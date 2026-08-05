@@ -1,0 +1,229 @@
+{
+  "archive": {
+    "file": "data.npz",
+    "sha256": "03b075e3ed076f7b53b244ff6f321b751d9872f66a3aa977c2a3eabfb14839eb"
+  },
+  "arrays": {
+    "background": {
+      "description": "Calculated background array",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "74c146913f738f75b65bfd318faf520ceda699d9f3e83b2fbc41d420504a2dfa",
+      "shape": [
+        4501
+      ],
+      "unit": "intensity"
+    },
+    "composition_phase_0_profile_per_deg": {
+      "description": "Normalized pinned GSAS-II profile",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "66d38776a246d0b28181279dc183c79fe0e986ee25782ab2864ba546c0d25276",
+      "shape": [
+        8001
+      ],
+      "unit": "inverse_degree"
+    },
+    "composition_phase_1_profile_per_deg": {
+      "description": "Normalized pinned GSAS-II profile",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "88298319d81c0b5bd1f3b749212e4ba4aa19c78432bb0759029eadca237d6dd5",
+      "shape": [
+        8001
+      ],
+      "unit": "inverse_degree"
+    },
+    "composition_x_deg": {
+      "description": "Profile sampling coordinates",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "a7031dce2053b9b2ec5391429f47c1dcfac393036b0bc54b54053f6c3dd591b3",
+      "shape": [
+        8001
+      ],
+      "unit": "degree_2theta"
+    },
+    "composition_ycalc": {
+      "description": "Calculated composition_ycalc array",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "f764947502e8b32053b9835b3bac36768cdbfc2e7ed9e42b27cc57325f6b3a48",
+      "shape": [
+        8001
+      ],
+      "unit": "intensity"
+    },
+    "reflection_list_alpha": {
+      "description": "Public scripting reflection list",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "04243a11df8cd067cdf8ff5f09e95de86c3a5c16077e5a7f1ade6186bb104417",
+      "shape": [
+        125,
+        15
+      ],
+      "unit": "mixed_by_column"
+    },
+    "reflection_list_beta": {
+      "description": "Public scripting reflection list",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "8d98d5286e431c1b4d5c69c4bad71f399cc421d10cb33eb1c6f3ac15adff8f2a",
+      "shape": [
+        73,
+        15
+      ],
+      "unit": "mixed_by_column"
+    },
+    "x_deg": {
+      "description": "Profile sampling coordinates",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "a0db3f2df6d12039c853c0e092a9396fa89332e585dfffec446749f1a5f8e47d",
+      "shape": [
+        4501
+      ],
+      "unit": "degree_2theta"
+    },
+    "ycalc": {
+      "description": "Calculated ycalc array",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "5e842984d0e15fadbe80656f0e2adefeaeee62707ad976f508c5e38d46a2a970",
+      "shape": [
+        4501
+      ],
+      "unit": "intensity"
+    }
+  },
+  "cases": [
+    {
+      "arrays": {
+        "phase_0_profile": "composition_phase_0_profile_per_deg",
+        "phase_1_profile": "composition_phase_1_profile_per_deg",
+        "x": "composition_x_deg",
+        "ycalc": "composition_ycalc"
+      },
+      "case_kind": "multiphase_profile_composition",
+      "id": "controlled_two_phase_overlap",
+      "parameters": {
+        "background": 0.37,
+        "base_integrated_intensities": [
+          7.0,
+          4.0
+        ],
+        "phase_scales": [
+          1.25,
+          0.65
+        ],
+        "reflections": [
+          {
+            "d_spacing_angstrom": 1.0690449676496976,
+            "gamma_centideg": 0.5280462471514142,
+            "gsasii_reported_integral": 0.9986537334026595,
+            "hkl": [
+              1,
+              -2,
+              -3
+            ],
+            "phase_id": "alpha",
+            "position_deg": 92.19667027536362,
+            "reflection_index": 101,
+            "sigma2_centideg2": 2.32033653369446
+          },
+          {
+            "d_spacing_angstrom": 1.0666666666666669,
+            "gamma_centideg": 0.5300202268063969,
+            "gsasii_reported_integral": 0.9986487517899778,
+            "hkl": [
+              1,
+              -2,
+              -2
+            ],
+            "phase_id": "beta",
+            "position_deg": 92.46247908348407,
+            "reflection_index": 46,
+            "sigma2_centideg2": 2.3356469303886502
+          }
+        ]
+      }
+    }
+  ],
+  "fixture_id": "gsasii_multiphase_v1",
+  "format_version": 1,
+  "input": {
+    "kind": "parameter_cases",
+    "sha256": "09a7390066e46cfdf3a005140a1e235274ae280f73d3d9935b341577f1b562d1"
+  },
+  "input_parameters": {
+    "composition": {
+      "background": 0.37,
+      "base_integrated_intensities": [
+        7.0,
+        4.0
+      ]
+    },
+    "instrument": {
+      "u_gsas_centideg2": 2.0,
+      "v_gsas_centideg2": -1.0,
+      "w_gsas_centideg2": 1.2,
+      "wavelength_angstrom": 1.54056,
+      "x_gsas_centideg": 0.15,
+      "y_gsas_centideg": 0.3
+    },
+    "phases": [
+      {
+        "cell_angstrom": 4.0,
+        "element": "Si",
+        "name": "oracle-alpha",
+        "phase_id": "alpha",
+        "scale": 1.25
+      },
+      {
+        "cell_angstrom": 3.2,
+        "element": "Ni",
+        "name": "oracle-beta",
+        "phase_id": "beta",
+        "scale": 0.65
+      }
+    ]
+  },
+  "kind": "cw_multiphase",
+  "provenance": {
+    "generated_at_utc": "2026-08-05T15:30:48.023874+00:00",
+    "generator_sha256": "d21e6d645209fc1828bb023ec2edf4e4dc452cccadc2ddfed694f70b42f23458",
+    "gsasii_repository": "https://github.com/AdvancedPhotonSource/GSAS-II",
+    "gsasii_revision": "c0bc79b259cdf0065480b5fbd57674ddf12c4a23",
+    "gsasii_tag": 5838,
+    "numpy_version": "2.2.6",
+    "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O",
+    "python_version": "3.13.9"
+  },
+  "source": {
+    "adapter_version": 1,
+    "api": [
+      "GSASII.GSASIIscriptable.G2Phase.getHAPentryList/getHAPentryValue/setHAPentryValue",
+      "GSASII.GSASIIscriptable.G2PwdrData.getdata/reflections",
+      "GSASII.GSASIIpwd.getPsVoigt"
+    ],
+    "private_probe": true,
+    "reflection_columns": [
+      "h",
+      "k",
+      "l",
+      "multiplicity",
+      "d_spacing_angstrom",
+      "position_deg",
+      "sigma2_centideg2",
+      "gamma_centideg",
+      "f_obs2",
+      "f_calc2",
+      "phase_deg",
+      "intensity_correction",
+      "preferred_orientation",
+      "transmission",
+      "extinction"
+    ]
+  }
+}

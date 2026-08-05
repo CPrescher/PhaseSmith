@@ -55,3 +55,53 @@ class FcjGeometry:
             raise ValueError("FCJ axial ratios must be finite")
         if any(value < 0.0 for value in values):
             raise ValueError("FCJ axial ratios must be non-negative")
+
+
+@dataclass(frozen=True, slots=True)
+class TofInstrument:
+    """TOF calibration and d-dependent profile coefficients in public units."""
+
+    zero_us: float
+    difc_us_per_angstrom: float
+    difa_us_per_angstrom2: float
+    difb_us_angstrom: float
+    alpha_coefficient: float
+    beta0_per_us: float
+    beta1_angstrom4_per_us: float
+    betaq_angstrom2_per_us: float
+    sigma0_us2: float
+    sigma1_us2_per_angstrom2: float
+    sigma2_us2_per_angstrom4: float
+    sigmaq_us2_per_angstrom: float
+    x_us_per_angstrom: float
+    y_us_per_angstrom2: float
+    z_us: float
+
+    def __post_init__(self) -> None:
+        """Reject non-finite coefficients and non-positive linear calibration."""
+
+        if not all(np.isfinite(value) for value in self.as_tuple()):
+            raise ValueError("TOF instrument coefficients must be finite")
+        if self.difc_us_per_angstrom <= 0.0:
+            raise ValueError("difc_us_per_angstrom must be positive")
+
+    def as_tuple(self) -> tuple[float, ...]:
+        """Return coefficients in the stable native/global-derivative order."""
+
+        return (
+            self.zero_us,
+            self.difc_us_per_angstrom,
+            self.difa_us_per_angstrom2,
+            self.difb_us_angstrom,
+            self.alpha_coefficient,
+            self.beta0_per_us,
+            self.beta1_angstrom4_per_us,
+            self.betaq_angstrom2_per_us,
+            self.sigma0_us2,
+            self.sigma1_us2_per_angstrom2,
+            self.sigma2_us2_per_angstrom4,
+            self.sigmaq_us2_per_angstrom,
+            self.x_us_per_angstrom,
+            self.y_us_per_angstrom2,
+            self.z_us,
+        )

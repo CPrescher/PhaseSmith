@@ -602,6 +602,8 @@ inside the primitive peak function.
 
 ## Implementation unit 6: multiple phases and scale composition
 
+Status: complete (2026-08-05).
+
 ### Goal
 
 Accumulate several phases and their derivatives deterministically in one pattern
@@ -655,6 +657,26 @@ CalculationInput (rietveld.calculation)
 8. Provide both stateless `calculate_pattern(...)` and reusable
    `PreparedPattern.calculate(...)` interfaces; both dispatch one flattened
    native batch call.
+
+Review result: `ReflectionBatch`, `Phase`, and `PowderPattern` provide durable
+IDs and validated immutable NumPy inputs without exposing core or oracle
+objects. `calculate_pattern` evaluates each optional provider once, prefixes
+its rows by phase ID, flattens phases in stable input order, and dispatches one
+generic Rust accumulation. `PreparedPattern` caches that immutable translation.
+Phase-scale rows are analytical; background is added once outside the profile
+kernel; negative base intensities and exact duplicate-position cancellation are
+supported. Optional phase curves are reconstructed from the same local support
+blocks without additional native calls. Eleven focused tests cover single-phase
+equivalence, fused/separate sums, order and labels, scale and provider finite
+differences, zero scales, cancellation, diagnostics, prepared reuse, boundary
+validation, and one-call dispatch. A pinned GSAS-II #5838 two-phase fixture
+stores public `X`, total `Ycalc`, background, two complete reflection lists,
+and a controlled private overlap. Widths, fused values, phase components, and
+scale rows agree within fixture-local `2.8e-6` peak-relative error. The full
+repository passes 179 Python and 22 Rust tests. For 200 reflections split over
+four size/strain phases and 5,001 samples, the recorded release medians are
+about 2.12 ms for the stateless API and 1.84 ms for the prepared API, returning
+2.191 MB of result arrays.
 
 ### Validation
 

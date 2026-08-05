@@ -3,9 +3,77 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from enum import StrEnum
 
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
+
+from .instrument import ConstantWavelengthInstrument
+
+
+class RadiationProbe(StrEnum):
+    """Physical probe used by a radiation model."""
+
+    X_RAY = "x-ray"
+    NEUTRON = "neutron"
+
+
+@dataclass(frozen=True, slots=True)
+class MonochromaticRadiation:
+    """One explicitly typed constant wavelength with no spectral components."""
+
+    probe: RadiationProbe
+    wavelength_angstrom: float
+
+    def __post_init__(self) -> None:
+        """Validate the explicit probe and positive wavelength."""
+
+        if not isinstance(self.probe, RadiationProbe):
+            raise TypeError("probe must be a RadiationProbe")
+        if not np.isfinite(self.wavelength_angstrom) or self.wavelength_angstrom <= 0.0:
+            raise ValueError("wavelength_angstrom must be positive and finite")
+
+    @classmethod
+    def x_ray(cls, wavelength_angstrom: float) -> MonochromaticRadiation:
+        """Construct monochromatic X-ray radiation."""
+
+        return cls(RadiationProbe.X_RAY, wavelength_angstrom)
+
+    @classmethod
+    def neutron(cls, wavelength_angstrom: float) -> MonochromaticRadiation:
+        """Construct monochromatic neutron radiation."""
+
+        return cls(RadiationProbe.NEUTRON, wavelength_angstrom)
+
+
+@dataclass(frozen=True, slots=True)
+class ConstantWavelengthExperiment:
+    """Typed pairing of a monochromatic probe and CW profile instrument."""
+
+    radiation: MonochromaticRadiation
+    instrument: ConstantWavelengthInstrument
+
+    def __post_init__(self) -> None:
+        """Reject ambiguous or inconsistent wavelength ownership."""
+
+        if not isinstance(self.radiation, MonochromaticRadiation):
+            raise TypeError("radiation must be MonochromaticRadiation")
+        if not isinstance(self.instrument, ConstantWavelengthInstrument):
+            raise TypeError("instrument must be ConstantWavelengthInstrument")
+        if self.radiation.wavelength_angstrom != self.instrument.wavelength_angstrom:
+            raise ValueError("radiation and instrument wavelengths must match exactly")
+
+    @classmethod
+    def x_ray(cls, instrument: ConstantWavelengthInstrument) -> ConstantWavelengthExperiment:
+        """Construct an explicitly monochromatic X-ray experiment."""
+
+        return cls(MonochromaticRadiation.x_ray(instrument.wavelength_angstrom), instrument)
+
+    @classmethod
+    def neutron(cls, instrument: ConstantWavelengthInstrument) -> ConstantWavelengthExperiment:
+        """Construct an explicitly monochromatic neutron experiment."""
+
+        return cls(MonochromaticRadiation.neutron(instrument.wavelength_angstrom), instrument)
 
 
 @dataclass(frozen=True, slots=True, init=False)

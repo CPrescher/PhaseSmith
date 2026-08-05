@@ -16,7 +16,22 @@ from ._api import (
     tch_shape_from_fwhm,
     tch_shape_from_gaussian_sigma,
 )
-from .calculation import calculate_cw_pattern
+from .calculation import (
+    CalculationOptions,
+    PreparedPattern,
+    calculate_cw_pattern,
+    calculate_monochromatic_cw_pattern,
+    calculate_monochromatic_pattern,
+    calculate_neutron_fcj_pattern,
+    calculate_neutron_pattern,
+    calculate_pattern,
+)
+from .control import (
+    CancellationCallback,
+    OperationCancelled,
+    ProgressCallback,
+    ProgressEvent,
+)
 from .cw import (
     CW_GLOBAL_PARAMETER_ORDER,
     CW_LOCAL_PARAMETER_ORDER,
@@ -43,9 +58,19 @@ from .fcj import (
     accumulate_cw_fcj_components,
     profile_fcj,
 )
-from .instrument import ConstantWavelengthInstrument, FcjGeometry
-from .phase import ReciprocalMetric, ReflectionGeometryBatch
-from .radiation import WavelengthComponents
+from .instrument import ConstantWavelengthInstrument, FcjGeometry, TofInstrument
+from .pattern import (
+    PatternCalculationResult,
+    PhasePatternComponent,
+    PowderPattern,
+)
+from .phase import Phase, ReciprocalMetric, ReflectionBatch, ReflectionGeometryBatch
+from .radiation import (
+    ConstantWavelengthExperiment,
+    MonochromaticRadiation,
+    RadiationProbe,
+    WavelengthComponents,
+)
 from .results import AccumulationResult, PatternDerivatives, SupportJacobian
 from .sample import (
     IsotropicMicrostrainBroadening,
@@ -65,7 +90,10 @@ __all__ = [
     "PHYSICS_PROVIDER_API_VERSION",
     "TCH_PARAMETER_ORDER",
     "AccumulationResult",
+    "CalculationOptions",
+    "CancellationCallback",
     "CompositePhysicsProvider",
+    "ConstantWavelengthExperiment",
     "ConstantWavelengthInstrument",
     "CwProfileParameters",
     "FcjGeometry",
@@ -73,13 +101,24 @@ __all__ = [
     "IsotropicMicrostrainBroadening",
     "IsotropicSizeBroadening",
     "MarchDollasePreferredOrientation",
+    "MonochromaticRadiation",
+    "OperationCancelled",
+    "PatternCalculationResult",
     "PatternDerivatives",
+    "Phase",
+    "PhasePatternComponent",
     "PhysicsContext",
     "PhysicsContribution",
+    "PowderPattern",
+    "PreparedPattern",
     "ProfileResult",
+    "ProgressCallback",
+    "ProgressEvent",
     "ProviderDescriptor",
+    "RadiationProbe",
     "ReciprocalAngleGeometry",
     "ReciprocalMetric",
+    "ReflectionBatch",
     "ReflectionGeometryBatch",
     "ReflectionPhysicsProvider",
     "SupportJacobian",
@@ -96,6 +135,11 @@ __all__ = [
     "accumulate_cw_fcj_components",
     "accumulate_tch",
     "calculate_cw_pattern",
+    "calculate_monochromatic_cw_pattern",
+    "calculate_monochromatic_pattern",
+    "calculate_neutron_fcj_pattern",
+    "calculate_neutron_pattern",
+    "calculate_pattern",
     "cw_profile_parameters",
     "profile",
     "profile_fcj",

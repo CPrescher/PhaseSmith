@@ -6,9 +6,13 @@ This module intentionally contains no profile evaluation or refinement state.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
+
+if TYPE_CHECKING:
+    from .extensions import ReflectionPhysicsProvider
 
 
 def _readonly_float_vector(values: ArrayLike, name: str) -> NDArray[np.float64]:
@@ -68,6 +72,98 @@ class ReflectionGeometryBatch:
         """Return the number of reflections."""
 
         return int(self.two_theta_deg.size)
+
+
+def _stable_id(value: str, name: str) -> str:
+    if not isinstance(value, str) or not value or value != value.strip():
+        raise ValueError(f"{name} must be a non-empty string without surrounding whitespace")
+    if any(ord(character) < 32 for character in value):
+        raise ValueError(f"{name} must not contain control characters")
+    return value
+
+
+@dataclass(frozen=True, slots=True, init=False)
+class ReflectionBatch:
+    """Durably identified reflections owned by one phase."""
+
+    reflection_ids: tuple[str, ...]
+    geometry: ReflectionGeometryBatch
+
+    def __init__(
+        self,
+        reflection_ids: tuple[str, ...] | list[str],
+        hkl: ArrayLike,
+        d_spacing_angstrom: ArrayLike,
+        two_theta_deg: ArrayLike,
+        integrated_intensity: ArrayLike,
+    ) -> None:
+        """Validate IDs and construct the immutable numerical geometry batch."""
+
+        ids = tuple(_stable_id(value, "reflection_id") for value in reflection_ids)
+        if len(set(ids)) != len(ids):
+            raise ValueError("reflection_ids must be unique within a phase")
+        geometry = ReflectionGeometryBatch(
+            hkl,
+            d_spacing_angstrom,
+            two_theta_deg,
+            integrated_intensity,
+        )
+        if len(ids) != geometry.reflection_count:
+            raise ValueError("reflection_ids must match the reflection count")
+        object.__setattr__(self, "reflection_ids", ids)
+        object.__setattr__(self, "geometry", geometry)
+
+    @property
+    def reflection_count(self) -> int:
+        """Return the number of reflections."""
+
+        return self.geometry.reflection_count
+
+    @property
+    def integrated_intensity(self) -> NDArray[np.float64]:
+        """Return the base integrated-intensity array."""
+
+        return self.geometry.base_integrated_intensity
+
+    @property
+    def hkl(self) -> NDArray[np.int64]:
+        """Return Miller indices in reflection order."""
+
+        return self.geometry.hkl
+
+    @property
+    def d_spacing_angstrom(self) -> NDArray[np.float64]:
+        """Return d-spacings in ångströms."""
+
+        return self.geometry.d_spacing_angstrom
+
+    @property
+    def two_theta_deg(self) -> NDArray[np.float64]:
+        """Return reflection positions in degrees two-theta."""
+
+        return self.geometry.two_theta_deg
+
+
+@dataclass(frozen=True, slots=True)
+class Phase:
+    """One identified powder phase and its reflection-physics configuration."""
+
+    phase_id: str
+    name: str
+    reflections: ReflectionBatch
+    scale: float = 1.0
+    physics: ReflectionPhysicsProvider | None = None
+
+    def __post_init__(self) -> None:
+        """Validate stable identity, scale, and typed reflection ownership."""
+
+        _stable_id(self.phase_id, "phase_id")
+        if not isinstance(self.name, str) or not self.name.strip():
+            raise ValueError("phase name must be a non-empty string")
+        if not isinstance(self.reflections, ReflectionBatch):
+            raise TypeError("reflections must be a ReflectionBatch")
+        if not np.isfinite(self.scale) or self.scale < 0.0:
+            raise ValueError("phase scale must be non-negative and finite")
 
 
 @dataclass(frozen=True, slots=True, init=False)
