@@ -16,12 +16,22 @@ from numpy.typing import NDArray
 from .calculation import CalculationOptions
 from .extensions import CompositePhysicsProvider, ReflectionPhysicsProvider
 from .instrument import ConstantWavelengthInstrument, FcjGeometry, TofInstrument
+from .intensity_corrections import (
+    BraggBrentanoUnpolarizedLp,
+    NeutralIntegratedIntensityCorrection,
+)
 from .pattern import (
     PatternCalculationResult,
     PhasePatternComponent,
     PowderPattern,
 )
-from .phase import Phase, ReciprocalMetric, ReflectionBatch
+from .phase import (
+    Phase,
+    ReciprocalMetric,
+    ReflectionBatch,
+    RietveldPhase,
+    StructuralReflectionBatch,
+)
 from .radiation import (
     ConstantWavelengthExperiment,
     MonochromaticRadiation,
@@ -55,8 +65,10 @@ from .sample import (
     IsotropicSizeBroadening,
     MarchDollasePreferredOrientation,
 )
+from .scattering import NeutronNuclear, XrayNonResonant
+from .structure import structure_from_record, structure_to_record
 
-FORMAT_VERSION: Final = 1
+FORMAT_VERSION: Final = 2
 MANIFEST_NAME: Final = "manifest.json"
 ARCHIVE_NAME: Final = "arrays.npz"
 Instrument = ConstantWavelengthInstrument | TofInstrument
@@ -91,6 +103,7 @@ class PersistenceBundle:
     fcj_geometry: FcjGeometry | None = None
     wavelength_components: WavelengthComponents | None = None
     phases: tuple[Phase, ...] = ()
+    rietveld_phases: tuple[RietveldPhase, ...] = ()
     calculation_options: CalculationOptions | None = None
     calculation_result: PatternCalculationResult | None = None
     parameters: ParameterSet | None = None
@@ -104,9 +117,12 @@ class PersistenceBundle:
         """Freeze sequences and require JSON-compatible user metadata."""
 
         object.__setattr__(self, "phases", tuple(self.phases))
+        object.__setattr__(self, "rietveld_phases", tuple(self.rietveld_phases))
         object.__setattr__(self, "constraints", tuple(self.constraints))
         if any(not isinstance(phase, Phase) for phase in self.phases):
             raise TypeError("phases must contain only Phase objects")
+        if any(not isinstance(phase, RietveldPhase) for phase in self.rietveld_phases):
+            raise TypeError("rietveld_phases must contain only RietveldPhase objects")
         if self.calculation_result is not None and not isinstance(
             self.calculation_result, PatternCalculationResult
         ):
@@ -513,6 +529,108 @@ def _phase_from_record(
     )
 
 
+def _scattering_record(provider: object) -> dict[str, str]:
+    if type(provider) is XrayNonResonant:
+        return {
+            "model": "xray_non_resonant",
+            "provider_id": provider.descriptor.provider_id,
+            "provider_version": provider.descriptor.provider_version,
+        }
+    if type(provider) is NeutronNuclear:
+        return {
+            "model": "neutron_nuclear",
+            "provider_id": provider.descriptor.provider_id,
+            "provider_version": provider.descriptor.provider_version,
+        }
+    raise TypeError("structural scattering persistence currently supports built-in models only")
+
+
+def _scattering_from_record(record: dict[str, Any]) -> XrayNonResonant | NeutronNuclear:
+    model = record["model"]
+    if model == "xray_non_resonant":
+        provider: XrayNonResonant | NeutronNuclear = XrayNonResonant()
+    elif model == "neutron_nuclear":
+        provider = NeutronNuclear()
+    else:
+        raise PersistenceError(f"unsupported structural scattering model {model!r}")
+    if (
+        record["provider_id"] != provider.descriptor.provider_id
+        or record["provider_version"] != provider.descriptor.provider_version
+    ):
+        raise PersistenceError("structural scattering provider version is incompatible")
+    return provider
+
+
+def _intensity_correction_record(provider: object) -> dict[str, Any]:
+    if type(provider) is NeutralIntegratedIntensityCorrection:
+        return {"model": "neutral"}
+    if type(provider) is BraggBrentanoUnpolarizedLp:
+        return {
+            "model": "bragg_brentano_unpolarized_lp",
+            "wavelength_angstrom": provider.wavelength_angstrom,
+        }
+    raise TypeError(
+        "structural intensity-correction persistence currently supports built-in models only"
+    )
+
+
+def _intensity_correction_from_record(
+    record: dict[str, Any],
+) -> NeutralIntegratedIntensityCorrection | BraggBrentanoUnpolarizedLp:
+    model = record["model"]
+    if model == "neutral":
+        return NeutralIntegratedIntensityCorrection()
+    if model == "bragg_brentano_unpolarized_lp":
+        return BraggBrentanoUnpolarizedLp(float(record["wavelength_angstrom"]))
+    raise PersistenceError(f"unsupported structural intensity correction {model!r}")
+
+
+def _rietveld_phase_record(
+    phase: RietveldPhase,
+    arrays: _ArrayWriter,
+    prefix: str,
+    codecs: tuple[PhysicsProviderCodec, ...],
+) -> dict[str, Any]:
+    return {
+        "phase_id": phase.phase_id,
+        "name": phase.name,
+        "structure": structure_to_record(phase.structure),
+        "reflections": {
+            "reflection_ids": list(phase.reflections.reflection_ids),
+            "hkl": arrays.add(f"{prefix}_hkl", phase.reflections.hkl),
+            "multiplicity": arrays.add(f"{prefix}_multiplicity", phase.reflections.multiplicity),
+        },
+        "scattering": _scattering_record(phase.scattering),
+        "intensity_correction": _intensity_correction_record(phase.intensity_correction),
+        "scale": phase.scale,
+        "physics": _provider_record(phase.physics, codecs),
+        "coordinate_tolerance": phase.coordinate_tolerance,
+    }
+
+
+def _rietveld_phase_from_record(
+    record: dict[str, Any],
+    arrays: dict[str, NDArray[np.generic]],
+    codecs: tuple[PhysicsProviderCodec, ...],
+) -> RietveldPhase:
+    reflections = record["reflections"]
+    return RietveldPhase(
+        record["phase_id"],
+        record["name"],
+        structure_from_record(record["structure"]),
+        StructuralReflectionBatch(
+            reflections["reflection_ids"],
+            arrays[reflections["hkl"]],
+            arrays[reflections["multiplicity"]],
+        ),
+        _scattering_from_record(record["scattering"]),
+        _intensity_correction_from_record(record["intensity_correction"]),
+        float(record["scale"]),
+        _provider_from_record(record["physics"], codecs),
+        float(record["coordinate_tolerance"]),
+    )
+
+
 def _pattern_record(pattern: PowderPattern | None, arrays: _ArrayWriter) -> dict[str, Any] | None:
     if pattern is None:
         return None
@@ -842,6 +960,10 @@ def save_bundle(
             _phase_record(phase, writer, f"phase_{index}", codecs)
             for index, phase in enumerate(bundle.phases)
         ],
+        "rietveld_phases": [
+            _rietveld_phase_record(phase, writer, f"rietveld_phase_{index}", codecs)
+            for index, phase in enumerate(bundle.rietveld_phases)
+        ],
         "calculation_options": (
             None
             if bundle.calculation_options is None
@@ -906,14 +1028,15 @@ def load_bundle(
     *,
     provider_codecs: tuple[PhysicsProviderCodec, ...] = (),
 ) -> PersistenceBundle:
-    """Validate and load a version-1 persistence bundle without pickle."""
+    """Validate and load a version-1 or version-2 bundle without pickle."""
 
     source = Path(path).resolve()
     try:
         manifest = json.loads((source / MANIFEST_NAME).read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as error:
         raise PersistenceError(f"cannot read persistence manifest: {error}") from error
-    if manifest.get("format_version") != FORMAT_VERSION:
+    version = manifest.get("format_version")
+    if version not in (1, FORMAT_VERSION):
         raise PersistenceError(f"unsupported persistence format {manifest.get('format_version')!r}")
     if manifest.get("archive", {}).get("file") != ARCHIVE_NAME:
         raise PersistenceError("persistence archive filename is invalid")
@@ -957,6 +1080,10 @@ def load_bundle(
         ),
         wavelength_components=_components_from_record(record["wavelength_components"], arrays),
         phases=tuple(_phase_from_record(phase, arrays, codecs) for phase in record["phases"]),
+        rietveld_phases=tuple(
+            _rietveld_phase_from_record(phase, arrays, codecs)
+            for phase in record.get("rietveld_phases", ())
+        ),
         calculation_options=None if options is None else CalculationOptions(**options),
         calculation_result=(
             None

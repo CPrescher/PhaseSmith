@@ -51,6 +51,34 @@ def phase(intensities: np.ndarray) -> rietveld.Phase:
     )
 
 
+def structural_phase() -> rietveld.RietveldPhase:
+    structure = rietveld.CrystalStructure(
+        "structure-alpha",
+        "Structural alpha",
+        rietveld.UnitCell(4.1, 4.1, 4.1, 90.0, 90.0, 90.0),
+        rietveld.SpaceGroup.p1(),
+        (
+            rietveld.AtomSite("si", "Si1", "Si", "Si", (0.1, 0.2, 0.3), 0.9, 0.012),
+            rietveld.AtomSite("o", "O1", "O", "O", (0.4, 0.5, 0.6), 1.0, 0.018),
+        ),
+    )
+    return rietveld.RietveldPhase(
+        "structural-alpha",
+        "Structural alpha",
+        structure,
+        rietveld.StructuralReflectionBatch(
+            ("1,0,0", "1,1,0"),
+            [[1, 0, 0], [1, 1, 0]],
+            [2, 4],
+        ),
+        rietveld.XrayNonResonant(),
+        rietveld.BraggBrentanoUnpolarizedLp(instrument().wavelength_angstrom),
+        scale=1.25,
+        physics=rietveld.IsotropicSizeBroadening(75.0),
+        coordinate_tolerance=2.0e-10,
+    )
+
+
 def refinement_models() -> tuple[rietveld.PowderPattern, rietveld.Phase, lebail.LeBailResult]:
     x = np.linspace(38.0, 42.0, 2001)
     truth = phase(np.array([7.0, 4.0]))
@@ -191,6 +219,59 @@ def test_parameter_change_history_round_trips(tmp_path) -> None:
     restored = persistence.load_bundle(destination)
     assert restored.lebail_result is not None
     assert restored.lebail_result.history == result.history
+
+
+def test_structural_phase_round_trips_separately_from_lebail_phases(tmp_path) -> None:
+    structural = structural_phase()
+    path = persistence.save_bundle(
+        tmp_path / "structural",
+        persistence.PersistenceBundle(
+            phases=(phase(np.ones(2)),),
+            rietveld_phases=(structural,),
+        ),
+    )
+    restored = persistence.load_bundle(path)
+    assert len(restored.phases) == 1
+    assert len(restored.rietveld_phases) == 1
+    actual = restored.rietveld_phases[0]
+    assert actual.phase_id == structural.phase_id
+    assert actual.structure == structural.structure
+    assert actual.reflections.reflection_ids == structural.reflections.reflection_ids
+    np.testing.assert_array_equal(actual.reflections.hkl, structural.reflections.hkl)
+    np.testing.assert_array_equal(
+        actual.reflections.multiplicity, structural.reflections.multiplicity
+    )
+    assert type(actual.scattering) is rietveld.XrayNonResonant
+    assert actual.intensity_correction == structural.intensity_correction
+    assert actual.scale == structural.scale
+    assert actual.coordinate_tolerance == structural.coordinate_tolerance
+    assert actual.physics == structural.physics
+
+    calculation_pattern = rietveld.PowderPattern(np.linspace(10.0, 80.0, 7_001))
+    experiment = rietveld.ConstantWavelengthExperiment.x_ray(instrument())
+    expected = rietveld.calculate_structural_pattern(calculation_pattern, experiment, structural)
+    observed = rietveld.calculate_structural_pattern(calculation_pattern, experiment, actual)
+    np.testing.assert_array_equal(observed.y, expected.y)
+    np.testing.assert_array_equal(
+        observed.reflections.integrated_intensity,
+        expected.reflections.integrated_intensity,
+    )
+
+
+def test_version_one_bundle_migrates_with_no_structural_phases(tmp_path) -> None:
+    path = persistence.save_bundle(
+        tmp_path / "version-one",
+        persistence.PersistenceBundle(phases=(phase(np.ones(2)),)),
+    )
+    manifest_path = path / persistence.MANIFEST_NAME
+    manifest = json.loads(manifest_path.read_text())
+    manifest["format_version"] = 1
+    manifest["bundle"].pop("rietveld_phases")
+    manifest_path.write_text(json.dumps(manifest))
+
+    restored = persistence.load_bundle(path)
+    assert len(restored.phases) == 1
+    assert restored.rietveld_phases == ()
 
 
 def test_undefined_zero_pattern_ratios_round_trip_as_explicit_nulls(tmp_path) -> None:
