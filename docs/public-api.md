@@ -8,7 +8,8 @@ global state, callbacks per reflection, or GUI objects.
 
 ```text
 rietveld.instrument
-  Instrument and radiation models. No phase or refinement state.
+  Instrument, radiation, and instrument-geometry models. No phase or
+  refinement state.
 
 rietveld.phase
   Crystallographic phase metadata and typed reflection batches. No observed
@@ -40,6 +41,24 @@ rietveld.integrations.dioptas
 
 Low-level profile functions remain available for equation testing and advanced
 use. They do not become the only way to calculate a pattern.
+
+The implemented low-level module split already follows this boundary:
+
+```text
+rietveld.instrument.ConstantWavelengthInstrument
+rietveld.instrument.FcjGeometry
+rietveld.cw.cw_profile_parameters
+rietveld.cw.accumulate_cw
+rietveld.fcj.profile_fcj
+rietveld.fcj.accumulate_cw_fcj
+rietveld.results.AccumulationResult
+```
+
+Top-level imports are convenience aliases for scripts and notebooks; the
+module-qualified paths above are the ownership boundary. FCJ geometry does not
+contain CW coefficients, and the FCJ module composes the two models through a
+single native batch call. Future phase and refinement layers consume this
+calculation surface rather than moving their state into either model.
 
 ## Data and ownership rules
 

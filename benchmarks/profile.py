@@ -12,9 +12,11 @@ from typing import Any
 import numpy as np
 from rietveld import (
     ConstantWavelengthInstrument,
+    FcjGeometry,
     _core,
     accumulate,
     accumulate_cw,
+    accumulate_cw_fcj,
     accumulate_tch,
     cw_profile_parameters,
 )
@@ -93,6 +95,7 @@ def main() -> None:
         x_deg=1.5e-3,
         y_deg=3.0e-3,
     )
+    fcj_geometry = FcjGeometry(sample_over_radius=0.012, detector_over_radius=0.012)
 
     support_fwhm = 20.0
     lower = np.searchsorted(x, positions - support_fwhm * fwhms, side="left")
@@ -113,6 +116,18 @@ def main() -> None:
     cw_lower = np.searchsorted(x, positions - support_fwhm * cw_widths, side="left")
     cw_upper = np.searchsorted(x, positions + support_fwhm * cw_widths, side="right")
     cw_active_peak_samples = int(np.sum(cw_upper - cw_lower))
+    apparent_limit = np.rad2deg(
+        np.arccos(
+            np.cos(np.deg2rad(positions))
+            * np.sqrt(
+                1.0 + (fcj_geometry.sample_over_radius + fcj_geometry.detector_over_radius) ** 2
+            )
+        )
+    )
+    fcj_radius = support_fwhm * cw_widths
+    fcj_lower = np.searchsorted(x, np.minimum(positions, apparent_limit) - fcj_radius, side="left")
+    fcj_upper = np.searchsorted(x, np.maximum(positions, apparent_limit) + fcj_radius, side="right")
+    fcj_active_peak_samples = int(np.sum(fcj_upper - fcj_lower))
 
     call_arguments = (x, positions, intensities, fwhms, etas, support_fwhm)
     values, values_timings = measure(
@@ -169,6 +184,18 @@ def main() -> None:
         warmups=arguments.warmups,
         repetitions=arguments.repetitions,
     )
+    fcj_result, fcj_timings = measure(
+        lambda: accumulate_cw_fcj(
+            x,
+            positions,
+            intensities,
+            cw_instrument,
+            fcj_geometry,
+            support_fwhm=support_fwhm,
+        ),
+        warmups=arguments.warmups,
+        repetitions=arguments.repetitions,
+    )
 
     input_bytes = sum(array.nbytes for array in (x, positions, intensities, fwhms, etas))
     print(f"python={platform.python_version()} numpy={np.__version__}")
@@ -177,7 +204,8 @@ def main() -> None:
     print(
         f"peaks={count} samples={x.size} active_peak_samples={active_peak_samples} "
         f"tch_active_peak_samples={tch_active_peak_samples} "
-        f"cw_active_peak_samples={cw_active_peak_samples} support_fwhm={support_fwhm:g}"
+        f"cw_active_peak_samples={cw_active_peak_samples} "
+        f"fcj_active_peak_samples={fcj_active_peak_samples} support_fwhm={support_fwhm:g}"
     )
     print(f"input_mb={input_bytes / 1e6:.3f} repetitions={arguments.repetitions}")
     report_case("values_only", values.nbytes, values_timings)
@@ -202,6 +230,13 @@ def main() -> None:
         + cw_result.derivatives.local.nbytes
         + cw_result.derivatives.global_jacobian.nbytes,
         cw_timings,
+    )
+    report_case(
+        "cw_fcj_local_and_global_jacobian_order_48",
+        fcj_result.y.nbytes
+        + fcj_result.derivatives.local.nbytes
+        + fcj_result.derivatives.global_jacobian.nbytes,
+        fcj_timings,
     )
 
 

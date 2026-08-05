@@ -1,0 +1,302 @@
+{
+  "archive": {
+    "file": "data.npz",
+    "sha256": "4f66197add7c8f6eca885560e72d35f987b077cd9426ba480596e6335050a1c8"
+  },
+  "arrays": {
+    "high_fcj__direct_jacobian": {
+      "description": "Position, Gaussian-FWHM, Lorentzian-FWHM, and SH/L derivatives",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "0e422b48e8449e4b15d2a07e34b47268ea4691447a704d44ab6d27dd26518c8e",
+      "shape": [
+        4,
+        10001
+      ],
+      "unit": "mixed_by_row"
+    },
+    "high_fcj__profile_per_deg": {
+      "description": "Normalized GSAS-II FCJ profile",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "df2aa9d59e03e36adcb9940c44200123b8baf13f4de4b2b04fc279560f927bd1",
+      "shape": [
+        10001
+      ],
+      "unit": "inverse_degree"
+    },
+    "high_fcj__x_deg": {
+      "description": "Profile sampling coordinates",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "b035f0fd01c6cc337d1a05c8376d1c2032d9419ced7f38c29aa5b54ec5d61f66",
+      "shape": [
+        10001
+      ],
+      "unit": "degree_2theta"
+    },
+    "low_fcj__direct_jacobian": {
+      "description": "Position, Gaussian-FWHM, Lorentzian-FWHM, and SH/L derivatives",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "eb60cce1386df332963b52d57d39426e55d137fa13d9374820906b61c08d0491",
+      "shape": [
+        4,
+        10001
+      ],
+      "unit": "mixed_by_row"
+    },
+    "low_fcj__profile_per_deg": {
+      "description": "Normalized GSAS-II FCJ profile",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "bc9f4573f4a5271a8f38049550b41e825d93b615bfe992407065d4058ed3291b",
+      "shape": [
+        10001
+      ],
+      "unit": "inverse_degree"
+    },
+    "low_fcj__x_deg": {
+      "description": "Profile sampling coordinates",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "9d2f319ca7d9e8da94792cc919e4185518ec150d9d23262755928d17a51e33ba",
+      "shape": [
+        10001
+      ],
+      "unit": "degree_2theta"
+    },
+    "middle_fcj__direct_jacobian": {
+      "description": "Position, Gaussian-FWHM, Lorentzian-FWHM, and SH/L derivatives",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "bab53ea224f4a63d63138e508d1f62d520fdefc171d7127c9b9b463ef8732379",
+      "shape": [
+        4,
+        10001
+      ],
+      "unit": "mixed_by_row"
+    },
+    "middle_fcj__profile_per_deg": {
+      "description": "Normalized GSAS-II FCJ profile",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "a24d50f635ec40d9b452ccd566c7d3fc84727bacedf853516f4b68802f095d33",
+      "shape": [
+        10001
+      ],
+      "unit": "inverse_degree"
+    },
+    "middle_fcj__x_deg": {
+      "description": "Profile sampling coordinates",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "bb74105f6a0058b23ebcd1548005321dcfa7237ac396d8b2a55d7014b3a3f49d",
+      "shape": [
+        10001
+      ],
+      "unit": "degree_2theta"
+    },
+    "middle_zero__direct_jacobian": {
+      "description": "Position, Gaussian-FWHM, Lorentzian-FWHM, and SH/L derivatives",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "7e7a4e2c5a6fdc94d9cb3031d61ae4b063d88ca9ef36c23b686db74cf43cef13",
+      "shape": [
+        4,
+        10001
+      ],
+      "unit": "mixed_by_row"
+    },
+    "middle_zero__profile_per_deg": {
+      "description": "Normalized GSAS-II FCJ profile",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "164f9abeed39e4cb62356f99b247db3db06086aae61acc89e76f1f8aa7dc6dff",
+      "shape": [
+        10001
+      ],
+      "unit": "inverse_degree"
+    },
+    "middle_zero__x_deg": {
+      "description": "Profile sampling coordinates",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "bb74105f6a0058b23ebcd1548005321dcfa7237ac396d8b2a55d7014b3a3f49d",
+      "shape": [
+        10001
+      ],
+      "unit": "degree_2theta"
+    }
+  },
+  "cases": [
+    {
+      "arrays": {
+        "direct_jacobian": "low_fcj__direct_jacobian",
+        "profile": "low_fcj__profile_per_deg",
+        "x": "low_fcj__x_deg"
+      },
+      "case_kind": "fcj_isolated_reflection",
+      "id": "low_fcj",
+      "parameters": {
+        "angular_regime": "low",
+        "gaussian_fwhm_deg": 0.02473135402653213,
+        "gaussian_variance_deg2": 0.00011030122626546027,
+        "gsas_shl": 0.024,
+        "instrument": {
+          "u_deg2": 0.0002,
+          "v_deg2": -0.0001,
+          "w_deg2": 0.00012,
+          "wavelength_angstrom": 1.5406,
+          "x_deg": 0.0015,
+          "y_deg": 0.003
+        },
+        "lorentzian_fwhm_deg": 0.0019079009336324167,
+        "position_deg": 15.0,
+        "public_equal_height_mapping": {
+          "detector_over_radius": 0.012,
+          "sample_over_radius": 0.012
+        }
+      },
+      "sampled_moments": {
+        "centroid_deg": 14.989591645074475,
+        "integral": 0.9995979418380434,
+        "third_central_moment_deg3": 1.4110645137325118e-05
+      }
+    },
+    {
+      "arrays": {
+        "direct_jacobian": "middle_fcj__direct_jacobian",
+        "profile": "middle_fcj__profile_per_deg",
+        "x": "middle_fcj__x_deg"
+      },
+      "case_kind": "fcj_isolated_reflection",
+      "id": "middle_fcj",
+      "parameters": {
+        "angular_regime": "middle",
+        "gaussian_fwhm_deg": 0.028651238368827187,
+        "gaussian_variance_deg2": 0.00014803736549216944,
+        "gsas_shl": 0.024,
+        "instrument": {
+          "u_deg2": 0.0002,
+          "v_deg2": -0.0001,
+          "w_deg2": 0.00012,
+          "wavelength_angstrom": 1.5406,
+          "x_deg": 0.0015,
+          "y_deg": 0.003
+        },
+        "lorentzian_fwhm_deg": 0.0039317844977713136,
+        "position_deg": 70.0,
+        "public_equal_height_mapping": {
+          "detector_over_radius": 0.012,
+          "sample_over_radius": 0.012
+        }
+      },
+      "sampled_moments": {
+        "centroid_deg": 69.99852933064511,
+        "integral": 0.9991857189107354,
+        "third_central_moment_deg3": 4.804516814298825e-06
+      }
+    },
+    {
+      "arrays": {
+        "direct_jacobian": "high_fcj__direct_jacobian",
+        "profile": "high_fcj__profile_per_deg",
+        "x": "high_fcj__x_deg"
+      },
+      "case_kind": "fcj_isolated_reflection",
+      "id": "high_fcj",
+      "parameters": {
+        "angular_regime": "high",
+        "gaussian_fwhm_deg": 0.08668100877002587,
+        "gaussian_variance_deg2": 0.001354978692137143,
+        "gsas_shl": 0.024,
+        "instrument": {
+          "u_deg2": 0.0002,
+          "v_deg2": -0.0001,
+          "w_deg2": 0.00012,
+          "wavelength_angstrom": 1.5406,
+          "x_deg": 0.0015,
+          "y_deg": 0.003
+        },
+        "lorentzian_fwhm_deg": 0.012628138858608494,
+        "position_deg": 140.0,
+        "public_equal_height_mapping": {
+          "detector_over_radius": 0.012,
+          "sample_over_radius": 0.012
+        }
+      },
+      "sampled_moments": {
+        "centroid_deg": 140.00481365822313,
+        "integral": 0.9973840320068125,
+        "third_central_moment_deg3": -5.014976098058233e-05
+      }
+    },
+    {
+      "arrays": {
+        "direct_jacobian": "middle_zero__direct_jacobian",
+        "profile": "middle_zero__profile_per_deg",
+        "x": "middle_zero__x_deg"
+      },
+      "case_kind": "fcj_isolated_reflection",
+      "id": "middle_zero",
+      "parameters": {
+        "angular_regime": "middle",
+        "gaussian_fwhm_deg": 0.028651238368827187,
+        "gaussian_variance_deg2": 0.00014803736549216944,
+        "gsas_shl": 0.0,
+        "instrument": {
+          "u_deg2": 0.0002,
+          "v_deg2": -0.0001,
+          "w_deg2": 0.00012,
+          "wavelength_angstrom": 1.5406,
+          "x_deg": 0.0015,
+          "y_deg": 0.003
+        },
+        "lorentzian_fwhm_deg": 0.0039317844977713136,
+        "position_deg": 70.0,
+        "public_equal_height_mapping": {
+          "detector_over_radius": 0.0,
+          "sample_over_radius": 0.0
+        }
+      },
+      "sampled_moments": {
+        "centroid_deg": 69.99999999999999,
+        "integral": 0.9991857645623304,
+        "third_central_moment_deg3": 1.4475043073989264e-16
+      }
+    }
+  ],
+  "fixture_id": "gsasii_fcj_profile_v1",
+  "format_version": 1,
+  "input": {
+    "kind": "parameter_cases",
+    "sha256": "0ac496d363cde8fc7a0a9a1eb83e10b516e3ff1b22e1fc9eedad96e0a4c19efe"
+  },
+  "kind": "fcj_profile",
+  "provenance": {
+    "generated_at_utc": "2026-08-05T08:27:55.295323+00:00",
+    "generator_sha256": "3896af32b1bba919ec44b3497f65eb0ef254dce45e2646c7c0ee54380d1f734a",
+    "gsasii_repository": "https://github.com/AdvancedPhotonSource/GSAS-II",
+    "gsasii_revision": "c0bc79b259cdf0065480b5fbd57674ddf12c4a23",
+    "gsasii_tag": 5838,
+    "numpy_version": "2.2.6",
+    "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O",
+    "python_version": "3.13.9"
+  },
+  "source": {
+    "adapter_version": 1,
+    "api": [
+      "GSASII.GSASIIpwd.getFCJVoigt3",
+      "GSASII.GSASIIpwd.getdFCJVoigt3"
+    ],
+    "native_units": {
+      "Gaussian_variance": "centidegree_squared",
+      "Lorentzian_fwhm": "centidegree",
+      "axial_parameter": "SH_over_L",
+      "coordinate": "degree_2theta",
+      "profile_density": "inverse_centidegree"
+    },
+    "private_probe": true
+  }
+}

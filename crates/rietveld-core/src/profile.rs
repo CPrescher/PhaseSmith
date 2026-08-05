@@ -150,6 +150,12 @@ impl SupportPolicy {
             }
         }
     }
+
+    pub(crate) fn radius(self, fwhm: f64) -> f64 {
+        match self {
+            Self::FwhmMultiple(multiple) => multiple * fwhm,
+        }
+    }
 }
 
 /// A profile value and its analytical first derivatives.

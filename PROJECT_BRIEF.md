@@ -84,6 +84,8 @@ documented; GSAS-II itself is never vendored.
 ## Architecture
 
 - `crates/rietveld-core`: dependency-light numerical types and kernels.
+- Numerical primitives such as CW width laws and FCJ geometry remain separate;
+  explicit composition modules fuse them for production accumulation.
 - `crates/rietveld-py`: PyO3 extension exposing array-oriented functions.
 - `python/rietveld`: public Python package, separated instrument/phase/pattern/
   calculation/refinement modules, reference implementation, optional

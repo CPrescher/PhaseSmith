@@ -93,7 +93,7 @@ impl CwProfileParameters {
         Self::from_validated_instrument(two_theta_deg, instrument)
     }
 
-    fn from_validated_instrument(
+    pub(crate) fn from_validated_instrument(
         two_theta_deg: f64,
         instrument: ConstantWavelengthInstrument,
     ) -> Result<Self, CwError> {
@@ -307,6 +307,14 @@ impl<'a> CwReflectionBatchView<'a> {
     #[must_use]
     pub const fn is_empty(self) -> bool {
         self.two_theta_deg.is_empty()
+    }
+
+    pub(crate) const fn position(self, reflection: usize) -> f64 {
+        self.two_theta_deg[reflection]
+    }
+
+    pub(crate) const fn intensity(self, reflection: usize) -> f64 {
+        self.intensities[reflection]
     }
 }
 

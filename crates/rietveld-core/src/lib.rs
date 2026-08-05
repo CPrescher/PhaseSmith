@@ -5,6 +5,8 @@
 //! numeric slices.
 
 pub mod cw;
+pub mod cw_fcj;
+pub mod fcj;
 pub mod profile;
 pub mod tch;
 
@@ -12,6 +14,8 @@ pub use cw::{
     ConstantWavelengthInstrument, CwBatchError, CwError, CwProfileParameters,
     CwReflectionBatchView, accumulate_cw_batch,
 };
+pub use cw_fcj::{CwFcjBatchError, accumulate_cw_fcj_batch};
+pub use fcj::{FcjError, FcjGeometry, FcjProfile, FcjProfilePoint};
 
 pub use profile::{
     Accumulation, DenseJacobian, GridView, PatternDerivatives, Peak, PeakBatchView, ProfileError,

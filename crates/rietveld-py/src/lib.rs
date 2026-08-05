@@ -8,9 +8,9 @@ use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use rietveld_core::{
     Accumulation, ConstantWavelengthInstrument, CwProfileParameters, CwReflectionBatchView,
-    GridView, PeakBatchView, SupportPolicy, TchPeakBatchView, TchShape, TchWidths,
-    accumulate_batch, accumulate_cw_batch, accumulate_tch_batch, accumulate_values_batch,
-    symmetric_pseudo_voigt,
+    FcjGeometry, FcjProfile, GridView, PeakBatchView, SupportPolicy, TchPeakBatchView, TchShape,
+    TchWidths, accumulate_batch, accumulate_cw_batch, accumulate_cw_fcj_batch,
+    accumulate_tch_batch, accumulate_values_batch, symmetric_pseudo_voigt,
 };
 
 type ProfileArrays<'py> = (
@@ -39,6 +39,15 @@ type CwProfileArrays<'py> = (
     Bound<'py, PyArray2<f64>>,
     Bound<'py, PyArray2<f64>>,
     Bound<'py, PyArray2<f64>>,
+);
+
+type FcjProfileArrays<'py> = (
+    Bound<'py, PyArray1<f64>>,
+    Bound<'py, PyArray1<f64>>,
+    Bound<'py, PyArray1<f64>>,
+    Bound<'py, PyArray1<f64>>,
+    Bound<'py, PyArray1<f64>>,
+    Bound<'py, PyArray1<f64>>,
 );
 
 /// Vectorized scalar profile evaluation used by the public Python wrapper.
@@ -139,6 +148,61 @@ fn profile_tch<'py>(
         d_delta.into_pyarray(py),
         d_gaussian.into_pyarray(py),
         d_lorentzian.into_pyarray(py),
+    ))
+}
+
+/// Vectorized FCJ-convolved TCH evaluation with direct-input derivatives.
+#[pyfunction]
+#[allow(clippy::too_many_arguments)]
+fn profile_fcj<'py>(
+    py: Python<'py>,
+    x_deg: PyReadonlyArray1<'py, f64>,
+    position_deg: f64,
+    gaussian_fwhm_deg: f64,
+    lorentzian_fwhm_deg: f64,
+    sample_over_radius: f64,
+    detector_over_radius: f64,
+) -> PyResult<FcjProfileArrays<'py>> {
+    let x_deg = contiguous_slice(&x_deg, "x_deg")?;
+    if x_deg.iter().any(|value| !value.is_finite()) {
+        return Err(PyValueError::new_err(
+            "x_deg must contain only finite values",
+        ));
+    }
+    let profile = FcjProfile::new(
+        position_deg,
+        TchWidths {
+            gaussian_fwhm: gaussian_fwhm_deg,
+            lorentzian_fwhm: lorentzian_fwhm_deg,
+        },
+        FcjGeometry {
+            sample_over_radius,
+            detector_over_radius,
+        },
+    )
+    .map_err(|error| PyValueError::new_err(error.to_string()))?;
+    let mut value = Vec::with_capacity(x_deg.len());
+    let mut d_position = Vec::with_capacity(x_deg.len());
+    let mut d_gaussian = Vec::with_capacity(x_deg.len());
+    let mut d_lorentzian = Vec::with_capacity(x_deg.len());
+    let mut d_sample = Vec::with_capacity(x_deg.len());
+    let mut d_detector = Vec::with_capacity(x_deg.len());
+    for coordinate in x_deg.iter().copied() {
+        let point = profile.evaluate(coordinate);
+        value.push(point.value);
+        d_position.push(point.d_position);
+        d_gaussian.push(point.d_gaussian_fwhm);
+        d_lorentzian.push(point.d_lorentzian_fwhm);
+        d_sample.push(point.d_sample_over_radius);
+        d_detector.push(point.d_detector_over_radius);
+    }
+    Ok((
+        value.into_pyarray(py),
+        d_position.into_pyarray(py),
+        d_gaussian.into_pyarray(py),
+        d_lorentzian.into_pyarray(py),
+        d_sample.into_pyarray(py),
+        d_detector.into_pyarray(py),
     ))
 }
 
@@ -312,6 +376,44 @@ fn accumulate_cw<'py>(
     accumulation_to_numpy(py, accumulation)
 }
 
+/// Accumulate an FCJ-asymmetric CW reflection batch with derivatives.
+#[pyfunction]
+#[allow(clippy::too_many_arguments)]
+fn accumulate_cw_fcj<'py>(
+    py: Python<'py>,
+    x: PyReadonlyArray1<'py, f64>,
+    two_theta_deg: PyReadonlyArray1<'py, f64>,
+    intensities: PyReadonlyArray1<'py, f64>,
+    wavelength_angstrom: f64,
+    u_deg2: f64,
+    v_deg2: f64,
+    w_deg2: f64,
+    x_deg: f64,
+    y_deg: f64,
+    sample_over_radius: f64,
+    detector_over_radius: f64,
+    support_fwhm: f64,
+) -> PyResult<AccumulationArrays<'py>> {
+    let x = contiguous_slice(&x, "x")?;
+    let two_theta_deg = contiguous_slice(&two_theta_deg, "two_theta_deg")?;
+    let intensities = contiguous_slice(&intensities, "intensities")?;
+    let grid = GridView::new(x).map_err(|error| PyValueError::new_err(error.to_string()))?;
+    let reflections = CwReflectionBatchView::new(two_theta_deg, intensities)
+        .map_err(|error| PyValueError::new_err(error.to_string()))?;
+    let accumulation = accumulate_cw_fcj_batch(
+        grid,
+        reflections,
+        cw_instrument(wavelength_angstrom, u_deg2, v_deg2, w_deg2, x_deg, y_deg),
+        FcjGeometry {
+            sample_over_radius,
+            detector_over_radius,
+        },
+        SupportPolicy::FwhmMultiple(support_fwhm),
+    )
+    .map_err(|error| PyValueError::new_err(error.to_string()))?;
+    accumulation_to_numpy(py, accumulation)
+}
+
 const fn cw_instrument(
     wavelength_angstrom: f64,
     u_deg2: f64,
@@ -379,11 +481,13 @@ fn _core(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_function(wrap_pyfunction!(profile, module)?)?;
     module.add_function(wrap_pyfunction!(tch_shape_from_fwhm, module)?)?;
     module.add_function(wrap_pyfunction!(profile_tch, module)?)?;
+    module.add_function(wrap_pyfunction!(profile_fcj, module)?)?;
     module.add_function(wrap_pyfunction!(accumulate, module)?)?;
     module.add_function(wrap_pyfunction!(accumulate_tch, module)?)?;
     module.add_function(wrap_pyfunction!(accumulate_values, module)?)?;
     module.add_function(wrap_pyfunction!(cw_profile_parameters, module)?)?;
     module.add_function(wrap_pyfunction!(accumulate_cw, module)?)?;
+    module.add_function(wrap_pyfunction!(accumulate_cw_fcj, module)?)?;
     module.add("PARAMETER_ORDER", ("intensity", "position", "fwhm", "eta"))?;
     module.add(
         "TCH_PARAMETER_ORDER",
@@ -391,6 +495,18 @@ fn _core(module: &Bound<'_, PyModule>) -> PyResult<()> {
     )?;
     module.add("CW_LOCAL_PARAMETER_ORDER", ("intensity", "position"))?;
     module.add("CW_GLOBAL_PARAMETER_ORDER", ("u", "v", "w", "x", "y"))?;
+    module.add(
+        "CW_FCJ_GLOBAL_PARAMETER_ORDER",
+        (
+            "u",
+            "v",
+            "w",
+            "x",
+            "y",
+            "sample_over_radius",
+            "detector_over_radius",
+        ),
+    )?;
     module.add(
         "BUILD_MODE",
         if cfg!(debug_assertions) {

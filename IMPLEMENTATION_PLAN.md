@@ -417,6 +417,8 @@ is about 131 microseconds.
 
 ## Implementation unit 4: FCJ asymmetry and K-alpha doublets
 
+Status: in progress (FCJ slice complete; K-alpha component composition next).
+
 ### Goal
 
 Add axial-divergence asymmetry and wavelength doublets without expanding peaks
@@ -436,6 +438,19 @@ in Python.
 6. Include derivatives for axial parameters and all inherited symmetric-profile
    parameters. Use published improved FCJ derivative expressions where
    appropriate, deriving the implementation independently.
+
+FCJ review result: the public `FcjGeometry` owns only dimensionless axial
+half-heights, while the `cw_fcj` composition module combines it with CW widths
+in one Rust reflection/sample pass. Production uses two fixed 48-point smooth
+Gauss-Legendre pieces, exact asymmetric union support, component-local support,
+and simultaneous derivatives for two local plus seven shared parameters. The
+independent 256-point study controls quadrature error; direct Rust/NumPy and
+finite-difference tests cover low/middle/high angle, equal/unequal geometry,
+zero asymmetry, normalization, centroid, and skew reversal. The pinned GSAS-II
+#5838 fixture records its discretized `SH/L` behavior and the documented
+fixture-local difference from the converged published integral. On the recorded
+development machine, a 200-reflection, 5,001-sample release batch takes about
+7.06 ms and returns 0.525 MB of values and derivatives.
 
 ### K-alpha plan
 

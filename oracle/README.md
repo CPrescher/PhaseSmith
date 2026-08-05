@@ -41,6 +41,15 @@ equations. It covers low, middle, and high angle plus an overlapping reflection
 batch. Its stored derivatives include the angle dependence of component widths
 in the reflection-position derivative and dense U/V/W/X/Y rows.
 
+`fcj_profile_v1` uses the pinned `getFCJVoigt3` and `getdFCJVoigt3` probes at
+low, middle, and high angle plus the zero-asymmetry limit. The oracle exposes a
+single `SH/L` parameter, recorded with the published equal-height mapping
+`sample_over_radius = detector_over_radius = SH/L / 2`. The production model
+evaluates the independently derived, quadrature-converged published integral;
+fixture-local tolerances record the observable discretization difference in the
+pinned compiled GSAS-II routine rather than tuning the production quadrature to
+that approximation.
+
 Generation is deliberately separate from the normal package: the script imports
 GSAS-II and NumPy, but never imports `rietveld`. Run it with GSAS-II's Python:
 
@@ -54,6 +63,10 @@ GSAS-II and NumPy, but never imports `rietveld`. Run it with GSAS-II's Python:
   --binary-dir /path/to/compatible/GSASII-bin/platform-directory
 
 /path/to/gsas/python oracle/scripts/generate_cw_instrument_profile.py \
+  --gsas-root /path/to/pinned/GSAS-II \
+  --binary-dir /path/to/compatible/GSASII-bin/platform-directory
+
+/path/to/gsas/python oracle/scripts/generate_fcj_profile.py \
   --gsas-root /path/to/pinned/GSAS-II \
   --binary-dir /path/to/compatible/GSASII-bin/platform-directory
 ```

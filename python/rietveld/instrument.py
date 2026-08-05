@@ -38,3 +38,20 @@ class ConstantWavelengthInstrument:
             raise ValueError("constant-wavelength instrument parameters must be finite")
         if self.wavelength_angstrom <= 0.0:
             raise ValueError("wavelength_angstrom must be positive")
+
+
+@dataclass(frozen=True, slots=True)
+class FcjGeometry:
+    """Finger-Cox-Jephcoat axial geometry as dimensionless half-heights."""
+
+    sample_over_radius: float
+    detector_over_radius: float
+
+    def __post_init__(self) -> None:
+        """Reject nonphysical geometry before entering a calculation."""
+
+        values = (self.sample_over_radius, self.detector_over_radius)
+        if not all(np.isfinite(value) for value in values):
+            raise ValueError("FCJ axial ratios must be finite")
+        if any(value < 0.0 for value in values):
+            raise ValueError("FCJ axial ratios must be non-negative")

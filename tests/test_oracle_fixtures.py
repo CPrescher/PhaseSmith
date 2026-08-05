@@ -14,6 +14,7 @@ REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 FIXTURE_PATH = REPOSITORY_ROOT / "oracle" / "fixtures" / "symmetric_pseudo_voigt_v1"
 HISTOGRAM_FIXTURE_PATH = REPOSITORY_ROOT / "oracle" / "fixtures" / "minimal_cw_histogram_v1"
 CW_FIXTURE_PATH = REPOSITORY_ROOT / "oracle" / "fixtures" / "cw_instrument_profile_v1"
+FCJ_FIXTURE_PATH = REPOSITORY_ROOT / "oracle" / "fixtures" / "fcj_profile_v1"
 
 
 def test_fixture_schema_and_pin_metadata_are_valid_json() -> None:
@@ -43,6 +44,16 @@ def test_cw_fixture_records_pin_and_committed_generator() -> None:
     generator = REPOSITORY_ROOT / "oracle" / "scripts" / "generate_cw_instrument_profile.py"
     digest = hashlib.sha256(generator.read_bytes()).hexdigest()
     assert fixture.manifest["fixture_id"] == "gsasii_cw_instrument_profile_v1"
+    assert fixture.manifest["provenance"]["gsasii_revision"] == PINNED_REVISION
+    assert fixture.manifest["provenance"]["generator_sha256"] == digest
+    assert len(fixture.cases) == 4
+
+
+def test_fcj_fixture_records_pin_and_committed_generator() -> None:
+    fixture = load_fixture(FCJ_FIXTURE_PATH)
+    generator = REPOSITORY_ROOT / "oracle" / "scripts" / "generate_fcj_profile.py"
+    digest = hashlib.sha256(generator.read_bytes()).hexdigest()
+    assert fixture.manifest["fixture_id"] == "gsasii_fcj_profile_v1"
     assert fixture.manifest["provenance"]["gsasii_revision"] == PINNED_REVISION
     assert fixture.manifest["provenance"]["generator_sha256"] == digest
     assert len(fixture.cases) == 4
@@ -215,6 +226,54 @@ def test_fused_cw_overlap_and_all_jacobians_against_pinned_gsasii() -> None:
     for native, oracle in comparisons:
         normalized_maximum_error = float(np.max(np.abs(native - oracle)) / np.max(np.abs(oracle)))
         assert normalized_maximum_error < 6e-6
+
+
+@pytest.mark.parametrize("angular_regime", ["low", "middle", "high"])
+def test_fcj_values_and_moments_against_pinned_gsasii(angular_regime: str) -> None:
+    fixture = load_fixture(FCJ_FIXTURE_PATH)
+    case = next(case for case in fixture.cases if case["id"] == f"{angular_regime}_fcj")
+    parameters = case["parameters"]
+    x = fixture.arrays[case["arrays"]["x"]]
+    oracle = fixture.arrays[case["arrays"]["profile"]]
+    mapping = parameters["public_equal_height_mapping"]
+    actual = rietveld.profile_fcj(
+        x,
+        parameters["position_deg"],
+        parameters["gaussian_fwhm_deg"],
+        parameters["lorentzian_fwhm_deg"],
+        rietveld.FcjGeometry(**dict(mapping)),
+    ).value
+    normalized_maximum_error = float(np.max(np.abs(actual - oracle)) / np.max(np.abs(oracle)))
+    # GSAS-II #5838 uses a discretized one-parameter SH/L convolution. The
+    # independently quadrature-converged published integral differs most at
+    # middle/high angle; this tolerance is local to that pinned behavior.
+    assert normalized_maximum_error < 2.4e-2
+
+    actual_area = np.trapezoid(actual, x)
+    actual_centroid = np.trapezoid(x * actual, x) / actual_area
+    actual_third = np.trapezoid((x - actual_centroid) ** 3 * actual, x) / actual_area
+    oracle_moments = case["sampled_moments"]
+    assert actual_area == pytest.approx(oracle_moments["integral"], rel=4e-6)
+    assert actual_centroid == pytest.approx(oracle_moments["centroid_deg"], abs=1.6e-3)
+    assert np.sign(actual_third) == np.sign(oracle_moments["third_central_moment_deg3"])
+    assert actual_third == pytest.approx(oracle_moments["third_central_moment_deg3"], rel=0.33)
+
+
+def test_fcj_zero_limit_against_pinned_gsasii() -> None:
+    fixture = load_fixture(FCJ_FIXTURE_PATH)
+    case = next(case for case in fixture.cases if case["id"] == "middle_zero")
+    parameters = case["parameters"]
+    x = fixture.arrays[case["arrays"]["x"]]
+    oracle = fixture.arrays[case["arrays"]["profile"]]
+    actual = rietveld.profile_fcj(
+        x,
+        parameters["position_deg"],
+        parameters["gaussian_fwhm_deg"],
+        parameters["lorentzian_fwhm_deg"],
+        rietveld.FcjGeometry(0.0, 0.0),
+    ).value
+    normalized_maximum_error = float(np.max(np.abs(actual - oracle)) / np.max(np.abs(oracle)))
+    assert normalized_maximum_error < 3e-6
 
 
 def test_fixture_reader_rejects_revision_drift(tmp_path: Path) -> None:

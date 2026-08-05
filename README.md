@@ -1,17 +1,20 @@
 # Rietveld Engine
 
 Rietveld Engine is an early-stage powder-diffraction computation library with a
-Rust numerical core and a typed Python/NumPy API. The current vertical slice is
-a finite-support symmetric pseudo-Voigt profile with analytical derivatives
+Rust numerical core and a typed Python/NumPy API. The current profile layer
+includes finite-support symmetric TCH pseudo-Voigt, constant-wavelength
+U/V/W/X/Y broadening, and FCJ axial asymmetry with analytical derivatives
 computed during fused peak accumulation.
 
 The architecture and roadmap are in [PROJECT_BRIEF.md](PROJECT_BRIEF.md); the
 equations and parameter conventions are in [docs/equations.md](docs/equations.md).
 The component-width TCH transform and chain-rule derivatives are documented in
 [docs/tch-profile.md](docs/tch-profile.md); constant-wavelength U/V/W/X/Y
-broadening is documented in [docs/cw-profile.md](docs/cw-profile.md). The
-script-first module boundaries, including the planned first-class Le Bail and
-Dioptas integration layers, are in [docs/public-api.md](docs/public-api.md).
+broadening is documented in [docs/cw-profile.md](docs/cw-profile.md). FCJ
+geometry, quadrature, derivatives, and asymmetric support are documented in
+[docs/fcj-profile.md](docs/fcj-profile.md). The script-first module boundaries,
+including the planned first-class Le Bail and Dioptas integration layers, are
+in [docs/public-api.md](docs/public-api.md).
 
 ## Development
 
@@ -75,6 +78,20 @@ instrument = ConstantWavelengthInstrument(
 cw = accumulate_cw(x, [24.0, 26.0], [100.0, 80.0], instrument)
 print(cw.derivatives.local_parameter_names)   # intensity, position
 print(cw.derivatives.global_parameter_names)  # U, V, W, X, Y
+```
+
+Axial divergence is a separate typed model and composes with CW broadening
+without expanding reflections in Python:
+
+```python
+from rietveld import FcjGeometry, accumulate_cw_fcj
+
+geometry = FcjGeometry(sample_over_radius=0.012, detector_over_radius=0.012)
+asymmetric = accumulate_cw_fcj(
+    x, [24.0, 26.0], [100.0, 80.0], instrument, geometry
+)
+print(asymmetric.derivatives.global_parameter_names)
+# U, V, W, X, Y, sample_over_radius, detector_over_radius
 ```
 
 GSAS-II is used only as the optional pinned validation oracle described in
