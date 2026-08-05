@@ -16,7 +16,9 @@ from rietveld import (
     FcjGeometry,
     IsotropicMicrostrainBroadening,
     IsotropicSizeBroadening,
+    MarchDollasePreferredOrientation,
     PhysicsContext,
+    ReciprocalMetric,
     ReflectionGeometryBatch,
     WavelengthComponents,
     _core,
@@ -115,7 +117,7 @@ def main() -> None:
             (
                 np.arange(count, dtype=np.int64),
                 np.ones(count, dtype=np.int64),
-                np.zeros(count, dtype=np.int64),
+                np.arange(count, dtype=np.int64) % 5,
             )
         ),
         d_spacings,
@@ -124,6 +126,15 @@ def main() -> None:
     )
     sample_physics = CompositePhysicsProvider(
         (IsotropicSizeBroadening(50.0), IsotropicMicrostrainBroadening(5.0e-4))
+    )
+    sample_orientation_physics = CompositePhysicsProvider(
+        (
+            IsotropicSizeBroadening(50.0),
+            IsotropicMicrostrainBroadening(5.0e-4),
+            MarchDollasePreferredOrientation(
+                0.72, (0.0, 0.0, 1.0), ReciprocalMetric.orthogonal(4.0, 4.0, 4.0)
+            ),
+        )
     )
     sample_contribution = sample_physics.evaluate(
         PhysicsContext(reflection_geometry, cw_instrument)
@@ -243,6 +254,17 @@ def main() -> None:
         warmups=arguments.warmups,
         repetitions=arguments.repetitions,
     )
+    sample_orientation_result, sample_orientation_timings = measure(
+        lambda: calculate_cw_pattern(
+            x,
+            reflection_geometry,
+            cw_instrument,
+            physics=sample_orientation_physics,
+            support_fwhm=support_fwhm,
+        ),
+        warmups=arguments.warmups,
+        repetitions=arguments.repetitions,
+    )
     fcj_result, fcj_timings = measure(
         lambda: accumulate_cw_fcj(
             x,
@@ -311,6 +333,13 @@ def main() -> None:
         + sample_result.derivatives.local.nbytes
         + sample_result.derivatives.global_jacobian.nbytes,
         sample_timings,
+    )
+    report_case(
+        "cw_size_strain_orientation_provider_and_native_jacobian",
+        sample_orientation_result.y.nbytes
+        + sample_orientation_result.derivatives.local.nbytes
+        + sample_orientation_result.derivatives.global_jacobian.nbytes,
+        sample_orientation_timings,
     )
     report_case(
         "cw_fcj_local_and_global_jacobian_order_48",

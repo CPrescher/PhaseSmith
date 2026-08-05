@@ -498,7 +498,7 @@ Rust (about 6.97 ms and 14.09 ms through Python), returning approximately
 
 ## Implementation unit 5: size, microstrain, and preferred orientation
 
-Status: in progress (provider contract and isotropic size/microstrain slice).
+Status: complete (2026-08-05).
 
 ### Goal
 
@@ -566,6 +566,23 @@ strain expand active work from 12,444 to 91,741 reflection/sample pairs; the
 recorded Rust benchmark is about 1.008 ms versus 0.126 ms instrument-only, and
 the end-to-end Python/provider/native median is about 1.08 ms with 1.791 MB of
 result arrays.
+
+Preferred-orientation review result: `MarchDollasePreferredOrientation` uses an
+explicit reciprocal metric and preferred reciprocal-lattice axis, returns an
+integrated-intensity modifier through the same provider protocol, and exposes
+the analytical March-ratio row. Reciprocal-angle geometry and axis-coordinate
+chains are independently finite-difference checked. Twelve focused tests cover
+the equation, random-orientation limit, sign-equivalent reflections,
+composition with size and strain, profile derivatives, and invalid geometry.
+The pinned GSAS-II #5838 fixture contains the public scripting `X`, `Ycalc`,
+background, and complete 125-reflection table plus three private normalized
+profile probes. After the explicit GSAS-unit translation, all reflection
+Gaussian variances, Lorentzian widths, and March factors agree to floating-point
+precision; selected peak-relative profile errors are below `2.0e-5`, with area
+and moments checked locally. The completed repository passes 166 Python and 22
+Rust tests. For 200 reflections and 5,001 samples, adding orientation to the
+size/strain provider increases the recorded end-to-end median from about 1.09
+ms and 1.791 MB to 1.24 ms and 1.831 MB.
 
 ### Validation
 

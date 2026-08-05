@@ -16,6 +16,7 @@ HISTOGRAM_FIXTURE_PATH = REPOSITORY_ROOT / "oracle" / "fixtures" / "minimal_cw_h
 CW_FIXTURE_PATH = REPOSITORY_ROOT / "oracle" / "fixtures" / "cw_instrument_profile_v1"
 FCJ_FIXTURE_PATH = REPOSITORY_ROOT / "oracle" / "fixtures" / "fcj_profile_v1"
 COMPONENT_FIXTURE_PATH = REPOSITORY_ROOT / "oracle" / "fixtures" / "wavelength_components_v1"
+SAMPLE_FIXTURE_PATH = REPOSITORY_ROOT / "oracle" / "fixtures" / "sample_physics_v1"
 
 
 def test_fixture_schema_and_pin_metadata_are_valid_json() -> None:
@@ -73,6 +74,121 @@ def test_component_fixture_records_pin_and_committed_generator() -> None:
         == hashlib.sha256(helper.read_bytes()).hexdigest()
     )
     assert len(fixture.cases) == 3
+
+
+def test_sample_fixture_records_pin_and_committed_generator() -> None:
+    fixture = load_fixture(SAMPLE_FIXTURE_PATH)
+    generator = REPOSITORY_ROOT / "oracle" / "scripts" / "generate_sample_physics.py"
+    digest = hashlib.sha256(generator.read_bytes()).hexdigest()
+    assert fixture.manifest["fixture_id"] == "gsasii_sample_physics_v1"
+    assert fixture.manifest["provenance"]["gsasii_revision"] == PINNED_REVISION
+    assert fixture.manifest["provenance"]["generator_sha256"] == digest
+    assert fixture.manifest["source"]["private_probe"] is True
+    assert len(fixture.cases) == 3
+
+
+def _sample_fixture_models(
+    fixture: rietveld.oracle.OracleFixture,
+) -> tuple[
+    rietveld.ConstantWavelengthInstrument,
+    rietveld.CompositePhysicsProvider,
+    dict[str, object],
+]:
+    translation = fixture.cases[0]["parameters"]["public_translation"]
+    instrument_values = fixture.manifest["input_parameters"]["instrument"]
+    instrument = rietveld.ConstantWavelengthInstrument(
+        wavelength_angstrom=instrument_values["wavelength_angstrom"],
+        u_deg2=instrument_values["u_gsas_centideg2"] * 1.0e-4,
+        v_deg2=instrument_values["v_gsas_centideg2"] * 1.0e-4,
+        w_deg2=instrument_values["w_gsas_centideg2"] * 1.0e-4,
+        x_deg=instrument_values["x_gsas_centideg"] * 1.0e-2,
+        y_deg=instrument_values["y_gsas_centideg"] * 1.0e-2,
+    )
+    provider = rietveld.CompositePhysicsProvider(
+        (
+            rietveld.IsotropicSizeBroadening(
+                translation["crystallite_size_nm"], translation["shape_factor"]
+            ),
+            rietveld.IsotropicMicrostrainBroadening(translation["rms_microstrain"]),
+            rietveld.MarchDollasePreferredOrientation(
+                translation["march_ratio"],
+                tuple(translation["preferred_axis_hkl"]),
+                rietveld.ReciprocalMetric(translation["reciprocal_metric_angstrom_minus2"]),
+            ),
+        )
+    )
+    return instrument, provider, translation
+
+
+def test_sample_reflection_parameters_against_pinned_gsasii() -> None:
+    fixture = load_fixture(SAMPLE_FIXTURE_PATH)
+    instrument, provider, _translation = _sample_fixture_models(fixture)
+    reflections = fixture.arrays["reflection_list"]
+    columns = fixture.manifest["source"]["reflection_columns"]
+    column = {name: columns.index(name) for name in columns}
+    batch = rietveld.ReflectionGeometryBatch(
+        reflections[:, :3].astype(np.int64),
+        reflections[:, column["d_spacing_angstrom"]],
+        reflections[:, column["position_deg"]],
+        np.ones(reflections.shape[0]),
+    )
+    contribution = provider.evaluate(rietveld.PhysicsContext(batch, instrument))
+    widths = rietveld.cw_profile_parameters(batch.two_theta_deg, instrument)
+    np.testing.assert_allclose(
+        1.0e4 * (widths.gaussian_variance_deg2 + contribution.gaussian_variance_deg2),
+        reflections[:, column["sigma2_centideg2"]],
+        rtol=8e-16,
+        atol=3e-15,
+    )
+    np.testing.assert_allclose(
+        100.0 * (widths.lorentzian_fwhm_deg + contribution.lorentzian_fwhm_deg),
+        reflections[:, column["gamma_centideg"]],
+        rtol=5e-16,
+        atol=1.1e-14,
+    )
+    np.testing.assert_allclose(
+        contribution.intensity_multiplier,
+        reflections[:, column["preferred_orientation"]],
+        rtol=9e-16,
+        atol=9e-16,
+    )
+    x = fixture.arrays["x_deg"]
+    ycalc = fixture.arrays["ycalc"]
+    background = fixture.arrays["background"]
+    assert x.shape == ycalc.shape == background.shape == (4_501,)
+    assert np.all(np.diff(x) > 0.0)
+    assert np.max(ycalc) > 0.0
+
+
+@pytest.mark.parametrize("case_index", [0, 1, 2])
+def test_sample_profiles_and_moments_against_pinned_gsasii(case_index: int) -> None:
+    fixture = load_fixture(SAMPLE_FIXTURE_PATH)
+    instrument, provider, _translation = _sample_fixture_models(fixture)
+    case = fixture.cases[case_index]
+    parameters = case["parameters"]
+    x = fixture.arrays[case["arrays"]["x"]]
+    oracle = parameters["preferred_orientation"] * fixture.arrays[case["arrays"]["profile"]]
+    batch = rietveld.ReflectionGeometryBatch(
+        [parameters["hkl"]],
+        [parameters["d_spacing_angstrom"]],
+        [parameters["position_deg"]],
+        [1.0],
+    )
+    actual = rietveld.calculate_cw_pattern(
+        x, batch, instrument, physics=provider, support_fwhm=10_000.0
+    ).y
+    normalized_maximum_error = float(np.max(np.abs(actual - oracle)) / np.max(np.abs(oracle)))
+    # Local to the pinned #5838 TCH implementation and the public unit
+    # translation validated independently against every reflection above.
+    assert normalized_maximum_error < 2.0e-5
+
+    actual_area = np.trapezoid(actual, x)
+    actual_centroid = np.trapezoid(x * actual, x) / actual_area
+    actual_second = np.trapezoid((x - actual_centroid) ** 2 * actual, x) / actual_area
+    oracle_moments = case["sampled_corrected_moments"]
+    assert actual_area == pytest.approx(oracle_moments["integral"], rel=2.1e-5)
+    assert actual_centroid == pytest.approx(oracle_moments["centroid_deg"], abs=3e-14)
+    assert actual_second == pytest.approx(oracle_moments["second_central_moment_deg2"], rel=4.1e-5)
 
 
 def test_public_scripting_histogram_fixture() -> None:

@@ -47,7 +47,13 @@ from .instrument import ConstantWavelengthInstrument, FcjGeometry
 from .phase import ReciprocalMetric, ReflectionGeometryBatch
 from .radiation import WavelengthComponents
 from .results import AccumulationResult, PatternDerivatives, SupportJacobian
-from .sample import IsotropicMicrostrainBroadening, IsotropicSizeBroadening
+from .sample import (
+    IsotropicMicrostrainBroadening,
+    IsotropicSizeBroadening,
+    MarchDollasePreferredOrientation,
+    ReciprocalAngleGeometry,
+    reciprocal_angle_geometry,
+)
 
 __all__ = [
     "CW_FCJ_GLOBAL_PARAMETER_ORDER",
@@ -66,11 +72,13 @@ __all__ = [
     "FcjProfileResult",
     "IsotropicMicrostrainBroadening",
     "IsotropicSizeBroadening",
+    "MarchDollasePreferredOrientation",
     "PatternDerivatives",
     "PhysicsContext",
     "PhysicsContribution",
     "ProfileResult",
     "ProviderDescriptor",
+    "ReciprocalAngleGeometry",
     "ReciprocalMetric",
     "ReflectionGeometryBatch",
     "ReflectionPhysicsProvider",
@@ -93,6 +101,7 @@ __all__ = [
     "profile_fcj",
     "profile_tch",
     "profile_tch_from_gaussian_sigma",
+    "reciprocal_angle_geometry",
     "tch_shape_from_fwhm",
     "tch_shape_from_gaussian_sigma",
 ]

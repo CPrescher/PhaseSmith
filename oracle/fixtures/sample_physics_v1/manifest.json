@@ -1,0 +1,357 @@
+{
+  "archive": {
+    "file": "data.npz",
+    "sha256": "6a856a04b54b6be444f5bace6ef34f7282f811329d5b89f08d2ac777f10a7a60"
+  },
+  "arrays": {
+    "background": {
+      "description": "Public scripting background array",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "74c146913f738f75b65bfd318faf520ceda699d9f3e83b2fbc41d420504a2dfa",
+      "shape": [
+        4501
+      ],
+      "unit": "intensity"
+    },
+    "reflection_list": {
+      "description": "Public scripting reflection list",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "2ee12515399c8f1e389708e6de24834835694549b0391cc26a0954f893cec3ab",
+      "shape": [
+        125,
+        15
+      ],
+      "unit": "mixed_by_column"
+    },
+    "sample_reflection_0__profile_per_deg": {
+      "description": "Normalized pinned GSAS-II profile",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "2b96602c981f142ab84e41a1b3bd69bf658030d31f071af0053dd68b9d7ae2d4",
+      "shape": [
+        6001
+      ],
+      "unit": "inverse_degree"
+    },
+    "sample_reflection_0__x_deg": {
+      "description": "Profile sampling coordinates",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "dc1e3045d3751bd4574ac77d083f79c336fe8bcaa8e6d5cf80ba523acb1f1f23",
+      "shape": [
+        6001
+      ],
+      "unit": "degree_2theta"
+    },
+    "sample_reflection_124__profile_per_deg": {
+      "description": "Normalized pinned GSAS-II profile",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "dc82957d71c2a7bf2e30c19ec51f244425b2a10cc33bb6226a3074c9219d595d",
+      "shape": [
+        6001
+      ],
+      "unit": "inverse_degree"
+    },
+    "sample_reflection_124__x_deg": {
+      "description": "Profile sampling coordinates",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "b4b1d0c98d5f6b751cc77df485b4872d42ef6431e0ed67ca7fc0c2eaf18f640a",
+      "shape": [
+        6001
+      ],
+      "unit": "degree_2theta"
+    },
+    "sample_reflection_62__profile_per_deg": {
+      "description": "Normalized pinned GSAS-II profile",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "9a438bd34cb46fb24cef1ebedbb4a353d7dfa7379401f023cd6e2661026659dc",
+      "shape": [
+        6001
+      ],
+      "unit": "inverse_degree"
+    },
+    "sample_reflection_62__x_deg": {
+      "description": "Profile sampling coordinates",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "92e0398127b5a920e4efe4b46c5c20ad694c04c27840efaa1ac7587c3a1af0af",
+      "shape": [
+        6001
+      ],
+      "unit": "degree_2theta"
+    },
+    "x_deg": {
+      "description": "Profile sampling coordinates",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "a0db3f2df6d12039c853c0e092a9396fa89332e585dfffec446749f1a5f8e47d",
+      "shape": [
+        4501
+      ],
+      "unit": "degree_2theta"
+    },
+    "ycalc": {
+      "description": "Public scripting ycalc array",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "7c43ca3141c4dfb5be38bdbf5fa4e44cb54a6591eeb992aa65130f874cefed21",
+      "shape": [
+        4501
+      ],
+      "unit": "intensity"
+    }
+  },
+  "cases": [
+    {
+      "arrays": {
+        "profile": "sample_reflection_0__profile_per_deg",
+        "x": "sample_reflection_0__x_deg"
+      },
+      "case_kind": "sample_physics_reflection",
+      "gsasii_reported_integral": 0.9920294485118394,
+      "id": "sample_reflection_0",
+      "parameters": {
+        "d_spacing_angstrom": 4.0,
+        "gamma_centideg": 18.131392151217515,
+        "hkl": [
+          1,
+          0,
+          0
+        ],
+        "position_deg": 22.20560919011823,
+        "preferred_orientation": 0.610940258945177,
+        "public_translation": {
+          "crystallite_size_nm": 50.0,
+          "march_ratio": 0.72,
+          "preferred_axis_hkl": [
+            0,
+            0,
+            1
+          ],
+          "reciprocal_metric_angstrom_minus2": [
+            [
+              0.0625,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0625,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0625
+            ]
+          ],
+          "rms_microstrain": 0.00012739827004320284,
+          "shape_factor": 1.0
+        },
+        "sigma2_centideg2": 0.9628564985374607
+      },
+      "sampled_corrected_moments": {
+        "centroid_deg": 22.205609190118235,
+        "integral": 0.6060699139631144,
+        "second_central_moment_deg2": 0.4154492650932565
+      }
+    },
+    {
+      "arrays": {
+        "profile": "sample_reflection_62__profile_per_deg",
+        "x": "sample_reflection_62__x_deg"
+      },
+      "case_kind": "sample_physics_reflection",
+      "gsasii_reported_integral": 0.9920041773382017,
+      "id": "sample_reflection_62",
+      "parameters": {
+        "d_spacing_angstrom": 1.2649110640673518,
+        "gamma_centideg": 22.53565919501555,
+        "hkl": [
+          0,
+          1,
+          -3
+        ],
+        "position_deg": 75.02865665901683,
+        "preferred_orientation": 2.1226762963242263,
+        "public_translation": {
+          "crystallite_size_nm": 50.0,
+          "march_ratio": 0.72,
+          "preferred_axis_hkl": [
+            0,
+            0,
+            1
+          ],
+          "reciprocal_metric_angstrom_minus2": [
+            [
+              0.0625,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0625,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0625
+            ]
+          ],
+          "rms_microstrain": 0.00012739827004320284,
+          "shape_factor": 1.0
+        },
+        "sigma2_centideg2": 2.6672313655841777
+      },
+      "sampled_corrected_moments": {
+        "centroid_deg": 75.02865665901682,
+        "integral": 2.1057009220043374,
+        "second_central_moment_deg2": 0.6437577883822222
+      }
+    },
+    {
+      "arrays": {
+        "profile": "sample_reflection_124__profile_per_deg",
+        "x": "sample_reflection_124__x_deg"
+      },
+      "case_kind": "sample_physics_reflection",
+      "gsasii_reported_integral": 0.9919895063856708,
+      "id": "sample_reflection_124",
+      "parameters": {
+        "d_spacing_angstrom": 1.0690449676496976,
+        "gamma_centideg": 25.8105506571614,
+        "hkl": [
+          1,
+          2,
+          3
+        ],
+        "position_deg": 92.19667027536362,
+        "preferred_orientation": 1.3241623339107356,
+        "public_translation": {
+          "crystallite_size_nm": 50.0,
+          "march_ratio": 0.72,
+          "preferred_axis_hkl": [
+            0,
+            0,
+            1
+          ],
+          "reciprocal_metric_angstrom_minus2": [
+            [
+              0.0625,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0625,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0625
+            ]
+          ],
+          "rms_microstrain": 0.00012739827004320284,
+          "shape_factor": 1.0
+        },
+        "sigma2_centideg2": 4.421467956392462
+      },
+      "sampled_corrected_moments": {
+        "centroid_deg": 92.1966702753636,
+        "integral": 1.3135533639345687,
+        "second_central_moment_deg2": 0.845949578922131
+      }
+    }
+  ],
+  "fixture_id": "gsasii_sample_physics_v1",
+  "format_version": 1,
+  "input": {
+    "kind": "parameter_cases",
+    "sha256": "148abd78b922ac3fff4b28062bedade9f72ea3461cfa36170b16ff2a7b7663a4"
+  },
+  "input_parameters": {
+    "instrument": {
+      "u_gsas_centideg2": 2.0,
+      "v_gsas_centideg2": -1.0,
+      "w_gsas_centideg2": 1.0,
+      "wavelength_angstrom": 1.54056,
+      "x_gsas_centideg": 0.1,
+      "y_gsas_centideg": 0.2
+    },
+    "phase": {
+      "cell": [
+        4.0,
+        4.0,
+        4.0,
+        90.0,
+        90.0,
+        90.0
+      ],
+      "name": "sample-physics-cubic",
+      "space_group": "P 1"
+    },
+    "sample": {
+      "march_ratio": 0.72,
+      "microstrain_lorentzian_fraction": 0.0,
+      "microstrain_ppm": 600.0,
+      "preferred_axis_hkl": [
+        0,
+        0,
+        1
+      ],
+      "size_lorentzian_fraction": 1.0,
+      "size_micrometre": 0.05
+    }
+  },
+  "kind": "cw_sample_physics",
+  "provenance": {
+    "generated_at_utc": "2026-08-05T15:15:46.021817+00:00",
+    "generator_sha256": "d73e96a83e9f197f08dbb08657c98e2330a221fbb47efc9619b5d90bca790d7f",
+    "gsasii_repository": "https://github.com/AdvancedPhotonSource/GSAS-II",
+    "gsasii_revision": "c0bc79b259cdf0065480b5fbd57674ddf12c4a23",
+    "gsasii_tag": 5838,
+    "numpy_version": "2.2.6",
+    "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O",
+    "python_version": "3.13.9"
+  },
+  "source": {
+    "adapter_version": 1,
+    "api": [
+      "GSASII.GSASIIscriptable.G2Phase.getHAPentryList/getHAPentryValue/setHAPentryValue",
+      "GSASII.GSASIIscriptable.G2PwdrData.getdata/reflections",
+      "GSASII.GSASIIpwd.getPsVoigt"
+    ],
+    "native_units": {
+      "Gaussian_variance": "centidegree_squared",
+      "Lorentzian_fwhm": "centidegree",
+      "microstrain": "delta_Q_over_Q_times_1e6",
+      "profile_density": "inverse_centidegree",
+      "size": "micrometre"
+    },
+    "private_probe": true,
+    "reflection_columns": [
+      "h",
+      "k",
+      "l",
+      "multiplicity",
+      "d_spacing_angstrom",
+      "position_deg",
+      "sigma2_centideg2",
+      "gamma_centideg",
+      "f_obs2",
+      "f_calc2",
+      "phase_deg",
+      "intensity_correction",
+      "preferred_orientation",
+      "transmission",
+      "extinction"
+    ]
+  }
+}

@@ -68,6 +68,8 @@ rietveld.extensions.ReflectionPhysicsProvider
 rietveld.extensions.CompositePhysicsProvider
 rietveld.sample.IsotropicSizeBroadening
 rietveld.sample.IsotropicMicrostrainBroadening
+rietveld.sample.MarchDollasePreferredOrientation
+rietveld.sample.reciprocal_angle_geometry
 rietveld.cw.cw_profile_parameters
 rietveld.cw.accumulate_cw
 rietveld.cw.accumulate_cw_components
@@ -203,3 +205,6 @@ FWHM, a multiplicative intensity correction, position chains, stable parameter
 names, and parameter-major derivative chains. The precise equations and array
 semantics are documented in [`sample-physics.md`](sample-physics.md). Width
 contributions add; intensity modifiers compose with the full product rule.
+The built-in March--Dollase provider uses the phase reciprocal metric and an
+explicit preferred reciprocal-lattice axis, and participates in the same
+calculation and derivative interface as broadening providers.

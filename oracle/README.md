@@ -57,6 +57,15 @@ weighted values, integrated area, centroid, and third moment. Together with the
 single-component FCJ fixture, it covers the optional-doublet and explicitly
 monochromatic paths.
 
+`sample_physics_v1` configures isotropic size, isotropic microstrain, and
+March--Dollase preferred orientation through the public generic HAP entry API.
+It stores the complete public reflection list and normalized private profile
+probes for low, middle, and high-angle reflections. The manifest records the
+explicit conversion from GSAS-II micrometre/ppm/centidegree conventions to the
+public nanometre/RMS-strain/degree conventions. Tests compare every reflection
+width and orientation factor before comparing selected values, areas, and
+moments.
+
 Generation is deliberately separate from the normal package: the script imports
 GSAS-II and NumPy, but never imports `rietveld`. Run it with GSAS-II's Python:
 
@@ -78,6 +87,10 @@ GSAS-II and NumPy, but never imports `rietveld`. Run it with GSAS-II's Python:
   --binary-dir /path/to/compatible/GSASII-bin/platform-directory
 
 /path/to/gsas/python oracle/scripts/generate_wavelength_components.py \
+  --gsas-root /path/to/pinned/GSAS-II \
+  --binary-dir /path/to/compatible/GSASII-bin/platform-directory
+
+/path/to/gsas/python oracle/scripts/generate_sample_physics.py \
   --gsas-root /path/to/pinned/GSAS-II \
   --binary-dir /path/to/compatible/GSASII-bin/platform-directory
 ```
