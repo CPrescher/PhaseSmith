@@ -993,9 +993,9 @@ requirement.
 
 ## Implementation units 11 through 18: crystallography and Rietveld
 
-Status: unit 11 implemented and independently validated (2026-08-05), with its
-live pinned GSAS-II P1 behavior fixture pending an available external checkout;
-units 12 through 18 are planned. The complete equations, data contracts,
+Status: units 11 and 12 implemented and independently validated (2026-08-05),
+with their live pinned GSAS-II behavior fixtures pending an available external
+checkout; units 13 through 18 are planned. The complete equations, data contracts,
 ordering, derivative strategy, validation gates, benchmarks, and discipline are
 specified in
 [`docs/crystallography-plan.md`](docs/crystallography-plan.md).
@@ -1046,6 +1046,21 @@ are approximately 2.502 ms for values, 2.843 ms for one JVP, and 6.895 ms for
 one intensity VJP. The pinned documentation survey and live-study schema are
 recorded in `oracle/STRUCTURAL_PARAMETER_STUDY.md`; no external-oracle
 equivalence is claimed until that fixture runs.
+
+Unit-12 review result: exact rational affine operations are canonicalized and
+checked for identity, uniqueness, finite rotation order, and closure. Rust owns
+special-position expansion, exact cyclotomic systematic-absence tests,
+reciprocal orbits, stable IDs/multiplicities, crystal-system inference, exact
+metric equations and nullspace parameterizations, and conservative bounded
+reflection generation. Typed inclusive ranges cover d, `Q = 2 pi/d`,
+monochromatic CW `2theta`, and TOF calibration. Twenty-three Python and ten new Rust
+tests cover P1/P-1, I/F centring, screw/glide extinction, all crystal systems,
+a non-standard setting, randomized triclinic enumeration, invalid inputs, and
+finite-difference cell derivatives. A prepared eight-operation C-centred
+orthorhombic release benchmark generates 3,174 families in approximately 14.95
+ms before the conservative-bound review and 14.64 ms after it. The external
+study schema is in
+`oracle/SYMMETRY_REFLECTION_STUDY.md`; no oracle equivalence is claimed yet.
 
 ## Cross-cutting validation matrix
 
@@ -1138,16 +1153,15 @@ resolved on 2026-08-05 by selecting the MIT License.
 
 ## Definition of the next completed milestone
 
-The immediate next milestone is implementation unit 11. It is complete when:
+The immediate next milestone is implementation unit 13. It is complete when:
 
-- the new Rust crate boundaries compile without introducing a dependency from
-  `rietveld-core` to crystallography;
-- general triclinic cell/reciprocal mathematics and derivatives are validated;
-- a P1 atom/reflection batch calculates complex structure factors and
-  integrated intensities in Rust from caller-supplied scattering amplitudes;
-- coordinate, occupancy, isotropic-displacement, and cell derivatives pass
-  independent NumPy, finite-difference, and JVP/VJP adjoint tests;
-- the Python boundary submits contiguous arrays once and contains no atom- or
-  reflection-level orchestration;
-- release benchmarks report values, JVP, VJP, memory, site count, and reflection
-  count for realistic inorganic and molecular batches.
+- optional CIF import yields typed cells, exact operations, sites, provenance,
+  and structured diagnostics without parser objects entering calculation state;
+- explicit-operation, Hall-symbol, setting, and legacy-tag precedence is tested;
+- imported structures persist independently of the optional parser backend;
+- a fixed-cell, cell-and-symmetry-only CIF can directly create a Le Bail phase
+  through the native reflection generator;
+- unsupported magnetic/modulated/macromolecular and anisotropic-conversion cases
+  fail visibly rather than being silently approximated;
+- the base package and every normal calculation remain independent of Gemmi and
+  GSAS-II.

@@ -17,7 +17,8 @@ use rietveld_core::{
     accumulate_values_batch, symmetric_pseudo_voigt,
 };
 use rietveld_engine::crystallography::{
-    P1BatchView, UnitCell, calculate_p1_dense, calculate_p1_intensity_vjp, calculate_p1_jvp,
+    P1BatchView, PreparedReflectionGenerator, Rational, ReflectionRange, SpaceGroup,
+    SymmetryOperation, UnitCell, calculate_p1_dense, calculate_p1_intensity_vjp, calculate_p1_jvp,
 };
 
 type ProfileArrays<'py> = (
@@ -112,6 +113,234 @@ type P1VjpArrays<'py> = (
     Bound<'py, PyArray1<f64>>,
     Bound<'py, PyArray1<f64>>,
 );
+
+type SymmetryTopology = (
+    Vec<i64>,
+    Vec<i64>,
+    Vec<i64>,
+    String,
+    Vec<i64>,
+    Vec<i64>,
+    usize,
+);
+
+type ExpandedSiteArrays<'py> = (Bound<'py, PyArray2<f64>>, Bound<'py, PyArray1<i64>>);
+
+type ReflectionFamilyArrays<'py> = (
+    Vec<String>,
+    Bound<'py, PyArray2<i64>>,
+    Bound<'py, PyArray1<i64>>,
+);
+
+type GeneratedReflectionArrays<'py> = (
+    Vec<String>,
+    Bound<'py, PyArray2<i64>>,
+    Bound<'py, PyArray1<i64>>,
+    Bound<'py, PyArray1<f64>>,
+    Bound<'py, PyArray1<f64>>,
+    Bound<'py, PyArray2<f64>>,
+);
+
+/// Cached native group topology and bounded reflection generator.
+#[pyclass(name = "_PreparedReflectionGenerator")]
+struct NativePreparedReflectionGenerator {
+    generator: PreparedReflectionGenerator,
+}
+
+#[pymethods]
+impl NativePreparedReflectionGenerator {
+    #[new]
+    fn new(
+        rotations_flat: PyReadonlyArray1<'_, i64>,
+        translation_numerators_flat: PyReadonlyArray1<'_, i64>,
+        translation_denominators_flat: PyReadonlyArray1<'_, i64>,
+        merge_friedel: bool,
+        max_candidates: usize,
+    ) -> PyResult<Self> {
+        let operations = symmetry_operations(
+            &rotations_flat,
+            &translation_numerators_flat,
+            &translation_denominators_flat,
+        )?;
+        let space_group = SpaceGroup::new(operations)
+            .map_err(|error| PyValueError::new_err(error.to_string()))?;
+        let generator =
+            PreparedReflectionGenerator::new(space_group, merge_friedel, max_candidates)
+                .map_err(|error| PyValueError::new_err(error.to_string()))?;
+        Ok(Self { generator })
+    }
+
+    fn topology(&self) -> SymmetryTopology {
+        let group = self.generator.space_group();
+        let mut rotations = Vec::with_capacity(group.operations().len() * 9);
+        let mut numerators = Vec::with_capacity(group.operations().len() * 3);
+        let mut denominators = Vec::with_capacity(group.operations().len() * 3);
+        for operation in group.operations() {
+            rotations.extend(operation.rotation().into_iter().flatten().map(i64::from));
+            for translation in operation.translation() {
+                numerators.push(translation.numerator());
+                denominators.push(translation.denominator());
+            }
+        }
+        let equations = group
+            .metric_constraints()
+            .equations
+            .iter()
+            .flatten()
+            .copied()
+            .collect();
+        let parameterization_basis = group
+            .metric_constraints()
+            .parameterization_basis
+            .iter()
+            .flatten()
+            .copied()
+            .collect();
+        (
+            rotations,
+            numerators,
+            denominators,
+            format!("{:?}", group.crystal_system()).to_lowercase(),
+            equations,
+            parameterization_basis,
+            group.metric_constraints().independent_parameter_count,
+        )
+    }
+
+    fn expand_sites<'py>(
+        &self,
+        py: Python<'py>,
+        fractional_xyz_flat: PyReadonlyArray1<'py, f64>,
+        tolerance: f64,
+    ) -> PyResult<ExpandedSiteArrays<'py>> {
+        let xyz = xyz_rows(&fractional_xyz_flat)?;
+        let expanded = self
+            .generator
+            .space_group()
+            .expand_sites(&xyz, tolerance)
+            .map_err(|error| PyValueError::new_err(error.to_string()))?;
+        let positions = Array2::from_shape_vec(
+            (expanded.fractional_xyz.len(), 3),
+            expanded.fractional_xyz.into_iter().flatten().collect(),
+        )
+        .map_err(|error| PyValueError::new_err(error.to_string()))?
+        .into_pyarray(py);
+        let source = expanded
+            .source_site
+            .into_iter()
+            .map(|value| {
+                i64::try_from(value)
+                    .map_err(|_| PyValueError::new_err("expanded source index overflow"))
+            })
+            .collect::<PyResult<Vec<_>>>()?
+            .into_pyarray(py);
+        Ok((positions, source))
+    }
+
+    fn systematic_absences<'py>(
+        &self,
+        py: Python<'py>,
+        hkl_flat: PyReadonlyArray1<'py, i64>,
+    ) -> PyResult<Bound<'py, PyArray1<bool>>> {
+        let hkl = hkl_rows(&hkl_flat)?;
+        hkl.into_iter()
+            .map(|reflection| {
+                self.generator
+                    .space_group()
+                    .is_systematically_absent(reflection)
+                    .map_err(|error| PyValueError::new_err(error.to_string()))
+            })
+            .collect::<PyResult<Vec<_>>>()
+            .map(|values| values.into_pyarray(py))
+    }
+
+    fn reflection_families<'py>(
+        &self,
+        py: Python<'py>,
+        hkl_flat: PyReadonlyArray1<'py, i64>,
+    ) -> PyResult<ReflectionFamilyArrays<'py>> {
+        let hkl = hkl_rows(&hkl_flat)?;
+        let mut ids = Vec::with_capacity(hkl.len());
+        let mut canonical = Vec::with_capacity(3 * hkl.len());
+        let mut multiplicity = Vec::with_capacity(hkl.len());
+        for reflection in hkl {
+            let family = self
+                .generator
+                .space_group()
+                .reflection_family(reflection, self.generator.merge_friedel())
+                .map_err(|error| PyValueError::new_err(error.to_string()))?;
+            ids.push(family.reflection_id);
+            canonical.extend(family.canonical_hkl.map(i64::from));
+            multiplicity.push(
+                i64::try_from(family.multiplicity)
+                    .map_err(|_| PyValueError::new_err("reflection multiplicity overflow"))?,
+            );
+        }
+        Ok((
+            ids,
+            Array2::from_shape_vec((multiplicity.len(), 3), canonical)
+                .map_err(|error| PyValueError::new_err(error.to_string()))?
+                .into_pyarray(py),
+            multiplicity.into_pyarray(py),
+        ))
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn generate<'py>(
+        &self,
+        py: Python<'py>,
+        a_angstrom: f64,
+        b_angstrom: f64,
+        c_angstrom: f64,
+        alpha_deg: f64,
+        beta_deg: f64,
+        gamma_deg: f64,
+        range_kind: &str,
+        range_parameters: PyReadonlyArray1<'py, f64>,
+    ) -> PyResult<GeneratedReflectionArrays<'py>> {
+        let parameters = contiguous_slice(&range_parameters, "range_parameters")?;
+        let range = reflection_range(range_kind, parameters)?;
+        let reflections = self
+            .generator
+            .generate(
+                crystallographic_cell(
+                    a_angstrom, b_angstrom, c_angstrom, alpha_deg, beta_deg, gamma_deg,
+                ),
+                range,
+            )
+            .map_err(|error| PyValueError::new_err(error.to_string()))?;
+        let count = reflections.len();
+        let mut ids = Vec::with_capacity(count);
+        let mut hkl = Vec::with_capacity(3 * count);
+        let mut multiplicity = Vec::with_capacity(count);
+        let mut d_spacing = Vec::with_capacity(count);
+        let mut reciprocal_length = Vec::with_capacity(count);
+        let mut derivatives = Vec::with_capacity(6 * count);
+        for reflection in reflections {
+            ids.push(reflection.reflection_id);
+            hkl.extend(reflection.hkl.map(i64::from));
+            multiplicity.push(
+                i64::try_from(reflection.multiplicity)
+                    .map_err(|_| PyValueError::new_err("reflection multiplicity overflow"))?,
+            );
+            d_spacing.push(reflection.d_spacing_angstrom);
+            reciprocal_length.push(reflection.reciprocal_length_inverse_angstrom);
+            derivatives.extend(reflection.d_spacing_derivatives);
+        }
+        Ok((
+            ids,
+            Array2::from_shape_vec((count, 3), hkl)
+                .map_err(|error| PyValueError::new_err(error.to_string()))?
+                .into_pyarray(py),
+            multiplicity.into_pyarray(py),
+            d_spacing.into_pyarray(py),
+            reciprocal_length.into_pyarray(py),
+            Array2::from_shape_vec((count, 6), derivatives)
+                .map_err(|error| PyValueError::new_err(error.to_string()))?
+                .into_pyarray(py),
+        ))
+    }
+}
 
 /// Derive direct and reciprocal cell geometry plus volume derivatives.
 #[pyfunction]
@@ -1176,6 +1405,96 @@ fn hkl_rows(array: &PyReadonlyArray1<'_, i64>) -> PyResult<Vec<[i32; 3]>> {
         .collect()
 }
 
+fn symmetry_operations(
+    rotations_flat: &PyReadonlyArray1<'_, i64>,
+    translation_numerators_flat: &PyReadonlyArray1<'_, i64>,
+    translation_denominators_flat: &PyReadonlyArray1<'_, i64>,
+) -> PyResult<Vec<SymmetryOperation>> {
+    let rotations = rotations_flat
+        .as_slice()
+        .map_err(|_| PyValueError::new_err("symmetry rotations must be contiguous"))?;
+    let numerators = translation_numerators_flat
+        .as_slice()
+        .map_err(|_| PyValueError::new_err("translation numerators must be contiguous"))?;
+    let denominators = translation_denominators_flat
+        .as_slice()
+        .map_err(|_| PyValueError::new_err("translation denominators must be contiguous"))?;
+    if rotations.len() % 9 != 0 {
+        return Err(PyValueError::new_err(
+            "flattened symmetry rotation length must be divisible by nine",
+        ));
+    }
+    let operation_count = rotations.len() / 9;
+    if numerators.len() != 3 * operation_count || denominators.len() != 3 * operation_count {
+        return Err(PyValueError::new_err(
+            "symmetry translations must have three entries per operation",
+        ));
+    }
+    (0..operation_count)
+        .map(|operation| {
+            let mut rotation = [[0_i32; 3]; 3];
+            for (index, value) in rotation.iter_mut().flatten().enumerate() {
+                *value = i32::try_from(rotations[9 * operation + index]).map_err(|_| {
+                    PyValueError::new_err("symmetry rotations must fit signed 32-bit")
+                })?;
+            }
+            let mut translation = [Rational::zero(); 3];
+            for (component, value) in translation.iter_mut().enumerate() {
+                let index = 3 * operation + component;
+                *value = Rational::new(numerators[index], denominators[index])
+                    .map_err(|error| PyValueError::new_err(error.to_string()))?;
+            }
+            SymmetryOperation::new(rotation, translation)
+                .map_err(|error| PyValueError::new_err(error.to_string()))
+        })
+        .collect()
+}
+
+fn reflection_range(kind: &str, parameters: &[f64]) -> PyResult<ReflectionRange> {
+    match (kind, parameters) {
+        ("d", [min_angstrom, max_angstrom]) => Ok(ReflectionRange::DSpacing {
+            min_angstrom: *min_angstrom,
+            max_angstrom: *max_angstrom,
+        }),
+        ("q", [min_inverse_angstrom, max_inverse_angstrom]) => {
+            Ok(ReflectionRange::ScatteringVector {
+                min_inverse_angstrom: *min_inverse_angstrom,
+                max_inverse_angstrom: *max_inverse_angstrom,
+            })
+        }
+        ("cw", [min_deg, max_deg, wavelength_angstrom]) => Ok(ReflectionRange::CwTwoTheta {
+            min_deg: *min_deg,
+            max_deg: *max_deg,
+            wavelength_angstrom: *wavelength_angstrom,
+        }),
+        (
+            "tof",
+            [
+                min_us,
+                max_us,
+                search_min_d_angstrom,
+                search_max_d_angstrom,
+                zero_us,
+                difc_us_per_angstrom,
+                difa_us_per_angstrom2,
+                difb_us_angstrom,
+            ],
+        ) => Ok(ReflectionRange::Tof {
+            min_us: *min_us,
+            max_us: *max_us,
+            search_min_d_angstrom: *search_min_d_angstrom,
+            search_max_d_angstrom: *search_max_d_angstrom,
+            zero_us: *zero_us,
+            difc_us_per_angstrom: *difc_us_per_angstrom,
+            difa_us_per_angstrom2: *difa_us_per_angstrom2,
+            difb_us_angstrom: *difb_us_angstrom,
+        }),
+        _ => Err(PyValueError::new_err(
+            "range must be d(2), q(2), cw(3), or tof(8) parameters",
+        )),
+    }
+}
+
 fn xyz_rows(array: &PyReadonlyArray1<'_, f64>) -> PyResult<Vec<[f64; 3]>> {
     let values = contiguous_slice(array, "fractional_xyz")?;
     if values.len() % 3 != 0 {
@@ -1209,6 +1528,7 @@ fn derivative_matrix(
 /// Native Python module.
 #[pymodule]
 fn _core(module: &Bound<'_, PyModule>) -> PyResult<()> {
+    module.add_class::<NativePreparedReflectionGenerator>()?;
     module.add_function(wrap_pyfunction!(unit_cell_geometry, module)?)?;
     module.add_function(wrap_pyfunction!(unit_cell_d_spacings, module)?)?;
     module.add_function(wrap_pyfunction!(p1_structure_factors_dense, module)?)?;

@@ -6,10 +6,19 @@
 
 pub mod cell;
 pub mod p1;
+pub mod reflection;
+pub mod symmetry;
 
 pub use cell::{CELL_PARAMETER_COUNT, CellError, CellGeometry, Matrix3, UnitCell};
 pub use p1::{
     P1BatchError, P1BatchView, P1DenseResult, P1JvpResult, P1ParameterLayout, P1Values,
     P1VjpResult, calculate_p1_dense, calculate_p1_intensity_vjp, calculate_p1_jvp,
     calculate_p1_values,
+};
+pub use reflection::{
+    GeneratedReflection, PreparedReflectionGenerator, ReflectionGenerationError, ReflectionRange,
+};
+pub use symmetry::{
+    CrystalSystem, ExpandedSites, MetricConstraints, Rational, ReflectionFamily, SpaceGroup,
+    SymmetryError, SymmetryOperation,
 };

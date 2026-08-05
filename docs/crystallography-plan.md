@@ -1,7 +1,8 @@
 # Crystallography and structure-factor implementation plan
 
-Status: unit 11 implemented and independently validated; live pinned P1 oracle
-fixture pending; units 12 through 18 pending.
+Status: units 11 and 12 implemented and independently validated; live pinned
+P1 and symmetry/reflection oracle fixtures pending; units 13 through 18
+pending.
 
 This plan adds CIF-driven Le Bail and structure-factor-driven Rietveld
 calculation without moving file parsing, Python objects, or per-reflection
@@ -284,6 +285,11 @@ available in the current environment; no oracle equivalence is claimed yet.
 - No Python callback occurs per atom or reflection.
 
 ## Implementation unit 12: symmetry and reflection generation
+
+Status: implemented and internally reviewed on 2026-08-05. Exact conventions,
+range semantics, validation, and performance are recorded in
+`docs/symmetry-reflections.md`. The external pinned behavior fixture remains
+pending an available checkout; no oracle equivalence is claimed yet.
 
 ### Work
 

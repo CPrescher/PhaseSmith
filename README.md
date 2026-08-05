@@ -6,19 +6,21 @@ includes symmetric TCH, CW U/V/W/X/Y broadening, FCJ asymmetry, wavelength
 components, extensible sample physics, multi-phase CW X-ray/neutron and neutron
 TOF calculation, plus a first-class scripted Le Bail workflow. Analytical
 derivatives are computed during fused peak accumulation. The crystallography
-foundation includes native general-cell mathematics and P1 complex structure
-factors with dense and matrix-free analytical derivatives.
+foundation includes native general-cell mathematics, P1 complex structure
+factors, exact symmetry, and bounded reflection generation with analytical
+derivatives.
 
 The architecture and roadmap are in [PROJECT_BRIEF.md](PROJECT_BRIEF.md); the
 equations and parameter conventions are in [docs/equations.md](docs/equations.md).
 The delivery plan for Rust-owned crystallographic calculations, CIF import,
 structure factors, CIF-to-Le Bail, and full Rietveld refinement is in
 [docs/crystallography-plan.md](docs/crystallography-plan.md). CIF import,
-symmetry/reflection generation, scattering tables, and structural refinement
-are not implemented yet.
+scattering tables, and structural refinement are not implemented yet.
 The implemented native unit-cell and P1 structure-factor foundation is
 documented in
 [docs/crystallography-foundation.md](docs/crystallography-foundation.md).
+Exact symmetry conventions and reflection ranges are documented in
+[docs/symmetry-reflections.md](docs/symmetry-reflections.md).
 The component-width TCH transform and chain-rule derivatives are documented in
 [docs/tch-profile.md](docs/tch-profile.md); constant-wavelength U/V/W/X/Y
 broadening is documented in [docs/cw-profile.md](docs/cw-profile.md). FCJ

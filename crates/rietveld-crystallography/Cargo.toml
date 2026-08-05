@@ -17,5 +17,9 @@ criterion = "0.7"
 name = "structure_factor"
 harness = false
 
+[[bench]]
+name = "reflection_generation"
+harness = false
+
 [lints]
 workspace = true

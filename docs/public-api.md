@@ -19,11 +19,14 @@ rietveld.phase
   Crystallographic phase metadata and typed reflection batches. No observed
   pattern, optimizer, or instrument state.
 
-rietveld.crystallography  [foundation implemented]
+rietveld.crystallography  [cells and P1 implemented]
   General cells, P1 atom sites, caller-supplied scattering amplitudes, complex
-  structure factors, and dense/JVP/VJP derivatives are implemented. Explicit
-  symmetry, generated reflection sets, and physical scattering models are the
-  next planned increments. Numerical evaluation is Rust-owned.
+  structure factors, and dense/JVP/VJP derivatives are implemented.
+
+rietveld.symmetry  [implemented]
+  Exact symmetry operations and closure, special positions, systematic
+  absences, metric parameterizations, and prepared d/Q/CW/TOF reflection
+  generation. Numerical evaluation and family enumeration are Rust-owned.
 
 rietveld.scattering  [planned]
   Typed X-ray and neutron scattering models plus versioned batch-provider
@@ -88,6 +91,13 @@ rietveld.crystallography.AtomSiteBatch
 rietveld.crystallography.calculate_p1_structure_factors
 rietveld.crystallography.p1_jacobian_vector_product
 rietveld.crystallography.p1_intensity_transpose_jacobian_vector_product
+rietveld.symmetry.SymmetryOperation
+rietveld.symmetry.SpaceGroup
+rietveld.symmetry.PreparedReflectionGenerator
+rietveld.symmetry.DSpacingRange
+rietveld.symmetry.ScatteringVectorRange
+rietveld.symmetry.CwTwoThetaRange
+rietveld.symmetry.TofRange
 rietveld.pattern.PowderPattern
 rietveld.pattern.PatternCalculationResult
 rietveld.extensions.PhysicsContribution

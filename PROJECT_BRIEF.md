@@ -22,12 +22,14 @@ and neither GSAS-II, SciPy, nor Dioptas is required for normal installation.
 Third-party reflection physics is supported through an explicit versioned batch
 provider and persistence-codec contract; arbitrary intrinsic line-shape plugins
 remain a future compiled-extension boundary rather than a promised Rust ABI.
-The implementation-unit-11 foundation adds Rust-owned general unit-cell
-geometry and P1 complex structure factors with analytical dense/JVP/VJP
-derivatives, a typed NumPy API, and an independent NumPy reference. Symmetry,
-CIF import, physical scattering tables, and structural refinement remain
-follow-on units. The live pinned GSAS-II P1 behavior fixture is pending because
-the external checkout is not available in the current environment.
+Implementation units 11 and 12 add Rust-owned general unit-cell geometry, P1
+complex structure factors with dense/JVP/VJP derivatives, exact symmetry,
+special-position expansion, systematic absences, metric constraints, and
+bounded d/Q/CW/TOF reflection generation. Typed NumPy APIs and independent
+NumPy references cover both slices. CIF import, physical scattering tables,
+and structural refinement remain follow-on units. The live pinned GSAS-II P1
+and reflection-behavior fixtures are pending because the external checkout is
+not available in the current environment.
 
 The project remains pre-release and is licensed under the MIT License. The
 architecture and delivery gates for CIF import, the remaining native
@@ -117,10 +119,10 @@ documented; GSAS-II itself is never vendored.
 - Numerical primitives such as CW width laws and FCJ geometry remain separate;
   explicit composition modules fuse them for production accumulation.
 - `crates/rietveld-py`: PyO3 extension exposing array-oriented functions.
-- Planned `crates/rietveld-crystallography`: file-independent crystallographic
-  mathematics, reflection generation, scattering, and structure factors.
-- Planned `crates/rietveld-engine`: native composition of crystallographic
-  intensities with the existing support-limited profile kernel.
+- `crates/rietveld-crystallography`: file-independent cell, exact symmetry,
+  reflection-generation, and P1 structure-factor kernels; scattering follows.
+- `crates/rietveld-engine`: native composition facade; structural-intensity
+  composition with the support-limited profile kernel follows.
 - `python/rietveld`: public Python package, separated instrument/phase/pattern/
   calculation/refinement modules, reference implementation, optional
   integrations, and validation tooling.
