@@ -537,12 +537,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "rietveld-crystallography"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+]
+
+[[package]]
+name = "rietveld-engine"
+version = "0.1.0"
+dependencies = [
+ "rietveld-core",
+ "rietveld-crystallography",
+]
+
+[[package]]
 name = "rietveld-py"
 version = "0.1.0"
 dependencies = [
  "numpy",
  "pyo3",
  "rietveld-core",
+ "rietveld-engine",
 ]
 
 [[package]]

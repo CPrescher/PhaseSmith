@@ -22,11 +22,17 @@ and neither GSAS-II, SciPy, nor Dioptas is required for normal installation.
 Third-party reflection physics is supported through an explicit versioned batch
 provider and persistence-codec contract; arbitrary intrinsic line-shape plugins
 remain a future compiled-extension boundary rather than a promised Rust ABI.
+The implementation-unit-11 foundation adds Rust-owned general unit-cell
+geometry and P1 complex structure factors with analytical dense/JVP/VJP
+derivatives, a typed NumPy API, and an independent NumPy reference. Symmetry,
+CIF import, physical scattering tables, and structural refinement remain
+follow-on units. The live pinned GSAS-II P1 behavior fixture is pending because
+the external checkout is not available in the current environment.
 
 The project remains pre-release and is licensed under the MIT License. The
-architecture and delivery gates for CIF import, native crystallographic
-calculation, and structure-factor-based Rietveld orchestration are specified in
-`docs/crystallography-plan.md`; those capabilities are not implemented yet.
+architecture and delivery gates for CIF import, the remaining native
+crystallographic calculations, and structure-factor-based Rietveld
+orchestration are specified in `docs/crystallography-plan.md`.
 
 ## Design commitments
 

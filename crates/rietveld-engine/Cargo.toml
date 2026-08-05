@@ -1,0 +1,15 @@
+[package]
+name = "rietveld-engine"
+description = "Native composition layer for Rietveld Engine"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+rietveld-core = { path = "../rietveld-core" }
+rietveld-crystallography = { path = "../rietveld-crystallography" }
+
+[lints]
+workspace = true

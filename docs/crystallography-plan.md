@@ -1,6 +1,7 @@
 # Crystallography and structure-factor implementation plan
 
-Status: working implementation plan, implementation pending.
+Status: unit 11 implemented and independently validated; live pinned P1 oracle
+fixture pending; units 12 through 18 pending.
 
 This plan adds CIF-driven Le Bail and structure-factor-driven Rietveld
 calculation without moving file parsing, Python objects, or per-reflection
@@ -244,6 +245,10 @@ is then consumed by our tests. Normal builds, imports, calculations, and
 refinements remain GSAS-II-free.
 
 ## Implementation unit 11: native foundation and P1 vertical slice
+
+Status: implemented and internally reviewed on 2026-08-05. The external pinned
+GSAS-II perturbation fixture remains pending because its checkout is not
+available in the current environment; no oracle equivalence is claimed yet.
 
 ### Work
 

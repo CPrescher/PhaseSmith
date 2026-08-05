@@ -16,6 +16,9 @@ use rietveld_core::{
     accumulate_cw_fcj_components_batch, accumulate_tch_batch, accumulate_tof_batch,
     accumulate_values_batch, symmetric_pseudo_voigt,
 };
+use rietveld_engine::crystallography::{
+    P1BatchView, UnitCell, calculate_p1_dense, calculate_p1_intensity_vjp, calculate_p1_jvp,
+};
 
 type ProfileArrays<'py> = (
     Bound<'py, PyArray1<f64>>,
@@ -73,6 +76,261 @@ type TofParameterArrays<'py> = (
     Bound<'py, PyArray1<f64>>,
     Bound<'py, PyArray1<f64>>,
 );
+
+type CellGeometryArrays<'py> = (
+    Bound<'py, PyArray2<f64>>,
+    Bound<'py, PyArray2<f64>>,
+    Bound<'py, PyArray2<f64>>,
+    Bound<'py, PyArray2<f64>>,
+    f64,
+    Bound<'py, PyArray1<f64>>,
+);
+
+type CellSpacingArrays<'py> = (Bound<'py, PyArray1<f64>>, Bound<'py, PyArray2<f64>>);
+
+type P1DenseArrays<'py> = (
+    Bound<'py, PyArray1<f64>>,
+    Bound<'py, PyArray1<f64>>,
+    Bound<'py, PyArray1<f64>>,
+    Bound<'py, PyArray2<f64>>,
+    Bound<'py, PyArray2<f64>>,
+    Bound<'py, PyArray2<f64>>,
+);
+
+type P1JvpArrays<'py> = (
+    Bound<'py, PyArray1<f64>>,
+    Bound<'py, PyArray1<f64>>,
+    Bound<'py, PyArray1<f64>>,
+    Bound<'py, PyArray1<f64>>,
+    Bound<'py, PyArray1<f64>>,
+    Bound<'py, PyArray1<f64>>,
+);
+
+type P1VjpArrays<'py> = (
+    Bound<'py, PyArray1<f64>>,
+    Bound<'py, PyArray1<f64>>,
+    Bound<'py, PyArray1<f64>>,
+    Bound<'py, PyArray1<f64>>,
+);
+
+/// Derive direct and reciprocal cell geometry plus volume derivatives.
+#[pyfunction]
+#[allow(clippy::too_many_arguments)]
+fn unit_cell_geometry(
+    py: Python<'_>,
+    a_angstrom: f64,
+    b_angstrom: f64,
+    c_angstrom: f64,
+    alpha_deg: f64,
+    beta_deg: f64,
+    gamma_deg: f64,
+) -> PyResult<CellGeometryArrays<'_>> {
+    let geometry = crystallographic_cell(
+        a_angstrom, b_angstrom, c_angstrom, alpha_deg, beta_deg, gamma_deg,
+    )
+    .geometry()
+    .map_err(|error| PyValueError::new_err(error.to_string()))?;
+    Ok((
+        matrix3_to_numpy(py, geometry.direct_basis)?,
+        matrix3_to_numpy(py, geometry.reciprocal_basis)?,
+        matrix3_to_numpy(py, geometry.direct_metric)?,
+        matrix3_to_numpy(py, geometry.reciprocal_metric)?,
+        geometry.volume_angstrom3,
+        geometry.volume_derivatives().to_vec().into_pyarray(py),
+    ))
+}
+
+/// Evaluate d-spacings and six direct-cell derivatives for a flat hkl array.
+#[pyfunction]
+#[allow(clippy::too_many_arguments)]
+fn unit_cell_d_spacings<'py>(
+    py: Python<'py>,
+    hkl_flat: PyReadonlyArray1<'py, i64>,
+    a_angstrom: f64,
+    b_angstrom: f64,
+    c_angstrom: f64,
+    alpha_deg: f64,
+    beta_deg: f64,
+    gamma_deg: f64,
+) -> PyResult<CellSpacingArrays<'py>> {
+    let hkl = hkl_rows(&hkl_flat)?;
+    let geometry = crystallographic_cell(
+        a_angstrom, b_angstrom, c_angstrom, alpha_deg, beta_deg, gamma_deg,
+    )
+    .geometry()
+    .map_err(|error| PyValueError::new_err(error.to_string()))?;
+    let mut spacings = Vec::with_capacity(hkl.len());
+    let mut derivatives = Vec::with_capacity(hkl.len() * 6);
+    for reflection in hkl {
+        let (spacing, derivative) = geometry
+            .d_spacing_and_derivatives(reflection)
+            .map_err(|error| PyValueError::new_err(error.to_string()))?;
+        spacings.push(spacing);
+        derivatives.extend_from_slice(&derivative);
+    }
+    Ok((
+        spacings.into_pyarray(py),
+        Array2::from_shape_vec((derivatives.len() / 6, 6), derivatives)
+            .map_err(|error| PyValueError::new_err(error.to_string()))?
+            .into_pyarray(py),
+    ))
+}
+
+/// Calculate P1 structure factors and a parameter-major dense Jacobian.
+#[pyfunction]
+#[allow(clippy::too_many_arguments)]
+fn p1_structure_factors_dense<'py>(
+    py: Python<'py>,
+    hkl_flat: PyReadonlyArray1<'py, i64>,
+    fractional_xyz_flat: PyReadonlyArray1<'py, f64>,
+    occupancy: PyReadonlyArray1<'py, f64>,
+    u_iso_angstrom2: PyReadonlyArray1<'py, f64>,
+    scattering_real_flat: PyReadonlyArray1<'py, f64>,
+    scattering_imag_flat: PyReadonlyArray1<'py, f64>,
+    a_angstrom: f64,
+    b_angstrom: f64,
+    c_angstrom: f64,
+    alpha_deg: f64,
+    beta_deg: f64,
+    gamma_deg: f64,
+    scale: f64,
+) -> PyResult<P1DenseArrays<'py>> {
+    let hkl = hkl_rows(&hkl_flat)?;
+    let xyz = xyz_rows(&fractional_xyz_flat)?;
+    let occupancy = contiguous_slice(&occupancy, "occupancy")?;
+    let u_iso = contiguous_slice(&u_iso_angstrom2, "u_iso_angstrom2")?;
+    let scattering_real = contiguous_slice(&scattering_real_flat, "scattering_real")?;
+    let scattering_imag = contiguous_slice(&scattering_imag_flat, "scattering_imag")?;
+    let result = calculate_p1_dense(
+        crystallographic_cell(
+            a_angstrom, b_angstrom, c_angstrom, alpha_deg, beta_deg, gamma_deg,
+        ),
+        P1BatchView {
+            hkl: &hkl,
+            fractional_xyz: &xyz,
+            occupancy,
+            u_iso_angstrom2: u_iso,
+            scattering_real,
+            scattering_imag,
+            scale,
+        },
+    )
+    .map_err(|error| PyValueError::new_err(error.to_string()))?;
+    let reflection_count = result.values.intensity.len();
+    let parameter_count = result.layout.parameter_count();
+    Ok((
+        result.values.f_real.into_pyarray(py),
+        result.values.f_imag.into_pyarray(py),
+        result.values.intensity.into_pyarray(py),
+        derivative_matrix(py, parameter_count, reflection_count, result.d_f_real)?,
+        derivative_matrix(py, parameter_count, reflection_count, result.d_f_imag)?,
+        derivative_matrix(py, parameter_count, reflection_count, result.d_intensity)?,
+    ))
+}
+
+/// Calculate P1 values and one structural forward derivative product.
+#[pyfunction]
+#[allow(clippy::too_many_arguments)]
+fn p1_structure_factors_jvp<'py>(
+    py: Python<'py>,
+    hkl_flat: PyReadonlyArray1<'py, i64>,
+    fractional_xyz_flat: PyReadonlyArray1<'py, f64>,
+    occupancy: PyReadonlyArray1<'py, f64>,
+    u_iso_angstrom2: PyReadonlyArray1<'py, f64>,
+    scattering_real_flat: PyReadonlyArray1<'py, f64>,
+    scattering_imag_flat: PyReadonlyArray1<'py, f64>,
+    a_angstrom: f64,
+    b_angstrom: f64,
+    c_angstrom: f64,
+    alpha_deg: f64,
+    beta_deg: f64,
+    gamma_deg: f64,
+    scale: f64,
+    tangent: PyReadonlyArray1<'py, f64>,
+) -> PyResult<P1JvpArrays<'py>> {
+    let hkl = hkl_rows(&hkl_flat)?;
+    let xyz = xyz_rows(&fractional_xyz_flat)?;
+    let occupancy = contiguous_slice(&occupancy, "occupancy")?;
+    let u_iso = contiguous_slice(&u_iso_angstrom2, "u_iso_angstrom2")?;
+    let scattering_real = contiguous_slice(&scattering_real_flat, "scattering_real")?;
+    let scattering_imag = contiguous_slice(&scattering_imag_flat, "scattering_imag")?;
+    let tangent = contiguous_slice(&tangent, "tangent")?;
+    let result = calculate_p1_jvp(
+        crystallographic_cell(
+            a_angstrom, b_angstrom, c_angstrom, alpha_deg, beta_deg, gamma_deg,
+        ),
+        P1BatchView {
+            hkl: &hkl,
+            fractional_xyz: &xyz,
+            occupancy,
+            u_iso_angstrom2: u_iso,
+            scattering_real,
+            scattering_imag,
+            scale,
+        },
+        tangent,
+    )
+    .map_err(|error| PyValueError::new_err(error.to_string()))?;
+    Ok((
+        result.values.f_real.into_pyarray(py),
+        result.values.f_imag.into_pyarray(py),
+        result.values.intensity.into_pyarray(py),
+        result.d_f_real.into_pyarray(py),
+        result.d_f_imag.into_pyarray(py),
+        result.d_intensity.into_pyarray(py),
+    ))
+}
+
+/// Calculate P1 values and an intensity reverse derivative product.
+#[pyfunction]
+#[allow(clippy::too_many_arguments)]
+fn p1_structure_factors_vjp<'py>(
+    py: Python<'py>,
+    hkl_flat: PyReadonlyArray1<'py, i64>,
+    fractional_xyz_flat: PyReadonlyArray1<'py, f64>,
+    occupancy: PyReadonlyArray1<'py, f64>,
+    u_iso_angstrom2: PyReadonlyArray1<'py, f64>,
+    scattering_real_flat: PyReadonlyArray1<'py, f64>,
+    scattering_imag_flat: PyReadonlyArray1<'py, f64>,
+    a_angstrom: f64,
+    b_angstrom: f64,
+    c_angstrom: f64,
+    alpha_deg: f64,
+    beta_deg: f64,
+    gamma_deg: f64,
+    scale: f64,
+    weights: PyReadonlyArray1<'py, f64>,
+) -> PyResult<P1VjpArrays<'py>> {
+    let hkl = hkl_rows(&hkl_flat)?;
+    let xyz = xyz_rows(&fractional_xyz_flat)?;
+    let occupancy = contiguous_slice(&occupancy, "occupancy")?;
+    let u_iso = contiguous_slice(&u_iso_angstrom2, "u_iso_angstrom2")?;
+    let scattering_real = contiguous_slice(&scattering_real_flat, "scattering_real")?;
+    let scattering_imag = contiguous_slice(&scattering_imag_flat, "scattering_imag")?;
+    let weights = contiguous_slice(&weights, "weights")?;
+    let result = calculate_p1_intensity_vjp(
+        crystallographic_cell(
+            a_angstrom, b_angstrom, c_angstrom, alpha_deg, beta_deg, gamma_deg,
+        ),
+        P1BatchView {
+            hkl: &hkl,
+            fractional_xyz: &xyz,
+            occupancy,
+            u_iso_angstrom2: u_iso,
+            scattering_real,
+            scattering_imag,
+            scale,
+        },
+        weights,
+    )
+    .map_err(|error| PyValueError::new_err(error.to_string()))?;
+    Ok((
+        result.values.f_real.into_pyarray(py),
+        result.values.f_imag.into_pyarray(py),
+        result.values.intensity.into_pyarray(py),
+        result.gradient.into_pyarray(py),
+    ))
+}
 
 /// Vectorized scalar profile evaluation used by the public Python wrapper.
 #[pyfunction]
@@ -876,9 +1134,86 @@ fn contiguous_slice<'array>(
     })
 }
 
+fn crystallographic_cell(
+    a_angstrom: f64,
+    b_angstrom: f64,
+    c_angstrom: f64,
+    alpha_deg: f64,
+    beta_deg: f64,
+    gamma_deg: f64,
+) -> UnitCell {
+    UnitCell {
+        a_angstrom,
+        b_angstrom,
+        c_angstrom,
+        alpha_deg,
+        beta_deg,
+        gamma_deg,
+    }
+}
+
+fn hkl_rows(array: &PyReadonlyArray1<'_, i64>) -> PyResult<Vec<[i32; 3]>> {
+    let values = array
+        .as_slice()
+        .map_err(|_| PyValueError::new_err("hkl must be a contiguous flattened array"))?;
+    if values.len() % 3 != 0 {
+        return Err(PyValueError::new_err(
+            "flattened hkl length must be divisible by three",
+        ));
+    }
+    values
+        .chunks_exact(3)
+        .map(|row| {
+            Ok([
+                i32::try_from(row[0])
+                    .map_err(|_| PyValueError::new_err("hkl values must fit signed 32-bit"))?,
+                i32::try_from(row[1])
+                    .map_err(|_| PyValueError::new_err("hkl values must fit signed 32-bit"))?,
+                i32::try_from(row[2])
+                    .map_err(|_| PyValueError::new_err("hkl values must fit signed 32-bit"))?,
+            ])
+        })
+        .collect()
+}
+
+fn xyz_rows(array: &PyReadonlyArray1<'_, f64>) -> PyResult<Vec<[f64; 3]>> {
+    let values = contiguous_slice(array, "fractional_xyz")?;
+    if values.len() % 3 != 0 {
+        return Err(PyValueError::new_err(
+            "flattened fractional_xyz length must be divisible by three",
+        ));
+    }
+    Ok(values
+        .chunks_exact(3)
+        .map(|row| [row[0], row[1], row[2]])
+        .collect())
+}
+
+fn matrix3_to_numpy(py: Python<'_>, matrix: [[f64; 3]; 3]) -> PyResult<Bound<'_, PyArray2<f64>>> {
+    Array2::from_shape_vec((3, 3), matrix.into_iter().flatten().collect())
+        .map_err(|error| PyValueError::new_err(error.to_string()))
+        .map(|array| array.into_pyarray(py))
+}
+
+fn derivative_matrix(
+    py: Python<'_>,
+    parameter_count: usize,
+    reflection_count: usize,
+    values: Vec<f64>,
+) -> PyResult<Bound<'_, PyArray2<f64>>> {
+    Array2::from_shape_vec((parameter_count, reflection_count), values)
+        .map_err(|error| PyValueError::new_err(error.to_string()))
+        .map(|array| array.into_pyarray(py))
+}
+
 /// Native Python module.
 #[pymodule]
 fn _core(module: &Bound<'_, PyModule>) -> PyResult<()> {
+    module.add_function(wrap_pyfunction!(unit_cell_geometry, module)?)?;
+    module.add_function(wrap_pyfunction!(unit_cell_d_spacings, module)?)?;
+    module.add_function(wrap_pyfunction!(p1_structure_factors_dense, module)?)?;
+    module.add_function(wrap_pyfunction!(p1_structure_factors_jvp, module)?)?;
+    module.add_function(wrap_pyfunction!(p1_structure_factors_vjp, module)?)?;
     module.add_function(wrap_pyfunction!(profile, module)?)?;
     module.add_function(wrap_pyfunction!(tch_shape_from_fwhm, module)?)?;
     module.add_function(wrap_pyfunction!(profile_tch, module)?)?;

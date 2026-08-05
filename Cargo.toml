@@ -1,5 +1,10 @@
 [workspace]
-members = ["crates/rietveld-core", "crates/rietveld-py"]
+members = [
+  "crates/rietveld-core",
+  "crates/rietveld-crystallography",
+  "crates/rietveld-engine",
+  "crates/rietveld-py",
+]
 resolver = "2"
 
 [workspace.package]

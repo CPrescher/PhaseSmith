@@ -993,8 +993,11 @@ requirement.
 
 ## Implementation units 11 through 18: crystallography and Rietveld
 
-Status: planned. The complete equations, data contracts, ordering, derivative
-strategy, validation gates, benchmarks, and commit discipline are specified in
+Status: unit 11 implemented and independently validated (2026-08-05), with its
+live pinned GSAS-II P1 behavior fixture pending an available external checkout;
+units 12 through 18 are planned. The complete equations, data contracts,
+ordering, derivative strategy, validation gates, benchmarks, and discipline are
+specified in
 [`docs/crystallography-plan.md`](docs/crystallography-plan.md).
 
 The dependency order is:
@@ -1029,6 +1032,20 @@ reflection intermediates, constraints, and one-at-a-time perturbation results.
 Published equations and reviewed data remain the implementation sources; the
 study determines conversions and validation cases, not architecture. The full
 protocol is in `docs/crystallography-plan.md`.
+
+Unit-11 review result: the workspace separates profile, crystallography,
+native composition, and PyO3 crates without adding crystallography to
+`rietveld-core`. General triclinic metrics, volume, d-spacing, and six cell
+derivatives are analytical. The P1 kernel calculates complex `F`,
+`scale |F|^2`, all coordinate/occupancy/`Uiso`/cell/scale derivatives, dense
+diagnostics, and native JVP/VJP products. Eight Python and eight Rust tests
+cover independent NumPy comparisons, every centered finite difference,
+invariances, invalid inputs, and adjoint consistency; all 277 normal Python and
+32 Rust tests pass. On a 5,000-reflection, 64-site release benchmark, medians
+are approximately 2.502 ms for values, 2.843 ms for one JVP, and 6.895 ms for
+one intensity VJP. The pinned documentation survey and live-study schema are
+recorded in `oracle/STRUCTURAL_PARAMETER_STUDY.md`; no external-oracle
+equivalence is claimed until that fixture runs.
 
 ## Cross-cutting validation matrix
 
