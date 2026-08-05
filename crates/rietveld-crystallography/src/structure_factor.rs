@@ -74,6 +74,30 @@ pub struct StructureFactorDenseResult {
     pub layout: P1ParameterLayout,
 }
 
+/// Values and one forward structural derivative product.
+#[derive(Clone, Debug, PartialEq)]
+pub struct StructureFactorJvpResult {
+    /// Calculated values.
+    pub values: StructureFactorValues,
+    /// Directional derivative of real `F`.
+    pub d_f_real: Vec<f64>,
+    /// Directional derivative of imaginary `F`.
+    pub d_f_imag: Vec<f64>,
+    /// Directional derivative of integrated intensity.
+    pub d_intensity: Vec<f64>,
+}
+
+/// Values and one reverse product for integrated-intensity weights.
+#[derive(Clone, Debug, PartialEq)]
+pub struct StructureFactorVjpResult {
+    /// Calculated values.
+    pub values: StructureFactorValues,
+    /// `J_intensity^T weights` in stable structural parameter order.
+    pub gradient: Vec<f64>,
+    /// Stable cell/site/scale parameter layout.
+    pub layout: P1ParameterLayout,
+}
+
 /// Invalid general-symmetry structure-factor input.
 #[derive(Clone, Debug, PartialEq)]
 pub enum StructureFactorBatchError {
@@ -97,6 +121,10 @@ pub enum StructureFactorBatchError {
     ZeroReflection,
     /// A requested output allocation overflowed addressable memory.
     AllocationOverflow,
+    /// A forward tangent does not match the stable parameter layout.
+    TangentLengthMismatch,
+    /// Reverse weights do not match the reflection count.
+    WeightLengthMismatch,
 }
 
 impl Display for StructureFactorBatchError {
@@ -125,6 +153,10 @@ impl Display for StructureFactorBatchError {
             Self::AllocationOverflow => {
                 formatter.write_str("structure-factor output allocation overflow")
             }
+            Self::TangentLengthMismatch => formatter
+                .write_str("structure-factor tangent length must equal the parameter count"),
+            Self::WeightLengthMismatch => formatter
+                .write_str("structure-factor reverse weights must match the reflection count"),
         }
     }
 }
@@ -207,6 +239,68 @@ pub fn calculate_structure_factor_dense(
     };
     for reflection in 0..reflection_count {
         evaluate_dense_reflection(&validated, reflection, &mut result);
+    }
+    Ok(result)
+}
+
+/// Calculate values and one forward derivative without a dense Jacobian.
+///
+/// # Errors
+///
+/// Returns [`StructureFactorBatchError`] for invalid batch data or a tangent
+/// that does not match the stable parameter layout.
+pub fn calculate_structure_factor_jvp(
+    cell: UnitCell,
+    space_group: &SpaceGroup,
+    batch: StructureFactorBatchView<'_>,
+    tangent: &[f64],
+) -> Result<StructureFactorJvpResult, StructureFactorBatchError> {
+    let validated = validate(cell, space_group, batch)?;
+    if tangent.len() != validated.layout.parameter_count() {
+        return Err(StructureFactorBatchError::TangentLengthMismatch);
+    }
+    if tangent.iter().any(|value| !value.is_finite()) {
+        return Err(StructureFactorBatchError::NonFiniteInput);
+    }
+    let reflection_count = batch.hkl.len();
+    let mut result = StructureFactorJvpResult {
+        values: empty_values(reflection_count),
+        d_f_real: vec![0.0; reflection_count],
+        d_f_imag: vec![0.0; reflection_count],
+        d_intensity: vec![0.0; reflection_count],
+    };
+    for reflection in 0..reflection_count {
+        evaluate_jvp_reflection(&validated, reflection, tangent, &mut result);
+    }
+    Ok(result)
+}
+
+/// Calculate values and `J_intensity^T weights` without a dense Jacobian.
+///
+/// # Errors
+///
+/// Returns [`StructureFactorBatchError`] for invalid batch data or reverse
+/// weights that do not match the reflection count.
+pub fn calculate_structure_factor_intensity_vjp(
+    cell: UnitCell,
+    space_group: &SpaceGroup,
+    batch: StructureFactorBatchView<'_>,
+    weights: &[f64],
+) -> Result<StructureFactorVjpResult, StructureFactorBatchError> {
+    let validated = validate(cell, space_group, batch)?;
+    if weights.len() != batch.hkl.len() {
+        return Err(StructureFactorBatchError::WeightLengthMismatch);
+    }
+    if weights.iter().any(|value| !value.is_finite()) {
+        return Err(StructureFactorBatchError::NonFiniteInput);
+    }
+    let mut result = StructureFactorVjpResult {
+        values: empty_values(batch.hkl.len()),
+        gradient: vec![0.0; validated.layout.parameter_count()],
+        layout: validated.layout,
+    };
+    for (reflection, weight) in weights.iter().copied().enumerate() {
+        evaluate_vjp_reflection(&validated, reflection, weight, &mut result);
     }
     Ok(result)
 }
@@ -453,6 +547,224 @@ fn accumulate_dense_site(
         -TWO_PI_SQUARED * q_squared * contribution.1,
     );
     contribution
+}
+
+fn evaluate_jvp_reflection(
+    validated: &ValidatedStructure<'_>,
+    reflection: usize,
+    tangent: &[f64],
+    result: &mut StructureFactorJvpResult,
+) {
+    let batch = validated.batch;
+    let (q_squared, d_q_squared) = validated
+        .geometry
+        .q_squared_and_derivatives(batch.hkl[reflection]);
+    let root_q = q_squared.sqrt();
+    let d_q_direction = d_q_squared
+        .iter()
+        .zip(&tangent[..CELL_PARAMETER_COUNT])
+        .map(|(derivative, direction)| derivative * direction)
+        .sum::<f64>();
+    let mut f = (0.0, 0.0);
+    let mut d_f = (0.0, 0.0);
+    for site in 0..validated.layout.site_count {
+        let (contribution, derivative) = jvp_site(
+            validated,
+            reflection,
+            site,
+            q_squared,
+            root_q,
+            d_q_direction,
+            tangent,
+        );
+        f.0 += contribution.0;
+        f.1 += contribution.1;
+        d_f.0 += derivative.0;
+        d_f.1 += derivative.1;
+    }
+    let s = 0.5 * root_q;
+    set_values(
+        &mut result.values,
+        batch,
+        reflection,
+        q_squared,
+        s,
+        f.0,
+        f.1,
+    );
+    result.d_f_real[reflection] = d_f.0;
+    result.d_f_imag[reflection] = d_f.1;
+    let norm = f.0 * f.0 + f.1 * f.1;
+    let d_norm = 2.0 * (f.0 * d_f.0 + f.1 * d_f.1);
+    let correction = batch.correction[reflection];
+    let d_correction = batch.d_correction_d_q_squared[reflection] * d_q_direction;
+    result.d_intensity[reflection] = multiplicity_f64(batch.multiplicity[reflection])
+        * (tangent[validated.layout.scale()] * correction * norm
+            + batch.scale * (d_correction * norm + correction * d_norm));
+}
+
+fn jvp_site(
+    validated: &ValidatedStructure<'_>,
+    reflection: usize,
+    site: usize,
+    q_squared: f64,
+    root_q: f64,
+    d_q_direction: f64,
+    tangent: &[f64],
+) -> ((f64, f64), (f64, f64)) {
+    let batch = validated.batch;
+    let terms = symmetry_terms(validated, batch.hkl[reflection], site);
+    let scattering_index = reflection * validated.layout.site_count + site;
+    let scattering = (
+        batch.scattering_real[scattering_index],
+        batch.scattering_imag[scattering_index],
+    );
+    let d_scattering = (
+        batch.d_scattering_real_d_s[scattering_index],
+        batch.d_scattering_imag_d_s[scattering_index],
+    );
+    let displacement = (-TWO_PI_SQUARED * batch.u_iso_angstrom2[site] * q_squared).exp();
+    let symmetry = (terms.symmetry_real, terms.symmetry_imag);
+    let base_rotated = complex_multiply(scattering, symmetry);
+    let base = (displacement * base_rotated.0, displacement * base_rotated.1);
+    let occupancy = batch.occupancy[site];
+    let contribution = (occupancy * base.0, occupancy * base.1);
+
+    let d_s = d_q_direction / (4.0 * root_q);
+    let cell_amplitude = (
+        d_scattering.0 * d_s
+            - TWO_PI_SQUARED * batch.u_iso_angstrom2[site] * scattering.0 * d_q_direction,
+        d_scattering.1 * d_s
+            - TWO_PI_SQUARED * batch.u_iso_angstrom2[site] * scattering.1 * d_q_direction,
+    );
+    let cell_rotated = complex_multiply(cell_amplitude, symmetry);
+    let d_symmetry = (0..3).fold((0.0, 0.0), |sum, component| {
+        let direction = tangent[validated.layout.coordinate(site, component)];
+        (
+            sum.0 + direction * terms.d_symmetry_real[component],
+            sum.1 + direction * terms.d_symmetry_imag[component],
+        )
+    });
+    let coordinate_rotated = complex_multiply(scattering, d_symmetry);
+    let occupancy_direction = tangent[validated.layout.occupancy(site)];
+    let u_direction = tangent[validated.layout.u_iso(site)];
+    let derivative = (
+        occupancy_direction * base.0
+            + occupancy * displacement * (cell_rotated.0 + coordinate_rotated.0)
+            - TWO_PI_SQUARED * q_squared * u_direction * contribution.0,
+        occupancy_direction * base.1
+            + occupancy * displacement * (cell_rotated.1 + coordinate_rotated.1)
+            - TWO_PI_SQUARED * q_squared * u_direction * contribution.1,
+    );
+    (contribution, derivative)
+}
+
+fn evaluate_vjp_reflection(
+    validated: &ValidatedStructure<'_>,
+    reflection: usize,
+    weight: f64,
+    result: &mut StructureFactorVjpResult,
+) {
+    let batch = validated.batch;
+    let (q_squared, d_q_squared) = validated
+        .geometry
+        .q_squared_and_derivatives(batch.hkl[reflection]);
+    let root_q = q_squared.sqrt();
+    let mut f = (0.0, 0.0);
+    for site in 0..validated.layout.site_count {
+        let terms = symmetry_terms(validated, batch.hkl[reflection], site);
+        let base = site_base(validated, reflection, site, q_squared, terms);
+        f.0 += batch.occupancy[site] * base.0;
+        f.1 += batch.occupancy[site] * base.1;
+    }
+    set_values(
+        &mut result.values,
+        batch,
+        reflection,
+        q_squared,
+        0.5 * root_q,
+        f.0,
+        f.1,
+    );
+    let norm = f.0 * f.0 + f.1 * f.1;
+    let multiplicity = multiplicity_f64(batch.multiplicity[reflection]);
+    let correction = batch.correction[reflection];
+    let f_weight = 2.0 * weight * multiplicity * batch.scale * correction;
+    for site in 0..validated.layout.site_count {
+        accumulate_vjp_site(
+            validated,
+            reflection,
+            site,
+            q_squared,
+            root_q,
+            d_q_squared,
+            f,
+            f_weight,
+            &mut result.gradient,
+        );
+    }
+    let correction_weight =
+        weight * multiplicity * batch.scale * batch.d_correction_d_q_squared[reflection] * norm;
+    for (parameter, d_q) in d_q_squared.into_iter().enumerate() {
+        result.gradient[parameter] += correction_weight * d_q;
+    }
+    result.gradient[validated.layout.scale()] += weight * multiplicity * correction * norm;
+}
+
+#[allow(clippy::too_many_arguments)]
+fn accumulate_vjp_site(
+    validated: &ValidatedStructure<'_>,
+    reflection: usize,
+    site: usize,
+    q_squared: f64,
+    root_q: f64,
+    d_q_squared: [f64; CELL_PARAMETER_COUNT],
+    f: (f64, f64),
+    f_weight: f64,
+    gradient: &mut [f64],
+) {
+    let batch = validated.batch;
+    let terms = symmetry_terms(validated, batch.hkl[reflection], site);
+    let scattering_index = reflection * validated.layout.site_count + site;
+    let scattering = (
+        batch.scattering_real[scattering_index],
+        batch.scattering_imag[scattering_index],
+    );
+    let d_scattering = (
+        batch.d_scattering_real_d_s[scattering_index],
+        batch.d_scattering_imag_d_s[scattering_index],
+    );
+    let displacement = (-TWO_PI_SQUARED * batch.u_iso_angstrom2[site] * q_squared).exp();
+    let symmetry = (terms.symmetry_real, terms.symmetry_imag);
+    let base_rotated = complex_multiply(scattering, symmetry);
+    let base = (displacement * base_rotated.0, displacement * base_rotated.1);
+    let occupancy = batch.occupancy[site];
+    let contribution = (occupancy * base.0, occupancy * base.1);
+    for (parameter, d_q) in d_q_squared.into_iter().enumerate() {
+        let d_s = d_q / (4.0 * root_q);
+        let d_amplitude = (
+            d_scattering.0 * d_s
+                - TWO_PI_SQUARED * batch.u_iso_angstrom2[site] * scattering.0 * d_q,
+            d_scattering.1 * d_s
+                - TWO_PI_SQUARED * batch.u_iso_angstrom2[site] * scattering.1 * d_q,
+        );
+        let rotated = complex_multiply(d_amplitude, symmetry);
+        gradient[parameter] +=
+            f_weight * occupancy * displacement * (f.0 * rotated.0 + f.1 * rotated.1);
+    }
+    for (component, (&d_real, &d_imag)) in terms
+        .d_symmetry_real
+        .iter()
+        .zip(&terms.d_symmetry_imag)
+        .enumerate()
+    {
+        let rotated = complex_multiply(scattering, (d_real, d_imag));
+        gradient[validated.layout.coordinate(site, component)] +=
+            f_weight * occupancy * displacement * (f.0 * rotated.0 + f.1 * rotated.1);
+    }
+    gradient[validated.layout.occupancy(site)] += f_weight * (f.0 * base.0 + f.1 * base.1);
+    gradient[validated.layout.u_iso(site)] +=
+        f_weight * -TWO_PI_SQUARED * q_squared * (f.0 * contribution.0 + f.1 * contribution.1);
 }
 
 fn symmetry_terms(validated: &ValidatedStructure<'_>, hkl: [i32; 3], site: usize) -> SiteTerms {
@@ -777,6 +1089,94 @@ mod tests {
         }
     }
 
+    #[test]
+    fn jvp_and_vjp_match_dense_and_are_adjoint_consistent() {
+        let hkl = [[1, 2, 1], [2, 1, 3], [3, 2, 1]];
+        let multiplicity = [2, 4, 2];
+        let xyz = [[0.17, 0.23, 0.31]];
+        let occupancy = [0.81];
+        let u_iso = [0.014];
+        let scattering_real = [3.9, 3.7, 3.5];
+        let scattering_imag = [0.1, 0.12, 0.15];
+        let d_scattering_real = [-0.2, -0.2, -0.2];
+        let d_scattering_imag = [0.05, 0.05, 0.05];
+        let correction = [1.1, 1.2, 1.3];
+        let d_correction = [0.2, 0.2, 0.2];
+        let batch = StructureFactorBatchView {
+            hkl: &hkl,
+            multiplicity: &multiplicity,
+            fractional_xyz: &xyz,
+            occupancy: &occupancy,
+            u_iso_angstrom2: &u_iso,
+            scattering_real: &scattering_real,
+            scattering_imag: &scattering_imag,
+            d_scattering_real_d_s: &d_scattering_real,
+            d_scattering_imag_d_s: &d_scattering_imag,
+            correction: &correction,
+            d_correction_d_q_squared: &d_correction,
+            scale: 1.4,
+            coordinate_tolerance: 1.0e-10,
+        };
+        let cell = cubic_cell(4.7);
+        let group = inversion();
+        let dense = calculate_structure_factor_dense(cell, &group, batch).expect("dense");
+        let tangent: Vec<f64> = (0..dense.layout.parameter_count())
+            .map(|index| f64::from(u32::try_from(index + 1).expect("small index")) * 1.0e-4)
+            .collect();
+        let weights = [0.7, -0.2, 1.1];
+        let jvp = calculate_structure_factor_jvp(cell, &group, batch, &tangent).expect("JVP");
+        let vjp =
+            calculate_structure_factor_intensity_vjp(cell, &group, batch, &weights).expect("VJP");
+        for reflection in 0..hkl.len() {
+            let expected_f_real = tangent
+                .iter()
+                .enumerate()
+                .map(|(parameter, value)| {
+                    value * dense.d_f_real[parameter * hkl.len() + reflection]
+                })
+                .sum::<f64>();
+            let expected_f_imag = tangent
+                .iter()
+                .enumerate()
+                .map(|(parameter, value)| {
+                    value * dense.d_f_imag[parameter * hkl.len() + reflection]
+                })
+                .sum::<f64>();
+            let expected_intensity = tangent
+                .iter()
+                .enumerate()
+                .map(|(parameter, value)| {
+                    value * dense.d_intensity[parameter * hkl.len() + reflection]
+                })
+                .sum::<f64>();
+            assert!((jvp.d_f_real[reflection] - expected_f_real).abs() < 2.0e-13);
+            assert!((jvp.d_f_imag[reflection] - expected_f_imag).abs() < 2.0e-13);
+            assert!((jvp.d_intensity[reflection] - expected_intensity).abs() < 2.0e-11);
+        }
+        for (parameter, actual) in vjp.gradient.iter().copied().enumerate() {
+            let expected = weights
+                .iter()
+                .enumerate()
+                .map(|(reflection, weight)| {
+                    weight * dense.d_intensity[parameter * hkl.len() + reflection]
+                })
+                .sum::<f64>();
+            assert!((actual - expected).abs() < 2.0e-10);
+        }
+        let forward_dot = jvp
+            .d_intensity
+            .iter()
+            .zip(weights)
+            .map(|(value, weight)| value * weight)
+            .sum::<f64>();
+        let reverse_dot = tangent
+            .iter()
+            .zip(vjp.gradient)
+            .map(|(value, gradient)| value * gradient)
+            .sum::<f64>();
+        assert!((forward_dot - reverse_dot).abs() < 2.0e-12);
+    }
+
     fn perturb_cell(cell: &mut UnitCell, parameter: usize, change: f64) {
         let value = match parameter {
             0 => &mut cell.a_angstrom,
@@ -832,6 +1232,14 @@ mod tests {
         assert_eq!(
             calculate_structure_factor_values(incompatible_cell, &axis_swap_group(), base),
             Err(StructureFactorBatchError::CellSymmetryMismatch)
+        );
+        assert_eq!(
+            calculate_structure_factor_jvp(cubic_cell(4.0), &p1(), base, &[]),
+            Err(StructureFactorBatchError::TangentLengthMismatch)
+        );
+        assert_eq!(
+            calculate_structure_factor_intensity_vjp(cubic_cell(4.0), &p1(), base, &[]),
+            Err(StructureFactorBatchError::WeightLengthMismatch)
         );
     }
 }

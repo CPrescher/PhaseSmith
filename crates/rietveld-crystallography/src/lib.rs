@@ -28,7 +28,9 @@ pub use scattering::{
 };
 pub use structure_factor::{
     StructureFactorBatchError, StructureFactorBatchView, StructureFactorDenseResult,
-    StructureFactorValues, calculate_structure_factor_dense, calculate_structure_factor_values,
+    StructureFactorJvpResult, StructureFactorValues, StructureFactorVjpResult,
+    calculate_structure_factor_dense, calculate_structure_factor_intensity_vjp,
+    calculate_structure_factor_jvp, calculate_structure_factor_values,
 };
 pub use symmetry::{
     CrystalSystem, ExpandedSites, MetricConstraints, Rational, ReflectionFamily, SpaceGroup,
