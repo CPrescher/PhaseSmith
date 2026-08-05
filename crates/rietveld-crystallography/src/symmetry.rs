@@ -361,24 +361,27 @@ impl SpaceGroup {
         }
         let mut positions = Vec::new();
         let mut source_site = Vec::new();
+        let mut representative_rotation = Vec::new();
         for (source, xyz) in asymmetric_xyz.iter().copied().enumerate() {
             let mut site_positions = Vec::new();
             for operation in &self.operations {
                 let candidate = operation.apply_fractional(xyz);
                 if !site_positions
                     .iter()
-                    .any(|existing| periodic_equal(*existing, candidate, tolerance))
+                    .any(|(existing, _)| periodic_equal(*existing, candidate, tolerance))
                 {
-                    site_positions.push(candidate);
+                    site_positions.push((candidate, operation.rotation()));
                 }
             }
-            site_positions.sort_by(lexicographic_f64);
+            site_positions.sort_by(|left, right| lexicographic_f64(&left.0, &right.0));
             source_site.extend(std::iter::repeat_n(source, site_positions.len()));
-            positions.extend(site_positions);
+            positions.extend(site_positions.iter().map(|(position, _)| *position));
+            representative_rotation.extend(site_positions.iter().map(|(_, rotation)| *rotation));
         }
         Ok(ExpandedSites {
             fractional_xyz: positions,
             source_site,
+            representative_rotation,
         })
     }
 
@@ -471,6 +474,13 @@ pub struct ExpandedSites {
     pub fractional_xyz: Vec<[f64; 3]>,
     /// Source asymmetric-site index for each expanded position.
     pub source_site: Vec<usize>,
+    /// Exact direct-space rotation used for each unique position.
+    ///
+    /// When multiple operations coincide at a special position, the first
+    /// canonically ordered operation is retained. Coordinate derivatives are
+    /// defined for fixed orbit topology and site-stabilizer-compatible
+    /// directions.
+    pub representative_rotation: Vec<[[i32; 3]; 3]>,
 }
 
 /// Reciprocal family topology independent of unit-cell dimensions.
@@ -1042,6 +1052,11 @@ mod tests {
             .expand_sites(&[[0.0, 0.0, 0.0], [0.1, 0.2, 0.3]], 1e-10)
             .expect("expanded sites");
         assert_eq!(expanded.source_site, vec![0, 1, 1]);
+        assert_eq!(expanded.representative_rotation.len(), 3);
+        assert_eq!(
+            expanded.representative_rotation[0],
+            group.operations()[0].rotation()
+        );
         assert!(periodic_equal(
             expanded.fractional_xyz[0],
             [0.0, 0.0, 0.0],
@@ -1049,6 +1064,21 @@ mod tests {
         ));
         assert!(expanded.fractional_xyz.contains(&[0.1, 0.2, 0.3]));
         assert!(expanded.fractional_xyz.contains(&[0.9, 0.8, 0.7]));
+        for (position, rotation) in expanded.fractional_xyz[1..]
+            .iter()
+            .zip(&expanded.representative_rotation[1..])
+        {
+            let operation = group
+                .operations()
+                .iter()
+                .find(|operation| operation.rotation() == *rotation)
+                .expect("representative operation");
+            assert!(periodic_equal(
+                *position,
+                operation.apply_fractional([0.1, 0.2, 0.3]),
+                1e-15
+            ));
+        }
     }
 
     #[test]
