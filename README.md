@@ -7,15 +7,17 @@ components, extensible sample physics, multi-phase CW X-ray/neutron and neutron
 TOF calculation, plus a first-class scripted Le Bail workflow. Analytical
 derivatives are computed during fused peak accumulation. The crystallography
 foundation includes native general-cell mathematics, P1 complex structure
-factors, exact symmetry, and bounded reflection generation with analytical
-derivatives.
+factors, exact symmetry, bounded reflection generation, and prepared X-ray and
+neutron scattering factors with analytical derivatives.
 
 The architecture and roadmap are in [PROJECT_BRIEF.md](PROJECT_BRIEF.md); the
 equations and parameter conventions are in [docs/equations.md](docs/equations.md).
 The delivery plan for Rust-owned crystallographic calculations, CIF import,
 structure factors, CIF-to-Le Bail, and full Rietveld refinement is in
-[docs/crystallography-plan.md](docs/crystallography-plan.md). Scattering tables
-and structural refinement are not implemented yet.
+[docs/crystallography-plan.md](docs/crystallography-plan.md). The scattering
+models and their independently reviewed source provenance are documented in
+[docs/scattering-models.md](docs/scattering-models.md). General-symmetry
+structural intensity and structural refinement remain follow-on units.
 The implemented native unit-cell and P1 structure-factor foundation is
 documented in
 [docs/crystallography-foundation.md](docs/crystallography-foundation.md).
@@ -69,6 +71,7 @@ release mode explicitly:
 maturin develop --release --uv
 uv run python benchmarks/profile.py --require-release
 uv run python benchmarks/lebail.py --require-release
+uv run python benchmarks/scattering.py --require-release
 ```
 
 ```python
@@ -112,6 +115,23 @@ instrument = ConstantWavelengthInstrument(
 cw = accumulate_cw(x, [24.0, 26.0], [100.0, 80.0], instrument)
 print(cw.derivatives.local_parameter_names)   # intensity, position
 print(cw.derivatives.global_parameter_names)  # U, V, W, X, Y
+```
+
+Atomic scattering models are also script-first and can be prepared once for a
+structure. X-ray species select exact neutral/ionic table states, while neutron
+species retain natural/isotope identity:
+
+```python
+from rietveld import ScatteringSpecies, XrayNonResonant
+
+species = (
+    ScatteringSpecies("Si"),
+    ScatteringSpecies("O"),
+    ScatteringSpecies("Fe", charge=3),
+)
+scattering = XrayNonResonant().prepare(species).evaluate([0.0, 0.5, 1.0])
+print(scattering.amplitudes.shape)       # (reflection, site)
+print(scattering.d_amplitudes_d_s.shape) # analytical df/ds, same shape
 ```
 
 Axial divergence is a separate typed model and composes with CW broadening

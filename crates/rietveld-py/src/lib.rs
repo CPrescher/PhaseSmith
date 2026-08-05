@@ -17,8 +17,10 @@ use rietveld_core::{
     accumulate_values_batch, symmetric_pseudo_voigt,
 };
 use rietveld_engine::crystallography::{
-    P1BatchView, PreparedReflectionGenerator, Rational, ReflectionRange, SpaceGroup,
-    SymmetryOperation, UnitCell, calculate_p1_dense, calculate_p1_intensity_vjp, calculate_p1_jvp,
+    NEUTRON_TABLE_PROVENANCE, P1BatchView, PreparedNeutronScattering, PreparedReflectionGenerator,
+    PreparedXrayScattering, Rational, ReflectionRange, ScatteringBatch, SpaceGroup,
+    SymmetryOperation, UnitCell, XRAY_TABLE_PROVENANCE, calculate_p1_dense,
+    calculate_p1_intensity_vjp, calculate_p1_jvp, neutron_species_metadata, xray_species_metadata,
 };
 
 type ProfileArrays<'py> = (
@@ -140,6 +142,103 @@ type GeneratedReflectionArrays<'py> = (
     Bound<'py, PyArray1<f64>>,
     Bound<'py, PyArray2<f64>>,
 );
+
+type ScatteringArrays<'py> = (
+    Bound<'py, PyArray2<f64>>,
+    Bound<'py, PyArray2<f64>>,
+    Bound<'py, PyArray2<f64>>,
+    Bound<'py, PyArray2<f64>>,
+);
+
+type TableProvenanceRecord = (&'static str, &'static str, &'static str, u64, usize);
+type TableProvenanceRecords = (TableProvenanceRecord, TableProvenanceRecord);
+type NeutronMetadataRecord = (
+    &'static str,
+    u8,
+    Option<u16>,
+    f64,
+    Option<f64>,
+    bool,
+    Option<&'static str>,
+);
+
+/// Cached native Waasmaier--Kirfel species rows.
+#[pyclass(name = "_PreparedXrayScattering")]
+struct NativePreparedXrayScattering {
+    model: PreparedXrayScattering,
+}
+
+#[pymethods]
+impl NativePreparedXrayScattering {
+    #[new]
+    fn new(species: Vec<String>) -> PyResult<Self> {
+        let model = PreparedXrayScattering::new(&species)
+            .map_err(|error| PyValueError::new_err(error.to_string()))?;
+        Ok(Self { model })
+    }
+
+    #[getter]
+    fn site_count(&self) -> usize {
+        self.model.site_count()
+    }
+
+    #[getter]
+    fn unique_species_count(&self) -> usize {
+        self.model.unique_species_count()
+    }
+
+    fn evaluate<'py>(
+        &self,
+        py: Python<'py>,
+        s_inverse_angstrom: PyReadonlyArray1<'py, f64>,
+    ) -> PyResult<ScatteringArrays<'py>> {
+        let values = contiguous_slice(&s_inverse_angstrom, "s_inverse_angstrom")?;
+        let result = self
+            .model
+            .evaluate(values)
+            .map_err(|error| PyValueError::new_err(error.to_string()))?;
+        scattering_to_numpy(py, result)
+    }
+}
+
+/// Cached native constant coherent neutron species rows.
+#[pyclass(name = "_PreparedNeutronScattering")]
+struct NativePreparedNeutronScattering {
+    model: PreparedNeutronScattering,
+}
+
+#[pymethods]
+impl NativePreparedNeutronScattering {
+    #[new]
+    fn new(species: Vec<String>) -> PyResult<Self> {
+        let model = PreparedNeutronScattering::new(&species)
+            .map_err(|error| PyValueError::new_err(error.to_string()))?;
+        Ok(Self { model })
+    }
+
+    #[getter]
+    fn site_count(&self) -> usize {
+        self.model.site_count()
+    }
+
+    #[getter]
+    fn unique_species_count(&self) -> usize {
+        self.model.unique_species_count()
+    }
+
+    fn evaluate<'py>(
+        &self,
+        py: Python<'py>,
+        s_inverse_angstrom: PyReadonlyArray1<'py, f64>,
+    ) -> PyResult<ScatteringArrays<'py>> {
+        let values = contiguous_slice(&s_inverse_angstrom, "s_inverse_angstrom")?;
+        let result = self
+            .model
+            .evaluate(values)
+            .map_err(|error| PyValueError::new_err(error.to_string()))?;
+        scattering_to_numpy(py, result)
+    }
+}
 
 /// Cached native group topology and bounded reflection generator.
 #[pyclass(name = "_PreparedReflectionGenerator")]
@@ -1525,15 +1624,78 @@ fn derivative_matrix(
         .map(|array| array.into_pyarray(py))
 }
 
+fn scattering_to_numpy(py: Python<'_>, values: ScatteringBatch) -> PyResult<ScatteringArrays<'_>> {
+    let shape = (values.reflection_count, values.site_count);
+    let matrix = |data| {
+        Array2::from_shape_vec(shape, data)
+            .map_err(|error| PyValueError::new_err(error.to_string()))
+            .map(|array| array.into_pyarray(py))
+    };
+    Ok((
+        matrix(values.real)?,
+        matrix(values.imag)?,
+        matrix(values.d_real_d_s)?,
+        matrix(values.d_imag_d_s)?,
+    ))
+}
+
+/// Return generated-table provenance without importing any source project.
+#[pyfunction]
+fn scattering_table_provenance() -> TableProvenanceRecords {
+    let record = |value: rietveld_engine::crystallography::ScatteringTableProvenance| {
+        (
+            value.name,
+            value.upstream_commit,
+            value.source_sha256,
+            value.table_fnv64,
+            value.row_count,
+        )
+    };
+    (
+        record(XRAY_TABLE_PROVENANCE),
+        record(NEUTRON_TABLE_PROVENANCE),
+    )
+}
+
+/// Return exact X-ray state metadata when a source key exists.
+#[pyfunction]
+fn xray_scattering_species_metadata(key: &str) -> Option<(&'static str, u8)> {
+    xray_species_metadata(key).map(|value| (value.key, value.atomic_number))
+}
+
+/// Return exact neutron identity metadata when a source key exists.
+#[pyfunction]
+fn neutron_scattering_species_metadata(key: &str) -> Option<NeutronMetadataRecord> {
+    neutron_species_metadata(key).map(|value| {
+        (
+            value.key,
+            value.atomic_number,
+            value.isotope,
+            value.b_c_fm,
+            value.uncertainty_fm,
+            value.energy_dependent,
+            value.derived_alias_of,
+        )
+    })
+}
+
 /// Native Python module.
 #[pymodule]
 fn _core(module: &Bound<'_, PyModule>) -> PyResult<()> {
+    module.add_class::<NativePreparedXrayScattering>()?;
+    module.add_class::<NativePreparedNeutronScattering>()?;
     module.add_class::<NativePreparedReflectionGenerator>()?;
     module.add_function(wrap_pyfunction!(unit_cell_geometry, module)?)?;
     module.add_function(wrap_pyfunction!(unit_cell_d_spacings, module)?)?;
     module.add_function(wrap_pyfunction!(p1_structure_factors_dense, module)?)?;
     module.add_function(wrap_pyfunction!(p1_structure_factors_jvp, module)?)?;
     module.add_function(wrap_pyfunction!(p1_structure_factors_vjp, module)?)?;
+    module.add_function(wrap_pyfunction!(scattering_table_provenance, module)?)?;
+    module.add_function(wrap_pyfunction!(xray_scattering_species_metadata, module)?)?;
+    module.add_function(wrap_pyfunction!(
+        neutron_scattering_species_metadata,
+        module
+    )?)?;
     module.add_function(wrap_pyfunction!(profile, module)?)?;
     module.add_function(wrap_pyfunction!(tch_shape_from_fwhm, module)?)?;
     module.add_function(wrap_pyfunction!(profile_tch, module)?)?;

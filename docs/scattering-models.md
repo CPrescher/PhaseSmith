@@ -116,6 +116,44 @@ zero-angle limits, isotope separation, and rejection of missing or
 energy-dependent species. The full-table checksum is local to the generated
 file so accidental edits cannot be hidden by loosening numerical tolerances.
 
+## Public provider and execution contract
+
+`ScatteringSpecies` stores probe-independent element, isotope, and charge
+identity plus an optional exact X-ray table key for specialist states such as
+`Cval`. `species_from_structure()` preserves those fields from typed CIF atom
+sites. There is no label-based chemical guessing in the numerical core.
+
+`XrayNonResonant.prepare(species)` and `NeutronNuclear.prepare(species)` resolve
+and deduplicate exact native rows once. Their `evaluate(s)` methods return
+immutable complex matrices and analytical `df/ds`, both reflection-major with
+shape `(reflection_count, site_count)`. The generic
+`evaluate_scattering_provider(provider, context)` boundary validates provider
+API version, probe/unit descriptor, result type, descriptor identity, and
+matrix shape. A user provider receives the complete batch in one call; it is
+never invoked once per atom or reflection by library orchestration.
+
+## Unit 14 review result
+
+The source/license decision, checksum-verifying generator, generated native
+tables, Rust prepared kernels, PyO3 boundary, typed Python providers, compact
+independent NumPy reference, and focused tests are implemented. The generated
+tables contain 211 exact X-ray states and 367 neutron natural/isotope records.
+Tests cover table fingerprints, exact ionic/isotope resolution, missing and
+energy-dependent identities, fit limits, independently authored coefficient
+comparisons, centered finite differences, immutable arrays, structure identity
+mapping, and third-party provider compatibility checks.
+
+The lookup and deduplication review confirms that exact label resolution occurs
+only during preparation. A 20,000-reflection by eight-site release benchmark
+evaluating values and derivatives together measured approximately 1.09 ms for
+the X-ray model and 89 microseconds for the constant neutron model on the
+development machine. These figures are baselines, not cross-machine promises.
+The optimized public Python boundary measured approximately 1.61 ms and
+0.65 ms respectively for the same shapes, including NumPy complex-array
+construction and immutable result validation. The final quality gate passes 46
+Rust tests and 317 normal Python tests; one external-oracle test remains
+explicitly deselected in normal development.
+
 ## Unit 14 execution sequence
 
 1. Commit this source/license and interface decision before table generation.

@@ -21,5 +21,9 @@ harness = false
 name = "reflection_generation"
 harness = false
 
+[[bench]]
+name = "scattering"
+harness = false
+
 [lints]
 workspace = true

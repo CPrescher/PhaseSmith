@@ -28,7 +28,7 @@ rietveld.symmetry  [implemented]
   absences, metric parameterizations, and prepared d/Q/CW/TOF reflection
   generation. Numerical evaluation and family enumeration are Rust-owned.
 
-rietveld.scattering  [planned]
+rietveld.scattering  [implemented]
   Typed X-ray and neutron scattering models plus versioned batch-provider
   contracts. Built-in production models execute in Rust.
 
@@ -104,6 +104,13 @@ rietveld.structure.AnisotropicDisplacement
 rietveld.structure.structure_to_record
 rietveld.structure.structure_from_record
 rietveld.io.cif.read_cif
+rietveld.scattering.ScatteringSpecies
+rietveld.scattering.ScatteringContext
+rietveld.scattering.ScatteringFactorBatch
+rietveld.scattering.ScatteringFactorProvider
+rietveld.scattering.XrayNonResonant
+rietveld.scattering.NeutronNuclear
+rietveld.scattering.species_from_structure
 rietveld.refinement.lebail.LeBailPhase
 rietveld.pattern.PowderPattern
 rietveld.pattern.PatternCalculationResult
@@ -179,6 +186,14 @@ surface rather than moving their state into either model.
   stored units remain the documented public physical units.
 - Prepared calculators may cache validated contiguous arrays, but a stateless
   one-call API remains available for notebooks, tests, and external programs.
+
+Scattering providers receive one immutable `(reflection, species)` context and
+return complex amplitudes plus analytical `df/ds` matrices in one call. The
+provider descriptor fixes its probe, amplitude unit, implementation version,
+and provider-API version. Built-in X-ray and neutron models resolve exact table
+identities during `prepare()` and perform no label lookup in the batch hot
+loop. Third-party research providers use the same explicit Python protocol;
+they are passed as objects and are not discovered through process-global state.
 
 ## Calculation interface direction
 

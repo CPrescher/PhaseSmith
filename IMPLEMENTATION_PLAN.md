@@ -993,9 +993,9 @@ requirement.
 
 ## Implementation units 11 through 18: crystallography and Rietveld
 
-Status: units 11 through 13 implemented and independently validated (2026-08-05),
+Status: units 11 through 14 implemented and independently validated (2026-08-05),
 with their live pinned GSAS-II behavior fixtures pending an available external
-checkout; units 14 through 18 are planned. The complete equations, data contracts,
+checkout; units 15 through 18 are planned. The complete equations, data contracts,
 ordering, derivative strategy, validation gates, benchmarks, and discipline are
 specified in
 [`docs/crystallography-plan.md`](docs/crystallography-plan.md).
@@ -1086,6 +1086,20 @@ at `182ef63a9ec118ef725aae5bb81860f4ba0fb573`. Checksums, equations, units,
 species resolution, provider versioning, and explicit exclusions are frozen in
 `docs/scattering-models.md` before numerical implementation. No scattering data
 comes from GSAS-II.
+
+Unit-14 review result: deterministic generation produces 211 exact
+Waasmaier--Kirfel X-ray states and 367 natural/isotope coherent-neutron
+records. Prepared Rust kernels deduplicate exact species before their hot loop
+and return values plus `df/ds` in one pass. Thin PyO3 bindings feed immutable
+typed Python results; a versioned one-call provider contract supports custom
+vectorized research models without process-global registration. Independent
+compact NumPy equations, finite differences, table fingerprints, invalid-state
+tests, and provider-contract tests cover the slice. On a 20,000-reflection,
+eight-site release benchmark, X-ray and constant-neutron medians are about
+1.09 ms and 89 microseconds respectively; the optimized public Python boundary
+measures about 1.61 ms and 0.65 ms including result-array construction and
+validation. Strict Ruff, Rust formatting, strict Clippy, 46 Rust tests, and 317
+normal Python tests pass; one external-oracle test is deselected normally.
 
 ## Cross-cutting validation matrix
 

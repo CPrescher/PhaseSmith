@@ -27,8 +27,11 @@ complex structure factors with dense/JVP/VJP derivatives, exact symmetry,
 special-position expansion, systematic absences, metric constraints, and
 bounded d/Q/CW/TOF reflection generation. Typed NumPy APIs and independent
 NumPy references cover both slices. Unit 13 adds optional parser-independent
-CIF models/import plus fixed-cell CIF-to-Le Bail. Physical scattering tables
-and structural refinement remain follow-on units. The live pinned GSAS-II P1
+CIF models/import plus fixed-cell CIF-to-Le Bail. Unit 14 adds independently
+sourced native non-resonant X-ray and coherent-neutron scattering tables,
+prepared value/derivative kernels, and a versioned vectorized provider API.
+General-symmetry structural intensities and structural refinement remain
+follow-on units. The live pinned GSAS-II P1
 and reflection-behavior fixtures are pending because the external checkout is
 not available in the current environment.
 
