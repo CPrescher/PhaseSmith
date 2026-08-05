@@ -695,6 +695,8 @@ derivatives and no GSAS-style project structure in the API.
 
 ## Implementation unit 7: neutron constant-wavelength profiles
 
+Status: complete (2026-08-05).
+
 ### Goal
 
 Reuse the validated CW shape pipeline while adding neutron-specific parameter
@@ -710,6 +712,24 @@ and oracle coverage.
 4. Keep neutron scattering-length and magnetic structure-factor calculation in
    a separate future physics layer; accept integrated intensities initially.
 5. Add neutron-specific GSAS-II fixtures and reflection metadata.
+
+Review result: `RadiationProbe`, `MonochromaticRadiation`, and
+`ConstantWavelengthExperiment` separate probe identity from instrument response
+while enforcing exact wavelength agreement. The neutron entry points accept
+only the monochromatic experiment type; no wavelength-component or K-alpha
+argument exists. Symmetric neutron CW, multi-phase composition, batch sample
+providers, and FCJ asymmetry reuse the existing fused kernels exactly. Eight
+focused tests cover typed persistence-safe data, exact X-ray/neutron profile
+equivalence for equal physical widths, high-level reuse, analytical finite
+differences, area and centroid, provider reuse, FCJ reuse, and invalid probe or
+wavelength combinations. A pinned GSAS-II #5838 `PNC` fixture stores public
+`X`, total `Ycalc`, background, and a complete 128-reflection table, with
+private symmetric/FCJ probes at low, middle, and high angle. Widths agree to
+floating-point precision; symmetric values are within `3.3e-5`, and FCJ values
+within `4.3e-4`, with area, centroid, and resolved asymmetric moments checked.
+The full repository passes 191 Python and 22 Rust tests. The 200-reflection,
+5,001-sample typed neutron benchmark is about 0.134 ms for symmetric CW and
+6.74 ms for FCJ, matching the shared untyped-kernel costs and allocations.
 
 ### Validation
 

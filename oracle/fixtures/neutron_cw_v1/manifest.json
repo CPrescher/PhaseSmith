@@ -1,0 +1,308 @@
+{
+  "archive": {
+    "file": "data.npz",
+    "sha256": "dd30741a5dedc8e8011b1352a9047d971c9aced246f116683e2a4890a44e61f5"
+  },
+  "arrays": {
+    "background": {
+      "description": "Public scripting background array",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "3e9fe18ee8f88a92c82be1886b01604ac8b980b53eace3b1f4d16b49571fe2d6",
+      "shape": [
+        7001
+      ],
+      "unit": "intensity"
+    },
+    "neutron_reflection_0__fcj_per_deg": {
+      "description": "Normalized pinned GSAS-II profile",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "c8e5aaec6e8bf97be1d7083a0980e78d828d0af6691ed159e3739c1e3befda58",
+      "shape": [
+        12001
+      ],
+      "unit": "inverse_degree"
+    },
+    "neutron_reflection_0__symmetric_per_deg": {
+      "description": "Normalized pinned GSAS-II profile",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "7d1cc7e3df0e8bf442e82f7fbd5111a0526e2593cf96d8f1de626392cd7342be",
+      "shape": [
+        12001
+      ],
+      "unit": "inverse_degree"
+    },
+    "neutron_reflection_0__x_deg": {
+      "description": "Profile sampling coordinates",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "9be8878e296190bc551be723ace1965ebe0b5d58482ac1229a939d5c7c939d33",
+      "shape": [
+        12001
+      ],
+      "unit": "degree_2theta"
+    },
+    "neutron_reflection_127__fcj_per_deg": {
+      "description": "Normalized pinned GSAS-II profile",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "e823a29931d47f92c6a30762a602d74bc109cc7401e91db8936bed0080426fd4",
+      "shape": [
+        12001
+      ],
+      "unit": "inverse_degree"
+    },
+    "neutron_reflection_127__symmetric_per_deg": {
+      "description": "Normalized pinned GSAS-II profile",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "f5c6cbe016dad5b28f97fbfb9131b7da2ada83e819fca36e0d59f656ae683e3b",
+      "shape": [
+        12001
+      ],
+      "unit": "inverse_degree"
+    },
+    "neutron_reflection_127__x_deg": {
+      "description": "Profile sampling coordinates",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "89edafbe5c9ab4c9d6fd5e8b6db0f6eb0f14c70fba0e61a6b5f3f8e30c5d69cb",
+      "shape": [
+        12001
+      ],
+      "unit": "degree_2theta"
+    },
+    "neutron_reflection_64__fcj_per_deg": {
+      "description": "Normalized pinned GSAS-II profile",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "06adde9bed432759ddecfa34b10430871cc5119166ad68fb98744e69e4b3cf42",
+      "shape": [
+        12001
+      ],
+      "unit": "inverse_degree"
+    },
+    "neutron_reflection_64__symmetric_per_deg": {
+      "description": "Normalized pinned GSAS-II profile",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "5f2d9d6c51d60ff136ff04f0722a7c0231a80bcdf866453cc05d32cbd3356900",
+      "shape": [
+        12001
+      ],
+      "unit": "inverse_degree"
+    },
+    "neutron_reflection_64__x_deg": {
+      "description": "Profile sampling coordinates",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "cae875c45d94f35e9d6bf918320302edf330c47573e06a4c03e5eb511f18ed2a",
+      "shape": [
+        12001
+      ],
+      "unit": "degree_2theta"
+    },
+    "reflection_list": {
+      "description": "Public scripting reflection list",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "df8db1ed47bb3e42e54436745990ac53229bee67b17d9faa74e5e86b457f9526",
+      "shape": [
+        128,
+        15
+      ],
+      "unit": "mixed_by_column"
+    },
+    "x_deg": {
+      "description": "Profile sampling coordinates",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "733c77cd6169a01c1fbf2ded5acc21dd9dd327b96736c9220f090d6ecf72a96b",
+      "shape": [
+        7001
+      ],
+      "unit": "degree_2theta"
+    },
+    "ycalc": {
+      "description": "Public scripting ycalc array",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "2e23d365f3d0c14f5f98fd0537cb51f3f64e932b75f2a0daded791dd51fb9bdf",
+      "shape": [
+        7001
+      ],
+      "unit": "intensity"
+    }
+  },
+  "cases": [
+    {
+      "arrays": {
+        "fcj_profile": "neutron_reflection_0__fcj_per_deg",
+        "symmetric_profile": "neutron_reflection_0__symmetric_per_deg",
+        "x": "neutron_reflection_0__x_deg"
+      },
+      "case_kind": "neutron_cw_reflection",
+      "gsasii_reported_integrals": {
+        "fcj": 0.9999985943944224,
+        "symmetric": 0.9999985878659989
+      },
+      "id": "neutron_reflection_0",
+      "parameters": {
+        "d_spacing_angstrom": 4.0,
+        "gamma_centideg": 0.001,
+        "hkl": [
+          1,
+          0,
+          0
+        ],
+        "position_deg": 27.610801915308524,
+        "public_equal_height_mapping": {
+          "detector_over_radius": 0.012,
+          "sample_over_radius": 0.012
+        },
+        "sigma2_centideg2": 427.5152799056474
+      },
+      "sampled_fcj_moments": {
+        "centroid_deg": 27.605550644694514,
+        "integral": 0.9999985940901089,
+        "third_central_moment_deg3": -2.98005751305285e-07
+      }
+    },
+    {
+      "arrays": {
+        "fcj_profile": "neutron_reflection_64__fcj_per_deg",
+        "symmetric_profile": "neutron_reflection_64__symmetric_per_deg",
+        "x": "neutron_reflection_64__x_deg"
+      },
+      "case_kind": "neutron_cw_reflection",
+      "gsasii_reported_integrals": {
+        "fcj": 0.9999986340605554,
+        "symmetric": 0.9999986099319392
+      },
+      "id": "neutron_reflection_64",
+      "parameters": {
+        "d_spacing_angstrom": 1.2649110640673518,
+        "gamma_centideg": 0.001,
+        "hkl": [
+          0,
+          3,
+          -1
+        ],
+        "position_deg": 97.98060105378572,
+        "public_equal_height_mapping": {
+          "detector_over_radius": 0.012,
+          "sample_over_radius": 0.012
+        },
+        "sigma2_centideg2": 172.9000999169998
+      },
+      "sampled_fcj_moments": {
+        "centroid_deg": 97.98090136281401,
+        "integral": 0.9999986341438792,
+        "third_central_moment_deg3": -3.815142882824e-09
+      }
+    },
+    {
+      "arrays": {
+        "fcj_profile": "neutron_reflection_127__fcj_per_deg",
+        "symmetric_profile": "neutron_reflection_127__symmetric_per_deg",
+        "x": "neutron_reflection_127__x_deg"
+      },
+      "case_kind": "neutron_cw_reflection",
+      "gsasii_reported_integrals": {
+        "fcj": 0.9999984169599351,
+        "symmetric": 0.9999985835243687
+      },
+      "id": "neutron_reflection_127",
+      "parameters": {
+        "d_spacing_angstrom": 1.0,
+        "gamma_centideg": 0.001,
+        "hkl": [
+          0,
+          0,
+          4
+        ],
+        "position_deg": 145.29964361056955,
+        "public_equal_height_mapping": {
+          "detector_over_radius": 0.012,
+          "sample_over_radius": 0.012
+        },
+        "sigma2_centideg2": 1154.0081535213942
+      },
+      "sampled_fcj_moments": {
+        "centroid_deg": 145.30374990875103,
+        "integral": 0.9999984165605484,
+        "third_central_moment_deg3": 1.0486592945524781e-07
+      }
+    }
+  ],
+  "fixture_id": "gsasii_neutron_cw_v1",
+  "format_version": 1,
+  "input": {
+    "kind": "parameter_cases",
+    "sha256": "3805af91f6055f37c8725bf7578e5a0b4230d8e955a6dc8485ae8af099344536"
+  },
+  "input_parameters": {
+    "instrument": {
+      "probe": "neutron",
+      "sh_over_l": 0.024,
+      "u_gsas_centideg2": 257.182710995,
+      "v_gsas_centideg2": -640.525145369,
+      "w_gsas_centideg2": 569.378664828,
+      "wavelength_angstrom": 1.909,
+      "x_gsas_centideg": 0.0,
+      "y_gsas_centideg": 0.0
+    },
+    "phase": {
+      "cell": [
+        4.0,
+        4.0,
+        4.0,
+        90.0,
+        90.0,
+        90.0
+      ],
+      "name": "neutron-cw-cubic",
+      "space_group": "P 1"
+    }
+  },
+  "kind": "neutron_cw",
+  "provenance": {
+    "generated_at_utc": "2026-08-05T15:40:04.093470+00:00",
+    "generator_sha256": "8f006168ea6a5b4f043dba6e770d524b1218f6f5d87116feefeff145d5ebbdc9",
+    "gsasii_repository": "https://github.com/AdvancedPhotonSource/GSAS-II",
+    "gsasii_revision": "c0bc79b259cdf0065480b5fbd57674ddf12c4a23",
+    "gsasii_tag": 5838,
+    "numpy_version": "2.2.6",
+    "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O",
+    "python_version": "3.13.9"
+  },
+  "source": {
+    "adapter_version": 1,
+    "api": [
+      "GSASII.GSASIIscriptable.G2PwdrData.getdata/reflections",
+      "GSASII.GSASIIpwd.getPsVoigt",
+      "GSASII.GSASIIpwd.getFCJVoigt3"
+    ],
+    "histogram_type": "PNC",
+    "private_probe": true,
+    "reflection_columns": [
+      "h",
+      "k",
+      "l",
+      "multiplicity",
+      "d_spacing_angstrom",
+      "position_deg",
+      "sigma2_centideg2",
+      "gamma_centideg",
+      "f_obs2",
+      "f_calc2",
+      "phase_deg",
+      "intensity_correction",
+      "preferred_orientation",
+      "transmission",
+      "extinction"
+    ]
+  }
+}

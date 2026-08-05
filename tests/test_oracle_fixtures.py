@@ -17,6 +17,9 @@ CW_FIXTURE_PATH = REPOSITORY_ROOT / "oracle" / "fixtures" / "cw_instrument_profi
 FCJ_FIXTURE_PATH = REPOSITORY_ROOT / "oracle" / "fixtures" / "fcj_profile_v1"
 COMPONENT_FIXTURE_PATH = REPOSITORY_ROOT / "oracle" / "fixtures" / "wavelength_components_v1"
 SAMPLE_FIXTURE_PATH = REPOSITORY_ROOT / "oracle" / "fixtures" / "sample_physics_v1"
+MULTIPHASE_FIXTURE_PATH = REPOSITORY_ROOT / "oracle" / "fixtures" / "multiphase_v1"
+NEUTRON_FIXTURE_PATH = REPOSITORY_ROOT / "oracle" / "fixtures" / "neutron_cw_v1"
+TOF_FIXTURE_PATH = REPOSITORY_ROOT / "oracle" / "fixtures" / "tof_v1"
 
 
 def test_fixture_schema_and_pin_metadata_are_valid_json() -> None:
