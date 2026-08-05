@@ -1,0 +1,320 @@
+from __future__ import annotations
+
+import hashlib
+import json
+from dataclasses import dataclass
+
+import numpy as np
+import pytest
+import rietveld
+from rietveld import persistence
+from rietveld.refinement import AffineConstraint, lebail
+
+
+def instrument() -> rietveld.ConstantWavelengthInstrument:
+    return rietveld.ConstantWavelengthInstrument(
+        1.5406,
+        2.0e-4,
+        -1.0e-4,
+        2.0e-4,
+        1.5e-3,
+        3.0e-3,
+    )
+
+
+def phase(intensities: np.ndarray) -> rietveld.Phase:
+    positions = np.array([39.9, 40.1])
+    d_spacing = instrument().wavelength_angstrom / (2.0 * np.sin(np.deg2rad(positions / 2.0)))
+    physics = rietveld.CompositePhysicsProvider(
+        (
+            rietveld.IsotropicSizeBroadening(80.0),
+            rietveld.IsotropicMicrostrainBroadening(3.0e-4),
+            rietveld.MarchDollasePreferredOrientation(
+                0.8,
+                (0.0, 0.0, 1.0),
+                rietveld.ReciprocalMetric.orthogonal(4.0, 4.0, 4.0),
+            ),
+        )
+    )
+    return rietveld.Phase(
+        "alpha",
+        "Alpha",
+        rietveld.ReflectionBatch(
+            ["alpha-100", "alpha-110"],
+            [[1, 0, 0], [1, 1, 0]],
+            d_spacing,
+            positions,
+            intensities,
+        ),
+        scale=0.9,
+        physics=physics,
+    )
+
+
+def refinement_models() -> tuple[rietveld.PowderPattern, rietveld.Phase, lebail.LeBailResult]:
+    x = np.linspace(38.0, 42.0, 2001)
+    truth = phase(np.array([7.0, 4.0]))
+    background = 0.2 + 0.01 * (x - x[0])
+    calculated = rietveld.calculate_pattern(
+        rietveld.PowderPattern(x, background=background),
+        instrument(),
+        (truth,),
+        options=rietveld.CalculationOptions(return_phase_components=True),
+    )
+    pattern = rietveld.PowderPattern(
+        x,
+        observed_y=calculated.y,
+        background=background,
+        uncertainty=np.sqrt(np.maximum(calculated.y, 1.0)),
+        mask=(x < 41.5),
+    )
+    starting = phase(np.ones(2))
+    result = lebail.refine(
+        lebail.LeBailInput(pattern, instrument(), (starting,)),
+        lebail.LeBailOptions(max_iterations=20),
+    )
+    return pattern, starting, result
+
+
+def test_full_bundle_round_trips_models_results_arrays_and_resume(tmp_path) -> None:
+    pattern, starting, result = refinement_models()
+    parameters = lebail.build_parameter_set(instrument(), (starting,), reflection_positions=True)
+    constraints = (AffineConstraint(parameters.keys[1], parameters.keys[0], 1.0, 0.2),)
+    bundle = persistence.PersistenceBundle(
+        pattern=pattern,
+        instrument=instrument(),
+        experiment=rietveld.ConstantWavelengthExperiment.neutron(instrument()),
+        fcj_geometry=rietveld.FcjGeometry(0.01, 0.02),
+        wavelength_components=rietveld.WavelengthComponents.doublet(1.5406, 1.5444, 0.5),
+        phases=(starting,),
+        calculation_options=rietveld.CalculationOptions(
+            support_fwhm=15.0,
+            return_phase_components=True,
+        ),
+        calculation_result=result.calculation,
+        parameters=parameters,
+        lebail_options=lebail.LeBailOptions(max_iterations=20),
+        lebail_checkpoint=result.checkpoint,
+        lebail_result=result,
+        constraints=constraints,
+        metadata={"sample": "synthetic", "temperature_k": 300.0},
+    )
+    destination = persistence.save_bundle(tmp_path / "project", bundle)
+    restored = persistence.load_bundle(destination)
+
+    assert restored.metadata == bundle.metadata
+    assert restored.calculation_options == bundle.calculation_options
+    assert restored.lebail_options == bundle.lebail_options
+    assert restored.parameters == parameters
+    assert restored.constraints == constraints
+    assert isinstance(restored.instrument, rietveld.ConstantWavelengthInstrument)
+    assert restored.instrument == instrument()
+    assert restored.experiment == rietveld.ConstantWavelengthExperiment.neutron(instrument())
+    assert restored.fcj_geometry == rietveld.FcjGeometry(0.01, 0.02)
+    assert restored.wavelength_components is not None
+    np.testing.assert_array_equal(
+        restored.wavelength_components.wavelengths_angstrom,
+        [1.5406, 1.5444],
+    )
+    assert restored.pattern is not None
+    np.testing.assert_array_equal(restored.pattern.x, pattern.x)
+    np.testing.assert_array_equal(restored.pattern.mask, pattern.mask)
+    assert isinstance(restored.phases[0].physics, rietveld.CompositePhysicsProvider)
+    assert len(restored.phases[0].physics.providers) == 3
+    assert restored.lebail_result is not None
+    assert restored.calculation_result is not None
+    np.testing.assert_array_equal(restored.calculation_result.y, result.calculation.y)
+    np.testing.assert_array_equal(restored.lebail_result.calculation.y, result.calculation.y)
+    np.testing.assert_array_equal(
+        restored.lebail_result.calculation.derivatives.local.values,
+        result.calculation.derivatives.local.values,
+    )
+    assert restored.lebail_result.history == result.history
+    assert restored.lebail_result.intensities == result.intensities
+    assert restored.lebail_checkpoint is not None
+    reconstructed_input = restored.to_lebail_input()
+    assert reconstructed_input.parameters == parameters
+    assert reconstructed_input.constraints == constraints
+    np.testing.assert_array_equal(reconstructed_input.pattern.x, pattern.x)
+    resumed = lebail.refine(
+        lebail.LeBailInput(pattern, instrument(), (starting,)),
+        lebail.LeBailOptions(max_iterations=result.checkpoint.completed_iterations + 1),
+        checkpoint=restored.lebail_checkpoint,
+    )
+    assert resumed.history[: len(result.history)] == result.history
+
+    manifest = json.loads((destination / persistence.MANIFEST_NAME).read_text())
+    assert manifest["format_version"] == persistence.FORMAT_VERSION
+    with np.load(destination / persistence.ARCHIVE_NAME, allow_pickle=False) as archive:
+        assert archive.files
+        assert all(archive[name].dtype != object for name in archive.files)
+
+
+def test_parameter_change_history_round_trips(tmp_path) -> None:
+    x = np.linspace(39.0, 41.0, 4001)
+    truth = phase(np.array([8.0, 0.0]))
+    truth = rietveld.Phase(
+        truth.phase_id,
+        truth.name,
+        rietveld.ReflectionBatch(
+            ["alpha-100"],
+            [[1, 0, 0]],
+            truth.reflections.d_spacing_angstrom[:1],
+            [40.0],
+            [8.0],
+        ),
+    )
+    calculated = rietveld.calculate_pattern(rietveld.PowderPattern(x), instrument(), (truth,))
+    starting = rietveld.Phase(
+        truth.phase_id,
+        truth.name,
+        rietveld.ReflectionBatch(
+            ["alpha-100"],
+            [[1, 0, 0]],
+            truth.reflections.d_spacing_angstrom,
+            [39.985],
+            [8.0],
+        ),
+    )
+    pattern = rietveld.PowderPattern(x, observed_y=calculated.y)
+    parameters = lebail.build_parameter_set(instrument(), (starting,), reflection_positions=True)
+    result = lebail.refine(
+        lebail.LeBailInput(pattern, instrument(), (starting,), parameters),
+        lebail.LeBailOptions(max_iterations=10, max_scaled_parameter_step=1.0),
+    )
+    assert any(record.parameter_changes for record in result.history)
+
+    destination = persistence.save_bundle(
+        tmp_path / "changes",
+        persistence.PersistenceBundle(lebail_result=result),
+    )
+    restored = persistence.load_bundle(destination)
+    assert restored.lebail_result is not None
+    assert restored.lebail_result.history == result.history
+
+
+def test_undefined_zero_pattern_ratios_round_trip_as_explicit_nulls(tmp_path) -> None:
+    x = np.linspace(38.0, 42.0, 101)
+    pattern = rietveld.PowderPattern(x, observed_y=np.zeros_like(x))
+    result = lebail.iterate_once(lebail.LeBailInput(pattern, instrument(), (phase(np.ones(2)),)))
+    assert np.isposinf(result.metrics.rwp)
+
+    destination = persistence.save_bundle(
+        tmp_path / "undefined-ratios",
+        persistence.PersistenceBundle(lebail_result=result),
+    )
+    manifest = json.loads((destination / persistence.MANIFEST_NAME).read_text())
+    assert manifest["bundle"]["lebail_result"]["metrics"]["rwp"] is None
+    restored = persistence.load_bundle(destination)
+    assert restored.lebail_result is not None
+    assert np.isposinf(restored.lebail_result.metrics.rwp)
+    assert np.isposinf(restored.lebail_result.checkpoint.previous_rwp)
+
+
+def test_tof_instrument_and_disabled_infinite_size_round_trip(tmp_path) -> None:
+    tof = rietveld.TofInstrument(
+        -0.7,
+        5084.0,
+        -2.6,
+        0.0,
+        5.0,
+        0.03,
+        0.001,
+        0.0,
+        1.0,
+        15.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+    )
+    disabled = phase(np.ones(2))
+    disabled = rietveld.Phase(
+        disabled.phase_id,
+        disabled.name,
+        disabled.reflections,
+        physics=rietveld.IsotropicSizeBroadening(np.inf),
+    )
+    destination = persistence.save_bundle(
+        tmp_path / "tof",
+        persistence.PersistenceBundle(instrument=tof, phases=(disabled,)),
+    )
+    restored = persistence.load_bundle(destination)
+    assert restored.instrument == tof
+    assert isinstance(restored.phases[0].physics, rietveld.IsotropicSizeBroadening)
+    assert np.isinf(restored.phases[0].physics.crystallite_size_nm)
+
+
+@dataclass(frozen=True)
+class CustomProvider:
+    amplitude: float
+    descriptor = rietveld.ProviderDescriptor("example.custom", "2")
+
+    def evaluate(self, context: rietveld.PhysicsContext) -> rietveld.PhysicsContribution:
+        count = context.reflections.reflection_count
+        zeros = np.zeros(count)
+        return rietveld.PhysicsContribution(
+            gaussian_variance_deg2=zeros,
+            lorentzian_fwhm_deg=np.full(count, self.amplitude),
+            intensity_multiplier=np.ones(count),
+            d_gaussian_variance_d_position=zeros,
+            d_lorentzian_fwhm_d_position=zeros,
+            d_intensity_multiplier_d_position=zeros,
+            parameter_names=("amplitude",),
+            d_gaussian_variance_d_parameters=zeros[None, :],
+            d_lorentzian_fwhm_d_parameters=np.ones((1, count)),
+            d_intensity_multiplier_d_parameters=zeros[None, :],
+        )
+
+
+class CustomCodec:
+    provider_id = "example.custom"
+
+    def encode(self, provider: object) -> dict[str, object] | None:
+        if isinstance(provider, CustomProvider):
+            return {"amplitude": provider.amplitude}
+        return None
+
+    def decode(self, configuration: dict[str, object], provider_version: str) -> CustomProvider:
+        assert provider_version == "2"
+        return CustomProvider(float(configuration["amplitude"]))
+
+
+def test_custom_provider_requires_and_round_trips_through_explicit_codec(tmp_path) -> None:
+    original = phase(np.ones(2))
+    custom = rietveld.Phase(
+        original.phase_id,
+        original.name,
+        original.reflections,
+        physics=CustomProvider(0.003),
+    )
+    bundle = persistence.PersistenceBundle(phases=(custom,))
+    with pytest.raises(TypeError, match="PhysicsProviderCodec"):
+        persistence.save_bundle(tmp_path / "missing", bundle)
+    path = persistence.save_bundle(tmp_path / "custom", bundle, provider_codecs=(CustomCodec(),))
+    with pytest.raises(persistence.PersistenceError, match="no PhysicsProviderCodec"):
+        persistence.load_bundle(path)
+    restored = persistence.load_bundle(path, provider_codecs=(CustomCodec(),))
+    assert restored.phases[0].physics == CustomProvider(0.003)
+
+
+def test_hash_version_and_overwrite_guards_are_enforced(tmp_path) -> None:
+    path = persistence.save_bundle(
+        tmp_path / "guarded", persistence.PersistenceBundle(instrument=instrument())
+    )
+    with pytest.raises(FileExistsError):
+        persistence.save_bundle(path, persistence.PersistenceBundle())
+
+    manifest_path = path / persistence.MANIFEST_NAME
+    manifest = json.loads(manifest_path.read_text())
+    manifest["format_version"] = 999
+    manifest_path.write_text(json.dumps(manifest))
+    with pytest.raises(persistence.PersistenceError, match="unsupported"):
+        persistence.load_bundle(path)
+
+    manifest["format_version"] = persistence.FORMAT_VERSION
+    manifest["archive"]["sha256"] = hashlib.sha256(b"wrong").hexdigest()
+    manifest_path.write_text(json.dumps(manifest))
+    with pytest.raises(persistence.PersistenceError, match="SHA-256"):
+        persistence.load_bundle(path)

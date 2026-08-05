@@ -43,9 +43,9 @@ rietveld.integrations.dioptas
   models. Dioptas is never a core or required Python dependency.
 
 rietveld.extensions
-  Versioned provider protocols and optional third-party discovery. Providers
-  are passed explicitly into calculations; discovery never creates numerical
-  core global state.
+  Versioned provider protocols and a reserved future entry-point discovery
+  convenience. Providers are passed explicitly into calculations; discovery
+  never creates numerical core global state.
 
 rietveld.sample
   Built-in size, microstrain, and preferred-orientation providers. These obey
@@ -60,9 +60,17 @@ The implemented low-level module split already follows this boundary:
 ```text
 rietveld.instrument.ConstantWavelengthInstrument
 rietveld.instrument.FcjGeometry
+rietveld.instrument.TofInstrument
 rietveld.radiation.WavelengthComponents
+rietveld.radiation.RadiationProbe
+rietveld.radiation.MonochromaticRadiation
+rietveld.radiation.ConstantWavelengthExperiment
 rietveld.phase.ReflectionGeometryBatch
 rietveld.phase.ReciprocalMetric
+rietveld.phase.ReflectionBatch
+rietveld.phase.Phase
+rietveld.pattern.PowderPattern
+rietveld.pattern.PatternCalculationResult
 rietveld.extensions.PhysicsContribution
 rietveld.extensions.ReflectionPhysicsProvider
 rietveld.extensions.CompositePhysicsProvider
@@ -75,10 +83,40 @@ rietveld.cw.accumulate_cw
 rietveld.cw.accumulate_cw_components
 rietveld.cw.accumulate_cw_contributions
 rietveld.calculation.calculate_cw_pattern
+rietveld.calculation.calculate_pattern
+rietveld.calculation.PreparedPattern
+rietveld.calculation.calculate_monochromatic_pattern
+rietveld.calculation.calculate_neutron_pattern
+rietveld.calculation.calculate_neutron_fcj_pattern
 rietveld.fcj.profile_fcj
 rietveld.fcj.accumulate_cw_fcj
 rietveld.fcj.accumulate_cw_fcj_components
+rietveld.tof.tof_profile_parameters
+rietveld.tof.profile_tof
+rietveld.tof.accumulate_tof
 rietveld.results.AccumulationResult
+rietveld.refinement.ParameterKey
+rietveld.refinement.ParameterSpec
+rietveld.refinement.ParameterSet
+rietveld.refinement.ParameterChange
+rietveld.refinement.ConstraintTransform
+rietveld.refinement.evaluate_residuals
+rietveld.refinement.jacobian_vector_product
+rietveld.refinement.transpose_jacobian_vector_product
+rietveld.refinement.lebail.LeBailInput
+rietveld.refinement.lebail.LeBailOptions
+rietveld.refinement.lebail.LeBailResult
+rietveld.refinement.lebail.extract_intensities
+rietveld.refinement.lebail.iterate_once
+rietveld.refinement.lebail.refine
+rietveld.persistence.PersistenceBundle
+rietveld.persistence.PersistenceBundle.to_lebail_input
+rietveld.persistence.save_bundle
+rietveld.persistence.load_bundle
+rietveld.integrations.dioptas.DioptasPatternData
+rietveld.integrations.dioptas.DioptasDisplayResult
+rietveld.integrations.dioptas.calculate
+rietveld.integrations.dioptas.refine_lebail
 ```
 
 Top-level imports are convenience aliases for scripts and notebooks; the
@@ -161,8 +199,10 @@ Le Bail is the first complete refinement workflow. It must provide:
 7. A checkpointable plain-data result containing refined parameters,
    intensities keyed by reflection ID, `Ycalc`, component arrays, and history.
 
-The simplest supported script must not require a user to construct a parameter
-vector or optimizer callback manually.
+The simplest supported script does not require a user to construct a parameter
+vector or optimizer callback manually. Exact equations, convergence behavior,
+and examples are in [`refinement.md`](refinement.md) and
+[`lebail.md`](lebail.md).
 
 ## Compatibility policy
 
@@ -208,3 +248,17 @@ contributions add; intensity modifiers compose with the full product rule.
 The built-in March--Dollase provider uses the phase reciprocal metric and an
 explicit preferred reciprocal-lattice axis, and participates in the same
 calculation and derivative interface as broadening providers.
+
+Multi-phase flattening, phase-scale rows, durable reflection labels, background
+composition, and the prepared/stateless interfaces are specified in
+[`multiphase.md`](multiphase.md). Each provider parameter is phase-prefixed, so
+the same built-in or third-party model can be configured independently for
+several phases without label collisions.
+
+Typed monochromatic-neutron reuse and the deliberate exclusion of X-ray
+doublets are documented in [`neutron-cw.md`](neutron-cw.md).
+
+Neutron TOF calibration, asymmetric profiles, exact finite support, bin-center
+coordinates, and the 15-row instrument Jacobian are documented in
+[`tof-profile.md`](tof-profile.md). TOF uses the same `AccumulationResult`
+contract as CW calculations rather than adding a refinement-specific data path.

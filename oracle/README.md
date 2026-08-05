@@ -66,6 +66,33 @@ public nanometre/RMS-strain/degree conventions. Tests compare every reflection
 width and orientation factor before comparing selected values, areas, and
 moments.
 
+`multiphase_v1` uses the public scripting API to configure two phases with
+different HAP scales and stores public `X`, total `Ycalc`, background, and both
+complete reflection lists. A controlled private two-reflection composition
+isolates scale multiplication from structure-factor calculation and validates
+the fused total, phase-separated diagnostics, component widths, and analytical
+phase-scale rows.
+
+`neutron_cw_v1` uses public scripting histogram type `PNC` and stores public
+`X`, total `Ycalc`, background, and the complete neutron reflection list.
+Pinned private probes cover symmetric and FCJ profiles for low-, middle-, and
+high-angle reflections, including widths, areas, centroids, and third moments.
+
+`tof_v1` uses public scripting histogram type `PNT` and stores calculation-bin
+centers `X`, total `Ycalc`, background, and the complete 18-column TOF
+reflection list. Pinned private `getEpsVoigt`/`getdEpsVoigt` probes cover three
+d-spacings and store values, five direct derivatives, integrated area,
+centroid, and third moment. The manifest records the GSAS-II-compatible
+`sig-q * d` convention explicitly.
+
+`lebail_v1` creates a deterministic synthetic `PNC` observation through public
+scripting, enables public Le Bail mode, and stores observed/calculated arrays,
+background, weights, the complete reflection list, and public residual trends.
+The pinned internal probe is limited to installing deterministic observations
+(because `getdata` returns a copy) and requesting GSAS-II's new-Le-Bail
+initialization. The manifest records the degree-density conversion
+`integrated_intensity = 0.01 * Fobs^2 * intensity_correction`.
+
 Generation is deliberately separate from the normal package: the script imports
 GSAS-II and NumPy, but never imports `rietveld`. Run it with GSAS-II's Python:
 
@@ -93,6 +120,22 @@ GSAS-II and NumPy, but never imports `rietveld`. Run it with GSAS-II's Python:
 /path/to/gsas/python oracle/scripts/generate_sample_physics.py \
   --gsas-root /path/to/pinned/GSAS-II \
   --binary-dir /path/to/compatible/GSASII-bin/platform-directory
+
+/path/to/gsas/python oracle/scripts/generate_multiphase.py \
+  --gsas-root /path/to/pinned/GSAS-II \
+  --binary-dir /path/to/compatible/GSASII-bin/platform-directory
+
+/path/to/gsas/python oracle/scripts/generate_neutron_cw.py \
+  --gsas-root /path/to/pinned/GSAS-II \
+  --binary-dir /path/to/compatible/GSASII-bin/platform-directory
+
+/path/to/gsas/python oracle/scripts/generate_tof.py \
+  --gsas-root /path/to/pinned/GSAS-II \
+  --binary-dir /path/to/compatible/GSASII-bin/platform-directory
+
+/path/to/gsas/python oracle/scripts/generate_lebail.py \
+  --gsas-root /path/to/pinned/GSAS-II \
+  --binary-dir /path/to/compatible/GSASII-bin/platform-directory
 ```
 
 The generator refuses to replace `data.npz` or `manifest.json`. Regeneration
@@ -103,6 +146,27 @@ names, array hashes, dtypes, shapes, and finiteness before returning data.
 
 The powder generator creates and discards its GPX file in a temporary directory;
 GSAS-II project objects never enter the fixture or normal test environment.
+
+## Live oracle workflow
+
+Normal CI validates committed fixtures and deliberately does not install or
+import GSAS-II. The opt-in `Pinned GSAS-II oracle` workflow runs on a controlled
+runner labeled `gsasii-oracle`. Repository variables `GSASII_PYTHON`,
+`RIETVELD_GSASII_ROOT`, and `RIETVELD_GSASII_BINARY_DIR` must identify the
+compatible interpreter, exact pinned checkout, and binary directory. The
+workflow builds this package in an isolated environment and runs only tests
+marked `external_oracle`. Missing configuration, an incorrect revision, absent
+binaries, or a numerical mismatch is a hard failure; the live tests never
+skip. The dispatch option `regenerate_symmetric_fixture` additionally runs the
+external-only generator into the runner temporary directory and validates the
+new archive; it never overwrites the committed golden fixture. Locally, the
+equivalent comparison command is:
+
+```shell
+RIETVELD_GSASII_ROOT=/path/to/pinned/GSAS-II \
+RIETVELD_GSASII_BINARY_DIR=/path/to/compatible/GSASII-bin/platform-directory \
+/path/to/gsas/python -m pytest -q -m external_oracle tests/test_external_oracle.py
+```
 
 GSAS-II is separately licensed and must be cited as requested by its authors.
 No GSAS-II source is copied into this repository.

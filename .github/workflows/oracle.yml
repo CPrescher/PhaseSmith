@@ -1,0 +1,50 @@
+name: Pinned GSAS-II oracle
+
+on:
+  workflow_dispatch:
+    inputs:
+      regenerate_symmetric_fixture:
+        description: Regenerate the symmetric fixture into the runner temporary directory
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  external-oracle:
+    # This label denotes a controlled runner with the pinned checkout and a
+    # compatible GSAS-II Python/binary installation. Missing configuration is
+    # a hard failure in both the workflow and the selected test.
+    runs-on: [self-hosted, gsasii-oracle]
+    env:
+      RIETVELD_GSASII_ROOT: ${{ vars.RIETVELD_GSASII_ROOT }}
+      RIETVELD_GSASII_BINARY_DIR: ${{ vars.RIETVELD_GSASII_BINARY_DIR }}
+      GSASII_PYTHON: ${{ vars.GSASII_PYTHON }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Validate runner configuration
+        run: |
+          test -x "$GSASII_PYTHON"
+          test -d "$RIETVELD_GSASII_ROOT"
+          test -d "$RIETVELD_GSASII_BINARY_DIR"
+      - name: Build isolated test environment with the GSAS-II interpreter
+        run: |
+          "$GSASII_PYTHON" -m venv --system-site-packages "$RUNNER_TEMP/rietveld-oracle-venv"
+          "$RUNNER_TEMP/rietveld-oracle-venv/bin/python" -m pip install --upgrade pip
+          "$RUNNER_TEMP/rietveld-oracle-venv/bin/python" -m pip install '.[test]'
+      - name: Execute live pinned comparisons
+        run: |
+          "$RUNNER_TEMP/rietveld-oracle-venv/bin/python" -m pytest -q \
+            -m external_oracle tests/test_external_oracle.py
+      - name: Explicitly regenerate the symmetric fixture
+        if: ${{ inputs.regenerate_symmetric_fixture }}
+        run: |
+          "$GSASII_PYTHON" oracle/scripts/generate_symmetric_profile.py \
+            --gsas-root "$RIETVELD_GSASII_ROOT" \
+            --binary-dir "$RIETVELD_GSASII_BINARY_DIR" \
+            --output "$RUNNER_TEMP/symmetric_pseudo_voigt_v1"
+          "$RUNNER_TEMP/rietveld-oracle-venv/bin/python" -c \
+            'from os import environ; from rietveld.oracle import load_fixture; load_fixture(environ["RUNNER_TEMP"] + "/symmetric_pseudo_voigt_v1")'

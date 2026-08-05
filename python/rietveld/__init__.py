@@ -1,5 +1,6 @@
 """Fast, validated powder-diffraction profile calculations."""
 
+from . import integrations, persistence, refinement
 from ._api import (
     PARAMETER_ORDER,
     TCH_PARAMETER_ORDER,
@@ -156,12 +157,15 @@ __all__ = [
     "calculate_neutron_pattern",
     "calculate_pattern",
     "cw_profile_parameters",
+    "integrations",
+    "persistence",
     "profile",
     "profile_fcj",
     "profile_tch",
     "profile_tch_from_gaussian_sigma",
     "profile_tof",
     "reciprocal_angle_geometry",
+    "refinement",
     "tch_shape_from_fwhm",
     "tch_shape_from_gaussian_sigma",
     "tof_profile_parameters",

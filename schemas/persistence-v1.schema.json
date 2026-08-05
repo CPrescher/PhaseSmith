@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:rietveld-engine:persistence:v1",
+  "title": "Rietveld Engine persistence manifest version 1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format_version", "archive", "arrays", "bundle"],
+  "properties": {
+    "format_version": {"const": 1},
+    "archive": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["file", "sha256"],
+      "properties": {
+        "file": {"const": "arrays.npz"},
+        "sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "arrays": {
+      "type": "object",
+      "additionalProperties": {"$ref": "#/$defs/array"}
+    },
+    "bundle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "pattern",
+        "instrument",
+        "experiment",
+        "fcj_geometry",
+        "wavelength_components",
+        "phases",
+        "calculation_options",
+        "calculation_result",
+        "parameters",
+        "lebail_options",
+        "lebail_checkpoint",
+        "lebail_result",
+        "constraints",
+        "metadata"
+      ],
+      "properties": {
+        "pattern": {"type": ["object", "null"]},
+        "instrument": {"type": ["object", "null"]},
+        "experiment": {"type": ["object", "null"]},
+        "fcj_geometry": {"type": ["object", "null"]},
+        "wavelength_components": {"type": ["object", "null"]},
+        "phases": {"type": "array", "items": {"type": "object"}},
+        "calculation_options": {"type": ["object", "null"]},
+        "calculation_result": {"type": ["object", "null"]},
+        "parameters": {"type": ["object", "null"]},
+        "lebail_options": {"type": ["object", "null"]},
+        "lebail_checkpoint": {"type": ["object", "null"]},
+        "lebail_result": {"type": ["object", "null"]},
+        "constraints": {"type": "array", "items": {"type": "object"}},
+        "metadata": {"type": ["object", "null"]}
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "array": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["dtype", "shape", "sha256"],
+      "properties": {
+        "dtype": {"type": "string", "minLength": 1},
+        "shape": {
+          "type": "array",
+          "items": {"type": "integer", "minimum": 0}
+        },
+        "sha256": {"$ref": "#/$defs/sha256"}
+      }
+    }
+  }
+}

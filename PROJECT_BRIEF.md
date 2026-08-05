@@ -10,6 +10,24 @@ profile kernels are mature; Le Bail extraction is the first supported complete
 refinement workflow. Project-file management and graphical user interfaces are
 not part of the numerical library.
 
+## Current implementation status
+
+Implementation units 0 through 10 in `IMPLEMENTATION_PLAN.md` are complete as
+of 2026-08-05. The repository now includes validated symmetric TCH, CW
+U/V/W/X/Y, FCJ, wavelength-component, sample-physics, multi-phase, neutron CW,
+and neutron TOF calculation paths; shared refinement infrastructure; first-class
+Le Bail extraction; versioned JSON+NPZ persistence; and an optional
+Dioptas-facing NumPy protocol. GSAS-II fixtures remain external-oracle products,
+and neither GSAS-II, SciPy, nor Dioptas is required for normal installation.
+Third-party reflection physics is supported through an explicit versioned batch
+provider and persistence-codec contract; arbitrary intrinsic line-shape plugins
+remain a future compiled-extension boundary rather than a promised Rust ABI.
+
+The project remains pre-release. In particular, the maintainers must select an
+open-source project license before accepting contributions or publishing a
+release, and structure-factor-based Rietveld orchestration remains deliberately
+reserved until its physics layer is designed and validated.
+
 ## Design commitments
 
 - Use GSAS-II only as a pinned validation oracle, never as the architecture.

@@ -208,6 +208,15 @@ Turn the current local demonstration into a repeatable validation baseline.
 - At least one real GSAS-II value comparison has run and passed.
 - Benchmark reports distinguish release Rust/Python execution from GSAS-II.
 
+Final audit result: ordinary CI excludes the `external_oracle` marker and stays
+GSAS-II-free. A dedicated manually dispatched, self-hosted job requires the
+exact configured checkout/interpreter/binaries and fails on missing setup,
+revision mismatch, or numerical mismatch. Its optional regeneration input
+writes a new symmetric fixture into runner-temporary storage and validates its
+schema and hashes without overwriting committed golden data. The live direct
+`getPsVoigt`/`getdPsVoigt` comparison passed locally at the pinned revision,
+including centidegree density, width scaling, and position-sign conversion.
+
 ## Implementation unit 1: scalable accumulation and derivative storage
 
 Status: complete (2026-08-05).
@@ -930,6 +939,8 @@ retaining final phase-component curves.
 
 ## Implementation unit 10: persistence and Dioptas integration boundary
 
+Status: complete (2026-08-05).
+
 ### Goal
 
 Make the mature calculation and Le Bail interfaces straightforward to embed in
@@ -960,6 +971,25 @@ Dioptas and other applications while keeping integrations optional.
   Le Bail and receives display-ready NumPy arrays and diagnostics.
 - Normal installation, import, calculation, and refinement never require
   Dioptas.
+
+Review result: format version 1 stores finite JSON records plus hash-validated,
+non-pickle NPZ arrays for CW/TOF instruments, radiation/FCJ configuration,
+phases and built-in or explicitly coded third-party providers, patterns,
+calculation inputs/results, typed refinement parameters/options, constraints,
+complete Le Bail checkpoints, and complete results. Undefined positive-infinite
+ratio metrics use an explicit JSON-null representation; NaN remains invalid.
+`PersistenceBundle.to_lebail_input()` reconstructs a runnable typed request. A
+machine-readable schema and corruption/version tests cover the boundary. The
+Dioptas module imports without Dioptas, normalizes included/excluded masks,
+exposes explicit coordinate/intensity units, returns background-separated
+display arrays and labeled phase curves, and is tested through a fake two-method
+consumer. Progress and cancellation occur only at calculation/iteration
+boundaries; cancelled Le Bail runs return resumable checkpoints. Documentation
+states current caller-thread and GIL behavior and recommends a worker process
+for responsive GUI integration. Final validation passes strict Ruff, Rust
+formatting, strict Clippy, 24 Rust tests, 269 normal Python tests, and one live
+pinned-oracle test; normal installation has no GSAS-II, Dioptas, or SciPy
+requirement.
 
 ## Cross-cutting validation matrix
 

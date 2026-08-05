@@ -1,10 +1,11 @@
 # Rietveld Engine
 
 Rietveld Engine is an early-stage powder-diffraction computation library with a
-Rust numerical core and a typed Python/NumPy API. The current profile layer
-includes finite-support symmetric TCH pseudo-Voigt, constant-wavelength
-U/V/W/X/Y broadening, and FCJ axial asymmetry with analytical derivatives
-computed during fused peak accumulation.
+Rust numerical core and a typed Python/NumPy API. The current implementation
+includes symmetric TCH, CW U/V/W/X/Y broadening, FCJ asymmetry, wavelength
+components, extensible sample physics, multi-phase CW X-ray/neutron and neutron
+TOF calculation, plus a first-class scripted Le Bail workflow. Analytical
+derivatives are computed during fused peak accumulation.
 
 The architecture and roadmap are in [PROJECT_BRIEF.md](PROJECT_BRIEF.md); the
 equations and parameter conventions are in [docs/equations.md](docs/equations.md).
@@ -21,6 +22,18 @@ in [docs/wavelength-components.md](docs/wavelength-components.md).
 The versioned physics-provider contract, isotropic size/microstrain equations,
 and preferred-orientation convention are documented in
 [docs/sample-physics.md](docs/sample-physics.md).
+Typed multi-phase composition, scale derivatives, supplied backgrounds, and
+prepared calculations are documented in [docs/multiphase.md](docs/multiphase.md).
+Explicit monochromatic-neutron configuration and shared CW/FCJ behavior are
+documented in [docs/neutron-cw.md](docs/neutron-cw.md).
+Neutron TOF calibration, back-to-back exponential TCH profiles, derivatives,
+and support semantics are documented in
+[docs/tof-profile.md](docs/tof-profile.md).
+Shared refinement contracts and Le Bail extraction are documented in
+[docs/refinement.md](docs/refinement.md) and [docs/lebail.md](docs/lebail.md).
+Versioned JSON+NPZ persistence and the optional Dioptas-facing NumPy boundary
+are documented in [docs/persistence.md](docs/persistence.md) and
+[docs/dioptas-integration.md](docs/dioptas-integration.md).
 
 ## Development
 
@@ -41,6 +54,7 @@ release mode explicitly:
 ```shell
 maturin develop --release --uv
 uv run python benchmarks/profile.py --require-release
+uv run python benchmarks/lebail.py --require-release
 ```
 
 ```python
@@ -143,6 +157,87 @@ sample = CompositePhysicsProvider(
 )
 calculated = calculate_cw_pattern(x, reflections, instrument, physics=sample)
 print(calculated.derivatives.global_parameter_names)
+```
+
+The high-level script interface assigns durable IDs and calculates all phases
+through one flattened native call:
+
+```python
+from rietveld import Phase, PowderPattern, ReflectionBatch, calculate_pattern
+
+alpha_reflections = ReflectionBatch(
+    reflection_ids=["alpha-100", "alpha-110"],
+    hkl=[[1, 0, 0], [1, 1, 0]],
+    d_spacing_angstrom=[3.72, 2.64],
+    two_theta_deg=[24.0, 34.0],
+    integrated_intensity=[100.0, 80.0],
+)
+alpha = Phase(
+    phase_id="alpha",
+    name="Alpha phase",
+    reflections=alpha_reflections,
+    scale=1.0,
+    physics=sample,
+)
+pattern_result = calculate_pattern(PowderPattern(x), instrument, [alpha])
+print(pattern_result.reflection_keys)
+print(pattern_result.derivatives.global_parameter_names)
+```
+
+Neutron CW is an explicit monochromatic probe configuration and cannot receive
+an X-ray K-alpha doublet:
+
+```python
+from rietveld import ConstantWavelengthExperiment, calculate_neutron_pattern
+
+neutron = ConstantWavelengthExperiment.neutron(instrument)
+neutron_result = calculate_neutron_pattern(PowderPattern(x), neutron, [alpha])
+```
+
+TOF reflections use d-spacing as their durable local coordinate. Values and
+all local/shared derivatives are accumulated in one native call:
+
+```python
+from rietveld import TofInstrument, accumulate_tof
+
+tof_instrument = TofInstrument(
+    zero_us=-0.773,
+    difc_us_per_angstrom=5084.83,
+    difa_us_per_angstrom2=-2.63,
+    difb_us_angstrom=0.0,
+    alpha_coefficient=5.0,
+    beta0_per_us=0.0333,
+    beta1_angstrom4_per_us=0.000964,
+    betaq_angstrom2_per_us=0.0,
+    sigma0_us2=0.0,
+    sigma1_us2_per_angstrom2=15.14,
+    sigma2_us2_per_angstrom4=0.0,
+    sigmaq_us2_per_angstrom=0.0,
+    x_us_per_angstrom=0.0,
+    y_us_per_angstrom2=0.0,
+    z_us=0.0,
+)
+tof_x = np.linspace(2_000.0, 20_000.0, 6_001)  # bin centers, microseconds
+tof_result = accumulate_tof(tof_x, [0.8, 1.5], [100.0, 80.0], tof_instrument)
+print(tof_result.derivatives.local_parameter_names)   # intensity, d_spacing
+print(tof_result.derivatives.global_parameter_names)  # 15 instrument rows
+```
+
+A complete Le Bail extraction uses the same typed pattern, instrument, and
+phase models and requires no project file or hand-written optimizer callback:
+
+```python
+from rietveld.refinement import lebail
+
+observed = PowderPattern(
+    x,
+    observed_y=measured_y,
+    background=background_y,
+    uncertainty=sigma_y,
+)
+result = lebail.refine(lebail.LeBailInput(observed, instrument, (alpha,)))
+print(result.termination_reason, result.metrics.rwp)
+print([(item.reflection_id, item.integrated_intensity) for item in result.intensities])
 ```
 
 GSAS-II is used only as the optional pinned validation oracle described in

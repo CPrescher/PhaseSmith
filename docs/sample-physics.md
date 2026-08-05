@@ -127,3 +127,51 @@ Package entry-point discovery may later locate providers, but discovery never
 changes the numerical core's behavior implicitly. A provider ID, provider
 version, API version, and plain configuration are sufficient for persistence;
 live Python or native objects are never serialized.
+
+## Third-party broadening example
+
+No subclassing or registration is required. A user model implements the
+structural protocol and is passed explicitly as `physics=`. This example adds
+the empirical Lorentzian law `L = strength / d` and exposes its analytical
+parameter derivative:
+
+```python
+import numpy as np
+from rietveld import PhysicsContribution, ProviderDescriptor, calculate_cw_pattern
+
+
+class ReciprocalDBroadening:
+    descriptor = ProviderDescriptor("example.reciprocal-d", "1.0")
+
+    def __init__(self, strength_deg_angstrom: float):
+        self.strength = float(strength_deg_angstrom)
+
+    def evaluate(self, context):
+        d = context.reflections.d_spacing_angstrom
+        count = d.size
+        zeros = np.zeros(count)
+        return PhysicsContribution(
+            gaussian_variance_deg2=zeros,
+            lorentzian_fwhm_deg=self.strength / d,
+            intensity_multiplier=np.ones(count),
+            d_gaussian_variance_d_position=zeros,
+            d_lorentzian_fwhm_d_position=zeros,
+            d_intensity_multiplier_d_position=zeros,
+            parameter_names=("strength_deg_angstrom",),
+            d_gaussian_variance_d_parameters=np.zeros((1, count)),
+            d_lorentzian_fwhm_d_parameters=(1.0 / d)[None, :],
+            d_intensity_multiplier_d_parameters=np.zeros((1, count)),
+        )
+
+
+result = calculate_cw_pattern(x, reflections, instrument,
+                              physics=ReciprocalDBroadening(0.004))
+```
+
+The provider executes once for the reflection batch. Its arrays and derivative
+chains then enter the same Rust accumulator as built-in physics, so Le Bail and
+later Rietveld orchestration can consume the resulting calculation without a
+model-specific branch. A model that changes the intrinsic sampled line-shape
+formula, rather than its widths or intensity, needs a compiled kernel provider
+for production throughput; a NumPy implementation remains suitable as an
+independent reference and prototype.

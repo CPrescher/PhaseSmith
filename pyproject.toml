@@ -30,9 +30,11 @@ module-name = "rietveld._core"
 features = ["pyo3/extension-module"]
 
 [tool.pytest.ini_options]
-addopts = "-ra"
+addopts = "-ra -m 'not external_oracle'"
 testpaths = ["tests"]
-markers = ["oracle: requires the exact pinned GSAS-II external checkout"]
+markers = [
+  "external_oracle: requires the exact pinned GSAS-II checkout and compatible binaries",
+]
 
 [tool.ruff]
 line-length = 100
