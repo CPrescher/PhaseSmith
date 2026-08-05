@@ -75,6 +75,7 @@ from .fcj import (
     profile_fcj,
 )
 from .instrument import ConstantWavelengthInstrument, FcjGeometry, TofInstrument
+from .io.cif import CifBackend, CifReadLimits, CifReadResult, read_cif
 from .pattern import (
     PatternCalculationResult,
     PhasePatternComponent,
@@ -94,6 +95,15 @@ from .sample import (
     MarchDollasePreferredOrientation,
     ReciprocalAngleGeometry,
     reciprocal_angle_geometry,
+)
+from .structure import (
+    AnisotropicDisplacement,
+    AtomSite,
+    CrystalStructure,
+    StructureDiagnostic,
+    StructureSource,
+    structure_from_record,
+    structure_to_record,
 )
 from .symmetry import (
     DEFAULT_MAX_REFLECTION_CANDIDATES,
@@ -135,13 +145,19 @@ __all__ = [
     "TOF_GLOBAL_PARAMETER_ORDER",
     "TOF_LOCAL_PARAMETER_ORDER",
     "AccumulationResult",
+    "AnisotropicDisplacement",
+    "AtomSite",
     "AtomSiteBatch",
     "CalculationOptions",
     "CancellationCallback",
     "CellGeometry",
+    "CifBackend",
+    "CifReadLimits",
+    "CifReadResult",
     "CompositePhysicsProvider",
     "ConstantWavelengthExperiment",
     "ConstantWavelengthInstrument",
+    "CrystalStructure",
     "CwProfileParameters",
     "CwTwoThetaRange",
     "DSpacingRange",
@@ -182,6 +198,8 @@ __all__ = [
     "ReflectionRange",
     "ScatteringVectorRange",
     "SpaceGroup",
+    "StructureDiagnostic",
+    "StructureSource",
     "SupportJacobian",
     "SymmetryOperation",
     "TchFwhmShape",
@@ -220,8 +238,11 @@ __all__ = [
     "profile_tch",
     "profile_tch_from_gaussian_sigma",
     "profile_tof",
+    "read_cif",
     "reciprocal_angle_geometry",
     "refinement",
+    "structure_from_record",
+    "structure_to_record",
     "tch_shape_from_fwhm",
     "tch_shape_from_gaussian_sigma",
     "tof_profile_parameters",

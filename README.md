@@ -14,13 +14,15 @@ The architecture and roadmap are in [PROJECT_BRIEF.md](PROJECT_BRIEF.md); the
 equations and parameter conventions are in [docs/equations.md](docs/equations.md).
 The delivery plan for Rust-owned crystallographic calculations, CIF import,
 structure factors, CIF-to-Le Bail, and full Rietveld refinement is in
-[docs/crystallography-plan.md](docs/crystallography-plan.md). CIF import,
-scattering tables, and structural refinement are not implemented yet.
+[docs/crystallography-plan.md](docs/crystallography-plan.md). Scattering tables
+and structural refinement are not implemented yet.
 The implemented native unit-cell and P1 structure-factor foundation is
 documented in
 [docs/crystallography-foundation.md](docs/crystallography-foundation.md).
 Exact symmetry conventions and reflection ranges are documented in
 [docs/symmetry-reflections.md](docs/symmetry-reflections.md).
+Optional CIF import and direct fixed-cell CIF-to-Le Bail are documented in
+[docs/cif-import.md](docs/cif-import.md).
 The component-width TCH transform and chain-rule derivatives are documented in
 [docs/tch-profile.md](docs/tch-profile.md); constant-wavelength U/V/W/X/Y
 broadening is documented in [docs/cw-profile.md](docs/cw-profile.md). FCJ

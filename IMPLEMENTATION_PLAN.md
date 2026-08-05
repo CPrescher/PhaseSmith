@@ -993,9 +993,9 @@ requirement.
 
 ## Implementation units 11 through 18: crystallography and Rietveld
 
-Status: units 11 and 12 implemented and independently validated (2026-08-05),
+Status: units 11 through 13 implemented and independently validated (2026-08-05),
 with their live pinned GSAS-II behavior fixtures pending an available external
-checkout; units 13 through 18 are planned. The complete equations, data contracts,
+checkout; units 14 through 18 are planned. The complete equations, data contracts,
 ordering, derivative strategy, validation gates, benchmarks, and discipline are
 specified in
 [`docs/crystallography-plan.md`](docs/crystallography-plan.md).
@@ -1061,6 +1061,22 @@ orthorhombic release benchmark generates 3,174 families in approximately 14.95
 ms before the conservative-bound review and 14.64 ms after it. The external
 study schema is in
 `oracle/SYMMETRY_REFLECTION_STUDY.md`; no oracle equivalence is claimed yet.
+
+Unit-13 review result: `rietveld.structure` owns immutable parser-independent
+cell/symmetry/site/provenance records and versioned JSON-compatible round trips.
+`rietveld.io.cif` defines injectable backend and resource-limit contracts; its
+lazy Gemmi 0.7.5 adapter handles blocks, loops, quoted values, standard
+uncertainties, missing/unknown states, current and legacy tags, explicit/Hall/
+HM/number symmetry precedence, Cartesian coordinates, B/U conversion,
+anisotropic preservation, and structured strict/permissive diagnostics.
+`LeBailPhase.from_structure()` and `.from_cif()` generate exact allowed
+monochromatic families through Rust while accepting cell-and-symmetry-only
+files. Ten focused CIF tests plus the existing Le Bail suite pass. Gemmi remains
+an optional parser/setting dependency under its upstream license; it supplies
+no diffraction calculation and no parser object crosses the adapter.
+No numerical-kernel benchmark is added for file parsing; the downstream native
+reflection generation used by CIF-to-Le Bail is covered by the unit-12 batch
+benchmark.
 
 ## Cross-cutting validation matrix
 

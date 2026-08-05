@@ -32,7 +32,7 @@ rietveld.scattering  [planned]
   Typed X-ray and neutron scattering models plus versioned batch-provider
   contracts. Built-in production models execute in Rust.
 
-rietveld.io.cif  [planned]
+rietveld.io.cif  [implemented]
   Optional CIF parsing into crystallography models. Parser objects never enter
   calculation, persistence, or refinement state.
 
@@ -98,6 +98,13 @@ rietveld.symmetry.DSpacingRange
 rietveld.symmetry.ScatteringVectorRange
 rietveld.symmetry.CwTwoThetaRange
 rietveld.symmetry.TofRange
+rietveld.structure.CrystalStructure
+rietveld.structure.AtomSite
+rietveld.structure.AnisotropicDisplacement
+rietveld.structure.structure_to_record
+rietveld.structure.structure_from_record
+rietveld.io.cif.read_cif
+rietveld.refinement.lebail.LeBailPhase
 rietveld.pattern.PowderPattern
 rietveld.pattern.PatternCalculationResult
 rietveld.extensions.PhysicsContribution

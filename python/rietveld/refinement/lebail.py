@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
+from pathlib import Path
+from typing import TYPE_CHECKING
 
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
@@ -17,6 +19,8 @@ from ..control import (
 from ..instrument import ConstantWavelengthInstrument
 from ..pattern import PatternCalculationResult, PowderPattern
 from ..phase import Phase, ReflectionBatch
+from ..structure import CrystalStructure
+from ..symmetry import CwTwoThetaRange, PreparedReflectionGenerator
 from .core import (
     AffineConstraint,
     Bounds,
@@ -32,6 +36,9 @@ from .core import (
     evaluate_residuals,
 )
 
+if TYPE_CHECKING:
+    from ..io.cif import CifBackend, CifReadLimits
+
 INSTRUMENT_ROWS = {
     "u_deg2": "u",
     "v_deg2": "v",
@@ -39,6 +46,119 @@ INSTRUMENT_ROWS = {
     "x_deg": "x",
     "y_deg": "y",
 }
+
+
+@dataclass(frozen=True, slots=True)
+class LeBailPhase(Phase):
+    """A reflection-extraction phase retaining its source crystal structure."""
+
+    structure: CrystalStructure | None = None
+
+    def __post_init__(self) -> None:
+        """Validate the generic phase contract and required source structure."""
+
+        Phase.__post_init__(self)
+        if not isinstance(self.structure, CrystalStructure):
+            raise TypeError("LeBailPhase structure must be a CrystalStructure")
+
+    @classmethod
+    def from_structure(
+        cls,
+        structure: CrystalStructure,
+        *,
+        phase_id: str,
+        wavelength_angstrom: float,
+        two_theta_min_deg: float,
+        two_theta_max_deg: float,
+        name: str | None = None,
+        scale: float = 1.0,
+        initial_intensity: float = 1.0,
+        merge_friedel: bool = True,
+        max_candidates: int = 50_000_000,
+    ) -> LeBailPhase:
+        """Generate fixed-cell monochromatic reflections from a typed structure."""
+
+        if not isinstance(structure, CrystalStructure):
+            raise TypeError("structure must be a CrystalStructure")
+        if not np.isfinite(initial_intensity) or initial_intensity < 0.0:
+            raise ValueError("initial_intensity must be non-negative and finite")
+        generated = PreparedReflectionGenerator(
+            structure.space_group,
+            merge_friedel=merge_friedel,
+            max_candidates=max_candidates,
+        ).generate(
+            structure.cell,
+            CwTwoThetaRange(
+                two_theta_min_deg,
+                two_theta_max_deg,
+                wavelength_angstrom,
+            ),
+        )
+        if generated.hkl.shape[0] == 0:
+            raise ValueError("no allowed reflections lie within the requested 2theta range")
+        argument = np.clip(
+            0.5 * wavelength_angstrom * generated.reciprocal_length_inverse_angstrom,
+            -1.0,
+            1.0,
+        )
+        two_theta = 2.0 * np.degrees(np.arcsin(argument))
+        reflections = ReflectionBatch(
+            list(generated.reflection_ids),
+            generated.hkl,
+            generated.d_spacing_angstrom,
+            two_theta,
+            np.full(generated.hkl.shape[0], initial_intensity),
+        )
+        return cls(
+            phase_id=phase_id,
+            name=structure.name if name is None else name,
+            reflections=reflections,
+            scale=scale,
+            structure=structure,
+        )
+
+    @classmethod
+    def from_cif(
+        cls,
+        path_or_text: str | Path,
+        *,
+        phase_id: str,
+        wavelength_angstrom: float,
+        two_theta_min_deg: float,
+        two_theta_max_deg: float,
+        block: str | None = None,
+        strict: bool = True,
+        name: str | None = None,
+        scale: float = 1.0,
+        initial_intensity: float = 1.0,
+        merge_friedel: bool = True,
+        max_candidates: int = 50_000_000,
+        limits: CifReadLimits | None = None,
+        backend: CifBackend | None = None,
+    ) -> LeBailPhase:
+        """Read an optional CIF backend and construct a fixed-cell Le Bail phase."""
+
+        from ..io.cif import read_cif
+
+        imported = read_cif(
+            path_or_text,
+            block=block,
+            strict=strict,
+            limits=limits,
+            backend=backend,
+        )
+        return cls.from_structure(
+            imported.structure,
+            phase_id=phase_id,
+            wavelength_angstrom=wavelength_angstrom,
+            two_theta_min_deg=two_theta_min_deg,
+            two_theta_max_deg=two_theta_max_deg,
+            name=name,
+            scale=scale,
+            initial_intensity=initial_intensity,
+            merge_friedel=merge_friedel,
+            max_candidates=max_candidates,
+        )
 
 
 def instrument_parameter_key(name: str) -> ParameterKey:

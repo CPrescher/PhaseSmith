@@ -26,7 +26,8 @@ Implementation units 11 and 12 add Rust-owned general unit-cell geometry, P1
 complex structure factors with dense/JVP/VJP derivatives, exact symmetry,
 special-position expansion, systematic absences, metric constraints, and
 bounded d/Q/CW/TOF reflection generation. Typed NumPy APIs and independent
-NumPy references cover both slices. CIF import, physical scattering tables,
+NumPy references cover both slices. Unit 13 adds optional parser-independent
+CIF models/import plus fixed-cell CIF-to-Le Bail. Physical scattering tables
 and structural refinement remain follow-on units. The live pinned GSAS-II P1
 and reflection-behavior fixtures are pending because the external checkout is
 not available in the current environment.
@@ -126,6 +127,8 @@ documented; GSAS-II itself is never vendored.
 - `python/rietveld`: public Python package, separated instrument/phase/pattern/
   calculation/refinement modules, reference implementation, optional
   integrations, and validation tooling.
+- `python/rietveld/io`: optional format adapters; CIF uses a lazy Gemmi backend
+  and returns only parser-independent structures and diagnostics.
 - `tests`: Python differential and contract tests.
 - `benchmarks`: end-to-end Python benchmarks and stored methodology.
 - `oracle`: pinned GSAS-II environment metadata, adapters, and fixture schema.

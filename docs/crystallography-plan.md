@@ -1,7 +1,7 @@
 # Crystallography and structure-factor implementation plan
 
-Status: units 11 and 12 implemented and independently validated; live pinned
-P1 and symmetry/reflection oracle fixtures pending; units 13 through 18
+Status: units 11 through 13 implemented and independently validated; live
+pinned P1 and symmetry/reflection oracle fixtures pending; units 14 through 18
 pending.
 
 This plan adds CIF-driven Le Bail and structure-factor-driven Rietveld
@@ -16,8 +16,8 @@ The first completed crystallography program must support two short, fully
 scripted workflows:
 
 ```python
-structure = rietveld.io.cif.read_cif("silicon.cif")
-phase = rietveld.phase.LeBailPhase.from_structure(
+structure = rietveld.read_cif("silicon.cif").structure
+phase = rietveld.refinement.LeBailPhase.from_structure(
     phase_id="si",
     structure=structure,
     experiment=experiment,
@@ -31,7 +31,7 @@ result = rietveld.refinement.lebail.refine(
 and, after the structure-factor and refinement units are complete:
 
 ```python
-structure = rietveld.io.cif.read_cif("silicon.cif")
+structure = rietveld.read_cif("silicon.cif").structure
 phase = rietveld.phase.RietveldPhase(
     phase_id="si",
     structure=structure,
@@ -328,6 +328,10 @@ pending an available checkout; no oracle equivalence is claimed yet.
   operation sets.
 
 ## Implementation unit 13: CIF import and fixed-cell CIF-to-Le Bail
+
+Status: implemented and internally reviewed on 2026-08-05. The backend
+boundary, supported data, diagnostics, resource limits, persistence record, and
+fixed-cell Le Bail constructor are documented in `docs/cif-import.md`.
 
 ### Work
 
