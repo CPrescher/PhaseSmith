@@ -1,0 +1,195 @@
+{
+  "archive": {
+    "file": "data.npz",
+    "sha256": "e1af273a2a8e93e1ccff179ad50b02915b639d9aaeb1c6b7c708d4df3303a110"
+  },
+  "arrays": {
+    "background": {
+      "description": "Public scripting background array",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "e463f3a273b93d6719e6005fb651e2ab1d219c523d169b67cac4d4740a07069f",
+      "shape": [
+        3001
+      ],
+      "unit": "intensity"
+    },
+    "convergence": {
+      "description": "Public residual trend",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "4a56a006ca53879e3a778345a974b56780b2327da862ee08b97bf619c8f3fabe",
+      "shape": [
+        8,
+        5
+      ],
+      "unit": "mixed_by_column"
+    },
+    "observed_y": {
+      "description": "Public scripting observed_y array",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "8cff90b16c4c2787b67a9e148ff8a3bd1baac23187106c3e2e96baee7bf3598e",
+      "shape": [
+        3001
+      ],
+      "unit": "intensity"
+    },
+    "reflection_list": {
+      "description": "Final public reflection list",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "b1764dc64b503f2685a8a4cb368bc18a73f2e89c6529c64a39b210d16f58601a",
+      "shape": [
+        85,
+        15
+      ],
+      "unit": "mixed_by_column"
+    },
+    "weight": {
+      "description": "Observation weights",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "e463f3a273b93d6719e6005fb651e2ab1d219c523d169b67cac4d4740a07069f",
+      "shape": [
+        3001
+      ],
+      "unit": "inverse_intensity_squared"
+    },
+    "x_deg": {
+      "description": "Profile sampling coordinates",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "aea7259db5d0417929c3d7006fd3140619883ad8eba306b16576a1180925ece3",
+      "shape": [
+        3001
+      ],
+      "unit": "degree_2theta"
+    },
+    "ycalc": {
+      "description": "Public scripting ycalc array",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "ae8ed8044bfffed035c750d5d6873eb0f1d83c2fb924f4f1e0f00f836e66a45e",
+      "shape": [
+        3001
+      ],
+      "unit": "intensity"
+    }
+  },
+  "cases": [
+    {
+      "arrays": {
+        "background": "background",
+        "convergence": "convergence",
+        "observed_y": "observed_y",
+        "reflection_list": "reflection_list",
+        "weight": "weight",
+        "x": "x_deg",
+        "ycalc": "ycalc"
+      },
+      "case_kind": "lebail_refinement",
+      "id": "neutron_cw_exact_synthetic",
+      "parameters": {
+        "convergence_columns": [
+          "cycle",
+          "R_percent",
+          "wR_percent",
+          "Rb_percent",
+          "wRb_percent"
+        ],
+        "integrated_intensity_convention": "0.01_times_f_obs2_times_intensity_correction"
+      },
+      "reflection_tables": [
+        {
+          "array": "reflection_list",
+          "columns": [
+            "h",
+            "k",
+            "l",
+            "multiplicity",
+            "d_spacing_angstrom",
+            "position_deg",
+            "sigma2_centideg2",
+            "gamma_centideg",
+            "f_obs2",
+            "f_calc2",
+            "phase_deg",
+            "intensity_correction",
+            "preferred_orientation",
+            "transmission",
+            "extinction"
+          ]
+        }
+      ]
+    }
+  ],
+  "fixture_id": "gsasii_lebail_v1",
+  "format_version": 1,
+  "input": {
+    "kind": "parameter_cases",
+    "sha256": "5e57603c3cb3401cd86000b2ef79c2451a72c8cb41dca958bcd46032fb2dd107"
+  },
+  "input_parameters": {
+    "instrument": {
+      "u_gsas_centideg2": 2.0,
+      "v_gsas_centideg2": -1.0,
+      "w_gsas_centideg2": 1.2,
+      "wavelength_angstrom": 1.54056,
+      "x_gsas_centideg": 0.15,
+      "y_gsas_centideg": 0.3
+    },
+    "phase": {
+      "cell": [
+        4.0,
+        4.0,
+        4.0,
+        90.0,
+        90.0,
+        90.0
+      ],
+      "name": "lebail-cubic",
+      "phase_id": "alpha",
+      "space_group": "P 1"
+    }
+  },
+  "kind": "lebail",
+  "provenance": {
+    "generated_at_utc": "2026-08-05T16:36:27.523433+00:00",
+    "generator_sha256": "e321b5bb1ba48affd42e6ccffae5842c023c4182bcd494e3521b58b4f9c98ed0",
+    "gsasii_repository": "https://github.com/AdvancedPhotonSource/GSAS-II",
+    "gsasii_revision": "c0bc79b259cdf0065480b5fbd57674ddf12c4a23",
+    "gsasii_tag": 5838,
+    "numpy_version": "2.2.6",
+    "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O",
+    "python_version": "3.13.9"
+  },
+  "source": {
+    "adapter_version": 1,
+    "api": [
+      "GSASII.GSASIIscriptable.G2Phase.set_refinements",
+      "GSASII.GSASIIscriptable.G2Project.refine",
+      "GSASII.GSASIIscriptable.G2PwdrData.getdata/reflections",
+      "GSASII.GSASIIstrMain.Refine(newLeBail=True)"
+    ],
+    "histogram_type": "PNC",
+    "private_probe": true,
+    "reflection_columns": [
+      "h",
+      "k",
+      "l",
+      "multiplicity",
+      "d_spacing_angstrom",
+      "position_deg",
+      "sigma2_centideg2",
+      "gamma_centideg",
+      "f_obs2",
+      "f_calc2",
+      "phase_deg",
+      "intensity_correction",
+      "preferred_orientation",
+      "transmission",
+      "extinction"
+    ]
+  }
+}

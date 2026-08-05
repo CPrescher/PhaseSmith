@@ -827,6 +827,8 @@ validation standard as CW profiles.
 
 ## Implementation unit 9: refinement infrastructure and first-class Le Bail
 
+Status: complete (2026-08-05).
+
 ### Goal
 
 Provide a clean scripted refinement layer, then implement Le Bail extraction as
@@ -908,6 +910,23 @@ A user can perform and inspect a robust Le Bail refinement from a short Python
 script without constructing parameter vectors, optimizer callbacks, project
 files, or per-reflection loops. The refinement layer consumes the calculation
 API without introducing refinement state into `rietveld-core`.
+
+Review result: immutable typed parameters, exact fixed/affine transforms,
+masked residuals, hybrid JVP/VJP products, a dependency-free default solver,
+and an injectable lazy SciPy-compatible optimizer protocol are implemented.
+Every accepted profile step records typed before/after/scaled parameter
+changes. `iterate_once` exposes the same state transition as the one-call
+workflow for notebooks and GUI scheduling. Tests cover isolated, overlapping,
+absent, zero, coincident, cross-phase shared reflections, constraints,
+instrument-width and position updates, phase-scale identifiability, custom
+optimizer injection, rank diagnostics, deterministic checkpoint resume, finite
+differences, and adjoint consistency. The pinned GSAS-II case compares all CW
+profile parameters, unresolved-group integrated intensities, sampled `Ycalc`,
+residuals, and convergence trends. On the recorded 200-reflection/5,001-sample
+release benchmark, medians were 0.217 ms for the profile kernel, 0.424 ms for
+intensity extraction, 0.829 ms estimated profile-optimizer overhead, 5.580 ms
+for one complete intensity iteration, and 14.480 ms for ten iterations while
+retaining final phase-component curves.
 
 ## Implementation unit 10: persistence and Dioptas integration boundary
 
