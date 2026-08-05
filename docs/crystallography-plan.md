@@ -387,9 +387,9 @@ and calculates diffraction.
 
 ## Implementation unit 14: scattering models and data provenance
 
-Status: source/license and interface gate completed on 2026-08-05; native
-implementation in progress. Exact equations, pinned revisions, checksums,
-provider semantics, and deliberate exclusions are in
+Status: implemented and internally reviewed on 2026-08-05. Exact equations,
+pinned revisions, checksums, provider semantics, deliberate exclusions, tests,
+and benchmarks are in
 `docs/scattering-models.md`.
 
 ### Work
@@ -429,6 +429,9 @@ provider semantics, and deliberate exclusions are in
   evaluation per atom.
 
 ## Implementation unit 15: structural intensities and fused patterns
+
+Status: equation, derivative, correction-ownership, and execution contract
+frozen before implementation in `docs/structural-intensities.md`.
 
 ### Work
 

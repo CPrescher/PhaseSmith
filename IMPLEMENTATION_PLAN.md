@@ -1101,6 +1101,14 @@ measures about 1.61 ms and 0.65 ms including result-array construction and
 validation. Strict Ruff, Rust formatting, strict Clippy, 46 Rust tests, and 317
 normal Python tests pass; one external-oracle test is deselected normally.
 
+Unit-15 source gate: general-symmetry structure-factor, isotropic displacement,
+integrated-intensity, cell/scattering/position derivative, and monochromatic
+unpolarized Bragg--Brentano integrated LP conventions are frozen in
+`docs/structural-intensities.md`. The document also fixes multiplicity,
+preferred-orientation and scale ownership, special-position derivative scope,
+parameter ordering, fused execution, and independent/oracle validation
+boundaries before the kernel is changed.
+
 ## Cross-cutting validation matrix
 
 Every numerical implementation unit must cover this matrix where applicable:
