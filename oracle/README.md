@@ -23,13 +23,17 @@ it to this project's Python environment.
 ## Fixture generation
 
 `fixtures/schema.json` defines fixture format version 1. The committed
-`symmetric_pseudo_voigt_v1` fixture contains three isolated component-width
-cases and one overlapping two-peak pattern produced by the pinned private
-`GSASIIpwd.getPsVoigt` probe. `minimal_cw_histogram_v1` is generated through the
-public scripting API and contains `X`, `Ycalc`, background, and a documented
-15-column powder reflection list for a deterministic synthetic phase. Manifests
-record array hashes, units, generator hash, exact GSAS-II revision/tag,
-Python/NumPy versions, and platform.
+`symmetric_pseudo_voigt_v1` fixture contains narrow and broad Gaussian-dominant,
+mixed, and Lorentzian-dominant cases plus one overlapping two-peak pattern. The
+pinned private `GSASIIpwd.getPsVoigt` and `getdPsVoigt` probes provide values and
+component-width/position derivatives. The generator converts centidegree
+density, Gaussian variance, Lorentzian FWHM, and the probe's reversed position
+derivative sign into the public degree/FWHM convention documented in
+`docs/tch-profile.md`. `minimal_cw_histogram_v1` is generated through the public
+scripting API and contains `X`, `Ycalc`, background, and a documented 15-column
+powder reflection list for a deterministic synthetic phase. Manifests record
+array hashes, units, generator hash, exact GSAS-II revision/tag, Python/NumPy
+versions, and platform.
 
 Generation is deliberately separate from the normal package: the script imports
 GSAS-II and NumPy, but never imports `rietveld`. Run it with GSAS-II's Python:

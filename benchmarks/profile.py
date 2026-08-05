@@ -10,7 +10,7 @@ from collections.abc import Callable
 from typing import Any
 
 import numpy as np
-from rietveld import _core, accumulate
+from rietveld import _core, accumulate, accumulate_tch
 
 
 def parse_args() -> argparse.Namespace:
@@ -76,11 +76,24 @@ def main() -> None:
     intensities = 100.0 + index % 31
     fwhms = 0.03 + (index % 7) * 0.002
     etas = 0.2 + (index % 5) * 0.1
+    gaussian_fwhms = 0.02 + (index % 7) * 0.002
+    lorentzian_fwhms = 0.01 + (index % 5) * 0.002
 
     support_fwhm = 20.0
     lower = np.searchsorted(x, positions - support_fwhm * fwhms, side="left")
     upper = np.searchsorted(x, positions + support_fwhm * fwhms, side="right")
     active_peak_samples = int(np.sum(upper - lower))
+    tch_fwhms = (
+        gaussian_fwhms**5
+        + 2.69269 * gaussian_fwhms**4 * lorentzian_fwhms
+        + 2.42843 * gaussian_fwhms**3 * lorentzian_fwhms**2
+        + 4.47163 * gaussian_fwhms**2 * lorentzian_fwhms**3
+        + 0.07842 * gaussian_fwhms * lorentzian_fwhms**4
+        + lorentzian_fwhms**5
+    ) ** 0.2
+    tch_lower = np.searchsorted(x, positions - support_fwhm * tch_fwhms, side="left")
+    tch_upper = np.searchsorted(x, positions + support_fwhm * tch_fwhms, side="right")
+    tch_active_peak_samples = int(np.sum(tch_upper - tch_lower))
 
     call_arguments = (x, positions, intensities, fwhms, etas, support_fwhm)
     values, values_timings = measure(
@@ -114,6 +127,18 @@ def main() -> None:
         warmups=arguments.warmups,
         repetitions=arguments.repetitions,
     )
+    tch_result, tch_timings = measure(
+        lambda: accumulate_tch(
+            x,
+            positions,
+            intensities,
+            gaussian_fwhms,
+            lorentzian_fwhms,
+            support_fwhm=support_fwhm,
+        ),
+        warmups=arguments.warmups,
+        repetitions=arguments.repetitions,
+    )
 
     input_bytes = sum(
         array.nbytes for array in (x, positions, intensities, fwhms, etas)
@@ -123,7 +148,7 @@ def main() -> None:
     print(f"native_build_mode={_core.BUILD_MODE} native_module={_core.__file__}")
     print(
         f"peaks={count} samples={x.size} active_peak_samples={active_peak_samples} "
-        f"support_fwhm={support_fwhm:g}"
+        f"tch_active_peak_samples={tch_active_peak_samples} support_fwhm={support_fwhm:g}"
     )
     print(f"input_mb={input_bytes / 1e6:.3f} repetitions={arguments.repetitions}")
     report_case("values_only", values.nbytes, values_timings)
@@ -136,6 +161,11 @@ def main() -> None:
         "dense_jacobian",
         dense_result.y.nbytes + dense_result.jacobian.nbytes,
         dense_timings,
+    )
+    report_case(
+        "tch_support_jacobian",
+        tch_result.y.nbytes + tch_result.derivatives.local.nbytes,
+        tch_timings,
     )
 
 

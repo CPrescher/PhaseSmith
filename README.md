@@ -7,6 +7,8 @@ computed during fused peak accumulation.
 
 The architecture and roadmap are in [PROJECT_BRIEF.md](PROJECT_BRIEF.md); the
 equations and parameter conventions are in [docs/equations.md](docs/equations.md).
+The component-width TCH transform and chain-rule derivatives are documented in
+[docs/tch-profile.md](docs/tch-profile.md).
 
 ## Development
 
@@ -47,6 +49,11 @@ print(result.y.shape, result.derivatives.local.values.shape)
 dense = result.derivatives.local.to_dense(result.y.size)
 print(dense.shape)  # (peak, parameter, sample)
 ```
+
+Use `profile_tch` or `accumulate_tch` when Gaussian and Lorentzian component
+FWHMs are the direct inputs. Explicit `tch_shape_from_gaussian_sigma` and
+`profile_tch_from_gaussian_sigma` helpers are provided when Gaussian width is a
+standard deviation; width conventions are never inferred.
 
 GSAS-II is used only as the optional pinned validation oracle described in
 [`oracle/README.md`](oracle/README.md).

@@ -261,7 +261,7 @@ allocation arithmetic, and deterministic peak-order summation.
 
 ## Implementation unit 2: GSAS-compatible TCH symmetric pseudo-Voigt
 
-Status: next.
+Status: complete (2026-08-05).
 
 ### Goal
 
@@ -321,7 +321,18 @@ used.
 The component-width API matches the pinned oracle within documented tolerances,
 and all chain-rule derivatives pass finite differences away from support edges.
 
+Review result: the Rust and independent NumPy transforms use the published
+fifth-order/cubic equations with analytical component-width derivatives and a
+scale-normalized evaluation that avoids intermediate overflow and underflow.
+The pinned fixture covers narrow and broad Gaussian-dominant, mixed, and
+Lorentzian-dominant profiles; the maximum derivative error is below `6e-5` of
+the corresponding oracle derivative peak magnitude after documented unit/sign
+conversion. The 200-peak release benchmark evaluates the support Jacobian in
+about 0.103 ms end to end through Python on the recorded development machine.
+
 ## Implementation unit 3: constant-wavelength U/V/W/X/Y broadening
+
+Status: next.
 
 ### Goal
 

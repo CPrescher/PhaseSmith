@@ -4,8 +4,8 @@ use std::hint::black_box;
 
 use criterion::{BenchmarkId, Criterion, Throughput, criterion_group, criterion_main};
 use rietveld_core::{
-    GridView, PeakBatchView, SupportPolicy, accumulate_batch, accumulate_values_batch,
-    symmetric_pseudo_voigt,
+    GridView, PeakBatchView, SupportPolicy, TchPeakBatchView, TchShape, TchWidths,
+    accumulate_batch, accumulate_tch_batch, accumulate_values_batch, symmetric_pseudo_voigt,
 };
 
 fn scalar_profile(criterion: &mut Criterion) {
@@ -62,5 +62,46 @@ fn fused_accumulator(criterion: &mut Criterion) {
     group.finish();
 }
 
-criterion_group!(benches, scalar_profile, fused_accumulator);
+fn tch_accumulator(criterion: &mut Criterion) {
+    criterion.bench_function("tch/width_transform", |bencher| {
+        bencher.iter(|| {
+            TchShape::from_component_fwhm(TchWidths {
+                gaussian_fwhm: black_box(0.071),
+                lorentzian_fwhm: black_box(0.023),
+            })
+            .expect("valid benchmark widths")
+        });
+    });
+
+    let x: Vec<f64> = (0..5_001)
+        .map(|index| 10.0 + f64::from(index) * 0.02)
+        .collect();
+    let positions: Vec<f64> = (0..200)
+        .map(|index| 10.1 + f64::from(index) * 0.49)
+        .collect();
+    let intensities: Vec<f64> = (0..200)
+        .map(|index| 100.0 + f64::from(index % 31))
+        .collect();
+    let gaussian_fwhms: Vec<f64> = (0..200)
+        .map(|index| 0.02 + f64::from(index % 7) * 0.002)
+        .collect();
+    let lorentzian_fwhms: Vec<f64> = (0..200)
+        .map(|index| 0.01 + f64::from(index % 5) * 0.002)
+        .collect();
+    let grid = GridView::new(&x).expect("benchmark grid");
+    let peaks = TchPeakBatchView::new(&positions, &intensities, &gaussian_fwhms, &lorentzian_fwhms)
+        .expect("benchmark TCH peaks");
+    let support = SupportPolicy::FwhmMultiple(20.0);
+    let mut group = criterion.benchmark_group("tch_accumulator");
+    group.throughput(Throughput::Elements(positions.len() as u64));
+    group.bench_function(BenchmarkId::new("support_jacobian", x.len()), |bencher| {
+        bencher.iter(|| {
+            accumulate_tch_batch(black_box(grid), black_box(peaks), black_box(support))
+                .expect("valid benchmark")
+        });
+    });
+    group.finish();
+}
+
+criterion_group!(benches, scalar_profile, fused_accumulator, tch_accumulator);
 criterion_main!(benches);

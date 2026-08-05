@@ -4,6 +4,8 @@ use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::mem::size_of;
 
+use crate::tch::TchError;
+
 const FOUR_LN_2: f64 = 4.0 * std::f64::consts::LN_2;
 const GAUSSIAN_NORMALIZATION: f64 = 0.939_437_278_699_651_3; // sqrt(4 ln(2) / pi)
 
@@ -130,20 +132,20 @@ pub struct SupportRange {
 }
 
 impl SupportPolicy {
-    fn validate(self) -> Result<(), ProfileError> {
+    pub(crate) fn validate(self) -> Result<(), ProfileError> {
         match self {
             Self::FwhmMultiple(multiple) if multiple.is_finite() && multiple > 0.0 => Ok(()),
             Self::FwhmMultiple(_) => Err(ProfileError::InvalidSupport),
         }
     }
 
-    fn range(self, peak: Peak) -> SupportRange {
+    pub(crate) fn range(self, position: f64, fwhm: f64) -> SupportRange {
         match self {
             Self::FwhmMultiple(multiple) => {
-                let radius = multiple * peak.fwhm;
+                let radius = multiple * fwhm;
                 SupportRange {
-                    left: peak.position - radius,
-                    right: peak.position + radius,
+                    left: position - radius,
+                    right: position + radius,
                 }
             }
         }
@@ -326,6 +328,15 @@ pub enum ProfileError {
     InvalidSupport,
     /// Peak parameter arrays do not all have the same length.
     PeakLengthMismatch,
+    /// TCH peak parameter arrays do not all have the same length.
+    TchPeakLengthMismatch,
+    /// A TCH peak has invalid component widths.
+    InvalidTchPeak {
+        /// Index of the invalid peak.
+        peak: usize,
+        /// Component-width validation failure.
+        reason: TchError,
+    },
     /// A Jacobian allocation would overflow `usize`.
     AllocationOverflow,
     /// A stored support block does not fit the requested dense grid.
@@ -356,6 +367,13 @@ impl Display for ProfileError {
                 formatter,
                 "positions, intensities, fwhms, and etas must have equal length"
             ),
+            Self::TchPeakLengthMismatch => write!(
+                formatter,
+                "positions, intensities, Gaussian FWHMs, and Lorentzian FWHMs must have equal length"
+            ),
+            Self::InvalidTchPeak { peak, reason } => {
+                write!(formatter, "TCH peak {peak} has invalid widths: {reason}")
+            }
             Self::AllocationOverflow => write!(formatter, "requested Jacobian is too large"),
             Self::InconsistentSupport => {
                 write!(
@@ -469,7 +487,7 @@ pub fn accumulate_values_batch(
     let mut y = zeroed_f64_vec(x.len())?;
     for peak_index in 0..peaks.len() {
         let peak = peaks.peak(peak_index);
-        let range = support.range(peak);
+        let range = support.range(peak.position, peak.fwhm);
         let lower = x.partition_point(|value| *value < range.left);
         let upper = x.partition_point(|value| *value <= range.right);
         for sample_index in lower..upper {
@@ -528,7 +546,7 @@ fn accumulate_source(
 
     for peak_index in 0..peak_count {
         let peak = peak_at(peak_index);
-        let range = support.range(peak);
+        let range = support.range(peak.position, peak.fwhm);
         let lower = x.partition_point(|value| *value < range.left);
         let upper = x.partition_point(|value| *value <= range.right);
         let next_offset = offsets[peak_index]
@@ -615,7 +633,7 @@ fn checked_matrix_len(rows: usize, columns: usize) -> Result<usize, ProfileError
     Ok(length)
 }
 
-fn zeroed_f64_vec(length: usize) -> Result<Vec<f64>, ProfileError> {
+pub(crate) fn zeroed_f64_vec(length: usize) -> Result<Vec<f64>, ProfileError> {
     checked_matrix_len(length, 1)?;
     let mut values = Vec::new();
     values

@@ -50,7 +50,17 @@
       "additionalProperties": false,
       "required": ["api", "private_probe", "adapter_version", "native_units"],
       "properties": {
-        "api": { "type": "string" },
+        "api": {
+          "oneOf": [
+            { "type": "string" },
+            {
+              "type": "array",
+              "minItems": 1,
+              "items": { "type": "string" },
+              "uniqueItems": true
+            }
+          ]
+        },
         "private_probe": { "type": "boolean" },
         "adapter_version": { "type": "integer", "minimum": 1 },
         "native_units": { "type": "object" }

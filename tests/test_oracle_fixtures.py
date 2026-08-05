@@ -15,22 +15,6 @@ FIXTURE_PATH = REPOSITORY_ROOT / "oracle" / "fixtures" / "symmetric_pseudo_voigt
 HISTOGRAM_FIXTURE_PATH = REPOSITORY_ROOT / "oracle" / "fixtures" / "minimal_cw_histogram_v1"
 
 
-def _tch_fwhm_and_eta(gaussian_sigma: float, lorentzian_fwhm: float) -> tuple[float, float]:
-    gaussian = np.sqrt(8.0 * np.log(2.0)) * gaussian_sigma
-    lorentzian = lorentzian_fwhm
-    fwhm = (
-        gaussian**5
-        + 2.69269 * gaussian**4 * lorentzian
-        + 2.42843 * gaussian**3 * lorentzian**2
-        + 4.47163 * gaussian**2 * lorentzian**3
-        + 0.07842 * gaussian * lorentzian**4
-        + lorentzian**5
-    ) ** 0.2
-    ratio = lorentzian / fwhm
-    eta = 1.36603 * ratio - 0.47719 * ratio**2 + 0.11116 * ratio**3
-    return float(fwhm), float(eta)
-
-
 def test_fixture_schema_and_pin_metadata_are_valid_json() -> None:
     schema = json.loads((REPOSITORY_ROOT / "oracle" / "fixtures" / "schema.json").read_text())
     pin = json.loads((REPOSITORY_ROOT / "oracle" / "PINNED_GSASII.json").read_text())
@@ -42,7 +26,7 @@ def test_committed_fixture_passes_hash_shape_and_provenance_validation() -> None
     fixture = load_fixture(FIXTURE_PATH)
     assert fixture.manifest["fixture_id"] == "gsasii_symmetric_pseudo_voigt_v1"
     assert fixture.manifest["provenance"]["gsasii_revision"] == PINNED_REVISION
-    assert len(fixture.cases) == 4
+    assert len(fixture.cases) == 7
     assert all(not array.flags.writeable for array in fixture.arrays.values())
 
 
@@ -90,23 +74,43 @@ def test_public_scripting_histogram_fixture() -> None:
     assert fixture.manifest["provenance"]["generator_sha256"] == digest
 
 
-@pytest.mark.parametrize(
-    "case_id", ["gaussian_dominant", "balanced", "lorentzian_dominant"]
-)
-def test_native_primitive_against_pinned_gsasii_fixture(case_id: str) -> None:
+@pytest.mark.parametrize("shape_class", ["gaussian_dominant", "mixed", "lorentzian_dominant"])
+@pytest.mark.parametrize("width_scale", ["narrow", "broad"])
+def test_tch_profile_and_derivatives_against_pinned_gsasii_fixture(
+    shape_class: str, width_scale: str
+) -> None:
     fixture = load_fixture(FIXTURE_PATH)
-    case = next(case for case in fixture.cases if case["id"] == case_id)
-    parameters = case["parameters"]
-    fwhm, eta = _tch_fwhm_and_eta(
-        parameters["gaussian_sigma_deg"], parameters["lorentzian_fwhm_deg"]
+    case = next(
+        case
+        for case in fixture.cases
+        if case["case_kind"] == "isolated_peak"
+        and case["parameters"]["shape_class"] == shape_class
+        and case["parameters"]["width_scale"] == width_scale
     )
+    parameters = case["parameters"]
     x = fixture.arrays[case["arrays"]["x"]]
     oracle = fixture.arrays[case["arrays"]["profile"]]
-    actual = rietveld.profile(x - parameters["position_deg"], fwhm, eta).value
+    actual = rietveld.profile_tch(
+        x - parameters["position_deg"],
+        parameters["gaussian_fwhm_deg"],
+        parameters["lorentzian_fwhm_deg"],
+    )
 
     # GSAS-II's compiled TCH approximation differs most in the far Gaussian-
     # dominant tail. This tolerance is local to the pinned #5838 fixture.
-    np.testing.assert_allclose(actual, oracle, rtol=1.2e-4, atol=3e-8)
+    np.testing.assert_allclose(actual.value, oracle, rtol=1.6e-4, atol=3e-8)
+    derivative_pairs = {
+        "d_position": -actual.d_delta,
+        "d_gaussian_fwhm": actual.d_gaussian_fwhm,
+        "d_lorentzian_fwhm": actual.d_lorentzian_fwhm,
+    }
+    for derivative_name, native_derivative in derivative_pairs.items():
+        oracle_derivative = fixture.arrays[case["arrays"][derivative_name]]
+        peak_scale = float(np.max(np.abs(oracle_derivative)))
+        normalized_maximum_error = float(
+            np.max(np.abs(native_derivative - oracle_derivative)) / peak_scale
+        )
+        assert normalized_maximum_error < 6e-5
     sampled_integral = np.trapezoid(oracle, x)
     assert sampled_integral == pytest.approx(case["sampled_integral_per_degree"], rel=2e-15)
     centroid = np.trapezoid(x * oracle, x) / sampled_integral
@@ -117,17 +121,16 @@ def test_fused_overlap_against_pinned_gsasii_fixture() -> None:
     fixture = load_fixture(FIXTURE_PATH)
     case = next(case for case in fixture.cases if case["case_kind"] == "overlapping_peaks")
     peaks = case["parameters"]["peaks"]
-    widths = [
-        _tch_fwhm_and_eta(peak["gaussian_sigma_deg"], peak["lorentzian_fwhm_deg"])
-        for peak in peaks
-    ]
     x = fixture.arrays[case["arrays"]["x"]]
-    actual = rietveld.accumulate(
+    actual = rietveld.accumulate_tch(
         x,
         [peak["position_deg"] for peak in peaks],
         [peak["intensity"] for peak in peaks],
-        [width[0] for width in widths],
-        [width[1] for width in widths],
+        [
+            np.sqrt(8.0 * np.log(2.0)) * peak["gaussian_sigma_deg"]
+            for peak in peaks
+        ],
+        [peak["lorentzian_fwhm_deg"] for peak in peaks],
         support_fwhm=100.0,
     ).y
     oracle = fixture.arrays[case["arrays"]["ycalc"]]

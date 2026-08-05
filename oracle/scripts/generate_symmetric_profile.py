@@ -23,6 +23,7 @@ import numpy as np
 ARCHIVE_NAME = "data.npz"
 MANIFEST_NAME = "manifest.json"
 ADAPTER_VERSION = 1
+GAUSSIAN_FWHM_PER_SIGMA = np.sqrt(8.0 * np.log(2.0))
 
 
 def sha256_bytes(value: bytes) -> str:
@@ -81,6 +82,8 @@ def isolated_case(
     lorentzian_fwhm_deg: float,
     half_span_deg: float,
     sample_count: int,
+    shape_class: str,
+    width_scale: str,
 ) -> tuple[dict[str, Any], dict[str, np.ndarray]]:
     """Evaluate one GSAS-II simple pseudo-Voigt case."""
 
@@ -98,22 +101,59 @@ def isolated_case(
         gamma_centidegrees,
         x,
     )
+    _derivative_profile, derivative_position, derivative_sigma2, derivative_gamma = (
+        profile_module.getdPsVoigt(
+            position_deg,
+            sigma_centidegrees_squared,
+            gamma_centidegrees,
+            x,
+        )
+    )
     profile_per_degree = 100.0 * np.asarray(native_profile, dtype=np.float64)
+    gaussian_fwhm_deg = GAUSSIAN_FWHM_PER_SIGMA * gaussian_sigma_deg
+    d_sigma2_d_gaussian_fwhm = (
+        20_000.0 * gaussian_fwhm_deg / GAUSSIAN_FWHM_PER_SIGMA**2
+    )
+    d_position = -100.0 * np.asarray(derivative_position, dtype=np.float64)
+    d_gaussian_fwhm = (
+        100.0
+        * np.asarray(derivative_sigma2, dtype=np.float64)
+        * d_sigma2_d_gaussian_fwhm
+    )
+    d_lorentzian_fwhm = 10_000.0 * np.asarray(derivative_gamma, dtype=np.float64)
     x_key = f"{case_id}__x_deg"
     profile_key = f"{case_id}__profile_per_deg"
+    position_key = f"{case_id}__d_position"
+    gaussian_key = f"{case_id}__d_gaussian_fwhm"
+    lorentzian_key = f"{case_id}__d_lorentzian_fwhm"
     case = {
         "id": case_id,
         "case_kind": "isolated_peak",
-        "arrays": {"x": x_key, "profile": profile_key},
+        "arrays": {
+            "x": x_key,
+            "profile": profile_key,
+            "d_position": position_key,
+            "d_gaussian_fwhm": gaussian_key,
+            "d_lorentzian_fwhm": lorentzian_key,
+        },
         "parameters": {
             "position_deg": position_deg,
             "gaussian_sigma_deg": gaussian_sigma_deg,
+            "gaussian_fwhm_deg": gaussian_fwhm_deg,
             "lorentzian_fwhm_deg": lorentzian_fwhm_deg,
+            "shape_class": shape_class,
+            "width_scale": width_scale,
         },
         "gsasii_reported_integral": float(native_integral),
         "sampled_integral_per_degree": float(np.trapezoid(profile_per_degree, x)),
     }
-    return case, {x_key: x, profile_key: profile_per_degree}
+    return case, {
+        x_key: x,
+        profile_key: profile_per_degree,
+        position_key: d_position,
+        gaussian_key: d_gaussian_fwhm,
+        lorentzian_key: d_lorentzian_fwhm,
+    }
 
 
 def overlapping_case(profile_module: Any) -> tuple[dict[str, Any], dict[str, np.ndarray]]:
@@ -166,6 +206,15 @@ def array_descriptor(name: str, array: np.ndarray) -> dict[str, Any]:
     elif name.endswith("__profile_per_deg"):
         unit = "inverse_degree"
         description = "GSAS-II normalized profile converted from inverse centidegrees"
+    elif name.endswith("__d_position"):
+        unit = "inverse_degree_squared"
+        description = "Profile derivative with respect to peak position in degrees"
+    elif name.endswith("__d_gaussian_fwhm"):
+        unit = "inverse_degree_squared"
+        description = "Profile derivative with respect to Gaussian FWHM in degrees"
+    elif name.endswith("__d_lorentzian_fwhm"):
+        unit = "inverse_degree_squared"
+        description = "Profile derivative with respect to Lorentzian FWHM in degrees"
     else:
         unit = "intensity_per_degree"
         description = "Summed calculated profile"
@@ -200,28 +249,64 @@ def write_fixture(
 
     case_specs = [
         {
-            "case_id": "gaussian_dominant",
+            "case_id": "gaussian_dominant_narrow",
             "position_deg": 20.0,
-            "gaussian_sigma_deg": 0.025,
-            "lorentzian_fwhm_deg": 0.001,
-            "half_span_deg": 0.8,
+            "gaussian_sigma_deg": 0.006,
+            "lorentzian_fwhm_deg": 0.0003,
+            "half_span_deg": 0.25,
+            "sample_count": 3_001,
+            "shape_class": "gaussian_dominant",
+            "width_scale": "narrow",
+        },
+        {
+            "case_id": "gaussian_dominant_broad",
+            "position_deg": 25.0,
+            "gaussian_sigma_deg": 0.06,
+            "lorentzian_fwhm_deg": 0.002,
+            "half_span_deg": 2.0,
             "sample_count": 4_001,
+            "shape_class": "gaussian_dominant",
+            "width_scale": "broad",
         },
         {
-            "case_id": "balanced",
+            "case_id": "mixed_narrow",
             "position_deg": 32.1,
-            "gaussian_sigma_deg": 0.031,
-            "lorentzian_fwhm_deg": 0.023,
-            "half_span_deg": 1.0,
-            "sample_count": 5_001,
+            "gaussian_sigma_deg": 0.008,
+            "lorentzian_fwhm_deg": 0.012,
+            "half_span_deg": 0.4,
+            "sample_count": 3_001,
+            "shape_class": "mixed",
+            "width_scale": "narrow",
         },
         {
-            "case_id": "lorentzian_dominant",
+            "case_id": "mixed_broad",
+            "position_deg": 45.2,
+            "gaussian_sigma_deg": 0.07,
+            "lorentzian_fwhm_deg": 0.12,
+            "half_span_deg": 3.0,
+            "sample_count": 5_001,
+            "shape_class": "mixed",
+            "width_scale": "broad",
+        },
+        {
+            "case_id": "lorentzian_dominant_narrow",
             "position_deg": 75.0,
-            "gaussian_sigma_deg": 0.008,
-            "lorentzian_fwhm_deg": 0.05,
-            "half_span_deg": 1.5,
-            "sample_count": 6_001,
+            "gaussian_sigma_deg": 0.001,
+            "lorentzian_fwhm_deg": 0.018,
+            "half_span_deg": 0.5,
+            "sample_count": 3_001,
+            "shape_class": "lorentzian_dominant",
+            "width_scale": "narrow",
+        },
+        {
+            "case_id": "lorentzian_dominant_broad",
+            "position_deg": 82.0,
+            "gaussian_sigma_deg": 0.01,
+            "lorentzian_fwhm_deg": 0.15,
+            "half_span_deg": 4.0,
+            "sample_count": 5_001,
+            "shape_class": "lorentzian_dominant",
+            "width_scale": "broad",
         },
     ]
     cases: list[dict[str, Any]] = []
@@ -254,7 +339,7 @@ def write_fixture(
             "generator_sha256": sha256_file(script_path),
         },
         "source": {
-            "api": "GSASII.GSASIIpwd.getPsVoigt",
+            "api": ["GSASII.GSASIIpwd.getPsVoigt", "GSASII.GSASIIpwd.getdPsVoigt"],
             "private_probe": True,
             "adapter_version": ADAPTER_VERSION,
             "native_units": {
@@ -262,6 +347,7 @@ def write_fixture(
                 "gaussian_width": "centidegree_squared_variance",
                 "lorentzian_width": "centidegree_fwhm",
                 "profile_density": "inverse_centidegree",
+                "position_derivative_sign": "opposite_peak_position_derivative",
             },
         },
         "input": {

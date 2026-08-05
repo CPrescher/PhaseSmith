@@ -1,66 +1,306 @@
 {
   "archive": {
     "file": "data.npz",
-    "sha256": "6691afd7cbce4c5edb2c1b9afd6b33439a01a5c3be81de0efd909316f48ae584"
+    "sha256": "909f2563bf230b7eb329631e59fca40454004a12bc353f1034621723171a41ac"
   },
   "arrays": {
-    "balanced__profile_per_deg": {
+    "gaussian_dominant_broad__d_gaussian_fwhm": {
+      "description": "Profile derivative with respect to Gaussian FWHM in degrees",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "b051ef9fd99dd62fb7dbfceb41c9a696ca1ca2344c9aa409319fad02d4ced7bc",
+      "shape": [
+        4001
+      ],
+      "unit": "inverse_degree_squared"
+    },
+    "gaussian_dominant_broad__d_lorentzian_fwhm": {
+      "description": "Profile derivative with respect to Lorentzian FWHM in degrees",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "f1a1ac1464ee98149aad512361c567463ff3f7f6056d4e91cebd7203ae9b47cf",
+      "shape": [
+        4001
+      ],
+      "unit": "inverse_degree_squared"
+    },
+    "gaussian_dominant_broad__d_position": {
+      "description": "Profile derivative with respect to peak position in degrees",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "430c980bacbc47d68af359490f98f9a1a1b64f33251c0f18f4f65e7d8007ffe9",
+      "shape": [
+        4001
+      ],
+      "unit": "inverse_degree_squared"
+    },
+    "gaussian_dominant_broad__profile_per_deg": {
       "description": "GSAS-II normalized profile converted from inverse centidegrees",
       "dtype": "float64",
       "finite": true,
-      "sha256": "a94eb636d0fe2721bf308bc5e97af78b88afa170ee80c796a7a53c9129d6e866",
-      "shape": [
-        5001
-      ],
-      "unit": "inverse_degree"
-    },
-    "balanced__x_deg": {
-      "description": "Profile sampling coordinates",
-      "dtype": "float64",
-      "finite": true,
-      "sha256": "753e0b9f2e71822bc5a9c19b071dc285ceca7e024662910516f9ba8bead59aa4",
-      "shape": [
-        5001
-      ],
-      "unit": "degree_2theta"
-    },
-    "gaussian_dominant__profile_per_deg": {
-      "description": "GSAS-II normalized profile converted from inverse centidegrees",
-      "dtype": "float64",
-      "finite": true,
-      "sha256": "2f2c204a2795567bfbef7df294dcefdfd1d350a1839ee089415f4b3516ef6571",
+      "sha256": "f6f497dac5aeb927cc807f07f0c16679ce01693eae6783e8c25fbbd6b9e5add7",
       "shape": [
         4001
       ],
       "unit": "inverse_degree"
     },
-    "gaussian_dominant__x_deg": {
+    "gaussian_dominant_broad__x_deg": {
       "description": "Profile sampling coordinates",
       "dtype": "float64",
       "finite": true,
-      "sha256": "adc99e992e272580c0a47320011935fb3d099c23386660ea3e46d2c6a09e711e",
+      "sha256": "9ab426f99d0420a0ee44285a8985a174ae2f150e10ab85eeddb8a0d10348cfc0",
       "shape": [
         4001
       ],
       "unit": "degree_2theta"
     },
-    "lorentzian_dominant__profile_per_deg": {
+    "gaussian_dominant_narrow__d_gaussian_fwhm": {
+      "description": "Profile derivative with respect to Gaussian FWHM in degrees",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "40c0842568ef39c789b593476cee3b3a24ebcbf700724630154a9ecc60011bf7",
+      "shape": [
+        3001
+      ],
+      "unit": "inverse_degree_squared"
+    },
+    "gaussian_dominant_narrow__d_lorentzian_fwhm": {
+      "description": "Profile derivative with respect to Lorentzian FWHM in degrees",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "04387be45f9eae0eed1ec9f956d7649c7d7f9ac0133e99a189de3972bd8e1e54",
+      "shape": [
+        3001
+      ],
+      "unit": "inverse_degree_squared"
+    },
+    "gaussian_dominant_narrow__d_position": {
+      "description": "Profile derivative with respect to peak position in degrees",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "c94d2840b857e891ae989dd1ce05fb76d4e7fe80078ed011682271268f30c76c",
+      "shape": [
+        3001
+      ],
+      "unit": "inverse_degree_squared"
+    },
+    "gaussian_dominant_narrow__profile_per_deg": {
       "description": "GSAS-II normalized profile converted from inverse centidegrees",
       "dtype": "float64",
       "finite": true,
-      "sha256": "bb0ef97eb2bf687d644ed5b72a23c4d0aa0e5b93bb7872ccd03166f173e741aa",
+      "sha256": "87beacd17df5151833d392ba2363783371a86686c1c0330986a1fc837ffe32e6",
       "shape": [
-        6001
+        3001
       ],
       "unit": "inverse_degree"
     },
-    "lorentzian_dominant__x_deg": {
+    "gaussian_dominant_narrow__x_deg": {
       "description": "Profile sampling coordinates",
       "dtype": "float64",
       "finite": true,
-      "sha256": "659256928a899cb5e51936b7b0be3bb15ad313ea54826259afb34db1fddc5d7e",
+      "sha256": "f87d753e8f427ac68c1540ca4c5a48aea0c6733806d62b78dae2cf4db0bf694d",
       "shape": [
-        6001
+        3001
+      ],
+      "unit": "degree_2theta"
+    },
+    "lorentzian_dominant_broad__d_gaussian_fwhm": {
+      "description": "Profile derivative with respect to Gaussian FWHM in degrees",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "44b97f5bbc46ef37247abe9effbd104188a7ab479e8f9d232b4885abfcc52dc6",
+      "shape": [
+        5001
+      ],
+      "unit": "inverse_degree_squared"
+    },
+    "lorentzian_dominant_broad__d_lorentzian_fwhm": {
+      "description": "Profile derivative with respect to Lorentzian FWHM in degrees",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "591da1d69df0d6e090207fa4741a5845632040dc7292bb7f7d18bdf3caada676",
+      "shape": [
+        5001
+      ],
+      "unit": "inverse_degree_squared"
+    },
+    "lorentzian_dominant_broad__d_position": {
+      "description": "Profile derivative with respect to peak position in degrees",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "734811545ad26dff681252cff07f41005accd5922342a39b3c611b637c26d1cd",
+      "shape": [
+        5001
+      ],
+      "unit": "inverse_degree_squared"
+    },
+    "lorentzian_dominant_broad__profile_per_deg": {
+      "description": "GSAS-II normalized profile converted from inverse centidegrees",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "35fa1553a48adf0c4465b6d5c987d770eaed1107bda460086c5e027e79f634b9",
+      "shape": [
+        5001
+      ],
+      "unit": "inverse_degree"
+    },
+    "lorentzian_dominant_broad__x_deg": {
+      "description": "Profile sampling coordinates",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "dcacf061f3f6365de52e5aecfb6263cb2a58a7813192ec82768142c5a7830635",
+      "shape": [
+        5001
+      ],
+      "unit": "degree_2theta"
+    },
+    "lorentzian_dominant_narrow__d_gaussian_fwhm": {
+      "description": "Profile derivative with respect to Gaussian FWHM in degrees",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "60e563c04dd96c300c694aa4b323340a494485abe7558506629091fe6d3410c3",
+      "shape": [
+        3001
+      ],
+      "unit": "inverse_degree_squared"
+    },
+    "lorentzian_dominant_narrow__d_lorentzian_fwhm": {
+      "description": "Profile derivative with respect to Lorentzian FWHM in degrees",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "6c161a8f6713f649d739244c939319ad0a8c4482f49d137b0c7adb608ffedf91",
+      "shape": [
+        3001
+      ],
+      "unit": "inverse_degree_squared"
+    },
+    "lorentzian_dominant_narrow__d_position": {
+      "description": "Profile derivative with respect to peak position in degrees",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "ba5c1f2e00536f62361d70450dea9e68447faa6029dc75c8dc0b0f760c3b37b1",
+      "shape": [
+        3001
+      ],
+      "unit": "inverse_degree_squared"
+    },
+    "lorentzian_dominant_narrow__profile_per_deg": {
+      "description": "GSAS-II normalized profile converted from inverse centidegrees",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "5898d9b9f2571b0e7811c64f2d4efd7556830d8050ac151c0776444db62e7e26",
+      "shape": [
+        3001
+      ],
+      "unit": "inverse_degree"
+    },
+    "lorentzian_dominant_narrow__x_deg": {
+      "description": "Profile sampling coordinates",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "bb52d3618206f147730a42d63e3dcb74fcff6dc0f9841cec3c643127a1de0871",
+      "shape": [
+        3001
+      ],
+      "unit": "degree_2theta"
+    },
+    "mixed_broad__d_gaussian_fwhm": {
+      "description": "Profile derivative with respect to Gaussian FWHM in degrees",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "dcfdf2eb687ebcab124c574b664fe40036bc2d2a88fdaca137e46a675f605ab7",
+      "shape": [
+        5001
+      ],
+      "unit": "inverse_degree_squared"
+    },
+    "mixed_broad__d_lorentzian_fwhm": {
+      "description": "Profile derivative with respect to Lorentzian FWHM in degrees",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "ee4210b1314e2bb6c5d6341ad86b06c05e1fabddd68cbcb6cb11b56ed3557837",
+      "shape": [
+        5001
+      ],
+      "unit": "inverse_degree_squared"
+    },
+    "mixed_broad__d_position": {
+      "description": "Profile derivative with respect to peak position in degrees",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "6971a92df9fd195601e54bd6606dc12670572a54fce16f4b00dde75c345828e5",
+      "shape": [
+        5001
+      ],
+      "unit": "inverse_degree_squared"
+    },
+    "mixed_broad__profile_per_deg": {
+      "description": "GSAS-II normalized profile converted from inverse centidegrees",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "dadff9f56b1a8e031f26d875fe9773f6cf235c6648b21a68fbab043a0d0c6749",
+      "shape": [
+        5001
+      ],
+      "unit": "inverse_degree"
+    },
+    "mixed_broad__x_deg": {
+      "description": "Profile sampling coordinates",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "d301bfc682e72cc31e4a7226ce73665b427c2611a9101af09979cd430c674881",
+      "shape": [
+        5001
+      ],
+      "unit": "degree_2theta"
+    },
+    "mixed_narrow__d_gaussian_fwhm": {
+      "description": "Profile derivative with respect to Gaussian FWHM in degrees",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "f786457d74d4bea5ae5fcac2d9d03275438eb0010cb9dba8b16db19146bbc35b",
+      "shape": [
+        3001
+      ],
+      "unit": "inverse_degree_squared"
+    },
+    "mixed_narrow__d_lorentzian_fwhm": {
+      "description": "Profile derivative with respect to Lorentzian FWHM in degrees",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "7b0c27178637f04ea2945ba8a436ba92fc914d7472c967abc64c794f88a00b19",
+      "shape": [
+        3001
+      ],
+      "unit": "inverse_degree_squared"
+    },
+    "mixed_narrow__d_position": {
+      "description": "Profile derivative with respect to peak position in degrees",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "e4104122434be211b471eb23efe910f77f75c9f3adf0ef2c0a6946245da4d853",
+      "shape": [
+        3001
+      ],
+      "unit": "inverse_degree_squared"
+    },
+    "mixed_narrow__profile_per_deg": {
+      "description": "GSAS-II normalized profile converted from inverse centidegrees",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "5456cdc038c5970e7c52a9a0dfc6094eeaecd30837efe3b8d339c23f3f007534",
+      "shape": [
+        3001
+      ],
+      "unit": "inverse_degree"
+    },
+    "mixed_narrow__x_deg": {
+      "description": "Profile sampling coordinates",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "5466bae963d09403b0b1c520dce99377ac153f72c14e1767f3b23818ebe5539a",
+      "shape": [
+        3001
       ],
       "unit": "degree_2theta"
     },
@@ -88,48 +328,129 @@
   "cases": [
     {
       "arrays": {
-        "profile": "gaussian_dominant__profile_per_deg",
-        "x": "gaussian_dominant__x_deg"
+        "d_gaussian_fwhm": "gaussian_dominant_narrow__d_gaussian_fwhm",
+        "d_lorentzian_fwhm": "gaussian_dominant_narrow__d_lorentzian_fwhm",
+        "d_position": "gaussian_dominant_narrow__d_position",
+        "profile": "gaussian_dominant_narrow__profile_per_deg",
+        "x": "gaussian_dominant_narrow__x_deg"
       },
       "case_kind": "isolated_peak",
-      "gsasii_reported_integral": 0.9994604798039428,
-      "id": "gaussian_dominant",
+      "gsasii_reported_integral": 0.9994829627082208,
+      "id": "gaussian_dominant_narrow",
       "parameters": {
-        "gaussian_sigma_deg": 0.025,
-        "lorentzian_fwhm_deg": 0.001,
-        "position_deg": 20.0
+        "gaussian_fwhm_deg": 0.014128920270185696,
+        "gaussian_sigma_deg": 0.006,
+        "lorentzian_fwhm_deg": 0.0003,
+        "position_deg": 20.0,
+        "shape_class": "gaussian_dominant",
+        "width_scale": "narrow"
       },
-      "sampled_integral_per_degree": 0.9994603453601766
+      "sampled_integral_per_degree": 0.9994827821654622
     },
     {
       "arrays": {
-        "profile": "balanced__profile_per_deg",
-        "x": "balanced__x_deg"
+        "d_gaussian_fwhm": "gaussian_dominant_broad__d_gaussian_fwhm",
+        "d_lorentzian_fwhm": "gaussian_dominant_broad__d_lorentzian_fwhm",
+        "d_position": "gaussian_dominant_broad__d_position",
+        "profile": "gaussian_dominant_broad__profile_per_deg",
+        "x": "gaussian_dominant_broad__x_deg"
       },
       "case_kind": "isolated_peak",
-      "gsasii_reported_integral": 0.9908917950823903,
-      "id": "balanced",
+      "gsasii_reported_integral": 0.9995680613568693,
+      "id": "gaussian_dominant_broad",
       "parameters": {
-        "gaussian_sigma_deg": 0.031,
-        "lorentzian_fwhm_deg": 0.023,
-        "position_deg": 32.1
+        "gaussian_fwhm_deg": 0.14128920270185696,
+        "gaussian_sigma_deg": 0.06,
+        "lorentzian_fwhm_deg": 0.002,
+        "position_deg": 25.0,
+        "shape_class": "gaussian_dominant",
+        "width_scale": "broad"
       },
-      "sampled_integral_per_degree": 0.9908899763513184
+      "sampled_integral_per_degree": 0.9995679499985272
     },
     {
       "arrays": {
-        "profile": "lorentzian_dominant__profile_per_deg",
-        "x": "lorentzian_dominant__x_deg"
+        "d_gaussian_fwhm": "mixed_narrow__d_gaussian_fwhm",
+        "d_lorentzian_fwhm": "mixed_narrow__d_lorentzian_fwhm",
+        "d_position": "mixed_narrow__d_position",
+        "profile": "mixed_narrow__profile_per_deg",
+        "x": "mixed_narrow__x_deg"
       },
       "case_kind": "isolated_peak",
-      "gsasii_reported_integral": 0.989080293825823,
-      "id": "lorentzian_dominant",
+      "gsasii_reported_integral": 0.9888529203847019,
+      "id": "mixed_narrow",
       "parameters": {
+        "gaussian_fwhm_deg": 0.018838560360247596,
         "gaussian_sigma_deg": 0.008,
-        "lorentzian_fwhm_deg": 0.05,
-        "position_deg": 75.0
+        "lorentzian_fwhm_deg": 0.012,
+        "position_deg": 32.1,
+        "shape_class": "mixed",
+        "width_scale": "narrow"
       },
-      "sampled_integral_per_degree": 0.9890784719451358
+      "sampled_integral_per_degree": 0.9888492041154888
+    },
+    {
+      "arrays": {
+        "d_gaussian_fwhm": "mixed_broad__d_gaussian_fwhm",
+        "d_lorentzian_fwhm": "mixed_broad__d_lorentzian_fwhm",
+        "d_position": "mixed_broad__d_position",
+        "profile": "mixed_broad__profile_per_deg",
+        "x": "mixed_broad__x_deg"
+      },
+      "case_kind": "isolated_peak",
+      "gsasii_reported_integral": 0.985338532745093,
+      "id": "mixed_broad",
+      "parameters": {
+        "gaussian_fwhm_deg": 0.16483740315216647,
+        "gaussian_sigma_deg": 0.07,
+        "lorentzian_fwhm_deg": 0.12,
+        "position_deg": 45.2,
+        "shape_class": "mixed",
+        "width_scale": "broad"
+      },
+      "sampled_integral_per_degree": 0.9853356012131552
+    },
+    {
+      "arrays": {
+        "d_gaussian_fwhm": "lorentzian_dominant_narrow__d_gaussian_fwhm",
+        "d_lorentzian_fwhm": "lorentzian_dominant_narrow__d_lorentzian_fwhm",
+        "d_position": "lorentzian_dominant_narrow__d_position",
+        "profile": "lorentzian_dominant_narrow__profile_per_deg",
+        "x": "lorentzian_dominant_narrow__x_deg"
+      },
+      "case_kind": "isolated_peak",
+      "gsasii_reported_integral": 0.9885137169522689,
+      "id": "lorentzian_dominant_narrow",
+      "parameters": {
+        "gaussian_fwhm_deg": 0.0023548200450309495,
+        "gaussian_sigma_deg": 0.001,
+        "lorentzian_fwhm_deg": 0.018,
+        "position_deg": 75.0,
+        "shape_class": "lorentzian_dominant",
+        "width_scale": "narrow"
+      },
+      "sampled_integral_per_degree": 0.9885098776792343
+    },
+    {
+      "arrays": {
+        "d_gaussian_fwhm": "lorentzian_dominant_broad__d_gaussian_fwhm",
+        "d_lorentzian_fwhm": "lorentzian_dominant_broad__d_lorentzian_fwhm",
+        "d_position": "lorentzian_dominant_broad__d_position",
+        "profile": "lorentzian_dominant_broad__profile_per_deg",
+        "x": "lorentzian_dominant_broad__x_deg"
+      },
+      "case_kind": "isolated_peak",
+      "gsasii_reported_integral": 0.9880105908159167,
+      "id": "lorentzian_dominant_broad",
+      "parameters": {
+        "gaussian_fwhm_deg": 0.023548200450309493,
+        "gaussian_sigma_deg": 0.01,
+        "lorentzian_fwhm_deg": 0.15,
+        "position_deg": 82.0,
+        "shape_class": "lorentzian_dominant",
+        "width_scale": "broad"
+      },
+      "sampled_integral_per_degree": 0.988008186576335
     },
     {
       "arrays": {
@@ -161,12 +482,12 @@
   "format_version": 1,
   "input": {
     "kind": "parameter_cases",
-    "sha256": "6c7ea69c0feeecf4574fe9d94d43d7d53e2c3db3c99dedf81b5e2d29bbb46260"
+    "sha256": "4cf97f2af25456f021e008fe9808b95f296bd5ac00c4a0cc524e9d0aed954c3f"
   },
   "kind": "symmetric_profile",
   "provenance": {
-    "generated_at_utc": "2026-08-04T22:33:05.493519+00:00",
-    "generator_sha256": "205cc6f3ae7ee1d747c3c82cb9a7a7ef26d2ee0f9e4a8a147ba24f89943457a4",
+    "generated_at_utc": "2026-08-05T05:00:44.624004+00:00",
+    "generator_sha256": "45cea549aff7650cb6229997a4767ad0be50789fc53c6a696aa16d7ce2b01775",
     "gsasii_repository": "https://github.com/AdvancedPhotonSource/GSAS-II",
     "gsasii_revision": "c0bc79b259cdf0065480b5fbd57674ddf12c4a23",
     "gsasii_tag": 5838,
@@ -176,11 +497,15 @@
   },
   "source": {
     "adapter_version": 1,
-    "api": "GSASII.GSASIIpwd.getPsVoigt",
+    "api": [
+      "GSASII.GSASIIpwd.getPsVoigt",
+      "GSASII.GSASIIpwd.getdPsVoigt"
+    ],
     "native_units": {
       "coordinate": "degree_2theta",
       "gaussian_width": "centidegree_squared_variance",
       "lorentzian_width": "centidegree_fwhm",
+      "position_derivative_sign": "opposite_peak_position_derivative",
       "profile_density": "inverse_centidegree"
     },
     "private_probe": true
