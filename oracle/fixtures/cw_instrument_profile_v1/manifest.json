@@ -1,0 +1,326 @@
+{
+  "archive": {
+    "file": "data.npz",
+    "sha256": "baaa43eeacbdd7da180318ae1efcaa247cc242a250e90916081def915db5e1f0"
+  },
+  "arrays": {
+    "isolated_high__d_instrument": {
+      "description": "U/V/W/X/Y derivative rows",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "d61f80c1689f24d81a32c11b7ba3516836e70f50848e0993c4f031149019bcab",
+      "shape": [
+        5,
+        5001
+      ],
+      "unit": "mixed_by_row"
+    },
+    "isolated_high__d_position": {
+      "description": "Full reflection-position derivative",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "8dc72b2c3b81d46d5ef3b84d83f87d667d6955c63a777b3228f5aa7e7302335a",
+      "shape": [
+        5001
+      ],
+      "unit": "inverse_degree_squared"
+    },
+    "isolated_high__profile_per_deg": {
+      "description": "Normalized GSAS-II profile",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "035756c93d0c902b8d0c131965bbde822210c8f078ed3a5b80dcaa57a1ef1b08",
+      "shape": [
+        5001
+      ],
+      "unit": "inverse_degree"
+    },
+    "isolated_high__x_deg": {
+      "description": "Profile sampling coordinates",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "4e204a657ab604a7b3ccafa4b583821a1f6acf5a77f7ba1e86c9aa99b85dc80b",
+      "shape": [
+        5001
+      ],
+      "unit": "degree_2theta"
+    },
+    "isolated_low__d_instrument": {
+      "description": "U/V/W/X/Y derivative rows",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "da864a91a9edbcea42cbd099438fdbca7c31f5b92ecd3f008ac8be0bf98a6ca8",
+      "shape": [
+        5,
+        5001
+      ],
+      "unit": "mixed_by_row"
+    },
+    "isolated_low__d_position": {
+      "description": "Full reflection-position derivative",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "556436bd7b17b5a7b2321c386aa9b73300984f4ed604dddc71edfc3999c20613",
+      "shape": [
+        5001
+      ],
+      "unit": "inverse_degree_squared"
+    },
+    "isolated_low__profile_per_deg": {
+      "description": "Normalized GSAS-II profile",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "5d428e9b97142b2bc0623268b42d025ea70e7d0448c3f00d10e97abb1472278b",
+      "shape": [
+        5001
+      ],
+      "unit": "inverse_degree"
+    },
+    "isolated_low__x_deg": {
+      "description": "Profile sampling coordinates",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "188713b1eee563b6d963c4841972d0993ecc35b27ed11d020bf7b3073d2af1b8",
+      "shape": [
+        5001
+      ],
+      "unit": "degree_2theta"
+    },
+    "isolated_middle__d_instrument": {
+      "description": "U/V/W/X/Y derivative rows",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "2cc9f12cfb184f04c98a97273dcdf92810b96a002f8600d87e4663fafe55dc16",
+      "shape": [
+        5,
+        5001
+      ],
+      "unit": "mixed_by_row"
+    },
+    "isolated_middle__d_position": {
+      "description": "Full reflection-position derivative",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "a16098e537f9676442b7133837950c9687edce09c7833c99623d14ea1d1eac76",
+      "shape": [
+        5001
+      ],
+      "unit": "inverse_degree_squared"
+    },
+    "isolated_middle__profile_per_deg": {
+      "description": "Normalized GSAS-II profile",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "2a3c3e06b8d9705bd4f471896da867228cd98e50e2ace226ba032631cb97e04a",
+      "shape": [
+        5001
+      ],
+      "unit": "inverse_degree"
+    },
+    "isolated_middle__x_deg": {
+      "description": "Profile sampling coordinates",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "0f2a1f5eac745b504e7d18f10bd2003d86809db9ae94fbc0fa561130e49240c9",
+      "shape": [
+        5001
+      ],
+      "unit": "degree_2theta"
+    },
+    "overlapping_cw_reflections__global_jacobian": {
+      "description": "U/V/W/X/Y derivative rows",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "881d3b906868a1091f56d2aae50876819263a2a84eef07854b30e67c6b7919fc",
+      "shape": [
+        5,
+        8001
+      ],
+      "unit": "mixed_by_row"
+    },
+    "overlapping_cw_reflections__local_jacobian": {
+      "description": "Intensity and position derivative rows",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "f0ed248a01405de33318298bf2528c15b7b9c0db3a72166d2466b263a4102fa2",
+      "shape": [
+        3,
+        2,
+        8001
+      ],
+      "unit": "mixed_by_column"
+    },
+    "overlapping_cw_reflections__x_deg": {
+      "description": "Profile sampling coordinates",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "d5a3719a9887081727762899f4400b271b6291897469794e1ec7b2edc3ba949a",
+      "shape": [
+        8001
+      ],
+      "unit": "degree_2theta"
+    },
+    "overlapping_cw_reflections__ycalc": {
+      "description": "Calculated profile",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "e1ecc36901dee884f1f6623e8824214ff40f89718323ffc19e2dc1cec9917deb",
+      "shape": [
+        8001
+      ],
+      "unit": "intensity_per_degree"
+    }
+  },
+  "cases": [
+    {
+      "arrays": {
+        "d_instrument": "isolated_low__d_instrument",
+        "d_position": "isolated_low__d_position",
+        "profile": "isolated_low__profile_per_deg",
+        "x": "isolated_low__x_deg"
+      },
+      "case_kind": "cw_isolated_reflection",
+      "id": "isolated_low",
+      "parameters": {
+        "angular_regime": "low",
+        "gaussian_fwhm_deg": 0.02473135402653213,
+        "gaussian_variance_deg2": 0.00011030122626546027,
+        "instrument": {
+          "u_deg2": 0.0002,
+          "v_deg2": -0.0001,
+          "w_deg2": 0.00012,
+          "wavelength_angstrom": 1.5406,
+          "x_deg": 0.0015,
+          "y_deg": 0.003
+        },
+        "integrated_intensity": 1.0,
+        "lorentzian_fwhm_deg": 0.0019079009336324167,
+        "position_deg": 15.0
+      },
+      "sampled_integral": 0.9989241492653587
+    },
+    {
+      "arrays": {
+        "d_instrument": "isolated_middle__d_instrument",
+        "d_position": "isolated_middle__d_position",
+        "profile": "isolated_middle__profile_per_deg",
+        "x": "isolated_middle__x_deg"
+      },
+      "case_kind": "cw_isolated_reflection",
+      "id": "isolated_middle",
+      "parameters": {
+        "angular_regime": "middle",
+        "gaussian_fwhm_deg": 0.028651238368827187,
+        "gaussian_variance_deg2": 0.00014803736549216944,
+        "instrument": {
+          "u_deg2": 0.0002,
+          "v_deg2": -0.0001,
+          "w_deg2": 0.00012,
+          "wavelength_angstrom": 1.5406,
+          "x_deg": 0.0015,
+          "y_deg": 0.003
+        },
+        "integrated_intensity": 1.0,
+        "lorentzian_fwhm_deg": 0.0039317844977713136,
+        "position_deg": 70.0
+      },
+      "sampled_integral": 0.998100767140926
+    },
+    {
+      "arrays": {
+        "d_instrument": "isolated_high__d_instrument",
+        "d_position": "isolated_high__d_position",
+        "profile": "isolated_high__profile_per_deg",
+        "x": "isolated_high__x_deg"
+      },
+      "case_kind": "cw_isolated_reflection",
+      "id": "isolated_high",
+      "parameters": {
+        "angular_regime": "high",
+        "gaussian_fwhm_deg": 0.10031210670822843,
+        "gaussian_variance_deg2": 0.0018146432378391487,
+        "instrument": {
+          "u_deg2": 0.0002,
+          "v_deg2": -0.0001,
+          "w_deg2": 0.00012,
+          "wavelength_angstrom": 1.5406,
+          "x_deg": 0.0015,
+          "y_deg": 0.003
+        },
+        "integrated_intensity": 1.0,
+        "lorentzian_fwhm_deg": 0.014503048692224203,
+        "position_deg": 145.0
+      },
+      "sampled_integral": 0.9980033590214774
+    },
+    {
+      "arrays": {
+        "global_jacobian": "overlapping_cw_reflections__global_jacobian",
+        "local_jacobian": "overlapping_cw_reflections__local_jacobian",
+        "x": "overlapping_cw_reflections__x_deg",
+        "ycalc": "overlapping_cw_reflections__ycalc"
+      },
+      "case_kind": "cw_overlapping_reflections",
+      "id": "overlapping_cw_reflections",
+      "parameters": {
+        "instrument": {
+          "u_deg2": 0.0002,
+          "v_deg2": -0.0001,
+          "w_deg2": 0.00012,
+          "wavelength_angstrom": 1.5406,
+          "x_deg": 0.0015,
+          "y_deg": 0.003
+        },
+        "integrated_intensities": [
+          125.0,
+          83.0,
+          47.0
+        ],
+        "positions_deg": [
+          49.8,
+          50.15,
+          50.32
+        ]
+      },
+      "sampled_integral": 254.83609382916876
+    }
+  ],
+  "fixture_id": "gsasii_cw_instrument_profile_v1",
+  "format_version": 1,
+  "input": {
+    "kind": "parameter_cases",
+    "sha256": "d7e1ae41ac84d953fd88ba965bd9294c8cf41c1bd2e94a91f55fed9d38902219"
+  },
+  "kind": "cw_instrument_profile",
+  "provenance": {
+    "generated_at_utc": "2026-08-05T07:06:23.456598+00:00",
+    "generator_sha256": "105dd8be6624de49d59149afc3ea61e1ca67713966ee0831eca75ac315734951",
+    "gsasii_repository": "https://github.com/AdvancedPhotonSource/GSAS-II",
+    "gsasii_revision": "c0bc79b259cdf0065480b5fbd57674ddf12c4a23",
+    "gsasii_tag": 5838,
+    "numpy_version": "2.2.6",
+    "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O",
+    "python_version": "3.13.9"
+  },
+  "source": {
+    "adapter_version": 1,
+    "api": [
+      "GSASII.GSASIIpwd.getPsVoigt",
+      "GSASII.GSASIIpwd.getdPsVoigt"
+    ],
+    "native_units": {
+      "U_V_W": "centidegree_squared_variance",
+      "X_Y": "centidegree_fwhm",
+      "coordinate": "degree_2theta",
+      "parameter_order": [
+        "U",
+        "V",
+        "W",
+        "X",
+        "Y"
+      ],
+      "profile_density": "inverse_centidegree"
+    },
+    "private_probe": true
+  }
+}

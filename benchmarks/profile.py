@@ -10,7 +10,14 @@ from collections.abc import Callable
 from typing import Any
 
 import numpy as np
-from rietveld import _core, accumulate, accumulate_tch
+from rietveld import (
+    ConstantWavelengthInstrument,
+    _core,
+    accumulate,
+    accumulate_cw,
+    accumulate_tch,
+    cw_profile_parameters,
+)
 
 
 def parse_args() -> argparse.Namespace:
@@ -78,6 +85,14 @@ def main() -> None:
     etas = 0.2 + (index % 5) * 0.1
     gaussian_fwhms = 0.02 + (index % 7) * 0.002
     lorentzian_fwhms = 0.01 + (index % 5) * 0.002
+    cw_instrument = ConstantWavelengthInstrument(
+        wavelength_angstrom=1.5406,
+        u_deg2=2.0e-4,
+        v_deg2=-1.0e-4,
+        w_deg2=1.2e-4,
+        x_deg=1.5e-3,
+        y_deg=3.0e-3,
+    )
 
     support_fwhm = 20.0
     lower = np.searchsorted(x, positions - support_fwhm * fwhms, side="left")
@@ -94,6 +109,10 @@ def main() -> None:
     tch_lower = np.searchsorted(x, positions - support_fwhm * tch_fwhms, side="left")
     tch_upper = np.searchsorted(x, positions + support_fwhm * tch_fwhms, side="right")
     tch_active_peak_samples = int(np.sum(tch_upper - tch_lower))
+    cw_widths = cw_profile_parameters(positions, cw_instrument).total_fwhm_deg
+    cw_lower = np.searchsorted(x, positions - support_fwhm * cw_widths, side="left")
+    cw_upper = np.searchsorted(x, positions + support_fwhm * cw_widths, side="right")
+    cw_active_peak_samples = int(np.sum(cw_upper - cw_lower))
 
     call_arguments = (x, positions, intensities, fwhms, etas, support_fwhm)
     values, values_timings = measure(
@@ -139,16 +158,26 @@ def main() -> None:
         warmups=arguments.warmups,
         repetitions=arguments.repetitions,
     )
-
-    input_bytes = sum(
-        array.nbytes for array in (x, positions, intensities, fwhms, etas)
+    cw_result, cw_timings = measure(
+        lambda: accumulate_cw(
+            x,
+            positions,
+            intensities,
+            cw_instrument,
+            support_fwhm=support_fwhm,
+        ),
+        warmups=arguments.warmups,
+        repetitions=arguments.repetitions,
     )
+
+    input_bytes = sum(array.nbytes for array in (x, positions, intensities, fwhms, etas))
     print(f"python={platform.python_version()} numpy={np.__version__}")
     print(f"platform={platform.platform()}")
     print(f"native_build_mode={_core.BUILD_MODE} native_module={_core.__file__}")
     print(
         f"peaks={count} samples={x.size} active_peak_samples={active_peak_samples} "
-        f"tch_active_peak_samples={tch_active_peak_samples} support_fwhm={support_fwhm:g}"
+        f"tch_active_peak_samples={tch_active_peak_samples} "
+        f"cw_active_peak_samples={cw_active_peak_samples} support_fwhm={support_fwhm:g}"
     )
     print(f"input_mb={input_bytes / 1e6:.3f} repetitions={arguments.repetitions}")
     report_case("values_only", values.nbytes, values_timings)
@@ -166,6 +195,13 @@ def main() -> None:
         "tch_support_jacobian",
         tch_result.y.nbytes + tch_result.derivatives.local.nbytes,
         tch_timings,
+    )
+    report_case(
+        "cw_local_and_global_jacobian",
+        cw_result.y.nbytes
+        + cw_result.derivatives.local.nbytes
+        + cw_result.derivatives.global_jacobian.nbytes,
+        cw_timings,
     )
 
 

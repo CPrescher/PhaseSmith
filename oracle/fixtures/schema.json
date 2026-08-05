@@ -19,7 +19,7 @@
     "format_version": { "const": 1 },
     "fixture_id": { "type": "string", "minLength": 1 },
     "kind": {
-      "enum": ["symmetric_profile", "powder_histogram"]
+      "enum": ["symmetric_profile", "cw_instrument_profile", "powder_histogram"]
     },
     "provenance": {
       "type": "object",
@@ -119,7 +119,15 @@
       "required": ["id", "case_kind", "arrays", "parameters"],
       "properties": {
         "id": { "type": "string", "minLength": 1 },
-        "case_kind": { "enum": ["isolated_peak", "overlapping_peaks", "histogram"] },
+        "case_kind": {
+          "enum": [
+            "isolated_peak",
+            "overlapping_peaks",
+            "cw_isolated_reflection",
+            "cw_overlapping_reflections",
+            "histogram"
+          ]
+        },
         "arrays": {
           "type": "object",
           "minProperties": 1,

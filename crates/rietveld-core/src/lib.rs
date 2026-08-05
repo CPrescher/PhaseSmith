@@ -4,8 +4,14 @@
 //! and GSAS-II data structures. It operates on explicit parameters and flat
 //! numeric slices.
 
+pub mod cw;
 pub mod profile;
 pub mod tch;
+
+pub use cw::{
+    ConstantWavelengthInstrument, CwBatchError, CwError, CwProfileParameters,
+    CwReflectionBatchView, accumulate_cw_batch,
+};
 
 pub use profile::{
     Accumulation, DenseJacobian, GridView, PatternDerivatives, Peak, PeakBatchView, ProfileError,

@@ -13,6 +13,7 @@ from rietveld.oracle._pinned_probe import PINNED_REVISION
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 FIXTURE_PATH = REPOSITORY_ROOT / "oracle" / "fixtures" / "symmetric_pseudo_voigt_v1"
 HISTOGRAM_FIXTURE_PATH = REPOSITORY_ROOT / "oracle" / "fixtures" / "minimal_cw_histogram_v1"
+CW_FIXTURE_PATH = REPOSITORY_ROOT / "oracle" / "fixtures" / "cw_instrument_profile_v1"
 
 
 def test_fixture_schema_and_pin_metadata_are_valid_json() -> None:
@@ -35,6 +36,16 @@ def test_fixture_records_the_committed_generator() -> None:
     generator = REPOSITORY_ROOT / "oracle" / "scripts" / "generate_symmetric_profile.py"
     digest = hashlib.sha256(generator.read_bytes()).hexdigest()
     assert fixture.manifest["provenance"]["generator_sha256"] == digest
+
+
+def test_cw_fixture_records_pin_and_committed_generator() -> None:
+    fixture = load_fixture(CW_FIXTURE_PATH)
+    generator = REPOSITORY_ROOT / "oracle" / "scripts" / "generate_cw_instrument_profile.py"
+    digest = hashlib.sha256(generator.read_bytes()).hexdigest()
+    assert fixture.manifest["fixture_id"] == "gsasii_cw_instrument_profile_v1"
+    assert fixture.manifest["provenance"]["gsasii_revision"] == PINNED_REVISION
+    assert fixture.manifest["provenance"]["generator_sha256"] == digest
+    assert len(fixture.cases) == 4
 
 
 def test_public_scripting_histogram_fixture() -> None:
@@ -126,15 +137,84 @@ def test_fused_overlap_against_pinned_gsasii_fixture() -> None:
         x,
         [peak["position_deg"] for peak in peaks],
         [peak["intensity"] for peak in peaks],
-        [
-            np.sqrt(8.0 * np.log(2.0)) * peak["gaussian_sigma_deg"]
-            for peak in peaks
-        ],
+        [np.sqrt(8.0 * np.log(2.0)) * peak["gaussian_sigma_deg"] for peak in peaks],
         [peak["lorentzian_fwhm_deg"] for peak in peaks],
         support_fwhm=100.0,
     ).y
     oracle = fixture.arrays[case["arrays"]["ycalc"]]
     np.testing.assert_allclose(actual, oracle, rtol=1.2e-4, atol=2e-5)
+
+
+@pytest.mark.parametrize("angular_regime", ["low", "middle", "high"])
+def test_cw_profile_widths_and_derivatives_against_pinned_gsasii(
+    angular_regime: str,
+) -> None:
+    fixture = load_fixture(CW_FIXTURE_PATH)
+    case = next(
+        case
+        for case in fixture.cases
+        if case["case_kind"] == "cw_isolated_reflection"
+        and case["parameters"]["angular_regime"] == angular_regime
+    )
+    parameters = case["parameters"]
+    model = rietveld.ConstantWavelengthInstrument(**dict(parameters["instrument"]))
+    position = parameters["position_deg"]
+    x = fixture.arrays[case["arrays"]["x"]]
+    widths = rietveld.cw_profile_parameters([position], model)
+    assert widths.gaussian_variance_deg2[0] == pytest.approx(
+        parameters["gaussian_variance_deg2"], rel=3e-15
+    )
+    assert widths.gaussian_fwhm_deg[0] == pytest.approx(parameters["gaussian_fwhm_deg"], rel=3e-15)
+    assert widths.lorentzian_fwhm_deg[0] == pytest.approx(
+        parameters["lorentzian_fwhm_deg"], rel=3e-15
+    )
+
+    actual = rietveld.accumulate_cw(
+        x, [position], [1.0], model, support_fwhm=100.0, jacobian_layout="dense"
+    )
+    comparisons = (
+        (actual.y, fixture.arrays[case["arrays"]["profile"]]),
+        (actual.jacobian[0, 1], fixture.arrays[case["arrays"]["d_position"]]),
+        (
+            actual.derivatives.global_jacobian,
+            fixture.arrays[case["arrays"]["d_instrument"]],
+        ),
+    )
+    for native, oracle in comparisons:
+        normalized_maximum_error = float(np.max(np.abs(native - oracle)) / np.max(np.abs(oracle)))
+        # Local to the pinned #5838 TCH implementation and public unit chain.
+        assert normalized_maximum_error < 6e-6
+    sampled_integral = np.trapezoid(actual.y, x)
+    assert sampled_integral == pytest.approx(parameters["integrated_intensity"], rel=2.2e-3)
+    centroid = np.trapezoid(x * actual.y, x) / sampled_integral
+    assert centroid == pytest.approx(position, abs=2e-11)
+
+
+def test_fused_cw_overlap_and_all_jacobians_against_pinned_gsasii() -> None:
+    fixture = load_fixture(CW_FIXTURE_PATH)
+    case = next(case for case in fixture.cases if case["case_kind"] == "cw_overlapping_reflections")
+    parameters = case["parameters"]
+    model = rietveld.ConstantWavelengthInstrument(**dict(parameters["instrument"]))
+    x = fixture.arrays[case["arrays"]["x"]]
+    actual = rietveld.accumulate_cw(
+        x,
+        parameters["positions_deg"],
+        parameters["integrated_intensities"],
+        model,
+        support_fwhm=100.0,
+        jacobian_layout="dense",
+    )
+    comparisons = (
+        (actual.y, fixture.arrays[case["arrays"]["ycalc"]]),
+        (actual.jacobian, fixture.arrays[case["arrays"]["local_jacobian"]]),
+        (
+            actual.derivatives.global_jacobian,
+            fixture.arrays[case["arrays"]["global_jacobian"]],
+        ),
+    )
+    for native, oracle in comparisons:
+        normalized_maximum_error = float(np.max(np.abs(native - oracle)) / np.max(np.abs(oracle)))
+        assert normalized_maximum_error < 6e-6
 
 
 def test_fixture_reader_rejects_revision_drift(tmp_path: Path) -> None:

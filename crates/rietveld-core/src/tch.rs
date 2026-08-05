@@ -337,6 +337,7 @@ pub fn accumulate_tch_batch(
                 starts,
                 offsets,
                 values,
+                parameter_count: 4,
             },
             global: None,
         },

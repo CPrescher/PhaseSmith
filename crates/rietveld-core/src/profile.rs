@@ -181,10 +181,10 @@ pub struct SupportJacobian {
     pub starts: Vec<usize>,
     /// Prefix sum of active sample counts, with length `peak_count + 1`.
     pub offsets: Vec<usize>,
-    /// Sample-major derivative rows with four values per active sample.
-    ///
-    /// The local parameter order is intensity, position, FWHM, and eta.
+    /// Sample-major derivative rows with `parameter_count` values per sample.
     pub values: Vec<f64>,
+    /// Number of local derivative columns per active sample.
+    pub parameter_count: usize,
 }
 
 impl SupportJacobian {
@@ -200,7 +200,7 @@ impl SupportJacobian {
         self.offsets.last().copied().unwrap_or(0)
     }
 
-    /// Materialize a parameter-major dense `(peak, 4, sample)` Jacobian.
+    /// Materialize a parameter-major dense `(peak, parameter, sample)` Jacobian.
     ///
     /// # Errors
     ///
@@ -210,7 +210,7 @@ impl SupportJacobian {
         self.validate_structure(sample_count)?;
         let dense_length = checked_matrix_len(
             self.peak_count()
-                .checked_mul(4)
+                .checked_mul(self.parameter_count)
                 .ok_or(ProfileError::AllocationOverflow)?,
             sample_count,
         )?;
@@ -222,10 +222,11 @@ impl SupportJacobian {
             let start = self.starts[peak_index];
             for relative_index in 0..active_count {
                 let sample_index = start + relative_index;
-                let sparse_base = (active_begin + relative_index) * 4;
-                for parameter_index in 0..4 {
-                    let dense_index =
-                        (peak_index * 4 + parameter_index) * sample_count + sample_index;
+                let sparse_base = (active_begin + relative_index) * self.parameter_count;
+                for parameter_index in 0..self.parameter_count {
+                    let dense_index = (peak_index * self.parameter_count + parameter_index)
+                        * sample_count
+                        + sample_index;
                     dense[dense_index] = self.values[sparse_base + parameter_index];
                 }
             }
@@ -237,7 +238,12 @@ impl SupportJacobian {
         if self.offsets.len() != self.starts.len().saturating_add(1)
             || self.offsets.first() != Some(&0)
             || self.offsets.windows(2).any(|pair| pair[0] > pair[1])
-            || self.offsets.last().and_then(|count| count.checked_mul(4)) != Some(self.values.len())
+            || self.parameter_count == 0
+            || self
+                .offsets
+                .last()
+                .and_then(|count| count.checked_mul(self.parameter_count))
+                != Some(self.values.len())
         {
             return Err(ProfileError::InconsistentSupport);
         }
@@ -586,6 +592,7 @@ fn accumulate_source(
                 starts,
                 offsets,
                 values,
+                parameter_count: 4,
             },
             global: None,
         },
@@ -835,6 +842,7 @@ mod tests {
             starts: vec![1],
             offsets: vec![0, 1],
             values: vec![0.0; 4],
+            parameter_count: 4,
         };
         assert_eq!(sparse.to_dense(1), Err(ProfileError::InconsistentSupport));
     }

@@ -7,8 +7,10 @@ use npy::{IntoPyArray, PyArray1, PyArray2, PyReadonlyArray1};
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use rietveld_core::{
-    Accumulation, GridView, PeakBatchView, SupportPolicy, TchPeakBatchView, TchShape, TchWidths,
-    accumulate_batch, accumulate_tch_batch, accumulate_values_batch, symmetric_pseudo_voigt,
+    Accumulation, ConstantWavelengthInstrument, CwProfileParameters, CwReflectionBatchView,
+    GridView, PeakBatchView, SupportPolicy, TchPeakBatchView, TchShape, TchWidths,
+    accumulate_batch, accumulate_cw_batch, accumulate_tch_batch, accumulate_values_batch,
+    symmetric_pseudo_voigt,
 };
 
 type ProfileArrays<'py> = (
@@ -23,9 +25,21 @@ type AccumulationArrays<'py> = (
     Bound<'py, PyArray1<i64>>,
     Bound<'py, PyArray1<i64>>,
     Bound<'py, PyArray2<f64>>,
+    Bound<'py, PyArray2<f64>>,
 );
 
 type TchShapeValues = (f64, f64, f64, f64, f64, f64);
+
+type CwProfileArrays<'py> = (
+    Bound<'py, PyArray1<f64>>,
+    Bound<'py, PyArray1<f64>>,
+    Bound<'py, PyArray1<f64>>,
+    Bound<'py, PyArray1<f64>>,
+    Bound<'py, PyArray1<f64>>,
+    Bound<'py, PyArray2<f64>>,
+    Bound<'py, PyArray2<f64>>,
+    Bound<'py, PyArray2<f64>>,
+);
 
 /// Vectorized scalar profile evaluation used by the public Python wrapper.
 #[pyfunction]
@@ -183,16 +197,137 @@ fn accumulation_to_numpy(
 ) -> PyResult<AccumulationArrays<'_>> {
     let local = accumulation.derivatives.local;
     let value_rows = local.active_sample_count();
+    let local_parameter_count = local.parameter_count;
     let starts = indices_to_i64(local.starts, "support starts")?;
     let offsets = indices_to_i64(local.offsets, "support offsets")?;
-    let values = Array2::from_shape_vec((value_rows, 4), local.values)
+    let values = Array2::from_shape_vec((value_rows, local_parameter_count), local.values)
         .map_err(|error| PyValueError::new_err(error.to_string()))?;
+    let global = if let Some(global) = accumulation.derivatives.global {
+        if global.sample_count != accumulation.sample_count {
+            return Err(PyValueError::new_err(
+                "global Jacobian sample count does not match accumulation",
+            ));
+        }
+        Array2::from_shape_vec((global.parameter_count, global.sample_count), global.values)
+            .map_err(|error| PyValueError::new_err(error.to_string()))?
+    } else {
+        Array2::zeros((0, accumulation.sample_count))
+    };
     Ok((
         accumulation.y.into_pyarray(py),
         starts.into_pyarray(py),
         offsets.into_pyarray(py),
         values.into_pyarray(py),
+        global.into_pyarray(py),
     ))
+}
+
+/// Derive CW component widths, TCH shape, and width derivatives for reflections.
+#[pyfunction]
+#[allow(clippy::too_many_arguments)]
+fn cw_profile_parameters<'py>(
+    py: Python<'py>,
+    two_theta_deg: PyReadonlyArray1<'py, f64>,
+    wavelength_angstrom: f64,
+    u_deg2: f64,
+    v_deg2: f64,
+    w_deg2: f64,
+    x_deg: f64,
+    y_deg: f64,
+) -> PyResult<CwProfileArrays<'py>> {
+    let two_theta_deg = contiguous_slice(&two_theta_deg, "two_theta_deg")?;
+    let instrument = cw_instrument(wavelength_angstrom, u_deg2, v_deg2, w_deg2, x_deg, y_deg);
+    instrument
+        .validate()
+        .map_err(|error| PyValueError::new_err(error.to_string()))?;
+    let mut variance = Vec::with_capacity(two_theta_deg.len());
+    let mut gaussian = Vec::with_capacity(two_theta_deg.len());
+    let mut lorentzian = Vec::with_capacity(two_theta_deg.len());
+    let mut total = Vec::with_capacity(two_theta_deg.len());
+    let mut eta = Vec::with_capacity(two_theta_deg.len());
+    let mut d_gaussian = Vec::with_capacity(two_theta_deg.len() * 5);
+    let mut d_lorentzian = Vec::with_capacity(two_theta_deg.len() * 5);
+    let mut d_position = Vec::with_capacity(two_theta_deg.len() * 2);
+    for position in two_theta_deg.iter().copied() {
+        let profile = CwProfileParameters::from_instrument(position, instrument)
+            .map_err(|error| PyValueError::new_err(error.to_string()))?;
+        variance.push(profile.gaussian_variance_deg2);
+        gaussian.push(profile.gaussian_fwhm_deg);
+        lorentzian.push(profile.lorentzian_fwhm_deg);
+        total.push(profile.tch.total_fwhm);
+        eta.push(profile.tch.eta);
+        d_gaussian.extend_from_slice(&profile.d_gaussian_fwhm_d_instrument);
+        d_lorentzian.extend_from_slice(&profile.d_lorentzian_fwhm_d_instrument);
+        d_position.push(profile.d_gaussian_fwhm_d_two_theta);
+        d_position.push(profile.d_lorentzian_fwhm_d_two_theta);
+    }
+    let count = two_theta_deg.len();
+    Ok((
+        variance.into_pyarray(py),
+        gaussian.into_pyarray(py),
+        lorentzian.into_pyarray(py),
+        total.into_pyarray(py),
+        eta.into_pyarray(py),
+        Array2::from_shape_vec((count, 5), d_gaussian)
+            .map_err(|error| PyValueError::new_err(error.to_string()))?
+            .into_pyarray(py),
+        Array2::from_shape_vec((count, 5), d_lorentzian)
+            .map_err(|error| PyValueError::new_err(error.to_string()))?
+            .into_pyarray(py),
+        Array2::from_shape_vec((count, 2), d_position)
+            .map_err(|error| PyValueError::new_err(error.to_string()))?
+            .into_pyarray(py),
+    ))
+}
+
+/// Accumulate a CW reflection batch with local and global derivatives.
+#[pyfunction]
+#[allow(clippy::too_many_arguments)]
+fn accumulate_cw<'py>(
+    py: Python<'py>,
+    x: PyReadonlyArray1<'py, f64>,
+    two_theta_deg: PyReadonlyArray1<'py, f64>,
+    intensities: PyReadonlyArray1<'py, f64>,
+    wavelength_angstrom: f64,
+    u_deg2: f64,
+    v_deg2: f64,
+    w_deg2: f64,
+    x_deg: f64,
+    y_deg: f64,
+    support_fwhm: f64,
+) -> PyResult<AccumulationArrays<'py>> {
+    let x = contiguous_slice(&x, "x")?;
+    let two_theta_deg = contiguous_slice(&two_theta_deg, "two_theta_deg")?;
+    let intensities = contiguous_slice(&intensities, "intensities")?;
+    let grid = GridView::new(x).map_err(|error| PyValueError::new_err(error.to_string()))?;
+    let reflections = CwReflectionBatchView::new(two_theta_deg, intensities)
+        .map_err(|error| PyValueError::new_err(error.to_string()))?;
+    let accumulation = accumulate_cw_batch(
+        grid,
+        reflections,
+        cw_instrument(wavelength_angstrom, u_deg2, v_deg2, w_deg2, x_deg, y_deg),
+        SupportPolicy::FwhmMultiple(support_fwhm),
+    )
+    .map_err(|error| PyValueError::new_err(error.to_string()))?;
+    accumulation_to_numpy(py, accumulation)
+}
+
+const fn cw_instrument(
+    wavelength_angstrom: f64,
+    u_deg2: f64,
+    v_deg2: f64,
+    w_deg2: f64,
+    x_deg: f64,
+    y_deg: f64,
+) -> ConstantWavelengthInstrument {
+    ConstantWavelengthInstrument {
+        wavelength_angstrom,
+        u_deg2,
+        v_deg2,
+        w_deg2,
+        x_deg,
+        y_deg,
+    }
 }
 
 /// Fused peak accumulation returning calculated values without derivatives.
@@ -247,11 +382,15 @@ fn _core(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_function(wrap_pyfunction!(accumulate, module)?)?;
     module.add_function(wrap_pyfunction!(accumulate_tch, module)?)?;
     module.add_function(wrap_pyfunction!(accumulate_values, module)?)?;
+    module.add_function(wrap_pyfunction!(cw_profile_parameters, module)?)?;
+    module.add_function(wrap_pyfunction!(accumulate_cw, module)?)?;
     module.add("PARAMETER_ORDER", ("intensity", "position", "fwhm", "eta"))?;
     module.add(
         "TCH_PARAMETER_ORDER",
         ("intensity", "position", "gaussian_fwhm", "lorentzian_fwhm"),
     )?;
+    module.add("CW_LOCAL_PARAMETER_ORDER", ("intensity", "position"))?;
+    module.add("CW_GLOBAL_PARAMETER_ORDER", ("u", "v", "w", "x", "y"))?;
     module.add(
         "BUILD_MODE",
         if cfg!(debug_assertions) {

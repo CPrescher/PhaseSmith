@@ -17,6 +17,9 @@ The plan follows four rules:
    moment checks, pinned-oracle coverage, and a realistic benchmark.
 4. GSAS-II remains an external process/environment that produces plain fixture
    data. Its objects and internal structures never enter the core API.
+5. Public Python development follows `docs/public-api.md`: instrument, phase,
+   pattern, calculation, and refinement modules remain separated; Le Bail is a
+   first-class method; integration adapters remain optional and NumPy-based.
 
 ## Current baseline
 
@@ -332,7 +335,7 @@ about 0.103 ms end to end through Python on the recorded development machine.
 
 ## Implementation unit 3: constant-wavelength U/V/W/X/Y broadening
 
-Status: next.
+Status: complete (2026-08-05).
 
 ### Goal
 
@@ -355,6 +358,11 @@ CwReflectionBatchView
   integrated_intensity
   optional reflection_id
 ```
+
+The public Python object lives in `rietveld.instrument`; array-oriented CW
+operations live in `rietveld.cw`. Shared result containers live in
+`rietveld.results`, independent of native-extension and refinement state. This
+is the first enforced slice of the public module contract.
 
 The exact parameter scaling and formula variants are frozen only after the
 published convention and pinned GSAS-II adapter are reconciled. Any conversion
@@ -393,6 +401,19 @@ from GSAS-II's stored units occurs in the adapter, not in the kernel.
 One array-oriented Python call evaluates an entire CW reflection batch with no
 per-reflection Python orchestration, and all seven derivative classes (five
 global, two local) meet documented oracle and finite-difference tolerances.
+
+Review result: the physical-unit U/V/W/X/Y model, TCH width chain, inclusive
+support, sparse reflection intensity/position columns, and dense shared
+instrument rows execute in one deterministic Rust reflection/sample pass. The
+position derivative includes both profile translation and angular width
+variation. Eighty Python tests and fifteen Rust tests pass, including randomized
+NumPy comparisons, centered finite differences for all seven derivative
+classes, area/centroid checks, invalid domains, and low/middle/high plus overlap
+cases from the pinned GSAS-II #5838 fixture. Fixture-normalized peak derivative
+errors remain below `6e-6`. On the recorded development machine, the 200-peak,
+5,001-sample release benchmark takes about 0.137 ms through Python, produces
+0.442 MB of value/local/global derivative arrays, and the Rust kernel benchmark
+is about 131 microseconds.
 
 ## Implementation unit 4: FCJ asymmetry and K-alpha doublets
 
@@ -511,34 +532,51 @@ calculation.
 ### Data model
 
 ```text
-PhaseBatch
+ReflectionBatch (rietveld.phase)
+  reflection_id
+  h, k, l
+  d_spacing_angstrom
+  two_theta_deg
+  integrated_intensity
+
+Phase (rietveld.phase)
   phase_id
-  reflection_range
+  name
+  reflection batch
   scale
   optional phase-level correction parameters
 
-PatternInput
+Pattern (rietveld.pattern)
   grid
-  flattened reflection arrays
-  phase offsets
+  observed intensity/uncertainty/mask when available
+  optional supplied background array or background model
+
+CalculationInput (rietveld.calculation)
+  pattern
+  phases
   instrument
   sample models by phase
-  optional supplied background array
+  calculation options
 ```
 
 ### Work
 
 1. Flatten phase reflection batches into contiguous arrays with explicit phase
    offsets.
-2. Accumulate phase-scale derivatives as dense global rows.
-3. Preserve stable phase and reflection ordering for deterministic summation and
+2. Validate durable phase/reflection IDs and preserve them in derivative and
+   diagnostic labels.
+3. Accumulate phase-scale derivatives as dense global rows.
+4. Preserve stable phase and reflection ordering for deterministic summation and
    result labeling.
-4. Allow a supplied background array to be added once, but keep background
+5. Allow a supplied background array to be added once, but keep background
    model evaluation outside the profile core.
-5. Return optional phase-separated `y` only in a diagnostic mode; the production
+6. Return optional phase-separated `y` only in a diagnostic mode; the production
    default returns the total pattern.
-6. Add cancellation/negative-intensity tests even if normal physical inputs are
+7. Add cancellation/negative-intensity tests even if normal physical inputs are
    non-negative, since derivative and difference calculations may contain signs.
+8. Provide both stateless `calculate_pattern(...)` and reusable
+   `PreparedPattern.calculate(...)` interfaces; both dispatch one flattened
+   native batch call.
 
 ### Validation
 
@@ -641,23 +679,122 @@ oracle before the public type is stabilized.
 TOF profiles use the common accumulation/derivative interfaces and meet the same
 validation standard as CW profiles.
 
-## Implementation unit 9: refinement-facing API, only after profile maturity
+## Implementation unit 9: refinement infrastructure and first-class Le Bail
 
-This unit begins only after CW X-ray, CW neutron, multi-phase, and TOF kernels
-are stable. It does not include a GUI or GSAS-II project compatibility layer.
+### Goal
 
-Potential scope:
+Provide a clean scripted refinement layer, then implement Le Bail extraction as
+the first complete workflow. This unit begins only after CW X-ray, CW neutron,
+multi-phase, and TOF kernels are stable. It does not include a GUI or GSAS-II
+project compatibility layer.
 
-- parameter-vector packing with stable names and bounds;
-- residual and weighted-residual evaluation in Python;
-- Jacobian-vector and transpose-Jacobian-vector products;
-- optional adapters to established Python optimizers;
-- constraint transforms expressed as typed graphs rather than string/global
-  dictionaries;
-- checkpointable plain-data model serialization with its own schema.
+### Module and data model
 
-The first refinement API should consume the profile calculator; it must not
-force refinement workflow concepts back into `rietveld-core`.
+```text
+rietveld.refinement
+  ParameterKey / ParameterSpec / ParameterSet
+  Bounds and typed constraint transforms
+  ResidualOptions / IterationRecord / TerminationReason
+  Jacobian-vector and transpose-Jacobian-vector operations
+
+rietveld.refinement.lebail
+  LeBailInput / LeBailOptions / LeBailResult
+  extract_intensities(...)
+  refine(...)
+
+rietveld.refinement.rietveld
+  Reserved separate orchestration module; no structure-factor implementation is
+  invented before its physics layer exists.
+```
+
+### Shared refinement work
+
+1. Pack selected parameters with stable typed keys, units, bounds, scales, and
+   deterministic ordering.
+2. Express equality/fixed/dependent constraints as typed transforms, not string
+   expressions or mutable global dictionaries.
+3. Evaluate masked weighted residuals and standard powder residual metrics.
+4. Provide dense-small-problem and matrix-free Jacobian-vector/
+   transpose-Jacobian-vector paths over the hybrid derivative representation.
+5. Add an optimizer protocol plus a documented adapter to a maintained Python
+   least-squares implementation; keep the objective independently callable.
+6. Record every iteration as immutable plain data with convergence metrics,
+   warnings, and parameter changes.
+7. Serialize inputs/checkpoints/results through a versioned plain-data schema;
+   arrays use NPZ or another explicit non-pickle representation.
+
+### Le Bail work
+
+1. Accept `Pattern`, one or more `Phase` reflection batches, instrument/sample
+   models, background, masks, weights, and selected refinable parameters.
+2. Initialize reflection intensities deterministically or accept supplied
+   values. Keep reflection IDs stable throughout the workflow.
+3. Implement non-negative Le Bail intensity redistribution from observed minus
+   background intensity using calculated reflection contributions.
+4. Partition exactly coincident and unresolved multiplets deterministically and
+   report rank-deficient groups rather than allowing order-dependent collapse.
+5. Alternate intensity extraction with bounded profile/position/scale parameter
+   least-squares updates using analytical derivatives.
+6. Expose a one-call `lebail.refine(...)` convenience API and lower-level
+   iteration primitives for notebooks and custom automation.
+7. Return refined intensities by phase/reflection ID, final `Ycalc`, background,
+   phase components, residual metrics, covariance information where valid,
+   iteration history, and an explicit termination reason.
+
+### Validation
+
+- Synthetic exact-recovery patterns with isolated, overlapping, coincident,
+  absent, and zero-intensity reflections.
+- Multiple phases with shared peaks, variable background, masks, nonuniform
+  uncertainties, bounds, constraints, and deliberately poor starting values.
+- Finite-difference checks of the packed refinement Jacobian and adjoint
+  consistency for JVP/VJP operations.
+- Deterministic repeated runs and checkpoint/resume equivalence.
+- Pinned GSAS-II Le Bail cases compare extracted intensities, `Ycalc`, residual
+  metrics, profile parameters, and convergence trends without sharing workflow
+  objects or code.
+- Benchmarks separate profile-kernel time, intensity extraction, optimizer
+  overhead, and total iteration time.
+
+### Exit gate
+
+A user can perform and inspect a robust Le Bail refinement from a short Python
+script without constructing parameter vectors, optimizer callbacks, project
+files, or per-reflection loops. The refinement layer consumes the calculation
+API without introducing refinement state into `rietveld-core`.
+
+## Implementation unit 10: persistence and Dioptas integration boundary
+
+### Goal
+
+Make the mature calculation and Le Bail interfaces straightforward to embed in
+Dioptas and other applications while keeping integrations optional.
+
+### Work
+
+1. Finalize a versioned plain-data schema for instruments, phases/reflections,
+   patterns, calculation options, and refinement checkpoints/results.
+2. Add `rietveld.integrations.dioptas` with conversion functions operating on
+   NumPy arrays and plain metadata. It must import without Dioptas installed.
+3. Define a minimal adapter protocol for grid/observed/background/mask input and
+   calculated/component/diagnostic output; keep GUI events and widgets out of
+   the library.
+4. Add an optional installed-Dioptas smoke adapter only if its public API is
+   stable enough; otherwise ship a tested protocol example and document the
+   small glue layer expected inside Dioptas.
+5. Add cancellation/progress callback hooks at calculation/refinement batch or
+   iteration boundaries, never inside the native reflection hot loop.
+6. Document thread ownership and GIL behavior for responsive GUI execution.
+
+### Validation and exit gate
+
+- Round-trip every public plain-data model without pickle or native objects.
+- Contract tests use a fake Dioptas consumer to verify dtype, shape, units,
+  labels, masks, background separation, and errors.
+- A documented example passes a Dioptas-style pattern through calculation and
+  Le Bail and receives display-ready NumPy arrays and diagnostics.
+- Normal installation, import, calculation, and refinement never require
+  Dioptas.
 
 ## Cross-cutting validation matrix
 
@@ -718,6 +855,9 @@ Keep implementation units reviewable through these ordered changes:
 9. Multi-phase flattening, phase scales, and background composition.
 10. Neutron CW fixtures and typed configuration.
 11. TOF calibration, then TOF profile and derivatives.
+12. Shared refinement parameters, constraints, residuals, and matrix products.
+13. Le Bail extraction, orchestration, oracle cases, and benchmarks.
+14. Plain-data persistence and the optional Dioptas integration boundary.
 
 Do not combine adjacent items merely to reduce PR count; numerical review is
 easier when parameter conventions and tolerance changes remain isolated.

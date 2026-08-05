@@ -35,6 +35,12 @@ powder reflection list for a deterministic synthetic phase. Manifests record
 array hashes, units, generator hash, exact GSAS-II revision/tag, Python/NumPy
 versions, and platform.
 
+`cw_instrument_profile_v1` uses the same pinned private profile probes after
+deriving Gaussian variance and Lorentzian FWHM from documented U/V/W/X/Y
+equations. It covers low, middle, and high angle plus an overlapping reflection
+batch. Its stored derivatives include the angle dependence of component widths
+in the reflection-position derivative and dense U/V/W/X/Y rows.
+
 Generation is deliberately separate from the normal package: the script imports
 GSAS-II and NumPy, but never imports `rietveld`. Run it with GSAS-II's Python:
 
@@ -44,6 +50,10 @@ GSAS-II and NumPy, but never imports `rietveld`. Run it with GSAS-II's Python:
   --binary-dir /path/to/compatible/GSASII-bin/platform-directory
 
 /path/to/gsas/python oracle/scripts/generate_powder_histogram.py \
+  --gsas-root /path/to/pinned/GSAS-II \
+  --binary-dir /path/to/compatible/GSASII-bin/platform-directory
+
+/path/to/gsas/python oracle/scripts/generate_cw_instrument_profile.py \
   --gsas-root /path/to/pinned/GSAS-II \
   --binary-dir /path/to/compatible/GSASII-bin/platform-directory
 ```

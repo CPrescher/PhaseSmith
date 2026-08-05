@@ -8,7 +8,10 @@ computed during fused peak accumulation.
 The architecture and roadmap are in [PROJECT_BRIEF.md](PROJECT_BRIEF.md); the
 equations and parameter conventions are in [docs/equations.md](docs/equations.md).
 The component-width TCH transform and chain-rule derivatives are documented in
-[docs/tch-profile.md](docs/tch-profile.md).
+[docs/tch-profile.md](docs/tch-profile.md); constant-wavelength U/V/W/X/Y
+broadening is documented in [docs/cw-profile.md](docs/cw-profile.md). The
+script-first module boundaries, including the planned first-class Le Bail and
+Dioptas integration layers, are in [docs/public-api.md](docs/public-api.md).
 
 ## Development
 
@@ -54,6 +57,25 @@ Use `profile_tch` or `accumulate_tch` when Gaussian and Lorentzian component
 FWHMs are the direct inputs. Explicit `tch_shape_from_gaussian_sigma` and
 `profile_tch_from_gaussian_sigma` helpers are provided when Gaussian width is a
 standard deviation; width conventions are never inferred.
+
+An entire constant-wavelength reflection list, including all local and shared
+instrument derivatives, is also one array-oriented call:
+
+```python
+from rietveld import ConstantWavelengthInstrument, accumulate_cw
+
+instrument = ConstantWavelengthInstrument(
+    wavelength_angstrom=1.5406,
+    u_deg2=2e-4,
+    v_deg2=-1e-4,
+    w_deg2=1.2e-4,
+    x_deg=1.5e-3,
+    y_deg=3e-3,
+)
+cw = accumulate_cw(x, [24.0, 26.0], [100.0, 80.0], instrument)
+print(cw.derivatives.local_parameter_names)   # intensity, position
+print(cw.derivatives.global_parameter_names)  # U, V, W, X, Y
+```
 
 GSAS-II is used only as the optional pinned validation oracle described in
 [`oracle/README.md`](oracle/README.md).

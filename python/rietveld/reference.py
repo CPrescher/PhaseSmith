@@ -49,6 +49,20 @@ class ReferenceTchProfile:
     d_lorentzian_fwhm: NDArray[np.float64]
 
 
+@dataclass(frozen=True, slots=True)
+class ReferenceCwProfileParameters:
+    """Independent CW widths and derivatives for a reflection array."""
+
+    gaussian_variance_deg2: NDArray[np.float64]
+    gaussian_fwhm_deg: NDArray[np.float64]
+    lorentzian_fwhm_deg: NDArray[np.float64]
+    total_fwhm_deg: NDArray[np.float64]
+    eta: NDArray[np.float64]
+    d_gaussian_fwhm_d_instrument: NDArray[np.float64]
+    d_lorentzian_fwhm_d_instrument: NDArray[np.float64]
+    d_component_fwhm_d_two_theta: NDArray[np.float64]
+
+
 def profile(delta: ArrayLike, fwhm: float, eta: float) -> ReferenceProfile:
     """Evaluate the symmetric pseudo-Voigt directly from its component equations."""
 
@@ -155,6 +169,65 @@ def profile_tch(
         ),
     )
 
+
+def cw_profile_parameters(
+    two_theta_deg: ArrayLike,
+    *,
+    u_deg2: float,
+    v_deg2: float,
+    w_deg2: float,
+    x_deg: float,
+    y_deg: float,
+) -> ReferenceCwProfileParameters:
+    """Evaluate U/V/W/X/Y broadening directly from the documented equations."""
+
+    two_theta = np.asarray(two_theta_deg, dtype=np.float64)
+    theta = np.deg2rad(two_theta / 2.0)
+    tangent = np.tan(theta)
+    secant = 1.0 / np.cos(theta)
+    variance = u_deg2 * tangent**2 + v_deg2 * tangent + w_deg2
+    gaussian = GAUSSIAN_FWHM_PER_SIGMA * np.sqrt(variance)
+    lorentzian = x_deg * secant + y_deg * tangent
+    total = np.empty_like(two_theta)
+    eta = np.empty_like(two_theta)
+    for index, (gaussian_value, lorentzian_value) in enumerate(
+        zip(gaussian, lorentzian, strict=True)
+    ):
+        shape = tch_shape_from_fwhm(float(gaussian_value), float(lorentzian_value))
+        total[index] = shape.total_fwhm
+        eta[index] = shape.eta
+
+    d_gaussian_d_variance = GAUSSIAN_FWHM_PER_SIGMA / (2.0 * np.sqrt(variance))
+    d_gaussian = np.zeros((two_theta.size, 5), dtype=np.float64)
+    d_gaussian[:, 0] = d_gaussian_d_variance * tangent**2
+    d_gaussian[:, 1] = d_gaussian_d_variance * tangent
+    d_gaussian[:, 2] = d_gaussian_d_variance
+    d_lorentzian = np.zeros((two_theta.size, 5), dtype=np.float64)
+    d_lorentzian[:, 3] = secant
+    d_lorentzian[:, 4] = tangent
+
+    radians_per_two_theta_degree = np.pi / 360.0
+    d_tangent_d_position = radians_per_two_theta_degree * secant**2
+    d_secant_d_position = radians_per_two_theta_degree * secant * tangent
+    d_variance_d_position = (2.0 * u_deg2 * tangent + v_deg2) * d_tangent_d_position
+    d_position = np.column_stack(
+        (
+            d_gaussian_d_variance * d_variance_d_position,
+            x_deg * d_secant_d_position + y_deg * d_tangent_d_position,
+        )
+    )
+    return ReferenceCwProfileParameters(
+        gaussian_variance_deg2=variance,
+        gaussian_fwhm_deg=gaussian,
+        lorentzian_fwhm_deg=lorentzian,
+        total_fwhm_deg=total,
+        eta=eta,
+        d_gaussian_fwhm_d_instrument=d_gaussian,
+        d_lorentzian_fwhm_d_instrument=d_lorentzian,
+        d_component_fwhm_d_two_theta=d_position,
+    )
+
+
 def accumulate(
     x: ArrayLike,
     positions: ArrayLike,
@@ -224,3 +297,57 @@ def accumulate_tch(
         jacobian[peak_index, 2, active] = intensity * evaluated.d_gaussian_fwhm
         jacobian[peak_index, 3, active] = intensity * evaluated.d_lorentzian_fwhm
     return y, jacobian
+
+
+def accumulate_cw(
+    x: ArrayLike,
+    two_theta_deg: ArrayLike,
+    integrated_intensities: ArrayLike,
+    *,
+    u_deg2: float,
+    v_deg2: float,
+    w_deg2: float,
+    x_deg: float,
+    y_deg: float,
+    support_fwhm: float = 20.0,
+) -> tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]]:
+    """Accumulate CW reflections with independent local/global derivatives."""
+
+    x_values = np.asarray(x, dtype=np.float64)
+    positions = np.asarray(two_theta_deg, dtype=np.float64)
+    intensities = np.asarray(integrated_intensities, dtype=np.float64)
+    parameters = cw_profile_parameters(
+        positions,
+        u_deg2=u_deg2,
+        v_deg2=v_deg2,
+        w_deg2=w_deg2,
+        x_deg=x_deg,
+        y_deg=y_deg,
+    )
+    y_values = np.zeros_like(x_values)
+    local = np.zeros((positions.size, 2, x_values.size), dtype=np.float64)
+    global_jacobian = np.zeros((5, x_values.size), dtype=np.float64)
+    for reflection, (position, intensity) in enumerate(zip(positions, intensities, strict=True)):
+        active = np.abs(x_values - position) <= (
+            support_fwhm * parameters.total_fwhm_deg[reflection]
+        )
+        evaluated = profile_tch(
+            x_values[active] - position,
+            float(parameters.gaussian_fwhm_deg[reflection]),
+            float(parameters.lorentzian_fwhm_deg[reflection]),
+        )
+        y_values[active] += intensity * evaluated.value
+        local[reflection, 0, active] = evaluated.value
+        local[reflection, 1, active] = intensity * (
+            -evaluated.d_delta
+            + evaluated.d_gaussian_fwhm * parameters.d_component_fwhm_d_two_theta[reflection, 0]
+            + evaluated.d_lorentzian_fwhm * parameters.d_component_fwhm_d_two_theta[reflection, 1]
+        )
+        for parameter in range(5):
+            global_jacobian[parameter, active] += intensity * (
+                evaluated.d_gaussian_fwhm
+                * parameters.d_gaussian_fwhm_d_instrument[reflection, parameter]
+                + evaluated.d_lorentzian_fwhm
+                * parameters.d_lorentzian_fwhm_d_instrument[reflection, parameter]
+            )
+    return y_values, local, global_jacobian
