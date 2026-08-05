@@ -46,6 +46,10 @@ rietveld.extensions
   Versioned provider protocols and optional third-party discovery. Providers
   are passed explicitly into calculations; discovery never creates numerical
   core global state.
+
+rietveld.sample
+  Built-in size, microstrain, and preferred-orientation providers. These obey
+  the same public protocol as third-party implementations.
 ```
 
 Low-level profile functions remain available for equation testing and advanced
@@ -57,9 +61,18 @@ The implemented low-level module split already follows this boundary:
 rietveld.instrument.ConstantWavelengthInstrument
 rietveld.instrument.FcjGeometry
 rietveld.radiation.WavelengthComponents
+rietveld.phase.ReflectionGeometryBatch
+rietveld.phase.ReciprocalMetric
+rietveld.extensions.PhysicsContribution
+rietveld.extensions.ReflectionPhysicsProvider
+rietveld.extensions.CompositePhysicsProvider
+rietveld.sample.IsotropicSizeBroadening
+rietveld.sample.IsotropicMicrostrainBroadening
 rietveld.cw.cw_profile_parameters
 rietveld.cw.accumulate_cw
 rietveld.cw.accumulate_cw_components
+rietveld.cw.accumulate_cw_contributions
+rietveld.calculation.calculate_cw_pattern
 rietveld.fcj.profile_fcj
 rietveld.fcj.accumulate_cw_fcj
 rietveld.fcj.accumulate_cw_fcj_components
@@ -69,8 +82,11 @@ rietveld.results.AccumulationResult
 Top-level imports are convenience aliases for scripts and notebooks; the
 module-qualified paths above are the ownership boundary. FCJ geometry does not
 contain CW coefficients, and the FCJ module composes the two models through a
-single native batch call. Future phase and refinement layers consume this
-calculation surface rather than moving their state into either model.
+single native batch call. `ReflectionGeometryBatch` owns plain `hkl`, d-spacing,
+position, and base-intensity arrays. `calculate_cw_pattern` accepts it directly
+and calls an optional provider exactly once before one native fused
+accumulation. Future phase and refinement layers consume this calculation
+surface rather than moving their state into either model.
 
 ## Data and ownership rules
 
@@ -181,3 +197,9 @@ provider version, API version, and plain-data configuration; it never pickles
 live provider or native objects. Refinement methods depend on the calculator
 contract, so a compatible provider is automatically usable by Le Bail and
 later Rietveld workflows.
+
+Provider API version 1 returns additive Gaussian variance, additive Lorentzian
+FWHM, a multiplicative intensity correction, position chains, stable parameter
+names, and parameter-major derivative chains. The precise equations and array
+semantics are documented in [`sample-physics.md`](sample-physics.md). Width
+contributions add; intensity modifiers compose with the full product rule.

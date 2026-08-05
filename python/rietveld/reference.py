@@ -587,6 +587,109 @@ def accumulate_cw(
     return y_values, local, global_jacobian
 
 
+def accumulate_cw_contributions(
+    x: ArrayLike,
+    two_theta_deg: ArrayLike,
+    base_integrated_intensities: ArrayLike,
+    *,
+    gaussian_variance_deg2: ArrayLike,
+    lorentzian_fwhm_deg: ArrayLike,
+    intensity_multiplier: ArrayLike,
+    d_gaussian_variance_d_position: ArrayLike,
+    d_lorentzian_fwhm_d_position: ArrayLike,
+    d_intensity_multiplier_d_position: ArrayLike,
+    d_gaussian_variance_d_parameters: ArrayLike,
+    d_lorentzian_fwhm_d_parameters: ArrayLike,
+    d_intensity_multiplier_d_parameters: ArrayLike,
+    u_deg2: float,
+    v_deg2: float,
+    w_deg2: float,
+    x_deg: float,
+    y_deg: float,
+    support_fwhm: float = 20.0,
+) -> tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]]:
+    """Independently compose provider arrays with the CW profile equations."""
+
+    x_values = np.asarray(x, dtype=np.float64)
+    positions = np.asarray(two_theta_deg, dtype=np.float64)
+    intensities = np.asarray(base_integrated_intensities, dtype=np.float64)
+    q_add = np.asarray(gaussian_variance_deg2, dtype=np.float64)
+    l_add = np.asarray(lorentzian_fwhm_deg, dtype=np.float64)
+    multiplier = np.asarray(intensity_multiplier, dtype=np.float64)
+    dq_position = np.asarray(d_gaussian_variance_d_position, dtype=np.float64)
+    dl_position = np.asarray(d_lorentzian_fwhm_d_position, dtype=np.float64)
+    dm_position = np.asarray(d_intensity_multiplier_d_position, dtype=np.float64)
+    dq_parameters = np.asarray(d_gaussian_variance_d_parameters, dtype=np.float64)
+    dl_parameters = np.asarray(d_lorentzian_fwhm_d_parameters, dtype=np.float64)
+    dm_parameters = np.asarray(d_intensity_multiplier_d_parameters, dtype=np.float64)
+    instrument = cw_profile_parameters(
+        positions,
+        u_deg2=u_deg2,
+        v_deg2=v_deg2,
+        w_deg2=w_deg2,
+        x_deg=x_deg,
+        y_deg=y_deg,
+    )
+    total_variance = instrument.gaussian_variance_deg2 + q_add
+    gaussian = GAUSSIAN_FWHM_PER_SIGMA * np.sqrt(total_variance)
+    lorentzian = instrument.lorentzian_fwhm_deg + l_add
+    d_gaussian_d_variance = GAUSSIAN_FWHM_PER_SIGMA / (2.0 * np.sqrt(total_variance))
+    instrument_scale = instrument.gaussian_fwhm_deg / gaussian
+    parameter_count = dq_parameters.shape[0]
+    y_values = np.zeros_like(x_values)
+    local = np.zeros((positions.size, 2, x_values.size), dtype=np.float64)
+    global_jacobian = np.zeros((5 + parameter_count, x_values.size), dtype=np.float64)
+    for reflection, (position, base_intensity) in enumerate(
+        zip(positions, intensities, strict=True)
+    ):
+        shape = tch_shape_from_fwhm(float(gaussian[reflection]), float(lorentzian[reflection]))
+        active = np.abs(x_values - position) <= support_fwhm * shape.total_fwhm
+        evaluated = profile_tch(
+            x_values[active] - position,
+            float(gaussian[reflection]),
+            float(lorentzian[reflection]),
+        )
+        effective_intensity = base_intensity * multiplier[reflection]
+        y_values[active] += effective_intensity * evaluated.value
+        local[reflection, 0, active] = multiplier[reflection] * evaluated.value
+        d_gaussian_position = (
+            instrument.d_component_fwhm_d_two_theta[reflection, 0] * instrument_scale[reflection]
+            + d_gaussian_d_variance[reflection] * dq_position[reflection]
+        )
+        d_lorentzian_position = (
+            instrument.d_component_fwhm_d_two_theta[reflection, 1] + dl_position[reflection]
+        )
+        local[reflection, 1, active] = base_intensity * (
+            dm_position[reflection] * evaluated.value
+            + multiplier[reflection]
+            * (
+                -evaluated.d_delta
+                + evaluated.d_gaussian_fwhm * d_gaussian_position
+                + evaluated.d_lorentzian_fwhm * d_lorentzian_position
+            )
+        )
+        for parameter in range(5):
+            global_jacobian[parameter, active] += effective_intensity * (
+                evaluated.d_gaussian_fwhm
+                * instrument.d_gaussian_fwhm_d_instrument[reflection, parameter]
+                * instrument_scale[reflection]
+                + evaluated.d_lorentzian_fwhm
+                * instrument.d_lorentzian_fwhm_d_instrument[reflection, parameter]
+            )
+        for parameter in range(parameter_count):
+            global_jacobian[5 + parameter, active] += base_intensity * (
+                dm_parameters[parameter, reflection] * evaluated.value
+                + multiplier[reflection]
+                * (
+                    evaluated.d_gaussian_fwhm
+                    * d_gaussian_d_variance[reflection]
+                    * dq_parameters[parameter, reflection]
+                    + evaluated.d_lorentzian_fwhm * dl_parameters[parameter, reflection]
+                )
+            )
+    return y_values, local, global_jacobian
+
+
 def accumulate_cw_fcj(
     x: ArrayLike,
     two_theta_deg: ArrayLike,

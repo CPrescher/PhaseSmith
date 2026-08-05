@@ -498,6 +498,8 @@ Rust (about 6.97 ms and 14.09 ms through Python), returning approximately
 
 ## Implementation unit 5: size, microstrain, and preferred orientation
 
+Status: in progress (provider contract and isotropic size/microstrain slice).
+
 ### Goal
 
 Introduce sample-dependent width and intensity modifiers while preserving the
@@ -546,6 +548,24 @@ validation without changes to refinement orchestration.
    isotropic cases are oracle-validated.
 6. Keep structure-factor calculation outside this unit; accept base integrated
    intensities as inputs.
+
+Provider and isotropic-broadening review result: provider API version 1 uses
+immutable contiguous arrays for additive Gaussian variance, additive
+Lorentzian FWHM, multiplicative integrated-intensity correction, position
+chains, and parameter-major analytical chains. `ReflectionGeometryBatch` and
+the stateless `calculate_cw_pattern` entry point call any compatible provider
+once, then dispatch one fused native batch. Built-in Scherrer size and explicit
+RMS Gaussian microstrain providers compose through the same public protocol as
+the tested external quadratic provider. Neutral contributions reproduce the
+instrument-only Rust result bit-for-bit. Eleven focused tests cover equations,
+units, disabled limits, randomized native/NumPy equality, finite retained
+area, centroid, all local/provider derivatives, deterministic repetition,
+invalid inputs, and the external-provider contract. At this checkpoint, 149
+Python and 22 Rust tests pass. For 200 reflections and 5,001 samples, size and
+strain expand active work from 12,444 to 91,741 reflection/sample pairs; the
+recorded Rust benchmark is about 1.008 ms versus 0.126 ms instrument-only, and
+the end-to-end Python/provider/native median is about 1.08 ms with 1.791 MB of
+result arrays.
 
 ### Validation
 

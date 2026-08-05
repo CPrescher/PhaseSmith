@@ -7,10 +7,11 @@ use npy::{IntoPyArray, PyArray1, PyArray2, PyReadonlyArray1};
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use rietveld_core::{
-    Accumulation, ConstantWavelengthInstrument, CwProfileParameters, CwReflectionBatchView,
-    FcjGeometry, FcjProfile, GridView, PeakBatchView, SupportPolicy, TchPeakBatchView, TchShape,
-    TchWidths, WavelengthComponentsView, accumulate_batch, accumulate_cw_batch,
-    accumulate_cw_components_batch, accumulate_cw_fcj_batch, accumulate_cw_fcj_components_batch,
+    Accumulation, ConstantWavelengthInstrument, CwContributionArrays, CwContributionsView,
+    CwProfileParameters, CwReflectionBatchView, FcjGeometry, FcjProfile, GridView, PeakBatchView,
+    SupportPolicy, TchPeakBatchView, TchShape, TchWidths, WavelengthComponentsView,
+    accumulate_batch, accumulate_cw_batch, accumulate_cw_components_batch,
+    accumulate_cw_contributions_batch, accumulate_cw_fcj_batch, accumulate_cw_fcj_components_batch,
     accumulate_tch_batch, accumulate_values_batch, symmetric_pseudo_voigt,
 };
 
@@ -384,6 +385,92 @@ fn accumulate_cw<'py>(
     accumulation_to_numpy(py, accumulation)
 }
 
+/// Accumulate a CW batch with vectorized sample-physics contributions.
+#[pyfunction]
+#[allow(clippy::too_many_arguments)]
+fn accumulate_cw_contributions<'py>(
+    py: Python<'py>,
+    x: PyReadonlyArray1<'py, f64>,
+    two_theta_deg: PyReadonlyArray1<'py, f64>,
+    base_intensities: PyReadonlyArray1<'py, f64>,
+    wavelength_angstrom: f64,
+    u_deg2: f64,
+    v_deg2: f64,
+    w_deg2: f64,
+    x_deg: f64,
+    y_deg: f64,
+    gaussian_variance_deg2: PyReadonlyArray1<'py, f64>,
+    lorentzian_fwhm_deg: PyReadonlyArray1<'py, f64>,
+    intensity_multiplier: PyReadonlyArray1<'py, f64>,
+    d_gaussian_variance_d_position: PyReadonlyArray1<'py, f64>,
+    d_lorentzian_fwhm_d_position: PyReadonlyArray1<'py, f64>,
+    d_intensity_multiplier_d_position: PyReadonlyArray1<'py, f64>,
+    d_gaussian_variance_d_parameters: PyReadonlyArray1<'py, f64>,
+    d_lorentzian_fwhm_d_parameters: PyReadonlyArray1<'py, f64>,
+    d_intensity_multiplier_d_parameters: PyReadonlyArray1<'py, f64>,
+    parameter_count: usize,
+    support_fwhm: f64,
+) -> PyResult<AccumulationArrays<'py>> {
+    let x = contiguous_slice(&x, "x")?;
+    let two_theta_deg = contiguous_slice(&two_theta_deg, "two_theta_deg")?;
+    let base_intensities = contiguous_slice(&base_intensities, "base_intensities")?;
+    let gaussian_variance_deg2 =
+        contiguous_slice(&gaussian_variance_deg2, "gaussian_variance_deg2")?;
+    let lorentzian_fwhm_deg = contiguous_slice(&lorentzian_fwhm_deg, "lorentzian_fwhm_deg")?;
+    let intensity_multiplier = contiguous_slice(&intensity_multiplier, "intensity_multiplier")?;
+    let d_gaussian_variance_d_position = contiguous_slice(
+        &d_gaussian_variance_d_position,
+        "d_gaussian_variance_d_position",
+    )?;
+    let d_lorentzian_fwhm_d_position = contiguous_slice(
+        &d_lorentzian_fwhm_d_position,
+        "d_lorentzian_fwhm_d_position",
+    )?;
+    let d_intensity_multiplier_d_position = contiguous_slice(
+        &d_intensity_multiplier_d_position,
+        "d_intensity_multiplier_d_position",
+    )?;
+    let d_gaussian_variance_d_parameters = contiguous_slice(
+        &d_gaussian_variance_d_parameters,
+        "d_gaussian_variance_d_parameters",
+    )?;
+    let d_lorentzian_fwhm_d_parameters = contiguous_slice(
+        &d_lorentzian_fwhm_d_parameters,
+        "d_lorentzian_fwhm_d_parameters",
+    )?;
+    let d_intensity_multiplier_d_parameters = contiguous_slice(
+        &d_intensity_multiplier_d_parameters,
+        "d_intensity_multiplier_d_parameters",
+    )?;
+    let grid = GridView::new(x).map_err(|error| PyValueError::new_err(error.to_string()))?;
+    let contributions = CwContributionsView::new(
+        two_theta_deg.len(),
+        parameter_count,
+        CwContributionArrays {
+            gaussian_variance_deg2,
+            lorentzian_fwhm_deg,
+            intensity_multiplier,
+            d_gaussian_variance_d_position,
+            d_lorentzian_fwhm_d_position,
+            d_intensity_multiplier_d_position,
+            d_gaussian_variance_d_parameters,
+            d_lorentzian_fwhm_d_parameters,
+            d_intensity_multiplier_d_parameters,
+        },
+    )
+    .map_err(|error| PyValueError::new_err(error.to_string()))?;
+    let accumulation = accumulate_cw_contributions_batch(
+        grid,
+        two_theta_deg,
+        base_intensities,
+        cw_instrument(wavelength_angstrom, u_deg2, v_deg2, w_deg2, x_deg, y_deg),
+        contributions,
+        SupportPolicy::FwhmMultiple(support_fwhm),
+    )
+    .map_err(|error| PyValueError::new_err(error.to_string()))?;
+    accumulation_to_numpy(py, accumulation)
+}
+
 /// Accumulate an FCJ-asymmetric CW reflection batch with derivatives.
 #[pyfunction]
 #[allow(clippy::too_many_arguments)]
@@ -558,6 +645,7 @@ fn _core(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_function(wrap_pyfunction!(accumulate_values, module)?)?;
     module.add_function(wrap_pyfunction!(cw_profile_parameters, module)?)?;
     module.add_function(wrap_pyfunction!(accumulate_cw, module)?)?;
+    module.add_function(wrap_pyfunction!(accumulate_cw_contributions, module)?)?;
     module.add_function(wrap_pyfunction!(accumulate_cw_fcj, module)?)?;
     module.add_function(wrap_pyfunction!(accumulate_cw_components, module)?)?;
     module.add("PARAMETER_ORDER", ("intensity", "position", "fwhm", "eta"))?;

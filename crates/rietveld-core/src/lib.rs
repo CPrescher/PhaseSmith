@@ -6,6 +6,7 @@
 
 pub mod cw;
 pub mod cw_components;
+pub mod cw_contributions;
 pub mod cw_fcj;
 pub mod fcj;
 pub mod profile;
@@ -18,6 +19,10 @@ pub use cw::{
 };
 pub use cw_components::{
     CwComponentsBatchError, accumulate_cw_components_batch, accumulate_cw_fcj_components_batch,
+};
+pub use cw_contributions::{
+    CwContributionArrays, CwContributionsError, CwContributionsView,
+    accumulate_cw_contributions_batch,
 };
 pub use cw_fcj::{CwFcjBatchError, accumulate_cw_fcj_batch};
 pub use fcj::{FcjError, FcjGeometry, FcjProfile, FcjProfilePoint};

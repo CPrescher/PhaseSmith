@@ -16,13 +16,23 @@ from ._api import (
     tch_shape_from_fwhm,
     tch_shape_from_gaussian_sigma,
 )
+from .calculation import calculate_cw_pattern
 from .cw import (
     CW_GLOBAL_PARAMETER_ORDER,
     CW_LOCAL_PARAMETER_ORDER,
     CwProfileParameters,
     accumulate_cw,
     accumulate_cw_components,
+    accumulate_cw_contributions,
     cw_profile_parameters,
+)
+from .extensions import (
+    PHYSICS_PROVIDER_API_VERSION,
+    CompositePhysicsProvider,
+    PhysicsContext,
+    PhysicsContribution,
+    ProviderDescriptor,
+    ReflectionPhysicsProvider,
 )
 from .fcj import (
     CW_FCJ_GLOBAL_PARAMETER_ORDER,
@@ -34,8 +44,10 @@ from .fcj import (
     profile_fcj,
 )
 from .instrument import ConstantWavelengthInstrument, FcjGeometry
+from .phase import ReciprocalMetric, ReflectionGeometryBatch
 from .radiation import WavelengthComponents
 from .results import AccumulationResult, PatternDerivatives, SupportJacobian
+from .sample import IsotropicMicrostrainBroadening, IsotropicSizeBroadening
 
 __all__ = [
     "CW_FCJ_GLOBAL_PARAMETER_ORDER",
@@ -44,14 +56,24 @@ __all__ = [
     "CW_LOCAL_PARAMETER_ORDER",
     "FCJ_PARAMETER_ORDER",
     "PARAMETER_ORDER",
+    "PHYSICS_PROVIDER_API_VERSION",
     "TCH_PARAMETER_ORDER",
     "AccumulationResult",
+    "CompositePhysicsProvider",
     "ConstantWavelengthInstrument",
     "CwProfileParameters",
     "FcjGeometry",
     "FcjProfileResult",
+    "IsotropicMicrostrainBroadening",
+    "IsotropicSizeBroadening",
     "PatternDerivatives",
+    "PhysicsContext",
+    "PhysicsContribution",
     "ProfileResult",
+    "ProviderDescriptor",
+    "ReciprocalMetric",
+    "ReflectionGeometryBatch",
+    "ReflectionPhysicsProvider",
     "SupportJacobian",
     "TchFwhmShape",
     "TchProfileResult",
@@ -61,9 +83,11 @@ __all__ = [
     "accumulate",
     "accumulate_cw",
     "accumulate_cw_components",
+    "accumulate_cw_contributions",
     "accumulate_cw_fcj",
     "accumulate_cw_fcj_components",
     "accumulate_tch",
+    "calculate_cw_pattern",
     "cw_profile_parameters",
     "profile",
     "profile_fcj",

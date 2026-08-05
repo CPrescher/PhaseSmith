@@ -11,8 +11,13 @@ from typing import Any
 
 import numpy as np
 from rietveld import (
+    CompositePhysicsProvider,
     ConstantWavelengthInstrument,
     FcjGeometry,
+    IsotropicMicrostrainBroadening,
+    IsotropicSizeBroadening,
+    PhysicsContext,
+    ReflectionGeometryBatch,
     WavelengthComponents,
     _core,
     accumulate,
@@ -20,6 +25,7 @@ from rietveld import (
     accumulate_cw_fcj,
     accumulate_cw_fcj_components,
     accumulate_tch,
+    calculate_cw_pattern,
     cw_profile_parameters,
 )
 
@@ -103,6 +109,25 @@ def main() -> None:
         1.54443,
         0.5,
     )
+    d_spacings = cw_instrument.wavelength_angstrom / (2.0 * np.sin(np.deg2rad(positions / 2.0)))
+    reflection_geometry = ReflectionGeometryBatch(
+        np.column_stack(
+            (
+                np.arange(count, dtype=np.int64),
+                np.ones(count, dtype=np.int64),
+                np.zeros(count, dtype=np.int64),
+            )
+        ),
+        d_spacings,
+        positions,
+        intensities,
+    )
+    sample_physics = CompositePhysicsProvider(
+        (IsotropicSizeBroadening(50.0), IsotropicMicrostrainBroadening(5.0e-4))
+    )
+    sample_contribution = sample_physics.evaluate(
+        PhysicsContext(reflection_geometry, cw_instrument)
+    )
 
     support_fwhm = 20.0
     lower = np.searchsorted(x, positions - support_fwhm * fwhms, side="left")
@@ -123,6 +148,22 @@ def main() -> None:
     cw_lower = np.searchsorted(x, positions - support_fwhm * cw_widths, side="left")
     cw_upper = np.searchsorted(x, positions + support_fwhm * cw_widths, side="right")
     cw_active_peak_samples = int(np.sum(cw_upper - cw_lower))
+    cw_parameters = cw_profile_parameters(positions, cw_instrument)
+    sample_gaussian = 2.3548200450309493 * np.sqrt(
+        cw_parameters.gaussian_variance_deg2 + sample_contribution.gaussian_variance_deg2
+    )
+    sample_lorentzian = cw_parameters.lorentzian_fwhm_deg + sample_contribution.lorentzian_fwhm_deg
+    sample_widths = (
+        sample_gaussian**5
+        + 2.69269 * sample_gaussian**4 * sample_lorentzian
+        + 2.42843 * sample_gaussian**3 * sample_lorentzian**2
+        + 4.47163 * sample_gaussian**2 * sample_lorentzian**3
+        + 0.07842 * sample_gaussian * sample_lorentzian**4
+        + sample_lorentzian**5
+    ) ** 0.2
+    sample_lower = np.searchsorted(x, positions - support_fwhm * sample_widths, side="left")
+    sample_upper = np.searchsorted(x, positions + support_fwhm * sample_widths, side="right")
+    sample_active_peak_samples = int(np.sum(sample_upper - sample_lower))
     apparent_limit = np.rad2deg(
         np.arccos(
             np.cos(np.deg2rad(positions))
@@ -191,6 +232,17 @@ def main() -> None:
         warmups=arguments.warmups,
         repetitions=arguments.repetitions,
     )
+    sample_result, sample_timings = measure(
+        lambda: calculate_cw_pattern(
+            x,
+            reflection_geometry,
+            cw_instrument,
+            physics=sample_physics,
+            support_fwhm=support_fwhm,
+        ),
+        warmups=arguments.warmups,
+        repetitions=arguments.repetitions,
+    )
     fcj_result, fcj_timings = measure(
         lambda: accumulate_cw_fcj(
             x,
@@ -225,6 +277,7 @@ def main() -> None:
         f"peaks={count} samples={x.size} active_peak_samples={active_peak_samples} "
         f"tch_active_peak_samples={tch_active_peak_samples} "
         f"cw_active_peak_samples={cw_active_peak_samples} "
+        f"sample_active_peak_samples={sample_active_peak_samples} "
         f"fcj_active_peak_samples={fcj_active_peak_samples} "
         f"wavelength_component_counts=1,2 support_fwhm={support_fwhm:g}"
     )
@@ -251,6 +304,13 @@ def main() -> None:
         + cw_result.derivatives.local.nbytes
         + cw_result.derivatives.global_jacobian.nbytes,
         cw_timings,
+    )
+    report_case(
+        "cw_size_strain_provider_and_native_jacobian",
+        sample_result.y.nbytes
+        + sample_result.derivatives.local.nbytes
+        + sample_result.derivatives.global_jacobian.nbytes,
+        sample_timings,
     )
     report_case(
         "cw_fcj_local_and_global_jacobian_order_48",

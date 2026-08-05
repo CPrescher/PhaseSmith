@@ -10,6 +10,7 @@ from numpy.typing import ArrayLike, NDArray
 
 from . import _core
 from ._api import _vector
+from .extensions import PhysicsContribution
 from .instrument import ConstantWavelengthInstrument
 from .radiation import WavelengthComponents, component_global_parameter_names
 from .results import AccumulationResult, _build_accumulation_result
@@ -88,6 +89,54 @@ def accumulate_cw(
         global_values,
         CW_LOCAL_PARAMETER_ORDER,
         CW_GLOBAL_PARAMETER_ORDER,
+        jacobian_layout,
+    )
+
+
+def accumulate_cw_contributions(
+    x: ArrayLike,
+    two_theta_deg: ArrayLike,
+    base_integrated_intensities: ArrayLike,
+    instrument: ConstantWavelengthInstrument,
+    contributions: PhysicsContribution,
+    *,
+    support_fwhm: float = 20.0,
+    jacobian_layout: Literal["support", "dense"] = "support",
+) -> AccumulationResult:
+    """Accumulate one vectorized sample-physics contribution batch."""
+
+    if jacobian_layout not in ("support", "dense"):
+        raise ValueError("jacobian_layout must be 'support' or 'dense'")
+    y, starts, offsets, local_values, global_values = _core.accumulate_cw_contributions(
+        _vector(x, "x"),
+        _vector(two_theta_deg, "two_theta_deg"),
+        _vector(base_integrated_intensities, "base_integrated_intensities"),
+        instrument.wavelength_angstrom,
+        instrument.u_deg2,
+        instrument.v_deg2,
+        instrument.w_deg2,
+        instrument.x_deg,
+        instrument.y_deg,
+        contributions.gaussian_variance_deg2,
+        contributions.lorentzian_fwhm_deg,
+        contributions.intensity_multiplier,
+        contributions.d_gaussian_variance_d_position,
+        contributions.d_lorentzian_fwhm_d_position,
+        contributions.d_intensity_multiplier_d_position,
+        contributions.d_gaussian_variance_d_parameters.reshape(-1),
+        contributions.d_lorentzian_fwhm_d_parameters.reshape(-1),
+        contributions.d_intensity_multiplier_d_parameters.reshape(-1),
+        len(contributions.parameter_names),
+        float(support_fwhm),
+    )
+    return _build_accumulation_result(
+        y,
+        starts,
+        offsets,
+        local_values,
+        global_values,
+        CW_LOCAL_PARAMETER_ORDER,
+        CW_GLOBAL_PARAMETER_ORDER + contributions.parameter_names,
         jacobian_layout,
     )
 

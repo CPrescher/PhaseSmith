@@ -18,6 +18,9 @@ in [docs/public-api.md](docs/public-api.md).
 
 Optional monochromatic and multi-wavelength radiation composition is documented
 in [docs/wavelength-components.md](docs/wavelength-components.md).
+The versioned physics-provider contract, isotropic size/microstrain equations,
+and preferred-orientation convention are documented in
+[docs/sample-physics.md](docs/sample-physics.md).
 
 ## Development
 
@@ -111,6 +114,35 @@ radiation = WavelengthComponents.doublet(
 doublet = accumulate_cw_fcj_components(
     x, [24.0, 26.0], [100.0, 80.0], instrument, radiation, geometry
 )
+```
+
+Sample physics is explicit and provider-based. Built-in and third-party models
+return the same vectorized contribution schema, and Python is never called from
+the native peak/sample loop:
+
+```python
+from rietveld import (
+    CompositePhysicsProvider,
+    IsotropicMicrostrainBroadening,
+    IsotropicSizeBroadening,
+    ReflectionGeometryBatch,
+    calculate_cw_pattern,
+)
+
+reflections = ReflectionGeometryBatch(
+    hkl=[[1, 0, 0], [1, 1, 0]],
+    d_spacing_angstrom=[3.72, 2.64],
+    two_theta_deg=[24.0, 34.0],
+    base_integrated_intensity=[100.0, 80.0],
+)
+sample = CompositePhysicsProvider(
+    (
+        IsotropicSizeBroadening(crystallite_size_nm=50.0),
+        IsotropicMicrostrainBroadening(rms_microstrain=5e-4),
+    )
+)
+calculated = calculate_cw_pattern(x, reflections, instrument, physics=sample)
+print(calculated.derivatives.global_parameter_names)
 ```
 
 GSAS-II is used only as the optional pinned validation oracle described in
