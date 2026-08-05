@@ -13,6 +13,10 @@ from numpy.typing import ArrayLike, NDArray
 
 if TYPE_CHECKING:
     from .extensions import ReflectionPhysicsProvider
+    from .intensity_corrections import IntegratedIntensityCorrectionProvider
+    from .scattering import ScatteringFactorProvider
+    from .structure import CrystalStructure
+    from .symmetry import GeneratedReflectionBatch
 
 
 def _readonly_float_vector(values: ArrayLike, name: str) -> NDArray[np.float64]:
@@ -164,6 +168,116 @@ class Phase:
             raise TypeError("reflections must be a ReflectionBatch")
         if not np.isfinite(self.scale) or self.scale < 0.0:
             raise ValueError("phase scale must be non-negative and finite")
+
+
+@dataclass(frozen=True, slots=True, init=False)
+class StructuralReflectionBatch:
+    """Stable reflection families whose geometry follows the structure cell."""
+
+    reflection_ids: tuple[str, ...]
+    hkl: NDArray[np.int64]
+    multiplicity: NDArray[np.int64]
+
+    def __init__(
+        self,
+        reflection_ids: tuple[str, ...] | list[str],
+        hkl: ArrayLike,
+        multiplicity: ArrayLike,
+    ) -> None:
+        """Copy canonical indices and positive powder multiplicities."""
+
+        ids = tuple(_stable_id(value, "reflection_id") for value in reflection_ids)
+        if len(set(ids)) != len(ids):
+            raise ValueError("reflection_ids must be unique within a phase")
+        raw_hkl = np.asarray(hkl)
+        if (
+            raw_hkl.ndim != 2
+            or raw_hkl.shape[1] != 3
+            or not np.issubdtype(raw_hkl.dtype, np.integer)
+        ):
+            raise ValueError("hkl must have shape (reflection_count, 3) and integer dtype")
+        indices = np.array(raw_hkl, dtype=np.int64, copy=True, order="C")
+        if not np.array_equal(raw_hkl, indices):
+            raise ValueError("hkl indices must fit in signed 64-bit integers")
+        raw_multiplicity = np.asarray(multiplicity)
+        if raw_multiplicity.ndim != 1 or not np.issubdtype(raw_multiplicity.dtype, np.integer):
+            raise ValueError("multiplicity must be a one-dimensional integer array")
+        multiplicities = np.array(raw_multiplicity, dtype=np.int64, copy=True, order="C")
+        if not np.array_equal(raw_multiplicity, multiplicities) or np.any(multiplicities <= 0):
+            raise ValueError("multiplicity values must be positive signed 64-bit integers")
+        count = indices.shape[0]
+        if count == 0:
+            raise ValueError("at least one structural reflection is required")
+        if len(ids) != count or multiplicities.shape != (count,):
+            raise ValueError("reflection IDs, hkl, and multiplicity must have equal lengths")
+        indices.flags.writeable = False
+        multiplicities.flags.writeable = False
+        object.__setattr__(self, "reflection_ids", ids)
+        object.__setattr__(self, "hkl", indices)
+        object.__setattr__(self, "multiplicity", multiplicities)
+
+    @classmethod
+    def from_generated(cls, reflections: GeneratedReflectionBatch) -> StructuralReflectionBatch:
+        """Drop cached metric values while retaining stable generated families."""
+
+        from .symmetry import GeneratedReflectionBatch
+
+        if not isinstance(reflections, GeneratedReflectionBatch):
+            raise TypeError("reflections must be a GeneratedReflectionBatch")
+        return cls(reflections.reflection_ids, reflections.hkl, reflections.multiplicity)
+
+    @property
+    def reflection_count(self) -> int:
+        """Return the number of reflection families."""
+
+        return int(self.hkl.shape[0])
+
+
+@dataclass(frozen=True, slots=True)
+class RietveldPhase:
+    """One structural phase with explicit scattering and correction models.
+
+    Reflection geometry and integrated intensities are calculated from the
+    structure for every evaluation. This model is separate from :class:`Phase`,
+    whose intensities are independent variables for Le Bail extraction.
+    """
+
+    phase_id: str
+    name: str
+    structure: CrystalStructure
+    reflections: StructuralReflectionBatch
+    scattering: ScatteringFactorProvider
+    intensity_correction: IntegratedIntensityCorrectionProvider
+    scale: float = 1.0
+    physics: ReflectionPhysicsProvider | None = None
+    coordinate_tolerance: float = 1.0e-10
+
+    def __post_init__(self) -> None:
+        """Validate stable identity and explicitly supplied physical models."""
+
+        from .intensity_corrections import IntegratedIntensityCorrectionProvider
+        from .scattering import ScatteringFactorProvider, ScatteringProviderDescriptor
+        from .structure import CrystalStructure
+
+        _stable_id(self.phase_id, "phase_id")
+        if not isinstance(self.name, str) or not self.name.strip():
+            raise ValueError("phase name must be a non-empty string")
+        if not isinstance(self.structure, CrystalStructure):
+            raise TypeError("structure must be a CrystalStructure")
+        if not isinstance(self.reflections, StructuralReflectionBatch):
+            raise TypeError("reflections must be a StructuralReflectionBatch")
+        if not isinstance(self.scattering, ScatteringFactorProvider):
+            raise TypeError("scattering must implement ScatteringFactorProvider")
+        if not isinstance(self.scattering.descriptor, ScatteringProviderDescriptor):
+            raise TypeError("scattering descriptor must be a ScatteringProviderDescriptor")
+        if not isinstance(self.intensity_correction, IntegratedIntensityCorrectionProvider):
+            raise TypeError(
+                "intensity_correction must implement IntegratedIntensityCorrectionProvider"
+            )
+        if not np.isfinite(self.scale) or self.scale < 0.0:
+            raise ValueError("phase scale must be non-negative and finite")
+        if not np.isfinite(self.coordinate_tolerance) or self.coordinate_tolerance <= 0.0:
+            raise ValueError("coordinate_tolerance must be positive and finite")
 
 
 @dataclass(frozen=True, slots=True, init=False)

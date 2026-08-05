@@ -24,6 +24,12 @@ use rietveld_engine::crystallography::{
     calculate_p1_dense, calculate_p1_intensity_vjp, calculate_p1_jvp,
     calculate_structure_factor_dense, neutron_species_metadata, xray_species_metadata,
 };
+use rietveld_engine::{
+    BuiltInScatteringModel, StructuralPatternError, StructuralPatternInputView,
+    StructuralPatternJvpResult, StructuralPatternResult, StructuralPatternVjpResult,
+    calculate_structural_pattern, calculate_structural_pattern_jvp,
+    calculate_structural_pattern_vjp,
+};
 
 type ProfileArrays<'py> = (
     Bound<'py, PyArray1<f64>>,
@@ -39,6 +45,28 @@ type AccumulationArrays<'py> = (
     Bound<'py, PyArray2<f64>>,
     Bound<'py, PyArray2<f64>>,
 );
+
+type StructuralReflectionArrays<'py> = (
+    Bound<'py, PyArray1<f64>>,
+    Bound<'py, PyArray1<f64>>,
+    Bound<'py, PyArray1<f64>>,
+    Bound<'py, PyArray1<f64>>,
+    Bound<'py, PyArray1<f64>>,
+    Bound<'py, PyArray1<f64>>,
+    Bound<'py, PyArray1<f64>>,
+    Bound<'py, PyArray1<f64>>,
+);
+
+type StructuralPatternArrays<'py> = (AccumulationArrays<'py>, StructuralReflectionArrays<'py>);
+
+type StructuralPatternJvpArrays<'py> = (
+    StructuralPatternArrays<'py>,
+    Bound<'py, PyArray1<f64>>,
+    Bound<'py, PyArray1<f64>>,
+    Bound<'py, PyArray1<f64>>,
+);
+
+type StructuralPatternVjpArrays<'py> = (StructuralPatternArrays<'py>, Bound<'py, PyArray1<f64>>);
 
 type TchShapeValues = (f64, f64, f64, f64, f64, f64);
 
@@ -515,6 +543,370 @@ impl NativePreparedReflectionGenerator {
                 .map_err(|error| PyValueError::new_err(error.to_string()))?
                 .into_pyarray(py),
         ))
+    }
+}
+
+/// Immutable native structural phase used by values and derivative products.
+#[pyclass(name = "_StructuralPhase")]
+struct NativeStructuralPhase {
+    space_group: SpaceGroup,
+    cell: UnitCell,
+    hkl: Vec<[i32; 3]>,
+    multiplicity: Vec<usize>,
+    fractional_xyz: Vec<[f64; 3]>,
+    occupancy: Vec<f64>,
+    u_iso_angstrom2: Vec<f64>,
+    scattering_species: Vec<String>,
+    scale: f64,
+    coordinate_tolerance: f64,
+    scattering_model: BuiltInScatteringModel,
+    correction_model: IntegratedIntensityCorrectionModel,
+}
+
+impl NativeStructuralPhase {
+    #[allow(clippy::too_many_arguments)]
+    fn contribution_view<'a>(
+        reflection_count: usize,
+        parameter_count: usize,
+        gaussian_variance_deg2: &'a PyReadonlyArray1<'_, f64>,
+        lorentzian_fwhm_deg: &'a PyReadonlyArray1<'_, f64>,
+        intensity_multiplier: &'a PyReadonlyArray1<'_, f64>,
+        d_gaussian_variance_d_position: &'a PyReadonlyArray1<'_, f64>,
+        d_lorentzian_fwhm_d_position: &'a PyReadonlyArray1<'_, f64>,
+        d_intensity_multiplier_d_position: &'a PyReadonlyArray1<'_, f64>,
+        d_gaussian_variance_d_parameters: &'a PyReadonlyArray1<'_, f64>,
+        d_lorentzian_fwhm_d_parameters: &'a PyReadonlyArray1<'_, f64>,
+        d_intensity_multiplier_d_parameters: &'a PyReadonlyArray1<'_, f64>,
+    ) -> PyResult<CwContributionsView<'a>> {
+        CwContributionsView::new(
+            reflection_count,
+            parameter_count,
+            CwContributionArrays {
+                gaussian_variance_deg2: contiguous_slice(
+                    gaussian_variance_deg2,
+                    "gaussian_variance_deg2",
+                )?,
+                lorentzian_fwhm_deg: contiguous_slice(lorentzian_fwhm_deg, "lorentzian_fwhm_deg")?,
+                intensity_multiplier: contiguous_slice(
+                    intensity_multiplier,
+                    "intensity_multiplier",
+                )?,
+                d_gaussian_variance_d_position: contiguous_slice(
+                    d_gaussian_variance_d_position,
+                    "d_gaussian_variance_d_position",
+                )?,
+                d_lorentzian_fwhm_d_position: contiguous_slice(
+                    d_lorentzian_fwhm_d_position,
+                    "d_lorentzian_fwhm_d_position",
+                )?,
+                d_intensity_multiplier_d_position: contiguous_slice(
+                    d_intensity_multiplier_d_position,
+                    "d_intensity_multiplier_d_position",
+                )?,
+                d_gaussian_variance_d_parameters: contiguous_slice(
+                    d_gaussian_variance_d_parameters,
+                    "d_gaussian_variance_d_parameters",
+                )?,
+                d_lorentzian_fwhm_d_parameters: contiguous_slice(
+                    d_lorentzian_fwhm_d_parameters,
+                    "d_lorentzian_fwhm_d_parameters",
+                )?,
+                d_intensity_multiplier_d_parameters: contiguous_slice(
+                    d_intensity_multiplier_d_parameters,
+                    "d_intensity_multiplier_d_parameters",
+                )?,
+            },
+        )
+        .map_err(|error| PyValueError::new_err(error.to_string()))
+    }
+
+    fn with_input<R>(
+        &self,
+        x_deg: &[f64],
+        instrument: ConstantWavelengthInstrument,
+        contributions: CwContributionsView<'_>,
+        support_fwhm: f64,
+        operation: impl FnOnce(
+            UnitCell,
+            &SpaceGroup,
+            &StructuralPatternInputView<'_>,
+        ) -> Result<R, StructuralPatternError>,
+    ) -> PyResult<R> {
+        let species = self
+            .scattering_species
+            .iter()
+            .map(String::as_str)
+            .collect::<Vec<_>>();
+        let input = StructuralPatternInputView {
+            x_deg,
+            hkl: &self.hkl,
+            multiplicity: &self.multiplicity,
+            fractional_xyz: &self.fractional_xyz,
+            occupancy: &self.occupancy,
+            u_iso_angstrom2: &self.u_iso_angstrom2,
+            scattering_species: &species,
+            scale: self.scale,
+            coordinate_tolerance: self.coordinate_tolerance,
+            instrument,
+            correction_model: self.correction_model,
+            scattering_model: self.scattering_model,
+            contributions,
+            support: SupportPolicy::FwhmMultiple(support_fwhm),
+        };
+        operation(self.cell, &self.space_group, &input)
+            .map_err(|error| PyValueError::new_err(error.to_string()))
+    }
+}
+
+#[pymethods]
+impl NativeStructuralPhase {
+    #[new]
+    #[allow(clippy::too_many_arguments)]
+    fn new(
+        generator: PyRef<'_, NativePreparedReflectionGenerator>,
+        hkl_flat: PyReadonlyArray1<'_, i64>,
+        multiplicity: PyReadonlyArray1<'_, i64>,
+        fractional_xyz_flat: PyReadonlyArray1<'_, f64>,
+        occupancy: PyReadonlyArray1<'_, f64>,
+        u_iso_angstrom2: PyReadonlyArray1<'_, f64>,
+        scattering_species: Vec<String>,
+        a_angstrom: f64,
+        b_angstrom: f64,
+        c_angstrom: f64,
+        alpha_deg: f64,
+        beta_deg: f64,
+        gamma_deg: f64,
+        scale: f64,
+        coordinate_tolerance: f64,
+        scattering_model: &str,
+        correction_model: &str,
+        correction_wavelength_angstrom: Option<f64>,
+    ) -> PyResult<Self> {
+        let hkl = hkl_rows(&hkl_flat)?;
+        let multiplicity = multiplicity_rows(&multiplicity)?;
+        let fractional_xyz = xyz_rows(&fractional_xyz_flat)?;
+        let occupancy = contiguous_slice(&occupancy, "occupancy")?.to_vec();
+        let u_iso_angstrom2 = contiguous_slice(&u_iso_angstrom2, "u_iso_angstrom2")?.to_vec();
+        if hkl.len() != multiplicity.len() {
+            return Err(PyValueError::new_err(
+                "hkl and multiplicity must have the same reflection count",
+            ));
+        }
+        if fractional_xyz.len() != occupancy.len()
+            || fractional_xyz.len() != u_iso_angstrom2.len()
+            || fractional_xyz.len() != scattering_species.len()
+        {
+            return Err(PyValueError::new_err(
+                "all structural site arrays must have the same site count",
+            ));
+        }
+        let scattering_model = parse_built_in_scattering_model(scattering_model)?;
+        match scattering_model {
+            BuiltInScatteringModel::XrayNonResonant => {
+                PreparedXrayScattering::new(&scattering_species).map(|_| ())
+            }
+            BuiltInScatteringModel::NeutronNuclear => {
+                PreparedNeutronScattering::new(&scattering_species).map(|_| ())
+            }
+        }
+        .map_err(|error| PyValueError::new_err(error.to_string()))?;
+        Ok(Self {
+            space_group: generator.generator.space_group().clone(),
+            cell: crystallographic_cell(
+                a_angstrom, b_angstrom, c_angstrom, alpha_deg, beta_deg, gamma_deg,
+            ),
+            hkl,
+            multiplicity,
+            fractional_xyz,
+            occupancy,
+            u_iso_angstrom2,
+            scattering_species,
+            scale,
+            coordinate_tolerance,
+            scattering_model,
+            correction_model: parse_correction_model(
+                correction_model,
+                correction_wavelength_angstrom,
+            )?,
+        })
+    }
+
+    #[getter]
+    fn reflection_count(&self) -> usize {
+        self.hkl.len()
+    }
+
+    #[getter]
+    fn structural_parameter_count(&self) -> usize {
+        6 + 5 * self.fractional_xyz.len() + 1
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn calculate<'py>(
+        &self,
+        py: Python<'py>,
+        x_deg: PyReadonlyArray1<'py, f64>,
+        wavelength_angstrom: f64,
+        u_deg2: f64,
+        v_deg2: f64,
+        w_deg2: f64,
+        x_width_deg: f64,
+        y_width_deg: f64,
+        gaussian_variance_deg2: PyReadonlyArray1<'py, f64>,
+        lorentzian_fwhm_deg: PyReadonlyArray1<'py, f64>,
+        intensity_multiplier: PyReadonlyArray1<'py, f64>,
+        d_gaussian_variance_d_position: PyReadonlyArray1<'py, f64>,
+        d_lorentzian_fwhm_d_position: PyReadonlyArray1<'py, f64>,
+        d_intensity_multiplier_d_position: PyReadonlyArray1<'py, f64>,
+        d_gaussian_variance_d_parameters: PyReadonlyArray1<'py, f64>,
+        d_lorentzian_fwhm_d_parameters: PyReadonlyArray1<'py, f64>,
+        d_intensity_multiplier_d_parameters: PyReadonlyArray1<'py, f64>,
+        parameter_count: usize,
+        support_fwhm: f64,
+    ) -> PyResult<StructuralPatternArrays<'py>> {
+        let x_deg_values = contiguous_slice(&x_deg, "x_deg")?;
+        let contributions = Self::contribution_view(
+            self.hkl.len(),
+            parameter_count,
+            &gaussian_variance_deg2,
+            &lorentzian_fwhm_deg,
+            &intensity_multiplier,
+            &d_gaussian_variance_d_position,
+            &d_lorentzian_fwhm_d_position,
+            &d_intensity_multiplier_d_position,
+            &d_gaussian_variance_d_parameters,
+            &d_lorentzian_fwhm_d_parameters,
+            &d_intensity_multiplier_d_parameters,
+        )?;
+        let result = self.with_input(
+            x_deg_values,
+            cw_instrument(
+                wavelength_angstrom,
+                u_deg2,
+                v_deg2,
+                w_deg2,
+                x_width_deg,
+                y_width_deg,
+            ),
+            contributions,
+            support_fwhm,
+            calculate_structural_pattern,
+        )?;
+        structural_pattern_to_numpy(py, result)
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn jvp<'py>(
+        &self,
+        py: Python<'py>,
+        tangent: PyReadonlyArray1<'py, f64>,
+        x_deg: PyReadonlyArray1<'py, f64>,
+        wavelength_angstrom: f64,
+        u_deg2: f64,
+        v_deg2: f64,
+        w_deg2: f64,
+        x_width_deg: f64,
+        y_width_deg: f64,
+        gaussian_variance_deg2: PyReadonlyArray1<'py, f64>,
+        lorentzian_fwhm_deg: PyReadonlyArray1<'py, f64>,
+        intensity_multiplier: PyReadonlyArray1<'py, f64>,
+        d_gaussian_variance_d_position: PyReadonlyArray1<'py, f64>,
+        d_lorentzian_fwhm_d_position: PyReadonlyArray1<'py, f64>,
+        d_intensity_multiplier_d_position: PyReadonlyArray1<'py, f64>,
+        d_gaussian_variance_d_parameters: PyReadonlyArray1<'py, f64>,
+        d_lorentzian_fwhm_d_parameters: PyReadonlyArray1<'py, f64>,
+        d_intensity_multiplier_d_parameters: PyReadonlyArray1<'py, f64>,
+        parameter_count: usize,
+        support_fwhm: f64,
+    ) -> PyResult<StructuralPatternJvpArrays<'py>> {
+        let tangent = contiguous_slice(&tangent, "tangent")?;
+        let x_deg_values = contiguous_slice(&x_deg, "x_deg")?;
+        let contributions = Self::contribution_view(
+            self.hkl.len(),
+            parameter_count,
+            &gaussian_variance_deg2,
+            &lorentzian_fwhm_deg,
+            &intensity_multiplier,
+            &d_gaussian_variance_d_position,
+            &d_lorentzian_fwhm_d_position,
+            &d_intensity_multiplier_d_position,
+            &d_gaussian_variance_d_parameters,
+            &d_lorentzian_fwhm_d_parameters,
+            &d_intensity_multiplier_d_parameters,
+        )?;
+        let result = self.with_input(
+            x_deg_values,
+            cw_instrument(
+                wavelength_angstrom,
+                u_deg2,
+                v_deg2,
+                w_deg2,
+                x_width_deg,
+                y_width_deg,
+            ),
+            contributions,
+            support_fwhm,
+            |cell, group, input| calculate_structural_pattern_jvp(cell, group, input, tangent),
+        )?;
+        structural_pattern_jvp_to_numpy(py, result)
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn vjp<'py>(
+        &self,
+        py: Python<'py>,
+        sample_weights: PyReadonlyArray1<'py, f64>,
+        x_deg: PyReadonlyArray1<'py, f64>,
+        wavelength_angstrom: f64,
+        u_deg2: f64,
+        v_deg2: f64,
+        w_deg2: f64,
+        x_width_deg: f64,
+        y_width_deg: f64,
+        gaussian_variance_deg2: PyReadonlyArray1<'py, f64>,
+        lorentzian_fwhm_deg: PyReadonlyArray1<'py, f64>,
+        intensity_multiplier: PyReadonlyArray1<'py, f64>,
+        d_gaussian_variance_d_position: PyReadonlyArray1<'py, f64>,
+        d_lorentzian_fwhm_d_position: PyReadonlyArray1<'py, f64>,
+        d_intensity_multiplier_d_position: PyReadonlyArray1<'py, f64>,
+        d_gaussian_variance_d_parameters: PyReadonlyArray1<'py, f64>,
+        d_lorentzian_fwhm_d_parameters: PyReadonlyArray1<'py, f64>,
+        d_intensity_multiplier_d_parameters: PyReadonlyArray1<'py, f64>,
+        parameter_count: usize,
+        support_fwhm: f64,
+    ) -> PyResult<StructuralPatternVjpArrays<'py>> {
+        let sample_weights = contiguous_slice(&sample_weights, "sample_weights")?;
+        let x_deg_values = contiguous_slice(&x_deg, "x_deg")?;
+        let contributions = Self::contribution_view(
+            self.hkl.len(),
+            parameter_count,
+            &gaussian_variance_deg2,
+            &lorentzian_fwhm_deg,
+            &intensity_multiplier,
+            &d_gaussian_variance_d_position,
+            &d_lorentzian_fwhm_d_position,
+            &d_intensity_multiplier_d_position,
+            &d_gaussian_variance_d_parameters,
+            &d_lorentzian_fwhm_d_parameters,
+            &d_intensity_multiplier_d_parameters,
+        )?;
+        let result = self.with_input(
+            x_deg_values,
+            cw_instrument(
+                wavelength_angstrom,
+                u_deg2,
+                v_deg2,
+                w_deg2,
+                x_width_deg,
+                y_width_deg,
+            ),
+            contributions,
+            support_fwhm,
+            |cell, group, input| {
+                calculate_structural_pattern_vjp(cell, group, input, sample_weights)
+            },
+        )?;
+        structural_pattern_vjp_to_numpy(py, result)
     }
 }
 
@@ -1024,6 +1416,53 @@ fn accumulation_to_numpy(
         offsets.into_pyarray(py),
         values.into_pyarray(py),
         global.into_pyarray(py),
+    ))
+}
+
+fn structural_pattern_to_numpy(
+    py: Python<'_>,
+    result: StructuralPatternResult,
+) -> PyResult<StructuralPatternArrays<'_>> {
+    let StructuralPatternResult {
+        structure_factors,
+        d_spacing_angstrom,
+        two_theta_deg,
+        accumulation,
+    } = result;
+    let reflections = (
+        structure_factors.f_real.into_pyarray(py),
+        structure_factors.f_imag.into_pyarray(py),
+        structure_factors.f_squared.into_pyarray(py),
+        structure_factors.intensity.into_pyarray(py),
+        structure_factors
+            .q_squared_inverse_angstrom2
+            .into_pyarray(py),
+        structure_factors.s_inverse_angstrom.into_pyarray(py),
+        d_spacing_angstrom.into_pyarray(py),
+        two_theta_deg.into_pyarray(py),
+    );
+    Ok((accumulation_to_numpy(py, accumulation)?, reflections))
+}
+
+fn structural_pattern_jvp_to_numpy(
+    py: Python<'_>,
+    result: StructuralPatternJvpResult,
+) -> PyResult<StructuralPatternJvpArrays<'_>> {
+    Ok((
+        structural_pattern_to_numpy(py, result.result)?,
+        result.d_y.into_pyarray(py),
+        result.d_integrated_intensity.into_pyarray(py),
+        result.d_two_theta_deg.into_pyarray(py),
+    ))
+}
+
+fn structural_pattern_vjp_to_numpy(
+    py: Python<'_>,
+    result: StructuralPatternVjpResult,
+) -> PyResult<StructuralPatternVjpArrays<'_>> {
+    Ok((
+        structural_pattern_to_numpy(py, result.result)?,
+        result.gradient.into_pyarray(py),
     ))
 }
 
@@ -1747,14 +2186,18 @@ fn structure_factor_dense_to_numpy(
     ))
 }
 
-/// Evaluate one explicit integrated-intensity correction model.
-#[pyfunction]
-fn integrated_intensity_correction<'py>(
-    py: Python<'py>,
-    q_squared_inverse_angstrom2: PyReadonlyArray1<'py, f64>,
+fn parse_built_in_scattering_model(model: &str) -> PyResult<BuiltInScatteringModel> {
+    match model {
+        "xray_non_resonant" => Ok(BuiltInScatteringModel::XrayNonResonant),
+        "neutron_nuclear" => Ok(BuiltInScatteringModel::NeutronNuclear),
+        _ => Err(PyValueError::new_err("unknown built-in scattering model")),
+    }
+}
+
+fn parse_correction_model(
     model: &str,
     wavelength_angstrom: Option<f64>,
-) -> PyResult<CorrectionArrays<'py>> {
+) -> PyResult<IntegratedIntensityCorrectionModel> {
     let selected = match (model, wavelength_angstrom) {
         ("neutral", None) => IntegratedIntensityCorrectionModel::Neutral,
         ("bragg_brentano_unpolarized_lp", Some(wavelength_angstrom)) => {
@@ -1778,6 +2221,18 @@ fn integrated_intensity_correction<'py>(
             ));
         }
     };
+    Ok(selected)
+}
+
+/// Evaluate one explicit integrated-intensity correction model.
+#[pyfunction]
+fn integrated_intensity_correction<'py>(
+    py: Python<'py>,
+    q_squared_inverse_angstrom2: PyReadonlyArray1<'py, f64>,
+    model: &str,
+    wavelength_angstrom: Option<f64>,
+) -> PyResult<CorrectionArrays<'py>> {
+    let selected = parse_correction_model(model, wavelength_angstrom)?;
     let result = selected
         .evaluate(contiguous_slice(
             &q_squared_inverse_angstrom2,
@@ -1836,6 +2291,7 @@ fn _core(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_class::<NativePreparedXrayScattering>()?;
     module.add_class::<NativePreparedNeutronScattering>()?;
     module.add_class::<NativePreparedReflectionGenerator>()?;
+    module.add_class::<NativeStructuralPhase>()?;
     module.add_function(wrap_pyfunction!(unit_cell_geometry, module)?)?;
     module.add_function(wrap_pyfunction!(unit_cell_d_spacings, module)?)?;
     module.add_function(wrap_pyfunction!(p1_structure_factors_dense, module)?)?;

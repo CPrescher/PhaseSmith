@@ -89,8 +89,19 @@ from .pattern import (
     PatternCalculationResult,
     PhasePatternComponent,
     PowderPattern,
+    StructuralPatternCalculationResult,
+    StructuralPatternJvpResult,
+    StructuralPatternVjpResult,
+    StructuralReflectionResult,
 )
-from .phase import Phase, ReciprocalMetric, ReflectionBatch, ReflectionGeometryBatch
+from .phase import (
+    Phase,
+    ReciprocalMetric,
+    ReflectionBatch,
+    ReflectionGeometryBatch,
+    RietveldPhase,
+    StructuralReflectionBatch,
+)
 from .radiation import (
     ConstantWavelengthExperiment,
     MonochromaticRadiation,
@@ -128,6 +139,7 @@ from .scattering import (
     species_from_structure,
     xray_species_metadata,
 )
+from .structural_calculation import PreparedStructuralPattern, calculate_structural_pattern
 from .structure import (
     AnisotropicDisplacement,
     AtomSite,
@@ -228,6 +240,7 @@ __all__ = [
     "PreparedNeutronNuclear",
     "PreparedPattern",
     "PreparedReflectionGenerator",
+    "PreparedStructuralPattern",
     "PreparedXrayNonResonant",
     "ProfileResult",
     "ProgressCallback",
@@ -241,6 +254,7 @@ __all__ = [
     "ReflectionGeometryBatch",
     "ReflectionPhysicsProvider",
     "ReflectionRange",
+    "RietveldPhase",
     "ScatteringContext",
     "ScatteringFactorBatch",
     "ScatteringFactorProvider",
@@ -249,6 +263,11 @@ __all__ = [
     "ScatteringTableProvenance",
     "ScatteringVectorRange",
     "SpaceGroup",
+    "StructuralPatternCalculationResult",
+    "StructuralPatternJvpResult",
+    "StructuralPatternVjpResult",
+    "StructuralReflectionBatch",
+    "StructuralReflectionResult",
     "StructureDiagnostic",
     "StructureFactorResult",
     "StructureSource",
@@ -281,6 +300,7 @@ __all__ = [
     "calculate_neutron_pattern",
     "calculate_p1_structure_factors",
     "calculate_pattern",
+    "calculate_structural_pattern",
     "calculate_structure_factors",
     "cw_profile_parameters",
     "evaluate_intensity_correction",

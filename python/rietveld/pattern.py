@@ -157,3 +157,147 @@ class PatternCalculationResult:
             if component.phase_id == phase_id:
                 return component.y
         raise KeyError(f"no diagnostic phase component for {phase_id!r}")
+
+
+@dataclass(frozen=True, slots=True)
+class StructuralReflectionResult:
+    """Structure-factor and geometry diagnostics in stable reflection order."""
+
+    reflection_ids: tuple[str, ...]
+    f: NDArray[np.complex128]
+    f_squared: NDArray[np.float64]
+    integrated_intensity: NDArray[np.float64]
+    q_squared_inverse_angstrom2: NDArray[np.float64]
+    s_inverse_angstrom: NDArray[np.float64]
+    d_spacing_angstrom: NDArray[np.float64]
+    two_theta_deg: NDArray[np.float64]
+
+    def __post_init__(self) -> None:
+        """Validate every reflection-major diagnostic array."""
+
+        ids = tuple(self.reflection_ids)
+        count = len(ids)
+        if len(set(ids)) != count or any(not value for value in ids):
+            raise ValueError("reflection_ids must be non-empty and unique")
+        if self.f.dtype != np.complex128 or self.f.shape != (count,):
+            raise ValueError("f must be a complex128 vector matching reflection IDs")
+        if not np.isfinite(self.f.real).all() or not np.isfinite(self.f.imag).all():
+            raise ValueError("f must contain only finite values")
+        for name, array in (
+            ("f_squared", self.f_squared),
+            ("integrated_intensity", self.integrated_intensity),
+            ("q_squared_inverse_angstrom2", self.q_squared_inverse_angstrom2),
+            ("s_inverse_angstrom", self.s_inverse_angstrom),
+            ("d_spacing_angstrom", self.d_spacing_angstrom),
+            ("two_theta_deg", self.two_theta_deg),
+        ):
+            if array.dtype != np.float64 or array.shape != (count,):
+                raise ValueError(f"{name} must be a float64 vector matching reflection IDs")
+            if not np.isfinite(array).all():
+                raise ValueError(f"{name} must contain only finite values")
+        for array in (
+            self.f,
+            self.f_squared,
+            self.integrated_intensity,
+            self.q_squared_inverse_angstrom2,
+            self.s_inverse_angstrom,
+            self.d_spacing_angstrom,
+            self.two_theta_deg,
+        ):
+            array.flags.writeable = False
+        object.__setattr__(self, "reflection_ids", ids)
+
+
+@dataclass(frozen=True, slots=True)
+class StructuralPatternCalculationResult:
+    """One structural phase pattern plus reflection-level diagnostics."""
+
+    phase_id: str
+    y: NDArray[np.float64]
+    profile_y: NDArray[np.float64]
+    background: NDArray[np.float64]
+    accumulation: AccumulationResult
+    reflections: StructuralReflectionResult
+
+    def __post_init__(self) -> None:
+        """Validate pattern arrays and reflection-support alignment."""
+
+        if not isinstance(self.phase_id, str) or not self.phase_id:
+            raise ValueError("phase_id must be a non-empty string")
+        count = self.accumulation.y.size
+        for name, array in (
+            ("y", self.y),
+            ("profile_y", self.profile_y),
+            ("background", self.background),
+        ):
+            if array.dtype != np.float64 or array.shape != (count,):
+                raise ValueError(f"{name} must be a float64 vector matching the sample count")
+            if not np.isfinite(array).all():
+                raise ValueError(f"{name} must contain only finite values")
+            array.flags.writeable = False
+        if self.reflections.integrated_intensity.size != self.derivatives.local.peak_count:
+            raise ValueError("reflection diagnostics must match local support blocks")
+
+    @property
+    def derivatives(self) -> PatternDerivatives:
+        """Return the fused analytical profile derivatives."""
+
+        return self.accumulation.derivatives
+
+    @property
+    def jacobian(self) -> SupportJacobian | NDArray[np.float64]:
+        """Return the selected support-sparse or dense local layout."""
+
+        return self.accumulation.jacobian
+
+
+@dataclass(frozen=True, slots=True)
+class StructuralPatternJvpResult:
+    """Structural pattern values and one structural forward derivative product."""
+
+    result: StructuralPatternCalculationResult
+    parameter_names: tuple[str, ...]
+    d_y: NDArray[np.float64]
+    d_integrated_intensity: NDArray[np.float64]
+    d_two_theta_deg: NDArray[np.float64]
+
+    def __post_init__(self) -> None:
+        """Validate structural parameter and derivative-vector dimensions."""
+
+        names = tuple(self.parameter_names)
+        if len(set(names)) != len(names) or any(not name for name in names):
+            raise ValueError("parameter_names must be non-empty and unique")
+        reflection_count = self.result.reflections.integrated_intensity.size
+        for name, array, count in (
+            ("d_y", self.d_y, self.result.y.size),
+            ("d_integrated_intensity", self.d_integrated_intensity, reflection_count),
+            ("d_two_theta_deg", self.d_two_theta_deg, reflection_count),
+        ):
+            if array.dtype != np.float64 or array.shape != (count,):
+                raise ValueError(f"{name} must be a float64 vector with the expected length")
+            if not np.isfinite(array).all():
+                raise ValueError(f"{name} must contain only finite values")
+            array.flags.writeable = False
+        object.__setattr__(self, "parameter_names", names)
+
+
+@dataclass(frozen=True, slots=True)
+class StructuralPatternVjpResult:
+    """Structural pattern values and one reverse product from sample weights."""
+
+    result: StructuralPatternCalculationResult
+    parameter_names: tuple[str, ...]
+    gradient: NDArray[np.float64]
+
+    def __post_init__(self) -> None:
+        """Validate the stable structural-gradient layout."""
+
+        names = tuple(self.parameter_names)
+        if len(set(names)) != len(names) or any(not name for name in names):
+            raise ValueError("parameter_names must be non-empty and unique")
+        if self.gradient.dtype != np.float64 or self.gradient.shape != (len(names),):
+            raise ValueError("gradient must be a float64 vector matching parameter_names")
+        if not np.isfinite(self.gradient).all():
+            raise ValueError("gradient must contain only finite values")
+        self.gradient.flags.writeable = False
+        object.__setattr__(self, "parameter_names", names)
