@@ -134,6 +134,25 @@ print(scattering.amplitudes.shape)       # (reflection, site)
 print(scattering.d_amplitudes_d_s.shape) # analytical df/ds, same shape
 ```
 
+A typed structure can be evaluated without assembling scattering arrays or
+looping over atoms/reflections in Python. Correction geometry is explicit; the
+default neutral model returns raw multiplicity-weighted structural intensity:
+
+```python
+from rietveld import XrayNonResonant, calculate_structure_factors
+from rietveld.io.cif import read_cif
+
+structure = read_cif("phase.cif").structure
+structural = calculate_structure_factors(
+    structure,
+    hkl=[[1, 0, 0], [1, 1, 0]],
+    multiplicity=[6, 12],
+    scattering=XrayNonResonant(),
+    scale=1.0,
+)
+print(structural.f, structural.integrated_intensity)
+```
+
 Axial divergence is a separate typed model and composes with CW broadening
 without expanding reflections in Python:
 

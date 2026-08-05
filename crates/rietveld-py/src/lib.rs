@@ -17,10 +17,12 @@ use rietveld_core::{
     accumulate_values_batch, symmetric_pseudo_voigt,
 };
 use rietveld_engine::crystallography::{
-    NEUTRON_TABLE_PROVENANCE, P1BatchView, PreparedNeutronScattering, PreparedReflectionGenerator,
-    PreparedXrayScattering, Rational, ReflectionRange, ScatteringBatch, SpaceGroup,
-    SymmetryOperation, UnitCell, XRAY_TABLE_PROVENANCE, calculate_p1_dense,
-    calculate_p1_intensity_vjp, calculate_p1_jvp, neutron_species_metadata, xray_species_metadata,
+    IntegratedIntensityCorrectionModel, NEUTRON_TABLE_PROVENANCE, P1BatchView,
+    PreparedNeutronScattering, PreparedReflectionGenerator, PreparedXrayScattering, Rational,
+    ReflectionRange, ScatteringBatch, SpaceGroup, StructureFactorBatchView,
+    StructureFactorDenseResult, SymmetryOperation, UnitCell, XRAY_TABLE_PROVENANCE,
+    calculate_p1_dense, calculate_p1_intensity_vjp, calculate_p1_jvp,
+    calculate_structure_factor_dense, neutron_species_metadata, xray_species_metadata,
 };
 
 type ProfileArrays<'py> = (
@@ -149,6 +151,20 @@ type ScatteringArrays<'py> = (
     Bound<'py, PyArray2<f64>>,
     Bound<'py, PyArray2<f64>>,
 );
+
+type StructureFactorDenseArrays<'py> = (
+    Bound<'py, PyArray1<f64>>,
+    Bound<'py, PyArray1<f64>>,
+    Bound<'py, PyArray1<f64>>,
+    Bound<'py, PyArray1<f64>>,
+    Bound<'py, PyArray1<f64>>,
+    Bound<'py, PyArray1<f64>>,
+    Bound<'py, PyArray2<f64>>,
+    Bound<'py, PyArray2<f64>>,
+    Bound<'py, PyArray2<f64>>,
+);
+
+type CorrectionArrays<'py> = (Bound<'py, PyArray1<f64>>, Bound<'py, PyArray1<f64>>);
 
 type TableProvenanceRecord = (&'static str, &'static str, &'static str, u64, usize);
 type TableProvenanceRecords = (TableProvenanceRecord, TableProvenanceRecord);
@@ -334,6 +350,67 @@ impl NativePreparedReflectionGenerator {
             .collect::<PyResult<Vec<_>>>()?
             .into_pyarray(py);
         Ok((positions, source))
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn structure_factor_dense<'py>(
+        &self,
+        py: Python<'py>,
+        hkl_flat: PyReadonlyArray1<'py, i64>,
+        multiplicity: PyReadonlyArray1<'py, i64>,
+        fractional_xyz_flat: PyReadonlyArray1<'py, f64>,
+        occupancy: PyReadonlyArray1<'py, f64>,
+        u_iso_angstrom2: PyReadonlyArray1<'py, f64>,
+        scattering_real: PyReadonlyArray1<'py, f64>,
+        scattering_imag: PyReadonlyArray1<'py, f64>,
+        d_scattering_real_d_s: PyReadonlyArray1<'py, f64>,
+        d_scattering_imag_d_s: PyReadonlyArray1<'py, f64>,
+        correction: PyReadonlyArray1<'py, f64>,
+        d_correction_d_q_squared: PyReadonlyArray1<'py, f64>,
+        a_angstrom: f64,
+        b_angstrom: f64,
+        c_angstrom: f64,
+        alpha_deg: f64,
+        beta_deg: f64,
+        gamma_deg: f64,
+        scale: f64,
+        coordinate_tolerance: f64,
+    ) -> PyResult<StructureFactorDenseArrays<'py>> {
+        let hkl = hkl_rows(&hkl_flat)?;
+        let multiplicity = multiplicity_rows(&multiplicity)?;
+        let xyz = xyz_rows(&fractional_xyz_flat)?;
+        let result = calculate_structure_factor_dense(
+            crystallographic_cell(
+                a_angstrom, b_angstrom, c_angstrom, alpha_deg, beta_deg, gamma_deg,
+            ),
+            self.generator.space_group(),
+            StructureFactorBatchView {
+                hkl: &hkl,
+                multiplicity: &multiplicity,
+                fractional_xyz: &xyz,
+                occupancy: contiguous_slice(&occupancy, "occupancy")?,
+                u_iso_angstrom2: contiguous_slice(&u_iso_angstrom2, "u_iso_angstrom2")?,
+                scattering_real: contiguous_slice(&scattering_real, "scattering_real")?,
+                scattering_imag: contiguous_slice(&scattering_imag, "scattering_imag")?,
+                d_scattering_real_d_s: contiguous_slice(
+                    &d_scattering_real_d_s,
+                    "d_scattering_real_d_s",
+                )?,
+                d_scattering_imag_d_s: contiguous_slice(
+                    &d_scattering_imag_d_s,
+                    "d_scattering_imag_d_s",
+                )?,
+                correction: contiguous_slice(&correction, "correction")?,
+                d_correction_d_q_squared: contiguous_slice(
+                    &d_correction_d_q_squared,
+                    "d_correction_d_q_squared",
+                )?,
+                scale,
+                coordinate_tolerance,
+            },
+        )
+        .map_err(|error| PyValueError::new_err(error.to_string()))?;
+        structure_factor_dense_to_numpy(py, result)
     }
 
     fn systematic_absences<'py>(
@@ -1504,6 +1581,18 @@ fn hkl_rows(array: &PyReadonlyArray1<'_, i64>) -> PyResult<Vec<[i32; 3]>> {
         .collect()
 }
 
+fn multiplicity_rows(array: &PyReadonlyArray1<'_, i64>) -> PyResult<Vec<usize>> {
+    array
+        .as_slice()
+        .map_err(|_| PyValueError::new_err("multiplicity must be a contiguous array"))?
+        .iter()
+        .map(|&value| {
+            usize::try_from(value)
+                .map_err(|_| PyValueError::new_err("multiplicity must be non-negative"))
+        })
+        .collect()
+}
+
 fn symmetry_operations(
     rotations_flat: &PyReadonlyArray1<'_, i64>,
     translation_numerators_flat: &PyReadonlyArray1<'_, i64>,
@@ -1639,6 +1728,68 @@ fn scattering_to_numpy(py: Python<'_>, values: ScatteringBatch) -> PyResult<Scat
     ))
 }
 
+fn structure_factor_dense_to_numpy(
+    py: Python<'_>,
+    result: StructureFactorDenseResult,
+) -> PyResult<StructureFactorDenseArrays<'_>> {
+    let reflection_count = result.values.f_real.len();
+    let parameter_count = result.layout.parameter_count();
+    Ok((
+        result.values.f_real.into_pyarray(py),
+        result.values.f_imag.into_pyarray(py),
+        result.values.f_squared.into_pyarray(py),
+        result.values.intensity.into_pyarray(py),
+        result.values.q_squared_inverse_angstrom2.into_pyarray(py),
+        result.values.s_inverse_angstrom.into_pyarray(py),
+        derivative_matrix(py, parameter_count, reflection_count, result.d_f_real)?,
+        derivative_matrix(py, parameter_count, reflection_count, result.d_f_imag)?,
+        derivative_matrix(py, parameter_count, reflection_count, result.d_intensity)?,
+    ))
+}
+
+/// Evaluate one explicit integrated-intensity correction model.
+#[pyfunction]
+fn integrated_intensity_correction<'py>(
+    py: Python<'py>,
+    q_squared_inverse_angstrom2: PyReadonlyArray1<'py, f64>,
+    model: &str,
+    wavelength_angstrom: Option<f64>,
+) -> PyResult<CorrectionArrays<'py>> {
+    let selected = match (model, wavelength_angstrom) {
+        ("neutral", None) => IntegratedIntensityCorrectionModel::Neutral,
+        ("bragg_brentano_unpolarized_lp", Some(wavelength_angstrom)) => {
+            IntegratedIntensityCorrectionModel::BraggBrentanoUnpolarizedLp {
+                wavelength_angstrom,
+            }
+        }
+        ("neutral", Some(_)) => {
+            return Err(PyValueError::new_err(
+                "neutral correction does not accept a wavelength",
+            ));
+        }
+        ("bragg_brentano_unpolarized_lp", None) => {
+            return Err(PyValueError::new_err(
+                "Bragg-Brentano LP correction requires a wavelength",
+            ));
+        }
+        _ => {
+            return Err(PyValueError::new_err(
+                "unknown integrated-intensity correction model",
+            ));
+        }
+    };
+    let result = selected
+        .evaluate(contiguous_slice(
+            &q_squared_inverse_angstrom2,
+            "q_squared_inverse_angstrom2",
+        )?)
+        .map_err(|error| PyValueError::new_err(error.to_string()))?;
+    Ok((
+        result.values.into_pyarray(py),
+        result.d_values_d_q_squared.into_pyarray(py),
+    ))
+}
+
 /// Return generated-table provenance without importing any source project.
 #[pyfunction]
 fn scattering_table_provenance() -> TableProvenanceRecords {
@@ -1691,6 +1842,7 @@ fn _core(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_function(wrap_pyfunction!(p1_structure_factors_jvp, module)?)?;
     module.add_function(wrap_pyfunction!(p1_structure_factors_vjp, module)?)?;
     module.add_function(wrap_pyfunction!(scattering_table_provenance, module)?)?;
+    module.add_function(wrap_pyfunction!(integrated_intensity_correction, module)?)?;
     module.add_function(wrap_pyfunction!(xray_scattering_species_metadata, module)?)?;
     module.add_function(wrap_pyfunction!(
         neutron_scattering_species_metadata,

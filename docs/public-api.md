@@ -19,9 +19,10 @@ rietveld.phase
   Crystallographic phase metadata and typed reflection batches. No observed
   pattern, optimizer, or instrument state.
 
-rietveld.crystallography  [cells and P1 implemented]
-  General cells, P1 atom sites, caller-supplied scattering amplitudes, complex
-  structure factors, and dense/JVP/VJP derivatives are implemented.
+rietveld.crystallography  [general symmetry implemented]
+  General cells, typed atom sites, complex structure factors, integrated
+  intensities, and dense/JVP/VJP derivatives are implemented. The P1 API
+  remains as a small caller-supplied-amplitude compatibility layer.
 
 rietveld.symmetry  [implemented]
   Exact symmetry operations and closure, special positions, systematic
@@ -31,6 +32,10 @@ rietveld.symmetry  [implemented]
 rietveld.scattering  [implemented]
   Typed X-ray and neutron scattering models plus versioned batch-provider
   contracts. Built-in production models execute in Rust.
+
+rietveld.intensity_corrections  [implemented]
+  Explicit neutral and monochromatic unpolarized Bragg--Brentano integrated
+  intensity corrections plus a batch-provider boundary.
 
 rietveld.io.cif  [implemented]
   Optional CIF parsing into crystallography models. Parser objects never enter
@@ -91,6 +96,8 @@ rietveld.crystallography.AtomSiteBatch
 rietveld.crystallography.calculate_p1_structure_factors
 rietveld.crystallography.p1_jacobian_vector_product
 rietveld.crystallography.p1_intensity_transpose_jacobian_vector_product
+rietveld.crystallography.StructureFactorResult
+rietveld.crystallography.calculate_structure_factors
 rietveld.symmetry.SymmetryOperation
 rietveld.symmetry.SpaceGroup
 rietveld.symmetry.PreparedReflectionGenerator
@@ -111,6 +118,9 @@ rietveld.scattering.ScatteringFactorProvider
 rietveld.scattering.XrayNonResonant
 rietveld.scattering.NeutronNuclear
 rietveld.scattering.species_from_structure
+rietveld.intensity_corrections.IntegratedIntensityCorrection
+rietveld.intensity_corrections.NeutralIntegratedIntensityCorrection
+rietveld.intensity_corrections.BraggBrentanoUnpolarizedLp
 rietveld.refinement.lebail.LeBailPhase
 rietveld.pattern.PowderPattern
 rietveld.pattern.PatternCalculationResult

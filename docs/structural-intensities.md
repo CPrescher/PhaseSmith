@@ -153,6 +153,12 @@ production orchestration step.
 
 ## Unit 15 implementation sequence
 
+Current status: steps 1 through 4 are implemented. Exact expansion rotations,
+general-symmetry values/dense/JVP/VJP kernels, neutral/LP corrections, and the
+typed provider-facing Python API pass strict Rust checks, 53 Rust tests, and
+321 normal Python tests. The fused structural-pattern engine, structural phase
+model, persistence migration, and combined benchmarks remain in progress.
+
 1. Extend exact symmetry expansion with representative rotations and tests.
 2. Add a general-symmetry Rust values/dense/JVP/VJP structure-factor kernel
    consuming scattering values plus `df/ds`.

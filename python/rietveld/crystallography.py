@@ -8,12 +8,17 @@ adapter in a later implementation unit.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Final
+from typing import TYPE_CHECKING, Final
 
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
 
 from . import _core
+
+if TYPE_CHECKING:
+    from .intensity_corrections import IntegratedIntensityCorrectionProvider
+    from .scattering import ScatteringFactorProvider
+    from .structure import CrystalStructure
 
 CELL_PARAMETER_NAMES: Final[tuple[str, ...]] = (
     "cell.a",
@@ -223,6 +228,22 @@ class P1VjpResult:
     gradient: NDArray[np.float64]
 
 
+@dataclass(frozen=True, slots=True)
+class StructureFactorResult:
+    """General-symmetry values and bounded dense analytical derivatives."""
+
+    f: NDArray[np.complex128]
+    f_squared: NDArray[np.float64]
+    integrated_intensity: NDArray[np.float64]
+    q_squared_inverse_angstrom2: NDArray[np.float64]
+    s_inverse_angstrom: NDArray[np.float64]
+    correction: NDArray[np.float64]
+    correction_model_id: str
+    parameter_names: tuple[str, ...]
+    d_f_d_parameters: NDArray[np.complex128]
+    d_integrated_intensity_d_parameters: NDArray[np.float64]
+
+
 def p1_parameter_names(sites: AtomSiteBatch) -> tuple[str, ...]:
     """Return the stable native P1 parameter order with durable site IDs."""
 
@@ -385,3 +406,100 @@ def p1_intensity_transpose_jacobian_vector_product(
     for array in (f, intensity, gradient):
         _freeze(array)
     return P1VjpResult(f, intensity, p1_parameter_names(sites), gradient)
+
+
+def calculate_structure_factors(
+    structure: CrystalStructure,
+    hkl: ArrayLike,
+    multiplicity: ArrayLike,
+    scattering: ScatteringFactorProvider,
+    *,
+    correction: IntegratedIntensityCorrectionProvider | None = None,
+    scale: float = 1.0,
+    coordinate_tolerance: float = 1.0e-10,
+    max_dense_derivative_elements: int = MAX_DENSE_DERIVATIVE_ELEMENTS,
+) -> StructureFactorResult:
+    """Calculate general-symmetry structural intensities in vectorized calls.
+
+    A custom scattering provider and correction provider are each called once
+    for the complete reflection batch. Symmetry expansion, atom summation, and
+    all structural derivatives remain native.
+    """
+
+    from .intensity_corrections import (  # avoid a structure-model import cycle
+        NeutralIntegratedIntensityCorrection,
+        evaluate_intensity_correction,
+    )
+    from .scattering import (
+        ScatteringContext,
+        evaluate_scattering_provider,
+        species_from_structure,
+    )
+    from .structure import CrystalStructure
+
+    if not isinstance(structure, CrystalStructure):
+        raise TypeError("structure must be a CrystalStructure")
+    indices = _hkl_array(hkl)
+    raw_multiplicity = np.asarray(multiplicity)
+    if (
+        raw_multiplicity.ndim != 1
+        or raw_multiplicity.shape != (indices.shape[0],)
+        or not np.issubdtype(raw_multiplicity.dtype, np.integer)
+    ):
+        raise ValueError("multiplicity must be a one-dimensional integer reflection vector")
+    multiplicities = np.array(raw_multiplicity, dtype=np.int64, copy=True, order="C")
+    if not np.array_equal(raw_multiplicity, multiplicities) or np.any(multiplicities <= 0):
+        raise ValueError("multiplicity values must be positive signed 64-bit integers")
+    sites = structure.to_isotropic_site_batch()
+    spacing = structure.cell.d_spacings(indices)
+    q_squared = np.ascontiguousarray(1.0 / spacing.d_spacing_angstrom**2)
+    s = np.ascontiguousarray(0.5 * np.sqrt(q_squared))
+    scattering_batch = evaluate_scattering_provider(
+        scattering,
+        ScatteringContext(species_from_structure(structure), s),
+    )
+    selected_correction = (
+        NeutralIntegratedIntensityCorrection() if correction is None else correction
+    )
+    correction_batch = evaluate_intensity_correction(selected_correction, q_squared)
+    parameter_names = p1_parameter_names(sites)
+    derivative_elements = 3 * len(parameter_names) * int(indices.shape[0])
+    if max_dense_derivative_elements < 0 or derivative_elements > max_dense_derivative_elements:
+        raise MemoryError(
+            f"dense structure-factor result requires {derivative_elements} derivative elements; "
+            f"limit is {max_dense_derivative_elements}"
+        )
+    arrays = structure.space_group._native.structure_factor_dense(
+        np.ascontiguousarray(indices.reshape(-1)),
+        multiplicities,
+        np.ascontiguousarray(sites.fractional_xyz.reshape(-1)),
+        sites.occupancy,
+        sites.u_iso_angstrom2,
+        np.ascontiguousarray(scattering_batch.amplitudes.real.reshape(-1)),
+        np.ascontiguousarray(scattering_batch.amplitudes.imag.reshape(-1)),
+        np.ascontiguousarray(scattering_batch.d_amplitudes_d_s.real.reshape(-1)),
+        np.ascontiguousarray(scattering_batch.d_amplitudes_d_s.imag.reshape(-1)),
+        correction_batch.values,
+        correction_batch.d_values_d_q_squared,
+        *structure.cell.as_tuple(),
+        float(scale),
+        float(coordinate_tolerance),
+    )
+    f = np.asarray(arrays[0]) + 1j * np.asarray(arrays[1])
+    d_f = np.asarray(arrays[6]) + 1j * np.asarray(arrays[7])
+    output = tuple(np.asarray(value) for value in arrays[2:6])
+    d_intensity = np.asarray(arrays[8])
+    for array in (f, d_f, *output, d_intensity):
+        _freeze(array)
+    return StructureFactorResult(
+        f=f,
+        f_squared=output[0],
+        integrated_intensity=output[1],
+        q_squared_inverse_angstrom2=output[2],
+        s_inverse_angstrom=output[3],
+        correction=correction_batch.values,
+        correction_model_id=correction_batch.model_id,
+        parameter_names=parameter_names,
+        d_f_d_parameters=d_f,
+        d_integrated_intensity_d_parameters=d_intensity,
+    )
