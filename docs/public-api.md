@@ -19,6 +19,18 @@ rietveld.phase
   Crystallographic phase metadata and typed reflection batches. No observed
   pattern, optimizer, or instrument state.
 
+rietveld.crystallography  [planned]
+  Cells, explicit symmetry operations, atom sites, generated reflection sets,
+  and inspectable structure-factor results. Numerical evaluation is Rust-owned.
+
+rietveld.scattering  [planned]
+  Typed X-ray and neutron scattering models plus versioned batch-provider
+  contracts. Built-in production models execute in Rust.
+
+rietveld.io.cif  [planned]
+  Optional CIF parsing into crystallography models. Parser objects never enter
+  calculation, persistence, or refinement state.
+
 rietveld.pattern
   Observed grids, intensities, uncertainties, masks, backgrounds, and
   calculated-pattern result containers.
@@ -35,8 +47,8 @@ rietveld.refinement.lebail
   First-class Le Bail intensity extraction and diagnostics.
 
 rietveld.refinement.rietveld
-  Structure-factor refinement orchestration after the required physics layer
-  exists. It consumes the same calculation interface as Le Bail.
+  Planned structure-factor refinement orchestration after the required native
+  physics layer exists. It consumes the same profile interface as Le Bail.
 
 rietveld.integrations.dioptas
   Optional conversion between Dioptas-facing NumPy data and the public typed

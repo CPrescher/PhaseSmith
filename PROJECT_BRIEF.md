@@ -23,9 +23,10 @@ Third-party reflection physics is supported through an explicit versioned batch
 provider and persistence-codec contract; arbitrary intrinsic line-shape plugins
 remain a future compiled-extension boundary rather than a promised Rust ABI.
 
-The project remains pre-release and is licensed under the MIT License.
-Structure-factor-based Rietveld orchestration remains deliberately reserved
-until its physics layer is designed and validated.
+The project remains pre-release and is licensed under the MIT License. The
+architecture and delivery gates for CIF import, native crystallographic
+calculation, and structure-factor-based Rietveld orchestration are specified in
+`docs/crystallography-plan.md`; those capabilities are not implemented yet.
 
 ## Design commitments
 
@@ -51,6 +52,10 @@ until its physics layer is designed and validated.
   copy source code into this repository.
 - License the independently implemented project under MIT. GSAS-II remains a
   separately licensed external validation oracle and is not redistributed.
+- Keep crystallographic calculation in Rust: cell/reciprocal mathematics,
+  symmetry application, reflection generation, scattering/structure factors,
+  integrated intensities, and analytical derivative products. CIF adapters
+  translate files into typed plain structures but do not calculate diffraction.
 
 ## First vertical slice
 
@@ -106,6 +111,10 @@ documented; GSAS-II itself is never vendored.
 - Numerical primitives such as CW width laws and FCJ geometry remain separate;
   explicit composition modules fuse them for production accumulation.
 - `crates/rietveld-py`: PyO3 extension exposing array-oriented functions.
+- Planned `crates/rietveld-crystallography`: file-independent crystallographic
+  mathematics, reflection generation, scattering, and structure factors.
+- Planned `crates/rietveld-engine`: native composition of crystallographic
+  intensities with the existing support-limited profile kernel.
 - `python/rietveld`: public Python package, separated instrument/phase/pattern/
   calculation/refinement modules, reference implementation, optional
   integrations, and validation tooling.
@@ -149,12 +158,20 @@ doublet assumptions.
    infrastructure, followed by a first-class Le Bail workflow.
 9. Plain-data persistence and optional external integration adapters, starting
    with a Dioptas-oriented NumPy boundary.
+10. Rust crystallographic domain types and a P1 structure-factor vertical slice.
+11. Symmetry, systematic absences, multiplicity, and reflection generation.
+12. Optional CIF import into typed structures, followed by CIF-to-Le Bail.
+13. Native X-ray and neutron scattering models with reviewed data provenance.
+14. Fused structural-intensity/profile calculation with analytical JVP/VJP.
+15. First full CIF-backed Rietveld refinement.
 
 ## Non-goals
 
 - Porting nested GSAS-II dictionaries or global mutable state.
 - Reproducing GSAS-II's file-driven refinement workflow.
 - Calling Python once per reflection in production profile calculation.
+- Calling Python once per atom or reflection in structure-factor calculation.
+- Treating CIF parser objects as crystallographic domain or refinement state.
 - Building a GUI in the numerical library.
 - Requiring Dioptas or any GUI toolkit to use the package.
 - Claiming numerical equivalence from pointwise values alone.

@@ -991,6 +991,45 @@ formatting, strict Clippy, 24 Rust tests, 269 normal Python tests, and one live
 pinned-oracle test; normal installation has no GSAS-II, Dioptas, or SciPy
 requirement.
 
+## Implementation units 11 through 18: crystallography and Rietveld
+
+Status: planned. The complete equations, data contracts, ordering, derivative
+strategy, validation gates, benchmarks, and commit discipline are specified in
+[`docs/crystallography-plan.md`](docs/crystallography-plan.md).
+
+The dependency order is:
+
+11. Rust crystallography crates, general cells, and a P1 structure-factor slice.
+12. Exact symmetry operations, special positions, systematic absences,
+    reflection generation, orbits, and multiplicity.
+13. Optional CIF import into typed plain structures plus fixed-cell CIF-to-Le
+    Bail through the native reflection generator. The parser performs no
+    diffraction calculation.
+14. Provenance-reviewed Rust X-ray and neutron scattering models plus a
+    versioned batch-provider boundary.
+15. Structural intensities, analytical derivatives, and one-call native
+    structure-factor/profile composition.
+16. CIF-backed lattice refinement and guarded reflection-domain management.
+17. First full CIF-backed Rietveld refinement using native JVP/VJP operations.
+18. Anisotropic, anomalous, absorption, magnetic, electron, and specialist
+    crystallographic physics as separate later increments.
+
+The design deliberately separates file interpretation from numerical work.
+The optional CIF backend may resolve names/settings and emit exact symmetry
+operations, but Rust owns reciprocal mathematics, reflection generation,
+structure factors, integrated intensities, and their derivative chains. The
+production Rietveld path may not materialize an unconditional dense
+`(pattern_sample, structural_parameter)` Jacobian or call Python per atom or
+reflection.
+
+Before implementing each new structural parameter family, the pinned GSAS-II
+environment is used as a black-box behavioral study. Public scripting output
+and narrowly revision-gated probes record parameter units/ownership,
+reflection intermediates, constraints, and one-at-a-time perturbation results.
+Published equations and reviewed data remain the implementation sources; the
+study determines conversions and validation cases, not architecture. The full
+protocol is in `docs/crystallography-plan.md`.
+
 ## Cross-cutting validation matrix
 
 Every numerical implementation unit must cover this matrix where applicable:
@@ -1053,6 +1092,12 @@ Keep implementation units reviewable through these ordered changes:
 12. Shared refinement parameters, constraints, residuals, and matrix products.
 13. Le Bail extraction, orchestration, oracle cases, and benchmarks.
 14. Plain-data persistence and the optional Dioptas integration boundary.
+15. Native cell/P1 structure-factor foundation and derivative products.
+16. Symmetry, reflection generation, and systematic absences.
+17. CIF import and CIF-to-Le Bail.
+18. Provenance-reviewed X-ray and neutron scattering tables.
+19. Fused structural pattern calculation and persistence migration.
+20. Full Rietveld orchestration and benchmarks.
 
 Do not combine adjacent items merely to reduce PR count; numerical review is
 easier when parameter conventions and tolerance changes remain isolated.
@@ -1071,18 +1116,21 @@ resolved on 2026-08-05 by selecting the MIT License.
    This plan recommends the latter.
 4. Which GSAS-II-derived fixtures are lawful and useful to redistribute; fixture
    provenance must be reviewed before commit.
+5. Which published space-group/scattering datasets may be redistributed in the
+   MIT project; every selected table needs its own source and license review.
 
 ## Definition of the next completed milestone
 
-The immediate next milestone comprises implementation units 0 through 3. It is
-complete when:
+The immediate next milestone is implementation unit 11. It is complete when:
 
-- the pinned oracle has actually run and produced reviewed fixtures;
-- sparse support derivatives replace unconditional dense per-peak storage;
-- TCH Gaussian/Lorentzian component-width mapping and derivatives are validated;
-- U/V/W/X/Y widths and all chain-rule derivatives are calculated in the same
-  fused Rust pass;
-- a whole CW reflection list is evaluated through one Python call;
-- values, retained intensity, moments, reflection widths/eta, and every local and
-  global derivative pass reference, finite-difference, and oracle tests;
-- release benchmarks document throughput, active-support work, and memory use.
+- the new Rust crate boundaries compile without introducing a dependency from
+  `rietveld-core` to crystallography;
+- general triclinic cell/reciprocal mathematics and derivatives are validated;
+- a P1 atom/reflection batch calculates complex structure factors and
+  integrated intensities in Rust from caller-supplied scattering amplitudes;
+- coordinate, occupancy, isotropic-displacement, and cell derivatives pass
+  independent NumPy, finite-difference, and JVP/VJP adjoint tests;
+- the Python boundary submits contiguous arrays once and contains no atom- or
+  reflection-level orchestration;
+- release benchmarks report values, JVP, VJP, memory, site count, and reflection
+  count for realistic inorganic and molecular batches.
