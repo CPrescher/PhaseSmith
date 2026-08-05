@@ -1078,6 +1078,15 @@ No numerical-kernel benchmark is added for file parsing; the downstream native
 reflection generation used by CIF-to-Le Bail is covered by the unit-12 batch
 benchmark.
 
+Unit-14 source gate: the non-resonant X-ray model uses every neutral/ionic row
+from the CC0/public-domain XrayDB Waasmaier--Kirfel source pinned at
+`663d2171bd301dc51dbe048cae459934e60347c2`; the constant coherent neutron
+model uses natural/isotope `b_c` rows from public-domain `periodictable` pinned
+at `182ef63a9ec118ef725aae5bb81860f4ba0fb573`. Checksums, equations, units,
+species resolution, provider versioning, and explicit exclusions are frozen in
+`docs/scattering-models.md` before numerical implementation. No scattering data
+comes from GSAS-II.
+
 ## Cross-cutting validation matrix
 
 Every numerical implementation unit must cover this matrix where applicable:
@@ -1164,20 +1173,22 @@ resolved on 2026-08-05 by selecting the MIT License.
    This plan recommends the latter.
 4. Which GSAS-II-derived fixtures are lawful and useful to redistribute; fixture
    provenance must be reviewed before commit.
-5. Which published space-group/scattering datasets may be redistributed in the
-   MIT project; every selected table needs its own source and license review.
+5. Any additional space-group/scattering dataset beyond the reviewed Unit-14
+   public-domain XrayDB and `periodictable` sources needs its own source and
+   license review before redistribution.
 
 ## Definition of the next completed milestone
 
-The immediate next milestone is implementation unit 13. It is complete when:
+The immediate next milestone is implementation unit 14. It is complete when:
 
-- optional CIF import yields typed cells, exact operations, sites, provenance,
-  and structured diagnostics without parser objects entering calculation state;
-- explicit-operation, Hall-symbol, setting, and legacy-tag precedence is tested;
-- imported structures persist independently of the optional parser backend;
-- a fixed-cell, cell-and-symmetry-only CIF can directly create a Le Bail phase
-  through the native reflection generator;
-- unsupported magnetic/modulated/macromolecular and anisotropic-conversion cases
-  fail visibly rather than being silently approximated;
-- the base package and every normal calculation remain independent of Gemmi and
-  GSAS-II.
+- deterministic generated tables verify pinned upstream commits and checksums;
+- prepared Rust X-ray and neutron models evaluate reflection/site batches and
+  `df/ds` without repeated species lookup in the hot loop;
+- exact species, ionic, isotope, missing-data, range, and energy-dependent-row
+  behavior is typed and tested;
+- a versioned explicit Python batch-provider contract supports third-party
+  research models without per-atom/reflection callbacks;
+- Rust and independent NumPy equations, finite differences, table integrity,
+  and prepared-batch benchmarks pass; and
+- normal builds and runtime calculations need no upstream checkout, network,
+  Gemmi, or GSAS-II.

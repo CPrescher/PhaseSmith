@@ -387,15 +387,22 @@ and calculates diffraction.
 
 ## Implementation unit 14: scattering models and data provenance
 
+Status: source/license and interface gate completed on 2026-08-05; native
+implementation in progress. Exact equations, pinned revisions, checksums,
+provider semantics, and deliberate exclusions are in
+`docs/scattering-models.md`.
+
 ### Work
 
 1. Define a versioned `ScatteringModel` contract that evaluates all unique
    species over a contiguous `s` array and returns complex amplitudes plus
    `df/ds` where applicable.
-2. Implement a built-in non-resonant neutral-atom X-ray form-factor model in
-   Rust from a citable open parameter table.
+2. Implement a built-in non-resonant neutral/ionic X-ray form-factor model in
+   Rust from the pinned public-domain XrayDB Waasmaier--Kirfel table.
 3. Implement non-magnetic coherent neutron nuclear scattering in Rust with
-   explicit element/isotope selection and citable open data.
+   explicit natural/isotope selection from the pinned public-domain
+   `periodictable` table; constant-model use of energy-dependent rows is an
+   error.
 4. Store table version, source, units, checksum, transformation script, and
    redistribution license under a source-data ledger. No table is extracted
    from GSAS-II source or fixtures.
