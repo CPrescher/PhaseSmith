@@ -245,6 +245,6 @@ GSAS-II is used only as the optional pinned validation oracle described in
 
 ## License
 
-The project license has not yet been selected. Contributions should not be
-accepted or releases published until maintainers add an explicit open-source
-license. GSAS-II is separately licensed and is not redistributed here.
+Rietveld Engine is licensed under the [MIT License](LICENSE). GSAS-II is
+separately licensed, is used only as an optional external validation oracle,
+and is not redistributed here.

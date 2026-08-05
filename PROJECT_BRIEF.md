@@ -23,10 +23,9 @@ Third-party reflection physics is supported through an explicit versioned batch
 provider and persistence-codec contract; arbitrary intrinsic line-shape plugins
 remain a future compiled-extension boundary rather than a promised Rust ABI.
 
-The project remains pre-release. In particular, the maintainers must select an
-open-source project license before accepting contributions or publishing a
-release, and structure-factor-based Rietveld orchestration remains deliberately
-reserved until its physics layer is designed and validated.
+The project remains pre-release and is licensed under the MIT License.
+Structure-factor-based Rietveld orchestration remains deliberately reserved
+until its physics layer is designed and validated.
 
 ## Design commitments
 
@@ -50,6 +49,8 @@ reserved until its physics layer is designed and validated.
 - Treat GSAS-II licensing conservatively: implement from published equations
   and public behavior, record sources, and compare numerical output. Do not
   copy source code into this repository.
+- License the independently implemented project under MIT. GSAS-II remains a
+  separately licensed external validation oracle and is not redistributed.
 
 ## First vertical slice
 

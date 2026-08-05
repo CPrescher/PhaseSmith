@@ -1060,16 +1060,16 @@ easier when parameter conventions and tolerance changes remain isolated.
 ## Maintainer decisions needed
 
 Development can proceed through the next numerical units, but the following
-must be decided before a public release:
+must be decided before a public release. The project-license question was
+resolved on 2026-08-05 by selecting the MIT License.
 
-1. Project license. The current repository intentionally has none.
-2. Whether direct `(H, eta)` remains public as a low-level API or is labeled
+1. Whether direct `(H, eta)` remains public as a low-level API or is labeled
    explicitly as a primitive/reference interface.
-3. When support-block Jacobians become the Python default.
-4. Whether the first supported CW convention is strictly GSAS-II-compatible or
+2. When support-block Jacobians become the Python default.
+3. Whether the first supported CW convention is strictly GSAS-II-compatible or
    a physical-unit API with a separately documented GSAS compatibility adapter.
    This plan recommends the latter.
-5. Which GSAS-II-derived fixtures are lawful and useful to redistribute; fixture
+4. Which GSAS-II-derived fixtures are lawful and useful to redistribute; fixture
    provenance must be reviewed before commit.
 
 ## Definition of the next completed milestone
