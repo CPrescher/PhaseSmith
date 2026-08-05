@@ -70,7 +70,13 @@ def test_fused_accumulation_matches_reference() -> None:
         x, positions, intensities, fwhms, etas, support_fwhm=7.37
     )
     np.testing.assert_allclose(actual.y, expected_y, rtol=3e-15, atol=2e-13)
-    np.testing.assert_allclose(actual.jacobian, expected_jacobian, rtol=4e-15, atol=2e-13)
+    assert isinstance(actual.jacobian, rietveld.SupportJacobian)
+    np.testing.assert_allclose(
+        actual.jacobian.to_dense(x.size),
+        expected_jacobian,
+        rtol=4e-15,
+        atol=2e-13,
+    )
     assert rietveld.PARAMETER_ORDER == ("intensity", "position", "fwhm", "eta")
 
 
@@ -86,6 +92,7 @@ def test_accumulation_jacobian_matches_centered_finite_difference(parameter: int
         parameters[:, 2],
         parameters[:, 3],
         support_fwhm=support,
+        jacobian_layout="dense",
     )
     # The input table is position, intensity, FWHM, eta; the public Jacobian is
     # intentionally intensity, position, FWHM, eta.
@@ -127,7 +134,11 @@ def test_support_is_inclusive_and_exact() -> None:
     )
     np.testing.assert_array_equal(result.y[[0, 4]], 0.0)
     assert np.all(result.y[1:4] > 0.0)
-    np.testing.assert_array_equal(result.jacobian[0, :, [0, 4]], 0.0)
+    assert isinstance(result.jacobian, rietveld.SupportJacobian)
+    np.testing.assert_array_equal(result.jacobian.starts, [1])
+    np.testing.assert_array_equal(result.jacobian.offsets, [0, 3])
+    dense = result.jacobian.to_dense(result.y.size)
+    np.testing.assert_array_equal(dense[0, :, [0, 4]], 0.0)
 
 
 @pytest.mark.parametrize(
@@ -143,3 +154,130 @@ def test_invalid_inputs_fail_at_python_boundary(
 ) -> None:
     with pytest.raises(ValueError, match=message):
         rietveld.accumulate(*arguments)
+
+
+def test_dense_layout_is_explicit_compatibility_materialization() -> None:
+    arguments = (
+        np.linspace(-1.0, 1.0, 101),
+        np.array([-0.3, 0.4]),
+        np.array([2.0, 5.0]),
+        np.array([0.1, 0.2]),
+        np.array([0.25, 0.75]),
+    )
+    support = rietveld.accumulate(*arguments, support_fwhm=3.0)
+    dense = rietveld.accumulate(
+        *arguments, support_fwhm=3.0, jacobian_layout="dense"
+    )
+    assert isinstance(support.jacobian, rietveld.SupportJacobian)
+    assert isinstance(dense.jacobian, np.ndarray)
+    np.testing.assert_array_equal(support.y, dense.y)
+    np.testing.assert_array_equal(
+        support.jacobian.to_dense(arguments[0].size), dense.jacobian
+    )
+    assert dense.derivatives.local.values.size == support.jacobian.values.size
+
+
+def test_sparse_memory_scales_with_active_support() -> None:
+    x = np.linspace(0.0, 100.0, 10_001)
+    positions = np.linspace(1.0, 99.0, 250)
+    result = rietveld.accumulate(
+        x,
+        positions,
+        np.ones(positions.size),
+        np.full(positions.size, 0.02),
+        np.full(positions.size, 0.5),
+        support_fwhm=2.0,
+    )
+    sparse = result.derivatives.local
+    dense_derivative_elements = positions.size * len(rietveld.PARAMETER_ORDER) * x.size
+    assert sparse.values.size == sparse.active_sample_count * len(rietveld.PARAMETER_ORDER)
+    assert sparse.values.size < dense_derivative_elements // 500
+
+
+@pytest.mark.parametrize("seed", [7, 41, 503, 8_191])
+def test_randomized_support_reconstruction_matches_reference(seed: int) -> None:
+    rng = np.random.default_rng(seed)
+    x = np.cumsum(rng.uniform(0.001, 0.006, 731))
+    positions = rng.uniform(x[0] - 0.2, x[-1] + 0.2, 23)
+    intensities = rng.uniform(-50.0, 400.0, positions.size)
+    fwhms = rng.uniform(0.004, 0.08, positions.size)
+    etas = rng.uniform(0.0, 1.0, positions.size)
+    support_fwhm = 3.719
+    actual = rietveld.accumulate(
+        x,
+        positions,
+        intensities,
+        fwhms,
+        etas,
+        support_fwhm=support_fwhm,
+    )
+    expected_starts = np.searchsorted(
+        x, positions - support_fwhm * fwhms, side="left"
+    )
+    expected_stops = np.searchsorted(
+        x, positions + support_fwhm * fwhms, side="right"
+    )
+    expected_offsets = np.concatenate(
+        ([0], np.cumsum(expected_stops - expected_starts))
+    )
+    expected_y, expected_jacobian = reference.accumulate(
+        x,
+        positions,
+        intensities,
+        fwhms,
+        etas,
+        support_fwhm=support_fwhm,
+    )
+    np.testing.assert_array_equal(actual.derivatives.local.starts, expected_starts)
+    np.testing.assert_array_equal(actual.derivatives.local.offsets, expected_offsets)
+    np.testing.assert_allclose(actual.y, expected_y, rtol=4e-15, atol=2e-12)
+    np.testing.assert_allclose(
+        actual.derivatives.local.to_dense(x.size),
+        expected_jacobian,
+        rtol=5e-15,
+        atol=2e-12,
+    )
+
+
+@pytest.mark.parametrize(
+    ("x", "positions", "expected_starts", "expected_offsets"),
+    [
+        ([], [], [], [0]),
+        ([0.0, 1.0], [10.0], [2], [0, 0]),
+        ([0.0, 1.0, 2.0], [1.1], [1], [0, 1]),
+    ],
+)
+def test_empty_outside_and_single_sample_supports(
+    x: list[float],
+    positions: list[float],
+    expected_starts: list[int],
+    expected_offsets: list[int],
+) -> None:
+    count = len(positions)
+    result = rietveld.accumulate(
+        x,
+        positions,
+        np.ones(count),
+        np.full(count, 0.1),
+        np.full(count, 0.5),
+        support_fwhm=1.0,
+    )
+    np.testing.assert_array_equal(result.derivatives.local.starts, expected_starts)
+    np.testing.assert_array_equal(result.derivatives.local.offsets, expected_offsets)
+
+
+def test_python_array_validation_and_layout_validation() -> None:
+    with pytest.raises(ValueError, match="one-dimensional"):
+        rietveld.accumulate([[0.0]], [], [], [], [])
+    with pytest.raises(ValueError, match="real floating-point or integer"):
+        rietveld.accumulate(np.array([0.0 + 1.0j]), [], [], [], [])
+    with pytest.raises(ValueError, match="equal length"):
+        rietveld.accumulate([0.0], [0.0], [], [1.0], [0.5])
+    with pytest.raises(ValueError, match="jacobian_layout"):
+        rietveld.accumulate([0.0], [], [], [], [], jacobian_layout="csr")  # type: ignore[arg-type]
+
+
+def test_support_to_dense_rejects_inconsistent_sample_count() -> None:
+    result = rietveld.accumulate([0.0, 1.0], [1.0], [1.0], [1.0], [0.5])
+    with pytest.raises(ValueError, match="outside"):
+        result.derivatives.local.to_dense(1)

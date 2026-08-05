@@ -207,7 +207,7 @@ Turn the current local demonstration into a repeatable validation baseline.
 
 ## Implementation unit 1: scalable accumulation and derivative storage
 
-Status: next.
+Status: complete (2026-08-05).
 
 ### Goal
 
@@ -252,7 +252,16 @@ numerical results exactly.
 - Release benchmarks demonstrate that runtime and memory scale with active
   support, not full peak-grid products.
 
+Review result: the 200-peak, 5,001-sample release benchmark stores 0.504 MB in
+support mode versus 32.046 MB in dense compatibility mode. Median end-to-end
+Python times were 0.079 ms and 0.292 ms respectively on the recorded development
+machine. Rust and Python tests cover borrowed inputs, sparse reconstruction,
+fixed-support derivatives, boundary inclusion, empty/outside supports, checked
+allocation arithmetic, and deterministic peak-order summation.
+
 ## Implementation unit 2: GSAS-compatible TCH symmetric pseudo-Voigt
+
+Status: next.
 
 ### Goal
 

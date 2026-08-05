@@ -7,5 +7,7 @@
 pub mod profile;
 
 pub use profile::{
-    Accumulation, Peak, ProfileError, ProfilePoint, accumulate_peaks, symmetric_pseudo_voigt,
+    Accumulation, DenseJacobian, GridView, PatternDerivatives, Peak, PeakBatchView, ProfileError,
+    ProfilePoint, SupportJacobian, SupportPolicy, SupportRange, accumulate_batch, accumulate_peaks,
+    accumulate_values_batch, symmetric_pseudo_voigt,
 };

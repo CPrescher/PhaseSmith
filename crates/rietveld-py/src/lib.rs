@@ -2,11 +2,14 @@
 
 #![allow(clippy::needless_pass_by_value)] // PyO3 extracts owned argument guards.
 
-use npy::ndarray::Array3;
-use npy::{IntoPyArray, PyArray1, PyArray3, PyReadonlyArray1};
+use npy::ndarray::Array2;
+use npy::{IntoPyArray, PyArray1, PyArray2, PyReadonlyArray1};
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
-use rietveld_core::{Peak, accumulate_peaks, symmetric_pseudo_voigt};
+use rietveld_core::{
+    GridView, PeakBatchView, SupportPolicy, accumulate_batch, accumulate_values_batch,
+    symmetric_pseudo_voigt,
+};
 
 type ProfileArrays<'py> = (
     Bound<'py, PyArray1<f64>>,
@@ -15,7 +18,12 @@ type ProfileArrays<'py> = (
     Bound<'py, PyArray1<f64>>,
 );
 
-type AccumulationArrays<'py> = (Bound<'py, PyArray1<f64>>, Bound<'py, PyArray3<f64>>);
+type AccumulationArrays<'py> = (
+    Bound<'py, PyArray1<f64>>,
+    Bound<'py, PyArray1<i64>>,
+    Bound<'py, PyArray1<i64>>,
+    Bound<'py, PyArray2<f64>>,
+);
 
 /// Vectorized scalar profile evaluation used by the public Python wrapper.
 #[pyfunction]
@@ -61,7 +69,7 @@ fn profile<'py>(
     ))
 }
 
-/// Fused peak accumulation returning `(y, jacobian)`.
+/// Fused peak accumulation returning dense values and support-sparse derivatives.
 #[pyfunction]
 fn accumulate<'py>(
     py: Python<'py>,
@@ -78,29 +86,57 @@ fn accumulate<'py>(
     let fwhms = contiguous_slice(&fwhms, "fwhms")?;
     let etas = contiguous_slice(&etas, "etas")?;
 
-    let peak_count = positions.len();
-    if intensities.len() != peak_count || fwhms.len() != peak_count || etas.len() != peak_count {
-        return Err(PyValueError::new_err(
-            "positions, intensities, fwhms, and etas must have equal length",
-        ));
-    }
-    let peaks: Vec<Peak> = (0..peak_count)
-        .map(|index| Peak {
-            position: positions[index],
-            intensity: intensities[index],
-            fwhm: fwhms[index],
-            eta: etas[index],
-        })
-        .collect();
-
-    let accumulation = accumulate_peaks(x, &peaks, support_fwhm)
+    let grid = GridView::new(x).map_err(|error| PyValueError::new_err(error.to_string()))?;
+    let peaks = PeakBatchView::new(positions, intensities, fwhms, etas)
         .map_err(|error| PyValueError::new_err(error.to_string()))?;
-    let jacobian = Array3::from_shape_vec(
-        (accumulation.peak_count, 4, accumulation.sample_count),
-        accumulation.jacobian,
-    )
-    .map_err(|error| PyValueError::new_err(error.to_string()))?;
-    Ok((accumulation.y.into_pyarray(py), jacobian.into_pyarray(py)))
+    let accumulation = accumulate_batch(grid, peaks, SupportPolicy::FwhmMultiple(support_fwhm))
+        .map_err(|error| PyValueError::new_err(error.to_string()))?;
+    let local = accumulation.derivatives.local;
+    let value_rows = local.active_sample_count();
+    let starts = indices_to_i64(local.starts, "support starts")?;
+    let offsets = indices_to_i64(local.offsets, "support offsets")?;
+    let values = Array2::from_shape_vec((value_rows, 4), local.values)
+        .map_err(|error| PyValueError::new_err(error.to_string()))?;
+    Ok((
+        accumulation.y.into_pyarray(py),
+        starts.into_pyarray(py),
+        offsets.into_pyarray(py),
+        values.into_pyarray(py),
+    ))
+}
+
+/// Fused peak accumulation returning calculated values without derivatives.
+#[pyfunction]
+fn accumulate_values<'py>(
+    py: Python<'py>,
+    x: PyReadonlyArray1<'py, f64>,
+    positions: PyReadonlyArray1<'py, f64>,
+    intensities: PyReadonlyArray1<'py, f64>,
+    fwhms: PyReadonlyArray1<'py, f64>,
+    etas: PyReadonlyArray1<'py, f64>,
+    support_fwhm: f64,
+) -> PyResult<Bound<'py, PyArray1<f64>>> {
+    let x = contiguous_slice(&x, "x")?;
+    let positions = contiguous_slice(&positions, "positions")?;
+    let intensities = contiguous_slice(&intensities, "intensities")?;
+    let fwhms = contiguous_slice(&fwhms, "fwhms")?;
+    let etas = contiguous_slice(&etas, "etas")?;
+    let grid = GridView::new(x).map_err(|error| PyValueError::new_err(error.to_string()))?;
+    let peaks = PeakBatchView::new(positions, intensities, fwhms, etas)
+        .map_err(|error| PyValueError::new_err(error.to_string()))?;
+    let y = accumulate_values_batch(grid, peaks, SupportPolicy::FwhmMultiple(support_fwhm))
+        .map_err(|error| PyValueError::new_err(error.to_string()))?;
+    Ok(y.into_pyarray(py))
+}
+
+fn indices_to_i64(indices: Vec<usize>, name: &str) -> PyResult<Vec<i64>> {
+    indices
+        .into_iter()
+        .map(|index| {
+            i64::try_from(index)
+                .map_err(|_| PyValueError::new_err(format!("{name} exceed NumPy int64 range")))
+        })
+        .collect()
 }
 
 fn contiguous_slice<'array>(
@@ -117,6 +153,7 @@ fn contiguous_slice<'array>(
 fn _core(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_function(wrap_pyfunction!(profile, module)?)?;
     module.add_function(wrap_pyfunction!(accumulate, module)?)?;
+    module.add_function(wrap_pyfunction!(accumulate_values, module)?)?;
     module.add("PARAMETER_ORDER", ("intensity", "position", "fwhm", "eta"))?;
     module.add(
         "BUILD_MODE",

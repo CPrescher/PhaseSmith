@@ -41,7 +41,11 @@ result = accumulate(
     fwhms=[0.08, 0.1],
     etas=[0.3, 0.5],
 )
-print(result.y.shape, result.jacobian.shape)
+print(result.y.shape, result.derivatives.local.values.shape)
+
+# Dense materialization is explicit and intended for small compatibility uses.
+dense = result.derivatives.local.to_dense(result.y.size)
+print(dense.shape)  # (peak, parameter, sample)
 ```
 
 GSAS-II is used only as the optional pinned validation oracle described in

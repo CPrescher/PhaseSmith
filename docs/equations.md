@@ -38,3 +38,12 @@ Consequently, `intensity` denotes the infinite-support integrated intensity,
 while the sampled pattern contains the analytically predictable in-window
 fraction. The derivative treats the selected samples as fixed; distributional
 derivatives at the moving cutoff are outside the API contract.
+
+## Derivative storage
+
+The calculated pattern remains dense. Per-peak derivatives are stored only for
+the inclusive active interval found by two binary searches. For peak `p`,
+`starts[p]` is its first active sample and `offsets[p]:offsets[p + 1]` selects
+sample-major rows in the order `(intensity, position, H, eta)`. Empty and
+entirely out-of-grid supports have zero-length blocks. Dense
+`(peak, parameter, sample)` storage is an explicit compatibility conversion.
