@@ -1,0 +1,122 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rietveld-engine.invalid/oracle/fixture-v1.schema.json",
+  "title": "Rietveld Engine GSAS-II oracle fixture",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format_version",
+    "fixture_id",
+    "kind",
+    "provenance",
+    "source",
+    "input",
+    "archive",
+    "arrays",
+    "cases"
+  ],
+  "properties": {
+    "format_version": { "const": 1 },
+    "fixture_id": { "type": "string", "minLength": 1 },
+    "kind": {
+      "enum": ["symmetric_profile", "powder_histogram"]
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "gsasii_repository",
+        "gsasii_revision",
+        "gsasii_tag",
+        "python_version",
+        "numpy_version",
+        "platform",
+        "generated_at_utc",
+        "generator_sha256"
+      ],
+      "properties": {
+        "gsasii_repository": { "type": "string" },
+        "gsasii_revision": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+        "gsasii_tag": { "type": "integer", "minimum": 1 },
+        "python_version": { "type": "string" },
+        "numpy_version": { "type": "string" },
+        "platform": { "type": "string" },
+        "generated_at_utc": { "type": "string", "format": "date-time" },
+        "generator_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["api", "private_probe", "adapter_version", "native_units"],
+      "properties": {
+        "api": { "type": "string" },
+        "private_probe": { "type": "boolean" },
+        "adapter_version": { "type": "integer", "minimum": 1 },
+        "native_units": { "type": "object" }
+      }
+    },
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "sha256"],
+      "properties": {
+        "kind": { "enum": ["parameter_cases", "gpx"] },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "file": { "type": "string" }
+      }
+    },
+    "archive": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["file", "sha256"],
+      "properties": {
+        "file": { "type": "string", "pattern": "^[^/]+\\.npz$" },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      }
+    },
+    "arrays": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": { "$ref": "#/$defs/array" }
+    },
+    "cases": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/case" }
+    }
+  },
+  "$defs": {
+    "array": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["dtype", "shape", "sha256", "finite"],
+      "properties": {
+        "dtype": { "type": "string" },
+        "shape": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 0 }
+        },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "finite": { "type": "boolean" },
+        "unit": { "type": "string" },
+        "description": { "type": "string" }
+      }
+    },
+    "case": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["id", "case_kind", "arrays", "parameters"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "case_kind": { "enum": ["isolated_peak", "overlapping_peaks", "histogram"] },
+        "arrays": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": { "type": "string" }
+        },
+        "parameters": { "type": "object" }
+      }
+    }
+  }
+}

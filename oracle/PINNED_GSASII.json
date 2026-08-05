@@ -1,0 +1,8 @@
+{
+  "repository": "https://github.com/AdvancedPhotonSource/GSAS-II",
+  "revision": "c0bc79b259cdf0065480b5fbd57674ddf12c4a23",
+  "short_revision": "c0bc79",
+  "upstream_tag": 5838,
+  "resolved_on": "2026-08-04",
+  "purpose": "Validation oracle only; not a runtime or architectural dependency"
+}

@@ -1,0 +1,188 @@
+{
+  "archive": {
+    "file": "data.npz",
+    "sha256": "6691afd7cbce4c5edb2c1b9afd6b33439a01a5c3be81de0efd909316f48ae584"
+  },
+  "arrays": {
+    "balanced__profile_per_deg": {
+      "description": "GSAS-II normalized profile converted from inverse centidegrees",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "a94eb636d0fe2721bf308bc5e97af78b88afa170ee80c796a7a53c9129d6e866",
+      "shape": [
+        5001
+      ],
+      "unit": "inverse_degree"
+    },
+    "balanced__x_deg": {
+      "description": "Profile sampling coordinates",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "753e0b9f2e71822bc5a9c19b071dc285ceca7e024662910516f9ba8bead59aa4",
+      "shape": [
+        5001
+      ],
+      "unit": "degree_2theta"
+    },
+    "gaussian_dominant__profile_per_deg": {
+      "description": "GSAS-II normalized profile converted from inverse centidegrees",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "2f2c204a2795567bfbef7df294dcefdfd1d350a1839ee089415f4b3516ef6571",
+      "shape": [
+        4001
+      ],
+      "unit": "inverse_degree"
+    },
+    "gaussian_dominant__x_deg": {
+      "description": "Profile sampling coordinates",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "adc99e992e272580c0a47320011935fb3d099c23386660ea3e46d2c6a09e711e",
+      "shape": [
+        4001
+      ],
+      "unit": "degree_2theta"
+    },
+    "lorentzian_dominant__profile_per_deg": {
+      "description": "GSAS-II normalized profile converted from inverse centidegrees",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "bb0ef97eb2bf687d644ed5b72a23c4d0aa0e5b93bb7872ccd03166f173e741aa",
+      "shape": [
+        6001
+      ],
+      "unit": "inverse_degree"
+    },
+    "lorentzian_dominant__x_deg": {
+      "description": "Profile sampling coordinates",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "659256928a899cb5e51936b7b0be3bb15ad313ea54826259afb34db1fddc5d7e",
+      "shape": [
+        6001
+      ],
+      "unit": "degree_2theta"
+    },
+    "overlapping_mixed__x_deg": {
+      "description": "Profile sampling coordinates",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "f25c58b806b0ce752315943a8d879fe1cc007293737172a4fe814f058bf2c0ac",
+      "shape": [
+        5001
+      ],
+      "unit": "degree_2theta"
+    },
+    "overlapping_mixed__ycalc": {
+      "description": "Summed calculated profile",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "69c123ed0386cbf1f12aef03c3fadd5f8fbad539eb45ca7edb58d495c63d25ca",
+      "shape": [
+        5001
+      ],
+      "unit": "intensity_per_degree"
+    }
+  },
+  "cases": [
+    {
+      "arrays": {
+        "profile": "gaussian_dominant__profile_per_deg",
+        "x": "gaussian_dominant__x_deg"
+      },
+      "case_kind": "isolated_peak",
+      "gsasii_reported_integral": 0.9994604798039428,
+      "id": "gaussian_dominant",
+      "parameters": {
+        "gaussian_sigma_deg": 0.025,
+        "lorentzian_fwhm_deg": 0.001,
+        "position_deg": 20.0
+      },
+      "sampled_integral_per_degree": 0.9994603453601766
+    },
+    {
+      "arrays": {
+        "profile": "balanced__profile_per_deg",
+        "x": "balanced__x_deg"
+      },
+      "case_kind": "isolated_peak",
+      "gsasii_reported_integral": 0.9908917950823903,
+      "id": "balanced",
+      "parameters": {
+        "gaussian_sigma_deg": 0.031,
+        "lorentzian_fwhm_deg": 0.023,
+        "position_deg": 32.1
+      },
+      "sampled_integral_per_degree": 0.9908899763513184
+    },
+    {
+      "arrays": {
+        "profile": "lorentzian_dominant__profile_per_deg",
+        "x": "lorentzian_dominant__x_deg"
+      },
+      "case_kind": "isolated_peak",
+      "gsasii_reported_integral": 0.989080293825823,
+      "id": "lorentzian_dominant",
+      "parameters": {
+        "gaussian_sigma_deg": 0.008,
+        "lorentzian_fwhm_deg": 0.05,
+        "position_deg": 75.0
+      },
+      "sampled_integral_per_degree": 0.9890784719451358
+    },
+    {
+      "arrays": {
+        "x": "overlapping_mixed__x_deg",
+        "ycalc": "overlapping_mixed__ycalc"
+      },
+      "case_kind": "overlapping_peaks",
+      "id": "overlapping_mixed",
+      "parameters": {
+        "peaks": [
+          {
+            "gaussian_sigma_deg": 0.021,
+            "intensity": 125.0,
+            "lorentzian_fwhm_deg": 0.017,
+            "position_deg": 40.43
+          },
+          {
+            "gaussian_sigma_deg": 0.028,
+            "intensity": 83.0,
+            "lorentzian_fwhm_deg": 0.034,
+            "position_deg": 40.49
+          }
+        ]
+      },
+      "sampled_integral": 204.1553079345088
+    }
+  ],
+  "fixture_id": "gsasii_symmetric_pseudo_voigt_v1",
+  "format_version": 1,
+  "input": {
+    "kind": "parameter_cases",
+    "sha256": "6c7ea69c0feeecf4574fe9d94d43d7d53e2c3db3c99dedf81b5e2d29bbb46260"
+  },
+  "kind": "symmetric_profile",
+  "provenance": {
+    "generated_at_utc": "2026-08-04T22:33:05.493519+00:00",
+    "generator_sha256": "205cc6f3ae7ee1d747c3c82cb9a7a7ef26d2ee0f9e4a8a147ba24f89943457a4",
+    "gsasii_repository": "https://github.com/AdvancedPhotonSource/GSAS-II",
+    "gsasii_revision": "c0bc79b259cdf0065480b5fbd57674ddf12c4a23",
+    "gsasii_tag": 5838,
+    "numpy_version": "2.2.6",
+    "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O",
+    "python_version": "3.13.9"
+  },
+  "source": {
+    "adapter_version": 1,
+    "api": "GSASII.GSASIIpwd.getPsVoigt",
+    "native_units": {
+      "coordinate": "degree_2theta",
+      "gaussian_width": "centidegree_squared_variance",
+      "lorentzian_width": "centidegree_fwhm",
+      "profile_density": "inverse_centidegree"
+    },
+    "private_probe": true
+  }
+}

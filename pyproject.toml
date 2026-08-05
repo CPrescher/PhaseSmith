@@ -1,0 +1,41 @@
+[build-system]
+requires = ["maturin>=1.10,<2"]
+build-backend = "maturin"
+
+[project]
+name = "rietveld-engine"
+version = "0.1.0"
+description = "Fast, validated powder-diffraction profile calculations"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{ name = "Rietveld Engine contributors" }]
+dependencies = ["numpy>=1.26"]
+classifiers = [
+  "Development Status :: 2 - Pre-Alpha",
+  "Intended Audience :: Science/Research",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Rust",
+  "Topic :: Scientific/Engineering :: Physics",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+dev = ["pytest>=8", "ruff>=0.12"]
+
+[tool.maturin]
+manifest-path = "crates/rietveld-py/Cargo.toml"
+python-source = "python"
+module-name = "rietveld._core"
+features = ["pyo3/extension-module"]
+
+[tool.pytest.ini_options]
+addopts = "-ra"
+testpaths = ["tests"]
+markers = ["oracle: requires the exact pinned GSAS-II external checkout"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]

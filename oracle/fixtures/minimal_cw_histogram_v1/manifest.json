@@ -1,0 +1,164 @@
+{
+  "archive": {
+    "file": "data.npz",
+    "sha256": "5165b244fbae0b73beef32dd8688b24e914051f3d01485fca71d1c5ca64182d3"
+  },
+  "arrays": {
+    "background": {
+      "description": "Public scripting background array",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "b2ce0b4bdbe2c9dfa51406ed2c48a9c96e23c3419be2b0acf154f06766522f90",
+      "shape": [
+        3501
+      ],
+      "unit": "intensity"
+    },
+    "reflection_list_0": {
+      "description": "GSAS-II powder reflection table",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "1c4268f22ce74375c0f677f2b87572a75e788577aeb9a33ec1391a468c8f7d19",
+      "shape": [
+        125,
+        15
+      ],
+      "unit": "dimensionless"
+    },
+    "x_deg": {
+      "description": "Public scripting X coordinates",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "746ddedbeba03a9b1102e02bed4b3273666565e64913944da017c3409072215e",
+      "shape": [
+        3501
+      ],
+      "unit": "degree_2theta"
+    },
+    "ycalc": {
+      "description": "Public scripting ycalc array",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "ff1393a3b990d76e7946b5d49a807274355c56cb0852d0e3289163db33e542e3",
+      "shape": [
+        3501
+      ],
+      "unit": "intensity"
+    }
+  },
+  "cases": [
+    {
+      "arrays": {
+        "background": "background",
+        "x": "x_deg",
+        "ycalc": "ycalc"
+      },
+      "case_kind": "histogram",
+      "id": "minimal_public_cw_histogram",
+      "parameters": {
+        "coordinate_unit": "degree_2theta",
+        "histogram_name": "PWDR synthetic-cw",
+        "instrument": {
+          "sh_over_l": 0.002,
+          "u": 2.0,
+          "v": -1.0,
+          "w": 1.0,
+          "wavelength_angstrom": 1.5406,
+          "x": 0.1,
+          "y": 0.2,
+          "z": 0.0
+        },
+        "phase": {
+          "atoms": [
+            {
+              "element": "Si",
+              "fractional": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "label": "Si1"
+            },
+            {
+              "element": "Si",
+              "fractional": [
+                0.25,
+                0.25,
+                0.25
+              ],
+              "label": "Si2"
+            }
+          ],
+          "cell": [
+            4.5,
+            4.5,
+            4.5,
+            90.0,
+            90.0,
+            90.0
+          ],
+          "name": "synthetic-silicon",
+          "space_group": "P 1"
+        },
+        "range_deg": [
+          10.0,
+          80.0
+        ],
+        "sample_count": 3501
+      },
+      "reflection_tables": [
+        {
+          "array": "reflection_list_0",
+          "column_count": 15,
+          "columns": [
+            "h",
+            "k",
+            "l",
+            "multiplicity",
+            "d_spacing_angstrom",
+            "position_deg",
+            "sigma2_centideg2",
+            "gamma_centideg",
+            "f_obs2",
+            "f_calc2",
+            "phase_deg",
+            "intensity_correction",
+            "preferred_orientation",
+            "transmission",
+            "extinction"
+          ],
+          "histogram_type": "PXC",
+          "phase": "synthetic-silicon",
+          "superspace": false
+        }
+      ]
+    }
+  ],
+  "fixture_id": "gsasii_minimal_cw_histogram_v1",
+  "format_version": 1,
+  "input": {
+    "kind": "parameter_cases",
+    "sha256": "6bdda9ec9412005e82510cfd09b2cfbd40c094f3cdc605b3dc22270f4c2b097f"
+  },
+  "kind": "powder_histogram",
+  "provenance": {
+    "generated_at_utc": "2026-08-04T22:41:32.472319+00:00",
+    "generator_sha256": "4309d88163f91242a97142d9900b27025aa6e6e5be43a25082f896e754937ba4",
+    "gsasii_repository": "https://github.com/AdvancedPhotonSource/GSAS-II",
+    "gsasii_revision": "c0bc79b259cdf0065480b5fbd57674ddf12c4a23",
+    "gsasii_tag": 5838,
+    "numpy_version": "2.2.6",
+    "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O",
+    "python_version": "3.13.9"
+  },
+  "source": {
+    "adapter_version": 1,
+    "api": "GSASII.GSASIIscriptable.G2PwdrData.getdata/reflections",
+    "native_units": {
+      "coordinate": "degree_2theta",
+      "profile": "intensity",
+      "reflection_table": "GSAS-II powder reflection columns"
+    },
+    "private_probe": false
+  }
+}
