@@ -100,6 +100,22 @@ objects, or GSAS-II dictionaries. Higher layers translate domain models into
 flat, validated kernel inputs. The durable public-module contract is documented
 in `docs/public-api.md`.
 
+Physics extensions use explicit, versioned provider objects rather than global
+core registration. A vectorized Python provider may calculate reflection-batch
+width/intensity contributions and derivative chains before one native
+accumulation call. New intrinsic line-shape kernels require a compiled native
+provider for production speed; Python implementations remain valid reference
+and prototyping paths and are never called inside the peak/sample hot loop.
+Built-in and third-party models must satisfy the same calculation contracts so
+Le Bail, Rietveld, persistence, and GUI adapters do not branch on model origin.
+
+Monochromatic constant-wavelength radiation is the baseline model. Discrete
+wavelength components are optional composition: one component is numerically
+identical to the monochromatic path, while K-alpha doublets or other spectra are
+supplied explicitly. FCJ geometry is independently optional. Neutron CW support
+will reuse the monochromatic radiation concept without inheriting X-ray
+doublet assumptions.
+
 ## Milestones
 
 1. Symmetric pseudo-Voigt profile, fused accumulation, derivatives, Python API,

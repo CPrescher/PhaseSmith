@@ -9,7 +9,8 @@ use pyo3::prelude::*;
 use rietveld_core::{
     Accumulation, ConstantWavelengthInstrument, CwProfileParameters, CwReflectionBatchView,
     FcjGeometry, FcjProfile, GridView, PeakBatchView, SupportPolicy, TchPeakBatchView, TchShape,
-    TchWidths, accumulate_batch, accumulate_cw_batch, accumulate_cw_fcj_batch,
+    TchWidths, WavelengthComponentsView, accumulate_batch, accumulate_cw_batch,
+    accumulate_cw_components_batch, accumulate_cw_fcj_batch, accumulate_cw_fcj_components_batch,
     accumulate_tch_batch, accumulate_values_batch, symmetric_pseudo_voigt,
 };
 
@@ -292,7 +293,7 @@ fn accumulation_to_numpy(
 fn cw_profile_parameters<'py>(
     py: Python<'py>,
     two_theta_deg: PyReadonlyArray1<'py, f64>,
-    wavelength_angstrom: f64,
+    reference_wavelength_angstrom: f64,
     u_deg2: f64,
     v_deg2: f64,
     w_deg2: f64,
@@ -300,7 +301,14 @@ fn cw_profile_parameters<'py>(
     y_deg: f64,
 ) -> PyResult<CwProfileArrays<'py>> {
     let two_theta_deg = contiguous_slice(&two_theta_deg, "two_theta_deg")?;
-    let instrument = cw_instrument(wavelength_angstrom, u_deg2, v_deg2, w_deg2, x_deg, y_deg);
+    let instrument = cw_instrument(
+        reference_wavelength_angstrom,
+        u_deg2,
+        v_deg2,
+        w_deg2,
+        x_deg,
+        y_deg,
+    );
     instrument
         .validate()
         .map_err(|error| PyValueError::new_err(error.to_string()))?;
@@ -414,6 +422,69 @@ fn accumulate_cw_fcj<'py>(
     accumulation_to_numpy(py, accumulation)
 }
 
+/// Accumulate an optional-FCJ CW wavelength-component reflection batch.
+#[pyfunction]
+#[allow(clippy::too_many_arguments)]
+fn accumulate_cw_components<'py>(
+    py: Python<'py>,
+    x: PyReadonlyArray1<'py, f64>,
+    two_theta_deg: PyReadonlyArray1<'py, f64>,
+    intensities: PyReadonlyArray1<'py, f64>,
+    wavelengths_angstrom: PyReadonlyArray1<'py, f64>,
+    relative_component_intensities: PyReadonlyArray1<'py, f64>,
+    reference_wavelength_angstrom: f64,
+    u_deg2: f64,
+    v_deg2: f64,
+    w_deg2: f64,
+    x_deg: f64,
+    y_deg: f64,
+    use_fcj: bool,
+    sample_over_radius: f64,
+    detector_over_radius: f64,
+    support_fwhm: f64,
+) -> PyResult<AccumulationArrays<'py>> {
+    let x = contiguous_slice(&x, "x")?;
+    let two_theta_deg = contiguous_slice(&two_theta_deg, "two_theta_deg")?;
+    let intensities = contiguous_slice(&intensities, "intensities")?;
+    let wavelengths_angstrom = contiguous_slice(&wavelengths_angstrom, "wavelengths_angstrom")?;
+    let relative_component_intensities = contiguous_slice(
+        &relative_component_intensities,
+        "relative_component_intensities",
+    )?;
+    let grid = GridView::new(x).map_err(|error| PyValueError::new_err(error.to_string()))?;
+    let reflections = CwReflectionBatchView::new(two_theta_deg, intensities)
+        .map_err(|error| PyValueError::new_err(error.to_string()))?;
+    let components =
+        WavelengthComponentsView::new(wavelengths_angstrom, relative_component_intensities)
+            .map_err(|error| PyValueError::new_err(error.to_string()))?;
+    let instrument = cw_instrument(
+        reference_wavelength_angstrom,
+        u_deg2,
+        v_deg2,
+        w_deg2,
+        x_deg,
+        y_deg,
+    );
+    let support = SupportPolicy::FwhmMultiple(support_fwhm);
+    let accumulation = if use_fcj {
+        accumulate_cw_fcj_components_batch(
+            grid,
+            reflections,
+            instrument,
+            components,
+            FcjGeometry {
+                sample_over_radius,
+                detector_over_radius,
+            },
+            support,
+        )
+    } else {
+        accumulate_cw_components_batch(grid, reflections, instrument, components, support)
+    }
+    .map_err(|error| PyValueError::new_err(error.to_string()))?;
+    accumulation_to_numpy(py, accumulation)
+}
+
 const fn cw_instrument(
     wavelength_angstrom: f64,
     u_deg2: f64,
@@ -488,6 +559,7 @@ fn _core(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_function(wrap_pyfunction!(cw_profile_parameters, module)?)?;
     module.add_function(wrap_pyfunction!(accumulate_cw, module)?)?;
     module.add_function(wrap_pyfunction!(accumulate_cw_fcj, module)?)?;
+    module.add_function(wrap_pyfunction!(accumulate_cw_components, module)?)?;
     module.add("PARAMETER_ORDER", ("intensity", "position", "fwhm", "eta"))?;
     module.add(
         "TCH_PARAMETER_ORDER",

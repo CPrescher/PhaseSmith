@@ -8,8 +8,12 @@ global state, callbacks per reflection, or GUI objects.
 
 ```text
 rietveld.instrument
-  Instrument, radiation, and instrument-geometry models. No phase or
-  refinement state.
+  Instrument response and instrument-geometry models. No phase, radiation
+  spectrum, or refinement state.
+
+rietveld.radiation
+  Optional discrete wavelength/source models. A single component is the exact
+  monochromatic baseline; doublets and other spectra are explicit composition.
 
 rietveld.phase
   Crystallographic phase metadata and typed reflection batches. No observed
@@ -37,6 +41,11 @@ rietveld.refinement.rietveld
 rietveld.integrations.dioptas
   Optional conversion between Dioptas-facing NumPy data and the public typed
   models. Dioptas is never a core or required Python dependency.
+
+rietveld.extensions
+  Versioned provider protocols and optional third-party discovery. Providers
+  are passed explicitly into calculations; discovery never creates numerical
+  core global state.
 ```
 
 Low-level profile functions remain available for equation testing and advanced
@@ -47,10 +56,13 @@ The implemented low-level module split already follows this boundary:
 ```text
 rietveld.instrument.ConstantWavelengthInstrument
 rietveld.instrument.FcjGeometry
+rietveld.radiation.WavelengthComponents
 rietveld.cw.cw_profile_parameters
 rietveld.cw.accumulate_cw
+rietveld.cw.accumulate_cw_components
 rietveld.fcj.profile_fcj
 rietveld.fcj.accumulate_cw_fcj
+rietveld.fcj.accumulate_cw_fcj_components
 rietveld.results.AccumulationResult
 ```
 
@@ -141,3 +153,31 @@ notes. Once declared stable, field removal or unit/order changes require a
 versioned migration path. New optional fields and result diagnostics may be
 added compatibly. Integration adapters are kept thin so external release cycles
 do not constrain the numerical core.
+
+## Extensible physics providers
+
+Built-in broadening and intensity models implement the same batch-oriented
+provider contracts offered to downstream packages. A broadening provider is
+called once with typed instrument, phase/reflection, and sample inputs and
+returns contiguous per-reflection component widths or contributions, stable
+parameter names, and analytical derivative-chain arrays. The generic Rust
+profile kernel consumes those arrays and retains ownership of support-limited
+peak/sample accumulation. This makes Python-defined size, strain, defect, or
+empirical laws practical without introducing a Python callback in the hot loop.
+
+An entirely new intrinsic line shape has two paths:
+
+1. A vectorized Python reference provider for prototyping, validation, and
+   modest workloads.
+2. A separately compiled native provider implementing the versioned kernel
+   trait for production. Rust's ABI is not treated as dynamically stable; a C
+   ABI or other binary boundary will be introduced only with an explicit API
+   version and compatibility tests.
+
+Calculations receive provider instances explicitly. Optional Python package
+entry-point discovery is a convenience in `rietveld.extensions`, not an
+implicit registry used by `rietveld-core`. Persistence records provider ID,
+provider version, API version, and plain-data configuration; it never pickles
+live provider or native objects. Refinement methods depend on the calculator
+contract, so a compatible provider is automatically usable by Le Bail and
+later Rietveld workflows.

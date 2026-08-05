@@ -11,6 +11,7 @@ from numpy.typing import ArrayLike, NDArray
 from . import _core
 from ._api import _vector
 from .instrument import ConstantWavelengthInstrument, FcjGeometry
+from .radiation import WavelengthComponents, component_global_parameter_names
 from .results import AccumulationResult, _build_accumulation_result
 
 FCJ_PARAMETER_ORDER: Final[tuple[str, ...]] = (
@@ -98,5 +99,49 @@ def accumulate_cw_fcj(
         global_values,
         CW_FCJ_LOCAL_PARAMETER_ORDER,
         CW_FCJ_GLOBAL_PARAMETER_ORDER,
+        jacobian_layout,
+    )
+
+
+def accumulate_cw_fcj_components(
+    x: ArrayLike,
+    two_theta_deg: ArrayLike,
+    integrated_intensities: ArrayLike,
+    instrument: ConstantWavelengthInstrument,
+    components: WavelengthComponents,
+    geometry: FcjGeometry,
+    *,
+    support_fwhm: float = 20.0,
+    jacobian_layout: Literal["support", "dense"] = "support",
+) -> AccumulationResult:
+    """Accumulate discrete CW wavelengths with FCJ asymmetry in one call."""
+
+    if jacobian_layout not in ("support", "dense"):
+        raise ValueError("jacobian_layout must be 'support' or 'dense'")
+    y, starts, offsets, local_values, global_values = _core.accumulate_cw_components(
+        _vector(x, "x"),
+        _vector(two_theta_deg, "two_theta_deg"),
+        _vector(integrated_intensities, "integrated_intensities"),
+        components.wavelengths_angstrom,
+        components.relative_intensities,
+        instrument.wavelength_angstrom,
+        instrument.u_deg2,
+        instrument.v_deg2,
+        instrument.w_deg2,
+        instrument.x_deg,
+        instrument.y_deg,
+        True,
+        geometry.sample_over_radius,
+        geometry.detector_over_radius,
+        float(support_fwhm),
+    )
+    return _build_accumulation_result(
+        y,
+        starts,
+        offsets,
+        local_values,
+        global_values,
+        CW_FCJ_LOCAL_PARAMETER_ORDER,
+        component_global_parameter_names(components, include_fcj=True),
         jacobian_layout,
     )

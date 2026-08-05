@@ -16,6 +16,9 @@ geometry, quadrature, derivatives, and asymmetric support are documented in
 including the planned first-class Le Bail and Dioptas integration layers, are
 in [docs/public-api.md](docs/public-api.md).
 
+Optional monochromatic and multi-wavelength radiation composition is documented
+in [docs/wavelength-components.md](docs/wavelength-components.md).
+
 ## Development
 
 Requires Rust 1.85 or newer, Python 3.11 or newer, `uv`, and `maturin`.
@@ -68,7 +71,7 @@ instrument derivatives, is also one array-oriented call:
 from rietveld import ConstantWavelengthInstrument, accumulate_cw
 
 instrument = ConstantWavelengthInstrument(
-    wavelength_angstrom=1.5406,
+    wavelength_angstrom=1.54056,
     u_deg2=2e-4,
     v_deg2=-1e-4,
     w_deg2=1.2e-4,
@@ -92,6 +95,22 @@ asymmetric = accumulate_cw_fcj(
 )
 print(asymmetric.derivatives.global_parameter_names)
 # U, V, W, X, Y, sample_over_radius, detector_over_radius
+```
+
+Discrete radiation components are optional. The ordinary CW calls above are
+monochromatic; a K-alpha doublet is an explicit model:
+
+```python
+from rietveld import WavelengthComponents, accumulate_cw_fcj_components
+
+radiation = WavelengthComponents.doublet(
+    reference_wavelength_angstrom=1.54056,
+    secondary_wavelength_angstrom=1.54439,
+    secondary_to_reference_intensity=0.5,
+)
+doublet = accumulate_cw_fcj_components(
+    x, [24.0, 26.0], [100.0, 80.0], instrument, radiation, geometry
+)
 ```
 
 GSAS-II is used only as the optional pinned validation oracle described in

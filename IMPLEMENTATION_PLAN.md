@@ -417,7 +417,7 @@ is about 131 microseconds.
 
 ## Implementation unit 4: FCJ asymmetry and K-alpha doublets
 
-Status: in progress (FCJ slice complete; K-alpha component composition next).
+Status: complete (2026-08-05).
 
 ### Goal
 
@@ -479,6 +479,23 @@ development machine, a 200-reflection, 5,001-sample release batch takes about
 FCJ plus doublets execute in one Rust batch call, use asymmetric finite support,
 and reproduce oracle values and peak moments across the angular test matrix.
 
+K-alpha review result: `WavelengthComponents` represents an optional discrete
+spectrum whose first component is the CW reference; a one-component model is
+bit-for-bit identical to the original monochromatic CW and CW+FCJ paths. The
+Rust kernel expands component positions through Bragg's law inside each
+reflection loop, accumulates over the exact union of component supports, and
+retains one logical intensity/position derivative owner per reflection.
+Analytical rows cover all inherited instrument and FCJ parameters plus every
+secondary wavelength and intensity ratio. Seventeen focused Python tests,
+including centered finite differences for all nine shared rows and both local
+columns, supplement the full 138-test Python and 21-test Rust suites. A pinned
+GSAS-II #5838 fixture covers resolved low/middle/high-angle FCJ doublets and
+checks component positions, values, area, centroid, and moments. On the
+recorded development machine, the 200-reflection, 5,001-sample release
+benchmark takes about 6.93 ms for one FCJ wavelength and 14.07 ms for two in
+Rust (about 6.97 ms and 14.09 ms through Python), returning approximately
+0.525 MB and 0.633 MB respectively.
+
 ## Implementation unit 5: size, microstrain, and preferred orientation
 
 ### Goal
@@ -506,6 +523,15 @@ PreferredOrientation
   axis_hkl
   model parameters
 ```
+
+This unit also establishes the first versioned physics-provider boundary.
+Built-in size, microstrain, and preferred-orientation implementations satisfy
+the same explicit batch protocols available to external packages. Broadening
+providers return contiguous reflection arrays and derivative chains for one
+native accumulation call; arbitrary Python code is not invoked from the Rust
+peak/sample loop. Tests include one external-style vectorized provider to prove
+that custom broadening can participate in calculation and finite-difference
+validation without changes to refinement orchestration.
 
 ### Work order
 

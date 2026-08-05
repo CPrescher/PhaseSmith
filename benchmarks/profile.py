@@ -13,10 +13,12 @@ import numpy as np
 from rietveld import (
     ConstantWavelengthInstrument,
     FcjGeometry,
+    WavelengthComponents,
     _core,
     accumulate,
     accumulate_cw,
     accumulate_cw_fcj,
+    accumulate_cw_fcj_components,
     accumulate_tch,
     cw_profile_parameters,
 )
@@ -96,6 +98,11 @@ def main() -> None:
         y_deg=3.0e-3,
     )
     fcj_geometry = FcjGeometry(sample_over_radius=0.012, detector_over_radius=0.012)
+    doublet = WavelengthComponents.doublet(
+        cw_instrument.wavelength_angstrom,
+        1.54443,
+        0.5,
+    )
 
     support_fwhm = 20.0
     lower = np.searchsorted(x, positions - support_fwhm * fwhms, side="left")
@@ -196,6 +203,19 @@ def main() -> None:
         warmups=arguments.warmups,
         repetitions=arguments.repetitions,
     )
+    doublet_result, doublet_timings = measure(
+        lambda: accumulate_cw_fcj_components(
+            x,
+            positions,
+            intensities,
+            cw_instrument,
+            doublet,
+            fcj_geometry,
+            support_fwhm=support_fwhm,
+        ),
+        warmups=arguments.warmups,
+        repetitions=arguments.repetitions,
+    )
 
     input_bytes = sum(array.nbytes for array in (x, positions, intensities, fwhms, etas))
     print(f"python={platform.python_version()} numpy={np.__version__}")
@@ -205,7 +225,8 @@ def main() -> None:
         f"peaks={count} samples={x.size} active_peak_samples={active_peak_samples} "
         f"tch_active_peak_samples={tch_active_peak_samples} "
         f"cw_active_peak_samples={cw_active_peak_samples} "
-        f"fcj_active_peak_samples={fcj_active_peak_samples} support_fwhm={support_fwhm:g}"
+        f"fcj_active_peak_samples={fcj_active_peak_samples} "
+        f"wavelength_component_counts=1,2 support_fwhm={support_fwhm:g}"
     )
     print(f"input_mb={input_bytes / 1e6:.3f} repetitions={arguments.repetitions}")
     report_case("values_only", values.nbytes, values_timings)
@@ -237,6 +258,13 @@ def main() -> None:
         + fcj_result.derivatives.local.nbytes
         + fcj_result.derivatives.global_jacobian.nbytes,
         fcj_timings,
+    )
+    report_case(
+        "cw_fcj_doublet_local_and_global_jacobian_order_48",
+        doublet_result.y.nbytes
+        + doublet_result.derivatives.local.nbytes
+        + doublet_result.derivatives.global_jacobian.nbytes,
+        doublet_timings,
     )
 
 

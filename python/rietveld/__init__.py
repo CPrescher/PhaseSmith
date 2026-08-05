@@ -21,6 +21,7 @@ from .cw import (
     CW_LOCAL_PARAMETER_ORDER,
     CwProfileParameters,
     accumulate_cw,
+    accumulate_cw_components,
     cw_profile_parameters,
 )
 from .fcj import (
@@ -29,9 +30,11 @@ from .fcj import (
     FCJ_PARAMETER_ORDER,
     FcjProfileResult,
     accumulate_cw_fcj,
+    accumulate_cw_fcj_components,
     profile_fcj,
 )
 from .instrument import ConstantWavelengthInstrument, FcjGeometry
+from .radiation import WavelengthComponents
 from .results import AccumulationResult, PatternDerivatives, SupportJacobian
 
 __all__ = [
@@ -54,9 +57,12 @@ __all__ = [
     "TchProfileResult",
     "TchSigmaProfileResult",
     "TchSigmaShape",
+    "WavelengthComponents",
     "accumulate",
     "accumulate_cw",
+    "accumulate_cw_components",
     "accumulate_cw_fcj",
+    "accumulate_cw_fcj_components",
     "accumulate_tch",
     "cw_profile_parameters",
     "profile",

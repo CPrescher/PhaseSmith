@@ -1,0 +1,333 @@
+{
+  "archive": {
+    "file": "data.npz",
+    "sha256": "4629021b8739f3c1cb6bc00364912bb5a300144ba8c7b46803b19c95e9af1d4d"
+  },
+  "arrays": {
+    "high_fcj_doublet__component_positions_deg": {
+      "description": "Bragg-law component positions",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "5dfcf46197a7f35c1b8e85b79808da327c94fce038d6e754879305be1aff6f92",
+      "shape": [
+        2
+      ],
+      "unit": "degree_2theta"
+    },
+    "high_fcj_doublet__component_profiles_per_deg": {
+      "description": "Individual GSAS-II FCJ components",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "5bd8a8b5552b408ccb82915ee7cb6e4f7366ed9f877313d0a16c29c14416ed4b",
+      "shape": [
+        2,
+        10001
+      ],
+      "unit": "inverse_degree"
+    },
+    "high_fcj_doublet__x_deg": {
+      "description": "Profile sampling coordinates",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "b035f0fd01c6cc337d1a05c8376d1c2032d9419ced7f38c29aa5b54ec5d61f66",
+      "shape": [
+        10001
+      ],
+      "unit": "degree_2theta"
+    },
+    "high_fcj_doublet__ycalc": {
+      "description": "Normalized weighted doublet profile",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "05b3efa1cffe3ab04eaa9b63991c1d088d50740e2272af44f5b5994bf308222a",
+      "shape": [
+        10001
+      ],
+      "unit": "inverse_degree"
+    },
+    "low_fcj_doublet__component_positions_deg": {
+      "description": "Bragg-law component positions",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "31ad4c518daa2a53bd24418ae50902ca9e95175e13f0d6ba3302ab8f25c51f6a",
+      "shape": [
+        2
+      ],
+      "unit": "degree_2theta"
+    },
+    "low_fcj_doublet__component_profiles_per_deg": {
+      "description": "Individual GSAS-II FCJ components",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "1b4568539a7a1dab3084be9bbd5c22e4584441480e7faf264c24bffc047c1f03",
+      "shape": [
+        2,
+        10001
+      ],
+      "unit": "inverse_degree"
+    },
+    "low_fcj_doublet__x_deg": {
+      "description": "Profile sampling coordinates",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "9d2f319ca7d9e8da94792cc919e4185518ec150d9d23262755928d17a51e33ba",
+      "shape": [
+        10001
+      ],
+      "unit": "degree_2theta"
+    },
+    "low_fcj_doublet__ycalc": {
+      "description": "Normalized weighted doublet profile",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "9e593d40b20c66b69a97064214d98fc4c2902ed73e2ba95ff3df52534020fdf3",
+      "shape": [
+        10001
+      ],
+      "unit": "inverse_degree"
+    },
+    "middle_fcj_doublet__component_positions_deg": {
+      "description": "Bragg-law component positions",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "1903fdad4cd4f3320ad43011dfd9b0f28e702a983d5815d110523f373507a839",
+      "shape": [
+        2
+      ],
+      "unit": "degree_2theta"
+    },
+    "middle_fcj_doublet__component_profiles_per_deg": {
+      "description": "Individual GSAS-II FCJ components",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "11c483f112cf75a434284b80d01e5d38d07cb35166996c4e70ec09bf6bfefa6d",
+      "shape": [
+        2,
+        10001
+      ],
+      "unit": "inverse_degree"
+    },
+    "middle_fcj_doublet__x_deg": {
+      "description": "Profile sampling coordinates",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "bb74105f6a0058b23ebcd1548005321dcfa7237ac396d8b2a55d7014b3a3f49d",
+      "shape": [
+        10001
+      ],
+      "unit": "degree_2theta"
+    },
+    "middle_fcj_doublet__ycalc": {
+      "description": "Normalized weighted doublet profile",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "acfb1a4ec053cf1f4dc8b35eaae7e6943770e53fbe135a1441961a662d0ec11b",
+      "shape": [
+        10001
+      ],
+      "unit": "inverse_degree"
+    }
+  },
+  "cases": [
+    {
+      "arrays": {
+        "component_positions": "low_fcj_doublet__component_positions_deg",
+        "component_profiles": "low_fcj_doublet__component_profiles_per_deg",
+        "x": "low_fcj_doublet__x_deg",
+        "ycalc": "low_fcj_doublet__ycalc"
+      },
+      "case_kind": "fcj_wavelength_doublet",
+      "id": "low_fcj_doublet",
+      "parameters": {
+        "angular_regime": "low",
+        "base_position_deg": 15.0,
+        "component_widths": [
+          {
+            "gaussian_fwhm_deg": 0.02473135402653213,
+            "gaussian_variance_deg2": 0.00011030122626546027,
+            "lorentzian_fwhm_deg": 0.0019079009336324167
+          },
+          {
+            "gaussian_fwhm_deg": 0.02472958920439773,
+            "gaussian_variance_deg2": 0.00011028548470114134,
+            "lorentzian_fwhm_deg": 0.0019089652026808175
+          }
+        ],
+        "gsas_shl": 0.024,
+        "instrument": {
+          "u_deg2": 0.0002,
+          "v_deg2": -0.0001,
+          "w_deg2": 0.00012,
+          "wavelength_angstrom": 1.54056,
+          "x_deg": 0.0015,
+          "y_deg": 0.003
+        },
+        "normalized_intensities": [
+          0.6666666666666666,
+          0.3333333333333333
+        ],
+        "public_equal_height_mapping": {
+          "detector_over_radius": 0.012,
+          "sample_over_radius": 0.012
+        },
+        "relative_intensities": [
+          1.0,
+          0.5
+        ],
+        "wavelengths_angstrom": [
+          1.54056,
+          1.54439
+        ]
+      },
+      "sampled_moments": {
+        "centroid_deg": 15.002101590608294,
+        "integral": 0.9995976815084082,
+        "third_central_moment_deg3": -2.2060401843821023e-06
+      }
+    },
+    {
+      "arrays": {
+        "component_positions": "middle_fcj_doublet__component_positions_deg",
+        "component_profiles": "middle_fcj_doublet__component_profiles_per_deg",
+        "x": "middle_fcj_doublet__x_deg",
+        "ycalc": "middle_fcj_doublet__ycalc"
+      },
+      "case_kind": "fcj_wavelength_doublet",
+      "id": "middle_fcj_doublet",
+      "parameters": {
+        "angular_regime": "middle",
+        "base_position_deg": 70.0,
+        "component_widths": [
+          {
+            "gaussian_fwhm_deg": 0.028651238368827187,
+            "gaussian_variance_deg2": 0.00014803736549216944,
+            "lorentzian_fwhm_deg": 0.0039317844977713136
+          },
+          {
+            "gaussian_fwhm_deg": 0.02869662586622889,
+            "gaussian_variance_deg2": 0.00014850676003635185,
+            "lorentzian_fwhm_deg": 0.00394182053365838
+          }
+        ],
+        "gsas_shl": 0.024,
+        "instrument": {
+          "u_deg2": 0.0002,
+          "v_deg2": -0.0001,
+          "w_deg2": 0.00012,
+          "wavelength_angstrom": 1.54056,
+          "x_deg": 0.0015,
+          "y_deg": 0.003
+        },
+        "normalized_intensities": [
+          0.6666666666666666,
+          0.3333333333333333
+        ],
+        "public_equal_height_mapping": {
+          "detector_over_radius": 0.012,
+          "sample_over_radius": 0.012
+        },
+        "relative_intensities": [
+          1.0,
+          0.5
+        ],
+        "wavelengths_angstrom": [
+          1.54056,
+          1.54439
+        ]
+      },
+      "sampled_moments": {
+        "centroid_deg": 70.06501328720775,
+        "integral": 0.9991823458486017,
+        "third_central_moment_deg3": 0.0003758145509492322
+      }
+    },
+    {
+      "arrays": {
+        "component_positions": "high_fcj_doublet__component_positions_deg",
+        "component_profiles": "high_fcj_doublet__component_profiles_per_deg",
+        "x": "high_fcj_doublet__x_deg",
+        "ycalc": "high_fcj_doublet__ycalc"
+      },
+      "case_kind": "fcj_wavelength_doublet",
+      "id": "high_fcj_doublet",
+      "parameters": {
+        "angular_regime": "high",
+        "base_position_deg": 140.0,
+        "component_widths": [
+          {
+            "gaussian_fwhm_deg": 0.08668100877002587,
+            "gaussian_variance_deg2": 0.001354978692137143,
+            "lorentzian_fwhm_deg": 0.012628138858608494
+          },
+          {
+            "gaussian_fwhm_deg": 0.08860290876205552,
+            "gaussian_variance_deg2": 0.0014157302484364297,
+            "lorentzian_fwhm_deg": 0.012893214465150392
+          }
+        ],
+        "gsas_shl": 0.024,
+        "instrument": {
+          "u_deg2": 0.0002,
+          "v_deg2": -0.0001,
+          "w_deg2": 0.00012,
+          "wavelength_angstrom": 1.54056,
+          "x_deg": 0.0015,
+          "y_deg": 0.003
+        },
+        "normalized_intensities": [
+          0.6666666666666666,
+          0.3333333333333333
+        ],
+        "public_equal_height_mapping": {
+          "detector_over_radius": 0.012,
+          "sample_over_radius": 0.012
+        },
+        "relative_intensities": [
+          1.0,
+          0.5
+        ],
+        "wavelengths_angstrom": [
+          1.54056,
+          1.54439
+        ]
+      },
+      "sampled_moments": {
+        "centroid_deg": 140.26741796184044,
+        "integral": 0.9971984676352714,
+        "third_central_moment_deg3": 0.03357004060025308
+      }
+    }
+  ],
+  "fixture_id": "gsasii_wavelength_components_v1",
+  "format_version": 1,
+  "input": {
+    "kind": "parameter_cases",
+    "sha256": "73dc30e411c7a18eccf91802aa8b2f7fc78f097e04147ee71a11c370d5a4fd23"
+  },
+  "kind": "fcj_wavelength_components",
+  "provenance": {
+    "generated_at_utc": "2026-08-05T14:21:43.946648+00:00",
+    "generator_sha256": "fb9d517421ea0a2a794e172fb455d7fa73190acfd2a2c97fbc2155282db05c8c",
+    "gsasii_repository": "https://github.com/AdvancedPhotonSource/GSAS-II",
+    "gsasii_revision": "c0bc79b259cdf0065480b5fbd57674ddf12c4a23",
+    "gsasii_tag": 5838,
+    "numpy_version": "2.2.6",
+    "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O",
+    "python_version": "3.13.9"
+  },
+  "source": {
+    "adapter_version": 1,
+    "api": [
+      "GSASII.GSASIIpwd.getFCJVoigt3"
+    ],
+    "helper_sha256": "3896af32b1bba919ec44b3497f65eb0ef254dce45e2646c7c0ee54380d1f734a",
+    "native_units": {
+      "Gaussian_variance": "centidegree_squared",
+      "Lorentzian_fwhm": "centidegree",
+      "axial_parameter": "SH_over_L",
+      "coordinate": "degree_2theta",
+      "profile_density": "inverse_centidegree"
+    },
+    "private_probe": true
+  }
+}

@@ -654,3 +654,138 @@ def accumulate_cw_fcj(
         global_jacobian[5, active] += intensity * evaluated.d_sample_over_radius
         global_jacobian[6, active] += intensity * evaluated.d_detector_over_radius
     return y_values, local, global_jacobian
+
+
+def wavelength_component_positions(
+    base_two_theta_deg: ArrayLike,
+    reference_wavelength_angstrom: float,
+    wavelengths_angstrom: ArrayLike,
+) -> tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]]:
+    """Apply Bragg's law to discrete wavelengths and return its derivatives."""
+
+    base = np.asarray(base_two_theta_deg, dtype=np.float64)
+    wavelengths = np.asarray(wavelengths_angstrom, dtype=np.float64)
+    ratios = wavelengths / reference_wavelength_angstrom
+    base_theta = np.deg2rad(base / 2.0)
+    component_sines = np.sin(base_theta)[:, None] * ratios[None, :]
+    if np.any(component_sines <= 0.0) or np.any(component_sines >= 1.0):
+        raise ValueError("wavelength component lies outside the Bragg domain")
+    component_theta = np.arcsin(component_sines)
+    positions = np.rad2deg(2.0 * component_theta)
+    positions[:, 0] = base
+    d_position_d_base = ratios[None, :] * np.cos(base_theta)[:, None] / np.cos(component_theta)
+    d_position_d_base[:, 0] = 1.0
+    d_position_d_ratio = 360.0 / np.pi * np.sin(base_theta)[:, None] / np.cos(component_theta)
+    return positions, d_position_d_base, d_position_d_ratio
+
+
+def accumulate_cw_components(
+    x: ArrayLike,
+    two_theta_deg: ArrayLike,
+    integrated_intensities: ArrayLike,
+    *,
+    reference_wavelength_angstrom: float,
+    wavelengths_angstrom: ArrayLike,
+    relative_component_intensities: ArrayLike,
+    u_deg2: float,
+    v_deg2: float,
+    w_deg2: float,
+    x_deg: float,
+    y_deg: float,
+    sample_over_radius: float | None = None,
+    detector_over_radius: float | None = None,
+    support_fwhm: float = 20.0,
+    quadrature_order: int = 48,
+) -> tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]]:
+    """Accumulate optional wavelength components as an independent reference."""
+
+    x_values = np.asarray(x, dtype=np.float64)
+    base_positions = np.asarray(two_theta_deg, dtype=np.float64)
+    intensities = np.asarray(integrated_intensities, dtype=np.float64)
+    wavelengths = np.asarray(wavelengths_angstrom, dtype=np.float64)
+    relative = np.asarray(relative_component_intensities, dtype=np.float64)
+    component_positions, d_position_d_base, d_position_d_ratio = wavelength_component_positions(
+        base_positions, reference_wavelength_angstrom, wavelengths
+    )
+    scaled_relative = relative / np.max(relative)
+    weights = scaled_relative / np.sum(scaled_relative)
+    include_fcj = sample_over_radius is not None or detector_over_radius is not None
+    if include_fcj and (sample_over_radius is None or detector_over_radius is None):
+        raise ValueError("both FCJ geometry ratios must be supplied together")
+    sample = 0.0 if sample_over_radius is None else sample_over_radius
+    detector = 0.0 if detector_over_radius is None else detector_over_radius
+    secondary_count = wavelengths.size - 1
+    global_count = 5 + (2 if include_fcj else 0) + 2 * secondary_count
+    wavelength_start = 5 + (2 if include_fcj else 0)
+    intensity_start = wavelength_start + secondary_count
+    y_values = np.zeros_like(x_values)
+    local = np.zeros((base_positions.size, 2, x_values.size), dtype=np.float64)
+    global_jacobian = np.zeros((global_count, x_values.size), dtype=np.float64)
+
+    for reflection, intensity in enumerate(intensities):
+        component_values = np.zeros((wavelengths.size, x_values.size), dtype=np.float64)
+        mixture_d_base = np.zeros_like(x_values)
+        for component in range(wavelengths.size):
+            position = component_positions[reflection, component]
+            parameters = cw_profile_parameters(
+                [position],
+                u_deg2=u_deg2,
+                v_deg2=v_deg2,
+                w_deg2=w_deg2,
+                x_deg=x_deg,
+                y_deg=y_deg,
+            )
+            support_radius = support_fwhm * parameters.total_fwhm_deg[0]
+            evaluated = profile_fcj(
+                x_values,
+                float(position),
+                float(parameters.gaussian_fwhm_deg[0]),
+                float(parameters.lorentzian_fwhm_deg[0]),
+                sample,
+                detector,
+                quadrature_order=quadrature_order,
+                support_radius_deg=float(support_radius),
+            )
+            component_values[component] = evaluated.value
+            d_profile_d_position = (
+                evaluated.d_position
+                + evaluated.d_gaussian_fwhm * parameters.d_component_fwhm_d_two_theta[0, 0]
+                + evaluated.d_lorentzian_fwhm * parameters.d_component_fwhm_d_two_theta[0, 1]
+            )
+            mixture_d_base += (
+                weights[component] * d_profile_d_position * d_position_d_base[reflection, component]
+            )
+            for parameter in range(5):
+                global_jacobian[parameter] += (
+                    intensity
+                    * weights[component]
+                    * (
+                        evaluated.d_gaussian_fwhm
+                        * parameters.d_gaussian_fwhm_d_instrument[0, parameter]
+                        + evaluated.d_lorentzian_fwhm
+                        * parameters.d_lorentzian_fwhm_d_instrument[0, parameter]
+                    )
+                )
+            if include_fcj:
+                global_jacobian[5] += (
+                    intensity * weights[component] * evaluated.d_sample_over_radius
+                )
+                global_jacobian[6] += (
+                    intensity * weights[component] * evaluated.d_detector_over_radius
+                )
+            if component > 0:
+                global_jacobian[wavelength_start + component - 1] += (
+                    intensity
+                    * weights[component]
+                    * d_profile_d_position
+                    * d_position_d_ratio[reflection, component]
+                )
+        mixture = np.sum(weights[:, None] * component_values, axis=0)
+        y_values += intensity * mixture
+        local[reflection, 0] = mixture
+        local[reflection, 1] = intensity * mixture_d_base
+        for secondary in range(secondary_count):
+            global_jacobian[intensity_start + secondary] += (
+                intensity * weights[0] * (component_values[secondary + 1] - mixture)
+            )
+    return y_values, local, global_jacobian

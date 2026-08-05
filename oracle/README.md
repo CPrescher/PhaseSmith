@@ -50,6 +50,13 @@ fixture-local tolerances record the observable discretization difference in the
 pinned compiled GSAS-II routine rather than tuning the production quadrature to
 that approximation.
 
+`wavelength_components_v1` composes two independently probed FCJ profiles at
+Bragg-law K-alpha1/K-alpha2 positions, using normalized 1:0.5 integrated
+intensities. Low, middle, and high-angle cases verify component positions,
+weighted values, integrated area, centroid, and third moment. Together with the
+single-component FCJ fixture, it covers the optional-doublet and explicitly
+monochromatic paths.
+
 Generation is deliberately separate from the normal package: the script imports
 GSAS-II and NumPy, but never imports `rietveld`. Run it with GSAS-II's Python:
 
@@ -67,6 +74,10 @@ GSAS-II and NumPy, but never imports `rietveld`. Run it with GSAS-II's Python:
   --binary-dir /path/to/compatible/GSASII-bin/platform-directory
 
 /path/to/gsas/python oracle/scripts/generate_fcj_profile.py \
+  --gsas-root /path/to/pinned/GSAS-II \
+  --binary-dir /path/to/compatible/GSASII-bin/platform-directory
+
+/path/to/gsas/python oracle/scripts/generate_wavelength_components.py \
   --gsas-root /path/to/pinned/GSAS-II \
   --binary-dir /path/to/compatible/GSASII-bin/platform-directory
 ```

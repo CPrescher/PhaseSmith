@@ -15,6 +15,7 @@ FIXTURE_PATH = REPOSITORY_ROOT / "oracle" / "fixtures" / "symmetric_pseudo_voigt
 HISTOGRAM_FIXTURE_PATH = REPOSITORY_ROOT / "oracle" / "fixtures" / "minimal_cw_histogram_v1"
 CW_FIXTURE_PATH = REPOSITORY_ROOT / "oracle" / "fixtures" / "cw_instrument_profile_v1"
 FCJ_FIXTURE_PATH = REPOSITORY_ROOT / "oracle" / "fixtures" / "fcj_profile_v1"
+COMPONENT_FIXTURE_PATH = REPOSITORY_ROOT / "oracle" / "fixtures" / "wavelength_components_v1"
 
 
 def test_fixture_schema_and_pin_metadata_are_valid_json() -> None:
@@ -57,6 +58,21 @@ def test_fcj_fixture_records_pin_and_committed_generator() -> None:
     assert fixture.manifest["provenance"]["gsasii_revision"] == PINNED_REVISION
     assert fixture.manifest["provenance"]["generator_sha256"] == digest
     assert len(fixture.cases) == 4
+
+
+def test_component_fixture_records_pin_and_committed_generator() -> None:
+    fixture = load_fixture(COMPONENT_FIXTURE_PATH)
+    generator = REPOSITORY_ROOT / "oracle" / "scripts" / "generate_wavelength_components.py"
+    digest = hashlib.sha256(generator.read_bytes()).hexdigest()
+    assert fixture.manifest["fixture_id"] == "gsasii_wavelength_components_v1"
+    assert fixture.manifest["provenance"]["gsasii_revision"] == PINNED_REVISION
+    assert fixture.manifest["provenance"]["generator_sha256"] == digest
+    helper = REPOSITORY_ROOT / "oracle" / "scripts" / "generate_fcj_profile.py"
+    assert (
+        fixture.manifest["source"]["helper_sha256"]
+        == hashlib.sha256(helper.read_bytes()).hexdigest()
+    )
+    assert len(fixture.cases) == 3
 
 
 def test_public_scripting_histogram_fixture() -> None:
@@ -274,6 +290,56 @@ def test_fcj_zero_limit_against_pinned_gsasii() -> None:
     ).value
     normalized_maximum_error = float(np.max(np.abs(actual - oracle)) / np.max(np.abs(oracle)))
     assert normalized_maximum_error < 3e-6
+
+
+@pytest.mark.parametrize("angular_regime", ["low", "middle", "high"])
+def test_fcj_doublet_values_positions_and_moments_against_pinned_gsasii(
+    angular_regime: str,
+) -> None:
+    fixture = load_fixture(COMPONENT_FIXTURE_PATH)
+    case = next(
+        case for case in fixture.cases if case["parameters"]["angular_regime"] == angular_regime
+    )
+    parameters = case["parameters"]
+    instrument = rietveld.ConstantWavelengthInstrument(**dict(parameters["instrument"]))
+    components = rietveld.WavelengthComponents(
+        parameters["wavelengths_angstrom"], parameters["relative_intensities"]
+    )
+    geometry = rietveld.FcjGeometry(**dict(parameters["public_equal_height_mapping"]))
+    x = fixture.arrays[case["arrays"]["x"]]
+    oracle = fixture.arrays[case["arrays"]["ycalc"]]
+    actual = rietveld.accumulate_cw_fcj_components(
+        x,
+        [parameters["base_position_deg"]],
+        [1.0],
+        instrument,
+        components,
+        geometry,
+        support_fwhm=100.0,
+    ).y
+    normalized_maximum_error = float(np.max(np.abs(actual - oracle)) / np.max(np.abs(oracle)))
+    assert normalized_maximum_error < 2.4e-2
+
+    base_theta = np.deg2rad(parameters["base_position_deg"] / 2.0)
+    component_positions = np.rad2deg(
+        2.0
+        * np.arcsin(
+            components.wavelengths_angstrom / instrument.wavelength_angstrom * np.sin(base_theta)
+        )
+    )
+    np.testing.assert_allclose(
+        component_positions,
+        fixture.arrays[case["arrays"]["component_positions"]],
+        rtol=2e-15,
+        atol=2e-14,
+    )
+    actual_area = np.trapezoid(actual, x)
+    actual_centroid = np.trapezoid(x * actual, x) / actual_area
+    actual_third = np.trapezoid((x - actual_centroid) ** 3 * actual, x) / actual_area
+    oracle_moments = case["sampled_moments"]
+    assert actual_area == pytest.approx(oracle_moments["integral"], rel=4e-6)
+    assert actual_centroid == pytest.approx(oracle_moments["centroid_deg"], abs=1.6e-3)
+    assert actual_third == pytest.approx(oracle_moments["third_central_moment_deg3"], rel=0.1)
 
 
 def test_fixture_reader_rejects_revision_drift(tmp_path: Path) -> None:

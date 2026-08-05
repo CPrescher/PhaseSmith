@@ -5,8 +5,10 @@ use std::hint::black_box;
 use criterion::{BenchmarkId, Criterion, Throughput, criterion_group, criterion_main};
 use rietveld_core::{
     ConstantWavelengthInstrument, CwReflectionBatchView, FcjGeometry, GridView, PeakBatchView,
-    SupportPolicy, TchPeakBatchView, TchShape, TchWidths, accumulate_batch, accumulate_cw_batch,
-    accumulate_cw_fcj_batch, accumulate_tch_batch, accumulate_values_batch, symmetric_pseudo_voigt,
+    SupportPolicy, TchPeakBatchView, TchShape, TchWidths, WavelengthComponentsView,
+    accumulate_batch, accumulate_cw_batch, accumulate_cw_fcj_batch,
+    accumulate_cw_fcj_components_batch, accumulate_tch_batch, accumulate_values_batch,
+    symmetric_pseudo_voigt,
 };
 
 fn scalar_profile(criterion: &mut Criterion) {
@@ -171,6 +173,10 @@ fn cw_fcj_accumulator(criterion: &mut Criterion) {
         detector_over_radius: 0.012,
     };
     let support = SupportPolicy::FwhmMultiple(20.0);
+    let wavelengths = [instrument.wavelength_angstrom, 1.544_43];
+    let relative_intensities = [1.0, 0.5];
+    let components = WavelengthComponentsView::new(&wavelengths, &relative_intensities)
+        .expect("benchmark components");
     let mut group = criterion.benchmark_group("cw_fcj_accumulator");
     group.throughput(Throughput::Elements(positions.len() as u64));
     group.bench_function(
@@ -185,6 +191,22 @@ fn cw_fcj_accumulator(criterion: &mut Criterion) {
                     black_box(support),
                 )
                 .expect("valid benchmark")
+            });
+        },
+    );
+    group.bench_function(
+        BenchmarkId::new("order_48_doublet_local_and_global_jacobian", x.len()),
+        |bencher| {
+            bencher.iter(|| {
+                accumulate_cw_fcj_components_batch(
+                    black_box(grid),
+                    black_box(reflections),
+                    black_box(instrument),
+                    black_box(components),
+                    black_box(geometry),
+                    black_box(support),
+                )
+                .expect("valid doublet benchmark")
             });
         },
     );
