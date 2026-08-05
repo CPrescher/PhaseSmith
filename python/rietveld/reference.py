@@ -75,6 +75,30 @@ class ReferenceFcjProfile:
     d_detector_over_radius: NDArray[np.float64]
 
 
+@dataclass(frozen=True, slots=True)
+class ReferenceTofProfile:
+    """Independent truncated double-exponential TCH convolution."""
+
+    value: NDArray[np.float64]
+    d_position: NDArray[np.float64]
+    d_alpha: NDArray[np.float64]
+    d_beta: NDArray[np.float64]
+    d_gaussian_fwhm: NDArray[np.float64]
+    d_lorentzian_fwhm: NDArray[np.float64]
+
+
+@dataclass(frozen=True, slots=True)
+class ReferenceTofProfileParameters:
+    """Independent TOF calibration, rates, and component-width equations."""
+
+    position_us: NDArray[np.float64]
+    alpha_per_us: NDArray[np.float64]
+    beta_per_us: NDArray[np.float64]
+    gaussian_variance_us2: NDArray[np.float64]
+    gaussian_fwhm_us: NDArray[np.float64]
+    lorentzian_fwhm_us: NDArray[np.float64]
+
+
 def profile(delta: ArrayLike, fwhm: float, eta: float) -> ReferenceProfile:
     """Evaluate the symmetric pseudo-Voigt directly from its component equations."""
 
@@ -460,6 +484,168 @@ def profile_fcj(
         d_sample_over_radius=d_sample,
         d_detector_over_radius=d_detector,
     )
+
+
+def profile_tof(
+    x_us: ArrayLike,
+    position_us: float,
+    alpha_per_us: float,
+    beta_per_us: float,
+    gaussian_fwhm_us: float,
+    lorentzian_fwhm_us: float,
+    *,
+    tail_log: float = 20.0,
+    quadrature_order: int = 96,
+    base_radius_us: float | None = None,
+) -> ReferenceTofProfile:
+    """Evaluate the independent truncated two-sided exponential convolution."""
+
+    x = np.asarray(x_us, dtype=np.float64)
+    nodes, legendre_weights = np.polynomial.legendre.leggauss(quadrature_order)
+    alpha = float(alpha_per_us)
+    beta = float(beta_per_us)
+    denominator = alpha + beta
+    left_fraction = beta / denominator
+    right_fraction = alpha / denominator
+    d_left_fraction_d_alpha = -beta / denominator**2
+    d_left_fraction_d_beta = alpha / denominator**2
+    if base_radius_us is not None:
+        output = [np.zeros_like(x) for _ in range(6)]
+        normalization = 1.0 - np.exp(-tail_log)
+
+        def integrate_interval(
+            delta: float, low: float, high: float, rate: float, direction: float
+        ) -> tuple[float, float, float, float, float]:
+            if low >= high:
+                return (0.0, 0.0, 0.0, 0.0, 0.0)
+            t_local = low + (high - low) * (nodes + 1.0) / 2.0
+            local_weights = (
+                (high - low)
+                * legendre_weights
+                / 2.0
+                * np.exp(-t_local)
+                / normalization
+            )
+            evaluated = profile_tch(
+                delta + direction * t_local / rate,
+                gaussian_fwhm_us,
+                lorentzian_fwhm_us,
+            )
+            return (
+                float(evaluated.value @ local_weights),
+                float(evaluated.d_delta @ local_weights),
+                float(evaluated.d_gaussian_fwhm @ local_weights),
+                float(evaluated.d_lorentzian_fwhm @ local_weights),
+                float(
+                    (evaluated.d_delta * (-direction * t_local / rate**2))
+                    @ local_weights
+                ),
+            )
+
+        for index, coordinate in enumerate(x.flat):
+            delta = float(coordinate - position_us)
+            left_low = float(np.clip(alpha * (-base_radius_us - delta), 0.0, tail_log))
+            left_high = float(np.clip(alpha * (base_radius_us - delta), 0.0, tail_log))
+            right_low = float(np.clip(beta * (delta - base_radius_us), 0.0, tail_log))
+            right_high = float(np.clip(beta * (delta + base_radius_us), 0.0, tail_log))
+            left = integrate_interval(delta, left_low, left_high, alpha, 1.0)
+            right = integrate_interval(delta, right_low, right_high, beta, -1.0)
+            output[0].flat[index] = left_fraction * left[0] + right_fraction * right[0]
+            output[1].flat[index] = -(left_fraction * left[1] + right_fraction * right[1])
+            output[2].flat[index] = (
+                d_left_fraction_d_alpha * left[0]
+                + left_fraction * left[4]
+                - d_left_fraction_d_alpha * right[0]
+            )
+            output[3].flat[index] = (
+                d_left_fraction_d_beta * left[0]
+                + right_fraction * right[4]
+                - d_left_fraction_d_beta * right[0]
+            )
+            output[4].flat[index] = left_fraction * left[2] + right_fraction * right[2]
+            output[5].flat[index] = left_fraction * left[3] + right_fraction * right[3]
+        return ReferenceTofProfile(*output)
+
+    t = tail_log * (nodes + 1.0) / 2.0
+    weights = tail_log * legendre_weights / 2.0 * np.exp(-t)
+    weights /= np.sum(weights)
+    left_delta = x[:, None] - position_us + t[None, :] / alpha
+    right_delta = x[:, None] - position_us - t[None, :] / beta
+    left = profile_tch(left_delta, gaussian_fwhm_us, lorentzian_fwhm_us)
+    right = profile_tch(right_delta, gaussian_fwhm_us, lorentzian_fwhm_us)
+    def integrate(values: NDArray[np.float64]) -> NDArray[np.float64]:
+        return values @ weights
+
+    left_value = integrate(left.value)
+    right_value = integrate(right.value)
+    left_d_delta = left.d_delta
+    right_d_delta = right.d_delta
+    d_delta = left_fraction * integrate(left_d_delta) + right_fraction * integrate(right_d_delta)
+    d_alpha_shift = integrate(left_d_delta * (-t[None, :] / alpha**2))
+    d_beta_shift = integrate(right_d_delta * (t[None, :] / beta**2))
+    return ReferenceTofProfile(
+        value=left_fraction * left_value + right_fraction * right_value,
+        d_position=-d_delta,
+        d_alpha=(
+            d_left_fraction_d_alpha * left_value
+            + left_fraction * d_alpha_shift
+            - d_left_fraction_d_alpha * right_value
+        ),
+        d_beta=(
+            d_left_fraction_d_beta * left_value
+            + right_fraction * d_beta_shift
+            - d_left_fraction_d_beta * right_value
+        ),
+        d_gaussian_fwhm=(
+            left_fraction * integrate(left.d_gaussian_fwhm)
+            + right_fraction * integrate(right.d_gaussian_fwhm)
+        ),
+        d_lorentzian_fwhm=(
+            left_fraction * integrate(left.d_lorentzian_fwhm)
+            + right_fraction * integrate(right.d_lorentzian_fwhm)
+        ),
+    )
+
+
+def tof_profile_parameters(
+    d_spacing_angstrom: ArrayLike,
+    *,
+    zero_us: float,
+    difc_us_per_angstrom: float,
+    difa_us_per_angstrom2: float,
+    difb_us_angstrom: float,
+    alpha_coefficient: float,
+    beta0_per_us: float,
+    beta1_angstrom4_per_us: float,
+    betaq_angstrom2_per_us: float,
+    sigma0_us2: float,
+    sigma1_us2_per_angstrom2: float,
+    sigma2_us2_per_angstrom4: float,
+    sigmaq_us2_per_angstrom: float,
+    x_us_per_angstrom: float,
+    y_us_per_angstrom2: float,
+    z_us: float,
+) -> ReferenceTofProfileParameters:
+    """Evaluate the documented TOF coefficient equations independently."""
+
+    d = np.asarray(d_spacing_angstrom, dtype=np.float64)
+    position = (
+        zero_us
+        + difc_us_per_angstrom * d
+        + difa_us_per_angstrom2 * d**2
+        + difb_us_angstrom / d
+    )
+    alpha = alpha_coefficient / d
+    beta = beta0_per_us + beta1_angstrom4_per_us / d**4 + betaq_angstrom2_per_us / d**2
+    variance = (
+        sigma0_us2
+        + sigma1_us2_per_angstrom2 * d**2
+        + sigma2_us2_per_angstrom4 * d**4
+        + sigmaq_us2_per_angstrom * d
+    )
+    gaussian = GAUSSIAN_FWHM_PER_SIGMA * np.sqrt(variance)
+    lorentzian = z_us + x_us_per_angstrom * d + y_us_per_angstrom2 * d**2
+    return ReferenceTofProfileParameters(position, alpha, beta, variance, gaussian, lorentzian)
 
 
 def accumulate(

@@ -90,6 +90,244 @@ def test_sample_fixture_records_pin_and_committed_generator() -> None:
     assert len(fixture.cases) == 3
 
 
+def test_multiphase_fixture_records_pin_and_public_scripting_arrays() -> None:
+    fixture = load_fixture(MULTIPHASE_FIXTURE_PATH)
+    generator = REPOSITORY_ROOT / "oracle" / "scripts" / "generate_multiphase.py"
+    assert fixture.manifest["fixture_id"] == "gsasii_multiphase_v1"
+    assert fixture.manifest["provenance"]["gsasii_revision"] == PINNED_REVISION
+    assert (
+        fixture.manifest["provenance"]["generator_sha256"]
+        == hashlib.sha256(generator.read_bytes()).hexdigest()
+    )
+    assert fixture.arrays["x_deg"].shape == fixture.arrays["ycalc"].shape == (4_501,)
+    assert fixture.arrays["background"].shape == (4_501,)
+    assert fixture.arrays["reflection_list_alpha"].shape == (125, 15)
+    assert fixture.arrays["reflection_list_beta"].shape == (73, 15)
+    assert np.max(fixture.arrays["ycalc"]) > np.max(fixture.arrays["background"])
+
+
+def test_multiphase_values_components_and_scale_rows_against_pinned_gsasii() -> None:
+    fixture = load_fixture(MULTIPHASE_FIXTURE_PATH)
+    case = fixture.cases[0]
+    values = fixture.manifest["input_parameters"]["instrument"]
+    instrument = rietveld.ConstantWavelengthInstrument(
+        wavelength_angstrom=values["wavelength_angstrom"],
+        u_deg2=values["u_gsas_centideg2"] * 1.0e-4,
+        v_deg2=values["v_gsas_centideg2"] * 1.0e-4,
+        w_deg2=values["w_gsas_centideg2"] * 1.0e-4,
+        x_deg=values["x_gsas_centideg"] * 1.0e-2,
+        y_deg=values["y_gsas_centideg"] * 1.0e-2,
+    )
+    parameters = case["parameters"]
+    phases = []
+    for index, reflection in enumerate(parameters["reflections"]):
+        batch = rietveld.ReflectionBatch(
+            [f"oracle-{index}"],
+            [reflection["hkl"]],
+            [reflection["d_spacing_angstrom"]],
+            [reflection["position_deg"]],
+            [parameters["base_integrated_intensities"][index]],
+        )
+        phases.append(
+            rietveld.Phase(
+                reflection["phase_id"],
+                reflection["phase_id"],
+                batch,
+                scale=parameters["phase_scales"][index],
+            )
+        )
+        widths = rietveld.cw_profile_parameters([reflection["position_deg"]], instrument)
+        assert 1.0e4 * widths.gaussian_variance_deg2[0] == pytest.approx(
+            reflection["sigma2_centideg2"], rel=7e-16
+        )
+        assert 100.0 * widths.lorentzian_fwhm_deg[0] == pytest.approx(
+            reflection["gamma_centideg"], rel=2.5e-12
+        )
+    x = fixture.arrays[case["arrays"]["x"]]
+    background = np.full(x.size, parameters["background"])
+    actual = rietveld.calculate_pattern(
+        rietveld.PowderPattern(x, background=background),
+        instrument,
+        phases,
+        options=rietveld.CalculationOptions(
+            support_fwhm=10_000.0,
+            return_phase_components=True,
+        ),
+    )
+    oracle = fixture.arrays[case["arrays"]["ycalc"]]
+    normalized_maximum_error = float(np.max(np.abs(actual.y - oracle)) / np.max(np.abs(oracle)))
+    assert normalized_maximum_error < 2.8e-6
+    for index, phase in enumerate(phases):
+        profile = fixture.arrays[case["arrays"][f"phase_{index}_profile"]]
+        expected_component = (
+            parameters["base_integrated_intensities"][index]
+            * parameters["phase_scales"][index]
+            * profile
+        )
+        component_error = float(
+            np.max(np.abs(actual.phase_y(phase.phase_id) - expected_component))
+            / np.max(np.abs(expected_component))
+        )
+        assert component_error < 2.8e-6
+        row = actual.derivatives.global_parameter_names.index(f"phase[{phase.phase_id}].scale")
+        expected_scale_row = parameters["base_integrated_intensities"][index] * profile
+        derivative_error = float(
+            np.max(np.abs(actual.derivatives.global_jacobian[row] - expected_scale_row))
+            / np.max(np.abs(expected_scale_row))
+        )
+        assert derivative_error < 2.8e-6
+
+
+def test_neutron_fixture_records_pin_public_arrays_and_reflections() -> None:
+    fixture = load_fixture(NEUTRON_FIXTURE_PATH)
+    generator = REPOSITORY_ROOT / "oracle" / "scripts" / "generate_neutron_cw.py"
+    assert fixture.manifest["fixture_id"] == "gsasii_neutron_cw_v1"
+    assert fixture.manifest["provenance"]["gsasii_revision"] == PINNED_REVISION
+    assert (
+        fixture.manifest["provenance"]["generator_sha256"]
+        == hashlib.sha256(generator.read_bytes()).hexdigest()
+    )
+    assert fixture.manifest["source"]["histogram_type"] == "PNC"
+    assert fixture.arrays["x_deg"].shape == fixture.arrays["ycalc"].shape == (7_001,)
+    assert fixture.arrays["background"].shape == (7_001,)
+    assert fixture.arrays["reflection_list"].shape == (128, 15)
+    assert np.max(fixture.arrays["ycalc"]) > np.max(fixture.arrays["background"])
+
+
+def test_tof_fixture_records_pin_public_arrays_and_reflections() -> None:
+    fixture = load_fixture(TOF_FIXTURE_PATH)
+    generator = REPOSITORY_ROOT / "oracle" / "scripts" / "generate_tof.py"
+    assert fixture.manifest["fixture_id"] == "gsasii_tof_v1"
+    assert fixture.manifest["provenance"]["gsasii_revision"] == PINNED_REVISION
+    assert (
+        fixture.manifest["provenance"]["generator_sha256"]
+        == hashlib.sha256(generator.read_bytes()).hexdigest()
+    )
+    assert fixture.manifest["source"]["histogram_type"] == "PNT"
+    assert fixture.arrays["x_us"].shape == fixture.arrays["ycalc"].shape == (6_000,)
+    assert fixture.arrays["background"].shape == (6_000,)
+    assert fixture.arrays["reflection_list"].shape == (2_066, 18)
+    assert np.max(fixture.arrays["ycalc"]) > np.max(fixture.arrays["background"])
+
+    values = fixture.manifest["input_parameters"]["instrument"]
+    instrument = rietveld.TofInstrument(
+        **{
+            key: value
+            for key, value in values.items()
+            if key not in {"flight_path_m", "two_theta_deg"}
+        }
+    )
+    reflections = fixture.arrays["reflection_list"]
+    actual = rietveld.tof_profile_parameters(reflections[:, 4], instrument)
+    np.testing.assert_array_equal(actual.position_us, reflections[:, 5])
+    np.testing.assert_array_equal(actual.gaussian_variance_us2, reflections[:, 6])
+    np.testing.assert_allclose(actual.lorentzian_fwhm_us, reflections[:, 7], rtol=9e-13)
+    np.testing.assert_allclose(actual.alpha_per_us, reflections[:, 12], rtol=3e-16)
+    np.testing.assert_allclose(actual.beta_per_us, reflections[:, 13], rtol=4e-16)
+
+
+@pytest.mark.parametrize("case_index", [1, 2, 3])
+def test_tof_profiles_derivatives_and_moments_against_pinned_gsasii(
+    case_index: int,
+) -> None:
+    fixture = load_fixture(TOF_FIXTURE_PATH)
+    case = fixture.cases[case_index]
+    parameters = case["parameters"]
+    x = fixture.arrays[case["arrays"]["x"]]
+    gaussian_fwhm = 2.3548200450309493 * np.sqrt(parameters["sigma2_us2"])
+    actual = rietveld.profile_tof(
+        x,
+        parameters["position_us"],
+        parameters["alpha_per_us"],
+        parameters["beta_per_us"],
+        gaussian_fwhm,
+        parameters["gamma_us"],
+    )
+    d_sigma2 = (
+        actual.d_gaussian_fwhm
+        * 2.3548200450309493
+        / (2.0 * np.sqrt(parameters["sigma2_us2"]))
+    )
+    comparisons = {
+        "value": (actual.value, 2.5e-4),
+        "d_position": (actual.d_position, 2.2e-3),
+        "d_alpha": (actual.d_alpha, 2.3e-2),
+        "d_beta": (actual.d_beta, 4.0e-4),
+        "d_sigma2": (d_sigma2, 2.2e-3),
+        "d_gamma": (actual.d_lorentzian_fwhm, 1.8e-3),
+    }
+    for name, (computed, tolerance) in comparisons.items():
+        oracle = fixture.arrays[case["arrays"][name]]
+        normalized_error = float(
+            np.max(np.abs(computed - oracle)) / np.max(np.abs(oracle))
+        )
+        assert normalized_error < tolerance
+
+    area = np.trapezoid(actual.value, x)
+    centroid = np.trapezoid(x * actual.value, x) / area
+    third = np.trapezoid((x - centroid) ** 3 * actual.value, x) / area
+    moments = case["sampled_moments"]
+    assert area == pytest.approx(moments["integral"], rel=1.0e-5)
+    assert centroid == pytest.approx(moments["centroid_us"], abs=3.0e-3)
+    assert third == pytest.approx(moments["third_central_moment_us3"], rel=1.0e-3)
+
+
+@pytest.mark.parametrize("case_index", [0, 1, 2])
+def test_neutron_symmetric_and_fcj_profiles_against_pinned_gsasii(case_index: int) -> None:
+    fixture = load_fixture(NEUTRON_FIXTURE_PATH)
+    values = fixture.manifest["input_parameters"]["instrument"]
+    instrument = rietveld.ConstantWavelengthInstrument(
+        wavelength_angstrom=values["wavelength_angstrom"],
+        u_deg2=values["u_gsas_centideg2"] * 1.0e-4,
+        v_deg2=values["v_gsas_centideg2"] * 1.0e-4,
+        w_deg2=values["w_gsas_centideg2"] * 1.0e-4,
+        x_deg=values["x_gsas_centideg"] * 1.0e-2,
+        y_deg=values["y_gsas_centideg"] * 1.0e-2,
+    )
+    experiment = rietveld.ConstantWavelengthExperiment.neutron(instrument)
+    case = fixture.cases[case_index]
+    parameters = case["parameters"]
+    batch = rietveld.ReflectionGeometryBatch(
+        [parameters["hkl"]],
+        [parameters["d_spacing_angstrom"]],
+        [parameters["position_deg"]],
+        [1.0],
+    )
+    widths = rietveld.cw_profile_parameters([parameters["position_deg"]], instrument)
+    assert 1.0e4 * widths.gaussian_variance_deg2[0] == pytest.approx(
+        parameters["sigma2_centideg2"], rel=5e-16
+    )
+    x = fixture.arrays[case["arrays"]["x"]]
+    symmetric = rietveld.calculate_monochromatic_cw_pattern(
+        x, batch, experiment, support_fwhm=10_000.0
+    ).y
+    symmetric_oracle = fixture.arrays[case["arrays"]["symmetric_profile"]]
+    symmetric_error = float(
+        np.max(np.abs(symmetric - symmetric_oracle)) / np.max(np.abs(symmetric_oracle))
+    )
+    assert symmetric_error < 3.3e-5
+
+    fcj = rietveld.calculate_neutron_fcj_pattern(
+        x,
+        batch,
+        experiment,
+        rietveld.FcjGeometry(**parameters["public_equal_height_mapping"]),
+        support_fwhm=10_000.0,
+    ).y
+    fcj_oracle = fixture.arrays[case["arrays"]["fcj_profile"]]
+    fcj_error = float(np.max(np.abs(fcj - fcj_oracle)) / np.max(np.abs(fcj_oracle)))
+    assert fcj_error < 4.3e-4
+    area = np.trapezoid(fcj, x)
+    centroid = np.trapezoid(x * fcj, x) / area
+    third = np.trapezoid((x - centroid) ** 3 * fcj, x) / area
+    moments = case["sampled_fcj_moments"]
+    assert area == pytest.approx(moments["integral"], rel=1.7e-6)
+    assert centroid == pytest.approx(moments["centroid_deg"], abs=1.4e-4)
+    if abs(moments["third_central_moment_deg3"]) > 1.0e-8:
+        assert np.sign(third) == np.sign(moments["third_central_moment_deg3"])
+        assert third == pytest.approx(moments["third_central_moment_deg3"], rel=0.55)
+
+
 def _sample_fixture_models(
     fixture: rietveld.oracle.OracleFixture,
 ) -> tuple[

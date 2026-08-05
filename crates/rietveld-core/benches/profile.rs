@@ -6,9 +6,9 @@ use criterion::{BenchmarkId, Criterion, Throughput, criterion_group, criterion_m
 use rietveld_core::{
     ConstantWavelengthInstrument, CwContributionArrays, CwContributionsView, CwReflectionBatchView,
     FcjGeometry, GridView, PeakBatchView, SupportPolicy, TchPeakBatchView, TchShape, TchWidths,
-    WavelengthComponentsView, accumulate_batch, accumulate_cw_batch,
+    TofInstrument, WavelengthComponentsView, accumulate_batch, accumulate_cw_batch,
     accumulate_cw_contributions_batch, accumulate_cw_fcj_batch, accumulate_cw_fcj_components_batch,
-    accumulate_tch_batch, accumulate_values_batch, symmetric_pseudo_voigt,
+    accumulate_tch_batch, accumulate_tof_batch, accumulate_values_batch, symmetric_pseudo_voigt,
 };
 
 struct OwnedContributions {
@@ -311,12 +311,67 @@ fn cw_fcj_accumulator(criterion: &mut Criterion) {
     group.finish();
 }
 
+fn tof_accumulator(criterion: &mut Criterion) {
+    let x: Vec<f64> = (0..5_001)
+        .map(|index| 2_000.0 + f64::from(index) * 3.6)
+        .collect();
+    let d_spacings: Vec<f64> = (0..200)
+        .map(|index| 0.42 + f64::from(index) * 0.017)
+        .collect();
+    let intensities: Vec<f64> = (0..200)
+        .map(|index| 100.0 + f64::from(index % 31))
+        .collect();
+    let instrument = TofInstrument {
+        zero_us: -0.773_346_536_757,
+        difc_us_per_angstrom: 5_084.827_630_65,
+        difa_us_per_angstrom2: -2.630_417_748_6,
+        difb_us_angstrom: 1.25,
+        alpha_coefficient: 5.0,
+        beta0_per_us: 0.028,
+        beta1_angstrom4_per_us: 0.0012,
+        betaq_angstrom2_per_us: 0.003,
+        sigma0_us2: 1.5,
+        sigma1_us2_per_angstrom2: 15.140_286_726_8,
+        sigma2_us2_per_angstrom4: 0.08,
+        sigmaq_us2_per_angstrom: 0.7,
+        x_us_per_angstrom: 0.8,
+        y_us_per_angstrom2: 0.15,
+        z_us: 1.2,
+    };
+    let grid = GridView::new(&x).expect("benchmark grid");
+    let mut group = criterion.benchmark_group("tof_accumulator");
+    group.throughput(Throughput::Elements(d_spacings.len() as u64));
+    for tail_log in [8.0, 20.0] {
+        group.bench_function(
+            BenchmarkId::new(
+                format!("tail_log_{tail_log:.0}_order_192_local_and_global_jacobian"),
+                x.len(),
+            ),
+            |bencher| {
+                bencher.iter(|| {
+                    accumulate_tof_batch(
+                        black_box(grid),
+                        black_box(&d_spacings),
+                        black_box(&intensities),
+                        black_box(instrument),
+                        black_box(20.0),
+                        black_box(tail_log),
+                    )
+                    .expect("valid TOF benchmark")
+                });
+            },
+        );
+    }
+    group.finish();
+}
+
 criterion_group!(
     benches,
     scalar_profile,
     fused_accumulator,
     tch_accumulator,
     cw_accumulator,
-    cw_fcj_accumulator
+    cw_fcj_accumulator,
+    tof_accumulator
 );
 criterion_main!(benches);

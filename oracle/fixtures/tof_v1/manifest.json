@@ -1,0 +1,459 @@
+{
+  "archive": {
+    "file": "data.npz",
+    "sha256": "f23d1019173367f97fcf055dc328073751cc71105c1a94842c7a8a1592743c4f"
+  },
+  "arrays": {
+    "background": {
+      "description": "Public scripting background array",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "a11a129781351cc749329a01f8ec4538768153143d6adf26b8bf50de23f0d22a",
+      "shape": [
+        6000
+      ],
+      "unit": "intensity"
+    },
+    "reflection_list": {
+      "description": "Public scripting reflection list",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "586682a8b9317562ca13246bc733800f4d9dbbcab263861648a918c6174c3af4",
+      "shape": [
+        2066,
+        18
+      ],
+      "unit": "mixed_by_column"
+    },
+    "tof_d_0_8__d_alpha": {
+      "description": "Pinned GSAS-II TOF profile or derivative",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "f221cc95fe092b16ef8d55967ded748eb4d0dc027f503b7460dcbbae1f18f224",
+      "shape": [
+        7201
+      ],
+      "unit": "profile_dependent"
+    },
+    "tof_d_0_8__d_beta": {
+      "description": "Pinned GSAS-II TOF profile or derivative",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "d843c99bc779a360e3096529642735244d9df8b94f087c78bb334ca5398345cb",
+      "shape": [
+        7201
+      ],
+      "unit": "profile_dependent"
+    },
+    "tof_d_0_8__d_gamma": {
+      "description": "Pinned GSAS-II TOF profile or derivative",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "39e66f93614165895697ceae324c500b355d0d6cb635fede9db03fccb5590a0e",
+      "shape": [
+        7201
+      ],
+      "unit": "profile_dependent"
+    },
+    "tof_d_0_8__d_position": {
+      "description": "Pinned GSAS-II TOF profile or derivative",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "27606c86e65003a409fb90ca45b391d0bc752bd1f4d091a6c81d508df255e201",
+      "shape": [
+        7201
+      ],
+      "unit": "profile_dependent"
+    },
+    "tof_d_0_8__d_sigma2": {
+      "description": "Pinned GSAS-II TOF profile or derivative",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "94d1ab505dca77df4487227b8e7e31bb739a37cb405a3a37a9296f6ae794f173",
+      "shape": [
+        7201
+      ],
+      "unit": "profile_dependent"
+    },
+    "tof_d_0_8__value": {
+      "description": "Pinned GSAS-II TOF profile or derivative",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "134f9fd2998e1d499fb15387f5d5ddb7eb573d6e6f217a91ef1490c27e37d894",
+      "shape": [
+        7201
+      ],
+      "unit": "profile_dependent"
+    },
+    "tof_d_0_8__x_us": {
+      "description": "TOF calculation coordinates",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "636563bebaee9d2c9767baab3888826cc1ece63c17ea0f9b286a0f4996b55d37",
+      "shape": [
+        7201
+      ],
+      "unit": "microsecond_bin_center"
+    },
+    "tof_d_1_5__d_alpha": {
+      "description": "Pinned GSAS-II TOF profile or derivative",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "37a7ee340e26d5baff4c40944d3913371706ed83845ba2cfabb41048ab31d302",
+      "shape": [
+        7201
+      ],
+      "unit": "profile_dependent"
+    },
+    "tof_d_1_5__d_beta": {
+      "description": "Pinned GSAS-II TOF profile or derivative",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "d4664fd9ccef6ab9d30ebc2f1fab32453dab4a584360405c927221f27fab468d",
+      "shape": [
+        7201
+      ],
+      "unit": "profile_dependent"
+    },
+    "tof_d_1_5__d_gamma": {
+      "description": "Pinned GSAS-II TOF profile or derivative",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "26fbfaf34b890e80786c5b285fd3cda3a55708a9415cea48e82ef7b5c1c83ad0",
+      "shape": [
+        7201
+      ],
+      "unit": "profile_dependent"
+    },
+    "tof_d_1_5__d_position": {
+      "description": "Pinned GSAS-II TOF profile or derivative",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "b2b9d93a718ba65d5d33e341f9d3ecb33f367f8d9d8fcc836fbb14f3da970456",
+      "shape": [
+        7201
+      ],
+      "unit": "profile_dependent"
+    },
+    "tof_d_1_5__d_sigma2": {
+      "description": "Pinned GSAS-II TOF profile or derivative",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "2fdb5b766cd0a68f12e73bebdf585c1875beb24d91f46958ea07647a5cf75422",
+      "shape": [
+        7201
+      ],
+      "unit": "profile_dependent"
+    },
+    "tof_d_1_5__value": {
+      "description": "Pinned GSAS-II TOF profile or derivative",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "c2cd6148303aa96c6f64a6524026c4db0021c07457ac99f2f82b614cb6050ce7",
+      "shape": [
+        7201
+      ],
+      "unit": "profile_dependent"
+    },
+    "tof_d_1_5__x_us": {
+      "description": "TOF calculation coordinates",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "67ade834bace82273af2b7cceec533f7e1143c1b7b3a5349c5e3839b91b19a99",
+      "shape": [
+        7201
+      ],
+      "unit": "microsecond_bin_center"
+    },
+    "tof_d_2_5__d_alpha": {
+      "description": "Pinned GSAS-II TOF profile or derivative",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "d973060fdc702628b7ef2f141fc5cfb6d79c83b1900c6dc12b91f0756048c6e0",
+      "shape": [
+        7201
+      ],
+      "unit": "profile_dependent"
+    },
+    "tof_d_2_5__d_beta": {
+      "description": "Pinned GSAS-II TOF profile or derivative",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "9aa1cf5a6c05bbe6152787f6a7b2958957bab020c13ceef1e59ce788f90eaab7",
+      "shape": [
+        7201
+      ],
+      "unit": "profile_dependent"
+    },
+    "tof_d_2_5__d_gamma": {
+      "description": "Pinned GSAS-II TOF profile or derivative",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "2e32f6c39e28e17b49d4b07f9d1b62e7546b08604553eb2f615f4a0ab0278060",
+      "shape": [
+        7201
+      ],
+      "unit": "profile_dependent"
+    },
+    "tof_d_2_5__d_position": {
+      "description": "Pinned GSAS-II TOF profile or derivative",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "ac468615c61cd7a6d8923883321d3ff8d5dda71538216c349a2b3f71848cee8d",
+      "shape": [
+        7201
+      ],
+      "unit": "profile_dependent"
+    },
+    "tof_d_2_5__d_sigma2": {
+      "description": "Pinned GSAS-II TOF profile or derivative",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "396e33728ef12e0c3812c5b3667159f913664709ff45248c093c9ea5f45d717c",
+      "shape": [
+        7201
+      ],
+      "unit": "profile_dependent"
+    },
+    "tof_d_2_5__value": {
+      "description": "Pinned GSAS-II TOF profile or derivative",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "a5d9c3c75e8e4d1ded14217a08894c3a5da74e936b0ff0d31b51a98436f0d08f",
+      "shape": [
+        7201
+      ],
+      "unit": "profile_dependent"
+    },
+    "tof_d_2_5__x_us": {
+      "description": "TOF calculation coordinates",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "8450904916644b897d70e578d28b15194d37e231e7d16bd13f78d4242076fed9",
+      "shape": [
+        7201
+      ],
+      "unit": "microsecond_bin_center"
+    },
+    "x_us": {
+      "description": "TOF calculation coordinates",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "f1ba37f8f34a9d28258e79da3d81760c10d4f287a79cf51c86863e505a276239",
+      "shape": [
+        6000
+      ],
+      "unit": "microsecond_bin_center"
+    },
+    "ycalc": {
+      "description": "Public scripting ycalc array",
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "fb76381bfbe75e34708c4acb7f9df14df17b56c7d2033bdc1c7b3ca5f4630d6a",
+      "shape": [
+        6000
+      ],
+      "unit": "intensity"
+    }
+  },
+  "cases": [
+    {
+      "arrays": {
+        "background": "background",
+        "reflection_list": "reflection_list",
+        "x": "x_us",
+        "ycalc": "ycalc"
+      },
+      "case_kind": "tof_public_histogram",
+      "id": "tof_public_histogram",
+      "parameters": {
+        "coordinate_convention": "bin_center_microseconds"
+      },
+      "reflection_tables": [
+        {
+          "array": "reflection_list",
+          "columns": [
+            "h",
+            "k",
+            "l",
+            "multiplicity",
+            "d_spacing_angstrom",
+            "position_us",
+            "sigma2_us2",
+            "gamma_us",
+            "f_obs2",
+            "f_calc2",
+            "phase_deg",
+            "intensity_correction",
+            "alpha_per_us",
+            "beta_per_us",
+            "wavelength_angstrom",
+            "preferred_orientation",
+            "transmission",
+            "extinction"
+          ]
+        }
+      ]
+    },
+    {
+      "arrays": {
+        "d_alpha": "tof_d_0_8__d_alpha",
+        "d_beta": "tof_d_0_8__d_beta",
+        "d_gamma": "tof_d_0_8__d_gamma",
+        "d_position": "tof_d_0_8__d_position",
+        "d_sigma2": "tof_d_0_8__d_sigma2",
+        "value": "tof_d_0_8__value",
+        "x": "tof_d_0_8__x_us"
+      },
+      "case_kind": "tof_private_profile",
+      "gsasii_reported_integral": 0.9991334108277741,
+      "id": "tof_d_0_8",
+      "parameters": {
+        "alpha_per_us": 6.25,
+        "beta_per_us": 0.0356171875,
+        "d_spacing_angstrom": 0.8,
+        "gamma_us": 1.9360000000000002,
+        "position_us": 4066.9677906241395,
+        "sigma2_us2": 11.782551505152004
+      },
+      "sampled_moments": {
+        "centroid_us": 4094.860231699257,
+        "integral": 0.9991332893459273,
+        "third_central_moment_us3": 24521.345156435287
+      }
+    },
+    {
+      "arrays": {
+        "d_alpha": "tof_d_1_5__d_alpha",
+        "d_beta": "tof_d_1_5__d_beta",
+        "d_gamma": "tof_d_1_5__d_gamma",
+        "d_position": "tof_d_1_5__d_position",
+        "d_sigma2": "tof_d_1_5__d_sigma2",
+        "value": "tof_d_1_5__value",
+        "x": "tof_d_1_5__x_us"
+      },
+      "case_kind": "tof_private_profile",
+      "gsasii_reported_integral": 0.9987548795004813,
+      "id": "tof_d_1_5",
+      "parameters": {
+        "alpha_per_us": 3.3333333333333335,
+        "beta_per_us": 0.02957037037037037,
+        "d_spacing_angstrom": 1.5,
+        "gamma_us": 2.7375000000000003,
+        "position_us": 7621.382992837225,
+        "sigma2_us2": 37.0206451353
+      },
+      "sampled_moments": {
+        "centroid_us": 7654.859328734041,
+        "integral": 0.9987547049888903,
+        "third_central_moment_us3": 43326.89608033785
+      }
+    },
+    {
+      "arrays": {
+        "d_alpha": "tof_d_2_5__d_alpha",
+        "d_beta": "tof_d_2_5__d_beta",
+        "d_gamma": "tof_d_2_5__d_gamma",
+        "d_position": "tof_d_2_5__d_position",
+        "d_sigma2": "tof_d_2_5__d_sigma2",
+        "value": "tof_d_2_5__value",
+        "x": "tof_d_2_5__x_us"
+      },
+      "case_kind": "tof_private_profile",
+      "gsasii_reported_integral": 0.9981120652608126,
+      "id": "tof_d_2_5",
+      "parameters": {
+        "alpha_per_us": 2.0,
+        "beta_per_us": 0.028510720000000003,
+        "d_spacing_angstrom": 2.5,
+        "gamma_us": 4.1375,
+        "position_us": 12695.355619159494,
+        "sigma2_us2": 101.0017920425
+      },
+      "sampled_moments": {
+        "centroid_us": 12729.866572402916,
+        "integral": 0.9981118001658018,
+        "third_central_moment_us3": 33073.59445904566
+      }
+    }
+  ],
+  "fixture_id": "gsasii_tof_v1",
+  "format_version": 1,
+  "input": {
+    "kind": "parameter_cases",
+    "sha256": "7bed8ca7a161c25398cb3e50ee930138386c54893161b53b084d15699c4e3885"
+  },
+  "input_parameters": {
+    "instrument": {
+      "alpha_coefficient": 5.0,
+      "beta0_per_us": 0.028,
+      "beta1_angstrom4_per_us": 0.0012,
+      "betaq_angstrom2_per_us": 0.003,
+      "difa_us_per_angstrom2": -2.6304177486,
+      "difb_us_angstrom": 1.25,
+      "difc_us_per_angstrom": 5084.82763065,
+      "flight_path_m": 10.32567,
+      "sigma0_us2": 1.5,
+      "sigma1_us2_per_angstrom2": 15.1402867268,
+      "sigma2_us2_per_angstrom4": 0.08,
+      "sigmaq_us2_per_angstrom": 0.7,
+      "two_theta_deg": 151.0,
+      "x_us_per_angstrom": 0.8,
+      "y_us_per_angstrom2": 0.15,
+      "z_us": 1.2,
+      "zero_us": -0.773346536757
+    },
+    "phase": {
+      "cell": [
+        4.0,
+        4.0,
+        4.0,
+        90.0,
+        90.0,
+        90.0
+      ],
+      "name": "tof-cubic",
+      "space_group": "P 1"
+    }
+  },
+  "kind": "neutron_tof",
+  "provenance": {
+    "generated_at_utc": "2026-08-05T16:39:50.533113+00:00",
+    "generator_sha256": "545b3f9aebe9546849fd46040e6817d39eff4b4c0be6b877e9cadce903549152",
+    "gsasii_repository": "https://github.com/AdvancedPhotonSource/GSAS-II",
+    "gsasii_revision": "c0bc79b259cdf0065480b5fbd57674ddf12c4a23",
+    "gsasii_tag": 5838,
+    "numpy_version": "2.2.6",
+    "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O",
+    "python_version": "3.13.9"
+  },
+  "source": {
+    "adapter_version": 1,
+    "api": [
+      "GSASII.GSASIIscriptable.G2PwdrData.getdata/reflections",
+      "GSASII.GSASIIpwd.getEpsVoigt/getdEpsVoigt"
+    ],
+    "histogram_type": "PNT",
+    "private_probe": true,
+    "reflection_columns": [
+      "h",
+      "k",
+      "l",
+      "multiplicity",
+      "d_spacing_angstrom",
+      "position_us",
+      "sigma2_us2",
+      "gamma_us",
+      "f_obs2",
+      "f_calc2",
+      "phase_deg",
+      "intensity_correction",
+      "alpha_per_us",
+      "beta_per_us",
+      "wavelength_angstrom",
+      "preferred_orientation",
+      "transmission",
+      "extinction"
+    ]
+  }
+}

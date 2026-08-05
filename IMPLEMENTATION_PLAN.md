@@ -746,6 +746,8 @@ parallel implementation.
 
 ## Implementation unit 8: time-of-flight profiles
 
+Status: complete (2026-08-05).
+
 ### Goal
 
 Add TOF peak positions, d-dependent broadening, and asymmetric exponential
@@ -782,6 +784,30 @@ oracle before the public type is stabilized.
    d-spacing derivatives in support blocks.
 7. Treat TOF bin coordinates explicitly: fixtures record whether values are bin
    minima or centers, and the public API accepts one documented convention.
+
+Review result: `TofInstrument` exposes a physical-unit, flat 15-coefficient
+model for d-to-TOF calibration, alpha/beta rates, Gaussian variance, and
+Lorentzian FWHM. The independently implemented asymmetric primitive convolves
+the validated TCH profile with normalized truncated back-to-back exponentials;
+values and five direct derivatives share every quadrature evaluation. The
+fused Rust path maps 192-point composite quadrature onto the exact active
+finite-support intervals, stores intensity/d-spacing rows in support blocks,
+and accumulates all 15 instrument rows densely in the same pass. Public NumPy
+coordinates are explicitly calculation-bin centers in microseconds. Thirty-eight
+focused Python tests cover independent high-order quadrature, coefficient
+equations, direct/local/global finite differences, overlap, exact support,
+normalization, centroid, skew, equal-rate symmetry, both one-sided exponential
+limits, and invalid inputs. A pinned
+GSAS-II #5838 `PNT` fixture stores public bin-center `X`, `Ycalc`, background,
+and a complete 2,066-row, 18-column reflection table; three private profile
+probes validate values, all five direct derivatives, areas, centroids, and third
+moments with explicit approximation-local tolerances. The compatibility-only
+`sig-q * d` convention is named and documented separately from published
+reciprocal-d variants. The full repository passes 231 Python and 24 Rust tests.
+For 200 reflections and 5,001 samples, recorded release medians are about
+131 ms for `tail_log=8`/63,837 active reflection-samples and 156 ms for
+`tail_log=20`/85,142 active reflection-samples, returning 1.665 MB and 2.006 MB
+respectively.
 
 ### Validation
 

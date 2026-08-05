@@ -12,14 +12,20 @@ from typing import Any
 import numpy as np
 from rietveld import (
     CompositePhysicsProvider,
+    ConstantWavelengthExperiment,
     ConstantWavelengthInstrument,
     FcjGeometry,
     IsotropicMicrostrainBroadening,
     IsotropicSizeBroadening,
     MarchDollasePreferredOrientation,
+    Phase,
     PhysicsContext,
+    PowderPattern,
+    PreparedPattern,
     ReciprocalMetric,
+    ReflectionBatch,
     ReflectionGeometryBatch,
+    TofInstrument,
     WavelengthComponents,
     _core,
     accumulate,
@@ -27,8 +33,13 @@ from rietveld import (
     accumulate_cw_fcj,
     accumulate_cw_fcj_components,
     accumulate_tch,
+    accumulate_tof,
     calculate_cw_pattern,
+    calculate_monochromatic_cw_pattern,
+    calculate_neutron_fcj_pattern,
+    calculate_pattern,
     cw_profile_parameters,
+    tof_profile_parameters,
 )
 
 
@@ -112,14 +123,15 @@ def main() -> None:
         0.5,
     )
     d_spacings = cw_instrument.wavelength_angstrom / (2.0 * np.sin(np.deg2rad(positions / 2.0)))
+    benchmark_hkl = np.column_stack(
+        (
+            np.arange(count, dtype=np.int64),
+            np.ones(count, dtype=np.int64),
+            np.arange(count, dtype=np.int64) % 5,
+        )
+    )
     reflection_geometry = ReflectionGeometryBatch(
-        np.column_stack(
-            (
-                np.arange(count, dtype=np.int64),
-                np.ones(count, dtype=np.int64),
-                np.arange(count, dtype=np.int64) % 5,
-            )
-        ),
+        benchmark_hkl,
         d_spacings,
         positions,
         intensities,
@@ -139,6 +151,46 @@ def main() -> None:
     sample_contribution = sample_physics.evaluate(
         PhysicsContext(reflection_geometry, cw_instrument)
     )
+    phase_size = count // 4
+    multiphase = tuple(
+        Phase(
+            f"phase-{phase_index}",
+            f"Benchmark phase {phase_index}",
+            ReflectionBatch(
+                [f"reflection-{index}" for index in range(phase_size)],
+                benchmark_hkl[phase_index * phase_size : (phase_index + 1) * phase_size],
+                d_spacings[phase_index * phase_size : (phase_index + 1) * phase_size],
+                positions[phase_index * phase_size : (phase_index + 1) * phase_size],
+                intensities[phase_index * phase_size : (phase_index + 1) * phase_size],
+            ),
+            scale=0.8 + 0.1 * phase_index,
+            physics=sample_physics,
+        )
+        for phase_index in range(4)
+    )
+    benchmark_pattern = PowderPattern(x, background=np.full(x.size, 0.25))
+    prepared_multiphase = PreparedPattern(benchmark_pattern, cw_instrument, multiphase)
+    neutron_experiment = ConstantWavelengthExperiment.neutron(cw_instrument)
+    tof_x = np.linspace(2_000.0, 20_000.0, 5_001)
+    tof_d_spacings = 0.42 + index * 0.017
+    tof_instrument = TofInstrument(
+        zero_us=-0.773346536757,
+        difc_us_per_angstrom=5084.82763065,
+        difa_us_per_angstrom2=-2.6304177486,
+        difb_us_angstrom=1.25,
+        alpha_coefficient=5.0,
+        beta0_per_us=0.028,
+        beta1_angstrom4_per_us=0.0012,
+        betaq_angstrom2_per_us=0.003,
+        sigma0_us2=1.5,
+        sigma1_us2_per_angstrom2=15.1402867268,
+        sigma2_us2_per_angstrom4=0.08,
+        sigmaq_us2_per_angstrom=0.7,
+        x_us_per_angstrom=0.8,
+        y_us_per_angstrom2=0.15,
+        z_us=1.2,
+    )
+    tof_tail_logs = (8.0, 20.0)
 
     support_fwhm = 20.0
     lower = np.searchsorted(x, positions - support_fwhm * fwhms, side="left")
@@ -187,6 +239,25 @@ def main() -> None:
     fcj_lower = np.searchsorted(x, np.minimum(positions, apparent_limit) - fcj_radius, side="left")
     fcj_upper = np.searchsorted(x, np.maximum(positions, apparent_limit) + fcj_radius, side="right")
     fcj_active_peak_samples = int(np.sum(fcj_upper - fcj_lower))
+    tof_parameters = tof_profile_parameters(tof_d_spacings, tof_instrument)
+    tof_radius = support_fwhm * tof_parameters.total_fwhm_us
+    tof_active_peak_samples = {}
+    for tail_log in tof_tail_logs:
+        tof_lower = np.searchsorted(
+            tof_x,
+            tof_parameters.position_us
+            - tof_radius
+            - tail_log / tof_parameters.alpha_per_us,
+            side="left",
+        )
+        tof_upper = np.searchsorted(
+            tof_x,
+            tof_parameters.position_us
+            + tof_radius
+            + tail_log / tof_parameters.beta_per_us,
+            side="right",
+        )
+        tof_active_peak_samples[tail_log] = int(np.sum(tof_upper - tof_lower))
 
     call_arguments = (x, positions, intensities, fwhms, etas, support_fwhm)
     values, values_timings = measure(
@@ -265,6 +336,37 @@ def main() -> None:
         warmups=arguments.warmups,
         repetitions=arguments.repetitions,
     )
+    multiphase_result, multiphase_timings = measure(
+        lambda: calculate_pattern(benchmark_pattern, cw_instrument, multiphase),
+        warmups=arguments.warmups,
+        repetitions=arguments.repetitions,
+    )
+    prepared_multiphase_result, prepared_multiphase_timings = measure(
+        prepared_multiphase.calculate,
+        warmups=arguments.warmups,
+        repetitions=arguments.repetitions,
+    )
+    neutron_result, neutron_timings = measure(
+        lambda: calculate_monochromatic_cw_pattern(
+            x,
+            reflection_geometry,
+            neutron_experiment,
+            support_fwhm=support_fwhm,
+        ),
+        warmups=arguments.warmups,
+        repetitions=arguments.repetitions,
+    )
+    neutron_fcj_result, neutron_fcj_timings = measure(
+        lambda: calculate_neutron_fcj_pattern(
+            x,
+            reflection_geometry,
+            neutron_experiment,
+            fcj_geometry,
+            support_fwhm=support_fwhm,
+        ),
+        warmups=arguments.warmups,
+        repetitions=arguments.repetitions,
+    )
     fcj_result, fcj_timings = measure(
         lambda: accumulate_cw_fcj(
             x,
@@ -290,6 +392,21 @@ def main() -> None:
         warmups=arguments.warmups,
         repetitions=arguments.repetitions,
     )
+    tof_measurements = {
+        tail_log: measure(
+            lambda tail_log=tail_log: accumulate_tof(
+                tof_x,
+                tof_d_spacings,
+                intensities,
+                tof_instrument,
+                support_fwhm=support_fwhm,
+                tail_log=tail_log,
+            ),
+            warmups=arguments.warmups,
+            repetitions=arguments.repetitions,
+        )
+        for tail_log in tof_tail_logs
+    }
 
     input_bytes = sum(array.nbytes for array in (x, positions, intensities, fwhms, etas))
     print(f"python={platform.python_version()} numpy={np.__version__}")
@@ -301,6 +418,8 @@ def main() -> None:
         f"cw_active_peak_samples={cw_active_peak_samples} "
         f"sample_active_peak_samples={sample_active_peak_samples} "
         f"fcj_active_peak_samples={fcj_active_peak_samples} "
+        "tof_active_peak_samples="
+        f"{','.join(f'{value:g}:{tof_active_peak_samples[value]}' for value in tof_tail_logs)} "
         f"wavelength_component_counts=1,2 support_fwhm={support_fwhm:g}"
     )
     print(f"input_mb={input_bytes / 1e6:.3f} repetitions={arguments.repetitions}")
@@ -342,6 +461,34 @@ def main() -> None:
         sample_orientation_timings,
     )
     report_case(
+        "cw_four_phase_size_strain_provider_and_native_jacobian",
+        multiphase_result.y.nbytes
+        + multiphase_result.derivatives.local.nbytes
+        + multiphase_result.derivatives.global_jacobian.nbytes,
+        multiphase_timings,
+    )
+    report_case(
+        "cw_prepared_four_phase_native_jacobian",
+        prepared_multiphase_result.y.nbytes
+        + prepared_multiphase_result.derivatives.local.nbytes
+        + prepared_multiphase_result.derivatives.global_jacobian.nbytes,
+        prepared_multiphase_timings,
+    )
+    report_case(
+        "neutron_cw_typed_local_and_global_jacobian",
+        neutron_result.y.nbytes
+        + neutron_result.derivatives.local.nbytes
+        + neutron_result.derivatives.global_jacobian.nbytes,
+        neutron_timings,
+    )
+    report_case(
+        "neutron_cw_fcj_typed_local_and_global_jacobian",
+        neutron_fcj_result.y.nbytes
+        + neutron_fcj_result.derivatives.local.nbytes
+        + neutron_fcj_result.derivatives.global_jacobian.nbytes,
+        neutron_fcj_timings,
+    )
+    report_case(
         "cw_fcj_local_and_global_jacobian_order_48",
         fcj_result.y.nbytes
         + fcj_result.derivatives.local.nbytes
@@ -355,6 +502,15 @@ def main() -> None:
         + doublet_result.derivatives.global_jacobian.nbytes,
         doublet_timings,
     )
+    for tail_log in tof_tail_logs:
+        tof_result, tof_timings = tof_measurements[tail_log]
+        report_case(
+            f"tof_tail_log_{tail_log:g}_local_and_global_jacobian_order_192",
+            tof_result.y.nbytes
+            + tof_result.derivatives.local.nbytes
+            + tof_result.derivatives.global_jacobian.nbytes,
+            tof_timings,
+        )
 
 
 if __name__ == "__main__":

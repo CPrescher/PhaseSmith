@@ -12,6 +12,7 @@ pub mod fcj;
 pub mod profile;
 pub mod radiation;
 pub mod tch;
+pub mod tof;
 
 pub use cw::{
     ConstantWavelengthInstrument, CwBatchError, CwError, CwProfileParameters,
@@ -36,4 +37,8 @@ pub use radiation::{WavelengthComponentsError, WavelengthComponentsView};
 pub use tch::{
     TchError, TchPeakBatchView, TchProfilePoint, TchShape, TchWidths, accumulate_tch_batch,
     tch_pseudo_voigt,
+};
+pub use tof::{
+    TOF_GLOBAL_PARAMETER_COUNT, TofError, TofInstrument, TofProfile, TofProfileParameters,
+    TofProfilePoint, accumulate_tof_batch,
 };

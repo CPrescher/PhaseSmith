@@ -79,6 +79,15 @@ from .sample import (
     ReciprocalAngleGeometry,
     reciprocal_angle_geometry,
 )
+from .tof import (
+    TOF_GLOBAL_PARAMETER_ORDER,
+    TOF_LOCAL_PARAMETER_ORDER,
+    TofProfileParameters,
+    TofProfileResult,
+    accumulate_tof,
+    profile_tof,
+    tof_profile_parameters,
+)
 
 __all__ = [
     "CW_FCJ_GLOBAL_PARAMETER_ORDER",
@@ -89,6 +98,8 @@ __all__ = [
     "PARAMETER_ORDER",
     "PHYSICS_PROVIDER_API_VERSION",
     "TCH_PARAMETER_ORDER",
+    "TOF_GLOBAL_PARAMETER_ORDER",
+    "TOF_LOCAL_PARAMETER_ORDER",
     "AccumulationResult",
     "CalculationOptions",
     "CancellationCallback",
@@ -126,6 +137,9 @@ __all__ = [
     "TchProfileResult",
     "TchSigmaProfileResult",
     "TchSigmaShape",
+    "TofInstrument",
+    "TofProfileParameters",
+    "TofProfileResult",
     "WavelengthComponents",
     "accumulate",
     "accumulate_cw",
@@ -134,6 +148,7 @@ __all__ = [
     "accumulate_cw_fcj",
     "accumulate_cw_fcj_components",
     "accumulate_tch",
+    "accumulate_tof",
     "calculate_cw_pattern",
     "calculate_monochromatic_cw_pattern",
     "calculate_monochromatic_pattern",
@@ -145,7 +160,9 @@ __all__ = [
     "profile_fcj",
     "profile_tch",
     "profile_tch_from_gaussian_sigma",
+    "profile_tof",
     "reciprocal_angle_geometry",
     "tch_shape_from_fwhm",
     "tch_shape_from_gaussian_sigma",
+    "tof_profile_parameters",
 ]

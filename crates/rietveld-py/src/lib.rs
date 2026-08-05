@@ -6,13 +6,15 @@ use npy::ndarray::Array2;
 use npy::{IntoPyArray, PyArray1, PyArray2, PyReadonlyArray1};
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
+use pyo3::types::PyTuple;
 use rietveld_core::{
     Accumulation, ConstantWavelengthInstrument, CwContributionArrays, CwContributionsView,
     CwProfileParameters, CwReflectionBatchView, FcjGeometry, FcjProfile, GridView, PeakBatchView,
-    SupportPolicy, TchPeakBatchView, TchShape, TchWidths, WavelengthComponentsView,
-    accumulate_batch, accumulate_cw_batch, accumulate_cw_components_batch,
-    accumulate_cw_contributions_batch, accumulate_cw_fcj_batch, accumulate_cw_fcj_components_batch,
-    accumulate_tch_batch, accumulate_values_batch, symmetric_pseudo_voigt,
+    SupportPolicy, TchPeakBatchView, TchShape, TchWidths, TofInstrument, TofProfile,
+    TofProfileParameters, WavelengthComponentsView, accumulate_batch, accumulate_cw_batch,
+    accumulate_cw_components_batch, accumulate_cw_contributions_batch, accumulate_cw_fcj_batch,
+    accumulate_cw_fcj_components_batch, accumulate_tch_batch, accumulate_tof_batch,
+    accumulate_values_batch, symmetric_pseudo_voigt,
 };
 
 type ProfileArrays<'py> = (
@@ -44,6 +46,26 @@ type CwProfileArrays<'py> = (
 );
 
 type FcjProfileArrays<'py> = (
+    Bound<'py, PyArray1<f64>>,
+    Bound<'py, PyArray1<f64>>,
+    Bound<'py, PyArray1<f64>>,
+    Bound<'py, PyArray1<f64>>,
+    Bound<'py, PyArray1<f64>>,
+    Bound<'py, PyArray1<f64>>,
+);
+
+type TofProfileArrays<'py> = (
+    Bound<'py, PyArray1<f64>>,
+    Bound<'py, PyArray1<f64>>,
+    Bound<'py, PyArray1<f64>>,
+    Bound<'py, PyArray1<f64>>,
+    Bound<'py, PyArray1<f64>>,
+    Bound<'py, PyArray1<f64>>,
+);
+
+type TofParameterArrays<'py> = (
+    Bound<'py, PyArray1<f64>>,
+    Bound<'py, PyArray1<f64>>,
     Bound<'py, PyArray1<f64>>,
     Bound<'py, PyArray1<f64>>,
     Bound<'py, PyArray1<f64>>,
@@ -208,6 +230,60 @@ fn profile_fcj<'py>(
     ))
 }
 
+/// Vectorized truncated double-exponential TCH profile and derivatives.
+#[pyfunction]
+#[allow(clippy::too_many_arguments)]
+fn profile_tof<'py>(
+    py: Python<'py>,
+    x_us: PyReadonlyArray1<'py, f64>,
+    position_us: f64,
+    alpha_per_us: f64,
+    beta_per_us: f64,
+    gaussian_fwhm_us: f64,
+    lorentzian_fwhm_us: f64,
+    tail_log: f64,
+) -> PyResult<TofProfileArrays<'py>> {
+    let x_us = contiguous_slice(&x_us, "x_us")?;
+    if x_us.iter().any(|value| !value.is_finite()) || !position_us.is_finite() {
+        return Err(PyValueError::new_err(
+            "TOF coordinates and position must be finite",
+        ));
+    }
+    let profile = TofProfile::new(
+        alpha_per_us,
+        beta_per_us,
+        TchWidths {
+            gaussian_fwhm: gaussian_fwhm_us,
+            lorentzian_fwhm: lorentzian_fwhm_us,
+        },
+        tail_log,
+    )
+    .map_err(|error| PyValueError::new_err(error.to_string()))?;
+    let mut value = Vec::with_capacity(x_us.len());
+    let mut d_position = Vec::with_capacity(x_us.len());
+    let mut d_alpha = Vec::with_capacity(x_us.len());
+    let mut d_beta = Vec::with_capacity(x_us.len());
+    let mut d_gaussian = Vec::with_capacity(x_us.len());
+    let mut d_lorentzian = Vec::with_capacity(x_us.len());
+    for coordinate in x_us.iter().copied() {
+        let point = profile.evaluate(coordinate - position_us);
+        value.push(point.value);
+        d_position.push(point.d_position);
+        d_alpha.push(point.d_alpha);
+        d_beta.push(point.d_beta);
+        d_gaussian.push(point.d_gaussian_fwhm);
+        d_lorentzian.push(point.d_lorentzian_fwhm);
+    }
+    Ok((
+        value.into_pyarray(py),
+        d_position.into_pyarray(py),
+        d_alpha.into_pyarray(py),
+        d_beta.into_pyarray(py),
+        d_gaussian.into_pyarray(py),
+        d_lorentzian.into_pyarray(py),
+    ))
+}
+
 /// Fused peak accumulation returning dense values and support-sparse derivatives.
 #[pyfunction]
 fn accumulate<'py>(
@@ -351,6 +427,136 @@ fn cw_profile_parameters<'py>(
             .map_err(|error| PyValueError::new_err(error.to_string()))?
             .into_pyarray(py),
     ))
+}
+
+/// Derive TOF calibration, rates, widths, and TCH shape for d-spacings.
+#[pyfunction]
+#[allow(clippy::similar_names, clippy::too_many_arguments)]
+fn tof_profile_parameters<'py>(
+    py: Python<'py>,
+    d_spacing_angstrom: PyReadonlyArray1<'py, f64>,
+    zero_us: f64,
+    difc_us_per_angstrom: f64,
+    difa_us_per_angstrom2: f64,
+    difb_us_angstrom: f64,
+    alpha_coefficient: f64,
+    beta0_per_us: f64,
+    beta1_angstrom4_per_us: f64,
+    betaq_angstrom2_per_us: f64,
+    sigma0_us2: f64,
+    sigma1_us2_per_angstrom2: f64,
+    sigma2_us2_per_angstrom4: f64,
+    sigmaq_us2_per_angstrom: f64,
+    x_us_per_angstrom: f64,
+    y_us_per_angstrom2: f64,
+    z_us: f64,
+) -> PyResult<TofParameterArrays<'py>> {
+    let d_spacing = contiguous_slice(&d_spacing_angstrom, "d_spacing_angstrom")?;
+    let instrument = tof_instrument(
+        zero_us,
+        difc_us_per_angstrom,
+        difa_us_per_angstrom2,
+        difb_us_angstrom,
+        alpha_coefficient,
+        beta0_per_us,
+        beta1_angstrom4_per_us,
+        betaq_angstrom2_per_us,
+        sigma0_us2,
+        sigma1_us2_per_angstrom2,
+        sigma2_us2_per_angstrom4,
+        sigmaq_us2_per_angstrom,
+        x_us_per_angstrom,
+        y_us_per_angstrom2,
+        z_us,
+    );
+    let mut position = Vec::with_capacity(d_spacing.len());
+    let mut alpha = Vec::with_capacity(d_spacing.len());
+    let mut beta = Vec::with_capacity(d_spacing.len());
+    let mut variance = Vec::with_capacity(d_spacing.len());
+    let mut gaussian = Vec::with_capacity(d_spacing.len());
+    let mut lorentzian = Vec::with_capacity(d_spacing.len());
+    let mut total = Vec::with_capacity(d_spacing.len());
+    let mut eta = Vec::with_capacity(d_spacing.len());
+    for d in d_spacing.iter().copied() {
+        let parameters = TofProfileParameters::from_instrument(d, instrument)
+            .map_err(|error| PyValueError::new_err(error.to_string()))?;
+        position.push(parameters.position_us);
+        alpha.push(parameters.alpha_per_us);
+        beta.push(parameters.beta_per_us);
+        variance.push(parameters.gaussian_variance_us2);
+        gaussian.push(parameters.gaussian_fwhm_us);
+        lorentzian.push(parameters.lorentzian_fwhm_us);
+        total.push(parameters.tch.total_fwhm);
+        eta.push(parameters.tch.eta);
+    }
+    Ok((
+        position.into_pyarray(py),
+        alpha.into_pyarray(py),
+        beta.into_pyarray(py),
+        variance.into_pyarray(py),
+        gaussian.into_pyarray(py),
+        lorentzian.into_pyarray(py),
+        total.into_pyarray(py),
+        eta.into_pyarray(py),
+    ))
+}
+
+/// Fused TOF reflection accumulation with local and global derivatives.
+#[pyfunction]
+#[allow(clippy::similar_names, clippy::too_many_arguments)]
+fn accumulate_tof<'py>(
+    py: Python<'py>,
+    x_us: PyReadonlyArray1<'py, f64>,
+    d_spacing_angstrom: PyReadonlyArray1<'py, f64>,
+    integrated_intensities: PyReadonlyArray1<'py, f64>,
+    zero_us: f64,
+    difc_us_per_angstrom: f64,
+    difa_us_per_angstrom2: f64,
+    difb_us_angstrom: f64,
+    alpha_coefficient: f64,
+    beta0_per_us: f64,
+    beta1_angstrom4_per_us: f64,
+    betaq_angstrom2_per_us: f64,
+    sigma0_us2: f64,
+    sigma1_us2_per_angstrom2: f64,
+    sigma2_us2_per_angstrom4: f64,
+    sigmaq_us2_per_angstrom: f64,
+    x_us_per_angstrom: f64,
+    y_us_per_angstrom2: f64,
+    z_us: f64,
+    support_fwhm: f64,
+    tail_log: f64,
+) -> PyResult<AccumulationArrays<'py>> {
+    let x = contiguous_slice(&x_us, "x_us")?;
+    let d_spacing = contiguous_slice(&d_spacing_angstrom, "d_spacing_angstrom")?;
+    let intensities = contiguous_slice(&integrated_intensities, "integrated_intensities")?;
+    let grid = GridView::new(x).map_err(|error| PyValueError::new_err(error.to_string()))?;
+    let accumulation = accumulate_tof_batch(
+        grid,
+        d_spacing,
+        intensities,
+        tof_instrument(
+            zero_us,
+            difc_us_per_angstrom,
+            difa_us_per_angstrom2,
+            difb_us_angstrom,
+            alpha_coefficient,
+            beta0_per_us,
+            beta1_angstrom4_per_us,
+            betaq_angstrom2_per_us,
+            sigma0_us2,
+            sigma1_us2_per_angstrom2,
+            sigma2_us2_per_angstrom4,
+            sigmaq_us2_per_angstrom,
+            x_us_per_angstrom,
+            y_us_per_angstrom2,
+            z_us,
+        ),
+        support_fwhm,
+        tail_log,
+    )
+    .map_err(|error| PyValueError::new_err(error.to_string()))?;
+    accumulation_to_numpy(py, accumulation)
 }
 
 /// Accumulate a CW reflection batch with local and global derivatives.
@@ -590,6 +796,43 @@ const fn cw_instrument(
     }
 }
 
+#[allow(clippy::similar_names, clippy::too_many_arguments)]
+const fn tof_instrument(
+    zero_us: f64,
+    difc_us_per_angstrom: f64,
+    difa_us_per_angstrom2: f64,
+    difb_us_angstrom: f64,
+    alpha_coefficient: f64,
+    beta0_per_us: f64,
+    beta1_angstrom4_per_us: f64,
+    betaq_angstrom2_per_us: f64,
+    sigma0_us2: f64,
+    sigma1_us2_per_angstrom2: f64,
+    sigma2_us2_per_angstrom4: f64,
+    sigmaq_us2_per_angstrom: f64,
+    x_us_per_angstrom: f64,
+    y_us_per_angstrom2: f64,
+    z_us: f64,
+) -> TofInstrument {
+    TofInstrument {
+        zero_us,
+        difc_us_per_angstrom,
+        difa_us_per_angstrom2,
+        difb_us_angstrom,
+        alpha_coefficient,
+        beta0_per_us,
+        beta1_angstrom4_per_us,
+        betaq_angstrom2_per_us,
+        sigma0_us2,
+        sigma1_us2_per_angstrom2,
+        sigma2_us2_per_angstrom4,
+        sigmaq_us2_per_angstrom,
+        x_us_per_angstrom,
+        y_us_per_angstrom2,
+        z_us,
+    }
+}
+
 /// Fused peak accumulation returning calculated values without derivatives.
 #[pyfunction]
 fn accumulate_values<'py>(
@@ -640,10 +883,13 @@ fn _core(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_function(wrap_pyfunction!(tch_shape_from_fwhm, module)?)?;
     module.add_function(wrap_pyfunction!(profile_tch, module)?)?;
     module.add_function(wrap_pyfunction!(profile_fcj, module)?)?;
+    module.add_function(wrap_pyfunction!(profile_tof, module)?)?;
     module.add_function(wrap_pyfunction!(accumulate, module)?)?;
     module.add_function(wrap_pyfunction!(accumulate_tch, module)?)?;
     module.add_function(wrap_pyfunction!(accumulate_values, module)?)?;
     module.add_function(wrap_pyfunction!(cw_profile_parameters, module)?)?;
+    module.add_function(wrap_pyfunction!(tof_profile_parameters, module)?)?;
+    module.add_function(wrap_pyfunction!(accumulate_tof, module)?)?;
     module.add_function(wrap_pyfunction!(accumulate_cw, module)?)?;
     module.add_function(wrap_pyfunction!(accumulate_cw_contributions, module)?)?;
     module.add_function(wrap_pyfunction!(accumulate_cw_fcj, module)?)?;
@@ -654,6 +900,17 @@ fn _core(module: &Bound<'_, PyModule>) -> PyResult<()> {
         ("intensity", "position", "gaussian_fwhm", "lorentzian_fwhm"),
     )?;
     module.add("CW_LOCAL_PARAMETER_ORDER", ("intensity", "position"))?;
+    module.add("TOF_LOCAL_PARAMETER_ORDER", ("intensity", "d_spacing"))?;
+    module.add(
+        "TOF_GLOBAL_PARAMETER_ORDER",
+        PyTuple::new(
+            module.py(),
+            [
+                "zero", "difc", "difa", "difb", "alpha", "beta0", "beta1", "betaq", "sigma0",
+                "sigma1", "sigma2", "sigmaq", "x", "y", "z",
+            ],
+        )?,
+    )?;
     module.add("CW_GLOBAL_PARAMETER_ORDER", ("u", "v", "w", "x", "y"))?;
     module.add(
         "CW_FCJ_GLOBAL_PARAMETER_ORDER",

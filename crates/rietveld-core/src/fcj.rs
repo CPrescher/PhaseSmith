@@ -8,11 +8,11 @@ use crate::tch::{TchError, TchShape, TchWidths};
 
 const DEGREE_TO_RADIAN: f64 = std::f64::consts::PI / 180.0;
 const RADIAN_TO_DEGREE: f64 = 180.0 / std::f64::consts::PI;
-const QUADRATURE_ORDER: usize = 48;
+pub(crate) const QUADRATURE_ORDER: usize = 48;
 const NODE_COUNT: usize = 2 * QUADRATURE_ORDER;
 
 // Gauss-Legendre nodes and weights transformed from [-1, 1] to [0, 1].
-const QUADRATURE_NODES: [f64; QUADRATURE_ORDER] = [
+pub(crate) const QUADRATURE_NODES: [f64; QUADRATURE_ORDER] = [
     6.144_963_737_869_658e-4,
     3.234_913_866_824_618e-3,
     7.937_708_138_586_574e-3,
@@ -63,7 +63,7 @@ const QUADRATURE_NODES: [f64; QUADRATURE_ORDER] = [
     9.993_855_036_262_13e-1,
 ];
 
-const QUADRATURE_WEIGHTS: [f64; QUADRATURE_ORDER] = [
+pub(crate) const QUADRATURE_WEIGHTS: [f64; QUADRATURE_ORDER] = [
     1.576_673_026_154_921e-3,
     3.663_776_950_637_925_2e-3,
     5.738_617_289_617_35e-3,
