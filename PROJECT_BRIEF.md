@@ -41,7 +41,12 @@ external checkout is not available in the current environment.
 A separate-environment benchmark now compares the same symmetric CW profile,
 finite support, and analytical derivative outputs against the pinned GSAS-II
 profile interface. It validates numerical agreement before reporting timings
-and does not treat the result as a complete-refinement speed comparison.
+and does not treat the result as a complete-refinement speed comparison. A
+second numerically gated benchmark starts with an equivalent typed P1 neutron
+crystal and compares structure-factor values, integrated intensities, and the
+controlled structure-to-symmetric-CW calculation. Project construction,
+reflection generation, file I/O, and process startup remain outside its timed
+regions; its scope likewise is not a complete-refinement comparison.
 
 The project remains pre-release and is licensed under the MIT License. The
 architecture and delivery gates for CIF import, the remaining native

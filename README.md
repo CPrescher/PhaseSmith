@@ -80,11 +80,18 @@ uv run python benchmarks/structural_pattern.py --require-release
 ```
 
 The pinned external-oracle environment can compare the same support-limited CW
-profile-and-derivative workload against GSAS-II. Numerical agreement is checked
-before timings are reported:
+profile-and-derivative workload against GSAS-II. A second benchmark starts from
+the crystal structure and compares structure factors, integrated intensities,
+and the composed structural CW pattern. Numerical agreement is checked before
+timings are reported:
 
 ```shell
 uv run python benchmarks/compare_gsasii.py --require-release \
+  --gsas-python /path/to/gsas/python \
+  --gsas-root /path/to/pinned/GSAS-II \
+  --binary-dir /path/to/compatible/GSASII-bin/platform-directory
+
+uv run python benchmarks/compare_gsasii_structural.py --require-release \
   --gsas-python /path/to/gsas/python \
   --gsas-root /path/to/pinned/GSAS-II \
   --binary-dir /path/to/compatible/GSASII-bin/platform-directory
@@ -159,11 +166,11 @@ looping over atoms/reflections in Python. Correction geometry is explicit; the
 default neutral model returns raw multiplicity-weighted structural intensity:
 
 ```python
-from rietveld import XrayNonResonant, calculate_structure_factors
+from rietveld import XrayNonResonant, calculate_structure_factor_values
 from rietveld.io.cif import read_cif
 
 structure = read_cif("phase.cif").structure
-structural = calculate_structure_factors(
+structural = calculate_structure_factor_values(
     structure,
     hkl=[[1, 0, 0], [1, 1, 0]],
     multiplicity=[6, 12],
@@ -172,6 +179,9 @@ structural = calculate_structure_factors(
 )
 print(structural.f, structural.integrated_intensity)
 ```
+
+Use `calculate_structure_factors` when the bounded dense analytical structural
+Jacobian is also required.
 
 Axial divergence is a separate typed model and composes with CW broadening
 without expanding reflections in Python:

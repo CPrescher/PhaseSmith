@@ -133,9 +133,70 @@ def test_external_worker_unit_and_derivative_chain_matches_fused_kernel() -> Non
     assert max(errors.values()) < 3.0e-15
 
 
+def test_structural_comparison_validation_contract() -> None:
+    benchmark = load_script(
+        "benchmarks/compare_gsasii_structural.py", "compare_gsasii_structural_test"
+    )
+    hkl = np.array([[1, 0, 0], [1, 1, 0], [1, 1, 1]], dtype=np.int64)
+    multiplicity = np.array([2, 4, 2], dtype=np.int64)
+    phase = benchmark.benchmark_phase(hkl, multiplicity, 4)
+    instrument = rietveld.ConstantWavelengthInstrument(
+        1.5406, 2.0e-4, -1.0e-4, 1.2e-4, 1.5e-3, 3.0e-3
+    )
+    structural = rietveld.calculate_structure_factor_values(
+        phase.structure,
+        hkl,
+        multiplicity,
+        phase.scattering,
+        correction=phase.intensity_correction,
+    )
+    pattern = rietveld.PreparedStructuralPattern(
+        rietveld.PowderPattern(np.linspace(5.0, 125.0, 2_001)),
+        rietveld.ConstantWavelengthExperiment.neutron(instrument),
+        phase,
+    ).calculate()
+    local = pattern.accumulation.derivatives.local
+    oracle = {
+        "f_fm": structural.f.copy(),
+        "f_squared_fm2": structural.f_squared.copy(),
+        "integrated_intensity": structural.integrated_intensity.copy(),
+        "d_spacing_angstrom": pattern.reflections.d_spacing_angstrom.copy(),
+        "position_deg": pattern.reflections.two_theta_deg.copy(),
+        "y": pattern.profile_y.copy(),
+        "starts": local.starts.copy(),
+        "offsets": local.offsets.copy(),
+        "local": local.values.copy(),
+        "global_jacobian": pattern.accumulation.derivatives.global_jacobian.copy(),
+    }
+
+    assert max(benchmark.validate_outputs(structural, pattern, oracle).values()) == 0.0
+    oracle["f_squared_fm2"][np.argmax(np.abs(oracle["f_squared_fm2"]))] *= 1.001
+    with pytest.raises(RuntimeError, match="structural numerical validation failed"):
+        benchmark.validate_outputs(structural, pattern, oracle)
+
+
+def test_structural_worker_converts_instrument_units_explicitly() -> None:
+    worker = load_script(
+        "oracle/scripts/benchmark_structural_pattern.py", "benchmark_structural_pattern_test"
+    )
+    text = worker.instrument_text(1.5406, np.array([2.0e-4, -1.0e-4, 1.2e-4, 1.5e-3, 3.0e-3]))
+    assert "Type:PNC" in text
+    assert "U:2" in text
+    assert "V:-1" in text
+    assert "W:1.2" in text
+    assert "X:0.15" in text
+    assert "Y:0.3" in text
+    assert worker.GSAS_F_SQUARED_TO_FM_SQUARED == 100.0
+
+
 @pytest.mark.parametrize(
     "script",
-    ["benchmarks/compare_gsasii.py", "oracle/scripts/benchmark_cw_profile.py"],
+    [
+        "benchmarks/compare_gsasii.py",
+        "benchmarks/compare_gsasii_structural.py",
+        "oracle/scripts/benchmark_cw_profile.py",
+        "oracle/scripts/benchmark_structural_pattern.py",
+    ],
 )
 def test_benchmark_help_does_not_require_gsasii(script: str) -> None:
     subprocess.run(
@@ -147,5 +208,9 @@ def test_benchmark_help_does_not_require_gsasii(script: str) -> None:
 
 
 def test_external_worker_does_not_import_rietveld() -> None:
-    source = (REPOSITORY_ROOT / "oracle/scripts/benchmark_cw_profile.py").read_text()
-    assert "import rietveld" not in source
+    for relative_path in (
+        "oracle/scripts/benchmark_cw_profile.py",
+        "oracle/scripts/benchmark_structural_pattern.py",
+    ):
+        source = (REPOSITORY_ROOT / relative_path).read_text()
+        assert "import rietveld" not in source
