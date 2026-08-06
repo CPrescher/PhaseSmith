@@ -39,6 +39,23 @@ jobs:
         run: |
           "$RUNNER_TEMP/rietveld-oracle-venv/bin/python" -m pytest -q \
             -m external_oracle tests/test_external_oracle.py
+      - name: Compare CW profile and derivative speed
+        run: |
+          "$RUNNER_TEMP/rietveld-oracle-venv/bin/python" benchmarks/compare_gsasii.py \
+            --require-release \
+            --gsas-python "$GSASII_PYTHON" \
+            --gsas-root "$RIETVELD_GSASII_ROOT" \
+            --binary-dir "$RIETVELD_GSASII_BINARY_DIR" \
+            --json-output "$RUNNER_TEMP/gsasii-speed-comparison.json" \
+            | tee "$RUNNER_TEMP/gsasii-speed-comparison.txt"
+      - name: Upload speed comparison
+        uses: actions/upload-artifact@v4
+        with:
+          name: gsasii-speed-comparison
+          path: |
+            ${{ runner.temp }}/gsasii-speed-comparison.json
+            ${{ runner.temp }}/gsasii-speed-comparison.txt
+          retention-days: 30
       - name: Explicitly regenerate the symmetric fixture
         if: ${{ inputs.regenerate_symmetric_fixture }}
         run: |

@@ -66,8 +66,9 @@ rietveld.refinement.rietveld
   physics layer exists. It consumes the same profile interface as Le Bail.
 
 rietveld.integrations.dioptas
-  Optional conversion between Dioptas-facing NumPy data and the public typed
-  models. Dioptas is never a core or required Python dependency.
+  Compatibility-only conversion between Dioptas-facing NumPy data and the
+  public typed models. It is not a forward roadmap target, and Dioptas is never
+  a core or required Python dependency.
 
 rietveld.extensions
   Versioned provider protocols and a reserved future entry-point discovery
@@ -236,10 +237,10 @@ reflection parameters are optional diagnostics. Analytical derivatives retain
 the hybrid local/global storage implemented by the numerical core and expose
 stable parameter labels.
 
-An external program such as Dioptas should need only to provide contiguous
-`x`, observed intensity, optional uncertainty/mask arrays, and typed
-instrument/phase data. It receives NumPy calculated arrays and plain diagnostic
-records. The adapter must not require that Dioptas adopt internal Rust types.
+An external program should need only to provide contiguous `x`, observed
+intensity, optional uncertainty/mask arrays, and typed instrument/phase data.
+It receives NumPy calculated arrays and plain diagnostic records. An adapter
+must not require that the host application adopt internal Rust types.
 
 ## Refinement methods
 

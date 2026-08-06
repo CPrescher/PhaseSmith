@@ -937,14 +937,14 @@ intensity extraction, 0.829 ms estimated profile-optimizer overhead, 5.580 ms
 for one complete intensity iteration, and 14.480 ms for ten iterations while
 retaining final phase-component curves.
 
-## Implementation unit 10: persistence and Dioptas integration boundary
+## Implementation unit 10: persistence and application integration boundary
 
 Status: complete (2026-08-05).
 
 ### Goal
 
 Make the mature calculation and Le Bail interfaces straightforward to embed in
-Dioptas and other applications while keeping integrations optional.
+external applications through an application-neutral NumPy contract.
 
 ### Work
 
@@ -990,6 +990,11 @@ for responsive GUI integration. Final validation passes strict Ruff, Rust
 formatting, strict Clippy, 24 Rust tests, 269 normal Python tests, and one live
 pinned-oracle test; normal installation has no GSAS-II, Dioptas, or SciPy
 requirement.
+
+Roadmap clarification (2026-08-06): the completed Dioptas adapter is retained
+only as an isolated compatibility convenience. Dioptas-specific expansion is
+not a forward milestone; new scriptability work targets the typed public API,
+plain persistence, and generic NumPy interchange.
 
 ## Implementation units 11 through 18: crystallography and Rietveld
 
@@ -1170,7 +1175,7 @@ Keep implementation units reviewable through these ordered changes:
 11. TOF calibration, then TOF profile and derivatives.
 12. Shared refinement parameters, constraints, residuals, and matrix products.
 13. Le Bail extraction, orchestration, oracle cases, and benchmarks.
-14. Plain-data persistence and the optional Dioptas integration boundary.
+14. Plain-data persistence and the application-neutral integration boundary.
 15. Native cell/P1 structure-factor foundation and derivative products.
 16. Symmetry, reflection generation, and systematic absences.
 17. CIF import and CIF-to-Le Bail.
@@ -1209,5 +1214,5 @@ NumPy validation, and combined benchmarks pass the normal quality gate.
 The immediate next milestone is implementation unit 16. It is complete when a
 CIF-backed Le Bail script can refine crystal-system-allowed lattice parameters,
 regenerate a guarded reflection domain only between accepted iterations,
-preserve intensities by stable family ID, and expose the same result through
-the optional Dioptas adapter without changing explicit-reflection Le Bail.
+preserve intensities by stable family ID, and expose plain-array diagnostics
+without changing explicit-reflection Le Bail.

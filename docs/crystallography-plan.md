@@ -487,8 +487,8 @@ benchmarks are in `docs/structural-intensities.md`.
    derivatives.
 4. Preserve reflection intensities by stable Miller-family ID when a prepared
    reflection domain is regenerated.
-5. Extend the Dioptas adapter with CIF import, generated reflection markers,
-   and Le Bail results without introducing GUI dependencies.
+5. Expose CIF import diagnostics, generated reflection markers, and Le Bail
+   results through the application-neutral typed/NumPy API.
 
 ### Validation and exit gate
 

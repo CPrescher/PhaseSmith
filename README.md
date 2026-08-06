@@ -34,7 +34,7 @@ The component-width TCH transform and chain-rule derivatives are documented in
 broadening is documented in [docs/cw-profile.md](docs/cw-profile.md). FCJ
 geometry, quadrature, derivatives, and asymmetric support are documented in
 [docs/fcj-profile.md](docs/fcj-profile.md). The script-first module boundaries,
-including the planned first-class Le Bail and Dioptas integration layers, are
+including the first-class Le Bail and application-neutral NumPy boundaries, are
 in [docs/public-api.md](docs/public-api.md).
 
 Optional monochromatic and multi-wavelength radiation composition is documented
@@ -51,9 +51,9 @@ and support semantics are documented in
 [docs/tof-profile.md](docs/tof-profile.md).
 Shared refinement contracts and Le Bail extraction are documented in
 [docs/refinement.md](docs/refinement.md) and [docs/lebail.md](docs/lebail.md).
-Versioned JSON+NPZ persistence and the optional Dioptas-facing NumPy boundary
-are documented in [docs/persistence.md](docs/persistence.md) and
-[docs/dioptas-integration.md](docs/dioptas-integration.md).
+Versioned JSON+NPZ persistence is documented in
+[docs/persistence.md](docs/persistence.md). The existing Dioptas adapter is a
+compatibility-only convenience and is not a forward roadmap target.
 
 ## Development
 
@@ -78,6 +78,21 @@ uv run python benchmarks/lebail.py --require-release
 uv run python benchmarks/scattering.py --require-release
 uv run python benchmarks/structural_pattern.py --require-release
 ```
+
+The pinned external-oracle environment can compare the same support-limited CW
+profile-and-derivative workload against GSAS-II. Numerical agreement is checked
+before timings are reported:
+
+```shell
+uv run python benchmarks/compare_gsasii.py --require-release \
+  --gsas-python /path/to/gsas/python \
+  --gsas-root /path/to/pinned/GSAS-II \
+  --binary-dir /path/to/compatible/GSASII-bin/platform-directory
+```
+
+The exact scope and interpretation are documented in
+[docs/gsasii-performance.md](docs/gsasii-performance.md). This is a kernel-level
+comparison, not a claim about complete refinement workflow speed.
 
 ```python
 import numpy as np

@@ -10,6 +10,12 @@ and `G2PwdrData.reflections()`. The private adapter `_pinned_probe.py` exposes
 only a small allowlist and verifies the checkout's exact Git revision before
 reading internal data.
 
+The external benchmark worker in `scripts/benchmark_cw_profile.py` uses the
+same revision gate. It is driven by `benchmarks/compare_gsasii.py`, imports no
+Rietveld Engine module, and reports only a numerically verified symmetric CW
+profile-and-derivative comparison. See `../docs/gsasii-performance.md` for its
+scope and limitations.
+
 To prepare an oracle checkout:
 
 ```shell
@@ -166,6 +172,16 @@ equivalent comparison command is:
 RIETVELD_GSASII_ROOT=/path/to/pinned/GSAS-II \
 RIETVELD_GSASII_BINARY_DIR=/path/to/compatible/GSASII-bin/platform-directory \
 /path/to/gsas/python -m pytest -q -m external_oracle tests/test_external_oracle.py
+```
+
+Run the performance comparison from the release-built normal environment while
+pointing it at the separate oracle interpreter:
+
+```shell
+uv run python benchmarks/compare_gsasii.py --require-release \
+  --gsas-python /path/to/gsas/python \
+  --gsas-root /path/to/pinned/GSAS-II \
+  --binary-dir /path/to/compatible/GSASII-bin/platform-directory
 ```
 
 GSAS-II is separately licensed and must be cited as requested by its authors.

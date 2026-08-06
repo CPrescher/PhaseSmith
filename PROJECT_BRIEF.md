@@ -16,9 +16,9 @@ Implementation units 0 through 10 in `IMPLEMENTATION_PLAN.md` are complete as
 of 2026-08-05. The repository now includes validated symmetric TCH, CW
 U/V/W/X/Y, FCJ, wavelength-component, sample-physics, multi-phase, neutron CW,
 and neutron TOF calculation paths; shared refinement infrastructure; first-class
-Le Bail extraction; versioned JSON+NPZ persistence; and an optional
-Dioptas-facing NumPy protocol. GSAS-II fixtures remain external-oracle products,
-and neither GSAS-II, SciPy, nor Dioptas is required for normal installation.
+Le Bail extraction; versioned JSON+NPZ persistence; and an application-neutral
+NumPy interoperability boundary. GSAS-II fixtures remain external-oracle
+products, and neither GSAS-II nor SciPy is required for normal installation.
 Third-party reflection physics is supported through an explicit versioned batch
 provider and persistence-codec contract; arbitrary intrinsic line-shape plugins
 remain a future compiled-extension boundary rather than a promised Rust ABI.
@@ -34,9 +34,14 @@ Unit 15 adds general-symmetry integrated intensities, explicit neutral and
 Bragg--Brentano LP corrections, a fused structural CW pattern kernel with
 analytical JVP/VJP products, scriptable `RietveldPhase` models, version-2
 persistence, independent NumPy comparisons, and combined Rust/Python
-benchmarks. Full structural refinement remains a follow-on unit. The live pinned GSAS-II P1
-and reflection-behavior fixtures are pending because the external checkout is
-not available in the current environment.
+benchmarks. Full structural refinement remains a follow-on unit. The live
+pinned GSAS-II P1 and reflection-behavior fixtures are pending because the
+external checkout is not available in the current environment.
+
+A separate-environment benchmark now compares the same symmetric CW profile,
+finite support, and analytical derivative outputs against the pinned GSAS-II
+profile interface. It validates numerical agreement before reporting timings
+and does not treat the result as a complete-refinement speed comparison.
 
 The project remains pre-release and is licensed under the MIT License. The
 architecture and delivery gates for CIF import, the remaining native
@@ -58,8 +63,9 @@ orchestration are specified in `docs/crystallography-plan.md`.
 - Make all workflows script-first. Domain objects use NumPy arrays and
   serialization-friendly plain records so GUI applications can integrate
   without adopting internal core types.
-- Maintain a thin optional Dioptas integration boundary; Dioptas and other GUI
-  packages are never runtime dependencies of the core package.
+- Keep integration boundaries application-neutral. Package-specific GUI
+  adapters are compatibility conveniences, not core architecture or roadmap
+  milestones.
 - Maintain an independent, readable Python reference implementation for every
   numerical kernel before optimizing it.
 - Treat GSAS-II licensing conservatively: implement from published equations
@@ -113,7 +119,9 @@ Validation is layered so failures are localizable:
    moments, FWHM behavior, and reflection parameters.
 5. Run pinned GSAS-II oracle cases and compare extracted `X`, `Ycalc`,
    background, reflection lists, and any explicitly probed intermediates.
-6. Track performance with repeatable Rust and Python benchmarks.
+6. Track performance with repeatable Rust and Python benchmarks. On the
+   controlled oracle host, also record the numerically gated GSAS-II comparison
+   with exact scope, software provenance, raw timings, median, and p95.
 
 Oracle fixtures must record the GSAS-II commit or distribution version, Python
 version, input project/checksum, adapter version, and platform. Generated
@@ -173,8 +181,8 @@ not inherit X-ray doublet or polarization assumptions.
 7. Time-of-flight profiles.
 8. Only after the numerical layers are mature: shared refinement
    infrastructure, followed by a first-class Le Bail workflow.
-9. Plain-data persistence and optional external integration adapters, starting
-   with a Dioptas-oriented NumPy boundary.
+9. Plain-data persistence and an application-neutral NumPy interoperability
+   boundary.
 10. Rust crystallographic domain types and a P1 structure-factor vertical slice.
 11. Symmetry, systematic absences, multiplicity, and reflection generation.
 12. Optional CIF import into typed structures, followed by CIF-to-Le Bail.
@@ -190,7 +198,7 @@ not inherit X-ray doublet or polarization assumptions.
 - Calling Python once per atom or reflection in structure-factor calculation.
 - Treating CIF parser objects as crystallographic domain or refinement state.
 - Building a GUI in the numerical library.
-- Requiring Dioptas or any GUI toolkit to use the package.
+- Requiring any GUI toolkit or package-specific adapter to use the package.
 - Claiming numerical equivalence from pointwise values alone.
 
 ## Quality bar
