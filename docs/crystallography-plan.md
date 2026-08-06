@@ -584,8 +584,9 @@ Multi-phase, neutron, every structural family, profile/background recovery,
 finite differences, adjoint identity, budgets, cancellation, accepted-state
 callbacks, and deterministic checkpoint continuation are covered. Persistence
 format 4 stores the request and restart state while loading formats 1--3. A
-realistic benchmark exercises 423 reflections, eight sites, 10,001 samples,
-and 29 free parameters without a dense sample Jacobian. The external pinned
+realistic release-wheel benchmark exercises 423 reflections, eight sites,
+20,001 samples, and 29 free parameters without a dense sample Jacobian; three
+iterations take 152.393 ms median on the development host. The external pinned
 GSAS-II refinement comparison remains unavailable and is not a runtime
 dependency or a basis for the implementation.
 

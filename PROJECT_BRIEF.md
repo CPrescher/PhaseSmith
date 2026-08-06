@@ -80,7 +80,7 @@ structured logs, cancellation, budgets, checkpoint callbacks, restart, and
 rank/correlation diagnostics. Multiple phases and built-in X-ray and neutron
 scattering use the same interface. Persistence format 4 retains the request,
 guarded structural domains, options, and restart checkpoint while loading
-formats 1--3. The internal gate currently passes 406 Python tests (one optional
+formats 1--3. The internal gate currently passes 410 Python tests (one optional
 external-oracle case deselected), 55 Rust tests, strict Ruff, formatting, and
 Clippy.
 

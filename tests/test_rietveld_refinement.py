@@ -6,7 +6,11 @@ from fractions import Fraction
 import numpy as np
 import pytest
 import rietveld
-from rietveld.refinement import AffineConstraint, PolynomialBackground
+from rietveld.refinement import (
+    AffineConstraint,
+    CheckpointCallbackError,
+    PolynomialBackground,
+)
 from rietveld.refinement import rietveld as structural_refinement
 
 P1_CIF = """
@@ -607,3 +611,97 @@ def test_polynomial_background_refines_as_a_separate_typed_domain() -> None:
         rtol=0.0,
         atol=2.0e-8,
     )
+
+
+def test_logger_failure_is_isolated_from_structural_refinement() -> None:
+    request = request_from_cif(selection(phase_scale=True))
+
+    def broken_logger(event: object) -> None:
+        raise OSError(f"cannot write {event!r}")
+
+    result = structural_refinement.refine(request, logger=broken_logger)
+    assert isinstance(result.logger_error, OSError)
+    assert result.termination_reason is structural_refinement.TerminationReason.CONVERGED
+
+
+def test_unexpected_model_failure_emits_last_safe_checkpoint_and_reraises(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    request = request_from_cif(selection(phase_scale=True))
+    emergency = []
+
+    def fail_calculation(self: object) -> object:
+        raise RuntimeError(f"injected failure in {type(self).__name__}")
+
+    monkeypatch.setattr(
+        structural_refinement._RietveldLinearization,
+        "calculate",
+        fail_calculation,
+    )
+    with pytest.raises(RuntimeError, match="injected failure"):
+        structural_refinement.refine(request, checkpoint_callback=emergency.append)
+    assert len(emergency) == 1
+    assert emergency[0].completed_iterations == 0
+    assert emergency[0].phases == request.phases
+
+
+def test_non_improving_trials_terminate_as_stagnated_without_installing_them(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    truth = request_from_cif(selection(phase_scale=True))
+    starting_phase = replace(truth.phases[0], scale=0.7)
+    request = replace(
+        truth,
+        phases=(starting_phase,),
+        parameters=structural_refinement.build_parameter_set(
+            (starting_phase,), (None,), truth.selection
+        ),
+    )
+    original = structural_refinement._RietveldLinearization.calculate
+    cached = []
+
+    def unchanged_trial(
+        self: structural_refinement._RietveldLinearization,
+    ) -> structural_refinement.RietveldCalculationResult:
+        if not cached:
+            cached.append(original(self))
+        else:
+            self.runtime.begin_evaluation()
+        return cached[0]
+
+    monkeypatch.setattr(
+        structural_refinement._RietveldLinearization,
+        "calculate",
+        unchanged_trial,
+    )
+    result = structural_refinement.refine(
+        request,
+        structural_refinement.RietveldOptions(
+            max_backtracks=2,
+            estimate_covariance=False,
+        ),
+    )
+    assert result.termination_reason is structural_refinement.TerminationReason.STAGNATED
+    assert result.history == ()
+    assert result.phases == request.phases
+
+
+def test_accepted_checkpoint_sink_failure_is_a_typed_error() -> None:
+    truth = request_from_cif(selection(phase_scale=True))
+    starting_phase = replace(truth.phases[0], scale=0.7)
+    request = replace(
+        truth,
+        phases=(starting_phase,),
+        parameters=structural_refinement.build_parameter_set(
+            (starting_phase,), (None,), truth.selection
+        ),
+    )
+
+    def broken_checkpoint(checkpoint: object) -> None:
+        raise OSError(f"cannot persist {checkpoint!r}")
+
+    with pytest.raises(CheckpointCallbackError):
+        structural_refinement.refine(
+            request,
+            checkpoint_callback=broken_checkpoint,
+        )

@@ -137,6 +137,23 @@ treated as structurally differentiable. A future provider capability record
 will advertise the additional structural derivative chains required for
 refinement; until then unsupported configurations fail explicitly.
 
+## Reference optimizer benchmark
+
+`benchmarks/structural_refinement.py` is the realistic hot-loop benchmark for
+this slice. On the development Apple Silicon host, the release wheel processed
+423 reflections, eight sites, 20,001 samples, and 29 free parameters for three
+matrix-free iterations (79 combined calculation/JVP/VJP evaluations) in
+152.393 ms median over seven repetitions; the minimum was 145.738 ms. The
+synthetic Rwp after those deliberately capped three iterations was
+`2.197e-5`. This measures the engine optimizer, not a complete comparison with
+another program.
+
+The separately validated pinned GSAS-II structural benchmark remains the
+like-for-like speed comparison documented in `gsasii-performance.md`. The
+locally installed GSAS-II checkout currently has revision `e88e61f`, not the
+pinned `c0bc79`, so the runner correctly refused a new comparison rather than
+publishing an unreviewed ratio.
+
 Preferred-orientation parameters, anisotropic displacement, wavelength
 components, magnetic scattering, and TOF structural refinement are
 intentionally outside this first slice. They can be added as typed parameter
