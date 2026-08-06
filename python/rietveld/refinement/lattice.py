@@ -9,6 +9,7 @@ import numpy as np
 from numpy.typing import ArrayLike, NDArray
 
 from ..crystallography import UnitCell
+from ..instrument import TofInstrument
 from ..phase import ReflectionBatch
 from ..symmetry import DSpacingRange, PreparedReflectionGenerator, SpaceGroup
 
@@ -303,6 +304,97 @@ class LatticeParameterBounds:
             _freeze(corner)
             corners.append(corner)
         return tuple(corners)
+
+
+@dataclass(frozen=True, slots=True)
+class LatticeReflectionGeometry:
+    """Reflection coordinates and derivatives in independent lattice order."""
+
+    d_spacing_angstrom: NDArray[np.float64]
+    coordinate: NDArray[np.float64]
+    d_d_spacing_d_parameters: NDArray[np.float64]
+    d_coordinate_d_parameters: NDArray[np.float64]
+    parameter_names: tuple[str, ...]
+
+
+def _lattice_spacing_geometry(
+    parameterization: LatticeParameterization,
+    cell: UnitCell,
+    hkl: ArrayLike,
+) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
+    values = parameterization.values_from_cell(cell)
+    spacing = cell.d_spacings(hkl)
+    cell_chain = parameterization.cell_parameter_jacobian(values)
+    d_spacing = np.ascontiguousarray(spacing.derivatives @ cell_chain)
+    _freeze(d_spacing)
+    return spacing.d_spacing_angstrom, d_spacing
+
+
+def cw_lattice_geometry(
+    parameterization: LatticeParameterization,
+    cell: UnitCell,
+    hkl: ArrayLike,
+    wavelength_angstrom: float,
+) -> LatticeReflectionGeometry:
+    """Calculate CW two-theta and its analytical lattice derivative chain."""
+
+    if not np.isfinite(wavelength_angstrom) or wavelength_angstrom <= 0.0:
+        raise ValueError("wavelength_angstrom must be positive and finite")
+    spacing, d_spacing = _lattice_spacing_geometry(parameterization, cell, hkl)
+    argument = wavelength_angstrom / (2.0 * spacing)
+    if np.any(argument >= 1.0):
+        raise ValueError("a reflection lies outside the physical monochromatic Bragg domain")
+    coordinate = np.ascontiguousarray(2.0 * np.degrees(np.arcsin(argument)))
+    derivative_per_d = (
+        -180.0
+        / np.pi
+        * wavelength_angstrom
+        / (np.square(spacing) * np.sqrt(1.0 - np.square(argument)))
+    )
+    d_coordinate = np.ascontiguousarray(derivative_per_d[:, None] * d_spacing)
+    _freeze(coordinate)
+    _freeze(d_coordinate)
+    return LatticeReflectionGeometry(
+        spacing,
+        coordinate,
+        d_spacing,
+        d_coordinate,
+        parameterization.parameter_names,
+    )
+
+
+def tof_lattice_geometry(
+    parameterization: LatticeParameterization,
+    cell: UnitCell,
+    hkl: ArrayLike,
+    instrument: TofInstrument,
+) -> LatticeReflectionGeometry:
+    """Calculate TOF coordinates and their analytical lattice derivative chain."""
+
+    if not isinstance(instrument, TofInstrument):
+        raise TypeError("instrument must be a TofInstrument")
+    spacing, d_spacing = _lattice_spacing_geometry(parameterization, cell, hkl)
+    coordinate = np.ascontiguousarray(
+        instrument.zero_us
+        + instrument.difc_us_per_angstrom * spacing
+        + instrument.difa_us_per_angstrom2 * np.square(spacing)
+        + instrument.difb_us_angstrom / spacing
+    )
+    derivative_per_d = (
+        instrument.difc_us_per_angstrom
+        + 2.0 * instrument.difa_us_per_angstrom2 * spacing
+        - instrument.difb_us_angstrom / np.square(spacing)
+    )
+    d_coordinate = np.ascontiguousarray(derivative_per_d[:, None] * d_spacing)
+    _freeze(coordinate)
+    _freeze(d_coordinate)
+    return LatticeReflectionGeometry(
+        spacing,
+        coordinate,
+        d_spacing,
+        d_coordinate,
+        parameterization.parameter_names,
+    )
 
 
 @dataclass(frozen=True, slots=True)

@@ -1,14 +1,19 @@
 from __future__ import annotations
 
 import itertools
+from dataclasses import replace
 
 import numpy as np
 import pytest
 import rietveld
 from rietveld.refinement import (
     CwLatticeReflectionDomain,
+    FixedConstraint,
     LatticeParameterBounds,
     LatticeParameterization,
+    cw_lattice_geometry,
+    lebail,
+    tof_lattice_geometry,
 )
 
 
@@ -176,3 +181,177 @@ def test_lattice_bounds_reject_infinite_or_incompatible_domains() -> None:
             parameterization.reference_values + 1.0,
             parameterization.reference_values + 2.0,
         )
+
+
+@pytest.mark.parametrize(("group", "cell", "names"), lattice_cases())
+def test_cw_and_tof_lattice_derivatives_match_centered_differences(
+    group: rietveld.SpaceGroup,
+    cell: rietveld.UnitCell,
+    names: tuple[str, ...],
+) -> None:
+    del names
+    parameterization = LatticeParameterization(group, cell)
+    hkl = np.array([[1, 0, 0], [1, 1, 0], [1, 1, 1]], dtype=np.int64)
+    tof_instrument = rietveld.TofInstrument(
+        2.0,
+        1000.0,
+        0.5,
+        0.2,
+        1.0,
+        0.02,
+        0.01,
+        0.005,
+        10.0,
+        1.0,
+        0.2,
+        0.1,
+        2.0,
+        0.3,
+        1.0,
+    )
+    cw = cw_lattice_geometry(parameterization, cell, hkl, 1.0)
+    tof = tof_lattice_geometry(parameterization, cell, hkl, tof_instrument)
+    for parameter in range(parameterization.parameter_count):
+        step = 1.0e-6
+        direction = np.zeros(parameterization.parameter_count)
+        direction[parameter] = step
+        plus_cell = parameterization.to_cell(parameterization.reference_values + direction)
+        minus_cell = parameterization.to_cell(parameterization.reference_values - direction)
+        plus_cw = cw_lattice_geometry(parameterization, plus_cell, hkl, 1.0)
+        minus_cw = cw_lattice_geometry(parameterization, minus_cell, hkl, 1.0)
+        plus_tof = tof_lattice_geometry(parameterization, plus_cell, hkl, tof_instrument)
+        minus_tof = tof_lattice_geometry(parameterization, minus_cell, hkl, tof_instrument)
+        np.testing.assert_allclose(
+            cw.d_d_spacing_d_parameters[:, parameter],
+            (plus_cw.d_spacing_angstrom - minus_cw.d_spacing_angstrom) / (2.0 * step),
+            rtol=2.0e-8,
+            atol=2.0e-9,
+        )
+        np.testing.assert_allclose(
+            cw.d_coordinate_d_parameters[:, parameter],
+            (plus_cw.coordinate - minus_cw.coordinate) / (2.0 * step),
+            rtol=3.0e-8,
+            atol=3.0e-8,
+        )
+        np.testing.assert_allclose(
+            tof.d_coordinate_d_parameters[:, parameter],
+            (plus_tof.coordinate - minus_tof.coordinate) / (2.0 * step),
+            rtol=3.0e-8,
+            atol=2.0e-5,
+        )
+
+
+def lattice_lebail_phase(cell: rietveld.UnitCell) -> lebail.LeBailPhase:
+    group, _, _ = lattice_cases()[3]
+    structure = rietveld.CrystalStructure(
+        "lattice-test",
+        "Lattice test",
+        cell,
+        group,
+    )
+    parameterization = LatticeParameterization(group, cell)
+    bounds = LatticeParameterBounds.around(parameterization, relative_length=0.04)
+    phase = lebail.LeBailPhase.from_structure(
+        structure,
+        phase_id="alpha",
+        wavelength_angstrom=1.5406,
+        two_theta_min_deg=20.0,
+        two_theta_max_deg=90.0,
+        initial_intensity=1.0,
+        lattice_bounds=bounds,
+    )
+    intensities = 2.0 + np.arange(phase.reflections.reflection_count, dtype=np.float64) % 7
+    return replace(
+        phase,
+        reflections=rietveld.ReflectionBatch(
+            phase.reflections.reflection_ids,
+            phase.reflections.hkl,
+            phase.reflections.d_spacing_angstrom,
+            phase.reflections.two_theta_deg,
+            intensities,
+        ),
+    )
+
+
+def test_lebail_lattice_pattern_columns_match_full_centered_differences() -> None:
+    phase = lattice_lebail_phase(rietveld.UnitCell(4.0, 4.0, 6.0, 90.0, 90.0, 90.0))
+    instrument = rietveld.ConstantWavelengthInstrument(
+        1.5406, 2.0e-4, -1.0e-4, 2.0e-4, 1.5e-3, 3.0e-3
+    )
+    pattern = rietveld.PowderPattern(np.linspace(20.0, 90.0, 7_001))
+    baseline = rietveld.calculate_pattern(pattern, instrument, (phase,))
+    parameters = lebail.build_parameter_set(instrument, (phase,), lattice_parameters=True)
+    analytical = lebail._parameter_columns(baseline, parameters, instrument, (phase,))
+    for column, spec in enumerate(parameters.specs):
+        step = 1.0e-6
+        plus_instrument, plus_phases = lebail._apply_parameter_values(
+            instrument, (phase,), {spec.key: spec.value + step}
+        )
+        minus_instrument, minus_phases = lebail._apply_parameter_values(
+            instrument, (phase,), {spec.key: spec.value - step}
+        )
+        plus = rietveld.calculate_pattern(pattern, plus_instrument, plus_phases).y
+        minus = rietveld.calculate_pattern(pattern, minus_instrument, minus_phases).y
+        finite_difference = (plus - minus) / (2.0 * step)
+        scale = max(float(np.max(np.abs(finite_difference))), 1.0)
+        # The local derivative is analytical; this end-to-end difference also
+        # contains subtraction error from tall, narrow sampled peaks.
+        assert float(np.max(np.abs(analytical[:, column] - finite_difference))) / scale < 2.0e-6
+
+
+def test_lattice_refinement_recovers_a_cubic_like_tetragonal_axis() -> None:
+    starting = lattice_lebail_phase(rietveld.UnitCell(3.995, 3.995, 6.0, 90.0, 90.0, 90.0))
+    domain = starting.reflection_domain
+    assert domain is not None
+    true_values = domain.parameterization.values_from_cell(starting.structure.cell).copy()
+    true_values[0] = 4.0
+    true_cell = domain.parameterization.to_cell(true_values)
+    generated = domain.generate(true_cell, starting.reflections)
+    truth = replace(
+        starting,
+        structure=replace(starting.structure, cell=true_cell),
+        reflections=generated.reflections,
+    )
+    instrument = rietveld.ConstantWavelengthInstrument(
+        1.5406, 2.0e-4, -1.0e-4, 2.0e-4, 1.5e-3, 3.0e-3
+    )
+    x = np.linspace(20.0, 90.0, 7_001)
+    calculated = rietveld.calculate_pattern(rietveld.PowderPattern(x), instrument, (truth,))
+    pattern = rietveld.PowderPattern(x, observed_y=calculated.y)
+    parameters = lebail.build_parameter_set(instrument, (starting,), lattice_parameters=True)
+    constraints = (FixedConstraint(parameters.keys[1], parameters.specs[1].value),)
+    result = lebail.refine(
+        lebail.LeBailInput(pattern, instrument, (starting,), parameters, constraints),
+        lebail.LeBailOptions(
+            max_iterations=30,
+            min_iterations=2,
+            intensity_tolerance=1.0e-7,
+            max_scaled_parameter_step=0.05,
+        ),
+    )
+    assert isinstance(result.phases[0], lebail.LeBailPhase)
+    assert result.phases[0].structure.cell.a_angstrom == pytest.approx(4.0, abs=2.0e-6)
+    assert result.phases[0].structure.cell.b_angstrom == pytest.approx(4.0, abs=2.0e-6)
+    assert result.metrics.rwp < 2.0e-5
+
+
+def test_guard_only_reflections_keep_their_intensity_when_unobserved() -> None:
+    phase = lattice_lebail_phase(rietveld.UnitCell(4.0, 4.0, 6.0, 90.0, 90.0, 90.0))
+    guard_only = ~phase.visible_reflection_mask
+    assert np.any(guard_only)
+    instrument = rietveld.ConstantWavelengthInstrument(
+        1.5406, 2.0e-4, -1.0e-4, 2.0e-4, 1.5e-3, 3.0e-3
+    )
+    x = np.linspace(20.0, 90.0, 7_001)
+    calculated = rietveld.calculate_pattern(rietveld.PowderPattern(x), instrument, (phase,))
+    result = lebail.iterate_once(
+        lebail.LeBailInput(
+            rietveld.PowderPattern(x, observed_y=calculated.y),
+            instrument,
+            (phase,),
+        )
+    )
+    final = np.asarray([item.integrated_intensity for item in result.intensities])
+    np.testing.assert_array_equal(
+        final[guard_only], phase.reflections.integrated_intensity[guard_only]
+    )

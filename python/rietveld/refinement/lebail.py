@@ -35,6 +35,12 @@ from .core import (
     TerminationReason,
     evaluate_residuals,
 )
+from .lattice import (
+    CwLatticeReflectionDomain,
+    LatticeParameterBounds,
+    LatticeParameterization,
+    cw_lattice_geometry,
+)
 
 if TYPE_CHECKING:
     from ..io.cif import CifBackend, CifReadLimits
@@ -46,6 +52,14 @@ INSTRUMENT_ROWS = {
     "x_deg": "x",
     "y_deg": "y",
 }
+_LATTICE_PARAMETER_NAMES = (
+    "a_angstrom",
+    "b_angstrom",
+    "c_angstrom",
+    "alpha_deg",
+    "beta_deg",
+    "gamma_deg",
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -53,6 +67,8 @@ class LeBailPhase(Phase):
     """A reflection-extraction phase retaining its source crystal structure."""
 
     structure: CrystalStructure | None = None
+    reflection_domain: CwLatticeReflectionDomain | None = None
+    reflections_generated: bool = False
 
     def __post_init__(self) -> None:
         """Validate the generic phase contract and required source structure."""
@@ -60,6 +76,27 @@ class LeBailPhase(Phase):
         Phase.__post_init__(self)
         if not isinstance(self.structure, CrystalStructure):
             raise TypeError("LeBailPhase structure must be a CrystalStructure")
+        if self.reflection_domain is not None:
+            if not isinstance(self.reflection_domain, CwLatticeReflectionDomain):
+                raise TypeError("reflection_domain must be CwLatticeReflectionDomain")
+            if self.reflection_domain.space_group != self.structure.space_group:
+                raise ValueError("reflection domain and structure must use the same space group")
+        if not isinstance(self.reflections_generated, bool):
+            raise TypeError("reflections_generated must be boolean")
+
+    @property
+    def visible_reflection_mask(self) -> NDArray[np.bool_]:
+        """Mark generated families currently inside the visible data range."""
+
+        if self.reflection_domain is None:
+            result = np.ones(self.reflections.reflection_count, dtype=np.bool_)
+        else:
+            result = (
+                self.reflections.two_theta_deg >= self.reflection_domain.visible_two_theta_min_deg
+            ) & (self.reflections.two_theta_deg <= self.reflection_domain.visible_two_theta_max_deg)
+        result = np.ascontiguousarray(result)
+        result.flags.writeable = False
+        return result
 
     @classmethod
     def from_structure(
@@ -75,46 +112,69 @@ class LeBailPhase(Phase):
         initial_intensity: float = 1.0,
         merge_friedel: bool = True,
         max_candidates: int = 50_000_000,
+        lattice_bounds: LatticeParameterBounds | None = None,
     ) -> LeBailPhase:
-        """Generate fixed-cell monochromatic reflections from a typed structure."""
+        """Generate monochromatic reflections, optionally over bounded lattice motion."""
 
         if not isinstance(structure, CrystalStructure):
             raise TypeError("structure must be a CrystalStructure")
         if not np.isfinite(initial_intensity) or initial_intensity < 0.0:
             raise ValueError("initial_intensity must be non-negative and finite")
-        generated = PreparedReflectionGenerator(
-            structure.space_group,
-            merge_friedel=merge_friedel,
-            max_candidates=max_candidates,
-        ).generate(
-            structure.cell,
-            CwTwoThetaRange(
+        reflection_domain = None
+        if lattice_bounds is None:
+            generated = PreparedReflectionGenerator(
+                structure.space_group,
+                merge_friedel=merge_friedel,
+                max_candidates=max_candidates,
+            ).generate(
+                structure.cell,
+                CwTwoThetaRange(
+                    two_theta_min_deg,
+                    two_theta_max_deg,
+                    wavelength_angstrom,
+                ),
+            )
+            if generated.hkl.shape[0] == 0:
+                raise ValueError("no allowed reflections lie within the requested 2theta range")
+            argument = np.clip(
+                0.5 * wavelength_angstrom * generated.reciprocal_length_inverse_angstrom,
+                -1.0,
+                1.0,
+            )
+            two_theta = 2.0 * np.degrees(np.arcsin(argument))
+            reflections = ReflectionBatch(
+                list(generated.reflection_ids),
+                generated.hkl,
+                generated.d_spacing_angstrom,
+                two_theta,
+                np.full(generated.hkl.shape[0], initial_intensity),
+            )
+        else:
+            if not isinstance(lattice_bounds, LatticeParameterBounds):
+                raise TypeError("lattice_bounds must be LatticeParameterBounds")
+            parameterization = LatticeParameterization(structure.space_group, structure.cell)
+            if lattice_bounds.parameter_names != parameterization.parameter_names:
+                raise ValueError("lattice bounds do not match the structure setting")
+            reflection_domain = CwLatticeReflectionDomain(
+                structure.space_group,
+                parameterization,
+                lattice_bounds,
+                wavelength_angstrom,
                 two_theta_min_deg,
                 two_theta_max_deg,
-                wavelength_angstrom,
-            ),
-        )
-        if generated.hkl.shape[0] == 0:
-            raise ValueError("no allowed reflections lie within the requested 2theta range")
-        argument = np.clip(
-            0.5 * wavelength_angstrom * generated.reciprocal_length_inverse_angstrom,
-            -1.0,
-            1.0,
-        )
-        two_theta = 2.0 * np.degrees(np.arcsin(argument))
-        reflections = ReflectionBatch(
-            list(generated.reflection_ids),
-            generated.hkl,
-            generated.d_spacing_angstrom,
-            two_theta,
-            np.full(generated.hkl.shape[0], initial_intensity),
-        )
+                initial_intensity,
+                merge_friedel,
+                max_candidates,
+            )
+            reflections = reflection_domain.generate(structure.cell).reflections
         return cls(
             phase_id=phase_id,
             name=structure.name if name is None else name,
             reflections=reflections,
             scale=scale,
             structure=structure,
+            reflection_domain=reflection_domain,
+            reflections_generated=True,
         )
 
     @classmethod
@@ -175,6 +235,14 @@ def phase_scale_key(phase_id: str) -> ParameterKey:
     return ParameterKey("phase", phase_id, "scale")
 
 
+def lattice_parameter_key(phase_id: str, name: str) -> ParameterKey:
+    """Return the stable key for one symmetry-independent lattice variable."""
+
+    if name not in _LATTICE_PARAMETER_NAMES:
+        raise ValueError(f"unsupported lattice parameter name {name!r}")
+    return ParameterKey("lattice", phase_id, name)
+
+
 def reflection_position_key(phase_id: str, reflection_id: str) -> ParameterKey:
     """Return the standard key for one independent reflection position."""
 
@@ -188,9 +256,12 @@ def build_parameter_set(
     instrument_parameters: tuple[str, ...] = (),
     phase_scales: bool = False,
     reflection_positions: bool = False,
+    lattice_parameters: bool = False,
 ) -> ParameterSet:
     """Build bounded typed specifications for selected Le Bail parameters."""
 
+    if lattice_parameters and reflection_positions:
+        raise ValueError("lattice parameters and independent reflection positions are redundant")
     specs = []
     for name in instrument_parameters:
         key = instrument_parameter_key(name)
@@ -205,6 +276,30 @@ def build_parameter_set(
             )
         )
     for phase in phases:
+        if lattice_parameters:
+            if not isinstance(phase, LeBailPhase) or phase.reflection_domain is None:
+                raise ValueError(
+                    "lattice parameters require LeBailPhase objects with bounded domains"
+                )
+            parameterization = phase.reflection_domain.parameterization
+            values = parameterization.values_from_cell(phase.structure.cell)
+            bounds = phase.reflection_domain.bounds
+            specs.extend(
+                ParameterSpec(
+                    lattice_parameter_key(phase.phase_id, name),
+                    float(value),
+                    "angstrom" if name.endswith("_angstrom") else "degree",
+                    Bounds(float(lower), float(upper)),
+                    max(abs(float(value)), 1.0),
+                )
+                for name, value, lower, upper in zip(
+                    parameterization.parameter_names,
+                    values,
+                    bounds.lower,
+                    bounds.upper,
+                    strict=True,
+                )
+            )
         if phase_scales:
             specs.append(
                 ParameterSpec(
@@ -254,6 +349,14 @@ class LeBailInput:
             raise TypeError("instrument must be ConstantWavelengthInstrument")
         if not self.phases or any(not isinstance(phase, Phase) for phase in self.phases):
             raise TypeError("phases must be a non-empty tuple of Phase objects")
+        for phase in self.phases:
+            if (
+                isinstance(phase, LeBailPhase)
+                and phase.reflection_domain is not None
+                and phase.reflection_domain.wavelength_angstrom
+                != self.instrument.wavelength_angstrom
+            ):
+                raise ValueError("reflection-domain wavelength must match the Le Bail instrument")
         if self.parameters is not None:
             _domain_parameter_values(self.instrument, self.phases, self.parameters)
             ConstraintTransform(self.parameters, self.constraints)
@@ -422,6 +525,9 @@ class LeBailCheckpoint:
             raise ValueError("checkpoint intensities must be a finite vector")
         if np.any(self.intensities < 0.0):
             raise ValueError("checkpoint intensities must be non-negative")
+        reflection_count = sum(phase.reflections.reflection_count for phase in self.phases)
+        if self.intensities.shape != (reflection_count,):
+            raise ValueError("checkpoint intensities must match its phase reflection count")
         if np.isnan(self.previous_rwp) or np.isneginf(self.previous_rwp):
             raise ValueError("checkpoint previous_rwp must be finite or positive infinity")
 
@@ -440,6 +546,17 @@ def _bin_integration_weights(x: NDArray[np.float64]) -> NDArray[np.float64]:
 
 def _flat_intensities(phases: tuple[Phase, ...]) -> NDArray[np.float64]:
     return np.concatenate(tuple(phase.reflections.integrated_intensity for phase in phases))
+
+
+def _preserve_unobserved_mask(phases: tuple[Phase, ...]) -> NDArray[np.bool_]:
+    return np.concatenate(
+        tuple(
+            ~phase.visible_reflection_mask
+            if isinstance(phase, LeBailPhase) and phase.reflection_domain is not None
+            else np.zeros(phase.reflections.reflection_count, dtype=np.bool_)
+            for phase in phases
+        )
+    )
 
 
 def _replace_intensities(
@@ -484,6 +601,8 @@ def extract_intensities(
     calculation: PatternCalculationResult,
     current_intensities: ArrayLike,
     options: LeBailOptions | None = None,
+    *,
+    preserve_unobserved: ArrayLike | None = None,
 ) -> IntensityExtractionResult:
     """Perform one non-negative multiplicative Le Bail redistribution step."""
 
@@ -496,6 +615,13 @@ def extract_intensities(
         raise ValueError("current_intensities must match the reflection count")
     if np.any(current < 0.0):
         raise ValueError("current_intensities must be non-negative")
+    preserve = (
+        np.zeros(reflection_count, dtype=np.bool_)
+        if preserve_unobserved is None
+        else np.asarray(preserve_unobserved, dtype=np.bool_)
+    )
+    if preserve.shape != (reflection_count,):
+        raise ValueError("preserve_unobserved must match the reflection count")
     included = np.ones(pattern.x.size, dtype=np.bool_) if pattern.mask is None else pattern.mask
     observation = np.maximum(pattern.observed_y - pattern.background, 0.0)
     ratio = np.zeros_like(observation)
@@ -518,6 +644,8 @@ def extract_intensities(
         denominator = float(np.sum(weighted_profile))
         if denominator <= 0.0:
             unobserved.append(key)
+            if preserve[reflection]:
+                updated[reflection] = current[reflection]
             continue
         factor = float(weighted_profile @ ratio[start:stop] / denominator)
         raw = max(0.0, current[reflection] * factor)
@@ -556,6 +684,18 @@ def _domain_parameter_values(
             value = float(getattr(instrument, key.name))
         elif key.module == "phase" and key.name == "scale" and key.owner_id in phase_by_id:
             value = float(phase_by_id[key.owner_id].scale)
+        elif key.module == "lattice" and key.owner_id in phase_by_id:
+            phase = phase_by_id[key.owner_id]
+            if not isinstance(phase, LeBailPhase) or phase.reflection_domain is None:
+                raise ValueError(f"phase {key.owner_id!r} has no bounded lattice domain")
+            parameterization = phase.reflection_domain.parameterization
+            try:
+                index = parameterization.parameter_names.index(key.name)
+            except ValueError as error:
+                raise ValueError(
+                    f"unsupported or unknown Le Bail parameter key {key.label}"
+                ) from error
+            value = float(parameterization.values_from_cell(phase.structure.cell)[index])
         elif (
             key.module == "reflection"
             and key.name == "two_theta_deg"
@@ -571,12 +711,17 @@ def _domain_parameter_values(
 
 
 def _parameter_columns(
-    calculation: PatternCalculationResult, parameters: ParameterSet
+    calculation: PatternCalculationResult,
+    parameters: ParameterSet,
+    instrument: ConstantWavelengthInstrument,
+    phases: tuple[Phase, ...],
 ) -> NDArray[np.float64]:
     columns = []
     global_names = calculation.derivatives.global_parameter_names
     local_positions: NDArray[np.float64] | None = None
     reflection_index = {key: index for index, key in enumerate(calculation.reflection_keys)}
+    phase_by_id = {phase.phase_id: phase for phase in phases}
+    lattice_geometry = {}
     for spec in parameters.specs:
         key = spec.key
         if key.module == "instrument":
@@ -585,12 +730,37 @@ def _parameter_columns(
         elif key.module == "phase":
             row = global_names.index(f"phase[{key.owner_id}].scale")
             columns.append(calculation.derivatives.global_jacobian[row])
-        else:
+        elif key.module == "reflection":
             phase_id, reflection_id = key.owner_id.split("/", 1)
             index = reflection_index[(phase_id, reflection_id)]
             if local_positions is None:
                 local_positions = calculation.derivatives.local.to_dense(calculation.y.size)[:, 1]
             columns.append(local_positions[index])
+        elif key.module == "lattice":
+            phase = phase_by_id[key.owner_id]
+            if not isinstance(phase, LeBailPhase) or phase.reflection_domain is None:
+                raise ValueError(f"phase {key.owner_id!r} has no bounded lattice domain")
+            if local_positions is None:
+                local_positions = calculation.derivatives.local.to_dense(calculation.y.size)[:, 1]
+            if phase.phase_id not in lattice_geometry:
+                lattice_geometry[phase.phase_id] = cw_lattice_geometry(
+                    phase.reflection_domain.parameterization,
+                    phase.structure.cell,
+                    phase.reflections.hkl,
+                    instrument.wavelength_angstrom,
+                )
+            geometry = lattice_geometry[phase.phase_id]
+            parameter = geometry.parameter_names.index(key.name)
+            column = np.zeros(calculation.y.size, dtype=np.float64)
+            for local_index, reflection_id in enumerate(phase.reflections.reflection_ids):
+                pattern_index = reflection_index[(phase.phase_id, reflection_id)]
+                column += (
+                    local_positions[pattern_index]
+                    * geometry.d_coordinate_d_parameters[local_index, parameter]
+                )
+            columns.append(column)
+        else:  # pragma: no cover - validated by _domain_parameter_values
+            raise ValueError(f"unsupported Le Bail parameter module {key.module!r}")
     if not columns:
         return np.empty((calculation.y.size, 0), dtype=np.float64)
     return np.ascontiguousarray(np.column_stack(columns))
@@ -642,8 +812,87 @@ def _apply_parameter_values(
                 positions,
                 phase.reflections.integrated_intensity,
             )
+        lattice_values = {
+            key.name: value
+            for key, value in values.items()
+            if key.module == "lattice" and key.owner_id == phase.phase_id
+        }
+        if lattice_values:
+            if not isinstance(phase, LeBailPhase) or phase.reflection_domain is None:
+                raise ValueError(f"phase {phase.phase_id!r} has no bounded lattice domain")
+            parameterization = phase.reflection_domain.parameterization
+            independent = np.array(
+                parameterization.values_from_cell(phase.structure.cell), copy=True
+            )
+            for name, value in lattice_values.items():
+                independent[parameterization.parameter_names.index(name)] = value
+            cell = parameterization.to_cell(independent)
+            geometry = cw_lattice_geometry(
+                parameterization,
+                cell,
+                phase.reflections.hkl,
+                updated_instrument.wavelength_angstrom,
+            )
+            phase_updates["structure"] = replace(phase.structure, cell=cell)
+            phase_updates["reflections"] = ReflectionBatch(
+                phase.reflections.reflection_ids,
+                phase.reflections.hkl,
+                geometry.d_spacing_angstrom,
+                geometry.coordinate,
+                phase.reflections.integrated_intensity,
+            )
         updated_phases.append(replace(phase, **phase_updates))
     return updated_instrument, tuple(updated_phases)
+
+
+def _regenerate_accepted_domains(
+    phases: tuple[Phase, ...],
+) -> tuple[tuple[Phase, ...], tuple[str, ...], bool]:
+    updated = []
+    warnings = []
+    changed = False
+    for phase in phases:
+        if not isinstance(phase, LeBailPhase) or phase.reflection_domain is None:
+            updated.append(phase)
+            continue
+        generated = phase.reflection_domain.generate(phase.structure.cell, phase.reflections)
+        topology_changed = generated.reflections.reflection_ids != phase.reflections.reflection_ids
+        changed = changed or topology_changed
+        if generated.added_reflection_ids or generated.removed_reflection_ids:
+            warnings.append(
+                f"phase {phase.phase_id} reflection domain regenerated: "
+                f"{len(generated.added_reflection_ids)} added, "
+                f"{len(generated.removed_reflection_ids)} removed"
+            )
+        updated.append(
+            replace(phase, reflections=generated.reflections) if topology_changed else phase
+        )
+    return tuple(updated), tuple(warnings), changed
+
+
+def _reflection_domains_compatible(left: LeBailPhase, right: LeBailPhase) -> bool:
+    """Return whether two dynamic phases use the same restart contract."""
+
+    left_domain = left.reflection_domain
+    right_domain = right.reflection_domain
+    if left_domain is None or right_domain is None:
+        return False
+    return (
+        left_domain.space_group == right_domain.space_group
+        and left_domain.parameterization.parameter_names
+        == right_domain.parameterization.parameter_names
+        and np.array_equal(left_domain.bounds.lower, right_domain.bounds.lower)
+        and np.array_equal(left_domain.bounds.upper, right_domain.bounds.upper)
+        and left_domain.wavelength_angstrom == right_domain.wavelength_angstrom
+        and left_domain.visible_two_theta_min_deg
+        == right_domain.visible_two_theta_min_deg
+        and left_domain.visible_two_theta_max_deg
+        == right_domain.visible_two_theta_max_deg
+        and left_domain.initial_intensity == right_domain.initial_intensity
+        and left_domain.merge_friedel == right_domain.merge_friedel
+        and left_domain.max_candidates == right_domain.max_candidates
+        and left_domain.guard_scale == right_domain.guard_scale
+    )
 
 
 def _profile_update(
@@ -669,7 +918,7 @@ def _profile_update(
     transform = ConstraintTransform(current_parameters, constraints)
     if not transform.free_keys:
         return instrument, phases, calculation, current_parameters, 0.0, (), ()
-    physical_columns = _parameter_columns(calculation, current_parameters)
+    physical_columns = _parameter_columns(calculation, current_parameters, instrument, phases)
     chain = _constraint_matrix(transform)
     jacobian = physical_columns @ chain
     residual = pattern.observed_y - calculation.y
@@ -754,6 +1003,19 @@ def _profile_update(
             continue
         if candidate_metrics.chi_square < baseline_metrics.chi_square:
             candidate_parameters = current_parameters.replace_values(values)
+            candidate_phases, domain_warnings, topology_changed = _regenerate_accepted_domains(
+                candidate_phases
+            )
+            if topology_changed:
+                candidate_calculation = calculate_pattern(
+                    pattern,
+                    candidate_instrument,
+                    candidate_phases,
+                    options=CalculationOptions(
+                        support_fwhm=options.support_fwhm,
+                        return_phase_components=True,
+                    ),
+                )
             changes = tuple(
                 ParameterChange(
                     spec.key,
@@ -771,7 +1033,7 @@ def _profile_update(
                 candidate_parameters,
                 float(np.linalg.norm(factor * step)),
                 changes,
-                warnings,
+                (*warnings, *domain_warnings),
             )
         factor *= 0.5
     return (
@@ -866,6 +1128,8 @@ def _rank_deficient_groups(
 def _covariance(
     pattern: PowderPattern,
     calculation: PatternCalculationResult,
+    instrument: ConstantWavelengthInstrument,
+    phases: tuple[Phase, ...],
     parameters: ParameterSet | None,
     constraints: tuple[Constraint, ...],
     use_uncertainty: bool,
@@ -879,7 +1143,7 @@ def _covariance(
     for row, spec in enumerate(parameters.specs):
         if spec.key.module == "phase" and spec.key.name == "scale" and np.any(chain[row] != 0.0):
             return None
-    jacobian = _parameter_columns(calculation, parameters) @ chain
+    jacobian = _parameter_columns(calculation, parameters, instrument, phases) @ chain
     included = np.ones(pattern.x.size, dtype=np.bool_) if pattern.mask is None else pattern.mask
     selected = jacobian[included]
     if use_uncertainty and pattern.uncertainty is not None:
@@ -932,7 +1196,22 @@ def refine(
             for reflection_id in phase.reflections.reflection_ids
         )
         if input_keys != checkpoint_keys:
-            raise ValueError("checkpoint reflection identities do not match Le Bail input")
+            input_phase_ids = tuple(phase.phase_id for phase in input_data.phases)
+            checkpoint_phase_ids = tuple(phase.phase_id for phase in checkpoint.phases)
+            dynamic_domains = input_phase_ids == checkpoint_phase_ids and all(
+                input_phase.reflections.reflection_ids
+                == checkpoint_phase.reflections.reflection_ids
+                or (
+                    isinstance(input_phase, LeBailPhase)
+                    and isinstance(checkpoint_phase, LeBailPhase)
+                    and _reflection_domains_compatible(input_phase, checkpoint_phase)
+                )
+                for input_phase, checkpoint_phase in zip(
+                    input_data.phases, checkpoint.phases, strict=True
+                )
+            )
+            if not dynamic_domains:
+                raise ValueError("checkpoint reflection identities do not match Le Bail input")
         instrument = checkpoint.instrument
         intensities = np.array(checkpoint.intensities, copy=True)
         phases = checkpoint.phases
@@ -959,6 +1238,7 @@ def refine(
             calculation,
             intensities,
             selected_options,
+            preserve_unobserved=_preserve_unobserved_mask(phases),
         )
         intensities = extraction.intensities
         phases = _replace_intensities(phases, intensities)
@@ -993,6 +1273,7 @@ def refine(
                 selected_options,
                 optimizer,
             )
+            intensities = _flat_intensities(phases)
         if extraction.unobserved_reflections:
             warnings = (
                 *warnings,
@@ -1093,6 +1374,8 @@ def refine(
         covariance=_covariance(
             input_data.pattern,
             calculation,
+            instrument,
+            phases,
             parameters,
             input_data.constraints,
             selected_options.use_uncertainty,

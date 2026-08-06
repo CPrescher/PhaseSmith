@@ -48,11 +48,14 @@ controlled structure-to-symmetric-CW calculation. Project construction,
 reflection generation, file I/O, and process startup remain outside its timed
 regions; its scope likewise is not a complete-refinement comparison.
 
-Implementation unit 16 is in progress. Its first checkpoint adds a
-setting-aware physical lattice parameterization for every crystal system and a
+Implementation unit 16 is in progress. Its first two checkpoints add a
+setting-aware physical lattice parameterization for every crystal system, a
 bounded monochromatic reflection-domain model that transfers Le Bail
-intensities by stable Miller-family ID. Integration with accepted refinement
-steps remains required before the unit is complete.
+intensities by stable Miller-family ID, and analytical CW/TOF lattice geometry
+derivatives. Le Bail now refines symmetry-independent lattice variables and
+regenerates guarded reflection topology only after accepted profile steps.
+High-level CIF construction, persistence, documentation, and performance gates
+remain before the unit is complete.
 
 The project remains pre-release and is licensed under the MIT License. The
 architecture and delivery gates for CIF import, the remaining native
