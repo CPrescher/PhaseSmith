@@ -16,6 +16,12 @@ from .core import (
     jacobian_vector_product,
     transpose_jacobian_vector_product,
 )
+from .lattice import (
+    CwLatticeReflectionDomain,
+    GeneratedReflectionDomainResult,
+    LatticeParameterBounds,
+    LatticeParameterization,
+)
 from .lebail import (
     CoincidentReflectionGroup,
     IntensityExtractionResult,
@@ -43,9 +49,13 @@ __all__ = [
     "Bounds",
     "CoincidentReflectionGroup",
     "ConstraintTransform",
+    "CwLatticeReflectionDomain",
     "FixedConstraint",
+    "GeneratedReflectionDomainResult",
     "IntensityExtractionResult",
     "IterationRecord",
+    "LatticeParameterBounds",
+    "LatticeParameterization",
     "LeBailCheckpoint",
     "LeBailInput",
     "LeBailOptions",
