@@ -8,6 +8,7 @@ import pytest
 import rietveld
 from rietveld.refinement import (
     CwLatticeReflectionDomain,
+    CwStructuralReflectionDomain,
     FixedConstraint,
     LatticeParameterBounds,
     LatticeParameterization,
@@ -189,6 +190,31 @@ def test_guarded_domain_contains_every_visible_family_across_bounded_cells() -> 
             rietveld.CwTwoThetaRange(20.0, 90.0, 1.5406),
         )
         assert set(generated.reflection_ids) <= guarded_ids
+
+
+def test_structural_guarded_domain_preserves_family_ids_and_multiplicities() -> None:
+    group, cell, _ = lattice_cases()[3]
+    parameterization = LatticeParameterization(group, cell)
+    bounds = LatticeParameterBounds.around(parameterization, relative_length=0.05)
+    domain = CwStructuralReflectionDomain(
+        group,
+        parameterization,
+        bounds,
+        1.5406,
+        20.0,
+        90.0,
+    )
+    initial = domain.generate(cell)
+    assert initial.reflections.reflection_count > int(np.count_nonzero(initial.visible))
+    assert np.all(initial.reflections.multiplicity > 0)
+    assert initial.added_reflection_ids == initial.reflections.reflection_ids
+    moved = domain.generate(parameterization.to_cell([4.1, 5.9]), initial.reflections)
+    assert moved.preserved_reflection_count == len(
+        set(initial.reflections.reflection_ids) & set(moved.reflections.reflection_ids)
+    )
+    assert moved.d_spacing_angstrom.shape == (moved.reflections.reflection_count,)
+    assert moved.two_theta_deg.shape == (moved.reflections.reflection_count,)
+    assert not moved.visible.flags.writeable
 
 
 def test_lattice_bounds_reject_infinite_or_incompatible_domains() -> None:

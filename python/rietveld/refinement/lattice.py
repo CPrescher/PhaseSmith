@@ -10,7 +10,7 @@ from numpy.typing import ArrayLike, NDArray
 
 from ..crystallography import UnitCell
 from ..instrument import TofInstrument
-from ..phase import ReflectionBatch
+from ..phase import ReflectionBatch, StructuralReflectionBatch
 from ..symmetry import DSpacingRange, PreparedReflectionGenerator, SpaceGroup
 
 _CELL_ATTRIBUTES = (
@@ -411,6 +411,65 @@ class GeneratedReflectionDomainResult:
 
 
 @dataclass(frozen=True, slots=True)
+class GeneratedStructuralReflectionDomainResult:
+    """One guarded structural topology with observable geometry diagnostics."""
+
+    reflections: StructuralReflectionBatch
+    d_spacing_angstrom: NDArray[np.float64]
+    two_theta_deg: NDArray[np.float64]
+    visible: NDArray[np.bool_]
+    guarded_d_min_angstrom: float
+    guarded_d_max_angstrom: float
+    added_reflection_ids: tuple[str, ...]
+    removed_reflection_ids: tuple[str, ...]
+    preserved_reflection_count: int
+
+
+def _guarded_cw_d_range(
+    parameterization: LatticeParameterization,
+    bounds: LatticeParameterBounds,
+    reference_cell: UnitCell,
+    wavelength_angstrom: float,
+    visible_two_theta_min_deg: float,
+    visible_two_theta_max_deg: float,
+    guard_scale: float,
+) -> tuple[float, float]:
+    corner_cells = np.asarray(
+        [parameterization.to_cell(values).as_tuple() for values in bounds.corner_values()],
+        dtype=np.float64,
+    )
+    physical_lower = np.min(corner_cells, axis=0)
+    physical_upper = np.max(corner_cells, axis=0)
+    cos_lower = np.cos(np.deg2rad(physical_upper[3:]))
+    cos_upper = np.cos(np.deg2rad(physical_lower[3:]))
+    product_lower = min(
+        float(alpha * beta * gamma)
+        for alpha, beta, gamma in product(*zip(cos_lower, cos_upper, strict=True))
+    )
+    maximum_squares = np.maximum(np.square(cos_lower), np.square(cos_upper))
+    angular_determinant_lower = 1.0 + 2.0 * product_lower - float(np.sum(maximum_squares))
+    if angular_determinant_lower <= 0.0:
+        raise ValueError("lattice angle bounds are too broad for a finite guarded domain")
+    determinant_lower = float(np.prod(physical_lower[:3])) ** 2 * angular_determinant_lower
+    trace_upper = float(np.sum(np.square(physical_upper[:3])))
+    direct_eigenvalue_lower = 4.0 * determinant_lower / trace_upper**2
+    reciprocal_eigenvalue_lower = 1.0 / trace_upper
+    reciprocal_eigenvalue_upper = 1.0 / direct_eigenvalue_lower
+    reference_eigenvalues = np.linalg.eigvalsh(reference_cell.geometry().reciprocal_metric)
+    minimum_ratio = (
+        np.sqrt(float(np.min(reference_eigenvalues)) / reciprocal_eigenvalue_upper) / guard_scale
+    )
+    maximum_ratio = (
+        np.sqrt(float(np.max(reference_eigenvalues)) / reciprocal_eigenvalue_lower) * guard_scale
+    )
+    theta_min = np.deg2rad(visible_two_theta_min_deg / 2.0)
+    theta_max = np.deg2rad(visible_two_theta_max_deg / 2.0)
+    visible_d_max = wavelength_angstrom / (2.0 * np.sin(theta_min))
+    visible_d_min = wavelength_angstrom / (2.0 * np.sin(theta_max))
+    return visible_d_min / maximum_ratio, visible_d_max / minimum_ratio
+
+
+@dataclass(frozen=True, slots=True)
 class CwLatticeReflectionDomain:
     """Bounded monochromatic reflection topology with stable intensity transfer."""
 
@@ -459,46 +518,15 @@ class CwLatticeReflectionDomain:
             raise ValueError("max_candidates must be positive")
 
     def _guarded_d_range(self, reference_cell: UnitCell) -> tuple[float, float]:
-        corner_cells = np.asarray(
-            [
-                self.parameterization.to_cell(values).as_tuple()
-                for values in self.bounds.corner_values()
-            ],
-            dtype=np.float64,
+        return _guarded_cw_d_range(
+            self.parameterization,
+            self.bounds,
+            reference_cell,
+            self.wavelength_angstrom,
+            self.visible_two_theta_min_deg,
+            self.visible_two_theta_max_deg,
+            self.guard_scale,
         )
-        physical_lower = np.min(corner_cells, axis=0)
-        physical_upper = np.max(corner_cells, axis=0)
-        cos_lower = np.cos(np.deg2rad(physical_upper[3:]))
-        cos_upper = np.cos(np.deg2rad(physical_lower[3:]))
-        product_lower = min(
-            float(alpha * beta * gamma)
-            for alpha, beta, gamma in product(*zip(cos_lower, cos_upper, strict=True))
-        )
-        maximum_squares = np.maximum(np.square(cos_lower), np.square(cos_upper))
-        angular_determinant_lower = 1.0 + 2.0 * product_lower - float(np.sum(maximum_squares))
-        if angular_determinant_lower <= 0.0:
-            raise ValueError(
-                "lattice angle bounds are too broad for a finite guarded reflection domain"
-            )
-        determinant_lower = float(np.prod(physical_lower[:3])) ** 2 * angular_determinant_lower
-        trace_upper = float(np.sum(np.square(physical_upper[:3])))
-        direct_eigenvalue_lower = 4.0 * determinant_lower / trace_upper**2
-        reciprocal_eigenvalue_lower = 1.0 / trace_upper
-        reciprocal_eigenvalue_upper = 1.0 / direct_eigenvalue_lower
-        reference_eigenvalues = np.linalg.eigvalsh(reference_cell.geometry().reciprocal_metric)
-        minimum_ratio = (
-            np.sqrt(float(np.min(reference_eigenvalues)) / reciprocal_eigenvalue_upper)
-            / self.guard_scale
-        )
-        maximum_ratio = (
-            np.sqrt(float(np.max(reference_eigenvalues)) / reciprocal_eigenvalue_lower)
-            * self.guard_scale
-        )
-        theta_min = np.deg2rad(self.visible_two_theta_min_deg / 2.0)
-        theta_max = np.deg2rad(self.visible_two_theta_max_deg / 2.0)
-        visible_d_max = self.wavelength_angstrom / (2.0 * np.sin(theta_min))
-        visible_d_min = self.wavelength_angstrom / (2.0 * np.sin(theta_max))
-        return visible_d_min / maximum_ratio, visible_d_max / minimum_ratio
 
     def generate(
         self,
@@ -567,4 +595,91 @@ class CwLatticeReflectionDomain:
                 )
             ),
             preserved_reflection_count=sum(reflection_id in old_ids for reflection_id in ids),
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class CwStructuralReflectionDomain:
+    """Bounded monochromatic structural-family topology for Rietveld refinement."""
+
+    space_group: SpaceGroup
+    parameterization: LatticeParameterization
+    bounds: LatticeParameterBounds
+    wavelength_angstrom: float
+    visible_two_theta_min_deg: float
+    visible_two_theta_max_deg: float
+    merge_friedel: bool = True
+    max_candidates: int = 50_000_000
+    guard_scale: float = 1.001
+
+    def __post_init__(self) -> None:
+        CwLatticeReflectionDomain(
+            self.space_group,
+            self.parameterization,
+            self.bounds,
+            self.wavelength_angstrom,
+            self.visible_two_theta_min_deg,
+            self.visible_two_theta_max_deg,
+            0.0,
+            self.merge_friedel,
+            self.max_candidates,
+            self.guard_scale,
+        )
+
+    def generate(
+        self,
+        cell: UnitCell,
+        previous: StructuralReflectionBatch | None = None,
+    ) -> GeneratedStructuralReflectionDomainResult:
+        """Generate structural families at one accepted compatible cell."""
+
+        self.parameterization.values_from_cell(cell)
+        d_min, d_max = _guarded_cw_d_range(
+            self.parameterization,
+            self.bounds,
+            cell,
+            self.wavelength_angstrom,
+            self.visible_two_theta_min_deg,
+            self.visible_two_theta_max_deg,
+            self.guard_scale,
+        )
+        generated = PreparedReflectionGenerator(
+            self.space_group,
+            merge_friedel=self.merge_friedel,
+            max_candidates=self.max_candidates,
+        ).generate(cell, DSpacingRange(d_min, d_max))
+        argument = self.wavelength_angstrom / (2.0 * generated.d_spacing_angstrom)
+        physical = argument < 1.0
+        if not np.any(physical):
+            raise ValueError("no physical reflections lie in the guarded structural CW domain")
+        ids = tuple(
+            reflection_id
+            for reflection_id, selected in zip(generated.reflection_ids, physical, strict=True)
+            if selected
+        )
+        hkl = generated.hkl[physical]
+        multiplicity = generated.multiplicity[physical]
+        spacing = generated.d_spacing_angstrom[physical]
+        position = np.ascontiguousarray(2.0 * np.degrees(np.arcsin(argument[physical])))
+        reflections = StructuralReflectionBatch(ids, hkl, multiplicity)
+        visible = np.ascontiguousarray(
+            (position >= self.visible_two_theta_min_deg)
+            & (position <= self.visible_two_theta_max_deg)
+        )
+        _freeze(spacing)
+        _freeze(position)
+        _freeze(visible)
+        old_ids = () if previous is None else previous.reflection_ids
+        old_set = set(old_ids)
+        new_set = set(ids)
+        return GeneratedStructuralReflectionDomainResult(
+            reflections,
+            spacing,
+            position,
+            visible,
+            float(d_min),
+            float(d_max),
+            tuple(reflection_id for reflection_id in ids if reflection_id not in old_set),
+            tuple(reflection_id for reflection_id in old_ids if reflection_id not in new_set),
+            sum(reflection_id in old_set for reflection_id in ids),
         )

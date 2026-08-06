@@ -1,5 +1,6 @@
 """Shared refinement infrastructure and method-specific submodules."""
 
+from . import rietveld
 from .core import (
     AffineConstraint,
     Bounds,
@@ -18,7 +19,9 @@ from .core import (
 )
 from .lattice import (
     CwLatticeReflectionDomain,
+    CwStructuralReflectionDomain,
     GeneratedReflectionDomainResult,
+    GeneratedStructuralReflectionDomainResult,
     LatticeParameterBounds,
     LatticeParameterization,
     LatticeReflectionGeometry,
@@ -46,6 +49,12 @@ from .lebail import (
     refine,
     reflection_position_key,
 )
+from .rietveld import (
+    RietveldCalculationResult,
+    RietveldInput,
+    RietveldParameterSelection,
+    SiteCoordinateModel,
+)
 from .runtime import (
     CheckpointCallback,
     CheckpointCallbackError,
@@ -69,8 +78,10 @@ __all__ = [
     "ConsoleRefinementLogger",
     "ConstraintTransform",
     "CwLatticeReflectionDomain",
+    "CwStructuralReflectionDomain",
     "FixedConstraint",
     "GeneratedReflectionDomainResult",
+    "GeneratedStructuralReflectionDomainResult",
     "IntensityExtractionResult",
     "IterationRecord",
     "JsonLinesRefinementLogger",
@@ -96,7 +107,11 @@ __all__ = [
     "ReflectionIntensity",
     "ResidualEvaluation",
     "ResidualOptions",
+    "RietveldCalculationResult",
+    "RietveldInput",
+    "RietveldParameterSelection",
     "ScipyLeastSquaresAdapter",
+    "SiteCoordinateModel",
     "TerminationReason",
     "build_parameter_set",
     "cw_lattice_geometry",
@@ -110,6 +125,7 @@ __all__ = [
     "phase_scale_key",
     "refine",
     "reflection_position_key",
+    "rietveld",
     "tof_lattice_geometry",
     "transpose_jacobian_vector_product",
 ]
