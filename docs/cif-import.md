@@ -58,6 +58,13 @@ Lower-priority definitions are also resolved. A disagreement is an error in
 strict mode and a structured warning in permissive mode. The chosen source and
 original identifiers are retained as plain metadata.
 
+Scripts that do not start from a CIF can use `space_group_by_number(1..230)` or
+`space_group_by_symbol(...)`. These optional Gemmi-backed lookup functions
+return `SpaceGroupInfo` with the International number, Hermann--Mauguin and
+Hall symbols, setting qualifier, and an engine-owned `SpaceGroup` made from
+exact integer/rational operations. Gemmi is discarded after lookup and is not
+used for reflection generation or diffraction calculations.
+
 ## Numeric and atom-site conventions
 
 - Cell lengths are ångströms and angles are degrees.

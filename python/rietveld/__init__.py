@@ -88,6 +88,7 @@ from .intensity_corrections import (
     evaluate_intensity_correction,
 )
 from .io.cif import CifBackend, CifReadLimits, CifReadResult, read_cif
+from .io.space_groups import SpaceGroupInfo, space_group_by_number, space_group_by_symbol
 from .pattern import (
     PatternCalculationResult,
     PhasePatternComponent,
@@ -268,6 +269,7 @@ __all__ = [
     "ScatteringTableProvenance",
     "ScatteringVectorRange",
     "SpaceGroup",
+    "SpaceGroupInfo",
     "StructuralPatternCalculationResult",
     "StructuralPatternJvpResult",
     "StructuralPatternVjpResult",
@@ -327,6 +329,8 @@ __all__ = [
     "read_cif",
     "reciprocal_angle_geometry",
     "refinement",
+    "space_group_by_number",
+    "space_group_by_symbol",
     "species_from_structure",
     "structure_from_record",
     "structure_to_record",
