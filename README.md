@@ -58,6 +58,9 @@ Shared refinement contracts and Le Bail extraction are documented in
 Versioned JSON+NPZ persistence is documented in
 [docs/persistence.md](docs/persistence.md). The existing Dioptas adapter is a
 compatibility-only convenience and is not a forward roadmap target.
+Bounded refinement execution, structured logs, cooperative cancellation, and
+checkpoint recovery are specified in
+[docs/refinement-runtime.md](docs/refinement-runtime.md).
 
 ## Development
 

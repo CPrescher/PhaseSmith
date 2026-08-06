@@ -65,6 +65,12 @@ architecture and delivery gates for CIF import, the remaining native
 crystallographic calculations, and structure-factor-based Rietveld
 orchestration are specified in `docs/crystallography-plan.md`.
 
+Unit 17 begins with a mandatory refinement-runtime safety shell. All iterative
+methods expose structured events, thread-safe cooperative cancellation,
+explicit execution budgets and termination reasons, and checkpoints of the
+last accepted state. Terminal key handling is an optional adapter; numerical
+code never reads standard input or configures global logging.
+
 ## Design commitments
 
 - Use GSAS-II only as a pinned validation oracle, never as the architecture.

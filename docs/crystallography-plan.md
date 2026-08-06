@@ -521,6 +521,12 @@ runtime dependency.
 
 ## Implementation unit 17: first full Rietveld refinement
 
+The first checkpoint is the method-independent runtime and safety shell in
+[`refinement-runtime.md`](refinement-runtime.md). Structural parameters are not
+connected until bounded execution, structured events, cooperative terminal/GUI
+cancellation, last-accepted-state recovery, and generation-based checkpoints
+pass fault-injection tests.
+
 ### Work
 
 1. Implement typed `RietveldInput`, `RietveldOptions`, iteration/checkpoint

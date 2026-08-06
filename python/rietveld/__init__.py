@@ -29,6 +29,7 @@ from .calculation import (
 )
 from .control import (
     CancellationCallback,
+    CancellationToken,
     OperationCancelled,
     ProgressCallback,
     ProgressEvent,
@@ -166,6 +167,7 @@ from .symmetry import (
     SymmetryOperation,
     TofRange,
 )
+from .terminal import TerminalCancellationController
 from .tof import (
     TOF_GLOBAL_PARAMETER_ORDER,
     TOF_LOCAL_PARAMETER_ORDER,
@@ -202,6 +204,7 @@ __all__ = [
     "BraggBrentanoUnpolarizedLp",
     "CalculationOptions",
     "CancellationCallback",
+    "CancellationToken",
     "CellGeometry",
     "CifBackend",
     "CifReadLimits",
@@ -280,6 +283,7 @@ __all__ = [
     "TchProfileResult",
     "TchSigmaProfileResult",
     "TchSigmaShape",
+    "TerminalCancellationController",
     "TofInstrument",
     "TofProfileParameters",
     "TofProfileResult",

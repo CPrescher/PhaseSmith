@@ -366,9 +366,7 @@ def jacobian_vector_product(
         begin = int(derivatives.local.offsets[peak])
         end = int(derivatives.local.offsets[peak + 1])
         start = int(start_value)
-        result[start : start + end - begin] += (
-            derivatives.local.values[begin:end] @ local[peak]
-        )
+        result[start : start + end - begin] += derivatives.local.values[begin:end] @ local[peak]
     return result
 
 
@@ -391,8 +389,7 @@ def transpose_jacobian_vector_product(
         end = int(derivatives.local.offsets[peak + 1])
         start = int(start_value)
         local_result[peak] = (
-            derivatives.local.values[begin:end].T
-            @ samples[start : start + end - begin]
+            derivatives.local.values[begin:end].T @ samples[start : start + end - begin]
         )
     global_result = derivatives.global_jacobian @ samples
     return local_result, global_result
@@ -420,3 +417,8 @@ class TerminationReason(StrEnum):
     NO_OBSERVATIONS = "no_observations"
     NUMERICAL_FAILURE = "numerical_failure"
     CANCELLED = "cancelled"
+    MAX_RUNTIME = "max_runtime"
+    MAX_EVALUATIONS = "max_evaluations"
+    STAGNATED = "stagnated"
+    DIVERGED = "diverged"
+    REPEATED_REJECTIONS = "repeated_rejections"

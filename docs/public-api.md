@@ -177,6 +177,13 @@ rietveld.refinement.ConstraintTransform
 rietveld.refinement.evaluate_residuals
 rietveld.refinement.jacobian_vector_product
 rietveld.refinement.transpose_jacobian_vector_product
+rietveld.CancellationToken
+rietveld.TerminalCancellationController
+rietveld.refinement.RefinementEvent
+rietveld.refinement.RefinementLimits
+rietveld.refinement.RefinementRuntime
+rietveld.refinement.ConsoleRefinementLogger
+rietveld.refinement.JsonLinesRefinementLogger
 rietveld.refinement.lebail.LeBailInput
 rietveld.refinement.lebail.LeBailInput.from_cif
 rietveld.refinement.lebail.LeBailOptions

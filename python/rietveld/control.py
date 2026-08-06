@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from threading import Event, Lock
 from typing import Protocol, runtime_checkable
 
 
@@ -40,15 +41,55 @@ class CancellationCallback(Protocol):
         """Return true when the current operation should stop cooperatively."""
 
 
+class CancellationToken:
+    """Thread-safe cooperative cancellation shared by scripts, GUIs, and CLIs."""
+
+    __slots__ = ("_event", "_lock", "_reason")
+
+    def __init__(self) -> None:
+        self._event = Event()
+        self._lock = Lock()
+        self._reason: str | None = None
+
+    def request(self, reason: str = "user_requested") -> bool:
+        """Request cancellation and return true only for the first request."""
+
+        if not isinstance(reason, str) or not reason.strip():
+            raise ValueError("cancellation reason must be a non-empty string")
+        with self._lock:
+            first = not self._event.is_set()
+            if first:
+                self._reason = reason
+                self._event.set()
+            return first
+
+    @property
+    def reason(self) -> str | None:
+        """Return the first cancellation reason, if cancellation was requested."""
+
+        with self._lock:
+            return self._reason
+
+    def __call__(self) -> bool:
+        """Implement :class:`CancellationCallback`."""
+
+        return self._event.is_set()
+
+
 class OperationCancelled(RuntimeError):
     """Raised when a calculation is cancelled before or after its native batch."""
+
+    def __init__(self, reason: str = "operation cancelled") -> None:
+        super().__init__(reason)
+        self.reason = reason
 
 
 def check_cancelled(cancellation: CancellationCallback | None) -> None:
     """Raise at a declared safe boundary when cancellation is requested."""
 
     if cancellation is not None and cancellation():
-        raise OperationCancelled("operation cancelled")
+        reason = getattr(cancellation, "reason", None)
+        raise OperationCancelled("operation cancelled" if reason is None else str(reason))
 
 
 def report_progress(progress: ProgressCallback | None, event: ProgressEvent) -> None:
