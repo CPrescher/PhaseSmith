@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 import numpy as np
 import pytest
@@ -14,6 +14,7 @@ from rietveld.refinement import (
     LatticeParameterization,
     lebail,
 )
+from rietveld.refinement import rietveld as structural_refinement
 
 
 def instrument() -> rietveld.ConstantWavelengthInstrument:
@@ -323,6 +324,110 @@ def test_structural_phase_round_trips_separately_from_lebail_phases(tmp_path) ->
         observed.reflections.integrated_intensity,
         expected.reflections.integrated_intensity,
     )
+
+
+def test_rietveld_checkpoint_domain_and_options_round_trip_and_resume(tmp_path) -> None:
+    x = np.linspace(10.0, 80.0, 7_001)
+    experiment = rietveld.ConstantWavelengthExperiment.x_ray(instrument())
+    truth_phase = structural_phase()
+    calculated = structural_refinement.calculate(
+        rietveld.PowderPattern(x), experiment, (truth_phase,)
+    )
+    starting_phase = replace(truth_phase, scale=0.55)
+    selection = structural_refinement.RietveldParameterSelection(
+        phase_scale=True,
+        lattice=False,
+    )
+    parameters = structural_refinement.build_parameter_set((starting_phase,), (None,), selection)
+    pattern = rietveld.PowderPattern(x, observed_y=calculated.y)
+    request = structural_refinement.RietveldInput(
+        pattern,
+        experiment,
+        (starting_phase,),
+        (None,),
+        parameters,
+        selection=selection,
+    )
+    first = structural_refinement.refine(
+        request,
+        structural_refinement.RietveldOptions(
+            limits=structural_refinement.RefinementLimits(
+                max_iterations=1,
+                max_evaluations=100,
+            ),
+            max_scaled_parameter_step=0.1,
+            estimate_covariance=False,
+        ),
+    )
+    resume_options = structural_refinement.RietveldOptions(
+        limits=structural_refinement.RefinementLimits(
+            max_iterations=10,
+            max_evaluations=300,
+        ),
+        max_scaled_parameter_step=0.1,
+        estimate_covariance=False,
+    )
+    destination = persistence.save_bundle(
+        tmp_path / "rietveld-restart",
+        persistence.PersistenceBundle(
+            pattern=pattern,
+            experiment=experiment,
+            rietveld_phases=(starting_phase,),
+            rietveld_domains=(None,),
+            rietveld_selection=selection,
+            rietveld_options=resume_options,
+            rietveld_checkpoint=first.checkpoint,
+            parameters=parameters,
+        ),
+    )
+    restored = persistence.load_bundle(destination)
+    assert restored.rietveld_selection == selection
+    assert restored.rietveld_options == resume_options
+    assert restored.rietveld_checkpoint is not None
+    assert (
+        restored.rietveld_checkpoint.completed_iterations == first.checkpoint.completed_iterations
+    )
+    assert restored.rietveld_checkpoint.parameters == first.checkpoint.parameters
+    assert restored.rietveld_checkpoint.history == first.checkpoint.history
+    assert restored.rietveld_checkpoint.phases[0].scale == first.checkpoint.phases[0].scale
+    resumed = structural_refinement.refine(
+        restored.to_rietveld_input(),
+        restored.rietveld_options,
+        checkpoint=restored.rietveld_checkpoint,
+    )
+    assert resumed.phases[0].scale == pytest.approx(truth_phase.scale, rel=2.0e-8)
+    assert resumed.metrics.rwp < 1.0e-8
+
+
+def test_guarded_structural_reflection_domain_round_trips(tmp_path) -> None:
+    phase = structural_phase()
+    parameterization = LatticeParameterization(phase.structure.space_group, phase.structure.cell)
+    bounds = LatticeParameterBounds.around(
+        parameterization, relative_length=0.03, angle_delta_deg=3.0
+    )
+    domain = structural_refinement.CwStructuralReflectionDomain(
+        phase.structure.space_group,
+        parameterization,
+        bounds,
+        instrument().wavelength_angstrom,
+        10.0,
+        80.0,
+    )
+    path = persistence.save_bundle(
+        tmp_path / "structural-domain",
+        persistence.PersistenceBundle(
+            rietveld_phases=(phase,),
+            rietveld_domains=(domain,),
+        ),
+    )
+    restored = persistence.load_bundle(path)
+    actual = restored.rietveld_domains[0]
+    assert actual is not None
+    assert actual.parameterization.parameter_names == parameterization.parameter_names
+    np.testing.assert_array_equal(actual.bounds.lower, bounds.lower)
+    np.testing.assert_array_equal(actual.bounds.upper, bounds.upper)
+    assert actual.wavelength_angstrom == domain.wavelength_angstrom
+    assert actual.guard_scale == domain.guard_scale
 
 
 def test_version_one_bundle_migrates_with_no_structural_phases(tmp_path) -> None:

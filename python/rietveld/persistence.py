@@ -51,6 +51,7 @@ from .refinement.core import (
 )
 from .refinement.lattice import (
     CwLatticeReflectionDomain,
+    CwStructuralReflectionDomain,
     LatticeParameterBounds,
     LatticeParameterization,
 )
@@ -65,6 +66,15 @@ from .refinement.lebail import (
     ParameterChange,
     ReflectionIntensity,
 )
+from .refinement.rietveld import (
+    RietveldCheckpoint,
+    RietveldInput,
+    RietveldIterationRecord,
+    RietveldOptions,
+    RietveldParameterChange,
+    RietveldParameterSelection,
+)
+from .refinement.runtime import RefinementLimits
 from .results import AccumulationResult, PatternDerivatives, SupportJacobian
 from .sample import (
     IsotropicMicrostrainBroadening,
@@ -74,7 +84,7 @@ from .sample import (
 from .scattering import NeutronNuclear, XrayNonResonant
 from .structure import CrystalStructure, structure_from_record, structure_to_record
 
-FORMAT_VERSION: Final = 3
+FORMAT_VERSION: Final = 4
 MANIFEST_NAME: Final = "manifest.json"
 ARCHIVE_NAME: Final = "arrays.npz"
 Instrument = ConstantWavelengthInstrument | TofInstrument
@@ -110,6 +120,10 @@ class PersistenceBundle:
     wavelength_components: WavelengthComponents | None = None
     phases: tuple[Phase, ...] = ()
     rietveld_phases: tuple[RietveldPhase, ...] = ()
+    rietveld_domains: tuple[CwStructuralReflectionDomain | None, ...] = ()
+    rietveld_selection: RietveldParameterSelection | None = None
+    rietveld_options: RietveldOptions | None = None
+    rietveld_checkpoint: RietveldCheckpoint | None = None
     calculation_options: CalculationOptions | None = None
     calculation_result: PatternCalculationResult | None = None
     parameters: ParameterSet | None = None
@@ -124,11 +138,34 @@ class PersistenceBundle:
 
         object.__setattr__(self, "phases", tuple(self.phases))
         object.__setattr__(self, "rietveld_phases", tuple(self.rietveld_phases))
+        domains = tuple(self.rietveld_domains)
+        if not domains and self.rietveld_phases:
+            domains = (None,) * len(self.rietveld_phases)
+        object.__setattr__(self, "rietveld_domains", domains)
         object.__setattr__(self, "constraints", tuple(self.constraints))
         if any(not isinstance(phase, Phase) for phase in self.phases):
             raise TypeError("phases must contain only Phase objects")
         if any(not isinstance(phase, RietveldPhase) for phase in self.rietveld_phases):
             raise TypeError("rietveld_phases must contain only RietveldPhase objects")
+        if len(self.rietveld_domains) != len(self.rietveld_phases):
+            raise ValueError("rietveld domains must align with persisted structural phases")
+        if any(
+            domain is not None and not isinstance(domain, CwStructuralReflectionDomain)
+            for domain in self.rietveld_domains
+        ):
+            raise TypeError("rietveld_domains must contain guarded structural domains or None")
+        if self.rietveld_selection is not None and not isinstance(
+            self.rietveld_selection, RietveldParameterSelection
+        ):
+            raise TypeError("rietveld_selection must be RietveldParameterSelection")
+        if self.rietveld_options is not None and not isinstance(
+            self.rietveld_options, RietveldOptions
+        ):
+            raise TypeError("rietveld_options must be RietveldOptions")
+        if self.rietveld_checkpoint is not None and not isinstance(
+            self.rietveld_checkpoint, RietveldCheckpoint
+        ):
+            raise TypeError("rietveld_checkpoint must be RietveldCheckpoint")
         if self.calculation_result is not None and not isinstance(
             self.calculation_result, PatternCalculationResult
         ):
@@ -165,6 +202,29 @@ class PersistenceBundle:
             self.phases,
             self.parameters,
             self.constraints,
+        )
+
+    def to_rietveld_input(self) -> RietveldInput:
+        """Reconstruct a complete structural input for calculation or resume."""
+
+        if self.pattern is None or self.experiment is None:
+            raise ValueError("persisted pattern and CW experiment are required")
+        if not self.rietveld_phases or self.parameters is None:
+            raise ValueError("persisted structural phases and parameters are required")
+        if len(self.rietveld_domains) != len(self.rietveld_phases):
+            raise ValueError("persisted structural domains must align with phases")
+        return RietveldInput(
+            self.pattern,
+            self.experiment,
+            self.rietveld_phases,
+            self.rietveld_domains,
+            self.parameters,
+            self.constraints,
+            (
+                RietveldParameterSelection()
+                if self.rietveld_selection is None
+                else self.rietveld_selection
+            ),
         )
 
 
@@ -696,6 +756,168 @@ def _rietveld_phase_from_record(
     )
 
 
+def _structural_domain_record(
+    domain: CwStructuralReflectionDomain | None,
+) -> dict[str, Any] | None:
+    if domain is None:
+        return None
+    return {
+        "lower": domain.bounds.lower.tolist(),
+        "upper": domain.bounds.upper.tolist(),
+        "wavelength_angstrom": domain.wavelength_angstrom,
+        "visible_two_theta_min_deg": domain.visible_two_theta_min_deg,
+        "visible_two_theta_max_deg": domain.visible_two_theta_max_deg,
+        "merge_friedel": domain.merge_friedel,
+        "max_candidates": domain.max_candidates,
+        "guard_scale": domain.guard_scale,
+    }
+
+
+def _structural_domain_from_record(
+    record: dict[str, Any] | None,
+    phase: RietveldPhase,
+) -> CwStructuralReflectionDomain | None:
+    if record is None:
+        return None
+    parameterization = LatticeParameterization(phase.structure.space_group, phase.structure.cell)
+    return CwStructuralReflectionDomain(
+        phase.structure.space_group,
+        parameterization,
+        LatticeParameterBounds(parameterization, record["lower"], record["upper"]),
+        float(record["wavelength_angstrom"]),
+        float(record["visible_two_theta_min_deg"]),
+        float(record["visible_two_theta_max_deg"]),
+        bool(record["merge_friedel"]),
+        int(record["max_candidates"]),
+        float(record["guard_scale"]),
+    )
+
+
+def _rietveld_selection_record(
+    selection: RietveldParameterSelection | None,
+) -> dict[str, bool] | None:
+    if selection is None:
+        return None
+    return {
+        name: getattr(selection, name) for name in RietveldParameterSelection.__dataclass_fields__
+    }
+
+
+def _rietveld_options_record(options: RietveldOptions | None) -> dict[str, Any] | None:
+    if options is None:
+        return None
+    return {
+        **{
+            name: getattr(options, name)
+            for name in RietveldOptions.__dataclass_fields__
+            if name != "limits"
+        },
+        "limits": {
+            name: getattr(options.limits, name) for name in RefinementLimits.__dataclass_fields__
+        },
+    }
+
+
+def _rietveld_options_from_record(record: dict[str, Any] | None) -> RietveldOptions | None:
+    if record is None:
+        return None
+    values = dict(record)
+    values["limits"] = RefinementLimits(**values["limits"])
+    return RietveldOptions(**values)
+
+
+def _rietveld_iteration_record(item: RietveldIterationRecord) -> dict[str, Any]:
+    return {
+        "iteration": item.iteration,
+        "rp": _ratio_record(item.rp),
+        "rwp": _ratio_record(item.rwp),
+        "chi_square": item.chi_square,
+        "reduced_chi_square": _ratio_record(item.reduced_chi_square),
+        "objective": item.objective,
+        "objective_change": item.objective_change,
+        "scaled_step_norm": item.scaled_step_norm,
+        "damping": item.damping,
+        "cg_iterations": item.cg_iterations,
+        "backtracks": item.backtracks,
+        "parameter_changes": [
+            {
+                "key": _key_record(change.key),
+                "before": change.before,
+                "after": change.after,
+                "scaled_change": change.scaled_change,
+            }
+            for change in item.parameter_changes
+        ],
+        "topology_changes": list(item.topology_changes),
+    }
+
+
+def _rietveld_iteration_from_record(item: dict[str, Any]) -> RietveldIterationRecord:
+    return RietveldIterationRecord(
+        int(item["iteration"]),
+        _ratio_from_record(item["rp"]),
+        _ratio_from_record(item["rwp"]),
+        float(item["chi_square"]),
+        _ratio_from_record(item["reduced_chi_square"]),
+        float(item["objective"]),
+        float(item["objective_change"]),
+        float(item["scaled_step_norm"]),
+        float(item["damping"]),
+        int(item["cg_iterations"]),
+        int(item["backtracks"]),
+        tuple(
+            RietveldParameterChange(
+                _key_from_record(change["key"]),
+                float(change["before"]),
+                float(change["after"]),
+                float(change["scaled_change"]),
+            )
+            for change in item["parameter_changes"]
+        ),
+        tuple(item["topology_changes"]),
+    )
+
+
+def _rietveld_checkpoint_record(
+    checkpoint: RietveldCheckpoint | None,
+    arrays: _ArrayWriter,
+    codecs: tuple[PhysicsProviderCodec, ...],
+) -> dict[str, Any] | None:
+    if checkpoint is None:
+        return None
+    return {
+        "completed_iterations": checkpoint.completed_iterations,
+        "phases": [
+            _rietveld_phase_record(phase, arrays, f"rietveld_checkpoint_{index}", codecs)
+            for index, phase in enumerate(checkpoint.phases)
+        ],
+        "parameters": _parameters_record(checkpoint.parameters),
+        "objective": checkpoint.objective,
+        "damping": checkpoint.damping,
+        "history": [_rietveld_iteration_record(item) for item in checkpoint.history],
+    }
+
+
+def _rietveld_checkpoint_from_record(
+    record: dict[str, Any] | None,
+    arrays: dict[str, NDArray[np.generic]],
+    codecs: tuple[PhysicsProviderCodec, ...],
+) -> RietveldCheckpoint | None:
+    if record is None:
+        return None
+    parameters = _parameters_from_record(record["parameters"])
+    if parameters is None:
+        raise PersistenceError("Rietveld checkpoint parameters are missing")
+    return RietveldCheckpoint(
+        int(record["completed_iterations"]),
+        tuple(_rietveld_phase_from_record(phase, arrays, codecs) for phase in record["phases"]),
+        parameters,
+        float(record["objective"]),
+        float(record["damping"]),
+        tuple(_rietveld_iteration_from_record(item) for item in record["history"]),
+    )
+
+
 def _pattern_record(pattern: PowderPattern | None, arrays: _ArrayWriter) -> dict[str, Any] | None:
     if pattern is None:
         return None
@@ -1029,6 +1251,14 @@ def save_bundle(
             _rietveld_phase_record(phase, writer, f"rietveld_phase_{index}", codecs)
             for index, phase in enumerate(bundle.rietveld_phases)
         ],
+        "rietveld_domains": [
+            _structural_domain_record(domain) for domain in bundle.rietveld_domains
+        ],
+        "rietveld_selection": _rietveld_selection_record(bundle.rietveld_selection),
+        "rietveld_options": _rietveld_options_record(bundle.rietveld_options),
+        "rietveld_checkpoint": _rietveld_checkpoint_record(
+            bundle.rietveld_checkpoint, writer, codecs
+        ),
         "calculation_options": (
             None
             if bundle.calculation_options is None
@@ -1093,7 +1323,7 @@ def load_bundle(
     *,
     provider_codecs: tuple[PhysicsProviderCodec, ...] = (),
 ) -> PersistenceBundle:
-    """Validate and load a version-1, version-2, or version-3 bundle without pickle."""
+    """Validate and load a supported versioned bundle without pickle."""
 
     source = Path(path).resolve()
     try:
@@ -1104,7 +1334,7 @@ def load_bundle(
     if (
         not isinstance(version, int)
         or isinstance(version, bool)
-        or version not in (1, 2, FORMAT_VERSION)
+        or version not in (1, 2, 3, FORMAT_VERSION)
     ):
         raise PersistenceError(f"unsupported persistence format {manifest.get('format_version')!r}")
     if manifest.get("archive", {}).get("file") != ARCHIVE_NAME:
@@ -1140,6 +1370,19 @@ def load_bundle(
     codecs = tuple(provider_codecs)
     options = record["calculation_options"]
     calculation_result = record["calculation_result"]
+    structural_phases = tuple(
+        _rietveld_phase_from_record(phase, arrays, codecs)
+        for phase in record.get("rietveld_phases", ())
+    )
+    domain_records = record.get("rietveld_domains")
+    structural_domains = (
+        (None,) * len(structural_phases)
+        if domain_records is None
+        else tuple(
+            _structural_domain_from_record(domain, phase)
+            for domain, phase in zip(domain_records, structural_phases, strict=True)
+        )
+    )
     return PersistenceBundle(
         pattern=_pattern_from_record(record["pattern"], arrays),
         instrument=_instrument_from_record(record["instrument"]),
@@ -1149,9 +1392,16 @@ def load_bundle(
         ),
         wavelength_components=_components_from_record(record["wavelength_components"], arrays),
         phases=tuple(_phase_from_record(phase, arrays, codecs) for phase in record["phases"]),
-        rietveld_phases=tuple(
-            _rietveld_phase_from_record(phase, arrays, codecs)
-            for phase in record.get("rietveld_phases", ())
+        rietveld_phases=structural_phases,
+        rietveld_domains=structural_domains,
+        rietveld_selection=(
+            None
+            if record.get("rietveld_selection") is None
+            else RietveldParameterSelection(**record["rietveld_selection"])
+        ),
+        rietveld_options=_rietveld_options_from_record(record.get("rietveld_options")),
+        rietveld_checkpoint=_rietveld_checkpoint_from_record(
+            record.get("rietveld_checkpoint"), arrays, codecs
         ),
         calculation_options=None if options is None else CalculationOptions(**options),
         calculation_result=(

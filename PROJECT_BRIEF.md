@@ -71,6 +71,16 @@ explicit execution budgets and termination reasons, and checkpoints of the
 last accepted state. Terminal key handling is an optional adapter; numerical
 code never reads standard input or configures global logging.
 
+Unit 17 now includes the first full monochromatic CIF-backed Rietveld vertical
+slice. Typed phase/lattice/site parameter families map through fixed/affine
+constraints into the Rust structural pattern JVP/VJP, and damped Gauss--Newton
+is solved without a dense sample Jacobian. The accepted-state runtime covers
+structured logs, cancellation, budgets, checkpoint callbacks, restart, and
+rank/correlation diagnostics. Multiple phases and built-in X-ray and neutron
+scattering use the same interface. Persistence format 4 retains the request,
+guarded structural domains, options, and restart checkpoint while loading
+formats 1--3.
+
 ## Design commitments
 
 - Use GSAS-II only as a pinned validation oracle, never as the architecture.

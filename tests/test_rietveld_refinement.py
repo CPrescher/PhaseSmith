@@ -6,6 +6,7 @@ from fractions import Fraction
 import numpy as np
 import pytest
 import rietveld
+from rietveld.refinement import AffineConstraint
 from rietveld.refinement import rietveld as structural_refinement
 
 P1_CIF = """
@@ -200,6 +201,9 @@ def test_matrix_free_refinement_recovers_phase_scale_and_emits_checkpoints() -> 
     assert result.termination_reason is structural_refinement.TerminationReason.CONVERGED
     assert result.phases[0].scale == pytest.approx(1.0, rel=2.0e-8)
     assert result.metrics.rwp < 1.0e-8
+    assert result.jacobian_rank == 1
+    assert result.covariance is not None
+    assert result.covariance.shape == (1, 1)
     assert checkpoints
     assert checkpoints[-1] == result.checkpoint
     assert events[0].kind is structural_refinement.RefinementEventKind.START
@@ -315,3 +319,186 @@ def test_matrix_free_refinement_improves_each_structural_parameter_family(
     )
     assert result.history
     assert result.metrics.chi_square < initial_metrics.chi_square * 1.0e-4
+
+
+def test_rank_deficient_multiphase_scales_are_reported_without_fake_covariance() -> None:
+    single = request_from_cif(selection(phase_scale=True))
+    first = replace(single.phases[0], phase_id="alpha", scale=0.6)
+    second = replace(single.phases[0], phase_id="beta", scale=0.4)
+    phases = (first, second)
+    parameters = structural_refinement.build_parameter_set(
+        phases,
+        (None, None),
+        single.selection,
+    )
+    calculated = structural_refinement.calculate(single.pattern, single.experiment, phases)
+    request = structural_refinement.RietveldInput(
+        rietveld.PowderPattern(single.pattern.x, observed_y=calculated.y),
+        single.experiment,
+        phases,
+        (None, None),
+        parameters,
+        selection=single.selection,
+    )
+    result = structural_refinement.refine(request)
+    assert result.termination_reason is structural_refinement.TerminationReason.CONVERGED
+    assert result.jacobian_rank == 1
+    assert result.covariance is None
+    assert len(result.unresolved_correlations) == 1
+    assert abs(result.unresolved_correlations[0].correlation) == pytest.approx(1.0)
+
+
+def test_affine_multiphase_scale_constraint_is_applied_in_native_products() -> None:
+    single = request_from_cif(selection(phase_scale=True))
+    truth_phases = (
+        replace(single.phases[0], phase_id="alpha", scale=0.6),
+        replace(single.phases[0], phase_id="beta", scale=0.4),
+    )
+    observed = structural_refinement.calculate(single.pattern, single.experiment, truth_phases).y
+    starting_phases = (
+        replace(truth_phases[0], scale=0.48),
+        replace(truth_phases[1], scale=0.32),
+    )
+    parameters = structural_refinement.build_parameter_set(
+        starting_phases, (None, None), single.selection
+    )
+    constraint = AffineConstraint(
+        structural_refinement.phase_scale_key("beta"),
+        structural_refinement.phase_scale_key("alpha"),
+        multiplier=2.0 / 3.0,
+    )
+    request = structural_refinement.RietveldInput(
+        rietveld.PowderPattern(single.pattern.x, observed_y=observed),
+        single.experiment,
+        starting_phases,
+        (None, None),
+        parameters,
+        (constraint,),
+        single.selection,
+    )
+    result = structural_refinement.refine(request)
+    assert result.phases[0].scale == pytest.approx(0.6, rel=2.0e-8)
+    assert result.phases[1].scale == pytest.approx(0.4, rel=2.0e-8)
+    assert result.covariance is not None
+    assert result.covariance[0, 1] != 0.0
+
+
+def test_monochromatic_neutron_cif_request_refines_through_same_runtime() -> None:
+    neutron_experiment = rietveld.ConstantWavelengthExperiment.neutron(experiment().instrument)
+    x = np.linspace(15.0, 100.0, 8_501)
+    selected = selection(phase_scale=True)
+    initial = structural_refinement.RietveldInput.from_cif(
+        rietveld.PowderPattern(x, observed_y=np.zeros_like(x)),
+        neutron_experiment,
+        P1_CIF,
+        phase_id="neutron-alpha",
+        selection=selected,
+    )
+    assert type(initial.phases[0].scattering) is rietveld.NeutronNuclear
+    truth = structural_refinement.calculate(initial.pattern, neutron_experiment, initial.phases)
+    starting_phase = replace(initial.phases[0], scale=0.72)
+    request = replace(
+        initial,
+        pattern=rietveld.PowderPattern(x, observed_y=truth.y),
+        phases=(starting_phase,),
+        parameters=structural_refinement.build_parameter_set((starting_phase,), (None,), selected),
+    )
+    result = structural_refinement.refine(request)
+    assert result.phases[0].scale == pytest.approx(1.0, rel=2.0e-8)
+    assert result.metrics.rwp < 1.0e-8
+
+
+def test_checkpoint_resume_reproduces_continuous_accepted_history() -> None:
+    truth = request_from_cif(selection(phase_scale=True))
+    starting_phase = replace(truth.phases[0], scale=0.41)
+    request = replace(
+        truth,
+        phases=(starting_phase,),
+        parameters=structural_refinement.build_parameter_set(
+            (starting_phase,), (None,), truth.selection
+        ),
+    )
+    common = dict(
+        min_iterations=1,
+        max_scaled_parameter_step=0.15,
+        estimate_covariance=False,
+    )
+    first = structural_refinement.refine(
+        request,
+        structural_refinement.RietveldOptions(
+            limits=structural_refinement.RefinementLimits(max_iterations=1, max_evaluations=100),
+            **common,
+        ),
+    )
+    resumed = structural_refinement.refine(
+        request,
+        structural_refinement.RietveldOptions(
+            limits=structural_refinement.RefinementLimits(max_iterations=10, max_evaluations=300),
+            **common,
+        ),
+        checkpoint=first.checkpoint,
+    )
+    continuous = structural_refinement.refine(
+        request,
+        structural_refinement.RietveldOptions(
+            limits=structural_refinement.RefinementLimits(max_iterations=10, max_evaluations=300),
+            **common,
+        ),
+    )
+    assert resumed.history == continuous.history
+    assert resumed.parameters == continuous.parameters
+    assert resumed.phases[0].scale == continuous.phases[0].scale
+
+
+def test_cancellation_requested_by_checkpoint_sink_returns_that_accepted_state() -> None:
+    truth = request_from_cif(selection(phase_scale=True))
+    starting_phase = replace(truth.phases[0], scale=0.45)
+    request = replace(
+        truth,
+        phases=(starting_phase,),
+        parameters=structural_refinement.build_parameter_set(
+            (starting_phase,), (None,), truth.selection
+        ),
+    )
+    token = rietveld.CancellationToken()
+    accepted = []
+
+    def stop_after_checkpoint(checkpoint: object) -> None:
+        accepted.append(checkpoint)
+        token.request("checkpoint_stop")
+
+    result = structural_refinement.refine(
+        request,
+        structural_refinement.RietveldOptions(estimate_covariance=False),
+        cancellation=token,
+        checkpoint_callback=stop_after_checkpoint,
+    )
+    assert result.termination_reason is structural_refinement.TerminationReason.CANCELLED
+    assert result.termination_message == "checkpoint_stop"
+    assert len(accepted) == 1
+    assert result.checkpoint == accepted[0]
+
+
+def test_model_evaluation_budget_returns_last_calculated_state() -> None:
+    truth = request_from_cif(selection(phase_scale=True))
+    starting_phase = replace(truth.phases[0], scale=0.7)
+    request = replace(
+        truth,
+        phases=(starting_phase,),
+        parameters=structural_refinement.build_parameter_set(
+            (starting_phase,), (None,), truth.selection
+        ),
+    )
+    result = structural_refinement.refine(
+        request,
+        structural_refinement.RietveldOptions(
+            limits=structural_refinement.RefinementLimits(
+                max_iterations=10,
+                max_evaluations=1,
+            )
+        ),
+    )
+    assert result.termination_reason is structural_refinement.TerminationReason.MAX_EVALUATIONS
+    assert result.evaluations == 1
+    assert result.history == ()
+    assert result.phases == request.phases

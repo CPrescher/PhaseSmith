@@ -294,6 +294,20 @@ vector or optimizer callback manually. Exact equations, convergence behavior,
 and examples are in [`refinement.md`](refinement.md) and
 [`lebail.md`](lebail.md).
 
+## Rietveld contract
+
+`rietveld.refinement.rietveld` is a separate method module rather than a flag
+on Le Bail. `RietveldInput.from_cif` creates a typed structural phase, scattering
+model, guarded reflection domain, and selected parameter set. `refine` uses
+matrix-free structural JVP/VJP products and returns the last accepted phases,
+parameters, calculation, residual metrics, iteration history, covariance/rank
+diagnostics, termination reason, and restart checkpoint.
+
+The initial families are phase scale, symmetry-independent lattice parameters,
+symmetry-allowed fractional coordinates, occupancy, and isotropic `U_iso`.
+Multiple phases and monochromatic X-ray or neutron experiments share the same
+interface. Details and a complete script are in [`rietveld.md`](rietveld.md).
+
 ## Compatibility policy
 
 Before the first stable release, domain models may evolve with explicit release

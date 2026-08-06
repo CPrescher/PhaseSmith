@@ -13,6 +13,9 @@ structural intensities and monochromatic structural patterns now have a fused
 native values/JVP/VJP path and a scriptable `RietveldPhase` API.
 CIF-backed Le Bail can refine setting-aware lattice parameters with analytical
 derivatives and guarded, stable-ID reflection-domain regeneration.
+The first full CIF-backed Rietveld workflow now refines phase scale, lattice,
+symmetry-allowed coordinates, occupancy, and isotropic displacement through
+matrix-free Rust JVP/VJP products with safe checkpoints and structured logs.
 
 The architecture and roadmap are in [PROJECT_BRIEF.md](PROJECT_BRIEF.md); the
 equations and parameter conventions are in [docs/equations.md](docs/equations.md).
@@ -23,7 +26,7 @@ models and their independently reviewed source provenance are documented in
 [docs/scattering-models.md](docs/scattering-models.md). General-symmetry
 structural equations and fused execution are documented in
 [docs/structural-intensities.md](docs/structural-intensities.md). Full
-structural refinement remains a follow-on unit.
+structural refinement is documented in [docs/rietveld.md](docs/rietveld.md).
 The implemented native unit-cell and P1 structure-factor foundation is
 documented in
 [docs/crystallography-foundation.md](docs/crystallography-foundation.md).
@@ -343,6 +346,30 @@ request = lebail.LeBailInput.from_cif(
     phase_id="alpha",
 )
 result = lebail.refine(request)
+print(result.phases[0].structure.cell)
+```
+
+A monochromatic structural refinement is likewise constructed directly from a
+CIF. Parameter families are explicit and no GSAS-II installation is involved:
+
+```python
+from rietveld.refinement import rietveld
+
+request = rietveld.RietveldInput.from_cif(
+    observed,
+    experiment,
+    "phase.cif",
+    phase_id="alpha",
+    selection=rietveld.RietveldParameterSelection(
+        phase_scale=True,
+        lattice=True,
+        coordinates=False,
+        occupancy=False,
+        u_iso=False,
+    ),
+)
+result = rietveld.refine(request)
+print(result.termination_reason, result.metrics.rwp)
 print(result.phases[0].structure.cell)
 ```
 

@@ -511,6 +511,9 @@ class RietveldOptions:
     max_backtracks: int = 8
     use_uncertainty: bool = True
     support_fwhm: float = 20.0
+    estimate_covariance: bool = True
+    max_covariance_parameters: int = 64
+    unresolved_correlation: float = 1.0 - 1.0e-10
 
     def __post_init__(self) -> None:
         if not isinstance(self.limits, RefinementLimits):
@@ -537,8 +540,17 @@ class RietveldOptions:
             raise ValueError("max_cg_iterations must be a positive integer")
         if not isinstance(self.max_backtracks, int) or self.max_backtracks < 0:
             raise ValueError("max_backtracks must be a non-negative integer")
-        if not isinstance(self.use_uncertainty, bool):
-            raise TypeError("use_uncertainty must be boolean")
+        if not isinstance(self.use_uncertainty, bool) or not isinstance(
+            self.estimate_covariance, bool
+        ):
+            raise TypeError("uncertainty and covariance selections must be boolean")
+        if (
+            not isinstance(self.max_covariance_parameters, int)
+            or self.max_covariance_parameters <= 0
+        ):
+            raise ValueError("max_covariance_parameters must be a positive integer")
+        if not 0.0 <= self.unresolved_correlation <= 1.0:
+            raise ValueError("unresolved_correlation must lie in [0, 1]")
 
 
 @dataclass(frozen=True, slots=True)
@@ -549,6 +561,21 @@ class RietveldParameterChange:
     before: float
     after: float
     scaled_change: float
+
+
+@dataclass(frozen=True, slots=True)
+class RietveldParameterCorrelation:
+    """A pair of nearly collinear weighted Jacobian columns."""
+
+    left: ParameterKey
+    right: ParameterKey
+    correlation: float
+
+    def __post_init__(self) -> None:
+        if self.left == self.right:
+            raise ValueError("correlated parameter keys must differ")
+        if not np.isfinite(self.correlation) or not -1.0 <= self.correlation <= 1.0:
+            raise ValueError("parameter correlation must lie in [-1, 1]")
 
 
 @dataclass(frozen=True, slots=True)
@@ -615,7 +642,22 @@ class RietveldResult:
     termination_message: str
     checkpoint: RietveldCheckpoint
     evaluations: int
+    jacobian_rank: int | None
+    covariance: NDArray[np.float64] | None
+    unresolved_correlations: tuple[RietveldParameterCorrelation, ...]
     logger_error: Exception | None = None
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "phases", tuple(self.phases))
+        object.__setattr__(self, "history", tuple(self.history))
+        object.__setattr__(self, "unresolved_correlations", tuple(self.unresolved_correlations))
+        if self.covariance is not None:
+            expected = (len(self.parameters.specs), len(self.parameters.specs))
+            if self.covariance.dtype != np.float64 or self.covariance.shape != expected:
+                raise ValueError("Rietveld covariance must match the physical parameter set")
+            if not np.isfinite(self.covariance).all():
+                raise ValueError("Rietveld covariance must contain finite values")
+            self.covariance.flags.writeable = False
 
 
 def _weight_vector(pattern: PowderPattern, use_uncertainty: bool) -> NDArray[np.float64]:
@@ -918,6 +960,59 @@ def _checkpoint(
     return RietveldCheckpoint(len(history), phases, parameters, objective, damping, tuple(history))
 
 
+def _covariance_diagnostics(
+    linearization: _RietveldLinearization,
+    metrics: ResidualEvaluation,
+    parameters: ParameterSet,
+    free_keys: tuple[ParameterKey, ...],
+    options: RietveldOptions,
+) -> tuple[
+    int | None,
+    NDArray[np.float64] | None,
+    tuple[RietveldParameterCorrelation, ...],
+]:
+    """Build only the small parameter-space normal matrix for diagnostics."""
+
+    free_count = linearization.physical_to_free.shape[1]
+    if (
+        not options.estimate_covariance
+        or free_count == 0
+        or free_count > options.max_covariance_parameters
+    ):
+        return None, None, ()
+    identity = np.eye(free_count, dtype=np.float64)
+    columns = np.column_stack(
+        [linearization.jvp(identity[:, index]) for index in range(free_count)]
+    )
+    normal = columns.T @ columns
+    rank = int(np.linalg.matrix_rank(normal))
+    norms = np.linalg.norm(columns, axis=0)
+    correlations = []
+    for left in range(free_count):
+        if norms[left] == 0.0:
+            continue
+        for right in range(left + 1, free_count):
+            if norms[right] == 0.0:
+                continue
+            correlation = float(columns[:, left] @ columns[:, right] / (norms[left] * norms[right]))
+            correlation = float(np.clip(correlation, -1.0, 1.0))
+            if abs(correlation) >= options.unresolved_correlation:
+                correlations.append(
+                    RietveldParameterCorrelation(free_keys[left], free_keys[right], correlation)
+                )
+    if rank != free_count:
+        return rank, None, tuple(correlations)
+    free_covariance = np.linalg.inv(normal)
+    if np.isfinite(metrics.reduced_chi_square):
+        free_covariance *= metrics.reduced_chi_square
+    physical_covariance = (
+        linearization.physical_to_free @ free_covariance @ linearization.physical_to_free.T
+    )
+    physical_covariance = np.ascontiguousarray(physical_covariance)
+    physical_covariance.flags.writeable = False
+    return rank, physical_covariance, tuple(correlations)
+
+
 def refine(
     input_data: RietveldInput,
     options: RietveldOptions | None = None,
@@ -1140,6 +1235,16 @@ def refine(
     if calculation is None:  # pragma: no cover - every guarded path assigns it
         raise RuntimeError("structural refinement produced no calculation")
     final_checkpoint = _checkpoint(phases, parameters, objective, damping, history)
+    try:
+        jacobian_rank, covariance, correlations = _covariance_diagnostics(
+            linearization,
+            metrics,
+            parameters,
+            transform.free_keys,
+            selected,
+        )
+    except RefinementStopped:
+        jacobian_rank, covariance, correlations = None, None, ()
     runtime.emit(
         RefinementEventKind.TERMINATION,
         "rietveld",
@@ -1156,5 +1261,8 @@ def refine(
         termination_message,
         final_checkpoint,
         runtime.evaluations,
+        jacobian_rank,
+        covariance,
+        correlations,
         runtime.logger_error,
     )
