@@ -30,8 +30,11 @@ NumPy references cover both slices. Unit 13 adds optional parser-independent
 CIF models/import plus fixed-cell CIF-to-Le Bail. Unit 14 adds independently
 sourced native non-resonant X-ray and coherent-neutron scattering tables,
 prepared value/derivative kernels, and a versioned vectorized provider API.
-General-symmetry structural intensities and structural refinement remain
-follow-on units. The live pinned GSAS-II P1
+Unit 15 adds general-symmetry integrated intensities, explicit neutral and
+Bragg--Brentano LP corrections, a fused structural CW pattern kernel with
+analytical JVP/VJP products, scriptable `RietveldPhase` models, version-2
+persistence, independent NumPy comparisons, and combined Rust/Python
+benchmarks. Full structural refinement remains a follow-on unit. The live pinned GSAS-II P1
 and reflection-behavior fixtures are pending because the external checkout is
 not available in the current environment.
 
@@ -126,7 +129,7 @@ documented; GSAS-II itself is never vendored.
 - `crates/rietveld-crystallography`: file-independent cell, exact symmetry,
   reflection-generation, and P1 structure-factor kernels; scattering follows.
 - `crates/rietveld-engine`: native composition facade; structural-intensity
-  composition with the support-limited profile kernel follows.
+  composition with the support-limited profile kernel and structural JVP/VJP.
 - `python/rietveld`: public Python package, separated instrument/phase/pattern/
   calculation/refinement modules, reference implementation, optional
   integrations, and validation tooling.
@@ -151,12 +154,12 @@ and prototyping paths and are never called inside the peak/sample hot loop.
 Built-in and third-party models must satisfy the same calculation contracts so
 Le Bail, Rietveld, persistence, and GUI adapters do not branch on model origin.
 
-Monochromatic constant-wavelength radiation is the baseline model. Discrete
+Monochromatic constant-wavelength X-ray and neutron radiation are supported
+baseline models. Discrete
 wavelength components are optional composition: one component is numerically
 identical to the monochromatic path, while K-alpha doublets or other spectra are
-supplied explicitly. FCJ geometry is independently optional. Neutron CW support
-will reuse the monochromatic radiation concept without inheriting X-ray
-doublet assumptions.
+supplied explicitly. FCJ geometry is independently optional. Neutron CW does
+not inherit X-ray doublet or polarization assumptions.
 
 ## Milestones
 

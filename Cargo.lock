@@ -547,6 +547,7 @@ dependencies = [
 name = "rietveld-engine"
 version = "0.1.0"
 dependencies = [
+ "criterion",
  "rietveld-core",
  "rietveld-crystallography",
 ]

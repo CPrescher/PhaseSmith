@@ -12,7 +12,12 @@ from . import _core
 from ._api import _vector
 from .crystallography import calculate_structure_factors, p1_parameter_names
 from .cw import CW_GLOBAL_PARAMETER_ORDER, CW_LOCAL_PARAMETER_ORDER, accumulate_cw_contributions
-from .extensions import PhysicsContext, PhysicsContribution, evaluate_provider
+from .extensions import (
+    CompositePhysicsProvider,
+    PhysicsContext,
+    PhysicsContribution,
+    evaluate_provider,
+)
 from .intensity_corrections import (
     BraggBrentanoUnpolarizedLp,
     NeutralIntegratedIntensityCorrection,
@@ -27,6 +32,7 @@ from .pattern import (
 from .phase import ReflectionGeometryBatch, RietveldPhase
 from .radiation import ConstantWavelengthExperiment, RadiationProbe
 from .results import AccumulationResult, _build_accumulation_result
+from .sample import IsotropicMicrostrainBroadening, IsotropicSizeBroadening
 from .scattering import NeutronNuclear, XrayNonResonant, species_from_structure
 
 
@@ -93,9 +99,20 @@ def _native_model_configuration(
     return None
 
 
+def _supports_fused_structural_physics(provider: object | None) -> bool:
+    if provider is None or type(provider) in (
+        IsotropicSizeBroadening,
+        IsotropicMicrostrainBroadening,
+    ):
+        return True
+    return type(provider) is CompositePhysicsProvider and all(
+        _supports_fused_structural_physics(child) for child in provider.providers
+    )
+
+
 def _native_phase(phase: RietveldPhase) -> object | None:
     configuration = _native_model_configuration(phase)
-    if configuration is None or phase.physics is not None:
+    if configuration is None or not _supports_fused_structural_physics(phase.physics):
         return None
     scattering_model, correction_model, correction_wavelength = configuration
     sites = phase.structure.to_isotropic_site_batch()
@@ -265,6 +282,7 @@ class PreparedStructuralPattern:
     support_fwhm: float
     jacobian_layout: Literal["support", "dense"]
     _native: object | None
+    _contribution: PhysicsContribution | None
 
     def __init__(
         self,
@@ -293,7 +311,24 @@ class PreparedStructuralPattern:
         object.__setattr__(self, "phase", phase)
         object.__setattr__(self, "support_fwhm", float(support_fwhm))
         object.__setattr__(self, "jacobian_layout", jacobian_layout)
-        object.__setattr__(self, "_native", _native_phase(phase))
+        native = _native_phase(phase)
+        contribution = None
+        if native is not None:
+            geometry = _geometry(
+                phase,
+                experiment,
+                np.ones(phase.reflections.reflection_count, dtype=np.float64),
+            )
+            contribution = (
+                PhysicsContribution.neutral(phase.reflections.reflection_count)
+                if phase.physics is None
+                else evaluate_provider(
+                    phase.physics,
+                    PhysicsContext(geometry, experiment.instrument),
+                )
+            )
+        object.__setattr__(self, "_native", native)
+        object.__setattr__(self, "_contribution", contribution)
 
     @property
     def uses_native_fused_path(self) -> bool:
@@ -312,7 +347,9 @@ class PreparedStructuralPattern:
                 self.support_fwhm,
                 self.jacobian_layout,
             )
-        contribution = PhysicsContribution.neutral(self.phase.reflections.reflection_count)
+        contribution = self._contribution
+        if contribution is None:  # pragma: no cover - native/contribution invariant
+            raise RuntimeError("native structural contribution was not prepared")
         accumulation_arrays, reflection_arrays = self._native.calculate(
             *_native_dynamic_arguments(
                 self.pattern,
@@ -344,7 +381,9 @@ class PreparedStructuralPattern:
         direction = _vector(tangent, "tangent")
         if direction.shape != (len(names),):
             raise ValueError("tangent must match the structural parameter count")
-        contribution = PhysicsContribution.neutral(self.phase.reflections.reflection_count)
+        contribution = self._contribution
+        if contribution is None:  # pragma: no cover - native/contribution invariant
+            raise RuntimeError("native structural contribution was not prepared")
         native_result, d_y, d_intensity, d_position = self._native.jvp(
             direction,
             *_native_dynamic_arguments(
@@ -381,7 +420,9 @@ class PreparedStructuralPattern:
         if weights.shape != self.pattern.x.shape:
             raise ValueError("sample_weights must match the pattern sample count")
         names = _structural_parameter_names(self.phase)
-        contribution = PhysicsContribution.neutral(self.phase.reflections.reflection_count)
+        contribution = self._contribution
+        if contribution is None:  # pragma: no cover - native/contribution invariant
+            raise RuntimeError("native structural contribution was not prepared")
         native_result, gradient = self._native.vjp(
             weights,
             *_native_dynamic_arguments(

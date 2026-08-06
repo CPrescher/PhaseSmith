@@ -49,6 +49,11 @@ rietveld.calculation
   Stateless and prepared pattern calculators that compose instrument, phase,
   sample, and pattern inputs into native batch calls.
 
+rietveld.structural_calculation  [implemented]
+  Stateless and prepared one-phase structural CW calculation. Built-in X-ray
+  and neutron models expose fused values/JVP/VJP; custom providers retain a
+  vectorized values fallback with one call per provider.
+
 rietveld.refinement
   Parameter selection, bounds, constraints, residuals, diagnostics, and
   optimizer adapters. Refinement methods are submodules, not mode flags.
@@ -91,6 +96,8 @@ rietveld.phase.ReflectionGeometryBatch
 rietveld.phase.ReciprocalMetric
 rietveld.phase.ReflectionBatch
 rietveld.phase.Phase
+rietveld.phase.StructuralReflectionBatch
+rietveld.phase.RietveldPhase
 rietveld.crystallography.UnitCell
 rietveld.crystallography.AtomSiteBatch
 rietveld.crystallography.calculate_p1_structure_factors
@@ -124,6 +131,10 @@ rietveld.intensity_corrections.BraggBrentanoUnpolarizedLp
 rietveld.refinement.lebail.LeBailPhase
 rietveld.pattern.PowderPattern
 rietveld.pattern.PatternCalculationResult
+rietveld.pattern.StructuralReflectionResult
+rietveld.pattern.StructuralPatternCalculationResult
+rietveld.pattern.StructuralPatternJvpResult
+rietveld.pattern.StructuralPatternVjpResult
 rietveld.extensions.PhysicsContribution
 rietveld.extensions.ReflectionPhysicsProvider
 rietveld.extensions.CompositePhysicsProvider
@@ -141,6 +152,8 @@ rietveld.calculation.PreparedPattern
 rietveld.calculation.calculate_monochromatic_pattern
 rietveld.calculation.calculate_neutron_pattern
 rietveld.calculation.calculate_neutron_fcj_pattern
+rietveld.structural_calculation.calculate_structural_pattern
+rietveld.structural_calculation.PreparedStructuralPattern
 rietveld.fcj.profile_fcj
 rietveld.fcj.accumulate_cw_fcj
 rietveld.fcj.accumulate_cw_fcj_components

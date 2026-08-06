@@ -993,9 +993,9 @@ requirement.
 
 ## Implementation units 11 through 18: crystallography and Rietveld
 
-Status: units 11 through 14 implemented and independently validated (2026-08-05),
+Status: units 11 through 15 implemented and independently validated (2026-08-05),
 with their live pinned GSAS-II behavior fixtures pending an available external
-checkout; units 15 through 18 are planned. The complete equations, data contracts,
+checkout; units 16 through 18 are planned. The complete equations, data contracts,
 ordering, derivative strategy, validation gates, benchmarks, and discipline are
 specified in
 [`docs/crystallography-plan.md`](docs/crystallography-plan.md).
@@ -1201,16 +1201,13 @@ resolved on 2026-08-05 by selecting the MIT License.
 
 ## Definition of the next completed milestone
 
-The immediate next milestone is implementation unit 14. It is complete when:
+Implementation unit 15 is complete: general-symmetry structural values,
+integrated corrections, fused CW patterns, structural JVP/VJP products,
+`RietveldPhase`, format-2 persistence with format-1 migration, independent
+NumPy validation, and combined benchmarks pass the normal quality gate.
 
-- deterministic generated tables verify pinned upstream commits and checksums;
-- prepared Rust X-ray and neutron models evaluate reflection/site batches and
-  `df/ds` without repeated species lookup in the hot loop;
-- exact species, ionic, isotope, missing-data, range, and energy-dependent-row
-  behavior is typed and tested;
-- a versioned explicit Python batch-provider contract supports third-party
-  research models without per-atom/reflection callbacks;
-- Rust and independent NumPy equations, finite differences, table integrity,
-  and prepared-batch benchmarks pass; and
-- normal builds and runtime calculations need no upstream checkout, network,
-  Gemmi, or GSAS-II.
+The immediate next milestone is implementation unit 16. It is complete when a
+CIF-backed Le Bail script can refine crystal-system-allowed lattice parameters,
+regenerate a guarded reflection domain only between accepted iterations,
+preserve intensities by stable family ID, and expose the same result through
+the optional Dioptas adapter without changing explicit-reflection Le Bail.

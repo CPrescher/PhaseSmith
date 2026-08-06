@@ -153,11 +153,15 @@ production orchestration step.
 
 ## Unit 15 implementation sequence
 
-Current status: steps 1 through 4 are implemented. Exact expansion rotations,
-general-symmetry values/dense/JVP/VJP kernels, neutral/LP corrections, and the
-typed provider-facing Python API pass strict Rust checks, 53 Rust tests, and
-321 normal Python tests. The fused structural-pattern engine, structural phase
-model, persistence migration, and combined benchmarks remain in progress.
+Current status: all seven steps are implemented. Built-in monochromatic X-ray
+and neutron models use one native values/JVP/VJP call. Built-in isotropic size
+and microstrain contributions remain on that fused path. Custom scattering and
+correction providers use a vectorized fallback and are each called once.
+Preferred orientation also remains on the fallback until its cell-metric
+derivative is explicit; structural derivative products never omit that chain.
+`RietveldPhase` remains distinct from the reflection-intensity `Phase` used by
+Le Bail. Persistence format 2 adds structural phases and explicitly migrates
+format-1 projects with an empty structural-phase collection.
 
 1. Extend exact symmetry expansion with representative rotations and tests.
 2. Add a general-symmetry Rust values/dense/JVP/VJP structure-factor kernel
@@ -173,3 +177,18 @@ model, persistence migration, and combined benchmarks remain in progress.
    separate/combined benchmarks.
 7. Run the full quality gate, review the complete unit, and commit. External
    GSAS-II fixtures remain a separately generated validation artifact.
+
+## Recorded combined benchmarks
+
+On the 2026-08-05 macOS ARM64 development machine, the release Rust benchmark
+with 256 reflections, 32 asymmetric sites, and 20,001 samples measured a
+716.9 microsecond fused median and a 718.5 microsecond explicitly separated
+median. The two cases execute equivalent native numerical work; fusion removes
+the orchestration boundary rather than changing the equations.
+
+The optimized public Python benchmark measured a 0.806 millisecond fused
+median and a 1.203 millisecond separated median. The separated public path also
+materializes bounded dense structural derivatives, while the fused production
+path is ready for JVP/VJP products. Reproduce these measurements with
+`cargo bench -p rietveld-engine --bench structural_pattern` and
+`python benchmarks/structural_pattern.py --require-release`.

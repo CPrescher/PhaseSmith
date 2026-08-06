@@ -430,8 +430,9 @@ and benchmarks are in
 
 ## Implementation unit 15: structural intensities and fused patterns
 
-Status: equation, derivative, correction-ownership, and execution contract
-frozen before implementation in `docs/structural-intensities.md`.
+Status: implemented and reviewed. Equations, derivative and correction
+ownership, public interfaces, validation, persistence migration, and recorded
+benchmarks are in `docs/structural-intensities.md`.
 
 ### Work
 

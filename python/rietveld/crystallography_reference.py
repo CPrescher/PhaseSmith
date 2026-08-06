@@ -8,6 +8,7 @@ import numpy as np
 from numpy.typing import ArrayLike, NDArray
 
 from .crystallography import AtomSiteBatch, UnitCell, p1_parameter_names
+from .structure import CrystalStructure
 
 
 @dataclass(frozen=True, slots=True)
@@ -30,6 +31,17 @@ class ReferenceP1Result:
     parameter_names: tuple[str, ...]
     d_f_d_parameters: NDArray[np.complex128]
     d_intensity_d_parameters: NDArray[np.float64]
+
+
+@dataclass(frozen=True, slots=True)
+class ReferenceStructureFactorValues:
+    """Independent general-symmetry values without derivative products."""
+
+    f: NDArray[np.complex128]
+    f_squared: NDArray[np.float64]
+    integrated_intensity: NDArray[np.float64]
+    q_squared_inverse_angstrom2: NDArray[np.float64]
+    s_inverse_angstrom: NDArray[np.float64]
 
 
 def reference_cell_geometry(cell: UnitCell) -> ReferenceCellGeometry:
@@ -117,3 +129,58 @@ def reference_p1_structure_factors(
     d_intensity = 2.0 * float(scale) * np.real(np.conjugate(f)[None, :] * d_f)
     d_intensity[-1] = np.abs(f) ** 2
     return ReferenceP1Result(f, intensity, names, d_f, d_intensity)
+
+
+def reference_structure_factor_values(
+    structure: CrystalStructure,
+    hkl: ArrayLike,
+    multiplicity: ArrayLike,
+    scattering_amplitudes: ArrayLike,
+    correction: ArrayLike,
+    *,
+    scale: float,
+    coordinate_tolerance: float = 1.0e-10,
+) -> ReferenceStructureFactorValues:
+    """Evaluate general-symmetry structural values with readable NumPy loops."""
+
+    indices = np.asarray(hkl, dtype=np.int64)
+    multiplicities = np.asarray(multiplicity, dtype=np.float64)
+    amplitudes = np.asarray(scattering_amplitudes, dtype=np.complex128)
+    corrections = np.asarray(correction, dtype=np.float64)
+    if indices.ndim != 2 or indices.shape[1] != 3:
+        raise ValueError("hkl must have shape (reflection_count, 3)")
+    reflection_count = indices.shape[0]
+    site_count = len(structure.sites)
+    if amplitudes.shape != (reflection_count, site_count):
+        raise ValueError("scattering_amplitudes must have shape (reflection_count, site_count)")
+    if multiplicities.shape != (reflection_count,) or corrections.shape != (reflection_count,):
+        raise ValueError("multiplicity and correction must match the reflection count")
+    geometry = reference_cell_geometry(structure.cell)
+    h_float = indices.astype(np.float64)
+    q_squared = np.einsum("ri,ij,rj->r", h_float, geometry.reciprocal_metric, h_float)
+    f = np.zeros(reflection_count, dtype=np.complex128)
+    for site_index, site in enumerate(structure.sites):
+        unique_positions: list[NDArray[np.float64]] = []
+        for operation in structure.space_group.operations:
+            candidate = operation.apply_fractional(site.fractional_xyz)
+            if not any(
+                np.all(
+                    np.minimum(np.abs(candidate - existing), 1.0 - np.abs(candidate - existing))
+                    <= coordinate_tolerance
+                )
+                for existing in unique_positions
+            ):
+                unique_positions.append(candidate)
+        positions = np.asarray(unique_positions, dtype=np.float64)
+        symmetry_sum = np.exp(2j * np.pi * (h_float @ positions.T)).sum(axis=1)
+        displacement = np.exp(-2.0 * np.pi**2 * (site.u_iso_angstrom2 or 0.0) * q_squared)
+        f += site.occupancy * amplitudes[:, site_index] * displacement * symmetry_sum
+    f_squared = np.abs(f) ** 2
+    intensity = float(scale) * multiplicities * corrections * f_squared
+    return ReferenceStructureFactorValues(
+        f,
+        f_squared,
+        intensity,
+        q_squared,
+        0.5 * np.sqrt(q_squared),
+    )

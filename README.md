@@ -8,7 +8,9 @@ TOF calculation, plus a first-class scripted Le Bail workflow. Analytical
 derivatives are computed during fused peak accumulation. The crystallography
 foundation includes native general-cell mathematics, P1 complex structure
 factors, exact symmetry, bounded reflection generation, and prepared X-ray and
-neutron scattering factors with analytical derivatives.
+neutron scattering factors with analytical derivatives. General-symmetry
+structural intensities and monochromatic structural patterns now have a fused
+native values/JVP/VJP path and a scriptable `RietveldPhase` API.
 
 The architecture and roadmap are in [PROJECT_BRIEF.md](PROJECT_BRIEF.md); the
 equations and parameter conventions are in [docs/equations.md](docs/equations.md).
@@ -17,7 +19,9 @@ structure factors, CIF-to-Le Bail, and full Rietveld refinement is in
 [docs/crystallography-plan.md](docs/crystallography-plan.md). The scattering
 models and their independently reviewed source provenance are documented in
 [docs/scattering-models.md](docs/scattering-models.md). General-symmetry
-structural intensity and structural refinement remain follow-on units.
+structural equations and fused execution are documented in
+[docs/structural-intensities.md](docs/structural-intensities.md). Full
+structural refinement remains a follow-on unit.
 The implemented native unit-cell and P1 structure-factor foundation is
 documented in
 [docs/crystallography-foundation.md](docs/crystallography-foundation.md).
@@ -72,6 +76,7 @@ maturin develop --release --uv
 uv run python benchmarks/profile.py --require-release
 uv run python benchmarks/lebail.py --require-release
 uv run python benchmarks/scattering.py --require-release
+uv run python benchmarks/structural_pattern.py --require-release
 ```
 
 ```python

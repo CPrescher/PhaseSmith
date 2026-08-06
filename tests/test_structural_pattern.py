@@ -6,6 +6,11 @@ import numpy as np
 import pytest
 import rietveld
 from numpy.typing import ArrayLike
+from rietveld import reference, scattering_reference
+from rietveld.crystallography_reference import (
+    reference_cell_geometry,
+    reference_structure_factor_values,
+)
 
 
 def inversion_group() -> rietveld.SpaceGroup:
@@ -109,6 +114,52 @@ def test_fused_structural_pattern_matches_separate_vectorized_layers() -> None:
     assert not actual.y.flags.writeable
 
 
+def test_fused_structural_pattern_matches_independent_numpy_equations() -> None:
+    phase = xray_phase()
+    actual = rietveld.calculate_structural_pattern(
+        pattern(),
+        rietveld.ConstantWavelengthExperiment.x_ray(instrument()),
+        phase,
+    )
+    geometry = reference_cell_geometry(phase.structure.cell)
+    h = phase.reflections.hkl.astype(np.float64)
+    q_squared = np.einsum("ri,ij,rj->r", h, geometry.reciprocal_metric, h)
+    s = 0.5 * np.sqrt(q_squared)
+    scattering, _ = scattering_reference.xray_non_resonant(
+        [site.type_symbol for site in phase.structure.sites],
+        s,
+    )
+    structural = reference_structure_factor_values(
+        phase.structure,
+        phase.reflections.hkl,
+        phase.reflections.multiplicity,
+        scattering,
+        np.ones(phase.reflections.reflection_count),
+        scale=phase.scale,
+    )
+    positions = 2.0 * np.degrees(
+        np.arcsin(0.5 * instrument().wavelength_angstrom * np.sqrt(q_squared))
+    )
+    expected_y, _, _ = reference.accumulate_cw(
+        pattern().x,
+        positions,
+        structural.integrated_intensity,
+        u_deg2=instrument().u_deg2,
+        v_deg2=instrument().v_deg2,
+        w_deg2=instrument().w_deg2,
+        x_deg=instrument().x_deg,
+        y_deg=instrument().y_deg,
+    )
+    np.testing.assert_allclose(actual.reflections.f, structural.f, rtol=3e-15, atol=3e-14)
+    np.testing.assert_allclose(
+        actual.reflections.integrated_intensity,
+        structural.integrated_intensity,
+        rtol=4e-15,
+        atol=4e-12,
+    )
+    np.testing.assert_allclose(actual.profile_y, expected_y, rtol=2e-12, atol=5e-9)
+
+
 def _perturb_phase(
     phase: rietveld.RietveldPhase,
     direction: np.ndarray,
@@ -180,6 +231,31 @@ def test_monochromatic_neutron_structural_pattern_uses_native_path() -> None:
     assert prepared.uses_native_fused_path
     assert np.all(np.isfinite(result.profile_y))
     assert np.all(result.reflections.integrated_intensity >= 0.0)
+
+
+def test_builtin_size_broadening_stays_on_fused_structural_path() -> None:
+    phase = replace(xray_phase(), physics=rietveld.IsotropicSizeBroadening(70.0))
+    experiment = rietveld.ConstantWavelengthExperiment.x_ray(instrument())
+    prepared = rietveld.PreparedStructuralPattern(pattern(), experiment, phase)
+    assert prepared.uses_native_fused_path
+    actual = prepared.calculate()
+
+    geometry = rietveld.ReflectionGeometryBatch(
+        phase.reflections.hkl,
+        actual.reflections.d_spacing_angstrom,
+        actual.reflections.two_theta_deg,
+        actual.reflections.integrated_intensity,
+    )
+    contribution = phase.physics.evaluate(rietveld.PhysicsContext(geometry, instrument()))
+    separate = rietveld.accumulate_cw_contributions(
+        pattern().x,
+        geometry.two_theta_deg,
+        geometry.base_integrated_intensity,
+        instrument(),
+        contribution,
+    )
+    np.testing.assert_allclose(actual.profile_y, separate.y, rtol=3e-15, atol=2e-11)
+    assert actual.derivatives.global_parameter_names[-1] == ("isotropic_size.crystallite_size_nm")
 
 
 def test_probe_mismatch_is_rejected_before_calculation() -> None:

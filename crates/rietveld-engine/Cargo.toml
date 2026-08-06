@@ -11,5 +11,12 @@ license.workspace = true
 rietveld-core = { path = "../rietveld-core" }
 rietveld-crystallography = { path = "../rietveld-crystallography" }
 
+[dev-dependencies]
+criterion = "0.7"
+
+[[bench]]
+name = "structural_pattern"
+harness = false
+
 [lints]
 workspace = true
