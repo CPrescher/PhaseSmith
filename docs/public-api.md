@@ -303,7 +303,8 @@ matrix-free structural JVP/VJP products and returns the last accepted phases,
 parameters, calculation, residual metrics, iteration history, covariance/rank
 diagnostics, termination reason, and restart checkpoint.
 
-The initial families are phase scale, symmetry-independent lattice parameters,
+The initial families are CW U/V/W/X/Y coefficients, normalized polynomial
+background coefficients, phase scale, symmetry-independent lattice parameters,
 symmetry-allowed fractional coordinates, occupancy, and isotropic `U_iso`.
 Multiple phases and monochromatic X-ray or neutron experiments share the same
 interface. Details and a complete script are in [`rietveld.md`](rietveld.md).

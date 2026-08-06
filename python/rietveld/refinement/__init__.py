@@ -1,12 +1,14 @@
 """Shared refinement infrastructure and method-specific submodules."""
 
 from . import rietveld
+from .background import PolynomialBackground
 from .core import (
     AffineConstraint,
     Bounds,
     ConstraintTransform,
     FixedConstraint,
     LeastSquaresOptimizer,
+    LinearConstraint,
     ParameterKey,
     ParameterSet,
     ParameterSpec,
@@ -100,10 +102,12 @@ __all__ = [
     "LeBailPhase",
     "LeBailResult",
     "LeastSquaresOptimizer",
+    "LinearConstraint",
     "ParameterChange",
     "ParameterKey",
     "ParameterSet",
     "ParameterSpec",
+    "PolynomialBackground",
     "RefinementEvent",
     "RefinementEventKind",
     "RefinementLimits",

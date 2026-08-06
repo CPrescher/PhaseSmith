@@ -12,6 +12,8 @@ from rietveld.refinement import (
     AffineConstraint,
     LatticeParameterBounds,
     LatticeParameterization,
+    LinearConstraint,
+    PolynomialBackground,
     lebail,
 )
 from rietveld.refinement import rietveld as structural_refinement
@@ -248,6 +250,28 @@ def test_parameter_change_history_round_trips(tmp_path) -> None:
     assert restored.lebail_result.history == result.history
 
 
+def test_multi_source_linear_constraint_round_trips(tmp_path) -> None:
+    parameters = lebail.build_parameter_set(
+        instrument(),
+        (phase(np.ones(2)),),
+        instrument_parameters=("u_deg2", "v_deg2", "w_deg2"),
+    )
+    constraint = LinearConstraint(
+        parameters.keys[2],
+        ((parameters.keys[0], 0.5), (parameters.keys[1], 0.2)),
+        4.0e-5,
+    )
+    path = persistence.save_bundle(
+        tmp_path / "linear-constraint",
+        persistence.PersistenceBundle(
+            parameters=parameters,
+            constraints=(constraint,),
+        ),
+    )
+    restored = persistence.load_bundle(path)
+    assert restored.constraints == (constraint,)
+
+
 def test_dynamic_lebail_phase_domain_round_trips_and_resumes(tmp_path) -> None:
     starting = dynamic_lebail_phase()
     x = np.linspace(20.0, 80.0, 6_001)
@@ -377,12 +401,14 @@ def test_rietveld_checkpoint_domain_and_options_round_trip_and_resume(tmp_path) 
             rietveld_selection=selection,
             rietveld_options=resume_options,
             rietveld_checkpoint=first.checkpoint,
+            rietveld_background=PolynomialBackground("restart", (0.0,)),
             parameters=parameters,
         ),
     )
     restored = persistence.load_bundle(destination)
     assert restored.rietveld_selection == selection
     assert restored.rietveld_options == resume_options
+    assert restored.rietveld_background == PolynomialBackground("restart", (0.0,))
     assert restored.rietveld_checkpoint is not None
     assert (
         restored.rietveld_checkpoint.completed_iterations == first.checkpoint.completed_iterations
@@ -390,6 +416,7 @@ def test_rietveld_checkpoint_domain_and_options_round_trip_and_resume(tmp_path) 
     assert restored.rietveld_checkpoint.parameters == first.checkpoint.parameters
     assert restored.rietveld_checkpoint.history == first.checkpoint.history
     assert restored.rietveld_checkpoint.phases[0].scale == first.checkpoint.phases[0].scale
+    assert restored.rietveld_checkpoint.experiment == experiment
     resumed = structural_refinement.refine(
         restored.to_rietveld_input(),
         restored.rietveld_options,

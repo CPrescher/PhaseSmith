@@ -10,6 +10,7 @@ from rietveld.refinement import (
     Bounds,
     ConstraintTransform,
     FixedConstraint,
+    LinearConstraint,
     ParameterKey,
     ParameterSet,
     ParameterSpec,
@@ -96,6 +97,28 @@ def test_constraint_cycles_duplicates_bounds_and_unknowns_are_rejected() -> None
     assert clipped[keys[0]] == 0.0
 
 
+def test_multi_source_linear_constraint_expands_values_and_exact_derivative() -> None:
+    parameters, keys = parameter_set()
+    constraint = LinearConstraint(
+        keys[2],
+        ((keys[0], 0.5), (keys[1], 0.2)),
+        offset=4.0e-5,
+    )
+    transform = ConstraintTransform(parameters, (constraint,))
+    assert transform.free_keys == (keys[0], keys[1], keys[3])
+    values = transform.unpack(transform.pack())
+    assert values[keys[2]] == pytest.approx(1.2e-4)
+    np.testing.assert_array_equal(
+        transform.derivative_matrix(),
+        [
+            [1.0e-4, 0.0, 0.0],
+            [0.0, 1.0e-4, 0.0],
+            [0.5e-4, 0.2e-4, 0.0],
+            [0.0, 0.0, 1.0],
+        ],
+    )
+
+
 def test_weighted_residuals_masks_and_standard_metrics() -> None:
     pattern = rietveld.PowderPattern(
         [1.0, 2.0, 3.0, 4.0],
@@ -151,9 +174,7 @@ def test_hybrid_jvp_matches_dense_materialization_and_vjp_is_adjoint() -> None:
     expected += global_vector @ derivatives.global_jacobian
     np.testing.assert_allclose(actual, expected, rtol=2e-16, atol=2e-15)
 
-    local_transpose, global_transpose = transpose_jacobian_vector_product(
-        derivatives, samples
-    )
+    local_transpose, global_transpose = transpose_jacobian_vector_product(derivatives, samples)
     left = float(actual @ samples)
     right = float(local_vector.ravel() @ local_transpose.ravel())
     right += float(global_vector @ global_transpose)
@@ -169,9 +190,7 @@ def test_selected_hybrid_jvp_matches_simultaneous_finite_difference() -> None:
     local_direction[:, 0] = [0.2, -0.1, 0.3]
     local_direction[:, 1] = [0.01, -0.02, 0.015]
     global_direction = np.array([0.02, -0.01, 0.015, -0.03, 0.01])
-    analytical = jacobian_vector_product(
-        baseline.derivatives, local_direction, global_direction
-    )
+    analytical = jacobian_vector_product(baseline.derivatives, local_direction, global_direction)
     step = 1.0e-6
     field_names = ("u_deg2", "v_deg2", "w_deg2", "x_deg", "y_deg")
     plus_values = {

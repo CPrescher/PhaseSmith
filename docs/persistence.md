@@ -43,8 +43,9 @@ reflection markers, finite lattice bounds, and the guarded CW reflection-domain
 policy needed for an exact dynamic-lattice restart. Format-1 and format-2
 bundles remain loadable; their generic phase records cannot be upgraded into a
 dynamic Le Bail phase because that state was not stored.
-Version 4 adds structural Rietveld reflection domains, parameter-family
-selection, numerical/runtime options, and complete last-accepted checkpoints.
+Version 4 adds structural Rietveld reflection domains, polynomial background,
+parameter-family selection, numerical/runtime options, refined experiment
+state, and complete last-accepted checkpoints.
 `restored.to_rietveld_input()` reconstructs the request for deterministic
 continuation without storing Python parser or optimizer objects. Formats 1--3
 remain loadable.

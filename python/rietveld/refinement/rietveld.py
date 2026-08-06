@@ -24,6 +24,7 @@ from ..scattering import NeutronNuclear, ScatteringFactorProvider, XrayNonResona
 from ..structural_calculation import PreparedStructuralPattern, calculate_structural_pattern
 from ..structure import AtomSite, CrystalStructure
 from ..symmetry import CwTwoThetaRange, PreparedReflectionGenerator
+from .background import PolynomialBackground
 from .core import (
     Bounds,
     Constraint,
@@ -64,6 +65,8 @@ class RietveldParameterSelection:
     coordinates: bool = False
     occupancy: bool = False
     u_iso: bool = False
+    instrument_parameters: tuple[str, ...] = ()
+    background: bool = False
 
     def __post_init__(self) -> None:
         if any(
@@ -74,9 +77,15 @@ class RietveldParameterSelection:
                 self.coordinates,
                 self.occupancy,
                 self.u_iso,
+                self.background,
             )
         ):
             raise TypeError("Rietveld parameter selections must be boolean")
+        names = tuple(self.instrument_parameters)
+        allowed = ("u_deg2", "v_deg2", "w_deg2", "x_deg", "y_deg")
+        if len(set(names)) != len(names) or any(name not in allowed for name in names):
+            raise ValueError("instrument parameters must be unique CW U/V/W/X/Y field names")
+        object.__setattr__(self, "instrument_parameters", names)
 
 
 @dataclass(frozen=True, slots=True)
@@ -143,10 +152,20 @@ def site_parameter_key(phase_id: str, site_id: str, name: str) -> ParameterKey:
     return ParameterKey("site", f"{phase_id}/{site_id}", name)
 
 
+def instrument_parameter_key(name: str) -> ParameterKey:
+    return ParameterKey("instrument", "cw", name)
+
+
+def background_parameter_key(background_id: str, index: int) -> ParameterKey:
+    return ParameterKey("background", background_id, f"coefficient_{index}")
+
+
 def _domain_parameter_values(
+    experiment: ConstantWavelengthExperiment,
     phases: tuple[RietveldPhase, ...],
     domains: tuple[CwStructuralReflectionDomain | None, ...],
     parameters: ParameterSet,
+    background: PolynomialBackground | None = None,
 ) -> dict[ParameterKey, float]:
     """Resolve typed parameter keys against the supplied structural state."""
 
@@ -162,6 +181,20 @@ def _domain_parameter_values(
         key = spec.key
         if key.module == "phase" and key.owner_id in phase_by_id and key.name == "scale":
             value = phase_by_id[key.owner_id].scale
+        elif (
+            key.module == "instrument"
+            and key.owner_id == "cw"
+            and hasattr(experiment.instrument, key.name)
+        ):
+            value = getattr(experiment.instrument, key.name)
+        elif key.module == "background" and background is not None:
+            if key.owner_id != background.background_id or not key.name.startswith("coefficient_"):
+                raise ValueError(f"unknown background parameter {key.label}")
+            try:
+                index = int(key.name.removeprefix("coefficient_"))
+                value = background.coefficients[index]
+            except (ValueError, IndexError) as error:
+                raise ValueError(f"unknown background parameter {key.label}") from error
         elif key.module == "lattice" and key.owner_id in phase_by_id:
             domain = domain_by_id[key.owner_id]
             if domain is None:
@@ -207,12 +240,43 @@ def build_parameter_set(
     phases: tuple[RietveldPhase, ...],
     lattice_domains: tuple[CwStructuralReflectionDomain | None, ...],
     selection: RietveldParameterSelection,
+    *,
+    experiment: ConstantWavelengthExperiment | None = None,
+    background: PolynomialBackground | None = None,
 ) -> ParameterSet:
-    """Construct deterministic structural parameter records in physical units."""
+    """Construct deterministic profile/background/structural parameter records."""
 
     if len(phases) != len(lattice_domains):
         raise ValueError("lattice domains must align with Rietveld phases")
     specs = []
+    if selection.instrument_parameters:
+        if experiment is None:
+            raise ValueError("instrument refinement requires a CW experiment")
+        for name in selection.instrument_parameters:
+            value = getattr(experiment.instrument, name)
+            floor = 1.0e-4 if name in ("u_deg2", "v_deg2", "w_deg2") else 1.0e-3
+            specs.append(
+                ParameterSpec(
+                    instrument_parameter_key(name),
+                    value,
+                    "degree^2" if name.endswith("deg2") else "degree",
+                    Bounds(),
+                    max(abs(value), floor),
+                )
+            )
+    if selection.background:
+        if background is None:
+            raise ValueError("background refinement requires PolynomialBackground")
+        specs.extend(
+            ParameterSpec(
+                background_parameter_key(background.background_id, index),
+                value,
+                "intensity",
+                Bounds(),
+                max(abs(value), 1.0),
+            )
+            for index, value in enumerate(background.coefficients)
+        )
     for phase, domain in zip(phases, lattice_domains, strict=True):
         if selection.phase_scale:
             specs.append(
@@ -325,6 +389,7 @@ def calculate(
     phases: tuple[RietveldPhase, ...],
     *,
     support_fwhm: float = 20.0,
+    background: PolynomialBackground | None = None,
 ) -> RietveldCalculationResult:
     """Calculate and sum one or more structural phases without duplicating background."""
 
@@ -338,8 +403,12 @@ def calculate(
     profile = np.ascontiguousarray(
         sum((item.profile_y for item in calculations), np.zeros_like(pattern.x))
     )
-    y = np.ascontiguousarray(profile + pattern.background)
-    return RietveldCalculationResult(y, profile, pattern.background, calculations)
+    combined_background = np.array(pattern.background, copy=True)
+    if background is not None:
+        combined_background += background.calculate(pattern.x)
+    combined_background = np.ascontiguousarray(combined_background)
+    y = np.ascontiguousarray(profile + combined_background)
+    return RietveldCalculationResult(y, profile, combined_background, calculations)
 
 
 @dataclass(frozen=True, slots=True)
@@ -353,6 +422,7 @@ class RietveldInput:
     parameters: ParameterSet
     constraints: tuple[Constraint, ...] = ()
     selection: RietveldParameterSelection = RietveldParameterSelection()
+    background: PolynomialBackground | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "phases", tuple(self.phases))
@@ -376,7 +446,15 @@ class RietveldInput:
                     raise ValueError("lattice-domain and experiment wavelengths must match")
         if not isinstance(self.parameters, ParameterSet):
             raise TypeError("parameters must be a ParameterSet")
-        domain_values = _domain_parameter_values(self.phases, self.lattice_domains, self.parameters)
+        if self.background is not None and not isinstance(self.background, PolynomialBackground):
+            raise TypeError("background must be PolynomialBackground")
+        domain_values = _domain_parameter_values(
+            self.experiment,
+            self.phases,
+            self.lattice_domains,
+            self.parameters,
+            self.background,
+        )
         for key, value in domain_values.items():
             if not np.isclose(
                 value,
@@ -412,6 +490,7 @@ class RietveldInput:
         merge_friedel: bool = True,
         max_candidates: int = 50_000_000,
         coordinate_tolerance: float = 1.0e-10,
+        background: PolynomialBackground | None = None,
         limits: CifReadLimits | None = None,
         backend: CifBackend | None = None,
     ) -> RietveldInput:
@@ -490,8 +569,23 @@ class RietveldInput:
             coordinate_tolerance,
         )
         domains = (selected_domain,)
-        parameters = build_parameter_set((phase,), domains, selected_parameters)
-        return cls(pattern, experiment, (phase,), domains, parameters, (), selected_parameters)
+        parameters = build_parameter_set(
+            (phase,),
+            domains,
+            selected_parameters,
+            experiment=experiment,
+            background=background,
+        )
+        return cls(
+            pattern,
+            experiment,
+            (phase,),
+            domains,
+            parameters,
+            (),
+            selected_parameters,
+            background,
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -613,6 +707,8 @@ class RietveldCheckpoint:
     objective: float
     damping: float
     history: tuple[RietveldIterationRecord, ...]
+    experiment: ConstantWavelengthExperiment | None = None
+    background: PolynomialBackground | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "phases", tuple(self.phases))
@@ -627,6 +723,12 @@ class RietveldCheckpoint:
             raise ValueError("checkpoint objective must be non-negative and finite")
         if not np.isfinite(self.damping) or self.damping <= 0.0:
             raise ValueError("checkpoint damping must be positive and finite")
+        if self.experiment is not None and not isinstance(
+            self.experiment, ConstantWavelengthExperiment
+        ):
+            raise TypeError("checkpoint experiment must be ConstantWavelengthExperiment")
+        if self.background is not None and not isinstance(self.background, PolynomialBackground):
+            raise TypeError("checkpoint background must be PolynomialBackground")
 
 
 @dataclass(frozen=True, slots=True)
@@ -634,6 +736,8 @@ class RietveldResult:
     """Last accepted structural state and auditable termination diagnostics."""
 
     calculation: RietveldCalculationResult
+    experiment: ConstantWavelengthExperiment
+    background: PolynomialBackground | None
     phases: tuple[RietveldPhase, ...]
     parameters: ParameterSet
     metrics: ResidualEvaluation
@@ -731,10 +835,13 @@ def _phase_native_mapping(
 class _RietveldLinearization:
     pattern: PowderPattern
     experiment: ConstantWavelengthExperiment
+    background: PolynomialBackground | None
     phases: tuple[RietveldPhase, ...]
     physical_to_free: NDArray[np.float64]
     native_mappings: tuple[NDArray[np.float64], ...]
     prepared: tuple[PreparedStructuralPattern, ...]
+    instrument_rows: tuple[tuple[int, str], ...]
+    background_mapping: NDArray[np.float64]
     sample_weight: NDArray[np.float64]
     runtime: RefinementRuntime
 
@@ -742,15 +849,41 @@ class _RietveldLinearization:
     def prepare(
         cls,
         input_data: RietveldInput,
+        experiment: ConstantWavelengthExperiment,
+        background: PolynomialBackground | None,
         phases: tuple[RietveldPhase, ...],
         parameters: ParameterSet,
         options: RietveldOptions,
         runtime: RefinementRuntime,
     ) -> _RietveldLinearization:
         transform = ConstraintTransform(parameters, input_data.constraints)
+        row_for_key = {spec.key: row for row, spec in enumerate(parameters.specs)}
+        global_names = {
+            "u_deg2": "u",
+            "v_deg2": "v",
+            "w_deg2": "w",
+            "x_deg": "x",
+            "y_deg": "y",
+        }
+        instrument_rows = tuple(
+            (row_for_key[key], global_names[key.name])
+            for key in parameters.keys
+            if key.module == "instrument"
+        )
+        background_mapping = np.zeros(
+            (input_data.pattern.x.size, len(parameters.specs)), dtype=np.float64
+        )
+        if background is not None:
+            basis = background.basis(input_data.pattern.x)
+            for index in range(len(background.coefficients)):
+                key = background_parameter_key(background.background_id, index)
+                if key in row_for_key:
+                    background_mapping[:, row_for_key[key]] = basis[:, index]
+        background_mapping.flags.writeable = False
         return cls(
             input_data.pattern,
-            input_data.experiment,
+            experiment,
+            background,
             phases,
             transform.derivative_matrix(),
             tuple(
@@ -760,12 +893,14 @@ class _RietveldLinearization:
             tuple(
                 PreparedStructuralPattern(
                     input_data.pattern,
-                    input_data.experiment,
+                    experiment,
                     phase,
                     support_fwhm=options.support_fwhm,
                 )
                 for phase in phases
             ),
+            instrument_rows,
+            background_mapping,
             _weight_vector(input_data.pattern, options.use_uncertainty),
             runtime,
         )
@@ -776,10 +911,14 @@ class _RietveldLinearization:
         profile = np.ascontiguousarray(
             sum((item.profile_y for item in calculations), np.zeros_like(self.pattern.x))
         )
+        background = np.array(self.pattern.background, copy=True)
+        if self.background is not None:
+            background += self.background.calculate(self.pattern.x)
+        background = np.ascontiguousarray(background)
         return RietveldCalculationResult(
-            np.ascontiguousarray(profile + self.pattern.background),
+            np.ascontiguousarray(profile + background),
             profile,
-            self.pattern.background,
+            background,
             calculations,
         )
 
@@ -788,9 +927,15 @@ class _RietveldLinearization:
         if direction.shape != (self.physical_to_free.shape[1],):
             raise ValueError("free tangent has the wrong shape")
         physical = self.physical_to_free @ direction
-        result = np.zeros_like(self.pattern.x)
+        result = self.background_mapping @ physical
         for prepared, mapping in zip(self.prepared, self.native_mappings, strict=True):
-            result += prepared.jvp(mapping @ physical).d_y
+            product = prepared.jvp(mapping @ physical)
+            result += product.d_y
+            names = product.result.derivatives.global_parameter_names
+            for row, name in self.instrument_rows:
+                result += (
+                    product.result.derivatives.global_jacobian[names.index(name)] * physical[row]
+                )
         return np.ascontiguousarray(result * self.sample_weight)
 
     def vjp(self, weighted_samples: NDArray[np.float64]) -> NDArray[np.float64]:
@@ -799,8 +944,15 @@ class _RietveldLinearization:
             raise ValueError("weighted sample vector has the wrong shape")
         physical_gradient = np.zeros(self.physical_to_free.shape[0], dtype=np.float64)
         raw_samples = weighted_samples * self.sample_weight
+        physical_gradient += self.background_mapping.T @ raw_samples
         for prepared, mapping in zip(self.prepared, self.native_mappings, strict=True):
-            physical_gradient += mapping.T @ prepared.vjp(raw_samples).gradient
+            product = prepared.vjp(raw_samples)
+            physical_gradient += mapping.T @ product.gradient
+            names = product.result.derivatives.global_parameter_names
+            for row, name in self.instrument_rows:
+                physical_gradient[row] += (
+                    product.result.derivatives.global_jacobian[names.index(name)] @ raw_samples
+                )
         return np.ascontiguousarray(self.physical_to_free.T @ physical_gradient)
 
 
@@ -893,6 +1045,33 @@ def _apply_parameter_values(
     return tuple(updated_phases), tuple(topology_changes)
 
 
+def _apply_profile_background_values(
+    experiment: ConstantWavelengthExperiment,
+    background: PolynomialBackground | None,
+    values: dict[ParameterKey, float],
+) -> tuple[ConstantWavelengthExperiment, PolynomialBackground | None]:
+    instrument_updates = {
+        key.name: value
+        for key, value in values.items()
+        if key.module == "instrument" and key.owner_id == "cw"
+    }
+    updated_experiment = (
+        experiment
+        if not instrument_updates
+        else replace(
+            experiment,
+            instrument=replace(experiment.instrument, **instrument_updates),
+        )
+    )
+    if background is None:
+        return updated_experiment, None
+    coefficients = [
+        values.get(background_parameter_key(background.background_id, index), value)
+        for index, value in enumerate(background.coefficients)
+    ]
+    return updated_experiment, background.replace_coefficients(coefficients)
+
+
 def _conjugate_gradient(
     operator: object,
     right_hand_side: NDArray[np.float64],
@@ -951,13 +1130,24 @@ def _metrics(
 
 
 def _checkpoint(
+    experiment: ConstantWavelengthExperiment,
+    background: PolynomialBackground | None,
     phases: tuple[RietveldPhase, ...],
     parameters: ParameterSet,
     objective: float,
     damping: float,
     history: list[RietveldIterationRecord],
 ) -> RietveldCheckpoint:
-    return RietveldCheckpoint(len(history), phases, parameters, objective, damping, tuple(history))
+    return RietveldCheckpoint(
+        len(history),
+        phases,
+        parameters,
+        objective,
+        damping,
+        tuple(history),
+        experiment,
+        background,
+    )
 
 
 def _covariance_diagnostics(
@@ -1036,6 +1226,8 @@ def refine(
         checkpoint=checkpoint_callback,
     )
     if checkpoint is None:
+        experiment = input_data.experiment
+        background = input_data.background
         phases = input_data.phases
         parameters = input_data.parameters
         history: list[RietveldIterationRecord] = []
@@ -1050,6 +1242,10 @@ def refine(
         if checkpoint.parameters.keys != input_data.parameters.keys:
             raise ValueError("checkpoint parameter identities do not match Rietveld input")
         phases = checkpoint.phases
+        experiment = (
+            input_data.experiment if checkpoint.experiment is None else checkpoint.experiment
+        )
+        background = checkpoint.background
         parameters = checkpoint.parameters
         history = list(checkpoint.history)
         damping = checkpoint.damping
@@ -1063,7 +1259,13 @@ def refine(
         (("free_parameters", len(transform.free_keys)), ("phases", len(phases))),
     )
     linearization = _RietveldLinearization.prepare(
-        input_data, phases, parameters, selected, runtime
+        input_data,
+        experiment,
+        background,
+        phases,
+        parameters,
+        selected,
+        runtime,
     )
     termination = TerminationReason.MAX_ITERATIONS
     termination_message = "iteration limit reached"
@@ -1110,9 +1312,16 @@ def refine(
                         parameters,
                         trial_values,
                     )
+                    trial_experiment, trial_background = _apply_profile_background_values(
+                        experiment,
+                        background,
+                        trial_values,
+                    )
                     trial_parameters = parameters.replace_values(trial_values)
                     trial_linearization = _RietveldLinearization.prepare(
                         input_data,
+                        trial_experiment,
+                        trial_background,
                         trial_phases,
                         trial_parameters,
                         selected,
@@ -1161,6 +1370,8 @@ def refine(
                             topology_changes,
                         )
                         history.append(record)
+                        experiment = trial_experiment
+                        background = trial_background
                         phases = trial_phases
                         parameters = trial_parameters
                         calculation = trial_calculation
@@ -1169,7 +1380,15 @@ def refine(
                         damping = max(damping * selected.damping_decrease, 1.0e-18)
                         transform = ConstraintTransform(parameters, input_data.constraints)
                         linearization = trial_linearization
-                        state = _checkpoint(phases, parameters, objective, damping, history)
+                        state = _checkpoint(
+                            experiment,
+                            background,
+                            phases,
+                            parameters,
+                            objective,
+                            damping,
+                            history,
+                        )
                         runtime.accept_step(state)
                         runtime.emit(
                             RefinementEventKind.STEP_ACCEPTED,
@@ -1212,7 +1431,12 @@ def refine(
         termination = stopped.reason
         termination_message = str(stopped)
         if calculation is None:
-            calculation = calculate(input_data.pattern, input_data.experiment, phases)
+            calculation = calculate(
+                input_data.pattern,
+                experiment,
+                phases,
+                background=background,
+            )
         metrics = _metrics(input_data, calculation, selected, len(transform.free_keys))
         objective = 0.5 * metrics.chi_square
     except Exception:
@@ -1222,6 +1446,8 @@ def refine(
             "unexpected structural refinement failure",
         )
         emergency = _checkpoint(
+            experiment,
+            background,
             phases,
             parameters,
             0.5 * metrics.chi_square if calculation is not None else 0.0,
@@ -1234,7 +1460,15 @@ def refine(
         raise
     if calculation is None:  # pragma: no cover - every guarded path assigns it
         raise RuntimeError("structural refinement produced no calculation")
-    final_checkpoint = _checkpoint(phases, parameters, objective, damping, history)
+    final_checkpoint = _checkpoint(
+        experiment,
+        background,
+        phases,
+        parameters,
+        objective,
+        damping,
+        history,
+    )
     try:
         jacobian_rank, covariance, correlations = _covariance_diagnostics(
             linearization,
@@ -1253,6 +1487,8 @@ def refine(
     )
     return RietveldResult(
         calculation,
+        experiment,
+        background,
         phases,
         parameters,
         metrics,

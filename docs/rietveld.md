@@ -32,7 +32,8 @@ support-limited. Bounds are applied in scaled free-parameter coordinates and
 trial states are installed only after their complete pattern improves the
 objective.
 
-The implemented structural families are phase scale, symmetry-independent
+The implemented families are CW U/V/W/X/Y profile coefficients, an additive
+grid-normalized polynomial background, phase scale, symmetry-independent
 lattice values, symmetry-allowed fractional coordinates, occupancy, and
 isotropic displacement `U_iso` in square ångströms. Lattice trials regenerate
 the conservative guarded reflection topology by stable Miller-family ID.
@@ -40,7 +41,8 @@ General positions expose `x`, `y`, and `z`. Special positions expose only the
 null-space coordinates allowed by their exact site stabilizer; a fixed special
 position exposes no coordinate parameter.
 
-Fixed and ordered affine constraints use `ParameterKey` identities. The exact
+Fixed, affine, and multi-source linear constraints use `ParameterKey`
+identities. The exact
 physical-to-scaled-free derivative of a constraint graph is shared across
 refinement methods and is applied before every native JVP and after every VJP.
 
@@ -68,7 +70,10 @@ request = rietveld.RietveldInput.from_cif(
         coordinates=False,
         occupancy=False,
         u_iso=False,
+        instrument_parameters=("u_deg2", "v_deg2", "w_deg2"),
+        background=True,
     ),
+    background=rietveld.PolynomialBackground("main", (0.0, 0.0, 0.0)),
 )
 result = rietveld.refine(request)
 print(result.termination_reason, result.metrics.rwp)
@@ -115,7 +120,8 @@ rank and nearly collinear columns, and returns physical-parameter covariance
 only when the normal matrix has full rank. It does not report a misleading
 inverse for a singular problem.
 
-Persistence format 4 stores the pattern, experiment, structural phases,
+Persistence format 4 stores the pattern, refined experiment and background,
+structural phases,
 guarded domains, parameter selection, options, constraints, and checkpoint.
 `PersistenceBundle.to_rietveld_input()` reconstructs the request; pass the
 restored checkpoint to `rietveld.refine` for deterministic continuation.
@@ -131,8 +137,8 @@ treated as structurally differentiable. A future provider capability record
 will advertise the additional structural derivative chains required for
 refinement; until then unsupported configurations fail explicitly.
 
-Profile/instrument parameters, background coefficients, preferred-orientation
-parameters, anisotropic displacement, wavelength components, magnetic
-scattering, and TOF structural refinement are intentionally outside this first
-slice. They can be added as typed parameter families without changing the
-accepted-state runtime or crystal-structure ownership model.
+Preferred-orientation parameters, anisotropic displacement, wavelength
+components, magnetic scattering, and TOF structural refinement are
+intentionally outside this first slice. They can be added as typed parameter
+families without changing the accepted-state runtime or crystal-structure
+ownership model.

@@ -12,14 +12,15 @@ scale, and refine flag. `ParameterSet` preserves explicit order, so packing is
 deterministic and never depends on dictionary order or a generated variable
 name.
 
-`ConstraintTransform` maps scaled free values to physical values. Version 1
-supports:
+`ConstraintTransform` maps scaled free values to physical values. It supports:
 
 - `FixedConstraint(target, value)`;
 - `AffineConstraint(target, source, multiplier, offset)`, representing
-  `target = multiplier * source + offset`.
+  `target = multiplier * source + offset`;
+- `LinearConstraint(target, terms, offset)`, representing a multi-source sum
+  suitable for composition and shared-parameter relationships.
 
-Affine constraints are ordered and acyclic. Their Jacobian is exact; bounded
+Dependent constraints are ordered and acyclic. Their Jacobian is exact; bounded
 finite perturbations are not used to discover the chain rule.
 
 ## Residual convention

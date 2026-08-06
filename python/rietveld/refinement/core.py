@@ -182,7 +182,27 @@ class AffineConstraint:
             raise ValueError("affine coefficients must be finite")
 
 
-Constraint = FixedConstraint | AffineConstraint
+@dataclass(frozen=True, slots=True)
+class LinearConstraint:
+    """Define ``target = offset + sum(coefficient * source)``."""
+
+    target: ParameterKey
+    terms: tuple[tuple[ParameterKey, float], ...]
+    offset: float = 0.0
+
+    def __post_init__(self) -> None:
+        terms = tuple((key, float(coefficient)) for key, coefficient in self.terms)
+        if not terms:
+            raise ValueError("linear constraints require at least one source term")
+        keys = tuple(key for key, _ in terms)
+        if self.target in keys or len(set(keys)) != len(keys):
+            raise ValueError("linear constraint sources must be unique and differ from target")
+        if not np.isfinite([self.offset, *(value for _, value in terms)]).all():
+            raise ValueError("linear constraint coefficients must be finite")
+        object.__setattr__(self, "terms", terms)
+
+
+Constraint = FixedConstraint | AffineConstraint | LinearConstraint
 
 
 @dataclass(frozen=True, slots=True, init=False)
@@ -203,8 +223,11 @@ class ConstraintTransform:
         if not isinstance(parameters, ParameterSet):
             raise TypeError("parameters must be a ParameterSet")
         selected = tuple(constraints)
-        if any(not isinstance(item, (FixedConstraint, AffineConstraint)) for item in selected):
-            raise TypeError("constraints must be fixed or affine constraints")
+        if any(
+            not isinstance(item, (FixedConstraint, AffineConstraint, LinearConstraint))
+            for item in selected
+        ):
+            raise TypeError("constraints must be fixed, affine, or linear constraints")
         known = set(parameters.keys)
         targets = tuple(item.target for item in selected)
         if any(target not in known for target in targets):
@@ -218,6 +241,12 @@ class ConstraintTransform:
                     raise ValueError("every affine source must belong to the parameter set")
                 if item.source not in resolved:
                     raise ValueError("affine constraints must be ordered without cycles")
+            elif isinstance(item, LinearConstraint):
+                sources = {key for key, _ in item.terms}
+                if not sources.issubset(known):
+                    raise ValueError("every linear source must belong to the parameter set")
+                if not sources.issubset(resolved):
+                    raise ValueError("linear constraints must be ordered without cycles")
             resolved.add(item.target)
         free_keys = tuple(
             spec.key for spec in parameters.specs if spec.refine and spec.key not in targets
@@ -252,9 +281,13 @@ class ConstraintTransform:
         for constraint in self.constraints:
             if isinstance(constraint, FixedConstraint):
                 values[constraint.target] = constraint.value
-            else:
+            elif isinstance(constraint, AffineConstraint):
                 values[constraint.target] = (
                     constraint.multiplier * values[constraint.source] + constraint.offset
+                )
+            else:
+                values[constraint.target] = constraint.offset + sum(
+                    coefficient * values[source] for source, coefficient in constraint.terms
                 )
         for key, value in values.items():
             if not self.parameters.spec(key).bounds.contains(value):
@@ -280,6 +313,14 @@ class ConstraintTransform:
             if isinstance(constraint, AffineConstraint):
                 matrix[row_for_key[constraint.target]] = (
                     constraint.multiplier * matrix[row_for_key[constraint.source]]
+                )
+            elif isinstance(constraint, LinearConstraint):
+                matrix[row_for_key[constraint.target]] = sum(
+                    (
+                        coefficient * matrix[row_for_key[source]]
+                        for source, coefficient in constraint.terms
+                    ),
+                    start=np.zeros(len(self.free_keys), dtype=np.float64),
                 )
         matrix.flags.writeable = False
         return matrix

@@ -521,6 +521,9 @@ runtime dependency.
 
 ## Implementation unit 17: first full Rietveld refinement
 
+Status: complete (2026-08-07), subject only to the optional live pinned-oracle
+run when that external checkout is available.
+
 The first checkpoint is the method-independent runtime and safety shell in
 [`refinement-runtime.md`](refinement-runtime.md). Structural parameters are not
 connected until bounded execution, structured events, cooperative terminal/GUI
@@ -569,6 +572,22 @@ pass fault-injection tests.
   factors, intensities, `Ycalc`, residual trends, and refined parameters.
 - A short script can refine a CIF-backed phase without dictionaries, project
   files, or per-reflection callbacks.
+
+Review result: `RietveldInput.from_cif` constructs monochromatic X-ray or
+neutron structural requests with guarded stable-ID reflection domains. The
+matrix-free damped Gauss--Newton loop maps CW profile, polynomial background,
+phase scale, setting-aware lattice, stabilizer-constrained coordinates,
+occupancy, and isotropic displacement through exact fixed/affine/multi-source
+linear constraints into native structural JVP/VJP products. It reports
+rank-deficient correlations instead of inverting singular normal matrices.
+Multi-phase, neutron, every structural family, profile/background recovery,
+finite differences, adjoint identity, budgets, cancellation, accepted-state
+callbacks, and deterministic checkpoint continuation are covered. Persistence
+format 4 stores the request and restart state while loading formats 1--3. A
+realistic benchmark exercises 423 reflections, eight sites, 10,001 samples,
+and 29 free parameters without a dense sample Jacobian. The external pinned
+GSAS-II refinement comparison remains unavailable and is not a runtime
+dependency or a basis for the implementation.
 
 ## Implementation unit 18: advanced crystallographic physics
 

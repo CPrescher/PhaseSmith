@@ -13,9 +13,10 @@ structural intensities and monochromatic structural patterns now have a fused
 native values/JVP/VJP path and a scriptable `RietveldPhase` API.
 CIF-backed Le Bail can refine setting-aware lattice parameters with analytical
 derivatives and guarded, stable-ID reflection-domain regeneration.
-The first full CIF-backed Rietveld workflow now refines phase scale, lattice,
-symmetry-allowed coordinates, occupancy, and isotropic displacement through
-matrix-free Rust JVP/VJP products with safe checkpoints and structured logs.
+The first full CIF-backed Rietveld workflow now refines CW profile/background,
+phase scale, lattice, symmetry-allowed coordinates, occupancy, and isotropic
+displacement through matrix-free Rust JVP/VJP products with safe checkpoints
+and structured logs.
 
 The architecture and roadmap are in [PROJECT_BRIEF.md](PROJECT_BRIEF.md); the
 equations and parameter conventions are in [docs/equations.md](docs/equations.md).

@@ -6,7 +6,7 @@ from fractions import Fraction
 import numpy as np
 import pytest
 import rietveld
-from rietveld.refinement import AffineConstraint
+from rietveld.refinement import AffineConstraint, PolynomialBackground
 from rietveld.refinement import rietveld as structural_refinement
 
 P1_CIF = """
@@ -220,6 +220,8 @@ def test_combined_structural_products_match_finite_difference_and_adjoint() -> N
     runtime = structural_refinement.RefinementRuntime(options.limits)
     linearization = structural_refinement._RietveldLinearization.prepare(
         request,
+        request.experiment,
+        request.background,
         request.phases,
         request.parameters,
         options,
@@ -383,6 +385,38 @@ def test_affine_multiphase_scale_constraint_is_applied_in_native_products() -> N
     assert result.covariance[0, 1] != 0.0
 
 
+def test_distinct_multiphase_scales_recover_independently() -> None:
+    single = request_from_cif(selection(phase_scale=True))
+    first = replace(single.phases[0], phase_id="alpha", scale=0.7)
+    second_structure = single.phases[0].structure
+    second_sites = list(second_structure.sites)
+    xyz = list(second_sites[0].fractional_xyz)
+    xyz[0] += 0.07
+    second_sites[0] = replace(second_sites[0], fractional_xyz=tuple(xyz))
+    second = replace(
+        single.phases[0],
+        phase_id="beta",
+        structure=replace(second_structure, sites=tuple(second_sites)),
+        scale=0.3,
+    )
+    truth_phases = (first, second)
+    observed = structural_refinement.calculate(single.pattern, single.experiment, truth_phases).y
+    starting = (replace(first, scale=0.58), replace(second, scale=0.42))
+    parameters = structural_refinement.build_parameter_set(starting, (None, None), single.selection)
+    request = structural_refinement.RietveldInput(
+        rietveld.PowderPattern(single.pattern.x, observed_y=observed),
+        single.experiment,
+        starting,
+        (None, None),
+        parameters,
+        selection=single.selection,
+    )
+    result = structural_refinement.refine(request)
+    assert result.phases[0].scale == pytest.approx(0.7, rel=2.0e-8)
+    assert result.phases[1].scale == pytest.approx(0.3, rel=2.0e-8)
+    assert result.jacobian_rank == 2
+
+
 def test_monochromatic_neutron_cif_request_refines_through_same_runtime() -> None:
     neutron_experiment = rietveld.ConstantWavelengthExperiment.neutron(experiment().instrument)
     x = np.linspace(15.0, 100.0, 8_501)
@@ -502,3 +536,74 @@ def test_model_evaluation_budget_returns_last_calculated_state() -> None:
     assert result.evaluations == 1
     assert result.history == ()
     assert result.phases == request.phases
+
+
+def test_cw_profile_parameter_refines_through_accumulation_derivative_rows() -> None:
+    selected = replace(selection(), instrument_parameters=("w_deg2",))
+    truth = request_from_cif(selection())
+    starting_instrument = replace(
+        truth.experiment.instrument,
+        w_deg2=truth.experiment.instrument.w_deg2 + 4.0e-5,
+    )
+    starting_experiment = replace(truth.experiment, instrument=starting_instrument)
+    parameters = structural_refinement.build_parameter_set(
+        truth.phases,
+        (None,),
+        selected,
+        experiment=starting_experiment,
+    )
+    request = structural_refinement.RietveldInput(
+        truth.pattern,
+        starting_experiment,
+        truth.phases,
+        (None,),
+        parameters,
+        selection=selected,
+    )
+    result = structural_refinement.refine(request)
+    assert result.experiment.instrument.w_deg2 == pytest.approx(
+        truth.experiment.instrument.w_deg2, rel=2.0e-7
+    )
+    assert result.metrics.rwp < 1.0e-8
+
+
+def test_polynomial_background_refines_as_a_separate_typed_domain() -> None:
+    truth = request_from_cif(selection())
+    expected_background = PolynomialBackground("main", (2.0, 0.3, -0.2))
+    calculated = structural_refinement.calculate(
+        truth.pattern,
+        truth.experiment,
+        truth.phases,
+        background=expected_background,
+    )
+    starting_background = PolynomialBackground("main", (1.6, 0.15, -0.05))
+    selected = selection(background=True)
+    parameters = structural_refinement.build_parameter_set(
+        truth.phases,
+        (None,),
+        selected,
+        background=starting_background,
+    )
+    request = structural_refinement.RietveldInput(
+        rietveld.PowderPattern(truth.pattern.x, observed_y=calculated.y),
+        truth.experiment,
+        truth.phases,
+        (None,),
+        parameters,
+        selection=selected,
+        background=starting_background,
+    )
+    result = structural_refinement.refine(request)
+    assert result.background is not None
+    np.testing.assert_allclose(
+        result.background.coefficients,
+        expected_background.coefficients,
+        rtol=0.0,
+        atol=2.0e-8,
+    )
+    np.testing.assert_allclose(
+        result.calculation.background,
+        expected_background.calculate(truth.pattern.x),
+        rtol=0.0,
+        atol=2.0e-8,
+    )

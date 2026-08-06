@@ -38,11 +38,13 @@ from .radiation import (
     RadiationProbe,
     WavelengthComponents,
 )
+from .refinement.background import PolynomialBackground
 from .refinement.core import (
     AffineConstraint,
     Bounds,
     Constraint,
     FixedConstraint,
+    LinearConstraint,
     ParameterKey,
     ParameterSet,
     ParameterSpec,
@@ -124,6 +126,7 @@ class PersistenceBundle:
     rietveld_selection: RietveldParameterSelection | None = None
     rietveld_options: RietveldOptions | None = None
     rietveld_checkpoint: RietveldCheckpoint | None = None
+    rietveld_background: PolynomialBackground | None = None
     calculation_options: CalculationOptions | None = None
     calculation_result: PatternCalculationResult | None = None
     parameters: ParameterSet | None = None
@@ -166,6 +169,10 @@ class PersistenceBundle:
             self.rietveld_checkpoint, RietveldCheckpoint
         ):
             raise TypeError("rietveld_checkpoint must be RietveldCheckpoint")
+        if self.rietveld_background is not None and not isinstance(
+            self.rietveld_background, PolynomialBackground
+        ):
+            raise TypeError("rietveld_background must be PolynomialBackground")
         if self.calculation_result is not None and not isinstance(
             self.calculation_result, PatternCalculationResult
         ):
@@ -225,6 +232,7 @@ class PersistenceBundle:
                 if self.rietveld_selection is None
                 else self.rietveld_selection
             ),
+            self.rietveld_background,
         )
 
 
@@ -337,11 +345,21 @@ def _constraint_record(constraint: Constraint) -> dict[str, Any]:
             "target": _key_record(constraint.target),
             "value": constraint.value,
         }
+    if isinstance(constraint, AffineConstraint):
+        return {
+            "type": "affine",
+            "target": _key_record(constraint.target),
+            "source": _key_record(constraint.source),
+            "multiplier": constraint.multiplier,
+            "offset": constraint.offset,
+        }
     return {
-        "type": "affine",
+        "type": "linear",
         "target": _key_record(constraint.target),
-        "source": _key_record(constraint.source),
-        "multiplier": constraint.multiplier,
+        "terms": [
+            {"source": _key_record(source), "coefficient": coefficient}
+            for source, coefficient in constraint.terms
+        ],
         "offset": constraint.offset,
     }
 
@@ -354,6 +372,15 @@ def _constraint_from_record(record: dict[str, Any]) -> Constraint:
             _key_from_record(record["target"]),
             _key_from_record(record["source"]),
             float(record["multiplier"]),
+            float(record["offset"]),
+        )
+    if record["type"] == "linear":
+        return LinearConstraint(
+            _key_from_record(record["target"]),
+            tuple(
+                (_key_from_record(item["source"]), float(item["coefficient"]))
+                for item in record["terms"]
+            ),
             float(record["offset"]),
         )
     raise PersistenceError(f"unknown constraint type {record['type']!r}")
@@ -803,6 +830,25 @@ def _rietveld_selection_record(
     }
 
 
+def _polynomial_background_record(
+    background: PolynomialBackground | None,
+) -> dict[str, Any] | None:
+    if background is None:
+        return None
+    return {
+        "background_id": background.background_id,
+        "coefficients": list(background.coefficients),
+    }
+
+
+def _polynomial_background_from_record(
+    record: dict[str, Any] | None,
+) -> PolynomialBackground | None:
+    if record is None:
+        return None
+    return PolynomialBackground(record["background_id"], tuple(record["coefficients"]))
+
+
 def _rietveld_options_record(options: RietveldOptions | None) -> dict[str, Any] | None:
     if options is None:
         return None
@@ -895,6 +941,8 @@ def _rietveld_checkpoint_record(
         "objective": checkpoint.objective,
         "damping": checkpoint.damping,
         "history": [_rietveld_iteration_record(item) for item in checkpoint.history],
+        "experiment": _experiment_record(checkpoint.experiment),
+        "background": _polynomial_background_record(checkpoint.background),
     }
 
 
@@ -915,6 +963,8 @@ def _rietveld_checkpoint_from_record(
         float(record["objective"]),
         float(record["damping"]),
         tuple(_rietveld_iteration_from_record(item) for item in record["history"]),
+        _experiment_from_record(record.get("experiment")),
+        _polynomial_background_from_record(record.get("background")),
     )
 
 
@@ -1259,6 +1309,7 @@ def save_bundle(
         "rietveld_checkpoint": _rietveld_checkpoint_record(
             bundle.rietveld_checkpoint, writer, codecs
         ),
+        "rietveld_background": _polynomial_background_record(bundle.rietveld_background),
         "calculation_options": (
             None
             if bundle.calculation_options is None
@@ -1403,6 +1454,7 @@ def load_bundle(
         rietveld_checkpoint=_rietveld_checkpoint_from_record(
             record.get("rietveld_checkpoint"), arrays, codecs
         ),
+        rietveld_background=_polynomial_background_from_record(record.get("rietveld_background")),
         calculation_options=None if options is None else CalculationOptions(**options),
         calculation_result=(
             None
