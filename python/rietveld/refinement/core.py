@@ -261,6 +261,29 @@ class ConstraintTransform:
                 raise ValueError(f"expanded value for {key.label} lies outside its bounds")
         return values
 
+    def derivative_matrix(self) -> NDArray[np.float64]:
+        """Return ``d physical values / d scaled free values`` exactly.
+
+        Rows follow :attr:`ParameterSet.specs`; columns follow
+        :attr:`free_keys`. Fixed rows remain zero and affine rows inherit the
+        already-resolved source row.
+        """
+
+        row_for_key = {spec.key: row for row, spec in enumerate(self.parameters.specs)}
+        matrix = np.zeros(
+            (len(self.parameters.specs), len(self.free_keys)),
+            dtype=np.float64,
+        )
+        for column, key in enumerate(self.free_keys):
+            matrix[row_for_key[key], column] = self.parameters.spec(key).scale
+        for constraint in self.constraints:
+            if isinstance(constraint, AffineConstraint):
+                matrix[row_for_key[constraint.target]] = (
+                    constraint.multiplier * matrix[row_for_key[constraint.source]]
+                )
+        matrix.flags.writeable = False
+        return matrix
+
 
 @dataclass(frozen=True, slots=True)
 class ResidualOptions:

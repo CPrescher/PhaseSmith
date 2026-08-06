@@ -66,6 +66,16 @@ def test_fixed_and_ordered_affine_constraints_expand_without_strings() -> None:
     assert values[keys[1]] == pytest.approx(-2.0e-4)
     assert values[keys[2]] == pytest.approx(1.6e-4)
     assert values[keys[3]] == pytest.approx(1.5)
+    np.testing.assert_array_equal(
+        transform.derivative_matrix(),
+        [
+            [1.0e-4, 0.0],
+            [0.0, 0.0],
+            [0.5e-4, 0.0],
+            [0.0, 1.0],
+        ],
+    )
+    assert not transform.derivative_matrix().flags.writeable
 
 
 def test_constraint_cycles_duplicates_bounds_and_unknowns_are_rejected() -> None:

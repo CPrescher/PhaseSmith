@@ -22,7 +22,6 @@ from ..phase import Phase, ReflectionBatch
 from ..structure import CrystalStructure
 from ..symmetry import CwTwoThetaRange, PreparedReflectionGenerator
 from .core import (
-    AffineConstraint,
     Bounds,
     Constraint,
     ConstraintTransform,
@@ -862,17 +861,7 @@ def _parameter_columns(
 def _constraint_matrix(transform: ConstraintTransform) -> NDArray[np.float64]:
     """Return the exact physical-to-scaled-free affine derivative matrix."""
 
-    specs = transform.parameters.specs
-    row_for_key = {spec.key: row for row, spec in enumerate(specs)}
-    matrix = np.zeros((len(specs), len(transform.free_keys)), dtype=np.float64)
-    for column, key in enumerate(transform.free_keys):
-        matrix[row_for_key[key], column] = transform.parameters.spec(key).scale
-    for constraint in transform.constraints:
-        if isinstance(constraint, AffineConstraint):
-            matrix[row_for_key[constraint.target]] = (
-                constraint.multiplier * matrix[row_for_key[constraint.source]]
-            )
-    return matrix
+    return transform.derivative_matrix()
 
 
 def _apply_parameter_values(

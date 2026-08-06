@@ -4,6 +4,7 @@ from dataclasses import replace
 from fractions import Fraction
 
 import numpy as np
+import pytest
 import rietveld
 from rietveld.refinement import rietveld as structural_refinement
 
@@ -169,3 +170,148 @@ def test_site_coordinate_model_handles_non_origin_fixed_point_exactly() -> None:
     assert model.special_position
     assert model.parameter_names == ()
     assert model.basis.shape == (3, 0)
+
+
+def test_matrix_free_refinement_recovers_phase_scale_and_emits_checkpoints() -> None:
+    truth = request_from_cif(selection(phase_scale=True))
+    starting_phase = replace(truth.phases[0], scale=0.65)
+    starting_parameters = structural_refinement.build_parameter_set(
+        (starting_phase,), (None,), truth.selection
+    )
+    request = replace(
+        truth,
+        phases=(starting_phase,),
+        parameters=starting_parameters,
+    )
+    events = []
+    checkpoints = []
+    result = structural_refinement.refine(
+        request,
+        structural_refinement.RietveldOptions(
+            limits=structural_refinement.RefinementLimits(
+                max_iterations=10,
+                max_evaluations=200,
+            ),
+            min_iterations=1,
+        ),
+        logger=events.append,
+        checkpoint_callback=checkpoints.append,
+    )
+    assert result.termination_reason is structural_refinement.TerminationReason.CONVERGED
+    assert result.phases[0].scale == pytest.approx(1.0, rel=2.0e-8)
+    assert result.metrics.rwp < 1.0e-8
+    assert checkpoints
+    assert checkpoints[-1] == result.checkpoint
+    assert events[0].kind is structural_refinement.RefinementEventKind.START
+    assert events[-1].kind is structural_refinement.RefinementEventKind.TERMINATION
+
+
+def test_combined_structural_products_match_finite_difference_and_adjoint() -> None:
+    request = request_from_cif(
+        selection(phase_scale=True, lattice=True, coordinates=True, occupancy=True, u_iso=True)
+    )
+    options = structural_refinement.RietveldOptions(
+        limits=structural_refinement.RefinementLimits(max_evaluations=100)
+    )
+    runtime = structural_refinement.RefinementRuntime(options.limits)
+    linearization = structural_refinement._RietveldLinearization.prepare(
+        request,
+        request.phases,
+        request.parameters,
+        options,
+        runtime,
+    )
+    transform = structural_refinement.ConstraintTransform(request.parameters)
+    rng = np.random.default_rng(20260807)
+    direction = rng.normal(size=len(transform.free_keys))
+    direction /= np.linalg.norm(direction)
+    analytical = linearization.jvp(direction)
+    step = 5.0e-7
+    packed = transform.pack()
+    calculations = []
+    for sign in (-1.0, 1.0):
+        values = transform.unpack(packed + sign * step * direction)
+        phases, _ = structural_refinement._apply_parameter_values(
+            request.phases,
+            request.lattice_domains,
+            request.parameters,
+            values,
+        )
+        calculations.append(
+            structural_refinement.calculate(request.pattern, request.experiment, phases).y
+        )
+    finite_difference = (calculations[1] - calculations[0]) / (2.0 * step)
+    relative_l2_error = np.linalg.norm(analytical - finite_difference) / np.linalg.norm(
+        finite_difference
+    )
+    # A few samples can cross an exact finite-support boundary; the full
+    # directional product remains tightly converged in norm.
+    assert relative_l2_error < 2.0e-5
+    samples = rng.normal(size=request.pattern.x.size)
+    left = float(analytical @ samples)
+    right = float(direction @ linearization.vjp(samples))
+    assert left == pytest.approx(right, rel=3.0e-12, abs=3.0e-9)
+
+
+def test_pre_requested_cancellation_returns_the_unmodified_safe_state() -> None:
+    request = request_from_cif(selection(phase_scale=True))
+    token = rietveld.CancellationToken()
+    token.request("test_stop")
+    result = structural_refinement.refine(request, cancellation=token)
+    assert result.termination_reason is structural_refinement.TerminationReason.CANCELLED
+    assert result.termination_message == "test_stop"
+    assert result.phases == request.phases
+    assert result.parameters == request.parameters
+    assert result.history == ()
+
+
+@pytest.mark.parametrize("family", ["lattice", "coordinates", "occupancy", "u_iso"])
+def test_matrix_free_refinement_improves_each_structural_parameter_family(
+    family: str,
+) -> None:
+    selected = selection(**{family: True})
+    truth = request_from_cif(selected)
+    phase = truth.phases[0]
+    structure = phase.structure
+    domain = truth.lattice_domains[0]
+    if family == "lattice":
+        cell_values = list(structure.cell.as_tuple())
+        cell_values[0] += 0.004
+        structure = replace(structure, cell=rietveld.UnitCell(*cell_values))
+        assert domain is not None
+        phase = replace(
+            phase,
+            structure=structure,
+            reflections=domain.generate(structure.cell).reflections,
+        )
+    else:
+        sites = list(structure.sites)
+        first = sites[0]
+        if family == "coordinates":
+            xyz = list(first.fractional_xyz)
+            xyz[0] += 8.0e-4
+            first = replace(first, fractional_xyz=tuple(xyz))
+        elif family == "occupancy":
+            first = replace(first, occupancy=first.occupancy - 0.015)
+        else:
+            first = replace(first, u_iso_angstrom2=first.u_iso_angstrom2 + 5.0e-4)
+        sites[0] = first
+        phase = replace(phase, structure=replace(structure, sites=tuple(sites)))
+    starting_parameters = structural_refinement.build_parameter_set(
+        (phase,), truth.lattice_domains, selected
+    )
+    request = replace(truth, phases=(phase,), parameters=starting_parameters)
+    initial = structural_refinement.calculate(request.pattern, request.experiment, request.phases)
+    initial_metrics = structural_refinement.evaluate_residuals(request.pattern, initial.y)
+    result = structural_refinement.refine(
+        request,
+        structural_refinement.RietveldOptions(
+            limits=structural_refinement.RefinementLimits(
+                max_iterations=12,
+                max_evaluations=800,
+            ),
+            max_cg_iterations=20,
+        ),
+    )
+    assert result.history
+    assert result.metrics.chi_square < initial_metrics.chi_square * 1.0e-4

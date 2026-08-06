@@ -51,8 +51,13 @@ from .lebail import (
 )
 from .rietveld import (
     RietveldCalculationResult,
+    RietveldCheckpoint,
     RietveldInput,
+    RietveldIterationRecord,
+    RietveldOptions,
+    RietveldParameterChange,
     RietveldParameterSelection,
+    RietveldResult,
     SiteCoordinateModel,
 )
 from .runtime import (
@@ -108,8 +113,13 @@ __all__ = [
     "ResidualEvaluation",
     "ResidualOptions",
     "RietveldCalculationResult",
+    "RietveldCheckpoint",
     "RietveldInput",
+    "RietveldIterationRecord",
+    "RietveldOptions",
+    "RietveldParameterChange",
     "RietveldParameterSelection",
+    "RietveldResult",
     "ScipyLeastSquaresAdapter",
     "SiteCoordinateModel",
     "TerminationReason",
