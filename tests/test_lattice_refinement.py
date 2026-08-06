@@ -164,6 +164,33 @@ def test_guarded_domain_preserves_intensities_by_stable_family_id() -> None:
     assert not moved.visible.flags.writeable
 
 
+def test_guarded_domain_contains_every_visible_family_across_bounded_cells() -> None:
+    group, cell, _ = lattice_cases()[0]
+    parameterization = LatticeParameterization(group, cell)
+    bounds = LatticeParameterBounds.around(
+        parameterization, relative_length=0.04, angle_delta_deg=4.0
+    )
+    domain = CwLatticeReflectionDomain(
+        group,
+        parameterization,
+        bounds,
+        wavelength_angstrom=1.5406,
+        visible_two_theta_min_deg=20.0,
+        visible_two_theta_max_deg=90.0,
+    )
+    guarded_ids = set(domain.generate(cell).reflections.reflection_ids)
+    generator = rietveld.PreparedReflectionGenerator(group)
+    rng = np.random.default_rng(20260806)
+    samples = [bounds.lower, bounds.upper]
+    samples.extend(rng.uniform(bounds.lower, bounds.upper) for _ in range(24))
+    for values in samples:
+        generated = generator.generate(
+            parameterization.to_cell(values),
+            rietveld.CwTwoThetaRange(20.0, 90.0, 1.5406),
+        )
+        assert set(generated.reflection_ids) <= guarded_ids
+
+
 def test_lattice_bounds_reject_infinite_or_incompatible_domains() -> None:
     parameterization = LatticeParameterization(
         rietveld.SpaceGroup.p1(),

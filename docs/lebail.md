@@ -24,8 +24,10 @@ factor may interpolate between `I_k` and `I'_k`. Intensities remain
 non-negative.
 
 Samples whose calculated profile is below `minimum_calculated` do not form a
-ratio. A reflection with no included support is set to zero and reported in the
-iteration warnings.
+ratio. An explicit reflection with no included support is set to zero and
+reported in the iteration warnings. A generated guard-only reflection retains
+its current intensity so it can cross into the visible interval without silent
+information loss.
 
 Exactly coincident profiles preserve their starting intensity ratio because
 their multiplicative factors are identical. Unresolved groups are detected
@@ -57,7 +59,9 @@ equally and applies a small positive floor.
 ## Optional profile updates
 
 `build_parameter_set` selects any combination of CW `U/V/W/X/Y`, phase scales,
-and individual reflection positions without requiring users to pack a vector.
+individual reflection positions, or symmetry-independent lattice variables
+without requiring users to pack a vector. Lattice parameters and independent
+reflection positions are deliberately mutually exclusive.
 Instrument coefficients are not individually forced positive: their composed
 Gaussian variance and Lorentzian width must be valid over the evaluated
 reflection range. Phase scales are non-negative and positions remain in
@@ -83,6 +87,10 @@ rank and its interpretation is valid. Phase scale and freely extracted
 intensities are inherently correlated; a selected phase scale therefore emits
 an explicit identifiability warning and covariance is not reported for that
 parameterization.
+
+CIF-backed lattice refinement, including the one-call constructor and guarded
+reflection-domain semantics, is documented in
+[lattice-refinement.md](lattice-refinement.md).
 
 ## Checkpoints and diagnostics
 

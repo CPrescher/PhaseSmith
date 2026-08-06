@@ -49,12 +49,18 @@ from .refinement.core import (
     ResidualEvaluation,
     TerminationReason,
 )
+from .refinement.lattice import (
+    CwLatticeReflectionDomain,
+    LatticeParameterBounds,
+    LatticeParameterization,
+)
 from .refinement.lebail import (
     CoincidentReflectionGroup,
     IterationRecord,
     LeBailCheckpoint,
     LeBailInput,
     LeBailOptions,
+    LeBailPhase,
     LeBailResult,
     ParameterChange,
     ReflectionIntensity,
@@ -66,9 +72,9 @@ from .sample import (
     MarchDollasePreferredOrientation,
 )
 from .scattering import NeutronNuclear, XrayNonResonant
-from .structure import structure_from_record, structure_to_record
+from .structure import CrystalStructure, structure_from_record, structure_to_record
 
-FORMAT_VERSION: Final = 2
+FORMAT_VERSION: Final = 3
 MANIFEST_NAME: Final = "manifest.json"
 ARCHIVE_NAME: Final = "arrays.npz"
 Instrument = ConstantWavelengthInstrument | TofInstrument
@@ -489,7 +495,7 @@ def _phase_record(
     phase: Phase, arrays: _ArrayWriter, prefix: str, codecs: tuple[PhysicsProviderCodec, ...]
 ) -> dict[str, Any]:
     reflections = phase.reflections
-    return {
+    record = {
         "phase_id": phase.phase_id,
         "name": phase.name,
         "scale": phase.scale,
@@ -506,6 +512,56 @@ def _phase_record(
             ),
         },
     }
+    if isinstance(phase, LeBailPhase):
+        record.update(
+            {
+                "phase_type": "lebail",
+                "structure": structure_to_record(phase.structure),
+                "reflection_domain": _reflection_domain_record(phase.reflection_domain),
+                "reflections_generated": phase.reflections_generated,
+            }
+        )
+    return record
+
+
+def _reflection_domain_record(
+    domain: CwLatticeReflectionDomain | None,
+) -> dict[str, Any] | None:
+    if domain is None:
+        return None
+    return {
+        "lower": domain.bounds.lower.tolist(),
+        "upper": domain.bounds.upper.tolist(),
+        "wavelength_angstrom": domain.wavelength_angstrom,
+        "visible_two_theta_min_deg": domain.visible_two_theta_min_deg,
+        "visible_two_theta_max_deg": domain.visible_two_theta_max_deg,
+        "initial_intensity": domain.initial_intensity,
+        "merge_friedel": domain.merge_friedel,
+        "max_candidates": domain.max_candidates,
+        "guard_scale": domain.guard_scale,
+    }
+
+
+def _reflection_domain_from_record(
+    record: dict[str, Any] | None,
+    structure: CrystalStructure,
+) -> CwLatticeReflectionDomain | None:
+    if record is None:
+        return None
+    parameterization = LatticeParameterization(structure.space_group, structure.cell)
+    bounds = LatticeParameterBounds(parameterization, record["lower"], record["upper"])
+    return CwLatticeReflectionDomain(
+        structure.space_group,
+        parameterization,
+        bounds,
+        float(record["wavelength_angstrom"]),
+        float(record["visible_two_theta_min_deg"]),
+        float(record["visible_two_theta_max_deg"]),
+        float(record["initial_intensity"]),
+        record["merge_friedel"],
+        record["max_candidates"],
+        float(record["guard_scale"]),
+    )
 
 
 def _phase_from_record(
@@ -514,7 +570,7 @@ def _phase_from_record(
     codecs: tuple[PhysicsProviderCodec, ...],
 ) -> Phase:
     reflections = record["reflections"]
-    return Phase(
+    arguments = (
         record["phase_id"],
         record["name"],
         ReflectionBatch(
@@ -526,6 +582,15 @@ def _phase_from_record(
         ),
         float(record["scale"]),
         _provider_from_record(record["physics"], codecs),
+    )
+    if record.get("phase_type") != "lebail":
+        return Phase(*arguments)
+    structure = structure_from_record(record["structure"])
+    return LeBailPhase(
+        *arguments,
+        structure,
+        _reflection_domain_from_record(record["reflection_domain"], structure),
+        record["reflections_generated"],
     )
 
 
@@ -1028,7 +1093,7 @@ def load_bundle(
     *,
     provider_codecs: tuple[PhysicsProviderCodec, ...] = (),
 ) -> PersistenceBundle:
-    """Validate and load a version-1 or version-2 bundle without pickle."""
+    """Validate and load a version-1, version-2, or version-3 bundle without pickle."""
 
     source = Path(path).resolve()
     try:
@@ -1036,7 +1101,11 @@ def load_bundle(
     except (OSError, json.JSONDecodeError) as error:
         raise PersistenceError(f"cannot read persistence manifest: {error}") from error
     version = manifest.get("format_version")
-    if version not in (1, FORMAT_VERSION):
+    if (
+        not isinstance(version, int)
+        or isinstance(version, bool)
+        or version not in (1, 2, FORMAT_VERSION)
+    ):
         raise PersistenceError(f"unsupported persistence format {manifest.get('format_version')!r}")
     if manifest.get("archive", {}).get("file") != ARCHIVE_NAME:
         raise PersistenceError("persistence archive filename is invalid")

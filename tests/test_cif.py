@@ -11,7 +11,8 @@ import numpy as np
 import pytest
 import rietveld
 from rietveld.io.cif import CifReadLimits, CifReadResult, read_cif
-from rietveld.refinement.lebail import LeBailPhase
+from rietveld.refinement import lebail
+from rietveld.refinement.lebail import LeBailInput, LeBailPhase
 
 P21_CIF = """
 data_demo
@@ -62,6 +63,38 @@ _cell_angle_beta 90
 _cell_angle_gamma 90
 _space_group_name_H-M_alt 'I m -3 m'
 """
+
+
+def test_script_first_cif_lebail_input_builds_bounded_lattice_parameters() -> None:
+    instrument = rietveld.ConstantWavelengthInstrument(
+        1.5406, 2.0e-4, -1.0e-4, 2.0e-4, 1.5e-3, 3.0e-3
+    )
+    x = np.linspace(20.0, 90.0, 7_001)
+    truth = LeBailPhase.from_cif(
+        CELL_ONLY_CIF,
+        phase_id="alpha",
+        wavelength_angstrom=instrument.wavelength_angstrom,
+        two_theta_min_deg=float(x[0]),
+        two_theta_max_deg=float(x[-1]),
+    )
+    calculated = rietveld.calculate_pattern(rietveld.PowderPattern(x), instrument, (truth,))
+    request = LeBailInput.from_cif(
+        rietveld.PowderPattern(x, observed_y=calculated.y),
+        instrument,
+        CELL_ONLY_CIF,
+        phase_id="alpha",
+    )
+
+    phase = request.phases[0]
+    assert isinstance(phase, LeBailPhase)
+    assert phase.reflection_domain is not None
+    assert phase.reflections_generated
+    assert request.parameters is not None
+    assert tuple(spec.key.name for spec in request.parameters.specs) == ("a_angstrom",)
+    assert phase.structure.source is not None
+    assert phase.structure.source.backend == "gemmi"
+    result = lebail.iterate_once(request)
+    assert result.checkpoint.completed_iterations == 1
 
 
 def test_gemmi_adapter_extracts_plain_typed_values_and_uncertainties() -> None:

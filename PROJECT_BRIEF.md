@@ -48,14 +48,17 @@ controlled structure-to-symmetric-CW calculation. Project construction,
 reflection generation, file I/O, and process startup remain outside its timed
 regions; its scope likewise is not a complete-refinement comparison.
 
-Implementation unit 16 is in progress. Its first two checkpoints add a
-setting-aware physical lattice parameterization for every crystal system, a
-bounded monochromatic reflection-domain model that transfers Le Bail
-intensities by stable Miller-family ID, and analytical CW/TOF lattice geometry
-derivatives. Le Bail now refines symmetry-independent lattice variables and
-regenerates guarded reflection topology only after accepted profile steps.
-High-level CIF construction, persistence, documentation, and performance gates
-remain before the unit is complete.
+Implementation unit 16 is complete. It adds setting-aware physical lattice
+parameters for every crystal system, conservative bounded monochromatic
+reflection domains with stable Miller-family intensity transfer, analytical
+CW/TOF lattice geometry chains, accepted-step Le Bail topology regeneration,
+and a one-call CIF-backed request constructor. Persistence format 3 retains the
+dynamic phase/domain restart contract while loading formats 1 and 2. The full
+gate passes 367 Python tests (one unavailable external-oracle case deselected),
+55 Rust tests, strict linting, and a realistic release benchmark. The live
+pinned GSAS-II lattice perturbation fixture remains pending because the
+external checkout is unavailable; equations and normal operation contain no
+GSAS-II dependency.
 
 The project remains pre-release and is licensed under the MIT License. The
 architecture and delivery gates for CIF import, the remaining native

@@ -11,6 +11,8 @@ factors, exact symmetry, bounded reflection generation, and prepared X-ray and
 neutron scattering factors with analytical derivatives. General-symmetry
 structural intensities and monochromatic structural patterns now have a fused
 native values/JVP/VJP path and a scriptable `RietveldPhase` API.
+CIF-backed Le Bail can refine setting-aware lattice parameters with analytical
+derivatives and guarded, stable-ID reflection-domain regeneration.
 
 The architecture and roadmap are in [PROJECT_BRIEF.md](PROJECT_BRIEF.md); the
 equations and parameter conventions are in [docs/equations.md](docs/equations.md).
@@ -27,8 +29,10 @@ documented in
 [docs/crystallography-foundation.md](docs/crystallography-foundation.md).
 Exact symmetry conventions and reflection ranges are documented in
 [docs/symmetry-reflections.md](docs/symmetry-reflections.md).
-Optional CIF import and direct fixed-cell CIF-to-Le Bail are documented in
-[docs/cif-import.md](docs/cif-import.md).
+Optional CIF import and direct CIF-to-Le Bail are documented in
+[docs/cif-import.md](docs/cif-import.md); lattice refinement equations and
+boundary behavior are in
+[docs/lattice-refinement.md](docs/lattice-refinement.md).
 The component-width TCH transform and chain-rule derivatives are documented in
 [docs/tch-profile.md](docs/tch-profile.md); constant-wavelength U/V/W/X/Y
 broadening is documented in [docs/cw-profile.md](docs/cw-profile.md). FCJ
@@ -77,6 +81,7 @@ uv run python benchmarks/profile.py --require-release
 uv run python benchmarks/lebail.py --require-release
 uv run python benchmarks/scattering.py --require-release
 uv run python benchmarks/structural_pattern.py --require-release
+uv run python benchmarks/lattice_refinement.py --require-release
 ```
 
 The pinned external-oracle environment can compare the same support-limited CW
@@ -321,6 +326,21 @@ observed = PowderPattern(
 result = lebail.refine(lebail.LeBailInput(observed, instrument, (alpha,)))
 print(result.termination_reason, result.metrics.rwp)
 print([(item.reflection_id, item.integrated_intensity) for item in result.intensities])
+```
+
+For a CIF-backed single phase, the convenience constructor creates the
+generated reflection domain and the symmetry-allowed bounded lattice parameter
+set directly from the observed grid:
+
+```python
+request = lebail.LeBailInput.from_cif(
+    observed,
+    instrument,
+    "phase.cif",
+    phase_id="alpha",
+)
+result = lebail.refine(request)
+print(result.phases[0].structure.cell)
 ```
 
 GSAS-II is used only as the optional pinned validation oracle described in

@@ -296,7 +296,7 @@ class LatticeParameterBounds:
         return cls(parameterization, lower, upper)
 
     def corner_values(self) -> tuple[NDArray[np.float64], ...]:
-        """Return deterministic corners used for conservative guard estimation."""
+        """Return deterministic corners of the independent-parameter box."""
 
         corners = []
         for values in product(*zip(self.lower, self.upper, strict=True)):
@@ -451,24 +451,49 @@ class CwLatticeReflectionDomain:
             raise ValueError("visible two-theta bounds must lie strictly inside (0, 180)")
         if self.guard_scale < 1.0:
             raise ValueError("guard_scale must be at least one")
+        if not isinstance(self.merge_friedel, bool):
+            raise TypeError("merge_friedel must be boolean")
+        if not isinstance(self.max_candidates, int) or isinstance(self.max_candidates, bool):
+            raise TypeError("max_candidates must be an integer")
         if self.max_candidates <= 0:
             raise ValueError("max_candidates must be positive")
 
     def _guarded_d_range(self, reference_cell: UnitCell) -> tuple[float, float]:
-        reference_reciprocal = reference_cell.geometry().reciprocal_metric
-        cholesky = np.linalg.cholesky(reference_reciprocal)
-        inverse = np.linalg.inv(cholesky)
-        minimum_ratio = 1.0
-        maximum_ratio = 1.0
-        for values in self.bounds.corner_values():
-            reciprocal = self.parameterization.to_cell(values).geometry().reciprocal_metric
-            relative = inverse @ reciprocal @ inverse.T
-            eigenvalues = np.linalg.eigvalsh(relative)
-            if np.any(eigenvalues <= 0.0):  # pragma: no cover - UnitCell already rejects this
-                raise ValueError("lattice bounds produced a non-positive reciprocal metric")
-            ratios = 1.0 / np.sqrt(eigenvalues)
-            minimum_ratio = min(minimum_ratio, float(np.min(ratios)) / self.guard_scale)
-            maximum_ratio = max(maximum_ratio, float(np.max(ratios)) * self.guard_scale)
+        corner_cells = np.asarray(
+            [
+                self.parameterization.to_cell(values).as_tuple()
+                for values in self.bounds.corner_values()
+            ],
+            dtype=np.float64,
+        )
+        physical_lower = np.min(corner_cells, axis=0)
+        physical_upper = np.max(corner_cells, axis=0)
+        cos_lower = np.cos(np.deg2rad(physical_upper[3:]))
+        cos_upper = np.cos(np.deg2rad(physical_lower[3:]))
+        product_lower = min(
+            float(alpha * beta * gamma)
+            for alpha, beta, gamma in product(*zip(cos_lower, cos_upper, strict=True))
+        )
+        maximum_squares = np.maximum(np.square(cos_lower), np.square(cos_upper))
+        angular_determinant_lower = 1.0 + 2.0 * product_lower - float(np.sum(maximum_squares))
+        if angular_determinant_lower <= 0.0:
+            raise ValueError(
+                "lattice angle bounds are too broad for a finite guarded reflection domain"
+            )
+        determinant_lower = float(np.prod(physical_lower[:3])) ** 2 * angular_determinant_lower
+        trace_upper = float(np.sum(np.square(physical_upper[:3])))
+        direct_eigenvalue_lower = 4.0 * determinant_lower / trace_upper**2
+        reciprocal_eigenvalue_lower = 1.0 / trace_upper
+        reciprocal_eigenvalue_upper = 1.0 / direct_eigenvalue_lower
+        reference_eigenvalues = np.linalg.eigvalsh(reference_cell.geometry().reciprocal_metric)
+        minimum_ratio = (
+            np.sqrt(float(np.min(reference_eigenvalues)) / reciprocal_eigenvalue_upper)
+            / self.guard_scale
+        )
+        maximum_ratio = (
+            np.sqrt(float(np.max(reference_eigenvalues)) / reciprocal_eigenvalue_lower)
+            * self.guard_scale
+        )
         theta_min = np.deg2rad(self.visible_two_theta_min_deg / 2.0)
         theta_max = np.deg2rad(self.visible_two_theta_max_deg / 2.0)
         visible_d_max = self.wavelength_angstrom / (2.0 * np.sin(theta_min))

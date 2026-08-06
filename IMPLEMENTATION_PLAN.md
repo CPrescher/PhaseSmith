@@ -998,9 +998,9 @@ plain persistence, and generic NumPy interchange.
 
 ## Implementation units 11 through 18: crystallography and Rietveld
 
-Status: units 11 through 15 implemented and independently validated (2026-08-05),
+Status: units 11 through 16 implemented and independently validated (2026-08-06),
 with their live pinned GSAS-II behavior fixtures pending an available external
-checkout; units 16 through 18 are planned. The complete equations, data contracts,
+checkout; units 17 and 18 are planned. The complete equations, data contracts,
 ordering, derivative strategy, validation gates, benchmarks, and discipline are
 specified in
 [`docs/crystallography-plan.md`](docs/crystallography-plan.md).
@@ -1211,8 +1211,9 @@ integrated corrections, fused CW patterns, structural JVP/VJP products,
 `RietveldPhase`, format-2 persistence with format-1 migration, independent
 NumPy validation, and combined benchmarks pass the normal quality gate.
 
-The immediate next milestone is implementation unit 16. It is complete when a
-CIF-backed Le Bail script can refine crystal-system-allowed lattice parameters,
-regenerate a guarded reflection domain only between accepted iterations,
-preserve intensities by stable family ID, and expose plain-array diagnostics
-without changing explicit-reflection Le Bail.
+Implementation unit 16 is complete: a CIF-backed Le Bail script refines
+crystal-system-allowed lattice parameters, regenerates a guarded reflection
+domain only between accepted iterations, preserves intensities by stable family
+ID, and exposes plain-array diagnostics without changing explicit-reflection Le
+Bail. The immediate next milestone is implementation unit 17, the first full
+CIF-backed Rietveld refinement using native structural JVP/VJP products.

@@ -475,6 +475,8 @@ benchmarks are in `docs/structural-intensities.md`.
 
 ## Implementation unit 16: lattice-refining CIF-to-Le Bail
 
+Status: complete (2026-08-06).
+
 ### Work
 
 1. Extend the fixed-cell CIF-to-Le Bail path without changing the lower-level
@@ -500,6 +502,22 @@ benchmarks are in `docs/structural-intensities.md`.
 - Peaks moving across the visible pattern boundary follow the documented guard
   and regeneration semantics without unstable IDs or silent intensity loss.
 - Explicit-reflection Le Bail remains backward compatible.
+
+Review result: all crystal systems, including non-standard monoclinic and both
+trigonal settings, map to stable physical parameter keys and analytical cell,
+d-spacing, CW, and TOF coordinate derivatives. A conservative full-bound metric
+eigenvalue guard contains every visible family in deterministic randomized
+boundary tests. Dynamic Le Bail holds topology fixed within a trial, regenerates
+after acceptance, preserves intensities by family ID, and retains guard-only
+intensities without changing explicit-reflection behavior. The one-call CIF
+constructor preserves parser diagnostics and creates bounded parameters;
+persistence format 3 round-trips and resumes the complete domain contract while
+formats 1 and 2 remain readable. Strict Ruff, Rust formatting, strict Clippy,
+367 normal Python tests, and 55 Rust tests pass. On the first release-build
+20,001-sample tetragonal baseline, median domain regeneration is 1.915 ms and a
+two-lattice-parameter Le Bail iteration is 18.149 ms. External pinned GSAS-II
+lattice perturbations remain pending its unavailable checkout and are not a
+runtime dependency.
 
 ## Implementation unit 17: first full Rietveld refinement
 

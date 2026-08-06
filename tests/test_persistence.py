@@ -8,7 +8,12 @@ import numpy as np
 import pytest
 import rietveld
 from rietveld import persistence
-from rietveld.refinement import AffineConstraint, lebail
+from rietveld.refinement import (
+    AffineConstraint,
+    LatticeParameterBounds,
+    LatticeParameterization,
+    lebail,
+)
 
 
 def instrument() -> rietveld.ConstantWavelengthInstrument:
@@ -102,6 +107,27 @@ def refinement_models() -> tuple[rietveld.PowderPattern, rietveld.Phase, lebail.
         lebail.LeBailOptions(max_iterations=20),
     )
     return pattern, starting, result
+
+
+def dynamic_lebail_phase() -> lebail.LeBailPhase:
+    structure = rietveld.CrystalStructure(
+        "dynamic-alpha",
+        "Dynamic alpha",
+        rietveld.UnitCell(4.0, 5.0, 6.0, 78.0, 82.0, 73.0),
+        rietveld.SpaceGroup.p1(),
+    )
+    parameterization = LatticeParameterization(structure.space_group, structure.cell)
+    bounds = LatticeParameterBounds.around(
+        parameterization, relative_length=0.02, angle_delta_deg=2.0
+    )
+    return lebail.LeBailPhase.from_structure(
+        structure,
+        phase_id="dynamic-alpha",
+        wavelength_angstrom=instrument().wavelength_angstrom,
+        two_theta_min_deg=20.0,
+        two_theta_max_deg=80.0,
+        lattice_bounds=bounds,
+    )
 
 
 def test_full_bundle_round_trips_models_results_arrays_and_resume(tmp_path) -> None:
@@ -221,6 +247,47 @@ def test_parameter_change_history_round_trips(tmp_path) -> None:
     assert restored.lebail_result.history == result.history
 
 
+def test_dynamic_lebail_phase_domain_round_trips_and_resumes(tmp_path) -> None:
+    starting = dynamic_lebail_phase()
+    x = np.linspace(20.0, 80.0, 6_001)
+    calculated = rietveld.calculate_pattern(rietveld.PowderPattern(x), instrument(), (starting,))
+    pattern = rietveld.PowderPattern(x, observed_y=calculated.y)
+    parameters = lebail.build_parameter_set(instrument(), (starting,), lattice_parameters=True)
+    request = lebail.LeBailInput(pattern, instrument(), (starting,), parameters)
+    first = lebail.iterate_once(request)
+    path = persistence.save_bundle(
+        tmp_path / "dynamic",
+        persistence.PersistenceBundle(
+            pattern=pattern,
+            instrument=instrument(),
+            phases=(starting,),
+            parameters=parameters,
+            lebail_checkpoint=first.checkpoint,
+            lebail_result=first,
+        ),
+    )
+
+    restored = persistence.load_bundle(path)
+    assert isinstance(restored.phases[0], lebail.LeBailPhase)
+    restored_phase = restored.phases[0]
+    assert restored_phase.structure == starting.structure
+    assert restored_phase.reflections_generated
+    assert restored_phase.reflection_domain is not None
+    assert starting.reflection_domain is not None
+    np.testing.assert_array_equal(
+        restored_phase.reflection_domain.bounds.lower,
+        starting.reflection_domain.bounds.lower,
+    )
+    np.testing.assert_array_equal(
+        restored_phase.reflection_domain.bounds.upper,
+        starting.reflection_domain.bounds.upper,
+    )
+    assert restored.lebail_checkpoint is not None
+    assert isinstance(restored.lebail_checkpoint.phases[0], lebail.LeBailPhase)
+    resumed = lebail.iterate_once(restored.to_lebail_input(), checkpoint=restored.lebail_checkpoint)
+    assert resumed.checkpoint.completed_iterations == 2
+
+
 def test_structural_phase_round_trips_separately_from_lebail_phases(tmp_path) -> None:
     structural = structural_phase()
     path = persistence.save_bundle(
@@ -272,6 +339,21 @@ def test_version_one_bundle_migrates_with_no_structural_phases(tmp_path) -> None
     restored = persistence.load_bundle(path)
     assert len(restored.phases) == 1
     assert restored.rietveld_phases == ()
+
+
+def test_version_two_generic_bundle_remains_loadable(tmp_path) -> None:
+    path = persistence.save_bundle(
+        tmp_path / "version-two",
+        persistence.PersistenceBundle(phases=(phase(np.ones(2)),)),
+    )
+    manifest_path = path / persistence.MANIFEST_NAME
+    manifest = json.loads(manifest_path.read_text())
+    manifest["format_version"] = 2
+    manifest_path.write_text(json.dumps(manifest))
+
+    restored = persistence.load_bundle(path)
+    assert len(restored.phases) == 1
+    assert type(restored.phases[0]) is rietveld.Phase
 
 
 def test_undefined_zero_pattern_ratios_round_trip_as_explicit_nulls(tmp_path) -> None:
@@ -390,6 +472,11 @@ def test_hash_version_and_overwrite_guards_are_enforced(tmp_path) -> None:
     manifest_path = path / persistence.MANIFEST_NAME
     manifest = json.loads(manifest_path.read_text())
     manifest["format_version"] = 999
+    manifest_path.write_text(json.dumps(manifest))
+    with pytest.raises(persistence.PersistenceError, match="unsupported"):
+        persistence.load_bundle(path)
+
+    manifest["format_version"] = True
     manifest_path.write_text(json.dumps(manifest))
     with pytest.raises(persistence.PersistenceError, match="unsupported"):
         persistence.load_bundle(path)

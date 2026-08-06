@@ -1,4 +1,4 @@
-# Optional CIF import and fixed-cell Le Bail
+# Optional CIF import and CIF-backed Le Bail
 
 Status: implemented and internally validated in implementation unit 13.
 
@@ -125,6 +125,13 @@ Both call the prepared Rust reflection generator, remove exact systematic
 absences, calculate monochromatic positions, and initialize one independently
 extractable intensity per stable reflection family. No Python loop performs
 per-reflection diffraction physics.
+
+Pass `refine_lattice=True` to `LeBailPhase.from_cif()` to construct a guarded
+domain, or use `LeBailInput.from_cif()` for a directly runnable request with
+lattice refinement enabled by default. The latter derives the visible interval
+from the observed pattern. Equations, finite bounds, topology regeneration,
+and stable intensity transfer are documented in
+[lattice-refinement.md](lattice-refinement.md).
 
 ## Validation
 

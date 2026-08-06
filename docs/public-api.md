@@ -132,6 +132,11 @@ rietveld.intensity_corrections.IntegratedIntensityCorrection
 rietveld.intensity_corrections.NeutralIntegratedIntensityCorrection
 rietveld.intensity_corrections.BraggBrentanoUnpolarizedLp
 rietveld.refinement.lebail.LeBailPhase
+rietveld.refinement.LatticeParameterization
+rietveld.refinement.LatticeParameterBounds
+rietveld.refinement.CwLatticeReflectionDomain
+rietveld.refinement.cw_lattice_geometry
+rietveld.refinement.tof_lattice_geometry
 rietveld.pattern.PowderPattern
 rietveld.pattern.PatternCalculationResult
 rietveld.pattern.StructuralReflectionResult
@@ -173,6 +178,7 @@ rietveld.refinement.evaluate_residuals
 rietveld.refinement.jacobian_vector_product
 rietveld.refinement.transpose_jacobian_vector_product
 rietveld.refinement.lebail.LeBailInput
+rietveld.refinement.lebail.LeBailInput.from_cif
 rietveld.refinement.lebail.LeBailOptions
 rietveld.refinement.lebail.LeBailResult
 rietveld.refinement.lebail.extract_intensities

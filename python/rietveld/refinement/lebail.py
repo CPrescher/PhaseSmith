@@ -193,13 +193,18 @@ class LeBailPhase(Phase):
         initial_intensity: float = 1.0,
         merge_friedel: bool = True,
         max_candidates: int = 50_000_000,
+        refine_lattice: bool = False,
+        lattice_relative_bound: float = 0.05,
+        lattice_angle_bound_deg: float = 5.0,
         limits: CifReadLimits | None = None,
         backend: CifBackend | None = None,
     ) -> LeBailPhase:
-        """Read an optional CIF backend and construct a fixed-cell Le Bail phase."""
+        """Read a CIF and construct a fixed or bounded-lattice Le Bail phase."""
 
         from ..io.cif import read_cif
 
+        if not isinstance(refine_lattice, bool):
+            raise TypeError("refine_lattice must be boolean")
         imported = read_cif(
             path_or_text,
             block=block,
@@ -207,6 +212,16 @@ class LeBailPhase(Phase):
             limits=limits,
             backend=backend,
         )
+        lattice_bounds = None
+        if refine_lattice:
+            parameterization = LatticeParameterization(
+                imported.structure.space_group, imported.structure.cell
+            )
+            lattice_bounds = LatticeParameterBounds.around(
+                parameterization,
+                relative_length=lattice_relative_bound,
+                angle_delta_deg=lattice_angle_bound_deg,
+            )
         return cls.from_structure(
             imported.structure,
             phase_id=phase_id,
@@ -218,6 +233,7 @@ class LeBailPhase(Phase):
             initial_intensity=initial_intensity,
             merge_friedel=merge_friedel,
             max_candidates=max_candidates,
+            lattice_bounds=lattice_bounds,
         )
 
 
@@ -362,6 +378,76 @@ class LeBailInput:
             ConstraintTransform(self.parameters, self.constraints)
         elif self.constraints:
             raise ValueError("constraints require a parameter set")
+
+    @classmethod
+    def from_cif(
+        cls,
+        pattern: PowderPattern,
+        instrument: ConstantWavelengthInstrument,
+        path_or_text: str | Path,
+        *,
+        phase_id: str,
+        block: str | None = None,
+        strict: bool = True,
+        name: str | None = None,
+        scale: float = 1.0,
+        initial_intensity: float = 1.0,
+        refine_lattice: bool = True,
+        lattice_relative_bound: float = 0.05,
+        lattice_angle_bound_deg: float = 5.0,
+        instrument_parameters: tuple[str, ...] = (),
+        refine_phase_scale: bool = False,
+        constraints: tuple[Constraint, ...] = (),
+        merge_friedel: bool = True,
+        max_candidates: int = 50_000_000,
+        limits: CifReadLimits | None = None,
+        backend: CifBackend | None = None,
+    ) -> LeBailInput:
+        """Build a directly runnable single-phase CIF-backed Le Bail request.
+
+        The pattern grid defines the visible two-theta interval. Lattice
+        refinement is enabled by default here and uses explicit finite bounds;
+        advanced callers can construct :class:`LeBailPhase` and parameter
+        records separately.
+        """
+
+        if not isinstance(pattern, PowderPattern) or pattern.observed_y is None:
+            raise ValueError("CIF-backed Le Bail input requires an observed PowderPattern")
+        if not isinstance(instrument, ConstantWavelengthInstrument):
+            raise TypeError("instrument must be ConstantWavelengthInstrument")
+        if not isinstance(refine_lattice, bool):
+            raise TypeError("refine_lattice must be boolean")
+        phase = LeBailPhase.from_cif(
+            path_or_text,
+            phase_id=phase_id,
+            wavelength_angstrom=instrument.wavelength_angstrom,
+            two_theta_min_deg=float(pattern.x[0]),
+            two_theta_max_deg=float(pattern.x[-1]),
+            block=block,
+            strict=strict,
+            name=name,
+            scale=scale,
+            initial_intensity=initial_intensity,
+            merge_friedel=merge_friedel,
+            max_candidates=max_candidates,
+            refine_lattice=refine_lattice,
+            lattice_relative_bound=lattice_relative_bound,
+            lattice_angle_bound_deg=lattice_angle_bound_deg,
+            limits=limits,
+            backend=backend,
+        )
+        parameters = (
+            build_parameter_set(
+                instrument,
+                (phase,),
+                instrument_parameters=instrument_parameters,
+                phase_scales=refine_phase_scale,
+                lattice_parameters=refine_lattice,
+            )
+            if refine_lattice or instrument_parameters or refine_phase_scale
+            else None
+        )
+        return cls(pattern, instrument, (phase,), parameters, constraints)
 
 
 @dataclass(frozen=True, slots=True)
@@ -528,6 +614,13 @@ class LeBailCheckpoint:
         reflection_count = sum(phase.reflections.reflection_count for phase in self.phases)
         if self.intensities.shape != (reflection_count,):
             raise ValueError("checkpoint intensities must match its phase reflection count")
+        if any(
+            isinstance(phase, LeBailPhase)
+            and phase.reflection_domain is not None
+            and phase.reflection_domain.wavelength_angstrom != self.instrument.wavelength_angstrom
+            for phase in self.phases
+        ):
+            raise ValueError("checkpoint reflection-domain wavelength must match its instrument")
         if np.isnan(self.previous_rwp) or np.isneginf(self.previous_rwp):
             raise ValueError("checkpoint previous_rwp must be finite or positive infinity")
 
@@ -884,10 +977,8 @@ def _reflection_domains_compatible(left: LeBailPhase, right: LeBailPhase) -> boo
         and np.array_equal(left_domain.bounds.lower, right_domain.bounds.lower)
         and np.array_equal(left_domain.bounds.upper, right_domain.bounds.upper)
         and left_domain.wavelength_angstrom == right_domain.wavelength_angstrom
-        and left_domain.visible_two_theta_min_deg
-        == right_domain.visible_two_theta_min_deg
-        and left_domain.visible_two_theta_max_deg
-        == right_domain.visible_two_theta_max_deg
+        and left_domain.visible_two_theta_min_deg == right_domain.visible_two_theta_min_deg
+        and left_domain.visible_two_theta_max_deg == right_domain.visible_two_theta_max_deg
         and left_domain.initial_intensity == right_domain.initial_intensity
         and left_domain.merge_friedel == right_domain.merge_friedel
         and left_domain.max_candidates == right_domain.max_candidates
@@ -1195,10 +1286,25 @@ def refine(
             for phase in checkpoint.phases
             for reflection_id in phase.reflections.reflection_ids
         )
+        input_phase_ids = tuple(phase.phase_id for phase in input_data.phases)
+        checkpoint_phase_ids = tuple(phase.phase_id for phase in checkpoint.phases)
+        if input_phase_ids != checkpoint_phase_ids:
+            raise ValueError("checkpoint phase identities do not match Le Bail input")
+        for input_phase, checkpoint_phase in zip(input_data.phases, checkpoint.phases, strict=True):
+            input_dynamic = isinstance(input_phase, LeBailPhase) and (
+                input_phase.reflection_domain is not None
+            )
+            checkpoint_dynamic = isinstance(checkpoint_phase, LeBailPhase) and (
+                checkpoint_phase.reflection_domain is not None
+            )
+            if (input_dynamic or checkpoint_dynamic) and not (
+                input_dynamic
+                and checkpoint_dynamic
+                and _reflection_domains_compatible(input_phase, checkpoint_phase)
+            ):
+                raise ValueError("checkpoint reflection domain does not match Le Bail input")
         if input_keys != checkpoint_keys:
-            input_phase_ids = tuple(phase.phase_id for phase in input_data.phases)
-            checkpoint_phase_ids = tuple(phase.phase_id for phase in checkpoint.phases)
-            dynamic_domains = input_phase_ids == checkpoint_phase_ids and all(
+            dynamic_domains = all(
                 input_phase.reflections.reflection_ids
                 == checkpoint_phase.reflections.reflection_ids
                 or (
