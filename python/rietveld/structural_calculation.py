@@ -10,7 +10,7 @@ from numpy.typing import ArrayLike, NDArray
 
 from . import _core
 from ._api import _vector
-from .crystallography import calculate_structure_factors, p1_parameter_names
+from .crystallography import calculate_structure_factor_values, p1_parameter_names
 from .cw import CW_GLOBAL_PARAMETER_ORDER, CW_LOCAL_PARAMETER_ORDER, accumulate_cw_contributions
 from .extensions import (
     CompositePhysicsProvider,
@@ -230,7 +230,7 @@ def _fallback_calculate(
     support_fwhm: float,
     jacobian_layout: Literal["support", "dense"],
 ) -> StructuralPatternCalculationResult:
-    structural = calculate_structure_factors(
+    structural = calculate_structure_factor_values(
         phase.structure,
         phase.reflections.hkl,
         phase.reflections.multiplicity,

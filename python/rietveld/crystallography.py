@@ -244,6 +244,19 @@ class StructureFactorResult:
     d_integrated_intensity_d_parameters: NDArray[np.float64]
 
 
+@dataclass(frozen=True, slots=True)
+class StructureFactorValuesResult:
+    """General-symmetry values without a materialized structural Jacobian."""
+
+    f: NDArray[np.complex128]
+    f_squared: NDArray[np.float64]
+    integrated_intensity: NDArray[np.float64]
+    q_squared_inverse_angstrom2: NDArray[np.float64]
+    s_inverse_angstrom: NDArray[np.float64]
+    correction: NDArray[np.float64]
+    correction_model_id: str
+
+
 def p1_parameter_names(sites: AtomSiteBatch) -> tuple[str, ...]:
     """Return the stable native P1 parameter order with durable site IDs."""
 
@@ -408,7 +421,7 @@ def p1_intensity_transpose_jacobian_vector_product(
     return P1VjpResult(f, intensity, p1_parameter_names(sites), gradient)
 
 
-def calculate_structure_factors(
+def _prepare_structure_factor_inputs(
     structure: CrystalStructure,
     hkl: ArrayLike,
     multiplicity: ArrayLike,
@@ -417,14 +430,8 @@ def calculate_structure_factors(
     correction: IntegratedIntensityCorrectionProvider | None = None,
     scale: float = 1.0,
     coordinate_tolerance: float = 1.0e-10,
-    max_dense_derivative_elements: int = MAX_DENSE_DERIVATIVE_ELEMENTS,
-) -> StructureFactorResult:
-    """Calculate general-symmetry structural intensities in vectorized calls.
-
-    A custom scattering provider and correction provider are each called once
-    for the complete reflection batch. Symmetry expansion, atom summation, and
-    all structural derivatives remain native.
-    """
+) -> tuple[tuple[object, ...], NDArray[np.float64], str, tuple[str, ...], int]:
+    """Validate and prepare one native general-symmetry reflection batch."""
 
     from .intensity_corrections import (  # avoid a structure-model import cycle
         NeutralIntegratedIntensityCorrection,
@@ -463,13 +470,7 @@ def calculate_structure_factors(
     )
     correction_batch = evaluate_intensity_correction(selected_correction, q_squared)
     parameter_names = p1_parameter_names(sites)
-    derivative_elements = 3 * len(parameter_names) * int(indices.shape[0])
-    if max_dense_derivative_elements < 0 or derivative_elements > max_dense_derivative_elements:
-        raise MemoryError(
-            f"dense structure-factor result requires {derivative_elements} derivative elements; "
-            f"limit is {max_dense_derivative_elements}"
-        )
-    arrays = structure.space_group._native.structure_factor_dense(
+    native_arguments = (
         np.ascontiguousarray(indices.reshape(-1)),
         multiplicities,
         np.ascontiguousarray(sites.fractional_xyz.reshape(-1)),
@@ -485,6 +486,96 @@ def calculate_structure_factors(
         float(scale),
         float(coordinate_tolerance),
     )
+    return (
+        native_arguments,
+        correction_batch.values,
+        correction_batch.model_id,
+        parameter_names,
+        int(indices.shape[0]),
+    )
+
+
+def calculate_structure_factor_values(
+    structure: CrystalStructure,
+    hkl: ArrayLike,
+    multiplicity: ArrayLike,
+    scattering: ScatteringFactorProvider,
+    *,
+    correction: IntegratedIntensityCorrectionProvider | None = None,
+    scale: float = 1.0,
+    coordinate_tolerance: float = 1.0e-10,
+) -> StructureFactorValuesResult:
+    """Calculate values and integrated intensities without a dense Jacobian.
+
+    Providers are evaluated once for the complete reflection batch. Symmetry
+    expansion and atom/reflection accumulation remain in the native kernel.
+    """
+
+    native, correction_values, correction_model_id, _, _ = _prepare_structure_factor_inputs(
+        structure,
+        hkl,
+        multiplicity,
+        scattering,
+        correction=correction,
+        scale=scale,
+        coordinate_tolerance=coordinate_tolerance,
+    )
+    arrays = structure.space_group._native.structure_factor_values(*native)
+    f = np.asarray(arrays[0]) + 1j * np.asarray(arrays[1])
+    output = tuple(np.asarray(value) for value in arrays[2:6])
+    for array in (f, *output):
+        _freeze(array)
+    return StructureFactorValuesResult(
+        f=f,
+        f_squared=output[0],
+        integrated_intensity=output[1],
+        q_squared_inverse_angstrom2=output[2],
+        s_inverse_angstrom=output[3],
+        correction=correction_values,
+        correction_model_id=correction_model_id,
+    )
+
+
+def calculate_structure_factors(
+    structure: CrystalStructure,
+    hkl: ArrayLike,
+    multiplicity: ArrayLike,
+    scattering: ScatteringFactorProvider,
+    *,
+    correction: IntegratedIntensityCorrectionProvider | None = None,
+    scale: float = 1.0,
+    coordinate_tolerance: float = 1.0e-10,
+    max_dense_derivative_elements: int = MAX_DENSE_DERIVATIVE_ELEMENTS,
+) -> StructureFactorResult:
+    """Calculate general-symmetry values and bounded analytical derivatives.
+
+    A custom scattering provider and correction provider are each called once
+    for the complete reflection batch. Symmetry expansion, atom summation, and
+    all structural derivatives remain native.
+    """
+
+    (
+        native,
+        correction_values,
+        correction_model_id,
+        parameter_names,
+        reflection_count,
+    ) = _prepare_structure_factor_inputs(
+        structure,
+        hkl,
+        multiplicity,
+        scattering,
+        correction=correction,
+        scale=scale,
+        coordinate_tolerance=coordinate_tolerance,
+    )
+    derivative_elements = 3 * len(parameter_names) * reflection_count
+    if max_dense_derivative_elements < 0 or derivative_elements > max_dense_derivative_elements:
+        raise MemoryError(
+            f"dense structure-factor result requires {derivative_elements} derivative elements; "
+            f"limit is {max_dense_derivative_elements}"
+        )
+    arrays = structure.space_group._native.structure_factor_dense(*native)
     f = np.asarray(arrays[0]) + 1j * np.asarray(arrays[1])
     d_f = np.asarray(arrays[6]) + 1j * np.asarray(arrays[7])
     output = tuple(np.asarray(value) for value in arrays[2:6])
@@ -497,8 +588,8 @@ def calculate_structure_factors(
         integrated_intensity=output[1],
         q_squared_inverse_angstrom2=output[2],
         s_inverse_angstrom=output[3],
-        correction=correction_batch.values,
-        correction_model_id=correction_batch.model_id,
+        correction=correction_values,
+        correction_model_id=correction_model_id,
         parameter_names=parameter_names,
         d_f_d_parameters=d_f,
         d_integrated_intensity_d_parameters=d_intensity,

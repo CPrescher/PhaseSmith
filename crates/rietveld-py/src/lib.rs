@@ -20,9 +20,10 @@ use rietveld_engine::crystallography::{
     IntegratedIntensityCorrectionModel, NEUTRON_TABLE_PROVENANCE, P1BatchView,
     PreparedNeutronScattering, PreparedReflectionGenerator, PreparedXrayScattering, Rational,
     ReflectionRange, ScatteringBatch, SpaceGroup, StructureFactorBatchView,
-    StructureFactorDenseResult, SymmetryOperation, UnitCell, XRAY_TABLE_PROVENANCE,
-    calculate_p1_dense, calculate_p1_intensity_vjp, calculate_p1_jvp,
-    calculate_structure_factor_dense, neutron_species_metadata, xray_species_metadata,
+    StructureFactorDenseResult, StructureFactorValues, SymmetryOperation, UnitCell,
+    XRAY_TABLE_PROVENANCE, calculate_p1_dense, calculate_p1_intensity_vjp, calculate_p1_jvp,
+    calculate_structure_factor_dense, calculate_structure_factor_values, neutron_species_metadata,
+    xray_species_metadata,
 };
 use rietveld_engine::{
     BuiltInScatteringModel, StructuralPatternError, StructuralPatternInputView,
@@ -190,6 +191,15 @@ type StructureFactorDenseArrays<'py> = (
     Bound<'py, PyArray2<f64>>,
     Bound<'py, PyArray2<f64>>,
     Bound<'py, PyArray2<f64>>,
+);
+
+type StructureFactorValueArrays<'py> = (
+    Bound<'py, PyArray1<f64>>,
+    Bound<'py, PyArray1<f64>>,
+    Bound<'py, PyArray1<f64>>,
+    Bound<'py, PyArray1<f64>>,
+    Bound<'py, PyArray1<f64>>,
+    Bound<'py, PyArray1<f64>>,
 );
 
 type CorrectionArrays<'py> = (Bound<'py, PyArray1<f64>>, Bound<'py, PyArray1<f64>>);
@@ -378,6 +388,67 @@ impl NativePreparedReflectionGenerator {
             .collect::<PyResult<Vec<_>>>()?
             .into_pyarray(py);
         Ok((positions, source))
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn structure_factor_values<'py>(
+        &self,
+        py: Python<'py>,
+        hkl_flat: PyReadonlyArray1<'py, i64>,
+        multiplicity: PyReadonlyArray1<'py, i64>,
+        fractional_xyz_flat: PyReadonlyArray1<'py, f64>,
+        occupancy: PyReadonlyArray1<'py, f64>,
+        u_iso_angstrom2: PyReadonlyArray1<'py, f64>,
+        scattering_real: PyReadonlyArray1<'py, f64>,
+        scattering_imag: PyReadonlyArray1<'py, f64>,
+        d_scattering_real_d_s: PyReadonlyArray1<'py, f64>,
+        d_scattering_imag_d_s: PyReadonlyArray1<'py, f64>,
+        correction: PyReadonlyArray1<'py, f64>,
+        d_correction_d_q_squared: PyReadonlyArray1<'py, f64>,
+        a_angstrom: f64,
+        b_angstrom: f64,
+        c_angstrom: f64,
+        alpha_deg: f64,
+        beta_deg: f64,
+        gamma_deg: f64,
+        scale: f64,
+        coordinate_tolerance: f64,
+    ) -> PyResult<StructureFactorValueArrays<'py>> {
+        let hkl = hkl_rows(&hkl_flat)?;
+        let multiplicity = multiplicity_rows(&multiplicity)?;
+        let xyz = xyz_rows(&fractional_xyz_flat)?;
+        let result = calculate_structure_factor_values(
+            crystallographic_cell(
+                a_angstrom, b_angstrom, c_angstrom, alpha_deg, beta_deg, gamma_deg,
+            ),
+            self.generator.space_group(),
+            StructureFactorBatchView {
+                hkl: &hkl,
+                multiplicity: &multiplicity,
+                fractional_xyz: &xyz,
+                occupancy: contiguous_slice(&occupancy, "occupancy")?,
+                u_iso_angstrom2: contiguous_slice(&u_iso_angstrom2, "u_iso_angstrom2")?,
+                scattering_real: contiguous_slice(&scattering_real, "scattering_real")?,
+                scattering_imag: contiguous_slice(&scattering_imag, "scattering_imag")?,
+                d_scattering_real_d_s: contiguous_slice(
+                    &d_scattering_real_d_s,
+                    "d_scattering_real_d_s",
+                )?,
+                d_scattering_imag_d_s: contiguous_slice(
+                    &d_scattering_imag_d_s,
+                    "d_scattering_imag_d_s",
+                )?,
+                correction: contiguous_slice(&correction, "correction")?,
+                d_correction_d_q_squared: contiguous_slice(
+                    &d_correction_d_q_squared,
+                    "d_correction_d_q_squared",
+                )?,
+                scale,
+                coordinate_tolerance,
+            },
+        )
+        .map_err(|error| PyValueError::new_err(error.to_string()))?;
+        Ok(structure_factor_values_to_numpy(py, result))
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -2184,6 +2255,20 @@ fn structure_factor_dense_to_numpy(
         derivative_matrix(py, parameter_count, reflection_count, result.d_f_imag)?,
         derivative_matrix(py, parameter_count, reflection_count, result.d_intensity)?,
     ))
+}
+
+fn structure_factor_values_to_numpy(
+    py: Python<'_>,
+    values: StructureFactorValues,
+) -> StructureFactorValueArrays<'_> {
+    (
+        values.f_real.into_pyarray(py),
+        values.f_imag.into_pyarray(py),
+        values.f_squared.into_pyarray(py),
+        values.intensity.into_pyarray(py),
+        values.q_squared_inverse_angstrom2.into_pyarray(py),
+        values.s_inverse_angstrom.into_pyarray(py),
+    )
 }
 
 fn parse_built_in_scattering_model(model: &str) -> PyResult<BuiltInScatteringModel> {

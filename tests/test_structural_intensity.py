@@ -88,6 +88,36 @@ def test_general_symmetry_values_match_independent_numpy_reference() -> None:
     assert not actual.d_integrated_intensity_d_parameters.flags.writeable
 
 
+def test_values_only_api_matches_dense_result_without_derivative_outputs() -> None:
+    model = structure()
+    hkl, multiplicity = reflections()
+    values = rietveld.calculate_structure_factor_values(
+        model,
+        hkl,
+        multiplicity,
+        rietveld.XrayNonResonant(),
+        scale=1.4,
+    )
+    dense = rietveld.calculate_structure_factors(
+        model,
+        hkl,
+        multiplicity,
+        rietveld.XrayNonResonant(),
+        scale=1.4,
+    )
+
+    np.testing.assert_array_equal(values.f, dense.f)
+    np.testing.assert_array_equal(values.f_squared, dense.f_squared)
+    np.testing.assert_array_equal(values.integrated_intensity, dense.integrated_intensity)
+    np.testing.assert_array_equal(
+        values.q_squared_inverse_angstrom2, dense.q_squared_inverse_angstrom2
+    )
+    np.testing.assert_array_equal(values.s_inverse_angstrom, dense.s_inverse_angstrom)
+    np.testing.assert_array_equal(values.correction, dense.correction)
+    assert values.correction_model_id == dense.correction_model_id
+    assert not values.integrated_intensity.flags.writeable
+
+
 def test_general_symmetry_selected_derivatives_match_centered_differences() -> None:
     baseline = structure()
     hkl, multiplicity = reflections()
