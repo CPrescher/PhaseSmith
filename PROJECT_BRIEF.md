@@ -101,6 +101,10 @@ environment. A 20,001-sample, 50-iteration release benchmark measures 3.61 ms
 median for native smoothing and 13.15 ms for the complete public subtraction
 pipeline.
 
+The complete internal gate now passes 417 Python tests (one optional
+external-oracle case deselected), 60 Rust tests, strict Ruff, formatting, and
+Clippy.
+
 ## Design commitments
 
 - Use GSAS-II only as a pinned validation oracle, never as the architecture.
