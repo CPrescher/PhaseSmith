@@ -1,6 +1,6 @@
 """Fast, validated powder-diffraction profile calculations."""
 
-from . import integrations, persistence, refinement
+from . import background, integrations, persistence, refinement
 from ._api import (
     PARAMETER_ORDER,
     TCH_PARAMETER_ORDER,
@@ -16,6 +16,12 @@ from ._api import (
     profile_tch_from_gaussian_sigma,
     tch_shape_from_fwhm,
     tch_shape_from_gaussian_sigma,
+)
+from .background import (
+    XYPATTERN_REVISION,
+    BackgroundSubtractionResult,
+    SmoothBrucknerBackground,
+    smooth_bruckner,
 )
 from .calculation import (
     CalculationOptions,
@@ -198,10 +204,12 @@ __all__ = [
     "TOF_LOCAL_PARAMETER_ORDER",
     "XRAY_NON_RESONANT_DESCRIPTOR",
     "XRAY_TABLE_PROVENANCE",
+    "XYPATTERN_REVISION",
     "AccumulationResult",
     "AnisotropicDisplacement",
     "AtomSite",
     "AtomSiteBatch",
+    "BackgroundSubtractionResult",
     "BraggBrentanoUnpolarizedLp",
     "CalculationOptions",
     "CancellationCallback",
@@ -268,6 +276,7 @@ __all__ = [
     "ScatteringSpecies",
     "ScatteringTableProvenance",
     "ScatteringVectorRange",
+    "SmoothBrucknerBackground",
     "SpaceGroup",
     "SpaceGroupInfo",
     "StructuralPatternCalculationResult",
@@ -302,6 +311,7 @@ __all__ = [
     "accumulate_cw_fcj_components",
     "accumulate_tch",
     "accumulate_tof",
+    "background",
     "calculate_cw_pattern",
     "calculate_monochromatic_cw_pattern",
     "calculate_monochromatic_pattern",
@@ -329,6 +339,7 @@ __all__ = [
     "read_cif",
     "reciprocal_angle_geometry",
     "refinement",
+    "smooth_bruckner",
     "space_group_by_number",
     "space_group_by_symbol",
     "species_from_structure",

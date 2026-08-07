@@ -14,7 +14,7 @@ use rietveld_core::{
     TofProfileParameters, WavelengthComponentsView, accumulate_batch, accumulate_cw_batch,
     accumulate_cw_components_batch, accumulate_cw_contributions_batch, accumulate_cw_fcj_batch,
     accumulate_cw_fcj_components_batch, accumulate_tch_batch, accumulate_tof_batch,
-    accumulate_values_batch, symmetric_pseudo_voigt,
+    accumulate_values_batch, smooth_bruckner as native_smooth_bruckner, symmetric_pseudo_voigt,
 };
 use rietveld_engine::crystallography::{
     IntegratedIntensityCorrectionModel, NEUTRON_TABLE_PROVENANCE, P1BatchView,
@@ -1435,6 +1435,20 @@ fn accumulate<'py>(
     accumulation_to_numpy(py, accumulation)
 }
 
+/// Pinned xypattern-compatible Smooth Bruckner background estimator.
+#[pyfunction]
+fn smooth_bruckner<'py>(
+    py: Python<'py>,
+    y: PyReadonlyArray1<'py, f64>,
+    smooth_points: usize,
+    iterations: usize,
+) -> PyResult<Bound<'py, PyArray1<f64>>> {
+    let y = contiguous_slice(&y, "y")?;
+    let background = native_smooth_bruckner(y, smooth_points, iterations)
+        .map_err(|error| PyValueError::new_err(error.to_string()))?;
+    Ok(background.into_pyarray(py))
+}
+
 /// Fused TCH peak accumulation with support-sparse direct-input derivatives.
 #[pyfunction]
 fn accumulate_tch<'py>(
@@ -2394,6 +2408,7 @@ fn _core(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_function(wrap_pyfunction!(profile_tch, module)?)?;
     module.add_function(wrap_pyfunction!(profile_fcj, module)?)?;
     module.add_function(wrap_pyfunction!(profile_tof, module)?)?;
+    module.add_function(wrap_pyfunction!(smooth_bruckner, module)?)?;
     module.add_function(wrap_pyfunction!(accumulate, module)?)?;
     module.add_function(wrap_pyfunction!(accumulate_tch, module)?)?;
     module.add_function(wrap_pyfunction!(accumulate_values, module)?)?;

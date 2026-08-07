@@ -3,6 +3,24 @@
 Rietveld Engine source is MIT licensed. Optional dependencies keep their own
 licenses and are not vendored.
 
+## xypattern Smooth Bruckner behavior
+
+- Purpose: compatibility semantics for the optional native Smooth Bruckner
+  background-estimation preprocessing path.
+- Upstream: <https://github.com/CPrescher/xypattern>
+- Pinned commit/release: `6e4574d75d2d6fcefc633f9fbecc27b8f1bcd817`
+  / 1.2.3.
+- Source: `xypattern/util/smooth_bruckner.pyx` and the composition in
+  `xypattern/auto_background.py`.
+- License: MIT; the complete upstream notice is retained in
+  `THIRD_PARTY_NOTICES.md` and included in package license files.
+- Runtime status: no dependency. Rietveld Engine owns its native implementation
+  and independent NumPy reference; an isolated pinned install is used only for
+  compatibility verification.
+- Boundary: `rietveld.background` is plain-array preprocessing. It does not
+  import xypattern or Dioptas and does not enter differentiable refinement
+  JVP/VJP calculations.
+
 ## Gemmi
 
 - Purpose: optional CIF syntax parsing and space-group name/setting resolution.

@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.11"
 authors = [{ name = "Rietveld Engine contributors" }]
 license = "MIT"
-license-files = ["LICENSE"]
+license-files = ["LICENSE", "THIRD_PARTY_NOTICES.md"]
 dependencies = ["numpy>=1.26"]
 classifiers = [
   "Development Status :: 2 - Pre-Alpha",
