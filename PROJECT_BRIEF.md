@@ -138,6 +138,15 @@ component kernel is not misrepresented as complete multi-wavelength Rietveld
 support. The implementation sequence is frozen in
 `docs/real-data-validation-plan.md`.
 
+The first pinned sucrose run uses 23,003 samples and 811 generated reflection
+families. Its first-cycle `Rwp` of 27.80% falls to 18.79%, the
+background-subtracted observed/calculated correlation is 0.99159, and all
+extracted intensities remain finite and non-negative. QARR verifies its 7,251
+samples and Cu K-alpha doublet metadata before returning the expected blocked
+status. The complete gate passes 469 Python tests (one optional external-oracle
+case deselected), 60 Rust tests, Ruff, Rust formatting, strict Clippy, and a
+fresh release-wheel smoke test in an isolated environment.
+
 ## Design commitments
 
 - Use GSAS-II only as a pinned validation oracle, never as the architecture.
