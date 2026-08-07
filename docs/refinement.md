@@ -23,6 +23,12 @@ name.
 Dependent constraints are ordered and acyclic. Their Jacobian is exact; bounded
 finite perturbations are not used to discover the chain rule.
 
+Nonzero phase-scale parameters use their current magnitude as their numerical
+scale. Consequently, refinements remain conditioned when absolute phase scales
+are much smaller than one, as is common for measured count data. An exact zero
+has no relative magnitude and therefore uses an order-one fallback so it can
+move away from the bound.
+
 ## Residual convention
 
 `evaluate_residuals` defines residual as `calculated - observed`. A pattern mask

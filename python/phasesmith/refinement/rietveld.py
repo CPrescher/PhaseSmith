@@ -409,7 +409,7 @@ def build_parameter_set(
                     phase.scale,
                     "relative",
                     Bounds(0.0, np.inf),
-                    max(abs(phase.scale), 1.0),
+                    abs(phase.scale) if phase.scale != 0.0 else 1.0,
                 )
             )
         if selection.lattice:
@@ -1629,22 +1629,32 @@ def refine(
                         wavelength_angstrom=trial_experiment.radiation.wavelength_angstrom,
                     )
                     trial_parameters = parameters.replace_values(trial_values)
-                    trial_linearization = _RietveldLinearization.prepare(
-                        input_data,
-                        trial_experiment,
-                        trial_background,
-                        trial_phases,
-                        trial_parameters,
-                        selected,
-                        runtime,
-                    )
-                    trial_calculation = trial_linearization.calculate()
-                    trial_metrics = _metrics(
-                        input_data,
-                        trial_calculation,
-                        selected,
-                        len(transform.free_keys),
-                    )
+                    try:
+                        trial_linearization = _RietveldLinearization.prepare(
+                            input_data,
+                            trial_experiment,
+                            trial_background,
+                            trial_phases,
+                            trial_parameters,
+                            selected,
+                            runtime,
+                        )
+                        trial_calculation = trial_linearization.calculate()
+                        trial_metrics = _metrics(
+                            input_data,
+                            trial_calculation,
+                            selected,
+                            len(transform.free_keys),
+                        )
+                    except ValueError as error:
+                        runtime.emit(
+                            RefinementEventKind.STEP_REJECTED,
+                            "rietveld_step",
+                            "structural trial outside the numerical model domain",
+                            (("backtrack", backtrack), ("reason", str(error))),
+                        )
+                        runtime.reject_step()
+                        continue
                     trial_objective = 0.5 * trial_metrics.chi_square
                     runtime.emit(
                         RefinementEventKind.TRIAL,

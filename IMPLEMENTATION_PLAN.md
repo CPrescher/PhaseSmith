@@ -1230,7 +1230,12 @@ monochromatic calibration and sample physics, richer backgrounds, the
 script-first project/report facade, format-5 persistence, and realistic X-ray
 and neutron benchmarks. Unit 19 is the next milestone and intentionally keeps
 anisotropic, anomalous, absorption, magnetic, electron, and specialist physics
-as separate reviewed increments. The QARR structural-intensity prerequisite now
+as separate reviewed increments. The QARR structural-intensity checkpoint now
 includes native caller-supplied fixed X-ray dispersion offsets and polarized
-Bragg--Brentano LP, with analytical metric/wavelength derivatives, fixed-spectrum
-composition, format-7 persistence, and independent finite-difference tests.
+Bragg--Brentano LP, with analytical metric/wavelength derivatives,
+fixed-spectrum composition, format-7 persistence, and independent
+finite-difference tests. The pinned three-phase QARR workflow is accepted with
+a maximum absolute phase-fraction error of 1.881 weight-percentage points,
+Poisson-weighted Rwp 0.19679, unit-weight Rwp 0.13282, and profile correlation
+0.99069. Its anisotropic-displacement, component-dispersion, FCJ, and absorption
+approximations remain explicit.

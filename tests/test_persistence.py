@@ -411,8 +411,8 @@ def test_rietveld_checkpoint_domain_and_options_round_trip_and_resume(tmp_path) 
     )
     resume_options = structural_refinement.RietveldOptions(
         limits=structural_refinement.RefinementLimits(
-            max_iterations=10,
-            max_evaluations=300,
+            max_iterations=20,
+            max_evaluations=500,
         ),
         max_scaled_parameter_step=0.1,
         estimate_covariance=False,

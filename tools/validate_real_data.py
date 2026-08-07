@@ -10,9 +10,11 @@ from datetime import UTC, datetime
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 
+from phasesmith import TerminalCancellationController
+from phasesmith.refinement import ConsoleRefinementLogger
 from phasesmith.validation import (
     fetch_validation_dataset,
-    qarr_1g_readiness,
+    run_qarr_1g_validation,
     run_sucrose_lebail_validation,
     verify_validation_dataset,
 )
@@ -28,14 +30,22 @@ def main() -> int:
     reports = []
     for dataset_id, runner in (
         ("aps-sucrose-11bmb", run_sucrose_lebail_validation),
-        ("iucr-qarr-1g", qarr_1g_readiness),
+        ("iucr-qarr-1g", run_qarr_1g_validation),
     ):
         destination = args.data_directory / dataset_id
         if args.fetch:
             fetch_validation_dataset(dataset_id, destination)
         else:
             verify_validation_dataset(dataset_id, destination)
-        report = runner(destination)
+        if dataset_id == "iucr-qarr-1g":
+            with TerminalCancellationController() as controller:
+                report = run_qarr_1g_validation(
+                    destination,
+                    cancellation=controller.token,
+                    logger=ConsoleRefinementLogger(),
+                )
+        else:
+            report = runner(destination)
         reports.append(report)
         print(f"{dataset_id}: {report.status}")
         for check in report.checks:
@@ -59,7 +69,7 @@ def main() -> int:
         args.output.write_text(
             json.dumps(record, indent=2, sort_keys=True) + "\n", encoding="utf-8"
         )
-    return 1 if any(report.status == "failed" for report in reports) else 0
+    return 1 if any(report.status != "passed" for report in reports) else 0
 
 
 if __name__ == "__main__":

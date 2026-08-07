@@ -337,6 +337,25 @@ not inherit X-ray doublet or polarization assumptions.
 - Requiring any GUI toolkit or package-specific adapter to use the package.
 - Claiming numerical equivalence from pointwise values alone.
 
+## Current real-data checkpoint
+
+The pinned IUCr QARR 1g workflow is now an accepted native three-phase
+fixed-spectrum structural validation, not a readiness placeholder. Its staged
+refinement ends with a scale-only polish and converts scales using reviewed
+phase Z, formula mass, and cell volume metadata. The 2026-08-07 baseline gives
+Al2O3 33.250%, ZnO 32.936%, and CaF2 33.814%, with a maximum absolute error of
+1.881 weight-percentage points from the independently weighed fractions.
+Poisson-weighted and unit-weight Rwp are reported separately (0.19679 and
+0.13282), alongside profile correlation 0.99069.
+
+This checkpoint uses explicit approximations: trace-mean Uiso for anisotropic
+Al2O3 sites, fixed Cu K-alpha1 dispersion offsets for both doublet components,
+and no SH/L=0.002 FCJ asymmetry or absorption. It also established two
+refinement safety rules: nonphysical bounded trials are logged and backtracked
+without losing the last accepted state, and phase-scale conditioning follows
+the current nonzero scale magnitude instead of assuming scales are order one;
+an exact zero retains an order-one escape scale.
+
 ## Quality bar
 
 Public behavior is typed and documented. Invalid shapes, non-finite values,

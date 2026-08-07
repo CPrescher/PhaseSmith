@@ -322,6 +322,45 @@ def test_matrix_free_refinement_recovers_phase_scale_and_emits_checkpoints() -> 
     assert events[-1].kind is structural_refinement.RefinementEventKind.TERMINATION
 
 
+def test_matrix_free_refinement_conditions_small_phase_scales_relatively() -> None:
+    base = request_from_cif(selection(phase_scale=True))
+    truth_phase = replace(base.phases[0], scale=6.0e-4)
+    truth = structural_refinement.calculate(
+        base.pattern,
+        base.experiment,
+        (truth_phase,),
+    )
+    starting_phase = replace(truth_phase, scale=3.0e-4)
+    parameters = structural_refinement.build_parameter_set(
+        (starting_phase,),
+        (None,),
+        base.selection,
+        experiment=base.experiment,
+    )
+    request = replace(
+        base,
+        pattern=phasesmith.PowderPattern(base.pattern.x, observed_y=truth.y),
+        phases=(starting_phase,),
+        parameters=parameters,
+    )
+
+    assert parameters.spec(structural_refinement.phase_scale_key("alpha")).scale == 3.0e-4
+    zero_parameters = structural_refinement.build_parameter_set(
+        (replace(starting_phase, scale=0.0),),
+        (None,),
+        base.selection,
+        experiment=base.experiment,
+    )
+    assert zero_parameters.spec(structural_refinement.phase_scale_key("alpha")).scale == 1.0
+    result = structural_refinement.refine(
+        request,
+        structural_refinement.RietveldOptions(estimate_covariance=False),
+    )
+    assert result.termination_reason is structural_refinement.TerminationReason.CONVERGED
+    assert result.phases[0].scale == pytest.approx(6.0e-4, rel=2.0e-8)
+    assert result.metrics.rwp < 1.0e-8
+
+
 def test_combined_structural_products_match_finite_difference_and_adjoint() -> None:
     request = request_from_cif(
         selection(phase_scale=True, lattice=True, coordinates=True, occupancy=True, u_iso=True)
@@ -1051,6 +1090,62 @@ def test_non_improving_trials_terminate_as_stagnated_without_installing_them(
     assert result.termination_reason is structural_refinement.TerminationReason.STAGNATED
     assert result.history == ()
     assert result.phases == request.phases
+
+
+def test_out_of_domain_trials_are_rejected_without_losing_the_safe_state(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    truth = request_from_cif(selection(phase_scale=True))
+    starting_phase = replace(truth.phases[0], scale=0.7)
+    request = replace(
+        truth,
+        phases=(starting_phase,),
+        parameters=structural_refinement.build_parameter_set(
+            (starting_phase,), (None,), truth.selection
+        ),
+    )
+    original = structural_refinement._RietveldLinearization.calculate
+    calls = 0
+    events = []
+
+    def reject_trial(
+        self: structural_refinement._RietveldLinearization,
+    ) -> structural_refinement.RietveldCalculationResult:
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            return original(self)
+        self.runtime.begin_evaluation()
+        raise ValueError("derived Gaussian variance must be positive and finite")
+
+    monkeypatch.setattr(
+        structural_refinement._RietveldLinearization,
+        "calculate",
+        reject_trial,
+    )
+    result = structural_refinement.refine(
+        request,
+        structural_refinement.RietveldOptions(
+            max_backtracks=2,
+            estimate_covariance=False,
+        ),
+        logger=events.append,
+    )
+    rejected = [
+        event
+        for event in events
+        if event.kind is structural_refinement.RefinementEventKind.STEP_REJECTED
+    ]
+    assert result.termination_reason is structural_refinement.TerminationReason.STAGNATED
+    assert result.history == ()
+    assert result.phases == request.phases
+    assert calls == 4
+    assert len(rejected) == 3
+    assert all("outside the numerical model domain" in event.message for event in rejected)
+    assert all(
+        dict(event.diagnostics)["reason"] == "derived Gaussian variance must be positive and finite"
+        for event in rejected
+    )
 
 
 def test_accepted_checkpoint_sink_failure_is_a_typed_error() -> None:

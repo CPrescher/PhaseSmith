@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-08-07T08:57:48.173017+00:00",
+  "generated_at_utc": "2026-08-07T10:21:58.188871+00:00",
   "phasesmith_version": "0.1.0",
   "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O",
   "python": "3.13.5",
@@ -36,7 +36,7 @@
         }
       ],
       "dataset_id": "aps-sucrose-11bmb",
-      "elapsed_seconds": 0.5774139999412,
+      "elapsed_seconds": 0.579090042039752,
       "notes": [
         "First-cycle Rwp=0.27803794; final Rwp=0.18786771; final Rp=0.13882782.",
         "Termination=max_iterations; iterations=20.",
@@ -51,34 +51,68 @@
         {
           "check_id": "observed_grid",
           "criterion": "7251 samples with endpoints 5 and 150 degrees",
-          "detail": "QARR 1g plain-column pattern spans the published 5-150 degree grid.",
+          "detail": "QARR 1g pattern spans the published 5-150 degree grid.",
           "measured": 7251.0,
           "status": "passed"
         },
         {
-          "check_id": "cuka_doublet_metadata",
-          "criterion": "Lam1, Lam2, and I(L2)/I(L1) present",
-          "detail": "Pinned instrument metadata identifies Cu K-alpha1/K-alpha2 and the 0.5 ratio.",
+          "check_id": "site_expansion",
+          "criterion": "expanded site counts Al2O3=30, ZnO=4, CaF2=12",
+          "detail": "The documented 1e-4 CIF coordinate tolerance gives physical unit-cell contents.",
+          "measured": 46.0,
+          "status": "passed"
+        },
+        {
+          "check_id": "refinement_termination",
+          "criterion": "no numerical failure, divergence, repeated rejection, or empty data",
+          "detail": "Refinement returns a finite last accepted state under explicit iteration budgets.",
           "measured": null,
           "status": "passed"
         },
         {
-          "check_id": "structural_doublet_refinement",
-          "criterion": "one structural intensity calculation per wavelength component",
-          "detail": "The profile kernel supports wavelength components, but the current full structure-factor Rietveld request accepts one monochromatic wavelength.",
-          "measured": null,
-          "status": "blocked"
+          "check_id": "poisson_rwp",
+          "criterion": "Rwp with sigma=sqrt(max(counts, 1)) <= 0.20",
+          "detail": "Poisson-weighted QARR profile gate with explicit approximations.",
+          "measured": 0.19679317671737867,
+          "status": "passed"
+        },
+        {
+          "check_id": "unit_weight_rwp",
+          "criterion": "unit-weight Rwp <= 0.15",
+          "detail": "Unit-weight profile residual is reported separately from Poisson-weighted Rwp.",
+          "measured": 0.13281539753042368,
+          "status": "passed"
+        },
+        {
+          "check_id": "profile_correlation",
+          "criterion": "Pearson correlation >= 0.98",
+          "detail": "Background-subtracted observed and calculated profiles remain strongly aligned.",
+          "measured": 0.9906927078046617,
+          "status": "passed"
+        },
+        {
+          "check_id": "qpa_weight_fraction",
+          "criterion": "maximum absolute phase error <= 0.02",
+          "detail": "Hill--Howard weight fractions agree with the independently weighed phase fractions.",
+          "measured": 0.018804876958780248,
+          "status": "passed"
         }
       ],
       "dataset_id": "iucr-qarr-1g",
-      "elapsed_seconds": 0.003301125019788742,
+      "elapsed_seconds": 8.732388624921441,
       "notes": [
-        "Published weighed fractions: Al2O3 31.37%, ZnO 34.21%, CaF2 34.42%.",
-        "No fit or quantitative accuracy claim is made while the capability check is blocked."
+        "Calculated crystalline weight fractions: Al2O3=33.250%, ZnO=32.936%, CaF2=33.814%.",
+        "Stage 1 termination=stagnated, iterations=9, Rwp=0.26375525.",
+        "Stage 2 termination=max_evaluations, iterations=24, Rwp=0.19685570.",
+        "Stage 3 scale polish termination=converged, iterations=1, Poisson Rwp=0.19679318, unit-weight Rwp=0.13281540, Rp=0.15450621.",
+        "Expanded sites at tolerance 1e-4: {'Al2O3': 30, 'ZnO': 4, 'CaF2': 12}.",
+        "Anisotropic sites replaced by trace-mean Uiso and refined: {'Al2O3': ('Al1', 'O1'), 'ZnO': (), 'CaF2': ()}.",
+        "Fixed Cu K-alpha1 Cromer--Liberman offsets are used for both doublet components; component-dependent dispersion is not interpolated.",
+        "The supplied SH/L=0.002 FCJ asymmetry and absorption are not included in this structural checkpoint; lattice and component wavelengths remain fixed."
       ],
-      "reflection_count": null,
+      "reflection_count": 110,
       "sample_count": 7251,
-      "status": "blocked"
+      "status": "passed"
     }
   ],
   "schema_version": 1

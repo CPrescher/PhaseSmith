@@ -31,11 +31,10 @@ observed/calculated correlation of at least 0.98, and finite non-negative
 integrated intensities. The threshold is a PhaseSmith regression gate for the
 present model, not an equivalence tolerance against another program.
 
-The original IUCr QARR 1g case was deliberately a readiness check. It verified
-the real 5–150 degree pattern and Cu K-alpha doublet metadata, then reported a
-blocked structural-doublet capability. That calculation-layer block is now
-removed; a real three-phase fit and acceptance assessment is the next
-checkpoint. No monochromatic approximation is substituted for the doublet.
+The IUCr QARR 1g case now runs the real 5–150 degree pattern, Cu K-alpha
+doublet, three CIF structures, native structural values/JVP/VJP products, and
+Hill--Howard QPA. No monochromatic approximation is substituted for the
+doublet.
 
 ## Implemented fixed-spectrum structural checkpoint
 
@@ -62,31 +61,35 @@ and polarized Bragg--Brentano LP with the instrument polarization mapped
 directly to `P`. Both execute in the native value/JVP/VJP path. Persistence
 format 7 stores these models and loads formats 1--6.
 
-## Remaining QARR execution sequence
+## Accepted QARR checkpoint
 
-1. Construct the three QARR phases from the pinned CIFs, use the calibrated Cu
-   K-alpha1/K-alpha2 spectrum, and verify reflection coverage phase by phase.
-2. Review and record each phase's `Z`, formula mass, and cell volume before any
-   scale-to-weight conversion.
-3. Establish the background and shared instrument state in explicit stages,
-   then refine structural phase scales. Structured events, cancellation,
-   budgets, checkpoints, and last-accepted-state behavior remain mandatory.
-4. Inspect difference curves, phase contributions, scale correlations,
-   termination reasons, and reflection diagnostics before calculating weight
-   fractions.
-5. Convert final scales through the Hill--Howard layer using the reviewed `Z`,
-   formula masses, and cell volumes. Record covariance propagation separately
-   once scale covariance is available.
-6. Freeze acceptance only after diagnostic review. The initial target is an
-   absolute error no greater than two weight-percentage points for each of the
-   three weighed phases, alongside pattern residuals, reflection diagnostics,
-   and numerical stability checks. Tighter limits should be based on repeated
-   runs and published round-robin dispersion, not selected post hoc.
-7. Add an optional same-scope GSAS-II timing comparison in its isolated pinned
+The deterministic three-stage workflow first refines phase scales plus shared
+U/V/W/zero, then adds isotropic displacement, size, microstrain, and preferred
+orientation, and finally polishes the three linear phase scales with nonlinear
+parameters fixed. The reviewed result is:
+
+- Al2O3 33.250%, ZnO 32.936%, CaF2 33.814%;
+- maximum absolute weighed-fraction error 1.881 percentage points (limit 2);
+- Poisson-weighted Rwp 0.19679 (limit 0.20);
+- unit-weight Rwp 0.13282 (limit 0.15);
+- background-subtracted profile correlation 0.99069 (limit 0.98).
+
+The two residual gates are intentionally separate: assigning
+`sigma=sqrt(max(counts, 1))` changes the weighting and must not be compared to a
+unit-weight prototype number. Current approximations are recorded in the
+machine-readable report: Al2O3 anisotropic displacement is replaced by
+trace-mean Uiso, Cu K-alpha1 fixed dispersion is reused for K-alpha2, and the
+supplied SH/L=0.002 FCJ asymmetry and absorption are not yet active.
+
+## Remaining QARR sequence
+
+1. Add covariance propagation for final phase fractions once the polished scale
+   covariance is retained.
+2. Add an optional same-scope GSAS-II timing comparison in its isolated pinned
    environment. Validate values first and report startup, setup, calculation,
    and refinement timing scopes separately. Normal installation and CI remain
    independent of GSAS-II.
-8. After fixed-component real-data acceptance, implement refinable wavelength
+3. After fixed-component real-data acceptance, implement refinable wavelength
    ratios and a multi-wavelength lattice guard. Move the component-level loop
    across the PyO3 boundary only if benchmark evidence justifies the ABI.
 
