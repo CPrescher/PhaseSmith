@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Literal
 
 import numpy as np
@@ -30,7 +30,12 @@ from .pattern import (
     StructuralReflectionResult,
 )
 from .phase import ReflectionGeometryBatch, RietveldPhase
-from .radiation import ConstantWavelengthExperiment, RadiationProbe
+from .radiation import (
+    ComponentRadiation,
+    ConstantWavelengthExperiment,
+    MonochromaticRadiation,
+    RadiationProbe,
+)
 from .results import AccumulationResult, _build_accumulation_result
 from .sample import (
     IsotropicMicrostrainBroadening,
@@ -245,6 +250,154 @@ def _calculation_result(
     )
 
 
+def _component_inputs(
+    experiment: ConstantWavelengthExperiment,
+    phase: RietveldPhase,
+) -> tuple[tuple[ConstantWavelengthExperiment, RietveldPhase, float], ...]:
+    radiation = experiment.radiation
+    if not isinstance(radiation, ComponentRadiation):
+        return ()
+    if not isinstance(
+        phase.intensity_correction,
+        (NeutralIntegratedIntensityCorrection, BraggBrentanoUnpolarizedLp),
+    ):
+        raise NotImplementedError(
+            "fixed structural wavelength components require a built-in neutral or "
+            "Bragg-Brentano intensity correction"
+        )
+    weights = radiation.components.normalized_intensities
+    prepared = []
+    for wavelength, weight in zip(radiation.components.wavelengths_angstrom, weights, strict=True):
+        component_instrument = replace(
+            experiment.instrument,
+            wavelength_angstrom=float(wavelength),
+        )
+        component_experiment = ConstantWavelengthExperiment(
+            MonochromaticRadiation(radiation.probe, float(wavelength)),
+            component_instrument,
+            experiment.zero_shift_deg,
+            experiment.geometry,
+        )
+        correction = phase.intensity_correction
+        if isinstance(correction, BraggBrentanoUnpolarizedLp):
+            correction = BraggBrentanoUnpolarizedLp(float(wavelength))
+        component_phase = replace(
+            phase,
+            scale=phase.scale * float(weight),
+            intensity_correction=correction,
+        )
+        prepared.append((component_experiment, component_phase, float(weight)))
+    return tuple(prepared)
+
+
+def _combine_component_accumulations(
+    results: tuple[StructuralPatternCalculationResult, ...],
+    jacobian_layout: Literal["support", "dense"],
+) -> AccumulationResult:
+    if not results:
+        raise ValueError("component calculation requires at least one result")
+    sample_count = results[0].profile_y.size
+    local_names = results[0].derivatives.local_parameter_names
+    global_names = tuple(
+        name
+        for name in results[0].derivatives.global_parameter_names
+        if name != "wavelength_angstrom"
+    )
+    starts = []
+    offsets = [0]
+    values = []
+    global_jacobian = np.zeros((len(global_names), sample_count), dtype=np.float64)
+    y = np.zeros(sample_count, dtype=np.float64)
+    for result in results:
+        if result.profile_y.size != sample_count:
+            raise ValueError("component calculations must share the sample grid")
+        if result.derivatives.local_parameter_names != local_names:
+            raise ValueError("component local derivative names must match")
+        selected_global_names = tuple(
+            name
+            for name in result.derivatives.global_parameter_names
+            if name != "wavelength_angstrom"
+        )
+        if selected_global_names != global_names:
+            raise ValueError("component global derivative names must match")
+        local = result.derivatives.local
+        starts.append(local.starts)
+        values.append(local.values)
+        cursor = offsets[-1]
+        offsets.extend((local.offsets[1:] + cursor).tolist())
+        selected_rows = [
+            result.derivatives.global_parameter_names.index(name) for name in global_names
+        ]
+        global_jacobian += result.derivatives.global_jacobian[selected_rows]
+        y += result.profile_y
+    starts_array = np.ascontiguousarray(np.concatenate(starts), dtype=np.int64)
+    offsets_array = np.ascontiguousarray(offsets, dtype=np.int64)
+    values_array = np.ascontiguousarray(np.concatenate(values, axis=0), dtype=np.float64)
+    y = np.ascontiguousarray(y)
+    for array in (starts_array, offsets_array, values_array, global_jacobian, y):
+        array.flags.writeable = False
+    return _build_accumulation_result(
+        y,
+        starts_array,
+        offsets_array,
+        values_array,
+        global_jacobian,
+        local_names,
+        global_names,
+        jacobian_layout,
+    )
+
+
+def _combine_component_reflections(
+    phase: RietveldPhase,
+    results: tuple[StructuralPatternCalculationResult, ...],
+) -> StructuralReflectionResult:
+    reflection_count = phase.reflections.reflection_count
+    ids = tuple(
+        f"{reflection_id}@component[{component}]"
+        for component in range(len(results))
+        for reflection_id in phase.reflections.reflection_ids
+    )
+    component_index = np.repeat(np.arange(len(results), dtype=np.int64), reflection_count)
+    base_index = np.tile(np.arange(reflection_count, dtype=np.int64), len(results))
+    return StructuralReflectionResult(
+        ids,
+        np.ascontiguousarray(np.concatenate([result.reflections.f for result in results])),
+        np.ascontiguousarray(np.concatenate([result.reflections.f_squared for result in results])),
+        np.ascontiguousarray(
+            np.concatenate([result.reflections.integrated_intensity for result in results])
+        ),
+        np.ascontiguousarray(
+            np.concatenate([result.reflections.q_squared_inverse_angstrom2 for result in results])
+        ),
+        np.ascontiguousarray(
+            np.concatenate([result.reflections.s_inverse_angstrom for result in results])
+        ),
+        np.ascontiguousarray(
+            np.concatenate([result.reflections.d_spacing_angstrom for result in results])
+        ),
+        np.ascontiguousarray(
+            np.concatenate([result.reflections.two_theta_deg for result in results])
+        ),
+        component_index,
+        base_index,
+    )
+
+
+def _combine_component_results(
+    phase: RietveldPhase,
+    pattern: PowderPattern,
+    results: tuple[StructuralPatternCalculationResult, ...],
+    jacobian_layout: Literal["support", "dense"],
+) -> StructuralPatternCalculationResult:
+    return _calculation_result(
+        phase,
+        pattern,
+        _combine_component_accumulations(results, jacobian_layout),
+        _combine_component_reflections(phase, results),
+    )
+
+
 def _fallback_calculate(
     phase: RietveldPhase,
     pattern: PowderPattern,
@@ -308,6 +461,8 @@ class PreparedStructuralPattern:
     jacobian_layout: Literal["support", "dense"]
     _native: object | None
     _contribution: PhysicsContribution | None
+    _components: tuple[PreparedStructuralPattern, ...]
+    _component_weights: tuple[float, ...]
 
     def __init__(
         self,
@@ -336,6 +491,30 @@ class PreparedStructuralPattern:
         object.__setattr__(self, "phase", phase)
         object.__setattr__(self, "support_fwhm", float(support_fwhm))
         object.__setattr__(self, "jacobian_layout", jacobian_layout)
+        component_inputs = _component_inputs(experiment, phase)
+        if component_inputs:
+            object.__setattr__(self, "_native", None)
+            object.__setattr__(self, "_contribution", None)
+            object.__setattr__(
+                self,
+                "_components",
+                tuple(
+                    PreparedStructuralPattern(
+                        pattern,
+                        component_experiment,
+                        component_phase,
+                        support_fwhm=support_fwhm,
+                        jacobian_layout=jacobian_layout,
+                    )
+                    for component_experiment, component_phase, _weight in component_inputs
+                ),
+            )
+            object.__setattr__(
+                self,
+                "_component_weights",
+                tuple(weight for _experiment, _phase, weight in component_inputs),
+            )
+            return
         native = _native_phase(phase)
         contribution = None
         if native is not None:
@@ -354,16 +533,27 @@ class PreparedStructuralPattern:
             )
         object.__setattr__(self, "_native", native)
         object.__setattr__(self, "_contribution", contribution)
+        object.__setattr__(self, "_components", ())
+        object.__setattr__(self, "_component_weights", ())
 
     @property
     def uses_native_fused_path(self) -> bool:
         """Report whether values and structural derivatives stay in one native call."""
 
+        if self._components:
+            return all(component.uses_native_fused_path for component in self._components)
         return self._native is not None
 
     def calculate(self) -> StructuralPatternCalculationResult:
         """Calculate structural intensities, positions, and the powder profile."""
 
+        if self._components:
+            return _combine_component_results(
+                self.phase,
+                self.pattern,
+                tuple(component.calculate() for component in self._components),
+                self.jacobian_layout,
+            )
         if self._native is None:
             return _fallback_calculate(
                 self.phase,
@@ -399,6 +589,36 @@ class PreparedStructuralPattern:
     def jvp(self, tangent: ArrayLike) -> StructuralPatternJvpResult:
         """Calculate one structural JVP without a dense pattern Jacobian."""
 
+        if self._components:
+            names = _structural_parameter_names(self.phase)
+            direction = _vector(tangent, "tangent")
+            if direction.shape != (len(names),):
+                raise ValueError("tangent must match the structural parameter count")
+            products = []
+            for component, weight in zip(self._components, self._component_weights, strict=True):
+                component_direction = np.array(direction, copy=True)
+                component_direction[-1] *= weight
+                products.append(component.jvp(component_direction))
+            product_tuple = tuple(products)
+            result = _combine_component_results(
+                self.phase,
+                self.pattern,
+                tuple(product.result for product in product_tuple),
+                self.jacobian_layout,
+            )
+            return StructuralPatternJvpResult(
+                result,
+                names,
+                np.ascontiguousarray(
+                    sum((item.d_y for item in product_tuple), np.zeros_like(self.pattern.x))
+                ),
+                np.ascontiguousarray(
+                    np.concatenate([item.d_integrated_intensity for item in product_tuple])
+                ),
+                np.ascontiguousarray(
+                    np.concatenate([item.d_two_theta_deg for item in product_tuple])
+                ),
+            )
         if self._native is None:
             raise NotImplementedError(
                 "structural JVP is currently available for the built-in fused path only"
@@ -439,6 +659,25 @@ class PreparedStructuralPattern:
     def vjp(self, sample_weights: ArrayLike) -> StructuralPatternVjpResult:
         """Calculate one structural transpose product from pattern-sample weights."""
 
+        if self._components:
+            weights = _vector(sample_weights, "sample_weights")
+            if weights.shape != self.pattern.x.shape:
+                raise ValueError("sample_weights must match the pattern sample count")
+            products = tuple(component.vjp(weights) for component in self._components)
+            gradient = np.zeros_like(products[0].gradient)
+            for product, component_weight in zip(products, self._component_weights, strict=True):
+                gradient[:-1] += product.gradient[:-1]
+                gradient[-1] += component_weight * product.gradient[-1]
+            return StructuralPatternVjpResult(
+                _combine_component_results(
+                    self.phase,
+                    self.pattern,
+                    tuple(product.result for product in products),
+                    self.jacobian_layout,
+                ),
+                _structural_parameter_names(self.phase),
+                np.ascontiguousarray(gradient),
+            )
         if self._native is None:
             raise NotImplementedError(
                 "structural VJP is currently available for the built-in fused path only"

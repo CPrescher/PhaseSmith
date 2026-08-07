@@ -233,6 +233,121 @@ def test_monochromatic_neutron_structural_pattern_uses_native_path() -> None:
     assert np.all(result.reflections.integrated_intensity >= 0.0)
 
 
+def component_experiment() -> phasesmith.ConstantWavelengthExperiment:
+    return phasesmith.ConstantWavelengthExperiment.x_ray_components(
+        instrument(),
+        phasesmith.WavelengthComponents.doublet(1.5406, 1.54439, 0.5),
+    )
+
+
+def component_phase(*, scale: float = 1.4) -> phasesmith.RietveldPhase:
+    return replace(
+        xray_phase(scale=scale),
+        intensity_correction=phasesmith.BraggBrentanoUnpolarizedLp(1.5406),
+    )
+
+
+def test_structural_doublet_matches_sum_of_component_native_batches() -> None:
+    phase = component_phase()
+    experiment = component_experiment()
+    prepared = phasesmith.PreparedStructuralPattern(pattern(), experiment, phase)
+
+    actual = prepared.calculate()
+
+    expected = np.zeros_like(pattern().x)
+    weights = experiment.radiation.components.normalized_intensities
+    for wavelength, weight in zip(
+        experiment.radiation.components.wavelengths_angstrom, weights, strict=True
+    ):
+        selected_instrument = replace(instrument(), wavelength_angstrom=float(wavelength))
+        selected_experiment = phasesmith.ConstantWavelengthExperiment.x_ray(selected_instrument)
+        selected_phase = replace(
+            phase,
+            scale=phase.scale * float(weight),
+            intensity_correction=phasesmith.BraggBrentanoUnpolarizedLp(float(wavelength)),
+        )
+        expected += phasesmith.calculate_structural_pattern(
+            pattern(), selected_experiment, selected_phase
+        ).profile_y
+
+    assert prepared.uses_native_fused_path
+    np.testing.assert_allclose(actual.profile_y, expected, rtol=3e-15, atol=3e-11)
+    np.testing.assert_array_equal(actual.reflections.component_index, [0, 0, 0, 1, 1, 1])
+    np.testing.assert_array_equal(actual.reflections.base_reflection_index, [0, 1, 2, 0, 1, 2])
+    assert actual.reflections.reflection_ids[3] == "1,0,1@component[1]"
+    assert "wavelength_angstrom" not in actual.derivatives.global_parameter_names
+
+
+def test_one_structural_component_matches_monochromatic_values_exactly() -> None:
+    phase = component_phase()
+    monochromatic = phasesmith.calculate_structural_pattern(
+        pattern(), phasesmith.ConstantWavelengthExperiment.x_ray(instrument()), phase
+    )
+    components = phasesmith.calculate_structural_pattern(
+        pattern(),
+        phasesmith.ConstantWavelengthExperiment.x_ray_components(
+            instrument(), phasesmith.WavelengthComponents.monochromatic(1.5406)
+        ),
+        phase,
+    )
+
+    np.testing.assert_array_equal(components.profile_y, monochromatic.profile_y)
+    np.testing.assert_array_equal(
+        components.reflections.integrated_intensity,
+        monochromatic.reflections.integrated_intensity,
+    )
+
+
+def test_structural_component_jvp_finite_difference_and_vjp_are_adjoint() -> None:
+    phase = component_phase()
+    experiment = component_experiment()
+    prepared = phasesmith.PreparedStructuralPattern(pattern(), experiment, phase)
+    names = phasesmith.p1_parameter_names(phase.structure.to_isotropic_site_batch())
+    direction = np.zeros(len(names))
+    direction[[0, 6, 12, 14, len(names) - 1]] = [0.04, 0.015, -0.03, 0.002, 0.05]
+
+    product = prepared.jvp(direction)
+    step = 1.0e-6
+    plus = phasesmith.calculate_structural_pattern(
+        pattern(), experiment, _perturb_phase(phase, direction, step)
+    )
+    minus = phasesmith.calculate_structural_pattern(
+        pattern(), experiment, _perturb_phase(phase, direction, -step)
+    )
+    finite_difference = (plus.profile_y - minus.profile_y) / (2.0 * step)
+    np.testing.assert_allclose(product.d_y, finite_difference, rtol=4e-6, atol=3e-7)
+
+    weights = np.sin(np.linspace(0.0, 3.0, pattern().x.size))
+    reverse = prepared.vjp(weights)
+    np.testing.assert_allclose(
+        product.d_y @ weights,
+        direction @ reverse.gradient,
+        rtol=8e-13,
+        atol=3e-10,
+    )
+
+
+def test_structural_component_shared_instrument_derivative_matches_difference() -> None:
+    phase = component_phase()
+    experiment = component_experiment()
+    result = phasesmith.calculate_structural_pattern(pattern(), experiment, phase)
+    row = result.derivatives.global_parameter_names.index("u")
+    step = 1.0e-8
+
+    def evaluate(delta: float) -> np.ndarray:
+        moved_instrument = replace(instrument(), u_deg2=instrument().u_deg2 + delta)
+        moved = replace(experiment, instrument=moved_instrument)
+        return phasesmith.calculate_structural_pattern(pattern(), moved, phase).profile_y
+
+    finite_difference = (evaluate(step) - evaluate(-step)) / (2.0 * step)
+    np.testing.assert_allclose(
+        result.derivatives.global_jacobian[row],
+        finite_difference,
+        rtol=2e-5,
+        atol=2e-5,
+    )
+
+
 def test_bragg_brentano_position_corrections_match_equation() -> None:
     geometry = phasesmith.BraggBrentanoGeometry(200.0, 0.35)
     experiment = phasesmith.ConstantWavelengthExperiment(

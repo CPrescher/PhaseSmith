@@ -122,6 +122,7 @@ from .quantitative import (
 )
 from .radiation import (
     BraggBrentanoGeometry,
+    ComponentRadiation,
     ConstantWavelengthExperiment,
     MonochromaticRadiation,
     RadiationProbe,
@@ -229,6 +230,7 @@ __all__ = [
     "CifBackend",
     "CifReadLimits",
     "CifReadResult",
+    "ComponentRadiation",
     "CompositePhysicsProvider",
     "ConstantWavelengthExperiment",
     "ConstantWavelengthInstrument",

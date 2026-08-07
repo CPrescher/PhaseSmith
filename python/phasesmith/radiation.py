@@ -66,9 +66,9 @@ class MonochromaticRadiation:
 
 @dataclass(frozen=True, slots=True)
 class ConstantWavelengthExperiment:
-    """Typed pairing of a monochromatic probe and CW profile instrument."""
+    """Typed pairing of a fixed-spectrum probe and CW profile instrument."""
 
-    radiation: MonochromaticRadiation
+    radiation: MonochromaticRadiation | ComponentRadiation
     instrument: ConstantWavelengthInstrument
     zero_shift_deg: float = 0.0
     geometry: BraggBrentanoGeometry | None = None
@@ -76,8 +76,8 @@ class ConstantWavelengthExperiment:
     def __post_init__(self) -> None:
         """Reject ambiguous or inconsistent wavelength ownership."""
 
-        if not isinstance(self.radiation, MonochromaticRadiation):
-            raise TypeError("radiation must be MonochromaticRadiation")
+        if not isinstance(self.radiation, (MonochromaticRadiation, ComponentRadiation)):
+            raise TypeError("radiation must be MonochromaticRadiation or ComponentRadiation")
         if not isinstance(self.instrument, ConstantWavelengthInstrument):
             raise TypeError("instrument must be ConstantWavelengthInstrument")
         if self.radiation.wavelength_angstrom != self.instrument.wavelength_angstrom:
@@ -98,6 +98,26 @@ class ConstantWavelengthExperiment:
         """Construct an explicitly monochromatic neutron experiment."""
 
         return cls(MonochromaticRadiation.neutron(instrument.wavelength_angstrom), instrument)
+
+    @classmethod
+    def x_ray_components(
+        cls,
+        instrument: ConstantWavelengthInstrument,
+        components: WavelengthComponents,
+    ) -> ConstantWavelengthExperiment:
+        """Construct a fixed-component X-ray experiment."""
+
+        return cls(ComponentRadiation.x_ray(components), instrument)
+
+    @classmethod
+    def neutron_components(
+        cls,
+        instrument: ConstantWavelengthInstrument,
+        components: WavelengthComponents,
+    ) -> ConstantWavelengthExperiment:
+        """Construct a fixed-component neutron experiment."""
+
+        return cls(ComponentRadiation.neutron(components), instrument)
 
 
 @dataclass(frozen=True, slots=True, init=False)
@@ -187,6 +207,38 @@ class WavelengthComponents:
         """Return relative intensities divided by component-zero intensity."""
 
         return self.relative_intensities / self.relative_intensities[0]
+
+
+@dataclass(frozen=True, slots=True)
+class ComponentRadiation:
+    """One probe with an immutable fixed discrete wavelength spectrum."""
+
+    probe: RadiationProbe
+    components: WavelengthComponents
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.probe, RadiationProbe):
+            raise TypeError("probe must be a RadiationProbe")
+        if not isinstance(self.components, WavelengthComponents):
+            raise TypeError("components must be WavelengthComponents")
+
+    @property
+    def wavelength_angstrom(self) -> float:
+        """Return the component-zero reference wavelength."""
+
+        return float(self.components.wavelengths_angstrom[0])
+
+    @classmethod
+    def x_ray(cls, components: WavelengthComponents) -> ComponentRadiation:
+        """Construct fixed-component X-ray radiation."""
+
+        return cls(RadiationProbe.X_RAY, components)
+
+    @classmethod
+    def neutron(cls, components: WavelengthComponents) -> ComponentRadiation:
+        """Construct fixed-component neutron radiation."""
+
+        return cls(RadiationProbe.NEUTRON, components)
 
 
 def component_global_parameter_names(

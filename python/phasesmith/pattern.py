@@ -171,6 +171,8 @@ class StructuralReflectionResult:
     s_inverse_angstrom: NDArray[np.float64]
     d_spacing_angstrom: NDArray[np.float64]
     two_theta_deg: NDArray[np.float64]
+    component_index: NDArray[np.int64] | None = None
+    base_reflection_index: NDArray[np.int64] | None = None
 
     def __post_init__(self) -> None:
         """Validate every reflection-major diagnostic array."""
@@ -205,6 +207,25 @@ class StructuralReflectionResult:
             self.two_theta_deg,
         ):
             array.flags.writeable = False
+        component_index = (
+            np.zeros(count, dtype=np.int64)
+            if self.component_index is None
+            else np.array(self.component_index, dtype=np.int64, copy=True, order="C")
+        )
+        base_reflection_index = (
+            np.arange(count, dtype=np.int64)
+            if self.base_reflection_index is None
+            else np.array(self.base_reflection_index, dtype=np.int64, copy=True, order="C")
+        )
+        for name, array in (
+            ("component_index", component_index),
+            ("base_reflection_index", base_reflection_index),
+        ):
+            if array.shape != (count,) or np.any(array < 0):
+                raise ValueError(f"{name} must be a nonnegative int64 vector matching reflections")
+            array.flags.writeable = False
+        object.__setattr__(self, "component_index", component_index)
+        object.__setattr__(self, "base_reflection_index", base_reflection_index)
         object.__setattr__(self, "reflection_ids", ids)
 
 
