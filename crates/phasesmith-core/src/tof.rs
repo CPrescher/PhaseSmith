@@ -2,6 +2,7 @@
 
 use std::error::Error;
 use std::fmt::{Display, Formatter};
+use std::sync::Arc;
 
 use crate::fcj::{QUADRATURE_NODES, QUADRATURE_ORDER, QUADRATURE_WEIGHTS};
 use crate::profile::{
@@ -255,36 +256,21 @@ pub struct TofProfile {
     shape: TchShape,
     alpha: f64,
     beta: f64,
+    quadrature: Arc<TofQuadrature>,
+}
+
+#[derive(Debug)]
+struct TofQuadrature {
     tail_log: f64,
     nodes: [f64; TOF_QUADRATURE_COUNT],
     weights: [f64; TOF_QUADRATURE_COUNT],
 }
 
-impl TofProfile {
-    /// Prepare a unit-area profile. Both exponential tails are truncated at
-    /// `exp(-tail_log)` and renormalized before convolution.
-    ///
-    /// # Errors
-    ///
-    /// Returns [`TofError`] for invalid rates, widths, tail cutoff, or
-    /// quadrature normalization.
-    pub fn new(
-        alpha_per_us: f64,
-        beta_per_us: f64,
-        widths: TchWidths,
-        tail_log: f64,
-    ) -> Result<Self, TofError> {
-        if !alpha_per_us.is_finite() || alpha_per_us <= 0.0 {
-            return Err(TofError::NonPositiveAlpha);
-        }
-        if !beta_per_us.is_finite() || beta_per_us <= 0.0 {
-            return Err(TofError::NonPositiveBeta);
-        }
+impl TofQuadrature {
+    fn new(tail_log: f64) -> Result<Self, TofError> {
         if !tail_log.is_finite() || tail_log <= 0.0 {
             return Err(TofError::InvalidTailLog);
         }
-        let shape = TchShape::from_component_fwhm(widths)
-            .map_err(|reason| TofError::InvalidTch { reason })?;
         let mut nodes = [0.0; TOF_QUADRATURE_COUNT];
         let mut weights = [0.0; TOF_QUADRATURE_COUNT];
         let mut normalization = 0.0;
@@ -308,12 +294,55 @@ impl TofProfile {
             *weight /= normalization;
         }
         Ok(Self {
-            shape,
-            alpha: alpha_per_us,
-            beta: beta_per_us,
             tail_log,
             nodes,
             weights,
+        })
+    }
+}
+
+impl TofProfile {
+    /// Prepare a unit-area profile. Both exponential tails are truncated at
+    /// `exp(-tail_log)` and renormalized before convolution.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`TofError`] for invalid rates, widths, tail cutoff, or
+    /// quadrature normalization.
+    pub fn new(
+        alpha_per_us: f64,
+        beta_per_us: f64,
+        widths: TchWidths,
+        tail_log: f64,
+    ) -> Result<Self, TofError> {
+        Self::validate_rates(alpha_per_us, beta_per_us)?;
+        let quadrature = Arc::new(TofQuadrature::new(tail_log)?);
+        Self::from_validated_rates(alpha_per_us, beta_per_us, widths, quadrature)
+    }
+
+    fn validate_rates(alpha_per_us: f64, beta_per_us: f64) -> Result<(), TofError> {
+        if !alpha_per_us.is_finite() || alpha_per_us <= 0.0 {
+            return Err(TofError::NonPositiveAlpha);
+        }
+        if !beta_per_us.is_finite() || beta_per_us <= 0.0 {
+            return Err(TofError::NonPositiveBeta);
+        }
+        Ok(())
+    }
+
+    fn from_validated_rates(
+        alpha_per_us: f64,
+        beta_per_us: f64,
+        widths: TchWidths,
+        quadrature: Arc<TofQuadrature>,
+    ) -> Result<Self, TofError> {
+        let shape = TchShape::from_component_fwhm(widths)
+            .map_err(|reason| TofError::InvalidTch { reason })?;
+        Ok(Self {
+            shape,
+            alpha: alpha_per_us,
+            beta: beta_per_us,
+            quadrature,
         })
     }
 
@@ -337,8 +366,8 @@ impl TofProfile {
         let mut left_alpha_shift = 0.0;
         let mut right_beta_shift = 0.0;
         for index in 0..TOF_QUADRATURE_COUNT {
-            let node = self.nodes[index];
-            let weight = self.weights[index];
+            let node = self.quadrature.nodes[index];
+            let weight = self.quadrature.weights[index];
             let left_delta = delta + node / self.alpha;
             if left_delta.abs() <= base_radius {
                 let point = self.shape.evaluate(left_delta);
@@ -378,11 +407,12 @@ impl TofProfile {
         let right_fraction = self.alpha / sum;
         let d_left_d_alpha = -self.beta / (sum * sum);
         let d_left_d_beta = self.alpha / (sum * sum);
-        let normalization = 1.0 - (-self.tail_log).exp();
-        let left_low = (self.alpha * (-base_radius - delta)).clamp(0.0, self.tail_log);
-        let left_high = (self.alpha * (base_radius - delta)).clamp(0.0, self.tail_log);
-        let right_low = (self.beta * (delta - base_radius)).clamp(0.0, self.tail_log);
-        let right_high = (self.beta * (delta + base_radius)).clamp(0.0, self.tail_log);
+        let tail_log = self.quadrature.tail_log;
+        let normalization = 1.0 - (-tail_log).exp();
+        let left_low = (self.alpha * (-base_radius - delta)).clamp(0.0, tail_log);
+        let left_high = (self.alpha * (base_radius - delta)).clamp(0.0, tail_log);
+        let right_low = (self.beta * (delta - base_radius)).clamp(0.0, tail_log);
+        let right_high = (self.beta * (delta + base_radius)).clamp(0.0, tail_log);
         let mut left = TofProfilePoint::default();
         let mut right = TofProfilePoint::default();
         let mut left_alpha_shift = 0.0;
@@ -440,8 +470,8 @@ impl TofProfile {
 
     fn support_range(&self, position: f64, base_radius: f64) -> SupportRange {
         SupportRange {
-            left: position - base_radius - self.tail_log / self.alpha,
-            right: position + base_radius + self.tail_log / self.beta,
+            left: position - base_radius - self.quadrature.tail_log / self.alpha,
+            right: position + base_radius + self.quadrature.tail_log / self.beta,
         }
     }
 }
@@ -578,19 +608,28 @@ pub fn accumulate_tof_batch(
         .try_reserve_exact(offset_count)
         .map_err(|_| TofError::AllocationOverflow)?;
     offsets.push(0usize);
+    let mut shared_quadrature = None;
     for reflection in 0..count {
         if !intensities[reflection].is_finite() {
             return Err(TofError::NonFiniteIntensity { reflection });
         }
         let parameters = TofProfileParameters::from_instrument(d_spacings[reflection], instrument)?;
-        let profile = TofProfile::new(
+        TofProfile::validate_rates(parameters.alpha_per_us, parameters.beta_per_us)?;
+        let quadrature = if let Some(quadrature) = &shared_quadrature {
+            Arc::clone(quadrature)
+        } else {
+            let quadrature = Arc::new(TofQuadrature::new(tail_log)?);
+            shared_quadrature = Some(Arc::clone(&quadrature));
+            quadrature
+        };
+        let profile = TofProfile::from_validated_rates(
             parameters.alpha_per_us,
             parameters.beta_per_us,
             TchWidths {
                 gaussian_fwhm: parameters.gaussian_fwhm_us,
                 lorentzian_fwhm: parameters.lorentzian_fwhm_us,
             },
-            tail_log,
+            quadrature,
         )?;
         let base_radius = support_fwhm * parameters.tch.total_fwhm;
         let range = profile.support_range(parameters.position_us, base_radius);
@@ -710,6 +749,22 @@ mod tests {
                 .abs()
                 < 1e-8
         );
+    }
+
+    #[test]
+    fn profiles_can_share_quadrature_storage() {
+        let quadrature = Arc::new(TofQuadrature::new(20.0).expect("quadrature"));
+        let widths = TchWidths {
+            gaussian_fwhm: 22.0,
+            lorentzian_fwhm: 4.0,
+        };
+        let first = TofProfile::from_validated_rates(0.08, 0.03, widths, Arc::clone(&quadrature))
+            .expect("first profile");
+        let second = TofProfile::from_validated_rates(0.09, 0.04, widths, Arc::clone(&quadrature))
+            .expect("second profile");
+
+        assert!(Arc::ptr_eq(&first.quadrature, &second.quadrature));
+        assert!(std::mem::size_of::<TofProfile>() < 128);
     }
 
     #[test]

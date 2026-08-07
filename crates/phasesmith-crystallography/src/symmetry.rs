@@ -3,9 +3,13 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
 use std::fmt::{Display, Formatter};
+use std::sync::OnceLock;
 
 /// Maximum common phase denominator accepted by exact absence detection.
 const MAX_PHASE_DENOMINATOR: i64 = 4096;
+const MAX_PHASE_DENOMINATOR_USIZE: usize = 4096;
+static CYCLOTOMIC_POLYNOMIALS: [OnceLock<Result<Vec<i64>, SymmetryError>>;
+    MAX_PHASE_DENOMINATOR_USIZE + 1] = [const { OnceLock::new() }; MAX_PHASE_DENOMINATOR_USIZE + 1];
 
 /// Reduced rational number used for exact fractional translations.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -659,6 +663,15 @@ fn exact_root_sum_is_zero(phases: &[Rational]) -> Result<bool, SymmetryError> {
 }
 
 fn cyclotomic_polynomial(order: usize) -> Result<Vec<i64>, SymmetryError> {
+    if order > MAX_PHASE_DENOMINATOR_USIZE {
+        return Err(SymmetryError::PhaseDenominatorTooLarge);
+    }
+    CYCLOTOMIC_POLYNOMIALS[order]
+        .get_or_init(|| calculate_cyclotomic_polynomial(order))
+        .clone()
+}
+
+fn calculate_cyclotomic_polynomial(order: usize) -> Result<Vec<i64>, SymmetryError> {
     let mut polynomial = vec![0_i64; order + 1];
     polynomial[0] = -1;
     polynomial[order] = 1;

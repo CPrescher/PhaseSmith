@@ -575,14 +575,15 @@ impl NativePreparedReflectionGenerator {
     ) -> PyResult<GeneratedReflectionArrays<'py>> {
         let parameters = contiguous_slice(&range_parameters, "range_parameters")?;
         let range = reflection_range(range_kind, parameters)?;
-        let reflections = self
-            .generator
-            .generate(
-                crystallographic_cell(
-                    a_angstrom, b_angstrom, c_angstrom, alpha_deg, beta_deg, gamma_deg,
-                ),
-                range,
-            )
+        let reflections = py
+            .detach(|| {
+                self.generator.generate(
+                    crystallographic_cell(
+                        a_angstrom, b_angstrom, c_angstrom, alpha_deg, beta_deg, gamma_deg,
+                    ),
+                    range,
+                )
+            })
             .map_err(|error| PyValueError::new_err(error.to_string()))?;
         let count = reflections.len();
         let mut ids = Vec::with_capacity(count);
@@ -896,21 +897,25 @@ impl NativeStructuralPhase {
             &d_lorentzian_fwhm_d_parameters,
             &d_intensity_multiplier_d_parameters,
         )?;
-        let result = self.with_input(
-            x_deg_values,
-            cw_instrument(
-                wavelength_angstrom,
-                u_deg2,
-                v_deg2,
-                w_deg2,
-                x_width_deg,
-                y_width_deg,
-            ),
-            position_correction(zero_shift_deg, sample_displacement_mm, goniometer_radius_mm)?,
-            contributions,
-            support_fwhm,
-            calculate_structural_pattern,
-        )?;
+        let correction =
+            position_correction(zero_shift_deg, sample_displacement_mm, goniometer_radius_mm)?;
+        let result = py.detach(|| {
+            self.with_input(
+                x_deg_values,
+                cw_instrument(
+                    wavelength_angstrom,
+                    u_deg2,
+                    v_deg2,
+                    w_deg2,
+                    x_width_deg,
+                    y_width_deg,
+                ),
+                correction,
+                contributions,
+                support_fwhm,
+                calculate_structural_pattern,
+            )
+        })?;
         structural_pattern_to_numpy(py, result)
     }
 
@@ -956,21 +961,25 @@ impl NativeStructuralPhase {
             &d_lorentzian_fwhm_d_parameters,
             &d_intensity_multiplier_d_parameters,
         )?;
-        let result = self.with_input(
-            x_deg_values,
-            cw_instrument(
-                wavelength_angstrom,
-                u_deg2,
-                v_deg2,
-                w_deg2,
-                x_width_deg,
-                y_width_deg,
-            ),
-            position_correction(zero_shift_deg, sample_displacement_mm, goniometer_radius_mm)?,
-            contributions,
-            support_fwhm,
-            |cell, group, input| calculate_structural_pattern_jvp(cell, group, input, tangent),
-        )?;
+        let correction =
+            position_correction(zero_shift_deg, sample_displacement_mm, goniometer_radius_mm)?;
+        let result = py.detach(|| {
+            self.with_input(
+                x_deg_values,
+                cw_instrument(
+                    wavelength_angstrom,
+                    u_deg2,
+                    v_deg2,
+                    w_deg2,
+                    x_width_deg,
+                    y_width_deg,
+                ),
+                correction,
+                contributions,
+                support_fwhm,
+                |cell, group, input| calculate_structural_pattern_jvp(cell, group, input, tangent),
+            )
+        })?;
         structural_pattern_jvp_to_numpy(py, result)
     }
 
@@ -1016,23 +1025,27 @@ impl NativeStructuralPhase {
             &d_lorentzian_fwhm_d_parameters,
             &d_intensity_multiplier_d_parameters,
         )?;
-        let result = self.with_input(
-            x_deg_values,
-            cw_instrument(
-                wavelength_angstrom,
-                u_deg2,
-                v_deg2,
-                w_deg2,
-                x_width_deg,
-                y_width_deg,
-            ),
-            position_correction(zero_shift_deg, sample_displacement_mm, goniometer_radius_mm)?,
-            contributions,
-            support_fwhm,
-            |cell, group, input| {
-                calculate_structural_pattern_vjp(cell, group, input, sample_weights)
-            },
-        )?;
+        let correction =
+            position_correction(zero_shift_deg, sample_displacement_mm, goniometer_radius_mm)?;
+        let result = py.detach(|| {
+            self.with_input(
+                x_deg_values,
+                cw_instrument(
+                    wavelength_angstrom,
+                    u_deg2,
+                    v_deg2,
+                    w_deg2,
+                    x_width_deg,
+                    y_width_deg,
+                ),
+                correction,
+                contributions,
+                support_fwhm,
+                |cell, group, input| {
+                    calculate_structural_pattern_vjp(cell, group, input, sample_weights)
+                },
+            )
+        })?;
         structural_pattern_vjp_to_numpy(py, result)
     }
 }

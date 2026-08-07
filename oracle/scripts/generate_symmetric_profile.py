@@ -111,14 +111,10 @@ def isolated_case(
     )
     profile_per_degree = 100.0 * np.asarray(native_profile, dtype=np.float64)
     gaussian_fwhm_deg = GAUSSIAN_FWHM_PER_SIGMA * gaussian_sigma_deg
-    d_sigma2_d_gaussian_fwhm = (
-        20_000.0 * gaussian_fwhm_deg / GAUSSIAN_FWHM_PER_SIGMA**2
-    )
+    d_sigma2_d_gaussian_fwhm = 20_000.0 * gaussian_fwhm_deg / GAUSSIAN_FWHM_PER_SIGMA**2
     d_position = -100.0 * np.asarray(derivative_position, dtype=np.float64)
     d_gaussian_fwhm = (
-        100.0
-        * np.asarray(derivative_sigma2, dtype=np.float64)
-        * d_sigma2_d_gaussian_fwhm
+        100.0 * np.asarray(derivative_sigma2, dtype=np.float64) * d_sigma2_d_gaussian_fwhm
     )
     d_lorentzian_fwhm = 10_000.0 * np.asarray(derivative_gamma, dtype=np.float64)
     x_key = f"{case_id}__x_deg"
@@ -320,9 +316,7 @@ def write_fixture(
     arrays.update(case_arrays)
 
     np.savez_compressed(archive_path, **arrays)
-    canonical_input = json.dumps(
-        [*case_specs, cases[-1]["parameters"]], sort_keys=True
-    ).encode()
+    canonical_input = json.dumps([*case_specs, cases[-1]["parameters"]], sort_keys=True).encode()
     script_path = Path(__file__).resolve()
     manifest = {
         "format_version": 1,

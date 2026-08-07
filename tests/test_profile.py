@@ -8,12 +8,14 @@ import pytest
 from phasesmith import reference
 
 
+def test_package_exposes_installed_version() -> None:
+    assert phasesmith.__version__ == "0.1.0"
+
+
 def test_native_profile_matches_independent_numpy_reference() -> None:
     rng = np.random.default_rng(20260804)
     delta = rng.uniform(-3.0, 3.0, 2_000)
-    for fwhm, eta in zip(
-        rng.uniform(0.02, 1.5, 12), rng.uniform(0.0, 1.0, 12), strict=True
-    ):
+    for fwhm, eta in zip(rng.uniform(0.02, 1.5, 12), rng.uniform(0.0, 1.0, 12), strict=True):
         actual = phasesmith.profile(delta, fwhm, eta)
         expected = reference.profile(delta, fwhm, eta)
         np.testing.assert_allclose(actual.value, expected.value, rtol=2e-15, atol=1e-15)
@@ -31,6 +33,11 @@ def test_fwhm_and_symmetry_contract() -> None:
         assert result.value[1] == result.value[2]
 
 
+def test_profile_rejects_non_finite_offsets_before_native_dispatch() -> None:
+    with pytest.raises(ValueError, match="delta must contain only finite values"):
+        phasesmith.profile([0.0, np.nan], 0.2, 0.5)
+
+
 def test_support_integral_matches_analytic_truncation() -> None:
     position = 0.2
     intensity = 137.0
@@ -39,15 +46,11 @@ def test_support_integral_matches_analytic_truncation() -> None:
     support = 12.0
     radius = support * fwhm
     x = np.linspace(position - radius, position + radius, 200_001)
-    result = phasesmith.accumulate(
-        x, [position], [intensity], [fwhm], [eta], support_fwhm=support
-    )
+    result = phasesmith.accumulate(x, [position], [intensity], [fwhm], [eta], support_fwhm=support)
 
     gaussian_fraction = math.erf(2.0 * math.sqrt(math.log(2.0)) * support)
     lorentzian_fraction = 2.0 / math.pi * math.atan(2.0 * support)
-    expected_integral = intensity * (
-        eta * lorentzian_fraction + (1.0 - eta) * gaussian_fraction
-    )
+    expected_integral = intensity * (eta * lorentzian_fraction + (1.0 - eta) * gaussian_fraction)
     sampled_integral = np.trapezoid(result.y, x)
     assert sampled_integral == pytest.approx(expected_integral, rel=2e-10)
 
@@ -63,9 +66,7 @@ def test_fused_accumulation_matches_reference() -> None:
     fwhms = rng.uniform(0.015, 0.15, positions.size)
     etas = rng.uniform(0.0, 1.0, positions.size)
 
-    actual = phasesmith.accumulate(
-        x, positions, intensities, fwhms, etas, support_fwhm=7.37
-    )
+    actual = phasesmith.accumulate(x, positions, intensities, fwhms, etas, support_fwhm=7.37)
     expected_y, expected_jacobian = reference.accumulate(
         x, positions, intensities, fwhms, etas, support_fwhm=7.37
     )
@@ -165,15 +166,11 @@ def test_dense_layout_is_explicit_compatibility_materialization() -> None:
         np.array([0.25, 0.75]),
     )
     support = phasesmith.accumulate(*arguments, support_fwhm=3.0)
-    dense = phasesmith.accumulate(
-        *arguments, support_fwhm=3.0, jacobian_layout="dense"
-    )
+    dense = phasesmith.accumulate(*arguments, support_fwhm=3.0, jacobian_layout="dense")
     assert isinstance(support.jacobian, phasesmith.SupportJacobian)
     assert isinstance(dense.jacobian, np.ndarray)
     np.testing.assert_array_equal(support.y, dense.y)
-    np.testing.assert_array_equal(
-        support.jacobian.to_dense(arguments[0].size), dense.jacobian
-    )
+    np.testing.assert_array_equal(support.jacobian.to_dense(arguments[0].size), dense.jacobian)
     assert dense.derivatives.local.values.size == support.jacobian.values.size
 
 
@@ -211,15 +208,9 @@ def test_randomized_support_reconstruction_matches_reference(seed: int) -> None:
         etas,
         support_fwhm=support_fwhm,
     )
-    expected_starts = np.searchsorted(
-        x, positions - support_fwhm * fwhms, side="left"
-    )
-    expected_stops = np.searchsorted(
-        x, positions + support_fwhm * fwhms, side="right"
-    )
-    expected_offsets = np.concatenate(
-        ([0], np.cumsum(expected_stops - expected_starts))
-    )
+    expected_starts = np.searchsorted(x, positions - support_fwhm * fwhms, side="left")
+    expected_stops = np.searchsorted(x, positions + support_fwhm * fwhms, side="right")
+    expected_offsets = np.concatenate(([0], np.cumsum(expected_stops - expected_starts)))
     expected_y, expected_jacobian = reference.accumulate(
         x,
         positions,

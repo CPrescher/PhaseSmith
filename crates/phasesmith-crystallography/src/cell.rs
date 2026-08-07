@@ -156,6 +156,13 @@ impl UnitCell {
 }
 
 impl CellGeometry {
+    /// Return `|g|² = hᵀ G* h` without constructing cell derivatives.
+    #[must_use]
+    pub fn q_squared(&self, hkl: [i32; 3]) -> f64 {
+        let h = [f64::from(hkl[0]), f64::from(hkl[1]), f64::from(hkl[2])];
+        dot(h, matrix_vector(self.reciprocal_metric, h))
+    }
+
     /// Return `|g|^2 = h^T G* h` and its derivatives in direct-cell parameter
     /// order. Unlike d-spacing evaluation, the zero reflection is permitted.
     #[must_use]

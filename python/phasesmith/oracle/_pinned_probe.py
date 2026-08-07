@@ -48,9 +48,7 @@ def probe_histogram(histogram: Any, gsas_module: ModuleType, *names: str) -> dic
 
     revision = detected_revision(gsas_module)
     if revision != PINNED_REVISION:
-        raise RuntimeError(
-            f"private GSAS-II probe requires {PINNED_REVISION}, detected {revision}"
-        )
+        raise RuntimeError(f"private GSAS-II probe requires {PINNED_REVISION}, detected {revision}")
 
     unsupported = set(names).difference(_HISTOGRAM_PATHS)
     if unsupported:
@@ -83,9 +81,7 @@ def probe_symmetric_profile(
 
     revision = detected_revision(gsas_pwd_module)
     if revision != PINNED_REVISION:
-        raise RuntimeError(
-            f"private GSAS-II probe requires {PINNED_REVISION}, detected {revision}"
-        )
+        raise RuntimeError(f"private GSAS-II probe requires {PINNED_REVISION}, detected {revision}")
     x = np.ascontiguousarray(x, dtype=np.float64)
     sigma_centidegrees_squared = (100.0 * gaussian_sigma) ** 2
     gamma_centidegrees = 100.0 * lorentzian_fwhm

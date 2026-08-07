@@ -93,6 +93,7 @@ class RietveldProject:
             self.input,
             experiment=result.experiment,
             phases=result.phases,
+            lattice_domains=result.checkpoint.lattice_domains,
             parameters=result.parameters,
             background=result.background,
         )

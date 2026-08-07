@@ -1,5 +1,7 @@
 """Fast, validated powder-diffraction profile calculations."""
 
+from importlib.metadata import PackageNotFoundError, version
+
 from . import background, integrations, persistence, refinement
 from ._api import (
     PARAMETER_ORDER,
@@ -199,6 +201,11 @@ from .tof import (
     tof_profile_parameters,
 )
 
+try:
+    __version__ = version("phasesmith")
+except PackageNotFoundError:  # pragma: no cover - source tree without installation
+    __version__ = "0+unknown"
+
 __all__ = [
     "CELL_PARAMETER_NAMES",
     "CW_FCJ_GLOBAL_PARAMETER_ORDER",
@@ -328,6 +335,7 @@ __all__ = [
     "XrayFixedDispersion",
     "XrayNonResonant",
     "XraySpeciesMetadata",
+    "__version__",
     "accumulate",
     "accumulate_cw",
     "accumulate_cw_components",

@@ -19,8 +19,8 @@ jobs:
     # a hard failure in both the workflow and the selected test.
     runs-on: [self-hosted, gsasii-oracle]
     env:
-      RIETVELD_GSASII_ROOT: ${{ vars.RIETVELD_GSASII_ROOT }}
-      RIETVELD_GSASII_BINARY_DIR: ${{ vars.RIETVELD_GSASII_BINARY_DIR }}
+      PHASESMITH_GSASII_ROOT: ${{ vars.PHASESMITH_GSASII_ROOT }}
+      PHASESMITH_GSASII_BINARY_DIR: ${{ vars.PHASESMITH_GSASII_BINARY_DIR }}
       GSASII_PYTHON: ${{ vars.GSASII_PYTHON }}
     steps:
       - uses: actions/checkout@v6
@@ -28,8 +28,8 @@ jobs:
       - name: Validate runner configuration
         run: |
           test -x "$GSASII_PYTHON"
-          test -d "$RIETVELD_GSASII_ROOT"
-          test -d "$RIETVELD_GSASII_BINARY_DIR"
+          test -d "$PHASESMITH_GSASII_ROOT"
+          test -d "$PHASESMITH_GSASII_BINARY_DIR"
       - name: Build isolated test environment with the GSAS-II interpreter
         run: |
           "$GSASII_PYTHON" -m venv --system-site-packages "$RUNNER_TEMP/rietveld-oracle-venv"
@@ -44,8 +44,8 @@ jobs:
           "$RUNNER_TEMP/rietveld-oracle-venv/bin/python" benchmarks/compare_gsasii.py \
             --require-release \
             --gsas-python "$GSASII_PYTHON" \
-            --gsas-root "$RIETVELD_GSASII_ROOT" \
-            --binary-dir "$RIETVELD_GSASII_BINARY_DIR" \
+            --gsas-root "$PHASESMITH_GSASII_ROOT" \
+            --binary-dir "$PHASESMITH_GSASII_BINARY_DIR" \
             --json-output "$RUNNER_TEMP/gsasii-speed-comparison.json" \
             | tee "$RUNNER_TEMP/gsasii-speed-comparison.txt"
       - name: Compare structural intensity and pattern speed
@@ -54,10 +54,23 @@ jobs:
             benchmarks/compare_gsasii_structural.py \
             --require-release \
             --gsas-python "$GSASII_PYTHON" \
-            --gsas-root "$RIETVELD_GSASII_ROOT" \
-            --binary-dir "$RIETVELD_GSASII_BINARY_DIR" \
+            --gsas-root "$PHASESMITH_GSASII_ROOT" \
+            --binary-dir "$PHASESMITH_GSASII_BINARY_DIR" \
             --json-output "$RUNNER_TEMP/gsasii-structural-speed-comparison.json" \
             | tee "$RUNNER_TEMP/gsasii-structural-speed-comparison.txt"
+      - name: Compare complete QARR native workflows
+        run: |
+          "$RUNNER_TEMP/rietveld-oracle-venv/bin/python" \
+            benchmarks/compare_gsasii_qarr.py \
+            --require-release \
+            --gsas-python "$GSASII_PYTHON" \
+            --gsas-root "$PHASESMITH_GSASII_ROOT" \
+            --binary-dir "$PHASESMITH_GSASII_BINARY_DIR" \
+            --data-directory validation/data/iucr-qarr-1g \
+            --warmups 1 \
+            --repetitions 3 \
+            --json-output "$RUNNER_TEMP/gsasii-qarr-comparison.json" \
+            | tee "$RUNNER_TEMP/gsasii-qarr-comparison.txt"
       - name: Upload speed comparison
         uses: actions/upload-artifact@v4
         with:
@@ -67,13 +80,15 @@ jobs:
             ${{ runner.temp }}/gsasii-speed-comparison.txt
             ${{ runner.temp }}/gsasii-structural-speed-comparison.json
             ${{ runner.temp }}/gsasii-structural-speed-comparison.txt
+            ${{ runner.temp }}/gsasii-qarr-comparison.json
+            ${{ runner.temp }}/gsasii-qarr-comparison.txt
           retention-days: 30
       - name: Explicitly regenerate the symmetric fixture
         if: ${{ inputs.regenerate_symmetric_fixture }}
         run: |
           "$GSASII_PYTHON" oracle/scripts/generate_symmetric_profile.py \
-            --gsas-root "$RIETVELD_GSASII_ROOT" \
-            --binary-dir "$RIETVELD_GSASII_BINARY_DIR" \
+            --gsas-root "$PHASESMITH_GSASII_ROOT" \
+            --binary-dir "$PHASESMITH_GSASII_BINARY_DIR" \
             --output "$RUNNER_TEMP/symmetric_pseudo_voigt_v1"
           "$RUNNER_TEMP/rietveld-oracle-venv/bin/python" -c \
             'from os import environ; from phasesmith.oracle import load_fixture; load_fixture(environ["RUNNER_TEMP"] + "/symmetric_pseudo_voigt_v1")'

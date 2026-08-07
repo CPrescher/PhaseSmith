@@ -305,7 +305,7 @@ pub fn calculate_structural_pattern_jvp(
         .collect::<Vec<_>>();
     let mut accumulation =
         accumulate(input, &prepared.two_theta_deg, &structural.values.intensity)?;
-    append_instrument_derivatives(&mut accumulation, &structural.values, &prepared)?;
+    append_instrument_derivatives(&mut accumulation, &structural.values, input, &prepared)?;
     let d_y = chain_pattern_jvp(&accumulation, &structural.d_intensity, &d_two_theta_deg);
     Ok(StructuralPatternJvpResult {
         result: StructuralPatternResult {
@@ -342,7 +342,7 @@ pub fn calculate_structural_pattern_vjp(
         calculate_structure_factor_values(cell, space_group, prepared.structure_batch(input))
             .map_err(StructuralPatternError::StructureFactor)?;
     let mut accumulation = accumulate(input, &prepared.two_theta_deg, &values.intensity)?;
-    append_instrument_derivatives(&mut accumulation, &values, &prepared)?;
+    append_instrument_derivatives(&mut accumulation, &values, input, &prepared)?;
     let (intensity_weights, position_weights) =
         local_transpose_weights(&accumulation, sample_weights);
     let mut structural = calculate_structure_factor_intensity_vjp(
@@ -479,7 +479,7 @@ fn calculate_values(
             .map_err(StructuralPatternError::StructureFactor)?;
     let mut accumulation =
         accumulate(input, &prepared.two_theta_deg, &structure_factors.intensity)?;
-    append_instrument_derivatives(&mut accumulation, &structure_factors, prepared)?;
+    append_instrument_derivatives(&mut accumulation, &structure_factors, input, prepared)?;
     Ok(StructuralPatternResult {
         structure_factors,
         d_spacing_angstrom: prepared.d_spacing.clone(),
@@ -491,6 +491,7 @@ fn calculate_values(
 fn append_instrument_derivatives(
     accumulation: &mut Accumulation,
     structure_factors: &StructureFactorValues,
+    input: &StructuralPatternInputView<'_>,
     prepared: &PreparedNumerics,
 ) -> Result<(), StructuralPatternError> {
     let sample_count = accumulation.sample_count;
@@ -515,10 +516,12 @@ fn append_instrument_derivatives(
         .map(|_| vec![0.0; sample_count]);
     let local = &accumulation.derivatives.local;
     for reflection in 0..local.peak_count() {
-        let correction = prepared.correction.values[reflection];
-        let d_intensity_d_wavelength = structure_factors.intensity[reflection]
-            * prepared.correction.d_values_d_wavelength[reflection]
-            / correction;
+        #[allow(clippy::cast_precision_loss)]
+        let multiplicity = input.multiplicity[reflection] as f64;
+        let d_intensity_d_wavelength = input.scale
+            * multiplicity
+            * structure_factors.f_squared[reflection]
+            * prepared.correction.d_values_d_wavelength[reflection];
         let begin = local.offsets[reflection];
         let end = local.offsets[reflection + 1];
         for active in begin..end {

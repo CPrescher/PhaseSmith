@@ -307,9 +307,7 @@ def component_phase(*, scale: float = 1.4) -> phasesmith.RietveldPhase:
 def test_structural_doublet_matches_sum_of_component_native_batches() -> None:
     phase = replace(
         component_phase(),
-        scattering=phasesmith.XrayFixedDispersion(
-            {"Si": 0.21 + 0.25j, "O": 0.05 + 0.03j}
-        ),
+        scattering=phasesmith.XrayFixedDispersion({"Si": 0.21 + 0.25j, "O": 0.05 + 0.03j}),
         intensity_correction=phasesmith.BraggBrentanoPolarizedLp(1.5406, 0.7),
     )
     experiment = component_experiment()

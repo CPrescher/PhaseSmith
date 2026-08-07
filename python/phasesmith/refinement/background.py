@@ -299,19 +299,15 @@ class AmorphousBackground:
         normalization = np.sqrt(factor / np.pi)
         for peak in self.peaks:
             delta = grid - peak.center_deg
-            gaussian = normalization / peak.fwhm_deg * np.exp(
-                -factor * (delta / peak.fwhm_deg) ** 2
+            gaussian = (
+                normalization / peak.fwhm_deg * np.exp(-factor * (delta / peak.fwhm_deg) ** 2)
             )
             value = peak.area * gaussian
             columns.extend(
                 (
                     gaussian,
                     value * 2.0 * factor * delta / peak.fwhm_deg**2,
-                    value
-                    * (
-                        -1.0 / peak.fwhm_deg
-                        + 2.0 * factor * delta**2 / peak.fwhm_deg**3
-                    ),
+                    value * (-1.0 / peak.fwhm_deg + 2.0 * factor * delta**2 / peak.fwhm_deg**3),
                 )
             )
         result = np.ascontiguousarray(np.column_stack(columns))
@@ -387,9 +383,7 @@ class CompositeBackground:
         return tuple(bound for item in self.components for bound in item.parameter_bounds)
 
     def basis(self, x: ArrayLike) -> NDArray[np.float64]:
-        result = np.ascontiguousarray(
-            np.column_stack([item.basis(x) for item in self.components])
-        )
+        result = np.ascontiguousarray(np.column_stack([item.basis(x) for item in self.components]))
         result.flags.writeable = False
         return result
 

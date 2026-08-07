@@ -50,6 +50,8 @@ def test_parameter_keys_sets_and_scaled_packing_are_deterministic() -> None:
     replaced = parameters.replace_values({keys[3]: 2.0})
     assert replaced.specs[-1].value == 2.0
     assert parameters.specs[-1].value == 1.0
+    with pytest.raises(KeyError):
+        parameters.spec(ParameterKey("phase", "missing", "scale"))
 
 
 def test_fixed_and_ordered_affine_constraints_expand_without_strings() -> None:

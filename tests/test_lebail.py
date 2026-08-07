@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 from dataclasses import replace
 
 import numpy as np
@@ -123,7 +124,7 @@ def test_exactly_coincident_multiplet_preserves_starting_partition_and_reports_r
     starting = (phase("alpha", positions, np.array([1.0, 2.0])),)
     result = lebail.refine(
         lebail.LeBailInput(observed_pattern(x, truth), instrument(), starting),
-        lebail.LeBailOptions(max_iterations=10),
+        lebail.LeBailOptions(max_iterations=10, diagnose_rank_deficiency=True),
     )
 
     np.testing.assert_allclose(extracted(result), [4.0, 8.0], rtol=2e-12)
@@ -142,7 +143,7 @@ def test_shared_peak_across_phases_keeps_identity_and_reports_joint_rank() -> No
     pattern = observed_pattern(x, (alpha_truth, beta_truth))
     result = lebail.refine(
         lebail.LeBailInput(pattern, instrument(), (alpha_start, beta_start)),
-        lebail.LeBailOptions(max_iterations=10),
+        lebail.LeBailOptions(max_iterations=10, diagnose_rank_deficiency=True),
     )
 
     np.testing.assert_allclose(extracted(result), [4.0, 8.0], rtol=2e-12)
@@ -334,7 +335,8 @@ def test_custom_optimizer_protocol_drives_profile_updates() -> None:
     assert result.phases[0].reflections.two_theta_deg[0] == pytest.approx(40.0, abs=3.0e-7)
 
 
-def test_optional_scipy_adapter_imports_only_when_used() -> None:
+def test_optional_scipy_adapter_imports_only_when_used(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setitem(sys.modules, "scipy", None)
     adapter = phasesmith.refinement.ScipyLeastSquaresAdapter()
     with pytest.raises(ImportError, match="optional dependency"):
         adapter.solve(

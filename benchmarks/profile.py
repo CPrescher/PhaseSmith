@@ -245,16 +245,12 @@ def main() -> None:
     for tail_log in tof_tail_logs:
         tof_lower = np.searchsorted(
             tof_x,
-            tof_parameters.position_us
-            - tof_radius
-            - tail_log / tof_parameters.alpha_per_us,
+            tof_parameters.position_us - tof_radius - tail_log / tof_parameters.alpha_per_us,
             side="left",
         )
         tof_upper = np.searchsorted(
             tof_x,
-            tof_parameters.position_us
-            + tof_radius
-            + tail_log / tof_parameters.beta_per_us,
+            tof_parameters.position_us + tof_radius + tail_log / tof_parameters.beta_per_us,
             side="right",
         )
         tof_active_peak_samples[tail_log] = int(np.sum(tof_upper - tof_lower))

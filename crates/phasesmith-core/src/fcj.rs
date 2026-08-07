@@ -207,8 +207,7 @@ pub struct FcjProfile {
     shape: TchShape,
     geometry: FcjGeometry,
     position_deg: f64,
-    nodes: [PreparedNode; NODE_COUNT],
-    node_count: usize,
+    nodes: Box<[PreparedNode]>,
     normalization: f64,
     d_normalization_d_position: f64,
     d_normalization_d_major: f64,
@@ -243,19 +242,17 @@ impl FcjProfile {
             limit_argument.acos() * RADIAN_TO_DEGREE
         };
         if maximum_height == 0.0 {
-            let mut nodes = [PreparedNode::default(); NODE_COUNT];
-            nodes[0] = PreparedNode {
+            let nodes = Box::new([PreparedNode {
                 apparent_position_deg: position_deg,
                 weighted_geometry: 1.0,
                 d_apparent_d_position: 1.0,
                 ..PreparedNode::default()
-            };
+            }]);
             return Ok(Self {
                 shape,
                 geometry,
                 position_deg,
                 nodes,
-                node_count: 1,
                 normalization: 1.0,
                 d_normalization_d_position: 0.0,
                 d_normalization_d_major: 0.0,
@@ -314,8 +311,7 @@ impl FcjProfile {
             shape,
             geometry,
             position_deg,
-            nodes,
-            node_count: NODE_COUNT,
+            nodes: Box::new(nodes),
             normalization,
             d_normalization_d_position,
             d_normalization_d_major,
@@ -354,7 +350,7 @@ impl FcjProfile {
         let mut numerator_lorentzian = 0.0;
         let mut numerator_major = 0.0;
         let mut numerator_minor = 0.0;
-        for node in &self.nodes[..self.node_count] {
+        for node in &self.nodes {
             let delta = x_deg - node.apparent_position_deg;
             if delta.abs() > support_radius_deg {
                 continue;
@@ -493,6 +489,7 @@ mod tests {
             },
         )
         .expect("zero geometry");
+        assert_eq!(fcj.nodes.len(), 1);
         let x = position + 0.017;
         let expected = TchShape::from_component_fwhm(widths)
             .expect("shape")

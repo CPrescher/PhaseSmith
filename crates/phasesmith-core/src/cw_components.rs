@@ -505,4 +505,121 @@ mod tests {
                 .expect("components");
         assert_eq!(actual, expected);
     }
+
+    #[test]
+    #[allow(clippy::too_many_lines)]
+    fn all_component_and_fcj_derivatives_match_centered_differences() {
+        let x: Vec<f64> = (0..=1_600)
+            .map(|index| 49.7 + f64::from(index) * 0.000_5)
+            .collect();
+        let positions = [50.0];
+        let intensities = [8.0];
+        let support = SupportPolicy::FwhmMultiple(100.0);
+        let base_instrument = instrument();
+        let base_geometry = FcjGeometry {
+            sample_over_radius: 0.012,
+            detector_over_radius: 0.008,
+        };
+        let wavelength_ratio = 1.544_39 / base_instrument.wavelength_angstrom;
+        let intensity_ratio = 0.5;
+
+        let calculate = |selected_instrument: ConstantWavelengthInstrument,
+                         geometry: FcjGeometry,
+                         ratio: f64,
+                         relative_intensity: f64| {
+            let wavelengths = [
+                selected_instrument.wavelength_angstrom,
+                selected_instrument.wavelength_angstrom * ratio,
+            ];
+            let weights = [1.0, relative_intensity];
+            accumulate_cw_fcj_components_batch(
+                GridView::new(&x).expect("grid"),
+                CwReflectionBatchView::new(&positions, &intensities).expect("reflections"),
+                selected_instrument,
+                WavelengthComponentsView::new(&wavelengths, &weights).expect("components"),
+                geometry,
+                support,
+            )
+            .expect("component accumulation")
+        };
+
+        let baseline = calculate(
+            base_instrument,
+            base_geometry,
+            wavelength_ratio,
+            intensity_ratio,
+        );
+        let global = baseline.derivatives.global.as_ref().expect("global");
+        for row in 0..9 {
+            let step = if row <= 2 { 1.0e-8 } else { 1.0e-7 };
+            let mut plus_instrument = base_instrument;
+            let mut minus_instrument = base_instrument;
+            let mut plus_geometry = base_geometry;
+            let mut minus_geometry = base_geometry;
+            let mut plus_wavelength_ratio = wavelength_ratio;
+            let mut minus_wavelength_ratio = wavelength_ratio;
+            let mut plus_intensity_ratio = intensity_ratio;
+            let mut minus_intensity_ratio = intensity_ratio;
+            match row {
+                0 => {
+                    plus_instrument.u_deg2 += step;
+                    minus_instrument.u_deg2 -= step;
+                }
+                1 => {
+                    plus_instrument.v_deg2 += step;
+                    minus_instrument.v_deg2 -= step;
+                }
+                2 => {
+                    plus_instrument.w_deg2 += step;
+                    minus_instrument.w_deg2 -= step;
+                }
+                3 => {
+                    plus_instrument.x_deg += step;
+                    minus_instrument.x_deg -= step;
+                }
+                4 => {
+                    plus_instrument.y_deg += step;
+                    minus_instrument.y_deg -= step;
+                }
+                5 => {
+                    plus_geometry.sample_over_radius += step;
+                    minus_geometry.sample_over_radius -= step;
+                }
+                6 => {
+                    plus_geometry.detector_over_radius += step;
+                    minus_geometry.detector_over_radius -= step;
+                }
+                7 => {
+                    plus_wavelength_ratio += step;
+                    minus_wavelength_ratio -= step;
+                }
+                8 => {
+                    plus_intensity_ratio += step;
+                    minus_intensity_ratio -= step;
+                }
+                _ => unreachable!(),
+            }
+            let plus = calculate(
+                plus_instrument,
+                plus_geometry,
+                plus_wavelength_ratio,
+                plus_intensity_ratio,
+            );
+            let minus = calculate(
+                minus_instrument,
+                minus_geometry,
+                minus_wavelength_ratio,
+                minus_intensity_ratio,
+            );
+            for (sample, (&plus_value, &minus_value)) in plus.y.iter().zip(&minus.y).enumerate() {
+                let finite_difference = (plus_value - minus_value) / (2.0 * step);
+                let analytical = global.values[row * x.len() + sample];
+                assert!(
+                    (analytical - finite_difference).abs()
+                        < 1.3e-5 * finite_difference.abs().max(1.0),
+                    "row {row}, sample {sample}: analytical={analytical}, finite={finite_difference}"
+                );
+            }
+        }
+    }
 }

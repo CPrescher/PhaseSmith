@@ -164,8 +164,7 @@ class ReciprocalDBroadening:
         )
 
 
-result = calculate_cw_pattern(x, reflections, instrument,
-                              physics=ReciprocalDBroadening(0.004))
+result = calculate_cw_pattern(x, reflections, instrument, physics=ReciprocalDBroadening(0.004))
 ```
 
 The provider executes once for the reflection batch. Its arrays and derivative

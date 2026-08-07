@@ -76,7 +76,10 @@ def _vector(values: ArrayLike, name: str) -> NDArray[np.float64]:
         raise ValueError(f"{name} must be one-dimensional")
     if raw.dtype.kind not in "fiu":
         raise ValueError(f"{name} must have a real floating-point or integer dtype")
-    return np.ascontiguousarray(raw, dtype=np.float64)
+    result = np.ascontiguousarray(raw, dtype=np.float64)
+    if not np.isfinite(result).all():
+        raise ValueError(f"{name} must contain only finite values")
+    return result
 
 
 def profile(delta: ArrayLike, fwhm: float, eta: float) -> ProfileResult:
@@ -86,14 +89,10 @@ def profile(delta: ArrayLike, fwhm: float, eta: float) -> ProfileResult:
     return ProfileResult(*arrays)
 
 
-def tch_shape_from_fwhm(
-    gaussian_fwhm: float, lorentzian_fwhm: float
-) -> TchFwhmShape:
+def tch_shape_from_fwhm(gaussian_fwhm: float, lorentzian_fwhm: float) -> TchFwhmShape:
     """Transform explicitly named Gaussian and Lorentzian component FWHMs."""
 
-    return TchFwhmShape(
-        *_core.tch_shape_from_fwhm(float(gaussian_fwhm), float(lorentzian_fwhm))
-    )
+    return TchFwhmShape(*_core.tch_shape_from_fwhm(float(gaussian_fwhm), float(lorentzian_fwhm)))
 
 
 def _gaussian_fwhm_from_sigma(gaussian_sigma: float) -> float:
@@ -105,9 +104,7 @@ def _gaussian_fwhm_from_sigma(gaussian_sigma: float) -> float:
     return GAUSSIAN_FWHM_PER_SIGMA * sigma
 
 
-def tch_shape_from_gaussian_sigma(
-    gaussian_sigma: float, lorentzian_fwhm: float
-) -> TchSigmaShape:
+def tch_shape_from_gaussian_sigma(gaussian_sigma: float, lorentzian_fwhm: float) -> TchSigmaShape:
     """Transform Gaussian standard deviation and Lorentzian FWHM."""
 
     shape = tch_shape_from_fwhm(_gaussian_fwhm_from_sigma(gaussian_sigma), lorentzian_fwhm)
@@ -118,16 +115,12 @@ def tch_shape_from_gaussian_sigma(
             shape.d_total_fwhm_d_gaussian_fwhm * GAUSSIAN_FWHM_PER_SIGMA
         ),
         d_total_fwhm_d_lorentzian_fwhm=shape.d_total_fwhm_d_lorentzian_fwhm,
-        d_eta_d_gaussian_sigma=(
-            shape.d_eta_d_gaussian_fwhm * GAUSSIAN_FWHM_PER_SIGMA
-        ),
+        d_eta_d_gaussian_sigma=(shape.d_eta_d_gaussian_fwhm * GAUSSIAN_FWHM_PER_SIGMA),
         d_eta_d_lorentzian_fwhm=shape.d_eta_d_lorentzian_fwhm,
     )
 
 
-def profile_tch(
-    delta: ArrayLike, gaussian_fwhm: float, lorentzian_fwhm: float
-) -> TchProfileResult:
+def profile_tch(delta: ArrayLike, gaussian_fwhm: float, lorentzian_fwhm: float) -> TchProfileResult:
     """Evaluate TCH using explicitly named component FWHMs."""
 
     arrays = _core.profile_tch(
@@ -141,9 +134,7 @@ def profile_tch_from_gaussian_sigma(
 ) -> TchSigmaProfileResult:
     """Evaluate TCH with derivatives with respect to Gaussian sigma."""
 
-    result = profile_tch(
-        delta, _gaussian_fwhm_from_sigma(gaussian_sigma), lorentzian_fwhm
-    )
+    result = profile_tch(delta, _gaussian_fwhm_from_sigma(gaussian_sigma), lorentzian_fwhm)
     return TchSigmaProfileResult(
         value=result.value,
         d_delta=result.d_delta,

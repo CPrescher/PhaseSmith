@@ -519,13 +519,7 @@ def profile_tof(
             if low >= high:
                 return (0.0, 0.0, 0.0, 0.0, 0.0)
             t_local = low + (high - low) * (nodes + 1.0) / 2.0
-            local_weights = (
-                (high - low)
-                * legendre_weights
-                / 2.0
-                * np.exp(-t_local)
-                / normalization
-            )
+            local_weights = (high - low) * legendre_weights / 2.0 * np.exp(-t_local) / normalization
             evaluated = profile_tch(
                 delta + direction * t_local / rate,
                 gaussian_fwhm_us,
@@ -536,10 +530,7 @@ def profile_tof(
                 float(evaluated.d_delta @ local_weights),
                 float(evaluated.d_gaussian_fwhm @ local_weights),
                 float(evaluated.d_lorentzian_fwhm @ local_weights),
-                float(
-                    (evaluated.d_delta * (-direction * t_local / rate**2))
-                    @ local_weights
-                ),
+                float((evaluated.d_delta * (-direction * t_local / rate**2)) @ local_weights),
             )
 
         for index, coordinate in enumerate(x.flat):
@@ -573,6 +564,7 @@ def profile_tof(
     right_delta = x[:, None] - position_us - t[None, :] / beta
     left = profile_tch(left_delta, gaussian_fwhm_us, lorentzian_fwhm_us)
     right = profile_tch(right_delta, gaussian_fwhm_us, lorentzian_fwhm_us)
+
     def integrate(values: NDArray[np.float64]) -> NDArray[np.float64]:
         return values @ weights
 
@@ -630,10 +622,7 @@ def tof_profile_parameters(
 
     d = np.asarray(d_spacing_angstrom, dtype=np.float64)
     position = (
-        zero_us
-        + difc_us_per_angstrom * d
-        + difa_us_per_angstrom2 * d**2
-        + difb_us_angstrom / d
+        zero_us + difc_us_per_angstrom * d + difa_us_per_angstrom2 * d**2 + difb_us_angstrom / d
     )
     alpha = alpha_coefficient / d
     beta = beta0_per_us + beta1_angstrom4_per_us / d**4 + betaq_angstrom2_per_us / d**2

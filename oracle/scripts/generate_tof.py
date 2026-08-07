@@ -170,9 +170,7 @@ def derived_parameters(d_spacing: float) -> dict[str, float]:
         + p["sigma1_us2_per_angstrom2"] * d**2
         + p["sigma2_us2_per_angstrom4"] * d**4
         + p["sigmaq_us2_per_angstrom"] * d,
-        "gamma_us": p["z_us"]
-        + p["x_us_per_angstrom"] * d
-        + p["y_us_per_angstrom2"] * d**2,
+        "gamma_us": p["z_us"] + p["x_us_per_angstrom"] * d + p["y_us_per_angstrom2"] * d**2,
     }
 
 
@@ -257,9 +255,7 @@ def generate_snapshot(
             histogram.reflections()[PHASE["name"]]["RefList"], dtype=np.float64
         )
         if reflection_list.shape[1] != len(REFLECTION_COLUMNS):
-            raise RuntimeError(
-                f"unexpected TOF reflection-list width {reflection_list.shape[1]}"
-            )
+            raise RuntimeError(f"unexpected TOF reflection-list width {reflection_list.shape[1]}")
         arrays = {
             "x_us": np.ascontiguousarray(histogram.getdata("X"), dtype=np.float64),
             "ycalc": np.ascontiguousarray(histogram.getdata("Ycalc"), dtype=np.float64),
@@ -277,9 +273,7 @@ def generate_snapshot(
                 "reflection_list": "reflection_list",
             },
             "parameters": {"coordinate_convention": "bin_center_microseconds"},
-            "reflection_tables": [
-                {"array": "reflection_list", "columns": REFLECTION_COLUMNS}
-            ],
+            "reflection_tables": [{"array": "reflection_list", "columns": REFLECTION_COLUMNS}],
         }
     ]
     for d_spacing in (0.8, 1.5, 2.5):

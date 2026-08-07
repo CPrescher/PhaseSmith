@@ -555,4 +555,76 @@ mod tests {
         .expect("contributions");
         assert_eq!(actual, expected);
     }
+
+    #[test]
+    fn position_and_provider_derivatives_match_centered_differences() {
+        let x: Vec<f64> = (0..=2_000)
+            .map(|index| 49.5 + f64::from(index) * 0.000_5)
+            .collect();
+        let intensity = [8.0];
+        let support = SupportPolicy::FwhmMultiple(100.0);
+        let calculate = |position: f64, amplitude: f64| {
+            let normalized = position / 100.0;
+            let variance = [amplitude * normalized * normalized];
+            let zeros = [0.0];
+            let ones = [1.0];
+            let d_variance_d_position = [2.0 * amplitude * normalized / 100.0];
+            let d_variance_d_amplitude = [normalized * normalized];
+            let arrays = CwContributionArrays {
+                gaussian_variance_deg2: &variance,
+                lorentzian_fwhm_deg: &zeros,
+                intensity_multiplier: &ones,
+                d_gaussian_variance_d_position: &d_variance_d_position,
+                d_lorentzian_fwhm_d_position: &zeros,
+                d_intensity_multiplier_d_position: &zeros,
+                d_gaussian_variance_d_parameters: &d_variance_d_amplitude,
+                d_lorentzian_fwhm_d_parameters: &zeros,
+                d_intensity_multiplier_d_parameters: &zeros,
+            };
+            accumulate_cw_contributions_batch(
+                GridView::new(&x).expect("grid"),
+                &[position],
+                &intensity,
+                instrument(),
+                CwContributionsView::new(1, 1, arrays).expect("contributions"),
+                support,
+            )
+            .expect("contribution accumulation")
+        };
+
+        let position = 50.0;
+        let amplitude = 3.0e-4;
+        let baseline = calculate(position, amplitude);
+        let position_step = 1.0e-6;
+        let position_plus = calculate(position + position_step, amplitude);
+        let position_minus = calculate(position - position_step, amplitude);
+        let dense = baseline
+            .derivatives
+            .local
+            .to_dense(x.len())
+            .expect("dense local derivatives");
+        for (sample, (&plus_value, &minus_value)) in
+            position_plus.y.iter().zip(&position_minus.y).enumerate()
+        {
+            let finite_difference = (plus_value - minus_value) / (2.0 * position_step);
+            let analytical = dense[x.len() + sample];
+            assert!(
+                (analytical - finite_difference).abs() < 8.0e-6 * finite_difference.abs().max(1.0)
+            );
+        }
+
+        let amplitude_step = 1.0e-8;
+        let amplitude_plus = calculate(position, amplitude + amplitude_step);
+        let amplitude_minus = calculate(position, amplitude - amplitude_step);
+        let global = baseline.derivatives.global.as_ref().expect("global");
+        for (sample, (&plus_value, &minus_value)) in
+            amplitude_plus.y.iter().zip(&amplitude_minus.y).enumerate()
+        {
+            let finite_difference = (plus_value - minus_value) / (2.0 * amplitude_step);
+            let analytical = global.values[INSTRUMENT_PARAMETER_COUNT * x.len() + sample];
+            assert!(
+                (analytical - finite_difference).abs() < 8.0e-6 * finite_difference.abs().max(1.0)
+            );
+        }
+    }
 }

@@ -150,9 +150,7 @@ def generate_snapshot(scripting: Any) -> tuple[dict[str, Any], dict[str, np.ndar
         arrays: dict[str, np.ndarray] = {
             "x_deg": np.ascontiguousarray(histogram.getdata("X"), dtype=np.float64),
             "ycalc": np.ascontiguousarray(histogram.getdata("Ycalc"), dtype=np.float64),
-            "background": np.ascontiguousarray(
-                histogram.getdata("Background"), dtype=np.float64
-            ),
+            "background": np.ascontiguousarray(histogram.getdata("Background"), dtype=np.float64),
         }
         reflection_metadata = []
         for index, (phase_name, payload) in enumerate(sorted(histogram.reflections().items())):

@@ -465,6 +465,7 @@ class LeBailOptions:
     max_scaled_parameter_step: float = 0.25
     max_profile_backtracks: int = 8
     unresolved_correlation: float = 1.0 - 1.0e-10
+    diagnose_rank_deficiency: bool = False
     support_fwhm: float = 20.0
 
     def __post_init__(self) -> None:
@@ -494,6 +495,8 @@ class LeBailOptions:
             raise ValueError("max_profile_backtracks must be non-negative")
         if not 0.0 <= self.unresolved_correlation <= 1.0:
             raise ValueError("unresolved_correlation must lie in [0, 1]")
+        if not isinstance(self.diagnose_rank_deficiency, bool):
+            raise TypeError("diagnose_rank_deficiency must be boolean")
 
 
 @dataclass(frozen=True, slots=True)
@@ -1462,8 +1465,10 @@ def refine(
         metrics=final_metrics,
         history=tuple(history),
         termination_reason=termination,
-        rank_deficient_groups=_rank_deficient_groups(
-            calculation, selected_options.unresolved_correlation
+        rank_deficient_groups=(
+            _rank_deficient_groups(calculation, selected_options.unresolved_correlation)
+            if selected_options.diagnose_rank_deficiency
+            else ()
         ),
         parameters=parameters,
         covariance=_covariance(

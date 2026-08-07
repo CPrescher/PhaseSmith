@@ -191,6 +191,16 @@ struct SiteTerms {
     d_symmetry_imag: [f64; 3],
 }
 
+#[derive(Clone, Copy)]
+struct SiteVjpEvaluation {
+    terms: SiteTerms,
+    scattering: (f64, f64),
+    d_scattering: (f64, f64),
+    displacement: f64,
+    base: (f64, f64),
+    contribution: (f64, f64),
+}
+
 /// Calculate values without materializing structural derivatives.
 ///
 /// # Errors
@@ -299,8 +309,18 @@ pub fn calculate_structure_factor_intensity_vjp(
         gradient: vec![0.0; validated.layout.parameter_count()],
         layout: validated.layout,
     };
+    let mut site_evaluations = Vec::new();
+    site_evaluations
+        .try_reserve_exact(validated.layout.site_count)
+        .map_err(|_| StructureFactorBatchError::AllocationOverflow)?;
     for (reflection, weight) in weights.iter().copied().enumerate() {
-        evaluate_vjp_reflection(&validated, reflection, weight, &mut result);
+        evaluate_vjp_reflection(
+            &validated,
+            reflection,
+            weight,
+            &mut site_evaluations,
+            &mut result,
+        );
     }
     Ok(result)
 }
@@ -402,9 +422,7 @@ fn evaluate_value_reflection(
     values: &mut StructureFactorValues,
 ) {
     let batch = validated.batch;
-    let (q_squared, _) = validated
-        .geometry
-        .q_squared_and_derivatives(batch.hkl[reflection]);
+    let q_squared = validated.geometry.q_squared(batch.hkl[reflection]);
     let s = 0.5 * q_squared.sqrt();
     let mut f_real = 0.0;
     let mut f_imag = 0.0;
@@ -663,6 +681,7 @@ fn evaluate_vjp_reflection(
     validated: &ValidatedStructure<'_>,
     reflection: usize,
     weight: f64,
+    site_evaluations: &mut Vec<SiteVjpEvaluation>,
     result: &mut StructureFactorVjpResult,
 ) {
     let batch = validated.batch;
@@ -671,11 +690,33 @@ fn evaluate_vjp_reflection(
         .q_squared_and_derivatives(batch.hkl[reflection]);
     let root_q = q_squared.sqrt();
     let mut f = (0.0, 0.0);
+    site_evaluations.clear();
     for site in 0..validated.layout.site_count {
         let terms = symmetry_terms(validated, batch.hkl[reflection], site);
-        let base = site_base(validated, reflection, site, q_squared, terms);
-        f.0 += batch.occupancy[site] * base.0;
-        f.1 += batch.occupancy[site] * base.1;
+        let scattering_index = reflection * validated.layout.site_count + site;
+        let scattering = (
+            batch.scattering_real[scattering_index],
+            batch.scattering_imag[scattering_index],
+        );
+        let d_scattering = (
+            batch.d_scattering_real_d_s[scattering_index],
+            batch.d_scattering_imag_d_s[scattering_index],
+        );
+        let displacement = (-TWO_PI_SQUARED * batch.u_iso_angstrom2[site] * q_squared).exp();
+        let rotated = complex_multiply(scattering, (terms.symmetry_real, terms.symmetry_imag));
+        let base = (displacement * rotated.0, displacement * rotated.1);
+        let occupancy = batch.occupancy[site];
+        let contribution = (occupancy * base.0, occupancy * base.1);
+        f.0 += contribution.0;
+        f.1 += contribution.1;
+        site_evaluations.push(SiteVjpEvaluation {
+            terms,
+            scattering,
+            d_scattering,
+            displacement,
+            base,
+            contribution,
+        });
     }
     set_values(
         &mut result.values,
@@ -690,16 +731,16 @@ fn evaluate_vjp_reflection(
     let multiplicity = multiplicity_f64(batch.multiplicity[reflection]);
     let correction = batch.correction[reflection];
     let f_weight = 2.0 * weight * multiplicity * batch.scale * correction;
-    for site in 0..validated.layout.site_count {
+    for (site, evaluation) in site_evaluations.iter().copied().enumerate() {
         accumulate_vjp_site(
             validated,
-            reflection,
             site,
             q_squared,
             root_q,
             d_q_squared,
             f,
             f_weight,
+            evaluation,
             &mut result.gradient,
         );
     }
@@ -714,32 +755,26 @@ fn evaluate_vjp_reflection(
 #[allow(clippy::too_many_arguments)]
 fn accumulate_vjp_site(
     validated: &ValidatedStructure<'_>,
-    reflection: usize,
     site: usize,
     q_squared: f64,
     root_q: f64,
     d_q_squared: [f64; CELL_PARAMETER_COUNT],
     f: (f64, f64),
     f_weight: f64,
+    evaluation: SiteVjpEvaluation,
     gradient: &mut [f64],
 ) {
     let batch = validated.batch;
-    let terms = symmetry_terms(validated, batch.hkl[reflection], site);
-    let scattering_index = reflection * validated.layout.site_count + site;
-    let scattering = (
-        batch.scattering_real[scattering_index],
-        batch.scattering_imag[scattering_index],
-    );
-    let d_scattering = (
-        batch.d_scattering_real_d_s[scattering_index],
-        batch.d_scattering_imag_d_s[scattering_index],
-    );
-    let displacement = (-TWO_PI_SQUARED * batch.u_iso_angstrom2[site] * q_squared).exp();
+    let SiteVjpEvaluation {
+        terms,
+        scattering,
+        d_scattering,
+        displacement,
+        base,
+        contribution,
+    } = evaluation;
     let symmetry = (terms.symmetry_real, terms.symmetry_imag);
-    let base_rotated = complex_multiply(scattering, symmetry);
-    let base = (displacement * base_rotated.0, displacement * base_rotated.1);
     let occupancy = batch.occupancy[site];
-    let contribution = (occupancy * base.0, occupancy * base.1);
     for (parameter, d_q) in d_q_squared.into_iter().enumerate() {
         let d_s = d_q / (4.0 * root_q);
         let d_amplitude = (
@@ -992,7 +1027,7 @@ mod tests {
                 let geometry = cell.geometry().expect("geometry");
                 let q_squared: Vec<f64> = hkl
                     .iter()
-                    .map(|&indices| geometry.q_squared_and_derivatives(indices).0)
+                    .map(|&indices| geometry.q_squared(indices))
                     .collect();
                 let s: Vec<f64> = q_squared.iter().map(|value| 0.5 * value.sqrt()).collect();
                 let real: Vec<f64> = s.iter().map(|value| 4.0 - 0.3 * value).collect();

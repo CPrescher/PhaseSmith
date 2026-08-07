@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 from dataclasses import dataclass, replace
+from pathlib import Path
 
 import numpy as np
 import phasesmith
@@ -22,6 +23,16 @@ from phasesmith.refinement import (
     lebail,
 )
 from phasesmith.refinement import rietveld as structural_refinement
+
+
+def test_current_persistence_schema_matches_the_writer_version() -> None:
+    schema_path = (
+        Path(__file__).resolve().parents[1]
+        / "schemas"
+        / f"persistence-v{persistence.FORMAT_VERSION}.schema.json"
+    )
+    schema = json.loads(schema_path.read_text())
+    assert schema["properties"]["format_version"]["const"] == persistence.FORMAT_VERSION
 
 
 def instrument() -> phasesmith.ConstantWavelengthInstrument:

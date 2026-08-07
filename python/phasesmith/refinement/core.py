@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from collections.abc import Mapping
+from dataclasses import dataclass, field
 from enum import StrEnum
+from types import MappingProxyType
 from typing import Protocol, runtime_checkable
 
 import numpy as np
@@ -98,6 +100,9 @@ class ParameterSet:
     """Deterministically ordered immutable scalar specifications."""
 
     specs: tuple[ParameterSpec, ...]
+    _spec_by_key: Mapping[ParameterKey, ParameterSpec] = field(
+        init=False, repr=False, compare=False
+    )
 
     def __init__(self, specs: tuple[ParameterSpec, ...] | list[ParameterSpec]) -> None:
         """Validate unique keys while preserving explicit input order."""
@@ -109,6 +114,11 @@ class ParameterSet:
         if len(set(keys)) != len(keys):
             raise ValueError("parameter keys must be unique")
         object.__setattr__(self, "specs", values)
+        object.__setattr__(
+            self,
+            "_spec_by_key",
+            MappingProxyType(dict(zip(keys, values, strict=True))),
+        )
 
     @property
     def keys(self) -> tuple[ParameterKey, ...]:
@@ -119,10 +129,7 @@ class ParameterSet:
     def spec(self, key: ParameterKey) -> ParameterSpec:
         """Return one specification by stable key."""
 
-        for spec in self.specs:
-            if spec.key == key:
-                return spec
-        raise KeyError(key)
+        return self._spec_by_key[key]
 
     def values(self) -> dict[ParameterKey, float]:
         """Return a plain key-to-value copy."""

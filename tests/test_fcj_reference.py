@@ -95,9 +95,7 @@ def test_direct_derivatives_match_centered_differences(
 def test_equal_height_derivatives_respect_sample_detector_symmetry() -> None:
     x = np.linspace(11.0, 13.0, 2_001)
     actual = reference.profile_fcj(x, 12.0, 0.018, 0.006, 0.012, 0.012, quadrature_order=64)
-    np.testing.assert_array_equal(
-        actual.d_sample_over_radius, actual.d_detector_over_radius
-    )
+    np.testing.assert_array_equal(actual.d_sample_over_radius, actual.d_detector_over_radius)
 
 
 def test_normalization_centroid_shift_and_skew_reverse_above_ninety() -> None:

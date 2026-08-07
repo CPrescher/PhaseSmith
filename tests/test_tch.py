@@ -55,12 +55,10 @@ def test_explicit_gaussian_sigma_helpers_apply_chain_rule() -> None:
     assert sigma_shape.total_fwhm == fwhm_shape.total_fwhm
     assert sigma_shape.eta == fwhm_shape.eta
     assert sigma_shape.d_total_fwhm_d_gaussian_sigma == pytest.approx(
-        fwhm_shape.d_total_fwhm_d_gaussian_fwhm
-        * reference.GAUSSIAN_FWHM_PER_SIGMA
+        fwhm_shape.d_total_fwhm_d_gaussian_fwhm * reference.GAUSSIAN_FWHM_PER_SIGMA
     )
     assert sigma_shape.d_eta_d_gaussian_sigma == pytest.approx(
-        fwhm_shape.d_eta_d_gaussian_fwhm
-        * reference.GAUSSIAN_FWHM_PER_SIGMA
+        fwhm_shape.d_eta_d_gaussian_fwhm * reference.GAUSSIAN_FWHM_PER_SIGMA
     )
 
     delta = np.linspace(-0.2, 0.2, 101)
@@ -240,9 +238,7 @@ def test_tch_accumulation_derivatives_match_finite_differences(parameter: int) -
         (float("nan"), 0.2, "Gaussian FWHM must be finite"),
     ],
 )
-def test_invalid_tch_widths_fail_clearly(
-    gaussian: float, lorentzian: float, message: str
-) -> None:
+def test_invalid_tch_widths_fail_clearly(gaussian: float, lorentzian: float, message: str) -> None:
     with pytest.raises(ValueError, match=message):
         phasesmith.tch_shape_from_fwhm(gaussian, lorentzian)
     with pytest.raises(ValueError, match=message):
@@ -253,9 +249,7 @@ def test_invalid_tch_widths_fail_clearly(
     ("sigma", "message"),
     [(-0.1, "sigma must be non-negative"), (float("nan"), "sigma must be finite")],
 )
-def test_invalid_gaussian_sigma_fails_with_sigma_convention(
-    sigma: float, message: str
-) -> None:
+def test_invalid_gaussian_sigma_fails_with_sigma_convention(sigma: float, message: str) -> None:
     with pytest.raises(ValueError, match=message):
         phasesmith.tch_shape_from_gaussian_sigma(sigma, 0.1)
     with pytest.raises(ValueError, match=message):

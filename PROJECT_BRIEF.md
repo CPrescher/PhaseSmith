@@ -176,6 +176,25 @@ microseconds, an observed 0.86% increment. A clean snapshot of the preceding
 commit measured 783.78 microseconds for the baseline on the same host, so this
 checkpoint introduces no measured baseline regression.
 
+A repository-hardening checkpoint follows format 7 without changing the
+scientific model. TOF batches share one immutable quadrature table, symmetric
+FCJ profiles allocate only their active node, and structure-factor VJPs reuse
+site trigonometric, scattering, and displacement terms. Value-only reflection
+paths no longer construct cell derivatives, while exact systematic-absence
+checks memoize their bounded cyclotomic polynomials. Native reflection
+generation and fused structural calculate/JVP/VJP bindings release the Python
+GIL during Rust work. New native finite-difference tests cover the full CW
+component/FCJ and sample-contribution chains, and the wavelength correction
+derivative no longer divides by a possibly zero correction value.
+
+Rietveld defaults now budget all requested iterations, accepted checkpoints
+carry their guarded lattice domains and wavelength state through persistence,
+and backtracking reuses the accepted-state special-position coordinate models
+instead of repeating their SVDs. Le Bail's quadratic rank-deficiency analysis
+is explicit opt-in diagnostics. Persistence format 7 now has a matching schema
+and documentation, and generator-source hashes remain recorded provenance
+rather than formatting-sensitive test assertions.
+
 ## Design commitments
 
 - Use GSAS-II only as a pinned validation oracle, never as the architecture.

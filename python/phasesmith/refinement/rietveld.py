@@ -180,9 +180,7 @@ def sample_parameter_key(phase_id: str, name: str) -> ParameterKey:
 
 
 def background_parameter_key(background_id: str, name_or_index: str | int) -> ParameterKey:
-    name = (
-        f"coefficient_{name_or_index}" if isinstance(name_or_index, int) else name_or_index
-    )
+    name = f"coefficient_{name_or_index}" if isinstance(name_or_index, int) else name_or_index
     return ParameterKey("background", background_id, name)
 
 
@@ -776,7 +774,9 @@ class RietveldInput:
 class RietveldOptions:
     """Numerical controls for bounded matrix-free structural refinement."""
 
-    limits: RefinementLimits = field(default_factory=lambda: RefinementLimits(max_iterations=50))
+    limits: RefinementLimits = field(
+        default_factory=lambda: RefinementLimits(max_iterations=50, max_evaluations=5_000)
+    )
     min_iterations: int = 1
     objective_tolerance: float = 1.0e-10
     parameter_tolerance: float = 1.0e-7
@@ -887,6 +887,7 @@ class RietveldCheckpoint:
 
     completed_iterations: int
     phases: tuple[RietveldPhase, ...]
+    lattice_domains: tuple[CwStructuralReflectionDomain | None, ...]
     parameters: ParameterSet
     objective: float
     damping: float
@@ -896,11 +897,19 @@ class RietveldCheckpoint:
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "phases", tuple(self.phases))
+        object.__setattr__(self, "lattice_domains", tuple(self.lattice_domains))
         object.__setattr__(self, "history", tuple(self.history))
         if self.completed_iterations != len(self.history) or self.completed_iterations < 0:
             raise ValueError("checkpoint iteration count must match its history")
         if not self.phases or any(not isinstance(phase, RietveldPhase) for phase in self.phases):
             raise TypeError("checkpoint phases must contain RietveldPhase values")
+        if len(self.phases) != len(self.lattice_domains):
+            raise ValueError("checkpoint lattice domains must align with its phases")
+        for phase, domain in zip(self.phases, self.lattice_domains, strict=True):
+            if domain is not None and domain.space_group != phase.structure.space_group:
+                raise ValueError(
+                    "checkpoint lattice domain and phase must use the same space group"
+                )
         if not isinstance(self.parameters, ParameterSet):
             raise TypeError("checkpoint parameters must be ParameterSet")
         if not np.isfinite(self.objective) or self.objective < 0.0:
@@ -911,6 +920,15 @@ class RietveldCheckpoint:
             self.experiment, ConstantWavelengthExperiment
         ):
             raise TypeError("checkpoint experiment must be ConstantWavelengthExperiment")
+        if self.experiment is not None:
+            for domain in self.lattice_domains:
+                if (
+                    domain is not None
+                    and domain.wavelength_angstrom != self.experiment.radiation.wavelength_angstrom
+                ):
+                    raise ValueError(
+                        "checkpoint lattice-domain and experiment wavelengths must match"
+                    )
         if self.background is not None and not isinstance(
             self.background, DifferentiableBackground
         ):
@@ -962,6 +980,7 @@ def _phase_native_mapping(
     phase: RietveldPhase,
     domain: CwStructuralReflectionDomain | None,
     parameters: ParameterSet,
+    coordinate_models: dict[str, SiteCoordinateModel],
 ) -> NDArray[np.float64]:
     """Map physical parameter changes to the native structural tangent."""
 
@@ -969,15 +988,6 @@ def _phase_native_mapping(
     native_row = {name: row for row, name in enumerate(names)}
     mapping = np.zeros((len(names), len(parameters.specs)), dtype=np.float64)
     site_by_id = {site.site_id: site for site in phase.structure.sites}
-    coordinate_models = {
-        site.site_id: _site_coordinate_model(
-            phase.phase_id,
-            phase.structure,
-            site,
-            phase.coordinate_tolerance,
-        )
-        for site in phase.structure.sites
-    }
     lattice_jacobian = None
     if domain is not None:
         lattice_values = domain.parameterization.values_from_cell(phase.structure.cell)
@@ -1023,6 +1033,7 @@ class _RietveldLinearization:
     experiment: ConstantWavelengthExperiment
     background: DifferentiableBackground | None
     phases: tuple[RietveldPhase, ...]
+    coordinate_models: tuple[dict[str, SiteCoordinateModel], ...]
     physical_to_free: NDArray[np.float64]
     native_mappings: tuple[NDArray[np.float64], ...]
     prepared: tuple[PreparedStructuralPattern, ...]
@@ -1038,6 +1049,7 @@ class _RietveldLinearization:
         experiment: ConstantWavelengthExperiment,
         background: DifferentiableBackground | None,
         phases: tuple[RietveldPhase, ...],
+        lattice_domains: tuple[CwStructuralReflectionDomain | None, ...],
         parameters: ParameterSet,
         options: RietveldOptions,
         runtime: RefinementRuntime,
@@ -1055,7 +1067,7 @@ class _RietveldLinearization:
             "sample_displacement_mm": "sample_displacement_mm",
         }
         global_rows = []
-        for phase, domain in zip(phases, input_data.lattice_domains, strict=True):
+        for phase, domain in zip(phases, lattice_domains, strict=True):
             rows = [
                 (row_for_key[key], global_names[key.name], 1.0)
                 for key in parameters.keys
@@ -1102,15 +1114,30 @@ class _RietveldLinearization:
                 if key in row_for_key:
                     background_mapping[:, row_for_key[key]] = basis[:, index]
         background_mapping.flags.writeable = False
+        coordinate_models = tuple(
+            {
+                site.site_id: _site_coordinate_model(
+                    phase.phase_id,
+                    phase.structure,
+                    site,
+                    phase.coordinate_tolerance,
+                )
+                for site in phase.structure.sites
+            }
+            for phase in phases
+        )
         return cls(
             input_data.pattern,
             experiment,
             background,
             phases,
+            coordinate_models,
             transform.derivative_matrix(),
             tuple(
-                _phase_native_mapping(phase, domain, parameters)
-                for phase, domain in zip(phases, input_data.lattice_domains, strict=True)
+                _phase_native_mapping(phase, domain, parameters, models)
+                for phase, domain, models in zip(
+                    phases, lattice_domains, coordinate_models, strict=True
+                )
             ),
             tuple(
                 PreparedStructuralPattern(
@@ -1178,9 +1205,8 @@ class _RietveldLinearization:
             physical_gradient += mapping.T @ product.gradient
             names = product.result.derivatives.global_parameter_names
             for row, name, coefficient in rows:
-                physical_gradient[row] += (
-                    coefficient
-                    * (product.result.derivatives.global_jacobian[names.index(name)] @ raw_samples)
+                physical_gradient[row] += coefficient * (
+                    product.result.derivatives.global_jacobian[names.index(name)] @ raw_samples
                 )
         return np.ascontiguousarray(self.physical_to_free.T @ physical_gradient)
 
@@ -1192,13 +1218,27 @@ def _apply_parameter_values(
     values: dict[ParameterKey, float],
     *,
     wavelength_angstrom: float | None = None,
+    coordinate_models: tuple[dict[str, SiteCoordinateModel], ...] | None = None,
 ) -> tuple[tuple[RietveldPhase, ...], tuple[str, ...]]:
     """Apply physical values and regenerate guarded topology at a trial state."""
 
     current_values = current_parameters.values()
     updated_phases = []
     topology_changes = []
-    for phase, domain in zip(phases, domains, strict=True):
+    if coordinate_models is None:
+        coordinate_models = tuple(
+            {
+                site.site_id: _site_coordinate_model(
+                    phase.phase_id,
+                    phase.structure,
+                    site,
+                    phase.coordinate_tolerance,
+                )
+                for site in phase.structure.sites
+            }
+            for phase in phases
+        )
+    for phase, domain, models in zip(phases, domains, coordinate_models, strict=True):
         if domain is not None and wavelength_angstrom is not None:
             domain = replace(domain, wavelength_angstrom=wavelength_angstrom)
         structure = phase.structure
@@ -1217,12 +1257,7 @@ def _apply_parameter_values(
             structure = replace(structure, cell=domain.parameterization.to_cell(lattice_values))
         sites = []
         for site in structure.sites:
-            model = _site_coordinate_model(
-                phase.phase_id,
-                structure,
-                site,
-                phase.coordinate_tolerance,
-            )
+            model = models[site.site_id]
             coordinate = np.asarray(site.fractional_xyz, dtype=np.float64)
             if model.special_position:
                 for index, name in enumerate(model.parameter_names):
@@ -1302,9 +1337,7 @@ def _replace_physics_parameters(
             return replace(
                 provider,
                 crystallite_size_nm=values.get(
-                    sample_parameter_key(
-                        phase.phase_id, "isotropic_size.crystallite_size_nm"
-                    ),
+                    sample_parameter_key(phase.phase_id, "isotropic_size.crystallite_size_nm"),
                     provider.crystallite_size_nm,
                 ),
             )
@@ -1375,9 +1408,7 @@ def _apply_profile_background_values(
         return updated_experiment, None
     coefficients = [
         values.get(background_parameter_key(background.background_id, name), value)
-        for name, value in zip(
-            background.parameter_names, background.coefficients, strict=True
-        )
+        for name, value in zip(background.parameter_names, background.coefficients, strict=True)
     ]
     return updated_experiment, background.replace_coefficients(coefficients)
 
@@ -1443,6 +1474,7 @@ def _checkpoint(
     experiment: ConstantWavelengthExperiment,
     background: DifferentiableBackground | None,
     phases: tuple[RietveldPhase, ...],
+    lattice_domains: tuple[CwStructuralReflectionDomain | None, ...],
     parameters: ParameterSet,
     objective: float,
     damping: float,
@@ -1451,6 +1483,7 @@ def _checkpoint(
     return RietveldCheckpoint(
         len(history),
         phases,
+        lattice_domains,
         parameters,
         objective,
         damping,
@@ -1539,6 +1572,7 @@ def refine(
         experiment = input_data.experiment
         background = input_data.background
         phases = input_data.phases
+        lattice_domains = input_data.lattice_domains
         parameters = input_data.parameters
         history: list[RietveldIterationRecord] = []
         damping = selected.initial_damping
@@ -1552,6 +1586,7 @@ def refine(
         if checkpoint.parameters.keys != input_data.parameters.keys:
             raise ValueError("checkpoint parameter identities do not match Rietveld input")
         phases = checkpoint.phases
+        lattice_domains = checkpoint.lattice_domains
         experiment = (
             input_data.experiment if checkpoint.experiment is None else checkpoint.experiment
         )
@@ -1573,6 +1608,7 @@ def refine(
         experiment,
         background,
         phases,
+        lattice_domains,
         parameters,
         selected,
         runtime,
@@ -1621,12 +1657,21 @@ def refine(
                         background,
                         trial_values,
                     )
+                    trial_lattice_domains = tuple(
+                        None
+                        if domain is None
+                        else replace(
+                            domain,
+                            wavelength_angstrom=trial_experiment.radiation.wavelength_angstrom,
+                        )
+                        for domain in lattice_domains
+                    )
                     trial_phases, topology_changes = _apply_parameter_values(
                         phases,
-                        input_data.lattice_domains,
+                        trial_lattice_domains,
                         parameters,
                         trial_values,
-                        wavelength_angstrom=trial_experiment.radiation.wavelength_angstrom,
+                        coordinate_models=linearization.coordinate_models,
                     )
                     trial_parameters = parameters.replace_values(trial_values)
                     try:
@@ -1635,6 +1680,7 @@ def refine(
                             trial_experiment,
                             trial_background,
                             trial_phases,
+                            trial_lattice_domains,
                             trial_parameters,
                             selected,
                             runtime,
@@ -1694,6 +1740,7 @@ def refine(
                         experiment = trial_experiment
                         background = trial_background
                         phases = trial_phases
+                        lattice_domains = trial_lattice_domains
                         parameters = trial_parameters
                         calculation = trial_calculation
                         metrics = trial_metrics
@@ -1705,6 +1752,7 @@ def refine(
                             experiment,
                             background,
                             phases,
+                            lattice_domains,
                             parameters,
                             objective,
                             damping,
@@ -1770,6 +1818,7 @@ def refine(
             experiment,
             background,
             phases,
+            lattice_domains,
             parameters,
             0.5 * metrics.chi_square if calculation is not None else 0.0,
             damping,
@@ -1785,6 +1834,7 @@ def refine(
         experiment,
         background,
         phases,
+        lattice_domains,
         parameters,
         objective,
         damping,

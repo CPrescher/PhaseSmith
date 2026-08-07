@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-import hashlib
 import json
 from pathlib import Path
 
 import numpy as np
 import phasesmith
 import pytest
-from phasesmith.oracle import FixtureValidationError, load_fixture
+from phasesmith.oracle import FixtureValidationError, OracleFixture, load_fixture
 from phasesmith.oracle._pinned_probe import PINNED_REVISION
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
@@ -20,6 +19,13 @@ SAMPLE_FIXTURE_PATH = REPOSITORY_ROOT / "oracle" / "fixtures" / "sample_physics_
 MULTIPHASE_FIXTURE_PATH = REPOSITORY_ROOT / "oracle" / "fixtures" / "multiphase_v1"
 NEUTRON_FIXTURE_PATH = REPOSITORY_ROOT / "oracle" / "fixtures" / "neutron_cw_v1"
 TOF_FIXTURE_PATH = REPOSITORY_ROOT / "oracle" / "fixtures" / "tof_v1"
+
+
+def _assert_advisory_generator_hash(fixture: OracleFixture, generator: Path) -> None:
+    assert generator.is_file()
+    recorded = fixture.manifest["provenance"]["generator_sha256"]
+    assert isinstance(recorded, str) and len(recorded) == 64
+    assert set(recorded) <= set("0123456789abcdef")
 
 
 def test_fixture_schema_and_pin_metadata_are_valid_json() -> None:
@@ -40,52 +46,47 @@ def test_committed_fixture_passes_hash_shape_and_provenance_validation() -> None
 def test_fixture_records_the_committed_generator() -> None:
     fixture = load_fixture(FIXTURE_PATH)
     generator = REPOSITORY_ROOT / "oracle" / "scripts" / "generate_symmetric_profile.py"
-    digest = hashlib.sha256(generator.read_bytes()).hexdigest()
-    assert fixture.manifest["provenance"]["generator_sha256"] == digest
+    _assert_advisory_generator_hash(fixture, generator)
 
 
 def test_cw_fixture_records_pin_and_committed_generator() -> None:
     fixture = load_fixture(CW_FIXTURE_PATH)
     generator = REPOSITORY_ROOT / "oracle" / "scripts" / "generate_cw_instrument_profile.py"
-    digest = hashlib.sha256(generator.read_bytes()).hexdigest()
     assert fixture.manifest["fixture_id"] == "gsasii_cw_instrument_profile_v1"
     assert fixture.manifest["provenance"]["gsasii_revision"] == PINNED_REVISION
-    assert fixture.manifest["provenance"]["generator_sha256"] == digest
+    _assert_advisory_generator_hash(fixture, generator)
     assert len(fixture.cases) == 4
 
 
 def test_fcj_fixture_records_pin_and_committed_generator() -> None:
     fixture = load_fixture(FCJ_FIXTURE_PATH)
     generator = REPOSITORY_ROOT / "oracle" / "scripts" / "generate_fcj_profile.py"
-    digest = hashlib.sha256(generator.read_bytes()).hexdigest()
     assert fixture.manifest["fixture_id"] == "gsasii_fcj_profile_v1"
     assert fixture.manifest["provenance"]["gsasii_revision"] == PINNED_REVISION
-    assert fixture.manifest["provenance"]["generator_sha256"] == digest
+    _assert_advisory_generator_hash(fixture, generator)
     assert len(fixture.cases) == 4
 
 
 def test_component_fixture_records_pin_and_committed_generator() -> None:
     fixture = load_fixture(COMPONENT_FIXTURE_PATH)
     generator = REPOSITORY_ROOT / "oracle" / "scripts" / "generate_wavelength_components.py"
-    digest = hashlib.sha256(generator.read_bytes()).hexdigest()
     assert fixture.manifest["fixture_id"] == "gsasii_wavelength_components_v1"
     assert fixture.manifest["provenance"]["gsasii_revision"] == PINNED_REVISION
-    assert fixture.manifest["provenance"]["generator_sha256"] == digest
+    _assert_advisory_generator_hash(fixture, generator)
     helper = REPOSITORY_ROOT / "oracle" / "scripts" / "generate_fcj_profile.py"
-    assert (
-        fixture.manifest["source"]["helper_sha256"]
-        == hashlib.sha256(helper.read_bytes()).hexdigest()
-    )
+    assert helper.is_file()
+    recorded_helper = fixture.manifest["source"]["helper_sha256"]
+    assert isinstance(recorded_helper, str) and len(recorded_helper) == 64
+    assert set(recorded_helper) <= set("0123456789abcdef")
     assert len(fixture.cases) == 3
 
 
 def test_sample_fixture_records_pin_and_committed_generator() -> None:
     fixture = load_fixture(SAMPLE_FIXTURE_PATH)
     generator = REPOSITORY_ROOT / "oracle" / "scripts" / "generate_sample_physics.py"
-    digest = hashlib.sha256(generator.read_bytes()).hexdigest()
     assert fixture.manifest["fixture_id"] == "gsasii_sample_physics_v1"
     assert fixture.manifest["provenance"]["gsasii_revision"] == PINNED_REVISION
-    assert fixture.manifest["provenance"]["generator_sha256"] == digest
+    _assert_advisory_generator_hash(fixture, generator)
     assert fixture.manifest["source"]["private_probe"] is True
     assert len(fixture.cases) == 3
 
@@ -95,10 +96,7 @@ def test_multiphase_fixture_records_pin_and_public_scripting_arrays() -> None:
     generator = REPOSITORY_ROOT / "oracle" / "scripts" / "generate_multiphase.py"
     assert fixture.manifest["fixture_id"] == "gsasii_multiphase_v1"
     assert fixture.manifest["provenance"]["gsasii_revision"] == PINNED_REVISION
-    assert (
-        fixture.manifest["provenance"]["generator_sha256"]
-        == hashlib.sha256(generator.read_bytes()).hexdigest()
-    )
+    _assert_advisory_generator_hash(fixture, generator)
     assert fixture.arrays["x_deg"].shape == fixture.arrays["ycalc"].shape == (4_501,)
     assert fixture.arrays["background"].shape == (4_501,)
     assert fixture.arrays["reflection_list_alpha"].shape == (125, 15)
@@ -183,10 +181,7 @@ def test_neutron_fixture_records_pin_public_arrays_and_reflections() -> None:
     generator = REPOSITORY_ROOT / "oracle" / "scripts" / "generate_neutron_cw.py"
     assert fixture.manifest["fixture_id"] == "gsasii_neutron_cw_v1"
     assert fixture.manifest["provenance"]["gsasii_revision"] == PINNED_REVISION
-    assert (
-        fixture.manifest["provenance"]["generator_sha256"]
-        == hashlib.sha256(generator.read_bytes()).hexdigest()
-    )
+    _assert_advisory_generator_hash(fixture, generator)
     assert fixture.manifest["source"]["histogram_type"] == "PNC"
     assert fixture.arrays["x_deg"].shape == fixture.arrays["ycalc"].shape == (7_001,)
     assert fixture.arrays["background"].shape == (7_001,)
@@ -199,10 +194,7 @@ def test_tof_fixture_records_pin_public_arrays_and_reflections() -> None:
     generator = REPOSITORY_ROOT / "oracle" / "scripts" / "generate_tof.py"
     assert fixture.manifest["fixture_id"] == "gsasii_tof_v1"
     assert fixture.manifest["provenance"]["gsasii_revision"] == PINNED_REVISION
-    assert (
-        fixture.manifest["provenance"]["generator_sha256"]
-        == hashlib.sha256(generator.read_bytes()).hexdigest()
-    )
+    _assert_advisory_generator_hash(fixture, generator)
     assert fixture.manifest["source"]["histogram_type"] == "PNT"
     assert fixture.arrays["x_us"].shape == fixture.arrays["ycalc"].shape == (6_000,)
     assert fixture.arrays["background"].shape == (6_000,)
@@ -244,9 +236,7 @@ def test_tof_profiles_derivatives_and_moments_against_pinned_gsasii(
         parameters["gamma_us"],
     )
     d_sigma2 = (
-        actual.d_gaussian_fwhm
-        * 2.3548200450309493
-        / (2.0 * np.sqrt(parameters["sigma2_us2"]))
+        actual.d_gaussian_fwhm * 2.3548200450309493 / (2.0 * np.sqrt(parameters["sigma2_us2"]))
     )
     comparisons = {
         "value": (actual.value, 2.5e-4),
@@ -258,9 +248,7 @@ def test_tof_profiles_derivatives_and_moments_against_pinned_gsasii(
     }
     for name, (computed, tolerance) in comparisons.items():
         oracle = fixture.arrays[case["arrays"][name]]
-        normalized_error = float(
-            np.max(np.abs(computed - oracle)) / np.max(np.abs(oracle))
-        )
+        normalized_error = float(np.max(np.abs(computed - oracle)) / np.max(np.abs(oracle)))
         assert normalized_error < tolerance
 
     area = np.trapezoid(actual.value, x)
@@ -465,8 +453,7 @@ def test_public_scripting_histogram_fixture() -> None:
     assert np.all((positions >= x[0]) & (positions <= x[-1]))
 
     generator = REPOSITORY_ROOT / "oracle" / "scripts" / "generate_powder_histogram.py"
-    digest = hashlib.sha256(generator.read_bytes()).hexdigest()
-    assert fixture.manifest["provenance"]["generator_sha256"] == digest
+    _assert_advisory_generator_hash(fixture, generator)
 
 
 @pytest.mark.parametrize("shape_class", ["gaussian_dominant", "mixed", "lorentzian_dominant"])

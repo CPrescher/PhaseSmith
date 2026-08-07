@@ -1088,6 +1088,9 @@ def _rietveld_checkpoint_record(
             _rietveld_phase_record(phase, arrays, f"rietveld_checkpoint_{index}", codecs)
             for index, phase in enumerate(checkpoint.phases)
         ],
+        "lattice_domains": [
+            _structural_domain_record(domain) for domain in checkpoint.lattice_domains
+        ],
         "parameters": _parameters_record(checkpoint.parameters),
         "objective": checkpoint.objective,
         "damping": checkpoint.damping,
@@ -1107,9 +1110,20 @@ def _rietveld_checkpoint_from_record(
     parameters = _parameters_from_record(record["parameters"])
     if parameters is None:
         raise PersistenceError("Rietveld checkpoint parameters are missing")
+    phases = tuple(_rietveld_phase_from_record(phase, arrays, codecs) for phase in record["phases"])
+    domain_records = record.get("lattice_domains")
+    lattice_domains = (
+        (None,) * len(phases)
+        if domain_records is None
+        else tuple(
+            _structural_domain_from_record(domain, phase)
+            for domain, phase in zip(domain_records, phases, strict=True)
+        )
+    )
     return RietveldCheckpoint(
         int(record["completed_iterations"]),
-        tuple(_rietveld_phase_from_record(phase, arrays, codecs) for phase in record["phases"]),
+        phases,
+        lattice_domains,
         parameters,
         float(record["objective"]),
         float(record["damping"]),

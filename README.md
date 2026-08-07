@@ -21,56 +21,10 @@ Model-independent preprocessing now includes a native Smooth Bruckner
 background implementation compatible with pinned xypattern/Dioptas behavior,
 plus optional Chebyshev compression and plain NumPy subtraction results.
 
-The architecture and roadmap are in [PROJECT_BRIEF.md](PROJECT_BRIEF.md); the
-equations and parameter conventions are in [docs/equations.md](docs/equations.md).
-The delivery plan for Rust-owned crystallographic calculations, CIF import,
-structure factors, CIF-to-Le Bail, and full Rietveld refinement is in
-[docs/crystallography-plan.md](docs/crystallography-plan.md). The scattering
-models and their independently reviewed source provenance are documented in
-[docs/scattering-models.md](docs/scattering-models.md). General-symmetry
-structural equations and fused execution are documented in
-[docs/structural-intensities.md](docs/structural-intensities.md). Full
-structural refinement is documented in [docs/rietveld.md](docs/rietveld.md).
-The implemented native unit-cell and P1 structure-factor foundation is
-documented in
-[docs/crystallography-foundation.md](docs/crystallography-foundation.md).
-Exact symmetry conventions and reflection ranges are documented in
-[docs/symmetry-reflections.md](docs/symmetry-reflections.md).
-Optional CIF import and direct CIF-to-Le Bail are documented in
-[docs/cif-import.md](docs/cif-import.md); lattice refinement equations and
-boundary behavior are in
-[docs/lattice-refinement.md](docs/lattice-refinement.md).
-The component-width TCH transform and chain-rule derivatives are documented in
-[docs/tch-profile.md](docs/tch-profile.md); constant-wavelength U/V/W/X/Y
-broadening is documented in [docs/cw-profile.md](docs/cw-profile.md). FCJ
-geometry, quadrature, derivatives, and asymmetric support are documented in
-[docs/fcj-profile.md](docs/fcj-profile.md). The script-first module boundaries,
-including the first-class Le Bail and application-neutral NumPy boundaries, are
-in [docs/public-api.md](docs/public-api.md).
-Background estimation, compatibility semantics, and its deliberate separation
-from refinable backgrounds are documented in
-[docs/background-subtraction.md](docs/background-subtraction.md).
-
-Optional monochromatic and multi-wavelength radiation composition is documented
-in [docs/wavelength-components.md](docs/wavelength-components.md).
-The versioned physics-provider contract, isotropic size/microstrain equations,
-and preferred-orientation convention are documented in
-[docs/sample-physics.md](docs/sample-physics.md).
-Typed multi-phase composition, scale derivatives, supplied backgrounds, and
-prepared calculations are documented in [docs/multiphase.md](docs/multiphase.md).
-Explicit monochromatic-neutron configuration and shared CW/FCJ behavior are
-documented in [docs/neutron-cw.md](docs/neutron-cw.md).
-Neutron TOF calibration, back-to-back exponential TCH profiles, derivatives,
-and support semantics are documented in
-[docs/tof-profile.md](docs/tof-profile.md).
-Shared refinement contracts and Le Bail extraction are documented in
-[docs/refinement.md](docs/refinement.md) and [docs/lebail.md](docs/lebail.md).
-Versioned JSON+NPZ persistence is documented in
-[docs/persistence.md](docs/persistence.md). The existing Dioptas adapter is a
-compatibility-only convenience and is not a forward roadmap target.
-Bounded refinement execution, structured logs, cooperative cancellation, and
-checkpoint recovery are specified in
-[docs/refinement-runtime.md](docs/refinement-runtime.md).
+Use the [documentation index](docs/index.md) to follow the shortest path from
+powder data and a CIF to background subtraction, Le Bail extraction, Rietveld
+refinement, reports, and persistence. The architecture and non-negotiable
+numerical rules are in [PROJECT_BRIEF.md](PROJECT_BRIEF.md).
 
 ## Development
 
@@ -180,7 +134,7 @@ instrument = ConstantWavelengthInstrument(
     y_deg=3e-3,
 )
 cw = accumulate_cw(x, [24.0, 26.0], [100.0, 80.0], instrument)
-print(cw.derivatives.local_parameter_names)   # intensity, position
+print(cw.derivatives.local_parameter_names)  # intensity, position
 print(cw.derivatives.global_parameter_names)  # U, V, W, X, Y
 ```
 
@@ -197,8 +151,8 @@ species = (
     ScatteringSpecies("Fe", charge=3),
 )
 scattering = XrayNonResonant().prepare(species).evaluate([0.0, 0.5, 1.0])
-print(scattering.amplitudes.shape)       # (reflection, site)
-print(scattering.d_amplitudes_d_s.shape) # analytical df/ds, same shape
+print(scattering.amplitudes.shape)  # (reflection, site)
+print(scattering.d_amplitudes_d_s.shape)  # analytical df/ds, same shape
 ```
 
 A typed structure can be evaluated without assembling scattering arrays or
@@ -230,9 +184,7 @@ without expanding reflections in Python:
 from phasesmith import FcjGeometry, accumulate_cw_fcj
 
 geometry = FcjGeometry(sample_over_radius=0.012, detector_over_radius=0.012)
-asymmetric = accumulate_cw_fcj(
-    x, [24.0, 26.0], [100.0, 80.0], instrument, geometry
-)
+asymmetric = accumulate_cw_fcj(x, [24.0, 26.0], [100.0, 80.0], instrument, geometry)
 print(asymmetric.derivatives.global_parameter_names)
 # U, V, W, X, Y, sample_over_radius, detector_over_radius
 ```
@@ -342,7 +294,7 @@ tof_instrument = TofInstrument(
 )
 tof_x = np.linspace(2_000.0, 20_000.0, 6_001)  # bin centers, microseconds
 tof_result = accumulate_tof(tof_x, [0.8, 1.5], [100.0, 80.0], tof_instrument)
-print(tof_result.derivatives.local_parameter_names)   # intensity, d_spacing
+print(tof_result.derivatives.local_parameter_names)  # intensity, d_spacing
 print(tof_result.derivatives.global_parameter_names)  # 15 instrument rows
 ```
 

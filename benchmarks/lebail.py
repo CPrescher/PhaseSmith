@@ -63,9 +63,7 @@ def models() -> tuple[
         x_deg=1.5e-3,
         y_deg=3.0e-3,
     )
-    d_spacing = instrument.wavelength_angstrom / (
-        2.0 * np.sin(np.deg2rad(positions / 2.0))
-    )
+    d_spacing = instrument.wavelength_angstrom / (2.0 * np.sin(np.deg2rad(positions / 2.0)))
 
     def phase(intensities: np.ndarray) -> phasesmith.Phase:
         return phasesmith.Phase(
@@ -108,14 +106,10 @@ def main() -> None:
     if arguments.warmups < 0 or arguments.repetitions <= 0:
         raise ValueError("warmups must be non-negative and repetitions positive")
     if arguments.require_release and phasesmith._core.BUILD_MODE != "release":
-        raise RuntimeError(
-            f"release extension required, imported {phasesmith._core.BUILD_MODE!r}"
-        )
+        raise RuntimeError(f"release extension required, imported {phasesmith._core.BUILD_MODE!r}")
     pattern, instrument, phases = models()
     calculation = phasesmith.calculate_pattern(pattern, instrument, phases)
-    current = np.concatenate(
-        tuple(phase.reflections.integrated_intensity for phase in phases)
-    )
+    current = np.concatenate(tuple(phase.reflections.integrated_intensity for phase in phases))
     input_data = lebail.LeBailInput(pattern, instrument, phases)
     parameters = lebail.build_parameter_set(
         instrument,

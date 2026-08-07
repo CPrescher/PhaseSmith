@@ -200,9 +200,7 @@ def generate_snapshot(
             "x_deg": np.ascontiguousarray(histogram.getdata("X"), dtype=np.float64),
             "observed_y": observed,
             "ycalc": np.ascontiguousarray(histogram.getdata("Ycalc"), dtype=np.float64),
-            "background": np.ascontiguousarray(
-                histogram.getdata("Background"), dtype=np.float64
-            ),
+            "background": np.ascontiguousarray(histogram.getdata("Background"), dtype=np.float64),
             "weight": np.ascontiguousarray(histogram.getdata("Yweight"), dtype=np.float64),
             "reflection_list": reflections,
             "convergence": np.ascontiguousarray(trends, dtype=np.float64),
@@ -220,9 +218,7 @@ def generate_snapshot(
             "convergence": "convergence",
         },
         "parameters": {
-            "integrated_intensity_convention": (
-                "0.01_times_f_obs2_times_intensity_correction"
-            ),
+            "integrated_intensity_convention": ("0.01_times_f_obs2_times_intensity_correction"),
             "convergence_columns": [
                 "cycle",
                 "R_percent",
@@ -231,9 +227,7 @@ def generate_snapshot(
                 "wRb_percent",
             ],
         },
-        "reflection_tables": [
-            {"array": "reflection_list", "columns": REFLECTION_COLUMNS}
-        ],
+        "reflection_tables": [{"array": "reflection_list", "columns": REFLECTION_COLUMNS}],
     }
     return [case], arrays
 

@@ -19,7 +19,13 @@ classifiers = [
   "Programming Language :: Python :: 3",
   "Programming Language :: Rust",
   "Topic :: Scientific/Engineering :: Physics",
+  "Typing :: Typed",
 ]
+
+[project.urls]
+Homepage = "https://github.com/CPrescher/PhaseSmith"
+Repository = "https://github.com/CPrescher/PhaseSmith.git"
+Issues = "https://github.com/CPrescher/PhaseSmith/issues"
 
 [project.optional-dependencies]
 test = ["pytest>=8", "gemmi>=0.7.5,<0.8"]

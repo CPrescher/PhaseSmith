@@ -94,15 +94,9 @@ def _reciprocal_metric_cell_derivatives(context: PhysicsContext) -> NDArray[np.f
         (a * np.cos(beta), b * np.cos(alpha), 2.0 * c),
     )
     per_degree = np.pi / 180.0
-    direct_derivatives[3, 1, 2] = direct_derivatives[3, 2, 1] = (
-        -b * c * np.sin(alpha) * per_degree
-    )
-    direct_derivatives[4, 0, 2] = direct_derivatives[4, 2, 0] = (
-        -a * c * np.sin(beta) * per_degree
-    )
-    direct_derivatives[5, 0, 1] = direct_derivatives[5, 1, 0] = (
-        -a * b * np.sin(gamma) * per_degree
-    )
+    direct_derivatives[3, 1, 2] = direct_derivatives[3, 2, 1] = -b * c * np.sin(alpha) * per_degree
+    direct_derivatives[4, 0, 2] = direct_derivatives[4, 2, 0] = -a * c * np.sin(beta) * per_degree
+    direct_derivatives[5, 0, 1] = direct_derivatives[5, 1, 0] = -a * b * np.sin(gamma) * per_degree
     reciprocal = cell.geometry().reciprocal_metric
     return np.ascontiguousarray(
         np.asarray([-reciprocal @ derivative @ reciprocal for derivative in direct_derivatives])
@@ -271,20 +265,14 @@ class MarchDollasePreferredOrientation:
             reflection_norm = np.einsum("ri,ij,rj->r", reflections, metric, reflections)
             axis_norm = float(axis @ metric @ axis)
             projection = np.einsum("ri,ij,j->r", reflections, metric, axis)
-            d_multiplier_d_cosine = (
-                -1.5 * denominator ** (-2.5) * (ratio**2 - 1.0 / ratio)
-            )
+            d_multiplier_d_cosine = -1.5 * denominator ** (-2.5) * (ratio**2 - 1.0 / ratio)
             for derivative in metric_derivatives:
-                d_reflection_norm = np.einsum(
-                    "ri,ij,rj->r", reflections, derivative, reflections
-                )
+                d_reflection_norm = np.einsum("ri,ij,rj->r", reflections, derivative, reflections)
                 d_axis_norm = float(axis @ derivative @ axis)
                 d_projection = np.einsum("ri,ij,j->r", reflections, derivative, axis)
-                d_cosine = (
-                    2.0 * projection * d_projection / (reflection_norm * axis_norm)
-                    - cosine_squared
-                    * (d_reflection_norm / reflection_norm + d_axis_norm / axis_norm)
-                )
+                d_cosine = 2.0 * projection * d_projection / (
+                    reflection_norm * axis_norm
+                ) - cosine_squared * (d_reflection_norm / reflection_norm + d_axis_norm / axis_norm)
                 cell_multiplier_derivatives.append(d_multiplier_d_cosine * d_cosine)
         count = context.reflections.reflection_count
         zeros = np.zeros(count, dtype=np.float64)

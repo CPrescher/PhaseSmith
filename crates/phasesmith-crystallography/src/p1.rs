@@ -284,8 +284,18 @@ pub fn calculate_p1_intensity_vjp(
         gradient: vec![0.0; validated.layout.parameter_count()],
         layout: validated.layout,
     };
+    let mut site_amplitudes = Vec::new();
+    site_amplitudes
+        .try_reserve_exact(validated.layout.site_count)
+        .map_err(|_| P1BatchError::AllocationOverflow)?;
     for (reflection, weight) in weights.iter().copied().enumerate() {
-        calculate_vjp_reflection(&validated, reflection, weight, &mut result);
+        calculate_vjp_reflection(
+            &validated,
+            reflection,
+            weight,
+            &mut site_amplitudes,
+            &mut result,
+        );
     }
     Ok(result)
 }
@@ -373,8 +383,7 @@ fn atom_amplitude(
 fn reflection_value(validated: &ValidatedP1<'_>, reflection: usize) -> (f64, f64) {
     let q_squared = validated
         .geometry
-        .q_squared_and_derivatives(validated.batch.hkl[reflection])
-        .0;
+        .q_squared(validated.batch.hkl[reflection]);
     let mut f_real = 0.0;
     let mut f_imag = 0.0;
     for site in 0..validated.layout.site_count {
@@ -523,21 +532,30 @@ fn calculate_vjp_reflection(
     validated: &ValidatedP1<'_>,
     reflection: usize,
     weight: f64,
+    site_amplitudes: &mut Vec<(f64, f64, f64, f64)>,
     result: &mut P1VjpResult,
 ) {
     let batch = validated.batch;
     let (q_squared, d_q_squared) = validated
         .geometry
         .q_squared_and_derivatives(batch.hkl[reflection]);
-    let (f_real, f_imag) = reflection_value(validated, reflection);
+    let mut f_real = 0.0;
+    let mut f_imag = 0.0;
+    site_amplitudes.clear();
+    for site in 0..validated.layout.site_count {
+        let amplitude = atom_amplitude(validated, reflection, site, q_squared);
+        f_real += amplitude.2;
+        f_imag += amplitude.3;
+        site_amplitudes.push(amplitude);
+    }
     let norm = f_real * f_real + f_imag * f_imag;
     result.values.f_real[reflection] = f_real;
     result.values.f_imag[reflection] = f_imag;
     result.values.intensity[reflection] = batch.scale * norm;
     let intensity_factor = 2.0 * batch.scale * weight;
-    for site in 0..validated.layout.site_count {
-        let (base_real, base_imag, contribution_real, contribution_imag) =
-            atom_amplitude(validated, reflection, site, q_squared);
+    for (site, &(base_real, base_imag, contribution_real, contribution_imag)) in
+        site_amplitudes.iter().enumerate()
+    {
         for (parameter, d_q) in d_q_squared.iter().copied().enumerate() {
             let factor = -TWO_PI_SQUARED * batch.u_iso_angstrom2[site] * d_q;
             result.gradient[parameter] += intensity_factor

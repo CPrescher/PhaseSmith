@@ -132,9 +132,7 @@ def write_rietveld_json(result: RietveldResult, path: str | Path) -> Path:
 
     destination = Path(path)
     destination.write_text(
-        json.dumps(
-            rietveld_result_record(result), indent=2, sort_keys=True, allow_nan=False
-        )
+        json.dumps(rietveld_result_record(result), indent=2, sort_keys=True, allow_nan=False)
         + "\n",
         encoding="utf-8",
     )
@@ -156,9 +154,7 @@ def write_rietveld_csv(
         raise ValueError("pattern and result sample counts must match")
     included = np.ones(pattern.x.size, dtype=np.bool_) if pattern.mask is None else pattern.mask
     uncertainty = (
-        np.full(pattern.x.size, np.nan)
-        if pattern.uncertainty is None
-        else pattern.uncertainty
+        np.full(pattern.x.size, np.nan) if pattern.uncertainty is None else pattern.uncertainty
     )
     weight = included.astype(np.float64)
     if pattern.uncertainty is not None:

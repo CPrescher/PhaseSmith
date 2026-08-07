@@ -374,6 +374,7 @@ def test_combined_structural_products_match_finite_difference_and_adjoint() -> N
         request.experiment,
         request.background,
         request.phases,
+        request.lattice_domains,
         request.parameters,
         options,
         runtime,
@@ -428,6 +429,7 @@ def test_march_dollase_lattice_chain_matches_finite_difference() -> None:
         request.experiment,
         request.background,
         request.phases,
+        request.lattice_domains,
         request.parameters,
         options,
         structural_refinement.RefinementRuntime(options.limits),
@@ -781,6 +783,16 @@ def test_model_evaluation_budget_returns_last_calculated_state() -> None:
     assert result.phases == request.phases
 
 
+def test_default_rietveld_budget_can_cover_worst_case_iterations() -> None:
+    options = structural_refinement.RietveldOptions()
+    maximum_evaluations_per_iteration = (
+        1 + 2 * options.max_cg_iterations + (options.max_backtracks + 1)
+    )
+    assert options.limits.max_evaluations >= (
+        1 + options.limits.max_iterations * maximum_evaluations_per_iteration
+    )
+
+
 def test_cw_profile_parameter_refines_through_accumulation_derivative_rows() -> None:
     selected = replace(selection(), instrument_parameters=("w_deg2",))
     truth = request_from_cif(selection())
@@ -823,7 +835,7 @@ def test_monochromatic_calibration_parameters_refine_analytically(
     truth_value: float,
     starting_value: float,
 ) -> None:
-    base = request_from_cif(selection())
+    base = request_from_cif(selection(lattice=name == "wavelength_angstrom"))
 
     def configured(value: float) -> phasesmith.ConstantWavelengthExperiment:
         wavelength = value if name == "wavelength_angstrom" else 1.5406
@@ -846,10 +858,16 @@ def test_monochromatic_calibration_parameters_refine_analytically(
     )
     observed = replace(base.pattern, observed_y=calculated.y)
     starting_experiment = configured(starting_value)
+    starting_domains = tuple(
+        None
+        if domain is None
+        else replace(domain, wavelength_angstrom=starting_experiment.radiation.wavelength_angstrom)
+        for domain in base.lattice_domains
+    )
     selected = replace(selection(), instrument_parameters=(name,))
     parameters = structural_refinement.build_parameter_set(
         base.phases,
-        (None,),
+        starting_domains,
         selected,
         experiment=starting_experiment,
     )
@@ -857,7 +875,7 @@ def test_monochromatic_calibration_parameters_refine_analytically(
         observed,
         starting_experiment,
         base.phases,
-        (None,),
+        starting_domains,
         parameters,
         selection=selected,
     )
@@ -871,6 +889,10 @@ def test_monochromatic_calibration_parameters_refine_analytically(
     )
     assert actual == pytest.approx(truth_value, rel=2.0e-6, abs=2.0e-8)
     assert result.metrics.rwp < 2.0e-7
+    if name == "wavelength_angstrom":
+        domain = result.checkpoint.lattice_domains[0]
+        assert domain is not None
+        assert domain.wavelength_angstrom == result.experiment.radiation.wavelength_angstrom
 
 
 @pytest.mark.parametrize("kind", ("size", "microstrain", "march"))

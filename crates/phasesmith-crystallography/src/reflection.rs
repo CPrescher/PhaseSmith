@@ -313,7 +313,7 @@ impl PreparedReflectionGenerator {
                     if hkl == [0, 0, 0] {
                         continue;
                     }
-                    let (reciprocal_squared, _) = geometry.q_squared_and_derivatives(hkl);
+                    let reciprocal_squared = geometry.q_squared(hkl);
                     if reciprocal_squared + boundary_tolerance < min_squared
                         || reciprocal_squared - boundary_tolerance > max_squared
                     {

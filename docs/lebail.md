@@ -30,10 +30,11 @@ its current intensity so it can cross into the visible interval without silent
 information loss.
 
 Exactly coincident profiles preserve their starting intensity ratio because
-their multiplicative factors are identical. Unresolved groups are detected
-from support-block profile correlations and returned with stable
-`(phase_id, reflection_id)` keys and numerical rank. This reports the
-identifiability limit instead of hiding it through reflection order.
+their multiplicative factors are identical. Set
+`LeBailOptions(diagnose_rank_deficiency=True)` to run the quadratic
+support-block correlation analysis and return unresolved groups with stable
+`(phase_id, reflection_id)` keys and numerical rank. It is opt-in so ordinary
+large reflection sets do not pay an O(N²) diagnostic cost.
 
 ## Short script
 
@@ -41,7 +42,7 @@ identifiability limit instead of hiding it through reflection order.
 from phasesmith.refinement import lebail
 
 request = lebail.LeBailInput(
-    pattern=pattern,       # observed_y and background are explicit arrays
+    pattern=pattern,  # observed_y and background are explicit arrays
     instrument=instrument,
     phases=(alpha, beta),  # reflection IDs remain stable
 )
