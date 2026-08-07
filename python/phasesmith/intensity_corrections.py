@@ -104,6 +104,43 @@ class BraggBrentanoUnpolarizedLp:
         )
 
 
+@dataclass(frozen=True, slots=True)
+class BraggBrentanoPolarizedLp:
+    """Polarized symmetric Bragg--Brentano integrated Lorentz--polarization.
+
+    ``polarization`` is the fraction in the constant term of
+    ``[P + (1-P) cos²(2θ)] / [sin²(θ) cos(θ)]``. Therefore ``P=0.5`` is
+    exactly the unpolarized model.
+    """
+
+    wavelength_angstrom: float
+    polarization: float
+
+    def __post_init__(self) -> None:
+        """Require a physical wavelength and polarization fraction."""
+
+        if not np.isfinite(self.wavelength_angstrom) or self.wavelength_angstrom <= 0.0:
+            raise ValueError("wavelength_angstrom must be positive and finite")
+        if not np.isfinite(self.polarization) or not 0.0 <= self.polarization <= 1.0:
+            raise ValueError("polarization must be finite and within [0, 1]")
+
+    def evaluate(self, q_squared_inverse_angstrom2: ArrayLike) -> IntegratedIntensityCorrection:
+        """Return polarized LP values and analytical metric derivatives."""
+
+        q_squared = _q_squared(q_squared_inverse_angstrom2)
+        values, derivatives = _core.integrated_intensity_correction(
+            q_squared,
+            "bragg_brentano_polarized_lp",
+            self.wavelength_angstrom,
+            self.polarization,
+        )
+        return IntegratedIntensityCorrection(
+            values,
+            derivatives,
+            "bragg_brentano_polarized_lp",
+        )
+
+
 def evaluate_intensity_correction(
     provider: IntegratedIntensityCorrectionProvider,
     q_squared_inverse_angstrom2: ArrayLike,

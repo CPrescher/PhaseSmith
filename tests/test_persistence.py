@@ -357,6 +357,25 @@ def test_structural_phase_round_trips_separately_from_lebail_phases(tmp_path) ->
     )
 
 
+def test_fixed_dispersion_and_polarized_lp_round_trip(tmp_path) -> None:
+    structural = replace(
+        structural_phase(),
+        scattering=phasesmith.XrayFixedDispersion(
+            {"Si": 0.212567 + 0.245496j, "O": 0.049384 + 0.032232j}
+        ),
+        intensity_correction=phasesmith.BraggBrentanoPolarizedLp(1.5406, 0.7),
+    )
+    destination = persistence.save_bundle(
+        tmp_path / "dispersion-polarization",
+        persistence.PersistenceBundle(rietveld_phases=(structural,)),
+    )
+    restored = persistence.load_bundle(destination).rietveld_phases[0]
+    assert restored.scattering == structural.scattering
+    assert restored.intensity_correction == structural.intensity_correction
+    manifest = json.loads((destination / persistence.MANIFEST_NAME).read_text())
+    assert manifest["format_version"] == 7
+
+
 def test_rietveld_checkpoint_domain_and_options_round_trip_and_resume(tmp_path) -> None:
     x = np.linspace(10.0, 80.0, 7_001)
     experiment = phasesmith.ConstantWavelengthExperiment.x_ray(instrument())

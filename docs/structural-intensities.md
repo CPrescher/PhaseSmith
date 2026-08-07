@@ -56,7 +56,7 @@ The profile receives the integrated reflection area
 I_h = phase_scale * multiplicity_h * C_h * |F_h|².
 ```
 
-Two initial correction choices are explicit:
+Three built-in correction choices are explicit:
 
 - `NeutralIntegratedIntensityCorrection` sets `C_h = 1`. It is required when
   supplied data are already corrected or when the caller wants raw
@@ -74,11 +74,21 @@ Two initial correction choices are explicit:
   32 in Dinnebier and Scardi,
   [X-ray powder diffraction in education. Part II](https://journals.iucr.org/j/issues/2023/03/00/dv5004/).
 
-The initial LP model is valid only for monochromatic unpolarized X-rays in
-symmetric angular-dispersive reflection geometry and `0 < 2theta < 180°`.
-Synchrotron polarization, transmission/capillary geometry, neutron, TOF,
-absorption, extinction, and pointwise broad-peak corrections require distinct
-typed models. They are never selected from an ambiguous boolean.
+- `BraggBrentanoPolarizedLp` uses the explicit polarization fraction `P`:
+
+  ```text
+  C_h = [P + (1-P) cos²(2 theta)] / [sin²(theta) cos(theta)], 0 <= P <= 1.
+  ```
+
+  `P = 0.5` is exactly `BraggBrentanoUnpolarizedLp`. Instrument values such as
+  `Polariz. = 0.7` map directly to `P = 0.7`; the parameter is not complemented
+  or normalized behind the API.
+
+Both LP models are valid only for monochromatic X-rays in symmetric angular-
+dispersive reflection geometry and `0 < 2theta < 180°`. Transmission/capillary
+geometry, neutron, TOF, absorption, extinction, and pointwise broad-peak
+corrections require distinct typed models. They are never selected from an
+ambiguous boolean.
 
 Preferred orientation is owned by the existing reflection-physics provider.
 The structure-factor correction batch has no preferred-orientation field; the

@@ -55,6 +55,10 @@ pub struct StructuralPatternInputView<'a> {
     pub u_iso_angstrom2: &'a [f64],
     /// Exact built-in table key for every asymmetric site.
     pub scattering_species: &'a [&'a str],
+    /// Fixed real X-ray dispersion offset for every site, or empty when absent.
+    pub scattering_real_offset: &'a [f64],
+    /// Fixed imaginary X-ray dispersion offset for every site, or empty when absent.
+    pub scattering_imag_offset: &'a [f64],
     /// Structural phase scale.
     pub scale: f64,
     /// Fixed symmetry-expansion deduplication tolerance.
@@ -113,6 +117,12 @@ pub struct StructuralPatternVjpResult {
 pub enum StructuralPatternError {
     /// Scattering species count does not match the asymmetric-site count.
     SpeciesLengthMismatch,
+    /// Offset vectors are neither both empty nor matched to the asymmetric sites.
+    ScatteringOffsetLengthMismatch,
+    /// A fixed scattering offset is non-finite.
+    NonFiniteScatteringOffset,
+    /// Fixed dispersion offsets were supplied to a non-X-ray model.
+    UnsupportedScatteringOffset,
     /// Built-in scattering preparation or evaluation failed.
     Scattering(ScatteringError),
     /// Integrated-intensity correction evaluation failed.
@@ -141,6 +151,13 @@ impl Display for StructuralPatternError {
             Self::SpeciesLengthMismatch => {
                 formatter.write_str("scattering species must contain one key per asymmetric site")
             }
+            Self::ScatteringOffsetLengthMismatch => formatter
+                .write_str("scattering offset vectors must both be empty or match the site count"),
+            Self::NonFiniteScatteringOffset => {
+                formatter.write_str("scattering offsets must be finite")
+            }
+            Self::UnsupportedScatteringOffset => formatter
+                .write_str("fixed scattering offsets are supported only for X-ray scattering"),
             Self::Scattering(error) => Display::fmt(error, formatter),
             Self::Correction(error) => Display::fmt(error, formatter),
             Self::StructureFactor(error) => Display::fmt(error, formatter),
@@ -173,6 +190,53 @@ struct PreparedNumerics {
     d_two_theta_d_cell: Vec<[f64; CELL_PARAMETER_COUNT]>,
     d_two_theta_d_wavelength: Vec<f64>,
     d_two_theta_d_sample_displacement: Option<Vec<f64>>,
+}
+
+fn validate_scattering_offsets(
+    input: &StructuralPatternInputView<'_>,
+) -> Result<(), StructuralPatternError> {
+    if input.scattering_real_offset.is_empty() && input.scattering_imag_offset.is_empty() {
+        return Ok(());
+    }
+    if input.scattering_real_offset.len() != input.fractional_xyz.len()
+        || input.scattering_imag_offset.len() != input.fractional_xyz.len()
+    {
+        return Err(StructuralPatternError::ScatteringOffsetLengthMismatch);
+    }
+    if input
+        .scattering_real_offset
+        .iter()
+        .chain(input.scattering_imag_offset)
+        .any(|value| !value.is_finite())
+    {
+        return Err(StructuralPatternError::NonFiniteScatteringOffset);
+    }
+    if input.scattering_model == BuiltInScatteringModel::NeutronNuclear
+        && input
+            .scattering_real_offset
+            .iter()
+            .chain(input.scattering_imag_offset)
+            .any(|value| *value != 0.0)
+    {
+        return Err(StructuralPatternError::UnsupportedScatteringOffset);
+    }
+    Ok(())
+}
+
+fn apply_scattering_offsets(
+    scattering: &mut ScatteringBatch,
+    input: &StructuralPatternInputView<'_>,
+) {
+    if input.scattering_real_offset.is_empty() {
+        return;
+    }
+    for reflection in 0..scattering.reflection_count {
+        for site in 0..scattering.site_count {
+            let index = reflection * scattering.site_count + site;
+            scattering.real[index] += input.scattering_real_offset[site];
+            scattering.imag[index] += input.scattering_imag_offset[site];
+        }
+    }
 }
 
 impl PreparedNumerics {
@@ -312,6 +376,7 @@ fn prepare(
     if input.scattering_species.len() != input.fractional_xyz.len() {
         return Err(StructuralPatternError::SpeciesLengthMismatch);
     }
+    validate_scattering_offsets(input)?;
     input
         .instrument
         .validate()
@@ -376,7 +441,7 @@ fn prepare(
         }
     }
     let s: Vec<f64> = q_squared.iter().map(|value| 0.5 * value.sqrt()).collect();
-    let scattering = match input.scattering_model {
+    let mut scattering = match input.scattering_model {
         BuiltInScatteringModel::XrayNonResonant => {
             PreparedXrayScattering::new(input.scattering_species.iter().copied())
                 .and_then(|model| model.evaluate(&s))
@@ -387,6 +452,7 @@ fn prepare(
         }
     }
     .map_err(StructuralPatternError::Scattering)?;
+    apply_scattering_offsets(&mut scattering, input);
     let correction = input
         .correction_model
         .evaluate(&q_squared)
@@ -618,6 +684,8 @@ mod tests {
                 occupancy,
                 u_iso_angstrom2: u_iso,
                 scattering_species: &["Si", "O"],
+                scattering_real_offset: &[],
+                scattering_imag_offset: &[],
                 scale,
                 coordinate_tolerance: 1.0e-10,
                 instrument: instrument(),
@@ -713,6 +781,8 @@ mod tests {
             occupancy: &occupancy,
             u_iso_angstrom2: &u_iso,
             scattering_species: &["Si", "O"],
+            scattering_real_offset: &[],
+            scattering_imag_offset: &[],
             scale,
             coordinate_tolerance: 1.0e-10,
             instrument: instrument(),

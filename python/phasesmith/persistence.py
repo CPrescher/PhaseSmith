@@ -17,6 +17,7 @@ from .calculation import CalculationOptions
 from .extensions import CompositePhysicsProvider, ReflectionPhysicsProvider
 from .instrument import ConstantWavelengthInstrument, FcjGeometry, TofInstrument
 from .intensity_corrections import (
+    BraggBrentanoPolarizedLp,
     BraggBrentanoUnpolarizedLp,
     NeutralIntegratedIntensityCorrection,
 )
@@ -93,10 +94,10 @@ from .sample import (
     IsotropicSizeBroadening,
     MarchDollasePreferredOrientation,
 )
-from .scattering import NeutronNuclear, XrayNonResonant
+from .scattering import NeutronNuclear, XrayFixedDispersion, XrayNonResonant
 from .structure import CrystalStructure, structure_from_record, structure_to_record
 
-FORMAT_VERSION: Final = 6
+FORMAT_VERSION: Final = 7
 MANIFEST_NAME: Final = "manifest.json"
 ARCHIVE_NAME: Final = "arrays.npz"
 Instrument = ConstantWavelengthInstrument | TofInstrument
@@ -744,7 +745,7 @@ def _phase_from_record(
     )
 
 
-def _scattering_record(provider: object) -> dict[str, str]:
+def _scattering_record(provider: object) -> dict[str, Any]:
     if type(provider) is XrayNonResonant:
         return {
             "model": "xray_non_resonant",
@@ -757,13 +758,32 @@ def _scattering_record(provider: object) -> dict[str, str]:
             "provider_id": provider.descriptor.provider_id,
             "provider_version": provider.descriptor.provider_version,
         }
+    if type(provider) is XrayFixedDispersion:
+        return {
+            "model": "xray_fixed_dispersion",
+            "provider_id": provider.descriptor.provider_id,
+            "provider_version": provider.descriptor.provider_version,
+            "corrections": [
+                {"element": element, "real": value.real, "imag": value.imag}
+                for element, value in provider.corrections
+            ],
+        }
     raise TypeError("structural scattering persistence currently supports built-in models only")
 
 
-def _scattering_from_record(record: dict[str, Any]) -> XrayNonResonant | NeutronNuclear:
+def _scattering_from_record(
+    record: dict[str, Any],
+) -> XrayNonResonant | XrayFixedDispersion | NeutronNuclear:
     model = record["model"]
     if model == "xray_non_resonant":
-        provider: XrayNonResonant | NeutronNuclear = XrayNonResonant()
+        provider: XrayNonResonant | XrayFixedDispersion | NeutronNuclear = XrayNonResonant()
+    elif model == "xray_fixed_dispersion":
+        provider = XrayFixedDispersion(
+            {
+                str(value["element"]): complex(float(value["real"]), float(value["imag"]))
+                for value in record["corrections"]
+            }
+        )
     elif model == "neutron_nuclear":
         provider = NeutronNuclear()
     else:
@@ -784,6 +804,12 @@ def _intensity_correction_record(provider: object) -> dict[str, Any]:
             "model": "bragg_brentano_unpolarized_lp",
             "wavelength_angstrom": provider.wavelength_angstrom,
         }
+    if type(provider) is BraggBrentanoPolarizedLp:
+        return {
+            "model": "bragg_brentano_polarized_lp",
+            "wavelength_angstrom": provider.wavelength_angstrom,
+            "polarization": provider.polarization,
+        }
     raise TypeError(
         "structural intensity-correction persistence currently supports built-in models only"
     )
@@ -791,12 +817,17 @@ def _intensity_correction_record(provider: object) -> dict[str, Any]:
 
 def _intensity_correction_from_record(
     record: dict[str, Any],
-) -> NeutralIntegratedIntensityCorrection | BraggBrentanoUnpolarizedLp:
+) -> NeutralIntegratedIntensityCorrection | BraggBrentanoUnpolarizedLp | BraggBrentanoPolarizedLp:
     model = record["model"]
     if model == "neutral":
         return NeutralIntegratedIntensityCorrection()
     if model == "bragg_brentano_unpolarized_lp":
         return BraggBrentanoUnpolarizedLp(float(record["wavelength_angstrom"]))
+    if model == "bragg_brentano_polarized_lp":
+        return BraggBrentanoPolarizedLp(
+            float(record["wavelength_angstrom"]),
+            float(record["polarization"]),
+        )
     raise PersistenceError(f"unsupported structural intensity correction {model!r}")
 
 
@@ -1505,7 +1536,7 @@ def load_bundle(
     if (
         not isinstance(version, int)
         or isinstance(version, bool)
-        or version not in (1, 2, 3, 4, 5, FORMAT_VERSION)
+        or version not in (1, 2, 3, 4, 5, 6, FORMAT_VERSION)
     ):
         raise PersistenceError(f"unsupported persistence format {manifest.get('format_version')!r}")
     if manifest.get("archive", {}).get("file") != ARCHIVE_NAME:

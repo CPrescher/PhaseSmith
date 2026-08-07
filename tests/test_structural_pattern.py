@@ -114,6 +114,63 @@ def test_fused_structural_pattern_matches_separate_vectorized_layers() -> None:
     assert not actual.y.flags.writeable
 
 
+def test_native_fixed_dispersion_and_polarized_lp_match_vectorized_layers() -> None:
+    phase = replace(
+        xray_phase(),
+        scattering=phasesmith.XrayFixedDispersion({"Si": 0.21 + 0.25j, "O": 0.05 + 0.03j}),
+        intensity_correction=phasesmith.BraggBrentanoPolarizedLp(
+            instrument().wavelength_angstrom,
+            0.7,
+        ),
+    )
+    experiment = phasesmith.ConstantWavelengthExperiment.x_ray(instrument())
+    prepared = phasesmith.PreparedStructuralPattern(pattern(), experiment, phase)
+    actual = prepared.calculate()
+    expected = phasesmith.calculate_structure_factors(
+        phase.structure,
+        phase.reflections.hkl,
+        phase.reflections.multiplicity,
+        phase.scattering,
+        correction=phase.intensity_correction,
+        scale=phase.scale,
+    )
+    assert prepared.uses_native_fused_path
+    np.testing.assert_allclose(actual.reflections.f, expected.f, rtol=3e-15, atol=3e-14)
+    np.testing.assert_allclose(
+        actual.reflections.integrated_intensity,
+        expected.integrated_intensity,
+        rtol=4e-15,
+        atol=4e-12,
+    )
+
+    direction = np.zeros(
+        len(phasesmith.p1_parameter_names(phase.structure.to_isotropic_site_batch()))
+    )
+    direction[[0, 6, 12, -1]] = [0.04, 0.015, -0.03, 0.05]
+    forward = prepared.jvp(direction)
+    step = 1.0e-6
+    plus = phasesmith.calculate_structural_pattern(
+        pattern(), experiment, _perturb_phase(phase, direction, step)
+    )
+    minus = phasesmith.calculate_structural_pattern(
+        pattern(), experiment, _perturb_phase(phase, direction, -step)
+    )
+    np.testing.assert_allclose(
+        forward.d_y,
+        (plus.profile_y - minus.profile_y) / (2.0 * step),
+        rtol=4e-6,
+        atol=3e-7,
+    )
+    weights = np.sin(np.linspace(0.0, 3.0, pattern().x.size))
+    reverse = prepared.vjp(weights)
+    np.testing.assert_allclose(
+        forward.d_y @ weights,
+        direction @ reverse.gradient,
+        rtol=6e-13,
+        atol=3e-10,
+    )
+
+
 def test_fused_structural_pattern_matches_independent_numpy_equations() -> None:
     phase = xray_phase()
     actual = phasesmith.calculate_structural_pattern(
@@ -248,7 +305,13 @@ def component_phase(*, scale: float = 1.4) -> phasesmith.RietveldPhase:
 
 
 def test_structural_doublet_matches_sum_of_component_native_batches() -> None:
-    phase = component_phase()
+    phase = replace(
+        component_phase(),
+        scattering=phasesmith.XrayFixedDispersion(
+            {"Si": 0.21 + 0.25j, "O": 0.05 + 0.03j}
+        ),
+        intensity_correction=phasesmith.BraggBrentanoPolarizedLp(1.5406, 0.7),
+    )
     experiment = component_experiment()
     prepared = phasesmith.PreparedStructuralPattern(pattern(), experiment, phase)
 
@@ -264,7 +327,7 @@ def test_structural_doublet_matches_sum_of_component_native_batches() -> None:
         selected_phase = replace(
             phase,
             scale=phase.scale * float(weight),
-            intensity_correction=phasesmith.BraggBrentanoUnpolarizedLp(float(wavelength)),
+            intensity_correction=phasesmith.BraggBrentanoPolarizedLp(float(wavelength), 0.7),
         )
         expected += phasesmith.calculate_structural_pattern(
             pattern(), selected_experiment, selected_phase

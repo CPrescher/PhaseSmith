@@ -23,6 +23,8 @@ struct BenchmarkCase {
     occupancy: Vec<f64>,
     u_iso: Vec<f64>,
     species: Vec<&'static str>,
+    site_real_offset: Vec<f64>,
+    site_imag_offset: Vec<f64>,
     zeros: Vec<f64>,
     ones: Vec<f64>,
     cell: UnitCell,
@@ -83,6 +85,12 @@ impl BenchmarkCase {
             species: (0..site_count)
                 .map(|site| species_keys[site % species_keys.len()])
                 .collect(),
+            site_real_offset: (0..site_count)
+                .map(|site| 0.02 * index_f64(site % species_keys.len()))
+                .collect(),
+            site_imag_offset: (0..site_count)
+                .map(|site| 0.01 * index_f64(1 + site % species_keys.len()))
+                .collect(),
             zeros: vec![0.0; reflection_count],
             ones: vec![1.0; reflection_count],
             cell,
@@ -117,7 +125,7 @@ impl BenchmarkCase {
         .expect("contributions")
     }
 
-    fn fused(&self) -> usize {
+    fn fused_with_offsets(&self, real_offset: &[f64], imag_offset: &[f64]) -> usize {
         calculate_structural_pattern(
             self.cell,
             &self.group,
@@ -129,6 +137,8 @@ impl BenchmarkCase {
                 occupancy: &self.occupancy,
                 u_iso_angstrom2: &self.u_iso,
                 scattering_species: &self.species,
+                scattering_real_offset: real_offset,
+                scattering_imag_offset: imag_offset,
                 scale: 1.3,
                 coordinate_tolerance: 1.0e-10,
                 instrument: self.instrument,
@@ -147,6 +157,14 @@ impl BenchmarkCase {
         .derivatives
         .local
         .active_sample_count()
+    }
+
+    fn fused(&self) -> usize {
+        self.fused_with_offsets(&[], &[])
+    }
+
+    fn fused_dispersion(&self) -> usize {
+        self.fused_with_offsets(&self.site_real_offset, &self.site_imag_offset)
     }
 
     fn separate(&self) -> usize {
@@ -224,6 +242,13 @@ fn structural_pattern_benchmark(criterion: &mut Criterion) {
         &case,
         |bench, case| {
             bench.iter(|| black_box(case.fused()));
+        },
+    );
+    group.bench_with_input(
+        BenchmarkId::new("fused_fixed_dispersion", "values+derivatives"),
+        &case,
+        |bench, case| {
+            bench.iter(|| black_box(case.fused_dispersion()));
         },
     );
     group.bench_with_input(

@@ -19,6 +19,7 @@ from .extensions import (
     evaluate_provider,
 )
 from .intensity_corrections import (
+    BraggBrentanoPolarizedLp,
     BraggBrentanoUnpolarizedLp,
     NeutralIntegratedIntensityCorrection,
 )
@@ -42,7 +43,12 @@ from .sample import (
     IsotropicSizeBroadening,
     MarchDollasePreferredOrientation,
 )
-from .scattering import NeutronNuclear, XrayNonResonant, species_from_structure
+from .scattering import (
+    NeutronNuclear,
+    XrayFixedDispersion,
+    XrayNonResonant,
+    species_from_structure,
+)
 
 
 def _freeze(array: NDArray[np.generic]) -> None:
@@ -57,7 +63,7 @@ def _check_probe(phase: RietveldPhase, experiment: ConstantWavelengthExperiment)
             f"the {experiment.radiation.probe.value} experiment"
         )
     correction = phase.intensity_correction
-    if isinstance(correction, BraggBrentanoUnpolarizedLp):
+    if isinstance(correction, (BraggBrentanoUnpolarizedLp, BraggBrentanoPolarizedLp)):
         if experiment.radiation.probe is not RadiationProbe.X_RAY:
             raise ValueError("Bragg-Brentano polarization correction requires X-ray radiation")
         if correction.wavelength_angstrom != experiment.radiation.wavelength_angstrom:
@@ -99,20 +105,28 @@ def _structural_parameter_names(phase: RietveldPhase) -> tuple[str, ...]:
 
 def _native_model_configuration(
     phase: RietveldPhase,
-) -> tuple[str, str, float | None] | None:
-    if type(phase.scattering) is XrayNonResonant:
+) -> tuple[str, str, float | None, float | None] | None:
+    if type(phase.scattering) in (XrayNonResonant, XrayFixedDispersion):
         scattering_model = "xray_non_resonant"
     elif type(phase.scattering) is NeutronNuclear:
         scattering_model = "neutron_nuclear"
     else:
         return None
     if type(phase.intensity_correction) is NeutralIntegratedIntensityCorrection:
-        return scattering_model, "neutral", None
+        return scattering_model, "neutral", None, None
     if type(phase.intensity_correction) is BraggBrentanoUnpolarizedLp:
         return (
             scattering_model,
             "bragg_brentano_unpolarized_lp",
             phase.intensity_correction.wavelength_angstrom,
+            None,
+        )
+    if type(phase.intensity_correction) is BraggBrentanoPolarizedLp:
+        return (
+            scattering_model,
+            "bragg_brentano_polarized_lp",
+            phase.intensity_correction.wavelength_angstrom,
+            phase.intensity_correction.polarization,
         )
     return None
 
@@ -133,13 +147,20 @@ def _native_phase(phase: RietveldPhase) -> object | None:
     configuration = _native_model_configuration(phase)
     if configuration is None or not _supports_fused_structural_physics(phase.physics):
         return None
-    scattering_model, correction_model, correction_wavelength = configuration
+    scattering_model, correction_model, correction_wavelength, correction_polarization = (
+        configuration
+    )
     sites = phase.structure.to_isotropic_site_batch()
     species = species_from_structure(phase.structure)
     species_keys = (
         [value.xray_key for value in species]
         if scattering_model == "xray_non_resonant"
         else [value.neutron_key for value in species]
+    )
+    offsets = (
+        phase.scattering.corrections_for(species)
+        if type(phase.scattering) is XrayFixedDispersion
+        else np.empty(0, dtype=np.complex128)
     )
     return _core._StructuralPhase(
         phase.structure.space_group._native,
@@ -149,12 +170,15 @@ def _native_phase(phase: RietveldPhase) -> object | None:
         sites.occupancy,
         sites.u_iso_angstrom2,
         species_keys,
+        np.ascontiguousarray(offsets.real),
+        np.ascontiguousarray(offsets.imag),
         *phase.structure.cell.as_tuple(),
         float(phase.scale),
         float(phase.coordinate_tolerance),
         scattering_model,
         correction_model,
         correction_wavelength,
+        correction_polarization,
     )
 
 
@@ -259,7 +283,11 @@ def _component_inputs(
         return ()
     if not isinstance(
         phase.intensity_correction,
-        (NeutralIntegratedIntensityCorrection, BraggBrentanoUnpolarizedLp),
+        (
+            NeutralIntegratedIntensityCorrection,
+            BraggBrentanoUnpolarizedLp,
+            BraggBrentanoPolarizedLp,
+        ),
     ):
         raise NotImplementedError(
             "fixed structural wavelength components require a built-in neutral or "
@@ -281,6 +309,11 @@ def _component_inputs(
         correction = phase.intensity_correction
         if isinstance(correction, BraggBrentanoUnpolarizedLp):
             correction = BraggBrentanoUnpolarizedLp(float(wavelength))
+        elif isinstance(correction, BraggBrentanoPolarizedLp):
+            correction = BraggBrentanoPolarizedLp(
+                float(wavelength),
+                correction.polarization,
+            )
         component_phase = replace(
             phase,
             scale=phase.scale * float(weight),

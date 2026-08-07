@@ -51,6 +51,36 @@ def test_xray_state_resolution_is_exact_and_range_limited() -> None:
         prepared.evaluate([6.000001])
 
 
+def test_fixed_xray_dispersion_adds_complex_offsets_without_changing_ds_derivative() -> None:
+    species = (
+        phasesmith.ScatteringSpecies("O"),
+        phasesmith.ScatteringSpecies("Zn", charge=2),
+        phasesmith.ScatteringSpecies("O"),
+    )
+    context = phasesmith.ScatteringContext(species, [0.1, 0.7, 1.3])
+    model = phasesmith.XrayFixedDispersion(
+        {"Zn": complex(-1.545988, 0.677687), "O": complex(0.049384, 0.032232)}
+    )
+    baseline = phasesmith.XrayNonResonant().evaluate(context)
+    actual = phasesmith.evaluate_scattering_provider(model, context)
+    expected_offsets = np.array([0.049384 + 0.032232j, -1.545988 + 0.677687j, 0.049384 + 0.032232j])
+    np.testing.assert_allclose(
+        actual.amplitudes,
+        baseline.amplitudes + expected_offsets[None, :],
+        rtol=0.0,
+        atol=2e-16,
+    )
+    np.testing.assert_array_equal(actual.d_amplitudes_d_s, baseline.d_amplitudes_d_s)
+    np.testing.assert_array_equal(model.corrections_for(species), expected_offsets)
+    assert actual.descriptor is phasesmith.XRAY_FIXED_DISPERSION_DESCRIPTOR
+    with pytest.raises(ValueError, match="missing fixed dispersion"):
+        model.corrections_for([phasesmith.ScatteringSpecies("Si")])
+    with pytest.raises(ValueError, match="canonical"):
+        phasesmith.XrayFixedDispersion({"zn": 1j})
+    with pytest.raises(ValueError, match="finite"):
+        phasesmith.XrayFixedDispersion({"Zn": complex(np.nan, 0.0)})
+
+
 def test_neutron_natural_isotope_and_energy_dependent_behavior_is_explicit() -> None:
     species = (
         phasesmith.ScatteringSpecies("H"),

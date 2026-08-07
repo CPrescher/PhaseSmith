@@ -28,8 +28,9 @@ Built-in providers resolve and cache each unique species in Rust. A third-party
 Python provider may implement the same versioned batch contract, but it is
 called once for the complete species/reflection batch and never once per atom,
 reflection, or profile sample. Providers are passed explicitly; there is no
-global registry. Complex output reserves the same interface for later anomalous
-or magnetic models without claiming that those models exist today.
+global registry. Complex output supports explicit fixed anomalous X-ray offsets
+and reserves the same interface for later interpolated anomalous or magnetic
+models.
 
 ## Non-resonant X-ray form factors
 
@@ -61,7 +62,27 @@ All neutral and ionic rows in that pinned source are retained with their exact
 source labels. Public typed species resolve an ionic row only when a matching
 state exists; there is no silent ionic-to-neutral fallback. Callers may select
 the neutral model explicitly when that approximation is intended. Anomalous
-`f' + i f''` is not part of this model.
+`f' + i f''` is not part of this baseline model.
+
+## Fixed X-ray dispersion offsets
+
+`XrayFixedDispersion` composes the native non-resonant model with one
+wavelength-specific, element-wise complex correction supplied explicitly by the
+caller:
+
+```text
+f(s, lambda_fixed) = f0(s) + f'(lambda_fixed) + i f''(lambda_fixed)
+df/ds = df0/ds.
+```
+
+The model stores finite offsets in electrons and requires a correction for every
+element present in the structure. It does not ship or interpolate an absorption-
+edge database, infer photon energy, or silently fall back when an element is
+missing. This keeps numerical provenance with the input dataset while allowing
+Rust to add the fixed real and imaginary columns inside the fused structural
+batch. The sign convention is the conventional crystallographic
+`f = f0 + f' + i f''`; callers using a source with the conjugate convention must
+convert it explicitly.
 
 ## Coherent neutron nuclear scattering
 

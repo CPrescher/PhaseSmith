@@ -30,12 +30,13 @@ phasesmith.symmetry  [implemented]
   generation. Numerical evaluation and family enumeration are Rust-owned.
 
 phasesmith.scattering  [implemented]
-  Typed X-ray and neutron scattering models plus versioned batch-provider
-  contracts. Built-in production models execute in Rust.
+  Typed X-ray and neutron scattering models, fixed X-ray dispersion offsets,
+  and versioned batch-provider contracts. Built-in production models execute
+  in Rust.
 
 phasesmith.intensity_corrections  [implemented]
-  Explicit neutral and monochromatic unpolarized Bragg--Brentano integrated
-  intensity corrections plus a batch-provider boundary.
+  Explicit neutral, unpolarized, and polarized monochromatic Bragg--Brentano
+  integrated intensity corrections plus a batch-provider boundary.
 
 phasesmith.io.cif  [implemented]
   Optional CIF parsing into crystallography models. Parser objects never enter
@@ -146,11 +147,13 @@ phasesmith.scattering.ScatteringContext
 phasesmith.scattering.ScatteringFactorBatch
 phasesmith.scattering.ScatteringFactorProvider
 phasesmith.scattering.XrayNonResonant
+phasesmith.scattering.XrayFixedDispersion
 phasesmith.scattering.NeutronNuclear
 phasesmith.scattering.species_from_structure
 phasesmith.intensity_corrections.IntegratedIntensityCorrection
 phasesmith.intensity_corrections.NeutralIntegratedIntensityCorrection
 phasesmith.intensity_corrections.BraggBrentanoUnpolarizedLp
+phasesmith.intensity_corrections.BraggBrentanoPolarizedLp
 phasesmith.refinement.lebail.LeBailPhase
 phasesmith.refinement.LatticeParameterization
 phasesmith.refinement.LatticeParameterBounds

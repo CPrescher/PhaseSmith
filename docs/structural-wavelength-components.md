@@ -30,9 +30,13 @@ y(x) = background(x) + sum_h sum_c I_hc profile(x - p_hc).
 ```
 
 `C_hc` is evaluated independently for each wavelength. For the built-in
-Bragg--Brentano model this includes the component-specific Lorentz--polarization
-factor. Non-resonant X-ray and coherent-neutron structure factors depend on
-`s_h`, not on the component wavelength, but they remain inside each native
+Bragg--Brentano models this includes the component-specific Lorentz--polarization
+factor while preserving the shared polarization fraction. Non-resonant X-ray
+and coherent-neutron structure factors depend on `s_h`, not on the component
+wavelength. A fixed-dispersion X-ray phase adds the same caller-supplied complex
+offsets to every component; this is an explicit narrow-spectrum approximation,
+not interpolation. A future component-dependent dispersion provider must own
+separate wavelength-tagged offsets. Structure factors remain inside each native
 structural batch so the existing value/JVP/VJP contract is unchanged. `P_hc`
 contains optional size, microstrain, preferred-orientation, or provider terms
 evaluated with the component geometry.

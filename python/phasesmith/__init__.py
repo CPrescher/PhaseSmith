@@ -87,6 +87,7 @@ from .fcj import (
 )
 from .instrument import ConstantWavelengthInstrument, FcjGeometry, TofInstrument
 from .intensity_corrections import (
+    BraggBrentanoPolarizedLp,
     BraggBrentanoUnpolarizedLp,
     IntegratedIntensityCorrection,
     IntegratedIntensityCorrectionProvider,
@@ -141,6 +142,7 @@ from .scattering import (
     NEUTRON_NUCLEAR_DESCRIPTOR,
     NEUTRON_TABLE_PROVENANCE,
     SCATTERING_PROVIDER_API_VERSION,
+    XRAY_FIXED_DISPERSION_DESCRIPTOR,
     XRAY_NON_RESONANT_DESCRIPTOR,
     XRAY_TABLE_PROVENANCE,
     NeutronNuclear,
@@ -153,6 +155,7 @@ from .scattering import (
     ScatteringProviderDescriptor,
     ScatteringSpecies,
     ScatteringTableProvenance,
+    XrayFixedDispersion,
     XrayNonResonant,
     XraySpeciesMetadata,
     evaluate_scattering_provider,
@@ -213,6 +216,7 @@ __all__ = [
     "TCH_PARAMETER_ORDER",
     "TOF_GLOBAL_PARAMETER_ORDER",
     "TOF_LOCAL_PARAMETER_ORDER",
+    "XRAY_FIXED_DISPERSION_DESCRIPTOR",
     "XRAY_NON_RESONANT_DESCRIPTOR",
     "XRAY_TABLE_PROVENANCE",
     "XYPATTERN_REVISION",
@@ -222,6 +226,7 @@ __all__ = [
     "AtomSiteBatch",
     "BackgroundSubtractionResult",
     "BraggBrentanoGeometry",
+    "BraggBrentanoPolarizedLp",
     "BraggBrentanoUnpolarizedLp",
     "CalculationOptions",
     "CancellationCallback",
@@ -320,6 +325,7 @@ __all__ = [
     "TofRange",
     "UnitCell",
     "WavelengthComponents",
+    "XrayFixedDispersion",
     "XrayNonResonant",
     "XraySpeciesMetadata",
     "accumulate",

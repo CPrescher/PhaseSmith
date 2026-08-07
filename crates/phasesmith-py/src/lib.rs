@@ -628,6 +628,8 @@ struct NativeStructuralPhase {
     occupancy: Vec<f64>,
     u_iso_angstrom2: Vec<f64>,
     scattering_species: Vec<String>,
+    scattering_real_offset: Vec<f64>,
+    scattering_imag_offset: Vec<f64>,
     scale: f64,
     coordinate_tolerance: f64,
     scattering_model: BuiltInScatteringModel,
@@ -718,6 +720,12 @@ impl NativeStructuralPhase {
                     wavelength_angstrom: instrument.wavelength_angstrom,
                 }
             }
+            IntegratedIntensityCorrectionModel::BraggBrentanoPolarizedLp {
+                polarization, ..
+            } => IntegratedIntensityCorrectionModel::BraggBrentanoPolarizedLp {
+                wavelength_angstrom: instrument.wavelength_angstrom,
+                polarization,
+            },
         };
         let input = StructuralPatternInputView {
             x_deg,
@@ -727,6 +735,8 @@ impl NativeStructuralPhase {
             occupancy: &self.occupancy,
             u_iso_angstrom2: &self.u_iso_angstrom2,
             scattering_species: &species,
+            scattering_real_offset: &self.scattering_real_offset,
+            scattering_imag_offset: &self.scattering_imag_offset,
             scale: self.scale,
             coordinate_tolerance: self.coordinate_tolerance,
             instrument,
@@ -753,6 +763,8 @@ impl NativeStructuralPhase {
         occupancy: PyReadonlyArray1<'_, f64>,
         u_iso_angstrom2: PyReadonlyArray1<'_, f64>,
         scattering_species: Vec<String>,
+        scattering_real_offset: PyReadonlyArray1<'_, f64>,
+        scattering_imag_offset: PyReadonlyArray1<'_, f64>,
         a_angstrom: f64,
         b_angstrom: f64,
         c_angstrom: f64,
@@ -764,12 +776,17 @@ impl NativeStructuralPhase {
         scattering_model: &str,
         correction_model: &str,
         correction_wavelength_angstrom: Option<f64>,
+        correction_polarization: Option<f64>,
     ) -> PyResult<Self> {
         let hkl = hkl_rows(&hkl_flat)?;
         let multiplicity = multiplicity_rows(&multiplicity)?;
         let fractional_xyz = xyz_rows(&fractional_xyz_flat)?;
         let occupancy = contiguous_slice(&occupancy, "occupancy")?.to_vec();
         let u_iso_angstrom2 = contiguous_slice(&u_iso_angstrom2, "u_iso_angstrom2")?.to_vec();
+        let scattering_real_offset =
+            contiguous_slice(&scattering_real_offset, "scattering_real_offset")?.to_vec();
+        let scattering_imag_offset =
+            contiguous_slice(&scattering_imag_offset, "scattering_imag_offset")?.to_vec();
         if hkl.len() != multiplicity.len() {
             return Err(PyValueError::new_err(
                 "hkl and multiplicity must have the same reflection count",
@@ -778,10 +795,22 @@ impl NativeStructuralPhase {
         if fractional_xyz.len() != occupancy.len()
             || fractional_xyz.len() != u_iso_angstrom2.len()
             || fractional_xyz.len() != scattering_species.len()
+            || (!scattering_real_offset.is_empty()
+                && fractional_xyz.len() != scattering_real_offset.len())
+            || (!scattering_imag_offset.is_empty()
+                && fractional_xyz.len() != scattering_imag_offset.len())
+            || scattering_real_offset.is_empty() != scattering_imag_offset.is_empty()
         {
             return Err(PyValueError::new_err(
                 "all structural site arrays must have the same site count",
             ));
+        }
+        if scattering_real_offset
+            .iter()
+            .chain(&scattering_imag_offset)
+            .any(|value| !value.is_finite())
+        {
+            return Err(PyValueError::new_err("scattering offsets must be finite"));
         }
         let scattering_model = parse_built_in_scattering_model(scattering_model)?;
         match scattering_model {
@@ -804,12 +833,15 @@ impl NativeStructuralPhase {
             occupancy,
             u_iso_angstrom2,
             scattering_species,
+            scattering_real_offset,
+            scattering_imag_offset,
             scale,
             coordinate_tolerance,
             scattering_model,
             correction_model: parse_correction_model(
                 correction_model,
                 correction_wavelength_angstrom,
+                correction_polarization,
             )?,
         })
     }
@@ -2340,22 +2372,40 @@ fn parse_built_in_scattering_model(model: &str) -> PyResult<BuiltInScatteringMod
 fn parse_correction_model(
     model: &str,
     wavelength_angstrom: Option<f64>,
+    polarization: Option<f64>,
 ) -> PyResult<IntegratedIntensityCorrectionModel> {
-    let selected = match (model, wavelength_angstrom) {
-        ("neutral", None) => IntegratedIntensityCorrectionModel::Neutral,
-        ("bragg_brentano_unpolarized_lp", Some(wavelength_angstrom)) => {
+    let selected = match (model, wavelength_angstrom, polarization) {
+        ("neutral", None, None) => IntegratedIntensityCorrectionModel::Neutral,
+        ("bragg_brentano_unpolarized_lp", Some(wavelength_angstrom), None) => {
             IntegratedIntensityCorrectionModel::BraggBrentanoUnpolarizedLp {
                 wavelength_angstrom,
             }
         }
-        ("neutral", Some(_)) => {
+        ("bragg_brentano_polarized_lp", Some(wavelength_angstrom), Some(polarization)) => {
+            IntegratedIntensityCorrectionModel::BraggBrentanoPolarizedLp {
+                wavelength_angstrom,
+                polarization,
+            }
+        }
+        ("neutral", Some(_), _) | ("neutral", None, Some(_)) => {
             return Err(PyValueError::new_err(
-                "neutral correction does not accept a wavelength",
+                "neutral correction does not accept wavelength or polarization",
             ));
         }
-        ("bragg_brentano_unpolarized_lp", None) => {
+        ("bragg_brentano_unpolarized_lp", None, None)
+        | ("bragg_brentano_polarized_lp", None, _) => {
             return Err(PyValueError::new_err(
                 "Bragg-Brentano LP correction requires a wavelength",
+            ));
+        }
+        ("bragg_brentano_unpolarized_lp", _, Some(_)) => {
+            return Err(PyValueError::new_err(
+                "unpolarized Bragg-Brentano LP does not accept polarization",
+            ));
+        }
+        ("bragg_brentano_polarized_lp", Some(_), None) => {
+            return Err(PyValueError::new_err(
+                "polarized Bragg-Brentano LP requires polarization",
             ));
         }
         _ => {
@@ -2368,14 +2418,20 @@ fn parse_correction_model(
 }
 
 /// Evaluate one explicit integrated-intensity correction model.
-#[pyfunction]
+#[pyfunction(signature = (
+    q_squared_inverse_angstrom2,
+    model,
+    wavelength_angstrom = None,
+    polarization = None
+))]
 fn integrated_intensity_correction<'py>(
     py: Python<'py>,
     q_squared_inverse_angstrom2: PyReadonlyArray1<'py, f64>,
     model: &str,
     wavelength_angstrom: Option<f64>,
+    polarization: Option<f64>,
 ) -> PyResult<CorrectionArrays<'py>> {
-    let selected = parse_correction_model(model, wavelength_angstrom)?;
+    let selected = parse_correction_model(model, wavelength_angstrom, polarization)?;
     let result = selected
         .evaluate(contiguous_slice(
             &q_squared_inverse_angstrom2,

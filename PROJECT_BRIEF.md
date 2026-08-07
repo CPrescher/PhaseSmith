@@ -161,6 +161,21 @@ implemented. Persistence format 6 stores the typed radiation union and loads
 formats 1--5. The next real-data checkpoint is the three-phase IUCr QARR fit
 and quantitative acceptance assessment.
 
+The following structural-intensity checkpoint adds native fixed X-ray
+dispersion offsets and polarized symmetric Bragg--Brentano LP. Fixed complex
+`f' + i f''` values are explicit caller-owned wavelength data layered on the
+independently sourced Waasmaier--Kirfel baseline; no absorption-edge database or
+GSAS-II code enters the runtime. Polarization uses
+`[P + (1-P) cos²(2theta)]/[sin²(theta) cos(theta)]`, with `P=0.5` exactly equal
+to the existing unpolarized model. Values and cell/wavelength JVP/VJP chains
+remain in Rust for monochromatic and fixed-component radiation. Persistence
+format 7 stores both typed models while loading formats 1--6.
+On the 20,001-sample, 256-reflection, 32-site release benchmark, the fused
+baseline takes 770.77 microseconds median and fixed dispersion takes 777.43
+microseconds, an observed 0.86% increment. A clean snapshot of the preceding
+commit measured 783.78 microseconds for the baseline on the same host, so this
+checkpoint introduces no measured baseline regression.
+
 ## Design commitments
 
 - Use GSAS-II only as a pinned validation oracle, never as the architecture.

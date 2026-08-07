@@ -15,6 +15,7 @@ from ..control import CancellationCallback
 from ..crystallography import p1_parameter_names
 from ..extensions import CompositePhysicsProvider
 from ..intensity_corrections import (
+    BraggBrentanoPolarizedLp,
     BraggBrentanoUnpolarizedLp,
     IntegratedIntensityCorrectionProvider,
     NeutralIntegratedIntensityCorrection,
@@ -1278,6 +1279,12 @@ def _apply_parameter_values(
                     BraggBrentanoUnpolarizedLp(wavelength_angstrom)
                     if wavelength_angstrom is not None
                     and type(phase.intensity_correction) is BraggBrentanoUnpolarizedLp
+                    else BraggBrentanoPolarizedLp(
+                        wavelength_angstrom,
+                        phase.intensity_correction.polarization,
+                    )
+                    if wavelength_angstrom is not None
+                    and type(phase.intensity_correction) is BraggBrentanoPolarizedLp
                     else phase.intensity_correction
                 ),
             )

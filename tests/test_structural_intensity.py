@@ -236,6 +236,32 @@ def test_lp_and_custom_correction_contracts_are_explicit_and_vectorized() -> Non
         atol=5e-6,
     )
 
+    polarized = phasesmith.BraggBrentanoPolarizedLp(wavelength, 0.7)
+    correction = polarized.evaluate(actual.q_squared_inverse_angstrom2)
+    expected_polarized = (0.7 + 0.3 * np.cos(2.0 * theta) ** 2) / (
+        np.sin(theta) ** 2 * np.cos(theta)
+    )
+    np.testing.assert_allclose(correction.values, expected_polarized, rtol=3e-15)
+    half = phasesmith.BraggBrentanoPolarizedLp(wavelength, 0.5).evaluate(
+        actual.q_squared_inverse_angstrom2
+    )
+    np.testing.assert_array_equal(
+        half.values, lp.evaluate(actual.q_squared_inverse_angstrom2).values
+    )
+    step_q = 1e-7
+    q = actual.q_squared_inverse_angstrom2
+    finite_q = (polarized.evaluate(q + step_q).values - polarized.evaluate(q - step_q).values) / (
+        2.0 * step_q
+    )
+    np.testing.assert_allclose(
+        correction.d_values_d_q_squared,
+        finite_q,
+        rtol=3e-8,
+        atol=3e-6,
+    )
+    with pytest.raises(ValueError, match="within"):
+        phasesmith.BraggBrentanoPolarizedLp(wavelength, 1.01)
+
     class CustomCorrection:
         calls = 0
 

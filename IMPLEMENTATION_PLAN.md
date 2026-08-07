@@ -1230,4 +1230,7 @@ monochromatic calibration and sample physics, richer backgrounds, the
 script-first project/report facade, format-5 persistence, and realistic X-ray
 and neutron benchmarks. Unit 19 is the next milestone and intentionally keeps
 anisotropic, anomalous, absorption, magnetic, electron, and specialist physics
-as separate reviewed increments.
+as separate reviewed increments. The QARR structural-intensity prerequisite now
+includes native caller-supplied fixed X-ray dispersion offsets and polarized
+Bragg--Brentano LP, with analytical metric/wavelength derivatives, fixed-spectrum
+composition, format-7 persistence, and independent finite-difference tests.

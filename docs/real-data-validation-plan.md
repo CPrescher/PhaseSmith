@@ -56,6 +56,12 @@ The fixed-spectrum prerequisite now provides:
 6. Explicit rejection of component-wavelength and guarded lattice refinement
    until their shared topology derivative contract is implemented.
 
+The QARR prerequisite review additionally identified and implemented two typed
+structural-intensity inputs: caller-supplied fixed X-ray `f' + i f''` offsets
+and polarized Bragg--Brentano LP with the instrument polarization mapped
+directly to `P`. Both execute in the native value/JVP/VJP path. Persistence
+format 7 stores these models and loads formats 1--6.
+
 ## Remaining QARR execution sequence
 
 1. Construct the three QARR phases from the pinned CIFs, use the calibrated Cu

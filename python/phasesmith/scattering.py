@@ -255,6 +255,12 @@ NEUTRON_NUCLEAR_DESCRIPTOR = ScatteringProviderDescriptor(
     "neutron",
     "fm",
 )
+XRAY_FIXED_DISPERSION_DESCRIPTOR = ScatteringProviderDescriptor(
+    "phasesmith.xray.fixed_dispersion",
+    "1",
+    "xray",
+    "electrons",
+)
 
 
 class PreparedXrayNonResonant:
@@ -344,6 +350,65 @@ class XrayNonResonant:
         """Evaluate one complete context through a temporary prepared cache."""
 
         return self.prepare(context.species).evaluate(context.s_inverse_angstrom)
+
+
+@dataclass(frozen=True, slots=True, init=False)
+class XrayFixedDispersion:
+    """Non-resonant X-ray factors plus fixed element-wise ``f' + i f''``.
+
+    Offsets are wavelength-specific input data; this model does not interpolate an
+    absorption-edge database or hide an energy convention. The constant offsets do
+    not change the analytical derivative with respect to scattering vector ``s``.
+    """
+
+    corrections: tuple[tuple[str, complex], ...]
+    descriptor = XRAY_FIXED_DISPERSION_DESCRIPTOR
+
+    def __init__(self, corrections: dict[str, complex]) -> None:
+        """Copy and validate one finite complex correction per element."""
+
+        if not isinstance(corrections, dict) or not corrections:
+            raise ValueError("corrections must be a non-empty element-to-complex mapping")
+        normalized: list[tuple[str, complex]] = []
+        for element, value in corrections.items():
+            if not isinstance(element, str) or not _ELEMENT.fullmatch(element):
+                raise ValueError("dispersion correction keys must be canonical element symbols")
+            correction = complex(value)
+            if not np.isfinite(correction.real) or not np.isfinite(correction.imag):
+                raise ValueError("dispersion corrections must be finite")
+            normalized.append((element, correction))
+        object.__setattr__(self, "corrections", tuple(sorted(normalized)))
+
+    def corrections_for(
+        self, species: tuple[ScatteringSpecies, ...] | list[ScatteringSpecies]
+    ) -> NDArray[np.complex128]:
+        """Return one immutable fixed correction for each requested species."""
+
+        identities = tuple(species)
+        if any(not isinstance(value, ScatteringSpecies) for value in identities):
+            raise TypeError("species must contain ScatteringSpecies values")
+        by_element = dict(self.corrections)
+        missing = sorted({value.element_symbol for value in identities} - by_element.keys())
+        if missing:
+            raise ValueError(f"missing fixed dispersion corrections for {', '.join(missing)}")
+        result = np.ascontiguousarray(
+            [by_element[value.element_symbol] for value in identities], dtype=np.complex128
+        )
+        result.flags.writeable = False
+        return result
+
+    def evaluate(self, context: ScatteringContext) -> ScatteringFactorBatch:
+        """Evaluate non-resonant factors and add the fixed complex offsets."""
+
+        if not isinstance(context, ScatteringContext):
+            raise TypeError("context must be a ScatteringContext")
+        baseline = XrayNonResonant().evaluate(context)
+        amplitudes = baseline.amplitudes + self.corrections_for(context.species)[None, :]
+        return ScatteringFactorBatch(
+            amplitudes,
+            baseline.d_amplitudes_d_s,
+            self.descriptor,
+        )
 
 
 @dataclass(frozen=True, slots=True)

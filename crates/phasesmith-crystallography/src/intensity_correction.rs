@@ -24,6 +24,13 @@ pub enum IntegratedIntensityCorrectionModel {
         /// Monochromatic wavelength in ångströms.
         wavelength_angstrom: f64,
     },
+    /// Monochromatic polarized symmetric Bragg--Brentano integrated LP.
+    BraggBrentanoPolarizedLp {
+        /// Monochromatic wavelength in ångströms.
+        wavelength_angstrom: f64,
+        /// Fraction in the constant polarization term, constrained to `[0, 1]`.
+        polarization: f64,
+    },
 }
 
 /// Invalid correction model or reflection geometry.
@@ -31,6 +38,8 @@ pub enum IntegratedIntensityCorrectionModel {
 pub enum IntegratedIntensityCorrectionError {
     /// Wavelength is not positive and finite.
     InvalidWavelength,
+    /// Polarization is not finite or lies outside `[0, 1]`.
+    InvalidPolarization,
     /// A reciprocal squared length is not positive and finite.
     InvalidQSquared,
     /// A reflection does not satisfy `0 < 2theta < 180°` for the wavelength.
@@ -41,6 +50,9 @@ impl Display for IntegratedIntensityCorrectionError {
     fn fmt(&self, formatter: &mut Formatter<'_>) -> std::fmt::Result {
         formatter.write_str(match self {
             Self::InvalidWavelength => "correction wavelength must be positive and finite",
+            Self::InvalidPolarization => {
+                "Bragg-Brentano polarization must be finite and within [0, 1]"
+            }
             Self::InvalidQSquared => "correction q_squared must be positive and finite",
             Self::ReflectionOutsideAngularDomain => {
                 "Bragg-Brentano LP requires reflections strictly within 0 < 2theta < 180 degrees"
@@ -76,9 +88,21 @@ impl IntegratedIntensityCorrectionModel {
             }),
             Self::BraggBrentanoUnpolarizedLp {
                 wavelength_angstrom,
+            }
+            | Self::BraggBrentanoPolarizedLp {
+                wavelength_angstrom,
+                ..
             } => {
                 if !wavelength_angstrom.is_finite() || wavelength_angstrom <= 0.0 {
                     return Err(IntegratedIntensityCorrectionError::InvalidWavelength);
+                }
+                let polarization = match self {
+                    Self::BraggBrentanoUnpolarizedLp { .. } => 0.5,
+                    Self::BraggBrentanoPolarizedLp { polarization, .. } => polarization,
+                    Self::Neutral => unreachable!(),
+                };
+                if !polarization.is_finite() || !(0.0..=1.0).contains(&polarization) {
+                    return Err(IntegratedIntensityCorrectionError::InvalidPolarization);
                 }
                 let mut values = Vec::with_capacity(q_squared_inverse_angstrom2.len());
                 let mut derivatives = Vec::with_capacity(q_squared_inverse_angstrom2.len());
@@ -86,7 +110,7 @@ impl IntegratedIntensityCorrectionModel {
                     Vec::with_capacity(q_squared_inverse_angstrom2.len());
                 for &q_squared in q_squared_inverse_angstrom2 {
                     let (value, derivative, wavelength_derivative) =
-                        bragg_brentano_lp(q_squared, wavelength_angstrom)?;
+                        bragg_brentano_lp(q_squared, wavelength_angstrom, polarization)?;
                     values.push(value);
                     derivatives.push(derivative);
                     wavelength_derivatives.push(wavelength_derivative);
@@ -104,6 +128,7 @@ impl IntegratedIntensityCorrectionModel {
 fn bragg_brentano_lp(
     q_squared: f64,
     wavelength: f64,
+    polarization: f64,
 ) -> Result<(f64, f64, f64), IntegratedIntensityCorrectionError> {
     let root_q = q_squared.sqrt();
     let sin_theta = 0.5 * wavelength * root_q;
@@ -114,10 +139,11 @@ fn bragg_brentano_lp(
     let cos_theta = theta.cos();
     let two_theta = 2.0 * theta;
     let (sin_two_theta, cos_two_theta) = two_theta.sin_cos();
-    let numerator = 1.0 + cos_two_theta * cos_two_theta;
-    let value = numerator / (2.0 * sin_theta * sin_theta * cos_theta);
-    let d_log_d_two_theta =
-        -2.0 * sin_two_theta * cos_two_theta / numerator - 1.0 / theta.tan() + 0.5 * theta.tan();
+    let numerator = polarization + (1.0 - polarization) * cos_two_theta * cos_two_theta;
+    let value = numerator / (sin_theta * sin_theta * cos_theta);
+    let d_log_d_two_theta = -2.0 * (1.0 - polarization) * sin_two_theta * cos_two_theta / numerator
+        - 1.0 / theta.tan()
+        + 0.5 * theta.tan();
     let d_two_theta_d_q_squared = wavelength / (2.0 * root_q * cos_theta);
     let d_two_theta_d_wavelength = root_q / cos_theta;
     Ok((
@@ -188,6 +214,61 @@ mod tests {
     }
 
     #[test]
+    fn polarized_lp_matches_closed_form_derivatives_and_unpolarized_limit() {
+        let wavelength = 1.54051;
+        let polarization = 0.7;
+        let q_squared = [0.03, 0.19, 0.62];
+        let model = IntegratedIntensityCorrectionModel::BraggBrentanoPolarizedLp {
+            wavelength_angstrom: wavelength,
+            polarization,
+        };
+        let actual = model.evaluate(&q_squared).expect("polarized LP");
+        for (index, value) in q_squared.into_iter().enumerate() {
+            let theta = (0.5 * wavelength * value.sqrt()).asin();
+            let expected = (polarization + (1.0 - polarization) * (2.0 * theta).cos().powi(2))
+                / (theta.sin().powi(2) * theta.cos());
+            assert!((actual.values[index] - expected).abs() < 2.0e-14 * expected);
+            let q_step = value * 1.0e-6;
+            let q_finite = (model.evaluate(&[value + q_step]).expect("q plus").values[0]
+                - model.evaluate(&[value - q_step]).expect("q minus").values[0])
+                / (2.0 * q_step);
+            assert!(
+                (actual.d_values_d_q_squared[index] - q_finite).abs()
+                    < 2.0e-8 * q_finite.abs().max(1.0)
+            );
+            let wavelength_step = wavelength * 1.0e-6;
+            let evaluate_at = |selected| {
+                IntegratedIntensityCorrectionModel::BraggBrentanoPolarizedLp {
+                    wavelength_angstrom: selected,
+                    polarization,
+                }
+                .evaluate(&[value])
+                .expect("wavelength finite difference")
+                .values[0]
+            };
+            let wavelength_finite = (evaluate_at(wavelength + wavelength_step)
+                - evaluate_at(wavelength - wavelength_step))
+                / (2.0 * wavelength_step);
+            assert!(
+                (actual.d_values_d_wavelength[index] - wavelength_finite).abs()
+                    < 2.0e-8 * wavelength_finite.abs().max(1.0)
+            );
+        }
+        let unpolarized = IntegratedIntensityCorrectionModel::BraggBrentanoUnpolarizedLp {
+            wavelength_angstrom: wavelength,
+        }
+        .evaluate(&q_squared)
+        .expect("unpolarized");
+        let half = IntegratedIntensityCorrectionModel::BraggBrentanoPolarizedLp {
+            wavelength_angstrom: wavelength,
+            polarization: 0.5,
+        }
+        .evaluate(&q_squared)
+        .expect("half polarized");
+        assert_eq!(half, unpolarized);
+    }
+
+    #[test]
     fn invalid_domains_are_explicit() {
         assert_eq!(
             IntegratedIntensityCorrectionModel::Neutral.evaluate(&[0.0]),
@@ -206,6 +287,14 @@ mod tests {
             }
             .evaluate(&[1.0]),
             Err(IntegratedIntensityCorrectionError::ReflectionOutsideAngularDomain)
+        );
+        assert_eq!(
+            IntegratedIntensityCorrectionModel::BraggBrentanoPolarizedLp {
+                wavelength_angstrom: 1.0,
+                polarization: 1.1,
+            }
+            .evaluate(&[1.0]),
+            Err(IntegratedIntensityCorrectionError::InvalidPolarization)
         );
     }
 }
