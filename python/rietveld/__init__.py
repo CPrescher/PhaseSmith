@@ -112,6 +112,7 @@ from .phase import (
     RietveldPhase,
     StructuralReflectionBatch,
 )
+from .project import RietveldProject
 from .radiation import (
     BraggBrentanoGeometry,
     ConstantWavelengthExperiment,
@@ -119,6 +120,7 @@ from .radiation import (
     RadiationProbe,
     WavelengthComponents,
 )
+from .reporting import rietveld_result_record, write_rietveld_csv, write_rietveld_json
 from .results import AccumulationResult, PatternDerivatives, SupportJacobian
 from .sample import (
     IsotropicMicrostrainBroadening,
@@ -271,6 +273,7 @@ __all__ = [
     "ReflectionPhysicsProvider",
     "ReflectionRange",
     "RietveldPhase",
+    "RietveldProject",
     "ScatteringContext",
     "ScatteringFactorBatch",
     "ScatteringFactorProvider",
@@ -341,6 +344,7 @@ __all__ = [
     "read_cif",
     "reciprocal_angle_geometry",
     "refinement",
+    "rietveld_result_record",
     "smooth_bruckner",
     "space_group_by_number",
     "space_group_by_symbol",
@@ -350,5 +354,7 @@ __all__ = [
     "tch_shape_from_fwhm",
     "tch_shape_from_gaussian_sigma",
     "tof_profile_parameters",
+    "write_rietveld_csv",
+    "write_rietveld_json",
     "xray_species_metadata",
 ]

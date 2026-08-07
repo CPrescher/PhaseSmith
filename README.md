@@ -402,6 +402,43 @@ print(result.termination_reason, result.metrics.rwp)
 print(result.phases[0].structure.cell)
 ```
 
+For long-running scripts and application integration, the small project facade
+keeps restart state, cooperative stop control, persistence, and plain reports
+together while leaving `RietveldInput` fully accessible:
+
+```python
+from dataclasses import replace
+
+from rietveld import BraggBrentanoGeometry, RietveldProject
+
+experiment = replace(
+    experiment,
+    zero_shift_deg=0.0,
+    geometry=BraggBrentanoGeometry(240.0, sample_displacement_mm=0.0),
+)
+selection = rietveld.RietveldParameterSelection(
+    phase_scale=True,
+    lattice=True,
+    sample_physics=True,
+    instrument_parameters=("zero_shift_deg", "sample_displacement_mm"),
+    background=True,
+)
+request = replace(request, experiment=experiment, selection=selection)
+project = RietveldProject(request)
+result = project.refine(logger=my_event_logger)
+project.write_reports(json_path="result.json", csv_path="pattern.csv")
+project.save("run-state")
+
+# Another thread or a callback can stop safely; the accepted state is resumable.
+project.stop("user_requested")
+```
+
+Refinable backgrounds share one analytical interface. Built-ins include power
+and Chebyshev series, fixed-knot linear interpolation, broad normalized
+Gaussian amorphous components, and ordered composites. Smooth Bruckner remains
+an explicit preprocessing operation and is never inserted into refinement
+automatically.
+
 GSAS-II is used only as the optional pinned validation oracle described in
 [`oracle/README.md`](oracle/README.md).
 

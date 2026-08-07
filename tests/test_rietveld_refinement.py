@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from dataclasses import replace
 from fractions import Fraction
 
@@ -8,7 +9,11 @@ import pytest
 import rietveld
 from rietveld.refinement import (
     AffineConstraint,
+    AmorphousBackground,
+    AmorphousPeak,
+    ChebyshevBackground,
     CheckpointCallbackError,
+    PointBackground,
     PolynomialBackground,
 )
 from rietveld.refinement import rietveld as structural_refinement
@@ -261,6 +266,54 @@ def test_combined_structural_products_match_finite_difference_and_adjoint() -> N
     left = float(analytical @ samples)
     right = float(direction @ linearization.vjp(samples))
     assert left == pytest.approx(right, rel=3.0e-12, abs=3.0e-9)
+
+
+def test_march_dollase_lattice_chain_matches_finite_difference() -> None:
+    selected = selection(lattice=True)
+    base = request_from_cif(selected)
+    metric = rietveld.ReciprocalMetric(base.phases[0].structure.cell.geometry().reciprocal_metric)
+    phase = replace(
+        base.phases[0],
+        physics=rietveld.MarchDollasePreferredOrientation(0.78, (1.0, 2.0, 1.0), metric),
+    )
+    parameters = structural_refinement.build_parameter_set(
+        (phase,), base.lattice_domains, selected, experiment=base.experiment
+    )
+    request = replace(base, phases=(phase,), parameters=parameters, selection=selected)
+    options = structural_refinement.RietveldOptions()
+    linearization = structural_refinement._RietveldLinearization.prepare(
+        request,
+        request.experiment,
+        request.background,
+        request.phases,
+        request.parameters,
+        options,
+        structural_refinement.RefinementRuntime(options.limits),
+    )
+    direction = np.zeros(len(parameters.specs))
+    direction[0] = 1.0
+    analytical = linearization.jvp(direction)
+    transform = structural_refinement.ConstraintTransform(parameters)
+    packed = transform.pack()
+    step = 5.0e-7
+    calculated = []
+    for sign in (-1.0, 1.0):
+        values = transform.unpack(packed + sign * step * direction)
+        phases, _ = structural_refinement._apply_parameter_values(
+            request.phases,
+            request.lattice_domains,
+            request.parameters,
+            values,
+            wavelength_angstrom=request.experiment.radiation.wavelength_angstrom,
+        )
+        calculated.append(
+            structural_refinement.calculate(request.pattern, request.experiment, phases).y
+        )
+    finite_difference = (calculated[1] - calculated[0]) / (2.0 * step)
+    relative_error = np.linalg.norm(analytical - finite_difference) / np.linalg.norm(
+        finite_difference
+    )
+    assert relative_error < 3.0e-5
 
 
 def test_pre_requested_cancellation_returns_the_unmodified_safe_state() -> None:
@@ -517,6 +570,48 @@ def test_cancellation_requested_by_checkpoint_sink_returns_that_accepted_state()
     assert result.checkpoint == accepted[0]
 
 
+def test_project_facade_refines_stops_reports_and_resumes(tmp_path) -> None:
+    truth = request_from_cif(selection(phase_scale=True))
+    starting_phase = replace(truth.phases[0], scale=0.55)
+    request = replace(
+        truth,
+        phases=(starting_phase,),
+        parameters=structural_refinement.build_parameter_set(
+            (starting_phase,), (None,), truth.selection
+        ),
+    )
+    project = rietveld.RietveldProject(request)
+    result = project.refine()
+    assert result.phases[0].scale == pytest.approx(1.0, rel=2.0e-8)
+    json_path, csv_path = project.write_reports(
+        json_path=tmp_path / "result.json",
+        csv_path=tmp_path / "pattern.csv",
+    )
+    assert json_path is not None and csv_path is not None
+    report = json.loads(json_path.read_text())
+    assert report["schema"] == "rietveld.result-report.v1"
+    assert report["termination"]["reason"] == result.termination_reason.value
+    assert report["phases"][0]["reflection_count"] == truth.phases[0].reflections.reflection_count
+    assert len(csv_path.read_text().splitlines()) == truth.pattern.x.size + 1
+
+    saved = project.save(tmp_path / "project")
+    restored = rietveld.RietveldProject.load(saved)
+    assert restored.checkpoint is not None and project.checkpoint is not None
+    assert restored.checkpoint.parameters == project.checkpoint.parameters
+    assert restored.checkpoint.history == project.checkpoint.history
+    np.testing.assert_allclose(restored.calculate().y, result.calculation.y)
+
+    stopped = rietveld.RietveldProject(request)
+
+    def stop_on_start(event: object) -> None:
+        if event.kind is structural_refinement.RefinementEventKind.START:
+            stopped.stop("test_stop")
+
+    cancelled = stopped.refine(logger=stop_on_start)
+    assert cancelled.termination_reason is structural_refinement.TerminationReason.CANCELLED
+    assert cancelled.history == ()
+
+
 def test_model_evaluation_budget_returns_last_calculated_state() -> None:
     truth = request_from_cif(selection(phase_scale=True))
     starting_phase = replace(truth.phases[0], scale=0.7)
@@ -722,6 +817,62 @@ def test_polynomial_background_refines_as_a_separate_typed_domain() -> None:
         rtol=0.0,
         atol=2.0e-8,
     )
+
+
+@pytest.mark.parametrize(
+    ("expected_background", "starting_background"),
+    (
+        (
+            ChebyshevBackground("cheb", (2.0, 0.3, -0.2), (15.0, 100.0)),
+            ChebyshevBackground("cheb", (1.7, 0.15, -0.05), (15.0, 100.0)),
+        ),
+        (
+            PointBackground("points", (15.0, 45.0, 75.0, 100.0), (1.0, 2.0, 1.4, 2.2)),
+            PointBackground("points", (15.0, 45.0, 75.0, 100.0), (0.8, 1.7, 1.2, 1.9)),
+        ),
+        (
+            AmorphousBackground("glass", (AmorphousPeak(18.0, 56.0, 14.0),)),
+            AmorphousBackground("glass", (AmorphousPeak(16.0, 55.0, 13.0),)),
+        ),
+    ),
+)
+def test_richer_background_models_refine_through_the_common_contract(
+    expected_background: object,
+    starting_background: object,
+) -> None:
+    truth = request_from_cif(selection())
+    calculated = structural_refinement.calculate(
+        truth.pattern,
+        truth.experiment,
+        truth.phases,
+        background=expected_background,
+    )
+    selected = selection(background=True)
+    parameters = structural_refinement.build_parameter_set(
+        truth.phases,
+        (None,),
+        selected,
+        experiment=truth.experiment,
+        background=starting_background,
+    )
+    request = structural_refinement.RietveldInput(
+        replace(truth.pattern, observed_y=calculated.y),
+        truth.experiment,
+        truth.phases,
+        (None,),
+        parameters,
+        selection=selected,
+        background=starting_background,
+    )
+    result = structural_refinement.refine(request)
+    assert result.background is not None
+    np.testing.assert_allclose(
+        result.background.coefficients,
+        expected_background.coefficients,
+        rtol=2.0e-5,
+        atol=2.0e-7,
+    )
+    assert result.metrics.rwp < 2.0e-7
 
 
 def test_logger_failure_is_isolated_from_structural_refinement() -> None:
