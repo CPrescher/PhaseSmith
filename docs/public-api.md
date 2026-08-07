@@ -45,6 +45,12 @@ rietveld.pattern
   Observed grids, intensities, uncertainties, masks, backgrounds, and
   calculated-pattern result containers.
 
+rietveld.background
+  Plain-array background estimation and subtraction preprocessing. The native
+  Smooth Bruckner estimator is compatible with a pinned xypattern revision;
+  no GUI package is imported. Non-differentiable preprocessing is kept out of
+  refinement parameter models.
+
 rietveld.calculation
   Stateless and prepared pattern calculators that compose instrument, phase,
   sample, and pattern inputs into native batch calls.
@@ -138,6 +144,9 @@ rietveld.refinement.CwLatticeReflectionDomain
 rietveld.refinement.cw_lattice_geometry
 rietveld.refinement.tof_lattice_geometry
 rietveld.pattern.PowderPattern
+rietveld.background.smooth_bruckner
+rietveld.background.SmoothBrucknerBackground
+rietveld.background.BackgroundSubtractionResult
 rietveld.pattern.PatternCalculationResult
 rietveld.pattern.StructuralReflectionResult
 rietveld.pattern.StructuralPatternCalculationResult

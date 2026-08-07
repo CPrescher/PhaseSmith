@@ -84,6 +84,16 @@ formats 1--3. The internal gate currently passes 410 Python tests (one optional
 external-oracle case deselected), 55 Rust tests, strict Ruff, formatting, and
 Clippy.
 
+Unit 18 starts with practical real-pattern usability while preserving the
+numerical/refinement boundaries. Its first slice is a native, deterministic
+Smooth Bruckner background estimator compatible with the pinned MIT-licensed
+xypattern implementation used by Dioptas-style workflows. It is exposed as
+plain-array preprocessing under `rietveld.background`; it never imports
+Dioptas or xypattern and is not inserted into the differentiable refinement
+model. The raw smoothed envelope and the optional Chebyshev-compressed
+background are both scriptable, and the result can be passed directly into a
+`PowderPattern`.
+
 ## Design commitments
 
 - Use GSAS-II only as a pinned validation oracle, never as the architecture.
@@ -177,6 +187,9 @@ documented; GSAS-II itself is never vendored.
 - `python/rietveld`: public Python package, separated instrument/phase/pattern/
   calculation/refinement modules, reference implementation, optional
   integrations, and validation tooling.
+- `python/rietveld/background`: model-independent background estimation and
+  subtraction preprocessing. Refinable additive background models remain in
+  `python/rietveld/refinement/background`.
 - `python/rietveld/io`: optional format adapters; CIF uses a lazy Gemmi backend
   and returns only parser-independent structures and diagnostics.
 - `tests`: Python differential and contract tests.

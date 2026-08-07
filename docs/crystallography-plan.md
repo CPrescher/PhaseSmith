@@ -590,7 +590,29 @@ iterations take 152.393 ms median on the development host. The external pinned
 GSAS-II refinement comparison remains unavailable and is not a runtime
 dependency or a basis for the implementation.
 
-## Implementation unit 18: advanced crystallographic physics
+## Implementation unit 18: practical monochromatic workflow
+
+This unit closes the gap between the validated Rietveld kernel and routine
+real-pattern scripts without adding GUI ownership to the library:
+
+1. model-independent background estimation/subtraction, beginning with the
+   pinned xypattern-compatible Smooth Bruckner algorithm;
+2. zero shift, sample displacement, wavelength calibration, and explicit
+   monochromatic instrument-geometry corrections;
+3. refinable built-in size, microstrain, and preferred orientation;
+4. richer differentiable backgrounds, including Chebyshev, point-interpolated,
+   and broad amorphous components;
+5. a concise project/request facade and plain JSON/CSV result reports; and
+6. realistic laboratory X-ray and monochromatic-neutron validation cases.
+
+Preprocessing estimators live in `rietveld.background` and return plain arrays.
+They are not silently coupled to refinement. Every refinable term remains a
+typed analytical model with value/JVP/VJP validation and persistence.
+
+The first background slice is specified in
+[`background-subtraction.md`](background-subtraction.md).
+
+## Implementation unit 19: advanced crystallographic physics
 
 These are separate reviewed increments after the first Rietveld exit gate:
 
