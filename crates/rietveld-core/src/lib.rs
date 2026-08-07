@@ -4,6 +4,7 @@
 //! and GSAS-II data structures. It operates on explicit parameters and flat
 //! numeric slices.
 
+pub mod background;
 pub mod cw;
 pub mod cw_components;
 pub mod cw_contributions;
@@ -14,6 +15,7 @@ pub mod radiation;
 pub mod tch;
 pub mod tof;
 
+pub use background::{BackgroundError, smooth_bruckner};
 pub use cw::{
     ConstantWavelengthInstrument, CwBatchError, CwError, CwProfileParameters,
     CwReflectionBatchView, accumulate_cw_batch,
