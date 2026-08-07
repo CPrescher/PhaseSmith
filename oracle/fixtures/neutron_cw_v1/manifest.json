@@ -270,7 +270,7 @@
   "kind": "neutron_cw",
   "provenance": {
     "generated_at_utc": "2026-08-05T15:40:04.093470+00:00",
-    "generator_sha256": "8f006168ea6a5b4f043dba6e770d524b1218f6f5d87116feefeff145d5ebbdc9",
+    "generator_sha256": "39d74a10252a1bc9dfaa525eebd88ffefda15ac70cd86b5a374e7e8fd62c5103",
     "gsasii_repository": "https://github.com/AdvancedPhotonSource/GSAS-II",
     "gsasii_revision": "c0bc79b259cdf0065480b5fbd57674ddf12c4a23",
     "gsasii_tag": 5838,

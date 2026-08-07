@@ -3,9 +3,9 @@ from __future__ import annotations
 import math
 
 import numpy as np
+import phasesmith
 import pytest
-import rietveld
-from rietveld import reference
+from phasesmith import reference
 
 
 def test_native_profile_matches_independent_numpy_reference() -> None:
@@ -14,7 +14,7 @@ def test_native_profile_matches_independent_numpy_reference() -> None:
     for fwhm, eta in zip(
         rng.uniform(0.02, 1.5, 12), rng.uniform(0.0, 1.0, 12), strict=True
     ):
-        actual = rietveld.profile(delta, fwhm, eta)
+        actual = phasesmith.profile(delta, fwhm, eta)
         expected = reference.profile(delta, fwhm, eta)
         np.testing.assert_allclose(actual.value, expected.value, rtol=2e-15, atol=1e-15)
         np.testing.assert_allclose(actual.d_delta, expected.d_delta, rtol=4e-15, atol=2e-14)
@@ -25,7 +25,7 @@ def test_native_profile_matches_independent_numpy_reference() -> None:
 def test_fwhm_and_symmetry_contract() -> None:
     fwhm = 0.37
     for eta in np.linspace(0.0, 1.0, 9):
-        result = rietveld.profile([0.0, -fwhm / 2.0, fwhm / 2.0], fwhm, eta)
+        result = phasesmith.profile([0.0, -fwhm / 2.0, fwhm / 2.0], fwhm, eta)
         np.testing.assert_allclose(result.value[1:], result.value[0] / 2.0, rtol=2e-15)
         assert result.d_delta[0] == 0.0
         assert result.value[1] == result.value[2]
@@ -39,7 +39,7 @@ def test_support_integral_matches_analytic_truncation() -> None:
     support = 12.0
     radius = support * fwhm
     x = np.linspace(position - radius, position + radius, 200_001)
-    result = rietveld.accumulate(
+    result = phasesmith.accumulate(
         x, [position], [intensity], [fwhm], [eta], support_fwhm=support
     )
 
@@ -63,29 +63,29 @@ def test_fused_accumulation_matches_reference() -> None:
     fwhms = rng.uniform(0.015, 0.15, positions.size)
     etas = rng.uniform(0.0, 1.0, positions.size)
 
-    actual = rietveld.accumulate(
+    actual = phasesmith.accumulate(
         x, positions, intensities, fwhms, etas, support_fwhm=7.37
     )
     expected_y, expected_jacobian = reference.accumulate(
         x, positions, intensities, fwhms, etas, support_fwhm=7.37
     )
     np.testing.assert_allclose(actual.y, expected_y, rtol=3e-15, atol=2e-13)
-    assert isinstance(actual.jacobian, rietveld.SupportJacobian)
+    assert isinstance(actual.jacobian, phasesmith.SupportJacobian)
     np.testing.assert_allclose(
         actual.jacobian.to_dense(x.size),
         expected_jacobian,
         rtol=4e-15,
         atol=2e-13,
     )
-    assert rietveld.PARAMETER_ORDER == ("intensity", "position", "fwhm", "eta")
+    assert phasesmith.PARAMETER_ORDER == ("intensity", "position", "fwhm", "eta")
 
 
-@pytest.mark.parametrize("parameter", range(4), ids=rietveld.PARAMETER_ORDER)
+@pytest.mark.parametrize("parameter", range(4), ids=phasesmith.PARAMETER_ORDER)
 def test_accumulation_jacobian_matches_centered_finite_difference(parameter: int) -> None:
     x = np.linspace(-0.493, 0.507, 1_001)
     parameters = np.array([[0.013, 82.0, 0.071, 0.37]], dtype=np.float64)
     support = 5.321
-    baseline = rietveld.accumulate(
+    baseline = phasesmith.accumulate(
         x,
         parameters[:, 0],
         parameters[:, 1],
@@ -104,7 +104,7 @@ def test_accumulation_jacobian_matches_centered_finite_difference(parameter: int
     minus[0, input_column] -= step
 
     def evaluate(values: np.ndarray) -> np.ndarray:
-        return rietveld.accumulate(
+        return phasesmith.accumulate(
             x,
             values[:, 0],
             values[:, 1],
@@ -124,7 +124,7 @@ def test_accumulation_jacobian_matches_centered_finite_difference(parameter: int
 
 
 def test_support_is_inclusive_and_exact() -> None:
-    result = rietveld.accumulate(
+    result = phasesmith.accumulate(
         [-2.0, -1.0, 0.0, 1.0, 2.0],
         [0.0],
         [1.0],
@@ -134,7 +134,7 @@ def test_support_is_inclusive_and_exact() -> None:
     )
     np.testing.assert_array_equal(result.y[[0, 4]], 0.0)
     assert np.all(result.y[1:4] > 0.0)
-    assert isinstance(result.jacobian, rietveld.SupportJacobian)
+    assert isinstance(result.jacobian, phasesmith.SupportJacobian)
     np.testing.assert_array_equal(result.jacobian.starts, [1])
     np.testing.assert_array_equal(result.jacobian.offsets, [0, 3])
     dense = result.jacobian.to_dense(result.y.size)
@@ -153,7 +153,7 @@ def test_invalid_inputs_fail_at_python_boundary(
     arguments: tuple[list[float], ...], message: str
 ) -> None:
     with pytest.raises(ValueError, match=message):
-        rietveld.accumulate(*arguments)
+        phasesmith.accumulate(*arguments)
 
 
 def test_dense_layout_is_explicit_compatibility_materialization() -> None:
@@ -164,11 +164,11 @@ def test_dense_layout_is_explicit_compatibility_materialization() -> None:
         np.array([0.1, 0.2]),
         np.array([0.25, 0.75]),
     )
-    support = rietveld.accumulate(*arguments, support_fwhm=3.0)
-    dense = rietveld.accumulate(
+    support = phasesmith.accumulate(*arguments, support_fwhm=3.0)
+    dense = phasesmith.accumulate(
         *arguments, support_fwhm=3.0, jacobian_layout="dense"
     )
-    assert isinstance(support.jacobian, rietveld.SupportJacobian)
+    assert isinstance(support.jacobian, phasesmith.SupportJacobian)
     assert isinstance(dense.jacobian, np.ndarray)
     np.testing.assert_array_equal(support.y, dense.y)
     np.testing.assert_array_equal(
@@ -180,7 +180,7 @@ def test_dense_layout_is_explicit_compatibility_materialization() -> None:
 def test_sparse_memory_scales_with_active_support() -> None:
     x = np.linspace(0.0, 100.0, 10_001)
     positions = np.linspace(1.0, 99.0, 250)
-    result = rietveld.accumulate(
+    result = phasesmith.accumulate(
         x,
         positions,
         np.ones(positions.size),
@@ -189,8 +189,8 @@ def test_sparse_memory_scales_with_active_support() -> None:
         support_fwhm=2.0,
     )
     sparse = result.derivatives.local
-    dense_derivative_elements = positions.size * len(rietveld.PARAMETER_ORDER) * x.size
-    assert sparse.values.size == sparse.active_sample_count * len(rietveld.PARAMETER_ORDER)
+    dense_derivative_elements = positions.size * len(phasesmith.PARAMETER_ORDER) * x.size
+    assert sparse.values.size == sparse.active_sample_count * len(phasesmith.PARAMETER_ORDER)
     assert sparse.values.size < dense_derivative_elements // 500
 
 
@@ -203,7 +203,7 @@ def test_randomized_support_reconstruction_matches_reference(seed: int) -> None:
     fwhms = rng.uniform(0.004, 0.08, positions.size)
     etas = rng.uniform(0.0, 1.0, positions.size)
     support_fwhm = 3.719
-    actual = rietveld.accumulate(
+    actual = phasesmith.accumulate(
         x,
         positions,
         intensities,
@@ -254,7 +254,7 @@ def test_empty_outside_and_single_sample_supports(
     expected_offsets: list[int],
 ) -> None:
     count = len(positions)
-    result = rietveld.accumulate(
+    result = phasesmith.accumulate(
         x,
         positions,
         np.ones(count),
@@ -268,16 +268,16 @@ def test_empty_outside_and_single_sample_supports(
 
 def test_python_array_validation_and_layout_validation() -> None:
     with pytest.raises(ValueError, match="one-dimensional"):
-        rietveld.accumulate([[0.0]], [], [], [], [])
+        phasesmith.accumulate([[0.0]], [], [], [], [])
     with pytest.raises(ValueError, match="real floating-point or integer"):
-        rietveld.accumulate(np.array([0.0 + 1.0j]), [], [], [], [])
+        phasesmith.accumulate(np.array([0.0 + 1.0j]), [], [], [], [])
     with pytest.raises(ValueError, match="equal length"):
-        rietveld.accumulate([0.0], [0.0], [], [1.0], [0.5])
+        phasesmith.accumulate([0.0], [0.0], [], [1.0], [0.5])
     with pytest.raises(ValueError, match="jacobian_layout"):
-        rietveld.accumulate([0.0], [], [], [], [], jacobian_layout="csr")  # type: ignore[arg-type]
+        phasesmith.accumulate([0.0], [], [], [], [], jacobian_layout="csr")  # type: ignore[arg-type]
 
 
 def test_support_to_dense_rejects_inconsistent_sample_count() -> None:
-    result = rietveld.accumulate([0.0, 1.0], [1.0], [1.0], [1.0], [0.5])
+    result = phasesmith.accumulate([0.0, 1.0], [1.0], [1.0], [1.0], [0.5])
     with pytest.raises(ValueError, match="outside"):
         result.derivatives.local.to_dense(1)

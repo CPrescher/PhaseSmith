@@ -1,0 +1,22 @@
+[package]
+name = "phasesmith-engine"
+description = "Native composition layer for PhaseSmith"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+phasesmith-core = { path = "../phasesmith-core" }
+phasesmith-crystallography = { path = "../phasesmith-crystallography" }
+
+[dev-dependencies]
+criterion = "0.7"
+
+[[bench]]
+name = "structural_pattern"
+harness = false
+
+[lints]
+workspace = true

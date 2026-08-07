@@ -347,6 +347,39 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d6790f58c7ff633d8771f42965289203411a5e5c68388703c06e14f24770b41e"
 
 [[package]]
+name = "phasesmith-core"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+]
+
+[[package]]
+name = "phasesmith-crystallography"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+]
+
+[[package]]
+name = "phasesmith-engine"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "phasesmith-core",
+ "phasesmith-crystallography",
+]
+
+[[package]]
+name = "phasesmith-py"
+version = "0.1.0"
+dependencies = [
+ "numpy",
+ "phasesmith-core",
+ "phasesmith-engine",
+ "pyo3",
+]
+
+[[package]]
 name = "pin-project-lite"
 version = "0.2.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -528,39 +561,6 @@ name = "regex-syntax"
 version = "0.8.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d6f6ff9a378485b298a5286656da665ba74413d36db0979633275d2e708145d4"
-
-[[package]]
-name = "rietveld-core"
-version = "0.1.0"
-dependencies = [
- "criterion",
-]
-
-[[package]]
-name = "rietveld-crystallography"
-version = "0.1.0"
-dependencies = [
- "criterion",
-]
-
-[[package]]
-name = "rietveld-engine"
-version = "0.1.0"
-dependencies = [
- "criterion",
- "rietveld-core",
- "rietveld-crystallography",
-]
-
-[[package]]
-name = "rietveld-py"
-version = "0.1.0"
-dependencies = [
- "numpy",
- "pyo3",
- "rietveld-core",
- "rietveld-engine",
-]
 
 [[package]]
 name = "rustc-hash"

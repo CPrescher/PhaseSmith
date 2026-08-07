@@ -1,7 +1,7 @@
 # Structural Rietveld refinement
 
 The first structural refinement vertical slice is implemented in
-`rietveld.refinement.rietveld`. It is a script-first, monochromatic
+`phasesmith.refinement.rietveld`. It is a script-first, monochromatic
 constant-wavelength workflow. It accepts one or more typed `RietveldPhase`
 objects and obtains every reflection intensity from their crystal structures;
 GSAS-II is never imported or called.
@@ -49,8 +49,8 @@ refinement methods and is applied before every native JVP and after every VJP.
 ## Minimal CIF script
 
 ```python
-from rietveld import PowderPattern
-from rietveld.refinement import rietveld
+from phasesmith import PowderPattern
+from phasesmith.refinement import rietveld
 
 observed = PowderPattern(
     two_theta,
@@ -101,8 +101,8 @@ budgets return the last accepted state. Every accepted step emits a complete
 with the last accepted state and then preserves the original traceback.
 
 ```python
-from rietveld import CancellationToken
-from rietveld.refinement import ConsoleRefinementLogger, rietveld
+from phasesmith import CancellationToken
+from phasesmith.refinement import ConsoleRefinementLogger, rietveld
 
 stop = CancellationToken()
 result = rietveld.refine(

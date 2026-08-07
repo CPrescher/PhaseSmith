@@ -3,13 +3,13 @@ from __future__ import annotations
 from dataclasses import replace
 
 import numpy as np
+import phasesmith
 import pytest
-import rietveld
-from rietveld import reference
+from phasesmith import reference
 
 
-def instrument() -> rietveld.TofInstrument:
-    return rietveld.TofInstrument(
+def instrument() -> phasesmith.TofInstrument:
+    return phasesmith.TofInstrument(
         zero_us=-0.773346536757,
         difc_us_per_angstrom=5084.82763065,
         difa_us_per_angstrom2=-2.6304177486,
@@ -52,7 +52,7 @@ def reference_parameters(d: np.ndarray) -> reference.ReferenceTofProfileParamete
 
 def test_parameter_equations_match_independent_reference() -> None:
     d = np.array([0.45, 0.8, 1.3, 2.1, 3.6])
-    actual = rietveld.tof_profile_parameters(d, instrument())
+    actual = phasesmith.tof_profile_parameters(d, instrument())
     expected = reference_parameters(d)
     for field in expected.__dataclass_fields__:
         np.testing.assert_allclose(
@@ -72,7 +72,7 @@ def test_direct_profile_matches_high_order_independent_quadrature(
     alpha: float, beta: float, gaussian: float, lorentzian: float
 ) -> None:
     x = np.linspace(-250.0, 450.0, 701)
-    actual = rietveld.profile_tof(x, 17.0, alpha, beta, gaussian, lorentzian)
+    actual = phasesmith.profile_tof(x, 17.0, alpha, beta, gaussian, lorentzian)
     expected = reference.profile_tof(
         x,
         17.0,
@@ -107,12 +107,12 @@ def test_direct_profile_derivatives_match_centered_differences(field: str, step:
         "lorentzian_fwhm_us": 4.0,
     }
     x = np.linspace(4875.0, 5225.0, 351)
-    actual = rietveld.profile_tof(x, **inputs)
+    actual = phasesmith.profile_tof(x, **inputs)
     plus = inputs | {field: inputs[field] + step}
     minus = inputs | {field: inputs[field] - step}
-    finite = (rietveld.profile_tof(x, **plus).value - rietveld.profile_tof(x, **minus).value) / (
-        2.0 * step
-    )
+    finite = (
+        phasesmith.profile_tof(x, **plus).value - phasesmith.profile_tof(x, **minus).value
+    ) / (2.0 * step)
     derivative_name = {
         "position_us": "d_position",
         "alpha_per_us": "d_alpha",
@@ -128,7 +128,7 @@ def test_normalization_centroid_and_asymmetry_moments() -> None:
     beta = 0.03
     tail_log = 20.0
     x = np.linspace(-300.0, 800.0, 44_001)
-    y = rietveld.profile_tof(x, 0.0, alpha, beta, 10.0, 0.0, tail_log=tail_log).value
+    y = phasesmith.profile_tof(x, 0.0, alpha, beta, 10.0, 0.0, tail_log=tail_log).value
     area = np.trapezoid(y, x)
     centroid = np.trapezoid(x * y, x) / area
     exponential_mean = (1.0 - (tail_log + 1.0) * np.exp(-tail_log)) / (1.0 - np.exp(-tail_log))
@@ -144,7 +144,7 @@ def test_normalization_centroid_and_asymmetry_moments() -> None:
 
 def test_equal_rates_produce_a_symmetric_profile() -> None:
     x = np.linspace(-150.0, 150.0, 1201)
-    result = rietveld.profile_tof(x, 0.0, 0.08, 0.08, 12.0, 3.0)
+    result = phasesmith.profile_tof(x, 0.0, 0.08, 0.08, 12.0, 3.0)
     np.testing.assert_allclose(result.value, result.value[::-1], rtol=0.0, atol=2e-17)
 
 
@@ -158,7 +158,7 @@ def test_one_sided_exponential_limits(collapsed_side: str) -> None:
     alpha, beta = (
         (collapsed_rate, finite_rate) if collapsed_side == "left" else (finite_rate, collapsed_rate)
     )
-    actual = rietveld.profile_tof(x, 0.0, alpha, beta, 12.0, 3.0).value
+    actual = phasesmith.profile_tof(x, 0.0, alpha, beta, 12.0, 3.0).value
 
     nodes, weights = np.polynomial.legendre.leggauss(768)
     tail_log = 20.0
@@ -176,11 +176,11 @@ def test_one_sided_exponential_limits(collapsed_side: str) -> None:
 def test_fused_accumulation_matches_support_limited_reference() -> None:
     d = np.array([1.58, 1.62, 1.69])
     intensities = np.array([9.0, 5.5, 13.0])
-    parameters = rietveld.tof_profile_parameters(d, instrument())
+    parameters = phasesmith.tof_profile_parameters(d, instrument())
     x = np.linspace(7600.0, 9400.0, 901)
     support_fwhm = 12.0
     tail_log = 20.0
-    actual = rietveld.accumulate_tof(
+    actual = phasesmith.accumulate_tof(
         x,
         d,
         intensities,
@@ -212,8 +212,8 @@ def test_fused_accumulation_matches_support_limited_reference() -> None:
         )
         expected[active] += intensity * evaluated.value
 
-    assert actual.derivatives.local_parameter_names == rietveld.TOF_LOCAL_PARAMETER_ORDER
-    assert actual.derivatives.global_parameter_names == rietveld.TOF_GLOBAL_PARAMETER_ORDER
+    assert actual.derivatives.local_parameter_names == phasesmith.TOF_LOCAL_PARAMETER_ORDER
+    assert actual.derivatives.global_parameter_names == phasesmith.TOF_GLOBAL_PARAMETER_ORDER
     np.testing.assert_allclose(actual.y, expected, rtol=2e-9, atol=2e-12)
 
 
@@ -236,23 +236,23 @@ GLOBAL_FIELDS = {
 }
 
 
-@pytest.mark.parametrize("parameter", rietveld.TOF_GLOBAL_PARAMETER_ORDER)
+@pytest.mark.parametrize("parameter", phasesmith.TOF_GLOBAL_PARAMETER_ORDER)
 def test_global_derivatives_match_centered_differences(parameter: str) -> None:
     d = np.array([1.66, 1.70])
     intensities = np.array([12.0, 7.0])
     x = np.linspace(8100.0, 9000.0, 451)
     model = instrument()
-    baseline = rietveld.accumulate_tof(x, d, intensities, model, support_fwhm=100.0)
+    baseline = phasesmith.accumulate_tof(x, d, intensities, model, support_fwhm=100.0)
     field = GLOBAL_FIELDS[parameter]
     value = getattr(model, field)
     step = max(abs(value) * 2e-6, 2e-7)
     plus = replace(model, **{field: value + step})
     minus = replace(model, **{field: value - step})
     finite = (
-        rietveld.accumulate_tof(x, d, intensities, plus, support_fwhm=100.0).y
-        - rietveld.accumulate_tof(x, d, intensities, minus, support_fwhm=100.0).y
+        phasesmith.accumulate_tof(x, d, intensities, plus, support_fwhm=100.0).y
+        - phasesmith.accumulate_tof(x, d, intensities, minus, support_fwhm=100.0).y
     ) / (2.0 * step)
-    row = rietveld.TOF_GLOBAL_PARAMETER_ORDER.index(parameter)
+    row = phasesmith.TOF_GLOBAL_PARAMETER_ORDER.index(parameter)
     scale = max(1.0, float(np.max(np.abs(finite))))
     np.testing.assert_allclose(
         baseline.derivatives.global_jacobian[row],
@@ -262,12 +262,12 @@ def test_global_derivatives_match_centered_differences(parameter: str) -> None:
     )
 
 
-@pytest.mark.parametrize("parameter", rietveld.TOF_LOCAL_PARAMETER_ORDER)
+@pytest.mark.parametrize("parameter", phasesmith.TOF_LOCAL_PARAMETER_ORDER)
 def test_local_derivatives_match_centered_differences(parameter: str) -> None:
     x = np.linspace(8100.0, 9000.0, 451)
     d = np.array([1.68])
     intensities = np.array([12.0])
-    baseline = rietveld.accumulate_tof(
+    baseline = phasesmith.accumulate_tof(
         x,
         d,
         intensities,
@@ -286,23 +286,23 @@ def test_local_derivatives_match_centered_differences(parameter: str) -> None:
     else:
         plus_i[0] += step
         minus_i[0] -= step
-    plus = rietveld.accumulate_tof(x, plus_d, plus_i, instrument(), support_fwhm=100.0).y
-    minus = rietveld.accumulate_tof(x, minus_d, minus_i, instrument(), support_fwhm=100.0).y
+    plus = phasesmith.accumulate_tof(x, plus_d, plus_i, instrument(), support_fwhm=100.0).y
+    minus = phasesmith.accumulate_tof(x, minus_d, minus_i, instrument(), support_fwhm=100.0).y
     finite = (plus - minus) / (2.0 * step)
-    column = rietveld.TOF_LOCAL_PARAMETER_ORDER.index(parameter)
+    column = phasesmith.TOF_LOCAL_PARAMETER_ORDER.index(parameter)
     np.testing.assert_allclose(baseline.jacobian[0, column], finite, rtol=2e-5, atol=2e-8)
 
 
 def test_support_boundaries_are_inclusive_and_coordinates_are_bin_centers() -> None:
     d = np.array([1.7])
-    parameters = rietveld.tof_profile_parameters(d, instrument())
+    parameters = phasesmith.tof_profile_parameters(d, instrument())
     support_fwhm = 1.0
     tail_log = 3.0
     base_radius = support_fwhm * parameters.total_fwhm_us[0]
     left = parameters.position_us[0] - base_radius - tail_log / parameters.alpha_per_us[0]
     right = parameters.position_us[0] + base_radius + tail_log / parameters.beta_per_us[0]
     x = np.array([left - 1e-6, left, parameters.position_us[0], right, right + 1e-6])
-    result = rietveld.accumulate_tof(
+    result = phasesmith.accumulate_tof(
         x, d, [1.0], instrument(), support_fwhm=support_fwhm, tail_log=tail_log
     )
     assert result.derivatives.local.starts.tolist() == [1]
@@ -325,15 +325,15 @@ def test_invalid_instrument_or_derived_domains_are_clear(
 ) -> None:
     with pytest.raises(ValueError, match=match):
         model = replace(instrument(), **change)
-        rietveld.tof_profile_parameters([1.7], model)
+        phasesmith.tof_profile_parameters([1.7], model)
 
 
 def test_batch_boundary_validation() -> None:
     with pytest.raises(ValueError, match="positive"):
-        rietveld.tof_profile_parameters([0.0], instrument())
+        phasesmith.tof_profile_parameters([0.0], instrument())
     with pytest.raises(ValueError, match="equal length"):
-        rietveld.accumulate_tof([1.0, 2.0], [1.5], [], instrument())
+        phasesmith.accumulate_tof([1.0, 2.0], [1.5], [], instrument())
     with pytest.raises(ValueError, match="strictly increasing"):
-        rietveld.accumulate_tof([1.0, 1.0], [1.5], [1.0], instrument())
+        phasesmith.accumulate_tof([1.0, 1.0], [1.5], [1.0], instrument())
     with pytest.raises(ValueError, match="tail_log"):
-        rietveld.profile_tof([0.0], 0.0, 1.0, 1.0, 1.0, 0.0, tail_log=0.0)
+        phasesmith.profile_tof([0.0], 0.0, 1.0, 1.0, 1.0, 0.0, tail_log=0.0)

@@ -118,20 +118,20 @@ candidate limit rejects unreasonable ranges before enumeration.
 from fractions import Fraction
 
 import numpy as np
-import rietveld
+import phasesmith
 
-identity = rietveld.SymmetryOperation.identity()
-centring = rietveld.SymmetryOperation(
+identity = phasesmith.SymmetryOperation.identity()
+centring = phasesmith.SymmetryOperation(
     np.eye(3, dtype=int),
     (Fraction(1, 2), Fraction(1, 2), Fraction(1, 2)),
 )
-group = rietveld.SpaceGroup([identity, centring])
-generator = rietveld.PreparedReflectionGenerator(group)
+group = phasesmith.SpaceGroup([identity, centring])
+generator = phasesmith.PreparedReflectionGenerator(group)
 
-cell = rietveld.UnitCell(4.2, 4.2, 4.2, 90.0, 90.0, 90.0)
+cell = phasesmith.UnitCell(4.2, 4.2, 4.2, 90.0, 90.0, 90.0)
 reflections = generator.generate(
     cell,
-    rietveld.CwTwoThetaRange(10.0, 120.0, wavelength_angstrom=1.5406),
+    phasesmith.CwTwoThetaRange(10.0, 120.0, wavelength_angstrom=1.5406),
 )
 ```
 

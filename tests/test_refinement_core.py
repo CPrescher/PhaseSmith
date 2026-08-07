@@ -3,9 +3,9 @@ from __future__ import annotations
 from dataclasses import replace
 
 import numpy as np
+import phasesmith
 import pytest
-import rietveld
-from rietveld.refinement import (
+from phasesmith.refinement import (
     AffineConstraint,
     Bounds,
     ConstraintTransform,
@@ -120,7 +120,7 @@ def test_multi_source_linear_constraint_expands_values_and_exact_derivative() ->
 
 
 def test_weighted_residuals_masks_and_standard_metrics() -> None:
-    pattern = rietveld.PowderPattern(
+    pattern = phasesmith.PowderPattern(
         [1.0, 2.0, 3.0, 4.0],
         observed_y=[10.0, 20.0, 30.0, 40.0],
         uncertainty=[1.0, 2.0, 3.0, 4.0],
@@ -140,8 +140,8 @@ def test_weighted_residuals_masks_and_standard_metrics() -> None:
     assert actual.rwp == pytest.approx(np.sqrt(3.0 / denominator))
 
 
-def instrument() -> rietveld.ConstantWavelengthInstrument:
-    return rietveld.ConstantWavelengthInstrument(
+def instrument() -> phasesmith.ConstantWavelengthInstrument:
+    return phasesmith.ConstantWavelengthInstrument(
         wavelength_angstrom=1.5406,
         u_deg2=2.0e-4,
         v_deg2=-1.0e-4,
@@ -151,9 +151,9 @@ def instrument() -> rietveld.ConstantWavelengthInstrument:
     )
 
 
-def calculation() -> rietveld.AccumulationResult:
+def calculation() -> phasesmith.AccumulationResult:
     x = np.linspace(35.0, 45.0, 1001)
-    return rietveld.accumulate_cw(
+    return phasesmith.accumulate_cw(
         x,
         [38.0, 41.0, 43.0],
         [12.0, 7.0, 4.0],
@@ -185,7 +185,7 @@ def test_selected_hybrid_jvp_matches_simultaneous_finite_difference() -> None:
     x = np.linspace(35.0, 45.0, 1001)
     positions = np.array([38.0, 41.0, 43.0])
     intensities = np.array([12.0, 7.0, 4.0])
-    baseline = rietveld.accumulate_cw(x, positions, intensities, instrument())
+    baseline = phasesmith.accumulate_cw(x, positions, intensities, instrument())
     local_direction = np.zeros((3, 2))
     local_direction[:, 0] = [0.2, -0.1, 0.3]
     local_direction[:, 1] = [0.01, -0.02, 0.015]
@@ -201,13 +201,13 @@ def test_selected_hybrid_jvp_matches_simultaneous_finite_difference() -> None:
         name: getattr(instrument(), name) - step * direction
         for name, direction in zip(field_names, global_direction, strict=True)
     }
-    plus = rietveld.accumulate_cw(
+    plus = phasesmith.accumulate_cw(
         x,
         positions + step * local_direction[:, 1],
         intensities + step * local_direction[:, 0],
         replace(instrument(), **plus_values),
     ).y
-    minus = rietveld.accumulate_cw(
+    minus = phasesmith.accumulate_cw(
         x,
         positions - step * local_direction[:, 1],
         intensities - step * local_direction[:, 0],
@@ -219,7 +219,7 @@ def test_selected_hybrid_jvp_matches_simultaneous_finite_difference() -> None:
 
 def test_refinement_boundary_validation_is_clear() -> None:
     with pytest.raises(ValueError, match="observed_y"):
-        evaluate_residuals(rietveld.PowderPattern([1.0]), [0.0])
+        evaluate_residuals(phasesmith.PowderPattern([1.0]), [0.0])
     with pytest.raises(ValueError, match="reserved"):
         ParameterKey("phase", "bad[id]", "scale")
     result = calculation()

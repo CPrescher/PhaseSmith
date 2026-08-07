@@ -137,7 +137,7 @@ parameter derivative:
 
 ```python
 import numpy as np
-from rietveld import PhysicsContribution, ProviderDescriptor, calculate_cw_pattern
+from phasesmith import PhysicsContribution, ProviderDescriptor, calculate_cw_pattern
 
 
 class ReciprocalDBroadening:

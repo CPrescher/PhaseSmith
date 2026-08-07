@@ -1,6 +1,6 @@
 # Dioptas integration boundary
 
-`rietveld.integrations.dioptas` is a thin, optional NumPy interface. It imports
+`phasesmith.integrations.dioptas` is a thin, optional NumPy interface. It imports
 without Dioptas installed and contains no Qt widgets, signals, project objects,
 or GUI event handling.
 
@@ -17,7 +17,7 @@ before constructing `DioptasPatternData`. `refine_lebail` returns that display
 record plus the complete typed `LeBailResult`.
 
 ```python
-from rietveld.integrations import dioptas
+from phasesmith.integrations import dioptas
 
 source = dioptas.DioptasPatternData(
     two_theta,
@@ -37,14 +37,14 @@ labels, mask conversion, background separation, and errors. Dioptas itself
 never becomes a package dependency.
 
 Dioptas-style Smooth Bruckner background subtraction is application-neutral
-and therefore lives in `rietveld.background`, not this adapter. A host can
+and therefore lives in `phasesmith.background`, not this adapter. A host can
 estimate the background before constructing `DioptasPatternData`:
 
 ```python
-import rietveld
-from rietveld.integrations import dioptas
+import phasesmith
+from phasesmith.integrations import dioptas
 
-model = rietveld.SmoothBrucknerBackground(smooth_width=0.1, iterations=50)
+model = phasesmith.SmoothBrucknerBackground(smooth_width=0.1, iterations=50)
 subtracted = model.subtract(two_theta, measured)
 source = dioptas.DioptasPatternData(
     two_theta,

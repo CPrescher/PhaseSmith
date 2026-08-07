@@ -7,81 +7,81 @@ global state, callbacks per reflection, or GUI objects.
 ## Stable module boundaries
 
 ```text
-rietveld.instrument
+phasesmith.instrument
   Instrument response and instrument-geometry models. No phase, radiation
   spectrum, or refinement state.
 
-rietveld.radiation
+phasesmith.radiation
   Optional discrete wavelength/source models. A single component is the exact
   monochromatic baseline; doublets and other spectra are explicit composition.
 
-rietveld.phase
+phasesmith.phase
   Crystallographic phase metadata and typed reflection batches. No observed
   pattern, optimizer, or instrument state.
 
-rietveld.crystallography  [general symmetry implemented]
+phasesmith.crystallography  [general symmetry implemented]
   General cells, typed atom sites, complex structure factors, integrated
   intensities, and dense/JVP/VJP derivatives are implemented. The P1 API
   remains as a small caller-supplied-amplitude compatibility layer.
 
-rietveld.symmetry  [implemented]
+phasesmith.symmetry  [implemented]
   Exact symmetry operations and closure, special positions, systematic
   absences, metric parameterizations, and prepared d/Q/CW/TOF reflection
   generation. Numerical evaluation and family enumeration are Rust-owned.
 
-rietveld.scattering  [implemented]
+phasesmith.scattering  [implemented]
   Typed X-ray and neutron scattering models plus versioned batch-provider
   contracts. Built-in production models execute in Rust.
 
-rietveld.intensity_corrections  [implemented]
+phasesmith.intensity_corrections  [implemented]
   Explicit neutral and monochromatic unpolarized Bragg--Brentano integrated
   intensity corrections plus a batch-provider boundary.
 
-rietveld.io.cif  [implemented]
+phasesmith.io.cif  [implemented]
   Optional CIF parsing into crystallography models. Parser objects never enter
   calculation, persistence, or refinement state.
 
-rietveld.pattern
+phasesmith.pattern
   Observed grids, intensities, uncertainties, masks, backgrounds, and
   calculated-pattern result containers.
 
-rietveld.background
+phasesmith.background
   Plain-array background estimation and subtraction preprocessing. The native
   Smooth Bruckner estimator is compatible with a pinned xypattern revision;
   no GUI package is imported. Non-differentiable preprocessing is kept out of
   refinement parameter models.
 
-rietveld.calculation
+phasesmith.calculation
   Stateless and prepared pattern calculators that compose instrument, phase,
   sample, and pattern inputs into native batch calls.
 
-rietveld.structural_calculation  [implemented]
+phasesmith.structural_calculation  [implemented]
   Stateless and prepared one-phase structural CW calculation. Built-in X-ray
   and neutron models expose fused values/JVP/VJP; custom providers retain a
   vectorized values fallback with one call per provider.
 
-rietveld.refinement
+phasesmith.refinement
   Parameter selection, bounds, constraints, residuals, diagnostics, and
   optimizer adapters. Refinement methods are submodules, not mode flags.
 
-rietveld.refinement.lebail
+phasesmith.refinement.lebail
   First-class Le Bail intensity extraction and diagnostics.
 
-rietveld.refinement.rietveld
+phasesmith.refinement.rietveld
   Planned structure-factor refinement orchestration after the required native
   physics layer exists. It consumes the same profile interface as Le Bail.
 
-rietveld.integrations.dioptas
+phasesmith.integrations.dioptas
   Compatibility-only conversion between Dioptas-facing NumPy data and the
   public typed models. It is not a forward roadmap target, and Dioptas is never
   a core or required Python dependency.
 
-rietveld.extensions
+phasesmith.extensions
   Versioned provider protocols and a reserved future entry-point discovery
   convenience. Providers are passed explicitly into calculations; discovery
   never creates numerical core global state.
 
-rietveld.sample
+phasesmith.sample
   Built-in size, microstrain, and preferred-orientation providers. These obey
   the same public protocol as third-party implementations.
 ```
@@ -92,122 +92,122 @@ use. They do not become the only way to calculate a pattern.
 The implemented low-level module split already follows this boundary:
 
 ```text
-rietveld.instrument.ConstantWavelengthInstrument
-rietveld.instrument.FcjGeometry
-rietveld.instrument.TofInstrument
-rietveld.radiation.WavelengthComponents
-rietveld.radiation.RadiationProbe
-rietveld.radiation.MonochromaticRadiation
-rietveld.radiation.ConstantWavelengthExperiment
-rietveld.phase.ReflectionGeometryBatch
-rietveld.phase.ReciprocalMetric
-rietveld.phase.ReflectionBatch
-rietveld.phase.Phase
-rietveld.phase.StructuralReflectionBatch
-rietveld.phase.RietveldPhase
-rietveld.crystallography.UnitCell
-rietveld.crystallography.AtomSiteBatch
-rietveld.crystallography.calculate_p1_structure_factors
-rietveld.crystallography.p1_jacobian_vector_product
-rietveld.crystallography.p1_intensity_transpose_jacobian_vector_product
-rietveld.crystallography.StructureFactorValuesResult
-rietveld.crystallography.StructureFactorResult
-rietveld.crystallography.calculate_structure_factor_values
-rietveld.crystallography.calculate_structure_factors
-rietveld.symmetry.SymmetryOperation
-rietveld.symmetry.SpaceGroup
-rietveld.symmetry.PreparedReflectionGenerator
-rietveld.symmetry.DSpacingRange
-rietveld.symmetry.ScatteringVectorRange
-rietveld.symmetry.CwTwoThetaRange
-rietveld.symmetry.TofRange
-rietveld.structure.CrystalStructure
-rietveld.structure.AtomSite
-rietveld.structure.AnisotropicDisplacement
-rietveld.structure.structure_to_record
-rietveld.structure.structure_from_record
-rietveld.io.cif.read_cif
-rietveld.scattering.ScatteringSpecies
-rietveld.scattering.ScatteringContext
-rietveld.scattering.ScatteringFactorBatch
-rietveld.scattering.ScatteringFactorProvider
-rietveld.scattering.XrayNonResonant
-rietveld.scattering.NeutronNuclear
-rietveld.scattering.species_from_structure
-rietveld.intensity_corrections.IntegratedIntensityCorrection
-rietveld.intensity_corrections.NeutralIntegratedIntensityCorrection
-rietveld.intensity_corrections.BraggBrentanoUnpolarizedLp
-rietveld.refinement.lebail.LeBailPhase
-rietveld.refinement.LatticeParameterization
-rietveld.refinement.LatticeParameterBounds
-rietveld.refinement.CwLatticeReflectionDomain
-rietveld.refinement.cw_lattice_geometry
-rietveld.refinement.tof_lattice_geometry
-rietveld.pattern.PowderPattern
-rietveld.background.smooth_bruckner
-rietveld.background.SmoothBrucknerBackground
-rietveld.background.BackgroundSubtractionResult
-rietveld.pattern.PatternCalculationResult
-rietveld.pattern.StructuralReflectionResult
-rietveld.pattern.StructuralPatternCalculationResult
-rietveld.pattern.StructuralPatternJvpResult
-rietveld.pattern.StructuralPatternVjpResult
-rietveld.extensions.PhysicsContribution
-rietveld.extensions.ReflectionPhysicsProvider
-rietveld.extensions.CompositePhysicsProvider
-rietveld.sample.IsotropicSizeBroadening
-rietveld.sample.IsotropicMicrostrainBroadening
-rietveld.sample.MarchDollasePreferredOrientation
-rietveld.sample.reciprocal_angle_geometry
-rietveld.cw.cw_profile_parameters
-rietveld.cw.accumulate_cw
-rietveld.cw.accumulate_cw_components
-rietveld.cw.accumulate_cw_contributions
-rietveld.calculation.calculate_cw_pattern
-rietveld.calculation.calculate_pattern
-rietveld.calculation.PreparedPattern
-rietveld.calculation.calculate_monochromatic_pattern
-rietveld.calculation.calculate_neutron_pattern
-rietveld.calculation.calculate_neutron_fcj_pattern
-rietveld.structural_calculation.calculate_structural_pattern
-rietveld.structural_calculation.PreparedStructuralPattern
-rietveld.fcj.profile_fcj
-rietveld.fcj.accumulate_cw_fcj
-rietveld.fcj.accumulate_cw_fcj_components
-rietveld.tof.tof_profile_parameters
-rietveld.tof.profile_tof
-rietveld.tof.accumulate_tof
-rietveld.results.AccumulationResult
-rietveld.refinement.ParameterKey
-rietveld.refinement.ParameterSpec
-rietveld.refinement.ParameterSet
-rietveld.refinement.ParameterChange
-rietveld.refinement.ConstraintTransform
-rietveld.refinement.evaluate_residuals
-rietveld.refinement.jacobian_vector_product
-rietveld.refinement.transpose_jacobian_vector_product
-rietveld.CancellationToken
-rietveld.TerminalCancellationController
-rietveld.refinement.RefinementEvent
-rietveld.refinement.RefinementLimits
-rietveld.refinement.RefinementRuntime
-rietveld.refinement.ConsoleRefinementLogger
-rietveld.refinement.JsonLinesRefinementLogger
-rietveld.refinement.lebail.LeBailInput
-rietveld.refinement.lebail.LeBailInput.from_cif
-rietveld.refinement.lebail.LeBailOptions
-rietveld.refinement.lebail.LeBailResult
-rietveld.refinement.lebail.extract_intensities
-rietveld.refinement.lebail.iterate_once
-rietveld.refinement.lebail.refine
-rietveld.persistence.PersistenceBundle
-rietveld.persistence.PersistenceBundle.to_lebail_input
-rietveld.persistence.save_bundle
-rietveld.persistence.load_bundle
-rietveld.integrations.dioptas.DioptasPatternData
-rietveld.integrations.dioptas.DioptasDisplayResult
-rietveld.integrations.dioptas.calculate
-rietveld.integrations.dioptas.refine_lebail
+phasesmith.instrument.ConstantWavelengthInstrument
+phasesmith.instrument.FcjGeometry
+phasesmith.instrument.TofInstrument
+phasesmith.radiation.WavelengthComponents
+phasesmith.radiation.RadiationProbe
+phasesmith.radiation.MonochromaticRadiation
+phasesmith.radiation.ConstantWavelengthExperiment
+phasesmith.phase.ReflectionGeometryBatch
+phasesmith.phase.ReciprocalMetric
+phasesmith.phase.ReflectionBatch
+phasesmith.phase.Phase
+phasesmith.phase.StructuralReflectionBatch
+phasesmith.phase.RietveldPhase
+phasesmith.crystallography.UnitCell
+phasesmith.crystallography.AtomSiteBatch
+phasesmith.crystallography.calculate_p1_structure_factors
+phasesmith.crystallography.p1_jacobian_vector_product
+phasesmith.crystallography.p1_intensity_transpose_jacobian_vector_product
+phasesmith.crystallography.StructureFactorValuesResult
+phasesmith.crystallography.StructureFactorResult
+phasesmith.crystallography.calculate_structure_factor_values
+phasesmith.crystallography.calculate_structure_factors
+phasesmith.symmetry.SymmetryOperation
+phasesmith.symmetry.SpaceGroup
+phasesmith.symmetry.PreparedReflectionGenerator
+phasesmith.symmetry.DSpacingRange
+phasesmith.symmetry.ScatteringVectorRange
+phasesmith.symmetry.CwTwoThetaRange
+phasesmith.symmetry.TofRange
+phasesmith.structure.CrystalStructure
+phasesmith.structure.AtomSite
+phasesmith.structure.AnisotropicDisplacement
+phasesmith.structure.structure_to_record
+phasesmith.structure.structure_from_record
+phasesmith.io.cif.read_cif
+phasesmith.scattering.ScatteringSpecies
+phasesmith.scattering.ScatteringContext
+phasesmith.scattering.ScatteringFactorBatch
+phasesmith.scattering.ScatteringFactorProvider
+phasesmith.scattering.XrayNonResonant
+phasesmith.scattering.NeutronNuclear
+phasesmith.scattering.species_from_structure
+phasesmith.intensity_corrections.IntegratedIntensityCorrection
+phasesmith.intensity_corrections.NeutralIntegratedIntensityCorrection
+phasesmith.intensity_corrections.BraggBrentanoUnpolarizedLp
+phasesmith.refinement.lebail.LeBailPhase
+phasesmith.refinement.LatticeParameterization
+phasesmith.refinement.LatticeParameterBounds
+phasesmith.refinement.CwLatticeReflectionDomain
+phasesmith.refinement.cw_lattice_geometry
+phasesmith.refinement.tof_lattice_geometry
+phasesmith.pattern.PowderPattern
+phasesmith.background.smooth_bruckner
+phasesmith.background.SmoothBrucknerBackground
+phasesmith.background.BackgroundSubtractionResult
+phasesmith.pattern.PatternCalculationResult
+phasesmith.pattern.StructuralReflectionResult
+phasesmith.pattern.StructuralPatternCalculationResult
+phasesmith.pattern.StructuralPatternJvpResult
+phasesmith.pattern.StructuralPatternVjpResult
+phasesmith.extensions.PhysicsContribution
+phasesmith.extensions.ReflectionPhysicsProvider
+phasesmith.extensions.CompositePhysicsProvider
+phasesmith.sample.IsotropicSizeBroadening
+phasesmith.sample.IsotropicMicrostrainBroadening
+phasesmith.sample.MarchDollasePreferredOrientation
+phasesmith.sample.reciprocal_angle_geometry
+phasesmith.cw.cw_profile_parameters
+phasesmith.cw.accumulate_cw
+phasesmith.cw.accumulate_cw_components
+phasesmith.cw.accumulate_cw_contributions
+phasesmith.calculation.calculate_cw_pattern
+phasesmith.calculation.calculate_pattern
+phasesmith.calculation.PreparedPattern
+phasesmith.calculation.calculate_monochromatic_pattern
+phasesmith.calculation.calculate_neutron_pattern
+phasesmith.calculation.calculate_neutron_fcj_pattern
+phasesmith.structural_calculation.calculate_structural_pattern
+phasesmith.structural_calculation.PreparedStructuralPattern
+phasesmith.fcj.profile_fcj
+phasesmith.fcj.accumulate_cw_fcj
+phasesmith.fcj.accumulate_cw_fcj_components
+phasesmith.tof.tof_profile_parameters
+phasesmith.tof.profile_tof
+phasesmith.tof.accumulate_tof
+phasesmith.results.AccumulationResult
+phasesmith.refinement.ParameterKey
+phasesmith.refinement.ParameterSpec
+phasesmith.refinement.ParameterSet
+phasesmith.refinement.ParameterChange
+phasesmith.refinement.ConstraintTransform
+phasesmith.refinement.evaluate_residuals
+phasesmith.refinement.jacobian_vector_product
+phasesmith.refinement.transpose_jacobian_vector_product
+phasesmith.CancellationToken
+phasesmith.TerminalCancellationController
+phasesmith.refinement.RefinementEvent
+phasesmith.refinement.RefinementLimits
+phasesmith.refinement.RefinementRuntime
+phasesmith.refinement.ConsoleRefinementLogger
+phasesmith.refinement.JsonLinesRefinementLogger
+phasesmith.refinement.lebail.LeBailInput
+phasesmith.refinement.lebail.LeBailInput.from_cif
+phasesmith.refinement.lebail.LeBailOptions
+phasesmith.refinement.lebail.LeBailResult
+phasesmith.refinement.lebail.extract_intensities
+phasesmith.refinement.lebail.iterate_once
+phasesmith.refinement.lebail.refine
+phasesmith.persistence.PersistenceBundle
+phasesmith.persistence.PersistenceBundle.to_lebail_input
+phasesmith.persistence.save_bundle
+phasesmith.persistence.load_bundle
+phasesmith.integrations.dioptas.DioptasPatternData
+phasesmith.integrations.dioptas.DioptasDisplayResult
+phasesmith.integrations.dioptas.calculate
+phasesmith.integrations.dioptas.refine_lebail
 ```
 
 Top-level imports are convenience aliases for scripts and notebooks; the
@@ -225,7 +225,7 @@ surface rather than moving their state into either model.
   objects. Their numerical payloads are NumPy arrays.
 - Array fields have documented shape, units, ordering, and parameter names.
 - Calculation inputs never own optimizer state. Refinement state never enters
-  `rietveld-core`.
+  `phasesmith-core`.
 - Stable string or integer IDs connect phases and reflections to derivative
   rows and diagnostics. Array position alone is not a durable external ID.
 - Models support explicit plain-data serialization. Native extension objects,
@@ -305,7 +305,7 @@ and examples are in [`refinement.md`](refinement.md) and
 
 ## Rietveld contract
 
-`rietveld.refinement.rietveld` is a separate method module rather than a flag
+`phasesmith.refinement.rietveld` is a separate method module rather than a flag
 on Le Bail. `RietveldInput.from_cif` creates a typed structural phase, scattering
 model, guarded reflection domain, and selected parameter set. `refine` uses
 matrix-free structural JVP/VJP products and returns the last accepted phases,
@@ -347,8 +347,8 @@ An entirely new intrinsic line shape has two paths:
    version and compatibility tests.
 
 Calculations receive provider instances explicitly. Optional Python package
-entry-point discovery is a convenience in `rietveld.extensions`, not an
-implicit registry used by `rietveld-core`. Persistence records provider ID,
+entry-point discovery is a convenience in `phasesmith.extensions`, not an
+implicit registry used by `phasesmith-core`. Persistence records provider ID,
 provider version, API version, and plain-data configuration; it never pickles
 live provider or native objects. Refinement methods depend on the calculator
 contract, so a compatible provider is automatically usable by Le Bail and

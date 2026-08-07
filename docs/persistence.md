@@ -1,13 +1,13 @@
 # Versioned plain-data persistence
 
-`rietveld.persistence` stores public models in a directory containing exactly
+`phasesmith.persistence` stores public models in a directory containing exactly
 the library-owned `manifest.json` and `arrays.npz` files. JSON contains the
 format version, typed records, units implicit in public field names, array
 descriptors, and SHA-256 hashes. NPZ contains only numeric or boolean contiguous
 arrays and is always loaded with `allow_pickle=False`.
 
 ```python
-from rietveld import persistence
+from phasesmith import persistence
 
 bundle = persistence.PersistenceBundle(
     pattern=pattern,

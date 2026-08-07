@@ -9,19 +9,19 @@ import time
 from dataclasses import replace
 
 import numpy as np
-import rietveld
-from rietveld.refinement import PolynomialBackground
-from rietveld.refinement import rietveld as structural_refinement
+import phasesmith
+from phasesmith.refinement import PolynomialBackground
+from phasesmith.refinement import rietveld as structural_refinement
 
 
 def benchmark_request(samples: int) -> structural_refinement.RietveldInput:
     x = np.linspace(12.0, 120.0, samples)
-    instrument = rietveld.ConstantWavelengthInstrument(
+    instrument = phasesmith.ConstantWavelengthInstrument(
         1.5406, 2.0e-4, -1.0e-4, 2.0e-4, 1.5e-3, 3.0e-3
     )
-    experiment = rietveld.ConstantWavelengthExperiment.x_ray(instrument)
+    experiment = phasesmith.ConstantWavelengthExperiment.x_ray(instrument)
     sites = tuple(
-        rietveld.AtomSite(
+        phasesmith.AtomSite(
             f"site-{index}",
             f"X{index}",
             "Si" if index % 2 == 0 else "O",
@@ -36,27 +36,27 @@ def benchmark_request(samples: int) -> structural_refinement.RietveldInput:
         )
         for index in range(8)
     )
-    structure = rietveld.CrystalStructure(
+    structure = phasesmith.CrystalStructure(
         "benchmark",
         "Rietveld benchmark",
-        rietveld.UnitCell(5.2, 5.2, 5.2, 90.0, 90.0, 90.0),
-        rietveld.SpaceGroup.p1(),
+        phasesmith.UnitCell(5.2, 5.2, 5.2, 90.0, 90.0, 90.0),
+        phasesmith.SpaceGroup.p1(),
         sites,
     )
-    generated = rietveld.PreparedReflectionGenerator(structure.space_group).generate(
+    generated = phasesmith.PreparedReflectionGenerator(structure.space_group).generate(
         structure.cell,
-        rietveld.CwTwoThetaRange(12.0, 120.0, instrument.wavelength_angstrom),
+        phasesmith.CwTwoThetaRange(12.0, 120.0, instrument.wavelength_angstrom),
     )
-    truth_phase = rietveld.RietveldPhase(
+    truth_phase = phasesmith.RietveldPhase(
         "alpha",
         "Benchmark alpha",
         structure,
-        rietveld.StructuralReflectionBatch.from_generated(generated),
-        rietveld.XrayNonResonant(),
-        rietveld.NeutralIntegratedIntensityCorrection(),
+        phasesmith.StructuralReflectionBatch.from_generated(generated),
+        phasesmith.XrayNonResonant(),
+        phasesmith.NeutralIntegratedIntensityCorrection(),
     )
     truth_background = PolynomialBackground("main", (1.0, 0.1, -0.05))
-    empty = rietveld.PowderPattern(x)
+    empty = phasesmith.PowderPattern(x)
     truth = structural_refinement.calculate(
         empty,
         experiment,
@@ -92,7 +92,7 @@ def benchmark_request(samples: int) -> structural_refinement.RietveldInput:
         background=starting_background,
     )
     return structural_refinement.RietveldInput(
-        rietveld.PowderPattern(x, observed_y=truth.y),
+        phasesmith.PowderPattern(x, observed_y=truth.y),
         starting_experiment,
         (starting_phase,),
         (None,),

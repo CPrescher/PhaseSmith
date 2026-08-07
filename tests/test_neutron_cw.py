@@ -3,12 +3,12 @@ from __future__ import annotations
 from dataclasses import fields, replace
 
 import numpy as np
+import phasesmith
 import pytest
-import rietveld
 
 
-def instrument() -> rietveld.ConstantWavelengthInstrument:
-    return rietveld.ConstantWavelengthInstrument(
+def instrument() -> phasesmith.ConstantWavelengthInstrument:
+    return phasesmith.ConstantWavelengthInstrument(
         wavelength_angstrom=1.909,
         u_deg2=257.182710995e-4,
         v_deg2=-640.525145369e-4,
@@ -18,10 +18,10 @@ def instrument() -> rietveld.ConstantWavelengthInstrument:
     )
 
 
-def geometry() -> rietveld.ReflectionGeometryBatch:
+def geometry() -> phasesmith.ReflectionGeometryBatch:
     positions = np.array([28.0, 64.0, 118.0])
     d_spacing = instrument().wavelength_angstrom / (2.0 * np.sin(np.deg2rad(positions / 2.0)))
-    return rietveld.ReflectionGeometryBatch(
+    return phasesmith.ReflectionGeometryBatch(
         [[1, 0, 0], [1, 1, 0], [1, 1, 1]],
         d_spacing,
         positions,
@@ -29,12 +29,12 @@ def geometry() -> rietveld.ReflectionGeometryBatch:
     )
 
 
-def phase() -> rietveld.Phase:
+def phase() -> phasesmith.Phase:
     batch = geometry()
-    return rietveld.Phase(
+    return phasesmith.Phase(
         "neutron-phase",
         "Neutron phase",
-        rietveld.ReflectionBatch(
+        phasesmith.ReflectionBatch(
             ["n-100", "n-110", "n-111"],
             batch.hkl,
             batch.d_spacing_angstrom,
@@ -45,8 +45,8 @@ def phase() -> rietveld.Phase:
 
 
 def test_neutron_experiment_is_explicit_monochromatic_plain_data() -> None:
-    experiment = rietveld.ConstantWavelengthExperiment.neutron(instrument())
-    assert experiment.radiation.probe is rietveld.RadiationProbe.NEUTRON
+    experiment = phasesmith.ConstantWavelengthExperiment.neutron(instrument())
+    assert experiment.radiation.probe is phasesmith.RadiationProbe.NEUTRON
     assert experiment.radiation.probe.value == "neutron"
     assert str(experiment.radiation.probe) == "neutron"
     assert experiment.radiation.wavelength_angstrom == instrument().wavelength_angstrom
@@ -58,16 +58,16 @@ def test_neutron_experiment_is_explicit_monochromatic_plain_data() -> None:
 
 def test_identical_physical_widths_produce_identical_xray_and_neutron_profiles() -> None:
     x = np.linspace(20.0, 125.0, 10_501)
-    neutron = rietveld.calculate_monochromatic_cw_pattern(
+    neutron = phasesmith.calculate_monochromatic_cw_pattern(
         x,
         geometry(),
-        rietveld.ConstantWavelengthExperiment.neutron(instrument()),
+        phasesmith.ConstantWavelengthExperiment.neutron(instrument()),
         jacobian_layout="dense",
     )
-    x_ray = rietveld.calculate_monochromatic_cw_pattern(
+    x_ray = phasesmith.calculate_monochromatic_cw_pattern(
         x,
         geometry(),
-        rietveld.ConstantWavelengthExperiment.x_ray(instrument()),
+        phasesmith.ConstantWavelengthExperiment.x_ray(instrument()),
         jacobian_layout="dense",
     )
     np.testing.assert_array_equal(neutron.y, x_ray.y)
@@ -79,10 +79,10 @@ def test_identical_physical_widths_produce_identical_xray_and_neutron_profiles()
 
 def test_neutron_high_level_path_reuses_multiphase_calculation_exactly() -> None:
     x = np.linspace(20.0, 125.0, 10_501)
-    pattern = rietveld.PowderPattern(x, background=np.full(x.size, 0.2))
-    experiment = rietveld.ConstantWavelengthExperiment.neutron(instrument())
-    neutron = rietveld.calculate_neutron_pattern(pattern, experiment, [phase()])
-    shared = rietveld.calculate_pattern(pattern, instrument(), [phase()])
+    pattern = phasesmith.PowderPattern(x, background=np.full(x.size, 0.2))
+    experiment = phasesmith.ConstantWavelengthExperiment.neutron(instrument())
+    neutron = phasesmith.calculate_neutron_pattern(pattern, experiment, [phase()])
+    shared = phasesmith.calculate_pattern(pattern, instrument(), [phase()])
     np.testing.assert_array_equal(neutron.y, shared.y)
     np.testing.assert_array_equal(neutron.profile_y, shared.profile_y)
     np.testing.assert_array_equal(
@@ -92,21 +92,21 @@ def test_neutron_high_level_path_reuses_multiphase_calculation_exactly() -> None
 
 def test_neutron_instrument_derivatives_match_centered_differences() -> None:
     x = np.linspace(62.0, 66.0, 4_001)
-    experiment = rietveld.ConstantWavelengthExperiment.neutron(instrument())
-    baseline = rietveld.calculate_monochromatic_cw_pattern(x, geometry(), experiment)
+    experiment = phasesmith.ConstantWavelengthExperiment.neutron(instrument())
+    baseline = phasesmith.calculate_monochromatic_cw_pattern(x, geometry(), experiment)
     parameter = "u_deg2"
     step = 1.0e-7
     plus_instrument = replace(instrument(), **{parameter: getattr(instrument(), parameter) + step})
     minus_instrument = replace(instrument(), **{parameter: getattr(instrument(), parameter) - step})
-    plus = rietveld.calculate_monochromatic_cw_pattern(
+    plus = phasesmith.calculate_monochromatic_cw_pattern(
         x,
         geometry(),
-        rietveld.ConstantWavelengthExperiment.neutron(plus_instrument),
+        phasesmith.ConstantWavelengthExperiment.neutron(plus_instrument),
     ).y
-    minus = rietveld.calculate_monochromatic_cw_pattern(
+    minus = phasesmith.calculate_monochromatic_cw_pattern(
         x,
         geometry(),
-        rietveld.ConstantWavelengthExperiment.neutron(minus_instrument),
+        phasesmith.ConstantWavelengthExperiment.neutron(minus_instrument),
     ).y
     finite_difference = (plus - minus) / (2.0 * step)
     row = baseline.derivatives.global_parameter_names.index("u")
@@ -120,16 +120,16 @@ def test_neutron_profile_retains_integrated_intensity_and_centroid() -> None:
     intensity = 6.0
     x = np.linspace(40.0, 88.0, 240_001)
     batch = geometry()
-    one = rietveld.ReflectionGeometryBatch(
+    one = phasesmith.ReflectionGeometryBatch(
         [batch.hkl[1]],
         [batch.d_spacing_angstrom[1]],
         [position],
         [intensity],
     )
-    actual = rietveld.calculate_monochromatic_cw_pattern(
+    actual = phasesmith.calculate_monochromatic_cw_pattern(
         x,
         one,
-        rietveld.ConstantWavelengthExperiment.neutron(instrument()),
+        phasesmith.ConstantWavelengthExperiment.neutron(instrument()),
         support_fwhm=100.0,
     ).y
     area = np.trapezoid(actual, x)
@@ -140,12 +140,12 @@ def test_neutron_profile_retains_integrated_intensity_and_centroid() -> None:
 
 def test_neutron_path_accepts_same_batch_provider_contract() -> None:
     x = np.linspace(20.0, 125.0, 10_501)
-    experiment = rietveld.ConstantWavelengthExperiment.neutron(instrument())
-    provider = rietveld.IsotropicSizeBroadening(80.0)
-    actual = rietveld.calculate_monochromatic_cw_pattern(
+    experiment = phasesmith.ConstantWavelengthExperiment.neutron(instrument())
+    provider = phasesmith.IsotropicSizeBroadening(80.0)
+    actual = phasesmith.calculate_monochromatic_cw_pattern(
         x, geometry(), experiment, physics=provider
     )
-    shared = rietveld.calculate_cw_pattern(x, geometry(), instrument(), physics=provider)
+    shared = phasesmith.calculate_cw_pattern(x, geometry(), instrument(), physics=provider)
     np.testing.assert_array_equal(actual.y, shared.y)
     np.testing.assert_array_equal(
         actual.derivatives.global_jacobian, shared.derivatives.global_jacobian
@@ -155,14 +155,14 @@ def test_neutron_path_accepts_same_batch_provider_contract() -> None:
 def test_neutron_fcj_path_reuses_shared_asymmetric_kernel_exactly() -> None:
     x = np.linspace(25.0, 31.0, 6_001)
     batch = geometry()
-    axial = rietveld.FcjGeometry(0.001, 0.001)
-    actual = rietveld.calculate_neutron_fcj_pattern(
+    axial = phasesmith.FcjGeometry(0.001, 0.001)
+    actual = phasesmith.calculate_neutron_fcj_pattern(
         x,
         batch,
-        rietveld.ConstantWavelengthExperiment.neutron(instrument()),
+        phasesmith.ConstantWavelengthExperiment.neutron(instrument()),
         axial,
     )
-    shared = rietveld.accumulate_cw_fcj(
+    shared = phasesmith.accumulate_cw_fcj(
         x,
         batch.two_theta_deg,
         batch.base_integrated_intensity,
@@ -178,13 +178,13 @@ def test_neutron_fcj_path_reuses_shared_asymmetric_kernel_exactly() -> None:
 def test_neutron_type_rejects_xray_and_wavelength_mismatch() -> None:
     x = np.linspace(20.0, 125.0, 1_001)
     with pytest.raises(ValueError, match="requires neutron"):
-        rietveld.calculate_neutron_pattern(
-            rietveld.PowderPattern(x),
-            rietveld.ConstantWavelengthExperiment.x_ray(instrument()),
+        phasesmith.calculate_neutron_pattern(
+            phasesmith.PowderPattern(x),
+            phasesmith.ConstantWavelengthExperiment.x_ray(instrument()),
             [phase()],
         )
-    mismatched = rietveld.MonochromaticRadiation.neutron(1.8)
+    mismatched = phasesmith.MonochromaticRadiation.neutron(1.8)
     with pytest.raises(ValueError, match="must match exactly"):
-        rietveld.ConstantWavelengthExperiment(mismatched, instrument())
+        phasesmith.ConstantWavelengthExperiment(mismatched, instrument())
     with pytest.raises(TypeError, match="RadiationProbe"):
-        rietveld.MonochromaticRadiation("neutron", 1.909)  # type: ignore[arg-type]
+        phasesmith.MonochromaticRadiation("neutron", 1.909)  # type: ignore[arg-type]

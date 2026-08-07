@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:rietveld-engine:persistence:v1",
-  "title": "Rietveld Engine persistence manifest version 1",
+  "$id": "urn:phasesmith:persistence:v1",
+  "title": "PhaseSmith persistence manifest version 1",
   "type": "object",
   "additionalProperties": false,
   "required": ["format_version", "archive", "arrays", "bundle"],

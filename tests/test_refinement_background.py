@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
-from rietveld.refinement import (
+from phasesmith.refinement import (
     AmorphousBackground,
     AmorphousPeak,
     ChebyshevBackground,

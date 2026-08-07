@@ -118,7 +118,7 @@ def instrument_text() -> str:
 def generate_snapshot(scripting: Any) -> tuple[dict[str, Any], dict[str, np.ndarray]]:
     random.seed(20_260_805)
     np.random.seed(20_260_805)
-    with tempfile.TemporaryDirectory(prefix="rietveld-gsas-oracle-") as temporary:
+    with tempfile.TemporaryDirectory(prefix="phasesmith-gsas-oracle-") as temporary:
         work = Path(temporary)
         instrument_path = work / "synthetic.instprm"
         instrument_path.write_text(instrument_text(), encoding="utf-8")

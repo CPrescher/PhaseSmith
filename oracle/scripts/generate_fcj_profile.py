@@ -2,7 +2,7 @@
 """Generate pinned GSAS-II FCJ profile and derivative fixtures.
 
 Run only with the pinned external GSAS-II Python environment. This script
-imports no Rietveld Engine module and refuses overwrite without ``--force``.
+imports no PhaseSmith module and refuses overwrite without ``--force``.
 """
 
 from __future__ import annotations

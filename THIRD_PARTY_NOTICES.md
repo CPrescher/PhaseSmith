@@ -1,11 +1,11 @@
 # Third-party notices
 
-Rietveld Engine is independently licensed under the MIT License. The following
+PhaseSmith is independently licensed under the MIT License. The following
 notice covers compatible behavior derived from separately licensed software.
 
 ## xypattern Smooth Bruckner background algorithm
 
-The `rietveld.background` Bruckner smoother reproduces the observable algorithm
+The `phasesmith.background` Bruckner smoother reproduces the observable algorithm
 of xypattern revision `6e4574d75d2d6fcefc633f9fbecc27b8f1bcd817`.
 
 MIT License

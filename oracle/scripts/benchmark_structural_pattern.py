@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Benchmark pinned GSAS-II structure factors and controlled CW composition.
 
-This external-only worker imports no Rietveld Engine module. Public scripting
+This external-only worker imports no PhaseSmith module. Public scripting
 constructs the crystal and reflection list once. A revision-gated internal
 adapter then times prepared numerical calls without project I/O.
 """
@@ -113,7 +113,7 @@ def prepare_structure_factor_call(
     x: np.ndarray,
 ) -> tuple[Any, dict[str, Any], tuple[Any, ...], Any]:
     scripting, structure_io, structure_math, lattice, profile_module = modules
-    with tempfile.TemporaryDirectory(prefix="rietveld-gsasii-structural-benchmark-") as temporary:
+    with tempfile.TemporaryDirectory(prefix="phasesmith-gsasii-structural-benchmark-") as temporary:
         np.random.seed(20_260_806)
         directory = Path(temporary)
         instrument_path = directory / "neutron.instprm"

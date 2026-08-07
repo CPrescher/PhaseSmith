@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
-import rietveld
+import phasesmith
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 WORKER = REPOSITORY_ROOT / "oracle" / "scripts" / "benchmark_structural_pattern.py"
@@ -30,9 +30,9 @@ PROFILE_KERNEL_TOLERANCE = 6.0e-6
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--gsas-python", type=Path, default=os.environ.get("GSASII_PYTHON"))
-    parser.add_argument("--gsas-root", type=Path, default=os.environ.get("RIETVELD_GSASII_ROOT"))
+    parser.add_argument("--gsas-root", type=Path, default=os.environ.get("PHASESMITH_GSASII_ROOT"))
     parser.add_argument(
-        "--binary-dir", type=Path, default=os.environ.get("RIETVELD_GSASII_BINARY_DIR")
+        "--binary-dir", type=Path, default=os.environ.get("PHASESMITH_GSASII_BINARY_DIR")
     )
     parser.add_argument("--reflections", type=int, default=256)
     parser.add_argument("--sites", type=int, default=32)
@@ -45,9 +45,9 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def benchmark_sites(site_count: int) -> tuple[rietveld.AtomSite, ...]:
+def benchmark_sites(site_count: int) -> tuple[phasesmith.AtomSite, ...]:
     return tuple(
-        rietveld.AtomSite(
+        phasesmith.AtomSite(
             f"site-{site}",
             f"{SPECIES[site % len(SPECIES)]}{site}",
             SPECIES[site % len(SPECIES)],
@@ -66,23 +66,23 @@ def benchmark_sites(site_count: int) -> tuple[rietveld.AtomSite, ...]:
 
 def benchmark_phase(
     hkl: np.ndarray, multiplicity: np.ndarray, site_count: int
-) -> rietveld.RietveldPhase:
-    structure = rietveld.CrystalStructure(
+) -> phasesmith.RietveldPhase:
+    structure = phasesmith.CrystalStructure(
         "benchmark",
         "Benchmark structure",
-        rietveld.UnitCell(15.0, 15.0, 15.0, 90.0, 90.0, 90.0),
-        rietveld.SpaceGroup.p1(),
+        phasesmith.UnitCell(15.0, 15.0, 15.0, 90.0, 90.0, 90.0),
+        phasesmith.SpaceGroup.p1(),
         benchmark_sites(site_count),
     )
-    return rietveld.RietveldPhase(
+    return phasesmith.RietveldPhase(
         "benchmark",
         "Benchmark phase",
         structure,
-        rietveld.StructuralReflectionBatch(
+        phasesmith.StructuralReflectionBatch(
             tuple(f"{h},{k},{ell}" for h, k, ell in hkl), hkl, multiplicity
         ),
-        rietveld.NeutronNuclear(),
-        rietveld.NeutralIntegratedIntensityCorrection(),
+        phasesmith.NeutronNuclear(),
+        phasesmith.NeutralIntegratedIntensityCorrection(),
         1.0,
     )
 
@@ -128,8 +128,8 @@ def normalized_maximum_error(actual: np.ndarray, expected: np.ndarray) -> float:
 
 
 def validate_outputs(
-    structural: rietveld.StructureFactorValuesResult,
-    pattern: rietveld.StructuralPatternCalculationResult,
+    structural: phasesmith.StructureFactorValuesResult,
+    pattern: phasesmith.StructuralPatternCalculationResult,
     oracle: dict[str, np.ndarray],
 ) -> dict[str, float]:
     np.testing.assert_array_equal(pattern.accumulation.derivatives.local.starts, oracle["starts"])
@@ -218,14 +218,14 @@ def main() -> None:
         )
     if arguments.gsas_python is None or arguments.gsas_root is None:
         raise RuntimeError(
-            "set --gsas-python and --gsas-root (or GSASII_PYTHON and RIETVELD_GSASII_ROOT)"
+            "set --gsas-python and --gsas-root (or GSASII_PYTHON and PHASESMITH_GSASII_ROOT)"
         )
-    if arguments.require_release and rietveld._core.BUILD_MODE != "release":
-        raise RuntimeError(f"release extension required, imported {rietveld._core.BUILD_MODE!r}")
+    if arguments.require_release and phasesmith._core.BUILD_MODE != "release":
+        raise RuntimeError(f"release extension required, imported {phasesmith._core.BUILD_MODE!r}")
 
     x = np.linspace(5.0, 125.0, arguments.samples, dtype=np.float64)
     wavelength = 1.5406
-    instrument = rietveld.ConstantWavelengthInstrument(
+    instrument = phasesmith.ConstantWavelengthInstrument(
         wavelength,
         2.0e-4,
         -1.0e-4,
@@ -243,7 +243,9 @@ def main() -> None:
         ],
         dtype=np.float64,
     )
-    with tempfile.TemporaryDirectory(prefix="rietveld-gsasii-structural-comparison-") as temporary:
+    with tempfile.TemporaryDirectory(
+        prefix="phasesmith-gsasii-structural-comparison-"
+    ) as temporary:
         directory = Path(temporary)
         input_path = directory / "input.npz"
         output_path = directory / "output.npz"
@@ -282,9 +284,9 @@ def main() -> None:
     validate_report(gsas_report, arguments.repetitions)
 
     phase = benchmark_phase(oracle["hkl"], oracle["multiplicity"], arguments.sites)
-    experiment = rietveld.ConstantWavelengthExperiment.neutron(instrument)
-    powder_pattern = rietveld.PowderPattern(x)
-    prepared = rietveld.PreparedStructuralPattern(
+    experiment = phasesmith.ConstantWavelengthExperiment.neutron(instrument)
+    powder_pattern = phasesmith.PowderPattern(x)
+    prepared = phasesmith.PreparedStructuralPattern(
         powder_pattern,
         experiment,
         phase,
@@ -293,8 +295,8 @@ def main() -> None:
     if not prepared.uses_native_fused_path:
         raise RuntimeError("structural benchmark did not select the fused native path")
 
-    def structure_operation() -> rietveld.StructureFactorValuesResult:
-        return rietveld.calculate_structure_factor_values(
+    def structure_operation() -> phasesmith.StructureFactorValuesResult:
+        return phasesmith.calculate_structure_factor_values(
             phase.structure,
             phase.reflections.hkl,
             phase.reflections.multiplicity,
@@ -345,13 +347,13 @@ def main() -> None:
             ],
         },
         "unit_convention": {
-            "rietveld_engine_scattering_length": "fm",
+            "phasesmith_scattering_length": "fm",
             "gsasii_neutron_scattering_length": "1e-12_cm",
             "gsasii_f_squared_to_fm_squared": 100.0,
         },
         "numerical_normalized_maximum_errors": errors,
-        "rietveld_engine": {
-            "build_mode": rietveld._core.BUILD_MODE,
+        "phasesmith": {
+            "build_mode": phasesmith._core.BUILD_MODE,
             "python_version": platform.python_version(),
             "numpy_version": np.__version__,
             "platform": platform.platform(),
@@ -359,7 +361,7 @@ def main() -> None:
             "structure_to_profile_values_and_cw_derivatives": engine_pattern,
         },
         "gsasii": gsas_report,
-        "median_speed_ratios_gsasii_over_rietveld": ratios,
+        "median_speed_ratios_gsasii_over_phasesmith": ratios,
     }
     print(
         f"scope={SCOPE} sites={arguments.sites} reflections={arguments.reflections} "
@@ -372,12 +374,12 @@ def main() -> None:
             "structure_to_profile_values_and_cw_derivatives",
         ),
     ):
-        engine = report["rietveld_engine"][key]
+        engine = report["phasesmith"][key]
         gsas = gsas_report[key]
         print(
-            f"case={label} rietveld_median_ms={engine['median_ms']:.3f} "
+            f"case={label} phasesmith_median_ms={engine['median_ms']:.3f} "
             f"gsasii_median_ms={gsas['median_ms']:.3f} "
-            f"ratio_gsasii_over_rietveld={ratios[key]:.3f}x"
+            f"ratio_gsasii_over_phasesmith={ratios[key]:.3f}x"
         )
     print(
         "normalized_maximum_errors="

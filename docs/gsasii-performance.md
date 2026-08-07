@@ -2,7 +2,7 @@
 
 `benchmarks/compare_gsasii.py` and
 `benchmarks/compare_gsasii_structural.py` provide reproducible speed
-comparisons between Rietveld Engine and the exact GSAS-II revision recorded in
+comparisons between PhaseSmith and the exact GSAS-II revision recorded in
 `oracle/PINNED_GSASII.json`. GSAS-II remains a separately installed external
 validation oracle and is never imported by the normal package.
 
@@ -19,7 +19,7 @@ Each timed operation includes reflection-dependent width calculation, TCH
 support calculation, binary support lookup, output allocation, profile and
 analytical derivative evaluation, and accumulation. Warmup calls, interpreter
 startup, process creation, and NPZ transfer are outside the timed region.
-Rietveld Engine uses one fused native batch call. The pinned GSAS-II worker uses
+PhaseSmith uses one fused native batch call. The pinned GSAS-II worker uses
 one `GSASIIpwd.getdPsVoigt` call per active reflection and performs batch
 orchestration in Python, which is the interface GSAS-II exposes for this
 profile-level comparison.
@@ -44,14 +44,14 @@ Both programs receive the same atom coordinates, occupancies, isotropic
 displacements, cell, HKLs, multiplicities, wavelength, instrument parameters,
 finite-support convention, and sample grid. The GSAS-II project, reflection
 generation, dictionary preparation, process startup, and NPZ transfer are done
-once outside the timed region. The Rietveld Engine phase and prepared pattern
+once outside the timed region. The PhaseSmith phase and prepared pattern
 are likewise constructed outside the timed region. The first Rietveld timing
 uses the public values-only structure-factor API; the second uses the fused
 native `PreparedStructuralPattern` path.
 
 The structural comparison deliberately uses neutron scattering and a neutral
 integrated-intensity correction. GSAS-II tabulates coherent scattering lengths
-in `10^-12 cm`, while Rietveld Engine's independently sourced table uses fm;
+in `10^-12 cm`, while PhaseSmith's independently sourced table uses fm;
 the adapter therefore applies the exact squared-unit conversion factor of 100.
 Because the tabulations are independently sourced and rounded, normalized
 maximum errors for F-squared and intensity must remain below `1.25e-4`, not
@@ -66,7 +66,7 @@ generation because the list is prepared input to both structural kernels.
 
 ## Run it
 
-Build Rietveld Engine in release mode, then use GSAS-II's separate interpreter
+Build PhaseSmith in release mode, then use GSAS-II's separate interpreter
 and compatible binary directory:
 
 ```shell
@@ -84,15 +84,15 @@ uv run python benchmarks/compare_gsasii_structural.py --require-release \
   --json-output gsasii-structural-speed-comparison.json
 ```
 
-The equivalent `GSASII_PYTHON`, `RIETVELD_GSASII_ROOT`, and
-`RIETVELD_GSASII_BINARY_DIR` environment variables are supported. The external
+The equivalent `GSASII_PYTHON`, `PHASESMITH_GSASII_ROOT`, and
+`PHASESMITH_GSASII_BINARY_DIR` environment variables are supported. The external
 worker refuses any GSAS-II checkout other than revision
 `c0bc79b259cdf0065480b5fbd57674ddf12c4a23`.
 
 Before printing a speed ratio, each runner performs its documented numerical
 checks. JSON reports record raw timings, median, p95, software versions,
 platform, workload dimensions, numerical errors, and the ratio `GSAS-II median
-/ Rietveld Engine median`. A ratio above one means Rietveld Engine was faster
+/ PhaseSmith median`. A ratio above one means PhaseSmith was faster
 for that specific workload on that machine.
 
 The self-hosted pinned-oracle workflow runs both commands and uploads text and

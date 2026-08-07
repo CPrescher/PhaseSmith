@@ -4,9 +4,9 @@ import io
 import json
 import signal
 
+import phasesmith
 import pytest
-import rietveld
-from rietveld.refinement import (
+from phasesmith.refinement import (
     CheckpointCallbackError,
     ConsoleRefinementLogger,
     JsonLinesRefinementLogger,
@@ -28,14 +28,14 @@ class FakeClock:
 
 
 def test_cancellation_token_is_thread_safe_callback_with_first_reason() -> None:
-    token = rietveld.CancellationToken()
+    token = phasesmith.CancellationToken()
     assert not token()
     assert token.request("stop_button")
     assert not token.request("later_reason")
     assert token()
     assert token.reason == "stop_button"
-    with pytest.raises(rietveld.OperationCancelled, match="stop_button") as raised:
-        rietveld.control.check_cancelled(token)
+    with pytest.raises(phasesmith.OperationCancelled, match="stop_button") as raised:
+        phasesmith.control.check_cancelled(token)
     assert raised.value.reason == "stop_button"
 
 
@@ -73,7 +73,7 @@ def test_structured_events_feed_human_and_finite_json_logs() -> None:
 
 def test_runtime_enforces_cancellation_runtime_evaluation_and_iteration_limits() -> None:
     clock = FakeClock()
-    token = rietveld.CancellationToken()
+    token = phasesmith.CancellationToken()
     runtime = RefinementRuntime(
         RefinementLimits(max_iterations=2, max_evaluations=2, max_runtime_seconds=5.0),
         cancellation=token,
@@ -97,7 +97,7 @@ def test_runtime_enforces_cancellation_runtime_evaluation_and_iteration_limits()
     assert elapsed.value.reason is TerminationReason.MAX_RUNTIME
 
     clock.value += 1.0
-    token = rietveld.CancellationToken()
+    token = phasesmith.CancellationToken()
     runtime = RefinementRuntime(RefinementLimits(max_iterations=1), cancellation=token, clock=clock)
     token.request("quit_key")
     with pytest.raises(RefinementStopped, match="quit_key") as cancelled:
@@ -150,7 +150,7 @@ def test_accepted_checkpoint_failure_is_typed_and_state_remains_accepted() -> No
 
 def test_terminal_controller_maps_q_and_two_interrupts_without_owning_numerics() -> None:
     output = io.StringIO()
-    controller = rietveld.TerminalCancellationController(
+    controller = phasesmith.TerminalCancellationController(
         input_stream=io.StringIO(), output_stream=output, enable_quit_key=False
     )
     assert not controller.handle_key("x")
@@ -158,8 +158,8 @@ def test_terminal_controller_maps_q_and_two_interrupts_without_owning_numerics()
     assert controller.token.reason == "quit_key"
     assert "Graceful" in output.getvalue()
 
-    token = rietveld.CancellationToken()
-    controller = rietveld.TerminalCancellationController(
+    token = phasesmith.CancellationToken()
+    controller = phasesmith.TerminalCancellationController(
         token, input_stream=io.StringIO(), output_stream=output, enable_quit_key=False
     )
     forced = []
@@ -173,7 +173,7 @@ def test_terminal_controller_maps_q_and_two_interrupts_without_owning_numerics()
 
 def test_terminal_controller_restores_previous_interrupt_handler() -> None:
     previous = signal.getsignal(signal.SIGINT)
-    controller = rietveld.TerminalCancellationController(
+    controller = phasesmith.TerminalCancellationController(
         input_stream=io.StringIO(), output_stream=io.StringIO(), enable_quit_key=False
     )
     with controller:

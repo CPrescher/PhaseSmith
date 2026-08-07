@@ -16,30 +16,30 @@ The first completed crystallography program must support two short, fully
 scripted workflows:
 
 ```python
-structure = rietveld.read_cif("silicon.cif").structure
-phase = rietveld.refinement.LeBailPhase.from_structure(
+structure = phasesmith.read_cif("silicon.cif").structure
+phase = phasesmith.refinement.LeBailPhase.from_structure(
     phase_id="si",
     structure=structure,
     experiment=experiment,
-    limits=rietveld.crystallography.TwoThetaLimits(10.0, 120.0),
+    limits=phasesmith.crystallography.TwoThetaLimits(10.0, 120.0),
 )
-result = rietveld.refinement.lebail.refine(
-    rietveld.refinement.lebail.LeBailInput(pattern, experiment.instrument, (phase,))
+result = phasesmith.refinement.lebail.refine(
+    phasesmith.refinement.lebail.LeBailInput(pattern, experiment.instrument, (phase,))
 )
 ```
 
 and, after the structure-factor and refinement units are complete:
 
 ```python
-structure = rietveld.read_cif("silicon.cif").structure
-phase = rietveld.phase.RietveldPhase(
+structure = phasesmith.read_cif("silicon.cif").structure
+phase = phasesmith.phase.RietveldPhase(
     phase_id="si",
     structure=structure,
     scale=1.0,
-    scattering=rietveld.scattering.XrayNonResonant(),
+    scattering=phasesmith.scattering.XrayNonResonant(),
 )
-result = rietveld.refinement.rietveld.refine(
-    rietveld.refinement.rietveld.RietveldInput(pattern, experiment, (phase,))
+result = phasesmith.refinement.rietveld.refine(
+    phasesmith.refinement.rietveld.RietveldInput(pattern, experiment, (phase,))
 )
 ```
 
@@ -54,25 +54,25 @@ intensities from the structure; both reuse the existing Rust profile engine.
 file or text
     |
     v
-rietveld.io.cif                 optional parsing adapter
+phasesmith.io.cif                 optional parsing adapter
     |                           no diffraction calculation
     v
 CrystalStructure               typed arrays and explicit symmetry operations
     |
     v
-rietveld-crystallography       Rust
+phasesmith-crystallography       Rust
     |-- cell and reciprocal-space mathematics
     |-- symmetry application and special-position expansion
     |-- reflection enumeration, absences, orbits, and multiplicities
     |-- scattering factors and structure factors
     |-- analytical JVP/VJP operations
     v
-rietveld-engine                Rust composition
+phasesmith-engine                Rust composition
     |-- integrated-intensity corrections
     |-- structure-factor/profile derivative chaining
     |-- one-call structural pattern calculation
     v
-rietveld-core                  existing Rust profile kernels
+phasesmith-core                  existing Rust profile kernels
     |
     v
 NumPy values, diagnostics, and labeled derivatives
@@ -80,17 +80,17 @@ NumPy values, diagnostics, and labeled derivatives
 
 The proposed Cargo workspace is:
 
-- `rietveld-core`: existing dependency-light profile primitives and fused
+- `phasesmith-core`: existing dependency-light profile primitives and fused
   support-limited accumulation;
-- `rietveld-crystallography`: cells, symmetry, reflections, scattering, and
+- `phasesmith-crystallography`: cells, symmetry, reflections, scattering, and
   structure-factor kernels, with no Python or file-I/O dependency;
-- `rietveld-engine`: native composition of crystallographic intensities with
+- `phasesmith-engine`: native composition of crystallographic intensities with
   profile accumulation, depending on the preceding two crates;
-- `rietveld-py`: thin PyO3 validation and NumPy bindings.
+- `phasesmith-py`: thin PyO3 validation and NumPy bindings.
 
-`rietveld-core` must not depend on crystallography. This preserves its utility
-as a small line-profile library and avoids a dependency cycle. `rietveld-py`
-must not implement numerical orchestration that belongs in `rietveld-engine`.
+`phasesmith-core` must not depend on crystallography. This preserves its utility
+as a small line-profile library and avoids a dependency cycle. `phasesmith-py`
+must not implement numerical orchestration that belongs in `phasesmith-engine`.
 
 The initial CIF adapter will use Gemmi behind an optional, lazily imported
 Python boundary because it has mature CIF handling and an extensive
@@ -104,7 +104,7 @@ not vendored or used as a structure-factor oracle.
 
 ### Public domain models
 
-`rietveld.crystallography` will own inspectable frozen models mirroring the
+`phasesmith.crystallography` will own inspectable frozen models mirroring the
 native array contracts:
 
 - `UnitCell(a, b, c, alpha, beta, gamma)`;
@@ -117,7 +117,7 @@ native array contracts:
   orbit_hkl)`;
 - `StructureFactorResult(f_real, f_imag, intensity, diagnostics)`.
 
-`rietveld.phase` will distinguish supplied-intensity and calculated-intensity
+`phasesmith.phase` will distinguish supplied-intensity and calculated-intensity
 workflows:
 
 - the existing `Phase`/`ReflectionBatch` remains the direct profile and Le Bail
@@ -233,7 +233,7 @@ Each outcome becomes a reviewed mapping table:
 | --- | --- | --- | --- | --- |
 | Isotropic displacement | Pinned study | `U_iso` in Å² | Explicit/tested | Published definition |
 
-The Rietveld Engine convention is selected for physical clarity and
+The PhaseSmith convention is selected for physical clarity and
 scriptability; it need not copy a GSAS-II parameter name. Published equations
 or first-principles derivations remain the implementation source. The oracle
 study supplies black-box numerical cases that verify conversions, derivative
@@ -241,7 +241,7 @@ signs, constraints, and final observables.
 
 Required oracle cases include a one-atom P1 cell, a centring extinction, a
 special-position structure, a multi-species structure, and a two-phase overlap.
-Every case must run without importing `rietveld`; the resulting plain fixture
+Every case must run without importing `phasesmith`; the resulting plain fixture
 is then consumed by our tests. Normal builds, imports, calculations, and
 refinements remain GSAS-II-free.
 
@@ -253,7 +253,7 @@ available in the current environment; no oracle equivalence is claimed yet.
 
 ### Work
 
-1. Add `rietveld-crystallography` and `rietveld-engine` workspace crates with
+1. Add `phasesmith-crystallography` and `phasesmith-engine` workspace crates with
    the dependency direction described above.
 2. Run the pinned GSAS-II P1 parameter study and review the physical-unit
    mapping before public structural parameter names are finalized.
@@ -335,7 +335,7 @@ fixed-cell Le Bail constructor are documented in `docs/cif-import.md`.
 
 ### Work
 
-1. Add an optional `cif` dependency group and `rietveld.io.cif`. Importing the
+1. Add an optional `cif` dependency group and `phasesmith.io.cif`. Importing the
    base package must not require the parser backend.
 2. Define `read_cif(path_or_text, *, block=None, strict=True)` and a backend
    protocol returning only typed public models and structured diagnostics.
@@ -446,7 +446,7 @@ benchmarks are in `docs/structural-intensities.md`.
    correction path; add tests preventing double application.
 4. Chain `dI/dp` and cell-dependent peak-position derivatives into the existing
    support-limited profile derivatives.
-5. Implement `rietveld-engine` one-call structural pattern calculation so
+5. Implement `phasesmith-engine` one-call structural pattern calculation so
    Python submits structures and arrays once. Intermediate per-reflection
    arrays may be returned as diagnostics but never orchestrated in Python.
 6. Add `RietveldPhase` and structural calculation result models with stable
@@ -605,7 +605,7 @@ real-pattern scripts without adding GUI ownership to the library:
 5. a concise project/request facade and plain JSON/CSV result reports; and
 6. realistic laboratory X-ray and monochromatic-neutron validation cases.
 
-Preprocessing estimators live in `rietveld.background` and return plain arrays.
+Preprocessing estimators live in `phasesmith.background` and return plain arrays.
 They are not silently coupled to refinement. Every refinable term remains a
 typed analytical model with value/JVP/VJP validation and persistence.
 

@@ -294,7 +294,7 @@
   "kind": "cw_instrument_profile",
   "provenance": {
     "generated_at_utc": "2026-08-05T07:06:23.456598+00:00",
-    "generator_sha256": "105dd8be6624de49d59149afc3ea61e1ca67713966ee0831eca75ac315734951",
+    "generator_sha256": "29ca295c2832f6f6a3ed002c7d7de089773bc875b3c82cd4341c807e9e1ca750",
     "gsasii_repository": "https://github.com/AdvancedPhotonSource/GSAS-II",
     "gsasii_revision": "c0bc79b259cdf0065480b5fbd57674ddf12c4a23",
     "gsasii_tag": 5838,

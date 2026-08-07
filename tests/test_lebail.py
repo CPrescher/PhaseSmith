@@ -3,13 +3,13 @@ from __future__ import annotations
 from dataclasses import replace
 
 import numpy as np
+import phasesmith
 import pytest
-import rietveld
-from rietveld.refinement import AffineConstraint, TerminationReason, lebail
+from phasesmith.refinement import AffineConstraint, TerminationReason, lebail
 
 
-def instrument() -> rietveld.ConstantWavelengthInstrument:
-    return rietveld.ConstantWavelengthInstrument(
+def instrument() -> phasesmith.ConstantWavelengthInstrument:
+    return phasesmith.ConstantWavelengthInstrument(
         wavelength_angstrom=1.5406,
         u_deg2=2.0e-4,
         v_deg2=-1.0e-4,
@@ -23,10 +23,10 @@ def phase(
     phase_id: str,
     positions: np.ndarray,
     intensities: np.ndarray,
-) -> rietveld.Phase:
+) -> phasesmith.Phase:
     count = positions.size
     d_spacing = instrument().wavelength_angstrom / (2.0 * np.sin(np.deg2rad(positions / 2.0)))
-    reflections = rietveld.ReflectionBatch(
+    reflections = phasesmith.ReflectionBatch(
         [f"{phase_id}-{index}" for index in range(count)],
         np.column_stack(
             (
@@ -39,24 +39,24 @@ def phase(
         positions,
         intensities,
     )
-    return rietveld.Phase(phase_id, phase_id.title(), reflections)
+    return phasesmith.Phase(phase_id, phase_id.title(), reflections)
 
 
 def observed_pattern(
     x: np.ndarray,
-    truth: tuple[rietveld.Phase, ...],
+    truth: tuple[phasesmith.Phase, ...],
     *,
     background: np.ndarray | None = None,
     uncertainty: np.ndarray | None = None,
     mask: np.ndarray | None = None,
-) -> rietveld.PowderPattern:
+) -> phasesmith.PowderPattern:
     supplied_background = np.zeros_like(x) if background is None else background
-    calculated = rietveld.calculate_pattern(
-        rietveld.PowderPattern(x, background=supplied_background),
+    calculated = phasesmith.calculate_pattern(
+        phasesmith.PowderPattern(x, background=supplied_background),
         instrument(),
         truth,
     )
-    return rietveld.PowderPattern(
+    return phasesmith.PowderPattern(
         x,
         observed_y=calculated.y,
         background=supplied_background,
@@ -335,7 +335,7 @@ def test_custom_optimizer_protocol_drives_profile_updates() -> None:
 
 
 def test_optional_scipy_adapter_imports_only_when_used() -> None:
-    adapter = rietveld.refinement.ScipyLeastSquaresAdapter()
+    adapter = phasesmith.refinement.ScipyLeastSquaresAdapter()
     with pytest.raises(ImportError, match="optional dependency"):
         adapter.solve(
             np.ones(2),
@@ -349,7 +349,7 @@ def test_le_bail_inputs_options_and_nonnegative_boundaries_are_validated() -> No
     x = np.linspace(39.0, 41.0, 101)
     phase_list = [phase("alpha", np.array([40.0]), np.ones(1))]
     frozen_input = lebail.LeBailInput(
-        rietveld.PowderPattern(x, observed_y=np.zeros_like(x)),
+        phasesmith.PowderPattern(x, observed_y=np.zeros_like(x)),
         instrument(),
         phase_list,
     )
@@ -357,14 +357,14 @@ def test_le_bail_inputs_options_and_nonnegative_boundaries_are_validated() -> No
     assert len(frozen_input.phases) == 1
     with pytest.raises(ValueError, match="observed_y"):
         lebail.LeBailInput(
-            rietveld.PowderPattern(x),
+            phasesmith.PowderPattern(x),
             instrument(),
             (phase("alpha", np.array([40.0]), np.ones(1)),),
         )
     with pytest.raises(ValueError, match="non-negative"):
         lebail.initialize_intensities(
             lebail.LeBailInput(
-                rietveld.PowderPattern(x, observed_y=np.zeros_like(x)),
+                phasesmith.PowderPattern(x, observed_y=np.zeros_like(x)),
                 instrument(),
                 (phase("alpha", np.array([40.0]), np.array([-1.0])),),
             )

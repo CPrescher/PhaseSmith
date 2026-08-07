@@ -487,7 +487,7 @@
   "kind": "symmetric_profile",
   "provenance": {
     "generated_at_utc": "2026-08-05T05:00:44.624004+00:00",
-    "generator_sha256": "45cea549aff7650cb6229997a4767ad0be50789fc53c6a696aa16d7ce2b01775",
+    "generator_sha256": "bacd9dd8eeab665dc48abce0afd9d27e41bdab743fb72e916f359df41542035f",
     "gsasii_repository": "https://github.com/AdvancedPhotonSource/GSAS-II",
     "gsasii_revision": "c0bc79b259cdf0065480b5fbd57674ddf12c4a23",
     "gsasii_tag": 5838,

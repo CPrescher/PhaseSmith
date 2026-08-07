@@ -2,9 +2,9 @@
 
 GSAS-II is an optional, pinned black-box oracle. The exact revision is recorded
 in `PINNED_GSASII.json`; it is not installed, vendored, or imported by the normal
-Rietveld Engine package.
+PhaseSmith package.
 
-The public adapter in `python/rietveld/oracle/gsasii.py` extracts copies of `X`,
+The public adapter in `python/phasesmith/oracle/gsasii.py` extracts copies of `X`,
 `Ycalc`, `Background`, and phase reflection lists using `G2PwdrData.getdata()`
 and `G2PwdrData.reflections()`. The private adapter `_pinned_probe.py` exposes
 only a small allowlist and verifies the checkout's exact Git revision before
@@ -12,7 +12,7 @@ reading internal data.
 
 The external benchmark workers in `scripts/benchmark_cw_profile.py` and
 `scripts/benchmark_structural_pattern.py` use the same revision gate. They are
-driven by the corresponding scripts in `benchmarks/`, import no Rietveld Engine
+driven by the corresponding scripts in `benchmarks/`, import no PhaseSmith
 module, and report numerically verified profile-only and controlled
 structure-to-profile comparisons. See `../docs/gsasii-performance.md` for their
 scope and limitations.
@@ -41,6 +41,11 @@ scripting API and contains `X`, `Ycalc`, background, and a documented 15-column
 powder reflection list for a deterministic synthetic phase. Manifests record
 array hashes, units, generator hash, exact GSAS-II revision/tag, Python/NumPy
 versions, and platform.
+
+The pre-release PhaseSmith rename on 2026-08-07 changed only generator
+docstrings and temporary-directory prefixes. The recorded generator hashes were
+updated accordingly; archive and member hashes were unchanged, and no fixture
+arrays were regenerated.
 
 `cw_instrument_profile_v1` uses the same pinned private profile probes after
 deriving Gaussian variance and Lorentzian FWHM from documented U/V/W/X/Y
@@ -101,7 +106,7 @@ initialization. The manifest records the degree-density conversion
 `integrated_intensity = 0.01 * Fobs^2 * intensity_correction`.
 
 Generation is deliberately separate from the normal package: the script imports
-GSAS-II and NumPy, but never imports `rietveld`. Run it with GSAS-II's Python:
+GSAS-II and NumPy, but never imports `phasesmith`. Run it with GSAS-II's Python:
 
 ```shell
 /path/to/gsas/python oracle/scripts/generate_symmetric_profile.py \
@@ -148,7 +153,7 @@ GSAS-II and NumPy, but never imports `rietveld`. Run it with GSAS-II's Python:
 The generator refuses to replace `data.npz` or `manifest.json`. Regeneration
 requires the explicit `--force` flag, after which both metadata and numerical
 diffs must be reviewed. Normal tests load fixtures through
-`rietveld.oracle.load_fixture`, which validates the pin, archive hash, member
+`phasesmith.oracle.load_fixture`, which validates the pin, archive hash, member
 names, array hashes, dtypes, shapes, and finiteness before returning data.
 
 The powder generator creates and discards its GPX file in a temporary directory;
@@ -159,7 +164,7 @@ GSAS-II project objects never enter the fixture or normal test environment.
 Normal CI validates committed fixtures and deliberately does not install or
 import GSAS-II. The opt-in `Pinned GSAS-II oracle` workflow runs on a controlled
 runner labeled `gsasii-oracle`. Repository variables `GSASII_PYTHON`,
-`RIETVELD_GSASII_ROOT`, and `RIETVELD_GSASII_BINARY_DIR` must identify the
+`PHASESMITH_GSASII_ROOT`, and `PHASESMITH_GSASII_BINARY_DIR` must identify the
 compatible interpreter, exact pinned checkout, and binary directory. The
 workflow builds this package in an isolated environment and runs only tests
 marked `external_oracle`. Missing configuration, an incorrect revision, absent
@@ -170,8 +175,8 @@ new archive; it never overwrites the committed golden fixture. Locally, the
 equivalent comparison command is:
 
 ```shell
-RIETVELD_GSASII_ROOT=/path/to/pinned/GSAS-II \
-RIETVELD_GSASII_BINARY_DIR=/path/to/compatible/GSASII-bin/platform-directory \
+PHASESMITH_GSASII_ROOT=/path/to/pinned/GSAS-II \
+PHASESMITH_GSASII_BINARY_DIR=/path/to/compatible/GSASII-bin/platform-directory \
 /path/to/gsas/python -m pytest -q -m external_oracle tests/test_external_oracle.py
 ```
 

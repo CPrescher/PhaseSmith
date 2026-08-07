@@ -12,14 +12,14 @@ an imported structure.
 Gemmi is optional:
 
 ```bash
-pip install 'rietveld-engine[cif]'
+pip install 'phasesmith[cif]'
 ```
 
-The supported adapter range is `gemmi>=0.7.5,<0.8`. Importing `rietveld` or
+The supported adapter range is `gemmi>=0.7.5,<0.8`. Importing `phasesmith` or
 using explicit cells/reflections does not import Gemmi.
 
 ```python
-from rietveld.io.cif import read_cif
+from phasesmith.io.cif import read_cif
 
 result = read_cif("sample.cif", block="phase_a", strict=True)
 structure = result.structure
@@ -116,7 +116,7 @@ tables. `LeBailPhase` subclasses the existing generic `Phase`, so all normal
 calculation and refinement functions accept it unchanged.
 
 ```python
-from rietveld.refinement.lebail import LeBailPhase
+from phasesmith.refinement.lebail import LeBailPhase
 
 phase = LeBailPhase.from_cif(
     "sample.cif",

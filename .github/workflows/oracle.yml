@@ -76,4 +76,4 @@ jobs:
             --binary-dir "$RIETVELD_GSASII_BINARY_DIR" \
             --output "$RUNNER_TEMP/symmetric_pseudo_voigt_v1"
           "$RUNNER_TEMP/rietveld-oracle-venv/bin/python" -c \
-            'from os import environ; from rietveld.oracle import load_fixture; load_fixture(environ["RUNNER_TEMP"] + "/symmetric_pseudo_voigt_v1")'
+            'from os import environ; from phasesmith.oracle import load_fixture; load_fixture(environ["RUNNER_TEMP"] + "/symmetric_pseudo_voigt_v1")'

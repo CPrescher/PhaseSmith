@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate a pinned GSAS-II Le Bail fixture without importing Rietveld Engine.
+"""Generate a pinned GSAS-II Le Bail fixture without importing PhaseSmith.
 
 Public scripting creates the phase/histogram, supplies the calculated pattern,
 enables Le Bail mode, and extracts arrays and reflection records. One pinned,
@@ -151,7 +151,7 @@ def generate_snapshot(
     scripting: Any, structure_main: Any
 ) -> tuple[list[dict[str, Any]], dict[str, np.ndarray]]:
     np.random.seed(20_260_805)
-    with tempfile.TemporaryDirectory(prefix="rietveld-gsas-lebail-") as temporary:
+    with tempfile.TemporaryDirectory(prefix="phasesmith-gsas-lebail-") as temporary:
         work = Path(temporary)
         instrument_path = work / "lebail.instprm"
         instrument_path.write_text(instrument_text(), encoding="utf-8")

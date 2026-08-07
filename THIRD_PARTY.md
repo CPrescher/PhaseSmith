@@ -1,6 +1,6 @@
 # Third-party dependency ledger
 
-Rietveld Engine source is MIT licensed. Optional dependencies keep their own
+PhaseSmith source is MIT licensed. Optional dependencies keep their own
 licenses and are not vendored.
 
 ## xypattern Smooth Bruckner behavior
@@ -14,10 +14,10 @@ licenses and are not vendored.
   `xypattern/auto_background.py`.
 - License: MIT; the complete upstream notice is retained in
   `THIRD_PARTY_NOTICES.md` and included in package license files.
-- Runtime status: no dependency. Rietveld Engine owns its native implementation
+- Runtime status: no dependency. PhaseSmith owns its native implementation
   and independent NumPy reference; an isolated pinned install is used only for
   compatibility verification.
-- Boundary: `rietveld.background` is plain-array preprocessing. It does not
+- Boundary: `phasesmith.background` is plain-array preprocessing. It does not
   import xypattern or Dioptas and does not enter differentiable refinement
   JVP/VJP calculations.
 
@@ -31,12 +31,12 @@ licenses and are not vendored.
 - License: Mozilla Public License 2.0, or LGPL v3 at the user's option, as
   declared by upstream and the Python package metadata.
 - Vendoring/modification: none.
-- Boundary: parser objects remain inside `rietveld.io._gemmi`; public and
-  persisted models contain only independently defined Rietveld Engine types.
+- Boundary: parser objects remain inside `phasesmith.io._gemmi`; public and
+  persisted models contain only independently defined PhaseSmith types.
 
 Gemmi is not a source for diffraction equations, reflection intensities, or
 scattering tables. Exact symmetry validation and all numerical diffraction
-work remain native Rietveld Engine implementations.
+work remain native PhaseSmith implementations.
 
 ## XrayDB Waasmaier--Kirfel data
 

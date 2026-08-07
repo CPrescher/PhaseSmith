@@ -2,7 +2,7 @@
 
 Refinement is a Python orchestration layer over immutable domain models and the
 native calculation API. No optimizer state, constraint graph, observed pattern,
-or iteration history enters `rietveld-core`.
+or iteration history enters `phasesmith-core`.
 
 ## Parameters and constraints
 
@@ -53,7 +53,7 @@ both products with a dense reconstruction and verify the adjoint identity.
 The built-in Le Bail profile update is dependency-free and uses damped normal
 equations with a least-squares fallback and backtracking. The optional
 `ScipyLeastSquaresAdapter` lazily imports `scipy.optimize.lsq_linear`; install it
-with `pip install 'rietveld-engine[refinement]'`. Objective calculation remains
+with `pip install 'phasesmith[refinement]'`. Objective calculation remains
 independently callable. Pass an adapter as `lebail.refine(..., optimizer=adapter)`;
 the solver receives the weighted linearized residual, analytical Jacobian, and
 physical-bound-aware scaled step limits.

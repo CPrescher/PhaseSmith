@@ -307,7 +307,7 @@
   "kind": "fcj_wavelength_components",
   "provenance": {
     "generated_at_utc": "2026-08-05T14:21:43.946648+00:00",
-    "generator_sha256": "fb9d517421ea0a2a794e172fb455d7fa73190acfd2a2c97fbc2155282db05c8c",
+    "generator_sha256": "79c76139f93db1b47841e651ed9abaa9f69d937ee42ab5395bc0f113f0a21620",
     "gsasii_repository": "https://github.com/AdvancedPhotonSource/GSAS-II",
     "gsasii_revision": "c0bc79b259cdf0065480b5fbd57674ddf12c4a23",
     "gsasii_tag": 5838,
@@ -320,7 +320,7 @@
     "api": [
       "GSASII.GSASIIpwd.getFCJVoigt3"
     ],
-    "helper_sha256": "3896af32b1bba919ec44b3497f65eb0ef254dce45e2646c7c0ee54380d1f734a",
+    "helper_sha256": "19279da14497410a2bb1cdd6135197a2a57a70b6298d32d506f29b6b443d2c73",
     "native_units": {
       "Gaussian_variance": "centidegree_squared",
       "Lorentzian_fwhm": "centidegree",

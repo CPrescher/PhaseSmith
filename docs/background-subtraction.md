@@ -2,7 +2,7 @@
 
 Background subtraction is a preprocessing operation, distinct from the
 additive differentiable background models used during refinement. The public
-module boundary is `rietveld.background`: it accepts and returns plain NumPy
+module boundary is `phasesmith.background`: it accepts and returns plain NumPy
 arrays and has no dependency on Dioptas, xypattern, or a GUI.
 
 ## Smooth Bruckner compatibility model
@@ -73,4 +73,4 @@ approximately 5.31 million input samples per second for each complete
 This estimator is non-linear and non-differentiable at clipping decisions. It
 is intentionally not a refinable parameter family and does not participate in
 Rietveld JVP/VJP calculations. Refinable polynomial and future spline/point
-backgrounds remain under `rietveld.refinement.background`.
+backgrounds remain under `phasesmith.refinement.background`.

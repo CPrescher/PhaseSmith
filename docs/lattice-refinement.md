@@ -10,7 +10,7 @@ values, and profile derivatives do not call GSAS-II.
 The shortest single-phase workflow is:
 
 ```python
-from rietveld.refinement import lebail
+from phasesmith.refinement import lebail
 
 request = lebail.LeBailInput.from_cif(
     observed_pattern,

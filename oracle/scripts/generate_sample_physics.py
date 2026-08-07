@@ -3,7 +3,7 @@
 
 The histogram and HAP values are configured through ``GSASIIscriptable`` and
 plain public entry accessors. A pinned private profile call evaluates selected
-reflection widths. This script imports no Rietveld Engine module.
+reflection widths. This script imports no PhaseSmith module.
 """
 
 from __future__ import annotations
@@ -241,7 +241,7 @@ def generate_snapshot(
     """Build one public scripting histogram and selected profile probes."""
 
     np.random.seed(20_260_805)
-    with tempfile.TemporaryDirectory(prefix="rietveld-gsas-sample-") as temporary:
+    with tempfile.TemporaryDirectory(prefix="phasesmith-gsas-sample-") as temporary:
         work = Path(temporary)
         instrument_path = work / "sample.instprm"
         instrument_path.write_text(instrument_text(), encoding="utf-8")

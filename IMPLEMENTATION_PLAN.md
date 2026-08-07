@@ -1,4 +1,4 @@
-# Rietveld Engine Implementation Plan
+# PhaseSmith Implementation Plan
 
 ## Purpose and planning rules
 
@@ -42,7 +42,7 @@ Implementation unit 0 was completed on 2026-08-05. The repository now also has:
 - a pinned private-profile fixture covering three width regimes and overlap;
 - a deterministic public-scripting fixture containing `X`, `Ycalc`, background,
   and a documented powder reflection list;
-- separate external generators that never import `rietveld`;
+- separate external generators that never import `phasesmith`;
 - baseline Rust/Python CI and optimized benchmark build-mode reporting.
 
 The baseline is not yet a release milestone for two numerical reasons:
@@ -182,8 +182,8 @@ Turn the current local demonstration into a repeatable validation baseline.
    - NPZ member names, shapes, dtypes, and parameter conventions;
    - reflection-table column metadata.
 2. Add an explicit oracle generator executable under `oracle/scripts/` that runs
-   only inside the pinned GSAS-II environment and imports no `rietveld` code.
-3. Add a normal-environment fixture reader under `python/rietveld/oracle/` that
+   only inside the pinned GSAS-II environment and imports no `phasesmith` code.
+3. Add a normal-environment fixture reader under `python/phasesmith/oracle/` that
    validates schema version, hashes, shapes, dtypes, finite values, and pin.
 4. Commit the smallest redistributable fixture set:
    - one isolated symmetric peak;
@@ -368,9 +368,9 @@ CwReflectionBatchView
   optional reflection_id
 ```
 
-The public Python object lives in `rietveld.instrument`; array-oriented CW
-operations live in `rietveld.cw`. Shared result containers live in
-`rietveld.results`, independent of native-extension and refinement state. This
+The public Python object lives in `phasesmith.instrument`; array-oriented CW
+operations live in `phasesmith.cw`. Shared result containers live in
+`phasesmith.results`, independent of native-extension and refinement state. This
 is the first enforced slice of the public module contract.
 
 The exact parameter scaling and formula variants are frozen only after the
@@ -621,26 +621,26 @@ calculation.
 ### Data model
 
 ```text
-ReflectionBatch (rietveld.phase)
+ReflectionBatch (phasesmith.phase)
   reflection_id
   h, k, l
   d_spacing_angstrom
   two_theta_deg
   integrated_intensity
 
-Phase (rietveld.phase)
+Phase (phasesmith.phase)
   phase_id
   name
   reflection batch
   scale
   optional phase-level correction parameters
 
-Pattern (rietveld.pattern)
+Pattern (phasesmith.pattern)
   grid
   observed intensity/uncertainty/mask when available
   optional supplied background array or background model
 
-CalculationInput (rietveld.calculation)
+CalculationInput (phasesmith.calculation)
   pattern
   phases
   instrument
@@ -848,18 +848,18 @@ project compatibility layer.
 ### Module and data model
 
 ```text
-rietveld.refinement
+phasesmith.refinement
   ParameterKey / ParameterSpec / ParameterSet
   Bounds and typed constraint transforms
   ResidualOptions / IterationRecord / TerminationReason
   Jacobian-vector and transpose-Jacobian-vector operations
 
-rietveld.refinement.lebail
+phasesmith.refinement.lebail
   LeBailInput / LeBailOptions / LeBailResult
   extract_intensities(...)
   refine(...)
 
-rietveld.refinement.rietveld
+phasesmith.refinement.rietveld
   Reserved separate orchestration module; no structure-factor implementation is
   invented before its physics layer exists.
 ```
@@ -918,7 +918,7 @@ rietveld.refinement.rietveld
 A user can perform and inspect a robust Le Bail refinement from a short Python
 script without constructing parameter vectors, optimizer callbacks, project
 files, or per-reflection loops. The refinement layer consumes the calculation
-API without introducing refinement state into `rietveld-core`.
+API without introducing refinement state into `phasesmith-core`.
 
 Review result: immutable typed parameters, exact fixed/affine transforms,
 masked residuals, hybrid JVP/VJP products, a dependency-free default solver,
@@ -950,7 +950,7 @@ external applications through an application-neutral NumPy contract.
 
 1. Finalize a versioned plain-data schema for instruments, phases/reflections,
    patterns, calculation options, and refinement checkpoints/results.
-2. Add `rietveld.integrations.dioptas` with conversion functions operating on
+2. Add `phasesmith.integrations.dioptas` with conversion functions operating on
    NumPy arrays and plain metadata. It must import without Dioptas installed.
 3. Define a minimal adapter protocol for grid/observed/background/mask input and
    calculated/component/diagnostic output; keep GUI events and widgets out of
@@ -1045,7 +1045,7 @@ protocol is in `docs/crystallography-plan.md`.
 
 Unit-11 review result: the workspace separates profile, crystallography,
 native composition, and PyO3 crates without adding crystallography to
-`rietveld-core`. General triclinic metrics, volume, d-spacing, and six cell
+`phasesmith-core`. General triclinic metrics, volume, d-spacing, and six cell
 derivatives are analytical. The P1 kernel calculates complex `F`,
 `scale |F|^2`, all coordinate/occupancy/`Uiso`/cell/scale derivatives, dense
 diagnostics, and native JVP/VJP products. Eight Python and eight Rust tests
@@ -1072,9 +1072,9 @@ ms before the conservative-bound review and 14.64 ms after it. The external
 study schema is in
 `oracle/SYMMETRY_REFLECTION_STUDY.md`; no oracle equivalence is claimed yet.
 
-Unit-13 review result: `rietveld.structure` owns immutable parser-independent
+Unit-13 review result: `phasesmith.structure` owns immutable parser-independent
 cell/symmetry/site/provenance records and versioned JSON-compatible round trips.
-`rietveld.io.cif` defines injectable backend and resource-limit contracts; its
+`phasesmith.io.cif` defines injectable backend and resource-limit contracts; its
 lazy Gemmi 0.7.5 adapter handles blocks, loops, quoted values, standard
 uncertainties, missing/unknown states, current and legacy tags, explicit/Hall/
 HM/number symmetry precedence, Cartesian coordinates, B/U conversion,

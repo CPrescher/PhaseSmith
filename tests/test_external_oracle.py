@@ -14,8 +14,8 @@ from types import ModuleType
 
 import numpy as np
 import pytest
-from rietveld.oracle import load_fixture
-from rietveld.oracle._pinned_probe import PINNED_REVISION, probe_symmetric_profile
+from phasesmith.oracle import load_fixture
+from phasesmith.oracle._pinned_probe import PINNED_REVISION, probe_symmetric_profile
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 FIXTURE_PATH = REPOSITORY_ROOT / "oracle" / "fixtures" / "symmetric_pseudo_voigt_v1"
@@ -33,8 +33,8 @@ def _required_directory(variable: str) -> Path:
 
 
 def _import_pinned_gsasii() -> ModuleType:
-    root = _required_directory("RIETVELD_GSASII_ROOT")
-    binary_dir = _required_directory("RIETVELD_GSASII_BINARY_DIR")
+    root = _required_directory("PHASESMITH_GSASII_ROOT")
+    binary_dir = _required_directory("PHASESMITH_GSASII_BINARY_DIR")
     sys.path.insert(0, str(root))
     sys.path.insert(0, str(binary_dir))
     try:

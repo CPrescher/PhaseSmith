@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import numpy as np
+import phasesmith
 import pytest
-import rietveld
-from rietveld import reference
+from phasesmith import reference
 
 
-def instrument() -> rietveld.ConstantWavelengthInstrument:
-    return rietveld.ConstantWavelengthInstrument(
+def instrument() -> phasesmith.ConstantWavelengthInstrument:
+    return phasesmith.ConstantWavelengthInstrument(
         wavelength_angstrom=1.54056,
         u_deg2=2.0e-4,
         v_deg2=-1.0e-4,
@@ -17,10 +17,10 @@ def instrument() -> rietveld.ConstantWavelengthInstrument:
     )
 
 
-def reflections() -> rietveld.ReflectionGeometryBatch:
+def reflections() -> phasesmith.ReflectionGeometryBatch:
     positions = np.array([25.0, 42.0, 63.0, 88.0])
     d_spacing = instrument().wavelength_angstrom / (2.0 * np.sin(np.deg2rad(positions / 2.0)))
-    return rietveld.ReflectionGeometryBatch(
+    return phasesmith.ReflectionGeometryBatch(
         [[0, 0, 1], [1, 0, 0], [1, 0, 1], [-1, 0, -1]],
         d_spacing,
         positions,
@@ -28,17 +28,17 @@ def reflections() -> rietveld.ReflectionGeometryBatch:
     )
 
 
-def cubic_metric() -> rietveld.ReciprocalMetric:
-    return rietveld.ReciprocalMetric.orthogonal(4.0, 4.0, 4.0)
+def cubic_metric() -> phasesmith.ReciprocalMetric:
+    return phasesmith.ReciprocalMetric.orthogonal(4.0, 4.0, 4.0)
 
 
 def test_reciprocal_metric_angles_match_independent_cartesian_geometry() -> None:
-    metric = rietveld.ReciprocalMetric(
+    metric = phasesmith.ReciprocalMetric(
         [[0.08, 0.012, -0.003], [0.012, 0.06, 0.007], [-0.003, 0.007, 0.04]]
     )
     hkl = np.array([[1.0, 0.0, 0.0], [1.0, 2.0, -1.0], [-2.0, 1.0, 3.0]])
     axis = np.array([0.4, -0.2, 1.3])
-    actual = rietveld.reciprocal_angle_geometry(hkl, axis, metric)
+    actual = phasesmith.reciprocal_angle_geometry(hkl, axis, metric)
     reciprocal_basis = np.linalg.cholesky(metric.matrix).T
     cartesian_hkl = hkl @ reciprocal_basis.T
     cartesian_axis = reciprocal_basis @ axis
@@ -49,12 +49,12 @@ def test_reciprocal_metric_angles_match_independent_cartesian_geometry() -> None
 
 
 def test_reciprocal_axis_derivatives_match_centered_differences() -> None:
-    metric = rietveld.ReciprocalMetric(
+    metric = phasesmith.ReciprocalMetric(
         [[0.08, 0.012, -0.003], [0.012, 0.06, 0.007], [-0.003, 0.007, 0.04]]
     )
     hkl = np.array([[1.0, 2.0, -1.0], [-2.0, 1.0, 3.0]])
     axis = np.array([0.4, -0.2, 1.3])
-    actual = rietveld.reciprocal_angle_geometry(hkl, axis, metric)
+    actual = phasesmith.reciprocal_angle_geometry(hkl, axis, metric)
     step = 1.0e-6
     for coordinate in range(3):
         plus = axis.copy()
@@ -62,8 +62,8 @@ def test_reciprocal_axis_derivatives_match_centered_differences() -> None:
         plus[coordinate] += step
         minus[coordinate] -= step
         finite_difference = (
-            rietveld.reciprocal_angle_geometry(hkl, plus, metric).cosine_squared
-            - rietveld.reciprocal_angle_geometry(hkl, minus, metric).cosine_squared
+            phasesmith.reciprocal_angle_geometry(hkl, plus, metric).cosine_squared
+            - phasesmith.reciprocal_angle_geometry(hkl, minus, metric).cosine_squared
         ) / (2.0 * step)
         np.testing.assert_allclose(
             actual.d_cosine_squared_d_axis_hkl[:, coordinate],
@@ -75,8 +75,8 @@ def test_reciprocal_axis_derivatives_match_centered_differences() -> None:
 
 def test_march_dollase_values_and_ratio_derivative_follow_equation() -> None:
     ratio = 0.72
-    provider = rietveld.MarchDollasePreferredOrientation(ratio, (0, 0, 1), cubic_metric())
-    contribution = provider.evaluate(rietveld.PhysicsContext(reflections(), instrument()))
+    provider = phasesmith.MarchDollasePreferredOrientation(ratio, (0, 0, 1), cubic_metric())
+    contribution = provider.evaluate(phasesmith.PhysicsContext(reflections(), instrument()))
     cosine_squared = np.array([1.0, 0.0, 0.5, 0.5])
     denominator = ratio**2 * cosine_squared + (1.0 - cosine_squared) / ratio
     expected = denominator ** (-1.5)
@@ -94,9 +94,9 @@ def test_march_dollase_values_and_ratio_derivative_follow_equation() -> None:
 def test_ratio_one_recovers_unmodified_profile_exactly() -> None:
     x = np.linspace(20.0, 95.0, 7_501)
     batch = reflections()
-    baseline = rietveld.calculate_cw_pattern(x, batch, instrument(), jacobian_layout="dense")
-    orientation = rietveld.MarchDollasePreferredOrientation(1.0, (0, 0, 1), cubic_metric())
-    actual = rietveld.calculate_cw_pattern(
+    baseline = phasesmith.calculate_cw_pattern(x, batch, instrument(), jacobian_layout="dense")
+    orientation = phasesmith.MarchDollasePreferredOrientation(1.0, (0, 0, 1), cubic_metric())
+    actual = phasesmith.calculate_cw_pattern(
         x, batch, instrument(), physics=orientation, jacobian_layout="dense"
     )
     np.testing.assert_array_equal(actual.y, baseline.y)
@@ -111,14 +111,14 @@ def test_march_ratio_profile_derivative_matches_centered_difference() -> None:
     batch = reflections()
     ratio = 0.72
 
-    def provider(value: float) -> rietveld.MarchDollasePreferredOrientation:
-        return rietveld.MarchDollasePreferredOrientation(value, (0, 0, 1), cubic_metric())
+    def provider(value: float) -> phasesmith.MarchDollasePreferredOrientation:
+        return phasesmith.MarchDollasePreferredOrientation(value, (0, 0, 1), cubic_metric())
 
-    baseline = rietveld.calculate_cw_pattern(x, batch, instrument(), physics=provider(ratio))
+    baseline = phasesmith.calculate_cw_pattern(x, batch, instrument(), physics=provider(ratio))
     step = 1.0e-6
     finite_difference = (
-        rietveld.calculate_cw_pattern(x, batch, instrument(), physics=provider(ratio + step)).y
-        - rietveld.calculate_cw_pattern(x, batch, instrument(), physics=provider(ratio - step)).y
+        phasesmith.calculate_cw_pattern(x, batch, instrument(), physics=provider(ratio + step)).y
+        - phasesmith.calculate_cw_pattern(x, batch, instrument(), physics=provider(ratio - step)).y
     ) / (2.0 * step)
     row = baseline.derivatives.global_parameter_names.index("march_dollase.ratio")
     np.testing.assert_allclose(
@@ -129,15 +129,15 @@ def test_march_ratio_profile_derivative_matches_centered_difference() -> None:
 def test_orientation_composes_with_size_and_strain_through_reference_path() -> None:
     x = np.linspace(20.0, 95.0, 7_501)
     batch = reflections()
-    provider = rietveld.CompositePhysicsProvider(
+    provider = phasesmith.CompositePhysicsProvider(
         (
-            rietveld.IsotropicSizeBroadening(60.0),
-            rietveld.IsotropicMicrostrainBroadening(4.0e-4),
-            rietveld.MarchDollasePreferredOrientation(1.25, (0, 0, 1), cubic_metric()),
+            phasesmith.IsotropicSizeBroadening(60.0),
+            phasesmith.IsotropicMicrostrainBroadening(4.0e-4),
+            phasesmith.MarchDollasePreferredOrientation(1.25, (0, 0, 1), cubic_metric()),
         )
     )
-    contribution = provider.evaluate(rietveld.PhysicsContext(batch, instrument()))
-    actual = rietveld.calculate_cw_pattern(
+    contribution = provider.evaluate(phasesmith.PhysicsContext(batch, instrument()))
+    actual = phasesmith.calculate_cw_pattern(
         x, batch, instrument(), physics=provider, jacobian_layout="dense"
     )
     expected = reference.accumulate_cw_contributions(
@@ -167,22 +167,22 @@ def test_orientation_composes_with_size_and_strain_through_reference_path() -> N
 
 
 def test_symmetry_related_signs_receive_identical_orientation_factors() -> None:
-    contribution = rietveld.MarchDollasePreferredOrientation(
+    contribution = phasesmith.MarchDollasePreferredOrientation(
         1.4, (0, 0, 1), cubic_metric()
-    ).evaluate(rietveld.PhysicsContext(reflections(), instrument()))
+    ).evaluate(phasesmith.PhysicsContext(reflections(), instrument()))
     assert contribution.intensity_multiplier[2] == contribution.intensity_multiplier[3]
 
 
 @pytest.mark.parametrize("ratio", [0.0, -1.0, np.inf, np.nan])
 def test_invalid_march_ratios_are_rejected(ratio: float) -> None:
     with pytest.raises(ValueError, match="march_ratio"):
-        rietveld.MarchDollasePreferredOrientation(ratio, (0, 0, 1), cubic_metric())
+        phasesmith.MarchDollasePreferredOrientation(ratio, (0, 0, 1), cubic_metric())
 
 
 def test_invalid_orientation_geometry_is_rejected() -> None:
     with pytest.raises(ValueError, match="non-zero"):
-        rietveld.MarchDollasePreferredOrientation(1.0, (0, 0, 0), cubic_metric())
+        phasesmith.MarchDollasePreferredOrientation(1.0, (0, 0, 0), cubic_metric())
     with pytest.raises(ValueError, match="zero reflection"):
-        rietveld.reciprocal_angle_geometry([[0, 0, 0]], [0, 0, 1], cubic_metric())
+        phasesmith.reciprocal_angle_geometry([[0, 0, 0]], [0, 0, 1], cubic_metric())
     with pytest.raises(ValueError, match="positive definite"):
-        rietveld.ReciprocalMetric([[1.0, 0.0, 0.0], [0.0, -1.0, 0.0], [0.0, 0.0, 1.0]])
+        phasesmith.ReciprocalMetric([[1.0, 0.0, 0.0], [0.0, -1.0, 0.0], [0.0, 0.0, 1.0]])

@@ -4,7 +4,7 @@
 The public scripting API supplies bin-center X, Ycalc, background, and the
 reflection list for a PNT histogram. A small pinned private probe supplies
 selected exponential-pseudo-Voigt values and derivatives. This script imports
-no Rietveld Engine module.
+no PhaseSmith module.
 """
 
 from __future__ import annotations
@@ -231,7 +231,7 @@ def generate_snapshot(
     scripting: Any, profile_module: Any
 ) -> tuple[list[dict[str, Any]], dict[str, np.ndarray]]:
     np.random.seed(20_260_805)
-    with tempfile.TemporaryDirectory(prefix="rietveld-gsas-tof-") as temporary:
+    with tempfile.TemporaryDirectory(prefix="phasesmith-gsas-tof-") as temporary:
         work = Path(temporary)
         instrument_path = work / "tof.instprm"
         instrument_path.write_text(instrument_text(), encoding="utf-8")

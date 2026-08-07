@@ -162,7 +162,7 @@ explicitly deselected in normal development.
 3. Implement dependency-free Rust lookup, prepared unique-species caches,
    X-ray/neutron batch values, and `df/ds` together.
 4. Add thin PyO3 prepared-model bindings and the typed
-   `rietveld.scattering` provider protocol.
+   `phasesmith.scattering` provider protocol.
 5. Add an independent NumPy reference, boundary/invalid-input tests, table
    integrity tests, and finite-difference derivative tests.
 6. Benchmark prepared multi-species batches and review that lookup is outside

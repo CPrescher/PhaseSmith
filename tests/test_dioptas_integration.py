@@ -3,20 +3,20 @@ from __future__ import annotations
 import sys
 
 import numpy as np
+import phasesmith
 import pytest
-import rietveld
-from rietveld.integrations import dioptas
-from rietveld.refinement import TerminationReason, lebail
+from phasesmith.integrations import dioptas
+from phasesmith.refinement import TerminationReason, lebail
 
 
 def models() -> tuple[
     np.ndarray,
-    rietveld.ConstantWavelengthInstrument,
-    rietveld.Phase,
+    phasesmith.ConstantWavelengthInstrument,
+    phasesmith.Phase,
     np.ndarray,
 ]:
     x = np.linspace(38.0, 42.0, 2001)
-    instrument = rietveld.ConstantWavelengthInstrument(
+    instrument = phasesmith.ConstantWavelengthInstrument(
         1.5406,
         2.0e-4,
         -1.0e-4,
@@ -26,10 +26,10 @@ def models() -> tuple[
     )
     positions = np.array([39.8, 40.2])
     d_spacing = instrument.wavelength_angstrom / (2.0 * np.sin(np.deg2rad(positions / 2.0)))
-    phase = rietveld.Phase(
+    phase = phasesmith.Phase(
         "alpha",
         "Alpha",
-        rietveld.ReflectionBatch(
+        phasesmith.ReflectionBatch(
             ["alpha-0", "alpha-1"],
             [[1, 0, 0], [1, 1, 0]],
             d_spacing,
@@ -38,8 +38,8 @@ def models() -> tuple[
         ),
     )
     background = np.full(x.size, 0.2)
-    truth = rietveld.calculate_pattern(
-        rietveld.PowderPattern(x, background=background),
+    truth = phasesmith.calculate_pattern(
+        phasesmith.PowderPattern(x, background=background),
         instrument,
         (phase,),
     ).y
@@ -74,7 +74,7 @@ def test_module_imports_without_dioptas_and_normalizes_excluded_mask() -> None:
 
 def test_calculation_returns_display_ready_components_labels_and_progress() -> None:
     x, instrument, phase, truth = models()
-    events: list[rietveld.ProgressEvent] = []
+    events: list[phasesmith.ProgressEvent] = []
     source = dioptas.DioptasPatternData(
         x,
         truth,
@@ -110,16 +110,16 @@ def test_fake_consumer_contract_and_calculation_cancellation() -> None:
     consumer = FakeConsumer(source)
     result = dioptas.run_calculation(consumer, instrument, (phase,))
     assert consumer.published is result
-    with pytest.raises(rietveld.OperationCancelled):
+    with pytest.raises(phasesmith.OperationCancelled):
         dioptas.calculate(source, instrument, (phase,), cancellation=lambda: True)
 
 
 def test_lebail_progress_can_request_cooperative_iteration_cancellation() -> None:
     x, instrument, truth_phase, truth = models()
-    starting = rietveld.Phase(
+    starting = phasesmith.Phase(
         truth_phase.phase_id,
         truth_phase.name,
-        rietveld.ReflectionBatch(
+        phasesmith.ReflectionBatch(
             list(truth_phase.reflections.reflection_ids),
             truth_phase.reflections.hkl,
             truth_phase.reflections.d_spacing_angstrom,
@@ -131,7 +131,7 @@ def test_lebail_progress_can_request_cooperative_iteration_cancellation() -> Non
     cancelled = False
     events = []
 
-    def progress(event: rietveld.ProgressEvent) -> None:
+    def progress(event: phasesmith.ProgressEvent) -> None:
         nonlocal cancelled
         events.append(event)
         cancelled = True

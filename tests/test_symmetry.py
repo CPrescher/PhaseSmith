@@ -3,9 +3,9 @@ from __future__ import annotations
 from dataclasses import replace
 
 import numpy as np
+import phasesmith
 import pytest
-import rietveld
-from rietveld.symmetry_reference import (
+from phasesmith.symmetry_reference import (
     reference_expand_sites,
     reference_family,
     reference_generate_d_spacing,
@@ -13,79 +13,79 @@ from rietveld.symmetry_reference import (
 )
 
 
-def inversion() -> rietveld.SymmetryOperation:
-    return rietveld.SymmetryOperation(-np.eye(3, dtype=np.int64), (0, 0, 0))
+def inversion() -> phasesmith.SymmetryOperation:
+    return phasesmith.SymmetryOperation(-np.eye(3, dtype=np.int64), (0, 0, 0))
 
 
-def inversion_group() -> rietveld.SpaceGroup:
-    return rietveld.SpaceGroup([rietveld.SymmetryOperation.identity(), inversion()])
+def inversion_group() -> phasesmith.SpaceGroup:
+    return phasesmith.SpaceGroup([phasesmith.SymmetryOperation.identity(), inversion()])
 
 
-def body_centred_group() -> rietveld.SpaceGroup:
-    return rietveld.SpaceGroup(
+def body_centred_group() -> phasesmith.SpaceGroup:
+    return phasesmith.SpaceGroup(
         [
-            rietveld.SymmetryOperation.identity(),
-            rietveld.SymmetryOperation(np.eye(3, dtype=np.int64), ("1/2", "1/2", "1/2")),
+            phasesmith.SymmetryOperation.identity(),
+            phasesmith.SymmetryOperation(np.eye(3, dtype=np.int64), ("1/2", "1/2", "1/2")),
         ]
     )
 
 
-def face_centred_group() -> rietveld.SpaceGroup:
+def face_centred_group() -> phasesmith.SpaceGroup:
     identity = np.eye(3, dtype=np.int64)
-    return rietveld.SpaceGroup(
+    return phasesmith.SpaceGroup(
         [
-            rietveld.SymmetryOperation.identity(),
-            rietveld.SymmetryOperation(identity, (0, "1/2", "1/2")),
-            rietveld.SymmetryOperation(identity, ("1/2", 0, "1/2")),
-            rietveld.SymmetryOperation(identity, ("1/2", "1/2", 0)),
+            phasesmith.SymmetryOperation.identity(),
+            phasesmith.SymmetryOperation(identity, (0, "1/2", "1/2")),
+            phasesmith.SymmetryOperation(identity, ("1/2", 0, "1/2")),
+            phasesmith.SymmetryOperation(identity, ("1/2", "1/2", 0)),
         ]
     )
 
 
-def p21_group() -> rietveld.SpaceGroup:
-    screw = rietveld.SymmetryOperation([[-1, 0, 0], [0, 1, 0], [0, 0, -1]], (0, "1/2", 0))
-    return rietveld.SpaceGroup([rietveld.SymmetryOperation.identity(), screw])
+def p21_group() -> phasesmith.SpaceGroup:
+    screw = phasesmith.SymmetryOperation([[-1, 0, 0], [0, 1, 0], [0, 0, -1]], (0, "1/2", 0))
+    return phasesmith.SpaceGroup([phasesmith.SymmetryOperation.identity(), screw])
 
 
-def glide_group() -> rietveld.SpaceGroup:
-    glide = rietveld.SymmetryOperation([[1, 0, 0], [0, -1, 0], [0, 0, 1]], (0, 0, "1/2"))
-    return rietveld.SpaceGroup([rietveld.SymmetryOperation.identity(), glide])
+def glide_group() -> phasesmith.SpaceGroup:
+    glide = phasesmith.SymmetryOperation([[1, 0, 0], [0, -1, 0], [0, 0, 1]], (0, 0, "1/2"))
+    return phasesmith.SpaceGroup([phasesmith.SymmetryOperation.identity(), glide])
 
 
-def p31_group() -> rietveld.SpaceGroup:
+def p31_group() -> phasesmith.SpaceGroup:
     rotation = np.array([[-1, -1, 0], [1, 0, 0], [0, 0, 1]], dtype=np.int64)
-    return rietveld.SpaceGroup(
+    return phasesmith.SpaceGroup(
         [
-            rietveld.SymmetryOperation.identity(),
-            rietveld.SymmetryOperation(rotation, (0, 0, "1/3")),
-            rietveld.SymmetryOperation(rotation @ rotation, (0, 0, "2/3")),
+            phasesmith.SymmetryOperation.identity(),
+            phasesmith.SymmetryOperation(rotation, (0, 0, "1/3")),
+            phasesmith.SymmetryOperation(rotation @ rotation, (0, 0, "2/3")),
         ]
     )
 
 
-def cyclic_rotation_group(rotation: np.ndarray, order: int) -> rietveld.SpaceGroup:
+def cyclic_rotation_group(rotation: np.ndarray, order: int) -> phasesmith.SpaceGroup:
     operations = []
     current = np.eye(3, dtype=np.int64)
     for _ in range(order):
-        operations.append(rietveld.SymmetryOperation(current, (0, 0, 0)))
+        operations.append(phasesmith.SymmetryOperation(current, (0, 0, 0)))
         current = current @ rotation
-    return rietveld.SpaceGroup(operations)
+    return phasesmith.SpaceGroup(operations)
 
 
 def test_exact_operations_validate_and_group_order_is_canonical() -> None:
-    identity = rietveld.SymmetryOperation.identity()
-    assert identity == rietveld.SymmetryOperation(np.eye(3, dtype=int), (0, 0, 0))
-    assert hash(identity) == hash(rietveld.SymmetryOperation.identity())
+    identity = phasesmith.SymmetryOperation.identity()
+    assert identity == phasesmith.SymmetryOperation(np.eye(3, dtype=int), (0, 0, 0))
+    assert hash(identity) == hash(phasesmith.SymmetryOperation.identity())
     with pytest.raises(TypeError, match="Fraction"):
-        rietveld.SymmetryOperation(np.eye(3, dtype=int), (0.5, 0, 0))
+        phasesmith.SymmetryOperation(np.eye(3, dtype=int), (0.5, 0, 0))
     with pytest.raises(ValueError, match="determinant"):
-        rietveld.SymmetryOperation(np.zeros((3, 3), dtype=int), (0, 0, 0))
+        phasesmith.SymmetryOperation(np.zeros((3, 3), dtype=int), (0, 0, 0))
     with pytest.raises(ValueError, match="closed"):
-        rietveld.SpaceGroup(
-            [identity, rietveld.SymmetryOperation([[0, -1, 0], [1, 0, 0], [0, 0, 1]], (0, 0, 0))]
+        phasesmith.SpaceGroup(
+            [identity, phasesmith.SymmetryOperation([[0, -1, 0], [1, 0, 0], [0, 0, 1]], (0, 0, 0))]
         )
-    forward = rietveld.SpaceGroup([identity, inversion()])
-    reverse = rietveld.SpaceGroup([inversion(), identity])
+    forward = phasesmith.SpaceGroup([identity, inversion()])
+    reverse = phasesmith.SpaceGroup([inversion(), identity])
     assert forward == reverse
     assert forward.operations == reverse.operations
 
@@ -120,7 +120,7 @@ def test_special_position_expansion_matches_independent_reference() -> None:
     ],
 )
 def test_exact_absences_match_closed_forms_and_independent_reference(
-    group: rietveld.SpaceGroup, hkl: tuple[int, int, int], expected: bool
+    group: phasesmith.SpaceGroup, hkl: tuple[int, int, int], expected: bool
 ) -> None:
     native = bool(group.systematic_absences([hkl])[0])
     assert native is expected
@@ -139,13 +139,13 @@ def test_reflection_family_topology_matches_independent_reference() -> None:
 
 def test_randomized_triclinic_reflections_match_independent_brute_force() -> None:
     rng = np.random.default_rng(271828)
-    group = rietveld.SpaceGroup.p1()
-    generator = rietveld.PreparedReflectionGenerator(group, max_candidates=2_000_000)
+    group = phasesmith.SpaceGroup.p1()
+    generator = phasesmith.PreparedReflectionGenerator(group, max_candidates=2_000_000)
     for _ in range(5):
-        cell = rietveld.UnitCell(
+        cell = phasesmith.UnitCell(
             *rng.uniform([3.5, 4.0, 4.5, 70.0, 75.0, 80.0], [5.0, 5.5, 6.0, 100.0, 105.0, 110.0])
         )
-        native = generator.generate(cell, rietveld.DSpacingRange(1.2, 4.0))
+        native = generator.generate(cell, phasesmith.DSpacingRange(1.2, 4.0))
         reference = reference_generate_d_spacing(cell, group, 1.2, 4.0, merge_friedel=True)
         np.testing.assert_array_equal(native.hkl, [item[0] for item in reference])
         np.testing.assert_array_equal(native.multiplicity, [item[1] for item in reference])
@@ -155,28 +155,28 @@ def test_randomized_triclinic_reflections_match_independent_brute_force() -> Non
 
 
 def test_nonstandard_monoclinic_setting_and_cell_constraints() -> None:
-    twofold_a = rietveld.SymmetryOperation([[1, 0, 0], [0, -1, 0], [0, 0, -1]], (0, 0, 0))
-    group = rietveld.SpaceGroup([rietveld.SymmetryOperation.identity(), twofold_a])
+    twofold_a = phasesmith.SymmetryOperation([[1, 0, 0], [0, -1, 0], [0, 0, -1]], (0, 0, 0))
+    group = phasesmith.SpaceGroup([phasesmith.SymmetryOperation.identity(), twofold_a])
     assert group.crystal_system == "monoclinic"
     assert group.metric_constraints.independent_parameter_count == 4
-    cell = rietveld.UnitCell(4.0, 5.0, 6.0, 103.0, 90.0, 90.0)
-    result = rietveld.PreparedReflectionGenerator(group).generate(
-        cell, rietveld.DSpacingRange(1.5, 5.0)
+    cell = phasesmith.UnitCell(4.0, 5.0, 6.0, 103.0, 90.0, 90.0)
+    result = phasesmith.PreparedReflectionGenerator(group).generate(
+        cell, phasesmith.DSpacingRange(1.5, 5.0)
     )
     assert len(result.reflection_ids) > 0
     incompatible = replace(cell, gamma_deg=91.0)
     with pytest.raises(ValueError, match="incompatible"):
-        rietveld.PreparedReflectionGenerator(group).generate(
-            incompatible, rietveld.DSpacingRange(1.5, 5.0)
+        phasesmith.PreparedReflectionGenerator(group).generate(
+            incompatible, phasesmith.DSpacingRange(1.5, 5.0)
         )
 
 
 def test_crystal_systems_and_metric_dimensions_are_derived_from_rotations() -> None:
-    identity = rietveld.SpaceGroup.p1()
+    identity = phasesmith.SpaceGroup.p1()
     monoclinic = cyclic_rotation_group(np.diag([1, -1, -1]), 2)
-    orthorhombic = rietveld.SpaceGroup(
+    orthorhombic = phasesmith.SpaceGroup(
         [
-            rietveld.SymmetryOperation(np.diag(signs), (0, 0, 0))
+            phasesmith.SymmetryOperation(np.diag(signs), (0, 0, 0))
             for signs in ((1, 1, 1), (1, -1, -1), (-1, 1, -1), (-1, -1, 1))
         ]
     )
@@ -203,8 +203,8 @@ def test_crystal_systems_and_metric_dimensions_are_derived_from_rotations() -> N
             for row, column in enumerate(permutation):
                 matrix[row, column] = 1 if signs[row] else -1
             if round(np.linalg.det(matrix)) == 1:
-                cubic_operations.append(rietveld.SymmetryOperation(matrix, (0, 0, 0)))
-    cubic = rietveld.SpaceGroup(cubic_operations)
+                cubic_operations.append(phasesmith.SymmetryOperation(matrix, (0, 0, 0)))
+    cubic = phasesmith.SpaceGroup(cubic_operations)
 
     assert [
         (group.crystal_system, group.metric_constraints.independent_parameter_count)
@@ -231,14 +231,14 @@ def test_crystal_systems_and_metric_dimensions_are_derived_from_rotations() -> N
 
 
 def test_d_q_cw_and_tof_ranges_are_consistent_for_monochromatic_data() -> None:
-    cell = rietveld.UnitCell(4.0, 4.0, 4.0, 90.0, 90.0, 90.0)
-    generator = rietveld.PreparedReflectionGenerator(rietveld.SpaceGroup.p1())
-    d_result = generator.generate(cell, rietveld.DSpacingRange(2.0, 4.0))
-    q_result = generator.generate(cell, rietveld.ScatteringVectorRange(2 * np.pi / 4.0, np.pi))
+    cell = phasesmith.UnitCell(4.0, 4.0, 4.0, 90.0, 90.0, 90.0)
+    generator = phasesmith.PreparedReflectionGenerator(phasesmith.SpaceGroup.p1())
+    d_result = generator.generate(cell, phasesmith.DSpacingRange(2.0, 4.0))
+    q_result = generator.generate(cell, phasesmith.ScatteringVectorRange(2 * np.pi / 4.0, np.pi))
     wavelength = 1.0
     cw_result = generator.generate(
         cell,
-        rietveld.CwTwoThetaRange(
+        phasesmith.CwTwoThetaRange(
             2 * np.degrees(np.arcsin(wavelength / 8.0)),
             2 * np.degrees(np.arcsin(wavelength / 4.0)),
             wavelength,
@@ -246,16 +246,16 @@ def test_d_q_cw_and_tof_ranges_are_consistent_for_monochromatic_data() -> None:
     )
     tof_result = generator.generate(
         cell,
-        rietveld.TofRange(2000.0, 4000.0, 1.5, 4.5, 0.0, 1000.0),
+        phasesmith.TofRange(2000.0, 4000.0, 1.5, 4.5, 0.0, 1000.0),
     )
     for result in (q_result, cw_result, tof_result):
         np.testing.assert_array_equal(result.hkl, d_result.hkl)
 
 
 def test_generated_cell_derivatives_match_centered_differences() -> None:
-    cell = rietveld.UnitCell(4.3, 5.1, 6.2, 78.0, 83.0, 71.0)
-    generator = rietveld.PreparedReflectionGenerator(rietveld.SpaceGroup.p1())
-    result = generator.generate(cell, rietveld.DSpacingRange(1.1, 7.0))
+    cell = phasesmith.UnitCell(4.3, 5.1, 6.2, 78.0, 83.0, 71.0)
+    generator = phasesmith.PreparedReflectionGenerator(phasesmith.SpaceGroup.p1())
+    result = generator.generate(cell, phasesmith.DSpacingRange(1.1, 7.0))
     parameter_names = (
         "a_angstrom",
         "b_angstrom",
@@ -275,18 +275,20 @@ def test_generated_cell_derivatives_match_centered_differences() -> None:
 
 
 def test_generator_limits_invalid_ranges_and_read_only_results_are_explicit() -> None:
-    cell = rietveld.UnitCell(4.0, 4.0, 4.0, 90.0, 90.0, 90.0)
+    cell = phasesmith.UnitCell(4.0, 4.0, 4.0, 90.0, 90.0, 90.0)
     with pytest.raises(ValueError, match="positive"):
-        rietveld.PreparedReflectionGenerator(rietveld.SpaceGroup.p1(), max_candidates=0)
+        phasesmith.PreparedReflectionGenerator(phasesmith.SpaceGroup.p1(), max_candidates=0)
     with pytest.raises(ValueError, match="positive"):
-        rietveld.PreparedReflectionGenerator(rietveld.SpaceGroup.p1(), max_candidates=-1)
-    generator = rietveld.PreparedReflectionGenerator(rietveld.SpaceGroup.p1(), max_candidates=10)
+        phasesmith.PreparedReflectionGenerator(phasesmith.SpaceGroup.p1(), max_candidates=-1)
+    generator = phasesmith.PreparedReflectionGenerator(
+        phasesmith.SpaceGroup.p1(), max_candidates=10
+    )
     with pytest.raises(ValueError, match="configured limit"):
-        generator.generate(cell, rietveld.DSpacingRange(0.5, 4.0))
-    generator = rietveld.PreparedReflectionGenerator(rietveld.SpaceGroup.p1())
+        generator.generate(cell, phasesmith.DSpacingRange(0.5, 4.0))
+    generator = phasesmith.PreparedReflectionGenerator(phasesmith.SpaceGroup.p1())
     with pytest.raises(ValueError, match="range"):
-        generator.generate(cell, rietveld.DSpacingRange(4.0, 1.0))
-    result = generator.generate(cell, rietveld.DSpacingRange(2.0, 4.0))
+        generator.generate(cell, phasesmith.DSpacingRange(4.0, 1.0))
+    result = generator.generate(cell, phasesmith.DSpacingRange(2.0, 4.0))
     assert len(result.reflection_ids) == len(set(result.reflection_ids))
     assert len(np.unique(result.d_spacing_angstrom)) < len(result.d_spacing_angstrom)
     assert not result.hkl.flags.writeable

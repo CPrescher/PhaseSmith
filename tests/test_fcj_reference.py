@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
-from rietveld import reference
+from phasesmith import reference
 
 
 def arguments() -> tuple[float, float, float, float, float]:

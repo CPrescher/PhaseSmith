@@ -1,6 +1,6 @@
-# Rietveld Engine
+# PhaseSmith
 
-Rietveld Engine is an early-stage powder-diffraction computation library with a
+PhaseSmith is an early-stage powder-diffraction computation library with a
 Rust numerical core and a typed Python/NumPy API. The current implementation
 includes symmetric TCH, CW U/V/W/X/Y broadening, FCJ asymmetry, wavelength
 components, extensible sample physics, multi-phase CW X-ray/neutron and neutron
@@ -84,7 +84,7 @@ cargo test --workspace --all-features
 uv run pytest
 ```
 
-Run the Rust benchmarks with `cargo bench -p rietveld-core`. For a comparable
+Run the Rust benchmarks with `cargo bench -p phasesmith-core`. For a comparable
 optimized Python-to-Rust measurement, build the release extension and require
 release mode explicitly:
 
@@ -123,15 +123,15 @@ comparison, not a claim about complete refinement workflow speed.
 Background estimation is an explicit preprocessing step:
 
 ```python
-import rietveld
+import phasesmith
 
-subtracted = rietveld.SmoothBrucknerBackground(
+subtracted = phasesmith.SmoothBrucknerBackground(
     smooth_width=0.1,
     iterations=50,
     chebyshev_order=50,
 ).subtract(two_theta, measured)
 
-pattern = rietveld.PowderPattern(
+pattern = phasesmith.PowderPattern(
     two_theta,
     observed_y=measured,
     background=subtracted.background,
@@ -143,7 +143,7 @@ nor Dioptas is required at runtime.
 
 ```python
 import numpy as np
-from rietveld import accumulate
+from phasesmith import accumulate
 
 x = np.linspace(20.0, 30.0, 10_001)
 result = accumulate(
@@ -169,7 +169,7 @@ An entire constant-wavelength reflection list, including all local and shared
 instrument derivatives, is also one array-oriented call:
 
 ```python
-from rietveld import ConstantWavelengthInstrument, accumulate_cw
+from phasesmith import ConstantWavelengthInstrument, accumulate_cw
 
 instrument = ConstantWavelengthInstrument(
     wavelength_angstrom=1.54056,
@@ -189,7 +189,7 @@ structure. X-ray species select exact neutral/ionic table states, while neutron
 species retain natural/isotope identity:
 
 ```python
-from rietveld import ScatteringSpecies, XrayNonResonant
+from phasesmith import ScatteringSpecies, XrayNonResonant
 
 species = (
     ScatteringSpecies("Si"),
@@ -206,8 +206,8 @@ looping over atoms/reflections in Python. Correction geometry is explicit; the
 default neutral model returns raw multiplicity-weighted structural intensity:
 
 ```python
-from rietveld import XrayNonResonant, calculate_structure_factor_values
-from rietveld.io.cif import read_cif
+from phasesmith import XrayNonResonant, calculate_structure_factor_values
+from phasesmith.io.cif import read_cif
 
 structure = read_cif("phase.cif").structure
 structural = calculate_structure_factor_values(
@@ -227,7 +227,7 @@ Axial divergence is a separate typed model and composes with CW broadening
 without expanding reflections in Python:
 
 ```python
-from rietveld import FcjGeometry, accumulate_cw_fcj
+from phasesmith import FcjGeometry, accumulate_cw_fcj
 
 geometry = FcjGeometry(sample_over_radius=0.012, detector_over_radius=0.012)
 asymmetric = accumulate_cw_fcj(
@@ -241,7 +241,7 @@ Discrete radiation components are optional. The ordinary CW calls above are
 monochromatic; a K-alpha doublet is an explicit model:
 
 ```python
-from rietveld import WavelengthComponents, accumulate_cw_fcj_components
+from phasesmith import WavelengthComponents, accumulate_cw_fcj_components
 
 radiation = WavelengthComponents.doublet(
     reference_wavelength_angstrom=1.54056,
@@ -258,7 +258,7 @@ return the same vectorized contribution schema, and Python is never called from
 the native peak/sample loop:
 
 ```python
-from rietveld import (
+from phasesmith import (
     CompositePhysicsProvider,
     IsotropicMicrostrainBroadening,
     IsotropicSizeBroadening,
@@ -286,7 +286,7 @@ The high-level script interface assigns durable IDs and calculates all phases
 through one flattened native call:
 
 ```python
-from rietveld import Phase, PowderPattern, ReflectionBatch, calculate_pattern
+from phasesmith import Phase, PowderPattern, ReflectionBatch, calculate_pattern
 
 alpha_reflections = ReflectionBatch(
     reflection_ids=["alpha-100", "alpha-110"],
@@ -311,7 +311,7 @@ Neutron CW is an explicit monochromatic probe configuration and cannot receive
 an X-ray K-alpha doublet:
 
 ```python
-from rietveld import ConstantWavelengthExperiment, calculate_neutron_pattern
+from phasesmith import ConstantWavelengthExperiment, calculate_neutron_pattern
 
 neutron = ConstantWavelengthExperiment.neutron(instrument)
 neutron_result = calculate_neutron_pattern(PowderPattern(x), neutron, [alpha])
@@ -321,7 +321,7 @@ TOF reflections use d-spacing as their durable local coordinate. Values and
 all local/shared derivatives are accumulated in one native call:
 
 ```python
-from rietveld import TofInstrument, accumulate_tof
+from phasesmith import TofInstrument, accumulate_tof
 
 tof_instrument = TofInstrument(
     zero_us=-0.773,
@@ -350,7 +350,7 @@ A complete Le Bail extraction uses the same typed pattern, instrument, and
 phase models and requires no project file or hand-written optimizer callback:
 
 ```python
-from rietveld.refinement import lebail
+from phasesmith.refinement import lebail
 
 observed = PowderPattern(
     x,
@@ -382,7 +382,7 @@ A monochromatic structural refinement is likewise constructed directly from a
 CIF. Parameter families are explicit and no GSAS-II installation is involved:
 
 ```python
-from rietveld.refinement import rietveld
+from phasesmith.refinement import rietveld
 
 request = rietveld.RietveldInput.from_cif(
     observed,
@@ -409,14 +409,14 @@ together while leaving `RietveldInput` fully accessible:
 ```python
 from dataclasses import replace
 
-from rietveld import BraggBrentanoGeometry, RietveldProject
+from phasesmith import BraggBrentanoGeometry, RietveldParameterSelection, RietveldProject
 
 experiment = replace(
     experiment,
     zero_shift_deg=0.0,
     geometry=BraggBrentanoGeometry(240.0, sample_displacement_mm=0.0),
 )
-selection = rietveld.RietveldParameterSelection(
+selection = RietveldParameterSelection(
     phase_scale=True,
     lattice=True,
     sample_physics=True,
@@ -444,6 +444,6 @@ GSAS-II is used only as the optional pinned validation oracle described in
 
 ## License
 
-Rietveld Engine is licensed under the [MIT License](LICENSE). GSAS-II is
+PhaseSmith is licensed under the [MIT License](LICENSE). GSAS-II is
 separately licensed, is used only as an optional external validation oracle,
 and is not redistributed here.

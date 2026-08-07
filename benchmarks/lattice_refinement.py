@@ -11,8 +11,8 @@ from dataclasses import replace
 from typing import Any
 
 import numpy as np
-import rietveld
-from rietveld.refinement import LatticeParameterBounds, LatticeParameterization, lebail
+import phasesmith
+from phasesmith.refinement import LatticeParameterBounds, LatticeParameterization, lebail
 
 
 def measure(operation: Callable[[], Any], warmups: int, repetitions: int) -> list[float]:
@@ -35,14 +35,14 @@ def report(name: str, timings: list[float]) -> None:
     )
 
 
-def tetragonal_group() -> rietveld.SpaceGroup:
+def tetragonal_group() -> phasesmith.SpaceGroup:
     rotation = np.array([[0, -1, 0], [1, 0, 0], [0, 0, 1]], dtype=np.int64)
     operations = []
     current = np.eye(3, dtype=np.int64)
     for _ in range(4):
-        operations.append(rietveld.SymmetryOperation(current, (0, 0, 0)))
+        operations.append(phasesmith.SymmetryOperation(current, (0, 0, 0)))
         current = rotation @ current
-    return rietveld.SpaceGroup(operations)
+    return phasesmith.SpaceGroup(operations)
 
 
 def main() -> None:
@@ -54,14 +54,14 @@ def main() -> None:
     arguments = parser.parse_args()
     if arguments.samples < 2 or arguments.warmups < 0 or arguments.repetitions <= 0:
         raise ValueError("samples/repetitions must be positive and warmups non-negative")
-    if arguments.require_release and rietveld._core.BUILD_MODE != "release":
-        raise RuntimeError(f"release extension required, imported {rietveld._core.BUILD_MODE!r}")
+    if arguments.require_release and phasesmith._core.BUILD_MODE != "release":
+        raise RuntimeError(f"release extension required, imported {phasesmith._core.BUILD_MODE!r}")
 
-    instrument = rietveld.ConstantWavelengthInstrument(
+    instrument = phasesmith.ConstantWavelengthInstrument(
         1.5406, 2.0e-4, -1.0e-4, 2.0e-4, 1.5e-3, 3.0e-3
     )
-    cell = rietveld.UnitCell(4.0, 4.0, 6.0, 90.0, 90.0, 90.0)
-    structure = rietveld.CrystalStructure(
+    cell = phasesmith.UnitCell(4.0, 4.0, 6.0, 90.0, 90.0, 90.0)
+    structure = phasesmith.CrystalStructure(
         "benchmark", "Tetragonal benchmark", cell, tetragonal_group()
     )
     parameterization = LatticeParameterization(structure.space_group, cell)
@@ -77,7 +77,7 @@ def main() -> None:
     seeded = 5.0 + np.arange(phase.reflections.reflection_count) % 13
     phase = replace(
         phase,
-        reflections=rietveld.ReflectionBatch(
+        reflections=phasesmith.ReflectionBatch(
             phase.reflections.reflection_ids,
             phase.reflections.hkl,
             phase.reflections.d_spacing_angstrom,
@@ -86,8 +86,8 @@ def main() -> None:
         ),
     )
     x = np.linspace(10.0, 130.0, arguments.samples)
-    calculated = rietveld.calculate_pattern(rietveld.PowderPattern(x), instrument, (phase,))
-    pattern = rietveld.PowderPattern(x, observed_y=calculated.y)
+    calculated = phasesmith.calculate_pattern(phasesmith.PowderPattern(x), instrument, (phase,))
+    pattern = phasesmith.PowderPattern(x, observed_y=calculated.y)
     fixed_request = lebail.LeBailInput(pattern, instrument, (phase,))
     lattice_parameters = lebail.build_parameter_set(instrument, (phase,), lattice_parameters=True)
     lattice_request = lebail.LeBailInput(pattern, instrument, (phase,), lattice_parameters)
@@ -116,7 +116,7 @@ def main() -> None:
     )
     print(
         f"python={platform.python_version()} platform={platform.platform()} "
-        f"build_mode={rietveld._core.BUILD_MODE} samples={x.size} "
+        f"build_mode={phasesmith._core.BUILD_MODE} samples={x.size} "
         f"reflections={phase.reflections.reflection_count} "
         f"visible_reflections={int(np.count_nonzero(phase.visible_reflection_mask))} "
         f"lattice_parameters={len(lattice_parameters.specs)}"

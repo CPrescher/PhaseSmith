@@ -313,7 +313,7 @@
   "kind": "cw_sample_physics",
   "provenance": {
     "generated_at_utc": "2026-08-05T15:15:46.021817+00:00",
-    "generator_sha256": "d73e96a83e9f197f08dbb08657c98e2330a221fbb47efc9619b5d90bca790d7f",
+    "generator_sha256": "ab01b04e84e89e8bc74784e3fea2ad9bb1b199d5b68c07601fb52f9e19d863c9",
     "gsasii_repository": "https://github.com/AdvancedPhotonSource/GSAS-II",
     "gsasii_revision": "c0bc79b259cdf0065480b5fbd57674ddf12c4a23",
     "gsasii_tag": 5838,

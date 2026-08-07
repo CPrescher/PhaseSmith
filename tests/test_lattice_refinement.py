@@ -4,9 +4,9 @@ import itertools
 from dataclasses import replace
 
 import numpy as np
+import phasesmith
 import pytest
-import rietveld
-from rietveld.refinement import (
+from phasesmith.refinement import (
     CwLatticeReflectionDomain,
     CwStructuralReflectionDomain,
     FixedConstraint,
@@ -18,25 +18,25 @@ from rietveld.refinement import (
 )
 
 
-def cyclic_group(generator: np.ndarray, order: int) -> rietveld.SpaceGroup:
+def cyclic_group(generator: np.ndarray, order: int) -> phasesmith.SpaceGroup:
     operations = []
     current = np.eye(3, dtype=np.int64)
     for _ in range(order):
-        operations.append(rietveld.SymmetryOperation(current, (0, 0, 0)))
+        operations.append(phasesmith.SymmetryOperation(current, (0, 0, 0)))
         current = generator @ current
-    return rietveld.SpaceGroup(operations)
+    return phasesmith.SpaceGroup(operations)
 
 
-def orthorhombic_group() -> rietveld.SpaceGroup:
-    return rietveld.SpaceGroup(
+def orthorhombic_group() -> phasesmith.SpaceGroup:
+    return phasesmith.SpaceGroup(
         [
-            rietveld.SymmetryOperation(np.diag(signs), (0, 0, 0))
+            phasesmith.SymmetryOperation(np.diag(signs), (0, 0, 0))
             for signs in ((1, 1, 1), (1, -1, -1), (-1, 1, -1), (-1, -1, 1))
         ]
     )
 
 
-def cubic_group() -> rietveld.SpaceGroup:
+def cubic_group() -> phasesmith.SpaceGroup:
     operations = []
     for permutation in itertools.permutations(range(3)):
         for signs in itertools.product((-1, 1), repeat=3):
@@ -44,11 +44,13 @@ def cubic_group() -> rietveld.SpaceGroup:
             for row, column in enumerate(permutation):
                 matrix[row, column] = signs[row]
             if round(np.linalg.det(matrix)) == 1:
-                operations.append(rietveld.SymmetryOperation(matrix, (0, 0, 0)))
-    return rietveld.SpaceGroup(operations)
+                operations.append(phasesmith.SymmetryOperation(matrix, (0, 0, 0)))
+    return phasesmith.SpaceGroup(operations)
 
 
-def lattice_cases() -> tuple[tuple[rietveld.SpaceGroup, rietveld.UnitCell, tuple[str, ...]], ...]:
+def lattice_cases() -> tuple[
+    tuple[phasesmith.SpaceGroup, phasesmith.UnitCell, tuple[str, ...]], ...
+]:
     monoclinic_a = cyclic_group(np.diag([1, -1, -1]), 2)
     tetragonal = cyclic_group(np.array([[0, -1, 0], [1, 0, 0], [0, 0, 1]], dtype=np.int64), 4)
     trigonal_hexagonal = cyclic_group(
@@ -60,43 +62,43 @@ def lattice_cases() -> tuple[tuple[rietveld.SpaceGroup, rietveld.UnitCell, tuple
     )
     return (
         (
-            rietveld.SpaceGroup.p1(),
-            rietveld.UnitCell(4.1, 5.2, 6.3, 77.0, 83.0, 72.0),
+            phasesmith.SpaceGroup.p1(),
+            phasesmith.UnitCell(4.1, 5.2, 6.3, 77.0, 83.0, 72.0),
             ("a_angstrom", "b_angstrom", "c_angstrom", "alpha_deg", "beta_deg", "gamma_deg"),
         ),
         (
             monoclinic_a,
-            rietveld.UnitCell(4.0, 5.0, 6.0, 103.0, 90.0, 90.0),
+            phasesmith.UnitCell(4.0, 5.0, 6.0, 103.0, 90.0, 90.0),
             ("a_angstrom", "b_angstrom", "c_angstrom", "alpha_deg"),
         ),
         (
             orthorhombic_group(),
-            rietveld.UnitCell(4.0, 5.0, 6.0, 90.0, 90.0, 90.0),
+            phasesmith.UnitCell(4.0, 5.0, 6.0, 90.0, 90.0, 90.0),
             ("a_angstrom", "b_angstrom", "c_angstrom"),
         ),
         (
             tetragonal,
-            rietveld.UnitCell(4.0, 4.0, 6.0, 90.0, 90.0, 90.0),
+            phasesmith.UnitCell(4.0, 4.0, 6.0, 90.0, 90.0, 90.0),
             ("a_angstrom", "c_angstrom"),
         ),
         (
             trigonal_hexagonal,
-            rietveld.UnitCell(4.0, 4.0, 6.0, 90.0, 90.0, 120.0),
+            phasesmith.UnitCell(4.0, 4.0, 6.0, 90.0, 90.0, 120.0),
             ("a_angstrom", "c_angstrom"),
         ),
         (
             trigonal_rhombohedral,
-            rietveld.UnitCell(5.0, 5.0, 5.0, 75.0, 75.0, 75.0),
+            phasesmith.UnitCell(5.0, 5.0, 5.0, 75.0, 75.0, 75.0),
             ("a_angstrom", "alpha_deg"),
         ),
         (
             hexagonal,
-            rietveld.UnitCell(4.0, 4.0, 6.0, 90.0, 90.0, 120.0),
+            phasesmith.UnitCell(4.0, 4.0, 6.0, 90.0, 90.0, 120.0),
             ("a_angstrom", "c_angstrom"),
         ),
         (
             cubic_group(),
-            rietveld.UnitCell(4.0, 4.0, 4.0, 90.0, 90.0, 90.0),
+            phasesmith.UnitCell(4.0, 4.0, 4.0, 90.0, 90.0, 90.0),
             ("a_angstrom",),
         ),
     )
@@ -104,8 +106,8 @@ def lattice_cases() -> tuple[tuple[rietveld.SpaceGroup, rietveld.UnitCell, tuple
 
 @pytest.mark.parametrize(("group", "cell", "names"), lattice_cases())
 def test_parameterization_matches_crystal_system_and_analytical_jacobian(
-    group: rietveld.SpaceGroup,
-    cell: rietveld.UnitCell,
+    group: phasesmith.SpaceGroup,
+    cell: phasesmith.UnitCell,
     names: tuple[str, ...],
 ) -> None:
     parameterization = LatticeParameterization(group, cell)
@@ -145,7 +147,7 @@ def test_guarded_domain_preserves_intensities_by_stable_family_id() -> None:
     assert initial.reflections.reflection_count > int(np.count_nonzero(initial.visible))
     assert initial.added_reflection_ids == initial.reflections.reflection_ids
     assert initial.preserved_reflection_count == 0
-    seeded = rietveld.ReflectionBatch(
+    seeded = phasesmith.ReflectionBatch(
         initial.reflections.reflection_ids,
         initial.reflections.hkl,
         initial.reflections.d_spacing_angstrom,
@@ -180,14 +182,14 @@ def test_guarded_domain_contains_every_visible_family_across_bounded_cells() -> 
         visible_two_theta_max_deg=90.0,
     )
     guarded_ids = set(domain.generate(cell).reflections.reflection_ids)
-    generator = rietveld.PreparedReflectionGenerator(group)
+    generator = phasesmith.PreparedReflectionGenerator(group)
     rng = np.random.default_rng(20260806)
     samples = [bounds.lower, bounds.upper]
     samples.extend(rng.uniform(bounds.lower, bounds.upper) for _ in range(24))
     for values in samples:
         generated = generator.generate(
             parameterization.to_cell(values),
-            rietveld.CwTwoThetaRange(20.0, 90.0, 1.5406),
+            phasesmith.CwTwoThetaRange(20.0, 90.0, 1.5406),
         )
         assert set(generated.reflection_ids) <= guarded_ids
 
@@ -219,8 +221,8 @@ def test_structural_guarded_domain_preserves_family_ids_and_multiplicities() -> 
 
 def test_lattice_bounds_reject_infinite_or_incompatible_domains() -> None:
     parameterization = LatticeParameterization(
-        rietveld.SpaceGroup.p1(),
-        rietveld.UnitCell(4.1, 5.2, 6.3, 77.0, 83.0, 72.0),
+        phasesmith.SpaceGroup.p1(),
+        phasesmith.UnitCell(4.1, 5.2, 6.3, 77.0, 83.0, 72.0),
     )
     with pytest.raises(ValueError, match="finite"):
         LatticeParameterBounds(
@@ -238,14 +240,14 @@ def test_lattice_bounds_reject_infinite_or_incompatible_domains() -> None:
 
 @pytest.mark.parametrize(("group", "cell", "names"), lattice_cases())
 def test_cw_and_tof_lattice_derivatives_match_centered_differences(
-    group: rietveld.SpaceGroup,
-    cell: rietveld.UnitCell,
+    group: phasesmith.SpaceGroup,
+    cell: phasesmith.UnitCell,
     names: tuple[str, ...],
 ) -> None:
     del names
     parameterization = LatticeParameterization(group, cell)
     hkl = np.array([[1, 0, 0], [1, 1, 0], [1, 1, 1]], dtype=np.int64)
-    tof_instrument = rietveld.TofInstrument(
+    tof_instrument = phasesmith.TofInstrument(
         2.0,
         1000.0,
         0.5,
@@ -294,9 +296,9 @@ def test_cw_and_tof_lattice_derivatives_match_centered_differences(
         )
 
 
-def lattice_lebail_phase(cell: rietveld.UnitCell) -> lebail.LeBailPhase:
+def lattice_lebail_phase(cell: phasesmith.UnitCell) -> lebail.LeBailPhase:
     group, _, _ = lattice_cases()[3]
-    structure = rietveld.CrystalStructure(
+    structure = phasesmith.CrystalStructure(
         "lattice-test",
         "Lattice test",
         cell,
@@ -316,7 +318,7 @@ def lattice_lebail_phase(cell: rietveld.UnitCell) -> lebail.LeBailPhase:
     intensities = 2.0 + np.arange(phase.reflections.reflection_count, dtype=np.float64) % 7
     return replace(
         phase,
-        reflections=rietveld.ReflectionBatch(
+        reflections=phasesmith.ReflectionBatch(
             phase.reflections.reflection_ids,
             phase.reflections.hkl,
             phase.reflections.d_spacing_angstrom,
@@ -327,12 +329,12 @@ def lattice_lebail_phase(cell: rietveld.UnitCell) -> lebail.LeBailPhase:
 
 
 def test_lebail_lattice_pattern_columns_match_full_centered_differences() -> None:
-    phase = lattice_lebail_phase(rietveld.UnitCell(4.0, 4.0, 6.0, 90.0, 90.0, 90.0))
-    instrument = rietveld.ConstantWavelengthInstrument(
+    phase = lattice_lebail_phase(phasesmith.UnitCell(4.0, 4.0, 6.0, 90.0, 90.0, 90.0))
+    instrument = phasesmith.ConstantWavelengthInstrument(
         1.5406, 2.0e-4, -1.0e-4, 2.0e-4, 1.5e-3, 3.0e-3
     )
-    pattern = rietveld.PowderPattern(np.linspace(20.0, 90.0, 7_001))
-    baseline = rietveld.calculate_pattern(pattern, instrument, (phase,))
+    pattern = phasesmith.PowderPattern(np.linspace(20.0, 90.0, 7_001))
+    baseline = phasesmith.calculate_pattern(pattern, instrument, (phase,))
     parameters = lebail.build_parameter_set(instrument, (phase,), lattice_parameters=True)
     analytical = lebail._parameter_columns(baseline, parameters, instrument, (phase,))
     for column, spec in enumerate(parameters.specs):
@@ -343,8 +345,8 @@ def test_lebail_lattice_pattern_columns_match_full_centered_differences() -> Non
         minus_instrument, minus_phases = lebail._apply_parameter_values(
             instrument, (phase,), {spec.key: spec.value - step}
         )
-        plus = rietveld.calculate_pattern(pattern, plus_instrument, plus_phases).y
-        minus = rietveld.calculate_pattern(pattern, minus_instrument, minus_phases).y
+        plus = phasesmith.calculate_pattern(pattern, plus_instrument, plus_phases).y
+        minus = phasesmith.calculate_pattern(pattern, minus_instrument, minus_phases).y
         finite_difference = (plus - minus) / (2.0 * step)
         scale = max(float(np.max(np.abs(finite_difference))), 1.0)
         # The local derivative is analytical; this end-to-end difference also
@@ -353,7 +355,7 @@ def test_lebail_lattice_pattern_columns_match_full_centered_differences() -> Non
 
 
 def test_lattice_refinement_recovers_a_cubic_like_tetragonal_axis() -> None:
-    starting = lattice_lebail_phase(rietveld.UnitCell(3.995, 3.995, 6.0, 90.0, 90.0, 90.0))
+    starting = lattice_lebail_phase(phasesmith.UnitCell(3.995, 3.995, 6.0, 90.0, 90.0, 90.0))
     domain = starting.reflection_domain
     assert domain is not None
     true_values = domain.parameterization.values_from_cell(starting.structure.cell).copy()
@@ -365,12 +367,12 @@ def test_lattice_refinement_recovers_a_cubic_like_tetragonal_axis() -> None:
         structure=replace(starting.structure, cell=true_cell),
         reflections=generated.reflections,
     )
-    instrument = rietveld.ConstantWavelengthInstrument(
+    instrument = phasesmith.ConstantWavelengthInstrument(
         1.5406, 2.0e-4, -1.0e-4, 2.0e-4, 1.5e-3, 3.0e-3
     )
     x = np.linspace(20.0, 90.0, 7_001)
-    calculated = rietveld.calculate_pattern(rietveld.PowderPattern(x), instrument, (truth,))
-    pattern = rietveld.PowderPattern(x, observed_y=calculated.y)
+    calculated = phasesmith.calculate_pattern(phasesmith.PowderPattern(x), instrument, (truth,))
+    pattern = phasesmith.PowderPattern(x, observed_y=calculated.y)
     parameters = lebail.build_parameter_set(instrument, (starting,), lattice_parameters=True)
     constraints = (FixedConstraint(parameters.keys[1], parameters.specs[1].value),)
     result = lebail.refine(
@@ -389,17 +391,17 @@ def test_lattice_refinement_recovers_a_cubic_like_tetragonal_axis() -> None:
 
 
 def test_guard_only_reflections_keep_their_intensity_when_unobserved() -> None:
-    phase = lattice_lebail_phase(rietveld.UnitCell(4.0, 4.0, 6.0, 90.0, 90.0, 90.0))
+    phase = lattice_lebail_phase(phasesmith.UnitCell(4.0, 4.0, 6.0, 90.0, 90.0, 90.0))
     guard_only = ~phase.visible_reflection_mask
     assert np.any(guard_only)
-    instrument = rietveld.ConstantWavelengthInstrument(
+    instrument = phasesmith.ConstantWavelengthInstrument(
         1.5406, 2.0e-4, -1.0e-4, 2.0e-4, 1.5e-3, 3.0e-3
     )
     x = np.linspace(20.0, 90.0, 7_001)
-    calculated = rietveld.calculate_pattern(rietveld.PowderPattern(x), instrument, (phase,))
+    calculated = phasesmith.calculate_pattern(phasesmith.PowderPattern(x), instrument, (phase,))
     result = lebail.iterate_once(
         lebail.LeBailInput(
-            rietveld.PowderPattern(x, observed_y=calculated.y),
+            phasesmith.PowderPattern(x, observed_y=calculated.y),
             instrument,
             (phase,),
         )

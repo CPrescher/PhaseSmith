@@ -3,21 +3,21 @@ from __future__ import annotations
 from dataclasses import replace
 
 import numpy as np
+import phasesmith
 import pytest
-import rietveld
 from numpy.typing import ArrayLike
-from rietveld import reference, scattering_reference
-from rietveld.crystallography_reference import (
+from phasesmith import reference, scattering_reference
+from phasesmith.crystallography_reference import (
     reference_cell_geometry,
     reference_structure_factor_values,
 )
 
 
-def inversion_group() -> rietveld.SpaceGroup:
-    return rietveld.SpaceGroup(
+def inversion_group() -> phasesmith.SpaceGroup:
+    return phasesmith.SpaceGroup(
         [
-            rietveld.SymmetryOperation.identity(),
-            rietveld.SymmetryOperation(
+            phasesmith.SymmetryOperation.identity(),
+            phasesmith.SymmetryOperation(
                 [[-1, 0, 0], [0, -1, 0], [0, 0, -1]],
                 (0, 0, 0),
             ),
@@ -25,29 +25,29 @@ def inversion_group() -> rietveld.SpaceGroup:
     )
 
 
-def structure() -> rietveld.CrystalStructure:
-    return rietveld.CrystalStructure(
+def structure() -> phasesmith.CrystalStructure:
+    return phasesmith.CrystalStructure(
         "structure",
         "General symmetry",
-        rietveld.UnitCell(4.7, 5.1, 6.2, 82.0, 87.0, 74.0),
+        phasesmith.UnitCell(4.7, 5.1, 6.2, 82.0, 87.0, 74.0),
         inversion_group(),
         (
-            rietveld.AtomSite("si", "Si1", "Si", "Si", (0.17, 0.23, 0.31), 0.82, 0.012),
-            rietveld.AtomSite("o", "O1", "O", "O", (0.0, 0.0, 0.0), 0.55, 0.018),
+            phasesmith.AtomSite("si", "Si1", "Si", "Si", (0.17, 0.23, 0.31), 0.82, 0.012),
+            phasesmith.AtomSite("o", "O1", "O", "O", (0.0, 0.0, 0.0), 0.55, 0.018),
         ),
     )
 
 
-def reflections() -> rietveld.StructuralReflectionBatch:
-    return rietveld.StructuralReflectionBatch(
+def reflections() -> phasesmith.StructuralReflectionBatch:
+    return phasesmith.StructuralReflectionBatch(
         ("1,0,1", "2,1,1", "1,2,3"),
         [[1, 0, 1], [2, 1, 1], [1, 2, 3]],
         [2, 4, 2],
     )
 
 
-def instrument() -> rietveld.ConstantWavelengthInstrument:
-    return rietveld.ConstantWavelengthInstrument(
+def instrument() -> phasesmith.ConstantWavelengthInstrument:
+    return phasesmith.ConstantWavelengthInstrument(
         1.5406,
         2.0e-4,
         -1.0e-4,
@@ -57,20 +57,20 @@ def instrument() -> rietveld.ConstantWavelengthInstrument:
     )
 
 
-def xray_phase(*, scale: float = 1.4) -> rietveld.RietveldPhase:
-    return rietveld.RietveldPhase(
+def xray_phase(*, scale: float = 1.4) -> phasesmith.RietveldPhase:
+    return phasesmith.RietveldPhase(
         "phase",
         "Structural phase",
         structure(),
         reflections(),
-        rietveld.XrayNonResonant(),
-        rietveld.NeutralIntegratedIntensityCorrection(),
+        phasesmith.XrayNonResonant(),
+        phasesmith.NeutralIntegratedIntensityCorrection(),
         scale,
     )
 
 
-def pattern() -> rietveld.PowderPattern:
-    return rietveld.PowderPattern(
+def pattern() -> phasesmith.PowderPattern:
+    return phasesmith.PowderPattern(
         np.linspace(10.0, 100.0, 9_001),
         background=np.linspace(0.1, 0.2, 9_001),
     )
@@ -78,12 +78,12 @@ def pattern() -> rietveld.PowderPattern:
 
 def test_fused_structural_pattern_matches_separate_vectorized_layers() -> None:
     phase = xray_phase()
-    experiment = rietveld.ConstantWavelengthExperiment.x_ray(instrument())
-    prepared = rietveld.PreparedStructuralPattern(pattern(), experiment, phase)
+    experiment = phasesmith.ConstantWavelengthExperiment.x_ray(instrument())
+    prepared = phasesmith.PreparedStructuralPattern(pattern(), experiment, phase)
     assert prepared.uses_native_fused_path
 
     actual = prepared.calculate()
-    structural = rietveld.calculate_structure_factors(
+    structural = phasesmith.calculate_structure_factors(
         phase.structure,
         phase.reflections.hkl,
         phase.reflections.multiplicity,
@@ -93,7 +93,7 @@ def test_fused_structural_pattern_matches_separate_vectorized_layers() -> None:
     )
     spacing = phase.structure.cell.d_spacings(phase.reflections.hkl).d_spacing_angstrom
     position = 2.0 * np.degrees(np.arcsin(instrument().wavelength_angstrom / (2.0 * spacing)))
-    separate = rietveld.accumulate_cw(
+    separate = phasesmith.accumulate_cw(
         pattern().x,
         position,
         structural.integrated_intensity,
@@ -116,9 +116,9 @@ def test_fused_structural_pattern_matches_separate_vectorized_layers() -> None:
 
 def test_fused_structural_pattern_matches_independent_numpy_equations() -> None:
     phase = xray_phase()
-    actual = rietveld.calculate_structural_pattern(
+    actual = phasesmith.calculate_structural_pattern(
         pattern(),
-        rietveld.ConstantWavelengthExperiment.x_ray(instrument()),
+        phasesmith.ConstantWavelengthExperiment.x_ray(instrument()),
         phase,
     )
     geometry = reference_cell_geometry(phase.structure.cell)
@@ -161,10 +161,10 @@ def test_fused_structural_pattern_matches_independent_numpy_equations() -> None:
 
 
 def _perturb_phase(
-    phase: rietveld.RietveldPhase,
+    phase: phasesmith.RietveldPhase,
     direction: np.ndarray,
     step: float,
-) -> rietveld.RietveldPhase:
+) -> phasesmith.RietveldPhase:
     cell_values = np.asarray(phase.structure.cell.as_tuple()) + step * direction[:6]
     sites = list(phase.structure.sites)
     site_count = len(sites)
@@ -183,7 +183,7 @@ def _perturb_phase(
         )
     model = replace(
         phase.structure,
-        cell=rietveld.UnitCell(*cell_values),
+        cell=phasesmith.UnitCell(*cell_values),
         sites=tuple(sites),
     )
     return replace(phase, structure=model, scale=phase.scale + step * direction[-1])
@@ -191,18 +191,18 @@ def _perturb_phase(
 
 def test_structural_pattern_jvp_matches_finite_difference_and_vjp_adjoint() -> None:
     phase = xray_phase()
-    experiment = rietveld.ConstantWavelengthExperiment.x_ray(instrument())
-    prepared = rietveld.PreparedStructuralPattern(pattern(), experiment, phase)
-    names = rietveld.p1_parameter_names(phase.structure.to_isotropic_site_batch())
+    experiment = phasesmith.ConstantWavelengthExperiment.x_ray(instrument())
+    prepared = phasesmith.PreparedStructuralPattern(pattern(), experiment, phase)
+    names = phasesmith.p1_parameter_names(phase.structure.to_isotropic_site_batch())
     direction = np.zeros(len(names))
     direction[[0, 6, 12, 14, len(names) - 1]] = [0.04, 0.015, -0.03, 0.002, 0.05]
 
     actual = prepared.jvp(direction)
     step = 1.0e-6
-    plus = rietveld.calculate_structural_pattern(
+    plus = phasesmith.calculate_structural_pattern(
         pattern(), experiment, _perturb_phase(phase, direction, step)
     )
-    minus = rietveld.calculate_structural_pattern(
+    minus = phasesmith.calculate_structural_pattern(
         pattern(), experiment, _perturb_phase(phase, direction, -step)
     )
     finite_difference = (plus.profile_y - minus.profile_y) / (2.0 * step)
@@ -222,11 +222,11 @@ def test_structural_pattern_jvp_matches_finite_difference_and_vjp_adjoint() -> N
 def test_monochromatic_neutron_structural_pattern_uses_native_path() -> None:
     phase = replace(
         xray_phase(),
-        scattering=rietveld.NeutronNuclear(),
-        intensity_correction=rietveld.NeutralIntegratedIntensityCorrection(),
+        scattering=phasesmith.NeutronNuclear(),
+        intensity_correction=phasesmith.NeutralIntegratedIntensityCorrection(),
     )
-    experiment = rietveld.ConstantWavelengthExperiment.neutron(instrument())
-    prepared = rietveld.PreparedStructuralPattern(pattern(), experiment, phase)
+    experiment = phasesmith.ConstantWavelengthExperiment.neutron(instrument())
+    prepared = phasesmith.PreparedStructuralPattern(pattern(), experiment, phase)
     result = prepared.calculate()
     assert prepared.uses_native_fused_path
     assert np.all(np.isfinite(result.profile_y))
@@ -234,18 +234,25 @@ def test_monochromatic_neutron_structural_pattern_uses_native_path() -> None:
 
 
 def test_bragg_brentano_position_corrections_match_equation() -> None:
-    geometry = rietveld.BraggBrentanoGeometry(200.0, 0.35)
-    experiment = rietveld.ConstantWavelengthExperiment(
-        rietveld.MonochromaticRadiation.x_ray(instrument().wavelength_angstrom),
+    geometry = phasesmith.BraggBrentanoGeometry(200.0, 0.35)
+    experiment = phasesmith.ConstantWavelengthExperiment(
+        phasesmith.MonochromaticRadiation.x_ray(instrument().wavelength_angstrom),
         instrument(),
         zero_shift_deg=0.075,
         geometry=geometry,
     )
-    actual = rietveld.calculate_structural_pattern(pattern(), experiment, xray_phase())
+    actual = phasesmith.calculate_structural_pattern(pattern(), experiment, xray_phase())
     spacing = xray_phase().structure.cell.d_spacings(reflections().hkl).d_spacing_angstrom
     beta = 2.0 * np.arcsin(instrument().wavelength_angstrom / (2.0 * spacing))
-    expected = np.degrees(beta) + 0.075 - np.degrees(
-        2.0 * geometry.sample_displacement_mm / geometry.goniometer_radius_mm * np.cos(beta / 2.0)
+    expected = (
+        np.degrees(beta)
+        + 0.075
+        - np.degrees(
+            2.0
+            * geometry.sample_displacement_mm
+            / geometry.goniometer_radius_mm
+            * np.cos(beta / 2.0)
+        )
     )
     np.testing.assert_allclose(actual.reflections.two_theta_deg, expected, rtol=2e-15)
 
@@ -262,20 +269,20 @@ def test_instrument_correction_derivatives_match_finite_difference(
     parameter: str,
     step: float,
 ) -> None:
-    geometry = rietveld.BraggBrentanoGeometry(240.0, 0.21)
-    base_experiment = rietveld.ConstantWavelengthExperiment(
-        rietveld.MonochromaticRadiation.x_ray(instrument().wavelength_angstrom),
+    geometry = phasesmith.BraggBrentanoGeometry(240.0, 0.21)
+    base_experiment = phasesmith.ConstantWavelengthExperiment(
+        phasesmith.MonochromaticRadiation.x_ray(instrument().wavelength_angstrom),
         instrument(),
         zero_shift_deg=-0.017,
         geometry=geometry,
     )
     base_phase = replace(
         xray_phase(),
-        intensity_correction=rietveld.BraggBrentanoUnpolarizedLp(
+        intensity_correction=phasesmith.BraggBrentanoUnpolarizedLp(
             instrument().wavelength_angstrom
         ),
     )
-    actual = rietveld.calculate_structural_pattern(pattern(), base_experiment, base_phase)
+    actual = phasesmith.calculate_structural_pattern(pattern(), base_experiment, base_phase)
     row = actual.derivatives.global_parameter_names.index(parameter)
 
     def evaluate(delta: float) -> np.ndarray:
@@ -289,20 +296,20 @@ def test_instrument_correction_derivatives_match_finite_difference(
         else:
             displacement += delta
         selected_instrument = replace(instrument(), wavelength_angstrom=wavelength)
-        selected_experiment = rietveld.ConstantWavelengthExperiment(
-            rietveld.MonochromaticRadiation.x_ray(wavelength),
+        selected_experiment = phasesmith.ConstantWavelengthExperiment(
+            phasesmith.MonochromaticRadiation.x_ray(wavelength),
             selected_instrument,
             zero_shift_deg=zero,
-            geometry=rietveld.BraggBrentanoGeometry(
+            geometry=phasesmith.BraggBrentanoGeometry(
                 geometry.goniometer_radius_mm,
                 displacement,
             ),
         )
         selected_phase = replace(
             base_phase,
-            intensity_correction=rietveld.BraggBrentanoUnpolarizedLp(wavelength),
+            intensity_correction=phasesmith.BraggBrentanoUnpolarizedLp(wavelength),
         )
-        return rietveld.calculate_structural_pattern(
+        return phasesmith.calculate_structural_pattern(
             pattern(), selected_experiment, selected_phase
         ).profile_y
 
@@ -316,20 +323,20 @@ def test_instrument_correction_derivatives_match_finite_difference(
 
 
 def test_builtin_size_broadening_stays_on_fused_structural_path() -> None:
-    phase = replace(xray_phase(), physics=rietveld.IsotropicSizeBroadening(70.0))
-    experiment = rietveld.ConstantWavelengthExperiment.x_ray(instrument())
-    prepared = rietveld.PreparedStructuralPattern(pattern(), experiment, phase)
+    phase = replace(xray_phase(), physics=phasesmith.IsotropicSizeBroadening(70.0))
+    experiment = phasesmith.ConstantWavelengthExperiment.x_ray(instrument())
+    prepared = phasesmith.PreparedStructuralPattern(pattern(), experiment, phase)
     assert prepared.uses_native_fused_path
     actual = prepared.calculate()
 
-    geometry = rietveld.ReflectionGeometryBatch(
+    geometry = phasesmith.ReflectionGeometryBatch(
         phase.reflections.hkl,
         actual.reflections.d_spacing_angstrom,
         actual.reflections.two_theta_deg,
         actual.reflections.integrated_intensity,
     )
-    contribution = phase.physics.evaluate(rietveld.PhysicsContext(geometry, instrument()))
-    separate = rietveld.accumulate_cw_contributions(
+    contribution = phase.physics.evaluate(phasesmith.PhysicsContext(geometry, instrument()))
+    separate = phasesmith.accumulate_cw_contributions(
         pattern().x,
         geometry.two_theta_deg,
         geometry.base_integrated_intensity,
@@ -341,18 +348,18 @@ def test_builtin_size_broadening_stays_on_fused_structural_path() -> None:
 
 
 def test_probe_mismatch_is_rejected_before_calculation() -> None:
-    experiment = rietveld.ConstantWavelengthExperiment.neutron(instrument())
+    experiment = phasesmith.ConstantWavelengthExperiment.neutron(instrument())
     with pytest.raises(ValueError, match="incompatible"):
-        rietveld.PreparedStructuralPattern(pattern(), experiment, xray_phase())
+        phasesmith.PreparedStructuralPattern(pattern(), experiment, xray_phase())
 
 
 def test_structural_reflections_can_be_created_from_generated_families() -> None:
     model = structure()
-    generated = rietveld.PreparedReflectionGenerator(model.space_group).generate(
+    generated = phasesmith.PreparedReflectionGenerator(model.space_group).generate(
         model.cell,
-        rietveld.DSpacingRange(1.5, 4.0),
+        phasesmith.DSpacingRange(1.5, 4.0),
     )
-    batch = rietveld.StructuralReflectionBatch.from_generated(generated)
+    batch = phasesmith.StructuralReflectionBatch.from_generated(generated)
     np.testing.assert_array_equal(batch.hkl, generated.hkl)
     np.testing.assert_array_equal(batch.multiplicity, generated.multiplicity)
     assert batch.reflection_ids == generated.reflection_ids
@@ -360,14 +367,14 @@ def test_structural_reflections_can_be_created_from_generated_families() -> None
 
 
 class CountingScattering:
-    descriptor = rietveld.XRAY_NON_RESONANT_DESCRIPTOR
+    descriptor = phasesmith.XRAY_NON_RESONANT_DESCRIPTOR
 
     def __init__(self) -> None:
         self.calls = 0
 
-    def evaluate(self, context: rietveld.ScatteringContext) -> rietveld.ScatteringFactorBatch:
+    def evaluate(self, context: phasesmith.ScatteringContext) -> phasesmith.ScatteringFactorBatch:
         self.calls += 1
-        return rietveld.XrayNonResonant().evaluate(context)
+        return phasesmith.XrayNonResonant().evaluate(context)
 
 
 class CountingCorrection:
@@ -376,16 +383,18 @@ class CountingCorrection:
 
     def evaluate(self, q_squared_inverse_angstrom2: ArrayLike):
         self.calls += 1
-        return rietveld.NeutralIntegratedIntensityCorrection().evaluate(q_squared_inverse_angstrom2)
+        return phasesmith.NeutralIntegratedIntensityCorrection().evaluate(
+            q_squared_inverse_angstrom2
+        )
 
 
 def test_custom_scattering_and_correction_use_vectorized_fallback_once() -> None:
     scattering = CountingScattering()
     correction = CountingCorrection()
     phase = replace(xray_phase(), scattering=scattering, intensity_correction=correction)
-    prepared = rietveld.PreparedStructuralPattern(
+    prepared = phasesmith.PreparedStructuralPattern(
         pattern(),
-        rietveld.ConstantWavelengthExperiment.x_ray(instrument()),
+        phasesmith.ConstantWavelengthExperiment.x_ray(instrument()),
         phase,
     )
     assert not prepared.uses_native_fused_path

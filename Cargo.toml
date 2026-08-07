@@ -1,9 +1,9 @@
 [workspace]
 members = [
-  "crates/rietveld-core",
-  "crates/rietveld-crystallography",
-  "crates/rietveld-engine",
-  "crates/rietveld-py",
+  "crates/phasesmith-core",
+  "crates/phasesmith-crystallography",
+  "crates/phasesmith-engine",
+  "crates/phasesmith-py",
 ]
 resolver = "2"
 
@@ -11,7 +11,7 @@ resolver = "2"
 version = "0.1.0"
 edition = "2024"
 rust-version = "1.85"
-authors = ["Rietveld Engine contributors"]
+authors = ["PhaseSmith contributors"]
 license = "MIT"
 
 [workspace.lints.rust]

@@ -3,13 +3,13 @@ from __future__ import annotations
 from dataclasses import replace
 
 import numpy as np
+import phasesmith
 import pytest
-import rietveld
-from rietveld import reference
+from phasesmith import reference
 
 
-def instrument() -> rietveld.ConstantWavelengthInstrument:
-    return rietveld.ConstantWavelengthInstrument(
+def instrument() -> phasesmith.ConstantWavelengthInstrument:
+    return phasesmith.ConstantWavelengthInstrument(
         wavelength_angstrom=1.5406,
         u_deg2=2.0e-4,
         v_deg2=-1.0e-4,
@@ -19,8 +19,8 @@ def instrument() -> rietveld.ConstantWavelengthInstrument:
     )
 
 
-def geometry() -> rietveld.FcjGeometry:
-    return rietveld.FcjGeometry(
+def geometry() -> phasesmith.FcjGeometry:
+    return phasesmith.FcjGeometry(
         sample_over_radius=0.013,
         detector_over_radius=0.009,
     )
@@ -65,12 +65,12 @@ def test_native_profile_matches_independent_quadrature(
     detector: float,
 ) -> None:
     x = np.linspace(position - 0.4, position + 0.4, 801)
-    actual = rietveld.profile_fcj(
+    actual = phasesmith.profile_fcj(
         x,
         position,
         gaussian,
         lorentzian,
-        rietveld.FcjGeometry(sample, detector),
+        phasesmith.FcjGeometry(sample, detector),
     )
     expected = reference.profile_fcj(
         x,
@@ -92,7 +92,7 @@ def test_fused_cw_fcj_batch_matches_independent_reference() -> None:
     positions = np.array([12.0, 69.95, 70.05, 138.0])
     intensities = np.array([5.0, 11.0, 7.0, 4.0])
     support_fwhm = 18.0
-    actual = rietveld.accumulate_cw_fcj(
+    actual = phasesmith.accumulate_cw_fcj(
         x,
         positions,
         intensities,
@@ -105,8 +105,8 @@ def test_fused_cw_fcj_batch_matches_independent_reference() -> None:
         x, positions, intensities, support_fwhm
     )
 
-    assert actual.derivatives.local_parameter_names == rietveld.CW_FCJ_LOCAL_PARAMETER_ORDER
-    assert actual.derivatives.global_parameter_names == rietveld.CW_FCJ_GLOBAL_PARAMETER_ORDER
+    assert actual.derivatives.local_parameter_names == phasesmith.CW_FCJ_LOCAL_PARAMETER_ORDER
+    assert actual.derivatives.global_parameter_names == phasesmith.CW_FCJ_GLOBAL_PARAMETER_ORDER
     np.testing.assert_allclose(actual.y, expected_y, rtol=3e-12, atol=3e-12)
     np.testing.assert_allclose(actual.jacobian, expected_local, rtol=5e-11, atol=2e-10)
     np.testing.assert_allclose(
@@ -117,14 +117,14 @@ def test_fused_cw_fcj_batch_matches_independent_reference() -> None:
     )
 
 
-@pytest.mark.parametrize("parameter", rietveld.CW_FCJ_GLOBAL_PARAMETER_ORDER)
+@pytest.mark.parametrize("parameter", phasesmith.CW_FCJ_GLOBAL_PARAMETER_ORDER)
 def test_global_derivatives_match_centered_differences(parameter: str) -> None:
     x = np.linspace(11.7, 12.2, 1_001)
     positions = np.array([12.0])
     intensities = np.array([8.0])
     model = instrument()
     axial = geometry()
-    baseline = rietveld.accumulate_cw_fcj(
+    baseline = phasesmith.accumulate_cw_fcj(
         x, positions, intensities, model, axial, support_fwhm=100.0
     )
     if parameter in {"u", "v", "w"}:
@@ -144,14 +144,14 @@ def test_global_derivatives_match_centered_differences(parameter: str) -> None:
         plus_model = minus_model = model
         plus_axial = replace(axial, **{parameter: getattr(axial, parameter) + step})
         minus_axial = replace(axial, **{parameter: getattr(axial, parameter) - step})
-    plus = rietveld.accumulate_cw_fcj(
+    plus = phasesmith.accumulate_cw_fcj(
         x, positions, intensities, plus_model, plus_axial, support_fwhm=100.0
     ).y
-    minus = rietveld.accumulate_cw_fcj(
+    minus = phasesmith.accumulate_cw_fcj(
         x, positions, intensities, minus_model, minus_axial, support_fwhm=100.0
     ).y
     finite_difference = (plus - minus) / (2.0 * step)
-    row = rietveld.CW_FCJ_GLOBAL_PARAMETER_ORDER.index(parameter)
+    row = phasesmith.CW_FCJ_GLOBAL_PARAMETER_ORDER.index(parameter)
     scale = max(1.0, float(np.max(np.abs(finite_difference))))
     np.testing.assert_allclose(
         baseline.derivatives.global_jacobian[row],
@@ -161,12 +161,12 @@ def test_global_derivatives_match_centered_differences(parameter: str) -> None:
     )
 
 
-@pytest.mark.parametrize("parameter", rietveld.CW_FCJ_LOCAL_PARAMETER_ORDER)
+@pytest.mark.parametrize("parameter", phasesmith.CW_FCJ_LOCAL_PARAMETER_ORDER)
 def test_local_derivatives_match_centered_differences(parameter: str) -> None:
     x = np.linspace(11.7, 12.2, 1_001)
     positions = np.array([12.0])
     intensities = np.array([8.0])
-    baseline = rietveld.accumulate_cw_fcj(
+    baseline = phasesmith.accumulate_cw_fcj(
         x,
         positions,
         intensities,
@@ -186,7 +186,7 @@ def test_local_derivatives_match_centered_differences(parameter: str) -> None:
     else:
         plus_intensities[0] += step
         minus_intensities[0] -= step
-    plus = rietveld.accumulate_cw_fcj(
+    plus = phasesmith.accumulate_cw_fcj(
         x,
         plus_positions,
         plus_intensities,
@@ -194,7 +194,7 @@ def test_local_derivatives_match_centered_differences(parameter: str) -> None:
         geometry(),
         support_fwhm=100.0,
     ).y
-    minus = rietveld.accumulate_cw_fcj(
+    minus = phasesmith.accumulate_cw_fcj(
         x,
         minus_positions,
         minus_intensities,
@@ -203,7 +203,7 @@ def test_local_derivatives_match_centered_differences(parameter: str) -> None:
         support_fwhm=100.0,
     ).y
     finite_difference = (plus - minus) / (2.0 * step)
-    column = rietveld.CW_FCJ_LOCAL_PARAMETER_ORDER.index(parameter)
+    column = phasesmith.CW_FCJ_LOCAL_PARAMETER_ORDER.index(parameter)
     np.testing.assert_allclose(
         baseline.jacobian[0, column], finite_difference, rtol=3e-6, atol=3e-6
     )
@@ -213,15 +213,15 @@ def test_zero_geometry_recovers_symmetric_cw_batch() -> None:
     x = np.linspace(39.0, 41.0, 2_001)
     positions = np.array([39.8, 40.2])
     intensities = np.array([12.0, 7.0])
-    symmetric = rietveld.accumulate_cw(
+    symmetric = phasesmith.accumulate_cw(
         x, positions, intensities, instrument(), support_fwhm=20.0, jacobian_layout="dense"
     )
-    fcj = rietveld.accumulate_cw_fcj(
+    fcj = phasesmith.accumulate_cw_fcj(
         x,
         positions,
         intensities,
         instrument(),
-        rietveld.FcjGeometry(0.0, 0.0),
+        phasesmith.FcjGeometry(0.0, 0.0),
         support_fwhm=20.0,
         jacobian_layout="dense",
     )
@@ -237,8 +237,8 @@ def test_area_centroid_and_skew_reverse_above_ninety_degrees() -> None:
     moments = []
     for position in (20.0, 140.0):
         x = np.linspace(position - 2.0, position + 2.0, 20_001)
-        values = rietveld.profile_fcj(
-            x, position, 0.05, 0.0, rietveld.FcjGeometry(0.02, 0.01)
+        values = phasesmith.profile_fcj(
+            x, position, 0.05, 0.0, phasesmith.FcjGeometry(0.02, 0.01)
         ).value
         area = np.trapezoid(values, x)
         centroid = np.trapezoid(x * values, x) / area
@@ -253,6 +253,6 @@ def test_area_centroid_and_skew_reverse_above_ninety_degrees() -> None:
 
 def test_public_geometry_validation_is_clear() -> None:
     with pytest.raises(ValueError, match="non-negative"):
-        rietveld.FcjGeometry(-0.1, 0.1)
+        phasesmith.FcjGeometry(-0.1, 0.1)
     with pytest.raises(ValueError, match="finite"):
-        rietveld.FcjGeometry(np.nan, 0.1)
+        phasesmith.FcjGeometry(np.nan, 0.1)

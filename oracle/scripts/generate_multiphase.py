@@ -3,7 +3,7 @@
 
 Public scripting supplies X, Ycalc, background, HAP scales, and both reflection
 lists. A pinned private profile call supplies one controlled two-reflection
-composition. This script imports no Rietveld Engine module.
+composition. This script imports no PhaseSmith module.
 """
 
 from __future__ import annotations
@@ -248,7 +248,7 @@ def generate_snapshot(
     scripting: Any, profile_module: Any
 ) -> tuple[list[dict[str, Any]], dict[str, np.ndarray]]:
     np.random.seed(20_260_805)
-    with tempfile.TemporaryDirectory(prefix="rietveld-gsas-multiphase-") as temporary:
+    with tempfile.TemporaryDirectory(prefix="phasesmith-gsas-multiphase-") as temporary:
         work = Path(temporary)
         instrument_path = work / "multiphase.instprm"
         instrument_path.write_text(instrument_text(), encoding="utf-8")

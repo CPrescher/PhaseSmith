@@ -22,7 +22,7 @@ jobs:
       - run: cargo fmt --all -- --check
       - run: cargo clippy --workspace --all-targets --all-features -- -D warnings
       - run: cargo test --workspace --all-features
-      - run: cargo bench -p rietveld-core --bench profile --no-run
+      - run: cargo bench -p phasesmith-core --bench profile --no-run
 
   python:
     runs-on: ubuntu-latest

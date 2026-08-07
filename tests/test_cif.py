@@ -8,11 +8,11 @@ from dataclasses import replace
 from pathlib import Path
 
 import numpy as np
+import phasesmith
 import pytest
-import rietveld
-from rietveld.io.cif import CifReadLimits, CifReadResult, read_cif
-from rietveld.refinement import lebail
-from rietveld.refinement.lebail import LeBailInput, LeBailPhase
+from phasesmith.io.cif import CifReadLimits, CifReadResult, read_cif
+from phasesmith.refinement import lebail
+from phasesmith.refinement.lebail import LeBailInput, LeBailPhase
 
 P21_CIF = """
 data_demo
@@ -66,7 +66,7 @@ _space_group_name_H-M_alt 'I m -3 m'
 
 
 def test_script_first_cif_lebail_input_builds_bounded_lattice_parameters() -> None:
-    instrument = rietveld.ConstantWavelengthInstrument(
+    instrument = phasesmith.ConstantWavelengthInstrument(
         1.5406, 2.0e-4, -1.0e-4, 2.0e-4, 1.5e-3, 3.0e-3
     )
     x = np.linspace(20.0, 90.0, 7_001)
@@ -77,9 +77,9 @@ def test_script_first_cif_lebail_input_builds_bounded_lattice_parameters() -> No
         two_theta_min_deg=float(x[0]),
         two_theta_max_deg=float(x[-1]),
     )
-    calculated = rietveld.calculate_pattern(rietveld.PowderPattern(x), instrument, (truth,))
+    calculated = phasesmith.calculate_pattern(phasesmith.PowderPattern(x), instrument, (truth,))
     request = LeBailInput.from_cif(
-        rietveld.PowderPattern(x, observed_y=calculated.y),
+        phasesmith.PowderPattern(x, observed_y=calculated.y),
         instrument,
         CELL_ONLY_CIF,
         phase_id="alpha",
@@ -206,7 +206,7 @@ def test_hall_number_disorder_and_duplicate_labels_have_defined_behavior() -> No
     hall = CELL_ONLY_CIF.replace(
         "_space_group_name_H-M_alt 'I m -3 m'", "_space_group.name_Hall 'P 1'"
     )
-    assert read_cif(hall).structure.space_group == rietveld.SpaceGroup.p1()
+    assert read_cif(hall).structure.space_group == phasesmith.SpaceGroup.p1()
     numbered = CELL_ONLY_CIF.replace(
         "_space_group_name_H-M_alt 'I m -3 m'", "_space_group.IT_number 229"
     )
@@ -297,7 +297,7 @@ def test_cell_and_symmetry_only_cif_constructs_a_fixed_cell_lebail_phase() -> No
         two_theta_min_deg=10.0,
         two_theta_max_deg=120.0,
     )
-    assert isinstance(phase, rietveld.Phase)
+    assert isinstance(phase, phasesmith.Phase)
     assert phase.structure is imported.structure
     assert phase.reflections.reflection_count > 0
     assert np.all(phase.reflections.integrated_intensity == 1.0)
@@ -318,8 +318,8 @@ def test_cell_and_symmetry_only_cif_constructs_a_fixed_cell_lebail_phase() -> No
 
 def test_structure_record_round_trip_requires_no_parser_objects() -> None:
     original = read_cif(P21_CIF).structure
-    encoded = json.dumps(rietveld.structure_to_record(original))
-    restored = rietveld.structure_from_record(json.loads(encoded))
+    encoded = json.dumps(phasesmith.structure_to_record(original))
+    restored = phasesmith.structure_from_record(json.loads(encoded))
     assert restored.cell == original.cell
     assert restored.space_group == original.space_group
     assert restored.sites == original.sites
@@ -344,11 +344,11 @@ def test_resource_limits_and_unsupported_features_fail_visibly(tmp_path: Path) -
 
 
 def test_backend_protocol_is_injectable_and_base_import_does_not_load_gemmi() -> None:
-    structure = rietveld.CrystalStructure(
+    structure = phasesmith.CrystalStructure(
         "fake",
         "Fake",
-        rietveld.UnitCell(1, 1, 1, 90, 90, 90),
-        rietveld.SpaceGroup.p1(),
+        phasesmith.UnitCell(1, 1, 1, 90, 90, 90),
+        phasesmith.SpaceGroup.p1(),
     )
 
     class FakeBackend:
@@ -371,9 +371,9 @@ def test_backend_protocol_is_injectable_and_base_import_does_not_load_gemmi() ->
                     raise RuntimeError('gemmi import attempted')
                 return None
         sys.meta_path.insert(0, BlockGemmi())
-        import rietveld
+        import phasesmith
         assert 'gemmi' not in sys.modules
-        assert rietveld.UnitCell(1, 1, 1, 90, 90, 90).a_angstrom == 1
+        assert phasesmith.UnitCell(1, 1, 1, 90, 90, 90).a_angstrom == 1
         """
     )
     completed = subprocess.run(

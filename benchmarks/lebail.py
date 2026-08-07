@@ -10,8 +10,8 @@ from collections.abc import Callable
 from typing import Any
 
 import numpy as np
-import rietveld
-from rietveld.refinement import lebail
+import phasesmith
+from phasesmith.refinement import lebail
 
 
 def measure(
@@ -38,9 +38,9 @@ def report(name: str, timings: list[float]) -> None:
 
 
 def models() -> tuple[
-    rietveld.PowderPattern,
-    rietveld.ConstantWavelengthInstrument,
-    tuple[rietveld.Phase, ...],
+    phasesmith.PowderPattern,
+    phasesmith.ConstantWavelengthInstrument,
+    tuple[phasesmith.Phase, ...],
 ]:
     x = np.linspace(10.0, 110.0, 5_001)
     count = 200
@@ -55,7 +55,7 @@ def models() -> tuple[
             index % 7,
         )
     )
-    instrument = rietveld.ConstantWavelengthInstrument(
+    instrument = phasesmith.ConstantWavelengthInstrument(
         wavelength_angstrom=1.5406,
         u_deg2=2.0e-4,
         v_deg2=-1.0e-4,
@@ -67,11 +67,11 @@ def models() -> tuple[
         2.0 * np.sin(np.deg2rad(positions / 2.0))
     )
 
-    def phase(intensities: np.ndarray) -> rietveld.Phase:
-        return rietveld.Phase(
+    def phase(intensities: np.ndarray) -> phasesmith.Phase:
+        return phasesmith.Phase(
             "benchmark",
             "Benchmark phase",
-            rietveld.ReflectionBatch(
+            phasesmith.ReflectionBatch(
                 [f"reflection-{number}" for number in index],
                 hkl,
                 d_spacing,
@@ -81,12 +81,12 @@ def models() -> tuple[
         )
 
     background = 0.2 + 0.0005 * (x - x[0])
-    truth = rietveld.calculate_pattern(
-        rietveld.PowderPattern(x, background=background),
+    truth = phasesmith.calculate_pattern(
+        phasesmith.PowderPattern(x, background=background),
         instrument,
         (phase(truth_intensities),),
     )
-    pattern = rietveld.PowderPattern(
+    pattern = phasesmith.PowderPattern(
         x,
         observed_y=truth.y,
         background=background,
@@ -107,12 +107,12 @@ def main() -> None:
     arguments = parser.parse_args()
     if arguments.warmups < 0 or arguments.repetitions <= 0:
         raise ValueError("warmups must be non-negative and repetitions positive")
-    if arguments.require_release and rietveld._core.BUILD_MODE != "release":
+    if arguments.require_release and phasesmith._core.BUILD_MODE != "release":
         raise RuntimeError(
-            f"release extension required, imported {rietveld._core.BUILD_MODE!r}"
+            f"release extension required, imported {phasesmith._core.BUILD_MODE!r}"
         )
     pattern, instrument, phases = models()
-    calculation = rietveld.calculate_pattern(pattern, instrument, phases)
+    calculation = phasesmith.calculate_pattern(pattern, instrument, phases)
     current = np.concatenate(
         tuple(phase.reflections.integrated_intensity for phase in phases)
     )
@@ -125,7 +125,7 @@ def main() -> None:
     profile_input = lebail.LeBailInput(pattern, instrument, phases, parameters)
 
     _, kernel = measure(
-        lambda: rietveld.calculate_pattern(pattern, instrument, phases),
+        lambda: phasesmith.calculate_pattern(pattern, instrument, phases),
         arguments.warmups,
         arguments.repetitions,
     )
@@ -164,7 +164,7 @@ def main() -> None:
     ]
     print(
         f"python={platform.python_version()} platform={platform.platform()} "
-        f"build_mode={rietveld._core.BUILD_MODE} samples={pattern.x.size} "
+        f"build_mode={phasesmith._core.BUILD_MODE} samples={pattern.x.size} "
         f"reflections={len(current)}"
     )
     report("profile_kernel", kernel)

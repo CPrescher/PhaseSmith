@@ -3,9 +3,9 @@ from __future__ import annotations
 import sys
 
 import numpy as np
+import phasesmith
 import pytest
-import rietveld
-from rietveld import background_reference
+from phasesmith import background_reference
 
 
 def peak_rich_signal(samples: int = 1001) -> tuple[np.ndarray, np.ndarray]:
@@ -30,14 +30,14 @@ def test_native_smoother_matches_independent_reference_randomized() -> None:
         (11, 20, 4),
     ):
         y = rng.uniform(-2.0, 7.0, sample_count)
-        actual = rietveld.smooth_bruckner(y, smooth_points, iterations)
+        actual = phasesmith.smooth_bruckner(y, smooth_points, iterations)
         expected = background_reference.smooth_bruckner(y, smooth_points, iterations)
         np.testing.assert_allclose(actual, expected, rtol=0.0, atol=2.0e-15)
 
 
 def test_pinned_xypattern_cython_fixture_and_trailing_range() -> None:
     # Generated from xypattern 1.2.3 smooth_bruckner.pyx at the revision
-    # exported by rietveld.XYPATTERN_REVISION.
+    # exported by phasesmith.XYPATTERN_REVISION.
     y = np.array(
         [
             2.969336117675465,
@@ -110,46 +110,46 @@ def test_pinned_xypattern_cython_fixture_and_trailing_range() -> None:
             3.6820555995420823,
         ]
     )
-    actual = rietveld.smooth_bruckner(y, 3, 4)
+    actual = phasesmith.smooth_bruckner(y, 3, 4)
     np.testing.assert_allclose(actual, expected, rtol=0.0, atol=5.0e-15)
     np.testing.assert_array_equal(actual[-8:], y[-8:])
-    assert len(rietveld.XYPATTERN_REVISION) == 40
+    assert len(phasesmith.XYPATTERN_REVISION) == 40
 
 
 def test_raw_smoother_validates_inputs_and_returns_owned_read_only_data() -> None:
     y = np.arange(8.0)
-    actual = rietveld.smooth_bruckner(y, 1, 2)
+    actual = phasesmith.smooth_bruckner(y, 1, 2)
     assert actual.dtype == np.float64
     assert actual.flags.c_contiguous
     assert not actual.flags.writeable
     assert y.flags.writeable
     for invalid in ([], [1.0, np.nan], [1.0, np.inf]):
         with pytest.raises(ValueError):
-            rietveld.smooth_bruckner(invalid, 1)
+            phasesmith.smooth_bruckner(invalid, 1)
     with pytest.raises(ValueError, match="one-dimensional"):
-        rietveld.smooth_bruckner(np.ones((2, 2)), 1)
+        phasesmith.smooth_bruckner(np.ones((2, 2)), 1)
     with pytest.raises(ValueError, match="real floating-point or integer"):
-        rietveld.smooth_bruckner(["1", "2"], 1)
+        phasesmith.smooth_bruckner(["1", "2"], 1)
     with pytest.raises(ValueError, match="non-negative"):
-        rietveld.smooth_bruckner(y, -1)
+        phasesmith.smooth_bruckner(y, -1)
     with pytest.raises(TypeError, match="integer"):
-        rietveld.smooth_bruckner(y, 1.5)  # type: ignore[arg-type]
+        phasesmith.smooth_bruckner(y, 1.5)  # type: ignore[arg-type]
     with pytest.raises(TypeError, match="integer"):
-        rietveld.smooth_bruckner(y, True)  # type: ignore[arg-type]
+        phasesmith.smooth_bruckner(y, True)  # type: ignore[arg-type]
     with pytest.raises(ValueError, match="non-negative"):
-        rietveld.smooth_bruckner(y, 1, -1)
+        phasesmith.smooth_bruckner(y, 1, -1)
 
 
 def test_physical_width_raw_model_matches_point_kernel() -> None:
     x, y = peak_rich_signal()
-    model = rietveld.SmoothBrucknerBackground(
+    model = phasesmith.SmoothBrucknerBackground(
         smooth_width=0.1,
         iterations=12,
         chebyshev_order=None,
     )
     result = model.subtract(x, y)
     assert result.smooth_points == 10
-    np.testing.assert_array_equal(result.smoothed_y, rietveld.smooth_bruckner(y, 10, 12))
+    np.testing.assert_array_equal(result.smoothed_y, phasesmith.smooth_bruckner(y, 10, 12))
     np.testing.assert_array_equal(result.background, result.smoothed_y)
     np.testing.assert_allclose(result.corrected_y, y - result.background, rtol=0.0, atol=0.0)
     assert all(
@@ -160,7 +160,7 @@ def test_physical_width_raw_model_matches_point_kernel() -> None:
 
 def test_default_pipeline_matches_explicit_chebyshev_fit_and_pattern_boundary() -> None:
     x, y = peak_rich_signal()
-    model = rietveld.SmoothBrucknerBackground()
+    model = phasesmith.SmoothBrucknerBackground()
     result = model.subtract(x, y)
     normalized_x = 2.0 * (x - x[0]) / (x[-1] - x[0]) - 1.0
     expected_coefficients = np.polynomial.chebyshev.chebfit(
@@ -171,7 +171,7 @@ def test_default_pipeline_matches_explicit_chebyshev_fit_and_pattern_boundary() 
     expected = np.polynomial.chebyshev.chebval(normalized_x, expected_coefficients)
     np.testing.assert_allclose(result.background, expected, rtol=0.0, atol=0.0)
     np.testing.assert_array_equal(model.estimate(x, y), result.background)
-    pattern = rietveld.PowderPattern(x, observed_y=y, background=result.background)
+    pattern = phasesmith.PowderPattern(x, observed_y=y, background=result.background)
     np.testing.assert_array_equal(pattern.background, result.background)
     np.testing.assert_array_equal(pattern.observed_y - pattern.background, result.corrected_y)
     assert "xypattern" not in sys.modules
@@ -181,32 +181,32 @@ def test_physical_width_model_rejects_ambiguous_or_invalid_configuration() -> No
     x = np.linspace(1.0, 2.0, 20)
     y = np.ones_like(x)
     with pytest.raises(ValueError, match="smooth_width"):
-        rietveld.SmoothBrucknerBackground(smooth_width=-0.1)
+        phasesmith.SmoothBrucknerBackground(smooth_width=-0.1)
     with pytest.raises(ValueError, match="smooth_width"):
-        rietveld.SmoothBrucknerBackground(smooth_width=np.inf)
+        phasesmith.SmoothBrucknerBackground(smooth_width=np.inf)
     with pytest.raises(TypeError, match="iterations"):
-        rietveld.SmoothBrucknerBackground(iterations=1.5)  # type: ignore[arg-type]
+        phasesmith.SmoothBrucknerBackground(iterations=1.5)  # type: ignore[arg-type]
     with pytest.raises(ValueError, match="chebyshev_order"):
-        rietveld.SmoothBrucknerBackground(chebyshev_order=-1)
+        phasesmith.SmoothBrucknerBackground(chebyshev_order=-1)
     with pytest.raises(ValueError, match="at least two"):
-        rietveld.SmoothBrucknerBackground(chebyshev_order=None).estimate([1.0], [2.0])
+        phasesmith.SmoothBrucknerBackground(chebyshev_order=None).estimate([1.0], [2.0])
     with pytest.raises(ValueError, match="same shape"):
-        rietveld.SmoothBrucknerBackground(chebyshev_order=None).estimate(x, y[:-1])
+        phasesmith.SmoothBrucknerBackground(chebyshev_order=None).estimate(x, y[:-1])
     with pytest.raises(ValueError, match="strictly increasing"):
-        rietveld.SmoothBrucknerBackground(chebyshev_order=None).estimate(x[::-1], y)
+        phasesmith.SmoothBrucknerBackground(chebyshev_order=None).estimate(x[::-1], y)
     nonuniform = x.copy()
     nonuniform[10:] += 0.01
     with pytest.raises(ValueError, match="uniformly spaced"):
-        rietveld.SmoothBrucknerBackground(chebyshev_order=None).estimate(nonuniform, y)
+        phasesmith.SmoothBrucknerBackground(chebyshev_order=None).estimate(nonuniform, y)
     with pytest.raises(ValueError, match="smaller than"):
-        rietveld.SmoothBrucknerBackground(chebyshev_order=x.size).estimate(x, y)
+        phasesmith.SmoothBrucknerBackground(chebyshev_order=x.size).estimate(x, y)
 
 
 def test_result_public_constructor_copies_inputs_and_validates_shape() -> None:
     values = np.arange(4.0)
-    result = rietveld.BackgroundSubtractionResult(values, values, values, 1)
+    result = phasesmith.BackgroundSubtractionResult(values, values, values, 1)
     values[0] = 99.0
     assert result.background[0] == 0.0
     assert not result.background.flags.writeable
     with pytest.raises(ValueError, match="same shape"):
-        rietveld.BackgroundSubtractionResult(np.ones(2), np.ones(3), np.ones(2), 1)
+        phasesmith.BackgroundSubtractionResult(np.ones(2), np.ones(3), np.ones(2), 1)

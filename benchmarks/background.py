@@ -10,7 +10,7 @@ from collections.abc import Callable
 from typing import Any
 
 import numpy as np
-import rietveld
+import phasesmith
 
 
 def measure(operation: Callable[[], Any], warmups: int, repetitions: int) -> list[float]:
@@ -68,19 +68,19 @@ def main() -> None:
         raise ValueError("benchmark counts and widths are outside their valid ranges")
     if arguments.chebyshev_order >= arguments.samples:
         raise ValueError("chebyshev order must be smaller than the sample count")
-    if arguments.require_release and rietveld._core.BUILD_MODE != "release":
-        raise RuntimeError(f"release extension required, imported {rietveld._core.BUILD_MODE!r}")
+    if arguments.require_release and phasesmith._core.BUILD_MODE != "release":
+        raise RuntimeError(f"release extension required, imported {phasesmith._core.BUILD_MODE!r}")
 
     x, y = benchmark_signal(arguments.samples, arguments.peaks)
     spacing = float(x[1] - x[0])
     smooth_points = int(arguments.smooth_width / spacing)
-    model = rietveld.SmoothBrucknerBackground(
+    model = phasesmith.SmoothBrucknerBackground(
         arguments.smooth_width,
         arguments.iterations,
         arguments.chebyshev_order,
     )
     native = measure(
-        lambda: rietveld.smooth_bruckner(y, smooth_points, arguments.iterations),
+        lambda: phasesmith.smooth_bruckner(y, smooth_points, arguments.iterations),
         arguments.warmups,
         arguments.repetitions,
     )
@@ -92,7 +92,7 @@ def main() -> None:
     print(
         json.dumps(
             {
-                "build_mode": rietveld._core.BUILD_MODE,
+                "build_mode": phasesmith._core.BUILD_MODE,
                 "samples": arguments.samples,
                 "peaks": arguments.peaks,
                 "iterations": arguments.iterations,

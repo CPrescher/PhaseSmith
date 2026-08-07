@@ -6,7 +6,7 @@ import argparse
 import time
 
 import numpy as np
-from rietveld.reference import profile_fcj
+from phasesmith.reference import profile_fcj
 
 
 def parse_args() -> argparse.Namespace:

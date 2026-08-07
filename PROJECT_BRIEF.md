@@ -1,8 +1,8 @@
-# Rietveld Engine Project Brief
+# PhaseSmith Project Brief
 
 ## Purpose
 
-Rietveld Engine is a modern, open-source powder-diffraction computation
+PhaseSmith is a modern, open-source powder-diffraction computation
 library. Its numerical kernels are written in Rust and exposed through a small,
 typed Python API. The first product layer is a trustworthy and fast
 powder-profile calculator. Refinement orchestration follows only after the
@@ -88,7 +88,7 @@ Unit 18 starts with practical real-pattern usability while preserving the
 numerical/refinement boundaries. Its first slice is a native, deterministic
 Smooth Bruckner background estimator compatible with the pinned MIT-licensed
 xypattern implementation used by Dioptas-style workflows. It is exposed as
-plain-array preprocessing under `rietveld.background`; it never imports
+plain-array preprocessing under `phasesmith.background`; it never imports
 Dioptas or xypattern and is not inserted into the differentiable refinement
 model. The raw smoothed envelope and the optional Chebyshev-compressed
 background are both scriptable, and the result can be passed directly into a
@@ -209,21 +209,21 @@ documented; GSAS-II itself is never vendored.
 
 ## Architecture
 
-- `crates/rietveld-core`: dependency-light numerical types and kernels.
+- `crates/phasesmith-core`: dependency-light numerical types and kernels.
 - Numerical primitives such as CW width laws and FCJ geometry remain separate;
   explicit composition modules fuse them for production accumulation.
-- `crates/rietveld-py`: PyO3 extension exposing array-oriented functions.
-- `crates/rietveld-crystallography`: file-independent cell, exact symmetry,
+- `crates/phasesmith-py`: PyO3 extension exposing array-oriented functions.
+- `crates/phasesmith-crystallography`: file-independent cell, exact symmetry,
   reflection-generation, and P1 structure-factor kernels; scattering follows.
-- `crates/rietveld-engine`: native composition facade; structural-intensity
+- `crates/phasesmith-engine`: native composition facade; structural-intensity
   composition with the support-limited profile kernel and structural JVP/VJP.
-- `python/rietveld`: public Python package, separated instrument/phase/pattern/
+- `python/phasesmith`: public Python package, separated instrument/phase/pattern/
   calculation/refinement modules, reference implementation, optional
   integrations, and validation tooling.
-- `python/rietveld/background`: model-independent background estimation and
+- `python/phasesmith/background`: model-independent background estimation and
   subtraction preprocessing. Refinable additive background models remain in
-  `python/rietveld/refinement/background`.
-- `python/rietveld/io`: optional format adapters; CIF uses a lazy Gemmi backend
+  `python/phasesmith/refinement/background`.
+- `python/phasesmith/io`: optional format adapters; CIF uses a lazy Gemmi backend
   and returns only parser-independent structures and diagnostics.
 - `tests`: Python differential and contract tests.
 - `benchmarks`: end-to-end Python benchmarks and stored methodology.

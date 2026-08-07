@@ -14,7 +14,7 @@ structures.
 The [pinned GSAS-II object/variable documentation](https://gsas-ii.readthedocs.io/en/latest/objvarorg.html)
 documents these externally visible concepts:
 
-| Concept | Pinned GSAS-II observation | Rietveld Engine unit-11 convention |
+| Concept | Pinned GSAS-II observation | PhaseSmith unit-11 convention |
 | --- | --- | --- |
 | Cell | `A0` through `A5` are reciprocal-metric components | Direct `a`, `b`, `c`, `alpha`, `beta`, `gamma` with analytical metric conversion |
 | Coordinates | `Ax`, `Ay`, `Az` are fractional atom coordinates | Fractional `site.<id>.x/y/z` |
@@ -60,7 +60,7 @@ For each base/plus/minus state it records plain arrays/records only:
 
 The public scripting API is used first. Any missing intermediate receives one
 narrowly named, revision-gated copied-value probe. The generator imports no
-`rietveld` module. Fixture regeneration is explicit and reviewed.
+`phasesmith` module. Fixture regeneration is explicit and reviewed.
 
 ## Required comparisons
 

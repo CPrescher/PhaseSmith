@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compare Rietveld Engine and pinned GSAS-II CW profile performance."""
+"""Compare PhaseSmith and pinned GSAS-II CW profile performance."""
 
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
-import rietveld
+import phasesmith
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 WORKER = REPOSITORY_ROOT / "oracle" / "scripts" / "benchmark_cw_profile.py"
@@ -26,9 +26,9 @@ SCOPE = "symmetric_cw_profile_values_and_analytical_derivatives"
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--gsas-python", type=Path, default=os.environ.get("GSASII_PYTHON"))
-    parser.add_argument("--gsas-root", type=Path, default=os.environ.get("RIETVELD_GSASII_ROOT"))
+    parser.add_argument("--gsas-root", type=Path, default=os.environ.get("PHASESMITH_GSASII_ROOT"))
     parser.add_argument(
-        "--binary-dir", type=Path, default=os.environ.get("RIETVELD_GSASII_BINARY_DIR")
+        "--binary-dir", type=Path, default=os.environ.get("PHASESMITH_GSASII_BINARY_DIR")
     )
     parser.add_argument("--peaks", type=int, default=200)
     parser.add_argument("--samples", type=int, default=5_001)
@@ -47,12 +47,12 @@ def percentile(values: list[float], fraction: float) -> float:
 
 def benchmark_inputs(
     peak_count: int, sample_count: int
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, rietveld.ConstantWavelengthInstrument]:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, phasesmith.ConstantWavelengthInstrument]:
     x = np.linspace(10.0, 110.0, sample_count, dtype=np.float64)
     index = np.arange(peak_count, dtype=np.float64)
     positions = 10.1 + index * (99.7 / peak_count)
     intensities = 100.0 + np.mod(index, 31.0)
-    instrument = rietveld.ConstantWavelengthInstrument(
+    instrument = phasesmith.ConstantWavelengthInstrument(
         wavelength_angstrom=1.5406,
         u_deg2=2.0e-4,
         v_deg2=-1.0e-4,
@@ -90,7 +90,7 @@ def normalized_maximum_error(actual: np.ndarray, expected: np.ndarray) -> float:
 
 
 def validate_outputs(
-    engine_result: rietveld.AccumulationResult, oracle_output: dict[str, np.ndarray]
+    engine_result: phasesmith.AccumulationResult, oracle_output: dict[str, np.ndarray]
 ) -> dict[str, float]:
     local = engine_result.derivatives.local
     np.testing.assert_array_equal(oracle_output["starts"], local.starts)
@@ -138,15 +138,15 @@ def main() -> None:
         )
     if arguments.gsas_python is None or arguments.gsas_root is None:
         raise RuntimeError(
-            "set --gsas-python and --gsas-root (or GSASII_PYTHON and RIETVELD_GSASII_ROOT)"
+            "set --gsas-python and --gsas-root (or GSASII_PYTHON and PHASESMITH_GSASII_ROOT)"
         )
-    if arguments.require_release and rietveld._core.BUILD_MODE != "release":
-        raise RuntimeError(f"release extension required, imported {rietveld._core.BUILD_MODE!r}")
+    if arguments.require_release and phasesmith._core.BUILD_MODE != "release":
+        raise RuntimeError(f"release extension required, imported {phasesmith._core.BUILD_MODE!r}")
 
     x, positions, intensities, instrument = benchmark_inputs(arguments.peaks, arguments.samples)
 
-    def operation() -> rietveld.AccumulationResult:
-        return rietveld.accumulate_cw(
+    def operation() -> phasesmith.AccumulationResult:
+        return phasesmith.accumulate_cw(
             x,
             positions,
             intensities,
@@ -157,7 +157,7 @@ def main() -> None:
     engine_result, engine_timings = measure(operation, arguments.warmups, arguments.repetitions)
     assert engine_result is not None
 
-    with tempfile.TemporaryDirectory(prefix="rietveld-gsasii-benchmark-") as temporary:
+    with tempfile.TemporaryDirectory(prefix="phasesmith-gsasii-benchmark-") as temporary:
         directory = Path(temporary)
         input_path = directory / "input.npz"
         output_path = directory / "output.npz"
@@ -227,29 +227,29 @@ def main() -> None:
             "outputs": ["profile", "local_intensity_position_derivatives", "uvwxy_derivatives"],
         },
         "numerical_normalized_maximum_errors": errors,
-        "rietveld_engine": {
-            "build_mode": rietveld._core.BUILD_MODE,
+        "phasesmith": {
+            "build_mode": phasesmith._core.BUILD_MODE,
             "python_version": platform.python_version(),
             "numpy_version": np.__version__,
             "platform": platform.platform(),
             **engine_summary,
         },
         "gsasii": gsas_report,
-        "median_speed_ratio_gsasii_over_rietveld": ratio,
+        "median_speed_ratio_gsasii_over_phasesmith": ratio,
     }
     print(
         f"scope={SCOPE} peaks={arguments.peaks} samples={arguments.samples} "
         f"active_peak_samples={engine_result.derivatives.local.active_sample_count}"
     )
     print(
-        f"rietveld_engine build_mode={rietveld._core.BUILD_MODE} "
+        f"phasesmith build_mode={phasesmith._core.BUILD_MODE} "
         f"median_ms={engine_summary['median_ms']:.3f} p95_ms={engine_summary['p95_ms']:.3f}"
     )
     print(
         f"gsasii revision={PINNED_REVISION[:12]} median_ms={gsas_report['median_ms']:.3f} "
         f"p95_ms={gsas_report['p95_ms']:.3f}"
     )
-    print(f"median_speed_ratio_gsasii_over_rietveld={ratio:.3f}x")
+    print(f"median_speed_ratio_gsasii_over_phasesmith={ratio:.3f}x")
     print(
         "normalized_maximum_errors="
         + ",".join(f"{name}:{value:.3e}" for name, value in errors.items())

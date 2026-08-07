@@ -4,10 +4,10 @@ import hashlib
 from pathlib import Path
 
 import numpy as np
-import rietveld
-from rietveld.oracle import load_fixture
-from rietveld.oracle._pinned_probe import PINNED_REVISION
-from rietveld.refinement import lebail
+import phasesmith
+from phasesmith.oracle import load_fixture
+from phasesmith.oracle._pinned_probe import PINNED_REVISION
+from phasesmith.refinement import lebail
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 FIXTURE_PATH = REPOSITORY_ROOT / "oracle" / "fixtures" / "lebail_v1"
@@ -15,14 +15,14 @@ FIXTURE_PATH = REPOSITORY_ROOT / "oracle" / "fixtures" / "lebail_v1"
 
 def _models() -> tuple[
     object,
-    rietveld.ConstantWavelengthInstrument,
-    rietveld.PowderPattern,
-    rietveld.Phase,
+    phasesmith.ConstantWavelengthInstrument,
+    phasesmith.PowderPattern,
+    phasesmith.Phase,
 ]:
     fixture = load_fixture(FIXTURE_PATH)
     reflection_list = fixture.arrays["reflection_list"]
     values = fixture.manifest["input_parameters"]["instrument"]
-    instrument = rietveld.ConstantWavelengthInstrument(
+    instrument = phasesmith.ConstantWavelengthInstrument(
         wavelength_angstrom=values["wavelength_angstrom"],
         u_deg2=values["u_gsas_centideg2"] * 1.0e-4,
         v_deg2=values["v_gsas_centideg2"] * 1.0e-4,
@@ -30,20 +30,20 @@ def _models() -> tuple[
         x_deg=values["x_gsas_centideg"] * 1.0e-2,
         y_deg=values["y_gsas_centideg"] * 1.0e-2,
     )
-    pattern = rietveld.PowderPattern(
+    pattern = phasesmith.PowderPattern(
         fixture.arrays["x_deg"],
         observed_y=fixture.arrays["observed_y"],
         background=fixture.arrays["background"],
         uncertainty=1.0 / np.sqrt(fixture.arrays["weight"]),
     )
-    reflections = rietveld.ReflectionBatch(
+    reflections = phasesmith.ReflectionBatch(
         [f"oracle-{index}" for index in range(reflection_list.shape[0])],
         reflection_list[:, :3].astype(np.int64),
         reflection_list[:, 4],
         reflection_list[:, 5],
         np.ones(reflection_list.shape[0]),
     )
-    return fixture, instrument, pattern, rietveld.Phase("alpha", "Oracle alpha", reflections)
+    return fixture, instrument, pattern, phasesmith.Phase("alpha", "Oracle alpha", reflections)
 
 
 def test_lebail_fixture_records_pin_generator_and_public_outputs() -> None:
@@ -85,7 +85,7 @@ def test_lebail_group_intensities_profile_parameters_and_ycalc_against_oracle() 
             rtol=1.1e-3,
         )
 
-    widths = rietveld.cw_profile_parameters(reflection_list[:, 5], instrument)
+    widths = phasesmith.cw_profile_parameters(reflection_list[:, 5], instrument)
     np.testing.assert_allclose(
         1.0e4 * widths.gaussian_variance_deg2,
         reflection_list[:, 6],

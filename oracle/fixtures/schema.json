@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://rietveld-engine.invalid/oracle/fixture-v1.schema.json",
-  "title": "Rietveld Engine GSAS-II oracle fixture",
+  "$id": "https://phasesmith.invalid/oracle/fixture-v1.schema.json",
+  "title": "PhaseSmith GSAS-II oracle fixture",
   "type": "object",
   "additionalProperties": false,
   "required": [

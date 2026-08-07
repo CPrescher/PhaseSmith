@@ -9,48 +9,48 @@ import time
 from functools import partial
 
 import numpy as np
-import rietveld
-from rietveld.refinement import (
+import phasesmith
+from phasesmith.refinement import (
     AmorphousBackground,
     AmorphousPeak,
     ChebyshevBackground,
     CompositeBackground,
 )
-from rietveld.refinement import rietveld as structural_refinement
+from phasesmith.refinement import rietveld as structural_refinement
 
 
 def benchmark_case(
-    probe: rietveld.RadiationProbe,
+    probe: phasesmith.RadiationProbe,
     samples: int,
 ) -> tuple[
-    rietveld.PowderPattern,
-    rietveld.ConstantWavelengthExperiment,
-    tuple[rietveld.RietveldPhase, ...],
+    phasesmith.PowderPattern,
+    phasesmith.ConstantWavelengthExperiment,
+    tuple[phasesmith.RietveldPhase, ...],
     CompositeBackground,
 ]:
     """Construct one deterministic multi-physics monochromatic workload."""
 
     x = np.linspace(12.0, 120.0, samples)
-    wavelength = 1.5406 if probe is rietveld.RadiationProbe.X_RAY else 1.8
-    instrument = rietveld.ConstantWavelengthInstrument(
+    wavelength = 1.5406 if probe is phasesmith.RadiationProbe.X_RAY else 1.8
+    instrument = phasesmith.ConstantWavelengthInstrument(
         wavelength, 2.0e-4, -1.0e-4, 2.0e-4, 1.5e-3, 3.0e-3
     )
     experiment = (
-        rietveld.ConstantWavelengthExperiment(
-            rietveld.MonochromaticRadiation.x_ray(wavelength),
+        phasesmith.ConstantWavelengthExperiment(
+            phasesmith.MonochromaticRadiation.x_ray(wavelength),
             instrument,
             zero_shift_deg=0.012,
-            geometry=rietveld.BraggBrentanoGeometry(240.0, 0.12),
+            geometry=phasesmith.BraggBrentanoGeometry(240.0, 0.12),
         )
-        if probe is rietveld.RadiationProbe.X_RAY
-        else rietveld.ConstantWavelengthExperiment(
-            rietveld.MonochromaticRadiation.neutron(wavelength),
+        if probe is phasesmith.RadiationProbe.X_RAY
+        else phasesmith.ConstantWavelengthExperiment(
+            phasesmith.MonochromaticRadiation.neutron(wavelength),
             instrument,
             zero_shift_deg=-0.008,
         )
     )
     sites = tuple(
-        rietveld.AtomSite(
+        phasesmith.AtomSite(
             f"site-{index}",
             f"{'Si' if index % 2 == 0 else 'O'}{index}",
             "Si" if index % 2 == 0 else "O",
@@ -65,39 +65,39 @@ def benchmark_case(
         )
         for index in range(8)
     )
-    structure = rietveld.CrystalStructure(
+    structure = phasesmith.CrystalStructure(
         "benchmark",
         "Practical workflow benchmark",
-        rietveld.UnitCell(5.2, 5.2, 5.2, 90.0, 90.0, 90.0),
-        rietveld.SpaceGroup.p1(),
+        phasesmith.UnitCell(5.2, 5.2, 5.2, 90.0, 90.0, 90.0),
+        phasesmith.SpaceGroup.p1(),
         sites,
     )
-    generated = rietveld.PreparedReflectionGenerator(structure.space_group).generate(
+    generated = phasesmith.PreparedReflectionGenerator(structure.space_group).generate(
         structure.cell,
-        rietveld.CwTwoThetaRange(12.0, 120.0, wavelength),
+        phasesmith.CwTwoThetaRange(12.0, 120.0, wavelength),
     )
-    metric = rietveld.ReciprocalMetric(structure.cell.geometry().reciprocal_metric)
-    physics = rietveld.CompositePhysicsProvider(
+    metric = phasesmith.ReciprocalMetric(structure.cell.geometry().reciprocal_metric)
+    physics = phasesmith.CompositePhysicsProvider(
         (
-            rietveld.IsotropicSizeBroadening(85.0),
-            rietveld.IsotropicMicrostrainBroadening(5.0e-4),
-            rietveld.MarchDollasePreferredOrientation(0.88, (0.0, 0.0, 1.0), metric),
+            phasesmith.IsotropicSizeBroadening(85.0),
+            phasesmith.IsotropicMicrostrainBroadening(5.0e-4),
+            phasesmith.MarchDollasePreferredOrientation(0.88, (0.0, 0.0, 1.0), metric),
         )
     )
-    phase = rietveld.RietveldPhase(
+    phase = phasesmith.RietveldPhase(
         "alpha",
         "Benchmark alpha",
         structure,
-        rietveld.StructuralReflectionBatch.from_generated(generated),
+        phasesmith.StructuralReflectionBatch.from_generated(generated),
         (
-            rietveld.XrayNonResonant()
-            if probe is rietveld.RadiationProbe.X_RAY
-            else rietveld.NeutronNuclear()
+            phasesmith.XrayNonResonant()
+            if probe is phasesmith.RadiationProbe.X_RAY
+            else phasesmith.NeutronNuclear()
         ),
         (
-            rietveld.BraggBrentanoUnpolarizedLp(wavelength)
-            if probe is rietveld.RadiationProbe.X_RAY
-            else rietveld.NeutralIntegratedIntensityCorrection()
+            phasesmith.BraggBrentanoUnpolarizedLp(wavelength)
+            if probe is phasesmith.RadiationProbe.X_RAY
+            else phasesmith.NeutralIntegratedIntensityCorrection()
         ),
         physics=physics,
     )
@@ -108,7 +108,7 @@ def benchmark_case(
             AmorphousBackground("glass", (AmorphousPeak(25.0, 48.0, 15.0),)),
         ),
     )
-    return rietveld.PowderPattern(x), experiment, (phase,), background
+    return phasesmith.PowderPattern(x), experiment, (phase,), background
 
 
 def main() -> None:
@@ -119,10 +119,10 @@ def main() -> None:
     arguments = parser.parse_args()
     if arguments.samples < 2 or arguments.repeats <= 0:
         raise ValueError("samples must be at least two and repeats positive")
-    if arguments.require_release and rietveld._core.BUILD_MODE != "release":
-        raise RuntimeError(f"release extension required, imported {rietveld._core.BUILD_MODE!r}")
+    if arguments.require_release and phasesmith._core.BUILD_MODE != "release":
+        raise RuntimeError(f"release extension required, imported {phasesmith._core.BUILD_MODE!r}")
     reports = {}
-    for probe in (rietveld.RadiationProbe.X_RAY, rietveld.RadiationProbe.NEUTRON):
+    for probe in (phasesmith.RadiationProbe.X_RAY, phasesmith.RadiationProbe.NEUTRON):
         pattern, experiment, phases, background = benchmark_case(probe, arguments.samples)
 
         operation = partial(

@@ -5,10 +5,10 @@ import json
 from dataclasses import dataclass, replace
 
 import numpy as np
+import phasesmith
 import pytest
-import rietveld
-from rietveld import persistence
-from rietveld.refinement import (
+from phasesmith import persistence
+from phasesmith.refinement import (
     AffineConstraint,
     AmorphousBackground,
     AmorphousPeak,
@@ -21,11 +21,11 @@ from rietveld.refinement import (
     PolynomialBackground,
     lebail,
 )
-from rietveld.refinement import rietveld as structural_refinement
+from phasesmith.refinement import rietveld as structural_refinement
 
 
-def instrument() -> rietveld.ConstantWavelengthInstrument:
-    return rietveld.ConstantWavelengthInstrument(
+def instrument() -> phasesmith.ConstantWavelengthInstrument:
+    return phasesmith.ConstantWavelengthInstrument(
         1.5406,
         2.0e-4,
         -1.0e-4,
@@ -35,24 +35,24 @@ def instrument() -> rietveld.ConstantWavelengthInstrument:
     )
 
 
-def phase(intensities: np.ndarray) -> rietveld.Phase:
+def phase(intensities: np.ndarray) -> phasesmith.Phase:
     positions = np.array([39.9, 40.1])
     d_spacing = instrument().wavelength_angstrom / (2.0 * np.sin(np.deg2rad(positions / 2.0)))
-    physics = rietveld.CompositePhysicsProvider(
+    physics = phasesmith.CompositePhysicsProvider(
         (
-            rietveld.IsotropicSizeBroadening(80.0),
-            rietveld.IsotropicMicrostrainBroadening(3.0e-4),
-            rietveld.MarchDollasePreferredOrientation(
+            phasesmith.IsotropicSizeBroadening(80.0),
+            phasesmith.IsotropicMicrostrainBroadening(3.0e-4),
+            phasesmith.MarchDollasePreferredOrientation(
                 0.8,
                 (0.0, 0.0, 1.0),
-                rietveld.ReciprocalMetric.orthogonal(4.0, 4.0, 4.0),
+                phasesmith.ReciprocalMetric.orthogonal(4.0, 4.0, 4.0),
             ),
         )
     )
-    return rietveld.Phase(
+    return phasesmith.Phase(
         "alpha",
         "Alpha",
-        rietveld.ReflectionBatch(
+        phasesmith.ReflectionBatch(
             ["alpha-100", "alpha-110"],
             [[1, 0, 0], [1, 1, 0]],
             d_spacing,
@@ -64,45 +64,45 @@ def phase(intensities: np.ndarray) -> rietveld.Phase:
     )
 
 
-def structural_phase() -> rietveld.RietveldPhase:
-    structure = rietveld.CrystalStructure(
+def structural_phase() -> phasesmith.RietveldPhase:
+    structure = phasesmith.CrystalStructure(
         "structure-alpha",
         "Structural alpha",
-        rietveld.UnitCell(4.1, 4.1, 4.1, 90.0, 90.0, 90.0),
-        rietveld.SpaceGroup.p1(),
+        phasesmith.UnitCell(4.1, 4.1, 4.1, 90.0, 90.0, 90.0),
+        phasesmith.SpaceGroup.p1(),
         (
-            rietveld.AtomSite("si", "Si1", "Si", "Si", (0.1, 0.2, 0.3), 0.9, 0.012),
-            rietveld.AtomSite("o", "O1", "O", "O", (0.4, 0.5, 0.6), 1.0, 0.018),
+            phasesmith.AtomSite("si", "Si1", "Si", "Si", (0.1, 0.2, 0.3), 0.9, 0.012),
+            phasesmith.AtomSite("o", "O1", "O", "O", (0.4, 0.5, 0.6), 1.0, 0.018),
         ),
     )
-    return rietveld.RietveldPhase(
+    return phasesmith.RietveldPhase(
         "structural-alpha",
         "Structural alpha",
         structure,
-        rietveld.StructuralReflectionBatch(
+        phasesmith.StructuralReflectionBatch(
             ("1,0,0", "1,1,0"),
             [[1, 0, 0], [1, 1, 0]],
             [2, 4],
         ),
-        rietveld.XrayNonResonant(),
-        rietveld.BraggBrentanoUnpolarizedLp(instrument().wavelength_angstrom),
+        phasesmith.XrayNonResonant(),
+        phasesmith.BraggBrentanoUnpolarizedLp(instrument().wavelength_angstrom),
         scale=1.25,
-        physics=rietveld.IsotropicSizeBroadening(75.0),
+        physics=phasesmith.IsotropicSizeBroadening(75.0),
         coordinate_tolerance=2.0e-10,
     )
 
 
-def refinement_models() -> tuple[rietveld.PowderPattern, rietveld.Phase, lebail.LeBailResult]:
+def refinement_models() -> tuple[phasesmith.PowderPattern, phasesmith.Phase, lebail.LeBailResult]:
     x = np.linspace(38.0, 42.0, 2001)
     truth = phase(np.array([7.0, 4.0]))
     background = 0.2 + 0.01 * (x - x[0])
-    calculated = rietveld.calculate_pattern(
-        rietveld.PowderPattern(x, background=background),
+    calculated = phasesmith.calculate_pattern(
+        phasesmith.PowderPattern(x, background=background),
         instrument(),
         (truth,),
-        options=rietveld.CalculationOptions(return_phase_components=True),
+        options=phasesmith.CalculationOptions(return_phase_components=True),
     )
-    pattern = rietveld.PowderPattern(
+    pattern = phasesmith.PowderPattern(
         x,
         observed_y=calculated.y,
         background=background,
@@ -118,11 +118,11 @@ def refinement_models() -> tuple[rietveld.PowderPattern, rietveld.Phase, lebail.
 
 
 def dynamic_lebail_phase() -> lebail.LeBailPhase:
-    structure = rietveld.CrystalStructure(
+    structure = phasesmith.CrystalStructure(
         "dynamic-alpha",
         "Dynamic alpha",
-        rietveld.UnitCell(4.0, 5.0, 6.0, 78.0, 82.0, 73.0),
-        rietveld.SpaceGroup.p1(),
+        phasesmith.UnitCell(4.0, 5.0, 6.0, 78.0, 82.0, 73.0),
+        phasesmith.SpaceGroup.p1(),
     )
     parameterization = LatticeParameterization(structure.space_group, structure.cell)
     bounds = LatticeParameterBounds.around(
@@ -145,11 +145,11 @@ def test_full_bundle_round_trips_models_results_arrays_and_resume(tmp_path) -> N
     bundle = persistence.PersistenceBundle(
         pattern=pattern,
         instrument=instrument(),
-        experiment=rietveld.ConstantWavelengthExperiment.neutron(instrument()),
-        fcj_geometry=rietveld.FcjGeometry(0.01, 0.02),
-        wavelength_components=rietveld.WavelengthComponents.doublet(1.5406, 1.5444, 0.5),
+        experiment=phasesmith.ConstantWavelengthExperiment.neutron(instrument()),
+        fcj_geometry=phasesmith.FcjGeometry(0.01, 0.02),
+        wavelength_components=phasesmith.WavelengthComponents.doublet(1.5406, 1.5444, 0.5),
         phases=(starting,),
-        calculation_options=rietveld.CalculationOptions(
+        calculation_options=phasesmith.CalculationOptions(
             support_fwhm=15.0,
             return_phase_components=True,
         ),
@@ -169,10 +169,10 @@ def test_full_bundle_round_trips_models_results_arrays_and_resume(tmp_path) -> N
     assert restored.lebail_options == bundle.lebail_options
     assert restored.parameters == parameters
     assert restored.constraints == constraints
-    assert isinstance(restored.instrument, rietveld.ConstantWavelengthInstrument)
+    assert isinstance(restored.instrument, phasesmith.ConstantWavelengthInstrument)
     assert restored.instrument == instrument()
-    assert restored.experiment == rietveld.ConstantWavelengthExperiment.neutron(instrument())
-    assert restored.fcj_geometry == rietveld.FcjGeometry(0.01, 0.02)
+    assert restored.experiment == phasesmith.ConstantWavelengthExperiment.neutron(instrument())
+    assert restored.fcj_geometry == phasesmith.FcjGeometry(0.01, 0.02)
     assert restored.wavelength_components is not None
     np.testing.assert_array_equal(
         restored.wavelength_components.wavelengths_angstrom,
@@ -181,7 +181,7 @@ def test_full_bundle_round_trips_models_results_arrays_and_resume(tmp_path) -> N
     assert restored.pattern is not None
     np.testing.assert_array_equal(restored.pattern.x, pattern.x)
     np.testing.assert_array_equal(restored.pattern.mask, pattern.mask)
-    assert isinstance(restored.phases[0].physics, rietveld.CompositePhysicsProvider)
+    assert isinstance(restored.phases[0].physics, phasesmith.CompositePhysicsProvider)
     assert len(restored.phases[0].physics.providers) == 3
     assert restored.lebail_result is not None
     assert restored.calculation_result is not None
@@ -215,10 +215,10 @@ def test_full_bundle_round_trips_models_results_arrays_and_resume(tmp_path) -> N
 def test_parameter_change_history_round_trips(tmp_path) -> None:
     x = np.linspace(39.0, 41.0, 4001)
     truth = phase(np.array([8.0, 0.0]))
-    truth = rietveld.Phase(
+    truth = phasesmith.Phase(
         truth.phase_id,
         truth.name,
-        rietveld.ReflectionBatch(
+        phasesmith.ReflectionBatch(
             ["alpha-100"],
             [[1, 0, 0]],
             truth.reflections.d_spacing_angstrom[:1],
@@ -226,11 +226,11 @@ def test_parameter_change_history_round_trips(tmp_path) -> None:
             [8.0],
         ),
     )
-    calculated = rietveld.calculate_pattern(rietveld.PowderPattern(x), instrument(), (truth,))
-    starting = rietveld.Phase(
+    calculated = phasesmith.calculate_pattern(phasesmith.PowderPattern(x), instrument(), (truth,))
+    starting = phasesmith.Phase(
         truth.phase_id,
         truth.name,
-        rietveld.ReflectionBatch(
+        phasesmith.ReflectionBatch(
             ["alpha-100"],
             [[1, 0, 0]],
             truth.reflections.d_spacing_angstrom,
@@ -238,7 +238,7 @@ def test_parameter_change_history_round_trips(tmp_path) -> None:
             [8.0],
         ),
     )
-    pattern = rietveld.PowderPattern(x, observed_y=calculated.y)
+    pattern = phasesmith.PowderPattern(x, observed_y=calculated.y)
     parameters = lebail.build_parameter_set(instrument(), (starting,), reflection_positions=True)
     result = lebail.refine(
         lebail.LeBailInput(pattern, instrument(), (starting,), parameters),
@@ -280,8 +280,10 @@ def test_multi_source_linear_constraint_round_trips(tmp_path) -> None:
 def test_dynamic_lebail_phase_domain_round_trips_and_resumes(tmp_path) -> None:
     starting = dynamic_lebail_phase()
     x = np.linspace(20.0, 80.0, 6_001)
-    calculated = rietveld.calculate_pattern(rietveld.PowderPattern(x), instrument(), (starting,))
-    pattern = rietveld.PowderPattern(x, observed_y=calculated.y)
+    calculated = phasesmith.calculate_pattern(
+        phasesmith.PowderPattern(x), instrument(), (starting,)
+    )
+    pattern = phasesmith.PowderPattern(x, observed_y=calculated.y)
     parameters = lebail.build_parameter_set(instrument(), (starting,), lattice_parameters=True)
     request = lebail.LeBailInput(pattern, instrument(), (starting,), parameters)
     first = lebail.iterate_once(request)
@@ -338,16 +340,16 @@ def test_structural_phase_round_trips_separately_from_lebail_phases(tmp_path) ->
     np.testing.assert_array_equal(
         actual.reflections.multiplicity, structural.reflections.multiplicity
     )
-    assert type(actual.scattering) is rietveld.XrayNonResonant
+    assert type(actual.scattering) is phasesmith.XrayNonResonant
     assert actual.intensity_correction == structural.intensity_correction
     assert actual.scale == structural.scale
     assert actual.coordinate_tolerance == structural.coordinate_tolerance
     assert actual.physics == structural.physics
 
-    calculation_pattern = rietveld.PowderPattern(np.linspace(10.0, 80.0, 7_001))
-    experiment = rietveld.ConstantWavelengthExperiment.x_ray(instrument())
-    expected = rietveld.calculate_structural_pattern(calculation_pattern, experiment, structural)
-    observed = rietveld.calculate_structural_pattern(calculation_pattern, experiment, actual)
+    calculation_pattern = phasesmith.PowderPattern(np.linspace(10.0, 80.0, 7_001))
+    experiment = phasesmith.ConstantWavelengthExperiment.x_ray(instrument())
+    expected = phasesmith.calculate_structural_pattern(calculation_pattern, experiment, structural)
+    observed = phasesmith.calculate_structural_pattern(calculation_pattern, experiment, actual)
     np.testing.assert_array_equal(observed.y, expected.y)
     np.testing.assert_array_equal(
         observed.reflections.integrated_intensity,
@@ -357,10 +359,10 @@ def test_structural_phase_round_trips_separately_from_lebail_phases(tmp_path) ->
 
 def test_rietveld_checkpoint_domain_and_options_round_trip_and_resume(tmp_path) -> None:
     x = np.linspace(10.0, 80.0, 7_001)
-    experiment = rietveld.ConstantWavelengthExperiment.x_ray(instrument())
+    experiment = phasesmith.ConstantWavelengthExperiment.x_ray(instrument())
     truth_phase = structural_phase()
     calculated = structural_refinement.calculate(
-        rietveld.PowderPattern(x), experiment, (truth_phase,)
+        phasesmith.PowderPattern(x), experiment, (truth_phase,)
     )
     starting_phase = replace(truth_phase, scale=0.55)
     selection = structural_refinement.RietveldParameterSelection(
@@ -368,7 +370,7 @@ def test_rietveld_checkpoint_domain_and_options_round_trip_and_resume(tmp_path) 
         lattice=False,
     )
     parameters = structural_refinement.build_parameter_set((starting_phase,), (None,), selection)
-    pattern = rietveld.PowderPattern(x, observed_y=calculated.y)
+    pattern = phasesmith.PowderPattern(x, observed_y=calculated.y)
     request = structural_refinement.RietveldInput(
         pattern,
         experiment,
@@ -490,12 +492,12 @@ def test_version_two_generic_bundle_remains_loadable(tmp_path) -> None:
 
     restored = persistence.load_bundle(path)
     assert len(restored.phases) == 1
-    assert type(restored.phases[0]) is rietveld.Phase
+    assert type(restored.phases[0]) is phasesmith.Phase
 
 
 def test_undefined_zero_pattern_ratios_round_trip_as_explicit_nulls(tmp_path) -> None:
     x = np.linspace(38.0, 42.0, 101)
-    pattern = rietveld.PowderPattern(x, observed_y=np.zeros_like(x))
+    pattern = phasesmith.PowderPattern(x, observed_y=np.zeros_like(x))
     result = lebail.iterate_once(lebail.LeBailInput(pattern, instrument(), (phase(np.ones(2)),)))
     assert np.isposinf(result.metrics.rwp)
 
@@ -512,7 +514,7 @@ def test_undefined_zero_pattern_ratios_round_trip_as_explicit_nulls(tmp_path) ->
 
 
 def test_tof_instrument_and_disabled_infinite_size_round_trip(tmp_path) -> None:
-    tof = rietveld.TofInstrument(
+    tof = phasesmith.TofInstrument(
         -0.7,
         5084.0,
         -2.6,
@@ -530,11 +532,11 @@ def test_tof_instrument_and_disabled_infinite_size_round_trip(tmp_path) -> None:
         0.0,
     )
     disabled = phase(np.ones(2))
-    disabled = rietveld.Phase(
+    disabled = phasesmith.Phase(
         disabled.phase_id,
         disabled.name,
         disabled.reflections,
-        physics=rietveld.IsotropicSizeBroadening(np.inf),
+        physics=phasesmith.IsotropicSizeBroadening(np.inf),
     )
     destination = persistence.save_bundle(
         tmp_path / "tof",
@@ -542,19 +544,19 @@ def test_tof_instrument_and_disabled_infinite_size_round_trip(tmp_path) -> None:
     )
     restored = persistence.load_bundle(destination)
     assert restored.instrument == tof
-    assert isinstance(restored.phases[0].physics, rietveld.IsotropicSizeBroadening)
+    assert isinstance(restored.phases[0].physics, phasesmith.IsotropicSizeBroadening)
     assert np.isinf(restored.phases[0].physics.crystallite_size_nm)
 
 
 @dataclass(frozen=True)
 class CustomProvider:
     amplitude: float
-    descriptor = rietveld.ProviderDescriptor("example.custom", "2")
+    descriptor = phasesmith.ProviderDescriptor("example.custom", "2")
 
-    def evaluate(self, context: rietveld.PhysicsContext) -> rietveld.PhysicsContribution:
+    def evaluate(self, context: phasesmith.PhysicsContext) -> phasesmith.PhysicsContribution:
         count = context.reflections.reflection_count
         zeros = np.zeros(count)
-        return rietveld.PhysicsContribution(
+        return phasesmith.PhysicsContribution(
             gaussian_variance_deg2=zeros,
             lorentzian_fwhm_deg=np.full(count, self.amplitude),
             intensity_multiplier=np.ones(count),
@@ -583,7 +585,7 @@ class CustomCodec:
 
 def test_custom_provider_requires_and_round_trips_through_explicit_codec(tmp_path) -> None:
     original = phase(np.ones(2))
-    custom = rietveld.Phase(
+    custom = phasesmith.Phase(
         original.phase_id,
         original.name,
         original.reflections,
@@ -626,11 +628,11 @@ def test_hash_version_and_overwrite_guards_are_enforced(tmp_path) -> None:
 
 
 def test_format_five_experiment_and_background_models_round_trip(tmp_path) -> None:
-    experiment = rietveld.ConstantWavelengthExperiment(
-        rietveld.MonochromaticRadiation.x_ray(instrument().wavelength_angstrom),
+    experiment = phasesmith.ConstantWavelengthExperiment(
+        phasesmith.MonochromaticRadiation.x_ray(instrument().wavelength_angstrom),
         instrument(),
         zero_shift_deg=0.035,
-        geometry=rietveld.BraggBrentanoGeometry(240.0, 0.18),
+        geometry=phasesmith.BraggBrentanoGeometry(240.0, 0.18),
     )
     backgrounds = (
         PolynomialBackground("power", (1.0, 0.2)),

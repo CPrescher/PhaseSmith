@@ -10,7 +10,7 @@ from collections.abc import Callable
 from typing import Any
 
 import numpy as np
-import rietveld
+import phasesmith
 
 
 def measure(operation: Callable[[], Any], warmups: int, repetitions: int) -> list[float]:
@@ -46,25 +46,25 @@ def main() -> None:
     arguments = parser.parse_args()
     if arguments.reflections <= 0 or arguments.warmups < 0 or arguments.repetitions <= 0:
         raise ValueError("reflections and repetitions must be positive; warmups non-negative")
-    if arguments.require_release and rietveld._core.BUILD_MODE != "release":
-        raise RuntimeError(f"release extension required, imported {rietveld._core.BUILD_MODE!r}")
+    if arguments.require_release and phasesmith._core.BUILD_MODE != "release":
+        raise RuntimeError(f"release extension required, imported {phasesmith._core.BUILD_MODE!r}")
 
     s = np.linspace(0.0, 5.9, arguments.reflections)
     xray_species = (
-        *(rietveld.ScatteringSpecies(key) for key in ("Si", "O", "O", "Na", "Al", "O", "O")),
-        rietveld.ScatteringSpecies("Fe", charge=3),
+        *(phasesmith.ScatteringSpecies(key) for key in ("Si", "O", "O", "Na", "Al", "O", "O")),
+        phasesmith.ScatteringSpecies("Fe", charge=3),
     )
     neutron_species = tuple(
-        rietveld.ScatteringSpecies(key) for key in ("Si", "O", "O", "Na", "Al", "O", "O", "Fe")
+        phasesmith.ScatteringSpecies(key) for key in ("Si", "O", "O", "Na", "Al", "O", "O", "Fe")
     )
-    xray = rietveld.XrayNonResonant().prepare(xray_species)
-    neutron = rietveld.NeutronNuclear().prepare(neutron_species)
+    xray = phasesmith.XrayNonResonant().prepare(xray_species)
+    neutron = phasesmith.NeutronNuclear().prepare(neutron_species)
 
     xray_timings = measure(lambda: xray.evaluate(s), arguments.warmups, arguments.repetitions)
     neutron_timings = measure(lambda: neutron.evaluate(s), arguments.warmups, arguments.repetitions)
     print(
         f"python={platform.python_version()} platform={platform.platform()} "
-        f"build_mode={rietveld._core.BUILD_MODE} reflections={arguments.reflections} "
+        f"build_mode={phasesmith._core.BUILD_MODE} reflections={arguments.reflections} "
         f"sites={len(xray_species)} xray_unique={xray.unique_species_count} "
         f"neutron_unique={neutron.unique_species_count}"
     )

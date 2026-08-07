@@ -7,8 +7,8 @@ from pathlib import Path
 from types import ModuleType
 
 import numpy as np
+import phasesmith
 import pytest
-import rietveld
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 
@@ -24,7 +24,7 @@ def load_script(relative_path: str, name: str) -> ModuleType:
 def test_comparison_workload_and_validation_contract() -> None:
     benchmark = load_script("benchmarks/compare_gsasii.py", "compare_gsasii_test")
     x, positions, intensities, instrument = benchmark.benchmark_inputs(8, 501)
-    actual = rietveld.accumulate_cw(x, positions, intensities, instrument)
+    actual = phasesmith.accumulate_cw(x, positions, intensities, instrument)
     local = actual.derivatives.local
     oracle = {
         "y": actual.y.copy(),
@@ -50,7 +50,7 @@ def test_comparison_workload_and_validation_contract() -> None:
 
 def test_external_worker_width_and_support_equations_match_public_model() -> None:
     worker = load_script("oracle/scripts/benchmark_cw_profile.py", "benchmark_cw_profile_test")
-    instrument = rietveld.ConstantWavelengthInstrument(
+    instrument = phasesmith.ConstantWavelengthInstrument(
         wavelength_angstrom=1.5406,
         u_deg2=2.0e-4,
         v_deg2=-1.0e-4,
@@ -68,7 +68,7 @@ def test_external_worker_width_and_support_equations_match_public_model() -> Non
         ]
     )
     positions = np.array([15.0, 70.0, 145.0])
-    expected = rietveld.cw_profile_parameters(positions, instrument)
+    expected = phasesmith.cw_profile_parameters(positions, instrument)
 
     for index, position in enumerate(positions):
         terms = worker.width_terms(position, instrument_array)
@@ -101,7 +101,7 @@ def test_external_worker_unit_and_derivative_chain_matches_fused_kernel() -> Non
         ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
             gaussian_sigma = np.sqrt(sigma2_centideg2) / 100.0
             gaussian_fwhm = gaussian_fwhm_per_sigma * gaussian_sigma
-            profile = rietveld.profile_tch(x - position, gaussian_fwhm, gamma_centideg / 100.0)
+            profile = phasesmith.profile_tch(x - position, gaussian_fwhm, gamma_centideg / 100.0)
             d_sigma2_d_gaussian = 20_000.0 * gaussian_fwhm / gaussian_fwhm_per_sigma**2
             return (
                 profile.value / 100.0,
@@ -111,7 +111,7 @@ def test_external_worker_unit_and_derivative_chain_matches_fused_kernel() -> Non
             )
 
     x, positions, intensities, instrument = benchmark.benchmark_inputs(12, 1_001)
-    expected = rietveld.accumulate_cw(x, positions, intensities, instrument)
+    expected = phasesmith.accumulate_cw(x, positions, intensities, instrument)
     model = np.array(
         [
             instrument.u_deg2,
@@ -140,19 +140,19 @@ def test_structural_comparison_validation_contract() -> None:
     hkl = np.array([[1, 0, 0], [1, 1, 0], [1, 1, 1]], dtype=np.int64)
     multiplicity = np.array([2, 4, 2], dtype=np.int64)
     phase = benchmark.benchmark_phase(hkl, multiplicity, 4)
-    instrument = rietveld.ConstantWavelengthInstrument(
+    instrument = phasesmith.ConstantWavelengthInstrument(
         1.5406, 2.0e-4, -1.0e-4, 1.2e-4, 1.5e-3, 3.0e-3
     )
-    structural = rietveld.calculate_structure_factor_values(
+    structural = phasesmith.calculate_structure_factor_values(
         phase.structure,
         hkl,
         multiplicity,
         phase.scattering,
         correction=phase.intensity_correction,
     )
-    pattern = rietveld.PreparedStructuralPattern(
-        rietveld.PowderPattern(np.linspace(5.0, 125.0, 2_001)),
-        rietveld.ConstantWavelengthExperiment.neutron(instrument),
+    pattern = phasesmith.PreparedStructuralPattern(
+        phasesmith.PowderPattern(np.linspace(5.0, 125.0, 2_001)),
+        phasesmith.ConstantWavelengthExperiment.neutron(instrument),
         phase,
     ).calculate()
     local = pattern.accumulation.derivatives.local
@@ -191,14 +191,14 @@ def test_structural_worker_converts_instrument_units_explicitly() -> None:
 
 def test_practical_workflow_benchmark_covers_xray_and_neutron() -> None:
     benchmark = load_script("benchmarks/practical_workflow.py", "practical_workflow_test")
-    for probe in (rietveld.RadiationProbe.X_RAY, rietveld.RadiationProbe.NEUTRON):
+    for probe in (phasesmith.RadiationProbe.X_RAY, phasesmith.RadiationProbe.NEUTRON):
         pattern, experiment, phases, background = benchmark.benchmark_case(probe, 1_001)
         result = benchmark.structural_refinement.calculate(
             pattern, experiment, phases, background=background
         )
         assert result.y.shape == (1_001,)
         assert np.isfinite(result.y).all()
-        assert phases[0].physics.providers[2].descriptor.provider_id == "rietveld.march-dollase"
+        assert phases[0].physics.providers[2].descriptor.provider_id == "phasesmith.march-dollase"
 
 
 @pytest.mark.parametrize(
@@ -226,4 +226,4 @@ def test_external_worker_does_not_import_rietveld() -> None:
         "oracle/scripts/benchmark_structural_pattern.py",
     ):
         source = (REPOSITORY_ROOT / relative_path).read_text()
-        assert "import rietveld" not in source
+        assert "import phasesmith" not in source

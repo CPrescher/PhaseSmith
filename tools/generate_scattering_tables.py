@@ -282,7 +282,7 @@ def main() -> None:
     parser.add_argument(
         "--output",
         type=Path,
-        default=Path("crates/rietveld-crystallography/src/scattering_data.rs"),
+        default=Path("crates/phasesmith-crystallography/src/scattering_data.rs"),
     )
     arguments = parser.parse_args()
     xray_source = _verify_source(

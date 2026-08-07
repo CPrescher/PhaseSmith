@@ -5,10 +5,10 @@ import json
 from pathlib import Path
 
 import numpy as np
+import phasesmith
 import pytest
-import rietveld
-from rietveld.oracle import FixtureValidationError, load_fixture
-from rietveld.oracle._pinned_probe import PINNED_REVISION
+from phasesmith.oracle import FixtureValidationError, load_fixture
+from phasesmith.oracle._pinned_probe import PINNED_REVISION
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 FIXTURE_PATH = REPOSITORY_ROOT / "oracle" / "fixtures" / "symmetric_pseudo_voigt_v1"
@@ -110,7 +110,7 @@ def test_multiphase_values_components_and_scale_rows_against_pinned_gsasii() -> 
     fixture = load_fixture(MULTIPHASE_FIXTURE_PATH)
     case = fixture.cases[0]
     values = fixture.manifest["input_parameters"]["instrument"]
-    instrument = rietveld.ConstantWavelengthInstrument(
+    instrument = phasesmith.ConstantWavelengthInstrument(
         wavelength_angstrom=values["wavelength_angstrom"],
         u_deg2=values["u_gsas_centideg2"] * 1.0e-4,
         v_deg2=values["v_gsas_centideg2"] * 1.0e-4,
@@ -121,7 +121,7 @@ def test_multiphase_values_components_and_scale_rows_against_pinned_gsasii() -> 
     parameters = case["parameters"]
     phases = []
     for index, reflection in enumerate(parameters["reflections"]):
-        batch = rietveld.ReflectionBatch(
+        batch = phasesmith.ReflectionBatch(
             [f"oracle-{index}"],
             [reflection["hkl"]],
             [reflection["d_spacing_angstrom"]],
@@ -129,14 +129,14 @@ def test_multiphase_values_components_and_scale_rows_against_pinned_gsasii() -> 
             [parameters["base_integrated_intensities"][index]],
         )
         phases.append(
-            rietveld.Phase(
+            phasesmith.Phase(
                 reflection["phase_id"],
                 reflection["phase_id"],
                 batch,
                 scale=parameters["phase_scales"][index],
             )
         )
-        widths = rietveld.cw_profile_parameters([reflection["position_deg"]], instrument)
+        widths = phasesmith.cw_profile_parameters([reflection["position_deg"]], instrument)
         assert 1.0e4 * widths.gaussian_variance_deg2[0] == pytest.approx(
             reflection["sigma2_centideg2"], rel=7e-16
         )
@@ -145,11 +145,11 @@ def test_multiphase_values_components_and_scale_rows_against_pinned_gsasii() -> 
         )
     x = fixture.arrays[case["arrays"]["x"]]
     background = np.full(x.size, parameters["background"])
-    actual = rietveld.calculate_pattern(
-        rietveld.PowderPattern(x, background=background),
+    actual = phasesmith.calculate_pattern(
+        phasesmith.PowderPattern(x, background=background),
         instrument,
         phases,
-        options=rietveld.CalculationOptions(
+        options=phasesmith.CalculationOptions(
             support_fwhm=10_000.0,
             return_phase_components=True,
         ),
@@ -210,7 +210,7 @@ def test_tof_fixture_records_pin_public_arrays_and_reflections() -> None:
     assert np.max(fixture.arrays["ycalc"]) > np.max(fixture.arrays["background"])
 
     values = fixture.manifest["input_parameters"]["instrument"]
-    instrument = rietveld.TofInstrument(
+    instrument = phasesmith.TofInstrument(
         **{
             key: value
             for key, value in values.items()
@@ -218,7 +218,7 @@ def test_tof_fixture_records_pin_public_arrays_and_reflections() -> None:
         }
     )
     reflections = fixture.arrays["reflection_list"]
-    actual = rietveld.tof_profile_parameters(reflections[:, 4], instrument)
+    actual = phasesmith.tof_profile_parameters(reflections[:, 4], instrument)
     np.testing.assert_array_equal(actual.position_us, reflections[:, 5])
     np.testing.assert_array_equal(actual.gaussian_variance_us2, reflections[:, 6])
     np.testing.assert_allclose(actual.lorentzian_fwhm_us, reflections[:, 7], rtol=9e-13)
@@ -235,7 +235,7 @@ def test_tof_profiles_derivatives_and_moments_against_pinned_gsasii(
     parameters = case["parameters"]
     x = fixture.arrays[case["arrays"]["x"]]
     gaussian_fwhm = 2.3548200450309493 * np.sqrt(parameters["sigma2_us2"])
-    actual = rietveld.profile_tof(
+    actual = phasesmith.profile_tof(
         x,
         parameters["position_us"],
         parameters["alpha_per_us"],
@@ -276,7 +276,7 @@ def test_tof_profiles_derivatives_and_moments_against_pinned_gsasii(
 def test_neutron_symmetric_and_fcj_profiles_against_pinned_gsasii(case_index: int) -> None:
     fixture = load_fixture(NEUTRON_FIXTURE_PATH)
     values = fixture.manifest["input_parameters"]["instrument"]
-    instrument = rietveld.ConstantWavelengthInstrument(
+    instrument = phasesmith.ConstantWavelengthInstrument(
         wavelength_angstrom=values["wavelength_angstrom"],
         u_deg2=values["u_gsas_centideg2"] * 1.0e-4,
         v_deg2=values["v_gsas_centideg2"] * 1.0e-4,
@@ -284,21 +284,21 @@ def test_neutron_symmetric_and_fcj_profiles_against_pinned_gsasii(case_index: in
         x_deg=values["x_gsas_centideg"] * 1.0e-2,
         y_deg=values["y_gsas_centideg"] * 1.0e-2,
     )
-    experiment = rietveld.ConstantWavelengthExperiment.neutron(instrument)
+    experiment = phasesmith.ConstantWavelengthExperiment.neutron(instrument)
     case = fixture.cases[case_index]
     parameters = case["parameters"]
-    batch = rietveld.ReflectionGeometryBatch(
+    batch = phasesmith.ReflectionGeometryBatch(
         [parameters["hkl"]],
         [parameters["d_spacing_angstrom"]],
         [parameters["position_deg"]],
         [1.0],
     )
-    widths = rietveld.cw_profile_parameters([parameters["position_deg"]], instrument)
+    widths = phasesmith.cw_profile_parameters([parameters["position_deg"]], instrument)
     assert 1.0e4 * widths.gaussian_variance_deg2[0] == pytest.approx(
         parameters["sigma2_centideg2"], rel=5e-16
     )
     x = fixture.arrays[case["arrays"]["x"]]
-    symmetric = rietveld.calculate_monochromatic_cw_pattern(
+    symmetric = phasesmith.calculate_monochromatic_cw_pattern(
         x, batch, experiment, support_fwhm=10_000.0
     ).y
     symmetric_oracle = fixture.arrays[case["arrays"]["symmetric_profile"]]
@@ -307,11 +307,11 @@ def test_neutron_symmetric_and_fcj_profiles_against_pinned_gsasii(case_index: in
     )
     assert symmetric_error < 3.3e-5
 
-    fcj = rietveld.calculate_neutron_fcj_pattern(
+    fcj = phasesmith.calculate_neutron_fcj_pattern(
         x,
         batch,
         experiment,
-        rietveld.FcjGeometry(**parameters["public_equal_height_mapping"]),
+        phasesmith.FcjGeometry(**parameters["public_equal_height_mapping"]),
         support_fwhm=10_000.0,
     ).y
     fcj_oracle = fixture.arrays[case["arrays"]["fcj_profile"]]
@@ -329,15 +329,15 @@ def test_neutron_symmetric_and_fcj_profiles_against_pinned_gsasii(case_index: in
 
 
 def _sample_fixture_models(
-    fixture: rietveld.oracle.OracleFixture,
+    fixture: phasesmith.oracle.OracleFixture,
 ) -> tuple[
-    rietveld.ConstantWavelengthInstrument,
-    rietveld.CompositePhysicsProvider,
+    phasesmith.ConstantWavelengthInstrument,
+    phasesmith.CompositePhysicsProvider,
     dict[str, object],
 ]:
     translation = fixture.cases[0]["parameters"]["public_translation"]
     instrument_values = fixture.manifest["input_parameters"]["instrument"]
-    instrument = rietveld.ConstantWavelengthInstrument(
+    instrument = phasesmith.ConstantWavelengthInstrument(
         wavelength_angstrom=instrument_values["wavelength_angstrom"],
         u_deg2=instrument_values["u_gsas_centideg2"] * 1.0e-4,
         v_deg2=instrument_values["v_gsas_centideg2"] * 1.0e-4,
@@ -345,16 +345,16 @@ def _sample_fixture_models(
         x_deg=instrument_values["x_gsas_centideg"] * 1.0e-2,
         y_deg=instrument_values["y_gsas_centideg"] * 1.0e-2,
     )
-    provider = rietveld.CompositePhysicsProvider(
+    provider = phasesmith.CompositePhysicsProvider(
         (
-            rietveld.IsotropicSizeBroadening(
+            phasesmith.IsotropicSizeBroadening(
                 translation["crystallite_size_nm"], translation["shape_factor"]
             ),
-            rietveld.IsotropicMicrostrainBroadening(translation["rms_microstrain"]),
-            rietveld.MarchDollasePreferredOrientation(
+            phasesmith.IsotropicMicrostrainBroadening(translation["rms_microstrain"]),
+            phasesmith.MarchDollasePreferredOrientation(
                 translation["march_ratio"],
                 tuple(translation["preferred_axis_hkl"]),
-                rietveld.ReciprocalMetric(translation["reciprocal_metric_angstrom_minus2"]),
+                phasesmith.ReciprocalMetric(translation["reciprocal_metric_angstrom_minus2"]),
             ),
         )
     )
@@ -367,14 +367,14 @@ def test_sample_reflection_parameters_against_pinned_gsasii() -> None:
     reflections = fixture.arrays["reflection_list"]
     columns = fixture.manifest["source"]["reflection_columns"]
     column = {name: columns.index(name) for name in columns}
-    batch = rietveld.ReflectionGeometryBatch(
+    batch = phasesmith.ReflectionGeometryBatch(
         reflections[:, :3].astype(np.int64),
         reflections[:, column["d_spacing_angstrom"]],
         reflections[:, column["position_deg"]],
         np.ones(reflections.shape[0]),
     )
-    contribution = provider.evaluate(rietveld.PhysicsContext(batch, instrument))
-    widths = rietveld.cw_profile_parameters(batch.two_theta_deg, instrument)
+    contribution = provider.evaluate(phasesmith.PhysicsContext(batch, instrument))
+    widths = phasesmith.cw_profile_parameters(batch.two_theta_deg, instrument)
     np.testing.assert_allclose(
         1.0e4 * (widths.gaussian_variance_deg2 + contribution.gaussian_variance_deg2),
         reflections[:, column["sigma2_centideg2"]],
@@ -409,13 +409,13 @@ def test_sample_profiles_and_moments_against_pinned_gsasii(case_index: int) -> N
     parameters = case["parameters"]
     x = fixture.arrays[case["arrays"]["x"]]
     oracle = parameters["preferred_orientation"] * fixture.arrays[case["arrays"]["profile"]]
-    batch = rietveld.ReflectionGeometryBatch(
+    batch = phasesmith.ReflectionGeometryBatch(
         [parameters["hkl"]],
         [parameters["d_spacing_angstrom"]],
         [parameters["position_deg"]],
         [1.0],
     )
-    actual = rietveld.calculate_cw_pattern(
+    actual = phasesmith.calculate_cw_pattern(
         x, batch, instrument, physics=provider, support_fwhm=10_000.0
     ).y
     normalized_maximum_error = float(np.max(np.abs(actual - oracle)) / np.max(np.abs(oracle)))
@@ -485,7 +485,7 @@ def test_tch_profile_and_derivatives_against_pinned_gsasii_fixture(
     parameters = case["parameters"]
     x = fixture.arrays[case["arrays"]["x"]]
     oracle = fixture.arrays[case["arrays"]["profile"]]
-    actual = rietveld.profile_tch(
+    actual = phasesmith.profile_tch(
         x - parameters["position_deg"],
         parameters["gaussian_fwhm_deg"],
         parameters["lorentzian_fwhm_deg"],
@@ -517,7 +517,7 @@ def test_fused_overlap_against_pinned_gsasii_fixture() -> None:
     case = next(case for case in fixture.cases if case["case_kind"] == "overlapping_peaks")
     peaks = case["parameters"]["peaks"]
     x = fixture.arrays[case["arrays"]["x"]]
-    actual = rietveld.accumulate_tch(
+    actual = phasesmith.accumulate_tch(
         x,
         [peak["position_deg"] for peak in peaks],
         [peak["intensity"] for peak in peaks],
@@ -541,10 +541,10 @@ def test_cw_profile_widths_and_derivatives_against_pinned_gsasii(
         and case["parameters"]["angular_regime"] == angular_regime
     )
     parameters = case["parameters"]
-    model = rietveld.ConstantWavelengthInstrument(**dict(parameters["instrument"]))
+    model = phasesmith.ConstantWavelengthInstrument(**dict(parameters["instrument"]))
     position = parameters["position_deg"]
     x = fixture.arrays[case["arrays"]["x"]]
-    widths = rietveld.cw_profile_parameters([position], model)
+    widths = phasesmith.cw_profile_parameters([position], model)
     assert widths.gaussian_variance_deg2[0] == pytest.approx(
         parameters["gaussian_variance_deg2"], rel=3e-15
     )
@@ -553,7 +553,7 @@ def test_cw_profile_widths_and_derivatives_against_pinned_gsasii(
         parameters["lorentzian_fwhm_deg"], rel=3e-15
     )
 
-    actual = rietveld.accumulate_cw(
+    actual = phasesmith.accumulate_cw(
         x, [position], [1.0], model, support_fwhm=100.0, jacobian_layout="dense"
     )
     comparisons = (
@@ -578,9 +578,9 @@ def test_fused_cw_overlap_and_all_jacobians_against_pinned_gsasii() -> None:
     fixture = load_fixture(CW_FIXTURE_PATH)
     case = next(case for case in fixture.cases if case["case_kind"] == "cw_overlapping_reflections")
     parameters = case["parameters"]
-    model = rietveld.ConstantWavelengthInstrument(**dict(parameters["instrument"]))
+    model = phasesmith.ConstantWavelengthInstrument(**dict(parameters["instrument"]))
     x = fixture.arrays[case["arrays"]["x"]]
-    actual = rietveld.accumulate_cw(
+    actual = phasesmith.accumulate_cw(
         x,
         parameters["positions_deg"],
         parameters["integrated_intensities"],
@@ -609,12 +609,12 @@ def test_fcj_values_and_moments_against_pinned_gsasii(angular_regime: str) -> No
     x = fixture.arrays[case["arrays"]["x"]]
     oracle = fixture.arrays[case["arrays"]["profile"]]
     mapping = parameters["public_equal_height_mapping"]
-    actual = rietveld.profile_fcj(
+    actual = phasesmith.profile_fcj(
         x,
         parameters["position_deg"],
         parameters["gaussian_fwhm_deg"],
         parameters["lorentzian_fwhm_deg"],
-        rietveld.FcjGeometry(**dict(mapping)),
+        phasesmith.FcjGeometry(**dict(mapping)),
     ).value
     normalized_maximum_error = float(np.max(np.abs(actual - oracle)) / np.max(np.abs(oracle)))
     # GSAS-II #5838 uses a discretized one-parameter SH/L convolution. The
@@ -638,12 +638,12 @@ def test_fcj_zero_limit_against_pinned_gsasii() -> None:
     parameters = case["parameters"]
     x = fixture.arrays[case["arrays"]["x"]]
     oracle = fixture.arrays[case["arrays"]["profile"]]
-    actual = rietveld.profile_fcj(
+    actual = phasesmith.profile_fcj(
         x,
         parameters["position_deg"],
         parameters["gaussian_fwhm_deg"],
         parameters["lorentzian_fwhm_deg"],
-        rietveld.FcjGeometry(0.0, 0.0),
+        phasesmith.FcjGeometry(0.0, 0.0),
     ).value
     normalized_maximum_error = float(np.max(np.abs(actual - oracle)) / np.max(np.abs(oracle)))
     assert normalized_maximum_error < 3e-6
@@ -658,14 +658,14 @@ def test_fcj_doublet_values_positions_and_moments_against_pinned_gsasii(
         case for case in fixture.cases if case["parameters"]["angular_regime"] == angular_regime
     )
     parameters = case["parameters"]
-    instrument = rietveld.ConstantWavelengthInstrument(**dict(parameters["instrument"]))
-    components = rietveld.WavelengthComponents(
+    instrument = phasesmith.ConstantWavelengthInstrument(**dict(parameters["instrument"]))
+    components = phasesmith.WavelengthComponents(
         parameters["wavelengths_angstrom"], parameters["relative_intensities"]
     )
-    geometry = rietveld.FcjGeometry(**dict(parameters["public_equal_height_mapping"]))
+    geometry = phasesmith.FcjGeometry(**dict(parameters["public_equal_height_mapping"]))
     x = fixture.arrays[case["arrays"]["x"]]
     oracle = fixture.arrays[case["arrays"]["ycalc"]]
-    actual = rietveld.accumulate_cw_fcj_components(
+    actual = phasesmith.accumulate_cw_fcj_components(
         x,
         [parameters["base_position_deg"]],
         [1.0],

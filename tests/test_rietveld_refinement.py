@@ -5,9 +5,9 @@ from dataclasses import replace
 from fractions import Fraction
 
 import numpy as np
+import phasesmith
 import pytest
-import rietveld
-from rietveld.refinement import (
+from phasesmith.refinement import (
     AffineConstraint,
     AmorphousBackground,
     AmorphousPeak,
@@ -16,7 +16,7 @@ from rietveld.refinement import (
     PointBackground,
     PolynomialBackground,
 )
-from rietveld.refinement import rietveld as structural_refinement
+from phasesmith.refinement import rietveld as structural_refinement
 
 P1_CIF = """
 data_p1
@@ -41,11 +41,11 @@ O1 O 0.41 0.52 0.63 1.0 0.018
 """
 
 
-def experiment() -> rietveld.ConstantWavelengthExperiment:
-    instrument = rietveld.ConstantWavelengthInstrument(
+def experiment() -> phasesmith.ConstantWavelengthExperiment:
+    instrument = phasesmith.ConstantWavelengthInstrument(
         1.5406, 2.0e-4, -1.0e-4, 2.0e-4, 1.5e-3, 3.0e-3
     )
-    return rietveld.ConstantWavelengthExperiment.x_ray(instrument)
+    return phasesmith.ConstantWavelengthExperiment.x_ray(instrument)
 
 
 def selection(**changes: bool) -> structural_refinement.RietveldParameterSelection:
@@ -66,7 +66,7 @@ def request_from_cif(
 ) -> structural_refinement.RietveldInput:
     x = np.linspace(15.0, 100.0, 8_501)
     initial = structural_refinement.RietveldInput.from_cif(
-        rietveld.PowderPattern(x, observed_y=np.zeros_like(x)),
+        phasesmith.PowderPattern(x, observed_y=np.zeros_like(x)),
         experiment(),
         P1_CIF,
         phase_id="alpha",
@@ -77,7 +77,7 @@ def request_from_cif(
     )
     return replace(
         initial,
-        pattern=rietveld.PowderPattern(x, observed_y=calculated.y),
+        pattern=phasesmith.PowderPattern(x, observed_y=calculated.y),
     )
 
 
@@ -103,12 +103,12 @@ def test_combined_structural_calculation_sums_profiles_and_background_once() -> 
     first = request.phases[0]
     second = replace(first, phase_id="beta", scale=0.4)
     background = np.full(request.pattern.x.size, 0.3)
-    pattern = rietveld.PowderPattern(
+    pattern = phasesmith.PowderPattern(
         request.pattern.x, observed_y=request.pattern.observed_y, background=background
     )
     combined = structural_refinement.calculate(pattern, request.experiment, (first, second))
     individual = tuple(
-        rietveld.calculate_structural_pattern(pattern, request.experiment, phase)
+        phasesmith.calculate_structural_pattern(pattern, request.experiment, phase)
         for phase in (first, second)
     )
     np.testing.assert_allclose(
@@ -121,16 +121,16 @@ def test_combined_structural_calculation_sums_profiles_and_background_once() -> 
 
 
 def test_special_position_coordinate_selection_uses_only_allowed_tangent_space() -> None:
-    inversion = rietveld.SymmetryOperation(-np.eye(3, dtype=np.int64), (0, 0, 0))
-    group = rietveld.SpaceGroup([rietveld.SymmetryOperation.identity(), inversion])
-    structure = rietveld.CrystalStructure(
+    inversion = phasesmith.SymmetryOperation(-np.eye(3, dtype=np.int64), (0, 0, 0))
+    group = phasesmith.SpaceGroup([phasesmith.SymmetryOperation.identity(), inversion])
+    structure = phasesmith.CrystalStructure(
         "special",
         "Special position",
-        rietveld.UnitCell(4.0, 5.0, 6.0, 90.0, 90.0, 90.0),
+        phasesmith.UnitCell(4.0, 5.0, 6.0, 90.0, 90.0, 90.0),
         group,
         (
-            rietveld.AtomSite("origin", "X1", "Si", "Si", (0.0, 0.0, 0.0)),
-            rietveld.AtomSite(
+            phasesmith.AtomSite("origin", "X1", "Si", "Si", (0.0, 0.0, 0.0)),
+            phasesmith.AtomSite(
                 "general",
                 "X2",
                 "O",
@@ -139,17 +139,17 @@ def test_special_position_coordinate_selection_uses_only_allowed_tangent_space()
             ),
         ),
     )
-    generated = rietveld.PreparedReflectionGenerator(group).generate(
+    generated = phasesmith.PreparedReflectionGenerator(group).generate(
         structure.cell,
-        rietveld.CwTwoThetaRange(20.0, 80.0, experiment().radiation.wavelength_angstrom),
+        phasesmith.CwTwoThetaRange(20.0, 80.0, experiment().radiation.wavelength_angstrom),
     )
-    phase = rietveld.RietveldPhase(
+    phase = phasesmith.RietveldPhase(
         "alpha",
         "Special",
         structure,
-        rietveld.StructuralReflectionBatch.from_generated(generated),
-        rietveld.XrayNonResonant(),
-        rietveld.NeutralIntegratedIntensityCorrection(),
+        phasesmith.StructuralReflectionBatch.from_generated(generated),
+        phasesmith.XrayNonResonant(),
+        phasesmith.NeutralIntegratedIntensityCorrection(),
     )
     parameters = structural_refinement.build_parameter_set(
         (phase,),
@@ -162,17 +162,17 @@ def test_special_position_coordinate_selection_uses_only_allowed_tangent_space()
 
 
 def test_site_coordinate_model_handles_non_origin_fixed_point_exactly() -> None:
-    operation = rietveld.SymmetryOperation(
+    operation = phasesmith.SymmetryOperation(
         -np.eye(3, dtype=np.int64),
         (Fraction(1, 1), Fraction(1, 1), Fraction(1, 1)),
     )
-    group = rietveld.SpaceGroup([rietveld.SymmetryOperation.identity(), operation])
-    structure = rietveld.CrystalStructure(
+    group = phasesmith.SpaceGroup([phasesmith.SymmetryOperation.identity(), operation])
+    structure = phasesmith.CrystalStructure(
         "fixed",
         "Fixed point",
-        rietveld.UnitCell(4.0, 5.0, 6.0, 90.0, 90.0, 90.0),
+        phasesmith.UnitCell(4.0, 5.0, 6.0, 90.0, 90.0, 90.0),
         group,
-        (rietveld.AtomSite("center", "X1", "Si", "Si", (0.5, 0.5, 0.5)),),
+        (phasesmith.AtomSite("center", "X1", "Si", "Si", (0.5, 0.5, 0.5)),),
     )
     model = structural_refinement._site_coordinate_model(
         "alpha", structure, structure.sites[0], 1.0e-10
@@ -271,10 +271,10 @@ def test_combined_structural_products_match_finite_difference_and_adjoint() -> N
 def test_march_dollase_lattice_chain_matches_finite_difference() -> None:
     selected = selection(lattice=True)
     base = request_from_cif(selected)
-    metric = rietveld.ReciprocalMetric(base.phases[0].structure.cell.geometry().reciprocal_metric)
+    metric = phasesmith.ReciprocalMetric(base.phases[0].structure.cell.geometry().reciprocal_metric)
     phase = replace(
         base.phases[0],
-        physics=rietveld.MarchDollasePreferredOrientation(0.78, (1.0, 2.0, 1.0), metric),
+        physics=phasesmith.MarchDollasePreferredOrientation(0.78, (1.0, 2.0, 1.0), metric),
     )
     parameters = structural_refinement.build_parameter_set(
         (phase,), base.lattice_domains, selected, experiment=base.experiment
@@ -318,7 +318,7 @@ def test_march_dollase_lattice_chain_matches_finite_difference() -> None:
 
 def test_pre_requested_cancellation_returns_the_unmodified_safe_state() -> None:
     request = request_from_cif(selection(phase_scale=True))
-    token = rietveld.CancellationToken()
+    token = phasesmith.CancellationToken()
     token.request("test_stop")
     result = structural_refinement.refine(request, cancellation=token)
     assert result.termination_reason is structural_refinement.TerminationReason.CANCELLED
@@ -340,7 +340,7 @@ def test_matrix_free_refinement_improves_each_structural_parameter_family(
     if family == "lattice":
         cell_values = list(structure.cell.as_tuple())
         cell_values[0] += 0.004
-        structure = replace(structure, cell=rietveld.UnitCell(*cell_values))
+        structure = replace(structure, cell=phasesmith.UnitCell(*cell_values))
         assert domain is not None
         phase = replace(
             phase,
@@ -392,7 +392,7 @@ def test_rank_deficient_multiphase_scales_are_reported_without_fake_covariance()
     )
     calculated = structural_refinement.calculate(single.pattern, single.experiment, phases)
     request = structural_refinement.RietveldInput(
-        rietveld.PowderPattern(single.pattern.x, observed_y=calculated.y),
+        phasesmith.PowderPattern(single.pattern.x, observed_y=calculated.y),
         single.experiment,
         phases,
         (None, None),
@@ -427,7 +427,7 @@ def test_affine_multiphase_scale_constraint_is_applied_in_native_products() -> N
         multiplier=2.0 / 3.0,
     )
     request = structural_refinement.RietveldInput(
-        rietveld.PowderPattern(single.pattern.x, observed_y=observed),
+        phasesmith.PowderPattern(single.pattern.x, observed_y=observed),
         single.experiment,
         starting_phases,
         (None, None),
@@ -461,7 +461,7 @@ def test_distinct_multiphase_scales_recover_independently() -> None:
     starting = (replace(first, scale=0.58), replace(second, scale=0.42))
     parameters = structural_refinement.build_parameter_set(starting, (None, None), single.selection)
     request = structural_refinement.RietveldInput(
-        rietveld.PowderPattern(single.pattern.x, observed_y=observed),
+        phasesmith.PowderPattern(single.pattern.x, observed_y=observed),
         single.experiment,
         starting,
         (None, None),
@@ -475,22 +475,22 @@ def test_distinct_multiphase_scales_recover_independently() -> None:
 
 
 def test_monochromatic_neutron_cif_request_refines_through_same_runtime() -> None:
-    neutron_experiment = rietveld.ConstantWavelengthExperiment.neutron(experiment().instrument)
+    neutron_experiment = phasesmith.ConstantWavelengthExperiment.neutron(experiment().instrument)
     x = np.linspace(15.0, 100.0, 8_501)
     selected = selection(phase_scale=True)
     initial = structural_refinement.RietveldInput.from_cif(
-        rietveld.PowderPattern(x, observed_y=np.zeros_like(x)),
+        phasesmith.PowderPattern(x, observed_y=np.zeros_like(x)),
         neutron_experiment,
         P1_CIF,
         phase_id="neutron-alpha",
         selection=selected,
     )
-    assert type(initial.phases[0].scattering) is rietveld.NeutronNuclear
+    assert type(initial.phases[0].scattering) is phasesmith.NeutronNuclear
     truth = structural_refinement.calculate(initial.pattern, neutron_experiment, initial.phases)
     starting_phase = replace(initial.phases[0], scale=0.72)
     request = replace(
         initial,
-        pattern=rietveld.PowderPattern(x, observed_y=truth.y),
+        pattern=phasesmith.PowderPattern(x, observed_y=truth.y),
         phases=(starting_phase,),
         parameters=structural_refinement.build_parameter_set((starting_phase,), (None,), selected),
     )
@@ -551,7 +551,7 @@ def test_cancellation_requested_by_checkpoint_sink_returns_that_accepted_state()
             (starting_phase,), (None,), truth.selection
         ),
     )
-    token = rietveld.CancellationToken()
+    token = phasesmith.CancellationToken()
     accepted = []
 
     def stop_after_checkpoint(checkpoint: object) -> None:
@@ -580,7 +580,7 @@ def test_project_facade_refines_stops_reports_and_resumes(tmp_path) -> None:
             (starting_phase,), (None,), truth.selection
         ),
     )
-    project = rietveld.RietveldProject(request)
+    project = phasesmith.RietveldProject(request)
     result = project.refine()
     assert result.phases[0].scale == pytest.approx(1.0, rel=2.0e-8)
     json_path, csv_path = project.write_reports(
@@ -589,7 +589,7 @@ def test_project_facade_refines_stops_reports_and_resumes(tmp_path) -> None:
     )
     assert json_path is not None and csv_path is not None
     report = json.loads(json_path.read_text())
-    assert report["schema"] == "rietveld.result-report.v1"
+    assert report["schema"] == "phasesmith.result-report.v1"
     assert report["termination"]["reason"] == result.termination_reason.value
     assert report["phases"][0]["reflection_count"] == truth.phases[0].reflections.reflection_count
     csv_lines = csv_path.read_text().splitlines()
@@ -597,13 +597,13 @@ def test_project_facade_refines_stops_reports_and_resumes(tmp_path) -> None:
     assert "weight" in csv_lines[0].split(",")
 
     saved = project.save(tmp_path / "project")
-    restored = rietveld.RietveldProject.load(saved)
+    restored = phasesmith.RietveldProject.load(saved)
     assert restored.checkpoint is not None and project.checkpoint is not None
     assert restored.checkpoint.parameters == project.checkpoint.parameters
     assert restored.checkpoint.history == project.checkpoint.history
     np.testing.assert_allclose(restored.calculate().y, result.calculation.y)
 
-    stopped = rietveld.RietveldProject(request)
+    stopped = phasesmith.RietveldProject(request)
 
     def stop_on_start(event: object) -> None:
         if event.kind is structural_refinement.RefinementEventKind.START:
@@ -683,14 +683,14 @@ def test_monochromatic_calibration_parameters_refine_analytically(
 ) -> None:
     base = request_from_cif(selection())
 
-    def configured(value: float) -> rietveld.ConstantWavelengthExperiment:
+    def configured(value: float) -> phasesmith.ConstantWavelengthExperiment:
         wavelength = value if name == "wavelength_angstrom" else 1.5406
         selected_instrument = replace(base.experiment.instrument, wavelength_angstrom=wavelength)
-        return rietveld.ConstantWavelengthExperiment(
-            rietveld.MonochromaticRadiation.x_ray(wavelength),
+        return phasesmith.ConstantWavelengthExperiment(
+            phasesmith.MonochromaticRadiation.x_ray(wavelength),
             selected_instrument,
             zero_shift_deg=value if name == "zero_shift_deg" else 0.0,
-            geometry=rietveld.BraggBrentanoGeometry(
+            geometry=phasesmith.BraggBrentanoGeometry(
                 240.0,
                 value if name == "sample_displacement_mm" else 0.0,
             ),
@@ -734,18 +734,18 @@ def test_monochromatic_calibration_parameters_refine_analytically(
 @pytest.mark.parametrize("kind", ("size", "microstrain", "march"))
 def test_builtin_sample_physics_parameters_are_refinable(kind: str) -> None:
     base = request_from_cif(selection())
-    metric = rietveld.ReciprocalMetric(base.phases[0].structure.cell.geometry().reciprocal_metric)
+    metric = phasesmith.ReciprocalMetric(base.phases[0].structure.cell.geometry().reciprocal_metric)
     if kind == "size":
-        truth_model = rietveld.IsotropicSizeBroadening(75.0)
-        starting_model = rietveld.IsotropicSizeBroadening(62.0)
+        truth_model = phasesmith.IsotropicSizeBroadening(75.0)
+        starting_model = phasesmith.IsotropicSizeBroadening(62.0)
         expected = 75.0
     elif kind == "microstrain":
-        truth_model = rietveld.IsotropicMicrostrainBroadening(7.0e-4)
-        starting_model = rietveld.IsotropicMicrostrainBroadening(9.0e-4)
+        truth_model = phasesmith.IsotropicMicrostrainBroadening(7.0e-4)
+        starting_model = phasesmith.IsotropicMicrostrainBroadening(9.0e-4)
         expected = 7.0e-4
     else:
-        truth_model = rietveld.MarchDollasePreferredOrientation(0.82, (0, 0, 1), metric)
-        starting_model = rietveld.MarchDollasePreferredOrientation(0.9, (0, 0, 1), metric)
+        truth_model = phasesmith.MarchDollasePreferredOrientation(0.82, (0, 0, 1), metric)
+        starting_model = phasesmith.MarchDollasePreferredOrientation(0.9, (0, 0, 1), metric)
         expected = 0.82
     truth_phase = replace(base.phases[0], physics=truth_model)
     starting_phase = replace(base.phases[0], physics=starting_model)
@@ -797,7 +797,7 @@ def test_polynomial_background_refines_as_a_separate_typed_domain() -> None:
         background=starting_background,
     )
     request = structural_refinement.RietveldInput(
-        rietveld.PowderPattern(truth.pattern.x, observed_y=calculated.y),
+        phasesmith.PowderPattern(truth.pattern.x, observed_y=calculated.y),
         truth.experiment,
         truth.phases,
         (None,),

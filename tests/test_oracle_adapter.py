@@ -5,8 +5,8 @@ from typing import ClassVar
 
 import numpy as np
 import pytest
-from rietveld.oracle._pinned_probe import PINNED_REVISION, probe_histogram
-from rietveld.oracle.gsasii import extract_snapshot
+from phasesmith.oracle._pinned_probe import PINNED_REVISION, probe_histogram
+from phasesmith.oracle.gsasii import extract_snapshot
 
 
 class FakeHistogram:
@@ -54,7 +54,7 @@ def test_public_adapter_returns_copied_plain_arrays() -> None:
 def test_internal_probe_is_allowlisted_and_pin_checked(monkeypatch: pytest.MonkeyPatch) -> None:
     module = SimpleNamespace(__file__=__file__)
     monkeypatch.setattr(
-        "rietveld.oracle._pinned_probe.detected_revision", lambda _module: PINNED_REVISION
+        "phasesmith.oracle._pinned_probe.detected_revision", lambda _module: PINNED_REVISION
     )
     values = probe_histogram(FakeHistogram(), module, "instrument_parameters", "limits")
     assert values["limits"] == [None, [10.0, 90.0]]
@@ -66,7 +66,7 @@ def test_internal_probe_is_allowlisted_and_pin_checked(monkeypatch: pytest.Monke
 
 def test_internal_probe_rejects_revision_drift(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
-        "rietveld.oracle._pinned_probe.detected_revision", lambda _module: "different"
+        "phasesmith.oracle._pinned_probe.detected_revision", lambda _module: "different"
     )
     with pytest.raises(RuntimeError, match=PINNED_REVISION):
         probe_histogram(FakeHistogram(), SimpleNamespace(__file__=__file__), "limits")

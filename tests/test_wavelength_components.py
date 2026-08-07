@@ -3,13 +3,13 @@ from __future__ import annotations
 from dataclasses import replace
 
 import numpy as np
+import phasesmith
 import pytest
-import rietveld
-from rietveld import reference
+from phasesmith import reference
 
 
-def instrument() -> rietveld.ConstantWavelengthInstrument:
-    return rietveld.ConstantWavelengthInstrument(
+def instrument() -> phasesmith.ConstantWavelengthInstrument:
+    return phasesmith.ConstantWavelengthInstrument(
         wavelength_angstrom=1.54056,
         u_deg2=2.0e-4,
         v_deg2=-1.0e-4,
@@ -19,18 +19,18 @@ def instrument() -> rietveld.ConstantWavelengthInstrument:
     )
 
 
-def geometry() -> rietveld.FcjGeometry:
-    return rietveld.FcjGeometry(0.013, 0.009)
+def geometry() -> phasesmith.FcjGeometry:
+    return phasesmith.FcjGeometry(0.013, 0.009)
 
 
-def doublet() -> rietveld.WavelengthComponents:
-    return rietveld.WavelengthComponents.doublet(1.54056, 1.54439, 0.5)
+def doublet() -> phasesmith.WavelengthComponents:
+    return phasesmith.WavelengthComponents.doublet(1.54056, 1.54439, 0.5)
 
 
 def test_component_model_is_immutable_normalized_plain_data() -> None:
     wavelengths = np.array([1.54056, 1.54439])
     intensities = np.array([2.0, 1.0])
-    components = rietveld.WavelengthComponents(wavelengths, intensities)
+    components = phasesmith.WavelengthComponents(wavelengths, intensities)
     wavelengths[0] = 99.0
     intensities[0] = 99.0
 
@@ -46,11 +46,11 @@ def test_one_component_is_exactly_monochromatic_with_and_without_fcj() -> None:
     x = np.linspace(39.0, 41.0, 2_001)
     positions = np.array([39.8, 40.2])
     intensities = np.array([12.0, 7.0])
-    components = rietveld.WavelengthComponents.monochromatic(instrument().wavelength_angstrom)
-    monochromatic = rietveld.accumulate_cw(
+    components = phasesmith.WavelengthComponents.monochromatic(instrument().wavelength_angstrom)
+    monochromatic = phasesmith.accumulate_cw(
         x, positions, intensities, instrument(), jacobian_layout="dense"
     )
-    component_result = rietveld.accumulate_cw_components(
+    component_result = phasesmith.accumulate_cw_components(
         x, positions, intensities, instrument(), components, jacobian_layout="dense"
     )
     np.testing.assert_array_equal(component_result.y, monochromatic.y)
@@ -60,7 +60,7 @@ def test_one_component_is_exactly_monochromatic_with_and_without_fcj() -> None:
         monochromatic.derivatives.global_jacobian,
     )
 
-    monochromatic_fcj = rietveld.accumulate_cw_fcj(
+    monochromatic_fcj = phasesmith.accumulate_cw_fcj(
         x,
         positions,
         intensities,
@@ -68,7 +68,7 @@ def test_one_component_is_exactly_monochromatic_with_and_without_fcj() -> None:
         geometry(),
         jacobian_layout="dense",
     )
-    component_fcj = rietveld.accumulate_cw_fcj_components(
+    component_fcj = phasesmith.accumulate_cw_fcj_components(
         x,
         positions,
         intensities,
@@ -89,7 +89,7 @@ def test_fused_fcj_doublet_matches_independent_reference() -> None:
     x = np.linspace(49.0, 51.0, 2_001)
     positions = np.array([49.85, 50.15])
     intensities = np.array([12.0, 7.0])
-    actual = rietveld.accumulate_cw_fcj_components(
+    actual = phasesmith.accumulate_cw_fcj_components(
         x,
         positions,
         intensities,
@@ -146,7 +146,7 @@ def test_all_shared_derivatives_match_centered_differences(parameter: str) -> No
     model = instrument()
     axial = geometry()
     components = doublet()
-    baseline = rietveld.accumulate_cw_fcj_components(
+    baseline = phasesmith.accumulate_cw_fcj_components(
         x, positions, intensities, model, components, axial, support_fwhm=100.0
     )
     plus_model = minus_model = model
@@ -169,24 +169,24 @@ def test_all_shared_derivatives_match_centered_differences(parameter: str) -> No
     elif parameter == "wavelength_ratio[1]":
         step = 1e-7
         ratio = components.wavelength_ratios[1]
-        plus_components = rietveld.WavelengthComponents(
+        plus_components = phasesmith.WavelengthComponents(
             [model.wavelength_angstrom, model.wavelength_angstrom * (ratio + step)],
             components.relative_intensities,
         )
-        minus_components = rietveld.WavelengthComponents(
+        minus_components = phasesmith.WavelengthComponents(
             [model.wavelength_angstrom, model.wavelength_angstrom * (ratio - step)],
             components.relative_intensities,
         )
     else:
         step = 1e-7
         ratio = components.intensity_ratios[1]
-        plus_components = rietveld.WavelengthComponents(
+        plus_components = phasesmith.WavelengthComponents(
             components.wavelengths_angstrom, [1.0, ratio + step]
         )
-        minus_components = rietveld.WavelengthComponents(
+        minus_components = phasesmith.WavelengthComponents(
             components.wavelengths_angstrom, [1.0, ratio - step]
         )
-    plus = rietveld.accumulate_cw_fcj_components(
+    plus = phasesmith.accumulate_cw_fcj_components(
         x,
         positions,
         intensities,
@@ -195,7 +195,7 @@ def test_all_shared_derivatives_match_centered_differences(parameter: str) -> No
         plus_axial,
         support_fwhm=100.0,
     ).y
-    minus = rietveld.accumulate_cw_fcj_components(
+    minus = phasesmith.accumulate_cw_fcj_components(
         x,
         positions,
         intensities,
@@ -220,7 +220,7 @@ def test_logical_reflection_derivatives_match_centered_differences(parameter: st
     x = np.linspace(49.7, 50.5, 1_601)
     positions = np.array([50.0])
     intensities = np.array([8.0])
-    baseline = rietveld.accumulate_cw_fcj_components(
+    baseline = phasesmith.accumulate_cw_fcj_components(
         x,
         positions,
         intensities,
@@ -241,7 +241,7 @@ def test_logical_reflection_derivatives_match_centered_differences(parameter: st
     else:
         plus_intensities[0] += step
         minus_intensities[0] -= step
-    plus = rietveld.accumulate_cw_fcj_components(
+    plus = phasesmith.accumulate_cw_fcj_components(
         x,
         plus_positions,
         plus_intensities,
@@ -250,7 +250,7 @@ def test_logical_reflection_derivatives_match_centered_differences(parameter: st
         geometry(),
         support_fwhm=100.0,
     ).y
-    minus = rietveld.accumulate_cw_fcj_components(
+    minus = phasesmith.accumulate_cw_fcj_components(
         x,
         minus_positions,
         minus_intensities,
@@ -280,7 +280,7 @@ def test_resolved_doublet_conserves_area_and_intensity_ratio() -> None:
         [base_position], narrow.wavelength_angstrom, doublet().wavelengths_angstrom
     )
     x = np.linspace(99.8, positions[0, 1] + 0.2, 40_001)
-    result = rietveld.accumulate_cw_components(
+    result = phasesmith.accumulate_cw_components(
         x, [base_position], [9.0], narrow, doublet(), support_fwhm=100.0
     )
     midpoint = float(np.mean(positions[0]))
@@ -294,37 +294,37 @@ def test_resolved_doublet_conserves_area_and_intensity_ratio() -> None:
 
 def test_unresolved_equal_wavelength_limit_matches_monochromatic_values() -> None:
     x = np.linspace(49.0, 51.0, 2_001)
-    components = rietveld.WavelengthComponents(
+    components = phasesmith.WavelengthComponents(
         [instrument().wavelength_angstrom, instrument().wavelength_angstrom],
         [1.0, 0.5],
     )
-    actual = rietveld.accumulate_cw_components(
+    actual = phasesmith.accumulate_cw_components(
         x, [50.0], [8.0], instrument(), components, support_fwhm=20.0
     ).y
-    expected = rietveld.accumulate_cw(x, [50.0], [8.0], instrument(), support_fwhm=20.0).y
+    expected = phasesmith.accumulate_cw(x, [50.0], [8.0], instrument(), support_fwhm=20.0).y
     np.testing.assert_allclose(actual, expected, rtol=3e-16, atol=6e-14)
 
 
 def test_component_boundary_validation_is_clear() -> None:
     with pytest.raises(ValueError, match="equal length"):
-        rietveld.WavelengthComponents([1.0], [1.0, 0.5])
+        phasesmith.WavelengthComponents([1.0], [1.0, 0.5])
     with pytest.raises(ValueError, match="reference component"):
-        rietveld.WavelengthComponents([1.0, 1.1], [0.0, 1.0])
+        phasesmith.WavelengthComponents([1.0, 1.1], [0.0, 1.0])
     with pytest.raises(ValueError, match="match the instrument"):
-        rietveld.accumulate_cw_components(
+        phasesmith.accumulate_cw_components(
             [49.0, 50.0],
             [49.5],
             [1.0],
             instrument(),
-            rietveld.WavelengthComponents.monochromatic(1.0),
+            phasesmith.WavelengthComponents.monochromatic(1.0),
         )
     with pytest.raises(ValueError, match="Bragg domain"):
-        rietveld.accumulate_cw_components(
+        phasesmith.accumulate_cw_components(
             [169.0, 171.0],
             [170.0],
             [1.0],
             instrument(),
-            rietveld.WavelengthComponents(
+            phasesmith.WavelengthComponents(
                 [instrument().wavelength_angstrom, 2.0 * instrument().wavelength_angstrom],
                 [1.0, 0.5],
             ),

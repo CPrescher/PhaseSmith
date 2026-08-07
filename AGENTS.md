@@ -29,7 +29,7 @@ boundaries.
 - Rust production code lives under `crates/`; Python source uses the `python/`
   layout; integration tests live in `tests/`.
 - Keep the numerical core dependency-light. Domain translation, serialization,
-  oracle interaction, and convenience APIs belong outside `rietveld-core`.
+  oracle interaction, and convenience APIs belong outside `phasesmith-core`.
 - Prefer typed structs and contiguous arrays over nested mappings.
 - Public Python functions accept and return NumPy arrays. Validate dtype, shape,
   finiteness, sortedness, and parameter ranges at the boundary.
@@ -58,13 +58,13 @@ boundaries.
 
 - Pin an exact GSAS-II revision and record provenance in `oracle/`.
 - Prefer the public scripting API. Put unavoidable private access behind the
-  small probe adapter in `python/rietveld/oracle/`; keep it version-gated and
+  small probe adapter in `python/phasesmith/oracle/`; keep it version-gated and
   covered by fixture-schema tests.
 - Oracle adapters extract plain arrays and records: `X`, `Ycalc`, background,
   and reflection lists. No GSAS-II objects cross into the numerical core.
 - Do not silently regenerate golden data. Make regeneration an explicit command
   and review numerical diffs.
-- Never require GSAS-II to import or use the normal `rietveld` package.
+- Never require GSAS-II to import or use the normal `phasesmith` package.
 
 ## Change discipline
 

@@ -10,7 +10,7 @@ from collections.abc import Callable
 from typing import Any
 
 import numpy as np
-import rietveld
+import phasesmith
 
 
 def measure(operation: Callable[[], Any], warmups: int, repetitions: int) -> list[float]:
@@ -49,9 +49,9 @@ def benchmark_hkl(reflection_count: int) -> np.ndarray:
     return np.ascontiguousarray(candidates[:reflection_count])
 
 
-def benchmark_phase(reflection_count: int, site_count: int) -> rietveld.RietveldPhase:
+def benchmark_phase(reflection_count: int, site_count: int) -> phasesmith.RietveldPhase:
     sites = tuple(
-        rietveld.AtomSite(
+        phasesmith.AtomSite(
             f"site-{site}",
             f"{('C', 'O', 'Si', 'Fe')[site % 4]}{site}",
             ("C", "O", "Si", "Fe")[site % 4],
@@ -66,25 +66,25 @@ def benchmark_phase(reflection_count: int, site_count: int) -> rietveld.Rietveld
         )
         for site in range(site_count)
     )
-    structure = rietveld.CrystalStructure(
+    structure = phasesmith.CrystalStructure(
         "benchmark",
         "Benchmark structure",
-        rietveld.UnitCell(15.0, 15.0, 15.0, 90.0, 90.0, 90.0),
-        rietveld.SpaceGroup.p1(),
+        phasesmith.UnitCell(15.0, 15.0, 15.0, 90.0, 90.0, 90.0),
+        phasesmith.SpaceGroup.p1(),
         sites,
     )
     hkl = benchmark_hkl(reflection_count)
-    return rietveld.RietveldPhase(
+    return phasesmith.RietveldPhase(
         "benchmark",
         "Benchmark phase",
         structure,
-        rietveld.StructuralReflectionBatch(
+        phasesmith.StructuralReflectionBatch(
             tuple(f"{h},{k},{ell}" for h, k, ell in hkl),
             hkl,
             np.ones(reflection_count, dtype=np.int64),
         ),
-        rietveld.XrayNonResonant(),
-        rietveld.NeutralIntegratedIntensityCorrection(),
+        phasesmith.XrayNonResonant(),
+        phasesmith.NeutralIntegratedIntensityCorrection(),
         1.3,
     )
 
@@ -104,11 +104,11 @@ def main() -> None:
         or arguments.repetitions <= 0
     ):
         raise ValueError("counts and repetitions must be positive; warmups non-negative")
-    if arguments.require_release and rietveld._core.BUILD_MODE != "release":
-        raise RuntimeError(f"release extension required, imported {rietveld._core.BUILD_MODE!r}")
+    if arguments.require_release and phasesmith._core.BUILD_MODE != "release":
+        raise RuntimeError(f"release extension required, imported {phasesmith._core.BUILD_MODE!r}")
 
     phase = benchmark_phase(arguments.reflections, arguments.sites)
-    instrument = rietveld.ConstantWavelengthInstrument(
+    instrument = phasesmith.ConstantWavelengthInstrument(
         1.5406,
         2.0e-4,
         -1.0e-4,
@@ -116,14 +116,14 @@ def main() -> None:
         1.5e-3,
         3.0e-3,
     )
-    experiment = rietveld.ConstantWavelengthExperiment.x_ray(instrument)
-    pattern = rietveld.PowderPattern(np.linspace(5.0, 125.0, 20_001))
-    prepared = rietveld.PreparedStructuralPattern(pattern, experiment, phase)
+    experiment = phasesmith.ConstantWavelengthExperiment.x_ray(instrument)
+    pattern = phasesmith.PowderPattern(np.linspace(5.0, 125.0, 20_001))
+    prepared = phasesmith.PreparedStructuralPattern(pattern, experiment, phase)
     if not prepared.uses_native_fused_path:
         raise RuntimeError("benchmark phase did not select the fused native path")
 
-    def separate() -> rietveld.AccumulationResult:
-        structural = rietveld.calculate_structure_factors(
+    def separate() -> phasesmith.AccumulationResult:
+        structural = phasesmith.calculate_structure_factors(
             phase.structure,
             phase.reflections.hkl,
             phase.reflections.multiplicity,
@@ -133,7 +133,7 @@ def main() -> None:
         )
         spacing = phase.structure.cell.d_spacings(phase.reflections.hkl).d_spacing_angstrom
         positions = 2.0 * np.degrees(np.arcsin(instrument.wavelength_angstrom / (2.0 * spacing)))
-        return rietveld.accumulate_cw(
+        return phasesmith.accumulate_cw(
             pattern.x,
             positions,
             structural.integrated_intensity,
@@ -147,7 +147,7 @@ def main() -> None:
     separated = measure(separate, arguments.warmups, arguments.repetitions)
     print(
         f"python={platform.python_version()} platform={platform.platform()} "
-        f"build_mode={rietveld._core.BUILD_MODE} reflections={arguments.reflections} "
+        f"build_mode={phasesmith._core.BUILD_MODE} reflections={arguments.reflections} "
         f"sites={arguments.sites} samples={pattern.x.size}"
     )
     report("fused_values_and_products_ready", fused)

@@ -171,7 +171,7 @@ format-1 projects with an empty structural-phase collection.
    compatibility API unchanged.
 5. Compose reflection generation, built-in scattering, structural intensity,
    CW position, existing sample physics, and profile accumulation in one
-   `rietveld-engine` call.
+   `phasesmith-engine` call.
 6. Add `RietveldPhase`, stable diagnostics, persistence migration, independent
    NumPy references, invariance/finite-difference/adjoint tests, and realistic
    separate/combined benchmarks.
@@ -190,5 +190,5 @@ The optimized public Python benchmark measured a 0.806 millisecond fused
 median and a 1.203 millisecond separated median. The separated public path also
 materializes bounded dense structural derivatives, while the fused production
 path is ready for JVP/VJP products. Reproduce these measurements with
-`cargo bench -p rietveld-engine --bench structural_pattern` and
+`cargo bench -p phasesmith-engine --bench structural_pattern` and
 `python benchmarks/structural_pattern.py --require-release`.

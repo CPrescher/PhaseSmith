@@ -1,6 +1,6 @@
 # Le Bail extraction
 
-`rietveld.refinement.lebail` is the first complete refinement workflow. It
+`phasesmith.refinement.lebail` is the first complete refinement workflow. It
 consumes `PowderPattern`, `ConstantWavelengthInstrument`, and one or more
 identified `Phase` objects through the same calculation API used by ordinary
 scripts.
@@ -38,7 +38,7 @@ identifiability limit instead of hiding it through reflection order.
 ## Short script
 
 ```python
-from rietveld.refinement import lebail
+from phasesmith.refinement import lebail
 
 request = lebail.LeBailInput(
     pattern=pattern,       # observed_y and background are explicit arrays

@@ -143,7 +143,7 @@
   "kind": "powder_histogram",
   "provenance": {
     "generated_at_utc": "2026-08-04T22:41:32.472319+00:00",
-    "generator_sha256": "4309d88163f91242a97142d9900b27025aa6e6e5be43a25082f896e754937ba4",
+    "generator_sha256": "77381e2ae873b04dbf5e429f70de983e91937d60735b414ca7cdb6cb680b25cf",
     "gsasii_repository": "https://github.com/AdvancedPhotonSource/GSAS-II",
     "gsasii_revision": "c0bc79b259cdf0065480b5fbd57674ddf12c4a23",
     "gsasii_tag": 5838,

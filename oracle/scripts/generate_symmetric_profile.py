@@ -2,7 +2,7 @@
 """Generate the pinned GSAS-II symmetric-profile oracle fixture.
 
 This script is run with GSAS-II's Python interpreter. It deliberately imports
-no Rietveld Engine module. Existing fixture files are protected unless
+no PhaseSmith module. Existing fixture files are protected unless
 ``--force`` is supplied explicitly.
 """
 

@@ -2,7 +2,7 @@
 """Generate pinned GSAS-II U/V/W/X/Y profile and derivative fixtures.
 
 Run this only with the pinned external GSAS-II Python environment. The script
-imports no Rietveld Engine module and refuses overwrite without ``--force``.
+imports no PhaseSmith module and refuses overwrite without ``--force``.
 """
 
 from __future__ import annotations

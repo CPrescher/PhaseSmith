@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Benchmark the pinned GSAS-II CW profile kernel and Python accumulation.
 
-This external-only worker imports no Rietveld Engine module. It is launched by
+This external-only worker imports no PhaseSmith module. It is launched by
 ``benchmarks/compare_gsasii.py`` with GSAS-II's own Python interpreter.
 """
 
