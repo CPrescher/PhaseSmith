@@ -7,11 +7,11 @@ arrays and has no dependency on Dioptas, xypattern, or a GUI.
 
 ## Smooth Bruckner compatibility model
 
-The first estimator reproduces the observable algorithm in xypattern's
-`smooth_bruckner.pyx`, used by Dioptas-style workflows. Compatibility is pinned
-to xypattern revision `6e4574d75d2d6fcefc633f9fbecc27b8f1bcd817` (release
-1.2.3). xypattern is MIT licensed; its notice is retained in
-`THIRD_PARTY_NOTICES.md`.
+The first estimator reproduces the observable algorithm in xypattern's pinned
+[`smooth_bruckner.pyx`](https://github.com/CPrescher/xypattern/blob/6e4574d75d2d6fcefc633f9fbecc27b8f1bcd817/xypattern/util/smooth_bruckner.pyx),
+used by Dioptas-style workflows. Compatibility is pinned to xypattern revision
+`6e4574d75d2d6fcefc633f9fbecc27b8f1bcd817` (release 1.2.3). xypattern is MIT
+licensed; its notice is retained in `THIRD_PARTY_NOTICES.md`.
 
 For an input intensity vector `y` of length `n` and a non-negative half-window
 `N`, the native kernel:
@@ -56,6 +56,19 @@ read-only and contiguous. The estimated array can be supplied directly as
   counts, non-finite input, nonuniform grids, and polynomial order limits.
 - A realistic multi-peak pattern benchmark reports native smoothing and the
   complete smoothing-plus-Chebyshev pipeline separately.
+
+An isolated install of xypattern 1.2.3 at the pinned revision gives a maximum
+absolute difference of `8.89e-16` for the raw 32-sample compatibility fixture
+and `8.31e-14` for a 1,001-sample default smoothing-plus-Chebyshev pipeline.
+xypattern remains absent from the project environment and dependency metadata.
+
+On the development host's release build, a realistic 20,001-sample, 200-peak,
+40-point-half-window, 50-iteration case takes 3.61 ms median through the public
+native smoother. The complete degree-50 Chebyshev subtraction takes 13.15 ms
+median. The corresponding Rust Criterion kernel measurement is 3.76 ms, or
+approximately 5.31 million input samples per second for each complete
+50-iteration call. Run `benchmarks/background.py --require-release` and the
+`background_smoother` Criterion case to reproduce the measurements.
 
 This estimator is non-linear and non-differentiable at clipping decisions. It
 is intentionally not a refinable parameter family and does not participate in

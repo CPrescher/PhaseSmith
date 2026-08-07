@@ -8,7 +8,8 @@ use rietveld_core::{
     FcjGeometry, GridView, PeakBatchView, SupportPolicy, TchPeakBatchView, TchShape, TchWidths,
     TofInstrument, WavelengthComponentsView, accumulate_batch, accumulate_cw_batch,
     accumulate_cw_contributions_batch, accumulate_cw_fcj_batch, accumulate_cw_fcj_components_batch,
-    accumulate_tch_batch, accumulate_tof_batch, accumulate_values_batch, symmetric_pseudo_voigt,
+    accumulate_tch_batch, accumulate_tof_batch, accumulate_values_batch, smooth_bruckner,
+    symmetric_pseudo_voigt,
 };
 
 struct OwnedContributions {
@@ -94,6 +95,34 @@ fn scalar_profile(criterion: &mut Criterion) {
     criterion.bench_function("symmetric_pseudo_voigt/value_and_derivatives", |bencher| {
         bencher.iter(|| symmetric_pseudo_voigt(black_box(0.17), black_box(0.08), black_box(0.43)));
     });
+}
+
+fn background_smoother(criterion: &mut Criterion) {
+    let x: Vec<f64> = (0..20_001)
+        .map(|index| 5.0 + f64::from(index) * 0.005)
+        .collect();
+    let mut y: Vec<f64> = x
+        .iter()
+        .map(|coordinate| 10.0 + 0.03 * coordinate + 0.8 * (coordinate / 17.0).cos())
+        .collect();
+    for peak_index in 0..200 {
+        let position = 5.3 + f64::from(peak_index) * (99.4 / 199.0);
+        let width = 0.025 + f64::from(peak_index % 7) * 0.003;
+        let intensity = 20.0 + f64::from(peak_index % 31);
+        for (coordinate, value) in x.iter().zip(&mut y) {
+            *value += intensity * (-0.5 * ((coordinate - position) / width).powi(2)).exp();
+        }
+    }
+
+    let mut group = criterion.benchmark_group("background_smoother");
+    group.throughput(Throughput::Elements(y.len() as u64));
+    group.bench_function(BenchmarkId::new("50_iterations", y.len()), |bencher| {
+        bencher.iter(|| {
+            smooth_bruckner(black_box(&y), black_box(40), black_box(50))
+                .expect("valid background benchmark")
+        });
+    });
+    group.finish();
 }
 
 fn fused_accumulator(criterion: &mut Criterion) {
@@ -367,6 +396,7 @@ fn tof_accumulator(criterion: &mut Criterion) {
 
 criterion_group!(
     benches,
+    background_smoother,
     scalar_profile,
     fused_accumulator,
     tch_accumulator,

@@ -36,6 +36,28 @@ For application-owned glue, `DioptasConsumer` has only `read_pattern()` and
 labels, mask conversion, background separation, and errors. Dioptas itself
 never becomes a package dependency.
 
+Dioptas-style Smooth Bruckner background subtraction is application-neutral
+and therefore lives in `rietveld.background`, not this adapter. A host can
+estimate the background before constructing `DioptasPatternData`:
+
+```python
+import rietveld
+from rietveld.integrations import dioptas
+
+model = rietveld.SmoothBrucknerBackground(smooth_width=0.1, iterations=50)
+subtracted = model.subtract(two_theta, measured)
+source = dioptas.DioptasPatternData(
+    two_theta,
+    measured,
+    background_y=subtracted.background,
+)
+```
+
+This reproduces the pinned xypattern smoothing-plus-Chebyshev algorithm without
+importing Dioptas or xypattern. See
+[`background-subtraction.md`](background-subtraction.md) for exact boundary and
+index semantics.
+
 ## Progress, cancellation, threads, and the GIL
 
 Calculation progress is reported immediately before and after one native batch.

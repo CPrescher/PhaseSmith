@@ -17,6 +17,9 @@ The first full CIF-backed Rietveld workflow now refines CW profile/background,
 phase scale, lattice, symmetry-allowed coordinates, occupancy, and isotropic
 displacement through matrix-free Rust JVP/VJP products with safe checkpoints
 and structured logs.
+Model-independent preprocessing now includes a native Smooth Bruckner
+background implementation compatible with pinned xypattern/Dioptas behavior,
+plus optional Chebyshev compression and plain NumPy subtraction results.
 
 The architecture and roadmap are in [PROJECT_BRIEF.md](PROJECT_BRIEF.md); the
 equations and parameter conventions are in [docs/equations.md](docs/equations.md).
@@ -44,6 +47,9 @@ geometry, quadrature, derivatives, and asymmetric support are documented in
 [docs/fcj-profile.md](docs/fcj-profile.md). The script-first module boundaries,
 including the first-class Le Bail and application-neutral NumPy boundaries, are
 in [docs/public-api.md](docs/public-api.md).
+Background estimation, compatibility semantics, and its deliberate separation
+from refinable backgrounds are documented in
+[docs/background-subtraction.md](docs/background-subtraction.md).
 
 Optional monochromatic and multi-wavelength radiation composition is documented
 in [docs/wavelength-components.md](docs/wavelength-components.md).
@@ -89,6 +95,7 @@ uv run python benchmarks/lebail.py --require-release
 uv run python benchmarks/scattering.py --require-release
 uv run python benchmarks/structural_pattern.py --require-release
 uv run python benchmarks/lattice_refinement.py --require-release
+uv run python benchmarks/background.py --require-release
 ```
 
 The pinned external-oracle environment can compare the same support-limited CW
@@ -112,6 +119,27 @@ uv run python benchmarks/compare_gsasii_structural.py --require-release \
 The exact scope and interpretation are documented in
 [docs/gsasii-performance.md](docs/gsasii-performance.md). This is a kernel-level
 comparison, not a claim about complete refinement workflow speed.
+
+Background estimation is an explicit preprocessing step:
+
+```python
+import rietveld
+
+subtracted = rietveld.SmoothBrucknerBackground(
+    smooth_width=0.1,
+    iterations=50,
+    chebyshev_order=50,
+).subtract(two_theta, measured)
+
+pattern = rietveld.PowderPattern(
+    two_theta,
+    observed_y=measured,
+    background=subtracted.background,
+)
+```
+
+Set `chebyshev_order=None` to use the raw Bruckner envelope. Neither xypattern
+nor Dioptas is required at runtime.
 
 ```python
 import numpy as np
