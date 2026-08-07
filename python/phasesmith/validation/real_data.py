@@ -13,7 +13,7 @@ import numpy as np
 from ..background import SmoothBrucknerBackground
 from ..control import CancellationCallback
 from ..extensions import CompositePhysicsProvider
-from ..instrument import ConstantWavelengthInstrument
+from ..instrument import ConstantWavelengthInstrument, FcjGeometry
 from ..intensity_corrections import BraggBrentanoPolarizedLp
 from ..io.powder import read_powder_data
 from ..pattern import PowderPattern
@@ -359,6 +359,10 @@ def run_qarr_1g_validation(
             values["Lam2"],
             values["I(L2)/I(L1)"],
         ),
+        axial_geometry=FcjGeometry(
+            values["SH/L"] / 2.0,
+            values["SH/L"] / 2.0,
+        ),
     )
     scattering = XrayFixedDispersion(QARR_1G_CUKA_FIXED_DISPERSION)
     correction = BraggBrentanoPolarizedLp(values["Lam1"], values["Polariz."])
@@ -640,8 +644,9 @@ def run_qarr_1g_validation(
                 "components; component-dependent dispersion is not interpolated."
             ),
             (
-                "The supplied SH/L=0.002 FCJ asymmetry and absorption are not included in this "
-                "structural checkpoint; lattice and component wavelengths remain fixed."
+                "The supplied SH/L=0.002 is included through the documented equal-height FCJ "
+                "mapping; absorption is not yet included, and lattice/component wavelengths "
+                "remain fixed."
             ),
         ),
     )

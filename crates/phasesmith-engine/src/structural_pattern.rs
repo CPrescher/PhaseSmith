@@ -5,7 +5,8 @@ use std::fmt::{Display, Formatter};
 
 use phasesmith_core::{
     Accumulation, ConstantWavelengthInstrument, CwContributionsError, CwContributionsView, CwError,
-    GridView, ProfileError, SupportPolicy, accumulate_cw_contributions_batch,
+    FcjGeometry, GridView, ProfileError, SupportPolicy, accumulate_cw_contributions_batch,
+    accumulate_cw_fcj_contributions_batch,
 };
 use phasesmith_crystallography::{
     IntegratedIntensityCorrection, IntegratedIntensityCorrectionError,
@@ -65,6 +66,8 @@ pub struct StructuralPatternInputView<'a> {
     pub coordinate_tolerance: f64,
     /// Monochromatic CW instrument/profile parameters.
     pub instrument: ConstantWavelengthInstrument,
+    /// Optional Finger--Cox--Jephcoat axial-divergence geometry.
+    pub axial_geometry: Option<FcjGeometry>,
     /// Explicit zero/sample-displacement position correction.
     pub position_correction: MonochromaticPositionCorrection,
     /// Explicit integrated-intensity correction model.
@@ -629,15 +632,26 @@ fn accumulate(
     intensities: &[f64],
 ) -> Result<Accumulation, StructuralPatternError> {
     let grid = GridView::new(input.x_deg).map_err(StructuralPatternError::Profile)?;
-    accumulate_cw_contributions_batch(
-        grid,
-        two_theta_deg,
-        intensities,
-        input.instrument,
-        input.contributions,
-        input.support,
-    )
-    .map_err(StructuralPatternError::Contributions)
+    let result = match input.axial_geometry {
+        Some(geometry) => accumulate_cw_fcj_contributions_batch(
+            grid,
+            two_theta_deg,
+            intensities,
+            input.instrument,
+            input.contributions,
+            geometry,
+            input.support,
+        ),
+        None => accumulate_cw_contributions_batch(
+            grid,
+            two_theta_deg,
+            intensities,
+            input.instrument,
+            input.contributions,
+            input.support,
+        ),
+    };
+    result.map_err(StructuralPatternError::Contributions)
 }
 
 fn chain_pattern_jvp(
@@ -762,6 +776,7 @@ mod tests {
                 scale,
                 coordinate_tolerance: 1.0e-10,
                 instrument: instrument(),
+                axial_geometry: None,
                 position_correction: MonochromaticPositionCorrection {
                     zero_shift_deg: 0.0,
                     bragg_brentano_mm: None,
@@ -859,6 +874,7 @@ mod tests {
             scale,
             coordinate_tolerance: 1.0e-10,
             instrument: instrument(),
+            axial_geometry: None,
             position_correction: MonochromaticPositionCorrection {
                 zero_shift_deg: 0.0,
                 bragg_brentano_mm: None,

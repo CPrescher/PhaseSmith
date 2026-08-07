@@ -11,7 +11,7 @@ from numpy.typing import ArrayLike, NDArray
 from . import _core
 from ._api import _vector
 from .extensions import PhysicsContribution
-from .instrument import ConstantWavelengthInstrument
+from .instrument import ConstantWavelengthInstrument, FcjGeometry
 from .radiation import WavelengthComponents, component_global_parameter_names
 from .results import AccumulationResult, _build_accumulation_result
 
@@ -100,13 +100,16 @@ def accumulate_cw_contributions(
     instrument: ConstantWavelengthInstrument,
     contributions: PhysicsContribution,
     *,
+    geometry: FcjGeometry | None = None,
     support_fwhm: float = 20.0,
     jacobian_layout: Literal["support", "dense"] = "support",
 ) -> AccumulationResult:
-    """Accumulate one vectorized sample-physics contribution batch."""
+    """Accumulate one vectorized sample-physics batch with optional FCJ asymmetry."""
 
     if jacobian_layout not in ("support", "dense"):
         raise ValueError("jacobian_layout must be 'support' or 'dense'")
+    if geometry is not None and not isinstance(geometry, FcjGeometry):
+        raise TypeError("geometry must be FcjGeometry or None")
     y, starts, offsets, local_values, global_values = _core.accumulate_cw_contributions(
         _vector(x, "x"),
         _vector(two_theta_deg, "two_theta_deg"),
@@ -128,6 +131,8 @@ def accumulate_cw_contributions(
         contributions.d_intensity_multiplier_d_parameters.reshape(-1),
         len(contributions.parameter_names),
         float(support_fwhm),
+        None if geometry is None else geometry.sample_over_radius,
+        None if geometry is None else geometry.detector_over_radius,
     )
     return _build_accumulation_result(
         y,
@@ -136,7 +141,9 @@ def accumulate_cw_contributions(
         local_values,
         global_values,
         CW_LOCAL_PARAMETER_ORDER,
-        CW_GLOBAL_PARAMETER_ORDER + contributions.parameter_names,
+        CW_GLOBAL_PARAMETER_ORDER
+        + (() if geometry is None else ("sample_over_radius", "detector_over_radius"))
+        + contributions.parameter_names,
         jacobian_layout,
     )
 

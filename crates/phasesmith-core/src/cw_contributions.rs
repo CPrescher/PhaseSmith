@@ -4,6 +4,7 @@ use std::error::Error;
 use std::fmt::{Display, Formatter};
 
 use crate::cw::{ConstantWavelengthInstrument, CwBatchError, CwError, CwProfileParameters};
+use crate::fcj::{FcjError, FcjGeometry, FcjProfile, FcjProfilePoint};
 use crate::profile::{
     Accumulation, DenseJacobian, GridView, PatternDerivatives, ProfileError, SupportJacobian,
     SupportPolicy, zeroed_f64_vec,
@@ -12,6 +13,7 @@ use crate::tch::{TchShape, TchWidths};
 
 const GAUSSIAN_FWHM_PER_SIGMA: f64 = 2.354_820_045_030_949_3;
 const INSTRUMENT_PARAMETER_COUNT: usize = 5;
+const FCJ_PARAMETER_COUNT: usize = 2;
 const LOCAL_PARAMETER_COUNT: usize = 2;
 
 /// Validated sample-physics contributions for one CW reflection batch.
@@ -228,6 +230,13 @@ pub enum CwContributionsError {
         /// Underlying CW error.
         reason: CwBatchError,
     },
+    /// One FCJ profile could not be prepared.
+    Fcj {
+        /// Reflection index.
+        reflection: usize,
+        /// Underlying FCJ error.
+        reason: FcjError,
+    },
     /// Allocation size arithmetic overflowed.
     AllocationOverflow,
     /// Generic grid, support, or allocation failure.
@@ -257,6 +266,12 @@ impl Display for CwContributionsError {
                 "provider parameter {parameter}, reflection {reflection} has an invalid {quantity} derivative"
             ),
             Self::Cw { reason } => Display::fmt(reason, formatter),
+            Self::Fcj { reflection, reason } => {
+                write!(
+                    formatter,
+                    "reflection {reflection} has invalid FCJ geometry: {reason}"
+                )
+            }
             Self::AllocationOverflow => write!(formatter, "contribution allocation size overflow"),
             Self::Profile { reason } => Display::fmt(reason, formatter),
         }
@@ -271,14 +286,33 @@ impl From<ProfileError> for CwContributionsError {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 struct PreparedProfile {
     tch: TchShape,
+    fcj: Option<FcjProfile>,
+    support_radius_deg: f64,
     d_gaussian_d_instrument: [f64; INSTRUMENT_PARAMETER_COUNT],
     d_lorentzian_d_instrument: [f64; INSTRUMENT_PARAMETER_COUNT],
     d_gaussian_d_position: f64,
     d_lorentzian_d_position: f64,
     d_gaussian_d_variance: f64,
+}
+
+impl PreparedProfile {
+    fn evaluate(&self, x_deg: f64, position_deg: f64) -> FcjProfilePoint {
+        if let Some(fcj) = &self.fcj {
+            return fcj.evaluate_supported(x_deg, self.support_radius_deg);
+        }
+        let point = self.tch.evaluate(x_deg - position_deg);
+        FcjProfilePoint {
+            value: point.value,
+            d_position: -point.d_delta,
+            d_gaussian_fwhm: point.d_gaussian_fwhm,
+            d_lorentzian_fwhm: point.d_lorentzian_fwhm,
+            d_sample_over_radius: 0.0,
+            d_detector_over_radius: 0.0,
+        }
+    }
 }
 
 struct PreparedBatch {
@@ -292,6 +326,8 @@ fn prepare_profile(
     position: f64,
     instrument: ConstantWavelengthInstrument,
     contributions: CwContributionsView<'_>,
+    geometry: Option<FcjGeometry>,
+    support: SupportPolicy,
 ) -> Result<PreparedProfile, CwContributionsError> {
     let base =
         CwProfileParameters::from_validated_instrument(position, instrument).map_err(|reason| {
@@ -325,8 +361,24 @@ fn prepare_profile(
         .d_gaussian_fwhm_d_instrument
         .map(|value| value * instrument_gaussian_scale);
     let d_gaussian_d_variance = GAUSSIAN_FWHM_PER_SIGMA / (2.0 * variance.sqrt());
+    let support_radius_deg = support.radius(tch.total_fwhm);
+    let fcj = geometry
+        .map(|geometry| {
+            FcjProfile::new(
+                position,
+                TchWidths {
+                    gaussian_fwhm: gaussian,
+                    lorentzian_fwhm: lorentzian,
+                },
+                geometry,
+            )
+            .map_err(|reason| CwContributionsError::Fcj { reflection, reason })
+        })
+        .transpose()?;
     Ok(PreparedProfile {
         tch,
+        fcj,
+        support_radius_deg,
         d_gaussian_d_instrument,
         d_lorentzian_d_instrument: base.d_lorentzian_fwhm_d_instrument,
         d_gaussian_d_position: base.d_gaussian_fwhm_d_two_theta * instrument_gaussian_scale
@@ -342,6 +394,7 @@ fn prepare_batch(
     positions_deg: &[f64],
     instrument: ConstantWavelengthInstrument,
     contributions: CwContributionsView<'_>,
+    geometry: Option<FcjGeometry>,
     support: SupportPolicy,
 ) -> Result<PreparedBatch, CwContributionsError> {
     let reflection_count = positions_deg.len();
@@ -368,8 +421,13 @@ fn prepare_batch(
             positions_deg[reflection],
             instrument,
             contributions,
+            geometry,
+            support,
         )?;
-        let range = support.range(positions_deg[reflection], profile.tch.total_fwhm);
+        let range = match &profile.fcj {
+            Some(fcj) => fcj.support_range(profile.support_radius_deg),
+            None => support.range(positions_deg[reflection], profile.tch.total_fwhm),
+        };
         let lower = x.partition_point(|value| *value < range.left);
         let upper = x.partition_point(|value| *value <= range.right);
         offsets.push(
@@ -403,6 +461,56 @@ pub fn accumulate_cw_contributions_batch(
     contributions: CwContributionsView<'_>,
     support: SupportPolicy,
 ) -> Result<Accumulation, CwContributionsError> {
+    accumulate_cw_contributions_impl(
+        grid,
+        positions_deg,
+        base_intensities,
+        instrument,
+        contributions,
+        None,
+        support,
+    )
+}
+
+/// Accumulate FCJ-asymmetric CW reflections with vectorized sample physics.
+///
+/// Local derivative order is base integrated intensity and ideal position.
+/// Dense global order is U/V/W/X/Y, the sample and detector axial ratios,
+/// followed by provider parameter rows.
+///
+/// # Errors
+///
+/// Returns [`CwContributionsError`] for invalid inputs or derived profiles.
+pub fn accumulate_cw_fcj_contributions_batch(
+    grid: GridView<'_>,
+    positions_deg: &[f64],
+    base_intensities: &[f64],
+    instrument: ConstantWavelengthInstrument,
+    contributions: CwContributionsView<'_>,
+    geometry: FcjGeometry,
+    support: SupportPolicy,
+) -> Result<Accumulation, CwContributionsError> {
+    accumulate_cw_contributions_impl(
+        grid,
+        positions_deg,
+        base_intensities,
+        instrument,
+        contributions,
+        Some(geometry),
+        support,
+    )
+}
+
+#[allow(clippy::too_many_arguments, clippy::too_many_lines)]
+fn accumulate_cw_contributions_impl(
+    grid: GridView<'_>,
+    positions_deg: &[f64],
+    base_intensities: &[f64],
+    instrument: ConstantWavelengthInstrument,
+    contributions: CwContributionsView<'_>,
+    geometry: Option<FcjGeometry>,
+    support: SupportPolicy,
+) -> Result<Accumulation, CwContributionsError> {
     support.validate()?;
     let reflections = crate::cw::CwReflectionBatchView::new(positions_deg, base_intensities)
         .map_err(|reason| CwContributionsError::Cw { reason })?;
@@ -418,10 +526,24 @@ pub fn accumulate_cw_contributions_batch(
     }
     let x = grid.as_slice();
     let reflection_count = reflections.len();
+    let axial_parameter_count = if geometry.is_some() {
+        FCJ_PARAMETER_COUNT
+    } else {
+        0
+    };
     let global_parameter_count = INSTRUMENT_PARAMETER_COUNT
+        .checked_add(axial_parameter_count)
+        .ok_or(CwContributionsError::AllocationOverflow)?
         .checked_add(contributions.parameter_count)
         .ok_or(CwContributionsError::AllocationOverflow)?;
-    let prepared = prepare_batch(x, positions_deg, instrument, contributions, support)?;
+    let prepared = prepare_batch(
+        x,
+        positions_deg,
+        instrument,
+        contributions,
+        geometry,
+        support,
+    )?;
 
     let active_count = prepared.offsets.last().copied().unwrap_or(0);
     let local_count = active_count
@@ -434,7 +556,7 @@ pub fn accumulate_cw_contributions_batch(
     let mut local_values = zeroed_f64_vec(local_count)?;
     let mut global_values = zeroed_f64_vec(global_count)?;
     for reflection in 0..reflection_count {
-        let profile = prepared.profiles[reflection];
+        let profile = &prepared.profiles[reflection];
         let base_intensity = base_intensities[reflection];
         let multiplier = contributions.intensity_multiplier[reflection];
         let effective_intensity = base_intensity * multiplier;
@@ -448,20 +570,26 @@ pub fn accumulate_cw_contributions_batch(
         let end = prepared.offsets[reflection + 1];
         for active in begin..end {
             let sample = prepared.starts[reflection] + active - begin;
-            let point = profile.tch.evaluate(x[sample] - positions_deg[reflection]);
+            let point = profile.evaluate(x[sample], positions_deg[reflection]);
             y[sample] += effective_intensity * point.value;
             let local = active * LOCAL_PARAMETER_COUNT;
             local_values[local] = multiplier * point.value;
             local_values[local + 1] = base_intensity
                 * (contributions.d_intensity_multiplier_d_position[reflection] * point.value
                     + multiplier
-                        * (-point.d_delta
+                        * (point.d_position
                             + point.d_gaussian_fwhm * profile.d_gaussian_d_position
                             + point.d_lorentzian_fwhm * profile.d_lorentzian_d_position));
             for parameter in 0..INSTRUMENT_PARAMETER_COUNT {
                 let derivative = point.d_gaussian_fwhm * profile.d_gaussian_d_instrument[parameter]
                     + point.d_lorentzian_fwhm * profile.d_lorentzian_d_instrument[parameter];
                 global_values[parameter * x.len() + sample] += effective_intensity * derivative;
+            }
+            if geometry.is_some() {
+                global_values[INSTRUMENT_PARAMETER_COUNT * x.len() + sample] +=
+                    effective_intensity * point.d_sample_over_radius;
+                global_values[(INSTRUMENT_PARAMETER_COUNT + 1) * x.len() + sample] +=
+                    effective_intensity * point.d_detector_over_radius;
             }
             for parameter in 0..contributions.parameter_count {
                 let index = contributions.derivative_index(parameter, reflection);
@@ -474,8 +602,9 @@ pub fn accumulate_cw_contributions_batch(
                         + multiplier
                             * (point.d_gaussian_fwhm * d_gaussian
                                 + point.d_lorentzian_fwhm * d_lorentzian));
-                global_values[(INSTRUMENT_PARAMETER_COUNT + parameter) * x.len() + sample] +=
-                    derivative;
+                global_values[(INSTRUMENT_PARAMETER_COUNT + axial_parameter_count + parameter)
+                    * x.len()
+                    + sample] += derivative;
             }
         }
     }
@@ -625,6 +754,144 @@ mod tests {
             assert!(
                 (analytical - finite_difference).abs() < 8.0e-6 * finite_difference.abs().max(1.0)
             );
+        }
+    }
+
+    #[test]
+    fn zero_fcj_geometry_exactly_matches_symmetric_contributions() {
+        let x: Vec<f64> = (0..=2_000)
+            .map(|index| 39.0 + f64::from(index) * 0.001)
+            .collect();
+        let positions = [39.8, 40.2];
+        let intensities = [12.0, 7.0];
+        let variance = [2.0e-5, 3.0e-5];
+        let lorentzian = [1.0e-3, 2.0e-3];
+        let multiplier = [0.8, 1.2];
+        let zeros = [0.0, 0.0];
+        let provider = [0.1, 0.2];
+        let arrays = CwContributionArrays {
+            gaussian_variance_deg2: &variance,
+            lorentzian_fwhm_deg: &lorentzian,
+            intensity_multiplier: &multiplier,
+            d_gaussian_variance_d_position: &zeros,
+            d_lorentzian_fwhm_d_position: &zeros,
+            d_intensity_multiplier_d_position: &zeros,
+            d_gaussian_variance_d_parameters: &zeros,
+            d_lorentzian_fwhm_d_parameters: &zeros,
+            d_intensity_multiplier_d_parameters: &provider,
+        };
+        let contributions = CwContributionsView::new(2, 1, arrays).expect("contributions");
+        let grid = GridView::new(&x).expect("grid");
+        let support = SupportPolicy::FwhmMultiple(20.0);
+        let symmetric = accumulate_cw_contributions_batch(
+            grid,
+            &positions,
+            &intensities,
+            instrument(),
+            contributions,
+            support,
+        )
+        .expect("symmetric");
+        let fcj = accumulate_cw_fcj_contributions_batch(
+            grid,
+            &positions,
+            &intensities,
+            instrument(),
+            contributions,
+            FcjGeometry {
+                sample_over_radius: 0.0,
+                detector_over_radius: 0.0,
+            },
+            support,
+        )
+        .expect("FCJ");
+        assert_eq!(fcj.y, symmetric.y);
+        assert_eq!(fcj.derivatives.local, symmetric.derivatives.local);
+        let symmetric_global = symmetric.derivatives.global.expect("symmetric global");
+        let fcj_global = fcj.derivatives.global.expect("FCJ global");
+        assert_eq!(
+            &fcj_global.values[..INSTRUMENT_PARAMETER_COUNT * x.len()],
+            &symmetric_global.values[..INSTRUMENT_PARAMETER_COUNT * x.len()]
+        );
+        assert_eq!(
+            &fcj_global.values[(INSTRUMENT_PARAMETER_COUNT + FCJ_PARAMETER_COUNT) * x.len()..],
+            &symmetric_global.values[INSTRUMENT_PARAMETER_COUNT * x.len()..]
+        );
+    }
+
+    #[test]
+    fn fcj_geometry_and_provider_derivatives_match_centered_differences() {
+        let x: Vec<f64> = (0..=2_000)
+            .map(|index| 49.5 + f64::from(index) * 0.000_5)
+            .collect();
+        let position = [50.0];
+        let intensity = [8.0];
+        let support = SupportPolicy::FwhmMultiple(100.0);
+        let calculate = |sample: f64, detector: f64, amplitude: f64| {
+            let variance = [amplitude * 0.25];
+            let zeros = [0.0];
+            let ones = [1.0];
+            let d_variance = [0.25];
+            let arrays = CwContributionArrays {
+                gaussian_variance_deg2: &variance,
+                lorentzian_fwhm_deg: &zeros,
+                intensity_multiplier: &ones,
+                d_gaussian_variance_d_position: &zeros,
+                d_lorentzian_fwhm_d_position: &zeros,
+                d_intensity_multiplier_d_position: &zeros,
+                d_gaussian_variance_d_parameters: &d_variance,
+                d_lorentzian_fwhm_d_parameters: &zeros,
+                d_intensity_multiplier_d_parameters: &zeros,
+            };
+            accumulate_cw_fcj_contributions_batch(
+                GridView::new(&x).expect("grid"),
+                &position,
+                &intensity,
+                instrument(),
+                CwContributionsView::new(1, 1, arrays).expect("contributions"),
+                FcjGeometry {
+                    sample_over_radius: sample,
+                    detector_over_radius: detector,
+                },
+                support,
+            )
+            .expect("FCJ contributions")
+        };
+        let sample = 0.013;
+        let detector = 0.009;
+        let amplitude = 3.0e-4;
+        let baseline = calculate(sample, detector, amplitude);
+        let global = baseline.derivatives.global.as_ref().expect("global");
+        for (parameter, step, plus, minus) in [
+            (
+                INSTRUMENT_PARAMETER_COUNT,
+                1.0e-7,
+                calculate(sample + 1.0e-7, detector, amplitude),
+                calculate(sample - 1.0e-7, detector, amplitude),
+            ),
+            (
+                INSTRUMENT_PARAMETER_COUNT + 1,
+                1.0e-7,
+                calculate(sample, detector + 1.0e-7, amplitude),
+                calculate(sample, detector - 1.0e-7, amplitude),
+            ),
+            (
+                INSTRUMENT_PARAMETER_COUNT + FCJ_PARAMETER_COUNT,
+                1.0e-8,
+                calculate(sample, detector, amplitude + 1.0e-8),
+                calculate(sample, detector, amplitude - 1.0e-8),
+            ),
+        ] {
+            for sample_index in 0..x.len() {
+                let finite_difference =
+                    (plus.y[sample_index] - minus.y[sample_index]) / (2.0 * step);
+                let analytical = global.values[parameter * x.len() + sample_index];
+                assert!(
+                    (analytical - finite_difference).abs()
+                        < 2.0e-4 * finite_difference.abs().max(1.0),
+                    "parameter {parameter}, sample {sample_index}: {analytical} != {finite_difference}"
+                );
+            }
         }
     }
 }

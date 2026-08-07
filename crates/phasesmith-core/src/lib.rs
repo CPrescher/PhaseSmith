@@ -25,7 +25,7 @@ pub use cw_components::{
 };
 pub use cw_contributions::{
     CwContributionArrays, CwContributionsError, CwContributionsView,
-    accumulate_cw_contributions_batch,
+    accumulate_cw_contributions_batch, accumulate_cw_fcj_contributions_batch,
 };
 pub use cw_fcj::{CwFcjBatchError, accumulate_cw_fcj_batch};
 pub use fcj::{FcjError, FcjGeometry, FcjProfile, FcjProfilePoint};

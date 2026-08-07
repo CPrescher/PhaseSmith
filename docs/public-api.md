@@ -231,12 +231,14 @@ phasesmith.integrations.dioptas.refine_lebail
 
 Top-level imports are convenience aliases for scripts and notebooks; the
 module-qualified paths above are the ownership boundary. FCJ geometry does not
-contain CW coefficients, and the FCJ module composes the two models through a
-single native batch call. `ReflectionGeometryBatch` owns plain `hkl`, d-spacing,
+contain CW coefficients. A `ConstantWavelengthExperiment` may own optional
+`axial_geometry`, allowing structural calculation, wavelength components, and
+sample-physics providers to compose through one native batch call.
+`ReflectionGeometryBatch` owns plain `hkl`, d-spacing,
 position, and base-intensity arrays. `calculate_cw_pattern` accepts it directly
 and calls an optional provider exactly once before one native fused
-accumulation. Future phase and refinement layers consume this calculation
-surface rather than moving their state into either model.
+accumulation. The two axial ratios and their analytical derivatives remain
+explicit global rows; refinement may keep them fixed without hiding them.
 
 ## Data and ownership rules
 

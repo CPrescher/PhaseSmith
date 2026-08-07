@@ -172,3 +172,15 @@ two-repetition run preserved those scientific outputs and reduced the
 PhaseSmith median to 7.60 s. GSAS-II measured 2.99 s in the same run. QARR stage
 2 retains matrix-free products until its rounding-sensitive flat basin is
 addressed by optimizer damping and acceptance hardening.
+
+After the structural path gained the exact continuous FCJ convolution, a
+reviewed one-repetition release run with no warmup returned essentially the
+same scientific result: PhaseSmith fractions 33.253%, 32.934%, and 33.813%,
+Poisson Rwp 19.672%, unit-weight Rwp 13.273%, and maximum weighed-fraction
+error 1.883 percentage points. PhaseSmith required 158.79 s. The pinned
+GSAS-II workflow returned 31.479%, 33.652%, and 34.869%, Rwp 18.389%, and
+required 10.59 s including an 8.21 s cold setup in that run. This is not a
+matched-kernel comparison: PhaseSmith evaluates the published continuous
+equal-height FCJ model while pinned GSAS-II uses its discretized one-parameter
+SH/L implementation. The result identifies FCJ convolution reuse and
+vectorization as a concrete performance requirement.

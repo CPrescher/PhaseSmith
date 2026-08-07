@@ -8,7 +8,7 @@ from enum import StrEnum
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
 
-from .instrument import ConstantWavelengthInstrument
+from .instrument import ConstantWavelengthInstrument, FcjGeometry
 
 
 class RadiationProbe(StrEnum):
@@ -72,6 +72,7 @@ class ConstantWavelengthExperiment:
     instrument: ConstantWavelengthInstrument
     zero_shift_deg: float = 0.0
     geometry: BraggBrentanoGeometry | None = None
+    axial_geometry: FcjGeometry | None = None
 
     def __post_init__(self) -> None:
         """Reject ambiguous or inconsistent wavelength ownership."""
@@ -86,38 +87,70 @@ class ConstantWavelengthExperiment:
             raise ValueError("zero_shift_deg must be finite")
         if self.geometry is not None and not isinstance(self.geometry, BraggBrentanoGeometry):
             raise TypeError("geometry must be BraggBrentanoGeometry or None")
+        if self.axial_geometry is not None and not isinstance(self.axial_geometry, FcjGeometry):
+            raise TypeError("axial_geometry must be FcjGeometry or None")
 
     @classmethod
-    def x_ray(cls, instrument: ConstantWavelengthInstrument) -> ConstantWavelengthExperiment:
+    def x_ray(
+        cls,
+        instrument: ConstantWavelengthInstrument,
+        *,
+        axial_geometry: FcjGeometry | None = None,
+    ) -> ConstantWavelengthExperiment:
         """Construct an explicitly monochromatic X-ray experiment."""
 
-        return cls(MonochromaticRadiation.x_ray(instrument.wavelength_angstrom), instrument)
+        return cls(
+            MonochromaticRadiation.x_ray(instrument.wavelength_angstrom),
+            instrument,
+            axial_geometry=axial_geometry,
+        )
 
     @classmethod
-    def neutron(cls, instrument: ConstantWavelengthInstrument) -> ConstantWavelengthExperiment:
+    def neutron(
+        cls,
+        instrument: ConstantWavelengthInstrument,
+        *,
+        axial_geometry: FcjGeometry | None = None,
+    ) -> ConstantWavelengthExperiment:
         """Construct an explicitly monochromatic neutron experiment."""
 
-        return cls(MonochromaticRadiation.neutron(instrument.wavelength_angstrom), instrument)
+        return cls(
+            MonochromaticRadiation.neutron(instrument.wavelength_angstrom),
+            instrument,
+            axial_geometry=axial_geometry,
+        )
 
     @classmethod
     def x_ray_components(
         cls,
         instrument: ConstantWavelengthInstrument,
         components: WavelengthComponents,
+        *,
+        axial_geometry: FcjGeometry | None = None,
     ) -> ConstantWavelengthExperiment:
         """Construct a fixed-component X-ray experiment."""
 
-        return cls(ComponentRadiation.x_ray(components), instrument)
+        return cls(
+            ComponentRadiation.x_ray(components),
+            instrument,
+            axial_geometry=axial_geometry,
+        )
 
     @classmethod
     def neutron_components(
         cls,
         instrument: ConstantWavelengthInstrument,
         components: WavelengthComponents,
+        *,
+        axial_geometry: FcjGeometry | None = None,
     ) -> ConstantWavelengthExperiment:
         """Construct a fixed-component neutron experiment."""
 
-        return cls(ComponentRadiation.neutron(components), instrument)
+        return cls(
+            ComponentRadiation.neutron(components),
+            instrument,
+            axial_geometry=axial_geometry,
+        )
 
 
 @dataclass(frozen=True, slots=True, init=False, eq=False)

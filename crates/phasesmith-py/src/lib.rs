@@ -10,8 +10,9 @@ use phasesmith_core::{
     SupportPolicy, TchPeakBatchView, TchShape, TchWidths, TofInstrument, TofProfile,
     TofProfileParameters, WavelengthComponentsView, accumulate_batch, accumulate_cw_batch,
     accumulate_cw_components_batch, accumulate_cw_contributions_batch, accumulate_cw_fcj_batch,
-    accumulate_cw_fcj_components_batch, accumulate_tch_batch, accumulate_tof_batch,
-    accumulate_values_batch, smooth_bruckner as native_smooth_bruckner, symmetric_pseudo_voigt,
+    accumulate_cw_fcj_components_batch, accumulate_cw_fcj_contributions_batch,
+    accumulate_tch_batch, accumulate_tof_batch, accumulate_values_batch,
+    smooth_bruckner as native_smooth_bruckner, symmetric_pseudo_voigt,
 };
 use phasesmith_engine::crystallography::{
     IntegratedIntensityCorrectionModel, NEUTRON_TABLE_PROVENANCE, P1BatchView,
@@ -696,11 +697,13 @@ impl NativeStructuralPhase {
         .map_err(|error| PyValueError::new_err(error.to_string()))
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn with_input<R>(
         &self,
         x_deg: &[f64],
         instrument: ConstantWavelengthInstrument,
         position_correction: MonochromaticPositionCorrection,
+        axial_geometry: Option<FcjGeometry>,
         contributions: CwContributionsView<'_>,
         support_fwhm: f64,
         operation: impl FnOnce(
@@ -743,6 +746,7 @@ impl NativeStructuralPhase {
             scale: self.scale,
             coordinate_tolerance: self.coordinate_tolerance,
             instrument,
+            axial_geometry,
             position_correction,
             correction_model,
             scattering_model: self.scattering_model,
@@ -868,6 +872,8 @@ impl NativeStructuralPhase {
         zero_shift_deg: f64,
         sample_displacement_mm: Option<f64>,
         goniometer_radius_mm: Option<f64>,
+        fcj_sample_over_radius: Option<f64>,
+        fcj_detector_over_radius: Option<f64>,
         u_deg2: f64,
         v_deg2: f64,
         w_deg2: f64,
@@ -901,6 +907,7 @@ impl NativeStructuralPhase {
         )?;
         let correction =
             position_correction(zero_shift_deg, sample_displacement_mm, goniometer_radius_mm)?;
+        let axial = axial_geometry(fcj_sample_over_radius, fcj_detector_over_radius)?;
         let result = py.detach(|| {
             self.with_input(
                 x_deg_values,
@@ -913,6 +920,7 @@ impl NativeStructuralPhase {
                     y_width_deg,
                 ),
                 correction,
+                axial,
                 contributions,
                 support_fwhm,
                 calculate_structural_pattern,
@@ -930,6 +938,8 @@ impl NativeStructuralPhase {
         zero_shift_deg: f64,
         sample_displacement_mm: Option<f64>,
         goniometer_radius_mm: Option<f64>,
+        fcj_sample_over_radius: Option<f64>,
+        fcj_detector_over_radius: Option<f64>,
         u_deg2: f64,
         v_deg2: f64,
         w_deg2: f64,
@@ -963,6 +973,7 @@ impl NativeStructuralPhase {
         )?;
         let correction =
             position_correction(zero_shift_deg, sample_displacement_mm, goniometer_radius_mm)?;
+        let axial = axial_geometry(fcj_sample_over_radius, fcj_detector_over_radius)?;
         let result = py.detach(|| {
             self.with_input(
                 x_deg_values,
@@ -975,6 +986,7 @@ impl NativeStructuralPhase {
                     y_width_deg,
                 ),
                 correction,
+                axial,
                 contributions,
                 support_fwhm,
                 calculate_structural_pattern_dense,
@@ -993,6 +1005,8 @@ impl NativeStructuralPhase {
         zero_shift_deg: f64,
         sample_displacement_mm: Option<f64>,
         goniometer_radius_mm: Option<f64>,
+        fcj_sample_over_radius: Option<f64>,
+        fcj_detector_over_radius: Option<f64>,
         u_deg2: f64,
         v_deg2: f64,
         w_deg2: f64,
@@ -1027,6 +1041,7 @@ impl NativeStructuralPhase {
         )?;
         let correction =
             position_correction(zero_shift_deg, sample_displacement_mm, goniometer_radius_mm)?;
+        let axial = axial_geometry(fcj_sample_over_radius, fcj_detector_over_radius)?;
         let result = py.detach(|| {
             self.with_input(
                 x_deg_values,
@@ -1039,6 +1054,7 @@ impl NativeStructuralPhase {
                     y_width_deg,
                 ),
                 correction,
+                axial,
                 contributions,
                 support_fwhm,
                 |cell, group, input| calculate_structural_pattern_jvp(cell, group, input, tangent),
@@ -1057,6 +1073,8 @@ impl NativeStructuralPhase {
         zero_shift_deg: f64,
         sample_displacement_mm: Option<f64>,
         goniometer_radius_mm: Option<f64>,
+        fcj_sample_over_radius: Option<f64>,
+        fcj_detector_over_radius: Option<f64>,
         u_deg2: f64,
         v_deg2: f64,
         w_deg2: f64,
@@ -1091,6 +1109,7 @@ impl NativeStructuralPhase {
         )?;
         let correction =
             position_correction(zero_shift_deg, sample_displacement_mm, goniometer_radius_mm)?;
+        let axial = axial_geometry(fcj_sample_over_radius, fcj_detector_over_radius)?;
         let result = py.detach(|| {
             self.with_input(
                 x_deg_values,
@@ -1103,6 +1122,7 @@ impl NativeStructuralPhase {
                     y_width_deg,
                 ),
                 correction,
+                axial,
                 contributions,
                 support_fwhm,
                 |cell, group, input| {
@@ -1954,6 +1974,8 @@ fn accumulate_cw_contributions<'py>(
     d_intensity_multiplier_d_parameters: PyReadonlyArray1<'py, f64>,
     parameter_count: usize,
     support_fwhm: f64,
+    fcj_sample_over_radius: Option<f64>,
+    fcj_detector_over_radius: Option<f64>,
 ) -> PyResult<AccumulationArrays<'py>> {
     let x = contiguous_slice(&x, "x")?;
     let two_theta_deg = contiguous_slice(&two_theta_deg, "two_theta_deg")?;
@@ -2003,14 +2025,27 @@ fn accumulate_cw_contributions<'py>(
         },
     )
     .map_err(|error| PyValueError::new_err(error.to_string()))?;
-    let accumulation = accumulate_cw_contributions_batch(
-        grid,
-        two_theta_deg,
-        base_intensities,
-        cw_instrument(wavelength_angstrom, u_deg2, v_deg2, w_deg2, x_deg, y_deg),
-        contributions,
-        SupportPolicy::FwhmMultiple(support_fwhm),
-    )
+    let instrument = cw_instrument(wavelength_angstrom, u_deg2, v_deg2, w_deg2, x_deg, y_deg);
+    let support = SupportPolicy::FwhmMultiple(support_fwhm);
+    let accumulation = match axial_geometry(fcj_sample_over_radius, fcj_detector_over_radius)? {
+        Some(geometry) => accumulate_cw_fcj_contributions_batch(
+            grid,
+            two_theta_deg,
+            base_intensities,
+            instrument,
+            contributions,
+            geometry,
+            support,
+        ),
+        None => accumulate_cw_contributions_batch(
+            grid,
+            two_theta_deg,
+            base_intensities,
+            instrument,
+            contributions,
+            support,
+        ),
+    }
     .map_err(|error| PyValueError::new_err(error.to_string()))?;
     accumulation_to_numpy(py, accumulation)
 }
@@ -2152,6 +2187,22 @@ fn position_correction(
         zero_shift_deg,
         bragg_brentano_mm,
     })
+}
+
+fn axial_geometry(
+    sample_over_radius: Option<f64>,
+    detector_over_radius: Option<f64>,
+) -> PyResult<Option<FcjGeometry>> {
+    match (sample_over_radius, detector_over_radius) {
+        (None, None) => Ok(None),
+        (Some(sample_over_radius), Some(detector_over_radius)) => Ok(Some(FcjGeometry {
+            sample_over_radius,
+            detector_over_radius,
+        })),
+        _ => Err(PyValueError::new_err(
+            "FCJ sample and detector ratios must be provided together",
+        )),
+    }
 }
 
 #[allow(clippy::similar_names, clippy::too_many_arguments)]

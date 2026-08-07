@@ -298,8 +298,8 @@ def main() -> None:
             ),
             "PhaseSmith approximates anisotropic displacement by trace-mean Uiso.",
             (
-                "PhaseSmith does not yet apply FCJ in the structural path; "
-                "GSAS-II uses the selected recipe."
+                "PhaseSmith uses the published continuous equal-height FCJ mapping; "
+                "GSAS-II uses its pinned discretized one-parameter SH/L implementation."
             ),
             "This is a complete native-workflow comparison, not a same-kernel benchmark.",
         ],

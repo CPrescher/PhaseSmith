@@ -191,12 +191,15 @@ def _native_dynamic_arguments(
 ) -> tuple[object, ...]:
     instrument = experiment.instrument
     geometry = experiment.geometry
+    axial = experiment.axial_geometry
     return (
         pattern.x,
         instrument.wavelength_angstrom,
         experiment.zero_shift_deg,
         None if geometry is None else geometry.sample_displacement_mm,
         None if geometry is None else geometry.goniometer_radius_mm,
+        None if axial is None else axial.sample_over_radius,
+        None if axial is None else axial.detector_over_radius,
         instrument.u_deg2,
         instrument.v_deg2,
         instrument.w_deg2,
@@ -225,10 +228,13 @@ def _accumulation_from_native(
     position_names = ("wavelength_angstrom", "zero_shift_deg")
     if experiment.geometry is not None:
         position_names += ("sample_displacement_mm",)
+    axial_names: tuple[str, ...] = ()
+    if experiment.axial_geometry is not None:
+        axial_names = ("sample_over_radius", "detector_over_radius")
     return _build_accumulation_result(
         *arrays,
         CW_LOCAL_PARAMETER_ORDER,
-        CW_GLOBAL_PARAMETER_ORDER + position_names + contribution.parameter_names,
+        CW_GLOBAL_PARAMETER_ORDER + position_names + axial_names + contribution.parameter_names,
         jacobian_layout,
     )
 
@@ -306,6 +312,7 @@ def _component_inputs(
             component_instrument,
             experiment.zero_shift_deg,
             experiment.geometry,
+            experiment.axial_geometry,
         )
         correction = phase.intensity_correction
         if isinstance(correction, BraggBrentanoUnpolarizedLp):
@@ -463,6 +470,7 @@ def _fallback_calculate(
         structural.integrated_intensity,
         experiment.instrument,
         contribution,
+        geometry=experiment.axial_geometry,
         support_fwhm=support_fwhm,
         jacobian_layout=jacobian_layout,
     )

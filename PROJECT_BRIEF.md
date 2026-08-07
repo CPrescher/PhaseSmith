@@ -206,6 +206,25 @@ its approximate model has a rounding-sensitive flat basin even though cached
 and matrix-free products agree to about 2e-15 relative; damping and acceptance
 hardening must resolve that path sensitivity before the override is removed.
 
+The structural FCJ checkpoint composes the independently implemented
+Finger--Cox--Jephcoat convolution with built-in and third-party vectorized
+sample physics inside the Rust support-limited accumulator. Optional
+`ConstantWavelengthExperiment.axial_geometry` propagates through monochromatic
+and fixed-component structural values, JVPs, VJPs, and reusable
+linearizations. Global derivatives are ordered U/V/W/X/Y, axial sample and
+detector ratios, then provider parameters; zero geometry exactly preserves the
+symmetric values and non-axial derivative rows. Persistence format 8 owns this
+optional geometry on the experiment while loading formats 1--7.
+
+The QARR checkpoint now applies the supplied `SH/L=0.002` through the published
+equal-height mapping `sample_over_radius = detector_over_radius = SH/L / 2`.
+One reviewed release run passes all scientific gates at 19.672% Poisson Rwp,
+13.273% unit-weight Rwp, 0.99070 profile correlation, and 1.883 percentage
+points maximum QPA error. Exact continuous FCJ currently raises PhaseSmith's
+workflow time from about 7.6 seconds to 158.8 seconds on the development host;
+FCJ convolution reuse/vectorization is therefore a measured performance
+priority before treating that workflow as production-speed.
+
 ## Design commitments
 
 - Use GSAS-II only as a pinned validation oracle, never as the architecture.

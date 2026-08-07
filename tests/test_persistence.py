@@ -384,7 +384,7 @@ def test_fixed_dispersion_and_polarized_lp_round_trip(tmp_path) -> None:
     assert restored.scattering == structural.scattering
     assert restored.intensity_correction == structural.intensity_correction
     manifest = json.loads((destination / persistence.MANIFEST_NAME).read_text())
-    assert manifest["format_version"] == 7
+    assert manifest["format_version"] == persistence.FORMAT_VERSION
 
 
 def test_rietveld_checkpoint_domain_and_options_round_trip_and_resume(tmp_path) -> None:
@@ -663,6 +663,7 @@ def test_format_five_experiment_and_background_models_round_trip(tmp_path) -> No
         instrument(),
         zero_shift_deg=0.035,
         geometry=phasesmith.BraggBrentanoGeometry(240.0, 0.18),
+        axial_geometry=phasesmith.FcjGeometry(0.013, 0.009),
     )
     backgrounds = (
         PolynomialBackground("power", (1.0, 0.2)),

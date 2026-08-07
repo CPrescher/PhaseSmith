@@ -142,6 +142,7 @@ impl BenchmarkCase {
                 scale: 1.3,
                 coordinate_tolerance: 1.0e-10,
                 instrument: self.instrument,
+                axial_geometry: None,
                 position_correction: phasesmith_engine::MonochromaticPositionCorrection {
                     zero_shift_deg: 0.0,
                     bragg_brentano_mm: None,

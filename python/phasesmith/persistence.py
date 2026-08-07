@@ -97,7 +97,7 @@ from .sample import (
 from .scattering import NeutronNuclear, XrayFixedDispersion, XrayNonResonant
 from .structure import CrystalStructure, structure_from_record, structure_to_record
 
-FORMAT_VERSION: Final = 7
+FORMAT_VERSION: Final = 8
 MANIFEST_NAME: Final = "manifest.json"
 ARCHIVE_NAME: Final = "arrays.npz"
 Instrument = ConstantWavelengthInstrument | TofInstrument
@@ -462,6 +462,7 @@ def _experiment_record(
                 "sample_displacement_mm": experiment.geometry.sample_displacement_mm,
             }
         ),
+        "axial_geometry": _fcj_record(experiment.axial_geometry),
     }
 
 
@@ -509,6 +510,7 @@ def _experiment_from_record(
                 float(geometry_record["sample_displacement_mm"]),
             )
         ),
+        (None if record.get("axial_geometry") is None else FcjGeometry(**record["axial_geometry"])),
     )
 
 
@@ -1550,7 +1552,7 @@ def load_bundle(
     if (
         not isinstance(version, int)
         or isinstance(version, bool)
-        or version not in (1, 2, 3, 4, 5, 6, FORMAT_VERSION)
+        or version not in (1, 2, 3, 4, 5, 6, 7, FORMAT_VERSION)
     ):
         raise PersistenceError(f"unsupported persistence format {manifest.get('format_version')!r}")
     if manifest.get("archive", {}).get("file") != ARCHIVE_NAME:

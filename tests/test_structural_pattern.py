@@ -538,6 +538,90 @@ def test_builtin_size_broadening_stays_on_fused_structural_path() -> None:
     assert actual.derivatives.global_parameter_names[-1] == ("isotropic_size.crystallite_size_nm")
 
 
+def test_fcj_and_sample_physics_compose_on_structural_paths() -> None:
+    axial = phasesmith.FcjGeometry(0.013, 0.009)
+    phase = replace(xray_phase(), physics=phasesmith.IsotropicSizeBroadening(70.0))
+    experiment = phasesmith.ConstantWavelengthExperiment.x_ray(
+        instrument(),
+        axial_geometry=axial,
+    )
+    prepared = phasesmith.PreparedStructuralPattern(pattern(), experiment, phase)
+    assert prepared.uses_native_fused_path
+    actual = prepared.calculate()
+    geometry = phasesmith.ReflectionGeometryBatch(
+        phase.reflections.hkl,
+        actual.reflections.d_spacing_angstrom,
+        actual.reflections.two_theta_deg,
+        actual.reflections.integrated_intensity,
+    )
+    contribution = phase.physics.evaluate(phasesmith.PhysicsContext(geometry, instrument()))
+    separate = phasesmith.accumulate_cw_contributions(
+        pattern().x,
+        geometry.two_theta_deg,
+        geometry.base_integrated_intensity,
+        instrument(),
+        contribution,
+        geometry=axial,
+    )
+    np.testing.assert_allclose(actual.profile_y, separate.y, rtol=3e-15, atol=2e-11)
+    assert actual.derivatives.global_parameter_names[-3:] == (
+        "sample_over_radius",
+        "detector_over_radius",
+        "isotropic_size.crystallite_size_nm",
+    )
+    for name, step in (("sample_over_radius", 1.0e-7), ("detector_over_radius", 1.0e-7)):
+        row = actual.derivatives.global_parameter_names.index(name)
+        plus_geometry = replace(axial, **{name: getattr(axial, name) + step})
+        minus_geometry = replace(axial, **{name: getattr(axial, name) - step})
+        plus = phasesmith.calculate_structural_pattern(
+            pattern(), replace(experiment, axial_geometry=plus_geometry), phase
+        )
+        minus = phasesmith.calculate_structural_pattern(
+            pattern(), replace(experiment, axial_geometry=minus_geometry), phase
+        )
+        np.testing.assert_allclose(
+            actual.derivatives.global_jacobian[row],
+            (plus.profile_y - minus.profile_y) / (2.0 * step),
+            rtol=2e-4,
+            atol=2e-4,
+        )
+
+    names = phasesmith.p1_parameter_names(phase.structure.to_isotropic_site_batch())
+    direction = np.zeros(len(names))
+    direction[[0, 6, -1]] = (0.03, -0.02, 0.04)
+    forward = prepared.jvp(direction)
+    linearization = prepared.linearize()
+    np.testing.assert_allclose(direction @ linearization.jacobian, forward.d_y, rtol=2e-13)
+    structural_step = 1.0e-5
+    plus_phase = _perturb_phase(phase, direction, structural_step)
+    minus_phase = _perturb_phase(phase, direction, -structural_step)
+    plus_y = phasesmith.calculate_structural_pattern(pattern(), experiment, plus_phase).profile_y
+    minus_y = phasesmith.calculate_structural_pattern(pattern(), experiment, minus_phase).profile_y
+    np.testing.assert_allclose(
+        forward.d_y,
+        (plus_y - minus_y) / (2.0 * structural_step),
+        rtol=6e-6,
+        atol=4e-7,
+    )
+    weights = np.sin(np.linspace(0.0, 3.0, pattern().x.size))
+    reverse = prepared.vjp(weights)
+    np.testing.assert_allclose(forward.d_y @ weights, direction @ reverse.gradient, rtol=8e-13)
+
+    custom_phase = replace(
+        phase,
+        scattering=CountingScattering(),
+        intensity_correction=CountingCorrection(),
+    )
+    fallback = phasesmith.PreparedStructuralPattern(pattern(), experiment, custom_phase)
+    assert not fallback.uses_native_fused_path
+    np.testing.assert_allclose(
+        fallback.calculate().profile_y,
+        actual.profile_y,
+        rtol=3e-15,
+        atol=2e-11,
+    )
+
+
 def test_probe_mismatch_is_rejected_before_calculation() -> None:
     experiment = phasesmith.ConstantWavelengthExperiment.neutron(instrument())
     with pytest.raises(ValueError, match="incompatible"):
