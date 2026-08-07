@@ -114,6 +114,12 @@ from .phase import (
     StructuralReflectionBatch,
 )
 from .project import RietveldProject
+from .quantitative import (
+    PhaseWeightFraction,
+    QuantitativePhase,
+    quantitative_phase_analysis,
+    weight_fractions_from_scale,
+)
 from .radiation import (
     BraggBrentanoGeometry,
     ConstantWavelengthExperiment,
@@ -253,6 +259,7 @@ __all__ = [
     "PatternDerivatives",
     "Phase",
     "PhasePatternComponent",
+    "PhaseWeightFraction",
     "PhysicsContext",
     "PhysicsContribution",
     "PowderData",
@@ -268,6 +275,7 @@ __all__ = [
     "ProgressCallback",
     "ProgressEvent",
     "ProviderDescriptor",
+    "QuantitativePhase",
     "RadiationProbe",
     "ReciprocalAngleGeometry",
     "ReciprocalMetric",
@@ -345,6 +353,7 @@ __all__ = [
     "profile_tch",
     "profile_tch_from_gaussian_sigma",
     "profile_tof",
+    "quantitative_phase_analysis",
     "read_cif",
     "read_powder_data",
     "reciprocal_angle_geometry",
@@ -359,6 +368,7 @@ __all__ = [
     "tch_shape_from_fwhm",
     "tch_shape_from_gaussian_sigma",
     "tof_profile_parameters",
+    "weight_fractions_from_scale",
     "write_rietveld_csv",
     "write_rietveld_json",
     "xray_species_metadata",
