@@ -33,12 +33,21 @@ from .phase import (
     StructuralReflectionBatch,
 )
 from .radiation import (
+    BraggBrentanoGeometry,
     ConstantWavelengthExperiment,
     MonochromaticRadiation,
     RadiationProbe,
     WavelengthComponents,
 )
-from .refinement.background import PolynomialBackground
+from .refinement.background import (
+    AmorphousBackground,
+    AmorphousPeak,
+    ChebyshevBackground,
+    CompositeBackground,
+    DifferentiableBackground,
+    PointBackground,
+    PolynomialBackground,
+)
 from .refinement.core import (
     AffineConstraint,
     Bounds,
@@ -86,7 +95,7 @@ from .sample import (
 from .scattering import NeutronNuclear, XrayNonResonant
 from .structure import CrystalStructure, structure_from_record, structure_to_record
 
-FORMAT_VERSION: Final = 4
+FORMAT_VERSION: Final = 5
 MANIFEST_NAME: Final = "manifest.json"
 ARCHIVE_NAME: Final = "arrays.npz"
 Instrument = ConstantWavelengthInstrument | TofInstrument
@@ -126,7 +135,7 @@ class PersistenceBundle:
     rietveld_selection: RietveldParameterSelection | None = None
     rietveld_options: RietveldOptions | None = None
     rietveld_checkpoint: RietveldCheckpoint | None = None
-    rietveld_background: PolynomialBackground | None = None
+    rietveld_background: DifferentiableBackground | None = None
     calculation_options: CalculationOptions | None = None
     calculation_result: PatternCalculationResult | None = None
     parameters: ParameterSet | None = None
@@ -170,9 +179,9 @@ class PersistenceBundle:
         ):
             raise TypeError("rietveld_checkpoint must be RietveldCheckpoint")
         if self.rietveld_background is not None and not isinstance(
-            self.rietveld_background, PolynomialBackground
+            self.rietveld_background, DifferentiableBackground
         ):
-            raise TypeError("rietveld_background must be PolynomialBackground")
+            raise TypeError("rietveld_background must implement DifferentiableBackground")
         if self.calculation_result is not None and not isinstance(
             self.calculation_result, PatternCalculationResult
         ):
@@ -429,6 +438,16 @@ def _experiment_record(
         "probe": experiment.radiation.probe.value,
         "wavelength_angstrom": experiment.radiation.wavelength_angstrom,
         "instrument": _instrument_record(experiment.instrument),
+        "zero_shift_deg": experiment.zero_shift_deg,
+        "geometry": (
+            None
+            if experiment.geometry is None
+            else {
+                "type": "bragg_brentano",
+                "goniometer_radius_mm": experiment.geometry.goniometer_radius_mm,
+                "sample_displacement_mm": experiment.geometry.sample_displacement_mm,
+            }
+        ),
     }
 
 
@@ -440,11 +459,23 @@ def _experiment_from_record(
     instrument = _instrument_from_record(record["instrument"])
     if not isinstance(instrument, ConstantWavelengthInstrument):
         raise PersistenceError("constant-wavelength experiment instrument is invalid")
+    geometry_record = record.get("geometry")
+    if geometry_record is not None and geometry_record.get("type") != "bragg_brentano":
+        raise PersistenceError("unknown constant-wavelength experiment geometry")
     return ConstantWavelengthExperiment(
         MonochromaticRadiation(
             RadiationProbe(record["probe"]), float(record["wavelength_angstrom"])
         ),
         instrument,
+        float(record.get("zero_shift_deg", 0.0)),
+        (
+            None
+            if geometry_record is None
+            else BraggBrentanoGeometry(
+                float(geometry_record["goniometer_radius_mm"]),
+                float(geometry_record["sample_displacement_mm"]),
+            )
+        ),
     )
 
 
@@ -830,23 +861,80 @@ def _rietveld_selection_record(
     }
 
 
-def _polynomial_background_record(
-    background: PolynomialBackground | None,
+def _background_record(
+    background: DifferentiableBackground | None,
 ) -> dict[str, Any] | None:
     if background is None:
         return None
-    return {
-        "background_id": background.background_id,
-        "coefficients": list(background.coefficients),
-    }
+    if type(background) is PolynomialBackground:
+        return {
+            "type": "polynomial",
+            "background_id": background.background_id,
+            "coefficients": list(background.coefficients),
+        }
+    if type(background) is ChebyshevBackground:
+        return {
+            "type": "chebyshev",
+            "background_id": background.background_id,
+            "coefficients": list(background.coefficients),
+            "domain_deg": list(background.domain_deg),
+        }
+    if type(background) is PointBackground:
+        return {
+            "type": "point",
+            "background_id": background.background_id,
+            "knot_x": list(background.knot_x),
+            "values": list(background.values),
+        }
+    if type(background) is AmorphousBackground:
+        return {
+            "type": "amorphous",
+            "background_id": background.background_id,
+            "peaks": [
+                {
+                    "area": peak.area,
+                    "center_deg": peak.center_deg,
+                    "fwhm_deg": peak.fwhm_deg,
+                }
+                for peak in background.peaks
+            ],
+        }
+    if type(background) is CompositeBackground:
+        return {
+            "type": "composite",
+            "background_id": background.background_id,
+            "components": [_background_record(item) for item in background.components],
+        }
+    raise TypeError(f"unsupported differentiable background {type(background).__name__}")
 
 
-def _polynomial_background_from_record(
+def _background_from_record(
     record: dict[str, Any] | None,
-) -> PolynomialBackground | None:
+) -> DifferentiableBackground | None:
     if record is None:
         return None
-    return PolynomialBackground(record["background_id"], tuple(record["coefficients"]))
+    model = record.get("type", "polynomial")
+    if model == "polynomial":
+        return PolynomialBackground(record["background_id"], tuple(record["coefficients"]))
+    if model == "chebyshev":
+        return ChebyshevBackground(
+            record["background_id"], tuple(record["coefficients"]), tuple(record["domain_deg"])
+        )
+    if model == "point":
+        return PointBackground(
+            record["background_id"], tuple(record["knot_x"]), tuple(record["values"])
+        )
+    if model == "amorphous":
+        return AmorphousBackground(
+            record["background_id"],
+            tuple(AmorphousPeak(**peak) for peak in record["peaks"]),
+        )
+    if model == "composite":
+        components = tuple(_background_from_record(item) for item in record["components"])
+        if any(item is None for item in components):
+            raise PersistenceError("composite background components cannot be null")
+        return CompositeBackground(record["background_id"], components)
+    raise PersistenceError(f"unknown differentiable background type {model!r}")
 
 
 def _rietveld_options_record(options: RietveldOptions | None) -> dict[str, Any] | None:
@@ -942,7 +1030,7 @@ def _rietveld_checkpoint_record(
         "damping": checkpoint.damping,
         "history": [_rietveld_iteration_record(item) for item in checkpoint.history],
         "experiment": _experiment_record(checkpoint.experiment),
-        "background": _polynomial_background_record(checkpoint.background),
+        "background": _background_record(checkpoint.background),
     }
 
 
@@ -964,7 +1052,7 @@ def _rietveld_checkpoint_from_record(
         float(record["damping"]),
         tuple(_rietveld_iteration_from_record(item) for item in record["history"]),
         _experiment_from_record(record.get("experiment")),
-        _polynomial_background_from_record(record.get("background")),
+        _background_from_record(record.get("background")),
     )
 
 
@@ -1309,7 +1397,7 @@ def save_bundle(
         "rietveld_checkpoint": _rietveld_checkpoint_record(
             bundle.rietveld_checkpoint, writer, codecs
         ),
-        "rietveld_background": _polynomial_background_record(bundle.rietveld_background),
+        "rietveld_background": _background_record(bundle.rietveld_background),
         "calculation_options": (
             None
             if bundle.calculation_options is None
@@ -1385,7 +1473,7 @@ def load_bundle(
     if (
         not isinstance(version, int)
         or isinstance(version, bool)
-        or version not in (1, 2, 3, FORMAT_VERSION)
+        or version not in (1, 2, 3, 4, FORMAT_VERSION)
     ):
         raise PersistenceError(f"unsupported persistence format {manifest.get('format_version')!r}")
     if manifest.get("archive", {}).get("file") != ARCHIVE_NAME:
@@ -1454,7 +1542,7 @@ def load_bundle(
         rietveld_checkpoint=_rietveld_checkpoint_from_record(
             record.get("rietveld_checkpoint"), arrays, codecs
         ),
-        rietveld_background=_polynomial_background_from_record(record.get("rietveld_background")),
+        rietveld_background=_background_from_record(record.get("rietveld_background")),
         calculation_options=None if options is None else CalculationOptions(**options),
         calculation_result=(
             None

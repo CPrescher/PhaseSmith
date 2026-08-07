@@ -10,9 +10,14 @@ import rietveld
 from rietveld import persistence
 from rietveld.refinement import (
     AffineConstraint,
+    AmorphousBackground,
+    AmorphousPeak,
+    ChebyshevBackground,
+    CompositeBackground,
     LatticeParameterBounds,
     LatticeParameterization,
     LinearConstraint,
+    PointBackground,
     PolynomialBackground,
     lebail,
 )
@@ -618,3 +623,30 @@ def test_hash_version_and_overwrite_guards_are_enforced(tmp_path) -> None:
     manifest_path.write_text(json.dumps(manifest))
     with pytest.raises(persistence.PersistenceError, match="SHA-256"):
         persistence.load_bundle(path)
+
+
+def test_format_five_experiment_and_background_models_round_trip(tmp_path) -> None:
+    experiment = rietveld.ConstantWavelengthExperiment(
+        rietveld.MonochromaticRadiation.x_ray(instrument().wavelength_angstrom),
+        instrument(),
+        zero_shift_deg=0.035,
+        geometry=rietveld.BraggBrentanoGeometry(240.0, 0.18),
+    )
+    backgrounds = (
+        PolynomialBackground("power", (1.0, 0.2)),
+        ChebyshevBackground("cheb", (1.0, -0.2), (10.0, 90.0)),
+        PointBackground("points", (10.0, 40.0, 90.0), (1.0, 2.0, 1.5)),
+        AmorphousBackground("glass", (AmorphousPeak(12.0, 45.0, 13.0),)),
+    )
+    backgrounds += (CompositeBackground("combined", backgrounds[:2]),)
+    for background in backgrounds:
+        destination = persistence.save_bundle(
+            tmp_path / background.background_id,
+            persistence.PersistenceBundle(
+                experiment=experiment,
+                rietveld_background=background,
+            ),
+        )
+        restored = persistence.load_bundle(destination)
+        assert restored.experiment == experiment
+        assert restored.rietveld_background == background
