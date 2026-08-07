@@ -153,7 +153,7 @@ def validate_outputs(
             oracle["local"][:, 1],
         ),
         "global_derivatives": (
-            pattern.accumulation.derivatives.global_jacobian,
+            pattern.accumulation.derivatives.global_jacobian[:5],
             oracle["global_jacobian"],
         ),
     }

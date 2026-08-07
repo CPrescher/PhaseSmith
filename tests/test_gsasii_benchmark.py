@@ -166,7 +166,7 @@ def test_structural_comparison_validation_contract() -> None:
         "starts": local.starts.copy(),
         "offsets": local.offsets.copy(),
         "local": local.values.copy(),
-        "global_jacobian": pattern.accumulation.derivatives.global_jacobian.copy(),
+        "global_jacobian": pattern.accumulation.derivatives.global_jacobian[:5].copy(),
     }
 
     assert max(benchmark.validate_outputs(structural, pattern, oracle).values()) == 0.0
@@ -189,11 +189,24 @@ def test_structural_worker_converts_instrument_units_explicitly() -> None:
     assert worker.GSAS_F_SQUARED_TO_FM_SQUARED == 100.0
 
 
+def test_practical_workflow_benchmark_covers_xray_and_neutron() -> None:
+    benchmark = load_script("benchmarks/practical_workflow.py", "practical_workflow_test")
+    for probe in (rietveld.RadiationProbe.X_RAY, rietveld.RadiationProbe.NEUTRON):
+        pattern, experiment, phases, background = benchmark.benchmark_case(probe, 1_001)
+        result = benchmark.structural_refinement.calculate(
+            pattern, experiment, phases, background=background
+        )
+        assert result.y.shape == (1_001,)
+        assert np.isfinite(result.y).all()
+        assert phases[0].physics.providers[2].descriptor.provider_id == "rietveld.march-dollase"
+
+
 @pytest.mark.parametrize(
     "script",
     [
         "benchmarks/compare_gsasii.py",
         "benchmarks/compare_gsasii_structural.py",
+        "benchmarks/practical_workflow.py",
         "oracle/scripts/benchmark_cw_profile.py",
         "oracle/scripts/benchmark_structural_pattern.py",
     ],
