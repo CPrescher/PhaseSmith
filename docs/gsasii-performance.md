@@ -1,7 +1,8 @@
 # GSAS-II performance comparison
 
-`benchmarks/compare_gsasii.py` and
-`benchmarks/compare_gsasii_structural.py` provide reproducible speed
+`benchmarks/compare_gsasii.py`,
+`benchmarks/compare_gsasii_structural.py`, and
+`benchmarks/compare_gsasii_qarr.py` provide reproducible speed
 comparisons between PhaseSmith and the exact GSAS-II revision recorded in
 `oracle/PINNED_GSASII.json`. GSAS-II remains a separately installed external
 validation oracle and is never imported by the normal package.
@@ -64,6 +65,35 @@ Rietveld refinement. It excludes background evaluation, constraints,
 optimization, project I/O, and GUI work. It also does not time reflection-list
 generation because the list is prepared input to both structural kernels.
 
+## QARR complete-workflow workload
+
+The QARR comparison runs the checksum-pinned IUCr QARR 1g pattern and its three
+CIF phases through each package's explicit native workflow. The external worker
+uses the public GSAS-II scripting API, disables the exactly redundant overall
+sample scale, and stages background/phase scales, U/V/W/zero, isotropic
+size/microstrain, and atomic displacement parameters. Its ablation switches can
+place SH/L below the pinned calculation floor or hold sample broadening or
+displacement fixed. Pinned GSAS-II clamps the applicable powder-profile SH/L to
+0.002, so the below-minimum case validates that behavior rather than claiming
+to disable FCJ. The optional trace-mean anisotropic ablation is the sole pinned,
+revision-gated internal probe because the public wrapper does not expose that
+ADP representation change.
+
+The default discarded complete warmup also populates GSAS-II's process-external
+Matplotlib/font cache. The report separates GSAS-II import, project/CIF setup,
+every refinement stage, finalization, total workflow, and external-process wall
+time. It records phase fractions with standard uncertainties, residuals,
+correlation, parameter and
+reflection counts, exact input hashes, and the complete recipe. Repetitions run
+in fresh subprocesses and must produce identical scientific outputs.
+
+This is deliberately labeled a native-workflow comparison rather than a
+same-parameterization benchmark. PhaseSmith currently uses a fixed Smooth
+Bruckner background and trace-mean isotropic displacement for anisotropic
+Al2O3 sites, while the GSAS-II recipe refines ten Chebyshev background terms
+and retains the CIF anisotropic model. Those differences are reported in JSON
+and must not be hidden behind a single timing ratio.
+
 ## Run it
 
 Build PhaseSmith in release mode, then use GSAS-II's separate interpreter
@@ -82,6 +112,13 @@ uv run python benchmarks/compare_gsasii_structural.py --require-release \
   --gsas-root /path/to/pinned/GSAS-II \
   --binary-dir /path/to/compatible/GSASII-bin/platform-directory \
   --json-output gsasii-structural-speed-comparison.json
+
+uv run python benchmarks/compare_gsasii_qarr.py --require-release \
+  --gsas-python /path/to/gsas/python \
+  --gsas-root /path/to/pinned/GSAS-II \
+  --binary-dir /path/to/compatible/GSASII-bin/platform-directory \
+  --data-directory validation/data/iucr-qarr-1g \
+  --json-output gsasii-qarr-comparison.json
 ```
 
 The equivalent `GSASII_PYTHON`, `PHASESMITH_GSASII_ROOT`, and
@@ -116,3 +153,16 @@ respectively. The normalized maximum errors were `4.683e-5` for complex F,
 profile, and at most `9.385e-5` across the reported derivative groups. These
 numbers characterize this workload and host; the committed runner and JSON
 schema, not the observed ratio, are the durable performance contract.
+
+## Reference QARR run
+
+The first reviewed single-run comparison on 2026-08-07 returned PhaseSmith
+fractions of Al2O3 33.250%, ZnO 32.936%, and CaF2 33.814%, versus GSAS-II
+31.479%, 33.652%, and 34.869%. Maximum errors from the independently weighed
+fractions were 1.880 and 0.558 percentage points. Poisson-weighted Rwp was
+19.679% and 18.389%; unit-weight Rwp was 13.282% and 13.732%.
+
+Measured total native-workflow times were 8.73 s for PhaseSmith and 2.93 s for
+GSAS-II on that host. This result motivates structural-linearization reuse and
+the missing-physics ablations; it does not override the matched kernel results
+above.

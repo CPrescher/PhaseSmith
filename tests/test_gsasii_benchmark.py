@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import subprocess
 import sys
 from pathlib import Path
-from types import ModuleType
+from types import ModuleType, SimpleNamespace
 
 import numpy as np
 import phasesmith
@@ -189,6 +190,46 @@ def test_structural_worker_converts_instrument_units_explicitly() -> None:
     assert worker.GSAS_F_SQUARED_TO_FM_SQUARED == 100.0
 
 
+def test_qarr_worker_fcj_ablation_preserves_source(tmp_path: Path) -> None:
+    worker = load_script("oracle/scripts/benchmark_qarr.py", "benchmark_qarr_worker_test")
+    source = tmp_path / "source.instprm"
+    source.write_text("Type:PXC\nSH/L:0.002\n", encoding="utf-8")
+
+    assert worker.selected_instrument(source, tmp_path, "instrument") == source
+    zero = worker.selected_instrument(source, tmp_path, "below-minimum")
+    assert zero != source
+    assert zero.read_text(encoding="utf-8") == "Type:PXC\nSH/L:1e-12\n"
+    assert source.read_text(encoding="utf-8") == "Type:PXC\nSH/L:0.002\n"
+
+
+def test_qarr_comparison_parses_results_and_rejects_oracle_drift() -> None:
+    benchmark = load_script("benchmarks/compare_gsasii_qarr.py", "compare_gsasii_qarr_test")
+    report = SimpleNamespace(
+        notes=("Calculated crystalline weight fractions: Al2O3=31.1%, ZnO=34.2%, CaF2=34.7%.",)
+    )
+    assert benchmark.phase_fractions(report) == {
+        "Al2O3": pytest.approx(0.311),
+        "ZnO": pytest.approx(0.342),
+        "CaF2": pytest.approx(0.347),
+    }
+    base = {
+        "schema_version": 1,
+        "implementation": "GSAS-II",
+        "revision": benchmark.PINNED_REVISION,
+        "scope": benchmark.SCOPE,
+        "recipe": {"cycles": 8},
+        "input_sha256": {"pattern": "abc"},
+        "oracle_behavior": {"fcj_calculation_floor": 0.002},
+        "result": {"poisson_rwp": 0.18},
+        "stage_rwp_percent": {"instrument": 20.0},
+    }
+    benchmark.validate_gsas_reports([base, dict(base)])
+    changed = json.loads(json.dumps(base))
+    changed["result"]["poisson_rwp"] = 0.19
+    with pytest.raises(RuntimeError, match="repetitions disagree"):
+        benchmark.validate_gsas_reports([base, changed])
+
+
 def test_practical_workflow_benchmark_covers_xray_and_neutron() -> None:
     benchmark = load_script("benchmarks/practical_workflow.py", "practical_workflow_test")
     for probe in (phasesmith.RadiationProbe.X_RAY, phasesmith.RadiationProbe.NEUTRON):
@@ -205,9 +246,11 @@ def test_practical_workflow_benchmark_covers_xray_and_neutron() -> None:
     "script",
     [
         "benchmarks/compare_gsasii.py",
+        "benchmarks/compare_gsasii_qarr.py",
         "benchmarks/compare_gsasii_structural.py",
         "benchmarks/practical_workflow.py",
         "oracle/scripts/benchmark_cw_profile.py",
+        "oracle/scripts/benchmark_qarr.py",
         "oracle/scripts/benchmark_structural_pattern.py",
     ],
 )
@@ -223,6 +266,7 @@ def test_benchmark_help_does_not_require_gsasii(script: str) -> None:
 def test_external_worker_does_not_import_rietveld() -> None:
     for relative_path in (
         "oracle/scripts/benchmark_cw_profile.py",
+        "oracle/scripts/benchmark_qarr.py",
         "oracle/scripts/benchmark_structural_pattern.py",
     ):
         source = (REPOSITORY_ROOT / relative_path).read_text()

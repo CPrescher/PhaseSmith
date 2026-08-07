@@ -11,8 +11,13 @@ only a small allowlist and verifies the checkout's exact Git revision before
 reading internal data.
 
 The external benchmark workers in `scripts/benchmark_cw_profile.py` and
-`scripts/benchmark_structural_pattern.py` use the same revision gate. They are
-driven by the corresponding scripts in `benchmarks/`, import no PhaseSmith
+`scripts/benchmark_structural_pattern.py` use the same revision gate. The
+QARR worker in `scripts/benchmark_qarr.py` additionally runs one complete,
+staged real-data workflow and exposes explicit FCJ, sample-broadening, and
+displacement ablations. Its optional trace-mean anisotropic ablation is a small,
+revision-gated internal probe because that representation change is absent from
+the public scripting API. These workers are driven by the corresponding scripts
+in `benchmarks/`, import no PhaseSmith
 module, and report numerically verified profile-only and controlled
 structure-to-profile comparisons. See `../docs/gsasii-performance.md` for their
 scope and limitations.
@@ -193,6 +198,12 @@ uv run python benchmarks/compare_gsasii_structural.py --require-release \
   --gsas-python /path/to/gsas/python \
   --gsas-root /path/to/pinned/GSAS-II \
   --binary-dir /path/to/compatible/GSASII-bin/platform-directory
+
+uv run python benchmarks/compare_gsasii_qarr.py --require-release \
+  --gsas-python /path/to/gsas/python \
+  --gsas-root /path/to/pinned/GSAS-II \
+  --binary-dir /path/to/compatible/GSASII-bin/platform-directory \
+  --data-directory validation/data/iucr-qarr-1g
 ```
 
 GSAS-II is separately licensed and must be cited as requested by its authors.
