@@ -652,3 +652,40 @@ def test_format_five_experiment_and_background_models_round_trip(tmp_path) -> No
         restored = persistence.load_bundle(destination)
         assert restored.experiment == experiment
         assert restored.rietveld_background == background
+
+
+def test_format_six_fixed_component_experiment_round_trips(tmp_path) -> None:
+    components = phasesmith.WavelengthComponents.doublet(1.5406, 1.5444, 0.5)
+    experiment = phasesmith.ConstantWavelengthExperiment.x_ray_components(instrument(), components)
+    destination = persistence.save_bundle(
+        tmp_path / "component-experiment",
+        persistence.PersistenceBundle(experiment=experiment),
+    )
+    restored = persistence.load_bundle(destination)
+    assert restored.experiment == experiment
+    manifest = json.loads((destination / persistence.MANIFEST_NAME).read_text())
+    radiation = manifest["bundle"]["experiment"]["radiation"]
+    assert radiation == {
+        "type": "components",
+        "probe": "x-ray",
+        "wavelengths_angstrom": [1.5406, 1.5444],
+        "relative_intensities": [1.0, 0.5],
+    }
+
+
+def test_format_five_flat_monochromatic_experiment_still_loads(tmp_path) -> None:
+    experiment = phasesmith.ConstantWavelengthExperiment.neutron(instrument())
+    destination = persistence.save_bundle(
+        tmp_path / "format-five",
+        persistence.PersistenceBundle(experiment=experiment),
+    )
+    manifest_path = destination / persistence.MANIFEST_NAME
+    manifest = json.loads(manifest_path.read_text())
+    record = manifest["bundle"]["experiment"]
+    radiation = record.pop("radiation")
+    record["probe"] = radiation["probe"]
+    record["wavelength_angstrom"] = radiation["wavelength_angstrom"]
+    manifest["format_version"] = 5
+    manifest_path.write_text(json.dumps(manifest))
+    restored = persistence.load_bundle(destination)
+    assert restored.experiment == experiment

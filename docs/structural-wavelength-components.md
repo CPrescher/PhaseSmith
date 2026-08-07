@@ -12,7 +12,9 @@ shared structural derivatives pass real-data validation.
 `ComponentRadiation` owns the probe plus `WavelengthComponents`. The profile
 instrument retains the reference (component-zero) wavelength and the shared
 physical U/V/W/X/Y coefficients. A one-component spectrum is numerically
-identical to the monochromatic calculation.
+identical to the monochromatic calculation. Every component used as structural
+radiation has positive intensity; a zero-weight entry is absent physics and
+must be removed from the spectrum.
 
 ## Equations
 
@@ -55,7 +57,10 @@ records a component index and base-reflection index, so reports can retain the
 original hkl while exposing component-specific position and integrated
 intensity.
 
-Fixed-lattice reflection generation uses the union d-spacing range implied by
-all wavelengths and the visible two-theta interval. Guarded lattice refinement
-with multiple components is not part of this slice and must fail explicitly;
-it requires a domain guard over both lattice motion and wavelength extrema.
+Fixed-lattice reflection generation first uses a conservative d-spacing range
+that is physically valid for the longest wavelength, then retains the exact
+union of families visible for any component in the requested two-theta
+interval. This prevents invalid inverse-sine evaluations while retaining
+component-only reflections. Guarded lattice refinement with multiple
+components is not part of this slice and must fail explicitly; it requires a
+domain guard over both lattice motion and wavelength extrema.

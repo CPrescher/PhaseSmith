@@ -30,8 +30,8 @@ persistence.save_bundle("analysis.rvp", bundle)
 restored = persistence.load_bundle("analysis.rvp")
 ```
 
-Format version 4 round-trips CW and TOF instruments, explicit monochromatic
-experiment type, FCJ geometry, wavelength components, phases/reflections,
+Format version 6 round-trips CW and TOF instruments, explicit monochromatic or
+fixed-component experiment radiation, FCJ geometry, wavelength components, phases/reflections,
 built-in physics providers, patterns, calculation inputs and results, typed
 refinement parameters, Le Bail options, constraints,
 complete Le Bail checkpoints, and complete Le Bail results including support
@@ -46,6 +46,10 @@ dynamic Le Bail phase because that state was not stored.
 Version 4 adds structural Rietveld reflection domains, polynomial background,
 parameter-family selection, numerical/runtime options, refined experiment
 state, and complete last-accepted checkpoints.
+Version 5 adds the application-neutral project/reporting and expanded
+background state. Version 6 adds fixed discrete radiation spectra directly to
+constant-wavelength structural experiments while continuing to load the flat
+monochromatic records written by formats 1--5.
 `restored.to_rietveld_input()` reconstructs the request for deterministic
 continuation without storing Python parser or optimizer objects. Formats 1--3
 remain loadable.
@@ -74,8 +78,10 @@ The format is intentionally independent of GSAS-II project files and GUI state.
 Future incompatible schema changes increment `FORMAT_VERSION` and require an
 explicit migration rather than silently guessing old units or fields.
 The machine-readable top-level contract is
-[`schemas/persistence-v4.schema.json`](../schemas/persistence-v4.schema.json).
+[`schemas/persistence-v6.schema.json`](../schemas/persistence-v6.schema.json).
 Previous formats remain documented by
+[`schemas/persistence-v5.schema.json`](../schemas/persistence-v5.schema.json),
+[`schemas/persistence-v4.schema.json`](../schemas/persistence-v4.schema.json),
 [`schemas/persistence-v3.schema.json`](../schemas/persistence-v3.schema.json),
 [`schemas/persistence-v2.schema.json`](../schemas/persistence-v2.schema.json) and
 [`schemas/persistence-v1.schema.json`](../schemas/persistence-v1.schema.json).

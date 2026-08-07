@@ -31,48 +31,58 @@ observed/calculated correlation of at least 0.98, and finite non-negative
 integrated intensities. The threshold is a PhaseSmith regression gate for the
 present model, not an equivalence tolerance against another program.
 
-The IUCr QARR 1g case is deliberately a readiness check. It verifies the real
-5–150 degree pattern and Cu K-alpha doublet metadata, then reports a blocked
-structural-doublet capability. It does not fit a monochromatic approximation
-and call that quantitative validation.
+The original IUCr QARR 1g case was deliberately a readiness check. It verified
+the real 5–150 degree pattern and Cu K-alpha doublet metadata, then reported a
+blocked structural-doublet capability. That calculation-layer block is now
+removed; a real three-phase fit and acceptance assessment is the next
+checkpoint. No monochromatic approximation is substituted for the doublet.
 
-## QARR implementation sequence
+## Implemented fixed-spectrum structural checkpoint
 
-The next numerical slice will make QARR executable in this order:
+The fixed-spectrum prerequisite now provides:
 
-1. Extend the structural constant-wavelength experiment from one wavelength to
-   typed `WavelengthComponents`. Each component gets its own Bragg position,
-   scattering vector, X-ray scattering factors, Lorentz--polarization factor,
-   and normalized source weight.
-2. Fuse component contributions in Rust. Shared phase, site, scale, lattice,
-   size, strain, preferred-orientation, and background derivatives accumulate
-   across components in one structural JVP/VJP contract; no Python loop is
-   introduced per reflection or sample.
-3. Add analytical derivatives for refinable component wavelengths and ratios
-   only after fixed, externally calibrated components pass. Test values and
-   derivatives against the independent NumPy equations and centered finite
-   differences away from support/topology boundaries.
-4. Extend reflection-domain guards using the minimum and maximum component
-   wavelengths, so accepted lattice/wavelength motion cannot silently add or
-   remove an unguarded visible family.
-5. Migrate persistence and `RietveldProject` records with a versioned radiation
-   union. Old monochromatic records load as one-component spectra.
-6. Construct the three QARR phases from the pinned CIFs, refine background and
-   shared instrument terms in explicit stages, then refine structural phase
-   scales. Structured events, cancellation, budgets, checkpoints, and last
-   accepted-state behavior remain mandatory.
-7. Convert final scales through the Hill--Howard layer using reviewed `Z`,
-   formula masses, and refined cell volumes. Record covariance propagation as
-   a separate result once scale covariance is available.
-8. Freeze acceptance only after diagnostic review. The initial target is an
+1. Typed fixed `ComponentRadiation` with positive component intensities and a
+   reference-wavelength profile instrument.
+2. Component-specific Bragg positions, Lorentz--polarization values, source
+   weights, and optional sample physics. Structure factors retain their
+   wavelength-independent scattering-vector convention.
+3. One fused native structural value/JVP/VJP batch per component. Python loops
+   only over the small spectrum and never over reflections or samples.
+4. Fixed-cell CIF reflection generation using the exact union visible in any
+   component while keeping every shared family physical for every wavelength.
+5. Fixed-spectrum Rietveld scale/site/profile/background/sample derivatives,
+   component-indexed reports, and format-6 persistence with formats 1--5
+   migration.
+6. Explicit rejection of component-wavelength and guarded lattice refinement
+   until their shared topology derivative contract is implemented.
+
+## Remaining QARR execution sequence
+
+1. Construct the three QARR phases from the pinned CIFs, use the calibrated Cu
+   K-alpha1/K-alpha2 spectrum, and verify reflection coverage phase by phase.
+2. Review and record each phase's `Z`, formula mass, and cell volume before any
+   scale-to-weight conversion.
+3. Establish the background and shared instrument state in explicit stages,
+   then refine structural phase scales. Structured events, cancellation,
+   budgets, checkpoints, and last-accepted-state behavior remain mandatory.
+4. Inspect difference curves, phase contributions, scale correlations,
+   termination reasons, and reflection diagnostics before calculating weight
+   fractions.
+5. Convert final scales through the Hill--Howard layer using the reviewed `Z`,
+   formula masses, and cell volumes. Record covariance propagation separately
+   once scale covariance is available.
+6. Freeze acceptance only after diagnostic review. The initial target is an
    absolute error no greater than two weight-percentage points for each of the
    three weighed phases, alongside pattern residuals, reflection diagnostics,
    and numerical stability checks. Tighter limits should be based on repeated
    runs and published round-robin dispersion, not selected post hoc.
-9. Add an optional same-scope GSAS-II timing comparison in its isolated pinned
+7. Add an optional same-scope GSAS-II timing comparison in its isolated pinned
    environment. Validate values first and report startup, setup, calculation,
    and refinement timing scopes separately. Normal installation and CI remain
    independent of GSAS-II.
+8. After fixed-component real-data acceptance, implement refinable wavelength
+   ratios and a multi-wavelength lattice guard. Move the component-level loop
+   across the PyO3 boundary only if benchmark evidence justifies the ABI.
 
 ## Review gates
 

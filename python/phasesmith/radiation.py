@@ -120,7 +120,7 @@ class ConstantWavelengthExperiment:
         return cls(ComponentRadiation.neutron(components), instrument)
 
 
-@dataclass(frozen=True, slots=True, init=False)
+@dataclass(frozen=True, slots=True, init=False, eq=False)
 class WavelengthComponents:
     """Discrete wavelengths and relative integrated intensities.
 
@@ -188,6 +188,15 @@ class WavelengthComponents:
 
         return int(self.wavelengths_angstrom.size)
 
+    def __eq__(self, other: object) -> bool:
+        """Compare immutable component values without ambiguous NumPy truth values."""
+
+        return (
+            isinstance(other, WavelengthComponents)
+            and np.array_equal(self.wavelengths_angstrom, other.wavelengths_angstrom)
+            and np.array_equal(self.relative_intensities, other.relative_intensities)
+        )
+
     @property
     def normalized_intensities(self) -> NDArray[np.float64]:
         """Return newly allocated unit-sum component weights."""
@@ -221,6 +230,8 @@ class ComponentRadiation:
             raise TypeError("probe must be a RadiationProbe")
         if not isinstance(self.components, WavelengthComponents):
             raise TypeError("components must be WavelengthComponents")
+        if np.any(self.components.relative_intensities <= 0.0):
+            raise ValueError("fixed-spectrum radiation components must have positive intensities")
 
     @property
     def wavelength_angstrom(self) -> float:

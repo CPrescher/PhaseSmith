@@ -147,6 +147,20 @@ status. The complete gate passes 469 Python tests (one optional external-oracle
 case deselected), 60 Rust tests, Ruff, Rust formatting, strict Clippy, and a
 fresh release-wheel smoke test in an isolated environment.
 
+The fixed-spectrum structural checkpoint removes the QARR capability block at
+the calculation and fixed-cell refinement layers. `ComponentRadiation` now
+drives component-specific Bragg positions, built-in Lorentz--polarization
+values, native fused structural values, and analytical JVP/VJP products. Each
+discrete wavelength is one Rust structural batch; Python performs only the
+small spectrum-level sum and never orchestrates atoms, reflections, support,
+or samples. CIF-backed Rietveld requests generate the exact union of visible
+fixed-cell families, refine shared phase/site/profile/background/sample terms,
+and report component-indexed reflection diagnostics. Component wavelength and
+lattice refinement fail explicitly until a multi-wavelength topology guard is
+implemented. Persistence format 6 stores the typed radiation union and loads
+formats 1--5. The next real-data checkpoint is the three-phase IUCr QARR fit
+and quantitative acceptance assessment.
+
 ## Design commitments
 
 - Use GSAS-II only as a pinned validation oracle, never as the architecture.

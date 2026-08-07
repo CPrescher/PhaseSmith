@@ -42,6 +42,12 @@ def test_component_model_is_immutable_normalized_plain_data() -> None:
     assert not components.relative_intensities.flags.writeable
 
 
+def test_fixed_spectrum_radiation_rejects_zero_weight_components() -> None:
+    components = phasesmith.WavelengthComponents([1.0, 2.0], [1.0, 0.0])
+    with pytest.raises(ValueError, match="positive intensities"):
+        phasesmith.ComponentRadiation.x_ray(components)
+
+
 def test_one_component_is_exactly_monochromatic_with_and_without_fcj() -> None:
     x = np.linspace(39.0, 41.0, 2_001)
     positions = np.array([39.8, 40.2])

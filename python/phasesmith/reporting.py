@@ -82,17 +82,20 @@ def rietveld_result_record(result: RietveldResult) -> dict[str, Any]:
                 "name": phase.name,
                 "scale": phase.scale,
                 "reflection_count": phase.reflections.reflection_count,
+                "component_reflection_count": len(calculation.reflections.reflection_ids),
                 "reflections": [
                     {
                         "reflection_id": reflection_id,
                         "hkl": list(map(int, hkl)),
+                        "component_index": int(component_index),
                         "d_spacing_angstrom": float(d_spacing),
                         "two_theta_deg": float(position),
                         "integrated_intensity": float(intensity),
                     }
-                    for reflection_id, hkl, d_spacing, position, intensity in zip(
+                    for reflection_id, hkl, component_index, d_spacing, position, intensity in zip(
                         calculation.reflections.reflection_ids,
-                        phase.reflections.hkl,
+                        phase.reflections.hkl[calculation.reflections.base_reflection_index],
+                        calculation.reflections.component_index,
                         calculation.reflections.d_spacing_angstrom,
                         calculation.reflections.two_theta_deg,
                         calculation.reflections.integrated_intensity,

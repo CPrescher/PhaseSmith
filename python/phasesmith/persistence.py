@@ -34,6 +34,7 @@ from .phase import (
 )
 from .radiation import (
     BraggBrentanoGeometry,
+    ComponentRadiation,
     ConstantWavelengthExperiment,
     MonochromaticRadiation,
     RadiationProbe,
@@ -95,7 +96,7 @@ from .sample import (
 from .scattering import NeutronNuclear, XrayNonResonant
 from .structure import CrystalStructure, structure_from_record, structure_to_record
 
-FORMAT_VERSION: Final = 5
+FORMAT_VERSION: Final = 6
 MANIFEST_NAME: Final = "manifest.json"
 ARCHIVE_NAME: Final = "arrays.npz"
 Instrument = ConstantWavelengthInstrument | TofInstrument
@@ -434,9 +435,21 @@ def _experiment_record(
 ) -> dict[str, Any] | None:
     if experiment is None:
         return None
+    if isinstance(experiment.radiation, ComponentRadiation):
+        radiation = {
+            "type": "components",
+            "probe": experiment.radiation.probe.value,
+            "wavelengths_angstrom": (experiment.radiation.components.wavelengths_angstrom.tolist()),
+            "relative_intensities": (experiment.radiation.components.relative_intensities.tolist()),
+        }
+    else:
+        radiation = {
+            "type": "monochromatic",
+            "probe": experiment.radiation.probe.value,
+            "wavelength_angstrom": experiment.radiation.wavelength_angstrom,
+        }
     return {
-        "probe": experiment.radiation.probe.value,
-        "wavelength_angstrom": experiment.radiation.wavelength_angstrom,
+        "radiation": radiation,
         "instrument": _instrument_record(experiment.instrument),
         "zero_shift_deg": experiment.zero_shift_deg,
         "geometry": (
@@ -462,10 +475,29 @@ def _experiment_from_record(
     geometry_record = record.get("geometry")
     if geometry_record is not None and geometry_record.get("type") != "bragg_brentano":
         raise PersistenceError("unknown constant-wavelength experiment geometry")
-    return ConstantWavelengthExperiment(
-        MonochromaticRadiation(
+    radiation_record = record.get("radiation")
+    if radiation_record is None:
+        # Formats 1--5 stored only monochromatic radiation as flat fields.
+        radiation: MonochromaticRadiation | ComponentRadiation = MonochromaticRadiation(
             RadiationProbe(record["probe"]), float(record["wavelength_angstrom"])
-        ),
+        )
+    elif radiation_record.get("type") == "monochromatic":
+        radiation = MonochromaticRadiation(
+            RadiationProbe(radiation_record["probe"]),
+            float(radiation_record["wavelength_angstrom"]),
+        )
+    elif radiation_record.get("type") == "components":
+        radiation = ComponentRadiation(
+            RadiationProbe(radiation_record["probe"]),
+            WavelengthComponents(
+                radiation_record["wavelengths_angstrom"],
+                radiation_record["relative_intensities"],
+            ),
+        )
+    else:
+        raise PersistenceError("unknown constant-wavelength radiation type")
+    return ConstantWavelengthExperiment(
+        radiation,
         instrument,
         float(record.get("zero_shift_deg", 0.0)),
         (
@@ -1473,7 +1505,7 @@ def load_bundle(
     if (
         not isinstance(version, int)
         or isinstance(version, bool)
-        or version not in (1, 2, 3, 4, FORMAT_VERSION)
+        or version not in (1, 2, 3, 4, 5, FORMAT_VERSION)
     ):
         raise PersistenceError(f"unsupported persistence format {manifest.get('format_version')!r}")
     if manifest.get("archive", {}).get("file") != ARCHIVE_NAME:

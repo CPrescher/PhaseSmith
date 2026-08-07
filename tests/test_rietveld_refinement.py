@@ -48,6 +48,16 @@ def experiment() -> phasesmith.ConstantWavelengthExperiment:
     return phasesmith.ConstantWavelengthExperiment.x_ray(instrument)
 
 
+def component_experiment() -> phasesmith.ConstantWavelengthExperiment:
+    instrument = phasesmith.ConstantWavelengthInstrument(
+        1.54056, 2.0e-4, -1.0e-4, 2.0e-4, 1.5e-3, 3.0e-3
+    )
+    return phasesmith.ConstantWavelengthExperiment.x_ray_components(
+        instrument,
+        phasesmith.WavelengthComponents.doublet(1.54056, 1.54439, 0.5),
+    )
+
+
 def selection(**changes: bool) -> structural_refinement.RietveldParameterSelection:
     return replace(
         structural_refinement.RietveldParameterSelection(
@@ -118,6 +128,99 @@ def test_combined_structural_calculation_sums_profiles_and_background_once() -> 
         atol=2.0e-14,
     )
     np.testing.assert_allclose(combined.y, combined.profile_y + background, atol=0.0)
+
+
+def test_fixed_components_from_cif_generates_exact_visible_union() -> None:
+    x = np.linspace(15.0, 100.0, 8_501)
+    selected = selection(phase_scale=True)
+    request = structural_refinement.RietveldInput.from_cif(
+        phasesmith.PowderPattern(x, observed_y=np.zeros_like(x)),
+        component_experiment(),
+        P1_CIF,
+        phase_id="alpha",
+        selection=selected,
+        intensity_correction=phasesmith.BraggBrentanoUnpolarizedLp(1.54056),
+    )
+    generator = phasesmith.PreparedReflectionGenerator(request.phases[0].structure.space_group)
+    expected = set()
+    for wavelength in (1.54056, 1.54439):
+        generated = generator.generate(
+            request.phases[0].structure.cell,
+            phasesmith.CwTwoThetaRange(float(x[0]), float(x[-1]), wavelength),
+        )
+        expected.update(generated.reflection_ids)
+    assert set(request.phases[0].reflections.reflection_ids) == expected
+    prepared = phasesmith.PreparedStructuralPattern(
+        request.pattern, request.experiment, request.phases[0]
+    )
+    assert prepared.uses_native_fused_path
+    calculation = structural_refinement.calculate(
+        request.pattern, request.experiment, request.phases
+    )
+    assert np.isfinite(calculation.y).all()
+
+
+def test_fixed_component_phase_scale_refines_and_reports_component_rows() -> None:
+    x = np.linspace(15.0, 100.0, 8_501)
+    selected = selection(phase_scale=True)
+    base = structural_refinement.RietveldInput.from_cif(
+        phasesmith.PowderPattern(x, observed_y=np.zeros_like(x)),
+        component_experiment(),
+        P1_CIF,
+        phase_id="alpha",
+        selection=selected,
+        intensity_correction=phasesmith.BraggBrentanoUnpolarizedLp(1.54056),
+    )
+    truth = structural_refinement.calculate(base.pattern, base.experiment, base.phases)
+    starting_phase = replace(base.phases[0], scale=0.55)
+    request = replace(
+        base,
+        pattern=phasesmith.PowderPattern(x, observed_y=truth.y),
+        phases=(starting_phase,),
+        parameters=structural_refinement.build_parameter_set(
+            (starting_phase,), (None,), selected, experiment=base.experiment
+        ),
+    )
+    result = structural_refinement.refine(
+        request,
+        structural_refinement.RietveldOptions(estimate_covariance=False),
+    )
+    assert result.phases[0].scale == pytest.approx(1.0, rel=2.0e-8)
+    assert result.metrics.rwp < 1.0e-8
+    report = phasesmith.rietveld_result_record(result)
+    phase_record = report["phases"][0]
+    count = result.phases[0].reflections.reflection_count
+    assert phase_record["reflection_count"] == count
+    assert phase_record["component_reflection_count"] == 2 * count
+    assert {item["component_index"] for item in phase_record["reflections"]} == {0, 1}
+    assert phase_record["reflections"][0]["hkl"] == phase_record["reflections"][count]["hkl"]
+
+
+def test_fixed_component_refinement_rejects_unsupported_parameter_families() -> None:
+    x = np.linspace(15.0, 100.0, 8_501)
+    pattern = phasesmith.PowderPattern(x, observed_y=np.zeros_like(x))
+    with pytest.raises(ValueError, match="do not yet support lattice refinement"):
+        structural_refinement.RietveldInput.from_cif(
+            pattern,
+            component_experiment(),
+            P1_CIF,
+            phase_id="alpha",
+            selection=selection(lattice=True),
+        )
+    fixed = structural_refinement.RietveldInput.from_cif(
+        pattern,
+        component_experiment(),
+        P1_CIF,
+        phase_id="alpha",
+        selection=selection(),
+    )
+    with pytest.raises(ValueError, match="do not support wavelength refinement"):
+        structural_refinement.build_parameter_set(
+            fixed.phases,
+            fixed.lattice_domains,
+            replace(selection(), instrument_parameters=("wavelength_angstrom",)),
+            experiment=fixed.experiment,
+        )
 
 
 def test_special_position_coordinate_selection_uses_only_allowed_tangent_space() -> None:

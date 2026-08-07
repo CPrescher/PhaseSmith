@@ -21,7 +21,7 @@ from ..intensity_corrections import (
 )
 from ..pattern import PowderPattern, StructuralPatternCalculationResult
 from ..phase import RietveldPhase, StructuralReflectionBatch
-from ..radiation import ConstantWavelengthExperiment, RadiationProbe
+from ..radiation import ComponentRadiation, ConstantWavelengthExperiment, RadiationProbe
 from ..sample import (
     IsotropicMicrostrainBroadening,
     IsotropicSizeBroadening,
@@ -30,7 +30,7 @@ from ..sample import (
 from ..scattering import NeutronNuclear, ScatteringFactorProvider, XrayNonResonant
 from ..structural_calculation import PreparedStructuralPattern, calculate_structural_pattern
 from ..structure import AtomSite, CrystalStructure
-from ..symmetry import CwTwoThetaRange, PreparedReflectionGenerator
+from ..symmetry import CwTwoThetaRange, DSpacingRange, PreparedReflectionGenerator
 from .background import DifferentiableBackground
 from .core import (
     Bounds,
@@ -341,6 +341,11 @@ def build_parameter_set(
     if selection.instrument_parameters:
         if experiment is None:
             raise ValueError("instrument refinement requires a CW experiment")
+        if (
+            isinstance(experiment.radiation, ComponentRadiation)
+            and "wavelength_angstrom" in selection.instrument_parameters
+        ):
+            raise ValueError("fixed wavelength components do not support wavelength refinement")
         for name in selection.instrument_parameters:
             value = _instrument_parameter_value(experiment, name)
             floor = {
@@ -556,6 +561,12 @@ class RietveldInput:
             raise ValueError("one optional lattice domain is required per phase")
         if len({phase.phase_id for phase in self.phases}) != len(self.phases):
             raise ValueError("Rietveld phase IDs must be unique")
+        if isinstance(self.experiment.radiation, ComponentRadiation) and any(
+            domain is not None for domain in self.lattice_domains
+        ):
+            raise ValueError(
+                "fixed wavelength components do not yet support guarded lattice refinement"
+            )
         for phase, domain in zip(self.phases, self.lattice_domains, strict=True):
             if domain is not None:
                 if domain.space_group != phase.structure.space_group:
@@ -564,6 +575,10 @@ class RietveldInput:
                     raise ValueError("lattice-domain and experiment wavelengths must match")
         if not isinstance(self.parameters, ParameterSet):
             raise TypeError("parameters must be a ParameterSet")
+        if isinstance(self.experiment.radiation, ComponentRadiation) and any(
+            key == instrument_parameter_key("wavelength_angstrom") for key in self.parameters.keys
+        ):
+            raise ValueError("fixed wavelength components do not support wavelength refinement")
         if self.background is not None and not isinstance(
             self.background, DifferentiableBackground
         ):
@@ -625,6 +640,14 @@ class RietveldInput:
         selected_parameters = RietveldParameterSelection() if selection is None else selection
         if not isinstance(selected_parameters, RietveldParameterSelection):
             raise TypeError("selection must be RietveldParameterSelection")
+        component_radiation = (
+            experiment.radiation if isinstance(experiment.radiation, ComponentRadiation) else None
+        )
+        if component_radiation is not None and selected_parameters.lattice:
+            raise ValueError(
+                "fixed wavelength components do not yet support lattice refinement; "
+                "set selection.lattice=False"
+            )
         imported = read_cif(
             path_or_text, block=block, strict=strict, limits=limits, backend=backend
         )
@@ -651,19 +674,59 @@ class RietveldInput:
             reflections = domain.generate(structure.cell).reflections
             selected_domain: CwStructuralReflectionDomain | None = domain
         else:
-            generated = PreparedReflectionGenerator(
+            generator = PreparedReflectionGenerator(
                 structure.space_group,
                 merge_friedel=merge_friedel,
                 max_candidates=max_candidates,
-            ).generate(
-                structure.cell,
-                CwTwoThetaRange(
-                    float(pattern.x[0]),
-                    float(pattern.x[-1]),
-                    experiment.radiation.wavelength_angstrom,
-                ),
             )
-            reflections = StructuralReflectionBatch.from_generated(generated)
+            if component_radiation is None:
+                generated = generator.generate(
+                    structure.cell,
+                    CwTwoThetaRange(
+                        float(pattern.x[0]),
+                        float(pattern.x[-1]),
+                        experiment.radiation.wavelength_angstrom,
+                    ),
+                )
+                reflections = StructuralReflectionBatch.from_generated(generated)
+            else:
+                wavelengths = component_radiation.components.wavelengths_angstrom
+                two_theta_min = float(pattern.x[0])
+                two_theta_max = float(pattern.x[-1])
+                if two_theta_min <= 0.0 or two_theta_max >= 180.0:
+                    raise ValueError(
+                        "fixed-component structural reflection generation requires "
+                        "0 < two-theta min < two-theta max < 180 degrees"
+                    )
+                # Every family sent to every component must remain inside asin's
+                # physical domain. Generate a conservative physical batch for the
+                # longest wavelength, then retain the exact union visible in any
+                # component.
+                d_min = np.nextafter(float(np.max(wavelengths)) / 2.0, np.inf)
+                d_max = float(np.max(wavelengths)) / (2.0 * np.sin(np.deg2rad(two_theta_min / 2.0)))
+                generated = generator.generate(
+                    structure.cell,
+                    DSpacingRange(d_min, d_max),
+                )
+                arguments = wavelengths[:, None] / (2.0 * generated.d_spacing_angstrom[None, :])
+                positions = 2.0 * np.degrees(np.arcsin(arguments))
+                visible = np.any(
+                    (positions >= two_theta_min) & (positions <= two_theta_max),
+                    axis=0,
+                )
+                if not np.any(visible):
+                    raise ValueError("no structural reflections lie in the fixed-component range")
+                reflections = StructuralReflectionBatch(
+                    tuple(
+                        reflection_id
+                        for reflection_id, selected in zip(
+                            generated.reflection_ids, visible, strict=True
+                        )
+                        if selected
+                    ),
+                    generated.hkl[visible],
+                    generated.multiplicity[visible],
+                )
             selected_domain = None
         selected_scattering = scattering
         if selected_scattering is None:
@@ -1286,9 +1349,15 @@ def _apply_profile_background_values(
         if geometry is None:  # pragma: no cover - rejected while constructing parameters
             raise ValueError("sample displacement requires Bragg-Brentano geometry")
         geometry = replace(geometry, sample_displacement_mm=values[sample_key])
+    if isinstance(experiment.radiation, ComponentRadiation):
+        if "wavelength_angstrom" in profile_updates:
+            raise ValueError("fixed wavelength components do not support wavelength refinement")
+        updated_radiation = experiment.radiation
+    else:
+        updated_radiation = replace(experiment.radiation, wavelength_angstrom=wavelength)
     updated_experiment = replace(
         experiment,
-        radiation=replace(experiment.radiation, wavelength_angstrom=wavelength),
+        radiation=updated_radiation,
         instrument=updated_instrument,
         zero_shift_deg=values.get(
             instrument_parameter_key("zero_shift_deg"), experiment.zero_shift_deg
