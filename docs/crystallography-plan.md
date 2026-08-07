@@ -615,6 +615,12 @@ The remaining unit equations, parameter ownership, facade, reporting, and
 validation contracts are specified in
 [`practical-workflow-plan.md`](practical-workflow-plan.md).
 
+Review result: unit 18 is complete. Calibration and phase sample parameters,
+all specified analytical backgrounds, the project/report facade, format-5
+persistence with formats 1--4 migration, realistic X-ray/neutron benchmarks,
+and source/fresh-wheel validation pass. The optional pinned GSAS-II comparison
+remains available but was not run without its external checkout.
+
 ## Implementation unit 19: advanced crystallographic physics
 
 These are separate reviewed increments after the first Rietveld exit gate:

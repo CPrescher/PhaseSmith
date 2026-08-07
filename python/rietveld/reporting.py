@@ -157,6 +157,9 @@ def write_rietveld_csv(
         if pattern.uncertainty is None
         else pattern.uncertainty
     )
+    weight = included.astype(np.float64)
+    if pattern.uncertainty is not None:
+        weight /= np.square(pattern.uncertainty)
     destination = Path(path)
     with destination.open("w", encoding="utf-8", newline="") as stream:
         writer = csv.writer(stream)
@@ -169,6 +172,7 @@ def write_rietveld_csv(
                 "background_y",
                 "residual_calculated_minus_observed",
                 "uncertainty",
+                "weight",
                 "included",
             )
         )
@@ -181,6 +185,7 @@ def write_rietveld_csv(
                 result.calculation.background,
                 result.metrics.residual,
                 uncertainty,
+                weight,
                 included.astype(np.int8),
                 strict=True,
             )

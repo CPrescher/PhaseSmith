@@ -592,7 +592,9 @@ def test_project_facade_refines_stops_reports_and_resumes(tmp_path) -> None:
     assert report["schema"] == "rietveld.result-report.v1"
     assert report["termination"]["reason"] == result.termination_reason.value
     assert report["phases"][0]["reflection_count"] == truth.phases[0].reflections.reflection_count
-    assert len(csv_path.read_text().splitlines()) == truth.pattern.x.size + 1
+    csv_lines = csv_path.read_text().splitlines()
+    assert len(csv_lines) == truth.pattern.x.size + 1
+    assert "weight" in csv_lines[0].split(",")
 
     saved = project.save(tmp_path / "project")
     restored = rietveld.RietveldProject.load(saved)

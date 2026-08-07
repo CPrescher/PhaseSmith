@@ -998,9 +998,9 @@ plain persistence, and generic NumPy interchange.
 
 ## Implementation units 11 through 19: crystallography and Rietveld
 
-Status: units 11 through 17 implemented and independently validated (2026-08-07),
+Status: units 11 through 18 implemented and independently validated (2026-08-07),
 with their live pinned GSAS-II behavior fixtures pending an available external
-checkout; unit 18 is in progress. The complete equations, data contracts,
+checkout. The complete equations, data contracts,
 ordering, derivative strategy, validation gates, benchmarks, and discipline are
 specified in
 [`docs/crystallography-plan.md`](docs/crystallography-plan.md).
@@ -1024,7 +1024,7 @@ The dependency order is:
 19. Anisotropic, anomalous, absorption, magnetic, electron, and specialist
     crystallographic physics as separate later increments.
 
-The detailed implementation contract for the remaining unit-18 work is frozen
+The completed unit-18 implementation contract and results are recorded
 in [`docs/practical-workflow-plan.md`](docs/practical-workflow-plan.md).
 
 The design deliberately separates file interpretation from numerical work.
@@ -1220,6 +1220,10 @@ Implementation unit 16 is complete: a CIF-backed Le Bail script refines
 crystal-system-allowed lattice parameters, regenerates a guarded reflection
 domain only between accepted iterations, preserves intensities by stable family
 ID, and exposes plain-array diagnostics without changing explicit-reflection Le
-Bail. Implementation unit 17 is complete. Unit 18 begins with the native pinned
-xypattern-compatible Smooth Bruckner preprocessing slice specified in
-[`docs/background-subtraction.md`](docs/background-subtraction.md).
+Bail. Implementation units 17 and 18 are complete. Unit 18 includes the native
+pinned xypattern-compatible Smooth Bruckner preprocessing slice, analytical
+monochromatic calibration and sample physics, richer backgrounds, the
+script-first project/report facade, format-5 persistence, and realistic X-ray
+and neutron benchmarks. Unit 19 is the next milestone and intentionally keeps
+anisotropic, anomalous, absorption, magnetic, electron, and specialist physics
+as separate reviewed increments.

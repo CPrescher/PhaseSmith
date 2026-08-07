@@ -115,3 +115,14 @@ The completion gate includes:
   GSAS-II comparison kept outside normal installation and tests;
 - source and wheel runs of formatting, strict Clippy, Rust tests, Ruff, and
   Python tests.
+
+## Completion review
+
+Completed on 2026-08-07. The release benchmark measured 13.19 ms median for a
+423-reflection laboratory X-ray calculation and 8.79 ms for a 257-reflection
+monochromatic-neutron calculation, each on 20,001 samples with eight sites and
+the built-in size, microstrain, March--Dollase, and composite background
+models. The 29-parameter, three-iteration structural refinement benchmark
+measured 145.56 ms median. All 60 Rust tests and 442 Python tests pass from
+source and from a fresh release-wheel environment; the one external pinned
+GSAS-II test remains explicitly deselected when its checkout is unavailable.

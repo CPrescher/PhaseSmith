@@ -101,7 +101,29 @@ environment. A 20,001-sample, 50-iteration release benchmark measures 3.61 ms
 median for native smoothing and 13.15 ms for the complete public subtraction
 pipeline.
 
-The complete internal gate now passes 417 Python tests (one optional
+Unit 18 is complete. Structural CW calculations now refine wavelength, zero
+shift, and typed Bragg--Brentano specimen displacement in the fused Rust path;
+the wavelength derivative includes both position motion and
+Lorentz--polarization intensity dependence. Built-in size, microstrain, and
+March--Dollase parameters are phase-owned refinable scalars. The
+March--Dollase lattice chain includes the analytical reciprocal-metric
+derivative and remains isolated between phases.
+
+Power, Chebyshev, point-interpolated, broad normalized-Gaussian amorphous, and
+ordered composite backgrounds implement one analytical protocol. The
+application-neutral `RietveldProject` facade provides calculate/refine/stop,
+checkpoint continuation, format-5 persistence, and finite JSON/plain CSV
+reports without replacing the typed request API.
+
+On the development host, realistic release calculations with 20,001 samples,
+eight sites, and built-in sample physics take 13.19 ms median for a
+423-reflection laboratory X-ray pattern and 8.79 ms for a 257-reflection
+monochromatic-neutron pattern. The existing 423-reflection, 29-parameter,
+three-iteration matrix-free refinement benchmark takes 145.56 ms median. The
+pinned GSAS-II comparison was not rerun because no external checkout was
+supplied; its optional harness remains separate from installation.
+
+The complete source and fresh-wheel gates pass 442 Python tests (one optional
 external-oracle case deselected), 60 Rust tests, strict Ruff, formatting, and
 Clippy.
 
