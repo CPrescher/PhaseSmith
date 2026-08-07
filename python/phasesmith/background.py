@@ -126,9 +126,13 @@ class SmoothBrucknerBackground:
         spacing = np.diff(grid)
         if np.any(spacing <= 0.0):
             raise ValueError("x must be strictly increasing")
-        if not np.allclose(spacing, spacing[0], rtol=1.0e-8, atol=0.0):
+        representative_spacing = float(np.median(spacing))
+        # Fixed-step text formats such as FXYE round each coordinate
+        # independently. Accept that decimal quantization without treating a
+        # physically nonuniform grid as uniform.
+        if not np.allclose(spacing, representative_spacing, rtol=2.0e-5, atol=0.0):
             raise ValueError("x must be uniformly spaced for a physical smoothing width")
-        points = int(self.smooth_width / float(spacing[0]))
+        points = int(self.smooth_width / representative_spacing)
         if self.chebyshev_order is not None and self.chebyshev_order >= grid.size:
             raise ValueError("chebyshev_order must be smaller than the number of samples")
         return grid, samples, points

@@ -65,7 +65,7 @@ VALIDATION_DATASETS: tuple[ValidationDataset, ...] = (
     ValidationDataset(
         dataset_id="iucr-qarr-1g",
         title="IUCr Quantitative Phase Analysis Round Robin sample 1g",
-        source_url="https://www.iucr.org/resources/commissions/powder-diffraction/projects/qarr",
+        source_url="https://www.iucr.org/__data/iucr/powder/QARR/data-kit.htm",
         citation=(
             "I. C. Madsen et al., J. Appl. Cryst. 34 (2001) 409-426, doi:10.1107/S0021889801007476"
         ),
@@ -98,14 +98,20 @@ VALIDATION_DATASETS: tuple[ValidationDataset, ...] = (
                 2_142,
                 (f"{_QARR_MIRROR}/ZnO.cif",),
             ),
+            ExternalValidationFile(
+                "cuka.instprm",
+                "aef315a10622fdb1afae5b264d43e7f9dcc053aba80aa3d9fa05067146922a08",
+                215,
+                (f"{_QARR_MIRROR}/cuka.instprm",),
+            ),
         ),
     ),
     ValidationDataset(
         dataset_id="aps-sucrose-11bmb",
         title="APS 11-BM sucrose Le Bail tutorial pattern",
         source_url=(
-            "https://advancedphotonsource.github.io/GSAS-II-tutorials/"
-            "LeBailSucrose/LeBailSucrose.htm"
+            "https://github.com/AdvancedPhotonSource/GSAS-II-Tutorials/blob/"
+            "e2485148a3d7ee4757239b1ba40653f1f715bba5/LeBail/LeBailSucrose.htm"
         ),
         citation="Advanced Photon Source, GSAS-II Le Bail fitting tutorial, Sucrose",
         license_note=(
@@ -167,6 +173,24 @@ def fetch_validation_dataset(
     return tuple(paths)
 
 
+def verify_validation_dataset(
+    dataset_id: str,
+    destination: str | Path,
+) -> tuple[Path, ...]:
+    """Verify a complete local dataset without performing network access."""
+
+    dataset = validation_dataset(dataset_id)
+    root = Path(destination)
+    paths = []
+    for external_file in dataset.files:
+        target = root / external_file.name
+        if not target.is_file():
+            raise FileNotFoundError(f"missing {external_file.name} for {dataset_id!r} in {root}")
+        _verify_file(target, external_file)
+        paths.append(target)
+    return tuple(paths)
+
+
 def _fetch_file(external_file: ExternalValidationFile, target: Path) -> None:
     errors: list[str] = []
     for url in external_file.urls:
@@ -178,6 +202,8 @@ def _fetch_file(external_file: ExternalValidationFile, target: Path) -> None:
                 temporary = Path(stream.name)
                 request = Request(url, headers={"User-Agent": "PhaseSmith-validation/0.1"})
                 with urlopen(request, timeout=60) as response:
+                    if not response.geturl().startswith("https://"):
+                        raise ValueError("download redirected away from HTTPS")
                     while block := response.read(1024 * 1024):
                         stream.write(block)
                         if stream.tell() > external_file.size_bytes:

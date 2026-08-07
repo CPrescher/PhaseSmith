@@ -1027,6 +1027,10 @@ The dependency order is:
 The completed unit-18 implementation contract and results are recorded
 in [`docs/practical-workflow-plan.md`](docs/practical-workflow-plan.md).
 
+The cross-cutting real-data checkpoint and the dependency-ordered Cu K-alpha
+structural-component/QARR plan are recorded in
+[`docs/real-data-validation-plan.md`](docs/real-data-validation-plan.md).
+
 The design deliberately separates file interpretation from numerical work.
 The optional CIF backend may resolve names/settings and emit exact symmetry
 operations, but Rust owns reciprocal mathematics, reflection generation,

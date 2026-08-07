@@ -158,6 +158,21 @@ def test_physical_width_raw_model_matches_point_kernel() -> None:
     )
 
 
+def test_physical_width_accepts_fixed_step_text_quantization() -> None:
+    x = np.round(0.5 + np.arange(100) * 0.00099987, decimals=8)
+    y = np.linspace(10.0, 20.0, x.size)
+    model = phasesmith.SmoothBrucknerBackground(
+        smooth_width=0.01,
+        iterations=2,
+        chebyshev_order=None,
+    )
+
+    result = model.subtract(x, y)
+
+    assert result.smooth_points == 10
+    np.testing.assert_array_equal(result.background, phasesmith.smooth_bruckner(y, 10, 2))
+
+
 def test_default_pipeline_matches_explicit_chebyshev_fit_and_pattern_boundary() -> None:
     x, y = peak_rich_signal()
     model = phasesmith.SmoothBrucknerBackground()

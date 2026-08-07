@@ -41,6 +41,10 @@ phasesmith.io.cif  [implemented]
   Optional CIF parsing into crystallography models. Parser objects never enter
   calculation, persistence, or refinement state.
 
+phasesmith.io.powder  [implemented]
+  Size-limited two/three-column and unpacked GSAS FXYE readers. Adapters return
+  immutable NumPy data plus source metadata and perform no refinement.
+
 phasesmith.pattern
   Observed grids, intensities, uncertainties, masks, backgrounds, and
   calculated-pattern result containers.
@@ -68,8 +72,17 @@ phasesmith.refinement.lebail
   First-class Le Bail intensity extraction and diagnostics.
 
 phasesmith.refinement.rietveld
-  Planned structure-factor refinement orchestration after the required native
-  physics layer exists. It consumes the same profile interface as Le Bail.
+  Implemented monochromatic structure-factor refinement orchestration. It
+  consumes the same profile interface as Le Bail.
+
+phasesmith.quantitative  [implemented]
+  Hill--Howard conversion of compatible phase scales into labeled normalized
+  crystalline weight fractions. This interpretation remains separate from the
+  refinement solver.
+
+phasesmith.validation  [implemented]
+  Explicit checksum-pinned external dataset retrieval and reproducible
+  real-data workflows. Downloads never occur at import time.
 
 phasesmith.integrations.dioptas
   Compatibility-only conversion between Dioptas-facing NumPy data and the
@@ -127,6 +140,7 @@ phasesmith.structure.AnisotropicDisplacement
 phasesmith.structure.structure_to_record
 phasesmith.structure.structure_from_record
 phasesmith.io.cif.read_cif
+phasesmith.io.powder.read_powder_data
 phasesmith.scattering.ScatteringSpecies
 phasesmith.scattering.ScatteringContext
 phasesmith.scattering.ScatteringFactorBatch
@@ -147,6 +161,8 @@ phasesmith.pattern.PowderPattern
 phasesmith.background.smooth_bruckner
 phasesmith.background.SmoothBrucknerBackground
 phasesmith.background.BackgroundSubtractionResult
+phasesmith.quantitative.weight_fractions_from_scale
+phasesmith.quantitative.quantitative_phase_analysis
 phasesmith.pattern.PatternCalculationResult
 phasesmith.pattern.StructuralReflectionResult
 phasesmith.pattern.StructuralPatternCalculationResult

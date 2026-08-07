@@ -127,6 +127,17 @@ The complete source and fresh-wheel gates pass 442 Python tests (one optional
 external-oracle case deselected), 60 Rust tests, strict Ruff, formatting, and
 Clippy.
 
+A cross-cutting real-data validation checkpoint now adds immutable plain-column
+and unpacked FXYE input, checksum-pinned external dataset provenance, explicit
+offline verification, and Hill--Howard phase-scale-to-weight-fraction
+conversion. The official monochromatic APS 11-BM sucrose pattern exercises the
+complete background/Le Bail/profile-refinement script and has a committed
+measured baseline. The IUCr QARR 1g input is verified but explicitly reports a
+blocked full structural Cu K-alpha doublet refinement; the lower-level profile
+component kernel is not misrepresented as complete multi-wavelength Rietveld
+support. The implementation sequence is frozen in
+`docs/real-data-validation-plan.md`.
+
 ## Design commitments
 
 - Use GSAS-II only as a pinned validation oracle, never as the architecture.
@@ -224,7 +235,12 @@ documented; GSAS-II itself is never vendored.
   subtraction preprocessing. Refinable additive background models remain in
   `python/phasesmith/refinement/background`.
 - `python/phasesmith/io`: optional format adapters; CIF uses a lazy Gemmi backend
-  and returns only parser-independent structures and diagnostics.
+  and returns only parser-independent structures and diagnostics; powder text
+  readers return immutable arrays and source metadata.
+- `python/phasesmith/quantitative`: phase-scale interpretation and quantitative
+  results, separate from iterative refinement.
+- `python/phasesmith/validation`: opt-in external dataset provenance and
+  machine-readable real-data workflows; no import-time network access.
 - `tests`: Python differential and contract tests.
 - `benchmarks`: end-to-end Python benchmarks and stored methodology.
 - `oracle`: pinned GSAS-II environment metadata, adapters, and fixture schema.

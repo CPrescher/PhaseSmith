@@ -1,0 +1,85 @@
+{
+  "generated_at_utc": "2026-08-07T08:57:48.173017+00:00",
+  "phasesmith_version": "0.1.0",
+  "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O",
+  "python": "3.13.5",
+  "reports": [
+    {
+      "checks": [
+        {
+          "check_id": "profile_improvement",
+          "criterion": "final Rwp / first-cycle Rwp < 1",
+          "detail": "Profile refinement lowers weighted residual relative to the first extraction cycle.",
+          "measured": 0.6756909213287914,
+          "status": "passed"
+        },
+        {
+          "check_id": "smoke_rwp",
+          "criterion": "Rwp <= 0.22",
+          "detail": "Current-model real-data smoke gate; this is not a GSAS-II equivalence tolerance.",
+          "measured": 0.18786771426990914,
+          "status": "passed"
+        },
+        {
+          "check_id": "profile_correlation",
+          "criterion": "Pearson correlation >= 0.98",
+          "detail": "Background-subtracted observed and calculated profiles remain strongly aligned.",
+          "measured": 0.9915878418639391,
+          "status": "passed"
+        },
+        {
+          "check_id": "integrated_intensities",
+          "criterion": "all finite and >= 0",
+          "detail": "Every extracted integrated intensity is finite and nonnegative.",
+          "measured": null,
+          "status": "passed"
+        }
+      ],
+      "dataset_id": "aps-sucrose-11bmb",
+      "elapsed_seconds": 0.5774139999412,
+      "notes": [
+        "First-cycle Rwp=0.27803794; final Rwp=0.18786771; final Rp=0.13882782.",
+        "Termination=max_iterations; iterations=20.",
+        "The tutorial's lower final Rwp uses additional staged background, size, microstrain, lattice, and repeated extraction refinements."
+      ],
+      "reflection_count": 811,
+      "sample_count": 23003,
+      "status": "passed"
+    },
+    {
+      "checks": [
+        {
+          "check_id": "observed_grid",
+          "criterion": "7251 samples with endpoints 5 and 150 degrees",
+          "detail": "QARR 1g plain-column pattern spans the published 5-150 degree grid.",
+          "measured": 7251.0,
+          "status": "passed"
+        },
+        {
+          "check_id": "cuka_doublet_metadata",
+          "criterion": "Lam1, Lam2, and I(L2)/I(L1) present",
+          "detail": "Pinned instrument metadata identifies Cu K-alpha1/K-alpha2 and the 0.5 ratio.",
+          "measured": null,
+          "status": "passed"
+        },
+        {
+          "check_id": "structural_doublet_refinement",
+          "criterion": "one structural intensity calculation per wavelength component",
+          "detail": "The profile kernel supports wavelength components, but the current full structure-factor Rietveld request accepts one monochromatic wavelength.",
+          "measured": null,
+          "status": "blocked"
+        }
+      ],
+      "dataset_id": "iucr-qarr-1g",
+      "elapsed_seconds": 0.003301125019788742,
+      "notes": [
+        "Published weighed fractions: Al2O3 31.37%, ZnO 34.21%, CaF2 34.42%.",
+        "No fit or quantitative accuracy claim is made while the capability check is blocked."
+      ],
+      "reflection_count": null,
+      "sample_count": 7251,
+      "status": "blocked"
+    }
+  ],
+  "schema_version": 1
+}
