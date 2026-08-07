@@ -1,7 +1,15 @@
 """Shared refinement infrastructure and method-specific submodules."""
 
 from . import rietveld
-from .background import PolynomialBackground
+from .background import (
+    AmorphousBackground,
+    AmorphousPeak,
+    ChebyshevBackground,
+    CompositeBackground,
+    DifferentiableBackground,
+    PointBackground,
+    PolynomialBackground,
+)
 from .core import (
     AffineConstraint,
     Bounds,
@@ -79,14 +87,19 @@ from .scipy import ScipyLeastSquaresAdapter
 
 __all__ = [
     "AffineConstraint",
+    "AmorphousBackground",
+    "AmorphousPeak",
     "Bounds",
+    "ChebyshevBackground",
     "CheckpointCallback",
     "CheckpointCallbackError",
     "CoincidentReflectionGroup",
+    "CompositeBackground",
     "ConsoleRefinementLogger",
     "ConstraintTransform",
     "CwLatticeReflectionDomain",
     "CwStructuralReflectionDomain",
+    "DifferentiableBackground",
     "FixedConstraint",
     "GeneratedReflectionDomainResult",
     "GeneratedStructuralReflectionDomainResult",
@@ -107,6 +120,7 @@ __all__ = [
     "ParameterKey",
     "ParameterSet",
     "ParameterSpec",
+    "PointBackground",
     "PolynomialBackground",
     "RefinementEvent",
     "RefinementEventKind",

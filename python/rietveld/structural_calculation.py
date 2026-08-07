@@ -265,7 +265,10 @@ def _fallback_calculate(
     contribution = (
         PhysicsContribution.neutral(phase.reflections.reflection_count)
         if phase.physics is None
-        else evaluate_provider(phase.physics, PhysicsContext(geometry, experiment.instrument))
+        else evaluate_provider(
+            phase.physics,
+            PhysicsContext(geometry, experiment.instrument, phase.structure.cell),
+        )
     )
     accumulation = accumulate_cw_contributions(
         pattern.x,
@@ -346,7 +349,7 @@ class PreparedStructuralPattern:
                 if phase.physics is None
                 else evaluate_provider(
                     phase.physics,
-                    PhysicsContext(geometry, experiment.instrument),
+                    PhysicsContext(geometry, experiment.instrument, phase.structure.cell),
                 )
             )
         object.__setattr__(self, "_native", native)

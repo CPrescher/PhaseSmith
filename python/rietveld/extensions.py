@@ -9,6 +9,7 @@ from typing import ClassVar, Protocol, runtime_checkable
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
 
+from .crystallography import UnitCell
 from .instrument import ConstantWavelengthInstrument
 from .phase import ReflectionGeometryBatch
 
@@ -65,6 +66,7 @@ class PhysicsContext:
 
     reflections: ReflectionGeometryBatch
     instrument: ConstantWavelengthInstrument
+    unit_cell: UnitCell | None = None
 
 
 @dataclass(frozen=True, slots=True, init=False)

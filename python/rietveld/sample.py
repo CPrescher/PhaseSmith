@@ -13,6 +13,14 @@ from .phase import ReciprocalMetric
 
 _DEG_PER_RAD = 180.0 / np.pi
 _HALF_ANGLE_RAD_PER_DEG = np.pi / 360.0
+_CELL_PARAMETER_NAMES = (
+    "a_angstrom",
+    "b_angstrom",
+    "c_angstrom",
+    "alpha_deg",
+    "beta_deg",
+    "gamma_deg",
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -61,6 +69,44 @@ def reciprocal_angle_geometry(
     cosine_squared.flags.writeable = False
     derivative.flags.writeable = False
     return ReciprocalAngleGeometry(cosine_squared, derivative)
+
+
+def _reciprocal_metric_cell_derivatives(context: PhysicsContext) -> NDArray[np.float64]:
+    cell = context.unit_cell
+    if cell is None:
+        return np.empty((0, 3, 3), dtype=np.float64)
+    a, b, c, alpha_deg, beta_deg, gamma_deg = cell.as_tuple()
+    alpha, beta, gamma = np.radians((alpha_deg, beta_deg, gamma_deg))
+    direct_derivatives = np.zeros((6, 3, 3), dtype=np.float64)
+    direct_derivatives[0] = (
+        (2.0 * a, b * np.cos(gamma), c * np.cos(beta)),
+        (b * np.cos(gamma), 0.0, 0.0),
+        (c * np.cos(beta), 0.0, 0.0),
+    )
+    direct_derivatives[1] = (
+        (0.0, a * np.cos(gamma), 0.0),
+        (a * np.cos(gamma), 2.0 * b, c * np.cos(alpha)),
+        (0.0, c * np.cos(alpha), 0.0),
+    )
+    direct_derivatives[2] = (
+        (0.0, 0.0, a * np.cos(beta)),
+        (0.0, 0.0, b * np.cos(alpha)),
+        (a * np.cos(beta), b * np.cos(alpha), 2.0 * c),
+    )
+    per_degree = np.pi / 180.0
+    direct_derivatives[3, 1, 2] = direct_derivatives[3, 2, 1] = (
+        -b * c * np.sin(alpha) * per_degree
+    )
+    direct_derivatives[4, 0, 2] = direct_derivatives[4, 2, 0] = (
+        -a * c * np.sin(beta) * per_degree
+    )
+    direct_derivatives[5, 0, 1] = direct_derivatives[5, 1, 0] = (
+        -a * b * np.sin(gamma) * per_degree
+    )
+    reciprocal = cell.geometry().reciprocal_metric
+    return np.ascontiguousarray(
+        np.asarray([-reciprocal @ derivative @ reciprocal for derivative in direct_derivatives])
+    )
 
 
 def _width_only_contribution(
@@ -199,10 +245,15 @@ class MarchDollasePreferredOrientation:
     def evaluate(self, context: PhysicsContext) -> PhysicsContribution:
         """Evaluate reflection multipliers and the March-ratio chain."""
 
+        reciprocal_metric = (
+            self.reciprocal_metric
+            if context.unit_cell is None
+            else ReciprocalMetric(context.unit_cell.geometry().reciprocal_metric)
+        )
         geometry = reciprocal_angle_geometry(
             context.reflections.hkl,
             self.preferred_axis_hkl,
-            self.reciprocal_metric,
+            reciprocal_metric,
         )
         cosine_squared = geometry.cosine_squared
         sine_squared = 1.0 - cosine_squared
@@ -211,8 +262,40 @@ class MarchDollasePreferredOrientation:
         multiplier = denominator ** (-1.5)
         d_denominator = 2.0 * ratio * cosine_squared - sine_squared / ratio**2
         d_ratio = -1.5 * denominator ** (-2.5) * d_denominator
+        metric_derivatives = _reciprocal_metric_cell_derivatives(context)
+        cell_multiplier_derivatives = []
+        if metric_derivatives.size:
+            reflections = np.asarray(context.reflections.hkl, dtype=np.float64)
+            axis = np.asarray(self.preferred_axis_hkl, dtype=np.float64)
+            metric = reciprocal_metric.matrix
+            reflection_norm = np.einsum("ri,ij,rj->r", reflections, metric, reflections)
+            axis_norm = float(axis @ metric @ axis)
+            projection = np.einsum("ri,ij,j->r", reflections, metric, axis)
+            d_multiplier_d_cosine = (
+                -1.5 * denominator ** (-2.5) * (ratio**2 - 1.0 / ratio)
+            )
+            for derivative in metric_derivatives:
+                d_reflection_norm = np.einsum(
+                    "ri,ij,rj->r", reflections, derivative, reflections
+                )
+                d_axis_norm = float(axis @ derivative @ axis)
+                d_projection = np.einsum("ri,ij,j->r", reflections, derivative, axis)
+                d_cosine = (
+                    2.0 * projection * d_projection / (reflection_norm * axis_norm)
+                    - cosine_squared
+                    * (d_reflection_norm / reflection_norm + d_axis_norm / axis_norm)
+                )
+                cell_multiplier_derivatives.append(d_multiplier_d_cosine * d_cosine)
         count = context.reflections.reflection_count
         zeros = np.zeros(count, dtype=np.float64)
+        parameter_names = (
+            "march_dollase.ratio",
+            *tuple(f"march_dollase.cell.{name}" for name in _CELL_PARAMETER_NAMES)[
+                : len(cell_multiplier_derivatives)
+            ],
+        )
+        intensity_derivatives = np.vstack((d_ratio, *cell_multiplier_derivatives))
+        parameter_count = len(parameter_names)
         return PhysicsContribution(
             gaussian_variance_deg2=zeros,
             lorentzian_fwhm_deg=zeros,
@@ -220,8 +303,8 @@ class MarchDollasePreferredOrientation:
             d_gaussian_variance_d_position=zeros,
             d_lorentzian_fwhm_d_position=zeros,
             d_intensity_multiplier_d_position=zeros,
-            parameter_names=("march_dollase.ratio",),
-            d_gaussian_variance_d_parameters=zeros[None, :],
-            d_lorentzian_fwhm_d_parameters=zeros[None, :],
-            d_intensity_multiplier_d_parameters=d_ratio[None, :],
+            parameter_names=parameter_names,
+            d_gaussian_variance_d_parameters=np.zeros((parameter_count, count)),
+            d_lorentzian_fwhm_d_parameters=np.zeros((parameter_count, count)),
+            d_intensity_multiplier_d_parameters=intensity_derivatives,
         )
