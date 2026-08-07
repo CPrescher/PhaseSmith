@@ -10,8 +10,8 @@ pub use rietveld_crystallography as crystallography;
 pub mod structural_pattern;
 
 pub use structural_pattern::{
-    BuiltInScatteringModel, StructuralPatternError, StructuralPatternInputView,
-    StructuralPatternJvpResult, StructuralPatternResult, StructuralPatternVjpResult,
-    calculate_structural_pattern, calculate_structural_pattern_jvp,
+    BuiltInScatteringModel, MonochromaticPositionCorrection, StructuralPatternError,
+    StructuralPatternInputView, StructuralPatternJvpResult, StructuralPatternResult,
+    StructuralPatternVjpResult, calculate_structural_pattern, calculate_structural_pattern_jvp,
     calculate_structural_pattern_vjp,
 };

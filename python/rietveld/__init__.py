@@ -113,6 +113,7 @@ from .phase import (
     StructuralReflectionBatch,
 )
 from .radiation import (
+    BraggBrentanoGeometry,
     ConstantWavelengthExperiment,
     MonochromaticRadiation,
     RadiationProbe,
@@ -210,6 +211,7 @@ __all__ = [
     "AtomSite",
     "AtomSiteBatch",
     "BackgroundSubtractionResult",
+    "BraggBrentanoGeometry",
     "BraggBrentanoUnpolarizedLp",
     "CalculationOptions",
     "CancellationCallback",

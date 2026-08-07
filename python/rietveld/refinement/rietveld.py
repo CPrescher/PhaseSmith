@@ -13,13 +13,20 @@ from numpy.typing import NDArray
 
 from ..control import CancellationCallback
 from ..crystallography import p1_parameter_names
+from ..extensions import CompositePhysicsProvider
 from ..intensity_corrections import (
+    BraggBrentanoUnpolarizedLp,
     IntegratedIntensityCorrectionProvider,
     NeutralIntegratedIntensityCorrection,
 )
 from ..pattern import PowderPattern, StructuralPatternCalculationResult
 from ..phase import RietveldPhase, StructuralReflectionBatch
 from ..radiation import ConstantWavelengthExperiment, RadiationProbe
+from ..sample import (
+    IsotropicMicrostrainBroadening,
+    IsotropicSizeBroadening,
+    MarchDollasePreferredOrientation,
+)
 from ..scattering import NeutronNuclear, ScatteringFactorProvider, XrayNonResonant
 from ..structural_calculation import PreparedStructuralPattern, calculate_structural_pattern
 from ..structure import AtomSite, CrystalStructure
@@ -65,6 +72,7 @@ class RietveldParameterSelection:
     coordinates: bool = False
     occupancy: bool = False
     u_iso: bool = False
+    sample_physics: bool = False
     instrument_parameters: tuple[str, ...] = ()
     background: bool = False
 
@@ -77,14 +85,24 @@ class RietveldParameterSelection:
                 self.coordinates,
                 self.occupancy,
                 self.u_iso,
+                self.sample_physics,
                 self.background,
             )
         ):
             raise TypeError("Rietveld parameter selections must be boolean")
         names = tuple(self.instrument_parameters)
-        allowed = ("u_deg2", "v_deg2", "w_deg2", "x_deg", "y_deg")
+        allowed = (
+            "u_deg2",
+            "v_deg2",
+            "w_deg2",
+            "x_deg",
+            "y_deg",
+            "wavelength_angstrom",
+            "zero_shift_deg",
+            "sample_displacement_mm",
+        )
         if len(set(names)) != len(names) or any(name not in allowed for name in names):
-            raise ValueError("instrument parameters must be unique CW U/V/W/X/Y field names")
+            raise ValueError("instrument parameters must be unique supported CW field names")
         object.__setattr__(self, "instrument_parameters", names)
 
 
@@ -156,8 +174,63 @@ def instrument_parameter_key(name: str) -> ParameterKey:
     return ParameterKey("instrument", "cw", name)
 
 
+def sample_parameter_key(phase_id: str, name: str) -> ParameterKey:
+    return ParameterKey("sample", phase_id, name)
+
+
 def background_parameter_key(background_id: str, index: int) -> ParameterKey:
     return ParameterKey("background", background_id, f"coefficient_{index}")
+
+
+def _instrument_parameter_value(experiment: ConstantWavelengthExperiment, name: str) -> float:
+    if hasattr(experiment.instrument, name):
+        return float(getattr(experiment.instrument, name))
+    if name == "zero_shift_deg":
+        return experiment.zero_shift_deg
+    if name == "sample_displacement_mm" and experiment.geometry is not None:
+        return experiment.geometry.sample_displacement_mm
+    raise ValueError(f"instrument parameter {name!r} is not configured for this experiment")
+
+
+def _physics_parameter_records(
+    provider: object | None,
+) -> tuple[tuple[str, float, str, Bounds], ...]:
+    if provider is None:
+        return ()
+    if type(provider) is IsotropicSizeBroadening:
+        if not np.isfinite(provider.crystallite_size_nm):
+            raise ValueError("infinite crystallite size cannot be selected for refinement")
+        return (
+            (
+                "isotropic_size.crystallite_size_nm",
+                provider.crystallite_size_nm,
+                "nanometre",
+                Bounds(np.finfo(np.float64).tiny, np.inf),
+            ),
+        )
+    if type(provider) is IsotropicMicrostrainBroadening:
+        return (
+            (
+                "isotropic_microstrain.rms",
+                provider.rms_microstrain,
+                "fraction",
+                Bounds(0.0, np.inf),
+            ),
+        )
+    if type(provider) is MarchDollasePreferredOrientation:
+        return (
+            (
+                "march_dollase.ratio",
+                provider.march_ratio,
+                "relative",
+                Bounds(np.finfo(np.float64).tiny, np.inf),
+            ),
+        )
+    if type(provider) is CompositePhysicsProvider:
+        return tuple(
+            record for child in provider.providers for record in _physics_parameter_records(child)
+        )
+    raise ValueError("sample-physics refinement requires built-in refinable providers")
 
 
 def _domain_parameter_values(
@@ -181,12 +254,18 @@ def _domain_parameter_values(
         key = spec.key
         if key.module == "phase" and key.owner_id in phase_by_id and key.name == "scale":
             value = phase_by_id[key.owner_id].scale
-        elif (
-            key.module == "instrument"
-            and key.owner_id == "cw"
-            and hasattr(experiment.instrument, key.name)
-        ):
-            value = getattr(experiment.instrument, key.name)
+        elif key.module == "instrument" and key.owner_id == "cw":
+            value = _instrument_parameter_value(experiment, key.name)
+        elif key.module == "sample" and key.owner_id in phase_by_id:
+            records = {
+                name: value
+                for name, value, _unit, _bounds in _physics_parameter_records(
+                    phase_by_id[key.owner_id].physics
+                )
+            }
+            if key.name not in records:
+                raise ValueError(f"unknown sample parameter {key.label}")
+            value = records[key.name]
         elif key.module == "background" and background is not None:
             if key.owner_id != background.background_id or not key.name.startswith("coefficient_"):
                 raise ValueError(f"unknown background parameter {key.label}")
@@ -253,14 +332,27 @@ def build_parameter_set(
         if experiment is None:
             raise ValueError("instrument refinement requires a CW experiment")
         for name in selection.instrument_parameters:
-            value = getattr(experiment.instrument, name)
-            floor = 1.0e-4 if name in ("u_deg2", "v_deg2", "w_deg2") else 1.0e-3
+            value = _instrument_parameter_value(experiment, name)
+            floor = {
+                "wavelength_angstrom": 0.1,
+                "zero_shift_deg": 1.0e-3,
+                "sample_displacement_mm": 1.0e-2,
+            }.get(name, 1.0e-4 if name in ("u_deg2", "v_deg2", "w_deg2") else 1.0e-3)
+            bounds = Bounds(0.0, np.inf) if name == "wavelength_angstrom" else Bounds()
             specs.append(
                 ParameterSpec(
                     instrument_parameter_key(name),
                     value,
-                    "degree^2" if name.endswith("deg2") else "degree",
-                    Bounds(),
+                    (
+                        "angstrom"
+                        if name == "wavelength_angstrom"
+                        else "millimetre"
+                        if name == "sample_displacement_mm"
+                        else "degree^2"
+                        if name.endswith("deg2")
+                        else "degree"
+                    ),
+                    bounds,
                     max(abs(value), floor),
                 )
             )
@@ -278,6 +370,17 @@ def build_parameter_set(
             for index, value in enumerate(background.coefficients)
         )
     for phase, domain in zip(phases, lattice_domains, strict=True):
+        if selection.sample_physics:
+            for name, value, unit, bounds in _physics_parameter_records(phase.physics):
+                specs.append(
+                    ParameterSpec(
+                        sample_parameter_key(phase.phase_id, name),
+                        value,
+                        unit,
+                        bounds,
+                        max(abs(value), 1.0e-4),
+                    )
+                )
         if selection.phase_scale:
             specs.append(
                 ParameterSpec(
@@ -864,11 +967,17 @@ class _RietveldLinearization:
             "w_deg2": "w",
             "x_deg": "x",
             "y_deg": "y",
+            "wavelength_angstrom": "wavelength_angstrom",
+            "zero_shift_deg": "zero_shift_deg",
+            "sample_displacement_mm": "sample_displacement_mm",
         }
         instrument_rows = tuple(
-            (row_for_key[key], global_names[key.name])
+            (
+                row_for_key[key],
+                global_names[key.name] if key.module == "instrument" else key.name,
+            )
             for key in parameters.keys
-            if key.module == "instrument"
+            if key.module in ("instrument", "sample")
         )
         background_mapping = np.zeros(
             (input_data.pattern.x.size, len(parameters.specs)), dtype=np.float64
@@ -961,6 +1070,8 @@ def _apply_parameter_values(
     domains: tuple[CwStructuralReflectionDomain | None, ...],
     current_parameters: ParameterSet,
     values: dict[ParameterKey, float],
+    *,
+    wavelength_angstrom: float | None = None,
 ) -> tuple[tuple[RietveldPhase, ...], tuple[str, ...]]:
     """Apply physical values and regenerate guarded topology at a trial state."""
 
@@ -968,6 +1079,8 @@ def _apply_parameter_values(
     updated_phases = []
     topology_changes = []
     for phase, domain in zip(phases, domains, strict=True):
+        if domain is not None and wavelength_angstrom is not None:
+            domain = replace(domain, wavelength_angstrom=wavelength_angstrom)
         structure = phase.structure
         if domain is not None:
             lattice_values = [
@@ -1034,15 +1147,65 @@ def _apply_parameter_values(
                     f"phase {phase.phase_id}: +{len(generated.added_reflection_ids)} "
                     f"-{len(generated.removed_reflection_ids)} guarded families"
                 )
+        physics = _replace_physics_parameters(phase, structure, values)
         updated_phases.append(
             replace(
                 phase,
                 structure=structure,
                 reflections=reflections,
                 scale=float(scale),
+                physics=physics,
+                intensity_correction=(
+                    BraggBrentanoUnpolarizedLp(wavelength_angstrom)
+                    if wavelength_angstrom is not None
+                    and type(phase.intensity_correction) is BraggBrentanoUnpolarizedLp
+                    else phase.intensity_correction
+                ),
             )
         )
     return tuple(updated_phases), tuple(topology_changes)
+
+
+def _replace_physics_parameters(
+    phase: RietveldPhase,
+    structure: CrystalStructure,
+    values: dict[ParameterKey, float],
+) -> object | None:
+    def update(provider: object) -> object:
+        if type(provider) is IsotropicSizeBroadening:
+            return replace(
+                provider,
+                crystallite_size_nm=values.get(
+                    sample_parameter_key(
+                        phase.phase_id, "isotropic_size.crystallite_size_nm"
+                    ),
+                    provider.crystallite_size_nm,
+                ),
+            )
+        if type(provider) is IsotropicMicrostrainBroadening:
+            return replace(
+                provider,
+                rms_microstrain=values.get(
+                    sample_parameter_key(phase.phase_id, "isotropic_microstrain.rms"),
+                    provider.rms_microstrain,
+                ),
+            )
+        if type(provider) is MarchDollasePreferredOrientation:
+            from ..phase import ReciprocalMetric
+
+            return replace(
+                provider,
+                march_ratio=values.get(
+                    sample_parameter_key(phase.phase_id, "march_dollase.ratio"),
+                    provider.march_ratio,
+                ),
+                reciprocal_metric=ReciprocalMetric(structure.cell.geometry().reciprocal_metric),
+            )
+        if type(provider) is CompositePhysicsProvider:
+            return replace(provider, providers=tuple(update(child) for child in provider.providers))
+        return provider
+
+    return None if phase.physics is None else update(phase.physics)
 
 
 def _apply_profile_background_values(
@@ -1050,18 +1213,31 @@ def _apply_profile_background_values(
     background: PolynomialBackground | None,
     values: dict[ParameterKey, float],
 ) -> tuple[ConstantWavelengthExperiment, PolynomialBackground | None]:
-    instrument_updates = {
+    profile_updates = {
         key.name: value
         for key, value in values.items()
-        if key.module == "instrument" and key.owner_id == "cw"
+        if key.module == "instrument"
+        and key.owner_id == "cw"
+        and hasattr(experiment.instrument, key.name)
     }
-    updated_experiment = (
-        experiment
-        if not instrument_updates
-        else replace(
-            experiment,
-            instrument=replace(experiment.instrument, **instrument_updates),
-        )
+    wavelength = profile_updates.get(
+        "wavelength_angstrom", experiment.instrument.wavelength_angstrom
+    )
+    updated_instrument = replace(experiment.instrument, **profile_updates)
+    geometry = experiment.geometry
+    sample_key = instrument_parameter_key("sample_displacement_mm")
+    if sample_key in values:
+        if geometry is None:  # pragma: no cover - rejected while constructing parameters
+            raise ValueError("sample displacement requires Bragg-Brentano geometry")
+        geometry = replace(geometry, sample_displacement_mm=values[sample_key])
+    updated_experiment = replace(
+        experiment,
+        radiation=replace(experiment.radiation, wavelength_angstrom=wavelength),
+        instrument=updated_instrument,
+        zero_shift_deg=values.get(
+            instrument_parameter_key("zero_shift_deg"), experiment.zero_shift_deg
+        ),
+        geometry=geometry,
     )
     if background is None:
         return updated_experiment, None
@@ -1306,16 +1482,17 @@ def refine(
                 for backtrack in range(selected.max_backtracks + 1):
                     factor = 0.5**backtrack
                     trial_values = transform.unpack(packed + factor * step, clip=True)
+                    trial_experiment, trial_background = _apply_profile_background_values(
+                        experiment,
+                        background,
+                        trial_values,
+                    )
                     trial_phases, topology_changes = _apply_parameter_values(
                         phases,
                         input_data.lattice_domains,
                         parameters,
                         trial_values,
-                    )
-                    trial_experiment, trial_background = _apply_profile_background_values(
-                        experiment,
-                        background,
-                        trial_values,
+                        wavelength_angstrom=trial_experiment.radiation.wavelength_angstrom,
                     )
                     trial_parameters = parameters.replace_values(trial_values)
                     trial_linearization = _RietveldLinearization.prepare(

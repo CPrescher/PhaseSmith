@@ -26,9 +26,9 @@ use rietveld_engine::crystallography::{
     xray_species_metadata,
 };
 use rietveld_engine::{
-    BuiltInScatteringModel, StructuralPatternError, StructuralPatternInputView,
-    StructuralPatternJvpResult, StructuralPatternResult, StructuralPatternVjpResult,
-    calculate_structural_pattern, calculate_structural_pattern_jvp,
+    BuiltInScatteringModel, MonochromaticPositionCorrection, StructuralPatternError,
+    StructuralPatternInputView, StructuralPatternJvpResult, StructuralPatternResult,
+    StructuralPatternVjpResult, calculate_structural_pattern, calculate_structural_pattern_jvp,
     calculate_structural_pattern_vjp,
 };
 
@@ -695,6 +695,7 @@ impl NativeStructuralPhase {
         &self,
         x_deg: &[f64],
         instrument: ConstantWavelengthInstrument,
+        position_correction: MonochromaticPositionCorrection,
         contributions: CwContributionsView<'_>,
         support_fwhm: f64,
         operation: impl FnOnce(
@@ -708,6 +709,16 @@ impl NativeStructuralPhase {
             .iter()
             .map(String::as_str)
             .collect::<Vec<_>>();
+        let correction_model = match self.correction_model {
+            IntegratedIntensityCorrectionModel::Neutral => {
+                IntegratedIntensityCorrectionModel::Neutral
+            }
+            IntegratedIntensityCorrectionModel::BraggBrentanoUnpolarizedLp { .. } => {
+                IntegratedIntensityCorrectionModel::BraggBrentanoUnpolarizedLp {
+                    wavelength_angstrom: instrument.wavelength_angstrom,
+                }
+            }
+        };
         let input = StructuralPatternInputView {
             x_deg,
             hkl: &self.hkl,
@@ -719,7 +730,8 @@ impl NativeStructuralPhase {
             scale: self.scale,
             coordinate_tolerance: self.coordinate_tolerance,
             instrument,
-            correction_model: self.correction_model,
+            position_correction,
+            correction_model,
             scattering_model: self.scattering_model,
             contributions,
             support: SupportPolicy::FwhmMultiple(support_fwhm),
@@ -818,6 +830,9 @@ impl NativeStructuralPhase {
         py: Python<'py>,
         x_deg: PyReadonlyArray1<'py, f64>,
         wavelength_angstrom: f64,
+        zero_shift_deg: f64,
+        sample_displacement_mm: Option<f64>,
+        goniometer_radius_mm: Option<f64>,
         u_deg2: f64,
         v_deg2: f64,
         w_deg2: f64,
@@ -859,6 +874,7 @@ impl NativeStructuralPhase {
                 x_width_deg,
                 y_width_deg,
             ),
+            position_correction(zero_shift_deg, sample_displacement_mm, goniometer_radius_mm)?,
             contributions,
             support_fwhm,
             calculate_structural_pattern,
@@ -873,6 +889,9 @@ impl NativeStructuralPhase {
         tangent: PyReadonlyArray1<'py, f64>,
         x_deg: PyReadonlyArray1<'py, f64>,
         wavelength_angstrom: f64,
+        zero_shift_deg: f64,
+        sample_displacement_mm: Option<f64>,
+        goniometer_radius_mm: Option<f64>,
         u_deg2: f64,
         v_deg2: f64,
         w_deg2: f64,
@@ -915,6 +934,7 @@ impl NativeStructuralPhase {
                 x_width_deg,
                 y_width_deg,
             ),
+            position_correction(zero_shift_deg, sample_displacement_mm, goniometer_radius_mm)?,
             contributions,
             support_fwhm,
             |cell, group, input| calculate_structural_pattern_jvp(cell, group, input, tangent),
@@ -929,6 +949,9 @@ impl NativeStructuralPhase {
         sample_weights: PyReadonlyArray1<'py, f64>,
         x_deg: PyReadonlyArray1<'py, f64>,
         wavelength_angstrom: f64,
+        zero_shift_deg: f64,
+        sample_displacement_mm: Option<f64>,
+        goniometer_radius_mm: Option<f64>,
         u_deg2: f64,
         v_deg2: f64,
         w_deg2: f64,
@@ -971,6 +994,7 @@ impl NativeStructuralPhase {
                 x_width_deg,
                 y_width_deg,
             ),
+            position_correction(zero_shift_deg, sample_displacement_mm, goniometer_radius_mm)?,
             contributions,
             support_fwhm,
             |cell, group, input| {
@@ -1981,6 +2005,26 @@ const fn cw_instrument(
         x_deg,
         y_deg,
     }
+}
+
+fn position_correction(
+    zero_shift_deg: f64,
+    sample_displacement_mm: Option<f64>,
+    goniometer_radius_mm: Option<f64>,
+) -> PyResult<MonochromaticPositionCorrection> {
+    let bragg_brentano_mm = match (sample_displacement_mm, goniometer_radius_mm) {
+        (None, None) => None,
+        (Some(displacement), Some(radius)) => Some((displacement, radius)),
+        _ => {
+            return Err(PyValueError::new_err(
+                "sample displacement and goniometer radius must be provided together",
+            ));
+        }
+    };
+    Ok(MonochromaticPositionCorrection {
+        zero_shift_deg,
+        bragg_brentano_mm,
+    })
 }
 
 #[allow(clippy::similar_names, clippy::too_many_arguments)]

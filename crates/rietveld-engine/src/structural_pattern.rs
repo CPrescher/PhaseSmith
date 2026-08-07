@@ -17,7 +17,17 @@ use rietveld_crystallography::{
 };
 
 const CELL_PARAMETER_COUNT: usize = 6;
+const CW_INSTRUMENT_PARAMETER_COUNT: usize = 5;
 const DEGREES_PER_RADIAN: f64 = 180.0 / std::f64::consts::PI;
+
+/// Monochromatic peak-position corrections evaluated with structural geometry.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct MonochromaticPositionCorrection {
+    /// Constant additive shift in degrees `2theta`.
+    pub zero_shift_deg: f64,
+    /// Optional Bragg--Brentano `(sample displacement, goniometer radius)` in mm.
+    pub bragg_brentano_mm: Option<(f64, f64)>,
+}
 
 /// Built-in native scattering model selected without a Python callback.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -51,6 +61,8 @@ pub struct StructuralPatternInputView<'a> {
     pub coordinate_tolerance: f64,
     /// Monochromatic CW instrument/profile parameters.
     pub instrument: ConstantWavelengthInstrument,
+    /// Explicit zero/sample-displacement position correction.
+    pub position_correction: MonochromaticPositionCorrection,
     /// Explicit integrated-intensity correction model.
     pub correction_model: IntegratedIntensityCorrectionModel,
     /// Built-in native scattering selection.
@@ -115,6 +127,8 @@ pub enum StructuralPatternError {
     ReflectionOutsideAngularDomain,
     /// The CW instrument model is invalid.
     InvalidInstrument(CwError),
+    /// A position-correction parameter is invalid.
+    InvalidPositionCorrection,
     /// Pattern reverse weights do not match the sample count.
     PatternWeightLengthMismatch,
     /// A pattern reverse weight is non-finite.
@@ -136,6 +150,9 @@ impl Display for StructuralPatternError {
                 "structural CW reflections must lie strictly within 0 < 2theta < 180 degrees",
             ),
             Self::InvalidInstrument(error) => Display::fmt(error, formatter),
+            Self::InvalidPositionCorrection => formatter.write_str(
+                "position corrections must be finite and goniometer radius must be positive",
+            ),
             Self::PatternWeightLengthMismatch => {
                 formatter.write_str("pattern reverse weights must match the sample count")
             }
@@ -154,6 +171,8 @@ struct PreparedNumerics {
     d_spacing: Vec<f64>,
     two_theta_deg: Vec<f64>,
     d_two_theta_d_cell: Vec<[f64; CELL_PARAMETER_COUNT]>,
+    d_two_theta_d_wavelength: Vec<f64>,
+    d_two_theta_d_sample_displacement: Option<Vec<f64>>,
 }
 
 impl PreparedNumerics {
@@ -220,7 +239,9 @@ pub fn calculate_structural_pattern_jvp(
                 .sum::<f64>()
         })
         .collect::<Vec<_>>();
-    let accumulation = accumulate(input, &prepared.two_theta_deg, &structural.values.intensity)?;
+    let mut accumulation =
+        accumulate(input, &prepared.two_theta_deg, &structural.values.intensity)?;
+    append_instrument_derivatives(&mut accumulation, &structural.values, &prepared)?;
     let d_y = chain_pattern_jvp(&accumulation, &structural.d_intensity, &d_two_theta_deg);
     Ok(StructuralPatternJvpResult {
         result: StructuralPatternResult {
@@ -256,7 +277,8 @@ pub fn calculate_structural_pattern_vjp(
     let values =
         calculate_structure_factor_values(cell, space_group, prepared.structure_batch(input))
             .map_err(StructuralPatternError::StructureFactor)?;
-    let accumulation = accumulate(input, &prepared.two_theta_deg, &values.intensity)?;
+    let mut accumulation = accumulate(input, &prepared.two_theta_deg, &values.intensity)?;
+    append_instrument_derivatives(&mut accumulation, &values, &prepared)?;
     let (intensity_weights, position_weights) =
         local_transpose_weights(&accumulation, sample_weights);
     let mut structural = calculate_structure_factor_intensity_vjp(
@@ -294,6 +316,16 @@ fn prepare(
         .instrument
         .validate()
         .map_err(StructuralPatternError::InvalidInstrument)?;
+    if !input.position_correction.zero_shift_deg.is_finite()
+        || input
+            .position_correction
+            .bragg_brentano_mm
+            .is_some_and(|(displacement, radius)| {
+                !displacement.is_finite() || !radius.is_finite() || radius <= 0.0
+            })
+    {
+        return Err(StructuralPatternError::InvalidPositionCorrection);
+    }
     let geometry = cell
         .geometry()
         .map_err(StructureFactorBatchError::Cell)
@@ -302,6 +334,11 @@ fn prepare(
     let mut d_spacing = Vec::with_capacity(input.hkl.len());
     let mut two_theta_deg = Vec::with_capacity(input.hkl.len());
     let mut d_two_theta_d_cell = Vec::with_capacity(input.hkl.len());
+    let mut d_two_theta_d_wavelength = Vec::with_capacity(input.hkl.len());
+    let mut d_two_theta_d_sample_displacement = input
+        .position_correction
+        .bragg_brentano_mm
+        .map(|_| Vec::with_capacity(input.hkl.len()));
     for &hkl in input.hkl {
         let (q_value, d_q) = geometry.q_squared_and_derivatives(hkl);
         if !q_value.is_finite() || q_value <= 0.0 {
@@ -313,12 +350,30 @@ fn prepare(
             return Err(StructuralPatternError::ReflectionOutsideAngularDomain);
         }
         let theta = sin_theta.asin();
-        let d_position_factor = input.instrument.wavelength_angstrom * DEGREES_PER_RADIAN
-            / (2.0 * root_q * theta.cos());
+        let mut position = 2.0 * theta.to_degrees() + input.position_correction.zero_shift_deg;
+        let mut d_corrected_d_base = 1.0;
+        let mut d_position_d_sample = None;
+        if let Some((displacement, radius)) = input.position_correction.bragg_brentano_mm {
+            position -= 2.0 * displacement / radius * theta.cos() * DEGREES_PER_RADIAN;
+            d_corrected_d_base += displacement / radius * theta.sin();
+            d_position_d_sample = Some(-2.0 / radius * theta.cos() * DEGREES_PER_RADIAN);
+        }
+        let d_position_factor =
+            d_corrected_d_base * input.instrument.wavelength_angstrom * DEGREES_PER_RADIAN
+                / (2.0 * root_q * theta.cos());
+        let d_position_d_wavelength =
+            d_corrected_d_base * DEGREES_PER_RADIAN * root_q / theta.cos();
         q_squared.push(q_value);
         d_spacing.push(root_q.recip());
-        two_theta_deg.push(2.0 * theta.to_degrees());
+        two_theta_deg.push(position);
         d_two_theta_d_cell.push(d_q.map(|derivative| d_position_factor * derivative));
+        d_two_theta_d_wavelength.push(d_position_d_wavelength);
+        if let (Some(values), Some(derivative)) = (
+            d_two_theta_d_sample_displacement.as_mut(),
+            d_position_d_sample,
+        ) {
+            values.push(derivative);
+        }
     }
     let s: Vec<f64> = q_squared.iter().map(|value| 0.5 * value.sqrt()).collect();
     let scattering = match input.scattering_model {
@@ -342,6 +397,8 @@ fn prepare(
         d_spacing,
         two_theta_deg,
         d_two_theta_d_cell,
+        d_two_theta_d_wavelength,
+        d_two_theta_d_sample_displacement,
     })
 }
 
@@ -354,13 +411,77 @@ fn calculate_values(
     let structure_factors =
         calculate_structure_factor_values(cell, space_group, prepared.structure_batch(input))
             .map_err(StructuralPatternError::StructureFactor)?;
-    let accumulation = accumulate(input, &prepared.two_theta_deg, &structure_factors.intensity)?;
+    let mut accumulation =
+        accumulate(input, &prepared.two_theta_deg, &structure_factors.intensity)?;
+    append_instrument_derivatives(&mut accumulation, &structure_factors, prepared)?;
     Ok(StructuralPatternResult {
         structure_factors,
         d_spacing_angstrom: prepared.d_spacing.clone(),
         two_theta_deg: prepared.two_theta_deg.clone(),
         accumulation,
     })
+}
+
+fn append_instrument_derivatives(
+    accumulation: &mut Accumulation,
+    structure_factors: &StructureFactorValues,
+    prepared: &PreparedNumerics,
+) -> Result<(), StructuralPatternError> {
+    let sample_count = accumulation.sample_count;
+    let extra_count = 2 + usize::from(prepared.d_two_theta_d_sample_displacement.is_some());
+    let global = accumulation
+        .derivatives
+        .global
+        .as_mut()
+        .expect("CW contribution accumulation always has global derivatives");
+    let old_values = std::mem::take(&mut global.values);
+    let mut combined = Vec::new();
+    combined
+        .try_reserve(old_values.len() + extra_count * sample_count)
+        .map_err(|_| {
+            StructuralPatternError::Contributions(CwContributionsError::AllocationOverflow)
+        })?;
+    let mut wavelength = vec![0.0; sample_count];
+    let mut zero_shift = vec![0.0; sample_count];
+    let mut sample_displacement = prepared
+        .d_two_theta_d_sample_displacement
+        .as_ref()
+        .map(|_| vec![0.0; sample_count]);
+    let local = &accumulation.derivatives.local;
+    for reflection in 0..local.peak_count() {
+        let correction = prepared.correction.values[reflection];
+        let d_intensity_d_wavelength = structure_factors.intensity[reflection]
+            * prepared.correction.d_values_d_wavelength[reflection]
+            / correction;
+        let begin = local.offsets[reflection];
+        let end = local.offsets[reflection + 1];
+        for active in begin..end {
+            let sample = local.starts[reflection] + active - begin;
+            let base = 2 * active;
+            let d_intensity = local.values[base];
+            let d_position = local.values[base + 1];
+            wavelength[sample] += d_intensity * d_intensity_d_wavelength
+                + d_position * prepared.d_two_theta_d_wavelength[reflection];
+            zero_shift[sample] += d_position;
+            if let (Some(values), Some(derivatives)) = (
+                sample_displacement.as_mut(),
+                prepared.d_two_theta_d_sample_displacement.as_ref(),
+            ) {
+                values[sample] += d_position * derivatives[reflection];
+            }
+        }
+    }
+    let instrument_end = CW_INSTRUMENT_PARAMETER_COUNT * sample_count;
+    combined.extend_from_slice(&old_values[..instrument_end]);
+    combined.extend(wavelength);
+    combined.extend(zero_shift);
+    if let Some(values) = sample_displacement {
+        combined.extend(values);
+    }
+    combined.extend_from_slice(&old_values[instrument_end..]);
+    global.values = combined;
+    global.parameter_count += extra_count;
+    Ok(())
 }
 
 fn accumulate(
@@ -500,6 +621,10 @@ mod tests {
                 scale,
                 coordinate_tolerance: 1.0e-10,
                 instrument: instrument(),
+                position_correction: MonochromaticPositionCorrection {
+                    zero_shift_deg: 0.0,
+                    bragg_brentano_mm: None,
+                },
                 correction_model: IntegratedIntensityCorrectionModel::Neutral,
                 scattering_model: BuiltInScatteringModel::XrayNonResonant,
                 contributions,
@@ -591,6 +716,10 @@ mod tests {
             scale,
             coordinate_tolerance: 1.0e-10,
             instrument: instrument(),
+            position_correction: MonochromaticPositionCorrection {
+                zero_shift_deg: 0.0,
+                bragg_brentano_mm: None,
+            },
             correction_model: IntegratedIntensityCorrectionModel::Neutral,
             scattering_model: BuiltInScatteringModel::XrayNonResonant,
             contributions,

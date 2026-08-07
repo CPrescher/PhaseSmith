@@ -233,6 +233,88 @@ def test_monochromatic_neutron_structural_pattern_uses_native_path() -> None:
     assert np.all(result.reflections.integrated_intensity >= 0.0)
 
 
+def test_bragg_brentano_position_corrections_match_equation() -> None:
+    geometry = rietveld.BraggBrentanoGeometry(200.0, 0.35)
+    experiment = rietveld.ConstantWavelengthExperiment(
+        rietveld.MonochromaticRadiation.x_ray(instrument().wavelength_angstrom),
+        instrument(),
+        zero_shift_deg=0.075,
+        geometry=geometry,
+    )
+    actual = rietveld.calculate_structural_pattern(pattern(), experiment, xray_phase())
+    spacing = xray_phase().structure.cell.d_spacings(reflections().hkl).d_spacing_angstrom
+    beta = 2.0 * np.arcsin(instrument().wavelength_angstrom / (2.0 * spacing))
+    expected = np.degrees(beta) + 0.075 - np.degrees(
+        2.0 * geometry.sample_displacement_mm / geometry.goniometer_radius_mm * np.cos(beta / 2.0)
+    )
+    np.testing.assert_allclose(actual.reflections.two_theta_deg, expected, rtol=2e-15)
+
+
+@pytest.mark.parametrize(
+    ("parameter", "step"),
+    (
+        ("wavelength_angstrom", 1.0e-6),
+        ("zero_shift_deg", 1.0e-6),
+        ("sample_displacement_mm", 1.0e-5),
+    ),
+)
+def test_instrument_correction_derivatives_match_finite_difference(
+    parameter: str,
+    step: float,
+) -> None:
+    geometry = rietveld.BraggBrentanoGeometry(240.0, 0.21)
+    base_experiment = rietveld.ConstantWavelengthExperiment(
+        rietveld.MonochromaticRadiation.x_ray(instrument().wavelength_angstrom),
+        instrument(),
+        zero_shift_deg=-0.017,
+        geometry=geometry,
+    )
+    base_phase = replace(
+        xray_phase(),
+        intensity_correction=rietveld.BraggBrentanoUnpolarizedLp(
+            instrument().wavelength_angstrom
+        ),
+    )
+    actual = rietveld.calculate_structural_pattern(pattern(), base_experiment, base_phase)
+    row = actual.derivatives.global_parameter_names.index(parameter)
+
+    def evaluate(delta: float) -> np.ndarray:
+        wavelength = instrument().wavelength_angstrom
+        zero = base_experiment.zero_shift_deg
+        displacement = geometry.sample_displacement_mm
+        if parameter == "wavelength_angstrom":
+            wavelength += delta
+        elif parameter == "zero_shift_deg":
+            zero += delta
+        else:
+            displacement += delta
+        selected_instrument = replace(instrument(), wavelength_angstrom=wavelength)
+        selected_experiment = rietveld.ConstantWavelengthExperiment(
+            rietveld.MonochromaticRadiation.x_ray(wavelength),
+            selected_instrument,
+            zero_shift_deg=zero,
+            geometry=rietveld.BraggBrentanoGeometry(
+                geometry.goniometer_radius_mm,
+                displacement,
+            ),
+        )
+        selected_phase = replace(
+            base_phase,
+            intensity_correction=rietveld.BraggBrentanoUnpolarizedLp(wavelength),
+        )
+        return rietveld.calculate_structural_pattern(
+            pattern(), selected_experiment, selected_phase
+        ).profile_y
+
+    finite_difference = (evaluate(step) - evaluate(-step)) / (2.0 * step)
+    np.testing.assert_allclose(
+        actual.derivatives.global_jacobian[row],
+        finite_difference,
+        rtol=2e-5,
+        atol=2e-5,
+    )
+
+
 def test_builtin_size_broadening_stays_on_fused_structural_path() -> None:
     phase = replace(xray_phase(), physics=rietveld.IsotropicSizeBroadening(70.0))
     experiment = rietveld.ConstantWavelengthExperiment.x_ray(instrument())

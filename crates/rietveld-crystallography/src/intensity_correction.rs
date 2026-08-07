@@ -10,6 +10,8 @@ pub struct IntegratedIntensityCorrection {
     pub values: Vec<f64>,
     /// Analytical derivative `d C_h / d(q²)`.
     pub d_values_d_q_squared: Vec<f64>,
+    /// Analytical derivative `d C_h / d(lambda)` at fixed `q²`.
+    pub d_values_d_wavelength: Vec<f64>,
 }
 
 /// Explicit integrated-intensity geometry model.
@@ -70,6 +72,7 @@ impl IntegratedIntensityCorrectionModel {
             Self::Neutral => Ok(IntegratedIntensityCorrection {
                 values: vec![1.0; q_squared_inverse_angstrom2.len()],
                 d_values_d_q_squared: vec![0.0; q_squared_inverse_angstrom2.len()],
+                d_values_d_wavelength: vec![0.0; q_squared_inverse_angstrom2.len()],
             }),
             Self::BraggBrentanoUnpolarizedLp {
                 wavelength_angstrom,
@@ -79,14 +82,19 @@ impl IntegratedIntensityCorrectionModel {
                 }
                 let mut values = Vec::with_capacity(q_squared_inverse_angstrom2.len());
                 let mut derivatives = Vec::with_capacity(q_squared_inverse_angstrom2.len());
+                let mut wavelength_derivatives =
+                    Vec::with_capacity(q_squared_inverse_angstrom2.len());
                 for &q_squared in q_squared_inverse_angstrom2 {
-                    let (value, derivative) = bragg_brentano_lp(q_squared, wavelength_angstrom)?;
+                    let (value, derivative, wavelength_derivative) =
+                        bragg_brentano_lp(q_squared, wavelength_angstrom)?;
                     values.push(value);
                     derivatives.push(derivative);
+                    wavelength_derivatives.push(wavelength_derivative);
                 }
                 Ok(IntegratedIntensityCorrection {
                     values,
                     d_values_d_q_squared: derivatives,
+                    d_values_d_wavelength: wavelength_derivatives,
                 })
             }
         }
@@ -96,7 +104,7 @@ impl IntegratedIntensityCorrectionModel {
 fn bragg_brentano_lp(
     q_squared: f64,
     wavelength: f64,
-) -> Result<(f64, f64), IntegratedIntensityCorrectionError> {
+) -> Result<(f64, f64, f64), IntegratedIntensityCorrectionError> {
     let root_q = q_squared.sqrt();
     let sin_theta = 0.5 * wavelength * root_q;
     if !(0.0..1.0).contains(&sin_theta) {
@@ -111,7 +119,12 @@ fn bragg_brentano_lp(
     let d_log_d_two_theta =
         -2.0 * sin_two_theta * cos_two_theta / numerator - 1.0 / theta.tan() + 0.5 * theta.tan();
     let d_two_theta_d_q_squared = wavelength / (2.0 * root_q * cos_theta);
-    Ok((value, value * d_log_d_two_theta * d_two_theta_d_q_squared))
+    let d_two_theta_d_wavelength = root_q / cos_theta;
+    Ok((
+        value,
+        value * d_log_d_two_theta * d_two_theta_d_q_squared,
+        value * d_log_d_two_theta * d_two_theta_d_wavelength,
+    ))
 }
 
 #[cfg(test)]
@@ -129,6 +142,7 @@ mod tests {
             .expect("neutral");
         assert_eq!(values.values, vec![1.0; 3]);
         assert_eq!(values.d_values_d_q_squared, vec![0.0; 3]);
+        assert_eq!(values.d_values_d_wavelength, vec![0.0; 3]);
     }
 
     #[test]
@@ -150,6 +164,24 @@ mod tests {
             let finite_difference = (plus - minus) / (2.0 * step);
             assert!(
                 (actual.d_values_d_q_squared[index] - finite_difference).abs()
+                    < 2.0e-8 * finite_difference.abs().max(1.0)
+            );
+            let wavelength_step = 1.0e-6 * wavelength;
+            let plus = IntegratedIntensityCorrectionModel::BraggBrentanoUnpolarizedLp {
+                wavelength_angstrom: wavelength + wavelength_step,
+            }
+            .evaluate(&[value])
+            .expect("wavelength plus")
+            .values[0];
+            let minus = IntegratedIntensityCorrectionModel::BraggBrentanoUnpolarizedLp {
+                wavelength_angstrom: wavelength - wavelength_step,
+            }
+            .evaluate(&[value])
+            .expect("wavelength minus")
+            .values[0];
+            let finite_difference = (plus - minus) / (2.0 * wavelength_step);
+            assert!(
+                (actual.d_values_d_wavelength[index] - finite_difference).abs()
                     < 2.0e-8 * finite_difference.abs().max(1.0)
             );
         }

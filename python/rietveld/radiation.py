@@ -19,6 +19,24 @@ class RadiationProbe(StrEnum):
 
 
 @dataclass(frozen=True, slots=True)
+class BraggBrentanoGeometry:
+    """Flat-plate sample displacement geometry in millimetres.
+
+    Positive displacement is toward the source and shifts peaks to lower
+    angle according to ``-2 s cos(theta) / R`` in radians.
+    """
+
+    goniometer_radius_mm: float
+    sample_displacement_mm: float = 0.0
+
+    def __post_init__(self) -> None:
+        if not np.isfinite(self.goniometer_radius_mm) or self.goniometer_radius_mm <= 0.0:
+            raise ValueError("goniometer_radius_mm must be positive and finite")
+        if not np.isfinite(self.sample_displacement_mm):
+            raise ValueError("sample_displacement_mm must be finite")
+
+
+@dataclass(frozen=True, slots=True)
 class MonochromaticRadiation:
     """One explicitly typed constant wavelength with no spectral components."""
 
@@ -52,6 +70,8 @@ class ConstantWavelengthExperiment:
 
     radiation: MonochromaticRadiation
     instrument: ConstantWavelengthInstrument
+    zero_shift_deg: float = 0.0
+    geometry: BraggBrentanoGeometry | None = None
 
     def __post_init__(self) -> None:
         """Reject ambiguous or inconsistent wavelength ownership."""
@@ -62,6 +82,10 @@ class ConstantWavelengthExperiment:
             raise TypeError("instrument must be ConstantWavelengthInstrument")
         if self.radiation.wavelength_angstrom != self.instrument.wavelength_angstrom:
             raise ValueError("radiation and instrument wavelengths must match exactly")
+        if not np.isfinite(self.zero_shift_deg):
+            raise ValueError("zero_shift_deg must be finite")
+        if self.geometry is not None and not isinstance(self.geometry, BraggBrentanoGeometry):
+            raise TypeError("geometry must be BraggBrentanoGeometry or None")
 
     @classmethod
     def x_ray(cls, instrument: ConstantWavelengthInstrument) -> ConstantWavelengthExperiment:

@@ -32,7 +32,11 @@ from .pattern import (
 from .phase import ReflectionGeometryBatch, RietveldPhase
 from .radiation import ConstantWavelengthExperiment, RadiationProbe
 from .results import AccumulationResult, _build_accumulation_result
-from .sample import IsotropicMicrostrainBroadening, IsotropicSizeBroadening
+from .sample import (
+    IsotropicMicrostrainBroadening,
+    IsotropicSizeBroadening,
+    MarchDollasePreferredOrientation,
+)
 from .scattering import NeutronNuclear, XrayNonResonant, species_from_structure
 
 
@@ -67,6 +71,15 @@ def _geometry(
             "all structural reflections must lie strictly within 0 < 2theta < 180 degrees"
         )
     two_theta = np.ascontiguousarray(2.0 * np.degrees(np.arcsin(sin_theta)))
+    two_theta += experiment.zero_shift_deg
+    if experiment.geometry is not None:
+        theta = np.radians(0.5 * (two_theta - experiment.zero_shift_deg))
+        two_theta -= np.degrees(
+            2.0
+            * experiment.geometry.sample_displacement_mm
+            / experiment.geometry.goniometer_radius_mm
+            * np.cos(theta)
+        )
     return ReflectionGeometryBatch(
         phase.reflections.hkl,
         spacing,
@@ -103,6 +116,7 @@ def _supports_fused_structural_physics(provider: object | None) -> bool:
     if provider is None or type(provider) in (
         IsotropicSizeBroadening,
         IsotropicMicrostrainBroadening,
+        MarchDollasePreferredOrientation,
     ):
         return True
     return type(provider) is CompositePhysicsProvider and all(
@@ -146,9 +160,13 @@ def _native_dynamic_arguments(
     support_fwhm: float,
 ) -> tuple[object, ...]:
     instrument = experiment.instrument
+    geometry = experiment.geometry
     return (
         pattern.x,
         instrument.wavelength_angstrom,
+        experiment.zero_shift_deg,
+        None if geometry is None else geometry.sample_displacement_mm,
+        None if geometry is None else geometry.goniometer_radius_mm,
         instrument.u_deg2,
         instrument.v_deg2,
         instrument.w_deg2,
@@ -171,12 +189,16 @@ def _native_dynamic_arguments(
 def _accumulation_from_native(
     arrays: tuple[object, ...],
     contribution: PhysicsContribution,
+    experiment: ConstantWavelengthExperiment,
     jacobian_layout: Literal["support", "dense"],
 ) -> AccumulationResult:
+    position_names = ("wavelength_angstrom", "zero_shift_deg")
+    if experiment.geometry is not None:
+        position_names += ("sample_displacement_mm",)
     return _build_accumulation_result(
         *arrays,
         CW_LOCAL_PARAMETER_ORDER,
-        CW_GLOBAL_PARAMETER_ORDER + contribution.parameter_names,
+        CW_GLOBAL_PARAMETER_ORDER + position_names + contribution.parameter_names,
         jacobian_layout,
     )
 
@@ -361,6 +383,7 @@ class PreparedStructuralPattern:
         accumulation = _accumulation_from_native(
             accumulation_arrays,
             contribution,
+            self.experiment,
             self.jacobian_layout,
         )
         return _calculation_result(
@@ -397,6 +420,7 @@ class PreparedStructuralPattern:
         accumulation = _accumulation_from_native(
             accumulation_arrays,
             contribution,
+            self.experiment,
             self.jacobian_layout,
         )
         result = _calculation_result(
@@ -436,6 +460,7 @@ class PreparedStructuralPattern:
         accumulation = _accumulation_from_native(
             accumulation_arrays,
             contribution,
+            self.experiment,
             self.jacobian_layout,
         )
         result = _calculation_result(

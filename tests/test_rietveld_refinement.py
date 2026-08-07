@@ -571,6 +571,117 @@ def test_cw_profile_parameter_refines_through_accumulation_derivative_rows() -> 
     assert result.metrics.rwp < 1.0e-8
 
 
+@pytest.mark.parametrize(
+    ("name", "truth_value", "starting_value"),
+    (
+        ("wavelength_angstrom", 1.5406, 1.5410),
+        ("zero_shift_deg", 0.025, 0.04),
+        ("sample_displacement_mm", 0.18, 0.27),
+    ),
+)
+def test_monochromatic_calibration_parameters_refine_analytically(
+    name: str,
+    truth_value: float,
+    starting_value: float,
+) -> None:
+    base = request_from_cif(selection())
+
+    def configured(value: float) -> rietveld.ConstantWavelengthExperiment:
+        wavelength = value if name == "wavelength_angstrom" else 1.5406
+        selected_instrument = replace(base.experiment.instrument, wavelength_angstrom=wavelength)
+        return rietveld.ConstantWavelengthExperiment(
+            rietveld.MonochromaticRadiation.x_ray(wavelength),
+            selected_instrument,
+            zero_shift_deg=value if name == "zero_shift_deg" else 0.0,
+            geometry=rietveld.BraggBrentanoGeometry(
+                240.0,
+                value if name == "sample_displacement_mm" else 0.0,
+            ),
+        )
+
+    truth_experiment = configured(truth_value)
+    calculated = structural_refinement.calculate(
+        base.pattern,
+        truth_experiment,
+        base.phases,
+    )
+    observed = replace(base.pattern, observed_y=calculated.y)
+    starting_experiment = configured(starting_value)
+    selected = replace(selection(), instrument_parameters=(name,))
+    parameters = structural_refinement.build_parameter_set(
+        base.phases,
+        (None,),
+        selected,
+        experiment=starting_experiment,
+    )
+    request = structural_refinement.RietveldInput(
+        observed,
+        starting_experiment,
+        base.phases,
+        (None,),
+        parameters,
+        selection=selected,
+    )
+    result = structural_refinement.refine(request)
+    actual = (
+        result.experiment.geometry.sample_displacement_mm
+        if name == "sample_displacement_mm"
+        else getattr(result.experiment, name)
+        if name == "zero_shift_deg"
+        else result.experiment.radiation.wavelength_angstrom
+    )
+    assert actual == pytest.approx(truth_value, rel=2.0e-6, abs=2.0e-8)
+    assert result.metrics.rwp < 2.0e-7
+
+
+@pytest.mark.parametrize("kind", ("size", "microstrain", "march"))
+def test_builtin_sample_physics_parameters_are_refinable(kind: str) -> None:
+    base = request_from_cif(selection())
+    metric = rietveld.ReciprocalMetric(base.phases[0].structure.cell.geometry().reciprocal_metric)
+    if kind == "size":
+        truth_model = rietveld.IsotropicSizeBroadening(75.0)
+        starting_model = rietveld.IsotropicSizeBroadening(62.0)
+        expected = 75.0
+    elif kind == "microstrain":
+        truth_model = rietveld.IsotropicMicrostrainBroadening(7.0e-4)
+        starting_model = rietveld.IsotropicMicrostrainBroadening(9.0e-4)
+        expected = 7.0e-4
+    else:
+        truth_model = rietveld.MarchDollasePreferredOrientation(0.82, (0, 0, 1), metric)
+        starting_model = rietveld.MarchDollasePreferredOrientation(0.9, (0, 0, 1), metric)
+        expected = 0.82
+    truth_phase = replace(base.phases[0], physics=truth_model)
+    starting_phase = replace(base.phases[0], physics=starting_model)
+    calculated = structural_refinement.calculate(base.pattern, base.experiment, (truth_phase,))
+    observed = replace(base.pattern, observed_y=calculated.y)
+    selected = selection(sample_physics=True)
+    parameters = structural_refinement.build_parameter_set(
+        (starting_phase,),
+        (None,),
+        selected,
+        experiment=base.experiment,
+    )
+    request = structural_refinement.RietveldInput(
+        observed,
+        base.experiment,
+        (starting_phase,),
+        (None,),
+        parameters,
+        selection=selected,
+    )
+    result = structural_refinement.refine(request)
+    model = result.phases[0].physics
+    actual = (
+        model.crystallite_size_nm
+        if kind == "size"
+        else model.rms_microstrain
+        if kind == "microstrain"
+        else model.march_ratio
+    )
+    assert actual == pytest.approx(expected, rel=3.0e-5)
+    assert result.metrics.rwp < 2.0e-7
+
+
 def test_polynomial_background_refines_as_a_separate_typed_domain() -> None:
     truth = request_from_cif(selection())
     expected_background = PolynomialBackground("main", (2.0, 0.3, -0.2))
