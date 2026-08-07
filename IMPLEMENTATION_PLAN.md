@@ -1024,6 +1024,9 @@ The dependency order is:
 19. Anisotropic, anomalous, absorption, magnetic, electron, and specialist
     crystallographic physics as separate later increments.
 
+The detailed implementation contract for the remaining unit-18 work is frozen
+in [`docs/practical-workflow-plan.md`](docs/practical-workflow-plan.md).
+
 The design deliberately separates file interpretation from numerical work.
 The optional CIF backend may resolve names/settings and emit exact symmetry
 operations, but Rust owns reciprocal mathematics, reflection generation,

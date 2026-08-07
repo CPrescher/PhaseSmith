@@ -611,6 +611,9 @@ typed analytical model with value/JVP/VJP validation and persistence.
 
 The first background slice is specified in
 [`background-subtraction.md`](background-subtraction.md).
+The remaining unit equations, parameter ownership, facade, reporting, and
+validation contracts are specified in
+[`practical-workflow-plan.md`](practical-workflow-plan.md).
 
 ## Implementation unit 19: advanced crystallographic physics
 
