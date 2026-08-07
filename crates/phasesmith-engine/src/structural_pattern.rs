@@ -11,7 +11,7 @@ use phasesmith_crystallography::{
     IntegratedIntensityCorrection, IntegratedIntensityCorrectionError,
     IntegratedIntensityCorrectionModel, PreparedNeutronScattering, PreparedXrayScattering,
     ScatteringBatch, ScatteringError, SpaceGroup, StructureFactorBatchError,
-    StructureFactorBatchView, StructureFactorValues, UnitCell,
+    StructureFactorBatchView, StructureFactorValues, UnitCell, calculate_structure_factor_dense,
     calculate_structure_factor_intensity_vjp, calculate_structure_factor_jvp,
     calculate_structure_factor_values,
 };
@@ -101,6 +101,17 @@ pub struct StructuralPatternJvpResult {
     pub d_integrated_intensity: Vec<f64>,
     /// Directional derivative of reflection positions in degrees.
     pub d_two_theta_deg: Vec<f64>,
+}
+
+/// Fused values and a reusable parameter-major structural pattern Jacobian.
+#[derive(Clone, Debug, PartialEq)]
+pub struct StructuralPatternDenseResult {
+    /// Calculated structural pattern.
+    pub result: StructuralPatternResult,
+    /// Pattern Jacobian with shape parameter count by sample count.
+    pub d_y: Vec<f64>,
+    /// Number of rows in the pattern Jacobian.
+    pub parameter_count: usize,
 }
 
 /// Fused values and one reverse product from pattern sample weights.
@@ -275,6 +286,65 @@ pub fn calculate_structural_pattern(
 ) -> Result<StructuralPatternResult, StructuralPatternError> {
     let prepared = prepare(cell, input)?;
     calculate_values(cell, space_group, input, &prepared)
+}
+
+/// Calculate values and a reusable dense structural pattern linearization.
+///
+/// # Errors
+///
+/// Returns an error for invalid inputs or allocation overflow.
+pub fn calculate_structural_pattern_dense(
+    cell: UnitCell,
+    space_group: &SpaceGroup,
+    input: &StructuralPatternInputView<'_>,
+) -> Result<StructuralPatternDenseResult, StructuralPatternError> {
+    let prepared = prepare(cell, input)?;
+    let structural =
+        calculate_structure_factor_dense(cell, space_group, prepared.structure_batch(input))
+            .map_err(StructuralPatternError::StructureFactor)?;
+    let parameter_count = structural.layout.parameter_count();
+    let sample_count = input.x_deg.len();
+    let element_count =
+        parameter_count
+            .checked_mul(sample_count)
+            .ok_or(StructuralPatternError::Contributions(
+                CwContributionsError::AllocationOverflow,
+            ))?;
+    let mut accumulation =
+        accumulate(input, &prepared.two_theta_deg, &structural.values.intensity)?;
+    append_instrument_derivatives(&mut accumulation, &structural.values, input, &prepared)?;
+    let mut d_y = vec![0.0; element_count];
+    let reflection_count = input.hkl.len();
+    let local = &accumulation.derivatives.local;
+    for reflection in 0..reflection_count {
+        let begin = local.offsets[reflection];
+        let end = local.offsets[reflection + 1];
+        for active in begin..end {
+            let sample = local.starts[reflection] + active - begin;
+            let local_base = 2 * active;
+            for parameter in 0..parameter_count {
+                let structural_index = parameter * reflection_count + reflection;
+                let position_derivative = if parameter < CELL_PARAMETER_COUNT {
+                    prepared.d_two_theta_d_cell[reflection][parameter]
+                } else {
+                    0.0
+                };
+                d_y[parameter * sample_count + sample] += local.values[local_base]
+                    * structural.d_intensity[structural_index]
+                    + local.values[local_base + 1] * position_derivative;
+            }
+        }
+    }
+    Ok(StructuralPatternDenseResult {
+        result: StructuralPatternResult {
+            structure_factors: structural.values,
+            d_spacing_angstrom: prepared.d_spacing,
+            two_theta_deg: prepared.two_theta_deg,
+            accumulation,
+        },
+        d_y,
+        parameter_count,
+    })
 }
 
 /// Calculate a full structural-pattern JVP without a dense pattern Jacobian.
@@ -804,6 +874,17 @@ mod tests {
             .collect();
         let jvp = calculate_structural_pattern_jvp(cell(), &group(), &input, &tangent)
             .expect("structural JVP");
+        let dense = calculate_structural_pattern_dense(cell(), &group(), &input)
+            .expect("structural dense linearization");
+        assert_eq!(dense.parameter_count, tangent.len());
+        for sample in 0..x.len() {
+            let product = tangent
+                .iter()
+                .enumerate()
+                .map(|(parameter, direction)| direction * dense.d_y[parameter * x.len() + sample])
+                .sum::<f64>();
+            assert!((product - jvp.d_y[sample]).abs() < 2.0e-11 * product.abs().max(1.0));
+        }
         let step = 1.0e-5;
         let mut plus_cell = cell();
         let mut minus_cell = cell();
@@ -881,6 +962,14 @@ mod tests {
             .map(|(direction, gradient)| direction * gradient)
             .sum::<f64>();
         assert!((forward - reverse).abs() < 2.0e-10 * forward.abs().max(1.0));
+        for (parameter, actual) in vjp.gradient.iter().copied().enumerate() {
+            let expected = dense.d_y[parameter * x.len()..(parameter + 1) * x.len()]
+                .iter()
+                .zip(&sample_weights)
+                .map(|(derivative, weight)| derivative * weight)
+                .sum::<f64>();
+            assert!((actual - expected).abs() < 2.0e-10 * expected.abs().max(1.0));
+        }
     }
 
     fn perturb_cell(cell: &mut UnitCell, parameter: usize, change: f64) {

@@ -195,6 +195,17 @@ is explicit opt-in diagnostics. Persistence format 7 now has a matching schema
 and documentation, and generator-source hashes remain recorded provenance
 rather than formatting-sensitive test assertions.
 
+The next performance checkpoint adds a bounded reusable structural
+linearization. Built-in Rust paths calculate one parameter-major pattern
+Jacobian and values per accepted or trial state, then reuse it for every
+optimizer JVP/VJP; plugins and requests above the configurable memory ceiling
+retain the matrix-free path. The 20,001-sample structural benchmark falls from
+148.7 to 38.3 milliseconds median while preserving the final Rwp to 2.6e-11
+absolute. QARR stage 2 temporarily requests the matrix-free fallback because
+its approximate model has a rounding-sensitive flat basin even though cached
+and matrix-free products agree to about 2e-15 relative; damping and acceptance
+hardening must resolve that path sensitivity before the override is removed.
+
 ## Design commitments
 
 - Use GSAS-II only as a pinned validation oracle, never as the architecture.

@@ -789,6 +789,7 @@ class RietveldOptions:
     max_backtracks: int = 8
     use_uncertainty: bool = True
     support_fwhm: float = 20.0
+    max_linearization_elements: int = 10_000_000
     estimate_covariance: bool = True
     max_covariance_parameters: int = 64
     unresolved_correlation: float = 1.0 - 1.0e-10
@@ -818,6 +819,11 @@ class RietveldOptions:
             raise ValueError("max_cg_iterations must be a positive integer")
         if not isinstance(self.max_backtracks, int) or self.max_backtracks < 0:
             raise ValueError("max_backtracks must be a non-negative integer")
+        if (
+            not isinstance(self.max_linearization_elements, int)
+            or self.max_linearization_elements < 0
+        ):
+            raise ValueError("max_linearization_elements must be a non-negative integer")
         if not isinstance(self.use_uncertainty, bool) or not isinstance(
             self.estimate_covariance, bool
         ):
@@ -1037,6 +1043,9 @@ class _RietveldLinearization:
     physical_to_free: NDArray[np.float64]
     native_mappings: tuple[NDArray[np.float64], ...]
     prepared: tuple[PreparedStructuralPattern, ...]
+    calculations: tuple[StructuralPatternCalculationResult, ...] | None
+    weighted_free_jacobian: NDArray[np.float64] | None
+    dense_enabled: bool
     global_rows: tuple[tuple[tuple[int, str, float], ...], ...]
     background_mapping: NDArray[np.float64]
     sample_weight: NDArray[np.float64]
@@ -1126,37 +1135,77 @@ class _RietveldLinearization:
             }
             for phase in phases
         )
+        physical_to_free = transform.derivative_matrix()
+        native_mappings = tuple(
+            _phase_native_mapping(phase, domain, parameters, models)
+            for phase, domain, models in zip(
+                phases, lattice_domains, coordinate_models, strict=True
+            )
+        )
+        prepared = tuple(
+            PreparedStructuralPattern(
+                input_data.pattern,
+                experiment,
+                phase,
+                support_fwhm=options.support_fwhm,
+            )
+            for phase in phases
+        )
+        sample_weight = _weight_vector(input_data.pattern, options.use_uncertainty)
+        dense_elements = input_data.pattern.x.size * sum(
+            mapping.shape[0] for mapping in native_mappings
+        )
+        dense_enabled = (
+            options.max_linearization_elements > 0
+            and dense_elements <= options.max_linearization_elements
+            and all(item.uses_native_fused_path for item in prepared)
+        )
         return cls(
             input_data.pattern,
             experiment,
             background,
             phases,
             coordinate_models,
-            transform.derivative_matrix(),
-            tuple(
-                _phase_native_mapping(phase, domain, parameters, models)
-                for phase, domain, models in zip(
-                    phases, lattice_domains, coordinate_models, strict=True
-                )
-            ),
-            tuple(
-                PreparedStructuralPattern(
-                    input_data.pattern,
-                    experiment,
-                    phase,
-                    support_fwhm=options.support_fwhm,
-                )
-                for phase in phases
-            ),
+            physical_to_free,
+            native_mappings,
+            prepared,
+            None,
+            None,
+            dense_enabled,
             tuple(global_rows),
             background_mapping,
-            _weight_vector(input_data.pattern, options.use_uncertainty),
+            sample_weight,
             runtime,
         )
 
-    def calculate(self) -> RietveldCalculationResult:
+    def _prepare_dense(self) -> None:
+        if not self.dense_enabled or self.calculations is not None:
+            return
         self.runtime.begin_evaluation()
-        calculations = tuple(item.calculate() for item in self.prepared)
+        products = tuple(item.linearize() for item in self.prepared)
+        self.calculations = tuple(product.result for product in products)
+        physical_jacobian = np.array(self.background_mapping.T, copy=True, order="C")
+        for product, mapping, rows in zip(
+            products, self.native_mappings, self.global_rows, strict=True
+        ):
+            physical_jacobian += mapping.T @ product.jacobian
+            names = product.result.derivatives.global_parameter_names
+            for row, name, coefficient in rows:
+                physical_jacobian[row] += (
+                    coefficient * product.result.derivatives.global_jacobian[names.index(name)]
+                )
+        weighted = np.ascontiguousarray(
+            (self.physical_to_free.T @ physical_jacobian) * self.sample_weight
+        )
+        weighted.flags.writeable = False
+        self.weighted_free_jacobian = weighted
+
+    def calculate(self) -> RietveldCalculationResult:
+        self._prepare_dense()
+        calculations = self.calculations
+        if calculations is None:
+            self.runtime.begin_evaluation()
+            calculations = tuple(item.calculate() for item in self.prepared)
         profile = np.ascontiguousarray(
             sum((item.profile_y for item in calculations), np.zeros_like(self.pattern.x))
         )
@@ -1172,9 +1221,11 @@ class _RietveldLinearization:
         )
 
     def jvp(self, direction: NDArray[np.float64]) -> NDArray[np.float64]:
-        self.runtime.begin_evaluation()
         if direction.shape != (self.physical_to_free.shape[1],):
             raise ValueError("free tangent has the wrong shape")
+        if self.weighted_free_jacobian is not None:
+            return np.ascontiguousarray(direction @ self.weighted_free_jacobian)
+        self.runtime.begin_evaluation()
         physical = self.physical_to_free @ direction
         result = self.background_mapping @ physical
         for prepared, mapping, rows in zip(
@@ -1192,9 +1243,11 @@ class _RietveldLinearization:
         return np.ascontiguousarray(result * self.sample_weight)
 
     def vjp(self, weighted_samples: NDArray[np.float64]) -> NDArray[np.float64]:
-        self.runtime.begin_evaluation()
         if weighted_samples.shape != self.pattern.x.shape:
             raise ValueError("weighted sample vector has the wrong shape")
+        if self.weighted_free_jacobian is not None:
+            return np.ascontiguousarray(self.weighted_free_jacobian @ weighted_samples)
+        self.runtime.begin_evaluation()
         physical_gradient = np.zeros(self.physical_to_free.shape[0], dtype=np.float64)
         raw_samples = weighted_samples * self.sample_weight
         physical_gradient += self.background_mapping.T @ raw_samples

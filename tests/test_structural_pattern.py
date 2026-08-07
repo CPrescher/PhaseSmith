@@ -368,6 +368,15 @@ def test_structural_component_jvp_finite_difference_and_vjp_are_adjoint() -> Non
     direction[[0, 6, 12, 14, len(names) - 1]] = [0.04, 0.015, -0.03, 0.002, 0.05]
 
     product = prepared.jvp(direction)
+    linearization = prepared.linearize()
+    assert linearization.parameter_names == names
+    np.testing.assert_array_equal(linearization.result.profile_y, product.result.profile_y)
+    np.testing.assert_allclose(
+        direction @ linearization.jacobian,
+        product.d_y,
+        rtol=4e-14,
+        atol=3e-10,
+    )
     step = 1.0e-6
     plus = phasesmith.calculate_structural_pattern(
         pattern(), experiment, _perturb_phase(phase, direction, step)
@@ -380,6 +389,12 @@ def test_structural_component_jvp_finite_difference_and_vjp_are_adjoint() -> Non
 
     weights = np.sin(np.linspace(0.0, 3.0, pattern().x.size))
     reverse = prepared.vjp(weights)
+    np.testing.assert_allclose(
+        linearization.jacobian @ weights,
+        reverse.gradient,
+        rtol=8e-13,
+        atol=3e-10,
+    )
     np.testing.assert_allclose(
         product.d_y @ weights,
         direction @ reverse.gradient,

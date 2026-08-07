@@ -27,6 +27,7 @@ from .pattern import (
     PowderPattern,
     StructuralPatternCalculationResult,
     StructuralPatternJvpResult,
+    StructuralPatternLinearizationResult,
     StructuralPatternVjpResult,
     StructuralReflectionResult,
 )
@@ -688,6 +689,58 @@ class PreparedStructuralPattern:
         for array in (d_y, d_intensity, d_position):
             _freeze(array)
         return StructuralPatternJvpResult(result, names, d_y, d_intensity, d_position)
+
+    def linearize(self) -> StructuralPatternLinearizationResult:
+        """Calculate one reusable native structural pattern Jacobian."""
+
+        names = _structural_parameter_names(self.phase)
+        if self._components:
+            products = tuple(component.linearize() for component in self._components)
+            jacobian = np.zeros_like(products[0].jacobian)
+            for product, weight in zip(products, self._component_weights, strict=True):
+                if product.parameter_names != names:
+                    raise ValueError("component structural parameter names must match")
+                jacobian[:-1] += product.jacobian[:-1]
+                jacobian[-1] += weight * product.jacobian[-1]
+            return StructuralPatternLinearizationResult(
+                _combine_component_results(
+                    self.phase,
+                    self.pattern,
+                    tuple(product.result for product in products),
+                    self.jacobian_layout,
+                ),
+                names,
+                np.ascontiguousarray(jacobian),
+            )
+        if self._native is None:
+            raise NotImplementedError(
+                "dense structural linearization is available for the built-in fused path only"
+            )
+        contribution = self._contribution
+        if contribution is None:  # pragma: no cover - native/contribution invariant
+            raise RuntimeError("native structural contribution was not prepared")
+        native_result, jacobian = self._native.linearize(
+            *_native_dynamic_arguments(
+                self.pattern,
+                self.experiment,
+                contribution,
+                self.support_fwhm,
+            )
+        )
+        accumulation_arrays, reflection_arrays = native_result
+        result = _calculation_result(
+            self.phase,
+            self.pattern,
+            _accumulation_from_native(
+                accumulation_arrays,
+                contribution,
+                self.experiment,
+                self.jacobian_layout,
+            ),
+            _reflection_result(self.phase, reflection_arrays),
+        )
+        _freeze(jacobian)
+        return StructuralPatternLinearizationResult(result, names, jacobian)
 
     def vjp(self, sample_weights: ArrayLike) -> StructuralPatternVjpResult:
         """Calculate one structural transpose product from pattern-sample weights."""

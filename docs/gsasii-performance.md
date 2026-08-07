@@ -166,3 +166,9 @@ Measured total native-workflow times were 8.73 s for PhaseSmith and 2.93 s for
 GSAS-II on that host. This result motivates structural-linearization reuse and
 the missing-physics ablations; it does not override the matched kernel results
 above.
+
+After bounded native linearization was enabled for stable stages, a reviewed
+two-repetition run preserved those scientific outputs and reduced the
+PhaseSmith median to 7.60 s. GSAS-II measured 2.99 s in the same run. QARR stage
+2 retains matrix-free products until its rounding-sensitive flat basin is
+addressed by optimizer damping and acceptance hardening.

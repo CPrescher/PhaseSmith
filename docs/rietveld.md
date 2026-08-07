@@ -148,6 +148,18 @@ synthetic Rwp after those deliberately capped three iterations was
 `2.197e-5`. This measures the engine optimizer, not a complete comparison with
 another program.
 
+The reusable native-linearization checkpoint reduces that reviewed median from
+148.7 ms to 38.3 ms, model evaluations from 79 to 4, and preserves final Rwp to
+2.6e-11 absolute. Built-in paths materialize one parameter-major Rust Jacobian
+per accepted or trial state and reuse it for every optimizer JVP/VJP.
+
+The default memory ceiling is 10,000,000 floating-point elements.
+RietveldOptions.max_linearization_elements set to zero forces the matrix-free
+path; requests above the ceiling and third-party physics providers fall back
+automatically. QARR stage 2 currently selects that fallback explicitly because
+its approximate model has a rounding-sensitive flat local basin; its cached and
+matrix-free products agree to approximately 2e-15 relative.
+
 The separately validated pinned GSAS-II structural benchmark remains the
 like-for-like speed comparison documented in `gsasii-performance.md`. The
 locally installed GSAS-II checkout currently has revision `e88e61f`, not the

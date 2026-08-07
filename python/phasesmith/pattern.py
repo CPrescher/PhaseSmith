@@ -303,6 +303,27 @@ class StructuralPatternJvpResult:
 
 
 @dataclass(frozen=True, slots=True)
+class StructuralPatternLinearizationResult:
+    """Structural pattern values and a reusable parameter-major Jacobian."""
+
+    result: StructuralPatternCalculationResult
+    parameter_names: tuple[str, ...]
+    jacobian: NDArray[np.float64]
+
+    def __post_init__(self) -> None:
+        names = tuple(self.parameter_names)
+        expected = (len(names), self.result.y.size)
+        if len(set(names)) != len(names) or any(not name for name in names):
+            raise ValueError("parameter_names must be non-empty and unique")
+        if self.jacobian.dtype != np.float64 or self.jacobian.shape != expected:
+            raise ValueError("jacobian must be parameter-major and match pattern samples")
+        if not np.isfinite(self.jacobian).all():
+            raise ValueError("jacobian must contain only finite values")
+        self.jacobian.flags.writeable = False
+        object.__setattr__(self, "parameter_names", names)
+
+
+@dataclass(frozen=True, slots=True)
 class StructuralPatternVjpResult:
     """Structural pattern values and one reverse product from sample weights."""
 

@@ -105,6 +105,7 @@ from .pattern import (
     PowderPattern,
     StructuralPatternCalculationResult,
     StructuralPatternJvpResult,
+    StructuralPatternLinearizationResult,
     StructuralPatternVjpResult,
     StructuralReflectionResult,
 )
@@ -312,6 +313,7 @@ __all__ = [
     "SpaceGroupInfo",
     "StructuralPatternCalculationResult",
     "StructuralPatternJvpResult",
+    "StructuralPatternLinearizationResult",
     "StructuralPatternVjpResult",
     "StructuralReflectionBatch",
     "StructuralReflectionResult",

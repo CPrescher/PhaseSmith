@@ -467,6 +467,10 @@ def run_qarr_1g_validation(
             min_iterations=3,
             max_scaled_parameter_step=0.15,
             support_fwhm=30.0,
+            # Preserve the accepted local path until damping/acceptance hardening:
+            # cached and matrix-free products agree to 2e-15 relative, but this
+            # deliberately approximate model has a rounding-sensitive flat basin.
+            max_linearization_elements=0,
             estimate_covariance=False,
         ),
         cancellation=cancellation,

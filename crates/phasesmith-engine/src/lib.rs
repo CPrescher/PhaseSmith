@@ -10,8 +10,9 @@ pub use phasesmith_crystallography as crystallography;
 pub mod structural_pattern;
 
 pub use structural_pattern::{
-    BuiltInScatteringModel, MonochromaticPositionCorrection, StructuralPatternError,
-    StructuralPatternInputView, StructuralPatternJvpResult, StructuralPatternResult,
-    StructuralPatternVjpResult, calculate_structural_pattern, calculate_structural_pattern_jvp,
+    BuiltInScatteringModel, MonochromaticPositionCorrection, StructuralPatternDenseResult,
+    StructuralPatternError, StructuralPatternInputView, StructuralPatternJvpResult,
+    StructuralPatternResult, StructuralPatternVjpResult, calculate_structural_pattern,
+    calculate_structural_pattern_dense, calculate_structural_pattern_jvp,
     calculate_structural_pattern_vjp,
 };

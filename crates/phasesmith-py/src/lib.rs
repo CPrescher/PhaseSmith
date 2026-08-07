@@ -23,9 +23,10 @@ use phasesmith_engine::crystallography::{
     xray_species_metadata,
 };
 use phasesmith_engine::{
-    BuiltInScatteringModel, MonochromaticPositionCorrection, StructuralPatternError,
-    StructuralPatternInputView, StructuralPatternJvpResult, StructuralPatternResult,
-    StructuralPatternVjpResult, calculate_structural_pattern, calculate_structural_pattern_jvp,
+    BuiltInScatteringModel, MonochromaticPositionCorrection, StructuralPatternDenseResult,
+    StructuralPatternError, StructuralPatternInputView, StructuralPatternJvpResult,
+    StructuralPatternResult, StructuralPatternVjpResult, calculate_structural_pattern,
+    calculate_structural_pattern_dense, calculate_structural_pattern_jvp,
     calculate_structural_pattern_vjp,
 };
 use pyo3::exceptions::PyValueError;
@@ -68,6 +69,7 @@ type StructuralPatternJvpArrays<'py> = (
 );
 
 type StructuralPatternVjpArrays<'py> = (StructuralPatternArrays<'py>, Bound<'py, PyArray1<f64>>);
+type StructuralPatternDenseArrays<'py> = (StructuralPatternArrays<'py>, Bound<'py, PyArray2<f64>>);
 
 type TchShapeValues = (f64, f64, f64, f64, f64, f64);
 
@@ -920,6 +922,68 @@ impl NativeStructuralPhase {
     }
 
     #[allow(clippy::too_many_arguments)]
+    fn linearize<'py>(
+        &self,
+        py: Python<'py>,
+        x_deg: PyReadonlyArray1<'py, f64>,
+        wavelength_angstrom: f64,
+        zero_shift_deg: f64,
+        sample_displacement_mm: Option<f64>,
+        goniometer_radius_mm: Option<f64>,
+        u_deg2: f64,
+        v_deg2: f64,
+        w_deg2: f64,
+        x_width_deg: f64,
+        y_width_deg: f64,
+        gaussian_variance_deg2: PyReadonlyArray1<'py, f64>,
+        lorentzian_fwhm_deg: PyReadonlyArray1<'py, f64>,
+        intensity_multiplier: PyReadonlyArray1<'py, f64>,
+        d_gaussian_variance_d_position: PyReadonlyArray1<'py, f64>,
+        d_lorentzian_fwhm_d_position: PyReadonlyArray1<'py, f64>,
+        d_intensity_multiplier_d_position: PyReadonlyArray1<'py, f64>,
+        d_gaussian_variance_d_parameters: PyReadonlyArray1<'py, f64>,
+        d_lorentzian_fwhm_d_parameters: PyReadonlyArray1<'py, f64>,
+        d_intensity_multiplier_d_parameters: PyReadonlyArray1<'py, f64>,
+        parameter_count: usize,
+        support_fwhm: f64,
+    ) -> PyResult<StructuralPatternDenseArrays<'py>> {
+        let x_deg_values = contiguous_slice(&x_deg, "x_deg")?;
+        let contributions = Self::contribution_view(
+            self.hkl.len(),
+            parameter_count,
+            &gaussian_variance_deg2,
+            &lorentzian_fwhm_deg,
+            &intensity_multiplier,
+            &d_gaussian_variance_d_position,
+            &d_lorentzian_fwhm_d_position,
+            &d_intensity_multiplier_d_position,
+            &d_gaussian_variance_d_parameters,
+            &d_lorentzian_fwhm_d_parameters,
+            &d_intensity_multiplier_d_parameters,
+        )?;
+        let correction =
+            position_correction(zero_shift_deg, sample_displacement_mm, goniometer_radius_mm)?;
+        let result = py.detach(|| {
+            self.with_input(
+                x_deg_values,
+                cw_instrument(
+                    wavelength_angstrom,
+                    u_deg2,
+                    v_deg2,
+                    w_deg2,
+                    x_width_deg,
+                    y_width_deg,
+                ),
+                correction,
+                contributions,
+                support_fwhm,
+                calculate_structural_pattern_dense,
+            )
+        })?;
+        structural_pattern_dense_to_numpy(py, result)
+    }
+
+    #[allow(clippy::too_many_arguments)]
     fn jvp<'py>(
         &self,
         py: Python<'py>,
@@ -1617,6 +1681,24 @@ fn structural_pattern_vjp_to_numpy(
     Ok((
         structural_pattern_to_numpy(py, result.result)?,
         result.gradient.into_pyarray(py),
+    ))
+}
+
+fn structural_pattern_dense_to_numpy(
+    py: Python<'_>,
+    result: StructuralPatternDenseResult,
+) -> PyResult<StructuralPatternDenseArrays<'_>> {
+    let StructuralPatternDenseResult {
+        result,
+        d_y,
+        parameter_count,
+    } = result;
+    let sample_count = result.accumulation.sample_count;
+    let jacobian = Array2::from_shape_vec((parameter_count, sample_count), d_y)
+        .map_err(|error| PyValueError::new_err(error.to_string()))?;
+    Ok((
+        structural_pattern_to_numpy(py, result)?,
+        jacobian.into_pyarray(py),
     ))
 }
 
