@@ -94,6 +94,7 @@ from .intensity_corrections import (
     evaluate_intensity_correction,
 )
 from .io.cif import CifBackend, CifReadLimits, CifReadResult, read_cif
+from .io.powder import PowderData, PowderFormat, PowderReadLimits, read_powder_data
 from .io.space_groups import SpaceGroupInfo, space_group_by_number, space_group_by_symbol
 from .pattern import (
     PatternCalculationResult,
@@ -254,7 +255,10 @@ __all__ = [
     "PhasePatternComponent",
     "PhysicsContext",
     "PhysicsContribution",
+    "PowderData",
+    "PowderFormat",
     "PowderPattern",
+    "PowderReadLimits",
     "PreparedNeutronNuclear",
     "PreparedPattern",
     "PreparedReflectionGenerator",
@@ -342,6 +346,7 @@ __all__ = [
     "profile_tch_from_gaussian_sigma",
     "profile_tof",
     "read_cif",
+    "read_powder_data",
     "reciprocal_angle_geometry",
     "refinement",
     "rietveld_result_record",
