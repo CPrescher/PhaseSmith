@@ -10,5 +10,12 @@ license.workspace = true
 [dependencies]
 phasesmith-model = { path = "../phasesmith-model" }
 
+[dev-dependencies]
+criterion = "0.7"
+
+[[bench]]
+name = "backgrounds"
+harness = false
+
 [lints]
 workspace = true

@@ -72,5 +72,46 @@ approximately 5.31 million input samples per second for each complete
 
 This estimator is non-linear and non-differentiable at clipping decisions. It
 is intentionally not a refinable parameter family and does not participate in
-Rietveld JVP/VJP calculations. Refinable polynomial and future spline/point
-backgrounds remain under `phasesmith.refinement.background`.
+Rietveld JVP/VJP calculations.
+
+## Refinable analytical backgrounds
+
+Refinable backgrounds remain distinct from preprocessing and are owned by
+`phasesmith.refinement.background` in Python and the Python-free
+`phasesmith-workflows` crate in Rust. Both interfaces provide the same ordered
+models:
+
+- a power series `sum(c_k t^k)` on the input grid normalized to `t in [-1,1]`;
+- a Chebyshev series `sum(c_k T_k(t))` on an explicit closed degree domain;
+- linear interpolation through fixed ordered knots, with constant values
+  outside the first and last knots;
+- area-normalized broad Gaussian amorphous components; and
+- ordered additive composition with unique immediate component IDs.
+
+For one amorphous component with area `A`, center `mu`, FWHM `H`,
+`q = 4 ln(2)`, and `d = x - mu`,
+
+```text
+g(x) = sqrt(q / pi) / H * exp(-q (d/H)^2)
+b(x) = A g(x)
+
+db/dA  = g(x)
+db/dmu = b(x) * 2 q d / H^2
+db/dH  = b(x) * (-1/H + 2 q d^2/H^3)
+```
+
+Power, Chebyshev, and point bases are coefficient-invariant and may be cached
+across optimizer trials. Amorphous derivatives depend on the current center
+and width; a composite is invariant only when all its components are. Native
+matrices are checked row-major sample-by-parameter records, and constructors
+prevent invalid domains, knots, coefficients, widths, IDs, or duplicate
+component IDs.
+
+Each native derivative column is checked against centered coefficient
+differences for all model families. A configured differential gate compares a
+mixed composite's values and complete basis with the existing NumPy
+implementation. On the development host, the quick release Criterion run for
+a realistic mixed 20,001-sample background measured a 295.98 microsecond
+central estimate for values and 472.81 microseconds for the complete analytical
+basis. Run `cargo bench -p phasesmith-workflows --bench backgrounds -- --quick`
+to repeat that smoke measurement; omit `--quick` for a full measurement.

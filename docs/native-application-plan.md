@@ -200,3 +200,12 @@ degrees-of-freedom rules. Invalid observations/calculated arrays are structured
 errors, and a configured differential test matches the existing Python arrays
 and metrics. Analytical backgrounds and bounded runtime remain before step 13
 is complete.
+
+Analytical native backgrounds completed next. The workflow crate now owns
+power, explicit-domain Chebyshev, fixed-knot point, normalized broad-Gaussian
+amorphous, and ordered composite records with checked row-major analytical
+bases. Constructor validation prevents invalid state, invariant bases are
+explicitly cacheable, nonlinear amorphous derivatives pass centered
+differences, and a mixed composite agrees with the existing Python
+implementation. A 20,001-sample release benchmark covers values and the full
+basis. The bounded runtime is the remaining delivery-step-13 substep.

@@ -110,7 +110,10 @@ March--Dollase lattice chain includes the analytical reciprocal-metric
 derivative and remains isolated between phases.
 
 Power, Chebyshev, point-interpolated, broad normalized-Gaussian amorphous, and
-ordered composite backgrounds implement one analytical protocol. The
+ordered composite backgrounds implement one analytical protocol. Their values,
+checked row-major derivative bases, validation, and coefficient replacement are
+now also owned by the Python-free `phasesmith-workflows` crate for shared
+scripting/desktop orchestration. The
 application-neutral `RietveldProject` facade provides calculate/refine/stop,
 checkpoint continuation, format-5 persistence, and finite JSON/plain CSV
 reports without replacing the typed request API.
