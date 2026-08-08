@@ -287,3 +287,12 @@ Exact forward and reverse transforms connect these physical parameters to the
 engine's native per-phase derivative layout; their composed JVP/VJP satisfies
 the adjoint identity. Instrument, position, sample-physics, and background
 families join this layout with the solver rather than being approximated here.
+
+The reusable structural objective is now native as well. It prepares accepted
+phase state once and exposes physical-parameter JVP, VJP, weighted gradient,
+and damped `J^T W J` products without allocating a dense sample Jacobian. Mask
+and uncertainty semantics are shared with residual evaluation, fixed background
+participates in the gradient residual but not derivatives, and stale layouts
+with different phase/site/symmetry identities fail before engine evaluation.
+Native tests compare the matrix-free normal product with explicit analytical
+columns and check both derivative adjoint identities.

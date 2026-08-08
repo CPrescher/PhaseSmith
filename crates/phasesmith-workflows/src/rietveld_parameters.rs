@@ -4,6 +4,7 @@ use std::error::Error;
 use std::fmt::{Display, Formatter};
 
 use phasesmith_crystallography::P1ParameterLayout;
+use phasesmith_model::RecordId;
 
 use crate::{
     LatticeBounds, LatticeError, LatticeParameterization, ParameterBounds, ParameterError,
@@ -134,6 +135,10 @@ pub struct RietveldStructuralLayout {
     parameters: ParameterSet,
     phases: Vec<PhaseDerivativeLayout>,
     coordinate_models: Vec<Vec<SiteCoordinateModel>>,
+    phase_ids: Vec<RecordId>,
+    site_ids: Vec<Vec<RecordId>>,
+    space_groups: Vec<phasesmith_crystallography::SpaceGroup>,
+    anisotropic_masks: Vec<Vec<bool>>,
 }
 
 impl RietveldStructuralLayout {
@@ -294,6 +299,22 @@ impl RietveldStructuralLayout {
             parameters: ParameterSet::new(specs)?,
             phases: layouts,
             coordinate_models: all_coordinate_models,
+            phase_ids: phases
+                .iter()
+                .map(|phase| phase.phase_id().clone())
+                .collect(),
+            site_ids: phases
+                .iter()
+                .map(|phase| phase.site_ids().to_vec())
+                .collect(),
+            space_groups: phases
+                .iter()
+                .map(|phase| phase.definition().space_group.clone())
+                .collect(),
+            anisotropic_masks: phases
+                .iter()
+                .map(|phase| phase.definition().anisotropic_mask.clone())
+                .collect(),
         })
     }
 
@@ -307,6 +328,25 @@ impl RietveldStructuralLayout {
     #[must_use]
     pub fn coordinate_models(&self) -> &[Vec<SiteCoordinateModel>] {
         &self.coordinate_models
+    }
+
+    pub(crate) fn validate_phases(
+        &self,
+        phases: &[RietveldPhase],
+    ) -> Result<(), RietveldParameterError> {
+        if phases.len() != self.phase_ids.len()
+            || phases.iter().enumerate().any(|(index, phase)| {
+                phase.phase_id() != &self.phase_ids[index]
+                    || phase.site_ids() != self.site_ids[index]
+                    || phase.definition().space_group != self.space_groups[index]
+                    || phase.definition().anisotropic_mask != self.anisotropic_masks[index]
+                    || 6 + 5 * phase.definition().fractional_xyz.len() + 1
+                        != self.phases[index].native_count
+            })
+        {
+            return Err(RietveldParameterError::PhaseIdentityMismatch);
+        }
+        Ok(())
     }
 
     /// Expand one physical parameter direction into native per-phase tangents.
@@ -443,6 +483,8 @@ pub enum RietveldParameterError {
     DirectionLengthMismatch,
     /// One native reverse product has the wrong length.
     NativeGradientLengthMismatch,
+    /// Layout phase/site identities differ from the calculation request.
+    PhaseIdentityMismatch,
     /// Site coordinate or stabilizer tolerance is invalid.
     InvalidCoordinateModel,
     /// Stable parameter construction failed.
@@ -464,6 +506,9 @@ impl Display for RietveldParameterError {
             Self::NativeGradientLengthMismatch => {
                 formatter.write_str("Rietveld native gradient length mismatch")
             }
+            Self::PhaseIdentityMismatch => {
+                formatter.write_str("Rietveld parameter layout phase identities differ")
+            }
             Self::InvalidCoordinateModel => {
                 formatter.write_str("Rietveld site coordinate model is invalid")
             }
@@ -482,6 +527,7 @@ impl Error for RietveldParameterError {
             | Self::MissingLatticeBounds
             | Self::DirectionLengthMismatch
             | Self::NativeGradientLengthMismatch
+            | Self::PhaseIdentityMismatch
             | Self::InvalidCoordinateModel => None,
         }
     }

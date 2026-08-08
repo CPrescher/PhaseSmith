@@ -125,6 +125,14 @@ key and bound packing, invalid shapes, and the transformed JVP/VJP adjoint
 identity. Instrument, background, position, and sample-physics parameter
 families remain part of the subsequent solver integration step.
 
+A reusable prepared Rietveld objective now composes that structural layout with
+the native multiphase engine. It provides JVP, VJP, uncertainty/mask-weighted
+gradient, and damped matrix-free normal products while keeping fixed background
+out of derivative columns. Layout identity checks reject stale phase, site,
+symmetry, or anisotropic-site state before evaluation. Analytical-column and
+adjoint tests lock down the operator that the bounded conjugate-gradient solver
+will consume next.
+
 Unit 17 now includes the first full monochromatic CIF-backed Rietveld vertical
 slice. Typed profile/background/phase/lattice/site parameter families map
 through fixed/affine/multi-source linear

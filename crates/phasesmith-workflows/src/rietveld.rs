@@ -71,7 +71,7 @@ impl RietveldPhase {
         Ok(phase)
     }
 
-    fn validate(&self) -> Result<(), RietveldError> {
+    pub(crate) fn validate(&self) -> Result<(), RietveldError> {
         if self.name.trim().is_empty() {
             return Err(RietveldError::InvalidPhaseName);
         }
@@ -167,7 +167,7 @@ impl RietveldInput {
         Ok(input)
     }
 
-    fn validate(&self) -> Result<(), RietveldError> {
+    pub(crate) fn validate(&self) -> Result<(), RietveldError> {
         self.pattern.validate().map_err(RietveldError::Pattern)?;
         if self.pattern.observed_y.is_none() {
             return Err(RietveldError::MissingObservations);
@@ -245,7 +245,7 @@ impl RietveldCalculationOptions {
         Ok(options)
     }
 
-    fn validate(&self) -> Result<(), RietveldError> {
+    pub(crate) fn validate(&self) -> Result<(), RietveldError> {
         if !self.support_fwhm.is_finite() || self.support_fwhm <= 0.0 {
             return Err(RietveldError::InvalidOptions);
         }

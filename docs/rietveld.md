@@ -22,6 +22,12 @@ These are solver-neutral records: a desktop inspector can list and constrain
 them without importing Python, while the remaining native solver work can use
 the same identities without changing the command contract.
 
+The native prepared objective applies those transforms directly to structural
+JVP/VJP products and exposes the weighted gradient and damped normal operator
+needed by a matrix-free solver. Masks, uncertainties, fixed background, and
+stale-layout rejection are handled at this application-neutral layer, so a
+Tauri command will not need to reproduce numerical objective rules.
+
 ## Objective and numerical method
 
 For included observations `i`, the residual used by the optimizer is

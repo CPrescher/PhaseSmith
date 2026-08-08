@@ -9,9 +9,11 @@ use phasesmith_engine::{
     PreparedStructuralPhase, StructuralPhaseDefinition,
 };
 use phasesmith_execution::ExecutionPolicy;
+use phasesmith_model::PatternRecord;
 use phasesmith_model::RecordId;
 use phasesmith_workflows::{
-    LatticeBounds, LatticeParameterization, RietveldParameterError, RietveldPhase,
+    LatticeBounds, LatticeParameterization, PreparedRietveldObjective, RietveldCalculationOptions,
+    RietveldInput, RietveldObjectiveError, RietveldParameterError, RietveldPhase,
     RietveldStructuralLayout, RietveldStructuralSelection, SiteCoordinateModel,
 };
 
@@ -65,6 +67,56 @@ fn phase() -> RietveldPhase {
         OwnedCwContributions::neutral(definition.hkl.len()),
     )
     .unwrap()
+}
+
+fn objective() -> PreparedRietveldObjective {
+    let phase = phase();
+    let layout = complete_layout(&phase);
+    objective_for_phase(phase, layout).unwrap()
+}
+
+fn objective_for_phase(
+    phase: RietveldPhase,
+    layout: RietveldStructuralLayout,
+) -> Result<PreparedRietveldObjective, RietveldObjectiveError> {
+    let x_deg = (0..3_001)
+        .map(|index| 10.0 + f64::from(index) * 0.03)
+        .collect::<Vec<_>>();
+    let mut mask = vec![true; x_deg.len()];
+    mask[333] = false;
+    let pattern = PatternRecord::new(
+        x_deg.clone(),
+        Some(vec![0.0; x_deg.len()]),
+        Some(x_deg.iter().map(|value| 0.4 + value / 500.0).collect()),
+        Some(mask),
+        Some(x_deg.iter().map(|value| 0.1 + value / 1_000.0).collect()),
+    )
+    .unwrap();
+    let input = RietveldInput::new(
+        pattern,
+        ConstantWavelengthInstrument {
+            wavelength_angstrom: 1.5406,
+            u_deg2: 2.0e-4,
+            v_deg2: -1.0e-4,
+            w_deg2: 1.2e-4,
+            x_deg: 1.5e-3,
+            y_deg: 3.0e-3,
+        },
+        None,
+        MonochromaticPositionCorrection {
+            zero_shift_deg: 0.0,
+            bragg_brentano_mm: None,
+            debye_scherrer_micrometre: None,
+        },
+        vec![phase],
+    )
+    .unwrap();
+    PreparedRietveldObjective::new(
+        input,
+        RietveldCalculationOptions::new(20.0, true, ExecutionPolicy::new(Some(1), 2).unwrap())
+            .unwrap(),
+        layout,
+    )
 }
 
 fn complete_layout(phase: &RietveldPhase) -> RietveldStructuralLayout {
@@ -283,5 +335,96 @@ fn transform_shapes_and_lattice_requirements_fail_structurally() {
     assert!(matches!(
         layout.project_native_gradients(&[&[]]),
         Err(RietveldParameterError::NativeGradientLengthMismatch)
+    ));
+}
+
+#[test]
+fn prepared_objective_jvp_vjp_and_normal_product_are_consistent() {
+    let objective = objective();
+    let count = objective.layout().parameters().specs().len();
+    let direction = (0..count)
+        .map(|index| 0.002 * (f64::from(u32::try_from(index).unwrap()) + 1.0))
+        .collect::<Vec<_>>();
+    let (_, derivative) = objective.jvp(&direction).unwrap();
+    let weights = derivative
+        .iter()
+        .enumerate()
+        .map(|(index, value)| (0.013 * f64::from(u32::try_from(index).unwrap())).cos() * value)
+        .collect::<Vec<_>>();
+    let reverse = objective.vjp(&weights).unwrap();
+    let left = derivative
+        .iter()
+        .zip(&weights)
+        .map(|(a, b)| a * b)
+        .sum::<f64>();
+    let right = direction
+        .iter()
+        .zip(&reverse)
+        .map(|(a, b)| a * b)
+        .sum::<f64>();
+    assert!(
+        (left - right).abs() < 5.0e-13 * left.abs().max(right.abs()).max(1.0),
+        "left={left:.17e}, right={right:.17e}, difference={:.17e}",
+        left - right
+    );
+
+    let damping = 0.03;
+    let actual = objective.normal_product(&direction, damping).unwrap();
+    let mut columns = Vec::with_capacity(count);
+    for parameter in 0..count {
+        let mut unit = vec![0.0; count];
+        unit[parameter] = 1.0;
+        columns.push(objective.jvp(&unit).unwrap().1);
+    }
+    let sigma = (0..derivative.len())
+        .map(|index| 0.4 + (10.0 + f64::from(u32::try_from(index).unwrap()) * 0.03) / 500.0)
+        .collect::<Vec<_>>();
+    for parameter in 0..count {
+        let expected = columns[parameter]
+            .iter()
+            .zip(&derivative)
+            .enumerate()
+            .filter(|(index, _)| *index != 333)
+            .map(|(index, (column, value))| column * value / (sigma[index] * sigma[index]))
+            .sum::<f64>()
+            + damping * direction[parameter];
+        assert!(
+            (actual[parameter] - expected).abs()
+                < 5.0e-12 * actual[parameter].abs().max(expected.abs()).max(1.0)
+        );
+    }
+}
+
+#[test]
+fn prepared_objective_gradient_and_invalid_damping_are_explicit() {
+    let objective = objective();
+    let (calculated, gradient) = objective.gradient().unwrap();
+    assert_eq!(calculated.len(), 3_001);
+    assert_eq!(
+        gradient.len(),
+        objective.layout().parameters().specs().len()
+    );
+    assert!(gradient.iter().all(|value| value.is_finite()));
+    assert!(matches!(
+        objective.normal_product(&vec![0.0; gradient.len()], f64::NAN),
+        Err(RietveldObjectiveError::InvalidDamping)
+    ));
+
+    let source = phase();
+    let layout = complete_layout(&source);
+    let definition = source.definition().clone();
+    let other = RietveldPhase::new_with_site_ids(
+        RecordId::new("beta").unwrap(),
+        "Beta",
+        source.site_ids().to_vec(),
+        definition.clone(),
+        OwnedCwContributions::neutral(definition.hkl.len()),
+    )
+    .unwrap();
+    assert!(matches!(
+        objective_for_phase(other, layout),
+        Err(RietveldObjectiveError::Parameter(
+            RietveldParameterError::PhaseIdentityMismatch
+        ))
     ));
 }
