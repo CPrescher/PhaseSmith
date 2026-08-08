@@ -243,6 +243,18 @@ maximum QPA error, 19.888% Poisson Rwp, 13.256% unit-weight Rwp, and 0.99061
 correlation. It ended safely at the stage-2 evaluation budget after 354.1
 seconds; FCJ optimization remains the dominant performance task.
 
+The adaptive-FCJ checkpoint keeps the independently derived regular-height
+integral and its fused analytical derivatives, but selects quadrature from the
+physical axial-span/TCH-FWHM ratio. Ratios at or below 0.2 use an independently
+validated 8-point Gauss--Legendre rule per non-empty smooth interval; all
+larger ratios retain the conservative 48-point rule. Equal sample and detector
+heights omit the zero-measure flat overlap interval, including its cancelling
+symmetry-averaged derivative terms. A deterministic near-boundary study against
+a 256-point NumPy integral bounds every value and direct derivative below
+3.4e-11 scaled error. The realistic 200-reflection FCJ benchmark improves from
+6.76 to 2.14 milliseconds, and the doublet case from 14.16 to 4.36
+milliseconds, before full-workflow optimizer changes.
+
 ## Design commitments
 
 - Use GSAS-II only as a pinned validation oracle, never as the architecture.

@@ -266,7 +266,7 @@ def profile_fcj(
     sample_over_radius: float,
     detector_over_radius: float,
     *,
-    quadrature_order: int = 32,
+    quadrature_order: int | None = None,
     support_radius_deg: float | None = None,
 ) -> ReferenceFcjProfile:
     """Convolve TCH with FCJ axial divergence using a regular height integral.
@@ -285,7 +285,7 @@ def profile_fcj(
         raise ValueError("position_deg must lie within (0, 180)")
     if sample < 0.0 or detector < 0.0 or not np.isfinite((sample, detector)).all():
         raise ValueError("FCJ axial ratios must be non-negative and finite")
-    if quadrature_order <= 0:
+    if quadrature_order is not None and quadrature_order <= 0:
         raise ValueError("quadrature_order must be positive")
     if support_radius_deg is not None and (
         not np.isfinite(support_radius_deg) or support_radius_deg <= 0.0
@@ -316,6 +316,11 @@ def profile_fcj(
             d_sample_over_radius=zeros,
             d_detector_over_radius=zeros.copy(),
         )
+
+    if quadrature_order is None:
+        total_fwhm = tch_shape_from_fwhm(gaussian_fwhm_deg, lorentzian_fwhm_deg).total_fwhm
+        axial_span = abs(np.rad2deg(np.arccos(limit_argument)) - position)
+        quadrature_order = 8 if axial_span / total_fwhm <= 0.2 else 48
 
     nodes, weights = np.polynomial.legendre.leggauss(quadrature_order)
     t = 0.5 * (nodes + 1.0)
@@ -878,7 +883,7 @@ def accumulate_cw_fcj(
     sample_over_radius: float,
     detector_over_radius: float,
     support_fwhm: float = 20.0,
-    quadrature_order: int = 48,
+    quadrature_order: int | None = None,
 ) -> tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]]:
     """Accumulate FCJ-asymmetric CW reflections as a transparent reference."""
 
@@ -973,7 +978,7 @@ def accumulate_cw_components(
     sample_over_radius: float | None = None,
     detector_over_radius: float | None = None,
     support_fwhm: float = 20.0,
-    quadrature_order: int = 48,
+    quadrature_order: int | None = None,
 ) -> tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]]:
     """Accumulate optional wavelength components as an independent reference."""
 

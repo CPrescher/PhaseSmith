@@ -307,7 +307,7 @@ fn cw_fcj_accumulator(criterion: &mut Criterion) {
     let mut group = criterion.benchmark_group("cw_fcj_accumulator");
     group.throughput(Throughput::Elements(positions.len() as u64));
     group.bench_function(
-        BenchmarkId::new("order_48_local_and_global_jacobian", x.len()),
+        BenchmarkId::new("adaptive_local_and_global_jacobian", x.len()),
         |bencher| {
             bencher.iter(|| {
                 accumulate_cw_fcj_batch(
@@ -322,7 +322,7 @@ fn cw_fcj_accumulator(criterion: &mut Criterion) {
         },
     );
     group.bench_function(
-        BenchmarkId::new("order_48_doublet_local_and_global_jacobian", x.len()),
+        BenchmarkId::new("adaptive_doublet_local_and_global_jacobian", x.len()),
         |bencher| {
             bencher.iter(|| {
                 accumulate_cw_fcj_components_batch(

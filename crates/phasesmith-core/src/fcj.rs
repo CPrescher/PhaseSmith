@@ -9,7 +9,32 @@ use crate::tch::{TchError, TchShape, TchWidths};
 const DEGREE_TO_RADIAN: f64 = std::f64::consts::PI / 180.0;
 const RADIAN_TO_DEGREE: f64 = 180.0 / std::f64::consts::PI;
 pub(crate) const QUADRATURE_ORDER: usize = 48;
-const NODE_COUNT: usize = 2 * QUADRATURE_ORDER;
+const SMALL_SPAN_QUADRATURE_ORDER: usize = 8;
+// The convergence study in docs/fcj-profile.md bounds every value and direct
+// derivative against an independent 256-point integral at this ratio.
+const SMALL_SPAN_RATIO_LIMIT: f64 = 0.2;
+
+const SMALL_SPAN_QUADRATURE_NODES: [f64; SMALL_SPAN_QUADRATURE_ORDER] = [
+    1.985_507_175_123_191_2e-2,
+    1.016_667_612_931_866_4e-1,
+    2.372_337_950_418_355e-1,
+    4.082_826_787_521_750_5e-1,
+    5.917_173_212_478_25e-1,
+    7.627_662_049_581_645e-1,
+    8.983_332_387_068_134e-1,
+    9.801_449_282_487_681e-1,
+];
+
+const SMALL_SPAN_QUADRATURE_WEIGHTS: [f64; SMALL_SPAN_QUADRATURE_ORDER] = [
+    5.061_426_814_518_826e-2,
+    1.111_905_172_266_872_3e-1,
+    1.568_533_229_389_435_8e-1,
+    1.813_418_916_891_809e-1,
+    1.813_418_916_891_809e-1,
+    1.568_533_229_389_435_8e-1,
+    1.111_905_172_266_872_3e-1,
+    5.061_426_814_518_826e-2,
+];
 
 // Gauss-Legendre nodes and weights transformed from [-1, 1] to [0, 1].
 pub(crate) const QUADRATURE_NODES: [f64; QUADRATURE_ORDER] = [
@@ -268,23 +293,34 @@ impl FcjProfile {
             .sample_over_radius
             .min(geometry.detector_over_radius);
         let difference = major - minor;
-        let mut nodes = [PreparedNode::default(); NODE_COUNT];
+        let (quadrature_nodes, quadrature_weights) =
+            quadrature_rule((apparent_limit_deg - position_deg).abs(), shape.total_fwhm);
+        let piece_count = if difference == 0.0 { 1 } else { 2 };
+        let mut nodes = Vec::with_capacity(piece_count * quadrature_nodes.len());
         let mut normalization = 0.0;
         let mut d_normalization_d_position = 0.0;
         let mut d_normalization_d_major = 0.0;
         let mut d_normalization_d_minor = 0.0;
-        for quadrature in 0..QUADRATURE_ORDER {
-            let t = QUADRATURE_NODES[quadrature];
-            let weight = QUADRATURE_WEIGHTS[quadrature];
-            let flat = prepare_node(
-                position_rad,
-                difference * t,
-                difference * weight,
-                weight,
-                -weight,
-                t,
-                -t,
-            );
+        for (&t, &weight) in quadrature_nodes.iter().zip(quadrature_weights) {
+            // Equal sample/detector heights have no flat overlap interval.
+            // Its separate major/minor derivatives are equal and opposite, so
+            // they also cancel in the symmetry-averaged public derivatives.
+            if difference != 0.0 {
+                let flat = prepare_node(
+                    position_rad,
+                    difference * t,
+                    difference * weight,
+                    weight,
+                    -weight,
+                    t,
+                    -t,
+                );
+                normalization += flat.weighted_geometry;
+                d_normalization_d_position += flat.d_weighted_geometry_d_position;
+                d_normalization_d_major += flat.d_weighted_geometry_d_major;
+                d_normalization_d_minor += flat.d_weighted_geometry_d_minor;
+                nodes.push(flat);
+            }
             let slope_weight = 2.0 * minor * weight * (1.0 - t);
             let slope = prepare_node(
                 position_rad,
@@ -295,14 +331,11 @@ impl FcjProfile {
                 1.0,
                 -1.0 + 2.0 * t,
             );
-            nodes[quadrature] = flat;
-            nodes[QUADRATURE_ORDER + quadrature] = slope;
-            for node in [flat, slope] {
-                normalization += node.weighted_geometry;
-                d_normalization_d_position += node.d_weighted_geometry_d_position;
-                d_normalization_d_major += node.d_weighted_geometry_d_major;
-                d_normalization_d_minor += node.d_weighted_geometry_d_minor;
-            }
+            normalization += slope.weighted_geometry;
+            d_normalization_d_position += slope.d_weighted_geometry_d_position;
+            d_normalization_d_major += slope.d_weighted_geometry_d_major;
+            d_normalization_d_minor += slope.d_weighted_geometry_d_minor;
+            nodes.push(slope);
         }
         if !normalization.is_finite() || normalization <= 0.0 {
             return Err(FcjError::InvalidNormalization);
@@ -311,7 +344,7 @@ impl FcjProfile {
             shape,
             geometry,
             position_deg,
-            nodes: Box::new(nodes),
+            nodes: nodes.into_boxed_slice(),
             normalization,
             d_normalization_d_position,
             d_normalization_d_major,
@@ -390,6 +423,14 @@ impl FcjProfile {
             d_sample_over_radius,
             d_detector_over_radius,
         }
+    }
+}
+
+fn quadrature_rule(axial_span_deg: f64, profile_fwhm_deg: f64) -> (&'static [f64], &'static [f64]) {
+    if axial_span_deg / profile_fwhm_deg <= SMALL_SPAN_RATIO_LIMIT {
+        (&SMALL_SPAN_QUADRATURE_NODES, &SMALL_SPAN_QUADRATURE_WEIGHTS)
+    } else {
+        (&QUADRATURE_NODES, &QUADRATURE_WEIGHTS)
     }
 }
 
@@ -563,5 +604,45 @@ mod tests {
         assert_relative_close(low_support.right, 12.0 + 0.2, 1e-10);
         assert_relative_close(high_support.left, 138.0 - 0.2, 1e-10);
         assert!(high_support.right > 138.0 + 0.2);
+    }
+
+    #[test]
+    fn quadrature_order_tracks_axial_span_relative_to_peak_width() {
+        let broad_small_span = FcjProfile::new(
+            70.0,
+            TchWidths {
+                gaussian_fwhm: 0.035,
+                lorentzian_fwhm: 0.012,
+            },
+            FcjGeometry {
+                sample_over_radius: 0.016,
+                detector_over_radius: 0.009,
+            },
+        )
+        .expect("small-span profile");
+        assert_eq!(
+            broad_small_span.nodes.len(),
+            2 * SMALL_SPAN_QUADRATURE_ORDER
+        );
+
+        let narrow_large_span = profile();
+        assert_eq!(narrow_large_span.nodes.len(), 2 * QUADRATURE_ORDER);
+    }
+
+    #[test]
+    fn equal_heights_need_only_the_sloping_overlap_piece() {
+        let equal = FcjProfile::new(
+            70.0,
+            TchWidths {
+                gaussian_fwhm: 0.035,
+                lorentzian_fwhm: 0.012,
+            },
+            FcjGeometry {
+                sample_over_radius: 0.012,
+                detector_over_radius: 0.012,
+            },
+        )
+        .expect("equal-height profile");
+        assert_eq!(equal.nodes.len(), SMALL_SPAN_QUADRATURE_ORDER);
     }
 }

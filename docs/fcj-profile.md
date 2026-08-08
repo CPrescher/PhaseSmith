@@ -82,7 +82,10 @@ normalization, but both integration intervals are fixed and all integrands are
 regular. `s=h=0` is defined as the symmetric-profile limit.
 
 Deterministic Gauss-Legendre quadrature is applied separately to the flat and
-sloping pieces. Splitting at `A` avoids integrating across the weight kink.
+sloping pieces. Splitting at `A` avoids integrating across the weight kink. If
+`A=0`, the flat interval has zero measure and is omitted; its one-sided
+major/minor derivative terms cancel in the symmetry-averaged equal-height
+derivative.
 
 ## Analytical derivatives
 
@@ -132,14 +135,26 @@ Derivatives hold all selected sample and component support sets fixed.
 
 The committed quadrature study compares candidate orders with a 256-point
 independent reference across low/middle/high angle, equal and unequal axial
-ratios, narrow/broad TCH widths, values, and every direct derivative. The
-low-angle, equal-height, narrow-width case controls convergence: 32 points has
-maximum scaled error `2.62e-5`, 48 points has `4.99e-8`, and 64 points has
-`8.31e-11`; the other cases are below `2.5e-7` at 8 points and their 48-point
-comparisons are at the `2.0e-12` floating-point noise level. Production
-therefore uses 48 points per smooth piece. Changing that order is observable
-numerical behavior and requires the same study, oracle comparison, and
-benchmark review.
+ratios, narrow/broad TCH widths, values, and every direct derivative. Define
+the resolution ratio
+
+```text
+rho = abs(a_limit - b) / H,
+```
+
+where `H` is the transformed TCH FWHM. Production uses 8 points per non-empty
+smooth piece for `rho <= 0.2`, and the conservative 48-point rule otherwise.
+The deterministic near-boundary randomized study reaches `rho=0.195` and has
+maximum scaled value/derivative error below `3.4e-11`; the recorded fixed
+small-span matrix is below `1.5e-8`. The demanding low-angle, equal-height,
+narrow-width case remains on the 48-point path: 32 points has maximum scaled
+error `2.62e-5`, 48 points has `4.99e-8`, and 64 points has `8.31e-11`.
+
+This selection follows the physically relevant aberration-span/peak-width
+scale rather than a fixed order. It is independently derived and more
+conservative than the pinned GSAS-II kernel's adaptive span/width heuristic.
+Changing the threshold or either order is observable numerical behavior and
+requires the same convergence study, oracle comparison, and benchmark review.
 
 ## Pinned-oracle interpretation
 

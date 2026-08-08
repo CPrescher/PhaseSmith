@@ -79,12 +79,55 @@ def test_native_profile_matches_independent_quadrature(
         lorentzian,
         sample,
         detector,
-        quadrature_order=48,
     )
     for field in actual.__dataclass_fields__:
         np.testing.assert_allclose(
             getattr(actual, field), getattr(expected, field), rtol=2e-12, atol=2e-12
         )
+
+
+def test_adaptive_small_span_profiles_match_converged_randomized_reference() -> None:
+    random = np.random.default_rng(20_260_808)
+    fields = tuple(phasesmith.FcjProfileResult.__dataclass_fields__)
+    for _case in range(12):
+        position = float(random.choice((random.uniform(10.0, 75.0), random.uniform(105.0, 170.0))))
+        gaussian = float(random.uniform(0.02, 0.08))
+        lorentzian = float(random.uniform(0.005, 0.03))
+        total_fwhm = reference.tch_shape_from_fwhm(gaussian, lorentzian).total_fwhm
+        span_ratio = float(random.uniform(0.02, 0.195))
+        axial_span = span_ratio * total_fwhm
+        apparent_limit = position - axial_span if position < 90.0 else position + axial_span
+        cosine_ratio = np.cos(np.deg2rad(apparent_limit)) / np.cos(np.deg2rad(position))
+        total_height = float(np.sqrt(cosine_ratio**2 - 1.0))
+        fraction = float(random.uniform(0.1, 0.9))
+        sample = total_height * fraction
+        detector = total_height * (1.0 - fraction)
+        x = np.linspace(
+            min(position, apparent_limit) - 3.0 * total_fwhm,
+            max(position, apparent_limit) + 3.0 * total_fwhm,
+            401,
+        )
+        actual = phasesmith.profile_fcj(
+            x,
+            position,
+            gaussian,
+            lorentzian,
+            phasesmith.FcjGeometry(sample, detector),
+        )
+        expected = reference.profile_fcj(
+            x,
+            position,
+            gaussian,
+            lorentzian,
+            sample,
+            detector,
+            quadrature_order=256,
+        )
+        for field in fields:
+            oracle = getattr(expected, field)
+            scale = max(float(np.max(np.abs(oracle))), 1.0)
+            error = float(np.max(np.abs(getattr(actual, field) - oracle))) / scale
+            assert error < 2.0e-8, (field, error)
 
 
 def test_fused_cw_fcj_batch_matches_independent_reference() -> None:

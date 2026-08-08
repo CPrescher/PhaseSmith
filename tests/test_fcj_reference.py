@@ -60,6 +60,36 @@ def test_48_point_quadrature_meets_recorded_reference_error(
 
 
 @pytest.mark.parametrize(
+    ("position", "gaussian", "lorentzian", "sample", "detector"),
+    [
+        (5.0, 0.010, 0.002, 0.001, 0.001),
+        (20.0, 0.030, 0.010, 0.001, 0.001),
+        (70.0, 0.035, 0.012, 0.016, 0.009),
+        (150.0, 0.080, 0.030, 0.001, 0.001),
+    ],
+)
+def test_eight_point_small_span_rule_meets_recorded_reference_error(
+    position: float,
+    gaussian: float,
+    lorentzian: float,
+    sample: float,
+    detector: float,
+) -> None:
+    x = np.linspace(position - 1.0, position + 1.0, 2_001)
+    actual = reference.profile_fcj(
+        x, position, gaussian, lorentzian, sample, detector, quadrature_order=8
+    )
+    expected = reference.profile_fcj(
+        x, position, gaussian, lorentzian, sample, detector, quadrature_order=256
+    )
+    for field in actual.__dataclass_fields__:
+        oracle = getattr(expected, field)
+        scale = max(float(np.max(np.abs(oracle))), 1.0)
+        error = float(np.max(np.abs(getattr(actual, field) - oracle))) / scale
+        assert error < 1.5e-8, (field, error)
+
+
+@pytest.mark.parametrize(
     ("parameter", "derivative", "step"),
     [
         (0, "d_position", 1e-6),
