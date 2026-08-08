@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from dataclasses import asdict
+from pickle import dumps, loads
+
 import pytest
 from phasesmith import CalculationOptions, ExecutionPolicy
 from phasesmith.execution import execution_pool
@@ -28,6 +31,13 @@ def test_execution_policy_bounds_workers_and_skips_small_task_sets() -> None:
     assert 1 <= policy.resolved_threads(3) <= 3
     with pytest.raises(ValueError, match="task_count"):
         policy.resolved_threads(-1)
+
+
+def test_execution_policy_keeps_native_runtime_out_of_dataclass_records() -> None:
+    policy = ExecutionPolicy(threads=1, minimum_parallel_tasks=3)
+    assert asdict(policy) == {"threads": 1, "minimum_parallel_tasks": 3}
+    assert policy == ExecutionPolicy(threads=1, minimum_parallel_tasks=3)
+    assert loads(dumps(policy)) == policy
 
 
 def test_execution_pool_uses_serial_sentinel_below_threshold() -> None:

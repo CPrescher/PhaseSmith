@@ -6,17 +6,25 @@ from collections.abc import Iterator
 from concurrent.futures import Executor, ThreadPoolExecutor
 from contextlib import contextmanager
 from dataclasses import dataclass
-from os import cpu_count
+
+from . import _core
+
+
+class _NativeExecutionPolicyOwner:
+    __slots__ = ("_native",)
+
+    _native: object
 
 
 @dataclass(frozen=True, slots=True)
-class ExecutionPolicy:
+class ExecutionPolicy(_NativeExecutionPolicyOwner):
     """Control CPU concurrency without changing numerical ordering.
 
     ``threads=2`` is the bounded default for normal scripts and applications.
     Embedders that already schedule work can select ``threads=1``; ``None`` uses
     the available logical CPU count. Work is parallelized only when at least
-    ``minimum_parallel_tasks`` independent tasks are available.
+    ``minimum_parallel_tasks`` independent tasks are available. Each policy
+    owns one native worker pool that prepared native operations reuse.
     """
 
     threads: int | None = 2
@@ -33,27 +41,33 @@ class ExecutionPolicy:
             or self.minimum_parallel_tasks <= 0
         ):
             raise ValueError("minimum_parallel_tasks must be a positive integer")
+        object.__setattr__(
+            self,
+            "_native",
+            _core._ExecutionPolicy(self.threads, self.minimum_parallel_tasks),
+        )
 
     def resolved_threads(self, task_count: int) -> int:
         """Return the bounded worker count for a known number of tasks."""
 
         return self.python_worker_count(task_count)
 
+    def __reduce__(self) -> tuple[object, tuple[int | None, int]]:
+        """Serialize only the stable public configuration, not native state."""
+
+        return type(self), (self.threads, self.minimum_parallel_tasks)
+
     def resolved_budget(self) -> int:
         """Return the total bounded logical-CPU budget for this operation."""
 
-        available = max(1, cpu_count() or 1)
-        requested = available if self.threads is None else self.threads
-        return max(1, min(requested, available))
+        return int(self._native.resolved_budget)
 
     def python_worker_count(self, task_count: int) -> int:
         """Return workers assigned to independent Python-visible tasks."""
 
         if isinstance(task_count, bool) or not isinstance(task_count, int) or task_count < 0:
             raise ValueError("task_count must be a non-negative integer")
-        if task_count < self.minimum_parallel_tasks:
-            return 1
-        return max(1, min(self.resolved_budget(), task_count))
+        return int(self._native.worker_count(task_count))
 
 
 @contextmanager

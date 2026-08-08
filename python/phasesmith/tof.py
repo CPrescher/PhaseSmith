@@ -111,7 +111,7 @@ def accumulate_tof(
         *instrument.as_tuple(),
         float(support_fwhm),
         float(tail_log),
-        selected_execution.resolved_budget(),
+        selected_execution._native,
     )
     return _build_accumulation_result(
         *arrays,

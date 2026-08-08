@@ -28,7 +28,7 @@ use phasesmith_engine::{
     PreparedStructuralPhase, StructuralPatternDenseResult, StructuralPatternJvpResult,
     StructuralPatternResult, StructuralPatternVjpResult, StructuralPhaseDefinition,
 };
-use phasesmith_execution::ExecutionContext;
+use phasesmith_execution::ExecutionPolicy as NativeExecutionPolicyModel;
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use pyo3::types::PyTuple;
@@ -112,6 +112,32 @@ type TofParameterArrays<'py> = (
     Bound<'py, PyArray1<f64>>,
     Bound<'py, PyArray1<f64>>,
 );
+
+/// Persistent native execution policy shared by prepared Python operations.
+#[pyclass(name = "_ExecutionPolicy", frozen)]
+struct NativeExecutionPolicy {
+    policy: NativeExecutionPolicyModel,
+}
+
+#[pymethods]
+impl NativeExecutionPolicy {
+    #[new]
+    fn new(threads: Option<usize>, minimum_parallel_tasks: usize) -> PyResult<Self> {
+        Ok(Self {
+            policy: NativeExecutionPolicyModel::new(threads, minimum_parallel_tasks)
+                .map_err(|error| PyValueError::new_err(error.to_string()))?,
+        })
+    }
+
+    #[getter]
+    fn resolved_budget(&self) -> usize {
+        self.policy.resolved_budget()
+    }
+
+    fn worker_count(&self, task_count: usize) -> usize {
+        self.policy.worker_count(task_count)
+    }
+}
 
 type CellGeometryArrays<'py> = (
     Bound<'py, PyArray2<f64>>,
@@ -721,7 +747,7 @@ impl NativeStructuralPhase {
         gamma_deg: f64,
         scale: f64,
         coordinate_tolerance: f64,
-        native_threads: usize,
+        execution: PyRef<'_, NativeExecutionPolicy>,
         scattering_model: &str,
         correction_model: &str,
         correction_wavelength_angstrom: Option<f64>,
@@ -739,8 +765,7 @@ impl NativeStructuralPhase {
         let scattering_imag_offset =
             contiguous_slice(&scattering_imag_offset, "scattering_imag_offset")?.to_vec();
         let scattering_model = parse_built_in_scattering_model(scattering_model)?;
-        let execution = ExecutionContext::new(native_threads)
-            .map_err(|error| PyValueError::new_err(error.to_string()))?;
+        let execution_context = execution.policy.context().clone();
         Ok(Self {
             phase: PreparedStructuralPhase::new(
                 StructuralPhaseDefinition {
@@ -767,7 +792,7 @@ impl NativeStructuralPhase {
                         correction_polarization,
                     )?,
                 },
-                execution,
+                execution_context,
             )
             .map_err(|error| PyValueError::new_err(error.to_string()))?,
         })
@@ -1872,7 +1897,7 @@ fn accumulate_tof<'py>(
     z_us: f64,
     support_fwhm: f64,
     tail_log: f64,
-    native_threads: usize,
+    execution: PyRef<'_, NativeExecutionPolicy>,
 ) -> PyResult<AccumulationArrays<'py>> {
     let x = contiguous_slice(&x_us, "x_us")?;
     let d_spacing = contiguous_slice(&d_spacing_angstrom, "d_spacing_angstrom")?;
@@ -1895,8 +1920,7 @@ fn accumulate_tof<'py>(
         y_us_per_angstrom2,
         z_us,
     );
-    let execution = ExecutionContext::new(native_threads)
-        .map_err(|error| PyValueError::new_err(error.to_string()))?;
+    let execution_context = execution.policy.context().clone();
     let accumulation = py
         .detach(|| {
             accumulate_tof_batch_with_context(
@@ -1906,7 +1930,7 @@ fn accumulate_tof<'py>(
                 instrument,
                 support_fwhm,
                 tail_log,
-                &execution,
+                &execution_context,
             )
         })
         .map_err(|error| PyValueError::new_err(error.to_string()))?;
@@ -2682,6 +2706,7 @@ fn neutron_scattering_species_metadata(key: &str) -> Option<NeutronMetadataRecor
 /// Native Python module.
 #[pymodule]
 fn _core(module: &Bound<'_, PyModule>) -> PyResult<()> {
+    module.add_class::<NativeExecutionPolicy>()?;
     module.add_class::<NativePreparedXrayScattering>()?;
     module.add_class::<NativePreparedNeutronScattering>()?;
     module.add_class::<NativePreparedReflectionGenerator>()?;

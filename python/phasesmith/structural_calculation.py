@@ -185,7 +185,7 @@ def _fallback_is_thread_safe(phase: RietveldPhase) -> bool:
     )
 
 
-def _native_phase(phase: RietveldPhase, native_threads: int) -> object | None:
+def _native_phase(phase: RietveldPhase, execution: ExecutionPolicy) -> object | None:
     configuration = _native_model_configuration(phase)
     if configuration is None or not _supports_fused_structural_physics(phase.physics):
         return None
@@ -219,7 +219,7 @@ def _native_phase(phase: RietveldPhase, native_threads: int) -> object | None:
         *phase.structure.cell.as_tuple(),
         float(phase.scale),
         float(phase.coordinate_tolerance),
-        native_threads,
+        execution._native,
         scattering_model,
         correction_model,
         correction_wavelength,
@@ -616,7 +616,7 @@ class PreparedStructuralPattern:
                 tuple(weight for _experiment, _phase, weight in component_inputs),
             )
             return
-        native = _native_phase(phase, selected_execution.resolved_budget())
+        native = _native_phase(phase, selected_execution)
         contribution = None
         if native is not None:
             geometry = _geometry(
