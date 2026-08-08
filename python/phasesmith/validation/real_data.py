@@ -461,10 +461,6 @@ def run_qarr_1g_validation(
             min_iterations=3,
             max_scaled_parameter_step=0.15,
             support_fwhm=30.0,
-            # Preserve the accepted local path until damping/acceptance hardening:
-            # cached and matrix-free products agree to 2e-15 relative, but this
-            # deliberately approximate model has a rounding-sensitive flat basin.
-            max_linearization_elements=0,
             estimate_covariance=False,
         ),
         cancellation=cancellation,
@@ -616,15 +612,18 @@ def run_qarr_1g_validation(
             f"Calculated crystalline weight fractions: {fraction_note}.",
             (
                 f"Stage 1 termination={first.termination_reason.value}, "
-                f"iterations={len(first.history)}, Rwp={first.metrics.rwp:.8f}."
+                f"iterations={len(first.history)}, evaluations={first.evaluations}, "
+                f"Rwp={first.metrics.rwp:.8f}."
             ),
             (
                 f"Stage 2 termination={second.termination_reason.value}, "
-                f"iterations={len(second.history)}, Rwp={second.metrics.rwp:.8f}."
+                f"iterations={len(second.history)}, evaluations={second.evaluations}, "
+                f"Rwp={second.metrics.rwp:.8f}."
             ),
             (
                 f"Stage 3 scale polish termination={result.termination_reason.value}, "
-                f"iterations={len(result.history)}, Poisson Rwp={result.metrics.rwp:.8f}, "
+                f"iterations={len(result.history)}, evaluations={result.evaluations}, "
+                f"Poisson Rwp={result.metrics.rwp:.8f}, "
                 f"unit-weight Rwp={unit_weight_rwp:.8f}, Rp={result.metrics.rp:.8f}."
             ),
             f"Expanded sites at tolerance 1e-4: {expanded_counts}.",

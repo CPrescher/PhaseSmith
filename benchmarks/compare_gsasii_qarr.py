@@ -296,7 +296,10 @@ def main() -> None:
                 "PhaseSmith uses fixed Smooth Bruckner background; "
                 "GSAS-II refines ten Chebyshev terms."
             ),
-            "PhaseSmith approximates anisotropic displacement by trace-mean Uiso.",
+            (
+                "PhaseSmith keeps preserved CIF anisotropic tensors fixed; "
+                "GSAS-II refines displacement parameters in its staged recipe."
+            ),
             (
                 "PhaseSmith uses the published continuous equal-height FCJ mapping; "
                 "GSAS-II uses its pinned discretized one-parameter SH/L implementation."

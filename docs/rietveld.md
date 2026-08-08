@@ -156,9 +156,12 @@ per accepted or trial state and reuse it for every optimizer JVP/VJP.
 The default memory ceiling is 10,000,000 floating-point elements.
 RietveldOptions.max_linearization_elements set to zero forces the matrix-free
 path; requests above the ceiling and third-party physics providers fall back
-automatically. QARR stage 2 currently selects that fallback explicitly because
-its approximate model has a rounding-sensitive flat local basin; its cached and
-matrix-free products agree to approximately 2e-15 relative.
+automatically. QARR stage 2 uses the bounded reusable linearization. After the
+fixed-anisotropic and adaptive-FCJ checkpoints, three repeated release runs
+produced exactly matching scientific records, reduced stage-2 evaluations from
+the 1,500 matrix-free budget to one linearization per accepted/trial state, and
+improved the final Rwp. The earlier validation-only matrix-free override is
+therefore removed rather than retained as an unmeasured compatibility path.
 
 The separately validated pinned GSAS-II structural benchmark remains the
 like-for-like speed comparison documented in `gsasii-performance.md`. The

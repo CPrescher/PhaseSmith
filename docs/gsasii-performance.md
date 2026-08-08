@@ -184,3 +184,30 @@ matched-kernel comparison: PhaseSmith evaluates the published continuous
 equal-height FCJ model while pinned GSAS-II uses its discretized one-parameter
 SH/L implementation. The result identifies FCJ convolution reuse and
 vectorization as a concrete performance requirement.
+
+After fixed CIF anisotropic tensors, convergence-tested adaptive FCJ
+quadrature, and removal of the obsolete QARR-only matrix-free override, the
+2026-08-08 warmed comparison returned PhaseSmith fractions 30.754%, 34.229%,
+and 35.018%, 19.826% Poisson Rwp, and 13.174% unit-weight Rwp. Pinned GSAS-II
+returned 31.479%, 33.652%, and 34.869%, 18.389% Poisson Rwp, and 13.733%
+unit-weight Rwp. PhaseSmith took 1.673 s and GSAS-II took 2.718 s, so the ratio
+`GSAS-II / PhaseSmith` was 1.624x. This is a complete native-workflow result,
+not a claim that the two programs optimize identical models or stopping rules.
+
+## Pinned FCJ strategy review
+
+The performance investigation inspected exact revision
+`c0bc79b259cdf0065480b5fbd57674ddf12c4a23` without importing any GSAS-II code
+into PhaseSmith. The pinned workflow narrows every reflection to a calculated
+support window, evaluates FCJ in a compiled numerical routine, selects among
+cached even-order Gauss--Legendre tables from an axial-span/width heuristic,
+and has a derivative routine that returns the profile and its position, width,
+and asymmetry derivatives together. Those are execution-strategy observations,
+not ported implementation details.
+
+PhaseSmith independently retains its published regular-height FCJ integral,
+two typed sample/detector ratios, `f64` arithmetic, and exact support union. It
+adopts only the general lesson that integration effort should track resolved
+aberration: the production 8/48-point rule is selected by axial span divided by
+the transformed TCH FWHM and accepted against an independent 256-point NumPy
+integral. This keeps the licensing boundary and the numerical model explicit.

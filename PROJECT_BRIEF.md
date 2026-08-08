@@ -202,9 +202,11 @@ optimizer JVP/VJP; plugins and requests above the configurable memory ceiling
 retain the matrix-free path. The 20,001-sample structural benchmark falls from
 148.7 to 38.3 milliseconds median while preserving the final Rwp to 2.6e-11
 absolute. QARR stage 2 temporarily requests the matrix-free fallback because
-its approximate model has a rounding-sensitive flat basin even though cached
-and matrix-free products agree to about 2e-15 relative; damping and acceptance
-hardening must resolve that path sensitivity before the override is removed.
+its then-approximate model had a rounding-sensitive flat basin even though
+cached and matrix-free products agreed to about 2e-15 relative. After fixed
+anisotropic displacement and adaptive FCJ removed those dominant model and
+execution changes, three repeated release runs gave identical scientific
+records with the cached path. The temporary override is removed.
 
 The structural FCJ checkpoint composes the independently implemented
 Finger--Cox--Jephcoat convolution with built-in and third-party vectorized
@@ -254,6 +256,16 @@ a 256-point NumPy integral bounds every value and direct derivative below
 3.4e-11 scaled error. The realistic 200-reflection FCJ benchmark improves from
 6.76 to 2.14 milliseconds, and the doublet case from 14.16 to 4.36
 milliseconds, before full-workflow optimizer changes.
+
+The reviewed cached-optimizer QARR checkpoint reduces stage 2 from the full
+1,500 matrix-free evaluation budget to 52 cached-state evaluations across 35
+accepted iterations. Three repeated release runs are scientifically identical.
+The final PhaseSmith result is Al2O3 30.754%, ZnO 34.229%, CaF2 35.018%,
+0.616 percentage points maximum QPA error, 19.826% Poisson Rwp, 13.174%
+unit-weight Rwp, and 0.99062 profile correlation. In a warmed same-run native
+workflow comparison, PhaseSmith takes 1.673 seconds and pinned GSAS-II takes
+2.718 seconds, a 1.624x PhaseSmith speed advantage for this explicitly
+non-matched parameterization benchmark.
 
 ## Design commitments
 
