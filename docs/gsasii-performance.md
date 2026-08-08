@@ -117,6 +117,7 @@ uv run python benchmarks/compare_gsasii_qarr.py --require-release \
   --gsas-python /path/to/gsas/python \
   --gsas-root /path/to/pinned/GSAS-II \
   --binary-dir /path/to/compatible/GSASII-bin/platform-directory \
+  --phasesmith-threads 2 \
   --data-directory validation/data/iucr-qarr-1g \
   --json-output gsasii-qarr-comparison.json
 ```
@@ -193,6 +194,17 @@ returned 31.479%, 33.652%, and 34.869%, 18.389% Poisson Rwp, and 13.733%
 unit-weight Rwp. PhaseSmith took 1.673 s and GSAS-II took 2.718 s, so the ratio
 `GSAS-II / PhaseSmith` was 1.624x. This is a complete native-workflow result,
 not a claim that the two programs optimize identical models or stopping rules.
+
+The subsequent deterministic multicore checkpoint adds a public bounded
+`ExecutionPolicy` and reuses special-position coordinate models across guarded
+trial states. On the same development host, warmed PhaseSmith-only medians over
+three measured runs are 1.245 s with one thread, 0.961 s with two, 0.965 s with
+three, and 0.966 s with automatic selection. All settings return the same
+scientific record and 19.826% Poisson Rwp. Relative to the preceding pinned
+GSAS-II median of 2.718 s, the two-thread PhaseSmith measurement is 2.83x
+faster; this last ratio combines two reviewed runs rather than claiming a new
+same-process comparison. Reproduce a fresh paired run with
+`benchmarks/compare_gsasii_qarr.py --phasesmith-threads 2`.
 
 ## Pinned FCJ strategy review
 

@@ -267,6 +267,22 @@ workflow comparison, PhaseSmith takes 1.673 seconds and pinned GSAS-II takes
 2.718 seconds, a 1.624x PhaseSmith speed advantage for this explicitly
 non-matched parameterization benchmark.
 
+The deterministic multicore checkpoint adds a public, persistence-safe
+`ExecutionPolicy` with a conservative one-thread embedding default and explicit
+fixed or automatic worker budgets. Multiphase values, dense linearizations,
+JVPs, and VJPs execute concurrently while results are always combined in phase
+input order. Guarded special-position coordinate models are reused across
+trial states instead of being reconstructed. The reviewed three-phase QARR
+release medians are 1.245 seconds on one thread and 0.961 seconds on two, a
+1.30x multicore gain with bitwise-identical scientific results. Three and
+automatic threads are flat near 0.965 seconds because phase costs are unequal.
+Against the preceding same-host pinned GSAS-II median of 2.718 seconds, the
+two-thread PhaseSmith result is 2.83x faster, while remaining an explicitly
+non-matched native-workflow comparison. Persistence format 9 stores the policy
+and loads formats 1--8. The complete gate passes 519 Python tests (one optional
+external-oracle case deselected), 70 Rust tests, Ruff, Rust formatting, and
+strict Clippy.
+
 ## Design commitments
 
 - Use GSAS-II only as a pinned validation oracle, never as the architecture.

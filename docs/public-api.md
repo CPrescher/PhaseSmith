@@ -60,6 +60,10 @@ phasesmith.calculation
   Stateless and prepared pattern calculators that compose instrument, phase,
   sample, and pattern inputs into native batch calls.
 
+phasesmith.execution
+  Immutable, bounded CPU execution policy. Serial execution is the embedding
+  default; fixed and automatic budgets enable deterministic phase concurrency.
+
 phasesmith.structural_calculation  [implemented]
   Stateless and prepared one-phase structural CW calculation. Built-in X-ray
   and neutron models expose fused values/JVP/VJP; custom providers retain a
@@ -154,6 +158,7 @@ phasesmith.intensity_corrections.IntegratedIntensityCorrection
 phasesmith.intensity_corrections.NeutralIntegratedIntensityCorrection
 phasesmith.intensity_corrections.BraggBrentanoUnpolarizedLp
 phasesmith.intensity_corrections.BraggBrentanoPolarizedLp
+phasesmith.execution.ExecutionPolicy
 phasesmith.refinement.lebail.LeBailPhase
 phasesmith.refinement.LatticeParameterization
 phasesmith.refinement.LatticeParameterBounds

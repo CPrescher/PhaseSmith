@@ -355,6 +355,24 @@ print(result.termination_reason, result.metrics.rwp)
 print(result.phases[0].structure.cell)
 ```
 
+Multiphase calculations and Rietveld refinement can use a bounded worker pool.
+The default is one thread so embedding applications retain control of CPU use;
+choose a fixed budget for predictable GUI/script behavior, or `None` to use the
+available logical CPUs:
+
+```python
+import phasesmith
+from phasesmith.refinement import rietveld
+
+options = rietveld.RietveldOptions(
+    execution=phasesmith.ExecutionPolicy(threads=2),
+)
+result = rietveld.refine(request, options)
+```
+
+Independent phases execute concurrently, while their values and analytical
+derivatives are combined in the original phase order.
+
 For long-running scripts and application integration, the small project facade
 keeps restart state, cooperative stop control, persistence, and plain reports
 together while leaving `RietveldInput` fully accessible:

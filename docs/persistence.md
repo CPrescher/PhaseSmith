@@ -30,7 +30,7 @@ persistence.save_bundle("analysis.rvp", bundle)
 restored = persistence.load_bundle("analysis.rvp")
 ```
 
-Format version 8 round-trips CW and TOF instruments, explicit monochromatic or
+Format version 9 round-trips CW and TOF instruments, explicit monochromatic or
 fixed-component experiment radiation, experiment-owned optional axial FCJ geometry,
 standalone FCJ geometry, wavelength components, phases/reflections,
 built-in physics providers, patterns, calculation inputs and results, typed
@@ -57,6 +57,8 @@ Version 8 adds optional axial geometry directly to constant-wavelength
 experiments while continuing to load formats 1--7. The standalone
 fcj_geometry bundle field remains available for lower-level calculation
 state and older application models.
+Version 9 adds the bounded Rietveld execution policy while continuing to load
+formats 1--8; older options receive the safe one-thread default.
 `restored.to_rietveld_input()` reconstructs the request for deterministic
 continuation without storing Python parser or optimizer objects. Formats 1--3
 remain loadable.
@@ -85,8 +87,9 @@ The format is intentionally independent of GSAS-II project files and GUI state.
 Future incompatible schema changes increment `FORMAT_VERSION` and require an
 explicit migration rather than silently guessing old units or fields.
 The machine-readable top-level contract is
-[`schemas/persistence-v8.schema.json`](../schemas/persistence-v8.schema.json).
+[`schemas/persistence-v9.schema.json`](../schemas/persistence-v9.schema.json).
 Previous formats remain documented by
+[`schemas/persistence-v8.schema.json`](../schemas/persistence-v8.schema.json),
 [`schemas/persistence-v7.schema.json`](../schemas/persistence-v7.schema.json),
 [`schemas/persistence-v6.schema.json`](../schemas/persistence-v6.schema.json),
 [`schemas/persistence-v5.schema.json`](../schemas/persistence-v5.schema.json),

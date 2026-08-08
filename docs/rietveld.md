@@ -137,6 +137,27 @@ treated as structurally differentiable. A future provider capability record
 will advertise the additional structural derivative chains required for
 refinement; until then unsupported configurations fail explicitly.
 
+## Execution policy
+
+`RietveldOptions.execution` is an immutable `ExecutionPolicy`. Its default,
+`threads=1`, is deliberately conservative for notebooks, GUI hosts, and larger
+applications that already schedule their own work. A positive integer selects
+a fixed CPU budget; `threads=None` selects the available logical CPU count.
+`minimum_parallel_tasks` defaults to two and avoids creating a pool for a
+single independent phase.
+
+The current parallel unit is one structural phase. A single reusable pool is
+owned by the complete `refine` call and is shared by calculation, dense
+linearization, JVP, and VJP operations. Native calls release the GIL.
+`Executor.map` returns phase products in input order, and PhaseSmith performs
+the final additions serially in that order. Consequently values, analytical
+derivatives, accepted history, and final metrics are bitwise identical between
+the tested one- and two-thread paths.
+
+Cancellation remains cooperative at safe evaluation boundaries. An in-flight
+native phase calculation completes before the pool closes; the refinement then
+returns its last accepted checkpoint. No worker mutates shared phase state.
+
 ## Reference optimizer benchmark
 
 `benchmarks/structural_refinement.py` is the realistic hot-loop benchmark for
@@ -162,6 +183,15 @@ produced exactly matching scientific records, reduced stage-2 evaluations from
 the 1,500 matrix-free budget to one linearization per accepted/trial state, and
 improved the final Rwp. The earlier validation-only matrix-free override is
 therefore removed rather than retained as an unmeasured compatibility path.
+
+For the three-phase QARR workload, reusing guarded coordinate models across
+trial states reduces the release median from 1.659 to 1.245 seconds on one
+thread. `ExecutionPolicy(threads=2)` reduces it further to 0.961 seconds, a
+1.30x multicore speedup. Three threads and automatic selection measure about
+0.965--0.966 seconds because the three phase costs are unequal. This evidence
+keeps two threads as the measured QARR choice and leaves within-phase Rust
+tiling as a future single-phase benchmark task rather than nesting another
+pool.
 
 The separately validated pinned GSAS-II structural benchmark remains the
 like-for-like speed comparison documented in `gsasii-performance.md`. The
