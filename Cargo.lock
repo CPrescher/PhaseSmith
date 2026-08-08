@@ -679,6 +679,9 @@ name = "phasesmith-workflows"
 version = "0.1.0"
 dependencies = [
  "criterion",
+ "nalgebra",
+ "phasesmith-core",
+ "phasesmith-execution",
  "phasesmith-model",
 ]
 

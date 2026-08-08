@@ -77,6 +77,14 @@ the same event, budget, typed-checkpoint, resume-counter, and cross-thread
 cancellation contracts without embedding CPython. The Python runtime remains
 the scripting implementation and differential oracle until solver delegation.
 
+The first native solver built on that shell is the fixed-reflection Le Bail
+workflow. It now performs complete non-negative intensity extraction,
+mask/uncertainty handling, residual histories, unresolved-column diagnostics,
+checkpoint/restart, cancellation, and display-series calculation without
+Python. Its iteration history and final intensities are differentially checked
+against the scripting workflow. Native analytical profile and bounded-lattice
+updates remain the next migration substeps before Python delegation.
+
 Unit 17 now includes the first full monochromatic CIF-backed Rietveld vertical
 slice. Typed profile/background/phase/lattice/site parameter families map
 through fixed/affine/multi-source linear

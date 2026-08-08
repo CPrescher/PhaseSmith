@@ -5,6 +5,7 @@
 
 mod backgrounds;
 mod constraints;
+mod lebail;
 mod parameters;
 mod residuals;
 mod runtime;
@@ -17,6 +18,13 @@ pub use backgrounds::{
 pub use constraints::{
     AffineConstraint, Constraint, ConstraintDerivativeMatrix, ConstraintError, ConstraintTransform,
     FixedConstraint, LinearConstraint, LinearTerm,
+};
+pub use lebail::{
+    CoincidentReflectionGroup, IntensityExtractionResult, LeBailCalculation, LeBailCheckpoint,
+    LeBailError, LeBailInput, LeBailIterationRecord, LeBailOptions, LeBailPhase, LeBailResult,
+    PhasePatternComponent, ReflectionIntensity, calculate_lebail_pattern,
+    extract_lebail_intensities, initialize_lebail_intensities, iterate_lebail_once, refine_lebail,
+    refine_lebail_with_runtime,
 };
 pub use parameters::{ParameterBounds, ParameterError, ParameterKey, ParameterSet, ParameterSpec};
 pub use residuals::{ResidualError, ResidualEvaluation, ResidualOptions, evaluate_residuals};

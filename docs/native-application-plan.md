@@ -219,3 +219,16 @@ tests cover every boundary, a real OS thread requests cancellation, and the
 normal stop sequence agrees with the existing Python runtime. This gives a
 future Tauri adapter a direct Rust cancellation/event/checkpoint contract;
 terminal key and signal handling remain optional Python/CLI presentation code.
+
+The fixed-reflection portion of native Le Bail is now implemented as the first
+substep of delivery step 14. It owns validated phase/reflection records,
+display-ready calculations, non-negative redistribution, residual history,
+rank diagnostics, typed checkpoints and one-iteration orchestration. It uses
+the native bounded runtime directly, including cross-thread cancellation,
+structured events and host checkpoint sinks. Mask, uncertainty, unobserved
+support, restart, worker determinism and every accepted history row agree with
+the current Python workflow. The committed release benchmark for eight
+iterations over 85 reflections and 3,001 samples has a current central estimate
+of 865.96 microseconds. Analytical profile/lattice parameter motion is the next
+Le Bail substep; until that lands, this native entry point deliberately accepts
+fixed reflection geometry only.

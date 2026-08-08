@@ -8,6 +8,9 @@ authors.workspace = true
 license.workspace = true
 
 [dependencies]
+nalgebra = "0.35"
+phasesmith-core = { path = "../phasesmith-core" }
+phasesmith-execution = { path = "../phasesmith-execution" }
 phasesmith-model = { path = "../phasesmith-model" }
 
 [dev-dependencies]
@@ -15,6 +18,10 @@ criterion = "0.7"
 
 [[bench]]
 name = "backgrounds"
+harness = false
+
+[[bench]]
+name = "lebail"
 harness = false
 
 [lints]
