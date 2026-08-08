@@ -92,18 +92,18 @@ def test_script_first_cif_lebail_input_builds_bounded_lattice_parameters() -> No
     assert request.parameters is not None
     assert tuple(spec.key.name for spec in request.parameters.specs) == ("a_angstrom",)
     assert phase.structure.source is not None
-    assert phase.structure.source.backend == "gemmi"
+    assert phase.structure.source.backend == "phasesmith-native"
     result = lebail.iterate_once(request)
     assert result.checkpoint.completed_iterations == 1
 
 
-def test_gemmi_adapter_extracts_plain_typed_values_and_uncertainties() -> None:
+def test_native_adapter_extracts_plain_typed_values_and_uncertainties() -> None:
     result = read_cif(P21_CIF)
     structure = result.structure
     assert result.selected_block == "demo"
     assert structure.name == "Authored monoclinic test"
     assert structure.source is not None
-    assert structure.source.backend == "gemmi"
+    assert structure.source.backend == "phasesmith-native"
     assert structure.space_group.crystal_system == "monoclinic"
     assert len(structure.space_group.operations) == 4
     assert structure.cell_standard_uncertainties[:3] == pytest.approx((0.005, 0.006, 0.007))
@@ -372,8 +372,18 @@ def test_backend_protocol_is_injectable_and_base_import_does_not_load_gemmi() ->
                 return None
         sys.meta_path.insert(0, BlockGemmi())
         import phasesmith
+        from phasesmith.io.cif import read_cif
         assert 'gemmi' not in sys.modules
         assert phasesmith.UnitCell(1, 1, 1, 90, 90, 90).a_angstrom == 1
+        result = read_cif('''data_test
+        _cell_length_a 1
+        _cell_length_b 1
+        _cell_length_c 1
+        _cell_angle_alpha 90
+        _cell_angle_beta 90
+        _cell_angle_gamma 90
+        ''')
+        assert result.structure.source.backend == 'phasesmith-native'
         """
     )
     completed = subprocess.run(
@@ -384,3 +394,29 @@ def test_backend_protocol_is_injectable_and_base_import_does_not_load_gemmi() ->
         env={"PYTHONPATH": str(Path(__file__).parents[1] / "python")},
     )
     assert completed.returncode == 0, completed.stderr
+
+
+@pytest.mark.parametrize(
+    "relative_path",
+    (
+        "iucr-qarr-1g/Al2O3.cif",
+        "iucr-qarr-1g/CaF2.cif",
+        "iucr-qarr-1g/ZnO.cif",
+        "gsasii-pbso4-cw/PbSO4-Wyckoff.cif",
+    ),
+)
+def test_native_cif_matches_optional_gemmi_oracle(relative_path: str) -> None:
+    pytest.importorskip("gemmi")
+    from phasesmith.io._gemmi import GemmiCifBackend
+
+    path = Path(__file__).parents[1] / "validation" / "data" / relative_path
+    native = read_cif(path).structure
+    oracle = read_cif(path, backend=GemmiCifBackend()).structure
+    assert native.cell.as_tuple() == pytest.approx(oracle.cell.as_tuple(), abs=1e-12)
+    assert native.space_group == oracle.space_group
+    assert len(native.sites) == len(oracle.sites)
+    for actual, expected in zip(native.sites, oracle.sites, strict=True):
+        assert actual.site_id == expected.site_id
+        assert actual.element_symbol == expected.element_symbol
+        assert actual.fractional_xyz == pytest.approx(expected.fractional_xyz, abs=1e-12)
+        assert actual.occupancy == pytest.approx(expected.occupancy, abs=1e-12)

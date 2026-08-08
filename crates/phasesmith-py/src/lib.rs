@@ -36,13 +36,18 @@ use phasesmith_engine::{
 };
 use phasesmith_execution::ExecutionPolicy as NativeExecutionPolicyModel;
 use phasesmith_io::{
-    PowderData as NativePowderData, PowderFormat as NativePowderFormat, PowderIoError,
-    PowderReadLimits as NativePowderReadLimits, parse_powder_text as parse_native_powder_text,
-    read_powder_file as read_native_powder_file,
+    CifDiagnosticSeverity, CifIoError, CifReadLimits as NativeCifReadLimits,
+    CifReadResult as NativeCifReadResult, DisplacementConvention, NATIVE_CIF_BACKEND,
+    NATIVE_CIF_BACKEND_VERSION, PowderData as NativePowderData, PowderFormat as NativePowderFormat,
+    PowderIoError, PowderReadLimits as NativePowderReadLimits,
+    SpaceGroupInfo as NativeSpaceGroupInfo, parse_cif_text as parse_native_cif_text,
+    parse_powder_text as parse_native_powder_text, read_powder_file as read_native_powder_file,
+    space_group_by_number as native_space_group_by_number,
+    space_group_by_symbol as native_space_group_by_symbol,
 };
-use pyo3::exceptions::PyValueError;
+use pyo3::exceptions::{PyNotImplementedError, PyValueError};
 use pyo3::prelude::*;
-use pyo3::types::{PyList, PyTuple};
+use pyo3::types::{PyDict, PyList, PyTuple};
 
 type ProfileArrays<'py> = (
     Bound<'py, PyArray1<f64>>,
@@ -3614,6 +3619,208 @@ fn neutron_scattering_species_metadata(key: &str) -> Option<NeutronMetadataRecor
     })
 }
 
+fn cif_error(error: CifIoError) -> PyErr {
+    match error {
+        CifIoError::Io(error) => error.into(),
+        CifIoError::Unsupported { .. } => PyNotImplementedError::new_err(error.to_string()),
+        error => PyValueError::new_err(error.to_string()),
+    }
+}
+
+fn symmetry_operations_to_python<'py>(
+    py: Python<'py>,
+    operations: &[SymmetryOperation],
+) -> PyResult<Bound<'py, PyList>> {
+    let records = PyList::empty(py);
+    for operation in operations {
+        let record = PyDict::new(py);
+        record.set_item("rotation", operation.rotation())?;
+        record.set_item(
+            "translation",
+            operation
+                .translation()
+                .map(|value| (value.numerator(), value.denominator())),
+        )?;
+        records.append(record)?;
+    }
+    Ok(records)
+}
+
+fn native_space_group_record(
+    py: Python<'_>,
+    info: NativeSpaceGroupInfo,
+) -> PyResult<Bound<'_, PyDict>> {
+    let record = PyDict::new(py);
+    record.set_item("number", info.number)?;
+    record.set_item("hm_symbol", info.hm_symbol)?;
+    record.set_item("hall_symbol", info.hall_symbol)?;
+    record.set_item("setting", info.setting)?;
+    record.set_item(
+        "operations",
+        symmetry_operations_to_python(py, info.space_group.operations())?,
+    )?;
+    Ok(record)
+}
+
+/// Resolve one conventional native space group by International number.
+#[pyfunction(name = "_space_group_by_number")]
+fn space_group_by_number_for_python(py: Python<'_>, number: i32) -> PyResult<Bound<'_, PyDict>> {
+    native_space_group_by_number(number)
+        .map_err(|error| PyValueError::new_err(error.to_string()))
+        .and_then(|info| native_space_group_record(py, info))
+}
+
+/// Resolve one conventional native space group by Hermann--Mauguin or Hall symbol.
+#[pyfunction(name = "_space_group_by_symbol")]
+fn space_group_by_symbol_for_python<'py>(
+    py: Python<'py>,
+    symbol: &str,
+) -> PyResult<Bound<'py, PyDict>> {
+    native_space_group_by_symbol(symbol)
+        .map_err(|error| PyValueError::new_err(error.to_string()))
+        .and_then(|info| native_space_group_record(py, info))
+}
+
+// The record mirrors `structure_to_record` so Python reconstruction uses the
+// same stable parser-independent boundary as JSON persistence.
+#[allow(clippy::too_many_lines)]
+fn native_cif_record(
+    py: Python<'_>,
+    result: NativeCifReadResult,
+) -> PyResult<(Bound<'_, PyDict>, String, Vec<String>)> {
+    let structure = &result.structure;
+    let record = PyDict::new(py);
+    record.set_item("format_version", 1)?;
+    record.set_item("structure_id", &structure.structure_id)?;
+    record.set_item("name", &structure.name)?;
+    record.set_item(
+        "cell",
+        [
+            structure.cell.a_angstrom,
+            structure.cell.b_angstrom,
+            structure.cell.c_angstrom,
+            structure.cell.alpha_deg,
+            structure.cell.beta_deg,
+            structure.cell.gamma_deg,
+        ],
+    )?;
+    record.set_item(
+        "cell_standard_uncertainties",
+        structure.cell_standard_uncertainties,
+    )?;
+    record.set_item(
+        "operations",
+        symmetry_operations_to_python(py, structure.space_group.operations())?,
+    )?;
+
+    let sites = PyList::empty(py);
+    for site in &structure.sites {
+        let site_record = PyDict::new(py);
+        site_record.set_item("site_id", &site.site_id)?;
+        site_record.set_item("source_label", &site.source_label)?;
+        site_record.set_item("type_symbol", &site.type_symbol)?;
+        site_record.set_item("element_symbol", &site.element_symbol)?;
+        site_record.set_item("fractional_xyz", site.fractional_xyz)?;
+        site_record.set_item("occupancy", site.occupancy)?;
+        site_record.set_item("u_iso_angstrom2", site.u_iso_angstrom2)?;
+        if let Some(anisotropic) = &site.anisotropic_displacement {
+            let anisotropic_record = PyDict::new(py);
+            anisotropic_record.set_item("u_cif_angstrom2", anisotropic.u_cif_angstrom2)?;
+            anisotropic_record.set_item(
+                "source_convention",
+                match anisotropic.source_convention {
+                    DisplacementConvention::CifU => "U_cif",
+                    DisplacementConvention::CifB => "B_cif",
+                },
+            )?;
+            anisotropic_record
+                .set_item("standard_uncertainty", anisotropic.standard_uncertainty)?;
+            site_record.set_item("anisotropic_displacement", anisotropic_record)?;
+        } else {
+            site_record.set_item("anisotropic_displacement", py.None())?;
+        }
+        site_record.set_item("charge", site.charge)?;
+        site_record.set_item("isotope", site.isotope)?;
+        site_record.set_item("disorder_group", &site.disorder_group)?;
+        site_record.set_item(
+            "fractional_xyz_standard_uncertainty",
+            site.fractional_xyz_standard_uncertainty,
+        )?;
+        site_record.set_item(
+            "occupancy_standard_uncertainty",
+            site.occupancy_standard_uncertainty,
+        )?;
+        site_record.set_item(
+            "u_iso_standard_uncertainty",
+            site.u_iso_standard_uncertainty,
+        )?;
+        sites.append(site_record)?;
+    }
+    record.set_item("sites", sites)?;
+
+    let source = PyDict::new(py);
+    source.set_item("format", &structure.source.format)?;
+    source.set_item("block_name", &structure.source.block_name)?;
+    source.set_item("backend", &structure.source.backend)?;
+    source.set_item("backend_version", &structure.source.backend_version)?;
+    source.set_item(
+        "source_name",
+        structure
+            .source
+            .source_path
+            .as_ref()
+            .map(|path| path.to_string_lossy().into_owned()),
+    )?;
+    record.set_item("source", source)?;
+
+    let diagnostics = PyList::empty(py);
+    for diagnostic in &structure.diagnostics {
+        let diagnostic_record = PyDict::new(py);
+        diagnostic_record.set_item(
+            "severity",
+            match diagnostic.severity {
+                CifDiagnosticSeverity::Warning => "warning",
+                CifDiagnosticSeverity::Error => "error",
+            },
+        )?;
+        diagnostic_record.set_item("code", &diagnostic.code)?;
+        diagnostic_record.set_item("message", &diagnostic.message)?;
+        diagnostic_record.set_item("tag", &diagnostic.tag)?;
+        diagnostic_record.set_item("row", diagnostic.row)?;
+        diagnostics.append(diagnostic_record)?;
+    }
+    record.set_item("diagnostics", diagnostics)?;
+    record.set_item("metadata", &structure.metadata)?;
+    Ok((record, result.selected_block, result.available_blocks))
+}
+
+/// Parse CIF text through the shared native adapter.
+#[pyfunction(name = "_parse_cif_text")]
+#[allow(clippy::too_many_arguments)]
+fn parse_cif_text_for_python(
+    py: Python<'_>,
+    text: String,
+    source_name: Option<String>,
+    block: Option<String>,
+    strict: bool,
+    max_bytes: usize,
+    max_blocks: usize,
+    max_loop_rows: usize,
+    max_atom_sites: usize,
+) -> PyResult<(Bound<'_, PyDict>, String, Vec<String>)> {
+    let limits = NativeCifReadLimits {
+        max_bytes,
+        max_blocks,
+        max_loop_rows,
+        max_atom_sites,
+    };
+    let mut result = py
+        .detach(move || parse_native_cif_text(&text, block.as_deref(), strict, limits))
+        .map_err(cif_error)?;
+    result.structure.source.source_path = source_name.map(Into::into);
+    native_cif_record(py, result)
+}
+
 fn parse_powder_format(value: &str) -> PyResult<NativePowderFormat> {
     match value {
         "auto" => Ok(NativePowderFormat::Auto),
@@ -3726,6 +3933,9 @@ fn _core(module: &Bound<'_, PyModule>) -> PyResult<()> {
         neutron_scattering_species_metadata,
         module
     )?)?;
+    module.add_function(wrap_pyfunction!(space_group_by_number_for_python, module)?)?;
+    module.add_function(wrap_pyfunction!(space_group_by_symbol_for_python, module)?)?;
+    module.add_function(wrap_pyfunction!(parse_cif_text_for_python, module)?)?;
     module.add_function(wrap_pyfunction!(parse_powder_text_for_python, module)?)?;
     module.add_function(wrap_pyfunction!(read_powder_file_for_python, module)?)?;
     module.add_function(wrap_pyfunction!(profile, module)?)?;
@@ -3782,5 +3992,7 @@ fn _core(module: &Bound<'_, PyModule>) -> PyResult<()> {
             "release"
         },
     )?;
+    module.add("NATIVE_CIF_BACKEND", NATIVE_CIF_BACKEND)?;
+    module.add("NATIVE_CIF_BACKEND_VERSION", NATIVE_CIF_BACKEND_VERSION)?;
     Ok(())
 }

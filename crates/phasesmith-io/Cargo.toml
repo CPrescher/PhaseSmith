@@ -8,6 +8,8 @@ authors.workspace = true
 license.workspace = true
 
 [dependencies]
+moyo = "=0.15.0"
+phasesmith-crystallography = { path = "../phasesmith-crystallography" }
 phasesmith-model = { path = "../phasesmith-model" }
 
 [lints]

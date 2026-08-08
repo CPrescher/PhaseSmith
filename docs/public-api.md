@@ -39,8 +39,9 @@ phasesmith.intensity_corrections  [implemented]
   integrated intensity corrections plus a batch-provider boundary.
 
 phasesmith.io.cif  [implemented]
-  Optional CIF parsing into crystallography models. Parser objects never enter
-  calculation, persistence, or refinement state.
+  Bounded native CIF parsing and pure-Rust space-group lookup into
+  crystallography models. Optional parser objects never enter calculation,
+  persistence, or refinement state.
 
 phasesmith.io.powder  [implemented]
   Size-limited two/three-column, unpacked GSAS FXYE, and packed constant-step

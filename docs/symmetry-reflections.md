@@ -3,9 +3,9 @@
 Status: implemented and internally validated in implementation unit 12.
 
 This layer is file-independent. It accepts exact operations supplied by callers
-or, later, by the optional CIF adapter. It does not contain a space-group name
-database and does not depend on GSAS-II, Gemmi, or Python crystallography
-objects.
+or by the native `phasesmith-io` CIF adapter. The crystallography crate itself
+does not contain a space-group name database and does not depend on GSAS-II,
+Gemmi, or Python crystallography objects.
 
 ## Operation convention
 

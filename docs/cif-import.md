@@ -1,22 +1,18 @@
-# Optional CIF import and CIF-backed Le Bail
+# Native CIF import and CIF-backed Le Bail
 
 Status: implemented and internally validated in implementation unit 13.
 
-CIF is an input format, not calculation state. The optional adapter returns
-immutable `CrystalStructure`, `UnitCell`, `SpaceGroup`, and `AtomSite` models.
-No Gemmi object is retained, serialized, passed to Rust, or required to reload
-an imported structure.
+CIF is an input format, not calculation state. The default pure-Rust adapter
+returns immutable `CrystalStructure`, `UnitCell`, `SpaceGroup`, and `AtomSite` models.
+It does not require CPython, Gemmi, or another native parser library. The same
+`phasesmith-io` implementation can be called by Python and a Rust-only desktop
+host.
 
 ## Installation and entry points
 
-Gemmi is optional:
-
-```bash
-pip install 'phasesmith[cif]'
-```
-
-The supported adapter range is `gemmi>=0.7.5,<0.8`. Importing `phasesmith` or
-using explicit cells/reflections does not import Gemmi.
+CIF import is part of the base package. The optional `phasesmith[cif]` extra
+installs `gemmi>=0.7.5,<0.8` only for callers that explicitly use the retained
+`GemmiCifBackend` or run differential validation.
 
 ```python
 from phasesmith.io.cif import read_cif
@@ -34,15 +30,18 @@ first block and returns a visible warning.
 
 ## Backend boundary
 
-`CifBackend` is a small explicit protocol. A backend receives text plus limits
-and returns `CifReadResult`; it may not leak parser objects. Callers can inject a
-backend directly for controlled environments. Default-backend loading is lazy
-and raises an actionable optional-dependency error when Gemmi is unavailable.
+`CifBackend` is a small explicit Python protocol. A backend receives text plus
+limits and returns `CifReadResult`; it may not leak parser objects. The default
+backend calls the bounded native CIF 1.1 tokenizer/import policy. Callers can
+still inject `GemmiCifBackend` for controlled comparison or unusual scripting
+environments.
 
-The current Gemmi adapter is used for CIF tokenization, loops, quoted strings,
-operation-string parsing, and space-group name/setting resolution. Native exact
-`SpaceGroup` construction revalidates every operation and owns closure,
-systematic absences, multiplicity, and reflection generation.
+The native adapter owns tokenization, blocks, loops, quoted and semicolon text,
+numeric uncertainties, operation-string parsing, and import policy. Conventional
+space-group lookup uses the pinned pure-Rust Moyo 0.15.0 Hall database with all
+530 settings. `SpaceGroup` construction independently revalidates exact integer/
+rational operations and owns closure, systematic absences, multiplicity, and
+reflection generation.
 
 ## Symmetry precedence
 
@@ -59,11 +58,10 @@ strict mode and a structured warning in permissive mode. The chosen source and
 original identifiers are retained as plain metadata.
 
 Scripts that do not start from a CIF can use `space_group_by_number(1..230)` or
-`space_group_by_symbol(...)`. These optional Gemmi-backed lookup functions
+`space_group_by_symbol(...)`. These native lookup functions
 return `SpaceGroupInfo` with the International number, Hermann--Mauguin and
 Hall symbols, setting qualifier, and an engine-owned `SpaceGroup` made from
-exact integer/rational operations. Gemmi is discarded after lookup and is not
-used for reflection generation or diffraction calculations.
+exact integer/rational operations.
 
 ## Numeric and atom-site conventions
 
@@ -106,7 +104,7 @@ warning without pretending the unsupported physics was interpreted.
 `structure_to_record()` returns a versioned JSON-compatible record containing
 cell values, exact rational operations, sites, displacement records,
 diagnostics, metadata, and provenance. `structure_from_record()` restores it
-without importing Gemmi. This is the persistence boundary future project
+without importing a CIF parser. This is the persistence boundary future project
 bundles will embed.
 
 ## CIF-to-Le Bail
@@ -148,9 +146,15 @@ number symmetry, non-standard settings through exact operations, Cartesian
 coordinates, disorder, duplicate definitions, anisotropic U/B input, resource
 limits, parser-free records, lazy imports, and cell-only CIF-to-Le Bail.
 
-The adapter follows the official IUCr core dictionary for data semantics and
-the public Gemmi CIF/small-structure documentation for parsing behavior. Gemmi
-does not supply numerical diffraction results.
+Rust-only integration tests also import pinned Al2O3, CaF2, ZnO, and PbSO4 CIFs.
+The Python validation suite compares their cells, exact operation sets, site
+identities, fractional coordinates, and occupancies against the optional Gemmi
+backend. A subprocess test blocks every Gemmi import and still performs the
+default CIF import.
+
+The adapter follows the official IUCr core dictionary for data semantics.
+Gemmi remains an independent parsing oracle and does not supply numerical
+diffraction results.
 
 - IUCr core CIF dictionary: <https://www.iucr.org/resources/cif/dictionaries/cif_core>
 - Gemmi CIF documentation: <https://gemmi.readthedocs.io/en/stable/cif.html>

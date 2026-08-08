@@ -98,7 +98,7 @@ from .intensity_corrections import (
     NeutralIntegratedIntensityCorrection,
     evaluate_intensity_correction,
 )
-from .io.cif import CifBackend, CifReadLimits, CifReadResult, read_cif
+from .io.cif import CifBackend, CifReadLimits, CifReadResult, NativeCifBackend, read_cif
 from .io.powder import PowderData, PowderFormat, PowderReadLimits, read_powder_data
 from .io.space_groups import SpaceGroupInfo, space_group_by_number, space_group_by_symbol
 from .pattern import (
@@ -269,6 +269,7 @@ __all__ = [
     "MarchDollasePreferredOrientation",
     "MetricConstraints",
     "MonochromaticRadiation",
+    "NativeCifBackend",
     "NeutralIntegratedIntensityCorrection",
     "NeutronNuclear",
     "NeutronSpeciesMetadata",

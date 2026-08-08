@@ -1,4 +1,4 @@
-"""Backend-neutral, size-limited CIF import entry point."""
+"""Backend-neutral, size-limited CIF import through the native Rust core."""
 
 from __future__ import annotations
 
@@ -6,7 +6,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol, runtime_checkable
 
-from ..structure import CrystalStructure, StructureDiagnostic
+from .. import _core
+from ..structure import CrystalStructure, StructureDiagnostic, structure_from_record
 
 
 @dataclass(frozen=True, slots=True)
@@ -66,6 +67,42 @@ class CifBackend(Protocol):
         """Parse text and return only public typed models and diagnostics."""
 
 
+class NativeCifBackend:
+    """Default pure-Rust CIF and space-group adapter."""
+
+    name = _core.NATIVE_CIF_BACKEND
+    version = _core.NATIVE_CIF_BACKEND_VERSION
+
+    def parse_text(
+        self,
+        text: str,
+        *,
+        source_name: str | None,
+        block: str | None,
+        strict: bool,
+        limits: CifReadLimits,
+    ) -> CifReadResult:
+        """Parse bounded text and reconstruct the stable Python structure model."""
+
+        record, selected_block, available_blocks = _core._parse_cif_text(
+            text,
+            source_name,
+            block,
+            strict,
+            limits.max_bytes,
+            limits.max_blocks,
+            limits.max_loop_rows,
+            limits.max_atom_sites,
+        )
+        structure = structure_from_record(record)
+        return CifReadResult(
+            structure,
+            structure.diagnostics,
+            selected_block,
+            tuple(available_blocks),
+        )
+
+
 def read_cif(
     path_or_text: str | Path,
     *,
@@ -74,7 +111,7 @@ def read_cif(
     limits: CifReadLimits | None = None,
     backend: CifBackend | None = None,
 ) -> CifReadResult:
-    """Read CIF text or a local path through a lazily loaded optional backend.
+    """Read CIF text or a local path through the native or an injected backend.
 
     A ``Path`` is always treated as a path. A string containing a newline or
     beginning with ``data_`` is treated as CIF text; other strings are treated
@@ -132,10 +169,4 @@ def _read_path(path: Path, max_bytes: int) -> tuple[str, str]:
 
 
 def _load_default_backend() -> CifBackend:
-    try:
-        from ._gemmi import GemmiCifBackend
-    except ImportError as error:
-        raise ImportError(
-            "CIF import requires the optional 'cif' dependency: install phasesmith[cif]"
-        ) from error
-    return GemmiCifBackend()
+    return NativeCifBackend()

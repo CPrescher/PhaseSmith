@@ -161,5 +161,13 @@ Powder import completed its native portion on 2026-08-08. The standalone
 constant-step GSAS STD data into `PatternRecord` without Python. Its contract
 suite includes the pinned 49,494-sample APS sucrose file. The public Python
 reader delegates both file and text input to this crate while preserving its
-script-facing `PowderData` result. Native CIF import remains the outstanding
-part of the I/O milestone.
+script-facing `PowderData` result.
+
+Native CIF import and space-group lookup completed on 2026-08-08. The same
+crate now provides a bounded CIF 1.1 tokenizer/import policy and exact lookup
+over all 530 conventional Hall settings using pinned Moyo 0.15.0 data. Rust-only
+tests import four real small-structure CIFs, and Python delegates its default
+`read_cif()` and lookup functions through stable parser-independent records.
+The optional Gemmi backend remains injectable and is used as a differential
+oracle; default CIF import succeeds when Gemmi imports are blocked. This closes
+the native I/O portion of delivery step 11.

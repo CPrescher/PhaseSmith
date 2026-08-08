@@ -21,11 +21,25 @@ licenses and are not vendored.
   import xypattern or Dioptas and does not enter differentiable refinement
   JVP/VJP calculations.
 
+## Moyo
+
+- Purpose: compiled-in pure-Rust conventional space-group identifiers and
+  exact symmetry operations for all 530 Hall settings.
+- Pinned release: `moyo = 0.15.0`.
+- Upstream: <https://github.com/spglib/moyo>
+- Database lineage: the provider's Hall-symbol database follows spglib.
+- License: MIT OR Apache-2.0; PhaseSmith distributes it under the MIT option.
+- Runtime status: required native dependency of `phasesmith-io`; no Python or C
+  runtime is involved.
+- Boundary: imported operations are converted to PhaseSmith integer/rational
+  types and pass independent group-closure validation before use.
+
 ## Gemmi
 
-- Purpose: optional CIF syntax parsing and space-group name/setting resolution.
+- Purpose: optional alternative CIF parser and differential validation oracle.
 - Tested range: `gemmi>=0.7.5,<0.8`.
-- Runtime status: optional `cif` extra; not imported by the base package path.
+- Runtime status: optional `cif` extra; neither the base package nor default CIF
+  import loads it.
 - Upstream: <https://github.com/project-gemmi/gemmi>
 - Documentation: <https://gemmi.readthedocs.io/en/stable/>
 - License: Mozilla Public License 2.0, or LGPL v3 at the user's option, as
@@ -34,9 +48,9 @@ licenses and are not vendored.
 - Boundary: parser objects remain inside `phasesmith.io._gemmi`; public and
   persisted models contain only independently defined PhaseSmith types.
 
-Gemmi is not a source for diffraction equations, reflection intensities, or
-scattering tables. Exact symmetry validation and all numerical diffraction
-work remain native PhaseSmith implementations.
+Gemmi is not the default parser and is not a source for diffraction equations,
+reflection intensities, or scattering tables. Exact symmetry validation and
+all numerical diffraction work remain native PhaseSmith implementations.
 
 ## XrayDB Waasmaier--Kirfel data
 

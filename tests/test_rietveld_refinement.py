@@ -101,7 +101,7 @@ def test_cif_request_builds_guarded_structural_phase_and_typed_parameters() -> N
     domain = request.lattice_domains[0]
     assert domain is not None
     assert phase.structure.source is not None
-    assert phase.structure.source.backend == "gemmi"
+    assert phase.structure.source.backend == "phasesmith-native"
     assert phase.reflections.reflection_count > 0
     assert len(request.parameters.specs) == 1 + 6 + 2 * 3 + 2 + 2
     labels = tuple(spec.key.label for spec in request.parameters.specs)
