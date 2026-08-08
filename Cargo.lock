@@ -380,6 +380,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "phasesmith-io"
+version = "0.1.0"
+dependencies = [
+ "phasesmith-model",
+]
+
+[[package]]
 name = "phasesmith-model"
 version = "0.1.0"
 dependencies = [
@@ -395,6 +402,7 @@ dependencies = [
  "phasesmith-core",
  "phasesmith-engine",
  "phasesmith-execution",
+ "phasesmith-io",
  "pyo3",
 ]
 

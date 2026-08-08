@@ -70,6 +70,8 @@ BANK 1 3 1 CONST 1000 2.5 0 0 STD
         ("1 2\n2 3 4\n", "expected 2 columns"),
         ("BANK 1 2 2 CONS 1 1 0 0 ESD\n1 2 3\n", "packed constant-step"),
         ("BANK 1 1 1 TIME_MAP 1 1 0 0 STD\n 1    10\n", "constant-step"),
+        ("BANK 1 1 1 CONST 1 1 0 0 STD ESD\n     10\n", "packed constant-step"),
+        ("BANK 1 1 1 CONST 1 1 0 0 STD\nxx    10\n", "fixed-width"),
     ],
 )
 def test_rejects_invalid_powder_data(text: str, message: str) -> None:

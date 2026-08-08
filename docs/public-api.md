@@ -43,8 +43,9 @@ phasesmith.io.cif  [implemented]
   calculation, persistence, or refinement state.
 
 phasesmith.io.powder  [implemented]
-  Size-limited two/three-column and unpacked GSAS FXYE readers. Adapters return
-  immutable NumPy data plus source metadata and perform no refinement.
+  Size-limited two/three-column, unpacked GSAS FXYE, and packed constant-step
+  GSAS STD readers. The Python adapter returns immutable NumPy data plus source
+  metadata through the shared Rust parser and performs no refinement.
 
 phasesmith.pattern
   Observed grids, intensities, uncertainties, masks, backgrounds, and

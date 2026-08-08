@@ -1,0 +1,14 @@
+[package]
+name = "phasesmith-io"
+description = "Native file-format adapters for PhaseSmith"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+phasesmith-model = { path = "../phasesmith-model" }
+
+[lints]
+workspace = true

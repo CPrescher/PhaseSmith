@@ -35,6 +35,11 @@ use phasesmith_engine::{
     StructuralPhaseDefinition,
 };
 use phasesmith_execution::ExecutionPolicy as NativeExecutionPolicyModel;
+use phasesmith_io::{
+    PowderData as NativePowderData, PowderFormat as NativePowderFormat, PowderIoError,
+    PowderReadLimits as NativePowderReadLimits, parse_powder_text as parse_native_powder_text,
+    read_powder_file as read_native_powder_file,
+};
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use pyo3::types::{PyList, PyTuple};
@@ -76,6 +81,15 @@ type StructuralPatternJvpArrays<'py> = (
 
 type StructuralPatternVjpArrays<'py> = (StructuralPatternArrays<'py>, Bound<'py, PyArray1<f64>>);
 type StructuralPatternDenseArrays<'py> = (StructuralPatternArrays<'py>, Bound<'py, PyArray2<f64>>);
+
+type PowderDataArrays<'py> = (
+    Bound<'py, PyArray1<f64>>,
+    Bound<'py, PyArray1<f64>>,
+    Option<Bound<'py, PyArray1<f64>>>,
+    &'static str,
+    Option<String>,
+    Option<usize>,
+);
 
 type TchShapeValues = (f64, f64, f64, f64, f64, f64);
 
@@ -3600,6 +3614,95 @@ fn neutron_scattering_species_metadata(key: &str) -> Option<NeutronMetadataRecor
     })
 }
 
+fn parse_powder_format(value: &str) -> PyResult<NativePowderFormat> {
+    match value {
+        "auto" => Ok(NativePowderFormat::Auto),
+        "columns" => Ok(NativePowderFormat::Columns),
+        "gsas_fxye" => Ok(NativePowderFormat::GsasFxye),
+        "gsas_std" => Ok(NativePowderFormat::GsasStd),
+        _ => Err(PyValueError::new_err(
+            "format must be 'auto', 'columns', 'gsas_fxye', or 'gsas_std'",
+        )),
+    }
+}
+
+fn powder_error(error: PowderIoError) -> PyErr {
+    match error {
+        PowderIoError::Io(error) => error.into(),
+        error => PyValueError::new_err(error.to_string()),
+    }
+}
+
+fn powder_data_to_numpy(py: Python<'_>, data: NativePowderData) -> PyResult<PowderDataArrays<'_>> {
+    let format = match data.format {
+        NativePowderFormat::Columns => "columns",
+        NativePowderFormat::GsasFxye => "gsas_fxye",
+        NativePowderFormat::GsasStd => "gsas_std",
+        NativePowderFormat::Auto => {
+            return Err(PyValueError::new_err(
+                "native powder reader returned unresolved auto format",
+            ));
+        }
+    };
+    let observed_y = data
+        .pattern
+        .observed_y
+        .ok_or_else(|| PyValueError::new_err("native powder reader returned no observations"))?;
+    Ok((
+        data.pattern.x_deg.into_pyarray(py),
+        observed_y.into_pyarray(py),
+        data.pattern
+            .uncertainty
+            .map(|values| values.into_pyarray(py)),
+        format,
+        data.source_path
+            .map(|path| path.to_string_lossy().into_owned()),
+        data.bank,
+    ))
+}
+
+/// Parse powder text through the shared native adapter.
+#[pyfunction(name = "_parse_powder_text")]
+fn parse_powder_text_for_python<'py>(
+    py: Python<'py>,
+    text: String,
+    format: &str,
+    bank: usize,
+    max_bytes: usize,
+    max_rows: usize,
+) -> PyResult<PowderDataArrays<'py>> {
+    let format = parse_powder_format(format)?;
+    let limits = NativePowderReadLimits {
+        max_bytes,
+        max_rows,
+    };
+    let data = py
+        .detach(move || parse_native_powder_text(&text, format, bank, limits))
+        .map_err(powder_error)?;
+    powder_data_to_numpy(py, data)
+}
+
+/// Read a powder file through the shared native adapter.
+#[pyfunction(name = "_read_powder_file")]
+fn read_powder_file_for_python<'py>(
+    py: Python<'py>,
+    path: String,
+    format: &str,
+    bank: usize,
+    max_bytes: usize,
+    max_rows: usize,
+) -> PyResult<PowderDataArrays<'py>> {
+    let format = parse_powder_format(format)?;
+    let limits = NativePowderReadLimits {
+        max_bytes,
+        max_rows,
+    };
+    let data = py
+        .detach(move || read_native_powder_file(path, format, bank, limits))
+        .map_err(powder_error)?;
+    powder_data_to_numpy(py, data)
+}
+
 /// Native Python module.
 #[pymodule]
 fn _core(module: &Bound<'_, PyModule>) -> PyResult<()> {
@@ -3623,6 +3726,8 @@ fn _core(module: &Bound<'_, PyModule>) -> PyResult<()> {
         neutron_scattering_species_metadata,
         module
     )?)?;
+    module.add_function(wrap_pyfunction!(parse_powder_text_for_python, module)?)?;
+    module.add_function(wrap_pyfunction!(read_powder_file_for_python, module)?)?;
     module.add_function(wrap_pyfunction!(profile, module)?)?;
     module.add_function(wrap_pyfunction!(tch_shape_from_fwhm, module)?)?;
     module.add_function(wrap_pyfunction!(profile_tch, module)?)?;

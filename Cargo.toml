@@ -4,6 +4,7 @@ members = [
   "crates/phasesmith-crystallography",
   "crates/phasesmith-execution",
   "crates/phasesmith-engine",
+  "crates/phasesmith-io",
   "crates/phasesmith-model",
   "crates/phasesmith-py",
 ]

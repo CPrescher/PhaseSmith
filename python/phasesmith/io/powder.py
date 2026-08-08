@@ -9,6 +9,7 @@ from typing import Literal
 import numpy as np
 from numpy.typing import NDArray
 
+from .. import _core
 from ..pattern import PowderPattern
 
 PowderFormat = Literal["auto", "columns", "gsas_fxye", "gsas_std"]
@@ -97,207 +98,26 @@ def read_powder_data(
         raise ValueError("format must be 'auto', 'columns', 'gsas_fxye', or 'gsas_std'")
     if isinstance(bank, bool) or not isinstance(bank, int) or bank <= 0:
         raise ValueError("bank must be a positive integer")
-    text, source_name = _read_source(path_or_text, selected_limits.max_bytes)
-    selected_format = _detect_format(text, source_name) if format == "auto" else format
-    if selected_format == "columns":
-        return _read_columns(text, source_name, selected_limits.max_rows)
-    if selected_format == "gsas_fxye":
-        return _read_gsas_fxye(text, source_name, bank, selected_limits.max_rows)
-    return _read_gsas_std(text, source_name, bank, selected_limits.max_rows)
-
-
-def _read_source(path_or_text: str | Path, max_bytes: int) -> tuple[str, str | None]:
+    native_arguments = (
+        format,
+        bank,
+        selected_limits.max_bytes,
+        selected_limits.max_rows,
+    )
     if isinstance(path_or_text, Path):
-        return _read_path(path_or_text, max_bytes)
+        arrays = _core._read_powder_file(str(path_or_text), *native_arguments)
+        return PowderData(*arrays)
     if not isinstance(path_or_text, str):
         raise TypeError("path_or_text must be a string or pathlib.Path")
     if "\n" in path_or_text or "\r" in path_or_text:
-        return _validate_text_size(path_or_text, max_bytes), None
+        arrays = _core._parse_powder_text(path_or_text, *native_arguments)
+        return PowderData(*arrays)
     candidate = Path(path_or_text)
     try:
         if candidate.exists():
-            return _read_path(candidate, max_bytes)
+            arrays = _core._read_powder_file(str(candidate), *native_arguments)
+            return PowderData(*arrays)
     except OSError:
         pass
-    return _validate_text_size(path_or_text, max_bytes), None
-
-
-def _read_path(path: Path, max_bytes: int) -> tuple[str, str]:
-    size = path.stat().st_size
-    if size > max_bytes:
-        raise ValueError(f"powder file exceeds max_bytes: {size} > {max_bytes}")
-    return path.read_text(encoding="utf-8"), str(path)
-
-
-def _validate_text_size(text: str, max_bytes: int) -> str:
-    if len(text.encode("utf-8")) > max_bytes:
-        raise ValueError("powder text exceeds max_bytes")
-    return text
-
-
-def _detect_format(
-    text: str, source_name: str | None
-) -> Literal["columns", "gsas_fxye", "gsas_std"]:
-    bank_headers = [
-        line.strip().upper()
-        for line in text.splitlines()
-        if line.lstrip().upper().startswith("BANK ")
-    ]
-    if any(header.split()[-1] == "FXYE" for header in bank_headers):
-        return "gsas_fxye"
-    if bank_headers:
-        return "gsas_std"
-    if source_name is not None and Path(source_name).suffix.lower() == ".fxye":
-        return "gsas_fxye"
-    return "columns"
-
-
-def _numeric_rows(text: str, *, expected_columns: int | None, max_rows: int) -> list[list[float]]:
-    rows: list[list[float]] = []
-    for line_number, raw_line in enumerate(text.splitlines(), start=1):
-        line = raw_line.strip()
-        if not line or line.startswith(("#", "!", ";")):
-            continue
-        for marker in ("#", "!"):
-            line = line.split(marker, maxsplit=1)[0].strip()
-        if not line:
-            continue
-        fields = line.replace(",", " ").split()
-        if expected_columns is None:
-            expected_columns = len(fields)
-            if expected_columns not in {2, 3}:
-                raise ValueError(f"line {line_number}: expected two or three columns")
-        if len(fields) != expected_columns:
-            raise ValueError(
-                f"line {line_number}: expected {expected_columns} columns, got {len(fields)}"
-            )
-        try:
-            rows.append([float(field) for field in fields])
-        except ValueError as error:
-            raise ValueError(f"line {line_number}: non-numeric powder value") from error
-        if len(rows) > max_rows:
-            raise ValueError(f"powder data exceeds max_rows: {max_rows}")
-    if not rows:
-        raise ValueError("powder data contains no numeric rows")
-    return rows
-
-
-def _read_columns(text: str, source_name: str | None, max_rows: int) -> PowderData:
-    rows = _numeric_rows(text, expected_columns=None, max_rows=max_rows)
-    data = np.asarray(rows, dtype=np.float64)
-    uncertainty = None if data.shape[1] == 2 else np.array(data[:, 2], copy=True)
-    return PowderData(
-        x=np.array(data[:, 0], copy=True),
-        observed_y=np.array(data[:, 1], copy=True),
-        uncertainty=uncertainty,
-        format="columns",
-        source_name=source_name,
-    )
-
-
-def _read_gsas_fxye(
-    text: str, source_name: str | None, selected_bank: int, max_rows: int
-) -> PowderData:
-    bank_lines: dict[int, list[str]] = {}
-    active_bank: int | None = None
-    for line_number, raw_line in enumerate(text.splitlines(), start=1):
-        line = raw_line.strip()
-        if line.upper().startswith("BANK "):
-            fields = line.split()
-            try:
-                active_bank = int(fields[1])
-            except (IndexError, ValueError) as error:
-                raise ValueError(f"line {line_number}: invalid GSAS bank header") from error
-            if fields[-1].upper() != "FXYE":
-                raise ValueError(f"line {line_number}: only unpacked GSAS FXYE banks are supported")
-            if active_bank in bank_lines:
-                raise ValueError(f"line {line_number}: duplicate GSAS bank {active_bank}")
-            bank_lines[active_bank] = []
-        elif active_bank is not None:
-            bank_lines[active_bank].append(raw_line)
-    if selected_bank not in bank_lines:
-        available = ", ".join(str(value) for value in sorted(bank_lines)) or "none"
-        raise ValueError(f"GSAS bank {selected_bank} not found; available banks: {available}")
-    rows = _numeric_rows(
-        "\n".join(bank_lines[selected_bank]), expected_columns=3, max_rows=max_rows
-    )
-    data = np.asarray(rows, dtype=np.float64)
-    return PowderData(
-        x=np.array(data[:, 0] / 100.0, copy=True),
-        observed_y=np.array(data[:, 1], copy=True),
-        uncertainty=np.array(data[:, 2], copy=True),
-        format="gsas_fxye",
-        source_name=source_name,
-        bank=selected_bank,
-    )
-
-
-def _read_gsas_std(
-    text: str, source_name: str | None, selected_bank: int, max_rows: int
-) -> PowderData:
-    bank_headers: dict[int, tuple[list[str], list[str]]] = {}
-    active_bank: int | None = None
-    for line_number, raw_line in enumerate(text.splitlines(), start=1):
-        line = raw_line.strip()
-        if line.upper().startswith("BANK "):
-            fields = line.split()
-            try:
-                active_bank = int(fields[1])
-            except (IndexError, ValueError) as error:
-                raise ValueError(f"line {line_number}: invalid GSAS bank header") from error
-            if active_bank in bank_headers:
-                raise ValueError(f"line {line_number}: duplicate GSAS bank {active_bank}")
-            bank_headers[active_bank] = (fields, [])
-        elif active_bank is not None:
-            bank_headers[active_bank][1].append(raw_line)
-    if selected_bank not in bank_headers:
-        available = ", ".join(str(value) for value in sorted(bank_headers)) or "none"
-        raise ValueError(f"GSAS bank {selected_bank} not found; available banks: {available}")
-
-    fields, lines = bank_headers[selected_bank]
-    encoding = fields[-1].upper() if len(fields) >= 10 else "STD"
-    if len(fields) < 7 or fields[4].upper() != "CONST" or encoding != "STD":
-        raise ValueError("only packed constant-step GSAS STD banks are supported")
-    try:
-        row_count = int(fields[2])
-        start_deg = float(fields[5]) / 100.0
-        step_deg = float(fields[6]) / 100.0
-    except ValueError as error:
-        raise ValueError("invalid packed GSAS STD bank dimensions") from error
-    if row_count <= 0 or row_count > max_rows or not np.isfinite((start_deg, step_deg)).all():
-        raise ValueError("packed GSAS STD bank dimensions exceed limits or are non-finite")
-    if step_deg <= 0.0:
-        raise ValueError("packed GSAS STD step must be positive")
-
-    intensities: list[float] = []
-    variances: list[float] = []
-    for line_number, raw_line in enumerate(lines, start=1):
-        for offset in range(0, len(raw_line), 8):
-            record = raw_line[offset : offset + 8]
-            if not record.strip():
-                continue
-            try:
-                normalization = max(int(record[:2].strip() or "1"), 1)
-                intensity = max(float(record[2:].strip()), 0.0)
-            except ValueError as error:
-                raise ValueError(
-                    f"packed GSAS STD data line {line_number}: invalid fixed-width record"
-                ) from error
-            intensities.append(intensity)
-            variances.append(intensity / normalization if intensity > 0.0 else 1.0)
-            if len(intensities) == row_count:
-                break
-        if len(intensities) == row_count:
-            break
-    if len(intensities) != row_count:
-        raise ValueError(
-            f"packed GSAS STD bank contains {len(intensities)} records; expected {row_count}"
-        )
-    return PowderData(
-        x=start_deg + step_deg * np.arange(row_count, dtype=np.float64),
-        observed_y=np.asarray(intensities, dtype=np.float64),
-        uncertainty=np.sqrt(np.asarray(variances, dtype=np.float64)),
-        format="gsas_std",
-        source_name=source_name,
-        bank=selected_bank,
-    )
+    arrays = _core._parse_powder_text(path_or_text, *native_arguments)
+    return PowderData(*arrays)

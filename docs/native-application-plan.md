@@ -154,6 +154,12 @@ native boundary, and verifies bitwise one-/two-thread agreement. The public
 Python structural values and derivative products now call that same native
 multiphase workflow, while custom providers retain the Python fallback. The
 pinned QARR regression passed with an identical scientific fingerprint across
-worker counts and no measured two-thread performance regression. Native file
-import remains part of the later I/O milestone rather than being simulated in
-the engine crate.
+worker counts and no measured two-thread performance regression.
+
+Powder import completed its native portion on 2026-08-08. The standalone
+`phasesmith-io` crate now reads bounded plain-column, GSAS FXYE, and packed
+constant-step GSAS STD data into `PatternRecord` without Python. Its contract
+suite includes the pinned 49,494-sample APS sucrose file. The public Python
+reader delegates both file and text input to this crate while preserving its
+script-facing `PowderData` result. Native CIF import remains the outstanding
+part of the I/O milestone.
