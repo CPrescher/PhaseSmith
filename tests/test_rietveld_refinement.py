@@ -673,6 +673,37 @@ def test_distinct_multiphase_scales_recover_independently() -> None:
     assert result.jacobian_rank == 2
 
 
+def test_refinement_reuses_guarded_coordinate_models_across_trial_states(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    truth = request_from_cif(selection(phase_scale=True))
+    starting_phase = replace(truth.phases[0], scale=0.45)
+    request = replace(
+        truth,
+        phases=(starting_phase,),
+        parameters=structural_refinement.build_parameter_set(
+            (starting_phase,),
+            (None,),
+            truth.selection,
+        ),
+    )
+    original = structural_refinement._site_coordinate_model
+    calls = 0
+
+    def counted(*args, **kwargs):
+        nonlocal calls
+        calls += 1
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(structural_refinement, "_site_coordinate_model", counted)
+    result = structural_refinement.refine(
+        request,
+        structural_refinement.RietveldOptions(estimate_covariance=False),
+    )
+    assert result.history
+    assert calls == len(starting_phase.structure.sites)
+
+
 def test_parallel_multiphase_refinement_matches_serial_history_and_derivatives() -> None:
     single = request_from_cif(selection(phase_scale=True))
     first = replace(single.phases[0], phase_id="alpha", scale=0.7)

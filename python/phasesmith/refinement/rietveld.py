@@ -1102,6 +1102,7 @@ class _RietveldLinearization:
         options: RietveldOptions,
         runtime: RefinementRuntime,
         executor: Executor | None = None,
+        coordinate_models: tuple[dict[str, SiteCoordinateModel], ...] | None = None,
     ) -> _RietveldLinearization:
         transform = ConstraintTransform(parameters, input_data.constraints)
         row_for_key = {spec.key: row for row, spec in enumerate(parameters.specs)}
@@ -1163,18 +1164,21 @@ class _RietveldLinearization:
                 if key in row_for_key:
                     background_mapping[:, row_for_key[key]] = basis[:, index]
         background_mapping.flags.writeable = False
-        coordinate_models = tuple(
-            {
-                site.site_id: _site_coordinate_model(
-                    phase.phase_id,
-                    phase.structure,
-                    site,
-                    phase.coordinate_tolerance,
-                )
-                for site in phase.structure.sites
-            }
-            for phase in phases
-        )
+        if coordinate_models is None:
+            coordinate_models = tuple(
+                {
+                    site.site_id: _site_coordinate_model(
+                        phase.phase_id,
+                        phase.structure,
+                        site,
+                        phase.coordinate_tolerance,
+                    )
+                    for site in phase.structure.sites
+                }
+                for phase in phases
+            )
+        elif len(coordinate_models) != len(phases):
+            raise ValueError("coordinate models must match the phase count")
         physical_to_free = transform.derivative_matrix()
         native_mappings = tuple(
             _phase_native_mapping(phase, domain, parameters, models)
@@ -1822,6 +1826,7 @@ def _refine_with_executor(
                             selected,
                             runtime,
                             executor,
+                            linearization.coordinate_models,
                         )
                         trial_calculation = trial_linearization.calculate()
                         trial_metrics = _metrics(
