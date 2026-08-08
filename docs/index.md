@@ -12,7 +12,9 @@
    intensities and optionally refine profile or lattice parameters.
 5. [Rietveld refinement](rietveld.md) — run the matrix-free structural workflow
    with checkpoints and reports.
-6. [Persistence](persistence.md) — save and restore JSON+NPZ project state.
+6. [Persistence](persistence.md) — save and restore Python workflow state.
+7. [Native project persistence](native-persistence.md) — use the Rust-only,
+   multi-histogram JSON+NPZ project and reporting boundary.
 
 For shared refinement controls, cancellation, logs, and safe checkpoints, see
 [refinement](refinement.md) and [refinement runtime](refinement-runtime.md).

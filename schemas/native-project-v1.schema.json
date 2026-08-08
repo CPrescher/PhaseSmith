@@ -1,0 +1,257 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://phasesmith.dev/schemas/native-project-v1.schema.json",
+  "title": "PhaseSmith native project manifest version 1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format_version", "archive", "arrays", "project"],
+  "properties": {
+    "format_version": { "const": 1 },
+    "archive": { "$ref": "#/$defs/archive" },
+    "arrays": {
+      "type": "object",
+      "propertyNames": { "minLength": 1 },
+      "additionalProperties": { "$ref": "#/$defs/arrayDescriptor" }
+    },
+    "project": { "$ref": "#/$defs/project" }
+  },
+  "$defs": {
+    "finiteNumber": { "type": "number" },
+    "nonEmptyString": { "type": "string", "minLength": 1 },
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "archive": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["file", "sha256"],
+      "properties": {
+        "file": { "const": "arrays.npz" },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "arrayDescriptor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["dtype", "shape", "sha256"],
+      "properties": {
+        "dtype": { "enum": ["float64", "int32", "uint64", "bool"] },
+        "shape": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 0 }
+        },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "arrayReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["array"],
+      "properties": { "array": { "$ref": "#/$defs/nonEmptyString" } }
+    },
+    "project": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["project_id", "revision", "name", "histograms", "phases", "metadata"],
+      "properties": {
+        "project_id": { "$ref": "#/$defs/nonEmptyString" },
+        "revision": { "type": "integer", "minimum": 0 },
+        "name": { "type": "string" },
+        "histograms": { "type": "array", "items": { "$ref": "#/$defs/histogram" } },
+        "phases": { "type": "array", "items": { "$ref": "#/$defs/phase" } },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        }
+      }
+    },
+    "histogram": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["histogram_id", "name", "pattern", "experiment", "phase_ids"],
+      "properties": {
+        "histogram_id": { "$ref": "#/$defs/nonEmptyString" },
+        "name": { "type": "string" },
+        "pattern": { "$ref": "#/$defs/pattern" },
+        "experiment": { "$ref": "#/$defs/experiment" },
+        "phase_ids": { "type": "array", "items": { "$ref": "#/$defs/nonEmptyString" } }
+      }
+    },
+    "pattern": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["x_deg", "observed_y", "uncertainty", "mask", "background_y"],
+      "properties": {
+        "x_deg": { "$ref": "#/$defs/arrayReference" },
+        "observed_y": { "oneOf": [{ "$ref": "#/$defs/arrayReference" }, { "type": "null" }] },
+        "uncertainty": { "oneOf": [{ "$ref": "#/$defs/arrayReference" }, { "type": "null" }] },
+        "mask": { "oneOf": [{ "$ref": "#/$defs/arrayReference" }, { "type": "null" }] },
+        "background_y": { "$ref": "#/$defs/arrayReference" }
+      }
+    },
+    "experiment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["instrument", "radiation", "axial_geometry", "position_correction"],
+      "properties": {
+        "instrument": { "$ref": "#/$defs/instrument" },
+        "radiation": { "$ref": "#/$defs/radiation" },
+        "axial_geometry": { "oneOf": [{ "$ref": "#/$defs/axialGeometry" }, { "type": "null" }] },
+        "position_correction": { "$ref": "#/$defs/positionCorrection" }
+      }
+    },
+    "instrument": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["wavelength_angstrom", "u_deg2", "v_deg2", "w_deg2", "x_deg", "y_deg"],
+      "properties": {
+        "wavelength_angstrom": { "$ref": "#/$defs/finiteNumber" },
+        "u_deg2": { "$ref": "#/$defs/finiteNumber" },
+        "v_deg2": { "$ref": "#/$defs/finiteNumber" },
+        "w_deg2": { "$ref": "#/$defs/finiteNumber" },
+        "x_deg": { "$ref": "#/$defs/finiteNumber" },
+        "y_deg": { "$ref": "#/$defs/finiteNumber" }
+      }
+    },
+    "radiation": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "probe", "wavelength_angstrom"],
+          "properties": {
+            "type": { "const": "monochromatic" },
+            "probe": { "$ref": "#/$defs/probe" },
+            "wavelength_angstrom": { "$ref": "#/$defs/finiteNumber" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "probe", "wavelengths_angstrom", "relative_intensities"],
+          "properties": {
+            "type": { "const": "fixed_spectrum" },
+            "probe": { "$ref": "#/$defs/probe" },
+            "wavelengths_angstrom": { "type": "array", "items": { "$ref": "#/$defs/finiteNumber" } },
+            "relative_intensities": { "type": "array", "items": { "$ref": "#/$defs/finiteNumber" } }
+          }
+        }
+      ]
+    },
+    "probe": { "enum": ["xray", "neutron"] },
+    "axialGeometry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sample_over_radius", "detector_over_radius"],
+      "properties": {
+        "sample_over_radius": { "$ref": "#/$defs/finiteNumber" },
+        "detector_over_radius": { "$ref": "#/$defs/finiteNumber" }
+      }
+    },
+    "positionCorrection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["zero_shift_deg", "bragg_brentano_mm", "debye_scherrer_micrometre"],
+      "properties": {
+        "zero_shift_deg": { "$ref": "#/$defs/finiteNumber" },
+        "bragg_brentano_mm": { "$ref": "#/$defs/optionalPair" },
+        "debye_scherrer_micrometre": {
+          "oneOf": [
+            { "type": "array", "prefixItems": [{ "$ref": "#/$defs/finiteNumber" }, { "$ref": "#/$defs/finiteNumber" }, { "$ref": "#/$defs/finiteNumber" }], "items": false },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "optionalPair": {
+      "oneOf": [
+        { "type": "array", "prefixItems": [{ "$ref": "#/$defs/finiteNumber" }, { "$ref": "#/$defs/finiteNumber" }], "items": false },
+        { "type": "null" }
+      ]
+    },
+    "phase": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["phase_id", "name", "definition", "required_providers"],
+      "properties": {
+        "phase_id": { "$ref": "#/$defs/nonEmptyString" },
+        "name": { "type": "string" },
+        "definition": { "$ref": "#/$defs/structuralDefinition" },
+        "required_providers": { "type": "array", "items": { "$ref": "#/$defs/providerRequirement" } }
+      }
+    },
+    "providerRequirement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["provider_id", "provider_version"],
+      "properties": {
+        "provider_id": { "$ref": "#/$defs/nonEmptyString" },
+        "provider_version": { "$ref": "#/$defs/nonEmptyString" }
+      }
+    },
+    "structuralDefinition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["cell", "operations", "hkl", "multiplicity", "fractional_xyz", "occupancy", "u_iso_angstrom2", "anisotropic_mask", "u_aniso_cif_angstrom2", "scattering_species", "scattering_real_offset", "scattering_imag_offset", "scale", "coordinate_tolerance", "scattering_model", "correction_model"],
+      "properties": {
+        "cell": { "type": "array", "minItems": 6, "maxItems": 6, "items": { "$ref": "#/$defs/finiteNumber" } },
+        "operations": { "type": "array", "items": { "$ref": "#/$defs/symmetryOperation" } },
+        "hkl": { "$ref": "#/$defs/arrayReference" },
+        "multiplicity": { "$ref": "#/$defs/arrayReference" },
+        "fractional_xyz": { "$ref": "#/$defs/arrayReference" },
+        "occupancy": { "$ref": "#/$defs/arrayReference" },
+        "u_iso_angstrom2": { "$ref": "#/$defs/arrayReference" },
+        "anisotropic_mask": { "$ref": "#/$defs/arrayReference" },
+        "u_aniso_cif_angstrom2": { "$ref": "#/$defs/arrayReference" },
+        "scattering_species": { "type": "array", "items": { "$ref": "#/$defs/nonEmptyString" } },
+        "scattering_real_offset": { "oneOf": [{ "$ref": "#/$defs/arrayReference" }, { "type": "null" }] },
+        "scattering_imag_offset": { "oneOf": [{ "$ref": "#/$defs/arrayReference" }, { "type": "null" }] },
+        "scale": { "$ref": "#/$defs/finiteNumber" },
+        "coordinate_tolerance": { "$ref": "#/$defs/finiteNumber" },
+        "scattering_model": { "enum": ["xray_non_resonant", "neutron_nuclear"] },
+        "correction_model": { "$ref": "#/$defs/correctionModel" }
+      }
+    },
+    "symmetryOperation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rotation", "translation"],
+      "properties": {
+        "rotation": { "$ref": "#/$defs/matrix3i" },
+        "translation": { "type": "array", "minItems": 3, "maxItems": 3, "items": { "$ref": "#/$defs/rational" } }
+      }
+    },
+    "matrix3i": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": { "type": "array", "minItems": 3, "maxItems": 3, "items": { "type": "integer" } }
+    },
+    "rational": {
+      "type": "array",
+      "prefixItems": [{ "type": "integer" }, { "type": "integer", "not": { "const": 0 } }],
+      "items": false
+    },
+    "correctionModel": {
+      "oneOf": [
+        { "type": "object", "additionalProperties": false, "required": ["type"], "properties": { "type": { "const": "neutral" } } },
+        { "$ref": "#/$defs/unpolarizedCorrection" },
+        { "$ref": "#/$defs/polarizedCorrection" },
+        { "$ref": "#/$defs/neutronCorrection" }
+      ]
+    },
+    "unpolarizedCorrection": {
+      "type": "object", "additionalProperties": false,
+      "required": ["type", "wavelength_angstrom"],
+      "properties": { "type": { "const": "bragg_brentano_unpolarized_lp" }, "wavelength_angstrom": { "$ref": "#/$defs/finiteNumber" } }
+    },
+    "polarizedCorrection": {
+      "type": "object", "additionalProperties": false,
+      "required": ["type", "wavelength_angstrom", "polarization"],
+      "properties": { "type": { "const": "bragg_brentano_polarized_lp" }, "wavelength_angstrom": { "$ref": "#/$defs/finiteNumber" }, "polarization": { "$ref": "#/$defs/finiteNumber" } }
+    },
+    "neutronCorrection": {
+      "type": "object", "additionalProperties": false,
+      "required": ["type", "wavelength_angstrom"],
+      "properties": { "type": { "const": "constant_wavelength_neutron_lorentz" }, "wavelength_angstrom": { "$ref": "#/$defs/finiteNumber" } }
+    }
+  }
+}

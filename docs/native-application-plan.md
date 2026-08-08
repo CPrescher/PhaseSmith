@@ -171,3 +171,13 @@ tests import four real small-structure CIFs, and Python delegates its default
 The optional Gemmi backend remains injectable and is used as a differential
 oracle; default CIF import succeeds when Gemmi imports are blocked. This closes
 the native I/O portion of delivery step 11.
+
+Canonical native project persistence and summary reporting completed on
+2026-08-08. The Python-free `phasesmith-persistence` crate stores the
+multi-histogram `ProjectRecord` as an explicit version-1 JSON wire manifest and
+bounded NPZ arrays, validates hashes and all reconstructed domain invariants,
+and emits stable array-free reports. Its complete JSON Schema and a configured
+NumPy rewrite test lock down cross-interface compatibility. The existing
+Python format-12 checkpoint remains unchanged until its refinement-only state
+has native records and can migrate without loss. This completes delivery step
+12 without introducing PyO3 or Tauri into the scientific dependency graph.

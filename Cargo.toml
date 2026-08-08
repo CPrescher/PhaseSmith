@@ -6,6 +6,7 @@ members = [
   "crates/phasesmith-engine",
   "crates/phasesmith-io",
   "crates/phasesmith-model",
+  "crates/phasesmith-persistence",
   "crates/phasesmith-py",
 ]
 resolver = "2"
