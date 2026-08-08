@@ -1,9 +1,10 @@
 //! Native fixed-reflection Le Bail integrated-intensity extraction.
 
+use std::collections::BTreeMap;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 
-use nalgebra::DMatrix;
+use nalgebra::{DMatrix, DVector};
 use phasesmith_core::{
     Accumulation, ConstantWavelengthInstrument, CwContributionsError, GridView,
     OwnedCwContributionArrays, OwnedCwContributions, ProfileError, SupportPolicy,
@@ -13,9 +14,13 @@ use phasesmith_execution::{ExecutionPolicy, ExecutionPolicyError};
 use phasesmith_model::{DomainError, PatternRecord};
 
 use crate::{
-    DiagnosticValue, RefinementEventKind, RefinementLimits, RefinementRuntime, ResidualError,
-    ResidualEvaluation, ResidualOptions, RuntimeError, TerminationReason, evaluate_residuals,
+    Constraint, ConstraintError, ConstraintTransform, DiagnosticValue, ParameterBounds,
+    ParameterError, ParameterKey, ParameterSet, ParameterSpec, RefinementEventKind,
+    RefinementLimits, RefinementRuntime, ResidualError, ResidualEvaluation, ResidualOptions,
+    RuntimeError, TerminationReason, evaluate_residuals,
 };
+
+const INSTRUMENT_PARAMETER_NAMES: [&str; 5] = ["u_deg2", "v_deg2", "w_deg2", "x_deg", "y_deg"];
 
 /// One fixed reflection phase whose integrated intensities are extracted.
 #[derive(Clone, Debug, PartialEq)]
@@ -195,6 +200,132 @@ impl LeBailPhase {
         phase.integrated_intensity.copy_from_slice(values);
         Ok(phase)
     }
+
+    fn replace_scale_and_positions(
+        &self,
+        scale: f64,
+        positions: Vec<f64>,
+    ) -> Result<Self, LeBailError> {
+        let mut phase = self.clone();
+        phase.scale = scale;
+        phase.two_theta_deg = positions;
+        phase.validate()?;
+        Ok(phase)
+    }
+}
+
+/// Return the stable key for one supported CW profile coefficient.
+///
+/// # Errors
+///
+/// Returns [`LeBailError`] for an unsupported name.
+pub fn lebail_instrument_parameter_key(name: &str) -> Result<ParameterKey, LeBailError> {
+    if !INSTRUMENT_PARAMETER_NAMES.contains(&name) {
+        return Err(LeBailError::UnsupportedParameter {
+            label: format!("instrument[cw].{name}"),
+        });
+    }
+    ParameterKey::new("instrument", "cw", name).map_err(LeBailError::Parameter)
+}
+
+/// Return the stable key for a phase scale.
+///
+/// # Errors
+///
+/// Returns [`LeBailError`] for an invalid phase ID.
+pub fn lebail_phase_scale_key(phase_id: &str) -> Result<ParameterKey, LeBailError> {
+    ParameterKey::new("phase", phase_id, "scale").map_err(LeBailError::Parameter)
+}
+
+/// Return the stable key for one independent reflection position.
+///
+/// # Errors
+///
+/// Returns [`LeBailError`] for invalid identity segments.
+pub fn lebail_reflection_position_key(
+    phase_id: &str,
+    reflection_id: &str,
+) -> Result<ParameterKey, LeBailError> {
+    ParameterKey::new(
+        "reflection",
+        format!("{phase_id}/{reflection_id}"),
+        "two_theta_deg",
+    )
+    .map_err(LeBailError::Parameter)
+}
+
+/// Build bounded typed specifications for selected fixed-geometry parameters.
+///
+/// # Errors
+///
+/// Returns [`LeBailError`] for unsupported names or invalid phase state.
+pub fn build_lebail_parameter_set(
+    instrument: ConstantWavelengthInstrument,
+    phases: &[LeBailPhase],
+    instrument_parameters: &[&str],
+    phase_scales: bool,
+    reflection_positions: bool,
+) -> Result<ParameterSet, LeBailError> {
+    let mut specs = Vec::new();
+    for name in instrument_parameters {
+        let key = lebail_instrument_parameter_key(name)?;
+        let value = instrument_parameter(instrument, name)
+            .ok_or_else(|| LeBailError::UnsupportedParameter { label: key.label() })?;
+        specs.push(
+            ParameterSpec::new(
+                key,
+                value,
+                if name.ends_with("deg2") {
+                    "degree^2"
+                } else {
+                    "degree"
+                },
+                ParameterBounds::default(),
+                value.abs().max(if name.ends_with("deg2") {
+                    1.0e-5
+                } else {
+                    1.0e-4
+                }),
+                true,
+            )
+            .map_err(LeBailError::Parameter)?,
+        );
+    }
+    for phase in phases {
+        if phase_scales {
+            specs.push(
+                ParameterSpec::new(
+                    lebail_phase_scale_key(phase.phase_id())?,
+                    phase.scale(),
+                    "dimensionless",
+                    ParameterBounds::new(0.0, f64::INFINITY).map_err(LeBailError::Parameter)?,
+                    phase.scale().max(1.0),
+                    true,
+                )
+                .map_err(LeBailError::Parameter)?,
+            );
+        }
+        if reflection_positions {
+            for (reflection_id, position) in phase.reflection_ids.iter().zip(&phase.two_theta_deg) {
+                specs.push(
+                    ParameterSpec::new(
+                        lebail_reflection_position_key(phase.phase_id(), reflection_id)?,
+                        *position,
+                        "degree_2theta",
+                        ParameterBounds::new(
+                            f64::from_bits(1),
+                            f64::from_bits(180.0_f64.to_bits() - 1),
+                        )
+                        .map_err(LeBailError::Parameter)?,
+                        0.01,
+                        true,
+                    )
+                    .map_err(LeBailError::Parameter)?,
+                );
+            }
+        }
+    }
+    ParameterSet::new(specs).map_err(LeBailError::Parameter)
 }
 
 /// Observations, instrument, and ordered fixed-reflection phases.
@@ -206,6 +337,10 @@ pub struct LeBailInput {
     pub instrument: ConstantWavelengthInstrument,
     /// Ordered non-empty phase list.
     pub phases: Vec<LeBailPhase>,
+    /// Optional typed profile parameter set.
+    pub parameters: Option<ParameterSet>,
+    /// Ordered fixed/affine/linear parameter constraints.
+    pub constraints: Vec<Constraint>,
 }
 
 impl LeBailInput {
@@ -243,7 +378,31 @@ impl LeBailInput {
             pattern,
             instrument,
             phases,
+            parameters: None,
+            constraints: Vec::new(),
         })
+    }
+
+    /// Validate a request with optional analytical profile parameters.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`LeBailError`] for unsupported keys, domain/value mismatch, or
+    /// an invalid constraint graph.
+    pub fn new_with_parameters(
+        pattern: PatternRecord,
+        instrument: ConstantWavelengthInstrument,
+        phases: Vec<LeBailPhase>,
+        parameters: ParameterSet,
+        constraints: Vec<Constraint>,
+    ) -> Result<Self, LeBailError> {
+        let mut input = Self::new(pattern, instrument, phases)?;
+        domain_parameter_values(input.instrument, &input.phases, &parameters)?;
+        ConstraintTransform::new(parameters.clone(), constraints.clone())
+            .map_err(LeBailError::Constraint)?;
+        input.parameters = Some(parameters);
+        input.constraints = constraints;
+        Ok(input)
     }
 }
 
@@ -266,6 +425,12 @@ pub struct LeBailOptions {
     pub initial_intensity_floor: f64,
     /// Whether supplied one-sigma uncertainty is used.
     pub use_uncertainty: bool,
+    /// Non-negative diagonal regularization for profile normal equations.
+    pub profile_damping: f64,
+    /// Maximum absolute free-parameter step in scaled coordinates.
+    pub max_scaled_parameter_step: f64,
+    /// Number of profile-step halvings after the initial candidate.
+    pub max_profile_backtracks: usize,
     /// Correlation threshold used by optional unresolved-group diagnostics.
     pub unresolved_correlation: f64,
     /// Whether coincident reflection rank diagnostics are calculated.
@@ -306,6 +471,9 @@ impl LeBailOptions {
             minimum_calculated,
             initial_intensity_floor,
             use_uncertainty,
+            profile_damping: 1.0e-10,
+            max_scaled_parameter_step: 0.25,
+            max_profile_backtracks: 8,
             unresolved_correlation,
             diagnose_rank_deficiency,
             support_fwhm,
@@ -348,7 +516,35 @@ impl LeBailOptions {
         {
             return Err(invalid_options("unresolved_correlation must lie in [0, 1]"));
         }
+        if !self.profile_damping.is_finite() || self.profile_damping < 0.0 {
+            return Err(invalid_options(
+                "profile_damping must be non-negative and finite",
+            ));
+        }
+        if !self.max_scaled_parameter_step.is_finite() || self.max_scaled_parameter_step <= 0.0 {
+            return Err(invalid_options(
+                "max_scaled_parameter_step must be positive and finite",
+            ));
+        }
         Ok(())
+    }
+
+    /// Replace the native profile-solver controls after validation.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`LeBailError`] for invalid damping or step controls.
+    pub fn with_profile_controls(
+        mut self,
+        profile_damping: f64,
+        max_scaled_parameter_step: f64,
+        max_profile_backtracks: usize,
+    ) -> Result<Self, LeBailError> {
+        self.profile_damping = profile_damping;
+        self.max_scaled_parameter_step = max_scaled_parameter_step;
+        self.max_profile_backtracks = max_profile_backtracks;
+        self.validate()?;
+        Ok(self)
     }
 
     /// Construct the scripting-compatible defaults with an explicit policy.
@@ -413,6 +609,19 @@ pub struct IntensityExtractionResult {
     pub unobserved_reflections: Vec<(String, String)>,
 }
 
+/// One accepted physical profile-parameter change.
+#[derive(Clone, Debug, PartialEq)]
+pub struct ParameterChange {
+    /// Stable parameter identity.
+    pub key: ParameterKey,
+    /// Physical value before the step.
+    pub before: f64,
+    /// Physical value after the step.
+    pub after: f64,
+    /// Change divided by the parameter scale.
+    pub scaled_change: f64,
+}
+
 /// One immutable accepted fixed-reflection iteration.
 #[derive(Clone, Debug, PartialEq)]
 pub struct LeBailIterationRecord {
@@ -428,6 +637,10 @@ pub struct LeBailIterationRecord {
     pub reduced_chi_square: f64,
     /// Largest relative integrated-intensity change.
     pub maximum_relative_intensity_change: f64,
+    /// Euclidean norm of the accepted scaled profile step.
+    pub scaled_profile_step_norm: f64,
+    /// Accepted physical parameter changes.
+    pub parameter_changes: Vec<ParameterChange>,
     /// Iteration warnings in deterministic order.
     pub warnings: Vec<String>,
 }
@@ -459,8 +672,12 @@ pub struct LeBailCheckpoint {
     pub completed_iterations: usize,
     /// Current phase records and integrated intensities.
     pub phases: Vec<LeBailPhase>,
+    /// Current instrument, including accepted profile changes.
+    pub instrument: ConstantWavelengthInstrument,
     /// Flattened current integrated intensities.
     pub intensities: Vec<f64>,
+    /// Current profile parameter set.
+    pub parameters: Option<ParameterSet>,
     /// Rwp from the last non-converged accepted iteration.
     pub previous_rwp: f64,
     /// Complete accepted deterministic history.
@@ -481,6 +698,19 @@ impl LeBailCheckpoint {
         }
         for phase in &self.phases {
             phase.validate()?;
+        }
+        self.instrument
+            .validate()
+            .map_err(|error| LeBailError::Profile {
+                message: error.to_string(),
+            })?;
+        if let Some(parameters) = &self.parameters {
+            let domain_values = domain_parameter_values(self.instrument, &self.phases, parameters)?;
+            if domain_values != parameters.values() {
+                return Err(LeBailError::InvalidCheckpoint {
+                    message: "checkpoint parameters disagree with its live domain".to_owned(),
+                });
+            }
         }
         let expected = self.phases.iter().map(reflection_count).sum::<usize>();
         if self.intensities.len() != expected
@@ -520,6 +750,8 @@ pub struct LeBailResult {
     pub calculation: LeBailCalculation,
     /// Final phases.
     pub phases: Vec<LeBailPhase>,
+    /// Final constant-wavelength profile.
+    pub instrument: ConstantWavelengthInstrument,
     /// Final labeled integrated intensities.
     pub intensities: Vec<ReflectionIntensity>,
     /// Final residual arrays and metrics.
@@ -530,8 +762,21 @@ pub struct LeBailResult {
     pub termination_reason: TerminationReason,
     /// Optional unresolved reflection diagnostics.
     pub rank_deficient_groups: Vec<CoincidentReflectionGroup>,
+    /// Final typed profile parameters.
+    pub parameters: Option<ParameterSet>,
+    /// Row-major free-parameter covariance, if identifiable.
+    pub covariance: Option<CovarianceMatrix>,
     /// Complete restart state.
     pub checkpoint: LeBailCheckpoint,
+}
+
+/// Square row-major covariance over scaled free parameters.
+#[derive(Clone, Debug, PartialEq)]
+pub struct CovarianceMatrix {
+    /// Matrix dimension.
+    pub size: usize,
+    /// Row-major values with length `size * size`.
+    pub values: Vec<f64>,
 }
 
 /// Calculate all fixed phases through one native fused accumulation.
@@ -799,9 +1044,14 @@ pub fn refine_lebail(
     options: &LeBailOptions,
     checkpoint: Option<&LeBailCheckpoint>,
 ) -> Result<LeBailResult, LeBailError> {
+    let evaluations_per_iteration = options
+        .max_profile_backtracks
+        .checked_add(2)
+        .ok_or(LeBailError::SizeOverflow)?;
     let max_evaluations = options
         .max_iterations
-        .checked_add(1)
+        .checked_mul(evaluations_per_iteration)
+        .and_then(|value| value.checked_add(1))
         .ok_or(LeBailError::SizeOverflow)?;
     let limits = RefinementLimits::new(options.max_iterations, max_evaluations, None, 1)
         .map_err(LeBailError::Runtime)?;
@@ -865,7 +1115,7 @@ pub fn refine_lebail_with_runtime(
         .map_err(LeBailError::Runtime)?;
     state.calculation = Some(calculate_lebail_pattern(
         &input.pattern,
-        input.instrument,
+        state.instrument,
         &state.phases,
         options.support_fwhm,
         &options.execution,
@@ -875,7 +1125,9 @@ pub fn refine_lebail_with_runtime(
         input,
         options,
         state.phases,
+        state.instrument,
         &state.intensities,
+        state.parameters,
         state.history,
         state.previous_rwp,
         state.calculation.ok_or(LeBailError::InternalInvariant)?,
@@ -900,7 +1152,13 @@ fn run_lebail_iterations(
         if let Err(error) = runtime.begin_evaluation() {
             return stop_reason_or_error(error);
         }
-        let candidate = evaluate_lebail_iteration(input, options, state)?;
+        let candidate = match evaluate_lebail_iteration(input, options, state, runtime) {
+            Ok(candidate) => candidate,
+            Err(LeBailError::Runtime(error)) if normal_stop_reason(&error).is_some() => {
+                return stop_reason_or_error(error);
+            }
+            Err(error) => return Err(error),
+        };
         state.history.push(LeBailIterationRecord {
             iteration,
             rp: candidate.metrics.rp,
@@ -908,9 +1166,13 @@ fn run_lebail_iterations(
             chi_square: candidate.metrics.chi_square,
             reduced_chi_square: candidate.metrics.reduced_chi_square,
             maximum_relative_intensity_change: candidate.extraction.maximum_relative_change,
+            scaled_profile_step_norm: candidate.profile_step_norm,
+            parameter_changes: candidate.parameter_changes,
             warnings: candidate.warnings,
         });
+        state.instrument = candidate.instrument;
         state.phases = candidate.phases;
+        state.parameters = candidate.parameters;
         state.intensities = candidate.extraction.intensities;
         state.calculation = Some(candidate.calculation);
         accept_lebail_iteration(runtime, state, &candidate.metrics)?;
@@ -931,12 +1193,17 @@ struct EvaluatedLeBailIteration {
     calculation: LeBailCalculation,
     metrics: ResidualEvaluation,
     warnings: Vec<String>,
+    instrument: ConstantWavelengthInstrument,
+    parameters: Option<ParameterSet>,
+    profile_step_norm: f64,
+    parameter_changes: Vec<ParameterChange>,
 }
 
 fn evaluate_lebail_iteration(
     input: &LeBailInput,
     options: &LeBailOptions,
     state: &RestoredLeBailState,
+    runtime: &mut RefinementRuntime<LeBailCheckpoint>,
 ) -> Result<EvaluatedLeBailIteration, LeBailError> {
     let extraction = extract_lebail_intensities(
         &input.pattern,
@@ -948,17 +1215,28 @@ fn evaluate_lebail_iteration(
     let phases = replace_flat_intensities(&state.phases, &extraction.intensities)?;
     let calculation = calculate_lebail_pattern(
         &input.pattern,
-        input.instrument,
+        state.instrument,
         &phases,
         options.support_fwhm,
         &options.execution,
     )?;
+    let profile = profile_update(
+        &input.pattern,
+        state.instrument,
+        phases,
+        calculation,
+        state.parameters.as_ref(),
+        &input.constraints,
+        options,
+        runtime,
+    )?;
+    let parameter_count = free_parameter_count(profile.parameters.as_ref(), &input.constraints)?;
     let metrics = evaluate_residuals(
         &input.pattern,
-        &calculation.y,
+        &profile.calculation.y,
         ResidualOptions {
             use_uncertainty: options.use_uncertainty,
-            parameter_count: 0,
+            parameter_count,
         },
     )
     .map_err(LeBailError::Residual)?;
@@ -972,10 +1250,14 @@ fn evaluate_lebail_iteration(
     };
     Ok(EvaluatedLeBailIteration {
         extraction,
-        phases,
-        calculation,
+        phases: profile.phases,
+        calculation: profile.calculation,
         metrics,
-        warnings,
+        warnings: [warnings, profile.warnings].concat(),
+        instrument: profile.instrument,
+        parameters: profile.parameters,
+        profile_step_norm: profile.step_norm,
+        parameter_changes: profile.parameter_changes,
     })
 }
 
@@ -987,7 +1269,9 @@ fn accept_lebail_iteration(
     let checkpoint = LeBailCheckpoint {
         completed_iterations: state.history.len(),
         phases: state.phases.clone(),
+        instrument: state.instrument,
         intensities: state.intensities.clone(),
+        parameters: state.parameters.clone(),
         previous_rwp: metrics.rwp,
         history: state.history.clone(),
     };
@@ -1022,7 +1306,9 @@ fn finish_result(
     input: &LeBailInput,
     options: &LeBailOptions,
     phases: Vec<LeBailPhase>,
+    instrument: ConstantWavelengthInstrument,
     intensities: &[f64],
+    parameters: Option<ParameterSet>,
     history: Vec<LeBailIterationRecord>,
     previous_rwp: f64,
     calculation: LeBailCalculation,
@@ -1034,14 +1320,16 @@ fn finish_result(
         &calculation.y,
         ResidualOptions {
             use_uncertainty: options.use_uncertainty,
-            parameter_count: 0,
+            parameter_count: free_parameter_count(parameters.as_ref(), &input.constraints)?,
         },
     )
     .map_err(LeBailError::Residual)?;
     let checkpoint = LeBailCheckpoint {
         completed_iterations: history.len(),
         phases: phases.clone(),
+        instrument,
         intensities: intensities.to_owned(),
+        parameters: parameters.clone(),
         previous_rwp: if termination == TerminationReason::Cancelled {
             previous_rwp
         } else {
@@ -1067,6 +1355,15 @@ fn finish_result(
     } else {
         Vec::new()
     };
+    let covariance = covariance(
+        &input.pattern,
+        &calculation,
+        instrument,
+        &phases,
+        parameters.as_ref(),
+        &input.constraints,
+        options.use_uncertainty,
+    )?;
     runtime
         .emit(
             RefinementEventKind::Termination,
@@ -1081,19 +1378,24 @@ fn finish_result(
     Ok(LeBailResult {
         calculation,
         phases,
+        instrument,
         intensities: labeled,
         metrics,
         history,
         termination_reason: termination,
         rank_deficient_groups,
+        parameters,
+        covariance,
         checkpoint,
     })
 }
 
 struct RestoredLeBailState {
     phases: Vec<LeBailPhase>,
+    instrument: ConstantWavelengthInstrument,
     intensities: Vec<f64>,
     history: Vec<LeBailIterationRecord>,
+    parameters: Option<ParameterSet>,
     previous_rwp: f64,
     first_iteration: usize,
     calculation: Option<LeBailCalculation>,
@@ -1117,8 +1419,10 @@ fn restore_state(
         let phases = replace_flat_intensities(&input.phases, &intensities)?;
         return Ok(RestoredLeBailState {
             phases,
+            instrument: input.instrument,
             intensities,
             history: Vec::new(),
+            parameters: input.parameters.clone(),
             previous_rwp: f64::INFINITY,
             first_iteration: 1,
             calculation: None,
@@ -1137,14 +1441,498 @@ fn restore_state(
             message: "checkpoint phase/reflection identities do not match the input".to_owned(),
         });
     }
+    let input_parameter_keys = input.parameters.as_ref().map(parameter_keys);
+    let checkpoint_parameter_keys = checkpoint.parameters.as_ref().map(parameter_keys);
+    if input_parameter_keys != checkpoint_parameter_keys {
+        return Err(LeBailError::InvalidCheckpoint {
+            message: "checkpoint parameter identities do not match the input".to_owned(),
+        });
+    }
     Ok(RestoredLeBailState {
         phases: checkpoint.phases.clone(),
+        instrument: checkpoint.instrument,
         intensities: checkpoint.intensities.clone(),
         history: checkpoint.history.clone(),
+        parameters: checkpoint.parameters.clone(),
         previous_rwp: checkpoint.previous_rwp,
         first_iteration: checkpoint.completed_iterations + 1,
         calculation: None,
     })
+}
+
+struct ProfileUpdate {
+    instrument: ConstantWavelengthInstrument,
+    phases: Vec<LeBailPhase>,
+    calculation: LeBailCalculation,
+    parameters: Option<ParameterSet>,
+    step_norm: f64,
+    parameter_changes: Vec<ParameterChange>,
+    warnings: Vec<String>,
+}
+
+#[allow(clippy::too_many_arguments)]
+// The linearization, bounded solve, and backtracking order intentionally stay
+// adjacent so this numerical state transition remains auditable against the
+// independent Python oracle.
+#[allow(clippy::too_many_lines)]
+fn profile_update(
+    pattern: &PatternRecord,
+    instrument: ConstantWavelengthInstrument,
+    phases: Vec<LeBailPhase>,
+    calculation: LeBailCalculation,
+    parameters: Option<&ParameterSet>,
+    constraints: &[Constraint],
+    options: &LeBailOptions,
+    runtime: &mut RefinementRuntime<LeBailCheckpoint>,
+) -> Result<ProfileUpdate, LeBailError> {
+    let Some(parameters) = parameters else {
+        return Ok(ProfileUpdate {
+            instrument,
+            phases,
+            calculation,
+            parameters: None,
+            step_norm: 0.0,
+            parameter_changes: Vec::new(),
+            warnings: Vec::new(),
+        });
+    };
+    let domain_values = domain_parameter_values(instrument, &phases, parameters)?;
+    let current = parameters
+        .replace_values(&domain_values)
+        .map_err(LeBailError::Parameter)?;
+    let transform = ConstraintTransform::new(current.clone(), constraints.to_vec())
+        .map_err(LeBailError::Constraint)?;
+    if transform.free_keys().is_empty() {
+        return Ok(ProfileUpdate {
+            instrument,
+            phases,
+            calculation,
+            parameters: Some(current),
+            step_norm: 0.0,
+            parameter_changes: Vec::new(),
+            warnings: Vec::new(),
+        });
+    }
+    let physical = parameter_columns(&calculation, &current, &phases)?;
+    let derivative = transform
+        .derivative_matrix()
+        .map_err(LeBailError::Constraint)?;
+    let chain = DMatrix::from_row_slice(derivative.rows, derivative.columns, &derivative.values);
+    let jacobian = physical * chain;
+    let observed = pattern
+        .observed_y
+        .as_deref()
+        .ok_or(LeBailError::MissingObservations)?;
+    let included = pattern
+        .mask
+        .clone()
+        .unwrap_or_else(|| vec![true; pattern.sample_count()]);
+    let selected_count = included.iter().filter(|value| **value).count();
+    let free_count = transform.free_keys().len();
+    let mut selected_jacobian = DMatrix::zeros(selected_count, free_count);
+    let mut selected_residual = DVector::zeros(selected_count);
+    let mut selected_row = 0;
+    for sample in 0..pattern.sample_count() {
+        if !included[sample] {
+            continue;
+        }
+        let weight = if options.use_uncertainty {
+            pattern
+                .uncertainty
+                .as_ref()
+                .map_or(1.0, |values| values[sample].recip())
+        } else {
+            1.0
+        };
+        selected_residual[selected_row] = (observed[sample] - calculation.y[sample]) * weight;
+        for column in 0..free_count {
+            selected_jacobian[(selected_row, column)] = jacobian[(sample, column)] * weight;
+        }
+        selected_row += 1;
+    }
+    let normal = selected_jacobian.transpose() * &selected_jacobian;
+    let mut warnings = Vec::new();
+    if matrix_rank(&normal) != free_count {
+        warnings.push("profile Jacobian is rank deficient".to_owned());
+    }
+    if current
+        .specs()
+        .iter()
+        .any(|spec| spec.key().module() == "phase" && spec.key().name() == "scale")
+    {
+        warnings.push(
+            "phase scale is not identifiable independently of extracted Le Bail intensities"
+                .to_owned(),
+        );
+    }
+    let base = transform.pack().map_err(LeBailError::Constraint)?;
+    let mut lower = vec![-options.max_scaled_parameter_step; free_count];
+    let mut upper = vec![options.max_scaled_parameter_step; free_count];
+    for (index, key) in transform.free_keys().iter().enumerate() {
+        let spec = current.spec(key).ok_or(LeBailError::InternalInvariant)?;
+        lower[index] = lower[index].max(spec.bounds().lower() / spec.scale() - base[index]);
+        upper[index] = upper[index].min(spec.bounds().upper() / spec.scale() - base[index]);
+    }
+    let rhs = selected_jacobian.transpose() * &selected_residual;
+    let mut regularized = normal;
+    for index in 0..free_count {
+        regularized[(index, index)] += options.profile_damping;
+    }
+    let mut step = if let Some(solution) = regularized.lu().solve(&rhs) {
+        solution
+    } else {
+        warnings.push("profile normal equations used least-squares fallback".to_owned());
+        selected_jacobian
+            .clone()
+            .svd(true, true)
+            .solve(&selected_residual, f64::EPSILON)
+            .map_err(|_| LeBailError::LinearSolve)?
+    };
+    for index in 0..free_count {
+        step[index] = step[index].clamp(lower[index], upper[index]);
+    }
+    let baseline = evaluate_residuals(
+        pattern,
+        &calculation.y,
+        ResidualOptions {
+            use_uncertainty: options.use_uncertainty,
+            parameter_count: free_count,
+        },
+    )
+    .map_err(LeBailError::Residual)?;
+    let mut factor = 1.0;
+    for _ in 0..=options.max_profile_backtracks {
+        let trial = base
+            .iter()
+            .zip(step.iter())
+            .map(|(base, step)| base + factor * step)
+            .collect::<Vec<_>>();
+        let Ok(values) = transform.unpack(&trial, true) else {
+            factor *= 0.5;
+            continue;
+        };
+        let Ok((candidate_instrument, candidate_phases)) =
+            apply_parameter_values(instrument, &phases, &values)
+        else {
+            factor *= 0.5;
+            continue;
+        };
+        runtime.begin_evaluation().map_err(LeBailError::Runtime)?;
+        let Ok(candidate_calculation) = calculate_lebail_pattern(
+            pattern,
+            candidate_instrument,
+            &candidate_phases,
+            options.support_fwhm,
+            &options.execution,
+        ) else {
+            factor *= 0.5;
+            continue;
+        };
+        let candidate_metrics = evaluate_residuals(
+            pattern,
+            &candidate_calculation.y,
+            ResidualOptions {
+                use_uncertainty: options.use_uncertainty,
+                parameter_count: free_count,
+            },
+        )
+        .map_err(LeBailError::Residual)?;
+        if candidate_metrics.chi_square < baseline.chi_square {
+            let candidate_parameters = current
+                .replace_values(&values)
+                .map_err(LeBailError::Parameter)?;
+            let parameter_changes = current
+                .specs()
+                .iter()
+                .filter_map(|spec| {
+                    let after = candidate_parameters.spec(spec.key())?.value();
+                    (after.to_bits() != spec.value().to_bits()).then(|| ParameterChange {
+                        key: spec.key().clone(),
+                        before: spec.value(),
+                        after,
+                        scaled_change: (after - spec.value()) / spec.scale(),
+                    })
+                })
+                .collect();
+            return Ok(ProfileUpdate {
+                instrument: candidate_instrument,
+                phases: candidate_phases,
+                calculation: candidate_calculation,
+                parameters: Some(candidate_parameters),
+                step_norm: factor * step.norm(),
+                parameter_changes,
+                warnings,
+            });
+        }
+        factor *= 0.5;
+    }
+    warnings.push("profile step rejected by backtracking".to_owned());
+    Ok(ProfileUpdate {
+        instrument,
+        phases,
+        calculation,
+        parameters: Some(current),
+        step_norm: 0.0,
+        parameter_changes: Vec::new(),
+        warnings,
+    })
+}
+
+fn domain_parameter_values(
+    instrument: ConstantWavelengthInstrument,
+    phases: &[LeBailPhase],
+    parameters: &ParameterSet,
+) -> Result<BTreeMap<ParameterKey, f64>, LeBailError> {
+    let mut values = BTreeMap::new();
+    for spec in parameters.specs() {
+        let key = spec.key();
+        let value = if key.module() == "instrument" && key.owner_id() == "cw" {
+            instrument_parameter(instrument, key.name())
+        } else if key.module() == "phase" && key.name() == "scale" {
+            phases
+                .iter()
+                .find(|phase| phase.phase_id() == key.owner_id())
+                .map(LeBailPhase::scale)
+        } else if key.module() == "reflection" && key.name() == "two_theta_deg" {
+            phases.iter().find_map(|phase| {
+                phase
+                    .reflection_ids
+                    .iter()
+                    .position(|reflection_id| {
+                        format!("{}/{}", phase.phase_id(), reflection_id) == key.owner_id()
+                    })
+                    .map(|index| phase.two_theta_deg[index])
+            })
+        } else {
+            None
+        }
+        .ok_or_else(|| LeBailError::UnsupportedParameter { label: key.label() })?;
+        if !spec.bounds().contains(value) {
+            return Err(LeBailError::ParameterDomainOutsideBounds { label: key.label() });
+        }
+        values.insert(key.clone(), value);
+    }
+    Ok(values)
+}
+
+fn parameter_columns(
+    calculation: &LeBailCalculation,
+    parameters: &ParameterSet,
+    phases: &[LeBailPhase],
+) -> Result<DMatrix<f64>, LeBailError> {
+    let samples = calculation.y.len();
+    let mut matrix = DMatrix::zeros(samples, parameters.specs().len());
+    let global = calculation
+        .accumulation
+        .derivatives
+        .global
+        .as_ref()
+        .ok_or(LeBailError::InternalInvariant)?;
+    for (column, spec) in parameters.specs().iter().enumerate() {
+        let key = spec.key();
+        if key.module() == "instrument" {
+            let row = INSTRUMENT_PARAMETER_NAMES
+                .iter()
+                .position(|name| *name == key.name())
+                .ok_or_else(|| LeBailError::UnsupportedParameter { label: key.label() })?;
+            for sample in 0..samples {
+                matrix[(sample, column)] = global.values[row * samples + sample];
+            }
+        } else if key.module() == "phase" {
+            let phase = phases
+                .iter()
+                .position(|phase| phase.phase_id() == key.owner_id())
+                .ok_or_else(|| LeBailError::UnsupportedParameter { label: key.label() })?;
+            let row = 5 + phase;
+            for sample in 0..samples {
+                matrix[(sample, column)] = global.values[row * samples + sample];
+            }
+        } else if key.module() == "reflection" {
+            let reflection = calculation
+                .reflection_keys
+                .iter()
+                .position(|(phase_id, reflection_id)| {
+                    format!("{phase_id}/{reflection_id}") == key.owner_id()
+                })
+                .ok_or_else(|| LeBailError::UnsupportedParameter { label: key.label() })?;
+            let local = &calculation.accumulation.derivatives.local;
+            let begin = local.offsets[reflection];
+            let end = local.offsets[reflection + 1];
+            let start = local.starts[reflection];
+            for active in begin..end {
+                matrix[(start + active - begin, column)] =
+                    local.values[active * local.parameter_count + 1];
+            }
+        } else {
+            return Err(LeBailError::UnsupportedParameter { label: key.label() });
+        }
+    }
+    Ok(matrix)
+}
+
+fn apply_parameter_values(
+    instrument: ConstantWavelengthInstrument,
+    phases: &[LeBailPhase],
+    values: &BTreeMap<ParameterKey, f64>,
+) -> Result<(ConstantWavelengthInstrument, Vec<LeBailPhase>), LeBailError> {
+    let mut updated_instrument = instrument;
+    for (key, value) in values {
+        if key.module() == "instrument" {
+            set_instrument_parameter(&mut updated_instrument, key.name(), *value)?;
+        }
+    }
+    updated_instrument
+        .validate()
+        .map_err(|error| LeBailError::Profile {
+            message: error.to_string(),
+        })?;
+    let mut updated_phases = Vec::with_capacity(phases.len());
+    for phase in phases {
+        let scale = values
+            .get(&lebail_phase_scale_key(phase.phase_id())?)
+            .copied()
+            .unwrap_or(phase.scale());
+        let mut positions = phase.two_theta_deg.clone();
+        for (index, reflection_id) in phase.reflection_ids.iter().enumerate() {
+            if let Some(value) = values.get(&lebail_reflection_position_key(
+                phase.phase_id(),
+                reflection_id,
+            )?) {
+                positions[index] = *value;
+            }
+        }
+        updated_phases.push(phase.replace_scale_and_positions(scale, positions)?);
+    }
+    Ok((updated_instrument, updated_phases))
+}
+
+fn covariance(
+    pattern: &PatternRecord,
+    calculation: &LeBailCalculation,
+    _instrument: ConstantWavelengthInstrument,
+    phases: &[LeBailPhase],
+    parameters: Option<&ParameterSet>,
+    constraints: &[Constraint],
+    use_uncertainty: bool,
+) -> Result<Option<CovarianceMatrix>, LeBailError> {
+    let Some(parameters) = parameters else {
+        return Ok(None);
+    };
+    let transform = ConstraintTransform::new(parameters.clone(), constraints.to_vec())
+        .map_err(LeBailError::Constraint)?;
+    let free_count = transform.free_keys().len();
+    if free_count == 0 {
+        return Ok(Some(CovarianceMatrix {
+            size: 0,
+            values: Vec::new(),
+        }));
+    }
+    let derivative = transform
+        .derivative_matrix()
+        .map_err(LeBailError::Constraint)?;
+    for (row, spec) in parameters.specs().iter().enumerate() {
+        if spec.key().module() == "phase"
+            && spec.key().name() == "scale"
+            && derivative
+                .row(row)
+                .is_some_and(|values| values.iter().any(|value| *value != 0.0))
+        {
+            return Ok(None);
+        }
+    }
+    let physical = parameter_columns(calculation, parameters, phases)?;
+    let chain = DMatrix::from_row_slice(derivative.rows, derivative.columns, &derivative.values);
+    let jacobian = physical * chain;
+    let included = pattern
+        .mask
+        .clone()
+        .unwrap_or_else(|| vec![true; pattern.sample_count()]);
+    let row_count = included.iter().filter(|value| **value).count();
+    let mut selected = DMatrix::zeros(row_count, free_count);
+    let mut row = 0;
+    for sample in 0..pattern.sample_count() {
+        if !included[sample] {
+            continue;
+        }
+        let weight = if use_uncertainty {
+            pattern
+                .uncertainty
+                .as_ref()
+                .map_or(1.0, |values| values[sample].recip())
+        } else {
+            1.0
+        };
+        for column in 0..free_count {
+            selected[(row, column)] = jacobian[(sample, column)] * weight;
+        }
+        row += 1;
+    }
+    let normal = selected.transpose() * selected;
+    if matrix_rank(&normal) != free_count {
+        return Ok(None);
+    }
+    let Some(inverse) = normal.try_inverse() else {
+        return Ok(None);
+    };
+    let mut values = Vec::with_capacity(free_count * free_count);
+    for row in 0..free_count {
+        for column in 0..free_count {
+            values.push(inverse[(row, column)]);
+        }
+    }
+    Ok(Some(CovarianceMatrix {
+        size: free_count,
+        values,
+    }))
+}
+
+fn free_parameter_count(
+    parameters: Option<&ParameterSet>,
+    constraints: &[Constraint],
+) -> Result<usize, LeBailError> {
+    parameters.map_or(Ok(0), |parameters| {
+        ConstraintTransform::new(parameters.clone(), constraints.to_vec())
+            .map(|transform| transform.free_keys().len())
+            .map_err(LeBailError::Constraint)
+    })
+}
+
+fn matrix_rank(matrix: &DMatrix<f64>) -> usize {
+    let singular = matrix.clone().svd(false, false).singular_values;
+    let maximum = singular.iter().copied().fold(0.0_f64, f64::max);
+    let tolerance = count_as_f64(matrix.nrows().max(matrix.ncols())) * f64::EPSILON * maximum;
+    singular.iter().filter(|value| **value > tolerance).count()
+}
+
+fn instrument_parameter(instrument: ConstantWavelengthInstrument, name: &str) -> Option<f64> {
+    match name {
+        "u_deg2" => Some(instrument.u_deg2),
+        "v_deg2" => Some(instrument.v_deg2),
+        "w_deg2" => Some(instrument.w_deg2),
+        "x_deg" => Some(instrument.x_deg),
+        "y_deg" => Some(instrument.y_deg),
+        _ => None,
+    }
+}
+
+fn set_instrument_parameter(
+    instrument: &mut ConstantWavelengthInstrument,
+    name: &str,
+    value: f64,
+) -> Result<(), LeBailError> {
+    match name {
+        "u_deg2" => instrument.u_deg2 = value,
+        "v_deg2" => instrument.v_deg2 = value,
+        "w_deg2" => instrument.w_deg2 = value,
+        "x_deg" => instrument.x_deg = value,
+        "y_deg" => instrument.y_deg = value,
+        _ => {
+            return Err(LeBailError::UnsupportedParameter {
+                label: format!("instrument[cw].{name}"),
+            });
+        }
+    }
+    Ok(())
 }
 
 fn rank_deficient_groups(
@@ -1330,6 +2118,10 @@ fn phase_identity(phases: &[LeBailPhase]) -> Vec<(&str, Vec<&str>)> {
         .collect()
 }
 
+fn parameter_keys(parameters: &ParameterSet) -> Vec<&ParameterKey> {
+    parameters.specs().iter().map(ParameterSpec::key).collect()
+}
+
 fn reflection_count(phase: &LeBailPhase) -> usize {
     phase.reflection_ids.len()
 }
@@ -1384,6 +2176,22 @@ pub enum LeBailError {
     Pattern(DomainError),
     /// Observations are required.
     MissingObservations,
+    /// Typed parameter construction or replacement failed.
+    Parameter(ParameterError),
+    /// Constraint graph or transform failed.
+    Constraint(ConstraintError),
+    /// A parameter key is not supported by fixed-geometry Le Bail.
+    UnsupportedParameter {
+        /// Stable parameter label.
+        label: String,
+    },
+    /// A live domain value violates its declared parameter bounds.
+    ParameterDomainOutsideBounds {
+        /// Stable parameter label.
+        label: String,
+    },
+    /// Native least-squares solution failed.
+    LinearSolve,
     /// One phase or reflection record is invalid.
     InvalidPhase {
         /// Stable diagnostic message.
@@ -1431,6 +2239,18 @@ impl Display for LeBailError {
             Self::MissingObservations => {
                 formatter.write_str("observed_y is required for Le Bail extraction")
             }
+            Self::Parameter(error) => Display::fmt(error, formatter),
+            Self::Constraint(error) => Display::fmt(error, formatter),
+            Self::UnsupportedParameter { label } => {
+                write!(formatter, "unsupported Le Bail parameter {label}")
+            }
+            Self::ParameterDomainOutsideBounds { label } => {
+                write!(
+                    formatter,
+                    "domain value for {label} lies outside its bounds"
+                )
+            }
+            Self::LinearSolve => formatter.write_str("profile least-squares solve failed"),
             Self::InvalidPhase { message }
             | Self::InvalidOptions { message }
             | Self::InvalidCheckpoint { message }
@@ -1458,12 +2278,17 @@ impl Error for LeBailError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
             Self::Pattern(error) => Some(error),
+            Self::Parameter(error) => Some(error),
+            Self::Constraint(error) => Some(error),
             Self::Grid(error) => Some(error),
             Self::Calculation(error) => Some(error),
             Self::Residual(error) => Some(error),
             Self::Runtime(error) => Some(error),
             Self::Execution(error) => Some(error),
             Self::MissingObservations
+            | Self::UnsupportedParameter { .. }
+            | Self::ParameterDomainOutsideBounds { .. }
+            | Self::LinearSolve
             | Self::InvalidPhase { .. }
             | Self::InvalidOptions { .. }
             | Self::InvalidCheckpoint { .. }

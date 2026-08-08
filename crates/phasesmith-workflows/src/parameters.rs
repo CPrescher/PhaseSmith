@@ -269,6 +269,39 @@ impl ParameterSet {
             .collect()
     }
 
+    /// Return a new ordered set with selected physical values replaced.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ParameterError`] for an unknown key or a replacement that is
+    /// non-finite or outside its existing bounds.
+    pub fn replace_values(
+        &self,
+        values: &BTreeMap<ParameterKey, f64>,
+    ) -> Result<Self, ParameterError> {
+        if let Some(key) = values
+            .keys()
+            .find(|key| !self.index_by_key.contains_key(*key))
+        {
+            return Err(ParameterError::UnknownReplacementKey { key: key.clone() });
+        }
+        Self::new(
+            self.specs
+                .iter()
+                .map(|spec| {
+                    ParameterSpec::new(
+                        spec.key.clone(),
+                        values.get(&spec.key).copied().unwrap_or(spec.value),
+                        spec.unit.clone(),
+                        spec.bounds,
+                        spec.scale,
+                        spec.refine,
+                    )
+                })
+                .collect::<Result<Vec<_>, _>>()?,
+        )
+    }
+
     /// Return all stable keys as a set for dependency validation.
     pub(crate) fn key_set(&self) -> BTreeSet<ParameterKey> {
         self.index_by_key.keys().cloned().collect()
@@ -312,6 +345,11 @@ pub enum ParameterError {
         /// Repeated identity.
         key: ParameterKey,
     },
+    /// A value replacement names a key outside the set.
+    UnknownReplacementKey {
+        /// Unknown identity.
+        key: ParameterKey,
+    },
 }
 
 impl Display for ParameterError {
@@ -343,6 +381,9 @@ impl Display for ParameterError {
                 )
             }
             Self::DuplicateKey { key } => write!(formatter, "duplicate parameter key {key}"),
+            Self::UnknownReplacementKey { key } => {
+                write!(formatter, "cannot replace unknown parameter key {key}")
+            }
         }
     }
 }

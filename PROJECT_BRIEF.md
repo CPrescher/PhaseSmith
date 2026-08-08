@@ -82,8 +82,16 @@ workflow. It now performs complete non-negative intensity extraction,
 mask/uncertainty handling, residual histories, unresolved-column diagnostics,
 checkpoint/restart, cancellation, and display-series calculation without
 Python. Its iteration history and final intensities are differentially checked
-against the scripting workflow. Native analytical profile and bounded-lattice
-updates remain the next migration substeps before Python delegation.
+against the scripting workflow. Parameter motion is layered onto this fixed
+extraction core in independently reviewed migration substeps.
+
+Fixed-topology native Le Bail now also refines analytical CW profile, phase
+scale, and independent reflection-position parameters through the native
+constraint graph. Its bounded regularized solve, backtracking, covariance,
+parameter audit trail, evaluation accounting, and profile-aware restart state
+are Python-free; accepted position-refinement histories agree with the Python
+oracle. Bounded lattice motion and reflection-domain regeneration remain before
+the complete workflow can replace Python orchestration.
 
 Unit 17 now includes the first full monochromatic CIF-backed Rietveld vertical
 slice. Typed profile/background/phase/lattice/site parameter families map

@@ -8,9 +8,10 @@ use phasesmith_core::ConstantWavelengthInstrument;
 use phasesmith_execution::ExecutionPolicy;
 use phasesmith_model::PatternRecord;
 use phasesmith_workflows::{
-    CancellationToken, LeBailInput, LeBailOptions, LeBailPhase, RefinementLimits,
-    RefinementRuntime, TerminationReason, calculate_lebail_pattern, iterate_lebail_once,
-    refine_lebail, refine_lebail_with_runtime,
+    AffineConstraint, CancellationToken, Constraint, LeBailInput, LeBailOptions, LeBailPhase,
+    RefinementLimits, RefinementRuntime, TerminationReason, build_lebail_parameter_set,
+    calculate_lebail_pattern, iterate_lebail_once, lebail_reflection_position_key, refine_lebail,
+    refine_lebail_with_runtime,
 };
 
 fn instrument() -> ConstantWavelengthInstrument {
@@ -241,6 +242,101 @@ fn invalid_state_is_rejected_and_worker_budgets_are_deterministic() {
 }
 
 #[test]
+fn analytical_position_instrument_and_constraint_updates_match_the_domain() {
+    let x = linspace(39.0, 43.0, 4_001);
+    let truth = vec![phase("alpha", &[40.0, 42.0], &[5.0, 7.0])];
+    let starting = vec![phase("alpha", &[39.99, 41.99], &[5.0, 7.0])];
+    let pattern = observed_pattern(x, &truth, vec![0.0; 4_001], None, None);
+    let parameters = build_lebail_parameter_set(instrument(), &starting, &[], false, true).unwrap();
+    let first = lebail_reflection_position_key("alpha", "alpha-0").unwrap();
+    let second = lebail_reflection_position_key("alpha", "alpha-1").unwrap();
+    let constraints = vec![Constraint::Affine(
+        AffineConstraint::new(second, first, 1.0, 2.0).unwrap(),
+    )];
+    let input =
+        LeBailInput::new_with_parameters(pattern, instrument(), starting, parameters, constraints)
+            .unwrap();
+    let selected = options(30).with_profile_controls(1.0e-10, 1.0, 8).unwrap();
+    let result = refine_lebail(&input, &selected, None).unwrap();
+    assert!((result.phases[0].two_theta_deg()[0] - 40.0).abs() < 4.0e-7);
+    assert!((result.phases[0].two_theta_deg()[1] - 42.0).abs() < 4.0e-7);
+    assert!(
+        result
+            .history
+            .iter()
+            .any(|record| !record.parameter_changes.is_empty())
+    );
+    assert!(result.covariance.is_some());
+    let partial_options = options(2).with_profile_controls(1.0e-10, 1.0, 8).unwrap();
+    let partial = refine_lebail(&input, &partial_options, None).unwrap();
+    let resumed = refine_lebail(&input, &selected, Some(&partial.checkpoint)).unwrap();
+    assert_eq!(resumed.history, result.history);
+    assert_eq!(resumed.calculation.y, result.calculation.y);
+    assert_eq!(resumed.parameters, result.parameters);
+
+    let positions = [30.0, 60.0, 100.0];
+    let x = linspace(20.0, 110.0, 9_001);
+    let truth = vec![phase("alpha", &positions, &[8.0, 5.0, 3.0])];
+    let starting = vec![phase("alpha", &positions, &[8.0, 5.0, 3.0])];
+    let pattern = observed_pattern(x, &truth, vec![0.0; 9_001], None, None);
+    let mut broad = instrument();
+    broad.w_deg2 = 5.0e-4;
+    let parameters =
+        build_lebail_parameter_set(broad, &starting, &["w_deg2"], false, false).unwrap();
+    let input =
+        LeBailInput::new_with_parameters(pattern, broad, starting, parameters, Vec::new()).unwrap();
+    let result = refine_lebail(
+        &input,
+        &options(30).with_profile_controls(1.0e-10, 1.0, 8).unwrap(),
+        None,
+    )
+    .unwrap();
+    assert!((result.instrument.w_deg2 - instrument().w_deg2).abs() < 2.0e-8);
+    assert!(result.metrics.rwp < 2.0e-5);
+
+    let x = linspace(39.0, 41.0, 1_001);
+    let phases = vec![phase("alpha", &[40.0], &[8.0])];
+    let pattern = observed_pattern(x, &phases, vec![0.0; 1_001], None, None);
+    let parameters = build_lebail_parameter_set(instrument(), &phases, &[], true, false).unwrap();
+    let input =
+        LeBailInput::new_with_parameters(pattern, instrument(), phases, parameters, Vec::new())
+            .unwrap();
+    let result = refine_lebail(&input, &options(3), None).unwrap();
+    assert!(result.covariance.is_none());
+    assert!(
+        result
+            .history
+            .iter()
+            .flat_map(|record| &record.warnings)
+            .any(|warning| warning.contains("not identifiable independently"))
+    );
+}
+
+#[test]
+fn profile_backtracking_obeys_the_host_evaluation_budget() {
+    let x = linspace(39.0, 41.0, 1_001);
+    let truth = vec![phase("alpha", &[40.0], &[8.0])];
+    let starting = vec![phase("alpha", &[39.985], &[8.0])];
+    let pattern = observed_pattern(x, &truth, vec![0.0; 1_001], None, None);
+    let parameters = build_lebail_parameter_set(instrument(), &starting, &[], false, true).unwrap();
+    let input =
+        LeBailInput::new_with_parameters(pattern, instrument(), starting, parameters, Vec::new())
+            .unwrap();
+    let limits = RefinementLimits::new(30, 2, None, 2).unwrap();
+    let mut runtime = RefinementRuntime::new(limits, None).unwrap();
+    let result = refine_lebail_with_runtime(
+        &input,
+        &options(30).with_profile_controls(1.0e-10, 1.0, 8).unwrap(),
+        None,
+        &mut runtime,
+    )
+    .unwrap();
+    assert_eq!(result.termination_reason, TerminationReason::MaxEvaluations);
+    assert!(result.history.is_empty());
+    assert_eq!(runtime.evaluations(), 2);
+}
+
+#[test]
 fn coincident_reflections_retain_partition_and_report_joint_rank() {
     let x = linspace(39.0, 41.0, 4_001);
     let truth = vec![
@@ -406,6 +502,91 @@ for item in result.history:
         assert_eq!(native.iteration, python.0);
         assert!((native.rwp - python.1).abs() < 2.0e-14);
         assert!((native.maximum_relative_intensity_change - python.2).abs() < 2.0e-12);
+    }
+}
+
+#[test]
+fn analytical_profile_history_matches_python_when_configured() {
+    let Ok(python) = std::env::var("PHASESMITH_NUMPY_PYTHON") else {
+        return;
+    };
+    let x = linspace(39.0, 41.0, 4_001);
+    let truth = vec![phase("alpha", &[40.0], &[8.0])];
+    let starting = vec![phase("alpha", &[39.985], &[8.0])];
+    let pattern = observed_pattern(x, &truth, vec![0.0; 4_001], None, None);
+    let parameters = build_lebail_parameter_set(instrument(), &starting, &[], false, true).unwrap();
+    let input =
+        LeBailInput::new_with_parameters(pattern, instrument(), starting, parameters, Vec::new())
+            .unwrap();
+    let result = refine_lebail(
+        &input,
+        &options(30).with_profile_controls(1.0e-10, 1.0, 8).unwrap(),
+        None,
+    )
+    .unwrap();
+
+    let script = r#"
+import numpy as np
+import phasesmith
+from phasesmith.refinement import lebail
+
+instrument = phasesmith.ConstantWavelengthInstrument(1.5406, 2e-4, -1e-4, 2e-4, 1.5e-3, 3e-3)
+x = np.linspace(39.0, 41.0, 4001)
+
+def phase(position):
+    d = instrument.wavelength_angstrom / (2.0 * np.sin(np.deg2rad(position / 2.0)))
+    reflections = phasesmith.ReflectionBatch(["alpha-0"], [[1, 1, 0]], [d], [position], [8.0])
+    return phasesmith.Phase("alpha", "alpha phase", reflections)
+
+observed = phasesmith.calculate_pattern(phasesmith.PowderPattern(x), instrument, (phase(40.0),)).y
+pattern = phasesmith.PowderPattern(x, observed_y=observed)
+starting = (phase(39.985),)
+parameters = lebail.build_parameter_set(instrument, starting, reflection_positions=True)
+result = lebail.refine(
+    lebail.LeBailInput(pattern, instrument, starting, parameters),
+    lebail.LeBailOptions(
+        max_iterations=30,
+        max_scaled_parameter_step=1.0,
+        execution=phasesmith.ExecutionPolicy(threads=1),
+    ),
+)
+print(format(result.phases[0].reflections.two_theta_deg[0], ".17g"))
+print(format(result.metrics.rwp, ".17g"))
+for item in result.history:
+    changes = sum(abs(change.scaled_change) for change in item.parameter_changes)
+    print(item.iteration, format(item.scaled_profile_step_norm, ".17g"), format(changes, ".17g"))
+"#;
+    let python_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../python");
+    let output = Command::new(python)
+        .args(["-c", script])
+        .env("PYTHONPATH", python_path)
+        .output()
+        .unwrap();
+    assert!(
+        output.status.success(),
+        "Python profile oracle failed:\n{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    let mut lines = stdout.lines();
+    let python_position = lines.next().unwrap().parse::<f64>().unwrap();
+    let python_rwp = lines.next().unwrap().parse::<f64>().unwrap();
+    assert!((result.phases[0].two_theta_deg()[0] - python_position).abs() < 2.0e-12);
+    assert!((result.metrics.rwp - python_rwp).abs() < 2.0e-12);
+    let python_history = lines.collect::<Vec<_>>();
+    assert_eq!(result.history.len(), python_history.len());
+    for (native, python) in result.history.iter().zip(python_history) {
+        let values = python.split_whitespace().collect::<Vec<_>>();
+        assert_eq!(native.iteration, values[0].parse::<usize>().unwrap());
+        assert!(
+            (native.scaled_profile_step_norm - values[1].parse::<f64>().unwrap()).abs() < 2.0e-10
+        );
+        let native_changes = native
+            .parameter_changes
+            .iter()
+            .map(|change| change.scaled_change.abs())
+            .sum::<f64>();
+        assert!((native_changes - values[2].parse::<f64>().unwrap()).abs() < 2.0e-10);
     }
 }
 

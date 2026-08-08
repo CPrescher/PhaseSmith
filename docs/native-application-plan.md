@@ -229,6 +229,18 @@ structured events and host checkpoint sinks. Mask, uncertainty, unobserved
 support, restart, worker determinism and every accepted history row agree with
 the current Python workflow. The committed release benchmark for eight
 iterations over 85 reflections and 3,001 samples has a current central estimate
-of 865.96 microseconds. Analytical profile/lattice parameter motion is the next
-Le Bail substep; until that lands, this native entry point deliberately accepts
-fixed reflection geometry only.
+of 865.96 microseconds. This first entry point deliberately owns fixed
+reflection topology; the subsequent substeps add parameter motion around that
+validated extraction core.
+
+Analytical fixed-topology profile motion completed the next native Le Bail
+substep. Native typed keys now cover CW U/V/W/X/Y coefficients, phase scales,
+and independent reflection positions; exact constraint chains feed a bounded
+regularized Gauss--Newton solve with deterministic backtracking. Accepted
+changes, scaled step norms, live parameters, covariance and the refined
+instrument are carried through results and restart checkpoints. Every trial
+calculation consumes the host evaluation budget. Constrained positions,
+instrument width, checkpoint continuation and covariance have native tests,
+while the complete accepted position-refinement history agrees with Python.
+Bounded lattice parameterization and accepted-step topology regeneration are
+the remaining Le Bail migration substep.
