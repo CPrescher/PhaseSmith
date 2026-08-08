@@ -31,6 +31,9 @@ pub struct MonochromaticPositionCorrection {
     pub zero_shift_deg: f64,
     /// Optional Bragg--Brentano `(sample displacement, goniometer radius)` in mm.
     pub bragg_brentano_mm: Option<(f64, f64)>,
+    /// Optional Debye--Scherrer `(X, Y, radius)` with displacements in micrometres
+    /// and the goniometer radius in millimetres.
+    pub debye_scherrer_micrometre: Option<(f64, f64, f64)>,
 }
 
 /// Built-in native scattering model selected without a Python callback.
@@ -211,6 +214,73 @@ struct PreparedNumerics {
     d_two_theta_d_cell: Vec<[f64; CELL_PARAMETER_COUNT]>,
     d_two_theta_d_wavelength: Vec<f64>,
     d_two_theta_d_sample_displacement: Option<Vec<f64>>,
+    d_two_theta_d_displace_x: Option<Vec<f64>>,
+    d_two_theta_d_displace_y: Option<Vec<f64>>,
+}
+
+#[derive(Clone, Copy, Debug)]
+struct CorrectedPosition {
+    position_deg: f64,
+    d_position_d_base: f64,
+    d_position_d_sample_displacement: Option<f64>,
+    d_position_d_displace_x: Option<f64>,
+    d_position_d_displace_y: Option<f64>,
+}
+
+fn corrected_monochromatic_position(
+    base_position_radians: f64,
+    correction: MonochromaticPositionCorrection,
+) -> CorrectedPosition {
+    let mut result = CorrectedPosition {
+        position_deg: base_position_radians.to_degrees() + correction.zero_shift_deg,
+        d_position_d_base: 1.0,
+        d_position_d_sample_displacement: None,
+        d_position_d_displace_x: None,
+        d_position_d_displace_y: None,
+    };
+    if let Some((displacement, radius)) = correction.bragg_brentano_mm {
+        let theta = 0.5 * base_position_radians;
+        result.position_deg -= 2.0 * displacement / radius * theta.cos() * DEGREES_PER_RADIAN;
+        result.d_position_d_base += displacement / radius * theta.sin();
+        result.d_position_d_sample_displacement =
+            Some(-2.0 / radius * theta.cos() * DEGREES_PER_RADIAN);
+    }
+    if let Some((displace_x, displace_y, radius)) = correction.debye_scherrer_micrometre {
+        let (sin_position, cos_position) = base_position_radians.sin_cos();
+        let displacement_scale = 0.18 / (std::f64::consts::PI * radius);
+        result.position_deg -=
+            displacement_scale * (displace_x * cos_position + displace_y * sin_position);
+        result.d_position_d_base += displacement_scale.to_radians()
+            * (displace_x * sin_position - displace_y * cos_position);
+        result.d_position_d_displace_x = Some(-displacement_scale * cos_position);
+        result.d_position_d_displace_y = Some(-displacement_scale * sin_position);
+    }
+    result
+}
+
+fn validate_position_correction(
+    correction: MonochromaticPositionCorrection,
+) -> Result<(), StructuralPatternError> {
+    let invalid = !correction.zero_shift_deg.is_finite()
+        || (correction.bragg_brentano_mm.is_some()
+            && correction.debye_scherrer_micrometre.is_some())
+        || correction
+            .bragg_brentano_mm
+            .is_some_and(|(displacement, radius)| {
+                !displacement.is_finite() || !radius.is_finite() || radius <= 0.0
+            })
+        || correction
+            .debye_scherrer_micrometre
+            .is_some_and(|(displace_x, displace_y, radius)| {
+                !displace_x.is_finite()
+                    || !displace_y.is_finite()
+                    || !radius.is_finite()
+                    || radius <= 0.0
+            });
+    if invalid {
+        return Err(StructuralPatternError::InvalidPositionCorrection);
+    }
+    Ok(())
 }
 
 fn validate_scattering_offsets(
@@ -591,16 +661,7 @@ fn prepare(
         .instrument
         .validate()
         .map_err(StructuralPatternError::InvalidInstrument)?;
-    if !input.position_correction.zero_shift_deg.is_finite()
-        || input
-            .position_correction
-            .bragg_brentano_mm
-            .is_some_and(|(displacement, radius)| {
-                !displacement.is_finite() || !radius.is_finite() || radius <= 0.0
-            })
-    {
-        return Err(StructuralPatternError::InvalidPositionCorrection);
-    }
+    validate_position_correction(input.position_correction)?;
     let geometry = cell
         .geometry()
         .map_err(StructureFactorBatchError::Cell)
@@ -614,6 +675,14 @@ fn prepare(
         .position_correction
         .bragg_brentano_mm
         .map(|_| Vec::with_capacity(input.hkl.len()));
+    let mut d_two_theta_d_displace_x = input
+        .position_correction
+        .debye_scherrer_micrometre
+        .map(|_| Vec::with_capacity(input.hkl.len()));
+    let mut d_two_theta_d_displace_y = input
+        .position_correction
+        .debye_scherrer_micrometre
+        .map(|_| Vec::with_capacity(input.hkl.len()));
     for &hkl in input.hkl {
         let (q_value, d_q) = geometry.q_squared_and_derivatives(hkl);
         if !q_value.is_finite() || q_value <= 0.0 {
@@ -625,27 +694,32 @@ fn prepare(
             return Err(StructuralPatternError::ReflectionOutsideAngularDomain);
         }
         let theta = sin_theta.asin();
-        let mut position = 2.0 * theta.to_degrees() + input.position_correction.zero_shift_deg;
-        let mut d_corrected_d_base = 1.0;
-        let mut d_position_d_sample = None;
-        if let Some((displacement, radius)) = input.position_correction.bragg_brentano_mm {
-            position -= 2.0 * displacement / radius * theta.cos() * DEGREES_PER_RADIAN;
-            d_corrected_d_base += displacement / radius * theta.sin();
-            d_position_d_sample = Some(-2.0 / radius * theta.cos() * DEGREES_PER_RADIAN);
-        }
+        let corrected = corrected_monochromatic_position(2.0 * theta, input.position_correction);
         let d_position_factor =
-            d_corrected_d_base * input.instrument.wavelength_angstrom * DEGREES_PER_RADIAN
+            corrected.d_position_d_base * input.instrument.wavelength_angstrom * DEGREES_PER_RADIAN
                 / (2.0 * root_q * theta.cos());
         let d_position_d_wavelength =
-            d_corrected_d_base * DEGREES_PER_RADIAN * root_q / theta.cos();
+            corrected.d_position_d_base * DEGREES_PER_RADIAN * root_q / theta.cos();
         q_squared.push(q_value);
         d_spacing.push(root_q.recip());
-        two_theta_deg.push(position);
+        two_theta_deg.push(corrected.position_deg);
         d_two_theta_d_cell.push(d_q.map(|derivative| d_position_factor * derivative));
         d_two_theta_d_wavelength.push(d_position_d_wavelength);
         if let (Some(values), Some(derivative)) = (
             d_two_theta_d_sample_displacement.as_mut(),
-            d_position_d_sample,
+            corrected.d_position_d_sample_displacement,
+        ) {
+            values.push(derivative);
+        }
+        if let (Some(values), Some(derivative)) = (
+            d_two_theta_d_displace_x.as_mut(),
+            corrected.d_position_d_displace_x,
+        ) {
+            values.push(derivative);
+        }
+        if let (Some(values), Some(derivative)) = (
+            d_two_theta_d_displace_y.as_mut(),
+            corrected.d_position_d_displace_y,
         ) {
             values.push(derivative);
         }
@@ -675,6 +749,8 @@ fn prepare(
         d_two_theta_d_cell,
         d_two_theta_d_wavelength,
         d_two_theta_d_sample_displacement,
+        d_two_theta_d_displace_x,
+        d_two_theta_d_displace_y,
     })
 }
 
@@ -714,7 +790,10 @@ fn append_instrument_derivatives(
     prepared: &PreparedNumerics,
 ) -> Result<(), StructuralPatternError> {
     let sample_count = accumulation.sample_count;
-    let extra_count = 2 + usize::from(prepared.d_two_theta_d_sample_displacement.is_some());
+    let extra_count = 2
+        + usize::from(prepared.d_two_theta_d_sample_displacement.is_some())
+        + usize::from(prepared.d_two_theta_d_displace_x.is_some())
+        + usize::from(prepared.d_two_theta_d_displace_y.is_some());
     let global = accumulation
         .derivatives
         .global
@@ -731,6 +810,14 @@ fn append_instrument_derivatives(
     let mut zero_shift = vec![0.0; sample_count];
     let mut sample_displacement = prepared
         .d_two_theta_d_sample_displacement
+        .as_ref()
+        .map(|_| vec![0.0; sample_count]);
+    let mut displace_x = prepared
+        .d_two_theta_d_displace_x
+        .as_ref()
+        .map(|_| vec![0.0; sample_count]);
+    let mut displace_y = prepared
+        .d_two_theta_d_displace_y
         .as_ref()
         .map(|_| vec![0.0; sample_count]);
     let local = &accumulation.derivatives.local;
@@ -757,6 +844,18 @@ fn append_instrument_derivatives(
             ) {
                 values[sample] += d_position * derivatives[reflection];
             }
+            if let (Some(values), Some(derivatives)) = (
+                displace_x.as_mut(),
+                prepared.d_two_theta_d_displace_x.as_ref(),
+            ) {
+                values[sample] += d_position * derivatives[reflection];
+            }
+            if let (Some(values), Some(derivatives)) = (
+                displace_y.as_mut(),
+                prepared.d_two_theta_d_displace_y.as_ref(),
+            ) {
+                values[sample] += d_position * derivatives[reflection];
+            }
         }
     }
     let instrument_end = CW_INSTRUMENT_PARAMETER_COUNT * sample_count;
@@ -764,6 +863,12 @@ fn append_instrument_derivatives(
     combined.extend(wavelength);
     combined.extend(zero_shift);
     if let Some(values) = sample_displacement {
+        combined.extend(values);
+    }
+    if let Some(values) = displace_x {
+        combined.extend(values);
+    }
+    if let Some(values) = displace_y {
         combined.extend(values);
     }
     combined.extend_from_slice(&old_values[instrument_end..]);
@@ -931,6 +1036,7 @@ mod tests {
                 position_correction: MonochromaticPositionCorrection {
                     zero_shift_deg: 0.0,
                     bragg_brentano_mm: None,
+                    debye_scherrer_micrometre: None,
                 },
                 correction_model: IntegratedIntensityCorrectionModel::Neutral,
                 scattering_model: BuiltInScatteringModel::XrayNonResonant,
@@ -1031,6 +1137,7 @@ mod tests {
             position_correction: MonochromaticPositionCorrection {
                 zero_shift_deg: 0.0,
                 bragg_brentano_mm: None,
+                debye_scherrer_micrometre: None,
             },
             correction_model: IntegratedIntensityCorrectionModel::Neutral,
             scattering_model: BuiltInScatteringModel::XrayNonResonant,

@@ -171,6 +171,7 @@ impl BenchmarkCase {
                 position_correction: phasesmith_engine::MonochromaticPositionCorrection {
                     zero_shift_deg: 0.0,
                     bragg_brentano_mm: None,
+                    debye_scherrer_micrometre: None,
                 },
                 correction_model: IntegratedIntensityCorrectionModel::Neutral,
                 scattering_model: BuiltInScatteringModel::XrayNonResonant,

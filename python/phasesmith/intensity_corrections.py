@@ -79,6 +79,33 @@ class NeutralIntegratedIntensityCorrection:
 
 
 @dataclass(frozen=True, slots=True)
+class ConstantWavelengthNeutronLorentz:
+    """Monochromatic neutron powder Lorentz factor ``1/(sinθ sin2θ)``."""
+
+    wavelength_angstrom: float
+    thread_safe: ClassVar[bool] = True
+
+    def __post_init__(self) -> None:
+        if not np.isfinite(self.wavelength_angstrom) or self.wavelength_angstrom <= 0.0:
+            raise ValueError("wavelength_angstrom must be positive and finite")
+
+    def evaluate(self, q_squared_inverse_angstrom2: ArrayLike) -> IntegratedIntensityCorrection:
+        """Return Lorentz values and analytical reciprocal-metric derivatives."""
+
+        q_squared = _q_squared(q_squared_inverse_angstrom2)
+        values, derivatives = _core.integrated_intensity_correction(
+            q_squared,
+            "constant_wavelength_neutron_lorentz",
+            self.wavelength_angstrom,
+        )
+        return IntegratedIntensityCorrection(
+            values,
+            derivatives,
+            "constant_wavelength_neutron_lorentz",
+        )
+
+
+@dataclass(frozen=True, slots=True)
 class BraggBrentanoUnpolarizedLp:
     """Monochromatic unpolarized symmetric Bragg--Brentano integrated LP."""
 

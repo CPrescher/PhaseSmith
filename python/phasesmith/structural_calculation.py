@@ -22,6 +22,7 @@ from .extensions import (
 from .intensity_corrections import (
     BraggBrentanoPolarizedLp,
     BraggBrentanoUnpolarizedLp,
+    ConstantWavelengthNeutronLorentz,
     NeutralIntegratedIntensityCorrection,
 )
 from .pattern import (
@@ -34,8 +35,10 @@ from .pattern import (
 )
 from .phase import ReflectionGeometryBatch, RietveldPhase
 from .radiation import (
+    BraggBrentanoGeometry,
     ComponentRadiation,
     ConstantWavelengthExperiment,
+    DebyeScherrerGeometry,
     MonochromaticRadiation,
     RadiationProbe,
 )
@@ -65,6 +68,11 @@ def _check_probe(phase: RietveldPhase, experiment: ConstantWavelengthExperiment)
             f"the {experiment.radiation.probe.value} experiment"
         )
     correction = phase.intensity_correction
+    if isinstance(correction, ConstantWavelengthNeutronLorentz):
+        if experiment.radiation.probe is not RadiationProbe.NEUTRON:
+            raise ValueError("constant-wavelength neutron Lorentz correction requires neutrons")
+        if correction.wavelength_angstrom != experiment.radiation.wavelength_angstrom:
+            raise ValueError("correction and experiment wavelengths must match exactly")
     if isinstance(correction, (BraggBrentanoUnpolarizedLp, BraggBrentanoPolarizedLp)):
         if experiment.radiation.probe is not RadiationProbe.X_RAY:
             raise ValueError("Bragg-Brentano polarization correction requires X-ray radiation")
@@ -83,15 +91,22 @@ def _geometry(
         raise ValueError(
             "all structural reflections must lie strictly within 0 < 2theta < 180 degrees"
         )
-    two_theta = np.ascontiguousarray(2.0 * np.degrees(np.arcsin(sin_theta)))
-    two_theta += experiment.zero_shift_deg
-    if experiment.geometry is not None:
-        theta = np.radians(0.5 * (two_theta - experiment.zero_shift_deg))
+    base_two_theta = np.ascontiguousarray(2.0 * np.degrees(np.arcsin(sin_theta)))
+    two_theta = base_two_theta + experiment.zero_shift_deg
+    if isinstance(experiment.geometry, BraggBrentanoGeometry):
+        theta = np.radians(0.5 * base_two_theta)
         two_theta -= np.degrees(
             2.0
             * experiment.geometry.sample_displacement_mm
             / experiment.geometry.goniometer_radius_mm
             * np.cos(theta)
+        )
+    elif isinstance(experiment.geometry, DebyeScherrerGeometry):
+        position_radians = np.radians(base_two_theta)
+        scale = 0.18 / (np.pi * experiment.geometry.goniometer_radius_mm)
+        two_theta -= scale * (
+            experiment.geometry.displace_x_micrometre * np.cos(position_radians)
+            + experiment.geometry.displace_y_micrometre * np.sin(position_radians)
         )
     return ReflectionGeometryBatch(
         phase.reflections.hkl,
@@ -129,6 +144,13 @@ def _native_model_configuration(
             "bragg_brentano_polarized_lp",
             phase.intensity_correction.wavelength_angstrom,
             phase.intensity_correction.polarization,
+        )
+    if type(phase.intensity_correction) is ConstantWavelengthNeutronLorentz:
+        return (
+            scattering_model,
+            "constant_wavelength_neutron_lorentz",
+            phase.intensity_correction.wavelength_angstrom,
+            None,
         )
     return None
 
@@ -218,7 +240,9 @@ def _native_dynamic_arguments(
         pattern.x,
         instrument.wavelength_angstrom,
         experiment.zero_shift_deg,
-        None if geometry is None else geometry.sample_displacement_mm,
+        (geometry.sample_displacement_mm if isinstance(geometry, BraggBrentanoGeometry) else None),
+        (geometry.displace_x_micrometre if isinstance(geometry, DebyeScherrerGeometry) else None),
+        (geometry.displace_y_micrometre if isinstance(geometry, DebyeScherrerGeometry) else None),
         None if geometry is None else geometry.goniometer_radius_mm,
         None if axial is None else axial.sample_over_radius,
         None if axial is None else axial.detector_over_radius,
@@ -249,7 +273,10 @@ def _accumulation_from_native(
 ) -> AccumulationResult:
     position_names = ("wavelength_angstrom", "zero_shift_deg")
     if experiment.geometry is not None:
-        position_names += ("sample_displacement_mm",)
+        if isinstance(experiment.geometry, BraggBrentanoGeometry):
+            position_names += ("sample_displacement_mm",)
+        else:
+            position_names += ("displace_x_micrometre", "displace_y_micrometre")
     axial_names: tuple[str, ...] = ()
     if experiment.axial_geometry is not None:
         axial_names = ("sample_over_radius", "detector_over_radius")
@@ -316,6 +343,7 @@ def _component_inputs(
             NeutralIntegratedIntensityCorrection,
             BraggBrentanoUnpolarizedLp,
             BraggBrentanoPolarizedLp,
+            ConstantWavelengthNeutronLorentz,
         ),
     ):
         raise NotImplementedError(
@@ -344,6 +372,8 @@ def _component_inputs(
                 float(wavelength),
                 correction.polarization,
             )
+        elif isinstance(correction, ConstantWavelengthNeutronLorentz):
+            correction = ConstantWavelengthNeutronLorentz(float(wavelength))
         component_phase = replace(
             phase,
             scale=phase.scale * float(weight),

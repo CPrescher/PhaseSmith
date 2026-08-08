@@ -32,8 +32,9 @@ support-limited. Bounds are applied in scaled free-parameter coordinates and
 trial states are installed only after their complete pattern improves the
 objective.
 
-The implemented families are CW U/V/W/X/Y profile coefficients, an additive
-grid-normalized polynomial background, phase scale, symmetry-independent
+The implemented families are CW U/V/W/X/Y profile coefficients, constant zero
+shift, Bragg--Brentano sample height, Debye--Scherrer X/Y displacement, an
+additive grid-normalized polynomial background, phase scale, symmetry-independent
 lattice values, symmetry-allowed fractional coordinates, occupancy, and
 isotropic displacement `U_iso` in square ångströms. Lattice trials regenerate
 the conservative guarded reflection topology by stable Miller-family ID.
@@ -80,11 +81,58 @@ print(result.termination_reason, result.metrics.rwp)
 print(result.phases[0].structure.cell)
 ```
 
+## Explicit and intelligent staged recipes
+
+The solver always refines exactly the active parameters in one
+`RietveldInput`; it never inserts a hidden sequence. Staging is an optional
+workflow layer in `phasesmith.refinement`:
+
+```python
+from phasesmith.refinement import intelligent_rietveld_recipe, run_rietveld_recipe
+
+# Advisory only: inspect this record before deciding whether to run it.
+proposal = intelligent_rietveld_recipe(request)
+print(proposal.to_record())
+
+workflow = run_rietveld_recipe(request, proposal, options=options)
+for stage in workflow.stages:
+    print(
+        stage.stage.name,
+        stage.starting_rwp,
+        stage.result.metrics.rwp,
+        stage.result.termination_reason,
+    )
+```
+
+The intelligent planner is deterministic and transparent. It can activate
+only families already authorized by `request.selection`. Its default cumulative
+advice establishes scale/background, aligns positions, stabilizes structural
+intensities, and finally releases the remaining profile/sample parameters. Each
+stage includes human-readable rationale and the resulting record lists every
+active `ParameterKey`. Iteration exhaustion is not accepted by default.
+
+Callers can construct `RietveldRecipe` and `RietveldStage` directly to change
+the order, options, or acceptable termination reasons. This is the appropriate
+place for experiment-specific judgment; the numerical solver remains
+unchanged.
+
+`RietveldProject.propose_intelligent_recipe()` returns advice without running
+anything. `RietveldProject.refine_intelligently()` is the explicit opt-in that
+plans and executes it, while `refine_recipe()` runs a caller-owned recipe.
+
 `ConstantWavelengthExperiment.x_ray(...)` selects built-in non-resonant X-ray
 scattering by default. `ConstantWavelengthExperiment.neutron(...)` selects the
 built-in nuclear neutron model through the identical refinement API. The
 workflow is explicitly monochromatic; wavelength-component refinement and TOF
 structural refinement are later method extensions, not implicit mode switches.
+For ordinary constant-wavelength neutron powder intensities, pass
+`ConstantWavelengthNeutronLorentz(wavelength)` explicitly. It evaluates
+`1/(sin(theta) sin(2 theta))` with analytical reciprocal-metric and wavelength
+derivatives; a neutral correction remains available for controlled calculations.
+For capillary/transmission data, attach `DebyeScherrerGeometry` to the
+experiment and authorize `displace_x_micrometre` and
+`displace_y_micrometre`. The intelligent planner places those parameters in
+its position-alignment stage, but only when the caller selected them.
 
 Multiple phases are a tuple in one `RietveldInput`. Background is owned by the
 pattern and is added once after summing phase profiles. Phase IDs, site IDs,
@@ -120,11 +168,27 @@ rank and nearly collinear columns, and returns physical-parameter covariance
 only when the normal matrix has full rank. It does not report a misleading
 inverse for a singular problem.
 
-Persistence format 4 stores the pattern, refined experiment and background,
+Persistence format 12 stores the pattern, refined experiment and background,
 structural phases,
 guarded domains, parameter selection, options, constraints, and checkpoint.
 `PersistenceBundle.to_rietveld_input()` reconstructs the request; pass the
 restored checkpoint to `rietveld.refine` for deterministic continuation.
+
+## Multi-histogram boundary
+
+One `RietveldInput` currently owns one observed pattern and one experiment.
+The PbSO4 validation therefore runs independent X-ray and neutron fits and
+labels its GSAS-II comparison accordingly. A scientifically equivalent joint
+fit requires a first-class multi-histogram input: structure, cell, atomic
+coordinates, occupancies, and displacement parameters are shared, while each
+histogram retains its own radiation/scattering model, scale, background,
+profile, limits, zero/displacement geometry, weights, and derivatives. The
+combined objective must sum every histogram's residual norm before accepting a
+trial. Alternating independent refinements is not treated as joint refinement.
+
+This typed shared/local parameter ownership is the next Rietveld slice. Until
+it exists, PhaseSmith does not claim that its independently fitted X/Y
+displacements should equal values from GSAS-II's coupled X-ray/neutron fit.
 
 ## Extension boundary
 

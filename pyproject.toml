@@ -40,10 +40,11 @@ module-name = "phasesmith._core"
 features = ["pyo3/extension-module"]
 
 [tool.pytest.ini_options]
-addopts = "-ra -m 'not external_oracle'"
+addopts = "-ra -m 'not external_oracle and not real_data'"
 testpaths = ["tests"]
 markers = [
   "external_oracle: requires the exact pinned GSAS-II checkout and compatible binaries",
+  "real_data: runs checksum-pinned external real-pattern workflows",
 ]
 
 [tool.ruff]

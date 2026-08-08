@@ -488,6 +488,46 @@ def test_bragg_brentano_position_corrections_match_equation() -> None:
     np.testing.assert_allclose(actual.reflections.two_theta_deg, expected, rtol=2e-15)
 
 
+def test_debye_scherrer_position_corrections_match_equation() -> None:
+    geometry = phasesmith.DebyeScherrerGeometry(650.0, 1578.8, 49.9)
+    phase = replace(xray_phase(), scattering=phasesmith.NeutronNuclear())
+    experiment = phasesmith.ConstantWavelengthExperiment(
+        phasesmith.MonochromaticRadiation.neutron(instrument().wavelength_angstrom),
+        instrument(),
+        zero_shift_deg=-0.1,
+        geometry=geometry,
+    )
+    actual = phasesmith.calculate_structural_pattern(pattern(), experiment, phase)
+    spacing = phase.structure.cell.d_spacings(reflections().hkl).d_spacing_angstrom
+    beta = 2.0 * np.arcsin(instrument().wavelength_angstrom / (2.0 * spacing))
+    expected = (
+        np.degrees(beta)
+        - 0.1
+        - 0.18
+        / (np.pi * geometry.goniometer_radius_mm)
+        * (
+            geometry.displace_x_micrometre * np.cos(beta)
+            + geometry.displace_y_micrometre * np.sin(beta)
+        )
+    )
+    np.testing.assert_allclose(actual.reflections.two_theta_deg, expected, rtol=2e-15)
+
+
+@pytest.mark.parametrize(
+    "values",
+    (
+        (0.0, 0.0, 0.0),
+        (650.0, np.nan, 0.0),
+        (650.0, 0.0, np.inf),
+    ),
+)
+def test_debye_scherrer_geometry_rejects_invalid_values(
+    values: tuple[float, float, float],
+) -> None:
+    with pytest.raises(ValueError, match=r"positive and finite|displacements must be finite"):
+        phasesmith.DebyeScherrerGeometry(*values)
+
+
 @pytest.mark.parametrize(
     ("parameter", "step"),
     (
@@ -549,6 +589,40 @@ def test_instrument_correction_derivatives_match_finite_difference(
         actual.derivatives.global_jacobian[row],
         finite_difference,
         rtol=2e-5,
+        atol=2e-5,
+    )
+
+
+@pytest.mark.parametrize("parameter", ("displace_x_micrometre", "displace_y_micrometre"))
+def test_debye_scherrer_derivatives_match_finite_difference(parameter: str) -> None:
+    geometry = phasesmith.DebyeScherrerGeometry(650.0, 1200.0, -80.0)
+    phase = replace(xray_phase(), scattering=phasesmith.NeutronNuclear())
+    base_experiment = phasesmith.ConstantWavelengthExperiment(
+        phasesmith.MonochromaticRadiation.neutron(instrument().wavelength_angstrom),
+        instrument(),
+        zero_shift_deg=-0.1,
+        geometry=geometry,
+    )
+    actual = phasesmith.calculate_structural_pattern(pattern(), base_experiment, phase)
+    row = actual.derivatives.global_parameter_names.index(parameter)
+    step = 1.0e-2
+
+    def evaluate(delta: float) -> np.ndarray:
+        moved = phasesmith.DebyeScherrerGeometry(
+            geometry.goniometer_radius_mm,
+            geometry.displace_x_micrometre
+            + (delta if parameter.endswith("_x_micrometre") else 0.0),
+            geometry.displace_y_micrometre
+            + (delta if parameter.endswith("_y_micrometre") else 0.0),
+        )
+        experiment = replace(base_experiment, geometry=moved)
+        return phasesmith.calculate_structural_pattern(pattern(), experiment, phase).profile_y
+
+    finite_difference = (evaluate(step) - evaluate(-step)) / (2.0 * step)
+    np.testing.assert_allclose(
+        actual.derivatives.global_jacobian[row],
+        finite_difference,
+        rtol=3e-5,
         atol=2e-5,
     )
 

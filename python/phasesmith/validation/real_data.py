@@ -15,21 +15,32 @@ from ..control import CancellationCallback
 from ..execution import ExecutionPolicy
 from ..extensions import CompositePhysicsProvider
 from ..instrument import ConstantWavelengthInstrument, FcjGeometry
-from ..intensity_corrections import BraggBrentanoPolarizedLp
+from ..intensity_corrections import (
+    BraggBrentanoPolarizedLp,
+    ConstantWavelengthNeutronLorentz,
+)
 from ..io.powder import read_powder_data
 from ..pattern import PowderPattern
 from ..phase import ReciprocalMetric, RietveldPhase
 from ..quantitative import QuantitativePhase, quantitative_phase_analysis
-from ..radiation import ConstantWavelengthExperiment, WavelengthComponents
+from ..radiation import (
+    ConstantWavelengthExperiment,
+    DebyeScherrerGeometry,
+    MonochromaticRadiation,
+    RadiationProbe,
+    WavelengthComponents,
+)
 from ..refinement import lebail, rietveld
+from ..refinement.background import ChebyshevBackground
 from ..refinement.core import TerminationReason
 from ..refinement.runtime import RefinementLimits, RefinementLogger
+from ..refinement.workflow import intelligent_rietveld_recipe, run_rietveld_recipe
 from ..sample import (
     IsotropicMicrostrainBroadening,
     IsotropicSizeBroadening,
     MarchDollasePreferredOrientation,
 )
-from ..scattering import XrayFixedDispersion
+from ..scattering import NeutronNuclear, XrayFixedDispersion, XrayNonResonant
 from ..structure import CrystalStructure
 
 ValidationStatus = Literal["passed", "failed", "blocked"]
@@ -754,6 +765,294 @@ def run_sucrose_lebail_validation(dataset_directory: str | Path) -> RealDataVali
             (
                 "The tutorial's lower final Rwp uses additional staged background, size, "
                 "microstrain, lattice, and repeated extraction refinements."
+            ),
+        ),
+    )
+
+
+def _pbso4_experiment(
+    probe: RadiationProbe,
+) -> tuple[ConstantWavelengthExperiment, object, object, tuple[float, float]]:
+    if probe is RadiationProbe.X_RAY:
+        instrument = ConstantWavelengthInstrument(
+            1.5405,
+            2.0e-4,
+            -2.0e-4,
+            5.0e-4,
+            1.0e-3,
+            0.0,
+        )
+        return (
+            ConstantWavelengthExperiment.x_ray_components(
+                instrument,
+                WavelengthComponents.doublet(1.5405, 1.5443, 0.5),
+                axial_geometry=FcjGeometry(0.0075, 0.0075),
+            ),
+            XrayNonResonant(),
+            BraggBrentanoPolarizedLp(1.5405, 0.7),
+            (16.0, 158.4),
+        )
+    instrument = ConstantWavelengthInstrument(
+        1.909,
+        354.031e-4,
+        -760.404e-4,
+        651.592e-4,
+        0.0,
+        0.0,
+    )
+    return (
+        ConstantWavelengthExperiment(
+            MonochromaticRadiation.neutron(1.909),
+            instrument,
+            zero_shift_deg=-0.1,
+            geometry=DebyeScherrerGeometry(650.0),
+        ),
+        NeutronNuclear(),
+        ConstantWavelengthNeutronLorentz(1.909),
+        (19.0, 153.0),
+    )
+
+
+def run_pbso4_cw_validation(
+    dataset_directory: str | Path,
+    probe: RadiationProbe,
+    *,
+    execution: ExecutionPolicy | None = None,
+) -> RealDataValidationReport:
+    """Refine one official PbSO4 X-ray or neutron constant-wavelength pattern."""
+
+    if probe not in {RadiationProbe.X_RAY, RadiationProbe.NEUTRON}:
+        raise ValueError("PbSO4 validation requires X-ray or neutron radiation")
+    start = perf_counter()
+    root = Path(dataset_directory)
+    filename = "PBSO4.XRA" if probe is RadiationProbe.X_RAY else "PBSO4.CWN"
+    data = read_powder_data(root / filename, format="gsas_std")
+    experiment, scattering, correction, limits = _pbso4_experiment(probe)
+    selected = (data.x >= limits[0]) & (data.x <= limits[1])
+    x = data.x[selected]
+    observed = data.observed_y[selected]
+    uncertainty = None if data.uncertainty is None else data.uncertainty[selected]
+    fixed_background = SmoothBrucknerBackground(
+        smooth_width=1.0,
+        iterations=50,
+        chebyshev_order=None,
+    ).estimate(x, observed)
+    residual_background = ChebyshevBackground(
+        "pbso4_residual",
+        (0.0, 0.0, 0.0),
+        limits,
+    )
+    pattern = PowderPattern(
+        x,
+        observed_y=observed,
+        uncertainty=uncertainty,
+        background=fixed_background,
+    )
+    position_parameters = (
+        ("u_deg2", "v_deg2", "w_deg2", "zero_shift_deg")
+        if probe is RadiationProbe.X_RAY
+        else (
+            "u_deg2",
+            "v_deg2",
+            "w_deg2",
+            "displace_x_micrometre",
+            "displace_y_micrometre",
+        )
+    )
+    selection = rietveld.RietveldParameterSelection(
+        phase_scale=True,
+        lattice=probe is RadiationProbe.NEUTRON,
+        coordinates=True,
+        occupancy=False,
+        u_iso=True,
+        sample_physics=probe is RadiationProbe.X_RAY,
+        instrument_parameters=position_parameters,
+        background=True,
+    )
+    initial = rietveld.RietveldInput.from_cif(
+        pattern,
+        experiment,
+        root / "PbSO4-Wyckoff.cif",
+        phase_id="PbSO4",
+        selection=selection,
+        scattering=scattering,
+        intensity_correction=correction,
+        coordinate_tolerance=1.0e-4,
+        background=residual_background,
+    )
+    phase = initial.phases[0]
+    if probe is RadiationProbe.X_RAY:
+        phase = replace(
+            phase,
+            physics=CompositePhysicsProvider(
+                (
+                    IsotropicSizeBroadening(100.0),
+                    IsotropicMicrostrainBroadening(8.0e-4),
+                )
+            ),
+        )
+    scale = _qarr_initial_scales(pattern, experiment, (phase,))[0]
+    phase = replace(phase, scale=scale)
+    initial_calculation = rietveld.calculate(
+        pattern,
+        experiment,
+        (phase,),
+        background=residual_background,
+    )
+    background_basis = residual_background.basis(x)
+    background_residual = observed - initial_calculation.y
+    if uncertainty is None:
+        weighted_basis = background_basis
+        weighted_residual = background_residual
+    else:
+        weighted_basis = background_basis / uncertainty[:, np.newaxis]
+        weighted_residual = background_residual / uncertainty
+    residual_background = residual_background.replace_coefficients(
+        np.linalg.lstsq(weighted_basis, weighted_residual, rcond=None)[0]
+    )
+    request = rietveld.RietveldInput(
+        pattern,
+        experiment,
+        (phase,),
+        initial.lattice_domains,
+        rietveld.build_parameter_set(
+            (phase,),
+            initial.lattice_domains,
+            selection,
+            experiment=experiment,
+            background=residual_background,
+        ),
+        selection=selection,
+        background=residual_background,
+    )
+    options = rietveld.RietveldOptions(
+        limits=RefinementLimits(max_iterations=160, max_evaluations=3_000),
+        min_iterations=3,
+        objective_tolerance=1.0e-7,
+        max_scaled_parameter_step=0.15,
+        support_fwhm=30.0,
+        estimate_covariance=False,
+        execution=ExecutionPolicy() if execution is None else execution,
+    )
+    recipe = intelligent_rietveld_recipe(
+        request,
+        name=f"pbso4-{probe.value}-intelligent",
+    )
+    workflow = run_rietveld_recipe(
+        request,
+        recipe,
+        options=options,
+    )
+    result = workflow.final_result
+    residual = result.calculation.y - observed
+    unit_weight_rwp = float(np.sqrt((residual @ residual) / (observed @ observed)))
+    profile_correlation = float(
+        np.corrcoef(
+            observed - result.calculation.background,
+            result.calculation.profile_y,
+        )[0, 1]
+    )
+    poisson_limit = 0.11 if probe is RadiationProbe.X_RAY else 0.05
+    unit_weight_limit = 0.10 if probe is RadiationProbe.X_RAY else 0.06
+    cell = result.phases[0].structure.cell
+    reference_cell = (8.48, 5.398, 6.958)
+    cell_values = (cell.a_angstrom, cell.b_angstrom, cell.c_angstrom)
+    maximum_cell_relative_error = max(
+        abs(actual - expected) / expected
+        for actual, expected in zip(cell_values, reference_cell, strict=True)
+    )
+    unsafe_terminations = {
+        TerminationReason.NUMERICAL_FAILURE,
+        TerminationReason.DIVERGED,
+        TerminationReason.REPEATED_REJECTIONS,
+        TerminationReason.NO_OBSERVATIONS,
+        TerminationReason.MAX_ITERATIONS,
+    }
+    safe_termination = workflow.completed and all(
+        stage.result.termination_reason not in unsafe_terminations for stage in workflow.stages
+    )
+    geometry_note = None
+    if isinstance(result.experiment.geometry, DebyeScherrerGeometry):
+        geometry_note = (
+            "Debye-Scherrer geometry: fixed radius="
+            f"{result.experiment.geometry.goniometer_radius_mm:.3f} mm; refined "
+            f"X={result.experiment.geometry.displace_x_micrometre:.6f} micrometre, "
+            f"Y={result.experiment.geometry.displace_y_micrometre:.6f} micrometre."
+        )
+    checks = (
+        ValidationCheck(
+            "observed_grid",
+            "passed" if x.size > 2_000 and x[0] == limits[0] and x[-1] == limits[1] else "failed",
+            "Selected PbSO4 pattern uses the official combined-refinement angular range.",
+            measured=float(x.size),
+            criterion=f">2000 samples with endpoints {limits[0]} and {limits[1]} degrees",
+        ),
+        ValidationCheck(
+            "refinement_termination",
+            "passed" if safe_termination else "failed",
+            "Every intelligent recipe stage terminates safely under explicit budgets.",
+            criterion="all stages converge or stagnate safely; iteration exhaustion fails",
+        ),
+        ValidationCheck(
+            "poisson_rwp",
+            "passed" if result.metrics.rwp <= poisson_limit else "failed",
+            "Poisson-weighted complete-pattern residual for the PbSO4 workflow.",
+            measured=result.metrics.rwp,
+            criterion=f"Rwp <= {poisson_limit}",
+        ),
+        ValidationCheck(
+            "unit_weight_rwp",
+            "passed" if unit_weight_rwp <= unit_weight_limit else "failed",
+            "Unit-weight PbSO4 residual is reported separately.",
+            measured=unit_weight_rwp,
+            criterion=f"unit-weight Rwp <= {unit_weight_limit}",
+        ),
+        ValidationCheck(
+            "profile_correlation",
+            "passed" if profile_correlation >= 0.99 else "failed",
+            "Background-subtracted observed and calculated profiles remain aligned.",
+            measured=profile_correlation,
+            criterion="Pearson correlation >= 0.99",
+        ),
+        ValidationCheck(
+            "reference_cell_relative_error",
+            "passed" if maximum_cell_relative_error <= 0.005 else "failed",
+            "Refined cell remains close to the supplied PbSO4 reference model.",
+            measured=maximum_cell_relative_error,
+            criterion="maximum relative error across a, b, c <= 0.005",
+        ),
+    )
+    status: ValidationStatus = (
+        "passed" if all(check.status == "passed" for check in checks) else "failed"
+    )
+    return RealDataValidationReport(
+        dataset_id=f"gsasii-pbso4-cw-{probe.value}",
+        status=status,
+        sample_count=x.size,
+        reflection_count=result.phases[0].reflections.reflection_count,
+        elapsed_seconds=perf_counter() - start,
+        checks=checks,
+        notes=(
+            f"Final cell a={cell.a_angstrom:.8f}, b={cell.b_angstrom:.8f}, "
+            f"c={cell.c_angstrom:.8f} angstrom.",
+            f"Termination={result.termination_reason.value}; iterations={len(result.history)}; "
+            f"evaluations={result.evaluations}.",
+            *((geometry_note,) if geometry_note is not None else ()),
+            *(
+                f"Stage {stage.stage.name}: Rwp {stage.starting_rwp:.8f} -> "
+                f"{stage.result.metrics.rwp:.8f}; "
+                f"termination={stage.result.termination_reason.value}; "
+                f"iterations={len(stage.result.history)}."
+                for stage in workflow.stages
+            ),
+            *recipe.planner_notes,
+            (
+                "The residual background coefficients are initialized by weighted linear "
+                "least squares against the starting structural profile."
+            ),
+            (
+                "Background is a fixed native Smooth Bruckner estimate plus a refined "
+                "three-term Chebyshev residual correction."
             ),
         ),
     )

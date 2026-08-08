@@ -523,6 +523,34 @@ without losing the last accepted state, and phase-scale conditioning follows
 the current nonzero scale magnitude instead of assuming scales are order one;
 an exact zero retains an order-one escape scale.
 
+The PbSO4 real-data checkpoint adds a separate optional staged-workflow layer
+above the unchanged general Rietveld solver. Explicit `RietveldRecipe` objects
+own parameter activation and stage acceptance. The deterministic
+`intelligent_rietveld_recipe` planner is advisory: it may select only families
+already authorized by the caller, records human-readable reasons and active
+parameter identities, and never runs implicitly. The accompanying physics
+checkpoint adds the constant-wavelength neutron powder Lorentz factor
+`1/(sin(theta) sin(2 theta))` with native values and analytical derivatives.
+Persistence format 12 stores that typed correction and the Debye--Scherrer
+goniometer radius/X/Y geometry while loading formats 1--11.
+The PbSO4 workflow composes background layers explicitly: a Smooth Bruckner
+estimate is fixed preprocessing, while a three-term differentiable Chebyshev
+correction is initialized by weighted linear least squares and then remains
+active throughout the cumulative recipe. This preserves the distinction
+between broad baseline estimation and refinable residual background structure.
+The neutron position model is no longer approximated by one constant shift:
+typed Debye--Scherrer X/Y displacements use the documented 650 mm radius,
+native analytical derivatives, refinement, persistence, and finite-difference
+tests. The pinned PbSO4 check now returns 4.217% neutron Rwp versus 4.535% from
+GSAS-II and a maximum relative cell difference of 0.000424.
+
+The remaining parity boundary is joint refinement. PhaseSmith currently owns
+one pattern/experiment per `RietveldInput`; GSAS-II shares one PbSO4 structure
+across both histograms. The next slice must introduce a first-class
+multi-histogram objective with explicit shared structural parameters and local
+scale/background/profile/radiation/geometry parameters. Alternating independent
+fits is not accepted as an equivalent implementation.
+
 ## Quality bar
 
 Public behavior is typed and documented. Invalid shapes, non-finite values,

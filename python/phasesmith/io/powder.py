@@ -11,7 +11,7 @@ from numpy.typing import NDArray
 
 from ..pattern import PowderPattern
 
-PowderFormat = Literal["auto", "columns", "gsas_fxye"]
+PowderFormat = Literal["auto", "columns", "gsas_fxye", "gsas_std"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -33,7 +33,7 @@ class PowderData:
     x: NDArray[np.float64]
     observed_y: NDArray[np.float64]
     uncertainty: NDArray[np.float64] | None
-    format: Literal["columns", "gsas_fxye"]
+    format: Literal["columns", "gsas_fxye", "gsas_std"]
     source_name: str | None = None
     bank: int | None = None
 
@@ -54,10 +54,10 @@ class PowderData:
                 raise ValueError("uncertainty must match x")
             if not np.isfinite(self.uncertainty).all() or np.any(self.uncertainty <= 0.0):
                 raise ValueError("uncertainty must contain only finite positive values")
-        if self.format not in {"columns", "gsas_fxye"}:
+        if self.format not in {"columns", "gsas_fxye", "gsas_std"}:
             raise ValueError("unsupported powder-data format")
-        if self.format == "gsas_fxye" and self.bank is None:
-            raise ValueError("GSAS FXYE data must identify its bank")
+        if self.format in {"gsas_fxye", "gsas_std"} and self.bank is None:
+            raise ValueError("GSAS powder data must identify its bank")
         for array in (self.x, self.observed_y, self.uncertainty):
             if array is not None:
                 array.flags.writeable = False
@@ -81,26 +81,29 @@ def read_powder_data(
     bank: int = 1,
     limits: PowderReadLimits | None = None,
 ) -> PowderData:
-    """Read two/three-column text or a constant-wavelength GSAS FXYE bank.
+    """Read columns or an unpacked/packed constant-wavelength GSAS bank.
 
     Plain columns are ``x, observed_y[, uncertainty]`` in caller-selected
     coordinate units. GSAS FXYE stores constant-wavelength coordinates in
-    centidegrees; this adapter exposes degrees. Packed GSAS formats are
-    intentionally rejected instead of being guessed.
+    centidegrees; this adapter exposes degrees. The packed ``CONST ... STD``
+    form stores ten fixed-width normalization/intensity records per line.
+    Other packed GSAS encodings are rejected instead of being guessed.
     """
 
     selected_limits = limits or PowderReadLimits()
     if not isinstance(selected_limits, PowderReadLimits):
         raise TypeError("limits must be PowderReadLimits")
-    if format not in {"auto", "columns", "gsas_fxye"}:
-        raise ValueError("format must be 'auto', 'columns', or 'gsas_fxye'")
+    if format not in {"auto", "columns", "gsas_fxye", "gsas_std"}:
+        raise ValueError("format must be 'auto', 'columns', 'gsas_fxye', or 'gsas_std'")
     if isinstance(bank, bool) or not isinstance(bank, int) or bank <= 0:
         raise ValueError("bank must be a positive integer")
     text, source_name = _read_source(path_or_text, selected_limits.max_bytes)
     selected_format = _detect_format(text, source_name) if format == "auto" else format
     if selected_format == "columns":
         return _read_columns(text, source_name, selected_limits.max_rows)
-    return _read_gsas_fxye(text, source_name, bank, selected_limits.max_rows)
+    if selected_format == "gsas_fxye":
+        return _read_gsas_fxye(text, source_name, bank, selected_limits.max_rows)
+    return _read_gsas_std(text, source_name, bank, selected_limits.max_rows)
 
 
 def _read_source(path_or_text: str | Path, max_bytes: int) -> tuple[str, str | None]:
@@ -132,9 +135,18 @@ def _validate_text_size(text: str, max_bytes: int) -> str:
     return text
 
 
-def _detect_format(text: str, source_name: str | None) -> Literal["columns", "gsas_fxye"]:
-    if any(line.lstrip().upper().startswith("BANK ") for line in text.splitlines()):
+def _detect_format(
+    text: str, source_name: str | None
+) -> Literal["columns", "gsas_fxye", "gsas_std"]:
+    bank_headers = [
+        line.strip().upper()
+        for line in text.splitlines()
+        if line.lstrip().upper().startswith("BANK ")
+    ]
+    if any(header.split()[-1] == "FXYE" for header in bank_headers):
         return "gsas_fxye"
+    if bank_headers:
+        return "gsas_std"
     if source_name is not None and Path(source_name).suffix.lower() == ".fxye":
         return "gsas_fxye"
     return "columns"
@@ -215,6 +227,77 @@ def _read_gsas_fxye(
         observed_y=np.array(data[:, 1], copy=True),
         uncertainty=np.array(data[:, 2], copy=True),
         format="gsas_fxye",
+        source_name=source_name,
+        bank=selected_bank,
+    )
+
+
+def _read_gsas_std(
+    text: str, source_name: str | None, selected_bank: int, max_rows: int
+) -> PowderData:
+    bank_headers: dict[int, tuple[list[str], list[str]]] = {}
+    active_bank: int | None = None
+    for line_number, raw_line in enumerate(text.splitlines(), start=1):
+        line = raw_line.strip()
+        if line.upper().startswith("BANK "):
+            fields = line.split()
+            try:
+                active_bank = int(fields[1])
+            except (IndexError, ValueError) as error:
+                raise ValueError(f"line {line_number}: invalid GSAS bank header") from error
+            if active_bank in bank_headers:
+                raise ValueError(f"line {line_number}: duplicate GSAS bank {active_bank}")
+            bank_headers[active_bank] = (fields, [])
+        elif active_bank is not None:
+            bank_headers[active_bank][1].append(raw_line)
+    if selected_bank not in bank_headers:
+        available = ", ".join(str(value) for value in sorted(bank_headers)) or "none"
+        raise ValueError(f"GSAS bank {selected_bank} not found; available banks: {available}")
+
+    fields, lines = bank_headers[selected_bank]
+    encoding = fields[-1].upper() if len(fields) >= 10 else "STD"
+    if len(fields) < 7 or fields[4].upper() != "CONST" or encoding != "STD":
+        raise ValueError("only packed constant-step GSAS STD banks are supported")
+    try:
+        row_count = int(fields[2])
+        start_deg = float(fields[5]) / 100.0
+        step_deg = float(fields[6]) / 100.0
+    except ValueError as error:
+        raise ValueError("invalid packed GSAS STD bank dimensions") from error
+    if row_count <= 0 or row_count > max_rows or not np.isfinite((start_deg, step_deg)).all():
+        raise ValueError("packed GSAS STD bank dimensions exceed limits or are non-finite")
+    if step_deg <= 0.0:
+        raise ValueError("packed GSAS STD step must be positive")
+
+    intensities: list[float] = []
+    variances: list[float] = []
+    for line_number, raw_line in enumerate(lines, start=1):
+        for offset in range(0, len(raw_line), 8):
+            record = raw_line[offset : offset + 8]
+            if not record.strip():
+                continue
+            try:
+                normalization = max(int(record[:2].strip() or "1"), 1)
+                intensity = max(float(record[2:].strip()), 0.0)
+            except ValueError as error:
+                raise ValueError(
+                    f"packed GSAS STD data line {line_number}: invalid fixed-width record"
+                ) from error
+            intensities.append(intensity)
+            variances.append(intensity / normalization if intensity > 0.0 else 1.0)
+            if len(intensities) == row_count:
+                break
+        if len(intensities) == row_count:
+            break
+    if len(intensities) != row_count:
+        raise ValueError(
+            f"packed GSAS STD bank contains {len(intensities)} records; expected {row_count}"
+        )
+    return PowderData(
+        x=start_deg + step_deg * np.arange(row_count, dtype=np.float64),
+        observed_y=np.asarray(intensities, dtype=np.float64),
+        uncertainty=np.sqrt(np.asarray(variances, dtype=np.float64)),
+        format="gsas_std",
         source_name=source_name,
         bank=selected_bank,
     )

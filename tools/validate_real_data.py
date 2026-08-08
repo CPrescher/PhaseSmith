@@ -11,9 +11,11 @@ from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 
 from phasesmith import TerminalCancellationController
+from phasesmith.radiation import RadiationProbe
 from phasesmith.refinement import ConsoleRefinementLogger
 from phasesmith.validation import (
     fetch_validation_dataset,
+    run_pbso4_cw_validation,
     run_qarr_1g_validation,
     run_sucrose_lebail_validation,
     verify_validation_dataset,
@@ -28,15 +30,27 @@ def main() -> int:
     args = parser.parse_args()
 
     reports = []
-    for dataset_id, runner in (
+    workflows = (
         ("aps-sucrose-11bmb", run_sucrose_lebail_validation),
         ("iucr-qarr-1g", run_qarr_1g_validation),
-    ):
+        (
+            "gsasii-pbso4-cw",
+            lambda directory: run_pbso4_cw_validation(directory, RadiationProbe.X_RAY),
+        ),
+        (
+            "gsasii-pbso4-cw",
+            lambda directory: run_pbso4_cw_validation(directory, RadiationProbe.NEUTRON),
+        ),
+    )
+    prepared: set[str] = set()
+    for dataset_id, runner in workflows:
         destination = args.data_directory / dataset_id
-        if args.fetch:
-            fetch_validation_dataset(dataset_id, destination)
-        else:
-            verify_validation_dataset(dataset_id, destination)
+        if dataset_id not in prepared:
+            if args.fetch:
+                fetch_validation_dataset(dataset_id, destination)
+            else:
+                verify_validation_dataset(dataset_id, destination)
+            prepared.add(dataset_id)
         if dataset_id == "iucr-qarr-1g":
             with TerminalCancellationController() as controller:
                 report = run_qarr_1g_validation(
@@ -47,7 +61,7 @@ def main() -> int:
         else:
             report = runner(destination)
         reports.append(report)
-        print(f"{dataset_id}: {report.status}")
+        print(f"{report.dataset_id}: {report.status}")
         for check in report.checks:
             measured = "" if check.measured is None else f" measured={check.measured:.8g}"
             print(f"  {check.status:7s} {check.check_id}{measured}")

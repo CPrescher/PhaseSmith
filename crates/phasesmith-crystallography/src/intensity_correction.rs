@@ -31,6 +31,11 @@ pub enum IntegratedIntensityCorrectionModel {
         /// Fraction in the constant polarization term, constrained to `[0, 1]`.
         polarization: f64,
     },
+    /// Monochromatic constant-wavelength neutron powder Lorentz factor.
+    ConstantWavelengthNeutronLorentz {
+        /// Monochromatic wavelength in ångströms.
+        wavelength_angstrom: f64,
+    },
 }
 
 /// Invalid correction model or reflection geometry.
@@ -92,13 +97,17 @@ impl IntegratedIntensityCorrectionModel {
             | Self::BraggBrentanoPolarizedLp {
                 wavelength_angstrom,
                 ..
+            }
+            | Self::ConstantWavelengthNeutronLorentz {
+                wavelength_angstrom,
             } => {
                 if !wavelength_angstrom.is_finite() || wavelength_angstrom <= 0.0 {
                     return Err(IntegratedIntensityCorrectionError::InvalidWavelength);
                 }
-                let polarization = match self {
-                    Self::BraggBrentanoUnpolarizedLp { .. } => 0.5,
-                    Self::BraggBrentanoPolarizedLp { polarization, .. } => polarization,
+                let (polarization, factor) = match self {
+                    Self::BraggBrentanoUnpolarizedLp { .. } => (0.5, 1.0),
+                    Self::BraggBrentanoPolarizedLp { polarization, .. } => (polarization, 1.0),
+                    Self::ConstantWavelengthNeutronLorentz { .. } => (1.0, 0.5),
                     Self::Neutral => unreachable!(),
                 };
                 if !polarization.is_finite() || !(0.0..=1.0).contains(&polarization) {
@@ -111,9 +120,9 @@ impl IntegratedIntensityCorrectionModel {
                 for &q_squared in q_squared_inverse_angstrom2 {
                     let (value, derivative, wavelength_derivative) =
                         bragg_brentano_lp(q_squared, wavelength_angstrom, polarization)?;
-                    values.push(value);
-                    derivatives.push(derivative);
-                    wavelength_derivatives.push(wavelength_derivative);
+                    values.push(factor * value);
+                    derivatives.push(factor * derivative);
+                    wavelength_derivatives.push(factor * wavelength_derivative);
                 }
                 Ok(IntegratedIntensityCorrection {
                     values,
@@ -266,6 +275,29 @@ mod tests {
         .evaluate(&q_squared)
         .expect("half polarized");
         assert_eq!(half, unpolarized);
+    }
+
+    #[test]
+    fn neutron_lorentz_matches_constant_wavelength_powder_equation() {
+        let wavelength = 1.909;
+        let q_squared = [0.03, 0.19, 0.62];
+        let model = IntegratedIntensityCorrectionModel::ConstantWavelengthNeutronLorentz {
+            wavelength_angstrom: wavelength,
+        };
+        let actual = model.evaluate(&q_squared).expect("neutron Lorentz values");
+        for (index, value) in q_squared.into_iter().enumerate() {
+            let theta = (0.5 * wavelength * value.sqrt()).asin();
+            let expected = 1.0 / (theta.sin() * (2.0 * theta).sin());
+            assert!((actual.values[index] - expected).abs() < 2.0e-14 * expected);
+            let step = 1.0e-6 * value;
+            let finite_difference = (model.evaluate(&[value + step]).unwrap().values[0]
+                - model.evaluate(&[value - step]).unwrap().values[0])
+                / (2.0 * step);
+            assert!(
+                (actual.d_values_d_q_squared[index] - finite_difference).abs()
+                    < 2.0e-8 * finite_difference.abs().max(1.0)
+            );
+        }
     }
 
     #[test]

@@ -47,13 +47,29 @@ BANK 2 1 1 CONS 1000.0 1.0 0 0 FXYE
     np.testing.assert_array_equal(data.observed_y, [9.0])
 
 
+def test_reads_packed_constant_step_gsas_std_bank() -> None:
+    text = """Packed example
+BANK 1 3 1 CONST 1000 2.5 0 0 STD
+     100 2    50     121
+"""
+
+    data = read_powder_data(text)
+
+    assert data.format == "gsas_std"
+    assert data.bank == 1
+    np.testing.assert_allclose(data.x, [10.0, 10.025, 10.05], atol=1.0e-15)
+    np.testing.assert_array_equal(data.observed_y, [100.0, 50.0, 121.0])
+    np.testing.assert_allclose(data.uncertainty, [10.0, 5.0, 11.0])
+
+
 @pytest.mark.parametrize(
     ("text", "message"),
     [
         ("1 2\n1 3\n", "strictly increasing"),
         ("1 2 0\n2 3 1\n", "positive"),
         ("1 2\n2 3 4\n", "expected 2 columns"),
-        ("BANK 1 2 2 CONS 1 1 0 0 ESD\n1 2 3\n", "only unpacked GSAS FXYE"),
+        ("BANK 1 2 2 CONS 1 1 0 0 ESD\n1 2 3\n", "packed constant-step"),
+        ("BANK 1 1 1 TIME_MAP 1 1 0 0 STD\n 1    10\n", "constant-step"),
     ],
 )
 def test_rejects_invalid_powder_data(text: str, message: str) -> None:

@@ -391,6 +391,23 @@ def test_fixed_dispersion_and_polarized_lp_round_trip(tmp_path) -> None:
     assert manifest["format_version"] == persistence.FORMAT_VERSION
 
 
+def test_neutron_lorentz_round_trip(tmp_path) -> None:
+    structural = replace(
+        structural_phase(),
+        scattering=phasesmith.NeutronNuclear(),
+        intensity_correction=phasesmith.ConstantWavelengthNeutronLorentz(1.5406),
+    )
+    destination = persistence.save_bundle(
+        tmp_path / "neutron-lorentz",
+        persistence.PersistenceBundle(rietveld_phases=(structural,)),
+    )
+
+    restored = persistence.load_bundle(destination).rietveld_phases[0]
+
+    assert restored.scattering == structural.scattering
+    assert restored.intensity_correction == structural.intensity_correction
+
+
 def test_rietveld_checkpoint_domain_and_options_round_trip_and_resume(tmp_path) -> None:
     x = np.linspace(10.0, 80.0, 7_001)
     experiment = phasesmith.ConstantWavelengthExperiment.x_ray(instrument())
@@ -751,6 +768,28 @@ def test_format_six_fixed_component_experiment_round_trips(tmp_path) -> None:
         "probe": "x-ray",
         "wavelengths_angstrom": [1.5406, 1.5444],
         "relative_intensities": [1.0, 0.5],
+    }
+
+
+def test_format_twelve_debye_scherrer_geometry_round_trips(tmp_path) -> None:
+    experiment = phasesmith.ConstantWavelengthExperiment(
+        phasesmith.MonochromaticRadiation.neutron(instrument().wavelength_angstrom),
+        instrument(),
+        zero_shift_deg=-0.1,
+        geometry=phasesmith.DebyeScherrerGeometry(650.0, 1578.8, 49.9),
+    )
+    destination = persistence.save_bundle(
+        tmp_path / "debye-scherrer",
+        persistence.PersistenceBundle(experiment=experiment),
+    )
+    restored = persistence.load_bundle(destination)
+    assert restored.experiment == experiment
+    manifest = json.loads((destination / persistence.MANIFEST_NAME).read_text())
+    assert manifest["bundle"]["experiment"]["geometry"] == {
+        "type": "debye_scherrer",
+        "goniometer_radius_mm": 650.0,
+        "displace_x_micrometre": 1578.8,
+        "displace_y_micrometre": 49.9,
     }
 
 

@@ -51,6 +51,20 @@ uv run python benchmarks/scattering.py --require-release
 uv run python benchmarks/structural_pattern.py --require-release
 uv run python benchmarks/lattice_refinement.py --require-release
 uv run python benchmarks/background.py --require-release
+uv run python benchmarks/real_data.py --require-release
+```
+
+The real-data benchmark verifies pinned QARR 1g, APS sucrose, and official
+PbSO4 X-ray/neutron tutorial inputs, records cold and warmed complete-workflow
+timings, and hashes the timing-free scientific report. By default it compares
+one- and two-thread QARR execution and runs both PbSO4 probes. Use `--dataset`,
+`--threads`, and `--json-output` to select cases and retain a machine-readable
+result. This is the PhaseSmith-only performance harness; the paired QARR and
+PbSO4 GSAS-II commands below are cross-implementation scientific and
+performance gates. The corresponding slow regression tests are opt-in:
+
+```shell
+uv run pytest -m real_data
 ```
 
 The pinned external-oracle environment can compare the same support-limited CW
@@ -69,11 +83,27 @@ uv run python benchmarks/compare_gsasii_structural.py --require-release \
   --gsas-python /path/to/gsas/python \
   --gsas-root /path/to/pinned/GSAS-II \
   --binary-dir /path/to/compatible/GSASII-bin/platform-directory
+
+uv run python benchmarks/compare_gsasii_qarr.py --require-release \
+  --gsas-python /path/to/gsas/python \
+  --gsas-root /path/to/pinned/GSAS-II \
+  --binary-dir /path/to/compatible/GSASII-bin/platform-directory \
+  --data-directory validation/data/iucr-qarr-1g \
+  --phasesmith-threads 2
+
+uv run python benchmarks/compare_gsasii_pbso4.py --require-release \
+  --gsas-python /path/to/gsas/python \
+  --gsas-root /path/to/pinned/GSAS-II \
+  --binary-dir /path/to/compatible/GSASII-bin/platform-directory \
+  --data-directory validation/data/gsasii-pbso4-cw
 ```
 
 The exact scope and interpretation are documented in
 [docs/gsasii-performance.md](docs/gsasii-performance.md). This is a kernel-level
-comparison, not a claim about complete refinement workflow speed.
+comparison. The QARR and PbSO4 drivers separately compare complete native
+workflows and gate their reported scientific results before reporting speed.
+The PbSO4 report includes the supplied reference cell alongside PhaseSmith's
+independent X-ray/neutron fits and GSAS-II's joint refinement.
 
 Background estimation is an explicit preprocessing step:
 
@@ -396,13 +426,21 @@ selection = RietveldParameterSelection(
 )
 request = replace(request, experiment=experiment, selection=selection)
 project = RietveldProject(request)
-result = project.refine(logger=my_event_logger)
+proposal = project.propose_intelligent_recipe()
+print(proposal.to_record())  # advice and rationale; no refinement has run yet
+workflow = project.refine_intelligently(logger=my_event_logger)
+result = workflow.final_result
 project.write_reports(json_path="result.json", csv_path="pattern.csv")
 project.save("run-state")
 
 # Another thread or a callback can stop safely; the accepted state is resumable.
 project.stop("user_requested")
 ```
+
+The intelligent path is optional workflow orchestration. `project.refine()`
+continues to call the general solver once with exactly the caller-selected
+parameters, and `project.refine_recipe(recipe)` runs an explicit user-defined
+sequence.
 
 Refinable backgrounds share one analytical interface. Built-ins include power
 and Chebyshev series, fixed-knot linear interpolation, broad normalized

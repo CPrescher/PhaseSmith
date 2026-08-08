@@ -30,7 +30,7 @@ persistence.save_bundle("analysis.rvp", bundle)
 restored = persistence.load_bundle("analysis.rvp")
 ```
 
-Format version 10 round-trips CW and TOF instruments, explicit monochromatic or
+Format version 12 round-trips CW and TOF instruments, explicit monochromatic or
 fixed-component experiment radiation, experiment-owned optional axial FCJ geometry,
 standalone FCJ geometry, wavelength components, phases/reflections,
 built-in physics providers, patterns, calculation inputs and results, typed
@@ -62,6 +62,12 @@ formats 1--8; older options receive the safe one-thread default.
 Version 10 extends that policy to generic calculation and Le Bail options while
 continuing to load formats 1--9. Missing policies migrate explicitly to one
 thread, independent of any future change to new-object defaults.
+Version 11 adds the typed constant-wavelength neutron powder Lorentz correction
+while continuing to load formats 1--10. Staged recipes are caller-owned
+workflow advice rather than hidden solver or checkpoint state.
+Version 12 adds typed Debye--Scherrer goniometer radius and X/Y specimen
+displacements while continuing to load formats 1--11. Field names preserve the
+public millimetre/micrometre units without an implicit conversion convention.
 `restored.to_rietveld_input()` reconstructs the request for deterministic
 continuation without storing Python parser or optimizer objects. Formats 1--3
 remain loadable.
@@ -90,8 +96,11 @@ The format is intentionally independent of GSAS-II project files and GUI state.
 Future incompatible schema changes increment `FORMAT_VERSION` and require an
 explicit migration rather than silently guessing old units or fields.
 The machine-readable top-level contract is
-[`schemas/persistence-v10.schema.json`](../schemas/persistence-v10.schema.json).
+[`schemas/persistence-v12.schema.json`](../schemas/persistence-v12.schema.json).
 Previous formats remain documented by
+[`schemas/persistence-v11.schema.json`](../schemas/persistence-v11.schema.json),
+[`schemas/persistence-v10.schema.json`](../schemas/persistence-v10.schema.json),
+[`schemas/persistence-v9.schema.json`](../schemas/persistence-v9.schema.json),
 [`schemas/persistence-v8.schema.json`](../schemas/persistence-v8.schema.json),
 [`schemas/persistence-v7.schema.json`](../schemas/persistence-v7.schema.json),
 [`schemas/persistence-v6.schema.json`](../schemas/persistence-v6.schema.json),

@@ -14,6 +14,7 @@ from .real_data import (
     RealDataValidationReport,
     ValidationCheck,
     qarr_1g_readiness,
+    run_pbso4_cw_validation,
     run_qarr_1g_validation,
     run_sucrose_lebail_validation,
 )
@@ -28,6 +29,7 @@ __all__ = [
     "ValidationDataset",
     "fetch_validation_dataset",
     "qarr_1g_readiness",
+    "run_pbso4_cw_validation",
     "run_qarr_1g_validation",
     "run_sucrose_lebail_validation",
     "validation_dataset",

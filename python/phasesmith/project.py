@@ -17,6 +17,12 @@ from .refinement.rietveld import (
     refine,
 )
 from .refinement.runtime import CheckpointCallback, RefinementLogger
+from .refinement.workflow import (
+    RietveldRecipe,
+    RietveldWorkflowResult,
+    intelligent_rietveld_recipe,
+    run_rietveld_recipe,
+)
 from .reporting import write_rietveld_csv, write_rietveld_json
 
 
@@ -28,6 +34,7 @@ class RietveldProject:
     options: RietveldOptions = field(default_factory=RietveldOptions)
     checkpoint: RietveldCheckpoint | None = None
     last_result: RietveldResult | None = field(default=None, init=False)
+    last_workflow: RietveldWorkflowResult | None = field(default=None, init=False)
     _cancellation: CancellationToken = field(default_factory=CancellationToken, init=False)
 
     def __post_init__(self) -> None:
@@ -76,12 +83,68 @@ class RietveldProject:
         )
         self.checkpoint = result.checkpoint
         self.last_result = result
+        self.last_workflow = None
         return result
 
     def stop(self, reason: str = "user_requested") -> bool:
         """Request cooperative stop at the next safe refinement boundary."""
 
         return self._cancellation.request(reason)
+
+    def propose_intelligent_recipe(self) -> RietveldRecipe:
+        """Return transparent staged advice without starting a refinement."""
+
+        return intelligent_rietveld_recipe(self.input)
+
+    def refine_recipe(
+        self,
+        recipe: RietveldRecipe,
+        *,
+        logger: RefinementLogger | None = None,
+        checkpoint_callback: CheckpointCallback | None = None,
+    ) -> RietveldWorkflowResult:
+        """Run a caller-owned recipe and retain its last accepted physical state."""
+
+        self._cancellation = CancellationToken()
+        workflow = run_rietveld_recipe(
+            self.input,
+            recipe,
+            options=self.options,
+            cancellation=self._cancellation,
+            logger=logger,
+            checkpoint_callback=checkpoint_callback,
+        )
+        result = workflow.final_result
+        accepted = workflow.last_accepted_stage
+        if accepted is not None:
+            accepted_result = accepted.result
+            self.input = replace(
+                self.input,
+                experiment=accepted_result.experiment,
+                phases=accepted_result.phases,
+                lattice_domains=accepted_result.checkpoint.lattice_domains,
+                parameters=accepted_result.parameters,
+                selection=accepted.stage.selection,
+                background=accepted_result.background,
+            )
+        self.checkpoint = None
+        self.last_result = result
+        self.last_workflow = workflow
+        return workflow
+
+    def refine_intelligently(
+        self,
+        *,
+        logger: RefinementLogger | None = None,
+        checkpoint_callback: CheckpointCallback | None = None,
+    ) -> RietveldWorkflowResult:
+        """Plan, disclose, and run a cumulative recipe from authorized parameters."""
+
+        return self.refine_recipe(
+            self.propose_intelligent_recipe(),
+            logger=logger,
+            checkpoint_callback=checkpoint_callback,
+        )
 
     def accept_result(self) -> None:
         """Promote the last result to the project input and clear restart state."""

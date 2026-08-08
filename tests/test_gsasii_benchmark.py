@@ -230,6 +230,78 @@ def test_qarr_comparison_parses_results_and_rejects_oracle_drift() -> None:
         benchmark.validate_gsas_reports([base, changed])
 
 
+def test_qarr_comparison_numerically_gates_cross_implementation_results() -> None:
+    benchmark = load_script("benchmarks/compare_gsasii_qarr.py", "qarr_cross_gate_test")
+    phasesmith_result = {
+        "sample_count": 7_251,
+        "reflection_count": 110,
+        "weight_fractions": {"Al2O3": 0.308, "ZnO": 0.342, "CaF2": 0.350},
+        "poisson_rwp": 0.198,
+        "unit_weight_rwp": 0.132,
+        "profile_correlation": 0.991,
+    }
+    gsas_result = {
+        "sample_count": 7_251,
+        "reflection_count": 110,
+        "weight_fractions": {"Al2O3": 0.315, "ZnO": 0.337, "CaF2": 0.349},
+        "poisson_rwp": 0.184,
+        "unit_weight_rwp": 0.137,
+        "profile_correlation": 0.990,
+    }
+
+    validation = benchmark.compare_scientific_results(phasesmith_result, gsas_result)
+
+    assert validation["checks"]["maximum_phase_fraction_delta"]["passed"] is True
+    assert validation["phase_fraction_deltas"]["Al2O3"] == pytest.approx(0.007)
+    changed = json.loads(json.dumps(gsas_result))
+    changed["weight_fractions"]["Al2O3"] = 0.40
+    with pytest.raises(RuntimeError, match="cross-implementation validation failed"):
+        benchmark.compare_scientific_results(phasesmith_result, changed)
+
+
+def test_pbso4_comparison_gates_profiles_and_refined_cell() -> None:
+    benchmark = load_script("benchmarks/compare_gsasii_pbso4.py", "pbso4_cross_gate_test")
+    phasesmith_result = {
+        "xray": {
+            "sample_count": 5_697,
+            "poisson_rwp": 0.10346,
+            "unit_weight_rwp": 0.08732,
+            "profile_correlation": 0.99555,
+        },
+        "neutron": {
+            "sample_count": 2_681,
+            "poisson_rwp": 0.04761,
+            "unit_weight_rwp": 0.05059,
+            "profile_correlation": 0.99580,
+            "cell_angstrom": {"a": 8.46474, "b": 5.38802, "c": 6.94670},
+        },
+    }
+    gsas_result = {
+        "xray": {
+            "sample_count": 5_697,
+            "poisson_rwp": 0.106,
+            "unit_weight_rwp": 0.088,
+            "profile_correlation": 0.996,
+        },
+        "neutron": {
+            "sample_count": 2_681,
+            "poisson_rwp": 0.045,
+            "unit_weight_rwp": 0.045,
+            "profile_correlation": 0.997,
+        },
+        "cell_angstrom": {"a": 8.4740, "b": 5.3939, "c": 6.9544},
+    }
+
+    validation = benchmark.compare_scientific_results(phasesmith_result, gsas_result)
+
+    assert validation["status"] == "passed"
+    assert validation["checks"]["neutron_cell_relative_delta"]["passed"] is True
+    changed = json.loads(json.dumps(phasesmith_result))
+    changed["neutron"]["cell_angstrom"]["a"] = 8.40
+    with pytest.raises(RuntimeError, match="cross-implementation validation failed"):
+        benchmark.compare_scientific_results(changed, gsas_result)
+
+
 def test_practical_workflow_benchmark_covers_xray_and_neutron() -> None:
     benchmark = load_script("benchmarks/practical_workflow.py", "practical_workflow_test")
     for probe in (phasesmith.RadiationProbe.X_RAY, phasesmith.RadiationProbe.NEUTRON):
@@ -246,10 +318,13 @@ def test_practical_workflow_benchmark_covers_xray_and_neutron() -> None:
     "script",
     [
         "benchmarks/compare_gsasii.py",
+        "benchmarks/compare_gsasii_pbso4.py",
         "benchmarks/compare_gsasii_qarr.py",
         "benchmarks/compare_gsasii_structural.py",
         "benchmarks/practical_workflow.py",
+        "benchmarks/real_data.py",
         "oracle/scripts/benchmark_cw_profile.py",
+        "oracle/scripts/benchmark_pbso4.py",
         "oracle/scripts/benchmark_qarr.py",
         "oracle/scripts/benchmark_structural_pattern.py",
     ],
@@ -266,6 +341,7 @@ def test_benchmark_help_does_not_require_gsasii(script: str) -> None:
 def test_external_worker_does_not_import_rietveld() -> None:
     for relative_path in (
         "oracle/scripts/benchmark_cw_profile.py",
+        "oracle/scripts/benchmark_pbso4.py",
         "oracle/scripts/benchmark_qarr.py",
         "oracle/scripts/benchmark_structural_pattern.py",
     ):

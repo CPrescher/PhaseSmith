@@ -84,6 +84,14 @@ from .runtime import (
     RefinementStopped,
 )
 from .scipy import ScipyLeastSquaresAdapter
+from .workflow import (
+    RietveldRecipe,
+    RietveldStage,
+    RietveldStageResult,
+    RietveldWorkflowResult,
+    intelligent_rietveld_recipe,
+    run_rietveld_recipe,
+)
 
 __all__ = [
     "AffineConstraint",
@@ -139,7 +147,11 @@ __all__ = [
     "RietveldParameterChange",
     "RietveldParameterCorrelation",
     "RietveldParameterSelection",
+    "RietveldRecipe",
     "RietveldResult",
+    "RietveldStage",
+    "RietveldStageResult",
+    "RietveldWorkflowResult",
     "ScipyLeastSquaresAdapter",
     "SiteCoordinateModel",
     "TerminationReason",
@@ -149,6 +161,7 @@ __all__ = [
     "extract_intensities",
     "initialize_intensities",
     "instrument_parameter_key",
+    "intelligent_rietveld_recipe",
     "iterate_once",
     "jacobian_vector_product",
     "lattice_parameter_key",
@@ -156,6 +169,7 @@ __all__ = [
     "refine",
     "reflection_position_key",
     "rietveld",
+    "run_rietveld_recipe",
     "tof_lattice_geometry",
     "transpose_jacobian_vector_product",
 ]

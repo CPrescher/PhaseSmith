@@ -20,6 +20,7 @@ from .instrument import ConstantWavelengthInstrument, FcjGeometry, TofInstrument
 from .intensity_corrections import (
     BraggBrentanoPolarizedLp,
     BraggBrentanoUnpolarizedLp,
+    ConstantWavelengthNeutronLorentz,
     NeutralIntegratedIntensityCorrection,
 )
 from .pattern import (
@@ -38,6 +39,7 @@ from .radiation import (
     BraggBrentanoGeometry,
     ComponentRadiation,
     ConstantWavelengthExperiment,
+    DebyeScherrerGeometry,
     MonochromaticRadiation,
     RadiationProbe,
     WavelengthComponents,
@@ -98,7 +100,7 @@ from .sample import (
 from .scattering import NeutronNuclear, XrayFixedDispersion, XrayNonResonant
 from .structure import CrystalStructure, structure_from_record, structure_to_record
 
-FORMAT_VERSION: Final = 10
+FORMAT_VERSION: Final = 12
 MANIFEST_NAME: Final = "manifest.json"
 ARCHIVE_NAME: Final = "arrays.npz"
 Instrument = ConstantWavelengthInstrument | TofInstrument
@@ -455,13 +457,20 @@ def _experiment_record(
         "instrument": _instrument_record(experiment.instrument),
         "zero_shift_deg": experiment.zero_shift_deg,
         "geometry": (
-            None
-            if experiment.geometry is None
-            else {
+            {
                 "type": "bragg_brentano",
                 "goniometer_radius_mm": experiment.geometry.goniometer_radius_mm,
                 "sample_displacement_mm": experiment.geometry.sample_displacement_mm,
             }
+            if isinstance(experiment.geometry, BraggBrentanoGeometry)
+            else {
+                "type": "debye_scherrer",
+                "goniometer_radius_mm": experiment.geometry.goniometer_radius_mm,
+                "displace_x_micrometre": experiment.geometry.displace_x_micrometre,
+                "displace_y_micrometre": experiment.geometry.displace_y_micrometre,
+            }
+            if isinstance(experiment.geometry, DebyeScherrerGeometry)
+            else None
         ),
         "axial_geometry": _fcj_record(experiment.axial_geometry),
     }
@@ -476,7 +485,10 @@ def _experiment_from_record(
     if not isinstance(instrument, ConstantWavelengthInstrument):
         raise PersistenceError("constant-wavelength experiment instrument is invalid")
     geometry_record = record.get("geometry")
-    if geometry_record is not None and geometry_record.get("type") != "bragg_brentano":
+    if geometry_record is not None and geometry_record.get("type") not in {
+        "bragg_brentano",
+        "debye_scherrer",
+    }:
         raise PersistenceError("unknown constant-wavelength experiment geometry")
     radiation_record = record.get("radiation")
     if radiation_record is None:
@@ -509,6 +521,12 @@ def _experiment_from_record(
             else BraggBrentanoGeometry(
                 float(geometry_record["goniometer_radius_mm"]),
                 float(geometry_record["sample_displacement_mm"]),
+            )
+            if geometry_record["type"] == "bragg_brentano"
+            else DebyeScherrerGeometry(
+                float(geometry_record["goniometer_radius_mm"]),
+                float(geometry_record["displace_x_micrometre"]),
+                float(geometry_record["displace_y_micrometre"]),
             )
         ),
         (None if record.get("axial_geometry") is None else FcjGeometry(**record["axial_geometry"])),
@@ -813,6 +831,11 @@ def _intensity_correction_record(provider: object) -> dict[str, Any]:
             "wavelength_angstrom": provider.wavelength_angstrom,
             "polarization": provider.polarization,
         }
+    if type(provider) is ConstantWavelengthNeutronLorentz:
+        return {
+            "model": "constant_wavelength_neutron_lorentz",
+            "wavelength_angstrom": provider.wavelength_angstrom,
+        }
     raise TypeError(
         "structural intensity-correction persistence currently supports built-in models only"
     )
@@ -820,7 +843,12 @@ def _intensity_correction_record(provider: object) -> dict[str, Any]:
 
 def _intensity_correction_from_record(
     record: dict[str, Any],
-) -> NeutralIntegratedIntensityCorrection | BraggBrentanoUnpolarizedLp | BraggBrentanoPolarizedLp:
+) -> (
+    NeutralIntegratedIntensityCorrection
+    | BraggBrentanoUnpolarizedLp
+    | BraggBrentanoPolarizedLp
+    | ConstantWavelengthNeutronLorentz
+):
     model = record["model"]
     if model == "neutral":
         return NeutralIntegratedIntensityCorrection()
@@ -831,6 +859,8 @@ def _intensity_correction_from_record(
             float(record["wavelength_angstrom"]),
             float(record["polarization"]),
         )
+    if model == "constant_wavelength_neutron_lorentz":
+        return ConstantWavelengthNeutronLorentz(float(record["wavelength_angstrom"]))
     raise PersistenceError(f"unsupported structural intensity correction {model!r}")
 
 
@@ -1571,7 +1601,7 @@ def load_bundle(
     if (
         not isinstance(version, int)
         or isinstance(version, bool)
-        or version not in (1, 2, 3, 4, 5, 6, 7, 8, 9, FORMAT_VERSION)
+        or version not in (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, FORMAT_VERSION)
     ):
         raise PersistenceError(f"unsupported persistence format {manifest.get('format_version')!r}")
     if manifest.get("archive", {}).get("file") != ARCHIVE_NAME:

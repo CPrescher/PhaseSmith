@@ -25,6 +25,12 @@ PINNED_REVISION = "c0bc79b259cdf0065480b5fbd57674ddf12c4a23"
 SCOPE = "iucr_qarr_1g_native_workflow"
 PHASE_NAMES = ("Al2O3", "ZnO", "CaF2")
 FRACTION_PATTERN = re.compile(r"(Al2O3|ZnO|CaF2)=([0-9]+(?:\.[0-9]+)?)%")
+CROSS_IMPLEMENTATION_LIMITS = {
+    "maximum_phase_fraction_delta": 0.02,
+    "poisson_rwp_delta": 0.03,
+    "unit_weight_rwp_delta": 0.02,
+    "profile_correlation_delta": 0.01,
+}
 
 
 def parse_args() -> argparse.Namespace:
@@ -206,6 +212,45 @@ def validate_gsas_reports(reports: list[dict[str, Any]]) -> None:
                 raise RuntimeError(f"GSAS-II QARR repetitions disagree for {key}")
 
 
+def compare_scientific_results(
+    phasesmith_result: dict[str, Any], gsas_result: dict[str, Any]
+) -> dict[str, Any]:
+    """Numerically gate the two intentionally non-matched native workflows."""
+
+    if phasesmith_result["sample_count"] != gsas_result["sample_count"]:
+        raise RuntimeError("PhaseSmith and GSAS-II used different QARR sample counts")
+    if phasesmith_result["reflection_count"] != gsas_result["reflection_count"]:
+        raise RuntimeError("PhaseSmith and GSAS-II generated different QARR reflection counts")
+    phase_deltas = {
+        name: abs(
+            phasesmith_result["weight_fractions"][name] - gsas_result["weight_fractions"][name]
+        )
+        for name in PHASE_NAMES
+    }
+    measurements = {
+        "maximum_phase_fraction_delta": max(phase_deltas.values()),
+        "poisson_rwp_delta": abs(phasesmith_result["poisson_rwp"] - gsas_result["poisson_rwp"]),
+        "unit_weight_rwp_delta": abs(
+            phasesmith_result["unit_weight_rwp"] - gsas_result["unit_weight_rwp"]
+        ),
+        "profile_correlation_delta": abs(
+            phasesmith_result["profile_correlation"] - gsas_result["profile_correlation"]
+        ),
+    }
+    checks = {
+        name: {
+            "measured": measurement,
+            "limit": CROSS_IMPLEMENTATION_LIMITS[name],
+            "passed": measurement <= CROSS_IMPLEMENTATION_LIMITS[name],
+        }
+        for name, measurement in measurements.items()
+    }
+    failed = [name for name, check in checks.items() if not check["passed"]]
+    if failed:
+        raise RuntimeError(f"QARR cross-implementation validation failed: {', '.join(failed)}")
+    return {"phase_fraction_deltas": phase_deltas, "checks": checks}
+
+
 def run_gsas(
     arguments: argparse.Namespace, temporary: Path
 ) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
@@ -277,8 +322,7 @@ def main() -> None:
     with tempfile.TemporaryDirectory(prefix="phasesmith-gsasii-qarr-comparison-") as name:
         gsas_result, gsas_timing, gsas_metadata = run_gsas(arguments, Path(name))
 
-    if phase_result_record["sample_count"] != gsas_result["sample_count"]:
-        raise RuntimeError("PhaseSmith and GSAS-II used different QARR sample counts")
+    cross_validation = compare_scientific_results(phase_result_record, gsas_result)
     ratio = (
         gsas_timing["total_workflow"]["median_ms"] / phase_timing["reported_workflow"]["median_ms"]
     )
@@ -309,6 +353,7 @@ def main() -> None:
             "timing": gsas_timing,
         },
         "median_total_workflow_ratio_gsasii_over_phasesmith": ratio,
+        "cross_implementation_validation": cross_validation,
         "limitations": [
             (
                 "PhaseSmith uses fixed Smooth Bruckner background; "

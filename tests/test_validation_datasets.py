@@ -9,6 +9,7 @@ from phasesmith.validation import datasets as datasets_module
 def test_registry_has_unique_stable_ids_and_pinned_files() -> None:
     assert {item.dataset_id for item in VALIDATION_DATASETS} == {
         "aps-sucrose-11bmb",
+        "gsasii-pbso4-cw",
         "iucr-qarr-1g",
     }
     for dataset in VALIDATION_DATASETS:

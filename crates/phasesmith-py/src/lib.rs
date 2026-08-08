@@ -750,6 +750,11 @@ impl NativeStructuralPhase {
                 wavelength_angstrom: instrument.wavelength_angstrom,
                 polarization,
             },
+            IntegratedIntensityCorrectionModel::ConstantWavelengthNeutronLorentz { .. } => {
+                IntegratedIntensityCorrectionModel::ConstantWavelengthNeutronLorentz {
+                    wavelength_angstrom: instrument.wavelength_angstrom,
+                }
+            }
         };
         let input = StructuralPatternInputView {
             x_deg,
@@ -894,7 +899,7 @@ impl NativeStructuralPhase {
         6 + 5 * self.fractional_xyz.len() + 1
     }
 
-    #[allow(clippy::too_many_arguments)]
+    #[allow(clippy::similar_names, clippy::too_many_arguments)]
     fn calculate<'py>(
         &self,
         py: Python<'py>,
@@ -902,6 +907,8 @@ impl NativeStructuralPhase {
         wavelength_angstrom: f64,
         zero_shift_deg: f64,
         sample_displacement_mm: Option<f64>,
+        displace_x_micrometre: Option<f64>,
+        displace_y_micrometre: Option<f64>,
         goniometer_radius_mm: Option<f64>,
         fcj_sample_over_radius: Option<f64>,
         fcj_detector_over_radius: Option<f64>,
@@ -936,8 +943,13 @@ impl NativeStructuralPhase {
             &d_lorentzian_fwhm_d_parameters,
             &d_intensity_multiplier_d_parameters,
         )?;
-        let correction =
-            position_correction(zero_shift_deg, sample_displacement_mm, goniometer_radius_mm)?;
+        let correction = position_correction(
+            zero_shift_deg,
+            sample_displacement_mm,
+            displace_x_micrometre,
+            displace_y_micrometre,
+            goniometer_radius_mm,
+        )?;
         let axial = axial_geometry(fcj_sample_over_radius, fcj_detector_over_radius)?;
         let result = py.detach(|| {
             self.with_input(
@@ -960,7 +972,7 @@ impl NativeStructuralPhase {
         structural_pattern_to_numpy(py, result)
     }
 
-    #[allow(clippy::too_many_arguments)]
+    #[allow(clippy::similar_names, clippy::too_many_arguments)]
     fn linearize<'py>(
         &self,
         py: Python<'py>,
@@ -968,6 +980,8 @@ impl NativeStructuralPhase {
         wavelength_angstrom: f64,
         zero_shift_deg: f64,
         sample_displacement_mm: Option<f64>,
+        displace_x_micrometre: Option<f64>,
+        displace_y_micrometre: Option<f64>,
         goniometer_radius_mm: Option<f64>,
         fcj_sample_over_radius: Option<f64>,
         fcj_detector_over_radius: Option<f64>,
@@ -1002,8 +1016,13 @@ impl NativeStructuralPhase {
             &d_lorentzian_fwhm_d_parameters,
             &d_intensity_multiplier_d_parameters,
         )?;
-        let correction =
-            position_correction(zero_shift_deg, sample_displacement_mm, goniometer_radius_mm)?;
+        let correction = position_correction(
+            zero_shift_deg,
+            sample_displacement_mm,
+            displace_x_micrometre,
+            displace_y_micrometre,
+            goniometer_radius_mm,
+        )?;
         let axial = axial_geometry(fcj_sample_over_radius, fcj_detector_over_radius)?;
         let result = py.detach(|| {
             self.with_input(
@@ -1026,7 +1045,7 @@ impl NativeStructuralPhase {
         structural_pattern_dense_to_numpy(py, result)
     }
 
-    #[allow(clippy::too_many_arguments)]
+    #[allow(clippy::similar_names, clippy::too_many_arguments)]
     fn jvp<'py>(
         &self,
         py: Python<'py>,
@@ -1035,6 +1054,8 @@ impl NativeStructuralPhase {
         wavelength_angstrom: f64,
         zero_shift_deg: f64,
         sample_displacement_mm: Option<f64>,
+        displace_x_micrometre: Option<f64>,
+        displace_y_micrometre: Option<f64>,
         goniometer_radius_mm: Option<f64>,
         fcj_sample_over_radius: Option<f64>,
         fcj_detector_over_radius: Option<f64>,
@@ -1070,8 +1091,13 @@ impl NativeStructuralPhase {
             &d_lorentzian_fwhm_d_parameters,
             &d_intensity_multiplier_d_parameters,
         )?;
-        let correction =
-            position_correction(zero_shift_deg, sample_displacement_mm, goniometer_radius_mm)?;
+        let correction = position_correction(
+            zero_shift_deg,
+            sample_displacement_mm,
+            displace_x_micrometre,
+            displace_y_micrometre,
+            goniometer_radius_mm,
+        )?;
         let axial = axial_geometry(fcj_sample_over_radius, fcj_detector_over_radius)?;
         let result = py.detach(|| {
             self.with_input(
@@ -1098,7 +1124,7 @@ impl NativeStructuralPhase {
         structural_pattern_jvp_to_numpy(py, result)
     }
 
-    #[allow(clippy::too_many_arguments)]
+    #[allow(clippy::similar_names, clippy::too_many_arguments)]
     fn vjp<'py>(
         &self,
         py: Python<'py>,
@@ -1107,6 +1133,8 @@ impl NativeStructuralPhase {
         wavelength_angstrom: f64,
         zero_shift_deg: f64,
         sample_displacement_mm: Option<f64>,
+        displace_x_micrometre: Option<f64>,
+        displace_y_micrometre: Option<f64>,
         goniometer_radius_mm: Option<f64>,
         fcj_sample_over_radius: Option<f64>,
         fcj_detector_over_radius: Option<f64>,
@@ -1142,8 +1170,13 @@ impl NativeStructuralPhase {
             &d_lorentzian_fwhm_d_parameters,
             &d_intensity_multiplier_d_parameters,
         )?;
-        let correction =
-            position_correction(zero_shift_deg, sample_displacement_mm, goniometer_radius_mm)?;
+        let correction = position_correction(
+            zero_shift_deg,
+            sample_displacement_mm,
+            displace_x_micrometre,
+            displace_y_micrometre,
+            goniometer_radius_mm,
+        )?;
         let axial = axial_geometry(fcj_sample_over_radius, fcj_detector_over_radius)?;
         let result = py.detach(|| {
             self.with_input(
@@ -2262,23 +2295,43 @@ const fn cw_instrument(
     }
 }
 
+#[allow(clippy::similar_names)]
 fn position_correction(
     zero_shift_deg: f64,
     sample_displacement_mm: Option<f64>,
+    displace_x_micrometre: Option<f64>,
+    displace_y_micrometre: Option<f64>,
     goniometer_radius_mm: Option<f64>,
 ) -> PyResult<MonochromaticPositionCorrection> {
-    let bragg_brentano_mm = match (sample_displacement_mm, goniometer_radius_mm) {
-        (None, None) => None,
-        (Some(displacement), Some(radius)) => Some((displacement, radius)),
+    let bragg_brentano_mm = match (
+        sample_displacement_mm,
+        displace_x_micrometre,
+        displace_y_micrometre,
+        goniometer_radius_mm,
+    ) {
+        (Some(displacement), None, None, Some(radius)) => Some((displacement, radius)),
+        (None, None, None, None) | (None, Some(_), Some(_), Some(_)) => None,
         _ => {
             return Err(PyValueError::new_err(
-                "sample displacement and goniometer radius must be provided together",
+                "one complete Bragg-Brentano or Debye-Scherrer geometry is required",
             ));
         }
+    };
+    let debye_scherrer_micrometre = match (
+        sample_displacement_mm,
+        displace_x_micrometre,
+        displace_y_micrometre,
+        goniometer_radius_mm,
+    ) {
+        (None, Some(displace_x), Some(displace_y), Some(radius)) => {
+            Some((displace_x, displace_y, radius))
+        }
+        _ => None,
     };
     Ok(MonochromaticPositionCorrection {
         zero_shift_deg,
         bragg_brentano_mm,
+        debye_scherrer_micrometre,
     })
 }
 
@@ -2649,15 +2702,20 @@ fn parse_correction_model(
                 polarization,
             }
         }
+        ("constant_wavelength_neutron_lorentz", Some(wavelength_angstrom), None) => {
+            IntegratedIntensityCorrectionModel::ConstantWavelengthNeutronLorentz {
+                wavelength_angstrom,
+            }
+        }
         ("neutral", Some(_), _) | ("neutral", None, Some(_)) => {
             return Err(PyValueError::new_err(
                 "neutral correction does not accept wavelength or polarization",
             ));
         }
-        ("bragg_brentano_unpolarized_lp", None, None)
+        ("bragg_brentano_unpolarized_lp" | "constant_wavelength_neutron_lorentz", None, None)
         | ("bragg_brentano_polarized_lp", None, _) => {
             return Err(PyValueError::new_err(
-                "Bragg-Brentano LP correction requires a wavelength",
+                "angular intensity correction requires a wavelength",
             ));
         }
         ("bragg_brentano_unpolarized_lp", _, Some(_)) => {
@@ -2668,6 +2726,11 @@ fn parse_correction_model(
         ("bragg_brentano_polarized_lp", Some(_), None) => {
             return Err(PyValueError::new_err(
                 "polarized Bragg-Brentano LP requires polarization",
+            ));
+        }
+        ("constant_wavelength_neutron_lorentz", _, Some(_)) => {
+            return Err(PyValueError::new_err(
+                "neutron Lorentz correction does not accept polarization",
             ));
         }
         _ => {

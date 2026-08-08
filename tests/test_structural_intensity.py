@@ -115,9 +115,7 @@ def test_fixed_anisotropic_values_and_cell_derivatives_match_independent_equatio
         baseline, hkl, multiplicity, phasesmith.XrayNonResonant(), scale=1.3
     )
     q_squared = actual.q_squared_inverse_angstrom2
-    amplitudes, _ = scattering_reference.xray_non_resonant(
-        ["Si"], 0.5 * np.sqrt(q_squared)
-    )
+    amplitudes, _ = scattering_reference.xray_non_resonant(["Si"], 0.5 * np.sqrt(q_squared))
     expected = reference_structure_factor_values(
         baseline, hkl, multiplicity, amplitudes, np.ones(2), scale=1.3
     )
@@ -326,6 +324,24 @@ def test_lp_and_custom_correction_contracts_are_explicit_and_vectorized() -> Non
     )
     with pytest.raises(ValueError, match="within"):
         phasesmith.BraggBrentanoPolarizedLp(wavelength, 1.01)
+
+    neutron_lorentz = phasesmith.ConstantWavelengthNeutronLorentz(1.909)
+    neutron_q = np.array([0.03, 0.19, 0.62])
+    neutron_theta = np.arcsin(0.5 * 1.909 * np.sqrt(neutron_q))
+    neutron_expected = 1.0 / (np.sin(neutron_theta) * np.sin(2.0 * neutron_theta))
+    neutron_actual = neutron_lorentz.evaluate(neutron_q)
+    np.testing.assert_allclose(neutron_actual.values, neutron_expected, rtol=3e-15)
+    neutron_step = 1.0e-7
+    neutron_finite = (
+        neutron_lorentz.evaluate(neutron_q + neutron_step).values
+        - neutron_lorentz.evaluate(neutron_q - neutron_step).values
+    ) / (2.0 * neutron_step)
+    np.testing.assert_allclose(
+        neutron_actual.d_values_d_q_squared,
+        neutron_finite,
+        rtol=3e-8,
+        atol=3e-6,
+    )
 
     class CustomCorrection:
         calls = 0

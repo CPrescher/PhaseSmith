@@ -2,7 +2,8 @@
 
 `benchmarks/compare_gsasii.py`,
 `benchmarks/compare_gsasii_structural.py`, and
-`benchmarks/compare_gsasii_qarr.py` provide reproducible speed
+`benchmarks/compare_gsasii_qarr.py`, and
+`benchmarks/compare_gsasii_pbso4.py` provide reproducible speed
 comparisons between PhaseSmith and the exact GSAS-II revision recorded in
 `oracle/PINNED_GSASII.json`. GSAS-II remains a separately installed external
 validation oracle and is never imported by the normal package.
@@ -83,9 +84,17 @@ The default discarded complete warmup also populates GSAS-II's process-external
 Matplotlib/font cache. The report separates GSAS-II import, project/CIF setup,
 every refinement stage, finalization, total workflow, and external-process wall
 time. It records phase fractions with standard uncertainties, residuals,
-correlation, parameter and
-reflection counts, exact input hashes, and the complete recipe. Repetitions run
-in fresh subprocesses and must produce identical scientific outputs.
+correlation, parameter and reflection counts, exact input hashes, and the
+complete recipe. Repetitions run in fresh subprocesses and must produce
+identical scientific outputs.
+
+Before timing is reported, the driver also gates the two final scientific
+records against each other. Sample and reflection counts must match exactly;
+the maximum absolute phase-fraction difference must not exceed `0.02`, the
+Poisson-weighted and unit-weight Rwp differences must not exceed `0.03` and
+`0.02`, and the profile-correlation difference must not exceed `0.01`.
+These are complete-workflow tolerances for intentionally different
+parameterizations, not matched-kernel numerical tolerances.
 
 This is deliberately labeled a native-workflow comparison rather than a
 same-parameterization benchmark. PhaseSmith uses a fixed Smooth Bruckner
@@ -93,6 +102,64 @@ background and fixed CIF anisotropic tensors, while the GSAS-II recipe refines
 ten Chebyshev background terms and may refine anisotropic parameters. Those
 differences are reported in JSON and must not be hidden behind a single timing
 ratio.
+
+The 2026-08-08 live pinned check measured a maximum phase-fraction difference
+of `0.007249`, Poisson-weighted Rwp difference of `0.014365`, unit-weight Rwp
+difference of `0.005580`, and profile-correlation difference of `0.000921`;
+all cross-implementation checks passed.
+
+## PbSO4 real X-ray/neutron workload
+
+The PbSO4 comparison uses the official commit-pinned GSAS-II combined-
+refinement tutorial inputs: a packed constant-wavelength Cu Kα X-ray pattern,
+a packed 1.909 Å neutron pattern, their legacy instrument files, and the PbSO4
+CIF. This expands real-data coverage beyond QARR to two radiation probes on the
+same crystalline specimen.
+
+The pinned GSAS-II worker follows the published staged recipe: background,
+cell, X-ray H-strain, X-ray size/microstrain, sample/atom parameters, angular
+limits, and U/V/W. It jointly refines one structure against both histograms.
+PhaseSmith currently performs two independent native refinements. Each uses a
+fixed Smooth Bruckner baseline plus a refined three-term Chebyshev residual
+correction. Its neutron workflow refines the lattice; its X-ray doublet
+workflow keeps the supplied lattice fixed. The result therefore reports—not
+obscures—the difference between a joint richer model and two independent
+current-capability workflows.
+
+PhaseSmith's optional intelligent planner discloses and runs cumulative
+scale/background, position, structure, and final-polish stages from only the
+parameter families authorized by the request. The residual polynomial remains
+active cumulatively after its first stage. GSAS-II's stages remain the explicit
+official tutorial recipe. Neither numerical solver chooses these sequences
+internally.
+The PhaseSmith neutron path uses the constant-wavelength powder Lorentz factor
+`1/(sin(theta) sin(2 theta))`; using a neutral intensity correction is not a
+valid parity workflow.
+
+Both workflows now use the same documented Debye--Scherrer displacement
+parameterization for neutron peak positions: a fixed 650 mm goniometer radius,
+X perpendicular to the incident beam, and Y parallel to it, with X/Y in
+micrometres. PhaseSmith refines X/Y analytically in its position stage. The
+pinned result reports X=1578.824 µm and Y=49.924 µm for GSAS-II's joint fit;
+PhaseSmith's independent neutron fit reports X=910.803 µm and Y=-529.510 µm.
+They are not equality-gated because the shared structure, background, and
+probe coupling differ. Peak residuals and the refined cell remain the relevant
+cross-implementation gates.
+
+The reference CIF cell is a=8.480, b=5.398, c=6.958 Å. The corrected pinned
+check returned PhaseSmith's neutron cell a=8.470449, b=5.391700,
+c=6.951482 Å and GSAS-II's joint cell a=8.473965, b=5.393891, c=6.954432 Å;
+their maximum relative difference was 0.000424. PhaseSmith/GSAS-II Poisson Rwp
+values were 10.346%/10.573% for X-ray and 4.217%/4.535% for neutron.
+Corresponding correlations were 0.99555/0.99554 and 0.99664/0.99669. The
+probe-specific Rwp-delta gates are at most 0.006 and the correlation gates are
+at most 0.002.
+
+On the same release host, one discarded warmup and three measured repetitions
+gave an 8.191 s PhaseSmith median (8.204 s p95) for both disclosed staged
+workflows together and a 12.943 s GSAS-II median (12.944 s p95) for the full
+six-stage joint workflow. The GSAS-II/PhaseSmith median ratio was 1.580x. These
+are host-specific observed timings, not cross-machine acceptance thresholds.
 
 ## Run it
 
@@ -120,6 +187,13 @@ uv run python benchmarks/compare_gsasii_qarr.py --require-release \
   --phasesmith-threads 2 \
   --data-directory validation/data/iucr-qarr-1g \
   --json-output gsasii-qarr-comparison.json
+
+uv run python benchmarks/compare_gsasii_pbso4.py --require-release \
+  --gsas-python /path/to/gsas/python \
+  --gsas-root /path/to/pinned/GSAS-II \
+  --binary-dir /path/to/compatible/GSASII-bin/platform-directory \
+  --data-directory validation/data/gsasii-pbso4-cw \
+  --json-output gsasii-pbso4-comparison.json
 ```
 
 The equivalent `GSASII_PYTHON`, `PHASESMITH_GSASII_ROOT`, and

@@ -20,6 +20,7 @@ from ..extensions import CompositePhysicsProvider
 from ..intensity_corrections import (
     BraggBrentanoPolarizedLp,
     BraggBrentanoUnpolarizedLp,
+    ConstantWavelengthNeutronLorentz,
     IntegratedIntensityCorrectionProvider,
     NeutralIntegratedIntensityCorrection,
 )
@@ -31,7 +32,13 @@ from ..pattern import (
     StructuralPatternVjpResult,
 )
 from ..phase import RietveldPhase, StructuralReflectionBatch
-from ..radiation import ComponentRadiation, ConstantWavelengthExperiment, RadiationProbe
+from ..radiation import (
+    BraggBrentanoGeometry,
+    ComponentRadiation,
+    ConstantWavelengthExperiment,
+    DebyeScherrerGeometry,
+    RadiationProbe,
+)
 from ..sample import (
     IsotropicMicrostrainBroadening,
     IsotropicSizeBroadening,
@@ -116,6 +123,8 @@ class RietveldParameterSelection:
             "wavelength_angstrom",
             "zero_shift_deg",
             "sample_displacement_mm",
+            "displace_x_micrometre",
+            "displace_y_micrometre",
         )
         if len(set(names)) != len(names) or any(name not in allowed for name in names):
             raise ValueError("instrument parameters must be unique supported CW field names")
@@ -204,8 +213,12 @@ def _instrument_parameter_value(experiment: ConstantWavelengthExperiment, name: 
         return float(getattr(experiment.instrument, name))
     if name == "zero_shift_deg":
         return experiment.zero_shift_deg
-    if name == "sample_displacement_mm" and experiment.geometry is not None:
+    if name == "sample_displacement_mm" and isinstance(experiment.geometry, BraggBrentanoGeometry):
         return experiment.geometry.sample_displacement_mm
+    if name == "displace_x_micrometre" and isinstance(experiment.geometry, DebyeScherrerGeometry):
+        return experiment.geometry.displace_x_micrometre
+    if name == "displace_y_micrometre" and isinstance(experiment.geometry, DebyeScherrerGeometry):
+        return experiment.geometry.displace_y_micrometre
     raise ValueError(f"instrument parameter {name!r} is not configured for this experiment")
 
 
@@ -364,8 +377,10 @@ def build_parameter_set(
             value = _instrument_parameter_value(experiment, name)
             floor = {
                 "wavelength_angstrom": 0.1,
-                "zero_shift_deg": 1.0e-3,
+                "zero_shift_deg": 5.0e-2,
                 "sample_displacement_mm": 1.0e-2,
+                "displace_x_micrometre": 1.0e3,
+                "displace_y_micrometre": 1.0e3,
             }.get(name, 1.0e-4 if name in ("u_deg2", "v_deg2", "w_deg2") else 1.0e-3)
             bounds = Bounds(0.0, np.inf) if name == "wavelength_angstrom" else Bounds()
             specs.append(
@@ -377,6 +392,8 @@ def build_parameter_set(
                         if name == "wavelength_angstrom"
                         else "millimetre"
                         if name == "sample_displacement_mm"
+                        else "micrometre"
+                        if name in ("displace_x_micrometre", "displace_y_micrometre")
                         else "degree^2"
                         if name.endswith("deg2")
                         else "degree"
@@ -1227,6 +1244,8 @@ def _global_parameter_rows(
         "wavelength_angstrom": "wavelength_angstrom",
         "zero_shift_deg": "zero_shift_deg",
         "sample_displacement_mm": "sample_displacement_mm",
+        "displace_x_micrometre": "displace_x_micrometre",
+        "displace_y_micrometre": "displace_y_micrometre",
     }
     result = []
     for phase, domain in zip(phases, lattice_domains, strict=True):
@@ -1432,9 +1451,7 @@ class _RietveldLinearization:
                 experiment,
                 phase,
                 support_fwhm=options.support_fwhm,
-                execution=(
-                    options.execution if executor is None else ExecutionPolicy(threads=1)
-                ),
+                execution=(options.execution if executor is None else ExecutionPolicy(threads=1)),
             )
             for phase in phases
         )
@@ -1681,6 +1698,9 @@ def _apply_parameter_values(
                     )
                     if wavelength_angstrom is not None
                     and type(phase.intensity_correction) is BraggBrentanoPolarizedLp
+                    else ConstantWavelengthNeutronLorentz(wavelength_angstrom)
+                    if wavelength_angstrom is not None
+                    and type(phase.intensity_correction) is ConstantWavelengthNeutronLorentz
                     else phase.intensity_correction
                 ),
             )
@@ -1747,9 +1767,23 @@ def _apply_profile_background_values(
     geometry = experiment.geometry
     sample_key = instrument_parameter_key("sample_displacement_mm")
     if sample_key in values:
-        if geometry is None:  # pragma: no cover - rejected while constructing parameters
+        if not isinstance(
+            geometry, BraggBrentanoGeometry
+        ):  # pragma: no cover - rejected while constructing parameters
             raise ValueError("sample displacement requires Bragg-Brentano geometry")
         geometry = replace(geometry, sample_displacement_mm=values[sample_key])
+    displace_x_key = instrument_parameter_key("displace_x_micrometre")
+    displace_y_key = instrument_parameter_key("displace_y_micrometre")
+    if displace_x_key in values or displace_y_key in values:
+        if not isinstance(
+            geometry, DebyeScherrerGeometry
+        ):  # pragma: no cover - rejected while constructing parameters
+            raise ValueError("X/Y displacement requires Debye-Scherrer geometry")
+        geometry = replace(
+            geometry,
+            displace_x_micrometre=values.get(displace_x_key, geometry.displace_x_micrometre),
+            displace_y_micrometre=values.get(displace_y_key, geometry.displace_y_micrometre),
+        )
     if isinstance(experiment.radiation, ComponentRadiation):
         if "wavelength_angstrom" in profile_updates:
             raise ValueError("fixed wavelength components do not support wavelength refinement")

@@ -989,8 +989,14 @@ def test_monochromatic_neutron_cif_request_refines_through_same_runtime() -> Non
         P1_CIF,
         phase_id="neutron-alpha",
         selection=selected,
+        intensity_correction=phasesmith.ConstantWavelengthNeutronLorentz(
+            neutron_experiment.radiation.wavelength_angstrom
+        ),
     )
     assert type(initial.phases[0].scattering) is phasesmith.NeutronNuclear
+    assert type(initial.phases[0].intensity_correction) is (
+        phasesmith.ConstantWavelengthNeutronLorentz
+    )
     truth = structural_refinement.calculate(initial.pattern, neutron_experiment, initial.phases)
     starting_phase = replace(initial.phases[0], scale=0.72)
     request = replace(
@@ -1254,6 +1260,59 @@ def test_monochromatic_calibration_parameters_refine_analytically(
         domain = result.checkpoint.lattice_domains[0]
         assert domain is not None
         assert domain.wavelength_angstrom == result.experiment.radiation.wavelength_angstrom
+
+
+@pytest.mark.parametrize(
+    ("name", "truth_value", "starting_value"),
+    (
+        ("displace_x_micrometre", 1250.0, 900.0),
+        ("displace_y_micrometre", 75.0, -100.0),
+    ),
+)
+def test_debye_scherrer_displacements_refine_analytically(
+    name: str,
+    truth_value: float,
+    starting_value: float,
+) -> None:
+    base = request_from_cif(selection())
+
+    def configured(value: float) -> phasesmith.ConstantWavelengthExperiment:
+        return replace(
+            base.experiment,
+            geometry=phasesmith.DebyeScherrerGeometry(
+                650.0,
+                value if name == "displace_x_micrometre" else 0.0,
+                value if name == "displace_y_micrometre" else 0.0,
+            ),
+        )
+
+    truth_experiment = configured(truth_value)
+    calculated = structural_refinement.calculate(
+        base.pattern,
+        truth_experiment,
+        base.phases,
+    )
+    observed = replace(base.pattern, observed_y=calculated.y)
+    starting_experiment = configured(starting_value)
+    selected = replace(selection(), instrument_parameters=(name,))
+    request = structural_refinement.RietveldInput(
+        observed,
+        starting_experiment,
+        base.phases,
+        base.lattice_domains,
+        structural_refinement.build_parameter_set(
+            base.phases,
+            base.lattice_domains,
+            selected,
+            experiment=starting_experiment,
+        ),
+        selection=selected,
+    )
+    result = structural_refinement.refine(request)
+    geometry = result.experiment.geometry
+    assert isinstance(geometry, phasesmith.DebyeScherrerGeometry)
+    assert getattr(geometry, name) == pytest.approx(truth_value, rel=2.0e-6, abs=2.0e-5)
+    assert result.metrics.rwp < 2.0e-7
 
 
 @pytest.mark.parametrize("kind", ("size", "microstrain", "march"))

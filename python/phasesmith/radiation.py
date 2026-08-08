@@ -37,6 +37,27 @@ class BraggBrentanoGeometry:
 
 
 @dataclass(frozen=True, slots=True)
+class DebyeScherrerGeometry:
+    """Capillary specimen displacement relative to the goniometer centre.
+
+    ``displace_x_micrometre`` is perpendicular to the incident beam and
+    ``displace_y_micrometre`` is parallel to it. The position correction in
+    degrees ``2theta`` is
+    ``-0.18/(pi R) * (X cos(2theta) + Y sin(2theta))``.
+    """
+
+    goniometer_radius_mm: float
+    displace_x_micrometre: float = 0.0
+    displace_y_micrometre: float = 0.0
+
+    def __post_init__(self) -> None:
+        if not np.isfinite(self.goniometer_radius_mm) or self.goniometer_radius_mm <= 0.0:
+            raise ValueError("goniometer_radius_mm must be positive and finite")
+        if not np.isfinite((self.displace_x_micrometre, self.displace_y_micrometre)).all():
+            raise ValueError("Debye-Scherrer displacements must be finite")
+
+
+@dataclass(frozen=True, slots=True)
 class MonochromaticRadiation:
     """One explicitly typed constant wavelength with no spectral components."""
 
@@ -71,7 +92,7 @@ class ConstantWavelengthExperiment:
     radiation: MonochromaticRadiation | ComponentRadiation
     instrument: ConstantWavelengthInstrument
     zero_shift_deg: float = 0.0
-    geometry: BraggBrentanoGeometry | None = None
+    geometry: BraggBrentanoGeometry | DebyeScherrerGeometry | None = None
     axial_geometry: FcjGeometry | None = None
 
     def __post_init__(self) -> None:
@@ -85,8 +106,12 @@ class ConstantWavelengthExperiment:
             raise ValueError("radiation and instrument wavelengths must match exactly")
         if not np.isfinite(self.zero_shift_deg):
             raise ValueError("zero_shift_deg must be finite")
-        if self.geometry is not None and not isinstance(self.geometry, BraggBrentanoGeometry):
-            raise TypeError("geometry must be BraggBrentanoGeometry or None")
+        if self.geometry is not None and not isinstance(
+            self.geometry, (BraggBrentanoGeometry, DebyeScherrerGeometry)
+        ):
+            raise TypeError(
+                "geometry must be BraggBrentanoGeometry, DebyeScherrerGeometry, or None"
+            )
         if self.axial_geometry is not None and not isinstance(self.axial_geometry, FcjGeometry):
             raise TypeError("axial_geometry must be FcjGeometry or None")
 
@@ -95,6 +120,7 @@ class ConstantWavelengthExperiment:
         cls,
         instrument: ConstantWavelengthInstrument,
         *,
+        geometry: BraggBrentanoGeometry | DebyeScherrerGeometry | None = None,
         axial_geometry: FcjGeometry | None = None,
     ) -> ConstantWavelengthExperiment:
         """Construct an explicitly monochromatic X-ray experiment."""
@@ -102,6 +128,7 @@ class ConstantWavelengthExperiment:
         return cls(
             MonochromaticRadiation.x_ray(instrument.wavelength_angstrom),
             instrument,
+            geometry=geometry,
             axial_geometry=axial_geometry,
         )
 
@@ -110,6 +137,7 @@ class ConstantWavelengthExperiment:
         cls,
         instrument: ConstantWavelengthInstrument,
         *,
+        geometry: BraggBrentanoGeometry | DebyeScherrerGeometry | None = None,
         axial_geometry: FcjGeometry | None = None,
     ) -> ConstantWavelengthExperiment:
         """Construct an explicitly monochromatic neutron experiment."""
@@ -117,6 +145,7 @@ class ConstantWavelengthExperiment:
         return cls(
             MonochromaticRadiation.neutron(instrument.wavelength_angstrom),
             instrument,
+            geometry=geometry,
             axial_geometry=axial_geometry,
         )
 
@@ -126,6 +155,7 @@ class ConstantWavelengthExperiment:
         instrument: ConstantWavelengthInstrument,
         components: WavelengthComponents,
         *,
+        geometry: BraggBrentanoGeometry | DebyeScherrerGeometry | None = None,
         axial_geometry: FcjGeometry | None = None,
     ) -> ConstantWavelengthExperiment:
         """Construct a fixed-component X-ray experiment."""
@@ -133,6 +163,7 @@ class ConstantWavelengthExperiment:
         return cls(
             ComponentRadiation.x_ray(components),
             instrument,
+            geometry=geometry,
             axial_geometry=axial_geometry,
         )
 
@@ -142,6 +173,7 @@ class ConstantWavelengthExperiment:
         instrument: ConstantWavelengthInstrument,
         components: WavelengthComponents,
         *,
+        geometry: BraggBrentanoGeometry | DebyeScherrerGeometry | None = None,
         axial_geometry: FcjGeometry | None = None,
     ) -> ConstantWavelengthExperiment:
         """Construct a fixed-component neutron experiment."""
@@ -149,6 +181,7 @@ class ConstantWavelengthExperiment:
         return cls(
             ComponentRadiation.neutron(components),
             instrument,
+            geometry=geometry,
             axial_geometry=axial_geometry,
         )
 

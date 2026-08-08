@@ -60,6 +60,10 @@ _SUCROSE_SOURCE = (
     "https://raw.githubusercontent.com/AdvancedPhotonSource/GSAS-II-Tutorials/"
     "e2485148a3d7ee4757239b1ba40653f1f715bba5/LeBail/data"
 )
+_PBSO4_SOURCE = (
+    "https://raw.githubusercontent.com/AdvancedPhotonSource/GSAS-II-Tutorials/"
+    "e2485148a3d7ee4757239b1ba40653f1f715bba5/PythonScript/data"
+)
 
 VALIDATION_DATASETS: tuple[ValidationDataset, ...] = (
     ValidationDataset(
@@ -130,6 +134,52 @@ VALIDATION_DATASETS: tuple[ValidationDataset, ...] = (
                 "ef606d5620cc8c8d9e7b712e1ba6113c9628e83f085835a2d477d4cd4d0d312c",
                 1_134,
                 (f"{_SUCROSE_SOURCE}/11bmb_8716.prm",),
+            ),
+        ),
+    ),
+    ValidationDataset(
+        dataset_id="gsasii-pbso4-cw",
+        title="GSAS-II PbSO4 combined constant-wavelength refinement tutorial",
+        source_url=(
+            "https://github.com/AdvancedPhotonSource/GSAS-II-Tutorials/blob/"
+            "e2485148a3d7ee4757239b1ba40653f1f715bba5/"
+            "CWCombined/Combined%20refinement.htm"
+        ),
+        citation="Advanced Photon Source, GSAS-II combined X-ray/neutron refinement tutorial",
+        license_note=(
+            "External tutorial data fetched from the commit-pinned official "
+            "AdvancedPhotonSource/GSAS-II-Tutorials repository; not redistributed."
+        ),
+        files=(
+            ExternalValidationFile(
+                "PBSO4.XRA",
+                "ca2da02fc7e17d2fc912de22a979f8101ba6140f2e8104f9d3aa64f030ca58bb",
+                49_445,
+                (f"{_PBSO4_SOURCE}/PBSO4.XRA",),
+            ),
+            ExternalValidationFile(
+                "PBSO4.CWN",
+                "59462ba6d7c72c9800b0b6bf41903f9933ed5ac5adab101d27022d5d25cf18ba",
+                24_190,
+                (f"{_PBSO4_SOURCE}/PBSO4.CWN",),
+            ),
+            ExternalValidationFile(
+                "PbSO4-Wyckoff.cif",
+                "9bc19d0995561afd78a5f0563599c032751621da994e36c7570b4f515d9f0e2f",
+                1_516,
+                (f"{_PBSO4_SOURCE}/PbSO4-Wyckoff.cif",),
+            ),
+            ExternalValidationFile(
+                "INST_XRY.PRM",
+                "e59413059bc3b12a51f1c6eebc5d581470320d05a31f11a41dbb32e16d1d16b9",
+                794,
+                (f"{_PBSO4_SOURCE}/INST_XRY.PRM",),
+            ),
+            ExternalValidationFile(
+                "inst_d1a.prm",
+                "a1031174a9b509f889377752f5c095a1dad49a25fb0a72c057f184f7b321fcea",
+                971,
+                (f"{_PBSO4_SOURCE}/inst_d1a.prm",),
             ),
         ),
     ),

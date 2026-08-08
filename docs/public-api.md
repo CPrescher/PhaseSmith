@@ -117,6 +117,8 @@ phasesmith.radiation.WavelengthComponents
 phasesmith.radiation.RadiationProbe
 phasesmith.radiation.MonochromaticRadiation
 phasesmith.radiation.ConstantWavelengthExperiment
+phasesmith.radiation.BraggBrentanoGeometry
+phasesmith.radiation.DebyeScherrerGeometry
 phasesmith.phase.ReflectionGeometryBatch
 phasesmith.phase.ReciprocalMetric
 phasesmith.phase.ReflectionBatch
@@ -158,6 +160,7 @@ phasesmith.intensity_corrections.IntegratedIntensityCorrection
 phasesmith.intensity_corrections.NeutralIntegratedIntensityCorrection
 phasesmith.intensity_corrections.BraggBrentanoUnpolarizedLp
 phasesmith.intensity_corrections.BraggBrentanoPolarizedLp
+phasesmith.intensity_corrections.ConstantWavelengthNeutronLorentz
 phasesmith.execution.ExecutionPolicy
 phasesmith.refinement.lebail.LeBailPhase
 phasesmith.refinement.LatticeParameterization
@@ -345,8 +348,17 @@ matrix-free structural JVP/VJP products and returns the last accepted phases,
 parameters, calculation, residual metrics, iteration history, covariance/rank
 diagnostics, termination reason, and restart checkpoint.
 
-The initial families are CW U/V/W/X/Y coefficients, normalized polynomial
-background coefficients, phase scale, symmetry-independent lattice parameters,
+`RietveldRecipe` and `RietveldStage` form a separate optional orchestration
+layer. `intelligent_rietveld_recipe` proposes a deterministic cumulative plan
+from only the families authorized by the input selection and records its
+rationale; `run_rietveld_recipe` executes explicit stages and stops when a
+stage does not meet its declared termination policy. The solver never invokes
+the planner implicitly.
+
+The initial families are CW U/V/W/X/Y coefficients, constant zero shift,
+Bragg--Brentano sample height, Debye--Scherrer X/Y specimen displacement,
+normalized polynomial background coefficients, phase scale,
+symmetry-independent lattice parameters,
 symmetry-allowed fractional coordinates, occupancy, and isotropic `U_iso`.
 Multiple phases and monochromatic X-ray or neutron experiments share the same
 interface. Details and a complete script are in [`rietveld.md`](rietveld.md).
