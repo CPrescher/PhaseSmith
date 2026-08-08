@@ -139,6 +139,10 @@ pub struct StructuralPatternVjpResult {
 /// Invalid fused structural-pattern request.
 #[derive(Debug)]
 pub enum StructuralPatternError {
+    /// Reflection indices and multiplicities have different lengths.
+    ReflectionLengthMismatch,
+    /// Owned asymmetric-site arrays have different lengths.
+    SiteLengthMismatch,
     /// Scattering species count does not match the asymmetric-site count.
     SpeciesLengthMismatch,
     /// Offset vectors are neither both empty nor matched to the asymmetric sites.
@@ -172,6 +176,12 @@ pub enum StructuralPatternError {
 impl Display for StructuralPatternError {
     fn fmt(&self, formatter: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
+            Self::ReflectionLengthMismatch => {
+                formatter.write_str("hkl and multiplicity must have the same reflection count")
+            }
+            Self::SiteLengthMismatch => {
+                formatter.write_str("all structural site arrays must have the same site count")
+            }
             Self::SpeciesLengthMismatch => {
                 formatter.write_str("scattering species must contain one key per asymmetric site")
             }

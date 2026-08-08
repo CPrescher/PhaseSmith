@@ -24,11 +24,9 @@ use phasesmith_engine::crystallography::{
     xray_species_metadata,
 };
 use phasesmith_engine::{
-    BuiltInScatteringModel, MonochromaticPositionCorrection, StructuralPatternDenseResult,
-    StructuralPatternError, StructuralPatternInputView, StructuralPatternJvpResult,
-    StructuralPatternResult, StructuralPatternVjpResult,
-    calculate_structural_pattern_dense_with_context, calculate_structural_pattern_jvp_with_context,
-    calculate_structural_pattern_vjp_with_context, calculate_structural_pattern_with_context,
+    BuiltInScatteringModel, MonochromaticPositionCorrection, PreparedStructuralPatternInputView,
+    PreparedStructuralPhase, StructuralPatternDenseResult, StructuralPatternJvpResult,
+    StructuralPatternResult, StructuralPatternVjpResult, StructuralPhaseDefinition,
 };
 use phasesmith_execution::ExecutionContext;
 use pyo3::exceptions::PyValueError;
@@ -638,23 +636,7 @@ impl NativePreparedReflectionGenerator {
 /// Immutable native structural phase used by values and derivative products.
 #[pyclass(name = "_StructuralPhase")]
 struct NativeStructuralPhase {
-    execution: ExecutionContext,
-    space_group: SpaceGroup,
-    cell: UnitCell,
-    hkl: Vec<[i32; 3]>,
-    multiplicity: Vec<usize>,
-    fractional_xyz: Vec<[f64; 3]>,
-    occupancy: Vec<f64>,
-    u_iso_angstrom2: Vec<f64>,
-    anisotropic_mask: Vec<bool>,
-    u_aniso_cif_angstrom2: Vec<[f64; 6]>,
-    scattering_species: Vec<String>,
-    scattering_real_offset: Vec<f64>,
-    scattering_imag_offset: Vec<f64>,
-    scale: f64,
-    coordinate_tolerance: f64,
-    scattering_model: BuiltInScatteringModel,
-    correction_model: IntegratedIntensityCorrectionModel,
+    phase: PreparedStructuralPhase,
 }
 
 impl NativeStructuralPhase {
@@ -713,74 +695,6 @@ impl NativeStructuralPhase {
         )
         .map_err(|error| PyValueError::new_err(error.to_string()))
     }
-
-    #[allow(clippy::too_many_arguments)]
-    fn with_input<R>(
-        &self,
-        x_deg: &[f64],
-        instrument: ConstantWavelengthInstrument,
-        position_correction: MonochromaticPositionCorrection,
-        axial_geometry: Option<FcjGeometry>,
-        contributions: CwContributionsView<'_>,
-        support_fwhm: f64,
-        operation: impl FnOnce(
-            UnitCell,
-            &SpaceGroup,
-            &StructuralPatternInputView<'_>,
-            &ExecutionContext,
-        ) -> Result<R, StructuralPatternError>,
-    ) -> PyResult<R> {
-        let species = self
-            .scattering_species
-            .iter()
-            .map(String::as_str)
-            .collect::<Vec<_>>();
-        let correction_model = match self.correction_model {
-            IntegratedIntensityCorrectionModel::Neutral => {
-                IntegratedIntensityCorrectionModel::Neutral
-            }
-            IntegratedIntensityCorrectionModel::BraggBrentanoUnpolarizedLp { .. } => {
-                IntegratedIntensityCorrectionModel::BraggBrentanoUnpolarizedLp {
-                    wavelength_angstrom: instrument.wavelength_angstrom,
-                }
-            }
-            IntegratedIntensityCorrectionModel::BraggBrentanoPolarizedLp {
-                polarization, ..
-            } => IntegratedIntensityCorrectionModel::BraggBrentanoPolarizedLp {
-                wavelength_angstrom: instrument.wavelength_angstrom,
-                polarization,
-            },
-            IntegratedIntensityCorrectionModel::ConstantWavelengthNeutronLorentz { .. } => {
-                IntegratedIntensityCorrectionModel::ConstantWavelengthNeutronLorentz {
-                    wavelength_angstrom: instrument.wavelength_angstrom,
-                }
-            }
-        };
-        let input = StructuralPatternInputView {
-            x_deg,
-            hkl: &self.hkl,
-            multiplicity: &self.multiplicity,
-            fractional_xyz: &self.fractional_xyz,
-            occupancy: &self.occupancy,
-            u_iso_angstrom2: &self.u_iso_angstrom2,
-            anisotropic_mask: &self.anisotropic_mask,
-            u_aniso_cif_angstrom2: &self.u_aniso_cif_angstrom2,
-            scattering_species: &species,
-            scattering_real_offset: &self.scattering_real_offset,
-            scattering_imag_offset: &self.scattering_imag_offset,
-            scale: self.scale,
-            coordinate_tolerance: self.coordinate_tolerance,
-            instrument,
-            axial_geometry,
-            position_correction,
-            correction_model,
-            scattering_model: self.scattering_model,
-            contributions,
-            support: SupportPolicy::FwhmMultiple(support_fwhm),
-        };
-        operation(self.cell, &self.space_group, &input, &self.execution)
-            .map_err(|error| PyValueError::new_err(error.to_string()))
-    }
 }
 
 #[pymethods]
@@ -824,79 +738,49 @@ impl NativeStructuralPhase {
             contiguous_slice(&scattering_real_offset, "scattering_real_offset")?.to_vec();
         let scattering_imag_offset =
             contiguous_slice(&scattering_imag_offset, "scattering_imag_offset")?.to_vec();
-        if hkl.len() != multiplicity.len() {
-            return Err(PyValueError::new_err(
-                "hkl and multiplicity must have the same reflection count",
-            ));
-        }
-        if fractional_xyz.len() != occupancy.len()
-            || fractional_xyz.len() != u_iso_angstrom2.len()
-            || fractional_xyz.len() != anisotropic_mask.len()
-            || fractional_xyz.len() != u_aniso_cif_angstrom2.len()
-            || fractional_xyz.len() != scattering_species.len()
-            || (!scattering_real_offset.is_empty()
-                && fractional_xyz.len() != scattering_real_offset.len())
-            || (!scattering_imag_offset.is_empty()
-                && fractional_xyz.len() != scattering_imag_offset.len())
-            || scattering_real_offset.is_empty() != scattering_imag_offset.is_empty()
-        {
-            return Err(PyValueError::new_err(
-                "all structural site arrays must have the same site count",
-            ));
-        }
-        if scattering_real_offset
-            .iter()
-            .chain(&scattering_imag_offset)
-            .any(|value| !value.is_finite())
-        {
-            return Err(PyValueError::new_err("scattering offsets must be finite"));
-        }
         let scattering_model = parse_built_in_scattering_model(scattering_model)?;
-        match scattering_model {
-            BuiltInScatteringModel::XrayNonResonant => {
-                PreparedXrayScattering::new(&scattering_species).map(|_| ())
-            }
-            BuiltInScatteringModel::NeutronNuclear => {
-                PreparedNeutronScattering::new(&scattering_species).map(|_| ())
-            }
-        }
-        .map_err(|error| PyValueError::new_err(error.to_string()))?;
+        let execution = ExecutionContext::new(native_threads)
+            .map_err(|error| PyValueError::new_err(error.to_string()))?;
         Ok(Self {
-            execution: ExecutionContext::new(native_threads)
-                .map_err(|error| PyValueError::new_err(error.to_string()))?,
-            space_group: generator.generator.space_group().clone(),
-            cell: crystallographic_cell(
-                a_angstrom, b_angstrom, c_angstrom, alpha_deg, beta_deg, gamma_deg,
-            ),
-            hkl,
-            multiplicity,
-            fractional_xyz,
-            occupancy,
-            u_iso_angstrom2,
-            anisotropic_mask,
-            u_aniso_cif_angstrom2,
-            scattering_species,
-            scattering_real_offset,
-            scattering_imag_offset,
-            scale,
-            coordinate_tolerance,
-            scattering_model,
-            correction_model: parse_correction_model(
-                correction_model,
-                correction_wavelength_angstrom,
-                correction_polarization,
-            )?,
+            phase: PreparedStructuralPhase::new(
+                StructuralPhaseDefinition {
+                    cell: crystallographic_cell(
+                        a_angstrom, b_angstrom, c_angstrom, alpha_deg, beta_deg, gamma_deg,
+                    ),
+                    space_group: generator.generator.space_group().clone(),
+                    hkl,
+                    multiplicity,
+                    fractional_xyz,
+                    occupancy,
+                    u_iso_angstrom2,
+                    anisotropic_mask,
+                    u_aniso_cif_angstrom2,
+                    scattering_species,
+                    scattering_real_offset,
+                    scattering_imag_offset,
+                    scale,
+                    coordinate_tolerance,
+                    scattering_model,
+                    correction_model: parse_correction_model(
+                        correction_model,
+                        correction_wavelength_angstrom,
+                        correction_polarization,
+                    )?,
+                },
+                execution,
+            )
+            .map_err(|error| PyValueError::new_err(error.to_string()))?,
         })
     }
 
     #[getter]
     fn reflection_count(&self) -> usize {
-        self.hkl.len()
+        self.phase.reflection_count()
     }
 
     #[getter]
     fn structural_parameter_count(&self) -> usize {
-        6 + 5 * self.fractional_xyz.len() + 1
+        self.phase.structural_parameter_count()
     }
 
     #[allow(clippy::similar_names, clippy::too_many_arguments)]
@@ -931,7 +815,7 @@ impl NativeStructuralPhase {
     ) -> PyResult<StructuralPatternArrays<'py>> {
         let x_deg_values = contiguous_slice(&x_deg, "x_deg")?;
         let contributions = Self::contribution_view(
-            self.hkl.len(),
+            self.phase.reflection_count(),
             parameter_count,
             &gaussian_variance_deg2,
             &lorentzian_fwhm_deg,
@@ -951,24 +835,24 @@ impl NativeStructuralPhase {
             goniometer_radius_mm,
         )?;
         let axial = axial_geometry(fcj_sample_over_radius, fcj_detector_over_radius)?;
-        let result = py.detach(|| {
-            self.with_input(
-                x_deg_values,
-                cw_instrument(
-                    wavelength_angstrom,
-                    u_deg2,
-                    v_deg2,
-                    w_deg2,
-                    x_width_deg,
-                    y_width_deg,
-                ),
-                correction,
-                axial,
-                contributions,
-                support_fwhm,
-                calculate_structural_pattern_with_context,
-            )
-        })?;
+        let input = PreparedStructuralPatternInputView {
+            x_deg: x_deg_values,
+            instrument: cw_instrument(
+                wavelength_angstrom,
+                u_deg2,
+                v_deg2,
+                w_deg2,
+                x_width_deg,
+                y_width_deg,
+            ),
+            position_correction: correction,
+            axial_geometry: axial,
+            contributions,
+            support: SupportPolicy::FwhmMultiple(support_fwhm),
+        };
+        let result = py
+            .detach(|| self.phase.calculate(&input))
+            .map_err(|error| PyValueError::new_err(error.to_string()))?;
         structural_pattern_to_numpy(py, result)
     }
 
@@ -1004,7 +888,7 @@ impl NativeStructuralPhase {
     ) -> PyResult<StructuralPatternDenseArrays<'py>> {
         let x_deg_values = contiguous_slice(&x_deg, "x_deg")?;
         let contributions = Self::contribution_view(
-            self.hkl.len(),
+            self.phase.reflection_count(),
             parameter_count,
             &gaussian_variance_deg2,
             &lorentzian_fwhm_deg,
@@ -1024,24 +908,24 @@ impl NativeStructuralPhase {
             goniometer_radius_mm,
         )?;
         let axial = axial_geometry(fcj_sample_over_radius, fcj_detector_over_radius)?;
-        let result = py.detach(|| {
-            self.with_input(
-                x_deg_values,
-                cw_instrument(
-                    wavelength_angstrom,
-                    u_deg2,
-                    v_deg2,
-                    w_deg2,
-                    x_width_deg,
-                    y_width_deg,
-                ),
-                correction,
-                axial,
-                contributions,
-                support_fwhm,
-                calculate_structural_pattern_dense_with_context,
-            )
-        })?;
+        let input = PreparedStructuralPatternInputView {
+            x_deg: x_deg_values,
+            instrument: cw_instrument(
+                wavelength_angstrom,
+                u_deg2,
+                v_deg2,
+                w_deg2,
+                x_width_deg,
+                y_width_deg,
+            ),
+            position_correction: correction,
+            axial_geometry: axial,
+            contributions,
+            support: SupportPolicy::FwhmMultiple(support_fwhm),
+        };
+        let result = py
+            .detach(|| self.phase.linearize(&input))
+            .map_err(|error| PyValueError::new_err(error.to_string()))?;
         structural_pattern_dense_to_numpy(py, result)
     }
 
@@ -1079,7 +963,7 @@ impl NativeStructuralPhase {
         let tangent = contiguous_slice(&tangent, "tangent")?;
         let x_deg_values = contiguous_slice(&x_deg, "x_deg")?;
         let contributions = Self::contribution_view(
-            self.hkl.len(),
+            self.phase.reflection_count(),
             parameter_count,
             &gaussian_variance_deg2,
             &lorentzian_fwhm_deg,
@@ -1099,28 +983,24 @@ impl NativeStructuralPhase {
             goniometer_radius_mm,
         )?;
         let axial = axial_geometry(fcj_sample_over_radius, fcj_detector_over_radius)?;
-        let result = py.detach(|| {
-            self.with_input(
-                x_deg_values,
-                cw_instrument(
-                    wavelength_angstrom,
-                    u_deg2,
-                    v_deg2,
-                    w_deg2,
-                    x_width_deg,
-                    y_width_deg,
-                ),
-                correction,
-                axial,
-                contributions,
-                support_fwhm,
-                |cell, group, input, execution| {
-                    calculate_structural_pattern_jvp_with_context(
-                        cell, group, input, tangent, execution,
-                    )
-                },
-            )
-        })?;
+        let input = PreparedStructuralPatternInputView {
+            x_deg: x_deg_values,
+            instrument: cw_instrument(
+                wavelength_angstrom,
+                u_deg2,
+                v_deg2,
+                w_deg2,
+                x_width_deg,
+                y_width_deg,
+            ),
+            position_correction: correction,
+            axial_geometry: axial,
+            contributions,
+            support: SupportPolicy::FwhmMultiple(support_fwhm),
+        };
+        let result = py
+            .detach(|| self.phase.jvp(&input, tangent))
+            .map_err(|error| PyValueError::new_err(error.to_string()))?;
         structural_pattern_jvp_to_numpy(py, result)
     }
 
@@ -1158,7 +1038,7 @@ impl NativeStructuralPhase {
         let sample_weights = contiguous_slice(&sample_weights, "sample_weights")?;
         let x_deg_values = contiguous_slice(&x_deg, "x_deg")?;
         let contributions = Self::contribution_view(
-            self.hkl.len(),
+            self.phase.reflection_count(),
             parameter_count,
             &gaussian_variance_deg2,
             &lorentzian_fwhm_deg,
@@ -1178,32 +1058,24 @@ impl NativeStructuralPhase {
             goniometer_radius_mm,
         )?;
         let axial = axial_geometry(fcj_sample_over_radius, fcj_detector_over_radius)?;
-        let result = py.detach(|| {
-            self.with_input(
-                x_deg_values,
-                cw_instrument(
-                    wavelength_angstrom,
-                    u_deg2,
-                    v_deg2,
-                    w_deg2,
-                    x_width_deg,
-                    y_width_deg,
-                ),
-                correction,
-                axial,
-                contributions,
-                support_fwhm,
-                |cell, group, input, execution| {
-                    calculate_structural_pattern_vjp_with_context(
-                        cell,
-                        group,
-                        input,
-                        sample_weights,
-                        execution,
-                    )
-                },
-            )
-        })?;
+        let input = PreparedStructuralPatternInputView {
+            x_deg: x_deg_values,
+            instrument: cw_instrument(
+                wavelength_angstrom,
+                u_deg2,
+                v_deg2,
+                w_deg2,
+                x_width_deg,
+                y_width_deg,
+            ),
+            position_correction: correction,
+            axial_geometry: axial,
+            contributions,
+            support: SupportPolicy::FwhmMultiple(support_fwhm),
+        };
+        let result = py
+            .detach(|| self.phase.vjp(&input, sample_weights))
+            .map_err(|error| PyValueError::new_err(error.to_string()))?;
         structural_pattern_vjp_to_numpy(py, result)
     }
 }

@@ -7,7 +7,12 @@
 pub use phasesmith_core as profile;
 pub use phasesmith_crystallography as crystallography;
 
+mod prepared_structural_phase;
 pub mod structural_pattern;
+
+pub use prepared_structural_phase::{
+    PreparedStructuralPatternInputView, PreparedStructuralPhase, StructuralPhaseDefinition,
+};
 
 pub use structural_pattern::{
     BuiltInScatteringModel, MonochromaticPositionCorrection, StructuralPatternDenseResult,
