@@ -66,20 +66,23 @@ format 7 stores these models and loads formats 1--6.
 The deterministic three-stage workflow first refines phase scales plus shared
 U/V/W/zero, then adds isotropic displacement, size, microstrain, and preferred
 orientation, and finally polishes the three linear phase scales with nonlinear
-parameters fixed. The reviewed result is:
+parameters fixed. The fixed-anisotropic reviewed result is:
 
-- Al2O3 33.250%, ZnO 32.936%, CaF2 33.814%;
-- maximum absolute weighed-fraction error 1.881 percentage points (limit 2);
-- Poisson-weighted Rwp 0.19679 (limit 0.20);
-- unit-weight Rwp 0.13282 (limit 0.15);
-- background-subtracted profile correlation 0.99069 (limit 0.98).
+- Al2O3 30.778%, ZnO 34.205%, CaF2 35.018%;
+- maximum absolute weighed-fraction error 0.598 percentage points (limit 2);
+- Poisson-weighted Rwp 0.19888 (limit 0.20);
+- unit-weight Rwp 0.13256 (limit 0.15);
+- background-subtracted profile correlation 0.99061 (limit 0.98).
 
 The two residual gates are intentionally separate: assigning
 `sigma=sqrt(max(counts, 1))` changes the weighting and must not be compared to a
 unit-weight prototype number. Current approximations are recorded in the
-machine-readable report: Al2O3 anisotropic displacement is replaced by
-trace-mean Uiso, Cu K-alpha1 fixed dispersion is reused for K-alpha2, and the
-supplied SH/L=0.002 FCJ asymmetry and absorption are not yet active.
+machine-readable report: Al2O3 CIF tensors are evaluated directly and fixed,
+sites lacking CIF displacement values start at `Uiso=0.005 Å²` and refine,
+Cu K-alpha1 fixed dispersion is reused for K-alpha2, SH/L=0.002 uses the
+documented equal-height FCJ mapping, and absorption is not yet active. The
+reviewed run ended safely at the stage-2 evaluation budget after 354.1 seconds;
+FCJ reuse/vectorization remains the dominant workflow performance priority.
 
 ## Remaining QARR sequence
 

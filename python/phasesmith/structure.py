@@ -200,6 +200,27 @@ class CrystalStructure:
             [site.u_iso_angstrom2 or 0.0 for site in self.sites],
         )
 
+    def to_site_batch(self) -> AtomSiteBatch:
+        """Convert sites without discarding fixed CIF anisotropic tensors."""
+
+        anisotropic = [site.anisotropic_displacement for site in self.sites]
+        return AtomSiteBatch(
+            [site.site_id for site in self.sites],
+            [site.type_symbol for site in self.sites],
+            np.asarray([site.fractional_xyz for site in self.sites], dtype=np.float64).reshape(
+                -1, 3
+            ),
+            [site.occupancy for site in self.sites],
+            [site.u_iso_angstrom2 or 0.0 for site in self.sites],
+            anisotropic_mask=[value is not None for value in anisotropic],
+            u_aniso_cif_angstrom2=[
+                (0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+                if value is None
+                else value.u_cif_angstrom2
+                for value in anisotropic
+            ],
+        )
+
 
 def structure_to_record(structure: CrystalStructure) -> dict[str, Any]:
     """Serialize a structure to parser-independent JSON-compatible values."""

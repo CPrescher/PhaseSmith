@@ -466,7 +466,7 @@ def build_parameter_set(
                         max(site.occupancy, 1.0),
                     )
                 )
-            if selection.u_iso:
+            if selection.u_iso and site.anisotropic_displacement is None:
                 value = 0.0 if site.u_iso_angstrom2 is None else site.u_iso_angstrom2
                 specs.append(
                     ParameterSpec(
@@ -990,7 +990,7 @@ def _phase_native_mapping(
 ) -> NDArray[np.float64]:
     """Map physical parameter changes to the native structural tangent."""
 
-    names = p1_parameter_names(phase.structure.to_isotropic_site_batch())
+    names = p1_parameter_names(phase.structure.to_site_batch())
     native_row = {name: row for row, name in enumerate(names)}
     mapping = np.zeros((len(names), len(parameters.specs)), dtype=np.float64)
     site_by_id = {site.site_id: site for site in phase.structure.sites}
@@ -1026,6 +1026,10 @@ def _phase_native_mapping(
             elif key.name == "occupancy":
                 mapping[native_row[f"site.{site_id}.occupancy"], column] = 1.0
             elif key.name == "u_iso_angstrom2":
+                if site_by_id[site_id].anisotropic_displacement is not None:
+                    raise ValueError(
+                        f"{key.label} cannot refine U_iso for an anisotropic site"
+                    )
                 mapping[native_row[f"site.{site_id}.u_iso"], column] = 1.0
             else:
                 raise ValueError(f"unknown site parameter {key.label}")

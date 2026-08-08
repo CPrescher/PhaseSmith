@@ -156,6 +156,37 @@ impl UnitCell {
 }
 
 impl CellGeometry {
+    /// Return reciprocal-axis lengths and their direct-cell derivatives.
+    ///
+    /// The lengths are `a*`, `b*`, and `c*` without a `2 pi` factor. The
+    /// derivative rows follow reciprocal-axis order and columns follow direct
+    /// cell parameter order.
+    #[must_use]
+    pub fn reciprocal_axis_lengths_and_derivatives(
+        &self,
+    ) -> ([f64; 3], [[f64; CELL_PARAMETER_COUNT]; 3]) {
+        let lengths = [
+            self.reciprocal_metric[0][0].sqrt(),
+            self.reciprocal_metric[1][1].sqrt(),
+            self.reciprocal_metric[2][2].sqrt(),
+        ];
+        let mut derivatives = [[0.0; CELL_PARAMETER_COUNT]; 3];
+        for axis in 0..3 {
+            let reciprocal_column = [
+                self.reciprocal_metric[0][axis],
+                self.reciprocal_metric[1][axis],
+                self.reciprocal_metric[2][axis],
+            ];
+            for (parameter, derivative) in derivatives[axis].iter_mut().enumerate() {
+                let product =
+                    matrix_vector(self.direct_metric_derivatives[parameter], reciprocal_column);
+                let d_reciprocal_diagonal = -dot(reciprocal_column, product);
+                *derivative = 0.5 * d_reciprocal_diagonal / lengths[axis];
+            }
+        }
+        (lengths, derivatives)
+    }
+
     /// Return `|g|² = hᵀ G* h` without constructing cell derivatives.
     #[must_use]
     pub fn q_squared(&self, hkl: [i32; 3]) -> f64 {
@@ -376,6 +407,8 @@ mod tests {
             .d_spacing_and_derivatives([2, -1, 3])
             .expect("reflection");
         let volume_derivatives = geometry.volume_derivatives();
+        let (reciprocal_lengths, reciprocal_derivatives) =
+            geometry.reciprocal_axis_lengths_and_derivatives();
         for parameter in 0..CELL_PARAMETER_COUNT {
             let step = if parameter < 3 { 1.0e-6 } else { 1.0e-5 };
             let plus = changed(cell, parameter, step)
@@ -399,6 +432,15 @@ mod tests {
                 (volume_derivatives[parameter] - finite_volume).abs()
                     < 2.0e-8 * geometry.volume_angstrom3
             );
+            let plus_lengths = plus.reciprocal_axis_lengths_and_derivatives().0;
+            let minus_lengths = minus.reciprocal_axis_lengths_and_derivatives().0;
+            for axis in 0..3 {
+                let finite_reciprocal = (plus_lengths[axis] - minus_lengths[axis]) / (2.0 * step);
+                assert!(
+                    (reciprocal_derivatives[axis][parameter] - finite_reciprocal).abs()
+                        < 2.0e-8 * reciprocal_lengths[axis].max(1.0)
+                );
+            }
         }
     }
 

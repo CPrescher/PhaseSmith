@@ -22,6 +22,9 @@ struct BenchmarkCase {
     xyz: Vec<[f64; 3]>,
     occupancy: Vec<f64>,
     u_iso: Vec<f64>,
+    anisotropic_mask: Vec<bool>,
+    anisotropic_mask_all: Vec<bool>,
+    u_aniso: Vec<[f64; 6]>,
     species: Vec<&'static str>,
     site_real_offset: Vec<f64>,
     site_imag_offset: Vec<f64>,
@@ -82,6 +85,21 @@ impl BenchmarkCase {
             u_iso: (0..site_count)
                 .map(|site| 0.005 + 0.0002 * index_f64(site))
                 .collect(),
+            anisotropic_mask: vec![false; site_count],
+            anisotropic_mask_all: vec![true; site_count],
+            u_aniso: (0..site_count)
+                .map(|site| {
+                    let base = 0.005 + 0.0002 * index_f64(site);
+                    [
+                        1.2 * base,
+                        0.9 * base,
+                        1.4 * base,
+                        0.05 * base,
+                        0.03 * base,
+                        0.08 * base,
+                    ]
+                })
+                .collect(),
             species: (0..site_count)
                 .map(|site| species_keys[site % species_keys.len()])
                 .collect(),
@@ -125,7 +143,12 @@ impl BenchmarkCase {
         .expect("contributions")
     }
 
-    fn fused_with_offsets(&self, real_offset: &[f64], imag_offset: &[f64]) -> usize {
+    fn fused_with_model(
+        &self,
+        real_offset: &[f64],
+        imag_offset: &[f64],
+        anisotropic_mask: &[bool],
+    ) -> usize {
         calculate_structural_pattern(
             self.cell,
             &self.group,
@@ -136,6 +159,8 @@ impl BenchmarkCase {
                 fractional_xyz: &self.xyz,
                 occupancy: &self.occupancy,
                 u_iso_angstrom2: &self.u_iso,
+                anisotropic_mask,
+                u_aniso_cif_angstrom2: &self.u_aniso,
                 scattering_species: &self.species,
                 scattering_real_offset: real_offset,
                 scattering_imag_offset: imag_offset,
@@ -161,11 +186,19 @@ impl BenchmarkCase {
     }
 
     fn fused(&self) -> usize {
-        self.fused_with_offsets(&[], &[])
+        self.fused_with_model(&[], &[], &self.anisotropic_mask)
     }
 
     fn fused_dispersion(&self) -> usize {
-        self.fused_with_offsets(&self.site_real_offset, &self.site_imag_offset)
+        self.fused_with_model(
+            &self.site_real_offset,
+            &self.site_imag_offset,
+            &self.anisotropic_mask,
+        )
+    }
+
+    fn fused_anisotropic(&self) -> usize {
+        self.fused_with_model(&[], &[], &self.anisotropic_mask_all)
     }
 
     fn separate(&self) -> usize {
@@ -207,6 +240,8 @@ impl BenchmarkCase {
                 fractional_xyz: &self.xyz,
                 occupancy: &self.occupancy,
                 u_iso_angstrom2: &self.u_iso,
+                anisotropic_mask: &self.anisotropic_mask,
+                u_aniso_cif_angstrom2: &self.u_aniso,
                 scattering_real: &scattering.real,
                 scattering_imag: &scattering.imag,
                 d_scattering_real_d_s: &scattering.d_real_d_s,
@@ -250,6 +285,13 @@ fn structural_pattern_benchmark(criterion: &mut Criterion) {
         &case,
         |bench, case| {
             bench.iter(|| black_box(case.fused_dispersion()));
+        },
+    );
+    group.bench_with_input(
+        BenchmarkId::new("fused_fixed_anisotropic", "values+derivatives"),
+        &case,
+        |bench, case| {
+            bench.iter(|| black_box(case.fused_anisotropic()));
         },
     );
     group.bench_with_input(

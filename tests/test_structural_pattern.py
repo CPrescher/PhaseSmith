@@ -276,6 +276,46 @@ def test_structural_pattern_jvp_matches_finite_difference_and_vjp_adjoint() -> N
     )
 
 
+def test_anisotropic_structural_pattern_native_products_match_finite_difference() -> None:
+    base = xray_phase()
+    aniso_site = replace(
+        base.structure.sites[0],
+        u_iso_angstrom2=None,
+        anisotropic_displacement=phasesmith.AnisotropicDisplacement(
+            (0.020, 0.013, 0.027, 0.002, 0.001, 0.003), "U_cif"
+        ),
+    )
+    phase = replace(
+        base,
+        structure=replace(base.structure, sites=(aniso_site, base.structure.sites[1])),
+    )
+    experiment = phasesmith.ConstantWavelengthExperiment.x_ray(instrument())
+    prepared = phasesmith.PreparedStructuralPattern(pattern(), experiment, phase)
+    assert prepared.uses_native_fused_path
+    names = phasesmith.p1_parameter_names(phase.structure.to_site_batch())
+    direction = np.zeros(len(names))
+    direction[[0, 6, 12, len(names) - 1]] = [0.04, 0.015, -0.03, 0.05]
+    actual = prepared.jvp(direction)
+    step = 1e-6
+    plus = phasesmith.calculate_structural_pattern(
+        pattern(), experiment, _perturb_phase(phase, direction, step)
+    )
+    minus = phasesmith.calculate_structural_pattern(
+        pattern(), experiment, _perturb_phase(phase, direction, -step)
+    )
+    finite = (plus.profile_y - minus.profile_y) / (2.0 * step)
+    np.testing.assert_allclose(actual.d_y, finite, rtol=4e-6, atol=3e-7)
+    weights = np.sin(np.linspace(0.0, 3.0, pattern().x.size))
+    reverse = prepared.vjp(weights)
+    np.testing.assert_allclose(
+        actual.d_y @ weights,
+        direction @ reverse.gradient,
+        rtol=7e-13,
+        atol=3e-10,
+    )
+    assert reverse.gradient[names.index("site.si.u_iso")] == 0.0
+
+
 def test_monochromatic_neutron_structural_pattern_uses_native_path() -> None:
     phase = replace(
         xray_phase(),

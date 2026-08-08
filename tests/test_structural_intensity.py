@@ -6,6 +6,7 @@ import numpy as np
 import phasesmith
 import pytest
 from phasesmith import scattering_reference
+from phasesmith.crystallography_reference import reference_structure_factor_values
 from phasesmith.symmetry_reference import reference_expand_sites
 
 
@@ -86,6 +87,70 @@ def test_general_symmetry_values_match_independent_numpy_reference() -> None:
     np.testing.assert_array_equal(actual.correction, 1.0)
     assert not actual.f.flags.writeable
     assert not actual.d_integrated_intensity_d_parameters.flags.writeable
+
+
+def test_fixed_anisotropic_values_and_cell_derivatives_match_independent_equations() -> None:
+    baseline = phasesmith.CrystalStructure(
+        "aniso",
+        "Anisotropic P1",
+        phasesmith.UnitCell(4.3, 5.1, 6.2, 78.0, 83.0, 71.0),
+        phasesmith.SpaceGroup([phasesmith.SymmetryOperation.identity()]),
+        (
+            phasesmith.AtomSite(
+                "si",
+                "Si1",
+                "Si",
+                "Si",
+                (0.17, 0.23, 0.31),
+                0.82,
+                anisotropic_displacement=phasesmith.AnisotropicDisplacement(
+                    (0.020, 0.013, 0.027, 0.002, 0.001, 0.003), "U_cif"
+                ),
+            ),
+        ),
+    )
+    hkl = np.array([[2, 1, 3], [1, 3, 2]], dtype=np.int64)
+    multiplicity = np.array([2, 4], dtype=np.int64)
+    actual = phasesmith.calculate_structure_factors(
+        baseline, hkl, multiplicity, phasesmith.XrayNonResonant(), scale=1.3
+    )
+    q_squared = actual.q_squared_inverse_angstrom2
+    amplitudes, _ = scattering_reference.xray_non_resonant(
+        ["Si"], 0.5 * np.sqrt(q_squared)
+    )
+    expected = reference_structure_factor_values(
+        baseline, hkl, multiplicity, amplitudes, np.ones(2), scale=1.3
+    )
+    np.testing.assert_allclose(actual.f, expected.f, rtol=3e-15, atol=3e-14)
+    np.testing.assert_allclose(
+        actual.integrated_intensity, expected.integrated_intensity, rtol=5e-15, atol=5e-13
+    )
+    for parameter, name in enumerate(phasesmith.CELL_PARAMETER_NAMES):
+        step = 1e-6 if parameter < 3 else 1e-5
+        values = list(baseline.cell.as_tuple())
+        values[parameter] += step
+        plus = phasesmith.calculate_structure_factor_values(
+            replace(baseline, cell=phasesmith.UnitCell(*values)),
+            hkl,
+            multiplicity,
+            phasesmith.XrayNonResonant(),
+            scale=1.3,
+        )
+        values[parameter] -= 2.0 * step
+        minus = phasesmith.calculate_structure_factor_values(
+            replace(baseline, cell=phasesmith.UnitCell(*values)),
+            hkl,
+            multiplicity,
+            phasesmith.XrayNonResonant(),
+            scale=1.3,
+        )
+        finite = (plus.integrated_intensity - minus.integrated_intensity) / (2.0 * step)
+        row = actual.parameter_names.index(name)
+        np.testing.assert_allclose(
+            actual.d_integrated_intensity_d_parameters[row], finite, rtol=2e-7, atol=2e-7
+        )
+    u_row = actual.parameter_names.index("site.si.u_iso")
+    np.testing.assert_array_equal(actual.d_integrated_intensity_d_parameters[u_row], 0.0)
 
 
 def test_values_only_api_matches_dense_result_without_derivative_outputs() -> None:
@@ -298,7 +363,7 @@ def test_lp_and_custom_correction_contracts_are_explicit_and_vectorized() -> Non
         )
 
 
-def test_structural_boundaries_reject_invalid_multiplicity_anisotropy_and_dense_size() -> None:
+def test_structural_boundaries_reject_invalid_multiplicity_and_dense_size() -> None:
     model = structure()
     hkl, multiplicity = reflections()
     with pytest.raises(ValueError, match="positive"):
@@ -311,15 +376,16 @@ def test_structural_boundaries_reject_invalid_multiplicity_anisotropy_and_dense_
             phasesmith.XrayNonResonant(),
             max_dense_derivative_elements=1,
         )
-    anisotropic = replace(
+    invalid_site = replace(
         model.sites[0],
+        u_iso_angstrom2=None,
         anisotropic_displacement=phasesmith.AnisotropicDisplacement(
-            (0.01, 0.01, 0.01, 0.0, 0.0, 0.0), "U_cif"
+            (-0.01, 0.01, 0.01, 0.0, 0.0, 0.0), "U_cif"
         ),
     )
-    with pytest.raises(NotImplementedError, match="anisotropic"):
-        phasesmith.calculate_structure_factors(
-            replace(model, sites=(anisotropic, model.sites[1])),
+    with pytest.raises(ValueError, match="physically valid"):
+        phasesmith.calculate_structure_factor_values(
+            replace(model, sites=(invalid_site, model.sites[1])),
             hkl,
             multiplicity,
             phasesmith.XrayNonResonant(),

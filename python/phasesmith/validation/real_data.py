@@ -232,28 +232,6 @@ def _qarr_instrument_values(path: Path) -> dict[str, float]:
     return values
 
 
-def _qarr_isotropic_structure(
-    structure: CrystalStructure,
-) -> tuple[CrystalStructure, tuple[str, ...]]:
-    sites = []
-    approximated = []
-    for site in structure.sites:
-        displacement = site.anisotropic_displacement
-        if displacement is None:
-            u_iso = 0.005 if site.u_iso_angstrom2 is None else site.u_iso_angstrom2
-        else:
-            u_iso = float(np.mean(displacement.u_cif_angstrom2[:3]))
-            approximated.append(site.site_id)
-        sites.append(
-            replace(
-                site,
-                u_iso_angstrom2=u_iso,
-                anisotropic_displacement=None,
-            )
-        )
-    return replace(structure, sites=tuple(sites)), tuple(approximated)
-
-
 def _qarr_physics(
     phase_id: str,
     structure: CrystalStructure,
@@ -271,6 +249,20 @@ def _qarr_physics(
             )
         )
     return CompositePhysicsProvider(tuple(providers))
+
+
+def _qarr_displacement_defaults(structure: CrystalStructure) -> CrystalStructure:
+    """Initialize only CIF sites that provide neither isotropic nor anisotropic U."""
+
+    return replace(
+        structure,
+        sites=tuple(
+            replace(site, u_iso_angstrom2=0.005)
+            if site.u_iso_angstrom2 is None and site.anisotropic_displacement is None
+            else site
+            for site in structure.sites
+        ),
+    )
 
 
 def _qarr_initial_scales(
@@ -374,7 +366,6 @@ def run_qarr_1g_validation(
         u_iso=False,
     )
     phases = []
-    approximated_sites: dict[str, tuple[str, ...]] = {}
     expanded_counts: dict[str, int] = {}
     for phase_id in QARR_1G_WEIGHED_WEIGHT_FRACTIONS:
         single = rietveld.RietveldInput.from_cif(
@@ -387,8 +378,7 @@ def run_qarr_1g_validation(
             intensity_correction=correction,
             coordinate_tolerance=_QARR_COORDINATE_TOLERANCE,
         )
-        structure, approximated = _qarr_isotropic_structure(single.phases[0].structure)
-        approximated_sites[phase_id] = approximated
+        structure = _qarr_displacement_defaults(single.phases[0].structure)
         expanded = structure.space_group.expand_sites(
             [site.fractional_xyz for site in structure.sites],
             tolerance=_QARR_COORDINATE_TOLERANCE,
@@ -582,7 +572,7 @@ def run_qarr_1g_validation(
         ValidationCheck(
             "poisson_rwp",
             "passed" if result.metrics.rwp <= 0.20 else "failed",
-            "Poisson-weighted QARR profile gate with explicit approximations.",
+            "Poisson-weighted QARR profile gate with fixed CIF anisotropic displacement.",
             measured=result.metrics.rwp,
             criterion="Rwp with sigma=sqrt(max(counts, 1)) <= 0.20",
         ),
@@ -638,7 +628,8 @@ def run_qarr_1g_validation(
                 f"unit-weight Rwp={unit_weight_rwp:.8f}, Rp={result.metrics.rp:.8f}."
             ),
             f"Expanded sites at tolerance 1e-4: {expanded_counts}.",
-            f"Anisotropic sites replaced by trace-mean Uiso and refined: {approximated_sites}.",
+            "CIF anisotropic displacement tensors are evaluated directly and remain fixed.",
+            "Sites without CIF displacement values start from Uiso=0.005 Å² and are refined.",
             (
                 "Fixed Cu K-alpha1 Cromer--Liberman offsets are used for both doublet "
                 "components; component-dependent dispersion is not interpolated."

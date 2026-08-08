@@ -54,6 +54,10 @@ pub struct StructuralPatternInputView<'a> {
     pub occupancy: &'a [f64],
     /// Asymmetric-site isotropic displacement in square ångströms.
     pub u_iso_angstrom2: &'a [f64],
+    /// True for asymmetric sites described by fixed CIF U tensors.
+    pub anisotropic_mask: &'a [bool],
+    /// CIF U tensors in component order `11,22,33,23,13,12`.
+    pub u_aniso_cif_angstrom2: &'a [[f64; 6]],
     /// Exact built-in table key for every asymmetric site.
     pub scattering_species: &'a [&'a str],
     /// Fixed real X-ray dispersion offset for every site, or empty when absent.
@@ -264,6 +268,8 @@ impl PreparedNumerics {
             fractional_xyz: input.fractional_xyz,
             occupancy: input.occupancy,
             u_iso_angstrom2: input.u_iso_angstrom2,
+            anisotropic_mask: input.anisotropic_mask,
+            u_aniso_cif_angstrom2: input.u_aniso_cif_angstrom2,
             scattering_real: &self.scattering.real,
             scattering_imag: &self.scattering.imag,
             d_scattering_real_d_s: &self.scattering.d_real_d_s,
@@ -770,6 +776,8 @@ mod tests {
                 fractional_xyz: xyz,
                 occupancy,
                 u_iso_angstrom2: u_iso,
+                anisotropic_mask: &[false, false],
+                u_aniso_cif_angstrom2: &[[0.0; 6]; 2],
                 scattering_species: &["Si", "O"],
                 scattering_real_offset: &[],
                 scattering_imag_offset: &[],
@@ -868,6 +876,8 @@ mod tests {
             fractional_xyz: &xyz,
             occupancy: &occupancy,
             u_iso_angstrom2: &u_iso,
+            anisotropic_mask: &[false, false],
+            u_aniso_cif_angstrom2: &[[0.0; 6]; 2],
             scattering_species: &["Si", "O"],
             scattering_real_offset: &[],
             scattering_imag_offset: &[],

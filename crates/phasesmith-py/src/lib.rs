@@ -402,6 +402,8 @@ impl NativePreparedReflectionGenerator {
         fractional_xyz_flat: PyReadonlyArray1<'py, f64>,
         occupancy: PyReadonlyArray1<'py, f64>,
         u_iso_angstrom2: PyReadonlyArray1<'py, f64>,
+        anisotropic_mask: PyReadonlyArray1<'py, bool>,
+        u_aniso_cif_angstrom2_flat: PyReadonlyArray1<'py, f64>,
         scattering_real: PyReadonlyArray1<'py, f64>,
         scattering_imag: PyReadonlyArray1<'py, f64>,
         d_scattering_real_d_s: PyReadonlyArray1<'py, f64>,
@@ -420,6 +422,7 @@ impl NativePreparedReflectionGenerator {
         let hkl = hkl_rows(&hkl_flat)?;
         let multiplicity = multiplicity_rows(&multiplicity)?;
         let xyz = xyz_rows(&fractional_xyz_flat)?;
+        let tensors = tensor_rows(&u_aniso_cif_angstrom2_flat)?;
         let result = calculate_structure_factor_values(
             crystallographic_cell(
                 a_angstrom, b_angstrom, c_angstrom, alpha_deg, beta_deg, gamma_deg,
@@ -431,6 +434,8 @@ impl NativePreparedReflectionGenerator {
                 fractional_xyz: &xyz,
                 occupancy: contiguous_slice(&occupancy, "occupancy")?,
                 u_iso_angstrom2: contiguous_slice(&u_iso_angstrom2, "u_iso_angstrom2")?,
+                anisotropic_mask: bool_slice(&anisotropic_mask, "anisotropic_mask")?,
+                u_aniso_cif_angstrom2: &tensors,
                 scattering_real: contiguous_slice(&scattering_real, "scattering_real")?,
                 scattering_imag: contiguous_slice(&scattering_imag, "scattering_imag")?,
                 d_scattering_real_d_s: contiguous_slice(
@@ -463,6 +468,8 @@ impl NativePreparedReflectionGenerator {
         fractional_xyz_flat: PyReadonlyArray1<'py, f64>,
         occupancy: PyReadonlyArray1<'py, f64>,
         u_iso_angstrom2: PyReadonlyArray1<'py, f64>,
+        anisotropic_mask: PyReadonlyArray1<'py, bool>,
+        u_aniso_cif_angstrom2_flat: PyReadonlyArray1<'py, f64>,
         scattering_real: PyReadonlyArray1<'py, f64>,
         scattering_imag: PyReadonlyArray1<'py, f64>,
         d_scattering_real_d_s: PyReadonlyArray1<'py, f64>,
@@ -481,6 +488,7 @@ impl NativePreparedReflectionGenerator {
         let hkl = hkl_rows(&hkl_flat)?;
         let multiplicity = multiplicity_rows(&multiplicity)?;
         let xyz = xyz_rows(&fractional_xyz_flat)?;
+        let tensors = tensor_rows(&u_aniso_cif_angstrom2_flat)?;
         let result = calculate_structure_factor_dense(
             crystallographic_cell(
                 a_angstrom, b_angstrom, c_angstrom, alpha_deg, beta_deg, gamma_deg,
@@ -492,6 +500,8 @@ impl NativePreparedReflectionGenerator {
                 fractional_xyz: &xyz,
                 occupancy: contiguous_slice(&occupancy, "occupancy")?,
                 u_iso_angstrom2: contiguous_slice(&u_iso_angstrom2, "u_iso_angstrom2")?,
+                anisotropic_mask: bool_slice(&anisotropic_mask, "anisotropic_mask")?,
+                u_aniso_cif_angstrom2: &tensors,
                 scattering_real: contiguous_slice(&scattering_real, "scattering_real")?,
                 scattering_imag: contiguous_slice(&scattering_imag, "scattering_imag")?,
                 d_scattering_real_d_s: contiguous_slice(
@@ -631,6 +641,8 @@ struct NativeStructuralPhase {
     fractional_xyz: Vec<[f64; 3]>,
     occupancy: Vec<f64>,
     u_iso_angstrom2: Vec<f64>,
+    anisotropic_mask: Vec<bool>,
+    u_aniso_cif_angstrom2: Vec<[f64; 6]>,
     scattering_species: Vec<String>,
     scattering_real_offset: Vec<f64>,
     scattering_imag_offset: Vec<f64>,
@@ -740,6 +752,8 @@ impl NativeStructuralPhase {
             fractional_xyz: &self.fractional_xyz,
             occupancy: &self.occupancy,
             u_iso_angstrom2: &self.u_iso_angstrom2,
+            anisotropic_mask: &self.anisotropic_mask,
+            u_aniso_cif_angstrom2: &self.u_aniso_cif_angstrom2,
             scattering_species: &species,
             scattering_real_offset: &self.scattering_real_offset,
             scattering_imag_offset: &self.scattering_imag_offset,
@@ -769,6 +783,8 @@ impl NativeStructuralPhase {
         fractional_xyz_flat: PyReadonlyArray1<'_, f64>,
         occupancy: PyReadonlyArray1<'_, f64>,
         u_iso_angstrom2: PyReadonlyArray1<'_, f64>,
+        anisotropic_mask: PyReadonlyArray1<'_, bool>,
+        u_aniso_cif_angstrom2_flat: PyReadonlyArray1<'_, f64>,
         scattering_species: Vec<String>,
         scattering_real_offset: PyReadonlyArray1<'_, f64>,
         scattering_imag_offset: PyReadonlyArray1<'_, f64>,
@@ -790,6 +806,8 @@ impl NativeStructuralPhase {
         let fractional_xyz = xyz_rows(&fractional_xyz_flat)?;
         let occupancy = contiguous_slice(&occupancy, "occupancy")?.to_vec();
         let u_iso_angstrom2 = contiguous_slice(&u_iso_angstrom2, "u_iso_angstrom2")?.to_vec();
+        let anisotropic_mask = bool_slice(&anisotropic_mask, "anisotropic_mask")?.to_vec();
+        let u_aniso_cif_angstrom2 = tensor_rows(&u_aniso_cif_angstrom2_flat)?;
         let scattering_real_offset =
             contiguous_slice(&scattering_real_offset, "scattering_real_offset")?.to_vec();
         let scattering_imag_offset =
@@ -801,6 +819,8 @@ impl NativeStructuralPhase {
         }
         if fractional_xyz.len() != occupancy.len()
             || fractional_xyz.len() != u_iso_angstrom2.len()
+            || fractional_xyz.len() != anisotropic_mask.len()
+            || fractional_xyz.len() != u_aniso_cif_angstrom2.len()
             || fractional_xyz.len() != scattering_species.len()
             || (!scattering_real_offset.is_empty()
                 && fractional_xyz.len() != scattering_real_offset.len())
@@ -839,6 +859,8 @@ impl NativeStructuralPhase {
             fractional_xyz,
             occupancy,
             u_iso_angstrom2,
+            anisotropic_mask,
+            u_aniso_cif_angstrom2,
             scattering_species,
             scattering_real_offset,
             scattering_imag_offset,
@@ -2285,6 +2307,15 @@ fn contiguous_slice<'array>(
     })
 }
 
+fn bool_slice<'array>(
+    array: &'array PyReadonlyArray1<'_, bool>,
+    name: &str,
+) -> PyResult<&'array [bool]> {
+    array.as_slice().map_err(|_| {
+        PyValueError::new_err(format!("{name} must be a contiguous one-dimensional array"))
+    })
+}
+
 fn crystallographic_cell(
     a_angstrom: f64,
     b_angstrom: f64,
@@ -2439,6 +2470,19 @@ fn xyz_rows(array: &PyReadonlyArray1<'_, f64>) -> PyResult<Vec<[f64; 3]>> {
     Ok(values
         .chunks_exact(3)
         .map(|row| [row[0], row[1], row[2]])
+        .collect())
+}
+
+fn tensor_rows(array: &PyReadonlyArray1<'_, f64>) -> PyResult<Vec<[f64; 6]>> {
+    let values = contiguous_slice(array, "u_aniso_cif_angstrom2")?;
+    if values.len() % 6 != 0 {
+        return Err(PyValueError::new_err(
+            "flattened u_aniso_cif_angstrom2 length must be divisible by six",
+        ));
+    }
+    Ok(values
+        .chunks_exact(6)
+        .map(|row| [row[0], row[1], row[2], row[3], row[4], row[5]])
         .collect())
 }
 

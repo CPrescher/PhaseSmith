@@ -101,7 +101,7 @@ def _geometry(
 
 
 def _structural_parameter_names(phase: RietveldPhase) -> tuple[str, ...]:
-    return p1_parameter_names(phase.structure.to_isotropic_site_batch())
+    return p1_parameter_names(phase.structure.to_site_batch())
 
 
 def _native_model_configuration(
@@ -151,7 +151,7 @@ def _native_phase(phase: RietveldPhase) -> object | None:
     scattering_model, correction_model, correction_wavelength, correction_polarization = (
         configuration
     )
-    sites = phase.structure.to_isotropic_site_batch()
+    sites = phase.structure.to_site_batch()
     species = species_from_structure(phase.structure)
     species_keys = (
         [value.xray_key for value in species]
@@ -170,6 +170,8 @@ def _native_phase(phase: RietveldPhase) -> object | None:
         np.ascontiguousarray(sites.fractional_xyz.reshape(-1)),
         sites.occupancy,
         sites.u_iso_angstrom2,
+        sites.anisotropic_mask,
+        np.ascontiguousarray(sites.u_aniso_cif_angstrom2.reshape(-1)),
         species_keys,
         np.ascontiguousarray(offsets.real),
         np.ascontiguousarray(offsets.imag),

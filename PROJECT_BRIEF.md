@@ -225,6 +225,24 @@ workflow time from about 7.6 seconds to 158.8 seconds on the development host;
 FCJ convolution reuse/vectorization is therefore a measured performance
 priority before treating that workflow as production-speed.
 
+The fixed-anisotropic displacement checkpoint evaluates preserved CIF U
+tensors directly in the Rust general-symmetry value, dense, JVP, VJP, and fused
+structural-pattern paths. Tensor components use CIF order
+`11,22,33,23,13,12`; each symmetry mate applies `p=R^T h` before reciprocal-axis
+scaling and the standard `exp(-2 pi^2 v^T U v)` factor. Analytical direct-cell
+derivatives include reciprocal-axis motion. Isotropic sites preserve their
+existing calculation, and fixed tensor sites expose a zero compatibility Uiso
+row while refinement selection omits that scalar.
+
+The reviewed 256-reflection, 32-site release benchmark measures 801.9
+microseconds for the isotropic fused path and 826.6 microseconds when all sites
+use fixed tensors, a 3.1% increment on the development host. The QARR workflow
+now uses the Al2O3 CIF tensors rather than trace-mean Uiso. Its reviewed run
+passes at Al2O3 30.778%, ZnO 34.205%, CaF2 35.018%, 0.598 percentage points
+maximum QPA error, 19.888% Poisson Rwp, 13.256% unit-weight Rwp, and 0.99061
+correlation. It ended safely at the stage-2 evaluation budget after 354.1
+seconds; FCJ optimization remains the dominant performance task.
+
 ## Design commitments
 
 - Use GSAS-II only as a pinned validation oracle, never as the architecture.
@@ -391,15 +409,17 @@ not inherit X-ray doublet or polarization assumptions.
 The pinned IUCr QARR 1g workflow is now an accepted native three-phase
 fixed-spectrum structural validation, not a readiness placeholder. Its staged
 refinement ends with a scale-only polish and converts scales using reviewed
-phase Z, formula mass, and cell volume metadata. The 2026-08-07 baseline gives
-Al2O3 33.250%, ZnO 32.936%, and CaF2 33.814%, with a maximum absolute error of
-1.881 weight-percentage points from the independently weighed fractions.
-Poisson-weighted and unit-weight Rwp are reported separately (0.19679 and
-0.13282), alongside profile correlation 0.99069.
+phase Z, formula mass, and cell volume metadata. The current 2026-08-07
+fixed-anisotropic baseline gives Al2O3 30.778%, ZnO 34.205%, and CaF2 35.018%,
+with a maximum absolute error of 0.598 weight-percentage points from the
+independently weighed fractions. Poisson-weighted and unit-weight Rwp are
+reported separately (0.19888 and 0.13256), alongside profile correlation
+0.99061.
 
-This checkpoint uses explicit approximations: trace-mean Uiso for anisotropic
-Al2O3 sites, fixed Cu K-alpha1 dispersion offsets for both doublet components,
-and no SH/L=0.002 FCJ asymmetry or absorption. It also established two
+This checkpoint uses explicit remaining approximations: fixed Cu K-alpha1
+dispersion offsets for both doublet components and no absorption. SH/L=0.002
+FCJ asymmetry and fixed CIF anisotropic displacement are active. It also
+established two
 refinement safety rules: nonphysical bounded trials are logged and backtracked
 without losing the last accepted state, and phase-scale conditioning follows
 the current nonzero scale magnitude instead of assuming scales are order one;

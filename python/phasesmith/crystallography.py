@@ -150,13 +150,15 @@ class UnitCell:
 
 @dataclass(frozen=True, slots=True, init=False)
 class AtomSiteBatch:
-    """Immutable P1 asymmetric-site arrays with stable site and species labels."""
+    """Immutable asymmetric-site arrays with isotropic or CIF U displacement."""
 
     site_ids: tuple[str, ...]
     species: tuple[str, ...]
     fractional_xyz: NDArray[np.float64]
     occupancy: NDArray[np.float64]
     u_iso_angstrom2: NDArray[np.float64]
+    anisotropic_mask: NDArray[np.bool_]
+    u_aniso_cif_angstrom2: NDArray[np.float64]
 
     def __init__(
         self,
@@ -165,6 +167,9 @@ class AtomSiteBatch:
         fractional_xyz: ArrayLike,
         occupancy: ArrayLike,
         u_iso_angstrom2: ArrayLike,
+        *,
+        anisotropic_mask: ArrayLike | None = None,
+        u_aniso_cif_angstrom2: ArrayLike | None = None,
     ) -> None:
         """Copy and validate one row per independent atom site."""
 
@@ -183,12 +188,31 @@ class AtomSiteBatch:
             raise ValueError("occupancy and u_iso_angstrom2 must match the site count")
         if np.any(occupancies < 0.0) or np.any(displacement < 0.0):
             raise ValueError("occupancy and u_iso_angstrom2 must be non-negative")
+        if anisotropic_mask is None:
+            mask = np.zeros(len(ids), dtype=np.bool_)
+        else:
+            raw_mask = np.asarray(anisotropic_mask)
+            if raw_mask.dtype != np.bool_ or raw_mask.shape != (len(ids),):
+                raise ValueError("anisotropic_mask must be boolean with shape (site_count,)")
+            mask = np.array(raw_mask, dtype=np.bool_, copy=True, order="C")
+        if u_aniso_cif_angstrom2 is None:
+            tensors = np.zeros((len(ids), 6), dtype=np.float64)
+        else:
+            tensors = np.array(u_aniso_cif_angstrom2, dtype=np.float64, copy=True, order="C")
+            if tensors.shape != (len(ids), 6) or not np.isfinite(tensors).all():
+                raise ValueError(
+                    "u_aniso_cif_angstrom2 must have finite shape (site_count, 6)"
+                )
         _freeze(xyz)
+        _freeze(mask)
+        _freeze(tensors)
         object.__setattr__(self, "site_ids", ids)
         object.__setattr__(self, "species", species_values)
         object.__setattr__(self, "fractional_xyz", xyz)
         object.__setattr__(self, "occupancy", occupancies)
         object.__setattr__(self, "u_iso_angstrom2", displacement)
+        object.__setattr__(self, "anisotropic_mask", mask)
+        object.__setattr__(self, "u_aniso_cif_angstrom2", tensors)
 
     @property
     def site_count(self) -> int:
@@ -457,7 +481,7 @@ def _prepare_structure_factor_inputs(
     multiplicities = np.array(raw_multiplicity, dtype=np.int64, copy=True, order="C")
     if not np.array_equal(raw_multiplicity, multiplicities) or np.any(multiplicities <= 0):
         raise ValueError("multiplicity values must be positive signed 64-bit integers")
-    sites = structure.to_isotropic_site_batch()
+    sites = structure.to_site_batch()
     spacing = structure.cell.d_spacings(indices)
     q_squared = np.ascontiguousarray(1.0 / spacing.d_spacing_angstrom**2)
     s = np.ascontiguousarray(0.5 * np.sqrt(q_squared))
@@ -476,6 +500,8 @@ def _prepare_structure_factor_inputs(
         np.ascontiguousarray(sites.fractional_xyz.reshape(-1)),
         sites.occupancy,
         sites.u_iso_angstrom2,
+        sites.anisotropic_mask,
+        np.ascontiguousarray(sites.u_aniso_cif_angstrom2.reshape(-1)),
         np.ascontiguousarray(scattering_batch.amplitudes.real.reshape(-1)),
         np.ascontiguousarray(scattering_batch.amplitudes.imag.reshape(-1)),
         np.ascontiguousarray(scattering_batch.d_amplitudes_d_s.real.reshape(-1)),

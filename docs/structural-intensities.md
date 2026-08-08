@@ -17,7 +17,7 @@ positions
 x_jr = R_jr x_j + t_jr  (modulo lattice translations).
 ```
 
-The structure factor is
+For an isotropic site, the structure factor is
 
 ```text
 T_j(h) = exp(-2 pi² U_j q²) = exp(-8 pi² U_j s²)
@@ -33,6 +33,23 @@ The isotropic displacement convention follows `B = 8 pi² U` and the
 `exp[-B (sin(theta)/lambda)²]` form summarized in the IUCr article
 [A new theory for X-ray diffraction](https://journals.iucr.org/a/issues/2014/03/00/sc5066/index.html),
 equation 2.
+
+Fixed anisotropic CIF tensors use component order
+`(U11,U22,U33,U23,U13,U12)`. For each retained symmetry mate `r`, define
+
+```text
+p_jr = transpose(R_jr) h
+v_jr,i = p_jr,i a*_i
+T_jr(h) = exp[-2 pi² transpose(v_jr) U_j v_jr]
+F_h,j = occupancy_j f_j(s) sum_r T_jr(h) exp(2 pi i h dot x_jr).
+```
+
+This is the standard core-CIF U tensor convention documented by the IUCr
+[definition of `_atom_site_aniso_U_`](https://www.iucr.org/cif/cif_core/definitions/Cdata_atom_site_aniso_U_.html).
+The mate rotation acts on the Miller index before reciprocal-axis scaling;
+this is required for non-orthogonal settings. Fixed tensors are validated as
+finite positive-semidefinite symmetric matrices. CIF B tensors are converted
+at import with `U = B/(8 pi²)`.
 
 Special-position duplicates are included once. The native expansion retains
 the representative exact rotation for each unique position so coordinate
@@ -126,6 +143,14 @@ d(f_j T_j)/dp = T_j [df_j/ds * ds/dp
                        - 2 pi² U_j f_j d(q²)/dp].
 ```
 
+For a fixed anisotropic tensor, direct-cell derivatives additionally use
+
+```text
+d a*_i/dp = d sqrt(G*ii)/dp
+d(v^T U v)/dp = 2 transpose(U v) dv/dp
+dT/dp = -2 pi² T d(v^T U v)/dp.
+```
+
 For monochromatic CW position `phi = 2theta` in radians,
 
 ```text
@@ -152,6 +177,11 @@ Structural parameters retain the established order:
 3. `site.<id>.occupancy`, site-major;
 4. `site.<id>.u_iso`, site-major;
 5. `phase.scale`.
+
+For a fixed anisotropic site, the existing `u_iso` compatibility row is zero
+and Rietveld parameter selection omits it. Symmetry-constrained tensor
+parameters are a distinct follow-on parameter family; a fixed tensor is never
+silently varied as an isotropic scalar.
 
 Reflection arrays are reflection-major. Scattering arrays have shape
 `(reflection_count, asymmetric_site_count)`; structural dense diagnostics are

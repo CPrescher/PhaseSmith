@@ -160,21 +160,46 @@ def reference_structure_factor_values(
     q_squared = np.einsum("ri,ij,rj->r", h_float, geometry.reciprocal_metric, h_float)
     f = np.zeros(reflection_count, dtype=np.complex128)
     for site_index, site in enumerate(structure.sites):
-        unique_positions: list[NDArray[np.float64]] = []
+        unique_positions: list[tuple[NDArray[np.float64], NDArray[np.int64]]] = []
         for operation in structure.space_group.operations:
             candidate = operation.apply_fractional(site.fractional_xyz)
             if not any(
                 np.all(
-                    np.minimum(np.abs(candidate - existing), 1.0 - np.abs(candidate - existing))
+                    np.minimum(
+                        np.abs(candidate - existing[0]),
+                        1.0 - np.abs(candidate - existing[0]),
+                    )
                     <= coordinate_tolerance
                 )
                 for existing in unique_positions
             ):
-                unique_positions.append(candidate)
-        positions = np.asarray(unique_positions, dtype=np.float64)
-        symmetry_sum = np.exp(2j * np.pi * (h_float @ positions.T)).sum(axis=1)
-        displacement = np.exp(-2.0 * np.pi**2 * (site.u_iso_angstrom2 or 0.0) * q_squared)
-        f += site.occupancy * amplitudes[:, site_index] * displacement * symmetry_sum
+                unique_positions.append((candidate, operation.rotation))
+        symmetry_sum = np.zeros(reflection_count, dtype=np.complex128)
+        if site.anisotropic_displacement is None:
+            positions = np.asarray([value[0] for value in unique_positions], dtype=np.float64)
+            symmetry_sum = np.exp(2j * np.pi * (h_float @ positions.T)).sum(axis=1)
+            symmetry_sum *= np.exp(
+                -2.0 * np.pi**2 * (site.u_iso_angstrom2 or 0.0) * q_squared
+            )
+        else:
+            reciprocal_lengths = np.sqrt(np.diag(geometry.reciprocal_metric))
+            u11, u22, u33, u23, u13, u12 = (
+                site.anisotropic_displacement.u_cif_angstrom2
+            )
+            tensor = np.array(
+                [[u11, u12, u13], [u12, u22, u23], [u13, u23, u33]],
+                dtype=np.float64,
+            )
+            for position, rotation in unique_positions:
+                transformed = h_float @ rotation
+                reciprocal_vector = transformed * reciprocal_lengths
+                quadratic = np.einsum(
+                    "ri,ij,rj->r", reciprocal_vector, tensor, reciprocal_vector
+                )
+                symmetry_sum += np.exp(
+                    2j * np.pi * (h_float @ position) - 2.0 * np.pi**2 * quadratic
+                )
+        f += site.occupancy * amplitudes[:, site_index] * symmetry_sum
     f_squared = np.abs(f) ** 2
     intensity = float(scale) * multiplicities * corrections * f_squared
     return ReferenceStructureFactorValues(

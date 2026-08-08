@@ -376,9 +376,10 @@ fixed-cell Le Bail constructor are documented in `docs/cif-import.md`.
 - Test fixtures have explicit redistribution provenance.
 - A user can run fixed-cell Le Bail directly from a CIF without manually
   calculating `hkl`, `d`, or `2theta`, before scattering tables are available.
-- Anisotropic displacement input is preserved losslessly, but the initial
-  isotropic structure-factor path must report it as unsupported unless the user
-  explicitly requests and records an equivalent-isotropic conversion.
+- Anisotropic displacement input is preserved losslessly. The implemented
+  fixed-tensor structure-factor path evaluates CIF U tensors directly for every
+  symmetry mate; equivalent-isotropic conversion is no longer used by
+  production calculation. Tensor refinement remains a separate unit.
 
 Gemmi is selected only for parsing and setting resolution. Its official
 documentation describes CIF parsing, small-structure extraction, and explicit
@@ -625,7 +626,8 @@ remains available but was not run without its external checkout.
 
 These are separate reviewed increments after the first Rietveld exit gate:
 
-1. symmetry-constrained anisotropic displacement tensors;
+1. symmetry-constrained refinement of anisotropic displacement tensors (fixed
+   tensor calculation is implemented);
 2. wavelength-dependent anomalous X-ray scattering and unmerged Friedel pairs;
 3. absorption/extinction and additional instrument geometries;
 4. magnetic neutron structures and magnetic CIF;

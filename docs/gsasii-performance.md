@@ -88,11 +88,11 @@ reflection counts, exact input hashes, and the complete recipe. Repetitions run
 in fresh subprocesses and must produce identical scientific outputs.
 
 This is deliberately labeled a native-workflow comparison rather than a
-same-parameterization benchmark. PhaseSmith currently uses a fixed Smooth
-Bruckner background and trace-mean isotropic displacement for anisotropic
-Al2O3 sites, while the GSAS-II recipe refines ten Chebyshev background terms
-and retains the CIF anisotropic model. Those differences are reported in JSON
-and must not be hidden behind a single timing ratio.
+same-parameterization benchmark. PhaseSmith uses a fixed Smooth Bruckner
+background and fixed CIF anisotropic tensors, while the GSAS-II recipe refines
+ten Chebyshev background terms and may refine anisotropic parameters. Those
+differences are reported in JSON and must not be hidden behind a single timing
+ratio.
 
 ## Run it
 

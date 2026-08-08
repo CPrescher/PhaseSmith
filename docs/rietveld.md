@@ -166,8 +166,9 @@ locally installed GSAS-II checkout currently has revision `e88e61f`, not the
 pinned `c0bc79`, so the runner correctly refused a new comparison rather than
 publishing an unreviewed ratio.
 
-Preferred-orientation parameters, anisotropic displacement, wavelength
-components, magnetic scattering, and TOF structural refinement are
-intentionally outside this first slice. They can be added as typed parameter
-families without changing the accepted-state runtime or crystal-structure
-ownership model.
+Preferred-orientation parameters, refinement of symmetry-constrained
+anisotropic tensors, wavelength components, magnetic scattering, and TOF
+structural refinement are intentionally outside this first slice. Fixed CIF
+anisotropic tensors are calculated directly. The remaining capabilities can be
+added as typed parameter families without changing the accepted-state runtime
+or crystal-structure ownership model.

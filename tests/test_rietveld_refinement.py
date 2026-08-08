@@ -108,6 +108,30 @@ def test_cif_request_builds_guarded_structural_phase_and_typed_parameters() -> N
     assert "site[alpha/O1].u_iso_angstrom2" in labels
 
 
+def test_u_iso_selection_skips_fixed_anisotropic_sites() -> None:
+    request = request_from_cif(selection())
+    phase = request.phases[0]
+    first = replace(
+        phase.structure.sites[0],
+        u_iso_angstrom2=None,
+        anisotropic_displacement=phasesmith.AnisotropicDisplacement(
+            (0.020, 0.013, 0.027, 0.002, 0.001, 0.003), "U_cif"
+        ),
+    )
+    phase = replace(
+        phase,
+        structure=replace(phase.structure, sites=(first, phase.structure.sites[1])),
+    )
+    parameters = structural_refinement.build_parameter_set(
+        (phase,), request.lattice_domains, selection(u_iso=True)
+    )
+    labels = {spec.key.label for spec in parameters.specs}
+    assert "site[alpha/Si1].u_iso_angstrom2" not in labels
+    assert "site[alpha/O1].u_iso_angstrom2" in labels
+    result = structural_refinement.calculate(request.pattern, request.experiment, (phase,))
+    assert np.isfinite(result.y).all()
+
+
 def test_combined_structural_calculation_sums_profiles_and_background_once() -> None:
     request = request_from_cif(selection())
     first = request.phases[0]

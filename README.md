@@ -10,7 +10,8 @@ foundation includes native general-cell mathematics, P1 complex structure
 factors, exact symmetry, bounded reflection generation, and prepared X-ray and
 neutron scattering factors with analytical derivatives. General-symmetry
 structural intensities and monochromatic structural patterns now have a fused
-native values/JVP/VJP path and a scriptable `RietveldPhase` API.
+native values/JVP/VJP path, direct fixed CIF anisotropic displacement, and a
+scriptable `RietveldPhase` API.
 CIF-backed Le Bail can refine setting-aware lattice parameters with analytical
 derivatives and guarded, stable-ID reflection-domain regeneration.
 The first full CIF-backed Rietveld workflow now refines CW profile/background,
