@@ -14,6 +14,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 from .calculation import CalculationOptions
+from .execution import ExecutionPolicy
 from .extensions import CompositePhysicsProvider, ReflectionPhysicsProvider
 from .instrument import ConstantWavelengthInstrument, FcjGeometry, TofInstrument
 from .intensity_corrections import (
@@ -97,7 +98,7 @@ from .sample import (
 from .scattering import NeutronNuclear, XrayFixedDispersion, XrayNonResonant
 from .structure import CrystalStructure, structure_from_record, structure_to_record
 
-FORMAT_VERSION: Final = 8
+FORMAT_VERSION: Final = 9
 MANIFEST_NAME: Final = "manifest.json"
 ARCHIVE_NAME: Final = "arrays.npz"
 Instrument = ConstantWavelengthInstrument | TofInstrument
@@ -1009,7 +1010,11 @@ def _rietveld_options_record(options: RietveldOptions | None) -> dict[str, Any] 
         **{
             name: getattr(options, name)
             for name in RietveldOptions.__dataclass_fields__
-            if name != "limits"
+            if name not in {"execution", "limits"}
+        },
+        "execution": {
+            "threads": options.execution.threads,
+            "minimum_parallel_tasks": options.execution.minimum_parallel_tasks,
         },
         "limits": {
             name: getattr(options.limits, name) for name in RefinementLimits.__dataclass_fields__
@@ -1022,6 +1027,7 @@ def _rietveld_options_from_record(record: dict[str, Any] | None) -> RietveldOpti
         return None
     values = dict(record)
     values["limits"] = RefinementLimits(**values["limits"])
+    values["execution"] = ExecutionPolicy(**values.get("execution", {}))
     return RietveldOptions(**values)
 
 
@@ -1552,7 +1558,7 @@ def load_bundle(
     if (
         not isinstance(version, int)
         or isinstance(version, bool)
-        or version not in (1, 2, 3, 4, 5, 6, 7, FORMAT_VERSION)
+        or version not in (1, 2, 3, 4, 5, 6, 7, 8, FORMAT_VERSION)
     ):
         raise PersistenceError(f"unsupported persistence format {manifest.get('format_version')!r}")
     if manifest.get("archive", {}).get("file") != ARCHIVE_NAME:

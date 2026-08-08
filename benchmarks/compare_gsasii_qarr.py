@@ -46,6 +46,12 @@ def parse_args() -> argparse.Namespace:
         help="discarded complete runs; one warms GSAS-II's process-external font cache",
     )
     parser.add_argument("--repetitions", type=int, default=3)
+    parser.add_argument(
+        "--phasesmith-threads",
+        type=int,
+        default=1,
+        help="PhaseSmith worker threads; zero selects available logical CPUs",
+    )
     parser.add_argument("--gsas-cycles", type=int, default=8)
     parser.add_argument(
         "--gsas-fcj",
@@ -110,15 +116,18 @@ def phase_result(report: Any) -> dict[str, Any]:
 
 
 def run_phasesmith(
-    data_directory: Path, warmups: int, repetitions: int
+    data_directory: Path,
+    warmups: int,
+    repetitions: int,
+    execution: phasesmith.ExecutionPolicy,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     for _ in range(warmups):
-        run_qarr_1g_validation(data_directory)
+        run_qarr_1g_validation(data_directory, execution=execution)
     reports = []
     wall_ms = []
     for _ in range(repetitions):
         started = time.perf_counter_ns()
-        report = run_qarr_1g_validation(data_directory)
+        report = run_qarr_1g_validation(data_directory, execution=execution)
         wall_ms.append((time.perf_counter_ns() - started) / 1.0e6)
         reports.append(report)
     results = [phase_result(report) for report in reports]
@@ -254,8 +263,16 @@ def main() -> None:
         raise RuntimeError(f"release extension required, imported {phasesmith._core.BUILD_MODE!r}")
     verify_validation_dataset("iucr-qarr-1g", arguments.data_directory)
 
+    if arguments.phasesmith_threads < 0:
+        raise ValueError("--phasesmith-threads must be non-negative")
+    execution = phasesmith.ExecutionPolicy(
+        threads=None if arguments.phasesmith_threads == 0 else arguments.phasesmith_threads
+    )
     phase_result_record, phase_timing = run_phasesmith(
-        arguments.data_directory, arguments.warmups, arguments.repetitions
+        arguments.data_directory,
+        arguments.warmups,
+        arguments.repetitions,
+        execution,
     )
     with tempfile.TemporaryDirectory(prefix="phasesmith-gsasii-qarr-comparison-") as name:
         gsas_result, gsas_timing, gsas_metadata = run_gsas(arguments, Path(name))
@@ -275,6 +292,7 @@ def main() -> None:
             "phases": list(PHASE_NAMES),
             "warmups": arguments.warmups,
             "repetitions": arguments.repetitions,
+            "phasesmith_threads": execution.threads,
         },
         "phasesmith": {
             "build_mode": phasesmith._core.BUILD_MODE,

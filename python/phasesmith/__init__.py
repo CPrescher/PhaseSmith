@@ -70,6 +70,7 @@ from .cw import (
     accumulate_cw_contributions,
     cw_profile_parameters,
 )
+from .execution import ExecutionPolicy
 from .extensions import (
     PHYSICS_PROVIDER_API_VERSION,
     CompositePhysicsProvider,
@@ -252,6 +253,7 @@ __all__ = [
     "CwTwoThetaRange",
     "DSpacingRange",
     "DSpacingResult",
+    "ExecutionPolicy",
     "ExpandedSites",
     "FcjGeometry",
     "FcjProfileResult",

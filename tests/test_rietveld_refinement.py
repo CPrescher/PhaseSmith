@@ -154,6 +154,37 @@ def test_combined_structural_calculation_sums_profiles_and_background_once() -> 
     np.testing.assert_allclose(combined.y, combined.profile_y + background, atol=0.0)
 
 
+def test_parallel_structural_calculation_is_bitwise_deterministic() -> None:
+    request = request_from_cif(selection())
+    first = request.phases[0]
+    second = replace(first, phase_id="beta", scale=0.4)
+    phases = (first, second)
+    serial = structural_refinement.calculate(
+        request.pattern,
+        request.experiment,
+        phases,
+        execution=phasesmith.ExecutionPolicy(threads=1),
+    )
+    parallel = structural_refinement.calculate(
+        request.pattern,
+        request.experiment,
+        phases,
+        execution=phasesmith.ExecutionPolicy(threads=2),
+    )
+    np.testing.assert_array_equal(parallel.y, serial.y)
+    np.testing.assert_array_equal(parallel.profile_y, serial.profile_y)
+    for parallel_phase, serial_phase in zip(
+        parallel.phase_calculations,
+        serial.phase_calculations,
+        strict=True,
+    ):
+        np.testing.assert_array_equal(parallel_phase.y, serial_phase.y)
+        np.testing.assert_array_equal(
+            parallel_phase.derivatives.global_jacobian,
+            serial_phase.derivatives.global_jacobian,
+        )
+
+
 def test_fixed_components_from_cif_generates_exact_visible_union() -> None:
     x = np.linspace(15.0, 100.0, 8_501)
     selected = selection(phase_scale=True)
@@ -640,6 +671,66 @@ def test_distinct_multiphase_scales_recover_independently() -> None:
     assert result.phases[0].scale == pytest.approx(0.7, rel=2.0e-8)
     assert result.phases[1].scale == pytest.approx(0.3, rel=2.0e-8)
     assert result.jacobian_rank == 2
+
+
+def test_parallel_multiphase_refinement_matches_serial_history_and_derivatives() -> None:
+    single = request_from_cif(selection(phase_scale=True))
+    first = replace(single.phases[0], phase_id="alpha", scale=0.7)
+    second_structure = single.phases[0].structure
+    second_sites = list(second_structure.sites)
+    xyz = list(second_sites[0].fractional_xyz)
+    xyz[0] += 0.07
+    second_sites[0] = replace(second_sites[0], fractional_xyz=tuple(xyz))
+    second = replace(
+        single.phases[0],
+        phase_id="beta",
+        structure=replace(second_structure, sites=tuple(second_sites)),
+        scale=0.3,
+    )
+    observed = structural_refinement.calculate(
+        single.pattern,
+        single.experiment,
+        (first, second),
+    ).y
+    starting = (replace(first, scale=0.58), replace(second, scale=0.42))
+    parameters = structural_refinement.build_parameter_set(
+        starting,
+        (None, None),
+        single.selection,
+    )
+    request = structural_refinement.RietveldInput(
+        phasesmith.PowderPattern(single.pattern.x, observed_y=observed),
+        single.experiment,
+        starting,
+        (None, None),
+        parameters,
+        selection=single.selection,
+    )
+    common = dict(estimate_covariance=False)
+    serial = structural_refinement.refine(
+        request,
+        structural_refinement.RietveldOptions(
+            execution=phasesmith.ExecutionPolicy(threads=1),
+            **common,
+        ),
+    )
+    parallel = structural_refinement.refine(
+        request,
+        structural_refinement.RietveldOptions(
+            execution=phasesmith.ExecutionPolicy(threads=2),
+            **common,
+        ),
+    )
+    assert parallel.history == serial.history
+    assert parallel.parameters == serial.parameters
+    np.testing.assert_array_equal(parallel.calculation.y, serial.calculation.y)
+    np.testing.assert_array_equal(parallel.metrics.residual, serial.metrics.residual)
+    np.testing.assert_array_equal(
+        parallel.metrics.weighted_residual,
+        serial.metrics.weighted_residual,
+    )
+    assert parallel.metrics.chi_square == serial.metrics.chi_square
+    assert parallel.metrics.rwp == serial.metrics.rwp
 
 
 def test_monochromatic_neutron_cif_request_refines_through_same_runtime() -> None:

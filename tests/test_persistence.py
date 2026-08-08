@@ -427,6 +427,7 @@ def test_rietveld_checkpoint_domain_and_options_round_trip_and_resume(tmp_path) 
         ),
         max_scaled_parameter_step=0.1,
         estimate_covariance=False,
+        execution=phasesmith.ExecutionPolicy(threads=2),
     )
     destination = persistence.save_bundle(
         tmp_path / "rietveld-restart",
@@ -523,6 +524,27 @@ def test_version_two_generic_bundle_remains_loadable(tmp_path) -> None:
     restored = persistence.load_bundle(path)
     assert len(restored.phases) == 1
     assert type(restored.phases[0]) is phasesmith.Phase
+
+
+def test_version_eight_rietveld_options_gain_serial_execution_default(tmp_path) -> None:
+    path = persistence.save_bundle(
+        tmp_path / "version-eight",
+        persistence.PersistenceBundle(
+            rietveld_options=structural_refinement.RietveldOptions(
+                estimate_covariance=False,
+                execution=phasesmith.ExecutionPolicy(threads=3),
+            )
+        ),
+    )
+    manifest_path = path / persistence.MANIFEST_NAME
+    manifest = json.loads(manifest_path.read_text())
+    manifest["format_version"] = 8
+    del manifest["bundle"]["rietveld_options"]["execution"]
+    manifest_path.write_text(json.dumps(manifest))
+
+    restored = persistence.load_bundle(path)
+    assert restored.rietveld_options is not None
+    assert restored.rietveld_options.execution == phasesmith.ExecutionPolicy()
 
 
 def test_undefined_zero_pattern_ratios_round_trip_as_explicit_nulls(tmp_path) -> None:

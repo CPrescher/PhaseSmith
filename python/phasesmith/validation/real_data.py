@@ -12,6 +12,7 @@ import numpy as np
 
 from ..background import SmoothBrucknerBackground
 from ..control import CancellationCallback
+from ..execution import ExecutionPolicy
 from ..extensions import CompositePhysicsProvider
 from ..instrument import ConstantWavelengthInstrument, FcjGeometry
 from ..intensity_corrections import BraggBrentanoPolarizedLp
@@ -318,10 +319,14 @@ def run_qarr_1g_validation(
     *,
     cancellation: CancellationCallback | None = None,
     logger: RefinementLogger | None = None,
+    execution: ExecutionPolicy | None = None,
 ) -> RealDataValidationReport:
     """Run the pinned three-phase Cu K-alpha QARR refinement and QPA checks."""
 
     start = perf_counter()
+    selected_execution = ExecutionPolicy() if execution is None else execution
+    if not isinstance(selected_execution, ExecutionPolicy):
+        raise TypeError("execution must be ExecutionPolicy")
     root = Path(dataset_directory)
     data = read_powder_data(root / "cpd-1g.prn", format="columns")
     values = _qarr_instrument_values(root / "cuka.instprm")
@@ -423,6 +428,7 @@ def run_qarr_1g_validation(
             max_scaled_parameter_step=0.2,
             support_fwhm=30.0,
             estimate_covariance=False,
+            execution=selected_execution,
         ),
         cancellation=cancellation,
         logger=logger,
@@ -462,6 +468,7 @@ def run_qarr_1g_validation(
             max_scaled_parameter_step=0.15,
             support_fwhm=30.0,
             estimate_covariance=False,
+            execution=selected_execution,
         ),
         cancellation=cancellation,
         logger=logger,
@@ -502,6 +509,7 @@ def run_qarr_1g_validation(
             max_scaled_parameter_step=1.0,
             support_fwhm=30.0,
             estimate_covariance=False,
+            execution=selected_execution,
         ),
         cancellation=cancellation,
         logger=logger,

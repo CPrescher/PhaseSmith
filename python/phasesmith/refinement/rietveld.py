@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from concurrent.futures import Executor
 from contextlib import suppress
 from dataclasses import dataclass, field, replace
 from functools import partial
@@ -13,6 +14,7 @@ from numpy.typing import NDArray
 
 from ..control import CancellationCallback
 from ..crystallography import p1_parameter_names
+from ..execution import ExecutionPolicy, execution_pool
 from ..extensions import CompositePhysicsProvider
 from ..intensity_corrections import (
     BraggBrentanoPolarizedLp,
@@ -20,7 +22,13 @@ from ..intensity_corrections import (
     IntegratedIntensityCorrectionProvider,
     NeutralIntegratedIntensityCorrection,
 )
-from ..pattern import PowderPattern, StructuralPatternCalculationResult
+from ..pattern import (
+    PowderPattern,
+    StructuralPatternCalculationResult,
+    StructuralPatternJvpResult,
+    StructuralPatternLinearizationResult,
+    StructuralPatternVjpResult,
+)
 from ..phase import RietveldPhase, StructuralReflectionBatch
 from ..radiation import ComponentRadiation, ConstantWavelengthExperiment, RadiationProbe
 from ..sample import (
@@ -505,6 +513,23 @@ class RietveldCalculationResult:
             raise ValueError("phase calculations must share the combined sample grid")
 
 
+def _calculate_structural_phase(
+    task: tuple[
+        PowderPattern,
+        ConstantWavelengthExperiment,
+        RietveldPhase,
+        float,
+    ],
+) -> StructuralPatternCalculationResult:
+    pattern, experiment, phase, support_fwhm = task
+    return calculate_structural_pattern(
+        pattern,
+        experiment,
+        phase,
+        support_fwhm=support_fwhm,
+    )
+
+
 def calculate(
     pattern: PowderPattern,
     experiment: ConstantWavelengthExperiment,
@@ -512,16 +537,22 @@ def calculate(
     *,
     support_fwhm: float = 20.0,
     background: DifferentiableBackground | None = None,
+    execution: ExecutionPolicy | None = None,
 ) -> RietveldCalculationResult:
     """Calculate and sum one or more structural phases without duplicating background."""
 
     selected = tuple(phases)
     if not selected:
         raise ValueError("at least one Rietveld phase is required")
-    calculations = tuple(
-        calculate_structural_pattern(pattern, experiment, phase, support_fwhm=support_fwhm)
-        for phase in selected
-    )
+    selected_execution = ExecutionPolicy() if execution is None else execution
+    if not isinstance(selected_execution, ExecutionPolicy):
+        raise TypeError("execution must be ExecutionPolicy")
+    tasks = tuple((pattern, experiment, phase, support_fwhm) for phase in selected)
+    with execution_pool(selected_execution, len(tasks)) as executor:
+        if executor is None:
+            calculations = tuple(_calculate_structural_phase(task) for task in tasks)
+        else:
+            calculations = tuple(executor.map(_calculate_structural_phase, tasks))
     profile = np.ascontiguousarray(
         sum((item.profile_y for item in calculations), np.zeros_like(pattern.x))
     )
@@ -793,10 +824,13 @@ class RietveldOptions:
     estimate_covariance: bool = True
     max_covariance_parameters: int = 64
     unresolved_correlation: float = 1.0 - 1.0e-10
+    execution: ExecutionPolicy = field(default_factory=ExecutionPolicy)
 
     def __post_init__(self) -> None:
         if not isinstance(self.limits, RefinementLimits):
             raise TypeError("limits must be RefinementLimits")
+        if not isinstance(self.execution, ExecutionPolicy):
+            raise TypeError("execution must be ExecutionPolicy")
         if not isinstance(self.min_iterations, int) or self.min_iterations <= 0:
             raise ValueError("min_iterations must be a positive integer")
         if self.min_iterations > self.limits.max_iterations:
@@ -1054,6 +1088,7 @@ class _RietveldLinearization:
     background_mapping: NDArray[np.float64]
     sample_weight: NDArray[np.float64]
     runtime: RefinementRuntime
+    executor: Executor | None
 
     @classmethod
     def prepare(
@@ -1066,6 +1101,7 @@ class _RietveldLinearization:
         parameters: ParameterSet,
         options: RietveldOptions,
         runtime: RefinementRuntime,
+        executor: Executor | None = None,
     ) -> _RietveldLinearization:
         transform = ConstraintTransform(parameters, input_data.constraints)
         row_for_key = {spec.key: row for row, spec in enumerate(parameters.specs)}
@@ -1180,13 +1216,17 @@ class _RietveldLinearization:
             background_mapping,
             sample_weight,
             runtime,
+            executor,
         )
 
     def _prepare_dense(self) -> None:
         if not self.dense_enabled or self.calculations is not None:
             return
         self.runtime.begin_evaluation()
-        products = tuple(item.linearize() for item in self.prepared)
+        if self.executor is None:
+            products = tuple(item.linearize() for item in self.prepared)
+        else:
+            products = tuple(self.executor.map(_linearize_prepared, self.prepared))
         self.calculations = tuple(product.result for product in products)
         physical_jacobian = np.array(self.background_mapping.T, copy=True, order="C")
         for product, mapping, rows in zip(
@@ -1209,7 +1249,10 @@ class _RietveldLinearization:
         calculations = self.calculations
         if calculations is None:
             self.runtime.begin_evaluation()
-            calculations = tuple(item.calculate() for item in self.prepared)
+            if self.executor is None:
+                calculations = tuple(item.calculate() for item in self.prepared)
+            else:
+                calculations = tuple(self.executor.map(_calculate_prepared, self.prepared))
         profile = np.ascontiguousarray(
             sum((item.profile_y for item in calculations), np.zeros_like(self.pattern.x))
         )
@@ -1232,10 +1275,15 @@ class _RietveldLinearization:
         self.runtime.begin_evaluation()
         physical = self.physical_to_free @ direction
         result = self.background_mapping @ physical
-        for prepared, mapping, rows in zip(
-            self.prepared, self.native_mappings, self.global_rows, strict=True
-        ):
-            product = prepared.jvp(mapping @ physical)
+        tasks = tuple(
+            (prepared, mapping @ physical)
+            for prepared, mapping in zip(self.prepared, self.native_mappings, strict=True)
+        )
+        if self.executor is None:
+            products = tuple(_jvp_prepared(task) for task in tasks)
+        else:
+            products = tuple(self.executor.map(_jvp_prepared, tasks))
+        for product, rows in zip(products, self.global_rows, strict=True):
             result += product.d_y
             names = product.result.derivatives.global_parameter_names
             for row, name, coefficient in rows:
@@ -1255,10 +1303,18 @@ class _RietveldLinearization:
         physical_gradient = np.zeros(self.physical_to_free.shape[0], dtype=np.float64)
         raw_samples = weighted_samples * self.sample_weight
         physical_gradient += self.background_mapping.T @ raw_samples
-        for prepared, mapping, rows in zip(
-            self.prepared, self.native_mappings, self.global_rows, strict=True
+        if self.executor is None:
+            products = tuple(prepared.vjp(raw_samples) for prepared in self.prepared)
+        else:
+            products = tuple(
+                self.executor.map(
+                    _vjp_prepared,
+                    ((prepared, raw_samples) for prepared in self.prepared),
+                )
+            )
+        for product, mapping, rows in zip(
+            products, self.native_mappings, self.global_rows, strict=True
         ):
-            product = prepared.vjp(raw_samples)
             physical_gradient += mapping.T @ product.gradient
             names = product.result.derivatives.global_parameter_names
             for row, name, coefficient in rows:
@@ -1266,6 +1322,30 @@ class _RietveldLinearization:
                     product.result.derivatives.global_jacobian[names.index(name)] @ raw_samples
                 )
         return np.ascontiguousarray(self.physical_to_free.T @ physical_gradient)
+
+
+def _linearize_prepared(
+    item: PreparedStructuralPattern,
+) -> StructuralPatternLinearizationResult:
+    return item.linearize()
+
+
+def _calculate_prepared(item: PreparedStructuralPattern) -> StructuralPatternCalculationResult:
+    return item.calculate()
+
+
+def _jvp_prepared(
+    task: tuple[PreparedStructuralPattern, NDArray[np.float64]],
+) -> StructuralPatternJvpResult:
+    prepared, direction = task
+    return prepared.jvp(direction)
+
+
+def _vjp_prepared(
+    task: tuple[PreparedStructuralPattern, NDArray[np.float64]],
+) -> StructuralPatternVjpResult:
+    prepared, samples = task
+    return prepared.vjp(samples)
 
 
 def _apply_parameter_values(
@@ -1603,7 +1683,7 @@ def _covariance_diagnostics(
     return rank, physical_covariance, tuple(correlations)
 
 
-def refine(
+def _refine_with_executor(
     input_data: RietveldInput,
     options: RietveldOptions | None = None,
     *,
@@ -1611,9 +1691,8 @@ def refine(
     cancellation: CancellationCallback | None = None,
     logger: RefinementLogger | None = None,
     checkpoint_callback: CheckpointCallback | None = None,
+    executor: Executor | None = None,
 ) -> RietveldResult:
-    """Refine structural parameters with Rust JVP/VJP products and safe states."""
-
     if not isinstance(input_data, RietveldInput):
         raise TypeError("input_data must be RietveldInput")
     selected = RietveldOptions() if options is None else options
@@ -1669,6 +1748,7 @@ def refine(
         parameters,
         selected,
         runtime,
+        executor,
     )
     termination = TerminationReason.MAX_ITERATIONS
     termination_message = "iteration limit reached"
@@ -1741,6 +1821,7 @@ def refine(
                             trial_parameters,
                             selected,
                             runtime,
+                            executor,
                         )
                         trial_calculation = trial_linearization.calculate()
                         trial_metrics = _metrics(
@@ -1930,3 +2011,35 @@ def refine(
         correlations,
         runtime.logger_error,
     )
+
+
+def refine(
+    input_data: RietveldInput,
+    options: RietveldOptions | None = None,
+    *,
+    checkpoint: RietveldCheckpoint | None = None,
+    cancellation: CancellationCallback | None = None,
+    logger: RefinementLogger | None = None,
+    checkpoint_callback: CheckpointCallback | None = None,
+) -> RietveldResult:
+    """Refine structural parameters with Rust JVP/VJP products and safe states.
+
+    Independent phases may execute concurrently according to options.execution.
+    Phase results are always combined in input order.
+    """
+
+    if not isinstance(input_data, RietveldInput):
+        raise TypeError("input_data must be RietveldInput")
+    selected = RietveldOptions() if options is None else options
+    if not isinstance(selected, RietveldOptions):
+        raise TypeError("options must be RietveldOptions")
+    with execution_pool(selected.execution, len(input_data.phases)) as executor:
+        return _refine_with_executor(
+            input_data,
+            selected,
+            checkpoint=checkpoint,
+            cancellation=cancellation,
+            logger=logger,
+            checkpoint_callback=checkpoint_callback,
+            executor=executor,
+        )

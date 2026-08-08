@@ -107,8 +107,14 @@ def main() -> None:
     parser.add_argument("--samples", type=int, default=20_001)
     parser.add_argument("--repeats", type=int, default=7)
     parser.add_argument("--iterations", type=int, default=3)
+    parser.add_argument("--threads", type=int, default=1)
     arguments = parser.parse_args()
-    if arguments.samples < 2 or arguments.repeats <= 0 or arguments.iterations <= 0:
+    if (
+        arguments.samples < 2
+        or arguments.repeats <= 0
+        or arguments.iterations <= 0
+        or arguments.threads <= 0
+    ):
         raise ValueError("benchmark counts must be positive and samples at least two")
     request = benchmark_request(arguments.samples)
     options = structural_refinement.RietveldOptions(
@@ -119,6 +125,7 @@ def main() -> None:
         min_iterations=arguments.iterations,
         max_cg_iterations=12,
         estimate_covariance=False,
+        execution=phasesmith.ExecutionPolicy(threads=arguments.threads),
     )
     structural_refinement.refine(request, options)
     timings = []
@@ -140,6 +147,7 @@ def main() -> None:
                     structural_refinement.ConstraintTransform(request.parameters).free_keys
                 ),
                 "iterations": arguments.iterations,
+                "threads": arguments.threads,
                 "median_ms": statistics.median(timings),
                 "minimum_ms": min(timings),
                 "evaluations": result.evaluations,
