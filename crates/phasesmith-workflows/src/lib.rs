@@ -10,6 +10,7 @@ mod lebail;
 mod parameters;
 mod residuals;
 mod rietveld;
+mod rietveld_parameters;
 mod runtime;
 
 pub use backgrounds::{
@@ -39,6 +40,10 @@ pub use residuals::{ResidualError, ResidualEvaluation, ResidualOptions, evaluate
 pub use rietveld::{
     RietveldCalculation, RietveldCalculationOptions, RietveldError, RietveldInput, RietveldPhase,
     RietveldPhaseCalculation, calculate_rietveld_pattern,
+};
+pub use rietveld_parameters::{
+    RietveldParameterError, RietveldStructuralLayout, RietveldStructuralSelection,
+    SiteCoordinateModel,
 };
 pub use runtime::{
     CancellationError, CancellationToken, CheckpointSink, DiagnosticValue, MonotonicClock,

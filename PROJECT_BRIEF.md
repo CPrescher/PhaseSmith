@@ -115,6 +115,16 @@ parameter motion, matrix-free solving, dynamic reflection topology,
 checkpoints, recipes, and scripting-facade delegation follow as independently
 reviewed steps.
 
+The native Rietveld boundary now also owns stable structural parameter
+identities and analytical derivative transforms. Explicit phase/site IDs feed
+the shared `ParameterSet`; setting-aware lattice variables and deterministic
+special-position coordinate bases map exactly into the engine's full cell/site
+layout, and reverse products map back to the same physical order. Native tests
+cover identity validation, general/partially constrained/fixed sites, complete
+key and bound packing, invalid shapes, and the transformed JVP/VJP adjoint
+identity. Instrument, background, position, and sample-physics parameter
+families remain part of the subsequent solver integration step.
+
 Unit 17 now includes the first full monochromatic CIF-backed Rietveld vertical
 slice. Typed profile/background/phase/lattice/site parameter families map
 through fixed/affine/multi-source linear

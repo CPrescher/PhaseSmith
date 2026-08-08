@@ -275,3 +275,15 @@ This is deliberately a forward-calculation boundary, not yet the native
 Rietveld solver; typed structural parameter motion, matrix-free refinement,
 topology regeneration, checkpoints, staging, and Python delegation remain
 separate reviewed substeps.
+
+The next Rietveld substep now supplies the stable structural parameter layer.
+Phases can carry explicit asymmetric-site IDs (with deterministic generated IDs
+for compatibility), and typed selections pack symmetry-independent lattice,
+symmetry-allowed coordinate, occupancy, isotropic displacement, and phase-scale
+parameters into the shared parameter model. Special-position coordinate bases
+use deterministic pivot-ordered stabilizer elimination so durable `q0`, `q1`,
+and related GUI/constraint identities do not depend on an SVD implementation.
+Exact forward and reverse transforms connect these physical parameters to the
+engine's native per-phase derivative layout; their composed JVP/VJP satisfies
+the adjoint identity. Instrument, position, sample-physics, and background
+families join this layout with the solver rather than being approximated here.

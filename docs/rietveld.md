@@ -15,6 +15,13 @@ below remains the production refinement orchestrator until its parameter,
 solver, topology, runtime, and staged-recipe contracts have each migrated and
 passed cross-interface validation.
 
+The native boundary additionally provides stable phase/site parameter IDs,
+setting-aware lattice bounds, deterministic symmetry-allowed special-position
+coordinate bases, and exact transforms to the Rust structural JVP/VJP layout.
+These are solver-neutral records: a desktop inspector can list and constrain
+them without importing Python, while the remaining native solver work can use
+the same identities without changing the command contract.
+
 ## Objective and numerical method
 
 For included observations `i`, the residual used by the optimizer is

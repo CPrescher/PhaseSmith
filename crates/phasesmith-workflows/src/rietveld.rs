@@ -22,6 +22,7 @@ use crate::{ResidualError, ResidualEvaluation, ResidualOptions, evaluate_residua
 pub struct RietveldPhase {
     phase_id: RecordId,
     name: String,
+    site_ids: Vec<RecordId>,
     definition: StructuralPhaseDefinition,
     contributions: OwnedCwContributions,
 }
@@ -39,9 +40,30 @@ impl RietveldPhase {
         definition: StructuralPhaseDefinition,
         contributions: OwnedCwContributions,
     ) -> Result<Self, RietveldError> {
+        let site_ids = (0..definition.fractional_xyz.len())
+            .map(|index| RecordId::new(format!("site-{index}")))
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(RietveldError::Pattern)?;
+        Self::new_with_site_ids(phase_id, name, site_ids, definition, contributions)
+    }
+
+    /// Validate and own one phase with explicit stable asymmetric-site IDs.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`RietveldError`] when site IDs are missing or duplicated, or
+    /// when another phase invariant is invalid.
+    pub fn new_with_site_ids(
+        phase_id: RecordId,
+        name: impl Into<String>,
+        site_ids: Vec<RecordId>,
+        definition: StructuralPhaseDefinition,
+        contributions: OwnedCwContributions,
+    ) -> Result<Self, RietveldError> {
         let phase = Self {
             phase_id,
             name: name.into(),
+            site_ids,
             definition,
             contributions,
         };
@@ -56,6 +78,18 @@ impl RietveldPhase {
         self.definition
             .validate()
             .map_err(RietveldError::StructuralPattern)?;
+        if self.site_ids.len() != self.definition.fractional_xyz.len() {
+            return Err(RietveldError::SiteIdCountMismatch);
+        }
+        if self
+            .site_ids
+            .iter()
+            .collect::<std::collections::BTreeSet<_>>()
+            .len()
+            != self.site_ids.len()
+        {
+            return Err(RietveldError::DuplicateSiteId);
+        }
         if self.contributions.reflection_count() != self.definition.hkl.len() {
             return Err(RietveldError::ContributionCountMismatch);
         }
@@ -72,6 +106,12 @@ impl RietveldPhase {
     #[must_use]
     pub fn name(&self) -> &str {
         &self.name
+    }
+
+    /// Borrow stable asymmetric-site IDs in structural-array order.
+    #[must_use]
+    pub fn site_ids(&self) -> &[RecordId] {
+        &self.site_ids
     }
 
     /// Borrow the complete structural definition.
@@ -341,6 +381,10 @@ pub enum RietveldError {
     DuplicatePhaseId,
     /// Sample-physics contributions must match the reflection count.
     ContributionCountMismatch,
+    /// Stable site IDs must match the asymmetric-site count.
+    SiteIdCountMismatch,
+    /// Stable site IDs must be unique within a phase.
+    DuplicateSiteId,
     /// One structural phase could not be prepared.
     StructuralPattern(StructuralPatternError),
     /// Native multiphase structural calculation failed.
@@ -368,6 +412,12 @@ impl Display for RietveldError {
             Self::DuplicatePhaseId => formatter.write_str("Rietveld phase IDs must be unique"),
             Self::ContributionCountMismatch => formatter
                 .write_str("sample-physics contributions must match the phase reflection count"),
+            Self::SiteIdCountMismatch => {
+                formatter.write_str("Rietveld site IDs must match the asymmetric-site count")
+            }
+            Self::DuplicateSiteId => {
+                formatter.write_str("Rietveld site IDs must be unique within a phase")
+            }
             Self::StructuralPattern(error) => Display::fmt(error, formatter),
             Self::StructuralMultiphase(error) => Display::fmt(error, formatter),
             Self::Residual(error) => Display::fmt(error, formatter),
@@ -394,6 +444,8 @@ impl Error for RietveldError {
             | Self::InvalidPhaseName
             | Self::DuplicatePhaseId
             | Self::ContributionCountMismatch
+            | Self::SiteIdCountMismatch
+            | Self::DuplicateSiteId
             | Self::InvalidOptions
             | Self::NonFiniteCalculation => None,
         }
