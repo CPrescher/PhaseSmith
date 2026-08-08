@@ -483,6 +483,25 @@ impl LatticeReflectionDomain {
         self.wavelength_angstrom
     }
 
+    /// Clone this guarded contract for another monochromatic wavelength.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`LatticeError`] when the wavelength is invalid or the updated
+    /// guard cannot cover the declared lattice box.
+    pub fn with_wavelength(&self, wavelength_angstrom: f64) -> Result<Self, LatticeError> {
+        Self::new(
+            self.parameterization.clone(),
+            self.bounds.clone(),
+            wavelength_angstrom,
+            self.visible_two_theta_deg,
+            self.initial_intensity,
+            self.merge_friedel,
+            self.max_candidates,
+            self.guard_scale,
+        )
+    }
+
     /// Validate a compatible cell inside the finite guard box.
     ///
     /// # Errors

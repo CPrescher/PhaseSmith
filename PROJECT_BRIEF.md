@@ -158,6 +158,15 @@ model on the observation grid, adds it exactly once, and exposes the combined
 background separately from the structural profile. This keeps background state
 inside the same Rust request that later refinement and desktop adapters use.
 
+The complete native Rietveld parameter/objective layer now composes the
+matrix-free structural tangent with selected CW U/V/W/X/Y, wavelength,
+zero/sample-position, and analytical-background columns. Stable physical keys,
+bounds and scales use instrument/background/structural order; accepted value
+installation updates the full owned request, including wavelength-coupled
+correction/domain state. Rust tests check centered differences and the complete
+JVP/VJP adjoint identity. Built-in sample-physics model records and the
+constraint-aware solver wrapper remain next.
+
 Unit 17 now includes the first full monochromatic CIF-backed Rietveld vertical
 slice. Typed profile/background/phase/lattice/site parameter families map
 through fixed/affine/multi-source linear

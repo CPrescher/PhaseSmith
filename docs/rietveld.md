@@ -44,6 +44,14 @@ Its calculated values are added once to the pattern's fixed supplied background
 and returned as the display-ready background series; coefficient selection and
 motion are introduced by the general native parameter layout.
 
+That general layout now covers CW U/V/W/X/Y, wavelength, zero shift,
+Bragg--Brentano displacement, Debye--Scherrer X/Y displacement, every attached
+background coefficient, and all structural families. Its complete JVP/VJP
+reuses matrix-free structural products and only stores the small global and
+background columns. Wavelength installation updates matching correction models
+and guarded domains atomically. Native sample-physics model records and the
+constraint-aware solver entry point remain the next migration slices.
+
 ## Objective and numerical method
 
 For included observations `i`, the residual used by the optimizer is

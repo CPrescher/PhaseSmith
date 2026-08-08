@@ -7,6 +7,7 @@ use phasesmith_core::{
     ConstantWavelengthInstrument, CwContributionsError, FcjGeometry, OwnedCwContributionArrays,
     OwnedCwContributions, SupportPolicy,
 };
+use phasesmith_crystallography::IntegratedIntensityCorrectionModel;
 use phasesmith_engine::{
     MonochromaticPositionCorrection, PreparedStructuralModel, PreparedStructuralMultiphase,
     PreparedStructuralPhase, StructuralCalculationRequest, StructuralModelInput,
@@ -311,6 +312,57 @@ impl RietveldPhase {
                     && self.definition.hkl == requested.definition.hkl
                     && self.definition.multiplicity == requested.definition.multiplicity))
     }
+
+    pub(crate) fn with_wavelength(&self, wavelength_angstrom: f64) -> Result<Self, RietveldError> {
+        let mut phase = self.clone();
+        phase.definition.correction_model = match phase.definition.correction_model {
+            IntegratedIntensityCorrectionModel::Neutral => {
+                IntegratedIntensityCorrectionModel::Neutral
+            }
+            IntegratedIntensityCorrectionModel::BraggBrentanoUnpolarizedLp { .. } => {
+                IntegratedIntensityCorrectionModel::BraggBrentanoUnpolarizedLp {
+                    wavelength_angstrom,
+                }
+            }
+            IntegratedIntensityCorrectionModel::BraggBrentanoPolarizedLp {
+                polarization, ..
+            } => IntegratedIntensityCorrectionModel::BraggBrentanoPolarizedLp {
+                wavelength_angstrom,
+                polarization,
+            },
+            IntegratedIntensityCorrectionModel::ConstantWavelengthNeutronLorentz { .. } => {
+                IntegratedIntensityCorrectionModel::ConstantWavelengthNeutronLorentz {
+                    wavelength_angstrom,
+                }
+            }
+        };
+        if let Some(domain) = &self.reflection_domain {
+            phase.reflection_domain = Some(
+                domain
+                    .with_wavelength(wavelength_angstrom)
+                    .map_err(RietveldError::Lattice)?,
+            );
+            phase = phase.regenerate_lattice_at_cell(phase.definition.cell)?.0;
+        }
+        phase.validate()?;
+        Ok(phase)
+    }
+
+    fn correction_wavelength(&self) -> Option<f64> {
+        match self.definition.correction_model {
+            IntegratedIntensityCorrectionModel::Neutral => None,
+            IntegratedIntensityCorrectionModel::BraggBrentanoUnpolarizedLp {
+                wavelength_angstrom,
+            }
+            | IntegratedIntensityCorrectionModel::BraggBrentanoPolarizedLp {
+                wavelength_angstrom,
+                ..
+            }
+            | IntegratedIntensityCorrectionModel::ConstantWavelengthNeutronLorentz {
+                wavelength_angstrom,
+            } => Some(wavelength_angstrom),
+        }
+    }
 }
 
 /// Reflection-topology change attached to an accepted structural step.
@@ -442,6 +494,11 @@ impl RietveldInput {
         let mut identities = std::collections::BTreeSet::new();
         for phase in &self.phases {
             phase.validate()?;
+            if phase.correction_wavelength().is_some_and(|wavelength| {
+                wavelength.to_bits() != self.instrument.wavelength_angstrom.to_bits()
+            }) {
+                return Err(RietveldError::CorrectionWavelengthMismatch);
+            }
             if phase.reflection_domain().is_some_and(|domain| {
                 domain.wavelength_angstrom().to_bits()
                     != self.instrument.wavelength_angstrom.to_bits()
@@ -714,6 +771,8 @@ pub enum RietveldError {
     ReflectionTopologyMismatch,
     /// A dynamic phase domain must use the experiment wavelength.
     ReflectionWavelengthMismatch,
+    /// An integrated-intensity correction must use the experiment wavelength.
+    CorrectionWavelengthMismatch,
     /// A fixed-reflection phase cannot regenerate lattice topology.
     FixedReflectionTopology,
     /// Stable site IDs must match the asymmetric-site count.
@@ -760,6 +819,8 @@ impl Display for RietveldError {
                 .write_str("Rietveld reflection topology does not match the current cell/domain"),
             Self::ReflectionWavelengthMismatch => formatter
                 .write_str("Rietveld reflection domain wavelength differs from the instrument"),
+            Self::CorrectionWavelengthMismatch => formatter
+                .write_str("Rietveld intensity-correction wavelength differs from the instrument"),
             Self::FixedReflectionTopology => {
                 formatter.write_str("fixed Rietveld phases cannot regenerate topology")
             }
@@ -804,6 +865,7 @@ impl Error for RietveldError {
             | Self::ReflectionIdentityMismatch
             | Self::ReflectionTopologyMismatch
             | Self::ReflectionWavelengthMismatch
+            | Self::CorrectionWavelengthMismatch
             | Self::FixedReflectionTopology
             | Self::SiteIdCountMismatch
             | Self::DuplicateSiteId

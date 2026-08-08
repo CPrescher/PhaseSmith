@@ -10,6 +10,8 @@ mod lebail;
 mod parameters;
 mod residuals;
 mod rietveld;
+mod rietveld_general_objective;
+mod rietveld_general_parameters;
 mod rietveld_objective;
 mod rietveld_parameters;
 mod rietveld_solver;
@@ -42,6 +44,13 @@ pub use residuals::{ResidualError, ResidualEvaluation, ResidualOptions, evaluate
 pub use rietveld::{
     RietveldCalculation, RietveldCalculationOptions, RietveldError, RietveldInput, RietveldPhase,
     RietveldPhaseCalculation, RietveldTopologyChange, calculate_rietveld_pattern,
+};
+pub use rietveld_general_objective::{
+    PreparedGeneralRietveldObjective, RietveldGeneralObjectiveError,
+};
+pub use rietveld_general_parameters::{
+    RietveldGeneralParameterError, RietveldInstrumentParameter, RietveldParameterLayout,
+    RietveldParameterSelection,
 };
 pub use rietveld_objective::{PreparedRietveldObjective, RietveldObjectiveError};
 pub use rietveld_parameters::{
