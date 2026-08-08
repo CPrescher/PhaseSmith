@@ -1191,18 +1191,30 @@ Keep implementation units reviewable through these ordered changes:
 18. Provenance-reviewed X-ray and neutron scattering tables.
 19. Fused structural pattern calculation and persistence migration.
 20. Full Rietveld orchestration and benchmarks.
-21. Typed multi-histogram Rietveld objective with shared structural and local
+21. Native application boundary: owned structural preparation, execution
+    policy, fixed-spectrum/multiphase composition, and a Rust-only calculation
+    vertical slice.
+22. Owned native domain/I/O/persistence records with Python/Rust compatibility,
+    followed by native refinement workflows and a separate Rust-only Tauri
+    adapter.
+23. Typed multi-histogram Rietveld objective with shared structural and local
     experiment parameters, followed by a joint PbSO4 X-ray/neutron benchmark.
 
 Do not combine adjacent items merely to reduce PR count; numerical review is
 easier when parameter conventions and tolerance changes remain isolated.
 
-Unit 21 must not emulate a joint fit by alternating single-histogram results.
+Unit 23 must not emulate a joint fit by alternating single-histogram results.
 One accepted trial evaluates the sum of all histogram objectives. Structure,
 cell, coordinates, occupancies, and atomic displacement parameters can be
 shared, while radiation, scattering/intensity correction, limits, scale,
 background, profile, zero/displacement geometry, masks, and uncertainties
 remain explicitly histogram-local.
+
+Units 21 and 22 follow the dependency order and review gates in
+[`docs/native-application-plan.md`](docs/native-application-plan.md). The
+desktop adapter never depends on `phasesmith-py`, and the existing Python API
+delegates built-in workflows to the same native implementation without losing
+the independent NumPy equation references.
 
 ## Maintainer decisions needed
 

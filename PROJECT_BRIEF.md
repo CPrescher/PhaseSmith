@@ -350,6 +350,9 @@ from normal installation and runtime.
 - Keep integration boundaries application-neutral. Package-specific GUI
   adapters are compatibility conveniences, not core architecture or roadmap
   milestones.
+- Keep future desktop runtimes Rust-only. Application-neutral workflows move
+  behind shared native APIs used by both PyO3 and presentation adapters; Tauri,
+  GUI state, CPython embedding, and Python sidecars are not library architecture.
 - Maintain an independent, readable Python reference implementation for every
   numerical kernel before optimizing it.
 - Treat GSAS-II licensing conservatively: implement from published equations
@@ -417,6 +420,8 @@ documented; GSAS-II itself is never vendored.
 - `crates/phasesmith-core`: dependency-light numerical types and kernels.
 - Numerical primitives such as CW width laws and FCJ geometry remain separate;
   explicit composition modules fuse them for production accumulation.
+- `crates/phasesmith-execution`: bounded reusable native execution contexts;
+  it never mutates a process-global worker pool.
 - `crates/phasesmith-py`: PyO3 extension exposing array-oriented functions.
 - `crates/phasesmith-crystallography`: file-independent cell, exact symmetry,
   reflection-generation, and P1 structure-factor kernels; scattering follows.
@@ -438,6 +443,12 @@ documented; GSAS-II itself is never vendored.
 - `tests`: Python differential and contract tests.
 - `benchmarks`: end-to-end Python benchmarks and stored methodology.
 - `oracle`: pinned GSAS-II environment metadata, adapters, and fixture schema.
+
+The planned native application boundary is specified in
+`docs/native-application-plan.md`. It keeps Tauri outside the scientific
+workspace, introduces application-neutral owned model/I/O/workflow layers, and
+preserves the Python scripting surface without requiring Python in a desktop
+distribution.
 
 The core accepts plain numeric slices and explicit peak/instrument batches. It
 does not know about files, refinement iterations, Python phase objects, GUI
