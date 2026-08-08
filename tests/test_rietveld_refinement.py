@@ -1125,6 +1125,30 @@ def test_project_facade_refines_stops_reports_and_resumes(tmp_path) -> None:
     assert cancelled.history == ()
 
 
+def test_project_calculate_uses_the_configured_execution_policy(monkeypatch) -> None:
+    request = request_from_cif(selection(phase_scale=True))
+    policy = phasesmith.ExecutionPolicy(threads=1, minimum_parallel_tasks=3)
+    project = phasesmith.RietveldProject(
+        request,
+        structural_refinement.RietveldOptions(execution=policy),
+    )
+    expected = object()
+    captured: dict[str, object] = {}
+
+    def capture_calculation(*args: object, **kwargs: object) -> object:
+        captured["args"] = args
+        captured.update(kwargs)
+        return expected
+
+    monkeypatch.setattr("phasesmith.project.calculate", capture_calculation)
+
+    assert project.calculate() is expected
+    assert captured["args"] == (request.pattern, request.experiment, request.phases)
+    assert captured["background"] is request.background
+    assert captured["support_fwhm"] == project.options.support_fwhm
+    assert captured["execution"] is policy
+
+
 def test_model_evaluation_budget_returns_last_calculated_state() -> None:
     truth = request_from_cif(selection(phase_scale=True))
     starting_phase = replace(truth.phases[0], scale=0.7)

@@ -62,6 +62,7 @@ class RietveldProject:
             phases,
             background=background,
             support_fwhm=self.options.support_fwhm,
+            execution=self.options.execution,
         )
 
     def refine(

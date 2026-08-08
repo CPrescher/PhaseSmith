@@ -39,6 +39,11 @@ cargo test --workspace --all-features
 uv run pytest
 ```
 
+Editable environments retain the absolute checkout location. After moving or
+renaming the repository, recreate `.venv`, repeat the three setup commands
+above, and confirm `uv run python -c "import phasesmith; print(phasesmith.__file__)"`
+points into the current checkout before running the gate.
+
 Run the Rust benchmarks with `cargo bench -p phasesmith-core`. For a comparable
 optimized Python-to-Rust measurement, build the release extension and require
 release mode explicitly:
@@ -386,9 +391,10 @@ print(result.phases[0].structure.cell)
 ```
 
 Multiphase calculations and Rietveld refinement can use a bounded worker pool.
-The default is one thread so embedding applications retain control of CPU use;
-choose a fixed budget for predictable GUI/script behavior, or `None` to use the
-available logical CPUs:
+The bounded default is two threads. Embedding applications that already
+schedule independent work can select one thread; choose another fixed budget
+for predictable GUI/script behavior, or `None` to use the available logical
+CPUs:
 
 ```python
 import phasesmith
