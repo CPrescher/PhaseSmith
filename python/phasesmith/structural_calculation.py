@@ -144,6 +144,24 @@ def _supports_fused_structural_physics(provider: object | None) -> bool:
     )
 
 
+def _physics_provider_is_thread_safe(provider: object | None) -> bool:
+    if provider is None:
+        return True
+    if type(provider) is CompositePhysicsProvider:
+        return all(_physics_provider_is_thread_safe(child) for child in provider.providers)
+    descriptor = getattr(provider, "descriptor", None)
+    return getattr(descriptor, "thread_safe", False) is True
+
+
+def _fallback_is_thread_safe(phase: RietveldPhase) -> bool:
+    scattering_descriptor = getattr(phase.scattering, "descriptor", None)
+    return (
+        getattr(scattering_descriptor, "thread_safe", False) is True
+        and getattr(phase.intensity_correction, "thread_safe", False) is True
+        and _physics_provider_is_thread_safe(phase.physics)
+    )
+
+
 def _native_phase(phase: RietveldPhase) -> object | None:
     configuration = _native_model_configuration(phase)
     if configuration is None or not _supports_fused_structural_physics(phase.physics):
@@ -588,15 +606,46 @@ class PreparedStructuralPattern:
             return all(component.uses_native_fused_path for component in self._components)
         return self._native is not None
 
+    @property
+    def parallel_safe(self) -> bool:
+        """Return whether independent calls may overlap on worker threads."""
+
+        if self._components:
+            return all(component.parallel_safe for component in self._components)
+        return self._native is not None or _fallback_is_thread_safe(self.phase)
+
+    @property
+    def leaf_count(self) -> int:
+        """Return the number of independently schedulable component leaves."""
+
+        return len(self._components) if self._components else 1
+
+    def _calculation_tasks(self) -> tuple[PreparedStructuralPattern, ...]:
+        return self._components if self._components else (self,)
+
+    def _combine_calculations(
+        self,
+        results: tuple[StructuralPatternCalculationResult, ...],
+    ) -> StructuralPatternCalculationResult:
+        if not self._components:
+            if len(results) != 1:
+                raise ValueError("one monochromatic result is required")
+            return results[0]
+        if len(results) != len(self._components):
+            raise ValueError("component result count does not match prepared components")
+        return _combine_component_results(
+            self.phase,
+            self.pattern,
+            results,
+            self.jacobian_layout,
+        )
+
     def calculate(self) -> StructuralPatternCalculationResult:
         """Calculate structural intensities, positions, and the powder profile."""
 
         if self._components:
-            return _combine_component_results(
-                self.phase,
-                self.pattern,
-                tuple(component.calculate() for component in self._components),
-                self.jacobian_layout,
+            return self._combine_calculations(
+                tuple(component.calculate() for component in self._components)
             )
         if self._native is None:
             return _fallback_calculate(
@@ -634,34 +683,8 @@ class PreparedStructuralPattern:
         """Calculate one structural JVP without a dense pattern Jacobian."""
 
         if self._components:
-            names = _structural_parameter_names(self.phase)
-            direction = _vector(tangent, "tangent")
-            if direction.shape != (len(names),):
-                raise ValueError("tangent must match the structural parameter count")
-            products = []
-            for component, weight in zip(self._components, self._component_weights, strict=True):
-                component_direction = np.array(direction, copy=True)
-                component_direction[-1] *= weight
-                products.append(component.jvp(component_direction))
-            product_tuple = tuple(products)
-            result = _combine_component_results(
-                self.phase,
-                self.pattern,
-                tuple(product.result for product in product_tuple),
-                self.jacobian_layout,
-            )
-            return StructuralPatternJvpResult(
-                result,
-                names,
-                np.ascontiguousarray(
-                    sum((item.d_y for item in product_tuple), np.zeros_like(self.pattern.x))
-                ),
-                np.ascontiguousarray(
-                    np.concatenate([item.d_integrated_intensity for item in product_tuple])
-                ),
-                np.ascontiguousarray(
-                    np.concatenate([item.d_two_theta_deg for item in product_tuple])
-                ),
+            return self._combine_jvps(
+                tuple(component.jvp(direction) for component, direction in self._jvp_tasks(tangent))
             )
         if self._native is None:
             raise NotImplementedError(
@@ -700,27 +723,53 @@ class PreparedStructuralPattern:
             _freeze(array)
         return StructuralPatternJvpResult(result, names, d_y, d_intensity, d_position)
 
+    def _jvp_tasks(
+        self,
+        tangent: ArrayLike,
+    ) -> tuple[tuple[PreparedStructuralPattern, NDArray[np.float64]], ...]:
+        names = _structural_parameter_names(self.phase)
+        direction = _vector(tangent, "tangent")
+        if direction.shape != (len(names),):
+            raise ValueError("tangent must match the structural parameter count")
+        if not self._components:
+            return ((self, direction),)
+        tasks = []
+        for component, weight in zip(self._components, self._component_weights, strict=True):
+            component_direction = np.array(direction, copy=True)
+            component_direction[-1] *= weight
+            tasks.append((component, component_direction))
+        return tuple(tasks)
+
+    def _combine_jvps(
+        self,
+        products: tuple[StructuralPatternJvpResult, ...],
+    ) -> StructuralPatternJvpResult:
+        if not self._components:
+            if len(products) != 1:
+                raise ValueError("one monochromatic JVP is required")
+            return products[0]
+        if len(products) != len(self._components):
+            raise ValueError("component JVP count does not match prepared components")
+        names = _structural_parameter_names(self.phase)
+        return StructuralPatternJvpResult(
+            self._combine_calculations(tuple(product.result for product in products)),
+            names,
+            np.ascontiguousarray(
+                sum((item.d_y for item in products), np.zeros_like(self.pattern.x))
+            ),
+            np.ascontiguousarray(
+                np.concatenate([item.d_integrated_intensity for item in products])
+            ),
+            np.ascontiguousarray(np.concatenate([item.d_two_theta_deg for item in products])),
+        )
+
     def linearize(self) -> StructuralPatternLinearizationResult:
         """Calculate one reusable native structural pattern Jacobian."""
 
         names = _structural_parameter_names(self.phase)
         if self._components:
-            products = tuple(component.linearize() for component in self._components)
-            jacobian = np.zeros_like(products[0].jacobian)
-            for product, weight in zip(products, self._component_weights, strict=True):
-                if product.parameter_names != names:
-                    raise ValueError("component structural parameter names must match")
-                jacobian[:-1] += product.jacobian[:-1]
-                jacobian[-1] += weight * product.jacobian[-1]
-            return StructuralPatternLinearizationResult(
-                _combine_component_results(
-                    self.phase,
-                    self.pattern,
-                    tuple(product.result for product in products),
-                    self.jacobian_layout,
-                ),
-                names,
-                np.ascontiguousarray(jacobian),
+            return self._combine_linearizations(
+                tuple(component.linearize() for component in self._components)
             )
         if self._native is None:
             raise NotImplementedError(
@@ -752,27 +801,40 @@ class PreparedStructuralPattern:
         _freeze(jacobian)
         return StructuralPatternLinearizationResult(result, names, jacobian)
 
+    def _linearization_tasks(self) -> tuple[PreparedStructuralPattern, ...]:
+        return self._components if self._components else (self,)
+
+    def _combine_linearizations(
+        self,
+        products: tuple[StructuralPatternLinearizationResult, ...],
+    ) -> StructuralPatternLinearizationResult:
+        if not self._components:
+            if len(products) != 1:
+                raise ValueError("one monochromatic linearization is required")
+            return products[0]
+        if len(products) != len(self._components):
+            raise ValueError("component linearization count does not match prepared components")
+        names = _structural_parameter_names(self.phase)
+        jacobian = np.zeros_like(products[0].jacobian)
+        for product, weight in zip(products, self._component_weights, strict=True):
+            if product.parameter_names != names:
+                raise ValueError("component structural parameter names must match")
+            jacobian[:-1] += product.jacobian[:-1]
+            jacobian[-1] += weight * product.jacobian[-1]
+        return StructuralPatternLinearizationResult(
+            self._combine_calculations(tuple(product.result for product in products)),
+            names,
+            np.ascontiguousarray(jacobian),
+        )
+
     def vjp(self, sample_weights: ArrayLike) -> StructuralPatternVjpResult:
         """Calculate one structural transpose product from pattern-sample weights."""
 
         if self._components:
-            weights = _vector(sample_weights, "sample_weights")
-            if weights.shape != self.pattern.x.shape:
-                raise ValueError("sample_weights must match the pattern sample count")
-            products = tuple(component.vjp(weights) for component in self._components)
-            gradient = np.zeros_like(products[0].gradient)
-            for product, component_weight in zip(products, self._component_weights, strict=True):
-                gradient[:-1] += product.gradient[:-1]
-                gradient[-1] += component_weight * product.gradient[-1]
-            return StructuralPatternVjpResult(
-                _combine_component_results(
-                    self.phase,
-                    self.pattern,
-                    tuple(product.result for product in products),
-                    self.jacobian_layout,
-                ),
-                _structural_parameter_names(self.phase),
-                np.ascontiguousarray(gradient),
+            return self._combine_vjps(
+                tuple(
+                    component.vjp(weights) for component, weights in self._vjp_tasks(sample_weights)
+                )
             )
         if self._native is None:
             raise NotImplementedError(
@@ -809,6 +871,36 @@ class PreparedStructuralPattern:
         )
         _freeze(gradient)
         return StructuralPatternVjpResult(result, names, gradient)
+
+    def _vjp_tasks(
+        self,
+        sample_weights: ArrayLike,
+    ) -> tuple[tuple[PreparedStructuralPattern, NDArray[np.float64]], ...]:
+        weights = _vector(sample_weights, "sample_weights")
+        if weights.shape != self.pattern.x.shape:
+            raise ValueError("sample_weights must match the pattern sample count")
+        leaves = self._components if self._components else (self,)
+        return tuple((component, weights) for component in leaves)
+
+    def _combine_vjps(
+        self,
+        products: tuple[StructuralPatternVjpResult, ...],
+    ) -> StructuralPatternVjpResult:
+        if not self._components:
+            if len(products) != 1:
+                raise ValueError("one monochromatic VJP is required")
+            return products[0]
+        if len(products) != len(self._components):
+            raise ValueError("component VJP count does not match prepared components")
+        gradient = np.zeros_like(products[0].gradient)
+        for product, component_weight in zip(products, self._component_weights, strict=True):
+            gradient[:-1] += product.gradient[:-1]
+            gradient[-1] += component_weight * product.gradient[-1]
+        return StructuralPatternVjpResult(
+            self._combine_calculations(tuple(product.result for product in products)),
+            _structural_parameter_names(self.phase),
+            np.ascontiguousarray(gradient),
+        )
 
 
 def calculate_structural_pattern(

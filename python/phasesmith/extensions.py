@@ -44,6 +44,7 @@ class ProviderDescriptor:
     provider_id: str
     provider_version: str
     api_version: int = PHYSICS_PROVIDER_API_VERSION
+    thread_safe: bool = False
 
     def __post_init__(self) -> None:
         """Validate persistence-safe provider metadata."""
@@ -58,6 +59,8 @@ class ProviderDescriptor:
             raise ValueError("provider_version must be a non-empty token")
         if self.api_version <= 0:
             raise ValueError("api_version must be positive")
+        if not isinstance(self.thread_safe, bool):
+            raise TypeError("thread_safe must be a boolean")
 
 
 @dataclass(frozen=True, slots=True)
@@ -269,7 +272,9 @@ class CompositePhysicsProvider:
     """Explicit ordered composition of independent physics providers."""
 
     providers: tuple[ReflectionPhysicsProvider, ...]
-    descriptor: ClassVar[ProviderDescriptor] = ProviderDescriptor("phasesmith.composite", "1")
+    descriptor: ClassVar[ProviderDescriptor] = ProviderDescriptor(
+        "phasesmith.composite", "1", thread_safe=True
+    )
 
     def __post_init__(self) -> None:
         """Require a non-empty immutable provider sequence."""

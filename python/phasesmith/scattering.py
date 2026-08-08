@@ -109,6 +109,7 @@ class ScatteringProviderDescriptor:
     probe: Literal["xray", "neutron"]
     amplitude_unit: Literal["electrons", "fm"]
     api_version: int = SCATTERING_PROVIDER_API_VERSION
+    thread_safe: bool = False
 
     def __post_init__(self) -> None:
         """Validate persistence-safe metadata."""
@@ -128,6 +129,8 @@ class ScatteringProviderDescriptor:
             raise ValueError(f"{self.probe} provider amplitude_unit must be {expected_unit}")
         if not isinstance(self.api_version, int) or self.api_version <= 0:
             raise ValueError("api_version must be a positive integer")
+        if not isinstance(self.thread_safe, bool):
+            raise TypeError("thread_safe must be a boolean")
 
 
 @dataclass(frozen=True, slots=True)
@@ -248,18 +251,21 @@ XRAY_NON_RESONANT_DESCRIPTOR = ScatteringProviderDescriptor(
     "1995+xraydb-663d2171",
     "xray",
     "electrons",
+    thread_safe=True,
 )
 NEUTRON_NUCLEAR_DESCRIPTOR = ScatteringProviderDescriptor(
     "phasesmith.neutron.bound_coherent",
     "periodictable-182ef63a",
     "neutron",
     "fm",
+    thread_safe=True,
 )
 XRAY_FIXED_DISPERSION_DESCRIPTOR = ScatteringProviderDescriptor(
     "phasesmith.xray.fixed_dispersion",
     "1",
     "xray",
     "electrons",
+    thread_safe=True,
 )
 
 

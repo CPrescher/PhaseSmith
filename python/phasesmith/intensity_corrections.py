@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Protocol, runtime_checkable
+from typing import ClassVar, Protocol, runtime_checkable
 
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
@@ -68,6 +68,8 @@ class IntegratedIntensityCorrectionProvider(Protocol):
 class NeutralIntegratedIntensityCorrection:
     """Raw multiplicity-weighted structural intensity with ``C_h = 1``."""
 
+    thread_safe: ClassVar[bool] = True
+
     def evaluate(self, q_squared_inverse_angstrom2: ArrayLike) -> IntegratedIntensityCorrection:
         """Return exact neutral values and zero derivatives."""
 
@@ -81,6 +83,7 @@ class BraggBrentanoUnpolarizedLp:
     """Monochromatic unpolarized symmetric Bragg--Brentano integrated LP."""
 
     wavelength_angstrom: float
+    thread_safe: ClassVar[bool] = True
 
     def __post_init__(self) -> None:
         """Require a positive finite monochromatic wavelength."""
@@ -115,6 +118,7 @@ class BraggBrentanoPolarizedLp:
 
     wavelength_angstrom: float
     polarization: float
+    thread_safe: ClassVar[bool] = True
 
     def __post_init__(self) -> None:
         """Require a physical wavelength and polarization fraction."""

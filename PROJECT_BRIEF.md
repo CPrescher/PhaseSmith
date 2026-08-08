@@ -271,16 +271,22 @@ The deterministic multicore checkpoint adds a public, persistence-safe
 `ExecutionPolicy` with a conservative one-thread embedding default and explicit
 fixed or automatic worker budgets. Multiphase values, dense linearizations,
 JVPs, and VJPs execute concurrently while results are always combined in phase
-input order. Guarded special-position coordinate models are reused across
-trial states instead of being reconstructed. The reviewed three-phase QARR
-release medians are 1.245 seconds on one thread and 0.961 seconds on two, a
-1.30x multicore gain with bitwise-identical scientific results. Three and
-automatic threads are flat near 0.965 seconds because phase costs are unequal.
-Against the preceding same-host pinned GSAS-II median of 2.718 seconds, the
-two-thread PhaseSmith result is 2.83x faster, while remaining an explicitly
-non-matched native-workflow comparison. Persistence format 9 stores the policy
-and loads formats 1--8. The complete gate passes 519 Python tests (one optional
-external-oracle case deselected), 70 Rust tests, Ruff, Rust formatting, and
+input order. The scheduler now exposes each phase/wavelength component as one
+flat leaf, so a single-phase doublet and an unbalanced multiphase spectrum can
+use the whole fixed worker budget without nested pools. Component results are
+reassembled first in component order and then in phase order. Python provider
+fallbacks remain serial unless every provider involved explicitly declares its
+thread-safety capability; built-in immutable/native providers declare that
+capability. Guarded special-position coordinate models are reused across
+trial states instead of being reconstructed. After flattening, three fresh
+three-run QARR release medians are 1.314 seconds on one thread, 0.874 seconds on
+two, and 0.738 seconds on three, with identical status and scientific checks.
+The third worker now remains useful because the dominant Al2O3 doublet is two
+independent leaves. Against the preceding same-host pinned GSAS-II median of
+2.718 seconds, the three-thread result is 3.68x faster, while remaining an
+explicitly non-matched native-workflow comparison. Persistence format 9 stores
+the policy and loads formats 1--8. The complete gate passes 529 Python tests
+(three optional cases deselected), 70 Rust tests, Ruff, Rust formatting, and
 strict Clippy.
 
 ## Design commitments

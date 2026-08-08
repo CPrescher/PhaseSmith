@@ -383,7 +383,15 @@ later Rietveld workflows.
 Provider API version 1 returns additive Gaussian variance, additive Lorentzian
 FWHM, a multiplicative intensity correction, position chains, stable parameter
 names, and parameter-major derivative chains. The precise equations and array
-semantics are documented in [`sample-physics.md`](sample-physics.md). Width
+layout remain unchanged by execution policy. `ProviderDescriptor.thread_safe`
+is an explicit concurrency capability and defaults to `False`; PhaseSmith never
+infers safety from a provider's implementation language or apparent
+statelessness. A provider may set it to `True` only when overlapping calls on
+the same instance are supported. Composite providers are parallel-safe only
+when every child is parallel-safe, and unknown custom scattering or correction
+providers likewise keep their structural fallback serialized. The precise
+equations and array semantics are documented in
+[`sample-physics.md`](sample-physics.md). Width
 contributions add; intensity modifiers compose with the full product rule.
 The built-in March--Dollase provider uses the phase reciprocal metric and an
 explicit preferred reciprocal-lattice axis, and participates in the same

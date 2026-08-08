@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 from dataclasses import replace
 from fractions import Fraction
+from threading import Lock
+from time import sleep
 
 import numpy as np
 import phasesmith
@@ -183,6 +185,88 @@ def test_parallel_structural_calculation_is_bitwise_deterministic() -> None:
             parallel_phase.derivatives.global_jacobian,
             serial_phase.derivatives.global_jacobian,
         )
+
+
+def test_component_calculation_dispatches_one_leaf_per_wavelength(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    x = np.linspace(15.0, 100.0, 8_501)
+    request = structural_refinement.RietveldInput.from_cif(
+        phasesmith.PowderPattern(x, observed_y=np.zeros_like(x)),
+        component_experiment(),
+        P1_CIF,
+        phase_id="alpha",
+        selection=selection(),
+        intensity_correction=phasesmith.BraggBrentanoUnpolarizedLp(1.54056),
+    )
+    dispatched: list[float] = []
+    original = structural_refinement._calculate_prepared
+
+    def counted(
+        item: phasesmith.PreparedStructuralPattern,
+    ) -> phasesmith.StructuralPatternCalculationResult:
+        dispatched.append(item.experiment.radiation.wavelength_angstrom)
+        return original(item)
+
+    monkeypatch.setattr(structural_refinement, "_calculate_prepared", counted)
+    result = structural_refinement.calculate(
+        request.pattern,
+        request.experiment,
+        request.phases,
+        execution=phasesmith.ExecutionPolicy(threads=2),
+    )
+    assert sorted(dispatched) == [1.54056, 1.54439]
+    assert result.phase_calculations[0].reflections.component_index is not None
+
+
+class ConcurrencyProbeProvider:
+    def __init__(self, *, thread_safe: bool) -> None:
+        self.descriptor = phasesmith.ProviderDescriptor(
+            "test.concurrency-probe",
+            "1",
+            thread_safe=thread_safe,
+        )
+        self.calls = 0
+        self.overlapped = False
+        self._active = 0
+        self._lock = Lock()
+
+    def evaluate(self, context: phasesmith.PhysicsContext) -> phasesmith.PhysicsContribution:
+        with self._lock:
+            self.calls += 1
+            self._active += 1
+            self.overlapped |= self._active > 1
+        sleep(0.02)
+        with self._lock:
+            self._active -= 1
+        return phasesmith.PhysicsContribution.neutral(context.reflections.reflection_count)
+
+
+@pytest.mark.parametrize("thread_safe, expected_overlap", ((False, False), (True, True)))
+def test_component_scheduler_respects_plugin_thread_safety_capability(
+    thread_safe: bool,
+    expected_overlap: bool,
+) -> None:
+    x = np.linspace(15.0, 100.0, 2_001)
+    request = structural_refinement.RietveldInput.from_cif(
+        phasesmith.PowderPattern(x, observed_y=np.zeros_like(x)),
+        component_experiment(),
+        P1_CIF,
+        phase_id="alpha",
+        selection=selection(),
+        intensity_correction=phasesmith.BraggBrentanoUnpolarizedLp(1.54056),
+    )
+    provider = ConcurrencyProbeProvider(thread_safe=thread_safe)
+    phase = replace(request.phases[0], physics=provider)
+    result = structural_refinement.calculate(
+        request.pattern,
+        request.experiment,
+        (phase,),
+        execution=phasesmith.ExecutionPolicy(threads=2),
+    )
+    assert provider.calls == 2
+    assert provider.overlapped is expected_overlap
+    assert np.isfinite(result.y).all()
 
 
 def test_fixed_components_from_cif_generates_exact_visible_union() -> None:

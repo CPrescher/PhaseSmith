@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from concurrent.futures import Executor
 from contextlib import suppress
 from dataclasses import dataclass, field, replace
 from functools import partial
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypeVar, cast
 
 import numpy as np
 from numpy.typing import NDArray
@@ -37,7 +38,7 @@ from ..sample import (
     MarchDollasePreferredOrientation,
 )
 from ..scattering import NeutronNuclear, ScatteringFactorProvider, XrayNonResonant
-from ..structural_calculation import PreparedStructuralPattern, calculate_structural_pattern
+from ..structural_calculation import PreparedStructuralPattern
 from ..structure import AtomSite, CrystalStructure
 from ..symmetry import CwTwoThetaRange, DSpacingRange, PreparedReflectionGenerator
 from .background import DifferentiableBackground
@@ -513,20 +514,138 @@ class RietveldCalculationResult:
             raise ValueError("phase calculations must share the combined sample grid")
 
 
-def _calculate_structural_phase(
-    task: tuple[
-        PowderPattern,
-        ConstantWavelengthExperiment,
-        RietveldPhase,
-        float,
-    ],
-) -> StructuralPatternCalculationResult:
-    pattern, experiment, phase, support_fwhm = task
-    return calculate_structural_pattern(
-        pattern,
-        experiment,
-        phase,
-        support_fwhm=support_fwhm,
+_Task = TypeVar("_Task")
+_Product = TypeVar("_Product")
+
+
+def _prepared_for_task(task: object) -> PreparedStructuralPattern:
+    if isinstance(task, PreparedStructuralPattern):
+        return task
+    if isinstance(task, tuple) and task and isinstance(task[0], PreparedStructuralPattern):
+        return task[0]
+    raise TypeError("prepared scheduler received an unknown task shape")
+
+
+def _run_prepared_tasks(
+    tasks: tuple[_Task, ...],
+    worker: Callable[[_Task], _Product],
+    executor: Executor | None,
+) -> tuple[_Product, ...]:
+    """Run safe leaves concurrently and preserve exact input ordering."""
+
+    if executor is None:
+        return tuple(worker(task) for task in tasks)
+    results: list[_Product | None] = [None] * len(tasks)
+    parallel_indices = tuple(
+        index
+        for index, task in enumerate(tasks)
+        if _prepared_for_task(task).parallel_safe
+    )
+    parallel_index_set = frozenset(parallel_indices)
+    for index, task in enumerate(tasks):
+        if index not in parallel_index_set:
+            results[index] = worker(task)
+    parallel_results = executor.map(worker, (tasks[index] for index in parallel_indices))
+    for index, result in zip(parallel_indices, parallel_results, strict=True):
+        results[index] = result
+    if any(result is None for result in results):  # pragma: no cover - scheduler invariant
+        raise RuntimeError("prepared task scheduler did not produce every result")
+    return cast(tuple[_Product, ...], tuple(results))
+
+
+def _result_groups(
+    results: tuple[_Product, ...],
+    sizes: tuple[int, ...],
+) -> tuple[tuple[_Product, ...], ...]:
+    groups = []
+    cursor = 0
+    for size in sizes:
+        groups.append(results[cursor : cursor + size])
+        cursor += size
+    if cursor != len(results):  # pragma: no cover - scheduler invariant
+        raise RuntimeError("prepared result grouping did not consume every result")
+    return tuple(groups)
+
+
+def _calculate_prepared_batch(
+    prepared: tuple[PreparedStructuralPattern, ...],
+    executor: Executor | None,
+) -> tuple[StructuralPatternCalculationResult, ...]:
+    groups = tuple(item._calculation_tasks() for item in prepared)
+    results = _run_prepared_tasks(
+        tuple(task for group in groups for task in group), _calculate_prepared, executor
+    )
+    return tuple(
+        item._combine_calculations(group)
+        for item, group in zip(
+            prepared,
+            _result_groups(results, tuple(len(group) for group in groups)),
+            strict=True,
+        )
+    )
+
+
+def _linearize_prepared_batch(
+    prepared: tuple[PreparedStructuralPattern, ...],
+    executor: Executor | None,
+) -> tuple[StructuralPatternLinearizationResult, ...]:
+    groups = tuple(item._linearization_tasks() for item in prepared)
+    results = _run_prepared_tasks(
+        tuple(task for group in groups for task in group),
+        _linearize_prepared,
+        executor,
+    )
+    return tuple(
+        item._combine_linearizations(group)
+        for item, group in zip(
+            prepared,
+            _result_groups(results, tuple(len(group) for group in groups)),
+            strict=True,
+        )
+    )
+
+
+def _jvp_prepared_batch(
+    prepared: tuple[PreparedStructuralPattern, ...],
+    directions: tuple[NDArray[np.float64], ...],
+    executor: Executor | None,
+) -> tuple[StructuralPatternJvpResult, ...]:
+    groups = tuple(
+        item._jvp_tasks(direction) for item, direction in zip(prepared, directions, strict=True)
+    )
+    results = _run_prepared_tasks(
+        tuple(task for group in groups for task in group),
+        _jvp_prepared,
+        executor,
+    )
+    return tuple(
+        item._combine_jvps(group)
+        for item, group in zip(
+            prepared,
+            _result_groups(results, tuple(len(group) for group in groups)),
+            strict=True,
+        )
+    )
+
+
+def _vjp_prepared_batch(
+    prepared: tuple[PreparedStructuralPattern, ...],
+    sample_weights: NDArray[np.float64],
+    executor: Executor | None,
+) -> tuple[StructuralPatternVjpResult, ...]:
+    groups = tuple(item._vjp_tasks(sample_weights) for item in prepared)
+    results = _run_prepared_tasks(
+        tuple(task for group in groups for task in group),
+        _vjp_prepared,
+        executor,
+    )
+    return tuple(
+        item._combine_vjps(group)
+        for item, group in zip(
+            prepared,
+            _result_groups(results, tuple(len(group) for group in groups)),
+            strict=True,
+        )
     )
 
 
@@ -547,12 +666,20 @@ def calculate(
     selected_execution = ExecutionPolicy() if execution is None else execution
     if not isinstance(selected_execution, ExecutionPolicy):
         raise TypeError("execution must be ExecutionPolicy")
-    tasks = tuple((pattern, experiment, phase, support_fwhm) for phase in selected)
-    with execution_pool(selected_execution, len(tasks)) as executor:
-        if executor is None:
-            calculations = tuple(_calculate_structural_phase(task) for task in tasks)
-        else:
-            calculations = tuple(executor.map(_calculate_structural_phase, tasks))
+    prepared = tuple(
+        PreparedStructuralPattern(
+            pattern,
+            experiment,
+            phase,
+            support_fwhm=support_fwhm,
+        )
+        for phase in selected
+    )
+    with execution_pool(
+        selected_execution,
+        sum(item.leaf_count for item in prepared),
+    ) as executor:
+        calculations = _calculate_prepared_batch(prepared, executor)
     profile = np.ascontiguousarray(
         sum((item.profile_y for item in calculations), np.zeros_like(pattern.x))
     )
@@ -1061,9 +1188,7 @@ def _phase_native_mapping(
                 mapping[native_row[f"site.{site_id}.occupancy"], column] = 1.0
             elif key.name == "u_iso_angstrom2":
                 if site_by_id[site_id].anisotropic_displacement is not None:
-                    raise ValueError(
-                        f"{key.label} cannot refine U_iso for an anisotropic site"
-                    )
+                    raise ValueError(f"{key.label} cannot refine U_iso for an anisotropic site")
                 mapping[native_row[f"site.{site_id}.u_iso"], column] = 1.0
             else:
                 raise ValueError(f"unknown site parameter {key.label}")
@@ -1227,10 +1352,7 @@ class _RietveldLinearization:
         if not self.dense_enabled or self.calculations is not None:
             return
         self.runtime.begin_evaluation()
-        if self.executor is None:
-            products = tuple(item.linearize() for item in self.prepared)
-        else:
-            products = tuple(self.executor.map(_linearize_prepared, self.prepared))
+        products = _linearize_prepared_batch(self.prepared, self.executor)
         self.calculations = tuple(product.result for product in products)
         physical_jacobian = np.array(self.background_mapping.T, copy=True, order="C")
         for product, mapping, rows in zip(
@@ -1253,10 +1375,7 @@ class _RietveldLinearization:
         calculations = self.calculations
         if calculations is None:
             self.runtime.begin_evaluation()
-            if self.executor is None:
-                calculations = tuple(item.calculate() for item in self.prepared)
-            else:
-                calculations = tuple(self.executor.map(_calculate_prepared, self.prepared))
+            calculations = _calculate_prepared_batch(self.prepared, self.executor)
         profile = np.ascontiguousarray(
             sum((item.profile_y for item in calculations), np.zeros_like(self.pattern.x))
         )
@@ -1279,14 +1398,8 @@ class _RietveldLinearization:
         self.runtime.begin_evaluation()
         physical = self.physical_to_free @ direction
         result = self.background_mapping @ physical
-        tasks = tuple(
-            (prepared, mapping @ physical)
-            for prepared, mapping in zip(self.prepared, self.native_mappings, strict=True)
-        )
-        if self.executor is None:
-            products = tuple(_jvp_prepared(task) for task in tasks)
-        else:
-            products = tuple(self.executor.map(_jvp_prepared, tasks))
+        directions = tuple(mapping @ physical for mapping in self.native_mappings)
+        products = _jvp_prepared_batch(self.prepared, directions, self.executor)
         for product, rows in zip(products, self.global_rows, strict=True):
             result += product.d_y
             names = product.result.derivatives.global_parameter_names
@@ -1307,15 +1420,7 @@ class _RietveldLinearization:
         physical_gradient = np.zeros(self.physical_to_free.shape[0], dtype=np.float64)
         raw_samples = weighted_samples * self.sample_weight
         physical_gradient += self.background_mapping.T @ raw_samples
-        if self.executor is None:
-            products = tuple(prepared.vjp(raw_samples) for prepared in self.prepared)
-        else:
-            products = tuple(
-                self.executor.map(
-                    _vjp_prepared,
-                    ((prepared, raw_samples) for prepared in self.prepared),
-                )
-            )
+        products = _vjp_prepared_batch(self.prepared, raw_samples, self.executor)
         for product, mapping, rows in zip(
             products, self.native_mappings, self.global_rows, strict=True
         ):
@@ -2038,7 +2143,15 @@ def refine(
     selected = RietveldOptions() if options is None else options
     if not isinstance(selected, RietveldOptions):
         raise TypeError("options must be RietveldOptions")
-    with execution_pool(selected.execution, len(input_data.phases)) as executor:
+    components_per_phase = (
+        len(input_data.experiment.radiation.components.wavelengths_angstrom)
+        if isinstance(input_data.experiment.radiation, ComponentRadiation)
+        else 1
+    )
+    with execution_pool(
+        selected.execution,
+        len(input_data.phases) * components_per_phase,
+    ) as executor:
         return _refine_with_executor(
             input_data,
             selected,

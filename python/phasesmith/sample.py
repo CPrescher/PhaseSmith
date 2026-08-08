@@ -134,7 +134,9 @@ class IsotropicSizeBroadening:
 
     crystallite_size_nm: float
     shape_factor: float = 0.9
-    descriptor: ClassVar[ProviderDescriptor] = ProviderDescriptor("phasesmith.isotropic-size", "1")
+    descriptor: ClassVar[ProviderDescriptor] = ProviderDescriptor(
+        "phasesmith.isotropic-size", "1", thread_safe=True
+    )
 
     def __post_init__(self) -> None:
         """Validate the coherent-domain and fixed shape-factor convention."""
@@ -181,7 +183,7 @@ class IsotropicMicrostrainBroadening:
 
     rms_microstrain: float
     descriptor: ClassVar[ProviderDescriptor] = ProviderDescriptor(
-        "phasesmith.isotropic-microstrain", "1"
+        "phasesmith.isotropic-microstrain", "1", thread_safe=True
     )
 
     def __post_init__(self) -> None:
@@ -222,7 +224,9 @@ class MarchDollasePreferredOrientation:
     march_ratio: float
     preferred_axis_hkl: tuple[float, float, float]
     reciprocal_metric: ReciprocalMetric
-    descriptor: ClassVar[ProviderDescriptor] = ProviderDescriptor("phasesmith.march-dollase", "1")
+    descriptor: ClassVar[ProviderDescriptor] = ProviderDescriptor(
+        "phasesmith.march-dollase", "1", thread_safe=True
+    )
 
     def __post_init__(self) -> None:
         """Validate the positive ratio and persistence-safe axis tuple."""
