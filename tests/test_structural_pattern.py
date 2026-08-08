@@ -81,6 +81,7 @@ def test_fused_structural_pattern_matches_separate_vectorized_layers() -> None:
     experiment = phasesmith.ConstantWavelengthExperiment.x_ray(instrument())
     prepared = phasesmith.PreparedStructuralPattern(pattern(), experiment, phase)
     assert prepared.uses_native_fused_path
+    assert prepared._native_multiphase is not None
 
     actual = prepared.calculate()
     structural = phasesmith.calculate_structure_factors(
@@ -136,6 +137,7 @@ def test_native_fixed_dispersion_and_polarized_lp_match_vectorized_layers() -> N
     )
     assert prepared.uses_native_fused_path
     assert prepared.leaf_count == 1
+    assert prepared._native_multiphase is not None
     np.testing.assert_allclose(actual.reflections.f, expected.f, rtol=3e-15, atol=3e-14)
     np.testing.assert_allclose(
         actual.reflections.integrated_intensity,
@@ -374,6 +376,7 @@ def test_structural_doublet_matches_sum_of_component_native_batches() -> None:
 
     assert prepared.uses_native_fused_path
     assert prepared.leaf_count == 1
+    assert prepared._native_multiphase is not None
     np.testing.assert_allclose(actual.profile_y, expected, rtol=3e-15, atol=3e-11)
     np.testing.assert_array_equal(actual.reflections.component_index, [0, 0, 0, 1, 1, 1])
     np.testing.assert_array_equal(actual.reflections.base_reflection_index, [0, 1, 2, 0, 1, 2])
@@ -731,6 +734,7 @@ def test_fcj_and_sample_physics_compose_on_structural_paths() -> None:
     )
     fallback = phasesmith.PreparedStructuralPattern(pattern(), experiment, custom_phase)
     assert not fallback.uses_native_fused_path
+    assert fallback._native_multiphase is None
     np.testing.assert_allclose(
         fallback.calculate().profile_y,
         actual.profile_y,

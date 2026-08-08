@@ -227,45 +227,7 @@ def _native_phase(phase: RietveldPhase, execution: ExecutionPolicy) -> object | 
     )
 
 
-def _native_dynamic_arguments(
-    pattern: PowderPattern,
-    experiment: ConstantWavelengthExperiment,
-    contribution: PhysicsContribution,
-    support_fwhm: float,
-) -> tuple[object, ...]:
-    instrument = experiment.instrument
-    geometry = experiment.geometry
-    axial = experiment.axial_geometry
-    return (
-        pattern.x,
-        instrument.wavelength_angstrom,
-        experiment.zero_shift_deg,
-        (geometry.sample_displacement_mm if isinstance(geometry, BraggBrentanoGeometry) else None),
-        (geometry.displace_x_micrometre if isinstance(geometry, DebyeScherrerGeometry) else None),
-        (geometry.displace_y_micrometre if isinstance(geometry, DebyeScherrerGeometry) else None),
-        None if geometry is None else geometry.goniometer_radius_mm,
-        None if axial is None else axial.sample_over_radius,
-        None if axial is None else axial.detector_over_radius,
-        instrument.u_deg2,
-        instrument.v_deg2,
-        instrument.w_deg2,
-        instrument.x_deg,
-        instrument.y_deg,
-        contribution.gaussian_variance_deg2,
-        contribution.lorentzian_fwhm_deg,
-        contribution.intensity_multiplier,
-        contribution.d_gaussian_variance_d_position,
-        contribution.d_lorentzian_fwhm_d_position,
-        contribution.d_intensity_multiplier_d_position,
-        contribution.d_gaussian_variance_d_parameters.reshape(-1),
-        contribution.d_lorentzian_fwhm_d_parameters.reshape(-1),
-        contribution.d_intensity_multiplier_d_parameters.reshape(-1),
-        len(contribution.parameter_names),
-        float(support_fwhm),
-    )
-
-
-def _native_spectrum_dynamic_arguments(
+def _native_workflow_dynamic_arguments(
     pattern: PowderPattern,
     experiment: ConstantWavelengthExperiment,
     support_fwhm: float,
@@ -656,8 +618,9 @@ class PreparedStructuralPattern:
     """Reusable one-phase structural pattern with a native built-in fast path.
 
     Built-in scattering and correction models with no Python physics provider
-    use one native values/JVP/VJP call. Third-party providers use a fully
-    vectorized fallback and are each evaluated exactly once per calculation.
+    use the shared native multiphase values/JVP/VJP workflow. Third-party
+    providers use a fully vectorized fallback and are each evaluated exactly
+    once per calculation.
     """
 
     pattern: PowderPattern
@@ -672,6 +635,7 @@ class PreparedStructuralPattern:
     _component_weights: tuple[float, ...]
     _native_spectrum: object | None
     _native_model: object | None
+    _native_multiphase: object | None
 
     def __init__(
         self,
@@ -734,13 +698,19 @@ class PreparedStructuralPattern:
                 "_native_spectrum",
                 native_spectrum,
             )
+            native_model = (
+                None
+                if native_spectrum is None
+                else _core._PreparedStructuralModel.fixed_spectrum(native_spectrum)
+            )
+            object.__setattr__(self, "_native_model", native_model)
             object.__setattr__(
                 self,
-                "_native_model",
+                "_native_multiphase",
                 (
                     None
-                    if native_spectrum is None
-                    else _core._PreparedStructuralModel.fixed_spectrum(native_spectrum)
+                    if native_model is None
+                    else _core._StructuralMultiphase([native_model], selected_execution._native)
                 ),
             )
             return
@@ -765,7 +735,17 @@ class PreparedStructuralPattern:
         object.__setattr__(self, "_components", ())
         object.__setattr__(self, "_component_weights", ())
         object.__setattr__(self, "_native_spectrum", None)
-        object.__setattr__(self, "_native_model", _native_prepared_model(native, contribution))
+        native_model = _native_prepared_model(native, contribution)
+        object.__setattr__(self, "_native_model", native_model)
+        object.__setattr__(
+            self,
+            "_native_multiphase",
+            (
+                None
+                if native_model is None
+                else _core._StructuralMultiphase([native_model], selected_execution._native)
+            ),
+        )
 
     @property
     def uses_native_fused_path(self) -> bool:
@@ -886,145 +866,51 @@ class PreparedStructuralPattern:
     def calculate(self) -> StructuralPatternCalculationResult:
         """Calculate structural intensities, positions, and the powder profile."""
 
-        if self._native_spectrum is not None:
-            contribution = self._components[0]._contribution
-            if contribution is None:  # pragma: no cover - preparation invariant
-                raise RuntimeError("native spectrum contribution was not prepared")
-            accumulation_arrays, reflection_arrays = self._native_spectrum.calculate(
-                *_native_spectrum_dynamic_arguments(
+        if self._native_multiphase is not None:
+            _profile_y, phases = self._native_multiphase.calculate(
+                *_native_workflow_dynamic_arguments(
                     self.pattern,
                     self.experiment,
                     self.support_fwhm,
                 )
             )
-            accumulation = _accumulation_from_native(
-                accumulation_arrays,
-                contribution,
-                self.experiment,
-                self.jacobian_layout,
-                fixed_spectrum=True,
-            )
-            return _calculation_result(
-                self.phase,
-                self.pattern,
-                accumulation,
-                _reflection_result(
-                    self.phase,
-                    reflection_arrays,
-                    len(self._components),
-                ),
-            )
+            return self._calculation_from_native_arrays(phases[0])
         if self._components:
             return self._combine_calculations(
                 tuple(component.calculate() for component in self._components)
             )
-        if self._native is None:
-            return _fallback_calculate(
-                self.phase,
-                self.pattern,
-                self.experiment,
-                self.support_fwhm,
-                self.jacobian_layout,
-            )
-        contribution = self._contribution
-        if contribution is None:  # pragma: no cover - native/contribution invariant
-            raise RuntimeError("native structural contribution was not prepared")
-        accumulation_arrays, reflection_arrays = self._native.calculate(
-            *_native_dynamic_arguments(
-                self.pattern,
-                self.experiment,
-                contribution,
-                self.support_fwhm,
-            )
-        )
-        accumulation = _accumulation_from_native(
-            accumulation_arrays,
-            contribution,
-            self.experiment,
-            self.jacobian_layout,
-        )
-        return _calculation_result(
+        return _fallback_calculate(
             self.phase,
             self.pattern,
-            accumulation,
-            _reflection_result(self.phase, reflection_arrays),
+            self.experiment,
+            self.support_fwhm,
+            self.jacobian_layout,
         )
 
     def jvp(self, tangent: ArrayLike) -> StructuralPatternJvpResult:
         """Calculate one structural JVP without a dense pattern Jacobian."""
 
-        if self._native_spectrum is not None:
+        if self._native_multiphase is not None:
             names = _structural_parameter_names(self.phase)
             direction = _vector(tangent, "tangent")
             if direction.shape != (len(names),):
                 raise ValueError("tangent must match the structural parameter count")
-            contribution = self._components[0]._contribution
-            if contribution is None:  # pragma: no cover - preparation invariant
-                raise RuntimeError("native spectrum contribution was not prepared")
-            native_result, d_y, d_intensity, d_position = self._native_spectrum.jvp(
+            products = self._native_multiphase.jvp(
                 direction,
-                *_native_spectrum_dynamic_arguments(
+                *_native_workflow_dynamic_arguments(
                     self.pattern,
                     self.experiment,
                     self.support_fwhm,
                 ),
             )
-            accumulation_arrays, reflection_arrays = native_result
-            result = _calculation_result(
-                self.phase,
-                self.pattern,
-                _accumulation_from_native(
-                    accumulation_arrays,
-                    contribution,
-                    self.experiment,
-                    self.jacobian_layout,
-                    fixed_spectrum=True,
-                ),
-                _reflection_result(self.phase, reflection_arrays, len(self._components)),
-            )
-            for array in (d_y, d_intensity, d_position):
-                _freeze(array)
-            return StructuralPatternJvpResult(result, names, d_y, d_intensity, d_position)
+            return self._jvp_from_native_arrays(products[0])
         if self._components:
             return self._combine_jvps(
-                tuple(component.jvp(direction) for component, direction in self._jvp_tasks(tangent))
+                tuple(component.jvp(value) for component, value in self._jvp_tasks(tangent))
             )
-        if self._native is None:
-            raise NotImplementedError(
-                "structural JVP is currently available for the built-in fused path only"
-            )
-        names = _structural_parameter_names(self.phase)
-        direction = _vector(tangent, "tangent")
-        if direction.shape != (len(names),):
-            raise ValueError("tangent must match the structural parameter count")
-        contribution = self._contribution
-        if contribution is None:  # pragma: no cover - native/contribution invariant
-            raise RuntimeError("native structural contribution was not prepared")
-        native_result, d_y, d_intensity, d_position = self._native.jvp(
-            direction,
-            *_native_dynamic_arguments(
-                self.pattern,
-                self.experiment,
-                contribution,
-                self.support_fwhm,
-            ),
+        raise NotImplementedError(
+            "structural JVP is currently available for the built-in fused path only"
         )
-        accumulation_arrays, reflection_arrays = native_result
-        accumulation = _accumulation_from_native(
-            accumulation_arrays,
-            contribution,
-            self.experiment,
-            self.jacobian_layout,
-        )
-        result = _calculation_result(
-            self.phase,
-            self.pattern,
-            accumulation,
-            _reflection_result(self.phase, reflection_arrays),
-        )
-        for array in (d_y, d_intensity, d_position):
-            _freeze(array)
-        return StructuralPatternJvpResult(result, names, d_y, d_intensity, d_position)
 
     def _jvp_tasks(
         self,
@@ -1073,33 +959,15 @@ class PreparedStructuralPattern:
     def linearize(self) -> StructuralPatternLinearizationResult:
         """Calculate one reusable native structural pattern Jacobian."""
 
-        names = _structural_parameter_names(self.phase)
-        if self._native_spectrum is not None:
-            contribution = self._components[0]._contribution
-            if contribution is None:  # pragma: no cover - preparation invariant
-                raise RuntimeError("native spectrum contribution was not prepared")
-            native_result, jacobian = self._native_spectrum.linearize(
-                *_native_spectrum_dynamic_arguments(
+        if self._native_multiphase is not None:
+            products = self._native_multiphase.linearize(
+                *_native_workflow_dynamic_arguments(
                     self.pattern,
                     self.experiment,
                     self.support_fwhm,
                 )
             )
-            accumulation_arrays, reflection_arrays = native_result
-            result = _calculation_result(
-                self.phase,
-                self.pattern,
-                _accumulation_from_native(
-                    accumulation_arrays,
-                    contribution,
-                    self.experiment,
-                    self.jacobian_layout,
-                    fixed_spectrum=True,
-                ),
-                _reflection_result(self.phase, reflection_arrays, len(self._components)),
-            )
-            _freeze(jacobian)
-            return StructuralPatternLinearizationResult(result, names, jacobian)
+            return self._linearization_from_native_arrays(products[0])
         if self._components:
             return self._combine_linearizations(
                 tuple(component.linearize() for component in self._components)
@@ -1108,31 +976,7 @@ class PreparedStructuralPattern:
             raise NotImplementedError(
                 "dense structural linearization is available for the built-in fused path only"
             )
-        contribution = self._contribution
-        if contribution is None:  # pragma: no cover - native/contribution invariant
-            raise RuntimeError("native structural contribution was not prepared")
-        native_result, jacobian = self._native.linearize(
-            *_native_dynamic_arguments(
-                self.pattern,
-                self.experiment,
-                contribution,
-                self.support_fwhm,
-            )
-        )
-        accumulation_arrays, reflection_arrays = native_result
-        result = _calculation_result(
-            self.phase,
-            self.pattern,
-            _accumulation_from_native(
-                accumulation_arrays,
-                contribution,
-                self.experiment,
-                self.jacobian_layout,
-            ),
-            _reflection_result(self.phase, reflection_arrays),
-        )
-        _freeze(jacobian)
-        return StructuralPatternLinearizationResult(result, names, jacobian)
+        raise RuntimeError("native structural workflow was not prepared")  # pragma: no cover
 
     def _linearization_tasks(self) -> tuple[PreparedStructuralPattern, ...]:
         if self._native_spectrum is not None:
@@ -1169,81 +1013,29 @@ class PreparedStructuralPattern:
     def vjp(self, sample_weights: ArrayLike) -> StructuralPatternVjpResult:
         """Calculate one structural transpose product from pattern-sample weights."""
 
-        if self._native_spectrum is not None:
+        if self._native_multiphase is not None:
             weights = _vector(sample_weights, "sample_weights")
             if weights.shape != self.pattern.x.shape:
                 raise ValueError("sample_weights must match the pattern sample count")
-            contribution = self._components[0]._contribution
-            if contribution is None:  # pragma: no cover - preparation invariant
-                raise RuntimeError("native spectrum contribution was not prepared")
-            native_result, gradient = self._native_spectrum.vjp(
+            products = self._native_multiphase.vjp(
                 weights,
-                *_native_spectrum_dynamic_arguments(
+                *_native_workflow_dynamic_arguments(
                     self.pattern,
                     self.experiment,
                     self.support_fwhm,
                 ),
             )
-            accumulation_arrays, reflection_arrays = native_result
-            result = _calculation_result(
-                self.phase,
-                self.pattern,
-                _accumulation_from_native(
-                    accumulation_arrays,
-                    contribution,
-                    self.experiment,
-                    self.jacobian_layout,
-                    fixed_spectrum=True,
-                ),
-                _reflection_result(self.phase, reflection_arrays, len(self._components)),
-            )
-            _freeze(gradient)
-            return StructuralPatternVjpResult(
-                result,
-                _structural_parameter_names(self.phase),
-                gradient,
-            )
+            return self._vjp_from_native_arrays(products[0])
         if self._components:
             return self._combine_vjps(
                 tuple(
-                    component.vjp(weights) for component, weights in self._vjp_tasks(sample_weights)
+                    component.vjp(value)
+                    for component, value in self._vjp_tasks(sample_weights)
                 )
             )
-        if self._native is None:
-            raise NotImplementedError(
-                "structural VJP is currently available for the built-in fused path only"
-            )
-        weights = _vector(sample_weights, "sample_weights")
-        if weights.shape != self.pattern.x.shape:
-            raise ValueError("sample_weights must match the pattern sample count")
-        names = _structural_parameter_names(self.phase)
-        contribution = self._contribution
-        if contribution is None:  # pragma: no cover - native/contribution invariant
-            raise RuntimeError("native structural contribution was not prepared")
-        native_result, gradient = self._native.vjp(
-            weights,
-            *_native_dynamic_arguments(
-                self.pattern,
-                self.experiment,
-                contribution,
-                self.support_fwhm,
-            ),
+        raise NotImplementedError(
+            "structural VJP is currently available for the built-in fused path only"
         )
-        accumulation_arrays, reflection_arrays = native_result
-        accumulation = _accumulation_from_native(
-            accumulation_arrays,
-            contribution,
-            self.experiment,
-            self.jacobian_layout,
-        )
-        result = _calculation_result(
-            self.phase,
-            self.pattern,
-            accumulation,
-            _reflection_result(self.phase, reflection_arrays),
-        )
-        _freeze(gradient)
-        return StructuralPatternVjpResult(result, names, gradient)
 
     def _vjp_tasks(
         self,

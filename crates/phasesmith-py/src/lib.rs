@@ -2,6 +2,8 @@
 
 #![allow(clippy::needless_pass_by_value)] // PyO3 extracts owned argument guards.
 
+use std::sync::Arc;
+
 use npy::ndarray::Array2;
 use npy::{IntoPyArray, PyArray1, PyArray2, PyReadonlyArray1};
 use phasesmith_core::{
@@ -665,7 +667,7 @@ impl NativePreparedReflectionGenerator {
 
 #[derive(Clone)]
 struct NativeComponentContributions {
-    components: Vec<OwnedCwContributions>,
+    components: Arc<[OwnedCwContributions]>,
 }
 
 impl NativeComponentContributions {
@@ -771,7 +773,9 @@ impl NativeComponentContributions {
                 .map_err(|error| PyValueError::new_err(error.to_string()))
             })
             .collect::<PyResult<Vec<_>>>()?;
-        Ok(Self { components })
+        Ok(Self {
+            components: components.into(),
+        })
     }
 
     fn views(&self) -> Vec<CwContributionsView<'_>> {

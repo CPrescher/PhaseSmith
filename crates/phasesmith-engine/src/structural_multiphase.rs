@@ -2,6 +2,7 @@
 
 use std::error::Error;
 use std::fmt::{Display, Formatter};
+use std::sync::Arc;
 
 use phasesmith_core::{
     ConstantWavelengthInstrument, CwContributionsView, FcjGeometry, OwnedCwContributions,
@@ -20,22 +21,22 @@ use crate::{
 #[derive(Clone)]
 pub enum PreparedStructuralModel {
     /// One monochromatic structural phase.
-    Monochromatic(Box<PreparedStructuralPhase>),
+    Monochromatic(Arc<PreparedStructuralPhase>),
     /// One fixed-wavelength structural spectrum.
-    FixedSpectrum(Box<PreparedStructuralSpectrum>),
+    FixedSpectrum(Arc<PreparedStructuralSpectrum>),
 }
 
 impl PreparedStructuralModel {
     /// Wrap one prepared monochromatic phase.
     #[must_use]
     pub fn monochromatic(phase: PreparedStructuralPhase) -> Self {
-        Self::Monochromatic(Box::new(phase))
+        Self::Monochromatic(Arc::new(phase))
     }
 
     /// Wrap one prepared fixed-wavelength spectrum.
     #[must_use]
     pub fn fixed_spectrum(spectrum: PreparedStructuralSpectrum) -> Self {
-        Self::FixedSpectrum(Box::new(spectrum))
+        Self::FixedSpectrum(Arc::new(spectrum))
     }
 
     /// Return the structural parameter count for this phase model.

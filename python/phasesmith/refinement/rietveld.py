@@ -49,7 +49,7 @@ from ..scattering import NeutronNuclear, ScatteringFactorProvider, XrayNonResona
 from ..structural_calculation import (
     PreparedStructuralPattern,
     _native_model_configuration,
-    _native_spectrum_dynamic_arguments,
+    _native_workflow_dynamic_arguments,
     _supports_fused_structural_physics,
 )
 from ..structure import AtomSite, CrystalStructure
@@ -619,7 +619,7 @@ def _calculate_prepared_batch(
     native = _native_multiphase(prepared) if native is None else native
     if native is not None:
         profile_y, arrays = native.calculate(
-            *_native_spectrum_dynamic_arguments(
+            *_native_workflow_dynamic_arguments(
                 prepared[0].pattern,
                 prepared[0].experiment,
                 prepared[0].support_fwhm,
@@ -658,7 +658,7 @@ def _linearize_prepared_batch(
     native = _native_multiphase(prepared) if native is None else native
     if native is not None:
         arrays = native.linearize(
-            *_native_spectrum_dynamic_arguments(
+            *_native_workflow_dynamic_arguments(
                 prepared[0].pattern,
                 prepared[0].experiment,
                 prepared[0].support_fwhm,
@@ -694,7 +694,7 @@ def _jvp_prepared_batch(
     if native is not None:
         arrays = native.jvp(
             np.ascontiguousarray(np.concatenate(directions)),
-            *_native_spectrum_dynamic_arguments(
+            *_native_workflow_dynamic_arguments(
                 prepared[0].pattern,
                 prepared[0].experiment,
                 prepared[0].support_fwhm,
@@ -732,7 +732,7 @@ def _vjp_prepared_batch(
     if native is not None:
         arrays = native.vjp(
             sample_weights,
-            *_native_spectrum_dynamic_arguments(
+            *_native_workflow_dynamic_arguments(
                 prepared[0].pattern,
                 prepared[0].experiment,
                 prepared[0].support_fwhm,
