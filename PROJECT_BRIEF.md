@@ -427,6 +427,9 @@ documented; GSAS-II itself is never vendored.
   reflection-generation, and P1 structure-factor kernels; scattering follows.
 - `crates/phasesmith-engine`: native composition facade; structural-intensity
   composition with the support-limited profile kernel and structural JVP/VJP.
+- `crates/phasesmith-workflows`: application-neutral parameter, constraint,
+  residual, background, runtime, and refinement orchestration shared by PyO3
+  and future desktop adapters; it contains no GUI or interpreter dependency.
 - `python/phasesmith`: public Python package, separated instrument/phase/pattern/
   calculation/refinement modules, reference implementation, optional
   integrations, and validation tooling.

@@ -1,8 +1,10 @@
 # Refinement infrastructure
 
-Refinement is a Python orchestration layer over immutable domain models and the
-native calculation API. No optimizer state, constraint graph, observed pattern,
-or iteration history enters `phasesmith-core`.
+Refinement orchestration is migrating behind an application-neutral Rust
+workflow layer over immutable domain models and the native calculation API.
+The Python scripting API remains the public interface during that migration.
+No optimizer state, constraint graph, observed pattern, or iteration history
+enters `phasesmith-core`.
 
 ## Parameters and constraints
 
@@ -22,6 +24,15 @@ name.
 
 Dependent constraints are ordered and acyclic. Their Jacobian is exact; bounded
 finite perturbations are not used to discover the chain rule.
+
+The same contract now exists in the Python-free `phasesmith-workflows` crate.
+Its parameter and constraint fields are constructor-validated and privately
+owned, transforms return structured errors for unknown/duplicate/cyclic
+dependencies and invalid vectors, and derivative matrices use checked
+row-major allocation. A configured differential test compares native packing,
+expansion, and exact chain rows with the existing Python implementation. Python
+delegation waits until the adjacent residual/background/runtime records are
+native, so the current scripting interface and reference remain unchanged.
 
 Nonzero phase-scale parameters use their current magnitude as their numerical
 scale. Consequently, refinements remain conditioned when absolute phase scales

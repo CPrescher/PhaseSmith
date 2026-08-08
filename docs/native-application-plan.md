@@ -181,3 +181,13 @@ NumPy rewrite test lock down cross-interface compatibility. The existing
 Python format-12 checkpoint remains unchanged until its refinement-only state
 has native records and can migrate without loss. This completes delivery step
 12 without introducing PyO3 or Tauri into the scientific dependency graph.
+
+The parameter/constraint portion of delivery step 13 completed on 2026-08-08.
+The new Python-free `phasesmith-workflows` crate owns stable structured
+parameter identities, bounds, scaling and selection plus ordered fixed, affine,
+and multi-source linear constraint transforms. Public constructors prevent
+invalid state, dependency cycles and duplicate targets fail structurally, and
+the exact row-major chain matrix agrees with the existing Python implementation
+in a configured differential test. Residuals, analytical backgrounds, and the
+bounded runtime remain the next independently reviewed substeps before solver
+or Python-refinement delegation begins.

@@ -8,6 +8,7 @@ members = [
   "crates/phasesmith-model",
   "crates/phasesmith-persistence",
   "crates/phasesmith-py",
+  "crates/phasesmith-workflows",
 ]
 resolver = "2"
 
