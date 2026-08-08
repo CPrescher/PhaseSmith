@@ -8,11 +8,16 @@ pub use phasesmith_core as profile;
 pub use phasesmith_crystallography as crystallography;
 
 mod prepared_structural_phase;
+mod structural_multiphase;
 pub mod structural_pattern;
 mod structural_spectrum;
 
 pub use prepared_structural_phase::{
     PreparedStructuralPatternInputView, PreparedStructuralPhase, StructuralPhaseDefinition,
+};
+pub use structural_multiphase::{
+    PreparedStructuralModel, PreparedStructuralModelInputView, PreparedStructuralMultiphase,
+    StructuralMultiphaseError, StructuralMultiphaseResult,
 };
 pub use structural_spectrum::{
     PreparedStructuralSpectrum, PreparedStructuralSpectrumInputView, StructuralSpectrumError,

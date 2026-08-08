@@ -187,6 +187,31 @@ def test_parallel_structural_calculation_is_bitwise_deterministic() -> None:
         )
 
 
+def test_builtin_multiphase_calculation_avoids_python_leaf_dispatch(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    request = request_from_cif(selection())
+    phases = (request.phases[0], replace(request.phases[0], phase_id="beta", scale=0.4))
+    dispatched: list[str] = []
+    original = structural_refinement._calculate_prepared
+
+    def counted(
+        item: phasesmith.PreparedStructuralPattern,
+    ) -> phasesmith.StructuralPatternCalculationResult:
+        dispatched.append(item.phase.phase_id)
+        return original(item)
+
+    monkeypatch.setattr(structural_refinement, "_calculate_prepared", counted)
+    result = structural_refinement.calculate(
+        request.pattern,
+        request.experiment,
+        phases,
+        execution=phasesmith.ExecutionPolicy(threads=2),
+    )
+    assert dispatched == []
+    assert tuple(item.phase_id for item in result.phase_calculations) == ("alpha", "beta")
+
+
 def test_native_structural_products_are_bitwise_deterministic_across_threads() -> None:
     request = request_from_cif(selection())
     phase = request.phases[0]
@@ -231,7 +256,7 @@ def test_native_structural_products_are_bitwise_deterministic_across_threads() -
     np.testing.assert_array_equal(parallel_vjp.gradient, serial_vjp.gradient)
 
 
-def test_builtin_component_calculation_dispatches_one_native_spectrum_leaf(
+def test_builtin_component_calculation_avoids_python_leaf_dispatch(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     x = np.linspace(15.0, 100.0, 8_501)
@@ -259,7 +284,7 @@ def test_builtin_component_calculation_dispatches_one_native_spectrum_leaf(
         request.phases,
         execution=phasesmith.ExecutionPolicy(threads=2),
     )
-    assert dispatched == [1.54056]
+    assert dispatched == []
     assert result.phase_calculations[0].reflections.component_index is not None
 
 

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from concurrent.futures import Executor
-from contextlib import suppress
+from contextlib import nullcontext, suppress
 from dataclasses import dataclass, field, replace
 from functools import partial
 from pathlib import Path
@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, TypeVar, cast
 import numpy as np
 from numpy.typing import NDArray
 
+from .. import _core
 from ..control import CancellationCallback
 from ..crystallography import p1_parameter_names
 from ..execution import ExecutionPolicy, execution_pool
@@ -45,7 +46,12 @@ from ..sample import (
     MarchDollasePreferredOrientation,
 )
 from ..scattering import NeutronNuclear, ScatteringFactorProvider, XrayNonResonant
-from ..structural_calculation import PreparedStructuralPattern
+from ..structural_calculation import (
+    PreparedStructuralPattern,
+    _native_model_configuration,
+    _native_spectrum_dynamic_arguments,
+    _supports_fused_structural_physics,
+)
 from ..structure import AtomSite, CrystalStructure
 from ..symmetry import CwTwoThetaRange, DSpacingRange, PreparedReflectionGenerator
 from .background import (
@@ -541,6 +547,23 @@ _Task = TypeVar("_Task")
 _Product = TypeVar("_Product")
 
 
+@dataclass(frozen=True, slots=True)
+class _PreparedBatchCalculation:
+    profile_y: NDArray[np.float64]
+    phases: tuple[StructuralPatternCalculationResult, ...]
+
+
+def _native_multiphase(
+    prepared: tuple[PreparedStructuralPattern, ...],
+) -> object | None:
+    if not prepared or any(item._native_model is None for item in prepared):
+        return None
+    return _core._StructuralMultiphase(
+        [item._native_model for item in prepared],
+        prepared[0].execution._native,
+    )
+
+
 def _prepared_for_task(task: object) -> PreparedStructuralPattern:
     if isinstance(task, PreparedStructuralPattern):
         return task
@@ -591,12 +614,28 @@ def _result_groups(
 def _calculate_prepared_batch(
     prepared: tuple[PreparedStructuralPattern, ...],
     executor: Executor | None,
-) -> tuple[StructuralPatternCalculationResult, ...]:
+    native: object | None = None,
+) -> _PreparedBatchCalculation:
+    native = _native_multiphase(prepared) if native is None else native
+    if native is not None:
+        profile_y, arrays = native.calculate(
+            *_native_spectrum_dynamic_arguments(
+                prepared[0].pattern,
+                prepared[0].experiment,
+                prepared[0].support_fwhm,
+            )
+        )
+        phases = tuple(
+            item._calculation_from_native_arrays(result)
+            for item, result in zip(prepared, arrays, strict=True)
+        )
+        profile_y.flags.writeable = False
+        return _PreparedBatchCalculation(profile_y, phases)
     groups = tuple(item._calculation_tasks() for item in prepared)
     results = _run_prepared_tasks(
         tuple(task for group in groups for task in group), _calculate_prepared, executor
     )
-    return tuple(
+    phases = tuple(
         item._combine_calculations(group)
         for item, group in zip(
             prepared,
@@ -604,12 +643,31 @@ def _calculate_prepared_batch(
             strict=True,
         )
     )
+    profile_y = np.ascontiguousarray(
+        sum((item.profile_y for item in phases), np.zeros_like(prepared[0].pattern.x))
+    )
+    profile_y.flags.writeable = False
+    return _PreparedBatchCalculation(profile_y, phases)
 
 
 def _linearize_prepared_batch(
     prepared: tuple[PreparedStructuralPattern, ...],
     executor: Executor | None,
+    native: object | None = None,
 ) -> tuple[StructuralPatternLinearizationResult, ...]:
+    native = _native_multiphase(prepared) if native is None else native
+    if native is not None:
+        arrays = native.linearize(
+            *_native_spectrum_dynamic_arguments(
+                prepared[0].pattern,
+                prepared[0].experiment,
+                prepared[0].support_fwhm,
+            )
+        )
+        return tuple(
+            item._linearization_from_native_arrays(result)
+            for item, result in zip(prepared, arrays, strict=True)
+        )
     groups = tuple(item._linearization_tasks() for item in prepared)
     results = _run_prepared_tasks(
         tuple(task for group in groups for task in group),
@@ -630,7 +688,22 @@ def _jvp_prepared_batch(
     prepared: tuple[PreparedStructuralPattern, ...],
     directions: tuple[NDArray[np.float64], ...],
     executor: Executor | None,
+    native: object | None = None,
 ) -> tuple[StructuralPatternJvpResult, ...]:
+    native = _native_multiphase(prepared) if native is None else native
+    if native is not None:
+        arrays = native.jvp(
+            np.ascontiguousarray(np.concatenate(directions)),
+            *_native_spectrum_dynamic_arguments(
+                prepared[0].pattern,
+                prepared[0].experiment,
+                prepared[0].support_fwhm,
+            ),
+        )
+        return tuple(
+            item._jvp_from_native_arrays(result)
+            for item, result in zip(prepared, arrays, strict=True)
+        )
     groups = tuple(
         item._jvp_tasks(direction) for item, direction in zip(prepared, directions, strict=True)
     )
@@ -653,7 +726,22 @@ def _vjp_prepared_batch(
     prepared: tuple[PreparedStructuralPattern, ...],
     sample_weights: NDArray[np.float64],
     executor: Executor | None,
+    native: object | None = None,
 ) -> tuple[StructuralPatternVjpResult, ...]:
+    native = _native_multiphase(prepared) if native is None else native
+    if native is not None:
+        arrays = native.vjp(
+            sample_weights,
+            *_native_spectrum_dynamic_arguments(
+                prepared[0].pattern,
+                prepared[0].experiment,
+                prepared[0].support_fwhm,
+            ),
+        )
+        return tuple(
+            item._vjp_from_native_arrays(result)
+            for item, result in zip(prepared, arrays, strict=True)
+        )
     groups = tuple(item._vjp_tasks(sample_weights) for item in prepared)
     results = _run_prepared_tasks(
         tuple(task for group in groups for task in group),
@@ -687,35 +775,26 @@ def calculate(
     selected_execution = ExecutionPolicy() if execution is None else execution
     if not isinstance(selected_execution, ExecutionPolicy):
         raise TypeError("execution must be ExecutionPolicy")
-    components_per_phase = (
-        len(experiment.radiation.components.wavelengths_angstrom)
-        if isinstance(experiment.radiation, ComponentRadiation)
-        else 1
-    )
-    task_count = len(selected) * components_per_phase
-    native_execution = (
-        selected_execution
-        if selected_execution.python_worker_count(task_count) == 1
-        else ExecutionPolicy(threads=1)
-    )
     prepared = tuple(
         PreparedStructuralPattern(
             pattern,
             experiment,
             phase,
             support_fwhm=support_fwhm,
-            execution=native_execution,
+            execution=selected_execution,
         )
         for phase in selected
     )
-    with execution_pool(
-        selected_execution,
-        sum(item.leaf_count for item in prepared),
-    ) as executor:
-        calculations = _calculate_prepared_batch(prepared, executor)
-    profile = np.ascontiguousarray(
-        sum((item.profile_y for item in calculations), np.zeros_like(pattern.x))
-    )
+    if all(item._native_model is not None for item in prepared):
+        batch = _calculate_prepared_batch(prepared, None)
+    else:
+        with execution_pool(
+            selected_execution,
+            sum(item.leaf_count for item in prepared),
+        ) as executor:
+            batch = _calculate_prepared_batch(prepared, executor)
+    calculations = batch.phases
+    profile = np.array(batch.profile_y, copy=True)
     combined_background = np.array(pattern.background, copy=True)
     if background is not None:
         combined_background += background.calculate(pattern.x)
@@ -1404,6 +1483,7 @@ class _RietveldLinearization:
     physical_to_free: NDArray[np.float64]
     native_mappings: tuple[NDArray[np.float64], ...]
     prepared: tuple[PreparedStructuralPattern, ...]
+    native_multiphase: object | None
     calculations: tuple[StructuralPatternCalculationResult, ...] | None
     weighted_free_jacobian: NDArray[np.float64] | None
     dense_enabled: bool
@@ -1470,6 +1550,7 @@ class _RietveldLinearization:
             preparation_cache.physical_to_free,
             preparation_cache.native_mappings,
             prepared,
+            _native_multiphase(prepared),
             None,
             None,
             dense_enabled,
@@ -1484,7 +1565,11 @@ class _RietveldLinearization:
         if not self.dense_enabled or self.calculations is not None:
             return
         self.runtime.begin_evaluation()
-        products = _linearize_prepared_batch(self.prepared, self.executor)
+        products = _linearize_prepared_batch(
+            self.prepared,
+            self.executor,
+            self.native_multiphase,
+        )
         self.calculations = tuple(product.result for product in products)
         physical_jacobian = np.array(self.background_mapping.T, copy=True, order="C")
         for product, mapping, rows in zip(
@@ -1507,10 +1592,17 @@ class _RietveldLinearization:
         calculations = self.calculations
         if calculations is None:
             self.runtime.begin_evaluation()
-            calculations = _calculate_prepared_batch(self.prepared, self.executor)
-        profile = np.ascontiguousarray(
-            sum((item.profile_y for item in calculations), np.zeros_like(self.pattern.x))
-        )
+            batch = _calculate_prepared_batch(
+                self.prepared,
+                self.executor,
+                self.native_multiphase,
+            )
+            calculations = batch.phases
+            profile = np.array(batch.profile_y, copy=True)
+        else:
+            profile = np.ascontiguousarray(
+                sum((item.profile_y for item in calculations), np.zeros_like(self.pattern.x))
+            )
         background = np.array(self.pattern.background, copy=True)
         if self.background is not None:
             background += self.background.calculate(self.pattern.x)
@@ -1531,7 +1623,12 @@ class _RietveldLinearization:
         physical = self.physical_to_free @ direction
         result = self.background_mapping @ physical
         directions = tuple(mapping @ physical for mapping in self.native_mappings)
-        products = _jvp_prepared_batch(self.prepared, directions, self.executor)
+        products = _jvp_prepared_batch(
+            self.prepared,
+            directions,
+            self.executor,
+            self.native_multiphase,
+        )
         for product, rows in zip(products, self.global_rows, strict=True):
             result += product.d_y
             names = product.result.derivatives.global_parameter_names
@@ -1552,7 +1649,12 @@ class _RietveldLinearization:
         physical_gradient = np.zeros(self.physical_to_free.shape[0], dtype=np.float64)
         raw_samples = weighted_samples * self.sample_weight
         physical_gradient += self.background_mapping.T @ raw_samples
-        products = _vjp_prepared_batch(self.prepared, raw_samples, self.executor)
+        products = _vjp_prepared_batch(
+            self.prepared,
+            raw_samples,
+            self.executor,
+            self.native_multiphase,
+        )
         for product, mapping, rows in zip(
             products, self.native_mappings, self.global_rows, strict=True
         ):
@@ -2292,15 +2394,25 @@ def refine(
     selected = RietveldOptions() if options is None else options
     if not isinstance(selected, RietveldOptions):
         raise TypeError("options must be RietveldOptions")
+    native_only = all(
+        _native_model_configuration(phase) is not None
+        and _supports_fused_structural_physics(phase.physics)
+        for phase in input_data.phases
+    )
     components_per_phase = (
         len(input_data.experiment.radiation.components.wavelengths_angstrom)
         if isinstance(input_data.experiment.radiation, ComponentRadiation)
         else 1
     )
-    with execution_pool(
-        selected.execution,
-        len(input_data.phases) * components_per_phase,
-    ) as executor:
+    pool = (
+        nullcontext(None)
+        if native_only
+        else execution_pool(
+            selected.execution,
+            len(input_data.phases) * components_per_phase,
+        )
+    )
+    with pool as executor:
         return _refine_with_executor(
             input_data,
             selected,

@@ -401,6 +401,27 @@ def _native_spectrum(
     )
 
 
+def _native_prepared_model(
+    native: object | None,
+    contribution: PhysicsContribution | None,
+) -> object | None:
+    if native is None or contribution is None:
+        return None
+    return _core._PreparedStructuralModel.monochromatic(
+        native,
+        contribution.gaussian_variance_deg2,
+        contribution.lorentzian_fwhm_deg,
+        contribution.intensity_multiplier,
+        contribution.d_gaussian_variance_d_position,
+        contribution.d_lorentzian_fwhm_d_position,
+        contribution.d_intensity_multiplier_d_position,
+        contribution.d_gaussian_variance_d_parameters.reshape(-1),
+        contribution.d_lorentzian_fwhm_d_parameters.reshape(-1),
+        contribution.d_intensity_multiplier_d_parameters.reshape(-1),
+        len(contribution.parameter_names),
+    )
+
+
 def _calculation_result(
     phase: RietveldPhase,
     pattern: PowderPattern,
@@ -650,6 +671,7 @@ class PreparedStructuralPattern:
     _components: tuple[PreparedStructuralPattern, ...]
     _component_weights: tuple[float, ...]
     _native_spectrum: object | None
+    _native_model: object | None
 
     def __init__(
         self,
@@ -704,10 +726,22 @@ class PreparedStructuralPattern:
                 "_component_weights",
                 tuple(weight for _experiment, _phase, weight in component_inputs),
             )
+            native_spectrum = _native_spectrum(
+                phase, experiment, components, selected_execution
+            )
             object.__setattr__(
                 self,
                 "_native_spectrum",
-                _native_spectrum(phase, experiment, components, selected_execution),
+                native_spectrum,
+            )
+            object.__setattr__(
+                self,
+                "_native_model",
+                (
+                    None
+                    if native_spectrum is None
+                    else _core._PreparedStructuralModel.fixed_spectrum(native_spectrum)
+                ),
             )
             return
         native = _native_phase(phase, selected_execution)
@@ -731,6 +765,7 @@ class PreparedStructuralPattern:
         object.__setattr__(self, "_components", ())
         object.__setattr__(self, "_component_weights", ())
         object.__setattr__(self, "_native_spectrum", None)
+        object.__setattr__(self, "_native_model", _native_prepared_model(native, contribution))
 
     @property
     def uses_native_fused_path(self) -> bool:
@@ -782,6 +817,70 @@ class PreparedStructuralPattern:
             self.pattern,
             results,
             self.jacobian_layout,
+        )
+
+    def _calculation_from_native_arrays(
+        self,
+        arrays: tuple[object, ...],
+    ) -> StructuralPatternCalculationResult:
+        if self._native_model is None:
+            raise RuntimeError("native structural model was not prepared")
+        contribution = (
+            self._components[0]._contribution
+            if self._native_spectrum is not None
+            else self._contribution
+        )
+        if contribution is None:  # pragma: no cover - preparation invariant
+            raise RuntimeError("native structural contribution was not prepared")
+        accumulation_arrays, reflection_arrays = arrays
+        return _calculation_result(
+            self.phase,
+            self.pattern,
+            _accumulation_from_native(
+                accumulation_arrays,
+                contribution,
+                self.experiment,
+                self.jacobian_layout,
+                fixed_spectrum=self._native_spectrum is not None,
+            ),
+            _reflection_result(
+                self.phase,
+                reflection_arrays,
+                (len(self._components) if self._native_spectrum is not None else None),
+            ),
+        )
+
+    def _linearization_from_native_arrays(
+        self,
+        arrays: tuple[object, ...],
+    ) -> StructuralPatternLinearizationResult:
+        result_arrays, jacobian = arrays
+        _freeze(jacobian)
+        return StructuralPatternLinearizationResult(
+            self._calculation_from_native_arrays(result_arrays),
+            _structural_parameter_names(self.phase),
+            jacobian,
+        )
+
+    def _jvp_from_native_arrays(self, arrays: tuple[object, ...]) -> StructuralPatternJvpResult:
+        result_arrays, d_y, d_intensity, d_position = arrays
+        for array in (d_y, d_intensity, d_position):
+            _freeze(array)
+        return StructuralPatternJvpResult(
+            self._calculation_from_native_arrays(result_arrays),
+            _structural_parameter_names(self.phase),
+            d_y,
+            d_intensity,
+            d_position,
+        )
+
+    def _vjp_from_native_arrays(self, arrays: tuple[object, ...]) -> StructuralPatternVjpResult:
+        result_arrays, gradient = arrays
+        _freeze(gradient)
+        return StructuralPatternVjpResult(
+            self._calculation_from_native_arrays(result_arrays),
+            _structural_parameter_names(self.phase),
+            gradient,
         )
 
     def calculate(self) -> StructuralPatternCalculationResult:

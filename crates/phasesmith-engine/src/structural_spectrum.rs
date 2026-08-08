@@ -102,6 +102,7 @@ impl Error for StructuralSpectrumError {
 }
 
 /// Reusable native fixed-wavelength spectrum for one structural phase.
+#[derive(Clone)]
 pub struct PreparedStructuralSpectrum {
     phases: Vec<PreparedStructuralPhase>,
     wavelengths_angstrom: Vec<f64>,
@@ -179,6 +180,12 @@ impl PreparedStructuralSpectrum {
     #[must_use]
     pub fn normalized_weights(&self) -> &[f64] {
         &self.normalized_weights
+    }
+
+    /// Return the structural parameter count shared by all components.
+    #[must_use]
+    pub fn structural_parameter_count(&self) -> usize {
+        self.phases[0].structural_parameter_count()
     }
 
     /// Calculate and combine all fixed wavelength components.

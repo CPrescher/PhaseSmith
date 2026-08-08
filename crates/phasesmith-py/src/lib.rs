@@ -24,15 +24,17 @@ use phasesmith_engine::crystallography::{
     xray_species_metadata,
 };
 use phasesmith_engine::{
-    BuiltInScatteringModel, MonochromaticPositionCorrection, PreparedStructuralPatternInputView,
-    PreparedStructuralPhase, PreparedStructuralSpectrum, PreparedStructuralSpectrumInputView,
-    StructuralPatternDenseResult, StructuralPatternJvpResult, StructuralPatternResult,
-    StructuralPatternVjpResult, StructuralPhaseDefinition,
+    BuiltInScatteringModel, MonochromaticPositionCorrection, PreparedStructuralModel,
+    PreparedStructuralModelInputView, PreparedStructuralMultiphase,
+    PreparedStructuralPatternInputView, PreparedStructuralPhase, PreparedStructuralSpectrum,
+    PreparedStructuralSpectrumInputView, StructuralMultiphaseResult, StructuralPatternDenseResult,
+    StructuralPatternJvpResult, StructuralPatternResult, StructuralPatternVjpResult,
+    StructuralPhaseDefinition,
 };
 use phasesmith_execution::ExecutionPolicy as NativeExecutionPolicyModel;
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
-use pyo3::types::PyTuple;
+use pyo3::types::{PyList, PyTuple};
 
 type ProfileArrays<'py> = (
     Bound<'py, PyArray1<f64>>,
@@ -660,6 +662,7 @@ impl NativePreparedReflectionGenerator {
     }
 }
 
+#[derive(Clone)]
 struct NativeComponentContributions {
     component_count: usize,
     reflection_count: usize,
@@ -717,6 +720,20 @@ impl NativeComponentContributions {
             })
             .collect()
     }
+}
+
+fn copied_exact_array(
+    array: &PyReadonlyArray1<'_, f64>,
+    name: &'static str,
+    expected: usize,
+) -> PyResult<Vec<f64>> {
+    let values = contiguous_slice(array, name)?;
+    if values.len() != expected {
+        return Err(PyValueError::new_err(format!(
+            "{name} must contain {expected} flattened values"
+        )));
+    }
+    Ok(values.to_vec())
 }
 
 /// Immutable native structural phase used by values and derivative products.
@@ -1515,6 +1532,392 @@ impl NativeStructuralSpectrum {
     }
 }
 
+/// One native structural phase model plus its owned sample-physics inputs.
+#[pyclass(name = "_PreparedStructuralModel")]
+struct NativePreparedStructuralModel {
+    model: PreparedStructuralModel,
+    contributions: NativeComponentContributions,
+}
+
+#[pymethods]
+impl NativePreparedStructuralModel {
+    #[staticmethod]
+    #[allow(clippy::too_many_arguments)]
+    fn monochromatic(
+        phase: PyRef<'_, NativeStructuralPhase>,
+        gaussian_variance_deg2: PyReadonlyArray1<'_, f64>,
+        lorentzian_fwhm_deg: PyReadonlyArray1<'_, f64>,
+        intensity_multiplier: PyReadonlyArray1<'_, f64>,
+        d_gaussian_variance_d_position: PyReadonlyArray1<'_, f64>,
+        d_lorentzian_fwhm_d_position: PyReadonlyArray1<'_, f64>,
+        d_intensity_multiplier_d_position: PyReadonlyArray1<'_, f64>,
+        d_gaussian_variance_d_parameters: PyReadonlyArray1<'_, f64>,
+        d_lorentzian_fwhm_d_parameters: PyReadonlyArray1<'_, f64>,
+        d_intensity_multiplier_d_parameters: PyReadonlyArray1<'_, f64>,
+        parameter_count: usize,
+    ) -> PyResult<Self> {
+        let reflection_count = phase.phase.reflection_count();
+        let parameter_values = reflection_count
+            .checked_mul(parameter_count)
+            .ok_or_else(|| PyValueError::new_err("contribution size overflow"))?;
+        let contributions = NativeComponentContributions {
+            component_count: 1,
+            reflection_count,
+            parameter_count,
+            gaussian_variance_deg2: copied_exact_array(
+                &gaussian_variance_deg2,
+                "gaussian_variance_deg2",
+                reflection_count,
+            )?,
+            lorentzian_fwhm_deg: copied_exact_array(
+                &lorentzian_fwhm_deg,
+                "lorentzian_fwhm_deg",
+                reflection_count,
+            )?,
+            intensity_multiplier: copied_exact_array(
+                &intensity_multiplier,
+                "intensity_multiplier",
+                reflection_count,
+            )?,
+            d_gaussian_variance_d_position: copied_exact_array(
+                &d_gaussian_variance_d_position,
+                "d_gaussian_variance_d_position",
+                reflection_count,
+            )?,
+            d_lorentzian_fwhm_d_position: copied_exact_array(
+                &d_lorentzian_fwhm_d_position,
+                "d_lorentzian_fwhm_d_position",
+                reflection_count,
+            )?,
+            d_intensity_multiplier_d_position: copied_exact_array(
+                &d_intensity_multiplier_d_position,
+                "d_intensity_multiplier_d_position",
+                reflection_count,
+            )?,
+            d_gaussian_variance_d_parameters: copied_exact_array(
+                &d_gaussian_variance_d_parameters,
+                "d_gaussian_variance_d_parameters",
+                parameter_values,
+            )?,
+            d_lorentzian_fwhm_d_parameters: copied_exact_array(
+                &d_lorentzian_fwhm_d_parameters,
+                "d_lorentzian_fwhm_d_parameters",
+                parameter_values,
+            )?,
+            d_intensity_multiplier_d_parameters: copied_exact_array(
+                &d_intensity_multiplier_d_parameters,
+                "d_intensity_multiplier_d_parameters",
+                parameter_values,
+            )?,
+        };
+        contributions.views()?;
+        Ok(Self {
+            model: PreparedStructuralModel::monochromatic(phase.phase.clone()),
+            contributions,
+        })
+    }
+
+    #[staticmethod]
+    fn fixed_spectrum(spectrum: PyRef<'_, NativeStructuralSpectrum>) -> Self {
+        Self {
+            model: PreparedStructuralModel::fixed_spectrum(spectrum.spectrum.clone()),
+            contributions: spectrum.contributions.clone(),
+        }
+    }
+}
+
+/// Native scheduler for a non-empty ordered list of structural phase models.
+#[pyclass(name = "_StructuralMultiphase")]
+struct NativeStructuralMultiphase {
+    prepared: PreparedStructuralMultiphase,
+    contributions: Vec<NativeComponentContributions>,
+}
+
+impl NativeStructuralMultiphase {
+    fn with_inputs<R>(
+        &self,
+        x_deg: &[f64],
+        instrument: ConstantWavelengthInstrument,
+        position_correction: MonochromaticPositionCorrection,
+        axial_geometry: Option<FcjGeometry>,
+        support_fwhm: f64,
+        operation: impl FnOnce(
+            &PreparedStructuralMultiphase,
+            &[PreparedStructuralModelInputView<'_>],
+        ) -> Result<R, phasesmith_engine::StructuralMultiphaseError>,
+    ) -> PyResult<R> {
+        let contribution_views = self
+            .contributions
+            .iter()
+            .map(NativeComponentContributions::views)
+            .collect::<PyResult<Vec<_>>>()?;
+        let inputs = contribution_views
+            .iter()
+            .map(|contributions| PreparedStructuralModelInputView {
+                x_deg,
+                instrument,
+                axial_geometry,
+                position_correction,
+                contributions,
+                support: SupportPolicy::FwhmMultiple(support_fwhm),
+            })
+            .collect::<Vec<_>>();
+        operation(&self.prepared, &inputs).map_err(|error| PyValueError::new_err(error.to_string()))
+    }
+}
+
+#[pymethods]
+impl NativeStructuralMultiphase {
+    #[new]
+    fn new(
+        models: &Bound<'_, PyList>,
+        execution: PyRef<'_, NativeExecutionPolicy>,
+    ) -> PyResult<Self> {
+        let mut prepared_models = Vec::with_capacity(models.len());
+        let mut contributions = Vec::with_capacity(models.len());
+        for item in models.iter() {
+            let model = item.extract::<PyRef<'_, NativePreparedStructuralModel>>()?;
+            prepared_models.push(model.model.clone());
+            contributions.push(model.contributions.clone());
+        }
+        Ok(Self {
+            prepared: PreparedStructuralMultiphase::new(prepared_models, execution.policy.clone())
+                .map_err(|error| PyValueError::new_err(error.to_string()))?,
+            contributions,
+        })
+    }
+
+    #[getter]
+    fn phase_count(&self) -> usize {
+        self.prepared.phase_count()
+    }
+
+    #[allow(clippy::similar_names, clippy::too_many_arguments)]
+    fn calculate<'py>(
+        &self,
+        py: Python<'py>,
+        x_deg: PyReadonlyArray1<'py, f64>,
+        zero_shift_deg: f64,
+        sample_displacement_mm: Option<f64>,
+        displace_x_micrometre: Option<f64>,
+        displace_y_micrometre: Option<f64>,
+        goniometer_radius_mm: Option<f64>,
+        fcj_sample_over_radius: Option<f64>,
+        fcj_detector_over_radius: Option<f64>,
+        wavelength_angstrom: f64,
+        u_deg2: f64,
+        v_deg2: f64,
+        w_deg2: f64,
+        x_width_deg: f64,
+        y_width_deg: f64,
+        support_fwhm: f64,
+    ) -> PyResult<(Bound<'py, PyArray1<f64>>, Vec<StructuralPatternArrays<'py>>)> {
+        let x = contiguous_slice(&x_deg, "x_deg")?;
+        let correction = position_correction(
+            zero_shift_deg,
+            sample_displacement_mm,
+            displace_x_micrometre,
+            displace_y_micrometre,
+            goniometer_radius_mm,
+        )?;
+        let axial = axial_geometry(fcj_sample_over_radius, fcj_detector_over_radius)?;
+        let result = py.detach(|| {
+            self.with_inputs(
+                x,
+                cw_instrument(
+                    wavelength_angstrom,
+                    u_deg2,
+                    v_deg2,
+                    w_deg2,
+                    x_width_deg,
+                    y_width_deg,
+                ),
+                correction,
+                axial,
+                support_fwhm,
+                PreparedStructuralMultiphase::calculate,
+            )
+        })?;
+        multiphase_result_to_numpy(py, result)
+    }
+
+    #[allow(clippy::similar_names, clippy::too_many_arguments)]
+    fn linearize<'py>(
+        &self,
+        py: Python<'py>,
+        x_deg: PyReadonlyArray1<'py, f64>,
+        zero_shift_deg: f64,
+        sample_displacement_mm: Option<f64>,
+        displace_x_micrometre: Option<f64>,
+        displace_y_micrometre: Option<f64>,
+        goniometer_radius_mm: Option<f64>,
+        fcj_sample_over_radius: Option<f64>,
+        fcj_detector_over_radius: Option<f64>,
+        wavelength_angstrom: f64,
+        u_deg2: f64,
+        v_deg2: f64,
+        w_deg2: f64,
+        x_width_deg: f64,
+        y_width_deg: f64,
+        support_fwhm: f64,
+    ) -> PyResult<Vec<StructuralPatternDenseArrays<'py>>> {
+        let x = contiguous_slice(&x_deg, "x_deg")?;
+        let correction = position_correction(
+            zero_shift_deg,
+            sample_displacement_mm,
+            displace_x_micrometre,
+            displace_y_micrometre,
+            goniometer_radius_mm,
+        )?;
+        let axial = axial_geometry(fcj_sample_over_radius, fcj_detector_over_radius)?;
+        let results = py.detach(|| {
+            self.with_inputs(
+                x,
+                cw_instrument(
+                    wavelength_angstrom,
+                    u_deg2,
+                    v_deg2,
+                    w_deg2,
+                    x_width_deg,
+                    y_width_deg,
+                ),
+                correction,
+                axial,
+                support_fwhm,
+                PreparedStructuralMultiphase::linearize,
+            )
+        })?;
+        results
+            .into_iter()
+            .map(|result| structural_pattern_dense_to_numpy(py, result))
+            .collect()
+    }
+
+    #[allow(clippy::similar_names, clippy::too_many_arguments)]
+    fn jvp<'py>(
+        &self,
+        py: Python<'py>,
+        tangent: PyReadonlyArray1<'py, f64>,
+        x_deg: PyReadonlyArray1<'py, f64>,
+        zero_shift_deg: f64,
+        sample_displacement_mm: Option<f64>,
+        displace_x_micrometre: Option<f64>,
+        displace_y_micrometre: Option<f64>,
+        goniometer_radius_mm: Option<f64>,
+        fcj_sample_over_radius: Option<f64>,
+        fcj_detector_over_radius: Option<f64>,
+        wavelength_angstrom: f64,
+        u_deg2: f64,
+        v_deg2: f64,
+        w_deg2: f64,
+        x_width_deg: f64,
+        y_width_deg: f64,
+        support_fwhm: f64,
+    ) -> PyResult<Vec<StructuralPatternJvpArrays<'py>>> {
+        let tangent = contiguous_slice(&tangent, "tangent")?;
+        let counts = self.prepared.structural_parameter_counts();
+        let expected = counts.iter().sum::<usize>();
+        if tangent.len() != expected {
+            return Err(PyValueError::new_err(
+                "flattened tangent must match all structural phase parameters",
+            ));
+        }
+        let mut cursor = 0;
+        let tangents = counts
+            .iter()
+            .map(|count| {
+                let selected = &tangent[cursor..cursor + count];
+                cursor += count;
+                selected
+            })
+            .collect::<Vec<_>>();
+        let x = contiguous_slice(&x_deg, "x_deg")?;
+        let correction = position_correction(
+            zero_shift_deg,
+            sample_displacement_mm,
+            displace_x_micrometre,
+            displace_y_micrometre,
+            goniometer_radius_mm,
+        )?;
+        let axial = axial_geometry(fcj_sample_over_radius, fcj_detector_over_radius)?;
+        let results = py.detach(|| {
+            self.with_inputs(
+                x,
+                cw_instrument(
+                    wavelength_angstrom,
+                    u_deg2,
+                    v_deg2,
+                    w_deg2,
+                    x_width_deg,
+                    y_width_deg,
+                ),
+                correction,
+                axial,
+                support_fwhm,
+                |prepared, inputs| prepared.jvp(inputs, &tangents),
+            )
+        })?;
+        results
+            .into_iter()
+            .map(|result| structural_pattern_jvp_to_numpy(py, result))
+            .collect()
+    }
+
+    #[allow(clippy::similar_names, clippy::too_many_arguments)]
+    fn vjp<'py>(
+        &self,
+        py: Python<'py>,
+        sample_weights: PyReadonlyArray1<'py, f64>,
+        x_deg: PyReadonlyArray1<'py, f64>,
+        zero_shift_deg: f64,
+        sample_displacement_mm: Option<f64>,
+        displace_x_micrometre: Option<f64>,
+        displace_y_micrometre: Option<f64>,
+        goniometer_radius_mm: Option<f64>,
+        fcj_sample_over_radius: Option<f64>,
+        fcj_detector_over_radius: Option<f64>,
+        wavelength_angstrom: f64,
+        u_deg2: f64,
+        v_deg2: f64,
+        w_deg2: f64,
+        x_width_deg: f64,
+        y_width_deg: f64,
+        support_fwhm: f64,
+    ) -> PyResult<Vec<StructuralPatternVjpArrays<'py>>> {
+        let weights = contiguous_slice(&sample_weights, "sample_weights")?;
+        let x = contiguous_slice(&x_deg, "x_deg")?;
+        let correction = position_correction(
+            zero_shift_deg,
+            sample_displacement_mm,
+            displace_x_micrometre,
+            displace_y_micrometre,
+            goniometer_radius_mm,
+        )?;
+        let axial = axial_geometry(fcj_sample_over_radius, fcj_detector_over_radius)?;
+        let results = py.detach(|| {
+            self.with_inputs(
+                x,
+                cw_instrument(
+                    wavelength_angstrom,
+                    u_deg2,
+                    v_deg2,
+                    w_deg2,
+                    x_width_deg,
+                    y_width_deg,
+                ),
+                correction,
+                axial,
+                support_fwhm,
+                |prepared, inputs| prepared.vjp(inputs, weights),
+            )
+        })?;
+        results
+            .into_iter()
+            .map(|result| structural_pattern_vjp_to_numpy(py, result))
+            .collect()
+    }
+}
+
 /// Derive direct and reciprocal cell geometry plus volume derivatives.
 #[pyfunction]
 #[allow(clippy::too_many_arguments)]
@@ -2084,6 +2487,20 @@ fn structural_pattern_to_numpy(
         two_theta_deg.into_pyarray(py),
     );
     Ok((accumulation_to_numpy(py, accumulation)?, reflections))
+}
+
+fn multiphase_result_to_numpy(
+    py: Python<'_>,
+    result: StructuralMultiphaseResult,
+) -> PyResult<(Bound<'_, PyArray1<f64>>, Vec<StructuralPatternArrays<'_>>)> {
+    Ok((
+        result.profile_y.into_pyarray(py),
+        result
+            .phases
+            .into_iter()
+            .map(|phase| structural_pattern_to_numpy(py, phase))
+            .collect::<PyResult<Vec<_>>>()?,
+    ))
 }
 
 fn structural_pattern_jvp_to_numpy(
@@ -3122,6 +3539,8 @@ fn _core(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_class::<NativePreparedReflectionGenerator>()?;
     module.add_class::<NativeStructuralPhase>()?;
     module.add_class::<NativeStructuralSpectrum>()?;
+    module.add_class::<NativePreparedStructuralModel>()?;
+    module.add_class::<NativeStructuralMultiphase>()?;
     module.add_function(wrap_pyfunction!(unit_cell_geometry, module)?)?;
     module.add_function(wrap_pyfunction!(unit_cell_d_spacings, module)?)?;
     module.add_function(wrap_pyfunction!(p1_structure_factors_dense, module)?)?;

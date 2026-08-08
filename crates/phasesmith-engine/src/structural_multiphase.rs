@@ -1,0 +1,398 @@
+//! Native scheduling and ordered composition for multiple structural phases.
+
+use std::error::Error;
+use std::fmt::{Display, Formatter};
+
+use phasesmith_core::{
+    ConstantWavelengthInstrument, CwContributionsView, FcjGeometry, SupportPolicy,
+};
+use phasesmith_execution::ExecutionPolicy;
+
+use crate::{
+    MonochromaticPositionCorrection, PreparedStructuralPatternInputView, PreparedStructuralPhase,
+    PreparedStructuralSpectrum, PreparedStructuralSpectrumInputView, StructuralPatternDenseResult,
+    StructuralPatternError, StructuralPatternJvpResult, StructuralPatternResult,
+    StructuralPatternVjpResult, StructuralSpectrumError,
+};
+
+/// One native built-in structural model, monochromatic or fixed-spectrum.
+#[derive(Clone)]
+pub enum PreparedStructuralModel {
+    /// One monochromatic structural phase.
+    Monochromatic(Box<PreparedStructuralPhase>),
+    /// One fixed-wavelength structural spectrum.
+    FixedSpectrum(Box<PreparedStructuralSpectrum>),
+}
+
+impl PreparedStructuralModel {
+    /// Wrap one prepared monochromatic phase.
+    #[must_use]
+    pub fn monochromatic(phase: PreparedStructuralPhase) -> Self {
+        Self::Monochromatic(Box::new(phase))
+    }
+
+    /// Wrap one prepared fixed-wavelength spectrum.
+    #[must_use]
+    pub fn fixed_spectrum(spectrum: PreparedStructuralSpectrum) -> Self {
+        Self::FixedSpectrum(Box::new(spectrum))
+    }
+
+    /// Return the structural parameter count for this phase model.
+    #[must_use]
+    pub fn structural_parameter_count(&self) -> usize {
+        match self {
+            Self::Monochromatic(phase) => phase.structural_parameter_count(),
+            Self::FixedSpectrum(spectrum) => spectrum.structural_parameter_count(),
+        }
+    }
+
+    fn calculate(
+        &self,
+        input: &PreparedStructuralModelInputView<'_>,
+    ) -> Result<StructuralPatternResult, StructuralMultiphaseError> {
+        match self {
+            Self::Monochromatic(phase) => phase
+                .calculate(&input.monochromatic_input()?)
+                .map_err(StructuralMultiphaseError::Structural),
+            Self::FixedSpectrum(spectrum) => spectrum
+                .calculate(&input.spectrum_input())
+                .map_err(StructuralMultiphaseError::Spectrum),
+        }
+    }
+
+    fn linearize(
+        &self,
+        input: &PreparedStructuralModelInputView<'_>,
+    ) -> Result<StructuralPatternDenseResult, StructuralMultiphaseError> {
+        match self {
+            Self::Monochromatic(phase) => phase
+                .linearize(&input.monochromatic_input()?)
+                .map_err(StructuralMultiphaseError::Structural),
+            Self::FixedSpectrum(spectrum) => spectrum
+                .linearize(&input.spectrum_input())
+                .map_err(StructuralMultiphaseError::Spectrum),
+        }
+    }
+
+    fn jvp(
+        &self,
+        input: &PreparedStructuralModelInputView<'_>,
+        tangent: &[f64],
+    ) -> Result<StructuralPatternJvpResult, StructuralMultiphaseError> {
+        match self {
+            Self::Monochromatic(phase) => phase
+                .jvp(&input.monochromatic_input()?, tangent)
+                .map_err(StructuralMultiphaseError::Structural),
+            Self::FixedSpectrum(spectrum) => spectrum
+                .jvp(&input.spectrum_input(), tangent)
+                .map_err(StructuralMultiphaseError::Spectrum),
+        }
+    }
+
+    fn vjp(
+        &self,
+        input: &PreparedStructuralModelInputView<'_>,
+        sample_weights: &[f64],
+    ) -> Result<StructuralPatternVjpResult, StructuralMultiphaseError> {
+        match self {
+            Self::Monochromatic(phase) => phase
+                .vjp(&input.monochromatic_input()?, sample_weights)
+                .map_err(StructuralMultiphaseError::Structural),
+            Self::FixedSpectrum(spectrum) => spectrum
+                .vjp(&input.spectrum_input(), sample_weights)
+                .map_err(StructuralMultiphaseError::Spectrum),
+        }
+    }
+}
+
+/// Borrowed dynamic data for one phase model in a multiphase operation.
+#[derive(Clone, Copy, Debug)]
+pub struct PreparedStructuralModelInputView<'a> {
+    /// Sorted pattern grid in degrees `2theta`.
+    pub x_deg: &'a [f64],
+    /// Reference constant-wavelength instrument.
+    pub instrument: ConstantWavelengthInstrument,
+    /// Optional axial-divergence geometry.
+    pub axial_geometry: Option<FcjGeometry>,
+    /// Explicit position correction.
+    pub position_correction: MonochromaticPositionCorrection,
+    /// One contribution batch for monochromatic models, or one per component.
+    pub contributions: &'a [CwContributionsView<'a>],
+    /// Exact finite profile-support policy.
+    pub support: SupportPolicy,
+}
+
+impl<'a> PreparedStructuralModelInputView<'a> {
+    fn monochromatic_input(
+        &self,
+    ) -> Result<PreparedStructuralPatternInputView<'a>, StructuralMultiphaseError> {
+        if self.contributions.len() != 1 {
+            return Err(StructuralMultiphaseError::ContributionCountMismatch);
+        }
+        Ok(PreparedStructuralPatternInputView {
+            x_deg: self.x_deg,
+            instrument: self.instrument,
+            axial_geometry: self.axial_geometry,
+            position_correction: self.position_correction,
+            contributions: self.contributions[0],
+            support: self.support,
+        })
+    }
+
+    fn spectrum_input(&self) -> PreparedStructuralSpectrumInputView<'a> {
+        PreparedStructuralSpectrumInputView {
+            x_deg: self.x_deg,
+            instrument: self.instrument,
+            axial_geometry: self.axial_geometry,
+            position_correction: self.position_correction,
+            contributions: self.contributions,
+            support: self.support,
+        }
+    }
+}
+
+/// Ordered multiphase structural values and their combined profile.
+#[derive(Clone, Debug, PartialEq)]
+pub struct StructuralMultiphaseResult {
+    /// Sum of phase profile arrays in phase input order.
+    pub profile_y: Vec<f64>,
+    /// One complete diagnostic result per phase, in input order.
+    pub phases: Vec<StructuralPatternResult>,
+}
+
+/// Invalid native multiphase request.
+#[derive(Debug)]
+pub enum StructuralMultiphaseError {
+    /// No structural model was supplied.
+    EmptyPhases,
+    /// Dynamic phase inputs do not match the prepared phase count.
+    PhaseInputCountMismatch,
+    /// Tangent vectors do not match the prepared phase count.
+    TangentCountMismatch,
+    /// A monochromatic model did not receive exactly one contribution batch.
+    ContributionCountMismatch,
+    /// Phase profile sample counts differ.
+    SampleCountMismatch,
+    /// A monochromatic phase failed.
+    Structural(StructuralPatternError),
+    /// A fixed-spectrum phase failed.
+    Spectrum(StructuralSpectrumError),
+}
+
+impl Display for StructuralMultiphaseError {
+    fn fmt(&self, formatter: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::EmptyPhases => formatter.write_str("at least one structural phase is required"),
+            Self::PhaseInputCountMismatch => {
+                formatter.write_str("dynamic phase inputs must match the prepared phase count")
+            }
+            Self::TangentCountMismatch => {
+                formatter.write_str("structural tangents must match the prepared phase count")
+            }
+            Self::ContributionCountMismatch => {
+                formatter.write_str("a monochromatic phase requires exactly one contribution batch")
+            }
+            Self::SampleCountMismatch => {
+                formatter.write_str("structural phases must share one sample grid")
+            }
+            Self::Structural(error) => Display::fmt(error, formatter),
+            Self::Spectrum(error) => Display::fmt(error, formatter),
+        }
+    }
+}
+
+impl Error for StructuralMultiphaseError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match self {
+            Self::Structural(error) => Some(error),
+            Self::Spectrum(error) => Some(error),
+            Self::EmptyPhases
+            | Self::PhaseInputCountMismatch
+            | Self::TangentCountMismatch
+            | Self::ContributionCountMismatch
+            | Self::SampleCountMismatch => None,
+        }
+    }
+}
+
+/// Reusable native scheduler for ordered structural phase models.
+pub struct PreparedStructuralMultiphase {
+    models: Vec<PreparedStructuralModel>,
+    execution: ExecutionPolicy,
+}
+
+impl PreparedStructuralMultiphase {
+    /// Prepare a non-empty ordered phase collection.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StructuralMultiphaseError::EmptyPhases`] for an empty model list.
+    pub fn new(
+        models: Vec<PreparedStructuralModel>,
+        execution: ExecutionPolicy,
+    ) -> Result<Self, StructuralMultiphaseError> {
+        if models.is_empty() {
+            return Err(StructuralMultiphaseError::EmptyPhases);
+        }
+        Ok(Self { models, execution })
+    }
+
+    /// Return the number of prepared phases.
+    #[must_use]
+    pub fn phase_count(&self) -> usize {
+        self.models.len()
+    }
+
+    /// Return structural parameter counts in phase order.
+    #[must_use]
+    pub fn structural_parameter_counts(&self) -> Vec<usize> {
+        self.models
+            .iter()
+            .map(PreparedStructuralModel::structural_parameter_count)
+            .collect()
+    }
+
+    /// Calculate all phases and their ordered sum.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StructuralMultiphaseError`] for invalid inputs or phase failures.
+    pub fn calculate(
+        &self,
+        inputs: &[PreparedStructuralModelInputView<'_>],
+    ) -> Result<StructuralMultiphaseResult, StructuralMultiphaseError> {
+        let phases = self.map_models(inputs, PreparedStructuralModel::calculate)?;
+        let profile_y = sum_phase_profiles(phases.iter().map(|phase| &phase.accumulation.y))?;
+        Ok(StructuralMultiphaseResult { profile_y, phases })
+    }
+
+    /// Calculate one dense structural linearization per phase.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StructuralMultiphaseError`] for invalid inputs or phase failures.
+    pub fn linearize(
+        &self,
+        inputs: &[PreparedStructuralModelInputView<'_>],
+    ) -> Result<Vec<StructuralPatternDenseResult>, StructuralMultiphaseError> {
+        self.map_models(inputs, PreparedStructuralModel::linearize)
+    }
+
+    /// Calculate one structural forward product per phase.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StructuralMultiphaseError`] for invalid inputs or tangents.
+    pub fn jvp(
+        &self,
+        inputs: &[PreparedStructuralModelInputView<'_>],
+        tangents: &[&[f64]],
+    ) -> Result<Vec<StructuralPatternJvpResult>, StructuralMultiphaseError> {
+        if tangents.len() != self.phase_count() {
+            return Err(StructuralMultiphaseError::TangentCountMismatch);
+        }
+        self.map_models_indexed(inputs, |index, model, input| {
+            model.jvp(input, tangents[index])
+        })
+    }
+
+    /// Calculate one structural reverse product per phase.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StructuralMultiphaseError`] for invalid inputs or sample weights.
+    pub fn vjp(
+        &self,
+        inputs: &[PreparedStructuralModelInputView<'_>],
+        sample_weights: &[f64],
+    ) -> Result<Vec<StructuralPatternVjpResult>, StructuralMultiphaseError> {
+        self.map_models(inputs, |model, input| model.vjp(input, sample_weights))
+    }
+
+    fn map_models<R: Send>(
+        &self,
+        inputs: &[PreparedStructuralModelInputView<'_>],
+        operation: impl Fn(
+            &PreparedStructuralModel,
+            &PreparedStructuralModelInputView<'_>,
+        ) -> Result<R, StructuralMultiphaseError>
+        + Send
+        + Sync,
+    ) -> Result<Vec<R>, StructuralMultiphaseError> {
+        self.map_models_indexed(inputs, |_index, model, input| operation(model, input))
+    }
+
+    fn map_models_indexed<R: Send>(
+        &self,
+        inputs: &[PreparedStructuralModelInputView<'_>],
+        operation: impl Fn(
+            usize,
+            &PreparedStructuralModel,
+            &PreparedStructuralModelInputView<'_>,
+        ) -> Result<R, StructuralMultiphaseError>
+        + Send
+        + Sync,
+    ) -> Result<Vec<R>, StructuralMultiphaseError> {
+        if inputs.len() != self.phase_count() {
+            return Err(StructuralMultiphaseError::PhaseInputCountMismatch);
+        }
+        self.execution
+            .context()
+            .map_ordered(
+                self.phase_count(),
+                self.execution.minimum_parallel_tasks(),
+                |index| operation(index, &self.models[index], &inputs[index]),
+            )
+            .into_iter()
+            .collect()
+    }
+}
+
+fn sum_phase_profiles<'a>(
+    profiles: impl IntoIterator<Item = &'a Vec<f64>>,
+) -> Result<Vec<f64>, StructuralMultiphaseError> {
+    let mut iterator = profiles.into_iter();
+    let first = iterator
+        .next()
+        .ok_or(StructuralMultiphaseError::EmptyPhases)?;
+    let mut combined = vec![0.0; first.len()];
+    for profile in std::iter::once(first).chain(iterator) {
+        if profile.len() != combined.len() {
+            return Err(StructuralMultiphaseError::SampleCountMismatch);
+        }
+        for (total, value) in combined.iter_mut().zip(profile) {
+            *total += value;
+        }
+    }
+    Ok(combined)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn multiphase_requires_at_least_one_model() {
+        assert!(matches!(
+            PreparedStructuralMultiphase::new(
+                Vec::new(),
+                ExecutionPolicy::bounded_default().expect("policy"),
+            ),
+            Err(StructuralMultiphaseError::EmptyPhases)
+        ));
+    }
+
+    #[test]
+    fn profile_sum_preserves_phase_order_and_validates_sample_counts() {
+        let first = vec![1.0, 2.0, 3.0];
+        let second = vec![0.5, 0.25, 0.125];
+        assert_eq!(
+            sum_phase_profiles([&first, &second]).expect("sum"),
+            [1.5, 2.25, 3.125]
+        );
+        assert!(matches!(
+            sum_phase_profiles([&first, &vec![1.0]]),
+            Err(StructuralMultiphaseError::SampleCountMismatch)
+        ));
+    }
+}
