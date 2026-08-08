@@ -349,6 +349,106 @@ impl RietveldStructuralLayout {
         Ok(())
     }
 
+    /// Install physical parameter values into cloned phase definitions.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`RietveldParameterError`] for stale phase identities, a wrong
+    /// value count, invalid lattice/site values, or a rejected phase domain.
+    pub fn apply_values(
+        &self,
+        phases: &[RietveldPhase],
+        values: &[f64],
+    ) -> Result<Vec<RietveldPhase>, RietveldParameterError> {
+        self.validate_phases(phases)?;
+        if values.len() != self.parameters.specs().len()
+            || values.iter().any(|value| !value.is_finite())
+        {
+            return Err(RietveldParameterError::ValueLengthMismatch);
+        }
+        if let Some((spec, value)) = self
+            .parameters
+            .specs()
+            .iter()
+            .zip(values)
+            .find(|(spec, value)| !spec.bounds().contains(**value))
+        {
+            return Err(RietveldParameterError::Parameter(
+                ParameterError::ValueOutsideBounds {
+                    key: spec.key().clone(),
+                    value: *value,
+                },
+            ));
+        }
+        let mut updated = Vec::with_capacity(phases.len());
+        for (phase_index, phase) in phases.iter().enumerate() {
+            let mut definition = phase.definition().clone();
+            let phase_id = phase.phase_id().as_str();
+            let parameterization =
+                LatticeParameterization::new(definition.space_group.clone(), definition.cell)?;
+            let mut lattice_values = parameterization.values_from_cell(definition.cell)?;
+            let mut lattice_changed = false;
+            for (index, name) in parameterization.parameter_names().iter().enumerate() {
+                if let Some(value) = self.value_for("lattice", phase_id, name, values)? {
+                    lattice_values[index] = value;
+                    lattice_changed = true;
+                }
+            }
+            if lattice_changed {
+                definition.cell = parameterization.to_cell(&lattice_values)?;
+            }
+            for (site, site_id) in phase.site_ids().iter().enumerate() {
+                let owner = format!("{phase_id}/{site_id}");
+                let model = &self.coordinate_models[phase_index][site];
+                if model.special_position {
+                    let columns = model.parameter_names.len();
+                    for column in 0..columns {
+                        if let Some(value) =
+                            self.value_for("site", &owner, &model.parameter_names[column], values)?
+                        {
+                            for row in 0..3 {
+                                definition.fractional_xyz[site][row] +=
+                                    model.basis[row * columns + column] * value;
+                            }
+                        }
+                    }
+                } else {
+                    for (component, name) in ["x", "y", "z"].iter().enumerate() {
+                        if let Some(value) = self.value_for("site", &owner, name, values)? {
+                            definition.fractional_xyz[site][component] = value;
+                        }
+                    }
+                }
+                if let Some(value) = self.value_for("site", &owner, "occupancy", values)? {
+                    definition.occupancy[site] = value;
+                }
+                if let Some(value) = self.value_for("site", &owner, "u_iso_angstrom2", values)? {
+                    definition.u_iso_angstrom2[site] = value;
+                }
+            }
+            if let Some(value) = self.value_for("phase", phase_id, "scale", values)? {
+                definition.scale = value;
+            }
+            updated.push(
+                phase
+                    .with_definition(definition)
+                    .map_err(RietveldParameterError::Rietveld)?,
+            );
+        }
+        Ok(updated)
+    }
+
+    fn value_for(
+        &self,
+        module: &str,
+        owner: &str,
+        name: &str,
+        values: &[f64],
+    ) -> Result<Option<f64>, RietveldParameterError> {
+        let key = ParameterKey::new(module, owner, name)?;
+        Ok(self.parameters.index_of(&key).map(|index| values[index]))
+    }
+
     /// Expand one physical parameter direction into native per-phase tangents.
     ///
     /// # Errors
@@ -483,6 +583,8 @@ pub enum RietveldParameterError {
     DirectionLengthMismatch,
     /// One native reverse product has the wrong length.
     NativeGradientLengthMismatch,
+    /// A physical value vector has the wrong length or contains non-finite data.
+    ValueLengthMismatch,
     /// Layout phase/site identities differ from the calculation request.
     PhaseIdentityMismatch,
     /// Site coordinate or stabilizer tolerance is invalid.
@@ -491,6 +593,8 @@ pub enum RietveldParameterError {
     Parameter(ParameterError),
     /// Setting-aware lattice construction failed.
     Lattice(LatticeError),
+    /// Reconstructed phase state is invalid.
+    Rietveld(crate::RietveldError),
 }
 
 impl Display for RietveldParameterError {
@@ -506,6 +610,9 @@ impl Display for RietveldParameterError {
             Self::NativeGradientLengthMismatch => {
                 formatter.write_str("Rietveld native gradient length mismatch")
             }
+            Self::ValueLengthMismatch => {
+                formatter.write_str("Rietveld physical value length mismatch")
+            }
             Self::PhaseIdentityMismatch => {
                 formatter.write_str("Rietveld parameter layout phase identities differ")
             }
@@ -514,6 +621,7 @@ impl Display for RietveldParameterError {
             }
             Self::Parameter(error) => Display::fmt(error, formatter),
             Self::Lattice(error) => Display::fmt(error, formatter),
+            Self::Rietveld(error) => Display::fmt(error, formatter),
         }
     }
 }
@@ -523,10 +631,12 @@ impl Error for RietveldParameterError {
         match self {
             Self::Parameter(error) => Some(error),
             Self::Lattice(error) => Some(error),
+            Self::Rietveld(error) => Some(error),
             Self::PhaseCountMismatch
             | Self::MissingLatticeBounds
             | Self::DirectionLengthMismatch
             | Self::NativeGradientLengthMismatch
+            | Self::ValueLengthMismatch
             | Self::PhaseIdentityMismatch
             | Self::InvalidCoordinateModel => None,
         }

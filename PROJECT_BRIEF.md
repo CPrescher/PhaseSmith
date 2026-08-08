@@ -133,6 +133,12 @@ symmetry, or anisotropic-site state before evaluation. Analytical-column and
 adjoint tests lock down the operator that the bounded conjugate-gradient solver
 will consume next.
 
+The inverse structural transform is now implemented too: bounded physical
+parameter vectors rebuild validated phase definitions through stable identities
+without exposing native derivative-array offsets. It covers lattice, general
+and special-position coordinates, occupancy, isotropic displacement, and phase
+scale, and rejects invalid values before structural preparation.
+
 Unit 17 now includes the first full monochromatic CIF-backed Rietveld vertical
 slice. Typed profile/background/phase/lattice/site parameter families map
 through fixed/affine/multi-source linear

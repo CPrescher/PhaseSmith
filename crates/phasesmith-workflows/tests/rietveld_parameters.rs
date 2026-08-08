@@ -339,6 +339,53 @@ fn transform_shapes_and_lattice_requirements_fail_structurally() {
 }
 
 #[test]
+fn physical_values_rebuild_lattice_sites_and_scale_with_bounds() {
+    let phase = phase();
+    let layout = complete_layout(&phase);
+    let mut values = layout
+        .parameters()
+        .specs()
+        .iter()
+        .map(phasesmith_workflows::ParameterSpec::value)
+        .collect::<Vec<_>>();
+    let index = |label: &str| {
+        layout
+            .parameters()
+            .specs()
+            .iter()
+            .position(|spec| spec.key().label() == label)
+            .unwrap()
+    };
+    values[index("lattice[alpha].a_angstrom")] += 0.02;
+    values[index("site[alpha/Si1].x")] += 0.03;
+    values[index("site[alpha/Si1].occupancy")] = 0.7;
+    values[index("site[alpha/origin-O].u_iso_angstrom2")] = 0.025;
+    values[index("phase[alpha].scale")] = 1.1;
+    let updated = layout
+        .apply_values(std::slice::from_ref(&phase), &values)
+        .unwrap();
+    let definition = updated[0].definition();
+    assert!((definition.cell.a_angstrom - 4.72).abs() < 1.0e-14);
+    assert!((definition.fractional_xyz[0][0] - 0.2).abs() < 1.0e-14);
+    assert!(
+        definition.fractional_xyz[1]
+            .iter()
+            .all(|value| value.to_bits() == 0.0_f64.to_bits())
+    );
+    assert_eq!(definition.occupancy[0].to_bits(), 0.7_f64.to_bits());
+    assert_eq!(definition.u_iso_angstrom2[1].to_bits(), 0.025_f64.to_bits());
+    assert_eq!(definition.scale.to_bits(), 1.1_f64.to_bits());
+
+    values[index("site[alpha/Si1].occupancy")] = -0.1;
+    assert!(matches!(
+        layout.apply_values(std::slice::from_ref(&phase), &values),
+        Err(RietveldParameterError::Parameter(
+            phasesmith_workflows::ParameterError::ValueOutsideBounds { .. }
+        ))
+    ));
+}
+
+#[test]
 fn prepared_objective_jvp_vjp_and_normal_product_are_consistent() {
     let objective = objective();
     let count = objective.layout().parameters().specs().len();

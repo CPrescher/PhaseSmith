@@ -125,6 +125,19 @@ impl RietveldPhase {
     pub const fn contributions(&self) -> &OwnedCwContributions {
         &self.contributions
     }
+
+    pub(crate) fn with_definition(
+        &self,
+        definition: StructuralPhaseDefinition,
+    ) -> Result<Self, RietveldError> {
+        Self::new_with_site_ids(
+            self.phase_id.clone(),
+            self.name.clone(),
+            self.site_ids.clone(),
+            definition,
+            self.contributions.clone(),
+        )
+    }
 }
 
 /// Observations, experiment state, and ordered structural phases.

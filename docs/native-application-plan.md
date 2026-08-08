@@ -296,3 +296,10 @@ participates in the gradient residual but not derivatives, and stale layouts
 with different phase/site/symmetry identities fail before engine evaluation.
 Native tests compare the matrix-free normal product with explicit analytical
 columns and check both derivative adjoint identities.
+
+Physical accepted-state installation is explicit as well. Ordered bounded
+values rebuild cloned phase definitions through stable keys, including
+setting-aware cells, general or symmetry-constrained coordinates, occupancy,
+isotropic displacement, and phase scale. Out-of-bounds or non-finite vectors
+fail before structural preparation. This closes the value-to-domain half of
+the native solver boundary; no adapter needs to edit engine array offsets.
