@@ -4,7 +4,8 @@ use std::error::Error;
 use std::fmt::{Display, Formatter};
 
 use phasesmith_core::{
-    ConstantWavelengthInstrument, CwContributionsView, FcjGeometry, SupportPolicy,
+    ConstantWavelengthInstrument, CwContributionsView, FcjGeometry, OwnedCwContributions,
+    SupportPolicy,
 };
 use phasesmith_execution::ExecutionPolicy;
 
@@ -122,6 +123,30 @@ pub struct PreparedStructuralModelInputView<'a> {
     pub support: SupportPolicy,
 }
 
+/// Owned sample-physics inputs for one prepared structural model.
+#[derive(Clone, Debug, PartialEq)]
+pub struct StructuralModelInput {
+    /// One contribution batch for monochromatic models, or one per spectrum component.
+    pub contributions: Vec<OwnedCwContributions>,
+}
+
+/// Owned application-boundary request for one multiphase structural calculation.
+#[derive(Clone, Debug, PartialEq)]
+pub struct StructuralCalculationRequest {
+    /// Sorted pattern grid in degrees `2theta`.
+    pub x_deg: Vec<f64>,
+    /// Reference constant-wavelength instrument.
+    pub instrument: ConstantWavelengthInstrument,
+    /// Optional axial-divergence geometry.
+    pub axial_geometry: Option<FcjGeometry>,
+    /// Explicit position correction.
+    pub position_correction: MonochromaticPositionCorrection,
+    /// Dynamic inputs in prepared-model order.
+    pub phase_inputs: Vec<StructuralModelInput>,
+    /// Exact finite profile-support policy.
+    pub support: SupportPolicy,
+}
+
 impl<'a> PreparedStructuralModelInputView<'a> {
     fn monochromatic_input(
         &self,
@@ -157,6 +182,17 @@ pub struct StructuralMultiphaseResult {
     /// Sum of phase profile arrays in phase input order.
     pub profile_y: Vec<f64>,
     /// One complete diagnostic result per phase, in input order.
+    pub phases: Vec<StructuralPatternResult>,
+}
+
+/// Display-ready owned result from a structural calculation request.
+#[derive(Clone, Debug, PartialEq)]
+pub struct StructuralCalculationResult {
+    /// Pattern grid copied from the evaluated request.
+    pub x_deg: Vec<f64>,
+    /// Sum of all phase profiles in prepared-model order.
+    pub profile_y: Vec<f64>,
+    /// Complete diagnostic result for each phase in prepared-model order.
     pub phases: Vec<StructuralPatternResult>,
 }
 
@@ -266,6 +302,49 @@ impl PreparedStructuralMultiphase {
         Ok(StructuralMultiphaseResult { profile_y, phases })
     }
 
+    /// Calculate from an entirely owned application-boundary request.
+    ///
+    /// This is the shared entry point for language and desktop adapters. The
+    /// request owns all dynamic arrays; kernel views exist only for the duration
+    /// of this call.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StructuralMultiphaseError`] for invalid inputs or phase failures.
+    pub fn calculate_request(
+        &self,
+        request: StructuralCalculationRequest,
+    ) -> Result<StructuralCalculationResult, StructuralMultiphaseError> {
+        let contribution_views = request
+            .phase_inputs
+            .iter()
+            .map(|model| {
+                model
+                    .contributions
+                    .iter()
+                    .map(OwnedCwContributions::as_view)
+                    .collect::<Vec<_>>()
+            })
+            .collect::<Vec<_>>();
+        let inputs = contribution_views
+            .iter()
+            .map(|contributions| PreparedStructuralModelInputView {
+                x_deg: &request.x_deg,
+                instrument: request.instrument,
+                axial_geometry: request.axial_geometry,
+                position_correction: request.position_correction,
+                contributions,
+                support: request.support,
+            })
+            .collect::<Vec<_>>();
+        let result = self.calculate(&inputs)?;
+        Ok(StructuralCalculationResult {
+            x_deg: request.x_deg,
+            profile_y: result.profile_y,
+            phases: result.phases,
+        })
+    }
+
     /// Calculate one dense structural linearization per phase.
     ///
     /// # Errors
@@ -370,6 +449,45 @@ fn sum_phase_profiles<'a>(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::{BuiltInScatteringModel, StructuralPhaseDefinition};
+    use phasesmith_crystallography::{
+        IntegratedIntensityCorrectionModel, SpaceGroup, SymmetryOperation, UnitCell,
+    };
+
+    fn prepared_model() -> PreparedStructuralModel {
+        let definition = StructuralPhaseDefinition {
+            cell: UnitCell {
+                a_angstrom: 5.0,
+                b_angstrom: 5.0,
+                c_angstrom: 5.0,
+                alpha_deg: 90.0,
+                beta_deg: 90.0,
+                gamma_deg: 90.0,
+            },
+            space_group: SpaceGroup::new(vec![SymmetryOperation::identity()]).expect("P1"),
+            hkl: vec![[1, 0, 0]],
+            multiplicity: vec![2],
+            fractional_xyz: vec![[0.0, 0.0, 0.0]],
+            occupancy: vec![1.0],
+            u_iso_angstrom2: vec![0.01],
+            anisotropic_mask: vec![false],
+            u_aniso_cif_angstrom2: vec![[0.0; 6]],
+            scattering_species: vec!["Si".to_owned()],
+            scattering_real_offset: Vec::new(),
+            scattering_imag_offset: Vec::new(),
+            scale: 1.0,
+            coordinate_tolerance: 1.0e-10,
+            scattering_model: BuiltInScatteringModel::XrayNonResonant,
+            correction_model: IntegratedIntensityCorrectionModel::Neutral,
+        };
+        PreparedStructuralModel::monochromatic(
+            PreparedStructuralPhase::new(
+                definition,
+                phasesmith_execution::ExecutionContext::serial(),
+            )
+            .expect("prepared phase"),
+        )
+    }
 
     #[test]
     fn multiphase_requires_at_least_one_model() {
@@ -393,6 +511,38 @@ mod tests {
         assert!(matches!(
             sum_phase_profiles([&first, &vec![1.0]]),
             Err(StructuralMultiphaseError::SampleCountMismatch)
+        ));
+    }
+
+    #[test]
+    fn owned_request_validates_phase_input_count() {
+        let prepared = PreparedStructuralMultiphase::new(
+            vec![prepared_model()],
+            ExecutionPolicy::bounded_default().expect("policy"),
+        )
+        .expect("multiphase");
+        let request = StructuralCalculationRequest {
+            x_deg: vec![20.0, 21.0],
+            instrument: ConstantWavelengthInstrument {
+                wavelength_angstrom: 1.5406,
+                u_deg2: 0.0,
+                v_deg2: 0.0,
+                w_deg2: 0.01,
+                x_deg: 0.0,
+                y_deg: 0.0,
+            },
+            axial_geometry: None,
+            position_correction: MonochromaticPositionCorrection {
+                zero_shift_deg: 0.0,
+                bragg_brentano_mm: None,
+                debye_scherrer_micrometre: None,
+            },
+            phase_inputs: Vec::new(),
+            support: SupportPolicy::FwhmMultiple(8.0),
+        };
+        assert!(matches!(
+            prepared.calculate_request(request),
+            Err(StructuralMultiphaseError::PhaseInputCountMismatch)
         ));
     }
 }

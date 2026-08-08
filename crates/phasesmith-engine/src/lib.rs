@@ -17,6 +17,7 @@ pub use prepared_structural_phase::{
 };
 pub use structural_multiphase::{
     PreparedStructuralModel, PreparedStructuralModelInputView, PreparedStructuralMultiphase,
+    StructuralCalculationRequest, StructuralCalculationResult, StructuralModelInput,
     StructuralMultiphaseError, StructuralMultiphaseResult,
 };
 pub use structural_spectrum::{

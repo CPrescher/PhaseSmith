@@ -56,6 +56,128 @@ pub struct CwContributionArrays<'a> {
     pub d_intensity_multiplier_d_parameters: &'a [f64],
 }
 
+/// Owned arrays used to construct [`OwnedCwContributions`].
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct OwnedCwContributionArrays {
+    /// Additive Gaussian variance for each reflection.
+    pub gaussian_variance_deg2: Vec<f64>,
+    /// Additive Lorentzian FWHM for each reflection.
+    pub lorentzian_fwhm_deg: Vec<f64>,
+    /// Multiplicative integrated-intensity correction for each reflection.
+    pub intensity_multiplier: Vec<f64>,
+    /// Position derivative of the Gaussian-variance contribution.
+    pub d_gaussian_variance_d_position: Vec<f64>,
+    /// Position derivative of the Lorentzian-FWHM contribution.
+    pub d_lorentzian_fwhm_d_position: Vec<f64>,
+    /// Position derivative of the intensity multiplier.
+    pub d_intensity_multiplier_d_position: Vec<f64>,
+    /// Parameter-major Gaussian-variance chains, flattened from `(parameter, reflection)`.
+    pub d_gaussian_variance_d_parameters: Vec<f64>,
+    /// Parameter-major Lorentzian-FWHM chains, flattened from `(parameter, reflection)`.
+    pub d_lorentzian_fwhm_d_parameters: Vec<f64>,
+    /// Parameter-major intensity-multiplier chains, flattened from `(parameter, reflection)`.
+    pub d_intensity_multiplier_d_parameters: Vec<f64>,
+}
+
+impl OwnedCwContributionArrays {
+    fn as_borrowed(&self) -> CwContributionArrays<'_> {
+        CwContributionArrays {
+            gaussian_variance_deg2: &self.gaussian_variance_deg2,
+            lorentzian_fwhm_deg: &self.lorentzian_fwhm_deg,
+            intensity_multiplier: &self.intensity_multiplier,
+            d_gaussian_variance_d_position: &self.d_gaussian_variance_d_position,
+            d_lorentzian_fwhm_d_position: &self.d_lorentzian_fwhm_d_position,
+            d_intensity_multiplier_d_position: &self.d_intensity_multiplier_d_position,
+            d_gaussian_variance_d_parameters: &self.d_gaussian_variance_d_parameters,
+            d_lorentzian_fwhm_d_parameters: &self.d_lorentzian_fwhm_d_parameters,
+            d_intensity_multiplier_d_parameters: &self.d_intensity_multiplier_d_parameters,
+        }
+    }
+}
+
+/// Validated owned sample-physics contributions for one CW reflection batch.
+#[derive(Clone, Debug, PartialEq)]
+pub struct OwnedCwContributions {
+    reflection_count: usize,
+    parameter_count: usize,
+    arrays: OwnedCwContributionArrays,
+}
+
+impl OwnedCwContributions {
+    /// Validate and take ownership of one reflection-batch contribution set.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`CwContributionsError`] for inconsistent lengths, non-finite
+    /// values, negative broadening, or negative intensity multipliers.
+    pub fn new(
+        reflection_count: usize,
+        parameter_count: usize,
+        arrays: OwnedCwContributionArrays,
+    ) -> Result<Self, CwContributionsError> {
+        CwContributionsView::new(reflection_count, parameter_count, arrays.as_borrowed())?;
+        Ok(Self {
+            reflection_count,
+            parameter_count,
+            arrays,
+        })
+    }
+
+    /// Construct neutral contributions with no provider parameters.
+    #[must_use]
+    pub fn neutral(reflection_count: usize) -> Self {
+        Self {
+            reflection_count,
+            parameter_count: 0,
+            arrays: OwnedCwContributionArrays {
+                gaussian_variance_deg2: vec![0.0; reflection_count],
+                lorentzian_fwhm_deg: vec![0.0; reflection_count],
+                intensity_multiplier: vec![1.0; reflection_count],
+                d_gaussian_variance_d_position: vec![0.0; reflection_count],
+                d_lorentzian_fwhm_d_position: vec![0.0; reflection_count],
+                d_intensity_multiplier_d_position: vec![0.0; reflection_count],
+                ..OwnedCwContributionArrays::default()
+            },
+        }
+    }
+
+    /// Borrow the owned arrays as a validated kernel input.
+    #[must_use]
+    pub fn as_view(&self) -> CwContributionsView<'_> {
+        CwContributionsView {
+            gaussian_variance_deg2: &self.arrays.gaussian_variance_deg2,
+            lorentzian_fwhm_deg: &self.arrays.lorentzian_fwhm_deg,
+            intensity_multiplier: &self.arrays.intensity_multiplier,
+            d_gaussian_variance_d_position: &self.arrays.d_gaussian_variance_d_position,
+            d_lorentzian_fwhm_d_position: &self.arrays.d_lorentzian_fwhm_d_position,
+            d_intensity_multiplier_d_position: &self.arrays.d_intensity_multiplier_d_position,
+            d_gaussian_variance_d_parameters: &self.arrays.d_gaussian_variance_d_parameters,
+            d_lorentzian_fwhm_d_parameters: &self.arrays.d_lorentzian_fwhm_d_parameters,
+            d_intensity_multiplier_d_parameters: &self.arrays.d_intensity_multiplier_d_parameters,
+            parameter_count: self.parameter_count,
+            reflection_count: self.reflection_count,
+        }
+    }
+
+    /// Number of reflections represented by this batch.
+    #[must_use]
+    pub const fn reflection_count(&self) -> usize {
+        self.reflection_count
+    }
+
+    /// Number of named provider parameters.
+    #[must_use]
+    pub const fn parameter_count(&self) -> usize {
+        self.parameter_count
+    }
+
+    /// Borrow the owned contribution arrays.
+    #[must_use]
+    pub const fn arrays(&self) -> &OwnedCwContributionArrays {
+        &self.arrays
+    }
+}
+
 fn validate_reflection_arrays(
     reflection_count: usize,
     arrays: CwContributionArrays<'_>,
@@ -1146,5 +1268,63 @@ mod tests {
                 );
             }
         }
+    }
+
+    #[test]
+    fn owned_contributions_validate_once_and_reborrow_without_changes() {
+        let owned = OwnedCwContributions::new(
+            2,
+            1,
+            OwnedCwContributionArrays {
+                gaussian_variance_deg2: vec![0.0, 0.25],
+                lorentzian_fwhm_deg: vec![0.1, 0.2],
+                intensity_multiplier: vec![1.0, 0.5],
+                d_gaussian_variance_d_position: vec![0.0, 0.0],
+                d_lorentzian_fwhm_d_position: vec![0.0, 0.0],
+                d_intensity_multiplier_d_position: vec![0.0, 0.0],
+                d_gaussian_variance_d_parameters: vec![0.3, 0.4],
+                d_lorentzian_fwhm_d_parameters: vec![0.0, 0.0],
+                d_intensity_multiplier_d_parameters: vec![0.0, 0.0],
+            },
+        )
+        .expect("owned contributions");
+
+        assert_eq!(owned.reflection_count(), 2);
+        assert_eq!(owned.parameter_count(), 1);
+        assert_eq!(owned.as_view().parameter_count(), 1);
+        assert_eq!(owned.arrays().intensity_multiplier, [1.0, 0.5]);
+    }
+
+    #[test]
+    fn neutral_owned_contributions_have_valid_identity_values() {
+        let owned = OwnedCwContributions::neutral(3);
+        assert_eq!(owned.reflection_count(), 3);
+        assert_eq!(owned.parameter_count(), 0);
+        assert_eq!(owned.arrays().gaussian_variance_deg2, [0.0; 3]);
+        assert_eq!(owned.arrays().intensity_multiplier, [1.0; 3]);
+        assert_eq!(owned.as_view().parameter_count(), 0);
+    }
+
+    #[test]
+    fn owned_contributions_reject_invalid_arrays_before_storage() {
+        assert!(matches!(
+            OwnedCwContributions::new(
+                1,
+                0,
+                OwnedCwContributionArrays {
+                    gaussian_variance_deg2: vec![-1.0],
+                    lorentzian_fwhm_deg: vec![0.0],
+                    intensity_multiplier: vec![1.0],
+                    d_gaussian_variance_d_position: vec![0.0],
+                    d_lorentzian_fwhm_d_position: vec![0.0],
+                    d_intensity_multiplier_d_position: vec![0.0],
+                    ..OwnedCwContributionArrays::default()
+                },
+            ),
+            Err(CwContributionsError::InvalidContribution {
+                quantity: "gaussian_variance_deg2",
+                ..
+            })
+        ));
     }
 }

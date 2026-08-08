@@ -6,8 +6,9 @@ use npy::ndarray::Array2;
 use npy::{IntoPyArray, PyArray1, PyArray2, PyReadonlyArray1};
 use phasesmith_core::{
     Accumulation, ConstantWavelengthInstrument, CwContributionArrays, CwContributionsView, CwError,
-    CwProfileParameters, CwReflectionBatchView, FcjGeometry, FcjProfile, GridView, PeakBatchView,
-    SupportPolicy, TchPeakBatchView, TchShape, TchWidths, TofError, TofInstrument, TofProfile,
+    CwProfileParameters, CwReflectionBatchView, FcjGeometry, FcjProfile, GridView,
+    OwnedCwContributionArrays, OwnedCwContributions, PeakBatchView, SupportPolicy,
+    TchPeakBatchView, TchShape, TchWidths, TofError, TofInstrument, TofProfile,
     TofProfileParameters, WavelengthComponentsView, accumulate_batch, accumulate_cw_batch,
     accumulate_cw_components_batch, accumulate_cw_contributions_batch, accumulate_cw_fcj_batch,
     accumulate_cw_fcj_components_batch, accumulate_cw_fcj_contributions_batch,
@@ -664,60 +665,119 @@ impl NativePreparedReflectionGenerator {
 
 #[derive(Clone)]
 struct NativeComponentContributions {
-    component_count: usize,
-    reflection_count: usize,
-    parameter_count: usize,
-    gaussian_variance_deg2: Vec<f64>,
-    lorentzian_fwhm_deg: Vec<f64>,
-    intensity_multiplier: Vec<f64>,
-    d_gaussian_variance_d_position: Vec<f64>,
-    d_lorentzian_fwhm_d_position: Vec<f64>,
-    d_intensity_multiplier_d_position: Vec<f64>,
-    d_gaussian_variance_d_parameters: Vec<f64>,
-    d_lorentzian_fwhm_d_parameters: Vec<f64>,
-    d_intensity_multiplier_d_parameters: Vec<f64>,
+    components: Vec<OwnedCwContributions>,
 }
 
 impl NativeComponentContributions {
-    fn views(&self) -> PyResult<Vec<CwContributionsView<'_>>> {
-        let reflection_stride = self.reflection_count;
-        let parameter_stride = self
-            .reflection_count
-            .checked_mul(self.parameter_count)
+    fn new(
+        component_count: usize,
+        reflection_count: usize,
+        parameter_count: usize,
+        arrays: OwnedCwContributionArrays,
+    ) -> PyResult<Self> {
+        let reflection_stride = reflection_count;
+        let parameter_stride = reflection_count
+            .checked_mul(parameter_count)
             .ok_or_else(|| PyValueError::new_err("component contribution size overflow"))?;
-        (0..self.component_count)
+        let reflection_values = component_count
+            .checked_mul(reflection_stride)
+            .ok_or_else(|| PyValueError::new_err("component contribution size overflow"))?;
+        let parameter_values = component_count
+            .checked_mul(parameter_stride)
+            .ok_or_else(|| PyValueError::new_err("component contribution size overflow"))?;
+        for (name, values) in [
+            ("gaussian_variance_deg2", &arrays.gaussian_variance_deg2),
+            ("lorentzian_fwhm_deg", &arrays.lorentzian_fwhm_deg),
+            ("intensity_multiplier", &arrays.intensity_multiplier),
+            (
+                "d_gaussian_variance_d_position",
+                &arrays.d_gaussian_variance_d_position,
+            ),
+            (
+                "d_lorentzian_fwhm_d_position",
+                &arrays.d_lorentzian_fwhm_d_position,
+            ),
+            (
+                "d_intensity_multiplier_d_position",
+                &arrays.d_intensity_multiplier_d_position,
+            ),
+        ] {
+            if values.len() != reflection_values {
+                return Err(PyValueError::new_err(format!(
+                    "{name} must contain {reflection_values} flattened component values"
+                )));
+            }
+        }
+        for (name, values) in [
+            (
+                "d_gaussian_variance_d_parameters",
+                &arrays.d_gaussian_variance_d_parameters,
+            ),
+            (
+                "d_lorentzian_fwhm_d_parameters",
+                &arrays.d_lorentzian_fwhm_d_parameters,
+            ),
+            (
+                "d_intensity_multiplier_d_parameters",
+                &arrays.d_intensity_multiplier_d_parameters,
+            ),
+        ] {
+            if values.len() != parameter_values {
+                return Err(PyValueError::new_err(format!(
+                    "{name} must contain {parameter_values} flattened component values"
+                )));
+            }
+        }
+        let components = (0..component_count)
             .map(|component| {
                 let reflection_begin = component * reflection_stride;
                 let reflection_end = reflection_begin + reflection_stride;
                 let parameter_begin = component * parameter_stride;
                 let parameter_end = parameter_begin + parameter_stride;
-                CwContributionsView::new(
-                    self.reflection_count,
-                    self.parameter_count,
-                    CwContributionArrays {
-                        gaussian_variance_deg2: &self.gaussian_variance_deg2
-                            [reflection_begin..reflection_end],
-                        lorentzian_fwhm_deg: &self.lorentzian_fwhm_deg
-                            [reflection_begin..reflection_end],
-                        intensity_multiplier: &self.intensity_multiplier
-                            [reflection_begin..reflection_end],
-                        d_gaussian_variance_d_position: &self.d_gaussian_variance_d_position
-                            [reflection_begin..reflection_end],
-                        d_lorentzian_fwhm_d_position: &self.d_lorentzian_fwhm_d_position
-                            [reflection_begin..reflection_end],
-                        d_intensity_multiplier_d_position: &self.d_intensity_multiplier_d_position
-                            [reflection_begin..reflection_end],
-                        d_gaussian_variance_d_parameters: &self.d_gaussian_variance_d_parameters
-                            [parameter_begin..parameter_end],
-                        d_lorentzian_fwhm_d_parameters: &self.d_lorentzian_fwhm_d_parameters
-                            [parameter_begin..parameter_end],
-                        d_intensity_multiplier_d_parameters: &self
+                OwnedCwContributions::new(
+                    reflection_count,
+                    parameter_count,
+                    OwnedCwContributionArrays {
+                        gaussian_variance_deg2: arrays.gaussian_variance_deg2
+                            [reflection_begin..reflection_end]
+                            .to_vec(),
+                        lorentzian_fwhm_deg: arrays.lorentzian_fwhm_deg
+                            [reflection_begin..reflection_end]
+                            .to_vec(),
+                        intensity_multiplier: arrays.intensity_multiplier
+                            [reflection_begin..reflection_end]
+                            .to_vec(),
+                        d_gaussian_variance_d_position: arrays.d_gaussian_variance_d_position
+                            [reflection_begin..reflection_end]
+                            .to_vec(),
+                        d_lorentzian_fwhm_d_position: arrays.d_lorentzian_fwhm_d_position
+                            [reflection_begin..reflection_end]
+                            .to_vec(),
+                        d_intensity_multiplier_d_position: arrays.d_intensity_multiplier_d_position
+                            [reflection_begin..reflection_end]
+                            .to_vec(),
+                        d_gaussian_variance_d_parameters: arrays.d_gaussian_variance_d_parameters
+                            [parameter_begin..parameter_end]
+                            .to_vec(),
+                        d_lorentzian_fwhm_d_parameters: arrays.d_lorentzian_fwhm_d_parameters
+                            [parameter_begin..parameter_end]
+                            .to_vec(),
+                        d_intensity_multiplier_d_parameters: arrays
                             .d_intensity_multiplier_d_parameters
-                            [parameter_begin..parameter_end],
+                            [parameter_begin..parameter_end]
+                            .to_vec(),
                     },
                 )
                 .map_err(|error| PyValueError::new_err(error.to_string()))
             })
+            .collect::<PyResult<Vec<_>>>()?;
+        Ok(Self { components })
+    }
+
+    fn views(&self) -> Vec<CwContributionsView<'_>> {
+        self.components
+            .iter()
+            .map(OwnedCwContributions::as_view)
             .collect()
     }
 }
@@ -1202,7 +1262,7 @@ impl NativeStructuralSpectrum {
             &PreparedStructuralSpectrumInputView<'_>,
         ) -> Result<R, phasesmith_engine::StructuralSpectrumError>,
     ) -> PyResult<R> {
-        let contributions = self.contributions.views()?;
+        let contributions = self.contributions.views();
         let input = PreparedStructuralSpectrumInputView {
             x_deg,
             instrument,
@@ -1258,57 +1318,58 @@ impl NativeStructuralSpectrum {
             }
             Ok(values.to_vec())
         };
-        let contributions = NativeComponentContributions {
+        let contributions = NativeComponentContributions::new(
             component_count,
             reflection_count,
             parameter_count,
-            gaussian_variance_deg2: copy_array(
-                &gaussian_variance_deg2,
-                "gaussian_variance_deg2",
-                reflection_values,
-            )?,
-            lorentzian_fwhm_deg: copy_array(
-                &lorentzian_fwhm_deg,
-                "lorentzian_fwhm_deg",
-                reflection_values,
-            )?,
-            intensity_multiplier: copy_array(
-                &intensity_multiplier,
-                "intensity_multiplier",
-                reflection_values,
-            )?,
-            d_gaussian_variance_d_position: copy_array(
-                &d_gaussian_variance_d_position,
-                "d_gaussian_variance_d_position",
-                reflection_values,
-            )?,
-            d_lorentzian_fwhm_d_position: copy_array(
-                &d_lorentzian_fwhm_d_position,
-                "d_lorentzian_fwhm_d_position",
-                reflection_values,
-            )?,
-            d_intensity_multiplier_d_position: copy_array(
-                &d_intensity_multiplier_d_position,
-                "d_intensity_multiplier_d_position",
-                reflection_values,
-            )?,
-            d_gaussian_variance_d_parameters: copy_array(
-                &d_gaussian_variance_d_parameters,
-                "d_gaussian_variance_d_parameters",
-                parameter_values,
-            )?,
-            d_lorentzian_fwhm_d_parameters: copy_array(
-                &d_lorentzian_fwhm_d_parameters,
-                "d_lorentzian_fwhm_d_parameters",
-                parameter_values,
-            )?,
-            d_intensity_multiplier_d_parameters: copy_array(
-                &d_intensity_multiplier_d_parameters,
-                "d_intensity_multiplier_d_parameters",
-                parameter_values,
-            )?,
-        };
-        contributions.views()?;
+            OwnedCwContributionArrays {
+                gaussian_variance_deg2: copy_array(
+                    &gaussian_variance_deg2,
+                    "gaussian_variance_deg2",
+                    reflection_values,
+                )?,
+                lorentzian_fwhm_deg: copy_array(
+                    &lorentzian_fwhm_deg,
+                    "lorentzian_fwhm_deg",
+                    reflection_values,
+                )?,
+                intensity_multiplier: copy_array(
+                    &intensity_multiplier,
+                    "intensity_multiplier",
+                    reflection_values,
+                )?,
+                d_gaussian_variance_d_position: copy_array(
+                    &d_gaussian_variance_d_position,
+                    "d_gaussian_variance_d_position",
+                    reflection_values,
+                )?,
+                d_lorentzian_fwhm_d_position: copy_array(
+                    &d_lorentzian_fwhm_d_position,
+                    "d_lorentzian_fwhm_d_position",
+                    reflection_values,
+                )?,
+                d_intensity_multiplier_d_position: copy_array(
+                    &d_intensity_multiplier_d_position,
+                    "d_intensity_multiplier_d_position",
+                    reflection_values,
+                )?,
+                d_gaussian_variance_d_parameters: copy_array(
+                    &d_gaussian_variance_d_parameters,
+                    "d_gaussian_variance_d_parameters",
+                    parameter_values,
+                )?,
+                d_lorentzian_fwhm_d_parameters: copy_array(
+                    &d_lorentzian_fwhm_d_parameters,
+                    "d_lorentzian_fwhm_d_parameters",
+                    parameter_values,
+                )?,
+                d_intensity_multiplier_d_parameters: copy_array(
+                    &d_intensity_multiplier_d_parameters,
+                    "d_intensity_multiplier_d_parameters",
+                    parameter_values,
+                )?,
+            },
+        )?;
         Ok(Self {
             spectrum: PreparedStructuralSpectrum::new(
                 base.phase.definition(),
@@ -1328,7 +1389,11 @@ impl NativeStructuralSpectrum {
 
     #[getter]
     fn reflection_count(&self) -> usize {
-        self.spectrum.component_count() * self.contributions.reflection_count
+        self.contributions
+            .components
+            .iter()
+            .map(OwnedCwContributions::reflection_count)
+            .sum()
     }
 
     #[allow(clippy::similar_names, clippy::too_many_arguments)]
@@ -1560,57 +1625,58 @@ impl NativePreparedStructuralModel {
         let parameter_values = reflection_count
             .checked_mul(parameter_count)
             .ok_or_else(|| PyValueError::new_err("contribution size overflow"))?;
-        let contributions = NativeComponentContributions {
-            component_count: 1,
+        let contributions = NativeComponentContributions::new(
+            1,
             reflection_count,
             parameter_count,
-            gaussian_variance_deg2: copied_exact_array(
-                &gaussian_variance_deg2,
-                "gaussian_variance_deg2",
-                reflection_count,
-            )?,
-            lorentzian_fwhm_deg: copied_exact_array(
-                &lorentzian_fwhm_deg,
-                "lorentzian_fwhm_deg",
-                reflection_count,
-            )?,
-            intensity_multiplier: copied_exact_array(
-                &intensity_multiplier,
-                "intensity_multiplier",
-                reflection_count,
-            )?,
-            d_gaussian_variance_d_position: copied_exact_array(
-                &d_gaussian_variance_d_position,
-                "d_gaussian_variance_d_position",
-                reflection_count,
-            )?,
-            d_lorentzian_fwhm_d_position: copied_exact_array(
-                &d_lorentzian_fwhm_d_position,
-                "d_lorentzian_fwhm_d_position",
-                reflection_count,
-            )?,
-            d_intensity_multiplier_d_position: copied_exact_array(
-                &d_intensity_multiplier_d_position,
-                "d_intensity_multiplier_d_position",
-                reflection_count,
-            )?,
-            d_gaussian_variance_d_parameters: copied_exact_array(
-                &d_gaussian_variance_d_parameters,
-                "d_gaussian_variance_d_parameters",
-                parameter_values,
-            )?,
-            d_lorentzian_fwhm_d_parameters: copied_exact_array(
-                &d_lorentzian_fwhm_d_parameters,
-                "d_lorentzian_fwhm_d_parameters",
-                parameter_values,
-            )?,
-            d_intensity_multiplier_d_parameters: copied_exact_array(
-                &d_intensity_multiplier_d_parameters,
-                "d_intensity_multiplier_d_parameters",
-                parameter_values,
-            )?,
-        };
-        contributions.views()?;
+            OwnedCwContributionArrays {
+                gaussian_variance_deg2: copied_exact_array(
+                    &gaussian_variance_deg2,
+                    "gaussian_variance_deg2",
+                    reflection_count,
+                )?,
+                lorentzian_fwhm_deg: copied_exact_array(
+                    &lorentzian_fwhm_deg,
+                    "lorentzian_fwhm_deg",
+                    reflection_count,
+                )?,
+                intensity_multiplier: copied_exact_array(
+                    &intensity_multiplier,
+                    "intensity_multiplier",
+                    reflection_count,
+                )?,
+                d_gaussian_variance_d_position: copied_exact_array(
+                    &d_gaussian_variance_d_position,
+                    "d_gaussian_variance_d_position",
+                    reflection_count,
+                )?,
+                d_lorentzian_fwhm_d_position: copied_exact_array(
+                    &d_lorentzian_fwhm_d_position,
+                    "d_lorentzian_fwhm_d_position",
+                    reflection_count,
+                )?,
+                d_intensity_multiplier_d_position: copied_exact_array(
+                    &d_intensity_multiplier_d_position,
+                    "d_intensity_multiplier_d_position",
+                    reflection_count,
+                )?,
+                d_gaussian_variance_d_parameters: copied_exact_array(
+                    &d_gaussian_variance_d_parameters,
+                    "d_gaussian_variance_d_parameters",
+                    parameter_values,
+                )?,
+                d_lorentzian_fwhm_d_parameters: copied_exact_array(
+                    &d_lorentzian_fwhm_d_parameters,
+                    "d_lorentzian_fwhm_d_parameters",
+                    parameter_values,
+                )?,
+                d_intensity_multiplier_d_parameters: copied_exact_array(
+                    &d_intensity_multiplier_d_parameters,
+                    "d_intensity_multiplier_d_parameters",
+                    parameter_values,
+                )?,
+            },
+        )?;
         Ok(Self {
             model: PreparedStructuralModel::monochromatic(phase.phase.clone()),
             contributions,
@@ -1650,7 +1716,7 @@ impl NativeStructuralMultiphase {
             .contributions
             .iter()
             .map(NativeComponentContributions::views)
-            .collect::<PyResult<Vec<_>>>()?;
+            .collect::<Vec<_>>();
         let inputs = contribution_views
             .iter()
             .map(|contributions| PreparedStructuralModelInputView {
