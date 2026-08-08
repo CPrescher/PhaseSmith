@@ -102,6 +102,19 @@ restart, and complete iteration histories agree with Python. The full built-in
 Le Bail scientific workflow is therefore Python-free; delegating the Python
 scripting façade to it is the next adapter step.
 
+Native Rietveld migration has begun with an owned Rust calculation boundary in
+`phasesmith-workflows`. A Rust or future Tauri adapter can now submit validated
+observations, monochromatic experiment state, ordered structural phases, and
+sample-physics contributions and receive display-ready phase/profile/background
+arrays, crystallographic intermediates, and residual metrics without importing
+Python. The operation revalidates adapter-visible records immediately before
+calculation, remains bitwise deterministic across configured worker counts,
+and is differentially checked against the existing Python structural workflow.
+This boundary does not yet replace the Python Rietveld optimizer; native
+parameter motion, matrix-free solving, dynamic reflection topology,
+checkpoints, recipes, and scripting-facade delegation follow as independently
+reviewed steps.
+
 Unit 17 now includes the first full monochromatic CIF-backed Rietveld vertical
 slice. Typed profile/background/phase/lattice/site parameter families map
 through fixed/affine/multi-source linear

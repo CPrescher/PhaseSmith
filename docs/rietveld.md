@@ -6,6 +6,15 @@ constant-wavelength workflow. It accepts one or more typed `RietveldPhase`
 objects and obtains every reflection intensity from their crystal structures;
 GSAS-II is never imported or called.
 
+For native applications, the first Python-free Rietveld boundary now lives in
+the `phasesmith-workflows` Rust crate. It owns structural phases, experiment
+state, fixed background composition, phase-resolved calculation results, and
+residual metrics, so a future Tauri command can calculate and plot a complete
+multiphase pattern without a Python process. The scripting optimizer described
+below remains the production refinement orchestrator until its parameter,
+solver, topology, runtime, and staged-recipe contracts have each migrated and
+passed cross-interface validation.
+
 ## Objective and numerical method
 
 For included observations `i`, the residual used by the optimizer is

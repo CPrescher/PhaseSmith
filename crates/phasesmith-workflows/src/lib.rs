@@ -9,6 +9,7 @@ mod lattice;
 mod lebail;
 mod parameters;
 mod residuals;
+mod rietveld;
 mod runtime;
 
 pub use backgrounds::{
@@ -35,6 +36,10 @@ pub use lebail::{
 };
 pub use parameters::{ParameterBounds, ParameterError, ParameterKey, ParameterSet, ParameterSpec};
 pub use residuals::{ResidualError, ResidualEvaluation, ResidualOptions, evaluate_residuals};
+pub use rietveld::{
+    RietveldCalculation, RietveldCalculationOptions, RietveldError, RietveldInput, RietveldPhase,
+    RietveldPhaseCalculation, calculate_rietveld_pattern,
+};
 pub use runtime::{
     CancellationError, CancellationToken, CheckpointSink, DiagnosticValue, MonotonicClock,
     RefinementEvent, RefinementEventKind, RefinementEventSink, RefinementLimits, RefinementRuntime,

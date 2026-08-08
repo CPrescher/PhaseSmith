@@ -260,3 +260,18 @@ the complete domain records compare equal. Exact synthetic recovery and the
 complete accepted history agree with the Python implementation. Native Le Bail
 is complete; Python delegation and native Rietveld are the next delivery
 boundaries.
+
+The first native Rietveld delivery boundary is now complete at calculation
+level. `phasesmith-workflows` owns validated, adapter-safe structural phases,
+observations, experiment state, sample-physics contributions, execution
+controls, display-ready phase/profile/background arrays, crystallographic
+intermediates, and residual metrics. Calculation revalidates public record
+fields so a JSON/Tauri adapter cannot bypass constructors by mutating decoded
+state. Six Rust integration contracts cover multiphase composition, bitwise
+worker determinism, masks and uncertainties, position corrections,
+sample-physics contributions, structural intermediates, invalid and mutated
+requests, and configured parity with the existing Python structural workflow.
+This is deliberately a forward-calculation boundary, not yet the native
+Rietveld solver; typed structural parameter motion, matrix-free refinement,
+topology regeneration, checkpoints, staging, and Python delegation remain
+separate reviewed substeps.

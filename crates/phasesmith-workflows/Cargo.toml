@@ -11,6 +11,7 @@ license.workspace = true
 nalgebra = "0.35"
 phasesmith-core = { path = "../phasesmith-core" }
 phasesmith-crystallography = { path = "../phasesmith-crystallography" }
+phasesmith-engine = { path = "../phasesmith-engine" }
 phasesmith-execution = { path = "../phasesmith-execution" }
 phasesmith-model = { path = "../phasesmith-model" }
 
