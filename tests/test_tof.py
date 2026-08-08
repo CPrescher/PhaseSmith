@@ -217,6 +217,35 @@ def test_fused_accumulation_matches_support_limited_reference() -> None:
     np.testing.assert_allclose(actual.y, expected, rtol=2e-9, atol=2e-12)
 
 
+def test_tof_execution_policy_is_bitwise_deterministic() -> None:
+    d = np.linspace(0.5, 2.8, 36)
+    intensities = np.linspace(3.0, 13.0, d.size)
+    x = np.linspace(1_000.0, 17_000.0, 8_001)
+    serial = phasesmith.accumulate_tof(
+        x,
+        d,
+        intensities,
+        instrument(),
+        execution=phasesmith.ExecutionPolicy(threads=1),
+    )
+    parallel = phasesmith.accumulate_tof(
+        x,
+        d,
+        intensities,
+        instrument(),
+        execution=phasesmith.ExecutionPolicy(threads=2),
+    )
+    np.testing.assert_array_equal(parallel.y, serial.y)
+    np.testing.assert_array_equal(
+        parallel.derivatives.local.values,
+        serial.derivatives.local.values,
+    )
+    np.testing.assert_array_equal(
+        parallel.derivatives.global_jacobian,
+        serial.derivatives.global_jacobian,
+    )
+
+
 GLOBAL_FIELDS = {
     "zero": "zero_us",
     "difc": "difc_us_per_angstrom",

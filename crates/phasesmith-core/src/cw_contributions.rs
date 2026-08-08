@@ -10,6 +10,7 @@ use crate::profile::{
     SupportPolicy, zeroed_f64_vec,
 };
 use crate::tch::{TchShape, TchWidths};
+use phasesmith_execution::ExecutionContext;
 
 const GAUSSIAN_FWHM_PER_SIGMA: f64 = 2.354_820_045_030_949_3;
 const INSTRUMENT_PARAMETER_COUNT: usize = 5;
@@ -321,6 +322,13 @@ struct PreparedBatch {
     offsets: Vec<usize>,
 }
 
+struct ReflectionBlock {
+    start: usize,
+    y: Vec<f64>,
+    local: Vec<f64>,
+    global: Vec<f64>,
+}
+
 fn prepare_profile(
     reflection: usize,
     position: f64,
@@ -461,6 +469,31 @@ pub fn accumulate_cw_contributions_batch(
     contributions: CwContributionsView<'_>,
     support: SupportPolicy,
 ) -> Result<Accumulation, CwContributionsError> {
+    accumulate_cw_contributions_batch_with_context(
+        grid,
+        positions_deg,
+        base_intensities,
+        instrument,
+        contributions,
+        support,
+        &ExecutionContext::serial(),
+    )
+}
+
+/// Accumulate symmetric CW contributions with a bounded execution context.
+///
+/// # Errors
+///
+/// Returns [`CwContributionsError`] for invalid inputs or derived profiles.
+pub fn accumulate_cw_contributions_batch_with_context(
+    grid: GridView<'_>,
+    positions_deg: &[f64],
+    base_intensities: &[f64],
+    instrument: ConstantWavelengthInstrument,
+    contributions: CwContributionsView<'_>,
+    support: SupportPolicy,
+    execution: &ExecutionContext,
+) -> Result<Accumulation, CwContributionsError> {
     accumulate_cw_contributions_impl(
         grid,
         positions_deg,
@@ -469,6 +502,7 @@ pub fn accumulate_cw_contributions_batch(
         contributions,
         None,
         support,
+        execution,
     )
 }
 
@@ -490,6 +524,34 @@ pub fn accumulate_cw_fcj_contributions_batch(
     geometry: FcjGeometry,
     support: SupportPolicy,
 ) -> Result<Accumulation, CwContributionsError> {
+    accumulate_cw_fcj_contributions_batch_with_context(
+        grid,
+        positions_deg,
+        base_intensities,
+        instrument,
+        contributions,
+        geometry,
+        support,
+        &ExecutionContext::serial(),
+    )
+}
+
+/// Accumulate FCJ-asymmetric contributions with a bounded execution context.
+///
+/// # Errors
+///
+/// Returns [`CwContributionsError`] for invalid inputs or derived profiles.
+#[allow(clippy::too_many_arguments)]
+pub fn accumulate_cw_fcj_contributions_batch_with_context(
+    grid: GridView<'_>,
+    positions_deg: &[f64],
+    base_intensities: &[f64],
+    instrument: ConstantWavelengthInstrument,
+    contributions: CwContributionsView<'_>,
+    geometry: FcjGeometry,
+    support: SupportPolicy,
+    execution: &ExecutionContext,
+) -> Result<Accumulation, CwContributionsError> {
     accumulate_cw_contributions_impl(
         grid,
         positions_deg,
@@ -498,6 +560,7 @@ pub fn accumulate_cw_fcj_contributions_batch(
         contributions,
         Some(geometry),
         support,
+        execution,
     )
 }
 
@@ -510,6 +573,7 @@ fn accumulate_cw_contributions_impl(
     contributions: CwContributionsView<'_>,
     geometry: Option<FcjGeometry>,
     support: SupportPolicy,
+    execution: &ExecutionContext,
 ) -> Result<Accumulation, CwContributionsError> {
     support.validate()?;
     let reflections = crate::cw::CwReflectionBatchView::new(positions_deg, base_intensities)
@@ -555,56 +619,152 @@ fn accumulate_cw_contributions_impl(
     let mut y = zeroed_f64_vec(x.len())?;
     let mut local_values = zeroed_f64_vec(local_count)?;
     let mut global_values = zeroed_f64_vec(global_count)?;
-    for reflection in 0..reflection_count {
-        let profile = &prepared.profiles[reflection];
-        let base_intensity = base_intensities[reflection];
-        let multiplier = contributions.intensity_multiplier[reflection];
-        let effective_intensity = base_intensity * multiplier;
-        if !effective_intensity.is_finite() {
-            return Err(CwContributionsError::InvalidContribution {
-                reflection,
-                quantity: "effective_intensity",
-            });
-        }
-        let begin = prepared.offsets[reflection];
-        let end = prepared.offsets[reflection + 1];
-        for active in begin..end {
-            let sample = prepared.starts[reflection] + active - begin;
-            let point = profile.evaluate(x[sample], positions_deg[reflection]);
-            y[sample] += effective_intensity * point.value;
-            let local = active * LOCAL_PARAMETER_COUNT;
-            local_values[local] = multiplier * point.value;
-            local_values[local + 1] = base_intensity
-                * (contributions.d_intensity_multiplier_d_position[reflection] * point.value
-                    + multiplier
-                        * (point.d_position
-                            + point.d_gaussian_fwhm * profile.d_gaussian_d_position
-                            + point.d_lorentzian_fwhm * profile.d_lorentzian_d_position));
-            for parameter in 0..INSTRUMENT_PARAMETER_COUNT {
-                let derivative = point.d_gaussian_fwhm * profile.d_gaussian_d_instrument[parameter]
-                    + point.d_lorentzian_fwhm * profile.d_lorentzian_d_instrument[parameter];
-                global_values[parameter * x.len() + sample] += effective_intensity * derivative;
+    if execution.threads() == 1 || reflection_count < 16 {
+        for reflection in 0..reflection_count {
+            let profile = &prepared.profiles[reflection];
+            let base_intensity = base_intensities[reflection];
+            let multiplier = contributions.intensity_multiplier[reflection];
+            let effective_intensity = base_intensity * multiplier;
+            if !effective_intensity.is_finite() {
+                return Err(CwContributionsError::InvalidContribution {
+                    reflection,
+                    quantity: "effective_intensity",
+                });
             }
-            if geometry.is_some() {
-                global_values[INSTRUMENT_PARAMETER_COUNT * x.len() + sample] +=
-                    effective_intensity * point.d_sample_over_radius;
-                global_values[(INSTRUMENT_PARAMETER_COUNT + 1) * x.len() + sample] +=
-                    effective_intensity * point.d_detector_over_radius;
-            }
-            for parameter in 0..contributions.parameter_count {
-                let index = contributions.derivative_index(parameter, reflection);
-                let d_multiplier = contributions.d_intensity_multiplier_d_parameters[index];
-                let d_gaussian = profile.d_gaussian_d_variance
-                    * contributions.d_gaussian_variance_d_parameters[index];
-                let d_lorentzian = contributions.d_lorentzian_fwhm_d_parameters[index];
-                let derivative = base_intensity
-                    * (d_multiplier * point.value
+            let begin = prepared.offsets[reflection];
+            let end = prepared.offsets[reflection + 1];
+            for active in begin..end {
+                let sample = prepared.starts[reflection] + active - begin;
+                let point = profile.evaluate(x[sample], positions_deg[reflection]);
+                y[sample] += effective_intensity * point.value;
+                let local = active * LOCAL_PARAMETER_COUNT;
+                local_values[local] = multiplier * point.value;
+                local_values[local + 1] = base_intensity
+                    * (contributions.d_intensity_multiplier_d_position[reflection] * point.value
                         + multiplier
-                            * (point.d_gaussian_fwhm * d_gaussian
-                                + point.d_lorentzian_fwhm * d_lorentzian));
-                global_values[(INSTRUMENT_PARAMETER_COUNT + axial_parameter_count + parameter)
-                    * x.len()
-                    + sample] += derivative;
+                            * (point.d_position
+                                + point.d_gaussian_fwhm * profile.d_gaussian_d_position
+                                + point.d_lorentzian_fwhm * profile.d_lorentzian_d_position));
+                for parameter in 0..INSTRUMENT_PARAMETER_COUNT {
+                    let derivative = point.d_gaussian_fwhm
+                        * profile.d_gaussian_d_instrument[parameter]
+                        + point.d_lorentzian_fwhm * profile.d_lorentzian_d_instrument[parameter];
+                    global_values[parameter * x.len() + sample] += effective_intensity * derivative;
+                }
+                if geometry.is_some() {
+                    global_values[INSTRUMENT_PARAMETER_COUNT * x.len() + sample] +=
+                        effective_intensity * point.d_sample_over_radius;
+                    global_values[(INSTRUMENT_PARAMETER_COUNT + 1) * x.len() + sample] +=
+                        effective_intensity * point.d_detector_over_radius;
+                }
+                for parameter in 0..contributions.parameter_count {
+                    let index = contributions.derivative_index(parameter, reflection);
+                    let d_multiplier = contributions.d_intensity_multiplier_d_parameters[index];
+                    let d_gaussian = profile.d_gaussian_d_variance
+                        * contributions.d_gaussian_variance_d_parameters[index];
+                    let d_lorentzian = contributions.d_lorentzian_fwhm_d_parameters[index];
+                    let derivative = base_intensity
+                        * (d_multiplier * point.value
+                            + multiplier
+                                * (point.d_gaussian_fwhm * d_gaussian
+                                    + point.d_lorentzian_fwhm * d_lorentzian));
+                    global_values[(INSTRUMENT_PARAMETER_COUNT
+                        + axial_parameter_count
+                        + parameter)
+                        * x.len()
+                        + sample] += derivative;
+                }
+            }
+        }
+    } else {
+        let blocks = execution.map_ordered(reflection_count, 16, |reflection| {
+            let profile = &prepared.profiles[reflection];
+            let base_intensity = base_intensities[reflection];
+            let multiplier = contributions.intensity_multiplier[reflection];
+            let effective_intensity = base_intensity * multiplier;
+            if !effective_intensity.is_finite() {
+                return Err(CwContributionsError::InvalidContribution {
+                    reflection,
+                    quantity: "effective_intensity",
+                });
+            }
+            let begin = prepared.offsets[reflection];
+            let end = prepared.offsets[reflection + 1];
+            let support_count = end - begin;
+            let mut block = ReflectionBlock {
+                start: prepared.starts[reflection],
+                y: zeroed_f64_vec(support_count)?,
+                local: zeroed_f64_vec(
+                    support_count
+                        .checked_mul(LOCAL_PARAMETER_COUNT)
+                        .ok_or(CwContributionsError::AllocationOverflow)?,
+                )?,
+                global: zeroed_f64_vec(
+                    support_count
+                        .checked_mul(global_parameter_count)
+                        .ok_or(CwContributionsError::AllocationOverflow)?,
+                )?,
+            };
+            for support_index in 0..support_count {
+                let sample = block.start + support_index;
+                let point = profile.evaluate(x[sample], positions_deg[reflection]);
+                block.y[support_index] = effective_intensity * point.value;
+                let local = support_index * LOCAL_PARAMETER_COUNT;
+                block.local[local] = multiplier * point.value;
+                block.local[local + 1] = base_intensity
+                    * (contributions.d_intensity_multiplier_d_position[reflection] * point.value
+                        + multiplier
+                            * (point.d_position
+                                + point.d_gaussian_fwhm * profile.d_gaussian_d_position
+                                + point.d_lorentzian_fwhm * profile.d_lorentzian_d_position));
+                for parameter in 0..INSTRUMENT_PARAMETER_COUNT {
+                    let derivative = point.d_gaussian_fwhm
+                        * profile.d_gaussian_d_instrument[parameter]
+                        + point.d_lorentzian_fwhm * profile.d_lorentzian_d_instrument[parameter];
+                    block.global[parameter * support_count + support_index] =
+                        effective_intensity * derivative;
+                }
+                if geometry.is_some() {
+                    block.global[INSTRUMENT_PARAMETER_COUNT * support_count + support_index] =
+                        effective_intensity * point.d_sample_over_radius;
+                    block.global
+                        [(INSTRUMENT_PARAMETER_COUNT + 1) * support_count + support_index] =
+                        effective_intensity * point.d_detector_over_radius;
+                }
+                for parameter in 0..contributions.parameter_count {
+                    let index = contributions.derivative_index(parameter, reflection);
+                    let d_multiplier = contributions.d_intensity_multiplier_d_parameters[index];
+                    let d_gaussian = profile.d_gaussian_d_variance
+                        * contributions.d_gaussian_variance_d_parameters[index];
+                    let d_lorentzian = contributions.d_lorentzian_fwhm_d_parameters[index];
+                    let derivative = base_intensity
+                        * (d_multiplier * point.value
+                            + multiplier
+                                * (point.d_gaussian_fwhm * d_gaussian
+                                    + point.d_lorentzian_fwhm * d_lorentzian));
+                    block.global[(INSTRUMENT_PARAMETER_COUNT
+                        + axial_parameter_count
+                        + parameter)
+                        * support_count
+                        + support_index] = derivative;
+                }
+            }
+            Ok(block)
+        });
+        for (reflection, block) in blocks.into_iter().enumerate() {
+            let block = block?;
+            let begin = prepared.offsets[reflection];
+            let support_count = block.y.len();
+            let local_begin = begin * LOCAL_PARAMETER_COUNT;
+            let local_end = local_begin + block.local.len();
+            local_values[local_begin..local_end].copy_from_slice(&block.local);
+            for support_index in 0..support_count {
+                let sample = block.start + support_index;
+                y[sample] += block.y[support_index];
+                for parameter in 0..global_parameter_count {
+                    global_values[parameter * x.len() + sample] +=
+                        block.global[parameter * support_count + support_index];
+                }
             }
         }
     }
@@ -683,6 +843,99 @@ mod tests {
         )
         .expect("contributions");
         assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn symmetric_and_fcj_blocks_are_bitwise_identical_across_worker_counts() {
+        let x = (0..=30_000)
+            .map(|index| 20.0 + f64::from(index) * 0.003)
+            .collect::<Vec<_>>();
+        let positions = (0..48)
+            .map(|index| 25.0 + f64::from(index) * 1.6)
+            .collect::<Vec<_>>();
+        let intensities = (0..48)
+            .map(|index| 5.0 + 0.2 * f64::from(index))
+            .collect::<Vec<_>>();
+        let zero = vec![0.0; positions.len()];
+        let one = vec![1.0; positions.len()];
+        let provider = (0..48)
+            .map(|index| 1.0e-5 * f64::from(index + 1))
+            .collect::<Vec<_>>();
+        let arrays = CwContributionArrays {
+            gaussian_variance_deg2: &zero,
+            lorentzian_fwhm_deg: &zero,
+            intensity_multiplier: &one,
+            d_gaussian_variance_d_position: &zero,
+            d_lorentzian_fwhm_d_position: &zero,
+            d_intensity_multiplier_d_position: &zero,
+            d_gaussian_variance_d_parameters: &provider,
+            d_lorentzian_fwhm_d_parameters: &zero,
+            d_intensity_multiplier_d_parameters: &zero,
+        };
+        let contributions =
+            CwContributionsView::new(positions.len(), 1, arrays).expect("contributions");
+        let grid = GridView::new(&x).expect("grid");
+        let support = SupportPolicy::FwhmMultiple(20.0);
+        let serial = ExecutionContext::serial();
+        let two = ExecutionContext::new(2).expect("two threads");
+        let three = ExecutionContext::new(3).expect("three threads");
+
+        let expected = accumulate_cw_contributions_batch_with_context(
+            grid,
+            &positions,
+            &intensities,
+            instrument(),
+            contributions,
+            support,
+            &serial,
+        )
+        .expect("serial symmetric");
+        let expected_fcj = accumulate_cw_fcj_contributions_batch_with_context(
+            grid,
+            &positions,
+            &intensities,
+            instrument(),
+            contributions,
+            FcjGeometry {
+                sample_over_radius: 0.002,
+                detector_over_radius: 0.003,
+            },
+            support,
+            &serial,
+        )
+        .expect("serial FCJ");
+        for context in [&two, &three] {
+            assert_eq!(
+                accumulate_cw_contributions_batch_with_context(
+                    grid,
+                    &positions,
+                    &intensities,
+                    instrument(),
+                    contributions,
+                    support,
+                    context,
+                )
+                .expect("parallel symmetric"),
+                expected
+            );
+            assert_eq!(
+                accumulate_cw_fcj_contributions_batch_with_context(
+                    grid,
+                    &positions,
+                    &intensities,
+                    instrument(),
+                    contributions,
+                    FcjGeometry {
+                        sample_over_radius: 0.002,
+                        detector_over_radius: 0.003,
+                    },
+                    support,
+                    context,
+                )
+                .expect("parallel FCJ"),
+                expected_fcj
+            );
+        }
     }
 
     #[test]

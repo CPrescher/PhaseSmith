@@ -297,8 +297,10 @@ strict Clippy.
 The bounded-native-context checkpoint adds a private Rayon pool owned and
 reused by each native structural phase; PhaseSmith never mutates Rayon's global
 pool. Fixed reflection partitions (at most 64) parallelize structure-factor
-values, dense derivatives, JVPs, and VJPs with bounded scratch, ordered merges,
-and bitwise-identical one-, two-, and three-thread results. Dense pattern
+values, dense derivatives, and JVPs with bounded scratch, ordered merges, and
+bitwise-identical one-, two-, and three-thread results. Structure-factor VJPs
+retain canonical serial reflection reduction until a row-owned reverse kernel
+can preserve that same bit pattern. Dense pattern
 chaining is partitioned by parameter row so workers own disjoint outputs while
 each row preserves reflection order. The scriptable `PreparedStructuralPattern`
 and `calculate_structural_pattern` APIs accept `ExecutionPolicy` directly. A
@@ -306,6 +308,18 @@ single native leaf receives the full budget, while the multiphase/component
 Python scheduler assigns one native thread per concurrent leaf to avoid nested
 oversubscription. The complete gate passes 536 Python tests (three optional
 cases deselected), 73 Rust tests, Ruff, Rust formatting, and strict Clippy.
+
+The internal-profile checkpoint evaluates symmetric CW, FCJ, and TOF
+reflection supports in parallel-owned blocks and merges them in original
+reflection order. One-thread and small batches keep their original direct loops
+without scratch allocation. A 254-reflection single-phase dense structural
+linearization improves from a 1.242 ms median on one thread to 0.926 ms on two
+and 0.814 ms on three. An 80-reflection TOF batch improves from 103.60 ms to
+53.50 ms and 40.71 ms respectively. The public `accumulate_tof` API now accepts
+`ExecutionPolicy`; all values and local/global analytical derivatives remain
+bitwise identical across worker counts. The complete gate passes 537 Python
+tests (three optional cases deselected), 75 Rust tests, Ruff, Rust formatting,
+and strict Clippy.
 
 ## Design commitments
 

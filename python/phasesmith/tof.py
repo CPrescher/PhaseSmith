@@ -10,6 +10,7 @@ from numpy.typing import ArrayLike, NDArray
 
 from . import _core
 from ._api import _vector
+from .execution import ExecutionPolicy
 from .instrument import TofInstrument
 from .results import AccumulationResult, _build_accumulation_result
 
@@ -89,6 +90,7 @@ def accumulate_tof(
     support_fwhm: float = 20.0,
     tail_log: float = 20.0,
     jacobian_layout: Literal["support", "dense"] = "support",
+    execution: ExecutionPolicy | None = None,
 ) -> AccumulationResult:
     """Accumulate TOF reflections in one native finite-support pass.
 
@@ -99,6 +101,9 @@ def accumulate_tof(
 
     if jacobian_layout not in ("support", "dense"):
         raise ValueError("jacobian_layout must be 'support' or 'dense'")
+    selected_execution = ExecutionPolicy() if execution is None else execution
+    if not isinstance(selected_execution, ExecutionPolicy):
+        raise TypeError("execution must be an ExecutionPolicy")
     arrays = _core.accumulate_tof(
         _vector(x_us, "x_us"),
         _vector(d_spacing_angstrom, "d_spacing_angstrom"),
@@ -106,6 +111,7 @@ def accumulate_tof(
         *instrument.as_tuple(),
         float(support_fwhm),
         float(tail_log),
+        selected_execution.resolved_budget(),
     )
     return _build_accumulation_result(
         *arrays,

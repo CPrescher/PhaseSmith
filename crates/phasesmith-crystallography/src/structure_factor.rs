@@ -250,6 +250,12 @@ pub fn calculate_structure_factor_values_with_context(
     let validated = validate(cell, space_group, batch)?;
     let mut values = empty_values(batch.hkl.len());
     let chunks = reflection_chunks(batch.hkl.len());
+    if execution.threads() == 1 || chunks.len() < 2 {
+        for reflection in 0..batch.hkl.len() {
+            evaluate_value_reflection(&validated, reflection, reflection, &mut values);
+        }
+        return Ok(values);
+    }
     let partials = execution.map_ordered(chunks.len(), 2, |chunk| {
         let range = chunks[chunk].clone();
         let mut partial = empty_values(range.len());
@@ -312,6 +318,18 @@ pub fn calculate_structure_factor_dense_with_context(
         layout: validated.layout,
     };
     let chunks = reflection_chunks(reflection_count);
+    if execution.threads() == 1 || chunks.len() < 2 {
+        for reflection in 0..reflection_count {
+            evaluate_dense_reflection(
+                &validated,
+                reflection,
+                reflection,
+                reflection_count,
+                &mut result,
+            );
+        }
+        return Ok(result);
+    }
     let partials = execution.map_ordered(chunks.len(), 2, |chunk| {
         let range = chunks[chunk].clone();
         let local_count = range.len();
@@ -381,6 +399,12 @@ pub fn calculate_structure_factor_jvp_with_context(
         d_intensity: vec![0.0; reflection_count],
     };
     let chunks = reflection_chunks(reflection_count);
+    if execution.threads() == 1 || chunks.len() < 2 {
+        for reflection in 0..reflection_count {
+            evaluate_jvp_reflection(&validated, reflection, reflection, tangent, &mut result);
+        }
+        return Ok(result);
+    }
     let partials = execution.map_ordered(chunks.len(), 2, |chunk| {
         let range = chunks[chunk].clone();
         let local_count = range.len();
@@ -432,7 +456,7 @@ pub fn calculate_structure_factor_intensity_vjp_with_context(
     space_group: &SpaceGroup,
     batch: StructureFactorBatchView<'_>,
     weights: &[f64],
-    execution: &ExecutionContext,
+    _execution: &ExecutionContext,
 ) -> Result<StructureFactorVjpResult, StructureFactorBatchError> {
     let validated = validate(cell, space_group, batch)?;
     if weights.len() != batch.hkl.len() {
@@ -446,33 +470,19 @@ pub fn calculate_structure_factor_intensity_vjp_with_context(
         gradient: vec![0.0; validated.layout.parameter_count()],
         layout: validated.layout,
     };
-    let chunks = reflection_chunks(batch.hkl.len());
-    let partials = execution.map_ordered(chunks.len(), 2, |chunk| {
-        let range = chunks[chunk].clone();
-        let local_count = range.len();
-        let mut partial = StructureFactorVjpResult {
-            values: empty_values(local_count),
-            gradient: vec![0.0; validated.layout.parameter_count()],
-            layout: validated.layout,
-        };
-        let mut site_evaluations = Vec::with_capacity(validated.layout.site_count);
-        for (local, reflection) in range.enumerate() {
-            evaluate_vjp_reflection(
-                &validated,
-                reflection,
-                local,
-                weights[reflection],
-                &mut site_evaluations,
-                &mut partial,
-            );
-        }
-        partial
-    });
-    for (range, partial) in chunks.into_iter().zip(partials) {
-        copy_values_chunk(&mut result.values, &partial.values, range);
-        for (target, contribution) in result.gradient.iter_mut().zip(partial.gradient) {
-            *target += contribution;
-        }
+    let mut site_evaluations = Vec::new();
+    site_evaluations
+        .try_reserve_exact(validated.layout.site_count)
+        .map_err(|_| StructureFactorBatchError::AllocationOverflow)?;
+    for (reflection, weight) in weights.iter().copied().enumerate() {
+        evaluate_vjp_reflection(
+            &validated,
+            reflection,
+            reflection,
+            weight,
+            &mut site_evaluations,
+            &mut result,
+        );
     }
     Ok(result)
 }

@@ -25,7 +25,8 @@ pub use cw_components::{
 };
 pub use cw_contributions::{
     CwContributionArrays, CwContributionsError, CwContributionsView,
-    accumulate_cw_contributions_batch, accumulate_cw_fcj_contributions_batch,
+    accumulate_cw_contributions_batch, accumulate_cw_contributions_batch_with_context,
+    accumulate_cw_fcj_contributions_batch, accumulate_cw_fcj_contributions_batch_with_context,
 };
 pub use cw_fcj::{CwFcjBatchError, accumulate_cw_fcj_batch};
 pub use fcj::{FcjError, FcjGeometry, FcjProfile, FcjProfilePoint};
@@ -42,5 +43,5 @@ pub use tch::{
 };
 pub use tof::{
     TOF_GLOBAL_PARAMETER_COUNT, TofError, TofInstrument, TofProfile, TofProfileParameters,
-    TofProfilePoint, accumulate_tof_batch,
+    TofProfilePoint, accumulate_tof_batch, accumulate_tof_batch_with_context,
 };

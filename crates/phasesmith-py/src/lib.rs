@@ -11,7 +11,7 @@ use phasesmith_core::{
     TofProfileParameters, WavelengthComponentsView, accumulate_batch, accumulate_cw_batch,
     accumulate_cw_components_batch, accumulate_cw_contributions_batch, accumulate_cw_fcj_batch,
     accumulate_cw_fcj_components_batch, accumulate_cw_fcj_contributions_batch,
-    accumulate_tch_batch, accumulate_tof_batch, accumulate_values_batch,
+    accumulate_tch_batch, accumulate_tof_batch_with_context, accumulate_values_batch,
     smooth_bruckner as native_smooth_bruckner, symmetric_pseudo_voigt,
 };
 use phasesmith_engine::crystallography::{
@@ -1967,6 +1967,7 @@ fn accumulate_tof<'py>(
     z_us: f64,
     support_fwhm: f64,
     tail_log: f64,
+    native_threads: usize,
 ) -> PyResult<AccumulationArrays<'py>> {
     let x = contiguous_slice(&x_us, "x_us")?;
     let d_spacing = contiguous_slice(&d_spacing_angstrom, "d_spacing_angstrom")?;
@@ -1989,15 +1990,18 @@ fn accumulate_tof<'py>(
         y_us_per_angstrom2,
         z_us,
     );
+    let execution = ExecutionContext::new(native_threads)
+        .map_err(|error| PyValueError::new_err(error.to_string()))?;
     let accumulation = py
         .detach(|| {
-            accumulate_tof_batch(
+            accumulate_tof_batch_with_context(
                 grid,
                 d_spacing,
                 intensities,
                 instrument,
                 support_fwhm,
                 tail_log,
+                &execution,
             )
         })
         .map_err(|error| PyValueError::new_err(error.to_string()))?;

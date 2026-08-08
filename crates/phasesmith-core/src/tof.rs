@@ -10,6 +10,7 @@ use crate::profile::{
     SupportRange, zeroed_f64_vec,
 };
 use crate::tch::{TchError, TchShape, TchWidths};
+use phasesmith_execution::ExecutionContext;
 
 const GAUSSIAN_FWHM_PER_SIGMA: f64 = 2.354_820_045_030_949_3;
 /// Public order: zero, difC, difA, difB, alpha, beta0, beta1, betaq,
@@ -568,6 +569,13 @@ struct PreparedReflection {
     profile: TofProfile,
 }
 
+struct TofReflectionBlock {
+    start: usize,
+    y: Vec<f64>,
+    local: Vec<f64>,
+    global: Vec<f64>,
+}
+
 /// Fused finite-support TOF accumulation with local intensity/d-spacing rows.
 ///
 /// # Errors
@@ -582,6 +590,32 @@ pub fn accumulate_tof_batch(
     instrument: TofInstrument,
     support_fwhm: f64,
     tail_log: f64,
+) -> Result<Accumulation, TofError> {
+    accumulate_tof_batch_with_context(
+        grid,
+        d_spacings,
+        intensities,
+        instrument,
+        support_fwhm,
+        tail_log,
+        &ExecutionContext::serial(),
+    )
+}
+
+/// Accumulate TOF reflections with a bounded execution context.
+///
+/// # Errors
+///
+/// Returns [`TofError`] for invalid inputs, profiles, supports, or allocations.
+#[allow(clippy::too_many_lines)]
+pub fn accumulate_tof_batch_with_context(
+    grid: GridView<'_>,
+    d_spacings: &[f64],
+    intensities: &[f64],
+    instrument: TofInstrument,
+    support_fwhm: f64,
+    tail_log: f64,
+    execution: &ExecutionContext,
 ) -> Result<Accumulation, TofError> {
     if d_spacings.len() != intensities.len() {
         return Err(TofError::LengthMismatch);
@@ -658,35 +692,94 @@ pub fn accumulate_tof_batch(
             .checked_mul(x.len())
             .ok_or(TofError::AllocationOverflow)?,
     )?;
-    for reflection in 0..count {
-        let item = &prepared[reflection];
-        let intensity = intensities[reflection];
-        let base_radius = support_fwhm * item.parameters.tch.total_fwhm;
-        let begin = offsets[reflection];
-        let end = offsets[reflection + 1];
-        for active_index in begin..end {
-            let sample = starts[reflection] + active_index - begin;
-            let point = item
-                .profile
-                .evaluate_with_radius(x[sample] - item.parameters.position_us, base_radius);
-            y[sample] += intensity * point.value;
-            local[active_index * LOCAL_PARAMETER_COUNT] = point.value;
-            local[active_index * LOCAL_PARAMETER_COUNT + 1] = intensity
-                * (point.d_position * item.parameters.d_position_d_d
-                    + point.d_alpha * item.parameters.d_alpha_d_d
-                    + point.d_beta * item.parameters.d_beta_d_d
-                    + point.d_gaussian_fwhm * item.parameters.d_gaussian_fwhm_d_d
-                    + point.d_lorentzian_fwhm * item.parameters.d_lorentzian_fwhm_d_d);
-            for parameter in 0..TOF_GLOBAL_PARAMETER_COUNT {
-                let derivative = point.d_position
-                    * item.parameters.d_position_d_instrument[parameter]
-                    + point.d_alpha * item.parameters.d_alpha_d_instrument[parameter]
-                    + point.d_beta * item.parameters.d_beta_d_instrument[parameter]
-                    + point.d_gaussian_fwhm
-                        * item.parameters.d_gaussian_fwhm_d_instrument[parameter]
-                    + point.d_lorentzian_fwhm
-                        * item.parameters.d_lorentzian_fwhm_d_instrument[parameter];
-                global[parameter * x.len() + sample] += intensity * derivative;
+    if execution.threads() == 1 || count < 16 {
+        for reflection in 0..count {
+            let item = &prepared[reflection];
+            let intensity = intensities[reflection];
+            let base_radius = support_fwhm * item.parameters.tch.total_fwhm;
+            let begin = offsets[reflection];
+            let end = offsets[reflection + 1];
+            for active_index in begin..end {
+                let sample = starts[reflection] + active_index - begin;
+                let point = item
+                    .profile
+                    .evaluate_with_radius(x[sample] - item.parameters.position_us, base_radius);
+                y[sample] += intensity * point.value;
+                local[active_index * LOCAL_PARAMETER_COUNT] = point.value;
+                local[active_index * LOCAL_PARAMETER_COUNT + 1] = intensity
+                    * (point.d_position * item.parameters.d_position_d_d
+                        + point.d_alpha * item.parameters.d_alpha_d_d
+                        + point.d_beta * item.parameters.d_beta_d_d
+                        + point.d_gaussian_fwhm * item.parameters.d_gaussian_fwhm_d_d
+                        + point.d_lorentzian_fwhm * item.parameters.d_lorentzian_fwhm_d_d);
+                for parameter in 0..TOF_GLOBAL_PARAMETER_COUNT {
+                    let derivative = point.d_position
+                        * item.parameters.d_position_d_instrument[parameter]
+                        + point.d_alpha * item.parameters.d_alpha_d_instrument[parameter]
+                        + point.d_beta * item.parameters.d_beta_d_instrument[parameter]
+                        + point.d_gaussian_fwhm
+                            * item.parameters.d_gaussian_fwhm_d_instrument[parameter]
+                        + point.d_lorentzian_fwhm
+                            * item.parameters.d_lorentzian_fwhm_d_instrument[parameter];
+                    global[parameter * x.len() + sample] += intensity * derivative;
+                }
+            }
+        }
+    } else {
+        let blocks = execution.map_ordered(count, 16, |reflection| {
+            let item = &prepared[reflection];
+            let intensity = intensities[reflection];
+            let base_radius = support_fwhm * item.parameters.tch.total_fwhm;
+            let begin = offsets[reflection];
+            let end = offsets[reflection + 1];
+            let support_count = end - begin;
+            let mut block = TofReflectionBlock {
+                start: starts[reflection],
+                y: vec![0.0; support_count],
+                local: vec![0.0; support_count * LOCAL_PARAMETER_COUNT],
+                global: vec![0.0; support_count * TOF_GLOBAL_PARAMETER_COUNT],
+            };
+            for support_index in 0..support_count {
+                let sample = block.start + support_index;
+                let point = item
+                    .profile
+                    .evaluate_with_radius(x[sample] - item.parameters.position_us, base_radius);
+                block.y[support_index] = intensity * point.value;
+                block.local[support_index * LOCAL_PARAMETER_COUNT] = point.value;
+                block.local[support_index * LOCAL_PARAMETER_COUNT + 1] = intensity
+                    * (point.d_position * item.parameters.d_position_d_d
+                        + point.d_alpha * item.parameters.d_alpha_d_d
+                        + point.d_beta * item.parameters.d_beta_d_d
+                        + point.d_gaussian_fwhm * item.parameters.d_gaussian_fwhm_d_d
+                        + point.d_lorentzian_fwhm * item.parameters.d_lorentzian_fwhm_d_d);
+                for parameter in 0..TOF_GLOBAL_PARAMETER_COUNT {
+                    let derivative = point.d_position
+                        * item.parameters.d_position_d_instrument[parameter]
+                        + point.d_alpha * item.parameters.d_alpha_d_instrument[parameter]
+                        + point.d_beta * item.parameters.d_beta_d_instrument[parameter]
+                        + point.d_gaussian_fwhm
+                            * item.parameters.d_gaussian_fwhm_d_instrument[parameter]
+                        + point.d_lorentzian_fwhm
+                            * item.parameters.d_lorentzian_fwhm_d_instrument[parameter];
+                    block.global[parameter * support_count + support_index] =
+                        intensity * derivative;
+                }
+            }
+            block
+        });
+        for (reflection, block) in blocks.into_iter().enumerate() {
+            let begin = offsets[reflection];
+            let support_count = block.y.len();
+            let local_begin = begin * LOCAL_PARAMETER_COUNT;
+            let local_end = local_begin + block.local.len();
+            local[local_begin..local_end].copy_from_slice(&block.local);
+            for support_index in 0..support_count {
+                let sample = block.start + support_index;
+                y[sample] += block.y[support_index];
+                for parameter in 0..TOF_GLOBAL_PARAMETER_COUNT {
+                    global[parameter * x.len() + sample] +=
+                        block.global[parameter * support_count + support_index];
+                }
             }
         }
     }
@@ -765,6 +858,47 @@ mod tests {
 
         assert!(Arc::ptr_eq(&first.quadrature, &second.quadrature));
         assert!(std::mem::size_of::<TofProfile>() < 128);
+    }
+
+    #[test]
+    fn accumulation_blocks_are_bitwise_identical_across_worker_counts() {
+        let x = (0..=8_000)
+            .map(|index| 1_000.0 + 2.0 * f64::from(index))
+            .collect::<Vec<_>>();
+        let d_spacings = (0..36)
+            .map(|index| 0.5 + 0.065 * f64::from(index))
+            .collect::<Vec<_>>();
+        let intensities = (0..36)
+            .map(|index| 3.0 + 0.3 * f64::from(index))
+            .collect::<Vec<_>>();
+        let grid = GridView::new(&x).expect("grid");
+        let serial = ExecutionContext::serial();
+        let expected = accumulate_tof_batch_with_context(
+            grid,
+            &d_spacings,
+            &intensities,
+            instrument(),
+            20.0,
+            20.0,
+            &serial,
+        )
+        .expect("serial TOF");
+        for threads in [2, 3] {
+            let context = ExecutionContext::new(threads).expect("parallel context");
+            assert_eq!(
+                accumulate_tof_batch_with_context(
+                    grid,
+                    &d_spacings,
+                    &intensities,
+                    instrument(),
+                    20.0,
+                    20.0,
+                    &context,
+                )
+                .expect("parallel TOF"),
+                expected
+            );
+        }
     }
 
     #[test]

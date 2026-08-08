@@ -5,8 +5,9 @@ use std::fmt::{Display, Formatter};
 
 use phasesmith_core::{
     Accumulation, ConstantWavelengthInstrument, CwContributionsError, CwContributionsView, CwError,
-    FcjGeometry, GridView, ProfileError, SupportPolicy, accumulate_cw_contributions_batch,
-    accumulate_cw_fcj_contributions_batch,
+    FcjGeometry, GridView, ProfileError, SupportPolicy,
+    accumulate_cw_contributions_batch_with_context,
+    accumulate_cw_fcj_contributions_batch_with_context,
 };
 use phasesmith_crystallography::{
     IntegratedIntensityCorrection, IntegratedIntensityCorrectionError,
@@ -358,35 +359,65 @@ pub fn calculate_structural_pattern_dense_with_context(
             .ok_or(StructuralPatternError::Contributions(
                 CwContributionsError::AllocationOverflow,
             ))?;
-    let mut accumulation =
-        accumulate(input, &prepared.two_theta_deg, &structural.values.intensity)?;
+    let mut accumulation = accumulate(
+        input,
+        &prepared.two_theta_deg,
+        &structural.values.intensity,
+        execution,
+    )?;
     append_instrument_derivatives(&mut accumulation, &structural.values, input, &prepared)?;
     let reflection_count = input.hkl.len();
     let local = &accumulation.derivatives.local;
-    let rows = execution.map_ordered(parameter_count, 2, |parameter| {
-        let mut row = vec![0.0; sample_count];
+    let d_y = if execution.threads() == 1 || parameter_count < 2 {
+        let mut values = vec![0.0; element_count];
         for reflection in 0..reflection_count {
             let begin = local.offsets[reflection];
             let end = local.offsets[reflection + 1];
             for active in begin..end {
                 let sample = local.starts[reflection] + active - begin;
                 let local_base = 2 * active;
-                let structural_index = parameter * reflection_count + reflection;
-                let position_derivative = if parameter < CELL_PARAMETER_COUNT {
-                    prepared.d_two_theta_d_cell[reflection][parameter]
-                } else {
-                    0.0
-                };
-                row[sample] += local.values[local_base] * structural.d_intensity[structural_index]
-                    + local.values[local_base + 1] * position_derivative;
+                for parameter in 0..parameter_count {
+                    let structural_index = parameter * reflection_count + reflection;
+                    let position_derivative = if parameter < CELL_PARAMETER_COUNT {
+                        prepared.d_two_theta_d_cell[reflection][parameter]
+                    } else {
+                        0.0
+                    };
+                    values[parameter * sample_count + sample] += local.values[local_base]
+                        * structural.d_intensity[structural_index]
+                        + local.values[local_base + 1] * position_derivative;
+                }
             }
         }
-        row
-    });
-    let mut d_y = Vec::with_capacity(element_count);
-    for row in rows {
-        d_y.extend(row);
-    }
+        values
+    } else {
+        let rows = execution.map_ordered(parameter_count, 2, |parameter| {
+            let mut row = vec![0.0; sample_count];
+            for reflection in 0..reflection_count {
+                let begin = local.offsets[reflection];
+                let end = local.offsets[reflection + 1];
+                for active in begin..end {
+                    let sample = local.starts[reflection] + active - begin;
+                    let local_base = 2 * active;
+                    let structural_index = parameter * reflection_count + reflection;
+                    let position_derivative = if parameter < CELL_PARAMETER_COUNT {
+                        prepared.d_two_theta_d_cell[reflection][parameter]
+                    } else {
+                        0.0
+                    };
+                    row[sample] += local.values[local_base]
+                        * structural.d_intensity[structural_index]
+                        + local.values[local_base + 1] * position_derivative;
+                }
+            }
+            row
+        });
+        let mut values = Vec::with_capacity(element_count);
+        for row in rows {
+            values.extend(row);
+        }
+        values
+    };
     Ok(StructuralPatternDenseResult {
         result: StructuralPatternResult {
             structure_factors: structural.values,
@@ -451,8 +482,12 @@ pub fn calculate_structural_pattern_jvp_with_context(
                 .sum::<f64>()
         })
         .collect::<Vec<_>>();
-    let mut accumulation =
-        accumulate(input, &prepared.two_theta_deg, &structural.values.intensity)?;
+    let mut accumulation = accumulate(
+        input,
+        &prepared.two_theta_deg,
+        &structural.values.intensity,
+        execution,
+    )?;
     append_instrument_derivatives(&mut accumulation, &structural.values, input, &prepared)?;
     let d_y = chain_pattern_jvp(&accumulation, &structural.d_intensity, &d_two_theta_deg);
     Ok(StructuralPatternJvpResult {
@@ -514,7 +549,8 @@ pub fn calculate_structural_pattern_vjp_with_context(
         execution,
     )
     .map_err(StructuralPatternError::StructureFactor)?;
-    let mut accumulation = accumulate(input, &prepared.two_theta_deg, &values.intensity)?;
+    let mut accumulation =
+        accumulate(input, &prepared.two_theta_deg, &values.intensity, execution)?;
     append_instrument_derivatives(&mut accumulation, &values, input, &prepared)?;
     let (intensity_weights, position_weights) =
         local_transpose_weights(&accumulation, sample_weights);
@@ -656,8 +692,12 @@ fn calculate_values(
         execution,
     )
     .map_err(StructuralPatternError::StructureFactor)?;
-    let mut accumulation =
-        accumulate(input, &prepared.two_theta_deg, &structure_factors.intensity)?;
+    let mut accumulation = accumulate(
+        input,
+        &prepared.two_theta_deg,
+        &structure_factors.intensity,
+        execution,
+    )?;
     append_instrument_derivatives(&mut accumulation, &structure_factors, input, prepared)?;
     Ok(StructuralPatternResult {
         structure_factors,
@@ -736,10 +776,11 @@ fn accumulate(
     input: &StructuralPatternInputView<'_>,
     two_theta_deg: &[f64],
     intensities: &[f64],
+    execution: &ExecutionContext,
 ) -> Result<Accumulation, StructuralPatternError> {
     let grid = GridView::new(input.x_deg).map_err(StructuralPatternError::Profile)?;
     let result = match input.axial_geometry {
-        Some(geometry) => accumulate_cw_fcj_contributions_batch(
+        Some(geometry) => accumulate_cw_fcj_contributions_batch_with_context(
             grid,
             two_theta_deg,
             intensities,
@@ -747,14 +788,16 @@ fn accumulate(
             input.contributions,
             geometry,
             input.support,
+            execution,
         ),
-        None => accumulate_cw_contributions_batch(
+        None => accumulate_cw_contributions_batch_with_context(
             grid,
             two_theta_deg,
             intensities,
             input.instrument,
             input.contributions,
             input.support,
+            execution,
         ),
     };
     result.map_err(StructuralPatternError::Contributions)
