@@ -23,9 +23,7 @@ class ExecutionPolicy:
 
     def __post_init__(self) -> None:
         if self.threads is not None and (
-            isinstance(self.threads, bool)
-            or not isinstance(self.threads, int)
-            or self.threads <= 0
+            isinstance(self.threads, bool) or not isinstance(self.threads, int) or self.threads <= 0
         ):
             raise ValueError("threads must be None or a positive integer")
         if (
@@ -38,13 +36,23 @@ class ExecutionPolicy:
     def resolved_threads(self, task_count: int) -> int:
         """Return the bounded worker count for a known number of tasks."""
 
+        return self.python_worker_count(task_count)
+
+    def resolved_budget(self) -> int:
+        """Return the total bounded logical-CPU budget for this operation."""
+
+        available = max(1, cpu_count() or 1)
+        requested = available if self.threads is None else self.threads
+        return max(1, min(requested, available))
+
+    def python_worker_count(self, task_count: int) -> int:
+        """Return workers assigned to independent Python-visible tasks."""
+
         if isinstance(task_count, bool) or not isinstance(task_count, int) or task_count < 0:
             raise ValueError("task_count must be a non-negative integer")
         if task_count < self.minimum_parallel_tasks:
             return 1
-        available = max(1, cpu_count() or 1)
-        requested = available if self.threads is None else self.threads
-        return max(1, min(requested, available, task_count))
+        return max(1, min(self.resolved_budget(), task_count))
 
 
 @contextmanager
@@ -56,7 +64,7 @@ def execution_pool(
 
     if not isinstance(policy, ExecutionPolicy):
         raise TypeError("policy must be ExecutionPolicy")
-    workers = policy.resolved_threads(task_count)
+    workers = policy.python_worker_count(task_count)
     if workers == 1:
         yield None
         return

@@ -163,10 +163,14 @@ def test_full_bundle_round_trips_models_results_arrays_and_resume(tmp_path) -> N
         calculation_options=phasesmith.CalculationOptions(
             support_fwhm=15.0,
             return_phase_components=True,
+            execution=phasesmith.ExecutionPolicy(threads=2),
         ),
         calculation_result=result.calculation,
         parameters=parameters,
-        lebail_options=lebail.LeBailOptions(max_iterations=20),
+        lebail_options=lebail.LeBailOptions(
+            max_iterations=20,
+            execution=phasesmith.ExecutionPolicy(threads=3),
+        ),
         lebail_checkpoint=result.checkpoint,
         lebail_result=result,
         constraints=constraints,
@@ -545,6 +549,30 @@ def test_version_eight_rietveld_options_gain_serial_execution_default(tmp_path) 
     restored = persistence.load_bundle(path)
     assert restored.rietveld_options is not None
     assert restored.rietveld_options.execution == phasesmith.ExecutionPolicy()
+
+
+def test_version_nine_calculation_and_lebail_gain_serial_execution_default(tmp_path) -> None:
+    path = persistence.save_bundle(
+        tmp_path / "version-nine",
+        persistence.PersistenceBundle(
+            calculation_options=phasesmith.CalculationOptions(
+                execution=phasesmith.ExecutionPolicy(threads=2)
+            ),
+            lebail_options=lebail.LeBailOptions(execution=phasesmith.ExecutionPolicy(threads=3)),
+        ),
+    )
+    manifest_path = path / persistence.MANIFEST_NAME
+    manifest = json.loads(manifest_path.read_text())
+    manifest["format_version"] = 9
+    del manifest["bundle"]["calculation_options"]["execution"]
+    del manifest["bundle"]["lebail_options"]["execution"]
+    manifest_path.write_text(json.dumps(manifest))
+
+    restored = persistence.load_bundle(path)
+    assert restored.calculation_options is not None
+    assert restored.lebail_options is not None
+    assert restored.calculation_options.execution == phasesmith.ExecutionPolicy(threads=1)
+    assert restored.lebail_options.execution == phasesmith.ExecutionPolicy(threads=1)
 
 
 def test_undefined_zero_pattern_ratios_round_trip_as_explicit_nulls(tmp_path) -> None:

@@ -82,6 +82,34 @@ def test_isolated_reflections_are_recovered_from_a_short_one_call_script() -> No
     )
 
     assert result.termination_reason is TerminationReason.CONVERGED
+
+
+def test_refinement_propagates_execution_policy_to_every_pattern_calculation(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    x = np.linspace(20.0, 80.0, 2_001)
+    positions = np.array([30.0, 50.0, 70.0])
+    truth = (phase("alpha", positions, np.array([10.0, 6.0, 3.0])),)
+    starting = (phase("alpha", positions, np.ones(3)),)
+    pattern = observed_pattern(x, truth)
+    policy = phasesmith.ExecutionPolicy(threads=2)
+    observed_policies = []
+    original = lebail.calculate_pattern
+
+    def counted(*args: object, **kwargs: object) -> phasesmith.PatternCalculationResult:
+        options = kwargs.get("options")
+        assert isinstance(options, phasesmith.CalculationOptions)
+        observed_policies.append(options.execution)
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(lebail, "calculate_pattern", counted)
+    result = lebail.refine(
+        lebail.LeBailInput(pattern, instrument(), starting),
+        lebail.LeBailOptions(max_iterations=2, execution=policy),
+    )
+    assert result.calculation.y.shape == x.shape
+    assert observed_policies
+    assert all(item is policy for item in observed_policies)
     np.testing.assert_allclose(extracted(result), [10.0, 6.0, 3.0], rtol=2e-12)
     np.testing.assert_allclose(result.calculation.y, pattern.observed_y, atol=3e-13)
     assert result.metrics.rwp < 2e-14

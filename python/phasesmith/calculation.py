@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Literal
 
 import numpy as np
@@ -16,6 +16,7 @@ from .control import (
     report_progress,
 )
 from .cw import accumulate_cw, accumulate_cw_contributions
+from .execution import ExecutionPolicy
 from .extensions import (
     PhysicsContext,
     PhysicsContribution,
@@ -74,6 +75,7 @@ class CalculationOptions:
     support_fwhm: float = 20.0
     jacobian_layout: Literal["support", "dense"] = "support"
     return_phase_components: bool = False
+    execution: ExecutionPolicy = field(default_factory=ExecutionPolicy)
 
     def __post_init__(self) -> None:
         """Validate support and derivative-layout selection early."""
@@ -82,6 +84,8 @@ class CalculationOptions:
             raise ValueError("support_fwhm must be positive and finite")
         if self.jacobian_layout not in ("support", "dense"):
             raise ValueError("jacobian_layout must be 'support' or 'dense'")
+        if not isinstance(self.execution, ExecutionPolicy):
+            raise TypeError("execution must be ExecutionPolicy")
 
 
 @dataclass(frozen=True, slots=True)

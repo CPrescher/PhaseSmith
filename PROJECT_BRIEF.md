@@ -287,8 +287,10 @@ status and scientific checks.
 The third worker now remains useful because the dominant Al2O3 doublet is two
 independent leaves. Against the preceding same-host pinned GSAS-II median of
 2.718 seconds, the three-thread result is 3.83x faster, while remaining an
-explicitly non-matched native-workflow comparison. Persistence format 9 stores
-the policy and loads formats 1--8. The complete gate passes 532 Python tests
+explicitly non-matched native-workflow comparison. Persistence format 10 stores
+the same execution policy for generic calculation, Le Bail, and Rietveld while
+loading formats 1--9 with an explicit one-thread migration default. The
+complete gate passes 535 Python tests
 (three optional cases deselected), 70 Rust tests, Ruff, Rust formatting, and
 strict Clippy.
 

@@ -287,6 +287,13 @@ reflection parameters are optional diagnostics. Analytical derivatives retain
 the hybrid local/global storage implemented by the numerical core and expose
 stable parameter labels.
 
+`CalculationOptions`, `LeBailOptions`, and `RietveldOptions` each own the same
+immutable `ExecutionPolicy`. Its budget belongs to the complete public
+operation, including prepared calculators and refinement backtracks; callers do
+not configure module-global pools. A fused generic pattern is currently one
+Python-visible task and therefore remains serial at this layer until its native
+kernel receives the remaining budget.
+
 An external program should need only to provide contiguous `x`, observed
 intensity, optional uncertainty/mask arrays, and typed instrument/phase data.
 It receives NumPy calculated arrays and plain diagnostic records. An adapter

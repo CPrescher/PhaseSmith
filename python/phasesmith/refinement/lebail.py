@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -16,6 +16,7 @@ from ..control import (
     ProgressEvent,
     report_progress,
 )
+from ..execution import ExecutionPolicy
 from ..instrument import ConstantWavelengthInstrument
 from ..pattern import PatternCalculationResult, PowderPattern
 from ..phase import Phase, ReflectionBatch
@@ -467,6 +468,7 @@ class LeBailOptions:
     unresolved_correlation: float = 1.0 - 1.0e-10
     diagnose_rank_deficiency: bool = False
     support_fwhm: float = 20.0
+    execution: ExecutionPolicy = field(default_factory=ExecutionPolicy)
 
     def __post_init__(self) -> None:
         """Validate finite convergence, support, and damping controls."""
@@ -497,6 +499,8 @@ class LeBailOptions:
             raise ValueError("unresolved_correlation must lie in [0, 1]")
         if not isinstance(self.diagnose_rank_deficiency, bool):
             raise TypeError("diagnose_rank_deficiency must be boolean")
+        if not isinstance(self.execution, ExecutionPolicy):
+            raise TypeError("execution must be ExecutionPolicy")
 
 
 @dataclass(frozen=True, slots=True)
@@ -1071,6 +1075,7 @@ def _profile_update(
                 options=CalculationOptions(
                     support_fwhm=options.support_fwhm,
                     return_phase_components=True,
+                    execution=options.execution,
                 ),
             )
             candidate_metrics = evaluate_residuals(
@@ -1097,6 +1102,7 @@ def _profile_update(
                     options=CalculationOptions(
                         support_fwhm=options.support_fwhm,
                         return_phase_components=True,
+                        execution=options.execution,
                     ),
                 )
             changes = tuple(
@@ -1325,6 +1331,7 @@ def refine(
         options=CalculationOptions(
             support_fwhm=selected_options.support_fwhm,
             return_phase_components=True,
+            execution=selected_options.execution,
         ),
     )
     for iteration in range(first_iteration, selected_options.max_iterations + 1):
@@ -1347,6 +1354,7 @@ def refine(
             options=CalculationOptions(
                 support_fwhm=selected_options.support_fwhm,
                 return_phase_components=True,
+                execution=selected_options.execution,
             ),
         )
         profile_step = 0.0

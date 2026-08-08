@@ -98,7 +98,7 @@ from .sample import (
 from .scattering import NeutronNuclear, XrayFixedDispersion, XrayNonResonant
 from .structure import CrystalStructure, structure_from_record, structure_to_record
 
-FORMAT_VERSION: Final = 9
+FORMAT_VERSION: Final = 10
 MANIFEST_NAME: Final = "manifest.json"
 ARCHIVE_NAME: Final = "arrays.npz"
 Instrument = ConstantWavelengthInstrument | TofInstrument
@@ -1012,10 +1012,7 @@ def _rietveld_options_record(options: RietveldOptions | None) -> dict[str, Any] 
             for name in RietveldOptions.__dataclass_fields__
             if name not in {"execution", "limits"}
         },
-        "execution": {
-            "threads": options.execution.threads,
-            "minimum_parallel_tasks": options.execution.minimum_parallel_tasks,
-        },
+        "execution": _execution_policy_record(options.execution),
         "limits": {
             name: getattr(options.limits, name) for name in RefinementLimits.__dataclass_fields__
         },
@@ -1027,8 +1024,21 @@ def _rietveld_options_from_record(record: dict[str, Any] | None) -> RietveldOpti
         return None
     values = dict(record)
     values["limits"] = RefinementLimits(**values["limits"])
-    values["execution"] = ExecutionPolicy(**values.get("execution", {}))
+    values["execution"] = _execution_policy_from_record(values.get("execution"))
     return RietveldOptions(**values)
+
+
+def _execution_policy_record(policy: ExecutionPolicy) -> dict[str, Any]:
+    return {
+        "threads": policy.threads,
+        "minimum_parallel_tasks": policy.minimum_parallel_tasks,
+    }
+
+
+def _execution_policy_from_record(record: dict[str, Any] | None) -> ExecutionPolicy:
+    if record is None:
+        return ExecutionPolicy(threads=1)
+    return ExecutionPolicy(**record)
 
 
 def _rietveld_iteration_record(item: RietveldIterationRecord) -> dict[str, Any]:
@@ -1490,6 +1500,7 @@ def save_bundle(
                 "support_fwhm": bundle.calculation_options.support_fwhm,
                 "jacobian_layout": bundle.calculation_options.jacobian_layout,
                 "return_phase_components": bundle.calculation_options.return_phase_components,
+                "execution": _execution_policy_record(bundle.calculation_options.execution),
             }
         ),
         "calculation_result": (
@@ -1504,7 +1515,9 @@ def save_bundle(
             else {
                 name: getattr(bundle.lebail_options, name)
                 for name in LeBailOptions.__dataclass_fields__
+                if name != "execution"
             }
+            | {"execution": _execution_policy_record(bundle.lebail_options.execution)}
         ),
         "lebail_checkpoint": _checkpoint_record(
             bundle.lebail_checkpoint, writer, "checkpoint", codecs
@@ -1558,7 +1571,7 @@ def load_bundle(
     if (
         not isinstance(version, int)
         or isinstance(version, bool)
-        or version not in (1, 2, 3, 4, 5, 6, 7, 8, FORMAT_VERSION)
+        or version not in (1, 2, 3, 4, 5, 6, 7, 8, 9, FORMAT_VERSION)
     ):
         raise PersistenceError(f"unsupported persistence format {manifest.get('format_version')!r}")
     if manifest.get("archive", {}).get("file") != ARCHIVE_NAME:
@@ -1593,6 +1606,13 @@ def load_bundle(
     record = manifest["bundle"]
     codecs = tuple(provider_codecs)
     options = record["calculation_options"]
+    if options is not None:
+        options = dict(options)
+        options["execution"] = _execution_policy_from_record(options.get("execution"))
+    lebail_options = record["lebail_options"]
+    if lebail_options is not None:
+        lebail_options = dict(lebail_options)
+        lebail_options["execution"] = _execution_policy_from_record(lebail_options.get("execution"))
     calculation_result = record["calculation_result"]
     structural_phases = tuple(
         _rietveld_phase_from_record(phase, arrays, codecs)
@@ -1635,9 +1655,7 @@ def load_bundle(
             else _calculation_from_record(calculation_result, arrays)
         ),
         parameters=_parameters_from_record(record["parameters"]),
-        lebail_options=(
-            None if record["lebail_options"] is None else LeBailOptions(**record["lebail_options"])
-        ),
+        lebail_options=(None if lebail_options is None else LeBailOptions(**lebail_options)),
         lebail_checkpoint=_checkpoint_from_record(record["lebail_checkpoint"], arrays, codecs),
         lebail_result=_result_from_record(record["lebail_result"], arrays, codecs),
         constraints=tuple(_constraint_from_record(item) for item in record["constraints"]),
