@@ -303,3 +303,13 @@ setting-aware cells, general or symmetry-constrained coordinates, occupancy,
 isotropic displacement, and phase scale. Out-of-bounds or non-finite vectors
 fail before structural preparation. This closes the value-to-domain half of
 the native solver boundary; no adapter needs to edit engine array offsets.
+
+The first bounded native Rietveld solver slice is complete for fixed reflection
+topology. Scaled conjugate gradients consume the matrix-free normal operator;
+step norms, physical bounds, deterministic half-step backtracking, Levenberg
+damping, model-product budgets, cancellation, structured events, accepted-only
+history, typed checkpoint sinks, and exact restart all use the shared runtime.
+Synthetic phase-scale and cubic-cell recovery pass natively, as do cancellation,
+evaluation exhaustion, all-excluded observations, corrupt checkpoints, worker
+determinism, and event/checkpoint delivery. Guarded topology regeneration is
+the next Rietveld substep before Python delegation.

@@ -12,6 +12,7 @@ mod residuals;
 mod rietveld;
 mod rietveld_objective;
 mod rietveld_parameters;
+mod rietveld_solver;
 mod runtime;
 
 pub use backgrounds::{
@@ -46,6 +47,11 @@ pub use rietveld_objective::{PreparedRietveldObjective, RietveldObjectiveError};
 pub use rietveld_parameters::{
     RietveldParameterError, RietveldStructuralLayout, RietveldStructuralSelection,
     SiteCoordinateModel,
+};
+pub use rietveld_solver::{
+    RietveldCheckpoint, RietveldIterationRecord, RietveldRefinementError,
+    RietveldRefinementOptions, RietveldRefinementResult, refine_rietveld,
+    refine_rietveld_with_runtime,
 };
 pub use runtime::{
     CancellationError, CancellationToken, CheckpointSink, DiagnosticValue, MonotonicClock,
