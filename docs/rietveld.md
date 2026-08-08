@@ -28,11 +28,14 @@ needed by a matrix-free solver. Masks, uncertainties, fixed background, and
 stale-layout rejection are handled at this application-neutral layer, so a
 Tauri command will not need to reproduce numerical objective rules.
 
-The native workflow now includes a bounded fixed-topology structural solver.
+The native workflow now includes a bounded structural solver with guarded
+reflection topology.
 It uses scaled conjugate gradients and deterministic backtracking over the
 matrix-free objective, with shared cancellation, budgets, events, accepted
-history, and restart checkpoints. Dynamic reflection regeneration and the
-instrument/background/sample-physics parameter families remain on the native
+history, and restart checkpoints. Dynamic cells regenerate HKLs and
+multiplicities after bounded motion, transfer sample-physics arrays by stable
+reflection ID, and record added/removed families on accepted history rows.
+Instrument/background/sample-physics parameter families remain on the native
 migration path; until those land, the Python orchestrator remains the complete
 script-facing implementation.
 

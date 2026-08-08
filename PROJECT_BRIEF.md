@@ -139,14 +139,18 @@ without exposing native derivative-array offsets. It covers lattice, general
 and special-position coordinates, occupancy, isotropic displacement, and phase
 scale, and rejects invalid values before structural preparation.
 
-Fixed-topology structural Rietveld refinement is now Python-free. The native
-workflow uses scaled matrix-free conjugate gradients, bounded backtracking and
-damping, the shared runtime budgets/cancellation/events, accepted-only history,
-and typed restart checkpoints. Rust integration tests recover synthetic phase
+Structural Rietveld refinement is now Python-free for the selected structural
+families. The native workflow uses scaled matrix-free conjugate gradients,
+bounds-aware backtracking and damping, the shared runtime
+budgets/cancellation/events, accepted-only history, and typed restart
+checkpoints. Rust integration tests recover synthetic phase
 scale and a cubic cell, reproduce uninterrupted history after restart, and
 exercise cancellation, evaluation exhaustion, empty masks, corrupt restart
-state, and host event/checkpoint delivery. Dynamic guarded reflection topology
-and the remaining non-structural parameter families are subsequent slices.
+state, and host event/checkpoint delivery. Guarded dynamic phases now regenerate
+HKLs and multiplicities after bounded cell motion, transfer every sample-physics
+array by stable reflection ID, record accepted topology changes, and allow
+changed-topology restart only for the identical domain contract. The remaining
+non-structural parameter families are the next slice.
 
 Unit 17 now includes the first full monochromatic CIF-backed Rietveld vertical
 slice. Typed profile/background/phase/lattice/site parameter families map

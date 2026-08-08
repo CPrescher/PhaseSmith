@@ -4,7 +4,8 @@ use std::error::Error;
 use std::fmt::{Display, Formatter};
 
 use phasesmith_core::{
-    ConstantWavelengthInstrument, FcjGeometry, OwnedCwContributions, SupportPolicy,
+    ConstantWavelengthInstrument, CwContributionsError, FcjGeometry, OwnedCwContributionArrays,
+    OwnedCwContributions, SupportPolicy,
 };
 use phasesmith_engine::{
     MonochromaticPositionCorrection, PreparedStructuralModel, PreparedStructuralMultiphase,
@@ -15,7 +16,10 @@ use phasesmith_engine::{
 use phasesmith_execution::ExecutionPolicy;
 use phasesmith_model::{DomainError, PatternRecord, RecordId};
 
-use crate::{ResidualError, ResidualEvaluation, ResidualOptions, evaluate_residuals};
+use crate::{
+    LatticeError, LatticeReflectionDomain, ResidualError, ResidualEvaluation, ResidualOptions,
+    evaluate_residuals,
+};
 
 /// One owned monochromatic structural phase and its sample-physics inputs.
 #[derive(Clone, Debug, PartialEq)]
@@ -23,8 +27,10 @@ pub struct RietveldPhase {
     phase_id: RecordId,
     name: String,
     site_ids: Vec<RecordId>,
+    reflection_ids: Vec<String>,
     definition: StructuralPhaseDefinition,
     contributions: OwnedCwContributions,
+    reflection_domain: Option<LatticeReflectionDomain>,
 }
 
 impl RietveldPhase {
@@ -60,12 +66,53 @@ impl RietveldPhase {
         definition: StructuralPhaseDefinition,
         contributions: OwnedCwContributions,
     ) -> Result<Self, RietveldError> {
+        let reflection_ids = definition
+            .hkl
+            .iter()
+            .map(|hkl| reflection_id(*hkl))
+            .collect();
         let phase = Self {
             phase_id,
             name: name.into(),
             site_ids,
+            reflection_ids,
             definition,
             contributions,
+            reflection_domain: None,
+        };
+        phase.validate()?;
+        Ok(phase)
+    }
+
+    /// Generate a structural phase from one bounded reflection-domain contract.
+    ///
+    /// Reflection arrays are regenerated from the definition's cell and start
+    /// with neutral sample-physics contributions. Subsequent accepted cell
+    /// changes transfer contribution arrays by stable reflection ID.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`RietveldError`] for an invalid domain, definition, or phase.
+    pub fn from_lattice_domain(
+        phase_id: RecordId,
+        name: impl Into<String>,
+        site_ids: Vec<RecordId>,
+        mut definition: StructuralPhaseDefinition,
+        reflection_domain: LatticeReflectionDomain,
+    ) -> Result<Self, RietveldError> {
+        let generated = reflection_domain
+            .generate(definition.cell, None)
+            .map_err(RietveldError::Lattice)?;
+        definition.hkl = generated.hkl;
+        definition.multiplicity = generated.multiplicity;
+        let phase = Self {
+            phase_id,
+            name: name.into(),
+            site_ids,
+            reflection_ids: generated.reflection_ids,
+            contributions: OwnedCwContributions::neutral(definition.hkl.len()),
+            definition,
+            reflection_domain: Some(reflection_domain),
         };
         phase.validate()?;
         Ok(phase)
@@ -93,6 +140,29 @@ impl RietveldPhase {
         if self.contributions.reflection_count() != self.definition.hkl.len() {
             return Err(RietveldError::ContributionCountMismatch);
         }
+        if self.reflection_ids.len() != self.definition.hkl.len()
+            || self
+                .reflection_ids
+                .iter()
+                .collect::<std::collections::BTreeSet<_>>()
+                .len()
+                != self.reflection_ids.len()
+        {
+            return Err(RietveldError::ReflectionIdentityMismatch);
+        }
+        if self
+            .reflection_ids
+            .iter()
+            .zip(&self.definition.hkl)
+            .any(|(id, hkl)| id != &reflection_id(*hkl))
+        {
+            return Err(RietveldError::ReflectionTopologyMismatch);
+        }
+        if let Some(domain) = &self.reflection_domain {
+            domain
+                .validate_cell(self.definition.cell)
+                .map_err(RietveldError::Lattice)?;
+        }
         Ok(())
     }
 
@@ -114,6 +184,12 @@ impl RietveldPhase {
         &self.site_ids
     }
 
+    /// Borrow stable reflection-family IDs in calculation order.
+    #[must_use]
+    pub fn reflection_ids(&self) -> &[String] {
+        &self.reflection_ids
+    }
+
     /// Borrow the complete structural definition.
     #[must_use]
     pub const fn definition(&self) -> &StructuralPhaseDefinition {
@@ -126,18 +202,127 @@ impl RietveldPhase {
         &self.contributions
     }
 
+    /// Replace sample-physics contributions without changing phase topology.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`RietveldError`] when the contribution reflection count does
+    /// not match the current stable reflection list.
+    pub fn with_contributions(
+        &self,
+        contributions: OwnedCwContributions,
+    ) -> Result<Self, RietveldError> {
+        let mut phase = self.clone();
+        phase.contributions = contributions;
+        phase.validate()?;
+        Ok(phase)
+    }
+
+    /// Borrow the guarded reflection domain for a dynamic phase.
+    #[must_use]
+    pub const fn reflection_domain(&self) -> Option<&LatticeReflectionDomain> {
+        self.reflection_domain.as_ref()
+    }
+
+    /// Regenerate a dynamic phase at another accepted bounded cell.
+    ///
+    /// Existing sample-physics values and parameter derivatives transfer by
+    /// stable reflection ID. New reflection families receive neutral values.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`RietveldError`] for a fixed phase, an out-of-domain cell, or
+    /// invalid transferred contributions.
+    pub fn regenerate_lattice_at_cell(
+        &self,
+        cell: phasesmith_crystallography::UnitCell,
+    ) -> Result<(Self, RietveldTopologyChange), RietveldError> {
+        let domain = self
+            .reflection_domain
+            .as_ref()
+            .ok_or(RietveldError::FixedReflectionTopology)?;
+        let previous = self
+            .reflection_ids
+            .iter()
+            .cloned()
+            .map(|reflection_id| (reflection_id, 1.0))
+            .collect::<std::collections::BTreeMap<_, _>>();
+        let generated = domain
+            .generate(cell, Some(&previous))
+            .map_err(RietveldError::Lattice)?;
+        let contributions = transfer_contributions(
+            &self.reflection_ids,
+            &generated.reflection_ids,
+            &self.contributions,
+        )?;
+        let change = RietveldTopologyChange {
+            phase_id: self.phase_id.clone(),
+            added_reflection_ids: generated.added_reflection_ids.clone(),
+            removed_reflection_ids: generated.removed_reflection_ids.clone(),
+            preserved_reflection_count: generated.preserved_reflection_count,
+        };
+        let mut phase = self.clone();
+        phase.definition.cell = cell;
+        phase.definition.hkl = generated.hkl;
+        phase.definition.multiplicity = generated.multiplicity;
+        phase.reflection_ids = generated.reflection_ids;
+        phase.contributions = contributions;
+        phase.validate()?;
+        Ok((phase, change))
+    }
+
     pub(crate) fn with_definition(
         &self,
         definition: StructuralPhaseDefinition,
     ) -> Result<Self, RietveldError> {
-        Self::new_with_site_ids(
-            self.phase_id.clone(),
-            self.name.clone(),
-            self.site_ids.clone(),
-            definition,
-            self.contributions.clone(),
-        )
+        if self.reflection_domain.is_some() && definition.cell != self.definition.cell {
+            let (mut phase, _) = self.regenerate_lattice_at_cell(definition.cell)?;
+            let hkl = std::mem::take(&mut phase.definition.hkl);
+            let multiplicity = std::mem::take(&mut phase.definition.multiplicity);
+            phase.definition = definition;
+            phase.definition.hkl = hkl;
+            phase.definition.multiplicity = multiplicity;
+            phase.validate()?;
+            return Ok(phase);
+        }
+        let mut phase = self.clone();
+        phase.definition = definition;
+        phase.validate()?;
+        Ok(phase)
     }
+
+    pub(crate) fn restart_compatible(&self, requested: &Self) -> bool {
+        self.phase_id == requested.phase_id
+            && self.site_ids == requested.site_ids
+            && self.definition.space_group == requested.definition.space_group
+            && self.definition.anisotropic_mask == requested.definition.anisotropic_mask
+            && self.definition.u_aniso_cif_angstrom2 == requested.definition.u_aniso_cif_angstrom2
+            && self.definition.scattering_species == requested.definition.scattering_species
+            && self.definition.scattering_real_offset == requested.definition.scattering_real_offset
+            && self.definition.scattering_imag_offset == requested.definition.scattering_imag_offset
+            && self.definition.coordinate_tolerance.to_bits()
+                == requested.definition.coordinate_tolerance.to_bits()
+            && self.definition.scattering_model == requested.definition.scattering_model
+            && self.definition.correction_model == requested.definition.correction_model
+            && self.reflection_domain == requested.reflection_domain
+            && (self.reflection_domain.is_some()
+                || (self.reflection_ids == requested.reflection_ids
+                    && self.definition.hkl == requested.definition.hkl
+                    && self.definition.multiplicity == requested.definition.multiplicity))
+    }
+}
+
+/// Reflection-topology change attached to an accepted structural step.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RietveldTopologyChange {
+    /// Stable phase identity.
+    pub phase_id: RecordId,
+    /// Reflection families added at the accepted cell.
+    pub added_reflection_ids: Vec<String>,
+    /// Reflection families removed at the accepted cell.
+    pub removed_reflection_ids: Vec<String>,
+    /// Families preserved by stable identity.
+    pub preserved_reflection_count: usize,
 }
 
 /// Observations, experiment state, and ordered structural phases.
@@ -219,12 +404,94 @@ impl RietveldInput {
         let mut identities = std::collections::BTreeSet::new();
         for phase in &self.phases {
             phase.validate()?;
+            if phase.reflection_domain().is_some_and(|domain| {
+                domain.wavelength_angstrom().to_bits()
+                    != self.instrument.wavelength_angstrom.to_bits()
+            }) {
+                return Err(RietveldError::ReflectionWavelengthMismatch);
+            }
             if !identities.insert(phase.phase_id.clone()) {
                 return Err(RietveldError::DuplicatePhaseId);
             }
         }
         Ok(())
     }
+}
+
+fn reflection_id(hkl: [i32; 3]) -> String {
+    format!("hkl:{},{},{}", hkl[0], hkl[1], hkl[2])
+}
+
+fn transfer_contributions(
+    previous_ids: &[String],
+    current_ids: &[String],
+    previous: &OwnedCwContributions,
+) -> Result<OwnedCwContributions, RietveldError> {
+    let old_count = previous_ids.len();
+    let new_count = current_ids.len();
+    let parameter_count = previous.parameter_count();
+    let derivative_count =
+        parameter_count
+            .checked_mul(new_count)
+            .ok_or(RietveldError::Contributions(
+                CwContributionsError::AllocationOverflow,
+            ))?;
+    let old = previous.arrays();
+    let mut arrays = OwnedCwContributionArrays {
+        gaussian_variance_deg2: vec![0.0; new_count],
+        lorentzian_fwhm_deg: vec![0.0; new_count],
+        intensity_multiplier: vec![1.0; new_count],
+        d_gaussian_variance_d_position: vec![0.0; new_count],
+        d_lorentzian_fwhm_d_position: vec![0.0; new_count],
+        d_intensity_multiplier_d_position: vec![0.0; new_count],
+        d_gaussian_variance_d_parameters: vec![0.0; derivative_count],
+        d_lorentzian_fwhm_d_parameters: vec![0.0; derivative_count],
+        d_intensity_multiplier_d_parameters: vec![0.0; derivative_count],
+    };
+    let previous_index = previous_ids
+        .iter()
+        .enumerate()
+        .map(|(index, id)| (id, index))
+        .collect::<std::collections::BTreeMap<_, _>>();
+    for (new_index, id) in current_ids.iter().enumerate() {
+        let Some(&old_index) = previous_index.get(id) else {
+            continue;
+        };
+        for (target, source) in [
+            (
+                &mut arrays.gaussian_variance_deg2,
+                &old.gaussian_variance_deg2,
+            ),
+            (&mut arrays.lorentzian_fwhm_deg, &old.lorentzian_fwhm_deg),
+            (&mut arrays.intensity_multiplier, &old.intensity_multiplier),
+            (
+                &mut arrays.d_gaussian_variance_d_position,
+                &old.d_gaussian_variance_d_position,
+            ),
+            (
+                &mut arrays.d_lorentzian_fwhm_d_position,
+                &old.d_lorentzian_fwhm_d_position,
+            ),
+            (
+                &mut arrays.d_intensity_multiplier_d_position,
+                &old.d_intensity_multiplier_d_position,
+            ),
+        ] {
+            target[new_index] = source[old_index];
+        }
+        for parameter in 0..parameter_count {
+            let old_offset = parameter * old_count + old_index;
+            let new_offset = parameter * new_count + new_index;
+            arrays.d_gaussian_variance_d_parameters[new_offset] =
+                old.d_gaussian_variance_d_parameters[old_offset];
+            arrays.d_lorentzian_fwhm_d_parameters[new_offset] =
+                old.d_lorentzian_fwhm_d_parameters[old_offset];
+            arrays.d_intensity_multiplier_d_parameters[new_offset] =
+                old.d_intensity_multiplier_d_parameters[old_offset];
+        }
+    }
+    OwnedCwContributions::new(new_count, parameter_count, arrays)
+        .map_err(RietveldError::Contributions)
 }
 
 /// Deterministic calculation controls shared by later native refinement.
@@ -394,6 +661,14 @@ pub enum RietveldError {
     DuplicatePhaseId,
     /// Sample-physics contributions must match the reflection count.
     ContributionCountMismatch,
+    /// Stable reflection IDs are missing, duplicated, or mis-sized.
+    ReflectionIdentityMismatch,
+    /// A dynamic reflection list does not match its current cell/domain.
+    ReflectionTopologyMismatch,
+    /// A dynamic phase domain must use the experiment wavelength.
+    ReflectionWavelengthMismatch,
+    /// A fixed-reflection phase cannot regenerate lattice topology.
+    FixedReflectionTopology,
     /// Stable site IDs must match the asymmetric-site count.
     SiteIdCountMismatch,
     /// Stable site IDs must be unique within a phase.
@@ -402,6 +677,10 @@ pub enum RietveldError {
     StructuralPattern(StructuralPatternError),
     /// Native multiphase structural calculation failed.
     StructuralMultiphase(StructuralMultiphaseError),
+    /// Guarded reflection generation failed.
+    Lattice(LatticeError),
+    /// Stable-ID contribution transfer produced invalid arrays.
+    Contributions(CwContributionsError),
     /// Residual evaluation failed.
     Residual(ResidualError),
     /// Calculation controls are invalid.
@@ -425,6 +704,16 @@ impl Display for RietveldError {
             Self::DuplicatePhaseId => formatter.write_str("Rietveld phase IDs must be unique"),
             Self::ContributionCountMismatch => formatter
                 .write_str("sample-physics contributions must match the phase reflection count"),
+            Self::ReflectionIdentityMismatch => {
+                formatter.write_str("Rietveld reflection identities are invalid")
+            }
+            Self::ReflectionTopologyMismatch => formatter
+                .write_str("Rietveld reflection topology does not match the current cell/domain"),
+            Self::ReflectionWavelengthMismatch => formatter
+                .write_str("Rietveld reflection domain wavelength differs from the instrument"),
+            Self::FixedReflectionTopology => {
+                formatter.write_str("fixed Rietveld phases cannot regenerate topology")
+            }
             Self::SiteIdCountMismatch => {
                 formatter.write_str("Rietveld site IDs must match the asymmetric-site count")
             }
@@ -433,6 +722,8 @@ impl Display for RietveldError {
             }
             Self::StructuralPattern(error) => Display::fmt(error, formatter),
             Self::StructuralMultiphase(error) => Display::fmt(error, formatter),
+            Self::Lattice(error) => Display::fmt(error, formatter),
+            Self::Contributions(error) => Display::fmt(error, formatter),
             Self::Residual(error) => Display::fmt(error, formatter),
             Self::InvalidOptions => formatter.write_str("Rietveld calculation options are invalid"),
             Self::NonFiniteCalculation => {
@@ -448,6 +739,8 @@ impl Error for RietveldError {
             Self::Pattern(error) => Some(error),
             Self::StructuralPattern(error) => Some(error),
             Self::StructuralMultiphase(error) => Some(error),
+            Self::Lattice(error) => Some(error),
+            Self::Contributions(error) => Some(error),
             Self::Residual(error) => Some(error),
             Self::MissingObservations
             | Self::InvalidInstrument
@@ -457,6 +750,10 @@ impl Error for RietveldError {
             | Self::InvalidPhaseName
             | Self::DuplicatePhaseId
             | Self::ContributionCountMismatch
+            | Self::ReflectionIdentityMismatch
+            | Self::ReflectionTopologyMismatch
+            | Self::ReflectionWavelengthMismatch
+            | Self::FixedReflectionTopology
             | Self::SiteIdCountMismatch
             | Self::DuplicateSiteId
             | Self::InvalidOptions

@@ -41,7 +41,7 @@ pub use parameters::{ParameterBounds, ParameterError, ParameterKey, ParameterSet
 pub use residuals::{ResidualError, ResidualEvaluation, ResidualOptions, evaluate_residuals};
 pub use rietveld::{
     RietveldCalculation, RietveldCalculationOptions, RietveldError, RietveldInput, RietveldPhase,
-    RietveldPhaseCalculation, calculate_rietveld_pattern,
+    RietveldPhaseCalculation, RietveldTopologyChange, calculate_rietveld_pattern,
 };
 pub use rietveld_objective::{PreparedRietveldObjective, RietveldObjectiveError};
 pub use rietveld_parameters::{

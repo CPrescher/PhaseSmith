@@ -8,8 +8,8 @@ use crate::{
     ParameterSpec, PreparedRietveldObjective, RefinementEventKind, RefinementLimits,
     RefinementRuntime, ResidualOptions, RietveldCalculation, RietveldCalculationOptions,
     RietveldError, RietveldInput, RietveldObjectiveError, RietveldParameterError, RietveldPhase,
-    RietveldStructuralLayout, RietveldStructuralSelection, RuntimeError, TerminationReason,
-    calculate_rietveld_pattern, evaluate_residuals,
+    RietveldStructuralLayout, RietveldStructuralSelection, RietveldTopologyChange, RuntimeError,
+    TerminationReason, calculate_rietveld_pattern, evaluate_residuals,
 };
 
 /// Numerical and bounded-runtime controls for native structural refinement.
@@ -125,6 +125,8 @@ pub struct RietveldIterationRecord {
     pub backtracks: usize,
     /// Accepted physical parameter changes.
     pub parameter_changes: Vec<ParameterChange>,
+    /// Reflection families added or removed by accepted lattice motion.
+    pub topology_changes: Vec<RietveldTopologyChange>,
     /// Accepted Rwp.
     pub rwp: f64,
 }
@@ -148,13 +150,18 @@ pub struct RietveldCheckpoint {
 
 impl RietveldCheckpoint {
     fn validate(&self, input: &RietveldInput) -> Result<(), RietveldRefinementError> {
+        let phase_ids = input
+            .phases
+            .iter()
+            .map(RietveldPhase::phase_id)
+            .collect::<std::collections::BTreeSet<_>>();
         if self.completed_iterations != self.history.len()
             || self.phases.len() != input.phases.len()
             || self
                 .phases
                 .iter()
                 .zip(&input.phases)
-                .any(|(stored, requested)| stored.phase_id() != requested.phase_id())
+                .any(|(stored, requested)| !stored.restart_compatible(requested))
             || !self.objective.is_finite()
             || self.objective < 0.0
             || !self.damping.is_finite()
@@ -170,6 +177,25 @@ impl RietveldCheckpoint {
                     || !row.damping.is_finite()
                     || row.damping <= 0.0
                     || !row.rwp.is_finite()
+                    || row.parameter_changes.iter().any(|change| {
+                        !change.before.is_finite()
+                            || !change.after.is_finite()
+                            || !change.scaled_change.is_finite()
+                    })
+                    || row.topology_changes.iter().any(|change| {
+                        let added = change
+                            .added_reflection_ids
+                            .iter()
+                            .collect::<std::collections::BTreeSet<_>>();
+                        let removed = change
+                            .removed_reflection_ids
+                            .iter()
+                            .collect::<std::collections::BTreeSet<_>>();
+                        !phase_ids.contains(&change.phase_id)
+                            || added.len() != change.added_reflection_ids.len()
+                            || removed.len() != change.removed_reflection_ids.len()
+                            || !added.is_disjoint(&removed)
+                    })
             })
         {
             return Err(RietveldRefinementError::InvalidCheckpoint);
@@ -422,6 +448,11 @@ pub fn refine_rietveld_with_runtime(
                 scaled_change: (after - before) / spec.scale(),
             })
             .collect::<Vec<_>>();
+        let topology_changes = phases
+            .iter()
+            .zip(&trial_phases)
+            .filter_map(|(before, after)| topology_change(before, after))
+            .collect::<Vec<_>>();
         history.push(RietveldIterationRecord {
             iteration,
             objective,
@@ -431,6 +462,7 @@ pub fn refine_rietveld_with_runtime(
             cg_iterations,
             backtracks,
             parameter_changes,
+            topology_changes: topology_changes.clone(),
             rwp: trial_calculation.metrics.rwp,
         });
         phases = trial_phases;
@@ -449,7 +481,15 @@ pub fn refine_rietveld_with_runtime(
             RefinementEventKind::StepAccepted,
             "rietveld_step",
             "native structural step accepted",
-            vec![("objective".to_owned(), DiagnosticValue::Float(objective))],
+            vec![
+                ("objective".to_owned(), DiagnosticValue::Float(objective)),
+                (
+                    "topology_changes".to_owned(),
+                    DiagnosticValue::Integer(
+                        i64::try_from(topology_changes.len()).unwrap_or(i64::MAX),
+                    ),
+                ),
+            ],
         )?;
         if iteration >= options.min_iterations
             && objective_change <= options.objective_tolerance * objective.max(1.0)
@@ -499,6 +539,41 @@ pub fn refine_rietveld_with_runtime(
         termination_reason: termination,
         checkpoint,
         evaluations: runtime.evaluations(),
+    })
+}
+
+fn topology_change(
+    before: &RietveldPhase,
+    after: &RietveldPhase,
+) -> Option<RietveldTopologyChange> {
+    let previous = before
+        .reflection_ids()
+        .iter()
+        .collect::<std::collections::BTreeSet<_>>();
+    let current = after
+        .reflection_ids()
+        .iter()
+        .collect::<std::collections::BTreeSet<_>>();
+    let added_reflection_ids = after
+        .reflection_ids()
+        .iter()
+        .filter(|id| !previous.contains(id))
+        .cloned()
+        .collect::<Vec<_>>();
+    let removed_reflection_ids = before
+        .reflection_ids()
+        .iter()
+        .filter(|id| !current.contains(id))
+        .cloned()
+        .collect::<Vec<_>>();
+    if added_reflection_ids.is_empty() && removed_reflection_ids.is_empty() {
+        return None;
+    }
+    Some(RietveldTopologyChange {
+        phase_id: after.phase_id().clone(),
+        added_reflection_ids,
+        removed_reflection_ids,
+        preserved_reflection_count: current.intersection(&previous).count(),
     })
 }
 
