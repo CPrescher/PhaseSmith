@@ -280,6 +280,17 @@ faster; this last ratio combines two reviewed runs rather than claiming a new
 same-process comparison. Reproduce a fresh paired run with
 `benchmarks/compare_gsasii_qarr.py --phasesmith-threads 2`.
 
+The Rust-only application-boundary migration was re-gated on 2026-08-08 after
+Python values, dense products, JVPs, and VJPs were delegated to the shared
+native multiphase workflow. A release build with no warmup and two measured
+repetitions returned the exact same timing-free scientific fingerprint for one
+and two threads (`77746021bc30373315705b435568305b773bdedb264e78f3538ca2f791ab3831`).
+The one-thread median was 1.394 s and the two-thread median was 0.933 s, a 1.49x
+speedup. Both returned 19.826% Poisson Rwp, 13.174% unit-weight Rwp, and a
+maximum weighed-fraction error of 0.617 percentage points. These host timings
+are diagnostic; the exact cross-thread fingerprint and existing scientific
+thresholds are the durable migration gate.
+
 ## Pinned FCJ strategy review
 
 The performance investigation inspected exact revision

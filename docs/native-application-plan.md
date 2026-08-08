@@ -146,3 +146,14 @@ calculate a complete multiphase fixed-spectrum pattern, and return
 display-ready arrays without importing Python. The existing Python calculation
 API produces the same scientific result through that native workflow. No
 refinement migration begins until this gate passes.
+
+Status on 2026-08-08: the construction-to-calculation portion of this gate is
+complete. An external Rust integration target constructs a two-phase request
+containing a fixed spectrum, calculates display-ready arrays through the owned
+native boundary, and verifies bitwise one-/two-thread agreement. The public
+Python structural values and derivative products now call that same native
+multiphase workflow, while custom providers retain the Python fallback. The
+pinned QARR regression passed with an identical scientific fingerprint across
+worker counts and no measured two-thread performance regression. Native file
+import remains part of the later I/O milestone rather than being simulated in
+the engine crate.
