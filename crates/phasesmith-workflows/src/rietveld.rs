@@ -17,7 +17,8 @@ use phasesmith_execution::ExecutionPolicy;
 use phasesmith_model::{DomainError, PatternRecord, RecordId};
 
 use crate::{
-    LatticeError, LatticeReflectionDomain, ResidualError, ResidualEvaluation, ResidualOptions,
+    BackgroundError, BackgroundModel, DifferentiableBackground, LatticeError,
+    LatticeReflectionDomain, ResidualError, ResidualEvaluation, ResidualOptions,
     evaluate_residuals,
 };
 
@@ -336,6 +337,8 @@ pub struct RietveldInput {
     pub axial_geometry: Option<FcjGeometry>,
     /// Explicit instrument/sample position correction.
     pub position_correction: MonochromaticPositionCorrection,
+    /// Optional differentiable background added to the pattern's fixed values.
+    pub background: Option<BackgroundModel>,
     /// Ordered non-empty built-in structural phases.
     pub phases: Vec<RietveldPhase>,
 }
@@ -359,8 +362,35 @@ impl RietveldInput {
             instrument,
             axial_geometry,
             position_correction,
+            background: None,
             phases,
         };
+        input.validate()?;
+        Ok(input)
+    }
+
+    /// Validate a request with an additional native analytical background.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`RietveldError`] for invalid observations, experiment state,
+    /// background state, or phase state.
+    pub fn new_with_background(
+        pattern: PatternRecord,
+        instrument: ConstantWavelengthInstrument,
+        axial_geometry: Option<FcjGeometry>,
+        position_correction: MonochromaticPositionCorrection,
+        background: BackgroundModel,
+        phases: Vec<RietveldPhase>,
+    ) -> Result<Self, RietveldError> {
+        let mut input = Self::new(
+            pattern,
+            instrument,
+            axial_geometry,
+            position_correction,
+            phases,
+        )?;
+        input.background = Some(background);
         input.validate()?;
         Ok(input)
     }
@@ -400,6 +430,14 @@ impl RietveldInput {
         }
         if self.phases.is_empty() {
             return Err(RietveldError::EmptyPhases);
+        }
+        if let Some(background) = &self.background {
+            background
+                .basis(&self.pattern.x_deg)
+                .map_err(RietveldError::Background)?;
+            background
+                .calculate(&self.pattern.x_deg)
+                .map_err(RietveldError::Background)?;
         }
         let mut identities = std::collections::BTreeSet::new();
         for phase in &self.phases {
@@ -602,7 +640,16 @@ pub fn calculate_rietveld_pattern(
     let calculated = prepared
         .calculate_request(request)
         .map_err(RietveldError::StructuralMultiphase)?;
-    let background_y = input.pattern.background_y.clone();
+    let mut background_y = input.pattern.background_y.clone();
+    if let Some(background) = &input.background {
+        for (target, value) in background_y.iter_mut().zip(
+            background
+                .calculate(&input.pattern.x_deg)
+                .map_err(RietveldError::Background)?,
+        ) {
+            *target += value;
+        }
+    }
     let y = calculated
         .profile_y
         .iter()
@@ -683,6 +730,8 @@ pub enum RietveldError {
     Contributions(CwContributionsError),
     /// Residual evaluation failed.
     Residual(ResidualError),
+    /// Analytical background evaluation failed.
+    Background(BackgroundError),
     /// Calculation controls are invalid.
     InvalidOptions,
     /// Profile/background composition overflowed or became non-finite.
@@ -725,6 +774,7 @@ impl Display for RietveldError {
             Self::Lattice(error) => Display::fmt(error, formatter),
             Self::Contributions(error) => Display::fmt(error, formatter),
             Self::Residual(error) => Display::fmt(error, formatter),
+            Self::Background(error) => Display::fmt(error, formatter),
             Self::InvalidOptions => formatter.write_str("Rietveld calculation options are invalid"),
             Self::NonFiniteCalculation => {
                 formatter.write_str("Rietveld calculated pattern is non-finite")
@@ -742,6 +792,7 @@ impl Error for RietveldError {
             Self::Lattice(error) => Some(error),
             Self::Contributions(error) => Some(error),
             Self::Residual(error) => Some(error),
+            Self::Background(error) => Some(error),
             Self::MissingObservations
             | Self::InvalidInstrument
             | Self::InvalidAxialGeometry

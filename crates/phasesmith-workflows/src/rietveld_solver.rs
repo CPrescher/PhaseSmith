@@ -581,13 +581,16 @@ fn replace_phases(
     input: &RietveldInput,
     phases: Vec<RietveldPhase>,
 ) -> Result<RietveldInput, RietveldError> {
-    RietveldInput::new(
+    let mut replaced = RietveldInput::new(
         input.pattern.clone(),
         input.instrument,
         input.axial_geometry,
         input.position_correction,
         phases,
-    )
+    )?;
+    replaced.background.clone_from(&input.background);
+    replaced.validate()?;
+    Ok(replaced)
 }
 
 fn reserve_products(

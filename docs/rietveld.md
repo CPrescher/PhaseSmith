@@ -39,6 +39,11 @@ Instrument/background/sample-physics parameter families remain on the native
 migration path; until those land, the Python orchestrator remains the complete
 script-facing implementation.
 
+An optional native `BackgroundModel` may already be attached to the request.
+Its calculated values are added once to the pattern's fixed supplied background
+and returned as the display-ready background series; coefficient selection and
+motion are introduced by the general native parameter layout.
+
 ## Objective and numerical method
 
 For included observations `i`, the residual used by the optimizer is

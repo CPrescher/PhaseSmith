@@ -15,8 +15,8 @@ use phasesmith_engine::{
 use phasesmith_execution::ExecutionPolicy;
 use phasesmith_model::{PatternRecord, RecordId};
 use phasesmith_workflows::{
-    RietveldCalculationOptions, RietveldError, RietveldInput, RietveldPhase,
-    calculate_rietveld_pattern,
+    BackgroundModel, PolynomialBackground, RietveldCalculationOptions, RietveldError,
+    RietveldInput, RietveldPhase, calculate_rietveld_pattern,
 };
 
 fn instrument() -> ConstantWavelengthInstrument {
@@ -27,6 +27,44 @@ fn instrument() -> ConstantWavelengthInstrument {
         w_deg2: 1.2e-4,
         x_deg: 1.5e-3,
         y_deg: 3.0e-3,
+    }
+}
+
+#[test]
+fn analytical_background_is_added_once_and_exposed_separately() {
+    let x_deg = (0..101)
+        .map(|index| 20.0 + f64::from(index) * 0.2)
+        .collect::<Vec<_>>();
+    let fixed = vec![0.25; x_deg.len()];
+    let pattern = PatternRecord::new(
+        x_deg.clone(),
+        Some(vec![0.0; x_deg.len()]),
+        None,
+        None,
+        Some(fixed.clone()),
+    )
+    .unwrap();
+    let model = PolynomialBackground::new("main", vec![1.5, -0.2]).unwrap();
+    let request = RietveldInput::new_with_background(
+        pattern,
+        instrument(),
+        None,
+        MonochromaticPositionCorrection {
+            zero_shift_deg: 0.0,
+            bragg_brentano_mm: None,
+            debye_scherrer_micrometre: None,
+        },
+        BackgroundModel::Polynomial(model),
+        vec![phase("alpha", 1.0)],
+    )
+    .unwrap();
+    let calculated = calculate_rietveld_pattern(&request, &options(1)).unwrap();
+    for (index, background) in calculated.background_y.iter().enumerate() {
+        let normalized =
+            2.0 * (x_deg[index] - x_deg[0]) / (x_deg[x_deg.len() - 1] - x_deg[0]) - 1.0;
+        let expected = fixed[index] + 1.5 - 0.2 * normalized;
+        assert!((background - expected).abs() < 1.0e-14);
+        assert!((calculated.y[index] - calculated.profile_y[index] - background).abs() < 1.0e-14);
     }
 }
 

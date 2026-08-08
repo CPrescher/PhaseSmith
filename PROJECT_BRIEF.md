@@ -152,6 +152,12 @@ array by stable reflection ID, record accepted topology changes, and allow
 changed-topology restart only for the identical domain contract. The remaining
 non-structural parameter families are the next slice.
 
+Native Rietveld requests can now own an optional analytical background in
+addition to the pattern's fixed supplied background. Calculation validates the
+model on the observation grid, adds it exactly once, and exposes the combined
+background separately from the structural profile. This keeps background state
+inside the same Rust request that later refinement and desktop adapters use.
+
 Unit 17 now includes the first full monochromatic CIF-backed Rietveld vertical
 slice. Typed profile/background/phase/lattice/site parameter families map
 through fixed/affine/multi-source linear

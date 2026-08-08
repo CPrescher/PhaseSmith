@@ -317,3 +317,8 @@ values and derivative rows by stable reflection ID, and attach added/removed
 families to accepted history. Changed-topology checkpoints require exact domain
 identity; fixed-list checkpoints require exact reflection identity. The
 non-structural parameter families are the next Rietveld substep.
+
+The request boundary now also owns an optional native analytical background.
+It composes with fixed supplied background during calculation and survives
+accepted structural state replacement, providing the state half of subsequent
+background-parameter refinement without introducing adapter-side arithmetic.

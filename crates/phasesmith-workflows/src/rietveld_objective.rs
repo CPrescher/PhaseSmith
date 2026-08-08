@@ -10,8 +10,8 @@ use phasesmith_engine::{
 };
 
 use crate::{
-    RietveldCalculationOptions, RietveldError, RietveldInput, RietveldParameterError,
-    RietveldStructuralLayout,
+    DifferentiableBackground, RietveldCalculationOptions, RietveldError, RietveldInput,
+    RietveldParameterError, RietveldStructuralLayout,
 };
 
 /// Reusable structural values and derivative products for one accepted state.
@@ -129,9 +129,19 @@ impl PreparedRietveldObjective {
     pub fn gradient(&self) -> Result<(Vec<f64>, Vec<f64>), RietveldObjectiveError> {
         let zero = vec![0.0; self.layout.parameters().specs().len()];
         let (profile, _) = self.jvp(&zero)?;
+        let mut background = self.input.pattern.background_y.clone();
+        if let Some(model) = &self.input.background {
+            for (target, value) in background.iter_mut().zip(
+                model
+                    .calculate(&self.input.pattern.x_deg)
+                    .map_err(RietveldError::Background)?,
+            ) {
+                *target += value;
+            }
+        }
         let calculated = profile
             .iter()
-            .zip(&self.input.pattern.background_y)
+            .zip(background)
             .map(|(profile, background)| profile + background)
             .collect::<Vec<_>>();
         if calculated.iter().any(|value| !value.is_finite()) {
