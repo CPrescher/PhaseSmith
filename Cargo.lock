@@ -681,7 +681,9 @@ dependencies = [
  "criterion",
  "nalgebra",
  "phasesmith-core",
+ "phasesmith-crystallography",
  "phasesmith-execution",
+ "phasesmith-io",
  "phasesmith-model",
 ]
 

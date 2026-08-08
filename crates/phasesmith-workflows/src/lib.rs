@@ -5,6 +5,7 @@
 
 mod backgrounds;
 mod constraints;
+mod lattice;
 mod lebail;
 mod parameters;
 mod residuals;
@@ -18,6 +19,10 @@ pub use backgrounds::{
 pub use constraints::{
     AffineConstraint, Constraint, ConstraintDerivativeMatrix, ConstraintError, ConstraintTransform,
     FixedConstraint, LinearConstraint, LinearTerm,
+};
+pub use lattice::{
+    CwLatticeGeometry, GeneratedLatticeDomain, LatticeBounds, LatticeError,
+    LatticeParameterization, LatticeReflectionDomain, cw_lattice_geometry,
 };
 pub use lebail::{
     CoincidentReflectionGroup, CovarianceMatrix, IntensityExtractionResult, LeBailCalculation,

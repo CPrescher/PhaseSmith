@@ -242,5 +242,13 @@ instrument are carried through results and restart checkpoints. Every trial
 calculation consumes the host evaluation budget. Constrained positions,
 instrument width, checkpoint continuation and covariance have native tests,
 while the complete accepted position-refinement history agrees with Python.
-Bounded lattice parameterization and accepted-step topology regeneration are
-the remaining Le Bail migration substep.
+The setting-aware lattice foundation is now native as well. It owns exact
+crystal-system parameter mappings, finite bounds, analytical CW d-spacing and
+two-theta derivatives, conservative bound-wide reflection guards, physical
+Bragg filtering, multiplicities, visibility masks, and stable-ID intensity
+transfer. Cells outside the declared box and invalid transferred intensities
+fail explicitly. The accompanying crystallography fix distinguishes proper
+sixfold hexagonal axes from cubic threefold topology and recognizes exact
+rhombohedral metrics in rhombohedral settings. Accepted-step regeneration,
+lattice parameter columns, and checkpoint domain compatibility are the
+remaining Le Bail migration substep.

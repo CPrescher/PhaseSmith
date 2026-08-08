@@ -119,6 +119,21 @@ persistence format 3. Restart accepts changed reflection IDs only when the
 input and checkpoint have identical symmetry, bounds, wavelength, visible
 range, and guard policy.
 
+## Native application boundary
+
+`phasesmith-workflows` now owns the Python-free lattice parameterization,
+finite bounds, CW derivative geometry, and guarded reflection-domain records.
+The guarded result includes stable IDs, Miller indices, multiplicities,
+d-spacings, two-theta coordinates, transferred integrated intensities, the
+visibility mask, the actual guarded d-spacing limits, and added/removed/
+preserved diagnostics. Generation rejects cells outside the declared bound box
+and rejects negative or non-finite transferred intensities.
+
+This is the scientific boundary a future Tauri command will call; it has no
+PyO3, NumPy, CPython, webview, or Tauri dependency. The existing Python classes
+remain the scripting interface and numerical oracle while accepted-step Le Bail
+regeneration is moved onto this Rust contract.
+
 ## Source and validation boundary
 
 The metric identities, reciprocal differentiation, Bragg law, and TOF

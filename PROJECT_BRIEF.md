@@ -90,8 +90,13 @@ scale, and independent reflection-position parameters through the native
 constraint graph. Its bounded regularized solve, backtracking, covariance,
 parameter audit trail, evaluation accounting, and profile-aware restart state
 are Python-free; accepted position-refinement histories agree with the Python
-oracle. Bounded lattice motion and reflection-domain regeneration remain before
-the complete workflow can replace Python orchestration.
+oracle. The workflow crate now additionally owns the setting-aware lattice
+parameterization, finite bound box, analytical CW geometry chain, conservative
+guarded reflection generator, and stable-ID intensity-transfer contract needed
+for dynamic topology. This foundation validates all conventional crystal
+systems, including rhombohedral axes, without Python. Wiring it into accepted
+Le Bail steps and restart compatibility remains before the complete workflow
+can replace Python orchestration.
 
 Unit 17 now includes the first full monochromatic CIF-backed Rietveld vertical
 slice. Typed profile/background/phase/lattice/site parameter families map

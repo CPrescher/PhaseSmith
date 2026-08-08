@@ -957,16 +957,37 @@ fn classify_crystal_system(
     rotations: &[[[i32; 3]; 3]],
     constraints: &MetricConstraints,
 ) -> Result<CrystalSystem, SymmetryError> {
+    let metric_columns_equal = |left: usize, right: usize| {
+        constraints
+            .parameterization_basis
+            .iter()
+            .all(|row| row[left] == row[right])
+    };
+    let rhombohedral_metric = constraints.independent_parameter_count == 2
+        && (1..3).all(|right| metric_columns_equal(0, right))
+        && (4..6).all(|right| metric_columns_equal(3, right))
+        && constraints
+            .parameterization_basis
+            .iter()
+            .any(|row| row[3] != 0);
     let mut orders = Vec::with_capacity(rotations.len());
+    let mut proper_orders = Vec::with_capacity(rotations.len());
     let mut proper_count = 0;
     for rotation in rotations {
-        orders.push(rotation_order(*rotation)?);
+        let order = rotation_order(*rotation)?;
+        orders.push(order);
         if determinant_i32(*rotation) == 1 {
             proper_count += 1;
+            proper_orders.push(order);
         }
     }
     let has_order = |order| orders.contains(&order);
-    Ok(if has_order(3) && proper_count >= 12 {
+    let has_proper_order = |order| proper_orders.contains(&order);
+    Ok(if rhombohedral_metric {
+        CrystalSystem::Trigonal
+    } else if has_proper_order(6) {
+        CrystalSystem::Hexagonal
+    } else if has_proper_order(3) && proper_count >= 12 {
         CrystalSystem::Cubic
     } else if has_order(6) {
         CrystalSystem::Hexagonal
@@ -1160,5 +1181,19 @@ mod tests {
                 );
             }
         }
+    }
+
+    #[test]
+    fn proper_sixfold_axis_takes_precedence_over_threefold_operation_count() {
+        let generator = [[0, -1, 0], [1, 1, 0], [0, 0, 1]];
+        let mut rotation = SymmetryOperation::identity().rotation;
+        let mut operations = Vec::new();
+        for _ in 0..6 {
+            operations.push(operation(rotation, [Rational::zero(); 3]));
+            rotation = multiply_rotation(generator, rotation).expect("finite rotation product");
+        }
+        let group = SpaceGroup::new(operations).expect("sixfold group");
+        assert_eq!(group.crystal_system(), CrystalSystem::Hexagonal);
+        assert_eq!(group.metric_constraints().independent_parameter_count, 2);
     }
 }

@@ -1,5 +1,6 @@
 //! Native space-group database contract tests.
 
+use phasesmith_crystallography::CrystalSystem;
 use phasesmith_io::{
     SPACE_GROUP_DATABASE_PROVENANCE, SpaceGroupLookupError, space_group_by_hall_symbol,
     space_group_by_number, space_group_by_symbol,
@@ -46,6 +47,12 @@ fn symbols_preserve_explicit_settings_and_choose_standard_short_setting() {
     assert_eq!(rhombohedral.number, 167);
     assert_eq!(rhombohedral.setting, "H");
     assert_eq!(rhombohedral.space_group.operations().len(), 36);
+
+    let rhombohedral_axes = space_group_by_symbol("R -3 c :R").expect("R qualifier must resolve");
+    assert_eq!(
+        rhombohedral_axes.space_group.crystal_system(),
+        CrystalSystem::Trigonal
+    );
 }
 
 #[test]

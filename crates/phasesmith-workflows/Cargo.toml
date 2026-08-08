@@ -10,11 +10,13 @@ license.workspace = true
 [dependencies]
 nalgebra = "0.35"
 phasesmith-core = { path = "../phasesmith-core" }
+phasesmith-crystallography = { path = "../phasesmith-crystallography" }
 phasesmith-execution = { path = "../phasesmith-execution" }
 phasesmith-model = { path = "../phasesmith-model" }
 
 [dev-dependencies]
 criterion = "0.7"
+phasesmith-io = { path = "../phasesmith-io" }
 
 [[bench]]
 name = "backgrounds"
