@@ -57,6 +57,12 @@ chi2 = sum(w_i (ycalc_i-yobs_i)^2)
 Reduced chi-square uses `included_sample_count - free_parameter_count` degrees
 of freedom. Values are fractions, not percentages.
 
+This evaluation is now also owned by `phasesmith-workflows` over the native
+`PatternRecord`. It preserves full sample-aligned residual/weighted arrays and
+uses structured errors for missing observations, mismatched calculated arrays,
+and non-finite calculated values. A configured differential gate compares the
+native arrays and metrics with the independent Python implementation.
+
 ## Hybrid Jacobian products
 
 `jacobian_vector_product` and `transpose_jacobian_vector_product` operate

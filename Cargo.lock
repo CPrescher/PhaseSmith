@@ -677,6 +677,9 @@ dependencies = [
 [[package]]
 name = "phasesmith-workflows"
 version = "0.1.0"
+dependencies = [
+ "phasesmith-model",
+]
 
 [[package]]
 name = "pin-project-lite"

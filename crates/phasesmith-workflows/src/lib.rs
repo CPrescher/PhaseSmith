@@ -5,9 +5,11 @@
 
 mod constraints;
 mod parameters;
+mod residuals;
 
 pub use constraints::{
     AffineConstraint, Constraint, ConstraintDerivativeMatrix, ConstraintError, ConstraintTransform,
     FixedConstraint, LinearConstraint, LinearTerm,
 };
 pub use parameters::{ParameterBounds, ParameterError, ParameterKey, ParameterSet, ParameterSpec};
+pub use residuals::{ResidualError, ResidualEvaluation, ResidualOptions, evaluate_residuals};

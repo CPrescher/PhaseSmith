@@ -191,3 +191,12 @@ the exact row-major chain matrix agrees with the existing Python implementation
 in a configured differential test. Residuals, analytical backgrounds, and the
 bounded runtime remain the next independently reviewed substeps before solver
 or Python-refinement delegation begins.
+
+Native residual evaluation completed next. `phasesmith-workflows` now consumes
+the validated owned pattern directly, applies inclusion masks and optional
+one-sigma weights, and returns sample-aligned residual arrays plus `Rp`, `Rwp`,
+chi-square, and reduced chi-square under the documented denominator and
+degrees-of-freedom rules. Invalid observations/calculated arrays are structured
+errors, and a configured differential test matches the existing Python arrays
+and metrics. Analytical backgrounds and bounded runtime remain before step 13
+is complete.
