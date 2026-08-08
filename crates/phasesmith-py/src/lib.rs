@@ -5,9 +5,9 @@
 use npy::ndarray::Array2;
 use npy::{IntoPyArray, PyArray1, PyArray2, PyReadonlyArray1};
 use phasesmith_core::{
-    Accumulation, ConstantWavelengthInstrument, CwContributionArrays, CwContributionsView,
+    Accumulation, ConstantWavelengthInstrument, CwContributionArrays, CwContributionsView, CwError,
     CwProfileParameters, CwReflectionBatchView, FcjGeometry, FcjProfile, GridView, PeakBatchView,
-    SupportPolicy, TchPeakBatchView, TchShape, TchWidths, TofInstrument, TofProfile,
+    SupportPolicy, TchPeakBatchView, TchShape, TchWidths, TofError, TofInstrument, TofProfile,
     TofProfileParameters, WavelengthComponentsView, accumulate_batch, accumulate_cw_batch,
     accumulate_cw_components_batch, accumulate_cw_contributions_batch, accumulate_cw_fcj_batch,
     accumulate_cw_fcj_components_batch, accumulate_cw_fcj_contributions_batch,
@@ -15,7 +15,7 @@ use phasesmith_core::{
     smooth_bruckner as native_smooth_bruckner, symmetric_pseudo_voigt,
 };
 use phasesmith_engine::crystallography::{
-    IntegratedIntensityCorrectionModel, NEUTRON_TABLE_PROVENANCE, P1BatchView,
+    CellError, IntegratedIntensityCorrectionModel, NEUTRON_TABLE_PROVENANCE, P1BatchView,
     PreparedNeutronScattering, PreparedReflectionGenerator, PreparedXrayScattering, Rational,
     ReflectionRange, ScatteringBatch, SpaceGroup, StructureFactorBatchView,
     StructureFactorDenseResult, StructureFactorValues, SymmetryOperation, UnitCell,
@@ -250,9 +250,8 @@ impl NativePreparedXrayScattering {
         s_inverse_angstrom: PyReadonlyArray1<'py, f64>,
     ) -> PyResult<ScatteringArrays<'py>> {
         let values = contiguous_slice(&s_inverse_angstrom, "s_inverse_angstrom")?;
-        let result = self
-            .model
-            .evaluate(values)
+        let result = py
+            .detach(|| self.model.evaluate(values))
             .map_err(|error| PyValueError::new_err(error.to_string()))?;
         scattering_to_numpy(py, result)
     }
@@ -289,9 +288,8 @@ impl NativePreparedNeutronScattering {
         s_inverse_angstrom: PyReadonlyArray1<'py, f64>,
     ) -> PyResult<ScatteringArrays<'py>> {
         let values = contiguous_slice(&s_inverse_angstrom, "s_inverse_angstrom")?;
-        let result = self
-            .model
-            .evaluate(values)
+        let result = py
+            .detach(|| self.model.evaluate(values))
             .map_err(|error| PyValueError::new_err(error.to_string()))?;
         scattering_to_numpy(py, result)
     }
@@ -370,10 +368,8 @@ impl NativePreparedReflectionGenerator {
         tolerance: f64,
     ) -> PyResult<ExpandedSiteArrays<'py>> {
         let xyz = xyz_rows(&fractional_xyz_flat)?;
-        let expanded = self
-            .generator
-            .space_group()
-            .expand_sites(&xyz, tolerance)
+        let expanded = py
+            .detach(|| self.generator.space_group().expand_sites(&xyz, tolerance))
             .map_err(|error| PyValueError::new_err(error.to_string()))?;
         let positions = Array2::from_shape_vec(
             (expanded.fractional_xyz.len(), 3),
@@ -423,39 +419,38 @@ impl NativePreparedReflectionGenerator {
         let multiplicity = multiplicity_rows(&multiplicity)?;
         let xyz = xyz_rows(&fractional_xyz_flat)?;
         let tensors = tensor_rows(&u_aniso_cif_angstrom2_flat)?;
-        let result = calculate_structure_factor_values(
-            crystallographic_cell(
-                a_angstrom, b_angstrom, c_angstrom, alpha_deg, beta_deg, gamma_deg,
-            ),
-            self.generator.space_group(),
-            StructureFactorBatchView {
-                hkl: &hkl,
-                multiplicity: &multiplicity,
-                fractional_xyz: &xyz,
-                occupancy: contiguous_slice(&occupancy, "occupancy")?,
-                u_iso_angstrom2: contiguous_slice(&u_iso_angstrom2, "u_iso_angstrom2")?,
-                anisotropic_mask: bool_slice(&anisotropic_mask, "anisotropic_mask")?,
-                u_aniso_cif_angstrom2: &tensors,
-                scattering_real: contiguous_slice(&scattering_real, "scattering_real")?,
-                scattering_imag: contiguous_slice(&scattering_imag, "scattering_imag")?,
-                d_scattering_real_d_s: contiguous_slice(
-                    &d_scattering_real_d_s,
-                    "d_scattering_real_d_s",
-                )?,
-                d_scattering_imag_d_s: contiguous_slice(
-                    &d_scattering_imag_d_s,
-                    "d_scattering_imag_d_s",
-                )?,
-                correction: contiguous_slice(&correction, "correction")?,
-                d_correction_d_q_squared: contiguous_slice(
-                    &d_correction_d_q_squared,
-                    "d_correction_d_q_squared",
-                )?,
-                scale,
-                coordinate_tolerance,
-            },
-        )
-        .map_err(|error| PyValueError::new_err(error.to_string()))?;
+        let cell = crystallographic_cell(
+            a_angstrom, b_angstrom, c_angstrom, alpha_deg, beta_deg, gamma_deg,
+        );
+        let batch = StructureFactorBatchView {
+            hkl: &hkl,
+            multiplicity: &multiplicity,
+            fractional_xyz: &xyz,
+            occupancy: contiguous_slice(&occupancy, "occupancy")?,
+            u_iso_angstrom2: contiguous_slice(&u_iso_angstrom2, "u_iso_angstrom2")?,
+            anisotropic_mask: bool_slice(&anisotropic_mask, "anisotropic_mask")?,
+            u_aniso_cif_angstrom2: &tensors,
+            scattering_real: contiguous_slice(&scattering_real, "scattering_real")?,
+            scattering_imag: contiguous_slice(&scattering_imag, "scattering_imag")?,
+            d_scattering_real_d_s: contiguous_slice(
+                &d_scattering_real_d_s,
+                "d_scattering_real_d_s",
+            )?,
+            d_scattering_imag_d_s: contiguous_slice(
+                &d_scattering_imag_d_s,
+                "d_scattering_imag_d_s",
+            )?,
+            correction: contiguous_slice(&correction, "correction")?,
+            d_correction_d_q_squared: contiguous_slice(
+                &d_correction_d_q_squared,
+                "d_correction_d_q_squared",
+            )?,
+            scale,
+            coordinate_tolerance,
+        };
+        let result = py
+            .detach(|| calculate_structure_factor_values(cell, self.generator.space_group(), batch))
+            .map_err(|error| PyValueError::new_err(error.to_string()))?;
         Ok(structure_factor_values_to_numpy(py, result))
     }
 
@@ -489,39 +484,38 @@ impl NativePreparedReflectionGenerator {
         let multiplicity = multiplicity_rows(&multiplicity)?;
         let xyz = xyz_rows(&fractional_xyz_flat)?;
         let tensors = tensor_rows(&u_aniso_cif_angstrom2_flat)?;
-        let result = calculate_structure_factor_dense(
-            crystallographic_cell(
-                a_angstrom, b_angstrom, c_angstrom, alpha_deg, beta_deg, gamma_deg,
-            ),
-            self.generator.space_group(),
-            StructureFactorBatchView {
-                hkl: &hkl,
-                multiplicity: &multiplicity,
-                fractional_xyz: &xyz,
-                occupancy: contiguous_slice(&occupancy, "occupancy")?,
-                u_iso_angstrom2: contiguous_slice(&u_iso_angstrom2, "u_iso_angstrom2")?,
-                anisotropic_mask: bool_slice(&anisotropic_mask, "anisotropic_mask")?,
-                u_aniso_cif_angstrom2: &tensors,
-                scattering_real: contiguous_slice(&scattering_real, "scattering_real")?,
-                scattering_imag: contiguous_slice(&scattering_imag, "scattering_imag")?,
-                d_scattering_real_d_s: contiguous_slice(
-                    &d_scattering_real_d_s,
-                    "d_scattering_real_d_s",
-                )?,
-                d_scattering_imag_d_s: contiguous_slice(
-                    &d_scattering_imag_d_s,
-                    "d_scattering_imag_d_s",
-                )?,
-                correction: contiguous_slice(&correction, "correction")?,
-                d_correction_d_q_squared: contiguous_slice(
-                    &d_correction_d_q_squared,
-                    "d_correction_d_q_squared",
-                )?,
-                scale,
-                coordinate_tolerance,
-            },
-        )
-        .map_err(|error| PyValueError::new_err(error.to_string()))?;
+        let cell = crystallographic_cell(
+            a_angstrom, b_angstrom, c_angstrom, alpha_deg, beta_deg, gamma_deg,
+        );
+        let batch = StructureFactorBatchView {
+            hkl: &hkl,
+            multiplicity: &multiplicity,
+            fractional_xyz: &xyz,
+            occupancy: contiguous_slice(&occupancy, "occupancy")?,
+            u_iso_angstrom2: contiguous_slice(&u_iso_angstrom2, "u_iso_angstrom2")?,
+            anisotropic_mask: bool_slice(&anisotropic_mask, "anisotropic_mask")?,
+            u_aniso_cif_angstrom2: &tensors,
+            scattering_real: contiguous_slice(&scattering_real, "scattering_real")?,
+            scattering_imag: contiguous_slice(&scattering_imag, "scattering_imag")?,
+            d_scattering_real_d_s: contiguous_slice(
+                &d_scattering_real_d_s,
+                "d_scattering_real_d_s",
+            )?,
+            d_scattering_imag_d_s: contiguous_slice(
+                &d_scattering_imag_d_s,
+                "d_scattering_imag_d_s",
+            )?,
+            correction: contiguous_slice(&correction, "correction")?,
+            d_correction_d_q_squared: contiguous_slice(
+                &d_correction_d_q_squared,
+                "d_correction_d_q_squared",
+            )?,
+            scale,
+            coordinate_tolerance,
+        };
+        let result = py
+            .detach(|| calculate_structure_factor_dense(cell, self.generator.space_group(), batch))
+            .map_err(|error| PyValueError::new_err(error.to_string()))?;
         structure_factor_dense_to_numpy(py, result)
     }
 
@@ -531,15 +525,18 @@ impl NativePreparedReflectionGenerator {
         hkl_flat: PyReadonlyArray1<'py, i64>,
     ) -> PyResult<Bound<'py, PyArray1<bool>>> {
         let hkl = hkl_rows(&hkl_flat)?;
-        hkl.into_iter()
-            .map(|reflection| {
-                self.generator
-                    .space_group()
-                    .is_systematically_absent(reflection)
-                    .map_err(|error| PyValueError::new_err(error.to_string()))
+        let values = py
+            .detach(|| {
+                hkl.into_iter()
+                    .map(|reflection| {
+                        self.generator
+                            .space_group()
+                            .is_systematically_absent(reflection)
+                    })
+                    .collect::<Result<Vec<_>, _>>()
             })
-            .collect::<PyResult<Vec<_>>>()
-            .map(|values| values.into_pyarray(py))
+            .map_err(|error| PyValueError::new_err(error.to_string()))?;
+        Ok(values.into_pyarray(py))
     }
 
     fn reflection_families<'py>(
@@ -548,15 +545,21 @@ impl NativePreparedReflectionGenerator {
         hkl_flat: PyReadonlyArray1<'py, i64>,
     ) -> PyResult<ReflectionFamilyArrays<'py>> {
         let hkl = hkl_rows(&hkl_flat)?;
-        let mut ids = Vec::with_capacity(hkl.len());
-        let mut canonical = Vec::with_capacity(3 * hkl.len());
-        let mut multiplicity = Vec::with_capacity(hkl.len());
-        for reflection in hkl {
-            let family = self
-                .generator
-                .space_group()
-                .reflection_family(reflection, self.generator.merge_friedel())
-                .map_err(|error| PyValueError::new_err(error.to_string()))?;
+        let families = py
+            .detach(|| {
+                hkl.into_iter()
+                    .map(|reflection| {
+                        self.generator
+                            .space_group()
+                            .reflection_family(reflection, self.generator.merge_friedel())
+                    })
+                    .collect::<Result<Vec<_>, _>>()
+            })
+            .map_err(|error| PyValueError::new_err(error.to_string()))?;
+        let mut ids = Vec::with_capacity(families.len());
+        let mut canonical = Vec::with_capacity(3 * families.len());
+        let mut multiplicity = Vec::with_capacity(families.len());
+        for family in families {
             ids.push(family.reflection_id);
             canonical.extend(family.canonical_hkl.map(i64::from));
             multiplicity.push(
@@ -1202,15 +1205,18 @@ fn unit_cell_d_spacings<'py>(
     )
     .geometry()
     .map_err(|error| PyValueError::new_err(error.to_string()))?;
-    let mut spacings = Vec::with_capacity(hkl.len());
-    let mut derivatives = Vec::with_capacity(hkl.len() * 6);
-    for reflection in hkl {
-        let (spacing, derivative) = geometry
-            .d_spacing_and_derivatives(reflection)
-            .map_err(|error| PyValueError::new_err(error.to_string()))?;
-        spacings.push(spacing);
-        derivatives.extend_from_slice(&derivative);
-    }
+    let (spacings, derivatives) = py
+        .detach(|| {
+            let mut spacings = Vec::with_capacity(hkl.len());
+            let mut derivatives = Vec::with_capacity(hkl.len() * 6);
+            for reflection in hkl {
+                let (spacing, derivative) = geometry.d_spacing_and_derivatives(reflection)?;
+                spacings.push(spacing);
+                derivatives.extend_from_slice(&derivative);
+            }
+            Ok((spacings, derivatives))
+        })
+        .map_err(|error: CellError| PyValueError::new_err(error.to_string()))?;
     Ok((
         spacings.into_pyarray(py),
         Array2::from_shape_vec((derivatives.len() / 6, 6), derivatives)
@@ -1244,21 +1250,21 @@ fn p1_structure_factors_dense<'py>(
     let u_iso = contiguous_slice(&u_iso_angstrom2, "u_iso_angstrom2")?;
     let scattering_real = contiguous_slice(&scattering_real_flat, "scattering_real")?;
     let scattering_imag = contiguous_slice(&scattering_imag_flat, "scattering_imag")?;
-    let result = calculate_p1_dense(
-        crystallographic_cell(
-            a_angstrom, b_angstrom, c_angstrom, alpha_deg, beta_deg, gamma_deg,
-        ),
-        P1BatchView {
-            hkl: &hkl,
-            fractional_xyz: &xyz,
-            occupancy,
-            u_iso_angstrom2: u_iso,
-            scattering_real,
-            scattering_imag,
-            scale,
-        },
-    )
-    .map_err(|error| PyValueError::new_err(error.to_string()))?;
+    let cell = crystallographic_cell(
+        a_angstrom, b_angstrom, c_angstrom, alpha_deg, beta_deg, gamma_deg,
+    );
+    let batch = P1BatchView {
+        hkl: &hkl,
+        fractional_xyz: &xyz,
+        occupancy,
+        u_iso_angstrom2: u_iso,
+        scattering_real,
+        scattering_imag,
+        scale,
+    };
+    let result = py
+        .detach(|| calculate_p1_dense(cell, batch))
+        .map_err(|error| PyValueError::new_err(error.to_string()))?;
     let reflection_count = result.values.intensity.len();
     let parameter_count = result.layout.parameter_count();
     Ok((
@@ -1298,22 +1304,21 @@ fn p1_structure_factors_jvp<'py>(
     let scattering_real = contiguous_slice(&scattering_real_flat, "scattering_real")?;
     let scattering_imag = contiguous_slice(&scattering_imag_flat, "scattering_imag")?;
     let tangent = contiguous_slice(&tangent, "tangent")?;
-    let result = calculate_p1_jvp(
-        crystallographic_cell(
-            a_angstrom, b_angstrom, c_angstrom, alpha_deg, beta_deg, gamma_deg,
-        ),
-        P1BatchView {
-            hkl: &hkl,
-            fractional_xyz: &xyz,
-            occupancy,
-            u_iso_angstrom2: u_iso,
-            scattering_real,
-            scattering_imag,
-            scale,
-        },
-        tangent,
-    )
-    .map_err(|error| PyValueError::new_err(error.to_string()))?;
+    let cell = crystallographic_cell(
+        a_angstrom, b_angstrom, c_angstrom, alpha_deg, beta_deg, gamma_deg,
+    );
+    let batch = P1BatchView {
+        hkl: &hkl,
+        fractional_xyz: &xyz,
+        occupancy,
+        u_iso_angstrom2: u_iso,
+        scattering_real,
+        scattering_imag,
+        scale,
+    };
+    let result = py
+        .detach(|| calculate_p1_jvp(cell, batch, tangent))
+        .map_err(|error| PyValueError::new_err(error.to_string()))?;
     Ok((
         result.values.f_real.into_pyarray(py),
         result.values.f_imag.into_pyarray(py),
@@ -1351,22 +1356,21 @@ fn p1_structure_factors_vjp<'py>(
     let scattering_real = contiguous_slice(&scattering_real_flat, "scattering_real")?;
     let scattering_imag = contiguous_slice(&scattering_imag_flat, "scattering_imag")?;
     let weights = contiguous_slice(&weights, "weights")?;
-    let result = calculate_p1_intensity_vjp(
-        crystallographic_cell(
-            a_angstrom, b_angstrom, c_angstrom, alpha_deg, beta_deg, gamma_deg,
-        ),
-        P1BatchView {
-            hkl: &hkl,
-            fractional_xyz: &xyz,
-            occupancy,
-            u_iso_angstrom2: u_iso,
-            scattering_real,
-            scattering_imag,
-            scale,
-        },
-        weights,
-    )
-    .map_err(|error| PyValueError::new_err(error.to_string()))?;
+    let cell = crystallographic_cell(
+        a_angstrom, b_angstrom, c_angstrom, alpha_deg, beta_deg, gamma_deg,
+    );
+    let batch = P1BatchView {
+        hkl: &hkl,
+        fractional_xyz: &xyz,
+        occupancy,
+        u_iso_angstrom2: u_iso,
+        scattering_real,
+        scattering_imag,
+        scale,
+    };
+    let result = py
+        .detach(|| calculate_p1_intensity_vjp(cell, batch, weights))
+        .map_err(|error| PyValueError::new_err(error.to_string()))?;
     Ok((
         result.values.f_real.into_pyarray(py),
         result.values.f_imag.into_pyarray(py),
@@ -1400,17 +1404,20 @@ fn profile<'py>(
         ));
     }
 
-    let mut value = Vec::with_capacity(delta.len());
-    let mut d_delta = Vec::with_capacity(delta.len());
-    let mut d_fwhm = Vec::with_capacity(delta.len());
-    let mut d_eta = Vec::with_capacity(delta.len());
-    for coordinate in delta.iter().copied() {
-        let point = symmetric_pseudo_voigt(coordinate, fwhm, eta);
-        value.push(point.value);
-        d_delta.push(point.d_delta);
-        d_fwhm.push(point.d_fwhm);
-        d_eta.push(point.d_eta);
-    }
+    let (value, d_delta, d_fwhm, d_eta) = py.detach(|| {
+        let mut value = Vec::with_capacity(delta.len());
+        let mut d_delta = Vec::with_capacity(delta.len());
+        let mut d_fwhm = Vec::with_capacity(delta.len());
+        let mut d_eta = Vec::with_capacity(delta.len());
+        for coordinate in delta.iter().copied() {
+            let point = symmetric_pseudo_voigt(coordinate, fwhm, eta);
+            value.push(point.value);
+            d_delta.push(point.d_delta);
+            d_fwhm.push(point.d_fwhm);
+            d_eta.push(point.d_eta);
+        }
+        (value, d_delta, d_fwhm, d_eta)
+    });
     Ok((
         value.into_pyarray(py),
         d_delta.into_pyarray(py),
@@ -1457,17 +1464,20 @@ fn profile_tch<'py>(
     };
     let shape = TchShape::from_component_fwhm(widths)
         .map_err(|error| PyValueError::new_err(error.to_string()))?;
-    let mut value = Vec::with_capacity(delta.len());
-    let mut d_delta = Vec::with_capacity(delta.len());
-    let mut d_gaussian = Vec::with_capacity(delta.len());
-    let mut d_lorentzian = Vec::with_capacity(delta.len());
-    for coordinate in delta.iter().copied() {
-        let point = shape.evaluate(coordinate);
-        value.push(point.value);
-        d_delta.push(point.d_delta);
-        d_gaussian.push(point.d_gaussian_fwhm);
-        d_lorentzian.push(point.d_lorentzian_fwhm);
-    }
+    let (value, d_delta, d_gaussian, d_lorentzian) = py.detach(|| {
+        let mut value = Vec::with_capacity(delta.len());
+        let mut d_delta = Vec::with_capacity(delta.len());
+        let mut d_gaussian = Vec::with_capacity(delta.len());
+        let mut d_lorentzian = Vec::with_capacity(delta.len());
+        for coordinate in delta.iter().copied() {
+            let point = shape.evaluate(coordinate);
+            value.push(point.value);
+            d_delta.push(point.d_delta);
+            d_gaussian.push(point.d_gaussian_fwhm);
+            d_lorentzian.push(point.d_lorentzian_fwhm);
+        }
+        (value, d_delta, d_gaussian, d_lorentzian)
+    });
     Ok((
         value.into_pyarray(py),
         d_delta.into_pyarray(py),
@@ -1506,21 +1516,31 @@ fn profile_fcj<'py>(
         },
     )
     .map_err(|error| PyValueError::new_err(error.to_string()))?;
-    let mut value = Vec::with_capacity(x_deg.len());
-    let mut d_position = Vec::with_capacity(x_deg.len());
-    let mut d_gaussian = Vec::with_capacity(x_deg.len());
-    let mut d_lorentzian = Vec::with_capacity(x_deg.len());
-    let mut d_sample = Vec::with_capacity(x_deg.len());
-    let mut d_detector = Vec::with_capacity(x_deg.len());
-    for coordinate in x_deg.iter().copied() {
-        let point = profile.evaluate(coordinate);
-        value.push(point.value);
-        d_position.push(point.d_position);
-        d_gaussian.push(point.d_gaussian_fwhm);
-        d_lorentzian.push(point.d_lorentzian_fwhm);
-        d_sample.push(point.d_sample_over_radius);
-        d_detector.push(point.d_detector_over_radius);
-    }
+    let (value, d_position, d_gaussian, d_lorentzian, d_sample, d_detector) = py.detach(|| {
+        let mut value = Vec::with_capacity(x_deg.len());
+        let mut d_position = Vec::with_capacity(x_deg.len());
+        let mut d_gaussian = Vec::with_capacity(x_deg.len());
+        let mut d_lorentzian = Vec::with_capacity(x_deg.len());
+        let mut d_sample = Vec::with_capacity(x_deg.len());
+        let mut d_detector = Vec::with_capacity(x_deg.len());
+        for coordinate in x_deg.iter().copied() {
+            let point = profile.evaluate(coordinate);
+            value.push(point.value);
+            d_position.push(point.d_position);
+            d_gaussian.push(point.d_gaussian_fwhm);
+            d_lorentzian.push(point.d_lorentzian_fwhm);
+            d_sample.push(point.d_sample_over_radius);
+            d_detector.push(point.d_detector_over_radius);
+        }
+        (
+            value,
+            d_position,
+            d_gaussian,
+            d_lorentzian,
+            d_sample,
+            d_detector,
+        )
+    });
     Ok((
         value.into_pyarray(py),
         d_position.into_pyarray(py),
@@ -1560,21 +1580,24 @@ fn profile_tof<'py>(
         tail_log,
     )
     .map_err(|error| PyValueError::new_err(error.to_string()))?;
-    let mut value = Vec::with_capacity(x_us.len());
-    let mut d_position = Vec::with_capacity(x_us.len());
-    let mut d_alpha = Vec::with_capacity(x_us.len());
-    let mut d_beta = Vec::with_capacity(x_us.len());
-    let mut d_gaussian = Vec::with_capacity(x_us.len());
-    let mut d_lorentzian = Vec::with_capacity(x_us.len());
-    for coordinate in x_us.iter().copied() {
-        let point = profile.evaluate(coordinate - position_us);
-        value.push(point.value);
-        d_position.push(point.d_position);
-        d_alpha.push(point.d_alpha);
-        d_beta.push(point.d_beta);
-        d_gaussian.push(point.d_gaussian_fwhm);
-        d_lorentzian.push(point.d_lorentzian_fwhm);
-    }
+    let (value, d_position, d_alpha, d_beta, d_gaussian, d_lorentzian) = py.detach(|| {
+        let mut value = Vec::with_capacity(x_us.len());
+        let mut d_position = Vec::with_capacity(x_us.len());
+        let mut d_alpha = Vec::with_capacity(x_us.len());
+        let mut d_beta = Vec::with_capacity(x_us.len());
+        let mut d_gaussian = Vec::with_capacity(x_us.len());
+        let mut d_lorentzian = Vec::with_capacity(x_us.len());
+        for coordinate in x_us.iter().copied() {
+            let point = profile.evaluate(coordinate - position_us);
+            value.push(point.value);
+            d_position.push(point.d_position);
+            d_alpha.push(point.d_alpha);
+            d_beta.push(point.d_beta);
+            d_gaussian.push(point.d_gaussian_fwhm);
+            d_lorentzian.push(point.d_lorentzian_fwhm);
+        }
+        (value, d_position, d_alpha, d_beta, d_gaussian, d_lorentzian)
+    });
     Ok((
         value.into_pyarray(py),
         d_position.into_pyarray(py),
@@ -1605,7 +1628,8 @@ fn accumulate<'py>(
     let grid = GridView::new(x).map_err(|error| PyValueError::new_err(error.to_string()))?;
     let peaks = PeakBatchView::new(positions, intensities, fwhms, etas)
         .map_err(|error| PyValueError::new_err(error.to_string()))?;
-    let accumulation = accumulate_batch(grid, peaks, SupportPolicy::FwhmMultiple(support_fwhm))
+    let accumulation = py
+        .detach(|| accumulate_batch(grid, peaks, SupportPolicy::FwhmMultiple(support_fwhm)))
         .map_err(|error| PyValueError::new_err(error.to_string()))?;
     accumulation_to_numpy(py, accumulation)
 }
@@ -1619,7 +1643,8 @@ fn smooth_bruckner<'py>(
     iterations: usize,
 ) -> PyResult<Bound<'py, PyArray1<f64>>> {
     let y = contiguous_slice(&y, "y")?;
-    let background = native_smooth_bruckner(y, smooth_points, iterations)
+    let background = py
+        .detach(|| native_smooth_bruckner(y, smooth_points, iterations))
         .map_err(|error| PyValueError::new_err(error.to_string()))?;
     Ok(background.into_pyarray(py))
 }
@@ -1643,7 +1668,8 @@ fn accumulate_tch<'py>(
     let grid = GridView::new(x).map_err(|error| PyValueError::new_err(error.to_string()))?;
     let peaks = TchPeakBatchView::new(positions, intensities, gaussian_fwhms, lorentzian_fwhms)
         .map_err(|error| PyValueError::new_err(error.to_string()))?;
-    let accumulation = accumulate_tch_batch(grid, peaks, SupportPolicy::FwhmMultiple(support_fwhm))
+    let accumulation = py
+        .detach(|| accumulate_tch_batch(grid, peaks, SupportPolicy::FwhmMultiple(support_fwhm)))
         .map_err(|error| PyValueError::new_err(error.to_string()))?;
     accumulation_to_numpy(py, accumulation)
 }
@@ -1769,27 +1795,40 @@ fn cw_profile_parameters<'py>(
     instrument
         .validate()
         .map_err(|error| PyValueError::new_err(error.to_string()))?;
-    let mut variance = Vec::with_capacity(two_theta_deg.len());
-    let mut gaussian = Vec::with_capacity(two_theta_deg.len());
-    let mut lorentzian = Vec::with_capacity(two_theta_deg.len());
-    let mut total = Vec::with_capacity(two_theta_deg.len());
-    let mut eta = Vec::with_capacity(two_theta_deg.len());
-    let mut d_gaussian = Vec::with_capacity(two_theta_deg.len() * 5);
-    let mut d_lorentzian = Vec::with_capacity(two_theta_deg.len() * 5);
-    let mut d_position = Vec::with_capacity(two_theta_deg.len() * 2);
-    for position in two_theta_deg.iter().copied() {
-        let profile = CwProfileParameters::from_instrument(position, instrument)
-            .map_err(|error| PyValueError::new_err(error.to_string()))?;
-        variance.push(profile.gaussian_variance_deg2);
-        gaussian.push(profile.gaussian_fwhm_deg);
-        lorentzian.push(profile.lorentzian_fwhm_deg);
-        total.push(profile.tch.total_fwhm);
-        eta.push(profile.tch.eta);
-        d_gaussian.extend_from_slice(&profile.d_gaussian_fwhm_d_instrument);
-        d_lorentzian.extend_from_slice(&profile.d_lorentzian_fwhm_d_instrument);
-        d_position.push(profile.d_gaussian_fwhm_d_two_theta);
-        d_position.push(profile.d_lorentzian_fwhm_d_two_theta);
-    }
+    let (variance, gaussian, lorentzian, total, eta, d_gaussian, d_lorentzian, d_position) = py
+        .detach(|| {
+            let mut variance = Vec::with_capacity(two_theta_deg.len());
+            let mut gaussian = Vec::with_capacity(two_theta_deg.len());
+            let mut lorentzian = Vec::with_capacity(two_theta_deg.len());
+            let mut total = Vec::with_capacity(two_theta_deg.len());
+            let mut eta = Vec::with_capacity(two_theta_deg.len());
+            let mut d_gaussian = Vec::with_capacity(two_theta_deg.len() * 5);
+            let mut d_lorentzian = Vec::with_capacity(two_theta_deg.len() * 5);
+            let mut d_position = Vec::with_capacity(two_theta_deg.len() * 2);
+            for position in two_theta_deg.iter().copied() {
+                let profile = CwProfileParameters::from_instrument(position, instrument)?;
+                variance.push(profile.gaussian_variance_deg2);
+                gaussian.push(profile.gaussian_fwhm_deg);
+                lorentzian.push(profile.lorentzian_fwhm_deg);
+                total.push(profile.tch.total_fwhm);
+                eta.push(profile.tch.eta);
+                d_gaussian.extend_from_slice(&profile.d_gaussian_fwhm_d_instrument);
+                d_lorentzian.extend_from_slice(&profile.d_lorentzian_fwhm_d_instrument);
+                d_position.push(profile.d_gaussian_fwhm_d_two_theta);
+                d_position.push(profile.d_lorentzian_fwhm_d_two_theta);
+            }
+            Ok((
+                variance,
+                gaussian,
+                lorentzian,
+                total,
+                eta,
+                d_gaussian,
+                d_lorentzian,
+                d_position,
+            ))
+        })
+        .map_err(|error: CwError| PyValueError::new_err(error.to_string()))?;
     let count = two_theta_deg.len();
     Ok((
         variance.into_pyarray(py),
@@ -1849,26 +1888,32 @@ fn tof_profile_parameters<'py>(
         y_us_per_angstrom2,
         z_us,
     );
-    let mut position = Vec::with_capacity(d_spacing.len());
-    let mut alpha = Vec::with_capacity(d_spacing.len());
-    let mut beta = Vec::with_capacity(d_spacing.len());
-    let mut variance = Vec::with_capacity(d_spacing.len());
-    let mut gaussian = Vec::with_capacity(d_spacing.len());
-    let mut lorentzian = Vec::with_capacity(d_spacing.len());
-    let mut total = Vec::with_capacity(d_spacing.len());
-    let mut eta = Vec::with_capacity(d_spacing.len());
-    for d in d_spacing.iter().copied() {
-        let parameters = TofProfileParameters::from_instrument(d, instrument)
-            .map_err(|error| PyValueError::new_err(error.to_string()))?;
-        position.push(parameters.position_us);
-        alpha.push(parameters.alpha_per_us);
-        beta.push(parameters.beta_per_us);
-        variance.push(parameters.gaussian_variance_us2);
-        gaussian.push(parameters.gaussian_fwhm_us);
-        lorentzian.push(parameters.lorentzian_fwhm_us);
-        total.push(parameters.tch.total_fwhm);
-        eta.push(parameters.tch.eta);
-    }
+    let (position, alpha, beta, variance, gaussian, lorentzian, total, eta) = py
+        .detach(|| {
+            let mut position = Vec::with_capacity(d_spacing.len());
+            let mut alpha = Vec::with_capacity(d_spacing.len());
+            let mut beta = Vec::with_capacity(d_spacing.len());
+            let mut variance = Vec::with_capacity(d_spacing.len());
+            let mut gaussian = Vec::with_capacity(d_spacing.len());
+            let mut lorentzian = Vec::with_capacity(d_spacing.len());
+            let mut total = Vec::with_capacity(d_spacing.len());
+            let mut eta = Vec::with_capacity(d_spacing.len());
+            for d in d_spacing.iter().copied() {
+                let parameters = TofProfileParameters::from_instrument(d, instrument)?;
+                position.push(parameters.position_us);
+                alpha.push(parameters.alpha_per_us);
+                beta.push(parameters.beta_per_us);
+                variance.push(parameters.gaussian_variance_us2);
+                gaussian.push(parameters.gaussian_fwhm_us);
+                lorentzian.push(parameters.lorentzian_fwhm_us);
+                total.push(parameters.tch.total_fwhm);
+                eta.push(parameters.tch.eta);
+            }
+            Ok((
+                position, alpha, beta, variance, gaussian, lorentzian, total, eta,
+            ))
+        })
+        .map_err(|error: TofError| PyValueError::new_err(error.to_string()))?;
     Ok((
         position.into_pyarray(py),
         alpha.into_pyarray(py),
@@ -1911,31 +1956,35 @@ fn accumulate_tof<'py>(
     let d_spacing = contiguous_slice(&d_spacing_angstrom, "d_spacing_angstrom")?;
     let intensities = contiguous_slice(&integrated_intensities, "integrated_intensities")?;
     let grid = GridView::new(x).map_err(|error| PyValueError::new_err(error.to_string()))?;
-    let accumulation = accumulate_tof_batch(
-        grid,
-        d_spacing,
-        intensities,
-        tof_instrument(
-            zero_us,
-            difc_us_per_angstrom,
-            difa_us_per_angstrom2,
-            difb_us_angstrom,
-            alpha_coefficient,
-            beta0_per_us,
-            beta1_angstrom4_per_us,
-            betaq_angstrom2_per_us,
-            sigma0_us2,
-            sigma1_us2_per_angstrom2,
-            sigma2_us2_per_angstrom4,
-            sigmaq_us2_per_angstrom,
-            x_us_per_angstrom,
-            y_us_per_angstrom2,
-            z_us,
-        ),
-        support_fwhm,
-        tail_log,
-    )
-    .map_err(|error| PyValueError::new_err(error.to_string()))?;
+    let instrument = tof_instrument(
+        zero_us,
+        difc_us_per_angstrom,
+        difa_us_per_angstrom2,
+        difb_us_angstrom,
+        alpha_coefficient,
+        beta0_per_us,
+        beta1_angstrom4_per_us,
+        betaq_angstrom2_per_us,
+        sigma0_us2,
+        sigma1_us2_per_angstrom2,
+        sigma2_us2_per_angstrom4,
+        sigmaq_us2_per_angstrom,
+        x_us_per_angstrom,
+        y_us_per_angstrom2,
+        z_us,
+    );
+    let accumulation = py
+        .detach(|| {
+            accumulate_tof_batch(
+                grid,
+                d_spacing,
+                intensities,
+                instrument,
+                support_fwhm,
+                tail_log,
+            )
+        })
+        .map_err(|error| PyValueError::new_err(error.to_string()))?;
     accumulation_to_numpy(py, accumulation)
 }
 
@@ -1961,13 +2010,11 @@ fn accumulate_cw<'py>(
     let grid = GridView::new(x).map_err(|error| PyValueError::new_err(error.to_string()))?;
     let reflections = CwReflectionBatchView::new(two_theta_deg, intensities)
         .map_err(|error| PyValueError::new_err(error.to_string()))?;
-    let accumulation = accumulate_cw_batch(
-        grid,
-        reflections,
-        cw_instrument(wavelength_angstrom, u_deg2, v_deg2, w_deg2, x_deg, y_deg),
-        SupportPolicy::FwhmMultiple(support_fwhm),
-    )
-    .map_err(|error| PyValueError::new_err(error.to_string()))?;
+    let instrument = cw_instrument(wavelength_angstrom, u_deg2, v_deg2, w_deg2, x_deg, y_deg);
+    let support = SupportPolicy::FwhmMultiple(support_fwhm);
+    let accumulation = py
+        .detach(|| accumulate_cw_batch(grid, reflections, instrument, support))
+        .map_err(|error| PyValueError::new_err(error.to_string()))?;
     accumulation_to_numpy(py, accumulation)
 }
 
@@ -2049,26 +2096,28 @@ fn accumulate_cw_contributions<'py>(
     .map_err(|error| PyValueError::new_err(error.to_string()))?;
     let instrument = cw_instrument(wavelength_angstrom, u_deg2, v_deg2, w_deg2, x_deg, y_deg);
     let support = SupportPolicy::FwhmMultiple(support_fwhm);
-    let accumulation = match axial_geometry(fcj_sample_over_radius, fcj_detector_over_radius)? {
-        Some(geometry) => accumulate_cw_fcj_contributions_batch(
-            grid,
-            two_theta_deg,
-            base_intensities,
-            instrument,
-            contributions,
-            geometry,
-            support,
-        ),
-        None => accumulate_cw_contributions_batch(
-            grid,
-            two_theta_deg,
-            base_intensities,
-            instrument,
-            contributions,
-            support,
-        ),
-    }
-    .map_err(|error| PyValueError::new_err(error.to_string()))?;
+    let geometry = axial_geometry(fcj_sample_over_radius, fcj_detector_over_radius)?;
+    let accumulation = py
+        .detach(|| match geometry {
+            Some(geometry) => accumulate_cw_fcj_contributions_batch(
+                grid,
+                two_theta_deg,
+                base_intensities,
+                instrument,
+                contributions,
+                geometry,
+                support,
+            ),
+            None => accumulate_cw_contributions_batch(
+                grid,
+                two_theta_deg,
+                base_intensities,
+                instrument,
+                contributions,
+                support,
+            ),
+        })
+        .map_err(|error| PyValueError::new_err(error.to_string()))?;
     accumulation_to_numpy(py, accumulation)
 }
 
@@ -2096,17 +2145,15 @@ fn accumulate_cw_fcj<'py>(
     let grid = GridView::new(x).map_err(|error| PyValueError::new_err(error.to_string()))?;
     let reflections = CwReflectionBatchView::new(two_theta_deg, intensities)
         .map_err(|error| PyValueError::new_err(error.to_string()))?;
-    let accumulation = accumulate_cw_fcj_batch(
-        grid,
-        reflections,
-        cw_instrument(wavelength_angstrom, u_deg2, v_deg2, w_deg2, x_deg, y_deg),
-        FcjGeometry {
-            sample_over_radius,
-            detector_over_radius,
-        },
-        SupportPolicy::FwhmMultiple(support_fwhm),
-    )
-    .map_err(|error| PyValueError::new_err(error.to_string()))?;
+    let instrument = cw_instrument(wavelength_angstrom, u_deg2, v_deg2, w_deg2, x_deg, y_deg);
+    let geometry = FcjGeometry {
+        sample_over_radius,
+        detector_over_radius,
+    };
+    let support = SupportPolicy::FwhmMultiple(support_fwhm);
+    let accumulation = py
+        .detach(|| accumulate_cw_fcj_batch(grid, reflections, instrument, geometry, support))
+        .map_err(|error| PyValueError::new_err(error.to_string()))?;
     accumulation_to_numpy(py, accumulation)
 }
 
@@ -2154,22 +2201,26 @@ fn accumulate_cw_components<'py>(
         y_deg,
     );
     let support = SupportPolicy::FwhmMultiple(support_fwhm);
-    let accumulation = if use_fcj {
-        accumulate_cw_fcj_components_batch(
-            grid,
-            reflections,
-            instrument,
-            components,
-            FcjGeometry {
-                sample_over_radius,
-                detector_over_radius,
-            },
-            support,
-        )
-    } else {
-        accumulate_cw_components_batch(grid, reflections, instrument, components, support)
-    }
-    .map_err(|error| PyValueError::new_err(error.to_string()))?;
+    let geometry = FcjGeometry {
+        sample_over_radius,
+        detector_over_radius,
+    };
+    let accumulation = py
+        .detach(|| {
+            if use_fcj {
+                accumulate_cw_fcj_components_batch(
+                    grid,
+                    reflections,
+                    instrument,
+                    components,
+                    geometry,
+                    support,
+                )
+            } else {
+                accumulate_cw_components_batch(grid, reflections, instrument, components, support)
+            }
+        })
+        .map_err(|error| PyValueError::new_err(error.to_string()))?;
     accumulation_to_numpy(py, accumulation)
 }
 
@@ -2283,7 +2334,8 @@ fn accumulate_values<'py>(
     let grid = GridView::new(x).map_err(|error| PyValueError::new_err(error.to_string()))?;
     let peaks = PeakBatchView::new(positions, intensities, fwhms, etas)
         .map_err(|error| PyValueError::new_err(error.to_string()))?;
-    let y = accumulate_values_batch(grid, peaks, SupportPolicy::FwhmMultiple(support_fwhm))
+    let y = py
+        .detach(|| accumulate_values_batch(grid, peaks, SupportPolicy::FwhmMultiple(support_fwhm)))
         .map_err(|error| PyValueError::new_err(error.to_string()))?;
     Ok(y.into_pyarray(py))
 }
@@ -2622,11 +2674,9 @@ fn integrated_intensity_correction<'py>(
     polarization: Option<f64>,
 ) -> PyResult<CorrectionArrays<'py>> {
     let selected = parse_correction_model(model, wavelength_angstrom, polarization)?;
-    let result = selected
-        .evaluate(contiguous_slice(
-            &q_squared_inverse_angstrom2,
-            "q_squared_inverse_angstrom2",
-        )?)
+    let q_squared = contiguous_slice(&q_squared_inverse_angstrom2, "q_squared_inverse_angstrom2")?;
+    let result = py
+        .detach(|| selected.evaluate(q_squared))
         .map_err(|error| PyValueError::new_err(error.to_string()))?;
     Ok((
         result.values.into_pyarray(py),

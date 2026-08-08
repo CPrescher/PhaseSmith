@@ -396,6 +396,15 @@ objects, or GSAS-II dictionaries. Higher layers translate domain models into
 flat, validated kernel inputs. The durable public-module contract is documented
 in `docs/public-api.md`.
 
+The Python boundary validates and borrows NumPy inputs while it owns the Python
+interpreter lock, releases that lock for every potentially long-running
+pure-Rust batch kernel, and reacquires it only to construct Python-owned output
+arrays or exceptions. This rule applies equally to profiles, backgrounds,
+reflection/symmetry work, scattering, structure factors, intensity corrections,
+and fused pattern accumulation. It keeps embedding applications responsive and
+allows the bounded execution scheduler to overlap independent native batches
+without weakening numerical determinism.
+
 Physics extensions use explicit, versioned provider objects rather than global
 core registration. A vectorized Python provider may calculate reflection-batch
 width/intensity contributions and derivative chains before one native
