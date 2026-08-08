@@ -277,15 +277,18 @@ use the whole fixed worker budget without nested pools. Component results are
 reassembled first in component order and then in phase order. Python provider
 fallbacks remain serial unless every provider involved explicitly declares its
 thread-safety capability; built-in immutable/native providers declare that
-capability. Guarded special-position coordinate models are reused across
-trial states instead of being reconstructed. After flattening, three fresh
-three-run QARR release medians are 1.314 seconds on one thread, 0.874 seconds on
-two, and 0.738 seconds on three, with identical status and scientific checks.
+capability. Guarded special-position coordinate models, affine constraint
+derivatives, native tangent maps, March--Dollase row maps, sample weights, and
+parameter-invariant background bases are reused across trial states. Nonlinear
+amorphous-background derivatives remain state-local. After flattening and
+invariant caching, three fresh three-run QARR release medians are 1.232 seconds
+on one thread, 0.829 seconds on two, and 0.710 seconds on three, with identical
+status and scientific checks.
 The third worker now remains useful because the dominant Al2O3 doublet is two
 independent leaves. Against the preceding same-host pinned GSAS-II median of
-2.718 seconds, the three-thread result is 3.68x faster, while remaining an
+2.718 seconds, the three-thread result is 3.83x faster, while remaining an
 explicitly non-matched native-workflow comparison. Persistence format 9 stores
-the policy and loads formats 1--8. The complete gate passes 529 Python tests
+the policy and loads formats 1--8. The complete gate passes 532 Python tests
 (three optional cases deselected), 70 Rust tests, Ruff, Rust formatting, and
 strict Clippy.
 

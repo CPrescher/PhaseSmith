@@ -550,6 +550,93 @@ def test_combined_structural_products_match_finite_difference_and_adjoint() -> N
     assert left == pytest.approx(right, rel=3.0e-12, abs=3.0e-9)
 
 
+def test_trial_preparation_reuses_invariant_constraint_and_topology_maps() -> None:
+    request = request_from_cif(selection(phase_scale=True, lattice=True))
+    options = structural_refinement.RietveldOptions()
+    runtime = structural_refinement.RefinementRuntime(options.limits)
+    initial = structural_refinement._RietveldLinearization.prepare(
+        request,
+        request.experiment,
+        request.background,
+        request.phases,
+        request.lattice_domains,
+        request.parameters,
+        options,
+        runtime,
+    )
+    trial_values = request.parameters.values()
+    scale_key = structural_refinement.phase_scale_key("alpha")
+    trial_values[scale_key] *= 1.01
+    trial_parameters = request.parameters.replace_values(trial_values)
+    trial_phases, _ = structural_refinement._apply_parameter_values(
+        request.phases,
+        request.lattice_domains,
+        request.parameters,
+        trial_values,
+        coordinate_models=initial.coordinate_models,
+    )
+    trial = structural_refinement._RietveldLinearization.prepare(
+        request,
+        request.experiment,
+        request.background,
+        trial_phases,
+        request.lattice_domains,
+        trial_parameters,
+        options,
+        runtime,
+        preparation_cache=initial.preparation_cache,
+    )
+    assert trial.preparation_cache is initial.preparation_cache
+    assert trial.physical_to_free is initial.physical_to_free
+    assert trial.native_mappings is initial.native_mappings
+    assert trial.global_rows is initial.global_rows
+    assert trial.background_mapping is initial.background_mapping
+    assert trial.sample_weight is initial.sample_weight
+
+
+def test_nonlinear_background_derivative_basis_is_rebuilt_for_trial_values() -> None:
+    selected = selection(background=True)
+    base = request_from_cif(selection())
+    background = AmorphousBackground(
+        "glass",
+        (AmorphousPeak(10.0, 42.0, 8.0),),
+    )
+    parameters = structural_refinement.build_parameter_set(
+        base.phases,
+        base.lattice_domains,
+        selected,
+        background=background,
+    )
+    request = replace(base, background=background, parameters=parameters, selection=selected)
+    options = structural_refinement.RietveldOptions()
+    runtime = structural_refinement.RefinementRuntime(options.limits)
+    initial = structural_refinement._RietveldLinearization.prepare(
+        request,
+        request.experiment,
+        background,
+        request.phases,
+        request.lattice_domains,
+        parameters,
+        options,
+        runtime,
+    )
+    assert initial.preparation_cache.background_mapping is None
+    trial_background = background.replace_coefficients((10.0, 43.0, 8.0))
+    trial = structural_refinement._RietveldLinearization.prepare(
+        request,
+        request.experiment,
+        trial_background,
+        request.phases,
+        request.lattice_domains,
+        parameters,
+        options,
+        runtime,
+        preparation_cache=initial.preparation_cache,
+    )
+    assert trial.preparation_cache is initial.preparation_cache
+    assert not np.array_equal(trial.background_mapping, initial.background_mapping)
+
+
 def test_march_dollase_lattice_chain_matches_finite_difference() -> None:
     selected = selection(lattice=True)
     base = request_from_cif(selected)

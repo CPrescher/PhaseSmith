@@ -41,7 +41,13 @@ from ..scattering import NeutronNuclear, ScatteringFactorProvider, XrayNonResona
 from ..structural_calculation import PreparedStructuralPattern
 from ..structure import AtomSite, CrystalStructure
 from ..symmetry import CwTwoThetaRange, DSpacingRange, PreparedReflectionGenerator
-from .background import DifferentiableBackground
+from .background import (
+    ChebyshevBackground,
+    CompositeBackground,
+    DifferentiableBackground,
+    PointBackground,
+    PolynomialBackground,
+)
 from .core import (
     Bounds,
     Constraint,
@@ -537,9 +543,7 @@ def _run_prepared_tasks(
         return tuple(worker(task) for task in tasks)
     results: list[_Product | None] = [None] * len(tasks)
     parallel_indices = tuple(
-        index
-        for index, task in enumerate(tasks)
-        if _prepared_for_task(task).parallel_safe
+        index for index, task in enumerate(tasks) if _prepared_for_task(task).parallel_safe
     )
     parallel_index_set = frozenset(parallel_indices)
     for index, task in enumerate(tasks):
@@ -1196,6 +1200,168 @@ def _phase_native_mapping(
     return mapping
 
 
+def _global_parameter_rows(
+    phases: tuple[RietveldPhase, ...],
+    lattice_domains: tuple[CwStructuralReflectionDomain | None, ...],
+    parameters: ParameterSet,
+) -> tuple[tuple[tuple[int, str, float], ...], ...]:
+    row_for_key = {spec.key: row for row, spec in enumerate(parameters.specs)}
+    global_names = {
+        "u_deg2": "u",
+        "v_deg2": "v",
+        "w_deg2": "w",
+        "x_deg": "x",
+        "y_deg": "y",
+        "wavelength_angstrom": "wavelength_angstrom",
+        "zero_shift_deg": "zero_shift_deg",
+        "sample_displacement_mm": "sample_displacement_mm",
+    }
+    result = []
+    for phase, domain in zip(phases, lattice_domains, strict=True):
+        rows = [
+            (row_for_key[key], global_names[key.name], 1.0)
+            for key in parameters.keys
+            if key.module == "instrument"
+        ]
+        rows.extend(
+            (row_for_key[key], key.name, 1.0)
+            for key in parameters.keys
+            if key.module == "sample" and key.owner_id == phase.phase_id
+        )
+        if domain is not None and _contains_march_dollase(phase.physics):
+            lattice_values = domain.parameterization.values_from_cell(phase.structure.cell)
+            lattice_jacobian = domain.parameterization.cell_parameter_jacobian(lattice_values)
+            for key in parameters.keys:
+                if key.module != "lattice" or key.owner_id != phase.phase_id:
+                    continue
+                column = domain.parameterization.parameter_names.index(key.name)
+                rows.extend(
+                    (
+                        row_for_key[key],
+                        f"march_dollase.cell.{cell_name}",
+                        float(lattice_jacobian[cell_row, column]),
+                    )
+                    for cell_row, cell_name in enumerate(
+                        (
+                            "a_angstrom",
+                            "b_angstrom",
+                            "c_angstrom",
+                            "alpha_deg",
+                            "beta_deg",
+                            "gamma_deg",
+                        )
+                    )
+                    if lattice_jacobian[cell_row, column] != 0.0
+                )
+        result.append(tuple(rows))
+    return tuple(result)
+
+
+def _background_derivative_mapping(
+    pattern: PowderPattern,
+    background: DifferentiableBackground | None,
+    parameters: ParameterSet,
+) -> NDArray[np.float64]:
+    row_for_key = {spec.key: row for row, spec in enumerate(parameters.specs)}
+    mapping = np.zeros((pattern.x.size, len(parameters.specs)), dtype=np.float64)
+    if background is not None:
+        basis = background.basis(pattern.x)
+        for index, name in enumerate(background.parameter_names):
+            key = background_parameter_key(background.background_id, name)
+            if key in row_for_key:
+                mapping[:, row_for_key[key]] = basis[:, index]
+    mapping.flags.writeable = False
+    return mapping
+
+
+def _background_basis_is_invariant(background: DifferentiableBackground | None) -> bool:
+    if background is None or isinstance(
+        background,
+        (PolynomialBackground, ChebyshevBackground, PointBackground),
+    ):
+        return True
+    if isinstance(background, CompositeBackground):
+        return all(_background_basis_is_invariant(item) for item in background.components)
+    return False
+
+
+@dataclass(frozen=True, slots=True)
+class _RietveldPreparationCache:
+    """Accepted-run topology and derivative maps that do not depend on values."""
+
+    parameter_keys: tuple[ParameterKey, ...]
+    phase_signatures: tuple[tuple[str, tuple[str, ...]], ...]
+    coordinate_models: tuple[dict[str, SiteCoordinateModel], ...]
+    physical_to_free: NDArray[np.float64]
+    native_mappings: tuple[NDArray[np.float64], ...]
+    global_rows: tuple[tuple[tuple[int, str, float], ...], ...]
+    background_mapping: NDArray[np.float64] | None
+    sample_weight: NDArray[np.float64]
+    dense_elements: int
+
+    @classmethod
+    def build(
+        cls,
+        input_data: RietveldInput,
+        background: DifferentiableBackground | None,
+        phases: tuple[RietveldPhase, ...],
+        lattice_domains: tuple[CwStructuralReflectionDomain | None, ...],
+        parameters: ParameterSet,
+        options: RietveldOptions,
+    ) -> _RietveldPreparationCache:
+        coordinate_models = tuple(
+            {
+                site.site_id: _site_coordinate_model(
+                    phase.phase_id,
+                    phase.structure,
+                    site,
+                    phase.coordinate_tolerance,
+                )
+                for site in phase.structure.sites
+            }
+            for phase in phases
+        )
+        native_mappings = tuple(
+            _phase_native_mapping(phase, domain, parameters, models)
+            for phase, domain, models in zip(
+                phases, lattice_domains, coordinate_models, strict=True
+            )
+        )
+        background_mapping = (
+            _background_derivative_mapping(input_data.pattern, background, parameters)
+            if _background_basis_is_invariant(background)
+            else None
+        )
+        return cls(
+            parameters.keys,
+            tuple(
+                (phase.phase_id, p1_parameter_names(phase.structure.to_site_batch()))
+                for phase in phases
+            ),
+            coordinate_models,
+            ConstraintTransform(parameters, input_data.constraints).derivative_matrix(),
+            native_mappings,
+            _global_parameter_rows(phases, lattice_domains, parameters),
+            background_mapping,
+            _weight_vector(input_data.pattern, options.use_uncertainty),
+            input_data.pattern.x.size * sum(mapping.shape[0] for mapping in native_mappings),
+        )
+
+    def validate(
+        self,
+        phases: tuple[RietveldPhase, ...],
+        parameters: ParameterSet,
+    ) -> None:
+        if parameters.keys != self.parameter_keys:
+            raise ValueError("cached preparation parameter identities changed")
+        signatures = tuple(
+            (phase.phase_id, p1_parameter_names(phase.structure.to_site_batch()))
+            for phase in phases
+        )
+        if signatures != self.phase_signatures:
+            raise ValueError("cached preparation structural topology changed")
+
+
 @dataclass(slots=True)
 class _RietveldLinearization:
     pattern: PowderPattern
@@ -1203,6 +1369,7 @@ class _RietveldLinearization:
     background: DifferentiableBackground | None
     phases: tuple[RietveldPhase, ...]
     coordinate_models: tuple[dict[str, SiteCoordinateModel], ...]
+    preparation_cache: _RietveldPreparationCache
     physical_to_free: NDArray[np.float64]
     native_mappings: tuple[NDArray[np.float64], ...]
     prepared: tuple[PreparedStructuralPattern, ...]
@@ -1227,90 +1394,26 @@ class _RietveldLinearization:
         options: RietveldOptions,
         runtime: RefinementRuntime,
         executor: Executor | None = None,
-        coordinate_models: tuple[dict[str, SiteCoordinateModel], ...] | None = None,
+        preparation_cache: _RietveldPreparationCache | None = None,
     ) -> _RietveldLinearization:
-        transform = ConstraintTransform(parameters, input_data.constraints)
-        row_for_key = {spec.key: row for row, spec in enumerate(parameters.specs)}
-        global_names = {
-            "u_deg2": "u",
-            "v_deg2": "v",
-            "w_deg2": "w",
-            "x_deg": "x",
-            "y_deg": "y",
-            "wavelength_angstrom": "wavelength_angstrom",
-            "zero_shift_deg": "zero_shift_deg",
-            "sample_displacement_mm": "sample_displacement_mm",
-        }
-        global_rows = []
-        for phase, domain in zip(phases, lattice_domains, strict=True):
-            rows = [
-                (row_for_key[key], global_names[key.name], 1.0)
-                for key in parameters.keys
-                if key.module == "instrument"
-            ]
-            rows.extend(
-                (row_for_key[key], key.name, 1.0)
-                for key in parameters.keys
-                if key.module == "sample" and key.owner_id == phase.phase_id
+        if preparation_cache is None:
+            preparation_cache = _RietveldPreparationCache.build(
+                input_data,
+                background,
+                phases,
+                lattice_domains,
+                parameters,
+                options,
             )
-            if domain is not None and _contains_march_dollase(phase.physics):
-                lattice_values = domain.parameterization.values_from_cell(phase.structure.cell)
-                lattice_jacobian = domain.parameterization.cell_parameter_jacobian(lattice_values)
-                for key in parameters.keys:
-                    if key.module != "lattice" or key.owner_id != phase.phase_id:
-                        continue
-                    column = domain.parameterization.parameter_names.index(key.name)
-                    rows.extend(
-                        (
-                            row_for_key[key],
-                            f"march_dollase.cell.{cell_name}",
-                            float(lattice_jacobian[cell_row, column]),
-                        )
-                        for cell_row, cell_name in enumerate(
-                            (
-                                "a_angstrom",
-                                "b_angstrom",
-                                "c_angstrom",
-                                "alpha_deg",
-                                "beta_deg",
-                                "gamma_deg",
-                            )
-                        )
-                        if lattice_jacobian[cell_row, column] != 0.0
-                    )
-            global_rows.append(tuple(rows))
-        background_mapping = np.zeros(
-            (input_data.pattern.x.size, len(parameters.specs)), dtype=np.float64
-        )
-        if background is not None:
-            basis = background.basis(input_data.pattern.x)
-            for index, name in enumerate(background.parameter_names):
-                key = background_parameter_key(background.background_id, name)
-                if key in row_for_key:
-                    background_mapping[:, row_for_key[key]] = basis[:, index]
-        background_mapping.flags.writeable = False
-        if coordinate_models is None:
-            coordinate_models = tuple(
-                {
-                    site.site_id: _site_coordinate_model(
-                        phase.phase_id,
-                        phase.structure,
-                        site,
-                        phase.coordinate_tolerance,
-                    )
-                    for site in phase.structure.sites
-                }
-                for phase in phases
+        else:
+            preparation_cache.validate(phases, parameters)
+        background_mapping = preparation_cache.background_mapping
+        if background_mapping is None:
+            background_mapping = _background_derivative_mapping(
+                input_data.pattern,
+                background,
+                parameters,
             )
-        elif len(coordinate_models) != len(phases):
-            raise ValueError("coordinate models must match the phase count")
-        physical_to_free = transform.derivative_matrix()
-        native_mappings = tuple(
-            _phase_native_mapping(phase, domain, parameters, models)
-            for phase, domain, models in zip(
-                phases, lattice_domains, coordinate_models, strict=True
-            )
-        )
         prepared = tuple(
             PreparedStructuralPattern(
                 input_data.pattern,
@@ -1320,13 +1423,9 @@ class _RietveldLinearization:
             )
             for phase in phases
         )
-        sample_weight = _weight_vector(input_data.pattern, options.use_uncertainty)
-        dense_elements = input_data.pattern.x.size * sum(
-            mapping.shape[0] for mapping in native_mappings
-        )
         dense_enabled = (
             options.max_linearization_elements > 0
-            and dense_elements <= options.max_linearization_elements
+            and preparation_cache.dense_elements <= options.max_linearization_elements
             and all(item.uses_native_fused_path for item in prepared)
         )
         return cls(
@@ -1334,16 +1433,17 @@ class _RietveldLinearization:
             experiment,
             background,
             phases,
-            coordinate_models,
-            physical_to_free,
-            native_mappings,
+            preparation_cache.coordinate_models,
+            preparation_cache,
+            preparation_cache.physical_to_free,
+            preparation_cache.native_mappings,
             prepared,
             None,
             None,
             dense_enabled,
-            tuple(global_rows),
+            preparation_cache.global_rows,
             background_mapping,
-            sample_weight,
+            preparation_cache.sample_weight,
             runtime,
             executor,
         )
@@ -1931,7 +2031,7 @@ def _refine_with_executor(
                             selected,
                             runtime,
                             executor,
-                            linearization.coordinate_models,
+                            linearization.preparation_cache,
                         )
                         trial_calculation = trial_linearization.calculate()
                         trial_metrics = _metrics(
