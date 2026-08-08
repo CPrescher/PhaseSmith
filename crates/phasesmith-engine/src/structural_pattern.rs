@@ -21,7 +21,7 @@ use phasesmith_crystallography::{
 use phasesmith_execution::ExecutionContext;
 
 const CELL_PARAMETER_COUNT: usize = 6;
-const CW_INSTRUMENT_PARAMETER_COUNT: usize = 5;
+pub(crate) const CW_INSTRUMENT_PARAMETER_COUNT: usize = 5;
 const DEGREES_PER_RADIAN: f64 = 180.0 / std::f64::consts::PI;
 
 /// Monochromatic peak-position corrections evaluated with structural geometry.

@@ -231,7 +231,7 @@ def test_native_structural_products_are_bitwise_deterministic_across_threads() -
     np.testing.assert_array_equal(parallel_vjp.gradient, serial_vjp.gradient)
 
 
-def test_component_calculation_dispatches_one_leaf_per_wavelength(
+def test_builtin_component_calculation_dispatches_one_native_spectrum_leaf(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     x = np.linspace(15.0, 100.0, 8_501)
@@ -259,7 +259,7 @@ def test_component_calculation_dispatches_one_leaf_per_wavelength(
         request.phases,
         execution=phasesmith.ExecutionPolicy(threads=2),
     )
-    assert sorted(dispatched) == [1.54056, 1.54439]
+    assert dispatched == [1.54056]
     assert result.phase_calculations[0].reflections.component_index is not None
 
 

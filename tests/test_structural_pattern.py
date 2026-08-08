@@ -135,6 +135,7 @@ def test_native_fixed_dispersion_and_polarized_lp_match_vectorized_layers() -> N
         scale=phase.scale,
     )
     assert prepared.uses_native_fused_path
+    assert prepared.leaf_count == 1
     np.testing.assert_allclose(actual.reflections.f, expected.f, rtol=3e-15, atol=3e-14)
     np.testing.assert_allclose(
         actual.reflections.integrated_intensity,
@@ -372,6 +373,7 @@ def test_structural_doublet_matches_sum_of_component_native_batches() -> None:
         ).profile_y
 
     assert prepared.uses_native_fused_path
+    assert prepared.leaf_count == 1
     np.testing.assert_allclose(actual.profile_y, expected, rtol=3e-15, atol=3e-11)
     np.testing.assert_array_equal(actual.reflections.component_index, [0, 0, 0, 1, 1, 1])
     np.testing.assert_array_equal(actual.reflections.base_reflection_index, [0, 1, 2, 0, 1, 2])
@@ -397,6 +399,7 @@ def test_one_structural_component_matches_monochromatic_values_exactly() -> None
         components.reflections.integrated_intensity,
         monochromatic.reflections.integrated_intensity,
     )
+    assert components.reflections.reflection_ids[0] == "1,0,1@component[0]"
 
 
 def test_structural_component_jvp_finite_difference_and_vjp_are_adjoint() -> None:

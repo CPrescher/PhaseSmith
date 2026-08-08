@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
-from typing import Literal
+from typing import Literal, cast
 
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
@@ -265,11 +265,40 @@ def _native_dynamic_arguments(
     )
 
 
+def _native_spectrum_dynamic_arguments(
+    pattern: PowderPattern,
+    experiment: ConstantWavelengthExperiment,
+    support_fwhm: float,
+) -> tuple[object, ...]:
+    instrument = experiment.instrument
+    geometry = experiment.geometry
+    axial = experiment.axial_geometry
+    return (
+        pattern.x,
+        experiment.zero_shift_deg,
+        (geometry.sample_displacement_mm if isinstance(geometry, BraggBrentanoGeometry) else None),
+        (geometry.displace_x_micrometre if isinstance(geometry, DebyeScherrerGeometry) else None),
+        (geometry.displace_y_micrometre if isinstance(geometry, DebyeScherrerGeometry) else None),
+        None if geometry is None else geometry.goniometer_radius_mm,
+        None if axial is None else axial.sample_over_radius,
+        None if axial is None else axial.detector_over_radius,
+        instrument.wavelength_angstrom,
+        instrument.u_deg2,
+        instrument.v_deg2,
+        instrument.w_deg2,
+        instrument.x_deg,
+        instrument.y_deg,
+        float(support_fwhm),
+    )
+
+
 def _accumulation_from_native(
     arrays: tuple[object, ...],
     contribution: PhysicsContribution,
     experiment: ConstantWavelengthExperiment,
     jacobian_layout: Literal["support", "dense"],
+    *,
+    fixed_spectrum: bool = False,
 ) -> AccumulationResult:
     position_names = ("wavelength_angstrom", "zero_shift_deg")
     if experiment.geometry is not None:
@@ -280,10 +309,15 @@ def _accumulation_from_native(
     axial_names: tuple[str, ...] = ()
     if experiment.axial_geometry is not None:
         axial_names = ("sample_over_radius", "detector_over_radius")
+    global_names = (
+        CW_GLOBAL_PARAMETER_ORDER + position_names + axial_names + contribution.parameter_names
+    )
+    if fixed_spectrum:
+        global_names = tuple(name for name in global_names if name != "wavelength_angstrom")
     return _build_accumulation_result(
         *arrays,
         CW_LOCAL_PARAMETER_ORDER,
-        CW_GLOBAL_PARAMETER_ORDER + position_names + axial_names + contribution.parameter_names,
+        global_names,
         jacobian_layout,
     )
 
@@ -291,6 +325,7 @@ def _accumulation_from_native(
 def _reflection_result(
     phase: RietveldPhase,
     arrays: tuple[object, ...],
+    component_count: int | None = None,
 ) -> StructuralReflectionResult:
     f_real, f_imag, f_squared, intensity, q_squared, s, d_spacing, two_theta = (
         np.asarray(value) for value in arrays
@@ -298,8 +333,21 @@ def _reflection_result(
     f = np.asarray(f_real + 1j * f_imag, dtype=np.complex128)
     for array in (f, f_squared, intensity, q_squared, s, d_spacing, two_theta):
         _freeze(array)
+    reflection_count = phase.reflections.reflection_count
+    if component_count is None:
+        ids = phase.reflections.reflection_ids
+        component_index = None
+        base_index = None
+    else:
+        ids = tuple(
+            f"{reflection_id}@component[{component}]"
+            for component in range(component_count)
+            for reflection_id in phase.reflections.reflection_ids
+        )
+        component_index = np.repeat(np.arange(component_count, dtype=np.int64), reflection_count)
+        base_index = np.tile(np.arange(reflection_count, dtype=np.int64), component_count)
     return StructuralReflectionResult(
-        phase.reflections.reflection_ids,
+        ids,
         f,
         f_squared,
         intensity,
@@ -307,6 +355,49 @@ def _reflection_result(
         s,
         d_spacing,
         two_theta,
+        component_index,
+        base_index,
+    )
+
+
+def _native_spectrum(
+    phase: RietveldPhase,
+    experiment: ConstantWavelengthExperiment,
+    components: tuple[PreparedStructuralPattern, ...],
+    execution: ExecutionPolicy,
+) -> object | None:
+    radiation = experiment.radiation
+    if not isinstance(radiation, ComponentRadiation):
+        return None
+    base = _native_phase(phase, execution)
+    contributions = tuple(component._contribution for component in components)
+    if base is None or any(value is None for value in contributions):
+        return None
+    selected = cast(tuple[PhysicsContribution, ...], contributions)
+    parameter_names = selected[0].parameter_names
+    if any(value.parameter_names != parameter_names for value in selected[1:]):
+        return None
+
+    def flattened(name: str) -> NDArray[np.float64]:
+        return np.ascontiguousarray(
+            np.concatenate([np.asarray(getattr(value, name)).reshape(-1) for value in selected])
+        )
+
+    return _core._StructuralSpectrum(
+        base,
+        radiation.components.wavelengths_angstrom,
+        radiation.components.relative_intensities,
+        flattened("gaussian_variance_deg2"),
+        flattened("lorentzian_fwhm_deg"),
+        flattened("intensity_multiplier"),
+        flattened("d_gaussian_variance_d_position"),
+        flattened("d_lorentzian_fwhm_d_position"),
+        flattened("d_intensity_multiplier_d_position"),
+        flattened("d_gaussian_variance_d_parameters"),
+        flattened("d_lorentzian_fwhm_d_parameters"),
+        flattened("d_intensity_multiplier_d_parameters"),
+        len(parameter_names),
+        execution._native,
     )
 
 
@@ -558,6 +649,7 @@ class PreparedStructuralPattern:
     _contribution: PhysicsContribution | None
     _components: tuple[PreparedStructuralPattern, ...]
     _component_weights: tuple[float, ...]
+    _native_spectrum: object | None
 
     def __init__(
         self,
@@ -595,25 +687,27 @@ class PreparedStructuralPattern:
         if component_inputs:
             object.__setattr__(self, "_native", None)
             object.__setattr__(self, "_contribution", None)
-            object.__setattr__(
-                self,
-                "_components",
-                tuple(
-                    PreparedStructuralPattern(
-                        pattern,
-                        component_experiment,
-                        component_phase,
-                        support_fwhm=support_fwhm,
-                        jacobian_layout=jacobian_layout,
-                        execution=selected_execution,
-                    )
-                    for component_experiment, component_phase, _weight in component_inputs
-                ),
+            components = tuple(
+                PreparedStructuralPattern(
+                    pattern,
+                    component_experiment,
+                    component_phase,
+                    support_fwhm=support_fwhm,
+                    jacobian_layout=jacobian_layout,
+                    execution=selected_execution,
+                )
+                for component_experiment, component_phase, _weight in component_inputs
             )
+            object.__setattr__(self, "_components", components)
             object.__setattr__(
                 self,
                 "_component_weights",
                 tuple(weight for _experiment, _phase, weight in component_inputs),
+            )
+            object.__setattr__(
+                self,
+                "_native_spectrum",
+                _native_spectrum(phase, experiment, components, selected_execution),
             )
             return
         native = _native_phase(phase, selected_execution)
@@ -636,11 +730,14 @@ class PreparedStructuralPattern:
         object.__setattr__(self, "_contribution", contribution)
         object.__setattr__(self, "_components", ())
         object.__setattr__(self, "_component_weights", ())
+        object.__setattr__(self, "_native_spectrum", None)
 
     @property
     def uses_native_fused_path(self) -> bool:
         """Report whether values and structural derivatives stay in one native call."""
 
+        if self._native_spectrum is not None:
+            return True
         if self._components:
             return all(component.uses_native_fused_path for component in self._components)
         return self._native is not None
@@ -649,6 +746,8 @@ class PreparedStructuralPattern:
     def parallel_safe(self) -> bool:
         """Return whether independent calls may overlap on worker threads."""
 
+        if self._native_spectrum is not None:
+            return True
         if self._components:
             return all(component.parallel_safe for component in self._components)
         return self._native is not None or _fallback_is_thread_safe(self.phase)
@@ -657,15 +756,21 @@ class PreparedStructuralPattern:
     def leaf_count(self) -> int:
         """Return the number of independently schedulable component leaves."""
 
-        return len(self._components) if self._components else 1
+        return 1 if self._native_spectrum is not None else len(self._components) or 1
 
     def _calculation_tasks(self) -> tuple[PreparedStructuralPattern, ...]:
+        if self._native_spectrum is not None:
+            return (self,)
         return self._components if self._components else (self,)
 
     def _combine_calculations(
         self,
         results: tuple[StructuralPatternCalculationResult, ...],
     ) -> StructuralPatternCalculationResult:
+        if self._native_spectrum is not None:
+            if len(results) != 1:
+                raise ValueError("one native spectrum result is required")
+            return results[0]
         if not self._components:
             if len(results) != 1:
                 raise ValueError("one monochromatic result is required")
@@ -682,6 +787,34 @@ class PreparedStructuralPattern:
     def calculate(self) -> StructuralPatternCalculationResult:
         """Calculate structural intensities, positions, and the powder profile."""
 
+        if self._native_spectrum is not None:
+            contribution = self._components[0]._contribution
+            if contribution is None:  # pragma: no cover - preparation invariant
+                raise RuntimeError("native spectrum contribution was not prepared")
+            accumulation_arrays, reflection_arrays = self._native_spectrum.calculate(
+                *_native_spectrum_dynamic_arguments(
+                    self.pattern,
+                    self.experiment,
+                    self.support_fwhm,
+                )
+            )
+            accumulation = _accumulation_from_native(
+                accumulation_arrays,
+                contribution,
+                self.experiment,
+                self.jacobian_layout,
+                fixed_spectrum=True,
+            )
+            return _calculation_result(
+                self.phase,
+                self.pattern,
+                accumulation,
+                _reflection_result(
+                    self.phase,
+                    reflection_arrays,
+                    len(self._components),
+                ),
+            )
         if self._components:
             return self._combine_calculations(
                 tuple(component.calculate() for component in self._components)
@@ -721,6 +854,38 @@ class PreparedStructuralPattern:
     def jvp(self, tangent: ArrayLike) -> StructuralPatternJvpResult:
         """Calculate one structural JVP without a dense pattern Jacobian."""
 
+        if self._native_spectrum is not None:
+            names = _structural_parameter_names(self.phase)
+            direction = _vector(tangent, "tangent")
+            if direction.shape != (len(names),):
+                raise ValueError("tangent must match the structural parameter count")
+            contribution = self._components[0]._contribution
+            if contribution is None:  # pragma: no cover - preparation invariant
+                raise RuntimeError("native spectrum contribution was not prepared")
+            native_result, d_y, d_intensity, d_position = self._native_spectrum.jvp(
+                direction,
+                *_native_spectrum_dynamic_arguments(
+                    self.pattern,
+                    self.experiment,
+                    self.support_fwhm,
+                ),
+            )
+            accumulation_arrays, reflection_arrays = native_result
+            result = _calculation_result(
+                self.phase,
+                self.pattern,
+                _accumulation_from_native(
+                    accumulation_arrays,
+                    contribution,
+                    self.experiment,
+                    self.jacobian_layout,
+                    fixed_spectrum=True,
+                ),
+                _reflection_result(self.phase, reflection_arrays, len(self._components)),
+            )
+            for array in (d_y, d_intensity, d_position):
+                _freeze(array)
+            return StructuralPatternJvpResult(result, names, d_y, d_intensity, d_position)
         if self._components:
             return self._combine_jvps(
                 tuple(component.jvp(direction) for component, direction in self._jvp_tasks(tangent))
@@ -770,7 +935,7 @@ class PreparedStructuralPattern:
         direction = _vector(tangent, "tangent")
         if direction.shape != (len(names),):
             raise ValueError("tangent must match the structural parameter count")
-        if not self._components:
+        if self._native_spectrum is not None or not self._components:
             return ((self, direction),)
         tasks = []
         for component, weight in zip(self._components, self._component_weights, strict=True):
@@ -783,6 +948,10 @@ class PreparedStructuralPattern:
         self,
         products: tuple[StructuralPatternJvpResult, ...],
     ) -> StructuralPatternJvpResult:
+        if self._native_spectrum is not None:
+            if len(products) != 1:
+                raise ValueError("one native spectrum JVP is required")
+            return products[0]
         if not self._components:
             if len(products) != 1:
                 raise ValueError("one monochromatic JVP is required")
@@ -806,6 +975,32 @@ class PreparedStructuralPattern:
         """Calculate one reusable native structural pattern Jacobian."""
 
         names = _structural_parameter_names(self.phase)
+        if self._native_spectrum is not None:
+            contribution = self._components[0]._contribution
+            if contribution is None:  # pragma: no cover - preparation invariant
+                raise RuntimeError("native spectrum contribution was not prepared")
+            native_result, jacobian = self._native_spectrum.linearize(
+                *_native_spectrum_dynamic_arguments(
+                    self.pattern,
+                    self.experiment,
+                    self.support_fwhm,
+                )
+            )
+            accumulation_arrays, reflection_arrays = native_result
+            result = _calculation_result(
+                self.phase,
+                self.pattern,
+                _accumulation_from_native(
+                    accumulation_arrays,
+                    contribution,
+                    self.experiment,
+                    self.jacobian_layout,
+                    fixed_spectrum=True,
+                ),
+                _reflection_result(self.phase, reflection_arrays, len(self._components)),
+            )
+            _freeze(jacobian)
+            return StructuralPatternLinearizationResult(result, names, jacobian)
         if self._components:
             return self._combine_linearizations(
                 tuple(component.linearize() for component in self._components)
@@ -841,12 +1036,18 @@ class PreparedStructuralPattern:
         return StructuralPatternLinearizationResult(result, names, jacobian)
 
     def _linearization_tasks(self) -> tuple[PreparedStructuralPattern, ...]:
+        if self._native_spectrum is not None:
+            return (self,)
         return self._components if self._components else (self,)
 
     def _combine_linearizations(
         self,
         products: tuple[StructuralPatternLinearizationResult, ...],
     ) -> StructuralPatternLinearizationResult:
+        if self._native_spectrum is not None:
+            if len(products) != 1:
+                raise ValueError("one native spectrum linearization is required")
+            return products[0]
         if not self._components:
             if len(products) != 1:
                 raise ValueError("one monochromatic linearization is required")
@@ -869,6 +1070,40 @@ class PreparedStructuralPattern:
     def vjp(self, sample_weights: ArrayLike) -> StructuralPatternVjpResult:
         """Calculate one structural transpose product from pattern-sample weights."""
 
+        if self._native_spectrum is not None:
+            weights = _vector(sample_weights, "sample_weights")
+            if weights.shape != self.pattern.x.shape:
+                raise ValueError("sample_weights must match the pattern sample count")
+            contribution = self._components[0]._contribution
+            if contribution is None:  # pragma: no cover - preparation invariant
+                raise RuntimeError("native spectrum contribution was not prepared")
+            native_result, gradient = self._native_spectrum.vjp(
+                weights,
+                *_native_spectrum_dynamic_arguments(
+                    self.pattern,
+                    self.experiment,
+                    self.support_fwhm,
+                ),
+            )
+            accumulation_arrays, reflection_arrays = native_result
+            result = _calculation_result(
+                self.phase,
+                self.pattern,
+                _accumulation_from_native(
+                    accumulation_arrays,
+                    contribution,
+                    self.experiment,
+                    self.jacobian_layout,
+                    fixed_spectrum=True,
+                ),
+                _reflection_result(self.phase, reflection_arrays, len(self._components)),
+            )
+            _freeze(gradient)
+            return StructuralPatternVjpResult(
+                result,
+                _structural_parameter_names(self.phase),
+                gradient,
+            )
         if self._components:
             return self._combine_vjps(
                 tuple(
@@ -918,6 +1153,8 @@ class PreparedStructuralPattern:
         weights = _vector(sample_weights, "sample_weights")
         if weights.shape != self.pattern.x.shape:
             raise ValueError("sample_weights must match the pattern sample count")
+        if self._native_spectrum is not None:
+            return ((self, weights),)
         leaves = self._components if self._components else (self,)
         return tuple((component, weights) for component in leaves)
 
@@ -925,6 +1162,10 @@ class PreparedStructuralPattern:
         self,
         products: tuple[StructuralPatternVjpResult, ...],
     ) -> StructuralPatternVjpResult:
+        if self._native_spectrum is not None:
+            if len(products) != 1:
+                raise ValueError("one native spectrum VJP is required")
+            return products[0]
         if not self._components:
             if len(products) != 1:
                 raise ValueError("one monochromatic VJP is required")

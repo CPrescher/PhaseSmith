@@ -9,9 +9,13 @@ pub use phasesmith_crystallography as crystallography;
 
 mod prepared_structural_phase;
 pub mod structural_pattern;
+mod structural_spectrum;
 
 pub use prepared_structural_phase::{
     PreparedStructuralPatternInputView, PreparedStructuralPhase, StructuralPhaseDefinition,
+};
+pub use structural_spectrum::{
+    PreparedStructuralSpectrum, PreparedStructuralSpectrumInputView, StructuralSpectrumError,
 };
 
 pub use structural_pattern::{

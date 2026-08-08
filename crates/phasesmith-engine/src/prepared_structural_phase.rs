@@ -72,6 +72,7 @@ pub struct PreparedStructuralPatternInputView<'a> {
 }
 
 /// Reusable, application-neutral structural phase with an owned worker budget.
+#[derive(Clone)]
 pub struct PreparedStructuralPhase {
     definition: StructuralPhaseDefinition,
     execution: ExecutionContext,
@@ -111,6 +112,12 @@ impl PreparedStructuralPhase {
     #[must_use]
     pub fn execution_threads(&self) -> usize {
         self.execution.threads()
+    }
+
+    /// Borrow the validated owned structural definition.
+    #[must_use]
+    pub const fn definition(&self) -> &StructuralPhaseDefinition {
+        &self.definition
     }
 
     /// Calculate values for the prepared phase.
