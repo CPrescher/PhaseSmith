@@ -209,3 +209,13 @@ explicitly cacheable, nonlinear amorphous derivatives pass centered
 differences, and a mixed composite agrees with the existing Python
 implementation. A 20,001-sample release benchmark covers values and the full
 basis. The bounded runtime is the remaining delivery-step-13 substep.
+
+The bounded native runtime completed delivery step 13. It provides the full
+stable termination/event enums, finite diagnostics, positive iteration,
+evaluation, elapsed-time and consecutive-rejection budgets, typed checkpoint
+sinks, isolated event sinks, checkpoint-resume counters, and a cloneable
+thread-safe first-reason cancellation token. Fake-clock and injected-failure
+tests cover every boundary, a real OS thread requests cancellation, and the
+normal stop sequence agrees with the existing Python runtime. This gives a
+future Tauri adapter a direct Rust cancellation/event/checkpoint contract;
+terminal key and signal handling remain optional Python/CLI presentation code.

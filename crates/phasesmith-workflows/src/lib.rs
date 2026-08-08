@@ -7,6 +7,7 @@ mod backgrounds;
 mod constraints;
 mod parameters;
 mod residuals;
+mod runtime;
 
 pub use backgrounds::{
     AmorphousBackground, AmorphousPeak, BackgroundBasis, BackgroundError, BackgroundModel,
@@ -19,3 +20,8 @@ pub use constraints::{
 };
 pub use parameters::{ParameterBounds, ParameterError, ParameterKey, ParameterSet, ParameterSpec};
 pub use residuals::{ResidualError, ResidualEvaluation, ResidualOptions, evaluate_residuals};
+pub use runtime::{
+    CancellationError, CancellationToken, CheckpointSink, DiagnosticValue, MonotonicClock,
+    RefinementEvent, RefinementEventKind, RefinementEventSink, RefinementLimits, RefinementRuntime,
+    RefinementStop, RuntimeClock, RuntimeError, TerminationReason,
+};

@@ -22,6 +22,13 @@ Cancellation is cooperative at declared orchestration boundaries, never once
 per atom, reflection, or pattern sample. The maximum cancellation latency is
 therefore one bounded native calculation or derivative product.
 
+The same safety shell now exists in the Python-free `phasesmith-workflows`
+crate. Its cloneable cancellation token uses first-request-wins shared state,
+publishes the reason before the atomic requested flag, and can be owned by a
+Tauri command registry while numerical work runs on another thread. Terminal
+and signal handling remain presentation adapters and are intentionally not
+part of the native workflow crate.
+
 ## Structured event stream
 
 `RefinementEvent` is an immutable plain-data record. It includes:
@@ -37,6 +44,11 @@ Events cover start, trial, accepted/rejected steps, iteration summaries,
 checkpoint completion, warnings, termination, and failures. Human-readable and
 JSON-lines loggers consume the same records. They write only to caller-supplied
 streams and never configure process-global logging.
+
+The native runtime exposes the same finite event categories and diagnostics
+through a synchronous sink trait. A failing event sink is detached and its
+message recorded without invalidating numerical state, which lets a desktop
+adapter forward events without making webview delivery part of the solver.
 
 The numerical result separately retains deterministic iteration history.
 Wall-clock timestamps and presentation text are deliberately not part of that
@@ -78,6 +90,12 @@ phase/reflection-domain contracts, array hashes, and accepted history before
 performing another calculation. Resuming an interrupted deterministic run must
 produce the same accepted-state sequence as running continuously.
 
+Native checkpoint sinks are typed by the workflow's checkpoint record. The
+runtime increments accepted state before calling the sink; a sink error is
+returned structurally while accepted counters remain advanced. Continuations
+restore attempted/accepted counts only before new work and restart evaluation
+and rejection budgets, matching the existing workflow policy.
+
 ## Termination reasons
 
 Public results distinguish at least:
@@ -103,3 +121,5 @@ They cover cancellation before the first iteration, cancellation after an
 accepted iteration, first/second interrupt behavior, `q`, callback isolation,
 every execution budget, rejected/non-finite trials, checkpoint callback
 failure, restart equivalence, and restoration of signal/terminal state.
+The native suite additionally launches cancellation from another OS thread and
+runs a configured stop-sequence differential check against the Python runtime.

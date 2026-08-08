@@ -71,6 +71,12 @@ explicit execution budgets and termination reasons, and checkpoints of the
 last accepted state. Terminal key handling is an optional adapter; numerical
 code never reads standard input or configures global logging.
 
+That safety shell is now also owned by the Python-free
+`phasesmith-workflows` crate: native solvers and a future desktop adapter share
+the same event, budget, typed-checkpoint, resume-counter, and cross-thread
+cancellation contracts without embedding CPython. The Python runtime remains
+the scripting implementation and differential oracle until solver delegation.
+
 Unit 17 now includes the first full monochromatic CIF-backed Rietveld vertical
 slice. Typed profile/background/phase/lattice/site parameter families map
 through fixed/affine/multi-source linear
