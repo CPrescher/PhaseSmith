@@ -139,20 +139,19 @@ refinement; until then unsupported configurations fail explicitly.
 
 ## Execution policy
 
-`RietveldOptions.execution` is an immutable `ExecutionPolicy`. Its default,
-`threads=1`, is deliberately conservative for notebooks, GUI hosts, and larger
-applications that already schedule their own work. A positive integer selects
-a fixed CPU budget; `threads=None` selects the available logical CPU count.
+`RietveldOptions.execution` is an immutable `ExecutionPolicy`. Its bounded
+default is `threads=2`; GUI hosts and larger applications that already schedule
+their own work can explicitly select `threads=1`. A positive integer selects a
+fixed CPU budget; `threads=None` selects the available logical CPU count.
 `minimum_parallel_tasks` defaults to two and avoids creating a pool for a
 single independent phase.
 
-The current parallel unit is one structural phase. A single reusable pool is
-owned by the complete `refine` call and is shared by calculation, dense
-linearization, JVP, and VJP operations. Native calls release the GIL.
-`Executor.map` returns phase products in input order, and PhaseSmith performs
-the final additions serially in that order. Consequently values, analytical
-derivatives, accepted history, and final metrics are bitwise identical between
-the tested one- and two-thread paths.
+The scheduler flattens phase/wavelength leaves and assigns the fixed budget
+without nesting native pools. Single native leaves use internal reflection or
+parameter-row parallelism where deterministic ownership is available. Native
+calls release the GIL. Results return in input order and final additions remain
+serial in that order, so values, analytical derivatives, accepted history, and
+final metrics are bitwise identical between tested worker counts.
 
 Cancellation remains cooperative at safe evaluation boundaries. An in-flight
 native phase calculation completes before the pool closes; the refinement then

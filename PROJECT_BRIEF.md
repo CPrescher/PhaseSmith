@@ -268,8 +268,8 @@ workflow comparison, PhaseSmith takes 1.673 seconds and pinned GSAS-II takes
 non-matched parameterization benchmark.
 
 The deterministic multicore checkpoint adds a public, persistence-safe
-`ExecutionPolicy` with a conservative one-thread embedding default and explicit
-fixed or automatic worker budgets. Multiphase values, dense linearizations,
+`ExecutionPolicy` with a bounded two-thread default and explicit fixed, serial,
+or automatic worker budgets. Multiphase values, dense linearizations,
 JVPs, and VJPs execute concurrently while results are always combined in phase
 input order. The scheduler now exposes each phase/wavelength component as one
 flat leaf, so a single-phase doublet and an unbalanced multiphase spectrum can

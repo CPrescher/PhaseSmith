@@ -13,12 +13,13 @@ from os import cpu_count
 class ExecutionPolicy:
     """Control CPU concurrency without changing numerical ordering.
 
-    ``threads=1`` is the conservative default for embedding applications. ``None``
-    selects the available logical CPU count. Work is parallelized only when at
-    least ``minimum_parallel_tasks`` independent tasks are available.
+    ``threads=2`` is the bounded default for normal scripts and applications.
+    Embedders that already schedule work can select ``threads=1``; ``None`` uses
+    the available logical CPU count. Work is parallelized only when at least
+    ``minimum_parallel_tasks`` independent tasks are available.
     """
 
-    threads: int | None = 1
+    threads: int | None = 2
     minimum_parallel_tasks: int = 2
 
     def __post_init__(self) -> None:

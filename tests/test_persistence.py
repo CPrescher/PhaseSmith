@@ -548,7 +548,7 @@ def test_version_eight_rietveld_options_gain_serial_execution_default(tmp_path) 
 
     restored = persistence.load_bundle(path)
     assert restored.rietveld_options is not None
-    assert restored.rietveld_options.execution == phasesmith.ExecutionPolicy()
+    assert restored.rietveld_options.execution == phasesmith.ExecutionPolicy(threads=1)
 
 
 def test_version_nine_calculation_and_lebail_gain_serial_execution_default(tmp_path) -> None:
