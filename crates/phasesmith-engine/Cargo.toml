@@ -10,6 +10,7 @@ license.workspace = true
 [dependencies]
 phasesmith-core = { path = "../phasesmith-core" }
 phasesmith-crystallography = { path = "../phasesmith-crystallography" }
+phasesmith-execution = { path = "../phasesmith-execution" }
 
 [dev-dependencies]
 criterion = "0.7"

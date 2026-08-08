@@ -16,6 +16,7 @@ npy = { package = "numpy", version = "0.27" }
 pyo3 = { version = "0.27", features = ["extension-module", "abi3-py311"] }
 phasesmith-core = { path = "../phasesmith-core" }
 phasesmith-engine = { path = "../phasesmith-engine" }
+phasesmith-execution = { path = "../phasesmith-execution" }
 
 [lints]
 workspace = true

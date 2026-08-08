@@ -358,6 +358,7 @@ name = "phasesmith-crystallography"
 version = "0.1.0"
 dependencies = [
  "criterion",
+ "phasesmith-execution",
 ]
 
 [[package]]
@@ -367,6 +368,14 @@ dependencies = [
  "criterion",
  "phasesmith-core",
  "phasesmith-crystallography",
+ "phasesmith-execution",
+]
+
+[[package]]
+name = "phasesmith-execution"
+version = "0.1.0"
+dependencies = [
+ "rayon",
 ]
 
 [[package]]
@@ -376,6 +385,7 @@ dependencies = [
  "numpy",
  "phasesmith-core",
  "phasesmith-engine",
+ "phasesmith-execution",
  "pyo3",
 ]
 

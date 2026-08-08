@@ -1,0 +1,14 @@
+[package]
+name = "phasesmith-execution"
+description = "Bounded reusable execution contexts for PhaseSmith kernels"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+rayon = "1.11"
+
+[lints]
+workspace = true

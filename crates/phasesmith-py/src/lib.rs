@@ -26,10 +26,11 @@ use phasesmith_engine::crystallography::{
 use phasesmith_engine::{
     BuiltInScatteringModel, MonochromaticPositionCorrection, StructuralPatternDenseResult,
     StructuralPatternError, StructuralPatternInputView, StructuralPatternJvpResult,
-    StructuralPatternResult, StructuralPatternVjpResult, calculate_structural_pattern,
-    calculate_structural_pattern_dense, calculate_structural_pattern_jvp,
-    calculate_structural_pattern_vjp,
+    StructuralPatternResult, StructuralPatternVjpResult,
+    calculate_structural_pattern_dense_with_context, calculate_structural_pattern_jvp_with_context,
+    calculate_structural_pattern_vjp_with_context, calculate_structural_pattern_with_context,
 };
+use phasesmith_execution::ExecutionContext;
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use pyo3::types::PyTuple;
@@ -637,6 +638,7 @@ impl NativePreparedReflectionGenerator {
 /// Immutable native structural phase used by values and derivative products.
 #[pyclass(name = "_StructuralPhase")]
 struct NativeStructuralPhase {
+    execution: ExecutionContext,
     space_group: SpaceGroup,
     cell: UnitCell,
     hkl: Vec<[i32; 3]>,
@@ -725,6 +727,7 @@ impl NativeStructuralPhase {
             UnitCell,
             &SpaceGroup,
             &StructuralPatternInputView<'_>,
+            &ExecutionContext,
         ) -> Result<R, StructuralPatternError>,
     ) -> PyResult<R> {
         let species = self
@@ -770,7 +773,7 @@ impl NativeStructuralPhase {
             contributions,
             support: SupportPolicy::FwhmMultiple(support_fwhm),
         };
-        operation(self.cell, &self.space_group, &input)
+        operation(self.cell, &self.space_group, &input, &self.execution)
             .map_err(|error| PyValueError::new_err(error.to_string()))
     }
 }
@@ -799,6 +802,7 @@ impl NativeStructuralPhase {
         gamma_deg: f64,
         scale: f64,
         coordinate_tolerance: f64,
+        native_threads: usize,
         scattering_model: &str,
         correction_model: &str,
         correction_wavelength_angstrom: Option<f64>,
@@ -853,6 +857,8 @@ impl NativeStructuralPhase {
         }
         .map_err(|error| PyValueError::new_err(error.to_string()))?;
         Ok(Self {
+            execution: ExecutionContext::new(native_threads)
+                .map_err(|error| PyValueError::new_err(error.to_string()))?,
             space_group: generator.generator.space_group().clone(),
             cell: crystallographic_cell(
                 a_angstrom, b_angstrom, c_angstrom, alpha_deg, beta_deg, gamma_deg,
@@ -948,7 +954,7 @@ impl NativeStructuralPhase {
                 axial,
                 contributions,
                 support_fwhm,
-                calculate_structural_pattern,
+                calculate_structural_pattern_with_context,
             )
         })?;
         structural_pattern_to_numpy(py, result)
@@ -1014,7 +1020,7 @@ impl NativeStructuralPhase {
                 axial,
                 contributions,
                 support_fwhm,
-                calculate_structural_pattern_dense,
+                calculate_structural_pattern_dense_with_context,
             )
         })?;
         structural_pattern_dense_to_numpy(py, result)
@@ -1082,7 +1088,11 @@ impl NativeStructuralPhase {
                 axial,
                 contributions,
                 support_fwhm,
-                |cell, group, input| calculate_structural_pattern_jvp(cell, group, input, tangent),
+                |cell, group, input, execution| {
+                    calculate_structural_pattern_jvp_with_context(
+                        cell, group, input, tangent, execution,
+                    )
+                },
             )
         })?;
         structural_pattern_jvp_to_numpy(py, result)
@@ -1150,8 +1160,14 @@ impl NativeStructuralPhase {
                 axial,
                 contributions,
                 support_fwhm,
-                |cell, group, input| {
-                    calculate_structural_pattern_vjp(cell, group, input, sample_weights)
+                |cell, group, input, execution| {
+                    calculate_structural_pattern_vjp_with_context(
+                        cell,
+                        group,
+                        input,
+                        sample_weights,
+                        execution,
+                    )
                 },
             )
         })?;

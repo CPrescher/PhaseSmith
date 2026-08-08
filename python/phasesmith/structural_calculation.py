@@ -12,6 +12,7 @@ from . import _core
 from ._api import _vector
 from .crystallography import calculate_structure_factor_values, p1_parameter_names
 from .cw import CW_GLOBAL_PARAMETER_ORDER, CW_LOCAL_PARAMETER_ORDER, accumulate_cw_contributions
+from .execution import ExecutionPolicy
 from .extensions import (
     CompositePhysicsProvider,
     PhysicsContext,
@@ -162,7 +163,7 @@ def _fallback_is_thread_safe(phase: RietveldPhase) -> bool:
     )
 
 
-def _native_phase(phase: RietveldPhase) -> object | None:
+def _native_phase(phase: RietveldPhase, native_threads: int) -> object | None:
     configuration = _native_model_configuration(phase)
     if configuration is None or not _supports_fused_structural_physics(phase.physics):
         return None
@@ -196,6 +197,7 @@ def _native_phase(phase: RietveldPhase) -> object | None:
         *phase.structure.cell.as_tuple(),
         float(phase.scale),
         float(phase.coordinate_tolerance),
+        native_threads,
         scattering_model,
         correction_model,
         correction_wavelength,
@@ -521,6 +523,7 @@ class PreparedStructuralPattern:
     phase: RietveldPhase
     support_fwhm: float
     jacobian_layout: Literal["support", "dense"]
+    execution: ExecutionPolicy
     _native: object | None
     _contribution: PhysicsContribution | None
     _components: tuple[PreparedStructuralPattern, ...]
@@ -534,6 +537,7 @@ class PreparedStructuralPattern:
         *,
         support_fwhm: float = 20.0,
         jacobian_layout: Literal["support", "dense"] = "support",
+        execution: ExecutionPolicy | None = None,
     ) -> None:
         """Validate immutable inputs and prepare native structural topology."""
 
@@ -547,12 +551,16 @@ class PreparedStructuralPattern:
             raise ValueError("support_fwhm must be positive and finite")
         if jacobian_layout not in ("support", "dense"):
             raise ValueError("jacobian_layout must be 'support' or 'dense'")
+        selected_execution = ExecutionPolicy() if execution is None else execution
+        if not isinstance(selected_execution, ExecutionPolicy):
+            raise TypeError("execution must be an ExecutionPolicy")
         _check_probe(phase, experiment)
         object.__setattr__(self, "pattern", pattern)
         object.__setattr__(self, "experiment", experiment)
         object.__setattr__(self, "phase", phase)
         object.__setattr__(self, "support_fwhm", float(support_fwhm))
         object.__setattr__(self, "jacobian_layout", jacobian_layout)
+        object.__setattr__(self, "execution", selected_execution)
         component_inputs = _component_inputs(experiment, phase)
         if component_inputs:
             object.__setattr__(self, "_native", None)
@@ -567,6 +575,7 @@ class PreparedStructuralPattern:
                         component_phase,
                         support_fwhm=support_fwhm,
                         jacobian_layout=jacobian_layout,
+                        execution=selected_execution,
                     )
                     for component_experiment, component_phase, _weight in component_inputs
                 ),
@@ -577,7 +586,7 @@ class PreparedStructuralPattern:
                 tuple(weight for _experiment, _phase, weight in component_inputs),
             )
             return
-        native = _native_phase(phase)
+        native = _native_phase(phase, selected_execution.resolved_budget())
         contribution = None
         if native is not None:
             geometry = _geometry(
@@ -910,6 +919,7 @@ def calculate_structural_pattern(
     *,
     support_fwhm: float = 20.0,
     jacobian_layout: Literal["support", "dense"] = "support",
+    execution: ExecutionPolicy | None = None,
 ) -> StructuralPatternCalculationResult:
     """Calculate one structural monochromatic CW phase through a scriptable API."""
 
@@ -919,4 +929,5 @@ def calculate_structural_pattern(
         phase,
         support_fwhm=support_fwhm,
         jacobian_layout=jacobian_layout,
+        execution=execution,
     ).calculate()

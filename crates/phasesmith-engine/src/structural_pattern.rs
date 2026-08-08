@@ -12,10 +12,12 @@ use phasesmith_crystallography::{
     IntegratedIntensityCorrection, IntegratedIntensityCorrectionError,
     IntegratedIntensityCorrectionModel, PreparedNeutronScattering, PreparedXrayScattering,
     ScatteringBatch, ScatteringError, SpaceGroup, StructureFactorBatchError,
-    StructureFactorBatchView, StructureFactorValues, UnitCell, calculate_structure_factor_dense,
-    calculate_structure_factor_intensity_vjp, calculate_structure_factor_jvp,
-    calculate_structure_factor_values,
+    StructureFactorBatchView, StructureFactorValues, UnitCell,
+    calculate_structure_factor_dense_with_context,
+    calculate_structure_factor_intensity_vjp_with_context,
+    calculate_structure_factor_jvp_with_context, calculate_structure_factor_values_with_context,
 };
+use phasesmith_execution::ExecutionContext;
 
 const CELL_PARAMETER_COUNT: usize = 6;
 const CW_INSTRUMENT_PARAMETER_COUNT: usize = 5;
@@ -293,8 +295,22 @@ pub fn calculate_structural_pattern(
     space_group: &SpaceGroup,
     input: &StructuralPatternInputView<'_>,
 ) -> Result<StructuralPatternResult, StructuralPatternError> {
+    calculate_structural_pattern_with_context(cell, space_group, input, &ExecutionContext::serial())
+}
+
+/// Calculate a structural pattern with an explicit bounded execution context.
+///
+/// # Errors
+///
+/// Returns [`StructuralPatternError`] for invalid inputs.
+pub fn calculate_structural_pattern_with_context(
+    cell: UnitCell,
+    space_group: &SpaceGroup,
+    input: &StructuralPatternInputView<'_>,
+    execution: &ExecutionContext,
+) -> Result<StructuralPatternResult, StructuralPatternError> {
     let prepared = prepare(cell, input)?;
-    calculate_values(cell, space_group, input, &prepared)
+    calculate_values(cell, space_group, input, &prepared, execution)
 }
 
 /// Calculate values and a reusable dense structural pattern linearization.
@@ -307,10 +323,33 @@ pub fn calculate_structural_pattern_dense(
     space_group: &SpaceGroup,
     input: &StructuralPatternInputView<'_>,
 ) -> Result<StructuralPatternDenseResult, StructuralPatternError> {
+    calculate_structural_pattern_dense_with_context(
+        cell,
+        space_group,
+        input,
+        &ExecutionContext::serial(),
+    )
+}
+
+/// Calculate a dense structural linearization with a bounded context.
+///
+/// # Errors
+///
+/// Returns an error for invalid inputs or allocation overflow.
+pub fn calculate_structural_pattern_dense_with_context(
+    cell: UnitCell,
+    space_group: &SpaceGroup,
+    input: &StructuralPatternInputView<'_>,
+    execution: &ExecutionContext,
+) -> Result<StructuralPatternDenseResult, StructuralPatternError> {
     let prepared = prepare(cell, input)?;
-    let structural =
-        calculate_structure_factor_dense(cell, space_group, prepared.structure_batch(input))
-            .map_err(StructuralPatternError::StructureFactor)?;
+    let structural = calculate_structure_factor_dense_with_context(
+        cell,
+        space_group,
+        prepared.structure_batch(input),
+        execution,
+    )
+    .map_err(StructuralPatternError::StructureFactor)?;
     let parameter_count = structural.layout.parameter_count();
     let sample_count = input.x_deg.len();
     let element_count =
@@ -322,27 +361,31 @@ pub fn calculate_structural_pattern_dense(
     let mut accumulation =
         accumulate(input, &prepared.two_theta_deg, &structural.values.intensity)?;
     append_instrument_derivatives(&mut accumulation, &structural.values, input, &prepared)?;
-    let mut d_y = vec![0.0; element_count];
     let reflection_count = input.hkl.len();
     let local = &accumulation.derivatives.local;
-    for reflection in 0..reflection_count {
-        let begin = local.offsets[reflection];
-        let end = local.offsets[reflection + 1];
-        for active in begin..end {
-            let sample = local.starts[reflection] + active - begin;
-            let local_base = 2 * active;
-            for parameter in 0..parameter_count {
+    let rows = execution.map_ordered(parameter_count, 2, |parameter| {
+        let mut row = vec![0.0; sample_count];
+        for reflection in 0..reflection_count {
+            let begin = local.offsets[reflection];
+            let end = local.offsets[reflection + 1];
+            for active in begin..end {
+                let sample = local.starts[reflection] + active - begin;
+                let local_base = 2 * active;
                 let structural_index = parameter * reflection_count + reflection;
                 let position_derivative = if parameter < CELL_PARAMETER_COUNT {
                     prepared.d_two_theta_d_cell[reflection][parameter]
                 } else {
                     0.0
                 };
-                d_y[parameter * sample_count + sample] += local.values[local_base]
-                    * structural.d_intensity[structural_index]
+                row[sample] += local.values[local_base] * structural.d_intensity[structural_index]
                     + local.values[local_base + 1] * position_derivative;
             }
         }
+        row
+    });
+    let mut d_y = Vec::with_capacity(element_count);
+    for row in rows {
+        d_y.extend(row);
     }
     Ok(StructuralPatternDenseResult {
         result: StructuralPatternResult {
@@ -367,10 +410,36 @@ pub fn calculate_structural_pattern_jvp(
     input: &StructuralPatternInputView<'_>,
     tangent: &[f64],
 ) -> Result<StructuralPatternJvpResult, StructuralPatternError> {
+    calculate_structural_pattern_jvp_with_context(
+        cell,
+        space_group,
+        input,
+        tangent,
+        &ExecutionContext::serial(),
+    )
+}
+
+/// Calculate a structural JVP with a bounded execution context.
+///
+/// # Errors
+///
+/// Returns [`StructuralPatternError`] for invalid inputs or tangent shape.
+pub fn calculate_structural_pattern_jvp_with_context(
+    cell: UnitCell,
+    space_group: &SpaceGroup,
+    input: &StructuralPatternInputView<'_>,
+    tangent: &[f64],
+    execution: &ExecutionContext,
+) -> Result<StructuralPatternJvpResult, StructuralPatternError> {
     let prepared = prepare(cell, input)?;
-    let structural =
-        calculate_structure_factor_jvp(cell, space_group, prepared.structure_batch(input), tangent)
-            .map_err(StructuralPatternError::StructureFactor)?;
+    let structural = calculate_structure_factor_jvp_with_context(
+        cell,
+        space_group,
+        prepared.structure_batch(input),
+        tangent,
+        execution,
+    )
+    .map_err(StructuralPatternError::StructureFactor)?;
     let d_two_theta_deg = prepared
         .d_two_theta_d_cell
         .iter()
@@ -410,6 +479,27 @@ pub fn calculate_structural_pattern_vjp(
     input: &StructuralPatternInputView<'_>,
     sample_weights: &[f64],
 ) -> Result<StructuralPatternVjpResult, StructuralPatternError> {
+    calculate_structural_pattern_vjp_with_context(
+        cell,
+        space_group,
+        input,
+        sample_weights,
+        &ExecutionContext::serial(),
+    )
+}
+
+/// Calculate a structural transpose product with a bounded context.
+///
+/// # Errors
+///
+/// Returns [`StructuralPatternError`] for invalid inputs or sample weights.
+pub fn calculate_structural_pattern_vjp_with_context(
+    cell: UnitCell,
+    space_group: &SpaceGroup,
+    input: &StructuralPatternInputView<'_>,
+    sample_weights: &[f64],
+    execution: &ExecutionContext,
+) -> Result<StructuralPatternVjpResult, StructuralPatternError> {
     if sample_weights.len() != input.x_deg.len() {
         return Err(StructuralPatternError::PatternWeightLengthMismatch);
     }
@@ -417,18 +507,23 @@ pub fn calculate_structural_pattern_vjp(
         return Err(StructuralPatternError::NonFinitePatternWeight);
     }
     let prepared = prepare(cell, input)?;
-    let values =
-        calculate_structure_factor_values(cell, space_group, prepared.structure_batch(input))
-            .map_err(StructuralPatternError::StructureFactor)?;
+    let values = calculate_structure_factor_values_with_context(
+        cell,
+        space_group,
+        prepared.structure_batch(input),
+        execution,
+    )
+    .map_err(StructuralPatternError::StructureFactor)?;
     let mut accumulation = accumulate(input, &prepared.two_theta_deg, &values.intensity)?;
     append_instrument_derivatives(&mut accumulation, &values, input, &prepared)?;
     let (intensity_weights, position_weights) =
         local_transpose_weights(&accumulation, sample_weights);
-    let mut structural = calculate_structure_factor_intensity_vjp(
+    let mut structural = calculate_structure_factor_intensity_vjp_with_context(
         cell,
         space_group,
         prepared.structure_batch(input),
         &intensity_weights,
+        execution,
     )
     .map_err(StructuralPatternError::StructureFactor)?;
     for (reflection, weight) in position_weights.into_iter().enumerate() {
@@ -552,10 +647,15 @@ fn calculate_values(
     space_group: &SpaceGroup,
     input: &StructuralPatternInputView<'_>,
     prepared: &PreparedNumerics,
+    execution: &ExecutionContext,
 ) -> Result<StructuralPatternResult, StructuralPatternError> {
-    let structure_factors =
-        calculate_structure_factor_values(cell, space_group, prepared.structure_batch(input))
-            .map_err(StructuralPatternError::StructureFactor)?;
+    let structure_factors = calculate_structure_factor_values_with_context(
+        cell,
+        space_group,
+        prepared.structure_batch(input),
+        execution,
+    )
+    .map_err(StructuralPatternError::StructureFactor)?;
     let mut accumulation =
         accumulate(input, &prepared.two_theta_deg, &structure_factors.intensity)?;
     append_instrument_derivatives(&mut accumulation, &structure_factors, input, prepared)?;

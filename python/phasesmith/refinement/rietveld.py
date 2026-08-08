@@ -670,12 +670,24 @@ def calculate(
     selected_execution = ExecutionPolicy() if execution is None else execution
     if not isinstance(selected_execution, ExecutionPolicy):
         raise TypeError("execution must be ExecutionPolicy")
+    components_per_phase = (
+        len(experiment.radiation.components.wavelengths_angstrom)
+        if isinstance(experiment.radiation, ComponentRadiation)
+        else 1
+    )
+    task_count = len(selected) * components_per_phase
+    native_execution = (
+        selected_execution
+        if selected_execution.python_worker_count(task_count) == 1
+        else ExecutionPolicy(threads=1)
+    )
     prepared = tuple(
         PreparedStructuralPattern(
             pattern,
             experiment,
             phase,
             support_fwhm=support_fwhm,
+            execution=native_execution,
         )
         for phase in selected
     )
@@ -1420,6 +1432,9 @@ class _RietveldLinearization:
                 experiment,
                 phase,
                 support_fwhm=options.support_fwhm,
+                execution=(
+                    options.execution if executor is None else ExecutionPolicy(threads=1)
+                ),
             )
             for phase in phases
         )

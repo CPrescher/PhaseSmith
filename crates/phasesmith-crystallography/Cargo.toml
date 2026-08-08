@@ -10,6 +10,9 @@ license.workspace = true
 [lib]
 bench = false
 
+[dependencies]
+phasesmith-execution = { path = "../phasesmith-execution" }
+
 [dev-dependencies]
 criterion = "0.7"
 

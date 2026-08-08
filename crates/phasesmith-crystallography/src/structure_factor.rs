@@ -6,6 +6,7 @@ use std::fmt::{Display, Formatter};
 use crate::cell::{CELL_PARAMETER_COUNT, CellError, CellGeometry, UnitCell};
 use crate::p1::P1ParameterLayout;
 use crate::symmetry::{ExpandedSites, SpaceGroup, SymmetryError};
+use phasesmith_execution::ExecutionContext;
 
 const TWO_PI: f64 = 2.0 * std::f64::consts::PI;
 const TWO_PI_SQUARED: f64 = 2.0 * std::f64::consts::PI * std::f64::consts::PI;
@@ -227,10 +228,38 @@ pub fn calculate_structure_factor_values(
     space_group: &SpaceGroup,
     batch: StructureFactorBatchView<'_>,
 ) -> Result<StructureFactorValues, StructureFactorBatchError> {
+    calculate_structure_factor_values_with_context(
+        cell,
+        space_group,
+        batch,
+        &ExecutionContext::serial(),
+    )
+}
+
+/// Calculate values with an explicit bounded execution context.
+///
+/// # Errors
+///
+/// Returns [`StructureFactorBatchError`] for invalid inputs.
+pub fn calculate_structure_factor_values_with_context(
+    cell: UnitCell,
+    space_group: &SpaceGroup,
+    batch: StructureFactorBatchView<'_>,
+    execution: &ExecutionContext,
+) -> Result<StructureFactorValues, StructureFactorBatchError> {
     let validated = validate(cell, space_group, batch)?;
     let mut values = empty_values(batch.hkl.len());
-    for reflection in 0..batch.hkl.len() {
-        evaluate_value_reflection(&validated, reflection, &mut values);
+    let chunks = reflection_chunks(batch.hkl.len());
+    let partials = execution.map_ordered(chunks.len(), 2, |chunk| {
+        let range = chunks[chunk].clone();
+        let mut partial = empty_values(range.len());
+        for (local, reflection) in range.enumerate() {
+            evaluate_value_reflection(&validated, reflection, local, &mut partial);
+        }
+        partial
+    });
+    for (range, partial) in chunks.into_iter().zip(partials) {
+        copy_values_chunk(&mut values, &partial, range);
     }
     Ok(values)
 }
@@ -249,6 +278,26 @@ pub fn calculate_structure_factor_dense(
     space_group: &SpaceGroup,
     batch: StructureFactorBatchView<'_>,
 ) -> Result<StructureFactorDenseResult, StructureFactorBatchError> {
+    calculate_structure_factor_dense_with_context(
+        cell,
+        space_group,
+        batch,
+        &ExecutionContext::serial(),
+    )
+}
+
+/// Calculate values and a dense Jacobian with an explicit bounded context.
+///
+/// # Errors
+///
+/// Returns [`StructureFactorBatchError`] for invalid inputs or allocation
+/// overflow.
+pub fn calculate_structure_factor_dense_with_context(
+    cell: UnitCell,
+    space_group: &SpaceGroup,
+    batch: StructureFactorBatchView<'_>,
+    execution: &ExecutionContext,
+) -> Result<StructureFactorDenseResult, StructureFactorBatchError> {
     let validated = validate(cell, space_group, batch)?;
     let reflection_count = batch.hkl.len();
     let parameter_count = validated.layout.parameter_count();
@@ -262,8 +311,24 @@ pub fn calculate_structure_factor_dense(
         d_intensity: vec![0.0; element_count],
         layout: validated.layout,
     };
-    for reflection in 0..reflection_count {
-        evaluate_dense_reflection(&validated, reflection, &mut result);
+    let chunks = reflection_chunks(reflection_count);
+    let partials = execution.map_ordered(chunks.len(), 2, |chunk| {
+        let range = chunks[chunk].clone();
+        let local_count = range.len();
+        let mut partial = StructureFactorDenseResult {
+            values: empty_values(local_count),
+            d_f_real: vec![0.0; parameter_count * local_count],
+            d_f_imag: vec![0.0; parameter_count * local_count],
+            d_intensity: vec![0.0; parameter_count * local_count],
+            layout: validated.layout,
+        };
+        for (local, reflection) in range.enumerate() {
+            evaluate_dense_reflection(&validated, reflection, local, local_count, &mut partial);
+        }
+        partial
+    });
+    for (range, partial) in chunks.into_iter().zip(partials) {
+        copy_dense_chunk(&mut result, &partial, range);
     }
     Ok(result)
 }
@@ -280,6 +345,27 @@ pub fn calculate_structure_factor_jvp(
     batch: StructureFactorBatchView<'_>,
     tangent: &[f64],
 ) -> Result<StructureFactorJvpResult, StructureFactorBatchError> {
+    calculate_structure_factor_jvp_with_context(
+        cell,
+        space_group,
+        batch,
+        tangent,
+        &ExecutionContext::serial(),
+    )
+}
+
+/// Calculate one forward derivative with an explicit bounded context.
+///
+/// # Errors
+///
+/// Returns [`StructureFactorBatchError`] for invalid inputs or tangent shape.
+pub fn calculate_structure_factor_jvp_with_context(
+    cell: UnitCell,
+    space_group: &SpaceGroup,
+    batch: StructureFactorBatchView<'_>,
+    tangent: &[f64],
+    execution: &ExecutionContext,
+) -> Result<StructureFactorJvpResult, StructureFactorBatchError> {
     let validated = validate(cell, space_group, batch)?;
     if tangent.len() != validated.layout.parameter_count() {
         return Err(StructureFactorBatchError::TangentLengthMismatch);
@@ -294,8 +380,23 @@ pub fn calculate_structure_factor_jvp(
         d_f_imag: vec![0.0; reflection_count],
         d_intensity: vec![0.0; reflection_count],
     };
-    for reflection in 0..reflection_count {
-        evaluate_jvp_reflection(&validated, reflection, tangent, &mut result);
+    let chunks = reflection_chunks(reflection_count);
+    let partials = execution.map_ordered(chunks.len(), 2, |chunk| {
+        let range = chunks[chunk].clone();
+        let local_count = range.len();
+        let mut partial = StructureFactorJvpResult {
+            values: empty_values(local_count),
+            d_f_real: vec![0.0; local_count],
+            d_f_imag: vec![0.0; local_count],
+            d_intensity: vec![0.0; local_count],
+        };
+        for (local, reflection) in range.enumerate() {
+            evaluate_jvp_reflection(&validated, reflection, local, tangent, &mut partial);
+        }
+        partial
+    });
+    for (range, partial) in chunks.into_iter().zip(partials) {
+        copy_jvp_chunk(&mut result, &partial, range);
     }
     Ok(result)
 }
@@ -312,6 +413,27 @@ pub fn calculate_structure_factor_intensity_vjp(
     batch: StructureFactorBatchView<'_>,
     weights: &[f64],
 ) -> Result<StructureFactorVjpResult, StructureFactorBatchError> {
+    calculate_structure_factor_intensity_vjp_with_context(
+        cell,
+        space_group,
+        batch,
+        weights,
+        &ExecutionContext::serial(),
+    )
+}
+
+/// Calculate an intensity VJP with an explicit bounded context.
+///
+/// # Errors
+///
+/// Returns [`StructureFactorBatchError`] for invalid inputs or weight shape.
+pub fn calculate_structure_factor_intensity_vjp_with_context(
+    cell: UnitCell,
+    space_group: &SpaceGroup,
+    batch: StructureFactorBatchView<'_>,
+    weights: &[f64],
+    execution: &ExecutionContext,
+) -> Result<StructureFactorVjpResult, StructureFactorBatchError> {
     let validated = validate(cell, space_group, batch)?;
     if weights.len() != batch.hkl.len() {
         return Err(StructureFactorBatchError::WeightLengthMismatch);
@@ -324,18 +446,33 @@ pub fn calculate_structure_factor_intensity_vjp(
         gradient: vec![0.0; validated.layout.parameter_count()],
         layout: validated.layout,
     };
-    let mut site_evaluations = Vec::new();
-    site_evaluations
-        .try_reserve_exact(validated.layout.site_count)
-        .map_err(|_| StructureFactorBatchError::AllocationOverflow)?;
-    for (reflection, weight) in weights.iter().copied().enumerate() {
-        evaluate_vjp_reflection(
-            &validated,
-            reflection,
-            weight,
-            &mut site_evaluations,
-            &mut result,
-        );
+    let chunks = reflection_chunks(batch.hkl.len());
+    let partials = execution.map_ordered(chunks.len(), 2, |chunk| {
+        let range = chunks[chunk].clone();
+        let local_count = range.len();
+        let mut partial = StructureFactorVjpResult {
+            values: empty_values(local_count),
+            gradient: vec![0.0; validated.layout.parameter_count()],
+            layout: validated.layout,
+        };
+        let mut site_evaluations = Vec::with_capacity(validated.layout.site_count);
+        for (local, reflection) in range.enumerate() {
+            evaluate_vjp_reflection(
+                &validated,
+                reflection,
+                local,
+                weights[reflection],
+                &mut site_evaluations,
+                &mut partial,
+            );
+        }
+        partial
+    });
+    for (range, partial) in chunks.into_iter().zip(partials) {
+        copy_values_chunk(&mut result.values, &partial.values, range);
+        for (target, contribution) in result.gradient.iter_mut().zip(partial.gradient) {
+            *target += contribution;
+        }
     }
     Ok(result)
 }
@@ -477,9 +614,68 @@ fn empty_values(reflection_count: usize) -> StructureFactorValues {
     }
 }
 
+fn reflection_chunks(reflection_count: usize) -> Vec<std::ops::Range<usize>> {
+    const MIN_REFLECTIONS_PER_CHUNK: usize = 16;
+    const MAX_CHUNKS: usize = 64;
+    let reflections_per_chunk =
+        MIN_REFLECTIONS_PER_CHUNK.max(reflection_count.div_ceil(MAX_CHUNKS));
+    (0..reflection_count)
+        .step_by(reflections_per_chunk)
+        .map(|start| start..(start + reflections_per_chunk).min(reflection_count))
+        .collect()
+}
+
+fn copy_values_chunk(
+    target: &mut StructureFactorValues,
+    source: &StructureFactorValues,
+    range: std::ops::Range<usize>,
+) {
+    target.f_real[range.clone()].copy_from_slice(&source.f_real);
+    target.f_imag[range.clone()].copy_from_slice(&source.f_imag);
+    target.f_squared[range.clone()].copy_from_slice(&source.f_squared);
+    target.intensity[range.clone()].copy_from_slice(&source.intensity);
+    target.q_squared_inverse_angstrom2[range.clone()]
+        .copy_from_slice(&source.q_squared_inverse_angstrom2);
+    target.s_inverse_angstrom[range].copy_from_slice(&source.s_inverse_angstrom);
+}
+
+fn copy_dense_chunk(
+    target: &mut StructureFactorDenseResult,
+    source: &StructureFactorDenseResult,
+    range: std::ops::Range<usize>,
+) {
+    copy_values_chunk(&mut target.values, &source.values, range.clone());
+    let target_count = target.values.f_real.len();
+    let source_count = source.values.f_real.len();
+    for parameter in 0..target.layout.parameter_count() {
+        let target_start = parameter * target_count + range.start;
+        let target_end = target_start + source_count;
+        let source_start = parameter * source_count;
+        let source_end = source_start + source_count;
+        target.d_f_real[target_start..target_end]
+            .copy_from_slice(&source.d_f_real[source_start..source_end]);
+        target.d_f_imag[target_start..target_end]
+            .copy_from_slice(&source.d_f_imag[source_start..source_end]);
+        target.d_intensity[target_start..target_end]
+            .copy_from_slice(&source.d_intensity[source_start..source_end]);
+    }
+}
+
+fn copy_jvp_chunk(
+    target: &mut StructureFactorJvpResult,
+    source: &StructureFactorJvpResult,
+    range: std::ops::Range<usize>,
+) {
+    copy_values_chunk(&mut target.values, &source.values, range.clone());
+    target.d_f_real[range.clone()].copy_from_slice(&source.d_f_real);
+    target.d_f_imag[range.clone()].copy_from_slice(&source.d_f_imag);
+    target.d_intensity[range].copy_from_slice(&source.d_intensity);
+}
+
 fn evaluate_value_reflection(
     validated: &ValidatedStructure<'_>,
     reflection: usize,
+    output_reflection: usize,
     values: &mut StructureFactorValues,
 ) {
     let batch = validated.batch;
@@ -498,7 +694,16 @@ fn evaluate_value_reflection(
         f_real += batch.occupancy[site] * base_real;
         f_imag += batch.occupancy[site] * base_imag;
     }
-    set_values(values, batch, reflection, q_squared, s, f_real, f_imag);
+    set_values(
+        values,
+        batch,
+        reflection,
+        output_reflection,
+        q_squared,
+        s,
+        f_real,
+        f_imag,
+    );
 }
 
 fn site_value_base(
@@ -560,10 +765,11 @@ fn site_value_base(
 fn evaluate_dense_reflection(
     validated: &ValidatedStructure<'_>,
     reflection: usize,
+    output_reflection: usize,
+    output_reflection_count: usize,
     result: &mut StructureFactorDenseResult,
 ) {
     let batch = validated.batch;
-    let reflection_count = batch.hkl.len();
     let (q_squared, d_q_squared) = validated
         .geometry
         .q_squared_and_derivatives(batch.hkl[reflection]);
@@ -575,6 +781,8 @@ fn evaluate_dense_reflection(
         let (contribution_real, contribution_imag) = accumulate_dense_site(
             validated,
             reflection,
+            output_reflection,
+            output_reflection_count,
             site,
             q_squared,
             root_q,
@@ -588,6 +796,7 @@ fn evaluate_dense_reflection(
         &mut result.values,
         batch,
         reflection,
+        output_reflection,
         q_squared,
         s,
         f_real,
@@ -601,19 +810,22 @@ fn evaluate_dense_reflection(
         .chain(std::iter::repeat(0.0))
         .take(validated.layout.parameter_count());
     for (parameter, d_q) in q_derivatives.enumerate() {
-        let index = parameter * reflection_count + reflection;
+        let index = parameter * output_reflection_count + output_reflection;
         let d_norm = 2.0 * (f_real * result.d_f_real[index] + f_imag * result.d_f_imag[index]);
         let d_correction = batch.d_correction_d_q_squared[reflection] * d_q;
         result.d_intensity[index] =
             multiplicity * batch.scale * (correction * d_norm + d_correction * norm);
     }
-    result.d_intensity[validated.layout.scale() * reflection_count + reflection] =
+    result.d_intensity[validated.layout.scale() * output_reflection_count + output_reflection] =
         multiplicity * correction * norm;
 }
 
+#[allow(clippy::too_many_arguments)]
 fn accumulate_dense_site(
     validated: &ValidatedStructure<'_>,
     reflection: usize,
+    output_reflection: usize,
+    output_reflection_count: usize,
     site: usize,
     q_squared: f64,
     root_q: f64,
@@ -621,7 +833,6 @@ fn accumulate_dense_site(
     result: &mut StructureFactorDenseResult,
 ) -> (f64, f64) {
     let batch = validated.batch;
-    let reflection_count = batch.hkl.len();
     let terms = symmetry_terms(
         validated,
         batch.hkl[reflection],
@@ -658,8 +869,8 @@ fn accumulate_dense_site(
         set_f_derivative(
             result,
             parameter,
-            reflection,
-            reflection_count,
+            output_reflection,
+            output_reflection_count,
             occupancy * (rotated_scattering.0 + rotated_displacement.0),
             occupancy * (rotated_scattering.1 + rotated_displacement.1),
         );
@@ -674,8 +885,8 @@ fn accumulate_dense_site(
         set_f_derivative(
             result,
             validated.layout.coordinate(site, component),
-            reflection,
-            reflection_count,
+            output_reflection,
+            output_reflection_count,
             occupancy * rotated.0,
             occupancy * rotated.1,
         );
@@ -683,8 +894,8 @@ fn accumulate_dense_site(
     set_f_derivative(
         result,
         validated.layout.occupancy(site),
-        reflection,
-        reflection_count,
+        output_reflection,
+        output_reflection_count,
         base_real,
         base_imag,
     );
@@ -692,8 +903,8 @@ fn accumulate_dense_site(
         set_f_derivative(
             result,
             validated.layout.u_iso(site),
-            reflection,
-            reflection_count,
+            output_reflection,
+            output_reflection_count,
             -TWO_PI_SQUARED * q_squared * contribution.0,
             -TWO_PI_SQUARED * q_squared * contribution.1,
         );
@@ -704,6 +915,7 @@ fn accumulate_dense_site(
 fn evaluate_jvp_reflection(
     validated: &ValidatedStructure<'_>,
     reflection: usize,
+    output_reflection: usize,
     tangent: &[f64],
     result: &mut StructureFactorJvpResult,
 ) {
@@ -737,18 +949,19 @@ fn evaluate_jvp_reflection(
         &mut result.values,
         batch,
         reflection,
+        output_reflection,
         q_squared,
         s,
         f.0,
         f.1,
     );
-    result.d_f_real[reflection] = d_f.0;
-    result.d_f_imag[reflection] = d_f.1;
+    result.d_f_real[output_reflection] = d_f.0;
+    result.d_f_imag[output_reflection] = d_f.1;
     let norm = f.0 * f.0 + f.1 * f.1;
     let d_norm = 2.0 * (f.0 * d_f.0 + f.1 * d_f.1);
     let correction = batch.correction[reflection];
     let d_correction = batch.d_correction_d_q_squared[reflection] * d_q_direction;
-    result.d_intensity[reflection] = multiplicity_f64(batch.multiplicity[reflection])
+    result.d_intensity[output_reflection] = multiplicity_f64(batch.multiplicity[reflection])
         * (tangent[validated.layout.scale()] * correction * norm
             + batch.scale * (d_correction * norm + correction * d_norm));
 }
@@ -820,6 +1033,7 @@ fn jvp_site(
 fn evaluate_vjp_reflection(
     validated: &ValidatedStructure<'_>,
     reflection: usize,
+    output_reflection: usize,
     weight: f64,
     site_evaluations: &mut Vec<SiteVjpEvaluation>,
     result: &mut StructureFactorVjpResult,
@@ -866,6 +1080,7 @@ fn evaluate_vjp_reflection(
         &mut result.values,
         batch,
         reflection,
+        output_reflection,
         q_squared,
         0.5 * root_q,
         f.0,
@@ -1121,25 +1336,27 @@ fn site_base(
     )
 }
 
+#[allow(clippy::too_many_arguments)]
 fn set_values(
     values: &mut StructureFactorValues,
     batch: StructureFactorBatchView<'_>,
-    reflection: usize,
+    input_reflection: usize,
+    output_reflection: usize,
     q_squared: f64,
     s: f64,
     f_real: f64,
     f_imag: f64,
 ) {
     let norm = f_real * f_real + f_imag * f_imag;
-    values.f_real[reflection] = f_real;
-    values.f_imag[reflection] = f_imag;
-    values.f_squared[reflection] = norm;
-    values.intensity[reflection] = batch.scale
-        * multiplicity_f64(batch.multiplicity[reflection])
-        * batch.correction[reflection]
+    values.f_real[output_reflection] = f_real;
+    values.f_imag[output_reflection] = f_imag;
+    values.f_squared[output_reflection] = norm;
+    values.intensity[output_reflection] = batch.scale
+        * multiplicity_f64(batch.multiplicity[input_reflection])
+        * batch.correction[input_reflection]
         * norm;
-    values.q_squared_inverse_angstrom2[reflection] = q_squared;
-    values.s_inverse_angstrom[reflection] = s;
+    values.q_squared_inverse_angstrom2[output_reflection] = q_squared;
+    values.s_inverse_angstrom[output_reflection] = s;
 }
 
 fn set_f_derivative(
@@ -1589,6 +1806,103 @@ mod tests {
             .map(|(value, gradient)| value * gradient)
             .sum::<f64>();
         assert!((forward_dot - reverse_dot).abs() < 2.0e-12);
+    }
+
+    #[test]
+    fn fixed_chunks_are_bitwise_identical_across_worker_counts() {
+        let hkl = (0_i32..49)
+            .map(|index| [index % 5 + 1, (index / 5) % 5, index / 25 + 1])
+            .collect::<Vec<_>>();
+        let multiplicity = (0..hkl.len())
+            .map(|index| 2 + 2 * (index % 3))
+            .collect::<Vec<_>>();
+        let site_count = 2;
+        let scattering_count = u32::try_from(hkl.len() * site_count).expect("small batch");
+        let scattering_real = (0..scattering_count)
+            .map(|index| 3.0 + 0.003 * f64::from(index))
+            .collect::<Vec<_>>();
+        let scattering_imag = (0..scattering_count)
+            .map(|index| 0.05 - 0.0002 * f64::from(index))
+            .collect::<Vec<_>>();
+        let d_scattering_real = vec![-0.17; hkl.len() * site_count];
+        let d_scattering_imag = vec![0.03; hkl.len() * site_count];
+        let reflection_count = u32::try_from(hkl.len()).expect("small batch");
+        let correction = (0..reflection_count)
+            .map(|index| 1.0 + 0.001 * f64::from(index))
+            .collect::<Vec<_>>();
+        let d_correction = vec![0.04; hkl.len()];
+        let batch = StructureFactorBatchView {
+            hkl: &hkl,
+            multiplicity: &multiplicity,
+            fractional_xyz: &[[0.13, 0.21, 0.07], [0.31, 0.11, 0.19]],
+            occupancy: &[0.8, 0.65],
+            u_iso_angstrom2: &[0.012, 0.018],
+            anisotropic_mask: &[false, false],
+            u_aniso_cif_angstrom2: &[[0.0; 6]; 2],
+            scattering_real: &scattering_real,
+            scattering_imag: &scattering_imag,
+            d_scattering_real_d_s: &d_scattering_real,
+            d_scattering_imag_d_s: &d_scattering_imag,
+            correction: &correction,
+            d_correction_d_q_squared: &d_correction,
+            scale: 1.7,
+            coordinate_tolerance: 1.0e-10,
+        };
+        let cell = cubic_cell(7.3);
+        let group = inversion();
+        let serial = ExecutionContext::serial();
+        let two = ExecutionContext::new(2).expect("two-thread pool");
+        let three = ExecutionContext::new(3).expect("three-thread pool");
+        let contexts = [&two, &three];
+
+        let expected_values =
+            calculate_structure_factor_values_with_context(cell, &group, batch, &serial)
+                .expect("serial values");
+        let expected_dense =
+            calculate_structure_factor_dense_with_context(cell, &group, batch, &serial)
+                .expect("serial dense");
+        let tangent = (0..expected_dense.layout.parameter_count())
+            .map(|index| {
+                1.0e-5 * f64::from(u32::try_from(index + 1).expect("small parameter count"))
+            })
+            .collect::<Vec<_>>();
+        let weights = (0..reflection_count)
+            .map(|index| 0.2 - 0.01 * f64::from(index))
+            .collect::<Vec<_>>();
+        let expected_jvp =
+            calculate_structure_factor_jvp_with_context(cell, &group, batch, &tangent, &serial)
+                .expect("serial JVP");
+        let expected_vjp = calculate_structure_factor_intensity_vjp_with_context(
+            cell, &group, batch, &weights, &serial,
+        )
+        .expect("serial VJP");
+
+        for context in contexts {
+            assert_eq!(
+                calculate_structure_factor_values_with_context(cell, &group, batch, context)
+                    .expect("parallel values"),
+                expected_values
+            );
+            assert_eq!(
+                calculate_structure_factor_dense_with_context(cell, &group, batch, context)
+                    .expect("parallel dense"),
+                expected_dense
+            );
+            assert_eq!(
+                calculate_structure_factor_jvp_with_context(
+                    cell, &group, batch, &tangent, context,
+                )
+                .expect("parallel JVP"),
+                expected_jvp
+            );
+            assert_eq!(
+                calculate_structure_factor_intensity_vjp_with_context(
+                    cell, &group, batch, &weights, context,
+                )
+                .expect("parallel VJP"),
+                expected_vjp
+            );
+        }
     }
 
     fn perturb_cell(cell: &mut UnitCell, parameter: usize, change: f64) {

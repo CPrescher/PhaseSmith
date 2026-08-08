@@ -34,8 +34,11 @@ pub use scattering::{
 pub use structure_factor::{
     StructureFactorBatchError, StructureFactorBatchView, StructureFactorDenseResult,
     StructureFactorJvpResult, StructureFactorValues, StructureFactorVjpResult,
-    calculate_structure_factor_dense, calculate_structure_factor_intensity_vjp,
-    calculate_structure_factor_jvp, calculate_structure_factor_values,
+    calculate_structure_factor_dense, calculate_structure_factor_dense_with_context,
+    calculate_structure_factor_intensity_vjp,
+    calculate_structure_factor_intensity_vjp_with_context, calculate_structure_factor_jvp,
+    calculate_structure_factor_jvp_with_context, calculate_structure_factor_values,
+    calculate_structure_factor_values_with_context,
 };
 pub use symmetry::{
     CrystalSystem, ExpandedSites, MetricConstraints, Rational, ReflectionFamily, SpaceGroup,

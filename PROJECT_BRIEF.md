@@ -294,6 +294,19 @@ complete gate passes 535 Python tests
 (three optional cases deselected), 70 Rust tests, Ruff, Rust formatting, and
 strict Clippy.
 
+The bounded-native-context checkpoint adds a private Rayon pool owned and
+reused by each native structural phase; PhaseSmith never mutates Rayon's global
+pool. Fixed reflection partitions (at most 64) parallelize structure-factor
+values, dense derivatives, JVPs, and VJPs with bounded scratch, ordered merges,
+and bitwise-identical one-, two-, and three-thread results. Dense pattern
+chaining is partitioned by parameter row so workers own disjoint outputs while
+each row preserves reflection order. The scriptable `PreparedStructuralPattern`
+and `calculate_structural_pattern` APIs accept `ExecutionPolicy` directly. A
+single native leaf receives the full budget, while the multiphase/component
+Python scheduler assigns one native thread per concurrent leaf to avoid nested
+oversubscription. The complete gate passes 536 Python tests (three optional
+cases deselected), 73 Rust tests, Ruff, Rust formatting, and strict Clippy.
+
 ## Design commitments
 
 - Use GSAS-II only as a pinned validation oracle, never as the architecture.

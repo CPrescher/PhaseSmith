@@ -187,6 +187,50 @@ def test_parallel_structural_calculation_is_bitwise_deterministic() -> None:
         )
 
 
+def test_native_structural_products_are_bitwise_deterministic_across_threads() -> None:
+    request = request_from_cif(selection())
+    phase = request.phases[0]
+    serial = phasesmith.PreparedStructuralPattern(
+        request.pattern,
+        request.experiment,
+        phase,
+        execution=phasesmith.ExecutionPolicy(threads=1),
+    )
+    parallel = phasesmith.PreparedStructuralPattern(
+        request.pattern,
+        request.experiment,
+        phase,
+        execution=phasesmith.ExecutionPolicy(threads=2),
+    )
+    parameter_count = len(serial.linearize().parameter_names)
+    tangent = np.linspace(-1.0e-4, 1.0e-4, parameter_count)
+    weights = np.sin(np.linspace(0.0, 4.0, request.pattern.x.size))
+
+    serial_values = serial.calculate()
+    parallel_values = parallel.calculate()
+    np.testing.assert_array_equal(parallel_values.profile_y, serial_values.profile_y)
+    np.testing.assert_array_equal(
+        parallel_values.reflections.integrated_intensity,
+        serial_values.reflections.integrated_intensity,
+    )
+
+    serial_dense = serial.linearize()
+    parallel_dense = parallel.linearize()
+    np.testing.assert_array_equal(parallel_dense.jacobian, serial_dense.jacobian)
+
+    serial_jvp = serial.jvp(tangent)
+    parallel_jvp = parallel.jvp(tangent)
+    np.testing.assert_array_equal(parallel_jvp.d_y, serial_jvp.d_y)
+    np.testing.assert_array_equal(
+        parallel_jvp.d_integrated_intensity,
+        serial_jvp.d_integrated_intensity,
+    )
+
+    serial_vjp = serial.vjp(weights)
+    parallel_vjp = parallel.vjp(weights)
+    np.testing.assert_array_equal(parallel_vjp.gradient, serial_vjp.gradient)
+
+
 def test_component_calculation_dispatches_one_leaf_per_wavelength(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
