@@ -1,0 +1,15 @@
+[package]
+name = "phasesmith-model"
+description = "Application-neutral domain records for PhaseSmith"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+phasesmith-core = { path = "../phasesmith-core" }
+phasesmith-engine = { path = "../phasesmith-engine" }
+
+[lints]
+workspace = true

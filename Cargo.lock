@@ -380,6 +380,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "phasesmith-model"
+version = "0.1.0"
+dependencies = [
+ "phasesmith-core",
+ "phasesmith-engine",
+]
+
+[[package]]
 name = "phasesmith-py"
 version = "0.1.0"
 dependencies = [

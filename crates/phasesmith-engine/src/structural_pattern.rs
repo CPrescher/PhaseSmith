@@ -10,7 +10,7 @@ use phasesmith_core::{
     accumulate_cw_fcj_contributions_batch_with_context,
 };
 use phasesmith_crystallography::{
-    IntegratedIntensityCorrection, IntegratedIntensityCorrectionError,
+    CellError, IntegratedIntensityCorrection, IntegratedIntensityCorrectionError,
     IntegratedIntensityCorrectionModel, PreparedNeutronScattering, PreparedXrayScattering,
     ScatteringBatch, ScatteringError, SpaceGroup, StructureFactorBatchError,
     StructureFactorBatchView, StructureFactorValues, UnitCell,
@@ -139,6 +139,8 @@ pub struct StructuralPatternVjpResult {
 /// Invalid fused structural-pattern request.
 #[derive(Debug)]
 pub enum StructuralPatternError {
+    /// The owned unit cell is invalid.
+    InvalidCell(CellError),
     /// Reflection indices and multiplicities have different lengths.
     ReflectionLengthMismatch,
     /// Owned asymmetric-site arrays have different lengths.
@@ -176,6 +178,7 @@ pub enum StructuralPatternError {
 impl Display for StructuralPatternError {
     fn fmt(&self, formatter: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
+            Self::InvalidCell(error) => Display::fmt(error, formatter),
             Self::ReflectionLengthMismatch => {
                 formatter.write_str("hkl and multiplicity must have the same reflection count")
             }

@@ -54,6 +54,18 @@ pub struct StructuralPhaseDefinition {
     pub correction_model: IntegratedIntensityCorrectionModel,
 }
 
+impl StructuralPhaseDefinition {
+    /// Validate owned reflection, site, scattering, and offset data.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StructuralPatternError`] when array shapes disagree, offsets
+    /// are invalid, or a built-in scattering-table key is unknown.
+    pub fn validate(&self) -> Result<(), StructuralPatternError> {
+        validate_definition(self)
+    }
+}
+
 /// Borrowed experiment and sample-physics data for evaluating a prepared phase.
 #[derive(Clone, Copy, Debug)]
 pub struct PreparedStructuralPatternInputView<'a> {
@@ -89,7 +101,7 @@ impl PreparedStructuralPhase {
         definition: StructuralPhaseDefinition,
         execution: ExecutionContext,
     ) -> Result<Self, StructuralPatternError> {
-        validate_definition(&definition)?;
+        definition.validate()?;
         Ok(Self {
             definition,
             execution,
@@ -241,6 +253,11 @@ impl PreparedStructuralPhase {
 fn validate_definition(
     definition: &StructuralPhaseDefinition,
 ) -> Result<(), StructuralPatternError> {
+    definition
+        .cell
+        .geometry()
+        .map(|_| ())
+        .map_err(StructuralPatternError::InvalidCell)?;
     if definition.hkl.len() != definition.multiplicity.len() {
         return Err(StructuralPatternError::ReflectionLengthMismatch);
     }
