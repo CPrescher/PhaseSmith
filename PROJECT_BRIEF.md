@@ -321,6 +321,17 @@ bitwise identical across worker counts. The complete gate passes 537 Python
 tests (three optional cases deselected), 75 Rust tests, Ruff, Rust formatting,
 and strict Clippy.
 
+The final multicore audit ran the complete paired QARR gate against a temporary
+detached worktree of the exact pinned GSAS-II revision
+`c0bc79b259cdf0065480b5fbd57674ddf12c4a23`. Across three measured complete
+runs, PhaseSmith with the public two-thread default took a median 863.266 ms;
+GSAS-II took 2887.243 ms, a 3.345x PhaseSmith advantage for the explicitly
+documented non-matched native-workflow comparison. The scientific gate passed:
+PhaseSmith returned Al2O3/ZnO/CaF2 30.754/34.229/35.018 wt% and 19.826% Poisson
+Rwp, while GSAS-II returned 31.479/33.652/34.869 wt% and 18.389% Rwp. The
+temporary oracle worktree was removed after the run; GSAS-II remains absent
+from normal installation and runtime.
+
 ## Design commitments
 
 - Use GSAS-II only as a pinned validation oracle, never as the architecture.
