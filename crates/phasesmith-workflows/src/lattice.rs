@@ -483,6 +483,19 @@ impl LatticeReflectionDomain {
         self.wavelength_angstrom
     }
 
+    /// Validate a compatible cell inside the finite guard box.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`LatticeError`] for an incompatible or out-of-bounds cell.
+    pub fn validate_cell(&self, cell: UnitCell) -> Result<Vec<f64>, LatticeError> {
+        let values = self.parameterization.values_from_cell(cell)?;
+        if !self.bounds.contains(&values) {
+            return Err(LatticeError::OutsideBounds);
+        }
+        Ok(values)
+    }
+
     /// Generate guarded topology and transfer intensities by stable ID.
     ///
     /// # Errors
@@ -493,10 +506,7 @@ impl LatticeReflectionDomain {
         cell: UnitCell,
         previous: Option<&BTreeMap<String, f64>>,
     ) -> Result<GeneratedLatticeDomain, LatticeError> {
-        let values = self.parameterization.values_from_cell(cell)?;
-        if !self.bounds.contains(&values) {
-            return Err(LatticeError::OutsideBounds);
-        }
+        self.validate_cell(cell)?;
         if previous.is_some_and(|items| {
             items
                 .values()

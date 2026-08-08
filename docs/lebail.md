@@ -93,6 +93,14 @@ CIF-backed lattice refinement, including the one-call constructor and guarded
 reflection-domain semantics, is documented in
 [lattice-refinement.md](lattice-refinement.md).
 
+The application-neutral Rust workflow now implements the same bounded lattice
+path without importing or embedding Python. It owns setting-aware lattice
+parameters, analytical pattern columns, accepted-step reflection regeneration,
+stable-ID intensity transfer, structured topology warnings, and compatible
+checkpoint continuation. The Python module remains the public scripting façade
+and numerical differential oracle until its built-in orchestration delegates to
+this native workflow.
+
 ## Checkpoints and diagnostics
 
 Every result contains an immutable checkpoint. Passing it back to `refine`

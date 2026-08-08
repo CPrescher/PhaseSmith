@@ -93,10 +93,14 @@ are Python-free; accepted position-refinement histories agree with the Python
 oracle. The workflow crate now additionally owns the setting-aware lattice
 parameterization, finite bound box, analytical CW geometry chain, conservative
 guarded reflection generator, and stable-ID intensity-transfer contract needed
-for dynamic topology. This foundation validates all conventional crystal
-systems, including rhombohedral axes, without Python. Wiring it into accepted
-Le Bail steps and restart compatibility remains before the complete workflow
-can replace Python orchestration.
+for dynamic topology. Native Le Bail now uses that foundation directly:
+lattice variables join the constraint graph and analytical pattern Jacobian,
+accepted cells regenerate topology with stable-ID intensity transfer, changed
+domains are reported, and checkpoints may resume changed reflection lists only
+under an identical guard contract. Synthetic recovery, topology-changing
+restart, and complete iteration histories agree with Python. The full built-in
+Le Bail scientific workflow is therefore Python-free; delegating the Python
+scripting façade to it is the next adapter step.
 
 Unit 17 now includes the first full monochromatic CIF-backed Rietveld vertical
 slice. Typed profile/background/phase/lattice/site parameter families map

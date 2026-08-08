@@ -5,13 +5,17 @@ use std::process::Command;
 use std::sync::{Arc, Mutex};
 
 use phasesmith_core::ConstantWavelengthInstrument;
+use phasesmith_crystallography::UnitCell;
 use phasesmith_execution::ExecutionPolicy;
+use phasesmith_io::space_group_by_number;
 use phasesmith_model::PatternRecord;
 use phasesmith_workflows::{
-    AffineConstraint, CancellationToken, Constraint, LeBailInput, LeBailOptions, LeBailPhase,
-    RefinementLimits, RefinementRuntime, TerminationReason, build_lebail_parameter_set,
-    calculate_lebail_pattern, iterate_lebail_once, lebail_reflection_position_key, refine_lebail,
-    refine_lebail_with_runtime,
+    AffineConstraint, CancellationToken, Constraint, FixedConstraint, LatticeBounds,
+    LatticeParameterization, LatticeReflectionDomain, LeBailCheckpoint, LeBailInput, LeBailOptions,
+    LeBailPhase, RefinementLimits, RefinementRuntime, TerminationReason,
+    build_lebail_parameter_set, build_lebail_parameter_set_with_lattice, calculate_lebail_pattern,
+    iterate_lebail_once, lebail_lattice_parameter_key, lebail_reflection_position_key,
+    refine_lebail, refine_lebail_with_runtime,
 };
 
 fn instrument() -> ConstantWavelengthInstrument {
@@ -68,6 +72,49 @@ fn phase(phase_id: &str, positions: &[f64], intensities: &[f64]) -> LeBailPhase 
         Vec::new(),
     )
     .unwrap()
+}
+
+fn tetragonal_cell(a_angstrom: f64, c_angstrom: f64) -> UnitCell {
+    UnitCell {
+        a_angstrom,
+        b_angstrom: a_angstrom,
+        c_angstrom,
+        alpha_deg: 90.0,
+        beta_deg: 90.0,
+        gamma_deg: 90.0,
+    }
+}
+
+fn lattice_domain(reference: UnitCell) -> LatticeReflectionDomain {
+    let group = space_group_by_number(123).expect("P 4/mmm").space_group;
+    let parameterization = LatticeParameterization::new(group, reference).expect("parameters");
+    let bounds = LatticeBounds::around(&parameterization, 0.04, 5.0).expect("bounds");
+    LatticeReflectionDomain::new(
+        parameterization,
+        bounds,
+        instrument().wavelength_angstrom,
+        [20.0, 90.0],
+        1.0,
+        true,
+        50_000_000,
+        1.001,
+    )
+    .expect("lattice domain")
+}
+
+fn dynamic_phase(cell: UnitCell, domain: LatticeReflectionDomain) -> LeBailPhase {
+    let phase =
+        LeBailPhase::from_lattice_domain("alpha", "Alpha phase", cell, 1.0, domain).unwrap();
+    let intensities = phase
+        .hkl()
+        .iter()
+        .map(|hkl| {
+            let marker =
+                hkl[0].unsigned_abs() + 2 * hkl[1].unsigned_abs() + 3 * hkl[2].unsigned_abs();
+            2.0 + f64::from(marker % 7)
+        })
+        .collect::<Vec<_>>();
+    phase.with_integrated_intensities(&intensities).unwrap()
 }
 
 #[allow(clippy::cast_precision_loss)]
@@ -242,6 +289,38 @@ fn invalid_state_is_rejected_and_worker_budgets_are_deterministic() {
 }
 
 #[test]
+fn dynamic_phase_selection_and_wavelength_contracts_are_explicit() {
+    let cell = tetragonal_cell(4.0, 6.0);
+    let dynamic = dynamic_phase(cell, lattice_domain(cell));
+    assert!(
+        build_lebail_parameter_set(
+            instrument(),
+            std::slice::from_ref(&dynamic),
+            &[],
+            false,
+            true,
+        )
+        .is_err()
+    );
+    let fixed = phase("fixed", &[40.0], &[1.0]);
+    assert!(
+        build_lebail_parameter_set_with_lattice(instrument(), &[fixed], &[], false, false, true,)
+            .is_err()
+    );
+    let x = linspace(20.0, 90.0, 1_001);
+    let pattern = observed_pattern(
+        x.clone(),
+        std::slice::from_ref(&dynamic),
+        vec![0.0; x.len()],
+        None,
+        None,
+    );
+    let mut wrong_wavelength = instrument();
+    wrong_wavelength.wavelength_angstrom = 1.0;
+    assert!(LeBailInput::new(pattern, wrong_wavelength, vec![dynamic]).is_err());
+}
+
+#[test]
 fn analytical_position_instrument_and_constraint_updates_match_the_domain() {
     let x = linspace(39.0, 43.0, 4_001);
     let truth = vec![phase("alpha", &[40.0, 42.0], &[5.0, 7.0])];
@@ -310,6 +389,159 @@ fn analytical_position_instrument_and_constraint_updates_match_the_domain() {
             .flat_map(|record| &record.warnings)
             .any(|warning| warning.contains("not identifiable independently"))
     );
+}
+
+#[test]
+fn bounded_lattice_refinement_recovers_cell_and_restarts_exactly() {
+    let starting_cell = tetragonal_cell(3.995, 6.0);
+    let true_cell = tetragonal_cell(4.0, 6.0);
+    let domain = lattice_domain(starting_cell);
+    let starting = vec![dynamic_phase(starting_cell, domain.clone())];
+    let truth = vec![
+        starting[0]
+            .regenerate_lattice_at_cell(true_cell)
+            .expect("truth cell"),
+    ];
+    let x = linspace(20.0, 90.0, 7_001);
+    let pattern = observed_pattern(x.clone(), &truth, vec![0.0; x.len()], None, None);
+    let parameters =
+        build_lebail_parameter_set_with_lattice(instrument(), &starting, &[], false, false, true)
+            .unwrap();
+    let c_key = lebail_lattice_parameter_key("alpha", "c_angstrom").unwrap();
+    let constraints = vec![Constraint::Fixed(
+        FixedConstraint::new(c_key, 6.0).expect("fixed c"),
+    )];
+    let input =
+        LeBailInput::new_with_parameters(pattern, instrument(), starting, parameters, constraints)
+            .unwrap();
+    let selected = options(30).with_profile_controls(1.0e-10, 0.05, 8).unwrap();
+    let result = refine_lebail(&input, &selected, None).unwrap();
+    let refined_cell = result.phases[0].cell().expect("dynamic cell");
+    assert!((refined_cell.a_angstrom - 4.0).abs() < 2.0e-6);
+    assert!((refined_cell.b_angstrom - 4.0).abs() < 2.0e-6);
+    assert!(result.metrics.rwp < 2.0e-5);
+    assert!(
+        result
+            .history
+            .iter()
+            .flat_map(|record| &record.parameter_changes)
+            .any(
+                |change| change.key == lebail_lattice_parameter_key("alpha", "a_angstrom").unwrap()
+            )
+    );
+
+    let partial = refine_lebail(
+        &input,
+        &options(2).with_profile_controls(1.0e-10, 0.05, 8).unwrap(),
+        None,
+    )
+    .unwrap();
+    let resumed = refine_lebail(&input, &selected, Some(&partial.checkpoint)).unwrap();
+    assert_eq!(resumed.history, result.history);
+    assert_eq!(resumed.phases, result.phases);
+    assert_eq!(resumed.calculation.y, result.calculation.y);
+    assert_eq!(resumed.parameters, result.parameters);
+}
+
+#[test]
+fn dynamic_checkpoint_allows_changed_topology_only_for_the_same_domain() {
+    let reference = tetragonal_cell(4.0, 6.0);
+    let group = space_group_by_number(123).expect("P 4/mmm").space_group;
+    let parameterization = LatticeParameterization::new(group, reference).expect("parameters");
+    let bounds = LatticeBounds::around(&parameterization, 0.2, 5.0).expect("bounds");
+    let domain = LatticeReflectionDomain::new(
+        parameterization.clone(),
+        bounds.clone(),
+        instrument().wavelength_angstrom,
+        [20.0, 90.0],
+        1.0,
+        true,
+        50_000_000,
+        1.001,
+    )
+    .expect("domain");
+    let starting = dynamic_phase(reference, domain.clone());
+    let changed = bounds
+        .corner_values()
+        .into_iter()
+        .map(|values| parameterization.to_cell(&values).expect("corner cell"))
+        .map(|cell| dynamic_phase(cell, domain.clone()))
+        .find(|phase| phase.reflection_ids() != starting.reflection_ids())
+        .expect("wide anisotropic bounds should exercise a topology change");
+    let x = linspace(20.0, 90.0, 2_001);
+    let pattern = observed_pattern(
+        x.clone(),
+        std::slice::from_ref(&starting),
+        vec![0.0; x.len()],
+        None,
+        None,
+    );
+    let input_parameters = build_lebail_parameter_set_with_lattice(
+        instrument(),
+        std::slice::from_ref(&starting),
+        &[],
+        false,
+        false,
+        true,
+    )
+    .unwrap();
+    let input = LeBailInput::new_with_parameters(
+        pattern,
+        instrument(),
+        vec![starting],
+        input_parameters,
+        Vec::new(),
+    )
+    .unwrap();
+    let checkpoint_parameters = build_lebail_parameter_set_with_lattice(
+        instrument(),
+        std::slice::from_ref(&changed),
+        &[],
+        false,
+        false,
+        true,
+    )
+    .unwrap();
+    let checkpoint = LeBailCheckpoint {
+        completed_iterations: 0,
+        phases: vec![changed.clone()],
+        instrument: instrument(),
+        intensities: changed.integrated_intensity().to_vec(),
+        parameters: Some(checkpoint_parameters),
+        previous_rwp: f64::INFINITY,
+        history: Vec::new(),
+    };
+    refine_lebail(&input, &options(1), Some(&checkpoint))
+        .expect("identical domains permit changed accepted topology");
+
+    let incompatible_domain = LatticeReflectionDomain::new(
+        parameterization,
+        bounds,
+        instrument().wavelength_angstrom,
+        [20.0, 90.0],
+        1.0,
+        true,
+        50_000_000,
+        1.01,
+    )
+    .expect("incompatible domain policy");
+    let incompatible = dynamic_phase(changed.cell().unwrap(), incompatible_domain);
+    let incompatible_parameters = build_lebail_parameter_set_with_lattice(
+        instrument(),
+        std::slice::from_ref(&incompatible),
+        &[],
+        false,
+        false,
+        true,
+    )
+    .unwrap();
+    let incompatible_checkpoint = LeBailCheckpoint {
+        phases: vec![incompatible.clone()],
+        intensities: incompatible.integrated_intensity().to_vec(),
+        parameters: Some(incompatible_parameters),
+        ..checkpoint
+    };
+    assert!(refine_lebail(&input, &options(1), Some(&incompatible_checkpoint)).is_err());
 }
 
 #[test]
@@ -588,6 +820,168 @@ for item in result.history:
             .sum::<f64>();
         assert!((native_changes - values[2].parse::<f64>().unwrap()).abs() < 2.0e-10);
     }
+}
+
+#[test]
+fn bounded_lattice_history_matches_python_when_configured() {
+    let Ok(python) = std::env::var("PHASESMITH_NUMPY_PYTHON") else {
+        return;
+    };
+    let starting_cell = tetragonal_cell(3.995, 6.0);
+    let domain = lattice_domain(starting_cell);
+    let starting = vec![dynamic_phase(starting_cell, domain)];
+    let truth = vec![
+        starting[0]
+            .regenerate_lattice_at_cell(tetragonal_cell(4.0, 6.0))
+            .unwrap(),
+    ];
+    let x = linspace(20.0, 90.0, 7_001);
+    let pattern = observed_pattern(x.clone(), &truth, vec![0.0; x.len()], None, None);
+    let parameters =
+        build_lebail_parameter_set_with_lattice(instrument(), &starting, &[], false, false, true)
+            .unwrap();
+    let constraint = Constraint::Fixed(
+        FixedConstraint::new(
+            lebail_lattice_parameter_key("alpha", "c_angstrom").unwrap(),
+            6.0,
+        )
+        .unwrap(),
+    );
+    let input = LeBailInput::new_with_parameters(
+        pattern,
+        instrument(),
+        starting,
+        parameters,
+        vec![constraint],
+    )
+    .unwrap();
+    let result = refine_lebail(
+        &input,
+        &options(30).with_profile_controls(1.0e-10, 0.05, 8).unwrap(),
+        None,
+    )
+    .unwrap();
+
+    let stdout = run_python_lattice_oracle(&python);
+    let mut lines = stdout.lines();
+    let python_a = lines.next().unwrap().parse::<f64>().unwrap();
+    let python_rwp = lines.next().unwrap().parse::<f64>().unwrap();
+    let python_ids = lines.next().unwrap();
+    assert!((result.phases[0].cell().unwrap().a_angstrom - python_a).abs() < 3.0e-11);
+    assert!((result.metrics.rwp - python_rwp).abs() < 3.0e-11);
+    assert_eq!(result.phases[0].reflection_ids().join("|"), python_ids);
+    let python_history = lines.collect::<Vec<_>>();
+    assert_eq!(result.history.len(), python_history.len());
+    for (native, line) in result.history.iter().zip(python_history) {
+        let values = line.split_whitespace().collect::<Vec<_>>();
+        assert_eq!(native.iteration, values[0].parse::<usize>().unwrap());
+        assert!((native.rwp - values[1].parse::<f64>().unwrap()).abs() < 3.0e-11);
+        assert!(
+            (native.maximum_relative_intensity_change - values[2].parse::<f64>().unwrap()).abs()
+                < 3.0e-10
+        );
+        assert!(
+            (native.scaled_profile_step_norm - values[3].parse::<f64>().unwrap()).abs() < 3.0e-10
+        );
+        assert_eq!(
+            native.parameter_changes.len(),
+            values[4].parse::<usize>().unwrap()
+        );
+        assert_eq!(native.warnings.len(), values[5].parse::<usize>().unwrap());
+    }
+}
+
+fn run_python_lattice_oracle(python: &str) -> String {
+    let script = r#"
+from dataclasses import replace
+import numpy as np
+import phasesmith
+from phasesmith.refinement import (
+    CwLatticeReflectionDomain,
+    FixedConstraint,
+    LatticeParameterBounds,
+    LatticeParameterization,
+    lebail,
+)
+
+instrument = phasesmith.ConstantWavelengthInstrument(1.5406, 2e-4, -1e-4, 2e-4, 1.5e-3, 3e-3)
+group = phasesmith.space_group_by_number(123).space_group
+cell = phasesmith.UnitCell(3.995, 3.995, 6.0, 90.0, 90.0, 90.0)
+structure = phasesmith.CrystalStructure("lattice-test", "Lattice test", cell, group)
+parameterization = LatticeParameterization(group, cell)
+bounds = LatticeParameterBounds.around(parameterization, relative_length=0.04)
+domain = CwLatticeReflectionDomain(group, parameterization, bounds, 1.5406, 20.0, 90.0)
+starting = lebail.LeBailPhase.from_structure(
+    structure,
+    phase_id="alpha",
+    wavelength_angstrom=1.5406,
+    two_theta_min_deg=20.0,
+    two_theta_max_deg=90.0,
+    lattice_bounds=bounds,
+)
+hkl = starting.reflections.hkl
+marker = np.abs(hkl[:, 0]) + 2 * np.abs(hkl[:, 1]) + 3 * np.abs(hkl[:, 2])
+intensities = 2.0 + marker % 7
+starting = replace(
+    starting,
+    reflections=phasesmith.ReflectionBatch(
+        starting.reflections.reflection_ids,
+        hkl,
+        starting.reflections.d_spacing_angstrom,
+        starting.reflections.two_theta_deg,
+        intensities,
+    ),
+)
+true_cell = parameterization.to_cell([4.0, 6.0])
+generated = domain.generate(true_cell, starting.reflections)
+truth = replace(
+    starting,
+    structure=replace(starting.structure, cell=true_cell),
+    reflections=generated.reflections,
+)
+x = np.linspace(20.0, 90.0, 7001)
+observed = phasesmith.calculate_pattern(phasesmith.PowderPattern(x), instrument, (truth,)).y
+pattern = phasesmith.PowderPattern(x, observed_y=observed, background=np.zeros_like(x))
+parameters = lebail.build_parameter_set(instrument, (starting,), lattice_parameters=True)
+constraints = (FixedConstraint(lebail.lattice_parameter_key("alpha", "c_angstrom"), 6.0),)
+result = lebail.refine(
+    lebail.LeBailInput(pattern, instrument, (starting,), parameters, constraints),
+    lebail.LeBailOptions(
+        max_iterations=30,
+        min_iterations=2,
+        intensity_tolerance=1e-6,
+        rwp_tolerance=1e-8,
+        profile_damping=1e-10,
+        max_scaled_parameter_step=0.05,
+        max_profile_backtracks=8,
+        execution=phasesmith.ExecutionPolicy(threads=1, minimum_parallel_tasks=2),
+    ),
+)
+print(format(result.phases[0].structure.cell.a_angstrom, ".17g"))
+print(format(result.metrics.rwp, ".17g"))
+print("|".join(result.phases[0].reflections.reflection_ids))
+for item in result.history:
+    print(
+        item.iteration,
+        format(item.rwp, ".17g"),
+        format(item.maximum_relative_intensity_change, ".17g"),
+        format(item.scaled_profile_step_norm, ".17g"),
+        len(item.parameter_changes),
+        len(item.warnings),
+    )
+"#;
+    let python_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../python");
+    let output = Command::new(python)
+        .args(["-c", script])
+        .env("PYTHONPATH", python_path)
+        .output()
+        .unwrap();
+    assert!(
+        output.status.success(),
+        "Python lattice oracle failed:\n{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    String::from_utf8(output.stdout).unwrap()
 }
 
 fn assert_close_slice(actual: &[f64], expected: &[f64], tolerance: f64) {

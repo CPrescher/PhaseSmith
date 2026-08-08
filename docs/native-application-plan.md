@@ -249,6 +249,14 @@ Bragg filtering, multiplicities, visibility masks, and stable-ID intensity
 transfer. Cells outside the declared box and invalid transferred intensities
 fail explicitly. The accompanying crystallography fix distinguishes proper
 sixfold hexagonal axes from cubic threefold topology and recognizes exact
-rhombohedral metrics in rhombohedral settings. Accepted-step regeneration,
-lattice parameter columns, and checkpoint domain compatibility are the
-remaining Le Bail migration substep.
+rhombohedral metrics in rhombohedral settings. Native Le Bail now consumes this
+contract end to end. Lattice variables use the same typed bounds and constraint
+transform as profile variables; their analytical Bragg-law columns feed the
+same bounded solve. A successful line-search trial regenerates each accepted
+dynamic domain, transfers intensities by stable ID, refreshes guard visibility,
+reports added/removed families, and charges any topology-driven recalculation
+to the evaluation budget. Restart permits changed reflection lists only when
+the complete domain records compare equal. Exact synthetic recovery and the
+complete accepted history agree with the Python implementation. Native Le Bail
+is complete; Python delegation and native Rietveld are the next delivery
+boundaries.

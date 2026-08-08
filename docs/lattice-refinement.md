@@ -131,8 +131,30 @@ and rejects negative or non-finite transferred intensities.
 
 This is the scientific boundary a future Tauri command will call; it has no
 PyO3, NumPy, CPython, webview, or Tauri dependency. The existing Python classes
-remain the scripting interface and numerical oracle while accepted-step Le Bail
-regeneration is moved onto this Rust contract.
+remain the scripting interface and numerical oracle.
+
+Native Le Bail now owns the accepted-step integration as well. Dynamic phase
+records carry their current cell and guarded domain; lattice parameters enter
+the ordinary typed constraint graph, analytical two-theta derivatives are
+chained through the sparse local profile derivatives, and topology remains
+fixed for each Jacobian/line-search evaluation. After acceptance the native
+workflow regenerates the domain, transfers intensities, refreshes visibility,
+emits deterministic added/removed warnings, and recalculates only when the
+reflection identity list changed. The recalculation consumes the same finite
+evaluation budget as every other model trial.
+
+Native checkpoint continuation compares complete domain contracts instead of
+requiring the initial and accepted reflection lists to be identical. A changed
+guard scale, symmetry setting, bounds, wavelength, visible interval, Friedel
+policy, candidate limit, or initialization policy rejects continuation. A
+topology-changing checkpoint with an identical contract resumes normally.
+
+The committed Rust benchmark covers one complete lattice Le Bail iteration on
+3,001 samples, including redistribution, analytical lattice-column assembly,
+the bounded solve, line search, and accepted-domain handling. The current
+Apple-silicon release measurement is 1.858 ms median (95% estimate
+1.854--1.861 ms). It is kept separate from the fixed-reflection eight-iteration
+benchmark so neither number hides the work included in the other.
 
 ## Source and validation boundary
 

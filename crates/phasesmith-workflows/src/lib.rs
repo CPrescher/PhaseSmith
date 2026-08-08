@@ -28,10 +28,10 @@ pub use lebail::{
     CoincidentReflectionGroup, CovarianceMatrix, IntensityExtractionResult, LeBailCalculation,
     LeBailCheckpoint, LeBailError, LeBailInput, LeBailIterationRecord, LeBailOptions, LeBailPhase,
     LeBailResult, ParameterChange, PhasePatternComponent, ReflectionIntensity,
-    build_lebail_parameter_set, calculate_lebail_pattern, extract_lebail_intensities,
-    initialize_lebail_intensities, iterate_lebail_once, lebail_instrument_parameter_key,
-    lebail_phase_scale_key, lebail_reflection_position_key, refine_lebail,
-    refine_lebail_with_runtime,
+    build_lebail_parameter_set, build_lebail_parameter_set_with_lattice, calculate_lebail_pattern,
+    extract_lebail_intensities, initialize_lebail_intensities, iterate_lebail_once,
+    lebail_instrument_parameter_key, lebail_lattice_parameter_key, lebail_phase_scale_key,
+    lebail_reflection_position_key, refine_lebail, refine_lebail_with_runtime,
 };
 pub use parameters::{ParameterBounds, ParameterError, ParameterKey, ParameterSet, ParameterSpec};
 pub use residuals::{ResidualError, ResidualEvaluation, ResidualOptions, evaluate_residuals};

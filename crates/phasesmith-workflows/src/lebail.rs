@@ -10,17 +10,27 @@ use phasesmith_core::{
     OwnedCwContributionArrays, OwnedCwContributions, ProfileError, SupportPolicy,
     accumulate_cw_contributions_batch_with_context,
 };
+use phasesmith_crystallography::UnitCell;
 use phasesmith_execution::{ExecutionPolicy, ExecutionPolicyError};
 use phasesmith_model::{DomainError, PatternRecord};
 
 use crate::{
-    Constraint, ConstraintError, ConstraintTransform, DiagnosticValue, ParameterBounds,
-    ParameterError, ParameterKey, ParameterSet, ParameterSpec, RefinementEventKind,
-    RefinementLimits, RefinementRuntime, ResidualError, ResidualEvaluation, ResidualOptions,
-    RuntimeError, TerminationReason, evaluate_residuals,
+    Constraint, ConstraintError, ConstraintTransform, DiagnosticValue, GeneratedLatticeDomain,
+    LatticeError, LatticeReflectionDomain, ParameterBounds, ParameterError, ParameterKey,
+    ParameterSet, ParameterSpec, RefinementEventKind, RefinementLimits, RefinementRuntime,
+    ResidualError, ResidualEvaluation, ResidualOptions, RuntimeError, TerminationReason,
+    cw_lattice_geometry, evaluate_residuals,
 };
 
 const INSTRUMENT_PARAMETER_NAMES: [&str; 5] = ["u_deg2", "v_deg2", "w_deg2", "x_deg", "y_deg"];
+const LATTICE_PARAMETER_NAMES: [&str; 6] = [
+    "a_angstrom",
+    "b_angstrom",
+    "c_angstrom",
+    "alpha_deg",
+    "beta_deg",
+    "gamma_deg",
+];
 
 /// One fixed reflection phase whose integrated intensities are extracted.
 #[derive(Clone, Debug, PartialEq)]
@@ -34,6 +44,8 @@ pub struct LeBailPhase {
     integrated_intensity: Vec<f64>,
     scale: f64,
     preserve_unobserved: Vec<bool>,
+    cell: Option<UnitCell>,
+    reflection_domain: Option<LatticeReflectionDomain>,
 }
 
 impl LeBailPhase {
@@ -70,7 +82,42 @@ impl LeBailPhase {
             integrated_intensity,
             scale,
             preserve_unobserved,
+            cell: None,
+            reflection_domain: None,
         };
+        phase.validate()?;
+        Ok(phase)
+    }
+
+    /// Generate and own a bounded dynamic-lattice phase.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`LeBailError`] if the cell lies outside the domain, reflection
+    /// generation fails, or the resulting phase state is invalid.
+    pub fn from_lattice_domain(
+        phase_id: impl Into<String>,
+        name: impl Into<String>,
+        cell: UnitCell,
+        scale: f64,
+        reflection_domain: LatticeReflectionDomain,
+    ) -> Result<Self, LeBailError> {
+        let generated = reflection_domain
+            .generate(cell, None)
+            .map_err(LeBailError::Lattice)?;
+        let mut phase = Self::new(
+            phase_id,
+            name,
+            generated.reflection_ids.clone(),
+            generated.hkl.clone(),
+            generated.d_spacing_angstrom.clone(),
+            generated.two_theta_deg.clone(),
+            generated.integrated_intensity.clone(),
+            scale,
+            generated.visible.iter().map(|visible| !visible).collect(),
+        )?;
+        phase.cell = Some(cell);
+        phase.reflection_domain = Some(reflection_domain);
         phase.validate()?;
         Ok(phase)
     }
@@ -129,6 +176,22 @@ impl LeBailPhase {
         if !self.scale.is_finite() || self.scale < 0.0 {
             return Err(invalid_phase("phase scale must be non-negative and finite"));
         }
+        match (&self.cell, &self.reflection_domain) {
+            (None, None) => {}
+            (Some(cell), Some(domain)) => {
+                domain.validate_cell(*cell).map_err(LeBailError::Lattice)?;
+                if self.preserve_unobserved.len() != count {
+                    return Err(invalid_phase(
+                        "dynamic phases require one visibility marker per reflection",
+                    ));
+                }
+            }
+            _ => {
+                return Err(invalid_phase(
+                    "dynamic phases require both a cell and reflection domain",
+                ));
+            }
+        }
         Ok(())
     }
 
@@ -174,6 +237,16 @@ impl LeBailPhase {
         &self.integrated_intensity
     }
 
+    /// Replace integrated intensities while preserving phase identity/geometry.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`LeBailError`] for a shape mismatch, negative value, or
+    /// non-finite value.
+    pub fn with_integrated_intensities(&self, values: &[f64]) -> Result<Self, LeBailError> {
+        self.replace_intensities(values)
+    }
+
     /// Return the phase scale.
     #[must_use]
     pub const fn scale(&self) -> f64 {
@@ -184,6 +257,44 @@ impl LeBailPhase {
     #[must_use]
     pub fn preserve_unobserved(&self) -> &[bool] {
         &self.preserve_unobserved
+    }
+
+    /// Return the current cell for a dynamic-lattice phase.
+    #[must_use]
+    pub const fn cell(&self) -> Option<UnitCell> {
+        self.cell
+    }
+
+    /// Borrow the guarded reflection domain for a dynamic-lattice phase.
+    #[must_use]
+    pub const fn reflection_domain(&self) -> Option<&LatticeReflectionDomain> {
+        self.reflection_domain.as_ref()
+    }
+
+    /// Regenerate a dynamic phase at another accepted bounded cell.
+    ///
+    /// Intensities transfer by stable reflection ID and new families use the
+    /// domain's declared initial intensity.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`LeBailError`] for a fixed phase, out-of-bounds cell, or
+    /// reflection-generation failure.
+    pub fn regenerate_lattice_at_cell(&self, cell: UnitCell) -> Result<Self, LeBailError> {
+        let domain = self
+            .reflection_domain
+            .as_ref()
+            .ok_or_else(|| invalid_phase("only dynamic phases have a lattice reflection domain"))?;
+        let previous = self
+            .reflection_ids
+            .iter()
+            .cloned()
+            .zip(self.integrated_intensity.iter().copied())
+            .collect::<BTreeMap<_, _>>();
+        let generated = domain
+            .generate(cell, Some(&previous))
+            .map_err(LeBailError::Lattice)?;
+        self.replace_generated_domain(cell, generated)
     }
 
     fn replace_intensities(&self, values: &[f64]) -> Result<Self, LeBailError> {
@@ -212,6 +323,51 @@ impl LeBailPhase {
         phase.validate()?;
         Ok(phase)
     }
+
+    fn replace_cell_geometry(
+        &self,
+        cell: UnitCell,
+        wavelength_angstrom: f64,
+    ) -> Result<Self, LeBailError> {
+        let domain = self.reflection_domain.as_ref().ok_or_else(|| {
+            invalid_phase("lattice parameters require a bounded reflection domain")
+        })?;
+        domain.validate_cell(cell).map_err(LeBailError::Lattice)?;
+        let geometry = cw_lattice_geometry(
+            domain.parameterization(),
+            cell,
+            &self.hkl,
+            wavelength_angstrom,
+        )
+        .map_err(LeBailError::Lattice)?;
+        let mut phase = self.clone();
+        phase.cell = Some(cell);
+        phase.d_spacing_angstrom = geometry.d_spacing_angstrom;
+        phase.two_theta_deg = geometry.two_theta_deg;
+        phase.validate()?;
+        Ok(phase)
+    }
+
+    fn replace_generated_domain(
+        &self,
+        cell: UnitCell,
+        generated: GeneratedLatticeDomain,
+    ) -> Result<Self, LeBailError> {
+        let mut phase = self.clone();
+        phase.cell = Some(cell);
+        phase.reflection_ids = generated.reflection_ids;
+        phase.hkl = generated.hkl;
+        phase.d_spacing_angstrom = generated.d_spacing_angstrom;
+        phase.two_theta_deg = generated.two_theta_deg;
+        phase.integrated_intensity = generated.integrated_intensity;
+        phase.preserve_unobserved = generated
+            .visible
+            .into_iter()
+            .map(|visible| !visible)
+            .collect();
+        phase.validate()?;
+        Ok(phase)
+    }
 }
 
 /// Return the stable key for one supported CW profile coefficient.
@@ -235,6 +391,23 @@ pub fn lebail_instrument_parameter_key(name: &str) -> Result<ParameterKey, LeBai
 /// Returns [`LeBailError`] for an invalid phase ID.
 pub fn lebail_phase_scale_key(phase_id: &str) -> Result<ParameterKey, LeBailError> {
     ParameterKey::new("phase", phase_id, "scale").map_err(LeBailError::Parameter)
+}
+
+/// Return the stable key for one symmetry-independent lattice variable.
+///
+/// # Errors
+///
+/// Returns [`LeBailError`] for an unsupported name or invalid phase ID.
+pub fn lebail_lattice_parameter_key(
+    phase_id: &str,
+    name: &str,
+) -> Result<ParameterKey, LeBailError> {
+    if !LATTICE_PARAMETER_NAMES.contains(&name) {
+        return Err(LeBailError::UnsupportedParameter {
+            label: format!("lattice[{phase_id}].{name}"),
+        });
+    }
+    ParameterKey::new("lattice", phase_id, name).map_err(LeBailError::Parameter)
 }
 
 /// Return the stable key for one independent reflection position.
@@ -266,6 +439,34 @@ pub fn build_lebail_parameter_set(
     phase_scales: bool,
     reflection_positions: bool,
 ) -> Result<ParameterSet, LeBailError> {
+    build_lebail_parameter_set_with_lattice(
+        instrument,
+        phases,
+        instrument_parameters,
+        phase_scales,
+        reflection_positions,
+        false,
+    )
+}
+
+/// Build bounded typed specifications including optional lattice variables.
+///
+/// # Errors
+///
+/// Returns [`LeBailError`] for unsupported selections or invalid phase state.
+pub fn build_lebail_parameter_set_with_lattice(
+    instrument: ConstantWavelengthInstrument,
+    phases: &[LeBailPhase],
+    instrument_parameters: &[&str],
+    phase_scales: bool,
+    reflection_positions: bool,
+    lattice_parameters: bool,
+) -> Result<ParameterSet, LeBailError> {
+    if lattice_parameters && reflection_positions {
+        return Err(invalid_phase(
+            "lattice parameters and independent reflection positions are redundant",
+        ));
+    }
     let mut specs = Vec::new();
     for name in instrument_parameters {
         let key = lebail_instrument_parameter_key(name)?;
@@ -292,6 +493,9 @@ pub fn build_lebail_parameter_set(
         );
     }
     for phase in phases {
+        if lattice_parameters {
+            append_lattice_parameter_specs(&mut specs, phase)?;
+        }
         if phase_scales {
             specs.push(
                 ParameterSpec::new(
@@ -306,6 +510,11 @@ pub fn build_lebail_parameter_set(
             );
         }
         if reflection_positions {
+            if phase.reflection_domain.is_some() {
+                return Err(invalid_phase(
+                    "independent reflection positions require fixed-topology phases",
+                ));
+            }
             for (reflection_id, position) in phase.reflection_ids.iter().zip(&phase.two_theta_deg) {
                 specs.push(
                     ParameterSpec::new(
@@ -326,6 +535,48 @@ pub fn build_lebail_parameter_set(
         }
     }
     ParameterSet::new(specs).map_err(LeBailError::Parameter)
+}
+
+fn append_lattice_parameter_specs(
+    specs: &mut Vec<ParameterSpec>,
+    phase: &LeBailPhase,
+) -> Result<(), LeBailError> {
+    let cell = phase
+        .cell
+        .ok_or_else(|| invalid_phase("lattice parameters require bounded dynamic phases"))?;
+    let domain = phase
+        .reflection_domain
+        .as_ref()
+        .ok_or_else(|| invalid_phase("lattice parameters require bounded dynamic phases"))?;
+    let values = domain
+        .parameterization()
+        .values_from_cell(cell)
+        .map_err(LeBailError::Lattice)?;
+    for (((name, value), lower), upper) in domain
+        .parameterization()
+        .parameter_names()
+        .iter()
+        .zip(values)
+        .zip(domain.bounds().lower())
+        .zip(domain.bounds().upper())
+    {
+        specs.push(
+            ParameterSpec::new(
+                lebail_lattice_parameter_key(phase.phase_id(), name)?,
+                value,
+                if name.ends_with("_angstrom") {
+                    "angstrom"
+                } else {
+                    "degree"
+                },
+                ParameterBounds::new(*lower, *upper).map_err(LeBailError::Parameter)?,
+                value.abs().max(1.0),
+                true,
+            )
+            .map_err(LeBailError::Parameter)?,
+        );
+    }
+    Ok(())
 }
 
 /// Observations, instrument, and ordered fixed-reflection phases.
@@ -370,6 +621,13 @@ impl LeBailInput {
         let mut phase_ids = std::collections::BTreeSet::new();
         for phase in &phases {
             phase.validate()?;
+            if phase.reflection_domain.as_ref().is_some_and(|domain| {
+                domain.wavelength_angstrom().to_bits() != instrument.wavelength_angstrom.to_bits()
+            }) {
+                return Err(invalid_phase(
+                    "dynamic phase wavelength must match the Le Bail instrument",
+                ));
+            }
             if !phase_ids.insert(phase.phase_id()) {
                 return Err(invalid_phase("phase IDs must be unique"));
             }
@@ -397,6 +655,7 @@ impl LeBailInput {
         constraints: Vec<Constraint>,
     ) -> Result<Self, LeBailError> {
         let mut input = Self::new(pattern, instrument, phases)?;
+        validate_parameter_selection(&input.phases, &parameters)?;
         domain_parameter_values(input.instrument, &input.phases, &parameters)?;
         ConstraintTransform::new(parameters.clone(), constraints.clone())
             .map_err(LeBailError::Constraint)?;
@@ -704,7 +963,18 @@ impl LeBailCheckpoint {
             .map_err(|error| LeBailError::Profile {
                 message: error.to_string(),
             })?;
+        if self.phases.iter().any(|phase| {
+            phase.reflection_domain.as_ref().is_some_and(|domain| {
+                domain.wavelength_angstrom().to_bits()
+                    != self.instrument.wavelength_angstrom.to_bits()
+            })
+        }) {
+            return Err(LeBailError::InvalidCheckpoint {
+                message: "checkpoint dynamic phase wavelength must match its instrument".to_owned(),
+            });
+        }
         if let Some(parameters) = &self.parameters {
+            validate_parameter_selection(&self.phases, parameters)?;
             let domain_values = domain_parameter_values(self.instrument, &self.phases, parameters)?;
             if domain_values != parameters.values() {
                 return Err(LeBailError::InvalidCheckpoint {
@@ -1205,7 +1475,7 @@ fn evaluate_lebail_iteration(
     state: &RestoredLeBailState,
     runtime: &mut RefinementRuntime<LeBailCheckpoint>,
 ) -> Result<EvaluatedLeBailIteration, LeBailError> {
-    let extraction = extract_lebail_intensities(
+    let mut extraction = extract_lebail_intensities(
         &input.pattern,
         state.calculation()?,
         &state.intensities,
@@ -1230,6 +1500,7 @@ fn evaluate_lebail_iteration(
         options,
         runtime,
     )?;
+    extraction.intensities = flatten_intensities(&profile.phases);
     let parameter_count = free_parameter_count(profile.parameters.as_ref(), &input.constraints)?;
     let metrics = evaluate_residuals(
         &input.pattern,
@@ -1434,11 +1705,9 @@ fn restore_state(
             message: "checkpoint already reached the configured maximum iteration".to_owned(),
         });
     }
-    let input_identity = phase_identity(&input.phases);
-    let checkpoint_identity = phase_identity(&checkpoint.phases);
-    if input_identity != checkpoint_identity {
+    if !phases_restart_compatible(&input.phases, &checkpoint.phases) {
         return Err(LeBailError::InvalidCheckpoint {
-            message: "checkpoint phase/reflection identities do not match the input".to_owned(),
+            message: "checkpoint phase/reflection domain does not match the input".to_owned(),
         });
     }
     let input_parameter_keys = input.parameters.as_ref().map(parameter_keys);
@@ -1513,7 +1782,7 @@ fn profile_update(
             warnings: Vec::new(),
         });
     }
-    let physical = parameter_columns(&calculation, &current, &phases)?;
+    let physical = parameter_columns(&calculation, &current, instrument, &phases)?;
     let derivative = transform
         .derivative_matrix()
         .map_err(LeBailError::Constraint)?;
@@ -1641,6 +1910,20 @@ fn profile_update(
             let candidate_parameters = current
                 .replace_values(&values)
                 .map_err(LeBailError::Parameter)?;
+            let (candidate_phases, domain_warnings, topology_changed) =
+                regenerate_accepted_domains(candidate_phases)?;
+            let candidate_calculation = if topology_changed {
+                runtime.begin_evaluation().map_err(LeBailError::Runtime)?;
+                calculate_lebail_pattern(
+                    pattern,
+                    candidate_instrument,
+                    &candidate_phases,
+                    options.support_fwhm,
+                    &options.execution,
+                )?
+            } else {
+                candidate_calculation
+            };
             let parameter_changes = current
                 .specs()
                 .iter()
@@ -1661,7 +1944,7 @@ fn profile_update(
                 parameters: Some(candidate_parameters),
                 step_norm: factor * step.norm(),
                 parameter_changes,
-                warnings,
+                warnings: [warnings, domain_warnings].concat(),
             });
         }
         factor *= 0.5;
@@ -1693,6 +1976,23 @@ fn domain_parameter_values(
                 .iter()
                 .find(|phase| phase.phase_id() == key.owner_id())
                 .map(LeBailPhase::scale)
+        } else if key.module() == "lattice" {
+            phases
+                .iter()
+                .find(|phase| phase.phase_id() == key.owner_id())
+                .and_then(|phase| {
+                    let cell = phase.cell?;
+                    let parameterization = phase.reflection_domain.as_ref()?.parameterization();
+                    let index = parameterization
+                        .parameter_names()
+                        .iter()
+                        .position(|name| name == key.name())?;
+                    parameterization
+                        .values_from_cell(cell)
+                        .ok()?
+                        .get(index)
+                        .copied()
+                })
         } else if key.module() == "reflection" && key.name() == "two_theta_deg" {
             phases.iter().find_map(|phase| {
                 phase
@@ -1718,6 +2018,7 @@ fn domain_parameter_values(
 fn parameter_columns(
     calculation: &LeBailCalculation,
     parameters: &ParameterSet,
+    instrument: ConstantWavelengthInstrument,
     phases: &[LeBailPhase],
 ) -> Result<DMatrix<f64>, LeBailError> {
     let samples = calculation.y.len();
@@ -1763,6 +2064,49 @@ fn parameter_columns(
                 matrix[(start + active - begin, column)] =
                     local.values[active * local.parameter_count + 1];
             }
+        } else if key.module() == "lattice" {
+            let phase = phases
+                .iter()
+                .find(|phase| phase.phase_id() == key.owner_id())
+                .ok_or_else(|| LeBailError::UnsupportedParameter { label: key.label() })?;
+            let cell = phase
+                .cell
+                .ok_or_else(|| LeBailError::UnsupportedParameter { label: key.label() })?;
+            let domain = phase
+                .reflection_domain
+                .as_ref()
+                .ok_or_else(|| LeBailError::UnsupportedParameter { label: key.label() })?;
+            let geometry = cw_lattice_geometry(
+                domain.parameterization(),
+                cell,
+                &phase.hkl,
+                instrument.wavelength_angstrom,
+            )
+            .map_err(LeBailError::Lattice)?;
+            let parameter = geometry
+                .parameter_names
+                .iter()
+                .position(|name| name == key.name())
+                .ok_or_else(|| LeBailError::UnsupportedParameter { label: key.label() })?;
+            let local = &calculation.accumulation.derivatives.local;
+            for (phase_reflection, reflection_id) in phase.reflection_ids.iter().enumerate() {
+                let reflection = calculation
+                    .reflection_keys
+                    .iter()
+                    .position(|(phase_id, candidate_id)| {
+                        phase_id == phase.phase_id() && candidate_id == reflection_id
+                    })
+                    .ok_or(LeBailError::InternalInvariant)?;
+                let derivative = geometry.d_two_theta_d_parameters
+                    [phase_reflection * geometry.parameter_names.len() + parameter];
+                let begin = local.offsets[reflection];
+                let end = local.offsets[reflection + 1];
+                let start = local.starts[reflection];
+                for active in begin..end {
+                    matrix[(start + active - begin, column)] +=
+                        local.values[active * local.parameter_count + 1] * derivative;
+                }
+            }
         } else {
             return Err(LeBailError::UnsupportedParameter { label: key.label() });
         }
@@ -1801,15 +2145,85 @@ fn apply_parameter_values(
                 positions[index] = *value;
             }
         }
-        updated_phases.push(phase.replace_scale_and_positions(scale, positions)?);
+        let mut updated = phase.replace_scale_and_positions(scale, positions)?;
+        let lattice_values = values
+            .iter()
+            .filter(|(key, _)| key.module() == "lattice" && key.owner_id() == phase.phase_id())
+            .collect::<Vec<_>>();
+        if !lattice_values.is_empty() {
+            let cell = phase.cell.ok_or_else(|| {
+                invalid_phase("lattice parameters require a bounded reflection domain")
+            })?;
+            let domain = phase.reflection_domain.as_ref().ok_or_else(|| {
+                invalid_phase("lattice parameters require a bounded reflection domain")
+            })?;
+            let mut independent = domain
+                .parameterization()
+                .values_from_cell(cell)
+                .map_err(LeBailError::Lattice)?;
+            for (key, value) in lattice_values {
+                let index = domain
+                    .parameterization()
+                    .parameter_names()
+                    .iter()
+                    .position(|name| name == key.name())
+                    .ok_or_else(|| LeBailError::UnsupportedParameter { label: key.label() })?;
+                independent[index] = *value;
+            }
+            let cell = domain
+                .parameterization()
+                .to_cell(&independent)
+                .map_err(LeBailError::Lattice)?;
+            updated =
+                updated.replace_cell_geometry(cell, updated_instrument.wavelength_angstrom)?;
+        }
+        updated_phases.push(updated);
     }
     Ok((updated_instrument, updated_phases))
+}
+
+fn regenerate_accepted_domains(
+    phases: Vec<LeBailPhase>,
+) -> Result<(Vec<LeBailPhase>, Vec<String>, bool), LeBailError> {
+    let mut updated = Vec::with_capacity(phases.len());
+    let mut warnings = Vec::new();
+    let mut topology_changed = false;
+    for phase in phases {
+        let Some(domain) = phase.reflection_domain.as_ref() else {
+            updated.push(phase);
+            continue;
+        };
+        let cell = phase.cell.ok_or(LeBailError::InternalInvariant)?;
+        let previous = phase
+            .reflection_ids
+            .iter()
+            .cloned()
+            .zip(phase.integrated_intensity.iter().copied())
+            .collect::<BTreeMap<_, _>>();
+        let generated = domain
+            .generate(cell, Some(&previous))
+            .map_err(LeBailError::Lattice)?;
+        let changed = generated.reflection_ids != phase.reflection_ids;
+        topology_changed |= changed;
+        if !generated.added_reflection_ids.is_empty()
+            || !generated.removed_reflection_ids.is_empty()
+        {
+            warnings.push(format!(
+                "phase {} reflection domain regenerated: {} added, {} removed",
+                phase.phase_id(),
+                generated.added_reflection_ids.len(),
+                generated.removed_reflection_ids.len()
+            ));
+        }
+        updated.push(phase.replace_generated_domain(cell, generated)?);
+    }
+    Ok((updated, warnings, topology_changed))
 }
 
 fn covariance(
     pattern: &PatternRecord,
     calculation: &LeBailCalculation,
-    _instrument: ConstantWavelengthInstrument,
+    instrument: ConstantWavelengthInstrument,
     phases: &[LeBailPhase],
     parameters: Option<&ParameterSet>,
     constraints: &[Constraint],
@@ -1840,7 +2254,7 @@ fn covariance(
             return Ok(None);
         }
     }
-    let physical = parameter_columns(calculation, parameters, phases)?;
+    let physical = parameter_columns(calculation, parameters, instrument, phases)?;
     let chain = DMatrix::from_row_slice(derivative.rows, derivative.columns, &derivative.values);
     let jacobian = physical * chain;
     let included = pattern
@@ -2106,20 +2520,64 @@ fn flatten_preserve_mask(phases: &[LeBailPhase]) -> Vec<bool> {
         .collect()
 }
 
-fn phase_identity(phases: &[LeBailPhase]) -> Vec<(&str, Vec<&str>)> {
-    phases
-        .iter()
-        .map(|phase| {
-            (
-                phase.phase_id(),
-                phase.reflection_ids().iter().map(String::as_str).collect(),
-            )
-        })
-        .collect()
-}
-
 fn parameter_keys(parameters: &ParameterSet) -> Vec<&ParameterKey> {
     parameters.specs().iter().map(ParameterSpec::key).collect()
+}
+
+fn validate_parameter_selection(
+    phases: &[LeBailPhase],
+    parameters: &ParameterSet,
+) -> Result<(), LeBailError> {
+    for spec in parameters.specs() {
+        let key = spec.key();
+        if key.module() == "lattice" {
+            let phase = phases
+                .iter()
+                .find(|phase| phase.phase_id() == key.owner_id())
+                .ok_or_else(|| LeBailError::UnsupportedParameter { label: key.label() })?;
+            let Some(domain) = phase.reflection_domain.as_ref() else {
+                return Err(invalid_phase(
+                    "lattice parameters require bounded dynamic phases",
+                ));
+            };
+            if !domain
+                .parameterization()
+                .parameter_names()
+                .iter()
+                .any(|name| name == key.name())
+            {
+                return Err(LeBailError::UnsupportedParameter { label: key.label() });
+            }
+        } else if key.module() == "reflection" {
+            let dynamic = phases.iter().any(|phase| {
+                phase.reflection_domain.is_some()
+                    && key
+                        .owner_id()
+                        .strip_prefix(phase.phase_id())
+                        .is_some_and(|suffix| suffix.starts_with('/'))
+            });
+            if dynamic {
+                return Err(invalid_phase(
+                    "independent reflection positions require fixed-topology phases",
+                ));
+            }
+        }
+    }
+    Ok(())
+}
+
+fn phases_restart_compatible(input: &[LeBailPhase], checkpoint: &[LeBailPhase]) -> bool {
+    input.len() == checkpoint.len()
+        && input.iter().zip(checkpoint).all(|(left, right)| {
+            if left.phase_id() != right.phase_id() {
+                return false;
+            }
+            match (&left.reflection_domain, &right.reflection_domain) {
+                (None, None) => left.reflection_ids == right.reflection_ids,
+                (Some(left_domain), Some(right_domain)) => left_domain == right_domain,
+                _ => false,
+            }
+        })
 }
 
 fn reflection_count(phase: &LeBailPhase) -> usize {
@@ -2180,6 +2638,8 @@ pub enum LeBailError {
     Parameter(ParameterError),
     /// Constraint graph or transform failed.
     Constraint(ConstraintError),
+    /// Lattice parameterization, geometry, bounds, or generation failed.
+    Lattice(LatticeError),
     /// A parameter key is not supported by fixed-geometry Le Bail.
     UnsupportedParameter {
         /// Stable parameter label.
@@ -2241,6 +2701,7 @@ impl Display for LeBailError {
             }
             Self::Parameter(error) => Display::fmt(error, formatter),
             Self::Constraint(error) => Display::fmt(error, formatter),
+            Self::Lattice(error) => Display::fmt(error, formatter),
             Self::UnsupportedParameter { label } => {
                 write!(formatter, "unsupported Le Bail parameter {label}")
             }
@@ -2280,6 +2741,7 @@ impl Error for LeBailError {
             Self::Pattern(error) => Some(error),
             Self::Parameter(error) => Some(error),
             Self::Constraint(error) => Some(error),
+            Self::Lattice(error) => Some(error),
             Self::Grid(error) => Some(error),
             Self::Calculation(error) => Some(error),
             Self::Residual(error) => Some(error),
