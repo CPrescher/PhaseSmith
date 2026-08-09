@@ -18,12 +18,12 @@ use phasesmith_io::{
     CifAtomSite, CifReadLimits, CifStructure, PowderFormat, PowderReadLimits, read_cif_file,
     read_powder_file,
 };
-use phasesmith_model::{PatternRecord, RadiationProbe, RecordId};
+use phasesmith_model::{FixedWavelengthSpectrum, PatternRecord, RadiationProbe, RecordId};
 use phasesmith_workflows::{
     BackgroundModel, ChebyshevBackground, JointRietveldHistogram, JointRietveldRefinementOptions,
-    LatticeBounds, LatticeParameterization, RefinementLimits, RietveldCalculationOptions,
-    RietveldInput, RietveldParameterSelection, RietveldPhase, RietveldSamplePhysicsModel,
-    RietveldStructuralSelection, calculate_rietveld_pattern, refine_joint_rietveld,
+    RefinementLimits, RietveldCalculationOptions, RietveldInput, RietveldParameterSelection,
+    RietveldPhase, RietveldSamplePhysicsModel, RietveldStructuralSelection,
+    calculate_rietveld_pattern, refine_joint_rietveld,
 };
 
 const PHASE_ID: &str = "PbSO4";
@@ -129,59 +129,73 @@ fn build_histogram(
     probe: RadiationProbe,
     execution: ExecutionPolicy,
 ) -> Result<JointRietveldHistogram, Box<dyn Error>> {
-    let (id, filename, angular_range, instrument, axial_geometry, position, correction, points) =
-        match probe {
-            RadiationProbe::Xray => (
-                "xray",
-                "PBSO4.XRA",
-                [16.0, 158.4],
-                ConstantWavelengthInstrument {
-                    wavelength_angstrom: 1.5405,
-                    u_deg2: 2.0e-4,
-                    v_deg2: -2.0e-4,
-                    w_deg2: 5.0e-4,
-                    x_deg: 1.0e-3,
-                    y_deg: 0.0,
-                },
-                Some(FcjGeometry {
-                    sample_over_radius: 0.0075,
-                    detector_over_radius: 0.0075,
-                }),
-                MonochromaticPositionCorrection {
-                    zero_shift_deg: 0.0,
-                    bragg_brentano_mm: None,
-                    debye_scherrer_micrometre: None,
-                },
-                IntegratedIntensityCorrectionModel::BraggBrentanoPolarizedLp {
-                    wavelength_angstrom: 1.5405,
-                    polarization: 0.7,
-                },
-                40,
-            ),
-            RadiationProbe::Neutron => (
-                "neutron",
-                "PBSO4.CWN",
-                [19.0, 153.0],
-                ConstantWavelengthInstrument {
-                    wavelength_angstrom: 1.909,
-                    u_deg2: 354.031e-4,
-                    v_deg2: -760.404e-4,
-                    w_deg2: 651.592e-4,
-                    x_deg: 0.0,
-                    y_deg: 0.0,
-                },
-                None,
-                MonochromaticPositionCorrection {
-                    zero_shift_deg: -0.1,
-                    bragg_brentano_mm: None,
-                    debye_scherrer_micrometre: Some((0.0, 0.0, 650.0)),
-                },
-                IntegratedIntensityCorrectionModel::ConstantWavelengthNeutronLorentz {
-                    wavelength_angstrom: 1.909,
-                },
-                20,
-            ),
-        };
+    let (
+        id,
+        filename,
+        angular_range,
+        instrument,
+        spectrum,
+        axial_geometry,
+        position,
+        correction,
+        points,
+    ) = match probe {
+        RadiationProbe::Xray => (
+            "xray",
+            "PBSO4.XRA",
+            [16.0, 158.4],
+            ConstantWavelengthInstrument {
+                wavelength_angstrom: 1.5405,
+                u_deg2: 2.0e-4,
+                v_deg2: -2.0e-4,
+                w_deg2: 5.0e-4,
+                x_deg: 1.0e-3,
+                y_deg: 0.0,
+            },
+            Some(FixedWavelengthSpectrum::new(
+                vec![1.5405, 1.5443],
+                vec![1.0, 0.5],
+            )?),
+            Some(FcjGeometry {
+                sample_over_radius: 0.0075,
+                detector_over_radius: 0.0075,
+            }),
+            MonochromaticPositionCorrection {
+                zero_shift_deg: 0.0,
+                bragg_brentano_mm: None,
+                debye_scherrer_micrometre: None,
+            },
+            IntegratedIntensityCorrectionModel::BraggBrentanoPolarizedLp {
+                wavelength_angstrom: 1.5405,
+                polarization: 0.7,
+            },
+            40,
+        ),
+        RadiationProbe::Neutron => (
+            "neutron",
+            "PBSO4.CWN",
+            [19.0, 153.0],
+            ConstantWavelengthInstrument {
+                wavelength_angstrom: 1.909,
+                u_deg2: 354.031e-4,
+                v_deg2: -760.404e-4,
+                w_deg2: 651.592e-4,
+                x_deg: 0.0,
+                y_deg: 0.0,
+            },
+            None,
+            None,
+            MonochromaticPositionCorrection {
+                zero_shift_deg: -0.1,
+                bragg_brentano_mm: None,
+                debye_scherrer_micrometre: Some((0.0, 0.0, 650.0)),
+            },
+            IntegratedIntensityCorrectionModel::ConstantWavelengthNeutronLorentz {
+                wavelength_angstrom: 1.909,
+            },
+            20,
+        ),
+    };
     let imported = read_powder_file(
         directory.join(filename),
         PowderFormat::GsasStd,
@@ -254,6 +268,7 @@ fn build_histogram(
         axial_geometry,
         position,
         &phase,
+        spectrum.as_ref(),
         execution.clone(),
     )?;
     let background = BackgroundModel::Chebyshev(ChebyshevBackground::new(
@@ -261,22 +276,32 @@ fn build_histogram(
         vec![0.0; 3],
         angular_range,
     )?);
-    let input = RietveldInput::new_with_background(
-        pattern,
-        instrument,
-        axial_geometry,
-        position,
-        background,
-        vec![phase],
-    )?;
-    let parameterization =
-        LatticeParameterization::new(structure.space_group.clone(), structure.cell)?;
+    let input = match spectrum {
+        Some(spectrum) => RietveldInput::new_fixed_spectrum_with_background(
+            pattern,
+            instrument,
+            spectrum,
+            axial_geometry,
+            position,
+            background,
+            vec![phase],
+        )?,
+        None => RietveldInput::new_with_background(
+            pattern,
+            instrument,
+            axial_geometry,
+            position,
+            background,
+            vec![phase],
+        )?,
+    };
     Ok(JointRietveldHistogram {
         histogram_id: RecordId::new(id)?,
         input,
         selection: RietveldParameterSelection::new(
             RietveldStructuralSelection {
-                lattice: true,
+                coordinates: true,
+                u_iso: true,
                 phase_scale: true,
                 ..RietveldStructuralSelection::default()
             },
@@ -284,7 +309,7 @@ fn build_histogram(
             true,
             false,
         )?,
-        lattice_bounds: vec![Some(LatticeBounds::around(&parameterization, 0.02, 1.0)?)],
+        lattice_bounds: vec![None],
         calculation: RietveldCalculationOptions::new(30.0, true, execution)?,
     })
 }
@@ -295,15 +320,26 @@ fn with_estimated_scale(
     axial_geometry: Option<FcjGeometry>,
     position: MonochromaticPositionCorrection,
     phase: &RietveldPhase,
+    spectrum: Option<&FixedWavelengthSpectrum>,
     execution: ExecutionPolicy,
 ) -> Result<RietveldPhase, Box<dyn Error>> {
-    let input = RietveldInput::new(
-        pattern.clone(),
-        instrument,
-        axial_geometry,
-        position,
-        vec![phase.clone()],
-    )?;
+    let input = match spectrum {
+        Some(spectrum) => RietveldInput::new_fixed_spectrum(
+            pattern.clone(),
+            instrument,
+            spectrum.clone(),
+            axial_geometry,
+            position,
+            vec![phase.clone()],
+        )?,
+        None => RietveldInput::new(
+            pattern.clone(),
+            instrument,
+            axial_geometry,
+            position,
+            vec![phase.clone()],
+        )?,
+    };
     let calculation = calculate_rietveld_pattern(
         &input,
         &RietveldCalculationOptions::new(30.0, true, execution)?,

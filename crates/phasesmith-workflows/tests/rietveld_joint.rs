@@ -7,7 +7,7 @@ use phasesmith_engine::{
 };
 use phasesmith_execution::ExecutionPolicy;
 use phasesmith_io::space_group_by_number;
-use phasesmith_model::{PatternRecord, RecordId};
+use phasesmith_model::{FixedWavelengthSpectrum, PatternRecord, RecordId};
 use phasesmith_workflows::{
     AffineConstraint, BackgroundModel, CancellationToken, Constraint, JointRietveldHistogram,
     JointRietveldLayout, JointRietveldRefinementOptions, LatticeBounds, LatticeParameterization,
@@ -150,6 +150,35 @@ fn histogram(id: &str, neutron: bool) -> JointRietveldHistogram {
 
 fn histograms() -> Vec<JointRietveldHistogram> {
     vec![histogram("xray", false), histogram("neutron", true)]
+}
+
+#[test]
+fn joint_objective_accepts_exact_fixed_spectrum_and_monochromatic_histograms() {
+    let mut histograms = histograms();
+    for histogram in &mut histograms {
+        histogram.selection.structural.lattice = false;
+        histogram.lattice_bounds = vec![None];
+    }
+    let previous = histograms[0].input.clone();
+    histograms[0].input = RietveldInput::new_fixed_spectrum_with_background(
+        previous.pattern,
+        previous.instrument,
+        FixedWavelengthSpectrum::new(vec![1.5406, 1.54439], vec![1.0, 0.5]).unwrap(),
+        previous.axial_geometry,
+        previous.position_correction,
+        previous.background.unwrap(),
+        previous.phases,
+    )
+    .unwrap();
+    let layout = JointRietveldLayout::new(&histograms).unwrap();
+    let objective = PreparedJointRietveldObjective::new(histograms, layout).unwrap();
+    let direction = vec![0.0; objective.layout().parameters().specs().len()];
+    let products = objective.jvp(&direction).unwrap();
+    assert_eq!(products.len(), 2);
+    assert!(products.iter().all(|product| {
+        product.profile.iter().all(|value| value.is_finite())
+            && product.derivative.iter().all(|value| value.to_bits() == 0)
+    }));
 }
 
 fn solver_histograms() -> Vec<JointRietveldHistogram> {

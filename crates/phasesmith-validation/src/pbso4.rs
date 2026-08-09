@@ -5,9 +5,12 @@ use std::time::Instant;
 
 use nalgebra::{DMatrix, DVector};
 use phasesmith_core::{
-    BackgroundError as SmoothBackgroundError, ConstantWavelengthInstrument, smooth_bruckner,
+    BackgroundError as SmoothBackgroundError, ConstantWavelengthInstrument, FcjGeometry,
+    OwnedCwContributions, smooth_bruckner,
 };
-use phasesmith_crystallography::IntegratedIntensityCorrectionModel;
+use phasesmith_crystallography::{
+    IntegratedIntensityCorrectionModel, PreparedReflectionGenerator, ReflectionRange,
+};
 use phasesmith_engine::{
     BuiltInScatteringModel, MonochromaticPositionCorrection, StructuralPhaseDefinition,
 };
@@ -16,7 +19,7 @@ use phasesmith_io::{
     CifAtomSite, CifIoError, CifReadLimits, CifStructure, PowderFormat, PowderIoError,
     PowderReadLimits, read_cif_file, read_powder_file,
 };
-use phasesmith_model::{DomainError, PatternRecord, RecordId};
+use phasesmith_model::{DomainError, FixedWavelengthSpectrum, PatternRecord, RecordId};
 use phasesmith_workflows::{
     BackgroundError as ModelBackgroundError, BackgroundModel, ChebyshevBackground,
     DifferentiableBackground, LatticeBounds, LatticeError, LatticeParameterization,
@@ -24,9 +27,9 @@ use phasesmith_workflows::{
     RietveldCovarianceOptions, RietveldError, RietveldGeneralParameterError,
     RietveldGeneralRefinementError, RietveldInput, RietveldInstrumentParameter,
     RietveldParameterSelection, RietveldPhase, RietveldRecipeError, RietveldRefinementError,
-    RietveldRefinementOptions, RietveldStructuralSelection, RietveldWorkflowResult, RuntimeError,
-    TerminationReason, calculate_rietveld_pattern, intelligent_rietveld_recipe,
-    run_rietveld_recipe,
+    RietveldRefinementOptions, RietveldSamplePhysicsModel, RietveldStructuralSelection,
+    RietveldWorkflowResult, RuntimeError, TerminationReason, calculate_rietveld_pattern,
+    intelligent_rietveld_recipe, run_rietveld_recipe,
 };
 
 use crate::{
@@ -37,6 +40,136 @@ use crate::{
 const DATASET_ID: &str = "gsasii-pbso4-cw";
 const PHASE_ID: &str = "PbSO4";
 const ANGULAR_RANGE: [f64; 2] = [19.0, 153.0];
+const XRAY_RANGE: [f64; 2] = [16.0, 158.4];
+
+/// Run the checksum-pinned fixed-doublet `PbSO4` X-ray validation without Python.
+///
+/// # Errors
+///
+/// Returns [`Pbso4ValidationError`] for invalid/missing data or native numerical failures.
+#[allow(clippy::too_many_lines)]
+pub fn run_pbso4_xray_validation(
+    dataset_directory: &Path,
+) -> Result<RealDataValidationReport, Pbso4ValidationError> {
+    let started = Instant::now();
+    verify_validation_dataset(DATASET_ID, dataset_directory)?;
+    let structure = read_cif_file(
+        dataset_directory.join("PbSO4-Wyckoff.cif"),
+        None,
+        true,
+        CifReadLimits::default(),
+    )?
+    .structure;
+    let imported = read_powder_file(
+        dataset_directory.join("PBSO4.XRA"),
+        PowderFormat::GsasStd,
+        1,
+        PowderReadLimits::default(),
+    )?;
+    let selected = selected_pattern(&imported.pattern, XRAY_RANGE)?;
+    let observed = selected
+        .observed_y
+        .as_ref()
+        .ok_or(Pbso4ValidationError::MissingObservations)?;
+    let pattern = PatternRecord::new(
+        selected.x_deg.clone(),
+        Some(observed.clone()),
+        selected.uncertainty.clone(),
+        None,
+        Some(smooth_bruckner(observed, 40, 50)?),
+    )?;
+    let instrument = xray_instrument();
+    let spectrum = FixedWavelengthSpectrum::new(vec![1.5405, 1.5443], vec![1.0, 0.5])?;
+    let axial = Some(FcjGeometry {
+        sample_over_radius: 0.0075,
+        detector_over_radius: 0.0075,
+    });
+    let position = MonochromaticPositionCorrection {
+        zero_shift_deg: 0.0,
+        bragg_brentano_mm: None,
+        debye_scherrer_micrometre: None,
+    };
+    let execution = ExecutionPolicy::bounded_default()?;
+    let mut phase = fixed_xray_phase(&structure)?;
+    phase = phase.with_sample_physics(RietveldSamplePhysicsModel::Composite(vec![
+        RietveldSamplePhysicsModel::IsotropicSize {
+            crystallite_size_nm: 100.0,
+            shape_factor: 0.9,
+        },
+        RietveldSamplePhysicsModel::IsotropicMicrostrain {
+            rms_microstrain: 8.0e-4,
+        },
+    ]));
+    phase = estimated_fixed_xray_scale(
+        &pattern,
+        instrument,
+        &spectrum,
+        axial,
+        position,
+        &phase,
+        execution.clone(),
+    )?;
+    let background = fitted_xray_background(
+        &pattern,
+        instrument,
+        &spectrum,
+        axial,
+        position,
+        &phase,
+        execution.clone(),
+    )?;
+    let input = RietveldInput::new_fixed_spectrum_with_background(
+        pattern,
+        instrument,
+        spectrum,
+        axial,
+        position,
+        BackgroundModel::Chebyshev(background),
+        vec![phase],
+    )?;
+    let selection = RietveldParameterSelection::new(
+        RietveldStructuralSelection {
+            coordinates: true,
+            u_iso: true,
+            phase_scale: true,
+            ..RietveldStructuralSelection::default()
+        },
+        vec![
+            RietveldInstrumentParameter::UDeg2,
+            RietveldInstrumentParameter::VDeg2,
+            RietveldInstrumentParameter::WDeg2,
+            RietveldInstrumentParameter::ZeroShiftDeg,
+        ],
+        true,
+        true,
+    )?;
+    let options = RietveldRefinementOptions::new(
+        RietveldCalculationOptions::new(30.0, true, execution)?,
+        RefinementLimits::new(160, 12_000, None, 20)?,
+        3,
+        1.0e-7,
+        1.0e-7,
+        1.0e-6,
+        10.0,
+        0.3,
+        1.0e-6,
+        30,
+        0.15,
+        8,
+    )?;
+    let recipe = intelligent_rietveld_recipe(&input, &selection, "pbso4-xray-intelligent")?;
+    let workflow = run_rietveld_recipe(
+        &input,
+        &selection,
+        &[None],
+        &[],
+        &recipe,
+        &options,
+        RietveldCovarianceOptions::new(false, 64, 1.0 - 1.0e-10)?,
+        None,
+    )?;
+    xray_report(started.elapsed().as_secs_f64(), &input, &workflow)
+}
 
 /// Run the checksum-pinned monochromatic `PbSO4` neutron validation without Python.
 ///
@@ -188,6 +321,314 @@ fn neutron_request(
         false,
     )?;
     Ok((input, selection, lattice_bounds, execution))
+}
+
+fn xray_instrument() -> ConstantWavelengthInstrument {
+    ConstantWavelengthInstrument {
+        wavelength_angstrom: 1.5405,
+        u_deg2: 2.0e-4,
+        v_deg2: -2.0e-4,
+        w_deg2: 5.0e-4,
+        x_deg: 1.0e-3,
+        y_deg: 0.0,
+    }
+}
+
+fn fixed_xray_phase(structure: &CifStructure) -> Result<RietveldPhase, Pbso4ValidationError> {
+    let reflections =
+        PreparedReflectionGenerator::new(structure.space_group.clone(), true, 500_000)
+            .map_err(LatticeError::Generation)?
+            .generate(
+                structure.cell,
+                ReflectionRange::CwTwoTheta {
+                    min_deg: XRAY_RANGE[0],
+                    max_deg: XRAY_RANGE[1],
+                    wavelength_angstrom: 1.5405,
+                },
+            )
+            .map_err(LatticeError::Generation)?;
+    let definition = StructuralPhaseDefinition {
+        cell: structure.cell,
+        space_group: structure.space_group.clone(),
+        hkl: reflections.iter().map(|item| item.hkl).collect(),
+        multiplicity: reflections.iter().map(|item| item.multiplicity).collect(),
+        fractional_xyz: structure
+            .sites
+            .iter()
+            .map(|site| site.fractional_xyz)
+            .collect(),
+        occupancy: structure.sites.iter().map(|site| site.occupancy).collect(),
+        u_iso_angstrom2: structure
+            .sites
+            .iter()
+            .map(|site| site.u_iso_angstrom2.unwrap_or(0.005))
+            .collect(),
+        anisotropic_mask: structure
+            .sites
+            .iter()
+            .map(|site| site.anisotropic_displacement.is_some())
+            .collect(),
+        u_aniso_cif_angstrom2: structure
+            .sites
+            .iter()
+            .map(|site| {
+                site.anisotropic_displacement
+                    .as_ref()
+                    .map_or([0.0; 6], |value| value.u_cif_angstrom2)
+            })
+            .collect(),
+        scattering_species: structure
+            .sites
+            .iter()
+            .map(|site| site.element_symbol.clone())
+            .collect(),
+        scattering_real_offset: Vec::new(),
+        scattering_imag_offset: Vec::new(),
+        scale: 1.0,
+        coordinate_tolerance: 1.0e-4,
+        scattering_model: BuiltInScatteringModel::XrayNonResonant,
+        correction_model: IntegratedIntensityCorrectionModel::BraggBrentanoPolarizedLp {
+            wavelength_angstrom: 1.5405,
+            polarization: 0.7,
+        },
+    };
+    Ok(RietveldPhase::new_with_site_ids(
+        RecordId::new(PHASE_ID)?,
+        "PbSO4",
+        structure
+            .sites
+            .iter()
+            .map(|site| RecordId::new(&site.site_id))
+            .collect::<Result<Vec<_>, _>>()?,
+        definition,
+        OwnedCwContributions::neutral(reflections.len()),
+    )?)
+}
+
+#[allow(clippy::too_many_arguments)]
+fn estimated_fixed_xray_scale(
+    pattern: &PatternRecord,
+    instrument: ConstantWavelengthInstrument,
+    spectrum: &FixedWavelengthSpectrum,
+    axial: Option<FcjGeometry>,
+    position: MonochromaticPositionCorrection,
+    phase: &RietveldPhase,
+    execution: ExecutionPolicy,
+) -> Result<RietveldPhase, Pbso4ValidationError> {
+    let input = RietveldInput::new_fixed_spectrum(
+        pattern.clone(),
+        instrument,
+        spectrum.clone(),
+        axial,
+        position,
+        vec![phase.clone()],
+    )?;
+    let calculation = calculate_rietveld_pattern(
+        &input,
+        &RietveldCalculationOptions::new(30.0, true, execution)?,
+    )?;
+    let observed = pattern
+        .observed_y
+        .as_ref()
+        .ok_or(Pbso4ValidationError::MissingObservations)?;
+    let mut numerator = 0.0;
+    let mut denominator = 0.0;
+    for index in 0..pattern.sample_count() {
+        let weight = pattern
+            .uncertainty
+            .as_ref()
+            .map_or(1.0, |sigma| sigma[index].powi(2).recip());
+        let target = observed[index] - pattern.background_y[index];
+        numerator += weight * calculation.profile_y[index] * target;
+        denominator += weight * calculation.profile_y[index].powi(2);
+    }
+    if !denominator.is_finite() || denominator <= 0.0 {
+        return Err(Pbso4ValidationError::LinearSolve);
+    }
+    let mut definition = phase.definition().clone();
+    definition.scale = (numerator / denominator).max(f64::MIN_POSITIVE);
+    let updated = RietveldPhase::new_with_site_ids(
+        phase.phase_id().clone(),
+        phase.name(),
+        phase.site_ids().to_vec(),
+        definition,
+        phase.contributions().clone(),
+    )?;
+    Ok(phase
+        .sample_physics()
+        .cloned()
+        .map_or(updated.clone(), |model| updated.with_sample_physics(model)))
+}
+
+#[allow(clippy::too_many_arguments)]
+fn fitted_xray_background(
+    pattern: &PatternRecord,
+    instrument: ConstantWavelengthInstrument,
+    spectrum: &FixedWavelengthSpectrum,
+    axial: Option<FcjGeometry>,
+    position: MonochromaticPositionCorrection,
+    phase: &RietveldPhase,
+    execution: ExecutionPolicy,
+) -> Result<ChebyshevBackground, Pbso4ValidationError> {
+    let initial = ChebyshevBackground::new("pbso4_residual", vec![0.0; 3], XRAY_RANGE)?;
+    let input = RietveldInput::new_fixed_spectrum_with_background(
+        pattern.clone(),
+        instrument,
+        spectrum.clone(),
+        axial,
+        position,
+        BackgroundModel::Chebyshev(initial.clone()),
+        vec![phase.clone()],
+    )?;
+    let calculation = calculate_rietveld_pattern(
+        &input,
+        &RietveldCalculationOptions::new(30.0, true, execution)?,
+    )?;
+    let observed = pattern
+        .observed_y
+        .as_ref()
+        .ok_or(Pbso4ValidationError::MissingObservations)?;
+    let target = observed
+        .iter()
+        .zip(&calculation.y)
+        .map(|(observed, calculated)| observed - calculated)
+        .collect::<Vec<_>>();
+    let basis = initial.basis(&pattern.x_deg)?;
+    let mut matrix = DMatrix::from_row_slice(basis.rows, basis.columns, &basis.values);
+    let mut right = DVector::from_vec(target);
+    if let Some(uncertainty) = &pattern.uncertainty {
+        for row in 0..basis.rows {
+            for column in 0..basis.columns {
+                matrix[(row, column)] /= uncertainty[row];
+            }
+            right[row] /= uncertainty[row];
+        }
+    }
+    let coefficients = matrix
+        .svd(true, true)
+        .solve(&right, f64::EPSILON)
+        .map_err(|_| Pbso4ValidationError::LinearSolve)?;
+    initial
+        .replace_coefficients(coefficients.as_slice())
+        .map_err(Into::into)
+}
+
+#[allow(clippy::too_many_lines)]
+fn xray_report(
+    elapsed_seconds: f64,
+    request: &RietveldInput,
+    workflow: &RietveldWorkflowResult,
+) -> Result<RealDataValidationReport, Pbso4ValidationError> {
+    let result = workflow.final_result();
+    let observed = request
+        .pattern
+        .observed_y
+        .as_ref()
+        .ok_or(Pbso4ValidationError::MissingObservations)?;
+    let residual = result
+        .calculation
+        .y
+        .iter()
+        .zip(observed)
+        .map(|(calculated, observed)| calculated - observed)
+        .collect::<Vec<_>>();
+    let unit_weight_rwp = (dot(&residual, &residual) / dot(observed, observed)).sqrt();
+    let background_subtracted = observed
+        .iter()
+        .zip(&result.calculation.background_y)
+        .map(|(observed, background)| observed - background)
+        .collect::<Vec<_>>();
+    let profile_correlation =
+        pearson_correlation(&background_subtracted, &result.calculation.profile_y)?;
+    let cell = result.input.phases[0].definition().cell;
+    let cell_error = [cell.a_angstrom, cell.b_angstrom, cell.c_angstrom]
+        .iter()
+        .zip([8.48, 5.398, 6.958])
+        .map(|(actual, expected)| (actual - expected).abs() / expected)
+        .fold(0.0_f64, f64::max);
+    let safe = workflow.stages().iter().all(|stage| {
+        !matches!(
+            stage.result.termination_reason,
+            TerminationReason::NumericalFailure
+                | TerminationReason::Diverged
+                | TerminationReason::RepeatedRejections
+                | TerminationReason::NoObservations
+                | TerminationReason::MaxIterations
+        )
+    });
+    let checks = vec![
+        check(
+            "observed_grid",
+            request.pattern.sample_count() == 5_697
+                && request.pattern.x_deg[0].to_bits() == 16.0_f64.to_bits()
+                && request
+                    .pattern
+                    .x_deg
+                    .last()
+                    .is_some_and(|value| value.to_bits() == 158.4_f64.to_bits()),
+            "Selected PbSO4 pattern uses the official combined-refinement angular range.",
+            Some(count_as_f64(request.pattern.sample_count())?),
+            ">2000 samples with endpoints 16.0 and 158.4 degrees",
+        )?,
+        check(
+            "refinement_termination",
+            safe,
+            "Every intelligent recipe stage terminates safely under explicit budgets.",
+            None,
+            "all stages converge or stagnate safely; iteration exhaustion fails",
+        )?,
+        check(
+            "poisson_rwp",
+            result.calculation.metrics.rwp <= 0.11,
+            "Poisson-weighted complete-pattern residual for the PbSO4 workflow.",
+            Some(result.calculation.metrics.rwp),
+            "Rwp <= 0.11",
+        )?,
+        check(
+            "unit_weight_rwp",
+            unit_weight_rwp <= 0.10,
+            "Unit-weight PbSO4 residual is reported separately.",
+            Some(unit_weight_rwp),
+            "unit-weight Rwp <= 0.10",
+        )?,
+        check(
+            "profile_correlation",
+            profile_correlation >= 0.99,
+            "Background-subtracted observed and calculated profiles remain aligned.",
+            Some(profile_correlation),
+            "Pearson correlation >= 0.99",
+        )?,
+        check(
+            "reference_cell_relative_error",
+            cell_error <= 0.005,
+            "Refined cell remains close to the supplied PbSO4 reference model.",
+            Some(cell_error),
+            "maximum relative error across a, b, c <= 0.005",
+        )?,
+    ];
+    let mut notes = vec![
+        format!("Final cell a={:.8}, b={:.8}, c={:.8} angstrom.", cell.a_angstrom, cell.b_angstrom, cell.c_angstrom),
+        "Cu K-alpha is evaluated as the exact fixed 1.5405/1.5443 angstrom doublet with relative intensity 0.5.".to_owned(),
+    ];
+    notes.extend(workflow.stages().iter().map(|stage| {
+        format!(
+            "Stage {}: Rwp {:.8} -> {:.8}; termination={}; iterations={}.",
+            stage.stage.name(),
+            stage.starting_rwp,
+            stage.result.calculation.metrics.rwp,
+            stage.result.termination_reason.as_str(),
+            stage.result.history.len()
+        )
+    }));
+    RealDataValidationReport::new(
+        DATASET_ID.to_owned() + "-x-ray",
+        request.pattern.sample_count(),
+        Some(result.input.phases[0].reflection_ids().len()),
+        elapsed_seconds,
+        checks,
+        notes,
+    )
+    .map_err(Into::into)
 }
 
 #[allow(clippy::too_many_arguments)]
