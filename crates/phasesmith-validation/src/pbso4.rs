@@ -147,7 +147,7 @@ pub fn run_pbso4_xray_validation(
         RietveldCalculationOptions::new(30.0, true, execution)?,
         RefinementLimits::new(160, 12_000, None, 20)?,
         3,
-        1.0e-7,
+        1.0e-6,
         1.0e-7,
         1.0e-6,
         10.0,
@@ -612,13 +612,28 @@ fn xray_report(
         "Background is a fixed native Smooth Bruckner estimate plus a refined three-term Chebyshev residual correction.".to_owned(),
     ];
     notes.extend(workflow.stages().iter().map(|stage| {
+        let cg_iterations = stage
+            .result
+            .history
+            .iter()
+            .map(|iteration| iteration.cg_iterations)
+            .sum::<usize>();
+        let backtracks = stage
+            .result
+            .history
+            .iter()
+            .map(|iteration| iteration.backtracks)
+            .sum::<usize>();
         format!(
-            "Stage {}: Rwp {:.8} -> {:.8}; termination={}; iterations={}.",
+            "Stage {}: Rwp {:.8} -> {:.8}; termination={}; iterations={}; evaluations={}; CG iterations={}; backtracks={}.",
             stage.stage.name(),
             stage.starting_rwp,
             stage.result.calculation.metrics.rwp,
             stage.result.termination_reason.as_str(),
-            stage.result.history.len()
+            stage.result.history.len(),
+            stage.result.evaluations,
+            cg_iterations,
+            backtracks,
         )
     }));
     RealDataValidationReport::new(
