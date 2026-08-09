@@ -1,6 +1,5 @@
 //! Native parameter and constraint semantic contracts.
 
-use std::path::PathBuf;
 use std::process::Command;
 
 use phasesmith_workflows::{
@@ -160,10 +159,9 @@ unpacked = transform.unpack(packed)
 for value in (*packed, *(unpacked[key] for key in keys), *transform.derivative_matrix().ravel()):
     print(repr(float(value)))
 "#;
-    let python_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../python");
     let output = Command::new(python)
         .args(["-c", script])
-        .env("PYTHONPATH", python_path)
+        .env_remove("PYTHONPATH")
         .output()
         .unwrap();
     assert!(

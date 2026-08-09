@@ -1,6 +1,5 @@
 //! Native bounded-runtime, cancellation, event, and checkpoint contracts.
 
-use std::path::PathBuf;
 use std::process::Command;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
@@ -236,10 +235,9 @@ try: runtime.reject_step()
 except RefinementStopped as error: reasons.append(error.reason.value)
 print(" ".join(reasons))
 "#;
-    let python_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../python");
     let output = Command::new(python)
         .args(["-c", script])
-        .env("PYTHONPATH", python_path)
+        .env_remove("PYTHONPATH")
         .output()
         .unwrap();
     assert!(

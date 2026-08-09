@@ -1,6 +1,5 @@
 //! Native residual semantic and cross-interface contracts.
 
-use std::path::PathBuf;
 use std::process::Command;
 
 use phasesmith_model::PatternRecord;
@@ -116,10 +115,9 @@ result = evaluate_residuals(
 for value in (*result.residual, *result.weighted_residual, result.rp, result.rwp, result.chi_square, result.reduced_chi_square):
     print(repr(float(value)))
 ";
-    let python_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../python");
     let output = Command::new(python)
         .args(["-c", script])
-        .env("PYTHONPATH", python_path)
+        .env_remove("PYTHONPATH")
         .output()
         .unwrap();
     assert!(

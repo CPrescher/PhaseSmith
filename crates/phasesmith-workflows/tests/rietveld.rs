@@ -1,6 +1,5 @@
 //! Owned native Rietveld calculation-boundary contracts.
 
-use std::path::PathBuf;
 use std::process::Command;
 
 use phasesmith_core::{
@@ -523,10 +522,9 @@ for values in (
 ):
     print(" ".join(format(float(value), ".17g") for value in values))
 "#;
-    let python_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../python");
     let output = Command::new(python)
         .args(["-c", script])
-        .env("PYTHONPATH", python_path)
+        .env_remove("PYTHONPATH")
         .output()
         .unwrap();
     assert!(

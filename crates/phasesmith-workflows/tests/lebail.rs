@@ -1,6 +1,5 @@
 //! Native fixed-reflection Le Bail workflow and Python differential checks.
 
-use std::path::PathBuf;
 use std::process::Command;
 use std::sync::{Arc, Mutex};
 
@@ -691,10 +690,9 @@ print(" ".join(format(item.integrated_intensity, ".17g") for item in result.inte
 for item in result.history:
     print(item.iteration, format(item.rwp, ".17g"), format(item.maximum_relative_intensity_change, ".17g"))
 "#;
-    let python_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../python");
     let output = Command::new(python)
         .args(["-c", script])
-        .env("PYTHONPATH", python_path)
+        .env_remove("PYTHONPATH")
         .output()
         .unwrap();
     assert!(
@@ -790,10 +788,9 @@ for item in result.history:
     changes = sum(abs(change.scaled_change) for change in item.parameter_changes)
     print(item.iteration, format(item.scaled_profile_step_norm, ".17g"), format(changes, ".17g"))
 "#;
-    let python_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../python");
     let output = Command::new(python)
         .args(["-c", script])
-        .env("PYTHONPATH", python_path)
+        .env_remove("PYTHONPATH")
         .output()
         .unwrap();
     assert!(
@@ -973,10 +970,9 @@ for item in result.history:
         len(item.warnings),
     )
 "#;
-    let python_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../python");
     let output = Command::new(python)
         .args(["-c", script])
-        .env("PYTHONPATH", python_path)
+        .env_remove("PYTHONPATH")
         .output()
         .unwrap();
     assert!(

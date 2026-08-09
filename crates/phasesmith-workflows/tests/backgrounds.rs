@@ -1,6 +1,5 @@
 //! Analytical background values, derivatives, composition, and Python parity.
 
-use std::path::PathBuf;
 use std::process::Command;
 
 use phasesmith_workflows::{
@@ -143,10 +142,9 @@ model = CompositeBackground("combined", (
 for value in (*model.calculate(x), *model.basis(x).ravel()):
     print(repr(float(value)))
 "#;
-    let python_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../python");
     let output = Command::new(python)
         .args(["-c", script])
-        .env("PYTHONPATH", python_path)
+        .env_remove("PYTHONPATH")
         .output()
         .unwrap();
     assert!(

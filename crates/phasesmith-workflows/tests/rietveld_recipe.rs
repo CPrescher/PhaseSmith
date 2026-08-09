@@ -1,6 +1,5 @@
 //! Native explicit and intelligent staged Rietveld workflow contracts.
 
-use std::path::PathBuf;
 use std::process::Command;
 use std::sync::{Arc, Mutex};
 
@@ -220,10 +219,7 @@ print(" ".join(recipe.stages[1].selection.instrument_parameters))
 "#;
     let output = Command::new(python)
         .args(["-c", script])
-        .env(
-            "PYTHONPATH",
-            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../python"),
-        )
+        .env_remove("PYTHONPATH")
         .output()
         .unwrap();
     assert!(

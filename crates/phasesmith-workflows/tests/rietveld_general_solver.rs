@@ -1,6 +1,5 @@
 //! Constraint-aware complete native Rietveld solver contracts.
 
-use std::path::PathBuf;
 use std::process::Command;
 
 use phasesmith_core::{ConstantWavelengthInstrument, OwnedCwContributions};
@@ -688,10 +687,9 @@ print(format(result.background.coefficients[0], ".17g"), format(result.backgroun
 print(len(result.history))
 print(" ".join(format(row.objective, ".17g") for row in result.history))
 "#;
-    let python_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../python");
     let output = Command::new(python)
         .args(["-c", script])
-        .env("PYTHONPATH", python_path)
+        .env_remove("PYTHONPATH")
         .output()
         .unwrap();
     assert!(
