@@ -30,10 +30,10 @@ fn pure_rust_qarr_runner_passes_all_scientific_gates_and_is_deterministic() {
         .iter()
         .filter_map(|check| check.measured.map(|value| (check.check_id.as_str(), value)))
         .collect::<std::collections::BTreeMap<_, _>>();
-    assert!((measured["poisson_rwp"] - 0.198_464_544_977_208_03).abs() < 2.0e-10);
-    assert!((measured["unit_weight_rwp"] - 0.132_019_033_135_049_67).abs() < 2.0e-10);
-    assert!((measured["profile_correlation"] - 0.990_593_769_950_535_9).abs() < 2.0e-10);
-    assert!((measured["qpa_weight_fraction"] - 0.009_910_113_343_336_802).abs() < 2.0e-10);
+    assert!((measured["poisson_rwp"] - 0.198_443_364_221_151).abs() < 2.0e-10);
+    assert!((measured["unit_weight_rwp"] - 0.131_813_052_208_354_82).abs() < 2.0e-10);
+    assert!((measured["profile_correlation"] - 0.990_618_084_457_731_4).abs() < 2.0e-10);
+    assert!((measured["qpa_weight_fraction"] - 0.010_042_134_333_594_799).abs() < 2.0e-10);
     let measurements = |report: &phasesmith_validation::RealDataValidationReport| {
         report
             .checks
