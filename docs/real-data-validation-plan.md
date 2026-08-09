@@ -10,18 +10,17 @@ workflow imports GSAS-II or makes it a PhaseSmith runtime dependency.
 
 ## Implemented checkpoint
 
-The first checkpoint adds four reusable layers:
+The implemented checkpoint provides Rust-owned layers with Python adapters:
 
-1. `phasesmith.io.powder` reads ordinary two/three-column files and unpacked
-   constant-wavelength GSAS FXYE banks into immutable NumPy arrays. FXYE
-   centidegrees are converted explicitly to public degrees.
-2. `phasesmith.validation.datasets` records stable dataset IDs, source and
-   license notes, commit-pinned HTTPS locations, byte sizes, and SHA-256 hashes.
-   Fetch and offline verification are separate explicit calls.
-3. `phasesmith.quantitative` implements the published Hill--Howard `S Z M V`
-   conversion for compatible phase scales.
-4. `tools/validate_real_data.py` runs machine-readable checks and can write a
-   finite JSON result without storing external inputs in the repository.
+1. `phasesmith-io` reads columns, GSAS FXYE, and GSAS STD into validated owned
+   records; Python reborrows those arrays as NumPy.
+2. `phasesmith-validation` owns dataset provenance, byte sizes, SHA-256 hashes,
+   stable reports, and all native real-data runners.
+3. `phasesmith-workflows::quantitative_phase_analysis` implements the published
+   Hill--Howard `S Z M V` conversion for compatible phase scales.
+4. `phasesmith-validation` provides a standalone JSON CLI. Public Python calls
+   delegate ordinary runs through PyO3 while independent reference/callback
+   paths remain available.
 
 The official APS 11-BM sucrose tutorial is the currently supported complete
 case: monochromatic FXYE input, native Smooth Bruckner background, P 21
@@ -63,16 +62,16 @@ format 7 stores these models and loads formats 1--6.
 
 ## Accepted QARR checkpoint
 
-The deterministic three-stage workflow first refines phase scales plus shared
+The deterministic pure-Rust three-stage workflow first refines phase scales plus shared
 U/V/W/zero, then adds isotropic displacement, size, microstrain, and preferred
 orientation, and finally polishes the three linear phase scales with nonlinear
 parameters fixed. The fixed-anisotropic reviewed result is:
 
-- Al2O3 30.778%, ZnO 34.205%, CaF2 35.018%;
-- maximum absolute weighed-fraction error 0.598 percentage points (limit 2);
-- Poisson-weighted Rwp 0.19888 (limit 0.20);
-- unit-weight Rwp 0.13256 (limit 0.15);
-- background-subtracted profile correlation 0.99061 (limit 0.98).
+- Al2O3 30.467%, ZnO 34.106%, CaF2 35.427%;
+- maximum absolute weighed-fraction error 1.007 percentage points (limit 2);
+- Poisson-weighted Rwp 0.19847 (limit 0.20);
+- unit-weight Rwp 0.13195 (limit 0.15);
+- background-subtracted profile correlation 0.99060 (limit 0.98).
 
 The two residual gates are intentionally separate: assigning
 `sigma=sqrt(max(counts, 1))` changes the weighting and must not be compared to a
@@ -81,8 +80,14 @@ machine-readable report: Al2O3 CIF tensors are evaluated directly and fixed,
 sites lacking CIF displacement values start at `Uiso=0.005 Å²` and refine,
 Cu K-alpha1 fixed dispersion is reused for K-alpha2, SH/L=0.002 uses the
 documented equal-height FCJ mapping, and absorption is not yet active. The
-reviewed run ended safely at the stage-2 evaluation budget after 354.1 seconds;
-FCJ reuse/vectorization remains the dominant workflow performance priority.
+reviewed release run ends safely at the stage-2 evaluation budget. One test
+repeats the full native workflow exactly and another compares its scientific
+measurements with the independent Python implementation.
+
+PbSO4 now covers both probes in Rust: the monochromatic neutron runner and an
+exact fixed-doublet X-ray runner retaining all 383 reflection families. The
+joint example combines this spectrum with the neutron histogram, and the
+analytical mixed-radiation objective has dedicated Rust coverage.
 
 ## Remaining QARR sequence
 

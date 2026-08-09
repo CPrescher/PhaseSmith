@@ -1199,11 +1199,20 @@ Keep implementation units reviewable through these ordered changes:
     adapter.
 23. Typed multi-histogram Rietveld objective with shared structural and local
     experiment parameters, followed by a joint PbSO4 X-ray/neutron benchmark.
+24. Python-free real-data validation crate and CLI, native fixed-spectrum
+    Rietveld workflows/persistence, Rust QPA, Rust QARR/PbSO4 runners, and thin
+    Python report adapters.
 
 Unit 23 is complete. The Rust workflow crate now owns stable shared/local
 packing, matrix-free joint products, a bounded constraint-aware summed solver,
 restart/cancellation state, aggregate metrics, and an optimized Rust-only
 benchmark over the pinned PbSO4 X-ray/neutron patterns and CIF.
+
+Unit 24 is complete. Tauri and the validation CLI call Rust directly with no
+Python sidecar; ordinary scripting validation calls reconstruct the same public
+report types from native JSON. Release-mode Rust tests cover deterministic
+QARR, both PbSO4 probes including the exact Cu K-alpha doublet, mixed-radiation
+joint products, and independent Python differential comparisons.
 
 Do not combine adjacent items merely to reduce PR count; numerical review is
 easier when parameter conventions and tolerance changes remain isolated.
@@ -1260,8 +1269,8 @@ as separate reviewed increments. The QARR structural-intensity checkpoint now
 includes native caller-supplied fixed X-ray dispersion offsets and polarized
 Bragg--Brentano LP, with analytical metric/wavelength derivatives,
 fixed-spectrum composition, format-7 persistence, and independent
-finite-difference tests. The pinned three-phase QARR workflow is accepted with
-a maximum absolute phase-fraction error of 1.881 weight-percentage points,
-Poisson-weighted Rwp 0.19679, unit-weight Rwp 0.13282, and profile correlation
-0.99069. Its anisotropic-displacement, component-dispersion, FCJ, and absorption
-approximations remain explicit.
+finite-difference tests. The pure-Rust three-phase QARR workflow is accepted
+with a maximum absolute phase-fraction error of 1.007 percentage points,
+Poisson-weighted Rwp 0.19847, unit-weight Rwp 0.13195, and profile correlation
+0.99060. Its component-dispersion and absorption approximations remain
+explicit; fixed anisotropic displacement and FCJ geometry are active.

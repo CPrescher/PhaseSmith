@@ -90,6 +90,19 @@ cargo run --release -p phasesmith-workflows --example joint_pbso4 -- \
   validation/data/gsasii-pbso4-cw
 ```
 
+Checksum-pinned validation also has a Python-free CLI. Successful runs write
+the same stable JSON report used by the scripting adapter:
+
+```shell
+cargo run -p phasesmith-validation --bin phasesmith-validation -- datasets
+cargo run --release -p phasesmith-validation --bin phasesmith-validation -- \
+  run iucr-qarr-1g validation/data/iucr-qarr-1g
+```
+
+Ordinary `phasesmith.validation` calls delegate to these Rust workflows.
+Python callbacks, custom execution policies, and explicit reference tests keep
+the independent scripting path; neither the CLI nor Tauri launches Python.
+
 The real-data benchmark verifies pinned QARR 1g, APS sucrose, and official
 PbSO4 X-ray/neutron tutorial inputs, records cold and warmed complete-workflow
 timings, and hashes the timing-free scientific report. By default it compares

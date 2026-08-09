@@ -275,11 +275,11 @@ using the joint free-parameter count once.
 
 The Rust-only `joint_pbso4` example is the pinned real-data workload. It reads
 the official packed GSAS X-ray and neutron patterns plus CIF without Python,
-uses probe-local reflection/scattering/correction models, and refines one
-shared cell with local scales and residual backgrounds. This deliberately
-bounded monochromatic benchmark is a regression workload for the native joint
-boundary; it does not claim feature parity with GSAS-II's fuller staged
-doublet/instrument/geometry recipe.
+uses probe-local reflection/scattering/correction models, the exact fixed
+1.5405/1.5443 Å X-ray spectrum, and shared structural coordinates/displacement
+state with local scales and residual backgrounds. This bounded benchmark is a
+regression workload for the native mixed-radiation joint boundary; it does not
+claim parity with every GSAS-II instrument or absorption term.
 
 ## Extension boundary
 

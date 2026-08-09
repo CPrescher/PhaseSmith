@@ -636,15 +636,16 @@ not inherit X-ray doublet or polarization assumptions.
 
 ## Current real-data checkpoint
 
-The pinned IUCr QARR 1g workflow is now an accepted native three-phase
+The pinned IUCr QARR 1g workflow is now an accepted Python-free Rust three-phase
 fixed-spectrum structural validation, not a readiness placeholder. Its staged
 refinement ends with a scale-only polish and converts scales using reviewed
-phase Z, formula mass, and cell volume metadata. The current 2026-08-07
-fixed-anisotropic baseline gives Al2O3 30.778%, ZnO 34.205%, and CaF2 35.018%,
-with a maximum absolute error of 0.598 weight-percentage points from the
+phase Z, formula mass, and cell volume metadata through the native Hill--Howard
+API. The reviewed Rust baseline gives Al2O3 30.467%, ZnO 34.106%, and CaF2
+35.427%, with a maximum absolute error of 1.007 percentage points from the
 independently weighed fractions. Poisson-weighted and unit-weight Rwp are
-reported separately (0.19888 and 0.13256), alongside profile correlation
-0.99061.
+reported separately (0.19847 and 0.13195), alongside profile correlation
+0.99060. Release tests repeat the native run exactly and compare the stable
+measurements with the independent Python runner under explicit tolerances.
 
 This checkpoint uses explicit remaining approximations: fixed Cu K-alpha1
 dispersion offsets for both doublet components and no absorption. SH/L=0.002
@@ -700,6 +701,11 @@ radiation, non-native checkpoints, scripting optimizer controls, and rich
 parser provenance continue to use the compatible format-12 scripting codec.
 This completes the public Python refinement/persistence migration without
 making Python part of the desktop runtime.
+Real-data validation follows the same boundary. `phasesmith-validation` owns
+checksum verification, stable reports, native sucrose, QARR, PbSO4 neutron,
+and exact fixed-doublet PbSO4 X-ray runners plus a standalone Rust CLI. Python
+reconstructs its existing immutable report types from native JSON for ordinary
+calls; callback/custom-execution and explicit reference runs stay in Python.
 The new `phasesmith-desktop` crate begins the presentation adapter as a separate
 Python-free layer. It owns immutable revisioned project snapshots and stable
 command errors, performs native load/save outside its short state locks, and
@@ -722,8 +728,8 @@ emits refinement events without introducing Tauri into the scientific crates.
 Its static frontend is a runtime probe, not a finished product UI. A release
 distribution audit rejects Python dependencies, dynamic CPython links, wheels,
 extension modules, and Python sidecar artifacts. Native CIF import, standalone
-calculation, and report-export commands remain before the desktop adapter is
-feature-complete.
+calculation, and report-export commands are implemented; product UI design is
+the remaining presentation work.
 Bounded powder import is now available through that adapter for plain columns,
 GSAS FXYE, and GSAS STD files. It installs a complete monochromatic experiment
 and observed histogram only against the exact source revision; all parse,
@@ -750,7 +756,8 @@ local scale, background, profile, radiation, correction, geometry, masks, and
 uncertainties. The constraint-aware solver evaluates the summed objective for
 every trial and retains cancellation/checkpoint state and aggregate metrics.
 The pinned Rust-only PbSO4 X-ray/neutron workload exercises the complete joint
-path without Python; alternating independent fits are not used.
+path without Python, including the exact 1.5405/1.5443 Å X-ray doublet and the
+monochromatic neutron histogram; alternating independent fits are not used.
 
 ## Quality bar
 

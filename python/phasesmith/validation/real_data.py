@@ -358,12 +358,7 @@ def run_qarr_1g_validation(
 ) -> RealDataValidationReport:
     """Run the pinned three-phase Cu K-alpha QARR refinement and QPA checks."""
 
-    if (
-        _use_native_validation()
-        and cancellation is None
-        and logger is None
-        and execution is None
-    ):
+    if _use_native_validation() and cancellation is None and logger is None and execution is None:
         return _native_validation_report("iucr-qarr-1g", dataset_directory)
 
     start = perf_counter()
@@ -860,9 +855,7 @@ def run_pbso4_cw_validation(
         raise ValueError("PbSO4 validation requires X-ray or neutron radiation")
     if _use_native_validation() and execution is None:
         runner = (
-            "gsasii-pbso4-cw-x-ray"
-            if probe is RadiationProbe.X_RAY
-            else "gsasii-pbso4-cw-neutron"
+            "gsasii-pbso4-cw-x-ray" if probe is RadiationProbe.X_RAY else "gsasii-pbso4-cw-neutron"
         )
         return _native_validation_report(runner, dataset_directory)
     start = perf_counter()

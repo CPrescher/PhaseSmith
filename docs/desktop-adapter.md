@@ -107,6 +107,12 @@ Node.js toolchain, and confirms the native project format and absence of a
 Python sidecar. Tauri is pinned in the application crate so lockfile updates do
 not silently change the desktop host API.
 
+Histogram radiation may be monochromatic or a validated fixed spectrum. The
+desktop calculation boundary constructs the corresponding native structural
+model directly, and fixed-spectrum project state round-trips through native
+persistence. No validation or calculation command crosses a Python process
+boundary.
+
 Run `scripts/audit-desktop-distribution.sh` after desktop dependency or bundle
 changes. The gate rejects Python/PyO3/NumPy in the normal or build dependency
 tree, builds the release executable, rejects a dynamic link to CPython, and
