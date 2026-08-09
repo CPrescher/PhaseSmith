@@ -161,6 +161,20 @@ workflows together and a 12.943 s GSAS-II median (12.944 s p95) for the full
 six-stage joint workflow. The GSAS-II/PhaseSmith median ratio was 1.580x. These
 are host-specific observed timings, not cross-machine acceptance thresholds.
 
+The 2026-08-09 Python-free application-boundary check measures the individual
+native runners rather than repeating the paired GSAS-II process: QARR takes
+0.989 s, PbSO4 neutron 2.300 s, and PbSO4 fixed-doublet X-ray 7.006 s on the
+development host. The corresponding Poisson Rwp values are 19.846%, 4.217%,
+and 10.353%. Before native general objectives reused their bounded analytical
+linearizations, the same recorded QARR and X-ray runs took 13.02 s and
+157.44 s; neutron took about 17.56 s. The current changes are therefore about
+13.2x, 7.6x, and 22.5x faster respectively. The previously measured Python
+scripting X-ray reference takes 3.59 s at 10.346% Rwp. Its remaining advantage
+is now dominated by different convergence paths and adapter-level optimizer
+behavior, not repeated X-ray Jacobian products. The historical 12.943 s
+GSAS-II number is a joint two-histogram workflow and must not be presented as a
+like-for-like ratio against any one of these native runners.
+
 ## Run it
 
 Build PhaseSmith in release mode, then use GSAS-II's separate interpreter

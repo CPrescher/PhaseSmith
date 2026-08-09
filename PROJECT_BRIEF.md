@@ -640,11 +640,11 @@ The pinned IUCr QARR 1g workflow is now an accepted Python-free Rust three-phase
 fixed-spectrum structural validation, not a readiness placeholder. Its staged
 refinement ends with a scale-only polish and converts scales using reviewed
 phase Z, formula mass, and cell volume metadata through the native Hill--Howard
-API. The reviewed Rust baseline gives Al2O3 30.467%, ZnO 34.106%, and CaF2
-35.427%, with a maximum absolute error of 1.007 percentage points from the
+API. The reviewed Rust baseline gives Al2O3 30.475%, ZnO 34.114%, and CaF2
+35.411%, with a maximum absolute error of 0.991 percentage points from the
 independently weighed fractions. Poisson-weighted and unit-weight Rwp are
-reported separately (0.19847 and 0.13195), alongside profile correlation
-0.99060. Release tests repeat the native run exactly and compare the stable
+reported separately (0.19846 and 0.13202), alongside profile correlation
+0.99059. Release tests repeat the native run exactly and compare the stable
 measurements with the independent Python runner under explicit tolerances.
 
 This checkpoint uses explicit remaining approximations: fixed Cu K-alpha1
@@ -758,6 +758,28 @@ every trial and retains cancellation/checkpoint state and aggregate metrics.
 The pinned Rust-only PbSO4 X-ray/neutron workload exercises the complete joint
 path without Python, including the exact 1.5405/1.5443 Å X-ray doublet and the
 monochromatic neutron histogram; alternating independent fits are not used.
+
+The native-objective performance checkpoint closes the large regression that
+appeared when those real-data workflows moved below Python. At each accepted or
+trial state, `PreparedGeneralRietveldObjective` now requests the fused native
+profile/analytical-derivative pass and reuses the projected structural Jacobian
+for gradients, normal products, and covariance. The default ceiling is
+10,000,000 `f64` elements (about 80 MB for structural rows); larger problems or
+an explicit zero ceiling remain matrix-free. Joint objectives aggregate this
+choice and its actual expensive-product accounting across histograms.
+
+A realistic fixed-doublet Rust benchmark with 256 reflections, 10,001 samples,
+eight sites, and FCJ measures 18.608 ms for bounded dense preparation, 0.289 ms
+for a cached normal product, and 19.847 ms for the equivalent matrix-free
+product on the development host. The repeated product is therefore 68.6x
+faster. Fresh release application-boundary runs take 0.989 s for QARR, 2.300 s
+for PbSO4 neutron, and 7.006 s for PbSO4 X-ray, versus the recorded pre-fix
+13.02 s, 17.56 s, and 157.44 s. All scientific gates pass; the current X-ray
+Poisson Rwp is 10.353%, within 0.007 percentage points of the 3.59 s Python
+scripting reference. The remaining scripting/native timing gap is a
+convergence-path issue rather than evidence that the X-ray calculation kernel
+still requires Python. Historical pinned GSAS-II timings remain separate
+because its PbSO4 number covers a joint two-histogram recipe.
 
 ## Quality bar
 

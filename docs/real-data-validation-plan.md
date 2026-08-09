@@ -62,16 +62,16 @@ format 7 stores these models and loads formats 1--6.
 
 ## Accepted QARR checkpoint
 
-The deterministic pure-Rust three-stage workflow first refines phase scales plus shared
-U/V/W/zero, then adds isotropic displacement, size, microstrain, and preferred
-orientation, and finally polishes the three linear phase scales with nonlinear
-parameters fixed. The fixed-anisotropic reviewed result is:
+The deterministic pure-Rust three-stage workflow first refines phase scales plus
+shared U/V/W/zero, then adds isotropic displacement, size, microstrain, and
+preferred orientation, and finally polishes the three linear phase scales with
+nonlinear parameters fixed. The fixed-anisotropic reviewed result is:
 
-- Al2O3 30.467%, ZnO 34.106%, CaF2 35.427%;
-- maximum absolute weighed-fraction error 1.007 percentage points (limit 2);
+- Al2O3 30.475%, ZnO 34.114%, CaF2 35.411%;
+- maximum absolute weighed-fraction error 0.991 percentage points (limit 2);
 - Poisson-weighted Rwp 0.19847 (limit 0.20);
-- unit-weight Rwp 0.13195 (limit 0.15);
-- background-subtracted profile correlation 0.99060 (limit 0.98).
+- unit-weight Rwp 0.13202 (limit 0.15);
+- background-subtracted profile correlation 0.99059 (limit 0.98).
 
 The two residual gates are intentionally separate: assigning
 `sigma=sqrt(max(counts, 1))` changes the weighting and must not be compared to a
@@ -80,7 +80,8 @@ machine-readable report: Al2O3 CIF tensors are evaluated directly and fixed,
 sites lacking CIF displacement values start at `Uiso=0.005 Å²` and refine,
 Cu K-alpha1 fixed dispersion is reused for K-alpha2, SH/L=0.002 uses the
 documented equal-height FCJ mapping, and absorption is not yet active. The
-reviewed release run ends safely at the stage-2 evaluation budget. One test
+reviewed release run ends safely by stagnation before the stage-2 evaluation
+budget. One test
 repeats the full native workflow exactly and another compares its scientific
 measurements with the independent Python implementation.
 

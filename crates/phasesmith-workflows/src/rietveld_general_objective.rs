@@ -31,8 +31,9 @@ pub struct PreparedGeneralRietveldObjective {
 impl PreparedGeneralRietveldObjective {
     /// Prepare structural products and explicit global/background columns.
     ///
-    /// The potentially large structural Jacobian remains matrix-free. Only the
-    /// selected experiment/background columns are materialized.
+    /// The structural Jacobian is materialized when it fits under the default
+    /// memory ceiling. Larger objectives retain matrix-free structural
+    /// products; selected experiment/background columns remain explicit.
     ///
     /// # Errors
     ///

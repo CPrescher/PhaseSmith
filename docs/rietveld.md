@@ -338,6 +338,25 @@ the 1,500 matrix-free budget to one linearization per accepted/trial state, and
 improved the final Rwp. The earlier validation-only matrix-free override is
 therefore removed rather than retained as an unmeasured compatibility path.
 
+The Python-free general and joint objectives now apply the same policy instead
+of unconditionally recomputing matrix-free products. A native accepted or trial
+state fuses profile values with analytical structural derivatives, projects the
+native rows into the stable physical layout, and reuses that bounded Jacobian
+for its gradient, conjugate-gradient products, and covariance. Solver budgets
+count the expensive preparation pass once and do not charge cached products as
+new model evaluations. `PreparedGeneralRietveldObjective::new_with_max_linearization_elements`
+is the lower-level Rust control; a zero ceiling remains the deterministic
+matrix-free test and memory fallback.
+
+`cargo bench -p phasesmith-workflows --bench rietveld` includes a fixed-doublet
+native objective with 256 reflections, 10,001 samples, eight sites, FCJ
+asymmetry, and structural/instrument/background parameters. On the development
+Apple Silicon host, bounded dense preparation measured 18.608 ms median. A
+cached normal product measured 289.45 microseconds versus 19.847 ms for the
+same matrix-free product, a 68.6x reduction in the repeated optimizer kernel.
+The benchmark reports these scopes separately so one-time preparation is not
+mistaken for product latency.
+
 For the three-phase QARR workload, reusing guarded coordinate models across
 trial states reduces the release median from 1.659 to 1.245 seconds on one
 thread. `ExecutionPolicy(threads=2)` reduces it further to 0.961 seconds, a
