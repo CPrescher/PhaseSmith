@@ -430,6 +430,9 @@ linking Python, and a release audit checks its dependency tree, executable
 links, and bundle contents for Python artifacts. The checked-in static frontend
 is only a runtime probe. Bounded powder import is now exposed as an atomic
 revision-checked command for columns, GSAS FXYE, and GSAS STD input with a
-complete native monochromatic experiment record. Native CIF phase import,
-standalone calculation, and report export remain the final workflow commands
-required to complete delivery step 16.
+complete native monochromatic experiment record. Native CIF phase import now
+also parses with bounded native limits, generates target-histogram-specific
+reflections, preserves X-ray/neutron scattering identity and diagnostics, and
+attaches the phase through exact snapshot comparison. Standalone calculation
+and report export remain the final workflow commands required to complete
+delivery step 16.

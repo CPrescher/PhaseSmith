@@ -5,9 +5,10 @@
 #![allow(clippy::needless_pass_by_value)]
 
 use phasesmith_desktop::{
-    BinarySeriesDescriptor, CancelJobResponse, DesktopError, DesktopEvent, DesktopProjectStore,
-    JobManager, JobStarted, JobStatus, OpenProjectResponse, PowderHistogramImportRequest,
-    PowderHistogramImportResponse, SaveProjectResponse,
+    BinarySeriesDescriptor, CancelJobResponse, CifPhaseImportRequest, CifPhaseImportResponse,
+    DesktopError, DesktopEvent, DesktopProjectStore, JobManager, JobStarted, JobStatus,
+    OpenProjectResponse, PowderHistogramImportRequest, PowderHistogramImportResponse,
+    SaveProjectResponse,
 };
 use phasesmith_persistence::{
     PROJECT_FORMAT_VERSION, ProjectReadLimits, ProjectSaveOptions, ProjectSummaryReport,
@@ -97,6 +98,20 @@ async fn import_powder_histogram(
     })
     .await
     .map_err(|error| DesktopError::host_failure(format!("powder-import task failed: {error}")))?
+}
+
+#[tauri::command]
+async fn import_cif_phase(
+    state: State<'_, AppState>,
+    expected_revision: u64,
+    request: CifPhaseImportRequest,
+) -> Result<CifPhaseImportResponse, DesktopError> {
+    let projects = state.projects.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        projects.import_cif_phase(expected_revision, request)
+    })
+    .await
+    .map_err(|error| DesktopError::host_failure(format!("CIF-import task failed: {error}")))?
 }
 
 #[tauri::command]
@@ -212,6 +227,7 @@ pub fn run() {
             project_summary,
             save_project,
             import_powder_histogram,
+            import_cif_phase,
             close_project,
             project_series,
             project_series_bytes,

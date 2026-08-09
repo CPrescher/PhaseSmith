@@ -6,6 +6,7 @@
 
 #![forbid(unsafe_code)]
 
+mod cif_import;
 mod jobs;
 mod powder_import;
 mod series;
@@ -24,6 +25,10 @@ use phasesmith_persistence::{
 use phasesmith_workflows::RietveldProjectState;
 use serde::Serialize;
 
+pub use cif_import::{
+    CifPhaseImportRequest, CifPhaseImportResponse, DesktopCifDiagnostic,
+    DesktopCifDiagnosticSeverity, DesktopIntensityCorrectionInput,
+};
 pub use jobs::{
     CancelJobResponse, DesktopEvent, DesktopEventSink, DiagnosticRecord, JobId, JobManager,
     JobStarted, JobState, JobStatus, RefinementEventRecord, RefinementOutcome,

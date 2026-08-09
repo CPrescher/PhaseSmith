@@ -728,7 +728,10 @@ Bounded powder import is now available through that adapter for plain columns,
 GSAS FXYE, and GSAS STD files. It installs a complete monochromatic experiment
 and observed histogram only against the exact source revision; all parse,
 validation, resource-limit, and concurrent-edit failures preserve project
-state. CIF phase import remains a separate native slice.
+state. Native CIF phase import likewise uses bounded parsing and exact snapshot
+installation, generating reflections for the selected histogram while
+preserving parser diagnostics, provenance, charge/isotope scattering identity,
+and an explicit probe-compatible intensity correction.
 
 The remaining parity boundary is joint refinement. PhaseSmith currently owns
 one pattern/experiment per `RietveldInput`; GSAS-II shares one PbSO4 structure

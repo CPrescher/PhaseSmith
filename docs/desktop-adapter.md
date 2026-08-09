@@ -34,6 +34,16 @@ resource-limit, experiment, phase-reference, duplicate-ID, and concurrent-edit
 failures leave the open snapshot unchanged. The Tauri host runs file parsing on
 its blocking pool and exposes only serializable request/response records.
 
+Native CIF phase import selects one bounded CIF block, preserves parser
+diagnostics and source provenance, and generates the phase's reflection
+families from the exact target histogram range and monochromatic wavelength.
+Built-in X-ray charge/table identities and neutron isotope identities are
+derived with the same explicit rules as the scripting layer. The request owns
+Friedel merging, candidate limits, phase scale, coordinate tolerance, and an
+explicit probe-compatible integrated-intensity correction. Import refuses to
+silently rewrite a histogram that already has a native analysis; attaching a
+new phase there requires a later analysis-edit workflow.
+
 ## Refinement jobs and events
 
 `JobManager` runs each native Rietveld analysis on a named Rust worker thread.
@@ -89,6 +99,6 @@ Run `scripts/audit-desktop-distribution.sh` after desktop dependency or bundle
 changes. The gate rejects Python/PyO3/NumPy in the normal or build dependency
 tree, builds the release executable, rejects a dynamic link to CPython, and
 scans produced bundles for Python runtimes, wheels, or extension modules.
-Native CIF phase import, standalone calculation, and report-export commands
-remain separate adapter slices; the shell is not considered feature-complete
-until those workflow-sized operations are present.
+Standalone calculation and report-export commands remain separate adapter
+slices; the shell is not considered feature-complete until those workflow-sized
+operations are present.
