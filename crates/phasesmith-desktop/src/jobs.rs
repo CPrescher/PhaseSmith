@@ -13,6 +13,7 @@ use phasesmith_workflows::{
 };
 use serde::Serialize;
 
+use crate::{BinaryPayload, BinarySeriesDescriptor, series};
 use crate::{DesktopError, DesktopErrorCode, DesktopProjectStore, ProjectSnapshot};
 
 /// Process-local stable refinement job identifier.
@@ -417,6 +418,33 @@ impl JobManager {
         Ok(status(job_id, job))
     }
 
+    /// List binary display-series descriptors retained by a completed job.
+    ///
+    /// # Errors
+    ///
+    /// Returns an unknown/not-completed job, size, or shared-state error.
+    pub fn refinement_series(
+        &self,
+        job_id: JobId,
+    ) -> Result<Vec<BinarySeriesDescriptor>, DesktopError> {
+        let (revision, histogram_id, result) = self.completed_result(job_id)?;
+        series::refinement_descriptors(job_id, revision, &histogram_id, &result)
+    }
+
+    /// Encode one retained refinement series as an owned binary payload.
+    ///
+    /// # Errors
+    ///
+    /// Returns an unknown/not-completed job, series, size, or shared-state error.
+    pub fn refinement_series_payload(
+        &self,
+        job_id: JobId,
+        series_id: &str,
+    ) -> Result<BinaryPayload, DesktopError> {
+        let (revision, histogram_id, result) = self.completed_result(job_id)?;
+        series::refinement_payload(job_id, revision, &histogram_id, &result, series_id)
+    }
+
     /// Explicitly install one completed result if its exact source snapshot is current.
     ///
     /// # Errors
@@ -510,6 +538,36 @@ impl JobManager {
                 "refinement job state lock is poisoned",
             )
         })
+    }
+
+    fn completed_result(
+        &self,
+        job_id: JobId,
+    ) -> Result<(u64, String, Arc<RietveldGeneralRefinementResult>), DesktopError> {
+        let jobs = self.lock_jobs()?;
+        let job = jobs.get(&job_id).ok_or_else(|| {
+            DesktopError::simple(
+                DesktopErrorCode::UnknownJob,
+                format!("unknown refinement job {job_id}"),
+            )
+        })?;
+        if job.state != JobState::Completed {
+            return Err(DesktopError::simple(
+                DesktopErrorCode::InvalidJobState,
+                format!("refinement job {job_id} has no completed result"),
+            ));
+        }
+        let result = job.result.as_ref().ok_or_else(|| {
+            DesktopError::simple(
+                DesktopErrorCode::StateUnavailable,
+                format!("completed refinement job {job_id} retained no result"),
+            )
+        })?;
+        Ok((
+            job.source.revision(),
+            job.histogram_id.as_str().to_owned(),
+            Arc::clone(result),
+        ))
     }
 }
 

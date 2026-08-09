@@ -42,3 +42,20 @@ newer edit or reopened project therefore wins deterministically. Shared phases
 across multiple histograms are rejected here until the joint objective owns the
 required shared/local parameter split. `cancel_refinement()` uses the native
 first-reason-wins token, and `discard_job()` releases retained result arrays.
+
+## Binary display series
+
+Large plotting arrays never enter JSON command/event payloads. Project and
+completed-job catalog commands return `BinarySeriesDescriptor` records with a
+stable series ID, semantic role, physical unit, owner revision/job, scalar
+count, exact byte count, and dtype. A second command returns `BinaryPayload`
+bytes for one descriptor. Project payload lookup checks the revision again, so
+an edit between catalog and fetch is a conflict rather than a mixed plot.
+
+`float64_le` uses explicit IEEE-754 little-endian encoding on every host;
+`uint8` masks contain only zero or one. The refinement catalog includes grid,
+observed/calculated/profile/background/residual values, inclusion mask, and
+per-phase profile/reflection position/reflection intensity series. Job disposal
+invalidates all of its descriptors and releases the retained native result.
+The Tauri command returns these bytes as a native IPC response body rather than
+serializing a numeric JSON array.

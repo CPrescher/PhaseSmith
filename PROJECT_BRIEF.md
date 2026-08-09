@@ -712,6 +712,11 @@ cancellation, retain completed results without implicit installation, and
 accept only through the exact source snapshot. Explicit disposal bounds the
 lifetime of retained solver arrays, and presentation event failures remain
 isolated from scientific state.
+Desktop plotting data now has an explicit binary IPC contract. JSON carries
+only typed descriptors and scalar summaries; requested grids, curves, masks,
+phase profiles, and reflection sticks are encoded as little-endian `f64` or
+byte payloads owned by an exact project revision or retained job. This avoids
+large JSON arrays and makes edit-between-catalog-and-fetch races explicit.
 
 The remaining parity boundary is joint refinement. PhaseSmith currently owns
 one pattern/experiment per `RietveldInput`; GSAS-II shares one PbSO4 structure

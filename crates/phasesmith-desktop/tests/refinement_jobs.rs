@@ -7,7 +7,7 @@ use std::time::{Duration, Instant};
 use phasesmith_core::{ConstantWavelengthInstrument, OwnedCwContributions};
 use phasesmith_crystallography::{IntegratedIntensityCorrectionModel, UnitCell};
 use phasesmith_desktop::{
-    DesktopErrorCode, DesktopEvent, DesktopProjectStore, JobManager, JobState,
+    DesktopErrorCode, DesktopEvent, DesktopProjectStore, JobManager, JobState, SeriesDtype,
 };
 use phasesmith_engine::{
     BuiltInScatteringModel, MonochromaticPositionCorrection, StructuralPhaseDefinition,
@@ -218,6 +218,66 @@ fn completion_emits_events_but_requires_explicit_revision_checked_acceptance() {
         jobs.job_status(started.job_id).unwrap_err().code,
         DesktopErrorCode::UnknownJob
     );
+}
+
+#[test]
+fn project_and_refinement_arrays_use_described_little_endian_binary_payloads() {
+    let store = runnable_store();
+    let project_series = store.project_series(1, "histogram").unwrap();
+    assert_eq!(
+        project_series
+            .iter()
+            .map(|value| value.series_id.as_str())
+            .collect::<Vec<_>>(),
+        ["x_deg", "observed_y", "fixed_background_y"]
+    );
+    assert!(serde_json::to_value(&project_series).is_ok());
+    let x = store
+        .project_series_payload(1, "histogram", "x_deg")
+        .unwrap();
+    assert_eq!(x.descriptor().dtype, SeriesDtype::Float64Le);
+    assert_eq!(x.bytes().len(), x.descriptor().byte_length);
+    assert_eq!(
+        f64::from_le_bytes(x.bytes()[..8].try_into().unwrap()).to_bits(),
+        20.0_f64.to_bits()
+    );
+    assert_eq!(
+        store
+            .project_series_payload(1, "histogram", "missing")
+            .unwrap_err()
+            .code,
+        DesktopErrorCode::UnknownSeries
+    );
+
+    let (sender, receiver) = mpsc::channel();
+    let jobs = JobManager::new(store, move |event: &DesktopEvent| {
+        sender
+            .send(event.clone())
+            .map_err(|error| error.to_string())
+    });
+    let started = jobs.start_refinement(1, "histogram").unwrap();
+    receive_completion(&receiver);
+    let descriptors = jobs.refinement_series(started.job_id).unwrap();
+    assert!(
+        descriptors
+            .iter()
+            .any(|value| value.series_id == "calculated_y")
+    );
+    assert!(
+        descriptors
+            .iter()
+            .any(|value| value.series_id == "phase/alpha/profile_y")
+    );
+    let mask = jobs
+        .refinement_series_payload(started.job_id, "included_mask")
+        .unwrap();
+    assert_eq!(mask.descriptor().dtype, SeriesDtype::Uint8);
+    assert!(mask.bytes().iter().all(|value| *value == 1));
+    let calculated = jobs
+        .refinement_series_payload(started.job_id, "calculated_y")
+        .unwrap();
+    assert_eq!(calculated.bytes().len(), 101 * 8);
+    assert_eq!(calculated.into_bytes().len(), 101 * 8);
 }
 
 #[test]

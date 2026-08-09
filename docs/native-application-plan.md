@@ -409,7 +409,7 @@ before installation and failed commands preserve current state. The adapter's
 job/event/binary transport layer and thin Tauri host remain subsequent atomic
 substeps.
 
-The next desktop-adapter substep adds detached native Rietveld jobs, structured
+A further desktop-adapter substep adds detached native Rietveld jobs, structured
 finite progress/completion/failure events, first-reason cooperative
 cancellation, polling, explicit result acceptance, and result disposal.
 Completion never mutates project state; acceptance compares the exact source
@@ -417,3 +417,11 @@ snapshot and revision. Event-delivery failure is isolated from numerical work,
 and shared multi-histogram phase acceptance remains explicitly unavailable
 until delivery step 17 provides the joint shared/local model. Binary series
 transport and the thin Tauri host remain.
+
+Binary display transport is now complete in the desktop adapter. JSON catalogs
+describe stable revision/job-owned `float64_le` and `uint8` series, while a
+separate payload call explicitly encodes only the requested vector. Catalogs
+cover observed project data and complete refinement plots, residuals, masks,
+phase profiles, and reflection sticks. Revision rechecks prevent mixed project
+snapshots and job disposal invalidates retained result series. The thin Tauri
+host and its distribution audit are the remaining delivery-step-16 substeps.

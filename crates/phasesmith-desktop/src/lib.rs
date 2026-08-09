@@ -7,6 +7,7 @@
 #![forbid(unsafe_code)]
 
 mod jobs;
+mod series;
 
 use std::collections::BTreeMap;
 use std::error::Error;
@@ -26,6 +27,7 @@ pub use jobs::{
     CancelJobResponse, DesktopEvent, DesktopEventSink, DiagnosticRecord, JobId, JobManager,
     JobStarted, JobState, JobStatus, RefinementEventRecord, RefinementOutcome,
 };
+pub use series::{BinaryPayload, BinarySeriesDescriptor, SeriesDtype, SeriesOwner};
 
 /// Stable desktop-command failure category.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
@@ -53,6 +55,8 @@ pub enum DesktopErrorCode {
     UnsupportedOperation,
     /// Native project persistence failed.
     Persistence,
+    /// A requested binary display series does not exist.
+    UnknownSeries,
     /// Internal shared state was poisoned by a panicking host callback.
     StateUnavailable,
 }
@@ -256,6 +260,47 @@ impl DesktopProjectStore {
         ProjectSummaryReport::from_project(&snapshot.state().project).map_err(|error| {
             DesktopError::simple(DesktopErrorCode::InvalidProject, error.to_string())
         })
+    }
+
+    /// List binary display-series descriptors for one histogram snapshot.
+    ///
+    /// # Errors
+    ///
+    /// Returns a project, revision, histogram, size, or shared-state error.
+    pub fn project_series(
+        &self,
+        expected_revision: u64,
+        histogram_id: &str,
+    ) -> Result<Vec<BinarySeriesDescriptor>, DesktopError> {
+        let snapshot = self.snapshot()?;
+        if snapshot.revision() != expected_revision {
+            return Err(DesktopError::conflict(
+                expected_revision,
+                snapshot.revision(),
+            ));
+        }
+        series::project_descriptors(snapshot.state(), histogram_id)
+    }
+
+    /// Encode one project display series as an owned binary payload.
+    ///
+    /// # Errors
+    ///
+    /// Returns a project, revision, histogram, series, size, or shared-state error.
+    pub fn project_series_payload(
+        &self,
+        expected_revision: u64,
+        histogram_id: &str,
+        series_id: &str,
+    ) -> Result<BinaryPayload, DesktopError> {
+        let snapshot = self.snapshot()?;
+        if snapshot.revision() != expected_revision {
+            return Err(DesktopError::conflict(
+                expected_revision,
+                snapshot.revision(),
+            ));
+        }
+        series::project_payload(snapshot.state(), histogram_id, series_id)
     }
 
     /// Replace the current project only when the caller evaluated its exact revision.
