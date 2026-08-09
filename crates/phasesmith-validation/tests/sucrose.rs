@@ -10,6 +10,7 @@ fn dataset() -> std::path::PathBuf {
 }
 
 #[test]
+#[ignore = "requires checksum-pinned external validation data"]
 fn pure_rust_sucrose_runner_reproduces_the_reviewed_scientific_gate() {
     let report = run_sucrose_lebail_validation(&dataset()).unwrap();
     assert_eq!(report.status, ValidationStatus::Passed);
