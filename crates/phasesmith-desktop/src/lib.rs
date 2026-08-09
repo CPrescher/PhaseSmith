@@ -99,6 +99,12 @@ impl DesktopError {
             actual_revision: Some(actual_revision),
         }
     }
+
+    /// Construct a stable host-infrastructure failure at an adapter boundary.
+    #[must_use]
+    pub fn host_failure(message: impl Into<String>) -> Self {
+        Self::simple(DesktopErrorCode::StateUnavailable, message)
+    }
 }
 
 impl Display for DesktopError {

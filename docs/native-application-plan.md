@@ -424,4 +424,10 @@ separate payload call explicitly encodes only the requested vector. Catalogs
 cover observed project data and complete refinement plots, residuals, masks,
 phase profiles, and reflection sticks. Revision rechecks prevent mixed project
 snapshots and job disposal invalidates retained result series. The thin Tauri
-host and its distribution audit are the remaining delivery-step-16 substeps.
+host is now present as a separate pinned application crate. It translates the
+existing project, refinement, event, and binary-series contracts without
+linking Python, and a release audit checks its dependency tree, executable
+links, and bundle contents for Python artifacts. The checked-in static frontend
+is only a runtime probe. Native import, standalone calculation, and report
+export remain the final workflow commands required to complete delivery step
+16.

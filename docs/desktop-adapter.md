@@ -59,3 +59,28 @@ per-phase profile/reflection position/reflection intensity series. Job disposal
 invalidates all of its descriptors and releases the retained native result.
 The Tauri command returns these bytes as a native IPC response body rather than
 serializing a numeric JSON array.
+
+## Tauri host
+
+The executable host lives in `apps/phasesmith-desktop/src-tauri`. It is a thin
+translation crate: application state and refinement workers remain in
+`phasesmith-desktop`, project codecs remain in `phasesmith-persistence`, and no
+scientific crate depends on Tauri. The host currently exposes project
+create/open/summary/save/close commands, revision-checked project series,
+detached refinement lifecycle commands, and retained-result series. Job events
+use the stable `phasesmith://refinement-event` channel; array payload commands
+return `tauri::ipc::Response` bytes.
+
+The checked-in frontend is deliberately a static runtime probe rather than the
+product UI. It is embedded from `apps/phasesmith-desktop/frontend`, requires no
+Node.js toolchain, and confirms the native project format and absence of a
+Python sidecar. Tauri is pinned in the application crate so lockfile updates do
+not silently change the desktop host API.
+
+Run `scripts/audit-desktop-distribution.sh` after desktop dependency or bundle
+changes. The gate rejects Python/PyO3/NumPy in the normal or build dependency
+tree, builds the release executable, rejects a dynamic link to CPython, and
+scans produced bundles for Python runtimes, wheels, or extension modules.
+Native import, standalone calculation, and report-export commands remain
+separate adapter slices; the shell is not considered feature-complete until
+those workflow-sized operations are present.

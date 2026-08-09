@@ -717,6 +717,13 @@ only typed descriptors and scalar summaries; requested grids, curves, masks,
 phase profiles, and reflection sticks are encoded as little-endian `f64` or
 byte payloads owned by an exact project revision or retained job. This avoids
 large JSON arrays and makes edit-between-catalog-and-fetch races explicit.
+The separate `phasesmith-tauri` application crate now hosts those contracts and
+emits refinement events without introducing Tauri into the scientific crates.
+Its static frontend is a runtime probe, not a finished product UI. A release
+distribution audit rejects Python dependencies, dynamic CPython links, wheels,
+extension modules, and Python sidecar artifacts. Native import, standalone
+calculation, and report-export commands remain before the desktop adapter is
+feature-complete.
 
 The remaining parity boundary is joint refinement. PhaseSmith currently owns
 one pattern/experiment per `RietveldInput`; GSAS-II shares one PbSO4 structure

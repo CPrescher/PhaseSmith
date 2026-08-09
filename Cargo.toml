@@ -1,5 +1,6 @@
 [workspace]
 members = [
+  "apps/phasesmith-desktop/src-tauri",
   "crates/phasesmith-core",
   "crates/phasesmith-crystallography",
   "crates/phasesmith-desktop",
