@@ -78,15 +78,22 @@ binary storage or later binary IPC.
 
 ## Python format distinction
 
-The existing `phasesmith.persistence.PersistenceBundle` format version 12 is
-the current Python scripting checkpoint format. It contains solver types that
-have not all moved to Rust yet and remains supported unchanged. Native project
-format 2 stores the application-neutral, multi-histogram `ProjectRecord`
-together with native Rietveld analyses and restart state.
+`RietveldProject.save()` writes native format 2 when its monochromatic request,
+built-in providers, numerical controls, and optional checkpoint can be
+represented by the Rust application model. `RietveldProject.load()` translates
+that validated native state back to the public scripting dataclasses, including
+an independently resumable native checkpoint. Fixed X-ray dispersion, neutron
+identities, every built-in sample-physics/background model, constraints,
+geometry, and native numerical controls round-trip through this path.
 
-These are deliberately separate during migration. The remaining Python API
-delegation can translate its built-in records through explicit migrations;
-the native format itself needs no Python interpreter.
+`phasesmith.persistence.PersistenceBundle` format 12 remains readable and
+writable. The scripting facade deliberately uses it for component radiation,
+Python provider extensions, Python-created checkpoint state, and the
+Python-optimizer-only `max_linearization_elements` option. Format 12 also
+retains parser provenance, source labels, uncertainties, disorder metadata,
+and other scripting metadata outside the native scientific application model.
+Thus existing Python projects remain compatible while desktop projects never
+require a Python interpreter.
 
 ## Cross-interface gate
 

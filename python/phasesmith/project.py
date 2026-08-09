@@ -2,11 +2,15 @@
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass, field, replace
 from pathlib import Path
 
+from ._native_persistence import load_native_rietveld_project
 from .control import CancellationToken
-from .persistence import PersistenceBundle, load_bundle, save_bundle
+from .persistence import PersistenceBundle, PersistenceError, load_bundle, save_bundle
+from .radiation import MonochromaticRadiation, RadiationProbe
+from .refinement import rietveld as native_rietveld
 from .refinement.rietveld import (
     RietveldCalculationResult,
     RietveldCheckpoint,
@@ -166,6 +170,46 @@ class RietveldProject:
     def save(self, path: str | Path, *, overwrite: bool = False) -> Path:
         """Persist the complete runnable project without pickle."""
 
+        if (
+            isinstance(self.input.experiment.radiation, MonochromaticRadiation)
+            and (self.checkpoint is None or self.checkpoint._native is not None)
+            and self.options.max_linearization_elements
+            == RietveldOptions().max_linearization_elements
+        ):
+            try:
+                request = native_rietveld._native_request(self.input, self.options)
+            except TypeError:
+                pass
+            else:
+                destination = Path(path).resolve()
+                if destination.exists() and not destination.is_dir():
+                    raise FileExistsError(
+                        f"persistence path exists and is not a directory: {destination}"
+                    )
+                if destination.exists() and not overwrite:
+                    raise FileExistsError(f"persistence directory already exists: {destination}")
+                probe = (
+                    "xray"
+                    if self.input.experiment.radiation.probe is RadiationProbe.X_RAY
+                    else "neutron"
+                )
+                try:
+                    saved = request.save_project(
+                        str(destination),
+                        "python-project",
+                        0,
+                        "Rietveld project",
+                        "histogram",
+                        "Observed pattern",
+                        probe,
+                        None if self.checkpoint is None else self.checkpoint._native,
+                        overwrite,
+                    )
+                except ValueError as error:
+                    raise PersistenceError(
+                        f"cannot save native Rietveld project: {error}"
+                    ) from error
+                return Path(saved)
         return save_bundle(
             path,
             PersistenceBundle(
@@ -187,6 +231,17 @@ class RietveldProject:
     def load(cls, path: str | Path) -> RietveldProject:
         """Load a runnable project and optional continuation checkpoint."""
 
+        source = Path(path).resolve()
+        try:
+            manifest = json.loads((source / "manifest.json").read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            manifest = None
+        if isinstance(manifest, dict) and "project" in manifest:
+            try:
+                input_data, options, checkpoint = load_native_rietveld_project(source)
+            except (KeyError, OSError, TypeError, ValueError) as error:
+                raise PersistenceError(f"cannot load native Rietveld project: {error}") from error
+            return cls(input_data, options, checkpoint)
         bundle = load_bundle(path)
         return cls(
             bundle.to_rietveld_input(),

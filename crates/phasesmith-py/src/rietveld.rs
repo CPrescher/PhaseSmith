@@ -17,7 +17,7 @@ use phasesmith_workflows::{
     AffineConstraint, AmorphousBackground, AmorphousPeak, BackgroundModel, CancellationToken,
     ChebyshevBackground, CompositeBackground, Constraint, FixedConstraint, LatticeBounds,
     LatticeParameterization, LatticeReflectionDomain, LinearConstraint, LinearTerm, ParameterKey,
-    PointBackground, PolynomialBackground, RefinementLimits, RietveldAnalysis,
+    ParameterSet, PointBackground, PolynomialBackground, RefinementLimits, RietveldAnalysis,
     RietveldCalculationOptions, RietveldCovarianceOptions, RietveldGeneralCheckpoint,
     RietveldGeneralRefinementResult, RietveldInput, RietveldInstrumentParameter,
     RietveldParameterSelection, RietveldPhase, RietveldProjectState, RietveldRefinementOptions,
@@ -35,6 +35,26 @@ use super::{
 type PyParameterRecord = (String, String, String, f64, String, f64, f64, f64, bool);
 type PyKeyRecord = (String, String, String);
 type PyCorrelationRecord = (PyKeyRecord, PyKeyRecord, f64);
+
+fn parameter_records(parameters: &ParameterSet) -> Vec<PyParameterRecord> {
+    parameters
+        .specs()
+        .iter()
+        .map(|spec| {
+            (
+                spec.key().module().to_owned(),
+                spec.key().owner_id().to_owned(),
+                spec.key().name().to_owned(),
+                spec.value(),
+                spec.unit().to_owned(),
+                spec.bounds().lower(),
+                spec.bounds().upper(),
+                spec.scale(),
+                spec.refine(),
+            )
+        })
+        .collect()
+}
 
 fn value_error(error: impl std::fmt::Display) -> PyErr {
     PyValueError::new_err(error.to_string())
@@ -694,6 +714,13 @@ pub(super) struct NativeRietveldCheckpoint {
     checkpoint: RietveldGeneralCheckpoint,
 }
 
+#[pymethods]
+impl NativeRietveldCheckpoint {
+    fn parameter_records(&self) -> Vec<PyParameterRecord> {
+        parameter_records(&self.checkpoint.parameters)
+    }
+}
+
 /// Validated native project loaded without Python-side scientific reconstruction.
 #[pyclass(name = "_StoredRietveldProject")]
 pub(super) struct NativeStoredRietveldProject {
@@ -833,24 +860,7 @@ impl NativeRietveldResult {
     }
 
     fn parameter_records(&self) -> Vec<PyParameterRecord> {
-        self.result
-            .parameters
-            .specs()
-            .iter()
-            .map(|spec| {
-                (
-                    spec.key().module().to_owned(),
-                    spec.key().owner_id().to_owned(),
-                    spec.key().name().to_owned(),
-                    spec.value(),
-                    spec.unit().to_owned(),
-                    spec.bounds().lower(),
-                    spec.bounds().upper(),
-                    spec.scale(),
-                    spec.refine(),
-                )
-            })
-            .collect()
+        parameter_records(&self.result.parameters)
     }
 
     fn history<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyList>> {

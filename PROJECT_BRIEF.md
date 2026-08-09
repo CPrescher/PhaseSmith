@@ -693,6 +693,13 @@ Rust desktop runtime.
 The public cancellation token shares the native solver's thread-safe state, so
 the stateful Python project facade keeps cooperative `stop()` while using the
 detached Rust refinement path.
+The same facade now delegates representable built-in monochromatic project
+persistence to native format 2 and reconstructs its scripting dataclasses and
+restart handle from Rust-validated state. Python-only providers, component
+radiation, non-native checkpoints, scripting optimizer controls, and rich
+parser provenance continue to use the compatible format-12 scripting codec.
+This completes the public Python refinement/persistence migration without
+making Python part of the desktop runtime.
 
 The remaining parity boundary is joint refinement. PhaseSmith currently owns
 one pattern/experiment per `RietveldInput`; GSAS-II shares one PbSO4 structure

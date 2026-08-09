@@ -16,6 +16,9 @@ from phasesmith.refinement import (
     AmorphousPeak,
     ChebyshevBackground,
     CheckpointCallbackError,
+    CompositeBackground,
+    FixedConstraint,
+    LinearConstraint,
     PointBackground,
     PolynomialBackground,
 )
@@ -1173,8 +1176,11 @@ def test_project_facade_refines_stops_reports_and_resumes(tmp_path) -> None:
     assert "weight" in csv_lines[0].split(",")
 
     saved = project.save(tmp_path / "project")
+    manifest = json.loads((saved / "manifest.json").read_text())
+    assert manifest["format_version"] == 2
     restored = phasesmith.RietveldProject.load(saved)
     assert restored.checkpoint is not None and project.checkpoint is not None
+    assert restored.checkpoint._native is not None
     assert restored.checkpoint.parameters == project.checkpoint.parameters
     assert restored.checkpoint.history == project.checkpoint.history
     np.testing.assert_allclose(restored.calculate().y, result.calculation.y)
@@ -1188,6 +1194,166 @@ def test_project_facade_refines_stops_reports_and_resumes(tmp_path) -> None:
     cancelled = stopped.refine(logger=stop_on_start)
     assert cancelled.termination_reason is structural_refinement.TerminationReason.CANCELLED
     assert cancelled.history == ()
+
+
+def test_python_project_native_format_round_trips_complete_builtin_models(tmp_path) -> None:
+    base = request_from_cif(selection(lattice=True))
+    selected = selection(
+        phase_scale=True,
+        lattice=True,
+        sample_physics=True,
+        background=True,
+    )
+    cell = base.phases[0].structure.cell
+    metric = phasesmith.ReciprocalMetric(cell.geometry().reciprocal_metric)
+    physics = phasesmith.CompositePhysicsProvider(
+        (
+            phasesmith.IsotropicSizeBroadening(80.0),
+            phasesmith.IsotropicMicrostrainBroadening(5.0e-4),
+            phasesmith.MarchDollasePreferredOrientation(0.9, (1.0, 1.0, 0.0), metric),
+        )
+    )
+    sites = tuple(
+        replace(site, type_symbol="Siva") if site.element_symbol == "Si" else site
+        for site in base.phases[0].structure.sites
+    )
+    structure = replace(base.phases[0].structure, sites=sites)
+    scattering = phasesmith.XrayFixedDispersion({"Si": 0.21 + 0.25j, "O": 0.05 + 0.03j})
+    phase = replace(
+        base.phases[0],
+        structure=structure,
+        scattering=scattering,
+        physics=physics,
+    )
+    background = CompositeBackground(
+        "combined",
+        (
+            PolynomialBackground("polynomial", (0.2, -0.01)),
+            PointBackground("points", (15.0, 100.0), (0.0, 0.1)),
+        ),
+    )
+    parameters = structural_refinement.build_parameter_set(
+        (phase,),
+        base.lattice_domains,
+        selected,
+        experiment=base.experiment,
+        background=background,
+    )
+    first, second, third = parameters.specs[:3]
+    constraints = (
+        FixedConstraint(first.key, first.value),
+        AffineConstraint(second.key, first.key, 1.0, second.value - first.value),
+        LinearConstraint(
+            third.key,
+            ((first.key, 0.5), (second.key, 0.25)),
+            third.value - 0.5 * first.value - 0.25 * second.value,
+        ),
+    )
+    request = structural_refinement.RietveldInput(
+        base.pattern,
+        base.experiment,
+        (phase,),
+        base.lattice_domains,
+        parameters,
+        constraints,
+        selected,
+        background,
+    )
+    options = structural_refinement.RietveldOptions(
+        estimate_covariance=False,
+        execution=phasesmith.ExecutionPolicy(threads=1, minimum_parallel_tasks=3),
+    )
+
+    saved = phasesmith.RietveldProject(request, options).save(tmp_path / "complete-native")
+    restored = phasesmith.RietveldProject.load(saved)
+
+    assert isinstance(restored.input.background, CompositeBackground)
+    assert isinstance(restored.input.phases[0].physics, phasesmith.CompositePhysicsProvider)
+    assert restored.input.phases[0].scattering == scattering
+    assert restored.input.phases[0].structure.sites[0].type_symbol == "Siva"
+    assert restored.input.phases[0].structure.sites[0].element_symbol == "Si"
+    assert restored.input.lattice_domains[0] is not None
+    assert restored.input.constraints == constraints
+    assert restored.options == options
+    expected_y = phasesmith.RietveldProject(request).calculate().y
+    np.testing.assert_allclose(restored.calculate().y, expected_y)
+
+
+def test_python_project_native_format_round_trips_neutron_geometry(tmp_path) -> None:
+    base = request_from_cif(selection())
+    instrument = base.experiment.instrument
+    experiment = phasesmith.ConstantWavelengthExperiment.neutron(
+        instrument,
+        geometry=phasesmith.DebyeScherrerGeometry(650.0, 1578.8, 49.9),
+        axial_geometry=phasesmith.FcjGeometry(0.01, 0.02),
+    )
+    phase = replace(
+        base.phases[0],
+        scattering=phasesmith.NeutronNuclear(),
+        intensity_correction=phasesmith.ConstantWavelengthNeutronLorentz(
+            instrument.wavelength_angstrom
+        ),
+    )
+    request = replace(
+        base,
+        experiment=experiment,
+        phases=(phase,),
+        parameters=structural_refinement.build_parameter_set(
+            (phase,), base.lattice_domains, base.selection, experiment=experiment
+        ),
+    )
+
+    saved = phasesmith.RietveldProject(request).save(tmp_path / "neutron-native")
+    restored = phasesmith.RietveldProject.load(saved)
+
+    assert restored.input.experiment == experiment
+    assert isinstance(restored.input.phases[0].scattering, phasesmith.NeutronNuclear)
+    assert isinstance(
+        restored.input.phases[0].intensity_correction,
+        phasesmith.ConstantWavelengthNeutronLorentz,
+    )
+    np.testing.assert_allclose(
+        restored.calculate().y, phasesmith.RietveldProject(request).calculate().y
+    )
+
+
+def test_python_project_rejects_corrupt_native_format(tmp_path) -> None:
+    project = phasesmith.RietveldProject(request_from_cif(selection()))
+    saved = project.save(tmp_path / "corrupt-native")
+    manifest_path = saved / "manifest.json"
+    manifest = json.loads(manifest_path.read_text())
+    manifest["rietveld_analyses"][0]["histogram_id"] = "missing"
+    manifest_path.write_text(json.dumps(manifest))
+
+    with pytest.raises(phasesmith.persistence.PersistenceError, match="cannot load native"):
+        phasesmith.RietveldProject.load(saved)
+
+
+def test_python_project_keeps_legacy_format_for_non_native_checkpoint(tmp_path) -> None:
+    request = request_from_cif(selection(phase_scale=True))
+    project = phasesmith.RietveldProject(request)
+    project.refine()
+    assert project.checkpoint is not None
+    project.checkpoint = replace(project.checkpoint, _native=None)
+
+    saved = project.save(tmp_path / "legacy-project")
+    manifest = json.loads((saved / "manifest.json").read_text())
+    assert manifest["format_version"] == phasesmith.persistence.FORMAT_VERSION
+    restored = phasesmith.RietveldProject.load(saved)
+    assert restored.checkpoint is not None
+    assert restored.checkpoint.parameters == project.checkpoint.parameters
+
+
+def test_python_project_keeps_legacy_format_for_python_only_options(tmp_path) -> None:
+    request = request_from_cif(selection())
+    options = structural_refinement.RietveldOptions(max_linearization_elements=1234)
+
+    saved = phasesmith.RietveldProject(request, options).save(tmp_path / "legacy-options")
+    manifest = json.loads((saved / "manifest.json").read_text())
+    restored = phasesmith.RietveldProject.load(saved)
+
+    assert manifest["format_version"] == phasesmith.persistence.FORMAT_VERSION
+    assert restored.options == options
 
 
 def test_native_adapter_saves_validates_and_restores_restart_handle(tmp_path) -> None:

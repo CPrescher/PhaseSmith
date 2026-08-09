@@ -3,9 +3,10 @@
 This page documents the Python scripting checkpoint format. The separate
 [native project format](native-persistence.md) stores the Rust-owned,
 multi-histogram application model and is the persistence boundary intended for
-the Tauri application. It does not require Python. The two formats remain
-distinct until the remaining refinement records have moved into Rust and an
-explicit migration can preserve all format-12 state.
+the Tauri application. It does not require Python. The public
+`RietveldProject` facade uses that format for representable built-in
+monochromatic requests and uses this format for Python-only extensions or
+metadata. Both formats remain readable by the scripting interface.
 
 `phasesmith.persistence` stores public models in a directory containing exactly
 the library-owned `manifest.json` and `arrays.npz` files. JSON contains the
