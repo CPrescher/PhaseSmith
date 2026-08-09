@@ -6,6 +6,10 @@ edition.workspace = true
 rust-version.workspace = true
 authors.workspace = true
 license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+readme.workspace = true
+publish = false
 
 [lib]
 name = "phasesmith_tauri"
@@ -18,8 +22,8 @@ path = "src/main.rs"
 tauri-build = "=2.6.3"
 
 [dependencies]
-phasesmith-desktop = { path = "../../../crates/phasesmith-desktop" }
-phasesmith-persistence = { path = "../../../crates/phasesmith-persistence" }
+phasesmith-desktop = { version = "0.1.0", path = "../../../crates/phasesmith-desktop" }
+phasesmith-persistence = { version = "0.1.0", path = "../../../crates/phasesmith-persistence" }
 serde = { version = "1.0", features = ["derive"] }
 tauri = "=2.11.5"
 

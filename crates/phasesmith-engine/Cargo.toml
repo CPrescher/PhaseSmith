@@ -6,11 +6,14 @@ edition.workspace = true
 rust-version.workspace = true
 authors.workspace = true
 license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+readme.workspace = true
 
 [dependencies]
-phasesmith-core = { path = "../phasesmith-core" }
-phasesmith-crystallography = { path = "../phasesmith-crystallography" }
-phasesmith-execution = { path = "../phasesmith-execution" }
+phasesmith-core = { version = "0.1.0", path = "../phasesmith-core" }
+phasesmith-crystallography = { version = "0.1.0", path = "../phasesmith-crystallography" }
+phasesmith-execution = { version = "0.1.0", path = "../phasesmith-execution" }
 
 [dev-dependencies]
 criterion = "0.7"

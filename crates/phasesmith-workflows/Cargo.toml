@@ -6,18 +6,21 @@ edition.workspace = true
 rust-version.workspace = true
 authors.workspace = true
 license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+readme.workspace = true
 
 [dependencies]
 nalgebra = "0.35"
-phasesmith-core = { path = "../phasesmith-core" }
-phasesmith-crystallography = { path = "../phasesmith-crystallography" }
-phasesmith-engine = { path = "../phasesmith-engine" }
-phasesmith-execution = { path = "../phasesmith-execution" }
-phasesmith-model = { path = "../phasesmith-model" }
+phasesmith-core = { version = "0.1.0", path = "../phasesmith-core" }
+phasesmith-crystallography = { version = "0.1.0", path = "../phasesmith-crystallography" }
+phasesmith-engine = { version = "0.1.0", path = "../phasesmith-engine" }
+phasesmith-execution = { version = "0.1.0", path = "../phasesmith-execution" }
+phasesmith-model = { version = "0.1.0", path = "../phasesmith-model" }
 
 [dev-dependencies]
 criterion = "0.7"
-phasesmith-io = { path = "../phasesmith-io" }
+phasesmith-io = { version = "0.1.0", path = "../phasesmith-io" }
 
 [[bench]]
 name = "backgrounds"

@@ -1,6 +1,6 @@
 [package]
-name = "phasesmith-persistence"
-description = "Canonical native project persistence and reporting for PhaseSmith"
+name = "phasesmith"
+description = "Validated powder-diffraction calculation and refinement library"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -9,18 +9,18 @@ license.workspace = true
 homepage.workspace = true
 repository.workspace = true
 readme.workspace = true
+keywords = ["diffraction", "rietveld", "crystallography", "powder", "science"]
+categories = ["science"]
 
 [dependencies]
-flate2 = { version = "1.1", default-features = false, features = ["rust_backend"] }
 phasesmith-core = { version = "0.1.0", path = "../phasesmith-core" }
+phasesmith-crystallography = { version = "0.1.0", path = "../phasesmith-crystallography" }
 phasesmith-engine = { version = "0.1.0", path = "../phasesmith-engine" }
 phasesmith-execution = { version = "0.1.0", path = "../phasesmith-execution" }
+phasesmith-io = { version = "0.1.0", path = "../phasesmith-io" }
 phasesmith-model = { version = "0.1.0", path = "../phasesmith-model" }
+phasesmith-persistence = { version = "0.1.0", path = "../phasesmith-persistence" }
 phasesmith-workflows = { version = "0.1.0", path = "../phasesmith-workflows" }
-serde = { version = "1.0", features = ["derive"] }
-serde_json = { version = "1.0", features = ["float_roundtrip"] }
-sha2 = "=0.10.9"
-zip = { version = "=5.1.1", default-features = false, features = ["deflate-flate2"] }
 
 [lints]
 workspace = true

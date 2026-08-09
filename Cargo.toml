@@ -1,6 +1,7 @@
 [workspace]
 members = [
   "apps/phasesmith-desktop/src-tauri",
+  "crates/phasesmith-rs",
   "crates/phasesmith-core",
   "crates/phasesmith-crystallography",
   "crates/phasesmith-desktop",
@@ -21,6 +22,9 @@ edition = "2024"
 rust-version = "1.85"
 authors = ["PhaseSmith contributors"]
 license = "MIT"
+homepage = "https://github.com/CPrescher/PhaseSmith"
+repository = "https://github.com/CPrescher/PhaseSmith"
+readme = "README.md"
 
 [workspace.lints.rust]
 unsafe_code = "forbid"
