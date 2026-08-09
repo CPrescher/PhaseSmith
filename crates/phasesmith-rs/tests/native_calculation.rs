@@ -1,17 +1,15 @@
-//! Rust-only integration coverage for the owned native calculation boundary.
+//! Public-facade integration coverage for the owned native calculation boundary.
 
-use phasesmith_engine::crystallography::{
+use phasesmith::core::{ConstantWavelengthInstrument, OwnedCwContributions, SupportPolicy};
+use phasesmith::crystallography::{
     IntegratedIntensityCorrectionModel, Rational, SpaceGroup, SymmetryOperation, UnitCell,
 };
-use phasesmith_engine::profile::{
-    ConstantWavelengthInstrument, OwnedCwContributions, SupportPolicy,
-};
-use phasesmith_engine::{
+use phasesmith::engine::{
     BuiltInScatteringModel, MonochromaticPositionCorrection, PreparedStructuralModel,
     PreparedStructuralMultiphase, PreparedStructuralPhase, PreparedStructuralSpectrum,
     StructuralCalculationRequest, StructuralModelInput, StructuralPhaseDefinition,
 };
-use phasesmith_execution::ExecutionPolicy;
+use phasesmith::execution::ExecutionPolicy;
 
 fn phase_definition(scale: f64) -> StructuralPhaseDefinition {
     StructuralPhaseDefinition {
