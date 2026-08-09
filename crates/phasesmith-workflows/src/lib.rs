@@ -13,6 +13,7 @@ mod rietveld;
 mod rietveld_general_objective;
 mod rietveld_general_parameters;
 mod rietveld_general_solver;
+mod rietveld_joint;
 mod rietveld_objective;
 mod rietveld_parameters;
 mod rietveld_project;
@@ -60,6 +61,10 @@ pub use rietveld_general_solver::{
     RietveldCovarianceMatrix, RietveldCovarianceOptions, RietveldGeneralCheckpoint,
     RietveldGeneralRefinementError, RietveldGeneralRefinementResult, RietveldParameterCorrelation,
     refine_general_rietveld, refine_general_rietveld_with_runtime,
+};
+pub use rietveld_joint::{
+    JointRietveldError, JointRietveldGradient, JointRietveldHistogram, JointRietveldLayout,
+    JointRietveldProduct, PreparedJointRietveldObjective,
 };
 pub use rietveld_objective::{PreparedRietveldObjective, RietveldObjectiveError};
 pub use rietveld_parameters::{
