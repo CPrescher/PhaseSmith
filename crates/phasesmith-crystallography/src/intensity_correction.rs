@@ -69,6 +69,26 @@ impl Display for IntegratedIntensityCorrectionError {
 impl Error for IntegratedIntensityCorrectionError {}
 
 impl IntegratedIntensityCorrectionModel {
+    /// Return the same correction family evaluated at another wavelength.
+    #[must_use]
+    pub const fn with_wavelength(self, wavelength_angstrom: f64) -> Self {
+        match self {
+            Self::Neutral => Self::Neutral,
+            Self::BraggBrentanoUnpolarizedLp { .. } => Self::BraggBrentanoUnpolarizedLp {
+                wavelength_angstrom,
+            },
+            Self::BraggBrentanoPolarizedLp { polarization, .. } => Self::BraggBrentanoPolarizedLp {
+                wavelength_angstrom,
+                polarization,
+            },
+            Self::ConstantWavelengthNeutronLorentz { .. } => {
+                Self::ConstantWavelengthNeutronLorentz {
+                    wavelength_angstrom,
+                }
+            }
+        }
+    }
+
     /// Evaluate values and `q²` derivatives together for one reflection batch.
     ///
     /// # Errors

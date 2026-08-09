@@ -154,9 +154,13 @@ impl PreparedStructuralSpectrum {
             .map(|value| value / intensity_sum)
             .collect::<Vec<_>>();
         let mut phases = Vec::with_capacity(wavelengths_angstrom.len());
-        for &weight in &normalized_weights {
+        for (&weight, &wavelength_angstrom) in normalized_weights.iter().zip(&wavelengths_angstrom)
+        {
             let mut component = definition.clone();
             component.scale *= weight;
+            component.correction_model = component
+                .correction_model
+                .with_wavelength(wavelength_angstrom);
             phases.push(
                 PreparedStructuralPhase::new(component, execution.context().clone())
                     .map_err(StructuralSpectrumError::Structural)?,
@@ -720,6 +724,33 @@ mod tests {
                 .map(|(derivative, weight)| derivative * weight)
                 .sum::<f64>();
             assert!((expected - gradient).abs() < 3.0e-10 * expected.abs().max(1.0));
+        }
+    }
+
+    #[test]
+    fn spectrum_rebinds_intensity_correction_to_each_component_wavelength() {
+        let mut definition = definition();
+        definition.correction_model =
+            IntegratedIntensityCorrectionModel::BraggBrentanoPolarizedLp {
+                wavelength_angstrom: 1.0,
+                polarization: 0.73,
+            };
+        let spectrum = PreparedStructuralSpectrum::new(
+            &definition,
+            vec![1.5406, 1.54439],
+            &[1.0, 0.5],
+            ExecutionPolicy::bounded_default().expect("policy"),
+        )
+        .expect("spectrum");
+
+        for (phase, wavelength_angstrom) in spectrum.phases.iter().zip([1.5406_f64, 1.54439_f64]) {
+            assert_eq!(
+                phase.definition().correction_model,
+                IntegratedIntensityCorrectionModel::BraggBrentanoPolarizedLp {
+                    wavelength_angstrom,
+                    polarization: 0.73,
+                }
+            );
         }
     }
 
