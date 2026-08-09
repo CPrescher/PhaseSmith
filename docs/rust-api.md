@@ -1,0 +1,48 @@
+# Rust API
+
+Native applications depend on the `phasesmith` facade crate. This is the
+recommended boundary for a Tauri desktop application or any other Rust
+consumer; Python is not embedded or launched.
+
+```shell
+cargo add phasesmith
+```
+
+For reproducible application builds, commit `Cargo.lock`. Libraries can select
+an explicit compatible range in `Cargo.toml`:
+
+```toml
+[dependencies]
+phasesmith = "0.1"
+```
+
+## Facade modules
+
+| Facade path | Component crate | Responsibility |
+| --- | --- | --- |
+| `phasesmith::core` | `phasesmith-core` | Profile and background kernels. |
+| `phasesmith::crystallography` | `phasesmith-crystallography` | Cells, symmetry, scattering, and structure factors. |
+| `phasesmith::engine` | `phasesmith-engine` | Native structural-calculation composition. |
+| `phasesmith::execution` | `phasesmith-execution` | Bounded deterministic execution policies. |
+| `phasesmith::io` | `phasesmith-io` | Powder and CIF input adapters. |
+| `phasesmith::model` | `phasesmith-model` | Application-neutral project and pattern records. |
+| `phasesmith::workflows` | `phasesmith-workflows` | Le Bail, Rietveld, quantitative, and validation workflows. |
+| `phasesmith::persistence` | `phasesmith-persistence` | Native JSON+NPZ project persistence and reports. |
+
+The complete generated Rust reference is published by docs.rs:
+
+- [`phasesmith` facade documentation](https://docs.rs/phasesmith/0.1.0/phasesmith/)
+- [`phasesmith-workflows`](https://docs.rs/phasesmith-workflows/0.1.0/phasesmith_workflows/)
+- [`phasesmith-persistence`](https://docs.rs/phasesmith-persistence/0.1.0/phasesmith_persistence/)
+
+## Application boundary
+
+A GUI crate should own window state, commands, presentation-specific records,
+and background-task coordination. It should call the typed facade directly and
+persist domain state through `phasesmith::persistence`. This keeps the Python
+scripting interface available to scientists without making CPython a desktop
+sidecar or packaging dependency.
+
+Long-running work should use `phasesmith::execution::ExecutionPolicy` and the
+workflow runtime/cancellation contracts. Do not pass Tauri handles or UI types
+into PhaseSmith domain crates.

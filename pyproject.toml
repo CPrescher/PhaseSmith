@@ -24,6 +24,7 @@ classifiers = [
 
 [project.urls]
 Homepage = "https://github.com/CPrescher/PhaseSmith"
+Documentation = "https://phasesmith.readthedocs.io/"
 Repository = "https://github.com/CPrescher/PhaseSmith.git"
 Issues = "https://github.com/CPrescher/PhaseSmith/issues"
 

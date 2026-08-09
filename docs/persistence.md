@@ -104,16 +104,16 @@ The format is intentionally independent of GSAS-II project files and GUI state.
 Future incompatible schema changes increment `FORMAT_VERSION` and require an
 explicit migration rather than silently guessing old units or fields.
 The machine-readable top-level contract is
-[`schemas/persistence-v12.schema.json`](../schemas/persistence-v12.schema.json).
+[`schemas/persistence-v12.schema.json`](https://github.com/CPrescher/PhaseSmith/blob/main/schemas/persistence-v12.schema.json).
 Previous formats remain documented by
-[`schemas/persistence-v11.schema.json`](../schemas/persistence-v11.schema.json),
-[`schemas/persistence-v10.schema.json`](../schemas/persistence-v10.schema.json),
-[`schemas/persistence-v9.schema.json`](../schemas/persistence-v9.schema.json),
-[`schemas/persistence-v8.schema.json`](../schemas/persistence-v8.schema.json),
-[`schemas/persistence-v7.schema.json`](../schemas/persistence-v7.schema.json),
-[`schemas/persistence-v6.schema.json`](../schemas/persistence-v6.schema.json),
-[`schemas/persistence-v5.schema.json`](../schemas/persistence-v5.schema.json),
-[`schemas/persistence-v4.schema.json`](../schemas/persistence-v4.schema.json),
-[`schemas/persistence-v3.schema.json`](../schemas/persistence-v3.schema.json),
-[`schemas/persistence-v2.schema.json`](../schemas/persistence-v2.schema.json) and
-[`schemas/persistence-v1.schema.json`](../schemas/persistence-v1.schema.json).
+[`schemas/persistence-v11.schema.json`](https://github.com/CPrescher/PhaseSmith/blob/main/schemas/persistence-v11.schema.json),
+[`schemas/persistence-v10.schema.json`](https://github.com/CPrescher/PhaseSmith/blob/main/schemas/persistence-v10.schema.json),
+[`schemas/persistence-v9.schema.json`](https://github.com/CPrescher/PhaseSmith/blob/main/schemas/persistence-v9.schema.json),
+[`schemas/persistence-v8.schema.json`](https://github.com/CPrescher/PhaseSmith/blob/main/schemas/persistence-v8.schema.json),
+[`schemas/persistence-v7.schema.json`](https://github.com/CPrescher/PhaseSmith/blob/main/schemas/persistence-v7.schema.json),
+[`schemas/persistence-v6.schema.json`](https://github.com/CPrescher/PhaseSmith/blob/main/schemas/persistence-v6.schema.json),
+[`schemas/persistence-v5.schema.json`](https://github.com/CPrescher/PhaseSmith/blob/main/schemas/persistence-v5.schema.json),
+[`schemas/persistence-v4.schema.json`](https://github.com/CPrescher/PhaseSmith/blob/main/schemas/persistence-v4.schema.json),
+[`schemas/persistence-v3.schema.json`](https://github.com/CPrescher/PhaseSmith/blob/main/schemas/persistence-v3.schema.json),
+[`schemas/persistence-v2.schema.json`](https://github.com/CPrescher/PhaseSmith/blob/main/schemas/persistence-v2.schema.json) and
+[`schemas/persistence-v1.schema.json`](https://github.com/CPrescher/PhaseSmith/blob/main/schemas/persistence-v1.schema.json).

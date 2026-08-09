@@ -1,0 +1,95 @@
+# Python API map
+
+PhaseSmith exposes a typed, array-oriented scripting API. Top-level imports are
+convenient for notebooks and short scripts; module-qualified imports make
+ownership clearer in applications and reusable packages.
+
+```python
+import phasesmith
+from phasesmith.instrument import ConstantWavelengthInstrument
+from phasesmith.refinement.lebail import LeBailInput, LeBailOptions, refine
+```
+
+The package ships a `py.typed` marker. Editors and type checkers can therefore
+use the annotations included in the installed distribution.
+
+## Data import and domain models
+
+| Module | Main public entry points | Purpose |
+| --- | --- | --- |
+| `phasesmith.io.powder` | `read_powder_data`, `PowderData`, `PowderReadLimits` | Bounded native readers for text and GSAS powder formats. |
+| `phasesmith.io.cif` | `read_cif`, `CifReadResult`, `CifReadLimits` | Native CIF ingestion and explicit backend selection. |
+| `phasesmith.io.space_groups` | `space_group_by_number`, `space_group_by_symbol` | Pure-Rust space-group lookup. |
+| `phasesmith.pattern` | `PowderPattern`, calculation result types | Observed data, masks, backgrounds, and calculated results. |
+| `phasesmith.structure` | `CrystalStructure`, `AtomSite`, `AnisotropicDisplacement` | Parser-independent structural records. |
+| `phasesmith.phase` | `Phase`, `RietveldPhase`, reflection batch types | Phase metadata and reflection geometry. |
+| `phasesmith.project` | `RietveldProject` | Multi-histogram project-level orchestration. |
+
+See [powder-file and CIF import](cif-import.md),
+[symmetry and reflection generation](symmetry-reflections.md), and the
+[crystallography foundation](crystallography-foundation.md).
+
+## Instruments, radiation, and profiles
+
+| Module | Main public entry points | Purpose |
+| --- | --- | --- |
+| `phasesmith.instrument` | `ConstantWavelengthInstrument`, `FcjGeometry`, `TofInstrument` | Instrument response and geometry. |
+| `phasesmith.radiation` | `MonochromaticRadiation`, `WavelengthComponents`, experiment and geometry types | Explicit source and specimen geometry. |
+| `phasesmith` / `phasesmith._api` | `profile`, `accumulate`, TCH variants | Low-level symmetric pseudo-Voigt kernels. |
+| `phasesmith.cw` | `accumulate_cw`, `accumulate_cw_components`, `cw_profile_parameters` | Constant-wavelength U/V/W/X/Y accumulation. |
+| `phasesmith.fcj` | `profile_fcj`, `accumulate_cw_fcj` | Finger–Cox–Jephcoat axial asymmetry. |
+| `phasesmith.tof` | `profile_tof`, `accumulate_tof`, `tof_profile_parameters` | Neutron time-of-flight profiles. |
+
+Units, parameter ordering, support rules, and derivative conventions are
+defined in [equations and units](equations.md) and the model-specific pages in
+the navigation.
+
+## Crystallography and scattering
+
+| Module | Main public entry points | Purpose |
+| --- | --- | --- |
+| `phasesmith.crystallography` | `UnitCell`, structure-factor values/JVP/VJP functions | Cell mathematics and structural intensities. |
+| `phasesmith.symmetry` | `SpaceGroup`, `SymmetryOperation`, `PreparedReflectionGenerator` | Exact symmetry, absences, families, and bounded generation. |
+| `phasesmith.scattering` | `XrayNonResonant`, `XrayFixedDispersion`, `NeutronNuclear` | Built-in prepared scattering models. |
+| `phasesmith.intensity_corrections` | Neutral, Bragg–Brentano, and neutron correction models | Explicit integrated-intensity corrections. |
+| `phasesmith.sample` | Size, microstrain, and March–Dollase models | Composable sample-physics contributions. |
+| `phasesmith.extensions` | Provider protocols and descriptors | Versioned third-party physics boundary. |
+
+## Calculations and execution
+
+| Module | Main public entry points | Purpose |
+| --- | --- | --- |
+| `phasesmith.calculation` | `calculate_pattern`, `calculate_cw_pattern`, `PreparedPattern` | Reflection-list profile calculation. |
+| `phasesmith.structural_calculation` | `calculate_structural_pattern`, `PreparedStructuralPattern` | Structure-to-pattern calculation with fused derivatives. |
+| `phasesmith.execution` | `ExecutionPolicy` | Bounded serial or fixed-thread execution. |
+| `phasesmith.control` | `CancellationToken`, `ProgressEvent`, `OperationCancelled` | Cancellation and progress callbacks. |
+| `phasesmith.results` | `AccumulationResult`, `PatternDerivatives`, `SupportJacobian` | Shared numerical result containers. |
+
+## Refinement and reporting
+
+| Module | Main public entry points | Purpose |
+| --- | --- | --- |
+| `phasesmith.refinement` | Parameters, constraints, residuals, JVP/VJP helpers | Shared refinement infrastructure. |
+| `phasesmith.refinement.lebail` | `LeBailInput`, `LeBailOptions`, `refine` | Intensity extraction and optional profile/lattice updates. |
+| `phasesmith.refinement.rietveld` | Rietveld inputs, options, recipes, and results | Structural refinement orchestration. |
+| `phasesmith.refinement.runtime` | Limits, events, logs, checkpoints | Bounded execution and recovery. |
+| `phasesmith.quantitative` | `quantitative_phase_analysis`, `weight_fractions_from_scale` | Hill–Howard phase fractions. |
+| `phasesmith.reporting` | JSON and CSV Rietveld writers | Stable external reports. |
+| `phasesmith.persistence` | `save_bundle`, `load_bundle`, `PersistenceBundle` | Versioned Python workflow persistence. |
+
+## Inspect exact signatures
+
+The installed release is the final source of truth for callable signatures and
+docstrings:
+
+```python
+import inspect
+import phasesmith
+
+print(inspect.signature(phasesmith.accumulate_cw))
+help(phasesmith.refinement.lebail.refine)
+```
+
+The [public Python architecture](public-api.md) defines compatibility and data
+ownership in more detail. Source links in the page header lead to the exact
+implementation for the selected documentation version.

@@ -1,0 +1,93 @@
+site_name: PhaseSmith
+site_url: https://phasesmith.readthedocs.io/
+site_description: Validated powder-diffraction calculation and refinement in Rust and Python
+repo_url: https://github.com/CPrescher/PhaseSmith
+repo_name: CPrescher/PhaseSmith
+edit_uri: edit/main/docs/
+copyright: Copyright &copy; PhaseSmith contributors
+
+theme:
+  name: material
+  features:
+    - content.code.copy
+    - navigation.footer
+    - navigation.indexes
+    - navigation.sections
+    - navigation.top
+    - search.highlight
+    - search.suggest
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: deep purple
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: deep purple
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
+  - tables
+
+plugins:
+  - search
+
+nav:
+  - Home: index.md
+  - Getting started: getting-started.md
+  - Workflows:
+      - Import powder data and CIFs: cif-import.md
+      - Background subtraction: background-subtraction.md
+      - Le Bail extraction: lebail.md
+      - Rietveld refinement: rietveld.md
+      - Refinement infrastructure: refinement.md
+      - Runtime and recovery: refinement-runtime.md
+      - Quantitative phase analysis: quantitative-phase-analysis.md
+      - Python persistence: persistence.md
+      - Native persistence: native-persistence.md
+  - Models and conventions:
+      - Equations and units: equations.md
+      - TCH profile: tch-profile.md
+      - Constant-wavelength broadening: cw-profile.md
+      - FCJ asymmetry: fcj-profile.md
+      - Wavelength components: wavelength-components.md
+      - Structural wavelength components: structural-wavelength-components.md
+      - Neutron constant wavelength: neutron-cw.md
+      - Neutron time of flight: tof-profile.md
+      - Multi-phase composition: multiphase.md
+      - Sample physics: sample-physics.md
+  - Crystallography:
+      - Foundation: crystallography-foundation.md
+      - Symmetry and reflections: symmetry-reflections.md
+      - Scattering models: scattering-models.md
+      - Structural intensities: structural-intensities.md
+      - Lattice refinement: lattice-refinement.md
+  - API reference:
+      - Python API map: api-reference.md
+      - Python architecture: public-api.md
+      - Rust API: rust-api.md
+      - Dioptas integration: dioptas-integration.md
+  - Validation and development:
+      - GSAS-II comparisons: gsasii-performance.md
+      - Documentation development: documentation.md
+      - Release process: releasing.md
+
+not_in_nav: |
+  crystallography-plan.md
+  practical-workflow-plan.md
+  real-data-validation-plan.md

@@ -1,9 +1,14 @@
 # PhaseSmith documentation
 
+PhaseSmith provides validated powder-diffraction calculations and refinement
+through a native Rust library and a typed Python/NumPy scripting interface.
+Python users install the same Rust numerical core that native applications can
+consume directly—no Python process or sidecar is required for a Rust GUI.
+
 ## Start here
 
-1. [README examples](../README.md) — construct typed patterns,
-   instruments, phases, and calculations.
+1. [Getting started](getting-started.md) — install PhaseSmith and run a first
+   calculation.
 2. [Powder-file and CIF import](cif-import.md) — turn measured arrays and a CIF
    into crystallographic inputs.
 3. [Background subtraction](background-subtraction.md) — estimate or supply the
@@ -15,8 +20,8 @@
 6. [Persistence](persistence.md) — save and restore Python workflow state.
 7. [Native project persistence](native-persistence.md) — use the Rust-only,
    multi-histogram JSON+NPZ project and reporting boundary.
-8. [Releasing](releasing.md) — build and publish synchronized crates.io, PyPI,
-   and GitHub releases.
+8. [Python API map](api-reference.md) — find public types and functions by
+   task.
 
 For shared refinement controls, cancellation, logs, and safe checkpoints, see
 [refinement](refinement.md) and [refinement runtime](refinement-runtime.md).
@@ -39,6 +44,14 @@ For shared refinement controls, cancellation, logs, and safe checkpoints, see
   [wavelength components](wavelength-components.md)
 - [Neutron CW](neutron-cw.md) and [neutron TOF](tof-profile.md)
 - [Public Python architecture](public-api.md)
+- [Native Rust API and GUI integration](rust-api.md)
+
+## Packages and source
+
+- [Python package on PyPI](https://pypi.org/project/phasesmith/)
+- [Rust facade on crates.io](https://crates.io/crates/phasesmith)
+- [Rust API documentation on docs.rs](https://docs.rs/phasesmith/)
+- [Source and releases on GitHub](https://github.com/CPrescher/PhaseSmith)
 
 Planning and historical implementation notes describe design provenance, not
 the current user contract. The documents above and `PROJECT_BRIEF.md` are the

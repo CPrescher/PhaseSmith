@@ -66,7 +66,8 @@ crates.io job remains safely skipped while the variable is absent.
    ```
 
 8. Watch every Release workflow job. Verify the GitHub Release, PyPI files,
-   crates.io versions, checksums, and installation from clean environments.
+   crates.io versions, checksums, installation from clean environments, and
+   the new Read the Docs version under `stable`.
 9. After the successful 0.1.0 workflow, create the repository variable
    `CRATES_IO_TRUSTED_PUBLISHING=true`. Later tags will then publish crates.io
    through OIDC as part of the workflow.

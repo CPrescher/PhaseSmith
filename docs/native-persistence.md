@@ -14,7 +14,7 @@ A native project is a directory with two library-owned files:
   `uint64`, and boolean NPY members.
 
 The complete manifest contract is
-[`schemas/native-project-v2.schema.json`](../schemas/native-project-v2.schema.json).
+[`schemas/native-project-v2.schema.json`](https://github.com/CPrescher/PhaseSmith/blob/main/schemas/native-project-v2.schema.json).
 Version 1 remains readable and migrates to a project with no Rietveld analyses.
 Internal kernel enums are not serialized directly. Every persisted record has
 an explicit conversion to and from the validated `phasesmith-model` domain.
