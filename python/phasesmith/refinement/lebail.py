@@ -1,4 +1,8 @@
-"""Deterministic first-class Le Bail integrated-intensity extraction."""
+"""Deterministic first-class Le Bail integrated-intensity extraction.
+
+Le Bail redistribution and refinement equations:
+https://phasesmith.readthedocs.io/en/latest/mathematics/refinement/
+"""
 
 from __future__ import annotations
 

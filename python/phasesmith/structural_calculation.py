@@ -1,4 +1,8 @@
-"""Scriptable structural-pattern calculation for one Rietveld phase."""
+"""Scriptable structural-pattern calculation for one Rietveld phase.
+
+Pattern-composition and derivative equations:
+https://phasesmith.readthedocs.io/en/latest/mathematics/pattern-composition/
+"""
 
 from __future__ import annotations
 

@@ -1,4 +1,8 @@
-"""Typed analytical background models for refinement workflows."""
+"""Typed analytical background models for refinement workflows.
+
+Background model equations:
+https://phasesmith.readthedocs.io/en/latest/mathematics/backgrounds/
+"""
 
 from __future__ import annotations
 

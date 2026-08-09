@@ -1,8 +1,11 @@
 """Typed crystallographic models and native P1 numerical interfaces.
 
 This module owns no file parsing and performs no Python loop over atoms or
-reflections in production calculation. CIF import is added through a separate
-adapter in a later implementation unit.
+reflections in production calculation. CIF import remains in the separate
+``phasesmith.io.cif`` adapter.
+
+Cell, scattering, structure-factor, and derivative equations:
+https://phasesmith.readthedocs.io/en/latest/mathematics/crystallography/
 """
 
 from __future__ import annotations

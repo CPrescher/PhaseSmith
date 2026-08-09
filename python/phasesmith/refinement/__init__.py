@@ -1,4 +1,8 @@
-"""Shared refinement infrastructure and method-specific submodules."""
+"""Shared refinement infrastructure and method-specific submodules.
+
+Residual, constraint, solver, covariance, and QPA equations:
+https://phasesmith.readthedocs.io/en/latest/mathematics/refinement/
+"""
 
 from . import rietveld
 from .background import (

@@ -13,6 +13,23 @@ from phasesmith.refinement.lebail import LeBailInput, LeBailOptions, refine
 The package ships a `py.typed` marker. Editors and type checkers can therefore
 use the annotations included in the installed distribution.
 
+## Mathematical contract
+
+The Python API and native Rust API expose the same production mathematical
+models. The complete, shared reference collects the equations, units,
+normalizations, finite-support rules, and analytical derivative chains:
+
+| Python API area | Mathematical reference |
+| --- | --- |
+| `phasesmith`, `phasesmith.cw`, `phasesmith.fcj`, `phasesmith.tof` | [Peak profiles](mathematics/peak-profiles.md) |
+| `phasesmith.crystallography`, `phasesmith.symmetry`, `phasesmith.scattering` | [Crystallography and scattering](mathematics/crystallography.md) |
+| `phasesmith.calculation`, `phasesmith.structural_calculation`, `phasesmith.sample` | [Pattern composition](mathematics/pattern-composition.md) |
+| `phasesmith.background`, `phasesmith.refinement.background` | [Backgrounds](mathematics/backgrounds.md) |
+| `phasesmith.refinement`, `phasesmith.quantitative` | [Refinement and quantitative analysis](mathematics/refinement.md) |
+
+Python docstrings link to these pages instead of copying long derivations that
+could diverge from the native implementation.
+
 ## Data import and domain models
 
 | Module | Main public entry points | Purpose |

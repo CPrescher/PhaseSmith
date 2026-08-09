@@ -1,4 +1,8 @@
-"""Public, typed Python API over the native numerical kernel."""
+"""Public, typed Python API over the native numerical kernel.
+
+Profile equations and derivative conventions:
+https://phasesmith.readthedocs.io/en/latest/mathematics/peak-profiles/
+"""
 
 from __future__ import annotations
 

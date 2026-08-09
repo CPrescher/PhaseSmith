@@ -1,4 +1,8 @@
-"""Fast, validated powder-diffraction profile calculations."""
+"""Fast, validated powder-diffraction profile calculations.
+
+The equations shared by the Python and Rust APIs are documented at
+https://phasesmith.readthedocs.io/en/latest/mathematics/.
+"""
 
 from importlib.metadata import PackageNotFoundError, version
 

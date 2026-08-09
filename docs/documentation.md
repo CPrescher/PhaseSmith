@@ -10,6 +10,7 @@ the native extension and cannot accidentally import development code.
 python -m venv .venv-docs
 source .venv-docs/bin/activate
 python -m pip install -r docs/requirements.txt
+python scripts/sync_math_docs.py --check
 mkdocs build --strict
 ```
 
@@ -22,6 +23,23 @@ mkdocs serve
 The generated `site/` directory is disposable and ignored by Git. CI uses the
 same strict build as Read the Docs, so unresolved internal links and invalid
 configuration fail before merge.
+
+## Shared mathematical reference
+
+The canonical equations live in
+`crates/phasesmith-rs/src/guide/mathematics/` so they ship with the facade crate
+and render on docs.rs. Committed pages under `docs/mathematics/` are generated
+from those sources for the Python-facing Read the Docs site:
+
+```shell
+python scripts/sync_math_docs.py
+python scripts/sync_math_docs.py --check
+```
+
+The generator changes rustdoc-only links into portable Rust owner names, adds
+the matching Python modules, and links both API references. Edit the canonical
+Rust Markdown and regenerate; do not edit the generated pages directly. CI
+rejects stale generated copies before building MkDocs.
 
 ## Build the Rust API documentation
 

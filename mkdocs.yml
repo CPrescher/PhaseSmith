@@ -61,6 +61,13 @@ nav:
       - Python persistence: persistence.md
       - Native persistence: native-persistence.md
   - Models and conventions:
+      - Mathematical reference:
+          - Overview: mathematics/index.md
+          - Peak profiles: mathematics/peak-profiles.md
+          - Crystallography and scattering: mathematics/crystallography.md
+          - Pattern composition: mathematics/pattern-composition.md
+          - Backgrounds: mathematics/backgrounds.md
+          - Refinement and QPA: mathematics/refinement.md
       - Equations and units: equations.md
       - TCH profile: tch-profile.md
       - Constant-wavelength broadening: cw-profile.md

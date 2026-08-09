@@ -28,6 +28,7 @@ For shared refinement controls, cancellation, logs, and safe checkpoints, see
 
 ## Numerical conventions
 
+- [Complete mathematical reference for Rust and Python](mathematics/index.md)
 - [Equations and units](equations.md)
 - [TCH profile](tch-profile.md), [CW broadening](cw-profile.md), and
   [FCJ asymmetry](fcj-profile.md)

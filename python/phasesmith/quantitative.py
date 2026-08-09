@@ -1,4 +1,8 @@
-"""Quantitative phase analysis from compatible refined phase scales."""
+"""Quantitative phase analysis from compatible refined phase scales.
+
+Hill--Howard quantitative-phase equations:
+https://phasesmith.readthedocs.io/en/latest/mathematics/refinement/#quantitative-phase-analysis
+"""
 
 from __future__ import annotations
 

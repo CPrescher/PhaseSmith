@@ -12,6 +12,9 @@ development versions.
   application-host integration.
 - Expand all published component-crate landing pages and validate rustdoc with
   warnings denied in CI.
+- Publish the same complete mathematical reference in the Python-facing Read
+  the Docs site, link public Python modules to it, and enforce automatic
+  rustdoc/MkDocs synchronization in CI.
 
 ## 0.1.0
 

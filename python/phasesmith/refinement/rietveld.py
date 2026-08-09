@@ -1,4 +1,8 @@
-"""Typed, script-first structural Rietveld refinement orchestration."""
+"""Typed, script-first structural Rietveld refinement orchestration.
+
+Objective, solver, covariance, and quantitative-analysis equations:
+https://phasesmith.readthedocs.io/en/latest/mathematics/refinement/
+"""
 
 from __future__ import annotations
 

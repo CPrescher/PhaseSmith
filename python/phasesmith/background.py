@@ -1,4 +1,8 @@
-"""Model-independent background estimation and subtraction."""
+"""Model-independent background estimation and subtraction.
+
+Background equations and preprocessing conventions:
+https://phasesmith.readthedocs.io/en/latest/mathematics/backgrounds/
+"""
 
 from __future__ import annotations
 
