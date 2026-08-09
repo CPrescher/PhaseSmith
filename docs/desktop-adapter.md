@@ -26,6 +26,14 @@ fully validated before installation; failed load preserves the current project.
 The job layer builds event delivery, cancellation, and accepted-result
 installation on top of these immutable snapshots.
 
+Native powder import accepts bounded plain-column, GSAS FXYE, and GSAS STD
+files together with a complete monochromatic experiment record. Parsing and
+nested validation happen outside the state lock; exact-snapshot replacement
+then appends the histogram and increments the project revision once. Parse,
+resource-limit, experiment, phase-reference, duplicate-ID, and concurrent-edit
+failures leave the open snapshot unchanged. The Tauri host runs file parsing on
+its blocking pool and exposes only serializable request/response records.
+
 ## Refinement jobs and events
 
 `JobManager` runs each native Rietveld analysis on a named Rust worker thread.
@@ -81,6 +89,6 @@ Run `scripts/audit-desktop-distribution.sh` after desktop dependency or bundle
 changes. The gate rejects Python/PyO3/NumPy in the normal or build dependency
 tree, builds the release executable, rejects a dynamic link to CPython, and
 scans produced bundles for Python runtimes, wheels, or extension modules.
-Native import, standalone calculation, and report-export commands remain
-separate adapter slices; the shell is not considered feature-complete until
-those workflow-sized operations are present.
+Native CIF phase import, standalone calculation, and report-export commands
+remain separate adapter slices; the shell is not considered feature-complete
+until those workflow-sized operations are present.

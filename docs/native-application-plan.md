@@ -428,6 +428,8 @@ host is now present as a separate pinned application crate. It translates the
 existing project, refinement, event, and binary-series contracts without
 linking Python, and a release audit checks its dependency tree, executable
 links, and bundle contents for Python artifacts. The checked-in static frontend
-is only a runtime probe. Native import, standalone calculation, and report
-export remain the final workflow commands required to complete delivery step
-16.
+is only a runtime probe. Bounded powder import is now exposed as an atomic
+revision-checked command for columns, GSAS FXYE, and GSAS STD input with a
+complete native monochromatic experiment record. Native CIF phase import,
+standalone calculation, and report export remain the final workflow commands
+required to complete delivery step 16.

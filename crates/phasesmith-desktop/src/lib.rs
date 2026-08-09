@@ -7,6 +7,7 @@
 #![forbid(unsafe_code)]
 
 mod jobs;
+mod powder_import;
 mod series;
 
 use std::collections::BTreeMap;
@@ -26,6 +27,11 @@ use serde::Serialize;
 pub use jobs::{
     CancelJobResponse, DesktopEvent, DesktopEventSink, DiagnosticRecord, JobId, JobManager,
     JobStarted, JobState, JobStatus, RefinementEventRecord, RefinementOutcome,
+};
+pub use powder_import::{
+    DesktopExperimentInput, DesktopFcjGeometryInput, DesktopPositionCorrectionInput,
+    DesktopRadiationProbe, PowderFormatInput, PowderHistogramImportRequest,
+    PowderHistogramImportResponse,
 };
 pub use series::{BinaryPayload, BinarySeriesDescriptor, SeriesDtype, SeriesOwner};
 
@@ -55,6 +61,8 @@ pub enum DesktopErrorCode {
     UnsupportedOperation,
     /// Native project persistence failed.
     Persistence,
+    /// Native file import failed.
+    Import,
     /// A requested binary display series does not exist.
     UnknownSeries,
     /// Internal shared state was poisoned by a panicking host callback.

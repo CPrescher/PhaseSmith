@@ -721,9 +721,14 @@ The separate `phasesmith-tauri` application crate now hosts those contracts and
 emits refinement events without introducing Tauri into the scientific crates.
 Its static frontend is a runtime probe, not a finished product UI. A release
 distribution audit rejects Python dependencies, dynamic CPython links, wheels,
-extension modules, and Python sidecar artifacts. Native import, standalone
+extension modules, and Python sidecar artifacts. Native CIF import, standalone
 calculation, and report-export commands remain before the desktop adapter is
 feature-complete.
+Bounded powder import is now available through that adapter for plain columns,
+GSAS FXYE, and GSAS STD files. It installs a complete monochromatic experiment
+and observed histogram only against the exact source revision; all parse,
+validation, resource-limit, and concurrent-edit failures preserve project
+state. CIF phase import remains a separate native slice.
 
 The remaining parity boundary is joint refinement. PhaseSmith currently owns
 one pattern/experiment per `RietveldInput`; GSAS-II shares one PbSO4 structure

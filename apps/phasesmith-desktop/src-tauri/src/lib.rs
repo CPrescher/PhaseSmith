@@ -6,7 +6,8 @@
 
 use phasesmith_desktop::{
     BinarySeriesDescriptor, CancelJobResponse, DesktopError, DesktopEvent, DesktopProjectStore,
-    JobManager, JobStarted, JobStatus, OpenProjectResponse, SaveProjectResponse,
+    JobManager, JobStarted, JobStatus, OpenProjectResponse, PowderHistogramImportRequest,
+    PowderHistogramImportResponse, SaveProjectResponse,
 };
 use phasesmith_persistence::{
     PROJECT_FORMAT_VERSION, ProjectReadLimits, ProjectSaveOptions, ProjectSummaryReport,
@@ -82,6 +83,20 @@ async fn save_project(
     })
     .await
     .map_err(|error| DesktopError::host_failure(format!("project-save task failed: {error}")))?
+}
+
+#[tauri::command]
+async fn import_powder_histogram(
+    state: State<'_, AppState>,
+    expected_revision: u64,
+    request: PowderHistogramImportRequest,
+) -> Result<PowderHistogramImportResponse, DesktopError> {
+    let projects = state.projects.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        projects.import_powder_histogram(expected_revision, request)
+    })
+    .await
+    .map_err(|error| DesktopError::host_failure(format!("powder-import task failed: {error}")))?
 }
 
 #[tauri::command]
@@ -196,6 +211,7 @@ pub fn run() {
             open_project,
             project_summary,
             save_project,
+            import_powder_histogram,
             close_project,
             project_series,
             project_series_bytes,
