@@ -48,8 +48,11 @@ experiment = ConstantWavelengthExperiment(
 )
 selection = RietveldParameterSelection(
     instrument_parameters=(
-        "u_deg2", "v_deg2", "w_deg2",
-        "displace_x_micrometre", "displace_y_micrometre",
+        "u_deg2",
+        "v_deg2",
+        "w_deg2",
+        "displace_x_micrometre",
+        "displace_y_micrometre",
     ),
 )
 ```

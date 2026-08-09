@@ -58,9 +58,7 @@ def test_native_cw_accumulation_is_safe_for_concurrent_callers() -> None:
 
     for result in actual:
         assert_array_equal(result.y, expected.y)
-        assert_array_equal(
-            result.derivatives.local.values, expected.derivatives.local.values
-        )
+        assert_array_equal(result.derivatives.local.values, expected.derivatives.local.values)
         assert_array_equal(
             result.derivatives.global_jacobian,
             expected.derivatives.global_jacobian,

@@ -214,9 +214,7 @@ class CrystalStructure:
             [site.u_iso_angstrom2 or 0.0 for site in self.sites],
             anisotropic_mask=[value is not None for value in anisotropic],
             u_aniso_cif_angstrom2=[
-                (0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
-                if value is None
-                else value.u_cif_angstrom2
+                (0.0, 0.0, 0.0, 0.0, 0.0, 0.0) if value is None else value.u_cif_angstrom2
                 for value in anisotropic
             ],
         )

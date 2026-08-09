@@ -200,9 +200,7 @@ class AtomSiteBatch:
         else:
             tensors = np.array(u_aniso_cif_angstrom2, dtype=np.float64, copy=True, order="C")
             if tensors.shape != (len(ids), 6) or not np.isfinite(tensors).all():
-                raise ValueError(
-                    "u_aniso_cif_angstrom2 must have finite shape (site_count, 6)"
-                )
+                raise ValueError("u_aniso_cif_angstrom2 must have finite shape (site_count, 6)")
         _freeze(xyz)
         _freeze(mask)
         _freeze(tensors)

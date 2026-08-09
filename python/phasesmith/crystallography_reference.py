@@ -178,14 +178,10 @@ def reference_structure_factor_values(
         if site.anisotropic_displacement is None:
             positions = np.asarray([value[0] for value in unique_positions], dtype=np.float64)
             symmetry_sum = np.exp(2j * np.pi * (h_float @ positions.T)).sum(axis=1)
-            symmetry_sum *= np.exp(
-                -2.0 * np.pi**2 * (site.u_iso_angstrom2 or 0.0) * q_squared
-            )
+            symmetry_sum *= np.exp(-2.0 * np.pi**2 * (site.u_iso_angstrom2 or 0.0) * q_squared)
         else:
             reciprocal_lengths = np.sqrt(np.diag(geometry.reciprocal_metric))
-            u11, u22, u33, u23, u13, u12 = (
-                site.anisotropic_displacement.u_cif_angstrom2
-            )
+            u11, u22, u33, u23, u13, u12 = site.anisotropic_displacement.u_cif_angstrom2
             tensor = np.array(
                 [[u11, u12, u13], [u12, u22, u23], [u13, u23, u33]],
                 dtype=np.float64,
@@ -193,9 +189,7 @@ def reference_structure_factor_values(
             for position, rotation in unique_positions:
                 transformed = h_float @ rotation
                 reciprocal_vector = transformed * reciprocal_lengths
-                quadratic = np.einsum(
-                    "ri,ij,rj->r", reciprocal_vector, tensor, reciprocal_vector
-                )
+                quadratic = np.einsum("ri,ij,rj->r", reciprocal_vector, tensor, reciprocal_vector)
                 symmetry_sum += np.exp(
                     2j * np.pi * (h_float @ position) - 2.0 * np.pi**2 * quadratic
                 )

@@ -2404,11 +2404,7 @@ def _native_physics_records(provider: object | None) -> list[tuple[str, list[flo
             )
         ]
     if type(provider) is CompositePhysicsProvider:
-        return [
-            record
-            for child in provider.providers
-            for record in _native_physics_records(child)
-        ]
+        return [record for child in provider.providers for record in _native_physics_records(child)]
     raise TypeError("native Rietveld received an unsupported sample-physics provider")
 
 

@@ -690,9 +690,7 @@ class PreparedStructuralPattern:
                 "_component_weights",
                 tuple(weight for _experiment, _phase, weight in component_inputs),
             )
-            native_spectrum = _native_spectrum(
-                phase, experiment, components, selected_execution
-            )
+            native_spectrum = _native_spectrum(phase, experiment, components, selected_execution)
             object.__setattr__(
                 self,
                 "_native_spectrum",
@@ -1028,10 +1026,7 @@ class PreparedStructuralPattern:
             return self._vjp_from_native_arrays(products[0])
         if self._components:
             return self._combine_vjps(
-                tuple(
-                    component.vjp(value)
-                    for component, value in self._vjp_tasks(sample_weights)
-                )
+                tuple(component.vjp(value) for component, value in self._vjp_tasks(sample_weights))
             )
         raise NotImplementedError(
             "structural VJP is currently available for the built-in fused path only"
