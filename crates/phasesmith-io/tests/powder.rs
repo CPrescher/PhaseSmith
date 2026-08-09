@@ -165,6 +165,7 @@ fn enforces_limits_and_reports_missing_bank() {
 }
 
 #[test]
+#[ignore = "requires checksum-pinned external validation data"]
 fn reads_pinned_real_fxye_fixture_without_python() {
     let path = Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../../validation/data/aps-sucrose-11bmb/11bmb_8716.fxye");

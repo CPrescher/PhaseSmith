@@ -232,6 +232,7 @@ C1 D 0.5 0.5 0.5
 }
 
 #[test]
+#[ignore = "requires checksum-pinned external validation data"]
 fn imports_pinned_real_small_structure_cifs_without_python() {
     let fixtures = [
         ("iucr-qarr-1g/Al2O3.cif", 36_usize),
