@@ -479,8 +479,17 @@ fn write_synced_file(path: &Path, bytes: &[u8]) -> Result<(), PersistenceError> 
     Ok(())
 }
 
+#[cfg(not(windows))]
 fn sync_directory(path: &Path) -> Result<(), PersistenceError> {
     fs::File::open(path)?.sync_all()?;
+    Ok(())
+}
+
+#[cfg(windows)]
+fn sync_directory(_path: &Path) -> Result<(), PersistenceError> {
+    // `File::open` cannot open directories on Windows. The project files are
+    // individually synced before they are renamed, but the standard library
+    // does not expose a portable equivalent of a Unix directory fsync.
     Ok(())
 }
 

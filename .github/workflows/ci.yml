@@ -24,6 +24,13 @@ jobs:
       - run: cargo test --workspace --all-features
       - run: cargo bench -p phasesmith-core --bench profile --no-run
 
+  rust-windows-persistence:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo test -p phasesmith-persistence --all-features --locked
+
   python:
     runs-on: ubuntu-latest
     strategy:
