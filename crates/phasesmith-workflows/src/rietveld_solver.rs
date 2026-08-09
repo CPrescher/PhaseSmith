@@ -446,10 +446,10 @@ pub fn refine_rietveld_with_runtime(
         let Some((backtracks, factor, trial_values, trial_phases, trial_calculation, objective)) =
             accepted
         else {
-            if termination == TerminationReason::MaxIterations {
-                termination = TerminationReason::Stagnated;
-            }
             damping *= options.damping_increase;
+            if termination == TerminationReason::MaxIterations {
+                continue;
+            }
             break;
         };
         let objective_change = current_objective - objective;
@@ -479,7 +479,7 @@ pub fn refine_rietveld_with_runtime(
             },
         )?;
         history.push(RietveldIterationRecord {
-            iteration,
+            iteration: history.len() + 1,
             objective,
             objective_change,
             scaled_step_norm: factor * step_norm,
@@ -519,7 +519,7 @@ pub fn refine_rietveld_with_runtime(
                 ),
             ],
         )?;
-        if iteration >= options.min_iterations
+        if history.len() >= options.min_iterations
             && objective_change <= options.objective_tolerance * objective.max(1.0)
         {
             termination = TerminationReason::Converged;
@@ -629,8 +629,31 @@ pub(crate) fn conjugate_gradient(
     right_hand_side: &[f64],
     tolerance: f64,
     max_iterations: usize,
-    mut operator: impl FnMut(&[f64]) -> Result<Vec<f64>, RietveldRefinementError>,
+    operator: impl FnMut(&[f64]) -> Result<Vec<f64>, RietveldRefinementError>,
 ) -> Result<(Vec<f64>, usize), RietveldRefinementError> {
+    conjugate_gradient_core(right_hand_side, tolerance, max_iterations, operator).map_err(|error| {
+        match error {
+            ConjugateGradientError::Operator(error) => error,
+            ConjugateGradientError::NonPositiveOperator => {
+                RietveldRefinementError::NonPositiveNormalOperator
+            }
+            ConjugateGradientError::NonFiniteState => RietveldRefinementError::NonFiniteSolve,
+        }
+    })
+}
+
+pub(crate) enum ConjugateGradientError<E> {
+    Operator(E),
+    NonPositiveOperator,
+    NonFiniteState,
+}
+
+pub(crate) fn conjugate_gradient_core<E>(
+    right_hand_side: &[f64],
+    tolerance: f64,
+    max_iterations: usize,
+    mut operator: impl FnMut(&[f64]) -> Result<Vec<f64>, E>,
+) -> Result<(Vec<f64>, usize), ConjugateGradientError<E>> {
     let mut solution = vec![0.0; right_hand_side.len()];
     let mut residual = right_hand_side.to_vec();
     let mut direction = residual.clone();
@@ -640,10 +663,10 @@ pub(crate) fn conjugate_gradient(
         return Ok((solution, 0));
     }
     for iteration in 1..=max_iterations {
-        let product = operator(&direction)?;
+        let product = operator(&direction).map_err(ConjugateGradientError::Operator)?;
         let denominator = dot(&direction, &product);
         if !denominator.is_finite() || denominator <= 0.0 {
-            return Err(RietveldRefinementError::NonPositiveNormalOperator);
+            return Err(ConjugateGradientError::NonPositiveOperator);
         }
         let alpha = squared / denominator;
         for index in 0..solution.len() {
@@ -652,7 +675,7 @@ pub(crate) fn conjugate_gradient(
         }
         let next_squared = dot(&residual, &residual);
         if !next_squared.is_finite() {
-            return Err(RietveldRefinementError::NonFiniteSolve);
+            return Err(ConjugateGradientError::NonFiniteState);
         }
         if next_squared.sqrt() <= target {
             return Ok((solution, iteration));

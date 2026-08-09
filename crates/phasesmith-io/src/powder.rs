@@ -214,6 +214,7 @@ fn parse_powder_text_inner(
             maximum: limits.max_bytes,
         });
     }
+    let text = text.strip_prefix('\u{feff}').unwrap_or(text);
     let selected = match format {
         PowderFormat::Auto => detect_format(text, source_path.as_deref()),
         selected => selected,
@@ -305,6 +306,7 @@ fn powder_data(
     x_deg: Vec<f64>,
     observed_y: Vec<f64>,
     uncertainty: Option<Vec<f64>>,
+    mask: Option<Vec<bool>>,
     format: PowderFormat,
     source_path: Option<PathBuf>,
     bank: Option<usize>,
@@ -312,7 +314,7 @@ fn powder_data(
     if x_deg.is_empty() {
         return Err(parse_error(0, "powder data contains no numeric rows"));
     }
-    let pattern = PatternRecord::new(x_deg, Some(observed_y), uncertainty, None, None)
+    let pattern = PatternRecord::new(x_deg, Some(observed_y), uncertainty, mask, None)
         .map_err(PowderIoError::Domain)?;
     Ok(PowderData {
         pattern,
@@ -333,6 +335,7 @@ fn read_columns(
         rows.iter().map(|row| row[0]).collect(),
         rows.iter().map(|row| row[1]).collect(),
         has_uncertainty.then(|| rows.iter().map(|row| row[2]).collect()),
+        None,
         PowderFormat::Columns,
         source,
         None,
@@ -402,10 +405,19 @@ fn read_gsas_fxye(
             .is_some_and(|value| value.eq_ignore_ascii_case("FXYE"))
     );
     let rows = numeric_rows(&lines.join("\n"), Some(3), max_rows)?;
+    let mut uncertainty = Vec::with_capacity(rows.len());
+    let mut mask = Vec::with_capacity(rows.len());
+    for row in &rows {
+        let supplied = row[2];
+        uncertainty.push(if supplied == 0.0 { 1.0 } else { supplied });
+        mask.push(supplied != 0.0);
+    }
+    let mask = mask.iter().any(|included| !included).then_some(mask);
     powder_data(
         rows.iter().map(|row| row[0] / 100.0).collect(),
         rows.iter().map(|row| row[1]).collect(),
-        Some(rows.iter().map(|row| row[2]).collect()),
+        Some(uncertainty),
+        mask,
         PowderFormat::GsasFxye,
         source,
         Some(bank),
@@ -500,6 +512,7 @@ fn read_gsas_std(
         coordinate_grid(start_deg, step_deg, row_count)?,
         intensities,
         Some(uncertainty),
+        None,
         PowderFormat::GsasStd,
         source,
         Some(bank),

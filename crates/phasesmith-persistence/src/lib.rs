@@ -34,6 +34,9 @@ pub const PROJECT_MANIFEST_NAME: &str = "manifest.json";
 /// Canonical `NumPy` archive filename within a project directory.
 pub const PROJECT_ARRAYS_NAME: &str = "arrays.npz";
 
+const MANIFEST_BACKUP_NAME: &str = ".manifest.json.phasesmith-backup";
+const ARRAYS_BACKUP_NAME: &str = ".arrays.npz.phasesmith-backup";
+
 static TEMP_SEQUENCE: AtomicU64 = AtomicU64::new(0);
 
 /// Resource limits applied before allocating project records and arrays.
@@ -59,10 +62,10 @@ impl Default for ProjectReadLimits {
     fn default() -> Self {
         Self {
             max_manifest_bytes: 16 * 1024 * 1024,
-            max_archive_bytes: 2 * 1024 * 1024 * 1024,
+            max_archive_bytes: 256 * 1024 * 1024,
             max_arrays: 10_000,
-            max_array_elements: 100_000_000,
-            max_uncompressed_array_bytes: 4 * 1024 * 1024 * 1024,
+            max_array_elements: 50_000_000,
+            max_uncompressed_array_bytes: 512 * 1024 * 1024,
             max_histograms: 10_000,
             max_phases: 10_000,
         }
@@ -195,6 +198,11 @@ struct ProjectManifest {
     rietveld_analyses: Option<Vec<rietveld_wire::WireRietveldAnalysis>>,
 }
 
+#[derive(Debug, Deserialize)]
+struct ProjectVersionProbe {
+    format_version: u32,
+}
+
 /// Save one validated native project as canonical JSON plus NPZ.
 ///
 /// Only `manifest.json` and `arrays.npz` are created or replaced; unrelated
@@ -244,6 +252,9 @@ fn save_project_parts(
     options: ProjectSaveOptions,
 ) -> Result<PathBuf, PersistenceError> {
     let destination = absolute_path(path)?;
+    if destination.is_dir() {
+        recover_interrupted_save(&destination)?;
+    }
     validate_destination(&destination, options)?;
     let (wire_project, arrays) = wire::encode_project(project)?;
     let encoded_archive = write_npz(&arrays)?;
@@ -272,21 +283,39 @@ fn save_project_parts(
     fs::create_dir_all(parent)?;
     let temporary = create_temporary_directory(parent, &destination)?;
     let write_result: Result<(), PersistenceError> = (|| {
-        fs::write(temporary.join(PROJECT_ARRAYS_NAME), encoded_archive)?;
-        fs::write(temporary.join(PROJECT_MANIFEST_NAME), encoded_manifest)?;
-        fs::create_dir_all(&destination)?;
-        replace_owned_file(
-            &temporary.join(PROJECT_ARRAYS_NAME),
-            &destination.join(PROJECT_ARRAYS_NAME),
-            options.overwrite,
-        )?;
-        replace_owned_file(
+        write_synced_file(&temporary.join(PROJECT_ARRAYS_NAME), &encoded_archive)?;
+        write_synced_file(
             &temporary.join(PROJECT_MANIFEST_NAME),
-            &destination.join(PROJECT_MANIFEST_NAME),
-            options.overwrite,
+            encoded_manifest.as_bytes(),
         )?;
+        fs::create_dir_all(&destination)?;
+        if options.overwrite {
+            backup_owned_file(
+                &destination.join(PROJECT_MANIFEST_NAME),
+                &destination.join(MANIFEST_BACKUP_NAME),
+            )?;
+            backup_owned_file(
+                &destination.join(PROJECT_ARRAYS_NAME),
+                &destination.join(ARRAYS_BACKUP_NAME),
+            )?;
+        }
+        fs::rename(
+            temporary.join(PROJECT_ARRAYS_NAME),
+            destination.join(PROJECT_ARRAYS_NAME),
+        )?;
+        fs::rename(
+            temporary.join(PROJECT_MANIFEST_NAME),
+            destination.join(PROJECT_MANIFEST_NAME),
+        )?;
+        sync_directory(&destination)?;
+        remove_if_exists(&destination.join(MANIFEST_BACKUP_NAME))?;
+        remove_if_exists(&destination.join(ARRAYS_BACKUP_NAME))?;
+        sync_directory(&destination)?;
         Ok(())
     })();
+    if write_result.is_err() && destination.is_dir() {
+        let _ = recover_interrupted_save(&destination);
+    }
     let _ = fs::remove_dir_all(&temporary);
     write_result?;
     Ok(destination)
@@ -319,6 +348,9 @@ pub fn load_rietveld_project(
 ) -> Result<RietveldProjectState, PersistenceError> {
     limits.validate()?;
     let source = absolute_path(path.as_ref())?;
+    if source.is_dir() {
+        recover_interrupted_save(&source)?;
+    }
     let manifest_path = source.join(PROJECT_MANIFEST_NAME);
     let archive_path = source.join(PROJECT_ARRAYS_NAME);
     let manifest_bytes = read_bounded_file(
@@ -326,12 +358,13 @@ pub fn load_rietveld_project(
         limits.max_manifest_bytes,
         "project manifest exceeds max_manifest_bytes",
     )?;
-    let manifest: ProjectManifest = serde_json::from_slice(&manifest_bytes)?;
-    if !(1..=PROJECT_FORMAT_VERSION).contains(&manifest.format_version) {
+    let version: ProjectVersionProbe = serde_json::from_slice(&manifest_bytes)?;
+    if !(1..=PROJECT_FORMAT_VERSION).contains(&version.format_version) {
         return Err(PersistenceError::UnsupportedVersion {
-            version: manifest.format_version,
+            version: version.format_version,
         });
     }
+    let manifest: ProjectManifest = serde_json::from_slice(&manifest_bytes)?;
     let rietveld_analyses = match (manifest.format_version, manifest.rietveld_analyses) {
         (1, None) => Vec::new(),
         (1, Some(_)) => {
@@ -440,19 +473,55 @@ fn create_temporary_directory(
     })
 }
 
-fn replace_owned_file(
-    source: &Path,
-    destination: &Path,
-    overwrite: bool,
-) -> Result<(), PersistenceError> {
-    if destination.exists() {
-        if !overwrite {
-            return Err(PersistenceError::InvalidDestination {
-                message: format!("project file already exists: {}", destination.display()),
-            });
-        }
-        fs::remove_file(destination)?;
+fn write_synced_file(path: &Path, bytes: &[u8]) -> Result<(), PersistenceError> {
+    fs::write(path, bytes)?;
+    fs::File::open(path)?.sync_all()?;
+    Ok(())
+}
+
+fn sync_directory(path: &Path) -> Result<(), PersistenceError> {
+    fs::File::open(path)?.sync_all()?;
+    Ok(())
+}
+
+fn backup_owned_file(source: &Path, backup: &Path) -> Result<(), PersistenceError> {
+    remove_if_exists(backup)?;
+    if source.exists() {
+        fs::rename(source, backup)?;
     }
-    fs::rename(source, destination)?;
+    Ok(())
+}
+
+fn remove_if_exists(path: &Path) -> Result<(), PersistenceError> {
+    match fs::remove_file(path) {
+        Ok(()) => Ok(()),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
+        Err(error) => Err(PersistenceError::Io(error)),
+    }
+}
+
+fn recover_interrupted_save(directory: &Path) -> Result<(), PersistenceError> {
+    let manifest = directory.join(PROJECT_MANIFEST_NAME);
+    let arrays = directory.join(PROJECT_ARRAYS_NAME);
+    let manifest_backup = directory.join(MANIFEST_BACKUP_NAME);
+    let arrays_backup = directory.join(ARRAYS_BACKUP_NAME);
+    let has_manifest_backup = manifest_backup.exists();
+    let has_arrays_backup = arrays_backup.exists();
+    if !has_manifest_backup && !has_arrays_backup {
+        return Ok(());
+    }
+    if manifest.exists() && arrays.exists() {
+        remove_if_exists(&manifest_backup)?;
+        remove_if_exists(&arrays_backup)?;
+        sync_directory(directory)?;
+        return Ok(());
+    }
+    for (current, backup) in [(&arrays, &arrays_backup), (&manifest, &manifest_backup)] {
+        if backup.exists() {
+            remove_if_exists(current)?;
+            fs::rename(backup, current)?;
+        }
+    }
+    sync_directory(directory)?;
     Ok(())
 }

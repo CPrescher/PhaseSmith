@@ -588,8 +588,11 @@ fn joint_checkpoint_resumes_and_pre_cancel_is_a_normal_unchanged_result() {
         None,
     )
     .unwrap();
-    assert!(resumed.history.len() >= partial.history.len());
-    assert!(resumed.checkpoint.objective <= partial.checkpoint.objective);
+    let uninterrupted =
+        refine_joint_rietveld(&histograms, &[], solver_options(15), None, None).unwrap();
+    assert_eq!(resumed.history, uninterrupted.history);
+    assert_eq!(resumed.histograms, uninterrupted.histograms);
+    assert_eq!(resumed.checkpoint, uninterrupted.checkpoint);
 
     let cancellation = CancellationToken::default();
     cancellation.request("joint test cancellation").unwrap();

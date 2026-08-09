@@ -460,6 +460,7 @@ fn structural_intermediates_position_correction_and_contributions_are_exposed() 
 }
 
 #[test]
+#[ignore = "requires an installed NumPy Python interpreter"]
 fn calculation_matches_python_structural_workflow_when_configured() {
     let Ok(python) = std::env::var("PHASESMITH_NUMPY_PYTHON") else {
         return;

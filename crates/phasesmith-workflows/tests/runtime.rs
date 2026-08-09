@@ -192,6 +192,7 @@ fn checkpoint_failure_keeps_state_accepted_and_resume_is_guarded() {
 }
 
 #[test]
+#[ignore = "requires an installed NumPy Python interpreter"]
 fn python_runtime_stop_sequence_matches_native_when_configured() {
     let Ok(python) = std::env::var("PHASESMITH_NUMPY_PYTHON") else {
         return;

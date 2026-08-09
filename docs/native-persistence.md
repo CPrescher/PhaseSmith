@@ -63,9 +63,12 @@ NPY v1 members and deflate compression.
 
 Saving an existing directory requires `overwrite: true`. Only
 `manifest.json` and `arrays.npz` are replaced, so caller-owned notes remain.
-The archive is installed before its manifest. An interrupted two-file update
-can therefore be rejected by its archive hash, but cannot silently load mixed
-state.
+Overwrite uses synced temporary files plus private backups. The archive and
+manifest are installed as one recoverable pair; a later load or save restores
+the previous pair after an interrupted partial install, while a fully installed
+pair commits and removes the backups. Future format versions are probed before
+strict manifest decoding, so they return `UnsupportedVersion` even when they
+add unknown fields.
 
 ## Reports
 

@@ -76,6 +76,36 @@ fn overwrite_replaces_only_owned_files_and_preserves_unrelated_content() {
 }
 
 #[test]
+fn load_recovers_the_previous_pair_after_an_interrupted_overwrite() {
+    let directory = temporary_path("overwrite-recovery");
+    let expected = project();
+    save_project(&directory, &expected, ProjectSaveOptions::default()).unwrap();
+    fs::rename(
+        directory.join(PROJECT_MANIFEST_NAME),
+        directory.join(".manifest.json.phasesmith-backup"),
+    )
+    .unwrap();
+    fs::rename(
+        directory.join(PROJECT_ARRAYS_NAME),
+        directory.join(".arrays.npz.phasesmith-backup"),
+    )
+    .unwrap();
+    fs::write(
+        directory.join(PROJECT_ARRAYS_NAME),
+        b"incomplete replacement",
+    )
+    .unwrap();
+
+    assert_eq!(
+        load_project(&directory, ProjectReadLimits::default()).unwrap(),
+        expected
+    );
+    assert!(!directory.join(".manifest.json.phasesmith-backup").exists());
+    assert!(!directory.join(".arrays.npz.phasesmith-backup").exists());
+    cleanup(directory);
+}
+
+#[test]
 fn hashes_unknown_fields_and_resource_limits_fail_before_domain_use() {
     let directory = temporary_path("validation");
     save_project(&directory, &project(), ProjectSaveOptions::default()).unwrap();
@@ -229,10 +259,20 @@ fn version_one_projects_migrate_but_version_two_requires_analysis_field() {
         load_project(&directory, ProjectReadLimits::default()),
         Err(PersistenceError::InvalidRecord { .. })
     ));
+
+    manifest["format_version"] = serde_json::json!(PROJECT_FORMAT_VERSION + 1);
+    manifest["future_field"] = serde_json::json!({"shape": "unknown"});
+    fs::write(&manifest_path, serde_json::to_vec(&manifest).unwrap()).unwrap();
+    assert!(matches!(
+        load_project(&directory, ProjectReadLimits::default()),
+        Err(PersistenceError::UnsupportedVersion { version })
+            if version == PROJECT_FORMAT_VERSION + 1
+    ));
     cleanup(directory);
 }
 
 #[test]
+#[ignore = "requires an installed NumPy Python interpreter"]
 fn numpy_reads_and_rewrites_native_archives_when_configured() {
     let Ok(python) = std::env::var("PHASESMITH_NUMPY_PYTHON") else {
         return;

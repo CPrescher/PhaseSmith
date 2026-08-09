@@ -505,7 +505,7 @@ pub fn calculate_structural_pattern_dense_with_context(
     let reflection_count = input.hkl.len();
     let local = &accumulation.derivatives.local;
     let d_y = if execution.threads() == 1 || parameter_count < 2 {
-        let mut values = vec![0.0; element_count];
+        let mut values = zeroed_values(element_count)?;
         for reflection in 0..reflection_count {
             let begin = local.offsets[reflection];
             let end = local.offsets[reflection + 1];
@@ -528,7 +528,7 @@ pub fn calculate_structural_pattern_dense_with_context(
         values
     } else {
         let rows = execution.map_ordered(parameter_count, 2, |parameter| {
-            let mut row = vec![0.0; sample_count];
+            let mut row = zeroed_values(sample_count)?;
             for reflection in 0..reflection_count {
                 let begin = local.offsets[reflection];
                 let end = local.offsets[reflection + 1];
@@ -546,11 +546,14 @@ pub fn calculate_structural_pattern_dense_with_context(
                         + local.values[local_base + 1] * position_derivative;
                 }
             }
-            row
+            Ok::<_, StructuralPatternError>(row)
         });
-        let mut values = Vec::with_capacity(element_count);
+        let mut values = Vec::new();
+        values.try_reserve_exact(element_count).map_err(|_| {
+            StructuralPatternError::Contributions(CwContributionsError::AllocationOverflow)
+        })?;
         for row in rows {
-            values.extend(row);
+            values.extend(row?);
         }
         values
     };
@@ -564,6 +567,15 @@ pub fn calculate_structural_pattern_dense_with_context(
         d_y,
         parameter_count,
     })
+}
+
+fn zeroed_values(count: usize) -> Result<Vec<f64>, StructuralPatternError> {
+    let mut values = Vec::new();
+    values.try_reserve_exact(count).map_err(|_| {
+        StructuralPatternError::Contributions(CwContributionsError::AllocationOverflow)
+    })?;
+    values.resize(count, 0.0);
+    Ok(values)
 }
 
 /// Calculate a full structural-pattern JVP without a dense pattern Jacobian.

@@ -791,6 +791,24 @@ difference occurs only on the flat tail of the minimum. Historical pinned
 GSAS-II timings remain separate because its PbSO4 number covers a joint
 two-histogram recipe.
 
+The 2026-08-09 hardening pass closes the remaining authoring and robustness
+gaps without changing the scientific layering. The desktop adapter can now
+create a fully validated analysis from imported records, atomically extend an
+existing analysis during CIF import, preserve fixed spectra on acceptance, and
+cancel/release snapshot-owned jobs and calculations on lifecycle close. All
+three LM solvers retry rejected line searches with increased damping under the
+existing attempt/evaluation/rejection budgets, and the joint solver reuses the
+same finite-safe conjugate-gradient core as the single-histogram solvers. Joint
+checkpoint continuation is pinned against uninterrupted history. Rust and the
+independent Python references now share an explicit covariance convention:
+known active uncertainties use the unscaled inverse weighted normal matrix;
+unit-weight fits scale by reduced chi-square. FXYE zero-ESD rows become masked
+exclusions and UTF-8 BOM input is accepted. Native persistence probes future
+versions before strict decoding, uses desktop-sized default allocation limits,
+and recovers the previous manifest/archive pair after an interrupted overwrite.
+The Python Rietveld result exposes `backend` as `native` or `python`, making an
+eligibility fallback visible to callers.
+
 ## Quality bar
 
 Public behavior is typed and documented. Invalid shapes, non-finite values,

@@ -351,6 +351,7 @@ fn refinable_records_replace_exactly_and_disabled_size_stays_calculable() {
 }
 
 #[test]
+#[ignore = "requires an installed NumPy Python interpreter"]
 fn native_models_match_python_values_and_derivatives_when_configured() {
     let Ok(python) = std::env::var("PHASESMITH_NUMPY_PYTHON") else {
         return;

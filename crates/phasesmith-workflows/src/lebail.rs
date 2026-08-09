@@ -1041,6 +1041,9 @@ pub struct LeBailResult {
 }
 
 /// Square row-major covariance over scaled free parameters.
+///
+/// The inverse weighted normal matrix is unscaled for supplied uncertainties;
+/// unit-weight fits estimate their noise scale from the reduced chi-square.
 #[derive(Clone, Debug, PartialEq)]
 pub struct CovarianceMatrix {
     /// Matrix dimension.
@@ -1634,6 +1637,7 @@ fn finish_result(
         parameters.as_ref(),
         &input.constraints,
         options.use_uncertainty,
+        metrics.reduced_chi_square,
     )?;
     runtime
         .emit(
@@ -2220,6 +2224,7 @@ fn regenerate_accepted_domains(
     Ok((updated, warnings, topology_changed))
 }
 
+#[allow(clippy::too_many_arguments)]
 fn covariance(
     pattern: &PatternRecord,
     calculation: &LeBailCalculation,
@@ -2228,6 +2233,7 @@ fn covariance(
     parameters: Option<&ParameterSet>,
     constraints: &[Constraint],
     use_uncertainty: bool,
+    reduced_chi_square: f64,
 ) -> Result<Option<CovarianceMatrix>, LeBailError> {
     let Some(parameters) = parameters else {
         return Ok(None);
@@ -2285,9 +2291,13 @@ fn covariance(
     if matrix_rank(&normal) != free_count {
         return Ok(None);
     }
-    let Some(inverse) = normal.try_inverse() else {
+    let Some(mut inverse) = normal.try_inverse() else {
         return Ok(None);
     };
+    let known_uncertainties = use_uncertainty && pattern.uncertainty.is_some();
+    if !known_uncertainties && reduced_chi_square.is_finite() {
+        inverse *= reduced_chi_square;
+    }
     let mut values = Vec::with_capacity(free_count * free_count);
     for row in 0..free_count {
         for column in 0..free_count {
@@ -2589,10 +2599,14 @@ fn reflection_count_of(phase: &LeBailPhase) -> usize {
 }
 
 fn validate_stable_label(name: &'static str, value: &str) -> Result<(), LeBailError> {
-    if value.is_empty() || value.trim() != value || value.chars().any(char::is_control) {
+    if value.is_empty()
+        || value.trim() != value
+        || value.chars().any(char::is_control)
+        || value.contains('/')
+    {
         return Err(LeBailError::InvalidPhase {
             message: format!(
-                "{name} must be non-empty, trimmed, and contain no control characters"
+                "{name} must be non-empty, trimmed, and contain neither '/' nor control characters"
             ),
         });
     }

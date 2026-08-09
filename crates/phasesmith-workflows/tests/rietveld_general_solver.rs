@@ -599,6 +599,7 @@ fn accepted_dense_trial_is_the_next_current_linearization() {
 }
 
 #[test]
+#[ignore = "requires an installed NumPy Python interpreter"]
 #[allow(clippy::too_many_lines)]
 fn complete_solver_matches_python_affine_history_when_configured() {
     let Ok(python) = std::env::var("PHASESMITH_NUMPY_PYTHON") else {

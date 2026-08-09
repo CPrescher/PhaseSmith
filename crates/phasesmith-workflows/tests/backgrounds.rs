@@ -112,6 +112,7 @@ fn validation_and_domains_fail_structurally() {
 }
 
 #[test]
+#[ignore = "requires an installed NumPy Python interpreter"]
 fn python_background_values_and_basis_match_native_when_configured() {
     let Ok(python) = std::env::var("PHASESMITH_NUMPY_PYTHON") else {
         return;

@@ -531,6 +531,25 @@ impl JobManager {
         Ok(())
     }
 
+    pub(crate) fn cancel_and_discard_for_project(
+        &self,
+        source: &ProjectSnapshot,
+        reason: &str,
+    ) -> Result<usize, DesktopError> {
+        let mut jobs = self.lock_jobs()?;
+        for job in jobs
+            .values()
+            .filter(|job| job.source.same_instance(source) && job.state == JobState::Running)
+        {
+            job.cancellation.request(reason).map_err(|error| {
+                DesktopError::simple(DesktopErrorCode::StateUnavailable, error.to_string())
+            })?;
+        }
+        let before = jobs.len();
+        jobs.retain(|_, job| !job.source.same_instance(source));
+        Ok(before - jobs.len())
+    }
+
     fn lock_jobs(&self) -> Result<MutexGuard<'_, BTreeMap<JobId, JobRecord>>, DesktopError> {
         self.jobs.lock().map_err(|_| {
             DesktopError::simple(
@@ -620,9 +639,10 @@ fn run_job(execution: JobExecution) {
     let event = match outcome {
         Ok(result) => {
             let summary = RefinementOutcome::from_result(&result);
-            if let Ok(mut jobs) = jobs.lock()
-                && let Some(job) = jobs.get_mut(&context.job_id)
-            {
+            let mut jobs = jobs
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            if let Some(job) = jobs.get_mut(&context.job_id) {
                 job.state = JobState::Completed;
                 job.result = Some(result);
             }
@@ -634,9 +654,10 @@ fn run_job(execution: JobExecution) {
             }
         }
         Err(message) => {
-            if let Ok(mut jobs) = jobs.lock()
-                && let Some(job) = jobs.get_mut(&context.job_id)
-            {
+            let mut jobs = jobs
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            if let Some(job) = jobs.get_mut(&context.job_id) {
                 job.state = JobState::Failed;
                 job.error = Some(message.clone());
             }
@@ -715,9 +736,15 @@ fn install_result(
     histogram.experiment.axial_geometry = result.input.axial_geometry;
     histogram.experiment.position_correction = result.input.position_correction;
     let probe = histogram.experiment.radiation.probe();
-    histogram.experiment.radiation = RadiationDefinition::Monochromatic {
-        probe,
-        wavelength_angstrom: result.input.instrument.wavelength_angstrom,
+    histogram.experiment.radiation = match &result.input.fixed_spectrum {
+        Some(spectrum) => RadiationDefinition::FixedSpectrum {
+            probe,
+            spectrum: spectrum.clone(),
+        },
+        None => RadiationDefinition::Monochromatic {
+            probe,
+            wavelength_angstrom: result.input.instrument.wavelength_angstrom,
+        },
     };
 
     for phase in &result.input.phases {

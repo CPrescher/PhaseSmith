@@ -2,6 +2,7 @@
 
 use std::path::PathBuf;
 
+use phasesmith_core::OwnedCwContributions;
 use phasesmith_crystallography::{
     IntegratedIntensityCorrectionModel, PreparedReflectionGenerator, ReflectionRange,
 };
@@ -10,6 +11,7 @@ use phasesmith_io::{
     CifDiagnostic, CifDiagnosticSeverity, CifReadLimits, CifStructure, read_cif_file,
 };
 use phasesmith_model::{RadiationDefinition, RadiationProbe, RecordId, StructuralPhaseRecord};
+use phasesmith_workflows::{LatticeBounds, LatticeParameterization, RietveldPhase};
 use serde::{Deserialize, Serialize};
 
 use crate::{DesktopError, DesktopErrorCode, DesktopProjectStore, ProjectSnapshot};
@@ -190,17 +192,6 @@ impl DesktopProjectStore {
                 starting.revision(),
             ));
         }
-        if starting
-            .state()
-            .analyses
-            .iter()
-            .any(|analysis| analysis.histogram_id.as_str() == request.histogram_id)
-        {
-            return Err(DesktopError::simple(
-                DesktopErrorCode::UnsupportedOperation,
-                "cannot attach a CIF phase to a histogram with an existing native analysis",
-            ));
-        }
         let (histogram_index, histogram) = starting
             .state()
             .project
@@ -209,24 +200,65 @@ impl DesktopProjectStore {
             .enumerate()
             .find(|(_, histogram)| histogram.histogram_id.as_str() == request.histogram_id)
             .ok_or_else(|| invalid_import("target histogram does not exist"))?;
-        let (probe, wavelength_angstrom) = match histogram.experiment.radiation {
+        let probe = histogram.experiment.radiation.probe();
+        let wavelength_angstrom = histogram
+            .experiment
+            .radiation
+            .reference_wavelength_angstrom();
+        let reflection_range = match &histogram.experiment.radiation {
             RadiationDefinition::Monochromatic {
-                probe,
                 wavelength_angstrom,
-            } => (probe, wavelength_angstrom),
-            RadiationDefinition::FixedSpectrum { .. } => {
-                return Err(DesktopError::simple(
-                    DesktopErrorCode::UnsupportedOperation,
-                    "CIF phase import currently requires monochromatic radiation",
-                ));
+                ..
+            } => ReflectionRange::CwTwoTheta {
+                min_deg: *histogram.pattern.x_deg.first().ok_or_else(|| {
+                    invalid_import("target histogram must contain at least one coordinate")
+                })?,
+                max_deg: *histogram.pattern.x_deg.last().ok_or_else(|| {
+                    invalid_import("target histogram must contain at least one coordinate")
+                })?,
+                wavelength_angstrom: *wavelength_angstrom,
+            },
+            RadiationDefinition::FixedSpectrum { spectrum, .. } => {
+                let minimum_wavelength = spectrum
+                    .wavelengths_angstrom()
+                    .iter()
+                    .copied()
+                    .reduce(f64::min)
+                    .ok_or_else(|| invalid_import("fixed spectrum has no wavelengths"))?;
+                let maximum_wavelength = spectrum
+                    .wavelengths_angstrom()
+                    .iter()
+                    .copied()
+                    .reduce(f64::max)
+                    .ok_or_else(|| invalid_import("fixed spectrum has no wavelengths"))?;
+                let min_theta = 0.5
+                    * histogram
+                        .pattern
+                        .x_deg
+                        .first()
+                        .copied()
+                        .ok_or_else(|| {
+                            invalid_import("target histogram must contain at least one coordinate")
+                        })?
+                        .to_radians();
+                let max_theta = 0.5
+                    * histogram
+                        .pattern
+                        .x_deg
+                        .last()
+                        .copied()
+                        .ok_or_else(|| {
+                            invalid_import("target histogram must contain at least one coordinate")
+                        })?
+                        .to_radians();
+                ReflectionRange::ScatteringVector {
+                    min_inverse_angstrom: 4.0 * std::f64::consts::PI * min_theta.sin()
+                        / maximum_wavelength,
+                    max_inverse_angstrom: 4.0 * std::f64::consts::PI * max_theta.sin()
+                        / minimum_wavelength,
+                }
             }
         };
-        let min_deg = histogram.pattern.x_deg.first().copied().ok_or_else(|| {
-            invalid_import("target histogram must contain at least one coordinate")
-        })?;
-        let max_deg = histogram.pattern.x_deg.last().copied().ok_or_else(|| {
-            invalid_import("target histogram must contain at least one coordinate")
-        })?;
         let imported = read_cif_file(
             &request.path,
             request.block.as_deref(),
@@ -238,16 +270,14 @@ impl DesktopProjectStore {
         let definition = phase_definition(
             &imported.structure,
             probe,
-            min_deg,
-            max_deg,
-            wavelength_angstrom,
+            reflection_range,
             request.merge_friedel,
             request.max_candidates,
             request.scale,
             request.coordinate_tolerance,
             correction,
         )?;
-        self.install_imported_cif(&starting, histogram_index, request, imported, definition)
+        self.install_imported_cif(&starting, histogram_index, request, imported, &definition)
     }
 
     fn install_imported_cif(
@@ -256,7 +286,7 @@ impl DesktopProjectStore {
         histogram_index: usize,
         request: CifPhaseImportRequest,
         imported: phasesmith_io::CifReadResult,
-        definition: StructuralPhaseDefinition,
+        definition: &StructuralPhaseDefinition,
     ) -> Result<CifPhaseImportResponse, DesktopError> {
         let phase_id =
             RecordId::new(&request.phase_id).map_err(|error| invalid_import(error.to_string()))?;
@@ -267,10 +297,17 @@ impl DesktopProjectStore {
         let site_count = definition.fractional_xyz.len();
         let reflection_count = definition.hkl.len();
         let mut next = starting.state().clone();
+        let analysis_phase = RietveldPhase::new(
+            phase_id.clone(),
+            phase_name.clone(),
+            definition.clone(),
+            OwnedCwContributions::neutral(reflection_count),
+        )
+        .map_err(|error| invalid_import(error.to_string()))?;
         next.project.phases.push(StructuralPhaseRecord {
             phase_id: phase_id.clone(),
             name: phase_name,
-            definition,
+            definition: definition.clone(),
             required_providers: Vec::new(),
         });
         let target = next
@@ -279,6 +316,29 @@ impl DesktopProjectStore {
             .get_mut(histogram_index)
             .ok_or_else(|| DesktopError::host_failure("cloned histogram index disappeared"))?;
         target.phase_ids.push(phase_id);
+        if let Some(analysis) = next
+            .analyses
+            .iter_mut()
+            .find(|analysis| analysis.histogram_id.as_str() == request.histogram_id)
+        {
+            let lattice_bounds = if analysis.selection.structural.lattice {
+                let parameterization =
+                    LatticeParameterization::new(definition.space_group.clone(), definition.cell)
+                        .map_err(|error| invalid_import(error.to_string()))?;
+                Some(
+                    LatticeBounds::around(&parameterization, 0.05, 5.0)
+                        .map_err(|error| invalid_import(error.to_string()))?,
+                )
+            } else {
+                None
+            };
+            analysis.input.phases.push(analysis_phase);
+            analysis.lattice_bounds.push(lattice_bounds);
+            analysis.checkpoint = None;
+            analysis
+                .validate()
+                .map_err(|error| invalid_import(error.to_string()))?;
+        }
         let metadata_prefix = format!("phase.{}", request.phase_id);
         next.project.metadata.insert(
             format!("{metadata_prefix}.cif_block"),
@@ -317,9 +377,7 @@ impl DesktopProjectStore {
 fn phase_definition(
     structure: &CifStructure,
     probe: RadiationProbe,
-    min_deg: f64,
-    max_deg: f64,
-    wavelength_angstrom: f64,
+    reflection_range: ReflectionRange,
     merge_friedel: bool,
     max_candidates: usize,
     scale: f64,
@@ -338,14 +396,7 @@ fn phase_definition(
     )
     .map_err(|error| invalid_import(error.to_string()))?;
     let generated = generator
-        .generate(
-            structure.cell,
-            ReflectionRange::CwTwoTheta {
-                min_deg,
-                max_deg,
-                wavelength_angstrom,
-            },
-        )
+        .generate(structure.cell, reflection_range)
         .map_err(|error| invalid_import(error.to_string()))?;
     if generated.is_empty() {
         return Err(invalid_import(

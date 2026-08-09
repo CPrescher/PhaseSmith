@@ -46,7 +46,8 @@ phasesmith.io.cif  [implemented]
 phasesmith.io.powder  [implemented]
   Size-limited two/three-column, unpacked GSAS FXYE, and packed constant-step
   GSAS STD readers. The Python adapter returns immutable NumPy data plus source
-  metadata through the shared Rust parser and performs no refinement.
+  metadata through the shared Rust parser and performs no refinement. FXYE
+  zero-ESD exclusions are exposed through `PowderData.mask`.
 
 phasesmith.pattern
   Observed grids, intensities, uncertainties, masks, backgrounds, and

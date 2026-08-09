@@ -8,7 +8,7 @@ from contextlib import nullcontext, suppress
 from dataclasses import dataclass, field, replace
 from functools import partial
 from pathlib import Path
-from typing import TYPE_CHECKING, TypeVar, cast
+from typing import TYPE_CHECKING, Literal, TypeVar, cast
 
 import numpy as np
 from numpy.typing import NDArray
@@ -1239,11 +1239,14 @@ class RietveldResult:
     covariance: NDArray[np.float64] | None
     unresolved_correlations: tuple[RietveldParameterCorrelation, ...]
     logger_error: Exception | None = None
+    backend: Literal["native", "python"] = "python"
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "phases", tuple(self.phases))
         object.__setattr__(self, "history", tuple(self.history))
         object.__setattr__(self, "unresolved_correlations", tuple(self.unresolved_correlations))
+        if self.backend not in {"native", "python"}:
+            raise ValueError("Rietveld backend must be 'native' or 'python'")
         if self.covariance is not None:
             expected = (len(self.parameters.specs), len(self.parameters.specs))
             if self.covariance.dtype != np.float64 or self.covariance.shape != expected:
@@ -2039,7 +2042,8 @@ def _covariance_diagnostics(
     if rank != free_count:
         return rank, None, tuple(correlations)
     free_covariance = np.linalg.inv(normal)
-    if np.isfinite(metrics.reduced_chi_square):
+    known_uncertainties = options.use_uncertainty and linearization.pattern.uncertainty is not None
+    if not known_uncertainties and np.isfinite(metrics.reduced_chi_square):
         free_covariance *= metrics.reduced_chi_square
     physical_covariance = (
         linearization.physical_to_free @ free_covariance @ linearization.physical_to_free.T
@@ -2227,7 +2231,7 @@ def _refine_with_executor(
                         )
                         change = objective - trial_objective
                         record = RietveldIterationRecord(
-                            iteration,
+                            len(history) + 1,
                             trial_metrics.rp,
                             trial_metrics.rwp,
                             trial_metrics.chi_square,
@@ -2272,7 +2276,7 @@ def _refine_with_executor(
                         )
                         accepted = True
                         if (
-                            iteration >= selected.min_iterations
+                            len(history) >= selected.min_iterations
                             and change <= selected.objective_tolerance * max(objective, 1.0)
                         ):
                             termination = TerminationReason.CONVERGED
@@ -2289,9 +2293,7 @@ def _refine_with_executor(
                     break
                 if not accepted:
                     damping *= selected.damping_increase
-                    termination = TerminationReason.STAGNATED
-                    termination_message = "no improving bounded step was found"
-                    break
+                    continue
                 runtime.emit(
                     RefinementEventKind.ITERATION,
                     "rietveld",
@@ -2714,6 +2716,7 @@ def _refine_native(
         native.covariance(),
         correlations,
         None,
+        "native",
     )
 
 

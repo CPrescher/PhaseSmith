@@ -77,6 +77,10 @@ pub struct RietveldParameterCorrelation {
 }
 
 /// Square row-major covariance over the complete physical parameter order.
+///
+/// The inverse weighted normal matrix is returned without residual scaling
+/// when supplied uncertainties are active. Unit-weight fits are scaled by the
+/// final reduced chi-square because their noise scale is estimated from the fit.
 #[derive(Clone, Debug, PartialEq)]
 pub struct RietveldCovarianceMatrix {
     /// Matrix dimension, equal to the complete physical parameter count.
@@ -489,10 +493,10 @@ pub fn refine_general_rietveld_with_runtime(
             objective,
         )) = accepted
         else {
-            if termination == TerminationReason::MaxIterations {
-                termination = TerminationReason::Stagnated;
-            }
             damping *= options.damping_increase;
+            if termination == TerminationReason::MaxIterations {
+                continue;
+            }
             break;
         };
         let objective_change = current_objective - objective;
@@ -524,7 +528,7 @@ pub fn refine_general_rietveld_with_runtime(
             },
         )?;
         history.push(RietveldIterationRecord {
-            iteration,
+            iteration: history.len() + 1,
             objective,
             objective_change,
             scaled_step_norm: factor * step_norm,
@@ -573,7 +577,7 @@ pub fn refine_general_rietveld_with_runtime(
                 ),
             ],
         )?;
-        if iteration >= options.min_iterations
+        if history.len() >= options.min_iterations
             && objective_change <= options.objective_tolerance * objective.max(1.0)
         {
             termination = TerminationReason::Converged;
@@ -831,7 +835,9 @@ fn covariance_diagnostics(
             correlations,
         });
     };
-    if calculation.metrics.reduced_chi_square.is_finite() {
+    let known_uncertainties =
+        options.calculation.use_uncertainty && input.pattern.uncertainty.is_some();
+    if !known_uncertainties && calculation.metrics.reduced_chi_square.is_finite() {
         free_covariance *= calculation.metrics.reduced_chi_square;
     }
     let covariance_count = derivative

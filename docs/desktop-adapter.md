@@ -33,16 +33,26 @@ then appends the histogram and increments the project revision once. Parse,
 resource-limit, experiment, phase-reference, duplicate-ID, and concurrent-edit
 failures leave the open snapshot unchanged. A GUI host should run file parsing
 on a blocking worker and expose only serializable request/response records.
+UTF-8 BOMs are tolerated. An FXYE row with zero ESD is retained with a neutral
+positive placeholder uncertainty and an explicit false mask entry, so an
+exported excluded channel does not abort import or silently enter the fit.
 
 Native CIF phase import selects one bounded CIF block, preserves parser
 diagnostics and source provenance, and generates the phase's reflection
-families from the exact target histogram range and monochromatic wavelength.
+families from the exact target histogram range and radiation spectrum.
 Built-in X-ray charge/table identities and neutron isotope identities are
 derived with the same explicit rules as the scripting layer. The request owns
 Friedel merging, candidate limits, phase scale, coordinate tolerance, and an
-explicit probe-compatible integrated-intensity correction. Import refuses to
-silently rewrite a histogram that already has a native analysis; attaching a
-new phase there requires a later analysis-edit workflow.
+explicit probe-compatible integrated-intensity correction. If the histogram
+already has an analysis, the imported phase and aligned lattice-bound slot are
+installed in that analysis in the same revision and its obsolete checkpoint is
+cleared.
+
+`create_analysis()` is the explicit authoring boundary between imported project
+records and refinement. Its request owns parameter-family selection, lattice
+bound widths, execution policy, solver budgets/tolerances, and covariance
+controls. The default selection refines phase scales. Creation validates the
+complete native layout and rejects an empty histogram or duplicate analysis.
 
 Standalone calculation builds neutral built-in `RietveldPhase` inputs directly
 from a histogram's ordered project phase records and reuses the same native
@@ -72,6 +82,10 @@ newer edit or reopened project therefore wins deterministically. Shared phases
 across multiple histograms are rejected here until the joint objective owns the
 required shared/local parameter split. `cancel_refinement()` uses the native
 first-reason-wins token, and `discard_job()` releases retained result arrays.
+`close_project_with_cleanup()` cancels and releases every job and retained
+standalone calculation owned by the exact closing snapshot before removing it.
+Fixed-spectrum acceptance preserves the spectrum instead of rewriting it as a
+monochromatic experiment.
 
 ## Binary display series
 

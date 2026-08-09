@@ -163,6 +163,7 @@ fn maximum(background: bool) -> RietveldParameterSelection {
 }
 
 #[test]
+#[ignore = "requires an installed NumPy Python interpreter"]
 fn intelligent_planner_is_cumulative_advice_and_matches_python_when_configured() {
     let input = shifted_input(None);
     let recipe =

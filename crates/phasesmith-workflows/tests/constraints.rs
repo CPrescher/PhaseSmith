@@ -107,6 +107,7 @@ fn cycles_duplicates_unknowns_bounds_and_invalid_scalars_are_structured() {
 }
 
 #[test]
+#[ignore = "requires an installed NumPy Python interpreter"]
 fn python_constraint_transform_matches_native_when_configured() {
     let Ok(python) = std::env::var("PHASESMITH_NUMPY_PYTHON") else {
         return;

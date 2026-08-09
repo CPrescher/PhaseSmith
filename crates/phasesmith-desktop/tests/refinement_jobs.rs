@@ -7,7 +7,8 @@ use std::time::{Duration, Instant};
 use phasesmith_core::{ConstantWavelengthInstrument, OwnedCwContributions};
 use phasesmith_crystallography::{IntegratedIntensityCorrectionModel, UnitCell};
 use phasesmith_desktop::{
-    DesktopErrorCode, DesktopEvent, DesktopProjectStore, JobManager, JobState, SeriesDtype,
+    CalculationManager, CalculationOptionsInput, DesktopErrorCode, DesktopEvent,
+    DesktopProjectStore, JobManager, JobState, SeriesDtype,
 };
 use phasesmith_engine::{
     BuiltInScatteringModel, MonochromaticPositionCorrection, StructuralPhaseDefinition,
@@ -15,8 +16,8 @@ use phasesmith_engine::{
 use phasesmith_execution::ExecutionPolicy;
 use phasesmith_io::space_group_by_number;
 use phasesmith_model::{
-    ExperimentRecord, HistogramRecord, PatternRecord, ProjectRecord, RadiationDefinition,
-    RadiationProbe, RecordId, StructuralPhaseRecord,
+    ExperimentRecord, FixedWavelengthSpectrum, HistogramRecord, PatternRecord, ProjectRecord,
+    RadiationDefinition, RadiationProbe, RecordId, StructuralPhaseRecord,
 };
 use phasesmith_workflows::{
     RefinementLimits, RietveldAnalysis, RietveldCalculationOptions, RietveldCovarianceOptions,
@@ -221,6 +222,49 @@ fn completion_emits_events_but_requires_explicit_revision_checked_acceptance() {
 }
 
 #[test]
+fn accepting_fixed_spectrum_refinement_preserves_the_radiation_contract() {
+    let mut state = project_state();
+    let spectrum = FixedWavelengthSpectrum::new(vec![1.5406, 1.5444], vec![1.0, 0.5]).unwrap();
+    state.project.histograms[0].experiment.radiation = RadiationDefinition::FixedSpectrum {
+        probe: RadiationProbe::Xray,
+        spectrum: spectrum.clone(),
+    };
+    state.analyses[0].input = RietveldInput::new_fixed_spectrum(
+        state.project.histograms[0].pattern.clone(),
+        instrument(),
+        spectrum.clone(),
+        None,
+        state.project.histograms[0].experiment.position_correction,
+        vec![phase()],
+    )
+    .unwrap();
+    state.validate().unwrap();
+    let store = DesktopProjectStore::new();
+    store.create_project("project", "Empty").unwrap();
+    store.replace_project(0, state).unwrap();
+    let (sender, receiver) = mpsc::channel();
+    let jobs = JobManager::new(store.clone(), move |event: &DesktopEvent| {
+        sender
+            .send(event.clone())
+            .map_err(|error| error.to_string())
+    });
+
+    let started = jobs.start_refinement(1, "histogram").unwrap();
+    receive_completion(&receiver);
+    jobs.accept_refinement(started.job_id, 1).unwrap();
+
+    assert_eq!(
+        store.snapshot().unwrap().state().project.histograms[0]
+            .experiment
+            .radiation,
+        RadiationDefinition::FixedSpectrum {
+            probe: RadiationProbe::Xray,
+            spectrum,
+        }
+    );
+}
+
+#[test]
 fn project_and_refinement_arrays_use_described_little_endian_binary_payloads() {
     let store = runnable_store();
     let project_series = store.project_series(1, "histogram").unwrap();
@@ -350,6 +394,53 @@ fn cancellation_is_first_reason_wins_and_returns_a_normal_completion() {
         DesktopEvent::RefinementCompleted { outcome, .. }
             if outcome.termination_reason == "cancelled"
     ));
+}
+
+#[test]
+fn lifecycle_close_cancels_running_jobs_and_releases_retained_arrays() {
+    let store = runnable_store();
+    let calculations = CalculationManager::new(store.clone());
+    let calculation = calculations
+        .calculate_histogram(1, "histogram", CalculationOptionsInput::default())
+        .unwrap();
+    let entered_start = Arc::new(Barrier::new(2));
+    let release_start = Arc::new(Barrier::new(2));
+    let entered = Arc::clone(&entered_start);
+    let release = Arc::clone(&release_start);
+    let jobs = JobManager::new(store.clone(), move |event: &DesktopEvent| {
+        if matches!(
+            event,
+            DesktopEvent::RefinementProgress { event, .. } if event.kind == "start"
+        ) {
+            entered.wait();
+            release.wait();
+        }
+        Ok(())
+    });
+    let started = jobs.start_refinement(1, "histogram").unwrap();
+    entered_start.wait();
+
+    let closed = store
+        .close_project_with_cleanup(1, &jobs, &calculations)
+        .unwrap();
+    assert_eq!(closed.discarded_jobs, 1);
+    assert_eq!(closed.discarded_calculations, 1);
+    assert_eq!(
+        store.snapshot().unwrap_err().code,
+        DesktopErrorCode::NoProject
+    );
+    assert_eq!(
+        jobs.job_status(started.job_id).unwrap_err().code,
+        DesktopErrorCode::UnknownJob
+    );
+    assert_eq!(
+        calculations
+            .calculation_series(calculation.calculation_id)
+            .unwrap_err()
+            .code,
+        DesktopErrorCode::UnknownCalculation
+    );
+    release_start.wait();
 }
 
 #[test]

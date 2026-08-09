@@ -3,7 +3,9 @@
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 
-use crate::rietveld_solver::{norm, topology_change};
+use crate::rietveld_solver::{
+    ConjugateGradientError, conjugate_gradient_core, norm, topology_change,
+};
 use crate::{
     CancellationToken, Constraint, ConstraintDerivativeMatrix, ConstraintError,
     ConstraintTransform, DiagnosticValue, JointRietveldError, JointRietveldHistogram,
@@ -496,10 +498,10 @@ pub fn refine_joint_rietveld_with_runtime(
             accepted_objective,
         )) = accepted
         else {
-            if termination == TerminationReason::MaxIterations {
-                termination = TerminationReason::Stagnated;
-            }
             damping *= options.damping_increase;
+            if termination == TerminationReason::MaxIterations {
+                continue;
+            }
             break;
         };
         let objective_change = current_objective - accepted_objective;
@@ -518,7 +520,7 @@ pub fn refine_joint_rietveld_with_runtime(
             .collect();
         let topology_changes = collect_topology_changes(&live, &trial);
         history.push(JointRietveldIterationRecord {
-            iteration,
+            iteration: history.len() + 1,
             objective: accepted_objective,
             objective_change,
             scaled_step_norm: factor * step_norm,
@@ -561,7 +563,7 @@ pub fn refine_joint_rietveld_with_runtime(
                 ),
             ],
         )?;
-        if iteration >= options.min_iterations
+        if history.len() >= options.min_iterations
             && objective_change <= options.objective_tolerance * accepted_objective.max(1.0)
         {
             termination = TerminationReason::Converged;
@@ -823,49 +825,17 @@ fn conjugate_gradient(
     right_hand_side: &[f64],
     tolerance: f64,
     max_iterations: usize,
-    mut operator: impl FnMut(&[f64]) -> Result<Vec<f64>, JointRietveldRefinementError>,
+    operator: impl FnMut(&[f64]) -> Result<Vec<f64>, JointRietveldRefinementError>,
 ) -> Result<(Vec<f64>, usize), JointRietveldRefinementError> {
-    let mut solution = vec![0.0; right_hand_side.len()];
-    let mut residual = right_hand_side.to_vec();
-    let mut direction = residual.clone();
-    let initial = dot(&residual, &residual);
-    if initial == 0.0 {
-        return Ok((solution, 0));
-    }
-    let mut squared = initial;
-    for iteration in 1..=max_iterations {
-        let product = operator(&direction)?;
-        let denominator = dot(&direction, &product);
-        if !denominator.is_finite() || denominator <= 0.0 {
-            return Err(JointRietveldRefinementError::NumericalBreakdown);
+    conjugate_gradient_core(right_hand_side, tolerance, max_iterations, operator).map_err(|error| {
+        match error {
+            ConjugateGradientError::Operator(error) => error,
+            ConjugateGradientError::NonPositiveOperator
+            | ConjugateGradientError::NonFiniteState => {
+                JointRietveldRefinementError::NumericalBreakdown
+            }
         }
-        let alpha = squared / denominator;
-        for ((solution, residual), (direction, product)) in solution
-            .iter_mut()
-            .zip(&mut residual)
-            .zip(direction.iter().zip(product))
-        {
-            *solution += alpha * direction;
-            *residual -= alpha * product;
-        }
-        let next = dot(&residual, &residual);
-        if next.sqrt() <= tolerance * initial.sqrt() {
-            return Ok((solution, iteration));
-        }
-        let beta = next / squared;
-        for (direction, residual) in direction.iter_mut().zip(&residual) {
-            *direction = residual + beta * *direction;
-        }
-        squared = next;
-    }
-    Ok((solution, max_iterations))
-}
-
-fn dot(left: &[f64], right: &[f64]) -> f64 {
-    left.iter()
-        .zip(right)
-        .map(|(left, right)| left * right)
-        .sum()
+    })
 }
 
 fn emit_rejected_trial(

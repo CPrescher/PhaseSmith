@@ -6,6 +6,7 @@
 
 #![forbid(unsafe_code)]
 
+mod analysis;
 mod calculation;
 mod cif_import;
 mod jobs;
@@ -27,6 +28,10 @@ use phasesmith_persistence::{
 use phasesmith_workflows::RietveldProjectState;
 use serde::Serialize;
 
+pub use analysis::{
+    AnalysisSelectionInput, AnalysisSolverInput, CreateAnalysisRequest, CreateAnalysisResponse,
+    DesktopInstrumentParameter,
+};
 pub use calculation::{
     CalculationId, CalculationManager, CalculationOptionsInput, CalculationResponse,
 };
@@ -196,6 +201,15 @@ pub struct SaveProjectResponse {
     pub revision: u64,
     /// Absolute destination returned by the native persistence codec.
     pub path: String,
+}
+
+/// Resources released while closing one exact desktop project instance.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+pub struct CloseProjectResponse {
+    /// Refinement jobs cancelled and released.
+    pub discarded_jobs: usize,
+    /// Standalone calculation results released.
+    pub discarded_calculations: usize,
 }
 
 #[derive(Default)]
@@ -444,6 +458,47 @@ impl DesktopProjectStore {
         }
         store.current = None;
         Ok(())
+    }
+
+    /// Cancel and release retained work before closing one exact project instance.
+    ///
+    /// Desktop hosts should use this lifecycle boundary instead of
+    /// [`Self::close_project`] when managers are active.
+    ///
+    /// # Errors
+    ///
+    /// Returns a no-project, revision-conflict, cancellation, lifecycle, or
+    /// shared-state error. A conflict never closes a newer project instance.
+    pub fn close_project_with_cleanup(
+        &self,
+        expected_revision: u64,
+        jobs: &JobManager,
+        calculations: &CalculationManager,
+    ) -> Result<CloseProjectResponse, DesktopError> {
+        let starting = self.snapshot()?;
+        if starting.revision() != expected_revision {
+            return Err(DesktopError::conflict(
+                expected_revision,
+                starting.revision(),
+            ));
+        }
+        let discarded_jobs = jobs.cancel_and_discard_for_project(&starting, "project_closed")?;
+        let discarded_calculations = calculations.discard_for_project(&starting)?;
+        let mut store = self.write()?;
+        let current = store.current.as_ref().ok_or_else(|| {
+            DesktopError::simple(DesktopErrorCode::NoProject, "no project is open")
+        })?;
+        if current.project.revision != expected_revision || !Arc::ptr_eq(current, &starting.state) {
+            return Err(DesktopError::conflict(
+                expected_revision,
+                current.project.revision,
+            ));
+        }
+        store.current = None;
+        Ok(CloseProjectResponse {
+            discarded_jobs,
+            discarded_calculations,
+        })
     }
 
     fn read(&self) -> Result<RwLockReadGuard<'_, StoreState>, DesktopError> {

@@ -43,6 +43,14 @@ jobs:
       - run: maturin build --release --out dist
       - run: python -m pip install dist/*.whl
       - run: python -m pytest -q
+      - name: Run Rust/Python differential contracts
+        if: matrix.python-version == '3.13'
+        env:
+          PHASESMITH_NUMPY_PYTHON: ${{ env.pythonLocation }}/bin/python
+        run: |
+          cargo test -p phasesmith-workflows --all-features -- --ignored
+          cargo test -p phasesmith-persistence --all-features \
+            numpy_reads_and_rewrites_native_archives_when_configured -- --ignored
       - run: ruff check .
       - run: ruff format --check .
       - run: python benchmarks/profile.py --require-release --warmups 1 --repetitions 3

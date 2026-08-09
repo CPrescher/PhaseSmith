@@ -88,6 +88,11 @@ rank and its interpretation is valid. Phase scale and freely extracted
 intensities are inherently correlated; a selected phase scale therefore emits
 an explicit identifiability warning and covariance is not reported for that
 parameterization.
+The same uncertainty convention is used for covariance as in Rietveld:
+supplied active uncertainties yield the unscaled inverse weighted normal
+matrix, while unit-weight fits scale it by the final reduced chi-square.
+Phase and reflection IDs cannot contain `/`, which keeps the documented
+`phase/reflection` parameter identities unambiguous.
 
 CIF-backed lattice refinement, including the one-call constructor and guarded
 reflection-domain semantics, is documented in

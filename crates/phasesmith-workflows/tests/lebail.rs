@@ -641,6 +641,7 @@ fn runtime_cancellation_events_and_checkpoint_delivery_are_integrated() {
 }
 
 #[test]
+#[ignore = "requires an installed NumPy Python interpreter"]
 fn fixed_reflection_history_matches_python_when_configured() {
     let Ok(python) = std::env::var("PHASESMITH_NUMPY_PYTHON") else {
         return;
@@ -738,6 +739,7 @@ for item in result.history:
 }
 
 #[test]
+#[ignore = "requires an installed NumPy Python interpreter"]
 fn analytical_profile_history_matches_python_when_configured() {
     let Ok(python) = std::env::var("PHASESMITH_NUMPY_PYTHON") else {
         return;
@@ -823,6 +825,7 @@ for item in result.history:
 }
 
 #[test]
+#[ignore = "requires an installed NumPy Python interpreter"]
 fn bounded_lattice_history_matches_python_when_configured() {
     let Ok(python) = std::env::var("PHASESMITH_NUMPY_PYTHON") else {
         return;

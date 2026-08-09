@@ -47,6 +47,17 @@ BANK 2 1 1 CONS 1000.0 1.0 0 0 FXYE
     np.testing.assert_array_equal(data.observed_y, [9.0])
 
 
+def test_bom_prefixed_fxye_zero_esd_is_exposed_as_an_exclusion_mask() -> None:
+    data = read_powder_data(
+        "\ufeffExample\nBANK 1 2 2 CONS 50.0 2.0 0 0 FXYE\n500.0 0.0 0.0\n502.0 121.0 11.0\n"
+    )
+
+    np.testing.assert_array_equal(data.uncertainty, [1.0, 11.0])
+    np.testing.assert_array_equal(data.mask, [False, True])
+    np.testing.assert_array_equal(data.to_pattern().mask, data.mask)
+    assert data.mask is not None and not data.mask.flags.writeable
+
+
 def test_reads_packed_constant_step_gsas_std_bank() -> None:
     text = """Packed example
 BANK 1 3 1 CONST 1000 2.5 0 0 STD

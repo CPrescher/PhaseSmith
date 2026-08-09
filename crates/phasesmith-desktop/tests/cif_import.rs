@@ -5,9 +5,10 @@ use std::sync::atomic::{AtomicU64, Ordering};
 
 use phasesmith_crystallography::IntegratedIntensityCorrectionModel;
 use phasesmith_desktop::{
-    CifPhaseImportRequest, DesktopErrorCode, DesktopExperimentInput,
-    DesktopIntensityCorrectionInput, DesktopPositionCorrectionInput, DesktopProjectStore,
-    DesktopRadiationProbe, PowderFormatInput, PowderHistogramImportRequest,
+    AnalysisSelectionInput, AnalysisSolverInput, CifPhaseImportRequest, CreateAnalysisRequest,
+    DesktopErrorCode, DesktopExperimentInput, DesktopIntensityCorrectionInput,
+    DesktopPositionCorrectionInput, DesktopProjectStore, DesktopRadiationProbe, PowderFormatInput,
+    PowderHistogramImportRequest,
 };
 use phasesmith_engine::BuiltInScatteringModel;
 
@@ -19,6 +20,49 @@ fn temporary_path(label: &str) -> PathBuf {
         std::process::id(),
         TEMP_SEQUENCE.fetch_add(1, Ordering::Relaxed)
     ))
+}
+
+#[test]
+fn creates_an_analysis_and_later_cif_imports_extend_it_atomically() {
+    let store = DesktopProjectStore::new();
+    let (powder, revision) = prepare_histogram(&store, DesktopRadiationProbe::Xray);
+    let first_cif = temporary_path("analysis-first.cif");
+    let second_cif = temporary_path("analysis-second.cif");
+    std::fs::write(&first_cif, cif_text()).unwrap();
+    std::fs::write(&second_cif, cif_text()).unwrap();
+
+    let first = store
+        .import_cif_phase(revision, request(first_cif.clone()))
+        .unwrap();
+    let created = store
+        .create_analysis(
+            first.revision,
+            &CreateAnalysisRequest {
+                histogram_id: "histogram-1".to_owned(),
+                selection: AnalysisSelectionInput::default(),
+                solver: AnalysisSolverInput::default(),
+                lattice_relative_length: 0.05,
+                lattice_angle_delta_deg: 5.0,
+            },
+        )
+        .unwrap();
+    assert_eq!(created.phase_count, 1);
+    assert_eq!(created.parameter_count, 1);
+
+    let mut second_request = request(second_cif.clone());
+    second_request.phase_id = "phase-si-2".to_owned();
+    let second = store
+        .import_cif_phase(created.revision, second_request)
+        .unwrap();
+    let snapshot = store.snapshot().unwrap();
+    assert_eq!(snapshot.revision(), second.revision);
+    assert_eq!(snapshot.state().analyses[0].input.phases.len(), 2);
+    assert_eq!(snapshot.state().analyses[0].lattice_bounds.len(), 2);
+    assert!(snapshot.state().analyses[0].checkpoint.is_none());
+
+    std::fs::remove_file(powder).unwrap();
+    std::fs::remove_file(first_cif).unwrap();
+    std::fs::remove_file(second_cif).unwrap();
 }
 
 fn prepare_histogram(store: &DesktopProjectStore, probe: DesktopRadiationProbe) -> (PathBuf, u64) {

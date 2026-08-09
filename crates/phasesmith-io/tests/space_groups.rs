@@ -90,3 +90,25 @@ fn database_provenance_is_pinned_and_complete() {
             .unwrap_or_else(|error| panic!("space group {number} did not resolve: {error}"));
     }
 }
+
+#[test]
+fn every_standard_space_group_has_the_international_crystal_system() {
+    let ranges = [
+        (1..=2, CrystalSystem::Triclinic),
+        (3..=15, CrystalSystem::Monoclinic),
+        (16..=74, CrystalSystem::Orthorhombic),
+        (75..=142, CrystalSystem::Tetragonal),
+        (143..=167, CrystalSystem::Trigonal),
+        (168..=194, CrystalSystem::Hexagonal),
+        (195..=230, CrystalSystem::Cubic),
+    ];
+    for (numbers, expected) in ranges {
+        for number in numbers {
+            let actual = space_group_by_number(number)
+                .unwrap_or_else(|error| panic!("space group {number} did not resolve: {error}"))
+                .space_group
+                .crystal_system();
+            assert_eq!(actual, expected, "space group {number}");
+        }
+    }
+}

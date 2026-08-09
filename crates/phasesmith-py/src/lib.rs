@@ -97,6 +97,7 @@ type PowderDataArrays<'py> = (
     &'static str,
     Option<String>,
     Option<usize>,
+    Option<Bound<'py, PyArray1<bool>>>,
 );
 
 type TchShapeValues = (f64, f64, f64, f64, f64, f64);
@@ -3868,6 +3869,7 @@ fn powder_data_to_numpy(py: Python<'_>, data: NativePowderData) -> PyResult<Powd
         data.source_path
             .map(|path| path.to_string_lossy().into_owned()),
         data.bank,
+        data.pattern.mask.map(|values| values.into_pyarray(py)),
     ))
 }
 

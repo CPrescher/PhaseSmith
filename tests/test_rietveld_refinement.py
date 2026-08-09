@@ -555,6 +555,7 @@ def test_builtin_refinement_delegates_to_native_and_restarts_natively() -> None:
             estimate_covariance=False,
         ),
     )
+    assert partial.backend == "native"
     assert partial.checkpoint._native is not None
     resumed = structural_refinement.refine(
         request,
@@ -566,6 +567,7 @@ def test_builtin_refinement_delegates_to_native_and_restarts_natively() -> None:
         ),
         checkpoint=partial.checkpoint,
     )
+    assert resumed.backend == "native"
     assert resumed.checkpoint._native is not None
     assert resumed.termination_reason is structural_refinement.TerminationReason.CONVERGED
     assert resumed.phases[0].scale == pytest.approx(1.0, rel=2.0e-8)
@@ -1791,7 +1793,7 @@ def test_unexpected_model_failure_emits_last_safe_checkpoint_and_reraises(
     assert emergency[0].phases == request.phases
 
 
-def test_non_improving_trials_terminate_as_stagnated_without_installing_them(
+def test_non_improving_trials_exhaust_rejection_budget_without_installing_them(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     truth = request_from_cif(selection(phase_scale=True))
@@ -1828,12 +1830,59 @@ def test_non_improving_trials_terminate_as_stagnated_without_installing_them(
         ),
         logger=lambda _event: None,
     )
-    assert result.termination_reason is structural_refinement.TerminationReason.STAGNATED
+    assert result.termination_reason is structural_refinement.TerminationReason.REPEATED_REJECTIONS
     assert result.history == ()
     assert result.phases == request.phases
 
 
-def test_out_of_domain_trials_are_rejected_without_losing_the_safe_state(
+def test_failed_line_search_retries_with_increased_damping(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    truth = request_from_cif(selection(phase_scale=True))
+    starting_phase = replace(truth.phases[0], scale=0.7)
+    request = replace(
+        truth,
+        phases=(starting_phase,),
+        parameters=structural_refinement.build_parameter_set(
+            (starting_phase,), (None,), truth.selection
+        ),
+    )
+    original = structural_refinement._RietveldLinearization.calculate
+    initial = []
+    calls = 0
+
+    def reject_one_line_search(
+        self: structural_refinement._RietveldLinearization,
+    ) -> structural_refinement.RietveldCalculationResult:
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            initial.append(original(self))
+            return initial[0]
+        if calls <= 4:
+            self.runtime.begin_evaluation()
+            return initial[0]
+        return original(self)
+
+    monkeypatch.setattr(
+        structural_refinement._RietveldLinearization,
+        "calculate",
+        reject_one_line_search,
+    )
+    options = structural_refinement.RietveldOptions(
+        max_backtracks=2,
+        estimate_covariance=False,
+    )
+    result = structural_refinement.refine(request, options, logger=lambda _event: None)
+
+    assert result.history
+    assert result.history[0].iteration == 1
+    assert result.history[0].damping == pytest.approx(
+        options.initial_damping * options.damping_increase
+    )
+
+
+def test_out_of_domain_trials_exhaust_rejection_budget_without_losing_the_safe_state(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     truth = request_from_cif(selection(phase_scale=True))
@@ -1877,11 +1926,11 @@ def test_out_of_domain_trials_are_rejected_without_losing_the_safe_state(
         for event in events
         if event.kind is structural_refinement.RefinementEventKind.STEP_REJECTED
     ]
-    assert result.termination_reason is structural_refinement.TerminationReason.STAGNATED
+    assert result.termination_reason is structural_refinement.TerminationReason.REPEATED_REJECTIONS
     assert result.history == ()
     assert result.phases == request.phases
-    assert calls == 4
-    assert len(rejected) == 3
+    assert calls == 21
+    assert len(rejected) == 20
     assert all("outside the numerical model domain" in event.message for event in rejected)
     assert all(
         dict(event.diagnostics)["reason"] == "derived Gaussian variance must be positive and finite"

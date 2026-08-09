@@ -73,6 +73,12 @@ rows are propagated through the constraint derivative rather than inverted as
 independent parameters. The native staged-recipe layer and the built-in Python
 façade now consume this solver directly.
 
+Covariance uses one convention in both the Rust and independent Python paths.
+When supplied uncertainties are enabled, the inverse weighted normal matrix is
+already in physical variance units and is not rescaled. Unit-weight fits instead
+multiply it by the final reduced chi-square because their noise scale is
+estimated from the residuals.
+
 ## Objective and numerical method
 
 For included observations `i`, the residual used by the optimizer is

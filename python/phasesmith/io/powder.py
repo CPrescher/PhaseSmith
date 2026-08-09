@@ -37,6 +37,7 @@ class PowderData:
     format: Literal["columns", "gsas_fxye", "gsas_std"]
     source_name: str | None = None
     bank: int | None = None
+    mask: NDArray[np.bool_] | None = None
 
     def __post_init__(self) -> None:
         count = self.x.size
@@ -55,11 +56,13 @@ class PowderData:
                 raise ValueError("uncertainty must match x")
             if not np.isfinite(self.uncertainty).all() or np.any(self.uncertainty <= 0.0):
                 raise ValueError("uncertainty must contain only finite positive values")
+        if self.mask is not None and (self.mask.dtype != np.bool_ or self.mask.shape != (count,)):
+            raise ValueError("mask must be a one-dimensional boolean array matching x")
         if self.format not in {"columns", "gsas_fxye", "gsas_std"}:
             raise ValueError("unsupported powder-data format")
         if self.format in {"gsas_fxye", "gsas_std"} and self.bank is None:
             raise ValueError("GSAS powder data must identify its bank")
-        for array in (self.x, self.observed_y, self.uncertainty):
+        for array in (self.x, self.observed_y, self.uncertainty, self.mask):
             if array is not None:
                 array.flags.writeable = False
 
@@ -71,7 +74,7 @@ class PowderData:
             observed_y=self.observed_y,
             uncertainty=self.uncertainty,
             background=background,
-            mask=mask,
+            mask=self.mask if mask is None else mask,
         )
 
 

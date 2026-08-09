@@ -74,6 +74,8 @@ class LeBailPhase(Phase):
         """Validate the generic phase contract and required source structure."""
 
         Phase.__post_init__(self)
+        if "/" in self.phase_id or any("/" in value for value in self.reflections.reflection_ids):
+            raise ValueError("Le Bail phase and reflection IDs must not contain '/'")
         if not isinstance(self.structure, CrystalStructure):
             raise TypeError("LeBailPhase structure must be a CrystalStructure")
         if self.reflection_domain is not None:
@@ -1222,6 +1224,7 @@ def _covariance(
     parameters: ParameterSet | None,
     constraints: tuple[Constraint, ...],
     use_uncertainty: bool,
+    reduced_chi_square: float,
 ) -> NDArray[np.float64] | None:
     if parameters is None:
         return None
@@ -1241,6 +1244,9 @@ def _covariance(
     if np.linalg.matrix_rank(normal) != normal.shape[0]:
         return None
     covariance = np.linalg.inv(normal)
+    known_uncertainties = use_uncertainty and pattern.uncertainty is not None
+    if not known_uncertainties and np.isfinite(reduced_chi_square):
+        covariance *= reduced_chi_square
     covariance.flags.writeable = False
     return covariance
 
@@ -1487,6 +1493,7 @@ def refine(
             parameters,
             input_data.constraints,
             selected_options.use_uncertainty,
+            final_metrics.reduced_chi_square,
         ),
         checkpoint=final_checkpoint,
     )

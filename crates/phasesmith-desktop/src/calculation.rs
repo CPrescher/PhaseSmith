@@ -233,6 +233,16 @@ impl CalculationManager {
         Ok(())
     }
 
+    pub(crate) fn discard_for_project(
+        &self,
+        source: &ProjectSnapshot,
+    ) -> Result<usize, DesktopError> {
+        let mut calculations = self.lock()?;
+        let before = calculations.len();
+        calculations.retain(|_, record| !record.source.same_instance(source));
+        Ok(before - calculations.len())
+    }
+
     fn lock(
         &self,
     ) -> Result<MutexGuard<'_, BTreeMap<CalculationId, CalculationRecord>>, DesktopError> {
@@ -260,7 +270,7 @@ impl CalculationManager {
     }
 }
 
-fn calculation_input(
+pub(crate) fn calculation_input(
     source: &ProjectSnapshot,
     histogram_id: &RecordId,
 ) -> Result<RietveldInput, DesktopError> {

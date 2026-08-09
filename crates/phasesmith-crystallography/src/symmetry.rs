@@ -983,12 +983,24 @@ fn classify_crystal_system(
     }
     let has_order = |order| orders.contains(&order);
     let has_proper_order = |order| proper_orders.contains(&order);
+    let has_negative_three = rotations.iter().zip(&orders).any(|(rotation, order)| {
+        if determinant_i32(*rotation) != -1 || *order != 6 {
+            return false;
+        }
+        let Ok(square) = multiply_rotation(*rotation, *rotation) else {
+            return false;
+        };
+        multiply_rotation(square, *rotation)
+            .is_ok_and(|cube| cube == [[-1, 0, 0], [0, -1, 0], [0, 0, -1]])
+    });
     Ok(if rhombohedral_metric {
         CrystalSystem::Trigonal
     } else if has_proper_order(6) {
         CrystalSystem::Hexagonal
     } else if has_proper_order(3) && proper_count >= 12 {
         CrystalSystem::Cubic
+    } else if has_negative_three {
+        CrystalSystem::Trigonal
     } else if has_order(6) {
         CrystalSystem::Hexagonal
     } else if has_order(4) {
@@ -1195,5 +1207,31 @@ mod tests {
         let group = SpaceGroup::new(operations).expect("sixfold group");
         assert_eq!(group.crystal_system(), CrystalSystem::Hexagonal);
         assert_eq!(group.metric_constraints().independent_parameter_count, 2);
+    }
+
+    #[test]
+    fn negative_three_is_trigonal_while_negative_six_is_hexagonal() {
+        let sixfold = [[0, -1, 0], [1, 1, 0], [0, 0, 1]];
+        let threefold = multiply_rotation(sixfold, sixfold).expect("threefold generator");
+        let negative_three = threefold.map(|row| row.map(|value| -value));
+        let mut rotation = SymmetryOperation::identity().rotation;
+        let mut operations = Vec::new();
+        for _ in 0..6 {
+            operations.push(operation(rotation, [Rational::zero(); 3]));
+            rotation =
+                multiply_rotation(negative_three, rotation).expect("finite rotation product");
+        }
+        let trigonal = SpaceGroup::new(operations).expect("negative-three group");
+        assert_eq!(trigonal.crystal_system(), CrystalSystem::Trigonal);
+
+        let negative_six = sixfold.map(|row| row.map(|value| -value));
+        let mut rotation = SymmetryOperation::identity().rotation;
+        let mut operations = Vec::new();
+        for _ in 0..6 {
+            operations.push(operation(rotation, [Rational::zero(); 3]));
+            rotation = multiply_rotation(negative_six, rotation).expect("finite rotation product");
+        }
+        let hexagonal = SpaceGroup::new(operations).expect("negative-six group");
+        assert_eq!(hexagonal.crystal_system(), CrystalSystem::Hexagonal);
     }
 }

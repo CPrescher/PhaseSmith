@@ -41,6 +41,20 @@ fn reads_selected_fxye_bank_and_converts_centidegrees() {
 }
 
 #[test]
+fn fxye_zero_esd_rows_are_preserved_as_explicitly_excluded_samples() {
+    let text = "\u{feff}Example\n\
+        BANK 1 2 2 CONS 50.0 2.0 0 0 FXYE\n\
+         500.0 0.0 0.0\n\
+         502.0 121.0 11.0\n";
+    let data = parse_powder_text(text, PowderFormat::Auto, 1, PowderReadLimits::default())
+        .expect("BOM-prefixed FXYE with an excluded row must parse");
+
+    assert_eq!(data.pattern.x_deg, [5.0, 5.02]);
+    assert_eq!(data.pattern.uncertainty.as_deref(), Some(&[1.0, 11.0][..]));
+    assert_eq!(data.pattern.mask.as_deref(), Some(&[false, true][..]));
+}
+
+#[test]
 fn reads_packed_constant_step_std_bank() {
     let data = parse(concat!(
         "Packed example\n",

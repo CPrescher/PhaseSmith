@@ -72,6 +72,7 @@ fn unit_weights_zero_denominators_degrees_and_invalid_inputs_are_explicit() {
 }
 
 #[test]
+#[ignore = "requires an installed NumPy Python interpreter"]
 fn python_residual_evaluation_matches_native_when_configured() {
     let Ok(python) = std::env::var("PHASESMITH_NUMPY_PYTHON") else {
         return;
