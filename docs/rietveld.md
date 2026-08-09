@@ -4,16 +4,18 @@ The first structural refinement vertical slice is implemented in
 `phasesmith.refinement.rietveld`. It is a script-first, monochromatic
 constant-wavelength workflow. It accepts one or more typed `RietveldPhase`
 objects and obtains every reflection intensity from their crystal structures;
-GSAS-II is never imported or called.
+GSAS-II is never imported or called. For monochromatic requests composed only
+of built-in scattering, correction, sample-physics, background, and constraint
+types, this Python façade delegates the complete solve and restart checkpoint
+to `refine_general_rietveld`. Python-only providers and calls that request
+Python cancellation, logging, or checkpoint callbacks retain the scripting
+orchestrator as an explicit compatibility path.
 
 For native applications, the first Python-free Rietveld boundary now lives in
 the `phasesmith-workflows` Rust crate. It owns structural phases, experiment
 state, fixed background composition, phase-resolved calculation results, and
-residual metrics, so a future Tauri command can calculate and plot a complete
-multiphase pattern without a Python process. The scripting optimizer described
-below remains the production refinement orchestrator until its parameter,
-solver, topology, runtime, and staged-recipe contracts have each migrated and
-passed cross-interface validation.
+residual metrics, so a future Tauri command can calculate, refine, and plot a
+complete multiphase pattern without a Python process.
 
 The native boundary additionally provides stable phase/site parameter IDs,
 setting-aware lattice bounds, deterministic symmetry-allowed special-position
@@ -68,8 +70,8 @@ The final optional small-matrix diagnostic reports weighted Jacobian rank and
 near-collinear free columns. It returns a full physical-parameter covariance
 only when the scaled-free normal matrix is full rank; fixed and constrained
 rows are propagated through the constraint derivative rather than inverted as
-independent parameters. The native staged-recipe layer now consumes this
-solver; Python façade delegation remains the next migration slice.
+independent parameters. The native staged-recipe layer and the built-in Python
+façade now consume this solver directly.
 
 ## Objective and numerical method
 

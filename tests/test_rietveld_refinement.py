@@ -526,8 +526,46 @@ def test_matrix_free_refinement_recovers_phase_scale_and_emits_checkpoints() -> 
     assert result.covariance.shape == (1, 1)
     assert checkpoints
     assert checkpoints[-1] == result.checkpoint
+    assert result.checkpoint._native is None
     assert events[0].kind is structural_refinement.RefinementEventKind.START
     assert events[-1].kind is structural_refinement.RefinementEventKind.TERMINATION
+
+
+def test_builtin_refinement_delegates_to_native_and_restarts_natively() -> None:
+    truth = request_from_cif(selection(phase_scale=True))
+    starting_phase = replace(truth.phases[0], scale=0.65)
+    request = replace(
+        truth,
+        phases=(starting_phase,),
+        parameters=structural_refinement.build_parameter_set(
+            (starting_phase,), (None,), truth.selection
+        ),
+    )
+    partial = structural_refinement.refine(
+        request,
+        structural_refinement.RietveldOptions(
+            limits=structural_refinement.RefinementLimits(
+                max_iterations=1,
+                max_evaluations=200,
+            ),
+            estimate_covariance=False,
+        ),
+    )
+    assert partial.checkpoint._native is not None
+    resumed = structural_refinement.refine(
+        request,
+        structural_refinement.RietveldOptions(
+            limits=structural_refinement.RefinementLimits(
+                max_iterations=10,
+                max_evaluations=200,
+            )
+        ),
+        checkpoint=partial.checkpoint,
+    )
+    assert resumed.checkpoint._native is not None
+    assert resumed.termination_reason is structural_refinement.TerminationReason.CONVERGED
+    assert resumed.phases[0].scale == pytest.approx(1.0, rel=2.0e-8)
+    assert resumed.history[: len(partial.history)] == partial.history
 
 
 def test_matrix_free_refinement_conditions_small_phase_scales_relatively() -> None:
@@ -1577,6 +1615,7 @@ def test_non_improving_trials_terminate_as_stagnated_without_installing_them(
             max_backtracks=2,
             estimate_covariance=False,
         ),
+        logger=lambda _event: None,
     )
     assert result.termination_reason is structural_refinement.TerminationReason.STAGNATED
     assert result.history == ()

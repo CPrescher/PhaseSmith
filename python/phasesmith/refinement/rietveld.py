@@ -49,12 +49,14 @@ from ..scattering import NeutronNuclear, ScatteringFactorProvider, XrayNonResona
 from ..structural_calculation import (
     PreparedStructuralPattern,
     _native_model_configuration,
+    _native_phase,
     _native_workflow_dynamic_arguments,
     _supports_fused_structural_physics,
 )
 from ..structure import AtomSite, CrystalStructure
 from ..symmetry import CwTwoThetaRange, DSpacingRange, PreparedReflectionGenerator
 from .background import (
+    AmorphousBackground,
     ChebyshevBackground,
     CompositeBackground,
     DifferentiableBackground,
@@ -62,9 +64,12 @@ from .background import (
     PolynomialBackground,
 )
 from .core import (
+    AffineConstraint,
     Bounds,
     Constraint,
     ConstraintTransform,
+    FixedConstraint,
+    LinearConstraint,
     ParameterKey,
     ParameterSet,
     ParameterSpec,
@@ -1173,6 +1178,7 @@ class RietveldCheckpoint:
     history: tuple[RietveldIterationRecord, ...]
     experiment: ConstantWavelengthExperiment | None = None
     background: DifferentiableBackground | None = None
+    _native: object | None = field(default=None, repr=False, compare=False)
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "phases", tuple(self.phases))
@@ -2374,6 +2380,338 @@ def _refine_with_executor(
     )
 
 
+def _native_key(key: ParameterKey) -> tuple[str, str, str]:
+    return key.module, key.owner_id, key.name
+
+
+def _native_physics_records(provider: object | None) -> list[tuple[str, list[float]]]:
+    if provider is None:
+        return []
+    if type(provider) is IsotropicSizeBroadening:
+        return [
+            (
+                "isotropic_size",
+                [float(provider.crystallite_size_nm), float(provider.shape_factor)],
+            )
+        ]
+    if type(provider) is IsotropicMicrostrainBroadening:
+        return [("isotropic_microstrain", [float(provider.rms_microstrain)])]
+    if type(provider) is MarchDollasePreferredOrientation:
+        return [
+            (
+                "march_dollase",
+                [float(provider.march_ratio), *map(float, provider.preferred_axis_hkl)],
+            )
+        ]
+    if type(provider) is CompositePhysicsProvider:
+        return [
+            record
+            for child in provider.providers
+            for record in _native_physics_records(child)
+        ]
+    raise TypeError("native Rietveld received an unsupported sample-physics provider")
+
+
+def _native_background_model(background: DifferentiableBackground | None) -> object | None:
+    if background is None:
+        return None
+    if type(background) is PolynomialBackground:
+        return _core._RietveldBackground.polynomial(
+            background.background_id, list(background.coefficients)
+        )
+    if type(background) is ChebyshevBackground:
+        return _core._RietveldBackground.chebyshev(
+            background.background_id,
+            list(background.coefficients),
+            background.domain_deg,
+        )
+    if type(background) is PointBackground:
+        return _core._RietveldBackground.point(
+            background.background_id,
+            list(background.knot_x),
+            list(background.values),
+        )
+    if type(background) is AmorphousBackground:
+        return _core._RietveldBackground.amorphous(
+            background.background_id,
+            [(peak.area, peak.center_deg, peak.fwhm_deg) for peak in background.peaks],
+        )
+    if type(background) is CompositeBackground:
+        return _core._RietveldBackground.composite(
+            background.background_id,
+            [_native_background_model(component) for component in background.components],
+        )
+    raise TypeError("native Rietveld received an unsupported analytical background")
+
+
+def _supports_native_background(background: DifferentiableBackground | None) -> bool:
+    if background is None or type(background) in (
+        PolynomialBackground,
+        ChebyshevBackground,
+        PointBackground,
+        AmorphousBackground,
+    ):
+        return True
+    return type(background) is CompositeBackground and all(
+        _supports_native_background(component) for component in background.components
+    )
+
+
+def _supports_native_constraints(constraints: tuple[Constraint, ...]) -> bool:
+    supported = (FixedConstraint, AffineConstraint, LinearConstraint)
+    return all(type(item) in supported for item in constraints)
+
+
+def _native_constraint(constraint: Constraint) -> object:
+    if type(constraint) is FixedConstraint:
+        return _core._RietveldConstraint.fixed(_native_key(constraint.target), constraint.value)
+    if type(constraint) is AffineConstraint:
+        return _core._RietveldConstraint.affine(
+            _native_key(constraint.target),
+            _native_key(constraint.source),
+            constraint.multiplier,
+            constraint.offset,
+        )
+    if type(constraint) is LinearConstraint:
+        return _core._RietveldConstraint.linear(
+            _native_key(constraint.target),
+            [(_native_key(source), coefficient) for source, coefficient in constraint.terms],
+            constraint.offset,
+        )
+    raise TypeError("native Rietveld received an unsupported constraint")
+
+
+def _native_request(input_data: RietveldInput, options: RietveldOptions) -> object:
+    phases = []
+    for phase, domain in zip(input_data.phases, input_data.lattice_domains, strict=True):
+        base = _native_phase(phase, options.execution)
+        if base is None:  # pragma: no cover - guarded by the native capability predicate
+            raise TypeError("native Rietveld phase conversion is unavailable")
+        arguments = (
+            base,
+            phase.phase_id,
+            phase.name,
+            [site.site_id for site in phase.structure.sites],
+            _native_physics_records(phase.physics),
+        )
+        if domain is None:
+            phases.append(_core._RietveldPhase.fixed(*arguments))
+        else:
+            phases.append(
+                _core._RietveldPhase.dynamic(
+                    *arguments,
+                    list(map(float, domain.bounds.lower)),
+                    list(map(float, domain.bounds.upper)),
+                    domain.wavelength_angstrom,
+                    domain.visible_two_theta_min_deg,
+                    domain.visible_two_theta_max_deg,
+                    domain.merge_friedel,
+                    domain.max_candidates,
+                    domain.guard_scale,
+                )
+            )
+    experiment = input_data.experiment
+    geometry = experiment.geometry
+    axial = experiment.axial_geometry
+    instrument = experiment.instrument
+    return _core._RietveldRequest(
+        input_data.pattern.x,
+        input_data.pattern.observed_y,
+        input_data.pattern.uncertainty,
+        input_data.pattern.mask,
+        input_data.pattern.background,
+        instrument.wavelength_angstrom,
+        instrument.u_deg2,
+        instrument.v_deg2,
+        instrument.w_deg2,
+        instrument.x_deg,
+        instrument.y_deg,
+        experiment.zero_shift_deg,
+        geometry.sample_displacement_mm if isinstance(geometry, BraggBrentanoGeometry) else None,
+        geometry.displace_x_micrometre if isinstance(geometry, DebyeScherrerGeometry) else None,
+        geometry.displace_y_micrometre if isinstance(geometry, DebyeScherrerGeometry) else None,
+        None if geometry is None else geometry.goniometer_radius_mm,
+        None if axial is None else axial.sample_over_radius,
+        None if axial is None else axial.detector_over_radius,
+        _native_background_model(input_data.background),
+        phases,
+        input_data.selection.phase_scale,
+        input_data.selection.lattice,
+        input_data.selection.coordinates,
+        input_data.selection.occupancy,
+        input_data.selection.u_iso,
+        list(input_data.selection.instrument_parameters),
+        input_data.selection.background,
+        input_data.selection.sample_physics,
+        [_native_constraint(constraint) for constraint in input_data.constraints],
+    )
+
+
+def _native_termination_message(reason: TerminationReason) -> str:
+    return {
+        TerminationReason.CONVERGED: "native convergence criterion reached",
+        TerminationReason.MAX_ITERATIONS: "iteration limit reached",
+        TerminationReason.NO_OBSERVATIONS: "no included observations",
+        TerminationReason.NUMERICAL_FAILURE: "native numerical failure",
+        TerminationReason.CANCELLED: "refinement cancelled",
+        TerminationReason.MAX_RUNTIME: "runtime limit reached",
+        TerminationReason.MAX_EVALUATIONS: "model-evaluation limit reached",
+        TerminationReason.STAGNATED: "no improving bounded step was found",
+        TerminationReason.DIVERGED: "objective diverged",
+        TerminationReason.REPEATED_REJECTIONS: "rejected-step limit reached",
+    }[reason]
+
+
+def _refine_native(
+    input_data: RietveldInput,
+    options: RietveldOptions,
+    checkpoint: RietveldCheckpoint | None,
+) -> RietveldResult:
+    request = _native_request(input_data, options)
+    limits = options.limits
+    native = request.refine(
+        options.execution._native,
+        limits.max_iterations,
+        limits.max_evaluations,
+        limits.max_runtime_seconds,
+        limits.max_consecutive_rejections,
+        options.min_iterations,
+        options.objective_tolerance,
+        options.parameter_tolerance,
+        options.initial_damping,
+        options.damping_increase,
+        options.damping_decrease,
+        options.cg_tolerance,
+        options.max_cg_iterations,
+        options.max_scaled_parameter_step,
+        options.max_backtracks,
+        options.use_uncertainty,
+        options.support_fwhm,
+        options.estimate_covariance,
+        options.max_covariance_parameters,
+        options.unresolved_correlation,
+        None if checkpoint is None else checkpoint._native,
+    )
+    parameters = ParameterSet(
+        [
+            ParameterSpec(
+                ParameterKey(module, owner, name),
+                value,
+                unit,
+                Bounds(lower, upper),
+                scale,
+                refine_selected,
+            )
+            for (
+                module,
+                owner,
+                name,
+                value,
+                unit,
+                lower,
+                upper,
+                scale,
+                refine_selected,
+            ) in native.parameter_records()
+        ]
+    )
+    values = parameters.values()
+    experiment, background = _apply_profile_background_values(
+        input_data.experiment, input_data.background, values
+    )
+    wavelength = experiment.radiation.wavelength_angstrom
+    lattice_domains = tuple(
+        None if domain is None else replace(domain, wavelength_angstrom=wavelength)
+        for domain in input_data.lattice_domains
+    )
+    phases, _ = _apply_parameter_values(
+        input_data.phases,
+        lattice_domains,
+        input_data.parameters,
+        values,
+        wavelength_angstrom=wavelength,
+    )
+    diagnostic = calculate(
+        input_data.pattern,
+        experiment,
+        phases,
+        background=background,
+        support_fwhm=options.support_fwhm,
+        execution=options.execution,
+    )
+    calculation = RietveldCalculationResult(
+        native.calculated_y(),
+        native.profile_y(),
+        native.background_y(),
+        diagnostic.phase_calculations,
+    )
+    rp, rwp, chi_square, reduced_chi_square = native.metrics()
+    metrics = ResidualEvaluation(
+        native.included(),
+        native.residual(),
+        native.weighted_residual(),
+        rp,
+        rwp,
+        chi_square,
+        reduced_chi_square,
+    )
+    history = tuple(
+        RietveldIterationRecord(
+            row["iteration"],
+            row["rp"],
+            row["rwp"],
+            row["chi_square"],
+            row["reduced_chi_square"],
+            row["objective"],
+            row["objective_change"],
+            row["scaled_step_norm"],
+            row["damping"],
+            row["cg_iterations"],
+            row["backtracks"],
+            tuple(
+                RietveldParameterChange(ParameterKey(*key), before, after, scaled)
+                for key, before, after, scaled in row["parameter_changes"]
+            ),
+            tuple(row["topology_changes"]),
+        )
+        for row in native.history()
+    )
+    final_checkpoint = RietveldCheckpoint(
+        len(history),
+        phases,
+        lattice_domains,
+        parameters,
+        native.objective,
+        native.damping,
+        history,
+        experiment,
+        background,
+        native,
+    )
+    reason = TerminationReason(native.termination_reason)
+    correlations = tuple(
+        RietveldParameterCorrelation(ParameterKey(*left), ParameterKey(*right), correlation)
+        for left, right, correlation in native.unresolved_correlations()
+    )
+    return RietveldResult(
+        calculation,
+        experiment,
+        background,
+        phases,
+        parameters,
+        metrics,
+        history,
+        reason,
+        _native_termination_message(reason),
+        final_checkpoint,
+        native.evaluations,
+        native.jacobian_rank,
+        native.covariance(),
+        correlations,
+        None,
+    )
+
+
 def refine(
     input_data: RietveldInput,
     options: RietveldOptions | None = None,
@@ -2404,6 +2742,19 @@ def refine(
         if isinstance(input_data.experiment.radiation, ComponentRadiation)
         else 1
     )
+    native_callbacks_absent = (
+        cancellation is None and logger is None and checkpoint_callback is None
+    )
+    native_checkpoint_available = checkpoint is None or checkpoint._native is not None
+    if (
+        native_only
+        and not isinstance(input_data.experiment.radiation, ComponentRadiation)
+        and _supports_native_background(input_data.background)
+        and _supports_native_constraints(input_data.constraints)
+        and native_callbacks_absent
+        and native_checkpoint_available
+    ):
+        return _refine_native(input_data, selected, checkpoint)
     pool = (
         nullcontext(None)
         if native_only

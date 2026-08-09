@@ -13,11 +13,12 @@ use phasesmith_io::space_group_by_number;
 use phasesmith_model::{PatternRecord, RecordId};
 use phasesmith_workflows::{
     AffineConstraint, BackgroundModel, CancellationToken, Constraint, FixedConstraint,
-    ParameterKey, PolynomialBackground, RefinementLimits, RietveldCalculationOptions,
-    RietveldCovarianceOptions, RietveldGeneralRefinementError, RietveldInput,
-    RietveldInstrumentParameter, RietveldParameterSelection, RietveldPhase,
-    RietveldRefinementOptions, RietveldSamplePhysicsModel, RietveldStructuralSelection,
-    TerminationReason, calculate_rietveld_pattern, refine_general_rietveld,
+    LatticeBounds, LatticeParameterization, LatticeReflectionDomain, ParameterKey,
+    PolynomialBackground, RefinementLimits, RietveldCalculationOptions, RietveldCovarianceOptions,
+    RietveldGeneralRefinementError, RietveldInput, RietveldInstrumentParameter,
+    RietveldParameterSelection, RietveldPhase, RietveldRefinementOptions,
+    RietveldSamplePhysicsModel, RietveldStructuralSelection, TerminationReason,
+    calculate_rietveld_pattern, refine_general_rietveld,
 };
 
 fn instrument() -> ConstantWavelengthInstrument {
@@ -65,6 +66,42 @@ fn phase(scale: f64, occupancy: f64) -> RietveldPhase {
         OwnedCwContributions::neutral(definition.hkl.len()),
     )
     .unwrap()
+}
+
+fn dynamic_phase(wavelength_angstrom: f64) -> (RietveldPhase, LatticeBounds) {
+    let mut definition = phase(1.0, 1.0).definition().clone();
+    definition.correction_model = IntegratedIntensityCorrectionModel::BraggBrentanoUnpolarizedLp {
+        wavelength_angstrom,
+    };
+    let parameterization =
+        LatticeParameterization::new(definition.space_group.clone(), definition.cell).unwrap();
+    let values = parameterization.values_from_cell(definition.cell).unwrap();
+    let bounds = LatticeBounds::new(
+        &parameterization,
+        values.iter().map(|value| value - 0.1).collect(),
+        values.iter().map(|value| value + 0.1).collect(),
+    )
+    .unwrap();
+    let domain = LatticeReflectionDomain::new(
+        parameterization,
+        bounds.clone(),
+        wavelength_angstrom,
+        [20.0, 95.0],
+        0.0,
+        true,
+        100_000,
+        1.05,
+    )
+    .unwrap();
+    let phase = RietveldPhase::from_lattice_domain(
+        RecordId::new("alpha").unwrap(),
+        "Alpha",
+        vec![RecordId::new("Si1").unwrap()],
+        definition,
+        domain,
+    )
+    .unwrap();
+    (phase, bounds)
 }
 
 fn calculation() -> RietveldCalculationOptions {
@@ -261,6 +298,100 @@ fn rank_deficiency_reports_correlations_without_a_misleading_inverse() {
 }
 
 #[test]
+fn value_dependent_parameter_metadata_does_not_invalidate_the_final_checkpoint() {
+    let input = input_from_truth(phase(1.0, 0.6), vec![0.0], phase(1.0, 0.9), vec![0.0]);
+    let selection = selection(RietveldStructuralSelection {
+        occupancy: true,
+        ..RietveldStructuralSelection::default()
+    });
+    let result = refine_general_rietveld(
+        &input,
+        &selection,
+        &[None],
+        &[],
+        &options(8),
+        RietveldCovarianceOptions::default(),
+        None,
+        None,
+    )
+    .unwrap();
+    assert!(result.history.len() >= 2);
+    assert!((result.input.phases[0].definition().occupancy[0] - 0.9).abs() < 2.0e-9);
+    assert_eq!(result.checkpoint.input, result.input);
+}
+
+#[test]
+fn selected_wavelength_updates_remain_restart_compatible() {
+    let starting_wavelength = 1.5406;
+    let truth_wavelength = 1.541;
+    let (starting_phase, bounds) = dynamic_phase(starting_wavelength);
+    let (truth_phase, _) = dynamic_phase(truth_wavelength);
+    let x_deg = (0..3_001)
+        .map(|index| 20.0 + f64::from(index) * 0.025)
+        .collect::<Vec<_>>();
+    let empty = PatternRecord::new(
+        x_deg.clone(),
+        Some(vec![0.0; x_deg.len()]),
+        Some(vec![0.5; x_deg.len()]),
+        None,
+        Some(vec![0.0; x_deg.len()]),
+    )
+    .unwrap();
+    let mut truth_instrument = instrument();
+    truth_instrument.wavelength_angstrom = truth_wavelength;
+    let truth = RietveldInput::new_with_background(
+        empty,
+        truth_instrument,
+        None,
+        MonochromaticPositionCorrection {
+            zero_shift_deg: 0.0,
+            bragg_brentano_mm: None,
+            debye_scherrer_micrometre: None,
+        },
+        BackgroundModel::Polynomial(PolynomialBackground::new("main", vec![0.0]).unwrap()),
+        vec![truth_phase],
+    )
+    .unwrap();
+    let observed = calculate_rietveld_pattern(&truth, &calculation()).unwrap();
+    let input = request(
+        PatternRecord::new(
+            x_deg,
+            Some(observed.y),
+            truth.pattern.uncertainty,
+            None,
+            Some(truth.pattern.background_y),
+        )
+        .unwrap(),
+        starting_phase,
+        vec![0.0],
+    );
+    let selection = RietveldParameterSelection::new(
+        RietveldStructuralSelection::default(),
+        vec![RietveldInstrumentParameter::WavelengthAngstrom],
+        false,
+        false,
+    )
+    .unwrap();
+    let result = refine_general_rietveld(
+        &input,
+        &selection,
+        &[Some(bounds)],
+        &[],
+        &options(8),
+        RietveldCovarianceOptions::default(),
+        None,
+        None,
+    )
+    .unwrap();
+    assert!((result.input.instrument.wavelength_angstrom - truth_wavelength).abs() < 2.0e-8);
+    let domain_wavelength = result.input.phases[0]
+        .reflection_domain()
+        .unwrap()
+        .wavelength_angstrom();
+    assert!((domain_wavelength - result.input.instrument.wavelength_angstrom).abs() < f64::EPSILON);
+}
+
+#[test]
 fn unsatisfied_constraints_and_changed_restart_contracts_are_rejected() {
     let input = input_from_truth(phase(0.8, 1.0), vec![0.5], phase(1.1, 1.0), vec![0.8]);
     let selection = selection(RietveldStructuralSelection {
@@ -305,7 +436,7 @@ fn unsatisfied_constraints_and_changed_restart_contracts_are_rejected() {
             Some(&result.checkpoint),
             None,
         ),
-        Err(RietveldGeneralRefinementError::InvalidCheckpoint
+        Err(RietveldGeneralRefinementError::InvalidCheckpoint { .. }
             | RietveldGeneralRefinementError::UnsatisfiedConstraint { .. })
     ));
     let mut changed_request = input.clone();
@@ -321,7 +452,7 @@ fn unsatisfied_constraints_and_changed_restart_contracts_are_rejected() {
             Some(&result.checkpoint),
             None,
         ),
-        Err(RietveldGeneralRefinementError::InvalidCheckpoint)
+        Err(RietveldGeneralRefinementError::InvalidCheckpoint { .. })
     ));
 }
 

@@ -18,6 +18,8 @@ phasesmith-core = { path = "../phasesmith-core" }
 phasesmith-engine = { path = "../phasesmith-engine" }
 phasesmith-execution = { path = "../phasesmith-execution" }
 phasesmith-io = { path = "../phasesmith-io" }
+phasesmith-model = { path = "../phasesmith-model" }
+phasesmith-workflows = { path = "../phasesmith-workflows" }
 
 [lints]
 workspace = true

@@ -117,30 +117,36 @@ impl RietveldGeneralCheckpoint {
         constraints: &[Constraint],
     ) -> Result<(), RietveldGeneralRefinementError> {
         self.input.validate()?;
-        if &self.selection != selection
-            || self.lattice_bounds != lattice_bounds
-            || self.constraints != constraints
-            || !checkpoint_request_compatible(&self.input, requested, selection)
-            || self.completed_iterations != self.history.len()
-            || !self.objective.is_finite()
-            || self.objective < 0.0
-            || !self.damping.is_finite()
-            || self.damping <= 0.0
-            || !valid_history(&self.history, requested)
-        {
-            return Err(RietveldGeneralRefinementError::InvalidCheckpoint);
+        let invalid = if &self.selection != selection {
+            Some("parameter selection changed")
+        } else if self.lattice_bounds != lattice_bounds {
+            Some("lattice bounds changed")
+        } else if self.constraints != constraints {
+            Some("constraints changed")
+        } else if !checkpoint_request_compatible(&self.input, requested, selection) {
+            Some("request contract changed")
+        } else if self.completed_iterations != self.history.len() {
+            Some("accepted iteration count does not match history")
+        } else if !self.objective.is_finite() || self.objective < 0.0 {
+            Some("objective is invalid")
+        } else if !self.damping.is_finite() || self.damping <= 0.0 {
+            Some("damping is invalid")
+        } else if !valid_history(&self.history, requested) {
+            Some("history is invalid")
+        } else {
+            None
+        };
+        if let Some(reason) = invalid {
+            return Err(RietveldGeneralRefinementError::InvalidCheckpoint { reason });
         }
         let accepted_layout = RietveldParameterLayout::new(&self.input, selection, lattice_bounds)?;
         let requested_layout = RietveldParameterLayout::new(requested, selection, lattice_bounds)?;
-        if !parameter_contract_matches(requested_layout.parameters(), &self.parameters, true, false)
-            || !parameter_contract_matches(
-                accepted_layout.parameters(),
-                &self.parameters,
-                false,
-                true,
-            )
+        if !parameter_contract_matches(requested_layout.parameters(), &self.parameters)
+            || !parameter_values_match(accepted_layout.parameters(), &self.parameters)
         {
-            return Err(RietveldGeneralRefinementError::InvalidCheckpoint);
+            return Err(RietveldGeneralRefinementError::InvalidCheckpoint {
+                reason: "parameter contract changed",
+            });
         }
         let transform = ConstraintTransform::new(self.parameters.clone(), constraints.to_vec())?;
         validate_constraint_state(&accepted_layout, &transform)?;
@@ -621,12 +627,7 @@ fn validate_constraint_state(
     Ok(())
 }
 
-fn parameter_contract_matches(
-    domain: &ParameterSet,
-    stored: &ParameterSet,
-    compare_scale: bool,
-    compare_value: bool,
-) -> bool {
+fn parameter_contract_matches(domain: &ParameterSet, stored: &ParameterSet) -> bool {
     domain.specs().len() == stored.specs().len()
         && domain
             .specs()
@@ -637,8 +638,18 @@ fn parameter_contract_matches(
                     && domain.unit() == stored.unit()
                     && domain.bounds() == stored.bounds()
                     && domain.refine() == stored.refine()
-                    && (!compare_scale || domain.scale().to_bits() == stored.scale().to_bits())
-                    && (!compare_value || domain.value().to_bits() == stored.value().to_bits())
+                    && domain.scale().to_bits() == stored.scale().to_bits()
+            })
+}
+
+fn parameter_values_match(domain: &ParameterSet, stored: &ParameterSet) -> bool {
+    domain.specs().len() == stored.specs().len()
+        && domain
+            .specs()
+            .iter()
+            .zip(stored.specs())
+            .all(|(domain, stored)| {
+                domain.key() == stored.key() && domain.value().to_bits() == stored.value().to_bits()
             })
 }
 
@@ -841,8 +852,12 @@ fn checkpoint_request_compatible(
             .iter()
             .zip(&requested.phases)
             .all(|(accepted, requested)| {
-                accepted.restart_compatible(requested)
-                    && phase_values_compatible(accepted, requested, selection)
+                accepted.restart_compatible_with_wavelength(
+                    requested,
+                    selection
+                        .instrument
+                        .contains(&RietveldInstrumentParameter::WavelengthAngstrom),
+                ) && phase_values_compatible(accepted, requested, selection)
             })
         && background_compatible(
             accepted.background.as_ref(),
@@ -999,7 +1014,10 @@ pub enum RietveldGeneralRefinementError {
     /// Covariance controls are invalid.
     InvalidCovarianceOptions,
     /// Restart state is inconsistent with the request or solver contract.
-    InvalidCheckpoint,
+    InvalidCheckpoint {
+        /// Stable diagnostic explaining the rejected checkpoint contract.
+        reason: &'static str,
+    },
     /// Checked diagnostic allocation overflowed.
     AllocationOverflow,
     /// Internal validated layout invariant failed.
@@ -1031,9 +1049,10 @@ impl Display for RietveldGeneralRefinementError {
             Self::InvalidCovarianceOptions => {
                 formatter.write_str("native Rietveld covariance options are invalid")
             }
-            Self::InvalidCheckpoint => {
-                formatter.write_str("native complete Rietveld checkpoint is invalid")
-            }
+            Self::InvalidCheckpoint { reason } => write!(
+                formatter,
+                "native complete Rietveld checkpoint is invalid: {reason}"
+            ),
             Self::AllocationOverflow => {
                 formatter.write_str("native Rietveld diagnostic allocation overflowed")
             }
@@ -1067,7 +1086,7 @@ impl Error for RietveldGeneralRefinementError {
             Self::Runtime(error) => Some(error),
             Self::Residual(error) => Some(error),
             Self::InvalidCovarianceOptions
-            | Self::InvalidCheckpoint
+            | Self::InvalidCheckpoint { .. }
             | Self::AllocationOverflow
             | Self::InternalInvariant
             | Self::UnsatisfiedConstraint { .. } => None,

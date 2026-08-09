@@ -345,6 +345,14 @@ impl RietveldPhase {
     }
 
     pub(crate) fn restart_compatible(&self, requested: &Self) -> bool {
+        self.restart_compatible_with_wavelength(requested, false)
+    }
+
+    pub(crate) fn restart_compatible_with_wavelength(
+        &self,
+        requested: &Self,
+        allow_wavelength_change: bool,
+    ) -> bool {
         self.phase_id == requested.phase_id
             && self.site_ids == requested.site_ids
             && self.definition.space_group == requested.definition.space_group
@@ -356,12 +364,22 @@ impl RietveldPhase {
             && self.definition.coordinate_tolerance.to_bits()
                 == requested.definition.coordinate_tolerance.to_bits()
             && self.definition.scattering_model == requested.definition.scattering_model
-            && self.definition.correction_model == requested.definition.correction_model
+            && (self.definition.correction_model == requested.definition.correction_model
+                || (allow_wavelength_change
+                    && correction_identity_matches(
+                        self.definition.correction_model,
+                        requested.definition.correction_model,
+                    )))
             && sample_physics_identity_matches(
                 self.sample_physics.as_ref(),
                 requested.sample_physics.as_ref(),
             )
-            && self.reflection_domain == requested.reflection_domain
+            && (self.reflection_domain == requested.reflection_domain
+                || (allow_wavelength_change
+                    && reflection_domain_identity_matches(
+                        self.reflection_domain.as_ref(),
+                        requested.reflection_domain.as_ref(),
+                    )))
             && (self.reflection_domain.is_some()
                 || (self.reflection_ids == requested.reflection_ids
                     && self.definition.hkl == requested.definition.hkl
@@ -417,6 +435,45 @@ impl RietveldPhase {
                 wavelength_angstrom,
             } => Some(wavelength_angstrom),
         }
+    }
+}
+
+fn correction_identity_matches(
+    left: IntegratedIntensityCorrectionModel,
+    right: IntegratedIntensityCorrectionModel,
+) -> bool {
+    match (left, right) {
+        (
+            IntegratedIntensityCorrectionModel::BraggBrentanoUnpolarizedLp { .. },
+            IntegratedIntensityCorrectionModel::BraggBrentanoUnpolarizedLp { .. },
+        )
+        | (
+            IntegratedIntensityCorrectionModel::ConstantWavelengthNeutronLorentz { .. },
+            IntegratedIntensityCorrectionModel::ConstantWavelengthNeutronLorentz { .. },
+        ) => true,
+        (
+            IntegratedIntensityCorrectionModel::BraggBrentanoPolarizedLp {
+                polarization: left, ..
+            },
+            IntegratedIntensityCorrectionModel::BraggBrentanoPolarizedLp {
+                polarization: right,
+                ..
+            },
+        ) => left.to_bits() == right.to_bits(),
+        _ => false,
+    }
+}
+
+fn reflection_domain_identity_matches(
+    left: Option<&LatticeReflectionDomain>,
+    right: Option<&LatticeReflectionDomain>,
+) -> bool {
+    match (left, right) {
+        (None, None) => true,
+        (Some(left), Some(right)) => left
+            .with_wavelength(right.wavelength_angstrom())
+            .is_ok_and(|updated| updated == *right),
+        _ => false,
     }
 }
 
