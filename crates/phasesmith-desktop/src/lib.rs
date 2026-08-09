@@ -10,6 +10,7 @@ mod calculation;
 mod cif_import;
 mod jobs;
 mod powder_import;
+mod report_export;
 mod series;
 
 use std::collections::BTreeMap;
@@ -42,6 +43,7 @@ pub use powder_import::{
     DesktopRadiationProbe, PowderFormatInput, PowderHistogramImportRequest,
     PowderHistogramImportResponse,
 };
+pub use report_export::ReportExportResponse;
 pub use series::{BinaryPayload, BinarySeriesDescriptor, SeriesDtype, SeriesOwner};
 
 /// Stable desktop-command failure category.

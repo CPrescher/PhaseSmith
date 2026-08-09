@@ -737,6 +737,12 @@ from those project records, evaluates them on the native blocking pool, and
 retains complete revision-owned plot data without changing project state.
 Finite metrics stay in JSON while sample/reflection arrays use the existing raw
 little-endian transport; explicit disposal releases the retained result.
+Revision-owned desktop report export now writes the canonical versioned native
+summary JSON with a protected-create/default policy and explicit overwrite.
+Together with project lifecycle, import, calculation, refinement, cancellation,
+acceptance, persistence, events, and binary plotting transport, this completes
+the Python-free desktop adapter boundary. The bundled static page remains a
+runtime probe rather than the product GUI.
 
 The remaining parity boundary is joint refinement. PhaseSmith currently owns
 one pattern/experiment per `RietveldInput`; GSAS-II shares one PbSO4 structure

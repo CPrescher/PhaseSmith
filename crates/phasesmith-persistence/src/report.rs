@@ -2,12 +2,20 @@
 
 use std::collections::BTreeMap;
 use std::fs;
+use std::io::Write;
 use std::path::{Path, PathBuf};
 
 use phasesmith_model::{ProjectRecord, RadiationProbe};
 use serde::Serialize;
 
 use crate::{PROJECT_FORMAT_VERSION, PersistenceError};
+
+/// Project-summary report write behavior.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct ProjectReportSaveOptions {
+    /// Replace an existing report file when true.
+    pub overwrite: bool,
+}
 
 /// One histogram entry in a project summary.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
@@ -161,12 +169,48 @@ pub fn write_project_summary_json(
     project: &ProjectRecord,
     path: impl AsRef<Path>,
 ) -> Result<PathBuf, PersistenceError> {
+    write_project_summary_json_with_options(
+        project,
+        path,
+        ProjectReportSaveOptions { overwrite: true },
+    )
+}
+
+/// Write one validated project summary with an explicit overwrite policy.
+///
+/// # Errors
+///
+/// Returns [`PersistenceError`] for validation, serialization, destination, or
+/// filesystem failures.
+pub fn write_project_summary_json_with_options(
+    project: &ProjectRecord,
+    path: impl AsRef<Path>,
+    options: ProjectReportSaveOptions,
+) -> Result<PathBuf, PersistenceError> {
     let path = path.as_ref();
     if let Some(parent) = path.parent()
         && !parent.as_os_str().is_empty()
     {
         fs::create_dir_all(parent)?;
     }
-    fs::write(path, project_summary_json(project)?)?;
+    let encoded = project_summary_json(project)?;
+    if options.overwrite {
+        fs::write(path, encoded)?;
+    } else {
+        fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(path)
+            .map_err(|error| {
+                if error.kind() == std::io::ErrorKind::AlreadyExists {
+                    PersistenceError::InvalidDestination {
+                        message: format!("report destination already exists: {}", path.display()),
+                    }
+                } else {
+                    PersistenceError::Io(error)
+                }
+            })?
+            .write_all(encoded.as_bytes())?;
+    }
     Ok(path.to_owned())
 }

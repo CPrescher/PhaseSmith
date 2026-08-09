@@ -23,8 +23,8 @@ use phasesmith_workflows::RietveldProjectState;
 use serde::{Deserialize, Serialize};
 
 pub use report::{
-    HistogramSummary, PhaseSummary, ProjectSummaryReport, project_summary_json,
-    write_project_summary_json,
+    HistogramSummary, PhaseSummary, ProjectReportSaveOptions, ProjectSummaryReport,
+    project_summary_json, write_project_summary_json, write_project_summary_json_with_options,
 };
 
 /// Current native project bundle wire version.

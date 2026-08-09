@@ -436,5 +436,8 @@ reflections, preserves X-ray/neutron scattering identity and diagnostics, and
 attaches the phase through exact snapshot comparison. Standalone calculation
 now evaluates ordered project phases through the native structural/Rietveld
 path, retains revision-owned results without mutating project state, and uses
-the same binary-series transport as refinement. Report export remains the final
-workflow command required to complete delivery step 16.
+the same binary-series transport as refinement. Report export now writes the
+canonical versioned project-summary JSON for one exact revision, refuses
+existing destinations unless overwrite is explicit, and performs file I/O off
+the Tauri event loop. Delivery step 16 is complete; product UI design remains
+separate from this native adapter plan.

@@ -44,6 +44,29 @@ renaming the repository, recreate `.venv`, repeat the three setup commands
 above, and confirm `uv run python -c "import phasesmith; print(phasesmith.__file__)"`
 points into the current checkout before running the gate.
 
+### Native desktop host
+
+The Tauri 2 host is a separate Rust-only application and does not start or
+bundle Python. Its checked-in frontend is currently a runtime probe for the
+complete native adapter—not the finished product UI. Run it directly with:
+
+```shell
+cargo run -p phasesmith-tauri
+```
+
+The adapter already covers revisioned project lifecycle, bounded powder/CIF
+import, standalone calculation, detached cancellable refinement, result
+acceptance, binary plotting series, native persistence, and summary-report
+export. After desktop dependency or bundle changes, verify the no-sidecar
+distribution contract with:
+
+```shell
+scripts/audit-desktop-distribution.sh
+```
+
+See [docs/desktop-adapter.md](docs/desktop-adapter.md) for the command, event,
+revision, and binary IPC contracts.
+
 Run the Rust benchmarks with `cargo bench -p phasesmith-core`. For a comparable
 optimized Python-to-Rust measurement, build the release extension and require
 release mode explicitly:

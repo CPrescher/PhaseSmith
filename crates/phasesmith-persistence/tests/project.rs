@@ -19,8 +19,8 @@ use phasesmith_model::{
 };
 use phasesmith_persistence::{
     PROJECT_ARRAYS_NAME, PROJECT_FORMAT_VERSION, PROJECT_MANIFEST_NAME, PersistenceError,
-    ProjectReadLimits, ProjectSaveOptions, ProjectSummaryReport, load_project,
-    project_summary_json, save_project,
+    ProjectReadLimits, ProjectReportSaveOptions, ProjectSaveOptions, ProjectSummaryReport,
+    load_project, project_summary_json, save_project, write_project_summary_json_with_options,
 };
 
 static TEST_SEQUENCE: AtomicU64 = AtomicU64::new(0);
@@ -155,6 +155,39 @@ fn project_summary_is_versioned_deterministic_and_array_free() {
     assert_eq!(report.total_sample_count, 8);
     assert_eq!(report.histograms[0].phase_ids, ["alpha"]);
     assert_eq!(report.phases[0].required_providers, ["example.texture@2"]);
+}
+
+#[test]
+fn project_summary_file_export_has_an_explicit_overwrite_policy() {
+    let path = temporary_path("summary.json");
+    let project = project();
+    write_project_summary_json_with_options(&project, &path, ProjectReportSaveOptions::default())
+        .unwrap();
+    assert_eq!(
+        fs::read_to_string(&path).unwrap(),
+        project_summary_json(&project).unwrap()
+    );
+    fs::write(&path, "caller-owned").unwrap();
+    assert!(matches!(
+        write_project_summary_json_with_options(
+            &project,
+            &path,
+            ProjectReportSaveOptions::default(),
+        ),
+        Err(PersistenceError::InvalidDestination { .. })
+    ));
+    assert_eq!(fs::read_to_string(&path).unwrap(), "caller-owned");
+    write_project_summary_json_with_options(
+        &project,
+        &path,
+        ProjectReportSaveOptions { overwrite: true },
+    )
+    .unwrap();
+    assert_eq!(
+        fs::read_to_string(&path).unwrap(),
+        project_summary_json(&project).unwrap()
+    );
+    fs::remove_file(path).unwrap();
 }
 
 #[test]

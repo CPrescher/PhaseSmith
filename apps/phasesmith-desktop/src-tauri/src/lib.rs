@@ -8,7 +8,8 @@ use phasesmith_desktop::{
     BinarySeriesDescriptor, CalculationManager, CalculationOptionsInput, CalculationResponse,
     CancelJobResponse, CifPhaseImportRequest, CifPhaseImportResponse, DesktopError, DesktopEvent,
     DesktopProjectStore, JobManager, JobStarted, JobStatus, OpenProjectResponse,
-    PowderHistogramImportRequest, PowderHistogramImportResponse, SaveProjectResponse,
+    PowderHistogramImportRequest, PowderHistogramImportResponse, ReportExportResponse,
+    SaveProjectResponse,
 };
 use phasesmith_persistence::{
     PROJECT_FORMAT_VERSION, ProjectReadLimits, ProjectSaveOptions, ProjectSummaryReport,
@@ -85,6 +86,21 @@ async fn save_project(
     })
     .await
     .map_err(|error| DesktopError::host_failure(format!("project-save task failed: {error}")))?
+}
+
+#[tauri::command]
+async fn export_project_report(
+    state: State<'_, AppState>,
+    expected_revision: u64,
+    path: String,
+    overwrite: bool,
+) -> Result<ReportExportResponse, DesktopError> {
+    let projects = state.projects.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        projects.export_project_report(expected_revision, path, overwrite)
+    })
+    .await
+    .map_err(|error| DesktopError::host_failure(format!("report-export task failed: {error}")))?
 }
 
 #[tauri::command]
@@ -275,6 +291,7 @@ pub fn run() {
             open_project,
             project_summary,
             save_project,
+            export_project_report,
             import_powder_histogram,
             import_cif_phase,
             calculate_histogram,

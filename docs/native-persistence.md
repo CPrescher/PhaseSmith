@@ -75,6 +75,9 @@ Reports include project revision, histogram and phase IDs, probes, sample
 counts, phase links, required provider capabilities, and metadata. They are
 safe JSON payloads for a desktop command response; display arrays remain in
 binary storage or later binary IPC.
+`write_project_summary_json_with_options` adds a protected-create mode for
+desktop export: an existing destination is rejected unless overwrite is
+explicit. The legacy convenience writer retains its replacement behavior.
 
 ## Python format distinction
 

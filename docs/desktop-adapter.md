@@ -111,5 +111,10 @@ Run `scripts/audit-desktop-distribution.sh` after desktop dependency or bundle
 changes. The gate rejects Python/PyO3/NumPy in the normal or build dependency
 tree, builds the release executable, rejects a dynamic link to CPython, and
 scans produced bundles for Python runtimes, wheels, or extension modules.
-Report export remains the final delivery-step-16 adapter slice; the shell is not
-considered feature-complete until that workflow-sized operation is present.
+Project report export is revision-owned as well. It writes the canonical
+versioned, array-free native summary JSON on the blocking pool and returns its
+absolute destination. Protected creation uses an atomic `create_new` policy:
+an existing caller-owned file is never truncated unless the command explicitly
+sets `overwrite`. Stale revisions are rejected before any filesystem change.
+This completes the workflow command surface defined for delivery step 16; the
+checked-in frontend remains intentionally only a runtime probe.
