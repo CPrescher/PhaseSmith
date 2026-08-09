@@ -2546,6 +2546,12 @@ dependencies = [
 name = "phasesmith-validation"
 version = "0.1.0"
 dependencies = [
+ "phasesmith-core",
+ "phasesmith-crystallography",
+ "phasesmith-execution",
+ "phasesmith-io",
+ "phasesmith-model",
+ "phasesmith-workflows",
  "serde",
  "serde_json",
  "sha2",

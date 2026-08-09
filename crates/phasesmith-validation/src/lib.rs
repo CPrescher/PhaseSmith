@@ -2,6 +2,7 @@
 
 mod dataset;
 mod report;
+mod sucrose;
 
 pub use dataset::{
     DatasetVerificationError, ExternalValidationFile, ValidationDataset, validation_dataset,
@@ -10,3 +11,4 @@ pub use dataset::{
 pub use report::{
     RealDataValidationReport, ValidationCheck, ValidationContractError, ValidationStatus,
 };
+pub use sucrose::{SucroseValidationError, run_sucrose_lebail_validation};
