@@ -14,14 +14,14 @@ use phasesmith_persistence::{
     ProjectReadLimits, ProjectSaveOptions, load_rietveld_project, save_rietveld_project,
 };
 use phasesmith_workflows::{
-    AffineConstraint, AmorphousBackground, AmorphousPeak, BackgroundModel, ChebyshevBackground,
-    CompositeBackground, Constraint, FixedConstraint, LatticeBounds, LatticeParameterization,
-    LatticeReflectionDomain, LinearConstraint, LinearTerm, ParameterKey, PointBackground,
-    PolynomialBackground, RefinementLimits, RietveldAnalysis, RietveldCalculationOptions,
-    RietveldCovarianceOptions, RietveldGeneralCheckpoint, RietveldGeneralRefinementResult,
-    RietveldInput, RietveldInstrumentParameter, RietveldParameterSelection, RietveldPhase,
-    RietveldProjectState, RietveldRefinementOptions, RietveldSamplePhysicsModel,
-    RietveldStructuralSelection, refine_general_rietveld,
+    AffineConstraint, AmorphousBackground, AmorphousPeak, BackgroundModel, CancellationToken,
+    ChebyshevBackground, CompositeBackground, Constraint, FixedConstraint, LatticeBounds,
+    LatticeParameterization, LatticeReflectionDomain, LinearConstraint, LinearTerm, ParameterKey,
+    PointBackground, PolynomialBackground, RefinementLimits, RietveldAnalysis,
+    RietveldCalculationOptions, RietveldCovarianceOptions, RietveldGeneralCheckpoint,
+    RietveldGeneralRefinementResult, RietveldInput, RietveldInstrumentParameter,
+    RietveldParameterSelection, RietveldPhase, RietveldProjectState, RietveldRefinementOptions,
+    RietveldSamplePhysicsModel, RietveldStructuralSelection, refine_general_rietveld,
 };
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
@@ -381,6 +381,31 @@ pub(super) struct NativeRietveldRequest {
     covariance: RietveldCovarianceOptions,
 }
 
+/// Thread-safe native cancellation shared with a detached solver call.
+#[pyclass(name = "_RietveldCancellation")]
+pub(super) struct NativeRietveldCancellation {
+    token: CancellationToken,
+}
+
+#[pymethods]
+impl NativeRietveldCancellation {
+    #[new]
+    fn new() -> Self {
+        Self {
+            token: CancellationToken::default(),
+        }
+    }
+
+    fn request(&self, reason: String) -> PyResult<bool> {
+        self.token.request(reason).map_err(value_error)
+    }
+
+    #[getter]
+    fn reason(&self) -> PyResult<Option<String>> {
+        self.token.reason().map_err(value_error)
+    }
+}
+
 #[pymethods]
 impl NativeRietveldRequest {
     #[new]
@@ -554,6 +579,7 @@ impl NativeRietveldRequest {
     fn refine(
         &self,
         py: Python<'_>,
+        cancellation: Option<PyRef<'_, NativeRietveldCancellation>>,
         checkpoint: Option<PyRef<'_, NativeRietveldCheckpoint>>,
     ) -> PyResult<NativeRietveldResult> {
         let input = self.input.clone();
@@ -562,6 +588,7 @@ impl NativeRietveldRequest {
         let constraints = self.constraints.clone();
         let options = self.options.clone();
         let covariance = self.covariance;
+        let cancellation = cancellation.map(|value| value.token.clone());
         let checkpoint = checkpoint.map(|value| value.checkpoint.clone());
         let result = py
             .detach(move || {
@@ -573,7 +600,7 @@ impl NativeRietveldRequest {
                     &options,
                     covariance,
                     checkpoint.as_ref(),
-                    None,
+                    cancellation,
                 )
             })
             .map_err(value_error)?;
@@ -916,6 +943,7 @@ pub(super) fn register(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_class::<NativeRietveldBackground>()?;
     module.add_class::<NativeRietveldConstraint>()?;
     module.add_class::<NativeRietveldRequest>()?;
+    module.add_class::<NativeRietveldCancellation>()?;
     module.add_class::<NativeRietveldCheckpoint>()?;
     module.add_class::<NativeStoredRietveldProject>()?;
     module.add_class::<NativeRietveldResult>()?;

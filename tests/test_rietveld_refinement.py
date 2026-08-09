@@ -1157,6 +1157,7 @@ def test_project_facade_refines_stops_reports_and_resumes(tmp_path) -> None:
     )
     project = phasesmith.RietveldProject(request)
     result = project.refine()
+    assert project.checkpoint is not None and project.checkpoint._native is not None
     assert result.phases[0].scale == pytest.approx(1.0, rel=2.0e-8)
     json_path, csv_path = project.write_reports(
         json_path=tmp_path / "result.json",
@@ -1207,7 +1208,7 @@ def test_native_adapter_saves_validates_and_restores_restart_handle(tmp_path) ->
         estimate_covariance=False,
     )
     native_request = structural_refinement._native_request(request, options)
-    native_result = native_request.refine(None)
+    native_result = native_request.refine(None, None)
     destination = native_request.save_project(
         str(tmp_path / "native-project"),
         "python-project",
@@ -1227,7 +1228,7 @@ def test_native_adapter_saves_validates_and_restores_restart_handle(tmp_path) ->
     assert stored.histogram_records() == [("histogram", "Observed pattern")]
     loaded_checkpoint = stored.checkpoint("histogram")
     assert loaded_checkpoint is not None
-    resumed = native_request.refine(loaded_checkpoint)
+    resumed = native_request.refine(None, loaded_checkpoint)
     assert resumed.parameter_records() == native_result.parameter_records()
     assert resumed.history() == native_result.history()
 

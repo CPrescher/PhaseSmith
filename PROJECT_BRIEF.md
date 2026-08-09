@@ -690,6 +690,9 @@ The PyO3 adapter exposes this codec and independently loadable native
 checkpoint handles while releasing the GIL for project I/O; this is the bridge
 used by the remaining public Python-facade migration, not a dependency of the
 Rust desktop runtime.
+The public cancellation token shares the native solver's thread-safe state, so
+the stateful Python project facade keeps cooperative `stop()` while using the
+detached Rust refinement path.
 
 The remaining parity boundary is joint refinement. PhaseSmith currently owns
 one pattern/experiment per `RietveldInput`; GSAS-II shares one PbSO4 structure

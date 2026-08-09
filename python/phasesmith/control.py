@@ -6,6 +6,8 @@ from dataclasses import dataclass
 from threading import Event, Lock
 from typing import Protocol, runtime_checkable
 
+from . import _core
+
 
 @dataclass(frozen=True, slots=True)
 class ProgressEvent:
@@ -44,11 +46,12 @@ class CancellationCallback(Protocol):
 class CancellationToken:
     """Thread-safe cooperative cancellation shared by scripts, GUIs, and CLIs."""
 
-    __slots__ = ("_event", "_lock", "_reason")
+    __slots__ = ("_event", "_lock", "_native", "_reason")
 
     def __init__(self) -> None:
         self._event = Event()
         self._lock = Lock()
+        self._native = _core._RietveldCancellation()
         self._reason: str | None = None
 
     def request(self, reason: str = "user_requested") -> bool:
@@ -59,6 +62,7 @@ class CancellationToken:
         with self._lock:
             first = not self._event.is_set()
             if first:
+                self._native.request(reason)
                 self._reason = reason
                 self._event.set()
             return first

@@ -4,7 +4,7 @@ from dataclasses import asdict
 from pickle import dumps, loads
 
 import pytest
-from phasesmith import CalculationOptions, ExecutionPolicy
+from phasesmith import CalculationOptions, CancellationToken, ExecutionPolicy
 from phasesmith.execution import execution_pool
 from phasesmith.refinement.lebail import LeBailOptions
 
@@ -43,6 +43,15 @@ def test_execution_policy_keeps_native_runtime_out_of_dataclass_records() -> Non
 def test_execution_pool_uses_serial_sentinel_below_threshold() -> None:
     with execution_pool(ExecutionPolicy(threads=None), 1) as executor:
         assert executor is None
+
+
+def test_cancellation_token_shares_first_reason_with_native_solver_handle() -> None:
+    token = CancellationToken()
+
+    assert token.request("native-stop") is True
+    assert token.request("ignored") is False
+    assert token.reason == "native-stop"
+    assert token._native.reason == "native-stop"
 
 
 def test_calculation_and_lebail_options_require_explicit_execution_policy() -> None:

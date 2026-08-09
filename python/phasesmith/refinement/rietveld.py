@@ -14,7 +14,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 from .. import _core
-from ..control import CancellationCallback
+from ..control import CancellationCallback, CancellationToken
 from ..crystallography import p1_parameter_names
 from ..execution import ExecutionPolicy, execution_pool
 from ..extensions import CompositePhysicsProvider
@@ -2587,9 +2587,11 @@ def _refine_native(
     input_data: RietveldInput,
     options: RietveldOptions,
     checkpoint: RietveldCheckpoint | None,
+    cancellation: CancellationToken | None,
 ) -> RietveldResult:
     request = _native_request(input_data, options)
     native = request.refine(
+        None if cancellation is None else cancellation._native,
         None if checkpoint is None else checkpoint._native,
     )
     parameters = ParameterSet(
@@ -2689,6 +2691,13 @@ def _refine_native(
         native.checkpoint(),
     )
     reason = TerminationReason(native.termination_reason)
+    termination_message = (
+        cancellation.reason
+        if reason is TerminationReason.CANCELLED
+        and cancellation is not None
+        and cancellation.reason is not None
+        else _native_termination_message(reason)
+    )
     correlations = tuple(
         RietveldParameterCorrelation(ParameterKey(*left), ParameterKey(*right), correlation)
         for left, right, correlation in native.unresolved_correlations()
@@ -2702,7 +2711,7 @@ def _refine_native(
         metrics,
         history,
         reason,
-        _native_termination_message(reason),
+        termination_message,
         final_checkpoint,
         native.evaluations,
         native.jacobian_rank,
@@ -2742,9 +2751,8 @@ def refine(
         if isinstance(input_data.experiment.radiation, ComponentRadiation)
         else 1
     )
-    native_callbacks_absent = (
-        cancellation is None and logger is None and checkpoint_callback is None
-    )
+    native_callbacks_absent = logger is None and checkpoint_callback is None
+    native_cancellation_available = cancellation is None or type(cancellation) is CancellationToken
     native_checkpoint_available = checkpoint is None or checkpoint._native is not None
     if (
         native_only
@@ -2752,9 +2760,10 @@ def refine(
         and _supports_native_background(input_data.background)
         and _supports_native_constraints(input_data.constraints)
         and native_callbacks_absent
+        and native_cancellation_available
         and native_checkpoint_available
     ):
-        return _refine_native(input_data, selected, checkpoint)
+        return _refine_native(input_data, selected, checkpoint, cancellation)
     pool = (
         nullcontext(None)
         if native_only

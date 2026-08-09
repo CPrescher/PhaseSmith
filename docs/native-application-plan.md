@@ -392,3 +392,6 @@ The PyO3 adapter now exposes that same save/validate/load boundary, releases
 the GIL during file I/O, and carries restart checkpoints as independent native
 handles. Switching the public Python project facade from its legacy format to
 this bridge is the next adapter-only substep.
+The scripting `CancellationToken` now also owns the shared Rust token used by
+detached native refinement, so `RietveldProject.refine()` no longer falls back
+to Python merely to preserve its concurrent `stop()` contract.
