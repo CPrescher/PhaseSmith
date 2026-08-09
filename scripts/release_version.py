@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import argparse
-import json
 import re
 import sys
 import tomllib
@@ -35,11 +34,9 @@ def release_version(root: Path = ROOT) -> str:
 
     cargo = _toml(root / "Cargo.toml")
     pyproject = _toml(root / "pyproject.toml")
-    tauri = json.loads((root / "apps/phasesmith-desktop/src-tauri/tauri.conf.json").read_text())
     versions = {
         "Cargo workspace": cargo["workspace"]["package"]["version"],
         "Python project": pyproject["project"]["version"],
-        "Tauri configuration": tauri["version"],
     }
     unique = set(versions.values())
     if len(unique) != 1:
@@ -52,7 +49,6 @@ def release_version(root: Path = ROOT) -> str:
     if re.search(rf"^## {re.escape(version)}$", changelog, re.MULTILINE) is None:
         raise ValueError(f"CHANGELOG.md has no '## {version}' release section")
     manifests = [root / "Cargo.toml", *sorted((root / "crates").glob("*/Cargo.toml"))]
-    manifests.append(root / "apps/phasesmith-desktop/src-tauri/Cargo.toml")
     package_names = set()
     for manifest in manifests:
         record = _toml(manifest)

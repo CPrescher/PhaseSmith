@@ -1,7 +1,7 @@
 # Releasing PhaseSmith
 
-PhaseSmith uses one SemVer value for the Rust workspace, Python distribution,
-and Tauri configuration. A `v<version>` tag starts
+PhaseSmith uses one SemVer value for the Rust library workspace and Python
+distribution. A `v<version>` tag starts
 `.github/workflows/release.yml`; an untagged manual dispatch builds and tests
 the artifacts without publishing anything.
 
@@ -9,8 +9,8 @@ The release workflow builds CPython-ABI3 wheels for Python 3.11 and newer on
 manylinux x86-64/AArch64, macOS x86-64/Apple Silicon, and Windows x86-64. It
 also builds an sdist, tests native wheels, creates build-provenance
 attestations, publishes through PyPI trusted publishing, and attaches every
-distribution plus `SHA256SUMS` to a GitHub Release. The Tauri runtime probe is
-not a product GUI and is deliberately not bundled as a release artifact.
+distribution plus `SHA256SUMS` to a GitHub Release. The standalone Tauri probe
+has its own dependency graph and is deliberately outside this release.
 
 ## One-time registry bootstrap
 
@@ -33,14 +33,12 @@ dry run, and publish the initial dependency-ordered workspace exactly once:
 cargo publish --workspace --locked --dry-run \
   --exclude phasesmith-desktop \
   --exclude phasesmith-py \
-  --exclude phasesmith-validation \
-  --exclude phasesmith-tauri
+  --exclude phasesmith-validation
 
 cargo publish --workspace --locked \
   --exclude phasesmith-desktop \
   --exclude phasesmith-py \
-  --exclude phasesmith-validation \
-  --exclude phasesmith-tauri
+  --exclude phasesmith-validation
 ```
 
 Publishing is permanent. Do not run the second command until the packaged
@@ -54,8 +52,8 @@ crates.io job remains safely skipped while the variable is absent.
 
 ## Release checklist
 
-1. Update `CHANGELOG.md` and synchronize the versions in `Cargo.toml`,
-   `pyproject.toml`, and `apps/phasesmith-desktop/src-tauri/tauri.conf.json`.
+1. Update `CHANGELOG.md` and synchronize the versions in `Cargo.toml` and
+   `pyproject.toml`.
 2. Run `python scripts/release_version.py --tag v<version>`.
 3. Run the complete Rust and Python gates and the crates.io dry run.
 4. Run the Release workflow manually. This builds and tests artifacts but does

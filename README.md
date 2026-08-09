@@ -56,12 +56,13 @@ points into the current checkout before running the gate.
 
 ### Native desktop host
 
-The Tauri 2 host is a separate Rust-only application and does not start or
-bundle Python. Its checked-in frontend is currently a runtime probe for the
-complete native adapter—not the finished product UI. Run it directly with:
+The experimental Tauri 2 host is a standalone Rust-only application outside
+the library workspace and does not start or bundle Python. Its checked-in
+frontend is currently a runtime probe for the complete native adapter—not the
+finished product UI. Run it directly with:
 
 ```shell
-cargo run -p phasesmith-tauri
+cargo run --manifest-path apps/phasesmith-desktop/src-tauri/Cargo.toml
 ```
 
 The adapter already covers revisioned project lifecycle, bounded powder/CIF

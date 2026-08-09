@@ -92,8 +92,9 @@ serializing a numeric JSON array.
 
 ## Tauri host
 
-The executable host lives in `apps/phasesmith-desktop/src-tauri`. It is a thin
-translation crate: application state and refinement workers remain in
+The experimental executable host lives in `apps/phasesmith-desktop/src-tauri`
+as a standalone crate outside the library workspace. It is a thin translation
+crate: application state and refinement workers remain in
 `phasesmith-desktop`, project codecs remain in `phasesmith-persistence`, and no
 scientific crate depends on Tauri. The host currently exposes project
 create/open/summary/save/close commands, revision-checked project series,
@@ -104,8 +105,9 @@ return `tauri::ipc::Response` bytes.
 The checked-in frontend is deliberately a static runtime probe rather than the
 product UI. It is embedded from `apps/phasesmith-desktop/frontend`, requires no
 Node.js toolchain, and confirms the native project format and absence of a
-Python sidecar. Tauri is pinned in the application crate so lockfile updates do
-not silently change the desktop host API.
+Python sidecar. Tauri is pinned in the standalone application crate so its
+dependency resolution and platform prerequisites do not affect library builds,
+tests, or releases.
 
 Histogram radiation may be monochromatic or a validated fixed spectrum. The
 desktop calculation boundary constructs the corresponding native structural

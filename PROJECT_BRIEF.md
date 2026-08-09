@@ -723,20 +723,21 @@ only typed descriptors and scalar summaries; requested grids, curves, masks,
 phase profiles, and reflection sticks are encoded as little-endian `f64` or
 byte payloads owned by an exact project revision or retained job. This avoids
 large JSON arrays and makes edit-between-catalog-and-fetch races explicit.
-The separate `phasesmith-tauri` application crate now hosts those contracts and
-emits refinement events without introducing Tauri into the scientific crates.
-Its static frontend is a runtime probe, not a finished product UI. A release
-distribution audit rejects Python dependencies, dynamic CPython links, wheels,
-extension modules, and Python sidecar artifacts. Native CIF import, standalone
-calculation, and report-export commands are implemented; product UI design is
-the remaining presentation work.
+The standalone `phasesmith-tauri` application crate hosts those contracts and
+emits refinement events without introducing Tauri into the library workspace.
+Its static frontend is a runtime probe, not a finished product UI. It has an
+independent dependency graph and distribution audit that rejects Python
+dependencies, dynamic CPython links, wheels, extension modules, and Python
+sidecar artifacts. Native CIF import, standalone calculation, and report-export
+commands are implemented; product UI design is the remaining presentation work.
 Release packaging preserves the same separation. The public crates.io
 `phasesmith` facade re-exports the application-neutral native component crates;
-PyO3, validation tooling, the desktop adapter, and the Tauri host remain
-unpublished workspace packages. A `v<version>` Git tag drives tested ABI3
+PyO3, validation tooling, and the desktop adapter remain unpublished workspace
+packages; the Tauri host is outside the library workspace and release. A
+`v<version>` Git tag drives tested ABI3
 Python wheels, an sdist, provenance, PyPI trusted publishing, the public Rust
 crate graph, and a tagged GitHub Release. Version checks bind Cargo,
-Python, Tauri, the changelog, and all internal registry requirements before any
+Python, the changelog, and all internal registry requirements before any
 publishing job receives credentials.
 Bounded powder import is now available through that adapter for plain columns,
 GSAS FXYE, and GSAS STD files. It installs a complete monochromatic experiment

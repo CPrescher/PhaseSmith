@@ -215,8 +215,7 @@ jobs:
           cargo publish --workspace --locked \
             --exclude phasesmith-desktop \
             --exclude phasesmith-py \
-            --exclude phasesmith-validation \
-            --exclude phasesmith-tauri
+            --exclude phasesmith-validation
 
   github-release:
     name: Publish GitHub Release
