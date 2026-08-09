@@ -2543,6 +2543,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "phasesmith-validation"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "sha2",
+]
+
+[[package]]
 name = "phasesmith-workflows"
 version = "0.1.0"
 dependencies = [
