@@ -408,3 +408,12 @@ close/reopen ABA race for asynchronous completions. Native load validates
 before installation and failed commands preserve current state. The adapter's
 job/event/binary transport layer and thin Tauri host remain subsequent atomic
 substeps.
+
+The next desktop-adapter substep adds detached native Rietveld jobs, structured
+finite progress/completion/failure events, first-reason cooperative
+cancellation, polling, explicit result acceptance, and result disposal.
+Completion never mutates project state; acceptance compares the exact source
+snapshot and revision. Event-delivery failure is isolated from numerical work,
+and shared multi-histogram phase acceptance remains explicitly unavailable
+until delivery step 17 provides the joint shared/local model. Binary series
+transport and the thin Tauri host remain.

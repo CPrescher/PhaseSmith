@@ -23,5 +23,22 @@ state.
 Creation, native load, summary, exact-revision save, replacement, and close are
 workflow-sized methods with serializable stable error records. Native load is
 fully validated before installation; failed load preserves the current project.
-The next adapter slice adds job IDs, refinement event delivery, cancellation,
-and accepted-result installation on top of these immutable snapshots.
+The job layer builds event delivery, cancellation, and accepted-result
+installation on top of these immutable snapshots.
+
+## Refinement jobs and events
+
+`JobManager` runs each native Rietveld analysis on a named Rust worker thread.
+Every progress/completion/failure event carries the process-local job ID,
+histogram ID, and immutable source revision. Native event diagnostics are
+translated into finite JSON scalar records; non-finite fit metrics are omitted
+rather than producing invalid JSON. A failed presentation event sink is
+isolated by the native runtime and cannot invalidate accepted numerical state.
+
+Completion only retains a result. `accept_refinement()` is a separate command
+that updates the analysis, histogram experiment, native phase definitions, and
+checkpoint through the exact source-snapshot compare-and-swap boundary. A
+newer edit or reopened project therefore wins deterministically. Shared phases
+across multiple histograms are rejected here until the joint objective owns the
+required shared/local parameter split. `cancel_refinement()` uses the native
+first-reason-wins token, and `discard_job()` releases retained result arrays.

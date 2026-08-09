@@ -706,6 +706,12 @@ command errors, performs native load/save outside its short state locks, and
 rejects stale updates by both revision and exact snapshot identity. This avoids
 late background work overwriting edits or a reopened project while keeping
 Tauri out of all scientific crates.
+Detached desktop refinement jobs now reuse the native runtime directly. They
+emit revision-tagged JSON-safe events, support first-reason cooperative
+cancellation, retain completed results without implicit installation, and
+accept only through the exact source snapshot. Explicit disposal bounds the
+lifetime of retained solver arrays, and presentation event failures remain
+isolated from scientific state.
 
 The remaining parity boundary is joint refinement. PhaseSmith currently owns
 one pattern/experiment per `RietveldInput`; GSAS-II shares one PbSO4 structure

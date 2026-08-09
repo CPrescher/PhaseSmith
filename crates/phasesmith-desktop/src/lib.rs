@@ -6,6 +6,8 @@
 
 #![forbid(unsafe_code)]
 
+mod jobs;
+
 use std::collections::BTreeMap;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
@@ -19,6 +21,11 @@ use phasesmith_persistence::{
 };
 use phasesmith_workflows::RietveldProjectState;
 use serde::Serialize;
+
+pub use jobs::{
+    CancelJobResponse, DesktopEvent, DesktopEventSink, DiagnosticRecord, JobId, JobManager,
+    JobStarted, JobState, JobStatus, RefinementEventRecord, RefinementOutcome,
+};
 
 /// Stable desktop-command failure category.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
@@ -34,6 +41,16 @@ pub enum DesktopErrorCode {
     RevisionOverflow,
     /// A supplied project or record was invalid.
     InvalidProject,
+    /// A requested histogram has no runnable native analysis.
+    UnknownAnalysis,
+    /// A requested refinement job does not exist.
+    UnknownJob,
+    /// A second job targeted an already-running analysis snapshot.
+    JobAlreadyRunning,
+    /// A job was not in the lifecycle state required by the command.
+    InvalidJobState,
+    /// Valid state requires a later native workflow capability.
+    UnsupportedOperation,
     /// Native project persistence failed.
     Persistence,
     /// Internal shared state was poisoned by a panicking host callback.
@@ -54,7 +71,7 @@ pub struct DesktopError {
 }
 
 impl DesktopError {
-    fn simple(code: DesktopErrorCode, message: impl Into<String>) -> Self {
+    pub(crate) fn simple(code: DesktopErrorCode, message: impl Into<String>) -> Self {
         Self {
             code,
             message: message.into(),
@@ -63,7 +80,7 @@ impl DesktopError {
         }
     }
 
-    fn conflict(expected_revision: u64, actual_revision: u64) -> Self {
+    pub(crate) fn conflict(expected_revision: u64, actual_revision: u64) -> Self {
         let message = if expected_revision == actual_revision {
             format!("project snapshot at revision {expected_revision} is no longer current")
         } else {
@@ -111,6 +128,10 @@ impl ProjectSnapshot {
     #[must_use]
     pub fn shared_state(&self) -> Arc<RietveldProjectState> {
         Arc::clone(&self.state)
+    }
+
+    pub(crate) fn same_instance(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.state, &other.state)
     }
 }
 
