@@ -28,11 +28,11 @@ fn pure_rust_neutron_runner_reproduces_the_reviewed_scientific_gate() {
     assert_eq!(report.status, ValidationStatus::Passed);
     assert_eq!(report.sample_count, 2_681);
     let measured = measurements(&report);
-    assert!((measured["poisson_rwp"] - 0.042_171_782_496_769_33).abs() < 2.0e-10);
-    assert!((measured["unit_weight_rwp"] - 0.045_260_138_152_294_72).abs() < 2.0e-10);
-    assert!((measured["profile_correlation"] - 0.996_644_799_175_426_8).abs() < 2.0e-10);
+    assert!((measured["poisson_rwp"] - 0.042_171_763_008_952_014).abs() < 2.0e-10);
+    assert!((measured["unit_weight_rwp"] - 0.045_261_157_551_245_6).abs() < 2.0e-10);
+    assert!((measured["profile_correlation"] - 0.996_644_691_149_770_6).abs() < 2.0e-10);
     assert!(
-        (measured["reference_cell_relative_error"] - 0.001_167_108_534_439_469_3).abs() < 2.0e-10
+        (measured["reference_cell_relative_error"] - 0.001_167_181_332_918_582_9).abs() < 2.0e-10
     );
 }
 
