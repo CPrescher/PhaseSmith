@@ -483,6 +483,36 @@ impl LatticeReflectionDomain {
         self.wavelength_angstrom
     }
 
+    /// Return the visible two-theta interval in degrees.
+    #[must_use]
+    pub const fn visible_two_theta_deg(&self) -> [f64; 2] {
+        self.visible_two_theta_deg
+    }
+
+    /// Return the initial value assigned to newly generated families.
+    #[must_use]
+    pub const fn initial_intensity(&self) -> f64 {
+        self.initial_intensity
+    }
+
+    /// Return whether Friedel pairs are merged.
+    #[must_use]
+    pub const fn merge_friedel(&self) -> bool {
+        self.merge_friedel
+    }
+
+    /// Return the reflection-candidate resource ceiling.
+    #[must_use]
+    pub const fn max_candidates(&self) -> usize {
+        self.max_candidates
+    }
+
+    /// Return the conservative reflection-guard scale.
+    #[must_use]
+    pub const fn guard_scale(&self) -> f64 {
+        self.guard_scale
+    }
+
     /// Clone this guarded contract for another monochromatic wavelength.
     ///
     /// # Errors

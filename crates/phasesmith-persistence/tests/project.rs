@@ -160,15 +160,43 @@ fn project_summary_is_versioned_deterministic_and_array_free() {
 #[test]
 fn native_manifest_schema_is_valid_json_and_tracks_the_wire_version() {
     let schema_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../schemas/native-project-v1.schema.json");
+        .join("../../schemas/native-project-v2.schema.json");
     let schema: serde_json::Value =
         serde_json::from_slice(&fs::read(schema_path).unwrap()).unwrap();
-    assert_eq!(schema["properties"]["format_version"]["const"], 1);
+    assert_eq!(schema["properties"]["format_version"]["const"], 2);
     assert_eq!(
         schema["properties"]["format_version"]["const"],
         PROJECT_FORMAT_VERSION
     );
     assert_eq!(schema["additionalProperties"], false);
+}
+
+#[test]
+fn version_one_projects_migrate_but_version_two_requires_analysis_field() {
+    let directory = temporary_path("native-version-migration");
+    let expected = project();
+    save_project(&directory, &expected, ProjectSaveOptions::default()).unwrap();
+    let manifest_path = directory.join(PROJECT_MANIFEST_NAME);
+    let mut manifest: serde_json::Value =
+        serde_json::from_slice(&fs::read(&manifest_path).unwrap()).unwrap();
+    manifest["format_version"] = serde_json::json!(1);
+    manifest
+        .as_object_mut()
+        .unwrap()
+        .remove("rietveld_analyses");
+    fs::write(&manifest_path, serde_json::to_vec(&manifest).unwrap()).unwrap();
+    assert_eq!(
+        load_project(&directory, ProjectReadLimits::default()).unwrap(),
+        expected
+    );
+
+    manifest["format_version"] = serde_json::json!(2);
+    fs::write(&manifest_path, serde_json::to_vec(&manifest).unwrap()).unwrap();
+    assert!(matches!(
+        load_project(&directory, ProjectReadLimits::default()),
+        Err(PersistenceError::InvalidRecord { .. })
+    ));
+    cleanup(directory);
 }
 
 #[test]

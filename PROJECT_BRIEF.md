@@ -676,6 +676,17 @@ native analytical derivatives, refinement, persistence, and finite-difference
 tests. The pinned PbSO4 check now returns 4.217% neutron Rwp versus 4.535% from
 GSAS-II and a maximum relative cell difference of 0.000424.
 
+The built-in monochromatic Python Rietveld facade now delegates complete
+refinement and checkpoint continuation to the Rust solver while retaining the
+existing scripting types. Python-defined callbacks and provider extensions use
+the explicit scripting fallback. The Python-free application model binds at
+most one validated native analysis to each project histogram through
+`RietveldProjectState`; native project format 2 persists its built-in sample
+physics, guarded lattice domains, analytical backgrounds, constraints, options,
+covariance controls, and exact accepted restart checkpoint. Format 1 remains
+readable as project-only state, so a future Tauri adapter can load and resume
+native projects directly without a Python sidecar.
+
 The remaining parity boundary is joint refinement. PhaseSmith currently owns
 one pattern/experiment per `RietveldInput`; GSAS-II shares one PbSO4 structure
 across both histograms. The next slice must introduce a first-class

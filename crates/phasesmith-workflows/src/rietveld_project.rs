@@ -4,6 +4,7 @@ use std::collections::BTreeSet;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 
+use phasesmith_core::OwnedCwContributions;
 use phasesmith_model::{DomainError, ProjectRecord, RadiationDefinition, RecordId};
 
 use crate::{
@@ -157,6 +158,14 @@ impl RietveldProjectState {
                         phase_id: stored.phase_id.clone(),
                     });
                 }
+                if phase.sample_physics().is_none()
+                    && phase.contributions()
+                        != &OwnedCwContributions::neutral(phase.reflection_ids().len())
+                {
+                    return Err(RietveldProjectError::OpaqueStaticContributions {
+                        phase_id: stored.phase_id.clone(),
+                    });
+                }
                 if stored.name != phase.name() || stored.definition != *phase.definition() {
                     return Err(RietveldProjectError::PhaseStateMismatch {
                         phase_id: stored.phase_id.clone(),
@@ -219,6 +228,11 @@ pub enum RietveldProjectError {
         /// Phase requiring the extension.
         phase_id: RecordId,
     },
+    /// Phase carries opaque static contribution arrays with no native model.
+    OpaqueStaticContributions {
+        /// Phase with non-reconstructible contributions.
+        phase_id: RecordId,
+    },
     /// Analysis phase label or structural definition differs from the project.
     PhaseStateMismatch {
         /// Inconsistent phase identity.
@@ -271,6 +285,10 @@ impl Display for RietveldProjectError {
             Self::ExternalProviderRequired { phase_id } => write!(
                 formatter,
                 "phase {phase_id} requires an unavailable external provider"
+            ),
+            Self::OpaqueStaticContributions { phase_id } => write!(
+                formatter,
+                "phase {phase_id} has opaque static sample-physics contributions"
             ),
             Self::PhaseStateMismatch { phase_id } => {
                 write!(

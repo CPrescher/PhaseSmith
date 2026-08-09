@@ -1,0 +1,351 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://phasesmith.dev/schemas/native-project-v2.schema.json",
+  "title": "PhaseSmith native project bundle version 2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format_version", "archive", "arrays", "project", "rietveld_analyses"],
+  "properties": {
+    "format_version": { "const": 2 },
+    "archive": { "$ref": "native-project-v1.schema.json#/properties/archive" },
+    "arrays": { "$ref": "native-project-v1.schema.json#/properties/arrays" },
+    "project": { "$ref": "native-project-v1.schema.json#/properties/project" },
+    "rietveld_analyses": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/analysis" }
+    }
+  },
+  "$defs": {
+    "key": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["module", "owner_id", "name"],
+      "properties": {
+        "module": { "type": "string", "minLength": 1 },
+        "owner_id": { "type": "string", "minLength": 1 },
+        "name": { "type": "string", "minLength": 1 }
+      }
+    },
+    "domain": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "lower", "upper", "wavelength_angstrom", "visible_two_theta_deg",
+        "initial_intensity", "merge_friedel", "max_candidates", "guard_scale"
+      ],
+      "properties": {
+        "lower": { "type": "array", "items": { "type": "number" }, "minItems": 1 },
+        "upper": { "type": "array", "items": { "type": "number" }, "minItems": 1 },
+        "wavelength_angstrom": { "type": "number", "exclusiveMinimum": 0 },
+        "visible_two_theta_deg": {
+          "type": "array", "items": { "type": "number" }, "minItems": 2, "maxItems": 2
+        },
+        "initial_intensity": { "type": "number", "minimum": 0 },
+        "merge_friedel": { "type": "boolean" },
+        "max_candidates": { "type": "integer", "minimum": 1 },
+        "guard_scale": { "type": "number", "minimum": 1 }
+      }
+    },
+    "sample_physics": {
+      "oneOf": [
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["type", "crystallite_size_nm", "shape_factor"],
+          "properties": {
+            "type": { "const": "isotropic_size" },
+            "crystallite_size_nm": { "type": "number" },
+            "shape_factor": { "type": "number" }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["type", "rms_microstrain"],
+          "properties": {
+            "type": { "const": "isotropic_microstrain" },
+            "rms_microstrain": { "type": "number" }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["type", "ratio", "preferred_axis_hkl"],
+          "properties": {
+            "type": { "const": "march_dollase" },
+            "ratio": { "type": "number" },
+            "preferred_axis_hkl": {
+              "type": "array", "items": { "type": "number" }, "minItems": 3, "maxItems": 3
+            }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["type", "components"],
+          "properties": {
+            "type": { "const": "composite" },
+            "components": {
+              "type": "array", "items": { "$ref": "#/$defs/sample_physics" }, "minItems": 1
+            }
+          }
+        }
+      ]
+    },
+    "background": {
+      "oneOf": [
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["type", "background_id", "coefficients"],
+          "properties": {
+            "type": { "const": "polynomial" },
+            "background_id": { "type": "string", "minLength": 1 },
+            "coefficients": { "type": "array", "items": { "type": "number" }, "minItems": 1 }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["type", "background_id", "coefficients", "domain_deg"],
+          "properties": {
+            "type": { "const": "chebyshev" },
+            "background_id": { "type": "string", "minLength": 1 },
+            "coefficients": { "type": "array", "items": { "type": "number" }, "minItems": 1 },
+            "domain_deg": {
+              "type": "array", "items": { "type": "number" }, "minItems": 2, "maxItems": 2
+            }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["type", "background_id", "knot_x", "values"],
+          "properties": {
+            "type": { "const": "point" },
+            "background_id": { "type": "string", "minLength": 1 },
+            "knot_x": { "type": "array", "items": { "type": "number" }, "minItems": 2 },
+            "values": { "type": "array", "items": { "type": "number" }, "minItems": 2 }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["type", "background_id", "peaks"],
+          "properties": {
+            "type": { "const": "amorphous" },
+            "background_id": { "type": "string", "minLength": 1 },
+            "peaks": {
+              "type": "array", "minItems": 1,
+              "items": {
+                "type": "array", "items": { "type": "number" }, "minItems": 3, "maxItems": 3
+              }
+            }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["type", "background_id", "components"],
+          "properties": {
+            "type": { "const": "composite" },
+            "background_id": { "type": "string", "minLength": 1 },
+            "components": {
+              "type": "array", "items": { "$ref": "#/$defs/background" }, "minItems": 1
+            }
+          }
+        }
+      ]
+    },
+    "constraint": {
+      "oneOf": [
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["type", "target", "value"],
+          "properties": {
+            "type": { "const": "fixed" },
+            "target": { "$ref": "#/$defs/key" },
+            "value": { "type": "number" }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["type", "target", "source", "multiplier", "offset"],
+          "properties": {
+            "type": { "const": "affine" },
+            "target": { "$ref": "#/$defs/key" },
+            "source": { "$ref": "#/$defs/key" },
+            "multiplier": { "type": "number" },
+            "offset": { "type": "number" }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["type", "target", "terms", "offset"],
+          "properties": {
+            "type": { "const": "linear" },
+            "target": { "$ref": "#/$defs/key" },
+            "terms": {
+              "type": "array", "minItems": 1,
+              "items": {
+                "type": "object", "additionalProperties": false,
+                "required": ["source", "coefficient"],
+                "properties": {
+                  "source": { "$ref": "#/$defs/key" },
+                  "coefficient": { "type": "number" }
+                }
+              }
+            },
+            "offset": { "type": "number" }
+          }
+        }
+      ]
+    },
+    "selection": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "phase_scale", "lattice", "coordinates", "occupancy", "u_iso",
+        "instrument", "background", "sample_physics"
+      ],
+      "properties": {
+        "phase_scale": { "type": "boolean" },
+        "lattice": { "type": "boolean" },
+        "coordinates": { "type": "boolean" },
+        "occupancy": { "type": "boolean" },
+        "u_iso": { "type": "boolean" },
+        "instrument": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+        "background": { "type": "boolean" },
+        "sample_physics": { "type": "boolean" }
+      }
+    },
+    "options": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "support_fwhm", "use_uncertainty", "requested_threads", "minimum_parallel_tasks",
+        "max_iterations", "max_evaluations", "max_runtime_seconds",
+        "max_consecutive_rejections", "min_iterations", "objective_tolerance",
+        "parameter_tolerance", "initial_damping", "damping_increase", "damping_decrease",
+        "cg_tolerance", "max_cg_iterations", "max_scaled_parameter_step", "max_backtracks"
+      ],
+      "properties": {
+        "support_fwhm": { "type": "number", "exclusiveMinimum": 0 },
+        "use_uncertainty": { "type": "boolean" },
+        "requested_threads": { "type": ["integer", "null"], "minimum": 1 },
+        "minimum_parallel_tasks": { "type": "integer", "minimum": 1 },
+        "max_iterations": { "type": "integer", "minimum": 1 },
+        "max_evaluations": { "type": "integer", "minimum": 1 },
+        "max_runtime_seconds": { "type": ["number", "null"], "exclusiveMinimum": 0 },
+        "max_consecutive_rejections": { "type": "integer", "minimum": 1 },
+        "min_iterations": { "type": "integer", "minimum": 1 },
+        "objective_tolerance": { "type": "number", "exclusiveMinimum": 0 },
+        "parameter_tolerance": { "type": "number", "exclusiveMinimum": 0 },
+        "initial_damping": { "type": "number", "exclusiveMinimum": 0 },
+        "damping_increase": { "type": "number", "exclusiveMinimum": 1 },
+        "damping_decrease": { "type": "number", "exclusiveMinimum": 0, "exclusiveMaximum": 1 },
+        "cg_tolerance": { "type": "number", "exclusiveMinimum": 0 },
+        "max_cg_iterations": { "type": "integer", "minimum": 1 },
+        "max_scaled_parameter_step": { "type": "number", "exclusiveMinimum": 0 },
+        "max_backtracks": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "iteration": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "iteration", "objective", "objective_change", "scaled_step_norm", "damping",
+        "cg_iterations", "backtracks", "parameter_changes", "topology_changes",
+        "rwp", "rp", "chi_square", "reduced_chi_square"
+      ],
+      "properties": {
+        "iteration": { "type": "integer", "minimum": 1 },
+        "objective": { "type": "number", "minimum": 0 },
+        "objective_change": { "type": "number", "minimum": 0 },
+        "scaled_step_norm": { "type": "number", "minimum": 0 },
+        "damping": { "type": "number", "exclusiveMinimum": 0 },
+        "cg_iterations": { "type": "integer", "minimum": 0 },
+        "backtracks": { "type": "integer", "minimum": 0 },
+        "parameter_changes": {
+          "type": "array",
+          "items": {
+            "type": "object", "additionalProperties": false,
+            "required": ["key", "before", "after", "scaled_change"],
+            "properties": {
+              "key": { "$ref": "#/$defs/key" },
+              "before": { "type": "number" },
+              "after": { "type": "number" },
+              "scaled_change": { "type": "number" }
+            }
+          }
+        },
+        "topology_changes": {
+          "type": "array",
+          "items": {
+            "type": "object", "additionalProperties": false,
+            "required": [
+              "phase_id", "added_reflection_ids", "removed_reflection_ids",
+              "preserved_reflection_count"
+            ],
+            "properties": {
+              "phase_id": { "type": "string", "minLength": 1 },
+              "added_reflection_ids": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+              "removed_reflection_ids": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+              "preserved_reflection_count": { "type": "integer", "minimum": 0 }
+            }
+          }
+        },
+        "rwp": { "type": "number" },
+        "rp": { "type": "number" },
+        "chi_square": { "type": "number", "minimum": 0 },
+        "reduced_chi_square": { "type": "number", "minimum": 0 }
+      }
+    },
+    "checkpoint": {
+      "type": "object", "additionalProperties": false,
+      "required": ["completed_iterations", "parameters", "objective", "damping", "history"],
+      "properties": {
+        "completed_iterations": { "type": "integer", "minimum": 0 },
+        "parameters": {
+          "type": "array",
+          "items": {
+            "type": "object", "additionalProperties": false,
+            "required": ["key", "value"],
+            "properties": {
+              "key": { "$ref": "#/$defs/key" },
+              "value": { "type": "number" }
+            }
+          }
+        },
+        "objective": { "type": "number", "minimum": 0 },
+        "damping": { "type": "number", "exclusiveMinimum": 0 },
+        "history": { "type": "array", "items": { "$ref": "#/$defs/iteration" } }
+      }
+    },
+    "analysis": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "histogram_id", "phases", "background", "selection", "constraints",
+        "options", "covariance", "checkpoint"
+      ],
+      "properties": {
+        "histogram_id": { "type": "string", "minLength": 1 },
+        "phases": {
+          "type": "array", "minItems": 1,
+          "items": {
+            "type": "object", "additionalProperties": false,
+            "required": ["phase_id", "site_ids", "domain", "sample_physics"],
+            "properties": {
+              "phase_id": { "type": "string", "minLength": 1 },
+              "site_ids": { "type": "array", "items": { "type": "string", "minLength": 1 }, "minItems": 1, "uniqueItems": true },
+              "domain": { "oneOf": [{ "$ref": "#/$defs/domain" }, { "type": "null" }] },
+              "sample_physics": { "oneOf": [{ "$ref": "#/$defs/sample_physics" }, { "type": "null" }] }
+            }
+          }
+        },
+        "background": { "oneOf": [{ "$ref": "#/$defs/background" }, { "type": "null" }] },
+        "selection": { "$ref": "#/$defs/selection" },
+        "constraints": { "type": "array", "items": { "$ref": "#/$defs/constraint" } },
+        "options": { "$ref": "#/$defs/options" },
+        "covariance": {
+          "type": "object", "additionalProperties": false,
+          "required": ["enabled", "max_parameters", "unresolved_correlation"],
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "max_parameters": { "type": "integer", "minimum": 1 },
+            "unresolved_correlation": { "type": "number", "minimum": 0, "maximum": 1 }
+          }
+        },
+        "checkpoint": { "oneOf": [{ "$ref": "#/$defs/checkpoint" }, { "type": "null" }] }
+      }
+    }
+  }
+}

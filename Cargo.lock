@@ -654,8 +654,11 @@ name = "phasesmith-persistence"
 version = "0.1.0"
 dependencies = [
  "flate2",
+ "phasesmith-core",
  "phasesmith-engine",
+ "phasesmith-execution",
  "phasesmith-model",
+ "phasesmith-workflows",
  "serde",
  "serde_json",
  "sha2",

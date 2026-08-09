@@ -2,7 +2,9 @@
 
 use std::collections::BTreeMap;
 
-use phasesmith_core::{ConstantWavelengthInstrument, OwnedCwContributions};
+use phasesmith_core::{
+    ConstantWavelengthInstrument, OwnedCwContributionArrays, OwnedCwContributions,
+};
 use phasesmith_crystallography::{IntegratedIntensityCorrectionModel, UnitCell};
 use phasesmith_engine::{
     BuiltInScatteringModel, MonochromaticPositionCorrection, StructuralPhaseDefinition,
@@ -222,5 +224,34 @@ fn cross_record_mismatches_are_rejected_before_adapter_use() {
     assert!(matches!(
         value.validate(),
         Err(RietveldProjectError::ExternalProviderRequired { .. })
+    ));
+
+    let mut value = state();
+    let stored = &value.project.phases[0];
+    value.analyses[0].input.phases[0] = RietveldPhase::new_with_site_ids(
+        stored.phase_id.clone(),
+        stored.name.clone(),
+        vec![RecordId::new("Si1").unwrap()],
+        stored.definition.clone(),
+        OwnedCwContributions::new(
+            1,
+            0,
+            OwnedCwContributionArrays {
+                gaussian_variance_deg2: vec![0.0],
+                lorentzian_fwhm_deg: vec![0.0],
+                intensity_multiplier: vec![2.0],
+                d_gaussian_variance_d_position: vec![0.0],
+                d_lorentzian_fwhm_d_position: vec![0.0],
+                d_intensity_multiplier_d_position: vec![0.0],
+                ..OwnedCwContributionArrays::default()
+            },
+        )
+        .unwrap(),
+    )
+    .unwrap();
+    value.analyses[0].checkpoint = None;
+    assert!(matches!(
+        value.validate(),
+        Err(RietveldProjectError::OpaqueStaticContributions { .. })
     ));
 }

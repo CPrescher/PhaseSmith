@@ -8,13 +8,14 @@ crate has no PyO3, NumPy, CPython, webview, or Tauri dependency.
 
 A native project is a directory with two library-owned files:
 
-- `manifest.json` contains format version 1, explicit wire records, array
+- `manifest.json` contains format version 2, explicit wire records, array
   descriptors, units in field names, and SHA-256 hashes;
 - `arrays.npz` contains only contiguous little-endian `float64`, `int32`,
   `uint64`, and boolean NPY members.
 
 The complete manifest contract is
-[`schemas/native-project-v1.schema.json`](../schemas/native-project-v1.schema.json).
+[`schemas/native-project-v2.schema.json`](../schemas/native-project-v2.schema.json).
+Version 1 remains readable and migrates to a project with no Rietveld analyses.
 Internal kernel enums are not serialized directly. Every persisted record has
 an explicit conversion to and from the validated `phasesmith-model` domain.
 
@@ -28,6 +29,30 @@ use phasesmith_persistence::{
 save_project("analysis.psproj", &project, ProjectSaveOptions::default())?;
 let restored = load_project("analysis.psproj", ProjectReadLimits::default())?;
 ```
+
+The version-2 API persists the complete Python-free refinement boundary as
+well:
+
+```rust,ignore
+use phasesmith_persistence::{load_rietveld_project, save_rietveld_project};
+
+save_rietveld_project(
+    "analysis.psproj",
+    &state,
+    ProjectSaveOptions::default(),
+)?;
+let restored = load_rietveld_project(
+    "analysis.psproj",
+    ProjectReadLimits::default(),
+)?;
+```
+
+`RietveldProjectState` stores at most one analysis per histogram, including
+built-in phase/sample-physics models, guarded lattice domains, analytical
+backgrounds, parameter selections, constraints, execution and covariance
+options, and the last accepted restart checkpoint with its full iteration
+history. Opaque external-provider arrays are rejected because they cannot be
+reconstructed by a Python-free desktop process.
 
 Loading is bounded before domain construction. It checks manifest and archive
 sizes, version, archive filename and hash, exact NPZ member set, every member's
@@ -56,14 +81,12 @@ binary storage or later binary IPC.
 The existing `phasesmith.persistence.PersistenceBundle` format version 12 is
 the current Python scripting checkpoint format. It contains solver types that
 have not all moved to Rust yet and remains supported unchanged. Native project
-format 1 instead stores the application-neutral, multi-histogram
-`ProjectRecord` already owned by Rust.
+format 2 stores the application-neutral, multi-histogram `ProjectRecord`
+together with native Rietveld analyses and restart state.
 
-These are deliberately separate during migration. Once constraints,
-backgrounds, refinement options, checkpoints, and results have native domain
-records, the Python API can delegate its built-in persistence to this codec
-through explicit migrations. No Python interpreter is required by the native
-format now or after that delegation.
+These are deliberately separate during migration. The remaining Python API
+delegation can translate its built-in records through explicit migrations;
+the native format itself needs no Python interpreter.
 
 ## Cross-interface gate
 

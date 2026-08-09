@@ -6,6 +6,7 @@
 
 mod arrays;
 mod report;
+mod rietveld_wire;
 mod wire;
 
 use std::collections::BTreeMap;
@@ -18,6 +19,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 
 use arrays::{ArrayDescriptor, read_npz, sha256_hex, write_npz};
 use phasesmith_model::{DomainError, ProjectRecord};
+use phasesmith_workflows::RietveldProjectState;
 use serde::{Deserialize, Serialize};
 
 pub use report::{
@@ -25,8 +27,8 @@ pub use report::{
     write_project_summary_json,
 };
 
-/// First native project bundle wire version.
-pub const PROJECT_FORMAT_VERSION: u32 = 1;
+/// Current native project bundle wire version.
+pub const PROJECT_FORMAT_VERSION: u32 = 2;
 /// Canonical manifest filename within a project directory.
 pub const PROJECT_MANIFEST_NAME: &str = "manifest.json";
 /// Canonical `NumPy` archive filename within a project directory.
@@ -189,6 +191,8 @@ struct ProjectManifest {
     archive: ArchiveRecord,
     arrays: BTreeMap<String, ArrayDescriptor>,
     project: wire::WireProject,
+    #[serde(default)]
+    rietveld_analyses: Option<Vec<rietveld_wire::WireRietveldAnalysis>>,
 }
 
 /// Save one validated native project as canonical JSON plus NPZ.
@@ -206,7 +210,40 @@ pub fn save_project(
     options: ProjectSaveOptions,
 ) -> Result<PathBuf, PersistenceError> {
     project.validate().map_err(PersistenceError::Domain)?;
-    let destination = absolute_path(path.as_ref())?;
+    save_project_parts(path.as_ref(), project, Vec::new(), options)
+}
+
+/// Save one validated project and all runnable native Rietveld analyses.
+///
+/// # Errors
+///
+/// Returns [`PersistenceError`] for invalid cross-record state, serialization,
+/// archive, filesystem, or overwrite failures.
+pub fn save_rietveld_project(
+    path: impl AsRef<Path>,
+    state: &RietveldProjectState,
+    options: ProjectSaveOptions,
+) -> Result<PathBuf, PersistenceError> {
+    state
+        .validate()
+        .map_err(|error| PersistenceError::InvalidRecord {
+            message: format!("invalid native Rietveld project state: {error}"),
+        })?;
+    save_project_parts(
+        path.as_ref(),
+        &state.project,
+        rietveld_wire::encode_analyses(state),
+        options,
+    )
+}
+
+fn save_project_parts(
+    path: &Path,
+    project: &ProjectRecord,
+    rietveld_analyses: Vec<rietveld_wire::WireRietveldAnalysis>,
+    options: ProjectSaveOptions,
+) -> Result<PathBuf, PersistenceError> {
+    let destination = absolute_path(path)?;
     validate_destination(&destination, options)?;
     let (wire_project, arrays) = wire::encode_project(project)?;
     let encoded_archive = write_npz(&arrays)?;
@@ -222,6 +259,7 @@ pub fn save_project(
         },
         arrays: descriptors,
         project: wire_project,
+        rietveld_analyses: Some(rietveld_analyses),
     };
     let mut encoded_manifest = serde_json::to_string_pretty(&manifest)?;
     encoded_manifest.push('\n');
@@ -264,6 +302,21 @@ pub fn load_project(
     path: impl AsRef<Path>,
     limits: ProjectReadLimits,
 ) -> Result<ProjectRecord, PersistenceError> {
+    load_rietveld_project(path, limits).map(|state| state.project)
+}
+
+/// Load and validate one project plus all native Rietveld analyses.
+///
+/// Version-1 native projects load with an empty analysis list.
+///
+/// # Errors
+///
+/// Returns [`PersistenceError`] for resource, filesystem, JSON, hash, archive,
+/// wire-record, domain, or Rietveld validation failures.
+pub fn load_rietveld_project(
+    path: impl AsRef<Path>,
+    limits: ProjectReadLimits,
+) -> Result<RietveldProjectState, PersistenceError> {
     limits.validate()?;
     let source = absolute_path(path.as_ref())?;
     let manifest_path = source.join(PROJECT_MANIFEST_NAME);
@@ -274,11 +327,25 @@ pub fn load_project(
         "project manifest exceeds max_manifest_bytes",
     )?;
     let manifest: ProjectManifest = serde_json::from_slice(&manifest_bytes)?;
-    if manifest.format_version != PROJECT_FORMAT_VERSION {
+    if !(1..=PROJECT_FORMAT_VERSION).contains(&manifest.format_version) {
         return Err(PersistenceError::UnsupportedVersion {
             version: manifest.format_version,
         });
     }
+    let rietveld_analyses = match (manifest.format_version, manifest.rietveld_analyses) {
+        (1, None) => Vec::new(),
+        (1, Some(_)) => {
+            return Err(PersistenceError::InvalidRecord {
+                message: "native project format 1 cannot declare Rietveld analyses".to_owned(),
+            });
+        }
+        (_, Some(analyses)) => analyses,
+        (_, None) => {
+            return Err(PersistenceError::InvalidRecord {
+                message: "native project format 2 requires Rietveld analyses".to_owned(),
+            });
+        }
+    };
     if manifest.archive.file != PROJECT_ARRAYS_NAME {
         return Err(PersistenceError::InvalidArchive {
             message: "project archive filename is invalid".to_owned(),
@@ -300,7 +367,8 @@ pub fn load_project(
         });
     }
     let arrays = read_npz(&archive_bytes, &manifest.arrays, limits)?;
-    wire::decode_project(manifest.project, arrays, limits)
+    let project = wire::decode_project(manifest.project, arrays, limits)?;
+    rietveld_wire::decode_state(project, rietveld_analyses, limits)
 }
 
 fn read_bounded_file(

@@ -383,5 +383,8 @@ record as well. `RietveldProjectState` joins the multi-histogram
 `ProjectRecord` to at most one runnable analysis per histogram and checks exact
 pattern, experiment, phase-order, phase-definition, provider, bounds,
 constraint, solver-option, and checkpoint contracts. This is the domain input
-for the next persistence wire migration and the later revisioned Tauri state;
-neither adapter needs to invent its own cross-record validation rules.
+for the later revisioned Tauri state; neither adapter needs to invent its own
+cross-record validation rules. Native project format 2 now persists this
+complete state through explicit Rust-only wire records, including guarded
+lattice domains, built-in sample physics and backgrounds, constraints, options,
+and accepted checkpoints. Format 1 remains readable as project-only state.
