@@ -67,11 +67,11 @@ shared U/V/W/zero, then adds isotropic displacement, size, microstrain, and
 preferred orientation, and finally polishes the three linear phase scales with
 nonlinear parameters fixed. The fixed-anisotropic reviewed result is:
 
-- Al2O3 30.475%, ZnO 34.114%, CaF2 35.411%;
-- maximum absolute weighed-fraction error 0.991 percentage points (limit 2);
-- Poisson-weighted Rwp 0.19847 (limit 0.20);
-- unit-weight Rwp 0.13202 (limit 0.15);
-- background-subtracted profile correlation 0.99059 (limit 0.98).
+- Al2O3 30.466%, ZnO 34.110%, CaF2 35.424%;
+- maximum absolute weighed-fraction error 1.004 percentage points (limit 2);
+- Poisson-weighted Rwp 0.19844 (limit 0.20);
+- unit-weight Rwp 0.13181 (limit 0.15);
+- background-subtracted profile correlation 0.99062 (limit 0.98).
 
 The two residual gates are intentionally separate: assigning
 `sigma=sqrt(max(counts, 1))` changes the weighting and must not be compared to a

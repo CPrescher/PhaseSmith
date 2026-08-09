@@ -640,11 +640,11 @@ The pinned IUCr QARR 1g workflow is now an accepted Python-free Rust three-phase
 fixed-spectrum structural validation, not a readiness placeholder. Its staged
 refinement ends with a scale-only polish and converts scales using reviewed
 phase Z, formula mass, and cell volume metadata through the native Hill--Howard
-API. The reviewed Rust baseline gives Al2O3 30.475%, ZnO 34.114%, and CaF2
-35.411%, with a maximum absolute error of 0.991 percentage points from the
+API. The reviewed Rust baseline gives Al2O3 30.466%, ZnO 34.110%, and CaF2
+35.424%, with a maximum absolute error of 1.004 percentage points from the
 independently weighed fractions. Poisson-weighted and unit-weight Rwp are
-reported separately (0.19846 and 0.13202), alongside profile correlation
-0.99059. Release tests repeat the native run exactly and compare the stable
+reported separately (0.19844 and 0.13181), alongside profile correlation
+0.99062. Release tests repeat the native run exactly and compare the stable
 measurements with the independent Python runner under explicit tolerances.
 
 This checkpoint uses explicit remaining approximations: fixed Cu K-alpha1
@@ -769,17 +769,20 @@ an explicit zero ceiling remain matrix-free. Joint objectives aggregate this
 choice and its actual expensive-product accounting across histograms.
 
 A realistic fixed-doublet Rust benchmark with 256 reflections, 10,001 samples,
-eight sites, and FCJ measures 18.608 ms for bounded dense preparation, 0.289 ms
-for a cached normal product, and 19.847 ms for the equivalent matrix-free
-product on the development host. The repeated product is therefore 68.6x
-faster. Fresh release application-boundary runs take 0.989 s for QARR, 2.300 s
-for PbSO4 neutron, and 7.006 s for PbSO4 X-ray, versus the recorded pre-fix
-13.02 s, 17.56 s, and 157.44 s. All scientific gates pass; the current X-ray
-Poisson Rwp is 10.353%, within 0.007 percentage points of the 3.59 s Python
-scripting reference. The remaining scripting/native timing gap is a
-convergence-path issue rather than evidence that the X-ray calculation kernel
-still requires Python. Historical pinned GSAS-II timings remain separate
-because its PbSO4 number covers a joint two-histogram recipe.
+eight sites, and FCJ measures 17.987 ms for bounded dense preparation, 0.276 ms
+for a cached normal product, and 19.660 ms for the equivalent matrix-free
+product on the development host. The repeated product is therefore 71.3x
+faster. Fresh release application-boundary runs take 0.645 s for QARR, 2.337 s
+for PbSO4 neutron, and 4.223 s for PbSO4 X-ray, versus the recorded pre-fix
+13.02 s, 17.56 s, and 157.44 s. All scientific gates pass. The pure-Rust X-ray
+Poisson Rwp is 10.34601%, while a fresh 3.560 s Python scripting run gives
+10.34604%; the native path is scientifically coincident and about 19% slower.
+It now follows the scripting optimizer's weighted free-coordinate Jacobian,
+phase-scale conditioning, accepted-trial carry-forward, bounded backtracking,
+and physical Bruckner-width conversion. The remaining final-stage iteration
+difference occurs only on the flat tail of the minimum. Historical pinned
+GSAS-II timings remain separate because its PbSO4 number covers a joint
+two-histogram recipe.
 
 ## Quality bar
 

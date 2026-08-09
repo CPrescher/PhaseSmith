@@ -341,19 +341,30 @@ therefore removed rather than retained as an unmeasured compatibility path.
 The Python-free general and joint objectives now apply the same policy instead
 of unconditionally recomputing matrix-free products. A native accepted or trial
 state fuses profile values with analytical structural derivatives, projects the
-native rows into the stable physical layout, and reuses that bounded Jacobian
-for its gradient, conjugate-gradient products, and covariance. Solver budgets
-count the expensive preparation pass once and do not charge cached products as
-new model evaluations. `PreparedGeneralRietveldObjective::new_with_max_linearization_elements`
+native rows through constraints and numerical scales into the complete
+mask/uncertainty-weighted free-coordinate Jacobian, and reuses that bounded
+Jacobian for its gradient, conjugate-gradient products, and covariance. An
+accepted trial's calculation and linearization become the next current state;
+they are not discarded and rebuilt. Solver budgets count the expensive
+preparation pass once and do not charge cached products as new model
+evaluations. `PreparedGeneralRietveldObjective::new_with_max_linearization_elements`
 is the lower-level Rust control; a zero ceiling remains the deterministic
 matrix-free test and memory fallback.
+
+Numerical scaling matches the scripting optimizer: a nonzero phase scale uses
+its current absolute magnitude, while exactly zero uses `1.0` so it can escape
+the boundary. The solver then applies the same damped normal equation, scaled
+step cap, bounded half-step backtracking, strict objective decrease, and
+accepted-state carry-forward contract as the Python implementation. This is
+conditioning only; the physical phase scale and reported parameter changes are
+unchanged.
 
 `cargo bench -p phasesmith-workflows --bench rietveld` includes a fixed-doublet
 native objective with 256 reflections, 10,001 samples, eight sites, FCJ
 asymmetry, and structural/instrument/background parameters. On the development
-Apple Silicon host, bounded dense preparation measured 18.608 ms median. A
-cached normal product measured 289.45 microseconds versus 19.847 ms for the
-same matrix-free product, a 68.6x reduction in the repeated optimizer kernel.
+Apple Silicon host, bounded dense preparation measured 17.987 ms median. A
+cached normal product measured 275.69 microseconds versus 19.660 ms for the
+same matrix-free product, a 71.3x reduction in the repeated optimizer kernel.
 The benchmark reports these scopes separately so one-time preparation is not
 mistaken for product latency.
 
