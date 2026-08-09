@@ -44,6 +44,18 @@ explicit probe-compatible integrated-intensity correction. Import refuses to
 silently rewrite a histogram that already has a native analysis; attaching a
 new phase there requires a later analysis-edit workflow.
 
+Standalone calculation builds neutral built-in `RietveldPhase` inputs directly
+from a histogram's ordered project phase records and reuses the same native
+calculation path as refinement. The Tauri command awaits this work on its
+blocking pool, returns only a finite scalar summary and retained calculation
+ID, and never mutates the project. Plot catalogs and raw payloads include the
+grid, observed/calculated/profile/background/residual/mask arrays and all
+per-phase profiles and reflection sticks. Each retained result owns its exact
+source snapshot and remains viewable after later edits until explicit disposal;
+bulk encoding occurs after releasing the result-map lock. This initial command
+does not offer cooperative cancellation, so the UI should use refinement jobs
+for cancellable iterative work.
+
 ## Refinement jobs and events
 
 `JobManager` runs each native Rietveld analysis on a named Rust worker thread.
@@ -99,6 +111,5 @@ Run `scripts/audit-desktop-distribution.sh` after desktop dependency or bundle
 changes. The gate rejects Python/PyO3/NumPy in the normal or build dependency
 tree, builds the release executable, rejects a dynamic link to CPython, and
 scans produced bundles for Python runtimes, wheels, or extension modules.
-Standalone calculation and report-export commands remain separate adapter
-slices; the shell is not considered feature-complete until those workflow-sized
-operations are present.
+Report export remains the final delivery-step-16 adapter slice; the shell is not
+considered feature-complete until that workflow-sized operation is present.

@@ -1,7 +1,9 @@
 //! Typed binary display-series descriptors and little-endian encoding.
 
 use phasesmith_model::HistogramRecord;
-use phasesmith_workflows::{RietveldGeneralRefinementResult, RietveldProjectState};
+use phasesmith_workflows::{
+    RietveldCalculation, RietveldGeneralRefinementResult, RietveldProjectState,
+};
 use serde::Serialize;
 
 use crate::{DesktopError, DesktopErrorCode, JobId};
@@ -43,6 +45,15 @@ pub enum SeriesOwner {
         /// Immutable project revision evaluated by the job.
         project_revision: u64,
         /// Histogram that was refined.
+        histogram_id: String,
+    },
+    /// Series belongs to one retained standalone calculation.
+    Calculation {
+        /// Process-local calculation ID.
+        calculation_id: crate::CalculationId,
+        /// Immutable project revision evaluated by the calculation.
+        project_revision: u64,
+        /// Histogram that was calculated.
         histogram_id: String,
     },
 }
@@ -171,6 +182,46 @@ pub(crate) fn refinement_payload(
         .ok_or_else(|| unknown_series(series_id))
 }
 
+pub(crate) fn calculation_descriptors(
+    calculation_id: crate::CalculationId,
+    project_revision: u64,
+    histogram_id: &str,
+    pattern: &phasesmith_model::PatternRecord,
+    result: &RietveldCalculation,
+) -> Result<Vec<BinarySeriesDescriptor>, DesktopError> {
+    Ok(calculation_series(
+        calculation_id,
+        project_revision,
+        histogram_id,
+        pattern,
+        result,
+    )?
+    .into_iter()
+    .map(|series| series.descriptor)
+    .collect())
+}
+
+pub(crate) fn calculation_payload(
+    calculation_id: crate::CalculationId,
+    project_revision: u64,
+    histogram_id: &str,
+    pattern: &phasesmith_model::PatternRecord,
+    result: &RietveldCalculation,
+    series_id: &str,
+) -> Result<BinaryPayload, DesktopError> {
+    calculation_series(
+        calculation_id,
+        project_revision,
+        histogram_id,
+        pattern,
+        result,
+    )?
+    .into_iter()
+    .find(|series| series.descriptor.series_id == series_id)
+    .map(SeriesRef::into_payload)
+    .ok_or_else(|| unknown_series(series_id))
+}
+
 fn project_series<'a>(
     state: &'a RietveldProjectState,
     histogram_id: &str,
@@ -249,7 +300,30 @@ fn refinement_series<'a>(
         project_revision,
         histogram_id: histogram_id.to_owned(),
     };
-    let mut series = Vec::with_capacity(8 + result.calculation.phases.len() * 3);
+    result_series(&owner, &result.input.pattern, &result.calculation)
+}
+
+fn calculation_series<'a>(
+    calculation_id: crate::CalculationId,
+    project_revision: u64,
+    histogram_id: &str,
+    pattern: &'a phasesmith_model::PatternRecord,
+    result: &'a RietveldCalculation,
+) -> Result<Vec<SeriesRef<'a>>, DesktopError> {
+    let owner = SeriesOwner::Calculation {
+        calculation_id,
+        project_revision,
+        histogram_id: histogram_id.to_owned(),
+    };
+    result_series(&owner, pattern, result)
+}
+
+fn result_series<'a>(
+    owner: &SeriesOwner,
+    pattern: &'a phasesmith_model::PatternRecord,
+    result: &'a RietveldCalculation,
+) -> Result<Vec<SeriesRef<'a>>, DesktopError> {
+    let mut series = Vec::with_capacity(8 + result.phases.len() * 3);
     push_f64(
         &mut series,
         owner.clone(),
@@ -257,10 +331,10 @@ fn refinement_series<'a>(
         "2θ",
         "coordinate",
         "degree",
-        &result.input.pattern.x_deg,
+        &pattern.x_deg,
         None,
     )?;
-    if let Some(values) = &result.input.pattern.observed_y {
+    if let Some(values) = &pattern.observed_y {
         push_f64(
             &mut series,
             owner.clone(),
@@ -277,31 +351,31 @@ fn refinement_series<'a>(
             "calculated_y",
             "Calculated",
             "calculated",
-            result.calculation.y.as_slice(),
+            result.y.as_slice(),
         ),
         (
             "profile_y",
             "Profile",
             "profile",
-            result.calculation.profile_y.as_slice(),
+            result.profile_y.as_slice(),
         ),
         (
             "background_y",
             "Background",
             "background",
-            result.calculation.background_y.as_slice(),
+            result.background_y.as_slice(),
         ),
         (
             "residual_y",
             "Residual",
             "residual",
-            result.calculation.metrics.residual.as_slice(),
+            result.metrics.residual.as_slice(),
         ),
         (
             "weighted_residual_y",
             "Weighted residual",
             "weighted_residual",
-            result.calculation.metrics.weighted_residual.as_slice(),
+            result.metrics.weighted_residual.as_slice(),
         ),
     ] {
         push_f64(
@@ -321,9 +395,9 @@ fn refinement_series<'a>(
         "included_mask",
         "Included mask",
         "mask",
-        &result.calculation.metrics.included,
+        &result.metrics.included,
     )?;
-    for phase in &result.calculation.phases {
+    for phase in &result.phases {
         push_phase_series(&mut series, owner.clone(), phase)?;
     }
     Ok(series)

@@ -732,6 +732,11 @@ state. Native CIF phase import likewise uses bounded parsing and exact snapshot
 installation, generating reflections for the selected histogram while
 preserving parser diagnostics, provenance, charge/isotope scattering identity,
 and an explicit probe-compatible intensity correction.
+Standalone desktop calculation now constructs built-in neutral-physics inputs
+from those project records, evaluates them on the native blocking pool, and
+retains complete revision-owned plot data without changing project state.
+Finite metrics stay in JSON while sample/reflection arrays use the existing raw
+little-endian transport; explicit disposal releases the retained result.
 
 The remaining parity boundary is joint refinement. PhaseSmith currently owns
 one pattern/experiment per `RietveldInput`; GSAS-II shares one PbSO4 structure

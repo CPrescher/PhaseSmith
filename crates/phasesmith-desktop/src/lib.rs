@@ -6,6 +6,7 @@
 
 #![forbid(unsafe_code)]
 
+mod calculation;
 mod cif_import;
 mod jobs;
 mod powder_import;
@@ -25,6 +26,9 @@ use phasesmith_persistence::{
 use phasesmith_workflows::RietveldProjectState;
 use serde::Serialize;
 
+pub use calculation::{
+    CalculationId, CalculationManager, CalculationOptionsInput, CalculationResponse,
+};
 pub use cif_import::{
     CifPhaseImportRequest, CifPhaseImportResponse, DesktopCifDiagnostic,
     DesktopCifDiagnosticSeverity, DesktopIntensityCorrectionInput,
@@ -58,6 +62,8 @@ pub enum DesktopErrorCode {
     UnknownAnalysis,
     /// A requested refinement job does not exist.
     UnknownJob,
+    /// A requested retained standalone calculation does not exist.
+    UnknownCalculation,
     /// A second job targeted an already-running analysis snapshot.
     JobAlreadyRunning,
     /// A job was not in the lifecycle state required by the command.
@@ -68,6 +74,8 @@ pub enum DesktopErrorCode {
     Persistence,
     /// Native file import failed.
     Import,
+    /// Native standalone calculation failed.
+    Calculation,
     /// A requested binary display series does not exist.
     UnknownSeries,
     /// Internal shared state was poisoned by a panicking host callback.

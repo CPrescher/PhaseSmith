@@ -11,6 +11,7 @@ license.workspace = true
 phasesmith-core = { path = "../phasesmith-core" }
 phasesmith-crystallography = { path = "../phasesmith-crystallography" }
 phasesmith-engine = { path = "../phasesmith-engine" }
+phasesmith-execution = { path = "../phasesmith-execution" }
 phasesmith-io = { path = "../phasesmith-io" }
 phasesmith-model = { path = "../phasesmith-model" }
 phasesmith-persistence = { path = "../phasesmith-persistence" }
@@ -18,7 +19,6 @@ phasesmith-workflows = { path = "../phasesmith-workflows" }
 serde = { version = "1.0", features = ["derive"] }
 
 [dev-dependencies]
-phasesmith-execution = { path = "../phasesmith-execution" }
 serde_json = "1.0"
 
 [lints]

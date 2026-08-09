@@ -434,5 +434,7 @@ complete native monochromatic experiment record. Native CIF phase import now
 also parses with bounded native limits, generates target-histogram-specific
 reflections, preserves X-ray/neutron scattering identity and diagnostics, and
 attaches the phase through exact snapshot comparison. Standalone calculation
-and report export remain the final workflow commands required to complete
-delivery step 16.
+now evaluates ordered project phases through the native structural/Rietveld
+path, retains revision-owned results without mutating project state, and uses
+the same binary-series transport as refinement. Report export remains the final
+workflow command required to complete delivery step 16.

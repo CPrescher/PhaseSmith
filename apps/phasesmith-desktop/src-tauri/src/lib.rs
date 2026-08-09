@@ -5,10 +5,10 @@
 #![allow(clippy::needless_pass_by_value)]
 
 use phasesmith_desktop::{
-    BinarySeriesDescriptor, CancelJobResponse, CifPhaseImportRequest, CifPhaseImportResponse,
-    DesktopError, DesktopEvent, DesktopProjectStore, JobManager, JobStarted, JobStatus,
-    OpenProjectResponse, PowderHistogramImportRequest, PowderHistogramImportResponse,
-    SaveProjectResponse,
+    BinarySeriesDescriptor, CalculationManager, CalculationOptionsInput, CalculationResponse,
+    CancelJobResponse, CifPhaseImportRequest, CifPhaseImportResponse, DesktopError, DesktopEvent,
+    DesktopProjectStore, JobManager, JobStarted, JobStatus, OpenProjectResponse,
+    PowderHistogramImportRequest, PowderHistogramImportResponse, SaveProjectResponse,
 };
 use phasesmith_persistence::{
     PROJECT_FORMAT_VERSION, ProjectReadLimits, ProjectSaveOptions, ProjectSummaryReport,
@@ -22,6 +22,7 @@ const JOB_EVENT_NAME: &str = "phasesmith://refinement-event";
 struct AppState {
     projects: DesktopProjectStore,
     jobs: JobManager,
+    calculations: CalculationManager,
 }
 
 /// Static native-runtime information shown by the desktop diagnostics panel.
@@ -112,6 +113,49 @@ async fn import_cif_phase(
     })
     .await
     .map_err(|error| DesktopError::host_failure(format!("CIF-import task failed: {error}")))?
+}
+
+#[tauri::command]
+async fn calculate_histogram(
+    state: State<'_, AppState>,
+    expected_revision: u64,
+    histogram_id: String,
+    options: CalculationOptionsInput,
+) -> Result<CalculationResponse, DesktopError> {
+    let calculations = state.calculations.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        calculations.calculate_histogram(expected_revision, &histogram_id, options)
+    })
+    .await
+    .map_err(|error| DesktopError::host_failure(format!("calculation task failed: {error}")))?
+}
+
+#[tauri::command]
+fn calculation_series(
+    state: State<'_, AppState>,
+    calculation_id: u64,
+) -> Result<Vec<BinarySeriesDescriptor>, DesktopError> {
+    state.calculations.calculation_series(calculation_id)
+}
+
+#[tauri::command]
+fn calculation_series_bytes(
+    state: State<'_, AppState>,
+    calculation_id: u64,
+    series_id: String,
+) -> Result<Response, DesktopError> {
+    state
+        .calculations
+        .calculation_series_payload(calculation_id, &series_id)
+        .map(|payload| Response::new(payload.into_bytes()))
+}
+
+#[tauri::command]
+fn discard_calculation(
+    state: State<'_, AppState>,
+    calculation_id: u64,
+) -> Result<(), DesktopError> {
+    state.calculations.discard_calculation(calculation_id)
 }
 
 #[tauri::command]
@@ -212,12 +256,17 @@ pub fn run() {
         .setup(|app| {
             let handle: AppHandle = app.handle().clone();
             let projects = DesktopProjectStore::new();
+            let calculations = CalculationManager::new(projects.clone());
             let jobs = JobManager::new(projects.clone(), move |event: &DesktopEvent| {
                 handle
                     .emit(JOB_EVENT_NAME, event)
                     .map_err(|error| error.to_string())
             });
-            app.manage(AppState { projects, jobs });
+            app.manage(AppState {
+                projects,
+                jobs,
+                calculations,
+            });
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -228,6 +277,10 @@ pub fn run() {
             save_project,
             import_powder_histogram,
             import_cif_phase,
+            calculate_histogram,
+            calculation_series,
+            calculation_series_bytes,
+            discard_calculation,
             close_project,
             project_series,
             project_series_bytes,
