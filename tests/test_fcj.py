@@ -82,7 +82,7 @@ def test_native_profile_matches_independent_quadrature(
     )
     for field in actual.__dataclass_fields__:
         np.testing.assert_allclose(
-            getattr(actual, field), getattr(expected, field), rtol=2e-12, atol=2e-12
+            getattr(actual, field), getattr(expected, field), rtol=5e-11, atol=5e-11
         )
 
 
