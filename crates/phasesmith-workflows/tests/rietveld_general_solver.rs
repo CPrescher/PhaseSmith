@@ -193,6 +193,15 @@ fn affine_background_and_phase_scale_recover_with_physical_covariance() {
     assert!((covariance.values[4] - 0.25 * source).abs() < 1.0e-12 * source.abs().max(1.0));
     assert!((covariance.values[1] - 0.5 * source).abs() < 1.0e-12 * source.abs().max(1.0));
     assert!(result.unresolved_correlations.is_empty());
+    for row in &result.history {
+        assert!(row.rp.is_finite());
+        assert!(row.rwp.is_finite());
+        assert!((row.chi_square - 2.0 * row.objective).abs() < 1.0e-12);
+        assert!(
+            (row.reduced_chi_square - row.chi_square / 2_999.0).abs()
+                < 1.0e-12 * row.reduced_chi_square.abs().max(1.0)
+        );
+    }
 
     let partial = refine_general_rietveld(
         &input,

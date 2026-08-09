@@ -36,7 +36,10 @@ history, and restart checkpoints. Dynamic cells regenerate HKLs and
 multiplicities after bounded motion and record added/removed families on
 accepted history rows. Attached built-in sample-physics records are evaluated
 again for the accepted cell and reflection list, rather than relying on stale
-transferred arrays.
+transferred arrays. Every accepted history row owns `Rp`, `Rwp`, chi-square,
+and reduced chi-square alongside its objective and parameter/topology changes,
+so application adapters do not need to replay accepted states to construct
+complete result records.
 
 An optional native `BackgroundModel` may already be attached to the request.
 Its calculated values are added once to the pattern's fixed supplied background

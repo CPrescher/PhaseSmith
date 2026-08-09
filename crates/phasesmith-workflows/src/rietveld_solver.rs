@@ -129,6 +129,12 @@ pub struct RietveldIterationRecord {
     pub topology_changes: Vec<RietveldTopologyChange>,
     /// Accepted Rwp.
     pub rwp: f64,
+    /// Accepted unweighted profile residual.
+    pub rp: f64,
+    /// Accepted weighted residual sum of squares.
+    pub chi_square: f64,
+    /// Accepted chi-square divided by residual degrees of freedom.
+    pub reduced_chi_square: f64,
 }
 
 /// Complete accepted state for deterministic native continuation.
@@ -177,6 +183,11 @@ impl RietveldCheckpoint {
                     || !row.damping.is_finite()
                     || row.damping <= 0.0
                     || !row.rwp.is_finite()
+                    || !row.rp.is_finite()
+                    || !row.chi_square.is_finite()
+                    || row.chi_square < 0.0
+                    || row.reduced_chi_square.is_nan()
+                    || row.reduced_chi_square < 0.0
                     || row.parameter_changes.iter().any(|change| {
                         !change.before.is_finite()
                             || !change.after.is_finite()
@@ -453,6 +464,14 @@ pub fn refine_rietveld_with_runtime(
             .zip(&trial_phases)
             .filter_map(|(before, after)| topology_change(before, after))
             .collect::<Vec<_>>();
+        let accepted_metrics = evaluate_residuals(
+            &input.pattern,
+            &trial_calculation.y,
+            ResidualOptions {
+                use_uncertainty: options.calculation.use_uncertainty,
+                parameter_count: specs.len(),
+            },
+        )?;
         history.push(RietveldIterationRecord {
             iteration,
             objective,
@@ -463,7 +482,10 @@ pub fn refine_rietveld_with_runtime(
             backtracks,
             parameter_changes,
             topology_changes: topology_changes.clone(),
-            rwp: trial_calculation.metrics.rwp,
+            rwp: accepted_metrics.rwp,
+            rp: accepted_metrics.rp,
+            chi_square: accepted_metrics.chi_square,
+            reduced_chi_square: accepted_metrics.reduced_chi_square,
         });
         phases = trial_phases;
         damping = (damping * options.damping_decrease).max(1.0e-18);
