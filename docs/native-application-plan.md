@@ -368,4 +368,20 @@ forward structured numerical events, caller-visible stage boundaries, and
 complete accepted checkpoints without adapter-owned orchestration. Rust tests
 cover planner parity with the configured Python oracle, cumulative recovery,
 final-only diagnostics, invalid recipes, constraint contracts, cancellation,
-and the evaluate-only case. Python facade delegation is the next migration substep.
+and the evaluate-only case.
+
+The built-in monochromatic Python Rietveld façade now delegates complete
+refinement and native checkpoint continuation through PyO3 while releasing the
+GIL. Python-defined providers and Python callback requests retain the scripting
+orchestrator explicitly. The adapter bridge reconstructs the established
+Python result types from native metrics, histories, covariance, and accepted
+state, and Rust/Python regression suites cover structural families,
+backgrounds, instrument motion, sample physics, constraints, and restart.
+
+Native project refinement ownership now has a validated application-neutral
+record as well. `RietveldProjectState` joins the multi-histogram
+`ProjectRecord` to at most one runnable analysis per histogram and checks exact
+pattern, experiment, phase-order, phase-definition, provider, bounds,
+constraint, solver-option, and checkpoint contracts. This is the domain input
+for the next persistence wire migration and the later revisioned Tauri state;
+neither adapter needs to invent its own cross-record validation rules.

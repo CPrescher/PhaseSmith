@@ -81,7 +81,13 @@ impl RietveldRefinementOptions {
         Ok(result)
     }
 
-    pub(crate) fn validate(&self) -> Result<(), RietveldRefinementError> {
+    /// Revalidate adapter-decoded numerical and runtime controls.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`RietveldRefinementError::InvalidOptions`] for inconsistent
+    /// tolerances, damping, iteration, or step controls.
+    pub fn validate(&self) -> Result<(), RietveldRefinementError> {
         let positive = [
             self.objective_tolerance,
             self.parameter_tolerance,

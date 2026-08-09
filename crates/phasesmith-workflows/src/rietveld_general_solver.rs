@@ -109,7 +109,13 @@ pub struct RietveldGeneralCheckpoint {
 }
 
 impl RietveldGeneralCheckpoint {
-    fn validate(
+    /// Revalidate this accepted state against its requested solver contract.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`RietveldGeneralRefinementError`] when the checkpoint is
+    /// internally invalid or no longer matches the requested input contract.
+    pub fn validate_for(
         &self,
         requested: &RietveldInput,
         selection: &RietveldParameterSelection,
@@ -237,7 +243,7 @@ pub fn refine_general_rietveld_with_runtime(
     validate_constraint_state(&initial_layout, &initial_transform)?;
     let (mut live_input, mut history, mut damping, parameter_template) =
         if let Some(checkpoint) = checkpoint {
-            checkpoint.validate(input, selection, lattice_bounds, constraints)?;
+            checkpoint.validate_for(input, selection, lattice_bounds, constraints)?;
             runtime.resume_accepted(checkpoint.completed_iterations)?;
             (
                 checkpoint.input.clone(),
@@ -541,7 +547,7 @@ pub fn refine_general_rietveld_with_runtime(
         damping,
         history: history.clone(),
     };
-    checkpoint.validate(input, selection, lattice_bounds, constraints)?;
+    checkpoint.validate_for(input, selection, lattice_bounds, constraints)?;
     let diagnostics = match covariance_diagnostics(
         &live_input,
         &final_layout,

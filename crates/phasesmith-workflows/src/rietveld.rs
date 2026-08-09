@@ -123,7 +123,12 @@ impl RietveldPhase {
         Ok(phase)
     }
 
-    pub(crate) fn validate(&self) -> Result<(), RietveldError> {
+    /// Revalidate adapter-decoded phase identity, structure, and topology.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`RietveldError`] for invalid phase state.
+    pub fn validate(&self) -> Result<(), RietveldError> {
         if self.name.trim().is_empty() {
             return Err(RietveldError::InvalidPhaseName);
         }
@@ -615,7 +620,13 @@ impl RietveldInput {
         Ok(input)
     }
 
-    pub(crate) fn validate(&self) -> Result<(), RietveldError> {
+    /// Revalidate an adapter-decoded complete calculation request.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`RietveldError`] for invalid observations, experiment state,
+    /// background state, or phase state.
+    pub fn validate(&self) -> Result<(), RietveldError> {
         self.pattern.validate().map_err(RietveldError::Pattern)?;
         if self.pattern.observed_y.is_none() {
             return Err(RietveldError::MissingObservations);

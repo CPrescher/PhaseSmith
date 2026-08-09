@@ -93,7 +93,13 @@ impl RietveldParameterSelection {
         Ok(result)
     }
 
-    fn validate(&self) -> Result<(), RietveldGeneralParameterError> {
+    /// Revalidate an adapter-decoded parameter selection.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`RietveldGeneralParameterError::DuplicateInstrumentParameter`]
+    /// when one instrument family occurs more than once.
+    pub fn validate(&self) -> Result<(), RietveldGeneralParameterError> {
         if self
             .instrument
             .iter()

@@ -15,6 +15,7 @@ mod rietveld_general_parameters;
 mod rietveld_general_solver;
 mod rietveld_objective;
 mod rietveld_parameters;
+mod rietveld_project;
 mod rietveld_recipe;
 mod rietveld_solver;
 mod runtime;
@@ -65,6 +66,7 @@ pub use rietveld_parameters::{
     RietveldParameterError, RietveldStructuralLayout, RietveldStructuralSelection,
     SiteCoordinateModel,
 };
+pub use rietveld_project::{RietveldAnalysis, RietveldProjectError, RietveldProjectState};
 pub use rietveld_recipe::{
     RietveldRecipe, RietveldRecipeError, RietveldRecipeMode, RietveldRecipeSinks, RietveldStage,
     RietveldStageResult, RietveldWorkflowResult, intelligent_rietveld_recipe, run_rietveld_recipe,
