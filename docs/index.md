@@ -15,6 +15,8 @@
 6. [Persistence](persistence.md) — save and restore Python workflow state.
 7. [Native project persistence](native-persistence.md) — use the Rust-only,
    multi-histogram JSON+NPZ project and reporting boundary.
+8. [Releasing](releasing.md) — build and publish synchronized crates.io, PyPI,
+   and GitHub releases.
 
 For shared refinement controls, cancellation, logs, and safe checkpoints, see
 [refinement](refinement.md) and [refinement runtime](refinement-runtime.md).

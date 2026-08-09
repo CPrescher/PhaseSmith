@@ -730,6 +730,14 @@ distribution audit rejects Python dependencies, dynamic CPython links, wheels,
 extension modules, and Python sidecar artifacts. Native CIF import, standalone
 calculation, and report-export commands are implemented; product UI design is
 the remaining presentation work.
+Release packaging preserves the same separation. The public crates.io
+`phasesmith` facade re-exports the application-neutral native component crates;
+PyO3, validation tooling, the desktop adapter, and the Tauri host remain
+unpublished workspace packages. A `v<version>` Git tag drives tested ABI3
+Python wheels, an sdist, provenance, PyPI trusted publishing, the public Rust
+crate graph, and a tagged GitHub Release. Version checks bind Cargo,
+Python, Tauri, the changelog, and all internal registry requirements before any
+publishing job receives credentials.
 Bounded powder import is now available through that adapter for plain columns,
 GSAS FXYE, and GSAS STD files. It installs a complete monochromatic experiment
 and observed histogram only against the exact source revision; all parse,

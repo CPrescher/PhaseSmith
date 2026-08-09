@@ -22,10 +22,20 @@ Model-independent preprocessing now includes a native Smooth Bruckner
 background implementation compatible with pinned xypattern/Dioptas behavior,
 plus optional Chebyshev compression and plain NumPy subtraction results.
 
+Install the Python interface from PyPI or the native Rust facade from
+crates.io:
+
+```shell
+python -m pip install phasesmith
+cargo add phasesmith
+```
+
 Use the [documentation index](docs/index.md) to follow the shortest path from
 powder data and a CIF to background subtraction, Le Bail extraction, Rietveld
 refinement, reports, and persistence. The architecture and non-negotiable
-numerical rules are in [PROJECT_BRIEF.md](PROJECT_BRIEF.md).
+numerical rules are in [PROJECT_BRIEF.md](PROJECT_BRIEF.md). The tag-driven
+GitHub/PyPI/crates.io process is documented in
+[docs/releasing.md](docs/releasing.md).
 
 ## Development
 
