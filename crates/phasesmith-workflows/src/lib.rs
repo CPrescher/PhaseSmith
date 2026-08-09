@@ -8,6 +8,7 @@ mod constraints;
 mod lattice;
 mod lebail;
 mod parameters;
+mod quantitative;
 mod residuals;
 mod rietveld;
 mod rietveld_general_objective;
@@ -46,6 +47,9 @@ pub use lebail::{
     lebail_reflection_position_key, refine_lebail, refine_lebail_with_runtime,
 };
 pub use parameters::{ParameterBounds, ParameterError, ParameterKey, ParameterSet, ParameterSpec};
+pub use quantitative::{
+    PhaseWeightFraction, QuantitativeError, QuantitativePhase, quantitative_phase_analysis,
+};
 pub use residuals::{ResidualError, ResidualEvaluation, ResidualOptions, evaluate_residuals};
 pub use rietveld::{
     RietveldCalculation, RietveldCalculationOptions, RietveldError, RietveldInput, RietveldPhase,
