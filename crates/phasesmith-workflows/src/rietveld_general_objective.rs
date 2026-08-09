@@ -369,7 +369,8 @@ fn append_background_columns(
 }
 
 fn sample_physics_global_start(input: &RietveldInput) -> usize {
-    7 + usize::from(input.position_correction.bragg_brentano_mm.is_some())
+    7 - usize::from(input.fixed_spectrum.is_some())
+        + usize::from(input.position_correction.bragg_brentano_mm.is_some())
         + 2 * usize::from(
             input
                 .position_correction
@@ -383,7 +384,7 @@ fn instrument_global_row(
     input: &RietveldInput,
     parameter: RietveldInstrumentParameter,
 ) -> Result<usize, RietveldGeneralObjectiveError> {
-    Ok(match parameter {
+    let monochromatic_row = match parameter {
         RietveldInstrumentParameter::UDeg2 => 0,
         RietveldInstrumentParameter::VDeg2 => 1,
         RietveldInstrumentParameter::WDeg2 => 2,
@@ -417,7 +418,15 @@ fn instrument_global_row(
             }
             8
         }
-    })
+    };
+    if input.fixed_spectrum.is_some() {
+        if parameter == RietveldInstrumentParameter::WavelengthAngstrom {
+            return Err(RietveldGeneralParameterError::SpectrumWavelengthRefinement.into());
+        }
+        Ok(monochromatic_row - usize::from(monochromatic_row > 5))
+    } else {
+        Ok(monochromatic_row)
+    }
 }
 
 /// Invalid complete native Rietveld objective state.

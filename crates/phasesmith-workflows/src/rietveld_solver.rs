@@ -609,14 +609,8 @@ fn replace_phases(
     input: &RietveldInput,
     phases: Vec<RietveldPhase>,
 ) -> Result<RietveldInput, RietveldError> {
-    let mut replaced = RietveldInput::new(
-        input.pattern.clone(),
-        input.instrument,
-        input.axial_geometry,
-        input.position_correction,
-        phases,
-    )?;
-    replaced.background.clone_from(&input.background);
+    let mut replaced = input.clone();
+    replaced.phases = phases;
     replaced.validate()?;
     Ok(replaced)
 }

@@ -10,12 +10,13 @@ use phasesmith_core::{
 use phasesmith_crystallography::IntegratedIntensityCorrectionModel;
 use phasesmith_engine::{
     MonochromaticPositionCorrection, PreparedStructuralModel, PreparedStructuralMultiphase,
-    PreparedStructuralPhase, StructuralCalculationRequest, StructuralModelInput,
-    StructuralMultiphaseError, StructuralPatternError, StructuralPatternResult,
-    StructuralPhaseDefinition, calculate_monochromatic_reflection_geometry,
+    PreparedStructuralPhase, PreparedStructuralSpectrum, StructuralCalculationRequest,
+    StructuralModelInput, StructuralMultiphaseError, StructuralPatternError,
+    StructuralPatternResult, StructuralPhaseDefinition, StructuralSpectrumError,
+    calculate_monochromatic_reflection_geometry,
 };
 use phasesmith_execution::ExecutionPolicy;
-use phasesmith_model::{DomainError, PatternRecord, RecordId};
+use phasesmith_model::{DomainError, FixedWavelengthSpectrum, PatternRecord, RecordId};
 
 use crate::{
     BackgroundError, BackgroundModel, DifferentiableBackground, LatticeError,
@@ -558,6 +559,8 @@ pub struct RietveldInput {
     pub pattern: PatternRecord,
     /// Monochromatic constant-wavelength profile.
     pub instrument: ConstantWavelengthInstrument,
+    /// Optional fixed spectrum; absent means a monochromatic calculation.
+    pub fixed_spectrum: Option<FixedWavelengthSpectrum>,
     /// Optional Finger--Cox--Jephcoat axial-divergence geometry.
     pub axial_geometry: Option<FcjGeometry>,
     /// Explicit instrument/sample position correction.
@@ -585,6 +588,38 @@ impl RietveldInput {
         let input = Self {
             pattern,
             instrument,
+            fixed_spectrum: None,
+            axial_geometry,
+            position_correction,
+            background: None,
+            phases,
+        };
+        input.validate()?;
+        Ok(input)
+    }
+
+    /// Validate one native fixed-wavelength-spectrum Rietveld request.
+    ///
+    /// The instrument wavelength must equal the spectrum's first, reference
+    /// component. Structural lattice/topology refinement remains restricted to
+    /// monochromatic inputs.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`RietveldError`] for invalid observations, spectrum,
+    /// experiment geometry, or structural phases.
+    pub fn new_fixed_spectrum(
+        pattern: PatternRecord,
+        instrument: ConstantWavelengthInstrument,
+        spectrum: FixedWavelengthSpectrum,
+        axial_geometry: Option<FcjGeometry>,
+        position_correction: MonochromaticPositionCorrection,
+        phases: Vec<RietveldPhase>,
+    ) -> Result<Self, RietveldError> {
+        let input = Self {
+            pattern,
+            instrument,
+            fixed_spectrum: Some(spectrum),
             axial_geometry,
             position_correction,
             background: None,
@@ -620,6 +655,34 @@ impl RietveldInput {
         Ok(input)
     }
 
+    /// Validate a fixed-spectrum request with an analytical background.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`RietveldError`] for invalid observations, spectrum,
+    /// background, experiment geometry, or structural phases.
+    pub fn new_fixed_spectrum_with_background(
+        pattern: PatternRecord,
+        instrument: ConstantWavelengthInstrument,
+        spectrum: FixedWavelengthSpectrum,
+        axial_geometry: Option<FcjGeometry>,
+        position_correction: MonochromaticPositionCorrection,
+        background: BackgroundModel,
+        phases: Vec<RietveldPhase>,
+    ) -> Result<Self, RietveldError> {
+        let mut input = Self::new_fixed_spectrum(
+            pattern,
+            instrument,
+            spectrum,
+            axial_geometry,
+            position_correction,
+            phases,
+        )?;
+        input.background = Some(background);
+        input.validate()?;
+        Ok(input)
+    }
+
     /// Revalidate an adapter-decoded complete calculation request.
     ///
     /// # Errors
@@ -634,6 +697,12 @@ impl RietveldInput {
         self.instrument
             .validate()
             .map_err(|_| RietveldError::InvalidInstrument)?;
+        if self.fixed_spectrum.as_ref().is_some_and(|spectrum| {
+            spectrum.wavelengths_angstrom()[0].to_bits()
+                != self.instrument.wavelength_angstrom.to_bits()
+        }) {
+            return Err(RietveldError::SpectrumReferenceWavelengthMismatch);
+        }
         if self.axial_geometry.is_some_and(|geometry| {
             !geometry.sample_over_radius.is_finite()
                 || !geometry.detector_over_radius.is_finite()
@@ -674,6 +743,9 @@ impl RietveldInput {
         for phase in &self.phases {
             phase.validate()?;
             phase.resolved_sample_physics(self.instrument, self.position_correction)?;
+            if self.fixed_spectrum.is_some() && phase.reflection_domain().is_some() {
+                return Err(RietveldError::SpectrumReflectionDomain);
+            }
             if phase.correction_wavelength().is_some_and(|wavelength| {
                 wavelength.to_bits() != self.instrument.wavelength_angstrom.to_bits()
             }) {
@@ -691,6 +763,46 @@ impl RietveldInput {
         }
         Ok(())
     }
+}
+
+pub(crate) fn prepare_phase_model(
+    phase: &RietveldPhase,
+    spectrum: Option<&FixedWavelengthSpectrum>,
+    execution: &ExecutionPolicy,
+) -> Result<PreparedStructuralModel, RietveldError> {
+    match spectrum {
+        None => PreparedStructuralPhase::new(phase.definition.clone(), execution.context().clone())
+            .map(PreparedStructuralModel::monochromatic)
+            .map_err(RietveldError::StructuralPattern),
+        Some(spectrum) => PreparedStructuralSpectrum::new(
+            &phase.definition,
+            spectrum.wavelengths_angstrom().to_vec(),
+            spectrum.relative_intensities(),
+            execution.clone(),
+        )
+        .map(PreparedStructuralModel::fixed_spectrum)
+        .map_err(RietveldError::StructuralSpectrum),
+    }
+}
+
+pub(crate) fn resolve_phase_contributions(
+    phase: &RietveldPhase,
+    input: &RietveldInput,
+) -> Result<Vec<OwnedCwContributions>, RietveldError> {
+    let wavelengths = input.fixed_spectrum.as_ref().map_or_else(
+        || vec![input.instrument.wavelength_angstrom],
+        |spectrum| spectrum.wavelengths_angstrom().to_vec(),
+    );
+    wavelengths
+        .into_iter()
+        .map(|wavelength_angstrom| {
+            let mut instrument = input.instrument;
+            instrument.wavelength_angstrom = wavelength_angstrom;
+            phase
+                .resolved_sample_physics(instrument, input.position_correction)
+                .map(|value| value.0)
+        })
+        .collect()
 }
 
 fn reflection_id(hkl: [i32; 3]) -> String {
@@ -849,25 +961,14 @@ pub fn calculate_rietveld_pattern(
     let models = input
         .phases
         .iter()
-        .map(|phase| {
-            PreparedStructuralPhase::new(
-                phase.definition.clone(),
-                options.execution.context().clone(),
-            )
-            .map(PreparedStructuralModel::monochromatic)
-            .map_err(RietveldError::StructuralPattern)
-        })
+        .map(|phase| prepare_phase_model(phase, input.fixed_spectrum.as_ref(), &options.execution))
         .collect::<Result<Vec<_>, _>>()?;
     let prepared = PreparedStructuralMultiphase::new(models, options.execution.clone())
         .map_err(RietveldError::StructuralMultiphase)?;
     let contributions = input
         .phases
         .iter()
-        .map(|phase| {
-            phase
-                .resolved_sample_physics(input.instrument, input.position_correction)
-                .map(|value| value.0)
-        })
+        .map(|phase| resolve_phase_contributions(phase, input))
         .collect::<Result<Vec<_>, _>>()?;
     let request = StructuralCalculationRequest {
         x_deg: input.pattern.x_deg.clone(),
@@ -876,9 +977,7 @@ pub fn calculate_rietveld_pattern(
         position_correction: input.position_correction,
         phase_inputs: contributions
             .into_iter()
-            .map(|contributions| StructuralModelInput {
-                contributions: vec![contributions],
-            })
+            .map(|contributions| StructuralModelInput { contributions })
             .collect(),
         support: SupportPolicy::FwhmMultiple(options.support_fwhm),
     };
@@ -961,6 +1060,10 @@ pub enum RietveldError {
     ReflectionWavelengthMismatch,
     /// An integrated-intensity correction must use the experiment wavelength.
     CorrectionWavelengthMismatch,
+    /// A spectrum's first component must equal the reference instrument wavelength.
+    SpectrumReferenceWavelengthMismatch,
+    /// Dynamic lattice/reflection domains are not supported for fixed spectra.
+    SpectrumReflectionDomain,
     /// A fixed-reflection phase cannot regenerate lattice topology.
     FixedReflectionTopology,
     /// Stable site IDs must match the asymmetric-site count.
@@ -969,6 +1072,8 @@ pub enum RietveldError {
     DuplicateSiteId,
     /// One structural phase could not be prepared.
     StructuralPattern(StructuralPatternError),
+    /// Native fixed-spectrum phase preparation failed.
+    StructuralSpectrum(StructuralSpectrumError),
     /// Native multiphase structural calculation failed.
     StructuralMultiphase(StructuralMultiphaseError),
     /// Guarded reflection generation failed.
@@ -1011,6 +1116,11 @@ impl Display for RietveldError {
                 .write_str("Rietveld reflection domain wavelength differs from the instrument"),
             Self::CorrectionWavelengthMismatch => formatter
                 .write_str("Rietveld intensity-correction wavelength differs from the instrument"),
+            Self::SpectrumReferenceWavelengthMismatch => formatter.write_str(
+                "fixed spectrum reference wavelength differs from the Rietveld instrument",
+            ),
+            Self::SpectrumReflectionDomain => formatter
+                .write_str("fixed-spectrum Rietveld inputs cannot use dynamic reflection domains"),
             Self::FixedReflectionTopology => {
                 formatter.write_str("fixed Rietveld phases cannot regenerate topology")
             }
@@ -1021,6 +1131,7 @@ impl Display for RietveldError {
                 formatter.write_str("Rietveld site IDs must be unique within a phase")
             }
             Self::StructuralPattern(error) => Display::fmt(error, formatter),
+            Self::StructuralSpectrum(error) => Display::fmt(error, formatter),
             Self::StructuralMultiphase(error) => Display::fmt(error, formatter),
             Self::Lattice(error) => Display::fmt(error, formatter),
             Self::Contributions(error) => Display::fmt(error, formatter),
@@ -1040,6 +1151,7 @@ impl Error for RietveldError {
         match self {
             Self::Pattern(error) => Some(error),
             Self::StructuralPattern(error) => Some(error),
+            Self::StructuralSpectrum(error) => Some(error),
             Self::StructuralMultiphase(error) => Some(error),
             Self::Lattice(error) => Some(error),
             Self::Contributions(error) => Some(error),
@@ -1058,6 +1170,8 @@ impl Error for RietveldError {
             | Self::ReflectionTopologyMismatch
             | Self::ReflectionWavelengthMismatch
             | Self::CorrectionWavelengthMismatch
+            | Self::SpectrumReferenceWavelengthMismatch
+            | Self::SpectrumReflectionDomain
             | Self::FixedReflectionTopology
             | Self::SiteIdCountMismatch
             | Self::DuplicateSiteId

@@ -5,10 +5,10 @@ use std::fmt::{Display, Formatter};
 
 use phasesmith_core::SupportPolicy;
 use phasesmith_engine::{
-    PreparedStructuralModel, PreparedStructuralModelInputView, PreparedStructuralMultiphase,
-    PreparedStructuralPhase, StructuralMultiphaseError,
+    PreparedStructuralModelInputView, PreparedStructuralMultiphase, StructuralMultiphaseError,
 };
 
+use crate::rietveld::{prepare_phase_model, resolve_phase_contributions};
 use crate::{
     DifferentiableBackground, RietveldCalculationOptions, RietveldError, RietveldInput,
     RietveldParameterError, RietveldStructuralLayout,
@@ -39,12 +39,7 @@ impl PreparedRietveldObjective {
             .phases
             .iter()
             .map(|phase| {
-                PreparedStructuralPhase::new(
-                    phase.definition().clone(),
-                    options.execution.context().clone(),
-                )
-                .map(PreparedStructuralModel::monochromatic)
-                .map_err(RietveldError::StructuralPattern)
+                prepare_phase_model(phase, input.fixed_spectrum.as_ref(), &options.execution)
             })
             .collect::<Result<Vec<_>, _>>()?;
         let prepared = PreparedStructuralMultiphase::new(models, options.execution.clone())?;
@@ -193,11 +188,7 @@ impl PreparedRietveldObjective {
             .input
             .phases
             .iter()
-            .map(|phase| {
-                phase
-                    .resolved_sample_physics(self.input.instrument, self.input.position_correction)
-                    .map(|value| vec![value.0])
-            })
+            .map(|phase| resolve_phase_contributions(phase, &self.input))
             .collect::<Result<Vec<_>, _>>()?;
         let views = owned
             .iter()

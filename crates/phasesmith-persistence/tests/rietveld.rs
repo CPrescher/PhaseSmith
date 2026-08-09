@@ -14,8 +14,8 @@ use phasesmith_engine::{
 };
 use phasesmith_execution::ExecutionPolicy;
 use phasesmith_model::{
-    ExperimentRecord, HistogramRecord, PatternRecord, ProjectRecord, RadiationDefinition,
-    RadiationProbe, RecordId, StructuralPhaseRecord,
+    ExperimentRecord, FixedWavelengthSpectrum, HistogramRecord, PatternRecord, ProjectRecord,
+    RadiationDefinition, RadiationProbe, RecordId, StructuralPhaseRecord,
 };
 use phasesmith_persistence::{
     PROJECT_MANIFEST_NAME, PersistenceError, ProjectReadLimits, ProjectSaveOptions,
@@ -138,6 +138,28 @@ fn every_native_background_and_sample_physics_variant_round_trips() {
             },
         ]));
     assert_native_round_trip("sample-physics-composite", &value);
+}
+
+#[test]
+fn fixed_spectrum_native_analysis_round_trips() {
+    let mut value = state_without_checkpoint();
+    let spectrum = FixedWavelengthSpectrum::new(vec![1.5406, 1.54439], vec![1.0, 0.48]).unwrap();
+    value.project.histograms[0].experiment.radiation = RadiationDefinition::FixedSpectrum {
+        probe: RadiationProbe::Xray,
+        spectrum: spectrum.clone(),
+    };
+    let previous = value.analyses[0].input.clone();
+    value.analyses[0].input = RietveldInput::new_fixed_spectrum_with_background(
+        previous.pattern,
+        previous.instrument,
+        spectrum,
+        previous.axial_geometry,
+        previous.position_correction,
+        previous.background.unwrap(),
+        previous.phases,
+    )
+    .unwrap();
+    assert_native_round_trip("fixed-spectrum", &value);
 }
 
 #[test]

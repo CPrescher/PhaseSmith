@@ -174,6 +174,28 @@ fn complete_project_analysis_and_checkpoint_validate_together() {
 }
 
 #[test]
+fn fixed_spectrum_project_analysis_validates_without_python_runtime() {
+    let mut value = state();
+    let spectrum = FixedWavelengthSpectrum::new(vec![1.5406, 1.54439], vec![1.0, 0.48]).unwrap();
+    value.project.histograms[0].experiment.radiation = RadiationDefinition::FixedSpectrum {
+        probe: RadiationProbe::Xray,
+        spectrum: spectrum.clone(),
+    };
+    let previous = value.analyses[0].input.clone();
+    value.analyses[0].input = RietveldInput::new_fixed_spectrum(
+        previous.pattern,
+        previous.instrument,
+        spectrum,
+        previous.axial_geometry,
+        previous.position_correction,
+        previous.phases,
+    )
+    .unwrap();
+    value.analyses[0].checkpoint = None;
+    value.validate().unwrap();
+}
+
+#[test]
 fn cross_record_mismatches_are_rejected_before_adapter_use() {
     let mut value = state();
     value.analyses[0].options.limits = RefinementLimits::new(1, 100, None, 10).unwrap();
@@ -215,7 +237,7 @@ fn cross_record_mismatches_are_rejected_before_adapter_use() {
     };
     assert!(matches!(
         value.validate(),
-        Err(RietveldProjectError::UnsupportedRadiation { .. })
+        Err(RietveldProjectError::HistogramStateMismatch { .. })
     ));
 
     let mut value = state();

@@ -116,16 +116,13 @@ impl RietveldProjectState {
                 .ok_or_else(|| RietveldProjectError::UnknownHistogram {
                     histogram_id: analysis.histogram_id.clone(),
                 })?;
-            if !matches!(
-                histogram.experiment.radiation,
-                RadiationDefinition::Monochromatic { .. }
-            ) {
-                return Err(RietveldProjectError::UnsupportedRadiation {
-                    histogram_id: analysis.histogram_id.clone(),
-                });
-            }
+            let expected_spectrum = match &histogram.experiment.radiation {
+                RadiationDefinition::Monochromatic { .. } => None,
+                RadiationDefinition::FixedSpectrum { spectrum, .. } => Some(spectrum),
+            };
             if analysis.input.pattern != histogram.pattern
                 || analysis.input.instrument != histogram.experiment.instrument
+                || analysis.input.fixed_spectrum.as_ref() != expected_spectrum
                 || analysis.input.axial_geometry != histogram.experiment.axial_geometry
                 || analysis.input.position_correction != histogram.experiment.position_correction
             {
@@ -208,11 +205,6 @@ pub enum RietveldProjectError {
         /// Missing histogram identity.
         histogram_id: RecordId,
     },
-    /// The current native solver does not support this histogram radiation.
-    UnsupportedRadiation {
-        /// Histogram with unsupported radiation.
-        histogram_id: RecordId,
-    },
     /// Pattern or experiment state differs from the project histogram.
     HistogramStateMismatch {
         /// Inconsistent histogram identity.
@@ -270,10 +262,6 @@ impl Display for RietveldProjectError {
                     "Rietveld analysis references unknown histogram {histogram_id}"
                 )
             }
-            Self::UnsupportedRadiation { histogram_id } => write!(
-                formatter,
-                "histogram {histogram_id} does not use supported monochromatic radiation"
-            ),
             Self::HistogramStateMismatch { histogram_id } => write!(
                 formatter,
                 "Rietveld analysis state differs from histogram {histogram_id}"

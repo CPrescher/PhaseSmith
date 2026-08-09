@@ -298,13 +298,25 @@ fn calculation_input(
         })
         .collect::<Result<Vec<_>, _>>()?;
     let pattern = histogram.pattern.clone();
-    let input = RietveldInput::new(
-        pattern.clone(),
-        histogram.experiment.instrument,
-        histogram.experiment.axial_geometry,
-        histogram.experiment.position_correction,
-        phases,
-    )
+    let input = match &histogram.experiment.radiation {
+        phasesmith_model::RadiationDefinition::Monochromatic { .. } => RietveldInput::new(
+            pattern.clone(),
+            histogram.experiment.instrument,
+            histogram.experiment.axial_geometry,
+            histogram.experiment.position_correction,
+            phases,
+        ),
+        phasesmith_model::RadiationDefinition::FixedSpectrum { spectrum, .. } => {
+            RietveldInput::new_fixed_spectrum(
+                pattern.clone(),
+                histogram.experiment.instrument,
+                spectrum.clone(),
+                histogram.experiment.axial_geometry,
+                histogram.experiment.position_correction,
+                phases,
+            )
+        }
+    }
     .map_err(|error| calculation_error(error.to_string()))?;
     Ok(input)
 }

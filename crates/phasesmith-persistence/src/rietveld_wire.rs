@@ -599,22 +599,48 @@ fn decode_analysis(
         lattice_bounds.push(bounds);
     }
     let background = value.background.map(decode_background).transpose()?;
-    let input = match background {
-        Some(background) => phasesmith_workflows::RietveldInput::new_with_background(
+    let input = match (&histogram.experiment.radiation, background) {
+        (phasesmith_model::RadiationDefinition::Monochromatic { .. }, Some(background)) => {
+            phasesmith_workflows::RietveldInput::new_with_background(
+                histogram.pattern.clone(),
+                histogram.experiment.instrument,
+                histogram.experiment.axial_geometry,
+                histogram.experiment.position_correction,
+                background,
+                phases,
+            )
+        }
+        (phasesmith_model::RadiationDefinition::Monochromatic { .. }, None) => {
+            phasesmith_workflows::RietveldInput::new(
+                histogram.pattern.clone(),
+                histogram.experiment.instrument,
+                histogram.experiment.axial_geometry,
+                histogram.experiment.position_correction,
+                phases,
+            )
+        }
+        (
+            phasesmith_model::RadiationDefinition::FixedSpectrum { spectrum, .. },
+            Some(background),
+        ) => phasesmith_workflows::RietveldInput::new_fixed_spectrum_with_background(
             histogram.pattern.clone(),
             histogram.experiment.instrument,
+            spectrum.clone(),
             histogram.experiment.axial_geometry,
             histogram.experiment.position_correction,
             background,
             phases,
         ),
-        None => phasesmith_workflows::RietveldInput::new(
-            histogram.pattern.clone(),
-            histogram.experiment.instrument,
-            histogram.experiment.axial_geometry,
-            histogram.experiment.position_correction,
-            phases,
-        ),
+        (phasesmith_model::RadiationDefinition::FixedSpectrum { spectrum, .. }, None) => {
+            phasesmith_workflows::RietveldInput::new_fixed_spectrum(
+                histogram.pattern.clone(),
+                histogram.experiment.instrument,
+                spectrum.clone(),
+                histogram.experiment.axial_geometry,
+                histogram.experiment.position_correction,
+                phases,
+            )
+        }
     }
     .map_err(|error| invalid(format!("invalid analysis input: {error}")))?;
     let selection = decode_selection(value.selection)?;

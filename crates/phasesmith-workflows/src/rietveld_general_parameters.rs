@@ -147,6 +147,17 @@ impl RietveldParameterLayout {
     ) -> Result<Self, RietveldGeneralParameterError> {
         input.validate()?;
         selection.validate()?;
+        if input.fixed_spectrum.is_some() {
+            if selection.structural.lattice {
+                return Err(RietveldGeneralParameterError::SpectrumLatticeRefinement);
+            }
+            if selection
+                .instrument
+                .contains(&RietveldInstrumentParameter::WavelengthAngstrom)
+            {
+                return Err(RietveldGeneralParameterError::SpectrumWavelengthRefinement);
+            }
+        }
         let structural =
             RietveldStructuralLayout::new(&input.phases, selection.structural, lattice_bounds)?;
         let mut specs = Vec::new();
@@ -513,6 +524,10 @@ pub enum RietveldGeneralParameterError {
     MissingBackground,
     /// A selected position parameter does not match the configured geometry.
     InstrumentGeometryMismatch,
+    /// Fixed component wavelengths cannot be refined as one scalar.
+    SpectrumWavelengthRefinement,
+    /// Dynamic lattice/topology refinement is not supported for spectra.
+    SpectrumLatticeRefinement,
     /// Accepted background identity changed under the layout.
     BackgroundIdentityMismatch,
     /// Complete value/direction length is wrong.
@@ -546,6 +561,12 @@ impl Display for RietveldGeneralParameterError {
             }
             Self::InstrumentGeometryMismatch => formatter
                 .write_str("selected Rietveld position parameter does not match the geometry"),
+            Self::SpectrumWavelengthRefinement => {
+                formatter.write_str("fixed-spectrum component wavelengths cannot be refined")
+            }
+            Self::SpectrumLatticeRefinement => {
+                formatter.write_str("fixed-spectrum Rietveld lattice refinement is not supported")
+            }
             Self::BackgroundIdentityMismatch => {
                 formatter.write_str("Rietveld background identity changed under the layout")
             }
@@ -576,6 +597,8 @@ impl Error for RietveldGeneralParameterError {
             | Self::MissingSamplePhysics { .. }
             | Self::MissingBackground
             | Self::InstrumentGeometryMismatch
+            | Self::SpectrumWavelengthRefinement
+            | Self::SpectrumLatticeRefinement
             | Self::BackgroundIdentityMismatch
             | Self::ValueLengthMismatch
             | Self::StructuralGradientLengthMismatch => None,

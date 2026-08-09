@@ -7,7 +7,7 @@ use phasesmith_engine::{
 };
 use phasesmith_execution::ExecutionPolicy;
 use phasesmith_io::space_group_by_number;
-use phasesmith_model::{PatternRecord, RecordId};
+use phasesmith_model::{FixedWavelengthSpectrum, PatternRecord, RecordId};
 use phasesmith_workflows::{
     BackgroundModel, DifferentiableBackground, LatticeBounds, LatticeParameterization,
     PolynomialBackground, PreparedGeneralRietveldObjective, RietveldCalculationOptions,
@@ -80,6 +80,20 @@ fn input() -> RietveldInput {
         },
         BackgroundModel::Polynomial(PolynomialBackground::new("main", vec![1.0, -0.1]).unwrap()),
         vec![phase(0.8)],
+    )
+    .unwrap()
+}
+
+fn spectrum_input() -> RietveldInput {
+    let monochromatic = input();
+    RietveldInput::new_fixed_spectrum_with_background(
+        monochromatic.pattern,
+        monochromatic.instrument,
+        FixedWavelengthSpectrum::new(vec![1.5406, 1.54439], vec![1.0, 0.48]).unwrap(),
+        monochromatic.axial_geometry,
+        monochromatic.position_correction,
+        monochromatic.background.unwrap(),
+        monochromatic.phases,
     )
     .unwrap()
 }
@@ -228,6 +242,146 @@ fn complete_jvp_matches_centered_differences_and_vjp_is_adjoint() {
         .map(|(left, right)| left * right)
         .sum::<f64>();
     assert!((left - right).abs() <= 2.0e-10 * left.abs().max(1.0));
+}
+
+#[test]
+fn fixed_spectrum_matches_weighted_monochromatic_phase_sum() {
+    let input = spectrum_input();
+    let spectrum = calculate_rietveld_pattern(&input, &options()).unwrap();
+    let weights = [1.0 / 1.48, 0.48 / 1.48];
+    let wavelengths = [1.5406, 1.54439];
+    let mut expected = vec![0.0; input.pattern.sample_count()];
+    for (weight, wavelength) in weights.into_iter().zip(wavelengths) {
+        let mut instrument = input.instrument;
+        instrument.wavelength_angstrom = wavelength;
+        let mut definition = input.phases[0].definition().clone();
+        definition.scale *= weight;
+        definition.correction_model = definition.correction_model.with_wavelength(wavelength);
+        let phase = RietveldPhase::new(
+            RecordId::new("alpha").unwrap(),
+            "Alpha",
+            definition,
+            input.phases[0].contributions().clone(),
+        )
+        .unwrap();
+        let mono = RietveldInput::new(
+            input.pattern.clone(),
+            instrument,
+            input.axial_geometry,
+            input.position_correction,
+            vec![phase],
+        )
+        .unwrap();
+        let calculation = calculate_rietveld_pattern(&mono, &options()).unwrap();
+        for (target, value) in expected.iter_mut().zip(calculation.profile_y) {
+            *target += value;
+        }
+    }
+    for (index, (actual, expected)) in spectrum.profile_y.iter().zip(expected).enumerate() {
+        assert!(
+            (actual - expected).abs() <= 2.0e-12 * expected.abs().max(1.0),
+            "sample {index}: actual={actual:.12e}, expected={expected:.12e}"
+        );
+    }
+}
+
+#[test]
+fn fixed_spectrum_general_products_match_differences_and_are_adjoint() {
+    let input = with_sample_physics(spectrum_input());
+    let selection = RietveldParameterSelection::new(
+        RietveldStructuralSelection {
+            phase_scale: true,
+            ..RietveldStructuralSelection::default()
+        },
+        vec![
+            RietveldInstrumentParameter::UDeg2,
+            RietveldInstrumentParameter::ZeroShiftDeg,
+        ],
+        true,
+        true,
+    )
+    .unwrap();
+    let layout = RietveldParameterLayout::new(&input, &selection, &[None]).unwrap();
+    let objective =
+        PreparedGeneralRietveldObjective::new(input.clone(), options(), layout.clone()).unwrap();
+    let direction = [2.0e-4, -0.03, 0.4, -0.2, 8.0, 2.0e-4, 0.1, 0.3];
+    assert_eq!(layout.parameters().specs().len(), direction.len());
+    let (_, analytical) = objective.jvp(&direction).unwrap();
+    let values = layout
+        .parameters()
+        .specs()
+        .iter()
+        .map(phasesmith_workflows::ParameterSpec::value)
+        .collect::<Vec<_>>();
+    let step = 1.0e-5;
+    let shifted = |sign: f64| {
+        values
+            .iter()
+            .zip(direction)
+            .map(|(value, direction)| value + sign * step * direction)
+            .collect::<Vec<_>>()
+    };
+    let plus = calculate_rietveld_pattern(
+        &layout.apply_values(&input, &shifted(1.0)).unwrap(),
+        &options(),
+    )
+    .unwrap();
+    let minus = calculate_rietveld_pattern(
+        &layout.apply_values(&input, &shifted(-1.0)).unwrap(),
+        &options(),
+    )
+    .unwrap();
+    for (index, ((plus, minus), analytical)) in
+        plus.y.iter().zip(&minus.y).zip(&analytical).enumerate()
+    {
+        let numerical = (plus - minus) / (2.0 * step);
+        assert!(
+            (numerical - analytical).abs() <= 1.0e-4 * numerical.abs().max(1.0),
+            "sample {index}: numerical={numerical:.12e}, analytical={analytical:.12e}"
+        );
+    }
+    let weights = (0..input.pattern.sample_count())
+        .map(|index| (f64::from(u32::try_from(index).unwrap()) * 0.11).sin())
+        .collect::<Vec<_>>();
+    let reverse = objective.vjp(&weights).unwrap();
+    let left = analytical
+        .iter()
+        .zip(&weights)
+        .map(|(left, right)| left * right)
+        .sum::<f64>();
+    let right = direction
+        .iter()
+        .zip(reverse)
+        .map(|(left, right)| left * right)
+        .sum::<f64>();
+    assert!((left - right).abs() <= 3.0e-10 * left.abs().max(1.0));
+}
+
+#[test]
+fn fixed_spectrum_rejects_reference_wavelength_lattice_and_wavelength_refinement() {
+    let mut invalid = spectrum_input();
+    invalid.instrument.wavelength_angstrom = 1.0;
+    assert!(invalid.validate().is_err());
+
+    let wavelength = RietveldParameterSelection::new(
+        RietveldStructuralSelection::default(),
+        vec![RietveldInstrumentParameter::WavelengthAngstrom],
+        false,
+        false,
+    )
+    .unwrap();
+    assert!(RietveldParameterLayout::new(&spectrum_input(), &wavelength, &[None]).is_err());
+    let lattice = RietveldParameterSelection::new(
+        RietveldStructuralSelection {
+            lattice: true,
+            ..RietveldStructuralSelection::default()
+        },
+        Vec::new(),
+        false,
+        false,
+    )
+    .unwrap();
+    assert!(RietveldParameterLayout::new(&spectrum_input(), &lattice, &[None]).is_err());
 }
 
 #[test]
