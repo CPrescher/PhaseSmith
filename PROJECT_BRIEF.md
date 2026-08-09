@@ -177,8 +177,14 @@ restart state owns the accepted request and exact selection/bounds/constraint
 contract. Final bounded diagnostics report weighted rank and correlations and
 produce full physical covariance only for a full-rank free normal matrix.
 Recovery, cancellation, restart, singular-diagnostic, covariance-chain, and
-configured Python-history tests cover the boundary. Native staged recipes
-remain next.
+configured Python-history tests cover the boundary. Native explicit recipes
+now execute cumulative complete-solver stages while promoting only
+policy-accepted physical states. Their deterministic intelligent planner stays
+within the caller-authorized maximum, discloses rationale, validates the full
+constraint contract before work, disables intermediate covariance, and stops
+safely on cancellation or a rejected termination. Native execution and
+planner-oracle tests cover these contracts. Delegating the built-in Python
+facade to the shared native refinement boundary remains next.
 
 Unit 17 now includes the first full monochromatic CIF-backed Rietveld vertical
 slice. Typed profile/background/phase/lattice/site parameter families map

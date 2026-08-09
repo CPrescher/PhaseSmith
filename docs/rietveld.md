@@ -65,8 +65,8 @@ The final optional small-matrix diagnostic reports weighted Jacobian rank and
 near-collinear free columns. It returns a full physical-parameter covariance
 only when the scaled-free normal matrix is full rank; fixed and constrained
 rows are propagated through the constraint derivative rather than inverted as
-independent parameters. The staged-recipe layer and Python façade delegation
-remain the next migration slices.
+independent parameters. The native staged-recipe layer now consumes this
+solver; Python façade delegation remains the next migration slice.
 
 ## Objective and numerical method
 
@@ -144,6 +144,17 @@ print(result.phases[0].structure.cell)
 ```
 
 ## Explicit and intelligent staged recipes
+
+The application-neutral Rust boundary provides `RietveldStage`,
+`RietveldRecipe`, `intelligent_rietveld_recipe`, and `run_rietveld_recipe`.
+It validates every stage against the caller-authorized maximum selection and
+the full initial constraint graph, then filters constraints only when their
+target and all dependencies are active in that stage. Only policy-accepted
+states advance. Intermediate stages skip covariance work, while the last
+attempted recipe stage may produce the complete solver diagnostics. The same
+cooperative cancellation token is observed by every stage. The optional
+`RietveldRecipeSinks` boundary forwards structured events and complete accepted
+checkpoints to a host such as Python or Tauri.
 
 The solver always refines exactly the active parameters in one
 `RietveldInput`; it never inserts a hidden sequence. Staging is an optional

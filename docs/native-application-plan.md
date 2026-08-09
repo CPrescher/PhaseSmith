@@ -354,5 +354,18 @@ free-parameter Jacobian, report rank and unresolved correlations, and emit a
 full physical covariance only for a full-rank normal matrix. Native tests cover
 complete-family recovery, affine covariance propagation, singular covariance
 suppression, cancellation, exact continuation, and stale checkpoint rejection;
-a configured Python differential matches accepted objective histories. Staged
-Rietveld recipes are the next native substep.
+a configured Python differential matches accepted objective histories.
+
+Native staged Rietveld recipes now sit above that unchanged solver. Typed
+explicit stages own cumulative selections, optional numerical controls,
+rationale, and accepted termination policies. The deterministic intelligent
+planner proposes only caller-authorized families and never runs implicitly.
+Execution validates the complete maximum constraint graph before numerical
+work, rejects stage-local missing dependencies, promotes only accepted
+physical states, disables covariance on intermediate stages, and shares one
+cooperative cancellation token across the workflow. Optional shared sinks
+forward structured numerical events, caller-visible stage boundaries, and
+complete accepted checkpoints without adapter-owned orchestration. Rust tests
+cover planner parity with the configured Python oracle, cumulative recovery,
+final-only diagnostics, invalid recipes, constraint contracts, cancellation,
+and the evaluate-only case. Python facade delegation is the next migration substep.
