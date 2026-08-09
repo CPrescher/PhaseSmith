@@ -9,11 +9,12 @@ use phasesmith_execution::ExecutionPolicy;
 use phasesmith_io::space_group_by_number;
 use phasesmith_model::{PatternRecord, RecordId};
 use phasesmith_workflows::{
-    BackgroundModel, JointRietveldHistogram, JointRietveldLayout, LatticeBounds,
-    LatticeParameterization, PolynomialBackground, PreparedJointRietveldObjective,
+    AffineConstraint, BackgroundModel, CancellationToken, Constraint, JointRietveldHistogram,
+    JointRietveldLayout, JointRietveldRefinementOptions, LatticeBounds, LatticeParameterization,
+    ParameterKey, PolynomialBackground, PreparedJointRietveldObjective, RefinementLimits,
     RietveldCalculationOptions, RietveldInput, RietveldInstrumentParameter,
-    RietveldParameterSelection, RietveldPhase, RietveldStructuralSelection,
-    calculate_rietveld_pattern,
+    RietveldParameterSelection, RietveldPhase, RietveldStructuralSelection, TerminationReason,
+    calculate_rietveld_pattern, refine_joint_rietveld,
 };
 
 fn phase(
@@ -149,6 +150,58 @@ fn histogram(id: &str, neutron: bool) -> JointRietveldHistogram {
 
 fn histograms() -> Vec<JointRietveldHistogram> {
     vec![histogram("xray", false), histogram("neutron", true)]
+}
+
+fn solver_histograms() -> Vec<JointRietveldHistogram> {
+    let mut starting = histograms();
+    let mut truth = starting.clone();
+    for (index, histogram) in truth.iter_mut().enumerate() {
+        let mut definition = histogram.input.phases[0].definition().clone();
+        definition.cell.a_angstrom = 4.705;
+        definition.cell.b_angstrom = 4.705;
+        definition.cell.c_angstrom = 4.705;
+        definition.scale = if index == 0 { 1.05 } else { 1.55 };
+        histogram.input.phases[0] = RietveldPhase::new_with_site_ids(
+            RecordId::new("alpha").unwrap(),
+            "Alpha",
+            vec![RecordId::new("Si1").unwrap()],
+            definition.clone(),
+            OwnedCwContributions::neutral(definition.hkl.len()),
+        )
+        .unwrap();
+        let calculation =
+            calculate_rietveld_pattern(&histogram.input, &histogram.calculation).unwrap();
+        starting[index].input.pattern.observed_y = Some(calculation.y);
+        starting[index].selection = RietveldParameterSelection::new(
+            RietveldStructuralSelection {
+                lattice: true,
+                phase_scale: true,
+                ..RietveldStructuralSelection::default()
+            },
+            Vec::new(),
+            false,
+            false,
+        )
+        .unwrap();
+    }
+    starting
+}
+
+fn solver_options(max_iterations: usize) -> JointRietveldRefinementOptions {
+    JointRietveldRefinementOptions::new(
+        RefinementLimits::new(max_iterations, 2_000, None, 100).unwrap(),
+        1,
+        1.0e-12,
+        1.0e-10,
+        1.0e-6,
+        10.0,
+        0.3,
+        1.0e-10,
+        32,
+        0.5,
+        12,
+    )
+    .unwrap()
 }
 
 #[test]
@@ -402,4 +455,163 @@ fn invalid_joint_identity_selection_and_shared_structure_are_rejected() {
     )
     .unwrap();
     assert!(JointRietveldLayout::new(&structure).is_err());
+}
+
+#[test]
+fn joint_solver_recovers_shared_cell_and_local_scales_from_one_summed_fit() {
+    let histograms = solver_histograms();
+    let initial = PreparedJointRietveldObjective::new(
+        histograms.clone(),
+        JointRietveldLayout::new(&histograms).unwrap(),
+    )
+    .unwrap()
+    .gradient()
+    .unwrap()
+    .objective;
+    let result = refine_joint_rietveld(&histograms, &[], solver_options(15), None, None).unwrap();
+    assert!(!result.history.is_empty());
+    assert!(
+        result.checkpoint.objective < initial * 1.0e-8,
+        "initial={initial:.12e}, final={:.12e}, termination={:?}, history={:?}",
+        result.checkpoint.objective,
+        result.termination_reason,
+        result
+            .history
+            .iter()
+            .map(|row| row.objective)
+            .collect::<Vec<_>>()
+    );
+    assert!(
+        (result.histograms[0].input.phases[0]
+            .definition()
+            .cell
+            .a_angstrom
+            - 4.705)
+            .abs()
+            < 1.0e-7
+    );
+    assert!(
+        (result.histograms[1].input.phases[0]
+            .definition()
+            .cell
+            .a_angstrom
+            - 4.705)
+            .abs()
+            < 1.0e-7
+    );
+    assert!(
+        (result.histograms[0].input.phases[0].definition().scale - 1.05).abs() < 2.0e-4,
+        "xray scale={}",
+        result.histograms[0].input.phases[0].definition().scale
+    );
+    assert!(
+        (result.histograms[1].input.phases[0].definition().scale - 1.55).abs() < 2.0e-4,
+        "neutron scale={}",
+        result.histograms[1].input.phases[0].definition().scale
+    );
+    let summed = result
+        .calculations
+        .iter()
+        .map(|calculation| 0.5 * calculation.metrics.chi_square)
+        .sum::<f64>();
+    assert!((summed - result.checkpoint.objective).abs() <= 1.0e-12 * summed.abs().max(1.0));
+    assert_eq!(
+        result.metrics.chi_square.to_bits(),
+        (2.0 * result.checkpoint.objective).to_bits()
+    );
+    assert_eq!(
+        result.metrics.included_samples,
+        histograms
+            .iter()
+            .map(|histogram| {
+                histogram
+                    .input
+                    .pattern
+                    .mask
+                    .as_ref()
+                    .map_or(histogram.input.pattern.sample_count(), |mask| {
+                        mask.iter().filter(|included| **included).count()
+                    })
+            })
+            .sum()
+    );
+    assert!(
+        result
+            .history
+            .windows(2)
+            .all(|rows| rows[1].objective < rows[0].objective)
+    );
+}
+
+#[test]
+fn joint_checkpoint_resumes_and_pre_cancel_is_a_normal_unchanged_result() {
+    let histograms = solver_histograms();
+    let partial = refine_joint_rietveld(&histograms, &[], solver_options(2), None, None).unwrap();
+    partial.checkpoint.validate_for(&histograms, &[]).unwrap();
+    let mut corrupt = partial.checkpoint.clone();
+    corrupt.objective += 1.0;
+    assert!(corrupt.validate_for(&histograms, &[]).is_err());
+    let resumed = refine_joint_rietveld(
+        &histograms,
+        &[],
+        solver_options(15),
+        Some(&partial.checkpoint),
+        None,
+    )
+    .unwrap();
+    assert!(resumed.history.len() >= partial.history.len());
+    assert!(resumed.checkpoint.objective <= partial.checkpoint.objective);
+
+    let cancellation = CancellationToken::default();
+    cancellation.request("joint test cancellation").unwrap();
+    let cancelled = refine_joint_rietveld(
+        &histograms,
+        &[],
+        solver_options(5),
+        None,
+        Some(cancellation),
+    )
+    .unwrap();
+    assert_eq!(cancelled.termination_reason, TerminationReason::Cancelled);
+    assert!(cancelled.history.is_empty());
+    assert_eq!(cancelled.histograms, histograms);
+}
+
+#[test]
+fn joint_constraints_link_histogram_local_parameters_in_the_same_solve() {
+    let histograms = solver_histograms();
+    let constraint = Constraint::Affine(
+        AffineConstraint::new(
+            ParameterKey::new("phase", "neutron/alpha", "scale").unwrap(),
+            ParameterKey::new("phase", "xray/alpha", "scale").unwrap(),
+            1.0,
+            0.5,
+        )
+        .unwrap(),
+    );
+    let result = refine_joint_rietveld(
+        &histograms,
+        std::slice::from_ref(&constraint),
+        solver_options(15),
+        None,
+        None,
+    )
+    .unwrap();
+    let xray = result.histograms[0].input.phases[0].definition().scale;
+    let neutron = result.histograms[1].input.phases[0].definition().scale;
+    assert!((neutron - xray - 0.5).abs() < 1.0e-12);
+    assert!(
+        result
+            .free_keys
+            .contains(&ParameterKey::new("phase", "xray/alpha", "scale").unwrap())
+    );
+    assert!(
+        !result
+            .free_keys
+            .contains(&ParameterKey::new("phase", "neutron/alpha", "scale").unwrap())
+    );
+    result
+        .checkpoint
+        .validate_for(&histograms, &[constraint])
+        .unwrap();
 }
