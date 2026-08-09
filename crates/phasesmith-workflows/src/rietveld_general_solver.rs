@@ -396,7 +396,16 @@ pub fn refine_general_rietveld_with_runtime(
                 termination = normal_stop(&error)?;
                 break 'iterations;
             }
-            let trial_calculation = calculate_rietveld_pattern(&trial_input, &options.calculation)?;
+            let Ok(trial_calculation) =
+                calculate_rietveld_pattern(&trial_input, &options.calculation)
+            else {
+                emit_rejected_trial(runtime, "trial outside the calculation domain")?;
+                if let Err(error) = runtime.reject_step() {
+                    termination = normal_stop(&error)?;
+                    break 'iterations;
+                }
+                continue;
+            };
             let trial_objective = 0.5 * trial_calculation.metrics.chi_square;
             runtime.emit(
                 RefinementEventKind::Trial,
