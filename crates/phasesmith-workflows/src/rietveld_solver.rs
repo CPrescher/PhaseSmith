@@ -81,7 +81,7 @@ impl RietveldRefinementOptions {
         Ok(result)
     }
 
-    fn validate(&self) -> Result<(), RietveldRefinementError> {
+    pub(crate) fn validate(&self) -> Result<(), RietveldRefinementError> {
         let positive = [
             self.objective_tolerance,
             self.parameter_tolerance,
@@ -106,7 +106,7 @@ impl RietveldRefinementOptions {
     }
 }
 
-/// One accepted structural Gauss--Newton iteration.
+/// One accepted native Rietveld Gauss--Newton iteration.
 #[derive(Clone, Debug, PartialEq)]
 pub struct RietveldIterationRecord {
     /// One-based attempted iteration.
@@ -542,7 +542,7 @@ pub fn refine_rietveld_with_runtime(
     })
 }
 
-fn topology_change(
+pub(crate) fn topology_change(
     before: &RietveldPhase,
     after: &RietveldPhase,
 ) -> Option<RietveldTopologyChange> {
@@ -593,8 +593,8 @@ fn replace_phases(
     Ok(replaced)
 }
 
-fn reserve_products(
-    runtime: &mut RefinementRuntime<RietveldCheckpoint>,
+pub(crate) fn reserve_products<T>(
+    runtime: &mut RefinementRuntime<T>,
     count: usize,
 ) -> Result<(), RuntimeError> {
     for _ in 0..count {
@@ -603,7 +603,7 @@ fn reserve_products(
     Ok(())
 }
 
-fn conjugate_gradient(
+pub(crate) fn conjugate_gradient(
     right_hand_side: &[f64],
     tolerance: f64,
     max_iterations: usize,
@@ -651,11 +651,13 @@ fn dot(left: &[f64], right: &[f64]) -> f64 {
         .sum()
 }
 
-fn norm(values: &[f64]) -> f64 {
+pub(crate) fn norm(values: &[f64]) -> f64 {
     dot(values, values).sqrt()
 }
 
-fn normal_stop(error: &RuntimeError) -> Result<TerminationReason, RietveldRefinementError> {
+pub(crate) fn normal_stop(
+    error: &RuntimeError,
+) -> Result<TerminationReason, RietveldRefinementError> {
     if let RuntimeError::Stopped(stop) = error {
         Ok(stop.reason)
     } else {
@@ -680,8 +682,14 @@ pub enum RietveldRefinementError {
     Rietveld(RietveldError),
     /// Structural parameter transform failed.
     Parameter(RietveldParameterError),
+    /// Complete parameter layout or installation failed.
+    GeneralParameter(crate::RietveldGeneralParameterError),
     /// Prepared objective failed.
     Objective(RietveldObjectiveError),
+    /// Complete prepared objective failed.
+    GeneralObjective(crate::RietveldGeneralObjectiveError),
+    /// Constraint graph or transform failed.
+    Constraint(crate::ConstraintError),
     /// Runtime boundary failed.
     Runtime(RuntimeError),
     /// Residual evaluation failed.
@@ -700,7 +708,10 @@ impl Display for RietveldRefinementError {
             Self::RuntimeMessage(message) => formatter.write_str(message),
             Self::Rietveld(error) => Display::fmt(error, formatter),
             Self::Parameter(error) => Display::fmt(error, formatter),
+            Self::GeneralParameter(error) => Display::fmt(error, formatter),
             Self::Objective(error) => Display::fmt(error, formatter),
+            Self::GeneralObjective(error) => Display::fmt(error, formatter),
+            Self::Constraint(error) => Display::fmt(error, formatter),
             Self::Runtime(error) => Display::fmt(error, formatter),
             Self::Residual(error) => Display::fmt(error, formatter),
         }
@@ -712,7 +723,10 @@ impl Error for RietveldRefinementError {
         match self {
             Self::Rietveld(error) => Some(error),
             Self::Parameter(error) => Some(error),
+            Self::GeneralParameter(error) => Some(error),
             Self::Objective(error) => Some(error),
+            Self::GeneralObjective(error) => Some(error),
+            Self::Constraint(error) => Some(error),
             Self::Runtime(error) => Some(error),
             Self::Residual(error) => Some(error),
             Self::InvalidOptions
@@ -736,6 +750,21 @@ impl From<RietveldParameterError> for RietveldRefinementError {
 impl From<RietveldObjectiveError> for RietveldRefinementError {
     fn from(value: RietveldObjectiveError) -> Self {
         Self::Objective(value)
+    }
+}
+impl From<crate::RietveldGeneralParameterError> for RietveldRefinementError {
+    fn from(value: crate::RietveldGeneralParameterError) -> Self {
+        Self::GeneralParameter(value)
+    }
+}
+impl From<crate::RietveldGeneralObjectiveError> for RietveldRefinementError {
+    fn from(value: crate::RietveldGeneralObjectiveError) -> Self {
+        Self::GeneralObjective(value)
+    }
+}
+impl From<crate::ConstraintError> for RietveldRefinementError {
+    fn from(value: crate::ConstraintError) -> Self {
+        Self::Constraint(value)
     }
 }
 impl From<RuntimeError> for RietveldRefinementError {

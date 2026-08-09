@@ -170,8 +170,15 @@ without Python. They use exact corrected reflection geometry, re-evaluate after
 dynamic topology changes, and contribute analytical scalar, position, and all
 six reciprocal-metric cell chains to the general objective. Native finite
 differences, adjoint products, and a configured Python differential cover the
-new values and derivative arrays. The constraint-aware solver wrapper remains
-next.
+new values and derivative arrays. The complete constraint-aware solver now
+maps that full physical layout through fixed, affine, and multi-source graphs
+into frozen scaled-free coordinates and the matrix-free normal operator. Its
+restart state owns the accepted request and exact selection/bounds/constraint
+contract. Final bounded diagnostics report weighted rank and correlations and
+produce full physical covariance only for a full-rank free normal matrix.
+Recovery, cancellation, restart, singular-diagnostic, covariance-chain, and
+configured Python-history tests cover the boundary. Native staged recipes
+remain next.
 
 Unit 17 now includes the first full monochromatic CIF-backed Rietveld vertical
 slice. Typed profile/background/phase/lattice/site parameter families map

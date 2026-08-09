@@ -655,6 +655,42 @@ impl DifferentiableBackground for BackgroundModel {
     }
 }
 
+impl BackgroundModel {
+    pub(crate) fn restart_compatible(&self, requested: &Self) -> bool {
+        match (self, requested) {
+            (Self::Polynomial(left), Self::Polynomial(right)) => {
+                left.background_id == right.background_id
+                    && left.coefficients.len() == right.coefficients.len()
+            }
+            (Self::Chebyshev(left), Self::Chebyshev(right)) => {
+                left.background_id == right.background_id
+                    && left.coefficients.len() == right.coefficients.len()
+                    && left
+                        .domain_deg
+                        .iter()
+                        .zip(right.domain_deg)
+                        .all(|(left, right)| left.to_bits() == right.to_bits())
+            }
+            (Self::Point(left), Self::Point(right)) => {
+                left.background_id == right.background_id && left.knot_x == right.knot_x
+            }
+            (Self::Amorphous(left), Self::Amorphous(right)) => {
+                left.background_id == right.background_id && left.peaks.len() == right.peaks.len()
+            }
+            (Self::Composite(left), Self::Composite(right)) => {
+                left.background_id == right.background_id
+                    && left.components.len() == right.components.len()
+                    && left
+                        .components
+                        .iter()
+                        .zip(&right.components)
+                        .all(|(left, right)| left.restart_compatible(right))
+            }
+            _ => false,
+        }
+    }
+}
+
 impl DifferentiableBackground for CompositeBackground {
     fn background_id(&self) -> &str {
         &self.background_id

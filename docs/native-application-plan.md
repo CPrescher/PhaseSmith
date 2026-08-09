@@ -341,3 +341,18 @@ composition follows additive width and multiplicative intensity product rules.
 Centered-difference, adjoint, topology, mixed-phase, and configured
 Rust-versus-Python tests cover the boundary. The constraint-aware complete
 solver is the next Rietveld substep.
+
+The constraint-aware complete Rietveld solver completed next. It maps the full
+native instrument, background, sample, and structural layout through the
+existing fixed/affine/multi-source constraint transform, keeps scaled-free
+solver coordinates fixed from the initial contract, and uses the complete
+matrix-free JVP/VJP normal operator. Accepted checkpoints contain the complete
+request state plus exact selection, lattice-bound, constraint, scale, damping,
+and history contracts. Changed or initially unsatisfied graphs fail before
+numerical work. Final diagnostics explicitly materialize only the bounded
+free-parameter Jacobian, report rank and unresolved correlations, and emit a
+full physical covariance only for a full-rank normal matrix. Native tests cover
+complete-family recovery, affine covariance propagation, singular covariance
+suppression, cancellation, exact continuation, and stale checkpoint rejection;
+a configured Python differential matches accepted objective histories. Staged
+Rietveld recipes are the next native substep.

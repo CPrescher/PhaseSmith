@@ -36,9 +36,7 @@ history, and restart checkpoints. Dynamic cells regenerate HKLs and
 multiplicities after bounded motion and record added/removed families on
 accepted history rows. Attached built-in sample-physics records are evaluated
 again for the accepted cell and reflection list, rather than relying on stale
-transferred arrays. The constraint-aware complete solver remains on the native
-migration path; until it lands, the Python orchestrator remains the complete
-script-facing implementation.
+transferred arrays.
 
 An optional native `BackgroundModel` may already be attached to the request.
 Its calculated values are added once to the pattern's fixed supplied background
@@ -54,7 +52,21 @@ lattice transform, including all six reciprocal-metric derivatives. Its
 complete JVP/VJP reuses matrix-free structural products and only stores the
 small global, sample, and background columns. Wavelength installation updates
 matching correction models and guarded domains atomically. The
-constraint-aware solver entry point remains the next migration slice.
+constraint-aware solver entry point now consumes this complete layout.
+
+`refine_general_rietveld` is the Python-free complete solver boundary. It
+applies fixed, affine, and multi-source constraints through the exact
+physical-to-scaled-free derivative matrix, freezes solver scales from the
+initial contract, and rebuilds only accepted physical values and guarded
+topology. Its checkpoint owns the complete accepted request, selection,
+lattice bounds, constraints, fixed scale template, damping, and accepted
+history, so continuation rejects changed contracts and unselected fixed state.
+The final optional small-matrix diagnostic reports weighted Jacobian rank and
+near-collinear free columns. It returns a full physical-parameter covariance
+only when the scaled-free normal matrix is full rank; fixed and constrained
+rows are propagated through the constraint derivative rather than inverted as
+independent parameters. The staged-recipe layer and Python façade delegation
+remain the next migration slices.
 
 ## Objective and numerical method
 
