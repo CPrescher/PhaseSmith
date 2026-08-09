@@ -305,7 +305,7 @@ impl PreparedStructuralMultiphase {
 
     /// Calculate from an entirely owned application-boundary request.
     ///
-    /// This is the shared entry point for language and desktop adapters. The
+    /// This is the shared entry point for language and application adapters. The
     /// request owns all dynamic arrays; kernel views exist only for the duration
     /// of this call.
     ///

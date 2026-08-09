@@ -213,7 +213,6 @@ jobs:
           CARGO_REGISTRY_TOKEN: ${{ steps.crates-auth.outputs.token }}
         run: |
           cargo publish --workspace --locked \
-            --exclude phasesmith-desktop \
             --exclude phasesmith-py \
             --exclude phasesmith-validation
 

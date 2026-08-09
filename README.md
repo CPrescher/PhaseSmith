@@ -54,15 +54,12 @@ renaming the repository, recreate `.venv`, repeat the three setup commands
 above, and confirm `uv run python -c "import phasesmith; print(phasesmith.__file__)"`
 points into the current checkout before running the gate.
 
-### Native application adapter
+### Native GUI applications
 
-The Python-free `phasesmith-desktop` crate provides revisioned project state,
-bounded powder/CIF import, standalone calculation, detached cancellable
-refinement, result acceptance, binary plotting series, native persistence, and
-summary-report export. It is presentation-framework agnostic so a future GUI
-can live in its own crate or repository and depend on PhaseSmith without
-bundling Python. See [docs/desktop-adapter.md](docs/desktop-adapter.md) for the
-state, event, revision, and binary-data contracts.
+GUI applications are separate consumers of the published Rust library. A
+future Tauri or other native application can depend on `phasesmith`, own its
+presentation state and background jobs, and call the native workflows directly
+without bundling Python.
 
 Run the Rust benchmarks with `cargo bench -p phasesmith-core`. For a comparable
 optimized Python-to-Rust measurement, build the release extension and require

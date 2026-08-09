@@ -1,4 +1,4 @@
-//! Application-neutral owned records shared by scripting and desktop hosts.
+//! Application-neutral owned records shared by scripting and native hosts.
 //!
 //! These types describe validated live domain state. Persistence wire records,
 //! migrations, `PyO3` objects, and Tauri command payloads deliberately live in
@@ -373,7 +373,7 @@ pub struct ProjectRecord {
 impl ProjectRecord {
     /// Validate cross-record identities and references.
     ///
-    /// Empty projects are allowed so a desktop host can create a project before
+    /// Empty projects are allowed so an application can create a project before
     /// importing data. Once histograms exist, every phase reference must resolve.
     ///
     /// # Errors

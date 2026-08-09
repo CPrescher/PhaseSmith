@@ -1,7 +1,8 @@
 //! Application-neutral native refinement and project workflows.
 //!
 //! This crate is the shared host boundary for Python adapters and future
-//! desktop adapters. It contains no `PyO3`, Tauri, GUI, or file-format types.
+//! native application consumers. It contains no `PyO3`, Tauri, GUI, or
+//! file-format types.
 
 mod backgrounds;
 mod constraints;

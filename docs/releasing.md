@@ -31,12 +31,10 @@ dry run, and publish the initial dependency-ordered workspace exactly once:
 
 ```shell
 cargo publish --workspace --locked --dry-run \
-  --exclude phasesmith-desktop \
   --exclude phasesmith-py \
   --exclude phasesmith-validation
 
 cargo publish --workspace --locked \
-  --exclude phasesmith-desktop \
   --exclude phasesmith-py \
   --exclude phasesmith-validation
 ```

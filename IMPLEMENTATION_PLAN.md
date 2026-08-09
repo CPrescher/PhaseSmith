@@ -1195,8 +1195,7 @@ Keep implementation units reviewable through these ordered changes:
     policy, fixed-spectrum/multiphase composition, and a Rust-only calculation
     vertical slice.
 22. Owned native domain/I/O/persistence records with Python/Rust compatibility,
-    followed by native refinement workflows and a presentation-framework-free
-    application adapter.
+    followed by native refinement workflows and application-neutral APIs.
 23. Typed multi-histogram Rietveld objective with shared structural and local
     experiment parameters, followed by a joint PbSO4 X-ray/neutron benchmark.
 24. Python-free real-data validation crate and CLI, native fixed-spectrum
@@ -1208,8 +1207,8 @@ packing, matrix-free joint products, a bounded constraint-aware summed solver,
 restart/cancellation state, aggregate metrics, and an optimized Rust-only
 benchmark over the pinned PbSO4 X-ray/neutron patterns and CIF.
 
-Unit 24 is complete. The application adapter and validation CLI call Rust
-directly with no Python sidecar; ordinary scripting validation calls
+Unit 24 is complete. The validation CLI calls Rust directly with no Python
+sidecar; ordinary scripting validation calls
 reconstruct the same public report types from native JSON. Release-mode Rust
 tests cover deterministic QARR, both PbSO4 probes including the exact Cu K-alpha
 doublet, mixed-radiation joint products, and independent Python differential
@@ -1225,11 +1224,10 @@ shared, while radiation, scattering/intensity correction, limits, scale,
 background, profile, zero/displacement geometry, masks, and uncertainties
 remain explicitly histogram-local.
 
-Units 21 and 22 follow the dependency order and review gates in
-[`docs/native-application-plan.md`](docs/native-application-plan.md). The
-desktop adapter never depends on `phasesmith-py`, and the existing Python API
-delegates built-in workflows to the same native implementation without losing
-the independent NumPy equation references.
+The existing Python API delegates built-in workflows to the same
+application-neutral native implementation without losing the independent NumPy
+equation references. GUI-specific state and presentation adapters belong in a
+separate application repository.
 
 ## Maintainer decisions needed
 

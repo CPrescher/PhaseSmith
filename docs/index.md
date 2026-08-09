@@ -20,8 +20,6 @@
 
 For shared refinement controls, cancellation, logs, and safe checkpoints, see
 [refinement](refinement.md) and [refinement runtime](refinement-runtime.md).
-The planned shared Rust workflow and Python-free desktop boundary is documented
-in the [native application plan](native-application-plan.md).
 
 ## Numerical conventions
 

@@ -72,8 +72,8 @@ last accepted state. Terminal key handling is an optional adapter; numerical
 code never reads standard input or configures global logging.
 
 That safety shell is now also owned by the Python-free
-`phasesmith-workflows` crate: native solvers and a future desktop adapter share
-the same event, budget, typed-checkpoint, resume-counter, and cross-thread
+`phasesmith-workflows` crate: native solvers and future application consumers
+share the same event, budget, typed-checkpoint, resume-counter, and cross-thread
 cancellation contracts without embedding CPython. The Python runtime remains
 the scripting implementation and differential oracle until solver delegation.
 
@@ -156,7 +156,7 @@ Native Rietveld requests can now own an optional analytical background in
 addition to the pattern's fixed supplied background. Calculation validates the
 model on the observation grid, adds it exactly once, and exposes the combined
 background separately from the structural profile. This keeps background state
-inside the same Rust request that later refinement and desktop adapters use.
+inside the same Rust request used by refinement and external applications.
 
 The complete native Rietveld parameter/objective layer now composes the
 matrix-free structural tangent with selected CW U/V/W/X/Y, wavelength,
@@ -547,7 +547,7 @@ documented; GSAS-II itself is never vendored.
   composition with the support-limited profile kernel and structural JVP/VJP.
 - `crates/phasesmith-workflows`: application-neutral parameter, constraint,
   residual, background, runtime, and refinement orchestration shared by PyO3
-  and future desktop adapters; it contains no GUI or interpreter dependency.
+  and future native applications; it contains no GUI or interpreter dependency.
 - `python/phasesmith`: public Python package, separated instrument/phase/pattern/
   calculation/refinement modules, reference implementation, optional
   integrations, and validation tooling.
@@ -565,11 +565,10 @@ documented; GSAS-II itself is never vendored.
 - `benchmarks`: end-to-end Python benchmarks and stored methodology.
 - `oracle`: pinned GSAS-II environment metadata, adapters, and fixture schema.
 
-The planned native application boundary is specified in
-`docs/native-application-plan.md`. It keeps Tauri outside the scientific
-workspace, introduces application-neutral owned model/I/O/workflow layers, and
-preserves the Python scripting surface without requiring Python in a desktop
-distribution.
+The native application boundary keeps GUI frameworks outside the scientific
+workspace, provides application-neutral owned model/I/O/workflow layers, and
+preserves the Python scripting surface without requiring Python in native
+consumers.
 
 The core accepts plain numeric slices and explicit peak/instrument batches. It
 does not know about files, refinement iterations, Python phase objects, GUI
@@ -685,12 +684,12 @@ most one validated native analysis to each project histogram through
 `RietveldProjectState`; native project format 2 persists its built-in sample
 physics, guarded lattice domains, analytical backgrounds, constraints, options,
 covariance controls, and exact accepted restart checkpoint. Format 1 remains
-readable as project-only state, so a future Tauri adapter can load and resume
-native projects directly without a Python sidecar.
+readable as project-only state, so a future native application can load and
+resume projects directly without a Python sidecar.
 The PyO3 adapter exposes this codec and independently loadable native
 checkpoint handles while releasing the GIL for project I/O; this is the bridge
 used by the remaining public Python-facade migration, not a dependency of the
-Rust desktop runtime.
+Rust workflows.
 The public cancellation token shares the native solver's thread-safe state, so
 the stateful Python project facade keeps cooperative `stop()` while using the
 detached Rust refinement path.
@@ -700,62 +699,22 @@ restart handle from Rust-validated state. Python-only providers, component
 radiation, non-native checkpoints, scripting optimizer controls, and rich
 parser provenance continue to use the compatible format-12 scripting codec.
 This completes the public Python refinement/persistence migration without
-making Python part of the desktop runtime.
+making Python part of native consumers.
 Real-data validation follows the same boundary. `phasesmith-validation` owns
 checksum verification, stable reports, native sucrose, QARR, PbSO4 neutron,
 and exact fixed-doublet PbSO4 X-ray runners plus a standalone Rust CLI. Python
 reconstructs its existing immutable report types from native JSON for ordinary
 calls; callback/custom-execution and explicit reference runs stay in Python.
-The new `phasesmith-desktop` crate begins the presentation adapter as a separate
-Python-free layer. It owns immutable revisioned project snapshots and stable
-command errors, performs native load/save outside its short state locks, and
-rejects stale updates by both revision and exact snapshot identity. This avoids
-late background work overwriting edits or a reopened project while keeping
-Tauri out of all scientific crates.
-Detached desktop refinement jobs now reuse the native runtime directly. They
-emit revision-tagged JSON-safe events, support first-reason cooperative
-cancellation, retain completed results without implicit installation, and
-accept only through the exact source snapshot. Explicit disposal bounds the
-lifetime of retained solver arrays, and presentation event failures remain
-isolated from scientific state.
-Desktop plotting data now has an explicit binary IPC contract. JSON carries
-only typed descriptors and scalar summaries; requested grids, curves, masks,
-phase profiles, and reflection sticks are encoded as little-endian `f64` or
-byte payloads owned by an exact project revision or retained job. This avoids
-large JSON arrays and makes edit-between-catalog-and-fetch races explicit.
-The reusable desktop adapter exposes those contracts without introducing a GUI
-framework into the library workspace. Native CIF import, standalone
-calculation, and report-export operations are implemented; a future application
-crate can translate them into its chosen command and event system without a
-Python sidecar.
 Release packaging preserves the same separation. The public crates.io
 `phasesmith` facade re-exports the application-neutral native component crates;
-PyO3, validation tooling, and the desktop adapter remain unpublished workspace
-packages; GUI applications are separate consumers. A
+PyO3 and validation tooling remain unpublished workspace packages; GUI
+applications are separate consumers. A
 `v<version>` Git tag drives tested ABI3
 Python wheels, an sdist, provenance, PyPI trusted publishing, the public Rust
 crate graph, and a tagged GitHub Release. Version checks bind Cargo,
 Python, the changelog, and all internal registry requirements before any
-publishing job receives credentials.
-Bounded powder import is now available through that adapter for plain columns,
-GSAS FXYE, and GSAS STD files. It installs a complete monochromatic experiment
-and observed histogram only against the exact source revision; all parse,
-validation, resource-limit, and concurrent-edit failures preserve project
-state. Native CIF phase import likewise uses bounded parsing and exact snapshot
-installation, generating reflections for the selected histogram while
-preserving parser diagnostics, provenance, charge/isotope scattering identity,
-and an explicit probe-compatible intensity correction.
-Standalone desktop calculation now constructs built-in neutral-physics inputs
-from those project records, evaluates them on the native blocking pool, and
-retains complete revision-owned plot data without changing project state.
-Finite metrics stay in JSON while sample/reflection arrays use the existing raw
-little-endian transport; explicit disposal releases the retained result.
-Revision-owned desktop report export now writes the canonical versioned native
-summary JSON with a protected-create/default policy and explicit overwrite.
-Together with project lifecycle, import, calculation, refinement, cancellation,
-acceptance, persistence, events, and binary plotting transport, this completes
-the Python-free desktop adapter boundary. The bundled static page remains a
-runtime probe rather than the product GUI.
+publishing job receives credentials. GUI-specific state, job ownership, IPC,
+and presentation behavior belong to a separate application repository.
 
 The final planned parity boundary, joint refinement, is now native.
 `JointRietveldLayout` shares structural phase/site parameters while preserving
@@ -792,11 +751,8 @@ GSAS-II timings remain separate because its PbSO4 number covers a joint
 two-histogram recipe.
 
 The 2026-08-09 hardening pass closes the remaining authoring and robustness
-gaps without changing the scientific layering. The desktop adapter can now
-create a fully validated analysis from imported records, atomically extend an
-existing analysis during CIF import, preserve fixed spectra on acceptance, and
-cancel/release snapshot-owned jobs and calculations on lifecycle close. All
-three LM solvers retry rejected line searches with increased damping under the
+gaps without changing the scientific layering. All three LM solvers retry
+rejected line searches with increased damping under the
 existing attempt/evaluation/rejection budgets, and the joint solver reuses the
 same finite-safe conjugate-gradient core as the single-histogram solvers. Joint
 checkpoint continuation is pinned against uninterrupted history. Rust and the
@@ -804,8 +760,9 @@ independent Python references now share an explicit covariance convention:
 known active uncertainties use the unscaled inverse weighted normal matrix;
 unit-weight fits scale by reduced chi-square. FXYE zero-ESD rows become masked
 exclusions and UTF-8 BOM input is accepted. Native persistence probes future
-versions before strict decoding, uses desktop-sized default allocation limits,
-and recovers the previous manifest/archive pair after an interrupted overwrite.
+versions before strict decoding, uses application-sized default allocation
+limits, and recovers the previous manifest/archive pair after an interrupted
+overwrite.
 The Python Rietveld result exposes `backend` as `native` or `python`, making an
 eligibility fallback visible to callers.
 
