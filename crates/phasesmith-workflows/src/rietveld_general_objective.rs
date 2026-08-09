@@ -449,6 +449,9 @@ impl PreparedGeneralRietveldObjective {
 fn dense_forward_product(jacobian: &[f64], direction: &[f64], sample_count: usize) -> Vec<f64> {
     let mut result = vec![0.0; sample_count];
     for (coefficient, row) in direction.iter().zip(jacobian.chunks_exact(sample_count)) {
+        if *coefficient == 0.0 {
+            continue;
+        }
         for (target, value) in result.iter_mut().zip(row) {
             *target += coefficient * value;
         }

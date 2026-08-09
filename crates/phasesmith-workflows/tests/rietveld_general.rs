@@ -158,6 +158,25 @@ fn layout_has_stable_order_and_installs_every_selected_family() {
             "phase[alpha].scale",
         ]
     );
+    let phase_scale = layout
+        .parameters()
+        .specs()
+        .iter()
+        .find(|spec| spec.key().label() == "phase[alpha].scale")
+        .unwrap();
+    assert_eq!(phase_scale.scale().to_bits(), 0.8_f64.to_bits());
+
+    let mut zero_input = input.clone();
+    zero_input.phases = vec![phase(0.0)];
+    let zero_layout = RietveldParameterLayout::new(&zero_input, &selection(), &[None]).unwrap();
+    let zero_phase_scale = zero_layout
+        .parameters()
+        .specs()
+        .iter()
+        .find(|spec| spec.key().label() == "phase[alpha].scale")
+        .unwrap();
+    assert_eq!(zero_phase_scale.scale().to_bits(), 1.0_f64.to_bits());
+
     let mut values = layout
         .parameters()
         .specs()

@@ -76,7 +76,11 @@ pub fn run_pbso4_xray_validation(
         Some(observed.clone()),
         selected.uncertainty.clone(),
         None,
-        Some(smooth_bruckner(observed, 40, 50)?),
+        Some(smooth_bruckner(
+            observed,
+            smoothing_points(&selected.x_deg, 1.0),
+            50,
+        )?),
     )?;
     let instrument = xray_instrument();
     let spectrum = FixedWavelengthSpectrum::new(vec![1.5405, 1.5443], vec![1.0, 0.5])?;
@@ -939,6 +943,24 @@ fn selected_pattern(
     .map_err(Into::into)
 }
 
+#[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+fn smoothing_points(grid: &[f64], physical_width: f64) -> usize {
+    let mut spacing = grid
+        .windows(2)
+        .map(|pair| pair[1] - pair[0])
+        .collect::<Vec<_>>();
+    spacing.sort_by(f64::total_cmp);
+    let middle = spacing.len() / 2;
+    let representative = if spacing.len() % 2 == 0 {
+        0.5 * (spacing[middle - 1] + spacing[middle])
+    } else {
+        spacing[middle]
+    };
+    // Rust's finite, non-negative float-to-integer cast has the same
+    // truncation semantics used by Python's `int` here.
+    (physical_width / representative) as usize
+}
+
 fn neutron_instrument() -> ConstantWavelengthInstrument {
     ConstantWavelengthInstrument {
         wavelength_angstrom: 1.909,
@@ -1187,3 +1209,16 @@ error_conversion!(RietveldGeneralParameterError, GeneralParameter);
 error_conversion!(RietveldGeneralRefinementError, GeneralRefinement);
 error_conversion!(RietveldRecipeError, Recipe);
 error_conversion!(ValidationContractError, Report);
+
+#[cfg(test)]
+mod tests {
+    use super::smoothing_points;
+
+    #[test]
+    fn physical_smoothing_width_matches_scripting_median_truncation() {
+        let grid = (0..5_697)
+            .map(|index| 16.0 + f64::from(index) * 0.025)
+            .collect::<Vec<_>>();
+        assert_eq!(smoothing_points(&grid, 1.0), 39);
+    }
+}

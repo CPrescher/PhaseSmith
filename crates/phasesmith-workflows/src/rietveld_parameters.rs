@@ -278,6 +278,11 @@ impl RietveldStructuralLayout {
                 }
             }
             if selection.phase_scale {
+                let numerical_scale = if definition.scale == 0.0 {
+                    1.0
+                } else {
+                    definition.scale.abs()
+                };
                 push_mapping(
                     &mut specs,
                     &mut mappings,
@@ -285,7 +290,7 @@ impl RietveldStructuralLayout {
                     definition.scale,
                     "relative",
                     ParameterBounds::new(0.0, f64::INFINITY)?,
-                    definition.scale.abs().max(1.0),
+                    numerical_scale,
                     vec![(native.scale(), 1.0)],
                 )?;
             }

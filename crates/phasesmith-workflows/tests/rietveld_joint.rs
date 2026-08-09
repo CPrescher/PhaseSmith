@@ -497,7 +497,7 @@ fn joint_solver_recovers_shared_cell_and_local_scales_from_one_summed_fit() {
     .gradient()
     .unwrap()
     .objective;
-    let result = refine_joint_rietveld(&histograms, &[], solver_options(15), None, None).unwrap();
+    let result = refine_joint_rietveld(&histograms, &[], solver_options(30), None, None).unwrap();
     assert!(!result.history.is_empty());
     assert!(
         result.checkpoint.objective < initial * 1.0e-8,
