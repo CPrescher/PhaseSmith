@@ -2,6 +2,7 @@
 members = [
   "crates/phasesmith-core",
   "crates/phasesmith-crystallography",
+  "crates/phasesmith-desktop",
   "crates/phasesmith-execution",
   "crates/phasesmith-engine",
   "crates/phasesmith-io",

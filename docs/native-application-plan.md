@@ -400,3 +400,11 @@ cover this translation. This completes delivery step 15.
 The scripting `CancellationToken` now also owns the shared Rust token used by
 detached native refinement, so `RietveldProject.refine()` no longer falls back
 to Python merely to preserve its concurrent `stop()` contract.
+
+Delivery step 16 has started with the Python-free `phasesmith-desktop` adapter.
+Its project store owns immutable native snapshots, checks every edit/save/close
+against an expected revision, and uses exact snapshot identity to reject the
+close/reopen ABA race for asynchronous completions. Native load validates
+before installation and failed commands preserve current state. The adapter's
+job/event/binary transport layer and thin Tauri host remain subsequent atomic
+substeps.

@@ -616,6 +616,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "phasesmith-desktop"
+version = "0.1.0"
+dependencies = [
+ "phasesmith-model",
+ "phasesmith-persistence",
+ "phasesmith-workflows",
+ "serde",
+]
+
+[[package]]
 name = "phasesmith-engine"
 version = "0.1.0"
 dependencies = [

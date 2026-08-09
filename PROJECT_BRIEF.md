@@ -700,6 +700,12 @@ radiation, non-native checkpoints, scripting optimizer controls, and rich
 parser provenance continue to use the compatible format-12 scripting codec.
 This completes the public Python refinement/persistence migration without
 making Python part of the desktop runtime.
+The new `phasesmith-desktop` crate begins the presentation adapter as a separate
+Python-free layer. It owns immutable revisioned project snapshots and stable
+command errors, performs native load/save outside its short state locks, and
+rejects stale updates by both revision and exact snapshot identity. This avoids
+late background work overwriting edits or a reopened project while keeping
+Tauri out of all scientific crates.
 
 The remaining parity boundary is joint refinement. PhaseSmith currently owns
 one pattern/experiment per `RietveldInput`; GSAS-II shares one PbSO4 structure
