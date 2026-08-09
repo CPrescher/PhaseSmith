@@ -2,6 +2,7 @@
 
 mod dataset;
 mod pbso4;
+mod qarr;
 mod report;
 mod sucrose;
 
@@ -10,6 +11,7 @@ pub use dataset::{
     validation_datasets, verify_validation_dataset,
 };
 pub use pbso4::{Pbso4ValidationError, run_pbso4_neutron_validation};
+pub use qarr::{QarrValidationError, run_qarr_1g_validation};
 pub use report::{
     RealDataValidationReport, ValidationCheck, ValidationContractError, ValidationStatus,
 };
