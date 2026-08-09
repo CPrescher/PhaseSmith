@@ -391,7 +391,6 @@ def test_backend_protocol_is_injectable_and_base_import_does_not_load_gemmi() ->
         check=False,
         capture_output=True,
         text=True,
-        env={"PYTHONPATH": str(Path(__file__).parents[1] / "python")},
     )
     assert completed.returncode == 0, completed.stderr
 
@@ -405,6 +404,7 @@ def test_backend_protocol_is_injectable_and_base_import_does_not_load_gemmi() ->
         "gsasii-pbso4-cw/PbSO4-Wyckoff.cif",
     ),
 )
+@pytest.mark.real_data
 def test_native_cif_matches_optional_gemmi_oracle(relative_path: str) -> None:
     pytest.importorskip("gemmi")
     from phasesmith.io._gemmi import GemmiCifBackend
