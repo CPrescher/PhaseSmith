@@ -4,9 +4,9 @@ use std::error::Error;
 use std::fmt::{Display, Formatter};
 
 use crate::{
-    DifferentiableBackground, PreparedRietveldObjective, RietveldCalculation,
-    RietveldCalculationOptions, RietveldError, RietveldGeneralParameterError, RietveldInput,
-    RietveldInstrumentParameter, RietveldObjectiveError, RietveldParameterLayout,
+    DifferentiableBackground, LatticeError, LatticeParameterization, PreparedRietveldObjective,
+    RietveldCalculation, RietveldCalculationOptions, RietveldError, RietveldGeneralParameterError,
+    RietveldInput, RietveldInstrumentParameter, RietveldObjectiveError, RietveldParameterLayout,
     calculate_rietveld_pattern,
 };
 
@@ -41,50 +41,9 @@ impl PreparedGeneralRietveldObjective {
             layout.structural_layout().clone(),
         )?;
         let calculation = calculate_rietveld_pattern(&input, &options)?;
-        let sample_count = input.pattern.sample_count();
-        let mut explicit_columns = Vec::new();
-        for (parameter, index) in layout.instrument_indices() {
-            let row = instrument_global_row(&input, *parameter)?;
-            let mut column = vec![0.0; sample_count];
-            for phase in &calculation.phases {
-                let global = phase
-                    .result
-                    .accumulation
-                    .derivatives
-                    .global
-                    .as_ref()
-                    .ok_or(RietveldGeneralObjectiveError::MissingGlobalDerivatives)?;
-                if row >= global.parameter_count || global.sample_count != sample_count {
-                    return Err(RietveldGeneralObjectiveError::GlobalDerivativeShape);
-                }
-                let values = global
-                    .values
-                    .get(row * sample_count..(row + 1) * sample_count)
-                    .ok_or(RietveldGeneralObjectiveError::GlobalDerivativeShape)?;
-                for (target, value) in column.iter_mut().zip(values) {
-                    *target += value;
-                }
-            }
-            explicit_columns.push((*index, column));
-        }
-        if !layout.background_indices().is_empty() {
-            let background = input
-                .background
-                .as_ref()
-                .ok_or(RietveldGeneralParameterError::MissingBackground)?;
-            let basis = background.basis(&input.pattern.x_deg)?;
-            if basis.columns != layout.background_indices().len() || basis.rows != sample_count {
-                return Err(RietveldGeneralObjectiveError::BackgroundDerivativeShape);
-            }
-            for (column_index, parameter_index) in layout.background_indices().iter().enumerate() {
-                explicit_columns.push((
-                    *parameter_index,
-                    basis
-                        .column(column_index)
-                        .ok_or(RietveldGeneralObjectiveError::BackgroundDerivativeShape)?,
-                ));
-            }
-        }
+        let mut explicit_columns = instrument_columns(&input, &calculation, &layout)?;
+        append_sample_physics_columns(&input, &calculation, &layout, &mut explicit_columns)?;
+        append_background_columns(&input, &layout, &mut explicit_columns)?;
         Ok(Self {
             input,
             options,
@@ -224,6 +183,202 @@ impl PreparedGeneralRietveldObjective {
     }
 }
 
+fn instrument_columns(
+    input: &RietveldInput,
+    calculation: &RietveldCalculation,
+    layout: &RietveldParameterLayout,
+) -> Result<Vec<(usize, Vec<f64>)>, RietveldGeneralObjectiveError> {
+    let sample_count = input.pattern.sample_count();
+    let mut result = Vec::new();
+    for (parameter, index) in layout.instrument_indices() {
+        let row = instrument_global_row(input, *parameter)?;
+        let mut column = vec![0.0; sample_count];
+        for phase in &calculation.phases {
+            let global = phase
+                .result
+                .accumulation
+                .derivatives
+                .global
+                .as_ref()
+                .ok_or(RietveldGeneralObjectiveError::MissingGlobalDerivatives)?;
+            if row >= global.parameter_count || global.sample_count != sample_count {
+                return Err(RietveldGeneralObjectiveError::GlobalDerivativeShape);
+            }
+            let values = global
+                .values
+                .get(row * sample_count..(row + 1) * sample_count)
+                .ok_or(RietveldGeneralObjectiveError::GlobalDerivativeShape)?;
+            for (target, value) in column.iter_mut().zip(values) {
+                *target += value;
+            }
+        }
+        result.push((*index, column));
+    }
+    Ok(result)
+}
+
+fn append_sample_physics_columns(
+    input: &RietveldInput,
+    calculation: &RietveldCalculation,
+    layout: &RietveldParameterLayout,
+    explicit_columns: &mut Vec<(usize, Vec<f64>)>,
+) -> Result<(), RietveldGeneralObjectiveError> {
+    let mut terms = layout
+        .sample_physics_indices()
+        .map(|(phase, name, parameter)| (phase, name.to_owned(), parameter, 1.0))
+        .collect::<Vec<_>>();
+    for (phase_index, phase) in input.phases.iter().enumerate() {
+        let (_, names) =
+            phase.resolved_sample_physics(input.instrument, input.position_correction)?;
+        if !names
+            .iter()
+            .any(|name| name.starts_with("march_dollase.cell."))
+        {
+            continue;
+        }
+        let parameterization = LatticeParameterization::new(
+            phase.definition().space_group.clone(),
+            phase.definition().cell,
+        )?;
+        let lattice_values = parameterization.values_from_cell(phase.definition().cell)?;
+        let jacobian = parameterization.cell_jacobian(&lattice_values)?;
+        let columns = lattice_values.len();
+        for (parameter_index, spec) in layout.parameters().specs().iter().enumerate() {
+            if spec.key().module() != "lattice"
+                || spec.key().owner_id() != phase.phase_id().as_str()
+            {
+                continue;
+            }
+            let column = parameterization
+                .parameter_names()
+                .iter()
+                .position(|name| name == spec.key().name())
+                .ok_or(RietveldGeneralObjectiveError::GlobalDerivativeShape)?;
+            for (cell_row, name) in [
+                "a_angstrom",
+                "b_angstrom",
+                "c_angstrom",
+                "alpha_deg",
+                "beta_deg",
+                "gamma_deg",
+            ]
+            .iter()
+            .enumerate()
+            {
+                let coefficient = jacobian[cell_row * columns + column];
+                if coefficient != 0.0 {
+                    terms.push((
+                        phase_index,
+                        format!("march_dollase.cell.{name}"),
+                        parameter_index,
+                        coefficient,
+                    ));
+                }
+            }
+        }
+    }
+    for (phase_index, name, parameter_index, coefficient) in terms {
+        append_sample_physics_column(
+            input,
+            calculation,
+            explicit_columns,
+            phase_index,
+            &name,
+            parameter_index,
+            coefficient,
+        )?;
+    }
+    Ok(())
+}
+
+#[allow(clippy::too_many_arguments)]
+fn append_sample_physics_column(
+    input: &RietveldInput,
+    calculation: &RietveldCalculation,
+    explicit_columns: &mut Vec<(usize, Vec<f64>)>,
+    phase_index: usize,
+    name: &str,
+    parameter_index: usize,
+    coefficient: f64,
+) -> Result<(), RietveldGeneralObjectiveError> {
+    let phase = input
+        .phases
+        .get(phase_index)
+        .ok_or(RietveldGeneralObjectiveError::GlobalDerivativeShape)?;
+    let (_, names) = phase.resolved_sample_physics(input.instrument, input.position_correction)?;
+    let provider_row = names
+        .iter()
+        .position(|candidate| candidate == name)
+        .ok_or(RietveldGeneralObjectiveError::GlobalDerivativeShape)?;
+    let sample_count = input.pattern.sample_count();
+    let row = sample_physics_global_start(input) + provider_row;
+    let global = calculation.phases[phase_index]
+        .result
+        .accumulation
+        .derivatives
+        .global
+        .as_ref()
+        .ok_or(RietveldGeneralObjectiveError::MissingGlobalDerivatives)?;
+    let values = global
+        .values
+        .get(row * sample_count..(row + 1) * sample_count)
+        .ok_or(RietveldGeneralObjectiveError::GlobalDerivativeShape)?;
+    if let Some((_, column)) = explicit_columns
+        .iter_mut()
+        .find(|(index, _)| *index == parameter_index)
+    {
+        for (target, value) in column.iter_mut().zip(values) {
+            *target += coefficient * value;
+        }
+    } else {
+        explicit_columns.push((
+            parameter_index,
+            values.iter().map(|value| coefficient * value).collect(),
+        ));
+    }
+    Ok(())
+}
+
+fn append_background_columns(
+    input: &RietveldInput,
+    layout: &RietveldParameterLayout,
+    explicit_columns: &mut Vec<(usize, Vec<f64>)>,
+) -> Result<(), RietveldGeneralObjectiveError> {
+    if layout.background_indices().is_empty() {
+        return Ok(());
+    }
+    let background = input
+        .background
+        .as_ref()
+        .ok_or(RietveldGeneralParameterError::MissingBackground)?;
+    let basis = background.basis(&input.pattern.x_deg)?;
+    if basis.columns != layout.background_indices().len()
+        || basis.rows != input.pattern.sample_count()
+    {
+        return Err(RietveldGeneralObjectiveError::BackgroundDerivativeShape);
+    }
+    for (column_index, parameter_index) in layout.background_indices().iter().enumerate() {
+        explicit_columns.push((
+            *parameter_index,
+            basis
+                .column(column_index)
+                .ok_or(RietveldGeneralObjectiveError::BackgroundDerivativeShape)?,
+        ));
+    }
+    Ok(())
+}
+
+fn sample_physics_global_start(input: &RietveldInput) -> usize {
+    7 + usize::from(input.position_correction.bragg_brentano_mm.is_some())
+        + 2 * usize::from(
+            input
+                .position_correction
+                .debye_scherrer_micrometre
+                .is_some(),
+        )
+        + 2 * usize::from(input.axial_geometry.is_some())
+}
+
 fn instrument_global_row(
     input: &RietveldInput,
     parameter: RietveldInstrumentParameter,
@@ -274,6 +429,8 @@ pub enum RietveldGeneralObjectiveError {
     Structural(RietveldObjectiveError),
     /// Request/calculation state is invalid.
     Rietveld(RietveldError),
+    /// Lattice-to-sample derivative mapping failed.
+    Lattice(LatticeError),
     /// Engine did not expose required global derivatives.
     MissingGlobalDerivatives,
     /// An engine global derivative matrix has an unexpected shape.
@@ -292,6 +449,7 @@ impl Display for RietveldGeneralObjectiveError {
             Self::Parameter(error) => Display::fmt(error, formatter),
             Self::Structural(error) => Display::fmt(error, formatter),
             Self::Rietveld(error) => Display::fmt(error, formatter),
+            Self::Lattice(error) => Display::fmt(error, formatter),
             Self::MissingGlobalDerivatives => {
                 formatter.write_str("native engine omitted Rietveld global derivatives")
             }
@@ -317,6 +475,7 @@ impl Error for RietveldGeneralObjectiveError {
             Self::Parameter(error) => Some(error),
             Self::Structural(error) => Some(error),
             Self::Rietveld(error) => Some(error),
+            Self::Lattice(error) => Some(error),
             Self::MissingGlobalDerivatives
             | Self::GlobalDerivativeShape
             | Self::BackgroundDerivativeShape
@@ -339,6 +498,11 @@ impl From<RietveldObjectiveError> for RietveldGeneralObjectiveError {
 impl From<RietveldError> for RietveldGeneralObjectiveError {
     fn from(value: RietveldError) -> Self {
         Self::Rietveld(value)
+    }
+}
+impl From<LatticeError> for RietveldGeneralObjectiveError {
+    fn from(value: LatticeError) -> Self {
+        Self::Lattice(value)
     }
 }
 impl From<crate::BackgroundError> for RietveldGeneralObjectiveError {

@@ -33,10 +33,11 @@ reflection topology.
 It uses scaled conjugate gradients and deterministic backtracking over the
 matrix-free objective, with shared cancellation, budgets, events, accepted
 history, and restart checkpoints. Dynamic cells regenerate HKLs and
-multiplicities after bounded motion, transfer sample-physics arrays by stable
-reflection ID, and record added/removed families on accepted history rows.
-Instrument/background/sample-physics parameter families remain on the native
-migration path; until those land, the Python orchestrator remains the complete
+multiplicities after bounded motion and record added/removed families on
+accepted history rows. Attached built-in sample-physics records are evaluated
+again for the accepted cell and reflection list, rather than relying on stale
+transferred arrays. The constraint-aware complete solver remains on the native
+migration path; until it lands, the Python orchestrator remains the complete
 script-facing implementation.
 
 An optional native `BackgroundModel` may already be attached to the request.
@@ -46,11 +47,14 @@ motion are introduced by the general native parameter layout.
 
 That general layout now covers CW U/V/W/X/Y, wavelength, zero shift,
 Bragg--Brentano displacement, Debye--Scherrer X/Y displacement, every attached
-background coefficient, and all structural families. Its complete JVP/VJP
-reuses matrix-free structural products and only stores the small global and
-background columns. Wavelength installation updates matching correction models
-and guarded domains atomically. Native sample-physics model records and the
-constraint-aware solver entry point remain the next migration slices.
+background coefficient, built-in isotropic size, isotropic microstrain,
+March--Dollase ratio, and all structural families. Sample parameters use stable
+phase-owned keys. March--Dollase cell chains pass through the setting-aware
+lattice transform, including all six reciprocal-metric derivatives. Its
+complete JVP/VJP reuses matrix-free structural products and only stores the
+small global, sample, and background columns. Wavelength installation updates
+matching correction models and guarded domains atomically. The
+constraint-aware solver entry point remains the next migration slice.
 
 ## Objective and numerical method
 

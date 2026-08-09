@@ -16,6 +16,7 @@ mod rietveld_objective;
 mod rietveld_parameters;
 mod rietveld_solver;
 mod runtime;
+mod sample_physics;
 
 pub use backgrounds::{
     AmorphousBackground, AmorphousPeak, BackgroundBasis, BackgroundError, BackgroundModel,
@@ -66,4 +67,7 @@ pub use runtime::{
     CancellationError, CancellationToken, CheckpointSink, DiagnosticValue, MonotonicClock,
     RefinementEvent, RefinementEventKind, RefinementEventSink, RefinementLimits, RefinementRuntime,
     RefinementStop, RuntimeClock, RuntimeError, TerminationReason,
+};
+pub use sample_physics::{
+    EvaluatedSamplePhysics, RietveldSamplePhysicsModel, SamplePhysicsError, SamplePhysicsParameter,
 };

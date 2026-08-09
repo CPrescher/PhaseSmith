@@ -15,8 +15,8 @@ use phasesmith_model::{PatternRecord, RecordId};
 use phasesmith_workflows::{
     LatticeBounds, LatticeParameterization, LatticeReflectionDomain, ParameterSet,
     RefinementLimits, RietveldCalculationOptions, RietveldCheckpoint, RietveldInput, RietveldPhase,
-    RietveldRefinementOptions, RietveldStructuralLayout, RietveldStructuralSelection,
-    TerminationReason, refine_rietveld,
+    RietveldRefinementOptions, RietveldSamplePhysicsModel, RietveldStructuralLayout,
+    RietveldStructuralSelection, TerminationReason, calculate_rietveld_pattern, refine_rietveld,
 };
 
 fn instrument() -> ConstantWavelengthInstrument {
@@ -193,6 +193,62 @@ fn regeneration_transfers_all_sample_physics_arrays_by_stable_id() {
         }
     }
     assert!(saw_added || moved.reflection_ids().len() < initial.reflection_ids().len());
+}
+
+#[test]
+fn regeneration_re_evaluates_attached_models_for_the_new_reflection_batch() {
+    let (reflection_domain, bounds) = domain(1.001);
+    let initial = phase(reference_cell(), reflection_domain).with_sample_physics(
+        RietveldSamplePhysicsModel::IsotropicSize {
+            crystallite_size_nm: 65.0,
+            shape_factor: 0.9,
+        },
+    );
+    let moved = changed_phase(&initial, &bounds);
+    let reflection_count = moved.reflection_ids().len();
+    let x_deg = (0..1_401)
+        .map(|index| 15.0 + f64::from(index) * 0.06)
+        .collect::<Vec<_>>();
+    let input = RietveldInput::new(
+        PatternRecord::new(
+            x_deg.clone(),
+            Some(vec![0.0; x_deg.len()]),
+            None,
+            None,
+            Some(vec![0.0; x_deg.len()]),
+        )
+        .unwrap(),
+        instrument(),
+        None,
+        MonochromaticPositionCorrection {
+            zero_shift_deg: 0.0,
+            bragg_brentano_mm: None,
+            debye_scherrer_micrometre: None,
+        },
+        vec![moved],
+    )
+    .unwrap();
+    let calculation = calculate_rietveld_pattern(
+        &input,
+        &RietveldCalculationOptions::new(20.0, false, ExecutionPolicy::new(Some(1), 1).unwrap())
+            .unwrap(),
+    )
+    .unwrap();
+    assert_eq!(
+        calculation.phases[0].result.two_theta_deg.len(),
+        reflection_count
+    );
+    assert_eq!(
+        calculation.phases[0]
+            .result
+            .accumulation
+            .derivatives
+            .global
+            .as_ref()
+            .unwrap()
+            .parameter_count,
+        8
+    );
 }
 
 #[test]

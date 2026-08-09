@@ -329,3 +329,15 @@ structural layout. The complete objective keeps structural products matrix-free
 and materializes only the small experiment/background columns already emitted
 by the engine. Full accepted-state installation updates instrument, correction,
 guarded wavelength topology, background, and phases through stable keys.
+
+Built-in native Rietveld sample physics completed next. Phase-owned Rust
+records now cover isotropic size, isotropic microstrain, March--Dollase
+preferred orientation, and ordered composition. They evaluate against the
+engine's exact corrected reflection geometry, regenerate with dynamic
+reflection topology, expose stable refinable scalar records, and install
+accepted values without Python. Analytical parameter, position, and all six
+March reciprocal-metric cell chains feed the complete matrix-free objective;
+composition follows additive width and multiplicative intensity product rules.
+Centered-difference, adjoint, topology, mixed-phase, and configured
+Rust-versus-Python tests cover the boundary. The constraint-aware complete
+solver is the next Rietveld substep.

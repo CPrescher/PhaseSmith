@@ -10,6 +10,7 @@ use crate::{
     BackgroundError, DifferentiableBackground, LatticeBounds, ParameterBounds, ParameterError,
     ParameterKey, ParameterSet, ParameterSpec, RietveldError, RietveldInput,
     RietveldParameterError, RietveldStructuralLayout, RietveldStructuralSelection,
+    SamplePhysicsError,
 };
 
 /// Supported built-in monochromatic instrument and position parameters.
@@ -103,9 +104,6 @@ impl RietveldParameterSelection {
         {
             return Err(RietveldGeneralParameterError::DuplicateInstrumentParameter);
         }
-        if self.sample_physics {
-            return Err(RietveldGeneralParameterError::SamplePhysicsNotConfigured);
-        }
         Ok(())
     }
 }
@@ -119,6 +117,14 @@ pub struct RietveldParameterLayout {
     instrument: Vec<(RietveldInstrumentParameter, usize)>,
     background_indices: Vec<usize>,
     background_id: Option<String>,
+    sample_physics: Vec<SamplePhysicsMapping>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct SamplePhysicsMapping {
+    phase_index: usize,
+    name: String,
+    parameter_index: usize,
 }
 
 impl RietveldParameterLayout {
@@ -177,6 +183,30 @@ impl RietveldParameterLayout {
                 background_indices.push(index);
             }
         }
+        let mut sample_physics = Vec::new();
+        if selection.sample_physics {
+            for (phase_index, phase) in input.phases.iter().enumerate() {
+                let Some(model) = phase.sample_physics() else {
+                    continue;
+                };
+                for parameter in model.parameters()? {
+                    let parameter_index = specs.len();
+                    specs.push(ParameterSpec::new(
+                        ParameterKey::new("sample", phase.phase_id().as_str(), &parameter.name)?,
+                        parameter.value,
+                        parameter.unit,
+                        parameter.bounds,
+                        parameter.scale,
+                        true,
+                    )?);
+                    sample_physics.push(SamplePhysicsMapping {
+                        phase_index,
+                        name: parameter.name,
+                        parameter_index,
+                    });
+                }
+            }
+        }
         let structural_indices = structural
             .parameters()
             .specs()
@@ -194,6 +224,7 @@ impl RietveldParameterLayout {
             instrument,
             background_indices,
             background_id,
+            sample_physics,
         })
     }
 
@@ -255,6 +286,16 @@ impl RietveldParameterLayout {
         &self.background_indices
     }
 
+    pub(crate) fn sample_physics_indices(&self) -> impl Iterator<Item = (usize, &str, usize)> {
+        self.sample_physics.iter().map(|mapping| {
+            (
+                mapping.phase_index,
+                mapping.name.as_str(),
+                mapping.parameter_index,
+            )
+        })
+    }
+
     /// Install complete bounded physical values into a cloned request.
     ///
     /// # Errors
@@ -314,6 +355,27 @@ impl RietveldParameterLayout {
                 .map(|index| values[*index])
                 .collect::<Vec<_>>();
             updated.background = Some(background.replace_coefficients(&coefficients)?);
+        }
+        for phase_index in 0..updated.phases.len() {
+            let mappings = self
+                .sample_physics
+                .iter()
+                .filter(|mapping| mapping.phase_index == phase_index)
+                .collect::<Vec<_>>();
+            if mappings.is_empty() {
+                continue;
+            }
+            let model = updated.phases[phase_index]
+                .sample_physics()
+                .ok_or_else(|| RietveldGeneralParameterError::MissingSamplePhysics {
+                    phase_id: updated.phases[phase_index].phase_id().to_string(),
+                })?;
+            let replacements = mappings
+                .into_iter()
+                .map(|mapping| (mapping.name.clone(), values[mapping.parameter_index]))
+                .collect();
+            updated.phases[phase_index] = updated.phases[phase_index]
+                .replace_sample_physics(model.replace_parameters(&replacements)?);
         }
         updated.validate()?;
         Ok(updated)
@@ -436,8 +498,11 @@ fn install_instrument_value(
 pub enum RietveldGeneralParameterError {
     /// One instrument parameter was selected more than once.
     DuplicateInstrumentParameter,
-    /// Sample-physics selection requires native model records not yet attached.
-    SamplePhysicsNotConfigured,
+    /// A phase lost the built-in model recorded by this parameter layout.
+    MissingSamplePhysics {
+        /// Stable phase missing a model record.
+        phase_id: String,
+    },
     /// Background selection requires an attached analytical model.
     MissingBackground,
     /// A selected position parameter does not match the configured geometry.
@@ -456,6 +521,8 @@ pub enum RietveldGeneralParameterError {
     Rietveld(RietveldError),
     /// Background replacement failed.
     Background(BackgroundError),
+    /// Built-in sample-physics state is invalid.
+    SamplePhysics(SamplePhysicsError),
 }
 
 impl Display for RietveldGeneralParameterError {
@@ -464,9 +531,10 @@ impl Display for RietveldGeneralParameterError {
             Self::DuplicateInstrumentParameter => {
                 formatter.write_str("Rietveld instrument selections must be unique")
             }
-            Self::SamplePhysicsNotConfigured => {
-                formatter.write_str("native sample-physics parameter records are not configured")
-            }
+            Self::MissingSamplePhysics { phase_id } => write!(
+                formatter,
+                "sample-physics model for phase {phase_id:?} changed under the parameter layout"
+            ),
             Self::MissingBackground => {
                 formatter.write_str("background refinement requires an analytical background")
             }
@@ -485,6 +553,7 @@ impl Display for RietveldGeneralParameterError {
             Self::Structural(error) => Display::fmt(error, formatter),
             Self::Rietveld(error) => Display::fmt(error, formatter),
             Self::Background(error) => Display::fmt(error, formatter),
+            Self::SamplePhysics(error) => Display::fmt(error, formatter),
         }
     }
 }
@@ -496,8 +565,9 @@ impl Error for RietveldGeneralParameterError {
             Self::Structural(error) => Some(error),
             Self::Rietveld(error) => Some(error),
             Self::Background(error) => Some(error),
+            Self::SamplePhysics(error) => Some(error),
             Self::DuplicateInstrumentParameter
-            | Self::SamplePhysicsNotConfigured
+            | Self::MissingSamplePhysics { .. }
             | Self::MissingBackground
             | Self::InstrumentGeometryMismatch
             | Self::BackgroundIdentityMismatch
@@ -525,5 +595,10 @@ impl From<RietveldError> for RietveldGeneralParameterError {
 impl From<BackgroundError> for RietveldGeneralParameterError {
     fn from(value: BackgroundError) -> Self {
         Self::Background(value)
+    }
+}
+impl From<SamplePhysicsError> for RietveldGeneralParameterError {
+    fn from(value: SamplePhysicsError) -> Self {
+        Self::SamplePhysics(value)
     }
 }

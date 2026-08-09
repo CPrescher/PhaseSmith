@@ -189,11 +189,19 @@ impl PreparedRietveldObjective {
             &[PreparedStructuralModelInputView<'_>],
         ) -> Result<R, StructuralMultiphaseError>,
     ) -> Result<R, RietveldObjectiveError> {
-        let views = self
+        let owned = self
             .input
             .phases
             .iter()
-            .map(|phase| vec![phase.contributions().as_view()])
+            .map(|phase| {
+                phase
+                    .resolved_sample_physics(self.input.instrument, self.input.position_correction)
+                    .map(|value| vec![value.0])
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+        let views = owned
+            .iter()
+            .map(|phase| phase.iter().map(|item| item.as_view()).collect::<Vec<_>>())
             .collect::<Vec<_>>();
         let inputs = views
             .iter()

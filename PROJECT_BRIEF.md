@@ -164,8 +164,14 @@ zero/sample-position, and analytical-background columns. Stable physical keys,
 bounds and scales use instrument/background/structural order; accepted value
 installation updates the full owned request, including wavelength-coupled
 correction/domain state. Rust tests check centered differences and the complete
-JVP/VJP adjoint identity. Built-in sample-physics model records and the
-constraint-aware solver wrapper remain next.
+JVP/VJP adjoint identity. Built-in phase-owned sample-physics records now add
+isotropic size, isotropic microstrain, March--Dollase, and ordered composition
+without Python. They use exact corrected reflection geometry, re-evaluate after
+dynamic topology changes, and contribute analytical scalar, position, and all
+six reciprocal-metric cell chains to the general objective. Native finite
+differences, adjoint products, and a configured Python differential cover the
+new values and derivative arrays. The constraint-aware solver wrapper remains
+next.
 
 Unit 17 now includes the first full monochromatic CIF-backed Rietveld vertical
 slice. Typed profile/background/phase/lattice/site parameter families map

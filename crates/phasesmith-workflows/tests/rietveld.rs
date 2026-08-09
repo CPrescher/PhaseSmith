@@ -16,7 +16,7 @@ use phasesmith_execution::ExecutionPolicy;
 use phasesmith_model::{PatternRecord, RecordId};
 use phasesmith_workflows::{
     BackgroundModel, PolynomialBackground, RietveldCalculationOptions, RietveldError,
-    RietveldInput, RietveldPhase, calculate_rietveld_pattern,
+    RietveldInput, RietveldPhase, RietveldSamplePhysicsModel, calculate_rietveld_pattern,
 };
 
 fn instrument() -> ConstantWavelengthInstrument {
@@ -135,6 +135,52 @@ fn input(pattern: PatternRecord, phases: Vec<RietveldPhase>) -> RietveldInput {
         phases,
     )
     .expect("input")
+}
+
+#[test]
+fn attached_native_sample_model_drives_calculation_and_derivative_rows() {
+    let x_deg = (0..4_001)
+        .map(|index| 10.0 + f64::from(index) * 0.03)
+        .collect::<Vec<_>>();
+    let pattern = PatternRecord::new(
+        x_deg.clone(),
+        Some(vec![0.0; x_deg.len()]),
+        None,
+        None,
+        Some(vec![0.0; x_deg.len()]),
+    )
+    .unwrap();
+    let neutral = calculate_rietveld_pattern(
+        &input(pattern.clone(), vec![phase("alpha", 1.0)]),
+        &options(1),
+    )
+    .unwrap();
+    let physical_phase =
+        phase("alpha", 1.0).with_sample_physics(RietveldSamplePhysicsModel::Composite(vec![
+            RietveldSamplePhysicsModel::IsotropicSize {
+                crystallite_size_nm: 55.0,
+                shape_factor: 0.9,
+            },
+            RietveldSamplePhysicsModel::IsotropicMicrostrain {
+                rms_microstrain: 8.0e-4,
+            },
+        ]));
+    let physical =
+        calculate_rietveld_pattern(&input(pattern, vec![physical_phase]), &options(1)).unwrap();
+    assert_ne!(physical.profile_y, neutral.profile_y);
+    let global = physical.phases[0]
+        .result
+        .accumulation
+        .derivatives
+        .global
+        .as_ref()
+        .unwrap();
+    assert_eq!(global.parameter_count, 9);
+    assert!(
+        global.values[7 * global.sample_count..]
+            .iter()
+            .any(|value| *value != 0.0)
+    );
 }
 
 #[test]

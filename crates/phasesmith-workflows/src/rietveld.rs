@@ -12,7 +12,7 @@ use phasesmith_engine::{
     MonochromaticPositionCorrection, PreparedStructuralModel, PreparedStructuralMultiphase,
     PreparedStructuralPhase, StructuralCalculationRequest, StructuralModelInput,
     StructuralMultiphaseError, StructuralPatternError, StructuralPatternResult,
-    StructuralPhaseDefinition,
+    StructuralPhaseDefinition, calculate_monochromatic_reflection_geometry,
 };
 use phasesmith_execution::ExecutionPolicy;
 use phasesmith_model::{DomainError, PatternRecord, RecordId};
@@ -20,7 +20,7 @@ use phasesmith_model::{DomainError, PatternRecord, RecordId};
 use crate::{
     BackgroundError, BackgroundModel, DifferentiableBackground, LatticeError,
     LatticeReflectionDomain, ResidualError, ResidualEvaluation, ResidualOptions,
-    evaluate_residuals,
+    RietveldSamplePhysicsModel, SamplePhysicsError, evaluate_residuals,
 };
 
 /// One owned monochromatic structural phase and its sample-physics inputs.
@@ -32,6 +32,7 @@ pub struct RietveldPhase {
     reflection_ids: Vec<String>,
     definition: StructuralPhaseDefinition,
     contributions: OwnedCwContributions,
+    sample_physics: Option<RietveldSamplePhysicsModel>,
     reflection_domain: Option<LatticeReflectionDomain>,
 }
 
@@ -80,6 +81,7 @@ impl RietveldPhase {
             reflection_ids,
             definition,
             contributions,
+            sample_physics: None,
             reflection_domain: None,
         };
         phase.validate()?;
@@ -113,6 +115,7 @@ impl RietveldPhase {
             site_ids,
             reflection_ids: generated.reflection_ids,
             contributions: OwnedCwContributions::neutral(definition.hkl.len()),
+            sample_physics: None,
             definition,
             reflection_domain: Some(reflection_domain),
         };
@@ -202,6 +205,54 @@ impl RietveldPhase {
     #[must_use]
     pub const fn contributions(&self) -> &OwnedCwContributions {
         &self.contributions
+    }
+
+    /// Borrow the optional built-in sample-physics model record.
+    #[must_use]
+    pub const fn sample_physics(&self) -> Option<&RietveldSamplePhysicsModel> {
+        self.sample_physics.as_ref()
+    }
+
+    /// Attach one built-in sample-physics model to this phase.
+    ///
+    /// The static contribution batch is retained only as the fixed-provider
+    /// fallback and is not composed with the built-in model.
+    #[must_use]
+    pub fn with_sample_physics(mut self, model: RietveldSamplePhysicsModel) -> Self {
+        self.sample_physics = Some(model);
+        self
+    }
+
+    pub(crate) fn replace_sample_physics(&self, model: RietveldSamplePhysicsModel) -> Self {
+        let mut phase = self.clone();
+        phase.sample_physics = Some(model);
+        phase
+    }
+
+    pub(crate) fn resolved_sample_physics(
+        &self,
+        instrument: ConstantWavelengthInstrument,
+        position_correction: MonochromaticPositionCorrection,
+    ) -> Result<(OwnedCwContributions, Vec<String>), RietveldError> {
+        let Some(model) = &self.sample_physics else {
+            return Ok((self.contributions.clone(), Vec::new()));
+        };
+        let geometry = calculate_monochromatic_reflection_geometry(
+            self.definition.cell,
+            &self.definition.hkl,
+            instrument,
+            position_correction,
+        )
+        .map_err(RietveldError::StructuralPattern)?;
+        let evaluated = model
+            .evaluate(
+                &self.definition.hkl,
+                &geometry.two_theta_deg,
+                self.definition.cell,
+                instrument.wavelength_angstrom,
+            )
+            .map_err(RietveldError::SamplePhysics)?;
+        Ok((evaluated.contributions, evaluated.parameter_names))
     }
 
     /// Replace sample-physics contributions without changing phase topology.
@@ -306,6 +357,10 @@ impl RietveldPhase {
                 == requested.definition.coordinate_tolerance.to_bits()
             && self.definition.scattering_model == requested.definition.scattering_model
             && self.definition.correction_model == requested.definition.correction_model
+            && sample_physics_identity_matches(
+                self.sample_physics.as_ref(),
+                requested.sample_physics.as_ref(),
+            )
             && self.reflection_domain == requested.reflection_domain
             && (self.reflection_domain.is_some()
                 || (self.reflection_ids == requested.reflection_ids
@@ -362,6 +417,62 @@ impl RietveldPhase {
                 wavelength_angstrom,
             } => Some(wavelength_angstrom),
         }
+    }
+}
+
+fn sample_physics_identity_matches(
+    left: Option<&RietveldSamplePhysicsModel>,
+    right: Option<&RietveldSamplePhysicsModel>,
+) -> bool {
+    match (left, right) {
+        (None, None) => true,
+        (Some(left), Some(right)) => sample_physics_model_identity_matches(left, right),
+        _ => false,
+    }
+}
+
+fn sample_physics_model_identity_matches(
+    left: &RietveldSamplePhysicsModel,
+    right: &RietveldSamplePhysicsModel,
+) -> bool {
+    match (left, right) {
+        (
+            RietveldSamplePhysicsModel::IsotropicSize {
+                shape_factor: left, ..
+            },
+            RietveldSamplePhysicsModel::IsotropicSize {
+                shape_factor: right,
+                ..
+            },
+        ) => left.to_bits() == right.to_bits(),
+        (
+            RietveldSamplePhysicsModel::IsotropicMicrostrain { .. },
+            RietveldSamplePhysicsModel::IsotropicMicrostrain { .. },
+        ) => true,
+        (
+            RietveldSamplePhysicsModel::MarchDollase {
+                preferred_axis_hkl: left,
+                ..
+            },
+            RietveldSamplePhysicsModel::MarchDollase {
+                preferred_axis_hkl: right,
+                ..
+            },
+        ) => left
+            .iter()
+            .zip(right)
+            .all(|(left, right)| left.to_bits() == right.to_bits()),
+        (
+            RietveldSamplePhysicsModel::Composite(left),
+            RietveldSamplePhysicsModel::Composite(right),
+        ) => {
+            left.len() == right.len()
+                && left
+                    .iter()
+                    .zip(right)
+                    .all(|(left, right)| sample_physics_model_identity_matches(left, right))
+        }
+        _ => false,
     }
 }
 
@@ -494,6 +605,7 @@ impl RietveldInput {
         let mut identities = std::collections::BTreeSet::new();
         for phase in &self.phases {
             phase.validate()?;
+            phase.resolved_sample_physics(self.instrument, self.position_correction)?;
             if phase.correction_wavelength().is_some_and(|wavelength| {
                 wavelength.to_bits() != self.instrument.wavelength_angstrom.to_bits()
             }) {
@@ -680,16 +792,24 @@ pub fn calculate_rietveld_pattern(
         .collect::<Result<Vec<_>, _>>()?;
     let prepared = PreparedStructuralMultiphase::new(models, options.execution.clone())
         .map_err(RietveldError::StructuralMultiphase)?;
+    let contributions = input
+        .phases
+        .iter()
+        .map(|phase| {
+            phase
+                .resolved_sample_physics(input.instrument, input.position_correction)
+                .map(|value| value.0)
+        })
+        .collect::<Result<Vec<_>, _>>()?;
     let request = StructuralCalculationRequest {
         x_deg: input.pattern.x_deg.clone(),
         instrument: input.instrument,
         axial_geometry: input.axial_geometry,
         position_correction: input.position_correction,
-        phase_inputs: input
-            .phases
-            .iter()
-            .map(|phase| StructuralModelInput {
-                contributions: vec![phase.contributions.clone()],
+        phase_inputs: contributions
+            .into_iter()
+            .map(|contributions| StructuralModelInput {
+                contributions: vec![contributions],
             })
             .collect(),
         support: SupportPolicy::FwhmMultiple(options.support_fwhm),
@@ -787,6 +907,8 @@ pub enum RietveldError {
     Lattice(LatticeError),
     /// Stable-ID contribution transfer produced invalid arrays.
     Contributions(CwContributionsError),
+    /// Built-in sample-physics evaluation failed.
+    SamplePhysics(SamplePhysicsError),
     /// Residual evaluation failed.
     Residual(ResidualError),
     /// Analytical background evaluation failed.
@@ -834,6 +956,7 @@ impl Display for RietveldError {
             Self::StructuralMultiphase(error) => Display::fmt(error, formatter),
             Self::Lattice(error) => Display::fmt(error, formatter),
             Self::Contributions(error) => Display::fmt(error, formatter),
+            Self::SamplePhysics(error) => Display::fmt(error, formatter),
             Self::Residual(error) => Display::fmt(error, formatter),
             Self::Background(error) => Display::fmt(error, formatter),
             Self::InvalidOptions => formatter.write_str("Rietveld calculation options are invalid"),
@@ -852,6 +975,7 @@ impl Error for RietveldError {
             Self::StructuralMultiphase(error) => Some(error),
             Self::Lattice(error) => Some(error),
             Self::Contributions(error) => Some(error),
+            Self::SamplePhysics(error) => Some(error),
             Self::Residual(error) => Some(error),
             Self::Background(error) => Some(error),
             Self::MissingObservations

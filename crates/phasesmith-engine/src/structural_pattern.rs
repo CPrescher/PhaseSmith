@@ -36,6 +36,59 @@ pub struct MonochromaticPositionCorrection {
     pub debye_scherrer_micrometre: Option<(f64, f64, f64)>,
 }
 
+/// Reflection geometry needed by built-in sample-physics providers.
+#[derive(Clone, Debug, PartialEq)]
+pub struct MonochromaticReflectionGeometry {
+    /// Reflection d-spacings in ångströms.
+    pub d_spacing_angstrom: Vec<f64>,
+    /// Corrected reflection positions in degrees `2theta`.
+    pub two_theta_deg: Vec<f64>,
+}
+
+/// Calculate corrected monochromatic reflection positions without profiles.
+///
+/// # Errors
+///
+/// Returns [`StructuralPatternError`] for invalid cell, wavelength, position
+/// correction, or inaccessible reflections.
+pub fn calculate_monochromatic_reflection_geometry(
+    cell: UnitCell,
+    hkl: &[[i32; 3]],
+    instrument: ConstantWavelengthInstrument,
+    position_correction: MonochromaticPositionCorrection,
+) -> Result<MonochromaticReflectionGeometry, StructuralPatternError> {
+    instrument
+        .validate()
+        .map_err(StructuralPatternError::InvalidInstrument)?;
+    validate_position_correction(position_correction)?;
+    let geometry = cell
+        .geometry()
+        .map_err(StructureFactorBatchError::Cell)
+        .map_err(StructuralPatternError::StructureFactor)?;
+    let mut d_spacing_angstrom = Vec::with_capacity(hkl.len());
+    let mut two_theta_deg = Vec::with_capacity(hkl.len());
+    for &reflection in hkl {
+        let q_value = geometry.q_squared(reflection);
+        if !q_value.is_finite() || q_value <= 0.0 {
+            return Err(StructuralPatternError::ReflectionOutsideAngularDomain);
+        }
+        let root_q = q_value.sqrt();
+        let sin_theta = 0.5 * instrument.wavelength_angstrom * root_q;
+        if !(0.0..1.0).contains(&sin_theta) {
+            return Err(StructuralPatternError::ReflectionOutsideAngularDomain);
+        }
+        d_spacing_angstrom.push(root_q.recip());
+        two_theta_deg.push(
+            corrected_monochromatic_position(2.0 * sin_theta.asin(), position_correction)
+                .position_deg,
+        );
+    }
+    Ok(MonochromaticReflectionGeometry {
+        d_spacing_angstrom,
+        two_theta_deg,
+    })
+}
+
 /// Built-in native scattering model selected without a Python callback.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum BuiltInScatteringModel {
@@ -1099,6 +1152,35 @@ mod tests {
         for (left, right) in neutral.accumulation.y.iter().zip(&doubled.accumulation.y) {
             assert!((2.0 * left - right).abs() < 2.0e-15 * right.abs().max(1.0));
         }
+    }
+
+    #[test]
+    fn reflection_geometry_helper_matches_the_fused_structural_positions() {
+        let x = (0..9_001)
+            .map(|index| 10.0 + f64::from(index) * 0.01)
+            .collect::<Vec<_>>();
+        let hkl = [[1, 0, 1], [2, 1, 1], [1, 2, 3]];
+        let correction = MonochromaticPositionCorrection {
+            zero_shift_deg: 0.0,
+            bragg_brentano_mm: None,
+            debye_scherrer_micrometre: None,
+        };
+        let fused = calculate_case(
+            cell(),
+            &x,
+            &hkl,
+            &[2, 4, 2],
+            &[[0.17, 0.23, 0.31], [0.37, 0.11, 0.19]],
+            &[0.82, 0.55],
+            &[0.012, 0.018],
+            1.4,
+            &[1.0; 3],
+        );
+        let geometry =
+            calculate_monochromatic_reflection_geometry(cell(), &hkl, instrument(), correction)
+                .unwrap();
+        assert_eq!(geometry.d_spacing_angstrom, fused.d_spacing_angstrom);
+        assert_eq!(geometry.two_theta_deg, fused.two_theta_deg);
     }
 
     #[test]

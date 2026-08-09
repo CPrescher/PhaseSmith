@@ -9,10 +9,11 @@ use phasesmith_execution::ExecutionPolicy;
 use phasesmith_io::space_group_by_number;
 use phasesmith_model::{PatternRecord, RecordId};
 use phasesmith_workflows::{
-    BackgroundModel, DifferentiableBackground, PolynomialBackground,
-    PreparedGeneralRietveldObjective, RietveldCalculationOptions, RietveldInput,
-    RietveldInstrumentParameter, RietveldParameterLayout, RietveldParameterSelection,
-    RietveldPhase, RietveldStructuralSelection, calculate_rietveld_pattern,
+    BackgroundModel, DifferentiableBackground, LatticeBounds, LatticeParameterization,
+    PolynomialBackground, PreparedGeneralRietveldObjective, RietveldCalculationOptions,
+    RietveldInput, RietveldInstrumentParameter, RietveldParameterLayout,
+    RietveldParameterSelection, RietveldPhase, RietveldSamplePhysicsModel,
+    RietveldStructuralSelection, calculate_rietveld_pattern,
 };
 
 fn phase(scale: f64) -> RietveldPhase {
@@ -97,6 +98,26 @@ fn selection() -> RietveldParameterSelection {
         false,
     )
     .unwrap()
+}
+
+fn with_sample_physics(mut input: RietveldInput) -> RietveldInput {
+    input.phases[0] =
+        input.phases[0]
+            .clone()
+            .with_sample_physics(RietveldSamplePhysicsModel::Composite(vec![
+                RietveldSamplePhysicsModel::IsotropicSize {
+                    crystallite_size_nm: 70.0,
+                    shape_factor: 0.9,
+                },
+                RietveldSamplePhysicsModel::IsotropicMicrostrain {
+                    rms_microstrain: 7.0e-4,
+                },
+                RietveldSamplePhysicsModel::MarchDollase {
+                    ratio: 0.82,
+                    preferred_axis_hkl: [1.0, 0.3, -0.2],
+                },
+            ]));
+    input
 }
 
 fn options() -> RietveldCalculationOptions {
@@ -210,6 +231,181 @@ fn complete_jvp_matches_centered_differences_and_vjp_is_adjoint() {
 }
 
 #[test]
+fn sample_physics_layout_installation_and_complete_products_are_analytical() {
+    let input = with_sample_physics(input());
+    let selection = RietveldParameterSelection::new(
+        RietveldStructuralSelection {
+            phase_scale: true,
+            ..RietveldStructuralSelection::default()
+        },
+        Vec::new(),
+        false,
+        true,
+    )
+    .unwrap();
+    let layout = RietveldParameterLayout::new(&input, &selection, &[None]).unwrap();
+    let labels = layout
+        .parameters()
+        .specs()
+        .iter()
+        .map(|spec| spec.key().label())
+        .collect::<Vec<_>>();
+    assert_eq!(
+        labels,
+        [
+            "sample[alpha].isotropic_size.crystallite_size_nm",
+            "sample[alpha].isotropic_microstrain.rms",
+            "sample[alpha].march_dollase.ratio",
+            "phase[alpha].scale",
+        ]
+    );
+    let values = layout
+        .parameters()
+        .specs()
+        .iter()
+        .map(phasesmith_workflows::ParameterSpec::value)
+        .collect::<Vec<_>>();
+    let direction = [8.0, 2.0e-4, 0.1, 0.2];
+    let objective =
+        PreparedGeneralRietveldObjective::new(input.clone(), options(), layout.clone()).unwrap();
+    let (_, analytical) = objective.jvp(&direction).unwrap();
+    let step = 1.0e-5;
+    let shifted = |sign: f64| {
+        values
+            .iter()
+            .zip(direction)
+            .map(|(value, direction)| value + sign * step * direction)
+            .collect::<Vec<_>>()
+    };
+    let plus = calculate_rietveld_pattern(
+        &layout.apply_values(&input, &shifted(1.0)).unwrap(),
+        &options(),
+    )
+    .unwrap();
+    let minus = calculate_rietveld_pattern(
+        &layout.apply_values(&input, &shifted(-1.0)).unwrap(),
+        &options(),
+    )
+    .unwrap();
+    for (index, ((plus, minus), analytical)) in
+        plus.y.iter().zip(&minus.y).zip(&analytical).enumerate()
+    {
+        let numerical = (plus - minus) / (2.0 * step);
+        assert!(
+            (numerical - analytical).abs() <= 8.0e-5 * numerical.abs().max(1.0),
+            "sample {index}: numerical={numerical:.12e}, analytical={analytical:.12e}"
+        );
+    }
+    let installed = layout.apply_values(&input, &shifted(1.0)).unwrap();
+    let installed_parameters = installed.phases[0]
+        .sample_physics()
+        .unwrap()
+        .parameters()
+        .unwrap();
+    assert_eq!(
+        installed_parameters[0].value.to_bits(),
+        shifted(1.0)[0].to_bits()
+    );
+
+    let weights = (0..input.pattern.sample_count())
+        .map(|index| (f64::from(u32::try_from(index).unwrap()) * 0.13).cos())
+        .collect::<Vec<_>>();
+    let reverse = objective.vjp(&weights).unwrap();
+    let left = analytical
+        .iter()
+        .zip(&weights)
+        .map(|(left, right)| left * right)
+        .sum::<f64>();
+    let right = direction
+        .iter()
+        .zip(reverse)
+        .map(|(left, right)| left * right)
+        .sum::<f64>();
+    assert!((left - right).abs() <= 2.0e-10 * left.abs().max(1.0));
+}
+
+#[test]
+fn march_cell_chain_is_included_in_general_lattice_products() {
+    let mut input = input();
+    let mut definition = input.phases[0].definition().clone();
+    definition.space_group = space_group_by_number(1).unwrap().space_group;
+    definition.cell = UnitCell {
+        a_angstrom: 4.1,
+        b_angstrom: 4.8,
+        c_angstrom: 5.7,
+        alpha_deg: 82.0,
+        beta_deg: 96.0,
+        gamma_deg: 74.0,
+    };
+    input.phases[0] = RietveldPhase::new(
+        RecordId::new("alpha").unwrap(),
+        "Alpha",
+        definition,
+        OwnedCwContributions::neutral(4),
+    )
+    .unwrap()
+    .with_sample_physics(RietveldSamplePhysicsModel::MarchDollase {
+        ratio: 0.76,
+        preferred_axis_hkl: [1.0, 0.2, -0.3],
+    });
+    let parameterization = LatticeParameterization::new(
+        input.phases[0].definition().space_group.clone(),
+        input.phases[0].definition().cell,
+    )
+    .unwrap();
+    let bounds = LatticeBounds::around(&parameterization, 0.05, 3.0).unwrap();
+    let selection = RietveldParameterSelection::new(
+        RietveldStructuralSelection {
+            lattice: true,
+            ..RietveldStructuralSelection::default()
+        },
+        Vec::new(),
+        false,
+        true,
+    )
+    .unwrap();
+    let layout = RietveldParameterLayout::new(&input, &selection, &[Some(bounds)]).unwrap();
+    let values = layout
+        .parameters()
+        .specs()
+        .iter()
+        .map(phasesmith_workflows::ParameterSpec::value)
+        .collect::<Vec<_>>();
+    let direction = [0.08, 0.02, -0.03, 0.04, 0.3, -0.2, 0.25];
+    assert_eq!(values.len(), direction.len());
+    let objective =
+        PreparedGeneralRietveldObjective::new(input.clone(), options(), layout.clone()).unwrap();
+    let (_, analytical) = objective.jvp(&direction).unwrap();
+    let step = 2.0e-5;
+    let shifted = |sign: f64| {
+        values
+            .iter()
+            .zip(direction)
+            .map(|(value, direction)| value + sign * step * direction)
+            .collect::<Vec<_>>()
+    };
+    let plus = calculate_rietveld_pattern(
+        &layout.apply_values(&input, &shifted(1.0)).unwrap(),
+        &options(),
+    )
+    .unwrap();
+    let minus = calculate_rietveld_pattern(
+        &layout.apply_values(&input, &shifted(-1.0)).unwrap(),
+        &options(),
+    )
+    .unwrap();
+    for (index, ((plus, minus), analytical)) in
+        plus.y.iter().zip(&minus.y).zip(&analytical).enumerate()
+    {
+        let numerical = (plus - minus) / (2.0 * step);
+        assert!(
+            (numerical - analytical).abs() <= 1.5e-4 * numerical.abs().max(1.0),
+            "sample {index}: numerical={numerical:.12e}, analytical={analytical:.12e}"
+        );
+    }
+}
+
+#[test]
 fn invalid_general_selections_fail_before_preparation() {
     let duplicate = RietveldParameterSelection::new(
         RietveldStructuralSelection::default(),
@@ -229,13 +425,18 @@ fn invalid_general_selections_fail_before_preparation() {
     )
     .unwrap();
     assert!(RietveldParameterLayout::new(&input(), &geometry, &[None]).is_err());
+    let sample_physics = RietveldParameterSelection::new(
+        RietveldStructuralSelection::default(),
+        Vec::new(),
+        false,
+        true,
+    )
+    .unwrap();
     assert!(
-        RietveldParameterSelection::new(
-            RietveldStructuralSelection::default(),
-            Vec::new(),
-            false,
-            true,
-        )
-        .is_err()
+        RietveldParameterLayout::new(&input(), &sample_physics, &[None])
+            .unwrap()
+            .parameters()
+            .specs()
+            .is_empty()
     );
 }
