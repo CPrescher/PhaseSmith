@@ -241,7 +241,8 @@ pub fn refine_general_rietveld_with_runtime(
     let initial_transform =
         ConstraintTransform::new(initial_layout.parameters().clone(), constraints.to_vec())?;
     validate_constraint_state(&initial_layout, &initial_transform)?;
-    let (mut live_input, mut history, mut damping, parameter_template) =
+    let stable_layout = initial_layout.clone();
+    let (mut live_input, mut history, mut damping, mut live_parameters) =
         if let Some(checkpoint) = checkpoint {
             checkpoint.validate_for(input, selection, lattice_bounds, constraints)?;
             runtime.resume_accepted(checkpoint.completed_iterations)?;
@@ -281,32 +282,49 @@ pub fn refine_general_rietveld_with_runtime(
     } else {
         history.len()
     };
+    let mut prepared_objective = None;
+    let mut final_calculation = None;
     'iterations: for iteration in first_iteration..=last_iteration {
         if let Err(error) = runtime.begin_iteration(iteration) {
             termination = normal_stop(&error)?;
             break;
         }
-        let layout = RietveldParameterLayout::new(&live_input, selection, lattice_bounds)?;
-        let solver_parameters = parameter_template
-            .replace_values(&layout.parameters().values())
-            .map_err(RietveldGeneralParameterError::Parameter)?;
+        let objective = if let Some(objective) = prepared_objective.take() {
+            objective
+        } else {
+            let objective = PreparedGeneralRietveldObjective::new(
+                live_input.clone(),
+                options.calculation.clone(),
+                stable_layout.clone(),
+            )?;
+            if let Err(error) = reserve_products(runtime, objective.preparation_evaluation_count())
+            {
+                termination = normal_stop(&error)?;
+                break;
+            }
+            objective
+        };
+        final_calculation = Some(objective.calculation().clone());
+        let layout = objective.layout().clone();
+        let solver_parameters = live_parameters.clone();
         let transform = ConstraintTransform::new(solver_parameters.clone(), constraints.to_vec())?;
         if transform.free_keys().is_empty() {
             termination = TerminationReason::Converged;
             break;
         }
         let derivative = transform.derivative_matrix()?;
-        let objective = PreparedGeneralRietveldObjective::new(
-            live_input.clone(),
-            options.calculation.clone(),
-            layout.clone(),
-        )?;
-        if let Err(error) = reserve_products(runtime, objective.preparation_evaluation_count()) {
-            termination = normal_stop(&error)?;
-            break;
-        }
-        let (_, physical_gradient) = objective.gradient()?;
-        let scaled_gradient = transpose_product(&derivative, &physical_gradient);
+        let free_linearization = objective.free_linearization(&derivative)?;
+        let scaled_gradient = if let Some(linearization) = &free_linearization {
+            let observed = input
+                .pattern
+                .observed_y
+                .as_deref()
+                .ok_or(RietveldGeneralRefinementError::InternalInvariant)?;
+            linearization.gradient(observed)?
+        } else {
+            let (_, physical_gradient) = objective.gradient()?;
+            transpose_product(&derivative, &physical_gradient)
+        };
         let right_hand_side = scaled_gradient
             .iter()
             .map(|value| -value)
@@ -316,14 +334,18 @@ pub fn refine_general_rietveld_with_runtime(
             options.cg_tolerance,
             options.max_cg_iterations,
             |direction| {
-                reserve_products(runtime, objective.normal_product_evaluation_count())?;
-                let physical = forward_product(&derivative, direction);
-                let physical_product = objective.normal_product(&physical, 0.0)?;
-                let mut result = transpose_product(&derivative, &physical_product);
-                for (value, direction) in result.iter_mut().zip(direction) {
-                    *value += damping * direction;
+                if let Some(linearization) = &free_linearization {
+                    Ok(linearization.normal_product(direction, damping)?)
+                } else {
+                    reserve_products(runtime, objective.normal_product_evaluation_count())?;
+                    let physical = forward_product(&derivative, direction);
+                    let physical_product = objective.normal_product(&physical, 0.0)?;
+                    let mut result = transpose_product(&derivative, &physical_product);
+                    for (value, direction) in result.iter_mut().zip(direction) {
+                        *value += damping * direction;
+                    }
+                    Ok(result)
                 }
-                Ok(result)
             },
         );
         let (mut step, cg_iterations) = match solve {
@@ -384,7 +406,9 @@ pub fn refine_general_rietveld_with_runtime(
                         .ok_or(RietveldGeneralRefinementError::InternalInvariant)
                 })
                 .collect::<Result<Vec<_>, _>>()?;
-            let Ok(trial_input) = layout.apply_values(&live_input, &trial_values) else {
+            let Ok(trial_input) =
+                layout.apply_value_change(&live_input, &current_values, &trial_values)
+            else {
                 emit_rejected_trial(runtime, "trial outside the numerical model domain")?;
                 if let Err(error) = runtime.reject_step() {
                     termination = normal_stop(&error)?;
@@ -392,19 +416,41 @@ pub fn refine_general_rietveld_with_runtime(
                 }
                 continue;
             };
-            if let Err(error) = runtime.begin_evaluation() {
-                termination = normal_stop(&error)?;
-                break 'iterations;
-            }
-            let Ok(trial_calculation) =
-                calculate_rietveld_pattern(&trial_input, &options.calculation)
-            else {
-                emit_rejected_trial(runtime, "trial outside the calculation domain")?;
-                if let Err(error) = runtime.reject_step() {
+            let (trial_calculation, trial_objective_state) = if objective.uses_dense_linearization()
+            {
+                if let Err(error) = runtime.begin_evaluation() {
                     termination = normal_stop(&error)?;
                     break 'iterations;
                 }
-                continue;
+                let Ok(trial_objective) = PreparedGeneralRietveldObjective::new(
+                    trial_input.clone(),
+                    options.calculation.clone(),
+                    stable_layout.clone(),
+                ) else {
+                    emit_rejected_trial(runtime, "trial outside the calculation domain")?;
+                    if let Err(error) = runtime.reject_step() {
+                        termination = normal_stop(&error)?;
+                        break 'iterations;
+                    }
+                    continue;
+                };
+                (trial_objective.calculation().clone(), Some(trial_objective))
+            } else {
+                if let Err(error) = runtime.begin_evaluation() {
+                    termination = normal_stop(&error)?;
+                    break 'iterations;
+                }
+                let Ok(trial_calculation) =
+                    calculate_rietveld_pattern(&trial_input, &options.calculation)
+                else {
+                    emit_rejected_trial(runtime, "trial outside the calculation domain")?;
+                    if let Err(error) = runtime.reject_step() {
+                        termination = normal_stop(&error)?;
+                        break 'iterations;
+                    }
+                    continue;
+                };
+                (trial_calculation, None)
             };
             let trial_objective = 0.5 * trial_calculation.metrics.chi_square;
             runtime.emit(
@@ -423,6 +469,7 @@ pub fn refine_general_rietveld_with_runtime(
                     trial_values,
                     trial_input,
                     trial_calculation,
+                    trial_objective_state,
                     trial_objective,
                 ));
                 break;
@@ -432,8 +479,15 @@ pub fn refine_general_rietveld_with_runtime(
                 break;
             }
         }
-        let Some((backtracks, factor, trial_values, trial_input, trial_calculation, objective)) =
-            accepted
+        let Some((
+            backtracks,
+            factor,
+            trial_values,
+            trial_input,
+            trial_calculation,
+            trial_objective_state,
+            objective,
+        )) = accepted
         else {
             if termination == TerminationReason::MaxIterations {
                 termination = TerminationReason::Stagnated;
@@ -485,18 +539,21 @@ pub fn refine_general_rietveld_with_runtime(
             reduced_chi_square: accepted_metrics.reduced_chi_square,
         });
         live_input = trial_input;
-        damping = (damping * options.damping_decrease).max(1.0e-18);
+        final_calculation = Some(trial_calculation.clone());
         let accepted_layout = RietveldParameterLayout::new(&live_input, selection, lattice_bounds)?;
-        let accepted_parameters = parameter_template
+        live_parameters = stable_layout
+            .parameters()
             .replace_values(&accepted_layout.parameters().values())
             .map_err(RietveldGeneralParameterError::Parameter)?;
+        prepared_objective = trial_objective_state;
+        damping = (damping * options.damping_decrease).max(1.0e-18);
         let state = RietveldGeneralCheckpoint {
             completed_iterations: history.len(),
             input: live_input.clone(),
             selection: selection.clone(),
             lattice_bounds: lattice_bounds.to_vec(),
             constraints: constraints.to_vec(),
-            parameters: accepted_parameters,
+            parameters: live_parameters.clone(),
             objective,
             damping,
             history: history.clone(),
@@ -523,16 +580,22 @@ pub fn refine_general_rietveld_with_runtime(
             break;
         }
     }
-    let final_layout = RietveldParameterLayout::new(&live_input, selection, lattice_bounds)?;
-    let final_parameters = parameter_template
-        .replace_values(&final_layout.parameters().values())
+    let final_layout = stable_layout;
+    let final_domain_layout = RietveldParameterLayout::new(&live_input, selection, lattice_bounds)?;
+    let final_parameters = final_layout
+        .parameters()
+        .replace_values(&final_domain_layout.parameters().values())
         .map_err(RietveldGeneralParameterError::Parameter)?;
     let final_transform = ConstraintTransform::new(final_parameters.clone(), constraints.to_vec())?;
-    runtime.begin_evaluation().or_else(|error| match error {
-        RuntimeError::Stopped(_) => Ok(()),
-        other => Err(other),
-    })?;
-    let mut calculation = calculate_rietveld_pattern(&live_input, &options.calculation)?;
+    let mut calculation = if let Some(calculation) = final_calculation {
+        calculation
+    } else {
+        runtime.begin_evaluation().or_else(|error| match error {
+            RuntimeError::Stopped(_) => Ok(()),
+            other => Err(other),
+        })?;
+        calculate_rietveld_pattern(&live_input, &options.calculation)?
+    };
     calculation.metrics = evaluate_residuals(
         &input.pattern,
         &calculation.y,

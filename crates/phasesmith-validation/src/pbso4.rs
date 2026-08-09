@@ -147,7 +147,7 @@ pub fn run_pbso4_xray_validation(
         RietveldCalculationOptions::new(30.0, true, execution)?,
         RefinementLimits::new(160, 12_000, None, 20)?,
         3,
-        1.0e-6,
+        1.0e-7,
         1.0e-7,
         1.0e-6,
         10.0,

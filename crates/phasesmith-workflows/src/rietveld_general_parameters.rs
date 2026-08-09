@@ -324,6 +324,32 @@ impl RietveldParameterLayout {
         input: &RietveldInput,
         values: &[f64],
     ) -> Result<RietveldInput, RietveldGeneralParameterError> {
+        let current = self
+            .parameters
+            .specs()
+            .iter()
+            .map(ParameterSpec::value)
+            .collect::<Vec<_>>();
+        self.apply_value_change(input, &current, values)
+    }
+
+    /// Install a change between two complete absolute parameter states.
+    ///
+    /// This retains the prepared special-position tangent basis while applying
+    /// only its accepted-to-trial coordinate increment, matching the scripting
+    /// optimizer's invariant preparation cache.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`RietveldGeneralParameterError`] for wrong, non-finite,
+    /// out-of-bounds, or domain-invalid values.
+    pub fn apply_value_change(
+        &self,
+        input: &RietveldInput,
+        current_values: &[f64],
+        values: &[f64],
+    ) -> Result<RietveldInput, RietveldGeneralParameterError> {
+        self.validate_length(current_values)?;
         self.validate_length(values)?;
         for (spec, value) in self.parameters.specs().iter().zip(values) {
             if !value.is_finite() || !spec.bounds().contains(*value) {
@@ -340,10 +366,17 @@ impl RietveldParameterLayout {
             .iter()
             .map(|index| values[*index])
             .collect::<Vec<_>>();
+        let current_structural_values = self
+            .structural_indices
+            .iter()
+            .map(|index| current_values[*index])
+            .collect::<Vec<_>>();
         let mut updated = input.clone();
-        updated.phases = self
-            .structural
-            .apply_values(&input.phases, &structural_values)?;
+        updated.phases = self.structural.apply_value_change(
+            &input.phases,
+            &current_structural_values,
+            &structural_values,
+        )?;
         let mut wavelength = None;
         for (parameter, index) in &self.instrument {
             install_instrument_value(&mut updated, *parameter, values[*index])?;

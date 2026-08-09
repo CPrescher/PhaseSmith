@@ -360,8 +360,35 @@ impl RietveldStructuralLayout {
         phases: &[RietveldPhase],
         values: &[f64],
     ) -> Result<Vec<RietveldPhase>, RietveldParameterError> {
+        let current = self
+            .parameters
+            .specs()
+            .iter()
+            .map(ParameterSpec::value)
+            .collect::<Vec<_>>();
+        self.apply_value_change(phases, &current, values)
+    }
+
+    /// Install a change between two absolute physical parameter states.
+    ///
+    /// Special-position coordinates are local tangent coordinates, so only
+    /// their difference is applied to the current phase. All other selected
+    /// values are installed absolutely.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`RietveldParameterError`] for stale phase identities, wrong
+    /// value counts, invalid values, or a rejected phase domain.
+    pub fn apply_value_change(
+        &self,
+        phases: &[RietveldPhase],
+        current_values: &[f64],
+        values: &[f64],
+    ) -> Result<Vec<RietveldPhase>, RietveldParameterError> {
         self.validate_phases(phases)?;
-        if values.len() != self.parameters.specs().len()
+        if current_values.len() != self.parameters.specs().len()
+            || values.len() != self.parameters.specs().len()
+            || current_values.iter().any(|value| !value.is_finite())
             || values.iter().any(|value| !value.is_finite())
         {
             return Err(RietveldParameterError::ValueLengthMismatch);
@@ -403,12 +430,16 @@ impl RietveldStructuralLayout {
                 if model.special_position {
                     let columns = model.parameter_names.len();
                     for column in 0..columns {
-                        if let Some(value) =
-                            self.value_for("site", &owner, &model.parameter_names[column], values)?
-                        {
+                        if let Some((before, after)) = self.value_change_for(
+                            "site",
+                            &owner,
+                            &model.parameter_names[column],
+                            current_values,
+                            values,
+                        )? {
                             for row in 0..3 {
                                 definition.fractional_xyz[site][row] +=
-                                    model.basis[row * columns + column] * value;
+                                    model.basis[row * columns + column] * (after - before);
                             }
                         }
                     }
@@ -436,6 +467,21 @@ impl RietveldStructuralLayout {
             );
         }
         Ok(updated)
+    }
+
+    fn value_change_for(
+        &self,
+        module: &str,
+        owner: &str,
+        name: &str,
+        current_values: &[f64],
+        values: &[f64],
+    ) -> Result<Option<(f64, f64)>, RietveldParameterError> {
+        let key = ParameterKey::new(module, owner, name)?;
+        Ok(self
+            .parameters
+            .index_of(&key)
+            .map(|index| (current_values[index], values[index])))
     }
 
     fn value_for(

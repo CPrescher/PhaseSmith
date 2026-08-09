@@ -386,6 +386,76 @@ fn physical_values_rebuild_lattice_sites_and_scale_with_bounds() {
 }
 
 #[test]
+fn special_position_changes_use_absolute_solver_state_and_incremental_coordinates() {
+    let mirror = SpaceGroup::new(vec![
+        SymmetryOperation::identity(),
+        SymmetryOperation::new([[1, 0, 0], [0, 1, 0], [0, 0, -1]], [Rational::zero(); 3]).unwrap(),
+    ])
+    .unwrap();
+    let mut definition = definition();
+    definition.space_group = mirror;
+    definition.cell.alpha_deg = 90.0;
+    definition.cell.beta_deg = 90.0;
+    definition.cell.gamma_deg = 90.0;
+    definition.fractional_xyz = vec![[0.2, 0.3, 0.0]];
+    definition.occupancy = vec![1.0];
+    definition.u_iso_angstrom2 = vec![0.01];
+    definition.anisotropic_mask = vec![false];
+    definition.u_aniso_cif_angstrom2 = vec![[0.0; 6]];
+    definition.scattering_species = vec!["Si".to_owned()];
+    let phase = RietveldPhase::new_with_site_ids(
+        RecordId::new("mirror").unwrap(),
+        "Mirror",
+        vec![RecordId::new("Si1").unwrap()],
+        definition.clone(),
+        OwnedCwContributions::neutral(definition.hkl.len()),
+    )
+    .unwrap();
+    let layout = RietveldStructuralLayout::new(
+        std::slice::from_ref(&phase),
+        RietveldStructuralSelection {
+            coordinates: true,
+            ..RietveldStructuralSelection::default()
+        },
+        &[None],
+    )
+    .unwrap();
+    assert_eq!(
+        layout
+            .parameters()
+            .specs()
+            .iter()
+            .map(|spec| spec.key().name())
+            .collect::<Vec<_>>(),
+        ["q0", "q1"]
+    );
+    let current = vec![0.0, 0.0];
+    let first = vec![0.1, -0.05];
+    let first_phase = layout
+        .apply_value_change(std::slice::from_ref(&phase), &current, &first)
+        .unwrap()
+        .remove(0);
+    for (actual, expected) in first_phase.definition().fractional_xyz[0]
+        .iter()
+        .zip([0.3, 0.25, 0.0])
+    {
+        assert!((actual - expected).abs() < 1.0e-14);
+    }
+
+    let second = vec![0.14, -0.02];
+    let second_phase = layout
+        .apply_value_change(std::slice::from_ref(&first_phase), &first, &second)
+        .unwrap()
+        .remove(0);
+    for (actual, expected) in second_phase.definition().fractional_xyz[0]
+        .iter()
+        .zip([0.34, 0.28, 0.0])
+    {
+        assert!((actual - expected).abs() < 1.0e-14);
+    }
+}
+
+#[test]
 fn prepared_objective_jvp_vjp_and_normal_product_are_consistent() {
     let objective = objective();
     let count = objective.layout().parameters().specs().len();

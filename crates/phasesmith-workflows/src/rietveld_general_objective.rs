@@ -4,10 +4,10 @@ use std::error::Error;
 use std::fmt::{Display, Formatter};
 
 use crate::{
-    DifferentiableBackground, LatticeError, LatticeParameterization, PreparedRietveldObjective,
-    RietveldCalculation, RietveldCalculationOptions, RietveldError, RietveldGeneralParameterError,
-    RietveldInput, RietveldInstrumentParameter, RietveldObjectiveError, RietveldParameterLayout,
-    calculate_rietveld_pattern,
+    ConstraintDerivativeMatrix, DifferentiableBackground, LatticeError, LatticeParameterization,
+    PreparedRietveldObjective, RietveldCalculation, RietveldCalculationOptions, RietveldError,
+    RietveldGeneralParameterError, RietveldInput, RietveldInstrumentParameter,
+    RietveldObjectiveError, RietveldParameterLayout, calculate_rietveld_pattern,
 };
 
 /// Default upper bound for reusable native structural Jacobians.
@@ -16,6 +16,109 @@ use crate::{
 /// complete-parameter columns are composed. Larger requests retain the
 /// matrix-free objective.
 pub const DEFAULT_MAX_LINEARIZATION_ELEMENTS: usize = 10_000_000;
+
+/// Complete weighted Jacobian in scaled free-parameter coordinates.
+///
+/// Rows are free parameters and columns are pattern samples. Masked samples
+/// are zero and included samples are divided by their uncertainty when the
+/// objective uses uncertainty weighting. This matches the dense scripting
+/// optimizer contract, so its JVP and VJP need no further weighting.
+pub struct PreparedGeneralFreeLinearization {
+    calculation: RietveldCalculation,
+    weighted_jacobian: Vec<f64>,
+    sample_scale: Vec<f64>,
+    parameter_count: usize,
+}
+
+impl PreparedGeneralFreeLinearization {
+    /// Borrow the calculation produced by the same fused native pass.
+    #[must_use]
+    pub const fn calculation(&self) -> &RietveldCalculation {
+        &self.calculation
+    }
+
+    /// Return the scaled free-parameter count.
+    #[must_use]
+    pub const fn parameter_count(&self) -> usize {
+        self.parameter_count
+    }
+
+    /// Apply the weighted free Jacobian.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`RietveldGeneralParameterError::ValueLengthMismatch`] for a
+    /// direction with the wrong free dimension.
+    pub fn jvp(&self, direction: &[f64]) -> Result<Vec<f64>, RietveldGeneralObjectiveError> {
+        if direction.len() != self.parameter_count {
+            return Err(RietveldGeneralParameterError::ValueLengthMismatch.into());
+        }
+        Ok(dense_forward_product(
+            &self.weighted_jacobian,
+            direction,
+            self.sample_scale.len(),
+        ))
+    }
+
+    /// Apply the weighted free Jacobian transpose.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`RietveldGeneralObjectiveError::SampleLengthMismatch`] for a
+    /// vector with the wrong sample dimension.
+    pub fn vjp(&self, samples: &[f64]) -> Result<Vec<f64>, RietveldGeneralObjectiveError> {
+        if samples.len() != self.sample_scale.len() {
+            return Err(RietveldGeneralObjectiveError::SampleLengthMismatch);
+        }
+        Ok(dense_reverse_product(
+            &self.weighted_jacobian,
+            samples,
+            self.parameter_count,
+        ))
+    }
+
+    /// Return `J_w^T J_w direction + damping direction` in scaled free coordinates.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`RietveldGeneralObjectiveError`] for invalid damping or shape.
+    pub fn normal_product(
+        &self,
+        direction: &[f64],
+        damping: f64,
+    ) -> Result<Vec<f64>, RietveldGeneralObjectiveError> {
+        if !damping.is_finite() || damping < 0.0 {
+            return Err(RietveldGeneralObjectiveError::InvalidDamping);
+        }
+        let product = self.jvp(direction)?;
+        let mut result = self.vjp(&product)?;
+        for (value, direction) in result.iter_mut().zip(direction) {
+            *value += damping * direction;
+        }
+        Ok(result)
+    }
+
+    /// Calculate the scaled free gradient for the stored calculation.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`RietveldGeneralObjectiveError::SampleLengthMismatch`] for an
+    /// observed vector with the wrong sample dimension.
+    pub fn gradient(&self, observed: &[f64]) -> Result<Vec<f64>, RietveldGeneralObjectiveError> {
+        if observed.len() != self.sample_scale.len() {
+            return Err(RietveldGeneralObjectiveError::SampleLengthMismatch);
+        }
+        let weighted_residual = self
+            .calculation
+            .y
+            .iter()
+            .zip(observed)
+            .zip(&self.sample_scale)
+            .map(|((calculated, observed), scale)| (calculated - observed) * scale)
+            .collect::<Vec<_>>();
+        self.vjp(&weighted_residual)
+    }
+}
 
 /// Reusable complete physical objective for one accepted native state.
 pub struct PreparedGeneralRietveldObjective {
@@ -141,6 +244,52 @@ impl PreparedGeneralRietveldObjective {
     #[must_use]
     pub const fn calculation(&self) -> &RietveldCalculation {
         &self.calculation
+    }
+
+    /// Project the cached dense objective into weighted scaled-free rows.
+    ///
+    /// Returns `None` for the bounded matrix-free fallback. The derivative
+    /// matrix maps scaled free coordinates to the complete physical layout.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`RietveldGeneralObjectiveError`] for incompatible dimensions
+    /// or failed dense products.
+    pub fn free_linearization(
+        &self,
+        derivative: &ConstraintDerivativeMatrix,
+    ) -> Result<Option<PreparedGeneralFreeLinearization>, RietveldGeneralObjectiveError> {
+        if !self.uses_dense_linearization() {
+            return Ok(None);
+        }
+        if derivative.rows != self.layout.parameters().specs().len() {
+            return Err(RietveldGeneralParameterError::ValueLengthMismatch.into());
+        }
+        let sample_count = self.input.pattern.sample_count();
+        let sample_scale = self.sample_scale();
+        let element_count = derivative
+            .columns
+            .checked_mul(sample_count)
+            .ok_or(RietveldObjectiveError::AllocationOverflow)?;
+        let mut weighted_jacobian = Vec::with_capacity(element_count);
+        for free in 0..derivative.columns {
+            let physical = derivative
+                .values
+                .chunks_exact(derivative.columns)
+                .map(|row| row[free])
+                .collect::<Vec<_>>();
+            let (_, mut row) = self.jvp(&physical)?;
+            for (value, scale) in row.iter_mut().zip(&sample_scale) {
+                *value *= scale;
+            }
+            weighted_jacobian.extend(row);
+        }
+        Ok(Some(PreparedGeneralFreeLinearization {
+            calculation: self.calculation.clone(),
+            weighted_jacobian,
+            sample_scale,
+            parameter_count: derivative.columns,
+        }))
     }
 
     /// Calculate profile values and one complete physical directional derivative.
@@ -273,6 +422,24 @@ impl PreparedGeneralRietveldObjective {
                     value / (sigma[index] * sigma[index])
                 } else {
                     *value
+                }
+            })
+            .collect()
+    }
+
+    fn sample_scale(&self) -> Vec<f64> {
+        let mask = self.input.pattern.mask.as_deref();
+        let uncertainty = self
+            .options
+            .use_uncertainty
+            .then_some(self.input.pattern.uncertainty.as_deref())
+            .flatten();
+        (0..self.input.pattern.sample_count())
+            .map(|index| {
+                if mask.is_some_and(|mask| !mask[index]) {
+                    0.0
+                } else {
+                    uncertainty.map_or(1.0, |sigma| sigma[index].recip())
                 }
             })
             .collect()

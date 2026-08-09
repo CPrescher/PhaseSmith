@@ -9,10 +9,10 @@ use phasesmith_execution::ExecutionPolicy;
 use phasesmith_io::space_group_by_number;
 use phasesmith_model::{FixedWavelengthSpectrum, PatternRecord, RecordId};
 use phasesmith_workflows::{
-    BackgroundModel, DifferentiableBackground, LatticeBounds, LatticeParameterization,
-    PolynomialBackground, PreparedGeneralRietveldObjective, RietveldCalculationOptions,
-    RietveldInput, RietveldInstrumentParameter, RietveldParameterLayout,
-    RietveldParameterSelection, RietveldPhase, RietveldSamplePhysicsModel,
+    BackgroundModel, ConstraintTransform, DifferentiableBackground, LatticeBounds,
+    LatticeParameterization, PolynomialBackground, PreparedGeneralRietveldObjective,
+    RietveldCalculationOptions, RietveldInput, RietveldInstrumentParameter,
+    RietveldParameterLayout, RietveldParameterSelection, RietveldPhase, RietveldSamplePhysicsModel,
     RietveldStructuralSelection, calculate_rietveld_pattern,
 };
 
@@ -413,6 +413,82 @@ fn fixed_spectrum_dense_and_matrix_free_objectives_agree() {
     let matrix_normal = matrix_free.normal_product(&direction, 1.0e-4).unwrap();
     for (dense, matrix_free) in dense_normal.iter().zip(matrix_normal) {
         assert!((dense - matrix_free).abs() <= 5.0e-11 * dense.abs().max(1.0));
+    }
+}
+
+#[test]
+fn dense_free_linearization_matches_the_scripting_weighted_coordinate_contract() {
+    let input = with_sample_physics(spectrum_input());
+    let selection = RietveldParameterSelection::new(
+        RietveldStructuralSelection {
+            phase_scale: true,
+            ..RietveldStructuralSelection::default()
+        },
+        vec![
+            RietveldInstrumentParameter::UDeg2,
+            RietveldInstrumentParameter::ZeroShiftDeg,
+        ],
+        true,
+        true,
+    )
+    .unwrap();
+    let layout = RietveldParameterLayout::new(&input, &selection, &[None]).unwrap();
+    let transform = ConstraintTransform::new(layout.parameters().clone(), Vec::new()).unwrap();
+    let derivative = transform.derivative_matrix().unwrap();
+    let objective =
+        PreparedGeneralRietveldObjective::new(input.clone(), options(), layout.clone()).unwrap();
+    let linearization = objective.free_linearization(&derivative).unwrap().unwrap();
+    assert_eq!(linearization.parameter_count(), transform.free_keys().len());
+    assert_eq!(linearization.calculation(), objective.calculation());
+
+    let free_direction = (0..transform.free_keys().len())
+        .map(|index| 0.03 * (f64::from(u32::try_from(index).unwrap()) + 1.0))
+        .collect::<Vec<_>>();
+    let physical_direction = derivative
+        .values
+        .chunks_exact(derivative.columns)
+        .map(|row| row.iter().zip(&free_direction).map(|(a, b)| a * b).sum())
+        .collect::<Vec<f64>>();
+    let (_, physical_jvp) = objective.jvp(&physical_direction).unwrap();
+    let free_jvp = linearization.jvp(&free_direction).unwrap();
+    for (actual, physical) in free_jvp.iter().zip(physical_jvp) {
+        let expected = physical / 0.5;
+        assert!(
+            (actual - expected).abs() <= 2.0e-11 * expected.abs().max(1.0),
+            "actual={actual:.12e}, expected={expected:.12e}"
+        );
+    }
+
+    let samples = (0..input.pattern.sample_count())
+        .map(|index| (f64::from(u32::try_from(index).unwrap()) * 0.07).cos())
+        .collect::<Vec<_>>();
+    let reverse = linearization.vjp(&samples).unwrap();
+    let left = free_jvp
+        .iter()
+        .zip(&samples)
+        .map(|(a, b)| a * b)
+        .sum::<f64>();
+    let right = free_direction
+        .iter()
+        .zip(reverse)
+        .map(|(a, b)| a * b)
+        .sum::<f64>();
+    assert!((left - right).abs() <= 2.0e-10 * left.abs().max(1.0));
+
+    let physical_gradient = objective.gradient().unwrap().1;
+    let expected_gradient = (0..derivative.columns)
+        .map(|column| {
+            physical_gradient
+                .iter()
+                .zip(derivative.values.chunks_exact(derivative.columns))
+                .map(|(gradient, row)| gradient * row[column])
+                .sum::<f64>()
+        })
+        .collect::<Vec<_>>();
+    let observed = input.pattern.observed_y.as_ref().unwrap();
+    let gradient = linearization.gradient(observed).unwrap();
+    for (actual, expected) in gradient.iter().zip(expected_gradient) {
+        assert!((actual - expected).abs() <= 3.0e-10 * expected.abs().max(1.0));
     }
 }
 

@@ -551,7 +551,7 @@ fn cancellation_returns_the_unchanged_restartable_complete_state() {
 }
 
 #[test]
-fn cached_current_calculation_does_not_consume_an_evaluation() {
+fn accepted_dense_trial_is_the_next_current_linearization() {
     let input = input_from_truth(phase(0.7, 1.0), vec![0.0], phase(1.3, 1.0), vec![0.0]);
     let selection = RietveldParameterSelection::new(
         RietveldStructuralSelection {
@@ -565,7 +565,7 @@ fn cached_current_calculation_does_not_consume_an_evaluation() {
     .unwrap();
     let options = RietveldRefinementOptions::new(
         calculation(),
-        RefinementLimits::new(1, 5, None, 20).unwrap(),
+        RefinementLimits::new(2, 4, None, 20).unwrap(),
         1,
         1.0e-12,
         1.0e-10,
@@ -574,7 +574,7 @@ fn cached_current_calculation_does_not_consume_an_evaluation() {
         0.3,
         1.0e-10,
         1,
-        1.0,
+        0.1,
         0,
     )
     .unwrap();
@@ -590,10 +590,11 @@ fn cached_current_calculation_does_not_consume_an_evaluation() {
     )
     .unwrap();
 
-    // One fused dense linearization, one trial, and one final calculation;
-    // algebraic CG products do not consume model-evaluation budget.
+    // One initial fused linearization and two accepted trial linearizations.
+    // Each accepted trial becomes the next current state, and the final
+    // accepted calculation is returned without evaluating it again.
     assert_eq!(result.evaluations, 3);
-    assert_eq!(result.history.len(), 1);
+    assert_eq!(result.history.len(), 2);
     assert!(result.input.phases[0].definition().scale > 0.7);
 }
 

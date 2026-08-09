@@ -56,8 +56,8 @@ pub use rietveld::{
     RietveldPhaseCalculation, RietveldTopologyChange, calculate_rietveld_pattern,
 };
 pub use rietveld_general_objective::{
-    DEFAULT_MAX_LINEARIZATION_ELEMENTS, PreparedGeneralRietveldObjective,
-    RietveldGeneralObjectiveError,
+    DEFAULT_MAX_LINEARIZATION_ELEMENTS, PreparedGeneralFreeLinearization,
+    PreparedGeneralRietveldObjective, RietveldGeneralObjectiveError,
 };
 pub use rietveld_general_parameters::{
     RietveldGeneralParameterError, RietveldInstrumentParameter, RietveldParameterLayout,
