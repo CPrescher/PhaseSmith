@@ -56,7 +56,8 @@ pub use rietveld::{
     RietveldPhaseCalculation, RietveldTopologyChange, calculate_rietveld_pattern,
 };
 pub use rietveld_general_objective::{
-    PreparedGeneralRietveldObjective, RietveldGeneralObjectiveError,
+    DEFAULT_MAX_LINEARIZATION_ELEMENTS, PreparedGeneralRietveldObjective,
+    RietveldGeneralObjectiveError,
 };
 pub use rietveld_general_parameters::{
     RietveldGeneralParameterError, RietveldInstrumentParameter, RietveldParameterLayout,
@@ -76,7 +77,9 @@ pub use rietveld_joint_solver::{
     JointRietveldRefinementError, JointRietveldRefinementOptions, JointRietveldRefinementResult,
     JointRietveldTopologyChange, refine_joint_rietveld, refine_joint_rietveld_with_runtime,
 };
-pub use rietveld_objective::{PreparedRietveldObjective, RietveldObjectiveError};
+pub use rietveld_objective::{
+    PreparedRietveldLinearization, PreparedRietveldObjective, RietveldObjectiveError,
+};
 pub use rietveld_parameters::{
     RietveldParameterError, RietveldStructuralLayout, RietveldStructuralSelection,
     SiteCoordinateModel,

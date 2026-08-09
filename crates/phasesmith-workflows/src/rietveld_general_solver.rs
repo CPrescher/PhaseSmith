@@ -301,7 +301,7 @@ pub fn refine_general_rietveld_with_runtime(
             options.calculation.clone(),
             layout.clone(),
         )?;
-        if let Err(error) = reserve_products(runtime, 2) {
+        if let Err(error) = reserve_products(runtime, objective.preparation_evaluation_count()) {
             termination = normal_stop(&error)?;
             break;
         }
@@ -316,7 +316,7 @@ pub fn refine_general_rietveld_with_runtime(
             options.cg_tolerance,
             options.max_cg_iterations,
             |direction| {
-                reserve_products(runtime, 2)?;
+                reserve_products(runtime, objective.normal_product_evaluation_count())?;
                 let physical = forward_product(&derivative, direction);
                 let physical_product = objective.normal_product(&physical, 0.0)?;
                 let mut result = transpose_product(&derivative, &physical_product);
@@ -716,6 +716,7 @@ fn covariance_diagnostics(
         options.calculation.clone(),
         layout.clone(),
     )?;
+    reserve_products(runtime, objective.preparation_evaluation_count())?;
     let derivative = transform.derivative_matrix()?;
     let sample_count = input.pattern.sample_count();
     let element_count = sample_count
@@ -723,7 +724,7 @@ fn covariance_diagnostics(
         .ok_or(RietveldGeneralRefinementError::AllocationOverflow)?;
     let mut columns = vec![0.0; element_count];
     for column in 0..free_count {
-        reserve_products(runtime, 1)?;
+        reserve_products(runtime, objective.jvp_evaluation_count())?;
         let mut basis = vec![0.0; free_count];
         basis[column] = 1.0;
         let physical = forward_product(&derivative, &basis);

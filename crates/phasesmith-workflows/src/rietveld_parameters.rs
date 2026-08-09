@@ -505,6 +505,53 @@ impl RietveldStructuralLayout {
         }
         Ok(projected)
     }
+
+    /// Project parameter-major native phase Jacobians into physical parameter order.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`RietveldParameterError`] for phase, native-row, sample, or
+    /// allocation shape mismatches.
+    pub fn project_native_jacobians(
+        &self,
+        jacobians: &[(&[f64], usize)],
+        sample_count: usize,
+    ) -> Result<Vec<f64>, RietveldParameterError> {
+        if jacobians.len() != self.phases.len() {
+            return Err(RietveldParameterError::PhaseCountMismatch);
+        }
+        let element_count = self
+            .parameters
+            .specs()
+            .len()
+            .checked_mul(sample_count)
+            .ok_or(RietveldParameterError::AllocationOverflow)?;
+        let mut projected = vec![0.0; element_count];
+        for (phase, (jacobian, native_count)) in self.phases.iter().zip(jacobians) {
+            let native_elements = native_count
+                .checked_mul(sample_count)
+                .ok_or(RietveldParameterError::AllocationOverflow)?;
+            if *native_count != phase.native_count || jacobian.len() != native_elements {
+                return Err(RietveldParameterError::NativeGradientLengthMismatch);
+            }
+            for mapping in &phase.mappings {
+                let target_start = mapping
+                    .global_index
+                    .checked_mul(sample_count)
+                    .ok_or(RietveldParameterError::AllocationOverflow)?;
+                for &(native_index, coefficient) in &mapping.native_terms {
+                    let source_start = native_index
+                        .checked_mul(sample_count)
+                        .ok_or(RietveldParameterError::AllocationOverflow)?;
+                    for sample in 0..sample_count {
+                        projected[target_start + sample] +=
+                            coefficient * jacobian[source_start + sample];
+                    }
+                }
+            }
+        }
+        Ok(projected)
+    }
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -583,6 +630,8 @@ pub enum RietveldParameterError {
     DirectionLengthMismatch,
     /// One native reverse product has the wrong length.
     NativeGradientLengthMismatch,
+    /// A requested dense derivative allocation exceeds addressable memory.
+    AllocationOverflow,
     /// A physical value vector has the wrong length or contains non-finite data.
     ValueLengthMismatch,
     /// Layout phase/site identities differ from the calculation request.
@@ -610,6 +659,9 @@ impl Display for RietveldParameterError {
             Self::NativeGradientLengthMismatch => {
                 formatter.write_str("Rietveld native gradient length mismatch")
             }
+            Self::AllocationOverflow => {
+                formatter.write_str("Rietveld derivative allocation overflow")
+            }
             Self::ValueLengthMismatch => {
                 formatter.write_str("Rietveld physical value length mismatch")
             }
@@ -636,6 +688,7 @@ impl Error for RietveldParameterError {
             | Self::MissingLatticeBounds
             | Self::DirectionLengthMismatch
             | Self::NativeGradientLengthMismatch
+            | Self::AllocationOverflow
             | Self::ValueLengthMismatch
             | Self::PhaseIdentityMismatch
             | Self::InvalidCoordinateModel => None,

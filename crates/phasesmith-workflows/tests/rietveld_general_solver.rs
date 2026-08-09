@@ -590,7 +590,9 @@ fn cached_current_calculation_does_not_consume_an_evaluation() {
     )
     .unwrap();
 
-    assert_eq!(result.evaluations, 5);
+    // One fused dense linearization, one trial, and one final calculation;
+    // algebraic CG products do not consume model-evaluation budget.
+    assert_eq!(result.evaluations, 3);
     assert_eq!(result.history.len(), 1);
     assert!(result.input.phases[0].definition().scale > 0.7);
 }

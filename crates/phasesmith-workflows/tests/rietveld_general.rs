@@ -358,6 +358,65 @@ fn fixed_spectrum_general_products_match_differences_and_are_adjoint() {
 }
 
 #[test]
+fn fixed_spectrum_dense_and_matrix_free_objectives_agree() {
+    let input = with_sample_physics(spectrum_input());
+    let selection = RietveldParameterSelection::new(
+        RietveldStructuralSelection {
+            phase_scale: true,
+            ..RietveldStructuralSelection::default()
+        },
+        vec![
+            RietveldInstrumentParameter::UDeg2,
+            RietveldInstrumentParameter::ZeroShiftDeg,
+        ],
+        true,
+        true,
+    )
+    .unwrap();
+    let layout = RietveldParameterLayout::new(&input, &selection, &[None]).unwrap();
+    let dense =
+        PreparedGeneralRietveldObjective::new(input.clone(), options(), layout.clone()).unwrap();
+    let matrix_free = PreparedGeneralRietveldObjective::new_with_max_linearization_elements(
+        input,
+        options(),
+        layout,
+        0,
+    )
+    .unwrap();
+    assert!(dense.uses_dense_linearization());
+    assert!(!matrix_free.uses_dense_linearization());
+    assert_eq!(dense.preparation_evaluation_count(), 1);
+    assert_eq!(matrix_free.preparation_evaluation_count(), 2);
+    assert_eq!(dense.normal_product_evaluation_count(), 0);
+    assert_eq!(matrix_free.normal_product_evaluation_count(), 2);
+
+    let direction = [2.0e-4, -0.03, 0.4, -0.2, 8.0, 2.0e-4, 0.1, 0.3];
+    let (dense_profile, dense_jvp) = dense.jvp(&direction).unwrap();
+    let (matrix_profile, matrix_jvp) = matrix_free.jvp(&direction).unwrap();
+    for (dense, matrix_free) in dense_profile.iter().zip(matrix_profile) {
+        assert!((dense - matrix_free).abs() <= 3.0e-12 * dense.abs().max(1.0));
+    }
+    for (dense, matrix_free) in dense_jvp.iter().zip(matrix_jvp) {
+        assert!((dense - matrix_free).abs() <= 3.0e-11 * dense.abs().max(1.0));
+    }
+
+    let weights = (0..dense_profile.len())
+        .map(|index| (f64::from(u32::try_from(index).unwrap()) * 0.07).cos())
+        .collect::<Vec<_>>();
+    let dense_vjp = dense.vjp(&weights).unwrap();
+    let matrix_vjp = matrix_free.vjp(&weights).unwrap();
+    for (dense, matrix_free) in dense_vjp.iter().zip(matrix_vjp) {
+        assert!((dense - matrix_free).abs() <= 3.0e-11 * dense.abs().max(1.0));
+    }
+
+    let dense_normal = dense.normal_product(&direction, 1.0e-4).unwrap();
+    let matrix_normal = matrix_free.normal_product(&direction, 1.0e-4).unwrap();
+    for (dense, matrix_free) in dense_normal.iter().zip(matrix_normal) {
+        assert!((dense - matrix_free).abs() <= 5.0e-11 * dense.abs().max(1.0));
+    }
+}
+
+#[test]
 fn fixed_spectrum_rejects_reference_wavelength_lattice_and_wavelength_refinement() {
     let mut invalid = spectrum_input();
     invalid.instrument.wavelength_angstrom = 1.0;

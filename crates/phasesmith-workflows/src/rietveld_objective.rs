@@ -8,11 +8,24 @@ use phasesmith_engine::{
     PreparedStructuralModelInputView, PreparedStructuralMultiphase, StructuralMultiphaseError,
 };
 
-use crate::rietveld::{prepare_phase_model, resolve_phase_contributions};
-use crate::{
-    DifferentiableBackground, RietveldCalculationOptions, RietveldError, RietveldInput,
-    RietveldParameterError, RietveldStructuralLayout,
+use crate::rietveld::{
+    assemble_rietveld_calculation, prepare_phase_model, resolve_phase_contributions,
 };
+use crate::{
+    DifferentiableBackground, RietveldCalculation, RietveldCalculationOptions, RietveldError,
+    RietveldInput, RietveldParameterError, RietveldStructuralLayout,
+};
+
+/// One reusable parameter-major physical structural Jacobian and its values.
+#[derive(Clone, Debug, PartialEq)]
+pub struct PreparedRietveldLinearization {
+    /// Complete calculated pattern at the linearized state.
+    pub calculation: RietveldCalculation,
+    /// Structural Jacobian in physical-parameter-major order.
+    pub jacobian: Vec<f64>,
+    /// Number of physical structural parameter rows.
+    pub parameter_count: usize,
+}
 
 /// Reusable structural values and derivative products for one accepted state.
 pub struct PreparedRietveldObjective {
@@ -56,6 +69,53 @@ impl PreparedRietveldObjective {
     #[must_use]
     pub const fn layout(&self) -> &RietveldStructuralLayout {
         &self.layout
+    }
+
+    /// Return the native dense element count required by [`Self::linearize`].
+    ///
+    /// # Errors
+    ///
+    /// Returns [`RietveldObjectiveError::AllocationOverflow`] when the product
+    /// is not representable as `usize`.
+    pub fn dense_element_count(&self) -> Result<usize, RietveldObjectiveError> {
+        self.prepared
+            .structural_parameter_counts()
+            .into_iter()
+            .try_fold(0_usize, usize::checked_add)
+            .and_then(|rows| rows.checked_mul(self.input.pattern.sample_count()))
+            .ok_or(RietveldObjectiveError::AllocationOverflow)
+    }
+
+    /// Materialize one reusable physical structural Jacobian and calculation.
+    ///
+    /// Values and native analytical derivatives are produced in the same
+    /// fused engine pass. The layout then projects native rows into stable
+    /// physical parameter order.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`RietveldObjectiveError`] for engine, shape, projection, or
+    /// calculation failures.
+    pub fn linearize(&self) -> Result<PreparedRietveldLinearization, RietveldObjectiveError> {
+        let products = self.with_inputs(|inputs| self.prepared.linearize(inputs))?;
+        let sample_count = self.input.pattern.sample_count();
+        let jacobians = products
+            .iter()
+            .map(|product| (product.d_y.as_slice(), product.parameter_count))
+            .collect::<Vec<_>>();
+        let jacobian = self
+            .layout
+            .project_native_jacobians(&jacobians, sample_count)?;
+        let calculation = assemble_rietveld_calculation(
+            &self.input,
+            &self.options,
+            products.into_iter().map(|product| product.result).collect(),
+        )?;
+        Ok(PreparedRietveldLinearization {
+            calculation,
+            jacobian,
+            parameter_count: self.layout.parameters().specs().len(),
+        })
     }
 
     /// Calculate the structural profile and its physical directional derivative.
@@ -220,6 +280,8 @@ pub enum RietveldObjectiveError {
     Structural(StructuralMultiphaseError),
     /// Damping must be finite and non-negative.
     InvalidDamping,
+    /// A requested reusable derivative allocation exceeds addressable memory.
+    AllocationOverflow,
 }
 
 impl Display for RietveldObjectiveError {
@@ -231,6 +293,9 @@ impl Display for RietveldObjectiveError {
             Self::InvalidDamping => {
                 formatter.write_str("Rietveld damping must be finite and non-negative")
             }
+            Self::AllocationOverflow => {
+                formatter.write_str("Rietveld dense linearization allocation overflow")
+            }
         }
     }
 }
@@ -241,7 +306,7 @@ impl Error for RietveldObjectiveError {
             Self::Rietveld(error) => Some(error),
             Self::Parameter(error) => Some(error),
             Self::Structural(error) => Some(error),
-            Self::InvalidDamping => None,
+            Self::InvalidDamping | Self::AllocationOverflow => None,
         }
     }
 }

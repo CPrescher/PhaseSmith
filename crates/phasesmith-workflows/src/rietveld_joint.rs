@@ -282,6 +282,24 @@ impl PreparedJointRietveldObjective {
         &self.layout
     }
 
+    /// Return expensive model products consumed while preparing all gradients.
+    #[must_use]
+    pub fn preparation_evaluation_count(&self) -> usize {
+        self.objectives
+            .iter()
+            .map(PreparedGeneralRietveldObjective::preparation_evaluation_count)
+            .sum()
+    }
+
+    /// Return expensive model products consumed by one joint normal product.
+    #[must_use]
+    pub fn normal_product_evaluation_count(&self) -> usize {
+        self.objectives
+            .iter()
+            .map(PreparedGeneralRietveldObjective::normal_product_evaluation_count)
+            .sum()
+    }
+
     /// Apply every histogram Jacobian to one joint physical direction.
     ///
     /// # Errors

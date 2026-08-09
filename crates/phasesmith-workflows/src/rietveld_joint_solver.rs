@@ -358,7 +358,7 @@ pub fn refine_joint_rietveld_with_runtime(
         }
         let derivative = transform.derivative_matrix()?;
         let objective = PreparedJointRietveldObjective::new(live.clone(), layout.clone())?;
-        if let Err(error) = reserve_products(runtime, 2) {
+        if let Err(error) = reserve_products(runtime, objective.preparation_evaluation_count()) {
             match error {
                 JointRietveldRefinementError::Runtime(RuntimeError::Stopped(stop)) => {
                     termination = stop.reason;
@@ -379,7 +379,7 @@ pub fn refine_joint_rietveld_with_runtime(
             options.cg_tolerance,
             options.max_cg_iterations,
             |direction| {
-                reserve_products(runtime, 2)?;
+                reserve_products(runtime, objective.normal_product_evaluation_count())?;
                 let physical = forward_product(&derivative, direction);
                 let physical_product = objective.normal_product(&physical, 0.0)?;
                 let mut result = transpose_product(&derivative, &physical_product);

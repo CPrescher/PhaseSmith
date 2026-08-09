@@ -984,6 +984,29 @@ pub fn calculate_rietveld_pattern(
     let calculated = prepared
         .calculate_request(request)
         .map_err(RietveldError::StructuralMultiphase)?;
+    assemble_rietveld_calculation(input, options, calculated.phases)
+}
+
+pub(crate) fn assemble_rietveld_calculation(
+    input: &RietveldInput,
+    options: &RietveldCalculationOptions,
+    phase_results: Vec<StructuralPatternResult>,
+) -> Result<RietveldCalculation, RietveldError> {
+    if phase_results.len() != input.phases.len() {
+        return Err(RietveldError::CalculationShapeMismatch);
+    }
+    let sample_count = input.pattern.sample_count();
+    let mut profile_y = vec![0.0; sample_count];
+    for result in &phase_results {
+        if result.accumulation.sample_count != sample_count
+            || result.accumulation.y.len() != sample_count
+        {
+            return Err(RietveldError::CalculationShapeMismatch);
+        }
+        for (combined, value) in profile_y.iter_mut().zip(&result.accumulation.y) {
+            *combined += value;
+        }
+    }
     let mut background_y = input.pattern.background_y.clone();
     if let Some(background) = &input.background {
         for (target, value) in background_y.iter_mut().zip(
@@ -994,8 +1017,7 @@ pub fn calculate_rietveld_pattern(
             *target += value;
         }
     }
-    let y = calculated
-        .profile_y
+    let y = profile_y
         .iter()
         .zip(&background_y)
         .map(|(profile, background)| profile + background)
@@ -1015,7 +1037,7 @@ pub fn calculate_rietveld_pattern(
     let phases = input
         .phases
         .iter()
-        .zip(calculated.phases)
+        .zip(phase_results)
         .map(|(phase, result)| RietveldPhaseCalculation {
             phase_id: phase.phase_id.clone(),
             name: phase.name.clone(),
@@ -1023,7 +1045,7 @@ pub fn calculate_rietveld_pattern(
         })
         .collect();
     Ok(RietveldCalculation {
-        profile_y: calculated.profile_y,
+        profile_y,
         background_y,
         y,
         phases,
@@ -1090,6 +1112,8 @@ pub enum RietveldError {
     InvalidOptions,
     /// Profile/background composition overflowed or became non-finite.
     NonFiniteCalculation,
+    /// One internal phase result has incompatible sample dimensions.
+    CalculationShapeMismatch,
 }
 
 impl Display for RietveldError {
@@ -1142,6 +1166,9 @@ impl Display for RietveldError {
             Self::NonFiniteCalculation => {
                 formatter.write_str("Rietveld calculated pattern is non-finite")
             }
+            Self::CalculationShapeMismatch => {
+                formatter.write_str("Rietveld phase calculation shape mismatch")
+            }
         }
     }
 }
@@ -1176,7 +1203,8 @@ impl Error for RietveldError {
             | Self::SiteIdCountMismatch
             | Self::DuplicateSiteId
             | Self::InvalidOptions
-            | Self::NonFiniteCalculation => None,
+            | Self::NonFiniteCalculation
+            | Self::CalculationShapeMismatch => None,
         }
     }
 }

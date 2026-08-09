@@ -10,6 +10,13 @@ use crate::{
     calculate_rietveld_pattern,
 };
 
+/// Default upper bound for reusable native structural Jacobians.
+///
+/// Ten million `f64` elements require at most about 80 MB before the smaller
+/// complete-parameter columns are composed. Larger requests retain the
+/// matrix-free objective.
+pub const DEFAULT_MAX_LINEARIZATION_ELEMENTS: usize = 10_000_000;
+
 /// Reusable complete physical objective for one accepted native state.
 pub struct PreparedGeneralRietveldObjective {
     input: RietveldInput,
@@ -17,6 +24,7 @@ pub struct PreparedGeneralRietveldObjective {
     layout: RietveldParameterLayout,
     structural: PreparedRietveldObjective,
     calculation: RietveldCalculation,
+    dense_structural_jacobian: Option<Vec<f64>>,
     explicit_columns: Vec<(usize, Vec<f64>)>,
 }
 
@@ -35,12 +43,43 @@ impl PreparedGeneralRietveldObjective {
         options: RietveldCalculationOptions,
         layout: RietveldParameterLayout,
     ) -> Result<Self, RietveldGeneralObjectiveError> {
+        Self::new_with_max_linearization_elements(
+            input,
+            options,
+            layout,
+            DEFAULT_MAX_LINEARIZATION_ELEMENTS,
+        )
+    }
+
+    /// Prepare a complete objective under an explicit dense-memory ceiling.
+    ///
+    /// A zero ceiling forces matrix-free products. Requests whose native
+    /// structural Jacobian fits within the ceiling materialize it once and
+    /// reuse it for every gradient and normal product at this state.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`RietveldGeneralObjectiveError`] for invalid state, derivative
+    /// layout mismatches, or failed structural products.
+    pub fn new_with_max_linearization_elements(
+        input: RietveldInput,
+        options: RietveldCalculationOptions,
+        layout: RietveldParameterLayout,
+        max_linearization_elements: usize,
+    ) -> Result<Self, RietveldGeneralObjectiveError> {
         let structural = PreparedRietveldObjective::new(
             input.clone(),
             options.clone(),
             layout.structural_layout().clone(),
         )?;
-        let calculation = calculate_rietveld_pattern(&input, &options)?;
+        let dense_enabled = max_linearization_elements > 0
+            && structural.dense_element_count()? <= max_linearization_elements;
+        let (calculation, dense_structural_jacobian) = if dense_enabled {
+            let linearization = structural.linearize()?;
+            (linearization.calculation, Some(linearization.jacobian))
+        } else {
+            (calculate_rietveld_pattern(&input, &options)?, None)
+        };
         let mut explicit_columns = instrument_columns(&input, &calculation, &layout)?;
         append_sample_physics_columns(&input, &calculation, &layout, &mut explicit_columns)?;
         append_background_columns(&input, &layout, &mut explicit_columns)?;
@@ -50,8 +89,45 @@ impl PreparedGeneralRietveldObjective {
             layout,
             structural,
             calculation,
+            dense_structural_jacobian,
             explicit_columns,
         })
+    }
+
+    /// Return whether this state reuses a bounded dense structural Jacobian.
+    #[must_use]
+    pub const fn uses_dense_linearization(&self) -> bool {
+        self.dense_structural_jacobian.is_some()
+    }
+
+    /// Return expensive model products consumed while preparing the gradient.
+    #[must_use]
+    pub const fn preparation_evaluation_count(&self) -> usize {
+        if self.uses_dense_linearization() {
+            1
+        } else {
+            2
+        }
+    }
+
+    /// Return expensive model products consumed by one normal-product call.
+    #[must_use]
+    pub const fn normal_product_evaluation_count(&self) -> usize {
+        if self.uses_dense_linearization() {
+            0
+        } else {
+            2
+        }
+    }
+
+    /// Return expensive model products consumed by one forward-product call.
+    #[must_use]
+    pub const fn jvp_evaluation_count(&self) -> usize {
+        if self.uses_dense_linearization() {
+            0
+        } else {
+            1
+        }
     }
 
     /// Borrow the complete stable physical layout.
@@ -80,7 +156,18 @@ impl PreparedGeneralRietveldObjective {
             return Err(RietveldGeneralParameterError::ValueLengthMismatch.into());
         }
         let structural_direction = self.layout.structural_direction(direction)?;
-        let (profile, mut derivative) = self.structural.jvp(&structural_direction)?;
+        let (profile, mut derivative) = if let Some(jacobian) = &self.dense_structural_jacobian {
+            (
+                self.calculation.profile_y.clone(),
+                dense_forward_product(
+                    jacobian,
+                    &structural_direction,
+                    self.input.pattern.sample_count(),
+                ),
+            )
+        } else {
+            self.structural.jvp(&structural_direction)?
+        };
         for (parameter, column) in &self.explicit_columns {
             let coefficient = direction[*parameter];
             for (target, value) in derivative.iter_mut().zip(column) {
@@ -100,7 +187,15 @@ impl PreparedGeneralRietveldObjective {
         if sample_weights.len() != self.input.pattern.sample_count() {
             return Err(RietveldGeneralObjectiveError::SampleLengthMismatch);
         }
-        let structural = self.structural.vjp(sample_weights)?;
+        let structural = if let Some(jacobian) = &self.dense_structural_jacobian {
+            dense_reverse_product(
+                jacobian,
+                sample_weights,
+                self.layout.structural_layout().parameters().specs().len(),
+            )
+        } else {
+            self.structural.vjp(sample_weights)?
+        };
         let mut result = self.layout.expand_structural_gradient(&structural)?;
         for (parameter, column) in &self.explicit_columns {
             result[*parameter] += column
@@ -181,6 +276,33 @@ impl PreparedGeneralRietveldObjective {
             })
             .collect()
     }
+}
+
+fn dense_forward_product(jacobian: &[f64], direction: &[f64], sample_count: usize) -> Vec<f64> {
+    let mut result = vec![0.0; sample_count];
+    for (coefficient, row) in direction.iter().zip(jacobian.chunks_exact(sample_count)) {
+        for (target, value) in result.iter_mut().zip(row) {
+            *target += coefficient * value;
+        }
+    }
+    result
+}
+
+fn dense_reverse_product(
+    jacobian: &[f64],
+    sample_weights: &[f64],
+    parameter_count: usize,
+) -> Vec<f64> {
+    jacobian
+        .chunks_exact(sample_weights.len())
+        .take(parameter_count)
+        .map(|row| {
+            row.iter()
+                .zip(sample_weights)
+                .map(|(left, right)| left * right)
+                .sum()
+        })
+        .collect()
 }
 
 fn instrument_columns(
