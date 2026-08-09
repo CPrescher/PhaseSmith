@@ -254,19 +254,32 @@ restored checkpoint to `rietveld.refine` for deterministic continuation.
 
 ## Multi-histogram boundary
 
-One `RietveldInput` currently owns one observed pattern and one experiment.
-The PbSO4 validation therefore runs independent X-ray and neutron fits and
-labels its GSAS-II comparison accordingly. A scientifically equivalent joint
-fit requires a first-class multi-histogram input: structure, cell, atomic
-coordinates, occupancies, and displacement parameters are shared, while each
-histogram retains its own radiation/scattering model, scale, background,
-profile, limits, zero/displacement geometry, weights, and derivatives. The
-combined objective must sum every histogram's residual norm before accepting a
-trial. Alternating independent refinements is not treated as joint refinement.
+`JointRietveldHistogram` and `JointRietveldLayout` compose two or more complete
+`RietveldInput` records into one physical parameter vector. Lattice, atomic
+coordinates, occupancies, and isotropic displacement values are shared by
+stable phase/site identity. Phase scale, radiation/scattering model,
+intensity correction, background, profile, limits, instrument and displacement
+geometry, masks, and uncertainties remain histogram-local. Local keys are
+namespaced by histogram ID; for example, `phase[xray/PbSO4].scale` and
+`phase[neutron/PbSO4].scale` are distinct while
+`lattice[PbSO4].a_angstrom` occurs once.
 
-This typed shared/local parameter ownership is the next Rietveld slice. Until
-it exists, PhaseSmith does not claim that its independently fitted X/Y
-displacements should equal values from GSAS-II's coupled X-ray/neutron fit.
+`PreparedJointRietveldObjective` scatters one joint direction into each native
+single-histogram product and sums reverse products back into shared rows.
+`refine_joint_rietveld` forms one constraint-aware Gauss--Newton step and
+evaluates the sum of all histogram objectives for every trial. A trial is never
+accepted from an alternating or partial histogram result. The solver provides
+bounded runtime events, cancellation, restart checkpoints, histogram-owned
+topology changes, and aggregate `Rp`, `Rwp`, chi-square, and reduced chi-square
+using the joint free-parameter count once.
+
+The Rust-only `joint_pbso4` example is the pinned real-data workload. It reads
+the official packed GSAS X-ray and neutron patterns plus CIF without Python,
+uses probe-local reflection/scattering/correction models, and refines one
+shared cell with local scales and residual backgrounds. This deliberately
+bounded monochromatic benchmark is a regression workload for the native joint
+boundary; it does not claim feature parity with GSAS-II's fuller staged
+doublet/instrument/geometry recipe.
 
 ## Extension boundary
 

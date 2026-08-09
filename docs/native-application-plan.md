@@ -121,7 +121,10 @@ wheels.
 14. Port Le Bail, followed by Rietveld and staged recipes.
 15. Delegate built-in Python refinement and persistence to the native APIs.
 16. Add the separate Tauri adapter and packaging gates.
-17. Implement the joint multi-histogram objective.
+17. Implement the joint multi-histogram objective. Complete: the native layout,
+    matrix-free products, constrained solver, cancellation/checkpoint boundary,
+    aggregate metrics, and pinned Rust-only PbSO4 workload share structure while
+    preserving histogram-local experiment state.
 
 Each numbered change is reviewed after implementation, passes its focused
 tests plus the relevant full gates, and is committed independently before the

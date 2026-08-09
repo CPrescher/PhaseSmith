@@ -744,12 +744,13 @@ acceptance, persistence, events, and binary plotting transport, this completes
 the Python-free desktop adapter boundary. The bundled static page remains a
 runtime probe rather than the product GUI.
 
-The remaining parity boundary is joint refinement. PhaseSmith currently owns
-one pattern/experiment per `RietveldInput`; GSAS-II shares one PbSO4 structure
-across both histograms. The next slice must introduce a first-class
-multi-histogram objective with explicit shared structural parameters and local
-scale/background/profile/radiation/geometry parameters. Alternating independent
-fits is not accepted as an equivalent implementation.
+The final planned parity boundary, joint refinement, is now native.
+`JointRietveldLayout` shares structural phase/site parameters while preserving
+local scale, background, profile, radiation, correction, geometry, masks, and
+uncertainties. The constraint-aware solver evaluates the summed objective for
+every trial and retains cancellation/checkpoint state and aggregate metrics.
+The pinned Rust-only PbSO4 X-ray/neutron workload exercises the complete joint
+path without Python; alternating independent fits are not used.
 
 ## Quality bar
 

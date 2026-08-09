@@ -1200,6 +1200,11 @@ Keep implementation units reviewable through these ordered changes:
 23. Typed multi-histogram Rietveld objective with shared structural and local
     experiment parameters, followed by a joint PbSO4 X-ray/neutron benchmark.
 
+Unit 23 is complete. The Rust workflow crate now owns stable shared/local
+packing, matrix-free joint products, a bounded constraint-aware summed solver,
+restart/cancellation state, aggregate metrics, and an optimized Rust-only
+benchmark over the pinned PbSO4 X-ray/neutron patterns and CIF.
+
 Do not combine adjacent items merely to reduce PR count; numerical review is
 easier when parameter conventions and tolerance changes remain isolated.
 

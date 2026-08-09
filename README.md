@@ -82,6 +82,14 @@ uv run python benchmarks/background.py --require-release
 uv run python benchmarks/real_data.py --require-release
 ```
 
+The joint multi-histogram PbSO4 workload is also executable entirely in Rust,
+without building or launching Python:
+
+```shell
+cargo run --release -p phasesmith-workflows --example joint_pbso4 -- \
+  validation/data/gsasii-pbso4-cw
+```
+
 The real-data benchmark verifies pinned QARR 1g, APS sucrose, and official
 PbSO4 X-ray/neutron tutorial inputs, records cold and warmed complete-workflow
 timings, and hashes the timing-free scientific report. By default it compares
@@ -130,8 +138,9 @@ The exact scope and interpretation are documented in
 [docs/gsasii-performance.md](docs/gsasii-performance.md). This is a kernel-level
 comparison. The QARR and PbSO4 drivers separately compare complete native
 workflows and gate their reported scientific results before reporting speed.
-The PbSO4 report includes the supplied reference cell alongside PhaseSmith's
-independent X-ray/neutron fits and GSAS-II's joint refinement.
+The established Python PbSO4 report includes the supplied reference cell
+alongside the per-probe staged fits and GSAS-II's joint refinement. The Rust
+example separately exercises PhaseSmith's first-class summed joint objective.
 
 Background estimation is an explicit preprocessing step:
 

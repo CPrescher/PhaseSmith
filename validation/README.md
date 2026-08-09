@@ -36,8 +36,10 @@ have deliberately different meanings:
   Poisson-weighted Rwp (0.19679, limit 0.20) from unit-weight Rwp (0.13282,
   limit 0.15); profile correlation is 0.99069.
 - `gsasii-pbso4-cw` adds official packed-GSAS X-ray and neutron patterns for
-  the same PbSO4 specimen. PhaseSmith runs the probes independently, while the
-  paired pinned-GSAS-II benchmark follows the official joint refinement stages.
+  the same PbSO4 specimen. The established Python validation keeps its staged
+  per-probe comparison for continuity, while the Rust-only joint benchmark
+  shares one structural parameter state across both probes. The paired pinned
+  GSAS-II benchmark follows the official joint refinement stages.
   The supplied reference cell is a=8.480, b=5.398, c=6.958 Å. PhaseSmith's
   neutron result is a=8.47045, b=5.39170, c=6.95148 Å; its X-ray path currently
   keeps the supplied lattice fixed. These distinctions are recorded rather
@@ -69,6 +71,24 @@ commit-pinned official [combined-refinement tutorial](https://github.com/Advance
 The committed `validation/results/2026-08-07-baseline.json` records the first
 reviewed run. Elapsed time is diagnostic host timing, not a cross-machine
 performance acceptance threshold.
+
+Run the Python-free joint workload directly through the native release binary:
+
+```bash
+cargo run --release -p phasesmith-workflows --example joint_pbso4 -- \
+  validation/data/gsasii-pbso4-cw
+```
+
+The reviewed one-worker fingerprint selects 8,378 observations, decreases the
+summed objective from `4.057058531851e5` to `3.888630080197e5`, reports joint
+`Rwp=0.2793263122`, and installs the identical shared cell
+`8.4795406429 × 5.3976687489 × 6.9575866497 Å` in both histogram states. Its
+40 accepted iterations are an intentional fixed workload; `max_iterations` is
+therefore an expected benchmark termination. Set
+`PHASESMITH_BENCHMARK_THREADS` to a positive worker count when comparing native
+execution policies. The executable gates sample count, finite `Rwp <= 0.30`,
+objective decrease, shared-cell identity, and 0.5% proximity to the supplied
+reference cell.
 
 ## Native real-data benchmark and regression tests
 
