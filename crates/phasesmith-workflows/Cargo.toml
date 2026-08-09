@@ -27,5 +27,9 @@ harness = false
 name = "lebail"
 harness = false
 
+[[bench]]
+name = "rietveld"
+harness = false
+
 [lints]
 workspace = true
