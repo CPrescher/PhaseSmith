@@ -13,7 +13,7 @@ use std::collections::BTreeMap;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::fs;
-use std::io::Read;
+use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 
@@ -474,8 +474,9 @@ fn create_temporary_directory(
 }
 
 fn write_synced_file(path: &Path, bytes: &[u8]) -> Result<(), PersistenceError> {
-    fs::write(path, bytes)?;
-    fs::File::open(path)?.sync_all()?;
+    let mut file = fs::File::create(path)?;
+    file.write_all(bytes)?;
+    file.sync_all()?;
     Ok(())
 }
 
