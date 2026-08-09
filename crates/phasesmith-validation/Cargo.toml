@@ -8,8 +8,10 @@ authors.workspace = true
 license.workspace = true
 
 [dependencies]
+nalgebra = "0.35"
 phasesmith-core = { path = "../phasesmith-core" }
 phasesmith-crystallography = { path = "../phasesmith-crystallography" }
+phasesmith-engine = { path = "../phasesmith-engine" }
 phasesmith-execution = { path = "../phasesmith-execution" }
 phasesmith-io = { path = "../phasesmith-io" }
 phasesmith-model = { path = "../phasesmith-model" }

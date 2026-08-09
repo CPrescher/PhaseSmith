@@ -2546,8 +2546,10 @@ dependencies = [
 name = "phasesmith-validation"
 version = "0.1.0"
 dependencies = [
+ "nalgebra",
  "phasesmith-core",
  "phasesmith-crystallography",
+ "phasesmith-engine",
  "phasesmith-execution",
  "phasesmith-io",
  "phasesmith-model",
