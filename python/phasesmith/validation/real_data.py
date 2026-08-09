@@ -926,7 +926,9 @@ def run_pbso4_cw_validation(
         background=residual_background,
     )
     options = rietveld.RietveldOptions(
-        limits=RefinementLimits(max_iterations=160, max_evaluations=3_000),
+        # Native matrix-free products are accounted individually; this budget
+        # covers the 160-iteration bound even when CG uses its full allowance.
+        limits=RefinementLimits(max_iterations=160, max_evaluations=12_000),
         min_iterations=3,
         objective_tolerance=1.0e-7,
         max_scaled_parameter_step=0.15,

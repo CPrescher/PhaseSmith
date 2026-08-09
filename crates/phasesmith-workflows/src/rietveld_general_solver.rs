@@ -346,10 +346,6 @@ pub fn refine_general_rietveld_with_runtime(
             termination = TerminationReason::Converged;
             break;
         }
-        if let Err(error) = runtime.begin_evaluation() {
-            termination = normal_stop(&error)?;
-            break;
-        }
         let current_calculation = objective.calculation().clone();
         let current_objective = 0.5 * current_calculation.metrics.chi_square;
         let current_values = solver_parameters

@@ -551,6 +551,51 @@ fn cancellation_returns_the_unchanged_restartable_complete_state() {
 }
 
 #[test]
+fn cached_current_calculation_does_not_consume_an_evaluation() {
+    let input = input_from_truth(phase(0.7, 1.0), vec![0.0], phase(1.3, 1.0), vec![0.0]);
+    let selection = RietveldParameterSelection::new(
+        RietveldStructuralSelection {
+            phase_scale: true,
+            ..RietveldStructuralSelection::default()
+        },
+        Vec::new(),
+        false,
+        false,
+    )
+    .unwrap();
+    let options = RietveldRefinementOptions::new(
+        calculation(),
+        RefinementLimits::new(1, 5, None, 20).unwrap(),
+        1,
+        1.0e-12,
+        1.0e-10,
+        1.0e-6,
+        10.0,
+        0.3,
+        1.0e-10,
+        1,
+        1.0,
+        0,
+    )
+    .unwrap();
+    let result = refine_general_rietveld(
+        &input,
+        &selection,
+        &[None],
+        &[],
+        &options,
+        RietveldCovarianceOptions::new(false, 1, 1.0).unwrap(),
+        None,
+        None,
+    )
+    .unwrap();
+
+    assert_eq!(result.evaluations, 5);
+    assert_eq!(result.history.len(), 1);
+    assert!(result.input.phases[0].definition().scale > 0.7);
+}
+
+#[test]
 #[allow(clippy::too_many_lines)]
 fn complete_solver_matches_python_affine_history_when_configured() {
     let Ok(python) = std::env::var("PHASESMITH_NUMPY_PYTHON") else {
