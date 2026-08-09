@@ -609,6 +609,7 @@ fn xray_report(
     let mut notes = vec![
         format!("Final cell a={:.8}, b={:.8}, c={:.8} angstrom.", cell.a_angstrom, cell.b_angstrom, cell.c_angstrom),
         "Cu K-alpha is evaluated as the exact fixed 1.5405/1.5443 angstrom doublet with relative intensity 0.5.".to_owned(),
+        "Background is a fixed native Smooth Bruckner estimate plus a refined three-term Chebyshev residual correction.".to_owned(),
     ];
     notes.extend(workflow.stages().iter().map(|stage| {
         format!(

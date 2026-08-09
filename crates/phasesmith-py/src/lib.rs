@@ -2,6 +2,7 @@
 
 #![allow(clippy::needless_pass_by_value)] // PyO3 extracts owned argument guards.
 
+use std::path::PathBuf;
 use std::sync::Arc;
 
 use npy::ndarray::Array2;
@@ -3912,6 +3913,29 @@ fn read_powder_file_for_python<'py>(
     powder_data_to_numpy(py, data)
 }
 
+/// Run one Python-free validation workflow and return its stable JSON report.
+#[pyfunction(name = "_run_native_validation")]
+fn run_native_validation(py: Python<'_>, runner: String, directory: String) -> PyResult<String> {
+    py.detach(move || {
+        let directory = PathBuf::from(directory);
+        let report = match runner.as_str() {
+            "aps-sucrose-11bmb" => phasesmith_validation::run_sucrose_lebail_validation(&directory)
+                .map_err(|error| error.to_string())?,
+            "iucr-qarr-1g" => phasesmith_validation::run_qarr_1g_validation(&directory)
+                .map_err(|error| error.to_string())?,
+            "gsasii-pbso4-cw-neutron" => {
+                phasesmith_validation::run_pbso4_neutron_validation(&directory)
+                    .map_err(|error| error.to_string())?
+            }
+            "gsasii-pbso4-cw-x-ray" => phasesmith_validation::run_pbso4_xray_validation(&directory)
+                .map_err(|error| error.to_string())?,
+            _ => return Err(format!("unknown native validation runner {runner:?}")),
+        };
+        report.to_json().map_err(|error| error.to_string())
+    })
+    .map_err(PyValueError::new_err)
+}
+
 /// Native Python module.
 #[pymodule]
 fn _core(module: &Bound<'_, PyModule>) -> PyResult<()> {
@@ -3941,6 +3965,7 @@ fn _core(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_function(wrap_pyfunction!(parse_cif_text_for_python, module)?)?;
     module.add_function(wrap_pyfunction!(parse_powder_text_for_python, module)?)?;
     module.add_function(wrap_pyfunction!(read_powder_file_for_python, module)?)?;
+    module.add_function(wrap_pyfunction!(run_native_validation, module)?)?;
     module.add_function(wrap_pyfunction!(profile, module)?)?;
     module.add_function(wrap_pyfunction!(tch_shape_from_fwhm, module)?)?;
     module.add_function(wrap_pyfunction!(profile_tch, module)?)?;

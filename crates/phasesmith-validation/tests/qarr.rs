@@ -53,7 +53,8 @@ fn pure_rust_qarr_report_matches_the_python_scripting_runner() {
     };
     let rust = run_qarr_1g_validation(&dataset()).unwrap();
     let script = r"
-import json, sys
+import json, os, sys
+os.environ['PHASESMITH_VALIDATION_PYTHON_REFERENCE'] = '1'
 from phasesmith.validation import run_qarr_1g_validation
 r = run_qarr_1g_validation(sys.argv[1])
 print(json.dumps(r.to_record(), sort_keys=True))

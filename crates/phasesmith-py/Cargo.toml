@@ -20,6 +20,7 @@ phasesmith-execution = { path = "../phasesmith-execution" }
 phasesmith-io = { path = "../phasesmith-io" }
 phasesmith-model = { path = "../phasesmith-model" }
 phasesmith-persistence = { path = "../phasesmith-persistence" }
+phasesmith-validation = { path = "../phasesmith-validation" }
 phasesmith-workflows = { path = "../phasesmith-workflows" }
 
 [lints]

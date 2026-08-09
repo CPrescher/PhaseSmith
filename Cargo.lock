@@ -2527,6 +2527,7 @@ dependencies = [
  "phasesmith-io",
  "phasesmith-model",
  "phasesmith-persistence",
+ "phasesmith-validation",
  "phasesmith-workflows",
  "pyo3",
 ]

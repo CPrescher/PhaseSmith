@@ -32,7 +32,8 @@ fn pure_rust_sucrose_report_matches_the_python_scripting_runner() {
     };
     let rust = run_sucrose_lebail_validation(&dataset()).unwrap();
     let script = r"
-import json, sys
+import json, os, sys
+os.environ['PHASESMITH_VALIDATION_PYTHON_REFERENCE'] = '1'
 from phasesmith.validation import run_sucrose_lebail_validation
 r = run_sucrose_lebail_validation(sys.argv[1])
 print(json.dumps(r.to_record(), sort_keys=True))

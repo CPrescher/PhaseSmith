@@ -44,7 +44,8 @@ fn pure_rust_neutron_report_matches_the_python_scripting_runner() {
     };
     let rust = run_pbso4_neutron_validation(&dataset()).unwrap();
     let script = r"
-import json, sys
+import json, os, sys
+os.environ['PHASESMITH_VALIDATION_PYTHON_REFERENCE'] = '1'
 from phasesmith import RadiationProbe
 from phasesmith.validation import run_pbso4_cw_validation
 r = run_pbso4_cw_validation(sys.argv[1], RadiationProbe.NEUTRON)
@@ -96,7 +97,8 @@ fn pure_rust_xray_report_matches_the_python_scripting_runner() {
     };
     let rust = run_pbso4_xray_validation(&dataset()).unwrap();
     let script = r"
-import json, sys
+import json, os, sys
+os.environ['PHASESMITH_VALIDATION_PYTHON_REFERENCE'] = '1'
 from phasesmith import RadiationProbe
 from phasesmith.validation import run_pbso4_cw_validation
 r = run_pbso4_cw_validation(sys.argv[1], RadiationProbe.X_RAY)

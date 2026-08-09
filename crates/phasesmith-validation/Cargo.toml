@@ -20,5 +20,9 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = { version = "1.0", features = ["float_roundtrip"] }
 sha2 = "=0.10.9"
 
+[[bin]]
+name = "phasesmith-validation"
+path = "src/bin/phasesmith-validation.rs"
+
 [lints]
 workspace = true

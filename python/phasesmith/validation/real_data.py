@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import json
 import math
+import os
 from dataclasses import dataclass, replace
 from pathlib import Path
 from time import perf_counter
@@ -10,6 +12,7 @@ from typing import Literal
 
 import numpy as np
 
+from .. import _core
 from ..background import SmoothBrucknerBackground
 from ..control import CancellationCallback
 from ..execution import ExecutionPolicy
@@ -167,6 +170,27 @@ class RealDataValidationReport:
             "checks": [check.to_record() for check in self.checks],
             "notes": list(self.notes),
         }
+
+
+def _native_validation_report(
+    runner: str, dataset_directory: str | Path
+) -> RealDataValidationReport:
+    """Decode one stable report returned by the Rust validation crate."""
+
+    record = json.loads(_core._run_native_validation(runner, str(dataset_directory)))
+    return RealDataValidationReport(
+        dataset_id=record["dataset_id"],
+        status=record["status"],
+        sample_count=record["sample_count"],
+        reflection_count=record["reflection_count"],
+        elapsed_seconds=record["elapsed_seconds"],
+        checks=tuple(ValidationCheck(**check) for check in record["checks"]),
+        notes=tuple(record["notes"]),
+    )
+
+
+def _use_native_validation() -> bool:
+    return os.environ.get("PHASESMITH_VALIDATION_PYTHON_REFERENCE") != "1"
 
 
 def qarr_1g_readiness(dataset_directory: str | Path) -> RealDataValidationReport:
@@ -333,6 +357,14 @@ def run_qarr_1g_validation(
     execution: ExecutionPolicy | None = None,
 ) -> RealDataValidationReport:
     """Run the pinned three-phase Cu K-alpha QARR refinement and QPA checks."""
+
+    if (
+        _use_native_validation()
+        and cancellation is None
+        and logger is None
+        and execution is None
+    ):
+        return _native_validation_report("iucr-qarr-1g", dataset_directory)
 
     start = perf_counter()
     selected_execution = ExecutionPolicy() if execution is None else execution
@@ -664,6 +696,9 @@ def run_qarr_1g_validation(
 def run_sucrose_lebail_validation(dataset_directory: str | Path) -> RealDataValidationReport:
     """Run the supported monochromatic Le Bail path on the APS sucrose data."""
 
+    if _use_native_validation():
+        return _native_validation_report("aps-sucrose-11bmb", dataset_directory)
+
     start = perf_counter()
     data = read_powder_data(Path(dataset_directory) / "11bmb_8716.fxye", format="gsas_fxye")
     selected = (data.x >= 1.0) & (data.x <= 24.0)
@@ -823,6 +858,13 @@ def run_pbso4_cw_validation(
 
     if probe not in {RadiationProbe.X_RAY, RadiationProbe.NEUTRON}:
         raise ValueError("PbSO4 validation requires X-ray or neutron radiation")
+    if _use_native_validation() and execution is None:
+        runner = (
+            "gsasii-pbso4-cw-x-ray"
+            if probe is RadiationProbe.X_RAY
+            else "gsasii-pbso4-cw-neutron"
+        )
+        return _native_validation_report(runner, dataset_directory)
     start = perf_counter()
     root = Path(dataset_directory)
     filename = "PBSO4.XRA" if probe is RadiationProbe.X_RAY else "PBSO4.CWN"

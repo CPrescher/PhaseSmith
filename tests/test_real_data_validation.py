@@ -9,6 +9,7 @@ from phasesmith.validation import (
 from phasesmith.validation.real_data import (
     RealDataValidationReport,
     ValidationCheck,
+    _native_validation_report,
     _qarr_cancelled_report,
 )
 
@@ -48,6 +49,32 @@ def test_qarr_cancellation_is_a_blocked_last_accepted_report() -> None:
     assert report.checks[0].check_id == "cooperative_cancellation"
     assert "stage 2" in report.checks[0].detail
     assert report.notes == ("Last accepted Poisson-weighted Rwp=0.20000000.",)
+
+
+def test_native_validation_json_reconstructs_the_public_report(monkeypatch) -> None:
+    record = {
+        "dataset_id": "native-case",
+        "status": "passed",
+        "sample_count": 2,
+        "reflection_count": 1,
+        "elapsed_seconds": 0.25,
+        "checks": [
+            {
+                "check_id": "gate",
+                "status": "passed",
+                "detail": "native report preserved",
+                "measured": 0.5,
+                "criterion": "finite",
+            }
+        ],
+        "notes": ["Rust-owned calculation."],
+    }
+    monkeypatch.setattr(
+        "phasesmith.validation.real_data._core._run_native_validation",
+        lambda runner, directory: __import__("json").dumps(record),
+    )
+    report = _native_validation_report("native-case", Path("dataset"))
+    assert report.to_record() == record
 
 
 def test_report_status_must_summarize_check_statuses() -> None:
