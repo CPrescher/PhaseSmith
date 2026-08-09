@@ -54,29 +54,15 @@ renaming the repository, recreate `.venv`, repeat the three setup commands
 above, and confirm `uv run python -c "import phasesmith; print(phasesmith.__file__)"`
 points into the current checkout before running the gate.
 
-### Native desktop host
+### Native application adapter
 
-The experimental Tauri 2 host is a standalone Rust-only application outside
-the library workspace and does not start or bundle Python. Its checked-in
-frontend is currently a runtime probe for the complete native adapter—not the
-finished product UI. Run it directly with:
-
-```shell
-cargo run --manifest-path apps/phasesmith-desktop/src-tauri/Cargo.toml
-```
-
-The adapter already covers revisioned project lifecycle, bounded powder/CIF
-import, standalone calculation, detached cancellable refinement, result
-acceptance, binary plotting series, native persistence, and summary-report
-export. After desktop dependency or bundle changes, verify the no-sidecar
-distribution contract with:
-
-```shell
-scripts/audit-desktop-distribution.sh
-```
-
-See [docs/desktop-adapter.md](docs/desktop-adapter.md) for the command, event,
-revision, and binary IPC contracts.
+The Python-free `phasesmith-desktop` crate provides revisioned project state,
+bounded powder/CIF import, standalone calculation, detached cancellable
+refinement, result acceptance, binary plotting series, native persistence, and
+summary-report export. It is presentation-framework agnostic so a future GUI
+can live in its own crate or repository and depend on PhaseSmith without
+bundling Python. See [docs/desktop-adapter.md](docs/desktop-adapter.md) for the
+state, event, revision, and binary-data contracts.
 
 Run the Rust benchmarks with `cargo bench -p phasesmith-core`. For a comparable
 optimized Python-to-Rust measurement, build the release extension and require
@@ -112,7 +98,7 @@ cargo run --release -p phasesmith-validation --bin phasesmith-validation -- \
 
 Ordinary `phasesmith.validation` calls delegate to these Rust workflows.
 Python callbacks, custom execution policies, and explicit reference tests keep
-the independent scripting path; neither the CLI nor Tauri launches Python.
+the independent scripting path; the native CLI does not launch Python.
 
 The real-data benchmark verifies pinned QARR 1g, APS sucrose, and official
 PbSO4 X-ray/neutron tutorial inputs, records cold and warmed complete-workflow

@@ -1195,8 +1195,8 @@ Keep implementation units reviewable through these ordered changes:
     policy, fixed-spectrum/multiphase composition, and a Rust-only calculation
     vertical slice.
 22. Owned native domain/I/O/persistence records with Python/Rust compatibility,
-    followed by native refinement workflows and a separate Rust-only Tauri
-    adapter.
+    followed by native refinement workflows and a presentation-framework-free
+    application adapter.
 23. Typed multi-histogram Rietveld objective with shared structural and local
     experiment parameters, followed by a joint PbSO4 X-ray/neutron benchmark.
 24. Python-free real-data validation crate and CLI, native fixed-spectrum
@@ -1208,11 +1208,12 @@ packing, matrix-free joint products, a bounded constraint-aware summed solver,
 restart/cancellation state, aggregate metrics, and an optimized Rust-only
 benchmark over the pinned PbSO4 X-ray/neutron patterns and CIF.
 
-Unit 24 is complete. Tauri and the validation CLI call Rust directly with no
-Python sidecar; ordinary scripting validation calls reconstruct the same public
-report types from native JSON. Release-mode Rust tests cover deterministic
-QARR, both PbSO4 probes including the exact Cu K-alpha doublet, mixed-radiation
-joint products, and independent Python differential comparisons.
+Unit 24 is complete. The application adapter and validation CLI call Rust
+directly with no Python sidecar; ordinary scripting validation calls
+reconstruct the same public report types from native JSON. Release-mode Rust
+tests cover deterministic QARR, both PbSO4 probes including the exact Cu K-alpha
+doublet, mixed-radiation joint products, and independent Python differential
+comparisons.
 
 Do not combine adjacent items merely to reduce PR count; numerical review is
 easier when parameter conventions and tolerance changes remain isolated.

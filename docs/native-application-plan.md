@@ -409,8 +409,8 @@ Its project store owns immutable native snapshots, checks every edit/save/close
 against an expected revision, and uses exact snapshot identity to reject the
 close/reopen ABA race for asynchronous completions. Native load validates
 before installation and failed commands preserve current state. The adapter's
-job/event/binary transport layer and thin Tauri host remain subsequent atomic
-substeps.
+job/event/binary transport layer remains a subsequent atomic substep; a product
+GUI is deliberately outside this library plan.
 
 A further desktop-adapter substep adds detached native Rietveld jobs, structured
 finite progress/completion/failure events, first-reason cooperative
@@ -419,19 +419,15 @@ Completion never mutates project state; acceptance compares the exact source
 snapshot and revision. Event-delivery failure is isolated from numerical work,
 and shared multi-histogram phase acceptance remains explicitly unavailable
 until delivery step 17 provides the joint shared/local model. Binary series
-transport and the thin Tauri host remain.
+transport remains.
 
 Binary display transport is now complete in the desktop adapter. JSON catalogs
 describe stable revision/job-owned `float64_le` and `uint8` series, while a
 separate payload call explicitly encodes only the requested vector. Catalogs
 cover observed project data and complete refinement plots, residuals, masks,
 phase profiles, and reflection sticks. Revision rechecks prevent mixed project
-snapshots and job disposal invalidates retained result series. The thin Tauri
-host is now present as a separate pinned application crate. It translates the
-existing project, refinement, event, and binary-series contracts without
-linking Python, and a release audit checks its dependency tree, executable
-links, and bundle contents for Python artifacts. The checked-in static frontend
-is only a runtime probe. Bounded powder import is now exposed as an atomic
+snapshots and job disposal invalidates retained result series. Bounded powder
+import is now exposed as an atomic
 revision-checked command for columns, GSAS FXYE, and GSAS STD input with a
 complete native monochromatic experiment record. Native CIF phase import now
 also parses with bounded native limits, generates target-histogram-specific
@@ -441,6 +437,6 @@ now evaluates ordered project phases through the native structural/Rietveld
 path, retains revision-owned results without mutating project state, and uses
 the same binary-series transport as refinement. Report export now writes the
 canonical versioned project-summary JSON for one exact revision, refuses
-existing destinations unless overwrite is explicit, and performs file I/O off
-the Tauri event loop. Delivery step 16 is complete; product UI design remains
-separate from this native adapter plan.
+existing destinations unless overwrite is explicit, and leaves file-I/O
+scheduling to the consuming application. Delivery step 16 is complete; product
+UI design and packaging remain separate from this native adapter plan.

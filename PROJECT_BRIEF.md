@@ -723,17 +723,15 @@ only typed descriptors and scalar summaries; requested grids, curves, masks,
 phase profiles, and reflection sticks are encoded as little-endian `f64` or
 byte payloads owned by an exact project revision or retained job. This avoids
 large JSON arrays and makes edit-between-catalog-and-fetch races explicit.
-The standalone `phasesmith-tauri` application crate hosts those contracts and
-emits refinement events without introducing Tauri into the library workspace.
-Its static frontend is a runtime probe, not a finished product UI. It has an
-independent dependency graph and distribution audit that rejects Python
-dependencies, dynamic CPython links, wheels, extension modules, and Python
-sidecar artifacts. Native CIF import, standalone calculation, and report-export
-commands are implemented; product UI design is the remaining presentation work.
+The reusable desktop adapter exposes those contracts without introducing a GUI
+framework into the library workspace. Native CIF import, standalone
+calculation, and report-export operations are implemented; a future application
+crate can translate them into its chosen command and event system without a
+Python sidecar.
 Release packaging preserves the same separation. The public crates.io
 `phasesmith` facade re-exports the application-neutral native component crates;
 PyO3, validation tooling, and the desktop adapter remain unpublished workspace
-packages; the Tauri host is outside the library workspace and release. A
+packages; GUI applications are separate consumers. A
 `v<version>` Git tag drives tested ABI3
 Python wheels, an sdist, provenance, PyPI trusted publishing, the public Rust
 crate graph, and a tagged GitHub Release. Version checks bind Cargo,

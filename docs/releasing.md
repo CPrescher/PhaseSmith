@@ -9,8 +9,8 @@ The release workflow builds CPython-ABI3 wheels for Python 3.11 and newer on
 manylinux x86-64/AArch64, macOS x86-64/Apple Silicon, and Windows x86-64. It
 also builds an sdist, tests native wheels, creates build-provenance
 attestations, publishes through PyPI trusted publishing, and attaches every
-distribution plus `SHA256SUMS` to a GitHub Release. The standalone Tauri probe
-has its own dependency graph and is deliberately outside this release.
+distribution plus `SHA256SUMS` to a GitHub Release. GUI applications are
+separate consumers and are not part of this library release.
 
 ## One-time registry bootstrap
 
