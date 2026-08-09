@@ -6,7 +6,12 @@ development versions.
 
 ## Unreleased
 
-Nothing yet.
+- Add a docs.rs-native Rust guide hierarchy with compiled examples and a
+  complete mathematical reference for profile calculation, crystallography,
+  scattering, pattern/sample composition, backgrounds, refinement, and
+  application-host integration.
+- Expand all published component-crate landing pages and validate rustdoc with
+  warnings denied in CI.
 
 ## 0.1.0
 

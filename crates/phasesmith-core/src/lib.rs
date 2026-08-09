@@ -1,8 +1,46 @@
 //! Numerical kernels for powder diffraction profile calculation.
 //!
-//! This crate is deliberately unaware of refinement projects, phases, files,
-//! and GSAS-II data structures. It operates on explicit parameters and flat
-//! numeric slices.
+//! `phasesmith-core` is the lowest numerical layer. It operates on explicit
+//! parameters and flat borrowed slices and is deliberately unaware of files,
+//! phases, refinement projects, Python, and GUI state. Most applications should
+//! depend on the [`phasesmith` facade](https://docs.rs/phasesmith/) and reach
+//! this crate through `phasesmith::core`.
+//!
+//! # Capabilities
+//!
+//! - symmetric pseudo-Voigt and Thompson–Cox–Hastings profiles;
+//! - constant-wavelength U/V/W/X/Y broadening;
+//! - Finger–Cox–Jephcoat axial asymmetry;
+//! - fixed wavelength components and neutron time-of-flight profiles;
+//! - smooth Bruckner background estimation;
+//! - fused pattern values and analytical derivative storage.
+//!
+//! # Quick start
+//!
+//! ```
+//! use phasesmith_core::{Peak, accumulate_peaks};
+//!
+//! let x = [23.9, 24.0, 24.1];
+//! let peaks = [Peak {
+//!     position: 24.0,
+//!     intensity: 100.0,
+//!     fwhm: 0.1,
+//!     eta: 0.4,
+//! }];
+//! let result = accumulate_peaks(&x, &peaks, 20.0)?;
+//!
+//! assert_eq!(result.y.len(), x.len());
+//! assert_eq!(result.derivatives.local.parameter_count, 4);
+//! # Ok::<(), Box<dyn std::error::Error>>(())
+//! ```
+//!
+//! [`GridView`] and the various `*BatchView` types validate borrowed arrays
+//! once before entering hot kernels. Local derivatives use sparse finite-support
+//! storage; call [`SupportJacobian::to_dense`] only when a dense allocation is
+//! actually required. See [`profile`] for support and derivative conventions.
+//! The facade's
+//! [profile mathematics guide](https://docs.rs/phasesmith/latest/phasesmith/guide/mathematics/peak_profiles/)
+//! derives every implemented profile and broadening equation together.
 
 pub mod background;
 pub mod cw;

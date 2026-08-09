@@ -1,8 +1,37 @@
 //! Native composition boundary for crystallography and powder profiles.
 //!
-//! Structural pattern fusion is added in implementation unit 15. Re-exports
-//! keep `PyO3` dependent on this facade rather than placing orchestration in the
-//! binding crate.
+//! `phasesmith-engine` turns crystallographic definitions into calculated
+//! powder patterns by composing `phasesmith-crystallography` with
+//! `phasesmith-core`. It has no Python, file-format, persistence, refinement,
+//! or GUI dependency. Applications normally use it through
+//! [`phasesmith::engine`](https://docs.rs/phasesmith/latest/phasesmith/).
+//!
+//! # Choosing an entry point
+//!
+//! - [`calculate_structural_pattern`] is the direct one-phase, one-wavelength
+//!   calculation.
+//! - [`PreparedStructuralPhase`] validates and caches topology for repeated
+//!   phase evaluations.
+//! - [`PreparedStructuralSpectrum`] adds fixed wavelength components.
+//! - [`PreparedStructuralMultiphase`] composes multiple structural phases.
+//! - [`PreparedStructuralModel`] is the reusable high-level structural model.
+//!
+//! Values, dense-Jacobian, JVP, and VJP paths share the same physical model.
+//! Prepared types are the intended choice for optimizers and interactive hosts:
+//! construct them when topology changes, then reuse them while numerical
+//! parameters vary.
+//!
+//! # Data boundary
+//!
+//! Inputs use borrowed array views and explicit physical definitions. Results
+//! own their values, reflection metadata, and derivative products. File parsing
+//! belongs to `phasesmith-io`; application records belong to
+//! `phasesmith-model`; refinement orchestration belongs to
+//! `phasesmith-workflows`.
+//!
+//! See the facade's
+//! [pattern-composition mathematics](https://docs.rs/phasesmith/latest/phasesmith/guide/mathematics/pattern_composition/)
+//! for the multi-phase, multi-wavelength, sample-physics, and derivative sums.
 
 pub use phasesmith_core as profile;
 pub use phasesmith_crystallography as crystallography;

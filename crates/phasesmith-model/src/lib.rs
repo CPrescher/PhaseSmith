@@ -3,6 +3,40 @@
 //! These types describe validated live domain state. Persistence wire records,
 //! migrations, `PyO3` objects, and Tauri command payloads deliberately live in
 //! adapter crates instead of being derived directly from this model.
+//! Applications normally use this crate through
+//! [`phasesmith::model`](https://docs.rs/phasesmith/latest/phasesmith/).
+//!
+//! # Core records
+//!
+//! - [`PatternRecord`] owns a strictly increasing `2θ` grid and aligned
+//!   observations, uncertainties, mask, and fixed background.
+//! - [`StructuralPhaseRecord`] owns one crystal-structure phase and its provider
+//!   requirements.
+//! - [`HistogramRecord`] combines observed data, an experiment, and referenced
+//!   phase IDs.
+//! - [`ProjectRecord`] is a revisioned multi-histogram project snapshot.
+//! - [`RecordId`] is the validated stable identifier shared across records.
+//!
+//! # Example
+//!
+//! ```
+//! use phasesmith_model::PatternRecord;
+//!
+//! let pattern = PatternRecord::new(
+//!     vec![20.0, 20.1],
+//!     Some(vec![100.0, 120.0]),
+//!     Some(vec![2.0, 2.5]),
+//!     None,
+//!     None,
+//! )?;
+//! assert_eq!(pattern.sample_count(), 2);
+//! assert_eq!(pattern.background_y, [0.0, 0.0]);
+//! # Ok::<(), Box<dyn std::error::Error>>(())
+//! ```
+//!
+//! Constructors validate records at trust boundaries. Public fields remain
+//! available for efficient adapter construction, so call `validate` again
+//! after direct mutation or before crossing into persistence/workflow code.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;

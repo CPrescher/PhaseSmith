@@ -1,4 +1,27 @@
 //! Explicit bounded execution contexts for native `PhaseSmith` kernels.
+//!
+//! This crate owns reusable Rayon pools instead of installing or modifying the
+//! process-global pool. It gives desktop applications, services, Python
+//! adapters, and tests the same deterministic worker-budget contract.
+//! Applications normally use it through
+//! [`phasesmith::execution`](https://docs.rs/phasesmith/latest/phasesmith/).
+//!
+//! # Example
+//!
+//! ```
+//! use phasesmith_execution::ExecutionPolicy;
+//!
+//! let policy = ExecutionPolicy::new(Some(4), 2)?;
+//! let results = policy.context().map_ordered(4, 2, |index| index * index);
+//! assert_eq!(results, [0, 1, 4, 9]);
+//! assert!(policy.resolved_budget() >= 1);
+//! # Ok::<(), Box<dyn std::error::Error>>(())
+//! ```
+//!
+//! `requested_threads = None` selects available logical parallelism. Fixed
+//! requests are capped to what the process reports as available. Work below
+//! `minimum_parallel_tasks` remains serial, and ordered mapping always returns
+//! results in input order.
 
 use std::error::Error;
 use std::fmt::{Display, Formatter};

@@ -1,8 +1,7 @@
-//! Public Rust entry point for `PhaseSmith`.
-//!
-//! The implementation remains split into focused crates. This facade keeps the
-//! component boundaries visible while giving applications one stable dependency
-//! and one version to select.
+#![doc = include_str!("crate.md")]
+
+/// Task-oriented guides for native Rust consumers and application hosts.
+pub mod guide;
 
 /// Numerical profile and background kernels.
 pub use phasesmith_core as core;

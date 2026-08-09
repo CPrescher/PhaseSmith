@@ -35,6 +35,20 @@ The complete generated Rust reference is published by docs.rs:
 - [`phasesmith-workflows`](https://docs.rs/phasesmith-workflows/0.1.0/phasesmith_workflows/)
 - [`phasesmith-persistence`](https://docs.rs/phasesmith-persistence/0.1.0/phasesmith_persistence/)
 
+Starting with the next release after 0.1.0, the facade reference also contains
+task-oriented native guides alongside the generated item reference:
+
+- [getting started](https://docs.rs/phasesmith/latest/phasesmith/guide/getting_started/)
+- [architecture and ownership](https://docs.rs/phasesmith/latest/phasesmith/guide/architecture/)
+- [scientific conventions](https://docs.rs/phasesmith/latest/phasesmith/guide/scientific_conventions/)
+- [implemented mathematics](https://docs.rs/phasesmith/latest/phasesmith/guide/mathematics/)
+- [calculations and workflows](https://docs.rs/phasesmith/latest/phasesmith/guide/workflows/)
+- [desktop and service integration](https://docs.rs/phasesmith/latest/phasesmith/guide/application_hosts/)
+
+The examples embedded in these pages are compiled as Rust doctests. Component
+crates also provide their own overview, capability map, and boundary guidance
+before the generated function/type listings.
+
 ## Application boundary
 
 A GUI crate should own window state, commands, presentation-specific records,

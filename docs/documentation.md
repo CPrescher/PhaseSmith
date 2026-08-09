@@ -23,6 +23,21 @@ The generated `site/` directory is disposable and ignored by Git. CI uses the
 same strict build as Read the Docs, so unresolved internal links and invalid
 configuration fail before merge.
 
+## Build the Rust API documentation
+
+docs.rs renders the rustdoc content shipped inside each crate. Build the same
+workspace documentation locally and reject broken intra-doc links or warnings:
+
+```shell
+RUSTDOCFLAGS="-D warnings" cargo doc --workspace --all-features --no-deps
+cargo test --doc --workspace
+```
+
+Open `target/doc/phasesmith/index.html` to review the facade landing page and
+the `phasesmith::guide` hierarchy. Runnable rustdoc examples belong in
+doctested code fences; longer cross-language explanations belong in this MkDocs
+site.
+
 ## Read the Docs project setup
 
 Repository configuration is committed in `.readthedocs.yaml`; the dashboard

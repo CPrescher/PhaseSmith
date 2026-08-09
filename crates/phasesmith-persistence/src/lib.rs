@@ -3,6 +3,45 @@
 //! Project bundles are directories containing `manifest.json` plus a numeric
 //! `arrays.npz`. Wire records are explicit and versioned; live domain types do
 //! not derive serialization directly.
+//! Applications normally use this crate through
+//! [`phasesmith::persistence`](https://docs.rs/phasesmith/latest/phasesmith/).
+//!
+//! # Bundle contract
+//!
+//! - `manifest.json` contains the format version, explicit wire records, array
+//!   descriptors, shapes, dtypes, and hashes.
+//! - `arrays.npz` contains typed little-endian numeric arrays.
+//! - loads validate the exact member set, hashes, shapes, dtypes, finiteness,
+//!   cross-record identities, and caller-selected [`ProjectReadLimits`].
+//! - overwrite replaces only the two library-owned files and preserves
+//!   unrelated application content in the directory.
+//!
+//! # Saving and loading
+//!
+//! ```no_run
+//! use std::collections::BTreeMap;
+//! use phasesmith_model::{ProjectRecord, RecordId};
+//! use phasesmith_persistence::{
+//!     ProjectReadLimits, ProjectSaveOptions, load_project, save_project,
+//! };
+//!
+//! let project = ProjectRecord {
+//!     project_id: RecordId::new("example")?,
+//!     revision: 0,
+//!     name: "Example".into(),
+//!     histograms: Vec::new(),
+//!     phases: Vec::new(),
+//!     metadata: BTreeMap::new(),
+//! };
+//! save_project("example.psproj", &project, ProjectSaveOptions::default())?;
+//! let restored = load_project("example.psproj", ProjectReadLimits::default())?;
+//! assert_eq!(restored.project_id, project.project_id);
+//! # Ok::<(), Box<dyn std::error::Error>>(())
+//! ```
+//!
+//! Use [`save_rietveld_project`] and [`load_rietveld_project`] when the bundle
+//! must retain runnable Rietveld analyses. Reporting functions produce stable
+//! JSON summaries without exposing internal wire records.
 
 mod arrays;
 mod report;

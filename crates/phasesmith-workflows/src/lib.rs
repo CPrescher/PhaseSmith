@@ -3,6 +3,45 @@
 //! This crate is the shared host boundary for Python adapters and future
 //! native application consumers. It contains no `PyO3`, Tauri, GUI, or
 //! file-format types.
+//! Applications normally use it through
+//! [`phasesmith::workflows`](https://docs.rs/phasesmith/latest/phasesmith/).
+//!
+//! # Workflow families
+//!
+//! - **Backgrounds:** differentiable Chebyshev, polynomial, point, amorphous,
+//!   and composite models.
+//! - **Le Bail:** intensity extraction with optional profile/lattice
+//!   refinement, covariance, checkpoints, and dynamic reflection domains.
+//! - **Rietveld:** calculation, prepared objective products, structural and
+//!   general refinement, staged recipes, and joint multi-histogram refinement.
+//! - **Quantitative analysis:** validated Hill–Howard phase fractions.
+//! - **Infrastructure:** typed parameters, bounds, constraints, residuals,
+//!   cancellation, limits, events, clocks, diagnostics, and checkpoints.
+//!
+//! # Selecting the level
+//!
+//! Use `calculate_*` functions for a deterministic forward calculation. Use a
+//! `Prepared*Objective` when integrating a custom optimizer and consuming
+//! values/JVP/VJP products directly. Use `refine_*` for the built-in solver, and
+//! the corresponding `_with_runtime` variant when an application needs
+//! cancellation, progress events, or checkpoint sinks.
+//!
+//! [`LeBailInput`] and [`RietveldInput`] own validated observations and domain
+//! state. Result/checkpoint records and structured event diagnostics are the
+//! stable programmatic output; human-readable event messages should not be
+//! parsed.
+//!
+//! # Application integration
+//!
+//! Workflows are synchronous and application-neutral. A desktop or async host
+//! runs them on its chosen worker mechanism, connects
+//! [`RefinementRuntime`] to its cancellation/event bridge, and uses
+//! `phasesmith-persistence` for native project state. The `joint_pbso4` example
+//! in this package demonstrates a complete Rust-only X-ray/neutron refinement.
+//! The facade provides collected mathematical references for
+//! [refinement](https://docs.rs/phasesmith/latest/phasesmith/guide/mathematics/refinement/)
+//! and
+//! [background models](https://docs.rs/phasesmith/latest/phasesmith/guide/mathematics/backgrounds/).
 
 mod backgrounds;
 mod constraints;
