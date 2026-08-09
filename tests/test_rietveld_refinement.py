@@ -9,6 +9,7 @@ from time import sleep
 import numpy as np
 import phasesmith
 import pytest
+from phasesmith import _core
 from phasesmith.refinement import (
     AffineConstraint,
     AmorphousBackground,
@@ -1186,6 +1187,49 @@ def test_project_facade_refines_stops_reports_and_resumes(tmp_path) -> None:
     cancelled = stopped.refine(logger=stop_on_start)
     assert cancelled.termination_reason is structural_refinement.TerminationReason.CANCELLED
     assert cancelled.history == ()
+
+
+def test_native_adapter_saves_validates_and_restores_restart_handle(tmp_path) -> None:
+    truth = request_from_cif(selection(phase_scale=True))
+    starting_phase = replace(truth.phases[0], scale=0.55)
+    request = replace(
+        truth,
+        phases=(starting_phase,),
+        parameters=structural_refinement.build_parameter_set(
+            (starting_phase,), (None,), truth.selection
+        ),
+    )
+    options = structural_refinement.RietveldOptions(
+        limits=structural_refinement.RefinementLimits(
+            max_iterations=1,
+            max_evaluations=100,
+        ),
+        estimate_covariance=False,
+    )
+    native_request = structural_refinement._native_request(request, options)
+    native_result = native_request.refine(None)
+    destination = native_request.save_project(
+        str(tmp_path / "native-project"),
+        "python-project",
+        4,
+        "Python project",
+        "histogram",
+        "Observed pattern",
+        "xray",
+        native_result.checkpoint(),
+        False,
+    )
+
+    manifest = json.loads((tmp_path / "native-project" / "manifest.json").read_text())
+    assert manifest["format_version"] == 2
+    stored = _core._StoredRietveldProject.load(destination)
+    assert stored.project_record() == ("python-project", 4, "Python project")
+    assert stored.histogram_records() == [("histogram", "Observed pattern")]
+    loaded_checkpoint = stored.checkpoint("histogram")
+    assert loaded_checkpoint is not None
+    resumed = native_request.refine(loaded_checkpoint)
+    assert resumed.parameter_records() == native_result.parameter_records()
+    assert resumed.history() == native_result.history()
 
 
 def test_project_calculate_uses_the_configured_execution_policy(monkeypatch) -> None:

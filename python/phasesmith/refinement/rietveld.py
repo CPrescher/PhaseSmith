@@ -2514,6 +2514,7 @@ def _native_request(input_data: RietveldInput, options: RietveldOptions) -> obje
     geometry = experiment.geometry
     axial = experiment.axial_geometry
     instrument = experiment.instrument
+    limits = options.limits
     return _core._RietveldRequest(
         input_data.pattern.x,
         input_data.pattern.observed_y,
@@ -2544,6 +2545,26 @@ def _native_request(input_data: RietveldInput, options: RietveldOptions) -> obje
         input_data.selection.background,
         input_data.selection.sample_physics,
         [_native_constraint(constraint) for constraint in input_data.constraints],
+        options.execution._native,
+        limits.max_iterations,
+        limits.max_evaluations,
+        limits.max_runtime_seconds,
+        limits.max_consecutive_rejections,
+        options.min_iterations,
+        options.objective_tolerance,
+        options.parameter_tolerance,
+        options.initial_damping,
+        options.damping_increase,
+        options.damping_decrease,
+        options.cg_tolerance,
+        options.max_cg_iterations,
+        options.max_scaled_parameter_step,
+        options.max_backtracks,
+        options.use_uncertainty,
+        options.support_fwhm,
+        options.estimate_covariance,
+        options.max_covariance_parameters,
+        options.unresolved_correlation,
     )
 
 
@@ -2568,28 +2589,7 @@ def _refine_native(
     checkpoint: RietveldCheckpoint | None,
 ) -> RietveldResult:
     request = _native_request(input_data, options)
-    limits = options.limits
     native = request.refine(
-        options.execution._native,
-        limits.max_iterations,
-        limits.max_evaluations,
-        limits.max_runtime_seconds,
-        limits.max_consecutive_rejections,
-        options.min_iterations,
-        options.objective_tolerance,
-        options.parameter_tolerance,
-        options.initial_damping,
-        options.damping_increase,
-        options.damping_decrease,
-        options.cg_tolerance,
-        options.max_cg_iterations,
-        options.max_scaled_parameter_step,
-        options.max_backtracks,
-        options.use_uncertainty,
-        options.support_fwhm,
-        options.estimate_covariance,
-        options.max_covariance_parameters,
-        options.unresolved_correlation,
         None if checkpoint is None else checkpoint._native,
     )
     parameters = ParameterSet(
@@ -2686,7 +2686,7 @@ def _refine_native(
         history,
         experiment,
         background,
-        native,
+        native.checkpoint(),
     )
     reason = TerminationReason(native.termination_reason)
     correlations = tuple(

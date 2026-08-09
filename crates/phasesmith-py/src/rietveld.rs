@@ -1,17 +1,27 @@
 //! Thin Python adapter for the application-neutral native Rietveld workflow.
 
+use std::collections::BTreeMap;
+
 use npy::ndarray::Array2;
 use npy::{IntoPyArray, PyArray1, PyArray2, PyReadonlyArray1};
 use phasesmith_core::OwnedCwContributions;
-use phasesmith_model::{PatternRecord, RecordId};
+use phasesmith_execution::ExecutionPolicy as NativeExecutionPolicyModel;
+use phasesmith_model::{
+    ExperimentRecord, HistogramRecord, PatternRecord, ProjectRecord, RadiationDefinition,
+    RadiationProbe, RecordId, StructuralPhaseRecord,
+};
+use phasesmith_persistence::{
+    ProjectReadLimits, ProjectSaveOptions, load_rietveld_project, save_rietveld_project,
+};
 use phasesmith_workflows::{
     AffineConstraint, AmorphousBackground, AmorphousPeak, BackgroundModel, ChebyshevBackground,
     CompositeBackground, Constraint, FixedConstraint, LatticeBounds, LatticeParameterization,
     LatticeReflectionDomain, LinearConstraint, LinearTerm, ParameterKey, PointBackground,
-    PolynomialBackground, RefinementLimits, RietveldCalculationOptions, RietveldCovarianceOptions,
-    RietveldGeneralRefinementResult, RietveldInput, RietveldInstrumentParameter,
-    RietveldParameterSelection, RietveldPhase, RietveldRefinementOptions,
-    RietveldSamplePhysicsModel, RietveldStructuralSelection, refine_general_rietveld,
+    PolynomialBackground, RefinementLimits, RietveldAnalysis, RietveldCalculationOptions,
+    RietveldCovarianceOptions, RietveldGeneralCheckpoint, RietveldGeneralRefinementResult,
+    RietveldInput, RietveldInstrumentParameter, RietveldParameterSelection, RietveldPhase,
+    RietveldProjectState, RietveldRefinementOptions, RietveldSamplePhysicsModel,
+    RietveldStructuralSelection, refine_general_rietveld,
 };
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
@@ -313,6 +323,53 @@ fn instrument_parameter(name: &str) -> PyResult<RietveldInstrumentParameter> {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
+fn refinement_options(
+    execution: &NativeExecutionPolicyModel,
+    max_iterations: usize,
+    max_evaluations: usize,
+    max_runtime_seconds: Option<f64>,
+    max_consecutive_rejections: usize,
+    min_iterations: usize,
+    objective_tolerance: f64,
+    parameter_tolerance: f64,
+    initial_damping: f64,
+    damping_increase: f64,
+    damping_decrease: f64,
+    cg_tolerance: f64,
+    max_cg_iterations: usize,
+    max_scaled_parameter_step: f64,
+    max_backtracks: usize,
+    use_uncertainty: bool,
+    support_fwhm: f64,
+) -> PyResult<RietveldRefinementOptions> {
+    let limits = RefinementLimits::new(
+        max_iterations,
+        max_evaluations,
+        max_runtime_seconds,
+        max_consecutive_rejections,
+    )
+    .map_err(value_error)?;
+    let calculation =
+        RietveldCalculationOptions::new(support_fwhm, use_uncertainty, execution.clone())
+            .map_err(value_error)?;
+    RietveldRefinementOptions::new(
+        calculation,
+        limits,
+        min_iterations,
+        objective_tolerance,
+        parameter_tolerance,
+        initial_damping,
+        damping_increase,
+        damping_decrease,
+        cg_tolerance,
+        max_cg_iterations,
+        max_scaled_parameter_step,
+        max_backtracks,
+    )
+    .map_err(value_error)
+}
+
 /// Complete owned native request assembled by the Python adapter.
 #[pyclass(name = "_RietveldRequest")]
 pub(super) struct NativeRietveldRequest {
@@ -320,6 +377,8 @@ pub(super) struct NativeRietveldRequest {
     selection: RietveldParameterSelection,
     bounds: Vec<Option<LatticeBounds>>,
     constraints: Vec<Constraint>,
+    options: RietveldRefinementOptions,
+    covariance: RietveldCovarianceOptions,
 }
 
 #[pymethods]
@@ -327,6 +386,7 @@ impl NativeRietveldRequest {
     #[new]
     #[allow(
         clippy::too_many_arguments,
+        clippy::too_many_lines,
         clippy::similar_names,
         clippy::fn_params_excessive_bools
     )]
@@ -360,6 +420,26 @@ impl NativeRietveldRequest {
         refine_background: bool,
         sample_physics: bool,
         constraints: &Bound<'py, PyList>,
+        execution: PyRef<'py, NativeExecutionPolicy>,
+        max_iterations: usize,
+        max_evaluations: usize,
+        max_runtime_seconds: Option<f64>,
+        max_consecutive_rejections: usize,
+        min_iterations: usize,
+        objective_tolerance: f64,
+        parameter_tolerance: f64,
+        initial_damping: f64,
+        damping_increase: f64,
+        damping_decrease: f64,
+        cg_tolerance: f64,
+        max_cg_iterations: usize,
+        max_scaled_parameter_step: f64,
+        max_backtracks: usize,
+        use_uncertainty: bool,
+        support_fwhm: f64,
+        estimate_covariance: bool,
+        max_covariance_parameters: usize,
+        unresolved_correlation: f64,
     ) -> PyResult<Self> {
         let pattern = PatternRecord::new(
             contiguous_slice(&x_deg, "x_deg")?.to_vec(),
@@ -436,56 +516,12 @@ impl NativeRietveldRequest {
                     .clone())
             })
             .collect::<PyResult<Vec<_>>>()?;
-        Ok(Self {
-            input,
-            selection,
-            bounds,
-            constraints,
-        })
-    }
-
-    #[allow(clippy::too_many_arguments)]
-    fn refine(
-        &self,
-        py: Python<'_>,
-        execution: PyRef<'_, NativeExecutionPolicy>,
-        max_iterations: usize,
-        max_evaluations: usize,
-        max_runtime_seconds: Option<f64>,
-        max_consecutive_rejections: usize,
-        min_iterations: usize,
-        objective_tolerance: f64,
-        parameter_tolerance: f64,
-        initial_damping: f64,
-        damping_increase: f64,
-        damping_decrease: f64,
-        cg_tolerance: f64,
-        max_cg_iterations: usize,
-        max_scaled_parameter_step: f64,
-        max_backtracks: usize,
-        use_uncertainty: bool,
-        support_fwhm: f64,
-        estimate_covariance: bool,
-        max_covariance_parameters: usize,
-        unresolved_correlation: f64,
-        checkpoint: Option<PyRef<'_, NativeRietveldResult>>,
-    ) -> PyResult<NativeRietveldResult> {
-        let limits = RefinementLimits::new(
+        let options = refinement_options(
+            &execution.policy,
             max_iterations,
             max_evaluations,
             max_runtime_seconds,
             max_consecutive_rejections,
-        )
-        .map_err(value_error)?;
-        let calculation = RietveldCalculationOptions::new(
-            support_fwhm,
-            use_uncertainty,
-            execution.policy.clone(),
-        )
-        .map_err(value_error)?;
-        let options = RietveldRefinementOptions::new(
-            calculation,
-            limits,
             min_iterations,
             objective_tolerance,
             parameter_tolerance,
@@ -496,19 +532,37 @@ impl NativeRietveldRequest {
             max_cg_iterations,
             max_scaled_parameter_step,
             max_backtracks,
-        )
-        .map_err(value_error)?;
+            use_uncertainty,
+            support_fwhm,
+        )?;
         let covariance = RietveldCovarianceOptions::new(
             estimate_covariance,
             max_covariance_parameters,
             unresolved_correlation,
         )
         .map_err(value_error)?;
+        Ok(Self {
+            input,
+            selection,
+            bounds,
+            constraints,
+            options,
+            covariance,
+        })
+    }
+
+    fn refine(
+        &self,
+        py: Python<'_>,
+        checkpoint: Option<PyRef<'_, NativeRietveldCheckpoint>>,
+    ) -> PyResult<NativeRietveldResult> {
         let input = self.input.clone();
         let selection = self.selection.clone();
         let bounds = self.bounds.clone();
         let constraints = self.constraints.clone();
-        let checkpoint = checkpoint.map(|value| value.result.checkpoint.clone());
+        let options = self.options.clone();
+        let covariance = self.covariance;
+        let checkpoint = checkpoint.map(|value| value.checkpoint.clone());
         let result = py
             .detach(move || {
                 refine_general_rietveld(
@@ -525,6 +579,138 @@ impl NativeRietveldRequest {
             .map_err(value_error)?;
         Ok(NativeRietveldResult { result })
     }
+
+    #[allow(clippy::too_many_arguments)]
+    fn save_project(
+        &self,
+        py: Python<'_>,
+        path: String,
+        project_id: String,
+        revision: u64,
+        project_name: String,
+        histogram_id: String,
+        histogram_name: String,
+        probe: &str,
+        checkpoint: Option<PyRef<'_, NativeRietveldCheckpoint>>,
+        overwrite: bool,
+    ) -> PyResult<String> {
+        let project_id = RecordId::new(project_id).map_err(value_error)?;
+        let histogram_id = RecordId::new(histogram_id).map_err(value_error)?;
+        let probe = match probe {
+            "xray" => RadiationProbe::Xray,
+            "neutron" => RadiationProbe::Neutron,
+            _ => return Err(PyValueError::new_err("probe must be 'xray' or 'neutron'")),
+        };
+        let phase_ids = self
+            .input
+            .phases
+            .iter()
+            .map(|phase| phase.phase_id().clone())
+            .collect::<Vec<_>>();
+        let phases = self
+            .input
+            .phases
+            .iter()
+            .map(|phase| StructuralPhaseRecord {
+                phase_id: phase.phase_id().clone(),
+                name: phase.name().to_owned(),
+                definition: phase.definition().clone(),
+                required_providers: Vec::new(),
+            })
+            .collect();
+        let experiment = ExperimentRecord::new(
+            self.input.instrument,
+            RadiationDefinition::Monochromatic {
+                probe,
+                wavelength_angstrom: self.input.instrument.wavelength_angstrom,
+            },
+            self.input.axial_geometry,
+            self.input.position_correction,
+        )
+        .map_err(value_error)?;
+        let state = RietveldProjectState {
+            project: ProjectRecord {
+                project_id,
+                revision,
+                name: project_name,
+                histograms: vec![HistogramRecord {
+                    histogram_id: histogram_id.clone(),
+                    name: histogram_name,
+                    pattern: self.input.pattern.clone(),
+                    experiment,
+                    phase_ids,
+                }],
+                phases,
+                metadata: BTreeMap::default(),
+            },
+            analyses: vec![RietveldAnalysis {
+                histogram_id,
+                input: self.input.clone(),
+                selection: self.selection.clone(),
+                lattice_bounds: self.bounds.clone(),
+                constraints: self.constraints.clone(),
+                options: self.options.clone(),
+                covariance: self.covariance,
+                checkpoint: checkpoint.map(|value| value.checkpoint.clone()),
+            }],
+        };
+        let destination = py
+            .detach(move || save_rietveld_project(path, &state, ProjectSaveOptions { overwrite }))
+            .map_err(value_error)?;
+        Ok(destination.to_string_lossy().into_owned())
+    }
+}
+
+/// Native checkpoint handle retained independently of result diagnostics.
+#[pyclass(name = "_RietveldCheckpoint")]
+pub(super) struct NativeRietveldCheckpoint {
+    checkpoint: RietveldGeneralCheckpoint,
+}
+
+/// Validated native project loaded without Python-side scientific reconstruction.
+#[pyclass(name = "_StoredRietveldProject")]
+pub(super) struct NativeStoredRietveldProject {
+    state: RietveldProjectState,
+}
+
+#[pymethods]
+impl NativeStoredRietveldProject {
+    #[staticmethod]
+    fn load(py: Python<'_>, path: String) -> PyResult<Self> {
+        Ok(Self {
+            state: py
+                .detach(move || load_rietveld_project(path, ProjectReadLimits::default()))
+                .map_err(value_error)?,
+        })
+    }
+
+    fn project_record(&self) -> (String, u64, String) {
+        (
+            self.state.project.project_id.as_str().to_owned(),
+            self.state.project.revision,
+            self.state.project.name.clone(),
+        )
+    }
+
+    fn histogram_records(&self) -> Vec<(String, String)> {
+        self.state
+            .project
+            .histograms
+            .iter()
+            .map(|value| (value.histogram_id.as_str().to_owned(), value.name.clone()))
+            .collect()
+    }
+
+    fn checkpoint(&self, histogram_id: &str) -> PyResult<Option<NativeRietveldCheckpoint>> {
+        let histogram_id = RecordId::new(histogram_id).map_err(value_error)?;
+        Ok(self
+            .state
+            .analyses
+            .iter()
+            .find(|value| value.histogram_id == histogram_id)
+            .and_then(|value| value.checkpoint.clone())
+            .map(|checkpoint| NativeRietveldCheckpoint { checkpoint }))
+    }
 }
 
 /// Complete native result retained for deterministic continuation.
@@ -535,6 +721,12 @@ pub(super) struct NativeRietveldResult {
 
 #[pymethods]
 impl NativeRietveldResult {
+    fn checkpoint(&self) -> NativeRietveldCheckpoint {
+        NativeRietveldCheckpoint {
+            checkpoint: self.result.checkpoint.clone(),
+        }
+    }
+
     #[getter]
     fn termination_reason(&self) -> &'static str {
         self.result.termination_reason.as_str()
@@ -724,6 +916,8 @@ pub(super) fn register(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_class::<NativeRietveldBackground>()?;
     module.add_class::<NativeRietveldConstraint>()?;
     module.add_class::<NativeRietveldRequest>()?;
+    module.add_class::<NativeRietveldCheckpoint>()?;
+    module.add_class::<NativeStoredRietveldProject>()?;
     module.add_class::<NativeRietveldResult>()?;
     Ok(())
 }

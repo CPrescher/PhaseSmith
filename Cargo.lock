@@ -675,6 +675,7 @@ dependencies = [
  "phasesmith-execution",
  "phasesmith-io",
  "phasesmith-model",
+ "phasesmith-persistence",
  "phasesmith-workflows",
  "pyo3",
 ]

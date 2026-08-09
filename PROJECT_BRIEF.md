@@ -686,6 +686,10 @@ physics, guarded lattice domains, analytical backgrounds, constraints, options,
 covariance controls, and exact accepted restart checkpoint. Format 1 remains
 readable as project-only state, so a future Tauri adapter can load and resume
 native projects directly without a Python sidecar.
+The PyO3 adapter exposes this codec and independently loadable native
+checkpoint handles while releasing the GIL for project I/O; this is the bridge
+used by the remaining public Python-facade migration, not a dependency of the
+Rust desktop runtime.
 
 The remaining parity boundary is joint refinement. PhaseSmith currently owns
 one pattern/experiment per `RietveldInput`; GSAS-II shares one PbSO4 structure

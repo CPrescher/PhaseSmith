@@ -19,6 +19,7 @@ phasesmith-engine = { path = "../phasesmith-engine" }
 phasesmith-execution = { path = "../phasesmith-execution" }
 phasesmith-io = { path = "../phasesmith-io" }
 phasesmith-model = { path = "../phasesmith-model" }
+phasesmith-persistence = { path = "../phasesmith-persistence" }
 phasesmith-workflows = { path = "../phasesmith-workflows" }
 
 [lints]

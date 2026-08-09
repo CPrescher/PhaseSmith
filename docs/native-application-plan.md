@@ -388,3 +388,7 @@ cross-record validation rules. Native project format 2 now persists this
 complete state through explicit Rust-only wire records, including guarded
 lattice domains, built-in sample physics and backgrounds, constraints, options,
 and accepted checkpoints. Format 1 remains readable as project-only state.
+The PyO3 adapter now exposes that same save/validate/load boundary, releases
+the GIL during file I/O, and carries restart checkpoints as independent native
+handles. Switching the public Python project facade from its legacy format to
+this bridge is the next adapter-only substep.
