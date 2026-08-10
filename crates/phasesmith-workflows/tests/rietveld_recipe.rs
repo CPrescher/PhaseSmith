@@ -20,6 +20,7 @@ use phasesmith_workflows::{
     RietveldRecipeMode, RietveldRecipeSinks, RietveldRefinementOptions, RietveldStage,
     RietveldStructuralSelection, TerminationReason, calculate_rietveld_pattern,
     intelligent_rietveld_recipe, run_rietveld_recipe, run_rietveld_recipe_with_sinks,
+    validate_rietveld_recipe,
 };
 
 fn instrument() -> ConstantWavelengthInstrument {
@@ -342,6 +343,10 @@ fn recipe_rejects_unauthorized_families_and_invalid_metadata() {
     )
     .unwrap();
     assert!(matches!(
+        validate_rietveld_recipe(&input, &maximum, &[None], &[], &recipe),
+        Err(RietveldRecipeError::UnauthorizedSelection { .. })
+    ));
+    assert!(matches!(
         run_rietveld_recipe(
             &input,
             &maximum,
@@ -399,6 +404,16 @@ fn recipe_rejects_a_selected_constraint_without_its_source_family() {
         )
         .unwrap(),
     );
+    assert!(matches!(
+        validate_rietveld_recipe(
+            &input,
+            &maximum,
+            &[None],
+            std::slice::from_ref(&constraint),
+            &recipe
+        ),
+        Err(RietveldRecipeError::MissingConstraintDependency { .. })
+    ));
     assert!(matches!(
         run_rietveld_recipe(
             &input,

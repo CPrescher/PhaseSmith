@@ -494,6 +494,45 @@ pub fn run_rietveld_recipe(
     )
 }
 
+/// Validate a complete staged recipe without calculating or refining a pattern.
+///
+/// This checks the input, authorized maximum selection, parameter layouts,
+/// complete constraint state, and every stage's constraint dependencies. It is
+/// intended for application review screens and other advisory orchestration.
+///
+/// # Errors
+///
+/// Returns [`RietveldRecipeError`] for the same recipe-contract failures that
+/// would stop [`run_rietveld_recipe_with_sinks`] before numerical work begins.
+pub fn validate_rietveld_recipe(
+    input: &RietveldInput,
+    maximum: &RietveldParameterSelection,
+    lattice_bounds: &[Option<LatticeBounds>],
+    constraints: &[Constraint],
+    recipe: &RietveldRecipe,
+) -> Result<(), RietveldRecipeError> {
+    input.validate()?;
+    recipe.validate()?;
+    let maximum_layout = RietveldParameterLayout::new(input, maximum, lattice_bounds)?;
+    validate_constraint_contract(&maximum_layout, constraints)?;
+    for stage in &recipe.stages {
+        if !selection_subset(&stage.selection, maximum) {
+            return Err(RietveldRecipeError::UnauthorizedSelection {
+                stage: stage.name.clone(),
+            });
+        }
+        let layout = RietveldParameterLayout::new(input, &stage.selection, lattice_bounds)?;
+        let keys = layout
+            .parameters()
+            .specs()
+            .iter()
+            .map(|spec| spec.key().clone())
+            .collect::<Vec<_>>();
+        stage_constraints(constraints, &keys, &stage.name)?;
+    }
+    Ok(())
+}
+
 /// Execute a recipe with optional shared event and checkpoint consumers.
 ///
 /// Each stage owns a fresh bounded runtime but forwards its numerical events
@@ -516,17 +555,7 @@ pub fn run_rietveld_recipe_with_sinks(
     cancellation: Option<&CancellationToken>,
     sinks: Option<&RietveldRecipeSinks>,
 ) -> Result<RietveldWorkflowResult, RietveldRecipeError> {
-    input.validate()?;
-    recipe.validate()?;
-    let maximum_layout = RietveldParameterLayout::new(input, maximum, lattice_bounds)?;
-    validate_constraint_contract(&maximum_layout, constraints)?;
-    for stage in &recipe.stages {
-        if !selection_subset(&stage.selection, maximum) {
-            return Err(RietveldRecipeError::UnauthorizedSelection {
-                stage: stage.name.clone(),
-            });
-        }
-    }
+    validate_rietveld_recipe(input, maximum, lattice_bounds, constraints, recipe)?;
     let mut current = input.clone();
     let mut current_rwp = calculate_rietveld_pattern(&current, &options.calculation)?
         .metrics

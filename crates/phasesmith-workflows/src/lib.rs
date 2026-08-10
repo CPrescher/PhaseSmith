@@ -132,7 +132,7 @@ pub use rietveld_project::{RietveldAnalysis, RietveldProjectError, RietveldProje
 pub use rietveld_recipe::{
     RietveldRecipe, RietveldRecipeError, RietveldRecipeMode, RietveldRecipeSinks, RietveldStage,
     RietveldStageResult, RietveldWorkflowResult, intelligent_rietveld_recipe, run_rietveld_recipe,
-    run_rietveld_recipe_with_sinks,
+    run_rietveld_recipe_with_sinks, validate_rietveld_recipe,
 };
 pub use rietveld_solver::{
     RietveldCheckpoint, RietveldIterationRecord, RietveldRefinementError,
