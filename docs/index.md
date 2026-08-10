@@ -43,6 +43,7 @@ For shared refinement controls, cancellation, logs, and safe checkpoints, see
   [quantitative phase analysis](quantitative-phase-analysis.md)
 - [Sample physics](sample-physics.md) and
   [wavelength components](wavelength-components.md)
+- [Offline fundamental-profile calibration](fundamental-profile-calibration.md)
 - [Neutron CW](neutron-cw.md) and [neutron TOF](tof-profile.md)
 - [Public Python architecture](public-api.md)
 - [Native Rust API and GUI integration](rust-api.md)

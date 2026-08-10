@@ -903,6 +903,20 @@ starting profile. Calibrant registries, CeO2/LaB6 detector-geometry workflows,
 in-situ Si separation, persistence, and GUI presentation remain deferred until
 representative real data can validate their behavior.
 
+The next experimental calibration slice follows the conventional GSAS-II
+fundamental-profile workflow without adding full fundamental-parameter physics
+to the refinement runtime. An independent NumPy generator builds isolated
+peaks from discrete emission wavelengths and intrinsic wavelength widths,
+ideal uniform equatorial source/receiving apertures, and published FCJ axial
+geometry. A bounded offline fit then uses the existing Rust analytical
+derivatives to compress those targets into production `U/V/W/X/Y` and a single
+equal-height `SH/L`. Global and per-peak L2/correlation diagnostics reject
+non-representable physical targets rather than presenting them as successful
+calibrations. Transparency, full divergence/Soller optics, tube tails,
+monochromator/analyser passbands, and PSD defocusing remain separate reviewed
+increments. No GSAS-II or NIST implementation code is copied or required at
+runtime.
+
 ## Quality bar
 
 Public behavior is typed and documented. Invalid shapes, non-finite values,

@@ -1208,6 +1208,10 @@ Keep implementation units reviewable through these ordered changes:
 26. Typed microsecond-domain fixed-instrument TOF Le Bail calculation and
     nonnegative intensity extraction, followed by checksum-pinned POWGEN LaB6
     real-pattern acceptance.
+27. Offline first-slice fundamental-profile calibration: independent isolated
+    physical targets from emission lines, ideal equatorial apertures, and FCJ;
+    bounded compression to production U/V/W/X/Y plus equal-height SH/L with
+    explicit rejection diagnostics.
 
 Unit 23 is complete. The Rust workflow crate now owns stable shared/local
 packing, matrix-free joint products, a bounded constraint-aware summed solver,
@@ -1239,6 +1243,14 @@ POWGEN bank-2 type-3 coefficients are translated in the validation adapter and
 the 6,825-sample, 330-family LaB6 run passes calibration, derivative, coverage,
 profile-correlation, and intensity gates. Structural TOF Rietveld refinement is
 outside this fixed-instrument Le Bail slice.
+
+Unit 27's first slice is complete. Fundamental targets are generated in the
+independent NumPy layer, while candidate values and analytical derivatives use
+the production Rust CW-component/FCJ pass. The fitted model remains the normal
+runtime U/V/W/X/Y plus single SH/L profile. Global and per-angle diagnostics
+make failed compression observable. Full divergence, transparency, tube tails,
+monochromator/analyser passbands, and PSD defocusing remain deferred to
+equation- and data-backed increments.
 
 Do not combine adjacent items merely to reduce PR count; numerical review is
 easier when parameter conventions and tolerance changes remain isolated.

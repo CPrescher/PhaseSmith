@@ -85,6 +85,11 @@ phasesmith.profile_estimation  [implemented]
   alignment is a nuisance step, and conservative diagnostics control model
   complexity.
 
+phasesmith.fpa_calibration  [implemented first slice]
+  Offline independent physical-peak generation and compression into the native
+  U/V/W/X/Y plus equal-height SH/L production profile. Fundamental-parameter
+  evaluation does not enter the refinement hot loop.
+
 phasesmith.refinement.rietveld
   Implemented monochromatic structure-factor refinement orchestration. It
   consumes the same profile interface as Le Bail.
@@ -243,6 +248,11 @@ phasesmith.profile_estimation.ProfileEstimationOptions
 phasesmith.profile_estimation.ProfileEstimationResult
 phasesmith.profile_estimation.starting_profile_from_fwhm
 phasesmith.profile_estimation.estimate_effective_profile
+phasesmith.fpa_calibration.FundamentalEmissionLine
+phasesmith.fpa_calibration.BraggBrentanoFundamentalProfile
+phasesmith.fpa_calibration.FundamentalProfileCalibrationOptions
+phasesmith.fpa_calibration.simulate_fundamental_peaks
+phasesmith.fpa_calibration.calibrate_fundamental_profile
 phasesmith.persistence.PersistenceBundle
 phasesmith.persistence.PersistenceBundle.to_lebail_input
 phasesmith.persistence.save_bundle

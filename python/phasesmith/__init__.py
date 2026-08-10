@@ -6,7 +6,14 @@ https://phasesmith.readthedocs.io/en/latest/mathematics/.
 
 from importlib.metadata import PackageNotFoundError, version
 
-from . import background, integrations, persistence, profile_estimation, refinement
+from . import (
+    background,
+    fpa_calibration,
+    integrations,
+    persistence,
+    profile_estimation,
+    refinement,
+)
 from ._api import (
     PARAMETER_ORDER,
     TCH_PARAMETER_ORDER,
@@ -91,6 +98,16 @@ from .fcj import (
     accumulate_cw_fcj,
     accumulate_cw_fcj_components,
     profile_fcj,
+)
+from .fpa_calibration import (
+    BraggBrentanoFundamentalProfile,
+    FundamentalEmissionLine,
+    FundamentalPeakDiagnostic,
+    FundamentalPeakPattern,
+    FundamentalProfileCalibrationOptions,
+    FundamentalProfileCalibrationResult,
+    calibrate_fundamental_profile,
+    simulate_fundamental_peaks,
 )
 from .instrument import ConstantWavelengthInstrument, FcjGeometry, TofInstrument
 from .intensity_corrections import (
@@ -251,6 +268,7 @@ __all__ = [
     "AtomSite",
     "AtomSiteBatch",
     "BackgroundSubtractionResult",
+    "BraggBrentanoFundamentalProfile",
     "BraggBrentanoGeometry",
     "BraggBrentanoPolarizedLp",
     "BraggBrentanoUnpolarizedLp",
@@ -276,6 +294,11 @@ __all__ = [
     "ExpandedSites",
     "FcjGeometry",
     "FcjProfileResult",
+    "FundamentalEmissionLine",
+    "FundamentalPeakDiagnostic",
+    "FundamentalPeakPattern",
+    "FundamentalProfileCalibrationOptions",
+    "FundamentalProfileCalibrationResult",
     "GeneratedReflectionBatch",
     "IntegratedIntensityCorrection",
     "IntegratedIntensityCorrectionProvider",
@@ -385,10 +408,12 @@ __all__ = [
     "calculate_structural_pattern",
     "calculate_structure_factor_values",
     "calculate_structure_factors",
+    "calibrate_fundamental_profile",
     "cw_profile_parameters",
     "estimate_effective_profile",
     "evaluate_intensity_correction",
     "evaluate_scattering_provider",
+    "fpa_calibration",
     "integrations",
     "neutron_species_metadata",
     "p1_intensity_transpose_jacobian_vector_product",
@@ -408,6 +433,7 @@ __all__ = [
     "reciprocal_angle_geometry",
     "refinement",
     "rietveld_result_record",
+    "simulate_fundamental_peaks",
     "smooth_bruckner",
     "space_group_by_number",
     "space_group_by_symbol",
