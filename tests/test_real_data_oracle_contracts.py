@@ -58,7 +58,19 @@ def test_real_lebail_parity_contract_gates_counts_rwp_and_correlation() -> None:
 
 
 def test_sucrose_oracle_background_uses_the_full_identical_grid(tmp_path: Path) -> None:
-    data = REPOSITORY_ROOT / "validation/data/aps-sucrose-11bmb"
+    data = tmp_path / "data"
+    data.mkdir()
+    x_centideg = np.arange(0.0, 3_050.0, 50.0)
+    observed = 100.0 + 0.02 * x_centideg + 5.0 * np.sin(x_centideg / 300.0)
+    rows = [
+        "Synthetic GSAS FXYE contract fixture",
+        f"BANK 1 {x_centideg.size} {x_centideg.size} CONS 0 50 0 0 FXYE",
+        *(
+            f"{x_value:.1f} {y_value:.17g} 1.0"
+            for x_value, y_value in zip(x_centideg, observed, strict=True)
+        ),
+    ]
+    (data / "11bmb_8716.fxye").write_text("\n".join(rows) + "\n", encoding="utf-8")
     path = LEBAIL.prepare_fixed_background("aps-sucrose-11bmb", data, tmp_path)
 
     assert path is not None
