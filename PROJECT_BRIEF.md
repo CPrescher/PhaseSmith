@@ -469,6 +469,34 @@ Rwp deltas below 0.5 percentage points and phase-fraction deltas below 0.5
 percentage points. Deposited TOPAS source terms remain provenance metadata only
 and no TOPAS or GSAS-II code enters the runtime.
 
+The same independently implemented size/microstrain profile and exact-linear
+scale/background alternation now transfer to both IUCr QARR mixtures. A
+separate matched parity workflow uses ten Chebyshev terms, fixed Cu doublet and
+dispersion values, refined U/V/W/zero, isotropic size and Lorentzian
+microstrain, and the explicit trace-mean isotropic representation of deposited
+anisotropic displacement tensors in both programs. With 29 free parameters,
+PhaseSmith and pinned GSAS-II respectively return 18.226%/18.395% Poisson Rwp
+for 1g and 18.358%/18.636% for the untouched 1h holdout. Maximum phase-fraction
+deltas are 0.00355 and 0.00415 absolute. Both cases pass limits of 0.005 for
+phase fractions and both Rwp conventions and 0.002 for profile correlation.
+The prior QARR acceptance workflow remains available as a distinct model and
+is not silently redefined by this oracle comparison.
+
+The next independent laboratory holdout uses specimen 100a from NIST SRM 660c.
+It preserves NIST's released fundamental-parameters curve as the primary
+reference, while a separate 17-parameter physical common subset compares
+PhaseSmith with pinned GSAS-II: fixed positive-variance U/V/W and zero
+microstrain, refined zero, isotropic size, two Uiso values, scale, and twelve
+Chebyshev coefficients. PhaseSmith returns 18.912% Poisson Rwp and 0.96932
+profile correlation versus GSAS-II's 13.984% and 0.98983; the NIST reference is
+6.055% and 0.99948. The cross-program profile gate therefore remains failed.
+Unconstrained GSAS-II runs were rejected as parity targets because they drove U
+and microstrain negative, producing nonphysical high-angle Gaussian variance.
+This holdout identifies a remaining empirical-profile/model gap without adding
+the TOPAS fundamental-parameters optics excluded from PhaseSmith's scope. The
+untuned 100b transfer scan reproduces the result at 18.777%/13.830% Rwp versus
+the 6.142% NIST reference, confirming that the gap is not specimen-specific.
+
 ## Design commitments
 
 - Use GSAS-II only as a pinned validation oracle, never as the architecture.
@@ -789,12 +817,11 @@ continues to use its certified values and released profiles as the primary
 oracle rather than treating a GSAS-II refit as replacement truth. POWGEN now
 has the same live pinned-oracle boundary as the other accepted
 real-data workflows, while its synthetic derivative fixture remains unchanged.
-The reviewed pinned run passes both Le Bail parity contracts and QARR 1g.
-QARR 1h remains explicitly not on par in profile quality: its maximum fraction
-delta is acceptable at 0.00979, but its Poisson Rwp, unit-weight Rwp, and
-correlation deltas are 0.09434, 0.11009, and 0.01297, respectively. The oracle
-test requires that reviewed failure status rather than treating the holdout as
-an expected skip.
+The historical native-workflow comparison passes both Le Bail parity contracts
+and QARR 1g. Its unchanged QARR 1h acceptance recipe retains the reviewed
+profile-quality failure, rather than having thresholds relaxed. The newer
+matched-parameterization QARR workflow is a separate parity contract and passes
+both 1g and the untouched 1h holdout.
 Release packaging preserves the same separation. The public crates.io
 `phasesmith` facade re-exports the application-neutral native component crates;
 PyO3 and validation tooling remain unpublished workspace packages; GUI

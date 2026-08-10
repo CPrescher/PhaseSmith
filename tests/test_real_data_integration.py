@@ -7,11 +7,13 @@ import pytest
 from phasesmith.io import convert_rowles_topas_bundle
 from phasesmith.validation import (
     run_echidna_lab6_validation,
+    run_nist_srm660c_parity_workflow,
     run_nist_srm660c_validation,
     run_pbso4_cw_validation,
     run_powgen_tof_validation,
     run_qarr_1g_validation,
     run_qarr_1h_validation,
+    run_qarr_gsasii_parity_workflow,
     run_rowles_qpa_workflow,
     run_sucrose_lebail_validation,
     verify_validation_dataset,
@@ -76,6 +78,32 @@ def test_nist_archive_integrity_regression() -> None:
 
 
 @pytest.mark.real_data
+@pytest.mark.parametrize(
+    ("specimen", "poisson_rwp", "correlation", "reference_rwp"),
+    [
+        ("100a", 0.18912495105274302, 0.9693153928778462, 0.0605460046286684),
+        ("100b", 0.187768715361898, 0.9713179663820863, 0.061423080940490066),
+    ],
+)
+def test_nist_srm660c_empirical_common_model_preserves_profile_gap(
+    specimen: str, poisson_rwp: float, correlation: float, reference_rwp: float
+) -> None:
+    result = run_nist_srm660c_parity_workflow(
+        available_dataset("nist-srm660c-lab6-xray"),
+        specimen,
+        execution=phasesmith.ExecutionPolicy(threads=1),
+    )
+
+    assert result.sample_count == 5_332
+    assert result.reflection_count == 30
+    assert result.free_parameter_count == 17
+    assert result.poisson_rwp == pytest.approx(poisson_rwp)
+    assert result.profile_correlation == pytest.approx(correlation)
+    assert result.nist_reference_rwp == pytest.approx(reference_rwp)
+    assert result.nist_reference_correlation >= 0.9993
+
+
+@pytest.mark.real_data
 def test_qarr_1h_holdout_preserves_the_reviewed_failure_signal() -> None:
     report = run_qarr_1h_validation(available_dataset("iucr-qarr-1h"))
     checks = {check.check_id: check for check in report.checks}
@@ -124,6 +152,29 @@ def test_qarr_real_pattern_two_thread_regression() -> None:
     assert measurements["profile_correlation"] >= 0.98
     assert measurements["qpa_weight_fraction"] <= 0.02
     assert measurements["qpa_covariance"] >= 0.0
+
+
+@pytest.mark.real_data
+@pytest.mark.parametrize(
+    ("sample", "maximum_qpa_error"),
+    [("1g", 0.008), ("1h", 0.006)],
+)
+def test_qarr_matched_gsasii_parity_workflow_regression(
+    sample: str, maximum_qpa_error: float
+) -> None:
+    result = run_qarr_gsasii_parity_workflow(
+        available_dataset(f"iucr-qarr-{sample}"),
+        sample,
+        execution=phasesmith.ExecutionPolicy(threads=1),
+    )
+
+    assert result.sample_count == 7_251
+    assert result.reflection_count == 110
+    assert result.free_parameter_count == 29
+    assert result.maximum_weight_fraction_error <= maximum_qpa_error
+    assert result.poisson_rwp <= 0.19
+    assert result.unit_weight_rwp <= 0.14
+    assert result.profile_correlation >= 0.99
 
 
 @pytest.mark.real_data

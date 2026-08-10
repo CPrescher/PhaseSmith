@@ -5,7 +5,7 @@ import json
 import subprocess
 import sys
 from pathlib import Path
-from types import ModuleType, SimpleNamespace
+from types import ModuleType
 
 import numpy as np
 import phasesmith
@@ -202,16 +202,8 @@ def test_qarr_worker_fcj_ablation_preserves_source(tmp_path: Path) -> None:
     assert source.read_text(encoding="utf-8") == "Type:PXC\nSH/L:0.002\n"
 
 
-def test_qarr_comparison_parses_results_and_rejects_oracle_drift() -> None:
+def test_qarr_comparison_rejects_oracle_drift() -> None:
     benchmark = load_script("benchmarks/compare_gsasii_qarr.py", "compare_gsasii_qarr_test")
-    report = SimpleNamespace(
-        notes=("Calculated crystalline weight fractions: Al2O3=31.1%, ZnO=34.2%, CaF2=34.7%.",)
-    )
-    assert benchmark.phase_fractions(report) == {
-        "Al2O3": pytest.approx(0.311),
-        "ZnO": pytest.approx(0.342),
-        "CaF2": pytest.approx(0.347),
-    }
     base = {
         "schema_version": 1,
         "implementation": "GSAS-II",
@@ -235,29 +227,63 @@ def test_qarr_comparison_numerically_gates_cross_implementation_results() -> Non
     phasesmith_result = {
         "sample_count": 7_251,
         "reflection_count": 110,
-        "weight_fractions": {"Al2O3": 0.308, "ZnO": 0.342, "CaF2": 0.350},
-        "poisson_rwp": 0.198,
-        "unit_weight_rwp": 0.132,
-        "profile_correlation": 0.991,
+        "weight_fractions": {"Al2O3": 0.3211, "ZnO": 0.3365, "CaF2": 0.3424},
+        "poisson_rwp": 0.1823,
+        "unit_weight_rwp": 0.1342,
+        "profile_correlation": 0.9903,
     }
     gsas_result = {
         "sample_count": 7_251,
         "reflection_count": 110,
-        "weight_fractions": {"Al2O3": 0.315, "ZnO": 0.337, "CaF2": 0.349},
-        "poisson_rwp": 0.184,
-        "unit_weight_rwp": 0.137,
-        "profile_correlation": 0.990,
+        "weight_fractions": {"Al2O3": 0.3247, "ZnO": 0.3330, "CaF2": 0.3423},
+        "poisson_rwp": 0.1839,
+        "unit_weight_rwp": 0.1374,
+        "profile_correlation": 0.9896,
     }
 
     validation = benchmark.compare_scientific_results(phasesmith_result, gsas_result)
 
     assert validation["checks"]["maximum_phase_fraction_delta"]["passed"] is True
-    assert validation["phase_fraction_deltas"]["Al2O3"] == pytest.approx(0.007)
+    assert validation["phase_fraction_deltas"]["Al2O3"] == pytest.approx(0.0036)
     changed = json.loads(json.dumps(gsas_result))
     changed["weight_fractions"]["Al2O3"] = 0.40
     drift = benchmark.compare_scientific_results(phasesmith_result, changed)
     assert drift["status"] == "failed"
     assert "maximum_phase_fraction_delta" in drift["failed_checks"]
+
+
+def test_nist_srm660c_physical_subset_preserves_the_reviewed_failure() -> None:
+    benchmark = load_script(
+        "benchmarks/compare_gsasii_nist_srm660c.py", "compare_gsasii_nist_srm660c_test"
+    )
+    phasesmith_result = {
+        "specimen": "100a",
+        "sample_count": 5_332,
+        "reflection_count": 30,
+        "free_parameter_count": 17,
+        "poisson_rwp": 0.1891,
+        "unit_weight_rwp": 0.2476,
+        "profile_correlation": 0.9693,
+        "nist_reference_rwp": 0.060546,
+        "nist_reference_correlation": 0.999479,
+    }
+    gsas_result = {
+        **phasesmith_result,
+        "poisson_rwp": 0.1398,
+        "unit_weight_rwp": 0.1452,
+        "profile_correlation": 0.9898,
+    }
+
+    comparison = benchmark.compare_scientific_results(phasesmith_result, gsas_result)
+
+    assert comparison["status"] == "failed"
+    assert comparison["failed_checks"] == [
+        "poisson_rwp_delta",
+        "unit_weight_rwp_delta",
+        "profile_correlation_delta",
+    ]
+    matched = benchmark.compare_scientific_results(phasesmith_result, phasesmith_result)
+    assert matched["status"] == "passed"
 
 
 def test_rowles_comparison_gates_converted_common_subset() -> None:
@@ -383,6 +409,7 @@ def test_practical_workflow_benchmark_covers_xray_and_neutron() -> None:
     "script",
     [
         "benchmarks/compare_gsasii.py",
+        "benchmarks/compare_gsasii_nist_srm660c.py",
         "benchmarks/compare_gsasii_pbso4.py",
         "benchmarks/compare_gsasii_powgen_tof.py",
         "benchmarks/compare_gsasii_qarr.py",
@@ -392,6 +419,7 @@ def test_practical_workflow_benchmark_covers_xray_and_neutron() -> None:
         "benchmarks/practical_workflow.py",
         "benchmarks/real_data.py",
         "oracle/scripts/benchmark_cw_profile.py",
+        "oracle/scripts/benchmark_nist_srm660c.py",
         "oracle/scripts/benchmark_pbso4.py",
         "oracle/scripts/benchmark_powgen_tof.py",
         "oracle/scripts/benchmark_qarr.py",
@@ -413,6 +441,7 @@ def test_benchmark_help_does_not_require_gsasii(script: str) -> None:
 def test_external_worker_does_not_import_rietveld() -> None:
     for relative_path in (
         "oracle/scripts/benchmark_cw_profile.py",
+        "oracle/scripts/benchmark_nist_srm660c.py",
         "oracle/scripts/benchmark_pbso4.py",
         "oracle/scripts/benchmark_powgen_tof.py",
         "oracle/scripts/benchmark_qarr.py",

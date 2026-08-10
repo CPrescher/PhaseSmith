@@ -87,18 +87,18 @@ def test_qarr_parity_contract_accepts_reviewed_metrics_and_rejects_drift() -> No
     phase = {
         "sample_count": 7_251,
         "reflection_count": 110,
-        "weight_fractions": {"Al2O3": 0.31, "ZnO": 0.34, "CaF2": 0.35},
-        "poisson_rwp": 0.20,
-        "unit_weight_rwp": 0.13,
-        "profile_correlation": 0.99,
+        "weight_fractions": {"Al2O3": 0.3211, "ZnO": 0.3365, "CaF2": 0.3424},
+        "poisson_rwp": 0.1823,
+        "unit_weight_rwp": 0.1342,
+        "profile_correlation": 0.9903,
     }
     gsas = {
         "sample_count": 7_251,
         "reflection_count": 110,
-        "weight_fractions": {"Al2O3": 0.315, "ZnO": 0.338, "CaF2": 0.347},
-        "poisson_rwp": 0.19,
-        "unit_weight_rwp": 0.14,
-        "profile_correlation": 0.995,
+        "weight_fractions": {"Al2O3": 0.3247, "ZnO": 0.3330, "CaF2": 0.3423},
+        "poisson_rwp": 0.1839,
+        "unit_weight_rwp": 0.1374,
+        "profile_correlation": 0.9896,
     }
     comparison = QARR.compare_scientific_results(phase, gsas)
     assert all(check["passed"] for check in comparison["checks"].values())

@@ -16,8 +16,13 @@ QARR worker in `scripts/benchmark_qarr.py` additionally runs a complete,
 staged 1g or 1h real-data workflow and exposes explicit FCJ, sample-broadening, and
 displacement ablations. Its optional trace-mean anisotropic ablation is a small,
 revision-gated internal probe because that representation change is absent from
-the public scripting API. `scripts/benchmark_real_lebail.py` runs the sucrose
-and Echidna constant-wavelength cases through temporary GSAS-II Le Bail
+the public scripting API. The default paired comparison applies that same
+trace-mean representation in PhaseSmith, matches the ten-term Chebyshev,
+isotropic-size, Lorentzian-microstrain, and staged refinement parameterization,
+and gates both 1g and the independent 1h holdout at 0.005 absolute for phase
+fractions and Rwp and 0.002 for profile correlation.
+`scripts/benchmark_real_lebail.py` runs the sucrose and Echidna
+constant-wavelength cases through temporary GSAS-II Le Bail
 projects; its exact-revision-gated `newLeBail` initialization is recorded as a
 private probe in each report because the public API does not expose it. The
 sucrose driver supplies the identical fixed Smooth Bruckner array to both
@@ -34,6 +39,14 @@ corresponding scripts in `benchmarks/`, import no PhaseSmith
 module, and report numerically verified profile-only and controlled
 structure-to-profile comparisons. See `../docs/gsasii-performance.md` for their
 scope and limitations.
+
+`scripts/benchmark_nist_srm660c.py` reads one bounded pdCIF member directly
+from the checksum-pinned NIST archive and fits the same 17-parameter physical
+empirical subset as PhaseSmith. The paired comparison is an expected failing
+holdout, not a replacement for the NIST reference: specimen 100a currently
+gives 18.912% PhaseSmith Rwp versus 13.984% GSAS-II Rwp. Negative Gaussian
+variance and negative microstrain states found in unconstrained GSAS-II probes
+are excluded explicitly.
 
 The live real-data matrix covers sucrose, Echidna, QARR 1g, QARR 1h, POWGEN,
 and the paired PbSO4 X-ray/neutron workflow. NIST SRM 660c is deliberately different:
@@ -224,6 +237,13 @@ uv run python benchmarks/compare_gsasii_qarr.py --require-release \
   --binary-dir /path/to/compatible/GSASII-bin/platform-directory \
   --sample 1g \
   --data-directory validation/data/iucr-qarr-1g
+
+uv run python benchmarks/compare_gsasii_nist_srm660c.py --require-release \
+  --gsas-python /path/to/gsas/python \
+  --gsas-root /path/to/pinned/GSAS-II \
+  --binary-dir /path/to/compatible/GSASII-bin/platform-directory \
+  --specimen 100a \
+  --data-directory validation/data/nist-srm660c-lab6-xray
 
 uv run python benchmarks/compare_gsasii_real_lebail.py --require-release \
   --gsas-python /path/to/gsas/python \

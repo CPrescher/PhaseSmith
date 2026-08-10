@@ -7,7 +7,6 @@ import argparse
 import json
 import os
 import platform
-import re
 import statistics
 import subprocess
 import tempfile
@@ -18,8 +17,7 @@ from typing import Any
 import numpy as np
 import phasesmith
 from phasesmith.validation import (
-    run_qarr_1g_validation,
-    run_qarr_1h_validation,
+    run_qarr_gsasii_parity_workflow,
     verify_validation_dataset,
 )
 
@@ -28,12 +26,11 @@ WORKER = REPOSITORY_ROOT / "oracle" / "scripts" / "benchmark_qarr.py"
 PINNED_REVISION = "c0bc79b259cdf0065480b5fbd57674ddf12c4a23"
 SCOPE = "iucr_qarr_1g_native_workflow"
 PHASE_NAMES = ("Al2O3", "ZnO", "CaF2")
-FRACTION_PATTERN = re.compile(r"(Al2O3|ZnO|CaF2)=([0-9]+(?:\.[0-9]+)?)%")
 CROSS_IMPLEMENTATION_LIMITS = {
-    "maximum_phase_fraction_delta": 0.02,
-    "poisson_rwp_delta": 0.03,
-    "unit_weight_rwp_delta": 0.02,
-    "profile_correlation_delta": 0.01,
+    "maximum_phase_fraction_delta": 0.005,
+    "poisson_rwp_delta": 0.005,
+    "unit_weight_rwp_delta": 0.005,
+    "profile_correlation_delta": 0.002,
 }
 
 
@@ -73,7 +70,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--gsas-anisotropic",
         choices=("cif", "trace-mean-isotropic"),
-        default="cif",
+        default="trace-mean-isotropic",
     )
     parser.add_argument("--require-release", action="store_true")
     parser.add_argument("--json-output", type=Path)
@@ -94,40 +91,6 @@ def timing_summary(values: list[float]) -> dict[str, Any]:
     }
 
 
-def phase_fractions(report: Any) -> dict[str, float]:
-    matches = dict(FRACTION_PATTERN.findall(" ".join(report.notes)))
-    if set(matches) != set(PHASE_NAMES):
-        raise RuntimeError("PhaseSmith QARR report does not contain structured phase fractions")
-    return {name: float(matches[name]) / 100.0 for name in PHASE_NAMES}
-
-
-def check_measurement(report: Any, check_id: str) -> float:
-    matches = [check.measured for check in report.checks if check.check_id == check_id]
-    if len(matches) != 1 or matches[0] is None or not np.isfinite(matches[0]):
-        raise RuntimeError(f"PhaseSmith QARR report has no finite {check_id} measurement")
-    return float(matches[0])
-
-
-def phase_result(report: Any, expected_status: str) -> dict[str, Any]:
-    if report.status != expected_status:
-        raise RuntimeError(
-            f"PhaseSmith QARR validation returned {report.status!r}, expected {expected_status!r}"
-        )
-    fractions = phase_fractions(report)
-    return {
-        "sample_count": report.sample_count,
-        "reflection_count": report.reflection_count,
-        "weight_fractions": fractions,
-        "maximum_weight_fraction_error": check_measurement(report, "qpa_weight_fraction"),
-        "poisson_rwp": check_measurement(report, "poisson_rwp"),
-        "unit_weight_rwp": check_measurement(report, "unit_weight_rwp"),
-        "profile_correlation": check_measurement(report, "profile_correlation"),
-        "validation_status": report.status,
-        "termination_notes": [note for note in report.notes if note.startswith("Stage ")],
-        "approximations": list(report.notes[5:]),
-    }
-
-
 def run_phasesmith(
     data_directory: Path,
     warmups: int,
@@ -135,13 +98,12 @@ def run_phasesmith(
     execution: phasesmith.ExecutionPolicy,
     sample: str,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
-    expected_status = "passed" if sample == "1g" else "failed"
-    runner = run_qarr_1g_validation if sample == "1g" else run_qarr_1h_validation
-
     def run_once() -> Any:
-        if sample == "1g":
-            return runner(data_directory, execution=execution)
-        return runner(data_directory)
+        return run_qarr_gsasii_parity_workflow(
+            data_directory,
+            sample,
+            execution=execution,
+        )
 
     for _ in range(warmups):
         run_once()
@@ -152,8 +114,12 @@ def run_phasesmith(
         report = run_once()
         wall_ms.append((time.perf_counter_ns() - started) / 1.0e6)
         reports.append(report)
-    results = [phase_result(report, expected_status) for report in reports]
-    if any(result != results[0] for result in results[1:]):
+    results = [report.to_record() for report in reports]
+    stable = [
+        {key: value for key, value in result.items() if key != "elapsed_seconds"}
+        for result in results
+    ]
+    if any(result != stable[0] for result in stable[1:]):
         raise RuntimeError("PhaseSmith QARR repetitions are not deterministic")
     return results[-1], {
         "reported_workflow": timing_summary(
@@ -233,7 +199,7 @@ def validate_gsas_reports(reports: list[dict[str, Any]], sample: str = "1g") -> 
 def compare_scientific_results(
     phasesmith_result: dict[str, Any], gsas_result: dict[str, Any]
 ) -> dict[str, Any]:
-    """Numerically gate the two intentionally non-matched native workflows."""
+    """Numerically gate the two matched common-model native workflows."""
 
     if phasesmith_result["sample_count"] != gsas_result["sample_count"]:
         raise RuntimeError("PhaseSmith and GSAS-II used different QARR sample counts")
@@ -358,10 +324,9 @@ def main() -> None:
     report = {
         "schema_version": 1,
         "scope": f"iucr_qarr_{arguments.sample}_native_workflow",
-        "comparison_kind": "native_workflows_not_matched_parameterizations",
+        "comparison_kind": "native_workflows_matched_common_parameterizations",
         "workload": {
             "dataset_id": dataset_id,
-            "expected_phasesmith_status": "passed" if arguments.sample == "1g" else "failed",
             "samples": phase_result_record["sample_count"],
             "phases": list(PHASE_NAMES),
             "warmups": arguments.warmups,
@@ -386,18 +351,14 @@ def main() -> None:
         "cross_implementation_validation": cross_validation,
         "limitations": [
             (
-                "PhaseSmith uses fixed Smooth Bruckner background; "
-                "GSAS-II refines ten Chebyshev terms."
-            ),
-            (
-                "PhaseSmith keeps preserved CIF anisotropic tensors fixed; "
-                "GSAS-II refines displacement parameters in its staged recipe."
+                "Both workflows use the explicit trace-mean isotropic ablation for CIF "
+                "anisotropic displacement tensors."
             ),
             (
                 "PhaseSmith uses the published continuous equal-height FCJ mapping; "
                 "GSAS-II uses its pinned discretized one-parameter SH/L implementation."
             ),
-            "This is a complete native-workflow comparison, not a same-kernel benchmark.",
+            "The optimizers are native staged workflows, not a same-kernel benchmark.",
         ],
     }
     print(f"scope=iucr_qarr_{arguments.sample}_native_workflow repetitions={arguments.repetitions}")

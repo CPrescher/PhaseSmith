@@ -69,6 +69,12 @@ have deliberately different meanings:
   unit-weight Rwp 0.24149, and correlation 0.97763 fail the accepted profile
   gates. The runner reports `failed`; the thresholds
   are not relaxed to turn this diagnostic into a pass.
+  A separate GSAS-II-parity workflow matches the ten-term background,
+  size/microstrain model, refinement blocks, and trace-mean isotropic
+  displacement representation in both programs. Without tuning against 1h,
+  it reaches 18.358% Poisson Rwp versus GSAS-II's 18.636%; the maximum
+  cross-program phase-fraction delta is 0.00415. This does not rewrite the
+  historical acceptance result above.
 - `curtin-rowles-qpa-topas` pins two laboratory Bruker D8 patterns (`1a` and
   `1e`) plus their deposited TOPAS v6 inputs and include file. The narrow
   converter emits neutral XY, CIF, GSAS-II instrument, and JSON records while
@@ -88,6 +94,15 @@ have deliberately different meanings:
   0.065 gates. This validates the external oracle archive. It is not a
   pointwise PhaseSmith equivalence claim because the released fit uses a Cu
   emission spectrum and fundamental-parameters optics model.
+  A separate specimen-100a empirical holdout compares the physically valid
+  common subset with pinned GSAS-II. PhaseSmith/GSAS-II Poisson Rwp values are
+  18.912%/13.984%, and correlations are 0.96932/0.98983, so the strict profile
+  parity gate remains failed. Both independently recover the released NIST
+  reference metrics exactly. U/V/W and zero microstrain are fixed because the
+  unconstrained GSAS-II solution drives those terms into nonphysical negative
+  widths; those states are not accepted as a PhaseSmith parity target.
+  The untouched 100b scan gives the same outcome: 18.777%/13.830% Rwp versus
+  the 6.142% released NIST reference.
 - `powgen-lab6-tof-calibration` pins the official GSAS-II POWGEN tutorial bank
   and calibration, converts 6,825 SLOG FXYE bin-boundary/integrated-intensity
   rows into 6,824 bin-center intensity densities in microseconds, and exercises
@@ -215,6 +230,13 @@ uv run python benchmarks/compare_gsasii_qarr.py --require-release \
   --data-directory validation/data/iucr-qarr-1g \
   --phasesmith-threads 2
 
+uv run python benchmarks/compare_gsasii_nist_srm660c.py --require-release \
+  --gsas-python /path/to/gsas/python \
+  --gsas-root /path/to/pinned/GSAS-II \
+  --binary-dir /path/to/compatible/GSASII-bin/platform-directory \
+  --specimen 100a \
+  --data-directory validation/data/nist-srm660c-lab6-xray
+
 uv run python benchmarks/compare_gsasii_real_lebail.py --require-release \
   --gsas-python /path/to/gsas/python \
   --gsas-root /path/to/pinned/GSAS-II \
@@ -252,12 +274,11 @@ labels PhaseSmith's independent fits, GSAS-II's joint fit, and the supplied
 reference cell. Probe-specific Rwp deltas are limited to at most 0.006 and
 profile-correlation deltas to at most 0.002.
 The live oracle test job runs both Le Bail cases, both QARR mixtures, and
-PbSO4. QARR 1h remains a reviewed PhaseSmith failure while still being compared
-numerically with GSAS-II; its weight fractions remain within 0.00979, but its
-Poisson Rwp, unit-weight Rwp, and correlation deltas fail at 0.09434, 0.11009,
-and 0.01297. The test requires that explicit reviewed failure, so expected
-failure never means “skip the oracle.” NIST 660c is checked against its
-certification release as the primary oracle.
+PbSO4. The matched QARR parity workflow passes both 1g and the untouched 1h
+holdout with maximum phase-fraction deltas of 0.00355 and 0.00415 and Poisson
+Rwp deltas of 0.00169 and 0.00278. The historical acceptance workflow and its
+reviewed 1h failure remain intact as a separate transfer diagnostic. NIST 660c
+is checked against its certification release as the primary oracle.
 The JSON also records both implementations' Debye--Scherrer radius and X/Y
 values. They are not equality-gated because PhaseSmith currently fits the
 neutron histogram independently while GSAS-II shares one structure between

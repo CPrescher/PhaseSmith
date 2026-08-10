@@ -1,8 +1,7 @@
-"""PhaseSmith workflow for the neutralized Rowles laboratory QPA patterns."""
+"""Matched common-model PhaseSmith workflow for IUCr QARR 1g and 1h."""
 
 from __future__ import annotations
 
-import json
 import math
 from dataclasses import asdict, dataclass, replace
 from pathlib import Path
@@ -11,7 +10,6 @@ from typing import Any
 
 import numpy as np
 
-from ..background import SmoothBrucknerBackground
 from ..execution import ExecutionPolicy
 from ..extensions import CompositePhysicsProvider
 from ..instrument import ConstantWavelengthInstrument, FcjGeometry
@@ -24,6 +22,7 @@ from ..refinement import rietveld
 from ..refinement.background import ChebyshevBackground
 from ..sample import IsotropicLorentzianMicrostrainBroadening, IsotropicSizeBroadening
 from ..scattering import XrayFixedDispersion
+from ..structure import CrystalStructure
 from ._rietveld_parity import refine_nonlinear_block, solve_linear_profile_block
 from .real_data import (
     _QARR_COORDINATE_TOLERANCE,
@@ -31,14 +30,37 @@ from .real_data import (
     QARR_1G_CUKA_FIXED_DISPERSION,
     _qarr_displacement_defaults,
     _qarr_initial_scales,
+    _qarr_instrument_values,
 )
 
-_SCOPE = "curtin_rowles_qpa_topas_common_subset"
+_PATTERNS = {"1g": "cpd-1g.prn", "1h": "cpd-1h.prn"}
+_TARGETS = {
+    "1g": {"Al2O3": 0.3137, "ZnO": 0.3421, "CaF2": 0.3442},
+    "1h": {"Al2O3": 0.3512, "ZnO": 0.3019, "CaF2": 0.3469},
+}
+
+
+def _trace_mean_isotropic_structure(structure: CrystalStructure) -> CrystalStructure:
+    """Replace each CIF anisotropic tensor by its documented diagonal trace mean."""
+
+    return replace(
+        structure,
+        sites=tuple(
+            replace(
+                site,
+                u_iso_angstrom2=float(np.mean(site.anisotropic_displacement.u_cif_angstrom2[:3])),
+                anisotropic_displacement=None,
+            )
+            if site.anisotropic_displacement is not None
+            else site
+            for site in structure.sites
+        ),
+    )
 
 
 @dataclass(frozen=True, slots=True)
-class RowlesQpaResult:
-    """Finite scientific result from one common-subset PhaseSmith refinement."""
+class QarrParityResult:
+    """Finite result from one matched common-model QARR refinement."""
 
     sample: str
     sample_count: int
@@ -61,10 +83,10 @@ class RowlesQpaResult:
             self.profile_correlation,
             self.elapsed_seconds,
         )
-        if self.sample not in {"1a", "1e"} or not all(math.isfinite(value) for value in values):
-            raise ValueError("Rowles QPA result is invalid or non-finite")
+        if self.sample not in _PATTERNS or not all(math.isfinite(value) for value in values):
+            raise ValueError("QARR parity result is invalid or non-finite")
         if self.sample_count <= 0 or self.reflection_count <= 0 or self.free_parameter_count <= 0:
-            raise ValueError("Rowles QPA result counts must be positive")
+            raise ValueError("QARR parity result counts must be positive")
 
     def to_record(self) -> dict[str, Any]:
         """Return a deterministic JSON-compatible record."""
@@ -72,74 +94,42 @@ class RowlesQpaResult:
         return asdict(self)
 
 
-def _load_manifest(root: Path, sample: str) -> dict[str, Any]:
-    if sample not in {"1a", "1e"}:
-        raise ValueError("Rowles sample must be '1a' or '1e'")
-    manifest = json.loads((root / "experiment.json").read_text(encoding="utf-8"))
-    if manifest.get("schema_version") != 1 or manifest.get("scope") != _SCOPE:
-        raise ValueError("unsupported neutral Rowles experiment manifest")
-    if sample not in manifest.get("patterns", {}):
-        raise ValueError(f"neutral Rowles manifest does not contain sample {sample}")
-    return manifest
-
-
-def run_rowles_qpa_workflow(
-    bundle_directory: str | Path,
+def run_qarr_gsasii_parity_workflow(
+    dataset_directory: str | Path,
     sample: str,
     *,
     execution: ExecutionPolicy | None = None,
-) -> RowlesQpaResult:
-    """Refine one converted Rowles pattern with the documented common model."""
+) -> QarrParityResult:
+    """Refine QARR 1g or 1h with the model shared by the pinned GSAS-II worker."""
 
+    if sample not in _PATTERNS:
+        raise ValueError("QARR parity sample must be '1g' or '1h'")
     started = perf_counter()
-    root = Path(bundle_directory)
-    manifest = _load_manifest(root, sample)
-    model = manifest["common_model"]
-    pattern_record = manifest["patterns"][sample]
-    data = read_powder_data(root / pattern_record["file"], format="columns")
-    low, high = map(float, model["range_two_theta_deg"])
-    selected = (data.x >= low) & (data.x <= high)
-    x = np.ascontiguousarray(data.x[selected])
-    observed = np.ascontiguousarray(data.observed_y[selected])
-    if x.size < 3 or np.any(observed < 0.0):
-        raise ValueError("Rowles common range has insufficient or negative count data")
-    fixed_background = SmoothBrucknerBackground(
-        smooth_width=1.0,
-        iterations=50,
-        chebyshev_order=None,
-    ).estimate(x, observed)
+    root = Path(dataset_directory)
+    data = read_powder_data(root / _PATTERNS[sample], format="columns")
+    observed = np.ascontiguousarray(data.observed_y)
     pattern = PowderPattern(
-        x,
+        data.x,
         observed_y=observed,
         uncertainty=np.sqrt(np.maximum(observed, 1.0)),
-        background=fixed_background,
+        background=np.zeros_like(observed),
     )
-    radiation = model["radiation"]
-    components = WavelengthComponents.doublet(
-        radiation["lambda1_angstrom"],
-        radiation["lambda2_angstrom"],
-        radiation["lambda2_over_lambda1_intensity"],
-    )
-    reference_wavelength = float(components.wavelengths_angstrom[0])
-    initializer = model["profile_initializer"]
+    values = _qarr_instrument_values(root / "cuka.instprm")
     instrument = ConstantWavelengthInstrument(
-        reference_wavelength,
-        initializer["u_deg2"],
-        initializer["v_deg2"],
-        initializer["w_deg2"],
-        initializer["x_deg"],
-        initializer["y_deg"],
+        values["Lam1"],
+        values["U"] * 1.0e-4,
+        values["V"] * 1.0e-4,
+        values["W"] * 1.0e-4,
+        values["X"] * 1.0e-2,
+        values["Y"] * 1.0e-2,
     )
     experiment = ConstantWavelengthExperiment.x_ray_components(
         instrument,
-        components,
-        axial_geometry=FcjGeometry(
-            initializer["fcj_sample_over_radius"],
-            initializer["fcj_detector_over_radius"],
-        ),
+        WavelengthComponents.doublet(values["Lam1"], values["Lam2"], values["I(L2)/I(L1)"]),
+        axial_geometry=FcjGeometry(values["SH/L"] / 2.0, values["SH/L"] / 2.0),
     )
-    correction = BraggBrentanoPolarizedLp(reference_wavelength, radiation["polarization_fraction"])
     scattering = XrayFixedDispersion(QARR_1G_CUKA_FIXED_DISPERSION)
+    correction = BraggBrentanoPolarizedLp(values["Lam1"], values["Polariz."])
     fixed_selection = rietveld.RietveldParameterSelection(
         phase_scale=False,
         lattice=False,
@@ -148,7 +138,7 @@ def run_rowles_qpa_workflow(
         u_iso=False,
     )
     phases = []
-    for phase_id in model["phases"]:
+    for phase_id in _TARGETS[sample]:
         loaded = rietveld.RietveldInput.from_cif(
             pattern,
             experiment,
@@ -159,30 +149,28 @@ def run_rowles_qpa_workflow(
             intensity_correction=correction,
             coordinate_tolerance=_QARR_COORDINATE_TOLERANCE,
         )
-        structure = _qarr_displacement_defaults(loaded.phases[0].structure)
+        structure = _trace_mean_isotropic_structure(
+            _qarr_displacement_defaults(loaded.phases[0].structure)
+        )
         physics = CompositePhysicsProvider(
             (
                 IsotropicSizeBroadening(250.0, shape_factor=1.0),
                 IsotropicLorentzianMicrostrainBroadening(1.0e-3),
             )
         )
-        phases.append(
-            replace(
-                loaded.phases[0],
-                structure=structure,
-                physics=physics,
-            )
-        )
-    scales = _qarr_initial_scales(pattern, experiment, phases)
-    phases = [replace(phase, scale=scale) for phase, scale in zip(phases, scales, strict=True)]
+        phases.append(replace(loaded.phases[0], structure=structure, physics=physics))
+    initial_scales = _qarr_initial_scales(pattern, experiment, phases)
+    phases = tuple(
+        replace(phase, scale=scale) for phase, scale in zip(phases, initial_scales, strict=True)
+    )
     background = ChebyshevBackground(
-        "rowles_residual",
-        tuple(0.0 for _ in range(int(model["background"]["terms"]))),
-        (float(x[0]), float(x[-1])),
+        "qarr_matched_background",
+        tuple(0.0 for _ in range(10)),
+        (float(data.x[0]), float(data.x[-1])),
     )
     selected_execution = ExecutionPolicy() if execution is None else execution
     phases, background = solve_linear_profile_block(
-        pattern, experiment, tuple(phases), background, selected_execution
+        pattern, experiment, phases, background, selected_execution
     )
     instrument_selection = rietveld.RietveldParameterSelection(
         phase_scale=False,
@@ -194,7 +182,7 @@ def run_rowles_qpa_workflow(
         instrument_parameters=("u_deg2", "v_deg2", "w_deg2", "zero_shift_deg"),
         background=False,
     )
-    sample_selection = rietveld.RietveldParameterSelection(
+    specimen_selection = rietveld.RietveldParameterSelection(
         phase_scale=False,
         lattice=False,
         coordinates=False,
@@ -220,25 +208,21 @@ def run_rowles_qpa_workflow(
         phases, background = solve_linear_profile_block(
             pattern, experiment, instrument_stage.phases, background, selected_execution
         )
-        sample_stage = refine_nonlinear_block(
+        specimen_stage = refine_nonlinear_block(
             pattern,
             experiment,
             phases,
             background,
-            sample_selection,
+            specimen_selection,
             selected_execution,
             iterations=30,
             step=0.10,
         )
-        stages.append(sample_stage)
+        stages.append(specimen_stage)
+        experiment = specimen_stage.experiment
         phases, background = solve_linear_profile_block(
-            pattern,
-            sample_stage.experiment,
-            sample_stage.phases,
-            background,
-            selected_execution,
+            pattern, experiment, specimen_stage.phases, background, selected_execution
         )
-        experiment = sample_stage.experiment
     calculation = rietveld.calculate(
         pattern,
         experiment,
@@ -260,16 +244,7 @@ def run_rowles_qpa_workflow(
     fractions = {
         item.phase_id: item.weight_fraction for item in quantitative_phase_analysis(quantitative)
     }
-    targets = {
-        name: float(value) for name, value in pattern_record["weighed_weight_fractions"].items()
-    }
-    maximum_error = max(abs(fractions[name] - targets[name]) for name in targets)
-    free_parameter_count = (
-        len(phases)
-        + len(background.coefficients)
-        + len(instrument_selection.instrument_parameters)
-        + sum(len(phase.structure.sites) + 2 for phase in phases)
-    )
+    maximum_error = max(abs(fractions[name] - _TARGETS[sample][name]) for name in fractions)
     residual = calculation.y - observed
     poisson_weight = 1.0 / np.maximum(observed, 1.0)
     poisson_rwp = float(
@@ -277,9 +252,15 @@ def run_rowles_qpa_workflow(
     )
     unit_rwp = float(np.sqrt((residual @ residual) / (observed @ observed)))
     correlation = float(np.corrcoef(observed - calculation.background, calculation.profile_y)[0, 1])
-    return RowlesQpaResult(
+    free_parameter_count = (
+        len(phases)
+        + len(background.coefficients)
+        + len(instrument_selection.instrument_parameters)
+        + sum(len(phase.structure.sites) + 2 for phase in phases)
+    )
+    return QarrParityResult(
         sample=sample,
-        sample_count=x.size,
+        sample_count=data.x.size,
         reflection_count=sum(phase.reflections.reflection_count for phase in phases),
         free_parameter_count=free_parameter_count,
         weight_fractions=fractions,
