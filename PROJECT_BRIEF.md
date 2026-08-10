@@ -456,6 +456,19 @@ Rwp, while GSAS-II returned 31.479/33.652/34.869 wt% and 18.389% Rwp. The
 temporary oracle worktree was removed after the run; GSAS-II remains absent
 from normal installation and runtime.
 
+Laboratory fundamental-parameters validation now also pins the CC BY 4.0
+Rowles/Curtin TOPAS v6 archive and converts mixtures `1a` and `1e` into a
+neutral XY/CIF/instrument/JSON bundle. The GSAS-II-parity slice deliberately
+omits TOPAS fundamental-parameters optics. It adds an independently documented
+Lorentzian microstrain convention, corrects the GSAS size-factor mapping, and
+alternates exact weighted scale/background solves with nonlinear instrument
+and specimen blocks. Against exact-revision GSAS-II, PhaseSmith now returns
+8.782%/8.264% Poisson Rwp versus 9.085%/8.195%; maximum cross-program phase
+fraction deltas are below 0.25 percentage points. The parity gate requires
+Rwp deltas below 0.5 percentage points and phase-fraction deltas below 0.5
+percentage points. Deposited TOPAS source terms remain provenance metadata only
+and no TOPAS or GSAS-II code enters the runtime.
+
 ## Design commitments
 
 - Use GSAS-II only as a pinned validation oracle, never as the architecture.

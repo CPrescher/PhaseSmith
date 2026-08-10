@@ -35,6 +35,11 @@ pub enum RietveldSamplePhysicsModel {
         /// Non-negative dimensionless RMS microstrain.
         rms_microstrain: f64,
     },
+    /// Lorentzian broadening from a distribution of `delta d / d`.
+    IsotropicLorentzianMicrostrain {
+        /// Non-negative dimensionless Lorentzian microstrain.
+        microstrain: f64,
+    },
     /// March--Dollase integrated-intensity correction around a fixed axis.
     MarchDollase {
         /// Positive March ratio.
@@ -112,6 +117,19 @@ impl RietveldSamplePhysicsModel {
                     scale: rms_microstrain.abs().max(1.0e-4),
                 }]
             }
+            Self::IsotropicLorentzianMicrostrain { microstrain } => {
+                if !microstrain.is_finite() || *microstrain < 0.0 {
+                    return Err(SamplePhysicsError::InvalidModel);
+                }
+                vec![SamplePhysicsParameter {
+                    name: "isotropic_lorentzian_microstrain.fraction".to_owned(),
+                    value: *microstrain,
+                    unit: "fraction",
+                    bounds: ParameterBounds::new(0.0, f64::INFINITY)
+                        .map_err(|_| SamplePhysicsError::InvalidModel)?,
+                    scale: microstrain.abs().max(1.0e-4),
+                }]
+            }
             Self::MarchDollase {
                 ratio,
                 preferred_axis_hkl,
@@ -182,6 +200,9 @@ impl RietveldSamplePhysicsModel {
             Self::IsotropicMicrostrain { .. } => Self::IsotropicMicrostrain {
                 rms_microstrain: values["isotropic_microstrain.rms"],
             },
+            Self::IsotropicLorentzianMicrostrain { .. } => Self::IsotropicLorentzianMicrostrain {
+                microstrain: values["isotropic_lorentzian_microstrain.fraction"],
+            },
             Self::MarchDollase {
                 preferred_axis_hkl, ..
             } => Self::MarchDollase {
@@ -248,6 +269,9 @@ impl RietveldSamplePhysicsModel {
             ),
             Self::IsotropicMicrostrain { rms_microstrain } => {
                 microstrain(*rms_microstrain, two_theta_deg)
+            }
+            Self::IsotropicLorentzianMicrostrain { microstrain } => {
+                lorentzian_microstrain(*microstrain, two_theta_deg)
             }
             Self::MarchDollase {
                 ratio,
@@ -330,6 +354,34 @@ fn microstrain(
         "isotropic_microstrain.rms",
         d_parameter,
         vec![0.0; count],
+    )
+}
+
+fn lorentzian_microstrain(
+    strain: f64,
+    positions: &[f64],
+) -> Result<EvaluatedSamplePhysics, SamplePhysicsError> {
+    if !strain.is_finite() || strain < 0.0 {
+        return Err(SamplePhysicsError::InvalidModel);
+    }
+    let mut lorentzian = Vec::with_capacity(positions.len());
+    let mut d_position = Vec::with_capacity(positions.len());
+    let mut d_parameter = Vec::with_capacity(positions.len());
+    for position in positions {
+        let theta = position * HALF_ANGLE_RAD_PER_DEG;
+        lorentzian.push(DEG_PER_RAD * strain * theta.tan());
+        d_parameter.push(DEG_PER_RAD * theta.tan());
+        d_position.push(0.5 * strain / theta.cos().powi(2));
+    }
+    let count = positions.len();
+    width_result(
+        vec![0.0; count],
+        lorentzian,
+        vec![0.0; count],
+        d_position,
+        "isotropic_lorentzian_microstrain.fraction",
+        vec![0.0; count],
+        d_parameter,
     )
 }
 

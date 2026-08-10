@@ -10,6 +10,7 @@ def test_registry_has_unique_stable_ids_and_pinned_files() -> None:
     assert {item.dataset_id for item in VALIDATION_DATASETS} == {
         "ansto-echidna-lab6-cw-neutron",
         "aps-sucrose-11bmb",
+        "curtin-rowles-qpa-topas",
         "gsasii-pbso4-cw",
         "iucr-qarr-1g",
         "iucr-qarr-1h",

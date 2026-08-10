@@ -218,6 +218,47 @@ class IsotropicMicrostrainBroadening:
 
 
 @dataclass(frozen=True, slots=True)
+class IsotropicLorentzianMicrostrainBroadening:
+    """Lorentzian microstrain broadening with ``H_L = epsilon tan(theta)``.
+
+    ``microstrain`` is the dimensionless integral-breadth convention used for
+    the Lorentzian distribution of relative lattice spacings. The resulting
+    two-theta Lorentzian FWHM is returned in degrees.
+    """
+
+    microstrain: float
+    descriptor: ClassVar[ProviderDescriptor] = ProviderDescriptor(
+        "phasesmith.isotropic-lorentzian-microstrain", "1", thread_safe=True
+    )
+
+    def __post_init__(self) -> None:
+        """Reject negative or non-finite microstrain."""
+
+        if not np.isfinite(self.microstrain) or self.microstrain < 0.0:
+            raise ValueError("microstrain must be non-negative and finite")
+
+    def evaluate(self, context: PhysicsContext) -> PhysicsContribution:
+        """Evaluate Lorentzian FWHM and analytical parameter/position chains."""
+
+        theta = context.reflections.two_theta_deg * _HALF_ANGLE_RAD_PER_DEG
+        tangent = np.tan(theta)
+        secant_squared = 1.0 / np.cos(theta) ** 2
+        lorentzian = _DEG_PER_RAD * self.microstrain * tangent
+        d_microstrain = _DEG_PER_RAD * tangent
+        d_position = 0.5 * self.microstrain * secant_squared
+        zeros = np.zeros(context.reflections.reflection_count, dtype=np.float64)
+        return _width_only_contribution(
+            zeros,
+            lorentzian,
+            zeros,
+            d_position,
+            "isotropic_lorentzian_microstrain.fraction",
+            zeros,
+            d_microstrain,
+        )
+
+
+@dataclass(frozen=True, slots=True)
 class MarchDollasePreferredOrientation:
     """March--Dollase integrated-intensity correction for one fixed axis."""
 

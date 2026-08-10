@@ -152,6 +152,7 @@ from .radiation import (
 from .reporting import rietveld_result_record, write_rietveld_csv, write_rietveld_json
 from .results import AccumulationResult, PatternDerivatives, SupportJacobian
 from .sample import (
+    IsotropicLorentzianMicrostrainBroadening,
     IsotropicMicrostrainBroadening,
     IsotropicSizeBroadening,
     MarchDollasePreferredOrientation,
@@ -278,6 +279,7 @@ __all__ = [
     "GeneratedReflectionBatch",
     "IntegratedIntensityCorrection",
     "IntegratedIntensityCorrectionProvider",
+    "IsotropicLorentzianMicrostrainBroadening",
     "IsotropicMicrostrainBroadening",
     "IsotropicSizeBroadening",
     "MarchDollasePreferredOrientation",

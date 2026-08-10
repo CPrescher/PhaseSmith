@@ -53,6 +53,7 @@ def phase(intensities: np.ndarray) -> phasesmith.Phase:
         (
             phasesmith.IsotropicSizeBroadening(80.0),
             phasesmith.IsotropicMicrostrainBroadening(3.0e-4),
+            phasesmith.IsotropicLorentzianMicrostrainBroadening(2.0e-4),
             phasesmith.MarchDollasePreferredOrientation(
                 0.8,
                 (0.0, 0.0, 1.0),
@@ -197,7 +198,7 @@ def test_full_bundle_round_trips_models_results_arrays_and_resume(tmp_path) -> N
     np.testing.assert_array_equal(restored.pattern.x, pattern.x)
     np.testing.assert_array_equal(restored.pattern.mask, pattern.mask)
     assert isinstance(restored.phases[0].physics, phasesmith.CompositePhysicsProvider)
-    assert len(restored.phases[0].physics.providers) == 3
+    assert len(restored.phases[0].physics.providers) == 4
     assert restored.lebail_result is not None
     assert restored.calculation_result is not None
     np.testing.assert_array_equal(restored.calculation_result.y, result.calculation.y)

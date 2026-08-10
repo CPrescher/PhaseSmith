@@ -48,6 +48,7 @@ from .radiation import (
 )
 from .results import AccumulationResult, _build_accumulation_result
 from .sample import (
+    IsotropicLorentzianMicrostrainBroadening,
     IsotropicMicrostrainBroadening,
     IsotropicSizeBroadening,
     MarchDollasePreferredOrientation,
@@ -161,6 +162,7 @@ def _native_model_configuration(
 
 def _supports_fused_structural_physics(provider: object | None) -> bool:
     if provider is None or type(provider) in (
+        IsotropicLorentzianMicrostrainBroadening,
         IsotropicSizeBroadening,
         IsotropicMicrostrainBroadening,
         MarchDollasePreferredOrientation,

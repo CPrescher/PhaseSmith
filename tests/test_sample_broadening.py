@@ -64,6 +64,30 @@ def test_isotropic_models_follow_documented_width_equations() -> None:
     )
 
 
+def test_lorentzian_microstrain_follows_documented_width_equation() -> None:
+    context = phasesmith.PhysicsContext(reflections(), instrument())
+    model = phasesmith.IsotropicLorentzianMicrostrainBroadening(4.0e-4)
+    actual = model.evaluate(context)
+    theta = np.deg2rad(context.reflections.two_theta_deg / 2.0)
+    expected = np.rad2deg(4.0e-4 * np.tan(theta))
+    np.testing.assert_allclose(actual.gaussian_variance_deg2, 0.0, atol=0.0)
+    np.testing.assert_allclose(actual.lorentzian_fwhm_deg, expected, rtol=2e-15)
+    np.testing.assert_allclose(
+        actual.d_lorentzian_fwhm_d_parameters[0], expected / 4.0e-4, rtol=2e-15
+    )
+
+
+def test_lorentzian_microstrain_position_derivative_matches_centered_difference() -> None:
+    positions = np.array([25.0, 55.0, 105.0])
+    step = 1.0e-5
+    model = phasesmith.IsotropicLorentzianMicrostrainBroadening(7.5e-4)
+    baseline = model.evaluate(phasesmith.PhysicsContext(reflections(positions), instrument()))
+    plus = model.evaluate(phasesmith.PhysicsContext(reflections(positions + step), instrument()))
+    minus = model.evaluate(phasesmith.PhysicsContext(reflections(positions - step), instrument()))
+    finite = (plus.lorentzian_fwhm_deg - minus.lorentzian_fwhm_deg) / (2.0 * step)
+    np.testing.assert_allclose(baseline.d_lorentzian_fwhm_d_position, finite, rtol=2e-9, atol=2e-12)
+
+
 def test_infinite_size_and_zero_strain_recover_instrument_values_exactly() -> None:
     x = np.linspace(20.0, 110.0, 9_001)
     batch = reflections()

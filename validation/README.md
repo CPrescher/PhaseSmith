@@ -69,6 +69,18 @@ have deliberately different meanings:
   unit-weight Rwp 0.24149, and correlation 0.97763 fail the accepted profile
   gates. The runner reports `failed`; the thresholds
   are not relaxed to turn this diagnostic into a pass.
+- `curtin-rowles-qpa-topas` pins two laboratory Bruker D8 patterns (`1a` and
+  `1e`) plus their deposited TOPAS v6 inputs and include file. The narrow
+  converter emits neutral XY, CIF, GSAS-II instrument, and JSON records while
+  retaining every omitted or approximated source term. The accepted
+  PhaseSmith common-doublet workflows recover the weighed fractions within
+  0.74 and 2.16 percentage points respectively. PhaseSmith and pinned GSAS-II
+  give 8.782%/9.085% Rwp for `1a` and 8.264%/8.195% for `1e`; the largest
+  cross-program phase-fraction delta is below 0.25 percentage points. This
+  parity came from the correct Lorentzian `Mustrain` convention, a unit shape
+  factor for the shared size convention, and an exact alternating linear block
+  for phase scales and background. TOPAS-only source and optics terms remain
+  excluded and are listed in `docs/topas-rowles-model.md`.
 - `nist-srm660c-lab6-xray` validates all 20 pdCIF specimens in NIST's official
   SRM 660c archive: 106,640 measured points, aligned released calculated
   profiles, the certified lattice interval, aggregate correlation 0.99933, and
@@ -215,6 +227,13 @@ uv run python benchmarks/compare_gsasii_pbso4.py --require-release \
   --gsas-root /path/to/pinned/GSAS-II \
   --binary-dir /path/to/compatible/GSASII-bin/platform-directory \
   --data-directory validation/data/gsasii-pbso4-cw
+
+uv run python benchmarks/compare_gsasii_rowles_qpa.py \
+  --gsas-python /path/to/gsas/python \
+  --gsas-root /path/to/pinned/GSAS-II \
+  --binary-dir /path/to/compatible/GSASII-bin/platform-directory \
+  --data-directory validation/data/curtin-rowles-qpa-topas \
+  --sample all
 ```
 
 It rejects mismatched sample or reflection counts and requires differences no

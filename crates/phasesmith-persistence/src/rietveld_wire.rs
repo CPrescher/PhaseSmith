@@ -64,6 +64,9 @@ enum WireSamplePhysics {
     IsotropicMicrostrain {
         rms_microstrain: f64,
     },
+    IsotropicLorentzianMicrostrain {
+        microstrain: f64,
+    },
     MarchDollase {
         ratio: f64,
         preferred_axis_hkl: [f64; 3],
@@ -294,6 +297,11 @@ fn encode_sample_physics(value: &RietveldSamplePhysicsModel) -> WireSamplePhysic
         RietveldSamplePhysicsModel::IsotropicMicrostrain { rms_microstrain } => {
             WireSamplePhysics::IsotropicMicrostrain {
                 rms_microstrain: *rms_microstrain,
+            }
+        }
+        RietveldSamplePhysicsModel::IsotropicLorentzianMicrostrain { microstrain } => {
+            WireSamplePhysics::IsotropicLorentzianMicrostrain {
+                microstrain: *microstrain,
             }
         }
         RietveldSamplePhysicsModel::MarchDollase {
@@ -704,6 +712,9 @@ fn decode_sample_physics(value: WireSamplePhysics) -> RietveldSamplePhysicsModel
         },
         WireSamplePhysics::IsotropicMicrostrain { rms_microstrain } => {
             RietveldSamplePhysicsModel::IsotropicMicrostrain { rms_microstrain }
+        }
+        WireSamplePhysics::IsotropicLorentzianMicrostrain { microstrain } => {
+            RietveldSamplePhysicsModel::IsotropicLorentzianMicrostrain { microstrain }
         }
         WireSamplePhysics::MarchDollase {
             ratio,

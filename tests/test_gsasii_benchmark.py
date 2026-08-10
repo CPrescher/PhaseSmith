@@ -260,6 +260,32 @@ def test_qarr_comparison_numerically_gates_cross_implementation_results() -> Non
     assert "maximum_phase_fraction_delta" in drift["failed_checks"]
 
 
+def test_rowles_comparison_gates_converted_common_subset() -> None:
+    benchmark = load_script("benchmarks/compare_gsasii_rowles_qpa.py", "compare_gsasii_rowles_test")
+    phasesmith_result = {
+        "sample": "1e",
+        "weight_fractions": {"Al2O3": 0.5728, "ZnO": 0.1401, "CaF2": 0.2871},
+        "poisson_rwp": 0.0826,
+        "unit_weight_rwp": 0.0897,
+        "profile_correlation": 0.9952,
+    }
+    gsas_result = {
+        "sample": "1e",
+        "weight_fractions": {"Al2O3": 0.5704, "ZnO": 0.1408, "CaF2": 0.2888},
+        "poisson_rwp": 0.0820,
+        "unit_weight_rwp": 0.0911,
+        "profile_correlation": 0.9950,
+    }
+
+    comparison = benchmark.compare_scientific_results(phasesmith_result, gsas_result)
+
+    assert comparison["status"] == "passed"
+    assert comparison["phase_fraction_deltas"]["Al2O3"] == pytest.approx(0.0024)
+    changed = json.loads(json.dumps(gsas_result))
+    changed["weight_fractions"]["Al2O3"] = 0.45
+    assert benchmark.compare_scientific_results(phasesmith_result, changed)["status"] == "failed"
+
+
 def test_powgen_worker_and_comparison_share_the_real_instrument_convention() -> None:
     worker = load_script(
         "oracle/scripts/benchmark_powgen_tof.py", "benchmark_powgen_tof_worker_test"
@@ -360,6 +386,7 @@ def test_practical_workflow_benchmark_covers_xray_and_neutron() -> None:
         "benchmarks/compare_gsasii_pbso4.py",
         "benchmarks/compare_gsasii_powgen_tof.py",
         "benchmarks/compare_gsasii_qarr.py",
+        "benchmarks/compare_gsasii_rowles_qpa.py",
         "benchmarks/compare_gsasii_real_lebail.py",
         "benchmarks/compare_gsasii_structural.py",
         "benchmarks/practical_workflow.py",
@@ -368,6 +395,7 @@ def test_practical_workflow_benchmark_covers_xray_and_neutron() -> None:
         "oracle/scripts/benchmark_pbso4.py",
         "oracle/scripts/benchmark_powgen_tof.py",
         "oracle/scripts/benchmark_qarr.py",
+        "oracle/scripts/benchmark_rowles_qpa.py",
         "oracle/scripts/benchmark_real_lebail.py",
         "oracle/scripts/benchmark_structural_pattern.py",
         "tools/fetch_validation_data.py",
@@ -388,6 +416,7 @@ def test_external_worker_does_not_import_rietveld() -> None:
         "oracle/scripts/benchmark_pbso4.py",
         "oracle/scripts/benchmark_powgen_tof.py",
         "oracle/scripts/benchmark_qarr.py",
+        "oracle/scripts/benchmark_rowles_qpa.py",
         "oracle/scripts/benchmark_real_lebail.py",
         "oracle/scripts/benchmark_structural_pattern.py",
     ):

@@ -519,6 +519,10 @@ fn sample_physics_model_identity_matches(
         (
             RietveldSamplePhysicsModel::IsotropicMicrostrain { .. },
             RietveldSamplePhysicsModel::IsotropicMicrostrain { .. },
+        )
+        | (
+            RietveldSamplePhysicsModel::IsotropicLorentzianMicrostrain { .. },
+            RietveldSamplePhysicsModel::IsotropicLorentzianMicrostrain { .. },
         ) => true,
         (
             RietveldSamplePhysicsModel::MarchDollase {

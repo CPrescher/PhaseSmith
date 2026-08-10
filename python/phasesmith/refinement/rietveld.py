@@ -45,6 +45,7 @@ from ..radiation import (
     RadiationProbe,
 )
 from ..sample import (
+    IsotropicLorentzianMicrostrainBroadening,
     IsotropicMicrostrainBroadening,
     IsotropicSizeBroadening,
     MarchDollasePreferredOrientation,
@@ -258,6 +259,15 @@ def _physics_parameter_records(
             (
                 "isotropic_microstrain.rms",
                 provider.rms_microstrain,
+                "fraction",
+                Bounds(0.0, np.inf),
+            ),
+        )
+    if type(provider) is IsotropicLorentzianMicrostrainBroadening:
+        return (
+            (
+                "isotropic_lorentzian_microstrain.fraction",
+                provider.microstrain,
                 "fraction",
                 Bounds(0.0, np.inf),
             ),
@@ -1845,6 +1855,16 @@ def _replace_physics_parameters(
                     provider.rms_microstrain,
                 ),
             )
+        if type(provider) is IsotropicLorentzianMicrostrainBroadening:
+            return replace(
+                provider,
+                microstrain=values.get(
+                    sample_parameter_key(
+                        phase.phase_id, "isotropic_lorentzian_microstrain.fraction"
+                    ),
+                    provider.microstrain,
+                ),
+            )
         if type(provider) is MarchDollasePreferredOrientation:
             from ..phase import ReciprocalMetric
 
@@ -2402,6 +2422,8 @@ def _native_physics_records(provider: object | None) -> list[tuple[str, list[flo
         ]
     if type(provider) is IsotropicMicrostrainBroadening:
         return [("isotropic_microstrain", [float(provider.rms_microstrain)])]
+    if type(provider) is IsotropicLorentzianMicrostrainBroadening:
+        return [("isotropic_lorentzian_microstrain", [float(provider.microstrain)])]
     if type(provider) is MarchDollasePreferredOrientation:
         return [
             (

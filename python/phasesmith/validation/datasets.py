@@ -77,8 +77,57 @@ _POWGEN_TOF_SOURCE = (
     "https://raw.githubusercontent.com/AdvancedPhotonSource/GSAS-II-Tutorials/"
     "e2485148a3d7ee4757239b1ba40653f1f715bba5/TOF%20Calibration/data"
 )
+_ROWLES_QPA_SOURCE = "https://ddfe.curtin.edu.au/5f44ad65411cc"
 
 VALIDATION_DATASETS: tuple[ValidationDataset, ...] = (
+    ValidationDataset(
+        dataset_id="curtin-rowles-qpa-topas",
+        title="Rowles laboratory X-ray QPA robustness study, TOPAS inputs",
+        source_url="https://doi.org/10.25917/5f44ad65411cc",
+        citation=(
+            "M. R. Rowles, J. Appl. Cryst. 54 (2021) 626-635, "
+            "doi:10.1107/S160057672100371X; dataset doi:10.25917/5f44ad65411cc"
+        ),
+        license_note=(
+            "External Curtin University laboratory XRD data and TOPAS v6 inputs under "
+            "Creative Commons Attribution 4.0; selected files are checksum-pinned and "
+            "not redistributed."
+        ),
+        files=(
+            ExternalValidationFile(
+                "1a_1000000_0-010_n001.xy",
+                "04643a24457bdefadb44b3432c569d353c49e777d1b3089e42b91a23db7c8a84",
+                264_883,
+                (f"{_ROWLES_QPA_SOURCE}/diffraction_data/1a_1000000_0-010_n001.xy",),
+            ),
+            ExternalValidationFile(
+                "1e_1000000_0-010_n001.xy",
+                "d12cf03415965666eabed014f4519360a9dd8a806b2d5ff09a0a31f36d0a2487",
+                272_757,
+                (f"{_ROWLES_QPA_SOURCE}/diffraction_data/1e_1000000_0-010_n001.xy",),
+            ),
+            ExternalValidationFile(
+                "robustness2_1a_4.INP",
+                "87d00f688194d0b498687cc7030425f20dff3841b9bb87028c4a890f0d107d9f",
+                17_948,
+                (f"{_ROWLES_QPA_SOURCE}/topas_files/robustness2_1a_4.INP",),
+            ),
+            ExternalValidationFile(
+                "robustness2_1e_4.INP",
+                "85f5e899ca527d3407296eed2bcb8e891e3fe4ce02c43de4afaddb5720495b1c",
+                17_921,
+                (f"{_ROWLES_QPA_SOURCE}/topas_files/robustness2_1e_4.INP",),
+            ),
+            ExternalValidationFile(
+                "row119.inc",
+                "f1b13d60c6b73b3139c984e99ba50c2880a0dea5e1d2ce1e81873da56c9c2bd3",
+                212_531,
+                (f"{_ROWLES_QPA_SOURCE}/topas_files/row119.inc",),
+            ),
+        ),
+        purpose="capability",
+        expected_status="passed",
+    ),
     ValidationDataset(
         dataset_id="ansto-echidna-lab6-cw-neutron",
         title="ANSTO Echidna LaB6 constant-wavelength neutron calibration pattern",

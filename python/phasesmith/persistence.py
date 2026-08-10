@@ -93,6 +93,7 @@ from .refinement.rietveld import (
 from .refinement.runtime import RefinementLimits
 from .results import AccumulationResult, PatternDerivatives, SupportJacobian
 from .sample import (
+    IsotropicLorentzianMicrostrainBroadening,
     IsotropicMicrostrainBroadening,
     IsotropicSizeBroadening,
     MarchDollasePreferredOrientation,
@@ -598,6 +599,12 @@ def _provider_record(
             "provider_version": provider.descriptor.provider_version,
             "configuration": {"rms_microstrain": provider.rms_microstrain},
         }
+    if isinstance(provider, IsotropicLorentzianMicrostrainBroadening):
+        return {
+            "provider_id": provider.descriptor.provider_id,
+            "provider_version": provider.descriptor.provider_version,
+            "configuration": {"microstrain": provider.microstrain},
+        }
     if isinstance(provider, MarchDollasePreferredOrientation):
         return {
             "provider_id": provider.descriptor.provider_id,
@@ -649,6 +656,12 @@ def _provider_from_record(
         if provider_version != "1":
             raise PersistenceError("unsupported phasesmith.isotropic-microstrain provider version")
         return IsotropicMicrostrainBroadening(**config)
+    if provider_id == "phasesmith.isotropic-lorentzian-microstrain":
+        if provider_version != "1":
+            raise PersistenceError(
+                "unsupported phasesmith.isotropic-lorentzian-microstrain provider version"
+            )
+        return IsotropicLorentzianMicrostrainBroadening(**config)
     if provider_id == "phasesmith.march-dollase":
         if provider_version != "1":
             raise PersistenceError("unsupported phasesmith.march-dollase provider version")

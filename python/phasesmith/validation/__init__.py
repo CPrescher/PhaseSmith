@@ -23,6 +23,7 @@ from .real_data import (
     run_qarr_1h_validation,
     run_sucrose_lebail_validation,
 )
+from .rowles import RowlesQpaResult, run_rowles_qpa_workflow
 from .suite import (
     VALIDATION_CASES,
     ValidationCase,
@@ -40,6 +41,7 @@ __all__ = [
     "VALIDATION_DATASETS",
     "ExternalValidationFile",
     "RealDataValidationReport",
+    "RowlesQpaResult",
     "ValidationCase",
     "ValidationCheck",
     "ValidationDataset",
@@ -54,6 +56,7 @@ __all__ = [
     "run_powgen_tof_validation",
     "run_qarr_1g_validation",
     "run_qarr_1h_validation",
+    "run_rowles_qpa_workflow",
     "run_sucrose_lebail_validation",
     "run_validation_case",
     "scientific_fingerprint",

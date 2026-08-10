@@ -68,6 +68,7 @@ from .refinement.rietveld import (
 )
 from .refinement.runtime import RefinementLimits
 from .sample import (
+    IsotropicLorentzianMicrostrainBroadening,
     IsotropicMicrostrainBroadening,
     IsotropicSizeBroadening,
     MarchDollasePreferredOrientation,
@@ -319,6 +320,8 @@ def _sample_physics(record: dict[str, Any] | None, cell: UnitCell) -> object | N
         )
     if kind == "isotropic_microstrain":
         return IsotropicMicrostrainBroadening(float(record["rms_microstrain"]))
+    if kind == "isotropic_lorentzian_microstrain":
+        return IsotropicLorentzianMicrostrainBroadening(float(record["microstrain"]))
     if kind == "march_dollase":
         return MarchDollasePreferredOrientation(
             float(record["ratio"]),

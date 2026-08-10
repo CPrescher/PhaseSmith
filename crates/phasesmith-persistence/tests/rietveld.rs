@@ -132,6 +132,9 @@ fn every_native_background_and_sample_physics_variant_round_trips() {
             RietveldSamplePhysicsModel::IsotropicMicrostrain {
                 rms_microstrain: 5.0e-4,
             },
+            RietveldSamplePhysicsModel::IsotropicLorentzianMicrostrain {
+                microstrain: 7.0e-4,
+            },
             RietveldSamplePhysicsModel::MarchDollase {
                 ratio: 0.85,
                 preferred_axis_hkl: [1.0, 1.0, 0.0],

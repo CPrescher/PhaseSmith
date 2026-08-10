@@ -79,6 +79,11 @@ fn physics_model(records: Vec<(String, Vec<f64>)>) -> PyResult<Option<RietveldSa
                     rms_microstrain: *rms_microstrain,
                 }
             }
+            ("isotropic_lorentzian_microstrain", [microstrain]) => {
+                RietveldSamplePhysicsModel::IsotropicLorentzianMicrostrain {
+                    microstrain: *microstrain,
+                }
+            }
             ("march_dollase", [ratio, h, k, l]) => RietveldSamplePhysicsModel::MarchDollase {
                 ratio: *ratio,
                 preferred_axis_hkl: [*h, *k, *l],

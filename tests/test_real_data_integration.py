@@ -4,6 +4,7 @@ from pathlib import Path
 
 import phasesmith
 import pytest
+from phasesmith.io import convert_rowles_topas_bundle
 from phasesmith.validation import (
     run_echidna_lab6_validation,
     run_nist_srm660c_validation,
@@ -11,6 +12,7 @@ from phasesmith.validation import (
     run_powgen_tof_validation,
     run_qarr_1g_validation,
     run_qarr_1h_validation,
+    run_rowles_qpa_workflow,
     run_sucrose_lebail_validation,
     verify_validation_dataset,
 )
@@ -122,6 +124,29 @@ def test_qarr_real_pattern_two_thread_regression() -> None:
     assert measurements["profile_correlation"] >= 0.98
     assert measurements["qpa_weight_fraction"] <= 0.02
     assert measurements["qpa_covariance"] >= 0.0
+
+
+@pytest.mark.real_data
+@pytest.mark.parametrize(
+    ("sample", "maximum_qpa_error", "maximum_rwp"),
+    [("1a", 0.01, 0.095), ("1e", 0.03, 0.09)],
+)
+def test_rowles_topas_conversion_and_phasesmith_qpa_regression(
+    tmp_path: Path, sample: str, maximum_qpa_error: float, maximum_rwp: float
+) -> None:
+    source = available_dataset("curtin-rowles-qpa-topas")
+    bundle = tmp_path / "converted"
+    convert_rowles_topas_bundle(source, bundle)
+
+    result = run_rowles_qpa_workflow(
+        bundle, sample, execution=phasesmith.ExecutionPolicy(threads=1)
+    )
+
+    assert result.sample_count in {14_066, 14_091}
+    assert result.reflection_count == 109
+    assert result.maximum_weight_fraction_error <= maximum_qpa_error
+    assert result.poisson_rwp <= maximum_rwp
+    assert result.profile_correlation >= 0.995
 
 
 @pytest.mark.real_data

@@ -237,7 +237,23 @@ uv run python benchmarks/compare_gsasii_powgen_tof.py \
   --gsas-root /path/to/pinned/GSAS-II \
   --binary-dir /path/to/compatible/GSASII-bin/platform-directory \
   --data-directory validation/data/powgen-lab6-tof-calibration
+
+uv run python benchmarks/compare_gsasii_rowles_qpa.py \
+  --gsas-python /path/to/gsas/python \
+  --gsas-root /path/to/pinned/GSAS-II \
+  --binary-dir /path/to/compatible/GSASII-bin/platform-directory \
+  --data-directory validation/data/curtin-rowles-qpa-topas \
+  --sample all
 ```
+
+The Rowles worker consumes only the neutral bundle produced from the
+checksum-pinned deposited TOPAS/XY files. It imports NumPy and GSAS-II in the
+separate oracle interpreter and never imports `phasesmith`. The report labels
+the matched common parameterization, exports optional plain calculation and
+reflection arrays for diagnostics, and enumerates every TOPAS optics term
+omitted from the shared input subset. The accepted cross gate requires phase
+fractions and Rwp values to agree within 0.005 absolute; GSAS-II remains an
+external black-box oracle rather than a runtime dependency.
 
 GSAS-II is separately licensed and must be cited as requested by its authors.
 No GSAS-II source is copied into this repository.

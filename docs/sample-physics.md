@@ -88,6 +88,24 @@ dq_strain/d(two_theta) = 2 C epsilon^2 tan(theta) sec(theta)^2 (pi/360)
 C = [2 (180/pi)]^2.
 ```
 
+## Isotropic Lorentzian microstrain
+
+The second strain model is explicitly Lorentzian. Its dimensionless
+`microstrain` parameter is the coefficient of the angular Lorentzian FWHM:
+
+```text
+l_strain = (180/pi) microstrain tan(theta)
+dl_strain/dmicrostrain = (180/pi) tan(theta)
+dl_strain/d(two_theta) = 0.5 microstrain sec(theta)^2.
+```
+
+This convention is separate from Gaussian RMS microstrain; the two parameter
+values are not interchangeable. Lorentzian FWHMs add linearly, so this term is
+fused with Scherrer size and instrument X/Y broadening in the same peak/sample
+pass. Zero is the exact disabled limit. The `microstrain` value maps to the
+GSAS-II isotropic `Mustrain` record as `microstrain = Mustrain * 1e-6`; this
+mapping is validated only by black-box arrays from the pinned oracle.
+
 ## March--Dollase preferred orientation
 
 For preferred reciprocal-lattice direction `a`, reflection vector `h`, and

@@ -80,6 +80,18 @@ fn size_and_microstrain_parameter_and_position_derivatives_are_analytical() {
             },
             true,
         ),
+        (
+            RietveldSamplePhysicsModel::IsotropicLorentzianMicrostrain {
+                microstrain: 9.0e-4,
+            },
+            RietveldSamplePhysicsModel::IsotropicLorentzianMicrostrain {
+                microstrain: 9.0e-4 + step,
+            },
+            RietveldSamplePhysicsModel::IsotropicLorentzianMicrostrain {
+                microstrain: 9.0e-4 - step,
+            },
+            false,
+        ),
     ] {
         let base = model.evaluate(&hkl, &positions, cell(), 1.5406).unwrap();
         let high = plus.evaluate(&hkl, &positions, cell(), 1.5406).unwrap();

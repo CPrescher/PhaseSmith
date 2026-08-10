@@ -194,6 +194,7 @@ phasesmith.extensions.ReflectionPhysicsProvider
 phasesmith.extensions.CompositePhysicsProvider
 phasesmith.sample.IsotropicSizeBroadening
 phasesmith.sample.IsotropicMicrostrainBroadening
+phasesmith.sample.IsotropicLorentzianMicrostrainBroadening
 phasesmith.sample.MarchDollasePreferredOrientation
 phasesmith.sample.reciprocal_angle_geometry
 phasesmith.cw.cw_profile_parameters
