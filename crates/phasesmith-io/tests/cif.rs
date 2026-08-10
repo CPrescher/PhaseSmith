@@ -10,6 +10,9 @@ use phasesmith_io::{
 const P21_CIF: &str = r"
 data_demo
 _chemical_name_common 'Authored monoclinic test'
+_chemical_formula_sum 'C Fe'
+_cell_formula_units_Z 4
+_chemical_formula_weight 123.45
 _cell_length_a 4.200(5)
 _cell_length_b 5.100(6)
 _cell_length_c 6.300(7)
@@ -63,6 +66,9 @@ fn imports_typed_sites_uncertainties_and_exact_symmetry() {
     assert_eq!(result.selected_block, "demo");
     assert_eq!(structure.name, "Authored monoclinic test");
     assert_eq!(structure.source.backend, NATIVE_CIF_BACKEND);
+    assert_eq!(structure.metadata["chemical_formula_sum"], "C Fe");
+    assert_eq!(structure.metadata["formula_units_per_cell"], "4");
+    assert_eq!(structure.metadata["formula_mass_g_mol"], "123.45");
     assert_eq!(structure.space_group.operations().len(), 4);
     assert_close(structure.cell_standard_uncertainties[0].unwrap(), 0.005);
     assert_close(structure.cell_standard_uncertainties[4].unwrap(), 0.02);

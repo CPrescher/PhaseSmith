@@ -220,6 +220,14 @@ fn parse_cif_text_inner(
             ][..],
         ),
         (
+            "formula_units_per_cell",
+            &["_cell_formula_units_z", "_cell.formula_units_z"][..],
+        ),
+        (
+            "formula_mass_g_mol",
+            &["_chemical_formula_weight", "_chemical.formula_weight"][..],
+        ),
+        (
             "radiation_wavelength",
             &[
                 "_diffrn_radiation_wavelength",
