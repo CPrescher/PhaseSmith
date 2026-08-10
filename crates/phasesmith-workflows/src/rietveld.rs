@@ -229,6 +229,14 @@ impl RietveldPhase {
         self
     }
 
+    /// Remove the built-in sample-physics model without changing the phase's
+    /// structure, reflection topology, or fixed contribution fallback.
+    #[must_use]
+    pub fn without_sample_physics(mut self) -> Self {
+        self.sample_physics = None;
+        self
+    }
+
     pub(crate) fn replace_sample_physics(&self, model: RietveldSamplePhysicsModel) -> Self {
         let mut phase = self.clone();
         phase.sample_physics = Some(model);

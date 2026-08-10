@@ -287,6 +287,24 @@ fn attached_native_sample_model_drives_calculation_and_derivative_rows() {
 }
 
 #[test]
+fn removing_sample_physics_preserves_phase_topology_and_fixed_contributions() {
+    let original = phase("alpha", 1.0);
+    let attached =
+        original
+            .clone()
+            .with_sample_physics(RietveldSamplePhysicsModel::IsotropicMicrostrain {
+                rms_microstrain: 5.0e-4,
+            });
+
+    let removed = attached.without_sample_physics();
+
+    assert!(removed.sample_physics().is_none());
+    assert_eq!(removed.definition(), original.definition());
+    assert_eq!(removed.reflection_ids(), original.reflection_ids());
+    assert_eq!(removed.contributions(), original.contributions());
+}
+
+#[test]
 fn multiphase_pattern_is_display_ready_and_worker_deterministic() {
     let x_deg = (0..9_001)
         .map(|index| 10.0 + f64::from(index) * 0.01)
