@@ -861,6 +861,34 @@ mod tests {
     }
 
     #[test]
+    fn direct_profile_is_numerically_unit_area() {
+        let profile = TofProfile::new(
+            0.08,
+            0.03,
+            TchWidths {
+                gaussian_fwhm: 22.0,
+                lorentzian_fwhm: 4.0,
+            },
+            20.0,
+        )
+        .expect("profile");
+        let step = 0.5;
+        let radius = 6_000.0;
+        let sample_count = 24_000_u32;
+        let mut area = 0.0;
+        let mut previous = profile.evaluate(-radius).value;
+        for index in 1..=sample_count {
+            let x = -radius + f64::from(index) * step;
+            let value = profile.evaluate(x).value;
+            area += 0.5 * step * (previous + value);
+            previous = value;
+        }
+        // The remaining discrepancy is the analytically infinite Lorentzian
+        // tail outside this deliberately finite integration interval.
+        assert!((area - 1.0).abs() < 3.0e-4, "integrated area={area:.12}");
+    }
+
+    #[test]
     fn accumulation_blocks_are_bitwise_identical_across_worker_counts() {
         let x = (0..=8_000)
             .map(|index| 1_000.0 + 2.0 * f64::from(index))

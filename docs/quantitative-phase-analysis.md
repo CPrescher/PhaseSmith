@@ -24,6 +24,19 @@ DOI [`10.1107/S0021889887086199`](https://doi.org/10.1107/S0021889887086199).
 for scripts and reports. This calculation is deliberately outside the
 refinement solver: it interprets final scales but does not alter them.
 
+`quantitative_phase_analysis_with_covariance` propagates a compatible
+phase-scale covariance analytically. For (k_i=(ZMV)_i) and
+(C=\sum_i S_i k_i), its Jacobian is
+
+\[
+\frac{\partial W_i}{\partial S_j}
+= \frac{\delta_{ij} k_i - W_i k_j}{C},
+\]
+
+and the returned fraction covariance is (J\,\mathrm{Cov}(S)\,J^T). The
+independent Python and production Rust implementations are each checked
+against centered scale differences.
+
 ## Preconditions and exclusions
 
 All supplied scales must come from the same calculation and use identical
@@ -34,6 +47,6 @@ phases use the same built-in scattering/intensity path.
 
 The normalized result describes only the supplied crystalline phases. It does
 not quantify amorphous or unidentified material unless the experimental design
-adds and models a suitable internal standard. PhaseSmith does not yet propagate
-scale covariance or uncertainty through this relation; that will be added with
-the real-data structural-refinement validation slice.
+adds and models a suitable internal standard. Propagated uncertainty describes
+only the supplied scale covariance and crystallographic metadata are treated as
+fixed; it is not a complete experimental uncertainty budget.

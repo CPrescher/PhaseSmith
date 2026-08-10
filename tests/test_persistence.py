@@ -270,6 +270,46 @@ def test_parameter_change_history_round_trips(tmp_path) -> None:
     assert restored.lebail_result.history == result.history
 
 
+def test_lebail_residual_background_round_trips_with_checkpoint(tmp_path) -> None:
+    x = np.linspace(39.0, 41.0, 2_001)
+    truth = (phase(np.array([8.0, 5.0])),)
+    fixed = np.full_like(x, 0.4)
+    residual = ChebyshevBackground("lebail-residual", (0.2, -0.05), (39.0, 41.0))
+    blank = phasesmith.PowderPattern(x, background=fixed)
+    calculated = phasesmith.calculate_pattern(blank, instrument(), truth)
+    pattern = phasesmith.PowderPattern(
+        x,
+        observed_y=calculated.y + residual.calculate(x),
+        background=fixed,
+    )
+    starting = (phase(np.ones(2)),)
+    request = lebail.LeBailInput(pattern, instrument(), starting).with_refinable_background(
+        ChebyshevBackground("lebail-residual", (0.0, 0.0), (39.0, 41.0))
+    )
+    result = lebail.refine(request, lebail.LeBailOptions(max_iterations=5))
+    assert result.background is not None
+
+    destination = persistence.save_bundle(
+        tmp_path / "lebail-background",
+        persistence.PersistenceBundle(
+            pattern=pattern,
+            instrument=instrument(),
+            phases=starting,
+            parameters=request.parameters,
+            lebail_background=request.background,
+            lebail_checkpoint=result.checkpoint,
+            lebail_result=result,
+        ),
+    )
+    restored = persistence.load_bundle(destination)
+    assert restored.lebail_background == request.background
+    assert restored.to_lebail_input().background == request.background
+    assert restored.lebail_checkpoint is not None
+    assert restored.lebail_checkpoint.background == result.background
+    assert restored.lebail_result is not None
+    assert restored.lebail_result.background == result.background
+
+
 def test_multi_source_linear_constraint_round_trips(tmp_path) -> None:
     parameters = lebail.build_parameter_set(
         instrument(),

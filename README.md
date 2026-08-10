@@ -171,6 +171,22 @@ pattern = phasesmith.PowderPattern(
 Set `chebyshev_order=None` to use the raw Bruckner envelope. Neither xypattern
 nor Dioptas is required at runtime.
 
+Refinement treats that array as a fixed broad baseline. Attach a low-order
+analytical correction rather than replacing it:
+
+```python
+from phasesmith.refinement import ChebyshevBackground, lebail
+
+residual = ChebyshevBackground("residual", (0.0, 0.0, 0.0), (two_theta[0], two_theta[-1]))
+request = lebail.LeBailInput(pattern, instrument, phases).with_refinable_background(residual)
+result = lebail.refine(request)
+```
+
+Structural Rietveld uses the same additive convention through
+`RietveldInput.background`; linear CW Le Bail backgrounds are eliminated by a
+weighted least-squares update each cycle, while nonlinear background terms
+remain in the joint analytical solve.
+
 ```python
 import numpy as np
 from phasesmith import accumulate
@@ -346,7 +362,12 @@ neutron_result = calculate_neutron_pattern(PowderPattern(x), neutron, [alpha])
 ```
 
 TOF reflections use d-spacing as their durable local coordinate. Values and
-all local/shared derivatives are accumulated in one native call:
+all local/shared derivatives are accumulated in one native call. Native Rust
+consumers can additionally use `TofLeBailInput` and `refine_tof_lebail` for a
+typed microsecond-domain, fixed-instrument nonnegative extraction workflow.
+Rust callers may attach `TofChebyshevBackground` to refine an explicit-domain
+Chebyshev residual on top of the fixed pattern background; omitting it preserves
+the fixed background alone:
 
 ```python
 from phasesmith import TofInstrument, accumulate_tof
@@ -405,6 +426,31 @@ request = lebail.LeBailInput.from_cif(
 result = lebail.refine(request)
 print(result.phases[0].structure.cell)
 ```
+
+When detector geometry and wavelength are already known from Dioptas/pyFAI but
+no separate resolution standard was measured, a predominantly single-phase
+pattern can provide a conservative **effective starting profile**:
+
+```python
+start = starting_profile_from_fwhm(wavelength_angstrom, fwhm_deg=0.04)
+request = lebail.LeBailInput.from_cif(
+    observed,
+    start,
+    "dominant-phase.cif",
+    phase_id="dominant",
+    refine_lattice=True,
+)
+profile_start = estimate_effective_profile(
+    request,
+    ProfileEstimationOptions(align_lattice=True),
+)
+print(profile_start.instrument, profile_start.active_parameters)
+```
+
+The wavelength is fixed. The returned widths may include sample broadening and
+are intended as refinement starting values, not as an instrument-only
+resolution calibration. See
+[`docs/effective-profile-estimation.md`](docs/effective-profile-estimation.md).
 
 A monochromatic structural refinement is likewise constructed directly from a
 CIF. Parameter families are explicit and no GSAS-II installation is involved:
@@ -491,8 +537,8 @@ sequence.
 Refinable backgrounds share one analytical interface. Built-ins include power
 and Chebyshev series, fixed-knot linear interpolation, broad normalized
 Gaussian amorphous components, and ordered composites. Smooth Bruckner remains
-an explicit preprocessing operation and is never inserted into refinement
-automatically.
+an explicit preprocessing operation and is never inserted automatically; when
+supplied, its values remain the fixed baseline beneath the refinable model.
 
 GSAS-II is used only as the optional pinned validation oracle described in
 [`oracle/README.md`](oracle/README.md).

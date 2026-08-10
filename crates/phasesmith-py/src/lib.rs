@@ -50,6 +50,7 @@ use pyo3::exceptions::{PyNotImplementedError, PyValueError};
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyTuple};
 
+mod profile_estimation;
 mod rietveld;
 
 type ProfileArrays<'py> = (
@@ -3921,10 +3922,24 @@ fn run_native_validation(py: Python<'_>, runner: String, directory: String) -> P
     py.detach(move || {
         let directory = PathBuf::from(directory);
         let report = match runner.as_str() {
+            "ansto-echidna-lab6-cw-neutron" => {
+                phasesmith_validation::run_echidna_lab6_validation(&directory)
+                    .map_err(|error| error.to_string())?
+            }
             "aps-sucrose-11bmb" => phasesmith_validation::run_sucrose_lebail_validation(&directory)
                 .map_err(|error| error.to_string())?,
             "iucr-qarr-1g" => phasesmith_validation::run_qarr_1g_validation(&directory)
                 .map_err(|error| error.to_string())?,
+            "iucr-qarr-1h" => phasesmith_validation::run_qarr_1h_validation(&directory)
+                .map_err(|error| error.to_string())?,
+            "nist-srm660c-lab6-xray" => {
+                phasesmith_validation::run_nist_srm660c_validation(&directory)
+                    .map_err(|error| error.to_string())?
+            }
+            "powgen-lab6-tof-calibration" => {
+                phasesmith_validation::run_powgen_tof_readiness(&directory)
+                    .map_err(|error| error.to_string())?
+            }
             "gsasii-pbso4-cw-neutron" => {
                 phasesmith_validation::run_pbso4_neutron_validation(&directory)
                     .map_err(|error| error.to_string())?
@@ -3950,6 +3965,7 @@ fn _core(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_class::<NativePreparedStructuralModel>()?;
     module.add_class::<NativeStructuralMultiphase>()?;
     rietveld::register(module)?;
+    profile_estimation::register(module)?;
     module.add_function(wrap_pyfunction!(unit_cell_geometry, module)?)?;
     module.add_function(wrap_pyfunction!(unit_cell_d_spacings, module)?)?;
     module.add_function(wrap_pyfunction!(p1_structure_factors_dense, module)?)?;

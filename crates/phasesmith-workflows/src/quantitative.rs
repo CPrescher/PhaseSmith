@@ -73,6 +73,15 @@ pub struct PhaseWeightFraction {
     pub weight_fraction: f64,
 }
 
+/// Weight fractions and their row-major covariance propagated from phase scales.
+#[derive(Clone, Debug, PartialEq)]
+pub struct QuantitativePhaseAnalysis {
+    /// Normalized crystalline weight fractions in input order.
+    pub phases: Vec<PhaseWeightFraction>,
+    /// Row-major fraction covariance with dimension `phases.len()`.
+    pub covariance: Vec<f64>,
+}
+
 /// Calculate Hill--Howard crystalline weight fractions in input order.
 ///
 /// `W_p = S_p (Z M V)_p / sum_i S_i (Z M V)_i`.
@@ -117,6 +126,72 @@ pub fn quantitative_phase_analysis(
         .collect())
 }
 
+/// Calculate weight fractions and analytically propagate a phase-scale covariance.
+///
+/// For `c_i = S_i (Z M V)_i`, `W_i = c_i / sum(c)`, the scale derivative is
+/// `dW_i/dS_j = (delta_ij k_i - W_i k_j) / sum(c)`, where `k_i = (Z M V)_i`.
+///
+/// # Errors
+///
+/// Returns [`QuantitativeError`] for invalid phases or covariance shape/values.
+pub fn quantitative_phase_analysis_with_covariance(
+    phases: &[QuantitativePhase],
+    scale_covariance: &[f64],
+) -> Result<QuantitativePhaseAnalysis, QuantitativeError> {
+    let fractions = quantitative_phase_analysis(phases)?;
+    let count = phases.len();
+    if scale_covariance.len()
+        != count
+            .checked_mul(count)
+            .ok_or(QuantitativeError::CovarianceShape)?
+    {
+        return Err(QuantitativeError::CovarianceShape);
+    }
+    if scale_covariance.iter().any(|value| !value.is_finite()) {
+        return Err(QuantitativeError::NonFiniteCovariance);
+    }
+    let factors = phases
+        .iter()
+        .map(|phase| {
+            phase.formula_units_per_cell * phase.formula_mass_g_mol * phase.cell_volume_angstrom3
+        })
+        .collect::<Vec<_>>();
+    let total = phases
+        .iter()
+        .zip(&factors)
+        .map(|(phase, factor)| phase.scale * factor)
+        .sum::<f64>();
+    let mut jacobian = vec![0.0; count * count];
+    for row in 0..count {
+        for column in 0..count {
+            jacobian[row * count + column] = (if row == column { factors[row] } else { 0.0 }
+                - fractions[row].weight_fraction * factors[column])
+                / total;
+        }
+    }
+    let mut covariance = vec![0.0; count * count];
+    for row in 0..count {
+        for column in 0..count {
+            let mut value = 0.0;
+            for left in 0..count {
+                for right in 0..count {
+                    value += jacobian[row * count + left]
+                        * scale_covariance[left * count + right]
+                        * jacobian[column * count + right];
+                }
+            }
+            if !value.is_finite() {
+                return Err(QuantitativeError::NonFiniteCovariance);
+            }
+            covariance[row * count + column] = value;
+        }
+    }
+    Ok(QuantitativePhaseAnalysis {
+        phases: fractions,
+        covariance,
+    })
+}
+
 /// Invalid quantitative-phase input.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum QuantitativeError {
@@ -134,6 +209,10 @@ pub enum QuantitativeError {
     ContributionOverflow,
     /// At least one phase scale must be positive.
     ZeroTotal,
+    /// Phase-scale covariance did not have square phase dimension.
+    CovarianceShape,
+    /// Phase-scale covariance or propagated covariance was not finite.
+    NonFiniteCovariance,
 }
 
 impl Display for QuantitativeError {
@@ -146,6 +225,10 @@ impl Display for QuantitativeError {
             Self::InvalidMetadata => "quantitative Z, mass, and volume must be positive and finite",
             Self::ContributionOverflow => "quantitative phase contribution overflowed",
             Self::ZeroTotal => "at least one quantitative phase scale must be positive",
+            Self::CovarianceShape => "scale covariance must be square with one row per phase",
+            Self::NonFiniteCovariance => {
+                "scale covariance and propagated covariance must be finite"
+            }
         })
     }
 }

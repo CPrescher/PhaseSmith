@@ -3,7 +3,7 @@
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 
-use phasesmith_model::{DomainError, PatternRecord};
+use phasesmith_model::{DomainError, PatternRecord, TofPatternRecord};
 
 /// Weighting and degrees-of-freedom controls for residual evaluation.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -59,32 +59,67 @@ pub fn evaluate_residuals(
     options: ResidualOptions,
 ) -> Result<ResidualEvaluation, ResidualError> {
     pattern.validate().map_err(ResidualError::Pattern)?;
-    let observed_y = pattern
-        .observed_y
-        .as_deref()
-        .ok_or(ResidualError::MissingObservations)?;
-    if calculated_y.len() != pattern.sample_count() {
+    evaluate_residual_arrays(
+        pattern.sample_count(),
+        pattern.observed_y.as_deref(),
+        pattern.uncertainty.as_deref(),
+        pattern.mask.as_deref(),
+        calculated_y,
+        options,
+    )
+}
+
+/// Evaluate residuals on an explicitly microsecond-domain TOF pattern.
+///
+/// This is deliberately separate from [`evaluate_residuals`]: callers cannot
+/// reinterpret TOF coordinates as constant-wavelength angles to reach shared
+/// residual mathematics.
+///
+/// # Errors
+///
+/// Returns [`ResidualError`] for an invalid pattern, absent observations, or
+/// invalid calculated values.
+pub fn evaluate_tof_residuals(
+    pattern: &TofPatternRecord,
+    calculated_y: &[f64],
+    options: ResidualOptions,
+) -> Result<ResidualEvaluation, ResidualError> {
+    pattern.validate().map_err(ResidualError::Pattern)?;
+    evaluate_residual_arrays(
+        pattern.sample_count(),
+        pattern.observed_y.as_deref(),
+        pattern.uncertainty.as_deref(),
+        pattern.mask.as_deref(),
+        calculated_y,
+        options,
+    )
+}
+
+fn evaluate_residual_arrays(
+    sample_count: usize,
+    observed_y: Option<&[f64]>,
+    uncertainty: Option<&[f64]>,
+    mask: Option<&[bool]>,
+    calculated_y: &[f64],
+    options: ResidualOptions,
+) -> Result<ResidualEvaluation, ResidualError> {
+    let observed_y = observed_y.ok_or(ResidualError::MissingObservations)?;
+    if calculated_y.len() != sample_count {
         return Err(ResidualError::CalculatedLengthMismatch {
-            expected: pattern.sample_count(),
+            expected: sample_count,
             actual: calculated_y.len(),
         });
     }
     if let Some(index) = calculated_y.iter().position(|value| !value.is_finite()) {
         return Err(ResidualError::NonFiniteCalculated { index });
     }
-    let included = pattern
-        .mask
-        .clone()
-        .unwrap_or_else(|| vec![true; pattern.sample_count()]);
+    let included = mask.map_or_else(|| vec![true; sample_count], <[bool]>::to_vec);
     let residual = calculated_y
         .iter()
         .zip(observed_y)
         .map(|(calculated, observed)| calculated - observed)
         .collect::<Vec<_>>();
-    let uncertainty = options
-        .use_uncertainty
-        .then_some(pattern.uncertainty.as_deref())
-        .flatten();
+    let uncertainty = options.use_uncertainty.then_some(uncertainty).flatten();
     let weighted_residual = match uncertainty {
         Some(uncertainty) => residual
             .iter()
@@ -99,7 +134,7 @@ pub fn evaluate_residuals(
     let mut absolute_observed_sum = 0.0;
     let mut weighted_observed_square_sum = 0.0;
     let mut chi_square = 0.0;
-    for index in 0..pattern.sample_count() {
+    for index in 0..sample_count {
         if !included[index] {
             continue;
         }

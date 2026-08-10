@@ -115,6 +115,22 @@ class PhaseWeightFraction:
             raise ValueError("weight_fraction must be finite and between zero and one")
 
 
+@dataclass(frozen=True, slots=True)
+class QuantitativePhaseAnalysis:
+    """Weight fractions and covariance propagated from compatible phase scales."""
+
+    phases: tuple[PhaseWeightFraction, ...]
+    covariance: NDArray[np.float64]
+
+    def __post_init__(self) -> None:
+        expected = (len(self.phases), len(self.phases))
+        if self.covariance.dtype != np.float64 or self.covariance.shape != expected:
+            raise ValueError("fraction covariance must match the number of phases")
+        if not np.isfinite(self.covariance).all():
+            raise ValueError("fraction covariance must contain finite values")
+        self.covariance.flags.writeable = False
+
+
 def quantitative_phase_analysis(
     phases: Iterable[QuantitativePhase],
 ) -> tuple[PhaseWeightFraction, ...]:
@@ -138,3 +154,41 @@ def quantitative_phase_analysis(
         PhaseWeightFraction(phase_id, float(fraction))
         for phase_id, fraction in zip(phase_ids, fractions, strict=True)
     )
+
+
+def quantitative_phase_analysis_with_covariance(
+    phases: Iterable[QuantitativePhase],
+    scale_covariance: ArrayLike,
+) -> QuantitativePhaseAnalysis:
+    r"""Propagate a phase-scale covariance through the Hill--Howard relation.
+
+    With ``c_i = S_i k_i`` and ``W_i = c_i / sum(c)``, the analytical
+    derivative is
+    ``dW_i/dS_j = (delta_ij k_i - W_i k_j) / sum(c)``.  The returned
+    covariance is ``J Cov(S) J.T`` in the caller's phase order.
+    """
+
+    records = tuple(phases)
+    fractions = quantitative_phase_analysis(records)
+    count = len(records)
+    covariance = np.asarray(scale_covariance, dtype=np.float64)
+    if covariance.shape != (count, count):
+        raise ValueError("scale covariance must be square with one row per phase")
+    if not np.isfinite(covariance).all():
+        raise ValueError("scale covariance must contain finite values")
+    factors = np.asarray(
+        [
+            phase.formula_units_per_cell * phase.formula_mass_g_mol * phase.cell_volume_angstrom3
+            for phase in records
+        ],
+        dtype=np.float64,
+    )
+    scales = np.asarray([phase.scale for phase in records], dtype=np.float64)
+    weights = np.asarray([phase.weight_fraction for phase in fractions], dtype=np.float64)
+    total = float(scales @ factors)
+    jacobian = (np.diag(factors) - np.outer(weights, factors)) / total
+    propagated = np.ascontiguousarray(jacobian @ covariance @ jacobian.T)
+    if not np.isfinite(propagated).all():
+        raise ValueError("propagated fraction covariance is not finite")
+    propagated.flags.writeable = False
+    return QuantitativePhaseAnalysis(fractions, propagated)

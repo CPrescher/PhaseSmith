@@ -54,6 +54,7 @@ nav:
       - Import powder data and CIFs: cif-import.md
       - Background subtraction: background-subtraction.md
       - Le Bail extraction: lebail.md
+      - Effective starting profile: effective-profile-estimation.md
       - Rietveld refinement: rietveld.md
       - Refinement infrastructure: refinement.md
       - Runtime and recovery: refinement-runtime.md

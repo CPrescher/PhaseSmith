@@ -3,7 +3,8 @@
 use std::path::Path;
 
 use phasesmith_io::{
-    PowderFormat, PowderIoError, PowderReadLimits, parse_powder_text, read_powder_file,
+    PowderFormat, PowderIoError, PowderReadLimits, parse_powder_text, parse_tof_powder_text,
+    read_powder_file, read_tof_powder_file,
 };
 
 fn parse(text: &str) -> phasesmith_io::PowderData {
@@ -38,6 +39,55 @@ fn reads_selected_fxye_bank_and_converts_centidegrees() {
     assert_eq!(data.bank, Some(2));
     assert_eq!(data.pattern.x_deg, [10.0]);
     assert_eq!(data.pattern.observed_y.as_deref(), Some(&[9.0][..]));
+}
+
+#[test]
+fn typed_tof_reader_converts_slog_boundaries_and_integrated_counts_to_densities() {
+    let text = "TOF example\n\
+        BANK 2 3 3 SLOG 1 2 3 4 5 FXYE\n\
+        6777.0 100.0 10.0\n\
+        6780.5 0.0 0.0\n\
+        6784.1 121.0 11.0\n";
+    let data = parse_tof_powder_text(text, 2, PowderReadLimits::default()).unwrap();
+
+    assert_eq!(data.bank, 2);
+    assert!(data.logarithmic_grid);
+    assert_eq!(data.pattern.tof_us, [6778.75, 6782.3]);
+    assert_eq!(
+        data.pattern.observed_y.as_deref(),
+        Some(&[100.0 / 3.5, 0.0][..])
+    );
+    assert_eq!(data.pattern.mask.as_deref(), Some(&[true, false][..]));
+    assert_eq!(
+        data.pattern.uncertainty.as_deref(),
+        Some(&[10.0 / 3.5, 1.0][..])
+    );
+}
+
+#[test]
+fn typed_tof_reader_rejects_angle_banks_bad_counts_and_invalid_uncertainties() {
+    let cases = [
+        (
+            "BANK 2 1 1 CONS 1 1 0 0 FXYE\n100 2 1\n",
+            "requires a GSAS SLOG FXYE",
+        ),
+        (
+            "BANK 2 2 2 SLOG 1 1 0 0 FXYE\n100 2 1\n",
+            "contains 1 rows; expected 2",
+        ),
+        (
+            "BANK 2 2 2 SLOG 1 1 0 0 FXYE\n100 2 -1\n101 2 1\n",
+            "uncertainty must be nonnegative",
+        ),
+        (
+            "BANK 2 2 2 SLOG 1 1 0 0 FXYE\n100 2 1\n99 2 1\n",
+            "strictly increasing",
+        ),
+    ];
+    for (text, expected) in cases {
+        let error = parse_tof_powder_text(text, 2, PowderReadLimits::default()).unwrap_err();
+        assert!(error.to_string().contains(expected), "{error:?}");
+    }
 }
 
 #[test]
@@ -191,4 +241,17 @@ fn reads_pinned_real_fxye_fixture_without_python() {
     assert_eq!(data.pattern.sample_count(), 49_494);
     assert_eq!(data.pattern.x_deg.first(), Some(&0.5));
     assert_eq!(data.pattern.x_deg.last(), Some(&49.986_431_79));
+}
+
+#[test]
+#[ignore = "requires checksum-pinned external validation data"]
+fn reads_pinned_powgen_tof_bank_without_angle_conversion() {
+    let path = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../validation/data/powgen-lab6-tof-calibration/PG3_17541.gsa");
+    let data = read_tof_powder_file(&path, 2, PowderReadLimits::default()).unwrap();
+
+    assert_eq!(data.source_path, Some(path));
+    assert_eq!(data.pattern.sample_count(), 6_824);
+    assert_eq!(data.pattern.tof_us.first(), Some(&6_778.436_958_210_5));
+    assert_eq!(data.pattern.tof_us.last(), Some(&103_793.999_499_413_5));
 }

@@ -75,7 +75,14 @@ impl ValidationCheck {
         if self.check_id.is_empty() || self.detail.is_empty() {
             return Err(ValidationContractError::EmptyCheckText);
         }
-        if self.criterion.as_ref().is_some_and(String::is_empty) {
+        if !self
+            .check_id
+            .bytes()
+            .all(|value| value.is_ascii_lowercase() || value.is_ascii_digit() || value == b'_')
+        {
+            return Err(ValidationContractError::InvalidCheckId);
+        }
+        if self.criterion.as_ref().is_none_or(String::is_empty) {
             return Err(ValidationContractError::EmptyCriterion);
         }
         if self.measured.is_some_and(|value| !value.is_finite()) {
@@ -156,6 +163,14 @@ impl RealDataValidationReport {
         for check in &self.checks {
             check.validate()?;
         }
+        for (index, check) in self.checks.iter().enumerate() {
+            if self.checks[..index]
+                .iter()
+                .any(|previous| previous.check_id == check.check_id)
+            {
+                return Err(ValidationContractError::DuplicateCheckId);
+            }
+        }
         if self.notes.iter().any(String::is_empty) {
             return Err(ValidationContractError::EmptyNote);
         }
@@ -218,6 +233,8 @@ fn summarize(checks: &[ValidationCheck]) -> ValidationStatus {
 pub enum ValidationContractError {
     /// A check identifier or detail was empty.
     EmptyCheckText,
+    /// A check identifier was not stable lowercase snake case.
+    InvalidCheckId,
     /// A supplied acceptance criterion was empty.
     EmptyCriterion,
     /// A measured value was not finite.
@@ -232,6 +249,8 @@ pub enum ValidationContractError {
     InvalidElapsedSeconds,
     /// A report contained no checks.
     EmptyChecks,
+    /// A report contained the same check identifier more than once.
+    DuplicateCheckId,
     /// A diagnostic note was empty.
     EmptyNote,
     /// The report summary did not match its check statuses.
@@ -246,7 +265,12 @@ impl Display for ValidationContractError {
             Self::EmptyCheckText => {
                 formatter.write_str("validation check ID and detail must not be empty")
             }
-            Self::EmptyCriterion => formatter.write_str("validation criterion must not be empty"),
+            Self::InvalidCheckId => {
+                formatter.write_str("validation check ID must be lowercase snake case")
+            }
+            Self::EmptyCriterion => {
+                formatter.write_str("validation criterion must be present and non-empty")
+            }
             Self::NonFiniteMeasurement => {
                 formatter.write_str("validation measurement must be finite")
             }
@@ -258,6 +282,9 @@ impl Display for ValidationContractError {
             }
             Self::EmptyChecks => {
                 formatter.write_str("validation report requires at least one check")
+            }
+            Self::DuplicateCheckId => {
+                formatter.write_str("validation report check IDs must be unique")
             }
             Self::EmptyNote => formatter.write_str("validation notes must not be empty"),
             Self::InconsistentStatus => {

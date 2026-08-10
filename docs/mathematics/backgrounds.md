@@ -11,6 +11,18 @@
 `PhaseSmith` distinguishes non-differentiable preprocessing from backgrounds
 that participate in refinement.
 
+The refinement convention is additive:
+
+```text
+b_total(x) = b_fixed,Bruckner(x) + b_refinable(x).
+```
+
+The Bruckner envelope is never differentiated or silently recomputed. CW Le
+Bail and TOF Le Bail update coefficient-invariant residual models by weighted
+linear least squares after intensity redistribution. Structural Rietveld uses
+the same values and analytical columns in its joint solve. Omitting the
+refinable term preserves the fixed-background-only calculation exactly.
+
 ## Smooth Bruckner preprocessing
 
 `phasesmith::core::smooth_bruckner` (Rust) operates on an intensity vector `y` with

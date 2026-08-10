@@ -5,8 +5,12 @@ from pathlib import Path
 import phasesmith
 import pytest
 from phasesmith.validation import (
+    run_echidna_lab6_validation,
+    run_nist_srm660c_validation,
     run_pbso4_cw_validation,
+    run_powgen_tof_validation,
     run_qarr_1g_validation,
+    run_qarr_1h_validation,
     run_sucrose_lebail_validation,
     verify_validation_dataset,
 )
@@ -39,6 +43,68 @@ def test_sucrose_real_pattern_regression() -> None:
 
 
 @pytest.mark.real_data
+def test_echidna_real_pattern_regression_is_deterministic() -> None:
+    directory = available_dataset("ansto-echidna-lab6-cw-neutron")
+    first = run_echidna_lab6_validation(directory)
+    second = run_echidna_lab6_validation(directory)
+
+    assert first.status == "passed"
+    assert first.sample_count == 2_111
+    assert first.reflection_count == 13
+    assert first.to_record() | {"elapsed_seconds": 0.0} == second.to_record() | {
+        "elapsed_seconds": 0.0
+    }
+
+
+@pytest.mark.real_data
+def test_nist_archive_integrity_regression() -> None:
+    report = run_nist_srm660c_validation(available_dataset("nist-srm660c-lab6-xray"))
+
+    assert report.status == "passed"
+    assert report.sample_count == 106_640
+    assert report.reflection_count == 24
+    assert {check.check_id for check in report.checks} == {
+        "archive_specimens",
+        "pdcif_profiles",
+        "certified_lattice_interval",
+        "nist_reference_profile",
+        "nist_specimen_correlation",
+        "nist_specimen_rwp",
+    }
+
+
+@pytest.mark.real_data
+def test_qarr_1h_holdout_preserves_the_reviewed_failure_signal() -> None:
+    report = run_qarr_1h_validation(available_dataset("iucr-qarr-1h"))
+    checks = {check.check_id: check for check in report.checks}
+
+    assert report.status == "failed"
+    assert checks["qpa_weight_fraction"].status == "passed"
+    assert checks["poisson_rwp"].status == "failed"
+    assert checks["unit_weight_rwp"].status == "failed"
+
+
+@pytest.mark.real_data
+def test_powgen_tof_complete_workflow_passes() -> None:
+    report = run_powgen_tof_validation(available_dataset("powgen-lab6-tof-calibration"))
+    checks = {check.check_id: check for check in report.checks}
+
+    assert report.status == "passed"
+    assert report.sample_count == 6_824
+    assert report.reflection_count == 330
+    assert checks["tof_fxye_grid"].status == "passed"
+    assert checks["tof_position_kernel"].status == "passed"
+    assert checks["tof_position_derivative"].status == "passed"
+    assert checks["tof_calibration_range"].status == "passed"
+    assert checks["tof_profile_improvement"].status == "passed"
+    assert checks["tof_profile_correlation"].status == "passed"
+    assert checks["tof_integrated_intensities"].status == "passed"
+    assert checks["tof_reflection_coverage"].status == "passed"
+    assert checks["tof_analytical_derivatives"].status == "passed"
+    assert checks["tof_chebyshev_background"].status == "passed"
+
+
+@pytest.mark.real_data
 def test_qarr_real_pattern_two_thread_regression() -> None:
     report = run_qarr_1g_validation(
         available_dataset("iucr-qarr-1g"),
@@ -55,6 +121,7 @@ def test_qarr_real_pattern_two_thread_regression() -> None:
     assert measurements["unit_weight_rwp"] <= 0.15
     assert measurements["profile_correlation"] >= 0.98
     assert measurements["qpa_weight_fraction"] <= 0.02
+    assert measurements["qpa_covariance"] >= 0.0
 
 
 @pytest.mark.real_data

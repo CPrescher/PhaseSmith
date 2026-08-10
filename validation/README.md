@@ -7,15 +7,26 @@ PhaseSmith code:
 
 ```bash
 python tools/validate_real_data.py --fetch \
+  --include-diagnostics \
   --data-directory validation/data \
   --output validation/results/local.json
 ```
 
-The QARR stages emit structured progress to standard error. In an interactive
-terminal, press `q` or Ctrl+C once to request a graceful stop at the next safe
-batch boundary; a second Ctrl+C forces interruption. A cooperative stop returns
-a machine-readable `blocked` report with the last accepted Rwp and a nonzero
-CLI exit status.
+The canonical suite uses native runners. Add `--interactive-qarr` to run QARR
+1g through the independent Python path with structured progress and cooperative
+cancellation: press `q` or Ctrl+C once to stop at the next safe batch boundary;
+a second Ctrl+C forces interruption.
+
+The default command contains only accepted, complete runners. Two additional
+diagnostic cases are intentionally invoked separately because one is a failing
+transferability holdout and the other exposes an unsupported workflow boundary:
+
+```bash
+cargo run -p phasesmith-validation --bin phasesmith-validation -- run \
+  iucr-qarr-1h validation/data/iucr-qarr-1h
+cargo run -p phasesmith-validation --bin phasesmith-validation -- run \
+  powgen-lab6-tof-calibration validation/data/powgen-lab6-tof-calibration
+```
 
 `validation/data/` and local result files are ignored. The current cases
 have deliberately different meanings:
@@ -26,15 +37,71 @@ have deliberately different meanings:
   threshold is a regression smoke gate for the present model, not a claim of
   numerical equivalence with GSAS-II. The tutorial's lower final residual uses
   additional staged background-peak, crystallite-size, microstrain, lattice,
-  and repeated extraction refinements.
+  and repeated extraction refinements. The matched oracle comparison gives
+  both methods the identical fixed Smooth Bruckner array and one refinable
+  constant Chebyshev residual. It also overrides GSAS-II's legacy instrument
+  import so both start from the same symmetric U/V/W/X/Y state. The reviewed
+  PhaseSmith Rwp is 0.14184 with correlation 0.99070; matched GSAS-II returns
+  0.14535 and 0.97300. GSAS-II's internal calculation floor reports SH/L as
+  0.0005 even though the shared input value is zero.
+- `ansto-echidna-lab6-cw-neutron` exercises a second independent
+  constant-wavelength neutron instrument using the deposited three-column LaB6
+  pattern and its uncertainties. On the selected 20–125.5° range, the native
+  Le Bail/profile runner uses 2,111 samples and 13 reflections, lowers Rwp from
+  0.51822 to 0.40858, and reaches correlation 0.90621. Its fixed ten-term
+  Chebyshev background is initialized from twenty regular Smooth-Bruckner
+  startup anchors. The deposited 2.047 Å
+  wavelength is explicitly approximate, so this is a profile smoke gate rather
+  than a wavelength or detector-zero calibration claim.
 - `iucr-qarr-1g` verifies the 7,251-point 5–150° input and its explicit Cu Kα1/
   Kα2 instrument metadata, runs a native three-phase fixed-spectrum structural
   refinement, and converts the final polished scales with the Hill--Howard
-  relation. The reviewed baseline returns Al2O3 33.250%, ZnO 32.936%, and CaF2
-  33.814% against weighed targets of 31.37%, 34.21%, and 34.42%. Its largest
-  absolute error is 1.881 weight-percentage points. The profile gates distinguish
-  Poisson-weighted Rwp (0.19679, limit 0.20) from unit-weight Rwp (0.13282,
-  limit 0.15); profile correlation is 0.99069.
+  relation. The reviewed native baseline returns Al2O3 30.460%, ZnO 34.113%,
+  and CaF2 35.427% against weighed targets of 31.37%, 34.21%, and 34.42%. Its
+  largest absolute error is 1.007 weight-percentage points. The profile gates
+  distinguish Poisson-weighted Rwp (0.19828, limit 0.20) from unit-weight Rwp
+  (0.13179, limit 0.15); profile correlation is 0.99062. The final scale-only
+  covariance propagates to a maximum phase-fraction standard uncertainty of
+  0.000852.
+- `iucr-qarr-1h` is an independent mixture from the same round robin and uses
+  the unchanged 1g setup as a transferability holdout. QPA remains within the
+  0.02 absolute-fraction gate (maximum error 0.01725), but Poisson Rwp 0.27896,
+  unit-weight Rwp 0.24149, and correlation 0.97763 fail the accepted profile
+  gates. The runner reports `failed`; the thresholds
+  are not relaxed to turn this diagnostic into a pass.
+- `nist-srm660c-lab6-xray` validates all 20 pdCIF specimens in NIST's official
+  SRM 660c archive: 106,640 measured points, aligned released calculated
+  profiles, the certified lattice interval, aggregate correlation 0.99933, and
+  weighted Rwp 0.06083. Every specimen also clears correlation 0.999 and Rwp
+  0.065 gates. This validates the external oracle archive. It is not a
+  pointwise PhaseSmith equivalence claim because the released fit uses a Cu
+  emission spectrum and fundamental-parameters optics model.
+- `powgen-lab6-tof-calibration` pins the official GSAS-II POWGEN tutorial bank
+  and calibration, converts 6,825 SLOG FXYE bin-boundary/integrated-intensity
+  rows into 6,824 bin-center intensity densities in microseconds, and exercises
+  the production TOF position law with Zero=4.41 µs, DIFC=22581.63 µs/Å, and
+  DIFB=0. The legacy GSAS `ICONS` record is translated as DIFC, DIFA, Zero,
+  unused; the mapping is checked against the pinned GSAS-II import rather than
+  inferred from the four-column layout.
+  The native reader returns a typed `TofPatternRecord`, preventing the CW
+  reader's centidegree conversion from being silently applied. The complete
+  fixed-instrument TOF Le Bail run generates 330 cubic LaB6 reflection
+  families, returns all 15 shared derivative rows, extracts finite nonnegative
+  intensities, jointly updates a 16-term Chebyshev residual above the fixed
+  Smooth Bruckner baseline, reaches
+  uncertainty-weighted Rwp 0.26461, and reaches background-subtracted profile
+  correlation 0.96729.
+  Position, centered finite-difference derivative, calibration-range,
+  profile-improvement, coverage, fused-profile-derivative, and analytical
+  background-basis gates all pass.
+  The live pinned-oracle benchmark additionally matches all 329 GSAS-II
+  reflection positions exactly, matches derived variance/rate terms to floating
+  point precision, and reconstructs GSAS-II's peak-only Le Bail pattern from
+  its extracted intensities with correlation above 0.99999 and relative L2
+  error below 0.006. With both native workflows using a 16-term Chebyshev
+  component on 6,824 centers, their uncertainty-weighted Rwp values are
+  0.26461 (PhaseSmith) and about 0.26297 (GSAS-II), an absolute delta below
+  0.0017; their profile-correlation delta is below 0.0005.
 - `gsasii-pbso4-cw` adds official packed-GSAS X-ray and neutron patterns for
   the same PbSO4 specimen. The established Python validation keeps its staged
   per-probe comparison for continuity, while the Rust-only joint benchmark
@@ -54,11 +121,12 @@ have deliberately different meanings:
   position stage refines typed Debye--Scherrer X/Y displacement at a fixed
   650 mm radius; the report records the geometry and units.
 
-The QARR checkpoint explicitly approximates anisotropic displacement with
-trace-mean isotropic values, uses fixed Cu Kα1 dispersion offsets for both
-doublet components, and does not yet apply the supplied SH/L=0.002 FCJ
-asymmetry or absorption. Those limitations are emitted in the report rather
-than hidden.
+The QARR checkpoint evaluates supplied CIF anisotropic displacement tensors
+directly and keeps them fixed; sites without displacement values start from a
+documented isotropic value and refine. It uses fixed Cu Kα1 dispersion offsets
+for both doublet components and maps SH/L=0.002 to the documented equal-height
+FCJ geometry. Absorption is not yet active. Those limitations are emitted in
+the report rather than hidden.
 
 The QARR case comes from the [IUCr quantitative phase analysis round
 robin](https://www.iucr.org/__data/iucr/powder/QARR/data-kit.htm), with files
@@ -67,10 +135,25 @@ does not permit automated retrieval. The sucrose files come from the official
 [GSAS-II tutorial repository](https://github.com/AdvancedPhotonSource/GSAS-II-Tutorials/tree/e2485148a3d7ee4757239b1ba40653f1f715bba5/LeBail/data).
 The PbSO4 patterns, instrument files, CIF, and staged recipe come from the
 commit-pinned official [combined-refinement tutorial](https://github.com/AdvancedPhotonSource/GSAS-II-Tutorials/blob/e2485148a3d7ee4757239b1ba40653f1f715bba5/CWCombined/Combined%20refinement.htm).
+The Echidna pattern is deposited in the
+[ANSTO powder-diffraction Zenodo record](https://zenodo.org/records/14286343).
+The LaB6 certification scans and reference fits come from the official
+[NIST SRM 660c data release](https://data.nist.gov/od/id/mds2-2315).
+The TOF bank and instrument parameters come from the commit-pinned official
+[GSAS-II TOF calibration tutorial](https://github.com/AdvancedPhotonSource/GSAS-II-Tutorials/tree/e2485148a3d7ee4757239b1ba40653f1f715bba5/TOF%20Calibration/data).
 
-The committed `validation/results/2026-08-07-baseline.json` records the first
-reviewed run. Elapsed time is diagnostic host timing, not a cross-machine
-performance acceptance threshold.
+The original schema-1 result remains at
+`validation/results/2026-08-07-baseline.json`. The reviewed schema-2 suite is
+`validation/results/2026-08-10-baseline-v2.json`; it records expected-outcome
+policy and deterministic scientific fingerprints for all eight cases. Elapsed
+time is diagnostic host timing and is excluded from each fingerprint. Compare
+a candidate without overwriting either file:
+
+```bash
+python tools/compare_validation_results.py \
+  validation/results/2026-08-10-baseline-v2.json \
+  validation/results/local.json
+```
 
 Run the Python-free joint workload directly through the native release binary:
 
@@ -107,17 +190,25 @@ other fixed worker counts, or pass `--threads 0` for automatic selection. Use
 part of the SHA-256 scientific fingerprint, and every warm-up and measured run
 must reproduce the cold scientific record exactly.
 
-This benchmark measures PhaseSmith configurations. Paired QARR and PbSO4
-comparisons against the exact pinned GSAS-II revision provide separate
-cross-implementation gates:
+This benchmark measures PhaseSmith configurations. Paired sucrose, Echidna,
+QARR, and PbSO4 comparisons against the exact pinned GSAS-II revision provide
+separate cross-implementation gates:
 
 ```bash
 uv run python benchmarks/compare_gsasii_qarr.py --require-release \
   --gsas-python /path/to/gsas/python \
   --gsas-root /path/to/pinned/GSAS-II \
   --binary-dir /path/to/compatible/GSASII-bin/platform-directory \
+  --sample 1g \
   --data-directory validation/data/iucr-qarr-1g \
   --phasesmith-threads 2
+
+uv run python benchmarks/compare_gsasii_real_lebail.py --require-release \
+  --gsas-python /path/to/gsas/python \
+  --gsas-root /path/to/pinned/GSAS-II \
+  --binary-dir /path/to/compatible/GSASII-bin/platform-directory \
+  --case ansto-echidna-lab6-cw-neutron \
+  --data-directory validation/data/ansto-echidna-lab6-cw-neutron
 
 uv run python benchmarks/compare_gsasii_pbso4.py --require-release \
   --gsas-python /path/to/gsas/python \
@@ -141,6 +232,13 @@ two APIs expose different family/list conventions. The JSON report explicitly
 labels PhaseSmith's independent fits, GSAS-II's joint fit, and the supplied
 reference cell. Probe-specific Rwp deltas are limited to at most 0.006 and
 profile-correlation deltas to at most 0.002.
+The live oracle test job runs both Le Bail cases, both QARR mixtures, and
+PbSO4. QARR 1h remains a reviewed PhaseSmith failure while still being compared
+numerically with GSAS-II; its weight fractions remain within 0.00979, but its
+Poisson Rwp, unit-weight Rwp, and correlation deltas fail at 0.09434, 0.11009,
+and 0.01297. The test requires that explicit reviewed failure, so expected
+failure never means “skip the oracle.” NIST 660c is checked against its
+certification release as the primary oracle.
 The JSON also records both implementations' Debye--Scherrer radius and X/Y
 values. They are not equality-gated because PhaseSmith currently fits the
 neutron histogram independently while GSAS-II shares one structure between

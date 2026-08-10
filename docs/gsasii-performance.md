@@ -1,9 +1,10 @@
 # GSAS-II performance comparison
 
 `benchmarks/compare_gsasii.py`,
-`benchmarks/compare_gsasii_structural.py`, and
-`benchmarks/compare_gsasii_qarr.py`, and
-`benchmarks/compare_gsasii_pbso4.py` provide reproducible speed
+`benchmarks/compare_gsasii_structural.py`,
+`benchmarks/compare_gsasii_qarr.py`,
+`benchmarks/compare_gsasii_pbso4.py`, and
+`benchmarks/compare_gsasii_real_lebail.py` provide reproducible speed
 comparisons between PhaseSmith and the exact GSAS-II revision recorded in
 `oracle/PINNED_GSASII.json`. GSAS-II remains a separately installed external
 validation oracle and is never imported by the normal package.
@@ -66,9 +67,34 @@ Rietveld refinement. It excludes background evaluation, constraints,
 optimization, project I/O, and GUI work. It also does not time reflection-list
 generation because the list is prepared input to both structural kernels.
 
+## Real Le Bail workloads
+
+The sucrose and Echidna comparison driver runs each checksum-pinned pattern
+through PhaseSmith's accepted Le Bail validation and a temporary project in the
+exact pinned GSAS-II interpreter. It requires identical selected sample and
+reflection counts, then gates weighted Rwp and background-subtracted profile
+correlation with explicit case-local tolerances. For sucrose, the driver sends
+the identical fixed Smooth Bruckner array to both methods as plain prepared
+input; each refines one constant Chebyshev residual from zero. The worker also
+overrides the legacy GSAS-II instrument import so both methods start from
+U/V/W/X/Y = 1.163/-0.126/0.063/0.173/0 in GSAS units and symmetric SH/L=0.
+Both initialize Le Bail intensities and perform twenty background/profile
+cycles over the same 23,003 bin centers and 811 reflections. On the reviewed
+pinned run, sucrose returned Rwp 0.14184 (PhaseSmith) versus 0.14535 (GSAS-II),
+a 0.00350 difference within the tightened 0.005 gate. Its correlations,
+0.99070 versus 0.97300, differ by 0.01770 within the 0.02 gate. Pinned GSAS-II
+reports its internal SH/L floor of 0.0005 after calculation even though the
+matched input parameter is zero; PhaseSmith's symmetric zero is exact. Echidna
+returned Rwp 0.40858 versus 0.59410 and
+correlation 0.90621 versus 0.94608; its 0.18552 and 0.03988 differences pass
+the case-local 0.25/0.15 gates retained because the deposited wavelength is
+explicitly approximate. The sucrose failure is kept visible rather than
+loosening its oracle tolerance. These remain workflow-outcome gates, not
+matched-kernel tolerances.
+
 ## QARR complete-workflow workload
 
-The QARR comparison runs the checksum-pinned IUCr QARR 1g pattern and its three
+The QARR comparison runs the checksum-pinned IUCr QARR 1g or 1h pattern and its three
 CIF phases through each package's explicit native workflow. The external worker
 uses the public GSAS-II scripting API, disables the exactly redundant overall
 sample scale, and stages background/phase scales, U/V/W/zero, isotropic
@@ -205,6 +231,7 @@ uv run python benchmarks/compare_gsasii_qarr.py --require-release \
   --gsas-python /path/to/gsas/python \
   --gsas-root /path/to/pinned/GSAS-II \
   --binary-dir /path/to/compatible/GSASII-bin/platform-directory \
+  --sample 1g \
   --phasesmith-threads 2 \
   --data-directory validation/data/iucr-qarr-1g \
   --json-output gsasii-qarr-comparison.json

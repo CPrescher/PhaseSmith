@@ -6,6 +6,7 @@ import tempfile
 from dataclasses import dataclass
 from hashlib import sha256
 from pathlib import Path
+from typing import Literal
 from urllib.error import URLError
 from urllib.request import Request, urlopen
 
@@ -40,6 +41,8 @@ class ValidationDataset:
     citation: str
     license_note: str
     files: tuple[ExternalValidationFile, ...]
+    purpose: Literal["acceptance", "oracle_integrity", "holdout", "capability"] = "acceptance"
+    expected_status: Literal["passed", "failed", "blocked"] = "passed"
 
     def __post_init__(self) -> None:
         if not self.dataset_id or not self.dataset_id.replace("-", "").isalnum():
@@ -50,6 +53,10 @@ class ValidationDataset:
             raise ValueError("validation dataset source URL must use HTTPS")
         if not self.files or len({file.name for file in self.files}) != len(self.files):
             raise ValueError("validation dataset filenames must be non-empty and unique")
+        if self.purpose not in {"acceptance", "oracle_integrity", "holdout", "capability"}:
+            raise ValueError("invalid validation dataset purpose")
+        if self.expected_status not in {"passed", "failed", "blocked"}:
+            raise ValueError("invalid expected validation status")
 
 
 _QARR_MIRROR = (
@@ -64,8 +71,41 @@ _PBSO4_SOURCE = (
     "https://raw.githubusercontent.com/AdvancedPhotonSource/GSAS-II-Tutorials/"
     "e2485148a3d7ee4757239b1ba40653f1f715bba5/PythonScript/data"
 )
+_ANSTO_ECHIDNA_SOURCE = "https://zenodo.org/records/14286343/files"
+_NIST_SRM660C_SOURCE = "https://data.nist.gov/od/ds/mds2-2315"
+_POWGEN_TOF_SOURCE = (
+    "https://raw.githubusercontent.com/AdvancedPhotonSource/GSAS-II-Tutorials/"
+    "e2485148a3d7ee4757239b1ba40653f1f715bba5/TOF%20Calibration/data"
+)
 
 VALIDATION_DATASETS: tuple[ValidationDataset, ...] = (
+    ValidationDataset(
+        dataset_id="ansto-echidna-lab6-cw-neutron",
+        title="ANSTO Echidna LaB6 constant-wavelength neutron calibration pattern",
+        source_url="https://doi.org/10.5281/zenodo.14286343",
+        citation=(
+            "M. Avdeev and J. R. Hester, Echidna Ge(115) monochromator calibration data, "
+            "doi:10.5281/zenodo.14286343"
+        ),
+        license_note=(
+            "External ANSTO calibration data from an immutable Zenodo record; the record "
+            "declares Creative Commons Attribution 4.0. Files are not redistributed."
+        ),
+        files=(
+            ExternalValidationFile(
+                "ECH0034258_LaB6.xyd",
+                "09950aaf3596518a40b2c5173ffdfd870043f55dcd3390fb83dc9f64e348e115",
+                112_390,
+                (f"{_ANSTO_ECHIDNA_SOURCE}/ECH0034258_LaB6.xyd?download=1",),
+            ),
+            ExternalValidationFile(
+                "ECH0034258_LaB6.cif",
+                "0fa02945683ea39d56dfb81d0f99de629e4e336abab85c6d92b3689b42d130d1",
+                112_390,
+                (f"{_ANSTO_ECHIDNA_SOURCE}/ECH0034258_LaB6.cif?download=1",),
+            ),
+        ),
+    ),
     ValidationDataset(
         dataset_id="iucr-qarr-1g",
         title="IUCr Quantitative Phase Analysis Round Robin sample 1g",
@@ -182,6 +222,104 @@ VALIDATION_DATASETS: tuple[ValidationDataset, ...] = (
                 (f"{_PBSO4_SOURCE}/inst_d1a.prm",),
             ),
         ),
+    ),
+    ValidationDataset(
+        dataset_id="iucr-qarr-1h",
+        title="IUCr Quantitative Phase Analysis Round Robin sample 1h holdout",
+        source_url="https://www.iucr.org/resources/commissions/powder-diffraction/projects/qarr/data",
+        citation=(
+            "I. C. Madsen et al., J. Appl. Cryst. 34 (2001) 409-426, doi:10.1107/S0021889801007476"
+        ),
+        license_note=(
+            "External IUCr round-robin data; fetched from a commit-pinned public mirror. "
+            "COD-derived CIF headers identify their structural data as public domain/CC0."
+        ),
+        files=(
+            ExternalValidationFile(
+                "cpd-1h.prn",
+                "0c36af18d7a341f03f4d8f24972608791351c45c951c431dd93fb54eb8e56da3",
+                145_020,
+                (f"{_QARR_MIRROR}/cpd-1h.prn",),
+            ),
+            ExternalValidationFile(
+                "Al2O3.cif",
+                "bc8b07c4e27fdb9df562c7b72d181a05394df20274a56b7e1ef50f6ec2c85709",
+                3_288,
+                (f"{_QARR_MIRROR}/Al2O3.cif",),
+            ),
+            ExternalValidationFile(
+                "CaF2.cif",
+                "b55fd04a3e344f73d4ece983da412056d04874b8ada7dfd4ecb93118e7905cd9",
+                4_361,
+                (f"{_QARR_MIRROR}/CaF2.cif",),
+            ),
+            ExternalValidationFile(
+                "ZnO.cif",
+                "021db20c9bdabcfd63bc794367fae3536197425ca5826d63541b2417e47d3c1a",
+                2_142,
+                (f"{_QARR_MIRROR}/ZnO.cif",),
+            ),
+            ExternalValidationFile(
+                "cuka.instprm",
+                "aef315a10622fdb1afae5b264d43e7f9dcc053aba80aa3d9fa05067146922a08",
+                215,
+                (f"{_QARR_MIRROR}/cuka.instprm",),
+            ),
+        ),
+        purpose="holdout",
+        expected_status="failed",
+    ),
+    ValidationDataset(
+        dataset_id="nist-srm660c-lab6-xray",
+        title="NIST SRM 660c LaB6 line-position and line-shape certification scans",
+        source_url="https://catalog.data.gov/dataset/diffraction-data-for-srm-660c",
+        citation=(
+            "D. R. Black et al., Powder Diffraction 35 (2020) 17-22, doi:10.1017/S0885715620000068"
+        ),
+        license_note=(
+            "Public NIST certification data under the NIST open-data license; the original "
+            "archive is checksum-pinned and is not redistributed."
+        ),
+        files=(
+            ExternalValidationFile(
+                "srm_660c_cifs_20201029_081700.zip",
+                "92034d06498161db365420831fe35d91ec18bad4ed17385329a1761658da2c42",
+                1_719_632,
+                (f"{_NIST_SRM660C_SOURCE}/srm_660c_cifs_20201029_081700.zip",),
+            ),
+        ),
+        purpose="oracle_integrity",
+        expected_status="passed",
+    ),
+    ValidationDataset(
+        dataset_id="powgen-lab6-tof-calibration",
+        title="POWGEN NIST LaB6 time-of-flight calibration tutorial",
+        source_url=(
+            "https://github.com/AdvancedPhotonSource/GSAS-II-Tutorials/blob/"
+            "e2485148a3d7ee4757239b1ba40653f1f715bba5/TOF%20Calibration/"
+            "Calibration%20of%20a%20TOF%20powder%20diffractometer.htm"
+        ),
+        citation="Advanced Photon Source, GSAS-II TOF powder diffractometer calibration tutorial",
+        license_note=(
+            "External tutorial data fetched from the commit-pinned official "
+            "AdvancedPhotonSource/GSAS-II-Tutorials repository; not redistributed."
+        ),
+        files=(
+            ExternalValidationFile(
+                "PG3_17541.gsa",
+                "ff7a408451e75d23e828ab2bb35a061a53517ff3430331bffeed21fcbc87d69c",
+                539_682,
+                (f"{_POWGEN_TOF_SOURCE}/PG3_17541.gsa",),
+            ),
+            ExternalValidationFile(
+                "PGHR_60-2015A.prm",
+                "1a098c260555d27642ab0501708c5d9058c5836fb201dec5bc7ab9880cea1cb8",
+                7_295,
+                (f"{_POWGEN_TOF_SOURCE}/PGHR_60-2015A.prm",),
+            ),
+        ),
+        purpose="acceptance",
+        expected_status="passed",
     ),
 )
 

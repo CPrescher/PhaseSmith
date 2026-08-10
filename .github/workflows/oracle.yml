@@ -35,10 +35,22 @@ jobs:
           "$GSASII_PYTHON" -m venv --system-site-packages "$RUNNER_TEMP/rietveld-oracle-venv"
           "$RUNNER_TEMP/rietveld-oracle-venv/bin/python" -m pip install --upgrade pip
           "$RUNNER_TEMP/rietveld-oracle-venv/bin/python" -m pip install '.[test]'
+      - name: Fetch checksum-pinned real-data inputs
+        run: |
+          "$RUNNER_TEMP/rietveld-oracle-venv/bin/python" tools/fetch_validation_data.py \
+            aps-sucrose-11bmb \
+            ansto-echidna-lab6-cw-neutron \
+            gsasii-pbso4-cw \
+            iucr-qarr-1g \
+            iucr-qarr-1h \
+            powgen-lab6-tof-calibration \
+            nist-srm660c-lab6-xray
       - name: Execute live pinned comparisons
         run: |
           "$RUNNER_TEMP/rietveld-oracle-venv/bin/python" -m pytest -q \
-            -m external_oracle tests/test_external_oracle.py
+            -m external_oracle \
+            tests/test_external_oracle.py \
+            tests/test_real_data_oracle.py
       - name: Compare CW profile and derivative speed
         run: |
           "$RUNNER_TEMP/rietveld-oracle-venv/bin/python" benchmarks/compare_gsasii.py \
@@ -67,6 +79,7 @@ jobs:
             --gsas-root "$PHASESMITH_GSASII_ROOT" \
             --binary-dir "$PHASESMITH_GSASII_BINARY_DIR" \
             --data-directory validation/data/iucr-qarr-1g \
+            --sample 1g \
             --warmups 1 \
             --repetitions 3 \
             --json-output "$RUNNER_TEMP/gsasii-qarr-comparison.json" \

@@ -10,6 +10,8 @@
 //!
 //! - [`PatternRecord`] owns a strictly increasing `2θ` grid and aligned
 //!   observations, uncertainties, mask, and fixed background.
+//! - [`TofPatternRecord`] owns the corresponding explicitly microsecond-domain
+//!   time-of-flight record; the coordinate types cannot be interchanged.
 //! - [`StructuralPhaseRecord`] owns one crystal-structure phase and its provider
 //!   requirements.
 //! - [`HistogramRecord`] combines observed data, an experiment, and referenced
@@ -234,6 +236,88 @@ impl PatternRecord {
             return Err(DomainError::UnorderedGrid);
         }
         let sample_count = self.x_deg.len();
+        validate_optional_f64(
+            "observed_y",
+            self.observed_y.as_deref(),
+            sample_count,
+            false,
+        )?;
+        validate_optional_f64(
+            "uncertainty",
+            self.uncertainty.as_deref(),
+            sample_count,
+            true,
+        )?;
+        if self
+            .mask
+            .as_ref()
+            .is_some_and(|values| values.len() != sample_count)
+        {
+            return Err(DomainError::ArrayLengthMismatch { name: "mask" });
+        }
+        validate_f64("background_y", &self.background_y, sample_count, false)
+    }
+}
+
+/// Owned time-of-flight powder pattern with an explicitly microsecond coordinate axis.
+#[derive(Clone, Debug, PartialEq)]
+pub struct TofPatternRecord {
+    /// Strictly increasing time-of-flight grid in microseconds.
+    pub tof_us: Vec<f64>,
+    /// Optional observed intensity values.
+    pub observed_y: Option<Vec<f64>>,
+    /// Optional positive one-sigma uncertainties.
+    pub uncertainty: Option<Vec<f64>>,
+    /// Optional inclusion mask.
+    pub mask: Option<Vec<bool>>,
+    /// Supplied fixed background, always sample-aligned.
+    pub background_y: Vec<f64>,
+}
+
+impl TofPatternRecord {
+    /// Validate and own one TOF pattern without angle-domain conversion.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`DomainError`] for non-finite, unordered, or mismatched arrays.
+    pub fn new(
+        tof_us: Vec<f64>,
+        observed_y: Option<Vec<f64>>,
+        uncertainty: Option<Vec<f64>>,
+        mask: Option<Vec<bool>>,
+        background_y: Option<Vec<f64>>,
+    ) -> Result<Self, DomainError> {
+        let sample_count = tof_us.len();
+        let record = Self {
+            tof_us,
+            observed_y,
+            uncertainty,
+            mask,
+            background_y: background_y.unwrap_or_else(|| vec![0.0; sample_count]),
+        };
+        record.validate()?;
+        Ok(record)
+    }
+
+    /// Return the number of TOF samples.
+    #[must_use]
+    pub fn sample_count(&self) -> usize {
+        self.tof_us.len()
+    }
+
+    /// Revalidate all arrays after direct adapter-side construction.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`DomainError`] for non-finite, unordered, or mismatched arrays.
+    pub fn validate(&self) -> Result<(), DomainError> {
+        if self.tof_us.iter().any(|value| !value.is_finite()) {
+            return Err(DomainError::NonFiniteArray { name: "tof_us" });
+        }
+        if self.tof_us.windows(2).any(|pair| pair[1] <= pair[0]) {
+            return Err(DomainError::UnorderedGrid);
+        }
+        let sample_count = self.tof_us.len();
         validate_optional_f64(
             "observed_y",
             self.observed_y.as_deref(),

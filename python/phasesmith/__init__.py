@@ -6,7 +6,7 @@ https://phasesmith.readthedocs.io/en/latest/mathematics/.
 
 from importlib.metadata import PackageNotFoundError, version
 
-from . import background, integrations, persistence, refinement
+from . import background, integrations, persistence, profile_estimation, refinement
 from ._api import (
     PARAMETER_ORDER,
     TCH_PARAMETER_ORDER,
@@ -123,11 +123,21 @@ from .phase import (
     RietveldPhase,
     StructuralReflectionBatch,
 )
+from .profile_estimation import (
+    ProfileEstimationMode,
+    ProfileEstimationOptions,
+    ProfileEstimationResult,
+    ProfileEstimationStage,
+    estimate_effective_profile,
+    starting_profile_from_fwhm,
+)
 from .project import RietveldProject
 from .quantitative import (
     PhaseWeightFraction,
     QuantitativePhase,
+    QuantitativePhaseAnalysis,
     quantitative_phase_analysis,
+    quantitative_phase_analysis_with_covariance,
     weight_fractions_from_scale,
 )
 from .radiation import (
@@ -297,11 +307,16 @@ __all__ = [
     "PreparedReflectionGenerator",
     "PreparedStructuralPattern",
     "PreparedXrayNonResonant",
+    "ProfileEstimationMode",
+    "ProfileEstimationOptions",
+    "ProfileEstimationResult",
+    "ProfileEstimationStage",
     "ProfileResult",
     "ProgressCallback",
     "ProgressEvent",
     "ProviderDescriptor",
     "QuantitativePhase",
+    "QuantitativePhaseAnalysis",
     "RadiationProbe",
     "ReciprocalAngleGeometry",
     "ReciprocalMetric",
@@ -369,6 +384,7 @@ __all__ = [
     "calculate_structure_factor_values",
     "calculate_structure_factors",
     "cw_profile_parameters",
+    "estimate_effective_profile",
     "evaluate_intensity_correction",
     "evaluate_scattering_provider",
     "integrations",
@@ -378,11 +394,13 @@ __all__ = [
     "p1_parameter_names",
     "persistence",
     "profile",
+    "profile_estimation",
     "profile_fcj",
     "profile_tch",
     "profile_tch_from_gaussian_sigma",
     "profile_tof",
     "quantitative_phase_analysis",
+    "quantitative_phase_analysis_with_covariance",
     "read_cif",
     "read_powder_data",
     "reciprocal_angle_geometry",
@@ -392,6 +410,7 @@ __all__ = [
     "space_group_by_number",
     "space_group_by_symbol",
     "species_from_structure",
+    "starting_profile_from_fwhm",
     "structure_from_record",
     "structure_to_record",
     "tch_shape_from_fwhm",

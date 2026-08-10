@@ -13,6 +13,7 @@ publish = false
 
 [dependencies]
 nalgebra = "0.35"
+flate2 = { version = "1.1", default-features = false, features = ["rust_backend"] }
 phasesmith-core = { version = "0.1.0", path = "../phasesmith-core" }
 phasesmith-crystallography = { version = "0.1.0", path = "../phasesmith-crystallography" }
 phasesmith-engine = { version = "0.1.0", path = "../phasesmith-engine" }
@@ -23,6 +24,7 @@ phasesmith-workflows = { version = "0.1.0", path = "../phasesmith-workflows" }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = { version = "1.0", features = ["float_roundtrip"] }
 sha2 = "=0.10.9"
+zip = { version = "=5.1.1", default-features = false, features = ["deflate-flate2"] }
 
 [[bin]]
 name = "phasesmith-validation"

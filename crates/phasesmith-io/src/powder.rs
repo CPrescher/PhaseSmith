@@ -6,7 +6,7 @@ use std::fmt::{Display, Formatter};
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use phasesmith_model::{DomainError, PatternRecord};
+use phasesmith_model::{DomainError, PatternRecord, TofPatternRecord};
 
 type GsasBank = (Vec<String>, Vec<String>);
 type GsasBanks = BTreeMap<usize, GsasBank>;
@@ -68,6 +68,19 @@ pub struct PowderData {
     pub source_path: Option<PathBuf>,
     /// Selected GSAS bank, absent for columns.
     pub bank: Option<usize>,
+}
+
+/// One observed TOF powder dataset with an explicitly microsecond-domain axis.
+#[derive(Clone, Debug, PartialEq)]
+pub struct TofPowderData {
+    /// Validated bin-center TOF density pattern; it cannot be passed as a CW pattern.
+    pub pattern: TofPatternRecord,
+    /// Source path when read from a file.
+    pub source_path: Option<PathBuf>,
+    /// Selected positive GSAS bank.
+    pub bank: usize,
+    /// True when the selected bank declares logarithmic `SLOG` spacing.
+    pub logarithmic_grid: bool,
 }
 
 /// Native powder input failure with stable categories.
@@ -195,6 +208,134 @@ pub fn parse_powder_text(
     limits: PowderReadLimits,
 ) -> Result<PowderData, PowderIoError> {
     parse_powder_text_inner(text, format, bank, limits, None)
+}
+
+/// Read one bounded GSAS SLOG FXYE TOF bank as bin-center intensity densities.
+///
+/// GSAS SLOG FXYE rows are bin boundaries with Y and sigma multiplied by the
+/// following bin width. The final boundary is therefore not an output sample.
+///
+/// # Errors
+///
+/// Returns [`PowderIoError`] for filesystem, limit, syntax, bank, or domain errors.
+pub fn read_tof_powder_file(
+    path: impl AsRef<Path>,
+    bank: usize,
+    limits: PowderReadLimits,
+) -> Result<TofPowderData, PowderIoError> {
+    limits.validate()?;
+    if bank == 0 {
+        return Err(PowderIoError::InvalidBank);
+    }
+    let path = path.as_ref();
+    let size = fs::metadata(path).map_err(PowderIoError::Io)?.len();
+    if size > u64::try_from(limits.max_bytes).unwrap_or(u64::MAX) {
+        return Err(PowderIoError::ByteLimitExceeded {
+            actual: size,
+            maximum: limits.max_bytes,
+        });
+    }
+    let text = fs::read_to_string(path).map_err(PowderIoError::Io)?;
+    parse_tof_powder_text_inner(&text, bank, limits, Some(path.to_owned()))
+}
+
+/// Parse one bounded GSAS SLOG FXYE TOF bank as bin-center intensity densities.
+///
+/// # Errors
+///
+/// Returns [`PowderIoError`] for limit, syntax, bank, or domain errors.
+pub fn parse_tof_powder_text(
+    text: &str,
+    bank: usize,
+    limits: PowderReadLimits,
+) -> Result<TofPowderData, PowderIoError> {
+    parse_tof_powder_text_inner(text, bank, limits, None)
+}
+
+fn parse_tof_powder_text_inner(
+    text: &str,
+    bank: usize,
+    limits: PowderReadLimits,
+    source_path: Option<PathBuf>,
+) -> Result<TofPowderData, PowderIoError> {
+    limits.validate()?;
+    if bank == 0 {
+        return Err(PowderIoError::InvalidBank);
+    }
+    if text.len() > limits.max_bytes {
+        return Err(PowderIoError::ByteLimitExceeded {
+            actual: u64::try_from(text.len()).unwrap_or(u64::MAX),
+            maximum: limits.max_bytes,
+        });
+    }
+    let banks = gsas_banks(text.strip_prefix('\u{feff}').unwrap_or(text))?;
+    let (header, lines) = selected_bank(&banks, bank)?;
+    if header
+        .get(4)
+        .is_none_or(|value| !value.eq_ignore_ascii_case("SLOG"))
+        || header
+            .last()
+            .is_none_or(|value| !value.eq_ignore_ascii_case("FXYE"))
+    {
+        return Err(parse_error(0, "TOF input requires a GSAS SLOG FXYE bank"));
+    }
+    let declared_rows = header
+        .get(2)
+        .and_then(|value| value.parse::<usize>().ok())
+        .ok_or_else(|| parse_error(0, "invalid GSAS TOF bank dimensions"))?;
+    let rows = numeric_rows(&lines.join("\n"), Some(3), limits.max_rows)?;
+    if rows.len() != declared_rows {
+        return Err(parse_error(
+            0,
+            format!(
+                "GSAS TOF bank contains {} rows; expected {declared_rows}",
+                rows.len()
+            ),
+        ));
+    }
+    if rows.len() < 2 {
+        return Err(parse_error(
+            0,
+            "GSAS TOF SLOG FXYE requires at least two bin-boundary rows",
+        ));
+    }
+    let output_count = rows.len() - 1;
+    let mut tof_us = Vec::with_capacity(output_count);
+    let mut observed_y = Vec::with_capacity(output_count);
+    let mut uncertainty = Vec::with_capacity(output_count);
+    let mut mask = Vec::with_capacity(output_count);
+    for pair in rows.windows(2) {
+        let row = &pair[0];
+        let next = &pair[1];
+        let width = next[0] - row[0];
+        if !width.is_finite() || width <= 0.0 {
+            return Err(parse_error(
+                0,
+                "GSAS TOF bin boundaries must be finite and strictly increasing",
+            ));
+        }
+        let supplied = row[2];
+        if supplied < 0.0 {
+            return Err(parse_error(0, "GSAS TOF uncertainty must be nonnegative"));
+        }
+        tof_us.push(0.5 * (row[0] + next[0]));
+        observed_y.push(row[1] / width);
+        uncertainty.push(if supplied == 0.0 {
+            1.0
+        } else {
+            supplied / width
+        });
+        mask.push(supplied != 0.0 && row[1] != 0.0);
+    }
+    let mask = mask.iter().any(|included| !included).then_some(mask);
+    let pattern = TofPatternRecord::new(tof_us, Some(observed_y), Some(uncertainty), mask, None)
+        .map_err(PowderIoError::Domain)?;
+    Ok(TofPowderData {
+        pattern,
+        source_path,
+        bank,
+        logarithmic_grid: true,
+    })
 }
 
 fn parse_powder_text_inner(

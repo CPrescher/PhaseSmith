@@ -40,7 +40,8 @@ pub use cif::{
 };
 
 pub use powder::{
-    PowderData, PowderFormat, PowderIoError, PowderReadLimits, parse_powder_text, read_powder_file,
+    PowderData, PowderFormat, PowderIoError, PowderReadLimits, TofPowderData, parse_powder_text,
+    parse_tof_powder_text, read_powder_file, read_tof_powder_file,
 };
 pub use space_groups::{
     SPACE_GROUP_DATABASE_PROVENANCE, SpaceGroupDatabaseProvenance, SpaceGroupInfo,

@@ -100,7 +100,7 @@ from .sample import (
 from .scattering import NeutronNuclear, XrayFixedDispersion, XrayNonResonant
 from .structure import CrystalStructure, structure_from_record, structure_to_record
 
-FORMAT_VERSION: Final = 12
+FORMAT_VERSION: Final = 13
 MANIFEST_NAME: Final = "manifest.json"
 ARCHIVE_NAME: Final = "arrays.npz"
 Instrument = ConstantWavelengthInstrument | TofInstrument
@@ -144,6 +144,7 @@ class PersistenceBundle:
     calculation_options: CalculationOptions | None = None
     calculation_result: PatternCalculationResult | None = None
     parameters: ParameterSet | None = None
+    lebail_background: DifferentiableBackground | None = None
     lebail_options: LeBailOptions | None = None
     lebail_checkpoint: LeBailCheckpoint | None = None
     lebail_result: LeBailResult | None = None
@@ -193,6 +194,10 @@ class PersistenceBundle:
             raise TypeError("calculation_result must be PatternCalculationResult")
         if self.parameters is not None and not isinstance(self.parameters, ParameterSet):
             raise TypeError("parameters must be ParameterSet")
+        if self.lebail_background is not None and not isinstance(
+            self.lebail_background, DifferentiableBackground
+        ):
+            raise TypeError("lebail_background must implement DifferentiableBackground")
         if self.lebail_options is not None and not isinstance(self.lebail_options, LeBailOptions):
             raise TypeError("lebail_options must be LeBailOptions")
         try:
@@ -223,6 +228,7 @@ class PersistenceBundle:
             self.phases,
             self.parameters,
             self.constraints,
+            self.lebail_background,
         )
 
     def to_rietveld_input(self) -> RietveldInput:
@@ -1269,6 +1275,7 @@ def _checkpoint_record(
     return {
         "completed_iterations": checkpoint.completed_iterations,
         "instrument": _instrument_record(checkpoint.instrument),
+        "background": _background_record(checkpoint.background),
         "phases": [
             _phase_record(phase, arrays, f"{prefix}_phase_{index}", codecs)
             for index, phase in enumerate(checkpoint.phases)
@@ -1293,6 +1300,7 @@ def _checkpoint_from_record(
     return LeBailCheckpoint(
         int(record["completed_iterations"]),
         instrument,
+        _background_from_record(record.get("background")),
         tuple(_phase_from_record(phase, arrays, codecs) for phase in record["phases"]),
         np.asarray(arrays[record["intensities"]], dtype=np.float64),
         _parameters_from_record(record["parameters"]),
@@ -1408,6 +1416,7 @@ def _result_record(
     return {
         "calculation": _calculation_record(result.calculation, arrays, "result_calculation"),
         "instrument": _instrument_record(result.instrument),
+        "background": _background_record(result.background),
         "phases": [
             _phase_record(phase, arrays, f"result_phase_{index}", codecs)
             for index, phase in enumerate(result.phases)
@@ -1454,6 +1463,7 @@ def _result_from_record(
     return LeBailResult(
         _calculation_from_record(record["calculation"], arrays),
         instrument,
+        _background_from_record(record.get("background")),
         tuple(_phase_from_record(phase, arrays, codecs) for phase in record["phases"]),
         tuple(
             ReflectionIntensity(
@@ -1523,6 +1533,7 @@ def save_bundle(
             bundle.rietveld_checkpoint, writer, codecs
         ),
         "rietveld_background": _background_record(bundle.rietveld_background),
+        "lebail_background": _background_record(bundle.lebail_background),
         "calculation_options": (
             None
             if bundle.calculation_options is None
@@ -1601,7 +1612,7 @@ def load_bundle(
     if (
         not isinstance(version, int)
         or isinstance(version, bool)
-        or version not in (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, FORMAT_VERSION)
+        or version not in (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, FORMAT_VERSION)
     ):
         raise PersistenceError(f"unsupported persistence format {manifest.get('format_version')!r}")
     if manifest.get("archive", {}).get("file") != ARCHIVE_NAME:
@@ -1678,6 +1689,7 @@ def load_bundle(
             record.get("rietveld_checkpoint"), arrays, codecs
         ),
         rietveld_background=_background_from_record(record.get("rietveld_background")),
+        lebail_background=_background_from_record(record.get("lebail_background")),
         calculation_options=None if options is None else CalculationOptions(**options),
         calculation_result=(
             None

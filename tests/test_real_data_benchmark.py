@@ -27,7 +27,11 @@ def report(*, elapsed: float, measured: float = 0.125) -> RealDataValidationRepo
         sample_count=101,
         reflection_count=7,
         elapsed_seconds=elapsed,
-        checks=(ValidationCheck("residual", "passed", "stable", measured=measured),),
+        checks=(
+            ValidationCheck(
+                "residual", "passed", "stable", measured=measured, criterion="value <= 1"
+            ),
+        ),
         notes=("deterministic scientific note",),
     )
 

@@ -12,15 +12,33 @@ reading internal data.
 
 The external benchmark workers in `scripts/benchmark_cw_profile.py` and
 `scripts/benchmark_structural_pattern.py` use the same revision gate. The
-QARR worker in `scripts/benchmark_qarr.py` additionally runs one complete,
-staged real-data workflow and exposes explicit FCJ, sample-broadening, and
+QARR worker in `scripts/benchmark_qarr.py` additionally runs a complete,
+staged 1g or 1h real-data workflow and exposes explicit FCJ, sample-broadening, and
 displacement ablations. Its optional trace-mean anisotropic ablation is a small,
 revision-gated internal probe because that representation change is absent from
-the public scripting API. These workers are driven by the corresponding scripts
-in `benchmarks/`, import no PhaseSmith
+the public scripting API. `scripts/benchmark_real_lebail.py` runs the sucrose
+and Echidna constant-wavelength cases through temporary GSAS-II Le Bail
+projects; its exact-revision-gated `newLeBail` initialization is recorded as a
+private probe in each report because the public API does not expose it. The
+sucrose driver supplies the identical fixed Smooth Bruckner array to both
+methods, while the worker explicitly overrides the legacy `.prm` import with
+the matched symmetric U/V/W/X/Y and SH/L=0 starting state.
+`scripts/benchmark_powgen_tof.py` runs the real POWGEN LaB6 bank,
+exports its 18-column Le Bail reflection list and selected profile probes, and
+neutralizes sample broadening so the peak-only reconstruction matches the
+fixed-instrument PhaseSmith scope. GSAS-II uses a 16-term Chebyshev background;
+PhaseSmith uses a fixed Smooth Bruckner baseline plus a 16-term Chebyshev
+residual. Their Rwp and profile-correlation deltas are gated separately from
+the same-reflection reconstruction. These workers are driven by the
+corresponding scripts in `benchmarks/`, import no PhaseSmith
 module, and report numerically verified profile-only and controlled
 structure-to-profile comparisons. See `../docs/gsasii-performance.md` for their
 scope and limitations.
+
+The live real-data matrix covers sucrose, Echidna, QARR 1g, QARR 1h, POWGEN,
+and the paired PbSO4 X-ray/neutron workflow. NIST SRM 660c is deliberately different:
+the certified NIST values and released calculated profiles remain the primary
+oracle, so a GSAS-II refit cannot redefine that case's truth.
 
 To prepare an oracle checkout:
 
@@ -182,7 +200,8 @@ equivalent comparison command is:
 ```shell
 PHASESMITH_GSASII_ROOT=/path/to/pinned/GSAS-II \
 PHASESMITH_GSASII_BINARY_DIR=/path/to/compatible/GSASII-bin/platform-directory \
-/path/to/gsas/python -m pytest -q -m external_oracle tests/test_external_oracle.py
+/path/to/gsas/python -m pytest -q -m external_oracle \
+  tests/test_external_oracle.py tests/test_real_data_oracle.py
 ```
 
 Run the performance comparison from the release-built normal environment while
@@ -203,7 +222,21 @@ uv run python benchmarks/compare_gsasii_qarr.py --require-release \
   --gsas-python /path/to/gsas/python \
   --gsas-root /path/to/pinned/GSAS-II \
   --binary-dir /path/to/compatible/GSASII-bin/platform-directory \
+  --sample 1g \
   --data-directory validation/data/iucr-qarr-1g
+
+uv run python benchmarks/compare_gsasii_real_lebail.py --require-release \
+  --gsas-python /path/to/gsas/python \
+  --gsas-root /path/to/pinned/GSAS-II \
+  --binary-dir /path/to/compatible/GSASII-bin/platform-directory \
+  --case aps-sucrose-11bmb \
+  --data-directory validation/data/aps-sucrose-11bmb
+
+uv run python benchmarks/compare_gsasii_powgen_tof.py \
+  --gsas-python /path/to/gsas/python \
+  --gsas-root /path/to/pinned/GSAS-II \
+  --binary-dir /path/to/compatible/GSASII-bin/platform-directory \
+  --data-directory validation/data/powgen-lab6-tof-calibration
 ```
 
 GSAS-II is separately licensed and must be cited as requested by its authors.

@@ -20,6 +20,7 @@ import phasesmith
 from phasesmith.background import SmoothBrucknerBackground
 from phasesmith.io.powder import read_powder_data
 from phasesmith.validation import (
+    run_echidna_lab6_validation,
     run_sucrose_lebail_validation,
     verify_validation_dataset,
 )
@@ -32,6 +33,11 @@ CASES = {
         "rwp_check": "smoke_rwp",
         "maximum_rwp_delta": 0.005,
         "maximum_correlation_delta": 0.02,
+    },
+    "ansto-echidna-lab6-cw-neutron": {
+        "rwp_check": None,
+        "maximum_rwp_delta": 0.25,
+        "maximum_correlation_delta": 0.15,
     },
 }
 RWP_NOTE = re.compile(r"First-cycle Rwp=[0-9.eE+-]+; final Rwp=([0-9.eE+-]+)")
@@ -93,7 +99,11 @@ def phase_result(case_id: str, report: Any) -> dict[str, Any]:
 def run_phasesmith(
     case_id: str, data: Path, warmups: int, repetitions: int
 ) -> tuple[dict[str, Any], dict[str, Any]]:
-    runner = run_sucrose_lebail_validation
+    runner = (
+        run_sucrose_lebail_validation
+        if case_id == "aps-sucrose-11bmb"
+        else run_echidna_lab6_validation
+    )
     for _ in range(warmups):
         runner(data)
     reports = []

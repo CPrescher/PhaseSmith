@@ -12,7 +12,7 @@ use phasesmith_engine::{
 use phasesmith_model::{
     CapabilityReason, DomainError, ExperimentRecord, FixedWavelengthSpectrum, HistogramRecord,
     HostCapabilities, PatternRecord, ProjectRecord, ProviderRequirement, RadiationDefinition,
-    RadiationProbe, RecordId, StructuralPhaseRecord,
+    RadiationProbe, RecordId, StructuralPhaseRecord, TofPatternRecord,
 };
 
 fn id(value: &str) -> RecordId {
@@ -157,6 +157,30 @@ fn empty_project_is_valid_but_pattern_and_identity_errors_are_structured() {
     assert!(matches!(
         PatternRecord::new(vec![1.0, 1.0], None, None, None, None),
         Err(DomainError::UnorderedGrid)
+    ));
+}
+
+#[test]
+fn tof_pattern_is_typed_in_microseconds_and_validates_aligned_arrays() {
+    let pattern = TofPatternRecord::new(
+        vec![1_000.0, 1_001.5],
+        Some(vec![10.0, 12.0]),
+        Some(vec![2.0, 3.0]),
+        None,
+        None,
+    )
+    .unwrap();
+    assert_eq!(pattern.tof_us, [1_000.0, 1_001.5]);
+    assert_eq!(pattern.sample_count(), 2);
+    assert!(matches!(
+        TofPatternRecord::new(vec![1.0, 1.0], None, None, None, None),
+        Err(DomainError::UnorderedGrid)
+    ));
+    assert!(matches!(
+        TofPatternRecord::new(vec![1.0], None, Some(vec![0.0]), None, None),
+        Err(DomainError::NonPositiveArray {
+            name: "uncertainty"
+        })
     ));
 }
 

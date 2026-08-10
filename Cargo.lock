@@ -699,6 +699,7 @@ dependencies = [
 name = "phasesmith-validation"
 version = "0.1.0"
 dependencies = [
+ "flate2",
  "nalgebra",
  "phasesmith-core",
  "phasesmith-crystallography",
@@ -710,6 +711,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2",
+ "zip",
 ]
 
 [[package]]

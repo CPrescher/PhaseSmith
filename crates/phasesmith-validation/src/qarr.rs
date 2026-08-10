@@ -21,10 +21,11 @@ use phasesmith_io::{
 };
 use phasesmith_model::{FixedWavelengthSpectrum, PatternRecord, RecordId};
 use phasesmith_workflows::{
-    QuantitativePhase, RefinementLimits, RietveldCalculationOptions, RietveldCovarianceOptions,
-    RietveldInput, RietveldInstrumentParameter, RietveldParameterSelection, RietveldPhase,
+    BackgroundModel, ChebyshevBackground, QuantitativePhase, RefinementLimits,
+    RietveldCalculationOptions, RietveldCovarianceOptions, RietveldInput,
+    RietveldInstrumentParameter, RietveldParameterSelection, RietveldPhase,
     RietveldRefinementOptions, RietveldSamplePhysicsModel, RietveldStructuralSelection,
-    TerminationReason, quantitative_phase_analysis,
+    TerminationReason, quantitative_phase_analysis, quantitative_phase_analysis_with_covariance,
     refine_general_rietveld,
 };
 
@@ -32,11 +33,31 @@ use crate::{
     RealDataValidationReport, ValidationCheck, ValidationStatus, verify_validation_dataset,
 };
 
-const DATASET_ID: &str = "iucr-qarr-1g";
 const PHASES: [&str; 3] = ["Al2O3", "ZnO", "CaF2"];
-const EXPECTED_FRACTIONS: [f64; 3] = [0.3137, 0.3421, 0.3442];
 const QPA: [(f64, f64); 3] = [(6.0, 101.961_276), (2.0, 81.38), (4.0, 78.074_806)];
 const EXPECTED_EXPANDED: [usize; 3] = [30, 4, 12];
+
+#[derive(Clone, Copy)]
+struct QarrCase {
+    dataset_id: &'static str,
+    pattern_filename: &'static str,
+    sample_label: &'static str,
+    expected_fractions: [f64; 3],
+}
+
+const QARR_1G: QarrCase = QarrCase {
+    dataset_id: "iucr-qarr-1g",
+    pattern_filename: "cpd-1g.prn",
+    sample_label: "1g",
+    expected_fractions: [0.3137, 0.3421, 0.3442],
+};
+
+const QARR_1H: QarrCase = QarrCase {
+    dataset_id: "iucr-qarr-1h",
+    pattern_filename: "cpd-1h.prn",
+    sample_label: "1h",
+    expected_fractions: [0.3512, 0.3019, 0.3469],
+};
 
 /// Run the checksum-pinned three-phase QARR refinement entirely in Rust.
 ///
@@ -48,10 +69,30 @@ const EXPECTED_EXPANDED: [usize; 3] = [30, 4, 12];
 pub fn run_qarr_1g_validation(
     dataset_directory: &Path,
 ) -> Result<RealDataValidationReport, QarrValidationError> {
+    run_qarr_validation(dataset_directory, QARR_1G)
+}
+
+/// Run the independently weighed QARR 1h composition as a holdout workflow.
+///
+/// # Errors
+///
+/// Returns [`QarrValidationError`] for invalid/missing external data or native
+/// calculation/refinement failures.
+pub fn run_qarr_1h_validation(
+    dataset_directory: &Path,
+) -> Result<RealDataValidationReport, QarrValidationError> {
+    run_qarr_validation(dataset_directory, QARR_1H)
+}
+
+#[allow(clippy::too_many_lines)]
+fn run_qarr_validation(
+    dataset_directory: &Path,
+    case: QarrCase,
+) -> Result<RealDataValidationReport, QarrValidationError> {
     let started = Instant::now();
-    verify_validation_dataset(DATASET_ID, dataset_directory).map_err(qerr)?;
+    verify_validation_dataset(case.dataset_id, dataset_directory).map_err(qerr)?;
     let imported = read_powder_file(
-        dataset_directory.join("cpd-1g.prn"),
+        dataset_directory.join(case.pattern_filename),
         PowderFormat::Columns,
         1,
         PowderReadLimits::default(),
@@ -119,12 +160,21 @@ pub fn run_qarr_1g_validation(
             instrument_values.lam1,
         )?);
     }
-    let starting = RietveldInput::new_fixed_spectrum(
+    let residual_background = BackgroundModel::Chebyshev(
+        ChebyshevBackground::new(
+            "qarr-residual",
+            vec![0.0; 3],
+            [pattern.x_deg[0], pattern.x_deg[pattern.sample_count() - 1]],
+        )
+        .map_err(qerr)?,
+    );
+    let starting = RietveldInput::new_fixed_spectrum_with_background(
         pattern.clone(),
         instrument,
         spectrum.clone(),
         axial,
         position,
+        residual_background,
         phases,
     )
     .map_err(qerr)?;
@@ -145,11 +195,20 @@ pub fn run_qarr_1g_validation(
             RietveldInstrumentParameter::WDeg2,
             RietveldInstrumentParameter::ZeroShiftDeg,
         ],
-        false,
+        true,
         false,
     )
     .map_err(qerr)?;
-    let first = refine_stage(&input, &first_selection, 20, 800, 2, 0.2, execution.clone())?;
+    let first = refine_stage(
+        &input,
+        &first_selection,
+        8,
+        800,
+        2,
+        0.2,
+        false,
+        execution.clone(),
+    )?;
     let second_selection = RietveldParameterSelection::new(
         RietveldStructuralSelection {
             phase_scale: true,
@@ -168,6 +227,7 @@ pub fn run_qarr_1g_validation(
         1_500,
         3,
         0.15,
+        false,
         execution.clone(),
     )?;
     let polish_selection = RietveldParameterSelection::new(
@@ -180,8 +240,18 @@ pub fn run_qarr_1g_validation(
         false,
     )
     .map_err(qerr)?;
-    let result = refine_stage(&second.input, &polish_selection, 10, 200, 1, 1.0, execution)?;
+    let result = refine_stage(
+        &second.input,
+        &polish_selection,
+        10,
+        200,
+        1,
+        1.0,
+        true,
+        execution,
+    )?;
     build_report(
+        case,
         started.elapsed().as_secs_f64(),
         &input,
         &expanded_counts,
@@ -191,6 +261,7 @@ pub fn run_qarr_1g_validation(
     )
 }
 
+#[allow(clippy::too_many_arguments)]
 fn refine_stage(
     input: &RietveldInput,
     selection: &RietveldParameterSelection,
@@ -198,6 +269,7 @@ fn refine_stage(
     max_evaluations: usize,
     min_iterations: usize,
     max_step: f64,
+    covariance: bool,
     execution: ExecutionPolicy,
 ) -> Result<phasesmith_workflows::RietveldGeneralRefinementResult, QarrValidationError> {
     let options = RietveldRefinementOptions::new(
@@ -221,7 +293,7 @@ fn refine_stage(
         &[None, None, None],
         &[],
         &options,
-        RietveldCovarianceOptions::new(false, 64, 1.0 - 1.0e-10).map_err(qerr)?,
+        RietveldCovarianceOptions::new(covariance, 64, 1.0 - 1.0e-10).map_err(qerr)?,
         None,
         None,
     )
@@ -339,6 +411,7 @@ fn qarr_phase(
 
 #[allow(clippy::too_many_lines)]
 fn build_report(
+    case: QarrCase,
     elapsed_seconds: f64,
     starting: &RietveldInput,
     expanded_counts: &[usize],
@@ -387,9 +460,39 @@ fn build_report(
         })
         .collect::<Result<Vec<_>, _>>()?;
     let fractions = quantitative_phase_analysis(&quantitative).map_err(qerr)?;
+    let propagated = if let Some(covariance) = &result.covariance {
+        let ordered_scales = result.parameters.specs().len() == result.input.phases.len()
+            && result
+                .parameters
+                .specs()
+                .iter()
+                .zip(&result.input.phases)
+                .all(|(parameter, phase)| {
+                    parameter.key().module() == "phase"
+                        && parameter.key().owner_id() == phase.phase_id().as_str()
+                        && parameter.key().name() == "scale"
+                });
+        if ordered_scales && covariance.size == quantitative.len() {
+            Some(
+                quantitative_phase_analysis_with_covariance(&quantitative, &covariance.values)
+                    .map_err(qerr)?,
+            )
+        } else {
+            None
+        }
+    } else {
+        None
+    };
+    let maximum_fraction_standard_uncertainty = propagated.as_ref().and_then(|analysis| {
+        (0..analysis.phases.len())
+            .map(|index| analysis.covariance[index * analysis.phases.len() + index])
+            .try_fold(0.0_f64, |maximum, variance| {
+                (variance.is_finite() && variance >= 0.0).then_some(maximum.max(variance.sqrt()))
+            })
+    });
     let max_fraction_error = fractions
         .iter()
-        .zip(EXPECTED_FRACTIONS)
+        .zip(case.expected_fractions)
         .map(|(item, expected)| (item.weight_fraction - expected).abs())
         .fold(0.0_f64, f64::max);
     let safe = [first, second, result].iter().all(|stage| {
@@ -407,7 +510,10 @@ fn build_report(
             starting.pattern.sample_count() == 7_251
                 && starting.pattern.x_deg[0].to_bits() == 5.0_f64.to_bits()
                 && starting.pattern.x_deg.last().unwrap_or(&0.0).to_bits() == 150.0_f64.to_bits(),
-            "QARR 1g pattern spans the published 5-150 degree grid.",
+            &format!(
+                "QARR {} pattern spans the published 5-150 degree grid.",
+                case.sample_label
+            ),
             Some(count_as_f64(starting.pattern.sample_count())?),
             "7251 samples with endpoints 5 and 150 degrees",
         )?,
@@ -453,6 +559,13 @@ fn build_report(
             Some(max_fraction_error),
             "maximum absolute phase error <= 0.02",
         )?,
+        check(
+            "qpa_covariance",
+            maximum_fraction_standard_uncertainty.is_some(),
+            "The final scale-only covariance is identifiable and propagates analytically to finite phase-fraction uncertainties.",
+            maximum_fraction_standard_uncertainty,
+            "finite nonnegative propagated variance for every phase fraction",
+        )?,
     ];
     let fraction_note = fractions
         .iter()
@@ -460,7 +573,7 @@ fn build_report(
         .collect::<Vec<_>>()
         .join(", ");
     RealDataValidationReport::new(
-        DATASET_ID,
+        case.dataset_id,
         starting.pattern.sample_count(),
         Some(
             result
@@ -474,6 +587,12 @@ fn build_report(
         checks,
         vec![
             format!("Calculated crystalline weight fractions: {fraction_note}."),
+            maximum_fraction_standard_uncertainty.map_or_else(
+                || "Final scale covariance was not identifiable.".to_owned(),
+                |value| {
+                    format!("Maximum propagated phase-fraction standard uncertainty={value:.8}.")
+                },
+            ),
             stage_note("Stage 1", first),
             stage_note("Stage 2", second),
             stage_note("Stage 3 scale polish", result),

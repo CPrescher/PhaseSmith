@@ -81,6 +81,16 @@ independently callable. Pass an adapter as `lebail.refine(..., optimizer=adapter
 the solver receives the weighted linearized residual, analytical Jacobian, and
 physical-bound-aware scaled step limits.
 
+CW Le Bail accepts an optional `DifferentiableBackground` through
+`LeBailInput.with_refinable_background`. Its calculated background is always
+the supplied fixed array plus the analytical residual. Polynomial, Chebyshev,
+and fixed-knot models have coefficient-invariant bases, so their coefficients
+are eliminated by a deterministic weighted linear least-squares update after
+each intensity redistribution instead of competing in the nonlinear profile
+step. Their analytical basis remains available for covariance and
+finite-difference checks. Rietveld and TOF use the same additive fixed-plus-
+residual convention.
+
 Iteration and termination records are immutable. Every accepted profile step
 records typed parameter keys plus before, after, and scaled-change values.
 Checkpoints are sufficient for deterministic continuation; their non-pickle

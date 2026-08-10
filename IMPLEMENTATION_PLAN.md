@@ -1201,6 +1201,13 @@ Keep implementation units reviewable through these ordered changes:
 24. Python-free real-data validation crate and CLI, native fixed-spectrum
     Rietveld workflows/persistence, Rust QPA, Rust QARR/PbSO4 runners, and thin
     Python report adapters.
+25. Effective constant-wavelength starting-profile estimation from one
+    predominantly single-phase pattern, with fixed wavelength, optional bounded
+    nuisance lattice alignment, Le Bail independent intensities, and
+    conservative W/UVW/UVWXY model selection.
+26. Typed microsecond-domain fixed-instrument TOF Le Bail calculation and
+    nonnegative intensity extraction, followed by checksum-pinned POWGEN LaB6
+    real-pattern acceptance.
 
 Unit 23 is complete. The Rust workflow crate now owns stable shared/local
 packing, matrix-free joint products, a bounded constraint-aware summed solver,
@@ -1213,6 +1220,25 @@ reconstruct the same public report types from native JSON. Release-mode Rust
 tests cover deterministic QARR, both PbSO4 probes including the exact Cu K-alpha
 doublet, mixed-radiation joint products, and independent Python differential
 comparisons.
+
+Unit 25's first slice is complete. `phasesmith-workflows` owns the staged
+estimator and fixed-wavelength invariant; the Python facade delegates width
+fitting to that native implementation. Synthetic tests cover W recovery,
+automatic complexity rejection, masks, and wavelength preservation. Bundled
+calibrant CIFs, CeO2/LaB6 geometry calibration, in-situ Si separation,
+persistence, and GUI presentation are deliberately deferred until real
+representative data are available. The estimator is documented as an effective
+starting profile because it may absorb sample broadening. Real-pattern
+validation remains the exit condition for promoting those deferred features.
+
+Unit 26 is complete. `TofPatternRecord` remains non-interchangeable with the CW
+angle record; the workflow carries d-spacing reflection coordinates through the
+fused TOF value and derivative pass, applies masks and nonuniform-grid weights,
+and extracts nonnegative intensities without a Python dependency. The official
+POWGEN bank-2 type-3 coefficients are translated in the validation adapter and
+the 6,825-sample, 330-family LaB6 run passes calibration, derivative, coverage,
+profile-correlation, and intensity gates. Structural TOF Rietveld refinement is
+outside this fixed-instrument Le Bail slice.
 
 Do not combine adjacent items merely to reduce PR count; numerical review is
 easier when parameter conventions and tolerance changes remain isolated.

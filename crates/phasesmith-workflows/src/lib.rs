@@ -12,6 +12,8 @@
 //!   and composite models.
 //! - **Le Bail:** intensity extraction with optional profile/lattice
 //!   refinement, covariance, checkpoints, and dynamic reflection domains.
+//! - **TOF Le Bail:** typed microsecond-domain fixed-instrument calculation and
+//!   nonnegative intensity extraction with fused d/instrument derivatives.
 //! - **Rietveld:** calculation, prepared objective products, structural and
 //!   general refinement, staged recipes, and joint multi-histogram refinement.
 //! - **Quantitative analysis:** validated Hill–Howard phase fractions.
@@ -47,8 +49,9 @@ mod backgrounds;
 mod constraints;
 mod lattice;
 mod lebail;
-mod phase_scale_estimation;
 mod parameters;
+mod phase_scale_estimation;
+mod profile_estimation;
 mod quantitative;
 mod residuals;
 mod rietveld;
@@ -64,6 +67,7 @@ mod rietveld_recipe;
 mod rietveld_solver;
 mod runtime;
 mod sample_physics;
+mod tof_lebail;
 
 pub use backgrounds::{
     AmorphousBackground, AmorphousPeak, BackgroundBasis, BackgroundError, BackgroundModel,
@@ -88,14 +92,22 @@ pub use lebail::{
     lebail_instrument_parameter_key, lebail_lattice_parameter_key, lebail_phase_scale_key,
     lebail_reflection_position_key, refine_lebail, refine_lebail_with_runtime,
 };
+pub use parameters::{ParameterBounds, ParameterError, ParameterKey, ParameterSet, ParameterSpec};
 pub use phase_scale_estimation::{
     PhaseScaleEstimationError, PhaseScaleEstimationResult, estimate_initial_phase_scales,
 };
-pub use parameters::{ParameterBounds, ParameterError, ParameterKey, ParameterSet, ParameterSpec};
-pub use quantitative::{
-    PhaseWeightFraction, QuantitativeError, QuantitativePhase, quantitative_phase_analysis,
+pub use profile_estimation::{
+    ProfileEstimationError, ProfileEstimationInput, ProfileEstimationMode,
+    ProfileEstimationOptions, ProfileEstimationResult, ProfileEstimationStage,
+    ProfileEstimationStageKind, estimate_effective_profile, starting_profile_from_fwhm,
 };
-pub use residuals::{ResidualError, ResidualEvaluation, ResidualOptions, evaluate_residuals};
+pub use quantitative::{
+    PhaseWeightFraction, QuantitativeError, QuantitativePhase, QuantitativePhaseAnalysis,
+    quantitative_phase_analysis, quantitative_phase_analysis_with_covariance,
+};
+pub use residuals::{
+    ResidualError, ResidualEvaluation, ResidualOptions, evaluate_residuals, evaluate_tof_residuals,
+};
 pub use rietveld::{
     RietveldCalculation, RietveldCalculationOptions, RietveldError, RietveldInput, RietveldPhase,
     RietveldPhaseCalculation, RietveldTopologyChange, calculate_rietveld_pattern,
@@ -147,4 +159,9 @@ pub use runtime::{
 };
 pub use sample_physics::{
     EvaluatedSamplePhysics, RietveldSamplePhysicsModel, SamplePhysicsError, SamplePhysicsParameter,
+};
+pub use tof_lebail::{
+    TofChebyshevBackground, TofChebyshevBasis, TofLeBailCalculation, TofLeBailError,
+    TofLeBailInput, TofLeBailIterationRecord, TofLeBailOptions, TofLeBailPhase, TofLeBailResult,
+    TofReflectionIntensity, calculate_tof_lebail_pattern, refine_tof_lebail,
 };

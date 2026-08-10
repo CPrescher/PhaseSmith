@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 from pathlib import Path
-from types import ModuleType
+from types import ModuleType, SimpleNamespace
 
 import numpy as np
 import pytest
@@ -21,6 +21,8 @@ def load_script(name: str, path: str) -> ModuleType:
 
 
 LEBAIL = load_script("compare_gsasii_real_lebail", "benchmarks/compare_gsasii_real_lebail.py")
+QARR = load_script("compare_gsasii_qarr_contract", "benchmarks/compare_gsasii_qarr.py")
+PBSO4 = load_script("compare_gsasii_pbso4_contract", "benchmarks/compare_gsasii_pbso4.py")
 
 
 def test_real_lebail_parity_contract_gates_counts_rwp_and_correlation() -> None:
@@ -29,22 +31,22 @@ def test_real_lebail_parity_contract_gates_counts_rwp_and_correlation() -> None:
     phase = {
         "sample_count": 2_111,
         "reflection_count": 13,
-        "poisson_rwp": 0.400,
+        "poisson_rwp": 0.40,
         "profile_correlation": 0.91,
     }
     gsas = {
         "sample_count": 2_111,
         "reflection_count": 13,
-        "poisson_rwp": 0.398,
-        "profile_correlation": 0.92,
+        "poisson_rwp": 0.30,
+        "profile_correlation": 0.96,
     }
-    comparison = LEBAIL.compare_scientific_results("aps-sucrose-11bmb", phase, gsas)
+    comparison = LEBAIL.compare_scientific_results("ansto-echidna-lab6-cw-neutron", phase, gsas)
     assert comparison["status"] == "passed"
     assert all(check["passed"] for check in comparison["checks"].values())
 
     with pytest.raises(RuntimeError, match="sample counts"):
         LEBAIL.compare_scientific_results(
-            "aps-sucrose-11bmb", phase, gsas | {"sample_count": 2_110}
+            "ansto-echidna-lab6-cw-neutron", phase, gsas | {"sample_count": 2_110}
         )
     drift = LEBAIL.compare_scientific_results(
         "aps-sucrose-11bmb",
@@ -69,8 +71,98 @@ def test_sucrose_oracle_background_uses_the_full_identical_grid(tmp_path: Path) 
     assert np.all(prepared[selected, 1] >= 0.0)
 
 
+def test_qarr_parity_contract_accepts_reviewed_metrics_and_rejects_drift() -> None:
+    phase = {
+        "sample_count": 7_251,
+        "reflection_count": 110,
+        "weight_fractions": {"Al2O3": 0.31, "ZnO": 0.34, "CaF2": 0.35},
+        "poisson_rwp": 0.20,
+        "unit_weight_rwp": 0.13,
+        "profile_correlation": 0.99,
+    }
+    gsas = {
+        "sample_count": 7_251,
+        "reflection_count": 110,
+        "weight_fractions": {"Al2O3": 0.315, "ZnO": 0.338, "CaF2": 0.347},
+        "poisson_rwp": 0.19,
+        "unit_weight_rwp": 0.14,
+        "profile_correlation": 0.995,
+    }
+    comparison = QARR.compare_scientific_results(phase, gsas)
+    assert all(check["passed"] for check in comparison["checks"].values())
+
+    drifted = gsas | {"weight_fractions": {"Al2O3": 0.40, "ZnO": 0.30, "CaF2": 0.30}}
+    drift = QARR.compare_scientific_results(phase, drifted)
+    assert drift["status"] == "failed"
+    assert "maximum_phase_fraction_delta" in drift["failed_checks"]
+
+
+def test_pbso4_parity_contract_keeps_probe_specific_limits() -> None:
+    phase = {
+        "xray": {
+            "sample_count": 5_697,
+            "poisson_rwp": 0.103,
+            "unit_weight_rwp": 0.087,
+            "profile_correlation": 0.996,
+            "cell_angstrom": {"a": 8.48, "b": 5.398, "c": 6.958},
+        },
+        "neutron": {
+            "sample_count": 2_681,
+            "poisson_rwp": 0.042,
+            "unit_weight_rwp": 0.045,
+            "profile_correlation": 0.997,
+            "cell_angstrom": {"a": 8.470, "b": 5.392, "c": 6.951},
+        },
+    }
+    gsas = {
+        "xray": {
+            "sample_count": 5_697,
+            "poisson_rwp": 0.101,
+            "unit_weight_rwp": 0.085,
+            "profile_correlation": 0.9965,
+        },
+        "neutron": {
+            "sample_count": 2_681,
+            "poisson_rwp": 0.040,
+            "unit_weight_rwp": 0.043,
+            "profile_correlation": 0.996,
+        },
+        "cell_angstrom": {"a": 8.474, "b": 5.394, "c": 6.954},
+    }
+    comparison = PBSO4.compare_scientific_results(phase, gsas)
+    assert comparison["status"] == "passed"
+
+
+def test_pbso4_comparison_preserves_failed_native_status_for_oracle_diagnosis() -> None:
+    checks = [
+        SimpleNamespace(check_id="poisson_rwp", measured=0.103),
+        SimpleNamespace(check_id="unit_weight_rwp", measured=0.087),
+        SimpleNamespace(check_id="profile_correlation", measured=0.996),
+        SimpleNamespace(check_id="reference_cell_relative_error", measured=0.0),
+    ]
+    report = SimpleNamespace(
+        status="failed",
+        sample_count=5_697,
+        reflection_count=383,
+        checks=checks,
+        notes=[
+            "Final cell a=8.48000000, b=5.39800000, c=6.95800000 angstrom.",
+            "Stage final_polish: termination=repeated_rejections.",
+        ],
+    )
+
+    result = PBSO4.phase_result(report, "xray")
+
+    assert result["validation_status"] == "failed"
+    assert result["termination"].startswith("Stage final_polish:")
+
+
 def test_oracle_workers_never_import_the_normal_phasesmith_package() -> None:
-    workers = ("oracle/scripts/benchmark_real_lebail.py",)
+    workers = (
+        "oracle/scripts/benchmark_real_lebail.py",
+        "oracle/scripts/benchmark_qarr.py",
+        "oracle/scripts/benchmark_pbso4.py",
+    )
     for worker in workers:
         source = (REPOSITORY_ROOT / worker).read_text(encoding="utf-8")
         assert "import phasesmith" not in source

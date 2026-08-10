@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compare complete native QARR workflows with pinned external GSAS-II."""
+"""Compare complete native QARR 1g/1h workflows with pinned external GSAS-II."""
 
 from __future__ import annotations
 
@@ -17,7 +17,11 @@ from typing import Any
 
 import numpy as np
 import phasesmith
-from phasesmith.validation import run_qarr_1g_validation, verify_validation_dataset
+from phasesmith.validation import (
+    run_qarr_1g_validation,
+    run_qarr_1h_validation,
+    verify_validation_dataset,
+)
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 WORKER = REPOSITORY_ROOT / "oracle" / "scripts" / "benchmark_qarr.py"
@@ -43,8 +47,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--data-directory",
         type=Path,
-        default=REPOSITORY_ROOT / "validation" / "data" / "iucr-qarr-1g",
     )
+    parser.add_argument("--sample", choices=("1g", "1h"), default="1g")
     parser.add_argument(
         "--warmups",
         type=int,
@@ -104,9 +108,11 @@ def check_measurement(report: Any, check_id: str) -> float:
     return float(matches[0])
 
 
-def phase_result(report: Any) -> dict[str, Any]:
-    if report.status != "passed":
-        raise RuntimeError(f"PhaseSmith QARR validation returned {report.status!r}")
+def phase_result(report: Any, expected_status: str) -> dict[str, Any]:
+    if report.status != expected_status:
+        raise RuntimeError(
+            f"PhaseSmith QARR validation returned {report.status!r}, expected {expected_status!r}"
+        )
     fractions = phase_fractions(report)
     return {
         "sample_count": report.sample_count,
@@ -116,6 +122,7 @@ def phase_result(report: Any) -> dict[str, Any]:
         "poisson_rwp": check_measurement(report, "poisson_rwp"),
         "unit_weight_rwp": check_measurement(report, "unit_weight_rwp"),
         "profile_correlation": check_measurement(report, "profile_correlation"),
+        "validation_status": report.status,
         "termination_notes": [note for note in report.notes if note.startswith("Stage ")],
         "approximations": list(report.notes[5:]),
     }
@@ -126,17 +133,26 @@ def run_phasesmith(
     warmups: int,
     repetitions: int,
     execution: phasesmith.ExecutionPolicy,
+    sample: str,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
+    expected_status = "passed" if sample == "1g" else "failed"
+    runner = run_qarr_1g_validation if sample == "1g" else run_qarr_1h_validation
+
+    def run_once() -> Any:
+        if sample == "1g":
+            return runner(data_directory, execution=execution)
+        return runner(data_directory)
+
     for _ in range(warmups):
-        run_qarr_1g_validation(data_directory, execution=execution)
+        run_once()
     reports = []
     wall_ms = []
     for _ in range(repetitions):
         started = time.perf_counter_ns()
-        report = run_qarr_1g_validation(data_directory, execution=execution)
+        report = run_once()
         wall_ms.append((time.perf_counter_ns() - started) / 1.0e6)
         reports.append(report)
-    results = [phase_result(report) for report in reports]
+    results = [phase_result(report, expected_status) for report in reports]
     if any(result != results[0] for result in results[1:]):
         raise RuntimeError("PhaseSmith QARR repetitions are not deterministic")
     return results[-1], {
@@ -162,6 +178,8 @@ def run_gsas_once(
         str(report_path),
         "--cycles",
         str(arguments.gsas_cycles),
+        "--sample",
+        arguments.sample,
         "--fcj",
         arguments.gsas_fcj,
         "--sample-broadening",
@@ -190,7 +208,7 @@ def run_gsas_once(
     return json.loads(report_path.read_text(encoding="utf-8")), process_ms
 
 
-def validate_gsas_reports(reports: list[dict[str, Any]]) -> None:
+def validate_gsas_reports(reports: list[dict[str, Any]], sample: str = "1g") -> None:
     stable_keys = (
         "recipe",
         "input_sha256",
@@ -203,7 +221,7 @@ def validate_gsas_reports(reports: list[dict[str, Any]]) -> None:
             report.get("schema_version") != 1
             or report.get("implementation") != "GSAS-II"
             or report.get("revision") != PINNED_REVISION
-            or report.get("scope") != SCOPE
+            or report.get("scope") != f"iucr_qarr_{sample}_native_workflow"
         ):
             raise RuntimeError("GSAS-II QARR worker returned invalid provenance")
     for report in reports[1:]:
@@ -246,9 +264,12 @@ def compare_scientific_results(
         for name, measurement in measurements.items()
     }
     failed = [name for name, check in checks.items() if not check["passed"]]
-    if failed:
-        raise RuntimeError(f"QARR cross-implementation validation failed: {', '.join(failed)}")
-    return {"phase_fraction_deltas": phase_deltas, "checks": checks}
+    return {
+        "status": "passed" if not failed else "failed",
+        "failed_checks": failed,
+        "phase_fraction_deltas": phase_deltas,
+        "checks": checks,
+    }
 
 
 def run_gsas(
@@ -266,7 +287,7 @@ def run_gsas(
         )
         reports.append(report)
         process_ms.append(elapsed)
-    validate_gsas_reports(reports)
+    validate_gsas_reports(reports, arguments.sample)
     stage_names = tuple(reports[-1]["timing_ms"]["stages"])
     timing = {
         "import": timing_summary([report["import_ms"] for report in reports]),
@@ -306,7 +327,14 @@ def main() -> None:
         )
     if arguments.require_release and phasesmith._core.BUILD_MODE != "release":
         raise RuntimeError(f"release extension required, imported {phasesmith._core.BUILD_MODE!r}")
-    verify_validation_dataset("iucr-qarr-1g", arguments.data_directory)
+    dataset_id = f"iucr-qarr-{arguments.sample}"
+    data_directory = (
+        REPOSITORY_ROOT / "validation" / "data" / dataset_id
+        if arguments.data_directory is None
+        else arguments.data_directory
+    )
+    arguments.data_directory = data_directory
+    verify_validation_dataset(dataset_id, data_directory)
 
     if arguments.phasesmith_threads < 0:
         raise ValueError("--phasesmith-threads must be non-negative")
@@ -314,10 +342,11 @@ def main() -> None:
         threads=None if arguments.phasesmith_threads == 0 else arguments.phasesmith_threads
     )
     phase_result_record, phase_timing = run_phasesmith(
-        arguments.data_directory,
+        data_directory,
         arguments.warmups,
         arguments.repetitions,
         execution,
+        arguments.sample,
     )
     with tempfile.TemporaryDirectory(prefix="phasesmith-gsasii-qarr-comparison-") as name:
         gsas_result, gsas_timing, gsas_metadata = run_gsas(arguments, Path(name))
@@ -328,10 +357,11 @@ def main() -> None:
     )
     report = {
         "schema_version": 1,
-        "scope": SCOPE,
+        "scope": f"iucr_qarr_{arguments.sample}_native_workflow",
         "comparison_kind": "native_workflows_not_matched_parameterizations",
         "workload": {
-            "dataset_id": "iucr-qarr-1g",
+            "dataset_id": dataset_id,
+            "expected_phasesmith_status": "passed" if arguments.sample == "1g" else "failed",
             "samples": phase_result_record["sample_count"],
             "phases": list(PHASE_NAMES),
             "warmups": arguments.warmups,
@@ -370,7 +400,7 @@ def main() -> None:
             "This is a complete native-workflow comparison, not a same-kernel benchmark.",
         ],
     }
-    print(f"scope={SCOPE} repetitions={arguments.repetitions}")
+    print(f"scope=iucr_qarr_{arguments.sample}_native_workflow repetitions={arguments.repetitions}")
     for name in PHASE_NAMES:
         print(
             f"phase={name} phasesmith={100 * phase_result_record['weight_fractions'][name]:.3f}% "

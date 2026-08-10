@@ -7,6 +7,22 @@ use std::path::{Component, Path, PathBuf};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
+use crate::ValidationStatus;
+
+/// Scientific role assigned to one external dataset in the validation matrix.
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ValidationPurpose {
+    /// Accepted complete `PhaseSmith` workflow.
+    Acceptance,
+    /// Integrity check for an independently released reference result.
+    OracleIntegrity,
+    /// Blind transferability case whose reviewed outcome may be a failure.
+    Holdout,
+    /// Dataset that exposes a deliberately unsupported capability boundary.
+    Capability,
+}
+
 /// One externally hosted file with immutable retrieval provenance.
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct ExternalValidationFile {
@@ -76,6 +92,10 @@ pub struct ValidationDataset {
     pub license_note: String,
     /// Ordered required file manifests.
     pub files: Vec<ExternalValidationFile>,
+    /// Scientific role of this dataset in the validation matrix.
+    pub purpose: ValidationPurpose,
+    /// Reviewed outcome expected from the registered runner.
+    pub expected_status: ValidationStatus,
 }
 
 impl ValidationDataset {
@@ -128,7 +148,48 @@ impl ValidationDataset {
 /// Return all built-in validation manifests in stable identifier order.
 #[must_use]
 pub fn validation_datasets() -> Vec<ValidationDataset> {
-    vec![sucrose_dataset(), pbso4_dataset(), qarr_dataset()]
+    vec![
+        echidna_dataset(),
+        sucrose_dataset(),
+        pbso4_dataset(),
+        qarr_dataset(),
+        qarr_1h_dataset(),
+        nist_srm660c_dataset(),
+        powgen_tof_dataset(),
+    ]
+}
+
+fn echidna_dataset() -> ValidationDataset {
+    let source = "https://zenodo.org/records/14286343/files";
+    dataset(
+        "ansto-echidna-lab6-cw-neutron",
+        "ANSTO Echidna LaB6 constant-wavelength neutron calibration pattern",
+        "https://doi.org/10.5281/zenodo.14286343",
+        concat!(
+            "M. Avdeev and J. R. Hester, Echidna Ge(115) monochromator calibration data, ",
+            "doi:10.5281/zenodo.14286343"
+        ),
+        concat!(
+            "External ANSTO calibration data from an immutable Zenodo record; the record ",
+            "declares Creative Commons Attribution 4.0. Files are not redistributed."
+        ),
+        ValidationPurpose::Acceptance,
+        ValidationStatus::Passed,
+        vec![
+            file(
+                "ECH0034258_LaB6.xyd",
+                "09950aaf3596518a40b2c5173ffdfd870043f55dcd3390fb83dc9f64e348e115",
+                112_390,
+                format!("{source}/ECH0034258_LaB6.xyd?download=1"),
+            ),
+            file(
+                "ECH0034258_LaB6.cif",
+                "0fa02945683ea39d56dfb81d0f99de629e4e336abab85c6d92b3689b42d130d1",
+                112_390,
+                format!("{source}/ECH0034258_LaB6.cif?download=1"),
+            ),
+        ],
+    )
 }
 
 fn sucrose_dataset() -> ValidationDataset {
@@ -148,6 +209,8 @@ fn sucrose_dataset() -> ValidationDataset {
             "External tutorial data fetched from the commit-pinned official ",
             "AdvancedPhotonSource/GSAS-II-Tutorials repository; not redistributed."
         ),
+        ValidationPurpose::Acceptance,
+        ValidationStatus::Passed,
         vec![
             file(
                 "11bmb_8716.fxye",
@@ -183,6 +246,8 @@ fn pbso4_dataset() -> ValidationDataset {
             "External tutorial data fetched from the commit-pinned official ",
             "AdvancedPhotonSource/GSAS-II-Tutorials repository; not redistributed."
         ),
+        ValidationPurpose::Acceptance,
+        ValidationStatus::Passed,
         vec![
             file(
                 "PBSO4.XRA",
@@ -232,6 +297,8 @@ fn qarr_dataset() -> ValidationDataset {
             "External IUCr round-robin data; fetched from a commit-pinned public mirror. ",
             "COD-derived CIF headers identify their structural data as public domain/CC0."
         ),
+        ValidationPurpose::Acceptance,
+        ValidationStatus::Passed,
         vec![
             file(
                 "cpd-1g.prn",
@@ -262,6 +329,119 @@ fn qarr_dataset() -> ValidationDataset {
                 "aef315a10622fdb1afae5b264d43e7f9dcc053aba80aa3d9fa05067146922a08",
                 215,
                 format!("{qarr_mirror}/cuka.instprm"),
+            ),
+        ],
+    )
+}
+
+fn qarr_1h_dataset() -> ValidationDataset {
+    let qarr_mirror = concat!(
+        "https://raw.githubusercontent.com/EdgarGF93/gsas_tutorial/",
+        "78c18d8c2c058067b92e1a8ecb8fa81d32980008"
+    );
+    dataset(
+        "iucr-qarr-1h",
+        "IUCr Quantitative Phase Analysis Round Robin sample 1h holdout",
+        "https://www.iucr.org/resources/commissions/powder-diffraction/projects/qarr/data",
+        "I. C. Madsen et al., J. Appl. Cryst. 34 (2001) 409-426, doi:10.1107/S0021889801007476",
+        concat!(
+            "External IUCr round-robin data; fetched from a commit-pinned public mirror. ",
+            "COD-derived CIF headers identify their structural data as public domain/CC0."
+        ),
+        ValidationPurpose::Holdout,
+        ValidationStatus::Failed,
+        vec![
+            file(
+                "cpd-1h.prn",
+                "0c36af18d7a341f03f4d8f24972608791351c45c951c431dd93fb54eb8e56da3",
+                145_020,
+                format!("{qarr_mirror}/cpd-1h.prn"),
+            ),
+            file(
+                "Al2O3.cif",
+                "bc8b07c4e27fdb9df562c7b72d181a05394df20274a56b7e1ef50f6ec2c85709",
+                3_288,
+                format!("{qarr_mirror}/Al2O3.cif"),
+            ),
+            file(
+                "CaF2.cif",
+                "b55fd04a3e344f73d4ece983da412056d04874b8ada7dfd4ecb93118e7905cd9",
+                4_361,
+                format!("{qarr_mirror}/CaF2.cif"),
+            ),
+            file(
+                "ZnO.cif",
+                "021db20c9bdabcfd63bc794367fae3536197425ca5826d63541b2417e47d3c1a",
+                2_142,
+                format!("{qarr_mirror}/ZnO.cif"),
+            ),
+            file(
+                "cuka.instprm",
+                "aef315a10622fdb1afae5b264d43e7f9dcc053aba80aa3d9fa05067146922a08",
+                215,
+                format!("{qarr_mirror}/cuka.instprm"),
+            ),
+        ],
+    )
+}
+
+fn nist_srm660c_dataset() -> ValidationDataset {
+    let source = "https://data.nist.gov/od/ds/mds2-2315";
+    dataset(
+        "nist-srm660c-lab6-xray",
+        "NIST SRM 660c LaB6 line-position and line-shape certification scans",
+        "https://catalog.data.gov/dataset/diffraction-data-for-srm-660c",
+        concat!(
+            "D. R. Black et al., Powder Diffraction 35 (2020) 17-22, ",
+            "doi:10.1017/S0885715620000068"
+        ),
+        concat!(
+            "Public NIST certification data under the NIST open-data license; the original ",
+            "archive is checksum-pinned and is not redistributed."
+        ),
+        ValidationPurpose::OracleIntegrity,
+        ValidationStatus::Passed,
+        vec![file(
+            "srm_660c_cifs_20201029_081700.zip",
+            "92034d06498161db365420831fe35d91ec18bad4ed17385329a1761658da2c42",
+            1_719_632,
+            format!("{source}/srm_660c_cifs_20201029_081700.zip"),
+        )],
+    )
+}
+
+fn powgen_tof_dataset() -> ValidationDataset {
+    let source = concat!(
+        "https://raw.githubusercontent.com/AdvancedPhotonSource/GSAS-II-Tutorials/",
+        "e2485148a3d7ee4757239b1ba40653f1f715bba5/TOF%20Calibration/data"
+    );
+    dataset(
+        "powgen-lab6-tof-calibration",
+        "POWGEN NIST LaB6 time-of-flight calibration tutorial",
+        concat!(
+            "https://github.com/AdvancedPhotonSource/GSAS-II-Tutorials/blob/",
+            "e2485148a3d7ee4757239b1ba40653f1f715bba5/TOF%20Calibration/",
+            "Calibration%20of%20a%20TOF%20powder%20diffractometer.htm"
+        ),
+        "Advanced Photon Source, GSAS-II TOF powder diffractometer calibration tutorial",
+        concat!(
+            "External tutorial data fetched from the commit-pinned official ",
+            "AdvancedPhotonSource/GSAS-II-Tutorials repository; not redistributed."
+        ),
+        ValidationPurpose::Acceptance,
+        ValidationStatus::Passed,
+        vec![
+            file(
+                "PG3_17541.gsa",
+                "ff7a408451e75d23e828ab2bb35a061a53517ff3430331bffeed21fcbc87d69c",
+                539_682,
+                format!("{source}/PG3_17541.gsa"),
+            ),
+            file(
+                "PGHR_60-2015A.prm",
+                "1a098c260555d27642ab0501708c5d9058c5836fb201dec5bc7ab9880cea1cb8",
+                7_295,
+                format!("{source}/PGHR_60-2015A.prm"),
             ),
         ],
     )
@@ -345,12 +525,15 @@ pub fn verify_validation_dataset(
     Ok(paths)
 }
 
+#[allow(clippy::too_many_arguments)]
 fn dataset(
     dataset_id: &str,
     title: &str,
     source_url: &str,
     citation: &str,
     license_note: &str,
+    purpose: ValidationPurpose,
+    expected_status: ValidationStatus,
     files: Vec<ExternalValidationFile>,
 ) -> ValidationDataset {
     ValidationDataset {
@@ -360,6 +543,8 @@ fn dataset(
         citation: citation.to_owned(),
         license_note: license_note.to_owned(),
         files,
+        purpose,
+        expected_status,
     }
 }
 

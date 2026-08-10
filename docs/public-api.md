@@ -79,14 +79,20 @@ phasesmith.refinement
 phasesmith.refinement.lebail
   First-class Le Bail intensity extraction and diagnostics.
 
+phasesmith.profile_estimation  [implemented]
+  Staged effective U/V/W/X/Y starting-profile estimation from one dominant
+  CIF-backed phase. Wavelength remains fixed; optional bounded lattice
+  alignment is a nuisance step, and conservative diagnostics control model
+  complexity.
+
 phasesmith.refinement.rietveld
   Implemented monochromatic structure-factor refinement orchestration. It
   consumes the same profile interface as Le Bail.
 
 phasesmith.quantitative  [implemented]
   Hill--Howard conversion of compatible phase scales into labeled normalized
-  crystalline weight fractions. This interpretation remains separate from the
-  refinement solver.
+  crystalline weight fractions, with optional analytical scale-covariance
+  propagation. This interpretation remains separate from the refinement solver.
 
 phasesmith.validation  [implemented]
   Explicit checksum-pinned external dataset retrieval and reproducible
@@ -177,6 +183,7 @@ phasesmith.background.SmoothBrucknerBackground
 phasesmith.background.BackgroundSubtractionResult
 phasesmith.quantitative.weight_fractions_from_scale
 phasesmith.quantitative.quantitative_phase_analysis
+phasesmith.quantitative.quantitative_phase_analysis_with_covariance
 phasesmith.pattern.PatternCalculationResult
 phasesmith.pattern.StructuralReflectionResult
 phasesmith.pattern.StructuralPatternCalculationResult
@@ -230,6 +237,11 @@ phasesmith.refinement.lebail.LeBailResult
 phasesmith.refinement.lebail.extract_intensities
 phasesmith.refinement.lebail.iterate_once
 phasesmith.refinement.lebail.refine
+phasesmith.profile_estimation.ProfileEstimationMode
+phasesmith.profile_estimation.ProfileEstimationOptions
+phasesmith.profile_estimation.ProfileEstimationResult
+phasesmith.profile_estimation.starting_profile_from_fwhm
+phasesmith.profile_estimation.estimate_effective_profile
 phasesmith.persistence.PersistenceBundle
 phasesmith.persistence.PersistenceBundle.to_lebail_input
 phasesmith.persistence.save_bundle

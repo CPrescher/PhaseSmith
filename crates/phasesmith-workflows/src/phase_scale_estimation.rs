@@ -224,6 +224,12 @@ fn solve_non_negative_least_squares(
                 .enumerate()
                 .filter_map(|(index, selected)| selected.then_some(index))
                 .collect::<Vec<_>>();
+            // A boundary step can remove every passive variable. Restart the
+            // outer search instead of asking nalgebra to decompose an m x 0
+            // matrix; SVD deliberately rejects empty matrices.
+            if active.is_empty() {
+                break;
+            }
             let active_matrix = DMatrix::from_fn(matrix.nrows(), active.len(), |row, column| {
                 matrix[(row, active[column])]
             });
@@ -238,17 +244,21 @@ fn solve_non_negative_least_squares(
             for (active_index, value) in active.into_iter().zip(active_solution.iter()) {
                 candidate_solution[active_index] = *value;
             }
-            if (0..columns).all(|index| !passive[index] || candidate_solution[index] > tolerance) {
+            // Feasibility is a condition on the scale itself. The dual
+            // gradient tolerance above has different units and can be very
+            // large for high-count diffraction patterns, so it must not be
+            // reused as a lower bound on phase scales.
+            if (0..columns).all(|index| !passive[index] || candidate_solution[index] > 0.0) {
                 solution = candidate_solution;
                 break;
             }
             let alpha = (0..columns)
-                .filter(|index| passive[*index] && candidate_solution[*index] <= tolerance)
+                .filter(|index| passive[*index] && candidate_solution[*index] <= 0.0)
                 .map(|index| solution[index] / (solution[index] - candidate_solution[index]))
                 .fold(1.0_f64, f64::min);
             solution += alpha * (candidate_solution - &solution);
             for index in 0..columns {
-                if passive[index] && solution[index] <= tolerance {
+                if passive[index] && solution[index] <= 0.0 {
                     solution[index] = 0.0;
                     passive[index] = false;
                 }
@@ -258,5 +268,22 @@ fn solve_non_negative_least_squares(
                 return Err(PhaseScaleEstimationError::DidNotConverge);
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn high_count_design_accepts_a_small_positive_scale() {
+        let matrix = DMatrix::from_row_slice(1, 1, &[1.0e8]);
+        let target = DVector::from_vec(vec![1.0]);
+
+        let (solution, iterations) =
+            solve_non_negative_least_squares(&matrix, &target).expect("bounded scale solve");
+
+        assert_eq!(iterations, 1);
+        assert!((solution[0] - 1.0e-8).abs() < 1.0e-20);
     }
 }

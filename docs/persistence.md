@@ -104,8 +104,9 @@ The format is intentionally independent of GSAS-II project files and GUI state.
 Future incompatible schema changes increment `FORMAT_VERSION` and require an
 explicit migration rather than silently guessing old units or fields.
 The machine-readable top-level contract is
-[`schemas/persistence-v12.schema.json`](https://github.com/CPrescher/PhaseSmith/blob/main/schemas/persistence-v12.schema.json).
+[`schemas/persistence-v13.schema.json`](https://github.com/CPrescher/PhaseSmith/blob/main/schemas/persistence-v13.schema.json).
 Previous formats remain documented by
+[`schemas/persistence-v12.schema.json`](https://github.com/CPrescher/PhaseSmith/blob/main/schemas/persistence-v12.schema.json),
 [`schemas/persistence-v11.schema.json`](https://github.com/CPrescher/PhaseSmith/blob/main/schemas/persistence-v11.schema.json),
 [`schemas/persistence-v10.schema.json`](https://github.com/CPrescher/PhaseSmith/blob/main/schemas/persistence-v10.schema.json),
 [`schemas/persistence-v9.schema.json`](https://github.com/CPrescher/PhaseSmith/blob/main/schemas/persistence-v9.schema.json),

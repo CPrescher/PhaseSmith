@@ -645,10 +645,10 @@ The pinned IUCr QARR 1g workflow is now an accepted Python-free Rust three-phase
 fixed-spectrum structural validation, not a readiness placeholder. Its staged
 refinement ends with a scale-only polish and converts scales using reviewed
 phase Z, formula mass, and cell volume metadata through the native Hill--Howard
-API. The reviewed Rust baseline gives Al2O3 30.466%, ZnO 34.110%, and CaF2
-35.424%, with a maximum absolute error of 1.004 percentage points from the
+API. The reviewed Rust baseline gives Al2O3 30.460%, ZnO 34.113%, and CaF2
+35.427%, with a maximum absolute error of 1.007 percentage points from the
 independently weighed fractions. Poisson-weighted and unit-weight Rwp are
-reported separately (0.19844 and 0.13181), alongside profile correlation
+reported separately (0.19828 and 0.13179), alongside profile correlation
 0.99062. Release tests repeat the native run exactly and compare the stable
 measurements with the independent Python runner under explicit tolerances.
 
@@ -670,6 +670,22 @@ without losing the last accepted state, and phase-scale conditioning follows
 the current nonzero scale magnitude instead of assuming scales are order one;
 an exact zero retains an order-one escape scale.
 
+All refinement families now use one explicit background-composition rule: the
+pattern's supplied Smooth Bruckner estimate remains a fixed broad baseline,
+and an optional differentiable polynomial or Chebyshev model is added as a
+refinable residual correction. Structural Rietveld already followed this rule;
+CW Le Bail now owns the same state in results and checkpoints, and TOF Le Bail
+no longer substitutes its Chebyshev model for the fixed array.
+Coefficient-invariant CW Le Bail backgrounds are solved by weighted linear
+least squares after each intensity redistribution and are held out of the
+nonlinear profile step. Synthetic Rust/Python tests recover the residual
+coefficients and verify the additive calculation exactly. The APS sucrose
+validation uses this convention directly: the fixed Smooth Bruckner array is
+shared verbatim with the GSAS-II oracle and a one-coefficient residual is
+refined by both workflows. Echidna retains its separate anchor-initialized
+polynomial convention. QARR retains its separately staged residual-background
+behavior and phase-fraction result.
+
 The PbSO4 real-data checkpoint adds a separate optional staged-workflow layer
 above the unchanged general Rietveld solver. Explicit `RietveldRecipe` objects
 own parameter activation and stage acceptance. The deterministic
@@ -678,7 +694,7 @@ already authorized by the caller, records human-readable reasons and active
 parameter identities, and never runs implicitly. The accompanying physics
 checkpoint adds the constant-wavelength neutron powder Lorentz factor
 `1/(sin(theta) sin(2 theta))` with native values and analytical derivatives.
-Persistence format 12 stores that typed correction and the Debye--Scherrer
+Persistence format 13 retains that typed correction and the Debye--Scherrer
 goniometer radius/X/Y geometry while loading formats 1--11.
 The PbSO4 workflow composes background layers explicitly: a Smooth Bruckner
 estimate is fixed preprocessing, while a three-term differentiable Chebyshev
@@ -720,6 +736,52 @@ checksum verification, stable reports, native sucrose, QARR, PbSO4 neutron,
 and exact fixed-doublet PbSO4 X-ray runners plus a standalone Rust CLI. Python
 reconstructs its existing immutable report types from native JSON for ordinary
 calls; callback/custom-execution and explicit reference runs stay in Python.
+The validation matrix now also includes an accepted ANSTO Echidna LaB6 neutron
+smoke gate and an official NIST SRM 660c archive-integrity gate. QARR 1h is kept
+as a failing unchanged-setup holdout: its phase fractions pass while its
+profile gates demonstrate that the 1g parameterization is not transferable.
+The official POWGEN LaB6 bank and calibration are pinned and parsed in native
+microseconds. `TofPatternRecord` and the native SLOG FXYE reader provide a
+unit-explicit boundary that cannot be confused with `PatternRecord.x_deg`.
+Adjacent SLOG boundary rows and their bin-width-multiplied Y/sigma values are
+converted to the same 6,824 bin-center density samples exposed by GSAS-II; the
+production position, derivative, and calibration-range checks pass. The native
+fixed-instrument TOF Le Bail workflow now carries d-spacing reflections through
+the fused value/local/global derivative kernel and nonnegative intensity
+redistribution on nonuniform grids. The POWGEN run generates 330 LaB6 families,
+returns all 15 instrument rows, and jointly refines an optional 16-term
+microsecond-domain Chebyshev background through analytical basis columns and a
+weighted linear solve after each redistribution. The reviewed uncertainty-weighted
+run reaches Rwp 0.26461 and profile correlation 0.96729 and is an accepted
+real-data workflow.
+TOF structural Rietveld parameter motion remains a separate future capability
+and is not implied by this Le Bail result.
+The legacy bank-2 `ICONS` adapter is black-box checked against pinned GSAS-II:
+the record maps to Zero=4.41 µs, DIFC=22581.63 µs/Å, DIFA=0, and DIFB=0. The
+live POWGEN oracle comparison matches all 329 GSAS-II calculation reflections'
+positions exactly and their variance/alpha/beta terms at floating-point scale.
+Using GSAS-II's extracted intensities and reflection list, the PhaseSmith kernel
+reconstructs the peak-only oracle pattern with 0.999994 correlation and 0.00512
+relative L2 error. The separately configured native workflows are reported for
+context but their Rwp values are not treated as like-for-like because their
+optimizers and endpoint conventions differ. GSAS-II uses a 16-term Chebyshev
+background while PhaseSmith uses the same-order residual above fixed Smooth
+Bruckner; the live workflow comparison now gates absolute Rwp delta below
+0.03 and profile-correlation delta below 0.02.
+The controlled pinned-oracle job now enforces live cross-implementation gates
+for the sucrose and Echidna Le Bail cases, both QARR mixtures, and the existing
+PbSO4 paired workflow. Workers run only in GSAS-II's isolated interpreter and
+return plain finite JSON; normal installation remains independent. NIST 660c
+continues to use its certified values and released profiles as the primary
+oracle rather than treating a GSAS-II refit as replacement truth. POWGEN now
+has the same live pinned-oracle boundary as the other accepted
+real-data workflows, while its synthetic derivative fixture remains unchanged.
+The reviewed pinned run passes both Le Bail parity contracts and QARR 1g.
+QARR 1h remains explicitly not on par in profile quality: its maximum fraction
+delta is acceptable at 0.00979, but its Poisson Rwp, unit-weight Rwp, and
+correlation deltas are 0.09434, 0.11009, and 0.01297, respectively. The oracle
+test requires that reviewed failure status rather than treating the holdout as
+an expected skip.
 Release packaging preserves the same separation. The public crates.io
 `phasesmith` facade re-exports the application-neutral native component crates;
 PyO3 and validation tooling remain unpublished workspace packages; GUI
@@ -780,6 +842,20 @@ limits, and recovers the previous manifest/archive pair after an interrupted
 overwrite.
 The Python Rietveld result exposes `backend` as `native` or `python`, making an
 eligibility fallback visible to callers.
+
+The first post-unit-24 experimental workflow estimates an effective
+constant-wavelength starting profile from one predominantly single-phase
+pattern. The Python-free workflow reuses Le Bail independent intensities and
+analytical profile derivatives, holds the pre-calibrated Dioptas/pyFAI
+wavelength bitwise fixed, optionally aligns a bounded lattice as a nuisance,
+and stages W, UVW, then UVWXY. Automatic promotion requires both absolute and
+relative Rwp improvement, identifiable covariance, and bounded correlation.
+The Python facade delegates width fitting to the same native implementation.
+This is intentionally not an instrument-only calibration: sample broadening is
+disclosed, known contaminant regions must be masked, and the output is a
+starting profile. Calibrant registries, CeO2/LaB6 detector-geometry workflows,
+in-situ Si separation, persistence, and GUI presentation remain deferred until
+representative real data can validate their behavior.
 
 ## Quality bar
 

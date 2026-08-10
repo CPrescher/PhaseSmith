@@ -255,8 +255,47 @@ def test_qarr_comparison_numerically_gates_cross_implementation_results() -> Non
     assert validation["phase_fraction_deltas"]["Al2O3"] == pytest.approx(0.007)
     changed = json.loads(json.dumps(gsas_result))
     changed["weight_fractions"]["Al2O3"] = 0.40
-    with pytest.raises(RuntimeError, match="cross-implementation validation failed"):
-        benchmark.compare_scientific_results(phasesmith_result, changed)
+    drift = benchmark.compare_scientific_results(phasesmith_result, changed)
+    assert drift["status"] == "failed"
+    assert "maximum_phase_fraction_delta" in drift["failed_checks"]
+
+
+def test_powgen_worker_and_comparison_share_the_real_instrument_convention() -> None:
+    worker = load_script(
+        "oracle/scripts/benchmark_powgen_tof.py", "benchmark_powgen_tof_worker_test"
+    )
+    benchmark = load_script(
+        "benchmarks/compare_gsasii_powgen_tof.py", "compare_gsasii_powgen_tof_test"
+    )
+    values = {
+        "Zero": 4.41,
+        "difC": 22_581.63,
+        "difA": 0.0,
+        "difB": 0.0,
+        "alpha": 0.25746,
+        "beta-0": 0.091563,
+        "beta-1": 0.017334,
+        "sig-0": 0.0,
+        "sig-1": 10.0,
+        "sig-2": 203.581,
+        "X": 0.0,
+        "Y": 0.0,
+        "Z": 0.0,
+    }
+    instrument = benchmark.phase_instrument(values)
+    actual = phasesmith.tof_profile_parameters([0.4, 1.0, 4.0], instrument)
+
+    assert worker.PINNED_REVISION == benchmark.PINNED_REVISION
+    np.testing.assert_allclose(actual.position_us, [9_037.062, 22_586.04, 90_330.93], rtol=2e-16)
+    np.testing.assert_allclose(actual.alpha_per_us, [0.64365, 0.25746, 0.064365], rtol=2e-16)
+    np.testing.assert_allclose(
+        actual.beta_per_us,
+        [0.091563 + 0.017334 / 0.4**4, 0.108897, 0.091563 + 0.017334 / 4.0**4],
+        rtol=4e-16,
+    )
+    assert benchmark.LIMITS["reconstructed_pattern_minimum_correlation"] == 0.99999
+    assert benchmark.LIMITS["native_workflow_rwp_delta"] == 0.03
+    assert benchmark.LIMITS["native_workflow_profile_correlation_delta"] == 0.02
 
 
 def test_pbso4_comparison_gates_profiles_and_refined_cell() -> None:
@@ -319,14 +358,19 @@ def test_practical_workflow_benchmark_covers_xray_and_neutron() -> None:
     [
         "benchmarks/compare_gsasii.py",
         "benchmarks/compare_gsasii_pbso4.py",
+        "benchmarks/compare_gsasii_powgen_tof.py",
         "benchmarks/compare_gsasii_qarr.py",
+        "benchmarks/compare_gsasii_real_lebail.py",
         "benchmarks/compare_gsasii_structural.py",
         "benchmarks/practical_workflow.py",
         "benchmarks/real_data.py",
         "oracle/scripts/benchmark_cw_profile.py",
         "oracle/scripts/benchmark_pbso4.py",
+        "oracle/scripts/benchmark_powgen_tof.py",
         "oracle/scripts/benchmark_qarr.py",
+        "oracle/scripts/benchmark_real_lebail.py",
         "oracle/scripts/benchmark_structural_pattern.py",
+        "tools/fetch_validation_data.py",
     ],
 )
 def test_benchmark_help_does_not_require_gsasii(script: str) -> None:
@@ -342,7 +386,9 @@ def test_external_worker_does_not_import_rietveld() -> None:
     for relative_path in (
         "oracle/scripts/benchmark_cw_profile.py",
         "oracle/scripts/benchmark_pbso4.py",
+        "oracle/scripts/benchmark_powgen_tof.py",
         "oracle/scripts/benchmark_qarr.py",
+        "oracle/scripts/benchmark_real_lebail.py",
         "oracle/scripts/benchmark_structural_pattern.py",
     ):
         source = (REPOSITORY_ROOT / relative_path).read_text()

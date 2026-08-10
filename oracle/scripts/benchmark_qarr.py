@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run IUCr QARR 1g with the pinned external GSAS-II oracle.
+"""Run an IUCr QARR 1g/1h case with the pinned external GSAS-II oracle.
 
 This worker imports no PhaseSmith module and performs exactly one workflow run.
 The comparison driver launches it repeatedly with GSAS-II's own interpreter.
@@ -21,9 +21,12 @@ from typing import Any
 import numpy as np
 
 PINNED_REVISION = "c0bc79b259cdf0065480b5fbd57674ddf12c4a23"
-SCOPE = "iucr_qarr_1g_native_workflow"
-TARGETS = {"Al2O3": 0.3137, "ZnO": 0.3421, "CaF2": 0.3442}
-REQUIRED_FILES = ("cpd-1g.prn", "cuka.instprm", "Al2O3.cif", "ZnO.cif", "CaF2.cif")
+TARGETS_BY_SAMPLE = {
+    "1g": {"Al2O3": 0.3137, "ZnO": 0.3421, "CaF2": 0.3442},
+    "1h": {"Al2O3": 0.3512, "ZnO": 0.3019, "CaF2": 0.3469},
+}
+PATTERN_BY_SAMPLE = {"1g": "cpd-1g.prn", "1h": "cpd-1h.prn"}
+COMMON_FILES = ("cuka.instprm", "Al2O3.cif", "ZnO.cif", "CaF2.cif")
 FCJ_BELOW_MINIMUM = 1.0e-12
 GSASII_FCJ_CALCULATION_FLOOR = 0.002
 
@@ -34,6 +37,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--binary-dir", type=Path)
     parser.add_argument("--data-directory", type=Path, required=True)
     parser.add_argument("--report", type=Path, required=True)
+    parser.add_argument("--sample", choices=tuple(TARGETS_BY_SAMPLE), default="1g")
     parser.add_argument("--cycles", type=int, default=8)
     parser.add_argument(
         "--fcj",
@@ -127,12 +131,13 @@ def configure_gsasii(root: Path, binary_directory: Path | None) -> tuple[Any, fl
 
 def run_workflow(scripting: Any, data: Path, arguments: argparse.Namespace) -> dict[str, Any]:
     total_started = time.perf_counter_ns()
+    targets = TARGETS_BY_SAMPLE[arguments.sample]
     with tempfile.TemporaryDirectory(prefix="phasesmith-gsasii-qarr-") as temporary:
         directory = Path(temporary)
         setup_started = time.perf_counter_ns()
         project = scripting.G2Project(newgpx=str(directory / "qarr.gpx"))
         histogram = project.add_powder_histogram(
-            str(data / "cpd-1g.prn"),
+            str(data / PATTERN_BY_SAMPLE[arguments.sample]),
             str(selected_instrument(data / "cuka.instprm", directory, arguments.fcj)),
             fmthint="Topas",
         )
@@ -150,7 +155,7 @@ def run_workflow(scripting: Any, data: Path, arguments: argparse.Namespace) -> d
         histogram.data["Sample Parameters"]["Scale"][1] = False
         project.set_Controls("cycles", arguments.cycles)
         phases = []
-        for name in TARGETS:
+        for name in targets:
             phase = project.add_phase(
                 str(data / f"{name}.cif"),
                 phasename=name,
@@ -182,8 +187,8 @@ def run_workflow(scripting: Any, data: Path, arguments: argparse.Namespace) -> d
         final_started = time.perf_counter_ns()
         project.save()
         mass_fractions = histogram.ComputeMassFracs()
-        fractions = {name: float(mass_fractions[name][0]) for name in TARGETS}
-        uncertainties = {name: float(mass_fractions[name][1]) for name in TARGETS}
+        fractions = {name: float(mass_fractions[name][0]) for name in targets}
+        uncertainties = {name: float(mass_fractions[name][1]) for name in targets}
         x = np.asarray(histogram.getdata("X"), dtype=np.float64)
         observed = np.asarray(histogram.getdata("Yobs"), dtype=np.float64)
         calculated = np.asarray(histogram.getdata("Ycalc"), dtype=np.float64)
@@ -215,7 +220,7 @@ def run_workflow(scripting: Any, data: Path, arguments: argparse.Namespace) -> d
             "weight_fractions": fractions,
             "weight_fraction_su": uncertainties,
             "maximum_weight_fraction_error": max(
-                abs(fractions[name] - target) for name, target in TARGETS.items()
+                abs(fractions[name] - target) for name, target in targets.items()
             ),
             "poisson_rwp": float(rwp) / 100.0,
             "unit_weight_rwp": unit_rwp,
@@ -264,7 +269,8 @@ def main() -> None:
             f"detected {detected_revision}"
         )
     data = arguments.data_directory.resolve()
-    missing = [name for name in REQUIRED_FILES if not (data / name).is_file()]
+    required_files = (PATTERN_BY_SAMPLE[arguments.sample], *COMMON_FILES)
+    missing = [name for name in required_files if not (data / name).is_file()]
     if missing:
         raise FileNotFoundError(f"QARR data directory is missing {', '.join(missing)}")
     scripting, import_ms = configure_gsasii(root, arguments.binary_dir)
@@ -273,18 +279,19 @@ def main() -> None:
         "schema_version": 1,
         "implementation": "GSAS-II",
         "revision": detected_revision,
-        "scope": SCOPE,
+        "scope": f"iucr_qarr_{arguments.sample}_native_workflow",
         "python_version": platform.python_version(),
         "numpy_version": np.__version__,
         "platform": platform.platform(),
         "recipe": {
             "cycles": arguments.cycles,
+            "sample": arguments.sample,
             "fcj": arguments.fcj,
             "sample_broadening": arguments.sample_broadening,
             "displacement": arguments.displacement,
             "anisotropic": arguments.anisotropic,
         },
-        "input_sha256": {name: sha256(data / name) for name in REQUIRED_FILES},
+        "input_sha256": {name: sha256(data / name) for name in required_files},
         "oracle_behavior": {
             "fcj_calculation_floor": GSASII_FCJ_CALCULATION_FLOOR,
             "note": "Values below the floor test the pinned clamp, not a zero-FCJ profile.",

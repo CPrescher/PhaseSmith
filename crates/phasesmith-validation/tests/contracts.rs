@@ -83,6 +83,36 @@ fn decoded_reports_are_revalidated() {
 }
 
 #[test]
+fn reports_require_stable_unique_check_ids_and_explicit_criteria() {
+    assert!(matches!(
+        ValidationCheck::new(
+            "Not-Stable",
+            ValidationStatus::Passed,
+            "detail",
+            None,
+            Some("finite".to_owned())
+        ),
+        Err(phasesmith_validation::ValidationContractError::InvalidCheckId)
+    ));
+    assert!(matches!(
+        ValidationCheck::new("missing", ValidationStatus::Passed, "detail", None, None),
+        Err(phasesmith_validation::ValidationContractError::EmptyCriterion)
+    ));
+    let duplicate = check("duplicate", ValidationStatus::Passed);
+    assert!(matches!(
+        RealDataValidationReport::new(
+            "fixture",
+            1,
+            None,
+            0.0,
+            vec![duplicate.clone(), duplicate],
+            Vec::new()
+        ),
+        Err(phasesmith_validation::ValidationContractError::DuplicateCheckId)
+    ));
+}
+
+#[test]
 fn checked_in_python_baseline_reports_decode_without_schema_translation() {
     let baseline = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../../validation/results/2026-08-07-baseline.json");
@@ -97,6 +127,28 @@ fn checked_in_python_baseline_reports_decode_without_schema_translation() {
 }
 
 #[test]
+fn checked_in_schema_two_suite_embeds_native_report_contracts() {
+    let baseline = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../validation/results/2026-08-10-baseline-v2.json");
+    let source = fs::read_to_string(baseline).unwrap();
+    let suite: serde_json::Value = serde_json::from_str(&source).unwrap();
+    assert_eq!(suite["schema_version"], 2);
+    assert_eq!(suite["status"], "passed");
+    let cases = suite["cases"].as_array().unwrap();
+    assert_eq!(cases.len(), 8);
+    for case in cases {
+        assert_eq!(case["expectation_met"], true);
+        let mut report = case["report"].clone();
+        report.as_object_mut().unwrap().insert(
+            "elapsed_seconds".to_owned(),
+            case["elapsed_seconds"].clone(),
+        );
+        let encoded = serde_json::to_string(&report).unwrap();
+        RealDataValidationReport::from_json(&encoded).unwrap();
+    }
+}
+
+#[test]
 fn built_in_dataset_manifests_match_the_python_registry() {
     let datasets = validation_datasets();
     assert_eq!(
@@ -104,7 +156,22 @@ fn built_in_dataset_manifests_match_the_python_registry() {
             .iter()
             .map(|dataset| dataset.dataset_id.as_str())
             .collect::<Vec<_>>(),
-        ["aps-sucrose-11bmb", "gsasii-pbso4-cw", "iucr-qarr-1g"]
+        [
+            "ansto-echidna-lab6-cw-neutron",
+            "aps-sucrose-11bmb",
+            "gsasii-pbso4-cw",
+            "iucr-qarr-1g",
+            "iucr-qarr-1h",
+            "nist-srm660c-lab6-xray",
+            "powgen-lab6-tof-calibration",
+        ]
+    );
+    assert_eq!(
+        validation_dataset("ansto-echidna-lab6-cw-neutron")
+            .unwrap()
+            .files
+            .len(),
+        2
     );
     assert_eq!(
         validation_dataset("aps-sucrose-11bmb").unwrap().files.len(),
@@ -115,6 +182,31 @@ fn built_in_dataset_manifests_match_the_python_registry() {
         5
     );
     assert_eq!(validation_dataset("iucr-qarr-1g").unwrap().files.len(), 5);
+    assert_eq!(validation_dataset("iucr-qarr-1h").unwrap().files.len(), 5);
+    assert_eq!(
+        validation_dataset("iucr-qarr-1h").unwrap().expected_status,
+        ValidationStatus::Failed
+    );
+    assert_eq!(
+        validation_dataset("nist-srm660c-lab6-xray")
+            .unwrap()
+            .files
+            .len(),
+        1
+    );
+    assert_eq!(
+        validation_dataset("powgen-lab6-tof-calibration")
+            .unwrap()
+            .files
+            .len(),
+        2
+    );
+    assert_eq!(
+        validation_dataset("powgen-lab6-tof-calibration")
+            .unwrap()
+            .expected_status,
+        ValidationStatus::Passed
+    );
     assert!(matches!(
         validation_dataset("missing"),
         Err(DatasetVerificationError::UnknownDataset(_))

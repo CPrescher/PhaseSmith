@@ -4,7 +4,12 @@ import pytest
 from phasesmith.validation import (
     QARR_1G_CUKA_FIXED_DISPERSION,
     qarr_1g_readiness,
+    run_echidna_lab6_validation,
+    run_nist_srm660c_validation,
+    run_powgen_tof_readiness,
+    run_powgen_tof_validation,
     run_qarr_1g_validation,
+    run_qarr_1h_validation,
 )
 from phasesmith.validation.real_data import (
     RealDataValidationReport,
@@ -31,7 +36,12 @@ def test_qarr_readiness_reports_structural_doublet_capability(tmp_path: Path) ->
 
 
 def test_qarr_structural_runner_and_fixed_dispersion_are_public() -> None:
+    assert callable(run_echidna_lab6_validation)
     assert callable(run_qarr_1g_validation)
+    assert callable(run_qarr_1h_validation)
+    assert callable(run_nist_srm660c_validation)
+    assert callable(run_powgen_tof_readiness)
+    assert callable(run_powgen_tof_validation)
     assert set(QARR_1G_CUKA_FIXED_DISPERSION) == {"Al", "O", "Zn", "Ca", "F"}
     assert all(value.imag > 0.0 for value in QARR_1G_CUKA_FIXED_DISPERSION.values())
 
@@ -85,7 +95,11 @@ def test_report_status_must_summarize_check_statuses() -> None:
             sample_count=1,
             reflection_count=None,
             elapsed_seconds=0.0,
-            checks=(ValidationCheck("blocked", "blocked", "not implemented"),),
+            checks=(
+                ValidationCheck(
+                    "blocked", "blocked", "not implemented", criterion="complete workflow"
+                ),
+            ),
         )
 
 
@@ -106,6 +120,21 @@ def test_report_rejects_untyped_checks_and_empty_notes() -> None:
             sample_count=1,
             reflection_count=None,
             elapsed_seconds=0.0,
-            checks=(ValidationCheck("ok", "passed", "complete"),),
+            checks=(ValidationCheck("ok", "passed", "complete", criterion="finite result"),),
             notes=("",),
+        )
+
+
+def test_report_rejects_duplicate_check_ids_and_missing_criteria() -> None:
+    with pytest.raises(ValueError, match="criterion"):
+        ValidationCheck("missing", "passed", "no acceptance criterion")
+    check = ValidationCheck("same", "passed", "first", criterion="finite")
+    with pytest.raises(ValueError, match="unique"):
+        RealDataValidationReport(
+            dataset_id="case",
+            status="passed",
+            sample_count=1,
+            reflection_count=None,
+            elapsed_seconds=0.0,
+            checks=(check, check),
         )

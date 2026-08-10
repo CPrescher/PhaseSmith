@@ -101,8 +101,12 @@ derivatives hold the active support set fixed; finite-difference tests avoid
 moving boundaries.
 
 The public `x_us` array always contains bin centers. GSAS-II can ingest TOF bin
-minima, but its scripting `getdata("X")` result contains the centers used for
-calculation; the `PNT` fixture records and tests that translation explicitly.
+boundaries with bin-width-multiplied Y and sigma. The typed SLOG FXYE reader
+converts adjacent boundaries to arithmetic centers and divides Y and sigma by
+the bin width, matching the density convention used by the profile kernel and
+GSAS-II's scripting `getdata` arrays. The final boundary is not an output
+sample; zero-intensity or zero-sigma bins are explicitly excluded. The `PNT`
+fixture records and tests this translation explicitly.
 
 ## Local derivatives and oracle scope
 
@@ -116,3 +120,41 @@ The pinned `tof_v1` fixture contains public `X`, `Ycalc`, background, and an
 `getEpsVoigt` values and derivatives. The production code is independently
 implemented from the equations above and compared numerically; GSAS-II is not a
 runtime dependency and no GSAS-II implementation code is copied.
+
+## Native pattern and Le Bail workflow
+
+`phasesmith-workflows` owns a separate fixed-instrument TOF path built around
+`TofPatternRecord`, `TofLeBailPhase`, and `TofLeBailInput`. It does not cast a
+microsecond grid into `PatternRecord.x_deg`. Reflections retain d-spacing as
+their durable coordinate, and each calculation returns the core accumulation
+containing intensity/d-spacing support columns and all 15 dense instrument
+rows.
+
+`refine_tof_lebail` performs nonnegative multiplicative redistribution on the
+actual, potentially nonuniform, bin-center grid. Trapezoidal cell widths enter
+the discrete extraction sums; masks and optional one-sigma uncertainties are
+applied locally. The instrument and reflection topology remain fixed during
+this workflow.
+
+An optional `TofChebyshevBackground` is a refinable residual added on top of
+the fixed pattern background. A Smooth Bruckner estimate can therefore remain
+the broad, non-differentiable baseline while the Chebyshev terms absorb smooth
+low-order mismatch. On the explicit microsecond domain `[lower, upper]`, define
+`u = 2 (tof - lower) / (upper - lower) - 1`; the background is
+`sum_k c_k T_k(u)`. Its exact coefficient derivatives are `T_k(u)`. After each
+nonnegative intensity redistribution, the coefficients are updated by a
+deterministic weighted linear least-squares solve using the same mask and
+uncertainty convention as the residual. The final calculation returns the
+sample-major basis and combined fixed-plus-residual background. Omitting the model preserves the
+previous fixed-background behavior. This is a complete Le Bail
+intensity/background extraction capability, not a claim of TOF structural
+Rietveld refinement.
+
+Legacy GSAS type-3 instrument files are translated only in the validation
+adapter. Its `ICONS` fields map to `difC`, `difA`, `zero`, and an unused value;
+legacy records do not supply `difB`. This potentially ambiguous mapping is
+verified through the pinned GSAS-II bank import. For profile function 3, the
+first three `PRCF11` values map to
+`alpha`, `beta0`, and `beta1`; the first two `PRCF12` values map to `sigma1`
+and `sigma2`. Unsupported coefficients are explicit zeros. This adapter detail
+does not enter the core instrument model.

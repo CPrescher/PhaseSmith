@@ -57,6 +57,19 @@ See [powder-file and CIF import](cif-import.md),
 | `phasesmith.fcj` | `profile_fcj`, `accumulate_cw_fcj` | Finger–Cox–Jephcoat axial asymmetry. |
 | `phasesmith.tof` | `profile_tof`, `accumulate_tof`, `tof_profile_parameters` | Neutron time-of-flight profiles. |
 
+The native `phasesmith-workflows` crate also exposes `TofLeBailInput`,
+`TofLeBailPhase`, `TofLeBailOptions`, `TofChebyshevBackground`,
+`calculate_tof_lebail_pattern`, and `refine_tof_lebail`. The optional background
+has a microsecond domain and exposes its sample-major analytical coefficient
+basis. These records are not interchangeable with the constant-wavelength
+Python refinement facade.
+
+CW `LeBailInput.with_refinable_background` and structural
+`RietveldInput.background` use the same additive convention: the analytical
+model is a residual above `PowderPattern.background`, not a replacement for
+that fixed baseline. Final calculations and checkpoints retain the refined
+model and combined background.
+
 Units, parameter ordering, support rules, and derivative conventions are
 defined in [equations and units](equations.md) and the model-specific pages in
 the navigation.
@@ -90,7 +103,7 @@ the navigation.
 | `phasesmith.refinement.lebail` | `LeBailInput`, `LeBailOptions`, `refine` | Intensity extraction and optional profile/lattice updates. |
 | `phasesmith.refinement.rietveld` | Rietveld inputs, options, recipes, and results | Structural refinement orchestration. |
 | `phasesmith.refinement.runtime` | Limits, events, logs, checkpoints | Bounded execution and recovery. |
-| `phasesmith.quantitative` | `quantitative_phase_analysis`, `weight_fractions_from_scale` | Hill–Howard phase fractions. |
+| `phasesmith.quantitative` | `quantitative_phase_analysis`, `quantitative_phase_analysis_with_covariance`, `weight_fractions_from_scale` | Hill–Howard phase fractions and scale-covariance propagation. |
 | `phasesmith.reporting` | JSON and CSV Rietveld writers | Stable external reports. |
 | `phasesmith.persistence` | `save_bundle`, `load_bundle`, `PersistenceBundle` | Versioned Python workflow persistence. |
 

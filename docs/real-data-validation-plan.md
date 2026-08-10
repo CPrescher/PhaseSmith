@@ -23,17 +23,70 @@ The implemented checkpoint provides Rust-owned layers with Python adapters:
    paths remain available.
 
 The official APS 11-BM sucrose tutorial is the currently supported complete
-case: monochromatic FXYE input, native Smooth Bruckner background, P 21
-reflection generation, non-negative Le Bail extraction, and analytical
-U/V/W/X/Y refinement. The gate checks profile improvement, `Rwp <= 0.22`,
-observed/calculated correlation of at least 0.98, and finite non-negative
-integrated intensities. The threshold is a PhaseSmith regression gate for the
-present model, not an equivalence tolerance against another program.
+case: monochromatic FXYE input, a fixed Smooth Bruckner baseline plus one
+refinable constant Chebyshev residual, P 21 reflection generation,
+non-negative Le Bail extraction, and analytical U/V/W/X/Y refinement. The
+oracle driver passes the same fixed baseline as plain GSAS-II input and
+overrides the legacy instrument import with the same symmetric starting state.
+The gate checks profile improvement,
+`Rwp <= 0.22`, observed/calculated correlation of at least 0.97, and finite
+non-negative integrated intensities. The threshold is a PhaseSmith regression
+gate for the present model, not an equivalence tolerance against another
+program.
 
 The IUCr QARR 1g case now runs the real 5–150 degree pattern, Cu K-alpha
 doublet, three CIF structures, native structural values/JVP/VJP products, and
 Hill--Howard QPA. No monochromatic approximation is substituted for the
 doublet.
+
+The expanded external matrix adds four distinct forms of evidence rather than
+treating every public file as the same kind of golden result:
+
+1. NIST SRM 660c checks the official 20-specimen archive, certified lattice
+   interval, and released reference profiles as an external-oracle integrity
+   gate. A matched PhaseSmith profile comparison awaits equivalent source and
+   optics models.
+2. The ANSTO Echidna LaB6 pattern passes a native constant-wavelength neutron
+   Le Bail smoke gate using deposited counting uncertainties.
+3. QARR 1h is a deliberately unchanged-setup holdout. Its QPA gate passes, but
+   its profile gates fail, showing that the accepted 1g setup is not yet a
+   transferable three-phase model.
+4. The official POWGEN tutorial data and bank calibration are checksum-pinned,
+   parsed into a typed microsecond record, and checked against the production
+   TOF position kernel and its analytical calibration derivative. Full TOF
+   structural refinement remains explicitly blocked at the application
+   workflow boundary.
+
+Each manifest declares whether it is an acceptance, oracle-integrity, holdout,
+or capability case and records its reviewed expected status. Schema-2 suite
+records include pinned file identities, explicit criteria, and one scientific
+SHA-256 fingerprint per case; host timing is excluded from that fingerprint.
+Expected holdout failure and capability blocking therefore remain visible
+without making the reviewed suite itself fail.
+
+## Pinned external-oracle matrix
+
+The controlled `gsasii-oracle` runner now executes the exact pinned GSAS-II
+revision for every applicable real-data workflow:
+
+- sucrose and Echidna use temporary GSAS-II Le Bail projects and gate selected
+  samples, reflection families, weighted Rwp, and profile correlation;
+- QARR 1g and the unchanged-setup 1h holdout gate phase fractions, both Rwp
+  conventions, correlation, and reflection/sample counts;
+- PbSO4 retains its paired X-ray/neutron joint-workflow gates;
+- POWGEN gates the legacy bank translation, selected TOF profiles, and a
+  same-reflection, same-intensity reconstruction of the peak-only pattern.
+
+The workers import no PhaseSmith module and return plain finite JSON to the
+comparison drivers. Normal CI does not install GSAS-II. NIST SRM 660c remains
+certified-data-primary: its published values and released fits are the oracle,
+not a new GSAS-II fit.
+
+The pinned live run confirms QARR 1g parity. QARR 1h remains a reviewed oracle
+failure: its phase-fraction delta passes (maximum 0.00979), while Poisson Rwp,
+unit-weight Rwp, and correlation deltas (0.09434, 0.11009, and 0.01297) exceed
+their gates. The controlled test requires this explicit `failed` status rather
+than skipping the holdout or silently accepting the discrepancy.
 
 ## Implemented fixed-spectrum structural checkpoint
 
@@ -67,10 +120,10 @@ shared U/V/W/zero, then adds isotropic displacement, size, microstrain, and
 preferred orientation, and finally polishes the three linear phase scales with
 nonlinear parameters fixed. The fixed-anisotropic reviewed result is:
 
-- Al2O3 30.466%, ZnO 34.110%, CaF2 35.424%;
+- Al2O3 30.460%, ZnO 34.113%, CaF2 35.427%;
 - maximum absolute weighed-fraction error 1.004 percentage points (limit 2);
-- Poisson-weighted Rwp 0.19844 (limit 0.20);
-- unit-weight Rwp 0.13181 (limit 0.15);
+- Poisson-weighted Rwp 0.19828 (limit 0.20);
+- unit-weight Rwp 0.13179 (limit 0.15);
 - background-subtracted profile correlation 0.99062 (limit 0.98).
 
 The two residual gates are intentionally separate: assigning
@@ -80,8 +133,9 @@ machine-readable report: Al2O3 CIF tensors are evaluated directly and fixed,
 sites lacking CIF displacement values start at `Uiso=0.005 Å²` and refine,
 Cu K-alpha1 fixed dispersion is reused for K-alpha2, SH/L=0.002 uses the
 documented equal-height FCJ mapping, and absorption is not yet active. The
-reviewed release run ends safely by stagnation before the stage-2 evaluation
-budget. One test
+final scale-only covariance is propagated analytically through the
+Hill--Howard normalization and reported as a phase-fraction uncertainty. The
+reviewed release run ends safely under explicit stage budgets. One test
 repeats the full native workflow exactly and another compares its scientific
 measurements with the independent Python implementation.
 
@@ -92,15 +146,22 @@ analytical mixed-radiation objective has dedicated Rust coverage.
 
 ## Remaining QARR sequence
 
-1. Add covariance propagation for final phase fractions once the polished scale
-   covariance is retained.
-2. Add an optional same-scope GSAS-II timing comparison in its isolated pinned
-   environment. Validate values first and report startup, setup, calculation,
-   and refinement timing scopes separately. Normal installation and CI remain
-   independent of GSAS-II.
-3. After fixed-component real-data acceptance, implement refinable wavelength
+1. After fixed-component real-data acceptance, implement refinable wavelength
    ratios and a multi-wavelength lattice guard. Move the component-level loop
    across the PyO3 boundary only if benchmark evidence justifies the ABI.
+
+## Remaining TOF sequence
+
+The fixed-instrument TOF Le Bail sequence is complete. The pinned POWGEN LaB6
+case now covers the typed TOF record, reflection positions, fused accumulation,
+all analytical instrument derivatives, normalization, finite differences, and
+nonnegative intensity extraction. Its optional 16-term Chebyshev residual is
+added above the fixed Smooth Bruckner baseline and updated analytically in every
+cycle. A separate live GSAS-II comparison checks
+real-bank parameter translation and reconstructs the oracle's peak-only pattern
+from the same extracted intensities; it also gates the two Chebyshev-enabled
+native workflows' Rwp and correlation deltas. Structural TOF Rietveld refinement
+remains future scope and is not implied by this acceptance.
 
 ## Review gates
 

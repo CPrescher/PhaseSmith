@@ -85,8 +85,10 @@ def check_measurement(report: Any, check_id: str) -> float:
 
 
 def phase_result(report: Any, probe: str) -> dict[str, Any]:
-    if report.status != "passed":
-        raise RuntimeError(f"PhaseSmith PbSO4 {probe} validation returned {report.status!r}")
+    if report.status not in {"passed", "failed"}:
+        raise RuntimeError(
+            f"PhaseSmith PbSO4 {probe} validation is not numerically comparable: {report.status!r}"
+        )
     match = next(
         (CELL_PATTERN.fullmatch(note) for note in report.notes if note.startswith("Final cell")),
         None,
@@ -94,7 +96,13 @@ def phase_result(report: Any, probe: str) -> dict[str, Any]:
     if match is None:
         raise RuntimeError("PhaseSmith PbSO4 report does not contain a structured final cell")
     cell = {name: float(value) for name, value in zip(("a", "b", "c"), match.groups(), strict=True)}
+    stage_notes = [note for note in report.notes if note.startswith("Stage ")]
+    termination = next(
+        (note for note in report.notes if note.startswith("Termination=")),
+        stage_notes[-1] if stage_notes else "not reported",
+    )
     result = {
+        "validation_status": report.status,
         "sample_count": report.sample_count,
         "reflection_count": report.reflection_count,
         "poisson_rwp": check_measurement(report, "poisson_rwp"),
@@ -105,8 +113,8 @@ def phase_result(report: Any, probe: str) -> dict[str, Any]:
         "maximum_reference_cell_relative_error": check_measurement(
             report, "reference_cell_relative_error"
         ),
-        "termination": next(note for note in report.notes if note.startswith("Termination=")),
-        "intelligent_stage_notes": [note for note in report.notes if note.startswith("Stage ")],
+        "termination": termination,
+        "intelligent_stage_notes": stage_notes,
     }
     if probe == "neutron":
         geometry_match = next(

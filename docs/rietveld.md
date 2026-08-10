@@ -252,7 +252,7 @@ rank and nearly collinear columns, and returns physical-parameter covariance
 only when the normal matrix has full rank. It does not report a misleading
 inverse for a singular problem.
 
-Persistence format 12 stores the pattern, refined experiment and background,
+Persistence format 13 stores the pattern, refined experiment and background,
 structural phases,
 guarded domains, parameter selection, options, constraints, and checkpoint.
 `PersistenceBundle.to_rietveld_input()` reconstructs the request; pass the

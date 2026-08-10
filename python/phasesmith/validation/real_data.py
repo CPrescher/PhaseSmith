@@ -25,7 +25,11 @@ from ..intensity_corrections import (
 from ..io.powder import read_powder_data
 from ..pattern import PowderPattern
 from ..phase import ReciprocalMetric, RietveldPhase
-from ..quantitative import QuantitativePhase, quantitative_phase_analysis
+from ..quantitative import (
+    QuantitativePhase,
+    quantitative_phase_analysis,
+    quantitative_phase_analysis_with_covariance,
+)
 from ..radiation import (
     ConstantWavelengthExperiment,
     DebyeScherrerGeometry,
@@ -99,12 +103,12 @@ class ValidationCheck:
     def __post_init__(self) -> None:
         if not self.check_id or not self.detail:
             raise ValueError("validation check ID and detail must not be empty")
+        if not self.check_id.replace("_", "").isalnum() or self.check_id.lower() != self.check_id:
+            raise ValueError("validation check ID must be lowercase snake case")
         if self.status not in {"passed", "failed", "blocked"}:
             raise ValueError("invalid validation check status")
-        if self.criterion is not None and (
-            not isinstance(self.criterion, str) or not self.criterion
-        ):
-            raise ValueError("validation criterion must be a non-empty string or None")
+        if not isinstance(self.criterion, str) or not self.criterion:
+            raise ValueError("validation criterion must be a non-empty string")
         if self.measured is not None and not math.isfinite(self.measured):
             raise ValueError("validation check measurement must be finite")
 
@@ -147,6 +151,8 @@ class RealDataValidationReport:
             raise ValueError("real-data validation requires at least one check")
         if any(not isinstance(check, ValidationCheck) for check in self.checks):
             raise TypeError("real-data checks must contain ValidationCheck values")
+        if len({check.check_id for check in self.checks}) != len(self.checks):
+            raise ValueError("real-data check IDs must be unique")
         if any(not isinstance(note, str) or not note for note in self.notes):
             raise ValueError("real-data notes must be non-empty strings")
         check_statuses = {check.status for check in self.checks}
@@ -191,6 +197,46 @@ def _native_validation_report(
 
 def _use_native_validation() -> bool:
     return os.environ.get("PHASESMITH_VALIDATION_PYTHON_REFERENCE") != "1"
+
+
+def run_nist_srm660c_validation(
+    dataset_directory: str | Path,
+) -> RealDataValidationReport:
+    """Validate the official NIST SRM 660c archive and released reference fits."""
+
+    return _native_validation_report("nist-srm660c-lab6-xray", dataset_directory)
+
+
+def run_echidna_lab6_validation(
+    dataset_directory: str | Path,
+) -> RealDataValidationReport:
+    """Run the native ANSTO Echidna constant-wavelength neutron smoke gate."""
+
+    return _native_validation_report("ansto-echidna-lab6-cw-neutron", dataset_directory)
+
+
+def run_powgen_tof_validation(
+    dataset_directory: str | Path,
+) -> RealDataValidationReport:
+    """Run the native POWGEN TOF profile and Le Bail acceptance workflow."""
+
+    return _native_validation_report("powgen-lab6-tof-calibration", dataset_directory)
+
+
+def run_powgen_tof_readiness(
+    dataset_directory: str | Path,
+) -> RealDataValidationReport:
+    """Compatibility alias for :func:`run_powgen_tof_validation`."""
+
+    return run_powgen_tof_validation(dataset_directory)
+
+
+def run_qarr_1h_validation(
+    dataset_directory: str | Path,
+) -> RealDataValidationReport:
+    """Run QARR 1h as an independent transferability holdout."""
+
+    return _native_validation_report("iucr-qarr-1h", dataset_directory)
 
 
 def qarr_1g_readiness(dataset_directory: str | Path) -> RealDataValidationReport:
@@ -401,6 +447,11 @@ def run_qarr_1g_validation(
     )
     scattering = XrayFixedDispersion(QARR_1G_CUKA_FIXED_DISPERSION)
     correction = BraggBrentanoPolarizedLp(values["Lam1"], values["Polariz."])
+    residual_background = ChebyshevBackground(
+        "qarr_residual",
+        (0.0, 0.0, 0.0),
+        (float(data.x[0]), float(data.x[-1])),
+    )
     fixed_selection = rietveld.RietveldParameterSelection(
         phase_scale=False,
         lattice=False,
@@ -444,6 +495,7 @@ def run_qarr_1g_validation(
         u_iso=False,
         sample_physics=False,
         instrument_parameters=("u_deg2", "v_deg2", "w_deg2", "zero_shift_deg"),
+        background=True,
     )
     stage_one = rietveld.RietveldInput(
         pattern,
@@ -455,13 +507,18 @@ def run_qarr_1g_validation(
             (None,) * len(phases),
             stage_one_selection,
             experiment=experiment,
+            background=residual_background,
         ),
         selection=stage_one_selection,
+        background=residual_background,
     )
     first = rietveld.refine(
         stage_one,
         rietveld.RietveldOptions(
-            limits=RefinementLimits(max_iterations=20, max_evaluations=800),
+            # This stage is an intentional fixed eight-step initialization.
+            # Continuing beyond its eight accepted improvements only reaches
+            # the rejection guard without changing the accepted state.
+            limits=RefinementLimits(max_iterations=8, max_evaluations=800),
             min_iterations=2,
             max_scaled_parameter_step=0.2,
             support_fwhm=30.0,
@@ -484,6 +541,7 @@ def run_qarr_1g_validation(
         stage_one_selection,
         u_iso=True,
         sample_physics=True,
+        background=False,
     )
     stage_two = rietveld.RietveldInput(
         pattern,
@@ -495,13 +553,18 @@ def run_qarr_1g_validation(
             (None,) * len(first.phases),
             stage_two_selection,
             experiment=first.experiment,
+            background=first.background,
         ),
         selection=stage_two_selection,
+        background=first.background,
     )
     second = rietveld.refine(
         stage_two,
         rietveld.RietveldOptions(
-            limits=RefinementLimits(max_iterations=35, max_evaluations=1_500),
+            # The independent Python path reaches its stable accepted state in
+            # 28 improvements; make that workload explicit instead of spending
+            # a rejection budget after the scientific result has stopped moving.
+            limits=RefinementLimits(max_iterations=28, max_evaluations=1_500),
             min_iterations=3,
             max_scaled_parameter_step=0.15,
             support_fwhm=30.0,
@@ -526,6 +589,7 @@ def run_qarr_1g_validation(
         coordinates=False,
         occupancy=False,
         u_iso=False,
+        background=False,
     )
     scale_polish = rietveld.RietveldInput(
         pattern,
@@ -537,8 +601,10 @@ def run_qarr_1g_validation(
             (None,) * len(second.phases),
             scale_selection,
             experiment=second.experiment,
+            background=second.background,
         ),
         selection=scale_selection,
+        background=second.background,
     )
     result = rietveld.refine(
         scale_polish,
@@ -546,7 +612,7 @@ def run_qarr_1g_validation(
             limits=RefinementLimits(max_iterations=10, max_evaluations=200),
             max_scaled_parameter_step=1.0,
             support_fwhm=30.0,
-            estimate_covariance=False,
+            estimate_covariance=True,
             execution=selected_execution,
         ),
         cancellation=cancellation,
@@ -561,7 +627,7 @@ def run_qarr_1g_validation(
             stage="stage 3 scale polish",
             rwp=result.metrics.rwp,
         )
-    qpa = quantitative_phase_analysis(
+    quantitative = tuple(
         QuantitativePhase(
             phase.phase_id,
             phase.scale,
@@ -570,6 +636,18 @@ def run_qarr_1g_validation(
             phase.structure.cell.geometry().volume_angstrom3,
         )
         for phase in result.phases
+    )
+    qpa = quantitative_phase_analysis(quantitative)
+    expected_scale_keys = tuple(rietveld.phase_scale_key(phase.phase_id) for phase in result.phases)
+    propagated = (
+        quantitative_phase_analysis_with_covariance(quantitative, result.covariance)
+        if result.covariance is not None and result.parameters.keys == expected_scale_keys
+        else None
+    )
+    maximum_fraction_standard_uncertainty = (
+        float(np.sqrt(np.max(np.diag(propagated.covariance))))
+        if propagated is not None and np.all(np.diag(propagated.covariance) >= 0.0)
+        else None
     )
     calculated_fractions = {item.phase_id: item.weight_fraction for item in qpa}
     max_weight_error = max(
@@ -582,12 +660,15 @@ def run_qarr_1g_validation(
     residual = result.calculation.y - data.observed_y
     unit_weight_rwp = float(np.sqrt((residual @ residual) / (data.observed_y @ data.observed_y)))
     expansion_ok = expanded_counts == _QARR_EXPECTED_EXPANDED_SITES
-    safe_termination = result.termination_reason not in {
+    unsafe_terminations = {
         TerminationReason.NUMERICAL_FAILURE,
         TerminationReason.DIVERGED,
         TerminationReason.REPEATED_REJECTIONS,
         TerminationReason.NO_OBSERVATIONS,
     }
+    safe_termination = all(
+        stage.termination_reason not in unsafe_terminations for stage in (first, second, result)
+    )
     checks = (
         ValidationCheck(
             "observed_grid",
@@ -639,6 +720,16 @@ def run_qarr_1g_validation(
             measured=max_weight_error,
             criterion="maximum absolute phase error <= 0.02",
         ),
+        ValidationCheck(
+            "qpa_covariance",
+            "passed" if maximum_fraction_standard_uncertainty is not None else "failed",
+            (
+                "The final scale covariance propagates analytically to finite "
+                "phase-fraction uncertainties."
+            ),
+            measured=maximum_fraction_standard_uncertainty,
+            criterion="finite nonnegative propagated variance for every phase fraction",
+        ),
     )
     status: ValidationStatus = (
         "passed" if all(check.status == "passed" for check in checks) else "failed"
@@ -656,6 +747,12 @@ def run_qarr_1g_validation(
         checks=checks,
         notes=(
             f"Calculated crystalline weight fractions: {fraction_note}.",
+            (
+                "Final scale covariance was not identifiable."
+                if maximum_fraction_standard_uncertainty is None
+                else "Maximum propagated phase-fraction standard uncertainty="
+                f"{maximum_fraction_standard_uncertainty:.8f}."
+            ),
             (
                 f"Stage 1 termination={first.termination_reason.value}, "
                 f"iterations={len(first.history)}, evaluations={first.evaluations}, "

@@ -92,10 +92,11 @@ an independently resumable native checkpoint. Fixed X-ray dispersion, neutron
 identities, every built-in sample-physics/background model, constraints,
 geometry, and native numerical controls round-trip through this path.
 
-`phasesmith.persistence.PersistenceBundle` format 12 remains readable and
-writable. The scripting facade deliberately uses it for component radiation,
+`phasesmith.persistence.PersistenceBundle` format 13 is the current writable
+schema and format 12 remains readable. The scripting facade deliberately uses
+it for component radiation,
 Python provider extensions, Python-created checkpoint state, and the
-Python-optimizer-only `max_linearization_elements` option. Format 12 also
+Python-optimizer-only `max_linearization_elements` option. Format 13 also
 retains parser provenance, source labels, uncertainties, disorder metadata,
 and other scripting metadata outside the native scientific application model.
 Thus existing Python projects remain compatible while desktop projects never

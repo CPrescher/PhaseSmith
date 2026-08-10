@@ -3,12 +3,39 @@
 use std::path::PathBuf;
 use std::process::Command;
 
-use phasesmith_validation::{ValidationStatus, run_qarr_1g_validation};
+use phasesmith_validation::{ValidationStatus, run_qarr_1g_validation, run_qarr_1h_validation};
 
 fn dataset() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("../..")
         .join("validation/data/iucr-qarr-1g")
+}
+
+fn holdout_dataset() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../..")
+        .join("validation/data/iucr-qarr-1h")
+}
+
+#[test]
+#[ignore = "expensive checksum-pinned QARR transferability holdout"]
+fn qarr_1h_preserves_the_qpa_signal_and_surfaces_the_profile_failure() {
+    let report = run_qarr_1h_validation(&holdout_dataset()).unwrap();
+    assert_eq!(report.status, ValidationStatus::Failed);
+    let check = |id: &str| {
+        report
+            .checks
+            .iter()
+            .find(|check| check.check_id == id)
+            .unwrap()
+    };
+    assert_eq!(
+        check("qpa_weight_fraction").status,
+        ValidationStatus::Passed
+    );
+    assert_eq!(check("qpa_covariance").status, ValidationStatus::Passed);
+    assert_eq!(check("poisson_rwp").status, ValidationStatus::Failed);
+    assert_eq!(check("unit_weight_rwp").status, ValidationStatus::Failed);
 }
 
 #[test]
@@ -30,10 +57,10 @@ fn pure_rust_qarr_runner_passes_all_scientific_gates_and_is_deterministic() {
         .iter()
         .filter_map(|check| check.measured.map(|value| (check.check_id.as_str(), value)))
         .collect::<std::collections::BTreeMap<_, _>>();
-    assert!((measured["poisson_rwp"] - 0.198_443_364_221_151).abs() < 2.0e-10);
-    assert!((measured["unit_weight_rwp"] - 0.131_813_052_208_354_82).abs() < 2.0e-10);
-    assert!((measured["profile_correlation"] - 0.990_618_084_457_731_4).abs() < 2.0e-10);
-    assert!((measured["qpa_weight_fraction"] - 0.010_042_134_333_594_799).abs() < 2.0e-10);
+    assert!((measured["poisson_rwp"] - 0.198_284_063_268_922_78).abs() < 2.0e-10);
+    assert!((measured["unit_weight_rwp"] - 0.131_785_139_100_731_06).abs() < 2.0e-10);
+    assert!((measured["profile_correlation"] - 0.990_621_550_207_537_2).abs() < 2.0e-10);
+    assert!((measured["qpa_weight_fraction"] - 0.010_067_003_462_405_855).abs() < 2.0e-10);
     let measurements = |report: &phasesmith_validation::RealDataValidationReport| {
         report
             .checks
