@@ -7,6 +7,22 @@ arrays and has no dependency on Dioptas, xypattern, or a GUI.
 
 ## Smooth Bruckner compatibility model
 
+The named procedure traces to Sergio Brückner, [*Estimation of the background
+in powder diffraction patterns through a robust smoothing
+procedure*](https://doi.org/10.1107/S0021889800003617), *Journal of Applied
+Crystallography* **33**, 977–979 (2000). Brückner introduced it for estimating
+the background beneath Bragg peaks, with particular attention to diffraction
+patterns from semicrystalline polymers. The paper describes the method as an
+extension of traditional smoothing that treats Bragg peaks as removable
+fluctuations alongside random profile noise.
+
+The documented origin of the named algorithm is therefore powder diffraction,
+not astronomy. Astronomy uses related moving-window smoothing and iterative
+clipping techniques for sky and spectral-background estimation, but that
+similarity does not establish an astronomical provenance for the Brückner
+procedure. `SmoothBrucknerBackground` is the ASCII software class name used by
+xypattern; it is not the title used in the original publication.
+
 The first estimator reproduces the observable algorithm in xypattern's pinned
 [`smooth_bruckner.pyx`](https://github.com/CPrescher/xypattern/blob/6e4574d75d2d6fcefc633f9fbecc27b8f1bcd817/xypattern/util/smooth_bruckner.pyx),
 used by Dioptas-style workflows. Compatibility is pinned to xypattern revision
