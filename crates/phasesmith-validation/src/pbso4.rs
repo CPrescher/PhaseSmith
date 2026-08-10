@@ -23,13 +23,14 @@ use phasesmith_model::{DomainError, FixedWavelengthSpectrum, PatternRecord, Reco
 use phasesmith_workflows::{
     BackgroundError as ModelBackgroundError, BackgroundModel, ChebyshevBackground,
     DifferentiableBackground, LatticeBounds, LatticeError, LatticeParameterization,
-    LatticeReflectionDomain, RefinementLimits, RietveldCalculationOptions,
-    RietveldCovarianceOptions, RietveldError, RietveldGeneralParameterError,
-    RietveldGeneralRefinementError, RietveldInput, RietveldInstrumentParameter,
-    RietveldParameterSelection, RietveldPhase, RietveldRecipeError, RietveldRefinementError,
-    RietveldRefinementOptions, RietveldSamplePhysicsModel, RietveldStructuralSelection,
-    RietveldWorkflowResult, RuntimeError, TerminationReason, calculate_rietveld_pattern,
-    intelligent_rietveld_recipe, run_rietveld_recipe,
+    LatticeReflectionDomain, PhaseScaleEstimationError, RefinementLimits,
+    RietveldCalculationOptions, RietveldCovarianceOptions, RietveldError,
+    RietveldGeneralParameterError, RietveldGeneralRefinementError, RietveldInput,
+    RietveldInstrumentParameter, RietveldParameterSelection, RietveldPhase, RietveldRecipeError,
+    RietveldRefinementError, RietveldRefinementOptions, RietveldSamplePhysicsModel,
+    RietveldStructuralSelection, RietveldWorkflowResult, RuntimeError, TerminationReason,
+    calculate_rietveld_pattern, estimate_initial_phase_scales, intelligent_rietveld_recipe,
+    run_rietveld_recipe,
 };
 
 use crate::{
@@ -282,20 +283,11 @@ fn neutron_request(
     let phase = RietveldPhase::from_lattice_domain(
         RecordId::new(PHASE_ID)?,
         "PbSO4",
-        site_ids.clone(),
-        definition.clone(),
-        domain.clone(),
-    )?;
-    let phase = estimated_scale(
-        &pattern,
-        instrument,
-        position,
-        phase,
+        site_ids,
         definition,
         domain,
-        site_ids,
-        execution.clone(),
     )?;
+    let phase = estimated_scale(&pattern, instrument, position, phase, execution.clone())?;
     let background =
         fitted_residual_background(&pattern, instrument, position, &phase, execution.clone())?;
     let input = RietveldInput::new_with_background(
@@ -427,41 +419,15 @@ fn estimated_fixed_xray_scale(
         position,
         vec![phase.clone()],
     )?;
-    let calculation = calculate_rietveld_pattern(
+    let mut estimated = estimate_initial_phase_scales(
         &input,
         &RietveldCalculationOptions::new(30.0, true, execution)?,
     )?;
-    let observed = pattern
-        .observed_y
-        .as_ref()
-        .ok_or(Pbso4ValidationError::MissingObservations)?;
-    let mut numerator = 0.0;
-    let mut denominator = 0.0;
-    for index in 0..pattern.sample_count() {
-        let weight = pattern
-            .uncertainty
-            .as_ref()
-            .map_or(1.0, |sigma| sigma[index].powi(2).recip());
-        let target = observed[index] - pattern.background_y[index];
-        numerator += weight * calculation.profile_y[index] * target;
-        denominator += weight * calculation.profile_y[index].powi(2);
-    }
-    if !denominator.is_finite() || denominator <= 0.0 {
-        return Err(Pbso4ValidationError::LinearSolve);
-    }
-    let mut definition = phase.definition().clone();
-    definition.scale = (numerator / denominator).max(f64::MIN_POSITIVE);
-    let updated = RietveldPhase::new_with_site_ids(
-        phase.phase_id().clone(),
-        phase.name(),
-        phase.site_ids().to_vec(),
-        definition,
-        phase.contributions().clone(),
-    )?;
-    Ok(phase
-        .sample_physics()
-        .cloned()
-        .map_or(updated.clone(), |model| updated.with_sample_physics(model)))
+    estimated
+        .input
+        .phases
+        .pop()
+        .ok_or(Pbso4ValidationError::LinearSolve)
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -657,43 +623,18 @@ fn estimated_scale(
     instrument: ConstantWavelengthInstrument,
     position: MonochromaticPositionCorrection,
     phase: RietveldPhase,
-    mut definition: StructuralPhaseDefinition,
-    domain: LatticeReflectionDomain,
-    site_ids: Vec<RecordId>,
     execution: ExecutionPolicy,
 ) -> Result<RietveldPhase, Pbso4ValidationError> {
     let input = RietveldInput::new(pattern.clone(), instrument, None, position, vec![phase])?;
-    let calculation = calculate_rietveld_pattern(
+    let mut estimated = estimate_initial_phase_scales(
         &input,
         &RietveldCalculationOptions::new(30.0, true, execution)?,
     )?;
-    let observed = pattern
-        .observed_y
-        .as_ref()
-        .ok_or(Pbso4ValidationError::MissingObservations)?;
-    let mut numerator = 0.0;
-    let mut denominator = 0.0;
-    for index in 0..pattern.sample_count() {
-        let weight = pattern
-            .uncertainty
-            .as_ref()
-            .map_or(1.0, |sigma| 1.0 / sigma[index].powi(2));
-        let target = observed[index] - pattern.background_y[index];
-        numerator += weight * calculation.profile_y[index] * target;
-        denominator += weight * calculation.profile_y[index].powi(2);
-    }
-    if !denominator.is_finite() || denominator <= 0.0 {
-        return Err(Pbso4ValidationError::LinearSolve);
-    }
-    definition.scale = (numerator / denominator).max(f64::MIN_POSITIVE);
-    RietveldPhase::from_lattice_domain(
-        RecordId::new(PHASE_ID)?,
-        "PbSO4",
-        site_ids,
-        definition,
-        domain,
-    )
-    .map_err(Into::into)
+    estimated
+        .input
+        .phases
+        .pop()
+        .ok_or(Pbso4ValidationError::LinearSolve)
 }
 
 fn fitted_residual_background(
@@ -1101,6 +1042,8 @@ pub enum Pbso4ValidationError {
     Lattice(LatticeError),
     /// Rietveld request or calculation failed.
     Rietveld(RietveldError),
+    /// Phase-scale initialization failed.
+    PhaseScale(PhaseScaleEstimationError),
     /// Rietveld solver-option construction failed.
     Refinement(RietveldRefinementError),
     /// Refinement runtime-limit construction failed.
@@ -1139,6 +1082,7 @@ impl Display for Pbso4ValidationError {
             Self::Execution(error) => Display::fmt(error, formatter),
             Self::Lattice(error) => Display::fmt(error, formatter),
             Self::Rietveld(error) => Display::fmt(error, formatter),
+            Self::PhaseScale(error) => Display::fmt(error, formatter),
             Self::Refinement(error) => Display::fmt(error, formatter),
             Self::Runtime(error) => Display::fmt(error, formatter),
             Self::GeneralParameter(error) => Display::fmt(error, formatter),
@@ -1173,6 +1117,7 @@ impl Error for Pbso4ValidationError {
             Self::Execution(error) => Some(error),
             Self::Lattice(error) => Some(error),
             Self::Rietveld(error) => Some(error),
+            Self::PhaseScale(error) => Some(error),
             Self::Refinement(error) => Some(error),
             Self::Runtime(error) => Some(error),
             Self::GeneralParameter(error) => Some(error),
@@ -1203,6 +1148,7 @@ error_conversion!(ModelBackgroundError, ModelBackground);
 error_conversion!(ExecutionPolicyError, Execution);
 error_conversion!(LatticeError, Lattice);
 error_conversion!(RietveldError, Rietveld);
+error_conversion!(PhaseScaleEstimationError, PhaseScale);
 error_conversion!(RietveldRefinementError, Refinement);
 error_conversion!(RuntimeError, Runtime);
 error_conversion!(RietveldGeneralParameterError, GeneralParameter);
