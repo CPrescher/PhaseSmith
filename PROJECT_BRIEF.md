@@ -646,6 +646,15 @@ reported separately (0.19844 and 0.13181), alongside profile correlation
 0.99062. Release tests repeat the native run exactly and compare the stable
 measurements with the independent Python runner under explicit tolerances.
 
+Phase-scale initialization is now an application-neutral
+`phasesmith-workflows` operation rather than validation-harness logic. It
+evaluates unit-scale native phase profiles on the exact finite-support grid and
+solves a deterministic weighted non-negative least-squares problem using only
+mask-included observations after subtracting fixed and analytical background.
+The result owns a validated restart-ready `RietveldInput`, ordered scales, and
+solve diagnostics. QARR consumes this public boundary; desktop adapters may use
+the same operation without depending on `phasesmith-validation`.
+
 This checkpoint uses explicit remaining approximations: fixed Cu K-alpha1
 dispersion offsets for both doublet components and no absorption. SH/L=0.002
 FCJ asymmetry and fixed CIF anisotropic displacement are active. It also

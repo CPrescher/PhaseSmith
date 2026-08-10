@@ -6,7 +6,6 @@ use std::fs;
 use std::path::Path;
 use std::time::Instant;
 
-use nalgebra::{DMatrix, DVector};
 use phasesmith_core::{
     ConstantWavelengthInstrument, FcjGeometry, OwnedCwContributions, smooth_bruckner,
 };
@@ -25,7 +24,7 @@ use phasesmith_workflows::{
     QuantitativePhase, RefinementLimits, RietveldCalculationOptions, RietveldCovarianceOptions,
     RietveldInput, RietveldInstrumentParameter, RietveldParameterSelection, RietveldPhase,
     RietveldRefinementOptions, RietveldSamplePhysicsModel, RietveldStructuralSelection,
-    TerminationReason, calculate_rietveld_pattern, quantitative_phase_analysis,
+    TerminationReason, quantitative_phase_analysis,
     refine_general_rietveld,
 };
 
@@ -129,28 +128,12 @@ pub fn run_qarr_1g_validation(
         phases,
     )
     .map_err(qerr)?;
-    let scales = initial_scales(&starting, execution.clone())?;
-    let mut phases = starting.phases.clone();
-    for (phase, scale) in phases.iter_mut().zip(scales) {
-        let mut definition = phase.definition().clone();
-        definition.scale = scale;
-        let sample_physics = phase.sample_physics().cloned();
-        let mut replacement = RietveldPhase::new_with_site_ids(
-            phase.phase_id().clone(),
-            phase.name(),
-            phase.site_ids().to_vec(),
-            definition,
-            phase.contributions().clone(),
-        )
-        .map_err(qerr)?;
-        if let Some(model) = sample_physics {
-            replacement = replacement.with_sample_physics(model);
-        }
-        *phase = replacement;
-    }
-    let input =
-        RietveldInput::new_fixed_spectrum(pattern, instrument, spectrum, axial, position, phases)
-            .map_err(qerr)?;
+    let input = phasesmith_workflows::estimate_initial_phase_scales(
+        &starting,
+        &RietveldCalculationOptions::new(30.0, true, execution.clone()).map_err(qerr)?,
+    )
+    .map_err(qerr)?
+    .input;
     let first_selection = RietveldParameterSelection::new(
         RietveldStructuralSelection {
             phase_scale: true,
@@ -352,54 +335,6 @@ fn qarr_phase(
     )
     .map(|phase| phase.with_sample_physics(RietveldSamplePhysicsModel::Composite(providers)))
     .map_err(qerr)
-}
-
-fn initial_scales(
-    input: &RietveldInput,
-    execution: ExecutionPolicy,
-) -> Result<Vec<f64>, QarrValidationError> {
-    let calculation = calculate_rietveld_pattern(
-        input,
-        &RietveldCalculationOptions::new(30.0, true, execution).map_err(qerr)?,
-    )
-    .map_err(qerr)?;
-    let observed = input
-        .pattern
-        .observed_y
-        .as_ref()
-        .ok_or_else(|| QarrValidationError("QARR observations are missing".to_owned()))?;
-    let uncertainty = input
-        .pattern
-        .uncertainty
-        .as_ref()
-        .ok_or_else(|| QarrValidationError("QARR uncertainty is missing".to_owned()))?;
-    let rows = input.pattern.sample_count();
-    let columns = calculation.phases.len();
-    let mut design = Vec::with_capacity(rows * columns);
-    for (row, sigma) in uncertainty.iter().enumerate().take(rows) {
-        for phase in &calculation.phases {
-            design.push(phase.result.accumulation.y[row] / sigma);
-        }
-    }
-    let target = observed
-        .iter()
-        .zip(&input.pattern.background_y)
-        .zip(uncertainty)
-        .map(|((observed, background), sigma)| (observed - background) / sigma)
-        .collect::<Vec<_>>();
-    let solution = DMatrix::from_row_slice(rows, columns, &design)
-        .svd(true, true)
-        .solve(&DVector::from_vec(target), f64::EPSILON)
-        .map_err(|_| QarrValidationError("QARR initial scale solve failed".to_owned()))?;
-    if solution
-        .iter()
-        .any(|value| !value.is_finite() || *value <= 0.0)
-    {
-        return Err(QarrValidationError(
-            "QARR initial scales are invalid".to_owned(),
-        ));
-    }
-    Ok(solution.as_slice().to_vec())
 }
 
 #[allow(clippy::too_many_lines)]

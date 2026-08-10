@@ -16,6 +16,7 @@ use phasesmith_model::{PatternRecord, RecordId};
 use phasesmith_workflows::{
     BackgroundModel, PolynomialBackground, RietveldCalculationOptions, RietveldError,
     RietveldInput, RietveldPhase, RietveldSamplePhysicsModel, calculate_rietveld_pattern,
+    estimate_initial_phase_scales,
 };
 
 fn instrument() -> ConstantWavelengthInstrument {
@@ -112,6 +113,19 @@ fn phase(id: &str, scale: f64) -> RietveldPhase {
     .expect("phase")
 }
 
+fn phase_with_a(id: &str, scale: f64, a_angstrom: f64) -> RietveldPhase {
+    let mut definition = phase_definition(scale);
+    definition.cell.a_angstrom = a_angstrom;
+    let contributions = OwnedCwContributions::neutral(definition.hkl.len());
+    RietveldPhase::new(
+        RecordId::new(id).expect("ID"),
+        format!("Phase {id}"),
+        definition,
+        contributions,
+    )
+    .expect("phase")
+}
+
 fn options(threads: usize) -> RietveldCalculationOptions {
     RietveldCalculationOptions::new(
         20.0,
@@ -134,6 +148,96 @@ fn input(pattern: PatternRecord, phases: Vec<RietveldPhase>) -> RietveldInput {
         phases,
     )
     .expect("input")
+}
+
+#[test]
+fn initial_phase_scale_estimation_respects_mask_uncertainty_and_background() {
+    let x_deg = (0..4_001)
+        .map(|index| 10.0 + f64::from(index) * 0.03)
+        .collect::<Vec<_>>();
+    let background = x_deg
+        .iter()
+        .map(|x| 3.0 + 0.01 * (x - 10.0))
+        .collect::<Vec<_>>();
+    let blank = PatternRecord::new(
+        x_deg.clone(),
+        Some(vec![0.0; x_deg.len()]),
+        None,
+        None,
+        Some(background.clone()),
+    )
+    .expect("truth pattern");
+    let truth = calculate_rietveld_pattern(&input(blank, vec![phase("alpha", 2.5)]), &options(1))
+        .expect("truth calculation");
+    let uncertainty = (0..x_deg.len())
+        .map(|index| {
+            0.8 + 0.1 * f64::from(u32::try_from(index % 7).expect("remainder fits in u32"))
+        })
+        .collect::<Vec<_>>();
+    let mask = (0..x_deg.len())
+        .map(|index| (250..3_800).contains(&index) && !(1_700..1_900).contains(&index))
+        .collect::<Vec<_>>();
+    let observed = PatternRecord::new(
+        x_deg,
+        Some(truth.y),
+        Some(uncertainty),
+        Some(mask),
+        Some(background),
+    )
+    .expect("observed pattern");
+    let starting = input(observed, vec![phase("alpha", 0.15)]);
+
+    let estimated = estimate_initial_phase_scales(&starting, &options(1))
+        .expect("single phase scale is identifiable");
+
+    assert!((estimated.scales[0] - 2.5).abs() < 1.0e-10);
+    assert_eq!(estimated.included_points, 3_350);
+    assert_eq!(estimated.active_phases, 1);
+    assert!(estimated.weighted_residual_sum_squares < 1.0e-18);
+    assert!((estimated.input.phases[0].definition().scale - 2.5).abs() < 1.0e-10);
+}
+
+#[test]
+fn initial_phase_scale_estimation_recovers_multiple_non_negative_scales() {
+    let x_deg = (0..4_001)
+        .map(|index| 10.0 + f64::from(index) * 0.03)
+        .collect::<Vec<_>>();
+    let blank = PatternRecord::new(
+        x_deg.clone(),
+        Some(vec![0.0; x_deg.len()]),
+        None,
+        None,
+        Some(vec![0.0; x_deg.len()]),
+    )
+    .expect("truth pattern");
+    let truth = calculate_rietveld_pattern(
+        &input(
+            blank,
+            vec![
+                phase_with_a("alpha", 1.7, 4.7),
+                phase_with_a("beta", 0.45, 5.35),
+            ],
+        ),
+        &options(1),
+    )
+    .expect("truth calculation");
+    let observed = PatternRecord::new(x_deg, Some(truth.y), None, None, Some(vec![0.0; 4_001]))
+        .expect("observed pattern");
+    let starting = input(
+        observed,
+        vec![
+            phase_with_a("alpha", 0.01, 4.7),
+            phase_with_a("beta", 4.0, 5.35),
+        ],
+    );
+
+    let estimated = estimate_initial_phase_scales(&starting, &options(1))
+        .expect("two phase scales are identifiable");
+
+    assert!((estimated.scales[0] - 1.7).abs() < 1.0e-10);
+    assert!((estimated.scales[1] - 0.45).abs() < 1.0e-10);
+    assert_eq!(estimated.active_phases, 2);
+    assert!(estimated.iterations >= 2);
 }
 
 #[test]

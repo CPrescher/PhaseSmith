@@ -47,6 +47,7 @@ mod backgrounds;
 mod constraints;
 mod lattice;
 mod lebail;
+mod phase_scale_estimation;
 mod parameters;
 mod quantitative;
 mod residuals;
@@ -85,6 +86,9 @@ pub use lebail::{
     extract_lebail_intensities, initialize_lebail_intensities, iterate_lebail_once,
     lebail_instrument_parameter_key, lebail_lattice_parameter_key, lebail_phase_scale_key,
     lebail_reflection_position_key, refine_lebail, refine_lebail_with_runtime,
+};
+pub use phase_scale_estimation::{
+    PhaseScaleEstimationError, PhaseScaleEstimationResult, estimate_initial_phase_scales,
 };
 pub use parameters::{ParameterBounds, ParameterError, ParameterKey, ParameterSet, ParameterSpec};
 pub use quantitative::{
