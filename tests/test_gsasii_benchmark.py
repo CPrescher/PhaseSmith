@@ -252,7 +252,7 @@ def test_qarr_comparison_numerically_gates_cross_implementation_results() -> Non
     assert "maximum_phase_fraction_delta" in drift["failed_checks"]
 
 
-def test_nist_srm660c_physical_subset_preserves_the_reviewed_failure() -> None:
+def test_nist_srm660c_fcj_cases_have_distinct_acceptance_contracts() -> None:
     benchmark = load_script(
         "benchmarks/compare_gsasii_nist_srm660c.py", "compare_gsasii_nist_srm660c_test"
     )
@@ -261,6 +261,7 @@ def test_nist_srm660c_physical_subset_preserves_the_reviewed_failure() -> None:
         "sample_count": 5_332,
         "reflection_count": 30,
         "free_parameter_count": 17,
+        "sh_over_l": 0.02,
         "poisson_rwp": 0.1891,
         "unit_weight_rwp": 0.2476,
         "profile_correlation": 0.9693,
@@ -276,6 +277,13 @@ def test_nist_srm660c_physical_subset_preserves_the_reviewed_failure() -> None:
 
     comparison = benchmark.compare_scientific_results(phasesmith_result, gsas_result)
 
+    assert benchmark.CASES["matched-small-fcj"]["expected_cross_status"] == "passed"
+    assert benchmark.CASES["large-fcj-stress"]["expected_cross_status"] == "failed"
+    assert list(benchmark.CASES["large-fcj-stress"]["expected_failed_checks"]) == [
+        "poisson_rwp_delta",
+        "unit_weight_rwp_delta",
+        "profile_correlation_delta",
+    ]
     assert comparison["status"] == "failed"
     assert comparison["failed_checks"] == [
         "poisson_rwp_delta",
@@ -284,6 +292,20 @@ def test_nist_srm660c_physical_subset_preserves_the_reviewed_failure() -> None:
     ]
     matched = benchmark.compare_scientific_results(phasesmith_result, phasesmith_result)
     assert matched["status"] == "passed"
+
+
+def test_nist_worker_converts_pdcif_displacement_to_gsasii_shift_units() -> None:
+    worker = load_script(
+        "oracle/scripts/benchmark_nist_srm660c.py", "benchmark_nist_srm660c_worker_test"
+    )
+
+    assert worker.gsas_shift_micrometre(-0.07877) == pytest.approx(-78.77)
+    assert "SH/L:0.002" in worker.instrument_text()
+    assert "SH/L:0.02" in worker.instrument_text(0.02)
+    with pytest.raises(ValueError, match="finite"):
+        worker.gsas_shift_micrometre(float("nan"))
+    with pytest.raises(ValueError, match="non-negative"):
+        worker.instrument_text(-0.001)
 
 
 def test_rowles_comparison_gates_converted_common_subset() -> None:

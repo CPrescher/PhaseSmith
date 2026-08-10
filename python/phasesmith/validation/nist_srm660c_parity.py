@@ -33,6 +33,8 @@ _PROFILE_HEADERS = (
 )
 _LAMBDA_1 = 1.5405929
 _LAMBDA_2 = 1.5444274
+NIST_SRM660C_MATCHED_SH_OVER_L = 0.002
+NIST_SRM660C_STRESS_SH_OVER_L = 0.02
 _COMMON_PROFILE_SEED = {
     "u_deg2": 2.0e-4,
     "v_deg2": -2.0e-4,
@@ -111,6 +113,7 @@ class NistSrm660cParityResult:
     sample_count: int
     reflection_count: int
     free_parameter_count: int
+    sh_over_l: float
     poisson_rwp: float
     unit_weight_rwp: float
     profile_correlation: float
@@ -127,6 +130,7 @@ class NistSrm660cParityResult:
             self.nist_reference_rwp,
             self.nist_reference_correlation,
             self.elapsed_seconds,
+            self.sh_over_l,
         )
         if _SPECIMEN_PATTERN.fullmatch(self.specimen) is None or not all(
             math.isfinite(value) for value in values
@@ -134,6 +138,8 @@ class NistSrm660cParityResult:
             raise ValueError("NIST SRM 660c parity result is invalid or non-finite")
         if self.sample_count <= 0 or self.reflection_count <= 0 or self.free_parameter_count <= 0:
             raise ValueError("NIST SRM 660c parity result counts must be positive")
+        if self.sh_over_l < 0.0:
+            raise ValueError("NIST SRM 660c parity result SH/L must be non-negative")
 
     def to_record(self) -> dict[str, Any]:
         return asdict(self)
@@ -144,8 +150,16 @@ def run_nist_srm660c_parity_workflow(
     specimen: str = "100a",
     *,
     execution: ExecutionPolicy | None = None,
+    sh_over_l: float = NIST_SRM660C_MATCHED_SH_OVER_L,
 ) -> NistSrm660cParityResult:
-    """Refine one NIST scan with the documented empirical common model."""
+    """Refine one NIST scan with an equal-height empirical FCJ common model.
+
+    ``sh_over_l=0.002`` is the matched GSAS-II parity contract. The separate
+    ``0.02`` case is retained as a large-asymmetry implementation stress test.
+    """
+
+    if not math.isfinite(sh_over_l) or sh_over_l < 0.0:
+        raise ValueError("sh_over_l must be finite and non-negative")
 
     started = perf_counter()
     text, x, observed, weight, nist_calculated, displacement = read_nist_srm660c_specimen(
@@ -170,7 +184,7 @@ def run_nist_srm660c_parity_workflow(
             instrument,
             WavelengthComponents.doublet(_LAMBDA_1, _LAMBDA_2, 0.5),
             geometry=BraggBrentanoGeometry(217.5, displacement),
-            axial_geometry=FcjGeometry(0.01, 0.01),
+            axial_geometry=FcjGeometry(sh_over_l / 2.0, sh_over_l / 2.0),
         ),
         zero_shift_deg=_COMMON_PROFILE_SEED["zero_shift_deg"],
     )
@@ -314,6 +328,7 @@ def run_nist_srm660c_parity_workflow(
         sample_count=x.size,
         reflection_count=phases[0].reflections.reflection_count,
         free_parameter_count=1 + 12 + 1 + 1 + len(phases[0].structure.sites),
+        sh_over_l=sh_over_l,
         poisson_rwp=poisson_rwp,
         unit_weight_rwp=float(np.sqrt((residual @ residual) / (observed @ observed))),
         profile_correlation=float(

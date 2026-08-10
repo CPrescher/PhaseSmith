@@ -482,20 +482,26 @@ phase fractions and both Rwp conventions and 0.002 for profile correlation.
 The prior QARR acceptance workflow remains available as a distinct model and
 is not silently redefined by this oracle comparison.
 
-The next independent laboratory holdout uses specimen 100a from NIST SRM 660c.
-It preserves NIST's released fundamental-parameters curve as the primary
+The next independent laboratory checkpoint uses specimen 100a from NIST SRM
+660c. It preserves NIST's released fundamental-parameters curve as the primary
 reference, while a separate 17-parameter physical common subset compares
 PhaseSmith with pinned GSAS-II: fixed positive-variance U/V/W and zero
 microstrain, refined zero, isotropic size, two Uiso values, scale, and twelve
-Chebyshev coefficients. PhaseSmith returns 18.912% Poisson Rwp and 0.96932
-profile correlation versus GSAS-II's 13.984% and 0.98983; the NIST reference is
-6.055% and 0.99948. The cross-program profile gate therefore remains failed.
-Unconstrained GSAS-II runs were rejected as parity targets because they drove U
-and microstrain negative, producing nonphysical high-angle Gaussian variance.
-This holdout identifies a remaining empirical-profile/model gap without adding
-the TOPAS fundamental-parameters optics excluded from PhaseSmith's scope. The
-untuned 100b transfer scan reproduces the result at 18.777%/13.830% Rwp versus
-the 6.142% NIST reference, confirming that the gap is not specimen-specific.
+Chebyshev coefficients. The oracle boundary explicitly converts NIST's
+millimetre specimen displacement to GSAS-II's micrometre `Shift` convention.
+At the matched small-asymmetry setting SH/L=0.002, PhaseSmith and GSAS-II return
+20.495% and 20.864% Poisson Rwp, 28.057% and 27.803% unit-weight Rwp, and
+0.95959 and 0.95982 profile correlation. Every cross-program gate passes.
+
+The original SH/L=0.02 setting is retained separately as a large-FCJ stress
+holdout. Correct displacement units give 18.912% PhaseSmith Rwp versus 17.024%
+GSAS-II Rwp, so the expected profile gate remains failed and isolates the
+continuous-versus-discretized FCJ difference. The NIST reference remains much
+better at 6.055% Rwp and 0.99948 correlation because its full Cu spectrum and
+fundamental-parameters optics are deliberately outside this empirical parity
+subset. Unconstrained GSAS-II runs remain rejected as targets because they
+drove U and microstrain negative, producing nonphysical high-angle Gaussian
+variance.
 
 ## Design commitments
 

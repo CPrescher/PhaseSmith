@@ -42,11 +42,14 @@ scope and limitations.
 
 `scripts/benchmark_nist_srm660c.py` reads one bounded pdCIF member directly
 from the checksum-pinned NIST archive and fits the same 17-parameter physical
-empirical subset as PhaseSmith. The paired comparison is an expected failing
-holdout, not a replacement for the NIST reference: specimen 100a currently
-gives 18.912% PhaseSmith Rwp versus 13.984% GSAS-II Rwp. Negative Gaussian
-variance and negative microstrain states found in unconstrained GSAS-II probes
-are excluded explicitly.
+empirical subset as PhaseSmith. NIST's millimetre specimen displacement is
+converted explicitly to the micrometre `Shift` unit used by GSAS-II. The
+SH/L=0.002 matched case passes at 20.495% PhaseSmith Rwp versus 20.864% GSAS-II
+Rwp. A separate SH/L=0.02 expected-failure stress case gives 18.912% versus
+17.024% and tracks the observable continuous-versus-discretized FCJ difference.
+Neither comparison replaces the NIST reference. Negative Gaussian variance and
+negative microstrain states found in unconstrained GSAS-II probes are excluded
+explicitly.
 
 The live real-data matrix covers sucrose, Echidna, QARR 1g, QARR 1h, POWGEN,
 and the paired PbSO4 X-ray/neutron workflow. NIST SRM 660c is deliberately different:

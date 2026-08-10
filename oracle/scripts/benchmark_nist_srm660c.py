@@ -27,6 +27,7 @@ PROFILE_HEADERS = (
     "_pd_proc_intensity_total",
     "_pd_proc_ls_weight",
 )
+MATCHED_SH_OVER_L = 0.002
 
 
 def parse_args() -> argparse.Namespace:
@@ -37,6 +38,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--report", type=Path, required=True)
     parser.add_argument("--specimen", default="100a")
     parser.add_argument("--cycles", type=int, default=8)
+    parser.add_argument("--sh-over-l", type=float, default=MATCHED_SH_OVER_L)
     return parser.parse_args()
 
 
@@ -114,8 +116,18 @@ def read_specimen(data: Path, specimen: str) -> tuple[str, Any, Any, Any, Any, f
     )
 
 
-def instrument_text() -> str:
-    return """#GSAS-II instrument parameter file
+def gsas_shift_micrometre(displacement_mm: float) -> float:
+    """Convert the NIST pdCIF specimen displacement to GSAS-II's shift unit."""
+
+    if not math.isfinite(displacement_mm):
+        raise ValueError("NIST specimen displacement must be finite")
+    return 1_000.0 * displacement_mm
+
+
+def instrument_text(sh_over_l: float = MATCHED_SH_OVER_L) -> str:
+    if not math.isfinite(sh_over_l) or sh_over_l < 0.0:
+        raise ValueError("SH/L must be finite and non-negative")
+    return f"""#GSAS-II instrument parameter file
 Type:PXC
 Bank:1.0
 Lam1:1.5405929
@@ -130,7 +142,7 @@ W:5.0
 X:0.0
 Y:0.0
 Z:0.0
-SH/L:0.02
+SH/L:{sh_over_l:.12g}
 Source:CuKa
 """
 
@@ -200,7 +212,7 @@ def run_workflow(scripting: Any, data: Path, arguments: argparse.Namespace) -> d
         instrument_path = directory / "instrument.instprm"
         structure_path = directory / "lab6.cif"
         np.savetxt(pattern_path, np.column_stack((x, observed, 1.0 / np.sqrt(weight))))
-        instrument_path.write_text(instrument_text(), encoding="utf-8")
+        instrument_path.write_text(instrument_text(arguments.sh_over_l), encoding="utf-8")
         structure_path.write_text(structure_text(lattice), encoding="utf-8")
         setup_started = time.perf_counter_ns()
         project = scripting.G2Project(newgpx=str(directory / "nist660c.gpx"))
@@ -214,7 +226,9 @@ def run_workflow(scripting: Any, data: Path, arguments: argparse.Namespace) -> d
             }
         )
         histogram.data["Sample Parameters"]["Scale"][1] = False
-        histogram.data["Sample Parameters"]["Shift"][0] = displacement
+        # NIST publishes millimetres; GSAS-II's Bragg--Brentano Shift field is
+        # expressed in micrometres.
+        histogram.data["Sample Parameters"]["Shift"][0] = gsas_shift_micrometre(displacement)
         histogram.data["Sample Parameters"]["Gonio. radius"] = 217.5
         project.set_Controls("cycles", arguments.cycles)
         phase = project.add_phase(
@@ -248,6 +262,7 @@ def run_workflow(scripting: Any, data: Path, arguments: argparse.Namespace) -> d
             "sample_count": int(x.size),
             "reflection_count": len(histogram.reflections()["LaB6"]["RefList"]),
             "free_parameter_count": len(covariance.get("varyList", [])),
+            "sh_over_l": arguments.sh_over_l,
             "poisson_rwp": float(np.sqrt(np.sum(weight * residual**2) / denominator)),
             "unit_weight_rwp": float(np.sqrt((residual @ residual) / (observed @ observed))),
             "profile_correlation": float(
@@ -309,7 +324,11 @@ def main() -> None:
         "python_version": platform.python_version(),
         "numpy_version": np.__version__,
         "platform": platform.platform(),
-        "recipe": {"cycles": arguments.cycles, "specimen": arguments.specimen},
+        "recipe": {
+            "cycles": arguments.cycles,
+            "specimen": arguments.specimen,
+            "sh_over_l": arguments.sh_over_l,
+        },
         "input_sha256": {ARCHIVE: sha256(archive)},
         "import_ms": import_ms,
         **workflow,

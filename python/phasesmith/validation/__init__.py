@@ -9,6 +9,8 @@ from .datasets import (
     verify_validation_dataset,
 )
 from .nist_srm660c_parity import (
+    NIST_SRM660C_MATCHED_SH_OVER_L,
+    NIST_SRM660C_STRESS_SH_OVER_L,
     NistSrm660cParityResult,
     read_nist_srm660c_specimen,
     run_nist_srm660c_parity_workflow,
@@ -41,6 +43,8 @@ from .suite import (
 )
 
 __all__ = [
+    "NIST_SRM660C_MATCHED_SH_OVER_L",
+    "NIST_SRM660C_STRESS_SH_OVER_L",
     "QARR_1G_CUKA_FIXED_DISPERSION",
     "QARR_1G_WEIGHED_WEIGHT_FRACTIONS",
     "VALIDATION_CASES",

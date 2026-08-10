@@ -16,6 +16,8 @@ from typing import Any
 import numpy as np
 import phasesmith
 from phasesmith.validation import (
+    NIST_SRM660C_MATCHED_SH_OVER_L,
+    NIST_SRM660C_STRESS_SH_OVER_L,
     run_nist_srm660c_parity_workflow,
     verify_validation_dataset,
 )
@@ -30,6 +32,24 @@ LIMITS = {
     "nist_reference_rwp_delta": 1.0e-12,
     "nist_reference_correlation_delta": 1.0e-12,
 }
+CASES = {
+    "matched-small-fcj": {
+        "sh_over_l": NIST_SRM660C_MATCHED_SH_OVER_L,
+        "expected_cross_status": "passed",
+        "expected_failed_checks": (),
+        "comparison_kind": "matched_empirical_common_subset",
+    },
+    "large-fcj-stress": {
+        "sh_over_l": NIST_SRM660C_STRESS_SH_OVER_L,
+        "expected_cross_status": "failed",
+        "expected_failed_checks": (
+            "poisson_rwp_delta",
+            "unit_weight_rwp_delta",
+            "profile_correlation_delta",
+        ),
+        "comparison_kind": "large_asymmetry_expected_holdout",
+    },
+}
 
 
 def parse_args() -> argparse.Namespace:
@@ -41,6 +61,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--data-directory", type=Path)
     parser.add_argument("--specimen", default="100a")
+    parser.add_argument("--case", choices=(*CASES, "both"), default="both")
     parser.add_argument("--cycles", type=int, default=8)
     parser.add_argument("--repetitions", type=int, default=3)
     parser.add_argument("--phasesmith-threads", type=int, default=1)
@@ -54,7 +75,13 @@ def compare_scientific_results(
 ) -> dict[str, Any]:
     """Apply strict physical-common-subset gates without masking known drift."""
 
-    for key in ("specimen", "sample_count", "reflection_count", "free_parameter_count"):
+    for key in (
+        "specimen",
+        "sample_count",
+        "reflection_count",
+        "free_parameter_count",
+        "sh_over_l",
+    ):
         if phasesmith_result[key] != gsas_result[key]:
             raise RuntimeError(f"PhaseSmith and GSAS-II disagree on {key}")
     measurements = {
@@ -86,13 +113,19 @@ def compare_scientific_results(
 
 
 def run_phasesmith(
-    data: Path, specimen: str, repetitions: int, execution: phasesmith.ExecutionPolicy
+    data: Path,
+    specimen: str,
+    repetitions: int,
+    execution: phasesmith.ExecutionPolicy,
+    sh_over_l: float,
 ) -> tuple[dict[str, Any], list[float]]:
     records = []
     timings = []
     for _ in range(repetitions):
         started = time.perf_counter_ns()
-        result = run_nist_srm660c_parity_workflow(data, specimen, execution=execution)
+        result = run_nist_srm660c_parity_workflow(
+            data, specimen, execution=execution, sh_over_l=sh_over_l
+        )
         timings.append((time.perf_counter_ns() - started) / 1.0e6)
         records.append(result.to_record())
     stable = [
@@ -104,7 +137,9 @@ def run_phasesmith(
     return records[-1], timings
 
 
-def run_gsas(arguments: argparse.Namespace, temporary: Path) -> tuple[dict[str, Any], list[float]]:
+def run_gsas(
+    arguments: argparse.Namespace, temporary: Path, sh_over_l: float
+) -> tuple[dict[str, Any], list[float]]:
     environment = dict(os.environ)
     environment["MPLCONFIGDIR"] = str(temporary / "matplotlib")
     reports = []
@@ -124,6 +159,8 @@ def run_gsas(arguments: argparse.Namespace, temporary: Path) -> tuple[dict[str, 
             arguments.specimen,
             "--cycles",
             str(arguments.cycles),
+            "--sh-over-l",
+            str(sh_over_l),
         ]
         if arguments.binary_dir is not None:
             command.extend(("--binary-dir", str(arguments.binary_dir)))
@@ -170,16 +207,53 @@ def main() -> None:
     execution = phasesmith.ExecutionPolicy(
         threads=None if arguments.phasesmith_threads == 0 else arguments.phasesmith_threads
     )
-    phase_result, phase_timings = run_phasesmith(
-        arguments.data_directory, arguments.specimen, arguments.repetitions, execution
-    )
+    selected_cases = tuple(CASES) if arguments.case == "both" else (arguments.case,)
+    case_reports = {}
     with tempfile.TemporaryDirectory(prefix="phasesmith-gsasii-nist660c-comparison-") as name:
-        gsas_result, gsas_timings = run_gsas(arguments, Path(name))
-    validation = compare_scientific_results(phase_result, gsas_result)
+        temporary = Path(name)
+        for case_name in selected_cases:
+            case_temporary = temporary / case_name
+            case_temporary.mkdir()
+            case = CASES[case_name]
+            sh_over_l = float(case["sh_over_l"])
+            phase_result, phase_timings = run_phasesmith(
+                arguments.data_directory,
+                arguments.specimen,
+                arguments.repetitions,
+                execution,
+                sh_over_l,
+            )
+            gsas_result, gsas_timings = run_gsas(arguments, case_temporary, sh_over_l)
+            validation = compare_scientific_results(phase_result, gsas_result)
+            expected_cross_status = str(case["expected_cross_status"])
+            expected_failed_checks = list(case["expected_failed_checks"])
+            expectation_met = (
+                validation["status"] == expected_cross_status
+                and validation["failed_checks"] == expected_failed_checks
+            )
+            case_reports[case_name] = {
+                "status": "passed" if expectation_met else "failed",
+                "comparison_kind": case["comparison_kind"],
+                "expected_cross_status": expected_cross_status,
+                "expected_failed_checks": expected_failed_checks,
+                "phasesmith": {
+                    "result": phase_result,
+                    "timings_ms": phase_timings,
+                },
+                "gsasii": {
+                    "result": gsas_result,
+                    "timings_ms": gsas_timings,
+                },
+                "cross_implementation_validation": validation,
+            }
     report = {
-        "schema_version": 1,
-        "scope": "nist_srm660c_empirical_common_model",
-        "comparison_kind": "physical_empirical_common_subset_expected_holdout",
+        "schema_version": 2,
+        "scope": "nist_srm660c_fcj_parity_and_stress",
+        "status": (
+            "passed"
+            if all(case_report["status"] == "passed" for case_report in case_reports.values())
+            else "failed"
+        ),
         "workload": {
             "dataset_id": "nist-srm660c-lab6-xray",
             "specimen": arguments.specimen,
@@ -190,15 +264,11 @@ def main() -> None:
             "build_mode": phasesmith._core.BUILD_MODE,
             "python_version": platform.python_version(),
             "numpy_version": np.__version__,
-            "result": phase_result,
-            "timings_ms": phase_timings,
         },
         "gsasii": {
             "revision": PINNED_REVISION,
-            "result": gsas_result,
-            "timings_ms": gsas_timings,
         },
-        "cross_implementation_validation": validation,
+        "cases": case_reports,
         "limitations": [
             "The NIST fundamental-parameters Cu spectrum and optics model is deliberately omitted.",
             (
@@ -210,20 +280,25 @@ def main() -> None:
                 "The common model refines zero, isotropic size, two Uiso values, "
                 "scale, and twelve Chebyshev terms."
             ),
+            (
+                "The matched case checks SH/L=0.002 parity. SH/L=0.02 is an expected-failure "
+                "stress test of the continuous and discretized FCJ implementations."
+            ),
         ],
     }
     print(
-        f"scope={report['scope']} specimen={arguments.specimen} repetitions={arguments.repetitions}"
+        f"scope={report['scope']} specimen={arguments.specimen} "
+        f"repetitions={arguments.repetitions}"
     )
-    print(
-        f"phasesmith_rwp={100 * phase_result['poisson_rwp']:.3f}% "
-        f"gsasii_rwp={100 * gsas_result['poisson_rwp']:.3f}% "
-        f"status={validation['status']}"
-    )
-    print(
-        f"nist_reference_rwp={100 * phase_result['nist_reference_rwp']:.3f}% "
-        f"failed_checks={','.join(validation['failed_checks']) or 'none'}"
-    )
+    for case_name, case_report in case_reports.items():
+        phase_result = case_report["phasesmith"]["result"]
+        gsas_result = case_report["gsasii"]["result"]
+        validation = case_report["cross_implementation_validation"]
+        print(
+            f"case={case_name} phasesmith_rwp={100 * phase_result['poisson_rwp']:.3f}% "
+            f"gsasii_rwp={100 * gsas_result['poisson_rwp']:.3f}% "
+            f"cross_status={validation['status']} expectation={case_report['status']}"
+        )
     if arguments.json_output is not None:
         arguments.json_output.parent.mkdir(parents=True, exist_ok=True)
         arguments.json_output.write_text(

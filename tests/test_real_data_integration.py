@@ -6,6 +6,7 @@ import phasesmith
 import pytest
 from phasesmith.io import convert_rowles_topas_bundle
 from phasesmith.validation import (
+    NIST_SRM660C_STRESS_SH_OVER_L,
     run_echidna_lab6_validation,
     run_nist_srm660c_parity_workflow,
     run_nist_srm660c_validation,
@@ -29,6 +30,17 @@ def available_dataset(dataset_id: str) -> Path:
     except (FileNotFoundError, ValueError) as error:
         pytest.skip(f"checksum-pinned real dataset is unavailable: {error}")
     return directory
+
+
+@pytest.mark.parametrize(
+    ("sh_over_l", "message"),
+    [(float("nan"), "finite"), (-0.001, "non-negative")],
+)
+def test_nist_srm660c_parity_rejects_invalid_fcj_settings(
+    sh_over_l: float, message: str
+) -> None:
+    with pytest.raises(ValueError, match=message):
+        run_nist_srm660c_parity_workflow(".", sh_over_l=sh_over_l)
 
 
 @pytest.mark.real_data
@@ -81,11 +93,11 @@ def test_nist_archive_integrity_regression() -> None:
 @pytest.mark.parametrize(
     ("specimen", "poisson_rwp", "correlation", "reference_rwp"),
     [
-        ("100a", 0.18912495105274302, 0.9693153928778462, 0.0605460046286684),
-        ("100b", 0.187768715361898, 0.9713179663820863, 0.061423080940490066),
+        ("100a", 0.2049454003288361, 0.959587330660236, 0.0605460046286684),
+        ("100b", 0.20359605144987802, 0.9619134148654077, 0.061423080940490066),
     ],
 )
-def test_nist_srm660c_empirical_common_model_preserves_profile_gap(
+def test_nist_srm660c_matched_small_fcj_regression(
     specimen: str, poisson_rwp: float, correlation: float, reference_rwp: float
 ) -> None:
     result = run_nist_srm660c_parity_workflow(
@@ -97,10 +109,25 @@ def test_nist_srm660c_empirical_common_model_preserves_profile_gap(
     assert result.sample_count == 5_332
     assert result.reflection_count == 30
     assert result.free_parameter_count == 17
+    assert result.sh_over_l == 0.002
     assert result.poisson_rwp == pytest.approx(poisson_rwp)
     assert result.profile_correlation == pytest.approx(correlation)
     assert result.nist_reference_rwp == pytest.approx(reference_rwp)
     assert result.nist_reference_correlation >= 0.9993
+
+
+@pytest.mark.real_data
+def test_nist_srm660c_large_fcj_stress_regression() -> None:
+    result = run_nist_srm660c_parity_workflow(
+        available_dataset("nist-srm660c-lab6-xray"),
+        "100a",
+        execution=phasesmith.ExecutionPolicy(threads=1),
+        sh_over_l=NIST_SRM660C_STRESS_SH_OVER_L,
+    )
+
+    assert result.sh_over_l == 0.02
+    assert result.poisson_rwp == pytest.approx(0.18912495105274302)
+    assert result.profile_correlation == pytest.approx(0.9693153928778462)
 
 
 @pytest.mark.real_data

@@ -258,6 +258,12 @@ uv run python benchmarks/compare_gsasii_rowles_qpa.py \
   --sample all
 ```
 
+The NIST comparison runs both contracts by default: a matched SH/L=0.002 FCJ
+parity case and an expected-failure SH/L=0.02 large-asymmetry stress case. Use
+`--case matched-small-fcj` or `--case large-fcj-stress` to run either one alone.
+The worker converts the pdCIF displacement from millimetres to GSAS-II's
+micrometre sample-shift convention before refinement.
+
 It rejects mismatched sample or reflection counts and requires differences no
 larger than 0.02 in any phase fraction, 0.03 in Poisson-weighted Rwp, 0.02 in
 unit-weight Rwp, and 0.01 in profile correlation. These deliberately broader
