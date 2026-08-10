@@ -194,8 +194,7 @@ def run_gsas(
         if arguments.case == "aps-sucrose-11bmb":
             recipe = report["recipe"]
             if (
-                recipe["background"]
-                != "fixed Smooth Bruckner + 1-term refined Chebyshev residual"
+                recipe["background"] != "fixed Smooth Bruckner + 1-term refined Chebyshev residual"
                 or recipe["background_start"] != [0.0]
                 or recipe["instrument_start"]
                 != {

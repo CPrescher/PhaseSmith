@@ -14,13 +14,13 @@ publish = false
 [dependencies]
 nalgebra = "0.35"
 flate2 = { version = "1.1", default-features = false, features = ["rust_backend"] }
-phasesmith-core = { version = "0.1.0", path = "../phasesmith-core" }
-phasesmith-crystallography = { version = "0.1.0", path = "../phasesmith-crystallography" }
-phasesmith-engine = { version = "0.1.0", path = "../phasesmith-engine" }
-phasesmith-execution = { version = "0.1.0", path = "../phasesmith-execution" }
-phasesmith-io = { version = "0.1.0", path = "../phasesmith-io" }
-phasesmith-model = { version = "0.1.0", path = "../phasesmith-model" }
-phasesmith-workflows = { version = "0.1.0", path = "../phasesmith-workflows" }
+phasesmith-core = { version = "0.2.0", path = "../phasesmith-core" }
+phasesmith-crystallography = { version = "0.2.0", path = "../phasesmith-crystallography" }
+phasesmith-engine = { version = "0.2.0", path = "../phasesmith-engine" }
+phasesmith-execution = { version = "0.2.0", path = "../phasesmith-execution" }
+phasesmith-io = { version = "0.2.0", path = "../phasesmith-io" }
+phasesmith-model = { version = "0.2.0", path = "../phasesmith-model" }
+phasesmith-workflows = { version = "0.2.0", path = "../phasesmith-workflows" }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = { version = "1.0", features = ["float_roundtrip"] }
 sha2 = "=0.10.9"

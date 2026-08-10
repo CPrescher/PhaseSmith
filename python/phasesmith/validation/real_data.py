@@ -811,9 +811,7 @@ def run_sucrose_lebail_validation(dataset_directory: str | Path) -> RealDataVali
         iterations=50,
         chebyshev_order=None,
     ).estimate(x, observed)
-    background = ChebyshevBackground(
-        "sucrose_background", (0.0,), (float(x[0]), float(x[-1]))
-    )
+    background = ChebyshevBackground("sucrose_background", (0.0,), (float(x[0]), float(x[-1])))
     pattern = PowderPattern(
         x,
         observed_y=observed,

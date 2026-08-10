@@ -12,8 +12,8 @@ readme.workspace = true
 
 [dependencies]
 moyo = "=0.15.0"
-phasesmith-crystallography = { version = "0.1.0", path = "../phasesmith-crystallography" }
-phasesmith-model = { version = "0.1.0", path = "../phasesmith-model" }
+phasesmith-crystallography = { version = "0.2.0", path = "../phasesmith-crystallography" }
+phasesmith-model = { version = "0.2.0", path = "../phasesmith-model" }
 
 [lints]
 workspace = true

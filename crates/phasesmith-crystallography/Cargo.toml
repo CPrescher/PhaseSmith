@@ -14,7 +14,7 @@ readme.workspace = true
 bench = false
 
 [dependencies]
-phasesmith-execution = { version = "0.1.0", path = "../phasesmith-execution" }
+phasesmith-execution = { version = "0.2.0", path = "../phasesmith-execution" }
 
 [dev-dependencies]
 criterion = "0.7"
