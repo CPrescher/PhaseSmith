@@ -256,10 +256,16 @@ component kernel is not misrepresented as complete multi-wavelength Rietveld
 support. The implementation sequence is frozen in
 `docs/real-data-validation-plan.md`.
 
-The first pinned sucrose run uses 23,003 samples and 811 generated reflection
-families. Its first-cycle `Rwp` of 27.80% falls to 18.79%, the
-background-subtracted observed/calculated correlation is 0.99159, and all
-extracted intensities remain finite and non-negative. QARR verifies its 7,251
+The pinned sucrose run uses 23,003 samples and 811 generated reflection
+families. Both PhaseSmith and the pinned GSAS-II comparison receive the same
+fixed Smooth Bruckner array and refine one constant Chebyshev residual from
+zero. Both start from the explicit symmetric instrument state U=1.163,
+V=-0.126, W=0.063, X=0.173, Y=0 in GSAS units with SH/L=0; the GSAS-II worker
+overrides the legacy importer before refinement. PhaseSmith's first-cycle
+`Rwp` of 27.80% falls to 14.18%, the background-subtracted
+observed/calculated correlation is 0.99070, and all extracted intensities
+remain finite and non-negative. The matched seeded GSAS-II run reaches Rwp
+14.53% and correlation 0.97300, placing the Rwp delta at 0.00350. QARR verifies its 7,251
 samples and Cu K-alpha doublet metadata before returning the expected blocked
 status. The complete gate passes 469 Python tests (one optional external-oracle
 case deselected), 60 Rust tests, Ruff, Rust formatting, strict Clippy, and a

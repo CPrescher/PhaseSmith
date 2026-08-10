@@ -21,9 +21,9 @@ fn pure_rust_sucrose_runner_reproduces_the_reviewed_scientific_gate() {
         .iter()
         .filter_map(|check| check.measured.map(|value| (check.check_id.as_str(), value)))
         .collect::<std::collections::BTreeMap<_, _>>();
-    assert!((measurements["profile_improvement"] - 0.675_690_921_328_791_4).abs() < 1.0e-12);
-    assert!((measurements["smoke_rwp"] - 0.187_867_714_269_909_14).abs() < 1.0e-12);
-    assert!((measurements["profile_correlation"] - 0.991_587_841_863_939_1).abs() < 1.0e-12);
+    assert!((measurements["profile_improvement"] - 0.510_157_903_966_125_9).abs() < 1.0e-12);
+    assert!((measurements["smoke_rwp"] - 0.141_840_758_036_235_64).abs() < 1.0e-12);
+    assert!((measurements["profile_correlation"] - 0.990_697_365_947_345_5).abs() < 1.0e-12);
 }
 
 #[test]

@@ -83,7 +83,8 @@ pub use lebail::{
     LeBailCheckpoint, LeBailError, LeBailInput, LeBailIterationRecord, LeBailOptions, LeBailPhase,
     LeBailResult, ParameterChange, PhasePatternComponent, ReflectionIntensity,
     build_lebail_parameter_set, build_lebail_parameter_set_with_lattice, calculate_lebail_pattern,
-    extract_lebail_intensities, initialize_lebail_intensities, iterate_lebail_once,
+    calculate_lebail_pattern_with_background, extract_lebail_intensities,
+    initialize_lebail_intensities, iterate_lebail_once, lebail_background_parameter_key,
     lebail_instrument_parameter_key, lebail_lattice_parameter_key, lebail_phase_scale_key,
     lebail_reflection_position_key, refine_lebail, refine_lebail_with_runtime,
 };

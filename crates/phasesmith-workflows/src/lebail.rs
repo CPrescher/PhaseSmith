@@ -15,11 +15,12 @@ use phasesmith_execution::{ExecutionPolicy, ExecutionPolicyError};
 use phasesmith_model::{DomainError, PatternRecord};
 
 use crate::{
-    Constraint, ConstraintError, ConstraintTransform, DiagnosticValue, GeneratedLatticeDomain,
-    LatticeError, LatticeReflectionDomain, ParameterBounds, ParameterError, ParameterKey,
-    ParameterSet, ParameterSpec, RefinementEventKind, RefinementLimits, RefinementRuntime,
-    ResidualError, ResidualEvaluation, ResidualOptions, RuntimeError, TerminationReason,
-    cw_lattice_geometry, evaluate_residuals,
+    BackgroundError, BackgroundModel, Constraint, ConstraintError, ConstraintTransform,
+    DiagnosticValue, DifferentiableBackground, GeneratedLatticeDomain, LatticeError,
+    LatticeReflectionDomain, ParameterBounds, ParameterError, ParameterKey, ParameterSet,
+    ParameterSpec, RefinementEventKind, RefinementLimits, RefinementRuntime, ResidualError,
+    ResidualEvaluation, ResidualOptions, RuntimeError, TerminationReason, cw_lattice_geometry,
+    evaluate_residuals,
 };
 
 const INSTRUMENT_PARAMETER_NAMES: [&str; 5] = ["u_deg2", "v_deg2", "w_deg2", "x_deg", "y_deg"];
@@ -393,6 +394,18 @@ pub fn lebail_phase_scale_key(phase_id: &str) -> Result<ParameterKey, LeBailErro
     ParameterKey::new("phase", phase_id, "scale").map_err(LeBailError::Parameter)
 }
 
+/// Return the stable key for one refinable residual-background coefficient.
+///
+/// # Errors
+///
+/// Returns [`LeBailError`] when an identity segment is invalid.
+pub fn lebail_background_parameter_key(
+    background_id: &str,
+    name: &str,
+) -> Result<ParameterKey, LeBailError> {
+    ParameterKey::new("background", background_id, name).map_err(LeBailError::Parameter)
+}
+
 /// Return the stable key for one symmetry-independent lattice variable.
 ///
 /// # Errors
@@ -588,6 +601,8 @@ pub struct LeBailInput {
     pub instrument: ConstantWavelengthInstrument,
     /// Ordered non-empty phase list.
     pub phases: Vec<LeBailPhase>,
+    /// Optional refinable analytical correction added to the fixed background.
+    pub background: Option<BackgroundModel>,
     /// Optional typed profile parameter set.
     pub parameters: Option<ParameterSet>,
     /// Ordered fixed/affine/linear parameter constraints.
@@ -636,6 +651,7 @@ impl LeBailInput {
             pattern,
             instrument,
             phases,
+            background: None,
             parameters: None,
             constraints: Vec::new(),
         })
@@ -655,13 +671,83 @@ impl LeBailInput {
         constraints: Vec<Constraint>,
     ) -> Result<Self, LeBailError> {
         let mut input = Self::new(pattern, instrument, phases)?;
-        validate_parameter_selection(&input.phases, &parameters)?;
-        domain_parameter_values(input.instrument, &input.phases, &parameters)?;
+        validate_parameter_selection(&input.phases, input.background.as_ref(), &parameters)?;
+        domain_parameter_values(
+            input.instrument,
+            &input.phases,
+            input.background.as_ref(),
+            &parameters,
+        )?;
         ConstraintTransform::new(parameters.clone(), constraints.clone())
             .map_err(LeBailError::Constraint)?;
         input.parameters = Some(parameters);
         input.constraints = constraints;
         Ok(input)
+    }
+
+    /// Attach a refinable analytical correction on top of the fixed supplied background.
+    ///
+    /// The model coefficients are appended to the existing parameter set in stable order.
+    /// This makes a Smooth Bruckner array in [`PatternRecord`] the fixed broad baseline,
+    /// while the analytical model captures low-order residual curvature.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`LeBailError`] for an invalid model/grid or duplicate parameter identity.
+    pub fn with_refinable_background(
+        mut self,
+        background: BackgroundModel,
+    ) -> Result<Self, LeBailError> {
+        background
+            .basis(&self.pattern.x_deg)
+            .map_err(LeBailError::Background)?;
+        background
+            .calculate(&self.pattern.x_deg)
+            .map_err(LeBailError::Background)?;
+        let names = background.parameter_names();
+        let coefficients = background.coefficients();
+        let bounds = background.parameter_bounds();
+        let refine_in_nonlinear_step = !background.basis_is_invariant();
+        let mut specs = self
+            .parameters
+            .as_ref()
+            .map_or_else(Vec::new, |parameters| parameters.specs().to_vec());
+        let background_scale = self
+            .pattern
+            .background_y
+            .iter()
+            .map(|value| value.abs())
+            .fold(1.0_f64, f64::max);
+        for ((name, value), bounds) in names.iter().zip(coefficients).zip(bounds) {
+            specs.push(
+                ParameterSpec::new(
+                    lebail_background_parameter_key(background.background_id(), name)?,
+                    value,
+                    "intensity",
+                    bounds,
+                    value.abs().max(background_scale),
+                    refine_in_nonlinear_step,
+                )
+                .map_err(LeBailError::Parameter)?,
+            );
+        }
+        self.parameters = Some(ParameterSet::new(specs).map_err(LeBailError::Parameter)?);
+        self.background = Some(background);
+        validate_parameter_selection(
+            &self.phases,
+            self.background.as_ref(),
+            self.parameters
+                .as_ref()
+                .ok_or(LeBailError::InternalInvariant)?,
+        )?;
+        ConstraintTransform::new(
+            self.parameters
+                .clone()
+                .ok_or(LeBailError::InternalInvariant)?,
+            self.constraints.clone(),
+        )
+        .map_err(LeBailError::Constraint)?;
+        Ok(self)
     }
 }
 
@@ -841,11 +927,11 @@ pub struct PhasePatternComponent {
 /// Native fixed-phase pattern result used by extraction and adapters.
 #[derive(Clone, Debug, PartialEq)]
 pub struct LeBailCalculation {
-    /// Profile plus fixed supplied background.
+    /// Profile plus combined fixed and analytical background.
     pub y: Vec<f64>,
     /// Sum of all phase profiles.
     pub profile_y: Vec<f64>,
-    /// Fixed supplied background.
+    /// Combined fixed supplied baseline and analytical residual background.
     pub background_y: Vec<f64>,
     /// Sparse local and dense global profile derivatives.
     pub accumulation: Accumulation,
@@ -933,6 +1019,8 @@ pub struct LeBailCheckpoint {
     pub phases: Vec<LeBailPhase>,
     /// Current instrument, including accepted profile changes.
     pub instrument: ConstantWavelengthInstrument,
+    /// Current refinable residual background.
+    pub background: Option<BackgroundModel>,
     /// Flattened current integrated intensities.
     pub intensities: Vec<f64>,
     /// Current profile parameter set.
@@ -974,8 +1062,13 @@ impl LeBailCheckpoint {
             });
         }
         if let Some(parameters) = &self.parameters {
-            validate_parameter_selection(&self.phases, parameters)?;
-            let domain_values = domain_parameter_values(self.instrument, &self.phases, parameters)?;
+            validate_parameter_selection(&self.phases, self.background.as_ref(), parameters)?;
+            let domain_values = domain_parameter_values(
+                self.instrument,
+                &self.phases,
+                self.background.as_ref(),
+                parameters,
+            )?;
             if domain_values != parameters.values() {
                 return Err(LeBailError::InvalidCheckpoint {
                     message: "checkpoint parameters disagree with its live domain".to_owned(),
@@ -1022,6 +1115,8 @@ pub struct LeBailResult {
     pub phases: Vec<LeBailPhase>,
     /// Final constant-wavelength profile.
     pub instrument: ConstantWavelengthInstrument,
+    /// Final refinable residual background added to the fixed pattern baseline.
+    pub background: Option<BackgroundModel>,
     /// Final labeled integrated intensities.
     pub intensities: Vec<ReflectionIntensity>,
     /// Final residual arrays and metrics.
@@ -1061,6 +1156,32 @@ pub fn calculate_lebail_pattern(
     pattern: &PatternRecord,
     instrument: ConstantWavelengthInstrument,
     phases: &[LeBailPhase],
+    support_fwhm: f64,
+    execution: &ExecutionPolicy,
+) -> Result<LeBailCalculation, LeBailError> {
+    calculate_lebail_pattern_with_background(
+        pattern,
+        instrument,
+        phases,
+        None,
+        support_fwhm,
+        execution,
+    )
+}
+
+/// Calculate all fixed phases plus an optional analytical residual background.
+///
+/// The analytical values are added to, never substituted for, the fixed
+/// background stored by [`PatternRecord`].
+///
+/// # Errors
+///
+/// Returns [`LeBailError`] for invalid pattern, profile, or background state.
+pub fn calculate_lebail_pattern_with_background(
+    pattern: &PatternRecord,
+    instrument: ConstantWavelengthInstrument,
+    phases: &[LeBailPhase],
+    background: Option<&BackgroundModel>,
     support_fwhm: f64,
     execution: &ExecutionPolicy,
 ) -> Result<LeBailCalculation, LeBailError> {
@@ -1129,41 +1250,78 @@ pub fn calculate_lebail_pattern(
     )
     .map_err(LeBailError::Calculation)?;
     let profile_y = accumulation.y.clone();
+    let background_y = combined_background_values(pattern, background)?;
     let y = profile_y
         .iter()
-        .zip(&pattern.background_y)
+        .zip(&background_y)
         .map(|(profile, background)| profile + background)
         .collect::<Vec<_>>();
-    let mut phase_components = Vec::with_capacity(phases.len());
-    for (phase_index, phase) in phases.iter().enumerate() {
-        let mut phase_y = vec![0.0; pattern.sample_count()];
-        let first = phase_offsets[phase_index];
-        let last = phase_offsets[phase_index + 1];
-        for (reflection, intensity) in intensities.iter().enumerate().take(last).skip(first) {
-            let begin = accumulation.derivatives.local.offsets[reflection];
-            let end = accumulation.derivatives.local.offsets[reflection + 1];
-            let start = accumulation.derivatives.local.starts[reflection];
-            for active in begin..end {
-                let sample = start + active - begin;
-                phase_y[sample] += intensity
-                    * accumulation.derivatives.local.values
-                        [active * accumulation.derivatives.local.parameter_count];
-            }
-        }
-        phase_components.push(PhasePatternComponent {
-            phase_id: phase.phase_id.clone(),
-            y: phase_y,
-        });
-    }
+    let phase_components = build_phase_components(
+        phases,
+        &phase_offsets,
+        &intensities,
+        &accumulation,
+        pattern.sample_count(),
+    );
     Ok(LeBailCalculation {
         y,
         profile_y,
-        background_y: pattern.background_y.clone(),
+        background_y,
         accumulation,
         reflection_keys,
         phase_offsets,
         phase_components,
     })
+}
+
+fn combined_background_values(
+    pattern: &PatternRecord,
+    background: Option<&BackgroundModel>,
+) -> Result<Vec<f64>, LeBailError> {
+    let mut values = pattern.background_y.clone();
+    if let Some(background) = background {
+        for (fixed, residual) in values.iter_mut().zip(
+            background
+                .calculate(&pattern.x_deg)
+                .map_err(LeBailError::Background)?,
+        ) {
+            *fixed += residual;
+        }
+    }
+    Ok(values)
+}
+
+fn build_phase_components(
+    phases: &[LeBailPhase],
+    phase_offsets: &[usize],
+    intensities: &[f64],
+    accumulation: &Accumulation,
+    sample_count: usize,
+) -> Vec<PhasePatternComponent> {
+    phases
+        .iter()
+        .enumerate()
+        .map(|(phase_index, phase)| {
+            let mut phase_y = vec![0.0; sample_count];
+            let first = phase_offsets[phase_index];
+            let last = phase_offsets[phase_index + 1];
+            for (reflection, intensity) in intensities.iter().enumerate().take(last).skip(first) {
+                let begin = accumulation.derivatives.local.offsets[reflection];
+                let end = accumulation.derivatives.local.offsets[reflection + 1];
+                let start = accumulation.derivatives.local.starts[reflection];
+                for active in begin..end {
+                    let sample = start + active - begin;
+                    phase_y[sample] += intensity
+                        * accumulation.derivatives.local.values
+                            [active * accumulation.derivatives.local.parameter_count];
+                }
+            }
+            PhasePatternComponent {
+                phase_id: phase.phase_id.clone(),
+                y: phase_y,
+            }
+        })
+        .collect()
 }
 
 /// Return deterministic positive starting intensities in phase order.
@@ -1197,9 +1355,19 @@ pub fn initialize_lebail_intensities(
         .as_deref()
         .ok_or(LeBailError::MissingObservations)?;
     let weights = bin_integration_weights(&input.pattern.x_deg);
+    let mut background_y = input.pattern.background_y.clone();
+    if let Some(background) = &input.background {
+        for (fixed, residual) in background_y.iter_mut().zip(
+            background
+                .calculate(&input.pattern.x_deg)
+                .map_err(LeBailError::Background)?,
+        ) {
+            *fixed += residual;
+        }
+    }
     let area = observed
         .iter()
-        .zip(&input.pattern.background_y)
+        .zip(&background_y)
         .zip(weights)
         .map(|((observed, background), width)| (observed - background).max(0.0) * width)
         .sum::<f64>();
@@ -1241,7 +1409,7 @@ pub fn extract_lebail_intensities(
         .unwrap_or_else(|| vec![true; pattern.sample_count()]);
     let ratio = observed
         .iter()
-        .zip(&pattern.background_y)
+        .zip(&calculation.background_y)
         .zip(&calculation.profile_y)
         .zip(&included)
         .map(|(((observed, background), calculated), included)| {
@@ -1386,10 +1554,11 @@ pub fn refine_lebail_with_runtime(
             Vec::new(),
         )
         .map_err(LeBailError::Runtime)?;
-    state.calculation = Some(calculate_lebail_pattern(
+    state.calculation = Some(calculate_lebail_pattern_with_background(
         &input.pattern,
         state.instrument,
         &state.phases,
+        state.background.as_ref(),
         options.support_fwhm,
         &options.execution,
     )?);
@@ -1399,6 +1568,7 @@ pub fn refine_lebail_with_runtime(
         options,
         state.phases,
         state.instrument,
+        state.background,
         &state.intensities,
         state.parameters,
         state.history,
@@ -1444,6 +1614,7 @@ fn run_lebail_iterations(
             warnings: candidate.warnings,
         });
         state.instrument = candidate.instrument;
+        state.background = candidate.background;
         state.phases = candidate.phases;
         state.parameters = candidate.parameters;
         state.intensities = candidate.extraction.intensities;
@@ -1467,6 +1638,7 @@ struct EvaluatedLeBailIteration {
     metrics: ResidualEvaluation,
     warnings: Vec<String>,
     instrument: ConstantWavelengthInstrument,
+    background: Option<BackgroundModel>,
     parameters: Option<ParameterSet>,
     profile_step_norm: f64,
     parameter_changes: Vec<ParameterChange>,
@@ -1486,10 +1658,26 @@ fn evaluate_lebail_iteration(
         &flatten_preserve_mask(&state.phases),
     )?;
     let phases = replace_flat_intensities(&state.phases, &extraction.intensities)?;
-    let calculation = calculate_lebail_pattern(
+    let calculation = calculate_lebail_pattern_with_background(
         &input.pattern,
         state.instrument,
         &phases,
+        state.background.as_ref(),
+        options.support_fwhm,
+        &options.execution,
+    )?;
+    let (background, parameters) = fit_linear_background(
+        &input.pattern,
+        &calculation.profile_y,
+        state.background.as_ref(),
+        state.parameters.as_ref(),
+        options.use_uncertainty,
+    )?;
+    let calculation = calculate_lebail_pattern_with_background(
+        &input.pattern,
+        state.instrument,
+        &phases,
+        background.as_ref(),
         options.support_fwhm,
         &options.execution,
     )?;
@@ -1498,7 +1686,8 @@ fn evaluate_lebail_iteration(
         state.instrument,
         phases,
         calculation,
-        state.parameters.as_ref(),
+        parameters.as_ref(),
+        background,
         &input.constraints,
         options,
         runtime,
@@ -1529,6 +1718,7 @@ fn evaluate_lebail_iteration(
         metrics,
         warnings: [warnings, profile.warnings].concat(),
         instrument: profile.instrument,
+        background: profile.background,
         parameters: profile.parameters,
         profile_step_norm: profile.step_norm,
         parameter_changes: profile.parameter_changes,
@@ -1544,6 +1734,7 @@ fn accept_lebail_iteration(
         completed_iterations: state.history.len(),
         phases: state.phases.clone(),
         instrument: state.instrument,
+        background: state.background.clone(),
         intensities: state.intensities.clone(),
         parameters: state.parameters.clone(),
         previous_rwp: metrics.rwp,
@@ -1581,6 +1772,7 @@ fn finish_result(
     options: &LeBailOptions,
     phases: Vec<LeBailPhase>,
     instrument: ConstantWavelengthInstrument,
+    background: Option<BackgroundModel>,
     intensities: &[f64],
     parameters: Option<ParameterSet>,
     history: Vec<LeBailIterationRecord>,
@@ -1602,6 +1794,7 @@ fn finish_result(
         completed_iterations: history.len(),
         phases: phases.clone(),
         instrument,
+        background: background.clone(),
         intensities: intensities.to_owned(),
         parameters: parameters.clone(),
         previous_rwp: if termination == TerminationReason::Cancelled {
@@ -1633,6 +1826,7 @@ fn finish_result(
         &input.pattern,
         &calculation,
         instrument,
+        background.as_ref(),
         &phases,
         parameters.as_ref(),
         &input.constraints,
@@ -1654,6 +1848,7 @@ fn finish_result(
         calculation,
         phases,
         instrument,
+        background,
         intensities: labeled,
         metrics,
         history,
@@ -1668,6 +1863,7 @@ fn finish_result(
 struct RestoredLeBailState {
     phases: Vec<LeBailPhase>,
     instrument: ConstantWavelengthInstrument,
+    background: Option<BackgroundModel>,
     intensities: Vec<f64>,
     history: Vec<LeBailIterationRecord>,
     parameters: Option<ParameterSet>,
@@ -1695,6 +1891,7 @@ fn restore_state(
         return Ok(RestoredLeBailState {
             phases,
             instrument: input.instrument,
+            background: input.background.clone(),
             intensities,
             history: Vec::new(),
             parameters: input.parameters.clone(),
@@ -1714,6 +1911,11 @@ fn restore_state(
             message: "checkpoint phase/reflection domain does not match the input".to_owned(),
         });
     }
+    if !backgrounds_restart_compatible(input.background.as_ref(), checkpoint.background.as_ref()) {
+        return Err(LeBailError::InvalidCheckpoint {
+            message: "checkpoint background does not match the input".to_owned(),
+        });
+    }
     let input_parameter_keys = input.parameters.as_ref().map(parameter_keys);
     let checkpoint_parameter_keys = checkpoint.parameters.as_ref().map(parameter_keys);
     if input_parameter_keys != checkpoint_parameter_keys {
@@ -1724,6 +1926,7 @@ fn restore_state(
     Ok(RestoredLeBailState {
         phases: checkpoint.phases.clone(),
         instrument: checkpoint.instrument,
+        background: checkpoint.background.clone(),
         intensities: checkpoint.intensities.clone(),
         history: checkpoint.history.clone(),
         parameters: checkpoint.parameters.clone(),
@@ -1736,11 +1939,93 @@ fn restore_state(
 struct ProfileUpdate {
     instrument: ConstantWavelengthInstrument,
     phases: Vec<LeBailPhase>,
+    background: Option<BackgroundModel>,
     calculation: LeBailCalculation,
     parameters: Option<ParameterSet>,
     step_norm: f64,
     parameter_changes: Vec<ParameterChange>,
     warnings: Vec<String>,
+}
+
+fn fit_linear_background(
+    pattern: &PatternRecord,
+    profile_y: &[f64],
+    background: Option<&BackgroundModel>,
+    parameters: Option<&ParameterSet>,
+    use_uncertainty: bool,
+) -> Result<(Option<BackgroundModel>, Option<ParameterSet>), LeBailError> {
+    let Some(background) = background else {
+        return Ok((None, parameters.cloned()));
+    };
+    if !background.basis_is_invariant() {
+        return Ok((Some(background.clone()), parameters.cloned()));
+    }
+    let observed = pattern
+        .observed_y
+        .as_deref()
+        .ok_or(LeBailError::MissingObservations)?;
+    let basis = background
+        .basis(&pattern.x_deg)
+        .map_err(LeBailError::Background)?;
+    let included = pattern
+        .mask
+        .clone()
+        .unwrap_or_else(|| vec![true; pattern.sample_count()]);
+    let row_count = included.iter().filter(|value| **value).count();
+    if row_count < basis.columns || profile_y.len() != pattern.sample_count() {
+        return Err(LeBailError::LinearSolve);
+    }
+    let mut design = Vec::with_capacity(row_count * basis.columns);
+    let mut target = Vec::with_capacity(row_count);
+    for sample in 0..pattern.sample_count() {
+        if !included[sample] {
+            continue;
+        }
+        let sigma = if use_uncertainty {
+            pattern
+                .uncertainty
+                .as_ref()
+                .map_or(1.0, |values| values[sample])
+        } else {
+            1.0
+        };
+        let row = basis.row(sample).ok_or(LeBailError::InternalInvariant)?;
+        design.extend(row.iter().map(|value| value / sigma));
+        target.push((observed[sample] - pattern.background_y[sample] - profile_y[sample]) / sigma);
+    }
+    let matrix = DMatrix::from_row_slice(row_count, basis.columns, &design);
+    let target = DVector::from_vec(target);
+    let coefficients = matrix
+        .svd(true, true)
+        .solve(&target, 1.0e-12)
+        .map_err(|_| LeBailError::LinearSolve)?;
+    if coefficients.iter().any(|value| !value.is_finite()) {
+        return Err(LeBailError::LinearSolve);
+    }
+    let updated = background
+        .replace_coefficients(coefficients.as_slice())
+        .map_err(LeBailError::Background)?;
+    let updated_parameters = if let Some(parameters) = parameters {
+        let values = updated
+            .parameter_names()
+            .iter()
+            .zip(updated.coefficients())
+            .map(|(name, value)| {
+                Ok((
+                    lebail_background_parameter_key(updated.background_id(), name)?,
+                    value,
+                ))
+            })
+            .collect::<Result<BTreeMap<_, _>, LeBailError>>()?;
+        Some(
+            parameters
+                .replace_values(&values)
+                .map_err(LeBailError::Parameter)?,
+        )
+    } else {
+        None
+    };
+    Ok((Some(updated), updated_parameters))
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -1754,6 +2039,7 @@ fn profile_update(
     phases: Vec<LeBailPhase>,
     calculation: LeBailCalculation,
     parameters: Option<&ParameterSet>,
+    background: Option<BackgroundModel>,
     constraints: &[Constraint],
     options: &LeBailOptions,
     runtime: &mut RefinementRuntime<LeBailCheckpoint>,
@@ -1762,6 +2048,7 @@ fn profile_update(
         return Ok(ProfileUpdate {
             instrument,
             phases,
+            background,
             calculation,
             parameters: None,
             step_norm: 0.0,
@@ -1769,7 +2056,8 @@ fn profile_update(
             warnings: Vec::new(),
         });
     };
-    let domain_values = domain_parameter_values(instrument, &phases, parameters)?;
+    let domain_values =
+        domain_parameter_values(instrument, &phases, background.as_ref(), parameters)?;
     let current = parameters
         .replace_values(&domain_values)
         .map_err(LeBailError::Parameter)?;
@@ -1779,6 +2067,7 @@ fn profile_update(
         return Ok(ProfileUpdate {
             instrument,
             phases,
+            background,
             calculation,
             parameters: Some(current),
             step_norm: 0.0,
@@ -1786,7 +2075,14 @@ fn profile_update(
             warnings: Vec::new(),
         });
     }
-    let physical = parameter_columns(&calculation, &current, instrument, &phases)?;
+    let physical = parameter_columns(
+        &calculation,
+        &current,
+        instrument,
+        &phases,
+        background.as_ref(),
+        &pattern.x_deg,
+    )?;
     let derivative = transform
         .derivative_matrix()
         .map_err(LeBailError::Constraint)?;
@@ -1884,17 +2180,18 @@ fn profile_update(
             factor *= 0.5;
             continue;
         };
-        let Ok((candidate_instrument, candidate_phases)) =
-            apply_parameter_values(instrument, &phases, &values)
+        let Ok((candidate_instrument, candidate_phases, candidate_background)) =
+            apply_parameter_values(instrument, &phases, background.as_ref(), &values)
         else {
             factor *= 0.5;
             continue;
         };
         runtime.begin_evaluation().map_err(LeBailError::Runtime)?;
-        let Ok(candidate_calculation) = calculate_lebail_pattern(
+        let Ok(candidate_calculation) = calculate_lebail_pattern_with_background(
             pattern,
             candidate_instrument,
             &candidate_phases,
+            candidate_background.as_ref(),
             options.support_fwhm,
             &options.execution,
         ) else {
@@ -1918,10 +2215,11 @@ fn profile_update(
                 regenerate_accepted_domains(candidate_phases)?;
             let candidate_calculation = if topology_changed {
                 runtime.begin_evaluation().map_err(LeBailError::Runtime)?;
-                calculate_lebail_pattern(
+                calculate_lebail_pattern_with_background(
                     pattern,
                     candidate_instrument,
                     &candidate_phases,
+                    candidate_background.as_ref(),
                     options.support_fwhm,
                     &options.execution,
                 )?
@@ -1944,6 +2242,7 @@ fn profile_update(
             return Ok(ProfileUpdate {
                 instrument: candidate_instrument,
                 phases: candidate_phases,
+                background: candidate_background,
                 calculation: candidate_calculation,
                 parameters: Some(candidate_parameters),
                 step_norm: factor * step.norm(),
@@ -1957,6 +2256,7 @@ fn profile_update(
     Ok(ProfileUpdate {
         instrument,
         phases,
+        background,
         calculation,
         parameters: Some(current),
         step_norm: 0.0,
@@ -1968,6 +2268,7 @@ fn profile_update(
 fn domain_parameter_values(
     instrument: ConstantWavelengthInstrument,
     phases: &[LeBailPhase],
+    background: Option<&BackgroundModel>,
     parameters: &ParameterSet,
 ) -> Result<BTreeMap<ParameterKey, f64>, LeBailError> {
     let mut values = BTreeMap::new();
@@ -1980,6 +2281,17 @@ fn domain_parameter_values(
                 .iter()
                 .find(|phase| phase.phase_id() == key.owner_id())
                 .map(LeBailPhase::scale)
+        } else if key.module() == "background" {
+            background.and_then(|background| {
+                if background.background_id() != key.owner_id() {
+                    return None;
+                }
+                background
+                    .parameter_names()
+                    .iter()
+                    .position(|name| name == key.name())
+                    .and_then(|index| background.coefficients().get(index).copied())
+            })
         } else if key.module() == "lattice" {
             phases
                 .iter()
@@ -2024,6 +2336,8 @@ fn parameter_columns(
     parameters: &ParameterSet,
     instrument: ConstantWavelengthInstrument,
     phases: &[LeBailPhase],
+    background: Option<&BackgroundModel>,
+    x_deg: &[f64],
 ) -> Result<DMatrix<f64>, LeBailError> {
     let samples = calculation.y.len();
     let mut matrix = DMatrix::zeros(samples, parameters.specs().len());
@@ -2111,6 +2425,8 @@ fn parameter_columns(
                         local.values[active * local.parameter_count + 1] * derivative;
                 }
             }
+        } else if key.module() == "background" {
+            fill_background_parameter_column(&mut matrix, column, key, background, x_deg)?;
         } else {
             return Err(LeBailError::UnsupportedParameter { label: key.label() });
         }
@@ -2118,11 +2434,44 @@ fn parameter_columns(
     Ok(matrix)
 }
 
+fn fill_background_parameter_column(
+    matrix: &mut DMatrix<f64>,
+    column: usize,
+    key: &ParameterKey,
+    background: Option<&BackgroundModel>,
+    x_deg: &[f64],
+) -> Result<(), LeBailError> {
+    let background = background
+        .filter(|background| background.background_id() == key.owner_id())
+        .ok_or_else(|| LeBailError::UnsupportedParameter { label: key.label() })?;
+    let parameter = background
+        .parameter_names()
+        .iter()
+        .position(|name| name == key.name())
+        .ok_or_else(|| LeBailError::UnsupportedParameter { label: key.label() })?;
+    let basis = background.basis(x_deg).map_err(LeBailError::Background)?;
+    let values = basis
+        .column(parameter)
+        .ok_or(LeBailError::InternalInvariant)?;
+    for sample in 0..matrix.nrows() {
+        matrix[(sample, column)] = values[sample];
+    }
+    Ok(())
+}
+
 fn apply_parameter_values(
     instrument: ConstantWavelengthInstrument,
     phases: &[LeBailPhase],
+    background: Option<&BackgroundModel>,
     values: &BTreeMap<ParameterKey, f64>,
-) -> Result<(ConstantWavelengthInstrument, Vec<LeBailPhase>), LeBailError> {
+) -> Result<
+    (
+        ConstantWavelengthInstrument,
+        Vec<LeBailPhase>,
+        Option<BackgroundModel>,
+    ),
+    LeBailError,
+> {
     let mut updated_instrument = instrument;
     for (key, value) in values {
         if key.module() == "instrument" {
@@ -2183,7 +2532,30 @@ fn apply_parameter_values(
         }
         updated_phases.push(updated);
     }
-    Ok((updated_instrument, updated_phases))
+    let updated_background = if let Some(background) = background {
+        let names = background.parameter_names();
+        let coefficients = names
+            .iter()
+            .zip(background.coefficients())
+            .map(|(name, current)| {
+                values
+                    .get(&lebail_background_parameter_key(
+                        background.background_id(),
+                        name,
+                    )?)
+                    .copied()
+                    .map_or(Ok(current), Ok)
+            })
+            .collect::<Result<Vec<_>, LeBailError>>()?;
+        Some(
+            background
+                .replace_coefficients(&coefficients)
+                .map_err(LeBailError::Background)?,
+        )
+    } else {
+        None
+    };
+    Ok((updated_instrument, updated_phases, updated_background))
 }
 
 fn regenerate_accepted_domains(
@@ -2229,6 +2601,7 @@ fn covariance(
     pattern: &PatternRecord,
     calculation: &LeBailCalculation,
     instrument: ConstantWavelengthInstrument,
+    background: Option<&BackgroundModel>,
     phases: &[LeBailPhase],
     parameters: Option<&ParameterSet>,
     constraints: &[Constraint],
@@ -2260,7 +2633,14 @@ fn covariance(
             return Ok(None);
         }
     }
-    let physical = parameter_columns(calculation, parameters, instrument, phases)?;
+    let physical = parameter_columns(
+        calculation,
+        parameters,
+        instrument,
+        phases,
+        background,
+        &pattern.x_deg,
+    )?;
     let chain = DMatrix::from_row_slice(derivative.rows, derivative.columns, &derivative.values);
     let jacobian = physical * chain;
     let included = pattern
@@ -2536,11 +2916,23 @@ fn parameter_keys(parameters: &ParameterSet) -> Vec<&ParameterKey> {
 
 fn validate_parameter_selection(
     phases: &[LeBailPhase],
+    background: Option<&BackgroundModel>,
     parameters: &ParameterSet,
 ) -> Result<(), LeBailError> {
     for spec in parameters.specs() {
         let key = spec.key();
-        if key.module() == "lattice" {
+        if key.module() == "background" {
+            let supported = background.is_some_and(|background| {
+                background.background_id() == key.owner_id()
+                    && background
+                        .parameter_names()
+                        .iter()
+                        .any(|name| name == key.name())
+            });
+            if !supported {
+                return Err(LeBailError::UnsupportedParameter { label: key.label() });
+            }
+        } else if key.module() == "lattice" {
             let phase = phases
                 .iter()
                 .find(|phase| phase.phase_id() == key.owner_id())
@@ -2588,6 +2980,17 @@ fn phases_restart_compatible(input: &[LeBailPhase], checkpoint: &[LeBailPhase]) 
                 _ => false,
             }
         })
+}
+
+fn backgrounds_restart_compatible(
+    input: Option<&BackgroundModel>,
+    checkpoint: Option<&BackgroundModel>,
+) -> bool {
+    match (input, checkpoint) {
+        (None, None) => true,
+        (Some(input), Some(checkpoint)) => checkpoint.restart_compatible(input),
+        _ => false,
+    }
 }
 
 fn reflection_count(phase: &LeBailPhase) -> usize {
@@ -2654,6 +3057,8 @@ pub enum LeBailError {
     Constraint(ConstraintError),
     /// Lattice parameterization, geometry, bounds, or generation failed.
     Lattice(LatticeError),
+    /// Analytical residual-background evaluation failed.
+    Background(BackgroundError),
     /// A parameter key is not supported by fixed-geometry Le Bail.
     UnsupportedParameter {
         /// Stable parameter label.
@@ -2716,6 +3121,7 @@ impl Display for LeBailError {
             Self::Parameter(error) => Display::fmt(error, formatter),
             Self::Constraint(error) => Display::fmt(error, formatter),
             Self::Lattice(error) => Display::fmt(error, formatter),
+            Self::Background(error) => Display::fmt(error, formatter),
             Self::UnsupportedParameter { label } => {
                 write!(formatter, "unsupported Le Bail parameter {label}")
             }
@@ -2756,6 +3162,7 @@ impl Error for LeBailError {
             Self::Parameter(error) => Some(error),
             Self::Constraint(error) => Some(error),
             Self::Lattice(error) => Some(error),
+            Self::Background(error) => Some(error),
             Self::Grid(error) => Some(error),
             Self::Calculation(error) => Some(error),
             Self::Residual(error) => Some(error),

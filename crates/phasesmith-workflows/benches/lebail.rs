@@ -9,9 +9,10 @@ use phasesmith_execution::ExecutionPolicy;
 use phasesmith_io::space_group_by_number;
 use phasesmith_model::PatternRecord;
 use phasesmith_workflows::{
-    Constraint, FixedConstraint, LatticeBounds, LatticeParameterization, LatticeReflectionDomain,
-    LeBailInput, LeBailOptions, LeBailPhase, build_lebail_parameter_set_with_lattice,
-    calculate_lebail_pattern, lebail_lattice_parameter_key, refine_lebail,
+    BackgroundModel, ChebyshevBackground, Constraint, FixedConstraint, LatticeBounds,
+    LatticeParameterization, LatticeReflectionDomain, LeBailInput, LeBailOptions, LeBailPhase,
+    build_lebail_parameter_set_with_lattice, calculate_lebail_pattern,
+    calculate_lebail_pattern_with_background, lebail_lattice_parameter_key, refine_lebail,
 };
 
 fn benchmark_fixed_lebail(criterion: &mut Criterion) {
@@ -30,19 +31,40 @@ fn benchmark_fixed_lebail(criterion: &mut Criterion) {
         .map(|index| 2.0 + f64::from(u32::try_from(index % 11).unwrap()))
         .collect::<Vec<_>>();
     let truth = phase("alpha", &positions, &truth_intensities, instrument);
-    let blank = PatternRecord::new(x.clone(), None, None, None, None).unwrap();
-    let observed = calculate_lebail_pattern(
+    let fixed_background = x
+        .iter()
+        .map(|position| 4.0 + 0.005 * (position - 60.0).powi(2))
+        .collect::<Vec<_>>();
+    let blank =
+        PatternRecord::new(x.clone(), None, None, None, Some(fixed_background.clone())).unwrap();
+    let truth_background = BackgroundModel::Chebyshev(
+        ChebyshevBackground::new(
+            "residual",
+            vec![0.5, -0.2, 0.08, -0.03, 0.01, -0.004],
+            [20.0, 100.0],
+        )
+        .unwrap(),
+    );
+    let observed = calculate_lebail_pattern_with_background(
         &blank,
         instrument,
         std::slice::from_ref(&truth),
+        Some(&truth_background),
         20.0,
         &execution,
     )
     .unwrap()
     .y;
-    let pattern = PatternRecord::new(x, Some(observed), None, None, None).unwrap();
+    let pattern =
+        PatternRecord::new(x, Some(observed), None, None, Some(fixed_background)).unwrap();
     let starting = phase("alpha", &positions, &vec![1.0; 85], instrument);
-    let input = LeBailInput::new(pattern, instrument, vec![starting]).unwrap();
+    let starting_background = BackgroundModel::Chebyshev(
+        ChebyshevBackground::new("residual", vec![0.0; 6], [20.0, 100.0]).unwrap(),
+    );
+    let input = LeBailInput::new(pattern, instrument, vec![starting])
+        .unwrap()
+        .with_refinable_background(starting_background)
+        .unwrap();
     let options = LeBailOptions::new(
         8,
         2,
@@ -58,9 +80,12 @@ fn benchmark_fixed_lebail(criterion: &mut Criterion) {
         execution,
     )
     .unwrap();
-    criterion.bench_function("fixed_lebail_85_reflections_3001_samples", |bencher| {
-        bencher.iter(|| refine_lebail(black_box(&input), black_box(&options), None).unwrap());
-    });
+    criterion.bench_function(
+        "lebail_85_reflections_3001_samples_6_term_residual_background",
+        |bencher| {
+            bencher.iter(|| refine_lebail(black_box(&input), black_box(&options), None).unwrap());
+        },
+    );
 }
 
 fn benchmark_lattice_lebail(criterion: &mut Criterion) {

@@ -26,6 +26,12 @@ from ..pattern import PatternCalculationResult, PowderPattern
 from ..phase import Phase, ReflectionBatch
 from ..structure import CrystalStructure
 from ..symmetry import CwTwoThetaRange, PreparedReflectionGenerator
+from .background import (
+    ChebyshevBackground,
+    DifferentiableBackground,
+    PointBackground,
+    PolynomialBackground,
+)
 from .core import (
     Bounds,
     Constraint,
@@ -257,6 +263,12 @@ def phase_scale_key(phase_id: str) -> ParameterKey:
     return ParameterKey("phase", phase_id, "scale")
 
 
+def background_parameter_key(background_id: str, name: str) -> ParameterKey:
+    """Return the stable key for one residual-background coefficient."""
+
+    return ParameterKey("background", background_id, name)
+
+
 def lattice_parameter_key(phase_id: str, name: str) -> ParameterKey:
     """Return the stable key for one symmetry-independent lattice variable."""
 
@@ -359,6 +371,7 @@ class LeBailInput:
     phases: tuple[Phase, ...]
     parameters: ParameterSet | None = None
     constraints: tuple[Constraint, ...] = ()
+    background: DifferentiableBackground | None = None
 
     def __post_init__(self) -> None:
         """Validate complete script-facing Le Bail input."""
@@ -379,11 +392,46 @@ class LeBailInput:
                 != self.instrument.wavelength_angstrom
             ):
                 raise ValueError("reflection-domain wavelength must match the Le Bail instrument")
+        if self.background is not None:
+            if not isinstance(self.background, DifferentiableBackground):
+                raise TypeError("background must implement DifferentiableBackground")
+            self.background.basis(self.pattern.x)
+            self.background.calculate(self.pattern.x)
         if self.parameters is not None:
-            _domain_parameter_values(self.instrument, self.phases, self.parameters)
+            _domain_parameter_values(self.instrument, self.phases, self.parameters, self.background)
             ConstraintTransform(self.parameters, self.constraints)
         elif self.constraints:
             raise ValueError("constraints require a parameter set")
+
+    def with_refinable_background(self, background: DifferentiableBackground) -> LeBailInput:
+        """Add a refinable analytical correction above the fixed pattern baseline."""
+
+        if not isinstance(background, DifferentiableBackground):
+            raise TypeError("background must implement DifferentiableBackground")
+        specs = [] if self.parameters is None else list(self.parameters.specs)
+        background_scale = max(float(np.max(np.abs(self.pattern.background), initial=0.0)), 1.0)
+        linear_background = type(background) in (
+            PolynomialBackground,
+            ChebyshevBackground,
+            PointBackground,
+        )
+        specs.extend(
+            ParameterSpec(
+                background_parameter_key(background.background_id, name),
+                value,
+                "intensity",
+                Bounds(*bounds),
+                max(abs(value), background_scale),
+                refine=not linear_background,
+            )
+            for name, value, bounds in zip(
+                background.parameter_names,
+                background.coefficients,
+                background.parameter_bounds,
+                strict=True,
+            )
+        )
+        return replace(self, parameters=ParameterSet(specs), background=background)
 
     @classmethod
     def from_cif(
@@ -408,6 +456,7 @@ class LeBailInput:
         max_candidates: int = 50_000_000,
         limits: CifReadLimits | None = None,
         backend: CifBackend | None = None,
+        background: DifferentiableBackground | None = None,
     ) -> LeBailInput:
         """Build a directly runnable single-phase CIF-backed Le Bail request.
 
@@ -453,7 +502,8 @@ class LeBailInput:
             if refine_lattice or instrument_parameters or refine_phase_scale
             else None
         )
-        return cls(pattern, instrument, (phase,), parameters, constraints)
+        result = cls(pattern, instrument, (phase,), parameters, constraints)
+        return result if background is None else result.with_refinable_background(background)
 
 
 @dataclass(frozen=True, slots=True)
@@ -586,6 +636,7 @@ class LeBailResult:
 
     calculation: PatternCalculationResult
     instrument: ConstantWavelengthInstrument
+    background: DifferentiableBackground | None
     phases: tuple[Phase, ...]
     intensities: tuple[ReflectionIntensity, ...]
     metrics: ResidualEvaluation
@@ -603,6 +654,7 @@ class LeBailCheckpoint:
 
     completed_iterations: int
     instrument: ConstantWavelengthInstrument
+    background: DifferentiableBackground | None
     phases: tuple[Phase, ...]
     intensities: NDArray[np.float64]
     parameters: ParameterSet | None
@@ -635,6 +687,10 @@ class LeBailCheckpoint:
             raise ValueError("checkpoint reflection-domain wavelength must match its instrument")
         if np.isnan(self.previous_rwp) or np.isneginf(self.previous_rwp):
             raise ValueError("checkpoint previous_rwp must be finite or positive infinity")
+        if self.background is not None and not isinstance(
+            self.background, DifferentiableBackground
+        ):
+            raise TypeError("checkpoint background must implement DifferentiableBackground")
 
 
 def _bin_integration_weights(x: NDArray[np.float64]) -> NDArray[np.float64]:
@@ -647,6 +703,42 @@ def _bin_integration_weights(x: NDArray[np.float64]) -> NDArray[np.float64]:
     widths[-1] = 0.5 * (x[-1] - x[-2])
     widths[1:-1] = 0.5 * (x[2:] - x[:-2])
     return widths
+
+
+def _calculate_pattern_with_background(
+    pattern: PowderPattern,
+    instrument: ConstantWavelengthInstrument,
+    phases: tuple[Phase, ...],
+    background: DifferentiableBackground | None,
+    options: LeBailOptions,
+) -> PatternCalculationResult:
+    calculation = calculate_pattern(
+        pattern,
+        instrument,
+        phases,
+        options=CalculationOptions(
+            support_fwhm=options.support_fwhm,
+            return_phase_components=True,
+            execution=options.execution,
+        ),
+    )
+    if background is None:
+        return calculation
+    combined_background = np.ascontiguousarray(
+        calculation.background + background.calculate(pattern.x)
+    )
+    total = np.ascontiguousarray(calculation.profile_y + combined_background)
+    combined_background.flags.writeable = False
+    total.flags.writeable = False
+    return PatternCalculationResult(
+        total,
+        calculation.profile_y,
+        combined_background,
+        calculation.accumulation,
+        calculation.reflection_keys,
+        calculation.phase_offsets,
+        calculation.phase_components,
+    )
 
 
 def _flat_intensities(phases: tuple[Phase, ...]) -> NDArray[np.float64]:
@@ -695,7 +787,10 @@ def initialize_intensities(
         raise ValueError("Le Bail starting intensities must be non-negative")
     if np.any(values > 0.0):
         return np.maximum(values, selected_options.initial_intensity_floor)
-    net = np.maximum(input_data.pattern.observed_y - input_data.pattern.background, 0.0)
+    background = np.array(input_data.pattern.background, copy=True)
+    if input_data.background is not None:
+        background += input_data.background.calculate(input_data.pattern.x)
+    net = np.maximum(input_data.pattern.observed_y - background, 0.0)
     area = float(np.sum(net * _bin_integration_weights(input_data.pattern.x)))
     starting = max(area / max(values.size, 1), selected_options.initial_intensity_floor)
     return np.full(values.size, starting, dtype=np.float64)
@@ -728,7 +823,7 @@ def extract_intensities(
     if preserve.shape != (reflection_count,):
         raise ValueError("preserve_unobserved must match the reflection count")
     included = np.ones(pattern.x.size, dtype=np.bool_) if pattern.mask is None else pattern.mask
-    observation = np.maximum(pattern.observed_y - pattern.background, 0.0)
+    observation = np.maximum(pattern.observed_y - calculation.background, 0.0)
     ratio = np.zeros_like(observation)
     valid = included & (calculation.profile_y > selected_options.minimum_calculated)
     ratio[valid] = observation[valid] / calculation.profile_y[valid]
@@ -771,6 +866,7 @@ def _domain_parameter_values(
     instrument: ConstantWavelengthInstrument,
     phases: tuple[Phase, ...],
     parameters: ParameterSet,
+    background: DifferentiableBackground | None = None,
 ) -> dict[ParameterKey, float]:
     values: dict[ParameterKey, float] = {}
     phase_by_id = {phase.phase_id: phase for phase in phases}
@@ -789,6 +885,13 @@ def _domain_parameter_values(
             value = float(getattr(instrument, key.name))
         elif key.module == "phase" and key.name == "scale" and key.owner_id in phase_by_id:
             value = float(phase_by_id[key.owner_id].scale)
+        elif (
+            key.module == "background"
+            and background is not None
+            and key.owner_id == background.background_id
+            and key.name in background.parameter_names
+        ):
+            value = float(background.coefficients[background.parameter_names.index(key.name)])
         elif key.module == "lattice" and key.owner_id in phase_by_id:
             phase = phase_by_id[key.owner_id]
             if not isinstance(phase, LeBailPhase) or phase.reflection_domain is None:
@@ -820,6 +923,8 @@ def _parameter_columns(
     parameters: ParameterSet,
     instrument: ConstantWavelengthInstrument,
     phases: tuple[Phase, ...],
+    background: DifferentiableBackground | None = None,
+    x: NDArray[np.float64] | None = None,
 ) -> NDArray[np.float64]:
     columns = []
     global_names = calculation.derivatives.global_parameter_names
@@ -864,6 +969,13 @@ def _parameter_columns(
                     * geometry.d_coordinate_d_parameters[local_index, parameter]
                 )
             columns.append(column)
+        elif key.module == "background" and background is not None:
+            if key.owner_id != background.background_id:
+                raise ValueError(f"unknown background parameter {key.label}")
+            if x is None:
+                raise ValueError("background derivatives require the pattern grid")
+            parameter = background.parameter_names.index(key.name)
+            columns.append(background.basis(x)[:, parameter])
         else:  # pragma: no cover - validated by _domain_parameter_values
             raise ValueError(f"unsupported Le Bail parameter module {key.module!r}")
     if not columns:
@@ -877,11 +989,16 @@ def _constraint_matrix(transform: ConstraintTransform) -> NDArray[np.float64]:
     return transform.derivative_matrix()
 
 
-def _apply_parameter_values(
+def _apply_parameter_values_with_background(
     instrument: ConstantWavelengthInstrument,
     phases: tuple[Phase, ...],
     values: dict[ParameterKey, float],
-) -> tuple[ConstantWavelengthInstrument, tuple[Phase, ...]]:
+    background: DifferentiableBackground | None = None,
+) -> tuple[
+    ConstantWavelengthInstrument,
+    tuple[Phase, ...],
+    DifferentiableBackground | None,
+]:
     instrument_updates = {
         key.name: value for key, value in values.items() if key.module == "instrument"
     }
@@ -937,7 +1054,29 @@ def _apply_parameter_values(
                 phase.reflections.integrated_intensity,
             )
         updated_phases.append(replace(phase, **phase_updates))
-    return updated_instrument, tuple(updated_phases)
+    updated_background = background
+    if background is not None:
+        coefficients = tuple(
+            values.get(background_parameter_key(background.background_id, name), current)
+            for name, current in zip(
+                background.parameter_names, background.coefficients, strict=True
+            )
+        )
+        updated_background = background.replace_coefficients(coefficients)
+    return updated_instrument, tuple(updated_phases), updated_background
+
+
+def _apply_parameter_values(
+    instrument: ConstantWavelengthInstrument,
+    phases: tuple[Phase, ...],
+    values: dict[ParameterKey, float],
+) -> tuple[ConstantWavelengthInstrument, tuple[Phase, ...]]:
+    """Apply profile/lattice values without analytical-background state."""
+
+    updated_instrument, updated_phases, _ = _apply_parameter_values_with_background(
+        instrument, phases, values
+    )
+    return updated_instrument, updated_phases
 
 
 def _regenerate_accepted_domains(
@@ -988,11 +1127,55 @@ def _reflection_domains_compatible(left: LeBailPhase, right: LeBailPhase) -> boo
     )
 
 
+def _backgrounds_compatible(
+    requested: DifferentiableBackground | None,
+    checkpoint: DifferentiableBackground | None,
+) -> bool:
+    if requested is None or checkpoint is None:
+        return requested is checkpoint
+    return (
+        type(requested) is type(checkpoint)
+        and requested.background_id == checkpoint.background_id
+        and requested.parameter_names == checkpoint.parameter_names
+    )
+
+
+def _fit_linear_background(
+    pattern: PowderPattern,
+    profile_y: NDArray[np.float64],
+    background: DifferentiableBackground | None,
+    parameters: ParameterSet | None,
+    use_uncertainty: bool,
+) -> tuple[DifferentiableBackground | None, ParameterSet | None]:
+    if background is None:
+        return None, parameters
+    if type(background) not in (PolynomialBackground, ChebyshevBackground, PointBackground):
+        return background, parameters
+    basis = background.basis(pattern.x)
+    included = np.ones(pattern.x.size, dtype=np.bool_) if pattern.mask is None else pattern.mask
+    selected_basis = basis[included]
+    target = pattern.observed_y - pattern.background - profile_y
+    selected_target = target[included]
+    if use_uncertainty and pattern.uncertainty is not None:
+        selected_basis = selected_basis / pattern.uncertainty[included, None]
+        selected_target = selected_target / pattern.uncertainty[included]
+    coefficients = np.linalg.lstsq(selected_basis, selected_target, rcond=None)[0]
+    updated = background.replace_coefficients(coefficients)
+    if parameters is None:
+        return updated, None
+    values = {
+        background_parameter_key(updated.background_id, name): value
+        for name, value in zip(updated.parameter_names, updated.coefficients, strict=True)
+    }
+    return updated, parameters.replace_values(values)
+
+
 def _profile_update(
     pattern: PowderPattern,
     instrument: ConstantWavelengthInstrument,
     phases: tuple[Phase, ...],
     calculation: PatternCalculationResult,
+    background: DifferentiableBackground | None,
     parameters: ParameterSet,
     constraints: tuple[Constraint, ...],
     options: LeBailOptions,
@@ -1001,17 +1184,25 @@ def _profile_update(
     ConstantWavelengthInstrument,
     tuple[Phase, ...],
     PatternCalculationResult,
+    DifferentiableBackground | None,
     ParameterSet,
     float,
     tuple[ParameterChange, ...],
     tuple[str, ...],
 ]:
-    domain_values = _domain_parameter_values(instrument, phases, parameters)
+    domain_values = _domain_parameter_values(instrument, phases, parameters, background)
     current_parameters = parameters.replace_values(domain_values)
     transform = ConstraintTransform(current_parameters, constraints)
     if not transform.free_keys:
-        return instrument, phases, calculation, current_parameters, 0.0, (), ()
-    physical_columns = _parameter_columns(calculation, current_parameters, instrument, phases)
+        return instrument, phases, calculation, background, current_parameters, 0.0, (), ()
+    physical_columns = _parameter_columns(
+        calculation,
+        current_parameters,
+        instrument,
+        phases,
+        background,
+        pattern.x,
+    )
     chain = _constraint_matrix(transform)
     jacobian = physical_columns @ chain
     residual = pattern.observed_y - calculation.y
@@ -1071,18 +1262,15 @@ def _profile_update(
     for _ in range(options.max_profile_backtracks + 1):
         try:
             values = transform.unpack(base + factor * step, clip=True)
-            candidate_instrument, candidate_phases = _apply_parameter_values(
-                instrument, phases, values
+            candidate_instrument, candidate_phases, candidate_background = (
+                _apply_parameter_values_with_background(instrument, phases, values, background)
             )
-            candidate_calculation = calculate_pattern(
+            candidate_calculation = _calculate_pattern_with_background(
                 pattern,
                 candidate_instrument,
                 candidate_phases,
-                options=CalculationOptions(
-                    support_fwhm=options.support_fwhm,
-                    return_phase_components=True,
-                    execution=options.execution,
-                ),
+                candidate_background,
+                options,
             )
             candidate_metrics = evaluate_residuals(
                 pattern,
@@ -1101,15 +1289,12 @@ def _profile_update(
                 candidate_phases
             )
             if topology_changed:
-                candidate_calculation = calculate_pattern(
+                candidate_calculation = _calculate_pattern_with_background(
                     pattern,
                     candidate_instrument,
                     candidate_phases,
-                    options=CalculationOptions(
-                        support_fwhm=options.support_fwhm,
-                        return_phase_components=True,
-                        execution=options.execution,
-                    ),
+                    candidate_background,
+                    options,
                 )
             changes = tuple(
                 ParameterChange(
@@ -1125,6 +1310,7 @@ def _profile_update(
                 candidate_instrument,
                 candidate_phases,
                 candidate_calculation,
+                candidate_background,
                 candidate_parameters,
                 float(np.linalg.norm(factor * step)),
                 changes,
@@ -1135,6 +1321,7 @@ def _profile_update(
         instrument,
         phases,
         calculation,
+        background,
         current_parameters,
         0.0,
         (),
@@ -1225,6 +1412,7 @@ def _covariance(
     calculation: PatternCalculationResult,
     instrument: ConstantWavelengthInstrument,
     phases: tuple[Phase, ...],
+    background: DifferentiableBackground | None,
     parameters: ParameterSet | None,
     constraints: tuple[Constraint, ...],
     use_uncertainty: bool,
@@ -1239,7 +1427,10 @@ def _covariance(
     for row, spec in enumerate(parameters.specs):
         if spec.key.module == "phase" and spec.key.name == "scale" and np.any(chain[row] != 0.0):
             return None
-    jacobian = _parameter_columns(calculation, parameters, instrument, phases) @ chain
+    jacobian = (
+        _parameter_columns(calculation, parameters, instrument, phases, background, pattern.x)
+        @ chain
+    )
     included = np.ones(pattern.x.size, dtype=np.bool_) if pattern.mask is None else pattern.mask
     selected = jacobian[included]
     if use_uncertainty and pattern.uncertainty is not None:
@@ -1275,6 +1466,7 @@ def refine(
         raise TypeError("optimizer must implement LeastSquaresOptimizer")
     if checkpoint is None:
         instrument = input_data.instrument
+        background = input_data.background
         intensities = initialize_intensities(input_data, selected_options)
         phases = _replace_intensities(input_data.phases, intensities)
         parameters = input_data.parameters
@@ -1326,7 +1518,10 @@ def refine(
             )
             if not dynamic_domains:
                 raise ValueError("checkpoint reflection identities do not match Le Bail input")
+        if not _backgrounds_compatible(input_data.background, checkpoint.background):
+            raise ValueError("checkpoint background does not match Le Bail input")
         instrument = checkpoint.instrument
+        background = checkpoint.background
         intensities = np.array(checkpoint.intensities, copy=True)
         phases = checkpoint.phases
         parameters = checkpoint.parameters
@@ -1334,15 +1529,12 @@ def refine(
         previous_rwp = checkpoint.previous_rwp
         first_iteration = checkpoint.completed_iterations + 1
     termination = TerminationReason.MAX_ITERATIONS
-    calculation = calculate_pattern(
+    calculation = _calculate_pattern_with_background(
         input_data.pattern,
         instrument,
         phases,
-        options=CalculationOptions(
-            support_fwhm=selected_options.support_fwhm,
-            return_phase_components=True,
-            execution=selected_options.execution,
-        ),
+        background,
+        selected_options,
     )
     for iteration in range(first_iteration, selected_options.max_iterations + 1):
         if cancellation is not None and cancellation():
@@ -1357,15 +1549,26 @@ def refine(
         )
         intensities = extraction.intensities
         phases = _replace_intensities(phases, intensities)
-        calculation = calculate_pattern(
+        calculation = _calculate_pattern_with_background(
             input_data.pattern,
             instrument,
             phases,
-            options=CalculationOptions(
-                support_fwhm=selected_options.support_fwhm,
-                return_phase_components=True,
-                execution=selected_options.execution,
-            ),
+            background,
+            selected_options,
+        )
+        background, parameters = _fit_linear_background(
+            input_data.pattern,
+            calculation.profile_y,
+            background,
+            parameters,
+            selected_options.use_uncertainty,
+        )
+        calculation = _calculate_pattern_with_background(
+            input_data.pattern,
+            instrument,
+            phases,
+            background,
+            selected_options,
         )
         profile_step = 0.0
         parameter_changes: tuple[ParameterChange, ...] = ()
@@ -1375,6 +1578,7 @@ def refine(
                 instrument,
                 phases,
                 calculation,
+                background,
                 parameters,
                 profile_step,
                 parameter_changes,
@@ -1384,6 +1588,7 @@ def refine(
                 instrument,
                 phases,
                 calculation,
+                background,
                 parameters,
                 input_data.constraints,
                 selected_options,
@@ -1467,6 +1672,7 @@ def refine(
     final_checkpoint = LeBailCheckpoint(
         completed_iterations=len(history),
         instrument=instrument,
+        background=background,
         phases=phases,
         intensities=final_intensity_array,
         parameters=parameters,
@@ -1478,6 +1684,7 @@ def refine(
     return LeBailResult(
         calculation=calculation,
         instrument=instrument,
+        background=background,
         phases=phases,
         intensities=labeled_intensities,
         metrics=final_metrics,
@@ -1494,6 +1701,7 @@ def refine(
             calculation,
             instrument,
             phases,
+            background,
             parameters,
             input_data.constraints,
             selected_options.use_uncertainty,

@@ -9,12 +9,13 @@ use phasesmith_execution::ExecutionPolicy;
 use phasesmith_io::space_group_by_number;
 use phasesmith_model::PatternRecord;
 use phasesmith_workflows::{
-    AffineConstraint, CancellationToken, Constraint, FixedConstraint, LatticeBounds,
-    LatticeParameterization, LatticeReflectionDomain, LeBailCheckpoint, LeBailInput, LeBailOptions,
-    LeBailPhase, RefinementLimits, RefinementRuntime, TerminationReason,
-    build_lebail_parameter_set, build_lebail_parameter_set_with_lattice, calculate_lebail_pattern,
-    iterate_lebail_once, lebail_lattice_parameter_key, lebail_reflection_position_key,
-    refine_lebail, refine_lebail_with_runtime,
+    AffineConstraint, BackgroundModel, CancellationToken, ChebyshevBackground, Constraint,
+    DifferentiableBackground, FixedConstraint, LatticeBounds, LatticeParameterization,
+    LatticeReflectionDomain, LeBailCheckpoint, LeBailInput, LeBailOptions, LeBailPhase,
+    RefinementLimits, RefinementRuntime, TerminationReason, build_lebail_parameter_set,
+    build_lebail_parameter_set_with_lattice, calculate_lebail_pattern,
+    calculate_lebail_pattern_with_background, iterate_lebail_once, lebail_lattice_parameter_key,
+    lebail_reflection_position_key, refine_lebail, refine_lebail_with_runtime,
 };
 
 fn instrument() -> ConstantWavelengthInstrument {
@@ -192,6 +193,55 @@ fn isolated_reflections_converge_with_display_components() {
         &result.calculation.profile_y,
         2.0e-15,
     );
+}
+
+#[test]
+fn refinable_chebyshev_is_added_to_the_fixed_background() {
+    let x = linspace(20.0, 80.0, 6_001);
+    let positions = [30.0, 50.0, 70.0];
+    let truth = vec![phase("alpha", &positions, &[10.0, 6.0, 3.0])];
+    let starting = vec![phase("alpha", &positions, &[1.0, 1.0, 1.0])];
+    let fixed = x
+        .iter()
+        .map(|value| 0.45 + 0.001 * (value - 20.0))
+        .collect::<Vec<_>>();
+    let truth_background = BackgroundModel::Chebyshev(
+        ChebyshevBackground::new("residual", vec![0.2, -0.08, 0.03], [20.0, 80.0]).unwrap(),
+    );
+    let blank = PatternRecord::new(x.clone(), None, None, None, Some(fixed.clone())).unwrap();
+    let calculated = calculate_lebail_pattern_with_background(
+        &blank,
+        instrument(),
+        &truth,
+        Some(&truth_background),
+        20.0,
+        &execution(),
+    )
+    .unwrap();
+    let pattern =
+        PatternRecord::new(x, Some(calculated.y), None, None, Some(fixed.clone())).unwrap();
+    let starting_background = BackgroundModel::Chebyshev(
+        ChebyshevBackground::new("residual", vec![0.0; 3], [20.0, 80.0]).unwrap(),
+    );
+    let input = LeBailInput::new(pattern, instrument(), starting)
+        .unwrap()
+        .with_refinable_background(starting_background)
+        .unwrap();
+    let result = refine_lebail(&input, &options(30), None).unwrap();
+
+    let background = result.background.as_ref().unwrap();
+    assert_close_slice(&background.coefficients(), &[0.2, -0.08, 0.03], 3.0e-7);
+    let residual = background.calculate(&blank.x_deg).unwrap();
+    for ((actual, fixed), residual) in result
+        .calculation
+        .background_y
+        .iter()
+        .zip(fixed)
+        .zip(residual)
+    {
+        assert!((actual - fixed - residual).abs() < 2.0e-13);
+    }
+    assert!(result.metrics.rwp < 2.0e-7);
 }
 
 #[test]
@@ -505,6 +555,7 @@ fn dynamic_checkpoint_allows_changed_topology_only_for_the_same_domain() {
         completed_iterations: 0,
         phases: vec![changed.clone()],
         instrument: instrument(),
+        background: None,
         intensities: changed.integrated_intensity().to_vec(),
         parameters: Some(checkpoint_parameters),
         previous_rwp: f64::INFINITY,

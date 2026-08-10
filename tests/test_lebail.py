@@ -6,7 +6,12 @@ from dataclasses import replace
 import numpy as np
 import phasesmith
 import pytest
-from phasesmith.refinement import AffineConstraint, TerminationReason, lebail
+from phasesmith.refinement import (
+    AffineConstraint,
+    ChebyshevBackground,
+    TerminationReason,
+    lebail,
+)
 
 
 def instrument() -> phasesmith.ConstantWavelengthInstrument:
@@ -82,6 +87,33 @@ def test_isolated_reflections_are_recovered_from_a_short_one_call_script() -> No
     )
 
     assert result.termination_reason is TerminationReason.CONVERGED
+
+
+def test_refinable_chebyshev_is_added_to_fixed_background() -> None:
+    x = np.linspace(20.0, 80.0, 6_001)
+    positions = np.array([30.0, 50.0, 70.0])
+    truth = (phase("alpha", positions, np.array([10.0, 6.0, 3.0])),)
+    starting = (phase("alpha", positions, np.ones(3)),)
+    fixed = 0.45 + 0.001 * (x - x[0])
+    truth_background = ChebyshevBackground("residual", (0.2, -0.08, 0.03), (20.0, 80.0))
+    blank = phasesmith.PowderPattern(x, background=fixed)
+    profile = phasesmith.calculate_pattern(blank, instrument(), truth)
+    observed = profile.y + truth_background.calculate(x)
+    pattern = phasesmith.PowderPattern(x, observed_y=observed, background=fixed)
+    request = lebail.LeBailInput(pattern, instrument(), starting).with_refinable_background(
+        ChebyshevBackground("residual", (0.0, 0.0, 0.0), (20.0, 80.0))
+    )
+
+    result = lebail.refine(request, lebail.LeBailOptions(max_iterations=30))
+
+    assert result.background is not None
+    np.testing.assert_allclose(result.background.coefficients, (0.2, -0.08, 0.03), atol=3e-7)
+    np.testing.assert_allclose(
+        result.calculation.background,
+        fixed + result.background.calculate(x),
+        atol=2e-13,
+    )
+    assert result.metrics.rwp < 2e-7
 
 
 def test_refinement_propagates_execution_policy_to_every_pattern_calculation(
