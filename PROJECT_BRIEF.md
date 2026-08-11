@@ -503,6 +503,19 @@ subset. Unconstrained GSAS-II runs remain rejected as targets because they
 drove U and microstrain negative, producing nonphysical high-angle Gaussian
 variance.
 
+The subsequent offline calibration increment adds independently derived full
+source/sample/receiver axial ray geometry and triangular incident/diffracted
+Soller transmissions. It remains outside the refinement runtime and compresses
+only into the existing analytical Rust `U/V/W/X/Y + SH/L` candidate. An
+exploratory NIST 100a run using the documented 12 mm / 15 mm / 5 mm lengths,
+6.776 degree Soller widths, and a provisional narrow Cu doublet lowers the
+PhaseSmith Poisson Rwp from 20.495% to 12.525% and raises profile correlation
+from 0.95959 to 0.99482. The compression is correctly rejected by normal shape
+gates (global relative L2 0.1909), and it remains well behind the NIST 6.055%
+reference. The graphite analyser/spectral passband is therefore a separate
+required validation increment; the exploratory spectrum is not a golden
+instrument calibration.
+
 ## Design commitments
 
 - Use GSAS-II only as a pinned validation oracle, never as the architecture.
@@ -912,7 +925,10 @@ geometry. A bounded offline fit then uses the existing Rust analytical
 derivatives to compress those targets into production `U/V/W/X/Y` and a single
 equal-height `SH/L`. Global and per-peak L2/correlation diagnostics reject
 non-representable physical targets rather than presenting them as successful
-calibrations. Transparency, full divergence/Soller optics, tube tails,
+calibrations. Its second reviewed increment adds finite axial
+source/sample/receiver lengths and triangular incident/diffracted Soller
+transmissions through an independently derived deterministic ray integral.
+Transparency, equatorial divergence beyond the ideal apertures, tube tails,
 monochromator/analyser passbands, and PSD defocusing remain separate reviewed
 increments. No GSAS-II or NIST implementation code is copied or required at
 runtime.

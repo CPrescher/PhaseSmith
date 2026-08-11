@@ -106,6 +106,7 @@ from .fpa_calibration import (
     FundamentalPeakPattern,
     FundamentalProfileCalibrationOptions,
     FundamentalProfileCalibrationResult,
+    SollerAxialGeometry,
     calibrate_fundamental_profile,
     simulate_fundamental_peaks,
 )
@@ -360,6 +361,7 @@ __all__ = [
     "ScatteringTableProvenance",
     "ScatteringVectorRange",
     "SmoothBrucknerBackground",
+    "SollerAxialGeometry",
     "SpaceGroup",
     "SpaceGroupInfo",
     "StructuralPatternCalculationResult",

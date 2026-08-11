@@ -20,6 +20,7 @@ from .radiation import WavelengthComponents
 
 _GAUSSIAN_FWHM_PER_SIGMA = 2.354_820_045_030_949_3
 _PARAMETER_NAMES = ("u_deg2", "v_deg2", "w_deg2", "x_deg", "y_deg", "sh_over_l")
+_TARGET_PROFILE_CHUNK_SIZE = 256
 
 
 @dataclass(frozen=True, slots=True)
@@ -49,6 +50,43 @@ class FundamentalEmissionLine:
 
 
 @dataclass(frozen=True, slots=True)
+class SollerAxialGeometry:
+    """Full axial lengths and optional triangular Soller angular filters.
+
+    Lengths are full axial lengths in millimetres. Soller widths are full
+    angular widths in degrees; ``None`` represents an open axial beam.
+    """
+
+    source_full_length_mm: float
+    sample_full_length_mm: float
+    receiving_slit_full_length_mm: float
+    incident_soller_full_width_deg: float | None = None
+    diffracted_soller_full_width_deg: float | None = None
+
+    def __post_init__(self) -> None:
+        lengths = (
+            self.source_full_length_mm,
+            self.sample_full_length_mm,
+            self.receiving_slit_full_length_mm,
+        )
+        if not np.isfinite(lengths).all() or any(value < 0.0 for value in lengths):
+            raise ValueError("full axial lengths must be finite and non-negative")
+        if any(value == 0.0 for value in lengths) and not (
+            self.source_full_length_mm == 0.0 and self.sample_full_length_mm == 0.0
+        ):
+            raise ValueError(
+                "full axial lengths must all be positive, or source and sample "
+                "must both be zero for the point-incident FCJ limit"
+            )
+        for name, value in (
+            ("incident_soller_full_width_deg", self.incident_soller_full_width_deg),
+            ("diffracted_soller_full_width_deg", self.diffracted_soller_full_width_deg),
+        ):
+            if value is not None and (not np.isfinite(value) or value <= 0.0):
+                raise ValueError(f"{name} must be positive and finite or None")
+
+
+@dataclass(frozen=True, slots=True)
 class BraggBrentanoFundamentalProfile:
     """Reviewed first-slice physical description of a laboratory CW instrument.
 
@@ -62,6 +100,7 @@ class BraggBrentanoFundamentalProfile:
     sample_half_length_mm: float
     detector_half_length_mm: float
     emission_lines: tuple[FundamentalEmissionLine, ...]
+    soller_axial_geometry: SollerAxialGeometry | None = None
 
     def __post_init__(self) -> None:
         geometry = (
@@ -81,6 +120,29 @@ class BraggBrentanoFundamentalProfile:
             raise ValueError("emission_lines must be a non-empty tuple")
         if not all(isinstance(line, FundamentalEmissionLine) for line in self.emission_lines):
             raise TypeError("emission_lines must contain FundamentalEmissionLine values")
+        if self.soller_axial_geometry is not None:
+            if not isinstance(self.soller_axial_geometry, SollerAxialGeometry):
+                raise TypeError("soller_axial_geometry must be SollerAxialGeometry or None")
+            sample_length = 2.0 * self.sample_half_length_mm
+            detector_length = 2.0 * self.detector_half_length_mm
+            if not np.isclose(
+                sample_length,
+                self.soller_axial_geometry.sample_full_length_mm,
+                rtol=0.0,
+                atol=1.0e-12,
+            ):
+                raise ValueError(
+                    "sample_half_length_mm must equal half the Soller sample full length"
+                )
+            if not np.isclose(
+                detector_length,
+                self.soller_axial_geometry.receiving_slit_full_length_mm,
+                rtol=0.0,
+                atol=1.0e-12,
+            ):
+                raise ValueError(
+                    "detector_half_length_mm must equal half the Soller receiver full length"
+                )
 
     @property
     def components(self) -> WavelengthComponents:
@@ -123,6 +185,7 @@ class FundamentalProfileCalibrationOptions:
     window_half_width_deg: float = 0.8
     step_deg: float = 0.002
     aperture_quadrature_order: int = 3
+    axial_ray_quadrature_order: int = 255
     fcj_quadrature_order: int = 48
     support_fwhm: float = 40.0
     max_iterations: int = 40
@@ -158,16 +221,20 @@ class FundamentalProfileCalibrationOptions:
             raise ValueError("damping must be finite and non-negative")
         integer_controls = (
             self.aperture_quadrature_order,
+            self.axial_ray_quadrature_order,
             self.fcj_quadrature_order,
             self.max_iterations,
         )
         integers_are_valid = all(
-            isinstance(value, int) and not isinstance(value, bool)
-            for value in integer_controls
+            isinstance(value, int) and not isinstance(value, bool) for value in integer_controls
         )
         if not integers_are_valid:
             raise TypeError("quadrature orders and max_iterations must be integers")
-        if self.aperture_quadrature_order <= 0 or self.fcj_quadrature_order <= 0:
+        if (
+            self.aperture_quadrature_order <= 0
+            or self.axial_ray_quadrature_order <= 0
+            or self.fcj_quadrature_order <= 0
+        ):
             raise ValueError("quadrature orders must be positive")
         if self.max_iterations <= 0:
             raise ValueError("max_iterations must be positive")
@@ -401,9 +468,7 @@ def _fundamental_target(
     for position, active in zip(positions, slices, strict=True):
         d_spacing = reference_wavelength / (2.0 * np.sin(np.deg2rad(position / 2.0)))
         local_grid = grid[active]
-        for line, component_weight in zip(
-            model.emission_lines, component_weights, strict=True
-        ):
+        for line, component_weight in zip(model.emission_lines, component_weights, strict=True):
             argument = line.wavelength_angstrom / (2.0 * d_spacing)
             if not 0.0 < argument < 1.0:
                 raise ValueError("an emission component lies outside the Bragg domain")
@@ -412,20 +477,190 @@ def _fundamental_target(
             angular_per_wavelength = np.rad2deg(2.0 * tangent / line.wavelength_angstrom)
             gaussian = angular_per_wavelength * line.gaussian_fwhm_angstrom
             lorentzian = angular_per_wavelength * line.lorentzian_fwhm_angstrom
-            for offset, aperture_weight in zip(
-                combined_offsets, combined_weights, strict=True
-            ):
-                evaluated = reference.profile_fcj(
-                    local_grid,
-                    component_position + float(offset),
-                    gaussian,
-                    lorentzian,
-                    geometry.sample_over_radius,
-                    geometry.detector_over_radius,
-                    quadrature_order=options.fcj_quadrature_order,
-                )
-                target[active] += component_weight * aperture_weight * evaluated.value
+            if model.soller_axial_geometry is None:
+                for offset, aperture_weight in zip(combined_offsets, combined_weights, strict=True):
+                    evaluated = reference.profile_fcj(
+                        local_grid,
+                        component_position + float(offset),
+                        gaussian,
+                        lorentzian,
+                        geometry.sample_over_radius,
+                        geometry.detector_over_radius,
+                        quadrature_order=options.fcj_quadrature_order,
+                    )
+                    target[active] += component_weight * aperture_weight * evaluated.value
+                continue
+            axial_centres, axial_weights = _soller_axial_rays(
+                component_position,
+                model.radius_mm,
+                model.soller_axial_geometry,
+                options.axial_ray_quadrature_order,
+            )
+            centres = (axial_centres[:, None] + combined_offsets[None, :]).ravel()
+            ray_weights = (axial_weights[:, None] * combined_weights[None, :]).ravel()
+            target[active] += component_weight * _weighted_tch_profiles(
+                local_grid,
+                centres,
+                ray_weights,
+                gaussian,
+                lorentzian,
+            )
     return target
+
+
+def _soller_axial_rays(
+    position_deg: float,
+    radius_mm: float,
+    geometry: SollerAxialGeometry,
+    quadrature_order: int,
+) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
+    """Return apparent angles and normalized weights for the axial ray integral."""
+
+    if (
+        min(
+            geometry.source_full_length_mm,
+            geometry.sample_full_length_mm,
+            geometry.receiving_slit_full_length_mm,
+        )
+        == 0.0
+    ):
+        return _coordinate_axial_rays(position_deg, radius_mm, geometry, quadrature_order)
+    nodes, weights = np.polynomial.legendre.leggauss(quadrature_order)
+    incident_limit = np.arctan(
+        (geometry.source_full_length_mm + geometry.sample_full_length_mm) / (2.0 * radius_mm)
+    )
+    diffracted_limit = np.arctan(
+        (geometry.sample_full_length_mm + geometry.receiving_slit_full_length_mm)
+        / (2.0 * radius_mm)
+    )
+    if geometry.incident_soller_full_width_deg is not None:
+        incident_limit = min(
+            incident_limit,
+            np.deg2rad(geometry.incident_soller_full_width_deg / 2.0),
+        )
+    if geometry.diffracted_soller_full_width_deg is not None:
+        diffracted_limit = min(
+            diffracted_limit,
+            np.deg2rad(geometry.diffracted_soller_full_width_deg / 2.0),
+        )
+    incident = incident_limit * nodes[:, None]
+    diffracted = diffracted_limit * nodes[None, :]
+    lower = np.maximum.reduce(
+        (
+            np.full(
+                (quadrature_order, quadrature_order),
+                -geometry.sample_full_length_mm / 2.0,
+            ),
+            np.broadcast_to(
+                -geometry.source_full_length_mm / 2.0 + radius_mm * np.tan(incident),
+                (quadrature_order, quadrature_order),
+            ),
+            np.broadcast_to(
+                -geometry.receiving_slit_full_length_mm / 2.0 - radius_mm * np.tan(diffracted),
+                (quadrature_order, quadrature_order),
+            ),
+        )
+    )
+    upper = np.minimum.reduce(
+        (
+            np.broadcast_to(
+                geometry.sample_full_length_mm / 2.0,
+                (quadrature_order, quadrature_order),
+            ),
+            np.broadcast_to(
+                geometry.source_full_length_mm / 2.0 + radius_mm * np.tan(incident),
+                (quadrature_order, quadrature_order),
+            ),
+            np.broadcast_to(
+                geometry.receiving_slit_full_length_mm / 2.0 - radius_mm * np.tan(diffracted),
+                (quadrature_order, quadrature_order),
+            ),
+        )
+    )
+    overlap = np.maximum(upper - lower, 0.0)
+    ray_weights = weights[:, None] * weights[None, :] * overlap
+    ray_weights = ray_weights * _soller_transmission(
+        incident, geometry.incident_soller_full_width_deg
+    )
+    ray_weights = ray_weights * _soller_transmission(
+        diffracted, geometry.diffracted_soller_full_width_deg
+    )
+    apparent = _apparent_axial_angle(position_deg, incident, diffracted)
+    ray_weights = ray_weights / (np.cos(incident) * np.cos(diffracted) * np.sin(apparent))
+    return _normalize_axial_rays(apparent, ray_weights)
+
+
+def _coordinate_axial_rays(
+    position_deg: float,
+    radius_mm: float,
+    geometry: SollerAxialGeometry,
+    quadrature_order: int,
+) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
+    if geometry.receiving_slit_full_length_mm == 0.0:
+        return np.array([position_deg]), np.array([1.0])
+    nodes, weights = np.polynomial.legendre.leggauss(quadrature_order)
+    diffracted = np.arctan(0.5 * geometry.receiving_slit_full_length_mm * nodes / radius_mm)
+    incident = np.zeros_like(diffracted)
+    ray_weights = weights.copy()
+    ray_weights = ray_weights * _soller_transmission(
+        diffracted, geometry.diffracted_soller_full_width_deg
+    )
+    apparent = _apparent_axial_angle(position_deg, incident, diffracted)
+    ray_weights = ray_weights * np.cos(incident) * np.cos(diffracted) / np.sin(apparent)
+    return _normalize_axial_rays(apparent, ray_weights)
+
+
+def _apparent_axial_angle(
+    position_deg: float,
+    incident: NDArray[np.float64],
+    diffracted: NDArray[np.float64],
+) -> NDArray[np.float64]:
+    position = np.deg2rad(position_deg)
+    cosine = (np.cos(position) - np.sin(incident) * np.sin(diffracted)) / (
+        np.cos(incident) * np.cos(diffracted)
+    )
+    domain_tolerance = 32.0 * np.finfo(np.float64).eps
+    if np.any((cosine < -1.0 - domain_tolerance) | (cosine > 1.0 + domain_tolerance)):
+        raise ValueError("axial ray lies outside the apparent-angle domain")
+    return np.arccos(np.clip(cosine, -1.0, 1.0))
+
+
+def _normalize_axial_rays(
+    apparent: NDArray[np.float64], ray_weights: NDArray[np.float64]
+) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
+    apparent = np.rad2deg(apparent).ravel()
+    ray_weights = ray_weights.ravel()
+    selected = np.isfinite(ray_weights) & (ray_weights > 0.0)
+    if not np.any(selected):
+        raise ValueError("Soller filters reject every axial quadrature ray")
+    apparent = apparent[selected]
+    ray_weights = ray_weights[selected]
+    ray_weights /= np.sum(ray_weights)
+    return apparent, ray_weights
+
+
+def _soller_transmission(
+    angle_rad: NDArray[np.float64], full_width_deg: float | None
+) -> NDArray[np.float64]:
+    if full_width_deg is None:
+        return np.ones_like(angle_rad)
+    return np.maximum(0.0, 1.0 - np.abs(2.0 * np.rad2deg(angle_rad) / full_width_deg))
+
+
+def _weighted_tch_profiles(
+    grid: NDArray[np.float64],
+    centres: NDArray[np.float64],
+    weights: NDArray[np.float64],
+    gaussian_fwhm: float,
+    lorentzian_fwhm: float,
+) -> NDArray[np.float64]:
+    result = np.zeros_like(grid)
+    for begin in range(0, centres.size, _TARGET_PROFILE_CHUNK_SIZE):
+        end = min(begin + _TARGET_PROFILE_CHUNK_SIZE, centres.size)
+        delta = grid[None, :] - centres[begin:end, None]
+        evaluated = reference.profile_tch(delta, gaussian_fwhm, lorentzian_fwhm)
+        result += weights[begin:end] @ evaluated.value
+    return result
 
 
 def _initial_parameters(model: BraggBrentanoFundamentalProfile) -> NDArray[np.float64]:
@@ -434,24 +669,16 @@ def _initial_parameters(model: BraggBrentanoFundamentalProfile) -> NDArray[np.fl
     gaussian_sigmas = np.array(
         [line.gaussian_fwhm_angstrom / _GAUSSIAN_FWHM_PER_SIGMA for line in model.emission_lines]
     )
-    lorentzian_widths = np.array(
-        [line.lorentzian_fwhm_angstrom for line in model.emission_lines]
-    )
-    relative_gaussian_sigma = float(
-        np.sqrt(np.sum(weights * (gaussian_sigmas / wavelengths) ** 2))
-    )
-    relative_lorentzian_fwhm = float(
-        np.sum(weights * lorentzian_widths / wavelengths)
-    )
+    lorentzian_widths = np.array([line.lorentzian_fwhm_angstrom for line in model.emission_lines])
+    relative_gaussian_sigma = float(np.sqrt(np.sum(weights * (gaussian_sigmas / wavelengths) ** 2)))
+    relative_lorentzian_fwhm = float(np.sum(weights * lorentzian_widths / wavelengths))
     u = np.rad2deg(2.0 * relative_gaussian_sigma) ** 2
     y = np.rad2deg(2.0 * relative_lorentzian_fwhm)
     source_angular_width = np.rad2deg(model.source_width_mm / model.radius_mm)
     detector_angular_width = np.rad2deg(model.receiving_slit_width_mm / model.radius_mm)
     w = (source_angular_width**2 + detector_angular_width**2) / 12.0
     w = max(w, 1.0e-8)
-    sh_over_l = (
-        model.sample_half_length_mm + model.detector_half_length_mm
-    ) / model.radius_mm
+    sh_over_l = (model.sample_half_length_mm + model.detector_half_length_mm) / model.radius_mm
     return np.array([u, 0.0, w, 0.0, y, sh_over_l], dtype=np.float64)
 
 
@@ -517,12 +744,8 @@ def _candidate(
         if unconstrained_scale > 0.0:
             d_numerator = target_peak @ jacobian_peak
             d_denominator = 2.0 * (unit_peak @ jacobian_peak)
-            d_scale = (
-                d_numerator * denominator - numerator * d_denominator
-            ) / denominator**2
-            scaled_jacobian[active] = (
-                scale * jacobian_peak + unit_peak[:, None] * d_scale[None, :]
-            )
+            d_scale = (d_numerator * denominator - numerator * d_denominator) / denominator**2
+            scaled_jacobian[active] = scale * jacobian_peak + unit_peak[:, None] * d_scale[None, :]
         else:
             scaled_jacobian[active] = 0.0
     return calculated, scaled_jacobian, peak_scales
@@ -565,9 +788,7 @@ def _bounded_gauss_newton_step(
         physical_step = scales * scaled_step
         at_lower = np.isclose(parameters, lower, rtol=0.0, atol=1.0e-14)
         at_upper = np.isclose(parameters, upper, rtol=0.0, atol=1.0e-14)
-        points_outside = (at_lower & (physical_step < 0.0)) | (
-            at_upper & (physical_step > 0.0)
-        )
+        points_outside = (at_lower & (physical_step < 0.0)) | (at_upper & (physical_step > 0.0))
         newly_fixed = free & points_outside
         if not np.any(newly_fixed):
             return scaled_step

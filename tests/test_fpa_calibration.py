@@ -65,9 +65,7 @@ def test_independent_fundamental_pattern_is_deterministic_and_immutable() -> Non
 
 def test_uniform_equatorial_apertures_add_the_first_principles_variance() -> None:
     line = phasesmith.FundamentalEmissionLine(1.5406, 1.0, 0.0002, 0.0)
-    narrow = phasesmith.BraggBrentanoFundamentalProfile(
-        217.5, 0.0, 0.0, 0.0, 0.0, (line,)
-    )
+    narrow = phasesmith.BraggBrentanoFundamentalProfile(217.5, 0.0, 0.0, 0.0, 0.0, (line,))
     wide = replace(narrow, source_width_mm=0.1, receiving_slit_width_mm=0.2)
     options = replace(_options(), aperture_quadrature_order=12)
     narrow_pattern = phasesmith.simulate_fundamental_peaks(narrow, options)
@@ -84,14 +82,113 @@ def test_uniform_equatorial_apertures_add_the_first_principles_variance() -> Non
         narrow_pattern.intensity[active]
     )
     expected_increment = (
-        np.rad2deg(0.1 / narrow.radius_mm) ** 2
-        + np.rad2deg(0.2 / narrow.radius_mm) ** 2
+        np.rad2deg(0.1 / narrow.radius_mm) ** 2 + np.rad2deg(0.2 / narrow.radius_mm) ** 2
     ) / 12.0
     np.testing.assert_allclose(
         actual_increment,
         expected_increment,
         rtol=1.0e-3,
     )
+
+
+def test_soller_axial_target_recovers_fcj_for_a_point_incident_beam() -> None:
+    line = phasesmith.FundamentalEmissionLine(1.5406, 1.0, 0.00025, 0.0001)
+    fcj = phasesmith.BraggBrentanoFundamentalProfile(217.5, 0.0, 0.0, 0.0, 2.0, (line,))
+    full_axial = replace(
+        fcj,
+        soller_axial_geometry=phasesmith.SollerAxialGeometry(
+            source_full_length_mm=0.0,
+            sample_full_length_mm=0.0,
+            receiving_slit_full_length_mm=4.0,
+        ),
+    )
+    options = replace(
+        _options(),
+        step_deg=0.004,
+        aperture_quadrature_order=1,
+        axial_ray_quadrature_order=48,
+        fcj_quadrature_order=128,
+    )
+
+    expected = phasesmith.simulate_fundamental_peaks(fcj, options)
+    actual = phasesmith.simulate_fundamental_peaks(full_axial, options)
+
+    np.testing.assert_allclose(actual.intensity, expected.intensity, rtol=8.0e-12, atol=1.0e-12)
+
+    symmetric = replace(fcj, detector_half_length_mm=0.0)
+    symmetric_full_axial = replace(
+        symmetric,
+        soller_axial_geometry=phasesmith.SollerAxialGeometry(0.0, 0.0, 0.0),
+    )
+    np.testing.assert_array_equal(
+        phasesmith.simulate_fundamental_peaks(symmetric_full_axial, options).intensity,
+        phasesmith.simulate_fundamental_peaks(symmetric, options).intensity,
+    )
+
+
+def test_soller_filters_reduce_full_axial_broadening() -> None:
+    line = phasesmith.FundamentalEmissionLine(1.5406, 1.0, 0.00025, 0.0001)
+    open_geometry = phasesmith.SollerAxialGeometry(12.0, 15.0, 5.0)
+    filtered_geometry = replace(
+        open_geometry,
+        incident_soller_full_width_deg=2.5,
+        diffracted_soller_full_width_deg=2.5,
+    )
+    open_model = phasesmith.BraggBrentanoFundamentalProfile(
+        217.5,
+        0.0,
+        0.0,
+        7.5,
+        2.5,
+        (line,),
+        open_geometry,
+    )
+    filtered_model = replace(open_model, soller_axial_geometry=filtered_geometry)
+    options = replace(
+        _options(),
+        step_deg=0.004,
+        aperture_quadrature_order=1,
+        axial_ray_quadrature_order=127,
+    )
+
+    open_pattern = phasesmith.simulate_fundamental_peaks(open_model, options)
+    filtered_pattern = phasesmith.simulate_fundamental_peaks(filtered_model, options)
+    active = open_pattern.peak_slices[0]
+    grid = open_pattern.grid_deg[active]
+
+    def moments(values: np.ndarray) -> tuple[float, float]:
+        weights = values / np.sum(values)
+        centroid = float(weights @ grid)
+        variance = float(weights @ (grid - centroid) ** 2)
+        return centroid, variance
+
+    open_centroid, open_variance = moments(open_pattern.intensity[active])
+    filtered_centroid, filtered_variance = moments(filtered_pattern.intensity[active])
+    assert filtered_centroid > open_centroid
+    assert filtered_variance < 0.1 * open_variance
+
+
+def test_transformed_soller_quadrature_is_converged_for_nist_geometry() -> None:
+    line = phasesmith.FundamentalEmissionLine(1.5406, 1.0, 0.00025, 0.0001)
+    geometry = phasesmith.SollerAxialGeometry(12.0, 15.0, 5.0, 6.776, 6.776)
+    model = phasesmith.BraggBrentanoFundamentalProfile(217.5, 0.0, 0.0, 7.5, 2.5, (line,), geometry)
+    options = replace(
+        _options(),
+        step_deg=0.004,
+        aperture_quadrature_order=1,
+        axial_ray_quadrature_order=191,
+    )
+
+    lower_order = phasesmith.simulate_fundamental_peaks(model, options)
+    accepted_order = phasesmith.simulate_fundamental_peaks(
+        model,
+        replace(options, axial_ray_quadrature_order=255),
+    )
+
+    relative_l2 = np.linalg.norm(lower_order.intensity - accepted_order.intensity) / np.linalg.norm(
+        accepted_order.intensity
+    )
+    assert relative_l2 < 2.0e-3
 
 
 def test_representable_physical_profile_compresses_to_production_model() -> None:
@@ -156,9 +253,7 @@ def test_unconverged_compression_cannot_be_accepted() -> None:
 
     assert not result.converged
     assert not result.accepted
-    assert result.warnings == (
-        "profile compression stopped before the convergence thresholds",
-    )
+    assert result.warnings == ("profile compression stopped before the convergence thresholds",)
 
 
 def test_variable_projection_jacobian_matches_centered_finite_differences() -> None:
@@ -218,3 +313,17 @@ def test_fundamental_profile_inputs_reject_ambiguous_values() -> None:
         )
     with np.testing.assert_raises(TypeError):
         phasesmith.FundamentalProfileCalibrationOptions(aperture_quadrature_order=2.5)  # type: ignore[arg-type]
+    with np.testing.assert_raises(ValueError):
+        phasesmith.SollerAxialGeometry(12.0, 15.0, 5.0, 0.0, 2.5)
+    with np.testing.assert_raises_regex(ValueError, "all be positive"):
+        phasesmith.SollerAxialGeometry(12.0, 15.0, 0.0)
+    with np.testing.assert_raises(ValueError):
+        phasesmith.BraggBrentanoFundamentalProfile(
+            217.5,
+            0.0,
+            0.0,
+            1.0,
+            2.5,
+            (line,),
+            phasesmith.SollerAxialGeometry(12.0, 15.0, 5.0),
+        )

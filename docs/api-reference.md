@@ -56,6 +56,7 @@ See [powder-file and CIF import](cif-import.md),
 | `phasesmith.cw` | `accumulate_cw`, `accumulate_cw_components`, `cw_profile_parameters` | Constant-wavelength U/V/W/X/Y accumulation. |
 | `phasesmith.fcj` | `profile_fcj`, `accumulate_cw_fcj` | Finger–Cox–Jephcoat axial asymmetry. |
 | `phasesmith.tof` | `profile_tof`, `accumulate_tof`, `tof_profile_parameters` | Neutron time-of-flight profiles. |
+| `phasesmith.fpa_calibration` | `FundamentalEmissionLine`, `SollerAxialGeometry`, `BraggBrentanoFundamentalProfile`, `simulate_fundamental_peaks`, `calibrate_fundamental_profile` | Offline physical laboratory targets and compression into the production CW profile. |
 
 The native `phasesmith-workflows` crate also exposes `TofLeBailInput`,
 `TofLeBailPhase`, `TofLeBailOptions`, `TofChebyshevBackground`,

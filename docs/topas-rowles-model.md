@@ -49,9 +49,13 @@ no larger than 0.002. Both patterns pass.
 The common workflow does not use the deposited seven-line Voigt emission
 spectrum, wavelength-edge filter, angle-dependent continuum, Soller-limited
 axial geometry, LPSD equatorial divergence, tube tails, flat-plate absorption,
-or TOPAS-specific Gaussian/Lorentzian size/strain macros. These fields remain
-in the neutral manifest so the conversion is auditable, but they are not
-PhaseSmith runtime objects or refinement parameters.
+or TOPAS-specific Gaussian/Lorentzian size/strain macros. A separate offline
+PhaseSmith calibration target now supports independently derived finite axial
+source/sample/receiver geometry and triangular incident/diffracted Soller
+transmissions, but it is not silently substituted into this matched parity
+workflow and does not claim TOPAS equivalence. The deposited fields remain in
+the neutral manifest so the conversion is auditable; they are not PhaseSmith
+runtime refinement parameters.
 
 The archive is CC BY 4.0 and is described by Curtin University at
 [DOI 10.25917/5f44ad65411cc](https://doi.org/10.25917/5f44ad65411cc). GSAS-II

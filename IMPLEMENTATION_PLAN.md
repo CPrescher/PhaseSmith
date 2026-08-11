@@ -1252,6 +1252,16 @@ make failed compression observable. Full divergence, transparency, tube tails,
 monochromator/analyser passbands, and PSD defocusing remain deferred to
 equation- and data-backed increments.
 
+Unit 27's second slice adds a deterministic independent axial-ray target with
+finite source, illuminated-sample, and receiving-slit lengths plus triangular
+incident and diffracted Soller transmissions. A transformed two-dimensional
+quadrature integrates the exact finite-coordinate overlap, recovers the FCJ
+point-incident limit, and has an explicit NIST-geometry convergence test. The
+target remains offline; the fitted production profile and its analytical Rust
+derivatives are unchanged. The NIST probe improves materially but fails the
+normal compression gates, leaving the graphite analyser/spectral passband as a
+separate next increment rather than loosening the empirical-profile contract.
+
 Do not combine adjacent items merely to reduce PR count; numerical review is
 easier when parameter conventions and tolerance changes remain isolated.
 

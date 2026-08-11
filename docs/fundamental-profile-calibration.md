@@ -20,7 +20,9 @@ The reviewed target includes:
 - an intrinsic Gaussian and Lorentzian wavelength FWHM for each line;
 - ideal uniform source and receiving-slit equatorial apertures;
 - physical sample and receiving-slit axial half-lengths through the published
-  Finger--Cox--Jephcoat convolution.
+  Finger--Cox--Jephcoat convolution; or
+- full source, illuminated-sample, and receiving-slit axial lengths with
+  independent triangular incident and diffracted Soller transmissions.
 
 Let line `j` have wavelength `lambda_j`, and let `d` be defined by the first
 line's requested peak position. Its Bragg position is
@@ -55,24 +57,96 @@ of Mendenhall, Mullen and Cline, *J. Res. NIST* **120** (2015), 223--251,
 [doi:10.6028/jres.120.014](https://doi.org/10.6028/jres.120.014), but the code
 here is independently derived from the stated equations.
 
-The first slice deliberately excludes flat-plate transparency, full divergence
-and Soller-slit optics, tube tails, monochromator/analyser passbands, and PSD
-defocusing. These require separately reviewed equations and validation data.
+### Full axial and Soller target
+
+`SollerAxialGeometry` selects the full axial ray target. Let `z_s`, `z`, and
+`z_r` be coordinates across the source, illuminated sample, and receiving
+slit, respectively. The incident and diffracted axial angles are
+
+```text
+beta  = atan((z - z_s) / R),
+gamma = atan((z_r - z) / R).
+```
+
+For the nominal equatorial scattering angle `a0`, the apparent angle `a` is
+obtained from the ray-vector dot product:
+
+```text
+cos(a) = (cos(a0) - sin(beta) sin(gamma))
+         / (cos(beta) cos(gamma)).
+```
+
+A Soller value is the full base width of its triangular transmission. With
+`B_i` and `B_d` in the same angular units as `beta` and `gamma`,
+
+```text
+S_i(beta)  = max(0, 1 - 2 abs(beta) / B_i),
+S_d(gamma) = max(0, 1 - 2 abs(gamma) / B_d).
+```
+
+`None` means unit transmission. The target integrates the finite coordinate
+volume with the ray-density factor
+
+```text
+cos(beta) cos(gamma) / sin(a)
+```
+
+and normalizes the positive ray weights for every Bragg peak. The generator uses
+a deterministic two-dimensional Gauss--Legendre integral in `(beta, gamma)`;
+the analytically computed overlap of the three finite axial intervals removes
+the sample coordinate. Constant Jacobian factors cancel during normalization.
+The default order is 255. For the NIST 12 mm / 15 mm / 5 mm geometry with
+6.776 degree Soller widths, order 191 differs from order 255 by less than
+`2e-3` in relative L2 norm on the test grid.
+
+The triangular transmissions and finite source/sample/receiver geometry
+follow Cheary and Coelho, *J. Appl. Cryst.* **31** (1998), 851--861,
+[doi:10.1107/S0021889898006876](https://doi.org/10.1107/S0021889898006876),
+and the explicit NIST conventions in Mendenhall, Mullen and Cline. The
+integration and coordinate transform are independent PhaseSmith derivations.
+The point-source/point-sample limit is tested directly against the independent
+FCJ reference.
+
+This increment still excludes flat-plate transparency, equatorial divergence
+beyond the ideal apertures, tube tails, monochromator/analyser passbands, and
+PSD defocusing. These require separately reviewed equations and validation
+data.
 
 ## Validation and oracle boundary
 
 The production side of the compression is already covered by the pinned
 GSAS-II `U/V/W/X/Y + SH/L` profile fixtures. The new target side is checked
 independently: wavelength conversion and equatorial-aperture moments have
-closed-form tests, FCJ has its separate high-order reference matrix, and the
-variable-projection Jacobian is checked with centered finite differences away
-from support boundaries.
+closed-form tests, FCJ has its separate high-order reference matrix, the full
+axial target recovers the FCJ limiting case, Soller filters are checked through
+peak moments, and the transformed quadrature has an explicit convergence test.
+The variable-projection Jacobian is checked with centered finite differences
+away from support boundaries.
 
 There is intentionally no golden claim that this reduced target equals the
 GSAS-II/NIST FPA generator. The pinned GSAS-II boundary does not expose that
 GUI workflow as a stable plain-array scripting API, and the first slice omits
-several of its physical contributions. A future black-box FPA fixture must pin
+several physical contributions. A future black-box FPA fixture must pin
 all input conventions and provenance before it can become an oracle gate.
+
+The target ray calculation is an offline, fixed-data generator and therefore
+does not add target-geometry derivative columns to refinement. Values and all
+six derivatives of the compressed candidate remain evaluated together by the
+production Rust pass. The synthetic target is evaluated only on the requested
+isolated windows; those window edges are its explicit finite comparison
+support.
+
+An exploratory SRM 660c specimen 100a probe used the documented 12 mm source,
+15 mm illuminated sample, 5 mm receiving slit, and 6.776 degree incident and
+diffracted Soller widths with a provisional narrow Cu doublet. The resulting
+compressed profile reduced PhaseSmith's weighted Rwp from 20.495% to 12.525%
+and increased profile correlation from 0.95959 to 0.99482. NIST's released
+fundamental-parameters curve remains at 6.055% Rwp and 0.99948 correlation.
+More importantly, the compression has global relative L2 error 0.1909 and
+therefore fails the normal 0.03 acceptance limit. This is evidence that the
+axial/Soller physics matters, not an accepted calibration: the graphite
+analyser/spectral passband is still missing, and the provisional line widths
+must not be promoted to a golden instrument model.
 
 ## Compression model and acceptance
 
@@ -110,8 +184,8 @@ model = phasesmith.BraggBrentanoFundamentalProfile(
     radius_mm=217.5,
     source_width_mm=0.02,
     receiving_slit_width_mm=0.04,
-    sample_half_length_mm=1.0875,
-    detector_half_length_mm=1.0875,
+    sample_half_length_mm=7.5,
+    detector_half_length_mm=2.5,
     emission_lines=(
         phasesmith.FundamentalEmissionLine(
             wavelength_angstrom=1.5405929,
@@ -126,17 +200,24 @@ model = phasesmith.BraggBrentanoFundamentalProfile(
             lorentzian_fwhm_angstrom=0.00012030,
         ),
     ),
+    soller_axial_geometry=phasesmith.SollerAxialGeometry(
+        source_full_length_mm=12.0,
+        sample_full_length_mm=15.0,
+        receiving_slit_full_length_mm=5.0,
+        incident_soller_full_width_deg=6.776,
+        diffracted_soller_full_width_deg=6.776,
+    ),
 )
 
 physical = phasesmith.simulate_fundamental_peaks(model)
 calibration = phasesmith.calibrate_fundamental_profile(model)
 
-if not calibration.accepted:
-    raise RuntimeError(calibration.warnings)
-
-instrument = calibration.instrument
-components = calibration.components
-axial_geometry = calibration.axial_geometry
+if calibration.accepted:
+    instrument = calibration.instrument
+    components = calibration.components
+    axial_geometry = calibration.axial_geometry
+else:
+    print(calibration.warnings)
 ```
 
 `physical.grid_deg`, `physical.intensity`, `calibration.target_y`, and
