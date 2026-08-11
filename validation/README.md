@@ -85,7 +85,10 @@ have deliberately different meanings:
   cross-program phase-fraction delta is below 0.25 percentage points. This
   parity came from the correct Lorentzian `Mustrain` convention, a unit shape
   factor for the shared size convention, and an exact alternating linear block
-  for phase scales and background. TOPAS-only source and optics terms remain
+  for phase scales and background. A separate pinned GSAS-II FPA diagnostic
+  compresses the deposited geometry successfully on synthetic peaks (6.952%
+  Rwp) but worsens the real-pattern Rwp from 9.085% to 13.928% for `1a` and
+  from 8.195% to 11.710% for `1e`. TOPAS-only source and optics terms remain
   excluded and are listed in `docs/topas-rowles-model.md`.
 - `nist-srm660c-lab6-xray` validates all 20 pdCIF specimens in NIST's official
   SRM 660c archive: 106,640 measured points, aligned released calculated
@@ -251,6 +254,13 @@ uv run python benchmarks/compare_gsasii_pbso4.py --require-release \
   --data-directory validation/data/gsasii-pbso4-cw
 
 uv run python benchmarks/compare_gsasii_rowles_qpa.py \
+  --gsas-python /path/to/gsas/python \
+  --gsas-root /path/to/pinned/GSAS-II \
+  --binary-dir /path/to/compatible/GSASII-bin/platform-directory \
+  --data-directory validation/data/curtin-rowles-qpa-topas \
+  --sample all
+
+uv run python benchmarks/compare_gsasii_rowles_fpa.py \
   --gsas-python /path/to/gsas/python \
   --gsas-root /path/to/pinned/GSAS-II \
   --binary-dir /path/to/compatible/GSASII-bin/platform-directory \

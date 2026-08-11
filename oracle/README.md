@@ -56,6 +56,16 @@ and the paired PbSO4 X-ray/neutron workflow. NIST SRM 660c is deliberately diffe
 the certified NIST values and released calculated profiles remain the primary
 oracle, so a GSAS-II refit cannot redefine that case's truth.
 
+`scripts/calibrate_rowles_fpa.py` is a separate exact-revision-gated diagnostic.
+At the pinned revision GSAS-II exposes its NIST fundamental-parameters
+calibration only through `GSASIIfpaGUI`, so the private access is contained in
+that worker and only plain JSON `U/V/W/X/Y/SH/L` coefficients leave it. The
+worker consumes the neutral Rowles manifest, generates isolated physical peaks,
+and uses GSAS-II's empirical peak fitter to compress them. The paired benchmark
+then compares fixed FPA-derived coefficients with the normal empirical GSAS-II
+instrument refinement on the same real patterns. It is neither a runtime
+dependency nor a TOPAS-equivalence claim.
+
 To prepare an oracle checkout:
 
 ```shell
@@ -267,6 +277,13 @@ uv run python benchmarks/compare_gsasii_rowles_qpa.py \
   --binary-dir /path/to/compatible/GSASII-bin/platform-directory \
   --data-directory validation/data/curtin-rowles-qpa-topas \
   --sample all
+
+uv run python benchmarks/compare_gsasii_rowles_fpa.py \
+  --gsas-python /path/to/gsas/python \
+  --gsas-root /path/to/pinned/GSAS-II \
+  --binary-dir /path/to/compatible/GSASII-bin/platform-directory \
+  --data-directory validation/data/curtin-rowles-qpa-topas \
+  --sample all
 ```
 
 The Rowles worker consumes only the neutral bundle produced from the
@@ -277,6 +294,12 @@ reflection arrays for diagnostics, and enumerates every TOPAS optics term
 omitted from the shared input subset. The accepted cross gate requires phase
 fractions and Rwp values to agree within 0.005 absolute; GSAS-II remains an
 external black-box oracle rather than a runtime dependency.
+
+The FPA diagnostic additionally retains the deposited Rowles instrument
+geometry in the neutral manifest. Its reviewed result is negative: the
+compressed profile fits the synthetic physical target at 6.952% Rwp, but
+worsens real-pattern Rwp from 9.085% to 13.928% (`1a`) and from 8.195% to
+11.710% (`1e`) relative to empirical GSAS-II calibration.
 
 GSAS-II is separately licensed and must be cited as requested by its authors.
 No GSAS-II source is copied into this repository.

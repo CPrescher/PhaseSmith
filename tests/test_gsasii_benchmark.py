@@ -435,6 +435,7 @@ def test_practical_workflow_benchmark_covers_xray_and_neutron() -> None:
         "benchmarks/compare_gsasii_pbso4.py",
         "benchmarks/compare_gsasii_powgen_tof.py",
         "benchmarks/compare_gsasii_qarr.py",
+        "benchmarks/compare_gsasii_rowles_fpa.py",
         "benchmarks/compare_gsasii_rowles_qpa.py",
         "benchmarks/compare_gsasii_real_lebail.py",
         "benchmarks/compare_gsasii_structural.py",
@@ -448,6 +449,7 @@ def test_practical_workflow_benchmark_covers_xray_and_neutron() -> None:
         "oracle/scripts/benchmark_rowles_qpa.py",
         "oracle/scripts/benchmark_real_lebail.py",
         "oracle/scripts/benchmark_structural_pattern.py",
+        "oracle/scripts/calibrate_rowles_fpa.py",
         "tools/fetch_validation_data.py",
     ],
 )
@@ -470,6 +472,7 @@ def test_external_worker_does_not_import_rietveld() -> None:
         "oracle/scripts/benchmark_rowles_qpa.py",
         "oracle/scripts/benchmark_real_lebail.py",
         "oracle/scripts/benchmark_structural_pattern.py",
+        "oracle/scripts/calibrate_rowles_fpa.py",
     ):
         source = (REPOSITORY_ROOT / relative_path).read_text()
         assert "import phasesmith" not in source

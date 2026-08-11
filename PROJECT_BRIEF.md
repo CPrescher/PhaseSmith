@@ -952,6 +952,16 @@ tails, coupled incident-monochromator dispersion, and PSD defocusing remain
 separate reviewed increments. No GSAS-II or NIST implementation code is copied
 or required at runtime.
 
+The deposited Rowles geometry has now been tested through that same strategy
+with the exact pinned GSAS-II FPA workflow. A version-gated external worker
+parses the neutral manifest and includes radii, axial lengths, incident and
+diffracted Soller angles, LPSD aperture/divergence, tube tails, and the five
+edge-transmitted Cu K-alpha lines. Its empirical compression reaches 6.952%
+Rwp on 13 synthetic peaks, but fixing that profile worsens real-pattern GSAS-II
+Rwp from 9.085% to 13.928% for 1a and from 8.195% to 11.710% for 1e. Specialized
+LPSD, tube-tail, and continuum runtime physics are therefore deferred; the next
+work is broader independent experimental validation.
+
 ## Quality bar
 
 Public behavior is typed and documented. Invalid shapes, non-finite values,

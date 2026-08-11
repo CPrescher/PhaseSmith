@@ -119,6 +119,62 @@ def _white_continuum_values(text: str) -> tuple[float, float]:
     return amplitude_numerator / 1_000_000.0, decay_per_angstrom2
 
 
+def _instrument_geometry(text: str) -> dict[str, Any]:
+    source_radius = _number(text, r"(?m)^\s*Rp\s+([0-9.eE+-]+)", "source radius")
+    detector_radius = _number(text, r"(?m)^\s*Rs\s+([0-9.eE+-]+)", "detector radius")
+    tube_tails = re.search(
+        r"Tube_Tails\(\s*,\s*([0-9.eE+-]+)\s*,\s*,\s*([0-9.eE+-]+)"
+        r"[^\n]*\n\s*,\s*,\s*([0-9.eE+-]+)[^\n]*\n\s*,\s*,\s*([0-9.eE+-]+)\s*\)",
+        text,
+    )
+    if tube_tails is None:
+        raise ValueError("deposited TOPAS input does not contain Tube_Tails geometry")
+    tail_values = tuple(float(value) for value in tube_tails.groups())
+    if not all(map(math.isfinite, tail_values)):
+        raise ValueError("deposited TOPAS Tube_Tails geometry is not finite")
+    return {
+        "source_to_sample_radius_mm": source_radius,
+        "sample_to_detector_radius_mm": detector_radius,
+        "axial": {
+            "filament_full_length_mm": _number(
+                text, r"filament_length\s+([0-9.eE+-]+)", "filament length"
+            ),
+            "illuminated_sample_full_length_mm": _number(
+                text, r"sample_length\s+([0-9.eE+-]+)", "sample length"
+            ),
+            "receiving_slit_full_length_mm": _number(
+                text, r"receiving_slit_length\s+([0-9.eE+-]+)", "receiving slit length"
+            ),
+            "incident_soller_full_width_deg": _number(
+                text, r"primary_soller_angle\s+([0-9.eE+-]+)", "primary Soller angle"
+            ),
+            "diffracted_soller_full_width_deg": _number(
+                text,
+                r"secondary_soller_angle\s+([0-9.eE+-]+)",
+                "secondary Soller angle",
+            ),
+        },
+        "linear_position_sensitive_detector": {
+            "two_theta_angular_range_deg": _number(
+                text,
+                r"lpsd_th2_angular_range_degrees\s+([0-9.eE+-]+)",
+                "LPSD angular range",
+            ),
+            "equatorial_divergence_deg": _number(
+                text,
+                r"lpsd_equitorial_divergence_degrees\s+([0-9.eE+-]+)",
+                "LPSD equatorial divergence",
+            ),
+        },
+        "tube_tails": {
+            "source_width_mm": tail_values[0],
+            "left_tail_mm": tail_values[1],
+            "right_tail_mm": tail_values[2],
+            "relative_intensity": tail_values[3],
+        },
+    }
+
+
 def _cif_files(values: dict[str, float]) -> dict[str, str]:
     return {
         "Al2O3.cif": f"""data_corundum_from_rowles_topas
@@ -227,6 +283,7 @@ def convert_rowles_topas_bundle(source: str | Path, destination: str | Path) -> 
         or _line_components(input_texts["1e"]) != components
         or _edge_values(input_texts["1e"]) != _edge_values(reference)
         or _white_continuum_values(input_texts["1e"]) != _white_continuum_values(reference)
+        or _instrument_geometry(input_texts["1e"]) != _instrument_geometry(reference)
     ):
         raise ValueError(
             "1a and 1e TOPAS inputs do not share the expected structure/instrument model"
@@ -236,6 +293,7 @@ def convert_rowles_topas_bundle(source: str | Path, destination: str | Path) -> 
     ratio = alpha2_weight / alpha1_weight
     edge_angstrom, edge_sharpness, edge_floor = _edge_values(reference)
     white_amplitude, white_decay = _white_continuum_values(reference)
+    instrument_geometry = _instrument_geometry(reference)
 
     destination_root.mkdir(parents=True, exist_ok=True)
     for sample in ROWLES_SAMPLES:
@@ -299,6 +357,7 @@ Source:CuKa
             "phases": ["Al2O3", "ZnO", "CaF2"],
         },
         "topas_source_model": {
+            "instrument_geometry": instrument_geometry,
             "emission_lines": [
                 {
                     "area": area,

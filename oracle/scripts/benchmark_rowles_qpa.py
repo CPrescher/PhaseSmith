@@ -29,6 +29,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--cycles", type=int, default=8)
     parser.add_argument("--report", type=Path, required=True)
     parser.add_argument(
+        "--instrument-profile",
+        type=Path,
+        help="optional fixed U/V/W/X/Y/SH/L JSON profile from an external calibration",
+    )
+    parser.add_argument(
         "--arrays-output",
         type=Path,
         help="optional NPZ with selected observed/calculated/background/reflection arrays",
@@ -105,6 +110,7 @@ def run_workflow(
     sample: str,
     cycles: int,
     arrays_output: Path | None,
+    instrument_profile: dict[str, float] | None,
 ) -> dict[str, Any]:
     manifest = json.loads((bundle / "experiment.json").read_text(encoding="utf-8"))
     if manifest.get("schema_version") != 1 or manifest.get("scope") != SCOPE:
@@ -131,6 +137,11 @@ def run_workflow(
                 },
             }
         )
+        if instrument_profile is not None:
+            for name, value in instrument_profile.items():
+                histogram.InstrumentParameters[name][0] = value
+                histogram.InstrumentParameters[name][1] = value
+                histogram.InstrumentParameters[name][2] = False
         histogram.data["Sample Parameters"]["Scale"][1] = False
         project.set_Controls("cycles", cycles)
         phases = []
@@ -145,7 +156,10 @@ def run_workflow(
             phases.append(phase)
 
         stages = [refine(project, histogram, "scale_background")]
-        histogram.set_refinements({"Instrument Parameters": ["U", "V", "W", "Zero"]})
+        instrument_stage = (
+            ["Zero"] if instrument_profile is not None else ["U", "V", "W", "Zero"]
+        )
+        histogram.set_refinements({"Instrument Parameters": instrument_stage})
         stages.append(refine(project, histogram, "instrument"))
         for phase in phases:
             phase.set_HAP_refinements(
@@ -288,6 +302,19 @@ def main() -> None:
             f"detected {detected_revision}"
         )
     bundle = arguments.bundle_directory.resolve()
+    instrument_profile = None
+    if arguments.instrument_profile is not None:
+        instrument_profile = json.loads(arguments.instrument_profile.read_text(encoding="utf-8"))
+        expected = {"U", "V", "W", "X", "Y", "SH/L"}
+        if set(instrument_profile) != expected:
+            raise ValueError("fixed instrument profile must contain exactly U/V/W/X/Y/SH/L")
+        instrument_profile = {
+            name: float(value) for name, value in instrument_profile.items()
+        }
+        if not all(np.isfinite(tuple(instrument_profile.values()))):
+            raise ValueError("fixed instrument profile values must be finite")
+        if instrument_profile["W"] <= 0.0 or instrument_profile["SH/L"] < 0.0:
+            raise ValueError("fixed instrument profile requires W > 0 and SH/L >= 0")
     required = (
         "experiment.json",
         "common.instprm",
@@ -306,6 +333,7 @@ def main() -> None:
         arguments.sample,
         arguments.cycles,
         arguments.arrays_output,
+        instrument_profile,
     )
     report = {
         "schema_version": 1,
@@ -313,10 +341,19 @@ def main() -> None:
         "revision": detected_revision,
         "scope": SCOPE,
         "sample": arguments.sample,
-        "recipe": {"cycles_per_stage": arguments.cycles, "common_subset": True},
+        "recipe": {
+            "cycles_per_stage": arguments.cycles,
+            "common_subset": instrument_profile is None,
+            "fixed_calibrated_instrument_profile": instrument_profile,
+        },
         "input_sha256": {name: sha256(bundle / name) for name in required},
         "arrays_output_sha256": (
             sha256(arguments.arrays_output) if arguments.arrays_output is not None else None
+        ),
+        "instrument_profile_sha256": (
+            sha256(arguments.instrument_profile)
+            if arguments.instrument_profile is not None
+            else None
         ),
         "python_version": platform.python_version(),
         "numpy_version": np.__version__,

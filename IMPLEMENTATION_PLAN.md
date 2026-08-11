@@ -1272,6 +1272,15 @@ which is retained as a negative scientific result rather than hidden by
 specimen-specific passband tuning. Coupled incident-monochromator dispersion
 remains outside this post-analyzer slice.
 
+Unit 27's Rowles transferability audit is complete. The neutral TOPAS converter
+now records the deposited physical geometry, and a contained pinned-GSAS-II FPA
+worker compresses it into plain `U/V/W/X/Y/SH/L` coefficients. Although the
+synthetic target is represented at 6.952% Rwp, fixed use on measured 1a/1e
+patterns is 4.843 and 3.515 percentage points worse than empirical GSAS-II
+calibration. This is the stop gate for additional Rowles-specific optics:
+continue with independent in-house benchmark examples before considering LPSD,
+tube-tail, continuum, or coupled-dispersion production terms.
+
 Do not combine adjacent items merely to reduce PR count; numerical review is
 easier when parameter conventions and tolerance changes remain isolated.
 

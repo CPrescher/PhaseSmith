@@ -1,0 +1,2108 @@
+{
+  "calibration": {
+    "implementation": "GSAS-II",
+    "input_sha256": {
+      "common.instprm": "040d72370b017795611ba52cf48aa7106b095936d2f57989f9faca420bade63a",
+      "experiment.json": "68be92e0985a7627d64045c94478635b780fb05d66438119e212f28ce01210a1"
+    },
+    "instrument_profile": {
+      "SH/L": 0.027259928298934408,
+      "U": 1.6286947633183924,
+      "V": -2.814202724499216,
+      "W": 1.8023046763406656,
+      "X": 0.3495150117877692,
+      "Y": 6.109195929068328
+    },
+    "numpy_version": "2.2.6",
+    "oracle_boundary": "version-gated private GSASIIfpaGUI adapter; output is plain JSON profile coefficients",
+    "python_version": "3.13.9",
+    "revision": "c0bc79b259cdf0065480b5fbd57674ddf12c4a23",
+    "schema_version": 1,
+    "scope": "curtin_rowles_qpa_topas_gsasii_fpa_compression",
+    "source_dataset_id": "curtin-rowles-qpa-topas",
+    "synthetic_diagnostics": {
+      "peak_count": 13,
+      "profile_correlation": 0.9974755216008911,
+      "relative_l2_error": 0.06951554481276735,
+      "rwp": 0.06951554481276735,
+      "sample_count": 22501,
+      "stages": {
+        "positions": {
+          "rwp_percent": 47.12932269396502,
+          "varied": [
+            "int0",
+            "int1",
+            "int2",
+            "int3",
+            "int4",
+            "int5",
+            "int6",
+            "int7",
+            "int8",
+            "int9",
+            "int10",
+            "int11",
+            "int12"
+          ]
+        },
+        "positions_areas": {
+          "rwp_percent": 47.025640137775724,
+          "varied": [
+            "pos0",
+            "int0",
+            "pos1",
+            "int1",
+            "pos2",
+            "int2",
+            "pos3",
+            "int3",
+            "pos4",
+            "int4",
+            "pos5",
+            "int5",
+            "pos6",
+            "int6",
+            "pos7",
+            "int7",
+            "pos8",
+            "int8",
+            "pos9",
+            "int9",
+            "pos10",
+            "int10",
+            "pos11",
+            "int11",
+            "pos12",
+            "int12"
+          ]
+        },
+        "profile": {
+          "rwp_percent": 6.9584543011677145,
+          "varied": [
+            "U",
+            "V",
+            "W",
+            "X",
+            "Y",
+            "pos0",
+            "int0",
+            "pos1",
+            "int1",
+            "pos2",
+            "int2",
+            "pos3",
+            "int3",
+            "pos4",
+            "int4",
+            "pos5",
+            "int5",
+            "pos6",
+            "int6",
+            "pos7",
+            "int7",
+            "pos8",
+            "int8",
+            "pos9",
+            "int9",
+            "pos10",
+            "int10",
+            "pos11",
+            "int11",
+            "pos12",
+            "int12"
+          ]
+        },
+        "profile_asymmetry": {
+          "rwp_percent": 6.951554481276736,
+          "varied": [
+            "U",
+            "V",
+            "W",
+            "X",
+            "Y",
+            "SH/L",
+            "pos0",
+            "int0",
+            "pos1",
+            "int1",
+            "pos2",
+            "int2",
+            "pos3",
+            "int3",
+            "pos4",
+            "int4",
+            "pos5",
+            "int5",
+            "pos6",
+            "int6",
+            "pos7",
+            "int7",
+            "pos8",
+            "int8",
+            "pos9",
+            "int9",
+            "pos10",
+            "int10",
+            "pos11",
+            "int11",
+            "pos12",
+            "int12"
+          ]
+        }
+      }
+    },
+    "target": {
+      "excluded": [
+        "K-beta and white-continuum source contributions outside the K-alpha calibration window",
+        "angle-dependent white continuum",
+        "specimen-dependent flat-plate absorption"
+      ],
+      "included": [
+        "five deposited Cu K-alpha Lorentzian lines",
+        "deposited absorption-edge transmission sampled at each line center",
+        "full source/sample/receiver axial geometry and equal 2.5 degree Soller slits",
+        "LPSD angular range and equatorial divergence",
+        "tube tails"
+      ],
+      "positions_deg": [
+        21.0,
+        31.5,
+        42.0,
+        52.5,
+        63.0,
+        73.5,
+        84.0,
+        94.5,
+        105.0,
+        115.5,
+        126.0,
+        136.5,
+        147.0
+      ],
+      "step_deg": 0.006000000000000227,
+      "topas_lh_conversion": "documented Lorentzian HW multiplied by two for NIST FWHM",
+      "window_full_width_deg": 3.0
+    }
+  },
+  "comparisons": {
+    "1a": {
+      "empirical_profile": {
+        "arrays_output_sha256": null,
+        "final_parameters": {
+          "instrument": {
+            "I(L2)/I(L1)": [
+              0.525027119169,
+              0.525027119169,
+              false
+            ],
+            "Lam1": [
+              1.54065055509,
+              1.54065055509,
+              false
+            ],
+            "Lam2": [
+              1.54448995307,
+              1.54448995307,
+              false
+            ],
+            "Polariz.": [
+              0.5,
+              0.5,
+              false
+            ],
+            "SH/L": [
+              0.002,
+              0.002,
+              false
+            ],
+            "Type": [
+              "PXC",
+              "PXC",
+              false
+            ],
+            "U": [
+              2.0,
+              8.794406527596356,
+              true
+            ],
+            "V": [
+              -2.0,
+              -8.305424671144998,
+              true
+            ],
+            "W": [
+              5.0,
+              3.7549893364039932,
+              true
+            ],
+            "X": [
+              0.0,
+              0.0,
+              false
+            ],
+            "Y": [
+              0.0,
+              0.0,
+              false
+            ],
+            "Z": [
+              0.0,
+              0.0,
+              false
+            ],
+            "Zero": [
+              0.0,
+              0.006721976310671031,
+              true
+            ]
+          },
+          "phases": {
+            "Al2O3": {
+              "atoms": [
+                {
+                  "coordinates": [
+                    0.0,
+                    0.0,
+                    0.3522
+                  ],
+                  "label": "Al1",
+                  "occupancy": 1.0,
+                  "uiso_angstrom2": 0.0060894140955291345
+                },
+                {
+                  "coordinates": [
+                    0.6937,
+                    0.0,
+                    0.25
+                  ],
+                  "label": "O1",
+                  "occupancy": 1.0,
+                  "uiso_angstrom2": 0.0029116017891879925
+                }
+              ],
+              "hap": {
+                "Mustrain": [
+                  "isotropic",
+                  [
+                    1565.797086177935,
+                    1000.0,
+                    1.0
+                  ],
+                  [
+                    true,
+                    false,
+                    false
+                  ],
+                  [
+                    0,
+                    0,
+                    1
+                  ],
+                  [
+                    0.01,
+                    0.01,
+                    0.01
+                  ],
+                  [
+                    false,
+                    false,
+                    false
+                  ]
+                ],
+                "Pref.Ori.": [
+                  "MD",
+                  1.0,
+                  false,
+                  [
+                    0,
+                    0,
+                    1
+                  ],
+                  0,
+                  {},
+                  [],
+                  0.1
+                ],
+                "Scale": [
+                  37.30178352170944,
+                  true
+                ],
+                "Size": [
+                  "isotropic",
+                  [
+                    0.2733336847624618,
+                    1.0,
+                    1.0
+                  ],
+                  [
+                    true,
+                    false,
+                    false
+                  ],
+                  [
+                    0,
+                    0,
+                    1
+                  ],
+                  [
+                    1.0,
+                    1.0,
+                    1.0,
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  [
+                    false,
+                    false,
+                    false,
+                    false,
+                    false,
+                    false
+                  ]
+                ]
+              }
+            },
+            "CaF2": {
+              "atoms": [
+                {
+                  "coordinates": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "label": "Ca1",
+                  "occupancy": 1.0,
+                  "uiso_angstrom2": 0.0057718673978337095
+                },
+                {
+                  "coordinates": [
+                    0.25,
+                    0.25,
+                    0.25
+                  ],
+                  "label": "F1",
+                  "occupancy": 1.0,
+                  "uiso_angstrom2": 0.008444760143362644
+                }
+              ],
+              "hap": {
+                "Mustrain": [
+                  "isotropic",
+                  [
+                    1296.0860560377296,
+                    1000.0,
+                    1.0
+                  ],
+                  [
+                    true,
+                    false,
+                    false
+                  ],
+                  [
+                    0,
+                    0,
+                    1
+                  ],
+                  [
+                    0.01,
+                    0.01
+                  ],
+                  [
+                    false,
+                    false
+                  ]
+                ],
+                "Pref.Ori.": [
+                  "MD",
+                  1.0,
+                  false,
+                  [
+                    0,
+                    0,
+                    1
+                  ],
+                  0,
+                  {},
+                  [],
+                  0.1
+                ],
+                "Scale": [
+                  4976.321652942857,
+                  true
+                ],
+                "Size": [
+                  "isotropic",
+                  [
+                    0.3459436641888277,
+                    1.0,
+                    1.0
+                  ],
+                  [
+                    true,
+                    false,
+                    false
+                  ],
+                  [
+                    0,
+                    0,
+                    1
+                  ],
+                  [
+                    1.0,
+                    1.0,
+                    1.0,
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  [
+                    false,
+                    false,
+                    false,
+                    false,
+                    false,
+                    false
+                  ]
+                ]
+              }
+            },
+            "ZnO": {
+              "atoms": [
+                {
+                  "coordinates": [
+                    0.333333333,
+                    0.666666667,
+                    0.0
+                  ],
+                  "label": "Zn1",
+                  "occupancy": 1.0,
+                  "uiso_angstrom2": 0.0068425415158079594
+                },
+                {
+                  "coordinates": [
+                    0.333333333,
+                    0.666666667,
+                    0.375
+                  ],
+                  "label": "O1",
+                  "occupancy": 1.0,
+                  "uiso_angstrom2": -0.006269355522161889
+                }
+              ],
+              "hap": {
+                "Mustrain": [
+                  "isotropic",
+                  [
+                    581.9364016676741,
+                    1000.0,
+                    1.0
+                  ],
+                  [
+                    true,
+                    false,
+                    false
+                  ],
+                  [
+                    0,
+                    0,
+                    1
+                  ],
+                  [
+                    0.01,
+                    0.01,
+                    0.01
+                  ],
+                  [
+                    false,
+                    false,
+                    false
+                  ]
+                ],
+                "Pref.Ori.": [
+                  "MD",
+                  1.0,
+                  false,
+                  [
+                    0,
+                    0,
+                    1
+                  ],
+                  0,
+                  {},
+                  [],
+                  0.1
+                ],
+                "Scale": [
+                  331.0144075309483,
+                  true
+                ],
+                "Size": [
+                  "isotropic",
+                  [
+                    0.22554328089764478,
+                    1.0,
+                    1.0
+                  ],
+                  [
+                    true,
+                    false,
+                    false
+                  ],
+                  [
+                    0,
+                    0,
+                    1
+                  ],
+                  [
+                    1.0,
+                    1.0,
+                    1.0,
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  [
+                    false,
+                    false,
+                    false,
+                    false,
+                    false,
+                    false
+                  ]
+                ]
+              }
+            }
+          },
+          "vary_list": [
+            "0::AUiso:0",
+            "0::AUiso:1",
+            "1::AUiso:0",
+            "1::AUiso:1",
+            "2::AUiso:0",
+            "2::AUiso:1",
+            "0:0:Scale",
+            "0:0:Mustrain;i",
+            "0:0:Size;i",
+            "1:0:Scale",
+            "1:0:Mustrain;i",
+            "1:0:Size;i",
+            "2:0:Scale",
+            "2:0:Mustrain;i",
+            "2:0:Size;i",
+            ":0:Back;0",
+            ":0:Back;1",
+            ":0:Back;2",
+            ":0:Back;3",
+            ":0:Back;4",
+            ":0:Back;5",
+            ":0:Back;6",
+            ":0:U",
+            ":0:V",
+            ":0:W",
+            ":0:Zero"
+          ]
+        },
+        "implementation": "GSAS-II",
+        "input_sha256": {
+          "1a.xy": "04643a24457bdefadb44b3432c569d353c49e777d1b3089e42b91a23db7c8a84",
+          "Al2O3.cif": "b6f2aba7fe62ea043a741906ac334af14940833dd6530c614a6ecbf473d19b4c",
+          "CaF2.cif": "ff315c7e7e2aced380506cf6b0364137f110a6816b7bf49f02e4f07ad1242574",
+          "ZnO.cif": "b46c70c9d3edbfffec06b450f9e9ccf7478907de05c6e5d4fec25ddee9bbf978",
+          "common.instprm": "040d72370b017795611ba52cf48aa7106b095936d2f57989f9faca420bade63a",
+          "experiment.json": "68be92e0985a7627d64045c94478635b780fb05d66438119e212f28ce01210a1"
+        },
+        "instrument_profile_sha256": null,
+        "numpy_version": "2.2.6",
+        "python_version": "3.13.9",
+        "recipe": {
+          "common_subset": true,
+          "cycles_per_stage": 8,
+          "fixed_calibrated_instrument_profile": null
+        },
+        "result": {
+          "free_parameter_count": 26,
+          "maximum_weight_fraction_error": 0.007364330252414515,
+          "poisson_rwp": 0.09085050114998489,
+          "profile_correlation": 0.996890745530843,
+          "reflection_count": 109,
+          "sample": "1a",
+          "sample_count": 14066,
+          "unit_weight_rwp": 0.07685820934836021,
+          "weight_fractions": {
+            "Al2O3": 0.013992934728391712,
+            "CaF2": 0.9529713955240228,
+            "ZnO": 0.03303566974758548
+          }
+        },
+        "revision": "c0bc79b259cdf0065480b5fbd57674ddf12c4a23",
+        "sample": "1a",
+        "schema_version": 1,
+        "scope": "curtin_rowles_qpa_topas_common_subset",
+        "stage_rwp_percent": {
+          "displacement": 9.085050114998488,
+          "instrument": 12.155046610734223,
+          "sample_broadening": 9.104123769616063,
+          "scale_background": 16.631676322184425
+        },
+        "stage_timing_ms": {
+          "displacement": 429.584333,
+          "instrument": 784.671917,
+          "sample_broadening": 1200.045042,
+          "scale_background": 331.782916
+        }
+      },
+      "fpa_compressed_profile": {
+        "arrays_output_sha256": null,
+        "final_parameters": {
+          "instrument": {
+            "I(L2)/I(L1)": [
+              0.525027119169,
+              0.525027119169,
+              false
+            ],
+            "Lam1": [
+              1.54065055509,
+              1.54065055509,
+              false
+            ],
+            "Lam2": [
+              1.54448995307,
+              1.54448995307,
+              false
+            ],
+            "Polariz.": [
+              0.5,
+              0.5,
+              false
+            ],
+            "SH/L": [
+              0.027259928298934408,
+              0.027259928298934408,
+              false
+            ],
+            "Type": [
+              "PXC",
+              "PXC",
+              false
+            ],
+            "U": [
+              1.6286947633183924,
+              1.6286947633183924,
+              false
+            ],
+            "V": [
+              -2.814202724499216,
+              -2.814202724499216,
+              false
+            ],
+            "W": [
+              1.8023046763406656,
+              1.8023046763406656,
+              false
+            ],
+            "X": [
+              0.3495150117877692,
+              0.3495150117877692,
+              false
+            ],
+            "Y": [
+              6.109195929068328,
+              6.109195929068328,
+              false
+            ],
+            "Z": [
+              0.0,
+              0.0,
+              false
+            ],
+            "Zero": [
+              0.0,
+              0.017987379471609836,
+              true
+            ]
+          },
+          "phases": {
+            "Al2O3": {
+              "atoms": [
+                {
+                  "coordinates": [
+                    0.0,
+                    0.0,
+                    0.3522
+                  ],
+                  "label": "Al1",
+                  "occupancy": 1.0,
+                  "uiso_angstrom2": 0.007928906315292045
+                },
+                {
+                  "coordinates": [
+                    0.6937,
+                    0.0,
+                    0.25
+                  ],
+                  "label": "O1",
+                  "occupancy": 1.0,
+                  "uiso_angstrom2": 0.008699571006775174
+                }
+              ],
+              "hap": {
+                "Mustrain": [
+                  "isotropic",
+                  [
+                    698.4399948870696,
+                    1000.0,
+                    1.0
+                  ],
+                  [
+                    true,
+                    false,
+                    false
+                  ],
+                  [
+                    0,
+                    0,
+                    1
+                  ],
+                  [
+                    0.01,
+                    0.01,
+                    0.01
+                  ],
+                  [
+                    false,
+                    false,
+                    false
+                  ]
+                ],
+                "Pref.Ori.": [
+                  "MD",
+                  1.0,
+                  false,
+                  [
+                    0,
+                    0,
+                    1
+                  ],
+                  0,
+                  {},
+                  [],
+                  0.1
+                ],
+                "Scale": [
+                  37.47779186105308,
+                  true
+                ],
+                "Size": [
+                  "isotropic",
+                  [
+                    0.23057946798562523,
+                    1.0,
+                    1.0
+                  ],
+                  [
+                    true,
+                    false,
+                    false
+                  ],
+                  [
+                    0,
+                    0,
+                    1
+                  ],
+                  [
+                    1.0,
+                    1.0,
+                    1.0,
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  [
+                    false,
+                    false,
+                    false,
+                    false,
+                    false,
+                    false
+                  ]
+                ]
+              }
+            },
+            "CaF2": {
+              "atoms": [
+                {
+                  "coordinates": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "label": "Ca1",
+                  "occupancy": 1.0,
+                  "uiso_angstrom2": 0.006277686165513311
+                },
+                {
+                  "coordinates": [
+                    0.25,
+                    0.25,
+                    0.25
+                  ],
+                  "label": "F1",
+                  "occupancy": 1.0,
+                  "uiso_angstrom2": 0.008854878225840822
+                }
+              ],
+              "hap": {
+                "Mustrain": [
+                  "isotropic",
+                  [
+                    482.2416697384551,
+                    1000.0,
+                    1.0
+                  ],
+                  [
+                    true,
+                    false,
+                    false
+                  ],
+                  [
+                    0,
+                    0,
+                    1
+                  ],
+                  [
+                    0.01,
+                    0.01
+                  ],
+                  [
+                    false,
+                    false
+                  ]
+                ],
+                "Pref.Ori.": [
+                  "MD",
+                  1.0,
+                  false,
+                  [
+                    0,
+                    0,
+                    1
+                  ],
+                  0,
+                  {},
+                  [],
+                  0.1
+                ],
+                "Scale": [
+                  4922.016218053595,
+                  true
+                ],
+                "Size": [
+                  "isotropic",
+                  [
+                    0.39865048439134915,
+                    1.0,
+                    1.0
+                  ],
+                  [
+                    true,
+                    false,
+                    false
+                  ],
+                  [
+                    0,
+                    0,
+                    1
+                  ],
+                  [
+                    1.0,
+                    1.0,
+                    1.0,
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  [
+                    false,
+                    false,
+                    false,
+                    false,
+                    false,
+                    false
+                  ]
+                ]
+              }
+            },
+            "ZnO": {
+              "atoms": [
+                {
+                  "coordinates": [
+                    0.333333333,
+                    0.666666667,
+                    0.0
+                  ],
+                  "label": "Zn1",
+                  "occupancy": 1.0,
+                  "uiso_angstrom2": 0.007340654064946829
+                },
+                {
+                  "coordinates": [
+                    0.333333333,
+                    0.666666667,
+                    0.375
+                  ],
+                  "label": "O1",
+                  "occupancy": 1.0,
+                  "uiso_angstrom2": -0.006734731484258188
+                }
+              ],
+              "hap": {
+                "Mustrain": [
+                  "isotropic",
+                  [
+                    -239.3959210934937,
+                    1000.0,
+                    1.0
+                  ],
+                  [
+                    true,
+                    false,
+                    false
+                  ],
+                  [
+                    0,
+                    0,
+                    1
+                  ],
+                  [
+                    0.01,
+                    0.01,
+                    0.01
+                  ],
+                  [
+                    false,
+                    false,
+                    false
+                  ]
+                ],
+                "Pref.Ori.": [
+                  "MD",
+                  1.0,
+                  false,
+                  [
+                    0,
+                    0,
+                    1
+                  ],
+                  0,
+                  {},
+                  [],
+                  0.1
+                ],
+                "Scale": [
+                  333.1476948734148,
+                  true
+                ],
+                "Size": [
+                  "isotropic",
+                  [
+                    0.24348590200123132,
+                    1.0,
+                    1.0
+                  ],
+                  [
+                    true,
+                    false,
+                    false
+                  ],
+                  [
+                    0,
+                    0,
+                    1
+                  ],
+                  [
+                    1.0,
+                    1.0,
+                    1.0,
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  [
+                    false,
+                    false,
+                    false,
+                    false,
+                    false,
+                    false
+                  ]
+                ]
+              }
+            }
+          },
+          "vary_list": [
+            "0::AUiso:0",
+            "0::AUiso:1",
+            "1::AUiso:0",
+            "1::AUiso:1",
+            "2::AUiso:0",
+            "2::AUiso:1",
+            "0:0:Scale",
+            "0:0:Mustrain;i",
+            "0:0:Size;i",
+            "1:0:Scale",
+            "1:0:Mustrain;i",
+            "1:0:Size;i",
+            "2:0:Scale",
+            "2:0:Mustrain;i",
+            "2:0:Size;i",
+            ":0:Back;0",
+            ":0:Back;1",
+            ":0:Back;2",
+            ":0:Back;3",
+            ":0:Back;4",
+            ":0:Back;5",
+            ":0:Back;6",
+            ":0:Zero"
+          ]
+        },
+        "implementation": "GSAS-II",
+        "input_sha256": {
+          "1a.xy": "04643a24457bdefadb44b3432c569d353c49e777d1b3089e42b91a23db7c8a84",
+          "Al2O3.cif": "b6f2aba7fe62ea043a741906ac334af14940833dd6530c614a6ecbf473d19b4c",
+          "CaF2.cif": "ff315c7e7e2aced380506cf6b0364137f110a6816b7bf49f02e4f07ad1242574",
+          "ZnO.cif": "b46c70c9d3edbfffec06b450f9e9ccf7478907de05c6e5d4fec25ddee9bbf978",
+          "common.instprm": "040d72370b017795611ba52cf48aa7106b095936d2f57989f9faca420bade63a",
+          "experiment.json": "68be92e0985a7627d64045c94478635b780fb05d66438119e212f28ce01210a1"
+        },
+        "instrument_profile_sha256": "6cb2a3ee202825a74504708d0f983f87cde6391cedba71f6d03150d3ff8ed6af",
+        "numpy_version": "2.2.6",
+        "python_version": "3.13.9",
+        "recipe": {
+          "common_subset": false,
+          "cycles_per_stage": 8,
+          "fixed_calibrated_instrument_profile": {
+            "SH/L": 0.027259928298934408,
+            "U": 1.6286947633183924,
+            "V": -2.814202724499216,
+            "W": 1.8023046763406656,
+            "X": 0.3495150117877692,
+            "Y": 6.109195929068328
+          }
+        },
+        "result": {
+          "free_parameter_count": 23,
+          "maximum_weight_fraction_error": 0.006811488712672606,
+          "poisson_rwp": 0.13927593671032343,
+          "profile_correlation": 0.9881948293384231,
+          "reflection_count": 109,
+          "sample": "1a",
+          "sample_count": 14066,
+          "unit_weight_rwp": 0.15083619863726205,
+          "weight_fractions": {
+            "Al2O3": 0.01420270052957234,
+            "CaF2": 0.9522087881831003,
+            "ZnO": 0.03358851128732739
+          }
+        },
+        "revision": "c0bc79b259cdf0065480b5fbd57674ddf12c4a23",
+        "sample": "1a",
+        "schema_version": 1,
+        "scope": "curtin_rowles_qpa_topas_common_subset",
+        "stage_rwp_percent": {
+          "displacement": 13.927593671032342,
+          "instrument": 14.295134376728196,
+          "sample_broadening": 13.957822875925899,
+          "scale_background": 23.859629466585083
+        },
+        "stage_timing_ms": {
+          "displacement": 780.7535,
+          "instrument": 657.657208,
+          "sample_broadening": 1326.361041,
+          "scale_background": 397.71375
+        }
+      },
+      "fpa_improved_poisson_rwp": false,
+      "fpa_minus_empirical": {
+        "poisson_rwp": 0.04842543556033854,
+        "profile_correlation": -0.008695916192419939,
+        "unit_weight_rwp": 0.07397798928890184
+      }
+    },
+    "1e": {
+      "empirical_profile": {
+        "arrays_output_sha256": null,
+        "final_parameters": {
+          "instrument": {
+            "I(L2)/I(L1)": [
+              0.525027119169,
+              0.525027119169,
+              false
+            ],
+            "Lam1": [
+              1.54065055509,
+              1.54065055509,
+              false
+            ],
+            "Lam2": [
+              1.54448995307,
+              1.54448995307,
+              false
+            ],
+            "Polariz.": [
+              0.5,
+              0.5,
+              false
+            ],
+            "SH/L": [
+              0.002,
+              0.002,
+              false
+            ],
+            "Type": [
+              "PXC",
+              "PXC",
+              false
+            ],
+            "U": [
+              2.0,
+              1.4707185553424704,
+              true
+            ],
+            "V": [
+              -2.0,
+              -1.9360592246407362,
+              true
+            ],
+            "W": [
+              5.0,
+              3.483583035234459,
+              true
+            ],
+            "X": [
+              0.0,
+              0.0,
+              false
+            ],
+            "Y": [
+              0.0,
+              0.0,
+              false
+            ],
+            "Z": [
+              0.0,
+              0.0,
+              false
+            ],
+            "Zero": [
+              0.0,
+              -0.023441368521346626,
+              true
+            ]
+          },
+          "phases": {
+            "Al2O3": {
+              "atoms": [
+                {
+                  "coordinates": [
+                    0.0,
+                    0.0,
+                    0.3522
+                  ],
+                  "label": "Al1",
+                  "occupancy": 1.0,
+                  "uiso_angstrom2": 0.0038329419623571153
+                },
+                {
+                  "coordinates": [
+                    0.6937,
+                    0.0,
+                    0.25
+                  ],
+                  "label": "O1",
+                  "occupancy": 1.0,
+                  "uiso_angstrom2": 0.0013677461034819942
+                }
+              ],
+              "hap": {
+                "Mustrain": [
+                  "isotropic",
+                  [
+                    941.8485828948044,
+                    1000.0,
+                    1.0
+                  ],
+                  [
+                    true,
+                    false,
+                    false
+                  ],
+                  [
+                    0,
+                    0,
+                    1
+                  ],
+                  [
+                    0.01,
+                    0.01,
+                    0.01
+                  ],
+                  [
+                    false,
+                    false,
+                    false
+                  ]
+                ],
+                "Pref.Ori.": [
+                  "MD",
+                  1.0,
+                  false,
+                  [
+                    0,
+                    0,
+                    1
+                  ],
+                  0,
+                  {},
+                  [],
+                  0.1
+                ],
+                "Scale": [
+                  5751.515418070405,
+                  true
+                ],
+                "Size": [
+                  "isotropic",
+                  [
+                    0.2070458282410772,
+                    1.0,
+                    1.0
+                  ],
+                  [
+                    true,
+                    false,
+                    false
+                  ],
+                  [
+                    0,
+                    0,
+                    1
+                  ],
+                  [
+                    1.0,
+                    1.0,
+                    1.0,
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  [
+                    false,
+                    false,
+                    false,
+                    false,
+                    false,
+                    false
+                  ]
+                ]
+              }
+            },
+            "CaF2": {
+              "atoms": [
+                {
+                  "coordinates": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "label": "Ca1",
+                  "occupancy": 1.0,
+                  "uiso_angstrom2": 0.006527111879094238
+                },
+                {
+                  "coordinates": [
+                    0.25,
+                    0.25,
+                    0.25
+                  ],
+                  "label": "F1",
+                  "occupancy": 1.0,
+                  "uiso_angstrom2": 0.010609765990650699
+                }
+              ],
+              "hap": {
+                "Mustrain": [
+                  "isotropic",
+                  [
+                    1530.922654548766,
+                    1000.0,
+                    1.0
+                  ],
+                  [
+                    true,
+                    false,
+                    false
+                  ],
+                  [
+                    0,
+                    0,
+                    1
+                  ],
+                  [
+                    0.01,
+                    0.01
+                  ],
+                  [
+                    false,
+                    false
+                  ]
+                ],
+                "Pref.Ori.": [
+                  "MD",
+                  1.0,
+                  false,
+                  [
+                    0,
+                    0,
+                    1
+                  ],
+                  0,
+                  {},
+                  [],
+                  0.1
+                ],
+                "Scale": [
+                  5705.260568103809,
+                  true
+                ],
+                "Size": [
+                  "isotropic",
+                  [
+                    0.36031489359329366,
+                    1.0,
+                    1.0
+                  ],
+                  [
+                    true,
+                    false,
+                    false
+                  ],
+                  [
+                    0,
+                    0,
+                    1
+                  ],
+                  [
+                    1.0,
+                    1.0,
+                    1.0,
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  [
+                    false,
+                    false,
+                    false,
+                    false,
+                    false,
+                    false
+                  ]
+                ]
+              }
+            },
+            "ZnO": {
+              "atoms": [
+                {
+                  "coordinates": [
+                    0.333333333,
+                    0.666666667,
+                    0.0
+                  ],
+                  "label": "Zn1",
+                  "occupancy": 1.0,
+                  "uiso_angstrom2": 0.007369405668163131
+                },
+                {
+                  "coordinates": [
+                    0.333333333,
+                    0.666666667,
+                    0.375
+                  ],
+                  "label": "O1",
+                  "occupancy": 1.0,
+                  "uiso_angstrom2": 0.00016364856110213358
+                }
+              ],
+              "hap": {
+                "Mustrain": [
+                  "isotropic",
+                  [
+                    692.3725362764504,
+                    1000.0,
+                    1.0
+                  ],
+                  [
+                    true,
+                    false,
+                    false
+                  ],
+                  [
+                    0,
+                    0,
+                    1
+                  ],
+                  [
+                    0.01,
+                    0.01,
+                    0.01
+                  ],
+                  [
+                    false,
+                    false,
+                    false
+                  ]
+                ],
+                "Pref.Ori.": [
+                  "MD",
+                  1.0,
+                  false,
+                  [
+                    0,
+                    0,
+                    1
+                  ],
+                  0,
+                  {},
+                  [],
+                  0.1
+                ],
+                "Scale": [
+                  5335.87356744243,
+                  true
+                ],
+                "Size": [
+                  "isotropic",
+                  [
+                    0.21000712966262775,
+                    1.0,
+                    1.0
+                  ],
+                  [
+                    true,
+                    false,
+                    false
+                  ],
+                  [
+                    0,
+                    0,
+                    1
+                  ],
+                  [
+                    1.0,
+                    1.0,
+                    1.0,
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  [
+                    false,
+                    false,
+                    false,
+                    false,
+                    false,
+                    false
+                  ]
+                ]
+              }
+            }
+          },
+          "vary_list": [
+            "0::AUiso:0",
+            "0::AUiso:1",
+            "1::AUiso:0",
+            "1::AUiso:1",
+            "2::AUiso:0",
+            "2::AUiso:1",
+            "0:0:Scale",
+            "0:0:Mustrain;i",
+            "0:0:Size;i",
+            "1:0:Scale",
+            "1:0:Mustrain;i",
+            "1:0:Size;i",
+            "2:0:Scale",
+            "2:0:Mustrain;i",
+            "2:0:Size;i",
+            ":0:Back;0",
+            ":0:Back;1",
+            ":0:Back;2",
+            ":0:Back;3",
+            ":0:Back;4",
+            ":0:Back;5",
+            ":0:Back;6",
+            ":0:U",
+            ":0:V",
+            ":0:W",
+            ":0:Zero"
+          ]
+        },
+        "implementation": "GSAS-II",
+        "input_sha256": {
+          "1e.xy": "d12cf03415965666eabed014f4519360a9dd8a806b2d5ff09a0a31f36d0a2487",
+          "Al2O3.cif": "b6f2aba7fe62ea043a741906ac334af14940833dd6530c614a6ecbf473d19b4c",
+          "CaF2.cif": "ff315c7e7e2aced380506cf6b0364137f110a6816b7bf49f02e4f07ad1242574",
+          "ZnO.cif": "b46c70c9d3edbfffec06b450f9e9ccf7478907de05c6e5d4fec25ddee9bbf978",
+          "common.instprm": "040d72370b017795611ba52cf48aa7106b095936d2f57989f9faca420bade63a",
+          "experiment.json": "68be92e0985a7627d64045c94478635b780fb05d66438119e212f28ce01210a1"
+        },
+        "instrument_profile_sha256": null,
+        "numpy_version": "2.2.6",
+        "python_version": "3.13.9",
+        "recipe": {
+          "common_subset": true,
+          "cycles_per_stage": 8,
+          "fixed_calibrated_instrument_profile": null
+        },
+        "result": {
+          "free_parameter_count": 26,
+          "maximum_weight_fraction_error": 0.019182237240098488,
+          "poisson_rwp": 0.08195258369954438,
+          "profile_correlation": 0.9950427470500688,
+          "reflection_count": 109,
+          "sample": "1e",
+          "sample_count": 14091,
+          "unit_weight_rwp": 0.09110767378555275,
+          "weight_fractions": {
+            "Al2O3": 0.5703822372400985,
+            "CaF2": 0.2888360507037337,
+            "ZnO": 0.14078171205616782
+          }
+        },
+        "revision": "c0bc79b259cdf0065480b5fbd57674ddf12c4a23",
+        "sample": "1e",
+        "schema_version": 1,
+        "scope": "curtin_rowles_qpa_topas_common_subset",
+        "stage_rwp_percent": {
+          "displacement": 8.195258369954438,
+          "instrument": 11.373275704102483,
+          "sample_broadening": 8.311261035199236,
+          "scale_background": 27.238337686280424
+        },
+        "stage_timing_ms": {
+          "displacement": 394.80075,
+          "instrument": 781.560042,
+          "sample_broadening": 1069.512125,
+          "scale_background": 333.950541
+        }
+      },
+      "fpa_compressed_profile": {
+        "arrays_output_sha256": null,
+        "final_parameters": {
+          "instrument": {
+            "I(L2)/I(L1)": [
+              0.525027119169,
+              0.525027119169,
+              false
+            ],
+            "Lam1": [
+              1.54065055509,
+              1.54065055509,
+              false
+            ],
+            "Lam2": [
+              1.54448995307,
+              1.54448995307,
+              false
+            ],
+            "Polariz.": [
+              0.5,
+              0.5,
+              false
+            ],
+            "SH/L": [
+              0.027259928298934408,
+              0.027259928298934408,
+              false
+            ],
+            "Type": [
+              "PXC",
+              "PXC",
+              false
+            ],
+            "U": [
+              1.6286947633183924,
+              1.6286947633183924,
+              false
+            ],
+            "V": [
+              -2.814202724499216,
+              -2.814202724499216,
+              false
+            ],
+            "W": [
+              1.8023046763406656,
+              1.8023046763406656,
+              false
+            ],
+            "X": [
+              0.3495150117877692,
+              0.3495150117877692,
+              false
+            ],
+            "Y": [
+              6.109195929068328,
+              6.109195929068328,
+              false
+            ],
+            "Z": [
+              0.0,
+              0.0,
+              false
+            ],
+            "Zero": [
+              0.0,
+              -0.013100238308222633,
+              true
+            ]
+          },
+          "phases": {
+            "Al2O3": {
+              "atoms": [
+                {
+                  "coordinates": [
+                    0.0,
+                    0.0,
+                    0.3522
+                  ],
+                  "label": "Al1",
+                  "occupancy": 1.0,
+                  "uiso_angstrom2": 0.004211921141303545
+                },
+                {
+                  "coordinates": [
+                    0.6937,
+                    0.0,
+                    0.25
+                  ],
+                  "label": "O1",
+                  "occupancy": 1.0,
+                  "uiso_angstrom2": 0.0016677339122101518
+                }
+              ],
+              "hap": {
+                "Mustrain": [
+                  "isotropic",
+                  [
+                    -167.25911839970368,
+                    1000.0,
+                    1.0
+                  ],
+                  [
+                    true,
+                    false,
+                    false
+                  ],
+                  [
+                    0,
+                    0,
+                    1
+                  ],
+                  [
+                    0.01,
+                    0.01,
+                    0.01
+                  ],
+                  [
+                    false,
+                    false,
+                    false
+                  ]
+                ],
+                "Pref.Ori.": [
+                  "MD",
+                  1.0,
+                  false,
+                  [
+                    0,
+                    0,
+                    1
+                  ],
+                  0,
+                  {},
+                  [],
+                  0.1
+                ],
+                "Scale": [
+                  5776.612427989671,
+                  true
+                ],
+                "Size": [
+                  "isotropic",
+                  [
+                    0.18596782079208565,
+                    1.0,
+                    1.0
+                  ],
+                  [
+                    true,
+                    false,
+                    false
+                  ],
+                  [
+                    0,
+                    0,
+                    1
+                  ],
+                  [
+                    1.0,
+                    1.0,
+                    1.0,
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  [
+                    false,
+                    false,
+                    false,
+                    false,
+                    false,
+                    false
+                  ]
+                ]
+              }
+            },
+            "CaF2": {
+              "atoms": [
+                {
+                  "coordinates": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "label": "Ca1",
+                  "occupancy": 1.0,
+                  "uiso_angstrom2": 0.0067825332909730906
+                },
+                {
+                  "coordinates": [
+                    0.25,
+                    0.25,
+                    0.25
+                  ],
+                  "label": "F1",
+                  "occupancy": 1.0,
+                  "uiso_angstrom2": 0.011203466598602219
+                }
+              ],
+              "hap": {
+                "Mustrain": [
+                  "isotropic",
+                  [
+                    395.2233094904808,
+                    1000.0,
+                    1.0
+                  ],
+                  [
+                    true,
+                    false,
+                    false
+                  ],
+                  [
+                    0,
+                    0,
+                    1
+                  ],
+                  [
+                    0.01,
+                    0.01
+                  ],
+                  [
+                    false,
+                    false
+                  ]
+                ],
+                "Pref.Ori.": [
+                  "MD",
+                  1.0,
+                  false,
+                  [
+                    0,
+                    0,
+                    1
+                  ],
+                  0,
+                  {},
+                  [],
+                  0.1
+                ],
+                "Scale": [
+                  5682.501379715949,
+                  true
+                ],
+                "Size": [
+                  "isotropic",
+                  [
+                    0.28798373242017683,
+                    1.0,
+                    1.0
+                  ],
+                  [
+                    true,
+                    false,
+                    false
+                  ],
+                  [
+                    0,
+                    0,
+                    1
+                  ],
+                  [
+                    1.0,
+                    1.0,
+                    1.0,
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  [
+                    false,
+                    false,
+                    false,
+                    false,
+                    false,
+                    false
+                  ]
+                ]
+              }
+            },
+            "ZnO": {
+              "atoms": [
+                {
+                  "coordinates": [
+                    0.333333333,
+                    0.666666667,
+                    0.0
+                  ],
+                  "label": "Zn1",
+                  "occupancy": 1.0,
+                  "uiso_angstrom2": 0.008090173947889662
+                },
+                {
+                  "coordinates": [
+                    0.333333333,
+                    0.666666667,
+                    0.375
+                  ],
+                  "label": "O1",
+                  "occupancy": 1.0,
+                  "uiso_angstrom2": -0.0004923060472658118
+                }
+              ],
+              "hap": {
+                "Mustrain": [
+                  "isotropic",
+                  [
+                    -374.77131830067924,
+                    1000.0,
+                    1.0
+                  ],
+                  [
+                    true,
+                    false,
+                    false
+                  ],
+                  [
+                    0,
+                    0,
+                    1
+                  ],
+                  [
+                    0.01,
+                    0.01,
+                    0.01
+                  ],
+                  [
+                    false,
+                    false,
+                    false
+                  ]
+                ],
+                "Pref.Ori.": [
+                  "MD",
+                  1.0,
+                  false,
+                  [
+                    0,
+                    0,
+                    1
+                  ],
+                  0,
+                  {},
+                  [],
+                  0.1
+                ],
+                "Scale": [
+                  5386.083821594767,
+                  true
+                ],
+                "Size": [
+                  "isotropic",
+                  [
+                    0.1898488814618428,
+                    1.0,
+                    1.0
+                  ],
+                  [
+                    true,
+                    false,
+                    false
+                  ],
+                  [
+                    0,
+                    0,
+                    1
+                  ],
+                  [
+                    1.0,
+                    1.0,
+                    1.0,
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  [
+                    false,
+                    false,
+                    false,
+                    false,
+                    false,
+                    false
+                  ]
+                ]
+              }
+            }
+          },
+          "vary_list": [
+            "0::AUiso:0",
+            "0::AUiso:1",
+            "1::AUiso:0",
+            "1::AUiso:1",
+            "2::AUiso:0",
+            "2::AUiso:1",
+            "0:0:Scale",
+            "0:0:Mustrain;i",
+            "0:0:Size;i",
+            "1:0:Scale",
+            "1:0:Mustrain;i",
+            "1:0:Size;i",
+            "2:0:Scale",
+            "2:0:Mustrain;i",
+            "2:0:Size;i",
+            ":0:Back;0",
+            ":0:Back;1",
+            ":0:Back;2",
+            ":0:Back;3",
+            ":0:Back;4",
+            ":0:Back;5",
+            ":0:Back;6",
+            ":0:Zero"
+          ]
+        },
+        "implementation": "GSAS-II",
+        "input_sha256": {
+          "1e.xy": "d12cf03415965666eabed014f4519360a9dd8a806b2d5ff09a0a31f36d0a2487",
+          "Al2O3.cif": "b6f2aba7fe62ea043a741906ac334af14940833dd6530c614a6ecbf473d19b4c",
+          "CaF2.cif": "ff315c7e7e2aced380506cf6b0364137f110a6816b7bf49f02e4f07ad1242574",
+          "ZnO.cif": "b46c70c9d3edbfffec06b450f9e9ccf7478907de05c6e5d4fec25ddee9bbf978",
+          "common.instprm": "040d72370b017795611ba52cf48aa7106b095936d2f57989f9faca420bade63a",
+          "experiment.json": "68be92e0985a7627d64045c94478635b780fb05d66438119e212f28ce01210a1"
+        },
+        "instrument_profile_sha256": "6cb2a3ee202825a74504708d0f983f87cde6391cedba71f6d03150d3ff8ed6af",
+        "numpy_version": "2.2.6",
+        "python_version": "3.13.9",
+        "recipe": {
+          "common_subset": false,
+          "cycles_per_stage": 8,
+          "fixed_calibrated_instrument_profile": {
+            "SH/L": 0.027259928298934408,
+            "U": 1.6286947633183924,
+            "V": -2.814202724499216,
+            "W": 1.8023046763406656,
+            "X": 0.3495150117877692,
+            "Y": 6.109195929068328
+          }
+        },
+        "result": {
+          "free_parameter_count": 23,
+          "maximum_weight_fraction_error": 0.02015052075503143,
+          "poisson_rwp": 0.11710049148128145,
+          "profile_correlation": 0.9885239587231095,
+          "reflection_count": 109,
+          "sample": "1e",
+          "sample_count": 14091,
+          "unit_weight_rwp": 0.13940535527088238,
+          "weight_fractions": {
+            "Al2O3": 0.5713505207550315,
+            "CaF2": 0.28692022136700335,
+            "ZnO": 0.14172925787796525
+          }
+        },
+        "revision": "c0bc79b259cdf0065480b5fbd57674ddf12c4a23",
+        "sample": "1e",
+        "schema_version": 1,
+        "scope": "curtin_rowles_qpa_topas_common_subset",
+        "stage_rwp_percent": {
+          "displacement": 11.710049148128144,
+          "instrument": 13.355433309306356,
+          "sample_broadening": 12.469404617021533,
+          "scale_background": 17.590724408980744
+        },
+        "stage_timing_ms": {
+          "displacement": 521.727125,
+          "instrument": 748.1945,
+          "sample_broadening": 1115.06725,
+          "scale_background": 416.295
+        }
+      },
+      "fpa_improved_poisson_rwp": false,
+      "fpa_minus_empirical": {
+        "poisson_rwp": 0.03514790778173707,
+        "profile_correlation": -0.0065187883269592906,
+        "unit_weight_rwp": 0.04829768148532963
+      }
+    }
+  },
+  "conversion": {
+    "approximated": [
+      "TOPAS seven-line emission spectrum reduced to the common K-alpha doublet",
+      "detailed axial convolution replaced by a neutral SH/L=0.002 initializer",
+      "U/V/W values are neutral common-model initializers, not TOPAS parameters"
+    ],
+    "omitted": [
+      "K-beta, continuum, and line-specific emission widths from the common workflow",
+      "angle-dependent white-radiation term from the experimental source-spectrum slice",
+      "Tube_Tails and detector equatorial convolution",
+      "physical source/sample/slit lengths and Soller-limited axial convolution",
+      "mixture absorption and absorption-edge correction from the common workflow",
+      "TOPAS randomized multi-start and correlation-screening logic"
+    ],
+    "translated": [
+      "two-column observed patterns and Poisson count uncertainties",
+      "three crystal structures, cells, coordinates, occupancies, and initial Biso",
+      "seven-term polynomial background",
+      "21-150 degree refinement range",
+      "Cu K-alpha1/K-alpha2 groups as area-weighted doublet centroids"
+    ]
+  },
+  "interpretation": [
+    "Pinned GSAS-II generates a physical target from the deposited Rowles geometry and compresses it into its production U/V/W/X/Y/SH/L profile.",
+    "The compression is not a TOPAS calculation and excludes the angle-dependent continuum, K-beta outside the K-alpha window, and specimen absorption.",
+    "The empirical and FPA-compressed profiles use the same GSAS-II QPA workflow; only the instrument-profile calibration changes.",
+    "A higher real-pattern Rwp for the FPA-compressed profile argues against adding more specialized Rowles optics to PhaseSmith at this stage."
+  ],
+  "schema_version": 1,
+  "scope": "curtin_rowles_qpa_topas_gsasii_fpa_diagnostic",
+  "source_dataset_id": "curtin-rowles-qpa-topas"
+}

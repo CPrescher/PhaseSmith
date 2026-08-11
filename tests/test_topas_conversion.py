@@ -16,6 +16,11 @@ Rp 250
 Rs 250
 start_X  21
 finish_X  HAL
+lpsd_th2_angular_range_degrees 2.994
+lpsd_equitorial_divergence_degrees 0.3
+Tube_Tails(, 0.04, , -0.555189814 min =-4; max =4;
+           , , 0.772701111 min =-4; max =4;
+           , , 0.00152295)
 axial_conv
  filament_length  12
  sample_length  15
@@ -97,6 +102,27 @@ def test_rowles_converter_materializes_common_bundle(tmp_path: Path) -> None:
         "gaussian_decay_per_angstrom2": 61.20577,
         "bragg_angle_factor": "1/tan(theta)",
         "supported": False,
+    }
+    assert source_model["instrument_geometry"] == {
+        "source_to_sample_radius_mm": 250.0,
+        "sample_to_detector_radius_mm": 250.0,
+        "axial": {
+            "filament_full_length_mm": 12.0,
+            "illuminated_sample_full_length_mm": 15.0,
+            "receiving_slit_full_length_mm": 12.0,
+            "incident_soller_full_width_deg": 2.5,
+            "diffracted_soller_full_width_deg": 2.5,
+        },
+        "linear_position_sensitive_detector": {
+            "two_theta_angular_range_deg": 2.994,
+            "equatorial_divergence_deg": 0.3,
+        },
+        "tube_tails": {
+            "source_width_mm": 0.04,
+            "left_tail_mm": -0.555189814,
+            "right_tail_mm": 0.772701111,
+            "relative_intensity": 0.00152295,
+        },
     }
     assert len(manifest["translation"]["omitted"]) == 6
     assert read_powder_data(destination / "1a.xy", format="columns").x.size == 3

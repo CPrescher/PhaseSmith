@@ -44,6 +44,38 @@ The automated gate requires absolute Rwp, unit-weight Rwp, and maximum phase
 fraction differences no larger than 0.005, plus profile-correlation difference
 no larger than 0.002. Both patterns pass.
 
+## GSAS-II fundamental-parameters diagnostic
+
+The deposited radii, axial lengths, 2.5 degree incident and diffracted Soller
+angles, LPSD angular range, equatorial divergence, tube tails, five transmitted
+Cu K-alpha lines, and edge transmission at each line center were also passed to
+the exact pinned GSAS-II fundamental-parameters calibration. TOPAS documents
+its `lh` emission widths as half widths; the adapter multiplies them by two for
+the NIST FPA full-width convention used by GSAS-II. K-beta, the angle-dependent
+continuum, and specimen absorption are outside this isolated K-alpha
+calibration.
+
+GSAS-II compressed 13 physical peaks from 21 to 147 degrees into
+`U=1.628695`, `V=-2.814203`, `W=1.802305`, `X=0.349515`, `Y=6.109196`, and
+`SH/L=0.027260`. The compressed profile has 6.952% Rwp and 0.99748 correlation
+against the synthetic FPA target. That compression does not transfer as well to
+the measured patterns:
+
+| Sample | GSAS-II profile source | Poisson Rwp | Unit-weight Rwp | Correlation |
+| --- | --- | ---: | ---: | ---: |
+| 1a | empirical refinement | 9.085% | 7.686% | 0.99689 |
+| 1a | fixed FPA compression | 13.928% | 15.084% | 0.98819 |
+| 1e | empirical refinement | 8.195% | 9.111% | 0.99504 |
+| 1e | fixed FPA compression | 11.710% | 13.941% | 0.98852 |
+
+Thus GSAS-II itself does not recover the Rowles result by replacing its
+empirical production profile with this compressed geometry. This is a negative
+transferability result, not a claim that GSAS-II's FPA target is equivalent to
+TOPAS. It argues for retaining PhaseSmith's compact production profile and
+testing additional datasets before adding LPSD, tube-tail, or continuum terms.
+The machine-readable result is
+`validation/results/2026-08-11-rowles-gsasii-fpa.json`.
+
 ## Explicitly excluded TOPAS terms
 
 The common workflow does not use the deposited seven-line Voigt emission
