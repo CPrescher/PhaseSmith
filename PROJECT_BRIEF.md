@@ -516,6 +516,23 @@ reference. The graphite analyser/spectral passband is therefore a separate
 required validation increment; the exploratory spectrum is not a golden
 instrument calibration.
 
+The next offline increment adds an explicit unit-height Gaussian wavelength
+passband with caller-supplied center and FWHM. It multiplies each continuous
+TCH emission line before the full axial/equatorial ray convolution, and the
+integrated transmitted line areas become the compressed model's fixed
+component weights and their first moments set its effective wavelengths. The
+26.6 degree NIST graphite value is the analyzer diffraction angle, not a
+recoverable bandwidth, so no guessed NIST default is provided. A full-order
+balanced-band probe gives 15.6665% Rwp and 0.99319 correlation versus 12.5254%
+and 0.99482 without the band after the transmitted line centroids are carried
+into the compressed spectrum. The negative result shows that the provisional
+narrow doublet already acts as an effective post-analyzer spectrum; it does not
+justify tuning an unreported bandwidth to the validation specimen.
+Compression of that passband target still fails the standard gates with global
+relative L2 error 0.1590 and minimum per-peak correlation 0.97614.
+Incident-monochromator dispersion, flat-specimen effects, tube tails, and a
+provenance-complete effective Cu spectrum remain separate work.
+
 ## Design commitments
 
 - Use GSAS-II only as a pinned validation oracle, never as the architecture.
@@ -928,10 +945,12 @@ non-representable physical targets rather than presenting them as successful
 calibrations. Its second reviewed increment adds finite axial
 source/sample/receiver lengths and triangular incident/diffracted Soller
 transmissions through an independently derived deterministic ray integral.
-Transparency, equatorial divergence beyond the ideal apertures, tube tails,
-monochromator/analyser passbands, and PSD defocusing remain separate reviewed
-increments. No GSAS-II or NIST implementation code is copied or required at
-runtime.
+The third increment adds a fixed Gaussian wavelength passband before those ray
+convolutions and propagates transmitted line areas into the compressed fixed
+spectrum. Transparency, equatorial divergence beyond the ideal apertures, tube
+tails, coupled incident-monochromator dispersion, and PSD defocusing remain
+separate reviewed increments. No GSAS-II or NIST implementation code is copied
+or required at runtime.
 
 ## Quality bar
 

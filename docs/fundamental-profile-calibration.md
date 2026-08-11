@@ -22,7 +22,9 @@ The reviewed target includes:
 - physical sample and receiving-slit axial half-lengths through the published
   Finger--Cox--Jephcoat convolution; or
 - full source, illuminated-sample, and receiving-slit axial lengths with
-  independent triangular incident and diffracted Soller transmissions.
+  independent triangular incident and diffracted Soller transmissions; and
+- an optional unit-height Gaussian wavelength passband applied to the source
+  spectrum before the geometrical convolutions.
 
 Let line `j` have wavelength `lambda_j`, and let `d` be defined by the first
 line's requested peak position. Its Bragg position is
@@ -108,9 +110,59 @@ The point-source/point-sample limit is tested directly against the independent
 FCJ reference.
 
 This increment still excludes flat-plate transparency, equatorial divergence
-beyond the ideal apertures, tube tails, monochromator/analyser passbands, and
-PSD defocusing. These require separately reviewed equations and validation
+beyond the ideal apertures, tube tails, passband-induced angular dispersion,
+and PSD defocusing. These require separately reviewed equations and validation
 data.
+
+### Gaussian spectral passband
+
+`GaussianSpectralPassband` represents an explicitly supplied analyzer or
+monochromator transmission with center `lambda_c` and wavelength FWHM `B`:
+
+```text
+T(lambda) = exp[-4 ln(2) ((lambda - lambda_c) / B)^2].
+```
+
+It has unit peak transmission and infinite mathematical support. For emission
+line `j`, the target wavelength density is multiplied before axial and
+equatorial convolution,
+
+```text
+p_filtered,j(lambda) = p_TCH,j(lambda) T(lambda).
+```
+
+The transmitted line area is
+
+```text
+A_effective,j = A_j integral p_TCH,j(lambda) T(lambda) d(lambda).
+```
+
+These effective areas become the fixed component weights returned by a
+calibration. The first wavelength moment of each transmitted line likewise
+becomes its effective component wavelength, so attenuation and passband-induced
+centroid motion are not lost when the target is compressed. The Gaussian parts
+of both moments are evaluated analytically. The Lorentzian parts use the
+substitution `lambda = lambda_j + (H/2) tan(t)`, which maps its infinite support
+to a finite Gauss--Legendre integral and makes the Lorentzian measure uniform
+in `t`.
+
+The passband is intentionally parameterized by wavelength center and FWHM.
+NIST identifies the 26.6 degree value for its graphite post-analyzer as the
+analyzer diffraction angle, not a passband width. The SRM 660c pdCIF says that
+a Gaussian approximation and offset were used, but does not contain enough
+information to reconstruct a unique bandwidth. PhaseSmith therefore does not
+invent a NIST default. The current post-analyzer slice also adds no dispersion
+term, consistent with the pdCIF statement that the analyzer is adjacent to the
+detector. Incident focusing monochromators need the coupled dispersion model of
+Mendenhall, Black and Cline, *J. Appl. Cryst.* **52** (2019), 1087--1094,
+[doi:10.1107/S1600576719010951](https://doi.org/10.1107/S1600576719010951),
+and remain a separate increment.
+
+Applying a spectral passband currently requires `SollerAxialGeometry`, even
+when all three axial lengths are zero. This makes the operation order explicit:
+wavelength filtering precedes the independent ray convolution. It avoids
+silently multiplying an already FCJ-convolved angular profile by a wavelength
+window, which would be a different model.
 
 ## Validation and oracle boundary
 
@@ -136,6 +188,13 @@ production Rust pass. The synthetic target is evaluated only on the requested
 isolated windows; those window edges are its explicit finite comparison
 support.
 
+Passband validation includes the exact half-height convention, immutable
+finite transmission arrays, an independent dense wavelength integral, peak
+moment narrowing, transmitted multi-line weights, and invalid-domain tests.
+The passband adds no refinement columns: its parameters are fixed physical
+inputs to the offline target, while the compressed candidate continues to use
+the existing fused Rust values and analytical derivatives.
+
 An exploratory SRM 660c specimen 100a probe used the documented 12 mm source,
 15 mm illuminated sample, 5 mm receiving slit, and 6.776 degree incident and
 diffracted Soller widths with a provisional narrow Cu doublet. The resulting
@@ -144,9 +203,25 @@ and increased profile correlation from 0.95959 to 0.99482. NIST's released
 fundamental-parameters curve remains at 6.055% Rwp and 0.99948 correlation.
 More importantly, the compression has global relative L2 error 0.1909 and
 therefore fails the normal 0.03 acceptance limit. This is evidence that the
-axial/Soller physics matters, not an accepted calibration: the graphite
-analyser/spectral passband is still missing, and the provisional line widths
-must not be promoted to a golden instrument model.
+axial/Soller physics matters, not an accepted calibration. At that stage the
+graphite analyzer passband had not yet been tested, and the provisional line
+widths could not be promoted to a golden instrument model.
+
+After adding the explicit Gaussian passband, a full-order balanced probe with
+center 1.5425 Å and FWHM 0.004 Å gives 15.6665% weighted Rwp and 0.99319
+correlation after its transmitted line centroids are propagated into the
+compressed spectrum. The first effective component is reanchored to NIST's
+certified Kα1 wavelength for this diagnostic while preserving its filtered
+component separation. The same Soller model without the passband gives
+12.5254% and 0.99482. A coarse sweep using the published multi-Lorentzian Cu
+spectrum was also substantially worse after compression. The passband
+implementation is therefore retained as a supported physical input, but it is
+not promoted as the solution to the NIST residual. The existing provisional
+narrow doublet already behaves like an effective post-analyzer spectrum, and
+the released pdCIF does not justify fitting a hidden bandwidth to specimen
+100a. The passband compression itself also remains rejected by the standard
+gates: global relative L2 error 0.1590, maximum per-peak relative L2 error
+0.2006, and minimum correlation 0.97614.
 
 ## Compression model and acceptance
 
@@ -206,6 +281,10 @@ model = phasesmith.BraggBrentanoFundamentalProfile(
         receiving_slit_full_length_mm=5.0,
         incident_soller_full_width_deg=6.776,
         diffracted_soller_full_width_deg=6.776,
+    ),
+    spectral_passband=phasesmith.GaussianSpectralPassband(
+        center_wavelength_angstrom=1.5425,
+        gaussian_fwhm_angstrom=0.008,
     ),
 )
 

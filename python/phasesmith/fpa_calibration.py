@@ -11,7 +11,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import numpy as np
-from numpy.typing import NDArray
+from numpy.typing import ArrayLike, NDArray
 
 from . import reference
 from .fcj import accumulate_cw_fcj_components
@@ -47,6 +47,31 @@ class FundamentalEmissionLine:
             raise ValueError("emission-line widths must be non-negative")
         if self.gaussian_fwhm_angstrom == 0.0 and self.lorentzian_fwhm_angstrom == 0.0:
             raise ValueError("an emission line must have a positive intrinsic width")
+
+
+@dataclass(frozen=True, slots=True)
+class GaussianSpectralPassband:
+    """Gaussian wavelength transmission for an analyser or monochromator.
+
+    The FWHM and centre are in ångström. The peak transmission is one and the
+    Gaussian has infinite mathematical support.
+    """
+
+    center_wavelength_angstrom: float
+    gaussian_fwhm_angstrom: float
+
+    def __post_init__(self) -> None:
+        values = (self.center_wavelength_angstrom, self.gaussian_fwhm_angstrom)
+        if not np.isfinite(values).all() or any(value <= 0.0 for value in values):
+            raise ValueError("passband centre and FWHM must be positive and finite")
+
+    def transmission(self, wavelength_angstrom: ArrayLike) -> NDArray[np.float64]:
+        """Evaluate the unit-height Gaussian transmission on a finite array."""
+
+        wavelength = np.asarray(wavelength_angstrom, dtype=np.float64)
+        if not np.isfinite(wavelength).all() or np.any(wavelength <= 0.0):
+            raise ValueError("passband wavelengths must be positive and finite")
+        return _readonly(_gaussian_passband_transmission(self, wavelength))
 
 
 @dataclass(frozen=True, slots=True)
@@ -101,6 +126,7 @@ class BraggBrentanoFundamentalProfile:
     detector_half_length_mm: float
     emission_lines: tuple[FundamentalEmissionLine, ...]
     soller_axial_geometry: SollerAxialGeometry | None = None
+    spectral_passband: GaussianSpectralPassband | None = None
 
     def __post_init__(self) -> None:
         geometry = (
@@ -120,6 +146,15 @@ class BraggBrentanoFundamentalProfile:
             raise ValueError("emission_lines must be a non-empty tuple")
         if not all(isinstance(line, FundamentalEmissionLine) for line in self.emission_lines):
             raise TypeError("emission_lines must contain FundamentalEmissionLine values")
+        if self.spectral_passband is not None and not isinstance(
+            self.spectral_passband, GaussianSpectralPassband
+        ):
+            raise TypeError("spectral_passband must be GaussianSpectralPassband or None")
+        if self.spectral_passband is not None and self.soller_axial_geometry is None:
+            raise ValueError(
+                "spectral_passband requires explicit full axial geometry so the "
+                "wavelength filter precedes the geometrical convolution"
+            )
         if self.soller_axial_geometry is not None:
             if not isinstance(self.soller_axial_geometry, SollerAxialGeometry):
                 raise TypeError("soller_axial_geometry must be SollerAxialGeometry or None")
@@ -186,6 +221,7 @@ class FundamentalProfileCalibrationOptions:
     step_deg: float = 0.002
     aperture_quadrature_order: int = 3
     axial_ray_quadrature_order: int = 255
+    spectral_transmission_quadrature_order: int = 255
     fcj_quadrature_order: int = 48
     support_fwhm: float = 40.0
     max_iterations: int = 40
@@ -222,6 +258,7 @@ class FundamentalProfileCalibrationOptions:
         integer_controls = (
             self.aperture_quadrature_order,
             self.axial_ray_quadrature_order,
+            self.spectral_transmission_quadrature_order,
             self.fcj_quadrature_order,
             self.max_iterations,
         )
@@ -233,6 +270,7 @@ class FundamentalProfileCalibrationOptions:
         if (
             self.aperture_quadrature_order <= 0
             or self.axial_ray_quadrature_order <= 0
+            or self.spectral_transmission_quadrature_order <= 0
             or self.fcj_quadrature_order <= 0
         ):
             raise ValueError("quadrature orders must be positive")
@@ -325,8 +363,8 @@ def calibrate_fundamental_profile(
     grid = target_pattern.grid_deg
     slices = target_pattern.peak_slices
     target = target_pattern.intensity
-    components = model.components
-    parameters = _initial_parameters(model)
+    components = _effective_components(model, selected.spectral_transmission_quadrature_order)
+    parameters = _initial_parameters(model, components)
     lower = np.array([0.0, -0.2, 1.0e-12, 0.0, 0.0, 0.0], dtype=np.float64)
     upper = np.array([0.2, 0.2, 0.2, 1.0, 1.0, 0.2], dtype=np.float64)
     scales = np.array([1.0e-3, 1.0e-3, 1.0e-3, 1.0e-2, 1.0e-2, 1.0e-2])
@@ -498,13 +536,23 @@ def _fundamental_target(
             )
             centres = (axial_centres[:, None] + combined_offsets[None, :]).ravel()
             ray_weights = (axial_weights[:, None] * combined_weights[None, :]).ravel()
-            target[active] += component_weight * _weighted_tch_profiles(
-                local_grid,
-                centres,
-                ray_weights,
-                gaussian,
-                lorentzian,
-            )
+            if model.spectral_passband is None:
+                target[active] += component_weight * _weighted_tch_profiles(
+                    local_grid,
+                    centres,
+                    ray_weights,
+                    gaussian,
+                    lorentzian,
+                )
+            else:
+                target[active] += component_weight * _weighted_filtered_tch_profiles(
+                    local_grid,
+                    centres,
+                    ray_weights,
+                    angular_per_wavelength,
+                    line,
+                    model.spectral_passband,
+                )
     return target
 
 
@@ -663,9 +711,119 @@ def _weighted_tch_profiles(
     return result
 
 
-def _initial_parameters(model: BraggBrentanoFundamentalProfile) -> NDArray[np.float64]:
-    weights = model.components.normalized_intensities
-    wavelengths = model.components.wavelengths_angstrom
+def _weighted_filtered_tch_profiles(
+    grid: NDArray[np.float64],
+    centres: NDArray[np.float64],
+    weights: NDArray[np.float64],
+    angular_per_wavelength: float,
+    line: FundamentalEmissionLine,
+    passband: GaussianSpectralPassband,
+) -> NDArray[np.float64]:
+    """Convolve axial rays with a wavelength profile multiplied by transmission."""
+
+    result = np.zeros_like(grid)
+    for begin in range(0, centres.size, _TARGET_PROFILE_CHUNK_SIZE):
+        end = min(begin + _TARGET_PROFILE_CHUNK_SIZE, centres.size)
+        wavelength_delta = (grid[None, :] - centres[begin:end, None]) / angular_per_wavelength
+        evaluated = reference.profile_tch(
+            wavelength_delta,
+            line.gaussian_fwhm_angstrom,
+            line.lorentzian_fwhm_angstrom,
+        )
+        wavelength = line.wavelength_angstrom + wavelength_delta
+        transmission = _gaussian_passband_transmission(passband, wavelength)
+        angular_density = evaluated.value * transmission / angular_per_wavelength
+        result += weights[begin:end] @ angular_density
+    return result
+
+
+def _effective_components(
+    model: BraggBrentanoFundamentalProfile, quadrature_order: int
+) -> WavelengthComponents:
+    if model.spectral_passband is None:
+        return model.components
+    moments = tuple(
+        _line_transmission_moments(line, model.spectral_passband, quadrature_order)
+        for line in model.emission_lines
+    )
+    transmitted = np.array(
+        [
+            line.relative_intensity * moment[0]
+            for line, moment in zip(model.emission_lines, moments, strict=True)
+        ],
+        dtype=np.float64,
+    )
+    if not np.isfinite(transmitted).all() or np.any(transmitted <= 0.0):
+        raise ValueError("spectral passband rejects an emission line numerically")
+    return WavelengthComponents(
+        [moment[1] for moment in moments],
+        transmitted,
+    )
+
+
+def _line_transmission(
+    line: FundamentalEmissionLine,
+    passband: GaussianSpectralPassband,
+    quadrature_order: int,
+) -> float:
+    """Integrate one normalized TCH line against the Gaussian passband."""
+
+    return _line_transmission_moments(line, passband, quadrature_order)[0]
+
+
+def _line_transmission_moments(
+    line: FundamentalEmissionLine,
+    passband: GaussianSpectralPassband,
+    quadrature_order: int,
+) -> tuple[float, float]:
+    """Return the transmitted area and wavelength centroid for one TCH line."""
+
+    shape = reference.tch_shape_from_fwhm(
+        line.gaussian_fwhm_angstrom, line.lorentzian_fwhm_angstrom
+    )
+    total_fwhm = shape.total_fwhm
+    line_gaussian_coefficient = reference.FOUR_LN_2 / total_fwhm**2
+    band_gaussian_coefficient = reference.FOUR_LN_2 / passband.gaussian_fwhm_angstrom**2
+    coefficient_sum = line_gaussian_coefficient + band_gaussian_coefficient
+    offset = line.wavelength_angstrom - passband.center_wavelength_angstrom
+    gaussian_integral = np.sqrt(line_gaussian_coefficient / coefficient_sum) * np.exp(
+        -line_gaussian_coefficient * band_gaussian_coefficient * offset**2 / coefficient_sum
+    )
+    gaussian_centroid = (
+        line_gaussian_coefficient * line.wavelength_angstrom
+        + band_gaussian_coefficient * passband.center_wavelength_angstrom
+    ) / coefficient_sum
+
+    nodes, weights = np.polynomial.legendre.leggauss(quadrature_order)
+    tangent_coordinate = 0.5 * np.pi * nodes
+    wavelength = line.wavelength_angstrom + 0.5 * total_fwhm * np.tan(tangent_coordinate)
+    positive = wavelength > 0.0
+    transmission = np.zeros_like(wavelength)
+    transmission[positive] = _gaussian_passband_transmission(passband, wavelength[positive])
+    lorentzian_integral = 0.5 * float(weights @ transmission)
+    lorentzian_first_moment = 0.5 * float(weights @ (wavelength * transmission))
+    total_integral = float(shape.eta * lorentzian_integral + (1.0 - shape.eta) * gaussian_integral)
+    if not np.isfinite(total_integral) or total_integral <= 0.0:
+        raise ValueError("spectral passband rejects an emission line numerically")
+    first_moment = float(
+        shape.eta * lorentzian_first_moment
+        + (1.0 - shape.eta) * gaussian_integral * gaussian_centroid
+    )
+    return total_integral, first_moment / total_integral
+
+
+def _gaussian_passband_transmission(
+    passband: GaussianSpectralPassband, wavelength: NDArray[np.float64]
+) -> NDArray[np.float64]:
+    delta = (wavelength - passband.center_wavelength_angstrom) / passband.gaussian_fwhm_angstrom
+    return np.exp(-reference.FOUR_LN_2 * np.square(delta))
+
+
+def _initial_parameters(
+    model: BraggBrentanoFundamentalProfile, components: WavelengthComponents
+) -> NDArray[np.float64]:
+    weights = components.normalized_intensities
+    wavelengths = components.wavelengths_angstrom
     gaussian_sigmas = np.array(
         [line.gaussian_fwhm_angstrom / _GAUSSIAN_FWHM_PER_SIGMA for line in model.emission_lines]
     )

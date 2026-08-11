@@ -17,6 +17,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repetitions", type=int, default=10)
     parser.add_argument("--soller-repetitions", type=int, default=3)
+    parser.add_argument("--passband-repetitions", type=int, default=3)
     return parser.parse_args()
 
 
@@ -32,7 +33,11 @@ def measure(operation: Callable[[], T], repetitions: int) -> tuple[T, list[float
 
 def main() -> None:
     arguments = parse_args()
-    if arguments.repetitions <= 0 or arguments.soller_repetitions <= 0:
+    if (
+        arguments.repetitions <= 0
+        or arguments.soller_repetitions <= 0
+        or arguments.passband_repetitions <= 0
+    ):
         raise ValueError("repetitions must be positive")
     first_wavelength = 1.5405929
     second_wavelength = 1.5444274
@@ -93,6 +98,25 @@ def main() -> None:
         f"case=soller_axial_target samples={soller_target.grid_deg.size} "
         f"axial_order={soller_options.axial_ray_quadrature_order} "
         f"median_ms={statistics.median(soller_ms):.3f}"
+    )
+    passband_model = phasesmith.BraggBrentanoFundamentalProfile(
+        radius_mm=soller_model.radius_mm,
+        source_width_mm=soller_model.source_width_mm,
+        receiving_slit_width_mm=soller_model.receiving_slit_width_mm,
+        sample_half_length_mm=soller_model.sample_half_length_mm,
+        detector_half_length_mm=soller_model.detector_half_length_mm,
+        emission_lines=soller_model.emission_lines,
+        soller_axial_geometry=soller_model.soller_axial_geometry,
+        spectral_passband=phasesmith.GaussianSpectralPassband(1.5425, 0.008),
+    )
+    passband_target, passband_ms = measure(
+        lambda: phasesmith.simulate_fundamental_peaks(passband_model, soller_options),
+        arguments.passband_repetitions,
+    )
+    print(
+        f"case=soller_passband_target samples={passband_target.grid_deg.size} "
+        f"axial_order={soller_options.axial_ray_quadrature_order} "
+        f"median_ms={statistics.median(passband_ms):.3f}"
     )
 
 

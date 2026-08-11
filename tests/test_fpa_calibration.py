@@ -91,6 +91,75 @@ def test_uniform_equatorial_apertures_add_the_first_principles_variance() -> Non
     )
 
 
+def test_gaussian_spectral_passband_has_explicit_fwhm_and_immutable_values() -> None:
+    passband = phasesmith.GaussianSpectralPassband(1.5406, 0.002)
+
+    transmission = passband.transmission(np.array([1.5396, 1.5406, 1.5416]))
+
+    np.testing.assert_allclose(transmission, [0.5, 1.0, 0.5], rtol=2.0e-13)
+    assert not transmission.flags.writeable
+    with np.testing.assert_raises_regex(ValueError, "positive and finite"):
+        phasesmith.GaussianSpectralPassband(1.5406, 0.0)
+    with np.testing.assert_raises_regex(ValueError, "positive and finite"):
+        passband.transmission([1.54, -1.0])
+
+
+def test_spectral_passband_narrows_a_line_and_updates_effective_components() -> None:
+    lines = (
+        phasesmith.FundamentalEmissionLine(1.5406, 2.0, 0.00026, 0.00012),
+        phasesmith.FundamentalEmissionLine(1.5444, 1.0, 0.00026, 0.00012),
+    )
+    geometry = phasesmith.SollerAxialGeometry(0.0, 0.0, 0.0)
+    unfiltered = phasesmith.BraggBrentanoFundamentalProfile(
+        217.5, 0.0, 0.0, 0.0, 0.0, lines, geometry
+    )
+    filtered = replace(
+        unfiltered,
+        spectral_passband=phasesmith.GaussianSpectralPassband(1.5406, 0.004),
+    )
+    options = replace(_options(), step_deg=0.004)
+
+    unfiltered_pattern = phasesmith.simulate_fundamental_peaks(unfiltered, options)
+    filtered_pattern = phasesmith.simulate_fundamental_peaks(filtered, options)
+    active = unfiltered_pattern.peak_slices[0]
+    grid = unfiltered_pattern.grid_deg[active]
+
+    def variance(values: np.ndarray) -> float:
+        weights = values / np.sum(values)
+        centroid = float(weights @ grid)
+        return float(weights @ (grid - centroid) ** 2)
+
+    assert variance(filtered_pattern.intensity[active]) < variance(
+        unfiltered_pattern.intensity[active]
+    )
+    calibration = phasesmith.calibrate_fundamental_profile(filtered, options)
+    assert calibration.components.normalized_intensities[1] < 0.1
+    assert calibration.components.wavelengths_angstrom[1] < lines[1].wavelength_angstrom
+
+
+def test_spectral_transmission_integral_matches_dense_wavelength_reference() -> None:
+    line = phasesmith.FundamentalEmissionLine(1.5406, 1.0, 0.0003, 0.0002)
+    passband = phasesmith.GaussianSpectralPassband(1.5409, 0.0018)
+    wavelength = np.linspace(1.5306, 1.5506, 200_001)
+    density = fpa_calibration.reference.profile_tch(
+        wavelength - line.wavelength_angstrom,
+        line.gaussian_fwhm_angstrom,
+        line.lorentzian_fwhm_angstrom,
+    ).value
+    expected = np.trapezoid(density * passband.transmission(wavelength), wavelength)
+    expected_centroid = (
+        np.trapezoid(wavelength * density * passband.transmission(wavelength), wavelength)
+        / expected
+    )
+
+    actual = fpa_calibration._line_transmission(line, passband, 255)
+    actual_area, actual_centroid = fpa_calibration._line_transmission_moments(line, passband, 255)
+
+    np.testing.assert_allclose(actual, expected, rtol=2.0e-6)
+    np.testing.assert_allclose(actual_area, expected, rtol=2.0e-6)
+    np.testing.assert_allclose(actual_centroid, expected_centroid, rtol=2.0e-9)
+
+
 def test_soller_axial_target_recovers_fcj_for_a_point_incident_beam() -> None:
     line = phasesmith.FundamentalEmissionLine(1.5406, 1.0, 0.00025, 0.0001)
     fcj = phasesmith.BraggBrentanoFundamentalProfile(217.5, 0.0, 0.0, 0.0, 2.0, (line,))
@@ -327,3 +396,15 @@ def test_fundamental_profile_inputs_reject_ambiguous_values() -> None:
             (line,),
             phasesmith.SollerAxialGeometry(12.0, 15.0, 5.0),
         )
+    with np.testing.assert_raises_regex(ValueError, "requires explicit full axial"):
+        phasesmith.BraggBrentanoFundamentalProfile(
+            217.5,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            (line,),
+            spectral_passband=phasesmith.GaussianSpectralPassband(1.5406, 0.002),
+        )
+    with np.testing.assert_raises(ValueError):
+        phasesmith.FundamentalProfileCalibrationOptions(spectral_transmission_quadrature_order=0)

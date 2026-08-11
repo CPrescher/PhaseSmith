@@ -53,9 +53,12 @@ or TOPAS-specific Gaussian/Lorentzian size/strain macros. A separate offline
 PhaseSmith calibration target now supports independently derived finite axial
 source/sample/receiver geometry and triangular incident/diffracted Soller
 transmissions, but it is not silently substituted into this matched parity
-workflow and does not claim TOPAS equivalence. The deposited fields remain in
-the neutral manifest so the conversion is auditable; they are not PhaseSmith
-runtime refinement parameters.
+workflow and does not claim TOPAS equivalence. That offline target also accepts
+an explicit Gaussian wavelength passband and propagates transmitted line areas
+into its compressed fixed spectrum. It does not reproduce the deposited TOPAS
+wavelength-edge filter or angle-dependent continuum. The deposited fields
+remain in the neutral manifest so the conversion is auditable; they are not
+PhaseSmith runtime refinement parameters.
 
 The archive is CC BY 4.0 and is described by Curtin University at
 [DOI 10.25917/5f44ad65411cc](https://doi.org/10.25917/5f44ad65411cc). GSAS-II

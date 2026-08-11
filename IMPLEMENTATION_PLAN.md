@@ -1262,6 +1262,16 @@ derivatives are unchanged. The NIST probe improves materially but fails the
 normal compression gates, leaving the graphite analyser/spectral passband as a
 separate next increment rather than loosening the empirical-profile contract.
 
+Unit 27's third slice adds an explicit Gaussian wavelength transmission before
+the full axial/equatorial target convolution. The center and FWHM are required
+physical inputs; no bandwidth is inferred from NIST's graphite analyzer angle.
+Analytical Gaussian and transformed Lorentzian integrals determine effective
+transmitted component areas and centroids for the compressed fixed spectrum.
+The full-order NIST probe is worse than the existing narrow effective doublet,
+which is retained as a negative scientific result rather than hidden by
+specimen-specific passband tuning. Coupled incident-monochromator dispersion
+remains outside this post-analyzer slice.
+
 Do not combine adjacent items merely to reduce PR count; numerical review is
 easier when parameter conventions and tolerance changes remain isolated.
 
