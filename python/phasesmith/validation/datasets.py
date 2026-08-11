@@ -78,8 +78,96 @@ _POWGEN_TOF_SOURCE = (
     "e2485148a3d7ee4757239b1ba40653f1f715bba5/TOF%20Calibration/data"
 )
 _ROWLES_QPA_SOURCE = "https://ddfe.curtin.edu.au/5f44ad65411cc"
+_BATH_LTL_SOURCE = "https://researchdata.bath.ac.uk/648"
+_XRED_TIO2_SOURCE = (
+    "https://raw.githubusercontent.com/WPEM/XRED/"
+    "916726657c44ef1ca30c475f136835a9f37393c4/biphase/TiO2Rutile%20Anatase"
+)
 
 VALIDATION_DATASETS: tuple[ValidationDataset, ...] = (
+    ValidationDataset(
+        dataset_id="xred-tio2-anatase-rutile",
+        title="XRED experimental anatase/rutile laboratory X-ray pattern",
+        source_url=(
+            "https://github.com/WPEM/XRED/tree/"
+            "916726657c44ef1ca30c475f136835a9f37393c4/biphase/TiO2Rutile%20Anatase"
+        ),
+        citation=(
+            "B. Cao, X-Ray phase Identification public Experimental Dataset (XRED), "
+            "commit 916726657c44ef1ca30c475f136835a9f37393c4"
+        ),
+        license_note=(
+            "External experimental pattern under the repository MIT license; COD CIFs "
+            "declare public-domain structural data. Files are checksum-pinned and not "
+            "redistributed."
+        ),
+        files=(
+            ExternalValidationFile(
+                "data.csv",
+                "33bc06f9a9c6ec94643c83fc3fef33ef4909641c9562c7a47b0c1d1b7ba9eb4b",
+                23_770,
+                (f"{_XRED_TIO2_SOURCE}/data.csv",),
+            ),
+            ExternalValidationFile(
+                "anatase.cif",
+                "4fc026291a789910481782d09b13b291fde2ab6b0166249e007ee0eb93b9b915",
+                2_452,
+                (f"{_XRED_TIO2_SOURCE}/1010942.cif",),
+            ),
+            ExternalValidationFile(
+                "rutile.cif",
+                "e0bbe47fbb0a23051cf6416cb6beab12d1abe53b26f2694e505cc53b972ffe34",
+                2_099,
+                (f"{_XRED_TIO2_SOURCE}/1530150.cif",),
+            ),
+        ),
+        purpose="capability",
+        expected_status="passed",
+    ),
+    ValidationDataset(
+        dataset_id="bath-ltl-lab-xray",
+        title="Bath K/Li/Cs-exchanged zeolite L laboratory X-ray refinements",
+        source_url="https://doi.org/10.15125/BATH-00648",
+        citation=(
+            "University of Bath Research Data Archive, The Effect of Cation Exchange on "
+            "the Pore Geometry of Zeolite L, doi:10.15125/BATH-00648"
+        ),
+        license_note=(
+            "External Rigaku SmartLab scans, final CIFs and legacy GSAS projects under "
+            "Creative Commons Attribution 4.0; checksum-pinned archives are not redistributed."
+        ),
+        files=(
+            ExternalValidationFile(
+                "patterns.zip",
+                "5d4ab92de3d64eb1e346e65b2bd38109c3fe17bd6e1c167738b089708d52c580",
+                117_902,
+                (f"{_BATH_LTL_SOURCE}/2/XRD_Patterns.zip",),
+            ),
+            ExternalValidationFile(
+                "cifs.zip",
+                "9bcf4d4190f9482e84ac0f8eea6370e744974d7bef91716fec12574d440facf2",
+                74_982,
+                (
+                    f"{_BATH_LTL_SOURCE}/3/"
+                    "CIF%20files-%20final%20refined%20structures%20all%20zeolites.zip",
+                ),
+            ),
+            ExternalValidationFile(
+                "gsas.zip",
+                "a2f2c61383ffd459e18ba9381675f166b385d5b56fdabed6bc566c5bb820e394",
+                3_269_620,
+                (f"{_BATH_LTL_SOURCE}/1/GSAS%20refinement%20files.zip",),
+            ),
+            ExternalValidationFile(
+                "README.txt",
+                "4dd3afedba584630cb812b494851834fa2e69e89c8dc7bc0336afe62ecaa150b",
+                1_586,
+                (f"{_BATH_LTL_SOURCE}/4/README.txt",),
+            ),
+        ),
+        purpose="capability",
+        expected_status="failed",
+    ),
     ValidationDataset(
         dataset_id="curtin-rowles-qpa-topas",
         title="Rowles laboratory X-ray QPA robustness study, TOPAS inputs",

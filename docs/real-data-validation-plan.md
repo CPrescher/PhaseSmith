@@ -88,6 +88,54 @@ unit-weight Rwp, and correlation deltas (0.09434, 0.11009, and 0.01297) exceed
 their gates. The controlled test requires this explicit `failed` status rather
 than skipping the holdout or silently accepting the discrepancy.
 
+## Independent laboratory follow-up cases
+
+Two non-GSAS-II deposits now extend the laboratory X-ray matrix without
+changing the production profile model.
+
+The University of Bath zeolite-L archive is a conversion-fidelity capability
+failure. It contains raw Rigaku SmartLab scans, legacy GSAS projects, released
+profile curves and final multi-block CIFs. The converter validates the packed
+ASC axes and counts, exports only the primary phase, repairs the GSAS2CIF
+`O-`/`O-2` truncation visibly, and preserves the released background exactly.
+The raw headers contradict the deposited README: K-LTL declares a Ge(220)x2
+monochromator and K-alpha1, while Li-LTL and Cs-LTL declare a 2.5-degree Soller
+slit and K-alpha. The header and archived experiment records take precedence.
+
+Using the same primary publication CIF, released observed curve, exact fixed
+background and archived effective profile initializer gives:
+
+| sample | released legacy GSAS Rwp | PhaseSmith Rwp | pinned GSAS-II Rwp |
+| --- | ---: | ---: | ---: |
+| K-LTL | 7.791% | 21.972% | 21.303% |
+| Li-LTL | 5.201% | 23.559% | 19.493% |
+| Cs-LTL | 3.492% | 15.062% | 12.080% |
+
+GSAS-II reproduces the deposited background with zero pointwise difference but
+does not reproduce the legacy curves from the publication CIF either. The
+missing information is therefore recorded as legacy-project conversion
+semantics, not attributed to a missing PhaseSmith fundamental-parameters term.
+
+The XRED anatase/rutile pattern is a phase-identification capability case, not
+a certified QPA case. XRED states that its background was removed, but provides
+neither instrument metadata nor a certified composition. The benchmark
+therefore discloses an assumed single Cu K-alpha1 model and treats fitted phase
+fractions only as cross-program diagnostics. Its COD anatase CIF uses the
+nonstandard `I 41/a m d S` symbol; PhaseSmith reads the explicit operations,
+while the converter emits the equivalent origin-choice-1 declaration required
+by GSAS-II.
+
+PhaseSmith reaches Poisson Rwp 22.256%, unit Rwp 14.740%, and correlation
+0.98749. Pinned GSAS-II's staged run reaches 44.801%, 32.354%, and 0.95097.
+Despite those optimizer minima, the inferred anatase fractions agree closely:
+86.049% versus 85.864%, a 0.185 percentage-point difference. This supports the
+shared structure-factor, phase-scale and Hill--Howard paths while leaving the
+unknown instrument and optimizer recipe outside strict parity acceptance.
+
+Reviewed machine-readable results are stored in
+`validation/results/2026-08-11-bath-ltl-gsasii.json` and
+`validation/results/2026-08-11-xred-tio2-gsasii.json`.
+
 ## Implemented fixed-spectrum structural checkpoint
 
 The fixed-spectrum prerequisite now provides:

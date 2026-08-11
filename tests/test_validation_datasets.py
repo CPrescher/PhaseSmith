@@ -10,12 +10,14 @@ def test_registry_has_unique_stable_ids_and_pinned_files() -> None:
     assert {item.dataset_id for item in VALIDATION_DATASETS} == {
         "ansto-echidna-lab6-cw-neutron",
         "aps-sucrose-11bmb",
+        "bath-ltl-lab-xray",
         "curtin-rowles-qpa-topas",
         "gsasii-pbso4-cw",
         "iucr-qarr-1g",
         "iucr-qarr-1h",
         "nist-srm660c-lab6-xray",
         "powgen-lab6-tof-calibration",
+        "xred-tio2-anatase-rutile",
     }
     for dataset in VALIDATION_DATASETS:
         assert dataset.source_url.startswith("https://")
@@ -96,6 +98,10 @@ def test_reviewed_nonpassing_outcomes_are_explicit() -> None:
         by_id["powgen-lab6-tof-calibration"].purpose,
         by_id["powgen-lab6-tof-calibration"].expected_status,
     ) == ("acceptance", "passed")
+    assert (
+        by_id["bath-ltl-lab-xray"].purpose,
+        by_id["bath-ltl-lab-xray"].expected_status,
+    ) == ("capability", "failed")
 
 
 @pytest.mark.parametrize(
