@@ -1,0 +1,191 @@
+{
+  "comparison_kind": "independent_real_data_lebail_workflows",
+  "cross_implementation_validation": {
+    "checks": {
+      "poisson_rwp_delta": {
+        "limit": 0.25,
+        "measured": 0.18551993604265066,
+        "passed": true
+      },
+      "profile_correlation_delta": {
+        "limit": 0.15,
+        "measured": 0.039877295338074936,
+        "passed": true
+      }
+    },
+    "failed_checks": [],
+    "status": "passed"
+  },
+  "gsasii": {
+    "cycle_rwp_percent": [
+      79.38512505777851,
+      61.727400559296555,
+      55.741665908597646,
+      53.14932910872208,
+      52.69700709176258,
+      52.59195481364431,
+      52.71485491994269,
+      52.94479697799015,
+      53.75670537277695,
+      54.30715227275185,
+      55.60768944387819,
+      56.60905932713527,
+      57.379516114928855,
+      57.96599378492985,
+      58.40899833661941,
+      58.74219729614849,
+      58.99142001201502,
+      59.17594487293631,
+      59.31164464355888,
+      59.40994760426507
+    ],
+    "input_sha256": {
+      "ECH0034258_LaB6.xyd": "09950aaf3596518a40b2c5173ffdfd870043f55dcd3390fb83dc9f64e348e115"
+    },
+    "numpy_version": "2.2.6",
+    "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O",
+    "python_version": "3.13.9",
+    "recipe": {
+      "background": "10-term refined Chebyshev",
+      "background_start": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "cycles": 20,
+      "generated_instrument": {
+        "Lam": 2.047,
+        "Type": "PNC",
+        "U": 140.0,
+        "V": -2530.0,
+        "W": 5160.0,
+        "X": 5.0,
+        "Y": 0.0,
+        "Zero": 0.0
+      },
+      "instrument_parameters": [
+        "U",
+        "V",
+        "W",
+        "X",
+        "Y"
+      ],
+      "instrument_start": {
+        "Lam": 2.047,
+        "SH/L": 0.0,
+        "U": 140.0,
+        "V": -2530.0,
+        "W": 5160.0,
+        "X": 5.0,
+        "Y": 0.0,
+        "Z": 0.0,
+        "Zero": 0.0
+      },
+      "le_bail": true,
+      "limits_deg": [
+        20.0,
+        125.5
+      ],
+      "private_probe": "GSASIIstrMain.Refine(newLeBail=True)",
+      "space_group": "P m -3 m",
+      "staging": "background setup, newLeBail extraction, then one-cycle profile updates",
+      "starting_cell": [
+        4.156826,
+        4.156826,
+        4.156826,
+        90.0,
+        90.0,
+        90.0
+      ]
+    },
+    "result": {
+      "background_coefficients": [
+        170.06935267181717,
+        132.74233042673976,
+        156.8734705071381,
+        -19.73954167968448,
+        110.00739174586164,
+        -29.242780435536115,
+        -22.982888835993485,
+        -59.20857032096942,
+        93.26777030068426,
+        68.0817528228253
+      ],
+      "instrument": {
+        "Lam": 2.047,
+        "SH/L": 0.0005,
+        "U": -2004.179065788459,
+        "V": 5673.050459717999,
+        "W": -6340.321074519811,
+        "X": 194.52170403761681,
+        "Y": -224.94450119335323,
+        "Z": 0.0,
+        "Zero": 0.0
+      },
+      "limits_deg": [
+        20.0,
+        125.5
+      ],
+      "poisson_rwp": 0.5940994760426507,
+      "profile_correlation": 0.9460847060661098,
+      "reflection_count": 13,
+      "sample_count": 2111,
+      "unit_weight_rwp": 0.30732840636325504
+    },
+    "revision": "c0bc79b259cdf0065480b5fbd57674ddf12c4a23",
+    "timing": {
+      "external_process": {
+        "max_ms": 10234.750833,
+        "median_ms": 10234.750833,
+        "min_ms": 10234.750833,
+        "timings_ms": [
+          10234.750833
+        ]
+      },
+      "reported_total_workflow_ms": [
+        9757.226167
+      ]
+    }
+  },
+  "limitations": [
+    "The sucrose workflows share one fixed Smooth Bruckner array and refine one constant Chebyshev residual from zero. The GSAS-II worker receives that fixed array as plain prepared input.",
+    "Both workflows start from the same explicit U/V/W/X/Y, wavelength, zero, and symmetric SH/L=0 instrument state; the legacy GSAS file import is overridden before refinement. Pinned GSAS-II reports its internal 0.0005 SH/L calculation floor, while PhaseSmith's zero is exactly symmetric."
+  ],
+  "phasesmith": {
+    "build_mode": "release",
+    "numpy_version": "2.5.1",
+    "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O",
+    "python_version": "3.13.5",
+    "result": {
+      "poisson_rwp": 0.40857954,
+      "profile_correlation": 0.9062074107280349,
+      "reflection_count": 13,
+      "sample_count": 2111,
+      "validation_status": "passed"
+    },
+    "timing": {
+      "driver_wall": {
+        "max_ms": 7.659791,
+        "median_ms": 7.659791,
+        "min_ms": 7.659791,
+        "timings_ms": [
+          7.659791
+        ]
+      }
+    }
+  },
+  "schema_version": 1,
+  "scope": "ansto-echidna-lab6-cw-neutron_lebail_workflow",
+  "workload": {
+    "dataset_id": "ansto-echidna-lab6-cw-neutron",
+    "repetitions": 1,
+    "warmups": 0
+  }
+}

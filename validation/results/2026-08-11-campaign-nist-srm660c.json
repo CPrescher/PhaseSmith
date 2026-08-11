@@ -1,0 +1,230 @@
+{
+  "cases": {
+    "large-fcj-stress": {
+      "comparison_kind": "large_asymmetry_expected_holdout",
+      "cross_implementation_validation": {
+        "checks": {
+          "nist_reference_correlation_delta": {
+            "limit": 1e-12,
+            "measured": 6.661338147750939e-16,
+            "passed": true
+          },
+          "nist_reference_rwp_delta": {
+            "limit": 1e-12,
+            "measured": 0.0,
+            "passed": true
+          },
+          "poisson_rwp_delta": {
+            "limit": 0.01,
+            "measured": 0.01886852927708918,
+            "passed": false
+          },
+          "profile_correlation_delta": {
+            "limit": 0.005,
+            "measured": 0.011374889041214753,
+            "passed": false
+          },
+          "unit_weight_rwp_delta": {
+            "limit": 0.02,
+            "measured": 0.052024298683852305,
+            "passed": false
+          }
+        },
+        "failed_checks": [
+          "poisson_rwp_delta",
+          "unit_weight_rwp_delta",
+          "profile_correlation_delta"
+        ],
+        "status": "failed"
+      },
+      "expected_cross_status": "failed",
+      "expected_failed_checks": [
+        "poisson_rwp_delta",
+        "unit_weight_rwp_delta",
+        "profile_correlation_delta"
+      ],
+      "gsasii": {
+        "result": {
+          "free_parameter_count": 17,
+          "model_parameters": {
+            "instrument": {
+              "U": 2.0,
+              "V": -2.0,
+              "W": 5.0,
+              "Zero": -0.004762922292472175
+            },
+            "microstrain": 0.0,
+            "size_micrometre": 0.24485627480639943,
+            "u_iso_angstrom2": {
+              "B1": 0.006976700406252348,
+              "La1": 0.006784698146391146
+            }
+          },
+          "nist_reference_correlation": 0.9994791733484742,
+          "nist_reference_rwp": 0.0605460046286684,
+          "poisson_rwp": 0.17025642177565384,
+          "profile_correlation": 0.9806902819190609,
+          "reflection_count": 30,
+          "sample_count": 5332,
+          "sh_over_l": 0.02,
+          "specimen": "100a",
+          "unit_weight_rwp": 0.19555532421409838
+        },
+        "timings_ms": [
+          9613.742792
+        ]
+      },
+      "phasesmith": {
+        "result": {
+          "elapsed_seconds": 0.16821245779283345,
+          "free_parameter_count": 17,
+          "nist_reference_correlation": 0.9994791733484749,
+          "nist_reference_rwp": 0.0605460046286684,
+          "poisson_rwp": 0.18912495105274302,
+          "profile_correlation": 0.9693153928778462,
+          "reflection_count": 30,
+          "sample_count": 5332,
+          "sh_over_l": 0.02,
+          "specimen": "100a",
+          "termination_reasons": [
+            "converged",
+            "converged",
+            "converged",
+            "converged",
+            "converged",
+            "converged",
+            "converged",
+            "converged",
+            "converged"
+          ],
+          "unit_weight_rwp": 0.24757962289795069
+        },
+        "timings_ms": [
+          168.265875
+        ]
+      },
+      "status": "passed"
+    },
+    "matched-small-fcj": {
+      "comparison_kind": "matched_empirical_common_subset",
+      "cross_implementation_validation": {
+        "checks": {
+          "nist_reference_correlation_delta": {
+            "limit": 1e-12,
+            "measured": 6.661338147750939e-16,
+            "passed": true
+          },
+          "nist_reference_rwp_delta": {
+            "limit": 1e-12,
+            "measured": 0.0,
+            "passed": true
+          },
+          "poisson_rwp_delta": {
+            "limit": 0.01,
+            "measured": 0.003700714837543778,
+            "passed": true
+          },
+          "profile_correlation_delta": {
+            "limit": 0.005,
+            "measured": 0.0002295301421475493,
+            "passed": true
+          },
+          "unit_weight_rwp_delta": {
+            "limit": 0.02,
+            "measured": 0.00252310330384381,
+            "passed": true
+          }
+        },
+        "failed_checks": [],
+        "status": "passed"
+      },
+      "expected_cross_status": "passed",
+      "expected_failed_checks": [],
+      "gsasii": {
+        "result": {
+          "free_parameter_count": 17,
+          "model_parameters": {
+            "instrument": {
+              "U": 2.0,
+              "V": -2.0,
+              "W": 5.0,
+              "Zero": -0.005914861379510122
+            },
+            "microstrain": 0.0,
+            "size_micrometre": 0.2438709112698343,
+            "u_iso_angstrom2": {
+              "B1": 0.006110807099056834,
+              "La1": 0.006094581743050333
+            }
+          },
+          "nist_reference_correlation": 0.9994791733484742,
+          "nist_reference_rwp": 0.0605460046286684,
+          "poisson_rwp": 0.20864611516637988,
+          "profile_correlation": 0.9598168608023836,
+          "reflection_count": 30,
+          "sample_count": 5332,
+          "sh_over_l": 0.002,
+          "specimen": "100a",
+          "unit_weight_rwp": 0.278044935830702
+        },
+        "timings_ms": [
+          9387.848541
+        ]
+      },
+      "phasesmith": {
+        "result": {
+          "elapsed_seconds": 0.28594879200682044,
+          "free_parameter_count": 17,
+          "nist_reference_correlation": 0.9994791733484749,
+          "nist_reference_rwp": 0.0605460046286684,
+          "poisson_rwp": 0.2049454003288361,
+          "profile_correlation": 0.959587330660236,
+          "reflection_count": 30,
+          "sample_count": 5332,
+          "sh_over_l": 0.002,
+          "specimen": "100a",
+          "termination_reasons": [
+            "converged",
+            "repeated_rejections",
+            "converged",
+            "converged",
+            "converged",
+            "converged",
+            "converged",
+            "repeated_rejections",
+            "converged"
+          ],
+          "unit_weight_rwp": 0.2805680391345458
+        },
+        "timings_ms": [
+          286.003542
+        ]
+      },
+      "status": "passed"
+    }
+  },
+  "gsasii": {
+    "revision": "c0bc79b259cdf0065480b5fbd57674ddf12c4a23"
+  },
+  "limitations": [
+    "The NIST fundamental-parameters Cu spectrum and optics model is deliberately omitted.",
+    "U/V/W remain fixed at a positive-variance state; the unconstrained GSAS-II optimum is nonphysical at high angle.",
+    "Microstrain is fixed at zero because the unconstrained GSAS-II optimum is negative.",
+    "The common model refines zero, isotropic size, two Uiso values, scale, and twelve Chebyshev terms.",
+    "The matched case checks SH/L=0.002 parity. SH/L=0.02 is an expected-failure stress test of the continuous and discretized FCJ implementations."
+  ],
+  "phasesmith": {
+    "build_mode": "release",
+    "numpy_version": "2.5.1",
+    "python_version": "3.13.5"
+  },
+  "schema_version": 2,
+  "scope": "nist_srm660c_fcj_parity_and_stress",
+  "status": "passed",
+  "workload": {
+    "dataset_id": "nist-srm660c-lab6-xray",
+    "phasesmith_threads": 1,
+    "repetitions": 1,
+    "specimen": "100a"
+  }
+}

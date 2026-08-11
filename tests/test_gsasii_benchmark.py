@@ -431,6 +431,7 @@ def test_practical_workflow_benchmark_covers_xray_and_neutron() -> None:
     "script",
     [
         "benchmarks/compare_gsasii.py",
+        "benchmarks/compare_gsasii_iucr_silicon_standard.py",
         "benchmarks/compare_gsasii_nist_srm660c.py",
         "benchmarks/compare_gsasii_pbso4.py",
         "benchmarks/compare_gsasii_powgen_tof.py",
@@ -442,6 +443,7 @@ def test_practical_workflow_benchmark_covers_xray_and_neutron() -> None:
         "benchmarks/practical_workflow.py",
         "benchmarks/real_data.py",
         "oracle/scripts/benchmark_cw_profile.py",
+        "oracle/scripts/benchmark_iucr_silicon_standard.py",
         "oracle/scripts/benchmark_nist_srm660c.py",
         "oracle/scripts/benchmark_pbso4.py",
         "oracle/scripts/benchmark_powgen_tof.py",
@@ -465,6 +467,7 @@ def test_benchmark_help_does_not_require_gsasii(script: str) -> None:
 def test_external_worker_does_not_import_rietveld() -> None:
     for relative_path in (
         "oracle/scripts/benchmark_cw_profile.py",
+        "oracle/scripts/benchmark_iucr_silicon_standard.py",
         "oracle/scripts/benchmark_nist_srm660c.py",
         "oracle/scripts/benchmark_pbso4.py",
         "oracle/scripts/benchmark_powgen_tof.py",

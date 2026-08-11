@@ -1,0 +1,79 @@
+{
+  "common_model": {
+    "background": "eight-term Chebyshev residual; XRED states source background was removed",
+    "composition_status": "unknown; fitted fractions are cross-program diagnostics only",
+    "polarization_fraction": 0.7,
+    "radiation": "single Cu K-alpha1 approximation",
+    "wavelength_angstrom": 1.54051
+  },
+  "gsasii": {
+    "cells_angstrom": {
+      "anatase": [
+        3.7827751269170156,
+        9.458348667936027
+      ],
+      "rutile": [
+        4.606355917064226,
+        2.9575591558639975
+      ]
+    },
+    "poisson_rwp": 0.4480100887862422,
+    "profile_correlation": 0.9509709804416153,
+    "revision": "c0bc79b259cdf0065480b5fbd57674ddf12c4a23",
+    "sample_count": 2501,
+    "schema_version": 1,
+    "scope": "xred_tio2_anatase_rutile_common_model",
+    "stage_poisson_rwp": {
+      "cell": 0.7526803641649926,
+      "instrument": 0.4566346212175846,
+      "sample_broadening": 0.4480100887862422,
+      "scale_background": 0.7542598279831929
+    },
+    "unit_weight_rwp": 0.3235403098342002,
+    "weight_fractions": {
+      "anatase": 0.8586436984596719,
+      "rutile": 0.14135630154032808
+    }
+  },
+  "interpretation": [
+    "The dataset has no instrument metadata or certified phase composition; the reported phase fractions are cross-program diagnostics, not an accuracy claim.",
+    "The deposited anatase CIF requires a visible origin-choice translation for GSAS-II; PhaseSmith reads its explicit operation set directly.",
+    "The programs agree closely on phase fractions after translation, while their different bounded refinement recipes reach different residual minima.",
+    "This case exercises experimental two-phase identification and guarded lattice motion, but it is not suitable as a strict Rietveld parity acceptance test."
+  ],
+  "phase_fraction_differences": {
+    "anatase": 0.0018508088724809024,
+    "rutile": -0.0018508088724808192
+  },
+  "phasesmith": {
+    "cells_angstrom": {
+      "anatase": [
+        3.787486702593603,
+        9.513436453491025
+      ],
+      "rutile": [
+        4.5967422725382505,
+        2.9597134836697667
+      ]
+    },
+    "elapsed_seconds": 0.5770012501161546,
+    "poisson_rwp": 0.22255701317985405,
+    "profile_correlation": 0.9874936604458044,
+    "reflection_count": 101,
+    "sample_count": 2501,
+    "unit_weight_rwp": 0.14740006473925582,
+    "weight_fractions": {
+      "anatase": 0.8604945073321528,
+      "rutile": 0.13950549266784726
+    }
+  },
+  "pinned_gsasii_revision": "c0bc79b259cdf0065480b5fbd57674ddf12c4a23",
+  "schema_version": 1,
+  "scope": "xred_tio2_anatase_rutile_comparison",
+  "setting_translation": {
+    "matched_group": "I 41/a m d :1",
+    "reason": "GSAS-II cannot infer the nonstandard S symbol from the deposited CIF",
+    "source": "COD 1010942 explicit operations and I 41/a m d S"
+  },
+  "source_dataset_id": "xred-tio2-anatase-rutile"
+}

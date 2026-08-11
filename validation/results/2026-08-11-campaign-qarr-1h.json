@@ -1,0 +1,275 @@
+{
+  "comparison_kind": "native_workflows_matched_common_parameterizations",
+  "cross_implementation_validation": {
+    "checks": {
+      "maximum_phase_fraction_delta": {
+        "limit": 0.005,
+        "measured": 0.0041542424539630085,
+        "passed": true
+      },
+      "poisson_rwp_delta": {
+        "limit": 0.005,
+        "measured": 0.0027889342482098345,
+        "passed": true
+      },
+      "profile_correlation_delta": {
+        "limit": 0.002,
+        "measured": 0.0005635936485296478,
+        "passed": true
+      },
+      "unit_weight_rwp_delta": {
+        "limit": 0.005,
+        "measured": 0.0025939290185397756,
+        "passed": true
+      }
+    },
+    "failed_checks": [],
+    "phase_fraction_deltas": {
+      "Al2O3": 0.00384215254033049,
+      "CaF2": 0.0003120899136322408,
+      "ZnO": 0.0041542424539630085
+    },
+    "status": "passed"
+  },
+  "gsasii": {
+    "input_sha256": {
+      "Al2O3.cif": "bc8b07c4e27fdb9df562c7b72d181a05394df20274a56b7e1ef50f6ec2c85709",
+      "CaF2.cif": "b55fd04a3e344f73d4ece983da412056d04874b8ada7dfd4ecb93118e7905cd9",
+      "ZnO.cif": "021db20c9bdabcfd63bc794367fae3536197425ca5826d63541b2417e47d3c1a",
+      "cpd-1h.prn": "0c36af18d7a341f03f4d8f24972608791351c45c951c431dd93fb54eb8e56da3",
+      "cuka.instprm": "aef315a10622fdb1afae5b264d43e7f9dcc053aba80aa3d9fa05067146922a08"
+    },
+    "numpy_version": "2.2.6",
+    "oracle_behavior": {
+      "fcj_calculation_floor": 0.002,
+      "note": "Values below the floor test the pinned clamp, not a zero-FCJ profile."
+    },
+    "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O",
+    "python_version": "3.13.9",
+    "recipe": {
+      "anisotropic": "trace-mean-isotropic",
+      "cycles": 8,
+      "displacement": "refine",
+      "fcj": "instrument",
+      "sample": "1h",
+      "sample_broadening": "refine"
+    },
+    "result": {
+      "covariance_shape": [
+        29,
+        29
+      ],
+      "free_parameter_count": 29,
+      "instrument_parameters": {
+        "I(L2)/I(L1)": {
+          "initial": 0.5,
+          "refine": false,
+          "value": 0.5
+        },
+        "Lam1": {
+          "initial": 1.54051,
+          "refine": false,
+          "value": 1.54051
+        },
+        "Lam2": {
+          "initial": 1.54433,
+          "refine": false,
+          "value": 1.54433
+        },
+        "SH/L": {
+          "initial": 0.002,
+          "refine": false,
+          "value": 0.002
+        },
+        "U": {
+          "initial": 2.0,
+          "refine": true,
+          "value": 7.146274931304368
+        },
+        "V": {
+          "initial": -2.0,
+          "refine": true,
+          "value": -9.002517804900855
+        },
+        "W": {
+          "initial": 5.0,
+          "refine": true,
+          "value": 17.52383447855793
+        },
+        "Zero": {
+          "initial": 0.0,
+          "refine": true,
+          "value": 0.022956980158064074
+        }
+      },
+      "maximum_weight_fraction_error": 0.009728200778526708,
+      "poisson_rwp": 0.18636608087194098,
+      "profile_correlation": 0.9904974850066228,
+      "reflection_count": 110,
+      "sample_count": 7251,
+      "unit_weight_rwp": 0.1316671716435763,
+      "weight_fraction_su": {
+        "Al2O3": 0.002922803648657843,
+        "CaF2": 0.002344638510946822,
+        "ZnO": 0.0020319879960252543
+      },
+      "weight_fractions": {
+        "Al2O3": 0.3578394355479423,
+        "CaF2": 0.3499887652305843,
+        "ZnO": 0.2921717992214733
+      }
+    },
+    "revision": "c0bc79b259cdf0065480b5fbd57674ddf12c4a23",
+    "stage_rwp_percent": {
+      "displacement": 18.636608087194098,
+      "instrument": 20.34000995908484,
+      "sample_broadening": 18.601470223904638,
+      "scale_background": 38.18465709583271
+    },
+    "timing": {
+      "external_process": {
+        "median_ms": 10750.20275,
+        "min_ms": 10750.20275,
+        "p95_ms": 10750.20275,
+        "timings_ms": [
+          10750.20275
+        ]
+      },
+      "finalization": {
+        "median_ms": 24.925084,
+        "min_ms": 24.925084,
+        "p95_ms": 24.925084,
+        "timings_ms": [
+          24.925084
+        ]
+      },
+      "import": {
+        "median_ms": 320.034958,
+        "min_ms": 320.034958,
+        "p95_ms": 320.034958,
+        "timings_ms": [
+          320.034958
+        ]
+      },
+      "setup": {
+        "median_ms": 8402.212792,
+        "min_ms": 8402.212792,
+        "p95_ms": 8402.212792,
+        "timings_ms": [
+          8402.212792
+        ]
+      },
+      "stages": {
+        "displacement": {
+          "median_ms": 231.083042,
+          "min_ms": 231.083042,
+          "p95_ms": 231.083042,
+          "timings_ms": [
+            231.083042
+          ]
+        },
+        "instrument": {
+          "median_ms": 514.199792,
+          "min_ms": 514.199792,
+          "p95_ms": 514.199792,
+          "timings_ms": [
+            514.199792
+          ]
+        },
+        "sample_broadening": {
+          "median_ms": 896.788083,
+          "min_ms": 896.788083,
+          "p95_ms": 896.788083,
+          "timings_ms": [
+            896.788083
+          ]
+        },
+        "scale_background": {
+          "median_ms": 220.749958,
+          "min_ms": 220.749958,
+          "p95_ms": 220.749958,
+          "timings_ms": [
+            220.749958
+          ]
+        }
+      },
+      "total_workflow": {
+        "median_ms": 10291.422166,
+        "min_ms": 10291.422166,
+        "p95_ms": 10291.422166,
+        "timings_ms": [
+          10291.422166
+        ]
+      }
+    }
+  },
+  "limitations": [
+    "Both workflows use the explicit trace-mean isotropic ablation for CIF anisotropic displacement tensors.",
+    "PhaseSmith uses the published continuous equal-height FCJ mapping; GSAS-II uses its pinned discretized one-parameter SH/L implementation.",
+    "The optimizers are native staged workflows, not a same-kernel benchmark."
+  ],
+  "median_total_workflow_ratio_gsasii_over_phasesmith": 5.077222942527099,
+  "phasesmith": {
+    "build_mode": "release",
+    "numpy_version": "2.5.1",
+    "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O",
+    "python_version": "3.13.5",
+    "result": {
+      "elapsed_seconds": 2.026978583075106,
+      "free_parameter_count": 29,
+      "maximum_weight_fraction_error": 0.005573958324563699,
+      "poisson_rwp": 0.18357714662373115,
+      "profile_correlation": 0.9910610786551525,
+      "reflection_count": 110,
+      "sample": "1h",
+      "sample_count": 7251,
+      "termination_reasons": [
+        "max_iterations",
+        "max_iterations",
+        "repeated_rejections",
+        "repeated_rejections",
+        "converged",
+        "converged"
+      ],
+      "unit_weight_rwp": 0.12907324262503653,
+      "weight_fractions": {
+        "Al2O3": 0.3539972830076118,
+        "CaF2": 0.34967667531695207,
+        "ZnO": 0.2963260416754363
+      }
+    },
+    "timing": {
+      "driver_wall": {
+        "median_ms": 2027.155542,
+        "min_ms": 2027.155542,
+        "p95_ms": 2027.155542,
+        "timings_ms": [
+          2027.155542
+        ]
+      },
+      "reported_workflow": {
+        "median_ms": 2026.9785830751061,
+        "min_ms": 2026.9785830751061,
+        "p95_ms": 2026.9785830751061,
+        "timings_ms": [
+          2026.9785830751061
+        ]
+      },
+      "stage_timing_available": false
+    }
+  },
+  "schema_version": 1,
+  "scope": "iucr_qarr_1h_native_workflow",
+  "workload": {
+    "dataset_id": "iucr-qarr-1h",
+    "phases": [
+      "Al2O3",
+      "ZnO",
+      "CaF2"
+    ],
+    "phasesmith_threads": 1,
+    "repetitions": 1,
+    "samples": 7251,
+    "warmups": 0
+  }
+}

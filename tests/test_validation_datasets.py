@@ -15,6 +15,7 @@ def test_registry_has_unique_stable_ids_and_pinned_files() -> None:
         "gsasii-pbso4-cw",
         "iucr-qarr-1g",
         "iucr-qarr-1h",
+        "iucr-dicesium-citrate-si-standard",
         "nist-srm660c-lab6-xray",
         "powgen-lab6-tof-calibration",
         "xred-tio2-anatase-rutile",

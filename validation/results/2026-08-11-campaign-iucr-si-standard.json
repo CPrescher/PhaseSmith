@@ -1,0 +1,419 @@
+{
+  "common_model": {
+    "data_selection": {
+      "background": "deposited legacy-GSAS background fixed in both new workflows",
+      "refined_sample_count": 2820,
+      "source_sample_count": 3217,
+      "two_theta_max_deg": 69.98581599813433,
+      "two_theta_min_deg": 13.00254473880597
+    },
+    "instrument": {
+      "device": "Bruker D2 Phaser",
+      "geometry": "reflection, flat specimen",
+      "initial_profile": {
+        "U": 2.336,
+        "V": 0.0,
+        "W": 3.777,
+        "X": 2.718,
+        "Y": 1.868
+      },
+      "initial_zero_deg": -0.0448,
+      "k_alpha2_over_k_alpha1": 0.5,
+      "polarization_fraction": 0.5,
+      "sh_over_l": 0.03384,
+      "wavelengths_angstrom": [
+        1.540629,
+        1.544451
+      ]
+    },
+    "silicon_calibration": {
+      "excluded_silicon_reflections": {
+        "111": "overlaps the dominant citrate peak near 28.28 degrees"
+      },
+      "fixed_during_calibration": {
+        "instrument_zero_shift_deg": -0.0448,
+        "reason": "separate zero and specimen displacement are too correlated in three isolated Si windows"
+      },
+      "fixed_lattice_a_angstrom": 5.43105,
+      "frozen_after_calibration": [
+        "sample displacement",
+        "silicon lattice"
+      ],
+      "goniometer_radius_mm": 141.5,
+      "refined_parameters": [
+        "silicon scale",
+        "constant residual",
+        "sample displacement"
+      ],
+      "role": "absolute specimen-displacement standard",
+      "windows_two_theta_deg": [
+        [
+          46.95,
+          47.78
+        ],
+        [
+          55.77,
+          56.63
+        ],
+        [
+          68.78,
+          69.68
+        ]
+      ]
+    },
+    "translation": {
+      "common_profile_subset": "The deposited phase-specific legacy profiles are initialized from the histogram U/V/W/X/Y values and represented by common instrumental broadening plus per-phase isotropic size and microstrain.",
+      "omitted_legacy_terms": "The main phase's Stephens anisotropic broadening and legacy profile-function differences are intentionally outside the GSAS-II/PhaseSmith common model.",
+      "silicon_setting": "The ambiguous deposited Hall symbol is normalized to IT 227, F d -3 m :1, retaining Si at (1/8,1/8,1/8)."
+    }
+  },
+  "gsasii": {
+    "legacy_curve_poisson_rwp": 0.06225695922735475,
+    "legacy_curve_profile_correlation": 0.9933213012290689,
+    "legacy_weight_fraction_errors": {
+      "cesium_dihydrogen_citrate": -0.01084458847343761,
+      "dicesium_hydrogen_citrate": -0.005669612979726124,
+      "silicon": 0.016014201453163845
+    },
+    "maximum_legacy_weight_fraction_error": 0.016014201453163845,
+    "poisson_rwp": 0.08894499786580709,
+    "profile_correlation": 0.982834283866242,
+    "refined_hap": {
+      "cesium_dihydrogen_citrate": {
+        "Mustrain": [
+          "isotropic",
+          [
+            -1144.4044491296731,
+            1000.0,
+            1.0
+          ],
+          [
+            true,
+            false,
+            false
+          ],
+          [
+            0,
+            0,
+            1
+          ],
+          [
+            0.01,
+            0.01,
+            0.01,
+            0.01,
+            0.01,
+            0.01
+          ],
+          [
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
+          ]
+        ],
+        "Scale": [
+          9.625366331845179,
+          true
+        ],
+        "Size": [
+          "isotropic",
+          [
+            0.15467304103312338,
+            1.0,
+            1.0
+          ],
+          [
+            true,
+            false,
+            false
+          ],
+          [
+            0,
+            0,
+            1
+          ],
+          [
+            1.0,
+            1.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
+          ]
+        ]
+      },
+      "dicesium_hydrogen_citrate": {
+        "Mustrain": [
+          "isotropic",
+          [
+            1217.6623509348497,
+            1000.0,
+            1.0
+          ],
+          [
+            true,
+            false,
+            false
+          ],
+          [
+            0,
+            0,
+            1
+          ],
+          [
+            0.01,
+            0.01,
+            0.01,
+            0.01,
+            0.01,
+            0.01
+          ],
+          [
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
+          ]
+        ],
+        "Scale": [
+          15.696040683218556,
+          true
+        ],
+        "Size": [
+          "isotropic",
+          [
+            0.46256494820591226,
+            1.0,
+            1.0
+          ],
+          [
+            true,
+            false,
+            false
+          ],
+          [
+            0,
+            0,
+            1
+          ],
+          [
+            1.0,
+            1.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
+          ]
+        ]
+      },
+      "silicon": {
+        "Mustrain": [
+          "isotropic",
+          [
+            -491.4413347898071,
+            1000.0,
+            1.0
+          ],
+          [
+            true,
+            false,
+            false
+          ],
+          [
+            0,
+            0,
+            1
+          ],
+          [
+            0.01,
+            0.01
+          ],
+          [
+            false,
+            false
+          ]
+        ],
+        "Scale": [
+          31.325533243968348,
+          true
+        ],
+        "Size": [
+          "isotropic",
+          [
+            0.12804413655033978,
+            1.0,
+            1.0
+          ],
+          [
+            true,
+            false,
+            false
+          ],
+          [
+            0,
+            0,
+            1
+          ],
+          [
+            1.0,
+            1.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
+          ]
+        ]
+      }
+    },
+    "refined_instrument": {
+      "SH/L": 0.03384,
+      "U": 93.52214680424248,
+      "V": -63.032368368792355,
+      "W": 30.17002378852089,
+      "X": 2.353554935150916,
+      "Y": -9.417422486215962,
+      "Zero": -0.0448
+    },
+    "revision": "c0bc79b259cdf0065480b5fbd57674ddf12c4a23",
+    "sample_count": 2820,
+    "schema_version": 1,
+    "scope": "iucr_dicesium_citrate_silicon_internal_standard",
+    "silicon_calibration": {
+      "calibrated_sample_displacement_mm": -0.23473512678378816,
+      "calibrated_zero_shift_deg": -0.0448,
+      "poisson_rwp": 0.13512563112816775,
+      "sample_count": 128,
+      "windows_two_theta_deg": [
+        [
+          46.95,
+          47.78
+        ],
+        [
+          55.77,
+          56.63
+        ],
+        [
+          68.78,
+          69.68
+        ]
+      ]
+    },
+    "stage_poisson_rwp": {
+      "instrument": 0.08913223320268089,
+      "sample_broadening": 0.08894499786580709,
+      "scale_background": 0.11043677412839316,
+      "silicon_scale_background": 0.3150216129943856,
+      "silicon_zero_calibration": 0.13512563112816775
+    },
+    "unit_weight_rwp": 0.10218235852246496,
+    "weight_fractions": {
+      "cesium_dihydrogen_citrate": 0.2591554115265624,
+      "dicesium_hydrogen_citrate": 0.5946303870202738,
+      "silicon": 0.14621420145316386
+    }
+  },
+  "interpretation": [
+    "The fixed-cell silicon standard alone calibrates zero shift in isolated Si(220), Si(311), and Si(400) windows; that zero is frozen before the three-phase refinement.",
+    "Both new workflows use the deposited background and the same Cu doublet, initial U/V/W/X/Y/zero, FCJ parameter, structures, and isotropic size/microstrain model.",
+    "The deposited legacy-GSAS calculation remains the accuracy reference; the new GSAS-II run is a black-box parity comparator, not a regeneration of it.",
+    "The legacy main-phase Stephens anisotropy and phase-specific profile functions are omitted deliberately and explain part of the residual floor."
+  ],
+  "legacy_gsas_reference": {
+    "profile_correlation": 0.9933213012290696,
+    "rexp": 0.0296,
+    "rp": 0.04965859778817593,
+    "rwp": 0.06225695922735475,
+    "weight_fractions": {
+      "cesium_dihydrogen_citrate": 0.27,
+      "dicesium_hydrogen_citrate": 0.6003,
+      "silicon": 0.1302
+    }
+  },
+  "phase_fraction_differences": {
+    "cesium_dihydrogen_citrate": -0.008602996014856923,
+    "dicesium_hydrogen_citrate": 0.008886994426688721,
+    "silicon": -0.00028399841183190944
+  },
+  "phasesmith": {
+    "calibrated_sample_displacement_mm": -0.1562876395688161,
+    "calibrated_zero_shift_deg": -0.0448,
+    "elapsed_seconds": 9.815969374962151,
+    "free_parameter_count": 16,
+    "legacy_curve_poisson_rwp": 0.06225695922735475,
+    "legacy_curve_profile_correlation": 0.9933213012290696,
+    "legacy_weight_fraction_errors": {
+      "cesium_dihydrogen_citrate": -0.019447584488294534,
+      "dicesium_hydrogen_citrate": 0.003217381446962597,
+      "silicon": 0.015730203041331936
+    },
+    "maximum_legacy_weight_fraction_error": 0.019447584488294534,
+    "poisson_rwp": 0.10179622915490755,
+    "profile_correlation": 0.9754964998604072,
+    "refined_instrument": {
+      "SH/L": 0.03384,
+      "U": 15.545854693527087,
+      "V": -8.003334181729196,
+      "W": 6.826765581454641,
+      "X": 2.725851374787046,
+      "Y": 0.00907515114864254,
+      "Zero": -0.0448
+    },
+    "reflection_count": 475,
+    "sample_count": 2820,
+    "silicon_calibration_poisson_rwp": 0.13555939063223166,
+    "silicon_calibration_sample_count": 128,
+    "termination_reasons": [
+      "max_iterations",
+      "repeated_rejections",
+      "max_iterations",
+      "repeated_rejections"
+    ],
+    "unit_weight_rwp": 0.12167528409052451,
+    "weight_fractions": {
+      "cesium_dihydrogen_citrate": 0.2505524155117055,
+      "dicesium_hydrogen_citrate": 0.6035173814469625,
+      "silicon": 0.14593020304133195
+    }
+  },
+  "pinned_gsasii_revision": "c0bc79b259cdf0065480b5fbd57674ddf12c4a23",
+  "schema_version": 1,
+  "scope": "iucr_dicesium_citrate_silicon_internal_standard_comparison",
+  "silicon_calibration_comparison": {
+    "absolute_sample_displacement_difference_mm": 0.07844748721497205,
+    "absolute_zero_shift_difference_deg": 0.0,
+    "gsasii_sample_displacement_mm": -0.23473512678378816,
+    "gsasii_zero_shift_deg": -0.0448,
+    "phasesmith_sample_displacement_mm": -0.1562876395688161,
+    "phasesmith_zero_shift_deg": -0.0448
+  },
+  "source_dataset_id": "iucr-dicesium-citrate-si-standard"
+}

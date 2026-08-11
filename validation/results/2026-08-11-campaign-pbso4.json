@@ -1,0 +1,329 @@
+{
+  "comparison_kind": "independent_native_vs_joint_native_workflows",
+  "cross_implementation_validation": {
+    "checks": {
+      "neutron_cell_relative_delta": {
+        "limit": 0.002,
+        "measured": 0.00042417398590998556,
+        "passed": true
+      },
+      "neutron_poisson_rwp_delta": {
+        "limit": 0.005,
+        "measured": 0.00317478239334449,
+        "passed": true
+      },
+      "neutron_profile_correlation_delta": {
+        "limit": 0.002,
+        "measured": 4.616124665701715e-05,
+        "passed": true
+      },
+      "neutron_unit_weight_rwp_delta": {
+        "limit": 0.006,
+        "measured": 0.00022591737575362175,
+        "passed": true
+      },
+      "xray_poisson_rwp_delta": {
+        "limit": 0.005,
+        "measured": 0.002270770848790779,
+        "passed": true
+      },
+      "xray_profile_correlation_delta": {
+        "limit": 0.001,
+        "measured": 1.496523623845114e-05,
+        "passed": true
+      },
+      "xray_unit_weight_rwp_delta": {
+        "limit": 0.005,
+        "measured": 0.000879437511678724,
+        "passed": true
+      }
+    },
+    "displacement_note": "Debye-Scherrer X/Y values are reported in micrometres but not gated because PhaseSmith refines each probe independently while GSAS-II refines one structure jointly against both histograms.",
+    "reference_cell_angstrom": {
+      "a": 8.48,
+      "b": 5.398,
+      "c": 6.958
+    },
+    "reflection_count_note": "Reflection counts are reported but not gated because the implementations use different family/list conventions.",
+    "status": "passed"
+  },
+  "gsasii": {
+    "input_sha256": {
+      "INST_XRY.PRM": "e59413059bc3b12a51f1c6eebc5d581470320d05a31f11a41dbb32e16d1d16b9",
+      "PBSO4.CWN": "59462ba6d7c72c9800b0b6bf41903f9933ed5ac5adab101d27022d5d25cf18ba",
+      "PBSO4.XRA": "ca2da02fc7e17d2fc912de22a979f8101ba6140f2e8104f9d3aa64f030ca58bb",
+      "PbSO4-Wyckoff.cif": "9bc19d0995561afd78a5f0563599c032751621da994e36c7570b4f515d9f0e2f",
+      "inst_d1a.prm": "a1031174a9b509f889377752f5c095a1dad49a25fb0a72c057f184f7b321fcea"
+    },
+    "numpy_version": "2.2.6",
+    "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O",
+    "python_version": "3.13.9",
+    "recipe": {
+      "cycles_per_stage": 8,
+      "joint_xray_neutron_structure": true,
+      "name": "official PbSO4 combined CW tutorial stages 4-9"
+    },
+    "result": {
+      "cell_angstrom": {
+        "a": 8.473964984998755,
+        "b": 5.393891094648641,
+        "c": 6.9544315589540995
+      },
+      "free_parameter_count": 41,
+      "maximum_reference_cell_relative_error": 0.0007611903207407877,
+      "neutron": {
+        "limits_deg": [
+          19.0,
+          153.0
+        ],
+        "poisson_rwp": 0.0453464977512281,
+        "profile_correlation": 0.9966905740437834,
+        "reflection_count": 198,
+        "sample_count": 2681,
+        "unit_weight_rwp": 0.04548953299523896
+      },
+      "neutron_debye_scherrer_geometry": {
+        "displace_x_micrometre": 1578.8236842693225,
+        "displace_y_micrometre": 49.923594203665594,
+        "goniometer_radius_mm": 650.0
+      },
+      "reference_cell_angstrom": {
+        "a": 8.48,
+        "b": 5.398,
+        "c": 6.958
+      },
+      "xray": {
+        "limits_deg": [
+          16.0,
+          158.4
+        ],
+        "poisson_rwp": 0.1057311874867433,
+        "profile_correlation": 0.9955376183709457,
+        "reflection_count": 382,
+        "sample_count": 5697,
+        "unit_weight_rwp": 0.08820060995946795
+      }
+    },
+    "revision": "c0bc79b259cdf0065480b5fbd57674ddf12c4a23",
+    "stage_rwp_percent": {
+      "background": {
+        "neutron": 18.572817352622824,
+        "xray": 40.88383116890533
+      },
+      "cell": {
+        "neutron": 20.607475160969525,
+        "xray": 36.719381595631816
+      },
+      "limits_and_instrument": {
+        "neutron": 4.53464977512281,
+        "xray": 10.57311874867433
+      },
+      "sample_and_atoms": {
+        "neutron": 6.834463310798032,
+        "xray": 11.16424678534555
+      },
+      "xray_hstrain": {
+        "neutron": 14.976986701230736,
+        "xray": 30.719840887315442
+      },
+      "xray_size_microstrain": {
+        "neutron": 14.973033984899828,
+        "xray": 21.52751106144139
+      }
+    },
+    "timing": {
+      "external_process": {
+        "median_ms": 20701.187084,
+        "min_ms": 20701.187084,
+        "p95_ms": 20701.187084,
+        "timings_ms": [
+          20701.187084
+        ]
+      },
+      "finalization": {
+        "median_ms": 22.926625,
+        "min_ms": 22.926625,
+        "p95_ms": 22.926625,
+        "timings_ms": [
+          22.926625
+        ]
+      },
+      "import": {
+        "median_ms": 331.081542,
+        "min_ms": 331.081542,
+        "p95_ms": 331.081542,
+        "timings_ms": [
+          331.081542
+        ]
+      },
+      "setup": {
+        "median_ms": 8469.480917,
+        "min_ms": 8469.480917,
+        "p95_ms": 8469.480917,
+        "timings_ms": [
+          8469.480917
+        ]
+      },
+      "stages": {
+        "background": {
+          "median_ms": 761.934334,
+          "min_ms": 761.934334,
+          "p95_ms": 761.934334,
+          "timings_ms": [
+            761.934334
+          ]
+        },
+        "cell": {
+          "median_ms": 1805.124291,
+          "min_ms": 1805.124291,
+          "p95_ms": 1805.124291,
+          "timings_ms": [
+            1805.124291
+          ]
+        },
+        "limits_and_instrument": {
+          "median_ms": 1577.123375,
+          "min_ms": 1577.123375,
+          "p95_ms": 1577.123375,
+          "timings_ms": [
+            1577.123375
+          ]
+        },
+        "sample_and_atoms": {
+          "median_ms": 3080.895458,
+          "min_ms": 3080.895458,
+          "p95_ms": 3080.895458,
+          "timings_ms": [
+            3080.895458
+          ]
+        },
+        "xray_hstrain": {
+          "median_ms": 1834.710625,
+          "min_ms": 1834.710625,
+          "p95_ms": 1834.710625,
+          "timings_ms": [
+            1834.710625
+          ]
+        },
+        "xray_size_microstrain": {
+          "median_ms": 2675.525625,
+          "min_ms": 2675.525625,
+          "p95_ms": 2675.525625,
+          "timings_ms": [
+            2675.525625
+          ]
+        }
+      },
+      "total_workflow": {
+        "median_ms": 20229.130083,
+        "min_ms": 20229.130083,
+        "p95_ms": 20229.130083,
+        "timings_ms": [
+          20229.130083
+        ]
+      }
+    }
+  },
+  "limitations": [
+    "PhaseSmith refines the X-ray and neutron histograms independently; GSAS-II refines one joint structure.",
+    "PhaseSmith refines a three-term Chebyshev correction above a fixed Smooth Bruckner baseline; GSAS-II refines three background coefficients from its native background model.",
+    "The PhaseSmith X-ray doublet workflow keeps the supplied lattice fixed; its neutron lattice is refined.",
+    "PhaseSmith uses a disclosed intelligent cumulative recipe; GSAS-II uses the official tutorial's caller-authored cumulative recipe.",
+    "Both are complete native workflows, not matched parameterizations or same-kernel timings."
+  ],
+  "median_total_workflow_ratio_gsasii_over_phasesmith": 2.333829790272882,
+  "phasesmith": {
+    "build_mode": "release",
+    "numpy_version": "2.5.1",
+    "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O",
+    "python_version": "3.13.5",
+    "result": {
+      "neutron": {
+        "cell_angstrom": {
+          "a": 8.47044883,
+          "b": 5.39169962,
+          "c": 6.95148167
+        },
+        "cell_refined": true,
+        "debye_scherrer_geometry": {
+          "displace_x_micrometre": 910.768743,
+          "displace_y_micrometre": -529.451271,
+          "goniometer_radius_mm": 650.0
+        },
+        "intelligent_stage_notes": [
+          "Stage scale_background: Rwp 0.27846683 -> 0.27770859; termination=converged; iterations=3.",
+          "Stage positions: Rwp 0.27770859 -> 0.10779195; termination=converged; iterations=15.",
+          "Stage structure: Rwp 0.10779195 -> 0.07296849; termination=converged; iterations=57.",
+          "Stage final_polish: Rwp 0.07296849 -> 0.04217172; termination=converged; iterations=139."
+        ],
+        "maximum_reference_cell_relative_error": 0.0011671685857443884,
+        "poisson_rwp": 0.04217171535788361,
+        "profile_correlation": 0.9966444127971263,
+        "reflection_count": 217,
+        "sample_count": 2681,
+        "termination": "Termination=converged; iterations=139; evaluations=140.",
+        "unit_weight_rwp": 0.04526361561948534,
+        "validation_status": "passed"
+      },
+      "xray": {
+        "cell_angstrom": {
+          "a": 8.48,
+          "b": 5.398,
+          "c": 6.958
+        },
+        "cell_refined": false,
+        "intelligent_stage_notes": [
+          "Stage scale_background: Rwp 0.33718655 -> 0.33542902; termination=converged; iterations=8.",
+          "Stage positions: Rwp 0.33542902 -> 0.19012346; termination=converged; iterations=22.",
+          "Stage structure: Rwp 0.19012346 -> 0.15848610; termination=converged; iterations=29.",
+          "Stage final_polish: Rwp 0.15848610 -> 0.10346042; termination=repeated_rejections; iterations=48."
+        ],
+        "maximum_reference_cell_relative_error": 0.0,
+        "poisson_rwp": 0.10346041663795252,
+        "profile_correlation": 0.9955525836071841,
+        "reflection_count": 383,
+        "sample_count": 5697,
+        "termination": "Termination=repeated_rejections; iterations=48; evaluations=77.",
+        "unit_weight_rwp": 0.08732117244778922,
+        "validation_status": "failed"
+      }
+    },
+    "timing": {
+      "combined_driver_wall": {
+        "median_ms": 8667.782958,
+        "min_ms": 8667.782958,
+        "p95_ms": 8667.782958,
+        "timings_ms": [
+          8667.782958
+        ]
+      },
+      "individual_reported_workflow": {
+        "median_ms": 4333.081020391546,
+        "min_ms": 2995.2539578080177,
+        "p95_ms": 5670.908082975075,
+        "timings_ms": [
+          5670.908082975075,
+          2995.2539578080177
+        ]
+      },
+      "stage_timing_available": false
+    }
+  },
+  "schema_version": 1,
+  "scope": "gsasii_pbso4_combined_cw_native_workflow",
+  "workload": {
+    "dataset_id": "gsasii-pbso4-cw",
+    "phasesmith_threads": 1,
+    "probes": [
+      "xray",
+      "neutron"
+    ],
+    "reference_cell_angstrom": {
+      "a": 8.48,
+      "b": 5.398,
+      "c": 6.958
+    },
+    "repetitions": 1,
+    "warmups": 0
+  }
+}

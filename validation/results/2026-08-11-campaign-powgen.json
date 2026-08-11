@@ -1,0 +1,92 @@
+{
+  "checks": {
+    "alpha_max_abs_per_us": {
+      "limit": 2e-15,
+      "measured": 1.1102230246251565e-16,
+      "passed": true
+    },
+    "beta_max_abs_per_us": {
+      "limit": 2e-15,
+      "measured": 8.881784197001252e-16,
+      "passed": true
+    },
+    "native_workflow_profile_correlation_delta": {
+      "limit": 0.02,
+      "measured": 0.0008249910810465,
+      "passed": true
+    },
+    "native_workflow_rwp_delta": {
+      "limit": 0.03,
+      "measured": 0.0010526789354129429,
+      "passed": true
+    },
+    "position_max_abs_us": {
+      "limit": 1e-10,
+      "measured": 0.0,
+      "passed": true
+    },
+    "reconstructed_pattern_minimum_correlation": {
+      "limit": 0.99999,
+      "measured": 0.9999943736433775,
+      "passed": true
+    },
+    "reconstructed_pattern_relative_l2": {
+      "limit": 0.006,
+      "measured": 0.005117982713103339,
+      "passed": true
+    },
+    "selected_profile_normalized_max_error": {
+      "limit": 0.002,
+      "measured": 0.0013071293171237975,
+      "passed": true
+    },
+    "sigma2_max_abs_us2": {
+      "limit": 2e-11,
+      "measured": 1.8189894035458565e-12,
+      "passed": true
+    }
+  },
+  "interpretation": "Kernel and same-intensity pattern checks are like-for-like. GSAS-II refines a 16-term Chebyshev background; PhaseSmith refines a 16-term Chebyshev residual on a fixed Smooth Bruckner baseline, so their Rwp and correlation deltas are now gated. They are not expected to be identical because GSAS-II uses 6824 calculation centers and its own joint optimizer while PhaseSmith uses independently parsed centers and alternating nonnegative Le Bail/background updates.",
+  "native_workflows": {
+    "GSAS-II": {
+      "profile_correlation": 0.9668019156411711,
+      "reflection_count": 329,
+      "rwp": 0.2629713189354129,
+      "sample_count": 6824
+    },
+    "PhaseSmith": {
+      "profile_correlation": 0.9676269067222176,
+      "reflection_count": 330,
+      "rwp": 0.26191864,
+      "sample_count": 6824,
+      "status": "passed"
+    }
+  },
+  "oracle_revision": "c0bc79b259cdf0065480b5fbd57674ddf12c4a23",
+  "parameter_errors": {
+    "alpha_max_abs_per_us": 1.1102230246251565e-16,
+    "beta_max_abs_per_us": 8.881784197001252e-16,
+    "position_max_abs_us": 0.0,
+    "sigma2_max_abs_us2": 1.8189894035458565e-12
+  },
+  "profile_probes": {
+    "d=0.4": {
+      "correlation": 0.9999999999996423,
+      "normalized_max_error": 1.6581531111158713e-06
+    },
+    "d=1": {
+      "correlation": 0.9999999999999912,
+      "normalized_max_error": 3.1936359018268565e-07
+    },
+    "d=4": {
+      "correlation": 0.9999999958868111,
+      "normalized_max_error": 0.0013071293171237975
+    }
+  },
+  "same_extracted_intensity_pattern": {
+    "correlation": 0.9999943736433775,
+    "normalized_max_error": 0.006060945490398816,
+    "relative_l2": 0.005117982713103339
+  },
+  "schema_version": 1
+}

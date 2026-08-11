@@ -117,11 +117,11 @@ def test_qarr_workflows_are_compared_with_pinned_gsasii(tmp_path: Path, sample: 
             "--phasesmith-threads",
             "1",
         ],
-        expected_cross_status="passed" if sample == "1g" else "failed",
+        expected_cross_status="passed",
     )
-    expected = "passed" if sample == "1g" else "failed"
-    assert report["workload"]["expected_phasesmith_status"] == expected
-    assert report["phasesmith"]["result"]["validation_status"] == expected
+    assert report["workload"]["dataset_id"] == dataset_id
+    assert report["phasesmith"]["result"]["sample"] == sample
+    assert report["cross_implementation_validation"]["failed_checks"] == []
 
 
 @pytest.mark.external_oracle

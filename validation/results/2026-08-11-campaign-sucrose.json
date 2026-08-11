@@ -1,0 +1,166 @@
+{
+  "comparison_kind": "independent_real_data_lebail_workflows",
+  "cross_implementation_validation": {
+    "checks": {
+      "poisson_rwp_delta": {
+        "limit": 0.005,
+        "measured": 0.00298427784919969,
+        "passed": true
+      },
+      "profile_correlation_delta": {
+        "limit": 0.02,
+        "measured": 0.0173949001456406,
+        "passed": true
+      }
+    },
+    "failed_checks": [],
+    "status": "passed"
+  },
+  "gsasii": {
+    "cycle_rwp_percent": [
+      36.131671278410714,
+      17.555667195580508,
+      16.915237394252237,
+      16.214589004149797,
+      16.159720373115167,
+      15.832959571756659,
+      15.513692917675565,
+      15.483320352855442,
+      15.397729252795308,
+      15.271375306331612,
+      15.042086947090322,
+      14.994028550202621,
+      14.909870336763367,
+      14.863488347533865,
+      14.858410411872605,
+      14.843086760888854,
+      14.856143814201003,
+      14.91045514916516,
+      14.814339689087891,
+      14.482503588543533
+    ],
+    "input_sha256": {
+      "11bmb_8716.fxye": "0971eebded2fdc6d8ae81a228325b2075ac45f6605da67468750e16ec23ecadd",
+      "11bmb_8716.prm": "ef606d5620cc8c8d9e7b712e1ba6113c9628e83f085835a2d477d4cd4d0d312c",
+      "prepared_fixed_background": "68d9a9fac6369c2c037c0ad17636d4afed6e966010cf9fba74fa8ec35197266a"
+    },
+    "numpy_version": "2.2.6",
+    "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O",
+    "python_version": "3.13.9",
+    "recipe": {
+      "background": "fixed Smooth Bruckner + 1-term refined Chebyshev residual",
+      "background_start": [
+        0.0
+      ],
+      "cycles": 20,
+      "generated_instrument": null,
+      "instrument_parameters": [
+        "U",
+        "V",
+        "W",
+        "X",
+        "Y"
+      ],
+      "instrument_start": {
+        "Lam": 0.413259,
+        "SH/L": 0.0,
+        "U": 1.163,
+        "V": -0.126,
+        "W": 0.063,
+        "X": 0.173,
+        "Y": 0.0,
+        "Z": 0.0,
+        "Zero": 0.0
+      },
+      "le_bail": true,
+      "limits_deg": [
+        1.00093351,
+        23.99988092
+      ],
+      "private_probe": "GSASIIstrMain.Refine(newLeBail=True)",
+      "space_group": "P 21",
+      "staging": "newLeBail extraction, then matched one-cycle background/profile updates",
+      "starting_cell": [
+        7.715231369389035,
+        8.663866877499101,
+        10.809618877725404,
+        90.0,
+        102.98249193732556,
+        90.0
+      ]
+    },
+    "result": {
+      "background_coefficients": [
+        -11.972138396349102
+      ],
+      "instrument": {
+        "Lam": 0.413259,
+        "SH/L": 0.0005,
+        "U": 11.833010906232825,
+        "V": -2.340694675006808,
+        "W": 0.0972805665585367,
+        "X": -0.011643208436527332,
+        "Y": -2.930033430324254,
+        "Z": 0.0,
+        "Zero": 0.0
+      },
+      "limits_deg": [
+        1.00093351,
+        23.99988092
+      ],
+      "poisson_rwp": 0.14482503588543533,
+      "profile_correlation": 0.9733024658017049,
+      "reflection_count": 811,
+      "sample_count": 23003,
+      "unit_weight_rwp": 0.22971347002419532
+    },
+    "revision": "c0bc79b259cdf0065480b5fbd57674ddf12c4a23",
+    "timing": {
+      "external_process": {
+        "max_ms": 128470.834542,
+        "median_ms": 128470.834542,
+        "min_ms": 128470.834542,
+        "timings_ms": [
+          128470.834542
+        ]
+      },
+      "reported_total_workflow_ms": [
+        127993.938
+      ]
+    }
+  },
+  "limitations": [
+    "The sucrose workflows share one fixed Smooth Bruckner array and refine one constant Chebyshev residual from zero. The GSAS-II worker receives that fixed array as plain prepared input.",
+    "Both workflows start from the same explicit U/V/W/X/Y, wavelength, zero, and symmetric SH/L=0 instrument state; the legacy GSAS file import is overridden before refinement. Pinned GSAS-II reports its internal 0.0005 SH/L calculation floor, while PhaseSmith's zero is exactly symmetric."
+  ],
+  "phasesmith": {
+    "build_mode": "release",
+    "numpy_version": "2.5.1",
+    "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O",
+    "python_version": "3.13.5",
+    "result": {
+      "poisson_rwp": 0.14184075803623564,
+      "profile_correlation": 0.9906973659473455,
+      "reflection_count": 811,
+      "sample_count": 23003,
+      "validation_status": "passed"
+    },
+    "timing": {
+      "driver_wall": {
+        "max_ms": 464.6745,
+        "median_ms": 464.6745,
+        "min_ms": 464.6745,
+        "timings_ms": [
+          464.6745
+        ]
+      }
+    }
+  },
+  "schema_version": 1,
+  "scope": "aps-sucrose-11bmb_lebail_workflow",
+  "workload": {
+    "dataset_id": "aps-sucrose-11bmb",
+    "repetitions": 1,
+    "warmups": 0
+  }
+}

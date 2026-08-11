@@ -9,6 +9,10 @@ from .datasets import (
     validation_dataset,
     verify_validation_dataset,
 )
+from .iucr_silicon_standard import (
+    IucrSiliconStandardResult,
+    run_iucr_silicon_standard_workflow,
+)
 from .nist_srm660c_parity import (
     NIST_SRM660C_MATCHED_SH_OVER_L,
     NIST_SRM660C_STRESS_SH_OVER_L,
@@ -53,6 +57,7 @@ __all__ = [
     "VALIDATION_DATASETS",
     "BathLtlResult",
     "ExternalValidationFile",
+    "IucrSiliconStandardResult",
     "NistSrm660cParityResult",
     "QarrParityResult",
     "RealDataValidationReport",
@@ -68,6 +73,7 @@ __all__ = [
     "read_nist_srm660c_specimen",
     "run_bath_ltl_workflow",
     "run_echidna_lab6_validation",
+    "run_iucr_silicon_standard_workflow",
     "run_nist_srm660c_parity_workflow",
     "run_nist_srm660c_validation",
     "run_pbso4_cw_validation",

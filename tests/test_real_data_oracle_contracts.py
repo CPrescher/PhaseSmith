@@ -171,6 +171,7 @@ def test_pbso4_comparison_preserves_failed_native_status_for_oracle_diagnosis() 
 
 def test_oracle_workers_never_import_the_normal_phasesmith_package() -> None:
     workers = (
+        "oracle/scripts/benchmark_iucr_silicon_standard.py",
         "oracle/scripts/benchmark_real_lebail.py",
         "oracle/scripts/benchmark_qarr.py",
         "oracle/scripts/benchmark_pbso4.py",

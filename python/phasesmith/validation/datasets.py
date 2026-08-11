@@ -83,8 +83,34 @@ _XRED_TIO2_SOURCE = (
     "https://raw.githubusercontent.com/WPEM/XRED/"
     "916726657c44ef1ca30c475f136835a9f37393c4/biphase/TiO2Rutile%20Anatase"
 )
+_IUCR_SILICON_SOURCE = "https://journals.iucr.org/e/issues/2017/02/00/wm5358"
 
 VALIDATION_DATASETS: tuple[ValidationDataset, ...] = (
+    ValidationDataset(
+        dataset_id="iucr-dicesium-citrate-si-standard",
+        title="Dicesium hydrogen citrate with NIST SRM 640b silicon internal standard",
+        source_url="https://doi.org/10.1107/S2056989017000792",
+        citation=(
+            "A. Rammohan, A. A. Sarjeant and J. A. Kaduk, Acta Cryst. E73 "
+            "(2017) 231-234, "
+            "doi:10.1107/S2056989017000792"
+        ),
+        license_note=(
+            "External IUCr supplementary CIF containing laboratory counts, structures, "
+            "and deposited legacy-GSAS results; the article is CC BY 4.0. The file is "
+            "checksum-pinned and not redistributed."
+        ),
+        files=(
+            ExternalValidationFile(
+                "wm5358sup1.cif",
+                "c0a14d617874bc649c922313164a12542fd2327072be88cc2e7ac7a6dedbc78d",
+                228_093,
+                (f"{_IUCR_SILICON_SOURCE}/wm5358sup1.cif",),
+            ),
+        ),
+        purpose="capability",
+        expected_status="passed",
+    ),
     ValidationDataset(
         dataset_id="xred-tio2-anatase-rutile",
         title="XRED experimental anatase/rutile laboratory X-ray pattern",

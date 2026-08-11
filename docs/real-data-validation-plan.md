@@ -136,6 +136,23 @@ Reviewed machine-readable results are stored in
 `validation/results/2026-08-11-bath-ltl-gsasii.json` and
 `validation/results/2026-08-11-xred-tio2-gsasii.json`.
 
+The in-house internal-standard capability case uses the IUCr dicesium hydrogen
+citrate supplementary CIF (`wm5358sup1.cif`). It is registered by exact size
+and SHA-256 and converted to one 2,820-point observed/legacy-calculated/fixed-
+background table plus three phase CIFs. The converter independently reproduces
+the deposited legacy-GSAS Rwp of 6.226% and retains its 60.03/27.00/13.02 wt%
+phase fractions. With the archived instrument zero fixed, fixed-cell Si alone
+first calibrates specimen displacement from its isolated (220), (311), and
+(400) windows, and that value is frozen for the multiphase fit. Under the
+disclosed common isotropic model, PhaseSmith gives 10.180% Rwp and 14.593 wt%
+Si; pinned GSAS-II gives 8.894% and 14.621 wt% Si. The reviewed result is
+`validation/results/2026-08-11-campaign-iucr-si-standard.json`.
+
+The broader 2026-08-11 pinned-oracle audit, including fresh Rowles, QARR,
+NIST, sucrose, Echidna, PbSO4, POWGEN, Bath, XRED, and mixed-Si records, is tracked in
+`docs/gsasii-benchmark-campaign.md` and summarized in
+`docs/gsasii-benchmark-report.md`.
+
 ## Implemented fixed-spectrum structural checkpoint
 
 The fixed-spectrum prerequisite now provides:

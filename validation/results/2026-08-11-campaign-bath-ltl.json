@@ -1,0 +1,173 @@
+{
+  "comparisons": {
+    "Cs": {
+      "gsasii": {
+        "fixed_profile": {
+          "fixed_background_max_abs_difference": 0.0,
+          "poisson_rwp": 0.15327070470702792,
+          "profile_correlation": 0.8941844846768559,
+          "sample_count": 1497,
+          "unit_weight_rwp": 0.18093996381502916
+        },
+        "refined_instrument": {
+          "SH/L": 0.04031532393538045,
+          "U": 4090.9651668431566,
+          "V": -1654.7972084675732,
+          "W": 182.31561552118865,
+          "X": 21.792389279605995,
+          "Y": -63.8221389245322,
+          "Zero": 0.03181194118689503
+        },
+        "refined_profile": {
+          "fixed_background_max_abs_difference": 0.0,
+          "poisson_rwp": 0.12079896694604111,
+          "profile_correlation": 0.9353537453814356,
+          "sample_count": 1497,
+          "unit_weight_rwp": 0.141078643357876
+        },
+        "released_poisson_rwp": 0.03491553254661925,
+        "revision": "c0bc79b259cdf0065480b5fbd57674ddf12c4a23",
+        "sample": "Cs",
+        "schema_version": 1,
+        "scope": "bath_ltl_lab_xray_conversion_fidelity"
+      },
+      "phasesmith": {
+        "elapsed_seconds": 0.3452480840496719,
+        "fixed_profile_poisson_rwp": 0.15241885853596493,
+        "profile_correlation": 0.8983668565193937,
+        "refined_profile_poisson_rwp": 0.15061598627543,
+        "reflection_count": 59,
+        "released_poisson_rwp": 0.03491553254661925,
+        "sample": "Cs",
+        "sample_count": 1497,
+        "unit_weight_rwp": 0.1748226370145346
+      },
+      "refined_poisson_rwp_difference": 0.029817019329388877
+    },
+    "K": {
+      "gsasii": {
+        "fixed_profile": {
+          "fixed_background_max_abs_difference": 0.0,
+          "poisson_rwp": 0.22151045070462402,
+          "profile_correlation": 0.8677418925881094,
+          "sample_count": 2698,
+          "unit_weight_rwp": 0.28661452489461275
+        },
+        "refined_instrument": {
+          "SH/L": 0.059883098649312634,
+          "U": 813.5980075179114,
+          "V": -407.933379499264,
+          "W": 51.57603915540321,
+          "X": 3.2941654953091266,
+          "Y": 1.0987762587025456,
+          "Zero": 0.004017331832224702
+        },
+        "refined_profile": {
+          "fixed_background_max_abs_difference": 0.0,
+          "poisson_rwp": 0.21303428453033166,
+          "profile_correlation": 0.8813411037328983,
+          "sample_count": 2698,
+          "unit_weight_rwp": 0.27036277622205956
+        },
+        "released_poisson_rwp": 0.07791200480489903,
+        "revision": "c0bc79b259cdf0065480b5fbd57674ddf12c4a23",
+        "sample": "K",
+        "schema_version": 1,
+        "scope": "bath_ltl_lab_xray_conversion_fidelity"
+      },
+      "phasesmith": {
+        "elapsed_seconds": 0.6224175409879535,
+        "fixed_profile_poisson_rwp": 0.2250094578019334,
+        "profile_correlation": 0.88741238355794,
+        "refined_profile_poisson_rwp": 0.21971560917027488,
+        "reflection_count": 56,
+        "released_poisson_rwp": 0.07791200480489903,
+        "sample": "K",
+        "sample_count": 2698,
+        "unit_weight_rwp": 0.26914284197825195
+      },
+      "refined_poisson_rwp_difference": 0.006681324639943226
+    },
+    "Li": {
+      "gsasii": {
+        "fixed_profile": {
+          "fixed_background_max_abs_difference": 0.0,
+          "poisson_rwp": 0.20948643010604157,
+          "profile_correlation": 0.8708226689111973,
+          "sample_count": 1497,
+          "unit_weight_rwp": 0.25789600867040774
+        },
+        "refined_instrument": {
+          "SH/L": 0.030156278039677555,
+          "U": 1190.298760562115,
+          "V": -325.7648451768854,
+          "W": 38.93404289649618,
+          "X": 13.79287533577673,
+          "Y": -26.826852250313156,
+          "Zero": 0.025830167840065487
+        },
+        "refined_profile": {
+          "fixed_background_max_abs_difference": 0.0,
+          "poisson_rwp": 0.19492814571707986,
+          "profile_correlation": 0.8945855324054336,
+          "sample_count": 1497,
+          "unit_weight_rwp": 0.2348614991461038
+        },
+        "released_poisson_rwp": 0.05200724179250489,
+        "revision": "c0bc79b259cdf0065480b5fbd57674ddf12c4a23",
+        "sample": "Li",
+        "schema_version": 1,
+        "scope": "bath_ltl_lab_xray_conversion_fidelity"
+      },
+      "phasesmith": {
+        "elapsed_seconds": 0.41105187498033047,
+        "fixed_profile_poisson_rwp": 0.23863984111351128,
+        "profile_correlation": 0.8420322497471788,
+        "refined_profile_poisson_rwp": 0.23559351120382516,
+        "reflection_count": 59,
+        "released_poisson_rwp": 0.05200724179250489,
+        "sample": "Li",
+        "sample_count": 1497,
+        "unit_weight_rwp": 0.2822230403041389
+      },
+      "refined_poisson_rwp_difference": 0.04066536548674529
+    }
+  },
+  "conversion": {
+    "metadata_discrepancy": {
+      "policy": "Prefer instrument-generated ASC headers and archived GSAS records over README prose.",
+      "raw_header_evidence": {
+        "Cs": {
+          "monochromator": "Soller_slit_2.5deg, 0.000000",
+          "radiation": "K-ALPHA"
+        },
+        "K": {
+          "monochromator": "Ge(220)x2, 0.000000",
+          "radiation": "K-ALPHA1"
+        },
+        "Li": {
+          "monochromator": "Soller_slit_2.5deg, 0.000000",
+          "radiation": "K-ALPHA"
+        }
+      },
+      "readme_claim": "K-LTL doublet; Li-LTL and Cs-LTL monochromated single wavelength",
+      "readme_contains_expected_description": true
+    },
+    "translation_notes": [
+      "Released GSAS profile CSVs are preserved as observed/calculated/background diagnostics.",
+      "Only the primary zeolite phase block is exported; minor secondary phases are excluded.",
+      "GSAS2CIF O- type symbols are normalized to O2- and recorded as a source-export repair.",
+      "This bundle cannot reconstruct every legacy GSAS project semantic from publication CIFs."
+    ]
+  },
+  "interpretation": [
+    "Both programs use the same primary publication CIF, released observed curve, deposited fixed background and archived effective profile initializer.",
+    "The released curve is a legacy GSAS result, not a calculation reconstructed from the publication CIF alone.",
+    "Similar PhaseSmith and GSAS-II residuals identify conversion fidelity rather than a PhaseSmith-only profile-physics gap.",
+    "The case remains a capability failure until the missing legacy semantics are identified or a cleaner accepted reference model is available."
+  ],
+  "pinned_gsasii_revision": "c0bc79b259cdf0065480b5fbd57674ddf12c4a23",
+  "schema_version": 1,
+  "scope": "bath_ltl_lab_xray_conversion_fidelity_comparison",
+  "source_dataset_id": "bath-ltl-lab-xray"
+}
