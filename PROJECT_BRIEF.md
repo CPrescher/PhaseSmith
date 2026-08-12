@@ -1114,7 +1114,16 @@ The public one-bank file composition path is complete.
 bank, its selected GSAS calibration with required detector geometry, and a CIF,
 then generates fixed structural reflection topology. It requires the caller to
 choose `already_normalized` or `calibration_type4` and `neutral` or
-`tof_lorentz`; missing requested calibration data fails explicitly. This is a
+`tof_lorentz`, and to declare that no sample correction is applied; missing
+requested calibration data or an unsupported sample-correction name fails
+explicitly. The composed request retains byte sizes and SHA-256 identities for
+the pattern, calibration, CIF, and embedded or separately supplied reduction
+record, plus the fixed-background array hash and every explicit physics choice.
+Hashing obeys the readers' bounded byte limits, and background provenance
+distinguishes absent input from a supplied all-zero array. This audit metadata
+stays in the Python application boundary rather than the numerical Rust kernel;
+Python checkpoint continuation requires the provenance record to match as well
+as the native numerical contract. The helper is a
 convenience adapter, not a facility policy: other beamlines and calibration
 formats construct the same typed request directly, and names never trigger
 normalization or intensity corrections.

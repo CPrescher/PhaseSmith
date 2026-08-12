@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 from dataclasses import replace
+from hashlib import sha256
 from pathlib import Path
 
 import numpy as np
 import phasesmith
 import pytest
+from phasesmith.io import PowderReadLimits
 from phasesmith.refinement import (
     Bounds,
     LatticeParameterBounds,
@@ -17,7 +19,9 @@ from phasesmith.refinement import (
     StructuralTofCancellation,
     StructuralTofMultiBankInput,
     StructuralTofRefinementOptions,
+    StructuralTofRequestProvenance,
     StructuralTofSelection,
+    StructuralTofSourceDigest,
     TofInstrumentParameterBound,
     refine_structural_tof_multibank,
 )
@@ -221,6 +225,7 @@ Ni1 Ni 0 0 0
         bank=2,
         incident_normalization="already_normalized",
         correction="tof_lorentz",
+        sample_corrections="none",
         search_min_d_angstrom=0.75,
         search_max_d_angstrom=1.25,
     )
@@ -230,6 +235,16 @@ Ni1 Ni 0 0 0
     assert request.banks[0].geometry == phasesmith.TofBankGeometry(90.0)
     assert request.banks[0].correction == phasesmith.TimeOfFlightNeutronLorentz(90.0)
     assert request.phase.reflections.reflection_count > 0
+    assert request.provenance is not None
+    assert request.provenance.pattern.source_name == str(pattern_path)
+    assert request.provenance.pattern.sha256 == sha256(pattern_path.read_bytes()).hexdigest()
+    assert request.provenance.instrument.sha256 == sha256(instrument_path.read_bytes()).hexdigest()
+    assert request.provenance.structure.sha256 == sha256(cif_path.read_bytes()).hexdigest()
+    assert request.provenance.reduction == request.provenance.pattern
+    assert request.provenance.reduction_embedded_in_pattern
+    assert request.provenance.sample_corrections == "none"
+    assert not request.provenance.fixed_background_supplied
+    assert len(request.provenance.fixed_background_sha256) == 64
     with pytest.raises(ValueError, match="requires an incident spectrum"):
         StructuralTofMultiBankInput.from_files(
             pattern_path,
@@ -238,6 +253,7 @@ Ni1 Ni 0 0 0
             bank=2,
             incident_normalization="calibration_type4",
             correction="neutral",
+            sample_corrections="none",
         )
 
     instrument_path.write_text(
@@ -252,6 +268,11 @@ Ni1 Ni 0 0 0
         "INS  2PRCF12 4 0 0 0\n",
         encoding="utf-8",
     )
+    reduction_path = tmp_path / "reduction.txt"
+    reduction_path.write_text(
+        "vanadium-normalized; proton-charge-normalized; bin-width density\n",
+        encoding="utf-8",
+    )
     normalized = StructuralTofMultiBankInput.from_files(
         pattern_path,
         instrument_path,
@@ -259,6 +280,8 @@ Ni1 Ni 0 0 0
         bank=2,
         incident_normalization="calibration_type4",
         correction="neutral",
+        sample_corrections="none",
+        reduction_path=reduction_path,
         search_min_d_angstrom=0.75,
         search_max_d_angstrom=1.25,
     )
@@ -270,10 +293,53 @@ Ni1 Ni 0 0 0
         normalized.banks[0].pattern.uncertainty,
         request.banks[0].pattern.uncertainty / 2.0,
     )
+    assert normalized.provenance is not None
+    assert normalized.provenance.incident_normalization == "calibration_type4"
+    assert normalized.provenance.correction == "neutral"
+    assert not normalized.provenance.reduction_embedded_in_pattern
+    assert normalized.provenance.reduction.source_name == str(reduction_path)
+    assert normalized.provenance.reduction.sha256 == sha256(reduction_path.read_bytes()).hexdigest()
+
+    with pytest.raises(ValueError, match="sample_corrections='none'"):
+        StructuralTofMultiBankInput.from_files(
+            pattern_path,
+            instrument_path,
+            cif_path,
+            bank=2,
+            incident_normalization="already_normalized",
+            correction="neutral",
+            sample_corrections="absorption",  # type: ignore[arg-type]
+        )
+    with pytest.raises(ValueError, match="request source exceeds max_bytes"):
+        StructuralTofMultiBankInput.from_files(
+            pattern_path,
+            instrument_path,
+            cif_path,
+            bank=2,
+            incident_normalization="already_normalized",
+            correction="neutral",
+            sample_corrections="none",
+            powder_limits=PowderReadLimits(max_bytes=1),
+        )
 
 
 def test_python_structural_tof_checkpoint_resumes_exactly() -> None:
     request, _ = _request()
+    digest = StructuralTofSourceDigest(None, sha256(b"").hexdigest(), 0)
+    provenance = StructuralTofRequestProvenance(
+        digest,
+        digest,
+        digest,
+        digest,
+        True,
+        1,
+        "already_normalized",
+        "tof_lorentz",
+        "none",
+        True,
+        sha256(request.banks[0].pattern.background.tobytes()).hexdigest(),
+    )
+    request = replace(request, provenance=provenance)
     uninterrupted = refine_structural_tof_multibank(request, _options(20))
     cancellation = StructuralTofCancellation()
 
@@ -297,6 +363,13 @@ def test_python_structural_tof_checkpoint_resumes_exactly() -> None:
     assert resumed.history == uninterrupted.history
     assert resumed.parameters == uninterrupted.parameters
     assert resumed.input == uninterrupted.input
+    assert resumed.input.provenance == provenance
+    with pytest.raises(ValueError, match="checkpoint provenance"):
+        refine_structural_tof_multibank(
+            replace(request, provenance=None),
+            _options(20),
+            checkpoint=stopped.checkpoint,
+        )
 
 
 def test_python_structural_tof_recovers_one_shared_cubic_cell() -> None:

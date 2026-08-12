@@ -250,10 +250,26 @@ reader, one GSAS calibration bank, required detector geometry, a CIF structure,
 and generated reflection topology. The caller must explicitly choose whether
 the observations are already normalized or require the calibration's type-4
 incident spectrum, and whether the bank uses a neutral or TOF-neutron Lorentz
-correction. Missing geometry or a requested but absent incident spectrum is an
-error. Facility names, filenames, and profile-function codes never select
-intensity physics implicitly; non-GSAS callers can continue to construct the
-same typed request directly.
+correction. The caller must also declare `sample_corrections="none"`; the file
+adapter rejects absorption, extinction, or texture names until those models
+have reviewed TOF equations and analytical derivatives. Missing geometry or a
+requested but absent incident spectrum is an error. Facility names, filenames,
+and profile-function codes never select intensity physics implicitly; non-GSAS
+callers can continue to construct the same typed request directly.
+
+Every composed request retains a `StructuralTofRequestProvenance` record with
+the source name, byte size, and SHA-256 of the pattern, instrument calibration,
+and CIF. The reduction record is either a separately supplied
+`reduction_path` or, when reduction metadata is embedded in the reduced pattern
+header, the same checksum-pinned pattern bytes. The record also retains the
+selected bank, normalization and correction declarations, the explicit absence
+of sample corrections, whether a fixed background was supplied, and the SHA-256
+of the applied fixed-background float64 array. Source hashing obeys the same
+caller-selected byte limits as the pattern, calibration, and CIF readers.
+This is application-layer audit metadata and never enters the numerical Rust
+kernel. Python checkpoints retain the provenance record and reject continuation
+when it differs from the request, while the native checkpoint continues to
+guard the exact numerical contract.
 
 `StructuralTofRefinementOptions` mirrors only the dense native solver controls.
 The result returns the updated phase and banks, immutable calculated/profile/
@@ -355,6 +371,10 @@ agree with the published POWGEN SRM-660b refinement within 0.000424 A and
 0.000060, respectively. This complements the stricter LANL multi-bank
 structural oracle; it does not claim that every POWGEN reduction or sample can
 inherit this specific normalization and correction declaration.
+For application requests, the reduced GSA header is also the reduction record;
+its digest therefore anchors both the observations and the embedded reduction
+declarations. A separate reduction log or recipe can instead be supplied and
+hashed independently.
 
 ## References
 

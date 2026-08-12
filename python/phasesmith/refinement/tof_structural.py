@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from collections.abc import Callable
 from dataclasses import dataclass, field, replace
 from pathlib import Path
@@ -18,7 +19,7 @@ from ..intensity_corrections import (
     NeutralIntegratedIntensityCorrection,
     TimeOfFlightNeutronLorentz,
 )
-from ..io.cif import read_cif
+from ..io.cif import CifReadLimits, read_cif
 from ..io.powder import PowderReadLimits, TofPowderFormat, read_tof_powder_data
 from ..io.tof_instrument import GsasTofInstrumentReadLimits, read_gsas_tof_instrument
 from ..pattern import TofPowderPattern
@@ -45,6 +46,107 @@ StructuralTofCancellation = TofLeBailCancellation
 
 def _freeze(array: NDArray[np.generic]) -> None:
     array.flags.writeable = False
+
+
+@dataclass(frozen=True, slots=True)
+class StructuralTofSourceDigest:
+    """Immutable identity for one file or inline-text request source."""
+
+    source_name: str | None
+    sha256: str
+    size_bytes: int
+
+    def __post_init__(self) -> None:
+        if self.source_name is not None and (
+            not isinstance(self.source_name, str) or not self.source_name
+        ):
+            raise ValueError("source_name must be a non-empty string or None")
+        if (
+            not isinstance(self.sha256, str)
+            or len(self.sha256) != 64
+            or any(character not in "0123456789abcdef" for character in self.sha256)
+        ):
+            raise ValueError("sha256 must be a lowercase 64-character hexadecimal digest")
+        if isinstance(self.size_bytes, bool) or not isinstance(self.size_bytes, int):
+            raise TypeError("size_bytes must be an integer")
+        if self.size_bytes < 0:
+            raise ValueError("size_bytes must be non-negative")
+
+
+@dataclass(frozen=True, slots=True)
+class StructuralTofRequestProvenance:
+    """Source hashes and explicit reduction/physics choices for a file request."""
+
+    pattern: StructuralTofSourceDigest
+    instrument: StructuralTofSourceDigest
+    structure: StructuralTofSourceDigest
+    reduction: StructuralTofSourceDigest
+    reduction_embedded_in_pattern: bool
+    bank: int
+    incident_normalization: Literal["already_normalized", "calibration_type4"]
+    correction: Literal["neutral", "tof_lorentz"]
+    sample_corrections: Literal["none"]
+    fixed_background_supplied: bool
+    fixed_background_sha256: str
+
+    def __post_init__(self) -> None:
+        for name in ("pattern", "instrument", "structure", "reduction"):
+            if not isinstance(getattr(self, name), StructuralTofSourceDigest):
+                raise TypeError(f"{name} must be a StructuralTofSourceDigest")
+        if not isinstance(self.reduction_embedded_in_pattern, bool):
+            raise TypeError("reduction_embedded_in_pattern must be boolean")
+        if isinstance(self.bank, bool) or not isinstance(self.bank, int) or self.bank <= 0:
+            raise ValueError("bank must be a positive integer")
+        if self.incident_normalization not in {"already_normalized", "calibration_type4"}:
+            raise ValueError("unsupported incident_normalization provenance")
+        if self.correction not in {"neutral", "tof_lorentz"}:
+            raise ValueError("unsupported correction provenance")
+        if self.sample_corrections != "none":
+            raise ValueError("the file adapter currently supports only sample_corrections='none'")
+        if not isinstance(self.fixed_background_supplied, bool):
+            raise TypeError("fixed_background_supplied must be boolean")
+        if len(self.fixed_background_sha256) != 64 or any(
+            character not in "0123456789abcdef" for character in self.fixed_background_sha256
+        ):
+            raise ValueError("fixed_background_sha256 must be a lowercase SHA-256 digest")
+
+
+def _source_digest(source: str | Path, max_bytes: int) -> StructuralTofSourceDigest:
+    if isinstance(max_bytes, bool) or not isinstance(max_bytes, int) or max_bytes <= 0:
+        raise ValueError("source digest max_bytes must be a positive integer")
+    if isinstance(source, Path):
+        size = source.stat().st_size
+        if size > max_bytes:
+            raise ValueError(f"request source exceeds max_bytes: {size} > {max_bytes}")
+        payload = source.read_bytes()
+        source_name = str(source)
+    elif not isinstance(source, str):
+        raise TypeError("request sources must be strings or pathlib.Path values")
+    elif "\n" in source or "\r" in source or source.lstrip().lower().startswith("data_"):
+        payload = source.encode("utf-8")
+        source_name = None
+    else:
+        candidate = Path(source)
+        try:
+            is_path = candidate.exists()
+        except OSError:
+            is_path = False
+        if is_path:
+            size = candidate.stat().st_size
+            if size > max_bytes:
+                raise ValueError(f"request source exceeds max_bytes: {size} > {max_bytes}")
+            payload = candidate.read_bytes()
+            source_name = str(candidate)
+        else:
+            payload = source.encode("utf-8")
+            source_name = None
+    if len(payload) > max_bytes:
+        raise ValueError(f"request source exceeds max_bytes: {len(payload)} > {max_bytes}")
+    return StructuralTofSourceDigest(
+        source_name,
+        hashlib.sha256(payload).hexdigest(),
+        len(payload),
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -152,6 +254,7 @@ class StructuralTofMultiBankInput:
     tail_log: float = 20.0
     use_uncertainty: bool = True
     execution: ExecutionPolicy = field(default_factory=ExecutionPolicy)
+    provenance: StructuralTofRequestProvenance | None = None
     _native_phase: object = field(init=False, repr=False, compare=False)
 
     def __post_init__(self) -> None:
@@ -190,6 +293,10 @@ class StructuralTofMultiBankInput:
             raise TypeError("use_uncertainty must be boolean")
         if not isinstance(self.execution, ExecutionPolicy):
             raise TypeError("execution must be an ExecutionPolicy")
+        if self.provenance is not None and not isinstance(
+            self.provenance, StructuralTofRequestProvenance
+        ):
+            raise TypeError("provenance must be a StructuralTofRequestProvenance or None")
         native = _native_phase(self.phase, self.execution)
         if native is None:
             raise TypeError("phase cannot be represented by the native structural TOF engine")
@@ -215,30 +322,57 @@ class StructuralTofMultiBankInput:
         bank: int,
         incident_normalization: Literal["already_normalized", "calibration_type4"],
         correction: Literal["neutral", "tof_lorentz"],
+        sample_corrections: Literal["none"],
         bank_id: str | None = None,
         pattern_format: TofPowderFormat = "auto",
         search_min_d_angstrom: float = 0.25,
         search_max_d_angstrom: float = 5.0,
         fixed_background: ArrayLike | None = None,
+        reduction_path: str | Path | None = None,
         powder_limits: PowderReadLimits | None = None,
         instrument_limits: GsasTofInstrumentReadLimits | None = None,
+        cif_limits: CifReadLimits | None = None,
     ) -> StructuralTofMultiBankInput:
         """Build one explicit reduced-data/calibration/CIF structural request.
 
-        ``incident_normalization`` and ``correction`` are mandatory so file or
-        facility names never select structural intensity physics implicitly.
+        The normalization, intensity correction, and absence of sample
+        corrections are mandatory declarations, so file or facility names
+        never select structural intensity physics implicitly. ``reduction_path``
+        can identify a separate reduction record; otherwise the pattern bytes
+        are the checksum-pinned reduction record as well.
         """
+
+        if sample_corrections != "none":
+            raise ValueError("the file adapter currently supports only sample_corrections='none'")
+
+        selected_powder_limits = powder_limits or PowderReadLimits()
+        if not isinstance(selected_powder_limits, PowderReadLimits):
+            raise TypeError("powder_limits must be a PowderReadLimits or None")
+        selected_instrument_limits = instrument_limits or GsasTofInstrumentReadLimits()
+        if not isinstance(selected_instrument_limits, GsasTofInstrumentReadLimits):
+            raise TypeError("instrument_limits must be a GsasTofInstrumentReadLimits or None")
+        selected_cif_limits = cif_limits or CifReadLimits()
+        if not isinstance(selected_cif_limits, CifReadLimits):
+            raise TypeError("cif_limits must be a CifReadLimits or None")
+        pattern_digest = _source_digest(pattern_path, selected_powder_limits.max_bytes)
+        instrument_digest = _source_digest(instrument_path, selected_instrument_limits.max_bytes)
+        structure_digest = _source_digest(cif_path, selected_cif_limits.max_bytes)
+        reduction_digest = (
+            pattern_digest
+            if reduction_path is None
+            else _source_digest(reduction_path, selected_powder_limits.max_bytes)
+        )
 
         powder = read_tof_powder_data(
             pattern_path,
             format=pattern_format,
             bank=bank,
-            limits=powder_limits,
+            limits=selected_powder_limits,
         )
         calibration = read_gsas_tof_instrument(
             instrument_path,
             bank=bank,
-            limits=instrument_limits,
+            limits=selected_instrument_limits,
         )
         geometry = calibration.bank_geometry
         if geometry is None:
@@ -258,7 +392,7 @@ class StructuralTofMultiBankInput:
             correction_model = TimeOfFlightNeutronLorentz(geometry.two_theta_deg)
         else:
             raise ValueError("correction must be 'neutral' or 'tof_lorentz'")
-        structure = read_cif(cif_path).structure
+        structure = read_cif(cif_path, limits=selected_cif_limits).structure
         generated = PreparedReflectionGenerator(structure.space_group).generate(
             structure.cell,
             TofRange(
@@ -287,7 +421,23 @@ class StructuralTofMultiBankInput:
             geometry,
             correction_model,
         )
-        return cls(phase, (structural_bank,))
+        background_digest = hashlib.sha256(
+            np.ascontiguousarray(pattern.background, dtype="<f8").tobytes(order="C")
+        ).hexdigest()
+        provenance = StructuralTofRequestProvenance(
+            pattern_digest,
+            instrument_digest,
+            structure_digest,
+            reduction_digest,
+            reduction_path is None,
+            bank,
+            incident_normalization,
+            correction,
+            sample_corrections,
+            fixed_background is not None,
+            background_digest,
+        )
+        return cls(phase, (structural_bank,), provenance=provenance)
 
 
 @dataclass(frozen=True, slots=True)
@@ -334,12 +484,19 @@ class StructuralTofRefinementOptions:
 class StructuralTofMultiBankCheckpoint:
     """Opaque accepted state resumed only with the exact original input."""
 
-    __slots__ = ("_native",)
+    __slots__ = ("_native", "_provenance")
 
-    def __init__(self, native: object) -> None:
+    def __init__(
+        self,
+        native: object,
+        provenance: StructuralTofRequestProvenance | None = None,
+    ) -> None:
         if not isinstance(native, _core._StructuralTofMultiBankCheckpoint):
             raise TypeError("native must be a PhaseSmith structural TOF checkpoint")
+        if provenance is not None and not isinstance(provenance, StructuralTofRequestProvenance):
+            raise TypeError("provenance must be a StructuralTofRequestProvenance or None")
         self._native = native
+        self._provenance = provenance
 
     @property
     def completed_iterations(self) -> int:
@@ -495,6 +652,8 @@ def refine_structural_tof_multibank(
         raise TypeError("cancellation must be TofLeBailCancellation or None")
     if checkpoint is not None and not isinstance(checkpoint, StructuralTofMultiBankCheckpoint):
         raise TypeError("checkpoint must be StructuralTofMultiBankCheckpoint or None")
+    if checkpoint is not None and checkpoint._provenance != input_.provenance:
+        raise ValueError("checkpoint provenance does not match the structural TOF input")
     if progress is not None and not callable(progress):
         raise TypeError("progress must be callable or None")
     lattice_bounds = input_.lattice_bounds
@@ -552,6 +711,6 @@ def refine_structural_tof_multibank(
         float(record["objective"]),
         history,
         TerminationReason(record["termination_reason"]),
-        StructuralTofMultiBankCheckpoint(record["checkpoint"]),
+        StructuralTofMultiBankCheckpoint(record["checkpoint"], input_.provenance),
         int(record["evaluations"]),
     )

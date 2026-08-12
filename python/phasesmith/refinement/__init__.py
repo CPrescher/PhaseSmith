@@ -133,7 +133,9 @@ from .tof_structural import (
     StructuralTofMultiBankResult,
     StructuralTofParameterChange,
     StructuralTofRefinementOptions,
+    StructuralTofRequestProvenance,
     StructuralTofSelection,
+    StructuralTofSourceDigest,
     refine_structural_tof_multibank,
 )
 from .workflow import (
@@ -216,7 +218,9 @@ __all__ = [
     "StructuralTofMultiBankResult",
     "StructuralTofParameterChange",
     "StructuralTofRefinementOptions",
+    "StructuralTofRequestProvenance",
     "StructuralTofSelection",
+    "StructuralTofSourceDigest",
     "TerminationReason",
     "TofBankInstrumentModel",
     "TofBankInstrumentState",

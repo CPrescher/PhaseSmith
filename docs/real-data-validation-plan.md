@@ -53,9 +53,10 @@ treating every public file as the same kind of golden result:
    transferable three-phase model.
 4. The official POWGEN tutorial data and bank calibration are checksum-pinned,
    parsed into a typed microsecond record, and checked against the production
-   TOF position kernel and its analytical calibration derivative. Full TOF
-   structural refinement remains explicitly blocked at the application
-   workflow boundary.
+   TOF position kernel and its analytical calibration derivative. Its explicit
+   one-bank structural acceptance now also checks the reduced-data contract,
+   TOF-neutron Lorentz correction, structural fit, published LaB6 lattice and
+   boron coordinate, and physical isotropic displacement interval.
 
 Each manifest declares whether it is an acceptance, oracle-integrity, holdout,
 or capability case and records its reviewed expected status. Schema-2 suite
