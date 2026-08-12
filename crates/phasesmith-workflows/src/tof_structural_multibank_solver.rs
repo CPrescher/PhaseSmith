@@ -346,7 +346,10 @@ pub fn refine_structural_tof_multibank_with_runtime(
                         .clip(spec.value() + factor * spec.scale() * delta)
                 })
                 .collect::<Vec<_>>();
-            let Ok(trial) = objective.layout().apply_values(&live, &trial_values) else {
+            let Ok(trial) = objective
+                .layout()
+                .apply_value_change(&live, &current, &trial_values)
+            else {
                 runtime.reject_step().map_err(normal_or_error)?;
                 continue;
             };
@@ -392,8 +395,15 @@ pub fn refine_structural_tof_multibank_with_runtime(
             backtracks,
             parameter_changes,
         });
+        let accepted_layout = StructuralTofMultiBankLayout::new(&trial)?;
+        let accepted_values = accepted_layout
+            .parameters()
+            .specs()
+            .iter()
+            .map(crate::ParameterSpec::value)
+            .collect::<Vec<_>>();
+        parameters = parameter_set_with_values(initial_layout.parameters(), &accepted_values)?;
         live = trial;
-        parameters = parameter_set_with_values(&parameters, &trial_values)?;
         damping = (damping * options.damping_decrease).max(1.0e-18);
         let state = checkpoint_state(
             input,

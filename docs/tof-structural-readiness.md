@@ -265,6 +265,14 @@ and Zero terms, resume bitwise-identical accepted state after cancellation, and
 recover a shared cubic lattice parameter. The structural real-data/oracle
 acceptance described below completes the final Unit 38d gate.
 
+Symmetry-constrained coordinates use the same local-tangent convention as the
+general structural solver. A special-position `q` value describes the current
+accepted step, not an absolute fractional coordinate: the accepted physical
+structure retains the displacement while the next solver/checkpoint parameter
+state resets that local coordinate to zero. Structural TOF trials apply
+`q_after - q_before` exactly once. A mirror-site regression checks accepted
+motion, final checkpoint validation, and bitwise-identical continuation.
+
 `StructuralTofMultiBankProjectState` is the Python-free application-host
 boundary for retaining these analyses. It requires unique analysis IDs and
 disjoint bank ownership, resolves every bank ID to an exact project TOF

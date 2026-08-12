@@ -1108,6 +1108,12 @@ choose `already_normalized` or `calibration_type4` and `neutral` or
 convenience adapter, not a facility policy: other beamlines and calibration
 formats construct the same typed request directly, and names never trigger
 normalization or intensity corrections.
+The structural TOF accepted-state solver now also preserves the established
+special-position coordinate convention. Symmetry-reduced `q` values are local
+tangent changes applied once to the current phase; after acceptance the moved
+physical coordinates are retained and the next solver/checkpoint `q` state is
+zero. A dedicated symmetry-site regression verifies accepted motion, valid
+checkpoint publication, and exact continuation.
 The public Python normalization slice is complete too.
 `TofIncidentSpectrum` independently evaluates the documented NumPy equation
 and analytical TOF derivative, returns immutable arrays, and transforms an

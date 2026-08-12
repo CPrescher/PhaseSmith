@@ -1556,6 +1556,13 @@ choices: requested type-4 normalization fails when the calibration does not
 provide it, and no facility or filename convention selects physics. Direct
 typed construction remains the facility-neutral path for other calibration
 formats and multi-bank requests.
+The structural TOF solver's special-position state audit is complete.
+Symmetry-reduced `q` coordinates are local tangent changes, so accepted
+physical displacements remain in the phase while the next solver/checkpoint
+state resets each `q` to zero. Trials now install the change from the current
+solver state exactly once, and accepted parameter state is reconstructed from
+the physical request before checkpoint publication. A mirror-site regression
+covers accepted coordinate motion, checkpoint validation, and exact resume.
 
 Do not combine adjacent items merely to reduce PR count; numerical review is
 easier when parameter conventions and tolerance changes remain isolated.

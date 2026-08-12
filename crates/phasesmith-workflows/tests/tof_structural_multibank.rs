@@ -7,7 +7,7 @@ use phasesmith_core::{
     OwnedCwContributions, TofBankGeometry, TofInstrument, TofInstrumentParameter,
 };
 use phasesmith_crystallography::{
-    IntegratedIntensityCorrectionModel, SpaceGroup, SymmetryOperation, UnitCell,
+    IntegratedIntensityCorrectionModel, Rational, SpaceGroup, SymmetryOperation, UnitCell,
 };
 use phasesmith_engine::{BuiltInScatteringModel, StructuralPhaseDefinition};
 use phasesmith_execution::ExecutionPolicy;
@@ -236,6 +236,61 @@ fn single_bank_scale_zero_solver_request() -> (StructuralTofMultiBankInput, Vec<
     (request, truth_values)
 }
 
+fn special_position_coordinate_solver_request() -> StructuralTofMultiBankInput {
+    let mirror = SpaceGroup::new(vec![
+        SymmetryOperation::identity(),
+        SymmetryOperation::new([[1, 0, 0], [0, 1, 0], [0, 0, -1]], [Rational::zero(); 3]).unwrap(),
+    ])
+    .unwrap();
+    let mut definition = phase().definition().clone();
+    definition.cell = UnitCell {
+        alpha_deg: 90.0,
+        beta_deg: 90.0,
+        gamma_deg: 90.0,
+        ..definition.cell
+    };
+    definition.space_group = mirror;
+    definition.fractional_xyz[0][2] = 0.0;
+    let phase = RietveldPhase::new_with_site_ids(
+        id("mirror-phase"),
+        "Mirror phase",
+        vec![id("si-mirror"), id("o-general")],
+        definition,
+        OwnedCwContributions::neutral(3),
+    )
+    .unwrap();
+    let mut request = input();
+    request.phase = phase;
+    request.structural_selection = RietveldStructuralSelection {
+        coordinates: true,
+        ..RietveldStructuralSelection::default()
+    };
+    request.lattice_bounds = None;
+    request.banks.truncate(1);
+    request.banks[0].refine_scale = false;
+    request.banks[0].refine_background = false;
+    request.banks[0].instrument_bounds.clear();
+    let layout = StructuralTofMultiBankLayout::new(&request).unwrap();
+    assert_eq!(
+        layout
+            .parameters()
+            .specs()
+            .iter()
+            .map(|spec| spec.key().name())
+            .collect::<Vec<_>>(),
+        ["q0", "q1", "x", "y", "z"]
+    );
+    let truth = layout
+        .apply_values(&request, &[0.025, -0.018, 0.37, 0.11, 0.19])
+        .unwrap();
+    let calculated = PreparedStructuralTofMultiBankObjective::new(truth)
+        .unwrap()
+        .calculate()
+        .unwrap();
+    request.banks[0].pattern.observed_y = Some(calculated.banks[0].y.clone());
+    request
+}
+
 fn solver_options(max_iterations: usize) -> StructuralTofMultiBankRefinementOptions {
     StructuralTofMultiBankRefinementOptions::new(
         RefinementLimits::new(max_iterations, 200, None, 8).unwrap(),
@@ -419,6 +474,39 @@ fn single_bank_solver_recovers_local_scale_and_zero() {
         assert!((spec.value() - truth).abs() < 2.0e-6, "{}", spec.key());
     }
     result.checkpoint.validate_for(&request).unwrap();
+}
+
+#[test]
+fn special_position_coordinates_use_incremental_state_and_resume_exactly() {
+    let request = special_position_coordinate_solver_request();
+    let partial = refine_structural_tof_multibank(&request, solver_options(2), None, None).unwrap();
+    assert!(!partial.history.is_empty());
+    assert!(
+        partial.input.phase.definition().fractional_xyz[0]
+            .iter()
+            .zip(request.phase.definition().fractional_xyz[0])
+            .any(|(after, before)| (after - before).abs() > 1.0e-12)
+    );
+    assert!(
+        partial.parameters.specs()[..2]
+            .iter()
+            .all(|spec| spec.value().to_bits() == 0.0_f64.to_bits())
+    );
+    partial.checkpoint.validate_for(&request).unwrap();
+
+    let resumed = refine_structural_tof_multibank(
+        &request,
+        solver_options(20),
+        Some(&partial.checkpoint),
+        None,
+    )
+    .unwrap();
+    let uninterrupted =
+        refine_structural_tof_multibank(&request, solver_options(20), None, None).unwrap();
+    assert_eq!(resumed.history, uninterrupted.history);
+    assert_eq!(resumed.input, uninterrupted.input);
+    assert_eq!(resumed.parameters, uninterrupted.parameters);
+    assert_eq!(resumed.checkpoint, uninterrupted.checkpoint);
 }
 
 #[test]

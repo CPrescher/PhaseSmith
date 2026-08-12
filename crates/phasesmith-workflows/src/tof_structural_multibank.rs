@@ -292,8 +292,36 @@ impl StructuralTofMultiBankLayout {
         input: &StructuralTofMultiBankInput,
         values: &[f64],
     ) -> Result<StructuralTofMultiBankInput, StructuralTofMultiBankError> {
+        let current = self
+            .parameters
+            .specs()
+            .iter()
+            .map(ParameterSpec::value)
+            .collect::<Vec<_>>();
+        self.apply_value_change(input, &current, values)
+    }
+
+    /// Install a change between two absolute solver states.
+    ///
+    /// Symmetry-constrained site coordinates are local tangent coordinates,
+    /// so their difference is applied to the current structure. Every other
+    /// selected value is installed absolutely.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StructuralTofMultiBankError`] for a stale contract, wrong
+    /// value count, violated bound, or invalid resulting physical model.
+    pub fn apply_value_change(
+        &self,
+        input: &StructuralTofMultiBankInput,
+        current_values: &[f64],
+        values: &[f64],
+    ) -> Result<StructuralTofMultiBankInput, StructuralTofMultiBankError> {
         self.validate_contract(input)?;
-        if values.len() != self.parameters.specs().len() {
+        if current_values.len() != self.parameters.specs().len()
+            || values.len() != self.parameters.specs().len()
+            || current_values.iter().any(|value| !value.is_finite())
+        {
             return Err(StructuralTofMultiBankError::ParameterLengthMismatch);
         }
         for (spec, value) in self.parameters.specs().iter().zip(values) {
@@ -308,8 +336,9 @@ impl StructuralTofMultiBankLayout {
         }
         let phase = self
             .structural
-            .apply_values(
+            .apply_value_change(
                 std::slice::from_ref(&input.phase),
+                &current_values[..self.structural_count],
                 &values[..self.structural_count],
             )?
             .into_iter()
