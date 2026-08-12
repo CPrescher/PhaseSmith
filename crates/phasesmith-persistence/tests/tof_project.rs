@@ -1,11 +1,13 @@
-//! Native format-3/4 TOF histogram and resumable analysis state coverage.
+//! Native TOF histogram and resumable analysis state coverage.
 
 use std::collections::BTreeMap;
 use std::fs;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicU64, Ordering};
 
-use phasesmith_core::{TofInstrument, TofInstrumentParameter};
+use phasesmith_core::{
+    OwnedCwContributions, TofBankGeometry, TofInstrument, TofInstrumentParameter,
+};
 use phasesmith_engine::crystallography::{
     IntegratedIntensityCorrectionModel, SpaceGroup, SymmetryOperation, UnitCell,
 };
@@ -16,19 +18,24 @@ use phasesmith_model::{
     TofPatternRecord,
 };
 use phasesmith_persistence::{
-    PROJECT_FORMAT_VERSION, PROJECT_MANIFEST_NAME, ProjectReadLimits, ProjectSaveOptions,
-    ProjectSummaryReport, load_project, load_rietveld_project, load_tof_lebail_project,
-    load_tof_multibank_geometry_project, save_tof_lebail_project,
-    save_tof_multibank_geometry_project,
+    PROJECT_FORMAT_VERSION, PROJECT_MANIFEST_NAME, PersistenceError, ProjectReadLimits,
+    ProjectSaveOptions, ProjectSummaryReport, load_project, load_rietveld_project,
+    load_structural_tof_multibank_project, load_tof_lebail_project,
+    load_tof_multibank_geometry_project, save_structural_tof_multibank_project,
+    save_tof_lebail_project, save_tof_multibank_geometry_project,
 };
 use phasesmith_workflows::{
-    LatticeBounds, LatticeParameterization, TofBankInstrumentModel, TofChebyshevBackground,
+    LatticeBounds, LatticeParameterization, ParameterBounds,
+    PreparedStructuralTofMultiBankObjective, RefinementLimits, RietveldPhase,
+    RietveldStructuralSelection, StructuralTofBank, StructuralTofMultiBankAnalysis,
+    StructuralTofMultiBankInput, StructuralTofMultiBankLayout, StructuralTofMultiBankProjectState,
+    StructuralTofMultiBankRefinementOptions, TofBankInstrumentModel, TofChebyshevBackground,
     TofInstrumentParameterBound, TofLeBailAnalysis, TofLeBailBank, TofLeBailInput,
     TofLeBailOptions, TofLeBailPhase, TofLeBailProjectState, TofMultiBankGeometryAnalysis,
     TofMultiBankGeometryInput, TofMultiBankGeometryOptions, TofMultiBankGeometryProjectState,
     TofMultiBankInput, TofMultiBankLatticeInput, TofMultiBankProjectError, TofProjectError,
-    TofSharedLatticePhase, calculate_tof_lebail_pattern, refine_tof_lebail,
-    refine_tof_multibank_geometry,
+    TofSharedLatticePhase, calculate_tof_lebail_pattern, refine_structural_tof_multibank,
+    refine_tof_lebail, refine_tof_multibank_geometry,
 };
 
 static TEST_SEQUENCE: AtomicU64 = AtomicU64::new(0);
@@ -83,6 +90,10 @@ fn format_three_round_trips_tof_histogram_analysis_and_checkpoint() {
         .as_object_mut()
         .unwrap()
         .remove("tof_multibank_geometry_analyses");
+    legacy
+        .as_object_mut()
+        .unwrap()
+        .remove("structural_tof_multibank_analyses");
     fs::write(
         directory.join(PROJECT_MANIFEST_NAME),
         serde_json::to_vec_pretty(&legacy).unwrap(),
@@ -140,7 +151,7 @@ fn format_four_round_trips_joint_geometry_and_complete_checkpoint() {
 
     let manifest: serde_json::Value =
         serde_json::from_slice(&fs::read(directory.join(PROJECT_MANIFEST_NAME)).unwrap()).unwrap();
-    assert_eq!(manifest["format_version"], 4);
+    assert_eq!(manifest["format_version"], PROJECT_FORMAT_VERSION);
     assert_eq!(
         manifest["tof_multibank_geometry_analyses"]
             .as_array()
@@ -178,6 +189,69 @@ fn joint_project_rejects_duplicate_histogram_ownership_and_drift() {
         drifted.validate(),
         Err(TofMultiBankProjectError::HistogramStateMismatch { .. })
     ));
+}
+
+#[test]
+fn format_five_round_trips_structural_tof_and_complete_checkpoint() {
+    let state = structural_tof_state();
+    let directory = temporary_path("structural-tof-round-trip");
+    save_structural_tof_multibank_project(&directory, &state, ProjectSaveOptions::default())
+        .unwrap();
+
+    let restored =
+        load_structural_tof_multibank_project(&directory, ProjectReadLimits::default()).unwrap();
+    assert_eq!(restored, state);
+    assert_eq!(
+        load_project(&directory, ProjectReadLimits::default()).unwrap(),
+        state.project
+    );
+    assert!(
+        load_tof_multibank_geometry_project(&directory, ProjectReadLimits::default())
+            .unwrap()
+            .analyses
+            .is_empty()
+    );
+
+    let mut manifest: serde_json::Value =
+        serde_json::from_slice(&fs::read(directory.join(PROJECT_MANIFEST_NAME)).unwrap()).unwrap();
+    assert_eq!(manifest["format_version"], 5);
+    assert_eq!(
+        manifest["structural_tof_multibank_analyses"]
+            .as_array()
+            .unwrap()
+            .len(),
+        1
+    );
+    assert!(
+        manifest["structural_tof_multibank_analyses"][0]["checkpoint"]["history"]
+            .as_array()
+            .is_some_and(|history| !history.is_empty())
+    );
+    assert!(
+        manifest["structural_tof_multibank_analyses"][0]["banks"][0]["scale_bounds"][0].is_null()
+    );
+
+    let restrictive = ProjectReadLimits {
+        max_histograms: 1,
+        ..ProjectReadLimits::default()
+    };
+    assert!(matches!(
+        load_structural_tof_multibank_project(&directory, restrictive),
+        Err(PersistenceError::LimitExceeded { .. })
+    ));
+
+    manifest["structural_tof_multibank_analyses"][0]["checkpoint"]["parameters"][0]["name"] =
+        serde_json::json!("corrupt_parameter_identity");
+    fs::write(
+        directory.join(PROJECT_MANIFEST_NAME),
+        serde_json::to_vec_pretty(&manifest).unwrap(),
+    )
+    .unwrap();
+    assert!(matches!(
+        load_structural_tof_multibank_project(&directory, ProjectReadLimits::default()),
+        Err(PersistenceError::InvalidRecord { .. })
+    ));
+    cleanup(directory);
 }
 
 fn state() -> TofLeBailProjectState {
@@ -247,6 +321,157 @@ fn state() -> TofLeBailProjectState {
         project,
         analyses: vec![TofLeBailAnalysis {
             histogram_id: id("bank-1"),
+            input,
+            options,
+            checkpoint: Some(checkpoint),
+        }],
+    }
+}
+
+#[allow(clippy::too_many_lines)]
+fn structural_tof_state() -> StructuralTofMultiBankProjectState {
+    let definition = StructuralPhaseDefinition {
+        cell: UnitCell {
+            a_angstrom: 4.0,
+            b_angstrom: 4.0,
+            c_angstrom: 4.0,
+            alpha_deg: 90.0,
+            beta_deg: 90.0,
+            gamma_deg: 90.0,
+        },
+        space_group: SpaceGroup::new(vec![SymmetryOperation::identity()]).unwrap(),
+        hkl: vec![[1, 0, 0], [1, 1, 0], [1, 1, 1], [2, 0, 0]],
+        multiplicity: vec![6, 12, 8, 6],
+        fractional_xyz: vec![[0.0, 0.0, 0.0]],
+        occupancy: vec![1.0],
+        u_iso_angstrom2: vec![0.01],
+        anisotropic_mask: vec![false],
+        u_aniso_cif_angstrom2: vec![[0.0; 6]],
+        scattering_species: vec!["Ni".to_owned()],
+        scattering_real_offset: Vec::new(),
+        scattering_imag_offset: Vec::new(),
+        scale: 1.0,
+        coordinate_tolerance: 1.0e-10,
+        scattering_model: BuiltInScatteringModel::NeutronNuclear,
+        correction_model: IntegratedIntensityCorrectionModel::Neutral,
+    };
+    let phase = RietveldPhase::new_with_site_ids(
+        id("structural-phase"),
+        "Structural phase",
+        vec![id("nickel-site")],
+        definition.clone(),
+        OwnedCwContributions::neutral(definition.hkl.len()),
+    )
+    .unwrap();
+    let mut banks = Vec::new();
+    for (bank_id, angle, zero_us, scale) in [
+        ("structural-bank-1", 88.0, 1.0, 1.1),
+        ("structural-bank-2", 130.0, -0.5, 0.9),
+    ] {
+        let tof_us = (0..1_001)
+            .map(|index| 5_000.0 + 20.0 * f64::from(index))
+            .collect::<Vec<_>>();
+        let pattern = TofPatternRecord::new(
+            tof_us.clone(),
+            Some(vec![0.0; tof_us.len()]),
+            Some(vec![1.0; tof_us.len()]),
+            Some((0..tof_us.len()).map(|index| index % 41 != 0).collect()),
+            Some(vec![0.1; tof_us.len()]),
+        )
+        .unwrap();
+        banks.push(StructuralTofBank {
+            bank_id: id(bank_id),
+            pattern,
+            instrument: TofInstrument {
+                zero_us,
+                ..instrument()
+            },
+            geometry: TofBankGeometry {
+                two_theta_deg: angle,
+            },
+            correction_model: IntegratedIntensityCorrectionModel::TimeOfFlightNeutronLorentz {
+                two_theta_deg: angle,
+            },
+            scale,
+            scale_bounds: ParameterBounds::default(),
+            refine_scale: true,
+            background: Some(
+                TofChebyshevBackground::new(
+                    id(&format!("{bank_id}-background")),
+                    vec![0.1, 0.0],
+                    [tof_us[0], *tof_us.last().unwrap()],
+                )
+                .unwrap(),
+            ),
+            refine_background: false,
+            instrument_bounds: vec![
+                TofInstrumentParameterBound::new(TofInstrumentParameter::Zero, -5.0, 5.0).unwrap(),
+            ],
+        });
+    }
+    let mut input = StructuralTofMultiBankInput {
+        phase,
+        structural_selection: RietveldStructuralSelection::default(),
+        lattice_bounds: None,
+        banks,
+        support_fwhm: 20.0,
+        tail_log: 20.0,
+        use_uncertainty: true,
+        execution: ExecutionPolicy::new(Some(1), 2).unwrap(),
+    };
+    let layout = StructuralTofMultiBankLayout::new(&input).unwrap();
+    let truth = layout.apply_values(&input, &[1.3, 2.0, 0.7, -1.5]).unwrap();
+    let calculated = PreparedStructuralTofMultiBankObjective::new(truth)
+        .unwrap()
+        .calculate()
+        .unwrap();
+    for (bank, calculated) in input.banks.iter_mut().zip(calculated.banks) {
+        bank.pattern.observed_y = Some(calculated.y);
+    }
+    let options = StructuralTofMultiBankRefinementOptions::new(
+        RefinementLimits::new(8, 100, None, 8).unwrap(),
+        1,
+        1.0e-12,
+        1.0e-9,
+        1.0e-3,
+        10.0,
+        0.3,
+        1.0,
+        8,
+    )
+    .unwrap();
+    let checkpoint = refine_structural_tof_multibank(&input, options, None, None)
+        .unwrap()
+        .checkpoint;
+    assert!(!checkpoint.history.is_empty());
+    let project = ProjectRecord {
+        project_id: id("structural-tof-project"),
+        revision: 5,
+        name: "Structural TOF project".to_owned(),
+        histograms: Vec::new(),
+        tof_histograms: input
+            .banks
+            .iter()
+            .map(|bank| TofHistogramRecord {
+                histogram_id: bank.bank_id.clone(),
+                name: bank.bank_id.as_str().to_owned(),
+                pattern: bank.pattern.clone(),
+                experiment: TofExperimentRecord::new(bank.instrument).unwrap(),
+                phase_ids: vec![input.phase.phase_id().clone()],
+            })
+            .collect(),
+        phases: vec![StructuralPhaseRecord {
+            phase_id: input.phase.phase_id().clone(),
+            name: input.phase.name().to_owned(),
+            definition,
+            required_providers: Vec::new(),
+        }],
+        metadata: BTreeMap::new(),
+    };
+    StructuralTofMultiBankProjectState {
+        project,
+        analyses: vec![StructuralTofMultiBankAnalysis {
+            analysis_id: id("structural-analysis"),
             input,
             options,
             checkpoint: Some(checkpoint),

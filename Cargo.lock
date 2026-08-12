@@ -670,6 +670,7 @@ version = "0.2.0"
 dependencies = [
  "flate2",
  "phasesmith-core",
+ "phasesmith-crystallography",
  "phasesmith-engine",
  "phasesmith-execution",
  "phasesmith-model",

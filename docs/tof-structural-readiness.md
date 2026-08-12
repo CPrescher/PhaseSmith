@@ -230,16 +230,23 @@ accepted history, bounded termination reason, evaluation count, and an opaque
 exact-resume checkpoint. `StructuralTofCancellation` reuses the thread-safe TOF
 cancellation token. End-to-end Python tests recover two distinct bank scales
 and Zero terms, resume bitwise-identical accepted state after cancellation, and
-recover a shared cubic lattice parameter. Native project persistence and the
-structural real-data/oracle acceptance remain separate Unit 38d gates.
+recover a shared cubic lattice parameter. The structural real-data/oracle
+acceptance remains the final Unit 38d gate.
 
 `StructuralTofMultiBankProjectState` is the Python-free application-host
 boundary for retaining these analyses. It requires unique analysis IDs and
 disjoint bank ownership, resolves every bank ID to an exact project TOF
 pattern/instrument record, requires each member histogram to reference exactly
 the one shared built-in phase, and revalidates an optional solver checkpoint.
-This guarded domain facade precedes the versioned persistence wire contract; it
-does not by itself claim that a project bundle can yet store structural TOF.
+Native project format 5 persists that facade through
+`save_structural_tof_multibank_project` and
+`load_structural_tof_multibank_project`. The wire contract references the
+project-owned observations, initial instruments, and phase definition rather
+than duplicating them. It retains explicit bank geometry/correction, stable
+site IDs, every refinement selection and bound, numerical controls, and the
+complete last-accepted checkpoint. Load reconstructs typed domain state and
+requires exact checkpoint/request validation. Formats 1--4 remain readable
+with no structural TOF analyses.
 
 ## Unit 38 delivery sequence
 

@@ -1503,16 +1503,20 @@ lattice bounds, bank geometry/correction, local scale/instrument/background
 bounds, dense-solver controls, immutable results, progress/cancellation, and
 opaque native checkpoints. It delegates directly to the Rust objective and
 solver. Python tests recover local scale/Zero parameters and one shared cubic
-cell, and verify exact cancellation/checkpoint continuation. Native project
-persistence is next, followed by the checksum-pinned structural data/oracle
-gate.
+cell, and verify exact cancellation/checkpoint continuation. The
+checksum-pinned structural data/oracle gate follows.
 The application-host validation layer is complete too.
 `StructuralTofMultiBankProjectState` gives each analysis a stable identity,
 prevents duplicate histogram ownership, matches bank arrays/instruments to the
 project's TOF records, requires exactly one matching built-in phase reference,
-and revalidates optional restart checkpoints. This state is intentionally
-Python-free and serialization-free. Encoding it in the next native project
-format is the next Unit 38d increment.
+and revalidates optional restart checkpoints. Native project format 5 now
+encodes it with stable site IDs, shared structural and bank-local
+selections/bounds, explicit geometry/correction, numerical controls, and
+complete accepted checkpoint/history state. Project-owned bulk arrays and
+structural topology are referenced instead of duplicated; loads reconstruct
+and revalidate the exact request/checkpoint contract. Formats 1--4 migrate with
+an empty structural-analysis list. The pinned structural real-data/oracle gate
+is next.
 
 Do not combine adjacent items merely to reduce PR count; numerical review is
 easier when parameter conventions and tolerance changes remain isolated.
@@ -1570,9 +1574,9 @@ completes atomic fixed-cell multi-bank coordination, Unit 34 completes shared
 analytical lattice motion, and Unit 35 completes selected fixed-cell bank-local
 instrument motion, and Unit 36 combines the two geometry families in one
 correlation-diagnosed system, and Unit 37a adds its Python application facade.
-The next TOF increment is Unit 38d's public Python facade and native project
-persistence for the completed bounded structural multi-bank workflow, followed
-by its checksum-pinned structural real-data and isolated-oracle acceptance gate.
+The next TOF increment is Unit 38d's checksum-pinned structural real-data and
+isolated-oracle acceptance gate; its public Python facade and native format-5
+project persistence are complete.
 Structural parameter and instrument refinement must
 be introduced only with analytical derivatives, finite-difference tests, and
 new oracle contracts; it is not part of the completed Le Bail facade.

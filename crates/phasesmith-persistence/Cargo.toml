@@ -13,6 +13,7 @@ readme.workspace = true
 [dependencies]
 flate2 = { version = "1.1", default-features = false, features = ["rust_backend"] }
 phasesmith-core = { version = "0.2.0", path = "../phasesmith-core" }
+phasesmith-crystallography = { version = "0.2.0", path = "../phasesmith-crystallography" }
 phasesmith-engine = { version = "0.2.0", path = "../phasesmith-engine" }
 phasesmith-execution = { version = "0.2.0", path = "../phasesmith-execution" }
 phasesmith-model = { version = "0.2.0", path = "../phasesmith-model" }

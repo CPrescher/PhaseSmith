@@ -8,16 +8,17 @@ crate has no PyO3, NumPy, CPython, webview, or Tauri dependency.
 
 A native project is a directory with two library-owned files:
 
-- `manifest.json` contains format version 4, explicit wire records, array
+- `manifest.json` contains format version 5, explicit wire records, array
   descriptors, units in field names, and SHA-256 hashes;
 - `arrays.npz` contains only contiguous little-endian `float64`, `int32`,
   `uint64`, and boolean NPY members.
 
 The complete manifest contract is
-[`schemas/native-project-v4.schema.json`](https://github.com/CPrescher/PhaseSmith/blob/main/schemas/native-project-v4.schema.json).
-Versions 1 through 3 remain readable. Versions 1 and 2 have no TOF histograms
+[`schemas/native-project-v5.schema.json`](https://github.com/CPrescher/PhaseSmith/blob/main/schemas/native-project-v5.schema.json).
+Versions 1 through 4 remain readable. Versions 1 and 2 have no TOF histograms
 or TOF Le Bail analyses; version 1 also has no Rietveld analyses; versions 1
-through 3 have no joint multi-bank TOF geometry analyses.
+through 3 have no joint multi-bank TOF geometry analyses; versions 1 through 4
+have no structural multi-bank TOF analyses.
 Internal kernel enums are not serialized directly. Every persisted record has
 an explicit conversion to and from the validated `phasesmith-model` domain.
 
@@ -112,6 +113,38 @@ intensity, inclusion, residual, and weighted-residual array. The checkpoint
 also retains accepted instruments, cells, backgrounds, aggregate metrics, and
 the complete lattice/instrument change history. This remains Le Bail geometry
 refinement with fixed reflection topology, not structural TOF Rietveld.
+
+Format 5 adds the complete Python-free structural multi-bank TOF boundary:
+
+```rust,ignore
+use phasesmith_persistence::{
+    load_structural_tof_multibank_project,
+    save_structural_tof_multibank_project,
+};
+
+save_structural_tof_multibank_project(
+    "structural-tof.psproj",
+    &structural_state,
+    ProjectSaveOptions::default(),
+)?;
+let restored = load_structural_tof_multibank_project(
+    "structural-tof.psproj",
+    ProjectReadLimits::default(),
+)?;
+```
+
+`StructuralTofMultiBankProjectState` reuses project-owned pattern arrays,
+initial instruments, and the shared structural definition. Its explicit wire
+record stores stable site IDs, structural selections and lattice bounds,
+bank-local angle/correction/scale/background/instrument contracts, bounded
+execution and solver controls, and the complete last-accepted checkpoint.
+Checkpoint state includes accepted cell/site values, instruments, scales,
+background coefficients, the original solver parameter contract, and every
+accepted iteration/change record. Loading reconstructs the domain objects and
+revalidates the checkpoint against the exact original request before returning
+it. Infinite open scale endpoints are represented by JSON `null`; all physical
+values remain finite. No structural TOF bulk array is duplicated outside the
+project-owned NPZ members.
 
 Loading is bounded before domain construction. It checks manifest and archive
 sizes, version, archive filename and hash, exact NPZ member set, every member's
