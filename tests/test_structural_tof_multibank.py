@@ -246,6 +246,7 @@ Ni1 Ni 0 0 0
     assert provenance.reduction_embedded_in_pattern
     assert provenance.sample_corrections == "none"
     assert not provenance.fixed_background_supplied
+    assert provenance.fixed_background_domain == "input"
     assert len(provenance.fixed_background_sha256) == 64
     with pytest.raises(ValueError, match="requires an incident spectrum"):
         StructuralTofMultiBankInput.from_files(
@@ -328,6 +329,28 @@ Ni1 Ni 0 0 0
     assert cropped.provenance is not None
     assert cropped.provenance.banks[0].tof_range_us == (4_200.0, 5_800.0)
     assert cropped.provenance.banks[0].fixed_background_supplied
+    assert cropped.provenance.banks[0].fixed_background_domain == "input"
+
+    normalized_background = StructuralTofMultiBankInput.from_files(
+        pattern_path,
+        instrument_path,
+        cif_path,
+        bank=2,
+        incident_normalization="calibration_type4",
+        correction="neutral",
+        sample_corrections="none",
+        tof_range_us=(4_200.0, 5_800.0),
+        fixed_background=full_background,
+        fixed_background_domain="normalized",
+        search_min_d_angstrom=0.75,
+        search_max_d_angstrom=1.25,
+    )
+    np.testing.assert_allclose(
+        normalized_background.banks[0].pattern.background,
+        full_background[selected],
+    )
+    assert normalized_background.provenance is not None
+    assert normalized_background.provenance.banks[0].fixed_background_domain == "normalized"
 
     with pytest.raises(ValueError, match="named correction models are not implemented"):
         StructuralTofMultiBankInput.from_files(
@@ -338,6 +361,17 @@ Ni1 Ni 0 0 0
             incident_normalization="already_normalized",
             correction="neutral",
             sample_corrections="absorption",  # type: ignore[arg-type]
+        )
+    with pytest.raises(ValueError, match="only when a background is supplied"):
+        StructuralTofMultiBankInput.from_files(
+            pattern_path,
+            instrument_path,
+            cif_path,
+            bank=2,
+            incident_normalization="already_normalized",
+            correction="neutral",
+            sample_corrections="none",
+            fixed_background_domain="normalized",
         )
     with pytest.raises(ValueError, match="request source exceeds max_bytes"):
         StructuralTofMultiBankInput.from_files(
@@ -367,6 +401,7 @@ def test_python_structural_tof_checkpoint_resumes_exactly() -> None:
         "none",
         None,
         True,
+        "input",
         sha256(request.banks[0].pattern.background.tobytes()).hexdigest(),
     )
     provenance = StructuralTofMultiBankProvenance(

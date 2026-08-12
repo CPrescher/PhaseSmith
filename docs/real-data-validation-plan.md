@@ -66,6 +66,9 @@ the same facility-neutral API on a packed profile-function-1 bank and an
 88.05-degree detector rather than only POWGEN SLOG/profile-function-3 input.
 Combining bank 2--4 requests with an explicit 0.2--3.0 A range produces the
 186-family shared structural topology and ordered provenance for all banks.
+An end-to-end public smoke solve then uses backgrounds estimated in normalized
+space, explicitly prevents a second background division, and recovers all three
+bank scales with maximum bank Rwp below 0.125.
 
 Each manifest declares whether it is an acceptance, oracle-integrity, holdout,
 or capability case and records its reviewed expected status. Schema-2 suite

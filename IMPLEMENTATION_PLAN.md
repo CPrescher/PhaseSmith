@@ -1595,6 +1595,13 @@ name chooses the interval. `combine_file_banks(...)` then validates common
 structure/numerical controls and unique bank IDs, regenerates one explicit
 shared 0.2--3.0 A topology with 186 families, and retains the ordered bank 2--4
 provenance records.
+The background-domain audit is complete. File requests declare whether a fixed
+background is in the input intensity domain and must follow type-4 division, or
+is already in the normalized domain and must be installed afterward. The
+applied array hash and domain are retained in provenance. With normalized-bank
+Smooth Brückner backgrounds, the public LANL three-bank scale solve converges
+in four accepted steps to scales 0.04029/0.04012/0.04481 and maximum bank Rwp
+0.12434; no separate scale initializer is required.
 The structural TOF solver's special-position state audit is complete.
 Symmetry-reduced `q` coordinates are local tangent changes, so accepted
 physical displacements remain in the phase while the next solver/checkpoint

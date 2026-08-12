@@ -280,6 +280,12 @@ a raw bank contains samples outside a calibrated type-4 spectrum's validity
 domain. The explicit range is retained in provenance; facility names do not
 choose it. A supplied full-bank fixed background is sliced with the same
 indices, while an already selected background must match the selected samples.
+`fixed_background_domain="input"` divides the supplied background together
+with raw observations during type-4 normalization. The alternative
+`"normalized"` installs a background already expressed on the normalized
+intensity scale after observation/uncertainty normalization. The declaration
+and the hash of the applied background are both retained in provenance, so an
+already-normalized estimate cannot be silently divided twice.
 
 `StructuralTofMultiBankInput.combine_file_banks(...)` joins one-bank requests
 only after checking their exact common structure and numerical controls,
@@ -407,6 +413,12 @@ that interval. The native LANL structural acceptance uses a deliberately wider
 not asserted across those two declared boundary conventions. Combining public
 bank 2--4 requests with that same d-spacing declaration reproduces the
 186-family shared topology and retains three ordered provenance records.
+Estimating Smooth Brückner independently on each normalized bank, passing it as
+`fixed_background_domain="normalized"`, and refining the three public bank
+scales converges in four accepted steps to 0.04029, 0.04012, and 0.04481. The
+three bank Rwp values are 0.1163--0.1243. This is an application-facade smoke
+gate; the native structural acceptance remains the stricter lattice/Uiso/Zero
+fit and pinned-oracle comparison.
 
 ## References
 

@@ -158,6 +158,11 @@ have deliberately different meanings:
   186-family shared topology used by the native structural acceptance and
   retains three ordered provenance records. The report's separate 102-family
   count belongs to its bank-2 Le Bail gate.
+  The public end-to-end smoke gate estimates each Smooth Brückner background
+  after incident normalization and declares the background domain explicitly.
+  Its scale-only three-bank solve converges in four accepted steps to scales
+  0.04029/0.04012/0.04481 and bank Rwp values 0.1163--0.1243. This does not
+  replace the stricter native structural cell/Uiso/Zero gate.
 
   Run the two pinned multi-bank comparisons with an exact GSAS-II checkout:
 

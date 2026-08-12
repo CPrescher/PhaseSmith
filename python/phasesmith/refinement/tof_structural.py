@@ -88,6 +88,7 @@ class StructuralTofRequestProvenance:
     sample_corrections: Literal["none", "already_applied"]
     tof_range_us: tuple[float, float] | None
     fixed_background_supplied: bool
+    fixed_background_domain: Literal["input", "normalized"]
     fixed_background_sha256: str
 
     def __post_init__(self) -> None:
@@ -107,6 +108,10 @@ class StructuralTofRequestProvenance:
         object.__setattr__(self, "tof_range_us", _validated_tof_range(self.tof_range_us))
         if not isinstance(self.fixed_background_supplied, bool):
             raise TypeError("fixed_background_supplied must be boolean")
+        if self.fixed_background_domain not in {"input", "normalized"}:
+            raise ValueError("fixed_background_domain must be 'input' or 'normalized'")
+        if not self.fixed_background_supplied and self.fixed_background_domain != "input":
+            raise ValueError("absent fixed background must use the canonical 'input' domain")
         if len(self.fixed_background_sha256) != 64 or any(
             character not in "0123456789abcdef" for character in self.fixed_background_sha256
         ):
@@ -365,6 +370,7 @@ class StructuralTofMultiBankInput:
         search_min_d_angstrom: float = 0.25,
         search_max_d_angstrom: float = 5.0,
         fixed_background: ArrayLike | None = None,
+        fixed_background_domain: Literal["input", "normalized"] = "input",
         tof_range_us: tuple[float, float] | None = None,
         reduction_path: str | Path | None = None,
         powder_limits: PowderReadLimits | None = None,
@@ -378,13 +384,20 @@ class StructuralTofMultiBankInput:
         implicitly. ``already_applied`` records upstream correction without
         applying it again. ``reduction_path`` can identify a separate reduction
         record; otherwise the pattern bytes are the checksum-pinned reduction
-        record as well.
+        record as well. ``fixed_background_domain`` states whether a supplied
+        background follows observation normalization or is already normalized.
         """
 
         if sample_corrections not in {"none", "already_applied"}:
             raise ValueError(
                 "sample_corrections must be 'none' or 'already_applied'; "
                 "named correction models are not implemented"
+            )
+        if fixed_background_domain not in {"input", "normalized"}:
+            raise ValueError("fixed_background_domain must be 'input' or 'normalized'")
+        if fixed_background is None and fixed_background_domain != "input":
+            raise ValueError(
+                "fixed_background_domain can differ from 'input' only when a background is supplied"
             )
 
         selected_powder_limits = powder_limits or PowderReadLimits()
@@ -437,7 +450,7 @@ class StructuralTofMultiBankInput:
             observed_y=powder.observed_y[start:end],
             uncertainty=(None if powder.uncertainty is None else powder.uncertainty[start:end]),
             mask=None if powder.mask is None else powder.mask[start:end],
-            background=selected_background,
+            background=(selected_background if fixed_background_domain == "input" else None),
         )
         if incident_normalization == "calibration_type4":
             if calibration.incident_spectrum is None:
@@ -446,6 +459,14 @@ class StructuralTofMultiBankInput:
         elif incident_normalization != "already_normalized":
             raise ValueError(
                 "incident_normalization must be 'already_normalized' or 'calibration_type4'"
+            )
+        if fixed_background_domain == "normalized" and selected_background is not None:
+            pattern = TofPowderPattern(
+                pattern.tof_us,
+                observed_y=pattern.observed_y,
+                uncertainty=pattern.uncertainty,
+                mask=pattern.mask,
+                background=selected_background,
             )
         if correction in {"neutral", "already_applied"}:
             correction_model = NeutralIntegratedIntensityCorrection()
@@ -499,6 +520,7 @@ class StructuralTofMultiBankInput:
                     sample_corrections,
                     selected_tof_range,
                     fixed_background is not None,
+                    fixed_background_domain,
                     background_digest,
                 ),
             )

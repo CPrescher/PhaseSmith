@@ -6,7 +6,12 @@ from pathlib import Path
 import phasesmith
 import pytest
 from phasesmith.io import convert_rowles_topas_bundle
-from phasesmith.refinement import StructuralTofMultiBankInput
+from phasesmith.refinement import (
+    RefinementLimits,
+    StructuralTofMultiBankInput,
+    StructuralTofRefinementOptions,
+    refine_structural_tof_multibank,
+)
 from phasesmith.validation import (
     NIST_SRM660C_STRESS_SH_OVER_L,
     run_echidna_lab6_validation,
@@ -323,6 +328,49 @@ def test_lanl_public_structural_file_request_normalizes_selected_range() -> None
             min_d_angstrom=0.2,
             max_d_angstrom=3.0,
         )
+
+    background_requests = tuple(
+        StructuralTofMultiBankInput.from_files(
+            directory / "nickel.raw",
+            directory / "inst_tof.prm",
+            LANL_NICKEL_CIF,
+            bank=bank,
+            incident_normalization="calibration_type4",
+            correction="tof_lorentz",
+            sample_corrections="none",
+            tof_range_us=(1_101.6, 8_189.6),
+            fixed_background=phasesmith.smooth_bruckner(
+                request.banks[0].pattern.observed_y,
+                20,
+                50,
+            ),
+            fixed_background_domain="normalized",
+            search_min_d_angstrom=0.2,
+            search_max_d_angstrom=3.0,
+        )
+        for bank, request in zip((2, 3, 4), requests, strict=True)
+    )
+    fitted = refine_structural_tof_multibank(
+        StructuralTofMultiBankInput.combine_file_banks(
+            background_requests,
+            min_d_angstrom=0.2,
+            max_d_angstrom=3.0,
+        ),
+        StructuralTofRefinementOptions(
+            limits=RefinementLimits(
+                max_iterations=20,
+                max_evaluations=600,
+                max_consecutive_rejections=10,
+            ),
+            max_scaled_parameter_step=0.5,
+        ),
+    )
+    assert fitted.termination_reason.value == "converged"
+    assert len(fitted.history) == 4
+    assert [bank.scale for bank in fitted.input.banks] == pytest.approx(
+        [0.04028837169669697, 0.04012464860552949, 0.04480513506645124]
+    )
+    assert max(bank.metrics.rwp for bank in fitted.banks) <= 0.125
 
 
 @pytest.mark.real_data
