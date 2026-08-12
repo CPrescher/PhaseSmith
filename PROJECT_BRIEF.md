@@ -961,6 +961,15 @@ continuation is exact. The two-bank, 80-reflection-per-bank, 4,001-sample-per-
 bank one-cycle benchmark measures 214.18 ms. Application facade/persistence and
 real-data oracle coverage are now the next increment before any structural TOF
 Rietveld claim.
+The first Unit 37 application slice now exposes the same joint solver through
+typed Python bank, shared-cell, instrument-selection, option, result,
+diagnostic, and checkpoint records. The exact native `SpaceGroup` topology is
+reused when constructing setting-aware lattice bounds, the GIL is released for
+the complete solve, and progress/cancellation plus opaque restart checkpoints
+preserve the Rust runtime contract. Python integration tests recover the shared
+cell and local Zero terms and prove exact cancelled continuation. Durable
+multi-bank project persistence and real-data/oracle acceptance remain the next
+Unit 37 slices.
 The historical native-workflow comparison passes both Le Bail parity contracts
 and QARR 1g. Its unchanged QARR 1h acceptance recipe retains the reviewed
 profile-quality failure, rather than having thresholds relaxed. The newer

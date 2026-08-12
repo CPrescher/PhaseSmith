@@ -77,6 +77,15 @@ bounds, bitwise-fixed unselected coefficients, physical derived profiles,
 background contracts, and contiguous bank-aligned history. A cancelled
 four-cycle checkpoint resumes identically to an uninterrupted twelve-cycle run.
 
+Python applications use the same solver through
+`phasesmith.refinement.refine_tof_multibank_geometry`. The facade accepts typed
+`TofLeBailBank`, `TofSharedLatticePhase`, and `TofBankInstrumentModel` records.
+The shared lattice reuses the exact native `SpaceGroup` topology already owned
+by `LatticeParameterization`, including nonstandard setting checks. The GIL is
+released for the complete native solve. Final bank arrays are read-only NumPy
+arrays, diagnostics preserve typed family/owner/parameter keys, and the opaque
+`TofMultiBankGeometryCheckpoint` can be passed back for exact continuation.
+
 The component lattice and all 15 instrument derivative families retain their
 independent NumPy and centered finite-difference gates. The joint test adds
 simultaneous synthetic recovery and typed cross-family correlation assertions.
@@ -84,7 +93,7 @@ The realistic benchmark performs one complete joint cycle for two banks, 80
 reflections per bank, and 4,001 samples per bank; it measured 214.18 ms on the
 review machine.
 
-This native workflow is the numerical contract required before adding a Python
-application facade, durable project records, or a multi-bank real-data oracle.
-It remains Le Bail extraction with fixed reflection topology, not structural
-TOF Rietveld.
+The native and Python application workflows now provide the numerical boundary
+required before durable project records and a multi-bank real-data oracle are
+added. This remains Le Bail extraction with fixed reflection topology, not
+structural TOF Rietveld.

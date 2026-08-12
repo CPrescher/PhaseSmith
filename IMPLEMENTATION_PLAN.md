@@ -1411,6 +1411,16 @@ lattice/calibration correlations; four accepted cycles resume exactly. The
 realistic one-cycle benchmark over two banks, 80 reflections per bank, and
 4,001 samples per bank measures 214.18 ms.
 
+Unit 37a is complete. `phasesmith.refinement.tof_multibank` owns typed Python
+records for bank-local observations, exact setting-aware shared cells, selected
+instrument bounds, joint controls, immutable results, rank/correlation
+diagnostics, accepted physical changes, progress/cancellation, and opaque
+restart checkpoints. The facade delegates one complete solve while the GIL is
+released. Synthetic public-API tests recover the shared cell and bank-local
+Zero coefficients and reproduce uninterrupted history and arrays after a
+cancelled four-cycle checkpoint resumes. Unit 37b adds durable multi-bank
+project persistence; Unit 37c adds the real-data/oracle acceptance contract.
+
 Do not combine adjacent items merely to reduce PR count; numerical review is
 easier when parameter conventions and tolerance changes remain isolated.
 
@@ -1466,8 +1476,9 @@ completes the explicit native TOF project/persistence schema, and Unit 33
 completes atomic fixed-cell multi-bank coordination, Unit 34 completes shared
 analytical lattice motion, and Unit 35 completes selected fixed-cell bank-local
 instrument motion, and Unit 36 combines the two geometry families in one
-correlation-diagnosed system. The next TOF increment is application persistence
-and multi-bank real-data oracle validation. Structural parameter and instrument refinement must
+correlation-diagnosed system, and Unit 37a adds its Python application facade.
+The next TOF increment is durable multi-bank persistence and real-data oracle
+validation. Structural parameter and instrument refinement must
 be introduced only with analytical derivatives, finite-difference tests, and
 new oracle contracts; it is not part of the completed Le Bail facade.
 

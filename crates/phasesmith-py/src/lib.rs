@@ -61,6 +61,7 @@ use pyo3::types::{PyDict, PyList, PyTuple};
 mod profile_estimation;
 mod rietveld;
 mod tof_lebail;
+mod tof_multibank;
 
 type ProfileArrays<'py> = (
     Bound<'py, PyArray1<f64>>,
@@ -374,8 +375,14 @@ impl NativePreparedNeutronScattering {
 
 /// Cached native group topology and bounded reflection generator.
 #[pyclass(name = "_PreparedReflectionGenerator")]
-struct NativePreparedReflectionGenerator {
+pub(crate) struct NativePreparedReflectionGenerator {
     generator: PreparedReflectionGenerator,
+}
+
+impl NativePreparedReflectionGenerator {
+    pub(crate) fn space_group(&self) -> &SpaceGroup {
+        self.generator.space_group()
+    }
 }
 
 #[pymethods]
@@ -4139,6 +4146,7 @@ fn _core(module: &Bound<'_, PyModule>) -> PyResult<()> {
     rietveld::register(module)?;
     profile_estimation::register(module)?;
     tof_lebail::register(module)?;
+    tof_multibank::register(module)?;
     module.add_function(wrap_pyfunction!(unit_cell_geometry, module)?)?;
     module.add_function(wrap_pyfunction!(unit_cell_d_spacings, module)?)?;
     module.add_function(wrap_pyfunction!(p1_structure_factors_dense, module)?)?;

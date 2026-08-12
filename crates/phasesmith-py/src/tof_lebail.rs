@@ -16,8 +16,8 @@ use crate::NativeExecutionPolicy;
 
 /// Thread-safe cancellation shared with a detached TOF refinement call.
 #[pyclass(name = "_TofLeBailCancellation")]
-struct NativeTofLeBailCancellation {
-    token: CancellationToken,
+pub(super) struct NativeTofLeBailCancellation {
+    pub(super) token: CancellationToken,
 }
 
 #[pymethods]
@@ -196,7 +196,7 @@ fn refine_tof_lebail_for_python<'py>(
     result_to_python(py, result)
 }
 
-fn tof_instrument(values: &[f64]) -> PyResult<TofInstrument> {
+pub(super) fn tof_instrument(values: &[f64]) -> PyResult<TofInstrument> {
     if values.len() != 15 {
         return Err(PyValueError::new_err(
             "instrument_values must contain 15 coefficients",
@@ -222,7 +222,7 @@ fn tof_instrument(values: &[f64]) -> PyResult<TofInstrument> {
 }
 
 #[allow(clippy::too_many_arguments)]
-fn tof_phases(
+pub(super) fn tof_phases(
     phase_ids: Vec<String>,
     phase_names: Vec<String>,
     offsets: &[i64],
@@ -338,7 +338,10 @@ fn result_to_python(py: Python<'_>, result: TofLeBailResult) -> PyResult<Bound<'
     Ok(output)
 }
 
-fn event_to_python<'py>(py: Python<'py>, event: &RefinementEvent) -> PyResult<Bound<'py, PyDict>> {
+pub(super) fn event_to_python<'py>(
+    py: Python<'py>,
+    event: &RefinementEvent,
+) -> PyResult<Bound<'py, PyDict>> {
     let output = PyDict::new(py);
     output.set_item("kind", event.kind().as_str())?;
     output.set_item("stage", event.stage())?;
@@ -362,7 +365,7 @@ fn event_to_python<'py>(py: Python<'py>, event: &RefinementEvent) -> PyResult<Bo
     Ok(output)
 }
 
-fn metrics_to_python<'py>(
+pub(super) fn metrics_to_python<'py>(
     py: Python<'py>,
     metrics: &ResidualEvaluation,
 ) -> PyResult<Bound<'py, PyDict>> {

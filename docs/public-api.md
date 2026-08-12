@@ -79,6 +79,16 @@ phasesmith.refinement
 phasesmith.refinement.lebail
   First-class Le Bail intensity extraction and diagnostics.
 
+phasesmith.refinement.tof_lebail  [implemented]
+  Fixed-instrument, fixed-cell TOF Le Bail extraction with a bounded native
+  runtime and opaque exact-restart checkpoints.
+
+phasesmith.refinement.tof_multibank  [implemented]
+  Validated multi-bank TOF records and one native joint shared-cell plus
+  bank-local instrument refinement call. Results retain immutable bank arrays,
+  aggregate metrics, typed rank/correlation diagnostics, accepted parameter
+  changes, progress events, cancellation, and exact continuation.
+
 phasesmith.profile_estimation  [implemented]
   Staged effective U/V/W/X/Y starting-profile estimation from one dominant
   CIF-backed phase. Wavelength remains fixed; optional bounded lattice
