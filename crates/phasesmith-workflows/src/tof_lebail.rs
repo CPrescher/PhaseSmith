@@ -14,7 +14,10 @@ use phasesmith_core::{
 use phasesmith_execution::{ExecutionPolicy, ExecutionPolicyError};
 use phasesmith_model::{DomainError, RecordId, TofPatternRecord};
 
-use crate::{ResidualError, ResidualEvaluation, ResidualOptions, evaluate_tof_residuals};
+use crate::{
+    DiagnosticValue, RefinementEventKind, RefinementLimits, RefinementRuntime, ResidualError,
+    ResidualEvaluation, ResidualOptions, RuntimeError, TerminationReason, evaluate_tof_residuals,
+};
 
 /// One fixed-topology phase in a TOF Le Bail extraction.
 #[derive(Clone, Debug, PartialEq)]
@@ -557,6 +560,98 @@ pub struct TofLeBailResult {
     pub intensities: Vec<TofReflectionIntensity>,
     /// Complete deterministic cycle history.
     pub history: Vec<TofLeBailIterationRecord>,
+    /// Stable bounded-runtime termination category.
+    pub termination_reason: TerminationReason,
+    /// Complete last accepted state for exact continuation.
+    pub checkpoint: TofLeBailCheckpoint,
+}
+
+/// Complete immutable continuation state for fixed-instrument TOF extraction.
+#[derive(Clone, Debug, PartialEq)]
+pub struct TofLeBailCheckpoint {
+    /// Number of accepted redistribution cycles.
+    pub completed_iterations: usize,
+    /// Current phase records and nonnegative integrated intensities.
+    pub phases: Vec<TofLeBailPhase>,
+    /// Current refinable residual background, if present.
+    pub background: Option<TofChebyshevBackground>,
+    /// Complete accepted deterministic history.
+    pub history: Vec<TofLeBailIterationRecord>,
+}
+
+impl TofLeBailCheckpoint {
+    /// Revalidate a continuation against its immutable request topology.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`TofLeBailError::InvalidCheckpoint`] when iteration counters,
+    /// phase identities/topology, or background identity/domain disagree.
+    pub fn validate_for(
+        &self,
+        input: &TofLeBailInput,
+        options: &TofLeBailOptions,
+    ) -> Result<(), TofLeBailError> {
+        if self.completed_iterations != self.history.len()
+            || self.completed_iterations > options.cycles
+        {
+            return Err(TofLeBailError::InvalidCheckpoint(
+                "checkpoint iteration count must equal history length and fit the cycle budget",
+            ));
+        }
+        if self.phases.len() != input.phases.len() {
+            return Err(TofLeBailError::InvalidCheckpoint(
+                "checkpoint phase count differs from the request",
+            ));
+        }
+        for (saved, original) in self.phases.iter().zip(&input.phases) {
+            saved.validate()?;
+            if saved.phase_id != original.phase_id
+                || saved.name != original.name
+                || saved.reflection_ids != original.reflection_ids
+                || saved.hkl != original.hkl
+                || saved.d_spacing_angstrom != original.d_spacing_angstrom
+                || saved.scale.to_bits() != original.scale.to_bits()
+            {
+                return Err(TofLeBailError::InvalidCheckpoint(
+                    "checkpoint phase topology differs from the request",
+                ));
+            }
+        }
+        match (&self.background, &input.background) {
+            (None, None) => {}
+            (Some(saved), Some(original)) => {
+                saved.validate()?;
+                if saved.background_id != original.background_id
+                    || saved
+                        .domain_us
+                        .iter()
+                        .zip(original.domain_us)
+                        .any(|(saved, original)| saved.to_bits() != original.to_bits())
+                    || saved.coefficients.len() != original.coefficients.len()
+                {
+                    return Err(TofLeBailError::InvalidCheckpoint(
+                        "checkpoint background contract differs from the request",
+                    ));
+                }
+            }
+            _ => {
+                return Err(TofLeBailError::InvalidCheckpoint(
+                    "checkpoint background presence differs from the request",
+                ));
+            }
+        }
+        if self
+            .history
+            .iter()
+            .enumerate()
+            .any(|(index, record)| record.iteration != index + 1)
+        {
+            return Err(TofLeBailError::InvalidCheckpoint(
+                "checkpoint history must be contiguous and one-based",
+            ));
+        }
+        Ok(())
+    }
 }
 
 /// Calculate one TOF pattern and all direct profile derivatives in one pass.
@@ -646,14 +741,63 @@ pub fn refine_tof_lebail(
 ) -> Result<TofLeBailResult, TofLeBailError> {
     input.validate()?;
     options.validate()?;
-    let mut phases = initialize_intensities(input, options)?;
-    let mut background = input.background.clone();
-    let mut history = Vec::with_capacity(options.cycles);
-    for iteration in 1..=options.cycles {
+    let max_evaluations = options
+        .cycles
+        .checked_mul(3)
+        .ok_or(TofLeBailError::AllocationOverflow)?;
+    let limits = RefinementLimits::new(options.cycles, max_evaluations, None, 1)?;
+    let mut runtime = RefinementRuntime::new(limits, None)?;
+    refine_tof_lebail_with_runtime(input, options, None, &mut runtime)
+}
+
+/// Run TOF Le Bail extraction with host-owned cancellation, events, and checkpoints.
+///
+/// The runtime must be fresh. When `checkpoint` is supplied, its accepted
+/// iteration count is restored before additional work begins. Cancellation and
+/// budget exhaustion return the last fully accepted state as a normal result.
+///
+/// # Errors
+///
+/// Returns [`TofLeBailError`] for invalid request/checkpoint state, numerical
+/// failures, or non-normal runtime failures.
+#[allow(clippy::too_many_lines)]
+pub fn refine_tof_lebail_with_runtime(
+    input: &TofLeBailInput,
+    options: &TofLeBailOptions,
+    checkpoint: Option<&TofLeBailCheckpoint>,
+    runtime: &mut RefinementRuntime<TofLeBailCheckpoint>,
+) -> Result<TofLeBailResult, TofLeBailError> {
+    input.validate()?;
+    options.validate()?;
+    let restored = restore_tof_state(input, options, checkpoint)?;
+    let mut phases = restored.phases;
+    let mut background = restored.background;
+    let mut history = restored.history;
+    let first_iteration = restored.first_iteration;
+    if let Some(checkpoint) = checkpoint {
+        runtime.resume_accepted(checkpoint.completed_iterations)?;
+    }
+    runtime.emit(
+        RefinementEventKind::Start,
+        "tof_lebail",
+        "TOF Le Bail extraction started",
+        Vec::new(),
+    )?;
+    let mut calculation = None;
+    let mut termination = TerminationReason::MaxIterations;
+    for iteration in first_iteration..=options.cycles {
+        if let Err(error) = runtime.begin_iteration(iteration) {
+            termination = normal_tof_stop(error)?;
+            break;
+        }
+        if let Err(error) = runtime.begin_evaluation() {
+            termination = normal_tof_stop(error)?;
+            break;
+        }
         let current_input = state_input(input, phases.clone(), background.clone())?;
-        let calculation = calculate_tof_lebail_pattern(&current_input, options)?;
+        let current_calculation = calculate_tof_lebail_pattern(&current_input, options)?;
         let current = flatten_intensities(&phases);
-        let updated = redistribute(&input.pattern, &calculation, &current, options)?;
+        let updated = redistribute(&input.pattern, &current_calculation, &current, options)?;
         let maximum_relative_intensity_change = updated
             .iter()
             .zip(&current)
@@ -661,21 +805,32 @@ pub fn refine_tof_lebail(
                 (updated - current).abs() / current.abs().max(options.initial_intensity_floor)
             })
             .fold(0.0_f64, f64::max);
-        phases = install_intensities(&phases, &updated)?;
-        let intensity_input = state_input(input, phases.clone(), background.clone())?;
+        let candidate_phases = install_intensities(&phases, &updated)?;
+        if let Err(error) = runtime.begin_evaluation() {
+            termination = normal_tof_stop(error)?;
+            break;
+        }
+        let intensity_input = state_input(input, candidate_phases.clone(), background.clone())?;
         let intensity_calculation = calculate_tof_lebail_pattern(&intensity_input, options)?;
-        let previous_background = background.clone();
-        background = refine_background(
+        let candidate_background = refine_background(
             &input.pattern,
             &intensity_calculation.profile_y,
             background.as_ref(),
             options,
         )?;
         let maximum_absolute_background_change =
-            maximum_background_change(previous_background.as_ref(), background.as_ref());
-        let accepted_input = state_input(input, phases.clone(), background.clone())?;
+            maximum_background_change(background.as_ref(), candidate_background.as_ref());
+        if let Err(error) = runtime.begin_evaluation() {
+            termination = normal_tof_stop(error)?;
+            break;
+        }
+        let accepted_input = state_input(
+            input,
+            candidate_phases.clone(),
+            candidate_background.clone(),
+        )?;
         let accepted = calculate_tof_lebail_pattern(&accepted_input, options)?;
-        let background_parameter_count = background
+        let background_parameter_count = candidate_background
             .as_ref()
             .map_or(0, |background| background.coefficients.len());
         let metrics = evaluate_tof_residuals(
@@ -686,20 +841,63 @@ pub fn refine_tof_lebail(
                 parameter_count: updated.len() + background_parameter_count,
             },
         )?;
+        phases = candidate_phases;
+        background = candidate_background;
         history.push(TofLeBailIterationRecord {
             iteration,
-            metrics,
+            metrics: metrics.clone(),
             maximum_relative_intensity_change,
             maximum_absolute_background_change,
         });
+        calculation = Some(accepted);
+        let accepted_checkpoint = TofLeBailCheckpoint {
+            completed_iterations: history.len(),
+            phases: phases.clone(),
+            background: background.clone(),
+            history: history.clone(),
+        };
+        runtime.accept_step(Some(&accepted_checkpoint))?;
+        runtime.emit(
+            RefinementEventKind::Iteration,
+            "tof_lebail_iteration",
+            "TOF Le Bail cycle accepted",
+            vec![
+                ("rwp".to_owned(), DiagnosticValue::Float(metrics.rwp)),
+                (
+                    "maximum_relative_intensity_change".to_owned(),
+                    DiagnosticValue::Float(maximum_relative_intensity_change),
+                ),
+                (
+                    "maximum_absolute_background_change".to_owned(),
+                    DiagnosticValue::Float(maximum_absolute_background_change),
+                ),
+            ],
+        )?;
     }
-    let final_input = state_input(input, phases.clone(), background.clone())?;
-    let calculation = calculate_tof_lebail_pattern(&final_input, options)?;
-    let metrics = history
-        .last()
-        .ok_or(TofLeBailError::InvalidOptions)?
-        .metrics
-        .clone();
+    let calculation = if let Some(calculation) = calculation {
+        calculation
+    } else {
+        let final_input = state_input(input, phases.clone(), background.clone())?;
+        calculate_tof_lebail_pattern(&final_input, options)?
+    };
+    let background_parameter_count = background
+        .as_ref()
+        .map_or(0, |background| background.coefficients.len());
+    let metrics = evaluate_tof_residuals(
+        &input.pattern,
+        &calculation.y,
+        ResidualOptions {
+            use_uncertainty: options.use_uncertainty,
+            parameter_count: flatten_intensities(&phases).len() + background_parameter_count,
+        },
+    )?;
+    let final_checkpoint = TofLeBailCheckpoint {
+        completed_iterations: history.len(),
+        phases: phases.clone(),
+        background: background.clone(),
+        history: history.clone(),
+    };
+    final_checkpoint.validate_for(input, options)?;
     let intensities = phases
         .iter()
         .flat_map(|phase| {
@@ -716,6 +914,15 @@ pub fn refine_tof_lebail(
                 )
         })
         .collect();
+    runtime.emit(
+        RefinementEventKind::Termination,
+        "tof_lebail",
+        "TOF Le Bail extraction terminated",
+        vec![(
+            "termination_reason".to_owned(),
+            DiagnosticValue::String(termination.as_str().to_owned()),
+        )],
+    )?;
     Ok(TofLeBailResult {
         calculation,
         metrics,
@@ -723,7 +930,49 @@ pub fn refine_tof_lebail(
         background,
         intensities,
         history,
+        termination_reason: termination,
+        checkpoint: final_checkpoint,
     })
+}
+
+struct RestoredTofState {
+    phases: Vec<TofLeBailPhase>,
+    background: Option<TofChebyshevBackground>,
+    history: Vec<TofLeBailIterationRecord>,
+    first_iteration: usize,
+}
+
+fn restore_tof_state(
+    input: &TofLeBailInput,
+    options: &TofLeBailOptions,
+    checkpoint: Option<&TofLeBailCheckpoint>,
+) -> Result<RestoredTofState, TofLeBailError> {
+    let Some(checkpoint) = checkpoint else {
+        return Ok(RestoredTofState {
+            phases: initialize_intensities(input, options)?,
+            background: input.background.clone(),
+            history: Vec::new(),
+            first_iteration: 1,
+        });
+    };
+    checkpoint.validate_for(input, options)?;
+    let first_iteration = checkpoint
+        .completed_iterations
+        .checked_add(1)
+        .ok_or(TofLeBailError::AllocationOverflow)?;
+    Ok(RestoredTofState {
+        phases: checkpoint.phases.clone(),
+        background: checkpoint.background.clone(),
+        history: checkpoint.history.clone(),
+        first_iteration,
+    })
+}
+
+fn normal_tof_stop(error: RuntimeError) -> Result<TerminationReason, TofLeBailError> {
+    match error {
+        RuntimeError::Stopped(stop) => Ok(stop.reason),
+        other => Err(TofLeBailError::Runtime(other)),
+    }
 }
 
 fn initialize_intensities(
@@ -1000,10 +1249,14 @@ pub enum TofLeBailError {
     IntensityLengthMismatch,
     /// Checked allocation arithmetic overflowed.
     AllocationOverflow,
+    /// A continuation state disagrees with the immutable request contract.
+    InvalidCheckpoint(&'static str),
     /// Residual evaluation failed.
     Residual(ResidualError),
     /// Execution policy construction failed.
     Execution(ExecutionPolicyError),
+    /// Bounded runtime, cancellation, event, or checkpoint delivery failed.
+    Runtime(RuntimeError),
 }
 
 impl Display for TofLeBailError {
@@ -1014,7 +1267,9 @@ impl Display for TofLeBailError {
                 formatter.write_str("observed_y is required for TOF Le Bail extraction")
             }
             Self::Profile(error) => Display::fmt(error, formatter),
-            Self::InvalidPhase(message) => formatter.write_str(message),
+            Self::InvalidPhase(message) | Self::InvalidCheckpoint(message) => {
+                formatter.write_str(message)
+            }
             Self::InvalidOptions => formatter.write_str("invalid TOF Le Bail options"),
             Self::InvalidBackground => {
                 formatter.write_str("invalid TOF Chebyshev background coefficients or domain")
@@ -1043,6 +1298,7 @@ impl Display for TofLeBailError {
             Self::AllocationOverflow => formatter.write_str("TOF Le Bail allocation overflow"),
             Self::Residual(error) => Display::fmt(error, formatter),
             Self::Execution(error) => Display::fmt(error, formatter),
+            Self::Runtime(error) => Display::fmt(error, formatter),
         }
     }
 }
@@ -1054,6 +1310,7 @@ impl Error for TofLeBailError {
             Self::Profile(error) => Some(error),
             Self::Residual(error) => Some(error),
             Self::Execution(error) => Some(error),
+            Self::Runtime(error) => Some(error),
             _ => None,
         }
     }
@@ -1074,5 +1331,11 @@ impl From<ResidualError> for TofLeBailError {
 impl From<ExecutionPolicyError> for TofLeBailError {
     fn from(value: ExecutionPolicyError) -> Self {
         Self::Execution(value)
+    }
+}
+
+impl From<RuntimeError> for TofLeBailError {
+    fn from(value: RuntimeError) -> Self {
+        Self::Runtime(value)
     }
 }

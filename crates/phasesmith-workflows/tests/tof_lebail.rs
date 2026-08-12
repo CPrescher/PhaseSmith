@@ -1,11 +1,15 @@
 //! Fixed-instrument native TOF Le Bail workflow tests.
 
+use std::sync::{Arc, Mutex};
+
 use phasesmith_core::TofInstrument;
 use phasesmith_execution::ExecutionPolicy;
 use phasesmith_model::{RecordId, TofPatternRecord};
 use phasesmith_workflows::{
-    ChebyshevBackground, DifferentiableBackground, TofChebyshevBackground, TofLeBailInput,
-    TofLeBailOptions, TofLeBailPhase, calculate_tof_lebail_pattern, refine_tof_lebail,
+    CancellationToken, ChebyshevBackground, DifferentiableBackground, RefinementEventKind,
+    RefinementLimits, RefinementRuntime, TerminationReason, TofChebyshevBackground,
+    TofLeBailCheckpoint, TofLeBailInput, TofLeBailOptions, TofLeBailPhase,
+    calculate_tof_lebail_pattern, refine_tof_lebail, refine_tof_lebail_with_runtime,
 };
 
 fn instrument() -> TofInstrument {
@@ -53,6 +57,24 @@ fn options(cycles: usize) -> TofLeBailOptions {
         ExecutionPolicy::new(Some(1), 2).unwrap(),
     )
     .unwrap()
+}
+
+fn synthetic_request() -> TofLeBailInput {
+    let x = (0..1_401)
+        .map(|index| {
+            let fraction = f64::from(index) / 1_400.0;
+            3_200.0 + 3_200.0 * fraction.powf(1.15)
+        })
+        .collect::<Vec<_>>();
+    let blank =
+        TofPatternRecord::new(x.clone(), Some(vec![0.0; x.len()]), None, None, None).unwrap();
+    let truth =
+        TofLeBailInput::new(blank, instrument(), vec![phase(vec![120.0, 75.0, 210.0])]).unwrap();
+    let observed = calculate_tof_lebail_pattern(&truth, &options(1))
+        .unwrap()
+        .profile_y;
+    let pattern = TofPatternRecord::new(x, Some(observed), None, None, None).unwrap();
+    TofLeBailInput::new(pattern, instrument(), vec![phase(vec![0.0; 3])]).unwrap()
 }
 
 #[test]
@@ -309,4 +331,75 @@ fn chebyshev_coefficient_derivatives_match_centered_differences() {
             assert!((finite - analytical).abs() < 2.0e-10);
         }
     }
+}
+
+#[test]
+fn cancellation_returns_an_accepted_checkpoint_and_resume_matches_uninterrupted() {
+    let request = synthetic_request();
+    let selected_options = options(12);
+    let uninterrupted = refine_tof_lebail(&request, &selected_options).unwrap();
+    let cancellation = CancellationToken::default();
+    let requested = cancellation.clone();
+    let events = Arc::new(Mutex::new(Vec::new()));
+    let captured = Arc::clone(&events);
+    let limits = RefinementLimits::new(12, 36, None, 1).unwrap();
+    let mut runtime =
+        RefinementRuntime::<TofLeBailCheckpoint>::new(limits, Some(cancellation)).unwrap();
+    runtime.set_event_sink(move |event: &phasesmith_workflows::RefinementEvent| {
+        captured.lock().unwrap().push(event.kind());
+        Ok(())
+    });
+    runtime.set_checkpoint_sink(move |checkpoint: &TofLeBailCheckpoint| {
+        if checkpoint.completed_iterations == 4 {
+            requested
+                .request("test stop")
+                .map_err(|error| error.to_string())?;
+        }
+        Ok(())
+    });
+
+    let stopped =
+        refine_tof_lebail_with_runtime(&request, &selected_options, None, &mut runtime).unwrap();
+    assert_eq!(stopped.termination_reason, TerminationReason::Cancelled);
+    assert_eq!(stopped.history.len(), 4);
+    assert_eq!(stopped.checkpoint.completed_iterations, 4);
+    let event_kinds = events.lock().unwrap();
+    assert_eq!(event_kinds.first(), Some(&RefinementEventKind::Start));
+    assert_eq!(event_kinds.last(), Some(&RefinementEventKind::Termination));
+    assert_eq!(
+        event_kinds
+            .iter()
+            .filter(|kind| **kind == RefinementEventKind::Iteration)
+            .count(),
+        4
+    );
+    drop(event_kinds);
+
+    let mut continuation = RefinementRuntime::new(limits, None).unwrap();
+    let resumed = refine_tof_lebail_with_runtime(
+        &request,
+        &selected_options,
+        Some(&stopped.checkpoint),
+        &mut continuation,
+    )
+    .unwrap();
+    assert_eq!(resumed.termination_reason, TerminationReason::MaxIterations);
+    assert_eq!(resumed.history, uninterrupted.history);
+    assert_eq!(resumed.intensities, uninterrupted.intensities);
+    assert_eq!(resumed.calculation.y, uninterrupted.calculation.y);
+}
+
+#[test]
+fn invalid_tof_checkpoint_is_rejected_before_continuation() {
+    let request = synthetic_request();
+    let selected_options = options(3);
+    let result = refine_tof_lebail(&request, &selected_options).unwrap();
+    let mut invalid = result.checkpoint;
+    invalid.completed_iterations -= 1;
+    let limits = RefinementLimits::new(3, 9, None, 1).unwrap();
+    let mut runtime = RefinementRuntime::new(limits, None).unwrap();
+    let error =
+        refine_tof_lebail_with_runtime(&request, &selected_options, Some(&invalid), &mut runtime)
+            .unwrap_err();
+    assert!(error.to_string().contains("checkpoint iteration count"));
 }

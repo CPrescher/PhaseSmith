@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -270,6 +271,45 @@ class TofLeBailIteration:
     maximum_absolute_background_change: float
 
 
+class TofLeBailCancellation:
+    """Thread-safe cooperative cancellation for a running native TOF refinement."""
+
+    __slots__ = ("_native",)
+
+    def __init__(self) -> None:
+        self._native = _core._TofLeBailCancellation()
+
+    def request(self, reason: str = "user requested cancellation") -> bool:
+        """Request cancellation; the first non-empty reason wins."""
+
+        if not isinstance(reason, str):
+            raise TypeError("reason must be a string")
+        return bool(self._native.request(reason))
+
+    @property
+    def reason(self) -> str | None:
+        """Return the first cancellation reason, if requested."""
+
+        return self._native.reason
+
+
+class TofLeBailCheckpoint:
+    """Opaque native last-accepted state for exact TOF continuation."""
+
+    __slots__ = ("_native",)
+
+    def __init__(self, native: object) -> None:
+        if not isinstance(native, _core._TofLeBailCheckpoint):
+            raise TypeError("native must be a PhaseSmith TOF Le Bail checkpoint")
+        self._native = native
+
+    @property
+    def completed_iterations(self) -> int:
+        """Return the number of accepted cycles stored in this checkpoint."""
+
+        return int(self._native.completed_iterations)
+
+
 @dataclass(frozen=True, slots=True)
 class TofLeBailResult:
     """Final pattern, stable intensities, metrics, and complete cycle history."""
@@ -283,6 +323,8 @@ class TofLeBailResult:
     background_coefficients: NDArray[np.float64] | None
     metrics: ResidualEvaluation
     history: tuple[TofLeBailIteration, ...]
+    termination_reason: str
+    checkpoint: TofLeBailCheckpoint
 
 
 def _metrics(record: dict[str, object]) -> ResidualEvaluation:
@@ -307,14 +349,29 @@ def _metrics(record: dict[str, object]) -> ResidualEvaluation:
 def refine_tof_lebail(
     input_: TofLeBailInput,
     options: TofLeBailOptions | None = None,
+    *,
+    cancellation: TofLeBailCancellation | None = None,
+    checkpoint: TofLeBailCheckpoint | None = None,
+    progress: Callable[[dict[str, object]], object] | None = None,
 ) -> TofLeBailResult:
-    """Run native nonnegative fixed-instrument TOF Le Bail extraction."""
+    """Run native nonnegative fixed-instrument TOF Le Bail extraction.
+
+    ``progress`` receives immutable-by-convention plain dictionaries at start,
+    accepted-cycle, and termination boundaries. Callback failures detach the
+    progress sink without invalidating the accepted numerical state.
+    """
 
     if not isinstance(input_, TofLeBailInput):
         raise TypeError("input_ must be a TofLeBailInput")
     selected = options or TofLeBailOptions()
     if not isinstance(selected, TofLeBailOptions):
         raise TypeError("options must be a TofLeBailOptions")
+    if cancellation is not None and not isinstance(cancellation, TofLeBailCancellation):
+        raise TypeError("cancellation must be a TofLeBailCancellation or None")
+    if checkpoint is not None and not isinstance(checkpoint, TofLeBailCheckpoint):
+        raise TypeError("checkpoint must be a TofLeBailCheckpoint or None")
+    if progress is not None and not callable(progress):
+        raise TypeError("progress must be callable or None")
     offsets = np.zeros(len(input_.phases) + 1, dtype=np.int64)
     offsets[1:] = np.cumsum([len(phase.reflection_ids) for phase in input_.phases])
     record = _core._refine_tof_lebail(
@@ -343,6 +400,9 @@ def refine_tof_lebail(
         selected.use_uncertainty,
         selected.redistribution_use_uncertainty,
         selected.execution._native,
+        None if cancellation is None else cancellation._native,
+        None if checkpoint is None else checkpoint._native,
+        progress,
     )
     history = tuple(
         TofLeBailIteration(
@@ -375,4 +435,6 @@ def refine_tof_lebail(
         background_coefficients,
         _metrics(record["metrics"]),
         history,
+        str(record["termination_reason"]),
+        TofLeBailCheckpoint(record["checkpoint"]),
     )

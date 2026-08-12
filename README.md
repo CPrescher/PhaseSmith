@@ -372,7 +372,12 @@ the fixed background alone. Python can build a complete fixed-instrument request
 from one bank, calibration, and CIF:
 
 ```python
-from phasesmith.refinement import TofLeBailInput, refine_tof_lebail
+from phasesmith.refinement import (
+    TofLeBailCancellation,
+    TofLeBailInput,
+    TofLeBailOptions,
+    refine_tof_lebail,
+)
 
 request = TofLeBailInput.from_files(
     "PG3_17541.gsa",
@@ -380,7 +385,21 @@ request = TofLeBailInput.from_files(
     "LaB6.cif",
     bank=2,
 )
-result = refine_tof_lebail(request)
+cancellation = TofLeBailCancellation()
+events = []
+result = refine_tof_lebail(
+    request,
+    TofLeBailOptions(cycles=20),
+    cancellation=cancellation,
+    progress=events.append,
+)
+
+# Continue a last-accepted state with a larger total cycle budget.
+continued = refine_tof_lebail(
+    request,
+    TofLeBailOptions(cycles=50),
+    checkpoint=result.checkpoint,
+)
 ```
 
 The file path is not tied to POWGEN: reduced center/density columns, GSAS SLOG

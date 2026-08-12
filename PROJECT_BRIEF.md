@@ -886,6 +886,16 @@ reflection families, Rwp 0.02485869, and background-subtracted profile
 correlation 0.99891242. This establishes facility-neutral operation for the
 supported back-to-back-exponential/TCH law; it is not a claim that every
 beamline-specific tail or resolution law is already implemented.
+The TOF Le Bail application boundary now also uses the shared native refinement
+runtime. Cancellation is checked before each accepted cycle and model
+evaluation; partial candidate work is discarded, every accepted state can be
+delivered as a typed checkpoint, and continuation reproduces uninterrupted
+history and final arrays exactly. Structured start/iteration/termination events
+are available to Rust hosts and as plain progress dictionaries in Python. This
+closes the cooperative-control part of application hardening. Durable TOF
+analysis persistence remains a separate schema change because the current
+native project record is deliberately constant-wavelength; it must not store a
+microsecond histogram in an angle-domain record.
 The historical native-workflow comparison passes both Le Bail parity contracts
 and QARR 1g. Its unchanged QARR 1h acceptance recipe retains the reviewed
 profile-quality failure, rather than having thresholds relaxed. The newer

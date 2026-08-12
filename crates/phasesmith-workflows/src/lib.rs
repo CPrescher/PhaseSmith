@@ -161,7 +161,8 @@ pub use sample_physics::{
     EvaluatedSamplePhysics, RietveldSamplePhysicsModel, SamplePhysicsError, SamplePhysicsParameter,
 };
 pub use tof_lebail::{
-    TofChebyshevBackground, TofChebyshevBasis, TofLeBailCalculation, TofLeBailError,
-    TofLeBailInput, TofLeBailIterationRecord, TofLeBailOptions, TofLeBailPhase, TofLeBailResult,
-    TofReflectionIntensity, calculate_tof_lebail_pattern, refine_tof_lebail,
+    TofChebyshevBackground, TofChebyshevBasis, TofLeBailCalculation, TofLeBailCheckpoint,
+    TofLeBailError, TofLeBailInput, TofLeBailIterationRecord, TofLeBailOptions, TofLeBailPhase,
+    TofLeBailResult, TofReflectionIntensity, calculate_tof_lebail_pattern, refine_tof_lebail,
+    refine_tof_lebail_with_runtime,
 };

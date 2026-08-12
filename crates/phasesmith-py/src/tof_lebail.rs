@@ -4,8 +4,9 @@ use npy::{IntoPyArray, PyReadonlyArray1, PyReadonlyArray2, PyUntypedArrayMethods
 use phasesmith_core::TofInstrument;
 use phasesmith_model::{RecordId, TofPatternRecord};
 use phasesmith_workflows::{
-    ResidualEvaluation, TofChebyshevBackground, TofLeBailInput, TofLeBailOptions, TofLeBailPhase,
-    TofLeBailResult, refine_tof_lebail,
+    CancellationToken, DiagnosticValue, RefinementEvent, RefinementLimits, RefinementRuntime,
+    ResidualEvaluation, TofChebyshevBackground, TofLeBailCheckpoint, TofLeBailInput,
+    TofLeBailOptions, TofLeBailPhase, TofLeBailResult, refine_tof_lebail_with_runtime,
 };
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
@@ -13,7 +14,50 @@ use pyo3::types::{PyDict, PyList};
 
 use crate::NativeExecutionPolicy;
 
-#[allow(clippy::too_many_arguments)]
+/// Thread-safe cancellation shared with a detached TOF refinement call.
+#[pyclass(name = "_TofLeBailCancellation")]
+struct NativeTofLeBailCancellation {
+    token: CancellationToken,
+}
+
+#[pymethods]
+impl NativeTofLeBailCancellation {
+    #[new]
+    fn new() -> Self {
+        Self {
+            token: CancellationToken::default(),
+        }
+    }
+
+    fn request(&self, reason: String) -> PyResult<bool> {
+        self.token
+            .request(reason)
+            .map_err(|error| PyValueError::new_err(error.to_string()))
+    }
+
+    #[getter]
+    fn reason(&self) -> PyResult<Option<String>> {
+        self.token
+            .reason()
+            .map_err(|error| PyValueError::new_err(error.to_string()))
+    }
+}
+
+/// Opaque validated continuation state returned by TOF refinement.
+#[pyclass(name = "_TofLeBailCheckpoint")]
+struct NativeTofLeBailCheckpoint {
+    checkpoint: TofLeBailCheckpoint,
+}
+
+#[pymethods]
+impl NativeTofLeBailCheckpoint {
+    #[getter]
+    fn completed_iterations(&self) -> usize {
+        self.checkpoint.completed_iterations
+    }
+}
+
+#[allow(clippy::too_many_arguments, clippy::too_many_lines)]
 #[pyfunction(name = "_refine_tof_lebail")]
 fn refine_tof_lebail_for_python<'py>(
     py: Python<'py>,
@@ -42,6 +86,9 @@ fn refine_tof_lebail_for_python<'py>(
     use_uncertainty: bool,
     redistribution_use_uncertainty: bool,
     execution: &NativeExecutionPolicy,
+    cancellation: Option<PyRef<'py, NativeTofLeBailCancellation>>,
+    checkpoint: Option<PyRef<'py, NativeTofLeBailCheckpoint>>,
+    progress: Option<Py<PyAny>>,
 ) -> PyResult<Bound<'py, PyDict>> {
     let tof_us = tof_us.as_slice()?.to_vec();
     let observed_y = observed_y.as_slice()?.to_vec();
@@ -84,6 +131,8 @@ fn refine_tof_lebail_for_python<'py>(
         phase_scales,
     )?;
     let execution = execution.policy.clone();
+    let cancellation = cancellation.map(|value| value.token.clone());
+    let checkpoint = checkpoint.map(|value| value.checkpoint.clone());
     let result = py
         .detach(move || {
             let pattern = TofPatternRecord::new(
@@ -121,7 +170,27 @@ fn refine_tof_lebail_for_python<'py>(
             )
             .map_err(|error| error.to_string())?
             .with_redistribution_uncertainty(redistribution_use_uncertainty);
-            refine_tof_lebail(&input, &options).map_err(|error| error.to_string())
+            let max_evaluations = cycles
+                .checked_mul(3)
+                .ok_or_else(|| "TOF Le Bail evaluation budget overflow".to_owned())?;
+            let limits = RefinementLimits::new(cycles, max_evaluations, None, 1)
+                .map_err(|error| error.to_string())?;
+            let mut runtime =
+                RefinementRuntime::new(limits, cancellation).map_err(|error| error.to_string())?;
+            if let Some(progress) = progress {
+                runtime.set_event_sink(move |event: &RefinementEvent| {
+                    Python::attach(|py| {
+                        let record =
+                            event_to_python(py, event).map_err(|error| error.to_string())?;
+                        progress
+                            .call1(py, (record,))
+                            .map(|_| ())
+                            .map_err(|error| error.to_string())
+                    })
+                });
+            }
+            refine_tof_lebail_with_runtime(&input, &options, checkpoint.as_ref(), &mut runtime)
+                .map_err(|error| error.to_string())
         })
         .map_err(PyValueError::new_err)?;
     result_to_python(py, result)
@@ -207,6 +276,16 @@ fn tof_phases(
 
 fn result_to_python(py: Python<'_>, result: TofLeBailResult) -> PyResult<Bound<'_, PyDict>> {
     let output = PyDict::new(py);
+    output.set_item("termination_reason", result.termination_reason.as_str())?;
+    output.set_item(
+        "checkpoint",
+        Py::new(
+            py,
+            NativeTofLeBailCheckpoint {
+                checkpoint: result.checkpoint.clone(),
+            },
+        )?,
+    )?;
     output.set_item("y", result.calculation.y.into_pyarray(py))?;
     output.set_item("profile_y", result.calculation.profile_y.into_pyarray(py))?;
     output.set_item(
@@ -259,6 +338,30 @@ fn result_to_python(py: Python<'_>, result: TofLeBailResult) -> PyResult<Bound<'
     Ok(output)
 }
 
+fn event_to_python<'py>(py: Python<'py>, event: &RefinementEvent) -> PyResult<Bound<'py, PyDict>> {
+    let output = PyDict::new(py);
+    output.set_item("kind", event.kind().as_str())?;
+    output.set_item("stage", event.stage())?;
+    output.set_item("attempted_iteration", event.attempted_iteration())?;
+    output.set_item("accepted_iterations", event.accepted_iterations())?;
+    output.set_item("evaluations", event.evaluations())?;
+    output.set_item("elapsed_seconds", event.elapsed_seconds())?;
+    output.set_item("message", event.message())?;
+    let diagnostics = PyDict::new(py);
+    for (key, value) in event.diagnostics() {
+        match value {
+            DiagnosticValue::String(value) => diagnostics.set_item(key, value)?,
+            DiagnosticValue::Bool(value) => diagnostics.set_item(key, value)?,
+            DiagnosticValue::Integer(value) => diagnostics.set_item(key, value)?,
+            DiagnosticValue::Unsigned(value) => diagnostics.set_item(key, value)?,
+            DiagnosticValue::Float(value) => diagnostics.set_item(key, value)?,
+            DiagnosticValue::Null => diagnostics.set_item(key, py.None())?,
+        }
+    }
+    output.set_item("diagnostics", diagnostics)?;
+    Ok(output)
+}
+
 fn metrics_to_python<'py>(
     py: Python<'py>,
     metrics: &ResidualEvaluation,
@@ -278,6 +381,8 @@ fn metrics_to_python<'py>(
 }
 
 pub(crate) fn register(module: &Bound<'_, PyModule>) -> PyResult<()> {
+    module.add_class::<NativeTofLeBailCancellation>()?;
+    module.add_class::<NativeTofLeBailCheckpoint>()?;
     module.add_function(wrap_pyfunction!(refine_tof_lebail_for_python, module)?)?;
     Ok(())
 }

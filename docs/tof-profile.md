@@ -180,6 +180,26 @@ the typed 15 coefficients without adopting GSAS filenames. It does not mean
 that specialized tails, tabulated resolution functions, or every historical
 profile function are silently approximated by this model.
 
+## Runtime, cancellation, and continuation
+
+The fixed-instrument workflow uses the common native refinement runtime.
+Cancellation is cooperative and checked before cycles and model evaluations.
+If it arrives after a candidate has begun but before acceptance, that candidate
+is discarded and the result contains the previous complete accepted state.
+Each accepted checkpoint contains phase intensities, optional Chebyshev
+coefficients, and the complete deterministic history. A checkpoint may resume
+only against the same phase IDs, reflection topology, d-spacings, phase scales,
+background identity/domain/order, and a total cycle budget at least as large as
+its completed count.
+
+Rust hosts use `refine_tof_lebail_with_runtime` to attach event and checkpoint
+sinks. Python callers pass `cancellation=`, `checkpoint=`, and `progress=` to
+`refine_tof_lebail`. Progress callbacks receive plain start, accepted-iteration,
+and termination records; Python is never invoked from the peak/sample pass.
+Loaded-project persistence is not yet implied by this checkpoint handle. The
+native project schema currently represents constant-wavelength histograms, so
+TOF persistence requires an explicit microsecond histogram/experiment variant.
+
 The public Python path keeps the same unit boundary:
 
 ```python

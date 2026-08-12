@@ -4,6 +4,8 @@ import numpy as np
 import phasesmith
 import pytest
 from phasesmith.refinement import (
+    TofLeBailCancellation,
+    TofLeBailCheckpoint,
     TofLeBailInput,
     TofLeBailOptions,
     TofLeBailPhase,
@@ -129,3 +131,77 @@ _space_group_name_H-M_alt 'P m -3 m'
     assert request.instrument.difc_us_per_angstrom == 5000.0
     assert request.phases[0].reflection_ids
     assert request.background is None
+
+
+def test_tof_progress_checkpoint_resume_and_cancellation_are_public() -> None:
+    instrument = _instrument()
+    tof_us = np.linspace(4500.0, 5500.0, 1001)
+    observed = phasesmith.accumulate_tof(
+        tof_us,
+        np.array([1.0]),
+        np.array([20.0]),
+        instrument,
+        execution=phasesmith.ExecutionPolicy(threads=1),
+    ).y
+    request = TofLeBailInput(
+        phasesmith.TofPowderPattern(tof_us, observed_y=observed),
+        instrument,
+        (
+            TofLeBailPhase(
+                "phase",
+                "Synthetic phase",
+                ["1,0,0"],
+                [[1, 0, 0]],
+                [1.0],
+                [1.0],
+            ),
+        ),
+    )
+    execution = phasesmith.ExecutionPolicy(threads=1)
+    events: list[dict[str, object]] = []
+    partial = refine_tof_lebail(
+        request,
+        TofLeBailOptions(cycles=2, execution=execution),
+        progress=events.append,
+    )
+    assert isinstance(partial.checkpoint, TofLeBailCheckpoint)
+    assert partial.checkpoint.completed_iterations == 2
+    assert partial.termination_reason == "max_iterations"
+    assert [event["kind"] for event in events] == [
+        "start",
+        "iteration",
+        "iteration",
+        "termination",
+    ]
+
+    resumed = refine_tof_lebail(
+        request,
+        TofLeBailOptions(cycles=4, execution=execution),
+        checkpoint=partial.checkpoint,
+    )
+    uninterrupted = refine_tof_lebail(
+        request,
+        TofLeBailOptions(cycles=4, execution=execution),
+    )
+    np.testing.assert_array_equal(resumed.y, uninterrupted.y)
+    np.testing.assert_array_equal(
+        resumed.integrated_intensity, uninterrupted.integrated_intensity
+    )
+    assert [item.iteration for item in resumed.history] == [1, 2, 3, 4]
+    np.testing.assert_array_equal(
+        [item.metrics.rwp for item in resumed.history],
+        [item.metrics.rwp for item in uninterrupted.history],
+    )
+
+    cancellation = TofLeBailCancellation()
+    assert cancellation.request("test cancellation")
+    assert not cancellation.request("ignored second reason")
+    cancelled = refine_tof_lebail(
+        request,
+        TofLeBailOptions(cycles=4, execution=execution),
+        cancellation=cancellation,
+    )
+    assert cancelled.termination_reason == "cancelled"
+    assert cancelled.checkpoint.completed_iterations == 0
+    assert cancelled.history == ()
+    assert cancellation.reason == "test cancellation"

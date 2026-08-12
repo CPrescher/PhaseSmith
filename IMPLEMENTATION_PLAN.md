@@ -1222,6 +1222,9 @@ Keep implementation units reviewable through these ordered changes:
     plain center/density columns, logarithmic FXYE and packed constant-step STD
     adapters, legacy profile functions 1/3, and a checksum-pinned LANL nickel
     refinement gate.
+31. TOF application runtime hardening: cooperative cancellation at safe
+    boundaries, structured progress events, typed last-accepted checkpoints,
+    and exact continuation through the Rust and Python application boundaries.
 
 Unit 23 is complete. The Rust workflow crate now owns stable shared/local
 packing, matrix-free joint products, a bounded constraint-aware summed solver,
@@ -1306,9 +1309,22 @@ records, the calibration reader, generated fixed-cell TOF phases, a
 `TofLeBailInput.from_files` composition boundary, and a thin native refinement
 facade returning stable reflection keys, intensities, backgrounds, metrics, and
 cycle history. Synthetic extraction and FXYE/PRM/CIF composition tests cover
-the boundary. Native project persistence, cancellation/progress events,
-multi-bank requests, lattice/instrument refinement, and structural TOF
-Rietveld remain follow-on slices.
+the boundary. Native project persistence, multi-bank requests,
+lattice/instrument refinement, and structural TOF Rietveld remain follow-on
+slices.
+
+Unit 31 is complete. `refine_tof_lebail_with_runtime` adopts the shared native
+runtime without changing the fixed-instrument numerical algorithm. Hosts can
+cancel before cycle/evaluation boundaries, consume stable events, durably sink
+each accepted checkpoint, and resume that checkpoint under the same immutable
+phase/background topology. Rust tests prove that a cancelled four-cycle state
+continued to twelve cycles is bitwise identical to an uninterrupted run.
+Python exposes the same cancellation token, progress dictionaries, opaque
+checkpoint, termination reason, and continuation path while releasing the GIL
+during native work. Durable TOF project persistence is intentionally still
+separate: the current project schema owns degree-domain CW histograms and must
+be extended with an explicit histogram/experiment variant rather than reusing
+those fields for microseconds.
 
 Do not combine adjacent items merely to reduce PR count; numerical review is
 easier when parameter conventions and tolerance changes remain isolated.
@@ -1359,10 +1375,10 @@ complete: the core request is facility-neutral, the production I/O boundary
 normalizes three explicit bin conventions, and the independent four-bank LANL
 nickel example passes on bank 2 with Rwp 0.02485869 and correlation 0.99891242.
 This validates the supported profile family beyond ORNL without promising
-unknown facility-specific line shapes. The next TOF increment is application
-hardening: native project persistence and cooperative
-cancellation/progress for the new request/result boundary, followed by a
-reviewed multi-bank model. Structural parameter and instrument refinement must
+unknown facility-specific line shapes. Unit 31 completes cooperative
+cancellation/progress and restartable accepted-state checkpoints. The next TOF
+increment is an explicit native TOF project/persistence schema, followed by a
+reviewed multi-bank shared-cell model. Structural parameter and instrument refinement must
 be introduced only with analytical derivatives, finite-difference tests, and
 new oracle contracts; it is not part of the completed Le Bail facade.
 

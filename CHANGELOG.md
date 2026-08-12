@@ -12,6 +12,9 @@ development versions.
 - Generalize the TOF input boundary to plain center/density columns and packed
   constant-step GSAS data, translate legacy profile functions 1 and 3, and add
   a checksum-pinned non-POWGEN LANL nickel acceptance refinement.
+- Add cooperative cancellation, structured progress events, last-accepted TOF
+  Le Bail checkpoints, and exact checkpoint continuation to the native and
+  Python fixed-instrument workflow.
 - Treat PbSO4 X-ray final-polish `repeated_rejections` as safe bounded
   stagnation only after an accepted, materially improved state, while
   preserving the termination reason, accepted-state checkpoint semantics, and

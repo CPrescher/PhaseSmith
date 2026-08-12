@@ -470,3 +470,9 @@ The powder adapter accepts plain center/density columns, GSAS SLOG FXYE, and
 packed constant-step GSAS STD. The legacy calibration adapter accepts profile
 functions 1 and 3; facilities using other file syntaxes can construct the same
 public `TofPowderPattern` and `TofInstrument` records directly.
+`refinement.refine_tof_lebail` additionally accepts a
+`TofLeBailCancellation`, an opaque `TofLeBailCheckpoint` for exact
+continuation, and a progress callback receiving plain event dictionaries. The
+result reports its stable termination reason and the last accepted checkpoint.
+Callback delivery occurs only at orchestration boundaries; no Python code runs
+inside the reflection/sample loop.

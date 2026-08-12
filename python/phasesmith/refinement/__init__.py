@@ -91,6 +91,8 @@ from .runtime import (
 from .scipy import ScipyLeastSquaresAdapter
 from .tof_lebail import (
     TofChebyshevBackground,
+    TofLeBailCancellation,
+    TofLeBailCheckpoint,
     TofLeBailInput,
     TofLeBailIteration,
     TofLeBailOptions,
@@ -170,6 +172,8 @@ __all__ = [
     "SiteCoordinateModel",
     "TerminationReason",
     "TofChebyshevBackground",
+    "TofLeBailCancellation",
+    "TofLeBailCheckpoint",
     "TofLeBailInput",
     "TofLeBailIteration",
     "TofLeBailOptions",
