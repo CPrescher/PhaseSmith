@@ -45,7 +45,8 @@ use std::error::Error;
 use std::fmt::{Display, Formatter};
 
 use phasesmith_core::{
-    ConstantWavelengthInstrument, FcjGeometry, WavelengthComponentsError, WavelengthComponentsView,
+    ConstantWavelengthInstrument, FcjGeometry, TofError, TofInstrument, WavelengthComponentsError,
+    WavelengthComponentsView,
 };
 use phasesmith_engine::{
     MonochromaticPositionCorrection, StructuralPatternError, StructuralPhaseDefinition,
@@ -471,6 +472,52 @@ pub struct HistogramRecord {
     pub phase_ids: Vec<RecordId>,
 }
 
+/// One explicitly microsecond-domain time-of-flight experiment.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct TofExperimentRecord {
+    /// Fixed 15-coefficient TOF calibration/profile model.
+    pub instrument: TofInstrument,
+}
+
+impl TofExperimentRecord {
+    /// Validate and own one fixed TOF instrument.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`DomainError`] when an instrument coefficient is invalid.
+    pub fn new(instrument: TofInstrument) -> Result<Self, DomainError> {
+        let result = Self { instrument };
+        result.validate()?;
+        Ok(result)
+    }
+
+    /// Revalidate adapter-decoded state.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`DomainError`] when an instrument coefficient is invalid.
+    pub fn validate(&self) -> Result<(), DomainError> {
+        self.instrument
+            .validate()
+            .map_err(DomainError::TofInstrument)
+    }
+}
+
+/// One independently observed TOF dataset in a multi-histogram project.
+#[derive(Clone, Debug, PartialEq)]
+pub struct TofHistogramRecord {
+    /// Stable histogram identifier shared with application selection state.
+    pub histogram_id: RecordId,
+    /// Human-readable dataset label.
+    pub name: String,
+    /// Explicit microsecond-domain observations.
+    pub pattern: TofPatternRecord,
+    /// Fixed TOF calibration/profile record.
+    pub experiment: TofExperimentRecord,
+    /// Ordered phase references active for this histogram.
+    pub phase_ids: Vec<RecordId>,
+}
+
 /// Revisioned application-neutral project snapshot.
 #[derive(Clone, Debug, PartialEq)]
 pub struct ProjectRecord {
@@ -482,6 +529,8 @@ pub struct ProjectRecord {
     pub name: String,
     /// Independently observed datasets.
     pub histograms: Vec<HistogramRecord>,
+    /// Independently observed microsecond-domain TOF datasets.
+    pub tof_histograms: Vec<TofHistogramRecord>,
     /// Project-owned phase definitions.
     pub phases: Vec<StructuralPhaseRecord>,
     /// Small textual metadata; bulk arrays remain typed fields.
@@ -530,6 +579,31 @@ impl ProjectRecord {
         let mut histogram_ids = BTreeSet::new();
         for histogram in &self.histograms {
             validate_label("histogram", &histogram.name)?;
+            histogram.pattern.validate()?;
+            histogram.experiment.validate()?;
+            if !histogram_ids.insert(histogram.histogram_id.clone()) {
+                return Err(DomainError::DuplicateHistogramId {
+                    histogram_id: histogram.histogram_id.clone(),
+                });
+            }
+            let mut referenced = BTreeSet::new();
+            for phase_id in &histogram.phase_ids {
+                if !phase_ids.contains(phase_id) {
+                    return Err(DomainError::UnknownPhaseReference {
+                        histogram_id: histogram.histogram_id.clone(),
+                        phase_id: phase_id.clone(),
+                    });
+                }
+                if !referenced.insert(phase_id.clone()) {
+                    return Err(DomainError::DuplicatePhaseReference {
+                        histogram_id: histogram.histogram_id.clone(),
+                        phase_id: phase_id.clone(),
+                    });
+                }
+            }
+        }
+        for histogram in &self.tof_histograms {
+            validate_label("TOF histogram", &histogram.name)?;
             histogram.pattern.validate()?;
             histogram.experiment.validate()?;
             if !histogram_ids.insert(histogram.histogram_id.clone()) {
@@ -660,6 +734,8 @@ pub enum DomainError {
     ReferenceWavelengthMismatch,
     /// Instrument parameters are non-finite or nonphysical.
     InvalidInstrument,
+    /// TOF instrument parameters are non-finite or nonphysical.
+    TofInstrument(TofError),
     /// Axial geometry is non-finite or negative.
     InvalidAxialGeometry,
     /// Position-correction geometry is non-finite or nonphysical.
@@ -715,7 +791,9 @@ impl Display for DomainError {
             Self::NonPositiveArray { name } => {
                 write!(formatter, "{name} must contain positive values")
             }
-            Self::UnorderedGrid => formatter.write_str("x_deg must be strictly increasing"),
+            Self::UnorderedGrid => {
+                formatter.write_str("pattern coordinates must be strictly increasing")
+            }
             Self::Radiation(error) => Display::fmt(error, formatter),
             Self::InvalidRadiationWavelength => {
                 formatter.write_str("radiation wavelength must be positive and finite")
@@ -725,6 +803,7 @@ impl Display for DomainError {
             Self::InvalidInstrument => {
                 formatter.write_str("constant-wavelength instrument parameters are invalid")
             }
+            Self::TofInstrument(error) => Display::fmt(error, formatter),
             Self::InvalidAxialGeometry => {
                 formatter.write_str("axial geometry must be finite and non-negative")
             }
@@ -768,6 +847,7 @@ impl Error for DomainError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
             Self::Radiation(error) => Some(error),
+            Self::TofInstrument(error) => Some(error),
             Self::StructuralPhase(error) => Some(error),
             _ => None,
         }

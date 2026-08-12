@@ -382,6 +382,7 @@ fn state() -> RietveldProjectState {
                 .unwrap(),
                 phase_ids: vec![id("alpha")],
             }],
+            tof_histograms: Vec::new(),
             phases: vec![StructuralPhaseRecord {
                 phase_id: id("alpha"),
                 name: "Alpha".to_owned(),

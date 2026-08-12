@@ -147,6 +147,7 @@ fn state() -> RietveldProjectState {
                 .unwrap(),
                 phase_ids: vec![phase.phase_id().clone()],
             }],
+            tof_histograms: Vec::new(),
             phases: vec![StructuralPhaseRecord {
                 phase_id: phase.phase_id().clone(),
                 name: phase.name().to_owned(),

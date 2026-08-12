@@ -5,14 +5,15 @@ use std::collections::BTreeMap;
 use phasesmith_engine::crystallography::{
     IntegratedIntensityCorrectionModel, SpaceGroup, SymmetryOperation, UnitCell,
 };
-use phasesmith_engine::profile::ConstantWavelengthInstrument;
+use phasesmith_engine::profile::{ConstantWavelengthInstrument, TofInstrument};
 use phasesmith_engine::{
     BuiltInScatteringModel, MonochromaticPositionCorrection, StructuralPhaseDefinition,
 };
 use phasesmith_model::{
     CapabilityReason, DomainError, ExperimentRecord, FixedWavelengthSpectrum, HistogramRecord,
     HostCapabilities, PatternRecord, ProjectRecord, ProviderRequirement, RadiationDefinition,
-    RadiationProbe, RecordId, StructuralPhaseRecord, TofPatternRecord,
+    RadiationProbe, RecordId, StructuralPhaseRecord, TofExperimentRecord, TofHistogramRecord,
+    TofPatternRecord,
 };
 
 fn id(value: &str) -> RecordId {
@@ -95,6 +96,43 @@ fn histogram(histogram_id: &str, phase_ids: &[&str]) -> HistogramRecord {
     }
 }
 
+fn tof_instrument() -> TofInstrument {
+    TofInstrument {
+        zero_us: -0.7,
+        difc_us_per_angstrom: 5_000.0,
+        difa_us_per_angstrom2: -1.5,
+        difb_us_angstrom: 0.8,
+        alpha_coefficient: 0.18,
+        beta0_per_us: 0.04,
+        beta1_angstrom4_per_us: 0.000_5,
+        betaq_angstrom2_per_us: 0.001,
+        sigma0_us2: 1.0,
+        sigma1_us2_per_angstrom2: 12.0,
+        sigma2_us2_per_angstrom4: 0.05,
+        sigmaq_us2_per_angstrom: 0.2,
+        x_us_per_angstrom: 0.3,
+        y_us_per_angstrom2: 0.05,
+        z_us: 0.4,
+    }
+}
+
+fn tof_histogram(histogram_id: &str, phase_ids: &[&str]) -> TofHistogramRecord {
+    TofHistogramRecord {
+        histogram_id: id(histogram_id),
+        name: histogram_id.to_owned(),
+        pattern: TofPatternRecord::new(
+            vec![3_000.0, 3_001.0],
+            Some(vec![10.0, 11.0]),
+            None,
+            None,
+            None,
+        )
+        .unwrap(),
+        experiment: TofExperimentRecord::new(tof_instrument()).unwrap(),
+        phase_ids: phase_ids.iter().map(|value| id(value)).collect(),
+    }
+}
+
 #[test]
 fn project_is_multi_histogram_aware_and_validates_references() {
     let project = ProjectRecord {
@@ -105,6 +143,7 @@ fn project_is_multi_histogram_aware_and_validates_references() {
             histogram("bank-1", &["alpha"]),
             histogram("bank-2", &["beta"]),
         ],
+        tof_histograms: Vec::new(),
         phases: vec![phase("alpha", Vec::new()), phase("beta", Vec::new())],
         metadata: BTreeMap::from([("sample".to_owned(), "reference".to_owned())]),
     };
@@ -127,6 +166,7 @@ fn host_capability_diagnostics_are_explicit_and_stably_ordered() {
         revision: 0,
         name: "Capabilities".to_owned(),
         histograms: vec![histogram("pattern", &["alpha"])],
+        tof_histograms: Vec::new(),
         phases: vec![phase("alpha", vec![python_only.clone(), native.clone()])],
         metadata: BTreeMap::new(),
     };
@@ -146,6 +186,7 @@ fn empty_project_is_valid_but_pattern_and_identity_errors_are_structured() {
         revision: 0,
         name: "New project".to_owned(),
         histograms: Vec::new(),
+        tof_histograms: Vec::new(),
         phases: Vec::new(),
         metadata: BTreeMap::new(),
     };
@@ -185,12 +226,34 @@ fn tof_pattern_is_typed_in_microseconds_and_validates_aligned_arrays() {
 }
 
 #[test]
+fn mixed_project_keeps_tof_coordinates_and_histogram_ids_explicit() {
+    let project = ProjectRecord {
+        project_id: id("mixed"),
+        revision: 0,
+        name: "Mixed coordinates".to_owned(),
+        histograms: vec![histogram("cw-bank", &["alpha"])],
+        tof_histograms: vec![tof_histogram("tof-bank", &["alpha"])],
+        phases: vec![phase("alpha", Vec::new())],
+        metadata: BTreeMap::new(),
+    };
+    project.validate().unwrap();
+
+    let mut duplicate = project.clone();
+    duplicate.tof_histograms[0].histogram_id = id("cw-bank");
+    assert!(matches!(
+        duplicate.validate(),
+        Err(DomainError::DuplicateHistogramId { .. })
+    ));
+}
+
+#[test]
 fn project_validation_rechecks_directly_constructed_nested_records() {
     let mut project = ProjectRecord {
         project_id: id("project-1"),
         revision: 0,
         name: "Recursive validation".to_owned(),
         histograms: vec![histogram("pattern", &["alpha"])],
+        tof_histograms: Vec::new(),
         phases: vec![phase("alpha", Vec::new())],
         metadata: BTreeMap::new(),
     };

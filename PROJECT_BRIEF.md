@@ -799,7 +799,7 @@ refinement and checkpoint continuation to the Rust solver while retaining the
 existing scripting types. Python-defined callbacks and provider extensions use
 the explicit scripting fallback. The Python-free application model binds at
 most one validated native analysis to each project histogram through
-`RietveldProjectState`; native project format 2 persists its built-in sample
+`RietveldProjectState`; native project format 2 introduced persistence for its built-in sample
 physics, guarded lattice domains, analytical backgrounds, constraints, options,
 covariance controls, and exact accepted restart checkpoint. Format 1 remains
 readable as project-only state, so a future native application can load and
@@ -812,10 +812,10 @@ The public cancellation token shares the native solver's thread-safe state, so
 the stateful Python project facade keeps cooperative `stop()` while using the
 detached Rust refinement path.
 The same facade now delegates representable built-in monochromatic project
-persistence to native format 2 and reconstructs its scripting dataclasses and
+persistence to the native format and reconstructs its scripting dataclasses and
 restart handle from Rust-validated state. Python-only providers, component
 radiation, non-native checkpoints, scripting optimizer controls, and rich
-parser provenance continue to use the compatible format-12 scripting codec.
+parser provenance continue to use the compatible format-13 scripting codec.
 This completes the public Python refinement/persistence migration without
 making Python part of native consumers.
 Real-data validation follows the same boundary. `phasesmith-validation` owns
@@ -871,8 +871,7 @@ are translated by `phasesmith-io` into the typed 15-coefficient
 workflow. `TofLeBailInput.from_files` composes one SLOG FXYE/GSA bank, matching
 PRM bank, and CIF into generated fixed-cell reflection families, and
 `refine_tof_lebail` delegates the complete extraction to the Rust workflow.
-This remains a fixed-instrument, fixed-cell Le Bail path. Native project
-persistence, cancellation/progress, multi-bank coordination, structural
+This remains a fixed-instrument, fixed-cell Le Bail path. Multi-bank coordination, structural
 parameter motion, and full TOF Rietveld refinement are explicit follow-on work.
 The TOF boundary is no longer POWGEN-specific. Plain bin-center/density columns,
 GSAS logarithmic FXYE boundaries, and GSAS packed constant-step STD counts all
@@ -892,10 +891,18 @@ evaluation; partial candidate work is discarded, every accepted state can be
 delivered as a typed checkpoint, and continuation reproduces uninterrupted
 history and final arrays exactly. Structured start/iteration/termination events
 are available to Rust hosts and as plain progress dictionaries in Python. This
-closes the cooperative-control part of application hardening. Durable TOF
-analysis persistence remains a separate schema change because the current
-native project record is deliberately constant-wavelength; it must not store a
-microsecond histogram in an angle-domain record.
+closes the cooperative-control part of application hardening. Native project
+format 3 now persists this state without reusing the constant-wavelength
+record: `ProjectRecord.tof_histograms` owns an explicit `tof_us` pattern and
+validated 15-coefficient TOF experiment, while `TofLeBailProjectState` binds at
+most one runnable analysis to each TOF histogram. Reflection topology and
+intensities, options, refinable Chebyshev background, masks, residual arrays,
+complete accepted history, and the last restart checkpoint round-trip through
+deterministic JSON plus typed NPZ arrays. Histogram IDs are unique across the
+angle and TOF collections, summary reports name the coordinate convention, and
+format-1/2 projects remain readable with empty TOF state. This closes durable
+native TOF persistence; it does not imply structural TOF refinement or
+multi-bank coupling.
 The historical native-workflow comparison passes both Le Bail parity contracts
 and QARR 1g. Its unchanged QARR 1h acceptance recipe retains the reviewed
 profile-quality failure, rather than having thresholds relaxed. The newer

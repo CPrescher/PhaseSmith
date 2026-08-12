@@ -1,0 +1,234 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://phasesmith.dev/schemas/native-project-v3.schema.json",
+  "title": "PhaseSmith native project bundle version 3",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format_version", "archive", "arrays", "project",
+    "rietveld_analyses", "tof_lebail_analyses"
+  ],
+  "properties": {
+    "format_version": { "const": 3 },
+    "archive": { "$ref": "native-project-v1.schema.json#/properties/archive" },
+    "arrays": { "$ref": "native-project-v1.schema.json#/properties/arrays" },
+    "project": { "$ref": "#/$defs/project" },
+    "rietveld_analyses": {
+      "type": "array",
+      "items": { "$ref": "native-project-v2.schema.json#/$defs/analysis" }
+    },
+    "tof_lebail_analyses": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/tofAnalysis" }
+    }
+  },
+  "$defs": {
+    "nonEmptyString": { "type": "string", "minLength": 1 },
+    "arrayReference": {
+      "$ref": "native-project-v1.schema.json#/$defs/arrayReference"
+    },
+    "project": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "project_id", "revision", "name", "histograms", "tof_histograms",
+        "phases", "metadata"
+      ],
+      "properties": {
+        "project_id": { "$ref": "#/$defs/nonEmptyString" },
+        "revision": { "type": "integer", "minimum": 0 },
+        "name": { "type": "string" },
+        "histograms": {
+          "type": "array",
+          "items": { "$ref": "native-project-v1.schema.json#/$defs/histogram" }
+        },
+        "tof_histograms": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/tofHistogram" }
+        },
+        "phases": {
+          "type": "array",
+          "items": { "$ref": "native-project-v1.schema.json#/$defs/phase" }
+        },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        }
+      }
+    },
+    "tofHistogram": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["histogram_id", "name", "pattern", "experiment", "phase_ids"],
+      "properties": {
+        "histogram_id": { "$ref": "#/$defs/nonEmptyString" },
+        "name": { "type": "string" },
+        "pattern": { "$ref": "#/$defs/tofPattern" },
+        "experiment": { "$ref": "#/$defs/tofExperiment" },
+        "phase_ids": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/nonEmptyString" }
+        }
+      }
+    },
+    "tofPattern": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tof_us", "observed_y", "uncertainty", "mask", "background_y"],
+      "properties": {
+        "tof_us": { "$ref": "#/$defs/arrayReference" },
+        "observed_y": {
+          "oneOf": [{ "$ref": "#/$defs/arrayReference" }, { "type": "null" }]
+        },
+        "uncertainty": {
+          "oneOf": [{ "$ref": "#/$defs/arrayReference" }, { "type": "null" }]
+        },
+        "mask": {
+          "oneOf": [{ "$ref": "#/$defs/arrayReference" }, { "type": "null" }]
+        },
+        "background_y": { "$ref": "#/$defs/arrayReference" }
+      }
+    },
+    "tofExperiment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["instrument"],
+      "properties": { "instrument": { "$ref": "#/$defs/tofInstrument" } }
+    },
+    "tofInstrument": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "zero_us", "difc_us_per_angstrom", "difa_us_per_angstrom2",
+        "difb_us_angstrom", "alpha_coefficient", "beta0_per_us",
+        "beta1_angstrom4_per_us", "betaq_angstrom2_per_us", "sigma0_us2",
+        "sigma1_us2_per_angstrom2", "sigma2_us2_per_angstrom4",
+        "sigmaq_us2_per_angstrom", "x_us_per_angstrom",
+        "y_us_per_angstrom2", "z_us"
+      ],
+      "properties": {
+        "zero_us": { "type": "number" },
+        "difc_us_per_angstrom": { "type": "number" },
+        "difa_us_per_angstrom2": { "type": "number" },
+        "difb_us_angstrom": { "type": "number" },
+        "alpha_coefficient": { "type": "number" },
+        "beta0_per_us": { "type": "number" },
+        "beta1_angstrom4_per_us": { "type": "number" },
+        "betaq_angstrom2_per_us": { "type": "number" },
+        "sigma0_us2": { "type": "number" },
+        "sigma1_us2_per_angstrom2": { "type": "number" },
+        "sigma2_us2_per_angstrom4": { "type": "number" },
+        "sigmaq_us2_per_angstrom": { "type": "number" },
+        "x_us_per_angstrom": { "type": "number" },
+        "y_us_per_angstrom2": { "type": "number" },
+        "z_us": { "type": "number" }
+      }
+    },
+    "tofAnalysis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["histogram_id", "phases", "background", "options", "checkpoint"],
+      "properties": {
+        "histogram_id": { "$ref": "#/$defs/nonEmptyString" },
+        "phases": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/tofPhase" } },
+        "background": {
+          "oneOf": [{ "$ref": "#/$defs/tofBackground" }, { "type": "null" }]
+        },
+        "options": { "$ref": "#/$defs/tofOptions" },
+        "checkpoint": {
+          "oneOf": [{ "$ref": "#/$defs/tofCheckpoint" }, { "type": "null" }]
+        }
+      }
+    },
+    "tofPhase": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "phase_id", "name", "reflection_ids", "hkl", "d_spacing_angstrom",
+        "integrated_intensity", "scale"
+      ],
+      "properties": {
+        "phase_id": { "$ref": "#/$defs/nonEmptyString" },
+        "name": { "type": "string", "minLength": 1 },
+        "reflection_ids": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/nonEmptyString" } },
+        "hkl": { "$ref": "#/$defs/arrayReference" },
+        "d_spacing_angstrom": { "$ref": "#/$defs/arrayReference" },
+        "integrated_intensity": { "$ref": "#/$defs/arrayReference" },
+        "scale": { "type": "number", "exclusiveMinimum": 0 }
+      }
+    },
+    "tofBackground": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["background_id", "coefficients", "domain_us"],
+      "properties": {
+        "background_id": { "$ref": "#/$defs/nonEmptyString" },
+        "coefficients": { "type": "array", "minItems": 1, "items": { "type": "number" } },
+        "domain_us": { "type": "array", "minItems": 2, "maxItems": 2, "items": { "type": "number" } }
+      }
+    },
+    "tofOptions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "cycles", "redistribution_damping", "initial_intensity_floor",
+        "minimum_calculated", "support_fwhm", "tail_log", "use_uncertainty",
+        "redistribution_use_uncertainty", "requested_threads", "minimum_parallel_tasks"
+      ],
+      "properties": {
+        "cycles": { "type": "integer", "minimum": 1 },
+        "redistribution_damping": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 },
+        "initial_intensity_floor": { "type": "number", "exclusiveMinimum": 0 },
+        "minimum_calculated": { "type": "number", "exclusiveMinimum": 0 },
+        "support_fwhm": { "type": "number", "exclusiveMinimum": 0 },
+        "tail_log": { "type": "number", "exclusiveMinimum": 0 },
+        "use_uncertainty": { "type": "boolean" },
+        "redistribution_use_uncertainty": { "type": "boolean" },
+        "requested_threads": {
+          "oneOf": [{ "type": "integer", "minimum": 1 }, { "type": "null" }]
+        },
+        "minimum_parallel_tasks": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "tofCheckpoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "completed_iterations", "phase_integrated_intensity",
+        "background_coefficients", "history"
+      ],
+      "properties": {
+        "completed_iterations": { "type": "integer", "minimum": 0 },
+        "phase_integrated_intensity": { "type": "array", "items": { "$ref": "#/$defs/arrayReference" } },
+        "background_coefficients": {
+          "oneOf": [
+            { "type": "array", "items": { "type": "number" } },
+            { "type": "null" }
+          ]
+        },
+        "history": { "type": "array", "items": { "$ref": "#/$defs/tofIteration" } }
+      }
+    },
+    "tofIteration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "iteration", "included", "residual", "weighted_residual", "rp", "rwp",
+        "chi_square", "reduced_chi_square", "maximum_relative_intensity_change",
+        "maximum_absolute_background_change"
+      ],
+      "properties": {
+        "iteration": { "type": "integer", "minimum": 1 },
+        "included": { "$ref": "#/$defs/arrayReference" },
+        "residual": { "$ref": "#/$defs/arrayReference" },
+        "weighted_residual": { "$ref": "#/$defs/arrayReference" },
+        "rp": { "type": "number" },
+        "rwp": { "type": "number" },
+        "chi_square": { "type": "number" },
+        "reduced_chi_square": { "type": "number" },
+        "maximum_relative_intensity_change": { "type": "number" },
+        "maximum_absolute_background_change": { "type": "number" }
+      }
+    }
+  }
+}

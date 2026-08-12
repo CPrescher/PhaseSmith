@@ -68,6 +68,7 @@ mod rietveld_solver;
 mod runtime;
 mod sample_physics;
 mod tof_lebail;
+mod tof_project;
 
 pub use backgrounds::{
     AmorphousBackground, AmorphousPeak, BackgroundBasis, BackgroundError, BackgroundModel,
@@ -166,3 +167,4 @@ pub use tof_lebail::{
     TofLeBailResult, TofReflectionIntensity, calculate_tof_lebail_pattern, refine_tof_lebail,
     refine_tof_lebail_with_runtime,
 };
+pub use tof_project::{TofLeBailAnalysis, TofLeBailProjectState, TofProjectError};

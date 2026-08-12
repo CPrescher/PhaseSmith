@@ -267,8 +267,10 @@ phasesmith.integrations.dioptas.refine_lebail
 
 The scripting checkpoint API above remains Python-facing while refinement is
 migrated. Rust applications use the separate `phasesmith-persistence` crate to
-save and load `ProjectRecord` and produce stable summary reports without
-CPython. See [native project persistence](native-persistence.md).
+save and load `ProjectRecord`, `RietveldProjectState`, and
+`TofLeBailProjectState` and produce stable summary reports without CPython.
+The TOF record uses explicit microsecond coordinates rather than the CW angle
+field. See [native project persistence](native-persistence.md).
 
 Top-level imports are convenience aliases for scripts and notebooks; the
 module-qualified paths above are the ownership boundary. FCJ geometry does not

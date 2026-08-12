@@ -217,7 +217,7 @@ analytical mixed-radiation objective has dedicated Rust coverage.
 
 ## Remaining TOF sequence
 
-The fixed-instrument TOF Le Bail sequence is complete. The pinned POWGEN LaB6
+The single-bank fixed-instrument TOF Le Bail sequence is complete. The pinned POWGEN LaB6
 case now covers the typed TOF record, reflection positions, fused accumulation,
 all analytical instrument derivatives, normalization, finite differences, and
 nonnegative intensity extraction. Its optional 16-term Chebyshev residual is
@@ -225,7 +225,9 @@ added above the fixed Smooth Bruckner baseline and updated analytically in every
 cycle. A separate live GSAS-II comparison checks
 real-bank parameter translation and reconstructs the oracle's peak-only pattern
 from the same extracted intensities; it also gates the two Chebyshev-enabled
-native workflows' Rwp and correlation deltas. Structural TOF Rietveld refinement
+native workflows' Rwp and correlation deltas. Native format 3 separately
+round-trips explicit microsecond histograms and resumable TOF Le Bail state. A
+reviewed multi-bank shared-cell model is next; structural TOF Rietveld refinement
 remains future scope and is not implied by this acceptance.
 
 ## Review gates

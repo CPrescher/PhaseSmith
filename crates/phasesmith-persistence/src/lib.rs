@@ -30,6 +30,7 @@
 //!     revision: 0,
 //!     name: "Example".into(),
 //!     histograms: Vec::new(),
+//!     tof_histograms: Vec::new(),
 //!     phases: Vec::new(),
 //!     metadata: BTreeMap::new(),
 //! };
@@ -39,13 +40,16 @@
 //! # Ok::<(), Box<dyn std::error::Error>>(())
 //! ```
 //!
-//! Use [`save_rietveld_project`] and [`load_rietveld_project`] when the bundle
-//! must retain runnable Rietveld analyses. Reporting functions produce stable
-//! JSON summaries without exposing internal wire records.
+//! Use [`save_rietveld_project`] / [`load_rietveld_project`] or
+//! [`save_tof_lebail_project`] / [`load_tof_lebail_project`] when the bundle
+//! must retain runnable analyses. TOF histograms keep microseconds separate
+//! from constant-wavelength degree coordinates. Reporting functions produce
+//! stable JSON summaries without exposing internal wire records.
 
 mod arrays;
 mod report;
 mod rietveld_wire;
+mod tof_wire;
 mod wire;
 
 use std::collections::BTreeMap;
@@ -58,7 +62,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 
 use arrays::{ArrayDescriptor, read_npz, sha256_hex, write_npz};
 use phasesmith_model::{DomainError, ProjectRecord};
-use phasesmith_workflows::RietveldProjectState;
+use phasesmith_workflows::{RietveldProjectState, TofLeBailProjectState};
 use serde::{Deserialize, Serialize};
 
 pub use report::{
@@ -67,7 +71,7 @@ pub use report::{
 };
 
 /// Current native project bundle wire version.
-pub const PROJECT_FORMAT_VERSION: u32 = 2;
+pub const PROJECT_FORMAT_VERSION: u32 = 3;
 /// Canonical manifest filename within a project directory.
 pub const PROJECT_MANIFEST_NAME: &str = "manifest.json";
 /// Canonical `NumPy` archive filename within a project directory.
@@ -235,12 +239,21 @@ struct ProjectManifest {
     project: wire::WireProject,
     #[serde(default)]
     rietveld_analyses: Option<Vec<rietveld_wire::WireRietveldAnalysis>>,
+    #[serde(default)]
+    tof_lebail_analyses: Option<Vec<tof_wire::WireTofLeBailAnalysis>>,
 }
 
 #[derive(Debug, Deserialize)]
 struct ProjectVersionProbe {
     format_version: u32,
 }
+
+type LoadedProjectParts = (
+    ProjectRecord,
+    Vec<rietveld_wire::WireRietveldAnalysis>,
+    Vec<tof_wire::WireTofLeBailAnalysis>,
+    BTreeMap<String, arrays::ArrayData>,
+);
 
 /// Save one validated native project as canonical JSON plus NPZ.
 ///
@@ -257,7 +270,14 @@ pub fn save_project(
     options: ProjectSaveOptions,
 ) -> Result<PathBuf, PersistenceError> {
     project.validate().map_err(PersistenceError::Domain)?;
-    save_project_parts(path.as_ref(), project, Vec::new(), options)
+    save_project_parts(
+        path.as_ref(),
+        project,
+        Vec::new(),
+        Vec::new(),
+        BTreeMap::new(),
+        options,
+    )
 }
 
 /// Save one validated project and all runnable native Rietveld analyses.
@@ -280,6 +300,35 @@ pub fn save_rietveld_project(
         path.as_ref(),
         &state.project,
         rietveld_wire::encode_analyses(state),
+        Vec::new(),
+        BTreeMap::new(),
+        options,
+    )
+}
+
+/// Save one validated project and all resumable fixed-instrument TOF Le Bail analyses.
+///
+/// # Errors
+///
+/// Returns [`PersistenceError`] for invalid cross-record state, serialization,
+/// archive, filesystem, or overwrite failures.
+pub fn save_tof_lebail_project(
+    path: impl AsRef<Path>,
+    state: &TofLeBailProjectState,
+    options: ProjectSaveOptions,
+) -> Result<PathBuf, PersistenceError> {
+    state
+        .validate()
+        .map_err(|error| PersistenceError::InvalidRecord {
+            message: format!("invalid native TOF project state: {error}"),
+        })?;
+    let (analyses, arrays) = tof_wire::encode_analyses(state)?;
+    save_project_parts(
+        path.as_ref(),
+        &state.project,
+        Vec::new(),
+        analyses,
+        arrays,
         options,
     )
 }
@@ -288,6 +337,8 @@ fn save_project_parts(
     path: &Path,
     project: &ProjectRecord,
     rietveld_analyses: Vec<rietveld_wire::WireRietveldAnalysis>,
+    tof_lebail_analyses: Vec<tof_wire::WireTofLeBailAnalysis>,
+    analysis_arrays: BTreeMap<String, arrays::ArrayData>,
     options: ProjectSaveOptions,
 ) -> Result<PathBuf, PersistenceError> {
     let destination = absolute_path(path)?;
@@ -295,7 +346,14 @@ fn save_project_parts(
         recover_interrupted_save(&destination)?;
     }
     validate_destination(&destination, options)?;
-    let (wire_project, arrays) = wire::encode_project(project)?;
+    let (wire_project, mut arrays) = wire::encode_project(project)?;
+    for (name, value) in analysis_arrays {
+        if arrays.insert(name.clone(), value).is_some() {
+            return Err(PersistenceError::InvalidRecord {
+                message: format!("duplicate project/analysis array name {name:?}"),
+            });
+        }
+    }
     let encoded_archive = write_npz(&arrays)?;
     let descriptors = arrays
         .iter()
@@ -310,6 +368,7 @@ fn save_project_parts(
         arrays: descriptors,
         project: wire_project,
         rietveld_analyses: Some(rietveld_analyses),
+        tof_lebail_analyses: Some(tof_lebail_analyses),
     };
     let mut encoded_manifest = serde_json::to_string_pretty(&manifest)?;
     encoded_manifest.push('\n');
@@ -370,7 +429,15 @@ pub fn load_project(
     path: impl AsRef<Path>,
     limits: ProjectReadLimits,
 ) -> Result<ProjectRecord, PersistenceError> {
-    load_rietveld_project(path, limits).map(|state| state.project)
+    let (project, rietveld_analyses, tof_analyses, mut arrays) =
+        load_project_parts(path.as_ref(), limits)?;
+    let project = tof_wire::decode_state(project, tof_analyses, &mut arrays, limits)?.project;
+    if !arrays.is_empty() {
+        return Err(PersistenceError::InvalidRecord {
+            message: "manifest contains arrays that are not referenced by the project".to_owned(),
+        });
+    }
+    Ok(rietveld_wire::decode_state(project, rietveld_analyses, limits)?.project)
 }
 
 /// Load and validate one project plus all native Rietveld analyses.
@@ -385,8 +452,47 @@ pub fn load_rietveld_project(
     path: impl AsRef<Path>,
     limits: ProjectReadLimits,
 ) -> Result<RietveldProjectState, PersistenceError> {
+    let (project, rietveld_analyses, tof_analyses, mut arrays) =
+        load_project_parts(path.as_ref(), limits)?;
+    let project = tof_wire::decode_state(project, tof_analyses, &mut arrays, limits)?.project;
+    if !arrays.is_empty() {
+        return Err(PersistenceError::InvalidRecord {
+            message: "manifest contains arrays that are not referenced by the project".to_owned(),
+        });
+    }
+    rietveld_wire::decode_state(project, rietveld_analyses, limits)
+}
+
+/// Load and validate one project plus all resumable fixed-instrument TOF Le Bail analyses.
+///
+/// Version-1 and version-2 native projects load with an empty analysis list.
+///
+/// # Errors
+///
+/// Returns [`PersistenceError`] for resource, filesystem, JSON, hash, archive,
+/// wire-record, domain, or TOF workflow validation failures.
+pub fn load_tof_lebail_project(
+    path: impl AsRef<Path>,
+    limits: ProjectReadLimits,
+) -> Result<TofLeBailProjectState, PersistenceError> {
+    let (project, rietveld_analyses, tof_analyses, mut arrays) =
+        load_project_parts(path.as_ref(), limits)?;
+    rietveld_wire::decode_state(project.clone(), rietveld_analyses, limits)?;
+    let state = tof_wire::decode_state(project, tof_analyses, &mut arrays, limits)?;
+    if !arrays.is_empty() {
+        return Err(PersistenceError::InvalidRecord {
+            message: "manifest contains arrays that are not referenced by the project".to_owned(),
+        });
+    }
+    Ok(state)
+}
+
+fn load_project_parts(
+    path: &Path,
+    limits: ProjectReadLimits,
+) -> Result<LoadedProjectParts, PersistenceError> {
     limits.validate()?;
-    let source = absolute_path(path.as_ref())?;
+    let source = absolute_path(path)?;
     if source.is_dir() {
         recover_interrupted_save(&source)?;
     }
@@ -411,13 +517,43 @@ pub fn load_rietveld_project(
                 message: "native project format 1 cannot declare Rietveld analyses".to_owned(),
             });
         }
-        (_, Some(analyses)) => analyses,
-        (_, None) => {
+        (2 | 3, Some(analyses)) => analyses,
+        (2 | 3, None) => {
             return Err(PersistenceError::InvalidRecord {
-                message: "native project format 2 requires Rietveld analyses".to_owned(),
+                message: format!(
+                    "native project format {} requires Rietveld analyses",
+                    manifest.format_version
+                ),
             });
         }
+        _ => unreachable!("format version checked above"),
     };
+    let tof_analyses = match (manifest.format_version, manifest.tof_lebail_analyses) {
+        (1 | 2, None) => Vec::new(),
+        (1 | 2, Some(_)) => {
+            return Err(PersistenceError::InvalidRecord {
+                message: format!(
+                    "native project format {} cannot declare TOF Le Bail analyses",
+                    manifest.format_version
+                ),
+            });
+        }
+        (3, Some(analyses)) => analyses,
+        (3, None) => {
+            return Err(PersistenceError::InvalidRecord {
+                message: "native project format 3 requires TOF Le Bail analyses".to_owned(),
+            });
+        }
+        _ => unreachable!("format version checked above"),
+    };
+    if manifest.format_version < 3 && wire::has_tof_histograms(&manifest.project) {
+        return Err(PersistenceError::InvalidRecord {
+            message: format!(
+                "native project format {} cannot declare TOF histograms",
+                manifest.format_version
+            ),
+        });
+    }
     if manifest.archive.file != PROJECT_ARRAYS_NAME {
         return Err(PersistenceError::InvalidArchive {
             message: "project archive filename is invalid".to_owned(),
@@ -438,9 +574,9 @@ pub fn load_rietveld_project(
             message: "project archive SHA-256 mismatch".to_owned(),
         });
     }
-    let arrays = read_npz(&archive_bytes, &manifest.arrays, limits)?;
-    let project = wire::decode_project(manifest.project, arrays, limits)?;
-    rietveld_wire::decode_state(project, rietveld_analyses, limits)
+    let mut arrays = read_npz(&archive_bytes, &manifest.arrays, limits)?;
+    let project = wire::decode_project_parts(manifest.project, &mut arrays, limits)?;
+    Ok((project, rietveld_analyses, tof_analyses, arrays))
 }
 
 fn read_bounded_file(

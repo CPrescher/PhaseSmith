@@ -5,13 +5,14 @@ use std::collections::BTreeMap;
 use phasesmith_engine::crystallography::{
     IntegratedIntensityCorrectionModel, Rational, SpaceGroup, SymmetryOperation, UnitCell,
 };
-use phasesmith_engine::profile::{ConstantWavelengthInstrument, FcjGeometry};
+use phasesmith_engine::profile::{ConstantWavelengthInstrument, FcjGeometry, TofInstrument};
 use phasesmith_engine::{
     BuiltInScatteringModel, MonochromaticPositionCorrection, StructuralPhaseDefinition,
 };
 use phasesmith_model::{
     ExperimentRecord, FixedWavelengthSpectrum, HistogramRecord, PatternRecord, ProjectRecord,
     ProviderRequirement, RadiationDefinition, RadiationProbe, RecordId, StructuralPhaseRecord,
+    TofExperimentRecord, TofHistogramRecord, TofPatternRecord,
 };
 use serde::{Deserialize, Serialize};
 
@@ -25,6 +26,8 @@ pub(crate) struct WireProject {
     revision: u64,
     name: String,
     histograms: Vec<WireHistogram>,
+    #[serde(default)]
+    tof_histograms: Vec<WireTofHistogram>,
     phases: Vec<WirePhase>,
     metadata: BTreeMap<String, String>,
 }
@@ -47,6 +50,52 @@ struct WirePattern {
     uncertainty: Option<ArrayReference>,
     mask: Option<ArrayReference>,
     background_y: ArrayReference,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct WireTofHistogram {
+    histogram_id: String,
+    name: String,
+    pattern: WireTofPattern,
+    experiment: WireTofExperiment,
+    phase_ids: Vec<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct WireTofPattern {
+    tof_us: ArrayReference,
+    observed_y: Option<ArrayReference>,
+    uncertainty: Option<ArrayReference>,
+    mask: Option<ArrayReference>,
+    background_y: ArrayReference,
+}
+
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct WireTofExperiment {
+    instrument: WireTofInstrument,
+}
+
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct WireTofInstrument {
+    zero_us: f64,
+    difc_us_per_angstrom: f64,
+    difa_us_per_angstrom2: f64,
+    difb_us_angstrom: f64,
+    alpha_coefficient: f64,
+    beta0_per_us: f64,
+    beta1_angstrom4_per_us: f64,
+    betaq_angstrom2_per_us: f64,
+    sigma0_us2: f64,
+    sigma1_us2_per_angstrom2: f64,
+    sigma2_us2_per_angstrom4: f64,
+    sigmaq_us2_per_angstrom: f64,
+    x_us_per_angstrom: f64,
+    y_us_per_angstrom2: f64,
+    z_us: f64,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -174,8 +223,8 @@ enum WireCorrectionModel {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
-struct ArrayReference {
-    array: String,
+pub(crate) struct ArrayReference {
+    pub(crate) array: String,
 }
 
 #[derive(Default)]
@@ -203,6 +252,11 @@ pub(crate) fn encode_project(
         .iter()
         .map(|histogram| encode_histogram(histogram, &mut writer))
         .collect::<Result<Vec<_>, _>>()?;
+    let tof_histograms = project
+        .tof_histograms
+        .iter()
+        .map(|histogram| encode_tof_histogram(histogram, &mut writer))
+        .collect::<Result<Vec<_>, _>>()?;
     let phases = project
         .phases
         .iter()
@@ -214,11 +268,100 @@ pub(crate) fn encode_project(
             revision: project.revision,
             name: project.name.clone(),
             histograms,
+            tof_histograms,
             phases,
             metadata: project.metadata.clone(),
         },
         writer.arrays,
     ))
+}
+
+fn encode_tof_histogram(
+    histogram: &TofHistogramRecord,
+    writer: &mut ArrayWriter,
+) -> Result<WireTofHistogram, PersistenceError> {
+    let prefix = format!("tof_histogram.{}", histogram.histogram_id.as_str());
+    let count = histogram.pattern.sample_count();
+    let tof_us = writer.add(
+        format!("{prefix}.tof_us"),
+        ArrayData::f64(histogram.pattern.tof_us.clone(), vec![count])?,
+    )?;
+    let observed_y = histogram
+        .pattern
+        .observed_y
+        .as_ref()
+        .map(|values| {
+            writer.add(
+                format!("{prefix}.observed_y"),
+                ArrayData::f64(values.clone(), vec![count])?,
+            )
+        })
+        .transpose()?;
+    let uncertainty = histogram
+        .pattern
+        .uncertainty
+        .as_ref()
+        .map(|values| {
+            writer.add(
+                format!("{prefix}.uncertainty"),
+                ArrayData::f64(values.clone(), vec![count])?,
+            )
+        })
+        .transpose()?;
+    let mask = histogram
+        .pattern
+        .mask
+        .as_ref()
+        .map(|values| {
+            writer.add(
+                format!("{prefix}.mask"),
+                ArrayData::bool(values.clone(), vec![count])?,
+            )
+        })
+        .transpose()?;
+    let background_y = writer.add(
+        format!("{prefix}.background_y"),
+        ArrayData::f64(histogram.pattern.background_y.clone(), vec![count])?,
+    )?;
+    Ok(WireTofHistogram {
+        histogram_id: histogram.histogram_id.as_str().to_owned(),
+        name: histogram.name.clone(),
+        pattern: WireTofPattern {
+            tof_us,
+            observed_y,
+            uncertainty,
+            mask,
+            background_y,
+        },
+        experiment: WireTofExperiment {
+            instrument: encode_tof_instrument(histogram.experiment.instrument),
+        },
+        phase_ids: histogram
+            .phase_ids
+            .iter()
+            .map(|value| value.as_str().to_owned())
+            .collect(),
+    })
+}
+
+fn encode_tof_instrument(instrument: TofInstrument) -> WireTofInstrument {
+    WireTofInstrument {
+        zero_us: instrument.zero_us,
+        difc_us_per_angstrom: instrument.difc_us_per_angstrom,
+        difa_us_per_angstrom2: instrument.difa_us_per_angstrom2,
+        difb_us_angstrom: instrument.difb_us_angstrom,
+        alpha_coefficient: instrument.alpha_coefficient,
+        beta0_per_us: instrument.beta0_per_us,
+        beta1_angstrom4_per_us: instrument.beta1_angstrom4_per_us,
+        betaq_angstrom2_per_us: instrument.betaq_angstrom2_per_us,
+        sigma0_us2: instrument.sigma0_us2,
+        sigma1_us2_per_angstrom2: instrument.sigma1_us2_per_angstrom2,
+        sigma2_us2_per_angstrom4: instrument.sigma2_us2_per_angstrom4,
+        sigmaq_us2_per_angstrom: instrument.sigmaq_us2_per_angstrom,
+        x_us_per_angstrom: instrument.x_us_per_angstrom,
+        y_us_per_angstrom2: instrument.y_us_per_angstrom2,
+        z_us: instrument.z_us,
+    }
 }
 
 fn encode_histogram(
@@ -529,12 +672,23 @@ fn encode_correction(model: IntegratedIntensityCorrectionModel) -> WireCorrectio
     }
 }
 
-pub(crate) fn decode_project(
+pub(crate) fn has_tof_histograms(wire: &WireProject) -> bool {
+    !wire.tof_histograms.is_empty()
+}
+
+pub(crate) fn decode_project_parts(
     wire: WireProject,
-    mut arrays: BTreeMap<String, ArrayData>,
+    arrays: &mut BTreeMap<String, ArrayData>,
     limits: ProjectReadLimits,
 ) -> Result<ProjectRecord, PersistenceError> {
-    if wire.histograms.len() > limits.max_histograms {
+    let histogram_count = wire
+        .histograms
+        .len()
+        .checked_add(wire.tof_histograms.len())
+        .ok_or_else(|| PersistenceError::LimitExceeded {
+            message: "project histogram count overflow".to_owned(),
+        })?;
+    if histogram_count > limits.max_histograms {
         return Err(PersistenceError::LimitExceeded {
             message: "project exceeds max_histograms".to_owned(),
         });
@@ -547,28 +701,86 @@ pub(crate) fn decode_project(
     let histograms = wire
         .histograms
         .into_iter()
-        .map(|histogram| decode_histogram(histogram, &mut arrays))
+        .map(|histogram| decode_histogram(histogram, arrays))
+        .collect::<Result<Vec<_>, _>>()?;
+    let tof_histograms = wire
+        .tof_histograms
+        .into_iter()
+        .map(|histogram| decode_tof_histogram(histogram, arrays))
         .collect::<Result<Vec<_>, _>>()?;
     let phases = wire
         .phases
         .into_iter()
-        .map(|phase| decode_phase(phase, &mut arrays))
+        .map(|phase| decode_phase(phase, arrays))
         .collect::<Result<Vec<_>, _>>()?;
-    if !arrays.is_empty() {
-        return Err(invalid_record(
-            "manifest contains arrays that are not referenced by the project".to_owned(),
-        ));
-    }
     let project = ProjectRecord {
         project_id: RecordId::new(wire.project_id).map_err(PersistenceError::Domain)?,
         revision: wire.revision,
         name: wire.name,
         histograms,
+        tof_histograms,
         phases,
         metadata: wire.metadata,
     };
     project.validate().map_err(PersistenceError::Domain)?;
     Ok(project)
+}
+
+fn decode_tof_histogram(
+    wire: WireTofHistogram,
+    arrays: &mut BTreeMap<String, ArrayData>,
+) -> Result<TofHistogramRecord, PersistenceError> {
+    let tof_us = take_f64(arrays, &wire.pattern.tof_us, None)?;
+    let count = tof_us.len();
+    let observed_y = wire
+        .pattern
+        .observed_y
+        .map(|reference| take_f64(arrays, &reference, Some(&[count])))
+        .transpose()?;
+    let uncertainty = wire
+        .pattern
+        .uncertainty
+        .map(|reference| take_f64(arrays, &reference, Some(&[count])))
+        .transpose()?;
+    let mask = wire
+        .pattern
+        .mask
+        .map(|reference| take_bool(arrays, &reference, &[count]))
+        .transpose()?;
+    let background_y = take_f64(arrays, &wire.pattern.background_y, Some(&[count]))?;
+    let instrument = decode_tof_instrument(wire.experiment.instrument);
+    Ok(TofHistogramRecord {
+        histogram_id: RecordId::new(wire.histogram_id).map_err(PersistenceError::Domain)?,
+        name: wire.name,
+        pattern: TofPatternRecord::new(tof_us, observed_y, uncertainty, mask, Some(background_y))
+            .map_err(PersistenceError::Domain)?,
+        experiment: TofExperimentRecord::new(instrument).map_err(PersistenceError::Domain)?,
+        phase_ids: wire
+            .phase_ids
+            .into_iter()
+            .map(|value| RecordId::new(value).map_err(PersistenceError::Domain))
+            .collect::<Result<Vec<_>, _>>()?,
+    })
+}
+
+fn decode_tof_instrument(instrument: WireTofInstrument) -> TofInstrument {
+    TofInstrument {
+        zero_us: instrument.zero_us,
+        difc_us_per_angstrom: instrument.difc_us_per_angstrom,
+        difa_us_per_angstrom2: instrument.difa_us_per_angstrom2,
+        difb_us_angstrom: instrument.difb_us_angstrom,
+        alpha_coefficient: instrument.alpha_coefficient,
+        beta0_per_us: instrument.beta0_per_us,
+        beta1_angstrom4_per_us: instrument.beta1_angstrom4_per_us,
+        betaq_angstrom2_per_us: instrument.betaq_angstrom2_per_us,
+        sigma0_us2: instrument.sigma0_us2,
+        sigma1_us2_per_angstrom2: instrument.sigma1_us2_per_angstrom2,
+        sigma2_us2_per_angstrom4: instrument.sigma2_us2_per_angstrom4,
+        sigmaq_us2_per_angstrom: instrument.sigmaq_us2_per_angstrom,
+        x_us_per_angstrom: instrument.x_us_per_angstrom,
+        y_us_per_angstrom2: instrument.y_us_per_angstrom2,
+        z_us: instrument.z_us,
+    }
 }
 
 fn decode_histogram(
@@ -814,7 +1026,7 @@ fn take_array(
     Ok(array)
 }
 
-fn take_f64(
+pub(crate) fn take_f64(
     arrays: &mut BTreeMap<String, ArrayData>,
     reference: &ArrayReference,
     expected_shape: Option<&[usize]>,
@@ -822,7 +1034,7 @@ fn take_f64(
     take_array(arrays, reference, expected_shape)?.into_f64()
 }
 
-fn take_i32(
+pub(crate) fn take_i32(
     arrays: &mut BTreeMap<String, ArrayData>,
     reference: &ArrayReference,
     expected_shape: Option<&[usize]>,
@@ -838,7 +1050,7 @@ fn take_u64(
     take_array(arrays, reference, Some(expected_shape))?.into_u64()
 }
 
-fn take_bool(
+pub(crate) fn take_bool(
     arrays: &mut BTreeMap<String, ArrayData>,
     reference: &ArrayReference,
     expected_shape: &[usize],

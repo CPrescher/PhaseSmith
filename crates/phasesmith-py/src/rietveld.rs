@@ -692,6 +692,7 @@ impl NativeRietveldRequest {
                     experiment,
                     phase_ids,
                 }],
+                tof_histograms: Vec::new(),
                 phases,
                 metadata: BTreeMap::default(),
             },

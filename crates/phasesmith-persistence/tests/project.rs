@@ -223,10 +223,10 @@ fn project_summary_file_export_has_an_explicit_overwrite_policy() {
 #[test]
 fn native_manifest_schema_is_valid_json_and_tracks_the_wire_version() {
     let schema_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../schemas/native-project-v2.schema.json");
+        .join("../../schemas/native-project-v3.schema.json");
     let schema: serde_json::Value =
         serde_json::from_slice(&fs::read(schema_path).unwrap()).unwrap();
-    assert_eq!(schema["properties"]["format_version"]["const"], 2);
+    assert_eq!(schema["properties"]["format_version"]["const"], 3);
     assert_eq!(
         schema["properties"]["format_version"]["const"],
         PROJECT_FORMAT_VERSION
@@ -235,7 +235,7 @@ fn native_manifest_schema_is_valid_json_and_tracks_the_wire_version() {
 }
 
 #[test]
-fn version_one_projects_migrate_but_version_two_requires_analysis_field() {
+fn old_projects_migrate_but_each_version_requires_its_analysis_fields() {
     let directory = temporary_path("native-version-migration");
     let expected = project();
     save_project(&directory, &expected, ProjectSaveOptions::default()).unwrap();
@@ -247,6 +247,10 @@ fn version_one_projects_migrate_but_version_two_requires_analysis_field() {
         .as_object_mut()
         .unwrap()
         .remove("rietveld_analyses");
+    manifest
+        .as_object_mut()
+        .unwrap()
+        .remove("tof_lebail_analyses");
     fs::write(&manifest_path, serde_json::to_vec(&manifest).unwrap()).unwrap();
     assert_eq!(
         load_project(&directory, ProjectReadLimits::default()).unwrap(),
@@ -254,6 +258,20 @@ fn version_one_projects_migrate_but_version_two_requires_analysis_field() {
     );
 
     manifest["format_version"] = serde_json::json!(2);
+    fs::write(&manifest_path, serde_json::to_vec(&manifest).unwrap()).unwrap();
+    assert!(matches!(
+        load_project(&directory, ProjectReadLimits::default()),
+        Err(PersistenceError::InvalidRecord { .. })
+    ));
+
+    manifest["rietveld_analyses"] = serde_json::json!([]);
+    fs::write(&manifest_path, serde_json::to_vec(&manifest).unwrap()).unwrap();
+    assert_eq!(
+        load_project(&directory, ProjectReadLimits::default()).unwrap(),
+        expected
+    );
+
+    manifest["format_version"] = serde_json::json!(3);
     fs::write(&manifest_path, serde_json::to_vec(&manifest).unwrap()).unwrap();
     assert!(matches!(
         load_project(&directory, ProjectReadLimits::default()),
@@ -335,6 +353,7 @@ fn project() -> ProjectRecord {
             histogram("xray-bank", RadiationProbe::Xray, &["alpha"]),
             histogram("neutron-bank", RadiationProbe::Neutron, &["beta"]),
         ],
+        tof_histograms: Vec::new(),
         phases: vec![
             phase(
                 "alpha",

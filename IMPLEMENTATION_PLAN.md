@@ -1309,7 +1309,7 @@ records, the calibration reader, generated fixed-cell TOF phases, a
 `TofLeBailInput.from_files` composition boundary, and a thin native refinement
 facade returning stable reflection keys, intensities, backgrounds, metrics, and
 cycle history. Synthetic extraction and FXYE/PRM/CIF composition tests cover
-the boundary. Native project persistence, multi-bank requests,
+the boundary. Multi-bank requests,
 lattice/instrument refinement, and structural TOF Rietveld remain follow-on
 slices.
 
@@ -1321,10 +1321,18 @@ phase/background topology. Rust tests prove that a cancelled four-cycle state
 continued to twelve cycles is bitwise identical to an uninterrupted run.
 Python exposes the same cancellation token, progress dictionaries, opaque
 checkpoint, termination reason, and continuation path while releasing the GIL
-during native work. Durable TOF project persistence is intentionally still
-separate: the current project schema owns degree-domain CW histograms and must
-be extended with an explicit histogram/experiment variant rather than reusing
-those fields for microseconds.
+during native work.
+
+Unit 32 is complete. Native project format 3 adds a separate
+`TofHistogramRecord` with explicit microsecond samples and a validated
+15-coefficient TOF experiment; the existing angle-domain histogram is
+unchanged. `TofLeBailProjectState` validates one optional analysis per TOF
+histogram against project pattern, instrument, phase order, and labels. The
+codec stores input reflection topology and intensities plus optional
+Chebyshev/background and complete accepted checkpoints, including residual
+history arrays, in bounded typed NPZ members. Format 1 and 2 remain readable
+with empty TOF state, and summary reports distinguish `two_theta_deg` from
+`tof_us`. Round-trip coverage restores a real refined checkpoint exactly.
 
 Do not combine adjacent items merely to reduce PR count; numerical review is
 easier when parameter conventions and tolerance changes remain isolated.
@@ -1376,9 +1384,9 @@ normalizes three explicit bin conventions, and the independent four-bank LANL
 nickel example passes on bank 2 with Rwp 0.02485869 and correlation 0.99891242.
 This validates the supported profile family beyond ORNL without promising
 unknown facility-specific line shapes. Unit 31 completes cooperative
-cancellation/progress and restartable accepted-state checkpoints. The next TOF
-increment is an explicit native TOF project/persistence schema, followed by a
-reviewed multi-bank shared-cell model. Structural parameter and instrument refinement must
+cancellation/progress and restartable accepted-state checkpoints. Unit 32
+completes the explicit native TOF project/persistence schema. The next TOF
+increment is a reviewed multi-bank shared-cell model. Structural parameter and instrument refinement must
 be introduced only with analytical derivatives, finite-difference tests, and
 new oracle contracts; it is not part of the completed Le Bail facade.
 

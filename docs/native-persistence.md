@@ -8,14 +8,15 @@ crate has no PyO3, NumPy, CPython, webview, or Tauri dependency.
 
 A native project is a directory with two library-owned files:
 
-- `manifest.json` contains format version 2, explicit wire records, array
+- `manifest.json` contains format version 3, explicit wire records, array
   descriptors, units in field names, and SHA-256 hashes;
 - `arrays.npz` contains only contiguous little-endian `float64`, `int32`,
   `uint64`, and boolean NPY members.
 
 The complete manifest contract is
-[`schemas/native-project-v2.schema.json`](https://github.com/CPrescher/PhaseSmith/blob/main/schemas/native-project-v2.schema.json).
-Version 1 remains readable and migrates to a project with no Rietveld analyses.
+[`schemas/native-project-v3.schema.json`](https://github.com/CPrescher/PhaseSmith/blob/main/schemas/native-project-v3.schema.json).
+Versions 1 and 2 remain readable and migrate with no TOF histograms or TOF Le
+Bail analyses. Version 1 also has no Rietveld analyses.
 Internal kernel enums are not serialized directly. Every persisted record has
 an explicit conversion to and from the validated `phasesmith-model` domain.
 
@@ -30,8 +31,7 @@ save_project("analysis.psproj", &project, ProjectSaveOptions::default())?;
 let restored = load_project("analysis.psproj", ProjectReadLimits::default())?;
 ```
 
-The version-2 API persists the complete Python-free refinement boundary as
-well:
+The native API persists the complete Python-free Rietveld refinement boundary:
 
 ```rust,ignore
 use phasesmith_persistence::{load_rietveld_project, save_rietveld_project};
@@ -54,6 +54,35 @@ options, and the last accepted restart checkpoint with its full iteration
 history. Opaque external-provider arrays are rejected because they cannot be
 reconstructed by a Python-free desktop process.
 
+Format 3 adds explicit microsecond-domain TOF records and resumable
+fixed-instrument Le Bail state:
+
+```rust,ignore
+use phasesmith_persistence::{
+    load_tof_lebail_project, save_tof_lebail_project,
+};
+
+save_tof_lebail_project(
+    "tof-analysis.psproj",
+    &tof_state,
+    ProjectSaveOptions::default(),
+)?;
+let restored = load_tof_lebail_project(
+    "tof-analysis.psproj",
+    ProjectReadLimits::default(),
+)?;
+```
+
+`TofHistogramRecord` stores `tof_us` separately from the CW `x_deg` record and
+owns the validated 15-coefficient TOF calibration/profile model. A
+`TofLeBailProjectState` binds at most one analysis to each TOF histogram and
+checks the project pattern, instrument, active phase order, and phase labels.
+Its NPZ members retain reflection HKLs, d-spacings and intensities plus every
+accepted checkpoint's phase intensities and sample-aligned residual history.
+The manifest retains scalar options and optional microsecond-domain Chebyshev
+background state. This is fixed-instrument, fixed-cell Le Bail persistence; it
+does not add multi-bank coupling or structural TOF refinement.
+
 Loading is bounded before domain construction. It checks manifest and archive
 sizes, version, archive filename and hash, exact NPZ member set, every member's
 dtype, shape, element count and content hash, finite floating-point values,
@@ -74,8 +103,9 @@ add unknown fields.
 
 `ProjectSummaryReport::from_project`, `project_summary_json`, and
 `write_project_summary_json` produce a stable, versioned, array-free summary.
-Reports include project revision, histogram and phase IDs, probes, sample
-counts, phase links, required provider capabilities, and metadata. They are
+Reports include project revision, histogram and phase IDs, probes, coordinate
+conventions (`two_theta_deg` or `tof_us`), sample counts, phase links, required
+provider capabilities, and metadata. They are
 safe JSON payloads for a desktop command response; display arrays remain in
 binary storage or later binary IPC.
 `write_project_summary_json_with_options` adds a protected-create mode for
@@ -84,7 +114,7 @@ explicit. The legacy convenience writer retains its replacement behavior.
 
 ## Python format distinction
 
-`RietveldProject.save()` writes native format 2 when its monochromatic request,
+`RietveldProject.save()` writes the current native format when its monochromatic request,
 built-in providers, numerical controls, and optional checkpoint can be
 represented by the Rust application model. `RietveldProject.load()` translates
 that validated native state back to the public scripting dataclasses, including

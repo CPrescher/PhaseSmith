@@ -196,9 +196,13 @@ Rust hosts use `refine_tof_lebail_with_runtime` to attach event and checkpoint
 sinks. Python callers pass `cancellation=`, `checkpoint=`, and `progress=` to
 `refine_tof_lebail`. Progress callbacks receive plain start, accepted-iteration,
 and termination records; Python is never invoked from the peak/sample pass.
-Loaded-project persistence is not yet implied by this checkpoint handle. The
-native project schema currently represents constant-wavelength histograms, so
-TOF persistence requires an explicit microsecond histogram/experiment variant.
+Native project format 3 persists this checkpoint through an explicit
+microsecond histogram/experiment variant. It stores reflection topology,
+current intensities, the optional refinable background, options, and complete
+accepted residual history in bounded typed NPZ arrays; no TOF coordinate is
+placed in the angle-domain histogram record. Rust hosts use
+`save_tof_lebail_project` and `load_tof_lebail_project` with a validated
+`TofLeBailProjectState`.
 
 The public Python path keeps the same unit boundary:
 
@@ -218,5 +222,6 @@ print(result.metrics.rwp)
 `TofLeBailInput.from_files` generates fixed-cell reflection families from the
 CIF and attaches an optional refinable Chebyshev residual to the fixed supplied
 background. It does not refine the lattice, instrument coefficients, atomic
-structure, or multiple detector banks. Project persistence and cooperative
-cancellation/progress are outside this first public application slice.
+structure, or multiple detector banks. Cooperative cancellation/progress and
+the Python-free native persistence boundary are separate completed layers
+around this first public application slice.
