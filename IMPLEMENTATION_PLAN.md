@@ -1440,6 +1440,20 @@ banks with correlation >= 0.9999 and relative L2 <= 0.015, and returns a shared
 cell within 0.0005 A of PhaseSmith. Endpoint counts and non-comparable Le Bail
 Rwp procedures remain visible rather than being forced into false parity.
 
+Unit 38 capability assessment is complete. The review in
+`docs/tof-structural-readiness.md` separates reusable structure-factor,
+reciprocal-metric, TOF-profile, and multi-bank machinery from the
+constant-wavelength assumptions in the current structural engine. A structural
+TOF request must carry typed bank geometry and explicitly select either a
+neutral/precorrected observation contract or a named correction model. Unit
+38a adds the conventional one-dimensional neutron TOF Lorentz factor and an
+independently documented bounded bank-angle adapter. Unit 38b adds the Rust
+structural calculation with fused dense/JVP/VJP derivatives. Unit 38c composes
+the guarded multi-bank solver, and Unit 38d adds Python, persistence, real-data,
+and isolated-oracle gates. Incident spectrum, detector efficiency, absorption,
+and extinction cannot be silently inferred from `POWGEN`, `BNKPAR`, or a TOF
+profile function.
+
 Do not combine adjacent items merely to reduce PR count; numerical review is
 easier when parameter conventions and tolerance changes remain isolated.
 
@@ -1496,7 +1510,7 @@ completes atomic fixed-cell multi-bank coordination, Unit 34 completes shared
 analytical lattice motion, and Unit 35 completes selected fixed-cell bank-local
 instrument motion, and Unit 36 combines the two geometry families in one
 correlation-diagnosed system, and Unit 37a adds its Python application facade.
-The next TOF increment is Unit 38's structural capability assessment.
+The next TOF increment is Unit 38a's correction and bank-geometry contract.
 Structural parameter and instrument refinement must
 be introduced only with analytical derivatives, finite-difference tests, and
 new oracle contracts; it is not part of the completed Le Bail facade.

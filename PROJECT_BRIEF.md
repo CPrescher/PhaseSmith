@@ -995,6 +995,19 @@ independent shared-cell results differ by 0.000283 A. The explicit GSAS-II and
 PhaseSmith endpoint conventions select 13,290 and 13,293 observations. Rwp is
 context only because the Le Bail intensity and background procedures are not
 the same optimization contract.
+Unit 38's structural capability assessment is complete. Reciprocal-metric
+geometry, symmetry, neutron structure factors, the fused TOF profile, and the
+atomic multi-bank objective are reusable, but the current structural pattern
+engine remains explicitly constant wavelength. Structural TOF additionally
+requires a typed bank scattering angle and an explicit observation-correction
+contract. PhaseSmith will support neutral/precorrected observations and a named
+legacy one-dimensional neutron TOF Lorentz factor as distinct choices; it will
+not infer incident-spectrum, detector-efficiency, absorption, or extinction
+corrections from a facility name. `TofInstrument` continues to represent the
+empirical profile/calibration law rather than pretending that fitted `DIFC`
+uniquely supplies physical bank geometry. The complete equations, ORNL/POWGEN
+request checklist, and staged implementation gates are recorded in
+`docs/tof-structural-readiness.md`.
 The historical native-workflow comparison passes both Le Bail parity contracts
 and QARR 1g. Its unchanged QARR 1h acceptance recipe retains the reviewed
 profile-quality failure, rather than having thresholds relaxed. The newer

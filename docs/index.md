@@ -49,6 +49,7 @@ For shared refinement controls, cancellation, logs, and safe checkpoints, see
   [shared TOF lattice](tof-lattice-refinement.md) and
   [bank-local instrument refinement](tof-instrument-refinement.md), and
   [joint TOF geometry refinement](tof-geometry-refinement.md)
+- [Structural TOF readiness and correction contract](tof-structural-readiness.md)
 - [Public Python architecture](public-api.md)
 - [Native Rust API and GUI integration](rust-api.md)
 

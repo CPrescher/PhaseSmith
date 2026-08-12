@@ -82,6 +82,7 @@ nav:
       - Shared TOF lattice refinement: tof-lattice-refinement.md
       - Bank-local TOF instrument refinement: tof-instrument-refinement.md
       - Joint TOF geometry refinement: tof-geometry-refinement.md
+      - Structural TOF readiness: tof-structural-readiness.md
       - Multi-phase composition: multiphase.md
       - Sample physics: sample-physics.md
   - Crystallography:
