@@ -3,16 +3,20 @@
 use std::hint::black_box;
 
 use criterion::{Criterion, criterion_group, criterion_main};
-use phasesmith_core::ConstantWavelengthInstrument;
+use phasesmith_core::{ConstantWavelengthInstrument, TofInstrument, TofInstrumentParameter};
 use phasesmith_crystallography::UnitCell;
 use phasesmith_execution::ExecutionPolicy;
 use phasesmith_io::space_group_by_number;
-use phasesmith_model::PatternRecord;
+use phasesmith_model::{PatternRecord, RecordId, TofPatternRecord};
 use phasesmith_workflows::{
     BackgroundModel, ChebyshevBackground, Constraint, FixedConstraint, LatticeBounds,
     LatticeParameterization, LatticeReflectionDomain, LeBailInput, LeBailOptions, LeBailPhase,
-    build_lebail_parameter_set_with_lattice, calculate_lebail_pattern,
-    calculate_lebail_pattern_with_background, lebail_lattice_parameter_key, refine_lebail,
+    TofBankInstrumentModel, TofInstrumentParameterBound, TofLeBailBank, TofLeBailInput,
+    TofLeBailOptions, TofLeBailPhase, TofMultiBankInput, TofMultiBankInstrumentInput,
+    TofMultiBankInstrumentOptions, build_lebail_parameter_set_with_lattice,
+    calculate_lebail_pattern, calculate_lebail_pattern_with_background,
+    calculate_tof_lebail_pattern, lebail_lattice_parameter_key, refine_lebail,
+    refine_tof_multibank_instrument,
 };
 
 fn benchmark_fixed_lebail(criterion: &mut Criterion) {
@@ -177,6 +181,120 @@ fn benchmark_lattice_lebail(criterion: &mut Criterion) {
     });
 }
 
+fn benchmark_tof_instrument_lebail(criterion: &mut Criterion) {
+    let execution = ExecutionPolicy::new(Some(1), 2).unwrap();
+    let d_spacings = linspace(0.65, 2.9, 80);
+    let intensities = (0..d_spacings.len())
+        .map(|index| 20.0 + f64::from(u32::try_from(index % 23).unwrap()))
+        .collect::<Vec<_>>();
+    let grid = linspace(3_000.0, 16_000.0, 4_001);
+    let truth_instruments = [tof_instrument(5_000.0, -0.7), tof_instrument(4_600.0, 1.2)];
+    let starting_instruments = [tof_instrument(5_000.0, 0.8), tof_instrument(4_600.0, -0.4)];
+    let calculation_options =
+        TofLeBailOptions::new(1, 1.0, 1.0e-12, 1.0e-15, 20.0, 20.0, true, execution).unwrap();
+    let mut banks = Vec::new();
+    let mut models = Vec::new();
+    for index in 0..2 {
+        let bank_id = RecordId::new(format!("bank-{}", index + 1)).unwrap();
+        let blank = TofPatternRecord::new(
+            grid.clone(),
+            Some(vec![0.0; grid.len()]),
+            Some(vec![1.0; grid.len()]),
+            None,
+            None,
+        )
+        .unwrap();
+        let truth = TofLeBailInput::new(
+            blank,
+            truth_instruments[index],
+            vec![tof_phase(&d_spacings, &intensities)],
+        )
+        .unwrap();
+        let observed = calculate_tof_lebail_pattern(&truth, &calculation_options)
+            .unwrap()
+            .y;
+        let pattern = TofPatternRecord::new(
+            grid.clone(),
+            Some(observed),
+            Some(vec![1.0; grid.len()]),
+            None,
+            None,
+        )
+        .unwrap();
+        banks.push(TofLeBailBank {
+            bank_id: bank_id.clone(),
+            input: TofLeBailInput::new(
+                pattern,
+                starting_instruments[index],
+                vec![tof_phase(&d_spacings, &vec![1.0; d_spacings.len()])],
+            )
+            .unwrap(),
+        });
+        models.push(
+            TofBankInstrumentModel::new(
+                bank_id,
+                vec![
+                    TofInstrumentParameterBound::new(TofInstrumentParameter::Zero, -5.0, 5.0)
+                        .unwrap(),
+                ],
+            )
+            .unwrap(),
+        );
+    }
+    let input = TofMultiBankInstrumentInput {
+        multibank: TofMultiBankInput { banks },
+        instrument_models: models,
+    };
+    let options =
+        TofMultiBankInstrumentOptions::new(calculation_options, 1.0e-10, 0.2, 8, 0.999_999)
+            .unwrap();
+    criterion.bench_function(
+        "tof_multibank_instrument_one_iteration_2x80_reflections_4001_samples",
+        |bencher| {
+            bencher.iter(|| {
+                refine_tof_multibank_instrument(black_box(&input), black_box(&options)).unwrap()
+            });
+        },
+    );
+}
+
+fn tof_instrument(difc: f64, zero: f64) -> TofInstrument {
+    TofInstrument {
+        zero_us: zero,
+        difc_us_per_angstrom: difc,
+        difa_us_per_angstrom2: -0.2,
+        difb_us_angstrom: 0.3,
+        alpha_coefficient: 0.18,
+        beta0_per_us: 0.04,
+        beta1_angstrom4_per_us: 0.000_5,
+        betaq_angstrom2_per_us: 0.001,
+        sigma0_us2: 1.0,
+        sigma1_us2_per_angstrom2: 10.0,
+        sigma2_us2_per_angstrom4: 0.05,
+        sigmaq_us2_per_angstrom: 0.2,
+        x_us_per_angstrom: 0.3,
+        y_us_per_angstrom2: 0.05,
+        z_us: 0.4,
+    }
+}
+
+fn tof_phase(d_spacings: &[f64], intensities: &[f64]) -> TofLeBailPhase {
+    TofLeBailPhase::new(
+        RecordId::new("alpha").unwrap(),
+        "benchmark TOF phase",
+        (0..d_spacings.len())
+            .map(|index| format!("reflection-{index}"))
+            .collect(),
+        (0..d_spacings.len())
+            .map(|index| [i32::try_from(index + 1).unwrap(), 1, 0])
+            .collect(),
+        d_spacings.to_vec(),
+        intensities.to_vec(),
+        1.0,
+    )
+    .unwrap()
+}
+
 fn phase(
     phase_id: &str,
     positions: &[f64],
@@ -231,5 +349,10 @@ fn linspace(start: f64, endpoint: f64, count: usize) -> Vec<f64> {
         .collect()
 }
 
-criterion_group!(benches, benchmark_fixed_lebail, benchmark_lattice_lebail);
+criterion_group!(
+    benches,
+    benchmark_fixed_lebail,
+    benchmark_lattice_lebail,
+    benchmark_tof_instrument_lebail
+);
 criterion_main!(benches);

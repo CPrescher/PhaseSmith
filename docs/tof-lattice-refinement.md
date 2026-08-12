@@ -94,3 +94,7 @@ parameters rather than treating optimizer histories as interchangeable.
 This API does not yet refine bank-local instrument coefficients, generate new
 reflection topology during a run, expose the shared-cell workflow through the
 Python application facade/project format, or refine structural intensities.
+The separate fixed-cell
+[`tof-instrument-refinement.md`](tof-instrument-refinement.md) workflow is the
+first bounded analytical instrument layer; joint cell/instrument motion remains
+separate because its correlation contract needs an explicit gate.

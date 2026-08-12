@@ -1236,9 +1236,11 @@ Keep implementation units reviewable through these ordered changes:
     profile coefficients enter the same summed objective through the existing
     15 analytical global derivative rows, with explicit bounds and correlation
     diagnostics.
-36. Shared-cell/instrument application facades, native persistence, and a
+36. Joint shared-cell plus bank-local instrument refinement with one analytical
+    system and explicit lattice/calibration identifiability diagnostics.
+37. Shared-cell/instrument application facades, native persistence, and a
     provenance-complete multi-bank real-data/oracle acceptance case.
-37. Structural TOF Rietveld only after structure-factor, correction, and
+38. Structural TOF Rietveld only after structure-factor, correction, and
     analytical shared/local parameter contracts pass synthetic and oracle gates.
 
 Unit 23 is complete. The Rust workflow crate now owns stable shared/local
@@ -1381,6 +1383,21 @@ both Rust and the independent NumPy reference; profile values remain
 deterministic and the realistic hot-loop benchmark shows about 1.4% overhead
 at `tail_log=8`.
 
+Unit 35 is complete for fixed-cell multi-bank refinement. The public
+`TofInstrumentParameter` order is identical to all 15 fused global derivative
+rows, while `TofBankInstrumentModel` selects finite bounded coefficients under
+stable bank IDs. One weighted system places local columns only on their bank's
+sample rows, solves in scaled coordinates, and backtracks invalid or
+non-improving profiles without partial acceptance. Checkpoints validate selected
+bounds, physical derived profiles, and bitwise-fixed unselected coefficients.
+Results report numerical Jacobian rank, maximum absolute weighted-column
+correlation, and every unresolved named bank/parameter pair. Two distinct
+synthetic banks recover local Zero and DIFC truth and resume exactly after
+cancellation; a one-reflection Zero/DIFC selection returns rank one and its
+unit correlation instead of a misleading covariance. All 15 kernel rows retain centered-difference and independent
+NumPy coverage. The realistic one-cycle benchmark over two banks, 80
+reflections per bank, and 4,001 samples per bank measures 426.04 ms.
+
 Do not combine adjacent items merely to reduce PR count; numerical review is
 easier when parameter conventions and tolerance changes remain isolated.
 
@@ -1433,10 +1450,11 @@ This validates the supported profile family beyond ORNL without promising
 unknown facility-specific line shapes. Unit 31 completes cooperative
 cancellation/progress and restartable accepted-state checkpoints. Unit 32
 completes the explicit native TOF project/persistence schema, and Unit 33
-completes atomic fixed-cell multi-bank coordination, and Unit 34 completes
-shared analytical lattice motion. The next TOF increment is selected bank-local
-instrument motion, followed by application persistence and multi-bank real-data
-oracle validation. Structural parameter and instrument refinement must
+completes atomic fixed-cell multi-bank coordination, Unit 34 completes shared
+analytical lattice motion, and Unit 35 completes selected fixed-cell bank-local
+instrument motion. The next TOF increment combines the two geometry families
+in one correlation-diagnosed system, followed by application persistence and
+multi-bank real-data oracle validation. Structural parameter and instrument refinement must
 be introduced only with analytical derivatives, finite-difference tests, and
 new oracle contracts; it is not part of the completed Le Bail facade.
 

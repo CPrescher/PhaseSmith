@@ -281,6 +281,10 @@ Rust applications use `TofMultiBankLatticeInput`, `TofSharedLatticePhase`, and
 objective over every bank. The Python facade and native project schema do not
 yet expose that workflow; see
 [shared TOF lattice refinement](tof-lattice-refinement.md).
+The native `TofMultiBankInstrumentInput` and
+`refine_tof_multibank_instrument_with_runtime` APIs select bounded bank-local
+coefficients and return rank/correlation diagnostics; see
+[bank-local TOF instrument refinement](tof-instrument-refinement.md).
 
 Top-level imports are convenience aliases for scripts and notebooks; the
 module-qualified paths above are the ownership boundary. FCJ geometry does not

@@ -232,9 +232,11 @@ while preserving bank-local observations, instruments, backgrounds, scales,
 and intensities. Its analytical shared-cell extension has synthetic recovery,
 finite-difference, and exact-continuation gates. The next real-data increment
 must identify a multi-bank dataset with citable cell truth and plain-array
-oracle output before adding a golden result. Selected bank-local instrument
-motion follows; structural TOF Rietveld refinement remains future scope and is
-not implied by this acceptance.
+oracle output before adding a golden result. Selected fixed-cell bank-local
+instrument motion now has synthetic recovery, all-row derivative, rank/
+correlation, and exact-continuation coverage. Joint cell/instrument motion must
+pass its correlation gate before that real-data acceptance; structural TOF
+Rietveld refinement remains future scope and is not implied by this acceptance.
 
 ## Review gates
 

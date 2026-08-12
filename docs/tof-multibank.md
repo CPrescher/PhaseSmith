@@ -77,5 +77,7 @@ one-bank d-spacing drift.
 The fixed-cell API remains useful when geometry must not move. The separate
 [`tof-lattice-refinement.md`](tof-lattice-refinement.md) workflow adds an
 analytical common-cell step while retaining bank-local extraction state. Bank-
-local instrument coefficients, atomic structure, and structural intensities
-still require separate analytical derivative and oracle gates.
+local coefficients are available through the separate
+[`tof-instrument-refinement.md`](tof-instrument-refinement.md) fixed-cell
+workflow. Joint cell/instrument motion, atomic structure, and structural
+intensities still require separate analytical derivative and oracle gates.

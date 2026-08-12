@@ -16,6 +16,80 @@ const GAUSSIAN_FWHM_PER_SIGMA: f64 = 2.354_820_045_030_949_3;
 /// Public order: zero, difC, difA, difB, alpha, beta0, beta1, betaq,
 /// sigma0, sigma1, sigma2, sigmaq, X, Y, Z.
 pub const TOF_GLOBAL_PARAMETER_COUNT: usize = 15;
+/// Stable names matching the dense global derivative-row order.
+pub const TOF_GLOBAL_PARAMETER_NAMES: [&str; TOF_GLOBAL_PARAMETER_COUNT] = [
+    "zero", "difc", "difa", "difb", "alpha", "beta0", "beta1", "betaq", "sigma0", "sigma1",
+    "sigma2", "sigmaq", "x", "y", "z",
+];
+
+/// One selectable TOF calibration/profile coefficient.
+#[repr(usize)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum TofInstrumentParameter {
+    /// Additive time zero.
+    Zero,
+    /// Linear d-to-TOF calibration.
+    Difc,
+    /// Quadratic d-to-TOF calibration.
+    Difa,
+    /// Reciprocal d-to-TOF calibration.
+    Difb,
+    /// Leading-edge rate numerator.
+    Alpha,
+    /// Constant trailing-edge rate.
+    Beta0,
+    /// Inverse-fourth-power trailing-edge rate.
+    Beta1,
+    /// Inverse-square trailing-edge rate.
+    Betaq,
+    /// Constant Gaussian variance.
+    Sigma0,
+    /// Quadratic-d Gaussian variance.
+    Sigma1,
+    /// Quartic-d Gaussian variance.
+    Sigma2,
+    /// Linear-d Gaussian variance.
+    Sigmaq,
+    /// Linear-d Lorentzian width.
+    X,
+    /// Quadratic-d Lorentzian width.
+    Y,
+    /// Constant Lorentzian width.
+    Z,
+}
+
+impl TofInstrumentParameter {
+    /// Every parameter in the fused dense-Jacobian order.
+    pub const ALL: [Self; TOF_GLOBAL_PARAMETER_COUNT] = [
+        Self::Zero,
+        Self::Difc,
+        Self::Difa,
+        Self::Difb,
+        Self::Alpha,
+        Self::Beta0,
+        Self::Beta1,
+        Self::Betaq,
+        Self::Sigma0,
+        Self::Sigma1,
+        Self::Sigma2,
+        Self::Sigmaq,
+        Self::X,
+        Self::Y,
+        Self::Z,
+    ];
+
+    /// Dense global derivative-row index.
+    #[must_use]
+    pub const fn index(self) -> usize {
+        self as usize
+    }
+
+    /// Stable short name.
+    #[must_use]
+    pub const fn name(self) -> &'static str {
+        TOF_GLOBAL_PARAMETER_NAMES[self.index()]
+    }
+}
 const LOCAL_PARAMETER_COUNT: usize = 2;
 const TOF_QUADRATURE_PANELS: usize = 8;
 const TOF_QUADRATURE_PANELS_F64: f64 = 8.0;
@@ -59,6 +133,70 @@ pub struct TofInstrument {
 }
 
 impl TofInstrument {
+    /// Coefficients in the stable dense global derivative-row order.
+    #[must_use]
+    pub const fn values(self) -> [f64; TOF_GLOBAL_PARAMETER_COUNT] {
+        [
+            self.zero_us,
+            self.difc_us_per_angstrom,
+            self.difa_us_per_angstrom2,
+            self.difb_us_angstrom,
+            self.alpha_coefficient,
+            self.beta0_per_us,
+            self.beta1_angstrom4_per_us,
+            self.betaq_angstrom2_per_us,
+            self.sigma0_us2,
+            self.sigma1_us2_per_angstrom2,
+            self.sigma2_us2_per_angstrom4,
+            self.sigmaq_us2_per_angstrom,
+            self.x_us_per_angstrom,
+            self.y_us_per_angstrom2,
+            self.z_us,
+        ]
+    }
+
+    /// Construct from coefficients in the stable dense global-row order.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`TofError`] when the complete instrument is invalid.
+    pub fn from_values(values: [f64; TOF_GLOBAL_PARAMETER_COUNT]) -> Result<Self, TofError> {
+        let result = Self {
+            zero_us: values[0],
+            difc_us_per_angstrom: values[1],
+            difa_us_per_angstrom2: values[2],
+            difb_us_angstrom: values[3],
+            alpha_coefficient: values[4],
+            beta0_per_us: values[5],
+            beta1_angstrom4_per_us: values[6],
+            betaq_angstrom2_per_us: values[7],
+            sigma0_us2: values[8],
+            sigma1_us2_per_angstrom2: values[9],
+            sigma2_us2_per_angstrom4: values[10],
+            sigmaq_us2_per_angstrom: values[11],
+            x_us_per_angstrom: values[12],
+            y_us_per_angstrom2: values[13],
+            z_us: values[14],
+        };
+        result.validate()?;
+        Ok(result)
+    }
+
+    /// Replace one coefficient without bypassing instrument validation.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`TofError`] when the replacement makes the instrument invalid.
+    pub fn with_parameter(
+        self,
+        parameter: TofInstrumentParameter,
+        value: f64,
+    ) -> Result<Self, TofError> {
+        let mut values = self.values();
+        values[parameter.index()] = value;
+        Self::from_values(values)
+    }
+
     /// Validate finite coefficients and a positive linear calibration scale.
     ///
     /// # Errors
@@ -957,6 +1095,42 @@ mod tests {
             (actual.d_gaussian_fwhm_d_d - finite(plus.gaussian_fwhm_us, minus.gaussian_fwhm_us))
                 .abs()
                 < 1e-8
+        );
+    }
+
+    #[test]
+    fn selectable_instrument_parameters_follow_dense_row_order() {
+        let original = instrument();
+        let values = original.values();
+        for parameter in TofInstrumentParameter::ALL {
+            assert_eq!(
+                parameter.name(),
+                TOF_GLOBAL_PARAMETER_NAMES[parameter.index()]
+            );
+            let replacement = values[parameter.index()] + 1.0e-6;
+            let updated = original
+                .with_parameter(parameter, replacement)
+                .expect("valid replacement");
+            for (index, value) in updated.values().iter().copied().enumerate() {
+                let expected = if index == parameter.index() {
+                    replacement
+                } else {
+                    values[index]
+                };
+                assert_eq!(value.to_bits(), expected.to_bits());
+            }
+        }
+        let mut invalid = values;
+        invalid[TofInstrumentParameter::Difc.index()] = 0.0;
+        assert_eq!(
+            TofInstrument::from_values(invalid),
+            Err(TofError::NonPositiveDifc)
+        );
+        invalid = values;
+        invalid[TofInstrumentParameter::Zero.index()] = f64::NAN;
+        assert_eq!(
+            TofInstrument::from_values(invalid),
+            Err(TofError::NonFiniteInstrumentParameter)
         );
     }
 

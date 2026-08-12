@@ -938,9 +938,21 @@ parameters. The Rust kernel and independent NumPy reference now include the
 analytical Leibniz boundary terms, define the derivative as zero at an exact
 clamp, and retain the existing calculated-value operation order. The realistic
 200-reflection/5,001-sample benchmark changed by about 1.4% at `tail_log=8`.
-The next coupling increment is selected bank-local instrument motion, followed
-by application facade/persistence and real-data oracle coverage before any
-structural TOF Rietveld claim.
+Selected bank-local instrument motion is now native for the fixed-cell
+multi-bank contract. `TofInstrumentParameter` binds every selection to the 15
+fused global rows; finite bounds contain the initial physical coefficients and
+unselected values remain bitwise fixed. Each atomic cycle appends the selected
+bank-local columns to the summed weighted objective, solves a scaled damped
+step, rejects nonphysical profiles by backtracking, and checkpoints instruments
+with intensities/backgrounds. Final numerical rank and weighted-column
+correlations remain explicit result data. Synthetic banks independently recover
+Zero and DIFC, same-bank correlations are surfaced, and cancelled continuation
+is exact. The realistic two-bank, 80-reflection-per-bank, 4,001-sample-per-bank
+one-cycle benchmark measures 426.04 ms on the review machine.
+The next coupling increment is deliberately joint shared-cell plus local-
+instrument motion, because cell/calibration correlations must be diagnosed in
+one system. Application facade/persistence and real-data oracle coverage follow
+before any structural TOF Rietveld claim.
 The historical native-workflow comparison passes both Le Bail parity contracts
 and QARR 1g. Its unchanged QARR 1h acceptance recipe retains the reviewed
 profile-quality failure, rather than having thresholds relaxed. The newer

@@ -9,7 +9,8 @@ use std::fmt::{Display, Formatter};
 
 use nalgebra::{DMatrix, DVector};
 use phasesmith_core::{
-    Accumulation, GridView, TofError, TofInstrument, accumulate_tof_batch_with_context,
+    Accumulation, GridView, TofError, TofInstrument, TofProfileParameters,
+    accumulate_tof_batch_with_context,
 };
 use phasesmith_execution::{ExecutionPolicy, ExecutionPolicyError};
 use phasesmith_model::{DomainError, RecordId, TofPatternRecord};
@@ -402,6 +403,10 @@ impl TofLeBailInput {
                 return Err(TofLeBailError::InvalidPhase(
                     "TOF Le Bail phase IDs must be unique",
                 ));
+            }
+            for d_spacing in phase.d_spacing_angstrom() {
+                TofProfileParameters::from_instrument(*d_spacing, self.instrument)
+                    .map_err(TofLeBailError::Profile)?;
             }
         }
         if let Some(background) = &self.background {

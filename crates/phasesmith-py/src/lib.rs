@@ -11,12 +11,12 @@ use phasesmith_core::{
     Accumulation, ConstantWavelengthInstrument, CwContributionArrays, CwContributionsView, CwError,
     CwProfileParameters, CwReflectionBatchView, FcjGeometry, FcjProfile, GridView,
     OwnedCwContributionArrays, OwnedCwContributions, PeakBatchView, SupportPolicy,
-    TchPeakBatchView, TchShape, TchWidths, TofError, TofInstrument, TofProfile,
-    TofProfileParameters, WavelengthComponentsView, accumulate_batch, accumulate_cw_batch,
-    accumulate_cw_components_batch, accumulate_cw_contributions_batch, accumulate_cw_fcj_batch,
-    accumulate_cw_fcj_components_batch, accumulate_cw_fcj_contributions_batch,
-    accumulate_tch_batch, accumulate_tof_batch_with_context, accumulate_values_batch,
-    smooth_bruckner as native_smooth_bruckner, symmetric_pseudo_voigt,
+    TOF_GLOBAL_PARAMETER_NAMES, TchPeakBatchView, TchShape, TchWidths, TofError, TofInstrument,
+    TofProfile, TofProfileParameters, WavelengthComponentsView, accumulate_batch,
+    accumulate_cw_batch, accumulate_cw_components_batch, accumulate_cw_contributions_batch,
+    accumulate_cw_fcj_batch, accumulate_cw_fcj_components_batch,
+    accumulate_cw_fcj_contributions_batch, accumulate_tch_batch, accumulate_tof_batch_with_context,
+    accumulate_values_batch, smooth_bruckner as native_smooth_bruckner, symmetric_pseudo_voigt,
 };
 use phasesmith_engine::crystallography::{
     CellError, IntegratedIntensityCorrectionModel, NEUTRON_TABLE_PROVENANCE, P1BatchView,
@@ -4192,13 +4192,7 @@ fn _core(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add("TOF_LOCAL_PARAMETER_ORDER", ("intensity", "d_spacing"))?;
     module.add(
         "TOF_GLOBAL_PARAMETER_ORDER",
-        PyTuple::new(
-            module.py(),
-            [
-                "zero", "difc", "difa", "difb", "alpha", "beta0", "beta1", "betaq", "sigma0",
-                "sigma1", "sigma2", "sigmaq", "x", "y", "z",
-            ],
-        )?,
+        PyTuple::new(module.py(), TOF_GLOBAL_PARAMETER_NAMES)?,
     )?;
     module.add("CW_GLOBAL_PARAMETER_ORDER", ("u", "v", "w", "x", "y"))?;
     module.add(

@@ -156,6 +156,17 @@ fn tof_workflow_rejects_angle_like_or_invalid_state_at_the_typed_boundary() {
     )
     .unwrap();
     assert!(TofLeBailInput::new(pattern, instrument(), Vec::new()).is_err());
+    let pattern = TofPatternRecord::new(
+        vec![1_000.0, 1_001.0],
+        Some(vec![1.0, 1.0]),
+        None,
+        None,
+        None,
+    )
+    .unwrap();
+    let mut invalid_profile = instrument();
+    invalid_profile.alpha_coefficient = -1.0;
+    assert!(TofLeBailInput::new(pattern, invalid_profile, vec![phase(vec![1.0; 3])]).is_err());
     assert!(
         TofLeBailPhase::new(
             RecordId::new("phase").unwrap(),

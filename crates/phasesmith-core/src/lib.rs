@@ -81,6 +81,7 @@ pub use tch::{
     tch_pseudo_voigt,
 };
 pub use tof::{
-    TOF_GLOBAL_PARAMETER_COUNT, TofError, TofInstrument, TofProfile, TofProfileParameters,
-    TofProfilePoint, accumulate_tof_batch, accumulate_tof_batch_with_context,
+    TOF_GLOBAL_PARAMETER_COUNT, TOF_GLOBAL_PARAMETER_NAMES, TofError, TofInstrument,
+    TofInstrumentParameter, TofProfile, TofProfileParameters, TofProfilePoint,
+    accumulate_tof_batch, accumulate_tof_batch_with_context,
 };
