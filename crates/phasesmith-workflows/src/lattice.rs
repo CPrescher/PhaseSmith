@@ -5,6 +5,7 @@ use std::error::Error;
 use std::fmt::{Display, Formatter};
 
 use nalgebra::{Matrix3, SymmetricEigen};
+use phasesmith_core::{TofError, TofInstrument};
 use phasesmith_crystallography::{
     CellError, CrystalSystem, PreparedReflectionGenerator, ReflectionGenerationError,
     ReflectionRange, SpaceGroup, UnitCell,
@@ -353,6 +354,21 @@ pub struct CwLatticeGeometry {
     pub parameter_names: Vec<String>,
 }
 
+/// TOF reflection geometry and independent lattice derivatives.
+#[derive(Clone, Debug, PartialEq)]
+pub struct TofLatticeGeometry {
+    /// D-spacings in reflection order.
+    pub d_spacing_angstrom: Vec<f64>,
+    /// Calibrated reflection positions in microseconds.
+    pub tof_us: Vec<f64>,
+    /// Row-major reflection-by-parameter d-spacing derivatives.
+    pub d_d_spacing_d_parameters: Vec<f64>,
+    /// Row-major reflection-by-parameter TOF-position derivatives.
+    pub d_tof_d_parameters: Vec<f64>,
+    /// Stable independent parameter names.
+    pub parameter_names: Vec<String>,
+}
+
 /// Calculate d-spacings, CW positions, and analytical independent-variable chains.
 ///
 /// # Errors
@@ -402,6 +418,67 @@ pub fn cw_lattice_geometry(
         two_theta_deg: positions,
         d_d_spacing_d_parameters: spacing_derivatives,
         d_two_theta_d_parameters: derivatives,
+        parameter_names: parameterization.parameter_names.clone(),
+    })
+}
+
+/// Calculate d-spacings, TOF positions, and analytical independent-variable chains.
+///
+/// The position convention is
+/// `tof = zero + difC d + difA d^2 + difB / d`. The d-spacing chain is
+/// independent of the detector bank; only the final position chain uses the
+/// bank-local calibration coefficients.
+///
+/// # Errors
+///
+/// Returns [`LatticeError`] for invalid cells/reflections, an invalid TOF
+/// instrument, or a non-finite calibrated position.
+pub fn tof_lattice_geometry(
+    parameterization: &LatticeParameterization,
+    cell: UnitCell,
+    hkl: &[[i32; 3]],
+    instrument: TofInstrument,
+) -> Result<TofLatticeGeometry, LatticeError> {
+    instrument.validate().map_err(LatticeError::Tof)?;
+    let values = parameterization.values_from_cell(cell)?;
+    let chain = parameterization.cell_jacobian(&values)?;
+    let columns = values.len();
+    let geometry = cell.geometry().map_err(LatticeError::Cell)?;
+    let mut spacing = Vec::with_capacity(hkl.len());
+    let mut positions = Vec::with_capacity(hkl.len());
+    let mut spacing_derivatives = vec![0.0; hkl.len() * columns];
+    let mut position_derivatives = vec![0.0; hkl.len() * columns];
+    for (reflection, hkl) in hkl.iter().copied().enumerate() {
+        let (d, d_cell) = geometry
+            .d_spacing_and_derivatives(hkl)
+            .map_err(LatticeError::Cell)?;
+        let inverse_d = d.recip();
+        let position = instrument.zero_us
+            + instrument.difc_us_per_angstrom * d
+            + instrument.difa_us_per_angstrom2 * d * d
+            + instrument.difb_us_angstrom * inverse_d;
+        if !position.is_finite() {
+            return Err(LatticeError::Tof(TofError::InvalidPosition));
+        }
+        spacing.push(d);
+        positions.push(position);
+        let per_d = instrument.difc_us_per_angstrom + 2.0 * instrument.difa_us_per_angstrom2 * d
+            - instrument.difb_us_angstrom * inverse_d * inverse_d;
+        for parameter in 0..columns {
+            let d_parameter = (0..6)
+                .map(|cell_parameter| {
+                    d_cell[cell_parameter] * chain[cell_parameter * columns + parameter]
+                })
+                .sum::<f64>();
+            spacing_derivatives[reflection * columns + parameter] = d_parameter;
+            position_derivatives[reflection * columns + parameter] = per_d * d_parameter;
+        }
+    }
+    Ok(TofLatticeGeometry {
+        d_spacing_angstrom: spacing,
+        tof_us: positions,
+        d_d_spacing_d_parameters: spacing_derivatives,
+        d_tof_d_parameters: position_derivatives,
         parameter_names: parameterization.parameter_names.clone(),
     })
 }
@@ -851,6 +928,8 @@ pub enum LatticeError {
     Cell(CellError),
     /// Reflection generation failed.
     Generation(ReflectionGenerationError),
+    /// TOF calibration validation or position evaluation failed.
+    Tof(TofError),
     /// Exact setting is not represented by the supported conventional mapping.
     UnsupportedSetting,
     /// Supplied cell is incompatible with the parameterization.
@@ -880,6 +959,7 @@ impl Display for LatticeError {
         match self {
             Self::Cell(error) => Display::fmt(error, formatter),
             Self::Generation(error) => Display::fmt(error, formatter),
+            Self::Tof(error) => Display::fmt(error, formatter),
             Self::UnsupportedSetting => formatter.write_str("unsupported lattice setting"),
             Self::IncompatibleCell => {
                 formatter.write_str("cell is incompatible with lattice setting")
@@ -915,6 +995,7 @@ impl Error for LatticeError {
         match self {
             Self::Cell(error) => Some(error),
             Self::Generation(error) => Some(error),
+            Self::Tof(error) => Some(error),
             _ => None,
         }
     }

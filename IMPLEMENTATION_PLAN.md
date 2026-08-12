@@ -1230,6 +1230,8 @@ Keep implementation units reviewable through these ordered changes:
 33. Atomic multi-bank fixed-cell TOF Le Bail: shared phase/reflection geometry,
     bank-local experimental state, aggregate metrics, runtime events, and exact
     joint checkpoint continuation.
+34. Shared analytical TOF lattice refinement: native setting-aware TOF geometry
+    chains first, then one bounded cell optimizer over every detector bank.
 
 Unit 23 is complete. The Rust workflow crate now owns stable shared/local
 packing, matrix-free joint products, a bounded constraint-aware summed solver,
@@ -1353,6 +1355,14 @@ nonuniform grids, calibrations, masks, scales, backgrounds, and intensities
 recover their local truth, and a four-cycle cancelled state resumes bitwise
 identically to an uninterrupted twelve-cycle run. Shared lattice motion remains
 the next coupling increment.
+
+Unit 34 is in progress. The native `TofLatticeGeometry`/`tof_lattice_geometry`
+API now composes reciprocal-metric d-spacing derivatives with the bank-local
+`zero + difC d + difA d^2 + difB / d` calibration derivative. Centered
+finite-difference coverage spans every supported crystal system and the
+rhombohedral setting, and invalid instrument/reflection inputs fail
+structurally. The remaining Unit 34 work is the bounded summed-objective
+optimizer, atomic cell checkpointing, and synthetic multi-bank recovery.
 
 Do not combine adjacent items merely to reduce PR count; numerical review is
 easier when parameter conventions and tolerance changes remain isolated.

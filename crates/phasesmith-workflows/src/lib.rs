@@ -82,7 +82,8 @@ pub use constraints::{
 };
 pub use lattice::{
     CwLatticeGeometry, GeneratedLatticeDomain, LatticeBounds, LatticeError,
-    LatticeParameterization, LatticeReflectionDomain, cw_lattice_geometry,
+    LatticeParameterization, LatticeReflectionDomain, TofLatticeGeometry, cw_lattice_geometry,
+    tof_lattice_geometry,
 };
 pub use lebail::{
     CoincidentReflectionGroup, CovarianceMatrix, IntensityExtractionResult, LeBailCalculation,

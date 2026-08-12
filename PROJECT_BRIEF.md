@@ -917,6 +917,14 @@ a cancelled checkpoint resumed under the same contract reproduces the
 uninterrupted per-bank arrays and joint history exactly. This is a true shared
 fixed-cell application contract, not alternating single-bank calls. Shared
 lattice motion is the next coupling increment.
+The first reviewed part of that increment is now native: `tof_lattice_geometry`
+evaluates d-spacings, calibrated microsecond positions, and their analytical
+derivatives with respect to the symmetry-independent cell variables. The
+reciprocal-metric d-spacing chain is bank-independent; each bank's Zero/DIFC/
+DIFA/DIFB coefficients enter only through the final `d(tof)/d(d)` chain. Rust
+finite differences cover every supported crystal system and the rhombohedral
+setting, alongside the independent NumPy reference. Joint optimization and
+accepted-cell checkpoint state remain the next part of the increment.
 The historical native-workflow comparison passes both Le Bail parity contracts
 and QARR 1g. Its unchanged QARR 1h acceptance recipe retains the reviewed
 profile-quality failure, rather than having thresholds relaxed. The newer

@@ -209,6 +209,20 @@ Two or more detector banks use the separate atomic contract documented in
 geometry, retains experimental/intensity state per bank, computes aggregate
 metrics from all included observations, and checkpoints the complete bank set.
 
+Rust lattice adapters use `tof_lattice_geometry` to evaluate the shared-cell
+chain without finite-differencing the profile. For each reflection,
+
+```text
+tof(d) = zero + difC d + difA d^2 + difB / d
+d(tof)/dp = (difC + 2 difA d - difB / d^2) d(d)/dp
+```
+
+`d(d)/dp` comes from the analytical reciprocal-metric derivative and the
+setting-aware independent-cell Jacobian. The result exposes both d-spacing and
+TOF-position derivatives in reflection-major, independent-parameter order.
+The bank calibration appears only in the second chain, so the same cell and
+d-spacing derivative are reusable across detector banks.
+
 The public Python path keeps the same unit boundary:
 
 ```python

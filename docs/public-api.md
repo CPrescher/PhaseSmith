@@ -274,6 +274,8 @@ field. See [native project persistence](native-persistence.md).
 Rust applications can also use `TofMultiBankInput`, `TofLeBailBank`, and
 `refine_tof_multibank_with_runtime` for atomic fixed-cell detector-bank
 coordination; see [multi-bank TOF Le Bail](tof-multibank.md).
+The native `tof_lattice_geometry` helper returns d-spacings, calibrated
+microsecond positions, and both analytical independent-cell derivative chains.
 
 Top-level imports are convenience aliases for scripts and notebooks; the
 module-qualified paths above are the ownership boundary. FCJ geometry does not

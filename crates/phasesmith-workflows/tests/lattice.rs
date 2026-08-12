@@ -2,12 +2,33 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
+use phasesmith_core::{TofError, TofInstrument};
 use phasesmith_crystallography::{PreparedReflectionGenerator, ReflectionRange, UnitCell};
 use phasesmith_io::{space_group_by_number, space_group_by_symbol};
 use phasesmith_workflows::{
     LatticeBounds, LatticeError, LatticeParameterization, LatticeReflectionDomain,
-    cw_lattice_geometry,
+    cw_lattice_geometry, tof_lattice_geometry,
 };
+
+fn tof_instrument() -> TofInstrument {
+    TofInstrument {
+        zero_us: 2.0,
+        difc_us_per_angstrom: 1_000.0,
+        difa_us_per_angstrom2: 0.5,
+        difb_us_angstrom: 0.2,
+        alpha_coefficient: 1.0,
+        beta0_per_us: 0.02,
+        beta1_angstrom4_per_us: 0.01,
+        betaq_angstrom2_per_us: 0.005,
+        sigma0_us2: 10.0,
+        sigma1_us2_per_angstrom2: 1.0,
+        sigma2_us2_per_angstrom4: 0.2,
+        sigmaq_us2_per_angstrom: 0.1,
+        x_us_per_angstrom: 2.0,
+        y_us_per_angstrom2: 0.3,
+        z_us: 1.0,
+    }
+}
 
 fn lattice_cases() -> Vec<(i32, UnitCell, &'static [&'static str])> {
     vec![
@@ -178,7 +199,7 @@ fn assert_cell_jacobian_matches_differences(
 }
 
 #[test]
-fn cw_geometry_derivatives_match_centered_differences() {
+fn cw_and_tof_geometry_derivatives_match_centered_differences() {
     let mut cases = lattice_cases()
         .into_iter()
         .map(|(number, cell, _)| {
@@ -196,26 +217,30 @@ fn cw_geometry_derivatives_match_centered_differences() {
             .unwrap_or_else(|error| panic!("space group {label}: {error}"));
         let values = parameterization.values_from_cell(cell).expect("values");
         let analytical = cw_lattice_geometry(&parameterization, cell, &hkl, 1.0).expect("geometry");
+        let analytical_tof = tof_lattice_geometry(&parameterization, cell, &hkl, tof_instrument())
+            .expect("TOF geometry");
+        assert_eq!(
+            analytical.d_d_spacing_d_parameters,
+            analytical_tof.d_d_spacing_d_parameters
+        );
         for parameter in 0..values.len() {
             let step = 1.0e-6;
-            let mut plus = values.clone();
-            let mut minus = values.clone();
-            plus[parameter] += step;
-            minus[parameter] -= step;
-            let plus = cw_lattice_geometry(
-                &parameterization,
-                parameterization.to_cell(&plus).expect("plus cell"),
-                &hkl,
-                1.0,
-            )
-            .expect("plus geometry");
-            let minus = cw_lattice_geometry(
-                &parameterization,
-                parameterization.to_cell(&minus).expect("minus cell"),
-                &hkl,
-                1.0,
-            )
-            .expect("minus geometry");
+            let mut plus_values = values.clone();
+            let mut minus_values = values.clone();
+            plus_values[parameter] += step;
+            minus_values[parameter] -= step;
+            let plus_cell = parameterization.to_cell(&plus_values).expect("plus cell");
+            let minus_cell = parameterization.to_cell(&minus_values).expect("minus cell");
+            let plus = cw_lattice_geometry(&parameterization, plus_cell, &hkl, 1.0)
+                .expect("plus geometry");
+            let minus = cw_lattice_geometry(&parameterization, minus_cell, &hkl, 1.0)
+                .expect("minus geometry");
+            let plus_tof =
+                tof_lattice_geometry(&parameterization, plus_cell, &hkl, tof_instrument())
+                    .expect("plus TOF geometry");
+            let minus_tof =
+                tof_lattice_geometry(&parameterization, minus_cell, &hkl, tof_instrument())
+                    .expect("minus TOF geometry");
             for reflection in 0..hkl.len() {
                 let index = reflection * values.len() + parameter;
                 let spacing_difference = (plus.d_spacing_angstrom[reflection]
@@ -224,6 +249,8 @@ fn cw_geometry_derivatives_match_centered_differences() {
                 let position_difference = (plus.two_theta_deg[reflection]
                     - minus.two_theta_deg[reflection])
                     / (2.0 * step);
+                let tof_difference =
+                    (plus_tof.tof_us[reflection] - minus_tof.tof_us[reflection]) / (2.0 * step);
                 assert_relative_close(
                     analytical.d_d_spacing_d_parameters[index],
                     spacing_difference,
@@ -236,9 +263,39 @@ fn cw_geometry_derivatives_match_centered_differences() {
                     4.0e-8,
                     4.0e-8,
                 );
+                assert_relative_close(
+                    analytical_tof.d_tof_d_parameters[index],
+                    tof_difference,
+                    4.0e-8,
+                    2.0e-5,
+                );
             }
         }
     }
+}
+
+#[test]
+fn tof_geometry_rejects_invalid_instrument_and_reflection_inputs() {
+    let cell = UnitCell {
+        a_angstrom: 4.0,
+        b_angstrom: 4.0,
+        c_angstrom: 4.0,
+        alpha_deg: 90.0,
+        beta_deg: 90.0,
+        gamma_deg: 90.0,
+    };
+    let group = space_group_by_number(221).expect("space group").space_group;
+    let parameterization = LatticeParameterization::new(group, cell).expect("parameters");
+    let mut invalid = tof_instrument();
+    invalid.difc_us_per_angstrom = 0.0;
+    assert!(matches!(
+        tof_lattice_geometry(&parameterization, cell, &[[1, 0, 0]], invalid),
+        Err(LatticeError::Tof(TofError::NonPositiveDifc))
+    ));
+    assert!(matches!(
+        tof_lattice_geometry(&parameterization, cell, &[[0, 0, 0]], tof_instrument()),
+        Err(LatticeError::Cell(_))
+    ));
 }
 
 #[test]
