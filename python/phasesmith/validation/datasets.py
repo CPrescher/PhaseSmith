@@ -77,6 +77,10 @@ _POWGEN_TOF_SOURCE = (
     "https://raw.githubusercontent.com/AdvancedPhotonSource/GSAS-II-Tutorials/"
     "e2485148a3d7ee4757239b1ba40653f1f715bba5/TOF%20Calibration/data"
 )
+_LANL_NICKEL_TOF_SOURCE = (
+    "https://subversion.xray.aps.anl.gov/EXPGUI/!svn/bc/1253/"
+    "tutorials/tutorial1"
+)
 _ROWLES_QPA_SOURCE = "https://ddfe.curtin.edu.au/5f44ad65411cc"
 _BATH_LTL_SOURCE = "https://researchdata.bath.ac.uk/648"
 _XRED_TIO2_SOURCE = (
@@ -452,6 +456,36 @@ VALIDATION_DATASETS: tuple[ValidationDataset, ...] = (
             ),
         ),
         purpose="oracle_integrity",
+        expected_status="passed",
+    ),
+    ValidationDataset(
+        dataset_id="lanl-nickel-tof",
+        title="LANL nickel time-of-flight powder refinement tutorial",
+        source_url="https://subversion.xray.aps.anl.gov/EXPGUI/tutorials/tutorial1/",
+        citation=(
+            "A. C. Larson and R. B. Von Dreele, GSAS nickel powder tutorial example; "
+            "EXPGUI adaptation by B. H. Toby"
+        ),
+        license_note=(
+            "Official GSAS/EXPGUI example data fetched from immutable APS Subversion "
+            "revision 1253. The tutorial grants public copying and use with its "
+            "authorship notice; files are not redistributed."
+        ),
+        files=(
+            ExternalValidationFile(
+                "nickel.raw",
+                "bfe2afd6843a11dc1935cbbdb3ca05962c3242b9ddc60baa6a4ff6a48491c3e7",
+                168_346,
+                (f"{_LANL_NICKEL_TOF_SOURCE}/nickel.raw",),
+            ),
+            ExternalValidationFile(
+                "inst_tof.prm",
+                "9a4f06cb560c8b7f783fd0773b37814dae1d705042087e66f8cd2be719477038",
+                8_610,
+                (f"{_LANL_NICKEL_TOF_SOURCE}/inst_tof.prm",),
+            ),
+        ),
+        purpose="acceptance",
         expected_status="passed",
     ),
     ValidationDataset(

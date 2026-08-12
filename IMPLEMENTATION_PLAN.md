@@ -1212,9 +1212,16 @@ Keep implementation units reviewable through these ordered changes:
     physical targets from emission lines, ideal equatorial apertures, and FCJ;
     bounded compression to production U/V/W/X/Y plus equal-height SH/L with
     explicit rejection diagnostics.
-28. Broader independent experimental validation on in-house benchmark examples
+28. Public POWGEN fixed-instrument TOF application slice: bounded SLOG FXYE/GSA
+    and GSAS type-3 PRM import, a distinct Python microsecond-domain pattern,
+    CIF reflection generation, and one-call native Le Bail extraction.
+29. Broader independent experimental validation on in-house benchmark examples
     to establish profile transferability before selecting any specialized
     LPSD, tube-tail, continuum, or coupled-dispersion production increment.
+30. Facility-neutral TOF interchange and independent non-POWGEN acceptance:
+    plain center/density columns, logarithmic FXYE and packed constant-step STD
+    adapters, legacy profile functions 1/3, and a checksum-pinned LANL nickel
+    refinement gate.
 
 Unit 23 is complete. The Rust workflow crate now owns stable shared/local
 packing, matrix-free joint products, a bounded constraint-aware summed solver,
@@ -1250,8 +1257,8 @@ Unit 26 is complete. `TofPatternRecord` remains non-interchangeable with the CW
 angle record; the workflow carries d-spacing reflection coordinates through the
 fused TOF value and derivative pass, applies masks and nonuniform-grid weights,
 and extracts nonnegative intensities without a Python dependency. The official
-POWGEN bank-2 type-3 coefficients are translated in the validation adapter and
-the 6,825-sample, 330-family LaB6 run passes calibration, derivative, coverage,
+POWGEN bank-2 type-3 coefficients are translated by the bounded I/O adapter and
+the 6,824-sample, 330-family LaB6 run passes calibration, derivative, coverage,
 profile-correlation, and intensity gates. Structural TOF Rietveld refinement is
 outside this fixed-instrument Le Bail slice.
 
@@ -1291,6 +1298,17 @@ patterns is 4.843 and 3.515 percentage points worse than empirical GSAS-II
 calibration. This is the stop gate for additional Rowles-specific optics:
 continue with independent in-house benchmark examples before considering LPSD,
 tube-tail, continuum, or coupled-dispersion production terms.
+
+Unit 28's first public slice is complete. The bank-aware GSAS type-3 calibration
+translation now lives in the bounded I/O crate and is shared by validation and
+applications. Python exposes immutable `TofPowderData`/`TofPowderPattern`
+records, the calibration reader, generated fixed-cell TOF phases, a
+`TofLeBailInput.from_files` composition boundary, and a thin native refinement
+facade returning stable reflection keys, intensities, backgrounds, metrics, and
+cycle history. Synthetic extraction and FXYE/PRM/CIF composition tests cover
+the boundary. Native project persistence, cancellation/progress events,
+multi-bank requests, lattice/instrument refinement, and structural TOF
+Rietveld remain follow-on slices.
 
 Do not combine adjacent items merely to reduce PR count; numerical review is
 easier when parameter conventions and tolerance changes remain isolated.
@@ -1336,8 +1354,21 @@ fundamental-profile target, finite axial/Soller geometry, explicit Gaussian
 passband experiment, and the Rowles transferability stop gate. Its negative
 transfer result is retained rather than hidden by looser compression criteria.
 
-Unit 28 is the actual next milestone: run broader independent experimental
-validation on in-house benchmark examples and define a reviewable
+Unit 28's public fixed-instrument POWGEN slice is complete. Unit 30 is also
+complete: the core request is facility-neutral, the production I/O boundary
+normalizes three explicit bin conventions, and the independent four-bank LANL
+nickel example passes on bank 2 with Rwp 0.02485869 and correlation 0.99891242.
+This validates the supported profile family beyond ORNL without promising
+unknown facility-specific line shapes. The next TOF increment is application
+hardening: native project persistence and cooperative
+cancellation/progress for the new request/result boundary, followed by a
+reviewed multi-bank model. Structural parameter and instrument refinement must
+be introduced only with analytical derivatives, finite-difference tests, and
+new oracle contracts; it is not part of the completed Le Bail facade.
+
+Unit 29 remains the next independent constant-wavelength calibration
+milestone: run broader independent experimental validation on in-house
+benchmark examples and define a reviewable
 transferability gate. Completion requires provenance-complete physical inputs,
 plain validation artifacts, explicit cross-pattern profile metrics, and a
 decision supported by those results about whether any specialized profile term

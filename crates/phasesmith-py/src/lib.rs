@@ -38,11 +38,19 @@ use phasesmith_engine::{
 use phasesmith_execution::ExecutionPolicy as NativeExecutionPolicyModel;
 use phasesmith_io::{
     CifDiagnosticSeverity, CifIoError, CifReadLimits as NativeCifReadLimits,
-    CifReadResult as NativeCifReadResult, DisplacementConvention, NATIVE_CIF_BACKEND,
+    CifReadResult as NativeCifReadResult, DisplacementConvention,
+    GsasTofInstrumentData as NativeGsasTofInstrumentData, GsasTofInstrumentIoError,
+    GsasTofInstrumentReadLimits as NativeGsasTofInstrumentReadLimits, NATIVE_CIF_BACKEND,
     NATIVE_CIF_BACKEND_VERSION, PowderData as NativePowderData, PowderFormat as NativePowderFormat,
     PowderIoError, PowderReadLimits as NativePowderReadLimits,
-    SpaceGroupInfo as NativeSpaceGroupInfo, parse_cif_text as parse_native_cif_text,
-    parse_powder_text as parse_native_powder_text, read_powder_file as read_native_powder_file,
+    SpaceGroupInfo as NativeSpaceGroupInfo, TofPowderData as NativeTofPowderData,
+    TofPowderFormat as NativeTofPowderFormat, parse_cif_text as parse_native_cif_text,
+    parse_gsas_tof_instrument_text as parse_native_gsas_tof_instrument_text,
+    parse_powder_text as parse_native_powder_text,
+    parse_tof_powder_text_as as parse_native_tof_powder_text,
+    read_gsas_tof_instrument_file as read_native_gsas_tof_instrument_file,
+    read_powder_file as read_native_powder_file,
+    read_tof_powder_file_as as read_native_tof_powder_file,
     space_group_by_number as native_space_group_by_number,
     space_group_by_symbol as native_space_group_by_symbol,
 };
@@ -52,6 +60,7 @@ use pyo3::types::{PyDict, PyList, PyTuple};
 
 mod profile_estimation;
 mod rietveld;
+mod tof_lebail;
 
 type ProfileArrays<'py> = (
     Bound<'py, PyArray1<f64>>,
@@ -100,6 +109,19 @@ type PowderDataArrays<'py> = (
     Option<usize>,
     Option<Bound<'py, PyArray1<bool>>>,
 );
+
+type TofPowderDataArrays<'py> = (
+    Bound<'py, PyArray1<f64>>,
+    Bound<'py, PyArray1<f64>>,
+    Option<Bound<'py, PyArray1<f64>>>,
+    &'static str,
+    Option<String>,
+    Option<usize>,
+    bool,
+    Option<Bound<'py, PyArray1<bool>>>,
+);
+
+type GsasTofInstrumentRecord = (Vec<f64>, usize, usize, Option<String>);
 
 type TchShapeValues = (f64, f64, f64, f64, f64, f64);
 
@@ -3838,6 +3860,18 @@ fn parse_powder_format(value: &str) -> PyResult<NativePowderFormat> {
     }
 }
 
+fn parse_tof_powder_format(value: &str) -> PyResult<NativeTofPowderFormat> {
+    match value {
+        "auto" => Ok(NativeTofPowderFormat::Auto),
+        "columns" => Ok(NativeTofPowderFormat::Columns),
+        "gsas_slog_fxye" => Ok(NativeTofPowderFormat::GsasSlogFxye),
+        "gsas_const_std" => Ok(NativeTofPowderFormat::GsasConstStd),
+        _ => Err(PyValueError::new_err(
+            "format must be 'auto', 'columns', 'gsas_slog_fxye', or 'gsas_const_std'",
+        )),
+    }
+}
+
 fn powder_error(error: PowderIoError) -> PyErr {
     match error {
         PowderIoError::Io(error) => error.into(),
@@ -3872,6 +3906,72 @@ fn powder_data_to_numpy(py: Python<'_>, data: NativePowderData) -> PyResult<Powd
         data.bank,
         data.pattern.mask.map(|values| values.into_pyarray(py)),
     ))
+}
+
+fn tof_powder_data_to_numpy(
+    py: Python<'_>,
+    data: NativeTofPowderData,
+) -> PyResult<TofPowderDataArrays<'_>> {
+    let format = match data.format {
+        NativeTofPowderFormat::Columns => "columns",
+        NativeTofPowderFormat::GsasSlogFxye => "gsas_slog_fxye",
+        NativeTofPowderFormat::GsasConstStd => "gsas_const_std",
+        NativeTofPowderFormat::Auto => {
+            return Err(PyValueError::new_err(
+                "native TOF powder reader returned unresolved auto format",
+            ));
+        }
+    };
+    let observed_y = data.pattern.observed_y.ok_or_else(|| {
+        PyValueError::new_err("native TOF powder reader returned no observations")
+    })?;
+    Ok((
+        data.pattern.tof_us.into_pyarray(py),
+        observed_y.into_pyarray(py),
+        data.pattern
+            .uncertainty
+            .map(|values| values.into_pyarray(py)),
+        format,
+        data.source_path
+            .map(|path| path.to_string_lossy().into_owned()),
+        data.bank,
+        data.logarithmic_grid,
+        data.pattern.mask.map(|values| values.into_pyarray(py)),
+    ))
+}
+
+fn gsas_tof_instrument_record(data: NativeGsasTofInstrumentData) -> GsasTofInstrumentRecord {
+    let instrument = data.instrument;
+    (
+        vec![
+            instrument.zero_us,
+            instrument.difc_us_per_angstrom,
+            instrument.difa_us_per_angstrom2,
+            instrument.difb_us_angstrom,
+            instrument.alpha_coefficient,
+            instrument.beta0_per_us,
+            instrument.beta1_angstrom4_per_us,
+            instrument.betaq_angstrom2_per_us,
+            instrument.sigma0_us2,
+            instrument.sigma1_us2_per_angstrom2,
+            instrument.sigma2_us2_per_angstrom4,
+            instrument.sigmaq_us2_per_angstrom,
+            instrument.x_us_per_angstrom,
+            instrument.y_us_per_angstrom2,
+            instrument.z_us,
+        ],
+        data.bank,
+        data.profile_function,
+        data.source_path
+            .map(|path| path.to_string_lossy().into_owned()),
+    )
+}
+
+fn gsas_tof_instrument_error(error: GsasTofInstrumentIoError) -> PyErr {
+    match error {
+        GsasTofInstrumentIoError::Io(error) => error.into(),
+        error => PyValueError::new_err(error.to_string()),
+    }
 }
 
 /// Parse powder text through the shared native adapter.
@@ -3916,6 +4016,76 @@ fn read_powder_file_for_python<'py>(
     powder_data_to_numpy(py, data)
 }
 
+/// Parse one GSAS TOF bank through the dedicated microsecond-domain adapter.
+#[pyfunction(name = "_parse_tof_powder_text")]
+fn parse_tof_powder_text_for_python<'py>(
+    py: Python<'py>,
+    text: String,
+    format: &str,
+    bank: usize,
+    max_bytes: usize,
+    max_rows: usize,
+) -> PyResult<TofPowderDataArrays<'py>> {
+    let format = parse_tof_powder_format(format)?;
+    let limits = NativePowderReadLimits {
+        max_bytes,
+        max_rows,
+    };
+    let data = py
+        .detach(move || parse_native_tof_powder_text(&text, format, bank, limits))
+        .map_err(powder_error)?;
+    tof_powder_data_to_numpy(py, data)
+}
+
+/// Read one GSAS TOF bank through the dedicated microsecond-domain adapter.
+#[pyfunction(name = "_read_tof_powder_file")]
+fn read_tof_powder_file_for_python<'py>(
+    py: Python<'py>,
+    path: String,
+    format: &str,
+    bank: usize,
+    max_bytes: usize,
+    max_rows: usize,
+) -> PyResult<TofPowderDataArrays<'py>> {
+    let format = parse_tof_powder_format(format)?;
+    let limits = NativePowderReadLimits {
+        max_bytes,
+        max_rows,
+    };
+    let data = py
+        .detach(move || read_native_tof_powder_file(path, format, bank, limits))
+        .map_err(powder_error)?;
+    tof_powder_data_to_numpy(py, data)
+}
+
+/// Parse one bounded legacy GSAS TOF instrument bank.
+#[pyfunction(name = "_parse_gsas_tof_instrument_text")]
+fn parse_gsas_tof_instrument_text_for_python(
+    py: Python<'_>,
+    text: String,
+    bank: usize,
+    max_bytes: usize,
+) -> PyResult<GsasTofInstrumentRecord> {
+    let limits = NativeGsasTofInstrumentReadLimits { max_bytes };
+    py.detach(move || parse_native_gsas_tof_instrument_text(&text, bank, limits))
+        .map(gsas_tof_instrument_record)
+        .map_err(gsas_tof_instrument_error)
+}
+
+/// Read one bounded legacy GSAS TOF instrument bank.
+#[pyfunction(name = "_read_gsas_tof_instrument_file")]
+fn read_gsas_tof_instrument_file_for_python(
+    py: Python<'_>,
+    path: String,
+    bank: usize,
+    max_bytes: usize,
+) -> PyResult<GsasTofInstrumentRecord> {
+    let limits = NativeGsasTofInstrumentReadLimits { max_bytes };
+    py.detach(move || read_native_gsas_tof_instrument_file(path, bank, limits))
+        .map(gsas_tof_instrument_record)
+        .map_err(gsas_tof_instrument_error)
+}
+
 /// Run one Python-free validation workflow and return its stable JSON report.
 #[pyfunction(name = "_run_native_validation")]
 fn run_native_validation(py: Python<'_>, runner: String, directory: String) -> PyResult<String> {
@@ -3936,6 +4106,8 @@ fn run_native_validation(py: Python<'_>, runner: String, directory: String) -> P
                 phasesmith_validation::run_nist_srm660c_validation(&directory)
                     .map_err(|error| error.to_string())?
             }
+            "lanl-nickel-tof" => phasesmith_validation::run_nickel_tof_validation(&directory)
+                .map_err(|error| error.to_string())?,
             "powgen-lab6-tof-calibration" => {
                 phasesmith_validation::run_powgen_tof_readiness(&directory)
                     .map_err(|error| error.to_string())?
@@ -3966,6 +4138,7 @@ fn _core(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_class::<NativeStructuralMultiphase>()?;
     rietveld::register(module)?;
     profile_estimation::register(module)?;
+    tof_lebail::register(module)?;
     module.add_function(wrap_pyfunction!(unit_cell_geometry, module)?)?;
     module.add_function(wrap_pyfunction!(unit_cell_d_spacings, module)?)?;
     module.add_function(wrap_pyfunction!(p1_structure_factors_dense, module)?)?;
@@ -3983,6 +4156,16 @@ fn _core(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_function(wrap_pyfunction!(parse_cif_text_for_python, module)?)?;
     module.add_function(wrap_pyfunction!(parse_powder_text_for_python, module)?)?;
     module.add_function(wrap_pyfunction!(read_powder_file_for_python, module)?)?;
+    module.add_function(wrap_pyfunction!(parse_tof_powder_text_for_python, module)?)?;
+    module.add_function(wrap_pyfunction!(read_tof_powder_file_for_python, module)?)?;
+    module.add_function(wrap_pyfunction!(
+        parse_gsas_tof_instrument_text_for_python,
+        module
+    )?)?;
+    module.add_function(wrap_pyfunction!(
+        read_gsas_tof_instrument_file_for_python,
+        module
+    )?)?;
     module.add_function(wrap_pyfunction!(run_native_validation, module)?)?;
     module.add_function(wrap_pyfunction!(profile, module)?)?;
     module.add_function(wrap_pyfunction!(tch_shape_from_fwhm, module)?)?;

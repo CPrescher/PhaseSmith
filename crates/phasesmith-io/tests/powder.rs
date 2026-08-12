@@ -3,8 +3,8 @@
 use std::path::Path;
 
 use phasesmith_io::{
-    PowderFormat, PowderIoError, PowderReadLimits, parse_powder_text, parse_tof_powder_text,
-    read_powder_file, read_tof_powder_file,
+    PowderFormat, PowderIoError, PowderReadLimits, TofPowderFormat, parse_powder_text,
+    parse_tof_powder_text, read_powder_file, read_tof_powder_file,
 };
 
 fn parse(text: &str) -> phasesmith_io::PowderData {
@@ -50,7 +50,8 @@ fn typed_tof_reader_converts_slog_boundaries_and_integrated_counts_to_densities(
         6784.1 121.0 11.0\n";
     let data = parse_tof_powder_text(text, 2, PowderReadLimits::default()).unwrap();
 
-    assert_eq!(data.bank, 2);
+    assert_eq!(data.bank, Some(2));
+    assert_eq!(data.format, TofPowderFormat::GsasSlogFxye);
     assert!(data.logarithmic_grid);
     assert_eq!(data.pattern.tof_us, [6778.75, 6782.3]);
     assert_eq!(
@@ -61,6 +62,41 @@ fn typed_tof_reader_converts_slog_boundaries_and_integrated_counts_to_densities(
     assert_eq!(
         data.pattern.uncertainty.as_deref(),
         Some(&[10.0 / 3.5, 1.0][..])
+    );
+}
+
+#[test]
+fn typed_tof_reader_accepts_packed_constant_step_and_plain_centers() {
+    let packed = parse_tof_powder_text(
+        concat!(
+            "Packed TOF example\n",
+            "BANK 2 3 1 CONST 1000 2.5 0 0\n",
+            "     100 2    50       0\n",
+        ),
+        2,
+        PowderReadLimits::default(),
+    )
+    .unwrap();
+    assert_eq!(packed.format, TofPowderFormat::GsasConstStd);
+    assert_eq!(packed.bank, Some(2));
+    assert_eq!(packed.pattern.tof_us, [1001.25, 1003.75, 1006.25]);
+    assert_eq!(
+        packed.pattern.observed_y.as_deref(),
+        Some(&[40.0, 20.0, 0.0][..])
+    );
+    assert_eq!(
+        packed.pattern.mask.as_deref(),
+        Some(&[true, true, false][..])
+    );
+
+    let columns =
+        parse_tof_powder_text("1000 4 2\n1001 9 3\n", 1, PowderReadLimits::default()).unwrap();
+    assert_eq!(columns.format, TofPowderFormat::Columns);
+    assert_eq!(columns.bank, None);
+    assert_eq!(columns.pattern.tof_us, [1000.0, 1001.0]);
+    assert_eq!(
+        columns.pattern.uncertainty.as_deref(),
+        Some(&[2.0, 3.0][..])
     );
 }
 

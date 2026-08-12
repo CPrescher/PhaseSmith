@@ -163,6 +163,7 @@ fn built_in_dataset_manifests_match_the_python_registry() {
             "iucr-qarr-1g",
             "iucr-qarr-1h",
             "nist-srm660c-lab6-xray",
+            "lanl-nickel-tof",
             "powgen-lab6-tof-calibration",
         ]
     );
@@ -193,6 +194,10 @@ fn built_in_dataset_manifests_match_the_python_registry() {
             .files
             .len(),
         1
+    );
+    assert_eq!(
+        validation_dataset("lanl-nickel-tof").unwrap().files.len(),
+        2
     );
     assert_eq!(
         validation_dataset("powgen-lab6-tof-calibration")

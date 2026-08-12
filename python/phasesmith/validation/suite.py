@@ -13,6 +13,7 @@ from .datasets import validation_dataset
 from .real_data import (
     RealDataValidationReport,
     run_echidna_lab6_validation,
+    run_nickel_tof_validation,
     run_nist_srm660c_validation,
     run_pbso4_cw_validation,
     run_powgen_tof_validation,
@@ -61,6 +62,12 @@ VALIDATION_CASES: tuple[ValidationCase, ...] = (
         "passed",
     ),
     ValidationCase(
+        "lanl-nickel-tof",
+        "lanl-nickel-tof",
+        "acceptance",
+        "passed",
+    ),
+    ValidationCase(
         "powgen-lab6-tof-calibration",
         "powgen-lab6-tof-calibration",
         "acceptance",
@@ -89,6 +96,8 @@ def run_validation_case(
         return run_qarr_1h_validation(directory)
     if case.case_id == "nist-srm660c-lab6-xray":
         return run_nist_srm660c_validation(directory)
+    if case.case_id == "lanl-nickel-tof":
+        return run_nickel_tof_validation(directory)
     if case.case_id == "powgen-lab6-tof-calibration":
         return run_powgen_tof_validation(directory)
     raise ValueError(f"unknown validation case {case.case_id!r}")

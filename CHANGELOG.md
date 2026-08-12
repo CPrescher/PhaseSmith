@@ -6,6 +6,12 @@ development versions.
 
 ## Unreleased
 
+- Add bounded public GSAS SLOG FXYE and type-3 PRM readers, an immutable Python
+  TOF pattern boundary, CIF-to-TOF reflection generation, and a native Python
+  fixed-instrument Le Bail facade with stable intensity and history results.
+- Generalize the TOF input boundary to plain center/density columns and packed
+  constant-step GSAS data, translate legacy profile functions 1 and 3, and add
+  a checksum-pinned non-POWGEN LANL nickel acceptance refinement.
 - Treat PbSO4 X-ray final-polish `repeated_rejections` as safe bounded
   stagnation only after an accepted, materially improved state, while
   preserving the termination reason, accepted-state checkpoint semantics, and

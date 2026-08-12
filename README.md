@@ -362,12 +362,34 @@ neutron_result = calculate_neutron_pattern(PowderPattern(x), neutron, [alpha])
 ```
 
 TOF reflections use d-spacing as their durable local coordinate. Values and
-all local/shared derivatives are accumulated in one native call. Native Rust
-consumers can additionally use `TofLeBailInput` and `refine_tof_lebail` for a
-typed microsecond-domain, fixed-instrument nonnegative extraction workflow.
+all local/shared derivatives are accumulated in one native call. Rust and
+Python consumers can additionally use `TofLeBailInput` and
+`refine_tof_lebail` for a typed microsecond-domain, fixed-instrument
+nonnegative extraction workflow.
 Rust callers may attach `TofChebyshevBackground` to refine an explicit-domain
 Chebyshev residual on top of the fixed pattern background; omitting it preserves
-the fixed background alone:
+the fixed background alone. Python can build a complete fixed-instrument request
+from one bank, calibration, and CIF:
+
+```python
+from phasesmith.refinement import TofLeBailInput, refine_tof_lebail
+
+request = TofLeBailInput.from_files(
+    "PG3_17541.gsa",
+    "PGHR_60-2015A.prm",
+    "LaB6.cif",
+    bank=2,
+)
+result = refine_tof_lebail(request)
+```
+
+The file path is not tied to POWGEN: reduced center/density columns, GSAS SLOG
+FXYE, and packed constant-step GSAS STD are supported, and legacy GSAS profile
+functions 1 and 3 translate into the same typed coefficients. Other beamlines
+can pass `TofPowderPattern` and `TofInstrument` directly. The pinned LANL nickel
+example is the non-POWGEN acceptance gate for this supported profile family.
+
+The lower-level profile API remains available:
 
 ```python
 from phasesmith import TofInstrument, accumulate_tof

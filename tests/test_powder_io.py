@@ -1,8 +1,9 @@
 from pathlib import Path
 
 import numpy as np
+import phasesmith
 import pytest
-from phasesmith.io import PowderReadLimits, read_powder_data
+from phasesmith.io import PowderReadLimits, read_powder_data, read_tof_powder_data
 
 
 def test_reads_two_column_pattern_from_text() -> None:
@@ -100,3 +101,45 @@ def test_enforces_row_and_byte_limits() -> None:
 def test_reports_missing_gsas_bank() -> None:
     with pytest.raises(ValueError, match="available banks: 1"):
         read_powder_data("BANK 1 1 1 CONS 1 1 0 0 FXYE\n100 2 1\n", bank=2)
+
+
+def test_tof_reader_preserves_microseconds_and_slog_bin_semantics() -> None:
+    data = read_tof_powder_data(
+        "TOF example\n"
+        "BANK 2 3 3 SLOG 1 2 3 4 5 FXYE\n"
+        "6777.0 100.0 10.0\n"
+        "6780.5 0.0 0.0\n"
+        "6784.1 121.0 11.0\n",
+        bank=2,
+    )
+
+    assert data.bank == 2
+    assert data.format == "gsas_slog_fxye"
+    assert data.logarithmic_grid
+    np.testing.assert_array_equal(data.tof_us, [6778.75, 6782.3])
+    np.testing.assert_allclose(data.observed_y, [100.0 / 3.5, 0.0])
+    np.testing.assert_array_equal(data.mask, [True, False])
+    pattern = data.to_pattern()
+    assert isinstance(pattern, phasesmith.TofPowderPattern)
+    assert not isinstance(pattern, phasesmith.PowderPattern)
+
+
+def test_tof_reader_accepts_packed_const_std_and_plain_center_columns() -> None:
+    packed = read_tof_powder_data(
+        "Packed TOF example\n"
+        "BANK 2 3 1 CONST 1000 2.5 0 0\n"
+        "     100 2    50       0\n",
+        bank=2,
+    )
+    assert packed.format == "gsas_const_std"
+    assert packed.bank == 2
+    assert not packed.logarithmic_grid
+    np.testing.assert_allclose(packed.tof_us, [1001.25, 1003.75, 1006.25])
+    np.testing.assert_allclose(packed.observed_y, [40.0, 20.0, 0.0])
+    np.testing.assert_array_equal(packed.mask, [True, True, False])
+
+    columns = read_tof_powder_data("1000 4 2\n1001 9 3\n", format="columns")
+    assert columns.format == "columns"
+    assert columns.bank is None
+    np.testing.assert_array_equal(columns.tof_us, [1000.0, 1001.0])
+    np.testing.assert_array_equal(columns.uncertainty, [2.0, 3.0])

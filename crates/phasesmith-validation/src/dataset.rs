@@ -155,6 +155,7 @@ pub fn validation_datasets() -> Vec<ValidationDataset> {
         qarr_dataset(),
         qarr_1h_dataset(),
         nist_srm660c_dataset(),
+        lanl_nickel_tof_dataset(),
         powgen_tof_dataset(),
     ]
 }
@@ -442,6 +443,43 @@ fn powgen_tof_dataset() -> ValidationDataset {
                 "1a098c260555d27642ab0501708c5d9058c5836fb201dec5bc7ab9880cea1cb8",
                 7_295,
                 format!("{source}/PGHR_60-2015A.prm"),
+            ),
+        ],
+    )
+}
+
+fn lanl_nickel_tof_dataset() -> ValidationDataset {
+    let source = concat!(
+        "https://subversion.xray.aps.anl.gov/EXPGUI/!svn/bc/1253/",
+        "tutorials/tutorial1"
+    );
+    dataset(
+        "lanl-nickel-tof",
+        "LANL nickel time-of-flight powder refinement tutorial",
+        "https://subversion.xray.aps.anl.gov/EXPGUI/tutorials/tutorial1/",
+        concat!(
+            "A. C. Larson and R. B. Von Dreele, GSAS nickel powder tutorial example; ",
+            "EXPGUI adaptation by B. H. Toby"
+        ),
+        concat!(
+            "Official GSAS/EXPGUI example data fetched from immutable APS Subversion ",
+            "revision 1253. The tutorial grants public copying and use with its ",
+            "authorship notice; files are not redistributed."
+        ),
+        ValidationPurpose::Acceptance,
+        ValidationStatus::Passed,
+        vec![
+            file(
+                "nickel.raw",
+                "bfe2afd6843a11dc1935cbbdb3ca05962c3242b9ddc60baa6a4ff6a48491c3e7",
+                168_346,
+                format!("{source}/nickel.raw"),
+            ),
+            file(
+                "inst_tof.prm",
+                "9a4f06cb560c8b7f783fd0773b37814dae1d705042087e66f8cd2be719477038",
+                8_610,
+                format!("{source}/inst_tof.prm"),
             ),
         ],
     )

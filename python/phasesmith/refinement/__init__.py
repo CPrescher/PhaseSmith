@@ -89,6 +89,15 @@ from .runtime import (
     RefinementStopped,
 )
 from .scipy import ScipyLeastSquaresAdapter
+from .tof_lebail import (
+    TofChebyshevBackground,
+    TofLeBailInput,
+    TofLeBailIteration,
+    TofLeBailOptions,
+    TofLeBailPhase,
+    TofLeBailResult,
+    refine_tof_lebail,
+)
 from .workflow import (
     RietveldRecipe,
     RietveldStage,
@@ -160,6 +169,12 @@ __all__ = [
     "ScipyLeastSquaresAdapter",
     "SiteCoordinateModel",
     "TerminationReason",
+    "TofChebyshevBackground",
+    "TofLeBailInput",
+    "TofLeBailIteration",
+    "TofLeBailOptions",
+    "TofLeBailPhase",
+    "TofLeBailResult",
     "background_parameter_key",
     "build_parameter_set",
     "cw_lattice_geometry",
@@ -173,6 +188,7 @@ __all__ = [
     "lattice_parameter_key",
     "phase_scale_key",
     "refine",
+    "refine_tof_lebail",
     "reflection_position_key",
     "rietveld",
     "run_rietveld_recipe",

@@ -2,17 +2,17 @@
 
 use std::error::Error;
 use std::fmt::{Display, Formatter};
-use std::fs;
 use std::path::Path;
 use std::time::Instant;
 
-use phasesmith_core::{BackgroundError, TofInstrument, TofProfileParameters, smooth_bruckner};
+use phasesmith_core::{BackgroundError, TofProfileParameters, smooth_bruckner};
 use phasesmith_crystallography::{
     PreparedReflectionGenerator, ReflectionGenerationError, ReflectionRange, UnitCell,
 };
 use phasesmith_execution::{ExecutionPolicy, ExecutionPolicyError};
 use phasesmith_io::{
-    PowderIoError, PowderReadLimits, SpaceGroupLookupError, read_tof_powder_file,
+    GsasTofInstrumentIoError, GsasTofInstrumentReadLimits, PowderIoError, PowderReadLimits,
+    SpaceGroupLookupError, read_gsas_tof_instrument_file, read_tof_powder_file,
     space_group_by_number,
 };
 use phasesmith_model::{DomainError, RecordId, TofPatternRecord};
@@ -50,13 +50,17 @@ pub fn run_powgen_tof_validation(
 ) -> Result<RealDataValidationReport, PowgenTofValidationError> {
     let started = Instant::now();
     verify_validation_dataset(DATASET_ID, dataset_directory)?;
-    let instrument_text = fs::read_to_string(dataset_directory.join("PGHR_60-2015A.prm"))?;
     let pattern = read_tof_powder_file(
         dataset_directory.join("PG3_17541.gsa"),
         EXPECTED_BANK,
         PowderReadLimits::default(),
     )?;
-    let kernel_instrument = parse_bank_instrument(&instrument_text, EXPECTED_BANK)?;
+    let kernel_instrument = read_gsas_tof_instrument_file(
+        dataset_directory.join("PGHR_60-2015A.prm"),
+        EXPECTED_BANK,
+        GsasTofInstrumentReadLimits::default(),
+    )?
+    .instrument;
     let at_one_angstrom = TofProfileParameters::from_instrument(1.0, kernel_instrument)
         .map_err(|error| PowgenTofValidationError::Kernel(error.to_string()))?;
     let expected_position = kernel_instrument.zero_us
@@ -359,96 +363,6 @@ pub fn run_powgen_tof_readiness(
     run_powgen_tof_validation(dataset_directory)
 }
 
-fn parse_bank_instrument(
-    text: &str,
-    bank: usize,
-) -> Result<TofInstrument, PowgenTofValidationError> {
-    let prefix = format!("INS  {bank} ICONS");
-    let line = text
-        .lines()
-        .find(|line| line.starts_with(&prefix))
-        .ok_or_else(|| {
-            PowgenTofValidationError::InvalidData(format!(
-                "POWGEN parameter file has no ICONS record for bank {bank}"
-            ))
-        })?;
-    let values = line[prefix.len()..]
-        .split_whitespace()
-        .take(4)
-        .map(str::parse::<f64>)
-        .collect::<Result<Vec<_>, _>>()
-        .map_err(|_| {
-            PowgenTofValidationError::InvalidData("invalid POWGEN ICONS record".to_owned())
-        })?;
-    if values.len() != 4 || values.iter().any(|value| !value.is_finite()) {
-        return Err(PowgenTofValidationError::InvalidData(
-            "POWGEN ICONS record does not contain four finite coefficients".to_owned(),
-        ));
-    }
-    let profile_header = parse_prefixed_values(text, &format!("INS  {bank}PRCF1 "))?;
-    if profile_header.first().copied() != Some(3.0) {
-        return Err(PowgenTofValidationError::InvalidData(
-            "POWGEN validation requires GSAS TOF profile function 3".to_owned(),
-        ));
-    }
-    let exponential = parse_prefixed_values(text, &format!("INS  {bank}PRCF11"))?;
-    let gaussian = parse_prefixed_values(text, &format!("INS  {bank}PRCF12"))?;
-    if exponential.len() < 3 || gaussian.len() < 2 {
-        return Err(PowgenTofValidationError::InvalidData(
-            "incomplete POWGEN type-3 profile record".to_owned(),
-        ));
-    }
-    let instrument = TofInstrument {
-        // The legacy GSAS `ICONS` record stores DIFC, DIFA, Zero, and an
-        // unused fourth field. This mapping is checked black-box against the
-        // pinned GSAS-II scripting import for this exact bank. Legacy GSAS
-        // files do not carry a DIFB term here.
-        zero_us: values[2],
-        difc_us_per_angstrom: values[0],
-        difa_us_per_angstrom2: values[1],
-        difb_us_angstrom: 0.0,
-        alpha_coefficient: exponential[0],
-        beta0_per_us: exponential[1],
-        beta1_angstrom4_per_us: exponential[2],
-        betaq_angstrom2_per_us: 0.0,
-        // GSAS profile function 3 stores sig-1 and sig-2 as the first
-        // two PRCF12 values. It has no sig-0/sig-q or Lorentzian terms.
-        sigma0_us2: 0.0,
-        sigma1_us2_per_angstrom2: gaussian[0],
-        sigma2_us2_per_angstrom4: gaussian[1],
-        sigmaq_us2_per_angstrom: 0.0,
-        x_us_per_angstrom: 0.0,
-        y_us_per_angstrom2: 0.0,
-        z_us: 0.0,
-    };
-    instrument
-        .validate()
-        .map_err(|error| PowgenTofValidationError::Kernel(error.to_string()))?;
-    Ok(instrument)
-}
-
-fn parse_prefixed_values(text: &str, prefix: &str) -> Result<Vec<f64>, PowgenTofValidationError> {
-    let line = text
-        .lines()
-        .find(|line| line.starts_with(prefix))
-        .ok_or_else(|| {
-            PowgenTofValidationError::InvalidData(format!(
-                "POWGEN parameter file has no {prefix:?} record"
-            ))
-        })?;
-    let values = line[prefix.len()..]
-        .split_whitespace()
-        .map(str::parse::<f64>)
-        .collect::<Result<Vec<_>, _>>()
-        .map_err(|_| PowgenTofValidationError::InvalidData(format!("invalid {prefix:?} record")))?;
-    if values.is_empty() || values.iter().any(|value| !value.is_finite()) {
-        return Err(PowgenTofValidationError::InvalidData(format!(
-            "{prefix:?} record must contain finite coefficients"
-        )));
-    }
-    Ok(values)
-}
-
 fn lab6_cell() -> UnitCell {
     UnitCell {
         a_angstrom: LAB6_LATTICE_ANGSTROM,
@@ -542,6 +456,8 @@ pub enum PowgenTofValidationError {
     Domain(DomainError),
     /// Typed TOF powder input failed.
     Powder(PowderIoError),
+    /// Legacy GSAS TOF calibration import failed.
+    Instrument(GsasTofInstrumentIoError),
     /// Space-group lookup failed.
     SpaceGroup(SpaceGroupLookupError),
     /// Reflection generation failed.
@@ -571,6 +487,7 @@ impl Display for PowgenTofValidationError {
             Self::Io(error) => Display::fmt(error, formatter),
             Self::Domain(error) => Display::fmt(error, formatter),
             Self::Powder(error) => Display::fmt(error, formatter),
+            Self::Instrument(error) => Display::fmt(error, formatter),
             Self::SpaceGroup(error) => Display::fmt(error, formatter),
             Self::Reflection(error) => Display::fmt(error, formatter),
             Self::Background(error) => Display::fmt(error, formatter),
@@ -601,6 +518,12 @@ impl From<std::io::Error> for PowgenTofValidationError {
 impl From<PowderIoError> for PowgenTofValidationError {
     fn from(value: PowderIoError) -> Self {
         Self::Powder(value)
+    }
+}
+
+impl From<GsasTofInstrumentIoError> for PowgenTofValidationError {
+    fn from(value: GsasTofInstrumentIoError) -> Self {
+        Self::Instrument(value)
     }
 }
 
@@ -659,7 +582,13 @@ mod tests {
             "INS  2PRCF11 0.257460 0.091563 0.017334 0\n",
             "INS  2PRCF12 10 203.581 0 10.651\n",
         );
-        let calibration = parse_bank_instrument(source, 2).unwrap();
+        let calibration = phasesmith_io::parse_gsas_tof_instrument_text(
+            source,
+            2,
+            GsasTofInstrumentReadLimits::default(),
+        )
+        .unwrap()
+        .instrument;
         assert_eq!(
             calibration.difc_us_per_angstrom.to_bits(),
             22_581.63_f64.to_bits()
@@ -679,7 +608,13 @@ mod tests {
             calibration.sigma2_us2_per_angstrom4.to_bits(),
             203.581_f64.to_bits()
         );
-        assert!(parse_bank_instrument("INS  1 ICONS1 2 3 4\n", 2).is_err());
-        assert!(parse_bank_instrument("INS  2 ICONSnan 0 4 0\n", 2).is_err());
+        assert!(
+            phasesmith_io::parse_gsas_tof_instrument_text(
+                "INS  1 ICONS1 2 3 4\n",
+                2,
+                GsasTofInstrumentReadLimits::default(),
+            )
+            .is_err()
+        );
     }
 }

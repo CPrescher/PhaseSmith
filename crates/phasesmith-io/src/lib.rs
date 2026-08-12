@@ -32,6 +32,7 @@
 mod cif;
 mod powder;
 mod space_groups;
+mod tof_instrument;
 
 pub use cif::{
     CifAnisotropicDisplacement, CifAtomSite, CifDiagnostic, CifDiagnosticSeverity, CifIoError,
@@ -40,11 +41,16 @@ pub use cif::{
 };
 
 pub use powder::{
-    PowderData, PowderFormat, PowderIoError, PowderReadLimits, TofPowderData, parse_powder_text,
-    parse_tof_powder_text, read_powder_file, read_tof_powder_file,
+    PowderData, PowderFormat, PowderIoError, PowderReadLimits, TofPowderData, TofPowderFormat,
+    parse_powder_text, parse_tof_powder_text, parse_tof_powder_text_as, read_powder_file,
+    read_tof_powder_file, read_tof_powder_file_as,
 };
 pub use space_groups::{
     SPACE_GROUP_DATABASE_PROVENANCE, SpaceGroupDatabaseProvenance, SpaceGroupInfo,
     SpaceGroupLookupError, space_group_by_hall_symbol, space_group_by_number,
     space_group_by_symbol,
+};
+pub use tof_instrument::{
+    GsasTofInstrumentData, GsasTofInstrumentIoError, GsasTofInstrumentReadLimits,
+    parse_gsas_tof_instrument_text, read_gsas_tof_instrument_file,
 };

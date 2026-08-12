@@ -651,6 +651,7 @@ name = "phasesmith-io"
 version = "0.2.0"
 dependencies = [
  "moyo",
+ "phasesmith-core",
  "phasesmith-crystallography",
  "phasesmith-model",
 ]

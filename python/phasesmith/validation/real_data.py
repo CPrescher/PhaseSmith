@@ -224,6 +224,14 @@ def run_powgen_tof_validation(
     return _native_validation_report("powgen-lab6-tof-calibration", dataset_directory)
 
 
+def run_nickel_tof_validation(
+    dataset_directory: str | Path,
+) -> RealDataValidationReport:
+    """Run the native non-POWGEN LANL nickel TOF transferability gate."""
+
+    return _native_validation_report("lanl-nickel-tof", dataset_directory)
+
+
 def run_powgen_tof_readiness(
     dataset_directory: str | Path,
 ) -> RealDataValidationReport:

@@ -863,6 +863,29 @@ continues to use its certified values and released profiles as the primary
 oracle rather than treating a GSAS-II refit as replacement truth. POWGEN now
 has the same live pinned-oracle boundary as the other accepted
 real-data workflows, while its synthetic derivative fixture remains unchanged.
+The first public POWGEN application slice promotes those validation entry
+points into bounded production adapters. Legacy GSAS profile-function-3 banks
+are translated by `phasesmith-io` into the typed 15-coefficient
+`TofInstrument`; the Python boundary exposes distinct `TofPowderData` and
+`TofPowderPattern` types, so microseconds cannot silently enter the CW angle
+workflow. `TofLeBailInput.from_files` composes one SLOG FXYE/GSA bank, matching
+PRM bank, and CIF into generated fixed-cell reflection families, and
+`refine_tof_lebail` delegates the complete extraction to the Rust workflow.
+This remains a fixed-instrument, fixed-cell Le Bail path. Native project
+persistence, cancellation/progress, multi-bank coordination, structural
+parameter motion, and full TOF Rietveld refinement are explicit follow-on work.
+The TOF boundary is no longer POWGEN-specific. Plain bin-center/density columns,
+GSAS logarithmic FXYE boundaries, and GSAS packed constant-step STD counts all
+resolve into the same `TofPatternRecord` convention; packed counts are shifted
+from lower boundaries to centers and divided by bin width. Legacy GSAS profile
+functions 1 and 3 both translate into the typed coefficient record, while any
+facility can bypass GSAS syntax and provide public microsecond arrays and a
+`TofInstrument` directly. A revision- and checksum-pinned LANL nickel bank is
+the independent transferability gate: 4,431 fitted samples, 102 Fm-3m
+reflection families, Rwp 0.02485869, and background-subtracted profile
+correlation 0.99891242. This establishes facility-neutral operation for the
+supported back-to-back-exponential/TCH law; it is not a claim that every
+beamline-specific tail or resolution law is already implemented.
 The historical native-workflow comparison passes both Le Bail parity contracts
 and QARR 1g. Its unchanged QARR 1h acceptance recipe retains the reviewed
 profile-quality failure, rather than having thresholds relaxed. The newer

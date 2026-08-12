@@ -25,6 +25,20 @@ pub enum PowderFormat {
     GsasStd,
 }
 
+/// Caller-selected or detected microsecond-domain powder text format.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum TofPowderFormat {
+    /// Detect a supported GSAS bank or fall back to center/density columns.
+    #[default]
+    Auto,
+    /// Two or three columns: bin-center TOF, intensity density, and optional sigma.
+    Columns,
+    /// GSAS logarithmic FXYE bin boundaries with width-multiplied values.
+    GsasSlogFxye,
+    /// GSAS packed constant-step lower-bin boundaries and integrated counts.
+    GsasConstStd,
+}
+
 /// Resource limits checked before or during parsing.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct PowderReadLimits {
@@ -75,10 +89,12 @@ pub struct PowderData {
 pub struct TofPowderData {
     /// Validated bin-center TOF density pattern; it cannot be passed as a CW pattern.
     pub pattern: TofPatternRecord,
+    /// Concrete detected/selected input convention.
+    pub format: TofPowderFormat,
     /// Source path when read from a file.
     pub source_path: Option<PathBuf>,
-    /// Selected positive GSAS bank.
-    pub bank: usize,
+    /// Selected positive GSAS bank, absent for plain columns.
+    pub bank: Option<usize>,
     /// True when the selected bank declares logarithmic `SLOG` spacing.
     pub logarithmic_grid: bool,
 }
@@ -210,16 +226,30 @@ pub fn parse_powder_text(
     parse_powder_text_inner(text, format, bank, limits, None)
 }
 
-/// Read one bounded GSAS SLOG FXYE TOF bank as bin-center intensity densities.
+/// Read one bounded reduced TOF file into bin-center intensity densities.
 ///
-/// GSAS SLOG FXYE rows are bin boundaries with Y and sigma multiplied by the
-/// following bin width. The final boundary is therefore not an output sample.
+/// The input convention is detected as plain center/density columns, GSAS SLOG
+/// FXYE boundaries, or packed constant-step GSAS STD counts.
 ///
 /// # Errors
 ///
 /// Returns [`PowderIoError`] for filesystem, limit, syntax, bank, or domain errors.
 pub fn read_tof_powder_file(
     path: impl AsRef<Path>,
+    bank: usize,
+    limits: PowderReadLimits,
+) -> Result<TofPowderData, PowderIoError> {
+    read_tof_powder_file_as(path, TofPowderFormat::Auto, bank, limits)
+}
+
+/// Read one bounded microsecond-domain powder file with an explicit convention.
+///
+/// # Errors
+///
+/// Returns [`PowderIoError`] for filesystem, limit, syntax, bank, or domain errors.
+pub fn read_tof_powder_file_as(
+    path: impl AsRef<Path>,
+    format: TofPowderFormat,
     bank: usize,
     limits: PowderReadLimits,
 ) -> Result<TofPowderData, PowderIoError> {
@@ -236,10 +266,10 @@ pub fn read_tof_powder_file(
         });
     }
     let text = fs::read_to_string(path).map_err(PowderIoError::Io)?;
-    parse_tof_powder_text_inner(&text, bank, limits, Some(path.to_owned()))
+    parse_tof_powder_text_inner(&text, format, bank, limits, Some(path.to_owned()))
 }
 
-/// Parse one bounded GSAS SLOG FXYE TOF bank as bin-center intensity densities.
+/// Parse one bounded reduced TOF input into bin-center intensity densities.
 ///
 /// # Errors
 ///
@@ -249,11 +279,26 @@ pub fn parse_tof_powder_text(
     bank: usize,
     limits: PowderReadLimits,
 ) -> Result<TofPowderData, PowderIoError> {
-    parse_tof_powder_text_inner(text, bank, limits, None)
+    parse_tof_powder_text_as(text, TofPowderFormat::Auto, bank, limits)
+}
+
+/// Parse bounded microsecond-domain powder text with an explicit convention.
+///
+/// # Errors
+///
+/// Returns [`PowderIoError`] for limit, syntax, bank, or domain errors.
+pub fn parse_tof_powder_text_as(
+    text: &str,
+    format: TofPowderFormat,
+    bank: usize,
+    limits: PowderReadLimits,
+) -> Result<TofPowderData, PowderIoError> {
+    parse_tof_powder_text_inner(text, format, bank, limits, None)
 }
 
 fn parse_tof_powder_text_inner(
     text: &str,
+    format: TofPowderFormat,
     bank: usize,
     limits: PowderReadLimits,
     source_path: Option<PathBuf>,
@@ -268,7 +313,46 @@ fn parse_tof_powder_text_inner(
             maximum: limits.max_bytes,
         });
     }
-    let banks = gsas_banks(text.strip_prefix('\u{feff}').unwrap_or(text))?;
+    let text = text.strip_prefix('\u{feff}').unwrap_or(text);
+    let resolved = match format {
+        TofPowderFormat::Auto
+            if text
+                .lines()
+                .any(|line| line.trim_start().starts_with("BANK")) =>
+        {
+            let banks = gsas_banks(text)?;
+            let (header, _) = selected_bank(&banks, bank)?;
+            if header
+                .last()
+                .is_some_and(|value| value.eq_ignore_ascii_case("FXYE"))
+            {
+                TofPowderFormat::GsasSlogFxye
+            } else {
+                TofPowderFormat::GsasConstStd
+            }
+        }
+        TofPowderFormat::Auto => TofPowderFormat::Columns,
+        selected => selected,
+    };
+    match resolved {
+        TofPowderFormat::Columns => read_tof_columns(text, source_path, limits.max_rows),
+        TofPowderFormat::GsasConstStd => {
+            read_tof_gsas_std(text, source_path, bank, limits.max_rows)
+        }
+        TofPowderFormat::GsasSlogFxye => {
+            read_tof_gsas_slog_fxye(text, source_path, bank, limits.max_rows)
+        }
+        TofPowderFormat::Auto => unreachable!("auto TOF format is resolved above"),
+    }
+}
+
+fn read_tof_gsas_slog_fxye(
+    text: &str,
+    source_path: Option<PathBuf>,
+    bank: usize,
+    max_rows: usize,
+) -> Result<TofPowderData, PowderIoError> {
+    let banks = gsas_banks(text)?;
     let (header, lines) = selected_bank(&banks, bank)?;
     if header
         .get(4)
@@ -283,7 +367,7 @@ fn parse_tof_powder_text_inner(
         .get(2)
         .and_then(|value| value.parse::<usize>().ok())
         .ok_or_else(|| parse_error(0, "invalid GSAS TOF bank dimensions"))?;
-    let rows = numeric_rows(&lines.join("\n"), Some(3), limits.max_rows)?;
+    let rows = numeric_rows(&lines.join("\n"), Some(3), max_rows)?;
     if rows.len() != declared_rows {
         return Err(parse_error(
             0,
@@ -332,9 +416,119 @@ fn parse_tof_powder_text_inner(
         .map_err(PowderIoError::Domain)?;
     Ok(TofPowderData {
         pattern,
+        format: TofPowderFormat::GsasSlogFxye,
         source_path,
-        bank,
+        bank: Some(bank),
         logarithmic_grid: true,
+    })
+}
+
+fn read_tof_columns(
+    text: &str,
+    source_path: Option<PathBuf>,
+    max_rows: usize,
+) -> Result<TofPowderData, PowderIoError> {
+    let rows = numeric_rows(text, None, max_rows)?;
+    let columns = rows
+        .first()
+        .map(Vec::len)
+        .ok_or_else(|| parse_error(0, "powder input contains no numeric rows"))?;
+    if !matches!(columns, 2 | 3) || rows.iter().any(|row| row.len() != columns) {
+        return Err(parse_error(
+            0,
+            "TOF columns require two or three consistent numeric fields",
+        ));
+    }
+    let uncertainty = (columns == 3).then(|| rows.iter().map(|row| row[2]).collect::<Vec<_>>());
+    if uncertainty
+        .as_deref()
+        .is_some_and(|values| values.iter().any(|value| *value <= 0.0))
+    {
+        return Err(parse_error(
+            0,
+            "TOF column uncertainty must be finite and positive",
+        ));
+    }
+    let pattern = TofPatternRecord::new(
+        rows.iter().map(|row| row[0]).collect(),
+        Some(rows.iter().map(|row| row[1]).collect()),
+        uncertainty,
+        None,
+        None,
+    )
+    .map_err(PowderIoError::Domain)?;
+    Ok(TofPowderData {
+        pattern,
+        format: TofPowderFormat::Columns,
+        source_path,
+        bank: None,
+        logarithmic_grid: false,
+    })
+}
+
+fn read_tof_gsas_std(
+    text: &str,
+    source_path: Option<PathBuf>,
+    bank: usize,
+    max_rows: usize,
+) -> Result<TofPowderData, PowderIoError> {
+    let banks = gsas_banks(text)?;
+    let (header, lines) = selected_bank(&banks, bank)?;
+    let encoding = if header.len() >= 10 {
+        header.last().map_or("", String::as_str)
+    } else {
+        "STD"
+    };
+    if header.len() < 7
+        || !header[4].eq_ignore_ascii_case("CONST")
+        || !encoding.eq_ignore_ascii_case("STD")
+    {
+        return Err(parse_error(
+            0,
+            "TOF input requires a packed constant-step GSAS STD bank",
+        ));
+    }
+    let row_count = header[2]
+        .parse::<usize>()
+        .map_err(|_| parse_error(0, "invalid packed GSAS TOF bank dimensions"))?;
+    let lower_us = parse_header_f64(&header[5])?;
+    let step_us = parse_header_f64(&header[6])?;
+    if row_count == 0 || row_count > max_rows || !lower_us.is_finite() || !step_us.is_finite() {
+        return Err(parse_error(
+            0,
+            "packed GSAS TOF bank dimensions exceed limits or are non-finite",
+        ));
+    }
+    if step_us <= 0.0 {
+        return Err(parse_error(0, "packed GSAS TOF step must be positive"));
+    }
+    let (counts, count_sigma) = packed_std_values(lines, row_count)?;
+    let mut tof_us = Vec::with_capacity(row_count);
+    let mut observed_y = Vec::with_capacity(row_count);
+    let mut uncertainty = Vec::with_capacity(row_count);
+    let mut mask = Vec::with_capacity(row_count);
+    for (index, (&count, &sigma)) in counts.iter().zip(&count_sigma).enumerate() {
+        let exact_index = u32::try_from(index)
+            .map_err(|_| parse_error(0, "packed GSAS TOF bank dimensions exceed numeric limits"))?;
+        tof_us.push(lower_us + (f64::from(exact_index) + 0.5) * step_us);
+        observed_y.push(count / step_us);
+        uncertainty.push(if count > 0.0 { sigma / step_us } else { 1.0 });
+        mask.push(count > 0.0);
+    }
+    let pattern = TofPatternRecord::new(
+        tof_us,
+        Some(observed_y),
+        Some(uncertainty),
+        mask.iter().any(|included| !included).then_some(mask),
+        None,
+    )
+    .map_err(PowderIoError::Domain)?;
+    Ok(TofPowderData {
+        pattern,
+        format: TofPowderFormat::GsasConstStd,
+        source_path,
+        bank: Some(bank),
+        logarithmic_grid: false,
     })
 }
 
@@ -658,6 +852,61 @@ fn read_gsas_std(
         source,
         Some(bank),
     )
+}
+
+fn packed_std_values(
+    lines: &[String],
+    row_count: usize,
+) -> Result<(Vec<f64>, Vec<f64>), PowderIoError> {
+    let mut intensities = Vec::with_capacity(row_count);
+    let mut uncertainty = Vec::with_capacity(row_count);
+    'lines: for (index, line) in lines.iter().enumerate() {
+        for bytes in line.as_bytes().chunks(8) {
+            let record = std::str::from_utf8(bytes)
+                .map_err(|_| parse_error(index + 1, "invalid UTF-8 fixed-width record"))?;
+            if record.trim().is_empty() {
+                continue;
+            }
+            let normalization_field = record.get(..2).unwrap_or(record).trim();
+            let normalization = if normalization_field.is_empty() {
+                1_u32
+            } else {
+                normalization_field
+                    .parse::<u32>()
+                    .map_err(|_| parse_error(index + 1, "invalid fixed-width record"))?
+                    .max(1)
+            };
+            let parsed_intensity = record
+                .get(2..)
+                .unwrap_or("")
+                .trim()
+                .parse::<f64>()
+                .map_err(|_| parse_error(index + 1, "invalid fixed-width record"))?;
+            if !parsed_intensity.is_finite() {
+                return Err(parse_error(index + 1, "invalid fixed-width record"));
+            }
+            let intensity = parsed_intensity.max(0.0);
+            intensities.push(intensity);
+            uncertainty.push(if intensity > 0.0 {
+                (intensity / f64::from(normalization)).sqrt()
+            } else {
+                1.0
+            });
+            if intensities.len() == row_count {
+                break 'lines;
+            }
+        }
+    }
+    if intensities.len() != row_count {
+        return Err(parse_error(
+            0,
+            format!(
+                "packed GSAS STD bank contains {} records; expected {row_count}",
+                intensities.len()
+            ),
+        ));
+    }
+    Ok((intensities, uncertainty))
 }
 
 fn coordinate_grid(

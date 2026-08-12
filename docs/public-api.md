@@ -462,3 +462,11 @@ Neutron TOF calibration, asymmetric profiles, exact finite support, bin-center
 coordinates, and the 15-row instrument Jacobian are documented in
 [`tof-profile.md`](tof-profile.md). TOF uses the same `AccumulationResult`
 contract as CW calculations rather than adding a refinement-specific data path.
+The public application boundary additionally provides bounded
+`read_tof_powder_data` and `read_gsas_tof_instrument` adapters, a distinct
+`TofPowderPattern`, and `refinement.TofLeBailInput.from_files` plus
+`refinement.refine_tof_lebail` for fixed-instrument, fixed-cell extraction.
+The powder adapter accepts plain center/density columns, GSAS SLOG FXYE, and
+packed constant-step GSAS STD. The legacy calibration adapter accepts profile
+functions 1 and 3; facilities using other file syntaxes can construct the same
+public `TofPowderPattern` and `TofInstrument` records directly.

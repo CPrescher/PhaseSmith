@@ -100,13 +100,22 @@ block. The TCH factor itself is limited to `abs(delta) <= R`. Analytical
 derivatives hold the active support set fixed; finite-difference tests avoid
 moving boundaries.
 
-The public `x_us` array always contains bin centers. GSAS-II can ingest TOF bin
+The public `tof_us` array always contains bin centers. GSAS-II can ingest TOF bin
 boundaries with bin-width-multiplied Y and sigma. The typed SLOG FXYE reader
 converts adjacent boundaries to arithmetic centers and divides Y and sigma by
 the bin width, matching the density convention used by the profile kernel and
 GSAS-II's scripting `getdata` arrays. The final boundary is not an output
 sample; zero-intensity or zero-sigma bins are explicitly excluded. The `PNT`
 fixture records and tests this translation explicitly.
+
+The production input boundary accepts three reduced-data conventions:
+
+- plain `tof_us, intensity_density[, sigma_density]` center columns;
+- GSAS `SLOG ... FXYE` boundaries with width-multiplied Y and sigma; and
+- GSAS `CONST ... STD` lower boundaries with packed integrated counts.
+
+Both GSAS forms are converted to center/density arrays before the model sees
+them. This conversion is an I/O concern, not a POWGEN assumption.
 
 ## Local derivatives and oracle scope
 
@@ -150,11 +159,44 @@ previous fixed-background behavior. This is a complete Le Bail
 intensity/background extraction capability, not a claim of TOF structural
 Rietveld refinement.
 
-Legacy GSAS type-3 instrument files are translated only in the validation
-adapter. Its `ICONS` fields map to `difC`, `difA`, `zero`, and an unused value;
+Legacy GSAS type-1 and type-3 instrument files are translated by the bounded
+`phasesmith-io` adapter used by applications and validation. Its `ICONS` fields
+map to `difC`, `difA`, `zero`, and an unused value;
 legacy records do not supply `difB`. This potentially ambiguous mapping is
 verified through the pinned GSAS-II bank import. For profile function 3, the
 first three `PRCF11` values map to
 `alpha`, `beta0`, and `beta1`; the first two `PRCF12` values map to `sigma1`
-and `sigma2`. Unsupported coefficients are explicit zeros. This adapter detail
-does not enter the core instrument model.
+and `sigma2`. Unsupported coefficients are explicit zeros. Legacy records stop
+at this adapter and do not enter the core instrument model.
+
+For profile function 1, the first value in each four-value legacy group is
+unused by the supported law: `PRCF 1` values 2--4 map to
+`alpha`/`beta0`/`beta1`, and `PRCF 2` values 2--3 map to `sigma1`/`sigma2`.
+The checksum-pinned LANL nickel tutorial exercises this translation and packed
+constant-step input independently of POWGEN.
+
+Facility-neutral means a beamline can provide reduced center/density arrays and
+the typed 15 coefficients without adopting GSAS filenames. It does not mean
+that specialized tails, tabulated resolution functions, or every historical
+profile function are silently approximated by this model.
+
+The public Python path keeps the same unit boundary:
+
+```python
+from phasesmith.refinement import TofLeBailInput, refine_tof_lebail
+
+request = TofLeBailInput.from_files(
+    "PG3_17541.gsa",
+    "PGHR_60-2015A.prm",
+    "LaB6.cif",
+    bank=2,
+)
+result = refine_tof_lebail(request)
+print(result.metrics.rwp)
+```
+
+`TofLeBailInput.from_files` generates fixed-cell reflection families from the
+CIF and attaches an optional refinable Chebyshev residual to the fixed supplied
+background. It does not refine the lattice, instrument coefficients, atomic
+structure, or multiple detector banks. Project persistence and cooperative
+cancellation/progress are outside this first public application slice.

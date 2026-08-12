@@ -22,6 +22,7 @@ fn datasets_are_stable_and_unknown_runners_fail() {
             "iucr-qarr-1g\n",
             "iucr-qarr-1h\n",
             "nist-srm660c-lab6-xray\n",
+            "lanl-nickel-tof\n",
             "powgen-lab6-tof-calibration\n",
         )
     );
@@ -29,7 +30,7 @@ fn datasets_are_stable_and_unknown_runners_fail() {
     assert!(manifest.status.success());
     let manifest: serde_json::Value = serde_json::from_slice(&manifest.stdout).unwrap();
     let datasets = manifest.as_array().unwrap();
-    assert_eq!(datasets.len(), 7);
+    assert_eq!(datasets.len(), 8);
     let qarr_1h = datasets
         .iter()
         .find(|dataset| dataset["dataset_id"] == "iucr-qarr-1h")

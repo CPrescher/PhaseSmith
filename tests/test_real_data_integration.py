@@ -8,6 +8,7 @@ from phasesmith.io import convert_rowles_topas_bundle
 from phasesmith.validation import (
     NIST_SRM660C_STRESS_SH_OVER_L,
     run_echidna_lab6_validation,
+    run_nickel_tof_validation,
     run_nist_srm660c_parity_workflow,
     run_nist_srm660c_validation,
     run_pbso4_cw_validation,
@@ -157,6 +158,20 @@ def test_powgen_tof_complete_workflow_passes() -> None:
     assert checks["tof_reflection_coverage"].status == "passed"
     assert checks["tof_analytical_derivatives"].status == "passed"
     assert checks["tof_chebyshev_background"].status == "passed"
+
+
+@pytest.mark.real_data
+def test_lanl_nickel_tof_transferability_workflow_passes() -> None:
+    report = run_nickel_tof_validation(available_dataset("lanl-nickel-tof"))
+    checks = {check.check_id: check for check in report.checks}
+
+    assert report.status == "passed"
+    assert report.sample_count == 4_431
+    assert report.reflection_count == 102
+    assert checks["tof_non_powgen_format"].status == "passed"
+    assert checks["tof_profile_function_one"].status == "passed"
+    assert checks["tof_nickel_profile_fit"].status == "passed"
+    assert checks["tof_nickel_profile_correlation"].status == "passed"
 
 
 @pytest.mark.real_data

@@ -84,6 +84,41 @@ class PowderPattern:
         object.__setattr__(self, "background", background_array)
 
 
+@dataclass(frozen=True, slots=True, init=False)
+class TofPowderPattern:
+    """Observed TOF-grid data in microseconds and an optional supplied background."""
+
+    tof_us: NDArray[np.float64]
+    observed_y: NDArray[np.float64] | None
+    uncertainty: NDArray[np.float64] | None
+    mask: NDArray[np.bool_] | None
+    background: NDArray[np.float64]
+
+    def __init__(
+        self,
+        tof_us: ArrayLike,
+        *,
+        observed_y: ArrayLike | None = None,
+        uncertainty: ArrayLike | None = None,
+        mask: ArrayLike | None = None,
+        background: ArrayLike | None = None,
+    ) -> None:
+        """Copy and validate microsecond-domain pattern arrays."""
+
+        validated = PowderPattern(
+            tof_us,
+            observed_y=observed_y,
+            uncertainty=uncertainty,
+            mask=mask,
+            background=background,
+        )
+        object.__setattr__(self, "tof_us", validated.x)
+        object.__setattr__(self, "observed_y", validated.observed_y)
+        object.__setattr__(self, "uncertainty", validated.uncertainty)
+        object.__setattr__(self, "mask", validated.mask)
+        object.__setattr__(self, "background", validated.background)
+
+
 @dataclass(frozen=True, slots=True)
 class PhasePatternComponent:
     """Diagnostic calculated profile for one identified phase."""
