@@ -1039,7 +1039,16 @@ matrix-free JVP, VJP, gradient, and normal products pass joint centered
 differences and the adjoint identity. The request freezes observation,
 geometry, correction, bound, support, and identity contracts and rejects CW
 sample physics or dynamic topology. Unit 38c next adds the bounded,
-checkpointable solver before Python/persistence/oracle exposure.
+checkpointable solver before Python/persistence/oracle exposure. That solver is
+now complete. It assembles the exact analytical scaled normal matrix from the
+joint objective's normal products, applies positive Levenberg damping, enforces
+declared physical bounds and a scaled step cap, and accepts a trial only when
+the summed masked/weighted objective decreases. Accepted input, parameters,
+history, objective, and next damping are checkpointed atomically. Exact resume,
+checkpoint corruption, cancellation after acceptance, evaluation exhaustion
+during normal assembly, and simultaneous recovery of two bank scales and Zero
+terms are tested. Unit 38c is complete; Unit 38d's Python facade, native project
+persistence, and checksum-pinned structural real-data/oracle gate are next.
 The historical native-workflow comparison passes both Le Bail parity contracts
 and QARR 1g. Its unchanged QARR 1h acceptance recipe retains the reviewed
 profile-quality failure, rather than having thresholds relaxed. The newer

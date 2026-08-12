@@ -75,6 +75,7 @@ mod tof_multibank_lattice;
 mod tof_multibank_project;
 mod tof_project;
 mod tof_structural_multibank;
+mod tof_structural_multibank_solver;
 
 pub use backgrounds::{
     AmorphousBackground, AmorphousPeak, BackgroundBasis, BackgroundError, BackgroundModel,
@@ -209,4 +210,10 @@ pub use tof_structural_multibank::{
     PreparedStructuralTofMultiBankObjective, StructuralTofBank, StructuralTofBankCalculation,
     StructuralTofMultiBankCalculation, StructuralTofMultiBankError, StructuralTofMultiBankGradient,
     StructuralTofMultiBankInput, StructuralTofMultiBankLayout, StructuralTofMultiBankProduct,
+};
+pub use tof_structural_multibank_solver::{
+    StructuralTofMultiBankCheckpoint, StructuralTofMultiBankIterationRecord,
+    StructuralTofMultiBankRefinementError, StructuralTofMultiBankRefinementOptions,
+    StructuralTofMultiBankRefinementResult, refine_structural_tof_multibank,
+    refine_structural_tof_multibank_with_runtime,
 };

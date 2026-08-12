@@ -65,7 +65,11 @@ For neutron TOF structural integrations, `phasesmith::engine` exposes the
 single-bank value/dense/JVP/VJP primitive. The guarded native multi-bank
 objective is `phasesmith::workflows::PreparedStructuralTofMultiBankObjective`;
 it sums shared structural rows across banks and keeps scale, selected instrument
-coefficients, and optional Chebyshev backgrounds bank-local. This objective is
-a Rust integration boundary, not yet the public Python workflow or persisted
-project format. Its correction and bank-geometry requirements are documented in
+coefficients, and optional Chebyshev backgrounds bank-local. The corresponding
+bounded entry points are `refine_structural_tof_multibank` and
+`refine_structural_tof_multibank_with_runtime`; the latter accepts application
+cancellation, event, and typed checkpoint sinks and returns the last atomically
+accepted state at a normal bound. These remain Rust integration boundaries, not
+yet the public Python workflow or persisted project format. Their correction
+and bank-geometry requirements are documented in
 [Structural TOF readiness](tof-structural-readiness.md).

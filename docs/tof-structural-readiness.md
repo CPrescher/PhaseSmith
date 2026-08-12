@@ -184,6 +184,34 @@ prepared contract freezes observation arrays, geometry, correction choice,
 parameter bounds, background identity/domain, support, weighting, and execution
 policy while allowing only the declared numerical parameters to change.
 
+## Implemented bounded solver
+
+`refine_structural_tof_multibank` completes Unit 38c without alternating bank
+fits. At every attempted iteration it evaluates the current atomic objective
+and obtains the full scaled normal matrix by applying the objective's analytical
+normal product to each scaled coordinate basis vector. Positive Levenberg
+damping is added in scaled coordinates. The guarded LU solve falls back to SVD;
+the result is capped by `max_scaled_parameter_step`, clipped to each physical
+bound, and half-step backtracked. A trial is accepted only if the summed
+masked/uncertainty-weighted objective over all banks decreases.
+
+`StructuralTofMultiBankRefinementOptions` owns only controls used by this dense
+solver: hard runtime limits, minimum accepted iterations, objective and scaled
+step tolerances, damping factors, step cap, and backtrack count. It deliberately
+does not expose the conjugate-gradient controls of the separate joint CW
+solver. The dense solve is appropriate for this first guarded structural
+contract; future large-site work may add an explicitly reviewed matrix-free
+solver without changing parameter ownership.
+
+Each accepted trial atomically checkpoints the complete original request,
+accepted physical input, stable parameter set, objective, next damping, and
+accepted history. Cancellation, wall/evaluation/iteration limits, and repeated
+rejection return the last accepted state. Resume revalidates the exact frozen
+request and parameter contract. Tests cover two-bank scale/Zero recovery, exact
+partial/resumed equivalence, corrupted checkpoint rejection, cancellation after
+an accepted checkpoint, and evaluation exhaustion while the normal matrix is
+being assembled.
+
 ## Unit 38 delivery sequence
 
 The structural extension is split into reviewable numerical increments:
@@ -197,7 +225,7 @@ The structural extension is split into reviewable numerical increments:
    values and structural/profile derivatives through the same finite-support
    accumulation. Dense, JVP, VJP, independent-reference, and realistic
    multi-reflection benchmark gates are present.
-4. **Objective complete; solver next:** compose the primitive into a guarded
+4. **Complete:** compose the primitive into a guarded
    multi-bank structural objective and solver with shared structure/cell and
    bank-local scale, background, instrument, geometry, masks, and uncertainties.
 5. Expose the same native contract through Python and project persistence, then

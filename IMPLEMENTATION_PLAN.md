@@ -1488,7 +1488,15 @@ observations, geometry, correction, support, bounds, and parameter identities,
 and rejects CW sample physics, dynamic topology, implicit shared scale, or
 mismatched bank angles. Joint centered differences, adjoint identity, normal
 product, and invalid-contract tests form the review gate. The bounded,
-checkpointable Unit 38c solver is next.
+checkpointable Unit 38c solver is complete too. It builds the dense scaled
+normal system from the analytical matrix-free product, uses guarded LU/SVD
+solution with Levenberg damping, clips physical bounds, caps scaled motion, and
+backtracks against the atomic all-bank objective. Runtime limits and
+cancellation return the last accepted state; accepted input, parameters,
+history, objective, and next damping form an exact restart checkpoint.
+Synthetic two-bank recovery, exact partial/resumed equivalence,
+corrupt-checkpoint rejection, cancellation, and mid-normal evaluation
+exhaustion form the solver review gate. Unit 38d is next.
 
 Do not combine adjacent items merely to reduce PR count; numerical review is
 easier when parameter conventions and tolerance changes remain isolated.
@@ -1546,8 +1554,9 @@ completes atomic fixed-cell multi-bank coordination, Unit 34 completes shared
 analytical lattice motion, and Unit 35 completes selected fixed-cell bank-local
 instrument motion, and Unit 36 combines the two geometry families in one
 correlation-diagnosed system, and Unit 37a adds its Python application facade.
-The next TOF increment is Unit 38c's bounded, checkpointable structural
-multi-bank solver over the completed joint objective.
+The next TOF increment is Unit 38d's public Python facade and native project
+persistence for the completed bounded structural multi-bank workflow, followed
+by its checksum-pinned structural real-data and isolated-oracle acceptance gate.
 Structural parameter and instrument refinement must
 be introduced only with analytical derivatives, finite-difference tests, and
 new oracle contracts; it is not part of the completed Le Bail facade.

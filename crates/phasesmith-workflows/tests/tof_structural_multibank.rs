@@ -1,5 +1,7 @@
 #![allow(missing_docs)]
 
+use std::sync::{Arc, Mutex};
+
 use phasesmith_core::{
     OwnedCwContributions, TofBankGeometry, TofInstrument, TofInstrumentParameter,
 };
@@ -10,10 +12,13 @@ use phasesmith_engine::{BuiltInScatteringModel, StructuralPhaseDefinition};
 use phasesmith_execution::ExecutionPolicy;
 use phasesmith_model::{RecordId, TofPatternRecord};
 use phasesmith_workflows::{
-    LatticeBounds, LatticeParameterization, ParameterBounds,
-    PreparedStructuralTofMultiBankObjective, RietveldPhase, RietveldStructuralSelection,
-    StructuralTofBank, StructuralTofMultiBankError, StructuralTofMultiBankInput,
-    StructuralTofMultiBankLayout, TofChebyshevBackground, TofInstrumentParameterBound,
+    CancellationToken, LatticeBounds, LatticeParameterization, ParameterBounds,
+    PreparedStructuralTofMultiBankObjective, RefinementLimits, RefinementRuntime, RietveldPhase,
+    RietveldStructuralSelection, StructuralTofBank, StructuralTofMultiBankCheckpoint,
+    StructuralTofMultiBankError, StructuralTofMultiBankInput, StructuralTofMultiBankLayout,
+    StructuralTofMultiBankRefinementOptions, TerminationReason, TofChebyshevBackground,
+    TofInstrumentParameterBound, refine_structural_tof_multibank,
+    refine_structural_tof_multibank_with_runtime,
 };
 
 fn id(value: &str) -> RecordId {
@@ -181,6 +186,48 @@ fn with_synthetic_observations(
     input
 }
 
+fn scale_zero_solver_request() -> (StructuralTofMultiBankInput, Vec<f64>, Vec<f64>) {
+    let mut request = input();
+    request.structural_selection = RietveldStructuralSelection::default();
+    request.lattice_bounds = None;
+    for bank in &mut request.banks {
+        bank.refine_background = false;
+    }
+    let layout = StructuralTofMultiBankLayout::new(&request).unwrap();
+    assert_eq!(layout.parameters().specs().len(), 4);
+    let initial = layout
+        .parameters()
+        .specs()
+        .iter()
+        .map(phasesmith_workflows::ParameterSpec::value)
+        .collect::<Vec<_>>();
+    let truth_values = vec![1.55, 2.3, 0.72, -1.8];
+    let truth = layout.apply_values(&request, &truth_values).unwrap();
+    let calculated = PreparedStructuralTofMultiBankObjective::new(truth)
+        .unwrap()
+        .calculate()
+        .unwrap();
+    for (bank, result) in request.banks.iter_mut().zip(calculated.banks) {
+        bank.pattern.observed_y = Some(result.y);
+    }
+    (request, truth_values, initial)
+}
+
+fn solver_options(max_iterations: usize) -> StructuralTofMultiBankRefinementOptions {
+    StructuralTofMultiBankRefinementOptions::new(
+        RefinementLimits::new(max_iterations, 200, None, 8).unwrap(),
+        1,
+        1.0e-12,
+        1.0e-9,
+        1.0e-3,
+        10.0,
+        0.3,
+        1.0,
+        8,
+    )
+    .unwrap()
+}
+
 #[test]
 #[allow(clippy::too_many_lines)]
 fn joint_products_match_differences_and_the_adjoint_identity() {
@@ -334,4 +381,99 @@ fn contracts_reject_implicit_or_incompatible_physics() {
         StructuralTofMultiBankLayout::new(&request),
         Err(StructuralTofMultiBankError::InvalidPhaseContract(_))
     ));
+}
+
+#[test]
+fn bounded_solver_recovers_bank_scales_and_zero_terms() {
+    let (request, truth_values, initial) = scale_zero_solver_request();
+    let result = refine_structural_tof_multibank(&request, solver_options(20), None, None).unwrap();
+    assert_eq!(result.termination_reason, TerminationReason::Converged);
+    assert!(!result.history.is_empty());
+    assert!(result.calculation.objective < 1.0e-12);
+    for ((spec, truth), start) in result
+        .parameters
+        .specs()
+        .iter()
+        .zip(truth_values)
+        .zip(initial)
+    {
+        assert!((spec.value() - truth).abs() < 2.0e-6, "{}", spec.key());
+        assert_ne!(spec.value().to_bits(), start.to_bits());
+    }
+    result.checkpoint.validate_for(&request).unwrap();
+}
+
+#[test]
+fn checkpoint_resume_is_exact_and_corruption_is_rejected() {
+    let (request, _, _) = scale_zero_solver_request();
+    let partial = refine_structural_tof_multibank(&request, solver_options(2), None, None).unwrap();
+    assert_eq!(partial.termination_reason, TerminationReason::MaxIterations);
+    assert_eq!(partial.history.len(), 2);
+    let resumed = refine_structural_tof_multibank(
+        &request,
+        solver_options(20),
+        Some(&partial.checkpoint),
+        None,
+    )
+    .unwrap();
+    let uninterrupted =
+        refine_structural_tof_multibank(&request, solver_options(20), None, None).unwrap();
+    assert_eq!(resumed.history, uninterrupted.history);
+    assert_eq!(resumed.input, uninterrupted.input);
+    assert_eq!(resumed.parameters, uninterrupted.parameters);
+    assert_eq!(resumed.checkpoint, uninterrupted.checkpoint);
+
+    let mut corrupt = partial.checkpoint;
+    corrupt.objective += 1.0;
+    assert!(corrupt.validate_for(&request).is_err());
+}
+
+#[test]
+fn cancellation_and_evaluation_limit_return_the_last_accepted_state() {
+    let (request, _, _) = scale_zero_solver_request();
+    let cancellation = CancellationToken::default();
+    let requested = cancellation.clone();
+    let checkpoints = Arc::new(Mutex::new(Vec::new()));
+    let captured = Arc::clone(&checkpoints);
+    let options = solver_options(20);
+    let mut runtime = RefinementRuntime::<StructuralTofMultiBankCheckpoint>::new(
+        options.limits,
+        Some(cancellation),
+    )
+    .unwrap();
+    runtime.set_checkpoint_sink(move |checkpoint: &StructuralTofMultiBankCheckpoint| {
+        captured.lock().unwrap().push(checkpoint.clone());
+        if checkpoint.completed_iterations() == 2 {
+            requested
+                .request("structural TOF test stop")
+                .map_err(|error| error.to_string())?;
+        }
+        Ok(())
+    });
+    let stopped =
+        refine_structural_tof_multibank_with_runtime(&request, options, None, &mut runtime)
+            .unwrap();
+    assert_eq!(stopped.termination_reason, TerminationReason::Cancelled);
+    assert_eq!(stopped.history.len(), 2);
+    assert_eq!(stopped.checkpoint, checkpoints.lock().unwrap()[1]);
+
+    let bounded_options = StructuralTofMultiBankRefinementOptions::new(
+        RefinementLimits::new(20, 2, None, 8).unwrap(),
+        1,
+        1.0e-12,
+        1.0e-9,
+        1.0e-3,
+        10.0,
+        0.3,
+        1.0,
+        8,
+    )
+    .unwrap();
+    let bounded = refine_structural_tof_multibank(&request, bounded_options, None, None).unwrap();
+    assert_eq!(
+        bounded.termination_reason,
+        TerminationReason::MaxEvaluations
+    );
+    assert!(bounded.history.is_empty());
+    assert_eq!(bounded.input, request);
 }
