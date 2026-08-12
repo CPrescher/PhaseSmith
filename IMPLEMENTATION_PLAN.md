@@ -1506,6 +1506,13 @@ solver. Python tests recover local scale/Zero parameters and one shared cubic
 cell, and verify exact cancellation/checkpoint continuation. Native project
 persistence is next, followed by the checksum-pinned structural data/oracle
 gate.
+The application-host validation layer is complete too.
+`StructuralTofMultiBankProjectState` gives each analysis a stable identity,
+prevents duplicate histogram ownership, matches bank arrays/instruments to the
+project's TOF records, requires exactly one matching built-in phase reference,
+and revalidates optional restart checkpoints. This state is intentionally
+Python-free and serialization-free. Encoding it in the next native project
+format is the next Unit 38d increment.
 
 Do not combine adjacent items merely to reduce PR count; numerical review is
 easier when parameter conventions and tolerance changes remain isolated.

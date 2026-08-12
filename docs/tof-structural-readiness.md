@@ -233,6 +233,14 @@ and Zero terms, resume bitwise-identical accepted state after cancellation, and
 recover a shared cubic lattice parameter. Native project persistence and the
 structural real-data/oracle acceptance remain separate Unit 38d gates.
 
+`StructuralTofMultiBankProjectState` is the Python-free application-host
+boundary for retaining these analyses. It requires unique analysis IDs and
+disjoint bank ownership, resolves every bank ID to an exact project TOF
+pattern/instrument record, requires each member histogram to reference exactly
+the one shared built-in phase, and revalidates an optional solver checkpoint.
+This guarded domain facade precedes the versioned persistence wire contract; it
+does not by itself claim that a project bundle can yet store structural TOF.
+
 ## Unit 38 delivery sequence
 
 The structural extension is split into reviewable numerical increments:

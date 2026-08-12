@@ -73,3 +73,9 @@ accepted state at a normal bound. These remain Rust integration boundaries, not
 yet the public Python workflow or persisted project format. Their correction
 and bank-geometry requirements are documented in
 [Structural TOF readiness](tof-structural-readiness.md).
+Application hosts can retain runnable analyses in
+`StructuralTofMultiBankProjectState`. Its validation binds bank IDs to exact
+project TOF histogram arrays/instruments, enforces disjoint histogram
+ownership, matches the one shared built-in phase, and revalidates optional
+checkpoints. Versioned serialization of this state is documented separately
+when available.

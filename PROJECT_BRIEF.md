@@ -1057,6 +1057,12 @@ bounded termination, and an opaque exact-resume checkpoint. Python recovery
 tests cover two local scales and Zero terms, cancellation/resume equivalence,
 and one genuinely shared cubic lattice parameter. Native project persistence
 and the pinned structural real-data/oracle gate remain the next Unit 38d slices.
+The application-neutral project facade is now complete as a separate guard
+before serialization. `StructuralTofMultiBankProjectState` binds every analysis
+to unique project TOF histograms, requires exact pattern/instrument equality,
+requires every member histogram to reference exactly the shared structural
+phase, rejects external provider requirements, and revalidates an optional
+solver checkpoint. The versioned native wire format remains the next slice.
 The historical native-workflow comparison passes both Le Bail parity contracts
 and QARR 1g. Its unchanged QARR 1h acceptance recipe retains the reviewed
 profile-quality failure, rather than having thresholds relaxed. The newer

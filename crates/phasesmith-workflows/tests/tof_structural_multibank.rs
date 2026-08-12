@@ -1,5 +1,6 @@
 #![allow(missing_docs)]
 
+use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex};
 
 use phasesmith_core::{
@@ -10,12 +11,16 @@ use phasesmith_crystallography::{
 };
 use phasesmith_engine::{BuiltInScatteringModel, StructuralPhaseDefinition};
 use phasesmith_execution::ExecutionPolicy;
-use phasesmith_model::{RecordId, TofPatternRecord};
+use phasesmith_model::{
+    ProjectRecord, RecordId, StructuralPhaseRecord, TofExperimentRecord, TofHistogramRecord,
+    TofPatternRecord,
+};
 use phasesmith_workflows::{
     CancellationToken, LatticeBounds, LatticeParameterization, ParameterBounds,
     PreparedStructuralTofMultiBankObjective, RefinementLimits, RefinementRuntime, RietveldPhase,
-    RietveldStructuralSelection, StructuralTofBank, StructuralTofMultiBankCheckpoint,
-    StructuralTofMultiBankError, StructuralTofMultiBankInput, StructuralTofMultiBankLayout,
+    RietveldStructuralSelection, StructuralTofBank, StructuralTofMultiBankAnalysis,
+    StructuralTofMultiBankCheckpoint, StructuralTofMultiBankError, StructuralTofMultiBankInput,
+    StructuralTofMultiBankLayout, StructuralTofMultiBankProjectState,
     StructuralTofMultiBankRefinementOptions, TerminationReason, TofChebyshevBackground,
     TofInstrumentParameterBound, refine_structural_tof_multibank,
     refine_structural_tof_multibank_with_runtime,
@@ -476,4 +481,68 @@ fn cancellation_and_evaluation_limit_return_the_last_accepted_state() {
     );
     assert!(bounded.history.is_empty());
     assert_eq!(bounded.input, request);
+}
+
+#[test]
+fn structural_tof_project_owns_exact_histograms_phase_and_checkpoint() {
+    let (request, _, _) = scale_zero_solver_request();
+    let options = solver_options(20);
+    let refined = refine_structural_tof_multibank(&request, options, None, None).unwrap();
+    let project = ProjectRecord {
+        project_id: id("structural-tof-project"),
+        revision: 3,
+        name: "Structural TOF project".to_owned(),
+        histograms: Vec::new(),
+        tof_histograms: request
+            .banks
+            .iter()
+            .map(|bank| TofHistogramRecord {
+                histogram_id: bank.bank_id.clone(),
+                name: bank.bank_id.as_str().to_owned(),
+                pattern: bank.pattern.clone(),
+                experiment: TofExperimentRecord::new(bank.instrument).unwrap(),
+                phase_ids: vec![request.phase.phase_id().clone()],
+            })
+            .collect(),
+        phases: vec![StructuralPhaseRecord {
+            phase_id: request.phase.phase_id().clone(),
+            name: request.phase.name().to_owned(),
+            definition: request.phase.definition().clone(),
+            required_providers: Vec::new(),
+        }],
+        metadata: BTreeMap::new(),
+    };
+    let analysis = StructuralTofMultiBankAnalysis {
+        analysis_id: id("structural-tof-analysis"),
+        input: request.clone(),
+        options,
+        checkpoint: Some(refined.checkpoint),
+    };
+    let state = StructuralTofMultiBankProjectState {
+        project,
+        analyses: vec![analysis],
+    };
+    state.validate().unwrap();
+
+    let mut duplicate = state.clone();
+    duplicate.analyses.push(duplicate.analyses[0].clone());
+    assert!(duplicate.validate().is_err());
+
+    let mut changed_histogram = state.clone();
+    changed_histogram.project.tof_histograms[0]
+        .pattern
+        .background_y[0] += 1.0;
+    assert!(changed_histogram.validate().is_err());
+
+    let mut changed_phase = state.clone();
+    changed_phase.project.phases[0].name.push_str(" changed");
+    assert!(changed_phase.validate().is_err());
+
+    let mut changed_checkpoint = state;
+    changed_checkpoint.analyses[0]
+        .checkpoint
+        .as_mut()
+        .unwrap()
+        .objective += 1.0;
+    assert!(changed_checkpoint.validate().is_err());
 }

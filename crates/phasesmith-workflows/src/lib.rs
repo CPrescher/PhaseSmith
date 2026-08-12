@@ -76,6 +76,7 @@ mod tof_multibank_project;
 mod tof_project;
 mod tof_structural_multibank;
 mod tof_structural_multibank_solver;
+mod tof_structural_project;
 
 pub use backgrounds::{
     AmorphousBackground, AmorphousPeak, BackgroundBasis, BackgroundError, BackgroundModel,
@@ -216,4 +217,7 @@ pub use tof_structural_multibank_solver::{
     StructuralTofMultiBankRefinementError, StructuralTofMultiBankRefinementOptions,
     StructuralTofMultiBankRefinementResult, refine_structural_tof_multibank,
     refine_structural_tof_multibank_with_runtime,
+};
+pub use tof_structural_project::{
+    StructuralTofMultiBankAnalysis, StructuralTofMultiBankProjectState, StructuralTofProjectError,
 };
