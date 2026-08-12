@@ -1418,8 +1418,18 @@ diagnostics, accepted physical changes, progress/cancellation, and opaque
 restart checkpoints. The facade delegates one complete solve while the GIL is
 released. Synthetic public-API tests recover the shared cell and bank-local
 Zero coefficients and reproduce uninterrupted history and arrays after a
-cancelled four-cycle checkpoint resumes. Unit 37b adds durable multi-bank
-project persistence; Unit 37c adds the real-data/oracle acceptance contract.
+cancelled four-cycle checkpoint resumes. Durable project state and real-data
+acceptance remain separately reviewable Unit 37 slices.
+
+Unit 37b is complete. Native project format 4 adds explicit joint multi-bank
+analysis records with disjoint histogram ownership. Project validation binds
+bank IDs to TOF histogram IDs and checks patterns, initial instruments, phase
+order/labels, shared cells, and exact symmetry settings. The JSON/NPZ codec
+round-trips bank reflection arrays, cell/instrument bounds, numerical controls,
+and complete checkpoints containing accepted cells, instruments, intensities,
+backgrounds, per-bank residual arrays, aggregate history, and named physical
+changes. Versions 1--3 load with empty joint state. Unit 37c adds the
+real-data/oracle acceptance contract.
 
 Do not combine adjacent items merely to reduce PR count; numerical review is
 easier when parameter conventions and tolerance changes remain isolated.
@@ -1477,8 +1487,8 @@ completes atomic fixed-cell multi-bank coordination, Unit 34 completes shared
 analytical lattice motion, and Unit 35 completes selected fixed-cell bank-local
 instrument motion, and Unit 36 combines the two geometry families in one
 correlation-diagnosed system, and Unit 37a adds its Python application facade.
-The next TOF increment is durable multi-bank persistence and real-data oracle
-validation. Structural parameter and instrument refinement must
+The next TOF increment is multi-bank real-data oracle validation. Structural
+parameter and instrument refinement must
 be introduced only with analytical derivatives, finite-difference tests, and
 new oracle contracts; it is not part of the completed Le Bail facade.
 

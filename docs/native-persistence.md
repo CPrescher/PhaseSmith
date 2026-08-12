@@ -8,15 +8,16 @@ crate has no PyO3, NumPy, CPython, webview, or Tauri dependency.
 
 A native project is a directory with two library-owned files:
 
-- `manifest.json` contains format version 3, explicit wire records, array
+- `manifest.json` contains format version 4, explicit wire records, array
   descriptors, units in field names, and SHA-256 hashes;
 - `arrays.npz` contains only contiguous little-endian `float64`, `int32`,
   `uint64`, and boolean NPY members.
 
 The complete manifest contract is
-[`schemas/native-project-v3.schema.json`](https://github.com/CPrescher/PhaseSmith/blob/main/schemas/native-project-v3.schema.json).
-Versions 1 and 2 remain readable and migrate with no TOF histograms or TOF Le
-Bail analyses. Version 1 also has no Rietveld analyses.
+[`schemas/native-project-v4.schema.json`](https://github.com/CPrescher/PhaseSmith/blob/main/schemas/native-project-v4.schema.json).
+Versions 1 through 3 remain readable. Versions 1 and 2 have no TOF histograms
+or TOF Le Bail analyses; version 1 also has no Rietveld analyses; versions 1
+through 3 have no joint multi-bank TOF geometry analyses.
 Internal kernel enums are not serialized directly. Every persisted record has
 an explicit conversion to and from the validated `phasesmith-model` domain.
 
@@ -80,8 +81,37 @@ checks the project pattern, instrument, active phase order, and phase labels.
 Its NPZ members retain reflection HKLs, d-spacings and intensities plus every
 accepted checkpoint's phase intensities and sample-aligned residual history.
 The manifest retains scalar options and optional microsecond-domain Chebyshev
-background state. This is fixed-instrument, fixed-cell Le Bail persistence; it
-does not add multi-bank coupling or structural TOF refinement.
+background state. This is fixed-instrument, fixed-cell Le Bail persistence.
+
+Format 4 adds complete joint multi-bank TOF geometry state:
+
+```rust,ignore
+use phasesmith_persistence::{
+    load_tof_multibank_geometry_project,
+    save_tof_multibank_geometry_project,
+};
+
+save_tof_multibank_geometry_project(
+    "joint-tof.psproj",
+    &joint_state,
+    ProjectSaveOptions::default(),
+)?;
+let restored = load_tof_multibank_geometry_project(
+    "joint-tof.psproj",
+    ProjectReadLimits::default(),
+)?;
+```
+
+`TofMultiBankGeometryProjectState` binds disjoint sets of TOF histograms to
+stable joint analysis IDs. Bank IDs are the project histogram IDs; pattern,
+initial instrument, phase order, phase labels, initial shared cells, and exact
+symmetry settings are cross-checked against project state. The manifest stores
+the bounded shared-cell and bank-local instrument selections plus all solver
+controls. Typed NPZ members store every input and checkpoint HKL, d-spacing,
+intensity, inclusion, residual, and weighted-residual array. The checkpoint
+also retains accepted instruments, cells, backgrounds, aggregate metrics, and
+the complete lattice/instrument change history. This remains Le Bail geometry
+refinement with fixed reflection topology, not structural TOF Rietveld.
 
 Loading is bounded before domain construction. It checks manifest and archive
 sizes, version, archive filename and hash, exact NPZ member set, every member's

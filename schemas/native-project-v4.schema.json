@@ -1,0 +1,253 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://phasesmith.dev/schemas/native-project-v4.schema.json",
+  "title": "PhaseSmith native project bundle version 4",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format_version", "archive", "arrays", "project", "rietveld_analyses",
+    "tof_lebail_analyses", "tof_multibank_geometry_analyses"
+  ],
+  "properties": {
+    "format_version": { "const": 4 },
+    "archive": { "$ref": "native-project-v1.schema.json#/properties/archive" },
+    "arrays": { "$ref": "native-project-v1.schema.json#/properties/arrays" },
+    "project": { "$ref": "native-project-v3.schema.json#/$defs/project" },
+    "rietveld_analyses": {
+      "type": "array",
+      "items": { "$ref": "native-project-v2.schema.json#/$defs/analysis" }
+    },
+    "tof_lebail_analyses": {
+      "type": "array",
+      "items": { "$ref": "native-project-v3.schema.json#/$defs/tofAnalysis" }
+    },
+    "tof_multibank_geometry_analyses": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/geometryAnalysis" }
+    }
+  },
+  "$defs": {
+    "nonEmptyString": { "type": "string", "minLength": 1 },
+    "arrayReference": {
+      "$ref": "native-project-v1.schema.json#/$defs/arrayReference"
+    },
+    "geometryAnalysis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "analysis_id", "banks", "lattice_phases", "instrument_models",
+        "options", "checkpoint"
+      ],
+      "properties": {
+        "analysis_id": { "$ref": "#/$defs/nonEmptyString" },
+        "banks": {
+          "type": "array", "minItems": 2,
+          "items": { "$ref": "#/$defs/bank" }
+        },
+        "lattice_phases": {
+          "type": "array", "minItems": 1,
+          "items": { "$ref": "#/$defs/latticePhase" }
+        },
+        "instrument_models": {
+          "type": "array", "minItems": 1,
+          "items": { "$ref": "#/$defs/instrumentModel" }
+        },
+        "options": { "$ref": "#/$defs/geometryOptions" },
+        "checkpoint": {
+          "oneOf": [{ "$ref": "#/$defs/geometryCheckpoint" }, { "type": "null" }]
+        }
+      }
+    },
+    "bank": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["bank_id", "phases", "background"],
+      "properties": {
+        "bank_id": { "$ref": "#/$defs/nonEmptyString" },
+        "phases": {
+          "type": "array", "minItems": 1,
+          "items": { "$ref": "native-project-v3.schema.json#/$defs/tofPhase" }
+        },
+        "background": {
+          "oneOf": [
+            { "$ref": "native-project-v3.schema.json#/$defs/tofBackground" },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "latticePhase": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["phase_id", "lower", "upper"],
+      "properties": {
+        "phase_id": { "$ref": "#/$defs/nonEmptyString" },
+        "lower": { "type": "array", "minItems": 1, "items": { "type": "number" } },
+        "upper": { "type": "array", "minItems": 1, "items": { "type": "number" } }
+      }
+    },
+    "instrumentModel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["bank_id", "bounds"],
+      "properties": {
+        "bank_id": { "$ref": "#/$defs/nonEmptyString" },
+        "bounds": {
+          "type": "array", "minItems": 1,
+          "items": { "$ref": "#/$defs/instrumentBound" }
+        }
+      }
+    },
+    "instrumentBound": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["parameter", "lower", "upper"],
+      "properties": {
+        "parameter": {
+          "enum": [
+            "zero", "difc", "difa", "difb", "alpha", "beta0", "beta1",
+            "betaq", "sigma0", "sigma1", "sigma2", "sigmaq", "x", "y", "z"
+          ]
+        },
+        "lower": { "type": "number" },
+        "upper": { "type": "number" }
+      }
+    },
+    "geometryOptions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "cycles", "redistribution_damping", "initial_intensity_floor",
+        "minimum_calculated", "support_fwhm", "tail_log", "use_uncertainty",
+        "redistribution_use_uncertainty", "requested_threads",
+        "minimum_parallel_tasks", "geometry_damping",
+        "max_scaled_geometry_step", "max_geometry_backtracks",
+        "unresolved_correlation"
+      ],
+      "properties": {
+        "cycles": { "type": "integer", "minimum": 1 },
+        "redistribution_damping": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 },
+        "initial_intensity_floor": { "type": "number", "exclusiveMinimum": 0 },
+        "minimum_calculated": { "type": "number", "exclusiveMinimum": 0 },
+        "support_fwhm": { "type": "number", "exclusiveMinimum": 0 },
+        "tail_log": { "type": "number", "exclusiveMinimum": 0 },
+        "use_uncertainty": { "type": "boolean" },
+        "redistribution_use_uncertainty": { "type": "boolean" },
+        "requested_threads": {
+          "oneOf": [{ "type": "integer", "minimum": 1 }, { "type": "null" }]
+        },
+        "minimum_parallel_tasks": { "type": "integer", "minimum": 1 },
+        "geometry_damping": { "type": "number", "minimum": 0 },
+        "max_scaled_geometry_step": { "type": "number", "exclusiveMinimum": 0 },
+        "max_geometry_backtracks": { "type": "integer", "minimum": 0 },
+        "unresolved_correlation": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "geometryCheckpoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["completed_iterations", "banks", "lattice_phases", "history"],
+      "properties": {
+        "completed_iterations": { "type": "integer", "minimum": 0 },
+        "banks": { "type": "array", "minItems": 2, "items": { "$ref": "#/$defs/checkpointBank" } },
+        "lattice_phases": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/latticeState" } },
+        "history": { "type": "array", "items": { "$ref": "#/$defs/geometryIteration" } }
+      }
+    },
+    "checkpointBank": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["bank_id", "instrument", "phases", "background"],
+      "properties": {
+        "bank_id": { "$ref": "#/$defs/nonEmptyString" },
+        "instrument": { "type": "array", "minItems": 15, "maxItems": 15, "items": { "type": "number" } },
+        "phases": { "type": "array", "minItems": 1, "items": { "$ref": "native-project-v3.schema.json#/$defs/tofPhase" } },
+        "background": {
+          "oneOf": [
+            { "$ref": "native-project-v3.schema.json#/$defs/tofBackground" },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "latticeState": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["phase_id", "cell"],
+      "properties": {
+        "phase_id": { "$ref": "#/$defs/nonEmptyString" },
+        "cell": { "type": "array", "minItems": 6, "maxItems": 6, "items": { "type": "number" } }
+      }
+    },
+    "geometryIteration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "iteration", "bank_metrics", "metrics",
+        "maximum_relative_intensity_change", "maximum_absolute_background_change",
+        "scaled_geometry_step_norm", "lattice_parameter_changes",
+        "instrument_parameter_changes"
+      ],
+      "properties": {
+        "iteration": { "type": "integer", "minimum": 1 },
+        "bank_metrics": { "type": "array", "minItems": 2, "items": { "$ref": "#/$defs/residual" } },
+        "metrics": { "$ref": "#/$defs/aggregateMetrics" },
+        "maximum_relative_intensity_change": { "type": "number" },
+        "maximum_absolute_background_change": { "type": "number" },
+        "scaled_geometry_step_norm": { "type": "number", "minimum": 0 },
+        "lattice_parameter_changes": { "type": "array", "items": { "$ref": "#/$defs/latticeChange" } },
+        "instrument_parameter_changes": { "type": "array", "items": { "$ref": "#/$defs/instrumentChange" } }
+      }
+    },
+    "residual": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["included", "residual", "weighted_residual", "rp", "rwp", "chi_square", "reduced_chi_square"],
+      "properties": {
+        "included": { "$ref": "#/$defs/arrayReference" },
+        "residual": { "$ref": "#/$defs/arrayReference" },
+        "weighted_residual": { "$ref": "#/$defs/arrayReference" },
+        "rp": { "type": "number" },
+        "rwp": { "type": "number" },
+        "chi_square": { "type": "number" },
+        "reduced_chi_square": { "type": "number" }
+      }
+    },
+    "aggregateMetrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["included_samples", "rp", "rwp", "chi_square", "reduced_chi_square"],
+      "properties": {
+        "included_samples": { "type": "integer", "minimum": 0 },
+        "rp": { "type": "number" },
+        "rwp": { "type": "number" },
+        "chi_square": { "type": "number" },
+        "reduced_chi_square": { "type": "number" }
+      }
+    },
+    "latticeChange": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["phase_id", "parameter_name", "before", "after", "scaled_change"],
+      "properties": {
+        "phase_id": { "$ref": "#/$defs/nonEmptyString" },
+        "parameter_name": { "$ref": "#/$defs/nonEmptyString" },
+        "before": { "type": "number" },
+        "after": { "type": "number" },
+        "scaled_change": { "type": "number" }
+      }
+    },
+    "instrumentChange": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["bank_id", "parameter", "before", "after", "scaled_change"],
+      "properties": {
+        "bank_id": { "$ref": "#/$defs/nonEmptyString" },
+        "parameter": { "$ref": "#/$defs/instrumentBound/properties/parameter" },
+        "before": { "type": "number" },
+        "after": { "type": "number" },
+        "scaled_change": { "type": "number" }
+      }
+    }
+  }
+}

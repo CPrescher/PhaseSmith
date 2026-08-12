@@ -42,13 +42,16 @@
 //!
 //! Use [`save_rietveld_project`] / [`load_rietveld_project`] or
 //! [`save_tof_lebail_project`] / [`load_tof_lebail_project`] when the bundle
-//! must retain runnable analyses. TOF histograms keep microseconds separate
-//! from constant-wavelength degree coordinates. Reporting functions produce
-//! stable JSON summaries without exposing internal wire records.
+//! must retain runnable single-histogram analyses. Joint TOF geometry state uses
+//! [`save_tof_multibank_geometry_project`] and
+//! [`load_tof_multibank_geometry_project`]. TOF histograms keep microseconds
+//! separate from constant-wavelength degree coordinates. Reporting functions
+//! produce stable JSON summaries without exposing internal wire records.
 
 mod arrays;
 mod report;
 mod rietveld_wire;
+mod tof_multibank_wire;
 mod tof_wire;
 mod wire;
 
@@ -62,7 +65,9 @@ use std::sync::atomic::{AtomicU64, Ordering};
 
 use arrays::{ArrayDescriptor, read_npz, sha256_hex, write_npz};
 use phasesmith_model::{DomainError, ProjectRecord};
-use phasesmith_workflows::{RietveldProjectState, TofLeBailProjectState};
+use phasesmith_workflows::{
+    RietveldProjectState, TofLeBailProjectState, TofMultiBankGeometryProjectState,
+};
 use serde::{Deserialize, Serialize};
 
 pub use report::{
@@ -71,7 +76,7 @@ pub use report::{
 };
 
 /// Current native project bundle wire version.
-pub const PROJECT_FORMAT_VERSION: u32 = 3;
+pub const PROJECT_FORMAT_VERSION: u32 = 4;
 /// Canonical manifest filename within a project directory.
 pub const PROJECT_MANIFEST_NAME: &str = "manifest.json";
 /// Canonical `NumPy` archive filename within a project directory.
@@ -241,6 +246,9 @@ struct ProjectManifest {
     rietveld_analyses: Option<Vec<rietveld_wire::WireRietveldAnalysis>>,
     #[serde(default)]
     tof_lebail_analyses: Option<Vec<tof_wire::WireTofLeBailAnalysis>>,
+    #[serde(default)]
+    tof_multibank_geometry_analyses:
+        Option<Vec<tof_multibank_wire::WireTofMultiBankGeometryAnalysis>>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -252,6 +260,7 @@ type LoadedProjectParts = (
     ProjectRecord,
     Vec<rietveld_wire::WireRietveldAnalysis>,
     Vec<tof_wire::WireTofLeBailAnalysis>,
+    Vec<tof_multibank_wire::WireTofMultiBankGeometryAnalysis>,
     BTreeMap<String, arrays::ArrayData>,
 );
 
@@ -273,6 +282,7 @@ pub fn save_project(
     save_project_parts(
         path.as_ref(),
         project,
+        Vec::new(),
         Vec::new(),
         Vec::new(),
         BTreeMap::new(),
@@ -301,6 +311,7 @@ pub fn save_rietveld_project(
         &state.project,
         rietveld_wire::encode_analyses(state),
         Vec::new(),
+        Vec::new(),
         BTreeMap::new(),
         options,
     )
@@ -328,6 +339,35 @@ pub fn save_tof_lebail_project(
         &state.project,
         Vec::new(),
         analyses,
+        Vec::new(),
+        arrays,
+        options,
+    )
+}
+
+/// Save one validated project and all resumable joint multi-bank TOF analyses.
+///
+/// # Errors
+///
+/// Returns [`PersistenceError`] for invalid cross-record state, serialization,
+/// archive, filesystem, or overwrite failures.
+pub fn save_tof_multibank_geometry_project(
+    path: impl AsRef<Path>,
+    state: &TofMultiBankGeometryProjectState,
+    options: ProjectSaveOptions,
+) -> Result<PathBuf, PersistenceError> {
+    state
+        .validate()
+        .map_err(|error| PersistenceError::InvalidRecord {
+            message: format!("invalid joint TOF project state: {error}"),
+        })?;
+    let (analyses, arrays) = tof_multibank_wire::encode_analyses(state)?;
+    save_project_parts(
+        path.as_ref(),
+        &state.project,
+        Vec::new(),
+        Vec::new(),
+        analyses,
         arrays,
         options,
     )
@@ -338,6 +378,7 @@ fn save_project_parts(
     project: &ProjectRecord,
     rietveld_analyses: Vec<rietveld_wire::WireRietveldAnalysis>,
     tof_lebail_analyses: Vec<tof_wire::WireTofLeBailAnalysis>,
+    tof_multibank_geometry_analyses: Vec<tof_multibank_wire::WireTofMultiBankGeometryAnalysis>,
     analysis_arrays: BTreeMap<String, arrays::ArrayData>,
     options: ProjectSaveOptions,
 ) -> Result<PathBuf, PersistenceError> {
@@ -369,6 +410,7 @@ fn save_project_parts(
         project: wire_project,
         rietveld_analyses: Some(rietveld_analyses),
         tof_lebail_analyses: Some(tof_lebail_analyses),
+        tof_multibank_geometry_analyses: Some(tof_multibank_geometry_analyses),
     };
     let mut encoded_manifest = serde_json::to_string_pretty(&manifest)?;
     encoded_manifest.push('\n');
@@ -429,8 +471,10 @@ pub fn load_project(
     path: impl AsRef<Path>,
     limits: ProjectReadLimits,
 ) -> Result<ProjectRecord, PersistenceError> {
-    let (project, rietveld_analyses, tof_analyses, mut arrays) =
+    let (project, rietveld_analyses, tof_analyses, multibank_analyses, mut arrays) =
         load_project_parts(path.as_ref(), limits)?;
+    let project =
+        tof_multibank_wire::decode_state(project, multibank_analyses, &mut arrays, limits)?.project;
     let project = tof_wire::decode_state(project, tof_analyses, &mut arrays, limits)?.project;
     if !arrays.is_empty() {
         return Err(PersistenceError::InvalidRecord {
@@ -452,8 +496,10 @@ pub fn load_rietveld_project(
     path: impl AsRef<Path>,
     limits: ProjectReadLimits,
 ) -> Result<RietveldProjectState, PersistenceError> {
-    let (project, rietveld_analyses, tof_analyses, mut arrays) =
+    let (project, rietveld_analyses, tof_analyses, multibank_analyses, mut arrays) =
         load_project_parts(path.as_ref(), limits)?;
+    let project =
+        tof_multibank_wire::decode_state(project, multibank_analyses, &mut arrays, limits)?.project;
     let project = tof_wire::decode_state(project, tof_analyses, &mut arrays, limits)?.project;
     if !arrays.is_empty() {
         return Err(PersistenceError::InvalidRecord {
@@ -475,8 +521,10 @@ pub fn load_tof_lebail_project(
     path: impl AsRef<Path>,
     limits: ProjectReadLimits,
 ) -> Result<TofLeBailProjectState, PersistenceError> {
-    let (project, rietveld_analyses, tof_analyses, mut arrays) =
+    let (project, rietveld_analyses, tof_analyses, multibank_analyses, mut arrays) =
         load_project_parts(path.as_ref(), limits)?;
+    let project =
+        tof_multibank_wire::decode_state(project, multibank_analyses, &mut arrays, limits)?.project;
     rietveld_wire::decode_state(project.clone(), rietveld_analyses, limits)?;
     let state = tof_wire::decode_state(project, tof_analyses, &mut arrays, limits)?;
     if !arrays.is_empty() {
@@ -487,6 +535,32 @@ pub fn load_tof_lebail_project(
     Ok(state)
 }
 
+/// Load and validate one project plus all resumable joint multi-bank TOF analyses.
+///
+/// Versions 1 through 3 load with an empty joint-analysis list.
+///
+/// # Errors
+///
+/// Returns [`PersistenceError`] for resource, filesystem, JSON, hash, archive,
+/// wire-record, domain, or joint TOF validation failures.
+pub fn load_tof_multibank_geometry_project(
+    path: impl AsRef<Path>,
+    limits: ProjectReadLimits,
+) -> Result<TofMultiBankGeometryProjectState, PersistenceError> {
+    let (project, rietveld_analyses, tof_analyses, multibank_analyses, mut arrays) =
+        load_project_parts(path.as_ref(), limits)?;
+    rietveld_wire::decode_state(project.clone(), rietveld_analyses, limits)?;
+    let project = tof_wire::decode_state(project, tof_analyses, &mut arrays, limits)?.project;
+    let state = tof_multibank_wire::decode_state(project, multibank_analyses, &mut arrays, limits)?;
+    if !arrays.is_empty() {
+        return Err(PersistenceError::InvalidRecord {
+            message: "manifest contains arrays that are not referenced by the project".to_owned(),
+        });
+    }
+    Ok(state)
+}
+
+#[allow(clippy::too_many_lines)] // The explicit version/field matrix is kept together for auditability.
 fn load_project_parts(
     path: &Path,
     limits: ProjectReadLimits,
@@ -517,8 +591,8 @@ fn load_project_parts(
                 message: "native project format 1 cannot declare Rietveld analyses".to_owned(),
             });
         }
-        (2 | 3, Some(analyses)) => analyses,
-        (2 | 3, None) => {
+        (2..=4, Some(analyses)) => analyses,
+        (2..=4, None) => {
             return Err(PersistenceError::InvalidRecord {
                 message: format!(
                     "native project format {} requires Rietveld analyses",
@@ -538,10 +612,34 @@ fn load_project_parts(
                 ),
             });
         }
-        (3, Some(analyses)) => analyses,
-        (3, None) => {
+        (3 | 4, Some(analyses)) => analyses,
+        (3 | 4, None) => {
             return Err(PersistenceError::InvalidRecord {
-                message: "native project format 3 requires TOF Le Bail analyses".to_owned(),
+                message: format!(
+                    "native project format {} requires TOF Le Bail analyses",
+                    manifest.format_version
+                ),
+            });
+        }
+        _ => unreachable!("format version checked above"),
+    };
+    let multibank_analyses = match (
+        manifest.format_version,
+        manifest.tof_multibank_geometry_analyses,
+    ) {
+        (1..=3, None) => Vec::new(),
+        (1..=3, Some(_)) => {
+            return Err(PersistenceError::InvalidRecord {
+                message: format!(
+                    "native project format {} cannot declare joint TOF analyses",
+                    manifest.format_version
+                ),
+            });
+        }
+        (4, Some(analyses)) => analyses,
+        (4, None) => {
+            return Err(PersistenceError::InvalidRecord {
+                message: "native project format 4 requires joint TOF analyses".to_owned(),
             });
         }
         _ => unreachable!("format version checked above"),
@@ -576,7 +674,13 @@ fn load_project_parts(
     }
     let mut arrays = read_npz(&archive_bytes, &manifest.arrays, limits)?;
     let project = wire::decode_project_parts(manifest.project, &mut arrays, limits)?;
-    Ok((project, rietveld_analyses, tof_analyses, arrays))
+    Ok((
+        project,
+        rietveld_analyses,
+        tof_analyses,
+        multibank_analyses,
+        arrays,
+    ))
 }
 
 fn read_bounded_file(

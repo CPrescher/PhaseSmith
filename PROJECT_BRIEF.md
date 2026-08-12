@@ -958,8 +958,8 @@ pairs, report numerical rank, and never fabricate covariance for a deficient
 selection. Synthetic distinct-bank data recover the common cubic cell and both
 local Zero terms while surfacing their cross-family correlations; cancelled
 continuation is exact. The two-bank, 80-reflection-per-bank, 4,001-sample-per-
-bank one-cycle benchmark measures 214.18 ms. Application facade/persistence and
-real-data oracle coverage are now the next increment before any structural TOF
+bank one-cycle benchmark measures 214.18 ms. Application facade, persistence,
+and real-data oracle coverage remain separate gates before any structural TOF
 Rietveld claim.
 The first Unit 37 application slice now exposes the same joint solver through
 typed Python bank, shared-cell, instrument-selection, option, result,
@@ -968,8 +968,17 @@ reused when constructing setting-aware lattice bounds, the GIL is released for
 the complete solve, and progress/cancellation plus opaque restart checkpoints
 preserve the Rust runtime contract. Python integration tests recover the shared
 cell and local Zero terms and prove exact cancelled continuation. Durable
-multi-bank project persistence and real-data/oracle acceptance remain the next
+multi-bank project persistence and real-data/oracle acceptance are separate
 Unit 37 slices.
+Unit 37b now adds native project format 4. A
+`TofMultiBankGeometryProjectState` assigns disjoint TOF histogram sets to
+stable analysis IDs and cross-checks patterns, initial instruments, phase
+order/labels, shared initial cells, and exact symmetry settings. The explicit
+JSON/NPZ codec round-trips bank inputs, cell and instrument bounds, solver
+controls, and the full accepted checkpoint: cells, instruments, intensities,
+backgrounds, per-bank residual arrays, aggregate metrics, and physical change
+history. Versions 1--3 remain readable with empty joint state. Multi-bank
+real-data/oracle acceptance is now the remaining Unit 37 slice.
 The historical native-workflow comparison passes both Le Bail parity contracts
 and QARR 1g. Its unchanged QARR 1h acceptance recipe retains the reviewed
 profile-quality failure, rather than having thresholds relaxed. The newer

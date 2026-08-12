@@ -93,7 +93,15 @@ The realistic benchmark performs one complete joint cycle for two banks, 80
 reflections per bank, and 4,001 samples per bank; it measured 214.18 ms on the
 review machine.
 
-The native and Python application workflows now provide the numerical boundary
-required before durable project records and a multi-bank real-data oracle are
-added. This remains Le Bail extraction with fixed reflection topology, not
-structural TOF Rietveld.
+Native project format 4 persists the same complete state through
+`TofMultiBankGeometryProjectState`, `save_tof_multibank_geometry_project`, and
+`load_tof_multibank_geometry_project`. One histogram can belong to at most one
+joint analysis. The codec stores every bank input, shared-cell bound,
+instrument selection, solver control, and accepted checkpoint array; restoring
+the bundle revalidates it against project histograms, phase definitions, and
+the exact symmetry setting.
+
+The native, Python, and persistence workflows now provide the application
+boundary required before a multi-bank real-data oracle is added. This remains
+Le Bail extraction with fixed reflection topology, not structural TOF
+Rietveld.

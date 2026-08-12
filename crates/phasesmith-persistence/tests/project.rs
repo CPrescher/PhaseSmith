@@ -223,10 +223,10 @@ fn project_summary_file_export_has_an_explicit_overwrite_policy() {
 #[test]
 fn native_manifest_schema_is_valid_json_and_tracks_the_wire_version() {
     let schema_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../schemas/native-project-v3.schema.json");
+        .join("../../schemas/native-project-v4.schema.json");
     let schema: serde_json::Value =
         serde_json::from_slice(&fs::read(schema_path).unwrap()).unwrap();
-    assert_eq!(schema["properties"]["format_version"]["const"], 3);
+    assert_eq!(schema["properties"]["format_version"]["const"], 4);
     assert_eq!(
         schema["properties"]["format_version"]["const"],
         PROJECT_FORMAT_VERSION
@@ -251,6 +251,10 @@ fn old_projects_migrate_but_each_version_requires_its_analysis_fields() {
         .as_object_mut()
         .unwrap()
         .remove("tof_lebail_analyses");
+    manifest
+        .as_object_mut()
+        .unwrap()
+        .remove("tof_multibank_geometry_analyses");
     fs::write(&manifest_path, serde_json::to_vec(&manifest).unwrap()).unwrap();
     assert_eq!(
         load_project(&directory, ProjectReadLimits::default()).unwrap(),
@@ -277,6 +281,27 @@ fn old_projects_migrate_but_each_version_requires_its_analysis_fields() {
         load_project(&directory, ProjectReadLimits::default()),
         Err(PersistenceError::InvalidRecord { .. })
     ));
+
+    manifest["tof_lebail_analyses"] = serde_json::json!([]);
+    fs::write(&manifest_path, serde_json::to_vec(&manifest).unwrap()).unwrap();
+    assert_eq!(
+        load_project(&directory, ProjectReadLimits::default()).unwrap(),
+        expected
+    );
+
+    manifest["format_version"] = serde_json::json!(4);
+    fs::write(&manifest_path, serde_json::to_vec(&manifest).unwrap()).unwrap();
+    assert!(matches!(
+        load_project(&directory, ProjectReadLimits::default()),
+        Err(PersistenceError::InvalidRecord { .. })
+    ));
+
+    manifest["tof_multibank_geometry_analyses"] = serde_json::json!([]);
+    fs::write(&manifest_path, serde_json::to_vec(&manifest).unwrap()).unwrap();
+    assert_eq!(
+        load_project(&directory, ProjectReadLimits::default()).unwrap(),
+        expected
+    );
 
     manifest["format_version"] = serde_json::json!(PROJECT_FORMAT_VERSION + 1);
     manifest["future_field"] = serde_json::json!({"shape": "unknown"});

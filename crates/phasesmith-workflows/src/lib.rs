@@ -72,6 +72,7 @@ mod tof_multibank;
 mod tof_multibank_geometry;
 mod tof_multibank_instrument;
 mod tof_multibank_lattice;
+mod tof_multibank_project;
 mod tof_project;
 
 pub use backgrounds::{
@@ -198,5 +199,8 @@ pub use tof_multibank_lattice::{
     TofMultiBankLatticeInput, TofMultiBankLatticeIterationRecord, TofMultiBankLatticeOptions,
     TofMultiBankLatticeResult, TofSharedLatticePhase, TofSharedLatticeState,
     refine_tof_multibank_lattice, refine_tof_multibank_lattice_with_runtime,
+};
+pub use tof_multibank_project::{
+    TofMultiBankGeometryAnalysis, TofMultiBankGeometryProjectState, TofMultiBankProjectError,
 };
 pub use tof_project::{TofLeBailAnalysis, TofLeBailProjectState, TofProjectError};
