@@ -1433,8 +1433,12 @@ half is also complete: checksum-pinned LANL nickel banks 2--4 share the full
 102-family Fm-3m topology while retaining distinct measured grids and
 function-1 instruments. One cubic cell plus three local Zero terms refine
 jointly over 13,293 observations to joint Rwp 0.02273306, per-bank Rwp below
-0.024, a=3.52361196 A against 3.5234 A, and analytical rank 4/4. A pinned
-plain-array GSAS-II multi-bank comparison remains before Unit 37c is closed.
+0.024, a=3.52361196 A against 3.5234 A, and analytical rank 4/4. Unit 37c is now
+complete: the pinned plain-array GSAS-II comparison matches reflection
+calibration chains at floating-point scale, reconstructs its three peak-only
+banks with correlation >= 0.9999 and relative L2 <= 0.015, and returns a shared
+cell within 0.0005 A of PhaseSmith. Endpoint counts and non-comparable Le Bail
+Rwp procedures remain visible rather than being forced into false parity.
 
 Do not combine adjacent items merely to reduce PR count; numerical review is
 easier when parameter conventions and tolerance changes remain isolated.
@@ -1492,8 +1496,8 @@ completes atomic fixed-cell multi-bank coordination, Unit 34 completes shared
 analytical lattice motion, and Unit 35 completes selected fixed-cell bank-local
 instrument motion, and Unit 36 combines the two geometry families in one
 correlation-diagnosed system, and Unit 37a adds its Python application facade.
-The next TOF increment is the pinned multi-bank oracle half of Unit 37c. Structural
-parameter and instrument refinement must
+The next TOF increment is Unit 38's structural capability assessment.
+Structural parameter and instrument refinement must
 be introduced only with analytical derivatives, finite-difference tests, and
 new oracle contracts; it is not part of the completed Le Bail facade.
 

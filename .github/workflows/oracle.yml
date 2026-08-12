@@ -43,6 +43,7 @@ jobs:
             gsasii-pbso4-cw \
             iucr-qarr-1g \
             iucr-qarr-1h \
+            lanl-nickel-tof \
             powgen-lab6-tof-calibration \
             nist-srm660c-lab6-xray
       - name: Execute live pinned comparisons

@@ -23,6 +23,10 @@ def load_script(name: str, path: str) -> ModuleType:
 LEBAIL = load_script("compare_gsasii_real_lebail", "benchmarks/compare_gsasii_real_lebail.py")
 QARR = load_script("compare_gsasii_qarr_contract", "benchmarks/compare_gsasii_qarr.py")
 PBSO4 = load_script("compare_gsasii_pbso4_contract", "benchmarks/compare_gsasii_pbso4.py")
+NICKEL_TOF = load_script(
+    "compare_gsasii_nickel_tof_contract",
+    "benchmarks/compare_gsasii_nickel_tof_multibank.py",
+)
 
 
 def test_real_lebail_parity_contract_gates_counts_rwp_and_correlation() -> None:
@@ -175,8 +179,18 @@ def test_oracle_workers_never_import_the_normal_phasesmith_package() -> None:
         "oracle/scripts/benchmark_real_lebail.py",
         "oracle/scripts/benchmark_qarr.py",
         "oracle/scripts/benchmark_pbso4.py",
+        "oracle/scripts/benchmark_powgen_tof.py",
+        "oracle/scripts/benchmark_nickel_tof_multibank.py",
     )
     for worker in workers:
         source = (REPOSITORY_ROOT / worker).read_text(encoding="utf-8")
         assert "import phasesmith" not in source
         assert "from phasesmith" not in source
+
+
+def test_nickel_multibank_oracle_contract_keeps_like_for_like_gates_separate() -> None:
+    assert NICKEL_TOF.BANKS == (2, 3, 4)
+    assert NICKEL_TOF.LIMITS["reconstructed_pattern_relative_l2"] == 0.015
+    assert NICKEL_TOF.LIMITS["reconstructed_pattern_minimum_correlation"] == 0.9999
+    assert "native_oracle_joint_rwp_delta" not in NICKEL_TOF.LIMITS
+    assert NICKEL_TOF.LIMITS["native_oracle_cell_delta_angstrom"] == 5.0e-4

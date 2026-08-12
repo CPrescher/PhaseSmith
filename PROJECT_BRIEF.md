@@ -986,8 +986,15 @@ cubic cell plus three local Zero terms over 13,293 observations. The reviewed
 result has joint Rwp 0.02273306, per-bank Rwp 0.02206--0.02336,
 a=3.52361196 A against 3.5234 A, and rank 4/4. The complete shared topology is
 intentional: finite bank grids, not an intersection-only reflection list,
-determine local visibility. A pinned plain-array GSAS-II multi-bank comparison
-is the remaining oracle half of Unit 37c.
+determine local visibility. Unit 37c's pinned GSAS-II half is complete too. Its
+isolated worker creates one three-histogram project and exports only arrays and
+JSON. PhaseSmith matches reflection positions exactly, variance and tail-rate
+chains at floating-point scale, and the same-extracted-intensity bank patterns
+with minimum correlation 0.999902 and maximum relative L2 0.013851. The
+independent shared-cell results differ by 0.000283 A. The explicit GSAS-II and
+PhaseSmith endpoint conventions select 13,290 and 13,293 observations. Rwp is
+context only because the Le Bail intensity and background procedures are not
+the same optimization contract.
 The historical native-workflow comparison passes both Le Bail parity contracts
 and QARR 1g. Its unchanged QARR 1h acceptance recipe retains the reviewed
 profile-quality failure, rather than having thresholds relaxed. The newer

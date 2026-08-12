@@ -40,6 +40,19 @@ module, and report numerically verified profile-only and controlled
 structure-to-profile comparisons. See `../docs/gsasii-performance.md` for their
 scope and limitations.
 
+`scripts/benchmark_nickel_tof_multibank.py` creates one pinned GSAS-II project
+with LANL nickel banks 2--4 linked to one Fm-3m phase. It exports plain arrays
+after refining one shared cubic cell and the three bank-local Zero terms. The
+paired driver gates exact reflection positions, variance and alpha/beta chains,
+and reconstruction of every GSAS-II peak-only bank from the same extracted
+intensities. The reviewed minimum reconstruction correlation is 0.999902 and
+the maximum relative L2 difference is 0.013851. PhaseSmith and GSAS-II return
+cells 3.523612 and 3.523895 A, a 0.000283 A difference. Their Le Bail Rwp values
+are reported but not cross-gated because the intensity redistribution and
+background decompositions are different. GSAS-II selects 4,430 points per bank
+at the nominal limits while PhaseSmith's inclusive explicit-center convention
+selects 4,431; both counts are asserted.
+
 `scripts/benchmark_nist_srm660c.py` reads one bounded pdCIF member directly
 from the checksum-pinned NIST archive and fits the same 17-parameter physical
 empirical subset as PhaseSmith. NIST's millimetre specimen displacement is
@@ -270,6 +283,12 @@ uv run python benchmarks/compare_gsasii_powgen_tof.py \
   --gsas-root /path/to/pinned/GSAS-II \
   --binary-dir /path/to/compatible/GSASII-bin/platform-directory \
   --data-directory validation/data/powgen-lab6-tof-calibration
+
+uv run python benchmarks/compare_gsasii_nickel_tof_multibank.py \
+  --gsas-python /path/to/gsas/python \
+  --gsas-root /path/to/pinned/GSAS-II \
+  --binary-dir /path/to/compatible/GSASII-bin/platform-directory \
+  --data-directory validation/data/lanl-nickel-tof
 
 uv run python benchmarks/compare_gsasii_rowles_qpa.py \
   --gsas-python /path/to/gsas/python \

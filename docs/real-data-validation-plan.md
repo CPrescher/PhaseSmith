@@ -235,9 +235,12 @@ now supplies the native real-data gate: banks 2--4 use their distinct measured
 grids and profile-function-1 calibrations while sharing the complete 102-family
 Fm-3m topology. One cubic cell and three local Zero terms refine jointly over
 13,293 observations to Rwp 0.02273306 and a=3.52361196 A; every bank is below
-Rwp 0.024 and the analytical system has rank 4/4. The next validation increment
-is a plain-array pinned GSAS-II multi-bank oracle. Structural TOF Rietveld
-refinement remains future scope and is not implied by this acceptance.
+Rwp 0.024 and the analytical system has rank 4/4. The plain-array pinned
+GSAS-II multi-bank oracle now also passes: calibration quantities agree at
+floating-point scale, same-intensity bank reconstructions exceed 0.9999
+correlation and remain below 0.015 relative L2, and the shared cells differ by
+0.000283 A. Structural TOF Rietveld refinement remains future scope and is not
+implied by this acceptance.
 
 ## Review gates
 

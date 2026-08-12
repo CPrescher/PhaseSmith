@@ -120,6 +120,18 @@ terms) have numerical rank four and expose lattice/instrument correlations.
 Acceptance requires joint and per-bank Rwp <= 0.03, |a-3.5234 A| <= 0.0005 A,
 and rank 4/4.
 
-This is a native real-data acceptance gate, not yet a GSAS-II multi-bank oracle.
-It remains Le Bail extraction with fixed reflection identities, not structural
-TOF Rietveld.
+The pinned GSAS-II oracle builds one independent three-histogram project and
+exports only plain arrays. Across banks 2--4, PhaseSmith reproduces GSAS-II's
+reflection positions exactly, variance to floating-point precision, and alpha/
+beta chains within 4.5e-16. Reconstructing each GSAS-II peak-only pattern from
+the same extracted intensities gives correlations 0.999902--0.999936 and
+relative L2 differences 0.01196--0.01385. The independently refined cells are
+3.52361196 A and 3.52389544 A, differing by 0.00028349 A and both passing their
+declared reference-cell gates.
+
+GSAS-II selects 4,430 samples per bank at the nominal limits while the
+PhaseSmith inclusive bin-center convention selects 4,431; the oracle asserts
+both rather than trimming one implementation silently. Workflow Rwp values are
+reported but are not a parity gate because the Le Bail redistribution and
+background decompositions differ. This remains extraction with fixed
+reflection identities, not structural TOF Rietveld.
