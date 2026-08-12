@@ -64,6 +64,8 @@ The public composer also consumes LANL nickel bank 2 with an explicit
 1101.6--8189.6 us selection before type-4 incident normalization. This gates
 the same facility-neutral API on a packed profile-function-1 bank and an
 88.05-degree detector rather than only POWGEN SLOG/profile-function-3 input.
+Combining bank 2--4 requests with an explicit 0.2--3.0 A range produces the
+186-family shared structural topology and ordered provenance for all banks.
 
 Each manifest declares whether it is an acceptance, oracle-integrity, holdout,
 or capability case and records its reviewed expected status. Schema-2 suite

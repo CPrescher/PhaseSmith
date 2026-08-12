@@ -281,6 +281,13 @@ domain. The explicit range is retained in provenance; facility names do not
 choose it. A supplied full-bank fixed background is sliced with the same
 indices, while an already selected background must match the selected samples.
 
+`StructuralTofMultiBankInput.combine_file_banks(...)` joins one-bank requests
+only after checking their exact common structure and numerical controls,
+one-bank provenance, and unique bank IDs. The caller supplies a shared inclusive
+d-spacing range; the composer regenerates one common reflection topology and
+retains ordered provenance for every bank. This avoids silently unioning
+different bank-visible topologies or choosing a facility-specific range.
+
 `StructuralTofRefinementOptions` mirrors only the dense native solver controls.
 The result returns the updated phase and banks, immutable calculated/profile/
 background and reflection-intensity arrays, the stable physical parameter set,
@@ -396,8 +403,10 @@ different facility/profile/input convention. An explicit 1101.6--8189.6 us
 interval selects 4,431 samples before type-4 incident normalization, imports
 the 88.05-degree geometry, and generates 100 families whose centers lie inside
 that interval. The native LANL structural acceptance uses a deliberately wider
-102-family d-space topology, so reflection-count equality is not asserted
-across those two declared boundary conventions.
+186-family shared 0.2--3.0 A d-space topology, so reflection-count equality is
+not asserted across those two declared boundary conventions. Combining public
+bank 2--4 requests with that same d-spacing declaration reproduces the
+186-family shared topology and retains three ordered provenance records.
 
 ## References
 

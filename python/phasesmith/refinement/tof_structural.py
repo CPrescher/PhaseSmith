@@ -27,7 +27,7 @@ from ..phase import RietveldPhase, StructuralReflectionBatch
 from ..scattering import NeutronNuclear
 from ..structural_calculation import _native_phase
 from ..structure import CrystalStructure
-from ..symmetry import PreparedReflectionGenerator, TofRange
+from ..symmetry import DSpacingRange, PreparedReflectionGenerator, TofRange
 from .core import (
     Bounds,
     ParameterKey,
@@ -111,6 +111,22 @@ class StructuralTofRequestProvenance:
             character not in "0123456789abcdef" for character in self.fixed_background_sha256
         ):
             raise ValueError("fixed_background_sha256 must be a lowercase SHA-256 digest")
+
+
+@dataclass(frozen=True, slots=True)
+class StructuralTofMultiBankProvenance:
+    """Ordered source and reduction records for every composed detector bank."""
+
+    banks: tuple[StructuralTofRequestProvenance, ...]
+
+    def __post_init__(self) -> None:
+        banks = tuple(self.banks)
+        if not banks or any(not isinstance(bank, StructuralTofRequestProvenance) for bank in banks):
+            raise ValueError("banks must contain at least one structural TOF provenance record")
+        identities = [(bank.pattern.sha256, bank.instrument.sha256, bank.bank) for bank in banks]
+        if len(set(identities)) != len(identities):
+            raise ValueError("structural TOF provenance bank identities must be unique")
+        object.__setattr__(self, "banks", banks)
 
 
 def _source_digest(source: str | Path, max_bytes: int) -> StructuralTofSourceDigest:
@@ -273,7 +289,7 @@ class StructuralTofMultiBankInput:
     tail_log: float = 20.0
     use_uncertainty: bool = True
     execution: ExecutionPolicy = field(default_factory=ExecutionPolicy)
-    provenance: StructuralTofRequestProvenance | None = None
+    provenance: StructuralTofMultiBankProvenance | None = None
     _native_phase: object = field(init=False, repr=False, compare=False)
 
     def __post_init__(self) -> None:
@@ -313,9 +329,11 @@ class StructuralTofMultiBankInput:
         if not isinstance(self.execution, ExecutionPolicy):
             raise TypeError("execution must be an ExecutionPolicy")
         if self.provenance is not None and not isinstance(
-            self.provenance, StructuralTofRequestProvenance
+            self.provenance, StructuralTofMultiBankProvenance
         ):
-            raise TypeError("provenance must be a StructuralTofRequestProvenance or None")
+            raise TypeError("provenance must be a StructuralTofMultiBankProvenance or None")
+        if self.provenance is not None and len(self.provenance.banks) != len(banks):
+            raise ValueError("provenance must contain exactly one record per structural TOF bank")
         native = _native_phase(self.phase, self.execution)
         if native is None:
             raise TypeError("phase cannot be represented by the native structural TOF engine")
@@ -467,21 +485,91 @@ class StructuralTofMultiBankInput:
         background_digest = hashlib.sha256(
             np.ascontiguousarray(pattern.background, dtype="<f8").tobytes(order="C")
         ).hexdigest()
-        provenance = StructuralTofRequestProvenance(
-            pattern_digest,
-            instrument_digest,
-            structure_digest,
-            reduction_digest,
-            reduction_path is None,
-            bank,
-            incident_normalization,
-            correction,
-            sample_corrections,
-            selected_tof_range,
-            fixed_background is not None,
-            background_digest,
+        provenance = StructuralTofMultiBankProvenance(
+            (
+                StructuralTofRequestProvenance(
+                    pattern_digest,
+                    instrument_digest,
+                    structure_digest,
+                    reduction_digest,
+                    reduction_path is None,
+                    bank,
+                    incident_normalization,
+                    correction,
+                    sample_corrections,
+                    selected_tof_range,
+                    fixed_background is not None,
+                    background_digest,
+                ),
+            )
         )
         return cls(phase, (structural_bank,), provenance=provenance)
+
+    @classmethod
+    def combine_file_banks(
+        cls,
+        requests: tuple[StructuralTofMultiBankInput, ...],
+        *,
+        min_d_angstrom: float,
+        max_d_angstrom: float,
+    ) -> StructuralTofMultiBankInput:
+        """Combine explicit one-bank file requests into one shared-topology objective."""
+
+        requests = tuple(requests)
+        if not requests or any(not isinstance(request, cls) for request in requests):
+            raise ValueError("requests must contain at least one structural TOF input")
+        if any(len(request.banks) != 1 for request in requests):
+            raise ValueError("combine_file_banks requires one bank in every input request")
+        if any(request.provenance is None for request in requests):
+            raise ValueError("combine_file_banks requires file provenance for every request")
+        first = requests[0]
+        controls = (
+            first.selection,
+            first.lattice_bounds,
+            first.support_fwhm,
+            first.tail_log,
+            first.use_uncertainty,
+            first.execution,
+        )
+        if any(
+            request.phase.structure != first.phase.structure
+            or (
+                request.selection,
+                request.lattice_bounds,
+                request.support_fwhm,
+                request.tail_log,
+                request.use_uncertainty,
+                request.execution,
+            )
+            != controls
+            for request in requests[1:]
+        ):
+            raise ValueError("combined file banks must share one structure and numerical controls")
+        banks = tuple(request.banks[0] for request in requests)
+        if len({bank.bank_id for bank in banks}) != len(banks):
+            raise ValueError("combined file banks must have unique bank IDs")
+        generated = PreparedReflectionGenerator(first.phase.structure.space_group).generate(
+            first.phase.structure.cell,
+            DSpacingRange(min_d_angstrom, max_d_angstrom),
+        )
+        phase = replace(
+            first.phase,
+            reflections=StructuralReflectionBatch.from_generated(generated),
+        )
+        provenance = StructuralTofMultiBankProvenance(
+            tuple(request.provenance.banks[0] for request in requests if request.provenance)
+        )
+        return cls(
+            phase=phase,
+            banks=banks,
+            selection=first.selection,
+            lattice_bounds=first.lattice_bounds,
+            support_fwhm=first.support_fwhm,
+            tail_log=first.tail_log,
+            use_uncertainty=first.use_uncertainty,
+            execution=first.execution,
+            provenance=provenance,
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -533,12 +621,12 @@ class StructuralTofMultiBankCheckpoint:
     def __init__(
         self,
         native: object,
-        provenance: StructuralTofRequestProvenance | None = None,
+        provenance: StructuralTofMultiBankProvenance | None = None,
     ) -> None:
         if not isinstance(native, _core._StructuralTofMultiBankCheckpoint):
             raise TypeError("native must be a PhaseSmith structural TOF checkpoint")
-        if provenance is not None and not isinstance(provenance, StructuralTofRequestProvenance):
-            raise TypeError("provenance must be a StructuralTofRequestProvenance or None")
+        if provenance is not None and not isinstance(provenance, StructuralTofMultiBankProvenance):
+            raise TypeError("provenance must be a StructuralTofMultiBankProvenance or None")
         self._native = native
         self._provenance = provenance
 

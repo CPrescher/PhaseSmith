@@ -205,20 +205,19 @@ def test_powgen_public_structural_file_request_is_provenance_complete() -> None:
     assert request.phase.reflections.reflection_count == 330
     assert request.banks[0].geometry.two_theta_deg == 90.0
     assert request.provenance is not None
-    assert request.provenance.pattern.sha256 == (
+    provenance = request.provenance.banks[0]
+    assert provenance.pattern.sha256 == (
         "ff7a408451e75d23e828ab2bb35a061a53517ff3430331bffeed21fcbc87d69c"
     )
-    assert request.provenance.instrument.sha256 == (
+    assert provenance.instrument.sha256 == (
         "1a098c260555d27642ab0501708c5d9058c5836fb201dec5bc7ab9880cea1cb8"
     )
-    assert (
-        request.provenance.structure.sha256 == sha256(POWGEN_LAB6_CIF.encode("utf-8")).hexdigest()
-    )
-    assert request.provenance.reduction == request.provenance.pattern
-    assert request.provenance.reduction_embedded_in_pattern
-    assert request.provenance.incident_normalization == "already_normalized"
-    assert request.provenance.correction == "tof_lorentz"
-    assert request.provenance.sample_corrections == "none"
+    assert provenance.structure.sha256 == sha256(POWGEN_LAB6_CIF.encode("utf-8")).hexdigest()
+    assert provenance.reduction == provenance.pattern
+    assert provenance.reduction_embedded_in_pattern
+    assert provenance.incident_normalization == "already_normalized"
+    assert provenance.correction == "tof_lorentz"
+    assert provenance.sample_corrections == "none"
 
 
 @pytest.mark.real_data
@@ -278,17 +277,52 @@ def test_lanl_public_structural_file_request_normalizes_selected_range() -> None
     assert request.phase.reflections.reflection_count == 100
     assert request.banks[0].geometry.two_theta_deg == 88.05
     assert request.provenance is not None
-    assert request.provenance.pattern.sha256 == (
+    provenance = request.provenance.banks[0]
+    assert provenance.pattern.sha256 == (
         "bfe2afd6843a11dc1935cbbdb3ca05962c3242b9ddc60baa6a4ff6a48491c3e7"
     )
-    assert request.provenance.instrument.sha256 == (
+    assert provenance.instrument.sha256 == (
         "9a4f06cb560c8b7f783fd0773b37814dae1d705042087e66f8cd2be719477038"
     )
-    assert (
-        request.provenance.structure.sha256 == sha256(LANL_NICKEL_CIF.encode("utf-8")).hexdigest()
+    assert provenance.structure.sha256 == sha256(LANL_NICKEL_CIF.encode("utf-8")).hexdigest()
+    assert provenance.tof_range_us == (1_101.6, 8_189.6)
+    assert provenance.incident_normalization == "calibration_type4"
+
+    requests = (
+        request,
+        *(
+            StructuralTofMultiBankInput.from_files(
+                directory / "nickel.raw",
+                directory / "inst_tof.prm",
+                LANL_NICKEL_CIF,
+                bank=bank,
+                incident_normalization="calibration_type4",
+                correction="tof_lorentz",
+                sample_corrections="none",
+                tof_range_us=(1_101.6, 8_189.6),
+                search_min_d_angstrom=0.2,
+                search_max_d_angstrom=3.0,
+            )
+            for bank in (3, 4)
+        ),
     )
-    assert request.provenance.tof_range_us == (1_101.6, 8_189.6)
-    assert request.provenance.incident_normalization == "calibration_type4"
+    combined = StructuralTofMultiBankInput.combine_file_banks(
+        requests,
+        min_d_angstrom=0.2,
+        max_d_angstrom=3.0,
+    )
+    assert [bank.bank_id for bank in combined.banks] == ["bank-2", "bank-3", "bank-4"]
+    assert [bank.pattern.tof_us.size for bank in combined.banks] == [4_431, 4_431, 4_431]
+    assert [bank.geometry.two_theta_deg for bank in combined.banks] == [88.05, 148.29, 148.29]
+    assert combined.phase.reflections.reflection_count == 186
+    assert combined.provenance is not None
+    assert [item.bank for item in combined.provenance.banks] == [2, 3, 4]
+    with pytest.raises(ValueError, match="unique bank IDs"):
+        StructuralTofMultiBankInput.combine_file_banks(
+            (request, request),
+            min_d_angstrom=0.2,
+            max_d_angstrom=3.0,
+        )
 
 
 @pytest.mark.real_data

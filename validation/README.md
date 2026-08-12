@@ -153,9 +153,11 @@ have deliberately different meanings:
   The public one-bank file composer separately gates bank 2 with an explicit
   1101.6--8189.6 µs interval applied before incident normalization. It returns
   4,431 samples, 88.05-degree geometry, and 100 reflection centers inside the
-  selected interval with complete source/range provenance. The native
-  multi-bank acceptance retains 102 d-space families by a deliberately wider
-  topology convention.
+  selected interval with complete source/range provenance. Combining public
+  requests for banks 2--4 with the declared 0.2--3.0 Å range produces the same
+  186-family shared topology used by the native structural acceptance and
+  retains three ordered provenance records. The report's separate 102-family
+  count belongs to its bank-2 Le Bail gate.
 
   Run the two pinned multi-bank comparisons with an exact GSAS-II checkout:
 

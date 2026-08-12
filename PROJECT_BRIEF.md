@@ -1140,6 +1140,9 @@ provenance. This closes a non-POWGEN portability issue for raw banks that extend
 beyond an incident-spectrum calibration domain. On pinned LANL nickel bank 2,
 1101.6--8189.6 us selects 4,431 samples, applies type-4 normalization, imports
 88.05-degree geometry, and produces 100 center-visible reflection families.
+`combine_file_banks(...)` joins explicit bank 2--4 requests into the declared
+shared 0.2--3.0 A topology of 186 families while retaining ordered per-bank
+provenance.
 The structural TOF accepted-state solver now also preserves the established
 special-position coordinate convention. Symmetry-reduced `q` values are local
 tangent changes applied once to the current phase; after acceptance the moved

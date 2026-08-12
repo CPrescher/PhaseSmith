@@ -1591,7 +1591,10 @@ slices observations/uncertainties/mask/full-bank fixed background first, then
 normalizes and generates the visible topology. The declared 1101.6--8189.6 us
 interval and all file hashes are retained in provenance; it yields 4,431
 samples, 88.05-degree geometry, and 100 center-visible families. No facility
-name chooses the interval.
+name chooses the interval. `combine_file_banks(...)` then validates common
+structure/numerical controls and unique bank IDs, regenerates one explicit
+shared 0.2--3.0 A topology with 186 families, and retains the ordered bank 2--4
+provenance records.
 The structural TOF solver's special-position state audit is complete.
 Symmetry-reduced `q` coordinates are local tangent changes, so accepted
 physical displacements remain in the phase while the next solver/checkpoint

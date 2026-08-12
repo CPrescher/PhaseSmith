@@ -18,6 +18,7 @@ from phasesmith.refinement import (
     StructuralTofBank,
     StructuralTofCancellation,
     StructuralTofMultiBankInput,
+    StructuralTofMultiBankProvenance,
     StructuralTofRefinementOptions,
     StructuralTofRequestProvenance,
     StructuralTofSelection,
@@ -236,15 +237,16 @@ Ni1 Ni 0 0 0
     assert request.banks[0].correction == phasesmith.TimeOfFlightNeutronLorentz(90.0)
     assert request.phase.reflections.reflection_count > 0
     assert request.provenance is not None
-    assert request.provenance.pattern.source_name == str(pattern_path)
-    assert request.provenance.pattern.sha256 == sha256(pattern_path.read_bytes()).hexdigest()
-    assert request.provenance.instrument.sha256 == sha256(instrument_path.read_bytes()).hexdigest()
-    assert request.provenance.structure.sha256 == sha256(cif_path.read_bytes()).hexdigest()
-    assert request.provenance.reduction == request.provenance.pattern
-    assert request.provenance.reduction_embedded_in_pattern
-    assert request.provenance.sample_corrections == "none"
-    assert not request.provenance.fixed_background_supplied
-    assert len(request.provenance.fixed_background_sha256) == 64
+    provenance = request.provenance.banks[0]
+    assert provenance.pattern.source_name == str(pattern_path)
+    assert provenance.pattern.sha256 == sha256(pattern_path.read_bytes()).hexdigest()
+    assert provenance.instrument.sha256 == sha256(instrument_path.read_bytes()).hexdigest()
+    assert provenance.structure.sha256 == sha256(cif_path.read_bytes()).hexdigest()
+    assert provenance.reduction == provenance.pattern
+    assert provenance.reduction_embedded_in_pattern
+    assert provenance.sample_corrections == "none"
+    assert not provenance.fixed_background_supplied
+    assert len(provenance.fixed_background_sha256) == 64
     with pytest.raises(ValueError, match="requires an incident spectrum"):
         StructuralTofMultiBankInput.from_files(
             pattern_path,
@@ -294,12 +296,13 @@ Ni1 Ni 0 0 0
         request.banks[0].pattern.uncertainty / 2.0,
     )
     assert normalized.provenance is not None
-    assert normalized.provenance.incident_normalization == "calibration_type4"
-    assert normalized.provenance.correction == "already_applied"
-    assert normalized.provenance.sample_corrections == "already_applied"
-    assert not normalized.provenance.reduction_embedded_in_pattern
-    assert normalized.provenance.reduction.source_name == str(reduction_path)
-    assert normalized.provenance.reduction.sha256 == sha256(reduction_path.read_bytes()).hexdigest()
+    normalized_provenance = normalized.provenance.banks[0]
+    assert normalized_provenance.incident_normalization == "calibration_type4"
+    assert normalized_provenance.correction == "already_applied"
+    assert normalized_provenance.sample_corrections == "already_applied"
+    assert not normalized_provenance.reduction_embedded_in_pattern
+    assert normalized_provenance.reduction.source_name == str(reduction_path)
+    assert normalized_provenance.reduction.sha256 == sha256(reduction_path.read_bytes()).hexdigest()
 
     full_background = np.arange(request.banks[0].pattern.tof_us.size, dtype=np.float64)
     cropped = StructuralTofMultiBankInput.from_files(
@@ -323,8 +326,8 @@ Ni1 Ni 0 0 0
         full_background[selected] / 2.0,
     )
     assert cropped.provenance is not None
-    assert cropped.provenance.tof_range_us == (4_200.0, 5_800.0)
-    assert cropped.provenance.fixed_background_supplied
+    assert cropped.provenance.banks[0].tof_range_us == (4_200.0, 5_800.0)
+    assert cropped.provenance.banks[0].fixed_background_supplied
 
     with pytest.raises(ValueError, match="named correction models are not implemented"):
         StructuralTofMultiBankInput.from_files(
@@ -352,7 +355,7 @@ Ni1 Ni 0 0 0
 def test_python_structural_tof_checkpoint_resumes_exactly() -> None:
     request, _ = _request()
     digest = StructuralTofSourceDigest(None, sha256(b"").hexdigest(), 0)
-    provenance = StructuralTofRequestProvenance(
+    first_provenance = StructuralTofRequestProvenance(
         digest,
         digest,
         digest,
@@ -365,6 +368,9 @@ def test_python_structural_tof_checkpoint_resumes_exactly() -> None:
         None,
         True,
         sha256(request.banks[0].pattern.background.tobytes()).hexdigest(),
+    )
+    provenance = StructuralTofMultiBankProvenance(
+        (first_provenance, replace(first_provenance, bank=2))
     )
     request = replace(request, provenance=provenance)
     uninterrupted = refine_structural_tof_multibank(request, _options(20))
