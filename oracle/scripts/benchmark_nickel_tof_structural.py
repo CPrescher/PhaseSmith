@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Run the LANL nickel multi-bank TOF case with pinned external GSAS-II.
+"""Run structural LANL nickel TOF refinement with pinned external GSAS-II.
 
-This worker imports no PhaseSmith module. Public scripting APIs create one
-phase linked to banks 2--4 and refine the shared cell plus bank-local Zero
-terms. The version-gated ``newLeBail`` call is the only workflow probe; output
-is restricted to plain JSON and NumPy arrays.
+This isolated worker imports no PhaseSmith module. Public scripting APIs build
+one Fm-3m Ni phase linked to banks 2--4, refine bank-local background, scale,
+and Zero together with the shared cubic cell and Ni Uiso, then export only
+plain JSON and NumPy arrays.
 """
 
 from __future__ import annotations
@@ -24,27 +24,9 @@ from gsas_bank_view import write_gsas_bank_view
 PINNED_REVISION = "c0bc79b259cdf0065480b5fbd57674ddf12c4a23"
 BANKS = (2, 3, 4)
 FIT_LIMITS_US = (1_101.6, 8_189.6)
-INITIAL_CELL_ANGSTROM = 3.523
-REFLECTION_COLUMNS = (
-    "h",
-    "k",
-    "l",
-    "multiplicity",
-    "d_spacing_angstrom",
-    "position_us",
-    "sigma2_us2",
-    "gamma_us",
-    "f_obs2",
-    "f_calc2",
-    "phase_deg",
-    "intensity_correction",
-    "alpha_per_us",
-    "beta_per_us",
-    "wavelength_angstrom",
-    "preferred_orientation",
-    "transmission",
-    "extinction",
-)
+INITIAL_CELL_ANGSTROM = 3.522
+INTENSITY_UNIT_SCALE = 1.0e6
+REFERENCE_HAP_SCALE = 1.0
 
 
 def parse_args() -> argparse.Namespace:
@@ -75,7 +57,7 @@ def sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def configure_gsasii(root: Path, binary_dir: Path) -> tuple[Any, Any, Any]:
+def configure_gsasii(root: Path, binary_dir: Path) -> tuple[Any, Any]:
     sys.path[:0] = [str(root), str(binary_dir)]
     from GSASII import GSASIIpath
 
@@ -84,13 +66,13 @@ def configure_gsasii(root: Path, binary_dir: Path) -> tuple[Any, Any, Any]:
     GSASIIpath.BinaryPathFailed = False
     GSASIIpath.LoadConfig()
     GSASIIpath.AddConfigValue({"Multiprocessing_cores": 0})
-    from GSASII import GSASIIscriptable, GSASIIstrMain
+    from GSASII import GSASIIscriptable
 
-    return GSASIIpath, GSASIIscriptable, GSASIIstrMain
+    return GSASIIpath, GSASIIscriptable
 
 
 def neutralize_sample_broadening(phase: Any) -> None:
-    """Set every bank's HAP broadening to the instrument-only limit."""
+    """Set each HAP broadening and preferred-orientation term to neutral."""
 
     for key, configure in (
         ("Size", lambda current: ["isotropic", [1.0e12, current[1][1], 1.0], *current[2:]]),
@@ -104,27 +86,7 @@ def neutralize_sample_broadening(phase: Any) -> None:
             phase.setHAPentryValue(path, configure(current))
 
 
-def instrument_values(histogram: Any) -> dict[str, float]:
-    instrument = histogram.data["Instrument Parameters"][0]
-    names = (
-        "Zero",
-        "difC",
-        "difA",
-        "difB",
-        "alpha",
-        "beta-0",
-        "beta-1",
-        "sig-0",
-        "sig-1",
-        "sig-2",
-        "X",
-        "Y",
-        "Z",
-    )
-    return {name: float(instrument[name][1]) for name in names}
-
-
-def selected_arrays(histogram: Any) -> tuple[dict[str, np.ndarray], np.ndarray]:
+def selected_arrays(histogram: Any) -> dict[str, np.ndarray]:
     arrays = {
         "x_us": np.asarray(histogram.getdata("X"), dtype=np.float64),
         "observed_y": np.asarray(histogram.getdata("Yobs"), dtype=np.float64),
@@ -135,20 +97,55 @@ def selected_arrays(histogram: Any) -> tuple[dict[str, np.ndarray], np.ndarray]:
     selected = (arrays["x_us"] >= FIT_LIMITS_US[0]) & (arrays["x_us"] <= FIT_LIMITS_US[1])
     if int(np.count_nonzero(selected)) != 4_430:
         raise RuntimeError("unexpected LANL nickel selected sample count")
-    return {name: np.ascontiguousarray(value[selected]) for name, value in arrays.items()}, selected
+    return {name: np.ascontiguousarray(values[selected]) for name, values in arrays.items()}
+
+
+def instrument_values(histogram: Any) -> dict[str, float]:
+    instrument = histogram.data["Instrument Parameters"][0]
+    return {name: float(instrument[name][1]) for name in ("Zero", "difC", "difA", "difB")}
+
+
+def rescale_intensity_units(histogram: Any) -> None:
+    """Move density-valued observations into a stable GSAS-II scale range."""
+
+    observed = histogram.data["data"][1][1]
+    weight = histogram.data["data"][1][2]
+    observed *= INTENSITY_UNIT_SCALE
+    weight /= INTENSITY_UNIT_SCALE**2
+
+
+def projected_hap_scale(histogram: Any) -> float:
+    """Project the calculated structural profile onto one bank's observations."""
+
+    arrays = selected_arrays(histogram)
+    profile = arrays["calculated_y"] - arrays["background_y"]
+    target = arrays["observed_y"] - arrays["background_y"]
+    weight = arrays["weight"]
+    denominator = float(np.dot(weight, profile * profile))
+    numerator = float(np.dot(weight, profile * target))
+    scale = REFERENCE_HAP_SCALE * numerator / denominator
+    if not np.isfinite(scale) or scale <= 1.0e-12:
+        raise RuntimeError(
+            f"invalid projected HAP scale for {histogram.name}: {scale!r}; "
+            f"numerator={numerator!r}, denominator={denominator!r}, "
+            f"profile_range=({profile.min()!r}, {profile.max()!r}), "
+            f"target_range=({target.min()!r}, {target.max()!r}), "
+            f"profile_peak_us={arrays['x_us'][int(np.argmax(profile))]!r}, "
+            f"target_peak_us={arrays['x_us'][int(np.argmax(target))]!r}"
+        )
+    return scale
 
 
 def run_workflow(
     scripting: Any,
-    structure_main: Any,
     data: Path,
     cycles: int,
 ) -> tuple[dict[str, Any], dict[str, np.ndarray]]:
     if cycles < 1:
         raise ValueError("cycles must be positive")
-    with tempfile.TemporaryDirectory(prefix="phasesmith-gsasii-nickel-") as temporary:
+    with tempfile.TemporaryDirectory(prefix="phasesmith-gsasii-nickel-structural-") as temporary:
         work = Path(temporary)
-        project = scripting.G2Project(newgpx=str(work / "nickel.gpx"))
+        project = scripting.G2Project(newgpx=str(work / "nickel-structural.gpx"))
         bank_data = {}
         for bank in BANKS:
             bank_data[bank] = work / f"nickel-bank-{bank}.raw"
@@ -172,31 +169,57 @@ def run_workflow(
         phase.add_atom(0.0, 0.0, 0.0, element="Ni", lbl="Ni", occ=1.0, uiso=0.01)
         neutralize_sample_broadening(phase)
         for histogram in histograms:
+            rescale_intensity_units(histogram)
+            phase.data["Histograms"][histogram.name]["Scale"][0] = REFERENCE_HAP_SCALE
             histogram.set_refinements(
                 {
                     "Limits": list(FIT_LIMITS_US),
                     "Background": {
                         "type": "chebyschev-1",
-                        "refine": True,
+                        "refine": False,
                         "no. coeffs": 12,
                     },
                 }
             )
+            background = histogram.data["Background"][0]
+            background[3:] = [0.0] * int(background[2])
+            background[3] = float(np.median(histogram.getdata("Yobs")))
             histogram.data["Sample Parameters"]["Scale"][1] = False
         phase.set_HAP_refinements({"Scale": False})
         project.set_Controls("cycles", 1)
         project.do_refinements([{}], outputnames=[None])
-        phase.set_refinements({"LeBail": True})
-        project.index_ids()
-        structure_main.Refine(project.filename, newLeBail=True)
-        project.reload()
+        phase = project.phase("Ni")
+        histograms = [project.histogram(index) for index in range(len(BANKS))]
+        starting_scales = {
+            histogram.name: projected_hap_scale(histogram) for histogram in histograms
+        }
+        for histogram in histograms:
+            phase.data["Histograms"][histogram.name]["Scale"][0] = starting_scales[
+                histogram.name
+            ]
+        phase.set_HAP_refinements({"Scale": True})
+        project.set_Controls("cycles", cycles)
+        project.refine(makeBack=False)
+        phase = project.phase("Ni")
+        histograms = [project.histogram(index) for index in range(len(BANKS))]
+        for histogram in histograms:
+            histogram.set_refinements(
+                {
+                    "Background": {
+                        "type": "chebyschev-1",
+                        "refine": True,
+                        "no. coeffs": 12,
+                    }
+                }
+            )
+        phase.set_HAP_refinements({"Scale": True})
+        project.refine(makeBack=False)
 
         phase = project.phase("Ni")
-        phase.set_refinements({"Cell": True})
+        phase.set_refinements({"Cell": True, "Atoms": {"all": "U"}})
         histograms = [project.histogram(index) for index in range(len(BANKS))]
         for histogram in histograms:
             histogram.set_refinements({"Instrument Parameters": ["Zero"]})
-        project.set_Controls("cycles", cycles)
         project.refine(makeBack=False)
 
         phase = project.phase("Ni")
@@ -206,21 +229,16 @@ def run_workflow(
         joint_numerator = 0.0
         joint_denominator = 0.0
         for bank, histogram in zip(BANKS, histograms, strict=True):
-            selected_arrays_by_name, _ = selected_arrays(histogram)
-            reflections = np.ascontiguousarray(
+            arrays = selected_arrays(histogram)
+            for name, values in arrays.items():
+                archive[f"bank_{bank}_{name}"] = values
+            archive[f"bank_{bank}_reflection_list"] = np.ascontiguousarray(
                 histogram.reflections()["Ni"]["RefList"], dtype=np.float64
             )
-            if reflections.ndim != 2 or reflections.shape[1] != len(REFLECTION_COLUMNS):
-                raise RuntimeError(
-                    f"unexpected bank {bank} reflection-list shape {reflections.shape}"
-                )
-            for name, values in selected_arrays_by_name.items():
-                archive[f"bank_{bank}_{name}"] = values
-            archive[f"bank_{bank}_reflection_list"] = reflections
-            observed = selected_arrays_by_name["observed_y"]
-            calculated = selected_arrays_by_name["calculated_y"]
-            background = selected_arrays_by_name["background_y"]
-            weight = selected_arrays_by_name["weight"]
+            observed = arrays["observed_y"]
+            calculated = arrays["calculated_y"]
+            background = arrays["background_y"]
+            weight = arrays["weight"]
             residual = calculated - observed
             joint_numerator += float(np.dot(weight, residual * residual))
             joint_denominator += float(np.dot(weight, observed * observed))
@@ -228,21 +246,43 @@ def run_workflow(
                 {
                     "bank": bank,
                     "sample_count": int(observed.size),
-                    "reflection_count": int(reflections.shape[0]),
-                    "poisson_rwp": float(histogram.get_wR()) / 100.0,
+                    "reflection_count": len(histogram.reflections()["Ni"]["RefList"]),
+                    "starting_hap_scale": starting_scales[histogram.name],
+                    "hap_scale": float(phase.data["Histograms"][histogram.name]["Scale"][0]),
+                    "poisson_rwp": float(
+                        np.sqrt(
+                            np.dot(weight, residual * residual)
+                            / np.dot(weight, observed * observed)
+                        )
+                    ),
                     "profile_correlation": float(
                         np.corrcoef(observed - background, calculated - background)[0, 1]
                     ),
                     "instrument": instrument_values(histogram),
                 }
             )
+        if any(
+            not np.isfinite(item[metric])
+            for item in bank_results
+            for metric in ("hap_scale", "poisson_rwp", "profile_correlation")
+        ):
+            raise RuntimeError(f"non-finite structural result: {bank_results!r}")
         cell = phase.get_cell()
+        atoms = phase.atoms()
+        if len(atoms) != 1:
+            raise RuntimeError("expected one Ni asymmetric-unit site")
+        covariance = project.data.get("Covariance", {}).get("data", {})
         return (
             {
                 "bank_count": len(bank_results),
                 "sample_count": sum(item["sample_count"] for item in bank_results),
                 "joint_poisson_rwp": float(np.sqrt(joint_numerator / joint_denominator)),
+                "minimum_profile_correlation": min(
+                    item["profile_correlation"] for item in bank_results
+                ),
                 "cell_angstrom": float(cell["length_a"]),
+                "u_iso_angstrom2": float(atoms[0].data[atoms[0].cia + 1]),
+                "free_parameter_count": len(covariance.get("varyList", [])),
                 "banks": bank_results,
                 "maximum_refinement_cycles": cycles,
             },
@@ -256,16 +296,14 @@ def main() -> None:
     revision = git_revision(root)
     if revision != PINNED_REVISION:
         raise RuntimeError("GSAS-II checkout does not match the recorded pin")
-    gsasii_path, scripting, structure_main = configure_gsasii(root, arguments.binary_dir.resolve())
-    result, arrays = run_workflow(
-        scripting, structure_main, arguments.data_directory.resolve(), arguments.cycles
-    )
+    gsasii_path, scripting = configure_gsasii(root, arguments.binary_dir.resolve())
+    result, arrays = run_workflow(scripting, arguments.data_directory.resolve(), arguments.cycles)
     arguments.archive.parent.mkdir(parents=True, exist_ok=True)
     np.savez_compressed(arguments.archive, **arrays)
     report = {
         "schema_version": 1,
         "implementation": "GSAS-II",
-        "scope": "lanl_nickel_multibank_tof_lebail_geometry",
+        "scope": "lanl_nickel_multibank_tof_structural",
         "revision": revision,
         "tag": int(gsasii_path.GetVersionNumber()),
         "input_sha256": {
@@ -275,15 +313,21 @@ def main() -> None:
             "banks": BANKS,
             "fit_limits_us": FIT_LIMITS_US,
             "fit_endpoint_convention": (
-                "GSAS-II selects 4430 samples per bank; PhaseSmith includes both explicit "
-                "bin centers and selects 4431"
+                "GSAS-II selects 4430 samples per bank; PhaseSmith includes 4431"
             ),
             "initial_cell_angstrom": INITIAL_CELL_ANGSTROM,
-            "refined_parameters": ["shared cubic cell", "bank-local Zero"],
+            "refined_parameters": [
+                "shared cubic cell",
+                "shared Ni Uiso",
+                "bank-local HAP scale",
+                "bank-local Zero",
+                "bank-local 12-term background",
+            ],
+            "incident_spectrum": "type-4 bank calibration applied by GSAS-II powder import",
+            "intensity_unit_scale": INTENSITY_UNIT_SCALE,
+            "scale_initialization": "weighted projection from a unit HAP reference scale",
             "sample_broadening": "effectively neutral fixed HAP values",
-            "background": "bank-local 12-term refined chebyschev-1",
-            "private_probe": ["GSASIIstrMain.Refine(newLeBail=True)"],
-            "reflection_columns": REFLECTION_COLUMNS,
+            "private_probe": [],
         },
         "archive": {"file": arguments.archive.name, "sha256": sha256(arguments.archive)},
         "result": result,

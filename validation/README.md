@@ -138,9 +138,25 @@ have deliberately different meanings:
   by that positive spectrum before fitting. One Fm-3m Ni phase shares its cubic
   cell and isotropic displacement across banks 2--4 while scale and Zero remain
   bank-local. The 13,293-point native result has Rwp 0.03278208, minimum bank
-  correlation 0.99749010, and a=3.52373113 A versus 3.5234 A. This is a native
-  real-data gate; the isolated structural GSAS-II comparison is tracked
-  separately.
+  correlation 0.99749010, a=3.52373113 A, and Uiso=0.00396507 A^2 versus
+  3.5234 A. The isolated pinned GSAS-II worker creates temporary one-bank views
+  so the public legacy loader cannot silently reuse the first RAW dataset. Its
+  13,290-center result has Rwp 0.03367362, minimum correlation 0.99730908,
+  a=3.52368699 A, and Uiso=0.00401813 A^2. The shared cell and Uiso differ by
+  only 0.00004414 A and 0.00005306 A^2. Each implementation must clear its own
+  Rwp/correlation gate; their Rwp delta is diagnostic because their background
+  and optimizer contracts differ.
+
+  Run the two pinned multi-bank comparisons with an exact GSAS-II checkout:
+
+  ```bash
+  python benchmarks/compare_gsasii_nickel_tof_multibank.py \
+    --gsas-python "$GSASII_PYTHON" --gsas-root "$PHASESMITH_GSASII_ROOT" \
+    --binary-dir "$PHASESMITH_GSASII_BINARY_DIR"
+  python benchmarks/compare_gsasii_nickel_tof_structural.py \
+    --gsas-python "$GSASII_PYTHON" --gsas-root "$PHASESMITH_GSASII_ROOT" \
+    --binary-dir "$PHASESMITH_GSASII_BINARY_DIR"
+  ```
 - `gsasii-pbso4-cw` adds official packed-GSAS X-ray and neutron patterns for
   the same PbSO4 specimen. The established Python validation keeps its staged
   per-probe comparison for continuity, while the Rust-only joint benchmark

@@ -990,9 +990,12 @@ determine local visibility. Unit 37c's pinned GSAS-II half is complete too. Its
 isolated worker creates one three-histogram project and exports only arrays and
 JSON. PhaseSmith matches reflection positions exactly, variance and tail-rate
 chains at floating-point scale, and the same-extracted-intensity bank patterns
-with minimum correlation 0.999902 and maximum relative L2 0.013851. The
-independent shared-cell results differ by 0.000283 A. The explicit GSAS-II and
-PhaseSmith endpoint conventions select 13,290 and 13,293 observations. Rwp is
+with minimum correlation 0.99999898 and maximum relative L2 0.00181021. The
+independent shared-cell results differ by 0.00025472 A. The isolated worker
+first writes checksum-derived one-bank views because the pinned scripting
+loader otherwise selects the first legacy RAW dataset when repeatedly called
+with `databank`. The explicit GSAS-II and PhaseSmith endpoint conventions
+select 13,290 and 13,293 observations. Rwp is
 context only because the Le Bail intensity and background procedures are not
 the same optimization contract.
 Unit 38's structural capability assessment is complete. Reciprocal-metric
@@ -1068,7 +1071,7 @@ complete last-accepted checkpoint while referencing project-owned observation
 arrays, initial instruments, and structural topology. Loads reconstruct typed
 domain objects, revalidate exact request/checkpoint identity, and retain
 formats 1--4 as structural-analysis-free migrations. The checksum-pinned
-structural real-data/oracle acceptance gate is the remaining Unit 38d slice.
+structural real-data/oracle acceptance gate described below completes Unit 38d.
 The native half of that acceptance gate now passes on the checksum-pinned LANL
 nickel banks 2--4. A facility-neutral `TofIncidentSpectrum` implements the
 published Maxwellian-plus-Chebyshev law, its analytical TOF derivative, and an
@@ -1079,16 +1082,23 @@ intensity before the structural fit; no facility name triggers correction.
 The joint Fm-3m neutron refinement shares the cubic cell and Ni isotropic
 displacement while refining three bank scales and Zero terms. Across 13,293
 observations it reaches Rwp 0.03278208, minimum bank profile correlation
-0.99749010, and a=3.52373113 A against 3.5234 A. The isolated pinned-oracle
-comparison remains the final Unit 38d gate.
+0.99749010, a=3.52373113 A against 3.5234 A, and Uiso=0.00396507 A^2. The
+isolated pinned-oracle comparison is complete. Its public-API-only worker
+refines the same shared cubic cell and Ni Uiso plus three bank-local HAP scales,
+Zero terms, and twelve-term backgrounds. GSAS-II reaches Rwp 0.03367362,
+minimum correlation 0.99730908, a=3.52368699 A, and Uiso=0.00401813 A^2 over
+13,290 centers. PhaseSmith and GSAS-II differ by 0.00004414 A in cell and
+0.00005306 A^2 in Uiso; both clear their independent Rwp/correlation gates.
+Rwp equality remains context rather than a false cross-gate because background
+and optimizer contracts differ. Unit 38d is complete.
 The public Python normalization slice is complete too.
 `TofIncidentSpectrum` independently evaluates the documented NumPy equation
 and analytical TOF derivative, returns immutable arrays, and transforms an
 observed `TofPowderPattern` by dividing observations, uncertainties, and fixed
 background consistently. `GsasTofInstrumentData` now carries the parsed
 spectrum without preventing non-GSAS callers from constructing the same typed
-record directly. The isolated structural oracle remains the only unfinished
-Unit 38d gate.
+record directly. The isolated structural oracle gate now passes as recorded
+above.
 The historical native-workflow comparison passes both Le Bail parity contracts
 and QARR 1g. Its unchanged QARR 1h acceptance recipe retains the reviewed
 profile-quality failure, rather than having thresholds relaxed. The newer

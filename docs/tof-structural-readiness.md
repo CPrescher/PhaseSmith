@@ -251,7 +251,7 @@ exact-resume checkpoint. `StructuralTofCancellation` reuses the thread-safe TOF
 cancellation token. End-to-end Python tests recover two distinct bank scales
 and Zero terms, resume bitwise-identical accepted state after cancellation, and
 recover a shared cubic lattice parameter. The structural real-data/oracle
-acceptance remains the final Unit 38d gate.
+acceptance described below completes the final Unit 38d gate.
 
 `StructuralTofMultiBankProjectState` is the Python-free application-host
 boundary for retaining these analyses. It requires unique analysis IDs and
@@ -284,12 +284,23 @@ The structural extension is split into reviewable numerical increments:
 4. **Complete:** compose the primitive into a guarded
    multi-bank structural objective and solver with shared structure/cell and
    bank-local scale, background, instrument, geometry, masks, and uncertainties.
-5. **In progress:** expose the same native contract through Python and project
+5. **Complete:** expose the same native contract through Python and project
    persistence, then validate a checksum-pinned real structural dataset against
-   an isolated pinned oracle. Python refinement and format-5 persistence are
-   complete. Native LANL nickel acceptance and public spectrum exposure are
-   complete after explicit incident normalization; the isolated-oracle
-   comparison remains.
+   an isolated pinned oracle. Python refinement, format-5 persistence, native
+   LANL nickel acceptance, public incident-spectrum exposure, and the
+   pinned-GSAS-II structural comparison all pass.
+
+The isolated worker uses only GSAS-II's public scripting API and exports plain
+JSON/NPZ records. It creates temporary checksum-derived one-bank RAW files
+before import because the pinned scripting loader otherwise selects the first
+dataset on repeated reads of this legacy multi-bank file. GSAS-II refines 44
+live variables: shared cell and Ni Uiso, three local scale and Zero terms, and
+36 local background coefficients. It reaches joint Rwp 0.03367362, minimum
+bank correlation 0.99730908, a=3.52368699 A, and Uiso=0.00401813 A^2 on 13,290
+selected centers. PhaseSmith's 13,293-center result differs by 0.00004414 A and
+0.00005306 A^2 in cell and Uiso. Both profiles pass independent quality gates;
+Rwp equality is not asserted across their different optimizer and background
+contracts.
 
 No stage may claim “all TOF beamlines” merely because another profile function
 fits. Acceptance requires a declared reduction/correction convention and bank

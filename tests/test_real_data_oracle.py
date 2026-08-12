@@ -225,6 +225,49 @@ def test_nickel_multibank_tof_geometry_is_on_par_with_pinned_gsasii(
 
 
 @pytest.mark.external_oracle
+def test_nickel_multibank_structural_tof_is_on_par_with_pinned_gsasii(
+    tmp_path: Path,
+) -> None:
+    dataset_id = "lanl-nickel-tof"
+    verify_validation_dataset(dataset_id, DATA_ROOT / dataset_id)
+    output = tmp_path / "nickel-structural-tof.json"
+    command = [
+        sys.executable,
+        "benchmarks/compare_gsasii_nickel_tof_structural.py",
+        "--gsas-python",
+        str(required_path("GSASII_PYTHON", directory=False)),
+        "--gsas-root",
+        str(required_path("PHASESMITH_GSASII_ROOT", directory=True)),
+        "--binary-dir",
+        str(required_path("PHASESMITH_GSASII_BINARY_DIR", directory=True)),
+        "--data-directory",
+        str(DATA_ROOT / dataset_id),
+        "--json-output",
+        str(output),
+    ]
+    process = subprocess.run(
+        command,
+        cwd=REPOSITORY_ROOT,
+        capture_output=True,
+        text=True,
+        env=dict(os.environ),
+    )
+    if process.returncode != 0:
+        pytest.fail(
+            "nickel structural TOF oracle comparison failed\n"
+            f"stdout:\n{process.stdout[-5000:]}\n"
+            f"stderr:\n{process.stderr[-5000:]}",
+            pytrace=False,
+        )
+    report = json.loads(output.read_text(encoding="utf-8"))
+    assert report["status"] == "passed"
+    assert report["oracle_revision"] == "c0bc79b259cdf0065480b5fbd57674ddf12c4a23"
+    assert all(report["identity_checks"].values())
+    assert all(check["passed"] for check in report["checks"].values())
+    assert report["workflow_context"]["rwp_is_a_cross_gate"] is False
+
+
+@pytest.mark.external_oracle
 def test_nist_certified_release_remains_the_primary_external_oracle() -> None:
     dataset_id = "nist-srm660c-lab6-xray"
     dataset = validation_dataset(dataset_id)

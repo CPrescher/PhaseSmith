@@ -324,10 +324,17 @@ pub fn run_nickel_tof_validation(
         )?,
         check(
             "tof_nickel_structural_fit",
-            structural.rwp <= 0.04 && structural.minimum_profile_correlation >= 0.995,
+            structural.rwp <= 0.04,
             "The native neutron structure-factor intensities reproduce every real bank without Le Bail intensity redistribution.",
             Some(structural.rwp),
-            "joint Rwp <= 0.04 and every bank profile correlation >= 0.995",
+            "joint Rwp <= 0.04",
+        )?,
+        check(
+            "tof_nickel_structural_correlation",
+            structural.minimum_profile_correlation >= 0.995,
+            "Every incident-normalized bank retains a high background-subtracted structural profile correlation.",
+            Some(structural.minimum_profile_correlation),
+            "minimum bank profile correlation >= 0.995",
         )?,
         check(
             "tof_nickel_structural_lattice",
@@ -335,6 +342,13 @@ pub fn run_nickel_tof_validation(
             "The real structural objective returns the displaced shared cubic cell to the published nickel lattice.",
             Some(structural.lattice_angstrom),
             "|a - 3.5234 A| <= 0.002 A",
+        )?,
+        check(
+            "tof_nickel_structural_u_iso",
+            (0.0..=0.05).contains(&structural.u_iso_angstrom2),
+            "The shared Ni isotropic displacement remains in an explicit physical validation interval.",
+            Some(structural.u_iso_angstrom2),
+            "0 <= Uiso <= 0.05 A^2",
         )?,
     ]);
     RealDataValidationReport::new(
@@ -361,10 +375,11 @@ pub fn run_nickel_tof_validation(
                 multibank.parameter_count,
             ),
             format!(
-                "Structural banks 2--4 Rwp={:.8}; minimum correlation={:.8}; a={:.8} A; accepted steps={}; evaluations={}.",
+                "Structural banks 2--4 Rwp={:.8}; minimum correlation={:.8}; a={:.8} A; Ni Uiso={:.8} A^2; accepted steps={}; evaluations={}.",
                 structural.rwp,
                 structural.minimum_profile_correlation,
                 structural.lattice_angstrom,
+                structural.u_iso_angstrom2,
                 structural.history_count,
                 structural.evaluation_count,
             ),
@@ -407,6 +422,7 @@ struct StructuralAcceptance {
     rwp: f64,
     minimum_profile_correlation: f64,
     lattice_angstrom: f64,
+    u_iso_angstrom2: f64,
 }
 
 #[allow(clippy::too_many_lines)]
@@ -823,6 +839,7 @@ fn run_multibank_structural(
         rwp,
         minimum_profile_correlation,
         lattice_angstrom: result.input.phase.definition().cell.a_angstrom,
+        u_iso_angstrom2: result.input.phase.definition().u_iso_angstrom2[0],
     })
 }
 

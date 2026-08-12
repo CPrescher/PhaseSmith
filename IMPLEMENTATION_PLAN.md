@@ -1436,9 +1436,12 @@ jointly over 13,293 observations to joint Rwp 0.02273306, per-bank Rwp below
 0.024, a=3.52361196 A against 3.5234 A, and analytical rank 4/4. Unit 37c is now
 complete: the pinned plain-array GSAS-II comparison matches reflection
 calibration chains at floating-point scale, reconstructs its three peak-only
-banks with correlation >= 0.9999 and relative L2 <= 0.015, and returns a shared
-cell within 0.0005 A of PhaseSmith. Endpoint counts and non-comparable Le Bail
-Rwp procedures remain visible rather than being forced into false parity.
+banks with measured minimum correlation 0.99999898 and maximum relative L2
+0.00181021, and returns a shared cell within 0.00025472 A of PhaseSmith. The
+worker materializes temporary one-bank RAW views because the pinned public
+scripting loader otherwise reselects the first dataset on repeated legacy
+multi-bank imports. Endpoint counts and non-comparable Le Bail Rwp procedures
+remain visible rather than being forced into false parity.
 
 Unit 38 capability assessment is complete. The review in
 `docs/tof-structural-readiness.md` separates reusable structure-factor,
@@ -1532,8 +1535,16 @@ immutable intensity and analytical TOF-derivative vectors, validates the
 inclusive calibration domain, and normalizes observed values, one-sigma
 uncertainties, and fixed background together. The public GSAS calibration
 record carries the optional translated spectrum, while any facility can create
-the same `TofIncidentSpectrum` directly. The isolated structural oracle is the
-remaining Unit 38d slice.
+the same `TofIncidentSpectrum` directly. The isolated structural oracle is
+complete. A public-scripting-only GSAS-II worker uses the exact pinned revision
+and checksum-derived banks 2--4, applies the file's type-4 incident
+normalization, and refines one shared cubic cell and Ni Uiso with local scale,
+Zero, and twelve-term background. It reaches Rwp 0.03367362, minimum
+correlation 0.99730908, a=3.52368699 A, and Uiso=0.00401813 A^2. PhaseSmith's
+independently accepted result differs by 0.00004414 A and 0.00005306 A^2 in the
+two shared physical quantities, while both profiles independently clear Rwp <=
+0.04 and correlation >= 0.995. The Rwp delta is retained as context because
+the solvers and background models are not identical. Unit 38d is complete.
 
 Do not combine adjacent items merely to reduce PR count; numerical review is
 easier when parameter conventions and tolerance changes remain isolated.

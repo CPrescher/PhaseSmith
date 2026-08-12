@@ -27,6 +27,11 @@ NICKEL_TOF = load_script(
     "compare_gsasii_nickel_tof_contract",
     "benchmarks/compare_gsasii_nickel_tof_multibank.py",
 )
+NICKEL_TOF_STRUCTURAL = load_script(
+    "compare_gsasii_nickel_tof_structural_contract",
+    "benchmarks/compare_gsasii_nickel_tof_structural.py",
+)
+GSAS_BANK_VIEW = load_script("gsas_bank_view_contract", "oracle/scripts/gsas_bank_view.py")
 
 
 def test_real_lebail_parity_contract_gates_counts_rwp_and_correlation() -> None:
@@ -181,6 +186,7 @@ def test_oracle_workers_never_import_the_normal_phasesmith_package() -> None:
         "oracle/scripts/benchmark_pbso4.py",
         "oracle/scripts/benchmark_powgen_tof.py",
         "oracle/scripts/benchmark_nickel_tof_multibank.py",
+        "oracle/scripts/benchmark_nickel_tof_structural.py",
     )
     for worker in workers:
         source = (REPOSITORY_ROOT / worker).read_text(encoding="utf-8")
@@ -194,3 +200,39 @@ def test_nickel_multibank_oracle_contract_keeps_like_for_like_gates_separate() -
     assert NICKEL_TOF.LIMITS["reconstructed_pattern_minimum_correlation"] == 0.9999
     assert "native_oracle_joint_rwp_delta" not in NICKEL_TOF.LIMITS
     assert NICKEL_TOF.LIMITS["native_oracle_cell_delta_angstrom"] == 5.0e-4
+
+
+def test_nickel_structural_oracle_gates_shared_physics_without_false_rwp_parity() -> None:
+    assert NICKEL_TOF_STRUCTURAL.BANKS == (2, 3, 4)
+    assert NICKEL_TOF_STRUCTURAL.LIMITS["native_rwp"] == 0.04
+    assert NICKEL_TOF_STRUCTURAL.LIMITS["oracle_rwp"] == 0.04
+    assert NICKEL_TOF_STRUCTURAL.LIMITS["cell_delta_angstrom"] == 0.002
+    assert NICKEL_TOF_STRUCTURAL.LIMITS["u_iso_delta_angstrom2"] == 0.005
+    assert "rwp_delta" not in NICKEL_TOF_STRUCTURAL.LIMITS
+
+
+def test_gsas_bank_view_selects_the_numbered_block_and_preserves_preamble(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "multi.raw"
+    destination = tmp_path / "bank-3.raw"
+    source.write_text(
+        "fixture title\n"
+        "# provenance\n"
+        "BANK  2  2  1 CONST 0 1 0 0\n"
+        "  bank two\n"
+        "BANK  3  2  1 CONST 0 1 0 0\n"
+        "  bank three\n",
+        encoding="latin-1",
+    )
+
+    GSAS_BANK_VIEW.write_gsas_bank_view(source, 3, destination)
+
+    assert destination.read_text(encoding="latin-1") == (
+        "fixture title\n"
+        "# provenance\n"
+        "BANK  3  2  1 CONST 0 1 0 0\n"
+        "  bank three\n"
+    )
+    with pytest.raises(RuntimeError, match="BANK 4 is absent"):
+        GSAS_BANK_VIEW.write_gsas_bank_view(source, 4, destination)
