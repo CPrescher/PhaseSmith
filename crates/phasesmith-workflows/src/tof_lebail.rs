@@ -161,6 +161,16 @@ impl TofLeBailPhase {
         result.validate()?;
         Ok(result)
     }
+
+    pub(crate) fn with_d_spacings(&self, values: &[f64]) -> Result<Self, TofLeBailError> {
+        if values.len() != self.d_spacing_angstrom.len() {
+            return Err(TofLeBailError::DSpacingLengthMismatch);
+        }
+        let mut result = self.clone();
+        result.d_spacing_angstrom.copy_from_slice(values);
+        result.validate()?;
+        Ok(result)
+    }
 }
 
 /// Refinable Chebyshev series on one explicit TOF interval.
@@ -1247,6 +1257,8 @@ pub enum TofLeBailError {
     BackgroundLinearSolve,
     /// Flattened reflection intensities have the wrong length.
     IntensityLengthMismatch,
+    /// Replacement reflection d-spacings have the wrong length.
+    DSpacingLengthMismatch,
     /// Checked allocation arithmetic overflowed.
     AllocationOverflow,
     /// A continuation state disagrees with the immutable request contract.
@@ -1294,6 +1306,9 @@ impl Display for TofLeBailError {
             }
             Self::IntensityLengthMismatch => {
                 formatter.write_str("TOF reflection intensity length mismatch")
+            }
+            Self::DSpacingLengthMismatch => {
+                formatter.write_str("TOF reflection d-spacing length mismatch")
             }
             Self::AllocationOverflow => formatter.write_str("TOF Le Bail allocation overflow"),
             Self::Residual(error) => Display::fmt(error, formatter),

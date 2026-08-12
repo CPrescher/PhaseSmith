@@ -79,6 +79,7 @@ nav:
       - Neutron constant wavelength: neutron-cw.md
       - Neutron time of flight: tof-profile.md
       - Multi-bank TOF Le Bail: tof-multibank.md
+      - Shared TOF lattice refinement: tof-lattice-refinement.md
       - Multi-phase composition: multiphase.md
       - Sample physics: sample-physics.md
   - Crystallography:

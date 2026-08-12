@@ -217,6 +217,44 @@ def test_fused_accumulation_matches_support_limited_reference() -> None:
     np.testing.assert_allclose(actual.y, expected, rtol=2e-9, atol=2e-12)
 
 
+def test_supported_reference_derivatives_include_moving_bounds() -> None:
+    inputs = {
+        "position_us": 5_000.0,
+        "alpha_per_us": 0.08,
+        "beta_per_us": 0.03,
+        "gaussian_fwhm_us": 22.0,
+        "lorentzian_fwhm_us": 4.0,
+    }
+    x = np.array([5_035.0])
+    support_multiple = 1.25
+
+    def evaluate(values: dict[str, float]) -> reference.ReferenceTofProfile:
+        shape = reference.tch_shape_from_fwhm(
+            values["gaussian_fwhm_us"], values["lorentzian_fwhm_us"]
+        )
+        return reference.profile_tof(
+            x,
+            **values,
+            quadrature_order=768,
+            base_radius_us=support_multiple * shape.total_fwhm,
+        )
+
+    actual = evaluate(inputs)
+    for field, derivative_name, step in (
+        ("position_us", "d_position", 1.0e-6),
+        ("alpha_per_us", "d_alpha", 1.0e-6),
+        ("beta_per_us", "d_beta", 1.0e-6),
+        ("gaussian_fwhm_us", "d_gaussian_fwhm", 1.0e-6),
+        ("lorentzian_fwhm_us", "d_lorentzian_fwhm", 1.0e-6),
+    ):
+        plus = inputs | {field: inputs[field] + step}
+        minus = inputs | {field: inputs[field] - step}
+        finite = (evaluate(plus).value - evaluate(minus).value) / (2.0 * step)
+        np.testing.assert_allclose(
+            getattr(actual, derivative_name), finite, rtol=2.0e-7, atol=2.0e-10
+        )
+
+
 def test_tof_execution_policy_is_bitwise_deterministic() -> None:
     d = np.linspace(0.5, 2.8, 36)
     intensities = np.linspace(3.0, 13.0, d.size)

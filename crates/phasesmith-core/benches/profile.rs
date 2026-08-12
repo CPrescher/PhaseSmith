@@ -373,7 +373,9 @@ fn tof_accumulator(criterion: &mut Criterion) {
     for tail_log in [8.0, 20.0] {
         group.bench_function(
             BenchmarkId::new(
-                format!("tail_log_{tail_log:.0}_order_192_local_and_global_jacobian"),
+                format!(
+                    "tail_log_{tail_log:.0}_order_192_moving_support_local_and_global_jacobian"
+                ),
                 x.len(),
             ),
             |bencher| {

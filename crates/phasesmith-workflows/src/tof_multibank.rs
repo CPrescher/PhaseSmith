@@ -252,65 +252,21 @@ pub fn refine_tof_multibank_with_runtime(
             termination = normal_tof_stop(error)?;
             break;
         }
-        if let Err(error) = runtime.begin_evaluation() {
-            termination = normal_tof_stop(error)?;
-            break;
-        }
-        let current_calculations = calculate_states(input, &states, options)?;
-        let mut candidate_states = Vec::with_capacity(states.len());
-        let mut maximum_relative_intensity_change = 0.0_f64;
-        for ((bank, state), calculation) in
-            input.banks.iter().zip(&states).zip(&current_calculations)
-        {
-            let current = flatten_intensities(&state.phases);
-            let updated = redistribute(&bank.input.pattern, calculation, &current, options)?;
-            maximum_relative_intensity_change = maximum_relative_intensity_change.max(
-                updated
-                    .iter()
-                    .zip(&current)
-                    .map(|(updated, current)| {
-                        (updated - current).abs()
-                            / current.abs().max(options.initial_intensity_floor)
-                    })
-                    .fold(0.0_f64, f64::max),
-            );
-            candidate_states.push(AcceptedBankState {
-                phases: install_intensities(&state.phases, &updated)?,
-                background: state.background.clone(),
-            });
-        }
-        if let Err(error) = runtime.begin_evaluation() {
-            termination = normal_tof_stop(error)?;
-            break;
-        }
-        let intensity_calculations = calculate_states(input, &candidate_states, options)?;
-        let mut maximum_absolute_background_change = 0.0_f64;
-        for (((bank, previous), candidate), calculation) in input
-            .banks
-            .iter()
-            .zip(&states)
-            .zip(&mut candidate_states)
-            .zip(&intensity_calculations)
-        {
-            let background = refine_background(
-                &bank.input.pattern,
-                &calculation.profile_y,
-                candidate.background.as_ref(),
-                options,
-            )?;
-            maximum_absolute_background_change = maximum_absolute_background_change.max(
-                maximum_background_change(previous.background.as_ref(), background.as_ref()),
-            );
-            candidate.background = background;
-        }
-        if let Err(error) = runtime.begin_evaluation() {
-            termination = normal_tof_stop(error)?;
-            break;
-        }
-        let calculations = calculate_states(input, &candidate_states, options)?;
-        let bank_metrics = evaluate_bank_metrics(input, &candidate_states, &calculations, options)?;
-        let parameter_count = fitted_parameter_count(&candidate_states)?;
-        let metrics = aggregate_metrics(input, &calculations, options, parameter_count)?;
+        let candidate = match prepare_multibank_cycle(input, &states, options, 0, runtime)? {
+            MultiBankCycleOutcome::Candidate(candidate) => candidate,
+            MultiBankCycleOutcome::Stopped(reason) => {
+                termination = reason;
+                break;
+            }
+        };
+        let MultiBankCycleCandidate {
+            states: candidate_states,
+            calculations,
+            bank_metrics,
+            metrics,
+            maximum_relative_intensity_change,
+            maximum_absolute_background_change,
+        } = candidate;
         states = candidate_states;
         history.push(TofMultiBankIterationRecord {
             iteration,
@@ -384,9 +340,95 @@ pub fn refine_tof_multibank_with_runtime(
 }
 
 #[derive(Clone)]
-struct AcceptedBankState {
-    phases: Vec<TofLeBailPhase>,
-    background: Option<TofChebyshevBackground>,
+pub(crate) struct AcceptedBankState {
+    pub(crate) phases: Vec<TofLeBailPhase>,
+    pub(crate) background: Option<TofChebyshevBackground>,
+}
+
+pub(crate) struct MultiBankCycleCandidate {
+    pub(crate) states: Vec<AcceptedBankState>,
+    pub(crate) calculations: Vec<TofLeBailCalculation>,
+    pub(crate) bank_metrics: Vec<ResidualEvaluation>,
+    pub(crate) metrics: TofMultiBankMetrics,
+    pub(crate) maximum_relative_intensity_change: f64,
+    pub(crate) maximum_absolute_background_change: f64,
+}
+
+pub(crate) enum MultiBankCycleOutcome {
+    Candidate(MultiBankCycleCandidate),
+    Stopped(TerminationReason),
+}
+
+pub(crate) fn prepare_multibank_cycle<C>(
+    input: &TofMultiBankInput,
+    states: &[AcceptedBankState],
+    options: &TofLeBailOptions,
+    shared_parameter_count: usize,
+    runtime: &mut RefinementRuntime<C>,
+) -> Result<MultiBankCycleOutcome, TofMultiBankError> {
+    if let Err(error) = runtime.begin_evaluation() {
+        return Ok(MultiBankCycleOutcome::Stopped(normal_tof_stop(error)?));
+    }
+    let current_calculations = calculate_states(input, states, options)?;
+    let mut candidate_states = Vec::with_capacity(states.len());
+    let mut maximum_relative_intensity_change = 0.0_f64;
+    for ((bank, state), calculation) in input.banks.iter().zip(states).zip(&current_calculations) {
+        let current = flatten_intensities(&state.phases);
+        let updated = redistribute(&bank.input.pattern, calculation, &current, options)?;
+        maximum_relative_intensity_change = maximum_relative_intensity_change.max(
+            updated
+                .iter()
+                .zip(&current)
+                .map(|(updated, current)| {
+                    (updated - current).abs() / current.abs().max(options.initial_intensity_floor)
+                })
+                .fold(0.0_f64, f64::max),
+        );
+        candidate_states.push(AcceptedBankState {
+            phases: install_intensities(&state.phases, &updated)?,
+            background: state.background.clone(),
+        });
+    }
+    if let Err(error) = runtime.begin_evaluation() {
+        return Ok(MultiBankCycleOutcome::Stopped(normal_tof_stop(error)?));
+    }
+    let intensity_calculations = calculate_states(input, &candidate_states, options)?;
+    let mut maximum_absolute_background_change = 0.0_f64;
+    for (((bank, previous), candidate), calculation) in input
+        .banks
+        .iter()
+        .zip(states)
+        .zip(&mut candidate_states)
+        .zip(&intensity_calculations)
+    {
+        let background = refine_background(
+            &bank.input.pattern,
+            &calculation.profile_y,
+            candidate.background.as_ref(),
+            options,
+        )?;
+        maximum_absolute_background_change = maximum_absolute_background_change.max(
+            maximum_background_change(previous.background.as_ref(), background.as_ref()),
+        );
+        candidate.background = background;
+    }
+    if let Err(error) = runtime.begin_evaluation() {
+        return Ok(MultiBankCycleOutcome::Stopped(normal_tof_stop(error)?));
+    }
+    let calculations = calculate_states(input, &candidate_states, options)?;
+    let bank_metrics = evaluate_bank_metrics(input, &candidate_states, &calculations, options)?;
+    let parameter_count = fitted_parameter_count(&candidate_states)?
+        .checked_add(shared_parameter_count)
+        .ok_or(TofLeBailError::AllocationOverflow)?;
+    let metrics = aggregate_metrics(input, &calculations, options, parameter_count)?;
+    Ok(MultiBankCycleOutcome::Candidate(MultiBankCycleCandidate {
+        states: candidate_states,
+        calculations,
+        bank_metrics,
+        metrics,
+        maximum_relative_intensity_change,
+        maximum_absolute_background_change,
+    }))
 }
 
 struct RestoredState {
@@ -435,7 +477,7 @@ fn restore_state(
     })
 }
 
-fn calculate_states(
+pub(crate) fn calculate_states(
     input: &TofMultiBankInput,
     states: &[AcceptedBankState],
     options: &TofLeBailOptions,
@@ -451,7 +493,7 @@ fn calculate_states(
         .collect()
 }
 
-fn evaluate_bank_metrics(
+pub(crate) fn evaluate_bank_metrics(
     input: &TofMultiBankInput,
     states: &[AcceptedBankState],
     calculations: &[TofLeBailCalculation],
@@ -480,7 +522,9 @@ fn evaluate_bank_metrics(
         .collect()
 }
 
-fn fitted_parameter_count(states: &[AcceptedBankState]) -> Result<usize, TofMultiBankError> {
+pub(crate) fn fitted_parameter_count(
+    states: &[AcceptedBankState],
+) -> Result<usize, TofMultiBankError> {
     states.iter().try_fold(0_usize, |total, state| {
         total
             .checked_add(flatten_intensities(&state.phases).len())
@@ -496,7 +540,7 @@ fn fitted_parameter_count(states: &[AcceptedBankState]) -> Result<usize, TofMult
     })
 }
 
-fn aggregate_metrics(
+pub(crate) fn aggregate_metrics(
     input: &TofMultiBankInput,
     calculations: &[TofLeBailCalculation],
     options: &TofLeBailOptions,
@@ -632,7 +676,7 @@ fn validate_checkpoint_bank(
     }
 }
 
-fn reflection_intensities(phases: &[TofLeBailPhase]) -> Vec<TofReflectionIntensity> {
+pub(crate) fn reflection_intensities(phases: &[TofLeBailPhase]) -> Vec<TofReflectionIntensity> {
     phases
         .iter()
         .flat_map(|phase| {

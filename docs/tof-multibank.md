@@ -74,6 +74,8 @@ masks, uncertainties, scales, backgrounds, and intensity truth in two banks.
 They also prove exact cancelled-state continuation and reject duplicate IDs or
 one-bank d-spacing drift.
 
-The current layer is fixed-cell Le Bail. It does not yet refine a common unit
-cell, bank-local instrument coefficients, atomic structure, or structural
-intensities. Those require separate analytical derivative and oracle gates.
+The fixed-cell API remains useful when geometry must not move. The separate
+[`tof-lattice-refinement.md`](tof-lattice-refinement.md) workflow adds an
+analytical common-cell step while retaining bank-local extraction state. Bank-
+local instrument coefficients, atomic structure, and structural intensities
+still require separate analytical derivative and oracle gates.

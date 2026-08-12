@@ -517,6 +517,49 @@ def profile_tof(
     if base_radius_us is not None:
         output = [np.zeros_like(x) for _ in range(6)]
         normalization = 1.0 - np.exp(-tail_log)
+        shape = tch_shape_from_fwhm(gaussian_fwhm_us, lorentzian_fwhm_us)
+        support_multiple = base_radius_us / shape.total_fwhm
+        d_radius = np.array(
+            [
+                0.0,
+                0.0,
+                0.0,
+                support_multiple * shape.d_total_fwhm_d_gaussian_fwhm,
+                support_multiple * shape.d_total_fwhm_d_lorentzian_fwhm,
+            ]
+        )
+
+        def bounded(
+            value: float, derivative: NDArray[np.float64]
+        ) -> tuple[float, NDArray[np.float64]]:
+            if 0.0 < value < tail_log:
+                return value, derivative
+            return float(np.clip(value, 0.0, tail_log)), np.zeros(5)
+
+        def bounds(
+            delta: float, radius: float, rate: float, *, left_side: bool
+        ) -> tuple[tuple[float, NDArray[np.float64]], tuple[float, NDArray[np.float64]]]:
+            low_sign, high_sign = (
+                (-radius - delta, radius - delta)
+                if left_side
+                else (delta - radius, delta + radius)
+            )
+            low_derivative = np.zeros(5)
+            high_derivative = np.zeros(5)
+            if left_side:
+                low_derivative[0] = high_derivative[0] = -rate
+                low_derivative[1] = low_sign
+                high_derivative[1] = high_sign
+            else:
+                low_derivative[0] = high_derivative[0] = rate
+                low_derivative[2] = low_sign
+                high_derivative[2] = high_sign
+            low_derivative[3:] = -rate * d_radius[3:]
+            high_derivative[3:] = rate * d_radius[3:]
+            return (
+                bounded(rate * low_sign, low_derivative),
+                bounded(rate * high_sign, high_derivative),
+            )
 
         def integrate_interval(
             delta: float, low: float, high: float, rate: float, direction: float
@@ -540,26 +583,75 @@ def profile_tof(
 
         for index, coordinate in enumerate(x.flat):
             delta = float(coordinate - position_us)
-            left_low = float(np.clip(alpha * (-base_radius_us - delta), 0.0, tail_log))
-            left_high = float(np.clip(alpha * (base_radius_us - delta), 0.0, tail_log))
-            right_low = float(np.clip(beta * (delta - base_radius_us), 0.0, tail_log))
-            right_high = float(np.clip(beta * (delta + base_radius_us), 0.0, tail_log))
+            (left_low, d_left_low), (left_high, d_left_high) = bounds(
+                delta, base_radius_us, alpha, left_side=True
+            )
+            (right_low, d_right_low), (right_high, d_right_high) = bounds(
+                delta, base_radius_us, beta, left_side=False
+            )
             left = integrate_interval(delta, left_low, left_high, alpha, 1.0)
             right = integrate_interval(delta, right_low, right_high, beta, -1.0)
+            left_low_value = (
+                np.exp(-left_low)
+                / normalization
+                * profile_tch(
+                    delta + left_low / alpha,
+                    gaussian_fwhm_us,
+                    lorentzian_fwhm_us,
+                ).value
+            )
+            left_high_value = (
+                np.exp(-left_high)
+                / normalization
+                * profile_tch(
+                    delta + left_high / alpha,
+                    gaussian_fwhm_us,
+                    lorentzian_fwhm_us,
+                ).value
+            )
+            right_low_value = (
+                np.exp(-right_low)
+                / normalization
+                * profile_tch(
+                    delta - right_low / beta,
+                    gaussian_fwhm_us,
+                    lorentzian_fwhm_us,
+                ).value
+            )
+            right_high_value = (
+                np.exp(-right_high)
+                / normalization
+                * profile_tch(
+                    delta - right_high / beta,
+                    gaussian_fwhm_us,
+                    lorentzian_fwhm_us,
+                ).value
+            )
+            left_boundary = left_high_value * d_left_high - left_low_value * d_left_low
+            right_boundary = right_high_value * d_right_high - right_low_value * d_right_low
             output[0].flat[index] = left_fraction * left[0] + right_fraction * right[0]
-            output[1].flat[index] = -(left_fraction * left[1] + right_fraction * right[1])
+            output[1].flat[index] = -(
+                left_fraction * (left[1] + left_boundary[0])
+                + right_fraction * (right[1] + right_boundary[0])
+            )
             output[2].flat[index] = (
                 d_left_fraction_d_alpha * left[0]
-                + left_fraction * left[4]
+                + left_fraction * (left[4] + left_boundary[1])
                 - d_left_fraction_d_alpha * right[0]
+                + right_fraction * right_boundary[1]
             )
             output[3].flat[index] = (
                 d_left_fraction_d_beta * left[0]
-                + right_fraction * right[4]
+                + left_fraction * left_boundary[2]
+                + right_fraction * (right[4] + right_boundary[2])
                 - d_left_fraction_d_beta * right[0]
             )
-            output[4].flat[index] = left_fraction * left[2] + right_fraction * right[2]
-            output[5].flat[index] = left_fraction * left[3] + right_fraction * right[3]
+            output[4].flat[index] = left_fraction * (
+                left[2] + left_boundary[3]
+            ) + right_fraction * (right[2] + right_boundary[3])
+            output[5].flat[index] = left_fraction * (
+                left[3] + left_boundary[4]
+            ) + right_fraction * (right[3] + right_boundary[4])
         return ReferenceTofProfile(*output)
 
     t = tail_log * (nodes + 1.0) / 2.0

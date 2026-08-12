@@ -97,8 +97,11 @@ right = position + R + L / beta.
 
 Grid samples exactly on either boundary belong to the reflection's support
 block. The TCH factor itself is limited to `abs(delta) <= R`. Analytical
-derivatives hold the active support set fixed; finite-difference tests avoid
-moving boundaries.
+derivatives hold the outer active sample block fixed, but include the moving
+internal quadrature bounds, weights, and `R(H)` chain for position, rates, and
+component widths. At an exact internal clamp boundary the derivative is defined
+as zero; centered finite-difference tests therefore use samples away from those
+non-smooth boundaries.
 
 The public `tof_us` array always contains bin centers. GSAS-II can ingest TOF bin
 boundaries with bin-width-multiplied Y and sigma. The typed SLOG FXYE reader
@@ -243,4 +246,6 @@ CIF and attaches an optional refinable Chebyshev residual to the fixed supplied
 background. It does not refine the lattice, instrument coefficients, atomic
 structure, or multiple detector banks. Cooperative cancellation/progress and
 the Python-free native persistence boundary are separate completed layers
-around this first public application slice.
+around this first public application slice. Rust hosts can use the separate
+[shared multi-bank lattice workflow](tof-lattice-refinement.md); its Python
+facade and project persistence are follow-on work.

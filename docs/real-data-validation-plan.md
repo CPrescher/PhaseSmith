@@ -227,10 +227,14 @@ real-bank parameter translation and reconstructs the oracle's peak-only pattern
 from the same extracted intensities; it also gates the two Chebyshev-enabled
 native workflows' Rwp and correlation deltas. Native format 3 separately
 round-trips explicit microsecond histograms and resumable TOF Le Bail state. A
-reviewed atomic fixed-cell multi-bank model now shares exact phase/reflection
-geometry while preserving bank-local observations, instruments, backgrounds,
-scales, and intensities. Shared lattice refinement is next; structural TOF
-Rietveld refinement remains future scope and is not implied by this acceptance.
+reviewed atomic multi-bank model now shares exact phase/reflection topology
+while preserving bank-local observations, instruments, backgrounds, scales,
+and intensities. Its analytical shared-cell extension has synthetic recovery,
+finite-difference, and exact-continuation gates. The next real-data increment
+must identify a multi-bank dataset with citable cell truth and plain-array
+oracle output before adding a golden result. Selected bank-local instrument
+motion follows; structural TOF Rietveld refinement remains future scope and is
+not implied by this acceptance.
 
 ## Review gates
 

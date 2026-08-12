@@ -251,6 +251,32 @@ pub struct TofProfilePoint {
     pub d_lorentzian_fwhm: f64,
 }
 
+const SUPPORTED_DELTA: usize = 0;
+const SUPPORTED_ALPHA: usize = 1;
+const SUPPORTED_BETA: usize = 2;
+const SUPPORTED_GAUSSIAN: usize = 3;
+const SUPPORTED_LORENTZIAN: usize = 4;
+const SUPPORTED_VARIABLE_COUNT: usize = 5;
+
+#[derive(Clone, Copy, Default)]
+struct SupportedScalar {
+    value: f64,
+    derivative: [f64; SUPPORTED_VARIABLE_COUNT],
+}
+
+impl SupportedScalar {
+    fn clamped(self, lower: f64, upper: f64) -> Self {
+        if lower < self.value && self.value < upper {
+            self
+        } else {
+            Self {
+                value: self.value.clamp(lower, upper),
+                derivative: [0.0; SUPPORTED_VARIABLE_COUNT],
+            }
+        }
+    }
+}
+
 /// Prepared truncated double-exponential convolution of a TCH profile.
 #[derive(Clone, Debug)]
 pub struct TofProfile {
@@ -402,6 +428,7 @@ impl TofProfile {
         }
     }
 
+    #[allow(clippy::too_many_lines)]
     fn evaluate_supported(&self, delta: f64, base_radius: f64) -> TofProfilePoint {
         let sum = self.alpha + self.beta;
         let left_fraction = self.beta / sum;
@@ -410,18 +437,22 @@ impl TofProfile {
         let d_left_d_beta = self.alpha / (sum * sum);
         let tail_log = self.quadrature.tail_log;
         let normalization = 1.0 - (-tail_log).exp();
-        let left_low = (self.alpha * (-base_radius - delta)).clamp(0.0, tail_log);
-        let left_high = (self.alpha * (base_radius - delta)).clamp(0.0, tail_log);
-        let right_low = (self.beta * (delta - base_radius)).clamp(0.0, tail_log);
-        let right_high = (self.beta * (delta + base_radius)).clamp(0.0, tail_log);
+        let support_multiple = base_radius / self.shape.total_fwhm;
+        let mut d_radius = [0.0; SUPPORTED_VARIABLE_COUNT];
+        d_radius[SUPPORTED_GAUSSIAN] = support_multiple * self.shape.d_total_fwhm_d_gaussian_fwhm;
+        d_radius[SUPPORTED_LORENTZIAN] =
+            support_multiple * self.shape.d_total_fwhm_d_lorentzian_fwhm;
+        let (left_low, left_high) = self.supported_bounds(delta, base_radius, d_radius, true);
+        let (right_low, right_high) = self.supported_bounds(delta, base_radius, d_radius, false);
         let mut left = TofProfilePoint::default();
         let mut right = TofProfilePoint::default();
         let mut left_alpha_shift = 0.0;
         let mut right_beta_shift = 0.0;
 
-        if left_low < left_high {
-            let panel_width = (left_high - left_low) / TOF_SUPPORT_QUADRATURE_PANELS_F64;
-            let mut panel_left = left_low;
+        if left_low.value < left_high.value {
+            let panel_width =
+                (left_high.value - left_low.value) / TOF_SUPPORT_QUADRATURE_PANELS_F64;
+            let mut panel_left = left_low.value;
             for _ in 0..TOF_SUPPORT_QUADRATURE_PANELS {
                 for quadrature in 0..QUADRATURE_ORDER {
                     let node = panel_left + panel_width * QUADRATURE_NODES[quadrature];
@@ -437,9 +468,10 @@ impl TofProfile {
                 panel_left += panel_width;
             }
         }
-        if right_low < right_high {
-            let panel_width = (right_high - right_low) / TOF_SUPPORT_QUADRATURE_PANELS_F64;
-            let mut panel_left = right_low;
+        if right_low.value < right_high.value {
+            let panel_width =
+                (right_high.value - right_low.value) / TOF_SUPPORT_QUADRATURE_PANELS_F64;
+            let mut panel_left = right_low.value;
             for _ in 0..TOF_SUPPORT_QUADRATURE_PANELS {
                 for quadrature in 0..QUADRATURE_ORDER {
                     let node = panel_left + panel_width * QUADRATURE_NODES[quadrature];
@@ -455,18 +487,102 @@ impl TofProfile {
                 panel_left += panel_width;
             }
         }
+        let left_boundary =
+            self.supported_boundary_chain(delta, left_low, left_high, true, normalization);
+        let right_boundary =
+            self.supported_boundary_chain(delta, right_low, right_high, false, normalization);
         TofProfilePoint {
             value: left_fraction * left.value + right_fraction * right.value,
-            d_position: -(left_fraction * left.d_position + right_fraction * right.d_position),
-            d_alpha: d_left_d_alpha * left.value + left_fraction * left_alpha_shift
-                - d_left_d_alpha * right.value,
-            d_beta: d_left_d_beta * left.value + right_fraction * right_beta_shift
+            d_position: -(left_fraction * (left.d_position + left_boundary[SUPPORTED_DELTA])
+                + right_fraction * (right.d_position + right_boundary[SUPPORTED_DELTA])),
+            d_alpha: d_left_d_alpha * left.value
+                + left_fraction * (left_alpha_shift + left_boundary[SUPPORTED_ALPHA])
+                - d_left_d_alpha * right.value
+                + right_fraction * right_boundary[SUPPORTED_ALPHA],
+            d_beta: d_left_d_beta * left.value
+                + left_fraction * left_boundary[SUPPORTED_BETA]
+                + right_fraction * (right_beta_shift + right_boundary[SUPPORTED_BETA])
                 - d_left_d_beta * right.value,
-            d_gaussian_fwhm: left_fraction * left.d_gaussian_fwhm
-                + right_fraction * right.d_gaussian_fwhm,
-            d_lorentzian_fwhm: left_fraction * left.d_lorentzian_fwhm
-                + right_fraction * right.d_lorentzian_fwhm,
+            d_gaussian_fwhm: left_fraction
+                * (left.d_gaussian_fwhm + left_boundary[SUPPORTED_GAUSSIAN])
+                + right_fraction * (right.d_gaussian_fwhm + right_boundary[SUPPORTED_GAUSSIAN]),
+            d_lorentzian_fwhm: left_fraction
+                * (left.d_lorentzian_fwhm + left_boundary[SUPPORTED_LORENTZIAN])
+                + right_fraction * (right.d_lorentzian_fwhm + right_boundary[SUPPORTED_LORENTZIAN]),
         }
+    }
+
+    fn supported_bounds(
+        &self,
+        delta: f64,
+        base_radius: f64,
+        d_radius: [f64; SUPPORTED_VARIABLE_COUNT],
+        left_side: bool,
+    ) -> (SupportedScalar, SupportedScalar) {
+        let tail_log = self.quadrature.tail_log;
+        let rate = if left_side { self.alpha } else { self.beta };
+        let (low_sign, high_sign) = if left_side {
+            (-base_radius - delta, base_radius - delta)
+        } else {
+            (delta - base_radius, delta + base_radius)
+        };
+        let mut low_derivative = [0.0; SUPPORTED_VARIABLE_COUNT];
+        let mut high_derivative = [0.0; SUPPORTED_VARIABLE_COUNT];
+        if left_side {
+            low_derivative[SUPPORTED_DELTA] = -rate;
+            high_derivative[SUPPORTED_DELTA] = -rate;
+            low_derivative[SUPPORTED_ALPHA] = low_sign;
+            high_derivative[SUPPORTED_ALPHA] = high_sign;
+            for parameter in [SUPPORTED_GAUSSIAN, SUPPORTED_LORENTZIAN] {
+                low_derivative[parameter] = -rate * d_radius[parameter];
+                high_derivative[parameter] = rate * d_radius[parameter];
+            }
+        } else {
+            low_derivative[SUPPORTED_DELTA] = rate;
+            high_derivative[SUPPORTED_DELTA] = rate;
+            low_derivative[SUPPORTED_BETA] = low_sign;
+            high_derivative[SUPPORTED_BETA] = high_sign;
+            for parameter in [SUPPORTED_GAUSSIAN, SUPPORTED_LORENTZIAN] {
+                low_derivative[parameter] = -rate * d_radius[parameter];
+                high_derivative[parameter] = rate * d_radius[parameter];
+            }
+        }
+        (
+            SupportedScalar {
+                value: rate * low_sign,
+                derivative: low_derivative,
+            }
+            .clamped(0.0, tail_log),
+            SupportedScalar {
+                value: rate * high_sign,
+                derivative: high_derivative,
+            }
+            .clamped(0.0, tail_log),
+        )
+    }
+
+    fn supported_boundary_chain(
+        &self,
+        delta: f64,
+        low: SupportedScalar,
+        high: SupportedScalar,
+        left_side: bool,
+        normalization: f64,
+    ) -> [f64; SUPPORTED_VARIABLE_COUNT] {
+        let rate = if left_side { self.alpha } else { self.beta };
+        let direction = if left_side { 1.0 } else { -1.0 };
+        let integrand = |node: f64| {
+            (-node).exp() / normalization
+                * self.shape.evaluate(delta + direction * node / rate).value
+        };
+        let low_value = integrand(low.value);
+        let high_value = integrand(high.value);
+        let mut derivative = [0.0; SUPPORTED_VARIABLE_COUNT];
+        for (parameter, value) in derivative.iter_mut().enumerate() {
+            *value =
+                high_value * high.derivative[parameter] - low_value * low.derivative[parameter];
+        }
+        derivative
     }
 
     fn support_range(&self, position: f64, base_radius: f64) -> SupportRange {
@@ -861,6 +977,28 @@ mod tests {
     }
 
     #[test]
+    fn supported_bound_derivative_is_zero_at_exact_clamp() {
+        let derivative = [1.0, 2.0, 3.0, 4.0, 5.0];
+        for value in [0.0, 20.0] {
+            let bounded = SupportedScalar { value, derivative }.clamped(0.0, 20.0);
+            assert_eq!(bounded.value.to_bits(), value.to_bits());
+            assert!(bounded.derivative.iter().all(|value| value.to_bits() == 0));
+        }
+        let interior = SupportedScalar {
+            value: 10.0,
+            derivative,
+        }
+        .clamped(0.0, 20.0);
+        assert!(
+            interior
+                .derivative
+                .iter()
+                .zip(derivative)
+                .all(|(actual, expected)| actual.to_bits() == expected.to_bits())
+        );
+    }
+
+    #[test]
     fn direct_profile_is_numerically_unit_area() {
         let profile = TofProfile::new(
             0.08,
@@ -1008,6 +1146,91 @@ mod tests {
                 ))
             .abs()
                 < 1e-8
+        );
+    }
+
+    #[test]
+    fn supported_profile_derivatives_include_moving_integration_bounds() {
+        let alpha = 0.08;
+        let beta = 0.03;
+        let gaussian = 22.0;
+        let lorentzian = 4.0;
+        let delta = 35.0;
+        let tail = 20.0;
+        let support_multiple = 1.25;
+        let profile = TofProfile::new(
+            alpha,
+            beta,
+            TchWidths {
+                gaussian_fwhm: gaussian,
+                lorentzian_fwhm: lorentzian,
+            },
+            tail,
+        )
+        .expect("profile");
+        let point =
+            profile.evaluate_with_radius(delta, support_multiple * profile.shape.total_fwhm);
+        let step = 1.0e-6;
+        let value = |a, b, g, l, x| {
+            let profile = TofProfile::new(
+                a,
+                b,
+                TchWidths {
+                    gaussian_fwhm: g,
+                    lorentzian_fwhm: l,
+                },
+                tail,
+            )
+            .expect("profile");
+            profile
+                .evaluate_with_radius(x, support_multiple * profile.shape.total_fwhm)
+                .value
+        };
+        let fd = |plus, minus| (plus - minus) / (2.0 * step);
+        assert!(
+            (point.d_position
+                - fd(
+                    value(alpha, beta, gaussian, lorentzian, delta - step),
+                    value(alpha, beta, gaussian, lorentzian, delta + step),
+                ))
+            .abs()
+                < 2.0e-9
+        );
+        assert!(
+            (point.d_alpha
+                - fd(
+                    value(alpha + step, beta, gaussian, lorentzian, delta),
+                    value(alpha - step, beta, gaussian, lorentzian, delta),
+                ))
+            .abs()
+                < 2.0e-8
+        );
+        assert!(
+            (point.d_beta
+                - fd(
+                    value(alpha, beta + step, gaussian, lorentzian, delta),
+                    value(alpha, beta - step, gaussian, lorentzian, delta),
+                ))
+            .abs()
+                < 2.0e-8
+        );
+        assert!(
+            (point.d_gaussian_fwhm
+                - fd(
+                    value(alpha, beta, gaussian + step, lorentzian, delta),
+                    value(alpha, beta, gaussian - step, lorentzian, delta),
+                ))
+            .abs()
+                < 2.0e-9
+        );
+        assert!(
+            (point.d_lorentzian_fwhm
+                - fd(
+                    value(alpha, beta, gaussian, lorentzian + step, delta),
+                    value(alpha, beta, gaussian, lorentzian - step, delta),
+                ))
+            .abs()
+                < 2.0e-9
         );
     }
 }

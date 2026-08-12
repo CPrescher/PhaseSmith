@@ -276,6 +276,11 @@ Rust applications can also use `TofMultiBankInput`, `TofLeBailBank`, and
 coordination; see [multi-bank TOF Le Bail](tof-multibank.md).
 The native `tof_lattice_geometry` helper returns d-spacings, calibrated
 microsecond positions, and both analytical independent-cell derivative chains.
+Rust applications use `TofMultiBankLatticeInput`, `TofSharedLatticePhase`, and
+`refine_tof_multibank_lattice_with_runtime` for one bounded shared-cell
+objective over every bank. The Python facade and native project schema do not
+yet expose that workflow; see
+[shared TOF lattice refinement](tof-lattice-refinement.md).
 
 Top-level imports are convenience aliases for scripts and notebooks; the
 module-qualified paths above are the ownership boundary. FCJ geometry does not

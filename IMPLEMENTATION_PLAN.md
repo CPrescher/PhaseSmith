@@ -1232,6 +1232,14 @@ Keep implementation units reviewable through these ordered changes:
     joint checkpoint continuation.
 34. Shared analytical TOF lattice refinement: native setting-aware TOF geometry
     chains first, then one bounded cell optimizer over every detector bank.
+35. Selected bank-local TOF instrument refinement: identifiable calibration or
+    profile coefficients enter the same summed objective through the existing
+    15 analytical global derivative rows, with explicit bounds and correlation
+    diagnostics.
+36. Shared-cell/instrument application facades, native persistence, and a
+    provenance-complete multi-bank real-data/oracle acceptance case.
+37. Structural TOF Rietveld only after structure-factor, correction, and
+    analytical shared/local parameter contracts pass synthetic and oracle gates.
 
 Unit 23 is complete. The Rust workflow crate now owns stable shared/local
 packing, matrix-free joint products, a bounded constraint-aware summed solver,
@@ -1353,16 +1361,25 @@ joint degrees of freedom. Runtime cancellation, events, typed checkpoints, and
 continuation operate on the complete bank set. Synthetic banks with different
 nonuniform grids, calibrations, masks, scales, backgrounds, and intensities
 recover their local truth, and a four-cycle cancelled state resumes bitwise
-identically to an uninterrupted twelve-cycle run. Shared lattice motion remains
-the next coupling increment.
+identically to an uninterrupted twelve-cycle run. Unit 34 builds shared
+lattice motion on this atomic cycle contract.
 
-Unit 34 is in progress. The native `TofLatticeGeometry`/`tof_lattice_geometry`
+Unit 34 is complete. The native `TofLatticeGeometry`/`tof_lattice_geometry`
 API now composes reciprocal-metric d-spacing derivatives with the bank-local
 `zero + difC d + difA d^2 + difB / d` calibration derivative. Centered
 finite-difference coverage spans every supported crystal system and the
 rhombohedral setting, and invalid instrument/reflection inputs fail
-structurally. The remaining Unit 34 work is the bounded summed-objective
-optimizer, atomic cell checkpointing, and synthetic multi-bank recovery.
+structurally. `TofMultiBankLatticeInput` then binds selected bounded cells to
+the exact multi-bank topology. One weighted dense lattice system sums fused
+`dY/dd * dd/dp` columns over every included sample, solves in scaled bounded
+coordinates, and backtracks on aggregate chi-square. Local extraction and
+shared cells are checkpointed atomically. Distinct synthetic banks recover the
+common cubic cell, full pattern columns match centered cell differences, and a
+cancelled run resumes exactly. Moving finite-support integration bounds and
+the width-dependent support radius now contribute analytical Leibniz terms in
+both Rust and the independent NumPy reference; profile values remain
+deterministic and the realistic hot-loop benchmark shows about 1.4% overhead
+at `tail_log=8`.
 
 Do not combine adjacent items merely to reduce PR count; numerical review is
 easier when parameter conventions and tolerance changes remain isolated.
@@ -1416,9 +1433,10 @@ This validates the supported profile family beyond ORNL without promising
 unknown facility-specific line shapes. Unit 31 completes cooperative
 cancellation/progress and restartable accepted-state checkpoints. Unit 32
 completes the explicit native TOF project/persistence schema, and Unit 33
-completes atomic fixed-cell multi-bank coordination. The next TOF increment is
-shared analytical lattice motion, followed by selected bank-local instrument
-motion. Structural parameter and instrument refinement must
+completes atomic fixed-cell multi-bank coordination, and Unit 34 completes
+shared analytical lattice motion. The next TOF increment is selected bank-local
+instrument motion, followed by application persistence and multi-bank real-data
+oracle validation. Structural parameter and instrument refinement must
 be introduced only with analytical derivatives, finite-difference tests, and
 new oracle contracts; it is not part of the completed Le Bail facade.
 
