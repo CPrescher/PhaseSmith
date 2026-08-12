@@ -864,6 +864,16 @@ continues to use its certified values and released profiles as the primary
 oracle rather than treating a GSAS-II refit as replacement truth. POWGEN now
 has the same live pinned-oracle boundary as the other accepted
 real-data workflows, while its synthetic derivative fixture remains unchanged.
+POWGEN bank 2 now also has a native one-bank structural acceptance path. The
+checksum-pinned header records the vanadium run, bin-width scaling, and
+proton-charge normalization; the type-0 calibration supplies no incident
+spectrum, so the request explicitly declares `already_normalized` and applies
+the named 90-degree TOF-neutron Lorentz correction. A staged structural solve
+reaches Rwp 0.14415481, profile correlation 0.97638031, a=4.15792396 A, and
+x(B)=0.19954072. The latter values agree with the published POWGEN SRM-660b
+result within 0.000424 A and 0.000060. The existing pinned GSAS-II Le Bail
+oracle continues to gate profile/calibration translation, while the LANL
+nickel oracle remains the stricter structural cross-implementation gate.
 The first public POWGEN application slice promotes those validation entry
 points into bounded production adapters. Legacy GSAS profile-function-3 banks
 are translated by `phasesmith-io` into the typed 15-coefficient

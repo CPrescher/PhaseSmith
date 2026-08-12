@@ -1556,6 +1556,16 @@ choices: requested type-4 normalization fails when the calibration does not
 provide it, and no facility or filename convention selects physics. Direct
 typed construction remains the facility-neutral path for other calibration
 formats and multi-bank requests.
+The explicit ORNL/POWGEN structural acceptance slice is complete. The pinned
+bank-2 header records its vanadium run, bin-width scaling, and proton-charge
+normalization, while the type-0 calibration supplies geometry but no incident
+spectrum. The runner therefore declares already-normalized observations and a
+90-degree TOF-neutron Lorentz correction, then stages geometry/background,
+boron-coordinate, and isotropic-displacement motion. It reaches Rwp
+0.14415481, correlation 0.97638031, a=4.15792396 A, and x(B)=0.19954072; the
+cell and coordinate agree with the published POWGEN SRM-660b result within
+0.000424 A and 0.000060. This is an explicit contract for this reduction, not a
+facility-name default.
 The structural TOF solver's special-position state audit is complete.
 Symmetry-reduced `q` coordinates are local tangent changes, so accepted
 physical displacements remain in the phase while the next solver/checkpoint

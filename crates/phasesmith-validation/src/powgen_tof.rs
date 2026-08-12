@@ -2,13 +2,19 @@
 
 use std::error::Error;
 use std::fmt::{Display, Formatter};
+use std::fs;
 use std::path::Path;
 use std::time::Instant;
 
-use phasesmith_core::{BackgroundError, TofProfileParameters, smooth_bruckner};
-use phasesmith_crystallography::{
-    PreparedReflectionGenerator, ReflectionGenerationError, ReflectionRange, UnitCell,
+use phasesmith_core::{
+    BackgroundError, OwnedCwContributions, TofInstrumentParameter, TofProfileParameters,
+    smooth_bruckner,
 };
+use phasesmith_crystallography::{
+    IntegratedIntensityCorrectionModel, PreparedReflectionGenerator, ReflectionGenerationError,
+    ReflectionRange, UnitCell,
+};
+use phasesmith_engine::{BuiltInScatteringModel, StructuralPhaseDefinition};
 use phasesmith_execution::{ExecutionPolicy, ExecutionPolicyError};
 use phasesmith_io::{
     GsasTofInstrumentIoError, GsasTofInstrumentReadLimits, PowderIoError, PowderReadLimits,
@@ -17,8 +23,14 @@ use phasesmith_io::{
 };
 use phasesmith_model::{DomainError, RecordId, TofPatternRecord};
 use phasesmith_workflows::{
-    ResidualOptions, TofChebyshevBackground, TofLeBailError, TofLeBailInput, TofLeBailOptions,
-    TofLeBailPhase, calculate_tof_lebail_pattern, evaluate_tof_residuals, refine_tof_lebail,
+    LatticeBounds, LatticeError, LatticeParameterization, ParameterBounds, ParameterError,
+    PreparedStructuralTofMultiBankObjective, RefinementLimits, ResidualOptions, RietveldError,
+    RietveldPhase, RietveldStructuralSelection, RuntimeError, StructuralTofBank,
+    StructuralTofMultiBankError, StructuralTofMultiBankInput,
+    StructuralTofMultiBankRefinementError, StructuralTofMultiBankRefinementOptions,
+    TofChebyshevBackground, TofInstrumentParameterBound, TofLeBailError, TofLeBailInput,
+    TofLeBailOptions, TofLeBailPhase, TofMultiBankGeometryError, calculate_tof_lebail_pattern,
+    evaluate_tof_residuals, refine_structural_tof_multibank, refine_tof_lebail,
 };
 
 use crate::{
@@ -30,6 +42,12 @@ const DATASET_ID: &str = "powgen-lab6-tof-calibration";
 const EXPECTED_BANK: usize = 2;
 const EXPECTED_SAMPLES: usize = 6_824;
 const LAB6_LATTICE_ANGSTROM: f64 = 4.156_826;
+// Structural acceptance targets follow Huq et al., J. Appl. Cryst. 52 (2019)
+// 1189-1201, DOI 10.1107/S160057671900833X. The isotropic displacement
+// initializer is an explicit simplified model, not a transcription of GSAS-II.
+const PUBLISHED_LAB6_LATTICE_ANGSTROM: f64 = 4.157_5;
+const PUBLISHED_BORON_X: f64 = 0.199_6;
+const INITIAL_BORON_X: f64 = 0.2;
 const MINIMUM_SEARCH_D_ANGSTROM: f64 = 0.25;
 const MAXIMUM_SEARCH_D_ANGSTROM: f64 = 5.0;
 
@@ -55,6 +73,10 @@ pub fn run_powgen_tof_validation(
         EXPECTED_BANK,
         PowderReadLimits::default(),
     )?;
+    let pattern_source = fs::read_to_string(dataset_directory.join("PG3_17541.gsa"))?;
+    let reduced_header = pattern_source.contains("Vanadium Run: 17534")
+        && pattern_source.contains("with Y multiplied by the bin widths.")
+        && pattern_source.contains("Normalised to pCharge");
     let calibration = read_gsas_tof_instrument_file(
         dataset_directory.join("PGHR_60-2015A.prm"),
         EXPECTED_BANK,
@@ -99,7 +121,7 @@ pub fn run_powgen_tof_validation(
         Some(observed.to_vec()),
         pattern.pattern.uncertainty.clone(),
         pattern.pattern.mask.clone(),
-        Some(background_seed),
+        Some(background_seed.clone()),
     )?;
     let reflections =
         PreparedReflectionGenerator::new(space_group_by_number(221)?.space_group, true, 1_000_000)?
@@ -193,6 +215,13 @@ pub fn run_powgen_tof_validation(
                         <= request.pattern.tof_us[request.pattern.sample_count() - 1]
             })
     });
+    let structural = run_powgen_structural(
+        &pattern.pattern,
+        &calibration,
+        background_seed,
+        &reflections,
+        reduced_header,
+    )?;
     let checks = vec![
         ValidationCheck::new(
             "tof_bank_geometry",
@@ -337,6 +366,46 @@ pub fn run_powgen_tof_validation(
             Some(16.0),
             "16 finite coefficients and 16 sample-major derivative columns",
         )?,
+        check(
+            "tof_powgen_structural_contract",
+            structural.incident_already_normalized
+                && structural.uses_tof_lorentz
+                && structural.history_counts.iter().all(|count| *count > 0),
+            "The POWGEN header and published reduction define already-normalized observations; the one-bank structural request explicitly applies the named TOF-neutron Lorentz correction.",
+            Some(count_as_f64(
+                structural.history_counts.iter().sum::<usize>(),
+            )?),
+            "already normalized, explicit TOF Lorentz, and every staged solve accepts at least one step",
+        )?,
+        check(
+            "tof_powgen_structural_fit",
+            structural.rwp <= 0.16 && structural.profile_correlation >= 0.97,
+            "The structural LaB6 intensities fit the checksum-pinned reduced POWGEN bank without Le Bail redistribution.",
+            Some(structural.rwp),
+            "uncertainty-weighted Rwp <= 0.16 and profile correlation >= 0.97",
+        )?,
+        check(
+            "tof_powgen_structural_lattice",
+            (structural.lattice_angstrom - PUBLISHED_LAB6_LATTICE_ANGSTROM).abs() <= 0.002,
+            "The staged one-bank structural objective returns the published POWGEN SRM-660b cubic lattice.",
+            Some(structural.lattice_angstrom),
+            "|a - 4.1575 A| <= 0.002 A",
+        )?,
+        check(
+            "tof_powgen_structural_boron_x",
+            (structural.boron_x - PUBLISHED_BORON_X).abs() <= 0.001,
+            "The symmetry-reduced boron coordinate remains consistent with the published POWGEN SRM-660b refinement.",
+            Some(structural.boron_x),
+            "|x(B) - 0.1996| <= 0.001",
+        )?,
+        check(
+            "tof_powgen_structural_displacement",
+            (0.0..=0.05).contains(&structural.lanthanum_u_iso)
+                && (0.0..=0.05).contains(&structural.boron_u_iso),
+            "Both refined isotropic displacement values remain inside an explicit physical validation interval.",
+            Some(structural.lanthanum_u_iso.max(structural.boron_u_iso)),
+            "0 <= Uiso(La), Uiso(B) <= 0.05 A^2",
+        )?,
     ];
     RealDataValidationReport::new(
         DATASET_ID,
@@ -360,6 +429,15 @@ pub fn run_powgen_tof_validation(
             ),
             "The SLOG FXYE data remain in a TofPatternRecord; no angle-domain conversion is used."
                 .to_owned(),
+            format!(
+                "Structural POWGEN result: Rwp={:.8}; correlation={:.8}; a={:.8} A; x(B)={:.8}; Uiso(La)={:.8} A^2; Uiso(B)={:.8} A^2.",
+                structural.rwp,
+                structural.profile_correlation,
+                structural.lattice_angstrom,
+                structural.boron_x,
+                structural.lanthanum_u_iso,
+                structural.boron_u_iso,
+            ),
         ],
     )
     .map_err(Into::into)
@@ -375,6 +453,205 @@ pub fn run_powgen_tof_readiness(
     dataset_directory: &Path,
 ) -> Result<RealDataValidationReport, PowgenTofValidationError> {
     run_powgen_tof_validation(dataset_directory)
+}
+
+#[derive(Clone, Debug)]
+struct PowgenStructuralAcceptance {
+    rwp: f64,
+    profile_correlation: f64,
+    lattice_angstrom: f64,
+    boron_x: f64,
+    lanthanum_u_iso: f64,
+    boron_u_iso: f64,
+    history_counts: [usize; 3],
+    incident_already_normalized: bool,
+    uses_tof_lorentz: bool,
+}
+
+#[allow(clippy::too_many_lines)]
+fn run_powgen_structural(
+    imported: &TofPatternRecord,
+    calibration: &phasesmith_io::GsasTofInstrumentData,
+    fixed_background: Vec<f64>,
+    reflections: &[phasesmith_crystallography::GeneratedReflection],
+    reduced_header: bool,
+) -> Result<PowgenStructuralAcceptance, PowgenTofValidationError> {
+    let geometry = calibration.bank_geometry.ok_or_else(|| {
+        PowgenTofValidationError::InvalidData(
+            "POWGEN structural validation requires bank geometry".to_owned(),
+        )
+    })?;
+    if calibration.incident_spectrum.is_some() {
+        return Err(PowgenTofValidationError::InvalidData(
+            "POWGEN reduced bank unexpectedly carries an incident spectrum".to_owned(),
+        ));
+    }
+    let pattern = TofPatternRecord::new(
+        imported.tof_us.clone(),
+        imported.observed_y.clone(),
+        imported.uncertainty.clone(),
+        imported.mask.clone(),
+        Some(fixed_background),
+    )?;
+    let space_group = space_group_by_number(221)?.space_group;
+    let definition = StructuralPhaseDefinition {
+        cell: lab6_cell(),
+        space_group: space_group.clone(),
+        hkl: reflections
+            .iter()
+            .map(|reflection| reflection.hkl)
+            .collect(),
+        multiplicity: reflections
+            .iter()
+            .map(|reflection| reflection.multiplicity)
+            .collect(),
+        fractional_xyz: vec![[0.0, 0.0, 0.0], [INITIAL_BORON_X, 0.5, 0.5]],
+        occupancy: vec![1.0, 1.0],
+        u_iso_angstrom2: vec![0.004_8, 0.003],
+        anisotropic_mask: vec![false, false],
+        u_aniso_cif_angstrom2: vec![[0.0; 6]; 2],
+        scattering_species: vec!["La".to_owned(), "B".to_owned()],
+        scattering_real_offset: Vec::new(),
+        scattering_imag_offset: Vec::new(),
+        scale: 1.0,
+        coordinate_tolerance: 1.0e-10,
+        scattering_model: BuiltInScatteringModel::NeutronNuclear,
+        correction_model: IntegratedIntensityCorrectionModel::Neutral,
+    };
+    let phase = RietveldPhase::new_with_site_ids(
+        RecordId::new("lab6")?,
+        "NIST SRM 660b LaB6 calibration material",
+        vec![RecordId::new("lanthanum")?, RecordId::new("boron")?],
+        definition,
+        OwnedCwContributions::neutral(reflections.len()),
+    )?;
+    let mut input = StructuralTofMultiBankInput {
+        phase,
+        structural_selection: RietveldStructuralSelection::default(),
+        lattice_bounds: None,
+        banks: vec![StructuralTofBank {
+            bank_id: RecordId::new("powgen-bank-2")?,
+            pattern,
+            instrument: calibration.instrument,
+            geometry,
+            correction_model: IntegratedIntensityCorrectionModel::TimeOfFlightNeutronLorentz {
+                two_theta_deg: geometry.two_theta_deg,
+            },
+            scale: 1.0,
+            scale_bounds: ParameterBounds::default(),
+            refine_scale: true,
+            background: Some(TofChebyshevBackground::new(
+                RecordId::new("powgen-structural-background")?,
+                vec![0.0; 16],
+                [
+                    imported.tof_us[0],
+                    imported.tof_us[imported.sample_count() - 1],
+                ],
+            )?),
+            refine_background: true,
+            instrument_bounds: vec![
+                TofInstrumentParameterBound::new(
+                    TofInstrumentParameter::Zero,
+                    calibration.instrument.zero_us - 20.0,
+                    calibration.instrument.zero_us + 20.0,
+                )
+                .map_err(TofMultiBankGeometryError::from)?,
+            ],
+        }],
+        support_fwhm: 20.0,
+        tail_log: 20.0,
+        use_uncertainty: true,
+        execution: ExecutionPolicy::new(Some(1), 2)?,
+    };
+    let unit = PreparedStructuralTofMultiBankObjective::new(input.clone())?.calculate()?;
+    let bank = &input.banks[0];
+    let observed = bank
+        .pattern
+        .observed_y
+        .as_deref()
+        .ok_or(PowgenTofValidationError::MissingObservations)?;
+    let uncertainty = bank.pattern.uncertainty.as_deref();
+    let mask = bank.pattern.mask.as_deref();
+    let calculated = &unit.banks[0];
+    let (numerator, denominator) = calculated.profile_y.iter().enumerate().fold(
+        (0.0, 0.0),
+        |(numerator, denominator), (sample, profile)| {
+            if mask.is_none_or(|values| values[sample]) {
+                let weight = uncertainty.map_or(1.0, |values| 1.0 / values[sample].powi(2));
+                let target = observed[sample] - calculated.background_y[sample];
+                (
+                    numerator + weight * profile * target,
+                    denominator + weight * profile * profile,
+                )
+            } else {
+                (numerator, denominator)
+            }
+        },
+    );
+    let scale = (numerator / denominator).max(f64::EPSILON);
+    if !scale.is_finite() {
+        return Err(PowgenTofValidationError::InvalidData(
+            "POWGEN structural scale estimate is invalid".to_owned(),
+        ));
+    }
+    input.banks[0].scale = scale;
+    input.banks[0].scale_bounds = ParameterBounds::new(0.01 * scale, 100.0 * scale)?;
+    let parameterization = LatticeParameterization::new(space_group, lab6_cell())?;
+    let lattice_bounds = LatticeBounds::around(&parameterization, 0.01, 1.0)?;
+    let options = StructuralTofMultiBankRefinementOptions::new(
+        RefinementLimits::new(20, 600, None, 10)?,
+        1,
+        1.0e-10,
+        1.0e-8,
+        1.0e-3,
+        10.0,
+        0.3,
+        0.5,
+        8,
+    )?;
+    input.structural_selection = RietveldStructuralSelection {
+        lattice: true,
+        ..RietveldStructuralSelection::default()
+    };
+    input.lattice_bounds = Some(lattice_bounds.clone());
+    let geometry_result = refine_structural_tof_multibank(&input, options, None, None)?;
+    input = geometry_result.input;
+    input.structural_selection.coordinates = true;
+    let coordinate_result = refine_structural_tof_multibank(&input, options, None, None)?;
+    input = coordinate_result.input;
+    input.structural_selection.u_iso = true;
+    let displacement_result = refine_structural_tof_multibank(&input, options, None, None)?;
+    let bank = &displacement_result.input.banks[0];
+    let calculated = &displacement_result.calculation.banks[0];
+    let profile_correlation = pearson_correlation(
+        bank.pattern
+            .observed_y
+            .as_deref()
+            .ok_or(PowgenTofValidationError::MissingObservations)?,
+        &calculated.background_y,
+        &calculated.profile_y,
+        bank.pattern.mask.as_deref(),
+    )?;
+    let uses_tof_lorentz = matches!(
+        bank.correction_model,
+        IntegratedIntensityCorrectionModel::TimeOfFlightNeutronLorentz { two_theta_deg }
+            if two_theta_deg.to_bits() == geometry.two_theta_deg.to_bits()
+    );
+    Ok(PowgenStructuralAcceptance {
+        rwp: calculated.metrics.rwp,
+        profile_correlation,
+        lattice_angstrom: displacement_result.input.phase.definition().cell.a_angstrom,
+        boron_x: displacement_result.input.phase.definition().fractional_xyz[1][0],
+        lanthanum_u_iso: displacement_result.input.phase.definition().u_iso_angstrom2[0],
+        boron_u_iso: displacement_result.input.phase.definition().u_iso_angstrom2[1],
+        history_counts: [
+            geometry_result.history.len(),
+            coordinate_result.history.len(),
+            displacement_result.history.len(),
+        ],
+        incident_already_normalized: reduced_header && calibration.incident_spectrum.is_none(),
+        uses_tof_lorentz,
+    })
 }
 
 fn lab6_cell() -> UnitCell {
@@ -480,6 +757,20 @@ pub enum PowgenTofValidationError {
     Background(BackgroundError),
     /// TOF workflow evaluation failed.
     Workflow(TofLeBailError),
+    /// Structural TOF objective construction failed.
+    Structural(StructuralTofMultiBankError),
+    /// Structural TOF staged refinement failed.
+    StructuralRefinement(StructuralTofMultiBankRefinementError),
+    /// Rietveld phase or lattice construction failed.
+    Rietveld(RietveldError),
+    /// Physical parameter bounds failed.
+    Parameter(ParameterError),
+    /// TOF geometry-bound construction failed.
+    Geometry(TofMultiBankGeometryError),
+    /// Lattice parameterization failed.
+    Lattice(LatticeError),
+    /// Refinement-limit construction failed.
+    Runtime(RuntimeError),
     /// Execution policy construction failed.
     Execution(ExecutionPolicyError),
     /// The observed pattern is absent or an iteration history is empty.
@@ -506,6 +797,13 @@ impl Display for PowgenTofValidationError {
             Self::Reflection(error) => Display::fmt(error, formatter),
             Self::Background(error) => Display::fmt(error, formatter),
             Self::Workflow(error) => Display::fmt(error, formatter),
+            Self::Structural(error) => Display::fmt(error, formatter),
+            Self::StructuralRefinement(error) => Display::fmt(error, formatter),
+            Self::Rietveld(error) => Display::fmt(error, formatter),
+            Self::Parameter(error) => Display::fmt(error, formatter),
+            Self::Geometry(error) => Display::fmt(error, formatter),
+            Self::Lattice(error) => Display::fmt(error, formatter),
+            Self::Runtime(error) => Display::fmt(error, formatter),
             Self::Execution(error) => Display::fmt(error, formatter),
             Self::MissingObservations => formatter.write_str("POWGEN observations are missing"),
             Self::EmptyHistory => formatter.write_str("POWGEN TOF extraction history is empty"),
@@ -568,6 +866,48 @@ impl From<BackgroundError> for PowgenTofValidationError {
 impl From<TofLeBailError> for PowgenTofValidationError {
     fn from(value: TofLeBailError) -> Self {
         Self::Workflow(value)
+    }
+}
+
+impl From<StructuralTofMultiBankError> for PowgenTofValidationError {
+    fn from(value: StructuralTofMultiBankError) -> Self {
+        Self::Structural(value)
+    }
+}
+
+impl From<StructuralTofMultiBankRefinementError> for PowgenTofValidationError {
+    fn from(value: StructuralTofMultiBankRefinementError) -> Self {
+        Self::StructuralRefinement(value)
+    }
+}
+
+impl From<RietveldError> for PowgenTofValidationError {
+    fn from(value: RietveldError) -> Self {
+        Self::Rietveld(value)
+    }
+}
+
+impl From<ParameterError> for PowgenTofValidationError {
+    fn from(value: ParameterError) -> Self {
+        Self::Parameter(value)
+    }
+}
+
+impl From<TofMultiBankGeometryError> for PowgenTofValidationError {
+    fn from(value: TofMultiBankGeometryError) -> Self {
+        Self::Geometry(value)
+    }
+}
+
+impl From<LatticeError> for PowgenTofValidationError {
+    fn from(value: LatticeError) -> Self {
+        Self::Lattice(value)
+    }
+}
+
+impl From<RuntimeError> for PowgenTofValidationError {
+    fn from(value: RuntimeError) -> Self {
+        Self::Runtime(value)
     }
 }
 

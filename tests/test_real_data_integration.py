@@ -158,6 +158,11 @@ def test_powgen_tof_complete_workflow_passes() -> None:
     assert checks["tof_reflection_coverage"].status == "passed"
     assert checks["tof_analytical_derivatives"].status == "passed"
     assert checks["tof_chebyshev_background"].status == "passed"
+    assert checks["tof_powgen_structural_contract"].status == "passed"
+    assert checks["tof_powgen_structural_fit"].status == "passed"
+    assert checks["tof_powgen_structural_lattice"].status == "passed"
+    assert checks["tof_powgen_structural_boron_x"].status == "passed"
+    assert checks["tof_powgen_structural_displacement"].status == "passed"
 
 
 @pytest.mark.real_data

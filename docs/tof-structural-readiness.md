@@ -341,9 +341,20 @@ contain or reference:
 - any absorption, extinction, texture, or other sample corrections; and
 - provenance and checksums for the data, calibration, structure, and reduction.
 
-The existing POWGEN profile-only example establishes the first two items and
-the general TOF kernel. It does not establish the remaining structural
-intensity contract.
+The checksum-pinned POWGEN bank now exercises this contract as an explicit
+one-bank structural acceptance case. Its header identifies the sample and
+vanadium runs, bin-width scaling, and proton-charge normalization; the
+calibration has no type-4 incident-spectrum record, so the request declares
+the observations already normalized rather than applying a second spectrum
+division. Bank 2 supplies `two_theta = 90 deg`, and the request explicitly
+selects the one-dimensional TOF-neutron Lorentz factor. A staged
+scale/background/geometry, boron-coordinate, and isotropic-displacement solve
+reaches Rwp 0.14415481, background-subtracted profile correlation 0.97638031,
+`a = 4.15792396 A`, and `x(B) = 0.19954072`. The lattice and boron coordinate
+agree with the published POWGEN SRM-660b refinement within 0.000424 A and
+0.000060, respectively. This complements the stricter LANL multi-bank
+structural oracle; it does not claim that every POWGEN reduction or sample can
+inherit this specific normalization and correction declaration.
 
 ## References
 
@@ -358,3 +369,6 @@ intensity contract.
   (GSAS)*, Los Alamos National Laboratory Report LAUR 86-748, 2004, pp.
   127--129 and 222--223,
   <https://subversion.xray.aps.anl.gov/EXPGUI/gsas/all/GSAS%20Manual.pdf>.
+- A. Huq et al., “POWGEN: rebuild of a third-generation powder diffractometer
+  at the Spallation Neutron Source,” *Journal of Applied Crystallography* **52**
+  (2019), 1189–1201, <https://doi.org/10.1107/S160057671900833X>.
