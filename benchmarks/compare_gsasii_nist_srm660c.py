@@ -287,8 +287,7 @@ def main() -> None:
         ],
     }
     print(
-        f"scope={report['scope']} specimen={arguments.specimen} "
-        f"repetitions={arguments.repetitions}"
+        f"scope={report['scope']} specimen={arguments.specimen} repetitions={arguments.repetitions}"
     )
     for case_name, case_report in case_reports.items():
         phase_result = case_report["phasesmith"]["result"]

@@ -48,9 +48,7 @@ def run_command(command: list[str], environment: dict[str, str]) -> None:
         )
 
 
-def common_worker_arguments(
-    arguments: argparse.Namespace, bundle: Path, report: Path
-) -> list[str]:
+def common_worker_arguments(arguments: argparse.Namespace, bundle: Path, report: Path) -> list[str]:
     command = [
         "--gsas-root",
         str(arguments.gsas_root),
@@ -152,8 +150,7 @@ def main() -> None:
                 "fpa_minus_empirical": {
                     "poisson_rwp": delta,
                     "unit_weight_rwp": (
-                        physical_result["unit_weight_rwp"]
-                        - empirical_result["unit_weight_rwp"]
+                        physical_result["unit_weight_rwp"] - empirical_result["unit_weight_rwp"]
                     ),
                     "profile_correlation": (
                         physical_result["profile_correlation"]

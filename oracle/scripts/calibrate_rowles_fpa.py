@@ -144,19 +144,13 @@ def calibrate(
         * (
             floor
             + 0.5
-            * (
-                1.0
-                + math.erf(
-                    sharpness * (float(line["wavelength_angstrom"]) - edge_wavelength)
-                )
-            )
+            * (1.0 + math.erf(sharpness * (float(line["wavelength_angstrom"]) - edge_wavelength)))
         )
         for line in alpha_lines
     ]
     fpa_input = {
         "wave": {
-            index: float(line["wavelength_angstrom"])
-            for index, line in enumerate(alpha_lines)
+            index: float(line["wavelength_angstrom"]) for index, line in enumerate(alpha_lines)
         },
         "int": {index: area for index, area in enumerate(transmitted_areas)},
         # TOPAS documents lh as Lorentzian HW; NIST FPA accepts FWHM.
@@ -201,9 +195,7 @@ def calibrate(
         positions = np.linspace(21.0, 147.0, 13)
         maximum_half_height_points = 0
         for position in positions:
-            center, peak_object = fpa.doFPAcalc(
-                physical_profile, x, float(position), 3.0, step
-            )
+            center, peak_object = fpa.doFPAcalc(physical_profile, x, float(position), 3.0, step)
             add_peak(target, center, peak_object.peak)
             maximum_half_height_points = max(
                 maximum_half_height_points,

@@ -39,9 +39,7 @@ def test_pbso4_repeated_rejection_policy_requires_accepted_material_improvement(
     expected: bool,
 ) -> None:
     assert (
-        _pbso4_stage_termination_is_safe(
-            reason, accepted_iterations, starting_rwp, final_rwp
-        )
+        _pbso4_stage_termination_is_safe(reason, accepted_iterations, starting_rwp, final_rwp)
         is expected
     )
 

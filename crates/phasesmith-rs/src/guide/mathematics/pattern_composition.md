@@ -85,6 +85,19 @@ C = [2(180/π)]²
 The equivalent Gaussian FWHM is
 `(180/π) 4 sqrt(2 ln(2)) ε tanθ`. Zero strain is the exact disabled limit.
 
+## Isotropic Lorentzian microstrain
+
+For the independent Lorentzian convention with dimensionless strain `η`,
+
+```text
+l_strain = (180/π) η tanθ
+∂l_strain/∂η = (180/π) tanθ
+∂l_strain/∂φ = 0.5 η sec²θ.
+```
+
+This parameter is named `isotropic_lorentzian_microstrain.fraction` and must
+not be interpreted as the Gaussian RMS parameter above.
+
 ## March–Dollase preferred orientation
 
 For preferred reciprocal direction `a`, reflection `h`, reciprocal metric

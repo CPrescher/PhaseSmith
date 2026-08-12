@@ -36,9 +36,7 @@ def available_dataset(dataset_id: str) -> Path:
     ("sh_over_l", "message"),
     [(float("nan"), "finite"), (-0.001, "non-negative")],
 )
-def test_nist_srm660c_parity_rejects_invalid_fcj_settings(
-    sh_over_l: float, message: str
-) -> None:
+def test_nist_srm660c_parity_rejects_invalid_fcj_settings(sh_over_l: float, message: str) -> None:
     with pytest.raises(ValueError, match=message):
         run_nist_srm660c_parity_workflow(".", sh_over_l=sh_over_l)
 

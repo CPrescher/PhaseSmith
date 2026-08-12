@@ -156,9 +156,7 @@ def run_workflow(
             phases.append(phase)
 
         stages = [refine(project, histogram, "scale_background")]
-        instrument_stage = (
-            ["Zero"] if instrument_profile is not None else ["U", "V", "W", "Zero"]
-        )
+        instrument_stage = ["Zero"] if instrument_profile is not None else ["U", "V", "W", "Zero"]
         histogram.set_refinements({"Instrument Parameters": instrument_stage})
         stages.append(refine(project, histogram, "instrument"))
         for phase in phases:
@@ -308,9 +306,7 @@ def main() -> None:
         expected = {"U", "V", "W", "X", "Y", "SH/L"}
         if set(instrument_profile) != expected:
             raise ValueError("fixed instrument profile must contain exactly U/V/W/X/Y/SH/L")
-        instrument_profile = {
-            name: float(value) for name, value in instrument_profile.items()
-        }
+        instrument_profile = {name: float(value) for name, value in instrument_profile.items()}
         if not all(np.isfinite(tuple(instrument_profile.values()))):
             raise ValueError("fixed instrument profile values must be finite")
         if instrument_profile["W"] <= 0.0 or instrument_profile["SH/L"] < 0.0:
