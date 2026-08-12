@@ -244,6 +244,17 @@ observed microsecond pattern, calibrated instrument, `TofBankGeometry`, neutral
 or matching-angle `TimeOfFlightNeutronLorentz` correction, scale and bounds,
 optional residual Chebyshev background, and selected instrument bounds.
 
+For a one-bank file workflow,
+`StructuralTofMultiBankInput.from_files(...)` composes the bounded reduced-data
+reader, one GSAS calibration bank, required detector geometry, a CIF structure,
+and generated reflection topology. The caller must explicitly choose whether
+the observations are already normalized or require the calibration's type-4
+incident spectrum, and whether the bank uses a neutral or TOF-neutron Lorentz
+correction. Missing geometry or a requested but absent incident spectrum is an
+error. Facility names, filenames, and profile-function codes never select
+intensity physics implicitly; non-GSAS callers can continue to construct the
+same typed request directly.
+
 `StructuralTofRefinementOptions` mirrors only the dense native solver controls.
 The result returns the updated phase and banks, immutable calculated/profile/
 background and reflection-intensity arrays, the stable physical parameter set,

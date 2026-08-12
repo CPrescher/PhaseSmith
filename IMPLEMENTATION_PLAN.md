@@ -1547,6 +1547,15 @@ independently accepted result differs by 0.00004414 A and 0.00005306 A^2 in the
 two shared physical quantities, while both profiles independently clear Rwp <=
 0.04 and correlation >= 0.995. The Rwp delta is retained as context because
 the solvers and background models are not identical. Unit 38d is complete.
+The public one-bank composition boundary is complete as a separate usability
+slice. `StructuralTofMultiBankInput.from_files(...)` joins one bounded reduced
+TOF pattern, one selected GSAS calibration bank with required detector
+geometry, and one CIF into the existing typed structural request. Incident
+normalization and the integrated-intensity correction are mandatory explicit
+choices: requested type-4 normalization fails when the calibration does not
+provide it, and no facility or filename convention selects physics. Direct
+typed construction remains the facility-neutral path for other calibration
+formats and multi-bank requests.
 
 Do not combine adjacent items merely to reduce PR count; numerical review is
 easier when parameter conventions and tolerance changes remain isolated.

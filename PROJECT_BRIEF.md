@@ -1099,6 +1099,15 @@ a complete structural TOF experiment and uses the same objective, bounded
 solver, checkpoint, Python facade, project validation, and format-5 persistence
 as a many-bank request. The established `MultiBank` type names remain for API
 stability; they no longer impose an artificial two-bank minimum.
+The public one-bank file composition path is complete.
+`StructuralTofMultiBankInput.from_files(...)` reads one bounded reduced-data
+bank, its selected GSAS calibration with required detector geometry, and a CIF,
+then generates fixed structural reflection topology. It requires the caller to
+choose `already_normalized` or `calibration_type4` and `neutral` or
+`tof_lorentz`; missing requested calibration data fails explicitly. This is a
+convenience adapter, not a facility policy: other beamlines and calibration
+formats construct the same typed request directly, and names never trigger
+normalization or intensity corrections.
 The public Python normalization slice is complete too.
 `TofIncidentSpectrum` independently evaluates the documented NumPy equation
 and analytical TOF derivative, returns immutable arrays, and transforms an

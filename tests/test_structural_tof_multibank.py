@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import replace
+from pathlib import Path
 
 import numpy as np
 import phasesmith
@@ -171,6 +172,104 @@ def test_python_structural_tof_supports_one_bank_and_rejects_no_banks() -> None:
     )
     with pytest.raises(ValueError, match="at least one StructuralTofBank"):
         replace(request, banks=())
+
+
+def test_structural_tof_from_files_requires_explicit_physics_choices(tmp_path: Path) -> None:
+    boundaries = np.linspace(4_000.0, 6_000.0, 21)
+    pattern_path = tmp_path / "bank.gsa"
+    pattern_path.write_text(
+        "TOF structural example\nBANK 2 21 21 SLOG 1 2 3 4 5 FXYE\n"
+        + "".join(f"{tof:.6f} 1.0 1.0\n" for tof in boundaries),
+        encoding="utf-8",
+    )
+    instrument_path = tmp_path / "instrument.prm"
+    instrument_path.write_text(
+        "INS  2 ICONS5000 0 0 0\n"
+        "INS  2BNKPAR 1 90 0 0 0 1 1\n"
+        "INS  2I ITYP 0 0.4 0.6 21\n"
+        "INS  2PRCF1 3 21 0.002\n"
+        "INS  2PRCF11 0.2 0.03 0 0\n"
+        "INS  2PRCF12 4 0 0 0\n",
+        encoding="utf-8",
+    )
+    cif_path = tmp_path / "phase.cif"
+    cif_path.write_text(
+        """data_phase
+_chemical_name_common 'Cubic nickel'
+_cell_length_a 4
+_cell_length_b 4
+_cell_length_c 4
+_cell_angle_alpha 90
+_cell_angle_beta 90
+_cell_angle_gamma 90
+_space_group_name_H-M_alt 'P m -3 m'
+loop_
+_atom_site_label
+_atom_site_type_symbol
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+Ni1 Ni 0 0 0
+""",
+        encoding="utf-8",
+    )
+
+    request = StructuralTofMultiBankInput.from_files(
+        pattern_path,
+        instrument_path,
+        cif_path,
+        bank=2,
+        incident_normalization="already_normalized",
+        correction="tof_lorentz",
+        search_min_d_angstrom=0.75,
+        search_max_d_angstrom=1.25,
+    )
+
+    assert len(request.banks) == 1
+    assert request.banks[0].bank_id == "bank-2"
+    assert request.banks[0].geometry == phasesmith.TofBankGeometry(90.0)
+    assert request.banks[0].correction == phasesmith.TimeOfFlightNeutronLorentz(90.0)
+    assert request.phase.reflections.reflection_count > 0
+    with pytest.raises(ValueError, match="requires an incident spectrum"):
+        StructuralTofMultiBankInput.from_files(
+            pattern_path,
+            instrument_path,
+            cif_path,
+            bank=2,
+            incident_normalization="calibration_type4",
+            correction="neutral",
+        )
+
+    instrument_path.write_text(
+        "INS  2 ICONS5000 0 0 0\n"
+        "INS  2BNKPAR 1 90 0 0 0 1 1\n"
+        "INS  2I ITYP 4 4.0 6.0 21\n"
+        "INS  2ICOFF1 2 0 0 0\n"
+        "INS  2ICOFF2 0 0 0 0\n"
+        "INS  2ICOFF3 0 0 0 0\n"
+        "INS  2PRCF1 3 21 0.002\n"
+        "INS  2PRCF11 0.2 0.03 0 0\n"
+        "INS  2PRCF12 4 0 0 0\n",
+        encoding="utf-8",
+    )
+    normalized = StructuralTofMultiBankInput.from_files(
+        pattern_path,
+        instrument_path,
+        cif_path,
+        bank=2,
+        incident_normalization="calibration_type4",
+        correction="neutral",
+        search_min_d_angstrom=0.75,
+        search_max_d_angstrom=1.25,
+    )
+    np.testing.assert_allclose(
+        normalized.banks[0].pattern.observed_y,
+        request.banks[0].pattern.observed_y / 2.0,
+    )
+    np.testing.assert_allclose(
+        normalized.banks[0].pattern.uncertainty,
+        request.banks[0].pattern.uncertainty / 2.0,
+    )
 
 
 def test_python_structural_tof_checkpoint_resumes_exactly() -> None:

@@ -4,9 +4,11 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass, field, replace
+from pathlib import Path
+from typing import Literal
 
 import numpy as np
-from numpy.typing import NDArray
+from numpy.typing import ArrayLike, NDArray
 
 from .. import _core
 from ..crystallography import UnitCell
@@ -16,11 +18,15 @@ from ..intensity_corrections import (
     NeutralIntegratedIntensityCorrection,
     TimeOfFlightNeutronLorentz,
 )
+from ..io.cif import read_cif
+from ..io.powder import PowderReadLimits, TofPowderFormat, read_tof_powder_data
+from ..io.tof_instrument import GsasTofInstrumentReadLimits, read_gsas_tof_instrument
 from ..pattern import TofPowderPattern
-from ..phase import RietveldPhase
+from ..phase import RietveldPhase, StructuralReflectionBatch
 from ..scattering import NeutronNuclear
 from ..structural_calculation import _native_phase
 from ..structure import CrystalStructure
+from ..symmetry import PreparedReflectionGenerator, TofRange
 from .core import (
     Bounds,
     ParameterKey,
@@ -198,6 +204,90 @@ class StructuralTofMultiBankInput:
                 [site.site_id for site in self.phase.structure.sites],
             ),
         )
+
+    @classmethod
+    def from_files(
+        cls,
+        pattern_path: str | Path,
+        instrument_path: str | Path,
+        cif_path: str | Path,
+        *,
+        bank: int,
+        incident_normalization: Literal["already_normalized", "calibration_type4"],
+        correction: Literal["neutral", "tof_lorentz"],
+        bank_id: str | None = None,
+        pattern_format: TofPowderFormat = "auto",
+        search_min_d_angstrom: float = 0.25,
+        search_max_d_angstrom: float = 5.0,
+        fixed_background: ArrayLike | None = None,
+        powder_limits: PowderReadLimits | None = None,
+        instrument_limits: GsasTofInstrumentReadLimits | None = None,
+    ) -> StructuralTofMultiBankInput:
+        """Build one explicit reduced-data/calibration/CIF structural request.
+
+        ``incident_normalization`` and ``correction`` are mandatory so file or
+        facility names never select structural intensity physics implicitly.
+        """
+
+        powder = read_tof_powder_data(
+            pattern_path,
+            format=pattern_format,
+            bank=bank,
+            limits=powder_limits,
+        )
+        calibration = read_gsas_tof_instrument(
+            instrument_path,
+            bank=bank,
+            limits=instrument_limits,
+        )
+        geometry = calibration.bank_geometry
+        if geometry is None:
+            raise ValueError("structural TOF calibration must supply explicit bank geometry")
+        pattern = powder.to_pattern(background=fixed_background)
+        if incident_normalization == "calibration_type4":
+            if calibration.incident_spectrum is None:
+                raise ValueError("calibration_type4 requires an incident spectrum in calibration")
+            pattern = calibration.incident_spectrum.normalize_pattern(pattern)
+        elif incident_normalization != "already_normalized":
+            raise ValueError(
+                "incident_normalization must be 'already_normalized' or 'calibration_type4'"
+            )
+        if correction == "neutral":
+            correction_model = NeutralIntegratedIntensityCorrection()
+        elif correction == "tof_lorentz":
+            correction_model = TimeOfFlightNeutronLorentz(geometry.two_theta_deg)
+        else:
+            raise ValueError("correction must be 'neutral' or 'tof_lorentz'")
+        structure = read_cif(cif_path).structure
+        generated = PreparedReflectionGenerator(structure.space_group).generate(
+            structure.cell,
+            TofRange(
+                float(pattern.tof_us[0]),
+                float(pattern.tof_us[-1]),
+                search_min_d_angstrom,
+                search_max_d_angstrom,
+                calibration.instrument.zero_us,
+                calibration.instrument.difc_us_per_angstrom,
+                calibration.instrument.difa_us_per_angstrom2,
+                calibration.instrument.difb_us_angstrom,
+            ),
+        )
+        phase = RietveldPhase(
+            structure.structure_id,
+            structure.name,
+            structure,
+            StructuralReflectionBatch.from_generated(generated),
+            NeutronNuclear(),
+            NeutralIntegratedIntensityCorrection(),
+        )
+        structural_bank = StructuralTofBank(
+            bank_id or f"bank-{bank}",
+            pattern,
+            calibration.instrument,
+            geometry,
+            correction_model,
+        )
+        return cls(phase, (structural_bank,))
 
 
 @dataclass(frozen=True, slots=True)
@@ -383,9 +473,7 @@ def _bank_result(record: dict[str, object]) -> StructuralTofBankResult:
     )
     for array in arrays:
         _freeze(array)
-    return StructuralTofBankResult(
-        str(record["bank_id"]), *arrays, _metrics(record["metrics"])
-    )
+    return StructuralTofBankResult(str(record["bank_id"]), *arrays, _metrics(record["metrics"]))
 
 
 def refine_structural_tof_multibank(
