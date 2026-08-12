@@ -60,6 +60,11 @@ treating every public file as the same kind of golden result:
    public-API integration gate composes the same real files with a
    citation-annotated LaB6 initializer and verifies all request provenance.
 
+The public composer also consumes LANL nickel bank 2 with an explicit
+1101.6--8189.6 us selection before type-4 incident normalization. This gates
+the same facility-neutral API on a packed profile-function-1 bank and an
+88.05-degree detector rather than only POWGEN SLOG/profile-function-3 input.
+
 Each manifest declares whether it is an acceptance, oracle-integrity, holdout,
 or capability case and records its reviewed expected status. Schema-2 suite
 records include pinned file identities, explicit criteria, and one scientific

@@ -301,6 +301,31 @@ Ni1 Ni 0 0 0
     assert normalized.provenance.reduction.source_name == str(reduction_path)
     assert normalized.provenance.reduction.sha256 == sha256(reduction_path.read_bytes()).hexdigest()
 
+    full_background = np.arange(request.banks[0].pattern.tof_us.size, dtype=np.float64)
+    cropped = StructuralTofMultiBankInput.from_files(
+        pattern_path,
+        instrument_path,
+        cif_path,
+        bank=2,
+        incident_normalization="calibration_type4",
+        correction="neutral",
+        sample_corrections="none",
+        tof_range_us=(4_200.0, 5_800.0),
+        fixed_background=full_background,
+        search_min_d_angstrom=0.75,
+        search_max_d_angstrom=1.25,
+    )
+    selected = (request.banks[0].pattern.tof_us >= 4_200.0) & (
+        request.banks[0].pattern.tof_us <= 5_800.0
+    )
+    np.testing.assert_allclose(
+        cropped.banks[0].pattern.background,
+        full_background[selected] / 2.0,
+    )
+    assert cropped.provenance is not None
+    assert cropped.provenance.tof_range_us == (4_200.0, 5_800.0)
+    assert cropped.provenance.fixed_background_supplied
+
     with pytest.raises(ValueError, match="named correction models are not implemented"):
         StructuralTofMultiBankInput.from_files(
             pattern_path,
@@ -337,6 +362,7 @@ def test_python_structural_tof_checkpoint_resumes_exactly() -> None:
         "already_normalized",
         "tof_lorentz",
         "none",
+        None,
         True,
         sha256(request.banks[0].pattern.background.tobytes()).hexdigest(),
     )

@@ -1584,6 +1584,14 @@ initializer it returns 6,824 samples, 330 reflection families, the 90-degree
 bank geometry, exact registered file hashes, and complete structure/reduction
 provenance. This separates application-boundary verification from the native
 staged-refinement gate while exercising both on the same physical inputs.
+The file composer transferability gate is complete on LANL nickel bank 2. Its
+raw packed profile-function-1 bank begins outside the type-4 incident-spectrum
+domain, so the helper now accepts a caller-selected inclusive `tof_range_us`,
+slices observations/uncertainties/mask/full-bank fixed background first, then
+normalizes and generates the visible topology. The declared 1101.6--8189.6 us
+interval and all file hashes are retained in provenance; it yields 4,431
+samples, 88.05-degree geometry, and 100 center-visible families. No facility
+name chooses the interval.
 The structural TOF solver's special-position state audit is complete.
 Symmetry-reduced `q` coordinates are local tangent changes, so accepted
 physical displacements remain in the phase while the next solver/checkpoint

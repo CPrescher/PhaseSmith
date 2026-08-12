@@ -274,6 +274,13 @@ kernel. Python checkpoints retain the provenance record and reject continuation
 when it differs from the request, while the native checkpoint continues to
 guard the exact numerical contract.
 
+`tof_range_us=(lower, upper)` optionally selects an inclusive observed interval
+before incident normalization and reflection generation. This is required when
+a raw bank contains samples outside a calibrated type-4 spectrum's validity
+domain. The explicit range is retained in provenance; facility names do not
+choose it. A supplied full-bank fixed background is sliced with the same
+indices, while an already selected background must match the selected samples.
+
 `StructuralTofRefinementOptions` mirrors only the dense native solver controls.
 The result returns the updated phase and banks, immutable calculated/profile/
 background and reflection-intensity arrays, the stable physical parameter set,
@@ -384,6 +391,13 @@ with an inline, citation-annotated LaB6 initializer. It returns 6,824 samples,
 pattern/calibration digests, a deterministic structure digest, and all explicit
 physics declarations. The native structural acceptance above then gates the
 full staged refinement.
+The same public path is also gated on checksum-pinned LANL nickel bank 2, a
+different facility/profile/input convention. An explicit 1101.6--8189.6 us
+interval selects 4,431 samples before type-4 incident normalization, imports
+the 88.05-degree geometry, and generates 100 families whose centers lie inside
+that interval. The native LANL structural acceptance uses a deliberately wider
+102-family d-space topology, so reflection-count equality is not asserted
+across those two declared boundary conventions.
 
 ## References
 

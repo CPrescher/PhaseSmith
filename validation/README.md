@@ -150,6 +150,12 @@ have deliberately different meanings:
   only 0.00004414 A and 0.00005306 A^2. Each implementation must clear its own
   Rwp/correlation gate; their Rwp delta is diagnostic because their background
   and optimizer contracts differ.
+  The public one-bank file composer separately gates bank 2 with an explicit
+  1101.6--8189.6 µs interval applied before incident normalization. It returns
+  4,431 samples, 88.05-degree geometry, and 100 reflection centers inside the
+  selected interval with complete source/range provenance. The native
+  multi-bank acceptance retains 102 d-space families by a deliberately wider
+  topology convention.
 
   Run the two pinned multi-bank comparisons with an exact GSAS-II checkout:
 

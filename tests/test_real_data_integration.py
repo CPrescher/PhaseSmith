@@ -48,6 +48,27 @@ La1 La 0 0 0 1 0.0048
 B1 B 0.2 0.5 0.5 1 0.003
 """
 
+LANL_NICKEL_CIF = """# PhaseSmith LANL nickel validation initializer.
+data_lanl_nickel
+_chemical_name_common 'FCC nickel powder standard'
+_cell_length_a 3.523
+_cell_length_b 3.523
+_cell_length_c 3.523
+_cell_angle_alpha 90
+_cell_angle_beta 90
+_cell_angle_gamma 90
+_space_group_name_H-M_alt 'F m -3 m'
+loop_
+_atom_site_label
+_atom_site_type_symbol
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+_atom_site_occupancy
+_atom_site_U_iso_or_equiv
+Ni1 Ni 0 0 0 1 0.01
+"""
+
 
 def available_dataset(dataset_id: str) -> Path:
     directory = DATA_ROOT / dataset_id
@@ -223,6 +244,51 @@ def test_powgen_tof_complete_workflow_passes() -> None:
     assert checks["tof_powgen_structural_lattice"].status == "passed"
     assert checks["tof_powgen_structural_boron_x"].status == "passed"
     assert checks["tof_powgen_structural_displacement"].status == "passed"
+
+
+@pytest.mark.real_data
+def test_lanl_public_structural_file_request_normalizes_selected_range() -> None:
+    directory = available_dataset("lanl-nickel-tof")
+    with pytest.raises(ValueError, match="within the calibration interval"):
+        StructuralTofMultiBankInput.from_files(
+            directory / "nickel.raw",
+            directory / "inst_tof.prm",
+            LANL_NICKEL_CIF,
+            bank=2,
+            incident_normalization="calibration_type4",
+            correction="tof_lorentz",
+            sample_corrections="none",
+            search_min_d_angstrom=0.2,
+            search_max_d_angstrom=3.0,
+        )
+    request = StructuralTofMultiBankInput.from_files(
+        directory / "nickel.raw",
+        directory / "inst_tof.prm",
+        LANL_NICKEL_CIF,
+        bank=2,
+        incident_normalization="calibration_type4",
+        correction="tof_lorentz",
+        sample_corrections="none",
+        tof_range_us=(1_101.6, 8_189.6),
+        search_min_d_angstrom=0.2,
+        search_max_d_angstrom=3.0,
+    )
+
+    assert request.banks[0].pattern.tof_us.size == 4_431
+    assert request.phase.reflections.reflection_count == 100
+    assert request.banks[0].geometry.two_theta_deg == 88.05
+    assert request.provenance is not None
+    assert request.provenance.pattern.sha256 == (
+        "bfe2afd6843a11dc1935cbbdb3ca05962c3242b9ddc60baa6a4ff6a48491c3e7"
+    )
+    assert request.provenance.instrument.sha256 == (
+        "9a4f06cb560c8b7f783fd0773b37814dae1d705042087e66f8cd2be719477038"
+    )
+    assert (
+        request.provenance.structure.sha256 == sha256(LANL_NICKEL_CIF.encode("utf-8")).hexdigest()
+    )
+    assert request.provenance.tof_range_us == (1_101.6, 8_189.6)
+    assert request.provenance.incident_normalization == "calibration_type4"
 
 
 @pytest.mark.real_data

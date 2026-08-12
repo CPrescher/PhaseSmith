@@ -86,6 +86,7 @@ class StructuralTofRequestProvenance:
     incident_normalization: Literal["already_normalized", "calibration_type4"]
     correction: Literal["neutral", "already_applied", "tof_lorentz"]
     sample_corrections: Literal["none", "already_applied"]
+    tof_range_us: tuple[float, float] | None
     fixed_background_supplied: bool
     fixed_background_sha256: str
 
@@ -103,6 +104,7 @@ class StructuralTofRequestProvenance:
             raise ValueError("unsupported correction provenance")
         if self.sample_corrections not in {"none", "already_applied"}:
             raise ValueError("unsupported sample_corrections provenance")
+        object.__setattr__(self, "tof_range_us", _validated_tof_range(self.tof_range_us))
         if not isinstance(self.fixed_background_supplied, bool):
             raise TypeError("fixed_background_supplied must be boolean")
         if len(self.fixed_background_sha256) != 64 or any(
@@ -147,6 +149,23 @@ def _source_digest(source: str | Path, max_bytes: int) -> StructuralTofSourceDig
         hashlib.sha256(payload).hexdigest(),
         len(payload),
     )
+
+
+def _validated_tof_range(
+    value: tuple[float, float] | None,
+) -> tuple[float, float] | None:
+    if value is None:
+        return None
+    if (
+        not isinstance(value, tuple)
+        or len(value) != 2
+        or any(isinstance(bound, bool) or not isinstance(bound, (int, float)) for bound in value)
+    ):
+        raise TypeError("tof_range_us must be a two-float tuple or None")
+    selected = (float(value[0]), float(value[1]))
+    if not np.isfinite(selected).all() or selected[0] >= selected[1]:
+        raise ValueError("tof_range_us must be a finite increasing pair or None")
+    return selected
 
 
 @dataclass(frozen=True, slots=True)
@@ -328,6 +347,7 @@ class StructuralTofMultiBankInput:
         search_min_d_angstrom: float = 0.25,
         search_max_d_angstrom: float = 5.0,
         fixed_background: ArrayLike | None = None,
+        tof_range_us: tuple[float, float] | None = None,
         reduction_path: str | Path | None = None,
         powder_limits: PowderReadLimits | None = None,
         instrument_limits: GsasTofInstrumentReadLimits | None = None,
@@ -381,7 +401,26 @@ class StructuralTofMultiBankInput:
         geometry = calibration.bank_geometry
         if geometry is None:
             raise ValueError("structural TOF calibration must supply explicit bank geometry")
-        pattern = powder.to_pattern(background=fixed_background)
+        selected_tof_range = _validated_tof_range(tof_range_us)
+        if selected_tof_range is None:
+            start, end = 0, powder.tof_us.size
+        else:
+            start = int(np.searchsorted(powder.tof_us, selected_tof_range[0], side="left"))
+            end = int(np.searchsorted(powder.tof_us, selected_tof_range[1], side="right"))
+            if start == end:
+                raise ValueError("tof_range_us selects no observed samples")
+        selected_background = fixed_background
+        if fixed_background is not None:
+            background_array = np.asarray(fixed_background)
+            if background_array.shape == powder.tof_us.shape:
+                selected_background = background_array[start:end]
+        pattern = TofPowderPattern(
+            powder.tof_us[start:end],
+            observed_y=powder.observed_y[start:end],
+            uncertainty=(None if powder.uncertainty is None else powder.uncertainty[start:end]),
+            mask=None if powder.mask is None else powder.mask[start:end],
+            background=selected_background,
+        )
         if incident_normalization == "calibration_type4":
             if calibration.incident_spectrum is None:
                 raise ValueError("calibration_type4 requires an incident spectrum in calibration")
@@ -438,6 +477,7 @@ class StructuralTofMultiBankInput:
             incident_normalization,
             correction,
             sample_corrections,
+            selected_tof_range,
             fixed_background is not None,
             background_digest,
         )

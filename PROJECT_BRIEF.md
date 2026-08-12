@@ -1134,6 +1134,12 @@ loads the real 6,824-sample bank and 90-degree calibration with a deterministic
 citation-annotated inline LaB6 structure, generates 330 families, and verifies
 the registered data/calibration hashes plus structure and embedded-reduction
 digests before the separate native structural refinement gate.
+The composer now also supports an explicit inclusive `tof_range_us`, applied
+before incident normalization and reflection generation and retained in
+provenance. This closes a non-POWGEN portability issue for raw banks that extend
+beyond an incident-spectrum calibration domain. On pinned LANL nickel bank 2,
+1101.6--8189.6 us selects 4,431 samples, applies type-4 normalization, imports
+88.05-degree geometry, and produces 100 center-visible reflection families.
 The structural TOF accepted-state solver now also preserves the established
 special-position coordinate convention. Symmetry-reduced `q` values are local
 tangent changes applied once to the current phase; after acceptance the moved
