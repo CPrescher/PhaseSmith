@@ -322,6 +322,11 @@ def test_lanl_public_structural_file_request_normalizes_selected_range() -> None
     assert combined.phase.reflections.reflection_count == 186
     assert combined.provenance is not None
     assert [item.bank for item in combined.provenance.banks] == [2, 3, 4]
+    assert [item.bank_id for item in combined.provenance.banks] == [
+        "bank-2",
+        "bank-3",
+        "bank-4",
+    ]
     with pytest.raises(ValueError, match="unique bank IDs"):
         StructuralTofMultiBankInput.combine_file_banks(
             (request, request),

@@ -292,7 +292,9 @@ only after checking their exact common structure and numerical controls,
 one-bank provenance, and unique bank IDs. The caller supplies a shared inclusive
 d-spacing range; the composer regenerates one common reflection topology and
 retains ordered provenance for every bank. This avoids silently unioning
-different bank-visible topologies or choosing a facility-specific range.
+different bank-visible topologies or choosing a facility-specific range. Each
+provenance record includes both the source bank number and the exact public
+`bank_id`; input validation requires those IDs to align in bank order.
 
 `StructuralTofRefinementOptions` mirrors only the dense native solver controls.
 The result returns the updated phase and banks, immutable calculated/profile/

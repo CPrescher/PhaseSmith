@@ -242,6 +242,7 @@ Ni1 Ni 0 0 0
     assert provenance.pattern.sha256 == sha256(pattern_path.read_bytes()).hexdigest()
     assert provenance.instrument.sha256 == sha256(instrument_path.read_bytes()).hexdigest()
     assert provenance.structure.sha256 == sha256(cif_path.read_bytes()).hexdigest()
+    assert provenance.bank_id == "bank-2"
     assert provenance.reduction == provenance.pattern
     assert provenance.reduction_embedded_in_pattern
     assert provenance.sample_corrections == "none"
@@ -396,6 +397,7 @@ def test_python_structural_tof_checkpoint_resumes_exactly() -> None:
         digest,
         True,
         1,
+        "bank-1",
         "already_normalized",
         "tof_lorentz",
         "none",
@@ -405,8 +407,18 @@ def test_python_structural_tof_checkpoint_resumes_exactly() -> None:
         sha256(request.banks[0].pattern.background.tobytes()).hexdigest(),
     )
     provenance = StructuralTofMultiBankProvenance(
-        (first_provenance, replace(first_provenance, bank=2))
+        (first_provenance, replace(first_provenance, bank=2, bank_id="bank-2"))
     )
+    with pytest.raises(ValueError, match="align exactly"):
+        replace(
+            request,
+            provenance=StructuralTofMultiBankProvenance(
+                (
+                    replace(first_provenance, bank_id="wrong-bank"),
+                    replace(first_provenance, bank=2, bank_id="bank-2"),
+                )
+            ),
+        )
     request = replace(request, provenance=provenance)
     uninterrupted = refine_structural_tof_multibank(request, _options(20))
     cancellation = StructuralTofCancellation()

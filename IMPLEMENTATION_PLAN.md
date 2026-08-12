@@ -1595,6 +1595,10 @@ name chooses the interval. `combine_file_banks(...)` then validates common
 structure/numerical controls and unique bank IDs, regenerates one explicit
 shared 0.2--3.0 A topology with 186 families, and retains the ordered bank 2--4
 provenance records.
+The per-bank identity audit is complete: every provenance item retains both the
+numeric source bank and the public `bank_id`, and the request validates exact
+ordered alignment instead of accepting an equal-length but misattached record
+collection.
 The background-domain audit is complete. File requests declare whether a fixed
 background is in the input intensity domain and must follow type-4 division, or
 is already in the normalized domain and must be installed afterward. The

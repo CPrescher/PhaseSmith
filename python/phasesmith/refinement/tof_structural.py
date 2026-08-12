@@ -83,6 +83,7 @@ class StructuralTofRequestProvenance:
     reduction: StructuralTofSourceDigest
     reduction_embedded_in_pattern: bool
     bank: int
+    bank_id: str
     incident_normalization: Literal["already_normalized", "calibration_type4"]
     correction: Literal["neutral", "already_applied", "tof_lorentz"]
     sample_corrections: Literal["none", "already_applied"]
@@ -99,6 +100,12 @@ class StructuralTofRequestProvenance:
             raise TypeError("reduction_embedded_in_pattern must be boolean")
         if isinstance(self.bank, bool) or not isinstance(self.bank, int) or self.bank <= 0:
             raise ValueError("bank must be a positive integer")
+        if (
+            not isinstance(self.bank_id, str)
+            or not self.bank_id
+            or self.bank_id != self.bank_id.strip()
+        ):
+            raise ValueError("bank_id must be a non-empty trimmed string")
         if self.incident_normalization not in {"already_normalized", "calibration_type4"}:
             raise ValueError("unsupported incident_normalization provenance")
         if self.correction not in {"neutral", "already_applied", "tof_lorentz"}:
@@ -128,7 +135,7 @@ class StructuralTofMultiBankProvenance:
         banks = tuple(self.banks)
         if not banks or any(not isinstance(bank, StructuralTofRequestProvenance) for bank in banks):
             raise ValueError("banks must contain at least one structural TOF provenance record")
-        identities = [(bank.pattern.sha256, bank.instrument.sha256, bank.bank) for bank in banks]
+        identities = [bank.bank_id for bank in banks]
         if len(set(identities)) != len(identities):
             raise ValueError("structural TOF provenance bank identities must be unique")
         object.__setattr__(self, "banks", banks)
@@ -339,6 +346,11 @@ class StructuralTofMultiBankInput:
             raise TypeError("provenance must be a StructuralTofMultiBankProvenance or None")
         if self.provenance is not None and len(self.provenance.banks) != len(banks):
             raise ValueError("provenance must contain exactly one record per structural TOF bank")
+        if self.provenance is not None and any(
+            provenance.bank_id != bank.bank_id
+            for bank, provenance in zip(banks, self.provenance.banks, strict=True)
+        ):
+            raise ValueError("provenance bank IDs must align exactly with structural TOF banks")
         native = _native_phase(self.phase, self.execution)
         if native is None:
             raise TypeError("phase cannot be represented by the native structural TOF engine")
@@ -496,8 +508,9 @@ class StructuralTofMultiBankInput:
             NeutronNuclear(),
             NeutralIntegratedIntensityCorrection(),
         )
+        selected_bank_id = bank_id or f"bank-{bank}"
         structural_bank = StructuralTofBank(
-            bank_id or f"bank-{bank}",
+            selected_bank_id,
             pattern,
             calibration.instrument,
             geometry,
@@ -515,6 +528,7 @@ class StructuralTofMultiBankInput:
                     reduction_digest,
                     reduction_path is None,
                     bank,
+                    selected_bank_id,
                     incident_normalization,
                     correction,
                     sample_corrections,

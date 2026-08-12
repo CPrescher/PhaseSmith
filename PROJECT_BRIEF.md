@@ -1143,6 +1143,9 @@ beyond an incident-spectrum calibration domain. On pinned LANL nickel bank 2,
 `combine_file_banks(...)` joins explicit bank 2--4 requests into the declared
 shared 0.2--3.0 A topology of 186 families while retaining ordered per-bank
 provenance.
+Per-bank provenance now binds the source bank number to the exact public
+`bank_id`, and request validation requires provenance order to align with bank
+order. Length-only provenance attachment is rejected.
 Fixed-background normalization is now explicit too: `input` backgrounds follow
 raw observations through type-4 division, while `normalized` backgrounds are
 installed afterward and cannot be divided twice. A real public LANL bank 2--4
