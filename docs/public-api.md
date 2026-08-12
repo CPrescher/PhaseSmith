@@ -89,6 +89,12 @@ phasesmith.refinement.tof_multibank  [implemented]
   aggregate metrics, typed rank/correlation diagnostics, accepted parameter
   changes, progress events, cancellation, and exact continuation.
 
+phasesmith.refinement.tof_structural  [implemented]
+  Guarded structural neutron TOF refinement over two or more banks with shared
+  cell/site parameters, explicit bank geometry and correction conventions,
+  bank-local scale/instrument/background parameters, immutable results,
+  cancellation, and exact continuation.
+
 phasesmith.profile_estimation  [implemented]
   Staged effective U/V/W/X/Y starting-profile estimation from one dominant
   CIF-backed phase. Wavelength remains fixed; optional bounded lattice

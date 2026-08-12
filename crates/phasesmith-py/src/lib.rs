@@ -62,6 +62,7 @@ mod profile_estimation;
 mod rietveld;
 mod tof_lebail;
 mod tof_multibank;
+mod tof_structural_multibank;
 
 type ProfileArrays<'py> = (
     Bound<'py, PyArray1<f64>>,
@@ -4177,6 +4178,7 @@ fn _core(module: &Bound<'_, PyModule>) -> PyResult<()> {
     profile_estimation::register(module)?;
     tof_lebail::register(module)?;
     tof_multibank::register(module)?;
+    tof_structural_multibank::register(module)?;
     module.add_function(wrap_pyfunction!(unit_cell_geometry, module)?)?;
     module.add_function(wrap_pyfunction!(unit_cell_d_spacings, module)?)?;
     module.add_function(wrap_pyfunction!(p1_structure_factors_dense, module)?)?;

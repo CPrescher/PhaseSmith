@@ -1049,6 +1049,14 @@ checkpoint corruption, cancellation after acceptance, evaluation exhaustion
 during normal assembly, and simultaneous recovery of two bank scales and Zero
 terms are tested. Unit 38c is complete; Unit 38d's Python facade, native project
 persistence, and checksum-pinned structural real-data/oracle gate are next.
+Unit 38d's public Python facade is now complete as its first separate slice.
+`phasesmith.refinement.tof_structural` constructs the same guarded native
+shared-phase/bank-local request and returns immutable bank arrays, the updated
+structural and instrument state, stable physical parameters, accepted history,
+bounded termination, and an opaque exact-resume checkpoint. Python recovery
+tests cover two local scales and Zero terms, cancellation/resume equivalence,
+and one genuinely shared cubic lattice parameter. Native project persistence
+and the pinned structural real-data/oracle gate remain the next Unit 38d slices.
 The historical native-workflow comparison passes both Le Bail parity contracts
 and QARR 1g. Its unchanged QARR 1h acceptance recipe retains the reviewed
 profile-quality failure, rather than having thresholds relaxed. The newer

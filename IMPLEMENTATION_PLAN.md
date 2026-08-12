@@ -1497,6 +1497,15 @@ history, objective, and next damping form an exact restart checkpoint.
 Synthetic two-bank recovery, exact partial/resumed equivalence,
 corrupt-checkpoint rejection, cancellation, and mid-normal evaluation
 exhaustion form the solver review gate. Unit 38d is next.
+Unit 38d's first slice is complete. The public
+`phasesmith.refinement.tof_structural` facade owns typed shared selection,
+lattice bounds, bank geometry/correction, local scale/instrument/background
+bounds, dense-solver controls, immutable results, progress/cancellation, and
+opaque native checkpoints. It delegates directly to the Rust objective and
+solver. Python tests recover local scale/Zero parameters and one shared cubic
+cell, and verify exact cancellation/checkpoint continuation. Native project
+persistence is next, followed by the checksum-pinned structural data/oracle
+gate.
 
 Do not combine adjacent items merely to reduce PR count; numerical review is
 easier when parameter conventions and tolerance changes remain isolated.

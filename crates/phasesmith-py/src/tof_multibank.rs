@@ -324,7 +324,7 @@ fn unit_cell(values: &[f64]) -> PyResult<UnitCell> {
     })
 }
 
-fn parameter(name: &str) -> PyResult<TofInstrumentParameter> {
+pub(super) fn parameter(name: &str) -> PyResult<TofInstrumentParameter> {
     TofInstrumentParameter::ALL
         .into_iter()
         .find(|parameter| parameter.name() == name)

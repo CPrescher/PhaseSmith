@@ -212,6 +212,27 @@ partial/resumed equivalence, corrupted checkpoint rejection, cancellation after
 an accepted checkpoint, and evaluation exhaustion while the normal matrix is
 being assembled.
 
+## Public Python facade
+
+`phasesmith.refinement.tof_structural` exposes the completed native objective
+and solver without a second Python numerical implementation. A
+`StructuralTofMultiBankInput` requires one built-in neutron phase with neutral
+placeholder correction, unit placeholder scale, fixed reflection topology,
+and no CW sample-physics provider. Each `StructuralTofBank` separately owns its
+observed microsecond pattern, calibrated instrument, `TofBankGeometry`, neutral
+or matching-angle `TimeOfFlightNeutronLorentz` correction, scale and bounds,
+optional residual Chebyshev background, and selected instrument bounds.
+
+`StructuralTofRefinementOptions` mirrors only the dense native solver controls.
+The result returns the updated phase and banks, immutable calculated/profile/
+background and reflection-intensity arrays, the stable physical parameter set,
+accepted history, bounded termination reason, evaluation count, and an opaque
+exact-resume checkpoint. `StructuralTofCancellation` reuses the thread-safe TOF
+cancellation token. End-to-end Python tests recover two distinct bank scales
+and Zero terms, resume bitwise-identical accepted state after cancellation, and
+recover a shared cubic lattice parameter. Native project persistence and the
+structural real-data/oracle acceptance remain separate Unit 38d gates.
+
 ## Unit 38 delivery sequence
 
 The structural extension is split into reviewable numerical increments:
