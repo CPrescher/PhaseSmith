@@ -172,8 +172,9 @@ calibration from their native metadata.
 ## Implemented multi-bank objective
 
 The first Unit 38c slice composes the single-bank primitive into
-`PreparedStructuralTofMultiBankObjective`. It requires two or more unique bank
-IDs and evaluates one summed objective atomically:
+`PreparedStructuralTofMultiBankObjective`. It requires one or more unique bank
+IDs and evaluates one summed objective atomically. The established `MultiBank`
+type names are retained for API stability, but a one-bank request is valid:
 
 ```text
 Phi = 1/2 sum_bank sum_included [(Y_calc - Y_obs) / sigma]^2

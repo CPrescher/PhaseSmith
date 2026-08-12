@@ -6,6 +6,7 @@ from dataclasses import replace
 
 import numpy as np
 import phasesmith
+import pytest
 from phasesmith.refinement import (
     Bounds,
     LatticeParameterBounds,
@@ -154,6 +155,22 @@ def test_python_structural_tof_recovers_local_scale_and_zero() -> None:
     assert result.input.banks[0].scale != request.banks[0].scale
     assert all(not bank.y.flags.writeable for bank in result.banks)
     assert all(not bank.integrated_intensity.flags.writeable for bank in result.banks)
+
+
+def test_python_structural_tof_supports_one_bank_and_rejects_no_banks() -> None:
+    request, truth = _request()
+    single_bank = replace(request, banks=request.banks[:1])
+
+    result = refine_structural_tof_multibank(single_bank, _options(20))
+
+    assert len(result.banks) == 1
+    assert result.termination_reason.value == "converged"
+    assert result.objective < 1.0e-12
+    np.testing.assert_allclose(
+        [spec.value for spec in result.parameters.specs], truth[:2], rtol=0.0, atol=2.0e-6
+    )
+    with pytest.raises(ValueError, match="at least one StructuralTofBank"):
+        replace(request, banks=())
 
 
 def test_python_structural_tof_checkpoint_resumes_exactly() -> None:

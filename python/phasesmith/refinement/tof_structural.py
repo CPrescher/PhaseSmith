@@ -136,7 +136,7 @@ class StructuralTofBank:
 
 @dataclass(frozen=True, slots=True)
 class StructuralTofMultiBankInput:
-    """One shared neutron structure and two or more explicit detector banks."""
+    """One shared neutron structure and one or more explicit detector banks."""
 
     phase: RietveldPhase
     banks: tuple[StructuralTofBank, ...]
@@ -160,8 +160,8 @@ class StructuralTofMultiBankInput:
         if self.phase.physics is not None:
             raise ValueError("CW sample physics is not part of the structural TOF contract")
         banks = tuple(self.banks)
-        if len(banks) < 2 or any(not isinstance(bank, StructuralTofBank) for bank in banks):
-            raise ValueError("banks must contain at least two StructuralTofBank values")
+        if not banks or any(not isinstance(bank, StructuralTofBank) for bank in banks):
+            raise ValueError("banks must contain at least one StructuralTofBank value")
         if len({bank.bank_id for bank in banks}) != len(banks):
             raise ValueError("structural TOF bank IDs must be unique")
         if not isinstance(self.selection, StructuralTofSelection):

@@ -51,7 +51,7 @@ pub struct StructuralTofBank {
     pub instrument_bounds: Vec<TofInstrumentParameterBound>,
 }
 
-/// Shared structural phase plus two or more explicit TOF banks.
+/// Shared structural phase plus one or more explicit TOF banks.
 #[derive(Clone, Debug, PartialEq)]
 pub struct StructuralTofMultiBankInput {
     /// One fixed-topology neutron structural phase; its scale/correction are neutral placeholders.
@@ -118,7 +118,7 @@ impl StructuralTofMultiBankInput {
         {
             return Err(StructuralTofMultiBankError::InvalidSupport);
         }
-        if self.banks.len() < 2 {
+        if self.banks.is_empty() {
             return Err(StructuralTofMultiBankError::TooFewBanks);
         }
         if self
@@ -976,7 +976,7 @@ const fn instrument_unit(parameter: TofInstrumentParameter) -> &'static str {
 /// Invalid structural multi-bank TOF request or objective product.
 #[derive(Debug)]
 pub enum StructuralTofMultiBankError {
-    /// At least two banks are required for a multi-bank objective.
+    /// At least one bank is required for a structural TOF objective.
     TooFewBanks,
     /// Stable bank IDs must be unique.
     DuplicateBankId,
@@ -1019,7 +1019,7 @@ pub enum StructuralTofMultiBankError {
 impl Display for StructuralTofMultiBankError {
     fn fmt(&self, formatter: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::TooFewBanks => formatter.write_str("structural TOF requires at least two banks"),
+            Self::TooFewBanks => formatter.write_str("structural TOF requires at least one bank"),
             Self::DuplicateBankId => formatter.write_str("structural TOF bank IDs must be unique"),
             Self::MissingObservations => {
                 formatter.write_str("every structural TOF bank requires observations")

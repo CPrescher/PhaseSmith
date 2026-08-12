@@ -1094,6 +1094,11 @@ minimum correlation 0.99730908, a=3.52368699 A, and Uiso=0.00401813 A^2 over
 0.00005306 A^2 in Uiso; both clear their independent Rwp/correlation gates.
 Rwp equality remains context rather than a false cross-gate because background
 and optimizer contracts differ. Unit 38d is complete.
+The structural request now accepts one or more banks. A single detector bank is
+a complete structural TOF experiment and uses the same objective, bounded
+solver, checkpoint, Python facade, project validation, and format-5 persistence
+as a many-bank request. The established `MultiBank` type names remain for API
+stability; they no longer impose an artificial two-bank minimum.
 The public Python normalization slice is complete too.
 `TofIncidentSpectrum` independently evaluates the documented NumPy equation
 and analytical TOF derivative, returns immutable arrays, and transforms an

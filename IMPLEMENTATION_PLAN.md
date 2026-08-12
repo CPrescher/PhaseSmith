@@ -1482,8 +1482,10 @@ adjoint checks, invalid correction/weight boundaries, an independent NumPy
 structural-TOF composition, and a 128-reflection/16-site/14,501-sample Criterion
 benchmark gate the implementation. Unit 38c's guarded multi-bank objective
 slice is now complete. `PreparedStructuralTofMultiBankObjective` atomically
-sums the uncertainty-weighted, masked residual objective across two or more
-banks. Symmetry-aware lattice/site parameters are shared; scale, selected
+sums the uncertainty-weighted, masked residual objective across one or more
+banks. The one-bank case uses the same solver and format-5 persistence path;
+the established `MultiBank` names are retained for API stability.
+Symmetry-aware lattice/site parameters are shared; scale, selected
 bounded instrument coefficients, and optional Chebyshev coefficients are
 bank-local. Values, JVP, VJP, gradient, and normal products use the fused
 structural/profile rows and exact background bases. The contract freezes

@@ -193,7 +193,7 @@ fn joint_project_rejects_duplicate_histogram_ownership_and_drift() {
 
 #[test]
 fn format_five_round_trips_structural_tof_and_complete_checkpoint() {
-    let state = structural_tof_state();
+    let state = structural_tof_state(2);
     let directory = temporary_path("structural-tof-round-trip");
     save_structural_tof_multibank_project(&directory, &state, ProjectSaveOptions::default())
         .unwrap();
@@ -251,6 +251,21 @@ fn format_five_round_trips_structural_tof_and_complete_checkpoint() {
         load_structural_tof_multibank_project(&directory, ProjectReadLimits::default()),
         Err(PersistenceError::InvalidRecord { .. })
     ));
+    cleanup(directory);
+}
+
+#[test]
+fn format_five_round_trips_a_single_bank_structural_tof_analysis() {
+    let state = structural_tof_state(1);
+    let directory = temporary_path("structural-tof-single-bank-round-trip");
+    save_structural_tof_multibank_project(&directory, &state, ProjectSaveOptions::default())
+        .unwrap();
+
+    let restored =
+        load_structural_tof_multibank_project(&directory, ProjectReadLimits::default()).unwrap();
+    assert_eq!(restored, state);
+    assert_eq!(restored.analyses[0].input.banks.len(), 1);
+    assert_eq!(restored.project.tof_histograms.len(), 1);
     cleanup(directory);
 }
 
@@ -329,7 +344,8 @@ fn state() -> TofLeBailProjectState {
 }
 
 #[allow(clippy::too_many_lines)]
-fn structural_tof_state() -> StructuralTofMultiBankProjectState {
+fn structural_tof_state(bank_count: usize) -> StructuralTofMultiBankProjectState {
+    assert!((1..=2).contains(&bank_count));
     let definition = StructuralPhaseDefinition {
         cell: UnitCell {
             a_angstrom: 4.0,
@@ -367,7 +383,10 @@ fn structural_tof_state() -> StructuralTofMultiBankProjectState {
     for (bank_id, angle, zero_us, scale) in [
         ("structural-bank-1", 88.0, 1.0, 1.1),
         ("structural-bank-2", 130.0, -0.5, 0.9),
-    ] {
+    ]
+    .into_iter()
+    .take(bank_count)
+    {
         let tof_us = (0..1_001)
             .map(|index| 5_000.0 + 20.0 * f64::from(index))
             .collect::<Vec<_>>();
@@ -420,7 +439,10 @@ fn structural_tof_state() -> StructuralTofMultiBankProjectState {
         execution: ExecutionPolicy::new(Some(1), 2).unwrap(),
     };
     let layout = StructuralTofMultiBankLayout::new(&input).unwrap();
-    let truth = layout.apply_values(&input, &[1.3, 2.0, 0.7, -1.5]).unwrap();
+    let truth_values = [1.3, 2.0, 0.7, -1.5];
+    let truth = layout
+        .apply_values(&input, &truth_values[..2 * bank_count])
+        .unwrap();
     let calculated = PreparedStructuralTofMultiBankObjective::new(truth)
         .unwrap()
         .calculate()

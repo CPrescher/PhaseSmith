@@ -218,6 +218,24 @@ fn scale_zero_solver_request() -> (StructuralTofMultiBankInput, Vec<f64>, Vec<f6
     (request, truth_values, initial)
 }
 
+fn single_bank_scale_zero_solver_request() -> (StructuralTofMultiBankInput, Vec<f64>) {
+    let mut request = input();
+    request.banks.truncate(1);
+    request.structural_selection = RietveldStructuralSelection::default();
+    request.lattice_bounds = None;
+    request.banks[0].refine_background = false;
+    let layout = StructuralTofMultiBankLayout::new(&request).unwrap();
+    assert_eq!(layout.parameters().specs().len(), 2);
+    let truth_values = vec![1.55, 2.3];
+    let truth = layout.apply_values(&request, &truth_values).unwrap();
+    let calculated = PreparedStructuralTofMultiBankObjective::new(truth)
+        .unwrap()
+        .calculate()
+        .unwrap();
+    request.banks[0].pattern.observed_y = Some(calculated.banks[0].y.clone());
+    (request, truth_values)
+}
+
 fn solver_options(max_iterations: usize) -> StructuralTofMultiBankRefinementOptions {
     StructuralTofMultiBankRefinementOptions::new(
         RefinementLimits::new(max_iterations, 200, None, 8).unwrap(),
@@ -357,7 +375,7 @@ fn joint_products_match_differences_and_the_adjoint_identity() {
 #[test]
 fn contracts_reject_implicit_or_incompatible_physics() {
     let mut request = input();
-    request.banks.truncate(1);
+    request.banks.clear();
     assert!(matches!(
         request.validate(),
         Err(StructuralTofMultiBankError::TooFewBanks)
@@ -386,6 +404,21 @@ fn contracts_reject_implicit_or_incompatible_physics() {
         StructuralTofMultiBankLayout::new(&request),
         Err(StructuralTofMultiBankError::InvalidPhaseContract(_))
     ));
+}
+
+#[test]
+fn single_bank_solver_recovers_local_scale_and_zero() {
+    let (request, truth_values) = single_bank_scale_zero_solver_request();
+    let result = refine_structural_tof_multibank(&request, solver_options(20), None, None).unwrap();
+
+    assert_eq!(result.input.banks.len(), 1);
+    assert_eq!(result.calculation.banks.len(), 1);
+    assert_eq!(result.termination_reason, TerminationReason::Converged);
+    assert!(result.calculation.objective < 1.0e-12);
+    for (spec, truth) in result.parameters.specs().iter().zip(truth_values) {
+        assert!((spec.value() - truth).abs() < 2.0e-6, "{}", spec.key());
+    }
+    result.checkpoint.validate_for(&request).unwrap();
 }
 
 #[test]
