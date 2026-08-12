@@ -119,6 +119,7 @@ from .intensity_corrections import (
     IntegratedIntensityCorrection,
     IntegratedIntensityCorrectionProvider,
     NeutralIntegratedIntensityCorrection,
+    TimeOfFlightNeutronLorentz,
     evaluate_intensity_correction,
 )
 from .io.cif import CifBackend, CifReadLimits, CifReadResult, NativeCifBackend, read_cif
@@ -399,6 +400,7 @@ __all__ = [
     "TchSigmaProfileResult",
     "TchSigmaShape",
     "TerminalCancellationController",
+    "TimeOfFlightNeutronLorentz",
     "TofInstrument",
     "TofPowderData",
     "TofPowderFormat",

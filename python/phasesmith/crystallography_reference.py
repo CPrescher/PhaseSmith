@@ -44,6 +44,21 @@ class ReferenceStructureFactorValues:
     s_inverse_angstrom: NDArray[np.float64]
 
 
+def reference_time_of_flight_neutron_lorentz(
+    q_squared_inverse_angstrom2: ArrayLike,
+    two_theta_deg: float,
+) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
+    """Evaluate ``d⁴ sin(theta)`` and ``dC/d(q²)`` with NumPy only."""
+
+    q_squared = np.asarray(q_squared_inverse_angstrom2, dtype=np.float64)
+    if q_squared.ndim != 1 or not np.isfinite(q_squared).all() or np.any(q_squared <= 0.0):
+        raise ValueError("q_squared_inverse_angstrom2 must be a finite positive vector")
+    if not np.isfinite(two_theta_deg) or not 0.0 < two_theta_deg < 180.0:
+        raise ValueError("two_theta_deg must be finite and strictly within (0, 180)")
+    sin_theta = np.sin(np.deg2rad(0.5 * two_theta_deg))
+    return sin_theta / q_squared**2, -2.0 * sin_theta / q_squared**3
+
+
 def reference_cell_geometry(cell: UnitCell) -> ReferenceCellGeometry:
     """Build the direct metric and its derivatives from scalar definitions."""
 

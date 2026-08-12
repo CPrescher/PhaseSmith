@@ -210,6 +210,8 @@ pub enum StructuralPatternError {
     Scattering(ScatteringError),
     /// Integrated-intensity correction evaluation failed.
     Correction(IntegratedIntensityCorrectionError),
+    /// A TOF-only intensity correction was supplied to the CW pattern engine.
+    TimeOfFlightCorrectionInConstantWavelengthPattern,
     /// General-symmetry structural intensity failed.
     StructureFactor(StructureFactorBatchError),
     /// Grid validation failed.
@@ -250,6 +252,9 @@ impl Display for StructuralPatternError {
                 .write_str("fixed scattering offsets are supported only for X-ray scattering"),
             Self::Scattering(error) => Display::fmt(error, formatter),
             Self::Correction(error) => Display::fmt(error, formatter),
+            Self::TimeOfFlightCorrectionInConstantWavelengthPattern => formatter.write_str(
+                "TOF neutron Lorentz correction is not valid for a constant-wavelength pattern",
+            ),
             Self::StructureFactor(error) => Display::fmt(error, formatter),
             Self::Profile(error) => Display::fmt(error, formatter),
             Self::Contributions(error) => Display::fmt(error, formatter),
@@ -731,6 +736,7 @@ fn prepare(
     cell: UnitCell,
     input: &StructuralPatternInputView<'_>,
 ) -> Result<PreparedNumerics, StructuralPatternError> {
+    validate_constant_wavelength_correction(input.correction_model)?;
     if input.scattering_species.len() != input.fractional_xyz.len() {
         return Err(StructuralPatternError::SpeciesLengthMismatch);
     }
@@ -830,6 +836,19 @@ fn prepare(
         d_two_theta_d_displace_x,
         d_two_theta_d_displace_y,
     })
+}
+
+fn validate_constant_wavelength_correction(
+    correction: IntegratedIntensityCorrectionModel,
+) -> Result<(), StructuralPatternError> {
+    if matches!(
+        correction,
+        IntegratedIntensityCorrectionModel::TimeOfFlightNeutronLorentz { .. }
+    ) {
+        Err(StructuralPatternError::TimeOfFlightCorrectionInConstantWavelengthPattern)
+    } else {
+        Ok(())
+    }
 }
 
 fn calculate_values(
@@ -1075,6 +1094,34 @@ mod tests {
         scale: f64,
         multiplier: &[f64],
     ) -> StructuralPatternResult {
+        calculate_case_with_correction(
+            selected_cell,
+            x,
+            hkl,
+            multiplicity,
+            xyz,
+            occupancy,
+            u_iso,
+            scale,
+            multiplier,
+            IntegratedIntensityCorrectionModel::Neutral,
+        )
+        .expect("structural pattern")
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn calculate_case_with_correction(
+        selected_cell: UnitCell,
+        x: &[f64],
+        hkl: &[[i32; 3]],
+        multiplicity: &[usize],
+        xyz: &[[f64; 3]],
+        occupancy: &[f64],
+        u_iso: &[f64],
+        scale: f64,
+        multiplier: &[f64],
+        correction_model: IntegratedIntensityCorrectionModel,
+    ) -> Result<StructuralPatternResult, StructuralPatternError> {
         let zeros = vec![0.0; hkl.len()];
         let contributions = CwContributionsView::new(
             hkl.len(),
@@ -1116,13 +1163,35 @@ mod tests {
                     bragg_brentano_mm: None,
                     debye_scherrer_micrometre: None,
                 },
-                correction_model: IntegratedIntensityCorrectionModel::Neutral,
+                correction_model,
                 scattering_model: BuiltInScatteringModel::XrayNonResonant,
                 contributions,
                 support: SupportPolicy::FwhmMultiple(20.0),
             },
         )
-        .expect("structural pattern")
+    }
+
+    #[test]
+    fn constant_wavelength_pattern_rejects_tof_only_correction() {
+        let error = calculate_case_with_correction(
+            cell(),
+            &[10.0, 20.0],
+            &[[1, 0, 1]],
+            &[2],
+            &[[0.17, 0.23, 0.31], [0.37, 0.11, 0.19]],
+            &[0.82, 0.55],
+            &[0.012, 0.018],
+            1.0,
+            &[1.0],
+            IntegratedIntensityCorrectionModel::TimeOfFlightNeutronLorentz {
+                two_theta_deg: 90.0,
+            },
+        )
+        .expect_err("TOF correction must not enter CW accumulation");
+        assert!(matches!(
+            error,
+            StructuralPatternError::TimeOfFlightCorrectionInConstantWavelengthPattern
+        ));
     }
 
     #[test]

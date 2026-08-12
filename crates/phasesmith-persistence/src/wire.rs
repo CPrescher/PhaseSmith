@@ -219,6 +219,9 @@ enum WireCorrectionModel {
     ConstantWavelengthNeutronLorentz {
         wavelength_angstrom: f64,
     },
+    TimeOfFlightNeutronLorentz {
+        two_theta_deg: f64,
+    },
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -669,6 +672,9 @@ fn encode_correction(model: IntegratedIntensityCorrectionModel) -> WireCorrectio
         } => WireCorrectionModel::ConstantWavelengthNeutronLorentz {
             wavelength_angstrom,
         },
+        IntegratedIntensityCorrectionModel::TimeOfFlightNeutronLorentz { two_theta_deg } => {
+            WireCorrectionModel::TimeOfFlightNeutronLorentz { two_theta_deg }
+        }
     }
 }
 
@@ -1006,6 +1012,9 @@ fn decode_correction(model: WireCorrectionModel) -> IntegratedIntensityCorrectio
         } => IntegratedIntensityCorrectionModel::ConstantWavelengthNeutronLorentz {
             wavelength_angstrom,
         },
+        WireCorrectionModel::TimeOfFlightNeutronLorentz { two_theta_deg } => {
+            IntegratedIntensityCorrectionModel::TimeOfFlightNeutronLorentz { two_theta_deg }
+        }
     }
 }
 

@@ -6,7 +6,10 @@ import numpy as np
 import phasesmith
 import pytest
 from phasesmith import scattering_reference
-from phasesmith.crystallography_reference import reference_structure_factor_values
+from phasesmith.crystallography_reference import (
+    reference_structure_factor_values,
+    reference_time_of_flight_neutron_lorentz,
+)
 from phasesmith.symmetry_reference import reference_expand_sites
 
 
@@ -377,6 +380,31 @@ def test_lp_and_custom_correction_contracts_are_explicit_and_vectorized() -> Non
             phasesmith.XrayNonResonant(),
             correction=WrongShapeCorrection(),
         )
+
+
+def test_tof_neutron_lorentz_matches_independent_numpy_and_finite_differences() -> None:
+    q_squared = np.array([0.03, 0.19, 0.62])
+    two_theta_deg = 88.05
+    model = phasesmith.TimeOfFlightNeutronLorentz(two_theta_deg)
+    actual = model.evaluate(q_squared)
+    expected, expected_derivative = reference_time_of_flight_neutron_lorentz(
+        q_squared,
+        two_theta_deg,
+    )
+    np.testing.assert_allclose(actual.values, expected, rtol=2e-15)
+    np.testing.assert_allclose(
+        actual.d_values_d_q_squared,
+        expected_derivative,
+        rtol=2e-15,
+    )
+    step = 1.0e-7
+    finite = (model.evaluate(q_squared + step).values - model.evaluate(q_squared - step).values) / (
+        2.0 * step
+    )
+    np.testing.assert_allclose(actual.d_values_d_q_squared, finite, rtol=3e-8, atol=3e-6)
+    assert actual.model_id == "time_of_flight_neutron_lorentz"
+    with pytest.raises(ValueError, match="strictly within"):
+        phasesmith.TimeOfFlightNeutronLorentz(180.0)
 
 
 def test_structural_boundaries_reject_invalid_multiplicity_and_dense_size() -> None:

@@ -319,6 +319,9 @@ fn correction_for_wavelength(
                 wavelength_angstrom,
             }
         }
+        IntegratedIntensityCorrectionModel::TimeOfFlightNeutronLorentz { two_theta_deg } => {
+            IntegratedIntensityCorrectionModel::TimeOfFlightNeutronLorentz { two_theta_deg }
+        }
     }
 }
 

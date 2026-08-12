@@ -28,6 +28,7 @@ from .intensity_corrections import (
     BraggBrentanoUnpolarizedLp,
     ConstantWavelengthNeutronLorentz,
     NeutralIntegratedIntensityCorrection,
+    TimeOfFlightNeutronLorentz,
 )
 from .pattern import (
     PowderPattern,
@@ -73,6 +74,11 @@ def _check_probe(phase: RietveldPhase, experiment: ConstantWavelengthExperiment)
             f"the {experiment.radiation.probe.value} experiment"
         )
     correction = phase.intensity_correction
+    if isinstance(correction, TimeOfFlightNeutronLorentz):
+        raise ValueError(
+            "time-of-flight neutron Lorentz correction is incompatible with a "
+            "constant-wavelength experiment"
+        )
     if isinstance(correction, ConstantWavelengthNeutronLorentz):
         if experiment.radiation.probe is not RadiationProbe.NEUTRON:
             raise ValueError("constant-wavelength neutron Lorentz correction requires neutrons")

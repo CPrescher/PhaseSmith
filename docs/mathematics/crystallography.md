@@ -185,12 +185,19 @@ Polarized X-ray Bragg–Brentano:
 C_h = [P + (1-P)cos²(2θ)]/[sin²θ cosθ],  0 <= P <= 1
 
 Constant-wavelength neutron powder:
-C_h = 1/[sinθ sin(2θ)].
+C_h = 1/[sinθ sin(2θ)]
+
+Conventional one-dimensional neutron TOF powder at fixed bank angle:
+C_h = d_h^4 sinθ_bank = sinθ_bank/(q_h²)^2
+dC_h/d(q_h²) = -2 sinθ_bank/(q_h²)^3.
 ```
 
-The neutron expression is exactly one half of the polarized implementation's
-`P=1` algebraic form. Correction values include analytical `q²` and wavelength
-derivatives.
+The constant-wavelength neutron expression is exactly one half of the
+polarized implementation's `P=1` algebraic form. Correction values include
+analytical `q²` and wavelength derivatives. The TOF derivative with respect to
+wavelength is exactly zero because its independent geometry input is the fixed
+bank `2theta`; spectrum and detector-efficiency terms are separate correction
+models rather than an implicit part of this Lorentz factor.
 
 ## Bragg positions and specimen displacement
 

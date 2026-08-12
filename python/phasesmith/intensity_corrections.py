@@ -106,6 +106,40 @@ class ConstantWavelengthNeutronLorentz:
 
 
 @dataclass(frozen=True, slots=True)
+class TimeOfFlightNeutronLorentz:
+    """Conventional 1D neutron TOF Lorentz factor ``d⁴ sin(theta)``.
+
+    ``two_theta_deg`` is fixed bank geometry. This explicit legacy
+    Bragg-Rietveld convention is not a universal correction for event data,
+    total scattering, or observations with a different reduction convention.
+    """
+
+    two_theta_deg: float
+    thread_safe: ClassVar[bool] = True
+
+    def __post_init__(self) -> None:
+        if not np.isfinite(self.two_theta_deg) or not 0.0 < self.two_theta_deg < 180.0:
+            raise ValueError("two_theta_deg must be finite and strictly within (0, 180)")
+
+    def evaluate(self, q_squared_inverse_angstrom2: ArrayLike) -> IntegratedIntensityCorrection:
+        """Return Lorentz values and analytical reciprocal-metric derivatives."""
+
+        q_squared = _q_squared(q_squared_inverse_angstrom2)
+        values, derivatives = _core.integrated_intensity_correction(
+            q_squared,
+            "time_of_flight_neutron_lorentz",
+            None,
+            None,
+            self.two_theta_deg,
+        )
+        return IntegratedIntensityCorrection(
+            values,
+            derivatives,
+            "time_of_flight_neutron_lorentz",
+        )
+
+
+@dataclass(frozen=True, slots=True)
 class BraggBrentanoUnpolarizedLp:
     """Monochromatic unpolarized symmetric Bragg--Brentano integrated LP."""
 

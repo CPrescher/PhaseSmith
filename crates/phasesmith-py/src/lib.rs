@@ -984,6 +984,7 @@ impl NativeStructuralPhase {
                         correction_model,
                         correction_wavelength_angstrom,
                         correction_polarization,
+                        None,
                     )?,
                 },
                 execution_context,
@@ -3534,49 +3535,75 @@ fn parse_correction_model(
     model: &str,
     wavelength_angstrom: Option<f64>,
     polarization: Option<f64>,
+    two_theta_deg: Option<f64>,
 ) -> PyResult<IntegratedIntensityCorrectionModel> {
-    let selected = match (model, wavelength_angstrom, polarization) {
-        ("neutral", None, None) => IntegratedIntensityCorrectionModel::Neutral,
-        ("bragg_brentano_unpolarized_lp", Some(wavelength_angstrom), None) => {
+    let selected = match (model, wavelength_angstrom, polarization, two_theta_deg) {
+        ("neutral", None, None, None) => IntegratedIntensityCorrectionModel::Neutral,
+        ("bragg_brentano_unpolarized_lp", Some(wavelength_angstrom), None, None) => {
             IntegratedIntensityCorrectionModel::BraggBrentanoUnpolarizedLp {
                 wavelength_angstrom,
             }
         }
-        ("bragg_brentano_polarized_lp", Some(wavelength_angstrom), Some(polarization)) => {
+        ("bragg_brentano_polarized_lp", Some(wavelength_angstrom), Some(polarization), None) => {
             IntegratedIntensityCorrectionModel::BraggBrentanoPolarizedLp {
                 wavelength_angstrom,
                 polarization,
             }
         }
-        ("constant_wavelength_neutron_lorentz", Some(wavelength_angstrom), None) => {
+        ("constant_wavelength_neutron_lorentz", Some(wavelength_angstrom), None, None) => {
             IntegratedIntensityCorrectionModel::ConstantWavelengthNeutronLorentz {
                 wavelength_angstrom,
             }
         }
-        ("neutral", Some(_), _) | ("neutral", None, Some(_)) => {
+        ("time_of_flight_neutron_lorentz", None, None, Some(two_theta_deg)) => {
+            IntegratedIntensityCorrectionModel::TimeOfFlightNeutronLorentz { two_theta_deg }
+        }
+        ("neutral", _, _, _) => {
             return Err(PyValueError::new_err(
-                "neutral correction does not accept wavelength or polarization",
+                "neutral correction does not accept wavelength, polarization, or two_theta",
             ));
         }
-        ("bragg_brentano_unpolarized_lp" | "constant_wavelength_neutron_lorentz", None, None)
-        | ("bragg_brentano_polarized_lp", None, _) => {
+        (
+            "bragg_brentano_unpolarized_lp" | "constant_wavelength_neutron_lorentz",
+            None,
+            None,
+            None,
+        )
+        | ("bragg_brentano_polarized_lp", None, _, None) => {
             return Err(PyValueError::new_err(
                 "angular intensity correction requires a wavelength",
             ));
         }
-        ("bragg_brentano_unpolarized_lp", _, Some(_)) => {
+        ("time_of_flight_neutron_lorentz", None, None, None) => {
             return Err(PyValueError::new_err(
-                "unpolarized Bragg-Brentano LP does not accept polarization",
+                "TOF neutron Lorentz correction requires two_theta_deg",
             ));
         }
-        ("bragg_brentano_polarized_lp", Some(_), None) => {
+        ("bragg_brentano_unpolarized_lp", _, Some(_), _)
+        | ("bragg_brentano_unpolarized_lp", _, _, Some(_)) => {
+            return Err(PyValueError::new_err(
+                "unpolarized Bragg-Brentano LP accepts only a wavelength",
+            ));
+        }
+        ("bragg_brentano_polarized_lp", Some(_), None, None) => {
             return Err(PyValueError::new_err(
                 "polarized Bragg-Brentano LP requires polarization",
             ));
         }
-        ("constant_wavelength_neutron_lorentz", _, Some(_)) => {
+        ("bragg_brentano_polarized_lp", _, _, Some(_)) => {
             return Err(PyValueError::new_err(
-                "neutron Lorentz correction does not accept polarization",
+                "polarized Bragg-Brentano LP does not accept two_theta_deg",
+            ));
+        }
+        ("constant_wavelength_neutron_lorentz", _, Some(_), _)
+        | ("constant_wavelength_neutron_lorentz", _, _, Some(_)) => {
+            return Err(PyValueError::new_err(
+                "constant-wavelength neutron Lorentz correction accepts only a wavelength",
+            ));
+        }
+        ("time_of_flight_neutron_lorentz", _, _, _) => {
+            return Err(PyValueError::new_err(
+                "TOF neutron Lorentz correction accepts only two_theta_deg",
             ));
         }
         _ => {
@@ -3593,7 +3620,8 @@ fn parse_correction_model(
     q_squared_inverse_angstrom2,
     model,
     wavelength_angstrom = None,
-    polarization = None
+    polarization = None,
+    two_theta_deg = None
 ))]
 fn integrated_intensity_correction<'py>(
     py: Python<'py>,
@@ -3601,8 +3629,9 @@ fn integrated_intensity_correction<'py>(
     model: &str,
     wavelength_angstrom: Option<f64>,
     polarization: Option<f64>,
+    two_theta_deg: Option<f64>,
 ) -> PyResult<CorrectionArrays<'py>> {
-    let selected = parse_correction_model(model, wavelength_angstrom, polarization)?;
+    let selected = parse_correction_model(model, wavelength_angstrom, polarization, two_theta_deg)?;
     let q_squared = contiguous_slice(&q_squared_inverse_angstrom2, "q_squared_inverse_angstrom2")?;
     let result = py
         .detach(|| selected.evaluate(q_squared))

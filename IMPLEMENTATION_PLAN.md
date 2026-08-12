@@ -1454,6 +1454,14 @@ and isolated-oracle gates. Incident spectrum, detector efficiency, absorption,
 and extinction cannot be silently inferred from `POWGEN`, `BNKPAR`, or a TOF
 profile function.
 
+Unit 38a's correction slice is complete. The Rust and public Python
+`TimeOfFlightNeutronLorentz` model implements `d^4 sin(theta_bank)` with its
+analytical reciprocal-metric derivative, explicit bank-angle validation, and
+zero wavelength derivative. Rust closed-form/finite-difference tests and an
+independent NumPy reference agree. The constant-wavelength structural engine
+explicitly rejects the TOF-only model. The remaining Unit 38a slice is typed
+bank geometry plus bounded, independently documented legacy angle import.
+
 Do not combine adjacent items merely to reduce PR count; numerical review is
 easier when parameter conventions and tolerance changes remain isolated.
 

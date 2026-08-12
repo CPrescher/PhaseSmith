@@ -21,6 +21,7 @@ from .intensity_corrections import (
     BraggBrentanoUnpolarizedLp,
     ConstantWavelengthNeutronLorentz,
     NeutralIntegratedIntensityCorrection,
+    TimeOfFlightNeutronLorentz,
 )
 from .pattern import PowderPattern
 from .phase import ReciprocalMetric, RietveldPhase, StructuralReflectionBatch
@@ -307,6 +308,8 @@ def _correction(record: dict[str, Any]) -> object:
         )
     if kind == "constant_wavelength_neutron_lorentz":
         return ConstantWavelengthNeutronLorentz(float(record["wavelength_angstrom"]))
+    if kind == "time_of_flight_neutron_lorentz":
+        return TimeOfFlightNeutronLorentz(float(record["two_theta_deg"]))
     raise ValueError(f"unsupported native correction model {kind!r}")
 
 

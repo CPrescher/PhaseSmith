@@ -73,7 +73,7 @@ The profile receives the integrated reflection area
 I_h = phase_scale * multiplicity_h * C_h * |F_h|².
 ```
 
-Three built-in correction choices are explicit:
+Five built-in correction choices are explicit:
 
 - `NeutralIntegratedIntensityCorrection` sets `C_h = 1`. It is required when
   supplied data are already corrected or when the caller wants raw
@@ -101,9 +101,22 @@ Three built-in correction choices are explicit:
   `Polariz. = 0.7` map directly to `P = 0.7`; the parameter is not complemented
   or normalized behind the API.
 
-Both LP models are valid only for monochromatic X-rays in symmetric angular-
+- `ConstantWavelengthNeutronLorentz` applies
+  `C_h = 1/[sin(theta) sin(2 theta)]` for a monochromatic neutron experiment.
+- `TimeOfFlightNeutronLorentz` applies the conventional one-dimensional
+  Bragg-Rietveld TOF factor at a fixed bank angle:
+
+  ```text
+  C_h = d_h^4 sin(theta_bank) = sin(theta_bank)/(q_h²)^2.
+  ```
+
+  It is an explicit reduced-observation convention, not a universal event-data
+  or total-scattering correction. See the
+  [structural TOF readiness contract](tof-structural-readiness.md).
+
+The Bragg--Brentano LP models are valid only for monochromatic X-rays in symmetric angular-
 dispersive reflection geometry and `0 < 2theta < 180°`. Transmission/capillary
-geometry, neutron, TOF, absorption, extinction, and pointwise broad-peak
+geometry, absorption, extinction, and pointwise broad-peak
 corrections require distinct typed models. They are never selected from an
 ambiguous boolean.
 

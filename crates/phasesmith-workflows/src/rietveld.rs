@@ -422,6 +422,9 @@ impl RietveldPhase {
                     wavelength_angstrom,
                 }
             }
+            IntegratedIntensityCorrectionModel::TimeOfFlightNeutronLorentz { two_theta_deg } => {
+                IntegratedIntensityCorrectionModel::TimeOfFlightNeutronLorentz { two_theta_deg }
+            }
         };
         if let Some(domain) = &self.reflection_domain {
             phase.reflection_domain = Some(
@@ -437,7 +440,8 @@ impl RietveldPhase {
 
     fn correction_wavelength(&self) -> Option<f64> {
         match self.definition.correction_model {
-            IntegratedIntensityCorrectionModel::Neutral => None,
+            IntegratedIntensityCorrectionModel::Neutral
+            | IntegratedIntensityCorrectionModel::TimeOfFlightNeutronLorentz { .. } => None,
             IntegratedIntensityCorrectionModel::BraggBrentanoUnpolarizedLp {
                 wavelength_angstrom,
             }
@@ -466,6 +470,14 @@ fn correction_identity_matches(
             IntegratedIntensityCorrectionModel::ConstantWavelengthNeutronLorentz { .. },
         ) => true,
         (
+            IntegratedIntensityCorrectionModel::TimeOfFlightNeutronLorentz {
+                two_theta_deg: left,
+            },
+            IntegratedIntensityCorrectionModel::TimeOfFlightNeutronLorentz {
+                two_theta_deg: right,
+            },
+        )
+        | (
             IntegratedIntensityCorrectionModel::BraggBrentanoPolarizedLp {
                 polarization: left, ..
             },

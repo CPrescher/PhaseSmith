@@ -36,6 +36,11 @@ pub enum IntegratedIntensityCorrectionModel {
         /// Monochromatic wavelength in ångströms.
         wavelength_angstrom: f64,
     },
+    /// Conventional one-dimensional neutron TOF powder Lorentz factor.
+    TimeOfFlightNeutronLorentz {
+        /// Fixed bank scattering angle in degrees `2theta`.
+        two_theta_deg: f64,
+    },
 }
 
 /// Invalid correction model or reflection geometry.
@@ -45,6 +50,8 @@ pub enum IntegratedIntensityCorrectionError {
     InvalidWavelength,
     /// Polarization is not finite or lies outside `[0, 1]`.
     InvalidPolarization,
+    /// Bank scattering angle is not finite or outside `0 < 2theta < 180°`.
+    InvalidTwoTheta,
     /// A reciprocal squared length is not positive and finite.
     InvalidQSquared,
     /// A reflection does not satisfy `0 < 2theta < 180°` for the wavelength.
@@ -57,6 +64,9 @@ impl Display for IntegratedIntensityCorrectionError {
             Self::InvalidWavelength => "correction wavelength must be positive and finite",
             Self::InvalidPolarization => {
                 "Bragg-Brentano polarization must be finite and within [0, 1]"
+            }
+            Self::InvalidTwoTheta => {
+                "TOF neutron Lorentz correction requires finite 0 < 2theta < 180 degrees"
             }
             Self::InvalidQSquared => "correction q_squared must be positive and finite",
             Self::ReflectionOutsideAngularDomain => {
@@ -86,6 +96,9 @@ impl IntegratedIntensityCorrectionModel {
                     wavelength_angstrom,
                 }
             }
+            Self::TimeOfFlightNeutronLorentz { two_theta_deg } => {
+                Self::TimeOfFlightNeutronLorentz { two_theta_deg }
+            }
         }
     }
 
@@ -111,6 +124,23 @@ impl IntegratedIntensityCorrectionModel {
                 d_values_d_q_squared: vec![0.0; q_squared_inverse_angstrom2.len()],
                 d_values_d_wavelength: vec![0.0; q_squared_inverse_angstrom2.len()],
             }),
+            Self::TimeOfFlightNeutronLorentz { two_theta_deg } => {
+                if !two_theta_deg.is_finite() || two_theta_deg <= 0.0 || two_theta_deg >= 180.0 {
+                    return Err(IntegratedIntensityCorrectionError::InvalidTwoTheta);
+                }
+                let sin_theta = (0.5 * two_theta_deg).to_radians().sin();
+                let mut values = Vec::with_capacity(q_squared_inverse_angstrom2.len());
+                let mut derivatives = Vec::with_capacity(q_squared_inverse_angstrom2.len());
+                for &q_squared in q_squared_inverse_angstrom2 {
+                    values.push(sin_theta / q_squared.powi(2));
+                    derivatives.push(-2.0 * sin_theta / q_squared.powi(3));
+                }
+                Ok(IntegratedIntensityCorrection {
+                    values,
+                    d_values_d_q_squared: derivatives,
+                    d_values_d_wavelength: vec![0.0; q_squared_inverse_angstrom2.len()],
+                })
+            }
             Self::BraggBrentanoUnpolarizedLp {
                 wavelength_angstrom,
             }
@@ -128,7 +158,7 @@ impl IntegratedIntensityCorrectionModel {
                     Self::BraggBrentanoUnpolarizedLp { .. } => (0.5, 1.0),
                     Self::BraggBrentanoPolarizedLp { polarization, .. } => (polarization, 1.0),
                     Self::ConstantWavelengthNeutronLorentz { .. } => (1.0, 0.5),
-                    Self::Neutral => unreachable!(),
+                    Self::Neutral | Self::TimeOfFlightNeutronLorentz { .. } => unreachable!(),
                 };
                 if !polarization.is_finite() || !(0.0..=1.0).contains(&polarization) {
                     return Err(IntegratedIntensityCorrectionError::InvalidPolarization);
@@ -321,6 +351,34 @@ mod tests {
     }
 
     #[test]
+    fn tof_neutron_lorentz_matches_closed_form_and_centered_differences() {
+        let two_theta_deg = 88.05;
+        let q_squared = [0.03_f64, 0.19, 0.62];
+        let model =
+            IntegratedIntensityCorrectionModel::TimeOfFlightNeutronLorentz { two_theta_deg };
+        let actual = model
+            .evaluate(&q_squared)
+            .expect("TOF neutron Lorentz values");
+        let sin_theta = (0.5 * two_theta_deg).to_radians().sin();
+        for (index, value) in q_squared.into_iter().enumerate() {
+            let expected = sin_theta / value.powi(2);
+            assert!((actual.values[index] - expected).abs() < 2.0e-14 * expected);
+            assert_eq!(
+                actual.d_values_d_wavelength[index].to_bits(),
+                0.0_f64.to_bits()
+            );
+            let step = 1.0e-6 * value;
+            let finite_difference = (model.evaluate(&[value + step]).unwrap().values[0]
+                - model.evaluate(&[value - step]).unwrap().values[0])
+                / (2.0 * step);
+            assert!(
+                (actual.d_values_d_q_squared[index] - finite_difference).abs()
+                    < 2.0e-8 * finite_difference.abs().max(1.0)
+            );
+        }
+    }
+
+    #[test]
     fn invalid_domains_are_explicit() {
         assert_eq!(
             IntegratedIntensityCorrectionModel::Neutral.evaluate(&[0.0]),
@@ -348,5 +406,12 @@ mod tests {
             .evaluate(&[1.0]),
             Err(IntegratedIntensityCorrectionError::InvalidPolarization)
         );
+        for two_theta_deg in [f64::NAN, 0.0, 180.0, f64::INFINITY] {
+            assert_eq!(
+                IntegratedIntensityCorrectionModel::TimeOfFlightNeutronLorentz { two_theta_deg }
+                    .evaluate(&[1.0]),
+                Err(IntegratedIntensityCorrectionError::InvalidTwoTheta)
+            );
+        }
     }
 }

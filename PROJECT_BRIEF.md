@@ -1008,6 +1008,15 @@ empirical profile/calibration law rather than pretending that fitted `DIFC`
 uniquely supplies physical bank geometry. The complete equations, ORNL/POWGEN
 request checklist, and staged implementation gates are recorded in
 `docs/tof-structural-readiness.md`.
+Unit 38a's first numerical slice adds the explicitly selected conventional
+one-dimensional neutron TOF Lorentz factor `d^4 sin(theta_bank)`. Rust evaluates
+its value and analytical reciprocal-metric derivative together, and the public
+Python model agrees with an independent NumPy equation and centered finite
+differences. Invalid bank angles fail at the boundary, wavelength derivatives
+are exactly zero, and the existing constant-wavelength structural engine
+rejects this TOF-only correction rather than silently applying it on an angular
+pattern. Typed bank geometry and bounded legacy import remain the next Unit 38a
+slice.
 The historical native-workflow comparison passes both Le Bail parity contracts
 and QARR 1g. Its unchanged QARR 1h acceptance recipe retains the reviewed
 profile-quality failure, rather than having thresholds relaxed. The newer
