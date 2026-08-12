@@ -74,6 +74,7 @@ mod tof_multibank_instrument;
 mod tof_multibank_lattice;
 mod tof_multibank_project;
 mod tof_project;
+mod tof_structural_multibank;
 
 pub use backgrounds::{
     AmorphousBackground, AmorphousPeak, BackgroundBasis, BackgroundError, BackgroundModel,
@@ -204,3 +205,8 @@ pub use tof_multibank_project::{
     TofMultiBankGeometryAnalysis, TofMultiBankGeometryProjectState, TofMultiBankProjectError,
 };
 pub use tof_project::{TofLeBailAnalysis, TofLeBailProjectState, TofProjectError};
+pub use tof_structural_multibank::{
+    PreparedStructuralTofMultiBankObjective, StructuralTofBank, StructuralTofBankCalculation,
+    StructuralTofMultiBankCalculation, StructuralTofMultiBankError, StructuralTofMultiBankGradient,
+    StructuralTofMultiBankInput, StructuralTofMultiBankLayout, StructuralTofMultiBankProduct,
+};

@@ -149,6 +149,41 @@ deliberately accepts only `Neutral` or `TimeOfFlightNeutronLorentz`, and the
 Lorentz angle must bitwise match the typed bank geometry. It does not infer
 incident-spectrum, detector, absorption, extinction, or texture corrections.
 
+## Implemented multi-bank objective
+
+The first Unit 38c slice composes the single-bank primitive into
+`PreparedStructuralTofMultiBankObjective`. It requires two or more unique bank
+IDs and evaluates one summed objective atomically:
+
+```text
+Phi = 1/2 sum_bank sum_included [(Y_calc - Y_obs) / sigma]^2
+```
+
+The uncertainty denominator is omitted when uncertainty weighting is disabled
+or a bank has no uncertainty array. Masks contribute exactly zero. Shared
+setting-aware lattice, symmetry-allowed coordinates, occupancies, and isotropic
+displacement parameters use the existing physical-to-native structural
+transform. Each bank independently owns its scale, selected bounded instrument
+coefficients, fixed plus optional Chebyshev background, geometry, correction,
+mask, and uncertainty.
+
+The prepared objective exposes values, JVP, VJP, gradient, and
+`J^T W J + damping I` products. Structural reverse products are summed into
+shared rows; the native structure-factor scale row is redirected to the
+corresponding bank-local scale. Instrument products select rows from the
+15-coefficient fused accumulation, and background products use the exact
+Chebyshev basis. Deterministic tests compare the complete joint JVP and
+objective gradient with centered differences, verify JVP/VJP adjoint identity,
+and check the normal operator explicitly.
+
+This slice is deliberately guarded to one fixed-topology neutron phase. The
+phase record must carry unit placeholder scale, neutral placeholder correction,
+neutral CW-contribution arrays, and no CW sample-physics or dynamic reflection
+domain. Every bank then chooses its real scale and correction explicitly. The
+prepared contract freezes observation arrays, geometry, correction choice,
+parameter bounds, background identity/domain, support, weighting, and execution
+policy while allowing only the declared numerical parameters to change.
+
 ## Unit 38 delivery sequence
 
 The structural extension is split into reviewable numerical increments:
@@ -162,9 +197,9 @@ The structural extension is split into reviewable numerical increments:
    values and structural/profile derivatives through the same finite-support
    accumulation. Dense, JVP, VJP, independent-reference, and realistic
    multi-reflection benchmark gates are present.
-4. Compose the primitive into a guarded multi-bank structural objective and
-   solver with shared structure/cell and bank-local scale, background,
-   instrument, geometry, masks, and uncertainties.
+4. **Objective complete; solver next:** compose the primitive into a guarded
+   multi-bank structural objective and solver with shared structure/cell and
+   bank-local scale, background, instrument, geometry, masks, and uncertainties.
 5. Expose the same native contract through Python and project persistence, then
    validate a checksum-pinned real structural dataset against an isolated
    pinned oracle.

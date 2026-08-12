@@ -1477,8 +1477,18 @@ rows. Cell motion includes both intensity and peak-position/width chains through
 sparse local profile blocks. Centered finite differences, dense/JVP/VJP and
 adjoint checks, invalid correction/weight boundaries, an independent NumPy
 structural-TOF composition, and a 128-reflection/16-site/14,501-sample Criterion
-benchmark gate the implementation. Unit 38c's guarded multi-bank structural
-objective and solver are next.
+benchmark gate the implementation. Unit 38c's guarded multi-bank objective
+slice is now complete. `PreparedStructuralTofMultiBankObjective` atomically
+sums the uncertainty-weighted, masked residual objective across two or more
+banks. Symmetry-aware lattice/site parameters are shared; scale, selected
+bounded instrument coefficients, and optional Chebyshev coefficients are
+bank-local. Values, JVP, VJP, gradient, and normal products use the fused
+structural/profile rows and exact background bases. The contract freezes
+observations, geometry, correction, support, bounds, and parameter identities,
+and rejects CW sample physics, dynamic topology, implicit shared scale, or
+mismatched bank angles. Joint centered differences, adjoint identity, normal
+product, and invalid-contract tests form the review gate. The bounded,
+checkpointable Unit 38c solver is next.
 
 Do not combine adjacent items merely to reduce PR count; numerical review is
 easier when parameter conventions and tolerance changes remain isolated.
@@ -1536,8 +1546,8 @@ completes atomic fixed-cell multi-bank coordination, Unit 34 completes shared
 analytical lattice motion, and Unit 35 completes selected fixed-cell bank-local
 instrument motion, and Unit 36 combines the two geometry families in one
 correlation-diagnosed system, and Unit 37a adds its Python application facade.
-The next TOF increment is Unit 38c's guarded multi-bank structural objective
-and solver.
+The next TOF increment is Unit 38c's bounded, checkpointable structural
+multi-bank solver over the completed joint objective.
 Structural parameter and instrument refinement must
 be introduced only with analytical derivatives, finite-difference tests, and
 new oracle contracts; it is not part of the completed Le Bail facade.

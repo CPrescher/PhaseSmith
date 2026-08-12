@@ -1,0 +1,337 @@
+#![allow(missing_docs)]
+
+use phasesmith_core::{
+    OwnedCwContributions, TofBankGeometry, TofInstrument, TofInstrumentParameter,
+};
+use phasesmith_crystallography::{
+    IntegratedIntensityCorrectionModel, SpaceGroup, SymmetryOperation, UnitCell,
+};
+use phasesmith_engine::{BuiltInScatteringModel, StructuralPhaseDefinition};
+use phasesmith_execution::ExecutionPolicy;
+use phasesmith_model::{RecordId, TofPatternRecord};
+use phasesmith_workflows::{
+    LatticeBounds, LatticeParameterization, ParameterBounds,
+    PreparedStructuralTofMultiBankObjective, RietveldPhase, RietveldStructuralSelection,
+    StructuralTofBank, StructuralTofMultiBankError, StructuralTofMultiBankInput,
+    StructuralTofMultiBankLayout, TofChebyshevBackground, TofInstrumentParameterBound,
+};
+
+fn id(value: &str) -> RecordId {
+    RecordId::new(value).expect("valid test ID")
+}
+
+fn cell() -> UnitCell {
+    UnitCell {
+        a_angstrom: 4.7,
+        b_angstrom: 5.1,
+        c_angstrom: 6.2,
+        alpha_deg: 82.0,
+        beta_deg: 87.0,
+        gamma_deg: 74.0,
+    }
+}
+
+fn instrument(zero_us: f64) -> TofInstrument {
+    TofInstrument {
+        zero_us,
+        difc_us_per_angstrom: 5_000.0,
+        difa_us_per_angstrom2: 0.2,
+        difb_us_angstrom: 0.0,
+        alpha_coefficient: 0.2,
+        beta0_per_us: 0.03,
+        beta1_angstrom4_per_us: 0.001,
+        betaq_angstrom2_per_us: 0.0,
+        sigma0_us2: 25.0,
+        sigma1_us2_per_angstrom2: 4.0,
+        sigma2_us2_per_angstrom4: 0.1,
+        sigmaq_us2_per_angstrom: 0.0,
+        x_us_per_angstrom: 1.0,
+        y_us_per_angstrom2: 0.1,
+        z_us: 0.5,
+    }
+}
+
+fn phase() -> RietveldPhase {
+    let definition = StructuralPhaseDefinition {
+        cell: cell(),
+        space_group: SpaceGroup::new(vec![SymmetryOperation::identity()]).expect("P1"),
+        hkl: vec![[1, 0, 1], [2, 1, 1], [1, 2, 3]],
+        multiplicity: vec![2, 4, 2],
+        fractional_xyz: vec![[0.17, 0.23, 0.31], [0.37, 0.11, 0.19]],
+        occupancy: vec![0.82, 0.55],
+        u_iso_angstrom2: vec![0.012, 0.018],
+        anisotropic_mask: vec![false, false],
+        u_aniso_cif_angstrom2: vec![[0.0; 6]; 2],
+        scattering_species: vec!["Si".to_owned(), "O".to_owned()],
+        scattering_real_offset: Vec::new(),
+        scattering_imag_offset: Vec::new(),
+        scale: 1.0,
+        coordinate_tolerance: 1.0e-10,
+        scattering_model: BuiltInScatteringModel::NeutronNuclear,
+        correction_model: IntegratedIntensityCorrectionModel::Neutral,
+    };
+    let reflections = definition.hkl.len();
+    RietveldPhase::new_with_site_ids(
+        id("phase"),
+        "TOF phase",
+        vec![id("si"), id("o")],
+        definition,
+        OwnedCwContributions::neutral(reflections),
+    )
+    .expect("phase")
+}
+
+fn bank(bank_id: &str, angle: f64, zero: f64, scale: f64) -> StructuralTofBank {
+    let tof_us = (0..2_401)
+        .map(|index| 1_000.0 + 10.0 * f64::from(index))
+        .collect::<Vec<_>>();
+    let pattern = TofPatternRecord::new(
+        tof_us.clone(),
+        Some(vec![0.0; tof_us.len()]),
+        Some(
+            (0..tof_us.len())
+                .map(|index| 0.8 + 0.001 * f64::from(u32::try_from(index % 37).unwrap()))
+                .collect(),
+        ),
+        Some((0..tof_us.len()).map(|index| index % 19 != 0).collect()),
+        Some(vec![0.15; tof_us.len()]),
+    )
+    .expect("pattern");
+    StructuralTofBank {
+        bank_id: id(bank_id),
+        pattern,
+        instrument: instrument(zero),
+        geometry: TofBankGeometry {
+            two_theta_deg: angle,
+        },
+        correction_model: IntegratedIntensityCorrectionModel::TimeOfFlightNeutronLorentz {
+            two_theta_deg: angle,
+        },
+        scale,
+        scale_bounds: ParameterBounds::new(0.2, 3.0).expect("scale bounds"),
+        refine_scale: true,
+        background: Some(
+            TofChebyshevBackground::new(
+                id(&format!("{bank_id}-background")),
+                vec![0.2, -0.03],
+                [tof_us[0], *tof_us.last().unwrap()],
+            )
+            .expect("background"),
+        ),
+        refine_background: true,
+        instrument_bounds: vec![
+            TofInstrumentParameterBound::new(TofInstrumentParameter::Zero, -10.0, 10.0)
+                .expect("zero bounds"),
+        ],
+    }
+}
+
+fn input() -> StructuralTofMultiBankInput {
+    let phase = phase();
+    let parameterization = LatticeParameterization::new(
+        phase.definition().space_group.clone(),
+        phase.definition().cell,
+    )
+    .expect("parameterization");
+    StructuralTofMultiBankInput {
+        phase,
+        structural_selection: RietveldStructuralSelection {
+            lattice: true,
+            coordinates: true,
+            occupancy: true,
+            u_iso: true,
+            phase_scale: false,
+        },
+        lattice_bounds: Some(
+            LatticeBounds::around(&parameterization, 0.05, 3.0).expect("lattice bounds"),
+        ),
+        banks: vec![
+            bank("bank-1", 88.05, 1.2, 1.3),
+            bank("bank-2", 120.0, -0.7, 0.9),
+        ],
+        support_fwhm: 20.0,
+        tail_log: 20.0,
+        use_uncertainty: true,
+        execution: ExecutionPolicy::new(Some(1), 16).expect("execution"),
+    }
+}
+
+fn with_synthetic_observations(
+    mut input: StructuralTofMultiBankInput,
+) -> StructuralTofMultiBankInput {
+    let calculated = PreparedStructuralTofMultiBankObjective::new(input.clone())
+        .expect("initial objective")
+        .calculate()
+        .expect("initial calculation");
+    for (bank, calculation) in input.banks.iter_mut().zip(calculated.banks) {
+        bank.pattern.observed_y = Some(
+            calculation
+                .y
+                .iter()
+                .enumerate()
+                .map(|(sample, value)| {
+                    value
+                        + 0.002
+                            * (f64::from(u32::try_from(sample).expect("sample fits u32")) * 0.17)
+                                .sin()
+                })
+                .collect(),
+        );
+    }
+    input
+}
+
+#[test]
+#[allow(clippy::too_many_lines)]
+fn joint_products_match_differences_and_the_adjoint_identity() {
+    let request = with_synthetic_observations(input());
+    let objective = PreparedStructuralTofMultiBankObjective::new(request.clone()).unwrap();
+    let layout = objective.layout();
+    assert_eq!(layout.parameters().specs().len(), 24);
+    let direction = (0..layout.parameters().specs().len())
+        .map(|index| 2.0e-4 * f64::from(u32::try_from(index + 1).unwrap()))
+        .collect::<Vec<_>>();
+    let products = objective.jvp(&direction).unwrap();
+    let weights = request
+        .banks
+        .iter()
+        .map(|bank| {
+            bank.pattern
+                .tof_us
+                .iter()
+                .map(|value| (value * 1.0e-3).sin())
+                .collect::<Vec<_>>()
+        })
+        .collect::<Vec<_>>();
+    let reverse = objective.vjp(&weights).unwrap();
+    let forward_dot = products
+        .iter()
+        .zip(&weights)
+        .map(|(product, weight)| {
+            product
+                .derivative
+                .iter()
+                .zip(weight)
+                .map(|(left, right)| left * right)
+                .sum::<f64>()
+        })
+        .sum::<f64>();
+    let reverse_dot = direction
+        .iter()
+        .zip(&reverse)
+        .map(|(left, right)| left * right)
+        .sum::<f64>();
+    assert!((forward_dot - reverse_dot).abs() < 2.0e-10 * forward_dot.abs().max(1.0));
+
+    let values = layout
+        .parameters()
+        .specs()
+        .iter()
+        .map(phasesmith_workflows::ParameterSpec::value)
+        .collect::<Vec<_>>();
+    let step = 1.0e-6;
+    let plus_values = values
+        .iter()
+        .zip(&direction)
+        .map(|(value, direction)| value + step * direction)
+        .collect::<Vec<_>>();
+    let minus_values = values
+        .iter()
+        .zip(&direction)
+        .map(|(value, direction)| value - step * direction)
+        .collect::<Vec<_>>();
+    let plus = layout.apply_values(&request, &plus_values).unwrap();
+    let minus = layout.apply_values(&request, &minus_values).unwrap();
+    let plus = PreparedStructuralTofMultiBankObjective::new(plus)
+        .unwrap()
+        .calculate()
+        .unwrap();
+    let minus = PreparedStructuralTofMultiBankObjective::new(minus)
+        .unwrap()
+        .calculate()
+        .unwrap();
+    for ((analytical, plus), minus) in products.iter().zip(plus.banks).zip(minus.banks) {
+        for sample in 0..analytical.derivative.len() {
+            let finite = (plus.y[sample] - minus.y[sample]) / (2.0 * step);
+            let scale = finite.abs().max(1.0);
+            assert!(
+                (analytical.derivative[sample] - finite).abs() <= 3.0e-4 * scale,
+                "bank={} sample={sample} analytical={} finite={finite}",
+                analytical.bank_id,
+                analytical.derivative[sample],
+            );
+        }
+    }
+
+    let gradient = objective.gradient().unwrap();
+    let finite_objective = (plus.objective - minus.objective) / (2.0 * step);
+    let directional_gradient = gradient
+        .gradient
+        .iter()
+        .zip(&direction)
+        .map(|(left, right)| left * right)
+        .sum::<f64>();
+    assert!(
+        (directional_gradient - finite_objective).abs() < 5.0e-4 * finite_objective.abs().max(1.0)
+    );
+
+    let normal = objective.normal_product(&direction, 0.3).unwrap();
+    let weighted = request
+        .banks
+        .iter()
+        .zip(&products)
+        .map(|(bank, product)| {
+            product
+                .derivative
+                .iter()
+                .enumerate()
+                .map(|(sample, value)| {
+                    if bank.pattern.mask.as_ref().unwrap()[sample] {
+                        let sigma = bank.pattern.uncertainty.as_ref().unwrap()[sample];
+                        value / (sigma * sigma)
+                    } else {
+                        0.0
+                    }
+                })
+                .collect::<Vec<_>>()
+        })
+        .collect::<Vec<_>>();
+    let expected_normal = objective.vjp(&weighted).unwrap();
+    for ((actual, expected), tangent) in normal.iter().zip(expected_normal).zip(&direction) {
+        assert!((actual - (expected + 0.3 * tangent)).abs() < 2.0e-10 * actual.abs().max(1.0));
+    }
+}
+
+#[test]
+fn contracts_reject_implicit_or_incompatible_physics() {
+    let mut request = input();
+    request.banks.truncate(1);
+    assert!(matches!(
+        request.validate(),
+        Err(StructuralTofMultiBankError::TooFewBanks)
+    ));
+
+    let mut request = input();
+    request.banks[1].bank_id = request.banks[0].bank_id.clone();
+    assert!(matches!(
+        request.validate(),
+        Err(StructuralTofMultiBankError::DuplicateBankId)
+    ));
+
+    let mut request = input();
+    request.banks[0].correction_model =
+        IntegratedIntensityCorrectionModel::TimeOfFlightNeutronLorentz {
+            two_theta_deg: 90.0,
+        };
+    assert!(matches!(
+        request.validate(),
+        Err(StructuralTofMultiBankError::InvalidBankContract(_))
+    ));
+
+    let mut request = input();
+    request.structural_selection.phase_scale = true;
+    assert!(matches!(
+        StructuralTofMultiBankLayout::new(&request),
+        Err(StructuralTofMultiBankError::InvalidPhaseContract(_))
+    ));
+}

@@ -60,3 +60,12 @@ sidecar or packaging dependency.
 Long-running work should use `phasesmith::execution::ExecutionPolicy` and the
 workflow runtime/cancellation contracts. Do not pass Tauri handles or UI types
 into PhaseSmith domain crates.
+
+For neutron TOF structural integrations, `phasesmith::engine` exposes the
+single-bank value/dense/JVP/VJP primitive. The guarded native multi-bank
+objective is `phasesmith::workflows::PreparedStructuralTofMultiBankObjective`;
+it sums shared structural rows across banks and keeps scale, selected instrument
+coefficients, and optional Chebyshev backgrounds bank-local. This objective is
+a Rust integration boundary, not yet the public Python workflow or persisted
+project format. Its correction and bank-geometry requirements are documented in
+[Structural TOF readiness](tof-structural-readiness.md).

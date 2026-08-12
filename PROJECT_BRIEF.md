@@ -1031,9 +1031,15 @@ motion includes intensity and d-spacing chains, and the 15 bank-instrument rows
 remain available for later joint composition. Centered finite differences,
 dense/product/adjoint agreement, explicit invalid-boundary tests, an independent
 NumPy composition, and a realistic 128-reflection benchmark form the review
-gate. The primitive is intentionally Rust-only and single-bank at this stage;
-Unit 38c next adds the guarded multi-bank structural objective and solver before
-Python/persistence/oracle exposure.
+gate. The primitive remains Rust-only at this stage. Unit 38c's joint objective
+is now complete: it atomically sums masked/uncertainty-weighted banks, shares
+symmetry-aware lattice and site parameters, and namespaces scale, selected
+instrument coefficients, and optional Chebyshev backgrounds per bank. Its
+matrix-free JVP, VJP, gradient, and normal products pass joint centered
+differences and the adjoint identity. The request freezes observation,
+geometry, correction, bound, support, and identity contracts and rejects CW
+sample physics or dynamic topology. Unit 38c next adds the bounded,
+checkpointable solver before Python/persistence/oracle exposure.
 The historical native-workflow comparison passes both Le Bail parity contracts
 and QARR 1g. Its unchanged QARR 1h acceptance recipe retains the reviewed
 profile-quality failure, rather than having thresholds relaxed. The newer

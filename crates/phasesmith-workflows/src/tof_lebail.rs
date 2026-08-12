@@ -250,7 +250,10 @@ impl TofChebyshevBackground {
         self.calculate_from_basis(&basis)
     }
 
-    fn calculate_from_basis(&self, basis: &TofChebyshevBasis) -> Result<Vec<f64>, TofLeBailError> {
+    pub(crate) fn calculate_from_basis(
+        &self,
+        basis: &TofChebyshevBasis,
+    ) -> Result<Vec<f64>, TofLeBailError> {
         let expected = basis
             .rows
             .checked_mul(basis.columns)
@@ -270,7 +273,7 @@ impl TofChebyshevBackground {
             .collect())
     }
 
-    fn basis(&self, tof_us: &[f64]) -> Result<TofChebyshevBasis, TofLeBailError> {
+    pub(crate) fn basis(&self, tof_us: &[f64]) -> Result<TofChebyshevBasis, TofLeBailError> {
         self.validate()?;
         if tof_us.is_empty()
             || tof_us.iter().any(|value| !value.is_finite())
