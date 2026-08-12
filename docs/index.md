@@ -47,7 +47,8 @@ For shared refinement controls, cancellation, logs, and safe checkpoints, see
 - [Neutron CW](neutron-cw.md), [neutron TOF](tof-profile.md),
   [multi-bank TOF Le Bail](tof-multibank.md), and
   [shared TOF lattice](tof-lattice-refinement.md) and
-  [bank-local instrument refinement](tof-instrument-refinement.md)
+  [bank-local instrument refinement](tof-instrument-refinement.md), and
+  [joint TOF geometry refinement](tof-geometry-refinement.md)
 - [Public Python architecture](public-api.md)
 - [Native Rust API and GUI integration](rust-api.md)
 

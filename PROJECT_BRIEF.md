@@ -949,10 +949,18 @@ correlations remain explicit result data. Synthetic banks independently recover
 Zero and DIFC, same-bank correlations are surfaced, and cancelled continuation
 is exact. The realistic two-bank, 80-reflection-per-bank, 4,001-sample-per-bank
 one-cycle benchmark measures 426.04 ms on the review machine.
-The next coupling increment is deliberately joint shared-cell plus local-
-instrument motion, because cell/calibration correlations must be diagnosed in
-one system. Application facade/persistence and real-data oracle coverage follow
-before any structural TOF Rietveld claim.
+Joint shared-cell plus local-instrument motion is now complete too.
+`TofMultiBankGeometryInput` concatenates the analytical shared `dY/dd * dd/dp`
+block and selected bank-local global rows against one bitwise-identical weighted
+residual vector. One bounded damped/SVD step and one backtracking decision move
+both families atomically. Typed diagnostics name lattice/instrument correlation
+pairs, report numerical rank, and never fabricate covariance for a deficient
+selection. Synthetic distinct-bank data recover the common cubic cell and both
+local Zero terms while surfacing their cross-family correlations; cancelled
+continuation is exact. The two-bank, 80-reflection-per-bank, 4,001-sample-per-
+bank one-cycle benchmark measures 214.18 ms. Application facade/persistence and
+real-data oracle coverage are now the next increment before any structural TOF
+Rietveld claim.
 The historical native-workflow comparison passes both Le Bail parity contracts
 and QARR 1g. Its unchanged QARR 1h acceptance recipe retains the reviewed
 profile-quality failure, rather than having thresholds relaxed. The newer

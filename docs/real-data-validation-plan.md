@@ -235,8 +235,10 @@ must identify a multi-bank dataset with citable cell truth and plain-array
 oracle output before adding a golden result. Selected fixed-cell bank-local
 instrument motion now has synthetic recovery, all-row derivative, rank/
 correlation, and exact-continuation coverage. Joint cell/instrument motion must
-pass its correlation gate before that real-data acceptance; structural TOF
-Rietveld refinement remains future scope and is not implied by this acceptance.
+now passes simultaneous recovery, typed cross-correlation, benchmark, and exact
+continuation gates. Application/persistence work and a provenance-complete
+multi-bank dataset with citable cell truth are next; structural TOF Rietveld
+refinement remains future scope and is not implied by this acceptance.
 
 ## Review gates
 

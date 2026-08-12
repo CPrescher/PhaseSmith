@@ -168,7 +168,7 @@ impl TofMultiBankInstrumentInput {
         Ok(())
     }
 
-    fn parameter_count(&self) -> Result<usize, TofMultiBankInstrumentError> {
+    pub(crate) fn parameter_count(&self) -> Result<usize, TofMultiBankInstrumentError> {
         self.instrument_models
             .iter()
             .try_fold(0_usize, |count, model| {
@@ -526,7 +526,8 @@ pub fn refine_tof_multibank_instrument_with_runtime(
         .ok_or(TofMultiBankInstrumentError::AllocationOverflow)?;
     let metrics = aggregate_metrics(&live, &calculations, &options.lebail, fitted)?;
     let packed = pack_instruments(input, &instruments)?;
-    let (jacobian, _) = instrument_system(input, &live, &calculations, &packed.scales, options)?;
+    let (jacobian, _) =
+        instrument_system(input, &live, &calculations, &packed.scales, &options.lebail)?;
     let diagnostics = instrument_diagnostics(input, &jacobian, options.unresolved_correlation)?;
     let checkpoint = checkpoint_from_state(input, &states, &instruments, &history);
     checkpoint.validate_for(input, options)?;
@@ -660,7 +661,7 @@ fn instrument_update<C>(
         &current,
         &cycle.calculations,
         &packed.scales,
-        options,
+        &options.lebail,
     )?;
     let normal = jacobian.transpose() * &jacobian;
     let rhs = jacobian.transpose() * &residual;
@@ -788,14 +789,14 @@ fn recoverable_multibank_trial_error(error: &TofMultiBankError) -> bool {
     )
 }
 
-struct PackedInstruments {
-    values: Vec<f64>,
-    scales: Vec<f64>,
-    lower: Vec<f64>,
-    upper: Vec<f64>,
+pub(crate) struct PackedInstruments {
+    pub(crate) values: Vec<f64>,
+    pub(crate) scales: Vec<f64>,
+    pub(crate) lower: Vec<f64>,
+    pub(crate) upper: Vec<f64>,
 }
 
-fn pack_instruments(
+pub(crate) fn pack_instruments(
     input: &TofMultiBankInstrumentInput,
     instruments: &[TofInstrument],
 ) -> Result<PackedInstruments, TofMultiBankInstrumentError> {
@@ -826,7 +827,7 @@ fn pack_instruments(
     })
 }
 
-fn unpack_instruments(
+pub(crate) fn unpack_instruments(
     input: &TofMultiBankInstrumentInput,
     current: &[TofInstrument],
     values: &[f64],
@@ -848,7 +849,7 @@ fn unpack_instruments(
     Ok(result)
 }
 
-fn live_input(
+pub(crate) fn live_input(
     input: &TofMultiBankInstrumentInput,
     instruments: &[TofInstrument],
 ) -> Result<TofMultiBankInput, TofMultiBankInstrumentError> {
@@ -875,12 +876,12 @@ fn bank_index(
         .ok_or(TofMultiBankInstrumentError::InternalInvariant)
 }
 
-fn instrument_system(
+pub(crate) fn instrument_system(
     input: &TofMultiBankInstrumentInput,
     live: &TofMultiBankInput,
     calculations: &[crate::TofLeBailCalculation],
     scales: &[f64],
-    options: &TofMultiBankInstrumentOptions,
+    options: &TofLeBailOptions,
 ) -> Result<(DMatrix<f64>, DVector<f64>), TofMultiBankInstrumentError> {
     let columns = input.parameter_count()?;
     if columns != scales.len()
@@ -949,7 +950,7 @@ fn instrument_system(
             {
                 continue;
             }
-            let weight = if options.lebail.use_uncertainty {
+            let weight = if options.use_uncertainty {
                 bank.input
                     .pattern
                     .uncertainty

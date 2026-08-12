@@ -1398,6 +1398,19 @@ unit correlation instead of a misleading covariance. All 15 kernel rows retain c
 NumPy coverage. The realistic one-cycle benchmark over two banks, 80
 reflections per bank, and 4,001 samples per bank measures 426.04 ms.
 
+Unit 36 is complete. `TofMultiBankGeometryInput` binds Unit 34's shared cells
+and Unit 35's selected local instrument coefficients to the same exact bank
+request. The weighted analytical system concatenates lattice and instrument
+blocks only after their residual vectors agree bitwise, then applies one scaled
+damped/SVD solve and one atomic backtracking decision. Checkpoints persist cells,
+instruments, intensities/backgrounds, and history together. Typed diagnostics
+name both lattice and instrument keys, expose cross-family correlations, and
+report numerical rank. Distinct synthetic banks simultaneously recover a
+displaced cubic cell and two local Zero terms while retaining the expected
+lattice/calibration correlations; four accepted cycles resume exactly. The
+realistic one-cycle benchmark over two banks, 80 reflections per bank, and
+4,001 samples per bank measures 214.18 ms.
+
 Do not combine adjacent items merely to reduce PR count; numerical review is
 easier when parameter conventions and tolerance changes remain isolated.
 
@@ -1452,9 +1465,9 @@ cancellation/progress and restartable accepted-state checkpoints. Unit 32
 completes the explicit native TOF project/persistence schema, and Unit 33
 completes atomic fixed-cell multi-bank coordination, Unit 34 completes shared
 analytical lattice motion, and Unit 35 completes selected fixed-cell bank-local
-instrument motion. The next TOF increment combines the two geometry families
-in one correlation-diagnosed system, followed by application persistence and
-multi-bank real-data oracle validation. Structural parameter and instrument refinement must
+instrument motion, and Unit 36 combines the two geometry families in one
+correlation-diagnosed system. The next TOF increment is application persistence
+and multi-bank real-data oracle validation. Structural parameter and instrument refinement must
 be introduced only with analytical derivatives, finite-difference tests, and
 new oracle contracts; it is not part of the completed Le Bail facade.
 

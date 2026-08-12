@@ -81,6 +81,7 @@ nav:
       - Multi-bank TOF Le Bail: tof-multibank.md
       - Shared TOF lattice refinement: tof-lattice-refinement.md
       - Bank-local TOF instrument refinement: tof-instrument-refinement.md
+      - Joint TOF geometry refinement: tof-geometry-refinement.md
       - Multi-phase composition: multiphase.md
       - Sample physics: sample-physics.md
   - Crystallography:

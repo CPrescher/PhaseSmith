@@ -103,7 +103,8 @@ cycle ordering. A provenance-complete multi-bank real-data refinement with
 reviewed parameter selection is required before promoting instrument motion
 through the Python application facade or native project format.
 
-This first instrument workflow keeps the supplied d-spacings fixed. Joint
-shared-cell plus local-instrument motion, application persistence/facades, and
-structural TOF Rietveld are separate follow-on increments because lattice and
-calibration columns can be highly correlated.
+This first instrument workflow keeps the supplied d-spacings fixed. The
+separate [`tof-geometry-refinement.md`](tof-geometry-refinement.md) workflow
+moves shared cells and local instruments in one correlation-diagnosed system.
+Application persistence/facades and structural TOF Rietveld remain separate
+follow-on increments.

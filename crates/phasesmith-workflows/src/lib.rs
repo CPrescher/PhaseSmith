@@ -69,6 +69,7 @@ mod runtime;
 mod sample_physics;
 mod tof_lebail;
 mod tof_multibank;
+mod tof_multibank_geometry;
 mod tof_multibank_instrument;
 mod tof_multibank_lattice;
 mod tof_project;
@@ -175,6 +176,13 @@ pub use tof_multibank::{
     TofLeBailBank, TofMultiBankCheckpoint, TofMultiBankCheckpointBank, TofMultiBankError,
     TofMultiBankInput, TofMultiBankIterationRecord, TofMultiBankMetrics, TofMultiBankResult,
     TofMultiBankResultBank, refine_tof_multibank, refine_tof_multibank_with_runtime,
+};
+pub use tof_multibank_geometry::{
+    TofGeometryCorrelation, TofGeometryDiagnostics, TofGeometryParameterKey,
+    TofMultiBankGeometryCheckpoint, TofMultiBankGeometryCheckpointBank, TofMultiBankGeometryError,
+    TofMultiBankGeometryInput, TofMultiBankGeometryIterationRecord, TofMultiBankGeometryOptions,
+    TofMultiBankGeometryResult, refine_tof_multibank_geometry,
+    refine_tof_multibank_geometry_with_runtime,
 };
 pub use tof_multibank_instrument::{
     TofBankInstrumentModel, TofBankInstrumentState, TofInstrumentCorrelation,

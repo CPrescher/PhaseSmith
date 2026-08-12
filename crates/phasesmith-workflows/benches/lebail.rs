@@ -12,11 +12,12 @@ use phasesmith_workflows::{
     BackgroundModel, ChebyshevBackground, Constraint, FixedConstraint, LatticeBounds,
     LatticeParameterization, LatticeReflectionDomain, LeBailInput, LeBailOptions, LeBailPhase,
     TofBankInstrumentModel, TofInstrumentParameterBound, TofLeBailBank, TofLeBailInput,
-    TofLeBailOptions, TofLeBailPhase, TofMultiBankInput, TofMultiBankInstrumentInput,
-    TofMultiBankInstrumentOptions, build_lebail_parameter_set_with_lattice,
+    TofLeBailOptions, TofLeBailPhase, TofMultiBankGeometryInput, TofMultiBankGeometryOptions,
+    TofMultiBankInput, TofMultiBankInstrumentInput, TofMultiBankInstrumentOptions,
+    TofMultiBankLatticeInput, TofSharedLatticePhase, build_lebail_parameter_set_with_lattice,
     calculate_lebail_pattern, calculate_lebail_pattern_with_background,
     calculate_tof_lebail_pattern, lebail_lattice_parameter_key, refine_lebail,
-    refine_tof_multibank_instrument,
+    refine_tof_multibank_geometry, refine_tof_multibank_instrument, tof_lattice_geometry,
 };
 
 fn benchmark_fixed_lebail(criterion: &mut Criterion) {
@@ -258,6 +259,142 @@ fn benchmark_tof_instrument_lebail(criterion: &mut Criterion) {
     );
 }
 
+fn benchmark_tof_joint_geometry(criterion: &mut Criterion) {
+    let execution = ExecutionPolicy::new(Some(1), 2).unwrap();
+    let initial_cell = cubic_cell(3.995);
+    let truth_cell = cubic_cell(4.0);
+    let group = space_group_by_number(221).unwrap().space_group;
+    let parameterization = LatticeParameterization::new(group, initial_cell).unwrap();
+    let bounds = LatticeBounds::around(&parameterization, 0.02, 1.0).unwrap();
+    let hkl = (1..=5)
+        .flat_map(|h| (0..=5).flat_map(move |k| (0..=5).map(move |l| [h, k, l])))
+        .take(80)
+        .collect::<Vec<_>>();
+    let intensities = (0..hkl.len())
+        .map(|index| 20.0 + f64::from(u32::try_from(index % 23).unwrap()))
+        .collect::<Vec<_>>();
+    let grid = linspace(2_000.0, 21_000.0, 4_001);
+    let truth_instruments = [tof_instrument(5_000.0, -0.7), tof_instrument(4_600.0, 1.2)];
+    let starting_instruments = [tof_instrument(5_000.0, 0.8), tof_instrument(4_600.0, -0.4)];
+    let calculation_options =
+        TofLeBailOptions::new(1, 1.0, 1.0e-12, 1.0e-15, 20.0, 20.0, true, execution).unwrap();
+    let mut banks = Vec::new();
+    let mut models = Vec::new();
+    for index in 0..2 {
+        let bank_id = RecordId::new(format!("joint-bank-{}", index + 1)).unwrap();
+        let blank = TofPatternRecord::new(
+            grid.clone(),
+            Some(vec![0.0; grid.len()]),
+            Some(vec![1.0; grid.len()]),
+            None,
+            None,
+        )
+        .unwrap();
+        let truth_phase = tof_lattice_phase(
+            &parameterization,
+            truth_cell,
+            truth_instruments[index],
+            &hkl,
+            &intensities,
+        );
+        let truth =
+            TofLeBailInput::new(blank, truth_instruments[index], vec![truth_phase]).unwrap();
+        let observed = calculate_tof_lebail_pattern(&truth, &calculation_options)
+            .unwrap()
+            .y;
+        let pattern = TofPatternRecord::new(
+            grid.clone(),
+            Some(observed),
+            Some(vec![1.0; grid.len()]),
+            None,
+            None,
+        )
+        .unwrap();
+        banks.push(TofLeBailBank {
+            bank_id: bank_id.clone(),
+            input: TofLeBailInput::new(
+                pattern,
+                starting_instruments[index],
+                vec![tof_lattice_phase(
+                    &parameterization,
+                    initial_cell,
+                    starting_instruments[index],
+                    &hkl,
+                    &vec![1.0; hkl.len()],
+                )],
+            )
+            .unwrap(),
+        });
+        models.push(
+            TofBankInstrumentModel::new(
+                bank_id,
+                vec![
+                    TofInstrumentParameterBound::new(TofInstrumentParameter::Zero, -5.0, 5.0)
+                        .unwrap(),
+                ],
+            )
+            .unwrap(),
+        );
+    }
+    let lattice_phase = TofSharedLatticePhase::new(
+        RecordId::new("alpha").unwrap(),
+        parameterization,
+        bounds,
+        initial_cell,
+    )
+    .unwrap();
+    let input = TofMultiBankGeometryInput {
+        lattice: TofMultiBankLatticeInput {
+            multibank: TofMultiBankInput { banks },
+            lattice_phases: vec![lattice_phase],
+        },
+        instrument_models: models,
+    };
+    let options =
+        TofMultiBankGeometryOptions::new(calculation_options, 1.0e-10, 0.1, 8, 0.999_999).unwrap();
+    criterion.bench_function(
+        "tof_multibank_joint_geometry_one_iteration_2x80_reflections_4001_samples",
+        |bencher| {
+            bencher.iter(|| {
+                refine_tof_multibank_geometry(black_box(&input), black_box(&options)).unwrap()
+            });
+        },
+    );
+}
+
+fn cubic_cell(a_angstrom: f64) -> UnitCell {
+    UnitCell {
+        a_angstrom,
+        b_angstrom: a_angstrom,
+        c_angstrom: a_angstrom,
+        alpha_deg: 90.0,
+        beta_deg: 90.0,
+        gamma_deg: 90.0,
+    }
+}
+
+fn tof_lattice_phase(
+    parameterization: &LatticeParameterization,
+    cell: UnitCell,
+    instrument: TofInstrument,
+    hkl: &[[i32; 3]],
+    intensities: &[f64],
+) -> TofLeBailPhase {
+    let geometry = tof_lattice_geometry(parameterization, cell, hkl, instrument).unwrap();
+    TofLeBailPhase::new(
+        RecordId::new("alpha").unwrap(),
+        "joint benchmark phase",
+        (0..hkl.len())
+            .map(|index| format!("reflection-{index}"))
+            .collect(),
+        hkl.to_vec(),
+        geometry.d_spacing_angstrom,
+        intensities.to_vec(),
+        1.0,
+    )
+    .unwrap()
+}
+
 fn tof_instrument(difc: f64, zero: f64) -> TofInstrument {
     TofInstrument {
         zero_us: zero,
@@ -353,6 +490,7 @@ criterion_group!(
     benches,
     benchmark_fixed_lebail,
     benchmark_lattice_lebail,
-    benchmark_tof_instrument_lebail
+    benchmark_tof_instrument_lebail,
+    benchmark_tof_joint_geometry
 );
 criterion_main!(benches);

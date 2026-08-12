@@ -285,6 +285,10 @@ The native `TofMultiBankInstrumentInput` and
 `refine_tof_multibank_instrument_with_runtime` APIs select bounded bank-local
 coefficients and return rank/correlation diagnostics; see
 [bank-local TOF instrument refinement](tof-instrument-refinement.md).
+`TofMultiBankGeometryInput` and `refine_tof_multibank_geometry_with_runtime`
+combine shared-cell and bank-local instrument columns in one typed,
+correlation-diagnosed solve; see
+[joint TOF geometry refinement](tof-geometry-refinement.md).
 
 Top-level imports are convenience aliases for scripts and notebooks; the
 module-qualified paths above are the ownership boundary. FCJ geometry does not

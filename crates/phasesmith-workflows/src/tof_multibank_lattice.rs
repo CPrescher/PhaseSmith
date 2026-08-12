@@ -77,7 +77,10 @@ impl TofSharedLatticePhase {
         self.initial_cell
     }
 
-    fn validate_cell(&self, cell: UnitCell) -> Result<Vec<f64>, TofMultiBankLatticeError> {
+    pub(crate) fn validate_cell(
+        &self,
+        cell: UnitCell,
+    ) -> Result<Vec<f64>, TofMultiBankLatticeError> {
         if self.bounds.parameter_names() != self.parameterization.parameter_names() {
             return Err(TofMultiBankLatticeError::InvalidModel(
                 "TOF lattice bounds use a different independent-parameter order",
@@ -156,7 +159,7 @@ impl TofMultiBankLatticeInput {
         Ok(())
     }
 
-    fn parameter_count(&self) -> Result<usize, TofMultiBankLatticeError> {
+    pub(crate) fn parameter_count(&self) -> Result<usize, TofMultiBankLatticeError> {
         self.lattice_phases
             .iter()
             .try_fold(0_usize, |count, phase| {
@@ -595,7 +598,8 @@ fn lattice_update<C>(
     runtime: &mut RefinementRuntime<C>,
 ) -> Result<LatticeUpdateOutcome, TofMultiBankLatticeError> {
     let packed = pack_lattice(input, cells)?;
-    let (jacobian, residual) = lattice_system(input, cells, &cycle, &packed.scales, options)?;
+    let (jacobian, residual) =
+        lattice_system(input, cells, &cycle, &packed.scales, &options.lebail)?;
     let normal = jacobian.transpose() * &jacobian;
     let rhs = jacobian.transpose() * &residual;
     let mut regularized = normal;
@@ -724,14 +728,14 @@ fn recoverable_multibank_trial_error(error: &TofMultiBankError) -> bool {
     )
 }
 
-struct PackedLattice {
-    values: Vec<f64>,
-    scales: Vec<f64>,
-    lower: Vec<f64>,
-    upper: Vec<f64>,
+pub(crate) struct PackedLattice {
+    pub(crate) values: Vec<f64>,
+    pub(crate) scales: Vec<f64>,
+    pub(crate) lower: Vec<f64>,
+    pub(crate) upper: Vec<f64>,
 }
 
-fn pack_lattice(
+pub(crate) fn pack_lattice(
     input: &TofMultiBankLatticeInput,
     cells: &[UnitCell],
 ) -> Result<PackedLattice, TofMultiBankLatticeError> {
@@ -757,7 +761,7 @@ fn pack_lattice(
     })
 }
 
-fn unpack_lattice(
+pub(crate) fn unpack_lattice(
     input: &TofMultiBankLatticeInput,
     values: &[f64],
 ) -> Result<Vec<UnitCell>, TofMultiBankLatticeError> {
@@ -778,7 +782,7 @@ fn unpack_lattice(
         .collect()
 }
 
-fn apply_cells(
+pub(crate) fn apply_cells(
     input: &TofMultiBankLatticeInput,
     states: &[AcceptedBankState],
     cells: &[UnitCell],
@@ -815,12 +819,12 @@ fn apply_cells(
 }
 
 #[allow(clippy::too_many_lines)]
-fn lattice_system(
+pub(crate) fn lattice_system(
     input: &TofMultiBankLatticeInput,
     cells: &[UnitCell],
     cycle: &MultiBankCycleCandidate,
     scales: &[f64],
-    options: &TofMultiBankLatticeOptions,
+    options: &TofLeBailOptions,
 ) -> Result<(DMatrix<f64>, DVector<f64>), TofMultiBankLatticeError> {
     let columns = input.parameter_count()?;
     if columns != scales.len() {
@@ -910,7 +914,7 @@ fn lattice_system(
             {
                 continue;
             }
-            let weight = if options.lebail.use_uncertainty {
+            let weight = if options.use_uncertainty {
                 bank.input
                     .pattern
                     .uncertainty
@@ -932,7 +936,7 @@ fn lattice_system(
     Ok((selected_jacobian, selected_residual))
 }
 
-fn lattice_changes(
+pub(crate) fn lattice_changes(
     input: &TofMultiBankLatticeInput,
     before: &[f64],
     after: &[f64],

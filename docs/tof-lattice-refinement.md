@@ -97,4 +97,5 @@ Python application facade/project format, or refine structural intensities.
 The separate fixed-cell
 [`tof-instrument-refinement.md`](tof-instrument-refinement.md) workflow is the
 first bounded analytical instrument layer; joint cell/instrument motion remains
-separate because its correlation contract needs an explicit gate.
+available through the explicitly correlation-diagnosed
+[`tof-geometry-refinement.md`](tof-geometry-refinement.md) workflow.
