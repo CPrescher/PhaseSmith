@@ -124,14 +124,17 @@ The pinned GSAS-II oracle builds one independent three-histogram project and
 exports only plain arrays. Across banks 2--4, PhaseSmith reproduces GSAS-II's
 reflection positions exactly, variance to floating-point precision, and alpha/
 beta chains within 4.5e-16. Reconstructing each GSAS-II peak-only pattern from
-the same extracted intensities gives correlations 0.999902--0.999936 and
-relative L2 differences 0.01196--0.01385. The independently refined cells are
-3.52361196 A and 3.52389544 A, differing by 0.00028349 A and both passing their
-declared reference-cell gates.
+the same extracted intensities gives correlations 0.99999898--0.99999922 and
+relative L2 differences 0.00174246--0.00181021. The independently refined cells
+are 3.52361196 A and 3.52386668 A, differing by 0.00025472 A and both passing
+their declared reference-cell gates. The oracle uses temporary one-bank RAW
+views because the pinned scripting loader otherwise reuses the first dataset
+on repeated legacy multi-bank imports.
 
 GSAS-II selects 4,430 samples per bank at the nominal limits while the
 PhaseSmith inclusive bin-center convention selects 4,431; the oracle asserts
 both rather than trimming one implementation silently. Workflow Rwp values are
 reported but are not a parity gate because the Le Bail redistribution and
-background decompositions differ. This remains extraction with fixed
-reflection identities, not structural TOF Rietveld.
+background decompositions differ. This geometry gate remains extraction with
+fixed reflection identities; the separate structural TOF workflow is described
+in [`tof-structural-readiness.md`](tof-structural-readiness.md).

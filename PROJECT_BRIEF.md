@@ -841,8 +841,9 @@ microsecond-domain Chebyshev background through analytical basis columns and a
 weighted linear solve after each redistribution. The reviewed uncertainty-weighted
 run reaches Rwp 0.26461 and profile correlation 0.96729 and is an accepted
 real-data workflow.
-TOF structural Rietveld parameter motion remains a separate future capability
-and is not implied by this Le Bail result.
+At this historical Le Bail milestone, TOF structural Rietveld parameter motion
+remained a separate capability and was not implied by that result; Unit 38 now
+provides it under an explicit structural observation/correction contract.
 The legacy bank-2 `ICONS` adapter is black-box checked against pinned GSAS-II:
 the record maps to Zero=4.41 µs, DIFC=22581.63 µs/Å, DIFA=0, and DIFB=0. The
 live POWGEN oracle comparison matches all 329 GSAS-II calculation reflections'
@@ -871,8 +872,10 @@ are translated by `phasesmith-io` into the typed 15-coefficient
 workflow. `TofLeBailInput.from_files` composes one SLOG FXYE/GSA bank, matching
 PRM bank, and CIF into generated fixed-cell reflection families, and
 `refine_tof_lebail` delegates the complete extraction to the Rust workflow.
-This remains a fixed-instrument, fixed-cell Le Bail path. Multi-bank coordination, structural
-parameter motion, and full TOF Rietveld refinement are explicit follow-on work.
+This remains a fixed-instrument, fixed-cell Le Bail path. Multi-bank
+coordination, structural parameter motion, and full TOF Rietveld refinement
+were explicit follow-on work at this milestone and are completed in Units
+33--38 rather than being attributed to this API.
 The TOF boundary is no longer POWGEN-specific. Plain bin-center/density columns,
 GSAS logarithmic FXYE boundaries, and GSAS packed constant-step STD counts all
 resolve into the same `TofPatternRecord` convention; packed counts are shifted

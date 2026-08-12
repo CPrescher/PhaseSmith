@@ -215,7 +215,7 @@ analytical mixed-radiation objective has dedicated Rust coverage.
    ratios and a multi-wavelength lattice guard. Move the component-level loop
    across the PyO3 boundary only if benchmark evidence justifies the ABI.
 
-## Remaining TOF sequence
+## Completed TOF sequence
 
 The single-bank fixed-instrument TOF Le Bail sequence is complete. The pinned POWGEN LaB6
 case now covers the typed TOF record, reflection positions, fused accumulation,
@@ -237,10 +237,21 @@ Fm-3m topology. One cubic cell and three local Zero terms refine jointly over
 13,293 observations to Rwp 0.02273306 and a=3.52361196 A; every bank is below
 Rwp 0.024 and the analytical system has rank 4/4. The plain-array pinned
 GSAS-II multi-bank oracle now also passes: calibration quantities agree at
-floating-point scale, same-intensity bank reconstructions exceed 0.9999
-correlation and remain below 0.015 relative L2, and the shared cells differ by
-0.000283 A. Structural TOF Rietveld refinement remains future scope and is not
-implied by this acceptance.
+floating-point scale, same-intensity bank reconstructions have measured minimum
+correlation 0.99999898 and maximum relative L2 0.00181021, and the shared cells
+differ by 0.00025472 A. Its temporary one-bank views prevent the pinned legacy
+scripting loader from silently reusing the first RAW dataset.
+
+The structural sequence is complete separately. A typed bank angle, selected
+TOF neutron Lorentz convention, explicit type-4 incident normalization, fused
+structural derivatives, bounded multi-bank solver, Python facade, format-5
+persistence, and checksum-pinned LANL nickel gate are all present. The isolated
+GSAS-II structural fit reaches Rwp 0.03367362, minimum correlation 0.99730908,
+a=3.52368699 A, and Ni Uiso=0.00401813 A^2. PhaseSmith reaches Rwp 0.03278208,
+minimum correlation 0.99749010, a=3.52373113 A, and Uiso=0.00396507 A^2. Cell
+and Uiso differ by 0.00004414 A and 0.00005306 A^2. Each profile has an
+independent quality gate; Rwp equality is not asserted across different
+background and optimizer contracts.
 
 ## Review gates
 

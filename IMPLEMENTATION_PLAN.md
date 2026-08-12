@@ -1326,9 +1326,9 @@ records, the calibration reader, generated fixed-cell TOF phases, a
 `TofLeBailInput.from_files` composition boundary, and a thin native refinement
 facade returning stable reflection keys, intensities, backgrounds, metrics, and
 cycle history. Synthetic extraction and FXYE/PRM/CIF composition tests cover
-the boundary. Multi-bank requests,
-lattice/instrument refinement, and structural TOF Rietveld remain follow-on
-slices.
+the boundary. Multi-bank requests, lattice/instrument refinement, and structural
+TOF Rietveld were follow-on slices at this milestone; Units 33--38 now complete
+them through separate APIs and validation gates.
 
 Unit 31 is complete. `refine_tof_lebail_with_runtime` adopts the shared native
 runtime without changing the fixed-instrument numerical algorithm. Hosts can

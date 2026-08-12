@@ -199,8 +199,10 @@ the variance error is `1.82e-12 us^2`; selected profiles differ by at most
 0.131%; and the same-extracted-intensity reconstruction correlates at
 0.999994. All nine gates pass.
 
-**Issue:** none in the supported TOF profile and bank-translation scope.
-Structural TOF Rietveld refinement remains separate future functionality.
+**Issue:** none in the supported TOF profile and bank-translation scope. This
+POWGEN case alone does not define a structural observation/correction contract;
+the later LANL nickel multi-bank gate now validates the separate structural TOF
+workflow against the same pinned GSAS-II revision.
 
 ### Bath zeolite L
 

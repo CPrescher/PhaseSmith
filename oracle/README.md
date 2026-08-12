@@ -45,13 +45,22 @@ with LANL nickel banks 2--4 linked to one Fm-3m phase. It exports plain arrays
 after refining one shared cubic cell and the three bank-local Zero terms. The
 paired driver gates exact reflection positions, variance and alpha/beta chains,
 and reconstruction of every GSAS-II peak-only bank from the same extracted
-intensities. The reviewed minimum reconstruction correlation is 0.999902 and
-the maximum relative L2 difference is 0.013851. PhaseSmith and GSAS-II return
-cells 3.523612 and 3.523895 A, a 0.000283 A difference. Their Le Bail Rwp values
+intensities. The reviewed minimum reconstruction correlation is 0.99999898 and
+the maximum relative L2 difference is 0.00181021. PhaseSmith and GSAS-II return
+cells 3.523612 and 3.523867 A, a 0.000255 A difference. Their Le Bail Rwp values
 are reported but not cross-gated because the intensity redistribution and
 background decompositions are different. GSAS-II selects 4,430 points per bank
 at the nominal limits while PhaseSmith's inclusive explicit-center convention
-selects 4,431; both counts are asserted.
+selects 4,431; both counts are asserted. Temporary one-bank RAW views prevent
+the pinned public scripting loader from reusing the first dataset.
+
+`scripts/benchmark_nickel_tof_structural.py` uses the same bank-authentic views
+and public scripting APIs to refine one Fm-3m Ni phase against banks 2--4.
+Shared cell and Uiso, bank-local HAP scale and Zero, and bank-local twelve-term
+backgrounds form 44 live variables. The worker exports only finite plain arrays
+and JSON. The paired driver requires both native and oracle profiles to pass
+Rwp/correlation gates and compares cell and Uiso directly; it records but does
+not cross-gate Rwp across different background and optimizer contracts.
 
 `scripts/benchmark_nist_srm660c.py` reads one bounded pdCIF member directly
 from the checksum-pinned NIST archive and fits the same 17-parameter physical

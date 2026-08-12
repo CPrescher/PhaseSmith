@@ -106,5 +106,7 @@ through the Python application facade or native project format.
 This first instrument workflow keeps the supplied d-spacings fixed. The
 separate [`tof-geometry-refinement.md`](tof-geometry-refinement.md) workflow
 moves shared cells and local instruments in one correlation-diagnosed system.
-Application persistence/facades and structural TOF Rietveld remain separate
-follow-on increments.
+Application persistence/facades and structural TOF Rietveld were separate
+follow-on increments; both are now complete under the contracts documented in
+[`tof-geometry-refinement.md`](tof-geometry-refinement.md) and
+[`tof-structural-readiness.md`](tof-structural-readiness.md).
