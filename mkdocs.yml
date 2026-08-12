@@ -78,6 +78,7 @@ nav:
       - Structural wavelength components: structural-wavelength-components.md
       - Neutron constant wavelength: neutron-cw.md
       - Neutron time of flight: tof-profile.md
+      - Multi-bank TOF Le Bail: tof-multibank.md
       - Multi-phase composition: multiphase.md
       - Sample physics: sample-physics.md
   - Crystallography:

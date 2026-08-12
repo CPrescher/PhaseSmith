@@ -271,6 +271,9 @@ save and load `ProjectRecord`, `RietveldProjectState`, and
 `TofLeBailProjectState` and produce stable summary reports without CPython.
 The TOF record uses explicit microsecond coordinates rather than the CW angle
 field. See [native project persistence](native-persistence.md).
+Rust applications can also use `TofMultiBankInput`, `TofLeBailBank`, and
+`refine_tof_multibank_with_runtime` for atomic fixed-cell detector-bank
+coordination; see [multi-bank TOF Le Bail](tof-multibank.md).
 
 Top-level imports are convenience aliases for scripts and notebooks; the
 module-qualified paths above are the ownership boundary. FCJ geometry does not

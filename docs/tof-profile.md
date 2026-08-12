@@ -204,6 +204,11 @@ placed in the angle-domain histogram record. Rust hosts use
 `save_tof_lebail_project` and `load_tof_lebail_project` with a validated
 `TofLeBailProjectState`.
 
+Two or more detector banks use the separate atomic contract documented in
+[`tof-multibank.md`](tof-multibank.md). It shares exact fixed-cell reflection
+geometry, retains experimental/intensity state per bank, computes aggregate
+metrics from all included observations, and checkpoints the complete bank set.
+
 The public Python path keeps the same unit boundary:
 
 ```python

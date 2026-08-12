@@ -44,7 +44,8 @@ For shared refinement controls, cancellation, logs, and safe checkpoints, see
 - [Sample physics](sample-physics.md) and
   [wavelength components](wavelength-components.md)
 - [Offline fundamental-profile calibration](fundamental-profile-calibration.md)
-- [Neutron CW](neutron-cw.md) and [neutron TOF](tof-profile.md)
+- [Neutron CW](neutron-cw.md), [neutron TOF](tof-profile.md), and
+  [multi-bank TOF Le Bail](tof-multibank.md)
 - [Public Python architecture](public-api.md)
 - [Native Rust API and GUI integration](rust-api.md)
 

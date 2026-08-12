@@ -299,7 +299,7 @@ impl TofChebyshevBackground {
         })
     }
 
-    fn with_coefficients(&self, coefficients: Vec<f64>) -> Result<Self, TofLeBailError> {
+    pub(crate) fn with_coefficients(&self, coefficients: Vec<f64>) -> Result<Self, TofLeBailError> {
         if coefficients.len() != self.coefficients.len() {
             return Err(TofLeBailError::BackgroundCoefficientLengthMismatch);
         }
@@ -968,14 +968,14 @@ fn restore_tof_state(
     })
 }
 
-fn normal_tof_stop(error: RuntimeError) -> Result<TerminationReason, TofLeBailError> {
+pub(crate) fn normal_tof_stop(error: RuntimeError) -> Result<TerminationReason, TofLeBailError> {
     match error {
         RuntimeError::Stopped(stop) => Ok(stop.reason),
         other => Err(TofLeBailError::Runtime(other)),
     }
 }
 
-fn initialize_intensities(
+pub(crate) fn initialize_intensities(
     input: &TofLeBailInput,
     options: &TofLeBailOptions,
 ) -> Result<Vec<TofLeBailPhase>, TofLeBailError> {
@@ -1014,7 +1014,7 @@ fn initialize_intensities(
     install_intensities(&input.phases, &vec![starting; current.len()])
 }
 
-fn redistribute(
+pub(crate) fn redistribute(
     pattern: &TofPatternRecord,
     calculation: &TofLeBailCalculation,
     current: &[f64],
@@ -1083,7 +1083,7 @@ fn redistribute(
     Ok(updated)
 }
 
-fn state_input(
+pub(crate) fn state_input(
     original: &TofLeBailInput,
     phases: Vec<TofLeBailPhase>,
     background: Option<TofChebyshevBackground>,
@@ -1094,7 +1094,7 @@ fn state_input(
     Ok(result)
 }
 
-fn refine_background(
+pub(crate) fn refine_background(
     pattern: &TofPatternRecord,
     profile_y: &[f64],
     background: Option<&TofChebyshevBackground>,
@@ -1155,7 +1155,7 @@ fn refine_background(
         .map(Some)
 }
 
-fn maximum_background_change(
+pub(crate) fn maximum_background_change(
     previous: Option<&TofChebyshevBackground>,
     updated: Option<&TofChebyshevBackground>,
 ) -> f64 {
@@ -1169,14 +1169,14 @@ fn maximum_background_change(
     })
 }
 
-fn flatten_intensities(phases: &[TofLeBailPhase]) -> Vec<f64> {
+pub(crate) fn flatten_intensities(phases: &[TofLeBailPhase]) -> Vec<f64> {
     phases
         .iter()
         .flat_map(|phase| phase.integrated_intensity.iter().copied())
         .collect()
 }
 
-fn install_intensities(
+pub(crate) fn install_intensities(
     phases: &[TofLeBailPhase],
     values: &[f64],
 ) -> Result<Vec<TofLeBailPhase>, TofLeBailError> {

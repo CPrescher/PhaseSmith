@@ -1225,6 +1225,11 @@ Keep implementation units reviewable through these ordered changes:
 31. TOF application runtime hardening: cooperative cancellation at safe
     boundaries, structured progress events, typed last-accepted checkpoints,
     and exact continuation through the Rust and Python application boundaries.
+32. Native TOF project format: explicit microsecond histograms, validated TOF
+    experiments, runnable Le Bail analyses, and exact checkpoint persistence.
+33. Atomic multi-bank fixed-cell TOF Le Bail: shared phase/reflection geometry,
+    bank-local experimental state, aggregate metrics, runtime events, and exact
+    joint checkpoint continuation.
 
 Unit 23 is complete. The Rust workflow crate now owns stable shared/local
 packing, matrix-free joint products, a bounded constraint-aware summed solver,
@@ -1334,6 +1339,21 @@ history arrays, in bounded typed NPZ members. Format 1 and 2 remain readable
 with empty TOF state, and summary reports distinguish `two_theta_deg` from
 `tof_us`. Round-trip coverage restores a real refined checkpoint exactly.
 
+Unit 33 is complete. `TofMultiBankInput` validates two or more unique banks
+against one exact fixed-cell reflection contract while leaving grids,
+instruments, masks, uncertainties, backgrounds, phase scales, and extracted
+intensities local. One joint cycle performs the current-profile,
+intensity-candidate, and accepted-background calculations over every bank; it
+publishes state only after all banks succeed. The result retains bank-local
+residual arrays plus aggregate metrics computed over the concatenated included
+observations with all local intensity/background parameters counted in the
+joint degrees of freedom. Runtime cancellation, events, typed checkpoints, and
+continuation operate on the complete bank set. Synthetic banks with different
+nonuniform grids, calibrations, masks, scales, backgrounds, and intensities
+recover their local truth, and a four-cycle cancelled state resumes bitwise
+identically to an uninterrupted twelve-cycle run. Shared lattice motion remains
+the next coupling increment.
+
 Do not combine adjacent items merely to reduce PR count; numerical review is
 easier when parameter conventions and tolerance changes remain isolated.
 
@@ -1385,8 +1405,10 @@ nickel example passes on bank 2 with Rwp 0.02485869 and correlation 0.99891242.
 This validates the supported profile family beyond ORNL without promising
 unknown facility-specific line shapes. Unit 31 completes cooperative
 cancellation/progress and restartable accepted-state checkpoints. Unit 32
-completes the explicit native TOF project/persistence schema. The next TOF
-increment is a reviewed multi-bank shared-cell model. Structural parameter and instrument refinement must
+completes the explicit native TOF project/persistence schema, and Unit 33
+completes atomic fixed-cell multi-bank coordination. The next TOF increment is
+shared analytical lattice motion, followed by selected bank-local instrument
+motion. Structural parameter and instrument refinement must
 be introduced only with analytical derivatives, finite-difference tests, and
 new oracle contracts; it is not part of the completed Le Bail facade.
 

@@ -903,6 +903,20 @@ angle and TOF collections, summary reports name the coordinate convention, and
 format-1/2 projects remain readable with empty TOF state. This closes durable
 native TOF persistence; it does not imply structural TOF refinement or
 multi-bank coupling.
+The first multi-bank layer is now complete too. `TofMultiBankInput` requires at
+least two stable bank IDs and an exact shared fixed-cell contract: phase order,
+phase/reflection IDs, labels, HKLs, and d-spacings are identical across banks.
+The grids, 15-coefficient instruments, observations, uncertainties, masks,
+fixed/refinable backgrounds, phase scales, and extracted intensities remain
+bank-local. `refine_tof_multibank_with_runtime` evaluates the three stages of
+each redistribution cycle across every bank and accepts them atomically under
+one runtime. Aggregate Rp, Rwp, chi-square, and reduced chi-square are computed
+from the concatenated included observations, while each bank retains its full
+residual arrays. Cancellation cannot expose a partially advanced bank set, and
+a cancelled checkpoint resumed under the same contract reproduces the
+uninterrupted per-bank arrays and joint history exactly. This is a true shared
+fixed-cell application contract, not alternating single-bank calls. Shared
+lattice motion is the next coupling increment.
 The historical native-workflow comparison passes both Le Bail parity contracts
 and QARR 1g. Its unchanged QARR 1h acceptance recipe retains the reviewed
 profile-quality failure, rather than having thresholds relaxed. The newer

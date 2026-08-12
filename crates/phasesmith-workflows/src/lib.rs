@@ -68,6 +68,7 @@ mod rietveld_solver;
 mod runtime;
 mod sample_physics;
 mod tof_lebail;
+mod tof_multibank;
 mod tof_project;
 
 pub use backgrounds::{
@@ -166,5 +167,10 @@ pub use tof_lebail::{
     TofLeBailError, TofLeBailInput, TofLeBailIterationRecord, TofLeBailOptions, TofLeBailPhase,
     TofLeBailResult, TofReflectionIntensity, calculate_tof_lebail_pattern, refine_tof_lebail,
     refine_tof_lebail_with_runtime,
+};
+pub use tof_multibank::{
+    TofLeBailBank, TofMultiBankCheckpoint, TofMultiBankCheckpointBank, TofMultiBankError,
+    TofMultiBankInput, TofMultiBankIterationRecord, TofMultiBankMetrics, TofMultiBankResult,
+    TofMultiBankResultBank, refine_tof_multibank, refine_tof_multibank_with_runtime,
 };
 pub use tof_project::{TofLeBailAnalysis, TofLeBailProjectState, TofProjectError};
