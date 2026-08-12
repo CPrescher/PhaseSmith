@@ -11,6 +11,8 @@ from dataclasses import dataclass
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
 
+from .instrument import TofInstrument
+
 FOUR_LN_2 = 4.0 * np.log(2.0)
 GAUSSIAN_NORMALIZATION = np.sqrt(FOUR_LN_2 / np.pi)
 PARAMETER_COUNT = 4
@@ -732,6 +734,87 @@ def tof_profile_parameters(
     gaussian = GAUSSIAN_FWHM_PER_SIGMA * np.sqrt(variance)
     lorentzian = z_us + x_us_per_angstrom * d + y_us_per_angstrom2 * d**2
     return ReferenceTofProfileParameters(position, alpha, beta, variance, gaussian, lorentzian)
+
+
+def accumulate_tof(
+    x_us: ArrayLike,
+    d_spacing_angstrom: ArrayLike,
+    integrated_intensity: ArrayLike,
+    instrument: TofInstrument,
+    *,
+    support_fwhm: float = 20.0,
+    tail_log: float = 20.0,
+    quadrature_order: int = 192,
+) -> NDArray[np.float64]:
+    """Accumulate structural or extracted TOF peaks with readable NumPy loops.
+
+    The support interval is inclusive and includes the truncated exponential
+    shifts on both sides of the TCH base radius. Coordinates are bin centers
+    and the returned values are densities per microsecond.
+    """
+
+    x = np.asarray(x_us, dtype=np.float64)
+    d = np.asarray(d_spacing_angstrom, dtype=np.float64)
+    intensity = np.asarray(integrated_intensity, dtype=np.float64)
+    if x.ndim != 1 or x.size == 0 or not np.isfinite(x).all() or np.any(np.diff(x) <= 0.0):
+        raise ValueError("x_us must be a non-empty finite strictly increasing vector")
+    if d.ndim != 1 or intensity.shape != d.shape:
+        raise ValueError("d_spacing_angstrom and integrated_intensity must be equal vectors")
+    if not np.isfinite(d).all() or np.any(d <= 0.0) or not np.isfinite(intensity).all():
+        raise ValueError("d-spacings must be positive and all peak inputs must be finite")
+    if not np.isfinite(support_fwhm) or support_fwhm <= 0.0:
+        raise ValueError("support_fwhm must be finite and positive")
+    if not np.isfinite(tail_log) or tail_log <= 0.0:
+        raise ValueError("tail_log must be finite and positive")
+    parameters = tof_profile_parameters(
+        d,
+        zero_us=instrument.zero_us,
+        difc_us_per_angstrom=instrument.difc_us_per_angstrom,
+        difa_us_per_angstrom2=instrument.difa_us_per_angstrom2,
+        difb_us_angstrom=instrument.difb_us_angstrom,
+        alpha_coefficient=instrument.alpha_coefficient,
+        beta0_per_us=instrument.beta0_per_us,
+        beta1_angstrom4_per_us=instrument.beta1_angstrom4_per_us,
+        betaq_angstrom2_per_us=instrument.betaq_angstrom2_per_us,
+        sigma0_us2=instrument.sigma0_us2,
+        sigma1_us2_per_angstrom2=instrument.sigma1_us2_per_angstrom2,
+        sigma2_us2_per_angstrom4=instrument.sigma2_us2_per_angstrom4,
+        sigmaq_us2_per_angstrom=instrument.sigmaq_us2_per_angstrom,
+        x_us_per_angstrom=instrument.x_us_per_angstrom,
+        y_us_per_angstrom2=instrument.y_us_per_angstrom2,
+        z_us=instrument.z_us,
+    )
+    y = np.zeros_like(x)
+    for reflection in range(d.size):
+        shape = tch_shape_from_fwhm(
+            float(parameters.gaussian_fwhm_us[reflection]),
+            float(parameters.lorentzian_fwhm_us[reflection]),
+        )
+        radius = support_fwhm * shape.total_fwhm
+        left = (
+            parameters.position_us[reflection]
+            - radius
+            - tail_log / parameters.alpha_per_us[reflection]
+        )
+        right = (
+            parameters.position_us[reflection]
+            + radius
+            + tail_log / parameters.beta_per_us[reflection]
+        )
+        active = (x >= left) & (x <= right)
+        evaluated = profile_tof(
+            x[active],
+            float(parameters.position_us[reflection]),
+            float(parameters.alpha_per_us[reflection]),
+            float(parameters.beta_per_us[reflection]),
+            float(parameters.gaussian_fwhm_us[reflection]),
+            float(parameters.lorentzian_fwhm_us[reflection]),
+            tail_log=tail_log,
+            quadrature_order=quadrature_order,
+            base_radius_us=radius,
+        )
+        y[active] += intensity[reflection] * evaluated.value
+    return y
 
 
 def accumulate(

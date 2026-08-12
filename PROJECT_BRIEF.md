@@ -1021,8 +1021,19 @@ facility-neutral `two_theta_deg`, while the bounded GSAS adapter optionally
 maps the independently documented second `BNKPAR` field. Missing `BNKPAR`
 remains compatible with profile-only imports but cannot satisfy a structural
 request. Checksum-pinned POWGEN bank 2 and LANL bank 2 acceptance runs verify
-the distinct 90.000 and 88.05 degree records. Unit 38a is complete; Unit 38b's
-fused structural TOF calculation is next.
+the distinct 90.000 and 88.05 degree records. Unit 38a is complete, and Unit
+38b's fused structural TOF calculation is now complete. The Rust
+engine composes reciprocal geometry, constant coherent neutron structure
+factors, explicit neutral or matching-angle TOF Lorentz correction, and the
+finite-support asymmetric TOF profile. Values, dense structural Jacobians,
+JVPs, and VJPs share the same profile-local `dY/dI` and `dY/dd` blocks; cell
+motion includes intensity and d-spacing chains, and the 15 bank-instrument rows
+remain available for later joint composition. Centered finite differences,
+dense/product/adjoint agreement, explicit invalid-boundary tests, an independent
+NumPy composition, and a realistic 128-reflection benchmark form the review
+gate. The primitive is intentionally Rust-only and single-bank at this stage;
+Unit 38c next adds the guarded multi-bank structural objective and solver before
+Python/persistence/oracle exposure.
 The historical native-workflow comparison passes both Le Bail parity contracts
 and QARR 1g. Its unchanged QARR 1h acceptance recipe retains the reviewed
 profile-quality failure, rather than having thresholds relaxed. The newer

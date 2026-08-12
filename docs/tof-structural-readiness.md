@@ -6,8 +6,9 @@ calibrations, but those capabilities alone do not make a structural Rietveld
 model. Structural TOF intensities need an explicit observation convention in
 addition to a peak shape.
 
-This document records the Unit 38 capability review and the contract that must
-be implemented before PhaseSmith claims structural TOF refinement.
+This document records the Unit 38 capability review, the implemented single-bank
+calculation primitive, and the remaining contract before PhaseSmith claims a
+complete structural TOF refinement workflow.
 
 ## What is already reusable
 
@@ -101,6 +102,53 @@ The existing `TofInstrument` remains the profile/calibration record. Keeping
 geometry separate avoids pretending that fitted `DIFC` uniquely determines a
 physical flight path or bank angle.
 
+## Implemented single-bank structural calculation
+
+Unit 38b provides the Rust `phasesmith-engine` structural TOF primitive. One
+request combines a unit cell, exact space group, canonical reflections,
+asymmetric sites, constant bound-coherent neutron species, explicit correction,
+typed bank geometry, and bank-local `TofInstrument` on a strictly increasing
+microsecond bin-center grid. It evaluates
+
+```text
+q_h^2 = h^T G* h
+d_h = 1 / sqrt(q_h^2)
+I_h = scale * multiplicity_h * correction_h * |F_h|^2
+Y_i = sum_h I_h P_TOF(tof_i; d_h, instrument)
+```
+
+in production Rust. The local profile block supplies `dY/dI_h` and `dY/dd_h`.
+The structural chain adds
+
+```text
+dd_h/dp_cell = -0.5 d_h^3 d(q_h^2)/dp_cell
+dY_i/dp = sum_h [(dY_i/dI_h)(dI_h/dp) + (dY_i/dd_h)(dd_h/dp)]
+```
+
+with the second term zero for non-cell structural parameters. Dense, JVP, and
+VJP interfaces use the established P1 structural order: six cell parameters;
+three fractional-coordinate values per site; one occupancy per site; one
+isotropic displacement value per site; and phase scale. The accumulation also
+retains the 15 bank-instrument derivative rows for later guarded composition.
+
+Finite support is inclusive at both ends. Centered-difference tests exclude
+samples whose membership can change at a perturbed support boundary. The cell
+rows use a local `2e-4` relative test tolerance because they chain through the
+finite-quadrature asymmetric-profile d-spacing derivative; direct structural
+rows remain at `3e-5`. JVP and VJP are checked against the dense result and by
+the adjoint identity. The independent NumPy reference composes symmetry,
+neutron intensity, reciprocal d-spacing, and high-order TOF quadrature without
+calling the new Rust primitive. A Criterion case covers 128 reflections, 16
+sites, and 14,501 TOF samples for value, dense, and JVP paths. On the 2026-08-12
+review machine, the new baseline medians were 167.96 ms for values, 173.40 ms
+for the dense structural Jacobian, and 167.72 ms for one JVP. There is no
+earlier structural-TOF baseline against which to report a regression.
+
+This is a calculation kernel, not yet a public Python refinement workflow. It
+deliberately accepts only `Neutral` or `TimeOfFlightNeutronLorentz`, and the
+Lorentz angle must bitwise match the typed bank geometry. It does not infer
+incident-spectrum, detector, absorption, extinction, or texture corrections.
+
 ## Unit 38 delivery sequence
 
 The structural extension is split into reviewable numerical increments:
@@ -110,9 +158,10 @@ The structural extension is split into reviewable numerical increments:
    centered finite differences.
 2. **Complete:** add typed TOF bank geometry and parse the independently
    documented scattering angle from bounded legacy instrument input.
-3. Add a Rust structural-TOF calculation primitive that evaluates values and
-   structural/profile derivatives in the same finite-support pass. Cover dense,
-   JVP, and VJP products and a realistic multi-reflection benchmark.
+3. **Complete:** add a Rust structural-TOF calculation primitive that evaluates
+   values and structural/profile derivatives through the same finite-support
+   accumulation. Dense, JVP, VJP, independent-reference, and realistic
+   multi-reflection benchmark gates are present.
 4. Compose the primitive into a guarded multi-bank structural objective and
    solver with shared structure/cell and bank-local scale, background,
    instrument, geometry, masks, and uncertainties.

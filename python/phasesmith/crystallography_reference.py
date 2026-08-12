@@ -8,6 +8,8 @@ import numpy as np
 from numpy.typing import ArrayLike, NDArray
 
 from .crystallography import AtomSiteBatch, UnitCell, p1_parameter_names
+from .instrument import TofInstrument
+from .reference import accumulate_tof
 from .structure import CrystalStructure
 
 
@@ -42,6 +44,15 @@ class ReferenceStructureFactorValues:
     integrated_intensity: NDArray[np.float64]
     q_squared_inverse_angstrom2: NDArray[np.float64]
     s_inverse_angstrom: NDArray[np.float64]
+
+
+@dataclass(frozen=True, slots=True)
+class ReferenceStructuralTofResult:
+    """Independent structural reflection values and TOF pattern densities."""
+
+    structure_factors: ReferenceStructureFactorValues
+    d_spacing_angstrom: NDArray[np.float64]
+    y: NDArray[np.float64]
 
 
 def reference_time_of_flight_neutron_lorentz(
@@ -218,3 +229,42 @@ def reference_structure_factor_values(
         q_squared,
         0.5 * np.sqrt(q_squared),
     )
+
+
+def reference_structural_tof_pattern(
+    structure: CrystalStructure,
+    hkl: ArrayLike,
+    multiplicity: ArrayLike,
+    scattering_amplitudes: ArrayLike,
+    correction: ArrayLike,
+    tof_us: ArrayLike,
+    instrument: TofInstrument,
+    *,
+    scale: float,
+    coordinate_tolerance: float = 1.0e-10,
+    support_fwhm: float = 20.0,
+    tail_log: float = 20.0,
+    quadrature_order: int = 192,
+) -> ReferenceStructuralTofResult:
+    """Compose independent symmetry, intensity, d-spacing, and TOF equations."""
+
+    structural = reference_structure_factor_values(
+        structure,
+        hkl,
+        multiplicity,
+        scattering_amplitudes,
+        correction,
+        scale=scale,
+        coordinate_tolerance=coordinate_tolerance,
+    )
+    d_spacing = 1.0 / np.sqrt(structural.q_squared_inverse_angstrom2)
+    y = accumulate_tof(
+        tof_us,
+        d_spacing,
+        structural.integrated_intensity,
+        instrument,
+        support_fwhm=support_fwhm,
+        tail_log=tail_log,
+        quadrature_order=quadrature_order,
+    )
+    return ReferenceStructuralTofResult(structural, d_spacing, y)

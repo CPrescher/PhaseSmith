@@ -10,6 +10,8 @@
 //!
 //! - [`calculate_structural_pattern`] is the direct one-phase, one-wavelength
 //!   calculation.
+//! - [`calculate_structural_tof_pattern`] is the direct one-phase, one-bank
+//!   neutron TOF calculation with explicit bank geometry and correction.
 //! - [`PreparedStructuralPhase`] validates and caches topology for repeated
 //!   phase evaluations.
 //! - [`PreparedStructuralSpectrum`] adds fixed wavelength components.
@@ -40,6 +42,7 @@ mod prepared_structural_phase;
 mod structural_multiphase;
 pub mod structural_pattern;
 mod structural_spectrum;
+pub mod structural_tof;
 
 pub use prepared_structural_phase::{
     PreparedStructuralPatternInputView, PreparedStructuralPhase, StructuralPhaseDefinition,
@@ -51,6 +54,14 @@ pub use structural_multiphase::{
 };
 pub use structural_spectrum::{
     PreparedStructuralSpectrum, PreparedStructuralSpectrumInputView, StructuralSpectrumError,
+};
+pub use structural_tof::{
+    StructuralTofDenseResult, StructuralTofError, StructuralTofInputView, StructuralTofJvpResult,
+    StructuralTofResult, StructuralTofVjpResult, calculate_structural_tof_pattern,
+    calculate_structural_tof_pattern_dense, calculate_structural_tof_pattern_dense_with_context,
+    calculate_structural_tof_pattern_jvp, calculate_structural_tof_pattern_jvp_with_context,
+    calculate_structural_tof_pattern_vjp, calculate_structural_tof_pattern_vjp_with_context,
+    calculate_structural_tof_pattern_with_context,
 };
 
 pub use structural_pattern::{

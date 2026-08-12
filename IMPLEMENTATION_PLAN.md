@@ -1466,8 +1466,19 @@ That remaining slice is complete. Rust and Python expose
 bounded legacy adapter maps the second `BNKPAR` field when present while
 retaining `None` for historical profile-only files. The checksum-pinned POWGEN
 and LANL validation reports now gate their distinct 90.000 and 88.05 degree
-angles through the same typed contract. Unit 38a is complete; Unit 38b now adds
-the fused Rust structural TOF calculation.
+angles through the same typed contract. Unit 38a is complete. Unit 38b is also
+complete: the fused Rust structural TOF calculation in the
+`phasesmith-engine` primitive composes reciprocal d-spacing, built-in neutron
+structure factors, explicit neutral or fixed-bank TOF Lorentz correction, and
+the asymmetric finite-support TOF accumulator. It returns values plus dense,
+JVP, and VJP structural derivatives while retaining all 15 bank-instrument
+rows. Cell motion includes both intensity and peak-position/width chains through
+`dd/dp = -d^3 d(q^2)/dp / 2`; reverse products use the exact transpose of the
+sparse local profile blocks. Centered finite differences, dense/JVP/VJP and
+adjoint checks, invalid correction/weight boundaries, an independent NumPy
+structural-TOF composition, and a 128-reflection/16-site/14,501-sample Criterion
+benchmark gate the implementation. Unit 38c's guarded multi-bank structural
+objective and solver are next.
 
 Do not combine adjacent items merely to reduce PR count; numerical review is
 easier when parameter conventions and tolerance changes remain isolated.
@@ -1525,7 +1536,8 @@ completes atomic fixed-cell multi-bank coordination, Unit 34 completes shared
 analytical lattice motion, and Unit 35 completes selected fixed-cell bank-local
 instrument motion, and Unit 36 combines the two geometry families in one
 correlation-diagnosed system, and Unit 37a adds its Python application facade.
-The next TOF increment is Unit 38b's fused structural TOF calculation.
+The next TOF increment is Unit 38c's guarded multi-bank structural objective
+and solver.
 Structural parameter and instrument refinement must
 be introduced only with analytical derivatives, finite-difference tests, and
 new oracle contracts; it is not part of the completed Le Bail facade.

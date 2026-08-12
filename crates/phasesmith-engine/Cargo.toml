@@ -22,5 +22,9 @@ criterion = "0.7"
 name = "structural_pattern"
 harness = false
 
+[[bench]]
+name = "structural_tof"
+harness = false
+
 [lints]
 workspace = true
