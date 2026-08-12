@@ -279,8 +279,8 @@ Ni1 Ni 0 0 0
         cif_path,
         bank=2,
         incident_normalization="calibration_type4",
-        correction="neutral",
-        sample_corrections="none",
+        correction="already_applied",
+        sample_corrections="already_applied",
         reduction_path=reduction_path,
         search_min_d_angstrom=0.75,
         search_max_d_angstrom=1.25,
@@ -295,12 +295,13 @@ Ni1 Ni 0 0 0
     )
     assert normalized.provenance is not None
     assert normalized.provenance.incident_normalization == "calibration_type4"
-    assert normalized.provenance.correction == "neutral"
+    assert normalized.provenance.correction == "already_applied"
+    assert normalized.provenance.sample_corrections == "already_applied"
     assert not normalized.provenance.reduction_embedded_in_pattern
     assert normalized.provenance.reduction.source_name == str(reduction_path)
     assert normalized.provenance.reduction.sha256 == sha256(reduction_path.read_bytes()).hexdigest()
 
-    with pytest.raises(ValueError, match="sample_corrections='none'"):
+    with pytest.raises(ValueError, match="named correction models are not implemented"):
         StructuralTofMultiBankInput.from_files(
             pattern_path,
             instrument_path,

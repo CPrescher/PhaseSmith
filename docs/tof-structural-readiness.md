@@ -250,11 +250,14 @@ reader, one GSAS calibration bank, required detector geometry, a CIF structure,
 and generated reflection topology. The caller must explicitly choose whether
 the observations are already normalized or require the calibration's type-4
 incident spectrum, and whether the bank uses a neutral or TOF-neutron Lorentz
-correction. The caller must also declare `sample_corrections="none"`; the file
-adapter rejects absorption, extinction, or texture names until those models
-have reviewed TOF equations and analytical derivatives. Missing geometry or a
-requested but absent incident spectrum is an error. Facility names, filenames,
-and profile-function codes never select intensity physics implicitly; non-GSAS
+correction. `correction="already_applied"` represents an upstream Lorentz or
+equivalent correction and maps to a neutral in-engine factor, while `neutral`
+means that no integrated-intensity correction is required. The caller must also
+declare sample corrections as `none` or `already_applied`; named absorption,
+extinction, or texture models are rejected until they have reviewed TOF
+equations and analytical derivatives. Missing geometry or a requested but
+absent incident spectrum is an error. Facility names, filenames, and
+profile-function codes never select intensity physics implicitly; non-GSAS
 callers can continue to construct the same typed request directly.
 
 Every composed request retains a `StructuralTofRequestProvenance` record with
@@ -262,9 +265,9 @@ the source name, byte size, and SHA-256 of the pattern, instrument calibration,
 and CIF. The reduction record is either a separately supplied
 `reduction_path` or, when reduction metadata is embedded in the reduced pattern
 header, the same checksum-pinned pattern bytes. The record also retains the
-selected bank, normalization and correction declarations, the explicit absence
-of sample corrections, whether a fixed background was supplied, and the SHA-256
-of the applied fixed-background float64 array. Source hashing obeys the same
+selected bank, normalization, integrated-intensity and sample-correction
+declarations, whether a fixed background was supplied, and the SHA-256 of the
+applied fixed-background float64 array. Source hashing obeys the same
 caller-selected byte limits as the pattern, calibration, and CIF readers.
 This is application-layer audit metadata and never enters the numerical Rust
 kernel. Python checkpoints retain the provenance record and reject continuation

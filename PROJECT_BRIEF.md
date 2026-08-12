@@ -1114,9 +1114,10 @@ The public one-bank file composition path is complete.
 bank, its selected GSAS calibration with required detector geometry, and a CIF,
 then generates fixed structural reflection topology. It requires the caller to
 choose `already_normalized` or `calibration_type4` and `neutral` or
-`tof_lorentz`, and to declare that no sample correction is applied; missing
-requested calibration data or an unsupported sample-correction name fails
-explicitly. The composed request retains byte sizes and SHA-256 identities for
+`tof_lorentz`; `already_applied` is also explicit when either the
+integrated-intensity correction or sample corrections were performed upstream.
+Missing requested calibration data or a named but unsupported sample-correction
+model fails explicitly. The composed request retains byte sizes and SHA-256 identities for
 the pattern, calibration, CIF, and embedded or separately supplied reduction
 record, plus the fixed-background array hash and every explicit physics choice.
 Hashing obeys the readers' bounded byte limits, and background provenance

@@ -84,8 +84,8 @@ class StructuralTofRequestProvenance:
     reduction_embedded_in_pattern: bool
     bank: int
     incident_normalization: Literal["already_normalized", "calibration_type4"]
-    correction: Literal["neutral", "tof_lorentz"]
-    sample_corrections: Literal["none"]
+    correction: Literal["neutral", "already_applied", "tof_lorentz"]
+    sample_corrections: Literal["none", "already_applied"]
     fixed_background_supplied: bool
     fixed_background_sha256: str
 
@@ -99,10 +99,10 @@ class StructuralTofRequestProvenance:
             raise ValueError("bank must be a positive integer")
         if self.incident_normalization not in {"already_normalized", "calibration_type4"}:
             raise ValueError("unsupported incident_normalization provenance")
-        if self.correction not in {"neutral", "tof_lorentz"}:
+        if self.correction not in {"neutral", "already_applied", "tof_lorentz"}:
             raise ValueError("unsupported correction provenance")
-        if self.sample_corrections != "none":
-            raise ValueError("the file adapter currently supports only sample_corrections='none'")
+        if self.sample_corrections not in {"none", "already_applied"}:
+            raise ValueError("unsupported sample_corrections provenance")
         if not isinstance(self.fixed_background_supplied, bool):
             raise TypeError("fixed_background_supplied must be boolean")
         if len(self.fixed_background_sha256) != 64 or any(
@@ -321,8 +321,8 @@ class StructuralTofMultiBankInput:
         *,
         bank: int,
         incident_normalization: Literal["already_normalized", "calibration_type4"],
-        correction: Literal["neutral", "tof_lorentz"],
-        sample_corrections: Literal["none"],
+        correction: Literal["neutral", "already_applied", "tof_lorentz"],
+        sample_corrections: Literal["none", "already_applied"],
         bank_id: str | None = None,
         pattern_format: TofPowderFormat = "auto",
         search_min_d_angstrom: float = 0.25,
@@ -335,15 +335,19 @@ class StructuralTofMultiBankInput:
     ) -> StructuralTofMultiBankInput:
         """Build one explicit reduced-data/calibration/CIF structural request.
 
-        The normalization, intensity correction, and absence of sample
-        corrections are mandatory declarations, so file or facility names
-        never select structural intensity physics implicitly. ``reduction_path``
-        can identify a separate reduction record; otherwise the pattern bytes
-        are the checksum-pinned reduction record as well.
+        Normalization, intensity correction, and sample-correction handling are
+        mandatory declarations, so file or facility names never select physics
+        implicitly. ``already_applied`` records upstream correction without
+        applying it again. ``reduction_path`` can identify a separate reduction
+        record; otherwise the pattern bytes are the checksum-pinned reduction
+        record as well.
         """
 
-        if sample_corrections != "none":
-            raise ValueError("the file adapter currently supports only sample_corrections='none'")
+        if sample_corrections not in {"none", "already_applied"}:
+            raise ValueError(
+                "sample_corrections must be 'none' or 'already_applied'; "
+                "named correction models are not implemented"
+            )
 
         selected_powder_limits = powder_limits or PowderReadLimits()
         if not isinstance(selected_powder_limits, PowderReadLimits):
@@ -386,12 +390,12 @@ class StructuralTofMultiBankInput:
             raise ValueError(
                 "incident_normalization must be 'already_normalized' or 'calibration_type4'"
             )
-        if correction == "neutral":
+        if correction in {"neutral", "already_applied"}:
             correction_model = NeutralIntegratedIntensityCorrection()
         elif correction == "tof_lorentz":
             correction_model = TimeOfFlightNeutronLorentz(geometry.two_theta_deg)
         else:
-            raise ValueError("correction must be 'neutral' or 'tof_lorentz'")
+            raise ValueError("correction must be 'neutral', 'already_applied', or 'tof_lorentz'")
         structure = read_cif(cif_path, limits=selected_cif_limits).structure
         generated = PreparedReflectionGenerator(structure.space_group).generate(
             structure.cell,

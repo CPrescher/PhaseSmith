@@ -1560,12 +1560,14 @@ The file-composition audit trail is complete as a separate application-layer
 slice. It retains SHA-256 and byte size for the pattern, calibration, CIF, and
 embedded or separate reduction record, as well as the selected bank,
 normalization/correction declarations, fixed-background array hash, and the
-explicit `sample_corrections="none"` choice. Hash reads obey the same bounded
-I/O limits as their parsers, and the record distinguishes no supplied
-background from a supplied all-zero array. Unsupported sample-correction names
-fail until their TOF value/derivative contracts exist. Provenance remains
-outside the dependency-light numerical kernel, survives immutable Python
-request updates, and is compared before Python checkpoint continuation.
+explicit sample-correction choice. Both integrated-intensity and sample
+corrections can be declared `already_applied`, which records upstream reduction
+without applying a second factor; named in-engine sample models remain rejected
+until their TOF value/derivative contracts exist. Hash reads obey the same
+bounded I/O limits as their parsers, and the record distinguishes no supplied
+background from a supplied all-zero array. Provenance remains outside the
+dependency-light numerical kernel, survives immutable Python request updates,
+and is compared before Python checkpoint continuation.
 The explicit ORNL/POWGEN structural acceptance slice is complete. The pinned
 bank-2 header records its vanadium run, bin-width scaling, and proton-charge
 normalization, while the type-0 calibration supplies geometry but no incident
