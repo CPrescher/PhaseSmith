@@ -1517,6 +1517,16 @@ structural topology are referenced instead of duplicated; loads reconstruct
 and revalidate the exact request/checkpoint contract. Formats 1--4 migrate with
 an empty structural-analysis list. The pinned structural real-data/oracle gate
 is next.
+The native structural real-data half is complete. The core now owns a
+facility-neutral twelve-coefficient Maxwellian/Chebyshev incident spectrum,
+including its explicit microsecond validity interval and analytical coordinate
+derivative. The bounded legacy adapter maps GSAS type 4 and rejects other
+non-neutral function types instead of silently dropping them. LANL nickel raw
+counts and uncertainties are normalized explicitly before the structural
+objective; bank 2--4 refinement of one shared cubic cell, Ni Uiso, three scales,
+and three Zero terms gives Rwp 0.03278208, minimum correlation 0.99749010, and
+a=3.52373113 A over 13,293 observations. Public Python exposure and the isolated
+structural oracle remain separately reviewable follow-up slices.
 
 Do not combine adjacent items merely to reduce PR count; numerical review is
 easier when parameter conventions and tolerance changes remain isolated.

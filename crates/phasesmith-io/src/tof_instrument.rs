@@ -9,7 +9,10 @@ use std::fmt::{Display, Formatter};
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use phasesmith_core::{TofBankGeometry, TofError, TofInstrument};
+use phasesmith_core::{
+    TOF_INCIDENT_SPECTRUM_COEFFICIENT_COUNT, TofBankGeometry, TofError, TofIncidentSpectrum,
+    TofInstrument,
+};
 
 /// Resource limit checked before decoding a legacy instrument file.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -51,6 +54,8 @@ pub struct GsasTofInstrumentData {
     pub profile_function: usize,
     /// Parsed fixed bank scattering angle when a `BNKPAR` record is present.
     pub bank_geometry: Option<TofBankGeometry>,
+    /// Parsed type-4 Maxwellian/Chebyshev incident spectrum when present.
+    pub incident_spectrum: Option<TofIncidentSpectrum>,
     /// Source path when read from a file.
     pub source_path: Option<PathBuf>,
 }
@@ -92,6 +97,13 @@ pub enum GsasTofInstrumentIoError {
         /// Parsed legacy function number.
         found: usize,
     },
+    /// The selected bank declares an incident-spectrum function not translated here.
+    UnsupportedIncidentSpectrumFunction {
+        /// Selected legacy bank.
+        bank: usize,
+        /// Parsed legacy incident-spectrum function number.
+        found: usize,
+    },
     /// Translated coefficients violate the core model.
     Profile(TofError),
 }
@@ -120,6 +132,10 @@ impl Display for GsasTofInstrumentIoError {
             Self::UnsupportedProfileFunction { bank, found } => write!(
                 formatter,
                 "GSAS TOF bank {bank} uses unsupported profile function {found}; only functions 1 and 3 are supported"
+            ),
+            Self::UnsupportedIncidentSpectrumFunction { bank, found } => write!(
+                formatter,
+                "GSAS TOF bank {bank} uses unsupported incident-spectrum function {found}; only functions 0 and 4 are supported"
             ),
             Self::Profile(error) => Display::fmt(error, formatter),
         }
@@ -195,6 +211,7 @@ fn parse_inner(
         return Err(invalid(bank, "ICONS"));
     }
     let bank_geometry = parse_optional_bank_geometry(text, bank)?;
+    let incident_spectrum = parse_optional_incident_spectrum(text, bank)?;
     let compact_header = format!("INS {bank:>2}PRCF1 ");
     let spaced_header = format!("INS {bank:>2}PRCF  ");
     let compact = text.lines().any(|line| line.starts_with(&compact_header));
@@ -279,6 +296,7 @@ fn parse_inner(
         bank,
         profile_function: function,
         bank_geometry,
+        incident_spectrum,
         source_path,
     })
 }
@@ -351,6 +369,61 @@ fn parse_optional_bank_geometry(
             Ok(geometry)
         })
         .transpose()
+}
+
+fn parse_optional_incident_spectrum(
+    text: &str,
+    bank: usize,
+) -> Result<Option<TofIncidentSpectrum>, GsasTofInstrumentIoError> {
+    let prefix = format!("INS {bank:>2}I ITYP");
+    let Some(line) = text.lines().find(|line| line.starts_with(&prefix)) else {
+        return Ok(None);
+    };
+    let mut tokens = line[prefix.len()..].split_whitespace();
+    let function = tokens
+        .next()
+        .ok_or_else(|| invalid(bank, "I ITYP"))?
+        .parse::<usize>()
+        .map_err(|_| invalid(bank, "I ITYP"))?;
+    let min_tof_ms = tokens
+        .next()
+        .ok_or_else(|| invalid(bank, "I ITYP"))?
+        .parse::<f64>()
+        .map_err(|_| invalid(bank, "I ITYP"))?;
+    let max_tof_ms = tokens
+        .next()
+        .ok_or_else(|| invalid(bank, "I ITYP"))?
+        .parse::<f64>()
+        .map_err(|_| invalid(bank, "I ITYP"))?;
+    if function == 0 {
+        return Ok(None);
+    }
+    if function != 4 {
+        return Err(
+            GsasTofInstrumentIoError::UnsupportedIncidentSpectrumFunction {
+                bank,
+                found: function,
+            },
+        );
+    }
+    let mut coefficients = Vec::with_capacity(TOF_INCIDENT_SPECTRUM_COEFFICIENT_COUNT);
+    for record_index in 1..=3 {
+        coefficients.extend(record_values(
+            text,
+            bank,
+            "ICOFF",
+            &format!("INS {bank:>2}ICOFF{record_index}"),
+        )?);
+    }
+    if coefficients.len() != TOF_INCIDENT_SPECTRUM_COEFFICIENT_COUNT {
+        return Err(invalid(bank, "ICOFF"));
+    }
+    let coefficients: [f64; TOF_INCIDENT_SPECTRUM_COEFFICIENT_COUNT] = coefficients
+        .try_into()
+        .map_err(|_| invalid(bank, "ICOFF"))?;
+    TofIncidentSpectrum::new(min_tof_ms * 1_000.0, max_tof_ms * 1_000.0, coefficients)
+        .map(Some)
+        .map_err(|_| invalid(bank, "I ITYP"))
 }
 
 fn profile_function(

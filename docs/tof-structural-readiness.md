@@ -144,10 +144,30 @@ review machine, the new baseline medians were 167.96 ms for values, 173.40 ms
 for the dense structural Jacobian, and 167.72 ms for one JVP. There is no
 earlier structural-TOF baseline against which to report a regression.
 
-This is a calculation kernel, not yet a public Python refinement workflow. It
-deliberately accepts only `Neutral` or `TimeOfFlightNeutronLorentz`, and the
-Lorentz angle must bitwise match the typed bank geometry. It does not infer
-incident-spectrum, detector, absorption, extinction, or texture corrections.
+The structural kernel deliberately accepts only `Neutral` or
+`TimeOfFlightNeutronLorentz`, and the Lorentz angle must bitwise match the typed
+bank geometry. It does not infer incident-spectrum, detector, absorption,
+extinction, or texture corrections. Observation preprocessing is explicit:
+raw TOF counts can be divided by a separately supplied incident-spectrum
+calibration before constructing the structural request.
+
+The facility-neutral `TofIncidentSpectrum` implements the calibrated
+Maxwellian-plus-Chebyshev function
+
+```text
+x = 2/t - 1
+I_inc(t) = P1 + P2 t^-5 exp(-P3/t^2)
+           + sum(Pj T_(j-3)(x), j=4..12)
+```
+
+where `t` is in milliseconds while the public API and inclusive validity
+interval are in microseconds. Value and `dI_inc/d(tof_us)` are evaluated
+together. The bounded GSAS adapter maps explicit `I ITYP 4` plus `ICOFF1..3`
+records into this model, treats an absent/type-0 record as no calibration, and
+rejects unsupported nonzero functions. Normalizing observations also requires
+dividing their one-sigma uncertainties by the same positive intensity. The
+model is not tied to POWGEN or LANL; other adapters may construct the same typed
+calibration from their native metadata.
 
 ## Implemented multi-bank objective
 
@@ -264,9 +284,12 @@ The structural extension is split into reviewable numerical increments:
 4. **Complete:** compose the primitive into a guarded
    multi-bank structural objective and solver with shared structure/cell and
    bank-local scale, background, instrument, geometry, masks, and uncertainties.
-5. Expose the same native contract through Python and project persistence, then
-   validate a checksum-pinned real structural dataset against an isolated
-   pinned oracle.
+5. **In progress:** expose the same native contract through Python and project
+   persistence, then validate a checksum-pinned real structural dataset against
+   an isolated pinned oracle. Python refinement and format-5 persistence are
+   complete. Native LANL nickel acceptance is complete after explicit incident
+   normalization; public spectrum exposure and isolated-oracle comparison
+   remain.
 
 No stage may claim “all TOF beamlines” merely because another profile function
 fits. Acceptance requires a declared reduction/correction convention and bank
@@ -300,3 +323,7 @@ intensity contract.
 - J. Liu et al., “Lorentz factor for time-of-flight neutron Bragg and total
   scattering,” *Journal of Applied Crystallography* **56** (2023),
   <https://doi.org/10.1107/S1600576723002127>.
+- A. C. Larson and R. B. Von Dreele, *General Structure Analysis System
+  (GSAS)*, Los Alamos National Laboratory Report LAUR 86-748, 2004, pp.
+  127--129 and 222--223,
+  <https://subversion.xray.aps.anl.gov/EXPGUI/gsas/all/GSAS%20Manual.pdf>.

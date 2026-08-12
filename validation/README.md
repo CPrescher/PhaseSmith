@@ -132,6 +132,15 @@ have deliberately different meanings:
   component on 6,824 centers, their uncertainty-weighted Rwp values are
   0.26461 (PhaseSmith) and about 0.26297 (GSAS-II), an absolute delta below
   0.0017; their profile-correlation delta is below 0.0005.
+- `lanl-nickel-tof` also gates structural TOF transfer independently of
+  POWGEN. The bounded calibration adapter reads each bank's explicit type-4
+  vanadium incident spectrum; raw count densities and uncertainties are divided
+  by that positive spectrum before fitting. One Fm-3m Ni phase shares its cubic
+  cell and isotropic displacement across banks 2--4 while scale and Zero remain
+  bank-local. The 13,293-point native result has Rwp 0.03278208, minimum bank
+  correlation 0.99749010, and a=3.52373113 A versus 3.5234 A. This is a native
+  real-data gate; the isolated structural GSAS-II comparison is tracked
+  separately.
 - `gsasii-pbso4-cw` adds official packed-GSAS X-ray and neutron patterns for
   the same PbSO4 specimen. The established Python validation keeps its staged
   per-probe comparison for continuity, while the Rust-only joint benchmark

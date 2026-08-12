@@ -21,6 +21,8 @@ pub const TOF_GLOBAL_PARAMETER_NAMES: [&str; TOF_GLOBAL_PARAMETER_COUNT] = [
     "zero", "difc", "difa", "difb", "alpha", "beta0", "beta1", "betaq", "sigma0", "sigma1",
     "sigma2", "sigmaq", "x", "y", "z",
 ];
+/// Number of coefficients in the Maxwellian-plus-Chebyshev incident spectrum.
+pub const TOF_INCIDENT_SPECTRUM_COEFFICIENT_COUNT: usize = 12;
 
 /// One selectable TOF calibration/profile coefficient.
 #[repr(usize)]
@@ -96,6 +98,143 @@ const TOF_QUADRATURE_PANELS_F64: f64 = 8.0;
 const TOF_SUPPORT_QUADRATURE_PANELS: usize = 4;
 const TOF_SUPPORT_QUADRATURE_PANELS_F64: f64 = 4.0;
 const TOF_QUADRATURE_COUNT: usize = TOF_QUADRATURE_PANELS * QUADRATURE_ORDER;
+
+/// One calibrated TOF incident-spectrum value and coordinate derivative.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct TofIncidentSpectrumPoint {
+    /// Positive incident intensity at the requested TOF.
+    pub value: f64,
+    /// Analytical derivative with respect to TOF in microseconds.
+    pub d_value_d_tof_us: f64,
+}
+
+/// Facility-neutral Maxwellian-plus-Chebyshev TOF incident spectrum.
+///
+/// The twelve coefficients are `P1..P12`. With TOF `t` in milliseconds and
+/// `x = 2/t - 1`, the calibrated intensity is
+///
+/// `P1 + P2 t^-5 exp(-P3/t^2) + sum(Pj T_(j-3)(x), j=4..12)`.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct TofIncidentSpectrum {
+    /// Inclusive lower validity bound in microseconds.
+    pub min_tof_us: f64,
+    /// Inclusive upper validity bound in microseconds.
+    pub max_tof_us: f64,
+    /// Coefficients `P1..P12` in the documented function order.
+    pub coefficients: [f64; TOF_INCIDENT_SPECTRUM_COEFFICIENT_COUNT],
+}
+
+impl TofIncidentSpectrum {
+    /// Construct and validate a fixed incident-spectrum calibration.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`TofIncidentSpectrumError`] for an invalid range or
+    /// non-finite coefficient.
+    pub fn new(
+        min_tof_us: f64,
+        max_tof_us: f64,
+        coefficients: [f64; TOF_INCIDENT_SPECTRUM_COEFFICIENT_COUNT],
+    ) -> Result<Self, TofIncidentSpectrumError> {
+        if !min_tof_us.is_finite()
+            || !max_tof_us.is_finite()
+            || min_tof_us <= 0.0
+            || max_tof_us <= min_tof_us
+        {
+            return Err(TofIncidentSpectrumError::InvalidRange);
+        }
+        if coefficients.iter().any(|value| !value.is_finite()) {
+            return Err(TofIncidentSpectrumError::NonFiniteCoefficient);
+        }
+        Ok(Self {
+            min_tof_us,
+            max_tof_us,
+            coefficients,
+        })
+    }
+
+    /// Evaluate the calibrated intensity and analytical TOF derivative.
+    ///
+    /// The validity interval is inclusive at both ends.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`TofIncidentSpectrumError`] when TOF lies outside the
+    /// calibration interval or the fitted function is not positive and finite.
+    pub fn evaluate(
+        self,
+        tof_us: f64,
+    ) -> Result<TofIncidentSpectrumPoint, TofIncidentSpectrumError> {
+        if !tof_us.is_finite() || tof_us < self.min_tof_us || tof_us > self.max_tof_us {
+            return Err(TofIncidentSpectrumError::TofOutsideRange);
+        }
+        let time_milliseconds = tof_us / 1_000.0;
+        let inverse_t = time_milliseconds.recip();
+        let inverse_t2 = inverse_t * inverse_t;
+        let x = 2.0 * inverse_t - 1.0;
+        let d_x_d_t_ms = -2.0 * inverse_t2;
+        let maxwell =
+            self.coefficients[1] * inverse_t.powi(5) * (-self.coefficients[2] * inverse_t2).exp();
+        let mut value = self.coefficients[0] + maxwell;
+        let mut d_value_d_t_ms =
+            maxwell * (-5.0 * inverse_t + 2.0 * self.coefficients[2] * inverse_t.powi(3));
+
+        let mut previous = 1.0;
+        let mut d_previous = 0.0;
+        let mut current = x;
+        let mut d_current = d_x_d_t_ms;
+        for (index, &coefficient) in self.coefficients[3..].iter().enumerate() {
+            if index > 0 {
+                let next = 2.0 * x * current - previous;
+                let d_next = 2.0 * (d_x_d_t_ms * current + x * d_current) - d_previous;
+                previous = current;
+                d_previous = d_current;
+                current = next;
+                d_current = d_next;
+            }
+            value += coefficient * current;
+            d_value_d_t_ms += coefficient * d_current;
+        }
+        let d_value_d_tof_us = d_value_d_t_ms / 1_000.0;
+        if !value.is_finite() || value <= 0.0 || !d_value_d_tof_us.is_finite() {
+            return Err(TofIncidentSpectrumError::NonPositiveIntensity);
+        }
+        Ok(TofIncidentSpectrumPoint {
+            value,
+            d_value_d_tof_us,
+        })
+    }
+}
+
+/// Invalid TOF incident-spectrum calibration or evaluation.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TofIncidentSpectrumError {
+    /// The inclusive validity interval is not finite, positive, and increasing.
+    InvalidRange,
+    /// At least one fitted coefficient is non-finite.
+    NonFiniteCoefficient,
+    /// Requested TOF is non-finite or outside the inclusive validity interval.
+    TofOutsideRange,
+    /// Evaluation produced an incident intensity that is not positive and finite.
+    NonPositiveIntensity,
+}
+
+impl Display for TofIncidentSpectrumError {
+    fn fmt(&self, formatter: &mut Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str(match self {
+            Self::InvalidRange => {
+                "TOF incident-spectrum range must be finite, positive, and increasing"
+            }
+            Self::NonFiniteCoefficient => "TOF incident-spectrum coefficients must be finite",
+            Self::TofOutsideRange => "TOF lies outside the incident-spectrum validity interval",
+            Self::NonPositiveIntensity => {
+                "TOF incident-spectrum intensity must be positive and finite"
+            }
+        })
+    }
+}
+
+impl Error for TofIncidentSpectrumError {}
 
 /// Facility-neutral fixed geometry for one focused TOF detector bank.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -1098,6 +1237,61 @@ pub fn accumulate_tof_batch_with_context(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn incident_spectrum_matches_closed_form_and_centered_difference() {
+        let spectrum = TofIncidentSpectrum::new(
+            500.0,
+            10_000.0,
+            [
+                12.0, 40_000.0, 3.0, 2.0, -0.5, 0.25, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+            ],
+        )
+        .expect("spectrum");
+        let tof_us: f64 = 2_500.0;
+        let t = tof_us / 1_000.0;
+        let x = 2.0 / t - 1.0;
+        let expected = 12.0 + 40_000.0 / t.powi(5) * (-3.0 / t.powi(2)).exp() + 2.0 * x
+            - 0.5 * (2.0 * x * x - 1.0)
+            + 0.25 * (4.0 * x.powi(3) - 3.0 * x);
+        let actual = spectrum.evaluate(tof_us).expect("evaluation");
+        assert!((actual.value - expected).abs() < 1.0e-12 * expected.abs());
+
+        let step_us = 1.0e-3;
+        let plus = spectrum.evaluate(tof_us + step_us).unwrap().value;
+        let minus = spectrum.evaluate(tof_us - step_us).unwrap().value;
+        let finite = (plus - minus) / (2.0 * step_us);
+        assert!((actual.d_value_d_tof_us - finite).abs() < 1.0e-9);
+    }
+
+    #[test]
+    fn incident_spectrum_enforces_constructor_range_and_positive_evaluation() {
+        assert_eq!(
+            TofIncidentSpectrum::new(1_000.0, 1_000.0, [1.0; 12]),
+            Err(TofIncidentSpectrumError::InvalidRange)
+        );
+        assert_eq!(
+            TofIncidentSpectrum::new(1_000.0, 2_000.0, [f64::NAN; 12]),
+            Err(TofIncidentSpectrumError::NonFiniteCoefficient)
+        );
+        let positive = TofIncidentSpectrum::new(
+            1_000.0,
+            2_000.0,
+            [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+        )
+        .unwrap();
+        assert!(positive.evaluate(1_000.0).is_ok());
+        assert!(positive.evaluate(2_000.0).is_ok());
+        assert_eq!(
+            positive.evaluate(999.0),
+            Err(TofIncidentSpectrumError::TofOutsideRange)
+        );
+        let zero = TofIncidentSpectrum::new(1_000.0, 2_000.0, [0.0; 12]).unwrap();
+        assert_eq!(
+            zero.evaluate(1_500.0),
+            Err(TofIncidentSpectrumError::NonPositiveIntensity)
+        );
+    }
 
     #[test]
     fn bank_geometry_requires_a_strict_physical_scattering_angle() {

@@ -7,10 +7,15 @@ use std::fmt::{Display, Formatter};
 use std::path::Path;
 use std::time::Instant;
 
-use phasesmith_core::{BackgroundError, TofInstrumentParameter, smooth_bruckner};
-use phasesmith_crystallography::{
-    PreparedReflectionGenerator, ReflectionGenerationError, ReflectionRange, UnitCell,
+use phasesmith_core::{
+    BackgroundError, OwnedCwContributions, TofIncidentSpectrumError, TofInstrumentParameter,
+    smooth_bruckner,
 };
+use phasesmith_crystallography::{
+    IntegratedIntensityCorrectionModel, PreparedReflectionGenerator, ReflectionGenerationError,
+    ReflectionRange, UnitCell,
+};
+use phasesmith_engine::{BuiltInScatteringModel, StructuralPhaseDefinition};
 use phasesmith_execution::{ExecutionPolicy, ExecutionPolicyError};
 use phasesmith_io::{
     GsasTofInstrumentIoError, GsasTofInstrumentReadLimits, PowderIoError, PowderReadLimits,
@@ -19,12 +24,16 @@ use phasesmith_io::{
 };
 use phasesmith_model::{DomainError, RecordId, TofPatternRecord};
 use phasesmith_workflows::{
-    LatticeBounds, LatticeParameterization, TofBankInstrumentModel, TofChebyshevBackground,
+    LatticeBounds, LatticeParameterization, ParameterBounds, ParameterError,
+    PreparedStructuralTofMultiBankObjective, RefinementLimits, RietveldError, RietveldPhase,
+    RietveldStructuralSelection, RuntimeError, StructuralTofBank, StructuralTofMultiBankError,
+    StructuralTofMultiBankInput, StructuralTofMultiBankRefinementError,
+    StructuralTofMultiBankRefinementOptions, TofBankInstrumentModel, TofChebyshevBackground,
     TofGeometryParameterKey, TofInstrumentParameterBound, TofLeBailBank, TofLeBailError,
     TofLeBailInput, TofLeBailOptions, TofLeBailPhase, TofMultiBankGeometryError,
     TofMultiBankGeometryInput, TofMultiBankGeometryOptions, TofMultiBankInput,
-    TofMultiBankLatticeInput, TofSharedLatticePhase, refine_tof_lebail,
-    refine_tof_multibank_geometry,
+    TofMultiBankLatticeInput, TofSharedLatticePhase, refine_structural_tof_multibank,
+    refine_tof_lebail, refine_tof_multibank_geometry,
 };
 
 use crate::{
@@ -40,6 +49,7 @@ const NICKEL_LATTICE_ANGSTROM: f64 = 3.523_4;
 const MULTIBANK_INITIAL_LATTICE_ANGSTROM: f64 = 3.523;
 const MULTIBANK_MIN_D_ANGSTROM: f64 = 0.2;
 const MULTIBANK_MAX_D_ANGSTROM: f64 = 3.0;
+const STRUCTURAL_INITIAL_LATTICE_ANGSTROM: f64 = 3.522;
 
 /// Run the complete native fixed-instrument TOF Le Bail transferability gate.
 ///
@@ -174,6 +184,7 @@ pub fn run_nickel_tof_validation(
         .windows(2)
         .all(|pair| pair[1].metrics.rwp <= pair[0].metrics.rwp);
     let multibank = run_multibank_geometry(dataset_directory)?;
+    let structural = run_multibank_structural(dataset_directory)?;
     let mut checks = vec![
         check(
             "tof_nickel_bank_geometry",
@@ -199,6 +210,18 @@ pub fn run_nickel_tof_validation(
             "Legacy GSAS profile function 1 is translated into the common typed 15-coefficient model.",
             Some(calibration.profile_function as f64),
             "profile function 1 with DIFC=4368.97 us/A and alpha=0.142760",
+        )?,
+        check(
+            "tof_nickel_incident_spectrum",
+            calibration.incident_spectrum.is_some_and(|spectrum| {
+                (spectrum.min_tof_us - 750.0).abs() <= 1.0e-9
+                    && (spectrum.max_tof_us - 8_190.4).abs() <= 1.0e-9
+            }),
+            "The bounded adapter translates the bank-local Maxwellian/Chebyshev spectrum into the facility-neutral microsecond contract.",
+            calibration
+                .incident_spectrum
+                .map(|spectrum| spectrum.max_tof_us),
+            "type 4 incident spectrum valid on 750.0..8190.4 us",
         )?,
         check(
             "tof_nickel_fit_window",
@@ -289,6 +312,30 @@ pub fn run_nickel_tof_validation(
             Some(multibank.jacobian_rank as f64),
             "4 selected columns, rank 4, and at least one cross-family correlation",
         )?,
+        check(
+            "tof_nickel_structural_multibank",
+            structural.bank_count == 3
+                && structural.included_samples == 13_293
+                && structural.parameter_count == 8
+                && structural.history_count > 0,
+            "One structural Fm-3m nickel phase and three explicit bank models refine in one accepted-state objective.",
+            Some(structural.history_count as f64),
+            "3 banks, 13293 included observations, 8 parameters, and at least one accepted step",
+        )?,
+        check(
+            "tof_nickel_structural_fit",
+            structural.rwp <= 0.04 && structural.minimum_profile_correlation >= 0.995,
+            "The native neutron structure-factor intensities reproduce every real bank without Le Bail intensity redistribution.",
+            Some(structural.rwp),
+            "joint Rwp <= 0.04 and every bank profile correlation >= 0.995",
+        )?,
+        check(
+            "tof_nickel_structural_lattice",
+            (structural.lattice_angstrom - NICKEL_LATTICE_ANGSTROM).abs() <= 0.002,
+            "The real structural objective returns the displaced shared cubic cell to the published nickel lattice.",
+            Some(structural.lattice_angstrom),
+            "|a - 3.5234 A| <= 0.002 A",
+        )?,
     ]);
     RealDataValidationReport::new(
         DATASET_ID,
@@ -313,7 +360,14 @@ pub fn run_nickel_tof_validation(
                 multibank.jacobian_rank,
                 multibank.parameter_count,
             ),
-            "These are Le Bail extraction and geometry-refinement gates, not structural TOF Rietveld parameter refinement.".to_owned(),
+            format!(
+                "Structural banks 2--4 Rwp={:.8}; minimum correlation={:.8}; a={:.8} A; accepted steps={}; evaluations={}.",
+                structural.rwp,
+                structural.minimum_profile_correlation,
+                structural.lattice_angstrom,
+                structural.history_count,
+                structural.evaluation_count,
+            ),
         ],
     )
     .map_err(Into::into)
@@ -341,6 +395,18 @@ struct MultiBankAcceptance {
     parameter_count: usize,
     jacobian_rank: usize,
     cross_family_correlations: usize,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+struct StructuralAcceptance {
+    bank_count: usize,
+    included_samples: usize,
+    history_count: usize,
+    evaluation_count: usize,
+    parameter_count: usize,
+    rwp: f64,
+    minimum_profile_correlation: f64,
+    lattice_angstrom: f64,
 }
 
 #[allow(clippy::too_many_lines)]
@@ -527,6 +593,271 @@ fn run_multibank_geometry(
     })
 }
 
+#[allow(clippy::too_many_lines)]
+fn run_multibank_structural(
+    dataset_directory: &Path,
+) -> Result<StructuralAcceptance, NickelTofValidationError> {
+    let initial_cell = UnitCell {
+        a_angstrom: STRUCTURAL_INITIAL_LATTICE_ANGSTROM,
+        b_angstrom: STRUCTURAL_INITIAL_LATTICE_ANGSTROM,
+        c_angstrom: STRUCTURAL_INITIAL_LATTICE_ANGSTROM,
+        alpha_deg: 90.0,
+        beta_deg: 90.0,
+        gamma_deg: 90.0,
+    };
+    let space_group = space_group_by_number(225)?.space_group;
+    let reflections = PreparedReflectionGenerator::new(space_group.clone(), true, 100_000)?
+        .generate(
+            initial_cell,
+            ReflectionRange::DSpacing {
+                min_angstrom: MULTIBANK_MIN_D_ANGSTROM,
+                max_angstrom: MULTIBANK_MAX_D_ANGSTROM,
+            },
+        )?;
+    let definition = StructuralPhaseDefinition {
+        cell: initial_cell,
+        space_group: space_group.clone(),
+        hkl: reflections
+            .iter()
+            .map(|reflection| reflection.hkl)
+            .collect(),
+        multiplicity: reflections
+            .iter()
+            .map(|reflection| reflection.multiplicity)
+            .collect(),
+        fractional_xyz: vec![[0.0, 0.0, 0.0]],
+        occupancy: vec![1.0],
+        u_iso_angstrom2: vec![0.01],
+        anisotropic_mask: vec![false],
+        u_aniso_cif_angstrom2: vec![[0.0; 6]],
+        scattering_species: vec!["Ni".to_owned()],
+        scattering_real_offset: Vec::new(),
+        scattering_imag_offset: Vec::new(),
+        scale: 1.0,
+        coordinate_tolerance: 1.0e-10,
+        scattering_model: BuiltInScatteringModel::NeutronNuclear,
+        correction_model: IntegratedIntensityCorrectionModel::Neutral,
+    };
+    let phase = RietveldPhase::new_with_site_ids(
+        RecordId::new("nickel")?,
+        "FCC nickel powder standard",
+        vec![RecordId::new("nickel-origin")?],
+        definition,
+        OwnedCwContributions::neutral(reflections.len()),
+    )?;
+    let mut banks = Vec::with_capacity(3);
+    for bank_number in 2..=4 {
+        let imported = read_tof_powder_file(
+            dataset_directory.join("nickel.raw"),
+            bank_number,
+            PowderReadLimits::default(),
+        )?;
+        let calibration = read_gsas_tof_instrument_file(
+            dataset_directory.join("inst_tof.prm"),
+            bank_number,
+            GsasTofInstrumentReadLimits::default(),
+        )?;
+        let geometry = calibration.bank_geometry.ok_or_else(|| {
+            NickelTofValidationError::InvalidData(format!(
+                "LANL nickel bank {bank_number} has no scattering angle"
+            ))
+        })?;
+        let incident_spectrum = calibration.incident_spectrum.ok_or_else(|| {
+            NickelTofValidationError::InvalidData(format!(
+                "LANL nickel bank {bank_number} has no calibrated incident spectrum"
+            ))
+        })?;
+        let start = imported
+            .pattern
+            .tof_us
+            .partition_point(|value| *value < FIT_MIN_US);
+        let end = imported
+            .pattern
+            .tof_us
+            .partition_point(|value| *value <= FIT_MAX_US);
+        let tof_us = imported.pattern.tof_us[start..end].to_vec();
+        let mut observed = imported
+            .pattern
+            .observed_y
+            .as_deref()
+            .ok_or(NickelTofValidationError::MissingObservations)?[start..end]
+            .to_vec();
+        let mut uncertainty = imported
+            .pattern
+            .uncertainty
+            .as_deref()
+            .map(|values| values[start..end].to_vec());
+        for (sample, (&tof_us, observed)) in tof_us.iter().zip(&mut observed).enumerate() {
+            let incident = incident_spectrum.evaluate(tof_us)?.value;
+            *observed /= incident;
+            if let Some(values) = uncertainty.as_mut() {
+                values[sample] /= incident;
+            }
+        }
+        let fixed_background = smooth_bruckner(&observed, 20, 50)?;
+        let pattern = TofPatternRecord::new(
+            tof_us,
+            Some(observed),
+            uncertainty,
+            imported
+                .pattern
+                .mask
+                .as_deref()
+                .map(|values| values[start..end].to_vec()),
+            Some(fixed_background),
+        )?;
+        banks.push(StructuralTofBank {
+            bank_id: RecordId::new(format!("nickel-bank-{bank_number}"))?,
+            pattern,
+            instrument: calibration.instrument,
+            geometry,
+            correction_model: IntegratedIntensityCorrectionModel::TimeOfFlightNeutronLorentz {
+                two_theta_deg: geometry.two_theta_deg,
+            },
+            scale: 1.0,
+            scale_bounds: ParameterBounds::default(),
+            refine_scale: true,
+            background: None,
+            refine_background: false,
+            instrument_bounds: vec![
+                TofInstrumentParameterBound::new(
+                    TofInstrumentParameter::Zero,
+                    calibration.instrument.zero_us - 20.0,
+                    calibration.instrument.zero_us + 20.0,
+                )
+                .map_err(TofMultiBankGeometryError::from)?,
+            ],
+        });
+    }
+    let parameterization = LatticeParameterization::new(space_group, initial_cell)
+        .map_err(TofMultiBankGeometryError::from)?;
+    let lattice_bounds = LatticeBounds::around(&parameterization, 0.01, 1.0)
+        .map_err(TofMultiBankGeometryError::from)?;
+    let mut input = StructuralTofMultiBankInput {
+        phase,
+        structural_selection: RietveldStructuralSelection {
+            lattice: true,
+            u_iso: true,
+            ..RietveldStructuralSelection::default()
+        },
+        lattice_bounds: Some(lattice_bounds),
+        banks,
+        support_fwhm: 20.0,
+        tail_log: 20.0,
+        use_uncertainty: true,
+        execution: ExecutionPolicy::new(Some(1), 2)?,
+    };
+    let unit = PreparedStructuralTofMultiBankObjective::new(input.clone())?.calculate()?;
+    for (bank, calculated) in input.banks.iter_mut().zip(unit.banks) {
+        let observed = bank
+            .pattern
+            .observed_y
+            .as_deref()
+            .ok_or(NickelTofValidationError::MissingObservations)?;
+        let uncertainty = bank.pattern.uncertainty.as_deref();
+        let mask = bank.pattern.mask.as_deref();
+        let (numerator, denominator) = calculated.profile_y.iter().enumerate().fold(
+            (0.0, 0.0),
+            |(numerator, denominator), (sample, profile)| {
+                if mask.is_none_or(|values| values[sample]) {
+                    let weight = uncertainty.map_or(1.0, |values| 1.0 / values[sample].powi(2));
+                    let target = observed[sample] - calculated.background_y[sample];
+                    (
+                        numerator + weight * profile * target,
+                        denominator + weight * profile * profile,
+                    )
+                } else {
+                    (numerator, denominator)
+                }
+            },
+        );
+        let scale = (numerator / denominator).max(f64::EPSILON);
+        if !scale.is_finite() {
+            return Err(NickelTofValidationError::InvalidData(
+                "structural TOF scale estimate is invalid".to_owned(),
+            ));
+        }
+        bank.scale = scale;
+        bank.scale_bounds = ParameterBounds::new(0.1 * scale, 10.0 * scale)?;
+    }
+    input.validate()?;
+    let options = StructuralTofMultiBankRefinementOptions::new(
+        RefinementLimits::new(12, 200, None, 8)?,
+        1,
+        1.0e-10,
+        1.0e-8,
+        1.0e-3,
+        10.0,
+        0.3,
+        0.5,
+        8,
+    )?;
+    let result = refine_structural_tof_multibank(&input, options, None, None)?;
+    let (rwp, included_samples) = structural_rwp(&result.input, &result.calculation.banks)?;
+    let minimum_profile_correlation = result
+        .input
+        .banks
+        .iter()
+        .zip(&result.calculation.banks)
+        .map(|(bank, calculation)| {
+            pearson_correlation(
+                bank.pattern
+                    .observed_y
+                    .as_deref()
+                    .ok_or(NickelTofValidationError::MissingObservations)?,
+                &calculation.background_y,
+                &calculation.profile_y,
+                bank.pattern.mask.as_deref(),
+            )
+        })
+        .collect::<Result<Vec<_>, _>>()?
+        .into_iter()
+        .reduce(f64::min)
+        .ok_or_else(|| NickelTofValidationError::InvalidData("no structural banks".to_owned()))?;
+    Ok(StructuralAcceptance {
+        bank_count: result.input.banks.len(),
+        included_samples,
+        history_count: result.history.len(),
+        evaluation_count: result.evaluations,
+        parameter_count: result.parameters.specs().len(),
+        rwp,
+        minimum_profile_correlation,
+        lattice_angstrom: result.input.phase.definition().cell.a_angstrom,
+    })
+}
+
+fn structural_rwp(
+    input: &StructuralTofMultiBankInput,
+    calculations: &[phasesmith_workflows::StructuralTofBankCalculation],
+) -> Result<(f64, usize), NickelTofValidationError> {
+    let mut numerator = 0.0;
+    let mut denominator = 0.0;
+    let mut included = 0;
+    for (bank, calculation) in input.banks.iter().zip(calculations) {
+        let observed = bank
+            .pattern
+            .observed_y
+            .as_deref()
+            .ok_or(NickelTofValidationError::MissingObservations)?;
+        for sample in 0..observed.len() {
+            if bank.pattern.mask.as_deref().is_none_or(|mask| mask[sample]) {
+                let weight = bank
+                    .pattern
+                    .uncertainty
+                    .as_deref()
+                    .map_or(1.0, |sigma| 1.0 / sigma[sample].powi(2));
+                numerator += weight * (calculation.y[sample] - observed[sample]).powi(2);
+                denominator += weight * observed[sample].powi(2);
+                included += 1;
+            }
+        }
+    }
+    let rwp = (numerator / denominator).sqrt();
+    rwp.is_finite()
+        .then_some((rwp, included))
+        .ok_or_else(|| NickelTofValidationError::InvalidData("invalid structural Rwp".to_owned()))
+}
+
 fn pearson_correlation(
     observed: &[f64],
     background: &[f64],
@@ -605,10 +936,22 @@ pub enum NickelTofValidationError {
     Reflection(ReflectionGenerationError),
     /// Fixed background estimation failed.
     Background(BackgroundError),
+    /// Incident-spectrum evaluation failed.
+    IncidentSpectrum(TofIncidentSpectrumError),
     /// Native TOF workflow failed.
     Workflow(TofLeBailError),
     /// Joint multi-bank geometry workflow failed.
     Geometry(TofMultiBankGeometryError),
+    /// Structural phase construction failed.
+    Rietveld(RietveldError),
+    /// Structural TOF request or products failed.
+    Structural(StructuralTofMultiBankError),
+    /// Structural TOF solver failed.
+    StructuralRefinement(StructuralTofMultiBankRefinementError),
+    /// Scalar parameter bounds failed validation.
+    Parameter(ParameterError),
+    /// Structural solver limits failed validation.
+    Runtime(RuntimeError),
     /// Execution policy construction failed.
     Execution(ExecutionPolicyError),
     /// The imported bank contains no observations.
@@ -629,8 +972,14 @@ impl Display for NickelTofValidationError {
             Self::SpaceGroup(error) => Display::fmt(error, formatter),
             Self::Reflection(error) => Display::fmt(error, formatter),
             Self::Background(error) => Display::fmt(error, formatter),
+            Self::IncidentSpectrum(error) => Display::fmt(error, formatter),
             Self::Workflow(error) => Display::fmt(error, formatter),
             Self::Geometry(error) => Display::fmt(error, formatter),
+            Self::Rietveld(error) => Display::fmt(error, formatter),
+            Self::Structural(error) => Display::fmt(error, formatter),
+            Self::StructuralRefinement(error) => Display::fmt(error, formatter),
+            Self::Parameter(error) => Display::fmt(error, formatter),
+            Self::Runtime(error) => Display::fmt(error, formatter),
             Self::Execution(error) => Display::fmt(error, formatter),
             Self::MissingObservations => {
                 formatter.write_str("LANL nickel observations are missing")
@@ -660,7 +1009,13 @@ from_error!(GsasTofInstrumentIoError, Instrument);
 from_error!(SpaceGroupLookupError, SpaceGroup);
 from_error!(ReflectionGenerationError, Reflection);
 from_error!(BackgroundError, Background);
+from_error!(TofIncidentSpectrumError, IncidentSpectrum);
 from_error!(TofLeBailError, Workflow);
 from_error!(TofMultiBankGeometryError, Geometry);
+from_error!(RietveldError, Rietveld);
+from_error!(StructuralTofMultiBankError, Structural);
+from_error!(StructuralTofMultiBankRefinementError, StructuralRefinement);
+from_error!(ParameterError, Parameter);
+from_error!(RuntimeError, Runtime);
 from_error!(ExecutionPolicyError, Execution);
 from_error!(ValidationContractError, Report);

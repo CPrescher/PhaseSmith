@@ -23,6 +23,7 @@ fn translates_selected_profile_function_three_bank() {
     assert_eq!(parsed.bank, 2);
     assert_eq!(parsed.profile_function, 3);
     assert!(parsed.source_path.is_none());
+    assert!(parsed.incident_spectrum.is_none());
     assert_eq!(
         parsed.bank_geometry.unwrap().two_theta_deg.to_bits(),
         90.0_f64.to_bits()
@@ -86,6 +87,29 @@ fn translates_legacy_profile_function_one_bank() {
 }
 
 #[test]
+fn translates_type_four_incident_spectrum_in_microseconds() {
+    let text = concat!(
+        "INS  2 ICONS   4368.97      0.02      2.11         0\n",
+        "INS  2I ITYP    4    0.7500    8.1904     76288\n",
+        "INS  2ICOFF1   0.177427E+04   0.783794E+07   0.237297E+02   0.305645E+04\n",
+        "INS  2ICOFF2  -0.600307E+03  -0.146005E+03  -0.147656E+03   0.442342E+03\n",
+        "INS  2ICOFF3  -0.302364E+03   0.885096E+02  -0.968997E+01   0.000000E+00\n",
+        "INS  2PRCF      1   12   0.01000    0NNNNNNNNNNNNNNNNNNNN\n",
+        "INS  2PRCF 1   0.000000E+00   0.142760E+00   0.557661E-01   0.344498E-02\n",
+        "INS  2PRCF 2   0.000000E+00   0.977951E+02   0.000000E+00   0.000000E+00\n",
+    );
+    let parsed =
+        parse_gsas_tof_instrument_text(text, 2, GsasTofInstrumentReadLimits::default()).unwrap();
+    let spectrum = parsed.incident_spectrum.expect("incident spectrum");
+    assert_eq!(spectrum.min_tof_us.to_bits(), 750.0_f64.to_bits());
+    assert!((spectrum.max_tof_us - 8_190.4).abs() <= 1.0e-9);
+    assert_eq!(spectrum.coefficients[0].to_bits(), 1_774.27_f64.to_bits());
+    let point = spectrum.evaluate(2_500.0).expect("spectrum value");
+    assert!(point.value.is_finite() && point.value > 0.0);
+    assert!(point.d_value_d_tof_us.is_finite());
+}
+
+#[test]
 fn accepts_utf8_bom() {
     let parsed = parse_gsas_tof_instrument_text(
         &format!("\u{feff}{BANKS}"),
@@ -132,6 +156,15 @@ fn rejects_missing_nonfinite_unsupported_and_oversized_inputs() {
             GsasTofInstrumentReadLimits::default()
         ),
         Err(GsasTofInstrumentIoError::UnsupportedProfileFunction { found: 2, .. })
+    ));
+    let unsupported_spectrum = format!("INS  2I ITYP    3    0.7500    8.1904     76288\n{BANKS}");
+    assert!(matches!(
+        parse_gsas_tof_instrument_text(
+            &unsupported_spectrum,
+            2,
+            GsasTofInstrumentReadLimits::default()
+        ),
+        Err(GsasTofInstrumentIoError::UnsupportedIncidentSpectrumFunction { found: 3, .. })
     ));
     assert!(matches!(
         parse_gsas_tof_instrument_text(

@@ -1069,6 +1069,18 @@ arrays, initial instruments, and structural topology. Loads reconstruct typed
 domain objects, revalidate exact request/checkpoint identity, and retain
 formats 1--4 as structural-analysis-free migrations. The checksum-pinned
 structural real-data/oracle acceptance gate is the remaining Unit 38d slice.
+The native half of that acceptance gate now passes on the checksum-pinned LANL
+nickel banks 2--4. A facility-neutral `TofIncidentSpectrum` implements the
+published Maxwellian-plus-Chebyshev law, its analytical TOF derivative, and an
+inclusive calibration interval. The bounded GSAS adapter translates only
+explicit type-4 records and rejects unsupported incident-spectrum functions.
+Raw packed counts and uncertainties are divided by the calibrated incident
+intensity before the structural fit; no facility name triggers correction.
+The joint Fm-3m neutron refinement shares the cubic cell and Ni isotropic
+displacement while refining three bank scales and Zero terms. Across 13,293
+observations it reaches Rwp 0.03278208, minimum bank profile correlation
+0.99749010, and a=3.52373113 A against 3.5234 A. The isolated pinned-oracle
+comparison remains the final Unit 38d gate.
 The historical native-workflow comparison passes both Le Bail parity contracts
 and QARR 1g. Its unchanged QARR 1h acceptance recipe retains the reviewed
 profile-quality failure, rather than having thresholds relaxed. The newer
