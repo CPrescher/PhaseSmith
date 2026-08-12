@@ -1501,7 +1501,8 @@ cancellation return the last accepted state; accepted input, parameters,
 history, objective, and next damping form an exact restart checkpoint.
 Synthetic two-bank recovery, exact partial/resumed equivalence,
 corrupt-checkpoint rejection, cancellation, and mid-normal evaluation
-exhaustion form the solver review gate. Unit 38d is next.
+exhaustion form the solver review gate. Unit 38d is complete through the
+application, persistence, and validation slices recorded below.
 Unit 38d's first slice is complete. The public
 `phasesmith.refinement.tof_structural` facade owns typed shared selection,
 lattice bounds, bank geometry/correction, local scale/instrument/background
@@ -1509,7 +1510,7 @@ bounds, dense-solver controls, immutable results, progress/cancellation, and
 opaque native checkpoints. It delegates directly to the Rust objective and
 solver. Python tests recover local scale/Zero parameters and one shared cubic
 cell, and verify exact cancellation/checkpoint continuation. The
-checksum-pinned structural data/oracle gate follows.
+checksum-pinned structural data/oracle gate is complete below.
 The application-host validation layer is complete too.
 `StructuralTofMultiBankProjectState` gives each analysis a stable identity,
 prevents duplicate histogram ownership, matches bank arrays/instruments to the
@@ -1521,7 +1522,7 @@ complete accepted checkpoint/history state. Project-owned bulk arrays and
 structural topology are referenced instead of duplicated; loads reconstruct
 and revalidate the exact request/checkpoint contract. Formats 1--4 migrate with
 an empty structural-analysis list. The pinned structural real-data/oracle gate
-is next.
+is complete below.
 The native structural real-data half is complete. The core now owns a
 facility-neutral twelve-coefficient Maxwellian/Chebyshev incident spectrum,
 including its explicit microsecond validity interval and analytical coordinate
@@ -1531,7 +1532,7 @@ counts and uncertainties are normalized explicitly before the structural
 objective; bank 2--4 refinement of one shared cubic cell, Ni Uiso, three scales,
 and three Zero terms gives Rwp 0.03278208, minimum correlation 0.99749010, and
 a=3.52373113 A over 13,293 observations. Public Python exposure and the isolated
-structural oracle remain separately reviewable follow-up slices.
+structural oracle are complete in the following separately reviewed slices.
 The Python exposure is now complete. Its independent NumPy evaluator returns
 immutable intensity and analytical TOF-derivative vectors, validates the
 inclusive calibration domain, and normalizes observed values, one-sigma
@@ -1670,9 +1671,14 @@ completes atomic fixed-cell multi-bank coordination, Unit 34 completes shared
 analytical lattice motion, and Unit 35 completes selected fixed-cell bank-local
 instrument motion, and Unit 36 combines the two geometry families in one
 correlation-diagnosed system, and Unit 37a adds its Python application facade.
-The next TOF increment is Unit 38d's checksum-pinned structural real-data and
-isolated-oracle acceptance gate; its public Python facade and native format-5
-project persistence are complete.
+The documented TOF roadmap through Unit 38d is complete: checksum-pinned
+structural real-data and isolated-oracle acceptance, the public Python facade,
+native format-5 project persistence, single-/multi-bank file composition, and
+explicit provenance/correction/background-domain contracts all pass their
+review gates. Further TOF work is new scope rather than an unfinished roadmap
+unit: additional beamline profile/calibration adapters, or named absorption,
+extinction, and texture models with their own equations, analytical
+derivatives, and independent validation.
 Structural parameter and instrument refinement must
 be introduced only with analytical derivatives, finite-difference tests, and
 new oracle contracts; it is not part of the completed Le Bail facade.

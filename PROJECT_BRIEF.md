@@ -1054,9 +1054,9 @@ instrument coefficients, and optional Chebyshev backgrounds per bank. Its
 matrix-free JVP, VJP, gradient, and normal products pass joint centered
 differences and the adjoint identity. The request freezes observation,
 geometry, correction, bound, support, and identity contracts and rejects CW
-sample physics or dynamic topology. Unit 38c next adds the bounded,
-checkpointable solver before Python/persistence/oracle exposure. That solver is
-now complete. It assembles the exact analytical scaled normal matrix from the
+sample physics or dynamic topology. The bounded checkpointable solver completes
+Unit 38c before the separately reviewed Python/persistence/oracle exposure. It
+assembles the exact analytical scaled normal matrix from the
 joint objective's normal products, applies positive Levenberg damping, enforces
 declared physical bounds and a scaled step cap, and accepts a trial only when
 the summed masked/weighted objective decreases. Accepted input, parameters,
@@ -1064,7 +1064,8 @@ history, objective, and next damping are checkpointed atomically. Exact resume,
 checkpoint corruption, cancellation after acceptance, evaluation exhaustion
 during normal assembly, and simultaneous recovery of two bank scales and Zero
 terms are tested. Unit 38c is complete; Unit 38d's Python facade, native project
-persistence, and checksum-pinned structural real-data/oracle gate follow.
+persistence, and checksum-pinned structural real-data/oracle gates are complete
+in the following reviewed slices.
 Unit 38d's public Python facade is now complete as its first separate slice.
 `phasesmith.refinement.tof_structural` constructs the same guarded native
 shared-phase/bank-local request and returns immutable bank arrays, the updated

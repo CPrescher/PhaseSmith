@@ -329,6 +329,28 @@ complete last-accepted checkpoint. Load reconstructs typed domain state and
 requires exact checkpoint/request validation. Formats 1--4 remain readable
 with no structural TOF analyses.
 
+## TOF roadmap completion audit
+
+The completed scope is the facility-neutral back-to-back-exponential/TCH TOF
+model and the explicit adapters/corrections listed here. Completion does not
+assert compatibility with an unimplemented beamline-specific profile or
+reduction convention.
+
+| Roadmap requirement | Authoritative implementation | Review evidence |
+| --- | --- | --- |
+| Atomic multi-bank fixed-cell refinement | `tof_multibank` workflow with bank-local observations, profiles, backgrounds, and intensities | Distinct-bank recovery, aggregate metrics, atomic cancellation, and exact resume in `crates/phasesmith-workflows/tests/tof_multibank.rs` |
+| Shared-cell analytical motion | Reciprocal-metric `dd/dp` composed with each bank's analytical TOF calibration/profile rows | Crystal-system finite differences and shared-cell recovery in `tof_multibank_lattice.rs`; moving-support derivative tests in `phasesmith-core` and the NumPy reference |
+| Bank-local analytical instrument motion | Stable 15-row instrument order, selected bounded columns, rank/correlation diagnostics | Recovery, finite-difference kernel coverage, rank-deficiency, and restart tests in `tof_multibank_instrument.rs` |
+| Joint lattice plus instrument refinement | One combined weighted system and atomic bounded/backtracked acceptance | Cross-family recovery, diagnostics, and exact continuation in `tof_multibank_geometry.rs` |
+| Application facades and durability | Python `tof_multibank`/`tof_structural` facades and native project formats 3--5 | Python recovery/resume tests and deterministic format-3/4/5 round trips in `crates/phasesmith-persistence/tests/tof_project.rs` |
+| Real-data and isolated-oracle coverage | POWGEN LaB6 plus LANL nickel bank 2--4 native/public workflows | Checksum-pinned validation reports and pinned public-scripting-only GSAS-II comparisons in `tests/test_real_data_integration.py` and `tests/test_real_data_oracle.py` |
+| Structural TOF Rietveld | Fused structural TOF values/dense/JVP/VJP products, shared structural solver, explicit incident/Lorentz/background contracts | Structural finite differences/adjoint tests, checkpoint/special-position tests, LANL cell/Uiso oracle, and POWGEN LaB6 structural acceptance |
+
+Unsupported profile functions, calibration syntaxes, and named absorption,
+extinction, or texture models remain explicit errors. Adding one is a new
+equation-, derivative-, provenance-, benchmark-, and oracle-backed increment;
+it is not an unfinished part of Units 26 or 28--38.
+
 ## Unit 38 delivery sequence
 
 The structural extension is split into reviewable numerical increments:
