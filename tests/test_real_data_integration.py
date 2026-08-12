@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+from hashlib import sha256
 from pathlib import Path
 
 import phasesmith
 import pytest
 from phasesmith.io import convert_rowles_topas_bundle
+from phasesmith.refinement import StructuralTofMultiBankInput
 from phasesmith.validation import (
     NIST_SRM660C_STRESS_SH_OVER_L,
     run_echidna_lab6_validation,
@@ -22,6 +24,29 @@ from phasesmith.validation import (
 )
 
 DATA_ROOT = Path(__file__).resolve().parents[1] / "validation" / "data"
+
+POWGEN_LAB6_CIF = """# PhaseSmith POWGEN validation initializer.
+# Published structural targets: Huq et al., JAC 52 (2019) 1189-1201.
+data_powgen_lab6
+_chemical_name_common 'NIST SRM 660b LaB6'
+_cell_length_a 4.156826
+_cell_length_b 4.156826
+_cell_length_c 4.156826
+_cell_angle_alpha 90
+_cell_angle_beta 90
+_cell_angle_gamma 90
+_space_group_name_H-M_alt 'P m -3 m'
+loop_
+_atom_site_label
+_atom_site_type_symbol
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+_atom_site_occupancy
+_atom_site_U_iso_or_equiv
+La1 La 0 0 0 1 0.0048
+B1 B 0.2 0.5 0.5 1 0.003
+"""
 
 
 def available_dataset(dataset_id: str) -> Path:
@@ -138,6 +163,41 @@ def test_qarr_1h_holdout_preserves_the_reviewed_failure_signal() -> None:
     assert checks["qpa_weight_fraction"].status == "passed"
     assert checks["poisson_rwp"].status == "failed"
     assert checks["unit_weight_rwp"].status == "failed"
+
+
+@pytest.mark.real_data
+def test_powgen_public_structural_file_request_is_provenance_complete() -> None:
+    directory = available_dataset("powgen-lab6-tof-calibration")
+    pattern_path = directory / "PG3_17541.gsa"
+    instrument_path = directory / "PGHR_60-2015A.prm"
+    request = StructuralTofMultiBankInput.from_files(
+        pattern_path,
+        instrument_path,
+        POWGEN_LAB6_CIF,
+        bank=2,
+        incident_normalization="already_normalized",
+        correction="tof_lorentz",
+        sample_corrections="none",
+    )
+
+    assert request.banks[0].pattern.tof_us.size == 6_824
+    assert request.phase.reflections.reflection_count == 330
+    assert request.banks[0].geometry.two_theta_deg == 90.0
+    assert request.provenance is not None
+    assert request.provenance.pattern.sha256 == (
+        "ff7a408451e75d23e828ab2bb35a061a53517ff3430331bffeed21fcbc87d69c"
+    )
+    assert request.provenance.instrument.sha256 == (
+        "1a098c260555d27642ab0501708c5d9058c5836fb201dec5bc7ab9880cea1cb8"
+    )
+    assert (
+        request.provenance.structure.sha256 == sha256(POWGEN_LAB6_CIF.encode("utf-8")).hexdigest()
+    )
+    assert request.provenance.reduction == request.provenance.pattern
+    assert request.provenance.reduction_embedded_in_pattern
+    assert request.provenance.incident_normalization == "already_normalized"
+    assert request.provenance.correction == "tof_lorentz"
+    assert request.provenance.sample_corrections == "none"
 
 
 @pytest.mark.real_data

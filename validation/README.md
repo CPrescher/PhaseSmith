@@ -119,8 +119,12 @@ have deliberately different meanings:
   families, returns all 15 shared derivative rows, extracts finite nonnegative
   intensities, jointly updates a 16-term Chebyshev residual above the fixed
   Smooth Bruckner baseline, reaches
-  uncertainty-weighted Rwp 0.26461, and reaches background-subtracted profile
-  correlation 0.96729.
+  uncertainty-weighted Rwp 0.26192, and reaches background-subtracted profile
+  correlation 0.96763. The public structural file composer independently
+  checks the real 6,824-sample request, 90-degree geometry, 330 generated
+  families, and complete source/reduction hashes. The staged native structural
+  solve reaches Rwp 0.14415, correlation 0.97638, a=4.15792396 A, and
+  x(B)=0.19954072 against the published POWGEN SRM-660b values.
   Position, centered finite-difference derivative, calibration-range,
   profile-improvement, coverage, fused-profile-derivative, and analytical
   background-basis gates all pass.
@@ -130,8 +134,8 @@ have deliberately different meanings:
   its extracted intensities with correlation above 0.99999 and relative L2
   error below 0.006. With both native workflows using a 16-term Chebyshev
   component on 6,824 centers, their uncertainty-weighted Rwp values are
-  0.26461 (PhaseSmith) and about 0.26297 (GSAS-II), an absolute delta below
-  0.0017; their profile-correlation delta is below 0.0005.
+  0.26192 (PhaseSmith) and about 0.26297 (GSAS-II), an absolute delta below
+  0.0011; their profile-correlation delta is below 0.0005.
 - `lanl-nickel-tof` also gates structural TOF transfer independently of
   POWGEN. The bounded calibration adapter reads each bank's explicit type-4
   vanadium incident spectrum; raw count densities and uncertainties are divided

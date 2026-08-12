@@ -1117,17 +1117,23 @@ choose `already_normalized` or `calibration_type4` and `neutral` or
 `tof_lorentz`; `already_applied` is also explicit when either the
 integrated-intensity correction or sample corrections were performed upstream.
 Missing requested calibration data or a named but unsupported sample-correction
-model fails explicitly. The composed request retains byte sizes and SHA-256 identities for
-the pattern, calibration, CIF, and embedded or separately supplied reduction
-record, plus the fixed-background array hash and every explicit physics choice.
+model fails explicitly. The composed request retains byte sizes and SHA-256
+identities for the pattern, calibration, CIF, and embedded or separately
+supplied reduction record, plus the fixed-background array hash and every
+explicit physics choice.
 Hashing obeys the readers' bounded byte limits, and background provenance
 distinguishes absent input from a supplied all-zero array. This audit metadata
 stays in the Python application boundary rather than the numerical Rust kernel;
 Python checkpoint continuation requires the provenance record to match as well
-as the native numerical contract. The helper is a
-convenience adapter, not a facility policy: other beamlines and calibration
+as the native numerical contract. The helper is a convenience adapter, not a
+facility policy: other beamlines and calibration
 formats construct the same typed request directly, and names never trigger
 normalization or intensity corrections.
+The same public composer now has a checksum-pinned POWGEN integration gate. It
+loads the real 6,824-sample bank and 90-degree calibration with a deterministic
+citation-annotated inline LaB6 structure, generates 330 families, and verifies
+the registered data/calibration hashes plus structure and embedded-reduction
+digests before the separate native structural refinement gate.
 The structural TOF accepted-state solver now also preserves the established
 special-position coordinate convention. Symmetry-reduced `q` values are local
 tangent changes applied once to the current phase; after acceptance the moved

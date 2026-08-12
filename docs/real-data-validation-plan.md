@@ -56,7 +56,9 @@ treating every public file as the same kind of golden result:
    TOF position kernel and its analytical calibration derivative. Its explicit
    one-bank structural acceptance now also checks the reduced-data contract,
    TOF-neutron Lorentz correction, structural fit, published LaB6 lattice and
-   boron coordinate, and physical isotropic displacement interval.
+   boron coordinate, and physical isotropic displacement interval. A separate
+   public-API integration gate composes the same real files with a
+   citation-annotated LaB6 initializer and verifies all request provenance.
 
 Each manifest declares whether it is an acceptance, oracle-integrity, holdout,
 or capability case and records its reviewed expected status. Schema-2 suite

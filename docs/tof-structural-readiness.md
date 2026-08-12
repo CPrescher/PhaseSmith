@@ -378,6 +378,12 @@ For application requests, the reduced GSA header is also the reduction record;
 its digest therefore anchors both the observations and the embedded reduction
 declarations. A separate reduction log or recipe can instead be supplied and
 hashed independently.
+The public file composer is exercised directly on these pinned POWGEN files
+with an inline, citation-annotated LaB6 initializer. It returns 6,824 samples,
+330 generated reflection families, the 90-degree geometry, exact registered
+pattern/calibration digests, a deterministic structure digest, and all explicit
+physics declarations. The native structural acceptance above then gates the
+full staged refinement.
 
 ## References
 

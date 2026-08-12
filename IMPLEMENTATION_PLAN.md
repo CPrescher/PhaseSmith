@@ -1578,6 +1578,12 @@ boron-coordinate, and isotropic-displacement motion. It reaches Rwp
 cell and coordinate agree with the published POWGEN SRM-660b result within
 0.000424 A and 0.000060. This is an explicit contract for this reduction, not a
 facility-name default.
+The public composition path now also consumes the real pinned POWGEN pattern
+and calibration directly. With a deterministic citation-annotated inline LaB6
+initializer it returns 6,824 samples, 330 reflection families, the 90-degree
+bank geometry, exact registered file hashes, and complete structure/reduction
+provenance. This separates application-boundary verification from the native
+staged-refinement gate while exercising both on the same physical inputs.
 The structural TOF solver's special-position state audit is complete.
 Symmetry-reduced `q` coordinates are local tangent changes, so accepted
 physical displacements remain in the phase while the next solver/checkpoint
