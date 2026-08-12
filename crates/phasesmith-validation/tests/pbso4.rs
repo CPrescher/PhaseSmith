@@ -87,6 +87,15 @@ fn pure_rust_xray_runner_reproduces_the_reviewed_scientific_gate() {
     assert_eq!(report.sample_count, 5_697);
     assert_eq!(report.reflection_count, Some(383));
     assert!(report.notes.iter().any(|note| note.contains("exact fixed")));
+    assert!(report.checks.iter().any(|check| {
+        check.check_id == "refinement_termination" && check.status == ValidationStatus::Passed
+    }));
+    assert!(
+        report
+            .notes
+            .iter()
+            .any(|note| note.contains("termination=repeated_rejections"))
+    );
 }
 
 #[test]

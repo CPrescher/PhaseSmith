@@ -28,9 +28,9 @@ use phasesmith_workflows::{
     RietveldGeneralParameterError, RietveldGeneralRefinementError, RietveldInput,
     RietveldInstrumentParameter, RietveldParameterSelection, RietveldPhase, RietveldRecipeError,
     RietveldRefinementError, RietveldRefinementOptions, RietveldSamplePhysicsModel,
-    RietveldStructuralSelection, RietveldWorkflowResult, RuntimeError, TerminationReason,
-    calculate_rietveld_pattern, estimate_initial_phase_scales, intelligent_rietveld_recipe,
-    run_rietveld_recipe,
+    RietveldStageResult, RietveldStructuralSelection, RietveldWorkflowResult, RuntimeError,
+    TerminationReason, calculate_rietveld_pattern, estimate_initial_phase_scales,
+    intelligent_rietveld_recipe, run_rietveld_recipe,
 };
 
 use crate::{
@@ -39,6 +39,7 @@ use crate::{
 };
 
 const DATASET_ID: &str = "gsasii-pbso4-cw";
+const MIN_SAFE_REJECTED_RWP_IMPROVEMENT: f64 = 1.0e-4;
 const PHASE_ID: &str = "PbSO4";
 const ANGULAR_RANGE: [f64; 2] = [19.0, 153.0];
 const XRAY_RANGE: [f64; 2] = [16.0, 158.4];
@@ -516,16 +517,11 @@ fn xray_report(
         .zip([8.48, 5.398, 6.958])
         .map(|(actual, expected)| (actual - expected).abs() / expected)
         .fold(0.0_f64, f64::max);
-    let safe = workflow.stages().iter().all(|stage| {
-        !matches!(
-            stage.result.termination_reason,
-            TerminationReason::NumericalFailure
-                | TerminationReason::Diverged
-                | TerminationReason::RepeatedRejections
-                | TerminationReason::NoObservations
-                | TerminationReason::MaxIterations
-        )
-    });
+    let safe = workflow.stages().len() == workflow.recipe().stages().len()
+        && workflow
+            .stages()
+            .iter()
+            .all(pbso4_stage_termination_is_safe);
     let checks = vec![
         check(
             "observed_grid",
@@ -545,7 +541,7 @@ fn xray_report(
             safe,
             "Every intelligent recipe stage terminates safely under explicit budgets.",
             None,
-            "all stages converge or stagnate safely; iteration exhaustion fails",
+            "all planned stages are attempted; repeated rejection requires an accepted Rwp improvement >= 0.0001; iteration exhaustion fails",
         )?,
         check(
             "poisson_rwp",
@@ -615,6 +611,36 @@ fn xray_report(
         notes,
     )
     .map_err(Into::into)
+}
+
+fn pbso4_stage_termination_is_safe(stage: &RietveldStageResult) -> bool {
+    pbso4_termination_is_safe(
+        stage.result.termination_reason,
+        stage.result.history.len(),
+        stage.starting_rwp,
+        stage.result.calculation.metrics.rwp,
+    )
+}
+
+fn pbso4_termination_is_safe(
+    reason: TerminationReason,
+    accepted_iterations: usize,
+    starting_rwp: f64,
+    final_rwp: f64,
+) -> bool {
+    match reason {
+        TerminationReason::NumericalFailure
+        | TerminationReason::Diverged
+        | TerminationReason::NoObservations
+        | TerminationReason::MaxIterations => false,
+        TerminationReason::RepeatedRejections => {
+            accepted_iterations > 0
+                && starting_rwp.is_finite()
+                && final_rwp.is_finite()
+                && starting_rwp - final_rwp >= MIN_SAFE_REJECTED_RWP_IMPROVEMENT
+        }
+        _ => true,
+    }
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -1158,7 +1184,9 @@ error_conversion!(ValidationContractError, Report);
 
 #[cfg(test)]
 mod tests {
-    use super::smoothing_points;
+    use phasesmith_workflows::TerminationReason;
+
+    use super::{pbso4_termination_is_safe, smoothing_points};
 
     #[test]
     fn physical_smoothing_width_matches_scripting_median_truncation() {
@@ -1166,5 +1194,33 @@ mod tests {
             .map(|index| 16.0 + f64::from(index) * 0.025)
             .collect::<Vec<_>>();
         assert_eq!(smoothing_points(&grid, 1.0), 39);
+    }
+
+    #[test]
+    fn repeated_rejections_require_accepted_material_improvement() {
+        assert!(pbso4_termination_is_safe(
+            TerminationReason::RepeatedRejections,
+            48,
+            0.158_486_10,
+            0.103_460_42,
+        ));
+        assert!(!pbso4_termination_is_safe(
+            TerminationReason::RepeatedRejections,
+            0,
+            0.158_486_10,
+            0.103_460_42,
+        ));
+        assert!(!pbso4_termination_is_safe(
+            TerminationReason::RepeatedRejections,
+            3,
+            0.158_486_10,
+            0.158_486_09,
+        ));
+        assert!(!pbso4_termination_is_safe(
+            TerminationReason::NumericalFailure,
+            48,
+            0.158_486_10,
+            0.103_460_42,
+        ));
     }
 }

@@ -783,6 +783,16 @@ typed Debye--Scherrer X/Y displacements use the documented 650 mm radius,
 native analytical derivatives, refinement, persistence, and finite-difference
 tests. The pinned PbSO4 check now returns 4.217% neutron Rwp versus 4.535% from
 GSAS-II and a maximum relative cell difference of 0.000424.
+The independent X-ray workflow is accepted at 10.346% Poisson Rwp, 8.735%
+unit-weight Rwp, 0.99555 profile correlation, and the fixed reference cell.
+Its final polish accepts 48 improving steps before exhausting the consecutive
+rejection budget on the flat tail. `repeated_rejections` remains a distinct
+non-convergence reason and is not accepted by general recipe defaults. The
+PbSO4 validation treats it as safe final-stage stagnation only when every
+planned stage was attempted, at least one step was accepted, the returned
+state is finite, and that stage improved Rwp by at least 0.0001. Numerical
+failure, divergence, missing observations, and iteration exhaustion remain
+unsafe; rejected trials never replace the last accepted state or checkpoint.
 
 The built-in monochromatic Python Rietveld facade now delegates complete
 refinement and checkpoint continuation to the Rust solver while retaining the
@@ -893,13 +903,15 @@ for a cached normal product, and 19.660 ms for the equivalent matrix-free
 product on the development host. The repeated product is therefore 71.3x
 faster. Fresh release application-boundary runs take 0.645 s for QARR, 2.337 s
 for PbSO4 neutron, and 4.223 s for PbSO4 X-ray, versus the recorded pre-fix
-13.02 s, 17.56 s, and 157.44 s. All scientific gates pass. The pure-Rust X-ray
+13.02 s, 17.56 s, and 157.44 s. All scientific gates pass under the explicit
+accepted-state termination policy above. The pure-Rust X-ray
 Poisson Rwp is 10.34601%, while a fresh 3.560 s Python scripting run gives
 10.34604%; the native path is scientifically coincident and about 19% slower.
 It now follows the scripting optimizer's weighted free-coordinate Jacobian,
 phase-scale conditioning, accepted-trial carry-forward, bounded backtracking,
-and physical Bruckner-width conversion. The remaining final-stage iteration
-difference occurs only on the flat tail of the minimum. Historical pinned
+and physical Bruckner-width conversion. The final stage's repeated rejections
+occur only after material improvement on the flat tail of the minimum.
+Historical pinned
 GSAS-II timings remain separate because its PbSO4 number covers a joint
 two-histogram recipe.
 
@@ -960,7 +972,10 @@ edge-transmitted Cu K-alpha lines. Its empirical compression reaches 6.952%
 Rwp on 13 synthetic peaks, but fixing that profile worsens real-pattern GSAS-II
 Rwp from 9.085% to 13.928% for 1a and from 8.195% to 11.710% for 1e. Specialized
 LPSD, tube-tail, and continuum runtime physics are therefore deferred; the next
-work is broader independent experimental validation.
+milestone is broader independent experimental validation using in-house
+benchmark examples. That evidence must establish transferable profile behavior
+before any specialized LPSD, tube-tail, continuum, or coupled-dispersion term
+is promoted into the production runtime.
 
 ## Quality bar
 

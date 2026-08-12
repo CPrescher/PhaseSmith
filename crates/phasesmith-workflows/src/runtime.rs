@@ -29,6 +29,10 @@ pub enum TerminationReason {
     /// Objective diverged under the method policy.
     Diverged,
     /// Consecutive rejected-step budget was exhausted.
+    ///
+    /// Solvers return the last accepted state for this normal bounded stop. It
+    /// is not convergence: staged workflows must opt in before promoting that
+    /// state, and validation policies may require evidence of prior progress.
     RepeatedRejections,
 }
 

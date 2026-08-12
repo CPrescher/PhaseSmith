@@ -191,6 +191,27 @@ fn checkpoint_failure_keeps_state_accepted_and_resume_is_guarded() {
 }
 
 #[test]
+fn repeated_rejections_do_not_roll_back_the_last_accepted_runtime_state() {
+    let clock = Arc::new(FakeClock::new(10.0));
+    let mut runtime = RefinementRuntime::<String>::with_clock(
+        RefinementLimits::new(3, 10, None, 2).unwrap(),
+        None,
+        clock,
+    )
+    .unwrap();
+    runtime.begin_iteration(1).unwrap();
+    runtime.accept_step(Some(&"accepted-1".to_owned())).unwrap();
+    runtime.begin_iteration(2).unwrap();
+    runtime.reject_step().unwrap();
+    assert_stop(
+        runtime.reject_step().unwrap_err(),
+        TerminationReason::RepeatedRejections,
+    );
+    assert_eq!(runtime.accepted_iterations(), 1);
+    assert_eq!(runtime.consecutive_rejections(), 2);
+}
+
+#[test]
 #[ignore = "requires an installed NumPy Python interpreter"]
 fn python_runtime_stop_sequence_matches_native_when_configured() {
     let Ok(python) = std::env::var("PHASESMITH_NUMPY_PYTHON") else {

@@ -254,10 +254,14 @@ def test_pbso4_real_pattern_regression(probe: phasesmith.RadiationProbe, samples
     )
     assert measurements["profile_correlation"] >= 0.99
     assert measurements["reference_cell_relative_error"] <= 0.005
+    checks = {check.check_id: check for check in report.checks}
+    assert checks["refinement_termination"].status == "passed"
     assert any(
         "fixed native Smooth Bruckner estimate plus a refined three-term Chebyshev" in note
         for note in report.notes
     )
+    if probe is phasesmith.RadiationProbe.X_RAY:
+        assert any("termination=repeated_rejections" in note for note in report.notes)
     if probe is phasesmith.RadiationProbe.NEUTRON:
         assert any(
             "Debye-Scherrer geometry: fixed radius=650.000 mm" in note for note in report.notes

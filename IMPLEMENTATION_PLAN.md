@@ -1212,6 +1212,9 @@ Keep implementation units reviewable through these ordered changes:
     physical targets from emission lines, ideal equatorial apertures, and FCJ;
     bounded compression to production U/V/W/X/Y plus equal-height SH/L with
     explicit rejection diagnostics.
+28. Broader independent experimental validation on in-house benchmark examples
+    to establish profile transferability before selecting any specialized
+    LPSD, tube-tail, continuum, or coupled-dispersion production increment.
 
 Unit 23 is complete. The Rust workflow crate now owns stable shared/local
 packing, matrix-free joint products, a bounded constraint-aware summed solver,
@@ -1224,6 +1227,14 @@ reconstruct the same public report types from native JSON. Release-mode Rust
 tests cover deterministic QARR, both PbSO4 probes including the exact Cu K-alpha
 doublet, mixed-radiation joint products, and independent Python differential
 comparisons.
+The PbSO4 X-ray scientific gate is accepted at 10.346% Poisson Rwp after the
+final polish materially improves its accepted state and then terminates with
+`repeated_rejections`. This remains a diagnostic non-convergence reason rather
+than being relabeled by the solver. General recipe defaults still reject it;
+the PbSO4 validation alone recognizes safe final-stage stagnation when all
+stages were attempted, at least one step was accepted, and the stage improves
+Rwp by an explicit minimum of 0.0001. Rejected trials never alter the returned
+accepted state or checkpoint.
 
 Unit 25's first slice is complete. `phasesmith-workflows` owns the staged
 estimator and fixed-wavelength invariant; the Python facade delegates width
@@ -1316,27 +1327,19 @@ resolved on 2026-08-05 by selecting the MIT License.
 
 ## Definition of the next completed milestone
 
-Implementation unit 15 is complete: general-symmetry structural values,
-integrated corrections, fused CW patterns, structural JVP/VJP products,
-`RietveldPhase`, format-2 persistence with format-1 migration, independent
-NumPy validation, and combined benchmarks pass the normal quality gate.
+Implementation units 0 through 24 are complete, including the Python-free
+Rietveld/Le Bail workflows, persistence and application boundaries, joint
+refinement, and checksum-pinned native real-data validation. Unit 25's
+effective starting-profile slice and unit 26's fixed-instrument TOF Le Bail
+workflow are complete. Unit 27 has delivered the independent offline
+fundamental-profile target, finite axial/Soller geometry, explicit Gaussian
+passband experiment, and the Rowles transferability stop gate. Its negative
+transfer result is retained rather than hidden by looser compression criteria.
 
-Implementation unit 16 is complete: a CIF-backed Le Bail script refines
-crystal-system-allowed lattice parameters, regenerates a guarded reflection
-domain only between accepted iterations, preserves intensities by stable family
-ID, and exposes plain-array diagnostics without changing explicit-reflection Le
-Bail. Implementation units 17 and 18 are complete. Unit 18 includes the native
-pinned xypattern-compatible Smooth Bruckner preprocessing slice, analytical
-monochromatic calibration and sample physics, richer backgrounds, the
-script-first project/report facade, format-5 persistence, and realistic X-ray
-and neutron benchmarks. Unit 19 is the next milestone and intentionally keeps
-anisotropic, anomalous, absorption, magnetic, electron, and specialist physics
-as separate reviewed increments. The QARR structural-intensity checkpoint now
-includes native caller-supplied fixed X-ray dispersion offsets and polarized
-Bragg--Brentano LP, with analytical metric/wavelength derivatives,
-fixed-spectrum composition, format-7 persistence, and independent
-finite-difference tests. The pure-Rust three-phase QARR workflow is accepted
-with a maximum absolute phase-fraction error of 1.007 percentage points,
-Poisson-weighted Rwp 0.19847, unit-weight Rwp 0.13195, and profile correlation
-0.99060. Its component-dispersion and absorption approximations remain
-explicit; fixed anisotropic displacement and FCJ geometry are active.
+Unit 28 is the actual next milestone: run broader independent experimental
+validation on in-house benchmark examples and define a reviewable
+transferability gate. Completion requires provenance-complete physical inputs,
+plain validation artifacts, explicit cross-pattern profile metrics, and a
+decision supported by those results about whether any specialized profile term
+belongs in production. Failed transfer remains a valid outcome; it must not be
+converted into a production feature by tuning against one specimen.

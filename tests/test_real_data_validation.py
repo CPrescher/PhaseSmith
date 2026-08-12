@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pytest
+from phasesmith.refinement.core import TerminationReason
 from phasesmith.validation import (
     QARR_1G_CUKA_FIXED_DISPERSION,
     qarr_1g_readiness,
@@ -15,8 +16,34 @@ from phasesmith.validation.real_data import (
     RealDataValidationReport,
     ValidationCheck,
     _native_validation_report,
+    _pbso4_stage_termination_is_safe,
     _qarr_cancelled_report,
 )
+
+
+@pytest.mark.parametrize(
+    ("reason", "accepted_iterations", "starting_rwp", "final_rwp", "expected"),
+    [
+        (TerminationReason.REPEATED_REJECTIONS, 48, 0.15848610, 0.10346042, True),
+        (TerminationReason.REPEATED_REJECTIONS, 0, 0.15848610, 0.10346042, False),
+        (TerminationReason.REPEATED_REJECTIONS, 3, 0.15848610, 0.15848609, False),
+        (TerminationReason.NUMERICAL_FAILURE, 48, 0.15848610, 0.10346042, False),
+        (TerminationReason.CONVERGED, 3, 0.2, 0.1, True),
+    ],
+)
+def test_pbso4_repeated_rejection_policy_requires_accepted_material_improvement(
+    reason: TerminationReason,
+    accepted_iterations: int,
+    starting_rwp: float,
+    final_rwp: float,
+    expected: bool,
+) -> None:
+    assert (
+        _pbso4_stage_termination_is_safe(
+            reason, accepted_iterations, starting_rwp, final_rwp
+        )
+        is expected
+    )
 
 
 def test_qarr_readiness_reports_structural_doublet_capability(tmp_path: Path) -> None:

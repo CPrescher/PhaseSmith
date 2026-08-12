@@ -6,6 +6,11 @@ development versions.
 
 ## Unreleased
 
+- Treat PbSO4 X-ray final-polish `repeated_rejections` as safe bounded
+  stagnation only after an accepted, materially improved state, while
+  preserving the termination reason, accepted-state checkpoint semantics, and
+  all scientific tolerances.
+
 ## 0.2.0
 
 - Standardize refinement background composition as a fixed supplied baseline

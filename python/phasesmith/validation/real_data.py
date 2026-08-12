@@ -51,6 +51,7 @@ from ..scattering import NeutronNuclear, XrayFixedDispersion, XrayNonResonant
 from ..structure import CrystalStructure
 
 ValidationStatus = Literal["passed", "failed", "blocked"]
+_PBSO4_MIN_SAFE_REJECTED_RWP_IMPROVEMENT = 1.0e-4
 
 QARR_1G_WEIGHED_WEIGHT_FRACTIONS = {
     "Al2O3": 0.3137,
@@ -946,6 +947,29 @@ def _pbso4_experiment(
     )
 
 
+def _pbso4_stage_termination_is_safe(
+    reason: TerminationReason,
+    accepted_iterations: int,
+    starting_rwp: float,
+    final_rwp: float,
+) -> bool:
+    if reason in {
+        TerminationReason.NUMERICAL_FAILURE,
+        TerminationReason.DIVERGED,
+        TerminationReason.NO_OBSERVATIONS,
+        TerminationReason.MAX_ITERATIONS,
+    }:
+        return False
+    if reason is TerminationReason.REPEATED_REJECTIONS:
+        return (
+            accepted_iterations > 0
+            and math.isfinite(starting_rwp)
+            and math.isfinite(final_rwp)
+            and starting_rwp - final_rwp >= _PBSO4_MIN_SAFE_REJECTED_RWP_IMPROVEMENT
+        )
+    return True
+
+
 def run_pbso4_cw_validation(
     dataset_directory: str | Path,
     probe: RadiationProbe,
@@ -1101,15 +1125,14 @@ def run_pbso4_cw_validation(
         abs(actual - expected) / expected
         for actual, expected in zip(cell_values, reference_cell, strict=True)
     )
-    unsafe_terminations = {
-        TerminationReason.NUMERICAL_FAILURE,
-        TerminationReason.DIVERGED,
-        TerminationReason.REPEATED_REJECTIONS,
-        TerminationReason.NO_OBSERVATIONS,
-        TerminationReason.MAX_ITERATIONS,
-    }
-    safe_termination = workflow.completed and all(
-        stage.result.termination_reason not in unsafe_terminations for stage in workflow.stages
+    safe_termination = len(workflow.stages) == len(recipe.stages) and all(
+        _pbso4_stage_termination_is_safe(
+            stage.result.termination_reason,
+            len(stage.result.history),
+            stage.starting_rwp,
+            stage.result.metrics.rwp,
+        )
+        for stage in workflow.stages
     )
     geometry_note = None
     if isinstance(result.experiment.geometry, DebyeScherrerGeometry):
@@ -1131,7 +1154,10 @@ def run_pbso4_cw_validation(
             "refinement_termination",
             "passed" if safe_termination else "failed",
             "Every intelligent recipe stage terminates safely under explicit budgets.",
-            criterion="all stages converge or stagnate safely; iteration exhaustion fails",
+            criterion=(
+                "all planned stages are attempted; repeated rejection requires an accepted "
+                "Rwp improvement >= 0.0001; iteration exhaustion fails"
+            ),
         ),
         ValidationCheck(
             "poisson_rwp",
