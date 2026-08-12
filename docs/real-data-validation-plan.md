@@ -230,14 +230,13 @@ round-trips explicit microsecond histograms and resumable TOF Le Bail state. A
 reviewed atomic multi-bank model now shares exact phase/reflection topology
 while preserving bank-local observations, instruments, backgrounds, scales,
 and intensities. Its analytical shared-cell extension has synthetic recovery,
-finite-difference, and exact-continuation gates. The next real-data increment
-must identify a multi-bank dataset with citable cell truth and plain-array
-oracle output before adding a golden result. Selected fixed-cell bank-local
-instrument motion now has synthetic recovery, all-row derivative, rank/
-correlation, and exact-continuation coverage. Joint cell/instrument motion must
-now passes simultaneous recovery, typed cross-correlation, benchmark, and exact
-continuation gates. Application/persistence work and a provenance-complete
-multi-bank dataset with citable cell truth are next; structural TOF Rietveld
+finite-difference, and exact-continuation gates. The pinned LANL nickel example
+now supplies the native real-data gate: banks 2--4 use their distinct measured
+grids and profile-function-1 calibrations while sharing the complete 102-family
+Fm-3m topology. One cubic cell and three local Zero terms refine jointly over
+13,293 observations to Rwp 0.02273306 and a=3.52361196 A; every bank is below
+Rwp 0.024 and the analytical system has rank 4/4. The next validation increment
+is a plain-array pinned GSAS-II multi-bank oracle. Structural TOF Rietveld
 refinement remains future scope and is not implied by this acceptance.
 
 ## Review gates

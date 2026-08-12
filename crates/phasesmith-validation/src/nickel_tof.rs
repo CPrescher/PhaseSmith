@@ -7,7 +7,7 @@ use std::fmt::{Display, Formatter};
 use std::path::Path;
 use std::time::Instant;
 
-use phasesmith_core::{BackgroundError, smooth_bruckner};
+use phasesmith_core::{BackgroundError, TofInstrumentParameter, smooth_bruckner};
 use phasesmith_crystallography::{
     PreparedReflectionGenerator, ReflectionGenerationError, ReflectionRange, UnitCell,
 };
@@ -19,8 +19,12 @@ use phasesmith_io::{
 };
 use phasesmith_model::{DomainError, RecordId, TofPatternRecord};
 use phasesmith_workflows::{
-    TofChebyshevBackground, TofLeBailError, TofLeBailInput, TofLeBailOptions, TofLeBailPhase,
-    refine_tof_lebail,
+    LatticeBounds, LatticeParameterization, TofBankInstrumentModel, TofChebyshevBackground,
+    TofGeometryParameterKey, TofInstrumentParameterBound, TofLeBailBank, TofLeBailError,
+    TofLeBailInput, TofLeBailOptions, TofLeBailPhase, TofMultiBankGeometryError,
+    TofMultiBankGeometryInput, TofMultiBankGeometryOptions, TofMultiBankInput,
+    TofMultiBankLatticeInput, TofSharedLatticePhase, refine_tof_lebail,
+    refine_tof_multibank_geometry,
 };
 
 use crate::{
@@ -33,6 +37,9 @@ const BANK: usize = 2;
 const FIT_MIN_US: f64 = 1_101.6;
 const FIT_MAX_US: f64 = 8_189.6;
 const NICKEL_LATTICE_ANGSTROM: f64 = 3.523_4;
+const MULTIBANK_INITIAL_LATTICE_ANGSTROM: f64 = 3.523;
+const MULTIBANK_MIN_D_ANGSTROM: f64 = 0.2;
+const MULTIBANK_MAX_D_ANGSTROM: f64 = 3.0;
 
 /// Run the complete native fixed-instrument TOF Le Bail transferability gate.
 ///
@@ -163,7 +170,8 @@ pub fn run_nickel_tof_validation(
         .history
         .windows(2)
         .all(|pair| pair[1].metrics.rwp <= pair[0].metrics.rwp);
-    let checks = vec![
+    let multibank = run_multibank_geometry(dataset_directory)?;
+    let mut checks = vec![
         check(
             "tof_non_powgen_format",
             imported.format == TofPowderFormat::GsasConstStd
@@ -234,6 +242,44 @@ pub fn run_nickel_tof_validation(
             "15 instrument derivative rows",
         )?,
     ];
+    checks.extend([
+        check(
+            "tof_nickel_multibank_atomic",
+            multibank.bank_count == 3
+                && multibank.history_count == 20
+                && multibank.included_samples == 13_293,
+            "Banks 2--4 advance in one atomic shared-cell/local-instrument workflow.",
+            Some(multibank.included_samples as f64),
+            "3 banks, 20 accepted cycles, and 13293 included observations",
+        )?,
+        check(
+            "tof_nickel_multibank_fit",
+            multibank.rwp <= 0.03
+                && multibank
+                    .bank_rwp
+                    .iter()
+                    .all(|value| value.is_finite() && *value <= 0.03),
+            "The concatenated real observations and every member bank pass explicit Rwp gates.",
+            Some(multibank.rwp),
+            "joint Rwp <= 0.03 and every bank Rwp <= 0.03",
+        )?,
+        check(
+            "tof_nickel_multibank_lattice",
+            (multibank.lattice_angstrom - NICKEL_LATTICE_ANGSTROM).abs() <= 0.0005,
+            "The displaced shared cubic cell returns to the published nickel lattice.",
+            Some(multibank.lattice_angstrom),
+            "|a - 3.5234 A| <= 0.0005 A",
+        )?,
+        check(
+            "tof_nickel_multibank_identifiability",
+            multibank.parameter_count == 4
+                && multibank.jacobian_rank == 4
+                && multibank.cross_family_correlations > 0,
+            "Rank and lattice/instrument correlations are retained for the real joint system.",
+            Some(multibank.jacobian_rank as f64),
+            "4 selected columns, rank 4, and at least one cross-family correlation",
+        )?,
+    ]);
     RealDataValidationReport::new(
         DATASET_ID,
         request.pattern.sample_count(),
@@ -249,8 +295,15 @@ pub fn run_nickel_tof_validation(
                 "Final Rwp={:.8}; Rp={:.8}; correlation={correlation:.8}; background=Smooth Bruckner + 12-term Chebyshev.",
                 result.metrics.rwp, result.metrics.rp,
             ),
-            "This is a fixed-instrument Le Bail extraction, not structural TOF Rietveld parameter refinement."
-                .to_owned(),
+            format!(
+                "Joint banks 2--4 Rwp={:.8}; bank Rwp={:?}; a={:.8} A; rank={}/{}.",
+                multibank.rwp,
+                multibank.bank_rwp,
+                multibank.lattice_angstrom,
+                multibank.jacobian_rank,
+                multibank.parameter_count,
+            ),
+            "These are Le Bail extraction and geometry-refinement gates, not structural TOF Rietveld parameter refinement.".to_owned(),
         ],
     )
     .map_err(Into::into)
@@ -265,6 +318,203 @@ fn nickel_cell() -> UnitCell {
         beta_deg: 90.0,
         gamma_deg: 90.0,
     }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+struct MultiBankAcceptance {
+    bank_count: usize,
+    included_samples: usize,
+    history_count: usize,
+    rwp: f64,
+    bank_rwp: Vec<f64>,
+    lattice_angstrom: f64,
+    parameter_count: usize,
+    jacobian_rank: usize,
+    cross_family_correlations: usize,
+}
+
+#[allow(clippy::too_many_lines)]
+fn run_multibank_geometry(
+    dataset_directory: &Path,
+) -> Result<MultiBankAcceptance, NickelTofValidationError> {
+    let initial_cell = UnitCell {
+        a_angstrom: MULTIBANK_INITIAL_LATTICE_ANGSTROM,
+        b_angstrom: MULTIBANK_INITIAL_LATTICE_ANGSTROM,
+        c_angstrom: MULTIBANK_INITIAL_LATTICE_ANGSTROM,
+        alpha_deg: 90.0,
+        beta_deg: 90.0,
+        gamma_deg: 90.0,
+    };
+    let space_group = space_group_by_number(225)?.space_group;
+    let reflections = PreparedReflectionGenerator::new(space_group.clone(), true, 100_000)?
+        .generate(
+            initial_cell,
+            ReflectionRange::DSpacing {
+                min_angstrom: MULTIBANK_MIN_D_ANGSTROM,
+                max_angstrom: MULTIBANK_MAX_D_ANGSTROM,
+            },
+        )?;
+    let phase_id = RecordId::new("nickel")?;
+    let mut banks = Vec::with_capacity(3);
+    let mut instrument_models = Vec::with_capacity(3);
+    for bank_number in 2..=4 {
+        let imported = read_tof_powder_file(
+            dataset_directory.join("nickel.raw"),
+            bank_number,
+            PowderReadLimits::default(),
+        )?;
+        let calibration = read_gsas_tof_instrument_file(
+            dataset_directory.join("inst_tof.prm"),
+            bank_number,
+            GsasTofInstrumentReadLimits::default(),
+        )?;
+        if imported.format != TofPowderFormat::GsasConstStd || calibration.profile_function != 1 {
+            return Err(NickelTofValidationError::InvalidData(format!(
+                "LANL nickel bank {bank_number} does not use the pinned packed/function-1 contract"
+            )));
+        }
+        let instrument = calibration.instrument;
+        let start = imported
+            .pattern
+            .tof_us
+            .partition_point(|value| *value < FIT_MIN_US);
+        let end = imported
+            .pattern
+            .tof_us
+            .partition_point(|value| *value <= FIT_MAX_US);
+        if start >= end {
+            return Err(NickelTofValidationError::InvalidData(format!(
+                "LANL nickel bank {bank_number} common TOF interval is empty"
+            )));
+        }
+        let tof_us = imported.pattern.tof_us[start..end].to_vec();
+        let observed = imported
+            .pattern
+            .observed_y
+            .as_deref()
+            .ok_or(NickelTofValidationError::MissingObservations)?[start..end]
+            .to_vec();
+        let uncertainty = imported
+            .pattern
+            .uncertainty
+            .as_deref()
+            .map(|values| values[start..end].to_vec());
+        let mask = imported
+            .pattern
+            .mask
+            .as_deref()
+            .map(|values| values[start..end].to_vec());
+        let fixed_background = smooth_bruckner(&observed, 20, 50)?;
+        let pattern = TofPatternRecord::new(
+            tof_us,
+            Some(observed),
+            uncertainty,
+            mask,
+            Some(fixed_background),
+        )?;
+        let phase = TofLeBailPhase::new(
+            phase_id.clone(),
+            "FCC nickel powder standard",
+            reflections
+                .iter()
+                .map(|reflection| reflection.reflection_id.clone())
+                .collect(),
+            reflections
+                .iter()
+                .map(|reflection| reflection.hkl)
+                .collect(),
+            reflections
+                .iter()
+                .map(|reflection| reflection.d_spacing_angstrom)
+                .collect(),
+            vec![0.0; reflections.len()],
+            1.0,
+        )?;
+        let bank_id = RecordId::new(format!("nickel-bank-{bank_number}"))?;
+        let background = TofChebyshevBackground::new(
+            RecordId::new(format!("nickel-bank-{bank_number}-background"))?,
+            vec![0.0; 12],
+            [
+                pattern.tof_us[0],
+                pattern.tof_us[pattern.sample_count() - 1],
+            ],
+        )?;
+        let input = TofLeBailInput::new(pattern, instrument, vec![phase])?
+            .with_refinable_background(background)?;
+        banks.push(TofLeBailBank {
+            bank_id: bank_id.clone(),
+            input,
+        });
+        instrument_models.push(
+            TofBankInstrumentModel::new(
+                bank_id,
+                vec![
+                    TofInstrumentParameterBound::new(
+                        TofInstrumentParameter::Zero,
+                        instrument.zero_us - 20.0,
+                        instrument.zero_us + 20.0,
+                    )
+                    .map_err(TofMultiBankGeometryError::from)?,
+                ],
+            )
+            .map_err(TofMultiBankGeometryError::from)?,
+        );
+    }
+    let parameterization = LatticeParameterization::new(space_group, initial_cell)
+        .map_err(TofMultiBankGeometryError::from)?;
+    let bounds = LatticeBounds::around(&parameterization, 0.01, 1.0)
+        .map_err(TofMultiBankGeometryError::from)?;
+    let lattice_phase =
+        TofSharedLatticePhase::new(phase_id, parameterization, bounds, initial_cell)
+            .map_err(TofMultiBankGeometryError::from)?;
+    let input = TofMultiBankGeometryInput {
+        lattice: TofMultiBankLatticeInput {
+            multibank: TofMultiBankInput { banks },
+            lattice_phases: vec![lattice_phase],
+        },
+        instrument_models,
+    };
+    let lebail = TofLeBailOptions::new(
+        20,
+        1.0,
+        1.0e-12,
+        1.0e-15,
+        20.0,
+        20.0,
+        true,
+        ExecutionPolicy::new(Some(1), 2)?,
+    )?
+    .with_redistribution_uncertainty(false);
+    let options = TofMultiBankGeometryOptions::new(lebail, 1.0e-10, 0.03, 10, 0.5)?;
+    let result = refine_tof_multibank_geometry(&input, &options)?;
+    let cross_family_correlations = result
+        .diagnostics
+        .unresolved_correlations
+        .iter()
+        .filter(|pair| {
+            matches!(
+                (&pair.left, &pair.right),
+                (
+                    TofGeometryParameterKey::Lattice { .. },
+                    TofGeometryParameterKey::Instrument { .. }
+                ) | (
+                    TofGeometryParameterKey::Instrument { .. },
+                    TofGeometryParameterKey::Lattice { .. }
+                )
+            )
+        })
+        .count();
+    Ok(MultiBankAcceptance {
+        bank_count: result.banks.len(),
+        included_samples: result.metrics.included_samples,
+        history_count: result.history.len(),
+        rwp: result.metrics.rwp,
+        bank_rwp: result.banks.iter().map(|bank| bank.metrics.rwp).collect(),
+        lattice_angstrom: result.lattice_phases[0].cell.a_angstrom,
+        parameter_count: result.diagnostics.parameter_count,
+        jacobian_rank: result.diagnostics.jacobian_rank,
+        cross_family_correlations,
+    })
 }
 
 fn pearson_correlation(
@@ -347,6 +597,8 @@ pub enum NickelTofValidationError {
     Background(BackgroundError),
     /// Native TOF workflow failed.
     Workflow(TofLeBailError),
+    /// Joint multi-bank geometry workflow failed.
+    Geometry(TofMultiBankGeometryError),
     /// Execution policy construction failed.
     Execution(ExecutionPolicyError),
     /// The imported bank contains no observations.
@@ -368,6 +620,7 @@ impl Display for NickelTofValidationError {
             Self::Reflection(error) => Display::fmt(error, formatter),
             Self::Background(error) => Display::fmt(error, formatter),
             Self::Workflow(error) => Display::fmt(error, formatter),
+            Self::Geometry(error) => Display::fmt(error, formatter),
             Self::Execution(error) => Display::fmt(error, formatter),
             Self::MissingObservations => {
                 formatter.write_str("LANL nickel observations are missing")
@@ -398,5 +651,6 @@ from_error!(SpaceGroupLookupError, SpaceGroup);
 from_error!(ReflectionGenerationError, Reflection);
 from_error!(BackgroundError, Background);
 from_error!(TofLeBailError, Workflow);
+from_error!(TofMultiBankGeometryError, Geometry);
 from_error!(ExecutionPolicyError, Execution);
 from_error!(ValidationContractError, Report);

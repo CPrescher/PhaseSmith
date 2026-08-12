@@ -172,6 +172,10 @@ def test_lanl_nickel_tof_transferability_workflow_passes() -> None:
     assert checks["tof_profile_function_one"].status == "passed"
     assert checks["tof_nickel_profile_fit"].status == "passed"
     assert checks["tof_nickel_profile_correlation"].status == "passed"
+    assert checks["tof_nickel_multibank_atomic"].status == "passed"
+    assert checks["tof_nickel_multibank_fit"].status == "passed"
+    assert checks["tof_nickel_multibank_lattice"].status == "passed"
+    assert checks["tof_nickel_multibank_identifiability"].status == "passed"
 
 
 @pytest.mark.real_data

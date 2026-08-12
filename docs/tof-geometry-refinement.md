@@ -101,7 +101,25 @@ instrument selection, solver control, and accepted checkpoint array; restoring
 the bundle revalidates it against project histograms, phase definitions, and
 the exact symmetry setting.
 
-The native, Python, and persistence workflows now provide the application
-boundary required before a multi-bank real-data oracle is added. This remains
-Le Bail extraction with fixed reflection topology, not structural TOF
-Rietveld.
+## Real multi-bank acceptance
+
+The checksum-pinned LANL nickel tutorial now exercises the complete native
+joint path on detector banks 2, 3, and 4. Each bank keeps its 4,431 measured
+constant-step bins, profile-function-1 calibration, uncertainty, Smooth
+Bruckner baseline, and 12-term Chebyshev residual. The banks share one complete
+102-family Fm-3m nickel topology over 0.2--3.0 A, one cubic cell, and refine one
+local Zero coefficient each. Reflections outside a particular bank's finite
+microsecond grid contribute no samples; the shared topology itself is not
+truncated to the intersection of bank coverage.
+
+Starting from 3.523 A, 20 deterministic accepted cycles use 13,293 included
+observations. The reviewed run returns joint Rwp 0.02273306, bank Rwp values
+0.02335845/0.02205717/0.02260671, and a=3.52361196 A against the published
+3.5234 A value. The four analytical columns (one cell plus three local Zero
+terms) have numerical rank four and expose lattice/instrument correlations.
+Acceptance requires joint and per-bank Rwp <= 0.03, |a-3.5234 A| <= 0.0005 A,
+and rank 4/4.
+
+This is a native real-data acceptance gate, not yet a GSAS-II multi-bank oracle.
+It remains Le Bail extraction with fixed reflection identities, not structural
+TOF Rietveld.

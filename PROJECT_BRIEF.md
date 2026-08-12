@@ -977,8 +977,17 @@ order/labels, shared initial cells, and exact symmetry settings. The explicit
 JSON/NPZ codec round-trips bank inputs, cell and instrument bounds, solver
 controls, and the full accepted checkpoint: cells, instruments, intensities,
 backgrounds, per-bank residual arrays, aggregate metrics, and physical change
-history. Versions 1--3 remain readable with empty joint state. Multi-bank
-real-data/oracle acceptance is now the remaining Unit 37 slice.
+history. Versions 1--3 remain readable with empty joint state.
+The native part of Unit 37c now uses the revision- and checksum-pinned LANL
+nickel example as a genuine three-bank joint gate. Banks 2--4 retain distinct
+grids, function-1 instruments, backgrounds, and intensities while sharing the
+complete 102-family Fm-3m topology. Twenty accepted cycles jointly refine one
+cubic cell plus three local Zero terms over 13,293 observations. The reviewed
+result has joint Rwp 0.02273306, per-bank Rwp 0.02206--0.02336,
+a=3.52361196 A against 3.5234 A, and rank 4/4. The complete shared topology is
+intentional: finite bank grids, not an intersection-only reflection list,
+determine local visibility. A pinned plain-array GSAS-II multi-bank comparison
+is the remaining oracle half of Unit 37c.
 The historical native-workflow comparison passes both Le Bail parity contracts
 and QARR 1g. Its unchanged QARR 1h acceptance recipe retains the reviewed
 profile-quality failure, rather than having thresholds relaxed. The newer
