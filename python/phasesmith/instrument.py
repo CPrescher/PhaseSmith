@@ -3,8 +3,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 import numpy as np
+from numpy.typing import ArrayLike, NDArray
+
+if TYPE_CHECKING:
+    from .pattern import TofPowderPattern
 
 
 @dataclass(frozen=True, slots=True)
@@ -74,6 +79,122 @@ class TofBankGeometry:
         """Return the half scattering angle in radians."""
 
         return float(np.deg2rad(0.5 * self.two_theta_deg))
+
+
+@dataclass(frozen=True, slots=True, init=False)
+class TofIncidentSpectrumEvaluation:
+    """Immutable incident intensities and analytical TOF derivatives."""
+
+    values: NDArray[np.float64]
+    d_values_d_tof_us: NDArray[np.float64]
+
+    def __init__(self, values: ArrayLike, d_values_d_tof_us: ArrayLike) -> None:
+        intensity = np.array(values, dtype=np.float64, copy=True, order="C")
+        derivative = np.array(d_values_d_tof_us, dtype=np.float64, copy=True, order="C")
+        if (
+            intensity.ndim != 1
+            or derivative.shape != intensity.shape
+            or not np.isfinite(intensity).all()
+            or not np.isfinite(derivative).all()
+            or np.any(intensity <= 0.0)
+        ):
+            raise ValueError("incident values must be positive finite matching vectors")
+        intensity.flags.writeable = False
+        derivative.flags.writeable = False
+        object.__setattr__(self, "values", intensity)
+        object.__setattr__(self, "d_values_d_tof_us", derivative)
+
+
+@dataclass(frozen=True, slots=True, init=False)
+class TofIncidentSpectrum:
+    """Facility-neutral Maxwellian-plus-Chebyshev TOF spectrum.
+
+    With ``t`` in milliseconds and ``x = 2/t - 1``, the twelve coefficients
+    ``P1..P12`` define ``P1 + P2*t^-5*exp(-P3/t^2)`` plus
+    ``sum(Pj*T_(j-3)(x), j=4..12)``. Public TOF values and the inclusive
+    calibration interval are in microseconds.
+    """
+
+    min_tof_us: float
+    max_tof_us: float
+    coefficients: tuple[float, ...]
+
+    def __init__(self, min_tof_us: float, max_tof_us: float, coefficients: ArrayLike) -> None:
+        fitted = np.array(coefficients, dtype=np.float64, copy=True, order="C")
+        if (
+            not np.isfinite(min_tof_us)
+            or not np.isfinite(max_tof_us)
+            or min_tof_us <= 0.0
+            or max_tof_us <= min_tof_us
+        ):
+            raise ValueError("incident-spectrum TOF range must be finite, positive, and increasing")
+        if fitted.shape != (12,) or not np.isfinite(fitted).all():
+            raise ValueError("incident-spectrum coefficients must contain 12 finite values")
+        object.__setattr__(self, "min_tof_us", float(min_tof_us))
+        object.__setattr__(self, "max_tof_us", float(max_tof_us))
+        object.__setattr__(self, "coefficients", tuple(float(value) for value in fitted))
+
+    def evaluate(self, tof_us: ArrayLike) -> TofIncidentSpectrumEvaluation:
+        """Evaluate positive intensities and ``dI/d(tof_us)`` together."""
+
+        time_us = np.array(tof_us, dtype=np.float64, copy=True, order="C")
+        if (
+            time_us.ndim != 1
+            or not np.isfinite(time_us).all()
+            or np.any(time_us < self.min_tof_us)
+            or np.any(time_us > self.max_tof_us)
+        ):
+            raise ValueError("tof_us must be a finite vector within the calibration interval")
+        coefficients = np.asarray(self.coefficients, dtype=np.float64)
+        time_ms = time_us / 1_000.0
+        inverse_time = 1.0 / time_ms
+        inverse_time2 = inverse_time * inverse_time
+        x = 2.0 * inverse_time - 1.0
+        d_x_d_time_ms = -2.0 * inverse_time2
+        maxwell = (
+            coefficients[1]
+            * inverse_time**5
+            * np.exp(-coefficients[2] * inverse_time2)
+        )
+        values = coefficients[0] + maxwell
+        derivatives_ms = maxwell * (
+            -5.0 * inverse_time + 2.0 * coefficients[2] * inverse_time**3
+        )
+        previous = np.ones_like(x)
+        d_previous = np.zeros_like(x)
+        current = x.copy()
+        d_current = d_x_d_time_ms.copy()
+        for index, coefficient in enumerate(coefficients[3:]):
+            if index > 0:
+                next_polynomial = 2.0 * x * current - previous
+                next_derivative = 2.0 * (
+                    d_x_d_time_ms * current + x * d_current
+                ) - d_previous
+                previous, current = current, next_polynomial
+                d_previous, d_current = d_current, next_derivative
+            values = values + coefficient * current
+            derivatives_ms = derivatives_ms + coefficient * d_current
+        if not np.isfinite(values).all() or np.any(values <= 0.0):
+            raise ValueError("incident-spectrum intensity must be positive and finite")
+        return TofIncidentSpectrumEvaluation(values, derivatives_ms / 1_000.0)
+
+    def normalize_pattern(self, pattern: TofPowderPattern) -> TofPowderPattern:
+        """Divide observed values, uncertainties, and background by the spectrum."""
+
+        from .pattern import TofPowderPattern
+
+        if not isinstance(pattern, TofPowderPattern) or pattern.observed_y is None:
+            raise TypeError("pattern must be an observed TofPowderPattern")
+        intensity = self.evaluate(pattern.tof_us).values
+        return TofPowderPattern(
+            pattern.tof_us,
+            observed_y=pattern.observed_y / intensity,
+            uncertainty=None
+            if pattern.uncertainty is None
+            else pattern.uncertainty / intensity,
+            mask=pattern.mask,
+            background=pattern.background / intensity,
+        )
 
 
 @dataclass(frozen=True, slots=True)

@@ -123,7 +123,14 @@ type TofPowderDataArrays<'py> = (
     Option<Bound<'py, PyArray1<bool>>>,
 );
 
-type GsasTofInstrumentRecord = (Vec<f64>, usize, usize, Option<String>, Option<f64>);
+type GsasTofInstrumentRecord = (
+    Vec<f64>,
+    usize,
+    usize,
+    Option<String>,
+    Option<f64>,
+    Option<(f64, f64, Vec<f64>)>,
+);
 
 type TchShapeValues = (f64, f64, f64, f64, f64, f64);
 
@@ -4002,6 +4009,13 @@ fn gsas_tof_instrument_record(data: NativeGsasTofInstrumentData) -> GsasTofInstr
         data.source_path
             .map(|path| path.to_string_lossy().into_owned()),
         data.bank_geometry.map(|geometry| geometry.two_theta_deg),
+        data.incident_spectrum.map(|spectrum| {
+            (
+                spectrum.min_tof_us,
+                spectrum.max_tof_us,
+                spectrum.coefficients.to_vec(),
+            )
+        }),
     )
 }
 

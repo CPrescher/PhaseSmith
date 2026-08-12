@@ -111,7 +111,14 @@ from .fpa_calibration import (
     calibrate_fundamental_profile,
     simulate_fundamental_peaks,
 )
-from .instrument import ConstantWavelengthInstrument, FcjGeometry, TofBankGeometry, TofInstrument
+from .instrument import (
+    ConstantWavelengthInstrument,
+    FcjGeometry,
+    TofBankGeometry,
+    TofIncidentSpectrum,
+    TofIncidentSpectrumEvaluation,
+    TofInstrument,
+)
 from .intensity_corrections import (
     BraggBrentanoPolarizedLp,
     BraggBrentanoUnpolarizedLp,
@@ -402,6 +409,8 @@ __all__ = [
     "TerminalCancellationController",
     "TimeOfFlightNeutronLorentz",
     "TofBankGeometry",
+    "TofIncidentSpectrum",
+    "TofIncidentSpectrumEvaluation",
     "TofInstrument",
     "TofPowderData",
     "TofPowderFormat",

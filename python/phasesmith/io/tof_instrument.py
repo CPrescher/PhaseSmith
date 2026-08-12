@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from .. import _core
-from ..instrument import TofBankGeometry, TofInstrument
+from ..instrument import TofBankGeometry, TofIncidentSpectrum, TofInstrument
 
 
 @dataclass(frozen=True, slots=True)
@@ -31,6 +31,7 @@ class GsasTofInstrumentData:
     profile_function: int
     source_name: str | None = None
     bank_geometry: TofBankGeometry | None = None
+    incident_spectrum: TofIncidentSpectrum | None = None
 
     def __post_init__(self) -> None:
         if not isinstance(self.instrument, TofInstrument):
@@ -41,6 +42,10 @@ class GsasTofInstrumentData:
             raise ValueError("only GSAS TOF profile functions 1 and 3 are supported")
         if self.bank_geometry is not None and not isinstance(self.bank_geometry, TofBankGeometry):
             raise TypeError("bank_geometry must be a TofBankGeometry or None")
+        if self.incident_spectrum is not None and not isinstance(
+            self.incident_spectrum, TofIncidentSpectrum
+        ):
+            raise TypeError("incident_spectrum must be a TofIncidentSpectrum or None")
 
 
 def read_gsas_tof_instrument(
@@ -73,11 +78,25 @@ def read_gsas_tof_instrument(
             record = _core._read_gsas_tof_instrument_file(str(candidate), *native_arguments)
         else:
             record = _core._parse_gsas_tof_instrument_text(path_or_text, *native_arguments)
-    coefficients, selected_bank, profile_function, source_name, two_theta_deg = record
+    (
+        coefficients,
+        selected_bank,
+        profile_function,
+        source_name,
+        two_theta_deg,
+        spectrum_record,
+    ) = record
     return GsasTofInstrumentData(
         TofInstrument(*coefficients),
         int(selected_bank),
         int(profile_function),
         source_name,
         None if two_theta_deg is None else TofBankGeometry(float(two_theta_deg)),
+        None
+        if spectrum_record is None
+        else TofIncidentSpectrum(
+            float(spectrum_record[0]),
+            float(spectrum_record[1]),
+            spectrum_record[2],
+        ),
     )

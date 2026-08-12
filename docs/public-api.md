@@ -505,8 +505,11 @@ The public application boundary additionally provides bounded
 `refinement.refine_tof_lebail` for fixed-instrument, fixed-cell extraction.
 The powder adapter accepts plain center/density columns, GSAS SLOG FXYE, and
 packed constant-step GSAS STD. The legacy calibration adapter accepts profile
-functions 1 and 3; facilities using other file syntaxes can construct the same
-public `TofPowderPattern` and `TofInstrument` records directly.
+functions 1 and 3 and exposes an explicit type-4 incident spectrum when present;
+facilities using other file syntaxes can construct the same public
+`TofPowderPattern`, `TofInstrument`, `TofBankGeometry`, and
+`TofIncidentSpectrum` records directly. Spectrum normalization is an explicit
+pattern transformation and never follows from a facility name.
 `refinement.refine_tof_lebail` additionally accepts a
 `TofLeBailCancellation`, an opaque `TofLeBailCheckpoint` for exact
 continuation, and a progress callback receiving plain event dictionaries. The

@@ -1527,6 +1527,13 @@ objective; bank 2--4 refinement of one shared cubic cell, Ni Uiso, three scales,
 and three Zero terms gives Rwp 0.03278208, minimum correlation 0.99749010, and
 a=3.52373113 A over 13,293 observations. Public Python exposure and the isolated
 structural oracle remain separately reviewable follow-up slices.
+The Python exposure is now complete. Its independent NumPy evaluator returns
+immutable intensity and analytical TOF-derivative vectors, validates the
+inclusive calibration domain, and normalizes observed values, one-sigma
+uncertainties, and fixed background together. The public GSAS calibration
+record carries the optional translated spectrum, while any facility can create
+the same `TofIncidentSpectrum` directly. The isolated structural oracle is the
+remaining Unit 38d slice.
 
 Do not combine adjacent items merely to reduce PR count; numerical review is
 easier when parameter conventions and tolerance changes remain isolated.

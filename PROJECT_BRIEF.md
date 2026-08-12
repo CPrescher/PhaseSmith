@@ -1081,6 +1081,14 @@ displacement while refining three bank scales and Zero terms. Across 13,293
 observations it reaches Rwp 0.03278208, minimum bank profile correlation
 0.99749010, and a=3.52373113 A against 3.5234 A. The isolated pinned-oracle
 comparison remains the final Unit 38d gate.
+The public Python normalization slice is complete too.
+`TofIncidentSpectrum` independently evaluates the documented NumPy equation
+and analytical TOF derivative, returns immutable arrays, and transforms an
+observed `TofPowderPattern` by dividing observations, uncertainties, and fixed
+background consistently. `GsasTofInstrumentData` now carries the parsed
+spectrum without preventing non-GSAS callers from constructing the same typed
+record directly. The isolated structural oracle remains the only unfinished
+Unit 38d gate.
 The historical native-workflow comparison passes both Le Bail parity contracts
 and QARR 1g. Its unchanged QARR 1h acceptance recipe retains the reviewed
 profile-quality failure, rather than having thresholds relaxed. The newer

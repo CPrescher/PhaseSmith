@@ -50,7 +50,7 @@ See [powder-file and CIF import](cif-import.md),
 
 | Module | Main public entry points | Purpose |
 | --- | --- | --- |
-| `phasesmith.instrument` | `ConstantWavelengthInstrument`, `FcjGeometry`, `TofInstrument` | Instrument response and geometry. |
+| `phasesmith.instrument` | `ConstantWavelengthInstrument`, `FcjGeometry`, `TofInstrument`, `TofIncidentSpectrum` | Instrument response, geometry, and explicit TOF normalization. |
 | `phasesmith.radiation` | `MonochromaticRadiation`, `WavelengthComponents`, experiment and geometry types | Explicit source and specimen geometry. |
 | `phasesmith` / `phasesmith._api` | `profile`, `accumulate`, TCH variants | Low-level symmetric pseudo-Voigt kernels. |
 | `phasesmith.cw` | `accumulate_cw`, `accumulate_cw_components`, `cw_profile_parameters` | Constant-wavelength U/V/W/X/Y accumulation. |
@@ -83,7 +83,7 @@ the navigation.
 | `phasesmith.symmetry` | `SpaceGroup`, `SymmetryOperation`, `PreparedReflectionGenerator` | Exact symmetry, absences, families, and bounded generation. |
 | `phasesmith.scattering` | `XrayNonResonant`, `XrayFixedDispersion`, `NeutronNuclear` | Built-in prepared scattering models. |
 | `phasesmith.intensity_corrections` | Neutral, Bragg–Brentano, and neutron correction models | Explicit integrated-intensity corrections. |
-| `phasesmith.instrument` | `ConstantWavelengthInstrument`, `TofInstrument`, `TofBankGeometry` | Typed profile/calibration and fixed TOF bank geometry. |
+| `phasesmith.instrument` | `ConstantWavelengthInstrument`, `TofInstrument`, `TofBankGeometry`, `TofIncidentSpectrum` | Typed profile/calibration, fixed TOF bank geometry, and incident normalization. |
 | `phasesmith.sample` | Size, microstrain, and March–Dollase models | Composable sample-physics contributions. |
 | `phasesmith.extensions` | Provider protocols and descriptors | Versioned third-party physics boundary. |
 

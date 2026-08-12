@@ -189,9 +189,19 @@ unused by the supported law: `PRCF 1` values 2--4 map to
 The checksum-pinned LANL nickel tutorial exercises this translation and packed
 constant-step input independently of POWGEN.
 
+When a legacy bank explicitly supplies `I ITYP 4` and all twelve `ICOFF`
+coefficients, the adapter also returns a public `TofIncidentSpectrum`. This
+record uses a microsecond validity interval, evaluates the published
+Maxwellian/Chebyshev intensity and analytical TOF derivative through an
+independent NumPy implementation, and can normalize a `TofPowderPattern` by
+dividing observations, uncertainties, and any supplied background by the same
+positive spectrum. Absent/type-0 records return `None`; unsupported nonzero
+functions are rejected. Other beamline adapters can construct the identical
+public record without using a GSAS file.
+
 Facility-neutral means a beamline can provide reduced center/density arrays,
-the typed 15 coefficients, and `TofBankGeometry` without adopting GSAS
-filenames. It does not mean
+the typed 15 coefficients, `TofBankGeometry`, and an optional explicit
+`TofIncidentSpectrum` without adopting GSAS filenames. It does not mean
 that specialized tails, tabulated resolution functions, or every historical
 profile function are silently approximated by this model.
 

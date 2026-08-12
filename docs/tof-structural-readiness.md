@@ -287,9 +287,9 @@ The structural extension is split into reviewable numerical increments:
 5. **In progress:** expose the same native contract through Python and project
    persistence, then validate a checksum-pinned real structural dataset against
    an isolated pinned oracle. Python refinement and format-5 persistence are
-   complete. Native LANL nickel acceptance is complete after explicit incident
-   normalization; public spectrum exposure and isolated-oracle comparison
-   remain.
+   complete. Native LANL nickel acceptance and public spectrum exposure are
+   complete after explicit incident normalization; the isolated-oracle
+   comparison remains.
 
 No stage may claim “all TOF beamlines” merely because another profile function
 fits. Acceptance requires a declared reduction/correction convention and bank
