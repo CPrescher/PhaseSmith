@@ -89,12 +89,13 @@ observable.
 
 ## Facility-neutral bank metadata
 
-The application boundary needs a typed bank-geometry record independent of any
-legacy file format. Its first required field is finite
-`0 < two_theta_deg < 180`. A GSAS `BNKPAR` adapter may populate it, but the core
-model must not consume legacy records or dictionaries. Flight paths and other
-source metadata can be retained when their definitions are independently
-documented; they are not required by the calibrated `tof(d)` equation.
+The application boundary now provides `TofBankGeometry`, independent of any
+legacy file format. Its required field is finite `0 < two_theta_deg < 180`. The
+bounded GSAS adapter populates it from the independently documented second
+`BNKPAR` field. The core model never consumes legacy records or dictionaries.
+Files without `BNKPAR` remain valid for profile-only use and return no geometry;
+structural TOF must reject that omission. Flight paths and other source metadata
+are not required by the calibrated `tof(d)` equation and are not guessed.
 
 The existing `TofInstrument` remains the profile/calibration record. Keeping
 geometry separate avoids pretending that fitted `DIFC` uniquely determines a
@@ -107,8 +108,8 @@ The structural extension is split into reviewable numerical increments:
 1. Add the explicit TOF neutron Lorentz correction with an independent NumPy
    equation, analytical reciprocal-metric derivative, invalid-angle tests, and
    centered finite differences.
-2. Add typed TOF bank geometry and parse the independently documented
-   scattering angle from bounded legacy instrument input.
+2. **Complete:** add typed TOF bank geometry and parse the independently
+   documented scattering angle from bounded legacy instrument input.
 3. Add a Rust structural-TOF calculation primitive that evaluates values and
    structural/profile derivatives in the same finite-support pass. Cover dense,
    JVP, and VJP products and a realistic multi-reflection benchmark.

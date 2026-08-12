@@ -73,6 +73,7 @@ def test_native_tof_lebail_recovers_one_integrated_intensity() -> None:
 def test_public_calibration_reader_maps_powgen_type_three_records() -> None:
     data = phasesmith.read_gsas_tof_instrument(
         "INS  2 ICONS22581.63 0 4.41 0\n"
+        "INS  2BNKPAR     3.183    90.000     0.000     0.000     0.200    1    1\n"
         "INS  2PRCF1     3 21 0.002\n"
         "INS  2PRCF11 0.257460 0.091563 0.017334 0\n"
         "INS  2PRCF12 10 203.581 0 10.651\n",
@@ -84,6 +85,19 @@ def test_public_calibration_reader_maps_powgen_type_three_records() -> None:
     assert data.instrument.difc_us_per_angstrom == pytest.approx(22581.63)
     assert data.instrument.zero_us == pytest.approx(4.41)
     assert data.instrument.sigma2_us2_per_angstrom4 == pytest.approx(203.581)
+    assert data.bank_geometry == phasesmith.TofBankGeometry(90.0)
+    assert data.bank_geometry.theta_radians == pytest.approx(np.pi / 4.0)
+
+    profile_only = phasesmith.read_gsas_tof_instrument(
+        "INS  2 ICONS22581.63 0 4.41 0\n"
+        "INS  2PRCF1     3 21 0.002\n"
+        "INS  2PRCF11 0.257460 0.091563 0.017334 0\n"
+        "INS  2PRCF12 10 203.581 0 10.651\n",
+        bank=2,
+    )
+    assert profile_only.bank_geometry is None
+    with pytest.raises(ValueError, match="strictly within"):
+        phasesmith.TofBankGeometry(0.0)
 
 
 def test_from_files_builds_one_typed_powgen_style_request(tmp_path: Path) -> None:

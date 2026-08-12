@@ -97,6 +97,41 @@ const TOF_SUPPORT_QUADRATURE_PANELS: usize = 4;
 const TOF_SUPPORT_QUADRATURE_PANELS_F64: f64 = 4.0;
 const TOF_QUADRATURE_COUNT: usize = TOF_QUADRATURE_PANELS * QUADRATURE_ORDER;
 
+/// Facility-neutral fixed geometry for one focused TOF detector bank.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct TofBankGeometry {
+    /// Nominal bank scattering angle in degrees `2theta`.
+    pub two_theta_deg: f64,
+}
+
+impl TofBankGeometry {
+    /// Validate the strict physical scattering-angle domain.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`TofError::InvalidBankTwoTheta`] unless the angle is finite and
+    /// strictly within `0 < 2theta < 180°`.
+    pub fn validate(self) -> Result<(), TofError> {
+        if !self.two_theta_deg.is_finite()
+            || self.two_theta_deg <= 0.0
+            || self.two_theta_deg >= 180.0
+        {
+            return Err(TofError::InvalidBankTwoTheta);
+        }
+        Ok(())
+    }
+
+    /// Return the half scattering angle in radians after validation.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`TofError::InvalidBankTwoTheta`] for invalid geometry.
+    pub fn theta_radians(self) -> Result<f64, TofError> {
+        self.validate()?;
+        Ok((0.5 * self.two_theta_deg).to_radians())
+    }
+}
+
 /// TOF calibration and d-dependent profile coefficients in public units.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct TofInstrument {
@@ -734,6 +769,8 @@ impl TofProfile {
 /// TOF domain or accumulation error.
 #[derive(Clone, Debug, PartialEq)]
 pub enum TofError {
+    /// Bank scattering angle is not finite or outside `0 < 2theta < 180°`.
+    InvalidBankTwoTheta,
     /// At least one instrument coefficient is non-finite.
     NonFiniteInstrumentParameter,
     /// The linear calibration coefficient is not positive.
@@ -778,6 +815,8 @@ pub enum TofError {
 impl Display for TofError {
     fn fmt(&self, formatter: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
+            Self::InvalidBankTwoTheta => formatter
+                .write_str("TOF bank two_theta_deg must be finite and strictly within (0, 180)"),
             Self::NonFiniteInstrumentParameter => {
                 write!(formatter, "TOF coefficients must be finite")
             }
@@ -1059,6 +1098,21 @@ pub fn accumulate_tof_batch_with_context(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn bank_geometry_requires_a_strict_physical_scattering_angle() {
+        let geometry = TofBankGeometry {
+            two_theta_deg: 88.05,
+        };
+        geometry.validate().expect("valid bank geometry");
+        assert!((geometry.theta_radians().unwrap() - 44.025_f64.to_radians()).abs() < 1.0e-15);
+        for two_theta_deg in [f64::NAN, 0.0, 180.0, f64::INFINITY] {
+            assert_eq!(
+                TofBankGeometry { two_theta_deg }.validate(),
+                Err(TofError::InvalidBankTwoTheta)
+            );
+        }
+    }
 
     fn instrument() -> TofInstrument {
         TofInstrument {

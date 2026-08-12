@@ -55,12 +55,15 @@ pub fn run_powgen_tof_validation(
         EXPECTED_BANK,
         PowderReadLimits::default(),
     )?;
-    let kernel_instrument = read_gsas_tof_instrument_file(
+    let calibration = read_gsas_tof_instrument_file(
         dataset_directory.join("PGHR_60-2015A.prm"),
         EXPECTED_BANK,
         GsasTofInstrumentReadLimits::default(),
-    )?
-    .instrument;
+    )?;
+    let bank_two_theta_deg = calibration
+        .bank_geometry
+        .map(|geometry| geometry.two_theta_deg);
+    let kernel_instrument = calibration.instrument;
     let at_one_angstrom = TofProfileParameters::from_instrument(1.0, kernel_instrument)
         .map_err(|error| PowgenTofValidationError::Kernel(error.to_string()))?;
     let expected_position = kernel_instrument.zero_us
@@ -191,6 +194,17 @@ pub fn run_powgen_tof_validation(
             })
     });
     let checks = vec![
+        ValidationCheck::new(
+            "tof_bank_geometry",
+            if bank_two_theta_deg.is_some_and(|value| value.to_bits() == 90.0_f64.to_bits()) {
+                ValidationStatus::Passed
+            } else {
+                ValidationStatus::Failed
+            },
+            "The independently documented BNKPAR scattering-angle field is imported as typed bank geometry.",
+            bank_two_theta_deg,
+            Some("POWGEN bank 2 two_theta_deg = 90.000".to_owned()),
+        )?,
         ValidationCheck::new(
             "tof_fxye_grid",
             if pattern.pattern.tof_us.len() == EXPECTED_SAMPLES

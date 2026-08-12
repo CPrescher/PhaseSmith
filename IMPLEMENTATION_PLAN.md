@@ -1461,6 +1461,13 @@ zero wavelength derivative. Rust closed-form/finite-difference tests and an
 independent NumPy reference agree. The constant-wavelength structural engine
 explicitly rejects the TOF-only model. The remaining Unit 38a slice is typed
 bank geometry plus bounded, independently documented legacy angle import.
+That remaining slice is complete. Rust and Python expose
+`TofBankGeometry(two_theta_deg)` with strict open-interval validation. The
+bounded legacy adapter maps the second `BNKPAR` field when present while
+retaining `None` for historical profile-only files. The checksum-pinned POWGEN
+and LANL validation reports now gate their distinct 90.000 and 88.05 degree
+angles through the same typed contract. Unit 38a is complete; Unit 38b now adds
+the fused Rust structural TOF calculation.
 
 Do not combine adjacent items merely to reduce PR count; numerical review is
 easier when parameter conventions and tolerance changes remain isolated.
@@ -1518,7 +1525,7 @@ completes atomic fixed-cell multi-bank coordination, Unit 34 completes shared
 analytical lattice motion, and Unit 35 completes selected fixed-cell bank-local
 instrument motion, and Unit 36 combines the two geometry families in one
 correlation-diagnosed system, and Unit 37a adds its Python application facade.
-The next TOF increment is Unit 38a's correction and bank-geometry contract.
+The next TOF increment is Unit 38b's fused structural TOF calculation.
 Structural parameter and instrument refinement must
 be introduced only with analytical derivatives, finite-difference tests, and
 new oracle contracts; it is not part of the completed Le Bail facade.

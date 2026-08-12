@@ -9,7 +9,7 @@ use std::fmt::{Display, Formatter};
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use phasesmith_core::{TofError, TofInstrument};
+use phasesmith_core::{TofBankGeometry, TofError, TofInstrument};
 
 /// Resource limit checked before decoding a legacy instrument file.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -49,6 +49,8 @@ pub struct GsasTofInstrumentData {
     pub bank: usize,
     /// Legacy GSAS profile function number. Currently 1 or 3.
     pub profile_function: usize,
+    /// Parsed fixed bank scattering angle when a `BNKPAR` record is present.
+    pub bank_geometry: Option<TofBankGeometry>,
     /// Source path when read from a file.
     pub source_path: Option<PathBuf>,
 }
@@ -192,6 +194,7 @@ fn parse_inner(
     if icons.len() < 4 {
         return Err(invalid(bank, "ICONS"));
     }
+    let bank_geometry = parse_optional_bank_geometry(text, bank)?;
     let compact_header = format!("INS {bank:>2}PRCF1 ");
     let spaced_header = format!("INS {bank:>2}PRCF  ");
     let compact = text.lines().any(|line| line.starts_with(&compact_header));
@@ -275,6 +278,7 @@ fn parse_inner(
         instrument,
         bank,
         profile_function: function,
+        bank_geometry,
         source_path,
     })
 }
@@ -309,6 +313,44 @@ fn record_values(
         return Err(invalid(bank, record));
     }
     Ok(values)
+}
+
+fn optional_record_values(
+    text: &str,
+    bank: usize,
+    record: &'static str,
+    prefix: &str,
+) -> Result<Option<Vec<f64>>, GsasTofInstrumentIoError> {
+    let Some(line) = text.lines().find(|line| line.starts_with(prefix)) else {
+        return Ok(None);
+    };
+    let values = line[prefix.len()..]
+        .split_whitespace()
+        .map(str::parse::<f64>)
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|_| invalid(bank, record))?;
+    if values.is_empty() || values.iter().any(|value| !value.is_finite()) {
+        return Err(invalid(bank, record));
+    }
+    Ok(Some(values))
+}
+
+fn parse_optional_bank_geometry(
+    text: &str,
+    bank: usize,
+) -> Result<Option<TofBankGeometry>, GsasTofInstrumentIoError> {
+    optional_record_values(text, bank, "BNKPAR", &format!("INS {bank:>2}BNKPAR"))?
+        .map(|values| {
+            if values.len() < 2 {
+                return Err(invalid(bank, "BNKPAR"));
+            }
+            let geometry = TofBankGeometry {
+                two_theta_deg: values[1],
+            };
+            geometry.validate().map_err(|_| invalid(bank, "BNKPAR"))?;
+            Ok(geometry)
+        })
+        .transpose()
 }
 
 fn profile_function(

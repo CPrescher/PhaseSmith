@@ -58,6 +58,25 @@ class FcjGeometry:
 
 
 @dataclass(frozen=True, slots=True)
+class TofBankGeometry:
+    """Facility-neutral fixed geometry for one focused TOF detector bank."""
+
+    two_theta_deg: float
+
+    def __post_init__(self) -> None:
+        """Require a finite scattering angle strictly inside the physical domain."""
+
+        if not np.isfinite(self.two_theta_deg) or not 0.0 < self.two_theta_deg < 180.0:
+            raise ValueError("two_theta_deg must be finite and strictly within (0, 180)")
+
+    @property
+    def theta_radians(self) -> float:
+        """Return the half scattering angle in radians."""
+
+        return float(np.deg2rad(0.5 * self.two_theta_deg))
+
+
+@dataclass(frozen=True, slots=True)
 class TofInstrument:
     """TOF calibration and d-dependent profile coefficients in public units."""
 

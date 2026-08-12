@@ -83,6 +83,7 @@ the navigation.
 | `phasesmith.symmetry` | `SpaceGroup`, `SymmetryOperation`, `PreparedReflectionGenerator` | Exact symmetry, absences, families, and bounded generation. |
 | `phasesmith.scattering` | `XrayNonResonant`, `XrayFixedDispersion`, `NeutronNuclear` | Built-in prepared scattering models. |
 | `phasesmith.intensity_corrections` | Neutral, Bragg–Brentano, and neutron correction models | Explicit integrated-intensity corrections. |
+| `phasesmith.instrument` | `ConstantWavelengthInstrument`, `TofInstrument`, `TofBankGeometry` | Typed profile/calibration and fixed TOF bank geometry. |
 | `phasesmith.sample` | Size, microstrain, and March–Dollase models | Composable sample-physics contributions. |
 | `phasesmith.extensions` | Provider protocols and descriptors | Versioned third-party physics boundary. |
 

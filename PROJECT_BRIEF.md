@@ -1015,8 +1015,14 @@ Python model agrees with an independent NumPy equation and centered finite
 differences. Invalid bank angles fail at the boundary, wavelength derivatives
 are exactly zero, and the existing constant-wavelength structural engine
 rejects this TOF-only correction rather than silently applying it on an angular
-pattern. Typed bank geometry and bounded legacy import remain the next Unit 38a
-slice.
+pattern. Typed bank geometry and bounded legacy import were the next Unit 38a
+slice. That slice is now complete: `TofBankGeometry` owns a strictly validated
+facility-neutral `two_theta_deg`, while the bounded GSAS adapter optionally
+maps the independently documented second `BNKPAR` field. Missing `BNKPAR`
+remains compatible with profile-only imports but cannot satisfy a structural
+request. Checksum-pinned POWGEN bank 2 and LANL bank 2 acceptance runs verify
+the distinct 90.000 and 88.05 degree records. Unit 38a is complete; Unit 38b's
+fused structural TOF calculation is next.
 The historical native-workflow comparison passes both Le Bail parity contracts
 and QARR 1g. Its unchanged QARR 1h acceptance recipe retains the reviewed
 profile-quality failure, rather than having thresholds relaxed. The newer

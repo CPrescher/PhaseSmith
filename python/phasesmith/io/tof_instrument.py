@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from .. import _core
-from ..instrument import TofInstrument
+from ..instrument import TofBankGeometry, TofInstrument
 
 
 @dataclass(frozen=True, slots=True)
@@ -30,6 +30,7 @@ class GsasTofInstrumentData:
     bank: int
     profile_function: int
     source_name: str | None = None
+    bank_geometry: TofBankGeometry | None = None
 
     def __post_init__(self) -> None:
         if not isinstance(self.instrument, TofInstrument):
@@ -38,6 +39,8 @@ class GsasTofInstrumentData:
             raise ValueError("bank must be positive")
         if self.profile_function not in {1, 3}:
             raise ValueError("only GSAS TOF profile functions 1 and 3 are supported")
+        if self.bank_geometry is not None and not isinstance(self.bank_geometry, TofBankGeometry):
+            raise TypeError("bank_geometry must be a TofBankGeometry or None")
 
 
 def read_gsas_tof_instrument(
@@ -70,10 +73,11 @@ def read_gsas_tof_instrument(
             record = _core._read_gsas_tof_instrument_file(str(candidate), *native_arguments)
         else:
             record = _core._parse_gsas_tof_instrument_text(path_or_text, *native_arguments)
-    coefficients, selected_bank, profile_function, source_name = record
+    coefficients, selected_bank, profile_function, source_name, two_theta_deg = record
     return GsasTofInstrumentData(
         TofInstrument(*coefficients),
         int(selected_bank),
         int(profile_function),
         source_name,
+        None if two_theta_deg is None else TofBankGeometry(float(two_theta_deg)),
     )

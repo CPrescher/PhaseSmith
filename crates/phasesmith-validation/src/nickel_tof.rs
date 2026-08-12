@@ -66,6 +66,9 @@ pub fn run_nickel_tof_validation(
         BANK,
         GsasTofInstrumentReadLimits::default(),
     )?;
+    let bank_two_theta_deg = calibration
+        .bank_geometry
+        .map(|geometry| geometry.two_theta_deg);
     let instrument = calibration.instrument;
     let start = imported
         .pattern
@@ -172,6 +175,13 @@ pub fn run_nickel_tof_validation(
         .all(|pair| pair[1].metrics.rwp <= pair[0].metrics.rwp);
     let multibank = run_multibank_geometry(dataset_directory)?;
     let mut checks = vec![
+        check(
+            "tof_nickel_bank_geometry",
+            bank_two_theta_deg.is_some_and(|value| value.to_bits() == 88.05_f64.to_bits()),
+            "The LANL BNKPAR scattering-angle field is imported into the same facility-neutral bank geometry used for POWGEN.",
+            bank_two_theta_deg,
+            "LANL bank 2 two_theta_deg = 88.05",
+        )?,
         check(
             "tof_non_powgen_format",
             imported.format == TofPowderFormat::GsasConstStd

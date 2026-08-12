@@ -172,14 +172,26 @@ first three `PRCF11` values map to
 and `sigma2`. Unsupported coefficients are explicit zeros. Legacy records stop
 at this adapter and do not enter the core instrument model.
 
+When present, the independently documented second `BNKPAR` field is the
+nominal detector-bank scattering angle (the `TTHETA` field in the
+[GSAS manual record specification](https://subversion.xray.aps.anl.gov/EXPGUI/gsas/all/GSAS%20Manual.pdf)).
+The adapter returns it as a validated
+`TofBankGeometry(two_theta_deg=...)` alongside the profile calibration. This
+geometry is deliberately separate from `TofInstrument`: an empirical `DIFC`
+does not uniquely supply a physical angle. Old profile-only files without
+`BNKPAR` remain readable with `bank_geometry=None`; a structural TOF request
+must instead require geometry explicitly. The checksum-pinned POWGEN and LANL
+acceptance datasets exercise `90.000°` and `88.05°`, respectively.
+
 For profile function 1, the first value in each four-value legacy group is
 unused by the supported law: `PRCF 1` values 2--4 map to
 `alpha`/`beta0`/`beta1`, and `PRCF 2` values 2--3 map to `sigma1`/`sigma2`.
 The checksum-pinned LANL nickel tutorial exercises this translation and packed
 constant-step input independently of POWGEN.
 
-Facility-neutral means a beamline can provide reduced center/density arrays and
-the typed 15 coefficients without adopting GSAS filenames. It does not mean
+Facility-neutral means a beamline can provide reduced center/density arrays,
+the typed 15 coefficients, and `TofBankGeometry` without adopting GSAS
+filenames. It does not mean
 that specialized tails, tabulated resolution functions, or every historical
 profile function are silently approximated by this model.
 
