@@ -21,13 +21,7 @@ from ..quantitative import QuantitativePhase, quantitative_phase_analysis
 from ..radiation import BraggBrentanoGeometry, ConstantWavelengthExperiment, WavelengthComponents
 from ..refinement import rietveld
 from ..refinement.background import ChebyshevBackground
-from ..sample import (
-    IsotropicLorentzianMicrostrainBroadening,
-    IsotropicMicrostrainBroadening,
-    IsotropicSizeBroadening,
-    MarchDollasePreferredOrientation,
-    ReciprocalMetric,
-)
+from ..sample import MarchDollasePreferredOrientation, ReciprocalMetric
 from ._rietveld_parity import refine_nonlinear_block, solve_linear_profile_block
 from .real_data import _qarr_displacement_defaults, _qarr_initial_scales
 
@@ -155,8 +149,8 @@ def run_iucr_sodium_citrate_silicon_workflow(
                 float(instrument_record["assumed_goniometer_radius_mm"]), 0.0
             ),
             axial_geometry=FcjGeometry(
-                float(instrument_record["legacy_s_over_l"]) / 2.0,
-                float(instrument_record["legacy_h_over_l"]) / 2.0,
+                float(instrument_record["matched_sh_over_l"]) / 2.0,
+                float(instrument_record["matched_sh_over_l"]) / 2.0,
             ),
         ),
         zero_shift_deg=float(instrument_record["initial_zero_deg"]),
@@ -183,11 +177,9 @@ def run_iucr_sodium_citrate_silicon_workflow(
             intensity_correction=correction,
         )
         structure = _qarr_displacement_defaults(loaded.phases[0].structure)
-        providers: list[Any] = [IsotropicSizeBroadening(250.0, shape_factor=1.0)]
         if phase_id == "sodium_dihydrogen_citrate":
-            providers.extend(
+            physics = CompositePhysicsProvider(
                 (
-                    IsotropicMicrostrainBroadening(1.0e-3),
                     MarchDollasePreferredOrientation(
                         1.0,
                         (0.0, 0.0, 1.0),
@@ -196,12 +188,12 @@ def run_iucr_sodium_citrate_silicon_workflow(
                 )
             )
         else:
-            providers.append(IsotropicLorentzianMicrostrainBroadening(1.0e-3))
+            physics = None
         phases.append(
             replace(
                 loaded.phases[0],
                 structure=structure,
-                physics=CompositePhysicsProvider(tuple(providers)),
+                physics=physics,
             )
         )
 
@@ -292,16 +284,6 @@ def run_iucr_sodium_citrate_silicon_workflow(
     selected_phases, background = solve_linear_profile_block(
         pattern, experiment, selected_phases, background, selected_execution
     )
-    instrument_selection = rietveld.RietveldParameterSelection(
-        phase_scale=False,
-        lattice=False,
-        coordinates=False,
-        occupancy=False,
-        u_iso=False,
-        sample_physics=False,
-        instrument_parameters=("w_deg2", "x_deg", "y_deg"),
-        background=False,
-    )
     sample_selection = rietveld.RietveldParameterSelection(
         phase_scale=False,
         lattice=False,
@@ -313,21 +295,6 @@ def run_iucr_sodium_citrate_silicon_workflow(
     )
     stages = []
     for _ in range(cycles):
-        instrument_stage = refine_nonlinear_block(
-            pattern,
-            experiment,
-            selected_phases,
-            background,
-            instrument_selection,
-            selected_execution,
-            iterations=25,
-            step=0.12,
-        )
-        stages.append(instrument_stage)
-        experiment = instrument_stage.experiment
-        selected_phases, background = solve_linear_profile_block(
-            pattern, experiment, instrument_stage.phases, background, selected_execution
-        )
         sample_stage = refine_nonlinear_block(
             pattern,
             experiment,
@@ -382,7 +349,7 @@ def run_iucr_sodium_citrate_silicon_workflow(
     return IucrSodiumCitrateSiliconResult(
         sample_count=int(x.size),
         reflection_count=sum(phase.reflections.reflection_count for phase in selected_phases),
-        free_parameter_count=11,
+        free_parameter_count=4,
         weight_fractions=fractions,
         legacy_weight_fraction_errors=errors,
         maximum_legacy_weight_fraction_error=max(abs(value) for value in errors.values()),
@@ -411,11 +378,12 @@ def run_iucr_sodium_citrate_silicon_workflow(
         model_qualifications=(
             "March-Dollase (001) is a one-axis stress model, not the deposited "
             "generalized spherical-harmonic correction.",
-            "Stephens anisotropic broadening is represented by transferable isotropic "
-            "size and microstrain only.",
+            "All phase size/strain terms are fixed out because the deposited Stephens "
+            "anisotropy has no identifiable isotropic common subset in this pattern.",
             manifest["translation_diagnostics"]["geometry_assumption"],
+            manifest["translation_diagnostics"]["axial_geometry_translation"],
             "The deposited Suortti surface-roughness correction is omitted.",
-            "Silicon-profile U and V remain fixed; only W, X, and Y are refined.",
+            "The complete silicon-derived U/V/W/X/Y profile remains fixed.",
         ),
         termination_reasons=tuple(stage.termination_reason.value for stage in stages),
         elapsed_seconds=perf_counter() - started,

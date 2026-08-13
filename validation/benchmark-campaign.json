@@ -157,6 +157,18 @@
       "outcome": "diagnostic",
       "oracle_revision_paths": ["pinned_gsasii_revision"],
       "assertions": []
+    },
+    {
+      "case_id": "iucr-sodium-citrate-silicon",
+      "title": "IUCr sodium citrate preferred-orientation holdout with Si 640b",
+      "dataset_id": "iucr-sodium-dihydrogen-citrate-si-standard",
+      "driver": "benchmarks/compare_gsasii_iucr_sodium_citrate_silicon.py",
+      "arguments": ["--gsas-cycles", "12", "--phasesmith-cycles", "2"],
+      "outcome": "pass",
+      "oracle_revision_paths": ["pinned_gsasii_revision"],
+      "assertions": [
+        {"path": "cross_implementation_validation.status", "equals": "passed"}
+      ]
     }
   ]
 }

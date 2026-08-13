@@ -1,0 +1,407 @@
+{
+  "common_model": {
+    "data_selection": {
+      "refined_sample_count": 4452,
+      "source_index_interval_inclusive": [
+        248,
+        4699
+      ],
+      "source_sample_count": 4701,
+      "two_theta_max_deg": 99.98338600000001,
+      "two_theta_min_deg": 10.010872
+    },
+    "fixed_parameters": [
+      "U/V/W/X/Y and matched SH/L=0.0187",
+      "instrument zero and Si lattice",
+      "Si-calibrated specimen displacement",
+      "all phase size/strain parameters"
+    ],
+    "instrument": {
+      "assumed_goniometer_radius_mm": 141.5,
+      "device": "Bruker D2 Phaser",
+      "geometry": "reflection, flat specimen",
+      "initial_zero_deg": -0.0448,
+      "k_alpha2_over_k_alpha1": 0.5,
+      "legacy_h_over_l": 0.0005,
+      "legacy_s_over_l": 0.0182,
+      "matched_sh_over_l": 0.0187,
+      "polarization_fraction": 0.5,
+      "silicon_profile": {
+        "U": 2.336,
+        "V": 0.0,
+        "W": 3.777,
+        "X": 2.718,
+        "Y": 15.991
+      },
+      "wavelengths_angstrom": [
+        1.540629,
+        1.544451
+      ]
+    },
+    "refined_parameters": [
+      "two phase scales",
+      "one constant residual background",
+      "sodium-citrate March-Dollase (001) ratio"
+    ],
+    "silicon_standard": {
+      "calibration_windows_two_theta_deg": [
+        [
+          46.95,
+          47.78
+        ],
+        [
+          55.77,
+          56.63
+        ],
+        [
+          68.78,
+          69.68
+        ]
+      ],
+      "deposited_weight_fraction": 0.1874,
+      "excluded_reflections": {
+        "111": "overlaps the dominant citrate peak near 28.28 degrees"
+      },
+      "fixed_lattice_a_angstrom": 5.43105,
+      "material": "NIST SRM 640b"
+    },
+    "translation_diagnostics": {
+      "axial_geometry_translation": "The deposited unequal S/L=0.0182 and H/L=0.0005 ratios are compressed to matched SH/L=0.0187. PhaseSmith uses the documented equal-height mapping sample/radius=detector/radius=SH/L/2 so the pinned GSAS-II comparator receives the same combined parameter.",
+      "geometry_assumption": "The source does not deposit a goniometer radius. The holdout uses 141.5 mm for the Bruker D2 Phaser; specimen displacement in millimetres is conditional on that disclosed value.",
+      "normalized_silicon_setting": "The deposited silicon structure is normalized to IT 227, F d -3 m :1, with Si at (1/8,1/8,1/8).",
+      "review_rule": "Source-only terms remain disclosed and unmodified; a common-model workflow must identify each approximation before claiming parity.",
+      "source_only_terms": [
+        "main-phase GSAS profile function 4 with Stephens anisotropic broadening",
+        "main-phase generalized spherical-harmonic preferred orientation",
+        "Suortti surface-roughness correction with coefficients 0.34 and 0.70",
+        "phase-specific legacy profile functions"
+      ]
+    }
+  },
+  "cross_implementation_validation": {
+    "checks": {
+      "march_ratio_delta": {
+        "limit": 0.01,
+        "measured": 0.0061400534794481265,
+        "passed": true
+      },
+      "phase_fraction_delta": {
+        "limit": 0.01,
+        "measured": 0.005216804358246785,
+        "passed": true
+      },
+      "poisson_rwp_delta": {
+        "limit": 0.01,
+        "measured": 0.0076165873512062665,
+        "passed": true
+      },
+      "profile_correlation_delta": {
+        "limit": 0.0075,
+        "measured": 0.005915779905718566,
+        "passed": true
+      },
+      "sample_count_equal": {
+        "limit": true,
+        "measured": true,
+        "passed": true
+      },
+      "sample_displacement_delta_mm": {
+        "limit": 0.1,
+        "measured": 0.061264055933555495,
+        "passed": true
+      },
+      "silicon_calibration_rwp_delta": {
+        "limit": 0.005,
+        "measured": 0.0014165252820428492,
+        "passed": true
+      }
+    },
+    "gsasii_march_ratio": 0.6323695954395467,
+    "status": "passed"
+  },
+  "gsasii": {
+    "legacy_curve_poisson_rwp": 0.08432524795559576,
+    "legacy_curve_profile_correlation": 0.9937647909171597,
+    "legacy_weight_fraction_errors": {
+      "silicon": 0.02911031858335736,
+      "sodium_dihydrogen_citrate": -0.02911031858335722
+    },
+    "maximum_legacy_weight_fraction_error": 0.02911031858335736,
+    "poisson_rwp": 0.18945026167995824,
+    "profile_correlation": 0.9499712917450116,
+    "refined_hap": {
+      "silicon": {
+        "Mustrain": [
+          "isotropic",
+          [
+            0.0,
+            1000.0,
+            0.0
+          ],
+          [
+            false,
+            false,
+            false
+          ],
+          [
+            0,
+            0,
+            1
+          ],
+          [
+            0.01,
+            0.01
+          ],
+          [
+            false,
+            false
+          ]
+        ],
+        "Pref.Ori.": [
+          "MD",
+          1.0,
+          false,
+          [
+            0,
+            0,
+            1
+          ],
+          0,
+          {},
+          [],
+          0.1
+        ],
+        "Scale": [
+          523.7528972852872,
+          true
+        ],
+        "Size": [
+          "isotropic",
+          [
+            10.0,
+            1.0,
+            1.0
+          ],
+          [
+            false,
+            false,
+            false
+          ],
+          [
+            0,
+            0,
+            1
+          ],
+          [
+            1.0,
+            1.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
+          ]
+        ]
+      },
+      "sodium_dihydrogen_citrate": {
+        "Mustrain": [
+          "isotropic",
+          [
+            0.0,
+            1000.0,
+            0.0
+          ],
+          [
+            false,
+            false,
+            false
+          ],
+          [
+            0,
+            0,
+            1
+          ],
+          [
+            0.01,
+            0.01,
+            0.01,
+            0.01,
+            0.01,
+            0.01
+          ],
+          [
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
+          ]
+        ],
+        "Pref.Ori.": [
+          "MD",
+          0.6323695954395467,
+          true,
+          [
+            0,
+            0,
+            1
+          ],
+          0,
+          {},
+          [],
+          0.1
+        ],
+        "Scale": [
+          497.24932033848484,
+          true
+        ],
+        "Size": [
+          "isotropic",
+          [
+            10.0,
+            1.0,
+            1.0
+          ],
+          [
+            false,
+            false,
+            false
+          ],
+          [
+            0,
+            0,
+            1
+          ],
+          [
+            1.0,
+            1.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
+          ]
+        ]
+      }
+    },
+    "refined_instrument": {
+      "SH/L": 0.0187,
+      "U": 2.336,
+      "V": 0.0,
+      "W": 3.777,
+      "X": 2.718,
+      "Y": 15.991,
+      "Zero": -0.0448
+    },
+    "revision": "c0bc79b259cdf0065480b5fbd57674ddf12c4a23",
+    "sample_count": 4452,
+    "schema_version": 1,
+    "scope": "iucr_sodium_dihydrogen_citrate_silicon_holdout",
+    "silicon_calibration": {
+      "calibrated_sample_displacement_mm": -0.2010153046011294,
+      "poisson_rwp": 0.12032917800249136,
+      "sample_count": 128,
+      "windows_two_theta_deg": [
+        [
+          46.95,
+          47.78
+        ],
+        [
+          55.77,
+          56.63
+        ],
+        [
+          68.78,
+          69.68
+        ]
+      ]
+    },
+    "stage_poisson_rwp": {
+      "preferred_orientation": 0.18945026167995824,
+      "scale_background": 0.22585132832431098,
+      "silicon_displacement_calibration": 0.12032917800249136,
+      "silicon_scale_background": 0.5478233011032254
+    },
+    "weight_fractions": {
+      "silicon": 0.21651031858335737,
+      "sodium_dihydrogen_citrate": 0.7834896814166428
+    }
+  },
+  "interpretation": [
+    "Both programs receive the same observed counts, fixed legacy background, Cu doublet, silicon-derived profile, equal-height SH/L, structures, and March-Dollase (001) stress model.",
+    "All isotropic sample-width refinement is excluded because trial runs made instrument/sample partitions non-identifiable and drove GSAS-II strain outside its physical domain.",
+    "Agreement between the two common-subset fits is a preferred-orientation parity result, not equivalence to the deposited generalized spherical-harmonic, Stephens-anisotropy, and Suortti-roughness refinement."
+  ],
+  "legacy_gsas_reference": {
+    "profile_correlation": 0.9937647909171597,
+    "rexp": 0.0244,
+    "rp": 0.06315980736619804,
+    "rwp": 0.08432524795559576,
+    "weight_fractions": {
+      "silicon": 0.1874,
+      "sodium_dihydrogen_citrate": 0.8126
+    }
+  },
+  "phasesmith": {
+    "calibrated_sample_displacement_mm": -0.1397512486675739,
+    "elapsed_seconds": 1.684252082835883,
+    "free_parameter_count": 4,
+    "legacy_curve_poisson_rwp": 0.08432524795559576,
+    "legacy_curve_profile_correlation": 0.9937647909171597,
+    "legacy_weight_fraction_errors": {
+      "silicon": 0.03432712294160409,
+      "sodium_dihydrogen_citrate": -0.034327122941604005
+    },
+    "maximum_legacy_weight_fraction_error": 0.03432712294160409,
+    "model_qualifications": [
+      "March-Dollase (001) is a one-axis stress model, not the deposited generalized spherical-harmonic correction.",
+      "All phase size/strain terms are fixed out because the deposited Stephens anisotropy has no identifiable isotropic common subset in this pattern.",
+      "The source does not deposit a goniometer radius. The holdout uses 141.5 mm for the Bruker D2 Phaser; specimen displacement in millimetres is conditional on that disclosed value.",
+      "The deposited unequal S/L=0.0182 and H/L=0.0005 ratios are compressed to matched SH/L=0.0187. PhaseSmith uses the documented equal-height mapping sample/radius=detector/radius=SH/L/2 so the pinned GSAS-II comparator receives the same combined parameter.",
+      "The deposited Suortti surface-roughness correction is omitted.",
+      "The complete silicon-derived U/V/W/X/Y profile remains fixed."
+    ],
+    "poisson_rwp": 0.18183367432875197,
+    "profile_correlation": 0.9558870716507302,
+    "refined_instrument": {
+      "U": 2.336,
+      "V": 0.0,
+      "W": 3.777,
+      "X": 2.718,
+      "Y": 15.991,
+      "Zero": -0.0448
+    },
+    "refined_march_ratio": 0.6385096489189949,
+    "reflection_count": 504,
+    "sample_count": 4452,
+    "silicon_calibration_poisson_rwp": 0.12174570328453421,
+    "silicon_calibration_sample_count": 128,
+    "termination_reasons": [
+      "converged",
+      "converged"
+    ],
+    "weight_fractions": {
+      "silicon": 0.2217271229416041,
+      "sodium_dihydrogen_citrate": 0.778272877058396
+    }
+  },
+  "pinned_gsasii_revision": "c0bc79b259cdf0065480b5fbd57674ddf12c4a23",
+  "schema_version": 1,
+  "scope": "iucr_sodium_citrate_silicon_preferred_orientation_comparison",
+  "source_dataset_id": "iucr-sodium-dihydrogen-citrate-si-standard"
+}

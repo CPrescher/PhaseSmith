@@ -115,6 +115,7 @@ def convert_iucr_sodium_citrate_silicon_bundle(source: str | Path, destination: 
             "initial_zero_deg": -0.04480,
             "legacy_s_over_l": 0.0182,
             "legacy_h_over_l": 0.0005,
+            "matched_sh_over_l": 0.0187,
             "assumed_goniometer_radius_mm": 141.5,
             "silicon_profile": {
                 "U": 2.336,
@@ -171,6 +172,12 @@ def convert_iucr_sodium_citrate_silicon_bundle(source: str | Path, destination: 
                 "The source does not deposit a goniometer radius. The holdout uses "
                 "141.5 mm for the Bruker D2 Phaser; specimen displacement in millimetres "
                 "is conditional on that disclosed value."
+            ),
+            "axial_geometry_translation": (
+                "The deposited unequal S/L=0.0182 and H/L=0.0005 ratios are "
+                "compressed to matched SH/L=0.0187. PhaseSmith uses the documented "
+                "equal-height mapping sample/radius=detector/radius=SH/L/2 so the "
+                "pinned GSAS-II comparator receives the same combined parameter."
             ),
             "review_rule": (
                 "Source-only terms remain disclosed and unmodified; a common-model "

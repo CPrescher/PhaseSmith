@@ -112,7 +112,7 @@ VALIDATION_DATASETS: tuple[ValidationDataset, ...] = (
             ),
         ),
         purpose="holdout",
-        expected_status="blocked",
+        expected_status="passed",
     ),
     ValidationDataset(
         dataset_id="iucr-dicesium-citrate-si-standard",

@@ -69,6 +69,7 @@ predeclared wider workflow tolerance passed; it is not strict model parity.
 | Bath Cs-LTL | 15.062 | 12.080 | capability failure | Released legacy GSAS curve is 3.492%; same conversion limitation. |
 | XRED TiO2 | 22.256 | 44.801 | diagnostic only | Unknown instrument/composition invalidate residual parity; phase fractions agree. |
 | IUCr citrate + NIST Si 640b | 10.180 | 8.894 | qualified capability pass | Deposited legacy GSAS is 6.226%; displacement-anchored Si is 14.593/14.621/13.02 wt% in PhaseSmith/GSAS-II/legacy. |
+| IUCr sodium citrate + NIST Si 640b | 18.183 | 18.945 | qualified holdout pass | All seven common-subset gates pass; Si is 22.173/21.651/18.74 wt% in PhaseSmith/GSAS-II/deposited GSAS. |
 
 ### IUCr dicesium citrate with NIST silicon internal standard
 
@@ -255,19 +256,19 @@ The initial search missed the multi-block supplementary CIF for the IUCr
 dicesium hydrogen citrate study. It does combine raw laboratory counts, all
 phase structures, the Si 640b fraction, instrument metadata, and a deposited
 legacy-GSAS result, and is now onboarded. The related sodium dihydrogen citrate
-polymorph-II deposit is also checksum-registered and converted. Its first
-native two-cycle common-model holdout returns 15.722% Poisson Rwp, 0.97163
-profile correlation, and 21.509 wt% Si against the deposited 8.433%, 0.99376,
-and 18.74 wt%. This is a blocked intermediate result, not a PhaseSmith/GSAS-II
-parity claim: the common model substitutes one March--Dollase (001) term for
-the source's generalized spherical harmonics and omits Stephens anisotropic
-broadening and Suortti surface roughness. The refined Y coefficient is negative,
-but the observable `X/cos(theta) + Y tan(theta)` Lorentzian width remains
-strictly positive over the complete fitted range; the regression gates that
-width rather than an individual coefficient sign. A matched pinned-GSAS-II run
-is the next gate. The remaining queued deposits are anhydrous tripotassium citrate
-and the trirubidium citrate anhydrous/monohydrate pair; each requires separate
-review because orientation, hydration, and phase-specific profiles differ.
+polymorph-II deposit is also checksum-registered, converted, and compared with
+the exact pinned GSAS-II revision. Trial refinements correctly rejected two
+non-identifiable models: free W/X/Y made the oracle's standalone Lorentzian
+width nonphysical, while fixed-profile isotropic width refinement drove its Si
+microstrain negative. The accepted preferred-orientation common subset fixes
+those terms and refines only scales, a constant residual, and March--Dollase
+(001). PhaseSmith/GSAS-II return 18.183%/18.945% Rwp, 0.95589/0.94997
+correlation, 22.173%/21.651% Si, and March ratios 0.63851/0.63237. All seven
+cross-implementation gates pass. The deposited 8.433% and 18.74 wt% Si remain
+the richer-model reference, not a parity target, because generalized spherical
+harmonics, Stephens anisotropy, and Suortti roughness are omitted. The next
+queued deposit is anhydrous tripotassium citrate, followed by the trirubidium
+citrate anhydrous/monohydrate pair.
 
 ## Recommended priorities
 
@@ -281,9 +282,10 @@ review because orientation, hydration, and phase-specific profiles differ.
    optics, unsupported legacy records, origin choices, and assumed radiation
    models before refinement. Bath and XRED show that this will improve user
    outcomes more than another profile term.
-3. **Expand the citrate/Si holdout series.** Reuse the narrow reviewed adapter
-   only where the related IUCr deposits expose the same complete counts,
-   structures, instrument, standard fraction, and deposited-fit contract.
+3. **Expand the citrate/Si holdout series.** The sodium case now passes its
+   restricted preferred-orientation common subset. Proceed to potassium, then
+   rubidium, reusing the narrow adapter only where the deposits expose the same
+   complete counts, structures, instrument, standard fraction, and fit contract.
 4. **Keep large-FCJ parity as a monitored holdout.** Do not replace the current
    published PhaseSmith mapping merely to mimic one pinned GSAS-II
    discretization. Reconsider only if multiple normal-use datasets fail for the

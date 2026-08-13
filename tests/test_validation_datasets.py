@@ -108,7 +108,7 @@ def test_reviewed_nonpassing_outcomes_are_explicit() -> None:
     assert (
         by_id["iucr-sodium-dihydrogen-citrate-si-standard"].purpose,
         by_id["iucr-sodium-dihydrogen-citrate-si-standard"].expected_status,
-    ) == ("holdout", "blocked")
+    ) == ("holdout", "passed")
 
 
 @pytest.mark.parametrize(

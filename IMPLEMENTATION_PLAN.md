@@ -1694,7 +1694,7 @@ belongs in production. Failed transfer remains a valid outcome; it must not be
 converted into a production feature by tuning against one specimen.
 
 Unit 29's campaign-orchestration slice is complete. The checked-in version-1
-manifest composes fourteen existing real-data comparison and diagnostic
+manifest composes fifteen existing real-data comparison and diagnostic
 drivers without duplicating their numerical logic. The runner validates the
 exact GSAS-II checkout, registered dataset bytes and hashes, result-carried
 oracle revisions, and case-specific scientific assertions, then writes one
@@ -1702,10 +1702,12 @@ finite aggregate JSON record while refusing to overwrite an existing output by
 default. Focused case selection and continue-on-error reporting support review;
 no reviewed golden is silently regenerated. The sodium-dihydrogen-citrate plus
 Si 640b preferred-orientation holdout is now checksum-registered, converted,
-and exercised by a native common-model workflow. The two-cycle baseline keeps
-Si-profile U/V and the deposited zero fixed, calibrates specimen displacement
-from three Si windows, and refines W/X/Y, isotropic phase widths, and one
-March--Dollase (001) term. Its 15.722% Rwp and 2.769 percentage-point maximum
-QPA delta remain blocked pending a matched pinned-GSAS-II run. The next slices
-are that oracle comparison and campaign registration, followed by the
-independently reviewed potassium/rubidium citrate series.
+and accepted through a matched pinned-GSAS-II comparison. The reviewed model
+fixes U/V/W/X/Y, equal-height SH/L=0.0187, zero, calibrated displacement, and
+all phase size/strain terms; it refines only scales, a constant residual, and
+March--Dollase (001). PhaseSmith/GSAS-II Rwp is 18.183%/18.945%, the Si-fraction
+delta is 0.522 percentage points, and the March-ratio delta is 0.00614. All
+seven comparison gates pass, while the residual gap to deposited GSAS remains
+qualified by the omitted spherical-harmonic, Stephens, and Suortti terms. The
+next scientific slice is the independently reviewed potassium citrate holdout,
+followed by the rubidium citrate series.

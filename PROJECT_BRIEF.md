@@ -1292,14 +1292,17 @@ reviewed, and no golden result is regenerated implicitly. The next Unit-29
 scientific slice is the sodium-dihydrogen-citrate plus Si 640b holdout. Its
 official IUCr supplement is checksum-registered and the reviewed converter
 extracts the 4,452-point deposited range, both structures, raw counts, and
-legacy calculation. The first native common-model pass fixes the deposited
-zero, uses fixed-cell Si to calibrate specimen displacement, and refines a
-single March--Dollase (001) stress term. It reaches 15.722% Poisson Rwp,
-0.97163 profile correlation, and 21.509 wt% Si versus 18.74 wt% deposited.
-This is not yet a parity result: the deposited spherical-harmonic orientation,
-Stephens anisotropic width, and Suortti surface-roughness terms are explicitly
-outside the common model. A pinned GSAS-II common-subset comparison is the next
-review gate before this holdout can move from blocked to passed or failed.
+legacy calculation. The accepted common subset fixes the deposited zero and
+complete silicon-derived U/V/W/X/Y profile, compresses the unequal source axial
+ratios to matched equal-height SH/L=0.0187, calibrates specimen displacement
+from fixed-cell Si, and refines only linear scales/background plus one
+March--Dollase (001) ratio. PhaseSmith and pinned GSAS-II respectively reach
+18.183%/18.945% Poisson Rwp, 0.95589/0.94997 profile correlation,
+22.173%/21.651% Si, and March ratios 0.63851/0.63237. All seven predeclared
+cross-implementation gates pass. This is preferred-orientation common-subset
+parity, not equivalence to the deposited 8.433% Rwp and 18.74 wt% Si: the
+source's spherical-harmonic orientation, Stephens anisotropy, and Suortti
+surface roughness remain explicitly outside the transferable model.
 
 ## Quality bar
 

@@ -240,6 +240,12 @@ def repository_revision() -> str | None:
     return revision if completed.returncode == 0 and len(revision) == 40 else None
 
 
+def driver_interpreter() -> Path:
+    """Return the active launcher without resolving a virtualenv symlink."""
+
+    return Path(sys.executable).absolute()
+
+
 def _verify_dataset(dataset_id: str, directory: Path, fetch: bool) -> None:
     from phasesmith.validation import fetch_validation_dataset, verify_validation_dataset
 
@@ -380,7 +386,9 @@ def main() -> int:
             "set --gsas-python and --gsas-root or their documented environment variables"
         )
     gsas_python = arguments.gsas_python.resolve()
-    driver_python = Path(sys.executable).resolve()
+    # Preserve a virtual-environment launcher instead of resolving its symlink
+    # to the base interpreter, which would discard that environment's packages.
+    driver_python = driver_interpreter()
     gsas_root = arguments.gsas_root.resolve()
     binary_directory = arguments.binary_dir.resolve() if arguments.binary_dir else None
     if not gsas_python.is_file():

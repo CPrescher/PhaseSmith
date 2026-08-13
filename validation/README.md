@@ -231,6 +231,19 @@ have deliberately different meanings:
   and 4.217% neutron Rwp with profile correlations above 0.995. The neutron
   position stage refines typed Debye--Scherrer X/Y displacement at a fixed
   650 mm radius; the report records the geometry and units.
+- `iucr-sodium-dihydrogen-citrate-si-standard` is the preferred-orientation
+  common-subset holdout. Its official IUCr pdCIF contributes 4,701 raw counts,
+  a contiguous 4,452-point deposited range, both structures, the Cu doublet,
+  and the deposited GSAS curve. The converter recomputes deposited
+  `Rwp=0.08432525` and pins every source byte. The accepted comparison fixes
+  the complete silicon-derived U/V/W/X/Y profile, equal-height `SH/L=0.0187`,
+  calibrated displacement, and all size/strain terms; it refines phase scales,
+  one residual constant, and March--Dollase (001). PhaseSmith/GSAS-II return
+  `Rwp=0.18183/0.18945`, correlations `0.95589/0.94997`, Si fractions
+  `0.22173/0.21651`, and March ratios `0.63851/0.63237`. All seven
+  cross-implementation gates pass. The deposited 18.74 wt% Si and 8.433% Rwp
+  remain richer-model references because spherical-harmonic orientation,
+  Stephens anisotropy, and Suortti roughness are outside this common subset.
 
 The QARR checkpoint evaluates supplied CIF anisotropic displacement tensors
 directly and keeps them fixed; sites without displacement values start from a
@@ -248,6 +261,8 @@ The PbSO4 patterns, instrument files, CIF, and staged recipe come from the
 commit-pinned official [combined-refinement tutorial](https://github.com/AdvancedPhotonSource/GSAS-II-Tutorials/blob/e2485148a3d7ee4757239b1ba40653f1f715bba5/CWCombined/Combined%20refinement.htm).
 The Echidna pattern is deposited in the
 [ANSTO powder-diffraction Zenodo record](https://zenodo.org/records/14286343).
+The sodium-citrate/Si holdout comes from the official
+[IUCr article and supplementary pdCIF](https://journals.iucr.org/e/issues/2016/06/00/hb7585/index.html).
 The LaB6 certification scans and reference fits come from the official
 [NIST SRM 660c data release](https://data.nist.gov/od/id/mds2-2315).
 The TOF bank and instrument parameters come from the commit-pinned official
