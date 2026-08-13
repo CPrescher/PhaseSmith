@@ -17,6 +17,7 @@ def test_registry_has_unique_stable_ids_and_pinned_files() -> None:
         "iucr-qarr-1h",
         "iucr-dicesium-citrate-si-standard",
         "iucr-sodium-dihydrogen-citrate-si-standard",
+        "iucr-tripotassium-citrate-si-standard",
         "lanl-nickel-tof",
         "nist-srm660c-lab6-xray",
         "powgen-lab6-tof-calibration",
@@ -109,6 +110,10 @@ def test_reviewed_nonpassing_outcomes_are_explicit() -> None:
         by_id["iucr-sodium-dihydrogen-citrate-si-standard"].purpose,
         by_id["iucr-sodium-dihydrogen-citrate-si-standard"].expected_status,
     ) == ("holdout", "passed")
+    assert (
+        by_id["iucr-tripotassium-citrate-si-standard"].purpose,
+        by_id["iucr-tripotassium-citrate-si-standard"].expected_status,
+    ) == ("holdout", "blocked")
 
 
 @pytest.mark.parametrize(
