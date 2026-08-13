@@ -72,9 +72,7 @@ class TofLeBailPhase:
         if indices.shape != (len(ids), 3):
             raise ValueError("hkl must have shape (reflection_count, 3)")
         spacing = _float_vector(d_spacing_angstrom, "d_spacing_angstrom")
-        intensity = _float_vector(
-            integrated_intensity, "integrated_intensity", nonnegative=True
-        )
+        intensity = _float_vector(integrated_intensity, "integrated_intensity", nonnegative=True)
         if spacing.shape != (len(ids),) or np.any(spacing <= 0.0):
             raise ValueError("d_spacing_angstrom must be positive and match reflection_ids")
         if intensity.shape != (len(ids),):
@@ -175,9 +173,7 @@ class TofLeBailInput:
             raise ValueError("phases must contain at least one TofLeBailPhase")
         if len({phase.phase_id for phase in phases}) != len(phases):
             raise ValueError("phase IDs must be unique")
-        if self.background is not None and not isinstance(
-            self.background, TofChebyshevBackground
-        ):
+        if self.background is not None and not isinstance(self.background, TofChebyshevBackground):
             raise TypeError("background must be a TofChebyshevBackground or None")
         object.__setattr__(self, "phases", phases)
 
@@ -205,9 +201,7 @@ class TofLeBailInput:
             bank=bank,
             limits=powder_limits,
         )
-        calibration = read_gsas_tof_instrument(
-            instrument_path, bank=bank, limits=instrument_limits
-        )
+        calibration = read_gsas_tof_instrument(instrument_path, bank=bank, limits=instrument_limits)
         pattern = powder.to_pattern(background=fixed_background)
         structure = read_cif(cif_path).structure
         phase = TofLeBailPhase.from_structure(

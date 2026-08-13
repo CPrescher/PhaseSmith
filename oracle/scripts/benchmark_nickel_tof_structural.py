@@ -194,9 +194,7 @@ def run_workflow(
             histogram.name: projected_hap_scale(histogram) for histogram in histograms
         }
         for histogram in histograms:
-            phase.data["Histograms"][histogram.name]["Scale"][0] = starting_scales[
-                histogram.name
-            ]
+            phase.data["Histograms"][histogram.name]["Scale"][0] = starting_scales[histogram.name]
         phase.set_HAP_refinements({"Scale": True})
         project.set_Controls("cycles", cycles)
         project.refine(makeBack=False)

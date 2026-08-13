@@ -126,9 +126,7 @@ def test_tof_reader_preserves_microseconds_and_slog_bin_semantics() -> None:
 
 def test_tof_reader_accepts_packed_const_std_and_plain_center_columns() -> None:
     packed = read_tof_powder_data(
-        "Packed TOF example\n"
-        "BANK 2 3 1 CONST 1000 2.5 0 0\n"
-        "     100 2    50       0\n",
+        "Packed TOF example\nBANK 2 3 1 CONST 1000 2.5 0 0\n     100 2    50       0\n",
         bank=2,
     )
     assert packed.format == "gsas_const_std"

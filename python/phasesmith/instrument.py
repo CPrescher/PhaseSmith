@@ -151,15 +151,9 @@ class TofIncidentSpectrum:
         inverse_time2 = inverse_time * inverse_time
         x = 2.0 * inverse_time - 1.0
         d_x_d_time_ms = -2.0 * inverse_time2
-        maxwell = (
-            coefficients[1]
-            * inverse_time**5
-            * np.exp(-coefficients[2] * inverse_time2)
-        )
+        maxwell = coefficients[1] * inverse_time**5 * np.exp(-coefficients[2] * inverse_time2)
         values = coefficients[0] + maxwell
-        derivatives_ms = maxwell * (
-            -5.0 * inverse_time + 2.0 * coefficients[2] * inverse_time**3
-        )
+        derivatives_ms = maxwell * (-5.0 * inverse_time + 2.0 * coefficients[2] * inverse_time**3)
         previous = np.ones_like(x)
         d_previous = np.zeros_like(x)
         current = x.copy()
@@ -167,9 +161,7 @@ class TofIncidentSpectrum:
         for index, coefficient in enumerate(coefficients[3:]):
             if index > 0:
                 next_polynomial = 2.0 * x * current - previous
-                next_derivative = 2.0 * (
-                    d_x_d_time_ms * current + x * d_current
-                ) - d_previous
+                next_derivative = 2.0 * (d_x_d_time_ms * current + x * d_current) - d_previous
                 previous, current = current, next_polynomial
                 d_previous, d_current = d_current, next_derivative
             values = values + coefficient * current
@@ -189,9 +181,7 @@ class TofIncidentSpectrum:
         return TofPowderPattern(
             pattern.tof_us,
             observed_y=pattern.observed_y / intensity,
-            uncertainty=None
-            if pattern.uncertainty is None
-            else pattern.uncertainty / intensity,
+            uncertainty=None if pattern.uncertainty is None else pattern.uncertainty / intensity,
             mask=pattern.mask,
             background=pattern.background / intensity,
         )

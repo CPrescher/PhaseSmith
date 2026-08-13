@@ -229,10 +229,7 @@ def test_gsas_bank_view_selects_the_numbered_block_and_preserves_preamble(
     GSAS_BANK_VIEW.write_gsas_bank_view(source, 3, destination)
 
     assert destination.read_text(encoding="latin-1") == (
-        "fixture title\n"
-        "# provenance\n"
-        "BANK  3  2  1 CONST 0 1 0 0\n"
-        "  bank three\n"
+        "fixture title\n# provenance\nBANK  3  2  1 CONST 0 1 0 0\n  bank three\n"
     )
     with pytest.raises(RuntimeError, match="BANK 4 is absent"):
         GSAS_BANK_VIEW.write_gsas_bank_view(source, 4, destination)

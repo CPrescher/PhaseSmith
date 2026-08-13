@@ -542,9 +542,7 @@ def profile_tof(
             delta: float, radius: float, rate: float, *, left_side: bool
         ) -> tuple[tuple[float, NDArray[np.float64]], tuple[float, NDArray[np.float64]]]:
             low_sign, high_sign = (
-                (-radius - delta, radius - delta)
-                if left_side
-                else (delta - radius, delta + radius)
+                (-radius - delta, radius - delta) if left_side else (delta - radius, delta + radius)
             )
             low_derivative = np.zeros(5)
             high_derivative = np.zeros(5)

@@ -198,9 +198,7 @@ def test_tof_progress_checkpoint_resume_and_cancellation_are_public() -> None:
         TofLeBailOptions(cycles=4, execution=execution),
     )
     np.testing.assert_array_equal(resumed.y, uninterrupted.y)
-    np.testing.assert_array_equal(
-        resumed.integrated_intensity, uninterrupted.integrated_intensity
-    )
+    np.testing.assert_array_equal(resumed.integrated_intensity, uninterrupted.integrated_intensity)
     assert [item.iteration for item in resumed.history] == [1, 2, 3, 4]
     np.testing.assert_array_equal(
         [item.metrics.rwp for item in resumed.history],

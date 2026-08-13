@@ -78,8 +78,7 @@ _POWGEN_TOF_SOURCE = (
     "e2485148a3d7ee4757239b1ba40653f1f715bba5/TOF%20Calibration/data"
 )
 _LANL_NICKEL_TOF_SOURCE = (
-    "https://subversion.xray.aps.anl.gov/EXPGUI/!svn/bc/1253/"
-    "tutorials/tutorial1"
+    "https://subversion.xray.aps.anl.gov/EXPGUI/!svn/bc/1253/tutorials/tutorial1"
 )
 _ROWLES_QPA_SOURCE = "https://ddfe.curtin.edu.au/5f44ad65411cc"
 _BATH_LTL_SOURCE = "https://researchdata.bath.ac.uk/648"

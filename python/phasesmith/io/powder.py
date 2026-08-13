@@ -119,9 +119,7 @@ class TofPowderData:
                 raise ValueError("uncertainty must match tof_us")
             if not np.isfinite(self.uncertainty).all() or np.any(self.uncertainty <= 0.0):
                 raise ValueError("uncertainty must contain only finite positive values")
-        if self.mask is not None and (
-            self.mask.dtype != np.bool_ or self.mask.shape != (count,)
-        ):
+        if self.mask is not None and (self.mask.dtype != np.bool_ or self.mask.shape != (count,)):
             raise ValueError("mask must be a one-dimensional boolean array matching tof_us")
         for array in (self.tof_us, self.observed_y, self.uncertainty, self.mask):
             if array is not None:
@@ -205,9 +203,7 @@ def read_tof_powder_data(
     if not isinstance(selected_limits, PowderReadLimits):
         raise TypeError("limits must be PowderReadLimits")
     if format not in {"auto", "columns", "gsas_slog_fxye", "gsas_const_std"}:
-        raise ValueError(
-            "format must be 'auto', 'columns', 'gsas_slog_fxye', or 'gsas_const_std'"
-        )
+        raise ValueError("format must be 'auto', 'columns', 'gsas_slog_fxye', or 'gsas_const_std'")
     if isinstance(bank, bool) or not isinstance(bank, int) or bank <= 0:
         raise ValueError("bank must be a positive integer")
     native_arguments = (format, bank, selected_limits.max_bytes, selected_limits.max_rows)

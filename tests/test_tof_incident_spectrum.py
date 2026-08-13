@@ -29,8 +29,7 @@ def test_numpy_equation_and_derivative_match_closed_form_differences() -> None:
 
     step_us = 1.0e-3
     finite = (
-        spectrum.evaluate(tof_us + step_us).values
-        - spectrum.evaluate(tof_us - step_us).values
+        spectrum.evaluate(tof_us + step_us).values - spectrum.evaluate(tof_us - step_us).values
     ) / (2.0 * step_us)
     np.testing.assert_allclose(actual.d_values_d_tof_us, finite, rtol=2e-8, atol=1e-10)
     assert not actual.values.flags.writeable

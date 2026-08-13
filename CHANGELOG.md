@@ -6,19 +6,46 @@ development versions.
 
 ## Unreleased
 
-- Add bounded public GSAS SLOG FXYE and type-3 PRM readers, an immutable Python
-  TOF pattern boundary, CIF-to-TOF reflection generation, and a native Python
-  fixed-instrument Le Bail facade with stable intensity and history results.
-- Generalize the TOF input boundary to plain center/density columns and packed
-  constant-step GSAS data, translate legacy profile functions 1 and 3, and add
-  a checksum-pinned non-POWGEN LANL nickel acceptance refinement.
-- Add cooperative cancellation, structured progress events, last-accepted TOF
-  Le Bail checkpoints, and exact checkpoint continuation to the native and
-  Python fixed-instrument workflow.
+## 0.3.0
+
+- Add facility-neutral TOF powder boundaries for center/density columns, packed
+  constant-step data, GSAS SLOG FXYE, and bounded legacy profile-function 1/3
+  calibration adapters. POWGEN LaB6 and LANL nickel provide checksum-pinned
+  acceptance cases without facility-name-triggered numerical behavior.
+- Add atomic multi-bank TOF Le Bail refinement with shared analytical lattice
+  motion, selected bank-local analytical instrument motion, joint
+  lattice/instrument systems, rank and correlation diagnostics, cooperative
+  cancellation, and exact accepted-state checkpoint continuation.
+- Add structural TOF Rietveld calculation and refinement with typed bank
+  geometry, the neutron TOF Lorentz correction, fused dense/JVP/VJP products,
+  shared structure and cell parameters, bank-local scale/instrument/background
+  parameters, bounded solving, and exact special-position restart semantics.
+- Expose fixed-instrument, joint-geometry, and structural TOF workflows through
+  immutable Python facades and versioned native project persistence. Add
+  single- and multi-bank file composition with explicit selected ranges,
+  incident normalization, upstream/sample corrections, background domains,
+  ordered bank identities, and checksum-bound provenance.
+- Validate structural TOF on real POWGEN LaB6 and three-bank LANL nickel data.
+  The isolated pinned GSAS-II comparisons reproduce peak positions and profile
+  chains at floating-point scale, exceed 0.99999 same-intensity pattern
+  correlation, and agree on the nickel structural cell and Uiso within
+  0.00004414 A and 0.00005306 A^2.
+- Add offline fundamental-profile, Soller axial-divergence, and Gaussian
+  spectral-passband calibration utilities together with independent laboratory
+  XRD benchmarks and expanded Rowles, QARR, NIST, PbSO4, sucrose, and Echidna
+  validation/oracle coverage.
 - Treat PbSO4 X-ray final-polish `repeated_rejections` as safe bounded
   stagnation only after an accepted, materially improved state, while
   preserving the termination reason, accepted-state checkpoint semantics, and
   all scientific tolerances.
+- Document the complete TOF equations, supported contracts, ORNL/POWGEN request
+  boundary, cross-implementation refinement results, and explicit unsupported
+  profile/calibration/correction scope.
+
+The TOF implementation is facility-neutral within its declared profile,
+calibration, reduction, and correction contracts. This release does not claim
+support for unimplemented beamline-specific profiles or implicit absorption,
+extinction, or texture models.
 
 ## 0.2.0
 

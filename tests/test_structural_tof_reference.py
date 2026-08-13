@@ -43,9 +43,7 @@ def test_structural_tof_reference_matches_native_component_composition() -> None
     tof_us = np.linspace(1_000.0, 25_000.0, 2_401)
     geometry = reference_cell_geometry(structure.cell)
     h_float = hkl.astype(np.float64)
-    q_squared = np.einsum(
-        "ri,ij,rj->r", h_float, geometry.reciprocal_metric, h_float
-    )
+    q_squared = np.einsum("ri,ij,rj->r", h_float, geometry.reciprocal_metric, h_float)
     scattering_real, _ = scattering_reference.neutron_nuclear(["Si", "O"], hkl.shape[0])
     correction, _ = reference_time_of_flight_neutron_lorentz(q_squared, 88.05)
     expected = reference_structural_tof_pattern(

@@ -134,9 +134,7 @@ def compare(report: dict[str, Any], data: Path) -> dict[str, Any]:
         "native_minimum_correlation": native["minimum_profile_correlation"],
         "oracle_minimum_correlation": oracle["minimum_profile_correlation"],
         "cell_delta_angstrom": abs(native["cell_angstrom"] - oracle["cell_angstrom"]),
-        "u_iso_delta_angstrom2": abs(
-            native["u_iso_angstrom2"] - oracle["u_iso_angstrom2"]
-        ),
+        "u_iso_delta_angstrom2": abs(native["u_iso_angstrom2"] - oracle["u_iso_angstrom2"]),
     }
     checks = {}
     for name, limit in LIMITS.items():
