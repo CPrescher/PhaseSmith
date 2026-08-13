@@ -87,8 +87,33 @@ _XRED_TIO2_SOURCE = (
     "916726657c44ef1ca30c475f136835a9f37393c4/biphase/TiO2Rutile%20Anatase"
 )
 _IUCR_SILICON_SOURCE = "https://journals.iucr.org/e/issues/2017/02/00/wm5358"
+_IUCR_SODIUM_CITRATE_SILICON_SOURCE = "https://journals.iucr.org/e/issues/2016/06/00/hb7585"
 
 VALIDATION_DATASETS: tuple[ValidationDataset, ...] = (
+    ValidationDataset(
+        dataset_id="iucr-sodium-dihydrogen-citrate-si-standard",
+        title="Sodium dihydrogen citrate polymorph II with NIST SRM 640b silicon",
+        source_url="https://doi.org/10.1107/S2056989016008343",
+        citation=(
+            "A. Rammohan and J. A. Kaduk, Acta Cryst. E72 (2016) 793-796, "
+            "doi:10.1107/S2056989016008343"
+        ),
+        license_note=(
+            "External IUCr supplementary CIF containing laboratory counts, structures, "
+            "and deposited legacy-GSAS results; the article is CC BY 4.0. The file is "
+            "checksum-pinned and not redistributed."
+        ),
+        files=(
+            ExternalValidationFile(
+                "hb7585sup1.cif",
+                "cfb8082b18c362830fe308dd18348d125178c54e5e735a2d4c8bd35e1542c1bf",
+                278_860,
+                (f"{_IUCR_SODIUM_CITRATE_SILICON_SOURCE}/hb7585sup1.cif",),
+            ),
+        ),
+        purpose="holdout",
+        expected_status="blocked",
+    ),
     ValidationDataset(
         dataset_id="iucr-dicesium-citrate-si-standard",
         title="Dicesium hydrogen citrate with NIST SRM 640b silicon internal standard",
