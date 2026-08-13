@@ -244,6 +244,15 @@ have deliberately different meanings:
   cross-implementation gates pass. The deposited 18.74 wt% Si and 8.433% Rwp
   remain richer-model references because spherical-harmonic orientation,
   Stephens anisotropy, and Suortti roughness are outside this common subset.
+- `iucr-tripotassium-citrate-si-standard` is the next independent laboratory
+  holdout. Its official IUCr pdCIF contributes 3,217 raw counts, the contiguous
+  2,696-point deposited range, both structures, and the deposited legacy-GSAS
+  profile. The converter recomputes `Rwp=0.04852875` and `Rp=0.03808683`,
+  retains the unequal S/L=0.0168 and H/L=0.0200 axial terms, and discloses the
+  phase-specific profiles, Stephens broadening, second-order texture, and
+  Suortti roughness. The source identifies a silicon internal standard with
+  `a=5.43105` Å but not a particular NIST SRM; its low 1.44 wt% fraction makes
+  the calibration/refinement contract a separate review gate.
 
 The QARR checkpoint evaluates supplied CIF anisotropic displacement tensors
 directly and keeps them fixed; sites without displacement values start from a
@@ -263,6 +272,8 @@ The Echidna pattern is deposited in the
 [ANSTO powder-diffraction Zenodo record](https://zenodo.org/records/14286343).
 The sodium-citrate/Si holdout comes from the official
 [IUCr article and supplementary pdCIF](https://journals.iucr.org/e/issues/2016/06/00/hb7585/index.html).
+The tripotassium-citrate/Si holdout comes from its official
+[IUCr article and supplementary pdCIF](https://journals.iucr.org/e/issues/2016/08/00/wm5301/index.html).
 The LaB6 certification scans and reference fits come from the official
 [NIST SRM 660c data release](https://data.nist.gov/od/id/mds2-2315).
 The TOF bank and instrument parameters come from the commit-pinned official
