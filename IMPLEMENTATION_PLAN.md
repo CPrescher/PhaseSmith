@@ -1641,7 +1641,10 @@ native boundary with Tauri 2 and no Python sidecar. Reviewed commits provide:
 3. bounded, explicitly distinct CW-degree and TOF-microsecond powder imports
    using the public native I/O facade; and
 4. bounded native CIF import with cell, exact symmetry-operation count, sites,
-   elements, provenance, and visible diagnostics.
+   elements, provenance, and visible diagnostics; and
+5. a facility-neutral TOF laboratory that exposes DIFC, calculates on a typed
+   microsecond grid, and runs native fixed-instrument nonnegative Le Bail
+   extraction without encoding POWGEN or another beamline into the model.
 
 The host verifies production TypeScript builds, strict Rust formatting/Clippy,
 native tests, a complete Tauri executable build, and responsive layouts at the
@@ -1649,11 +1652,12 @@ configured 1280x820 and 1024x680 window sizes. PhaseSmith gains no Tauri,
 webview, or serialization dependency from this work.
 
 The next host-only sequence is: compose imported records into a validated
-application project; expose canonical project persistence; then add generic
-TOF bank/instrument setup, fixed-instrument calculation, refinement progress,
-cancellation, and checkpoint controls. Beamline names may select adapters or
-presets, but the host must keep the 15-coefficient TOF model and explicit bin
-conventions as the actual scientific contract.
+application project; expose canonical project persistence; then extend the TOF
+lab from its generic single-bank vertical slice to imported multi-bank data,
+all 15 coefficient controls, refinement progress, cancellation, and checkpoint
+continuation. Beamline names may select adapters or presets, but the host must
+keep the 15-coefficient TOF model and explicit bin conventions as the actual
+scientific contract.
 
 ## Maintainer decisions needed
 
