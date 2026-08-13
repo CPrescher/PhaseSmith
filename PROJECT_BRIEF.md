@@ -663,11 +663,8 @@ engine-status boundary, a real Le Bail effective-profile tutorial, separate
 bounded CW/TOF powder-text imports, and bounded native CIF import. Numerical
 commands run through Tauri's blocking worker boundary, and browser preview mode
 does not substitute JavaScript calculations for the Rust engine. Project
-composition/persistence and imported multi-bank TOF orchestration remain
-application milestones, not missing PhaseSmith runtime dependencies. The first
-TOF lab is already facility-neutral: it exposes DIFC as one coefficient of the
-public 15-coefficient model, calculates on a microsecond grid, and runs native
-nonnegative Le Bail intensity extraction without encoding a POWGEN name.
+composition/persistence and instrument-neutral TOF setup/refinement remain
+application milestones, not missing PhaseSmith runtime dependencies.
 
 The core accepts plain numeric slices and explicit peak/instrument batches. It
 does not know about files, refinement iterations, Python phase objects, GUI
