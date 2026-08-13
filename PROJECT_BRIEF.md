@@ -1366,6 +1366,18 @@ next separately reviewed production term; it must be independently derived
 from the publication and compared against the pinned GSAS-II generalized
 `Mustrain` oracle rather than translated from its implementation.
 
+The first Stephens production slice is now implemented for orthorhombic cells.
+It uses six physical ångström⁻⁴ coefficients for the fourth-order variance of
+`1/d_hkl²`, plus an explicit PhaseSmith Gaussian/Lorentzian mixing fraction.
+Python and Rust independently evaluate values and analytical coefficient,
+mixing, position, and cell derivatives; native and scripting persistence and
+Rietveld parameter rows are wired, and centered-difference plus realistic
+multi-peak benchmark coverage is present. The provider rejects nonorthorhombic
+cells and any materially negative active-reflection variance, so this slice
+does not overclaim other Laue classes. The remaining acceptance work is the
+pinned GSAS-II convention adapter/black-box comparison and the controlled
+potassium/rubidium citrate refinement with identifiability diagnostics.
+
 ## Quality bar
 
 Public behavior is typed and documented. Invalid shapes, non-finite values,

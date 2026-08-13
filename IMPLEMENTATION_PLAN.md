@@ -1751,3 +1751,16 @@ coverage; and black-box comparison with the exact pinned GSAS-II generalized
 `Mustrain` implementation. The first real-data acceptance must improve both
 citrate patterns without moving omitted texture, roughness, or weak-anchor
 geometry terms, and must report identifiability rather than merely lower Rwp.
+
+Unit-29 checkpoint: the orthorhombic kernel/API slice is complete. The public
+model fixes the coefficient order to `S400,S040,S004,S220,S202,S022` in
+ångström⁻⁴, defines the inverse-metric variance and Gaussian/Lorentzian split in
+`docs/sample-physics.md`, and evaluates Rust/Python values and analytical
+parameter/position/cell chains independently. Refinement replacement/scaling,
+direct cell-row mapping, native bridge, scripting/native persistence, invalid
+variance/cell handling, cross-language comparison, full structural lattice
+finite differences, and the realistic structural multi-peak benchmark are
+included. Next: derive and test the explicit pinned-GSAS-II stored-value
+translation as an oracle-only adapter, then run the fixed-nuisance citrate
+Stephens ablation. Other Laue-class reductions remain separate follow-up
+slices rather than silently sharing the orthorhombic basis.

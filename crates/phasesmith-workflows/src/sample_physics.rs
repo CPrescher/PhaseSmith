@@ -12,6 +12,8 @@ use crate::ParameterBounds;
 
 const DEG_PER_RAD: f64 = 180.0 / PI;
 const HALF_ANGLE_RAD_PER_DEG: f64 = PI / 360.0;
+const EIGHT_LN_TWO: f64 = 8.0 * std::f64::consts::LN_2;
+const STEPHENS_ORTHORHOMBIC_NAMES: [&str; 6] = ["S400", "S040", "S004", "S220", "S202", "S022"];
 const CELL_PARAMETER_NAMES: [&str; 6] = [
     "a_angstrom",
     "b_angstrom",
@@ -39,6 +41,13 @@ pub enum RietveldSamplePhysicsModel {
     IsotropicLorentzianMicrostrain {
         /// Non-negative dimensionless Lorentzian microstrain.
         microstrain: f64,
+    },
+    /// Stephens anisotropic microstrain in the orthorhombic reciprocal basis.
+    StephensOrthorhombic {
+        /// Coefficients `S400, S040, S004, S220, S202, S022` in angstrom^-4.
+        coefficients_angstrom_minus4: [f64; 6],
+        /// Fraction of the Gaussian-equivalent FWHM assigned to the Lorentzian term.
+        lorentzian_fraction: f64,
     },
     /// March--Dollase integrated-intensity correction around a fixed axis.
     MarchDollase {
@@ -130,6 +139,10 @@ impl RietveldSamplePhysicsModel {
                     scale: microstrain.abs().max(1.0e-4),
                 }]
             }
+            Self::StephensOrthorhombic {
+                coefficients_angstrom_minus4,
+                lorentzian_fraction,
+            } => stephens_parameters(coefficients_angstrom_minus4, *lorentzian_fraction)?,
             Self::MarchDollase {
                 ratio,
                 preferred_axis_hkl,
@@ -203,6 +216,11 @@ impl RietveldSamplePhysicsModel {
             Self::IsotropicLorentzianMicrostrain { .. } => Self::IsotropicLorentzianMicrostrain {
                 microstrain: values["isotropic_lorentzian_microstrain.fraction"],
             },
+            Self::StephensOrthorhombic { .. } => Self::StephensOrthorhombic {
+                coefficients_angstrom_minus4: STEPHENS_ORTHORHOMBIC_NAMES
+                    .map(|name| values[&format!("stephens.{name}")]),
+                lorentzian_fraction: values["stephens.lorentzian_fraction"],
+            },
             Self::MarchDollase {
                 preferred_axis_hkl, ..
             } => Self::MarchDollase {
@@ -273,6 +291,16 @@ impl RietveldSamplePhysicsModel {
             Self::IsotropicLorentzianMicrostrain { microstrain } => {
                 lorentzian_microstrain(*microstrain, two_theta_deg)
             }
+            Self::StephensOrthorhombic {
+                coefficients_angstrom_minus4,
+                lorentzian_fraction,
+            } => stephens_orthorhombic(
+                *coefficients_angstrom_minus4,
+                *lorentzian_fraction,
+                hkl,
+                two_theta_deg,
+                cell,
+            ),
             Self::MarchDollase {
                 ratio,
                 preferred_axis_hkl,
@@ -289,6 +317,52 @@ impl RietveldSamplePhysicsModel {
             }
         }
     }
+}
+
+fn stephens_parameters(
+    coefficients: &[f64; 6],
+    mixing: f64,
+) -> Result<Vec<SamplePhysicsParameter>, SamplePhysicsError> {
+    if coefficients.iter().any(|value| !value.is_finite())
+        || !mixing.is_finite()
+        || !(0.0..=1.0).contains(&mixing)
+    {
+        return Err(SamplePhysicsError::InvalidModel);
+    }
+    let coefficient_bounds = ParameterBounds::new(f64::NEG_INFINITY, f64::INFINITY)
+        .map_err(|_| SamplePhysicsError::InvalidModel)?;
+    let mixing_bounds =
+        ParameterBounds::new(0.0, 1.0).map_err(|_| SamplePhysicsError::InvalidModel)?;
+    Ok(STEPHENS_ORTHORHOMBIC_NAMES
+        .iter()
+        .zip(coefficients)
+        .map(|(name, value)| SamplePhysicsParameter {
+            name: format!("stephens.{name}"),
+            value: *value,
+            unit: "angstrom^-4",
+            bounds: coefficient_bounds,
+            scale: value.abs().max(1.0e-12),
+        })
+        .chain(std::iter::once(SamplePhysicsParameter {
+            name: "stephens.lorentzian_fraction".to_owned(),
+            value: mixing,
+            unit: "fraction",
+            bounds: mixing_bounds,
+            scale: 1.0,
+        }))
+        .collect())
+}
+
+fn stephens_orthorhombic_basis([h, k, l]: [i32; 3]) -> [f64; 6] {
+    let [h, k, l] = [h, k, l].map(f64::from);
+    [
+        h.powi(4),
+        k.powi(4),
+        l.powi(4),
+        h.powi(2) * k.powi(2),
+        h.powi(2) * l.powi(2),
+        k.powi(2) * l.powi(2),
+    ]
 }
 
 fn size(
@@ -383,6 +457,115 @@ fn lorentzian_microstrain(
         vec![0.0; count],
         d_parameter,
     )
+}
+
+fn stephens_orthorhombic(
+    coefficients: [f64; 6],
+    mixing: f64,
+    hkl: &[[i32; 3]],
+    positions: &[f64],
+    cell: UnitCell,
+) -> Result<EvaluatedSamplePhysics, SamplePhysicsError> {
+    if coefficients.iter().any(|value| !value.is_finite())
+        || !mixing.is_finite()
+        || !(0.0..=1.0).contains(&mixing)
+        || [cell.alpha_deg, cell.beta_deg, cell.gamma_deg]
+            .iter()
+            .any(|angle| (angle - 90.0).abs() > 1.0e-10)
+    {
+        return Err(SamplePhysicsError::InvalidModel);
+    }
+    let geometry = cell
+        .geometry()
+        .map_err(|_| SamplePhysicsError::InvalidInput)?;
+    let count = positions.len();
+    let parameter_count = STEPHENS_ORTHORHOMBIC_NAMES.len() + 1 + CELL_PARAMETER_NAMES.len();
+    let derivative_count =
+        parameter_count
+            .checked_mul(count)
+            .ok_or(SamplePhysicsError::Contributions(
+                CwContributionsError::AllocationOverflow,
+            ))?;
+    let mut gaussian = Vec::with_capacity(count);
+    let mut lorentzian = Vec::with_capacity(count);
+    let mut d_gaussian_position = Vec::with_capacity(count);
+    let mut d_lorentzian_position = Vec::with_capacity(count);
+    let mut d_gaussian_parameters = vec![0.0; derivative_count];
+    let mut d_lorentzian_parameters = vec![0.0; derivative_count];
+    let gaussian_weight = (1.0 - mixing).powi(2);
+
+    for (reflection_index, (reflection, position)) in hkl.iter().zip(positions).enumerate() {
+        let basis = stephens_orthorhombic_basis(*reflection);
+        let terms = std::array::from_fn::<_, 6, _>(|index| coefficients[index] * basis[index]);
+        let raw_variance = terms.iter().sum::<f64>();
+        let tolerance = 64.0 * f64::EPSILON * terms.iter().map(|value| value.abs()).sum::<f64>();
+        if raw_variance < -tolerance {
+            return Err(SamplePhysicsError::InvalidModel);
+        }
+        let inverse_metric_variance = raw_variance.max(0.0);
+        if mixing > 0.0 && inverse_metric_variance == 0.0 {
+            return Err(SamplePhysicsError::InvalidModel);
+        }
+        let (d_spacing, d_spacing_cell) = geometry
+            .d_spacing_and_derivatives(*reflection)
+            .map_err(|_| SamplePhysicsError::InvalidInput)?;
+        let theta = position * HALF_ANGLE_RAD_PER_DEG;
+        let angular_scale = DEG_PER_RAD.powi(2) * d_spacing.powi(4) * theta.tan().powi(2);
+        let equivalent_fwhm = (EIGHT_LN_TWO * angular_scale * inverse_metric_variance).sqrt();
+        let gaussian_value = gaussian_weight * angular_scale * inverse_metric_variance;
+        let lorentzian_value = mixing * equivalent_fwhm;
+        gaussian.push(gaussian_value);
+        lorentzian.push(lorentzian_value);
+        let position_log_scale = (PI / 180.0) / (theta.sin() * theta.cos());
+        d_gaussian_position.push(gaussian_value * position_log_scale);
+        d_lorentzian_position.push(0.5 * lorentzian_value * position_log_scale);
+
+        for (coefficient_index, basis_value) in basis.iter().copied().enumerate() {
+            let target = coefficient_index * count + reflection_index;
+            d_gaussian_parameters[target] = gaussian_weight * angular_scale * basis_value;
+            if mixing > 0.0 {
+                d_lorentzian_parameters[target] =
+                    lorentzian_value * basis_value / (2.0 * inverse_metric_variance);
+            }
+        }
+        let mixing_row = STEPHENS_ORTHORHOMBIC_NAMES.len();
+        d_gaussian_parameters[mixing_row * count + reflection_index] =
+            -2.0 * (1.0 - mixing) * angular_scale * inverse_metric_variance;
+        d_lorentzian_parameters[mixing_row * count + reflection_index] = equivalent_fwhm;
+        for (cell_index, d_spacing_value) in d_spacing_cell.iter().enumerate() {
+            let target = (mixing_row + 1 + cell_index) * count + reflection_index;
+            d_gaussian_parameters[target] = 4.0 * gaussian_value * d_spacing_value / d_spacing;
+            d_lorentzian_parameters[target] = 2.0 * lorentzian_value * d_spacing_value / d_spacing;
+        }
+    }
+
+    Ok(EvaluatedSamplePhysics {
+        contributions: OwnedCwContributions::new(
+            count,
+            parameter_count,
+            OwnedCwContributionArrays {
+                gaussian_variance_deg2: gaussian,
+                lorentzian_fwhm_deg: lorentzian,
+                intensity_multiplier: vec![1.0; count],
+                d_gaussian_variance_d_position: d_gaussian_position,
+                d_lorentzian_fwhm_d_position: d_lorentzian_position,
+                d_intensity_multiplier_d_position: vec![0.0; count],
+                d_gaussian_variance_d_parameters: d_gaussian_parameters,
+                d_lorentzian_fwhm_d_parameters: d_lorentzian_parameters,
+                d_intensity_multiplier_d_parameters: vec![0.0; derivative_count],
+            },
+        )?,
+        parameter_names: STEPHENS_ORTHORHOMBIC_NAMES
+            .iter()
+            .map(|name| format!("stephens.{name}"))
+            .chain(std::iter::once("stephens.lorentzian_fraction".to_owned()))
+            .chain(
+                CELL_PARAMETER_NAMES
+                    .iter()
+                    .map(|name| format!("stephens.cell.{name}")),
+            )
+            .collect(),
+    })
 }
 
 #[allow(clippy::too_many_arguments)]

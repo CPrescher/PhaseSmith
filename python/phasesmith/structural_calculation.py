@@ -53,6 +53,7 @@ from .sample import (
     IsotropicMicrostrainBroadening,
     IsotropicSizeBroadening,
     MarchDollasePreferredOrientation,
+    StephensOrthorhombicBroadening,
 )
 from .scattering import (
     NeutronNuclear,
@@ -172,6 +173,7 @@ def _supports_fused_structural_physics(provider: object | None) -> bool:
         IsotropicSizeBroadening,
         IsotropicMicrostrainBroadening,
         MarchDollasePreferredOrientation,
+        StephensOrthorhombicBroadening,
     ):
         return True
     return type(provider) is CompositePhysicsProvider and all(

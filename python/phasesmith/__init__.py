@@ -198,6 +198,7 @@ from .sample import (
     IsotropicSizeBroadening,
     MarchDollasePreferredOrientation,
     ReciprocalAngleGeometry,
+    StephensOrthorhombicBroadening,
     reciprocal_angle_geometry,
 )
 from .scattering import (
@@ -390,6 +391,7 @@ __all__ = [
     "SollerAxialGeometry",
     "SpaceGroup",
     "SpaceGroupInfo",
+    "StephensOrthorhombicBroadening",
     "StructuralPatternCalculationResult",
     "StructuralPatternJvpResult",
     "StructuralPatternLinearizationResult",

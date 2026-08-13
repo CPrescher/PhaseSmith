@@ -7,6 +7,7 @@ import platform
 import statistics
 import time
 from collections.abc import Callable
+from dataclasses import replace
 from typing import Any
 
 import numpy as np
@@ -144,6 +145,16 @@ def main() -> None:
     separate_result = separate()
     np.testing.assert_allclose(fused_result.profile_y, separate_result.y, rtol=5e-12, atol=1e-6)
     fused = measure(prepared.calculate, arguments.warmups, arguments.repetitions)
+    stephens_phase = replace(
+        phase,
+        physics=phasesmith.StephensOrthorhombicBroadening(
+            (2.0e-12, 3.0e-12, 1.0e-12, 8.0e-13, 6.0e-13, 7.0e-13), 0.35
+        ),
+    )
+    prepared_stephens = phasesmith.PreparedStructuralPattern(pattern, experiment, stephens_phase)
+    if not prepared_stephens.uses_native_fused_path:
+        raise RuntimeError("Stephens benchmark did not select the fused native path")
+    stephens = measure(prepared_stephens.calculate, arguments.warmups, arguments.repetitions)
     separated = measure(separate, arguments.warmups, arguments.repetitions)
     print(
         f"python={platform.python_version()} platform={platform.platform()} "
@@ -151,6 +162,7 @@ def main() -> None:
         f"sites={arguments.sites} samples={pattern.x.size}"
     )
     report("fused_values_and_products_ready", fused)
+    report("fused_with_orthorhombic_stephens", stephens)
     report("separate_public_dense_structural_derivatives", separated)
 
 

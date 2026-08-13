@@ -484,7 +484,13 @@ equations and array semantics are documented in
 contributions add; intensity modifiers compose with the full product rule.
 The built-in March--Dollase provider uses the phase reciprocal metric and an
 explicit preferred reciprocal-lattice axis, and participates in the same
-calculation and derivative interface as broadening providers.
+calculation and derivative interface as broadening providers. The built-in
+`StephensOrthorhombicBroadening` provider supplies the six orthorhombic
+fourth-order inverse-metric-variance coefficients, an explicit
+Gaussian/Lorentzian split, analytical parameter/position/cell chains, native
+Rietveld refinement rows, and both scripting and native persistence. Its
+ångström⁻⁴ convention and orthorhombic-only scope are documented in
+[`sample-physics.md`](sample-physics.md).
 
 Multi-phase flattening, phase-scale rows, durable reflection labels, background
 composition, and the prepared/stateless interfaces are specified in
