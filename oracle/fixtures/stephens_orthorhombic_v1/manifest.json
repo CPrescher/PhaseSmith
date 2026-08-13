@@ -1,0 +1,282 @@
+{
+  "archive": {
+    "file": "data.npz",
+    "sha256": "e45cb1983e41e67302da19b420fcee115d68007b78d83bad1c08390fd468c758"
+  },
+  "arrays": {
+    "reflection_list": {
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "cbeea52287afab9330a31462f555c9d85822d006db17085b80d419f955740b66",
+      "shape": [
+        395,
+        15
+      ],
+      "unit": "mixed_by_column"
+    },
+    "stephens_reflection_0__profile_per_deg": {
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "d8781137dd93bcd212fc9f8a245dd4c75f134d74ce9b2b7f1206d0d7efd41bff",
+      "shape": [
+        6001
+      ],
+      "unit": "inverse_degree"
+    },
+    "stephens_reflection_0__x_deg": {
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "8a210f38627efe4ef143c2f904d73a1b3ab3d12eb563bc048cc21858464585fe",
+      "shape": [
+        6001
+      ],
+      "unit": "degree_2theta"
+    },
+    "stephens_reflection_197__profile_per_deg": {
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "aed9fb451544f3938923edb9063482ff9c26900a520ad1f6907e7294cc05149d",
+      "shape": [
+        6001
+      ],
+      "unit": "inverse_degree"
+    },
+    "stephens_reflection_197__x_deg": {
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "da30fdf62a8006b46037090534a63d01628bb8ef00b211e18d0e9e05c4f22c67",
+      "shape": [
+        6001
+      ],
+      "unit": "degree_2theta"
+    },
+    "stephens_reflection_394__profile_per_deg": {
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "a80502abbb9f30aed3c299edb35a151840b6d8f5861f1770f72dfeaa1b8174fb",
+      "shape": [
+        6001
+      ],
+      "unit": "inverse_degree"
+    },
+    "stephens_reflection_394__x_deg": {
+      "dtype": "float64",
+      "finite": true,
+      "sha256": "67049ffff6a7c167c525233a372dfce72cb7c1b876b1259e04fc2ee54e827c40",
+      "shape": [
+        6001
+      ],
+      "unit": "degree_2theta"
+    }
+  },
+  "cases": [
+    {
+      "arrays": {
+        "profile": "stephens_reflection_0__profile_per_deg",
+        "reflection_list": "reflection_list",
+        "x": "stephens_reflection_0__x_deg"
+      },
+      "case_kind": "orthorhombic_stephens_reflection",
+      "gsasii_reported_integral": 0.9996203161748487,
+      "id": "stephens_reflection_0",
+      "parameters": {
+        "d_spacing_angstrom": 6.689647316224497,
+        "gamma_centideg": 0.1343159152915717,
+        "hkl": [
+          0,
+          1,
+          1
+        ],
+        "position_deg": 13.223986641624299,
+        "public_translation": {
+          "coefficient_order": [
+            "S400",
+            "S040",
+            "S004",
+            "S220",
+            "S202",
+            "S022"
+          ],
+          "coefficients_angstrom_minus4": [
+            8.29549648511154e-14,
+            4.688758882889131e-15,
+            8.836507125444902e-15,
+            3.0837606499001595e-14,
+            6.492127684000336e-15,
+            1.4066276648667393e-14
+          ],
+          "conversion": "pure*1e-12/(8ln2), mixed*3e-12/(8ln2)",
+          "lorentzian_fraction": 0.9
+        },
+        "reflection_index": 0,
+        "sigma2_centideg2": 0.9109572399918187
+      }
+    },
+    {
+      "arrays": {
+        "profile": "stephens_reflection_197__profile_per_deg",
+        "reflection_list": "reflection_list",
+        "x": "stephens_reflection_197__x_deg"
+      },
+      "case_kind": "orthorhombic_stephens_reflection",
+      "gsasii_reported_integral": 0.9989862686705543,
+      "id": "stephens_reflection_197",
+      "parameters": {
+        "d_spacing_angstrom": 1.2803687993289599,
+        "gamma_centideg": 0.36630664160094206,
+        "hkl": [
+          4,
+          0,
+          6
+        ],
+        "position_deg": 73.97028573465681,
+        "public_translation": {
+          "coefficient_order": [
+            "S400",
+            "S040",
+            "S004",
+            "S220",
+            "S202",
+            "S022"
+          ],
+          "coefficients_angstrom_minus4": [
+            8.29549648511154e-14,
+            4.688758882889131e-15,
+            8.836507125444902e-15,
+            3.0837606499001595e-14,
+            6.492127684000336e-15,
+            1.4066276648667393e-14
+          ],
+          "conversion": "pure*1e-12/(8ln2), mixed*3e-12/(8ln2)",
+          "lorentzian_fraction": 0.9
+        },
+        "reflection_index": 197,
+        "sigma2_centideg2": 1.3813332011360315
+      }
+    },
+    {
+      "arrays": {
+        "profile": "stephens_reflection_394__profile_per_deg",
+        "reflection_list": "reflection_list",
+        "x": "stephens_reflection_394__x_deg"
+      },
+      "case_kind": "orthorhombic_stephens_reflection",
+      "gsasii_reported_integral": 0.9985699711333584,
+      "id": "stephens_reflection_394",
+      "parameters": {
+        "d_spacing_angstrom": 1.00829656346649,
+        "gamma_centideg": 0.5167495168145683,
+        "hkl": [
+          2,
+          3,
+          9
+        ],
+        "position_deg": 99.62590211679516,
+        "public_translation": {
+          "coefficient_order": [
+            "S400",
+            "S040",
+            "S004",
+            "S220",
+            "S202",
+            "S022"
+          ],
+          "coefficients_angstrom_minus4": [
+            8.29549648511154e-14,
+            4.688758882889131e-15,
+            8.836507125444902e-15,
+            3.0837606499001595e-14,
+            6.492127684000336e-15,
+            1.4066276648667393e-14
+          ],
+          "conversion": "pure*1e-12/(8ln2), mixed*3e-12/(8ln2)",
+          "lorentzian_fraction": 0.9
+        },
+        "reflection_index": 394,
+        "sigma2_centideg2": 2.6193093428187795
+      }
+    }
+  ],
+  "fixture_id": "gsasii_stephens_orthorhombic_v1",
+  "format_version": 1,
+  "input": {
+    "kind": "parameter_cases",
+    "sha256": "0209212f2a0cb21c1c4b5d7f89fa762b3cc547582ea4e906945f6eca4edf07a9"
+  },
+  "input_parameters": {
+    "phase": {
+      "cell": [
+        8.0,
+        9.0,
+        10.0,
+        90.0,
+        90.0,
+        90.0
+      ],
+      "name": "stephens-orthorhombic",
+      "space_group": "P n m a"
+    },
+    "sample": {
+      "coefficient_order": [
+        "S400",
+        "S040",
+        "S004",
+        "S220",
+        "S202",
+        "S022"
+      ],
+      "gsasii_coefficients": [
+        0.46,
+        0.026,
+        0.049,
+        0.057,
+        0.012,
+        0.026
+      ],
+      "lorentzian_fraction": 0.9
+    }
+  },
+  "kind": "cw_orthorhombic_stephens",
+  "provenance": {
+    "generated_at_utc": "2026-08-13T18:34:55.493034+00:00",
+    "generator_sha256": "4ae8596f63a4e83be11a25f9aff219bc65e6aacd9bad1c4fde4f97657b380ff4",
+    "gsasii_repository": "https://github.com/AdvancedPhotonSource/GSAS-II",
+    "gsasii_revision": "c0bc79b259cdf0065480b5fbd57674ddf12c4a23",
+    "gsasii_tag": 5838,
+    "helper_sha256": "ab01b04e84e89e8bc74784e3fea2ad9bb1b199d5b68c07601fb52f9e19d863c9",
+    "numpy_version": "2.2.6",
+    "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O",
+    "python_version": "3.13.9"
+  },
+  "source": {
+    "adapter_version": 1,
+    "api": [
+      "GSASII.GSASIIscriptable.G2Phase.getHAPentryList/getHAPentryValue/setHAPentryValue",
+      "GSASII.GSASIIscriptable.G2PwdrData.reflections",
+      "GSASII.GSASIIpwd.getPsVoigt"
+    ],
+    "native_units": {
+      "Gaussian_variance": "centidegree_squared",
+      "Lorentzian_fwhm": "centidegree",
+      "coefficients": "GSAS-II generalized microstrain stored values"
+    },
+    "private_probe": true,
+    "reflection_columns": [
+      "h",
+      "k",
+      "l",
+      "multiplicity",
+      "d_spacing_angstrom",
+      "position_deg",
+      "sigma2_centideg2",
+      "gamma_centideg",
+      "f_obs2",
+      "f_calc2",
+      "phase_deg",
+      "intensity_correction",
+      "preferred_orientation",
+      "transmission",
+      "extinction"
+    ]
+  }
+}

@@ -13,7 +13,7 @@ an explicit compatible range in `Cargo.toml`:
 
 ```toml
 [dependencies]
-phasesmith = "0.1"
+phasesmith = "0.3"
 ```
 
 ## Facade modules
@@ -31,12 +31,12 @@ phasesmith = "0.1"
 
 The complete generated Rust reference is published by docs.rs:
 
-- [`phasesmith` facade documentation](https://docs.rs/phasesmith/0.1.0/phasesmith/)
-- [`phasesmith-workflows`](https://docs.rs/phasesmith-workflows/0.1.0/phasesmith_workflows/)
-- [`phasesmith-persistence`](https://docs.rs/phasesmith-persistence/0.1.0/phasesmith_persistence/)
+- [`phasesmith` facade documentation](https://docs.rs/phasesmith/latest/phasesmith/)
+- [`phasesmith-workflows`](https://docs.rs/phasesmith-workflows/latest/phasesmith_workflows/)
+- [`phasesmith-persistence`](https://docs.rs/phasesmith-persistence/latest/phasesmith_persistence/)
 
-Starting with the next release after 0.1.0, the facade reference also contains
-task-oriented native guides alongside the generated item reference:
+The facade reference also contains task-oriented native guides alongside the
+generated item reference:
 
 - [getting started](https://docs.rs/phasesmith/latest/phasesmith/guide/getting_started/)
 - [architecture and ownership](https://docs.rs/phasesmith/latest/phasesmith/guide/architecture/)
@@ -69,13 +69,14 @@ coefficients, and optional Chebyshev backgrounds bank-local. The corresponding
 bounded entry points are `refine_structural_tof_multibank` and
 `refine_structural_tof_multibank_with_runtime`; the latter accepts application
 cancellation, event, and typed checkpoint sinks and returns the last atomically
-accepted state at a normal bound. These remain Rust integration boundaries, not
-yet the public Python workflow or persisted project format. Their correction
-and bank-geometry requirements are documented in
+accepted state at a normal bound. The same structural workflow is exposed by
+`phasesmith.refinement.tof_structural` and persisted by native project format
+5 through `StructuralTofMultiBankProjectState`. Its correction and
+bank-geometry requirements are documented in
 [Structural TOF readiness](tof-structural-readiness.md).
 Application hosts can retain runnable analyses in
 `StructuralTofMultiBankProjectState`. Its validation binds bank IDs to exact
 project TOF histogram arrays/instruments, enforces disjoint histogram
 ownership, matches the one shared built-in phase, and revalidates optional
-checkpoints. Versioned serialization of this state is documented separately
-when available.
+checkpoints. Versioned serialization of this state is documented in
+[native project persistence](native-persistence.md).

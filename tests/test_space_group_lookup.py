@@ -23,6 +23,19 @@ def test_space_group_symbol_lookup_preserves_requested_setting_operations() -> N
     assert info.space_group.crystal_system == "monoclinic"
 
 
+def test_general_hall_parser_preserves_exact_noncanonical_operations() -> None:
+    canonical = phasesmith.space_group_from_hall_symbol("A 2 -2ab")
+    redundant = phasesmith.space_group_from_hall_symbol("A 2 -2ac")
+    assert redundant == canonical
+    assert redundant == phasesmith.space_group_by_number(41).space_group
+
+    shifted = phasesmith.space_group_from_hall_symbol("P 2y (3 0 0)")
+    assert shifted != phasesmith.space_group_from_hall_symbol("P 2y")
+
+    with pytest.raises(ValueError, match="F m 3 m"):
+        phasesmith.space_group_from_hall_symbol("F m 3 m")
+
+
 @pytest.mark.parametrize("value", [0, 231, True, 1.5])
 def test_space_group_number_lookup_rejects_invalid_numbers(value: object) -> None:
     with pytest.raises(ValueError, match=r"\[1, 230\]"):

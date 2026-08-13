@@ -99,7 +99,14 @@ def structural_phase() -> phasesmith.RietveldPhase:
         phasesmith.XrayNonResonant(),
         phasesmith.BraggBrentanoUnpolarizedLp(instrument().wavelength_angstrom),
         scale=1.25,
-        physics=phasesmith.IsotropicSizeBroadening(75.0),
+        physics=phasesmith.CompositePhysicsProvider(
+            (
+                phasesmith.IsotropicSizeBroadening(75.0),
+                phasesmith.StephensOrthorhombicBroadening(
+                    (2.0e-8, 3.0e-8, 1.0e-8, 8.0e-9, 6.0e-9, 7.0e-9), 0.35
+                ),
+            )
+        ),
         coordinate_tolerance=2.0e-10,
     )
 

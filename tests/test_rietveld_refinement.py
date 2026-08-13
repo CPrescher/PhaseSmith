@@ -799,6 +799,82 @@ def test_march_dollase_lattice_chain_matches_finite_difference() -> None:
     assert relative_error < 3.0e-5
 
 
+def test_stephens_lattice_chain_matches_finite_difference() -> None:
+    selected = selection(lattice=True)
+    base = request_from_cif(selected)
+    old_domain = base.lattice_domains[0]
+    assert old_domain is not None
+    cell = phasesmith.UnitCell(4.1, 5.2, 6.3, 90.0, 90.0, 90.0)
+    structure = replace(base.phases[0].structure, cell=cell)
+    parameterization = structural_refinement.LatticeParameterization(structure.space_group, cell)
+    bounds = structural_refinement.LatticeParameterBounds.around(
+        parameterization, relative_length=0.02, angle_delta_deg=1.0
+    )
+    domain = structural_refinement.CwStructuralReflectionDomain(
+        structure.space_group,
+        parameterization,
+        bounds,
+        old_domain.wavelength_angstrom,
+        old_domain.visible_two_theta_min_deg,
+        old_domain.visible_two_theta_max_deg,
+    )
+    phase = replace(
+        base.phases[0],
+        structure=structure,
+        reflections=domain.generate(cell).reflections,
+        physics=phasesmith.StephensOrthorhombicBroadening(
+            (2.0e-8, 3.0e-8, 1.0e-8, 8.0e-9, 6.0e-9, 7.0e-9), 0.35
+        ),
+    )
+    parameters = structural_refinement.build_parameter_set(
+        (phase,), (domain,), selected, experiment=base.experiment
+    )
+    request = replace(
+        base,
+        phases=(phase,),
+        lattice_domains=(domain,),
+        parameters=parameters,
+        selection=selected,
+    )
+    options = structural_refinement.RietveldOptions(support_fwhm=100.0)
+    linearization = structural_refinement._RietveldLinearization.prepare(
+        request,
+        request.experiment,
+        request.background,
+        request.phases,
+        request.lattice_domains,
+        request.parameters,
+        options,
+        structural_refinement.RefinementRuntime(options.limits),
+    )
+    direction = np.zeros(len(parameters.specs))
+    direction[0] = 1.0
+    analytical = linearization.jvp(direction)
+    transform = structural_refinement.ConstraintTransform(parameters)
+    packed = transform.pack()
+    step = 1.0e-5
+    calculated = []
+    for sign in (-1.0, 1.0):
+        values = transform.unpack(packed + sign * step * direction)
+        phases, _ = structural_refinement._apply_parameter_values(
+            request.phases,
+            request.lattice_domains,
+            request.parameters,
+            values,
+            wavelength_angstrom=request.experiment.radiation.wavelength_angstrom,
+        )
+        calculated.append(
+            structural_refinement.calculate(
+                request.pattern, request.experiment, phases, support_fwhm=100.0
+            ).y
+        )
+    finite_difference = (calculated[1] - calculated[0]) / (2.0 * step)
+    relative_error = np.linalg.norm(analytical - finite_difference) / np.linalg.norm(
+        finite_difference
+    )
+    assert relative_error < 1.0e-4
+
+
 def test_pre_requested_cancellation_returns_the_unmodified_safe_state() -> None:
     request = request_from_cif(selection(phase_scale=True))
     token = phasesmith.CancellationToken()

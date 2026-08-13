@@ -84,6 +84,12 @@ fn physics_model(records: Vec<(String, Vec<f64>)>) -> PyResult<Option<RietveldSa
                     microstrain: *microstrain,
                 }
             }
+            ("stephens_orthorhombic", [s400, s040, s004, s220, s202, s022, mixing]) => {
+                RietveldSamplePhysicsModel::StephensOrthorhombic {
+                    coefficients_angstrom_minus4: [*s400, *s040, *s004, *s220, *s202, *s022],
+                    lorentzian_fraction: *mixing,
+                }
+            }
             ("march_dollase", [ratio, h, k, l]) => RietveldSamplePhysicsModel::MarchDollase {
                 ratio: *ratio,
                 preferred_axis_hkl: [*h, *k, *l],

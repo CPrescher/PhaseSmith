@@ -73,6 +73,7 @@ from .sample import (
     IsotropicMicrostrainBroadening,
     IsotropicSizeBroadening,
     MarchDollasePreferredOrientation,
+    StephensOrthorhombicBroadening,
 )
 from .scattering import (
     NeutronNuclear,
@@ -330,6 +331,11 @@ def _sample_physics(record: dict[str, Any] | None, cell: UnitCell) -> object | N
             float(record["ratio"]),
             tuple(map(float, record["preferred_axis_hkl"])),
             ReciprocalMetric(cell.geometry().reciprocal_metric),
+        )
+    if kind == "stephens_orthorhombic":
+        return StephensOrthorhombicBroadening(
+            tuple(map(float, record["coefficients_angstrom_minus4"])),
+            float(record["lorentzian_fraction"]),
         )
     if kind == "composite":
         return CompositePhysicsProvider(

@@ -168,3 +168,14 @@ degrees in the committed low/middle/high matrix. Those fixture-local bounds are
 recorded explicitly. Production keeps the converged published model rather
 than reproducing oracle discretization artifacts; all direct derivatives are
 also checked against centered finite differences of that model.
+
+The source-specific trirubidium-citrate audit exercises a more demanding
+low-angle legacy conversion. Legacy-GSAS full-height/diameter `S/L` and `H/L`
+ratios are numerically the half-height/radius ratios used here. The deposited
+equal values `0.0097/0.0097` are therefore preserved directly and are exactly
+the PhaseSmith equal-height representation of the documented GSAS-II formal
+sum `SH/L=0.0194`. At that value the pinned discretized GSAS-II kernel differs
+from the continuous source-native profiles by up to 17.53% normalized L1 and
+0.00847 degrees in centroid. An empirically closer GSAS-II value is not a valid
+replacement for the physical geometry. This source-local result strengthens,
+rather than changes, the policy of retaining the published continuous model.

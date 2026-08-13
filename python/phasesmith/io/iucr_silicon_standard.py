@@ -43,7 +43,7 @@ def _block(text: str, name: str) -> str:
     return match.group(0).rstrip() + "\n"
 
 
-def _powder_rows(powder_block: str) -> np.ndarray:
+def _powder_rows(powder_block: str, *, expected_rows: int = 3217) -> np.ndarray:
     header = (
         "    _pd_proc_ls_weight\n"
         "    _pd_proc_intensity_bkg_calc\n"
@@ -61,14 +61,20 @@ def _powder_rows(powder_block: str) -> np.ndarray:
             break
         rows.append([np.nan if value == "." else float(value) for value in fields])
     result = np.asarray(rows, dtype=np.float64)
-    if result.shape != (3217, 4):
-        raise ValueError("IUCr powder loop does not contain the expected 3217 rows")
+    if result.shape != (expected_rows, 4):
+        raise ValueError(f"IUCr powder loop does not contain the expected {expected_rows} rows")
     return result
 
 
-def _normalized_silicon_cif() -> str:
-    return """data_silicon_nist_srm_640b
-_audit_creation_method 'PhaseSmith normalization of IUCr RAMM016C_phase_3'
+def _normalized_silicon_cif(
+    source_block: str = "RAMM016C_phase_3", *, u_iso_angstrom2: float = 0.01
+) -> str:
+    if not source_block or "'" in source_block or "\n" in source_block:
+        raise ValueError("normalized silicon source block must be a safe CIF label")
+    if not np.isfinite(u_iso_angstrom2) or u_iso_angstrom2 < 0.0:
+        raise ValueError("normalized silicon Uiso must be nonnegative and finite")
+    return f"""data_silicon_nist_srm_640b
+_audit_creation_method 'PhaseSmith normalization of IUCr {source_block}'
 _chemical_name_common 'silicon internal standard NIST SRM 640b'
 _chemical_formula_sum 'Si'
 _chemical_formula_weight 28.09
@@ -89,7 +95,7 @@ _atom_site_fract_y
 _atom_site_fract_z
 _atom_site_occupancy
 _atom_site_U_iso_or_equiv
-Si1 Si 0.125 0.125 0.125 1.0 0.01
+Si1 Si 0.125 0.125 0.125 1.0 {u_iso_angstrom2:.12g}
 """
 
 

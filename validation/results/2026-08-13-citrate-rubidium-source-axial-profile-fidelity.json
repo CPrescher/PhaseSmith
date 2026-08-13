@@ -1,0 +1,570 @@
+{
+  "cases": [
+    {
+      "comparisons_by_gsasii_sh_over_l": {
+        "0.002": {
+          "gsasii_against_published_equal_height_same_parameter": {
+            "candidate_minus_reference_centroid_deg": -8.935311406688129e-05,
+            "candidate_minus_reference_mode_deg": -0.00015000000000142677,
+            "candidate_minus_reference_skewness": 0.0006278090166730223,
+            "candidate_moments": {
+              "centroid_deg": 17.899878322524597,
+              "maximum_per_deg": 10.19626334309578,
+              "mode_deg": 17.899876266595427,
+              "rms_width_deg": 0.14213495098160167,
+              "sampled_area": 0.9909615859178846,
+              "skewness": 0.0010393738690980703
+            },
+            "candidate_over_reference_rms_width": 1.0000046629340456,
+            "normalized_l1_distance": 0.0018551539902130609,
+            "normalized_maximum_abs_error": 0.001599146762678153,
+            "normalized_rms_distance": 0.001847524014136419,
+            "reference_moments": {
+              "centroid_deg": 17.899967675638663,
+              "maximum_per_deg": 10.196116662169706,
+              "mode_deg": 17.90002626659543,
+              "rms_width_deg": 0.1421342882187901,
+              "sampled_area": 0.9909503394814442,
+              "skewness": 0.000411564852425048
+            }
+          },
+          "gsasii_against_source_native": {
+            "candidate_minus_reference_centroid_deg": 0.005368698095789881,
+            "candidate_minus_reference_mode_deg": 0.005099999999998772,
+            "candidate_minus_reference_skewness": -0.03744276261469294,
+            "candidate_moments": {
+              "centroid_deg": 17.899878322524597,
+              "maximum_per_deg": 10.19626334309578,
+              "mode_deg": 17.899876266595427,
+              "rms_width_deg": 0.14213495098160167,
+              "sampled_area": 0.9909615859178846,
+              "skewness": 0.0010393738690980703
+            },
+            "candidate_over_reference_rms_width": 0.9989518147400857,
+            "normalized_l1_distance": 0.10931228336348106,
+            "normalized_maximum_abs_error": 0.09473123895356168,
+            "normalized_rms_distance": 0.10891863603725743,
+            "reference_moments": {
+              "centroid_deg": 17.894509624428807,
+              "maximum_per_deg": 9.9581346350034,
+              "mode_deg": 17.89477626659543,
+              "rms_width_deg": 0.14228409106858006,
+              "sampled_area": 0.9909500405509304,
+              "skewness": 0.03848213648379101
+            }
+          }
+        },
+        "0.0097": {
+          "gsasii_against_published_equal_height_same_parameter": {
+            "candidate_minus_reference_centroid_deg": -0.0021109163475721004,
+            "candidate_minus_reference_mode_deg": -0.002100000000002211,
+            "candidate_minus_reference_skewness": 0.01483219568748473,
+            "candidate_moments": {
+              "centroid_deg": 17.896536913493215,
+              "maximum_per_deg": 10.196232795715332,
+              "mode_deg": 17.896576266595428,
+              "rms_width_deg": 0.14213495108277052,
+              "sampled_area": 0.9909615644430914,
+              "skewness": 0.02451065479506342
+            },
+            "candidate_over_reference_rms_width": 0.9999389489305687,
+            "normalized_l1_distance": 0.04381970327695772,
+            "normalized_maximum_abs_error": 0.0375567197483149,
+            "normalized_rms_distance": 0.04366115944248142,
+            "reference_moments": {
+              "centroid_deg": 17.898647829840787,
+              "maximum_per_deg": 10.179955766816821,
+              "mode_deg": 17.89867626659543,
+              "rms_width_deg": 0.14214362910334014,
+              "sampled_area": 0.9909503208532905,
+              "skewness": 0.009678459107578691
+            }
+          },
+          "gsasii_against_source_native": {
+            "candidate_minus_reference_centroid_deg": 0.0020272890644079666,
+            "candidate_minus_reference_mode_deg": 0.0017999999999993577,
+            "candidate_minus_reference_skewness": -0.013971481688727586,
+            "candidate_moments": {
+              "centroid_deg": 17.896536913493215,
+              "maximum_per_deg": 10.196232795715332,
+              "mode_deg": 17.896576266595428,
+              "rms_width_deg": 0.14213495108277052,
+              "sampled_area": 0.9909615644430914,
+              "skewness": 0.02451065479506342
+            },
+            "candidate_over_reference_rms_width": 0.9989518154511199,
+            "normalized_l1_distance": 0.04246592362537831,
+            "normalized_maximum_abs_error": 0.03819651721801806,
+            "normalized_rms_distance": 0.04288229853149999,
+            "reference_moments": {
+              "centroid_deg": 17.894509624428807,
+              "maximum_per_deg": 9.9581346350034,
+              "mode_deg": 17.89477626659543,
+              "rms_width_deg": 0.14228409106858006,
+              "sampled_area": 0.9909500405509304,
+              "skewness": 0.03848213648379101
+            }
+          }
+        },
+        "0.0194": {
+          "gsasii_against_published_equal_height_same_parameter": {
+            "candidate_minus_reference_centroid_deg": -0.008469418902411263,
+            "candidate_minus_reference_mode_deg": -0.008849999999998914,
+            "candidate_minus_reference_skewness": 0.05976093911292678,
+            "candidate_moments": {
+              "centroid_deg": 17.886040205526395,
+              "maximum_per_deg": 10.19626334309578,
+              "mode_deg": 17.88592626659543,
+              "rms_width_deg": 0.1421349536908484,
+              "sampled_area": 0.9909608420689708,
+              "skewness": 0.09824307559671779
+            },
+            "candidate_over_reference_rms_width": 0.9989518337811935,
+            "normalized_l1_distance": 0.17529864315052218,
+            "normalized_maximum_abs_error": 0.1537823560994232,
+            "normalized_rms_distance": 0.17594361704627068,
+            "reference_moments": {
+              "centroid_deg": 17.894509624428807,
+              "maximum_per_deg": 9.9581346350034,
+              "mode_deg": 17.89477626659543,
+              "rms_width_deg": 0.14228409106858006,
+              "sampled_area": 0.9909500405509304,
+              "skewness": 0.03848213648379101
+            }
+          },
+          "gsasii_against_source_native": {
+            "candidate_minus_reference_centroid_deg": -0.008469418902411263,
+            "candidate_minus_reference_mode_deg": -0.008849999999998914,
+            "candidate_minus_reference_skewness": 0.05976093911292678,
+            "candidate_moments": {
+              "centroid_deg": 17.886040205526395,
+              "maximum_per_deg": 10.19626334309578,
+              "mode_deg": 17.88592626659543,
+              "rms_width_deg": 0.1421349536908484,
+              "sampled_area": 0.9909608420689708,
+              "skewness": 0.09824307559671779
+            },
+            "candidate_over_reference_rms_width": 0.9989518337811935,
+            "normalized_l1_distance": 0.17529864315052218,
+            "normalized_maximum_abs_error": 0.1537823560994232,
+            "normalized_rms_distance": 0.17594361704627068,
+            "reference_moments": {
+              "centroid_deg": 17.894509624428807,
+              "maximum_per_deg": 9.9581346350034,
+              "mode_deg": 17.89477626659543,
+              "rms_width_deg": 0.14228409106858006,
+              "sampled_area": 0.9909500405509304,
+              "skewness": 0.03848213648379101
+            }
+          }
+        }
+      },
+      "gaussian_fwhm_deg": 0.05322622620837032,
+      "hkl": [
+        1,
+        0,
+        2
+      ],
+      "lorentzian_fwhm_deg": 0.03678791331123737,
+      "position_deg": 17.90002626659543,
+      "source_native_moments": {
+        "centroid_deg": 17.894509624428807,
+        "maximum_per_deg": 9.9581346350034,
+        "mode_deg": 17.89477626659543,
+        "rms_width_deg": 0.14228409106858006,
+        "sampled_area": 0.9909500405509304,
+        "skewness": 0.03848213648379101
+      }
+    },
+    {
+      "comparisons_by_gsasii_sh_over_l": {
+        "0.002": {
+          "gsasii_against_published_equal_height_same_parameter": {
+            "candidate_minus_reference_centroid_deg": -7.038872387710171e-05,
+            "candidate_minus_reference_mode_deg": -0.00015000000000142677,
+            "candidate_minus_reference_skewness": 0.0004929442965971823,
+            "candidate_moments": {
+              "centroid_deg": 22.550450799488246,
+              "maximum_per_deg": 10.162313282489777,
+              "mode_deg": 22.550416759026504,
+              "rms_width_deg": 0.14258346819914547,
+              "sampled_area": 0.9909027379596044,
+              "skewness": 0.0008120856737939018
+            },
+            "candidate_over_reference_rms_width": 1.0000046837915706,
+            "normalized_l1_distance": 0.0014567153443885508,
+            "normalized_maximum_abs_error": 0.001269015330120329,
+            "normalized_rms_distance": 0.0014514615183425761,
+            "reference_moments": {
+              "centroid_deg": 22.550521188212123,
+              "maximum_per_deg": 10.162191419813679,
+              "mode_deg": 22.550566759026506,
+              "rms_width_deg": 0.14258280037102697,
+              "sampled_area": 0.9908914241619482,
+              "skewness": 0.00031914137719671944
+            }
+          },
+          "gsasii_against_source_native": {
+            "candidate_minus_reference_centroid_deg": 0.004173457676870385,
+            "candidate_minus_reference_mode_deg": 0.004049999999999443,
+            "candidate_minus_reference_skewness": -0.029102223137939053,
+            "candidate_moments": {
+              "centroid_deg": 22.550450799488246,
+              "maximum_per_deg": 10.162313282489777,
+              "mode_deg": 22.550416759026504,
+              "rms_width_deg": 0.14258346819914547,
+              "sampled_area": 0.9909027379596044,
+              "skewness": 0.0008120856737939018
+            },
+            "candidate_over_reference_rms_width": 0.9993717915490429,
+            "normalized_l1_distance": 0.0853424241472045,
+            "normalized_maximum_abs_error": 0.07364253858887136,
+            "normalized_rms_distance": 0.08506225698700355,
+            "reference_moments": {
+              "centroid_deg": 22.546277341811376,
+              "maximum_per_deg": 10.014308079686318,
+              "mode_deg": 22.546366759026505,
+              "rms_width_deg": 0.14267309664418157,
+              "sampled_area": 0.9908912422567222,
+              "skewness": 0.029914308811732956
+            }
+          }
+        },
+        "0.0097": {
+          "gsasii_against_published_equal_height_same_parameter": {
+            "candidate_minus_reference_centroid_deg": -0.0016443158796128898,
+            "candidate_minus_reference_mode_deg": -0.0016500000000014836,
+            "candidate_minus_reference_skewness": 0.01151739331203248,
+            "candidate_moments": {
+              "centroid_deg": 22.547850403259105,
+              "maximum_per_deg": 10.162309557199478,
+              "mode_deg": 22.547866759026505,
+              "rms_width_deg": 0.14258346832404784,
+              "sampled_area": 0.9909027190174856,
+              "skewness": 0.019023143316095958
+            },
+            "candidate_over_reference_rms_width": 0.9999651856585822,
+            "normalized_l1_distance": 0.03402626897776541,
+            "normalized_maximum_abs_error": 0.029176238869839395,
+            "normalized_rms_distance": 0.033912097771831684,
+            "reference_moments": {
+              "centroid_deg": 22.549494719138718,
+              "maximum_per_deg": 10.152461314409583,
+              "mode_deg": 22.549516759026506,
+              "rms_width_deg": 0.14258843244641725,
+              "sampled_area": 0.9908914128201559,
+              "skewness": 0.007505750004063476
+            }
+          },
+          "gsasii_against_source_native": {
+            "candidate_minus_reference_centroid_deg": 0.0015730614477291738,
+            "candidate_minus_reference_mode_deg": 0.0015000000000000568,
+            "candidate_minus_reference_skewness": -0.010891165495636998,
+            "candidate_moments": {
+              "centroid_deg": 22.547850403259105,
+              "maximum_per_deg": 10.162309557199478,
+              "mode_deg": 22.547866759026505,
+              "rms_width_deg": 0.14258346832404784,
+              "sampled_area": 0.9909027190174856,
+              "skewness": 0.019023143316095958
+            },
+            "candidate_over_reference_rms_width": 0.9993717924244873,
+            "normalized_l1_distance": 0.03275168129652273,
+            "normalized_maximum_abs_error": 0.02886988564976589,
+            "normalized_rms_distance": 0.032907716678550546,
+            "reference_moments": {
+              "centroid_deg": 22.546277341811376,
+              "maximum_per_deg": 10.014308079686318,
+              "mode_deg": 22.546366759026505,
+              "rms_width_deg": 0.14267309664418157,
+              "sampled_area": 0.9908912422567222,
+              "skewness": 0.029914308811732956
+            }
+          }
+        },
+        "0.0194": {
+          "gsasii_against_published_equal_height_same_parameter": {
+            "candidate_minus_reference_centroid_deg": -0.006587191937153847,
+            "candidate_minus_reference_mode_deg": -0.006750000000000256,
+            "candidate_minus_reference_skewness": 0.046256613626161625,
+            "candidate_moments": {
+              "centroid_deg": 22.53969014987422,
+              "maximum_per_deg": 10.162314772605896,
+              "mode_deg": 22.539616759026504,
+              "rms_width_deg": 0.1425834699516812,
+              "sampled_area": 0.9909022230050232,
+              "skewness": 0.07617092243789458
+            },
+            "candidate_over_reference_rms_width": 0.9993718038326181,
+            "normalized_l1_distance": 0.13608345199622274,
+            "normalized_maximum_abs_error": 0.11829215188635135,
+            "normalized_rms_distance": 0.13623207114711253,
+            "reference_moments": {
+              "centroid_deg": 22.546277341811376,
+              "maximum_per_deg": 10.014308079686318,
+              "mode_deg": 22.546366759026505,
+              "rms_width_deg": 0.14267309664418157,
+              "sampled_area": 0.9908912422567222,
+              "skewness": 0.029914308811732956
+            }
+          },
+          "gsasii_against_source_native": {
+            "candidate_minus_reference_centroid_deg": -0.006587191937153847,
+            "candidate_minus_reference_mode_deg": -0.006750000000000256,
+            "candidate_minus_reference_skewness": 0.046256613626161625,
+            "candidate_moments": {
+              "centroid_deg": 22.53969014987422,
+              "maximum_per_deg": 10.162314772605896,
+              "mode_deg": 22.539616759026504,
+              "rms_width_deg": 0.1425834699516812,
+              "sampled_area": 0.9909022230050232,
+              "skewness": 0.07617092243789458
+            },
+            "candidate_over_reference_rms_width": 0.9993718038326181,
+            "normalized_l1_distance": 0.13608345199622274,
+            "normalized_maximum_abs_error": 0.11829215188635135,
+            "normalized_rms_distance": 0.13623207114711253,
+            "reference_moments": {
+              "centroid_deg": 22.546277341811376,
+              "maximum_per_deg": 10.014308079686318,
+              "mode_deg": 22.546366759026505,
+              "rms_width_deg": 0.14267309664418157,
+              "sampled_area": 0.9908912422567222,
+              "skewness": 0.029914308811732956
+            }
+          }
+        }
+      },
+      "gaussian_fwhm_deg": 0.05322622620837032,
+      "hkl": [
+        0,
+        1,
+        3
+      ],
+      "lorentzian_fwhm_deg": 0.03705519884283496,
+      "position_deg": 22.550566759026506,
+      "source_native_moments": {
+        "centroid_deg": 22.546277341811376,
+        "maximum_per_deg": 10.014308079686318,
+        "mode_deg": 22.546366759026505,
+        "rms_width_deg": 0.14267309664418157,
+        "sampled_area": 0.9908912422567222,
+        "skewness": 0.029914308811732956
+      }
+    },
+    {
+      "comparisons_by_gsasii_sh_over_l": {
+        "0.002": {
+          "gsasii_against_published_equal_height_same_parameter": {
+            "candidate_minus_reference_centroid_deg": -5.62831094299554e-05,
+            "candidate_minus_reference_mode_deg": -0.00015000000000142677,
+            "candidate_minus_reference_skewness": 0.0003919444308512763,
+            "candidate_moments": {
+              "centroid_deg": 28.852038409348232,
+              "maximum_per_deg": 10.103339701890945,
+              "mode_deg": 28.85197903583581,
+              "rms_width_deg": 0.14336424705798806,
+              "sampled_area": 0.9907998070728716,
+              "skewness": 0.0006312017104328292
+            },
+            "candidate_over_reference_rms_width": 1.0000046979285204,
+            "normalized_l1_distance": 0.0011582698609516819,
+            "normalized_maximum_abs_error": 0.001014639491907238,
+            "normalized_rms_distance": 0.001155056331480976,
+            "reference_moments": {
+              "centroid_deg": 28.852094692457662,
+              "maximum_per_deg": 10.103245889371365,
+              "mode_deg": 28.852129035835812,
+              "rms_width_deg": 0.1433635735461671,
+              "sampled_area": 0.9907884092254367,
+              "skewness": 0.00023925727958155286
+            }
+          },
+          "gsasii_against_source_native": {
+            "candidate_minus_reference_centroid_deg": 0.0031413393935579847,
+            "candidate_minus_reference_mode_deg": 0.0030000000000001137,
+            "candidate_minus_reference_skewness": -0.0218318968231316,
+            "candidate_moments": {
+              "centroid_deg": 28.852038409348232,
+              "maximum_per_deg": 10.103339701890945,
+              "mode_deg": 28.85197903583581,
+              "rms_width_deg": 0.14336424705798806,
+              "sampled_area": 0.9907998070728716,
+              "skewness": 0.0006312017104328292
+            },
+            "candidate_over_reference_rms_width": 0.9996491560039199,
+            "normalized_l1_distance": 0.06420593428379685,
+            "normalized_maximum_abs_error": 0.055270089455620904,
+            "normalized_rms_distance": 0.06403762667674757,
+            "reference_moments": {
+              "centroid_deg": 28.848897069954674,
+              "maximum_per_deg": 10.018295353232949,
+              "mode_deg": 28.84897903583581,
+              "rms_width_deg": 0.14341456319643597,
+              "sampled_area": 0.9907883047708497,
+              "skewness": 0.02246309853356443
+            }
+          }
+        },
+        "0.0097": {
+          "gsasii_against_published_equal_height_same_parameter": {
+            "candidate_minus_reference_centroid_deg": -0.0012385077137864187,
+            "candidate_minus_reference_mode_deg": -0.00134999999999863,
+            "candidate_minus_reference_skewness": 0.00862901077472614,
+            "candidate_moments": {
+              "centroid_deg": 28.850082649839877,
+              "maximum_per_deg": 10.10335236787796,
+              "mode_deg": 28.850029035835814,
+              "rms_width_deg": 0.1433642473207408,
+              "sampled_area": 0.9907998095453148,
+              "skewness": 0.01425636842305368
+            },
+            "candidate_over_reference_rms_width": 0.9999825116304933,
+            "normalized_l1_distance": 0.025486351571746547,
+            "normalized_maximum_abs_error": 0.02187553852050292,
+            "normalized_rms_distance": 0.02541803841557967,
+            "reference_moments": {
+              "centroid_deg": 28.851321157553663,
+              "maximum_per_deg": 10.0977587326005,
+              "mode_deg": 28.851379035835812,
+              "rms_width_deg": 0.1433667545715197,
+              "sampled_area": 0.9907884027103435,
+              "skewness": 0.00562735764832754
+            }
+          },
+          "gsasii_against_source_native": {
+            "candidate_minus_reference_centroid_deg": 0.0011855798852025146,
+            "candidate_minus_reference_mode_deg": 0.001050000000002882,
+            "candidate_minus_reference_skewness": -0.008206730110510749,
+            "candidate_moments": {
+              "centroid_deg": 28.850082649839877,
+              "maximum_per_deg": 10.10335236787796,
+              "mode_deg": 28.850029035835814,
+              "rms_width_deg": 0.1433642473207408,
+              "sampled_area": 0.9907998095453148,
+              "skewness": 0.01425636842305368
+            },
+            "candidate_over_reference_rms_width": 0.9996491578360402,
+            "normalized_l1_distance": 0.024487322514875988,
+            "normalized_maximum_abs_error": 0.021319933559730844,
+            "normalized_rms_distance": 0.02453313718743138,
+            "reference_moments": {
+              "centroid_deg": 28.848897069954674,
+              "maximum_per_deg": 10.018295353232949,
+              "mode_deg": 28.84897903583581,
+              "rms_width_deg": 0.14341456319643597,
+              "sampled_area": 0.9907883047708497,
+              "skewness": 0.02246309853356443
+            }
+          }
+        },
+        "0.0194": {
+          "gsasii_against_published_equal_height_same_parameter": {
+            "candidate_minus_reference_centroid_deg": -0.004961362936903413,
+            "candidate_minus_reference_mode_deg": -0.005099999999998772,
+            "candidate_minus_reference_skewness": 0.034616455508365715,
+            "candidate_moments": {
+              "centroid_deg": 28.84393570701777,
+              "maximum_per_deg": 10.103356093168259,
+              "mode_deg": 28.843879035835812,
+              "rms_width_deg": 0.14336424825230143,
+              "sampled_area": 0.9907995241640764,
+              "skewness": 0.057079554041930144
+            },
+            "candidate_over_reference_rms_width": 0.9996491643316193,
+            "normalized_l1_distance": 0.10200520667756396,
+            "normalized_maximum_abs_error": 0.08818541214647732,
+            "normalized_rms_distance": 0.10198894962584183,
+            "reference_moments": {
+              "centroid_deg": 28.848897069954674,
+              "maximum_per_deg": 10.018295353232949,
+              "mode_deg": 28.84897903583581,
+              "rms_width_deg": 0.14341456319643597,
+              "sampled_area": 0.9907883047708497,
+              "skewness": 0.02246309853356443
+            }
+          },
+          "gsasii_against_source_native": {
+            "candidate_minus_reference_centroid_deg": -0.004961362936903413,
+            "candidate_minus_reference_mode_deg": -0.005099999999998772,
+            "candidate_minus_reference_skewness": 0.034616455508365715,
+            "candidate_moments": {
+              "centroid_deg": 28.84393570701777,
+              "maximum_per_deg": 10.103356093168259,
+              "mode_deg": 28.843879035835812,
+              "rms_width_deg": 0.14336424825230143,
+              "sampled_area": 0.9907995241640764,
+              "skewness": 0.057079554041930144
+            },
+            "candidate_over_reference_rms_width": 0.9996491643316193,
+            "normalized_l1_distance": 0.10200520667756396,
+            "normalized_maximum_abs_error": 0.08818541214647732,
+            "normalized_rms_distance": 0.10198894962584183,
+            "reference_moments": {
+              "centroid_deg": 28.848897069954674,
+              "maximum_per_deg": 10.018295353232949,
+              "mode_deg": 28.84897903583581,
+              "rms_width_deg": 0.14341456319643597,
+              "sampled_area": 0.9907883047708497,
+              "skewness": 0.02246309853356443
+            }
+          }
+        }
+      },
+      "gaussian_fwhm_deg": 0.05322622620837032,
+      "hkl": [
+        2,
+        2,
+        1
+      ],
+      "lorentzian_fwhm_deg": 0.03752310620338248,
+      "position_deg": 28.852129035835812,
+      "source_native_moments": {
+        "centroid_deg": 28.848897069954674,
+        "maximum_per_deg": 10.018295353232949,
+        "mode_deg": 28.84897903583581,
+        "rms_width_deg": 0.14341456319643597,
+        "sampled_area": 0.9907883047708497,
+        "skewness": 0.02246309853356443
+      }
+    }
+  ],
+  "interpretation": {
+    "gsasii_formal_sum_parameter": 0.0194,
+    "gsasii_parameter_action": "retain the documented formal sum for declared common-input comparisons; do not retune it to imitate the deposited curve",
+    "phasesmith_conversion": "retain separate source S/L and H/L ratios",
+    "remaining_gap": "the pinned GSAS-II one-parameter discretization cannot establish the deposited legacy profile-function-4 shape at this geometry"
+  },
+  "oracle_boundary": {
+    "api": "GSASIIpwd.getFCJVoigt3",
+    "native_units": {
+      "gaussian_variance": "centidegree_squared",
+      "lorentzian_fwhm": "centidegree",
+      "profile": "inverse_centidegree converted to inverse_degree"
+    },
+    "private_probe": true,
+    "reason": "GSAS-II scripting does not expose an isolated normalized FCJ profile"
+  },
+  "review": {
+    "closest_tested_gsasii_parameter_by_case": [
+      "0.0097",
+      "0.0097",
+      "0.0097"
+    ],
+    "closest_tested_maximum_l1_distance": 0.04246592362537831,
+    "conclusion": "The native PhaseSmith conversion preserves the deposited separate S/L and H/L geometry exactly. The documented GSAS-II formal-sum field is not shape-faithful for these low-angle source peaks under the pinned discretized kernel; its empirically closer tested value must not replace the physical conversion.",
+    "formal_sum_is_closest_gsasii_parameter": false,
+    "formal_sum_maximum_abs_centroid_delta_deg": 0.008469418902411263,
+    "formal_sum_maximum_l1_distance": 0.17529864315052218,
+    "formal_sum_maximum_normalized_profile_error": 0.1537823560994232,
+    "source_native_equals_formal_phasesmith_mapping": true
+  },
+  "revision": "c0bc79b259cdf0065480b5fbd57674ddf12c4a23",
+  "schema_version": 1,
+  "scope": "iucr_trirubidium_citrate_source_axial_profile_fidelity",
+  "source_dataset_id": "iucr-trirubidium-citrate-si-standard",
+  "source_geometry": {
+    "H/L": 0.0097,
+    "S/L": 0.0097
+  }
+}

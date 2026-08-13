@@ -21,6 +21,8 @@ _CELL_PARAMETER_NAMES = (
     "beta_deg",
     "gamma_deg",
 )
+_STEPHENS_ORTHORHOMBIC_NAMES = ("S400", "S040", "S004", "S220", "S202", "S022")
+_EIGHT_LN_TWO = 8.0 * np.log(2.0)
 
 
 @dataclass(frozen=True, slots=True)
@@ -255,6 +257,132 @@ class IsotropicLorentzianMicrostrainBroadening:
             "isotropic_lorentzian_microstrain.fraction",
             zeros,
             d_microstrain,
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class StephensOrthorhombicBroadening:
+    """Stephens anisotropic microstrain for an orthorhombic reciprocal basis.
+
+    ``coefficients_angstrom_minus4`` follow ``S400, S040, S004, S220,
+    S202, S022`` and define the variance of ``1 / d_hkl**2`` as
+
+    ``S400 h**4 + S040 k**4 + S004 l**4 + S220 h**2 k**2
+    + S202 h**2 l**2 + S022 k**2 l**2``.
+
+    The Gaussian-equivalent angular FWHM may be split explicitly between
+    Gaussian and Lorentzian TCH contributions with ``lorentzian_fraction``.
+    This mixing convention is part of the provider contract; the coefficients
+    remain physical inverse-metric variances in ``angstrom**-4``.
+    """
+
+    coefficients_angstrom_minus4: tuple[float, float, float, float, float, float]
+    lorentzian_fraction: float = 0.0
+    descriptor: ClassVar[ProviderDescriptor] = ProviderDescriptor(
+        "phasesmith.stephens-orthorhombic", "1", thread_safe=True
+    )
+
+    def __post_init__(self) -> None:
+        """Validate fixed coefficient order and the closed mixing interval."""
+
+        coefficients = tuple(float(value) for value in self.coefficients_angstrom_minus4)
+        if (
+            len(coefficients) != len(_STEPHENS_ORTHORHOMBIC_NAMES)
+            or not np.isfinite(coefficients).all()
+        ):
+            raise ValueError(
+                "coefficients_angstrom_minus4 must contain six finite orthorhombic values"
+            )
+        if not np.isfinite(self.lorentzian_fraction) or not 0.0 <= self.lorentzian_fraction <= 1.0:
+            raise ValueError("lorentzian_fraction must lie in [0, 1]")
+        object.__setattr__(self, "coefficients_angstrom_minus4", coefficients)
+
+    @property
+    def coefficient_names(self) -> tuple[str, ...]:
+        """Return the fixed independent-coefficient order."""
+
+        return _STEPHENS_ORTHORHOMBIC_NAMES
+
+    def evaluate(self, context: PhysicsContext) -> PhysicsContribution:
+        """Evaluate widths and coefficient, mixing, position, and cell chains."""
+
+        if context.unit_cell is None:
+            raise ValueError("Stephens broadening requires a unit cell")
+        if not np.allclose(
+            context.unit_cell.as_tuple()[3:], (90.0, 90.0, 90.0), rtol=0.0, atol=1.0e-10
+        ):
+            raise ValueError("StephensOrthorhombicBroadening requires an orthorhombic unit cell")
+        h, k, ell = np.asarray(context.reflections.hkl, dtype=np.float64).T
+        basis = np.ascontiguousarray(
+            np.vstack((h**4, k**4, ell**4, h**2 * k**2, h**2 * ell**2, k**2 * ell**2))
+        )
+        coefficients = np.asarray(self.coefficients_angstrom_minus4, dtype=np.float64)
+        terms = coefficients[:, None] * basis
+        inverse_metric_variance = np.sum(terms, axis=0)
+        tolerance = 64.0 * np.finfo(np.float64).eps * np.sum(np.abs(terms), axis=0)
+        if np.any(inverse_metric_variance < -tolerance):
+            raise ValueError("Stephens coefficients produce a negative reflection variance")
+        inverse_metric_variance = np.maximum(inverse_metric_variance, 0.0)
+        mixing = self.lorentzian_fraction
+        if mixing > 0.0 and np.any(inverse_metric_variance == 0.0):
+            raise ValueError(
+                "positive Stephens Lorentzian mixing requires positive reflection variances"
+            )
+
+        theta = context.reflections.two_theta_deg * _HALF_ANGLE_RAD_PER_DEG
+        tangent = np.tan(theta)
+        d_spacing = context.reflections.d_spacing_angstrom
+        angular_variance_scale = _DEG_PER_RAD**2 * d_spacing**4 * tangent**2
+        equivalent_fwhm = np.sqrt(_EIGHT_LN_TWO * angular_variance_scale * inverse_metric_variance)
+        gaussian_weight = (1.0 - mixing) ** 2
+        gaussian = gaussian_weight * angular_variance_scale * inverse_metric_variance
+        lorentzian = mixing * equivalent_fwhm
+
+        position_log_scale = np.pi / 180.0 / (np.sin(theta) * np.cos(theta))
+        d_gaussian_position = gaussian * position_log_scale
+        d_lorentzian_position = 0.5 * lorentzian * position_log_scale
+
+        d_gaussian_coefficients = gaussian_weight * angular_variance_scale[None, :] * basis
+        if mixing == 0.0:
+            d_lorentzian_coefficients = np.zeros_like(basis)
+        else:
+            d_lorentzian_coefficients = (
+                lorentzian[None, :] * basis / (2.0 * inverse_metric_variance[None, :])
+            )
+        d_gaussian_mixing = -2.0 * (1.0 - mixing) * angular_variance_scale * inverse_metric_variance
+        d_lorentzian_mixing = equivalent_fwhm
+
+        reciprocal_derivatives = _reciprocal_metric_cell_derivatives(context)
+        reflections = np.asarray(context.reflections.hkl, dtype=np.float64)
+        d_q_squared = np.einsum("ni,pij,nj->pn", reflections, reciprocal_derivatives, reflections)
+        d_d_spacing = -0.5 * d_spacing[None, :] ** 3 * d_q_squared
+        d_gaussian_cell = 4.0 * gaussian[None, :] * d_d_spacing / d_spacing[None, :]
+        d_lorentzian_cell = 2.0 * lorentzian[None, :] * d_d_spacing / d_spacing[None, :]
+
+        gaussian_parameters = np.vstack(
+            (d_gaussian_coefficients, d_gaussian_mixing, d_gaussian_cell)
+        )
+        lorentzian_parameters = np.vstack(
+            (d_lorentzian_coefficients, d_lorentzian_mixing, d_lorentzian_cell)
+        )
+        parameter_names = (
+            *(f"stephens.{name}" for name in _STEPHENS_ORTHORHOMBIC_NAMES),
+            "stephens.lorentzian_fraction",
+            *(f"stephens.cell.{name}" for name in _CELL_PARAMETER_NAMES),
+        )
+        count = context.reflections.reflection_count
+        zeros = np.zeros(count, dtype=np.float64)
+        return PhysicsContribution(
+            gaussian_variance_deg2=gaussian,
+            lorentzian_fwhm_deg=lorentzian,
+            intensity_multiplier=np.ones(count, dtype=np.float64),
+            d_gaussian_variance_d_position=d_gaussian_position,
+            d_lorentzian_fwhm_d_position=d_lorentzian_position,
+            d_intensity_multiplier_d_position=zeros,
+            parameter_names=parameter_names,
+            d_gaussian_variance_d_parameters=gaussian_parameters,
+            d_lorentzian_fwhm_d_parameters=lorentzian_parameters,
+            d_intensity_multiplier_d_parameters=np.zeros_like(gaussian_parameters),
         )
 
 

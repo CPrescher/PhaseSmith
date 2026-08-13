@@ -37,6 +37,17 @@ fn perturb_cell(cell: UnitCell, parameter: usize, delta: f64) -> UnitCell {
     }
 }
 
+fn orthorhombic_cell() -> UnitCell {
+    UnitCell {
+        a_angstrom: 8.0,
+        b_angstrom: 9.0,
+        c_angstrom: 10.0,
+        alpha_deg: 90.0,
+        beta_deg: 90.0,
+        gamma_deg: 90.0,
+    }
+}
+
 fn assert_close(actual: &[f64], expected: &[f64], relative: f64, absolute: f64) {
     assert_eq!(actual.len(), expected.len());
     for (index, (actual, expected)) in actual.iter().zip(expected).enumerate() {
@@ -229,6 +240,202 @@ fn march_ratio_and_all_cell_derivatives_match_centered_differences() {
 }
 
 #[test]
+#[allow(clippy::too_many_lines)]
+fn stephens_values_and_analytical_derivatives_match_centered_differences() {
+    let hkl = [[1, 0, 0], [0, 2, 0], [0, 0, 3], [1, 2, 1], [2, 1, 3]];
+    let positions = [20.0, 35.0, 50.0, 70.0, 105.0];
+    let coefficients = [2.0e-8, 3.0e-8, 1.0e-8, 8.0e-9, 6.0e-9, 7.0e-9];
+    let mixing = 0.35;
+    let model = RietveldSamplePhysicsModel::StephensOrthorhombic {
+        coefficients_angstrom_minus4: coefficients,
+        lorentzian_fraction: mixing,
+    };
+    let actual = model
+        .evaluate(&hkl, &positions, orthorhombic_cell(), 1.5406)
+        .unwrap();
+    let arrays = actual.contributions.arrays();
+    assert_eq!(actual.parameter_names.len(), 13);
+
+    for coefficient_index in 0..6 {
+        let step = (coefficients[coefficient_index].abs() * 1.0e-5_f64).max(1.0e-14);
+        let mut high_coefficients = coefficients;
+        let mut low_coefficients = coefficients;
+        high_coefficients[coefficient_index] += step;
+        low_coefficients[coefficient_index] -= step;
+        let high = RietveldSamplePhysicsModel::StephensOrthorhombic {
+            coefficients_angstrom_minus4: high_coefficients,
+            lorentzian_fraction: mixing,
+        }
+        .evaluate(&hkl, &positions, orthorhombic_cell(), 1.5406)
+        .unwrap();
+        let low = RietveldSamplePhysicsModel::StephensOrthorhombic {
+            coefficients_angstrom_minus4: low_coefficients,
+            lorentzian_fraction: mixing,
+        }
+        .evaluate(&hkl, &positions, orthorhombic_cell(), 1.5406)
+        .unwrap();
+        let numerical_gaussian = high
+            .contributions
+            .arrays()
+            .gaussian_variance_deg2
+            .iter()
+            .zip(&low.contributions.arrays().gaussian_variance_deg2)
+            .map(|(high, low)| (high - low) / (2.0 * step))
+            .collect::<Vec<_>>();
+        let numerical_lorentzian = high
+            .contributions
+            .arrays()
+            .lorentzian_fwhm_deg
+            .iter()
+            .zip(&low.contributions.arrays().lorentzian_fwhm_deg)
+            .map(|(high, low)| (high - low) / (2.0 * step))
+            .collect::<Vec<_>>();
+        let start = coefficient_index * hkl.len();
+        assert_close(
+            &arrays.d_gaussian_variance_d_parameters[start..start + hkl.len()],
+            &numerical_gaussian,
+            3.0e-9,
+            1.0e-8,
+        );
+        assert_close(
+            &arrays.d_lorentzian_fwhm_d_parameters[start..start + hkl.len()],
+            &numerical_lorentzian,
+            3.0e-9,
+            1.0e-8,
+        );
+    }
+
+    let step = 1.0e-6;
+    let high = RietveldSamplePhysicsModel::StephensOrthorhombic {
+        coefficients_angstrom_minus4: coefficients,
+        lorentzian_fraction: mixing + step,
+    }
+    .evaluate(&hkl, &positions, orthorhombic_cell(), 1.5406)
+    .unwrap();
+    let low = RietveldSamplePhysicsModel::StephensOrthorhombic {
+        coefficients_angstrom_minus4: coefficients,
+        lorentzian_fraction: mixing - step,
+    }
+    .evaluate(&hkl, &positions, orthorhombic_cell(), 1.5406)
+    .unwrap();
+    let numerical_gaussian = high
+        .contributions
+        .arrays()
+        .gaussian_variance_deg2
+        .iter()
+        .zip(&low.contributions.arrays().gaussian_variance_deg2)
+        .map(|(high, low)| (high - low) / (2.0 * step))
+        .collect::<Vec<_>>();
+    let numerical_lorentzian = high
+        .contributions
+        .arrays()
+        .lorentzian_fwhm_deg
+        .iter()
+        .zip(&low.contributions.arrays().lorentzian_fwhm_deg)
+        .map(|(high, low)| (high - low) / (2.0 * step))
+        .collect::<Vec<_>>();
+    let start = 6 * hkl.len();
+    assert_close(
+        &arrays.d_gaussian_variance_d_parameters[start..start + hkl.len()],
+        &numerical_gaussian,
+        3.0e-10,
+        1.0e-12,
+    );
+    assert_close(
+        &arrays.d_lorentzian_fwhm_d_parameters[start..start + hkl.len()],
+        &numerical_lorentzian,
+        3.0e-10,
+        1.0e-12,
+    );
+
+    let high_positions = positions.map(|value| value + step);
+    let low_positions = positions.map(|value| value - step);
+    let high = model
+        .evaluate(&hkl, &high_positions, orthorhombic_cell(), 1.5406)
+        .unwrap();
+    let low = model
+        .evaluate(&hkl, &low_positions, orthorhombic_cell(), 1.5406)
+        .unwrap();
+    let numerical_gaussian = high
+        .contributions
+        .arrays()
+        .gaussian_variance_deg2
+        .iter()
+        .zip(&low.contributions.arrays().gaussian_variance_deg2)
+        .map(|(high, low)| (high - low) / (2.0 * step))
+        .collect::<Vec<_>>();
+    let numerical_lorentzian = high
+        .contributions
+        .arrays()
+        .lorentzian_fwhm_deg
+        .iter()
+        .zip(&low.contributions.arrays().lorentzian_fwhm_deg)
+        .map(|(high, low)| (high - low) / (2.0 * step))
+        .collect::<Vec<_>>();
+    assert_close(
+        &arrays.d_gaussian_variance_d_position,
+        &numerical_gaussian,
+        3.0e-8,
+        1.0e-12,
+    );
+    assert_close(
+        &arrays.d_lorentzian_fwhm_d_position,
+        &numerical_lorentzian,
+        3.0e-8,
+        1.0e-12,
+    );
+
+    for cell_parameter in 0..3 {
+        let cell_step = 1.0e-5;
+        let high = model
+            .evaluate(
+                &hkl,
+                &positions,
+                perturb_cell(orthorhombic_cell(), cell_parameter, cell_step),
+                1.5406,
+            )
+            .unwrap();
+        let low = model
+            .evaluate(
+                &hkl,
+                &positions,
+                perturb_cell(orthorhombic_cell(), cell_parameter, -cell_step),
+                1.5406,
+            )
+            .unwrap();
+        let numerical_gaussian = high
+            .contributions
+            .arrays()
+            .gaussian_variance_deg2
+            .iter()
+            .zip(&low.contributions.arrays().gaussian_variance_deg2)
+            .map(|(high, low)| (high - low) / (2.0 * cell_step))
+            .collect::<Vec<_>>();
+        let numerical_lorentzian = high
+            .contributions
+            .arrays()
+            .lorentzian_fwhm_deg
+            .iter()
+            .zip(&low.contributions.arrays().lorentzian_fwhm_deg)
+            .map(|(high, low)| (high - low) / (2.0 * cell_step))
+            .collect::<Vec<_>>();
+        let start = (7 + cell_parameter) * hkl.len();
+        assert_close(
+            &arrays.d_gaussian_variance_d_parameters[start..start + hkl.len()],
+            &numerical_gaussian,
+            3.0e-8,
+            2.0e-12,
+        );
+        assert_close(
+            &arrays.d_lorentzian_fwhm_d_parameters[start..start + hkl.len()],
+            &numerical_lorentzian,
+            3.0e-8,
+            1.0e-11,
+        );
+    }
+}
+
+#[test]
 fn march_dollase_and_composition_have_stable_rows_and_product_rule() {
     let hkl = [[1, 0, 0], [0, 1, 0], [1, 1, 0]];
     let positions = [30.0, 45.0, 60.0];
@@ -281,6 +488,23 @@ fn invalid_models_and_duplicate_composite_parameters_are_rejected() {
     assert!(
         RietveldSamplePhysicsModel::IsotropicMicrostrain {
             rms_microstrain: -1.0,
+        }
+        .evaluate(&hkl, &positions, cell(), 1.5406)
+        .is_err()
+    );
+    let invalid_stephens = RietveldSamplePhysicsModel::StephensOrthorhombic {
+        coefficients_angstrom_minus4: [-1.0e-8, 0.0, 0.0, 0.0, 0.0, 0.0],
+        lorentzian_fraction: 0.35,
+    };
+    assert!(
+        invalid_stephens
+            .evaluate(&hkl, &positions, orthorhombic_cell(), 1.5406)
+            .is_err()
+    );
+    assert!(
+        RietveldSamplePhysicsModel::StephensOrthorhombic {
+            coefficients_angstrom_minus4: [1.0e-8; 6],
+            lorentzian_fraction: 0.35,
         }
         .evaluate(&hkl, &positions, cell(), 1.5406)
         .is_err()
@@ -377,12 +601,18 @@ fn native_models_match_python_values_and_derivatives_when_configured() {
         RietveldSamplePhysicsModel::IsotropicMicrostrain {
             rms_microstrain: 8.0e-4,
         },
+        RietveldSamplePhysicsModel::StephensOrthorhombic {
+            coefficients_angstrom_minus4: [2.0e-8, 3.0e-8, 1.0e-8, 8.0e-9, 6.0e-9, 7.0e-9],
+            lorentzian_fraction: 0.35,
+        },
         RietveldSamplePhysicsModel::MarchDollase {
             ratio: 0.78,
             preferred_axis_hkl: [1.0, 0.3, -0.2],
         },
     ]);
-    let native = model.evaluate(&hkl, &positions, cell(), 1.5406).unwrap();
+    let native = model
+        .evaluate(&hkl, &positions, orthorhombic_cell(), 1.5406)
+        .unwrap();
     let arrays = native.contributions.arrays();
     let expected = [
         arrays.gaussian_variance_deg2.as_slice(),
@@ -399,17 +629,20 @@ fn native_models_match_python_values_and_derivatives_when_configured() {
 import numpy as np
 import phasesmith
 
-cell = phasesmith.UnitCell(4.0, 5.0, 6.0, 90.0, 100.0, 90.0)
+cell = phasesmith.UnitCell(8.0, 9.0, 10.0, 90.0, 90.0, 90.0)
 hkl = np.asarray([[1, 0, 0], [1, 1, 0], [2, 1, 1], [-1, 2, 1]], dtype=np.int64)
 positions = np.asarray([25.0, 47.0, 83.0, 106.0])
 wavelength = 1.5406
-d = wavelength / (2.0 * np.sin(np.deg2rad(positions / 2.0)))
+d = cell.d_spacings(hkl).d_spacing_angstrom
 batch = phasesmith.ReflectionGeometryBatch(hkl, d, positions, np.ones(4))
 instrument = phasesmith.ConstantWavelengthInstrument(wavelength, 2e-4, -1e-4, 1.2e-4, 1.5e-3, 3e-3)
 metric = phasesmith.ReciprocalMetric(cell.geometry().reciprocal_metric)
 provider = phasesmith.CompositePhysicsProvider((
     phasesmith.IsotropicSizeBroadening(75.0, 0.9),
     phasesmith.IsotropicMicrostrainBroadening(8e-4),
+    phasesmith.StephensOrthorhombicBroadening(
+        (2e-8, 3e-8, 1e-8, 8e-9, 6e-9, 7e-9), 0.35
+    ),
     phasesmith.MarchDollasePreferredOrientation(0.78, (1.0, 0.3, -0.2), metric),
 ))
 value = provider.evaluate(phasesmith.PhysicsContext(batch, instrument, cell))

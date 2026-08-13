@@ -1,0 +1,401 @@
+{
+  "common_model": {
+    "data_selection": {
+      "excluded_source_region_two_theta_deg": [
+        5.0,
+        17.0
+      ],
+      "exclusion_reason": "beam spillover in the deposited refinement",
+      "refined_sample_count": 4106,
+      "source_index_interval_inclusive": [
+        594,
+        4699
+      ],
+      "source_sample_count": 4701,
+      "two_theta_max_deg": 99.98338600000001,
+      "two_theta_min_deg": 17.004916
+    },
+    "fixed_parameters": [
+      "shared deposited base U/V/W/X/Y and matched SH/L=0.0194",
+      "instrument zero, source-translated specimen displacement, radius, and Si lattice",
+      "all phase mixing, size/strain, and orientation parameters"
+    ],
+    "instrument": {
+      "common_base_profile": {
+        "U": 0.0,
+        "V": 0.0,
+        "W": 5.109,
+        "X": 3.634,
+        "Y": 0.0
+      },
+      "detector_over_radius": 0.0097,
+      "device": "Bruker D2 Phaser",
+      "geometry": "reflection, flat specimen",
+      "goniometer_radius_mm": 141.5,
+      "initial_zero_deg": 0.0,
+      "k_alpha2_over_k_alpha1": 0.5,
+      "legacy_manual_physical_sample_shift_mm": 0.10805049346761132,
+      "legacy_phase_profile_functions": {
+        "silicon": 4,
+        "trirubidium_citrate": 4
+      },
+      "legacy_phase_shift_coefficients": {
+        "silicon": -8.7503,
+        "trirubidium_citrate": -8.7503
+      },
+      "legacy_transparency_centideg": 1.3,
+      "matched_sh_over_l": 0.0194,
+      "polarization_fraction": 0.5,
+      "radius_is_source_deposited": true,
+      "source_over_radius": 0.0097,
+      "source_translated_sample_displacement_mm": -0.10805049346761132,
+      "translated_gsasii_transparency_field_cm": 0.6421066318087139,
+      "wavelengths_angstrom": [
+        1.540593,
+        1.544451
+      ]
+    },
+    "refined_parameters": [
+      "two phase scales",
+      "one constant residual background"
+    ],
+    "silicon_standard": {
+      "candidate_calibration_windows_two_theta_deg": [
+        [
+          46.95,
+          47.78
+        ],
+        [
+          55.77,
+          56.63
+        ],
+        [
+          68.78,
+          69.68
+        ]
+      ],
+      "deposited_weight_fraction": 0.0215,
+      "fixed_lattice_a_angstrom": 5.43105,
+      "material": "NIST SRM 640b"
+    }
+  },
+  "cross_implementation_validation": {
+    "checks": {
+      "phase_fraction_delta": {
+        "limit": 0.005,
+        "measured": 0.0002640802807155618,
+        "passed": true
+      },
+      "poisson_rwp_delta": {
+        "limit": 0.005,
+        "measured": 0.001553574864399887,
+        "passed": true
+      },
+      "profile_correlation_delta": {
+        "limit": 0.005,
+        "measured": 0.004840644864247179,
+        "passed": true
+      },
+      "sample_count_equal": {
+        "limit": true,
+        "measured": true,
+        "passed": true
+      },
+      "silicon_anchor_not_transferable": {
+        "measured_displacement_delta_mm": 0.03511910637273588,
+        "minimum_expected_delta_mm": 0.02,
+        "passed": true
+      },
+      "silicon_calibration_rwp_delta": {
+        "limit": 0.005,
+        "measured": 3.2858571008417825e-05,
+        "passed": true
+      }
+    },
+    "status": "qualified_pass"
+  },
+  "gsasii": {
+    "legacy_curve_poisson_rwp": 0.024583261453453954,
+    "legacy_curve_profile_correlation": 0.9977005959033203,
+    "legacy_weight_fraction_errors": {
+      "silicon": 0.00398191881388019,
+      "trirubidium_citrate": -0.003981918813880214
+    },
+    "maximum_legacy_weight_fraction_error": 0.003981918813880214,
+    "poisson_rwp": 0.09734738889053016,
+    "profile_correlation": 0.942476485890706,
+    "refined_hap": {
+      "silicon": {
+        "Mustrain": [
+          "isotropic",
+          [
+            0.0,
+            1000.0,
+            0.0
+          ],
+          [
+            false,
+            false,
+            false
+          ],
+          [
+            0,
+            0,
+            1
+          ],
+          [
+            0.01,
+            0.01
+          ],
+          [
+            false,
+            false
+          ]
+        ],
+        "Pref.Ori.": [
+          "MD",
+          1.0,
+          false,
+          [
+            0,
+            0,
+            1
+          ],
+          0,
+          {},
+          [],
+          0.1
+        ],
+        "Scale": [
+          6.842394973407277,
+          true
+        ],
+        "Size": [
+          "isotropic",
+          [
+            10.0,
+            1.0,
+            1.0
+          ],
+          [
+            false,
+            false,
+            false
+          ],
+          [
+            0,
+            0,
+            1
+          ],
+          [
+            1.0,
+            1.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
+          ]
+        ]
+      },
+      "trirubidium_citrate": {
+        "Mustrain": [
+          "isotropic",
+          [
+            0.0,
+            1000.0,
+            0.0
+          ],
+          [
+            false,
+            false,
+            false
+          ],
+          [
+            0,
+            0,
+            1
+          ],
+          [
+            0.01,
+            0.01,
+            0.01,
+            0.01,
+            0.01,
+            0.01
+          ],
+          [
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
+          ]
+        ],
+        "Pref.Ori.": [
+          "MD",
+          1.0,
+          false,
+          [
+            0,
+            0,
+            1
+          ],
+          0,
+          {},
+          [],
+          0.1
+        ],
+        "Scale": [
+          32.99401503465232,
+          true
+        ],
+        "Size": [
+          "isotropic",
+          [
+            10.0,
+            1.0,
+            1.0
+          ],
+          [
+            false,
+            false,
+            false
+          ],
+          [
+            0,
+            0,
+            1
+          ],
+          [
+            1.0,
+            1.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
+          ]
+        ]
+      }
+    },
+    "refined_instrument": {
+      "SH/L": 0.0194,
+      "U": 0.0,
+      "V": 0.0,
+      "W": 5.109,
+      "X": 3.634,
+      "Y": 0.0,
+      "Zero": 0.0
+    },
+    "revision": "c0bc79b259cdf0065480b5fbd57674ddf12c4a23",
+    "sample_count": 4106,
+    "schema_version": 1,
+    "scope": "iucr_anhydrous_trirubidium_citrate_silicon_holdout",
+    "silicon_calibration": {
+      "calibrated_sample_displacement_mm": -0.1103128296888061,
+      "poisson_rwp": 0.09567757554869726,
+      "sample_count": 128,
+      "windows_two_theta_deg": [
+        [
+          46.95,
+          47.78
+        ],
+        [
+          55.77,
+          56.63
+        ],
+        [
+          68.78,
+          69.68
+        ]
+      ]
+    },
+    "stage_poisson_rwp": {
+      "scale_background": 0.09734738889053016,
+      "silicon_displacement_calibration": 0.09567757554869726,
+      "silicon_scale_background": 0.11371087077343629
+    },
+    "weight_fractions": {
+      "silicon": 0.025481918813880188,
+      "trirubidium_citrate": 0.9745180811861198
+    }
+  },
+  "interpretation": [
+    "The fixed-geometry common subset agrees closely across implementations.",
+    "The source-deposited radius removes the geometry assumption present in the potassium diagnostic.",
+    "Legacy LX and shft now have explicit equation translations and documented sign conventions. Their corrected common subset materially lowers both implementations' Rwp while retaining cross-implementation parity.",
+    "The 2.15 wt% silicon windows still do not transfer a displacement anchor; their estimates remain diagnostic and do not replace the source shft value.",
+    "Both fits remain far from the phase-specific deposited GSAS model, so this does not justify adding transparency or another broadening term."
+  ],
+  "legacy_gsas_reference": {
+    "profile_correlation": 0.9977005959033199,
+    "rexp": 0.0225,
+    "rp": 0.01950459520303016,
+    "rwp": 0.024583376646074934,
+    "weight_fractions": {
+      "silicon": 0.0215,
+      "trirubidium_citrate": 0.9785
+    }
+  },
+  "phasesmith": {
+    "calibrated_sample_displacement_mm": -0.07519372331607022,
+    "elapsed_seconds": 1.4607870001345873,
+    "free_parameter_count": 3,
+    "legacy_curve_poisson_rwp": 0.024583261453453954,
+    "legacy_curve_profile_correlation": 0.9977005959033199,
+    "legacy_weight_fraction_errors": {
+      "silicon": 0.0042459990945957135,
+      "trirubidium_citrate": -0.004245999094595776
+    },
+    "maximum_legacy_weight_fraction_error": 0.004245999094595776,
+    "model_qualifications": [
+      "Both phases use the corrected deposited common isotropic base profile, with legacy LX mapped to the current Lorentzian size axis.",
+      "Phase-specific mixing and Stephens anisotropy remain fixed out.",
+      "The source declares no absorption or surface-roughness correction.",
+      "The 141.5 mm goniometer radius is source-deposited rather than assumed.",
+      "The source-deposited legacy shft coefficient is analytically translated to the current PhaseSmith/GSAS-II Bragg-Brentano displacement parameter and applied to the full pattern; the legacy manual's physical shift variable uses the opposite sign.",
+      "The source deposits equal source/specimen and specimen/detector radii of 141.5 mm and equal S/L=H/L=0.0097. The article says Si verifies the calibrated goniometer zero. Legacy shft=-8.7503 centidegrees maps analytically to -0.108050493468 mm in the current PhaseSmith/GSAS-II Bragg-Brentano parameter convention. The legacy manual's physical sample-shift variable uses the opposite sign (0.108050493468 mm); instrument zero remains zero.",
+      "The source declares no absorption-intensity or surface-roughness correction. In the legacy profile-position equation, trns=1.30 implies a formally negative effective absorption. Its numerically equivalent pinned-GSAS-II field is 0.642106631809 cm, but this is not a physical 1/mu conversion and PhaseSmith does not apply it because the factorial oracle ablation worsens the fixed-structure reconstruction. An unpolarized Cu source fraction of 0.5 is an explicit holdout assumption.",
+      "The 2.15 wt% silicon-only displacement calibration remains diagnostic; it is compared with the independently translated source displacement rather than used to set the full-pattern value."
+    ],
+    "poisson_rwp": 0.09579381402613027,
+    "profile_correlation": 0.9473171307549532,
+    "refined_instrument": {
+      "U": 0.0,
+      "V": 0.0,
+      "W": 5.109,
+      "X": 3.634,
+      "Y": 0.0,
+      "Zero": 0.0
+    },
+    "reflection_count": 601,
+    "sample_count": 4106,
+    "silicon_calibration_poisson_rwp": 0.09571043411970567,
+    "silicon_calibration_sample_count": 128,
+    "weight_fractions": {
+      "silicon": 0.025745999094595712,
+      "trirubidium_citrate": 0.9742540009054043
+    }
+  },
+  "pinned_gsasii_revision": "c0bc79b259cdf0065480b5fbd57674ddf12c4a23",
+  "schema_version": 1,
+  "scientific_status": "qualified_source_translation_and_remaining_model_gap",
+  "scope": "iucr_trirubidium_citrate_silicon_transferability_comparison",
+  "source_dataset_id": "iucr-trirubidium-citrate-si-standard"
+}

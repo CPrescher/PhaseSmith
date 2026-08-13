@@ -184,6 +184,61 @@ def test_values_only_api_matches_dense_result_without_derivative_outputs() -> No
     assert not values.integrated_intensity.flags.writeable
 
 
+def test_values_only_execution_policy_is_bitwise_deterministic() -> None:
+    model = structure()
+    hkl = np.array(
+        [(h, k, ell) for h in range(1, 6) for k in range(5) for ell in range(1, 4)],
+        dtype=np.int64,
+    )
+    multiplicity = 2 + 2 * (np.arange(hkl.shape[0], dtype=np.int64) % 3)
+    serial = phasesmith.calculate_structure_factor_values(
+        model,
+        hkl,
+        multiplicity,
+        phasesmith.XrayNonResonant(),
+        scale=1.4,
+        execution=phasesmith.ExecutionPolicy(threads=1),
+    )
+    for execution in (
+        None,
+        phasesmith.ExecutionPolicy(threads=2),
+        phasesmith.ExecutionPolicy(threads=3),
+    ):
+        parallel = phasesmith.calculate_structure_factor_values(
+            model,
+            hkl,
+            multiplicity,
+            phasesmith.XrayNonResonant(),
+            scale=1.4,
+            execution=execution,
+        )
+        np.testing.assert_array_equal(parallel.f, serial.f)
+        np.testing.assert_array_equal(parallel.f_squared, serial.f_squared)
+        np.testing.assert_array_equal(
+            parallel.integrated_intensity,
+            serial.integrated_intensity,
+        )
+        np.testing.assert_array_equal(
+            parallel.q_squared_inverse_angstrom2,
+            serial.q_squared_inverse_angstrom2,
+        )
+        np.testing.assert_array_equal(parallel.s_inverse_angstrom, serial.s_inverse_angstrom)
+        np.testing.assert_array_equal(parallel.correction, serial.correction)
+
+
+def test_values_only_execution_policy_rejects_wrong_type() -> None:
+    model = structure()
+    hkl, multiplicity = reflections()
+    with pytest.raises(TypeError, match="execution must be an ExecutionPolicy"):
+        phasesmith.calculate_structure_factor_values(
+            model,
+            hkl,
+            multiplicity,
+            phasesmith.XrayNonResonant(),
+            execution=object(),  # type: ignore[arg-type]
+        )
+
+
 def test_general_symmetry_selected_derivatives_match_centered_differences() -> None:
     baseline = structure()
     hkl, multiplicity = reflections()

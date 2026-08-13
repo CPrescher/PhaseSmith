@@ -87,8 +87,111 @@ _XRED_TIO2_SOURCE = (
     "916726657c44ef1ca30c475f136835a9f37393c4/biphase/TiO2Rutile%20Anatase"
 )
 _IUCR_SILICON_SOURCE = "https://journals.iucr.org/e/issues/2017/02/00/wm5358"
+_IUCR_SODIUM_CITRATE_SILICON_SOURCE = "https://journals.iucr.org/e/issues/2016/06/00/hb7585"
+_IUCR_TRIPOTASSIUM_CITRATE_SILICON_SOURCE = "https://journals.iucr.org/e/issues/2016/08/00/wm5301"
+_IUCR_TRIRUBIDIUM_CITRATE_SILICON_SOURCE = "https://journals.iucr.org/e/issues/2017/02/00/vn2123"
+_IUCR_TRIRUBIDIUM_CITRATE_MONOHYDRATE_SILICON_SOURCE = (
+    "https://journals.iucr.org/e/issues/2017/02/00/hb7648"
+)
 
 VALIDATION_DATASETS: tuple[ValidationDataset, ...] = (
+    ValidationDataset(
+        dataset_id="iucr-trirubidium-citrate-si-standard",
+        title="Anhydrous trirubidium citrate with NIST SRM 640b silicon",
+        source_url="https://doi.org/10.1107/S2056989017001086",
+        citation=(
+            "A. Rammohan and J. A. Kaduk, Acta Cryst. E73 (2017) 250-253, "
+            "doi:10.1107/S2056989017001086"
+        ),
+        license_note=(
+            "External IUCr supplementary CIF containing laboratory counts, structures, "
+            "and deposited legacy-GSAS results; the article is CC BY. The file is "
+            "checksum-pinned and not redistributed."
+        ),
+        files=(
+            ExternalValidationFile(
+                "vn2123sup1.cif",
+                "24b5c9d0d901f8c76c4f2d47b92232e11472ccfbd2c8004b9cbeaa53e2ce3f34",
+                275_362,
+                (f"{_IUCR_TRIRUBIDIUM_CITRATE_SILICON_SOURCE}/vn2123sup1.cif",),
+            ),
+        ),
+        purpose="holdout",
+        expected_status="failed",
+    ),
+    ValidationDataset(
+        dataset_id="iucr-trirubidium-citrate-monohydrate-si-standard",
+        title="Trirubidium citrate monohydrate with NIST SRM 640b silicon",
+        source_url="https://doi.org/10.1107/S2056989017000743",
+        citation=(
+            "A. Rammohan and J. A. Kaduk, Acta Cryst. E73 (2017) 227-230, "
+            "doi:10.1107/S2056989017000743"
+        ),
+        license_note=(
+            "External IUCr supplementary CIF containing laboratory counts, structures, "
+            "and deposited legacy-GSAS results; the article is CC BY. The file is "
+            "checksum-pinned and not redistributed."
+        ),
+        files=(
+            ExternalValidationFile(
+                "hb7648sup1.cif",
+                "a3155b6c678cedb1d450460f7758fdd973962744e2821aed671600308d0b1f53",
+                518_586,
+                (f"{_IUCR_TRIRUBIDIUM_CITRATE_MONOHYDRATE_SILICON_SOURCE}/hb7648sup1.cif",),
+            ),
+        ),
+        purpose="holdout",
+        expected_status="blocked",
+    ),
+    ValidationDataset(
+        dataset_id="iucr-tripotassium-citrate-si-standard",
+        title="Anhydrous tripotassium citrate with silicon internal standard",
+        source_url="https://doi.org/10.1107/S2056989016011506",
+        citation=(
+            "A. Rammohan and J. A. Kaduk, Acta Cryst. E72 (2016) 1159-1162, "
+            "doi:10.1107/S2056989016011506"
+        ),
+        license_note=(
+            "External IUCr supplementary CIF containing laboratory counts, structures, "
+            "and deposited legacy-GSAS results; the article is distributed under the "
+            "Creative Commons Attribution licence. The file is checksum-pinned and not "
+            "redistributed."
+        ),
+        files=(
+            ExternalValidationFile(
+                "wm5301sup1.cif",
+                "652cb6c3241ea85210124ae5ef04e4594e6b7219cb5bc5bbef9d36f728c040d0",
+                190_490,
+                (f"{_IUCR_TRIPOTASSIUM_CITRATE_SILICON_SOURCE}/wm5301sup1.cif",),
+            ),
+        ),
+        purpose="holdout",
+        expected_status="failed",
+    ),
+    ValidationDataset(
+        dataset_id="iucr-sodium-dihydrogen-citrate-si-standard",
+        title="Sodium dihydrogen citrate polymorph II with NIST SRM 640b silicon",
+        source_url="https://doi.org/10.1107/S2056989016008343",
+        citation=(
+            "A. Rammohan and J. A. Kaduk, Acta Cryst. E72 (2016) 793-796, "
+            "doi:10.1107/S2056989016008343"
+        ),
+        license_note=(
+            "External IUCr supplementary CIF containing laboratory counts, structures, "
+            "and deposited legacy-GSAS results; the article is CC BY 4.0. The file is "
+            "checksum-pinned and not redistributed."
+        ),
+        files=(
+            ExternalValidationFile(
+                "hb7585sup1.cif",
+                "cfb8082b18c362830fe308dd18348d125178c54e5e735a2d4c8bd35e1542c1bf",
+                278_860,
+                (f"{_IUCR_SODIUM_CITRATE_SILICON_SOURCE}/hb7585sup1.cif",),
+            ),
+        ),
+        purpose="holdout",
+        expected_status="passed",
+    ),
     ValidationDataset(
         dataset_id="iucr-dicesium-citrate-si-standard",
         title="Dicesium hydrogen citrate with NIST SRM 640b silicon internal standard",

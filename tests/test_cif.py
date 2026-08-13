@@ -239,6 +239,36 @@ C1 D 0.5 0.5 0.5 B
     assert permissive.sites[1].isotope == 2
 
 
+def test_general_hall_expression_is_parsed_without_a_legacy_backend() -> None:
+    text = CELL_ONLY_CIF.replace(
+        "_space_group_name_H-M_alt 'I m -3 m'",
+        "_symmetry_space_group_name_Hall 'A 2 -2ac'",
+    )
+    result = read_cif(text)
+    assert len(result.structure.space_group.operations) == 8
+    assert result.structure.metadata["symmetry_source"] == "hall"
+    assert result.structure.metadata["space_group_hall"] == "A 2 -2ac"
+
+
+def test_permissive_symmetry_precedence_does_not_repair_invalid_hm() -> None:
+    text = CELL_ONLY_CIF.replace(
+        "_space_group_name_H-M_alt 'I m -3 m'",
+        """_space_group_name_H-M_alt 'F m 3 m'
+_space_group_symop_operation_xyz 'x,y,z'""",
+    )
+    with pytest.raises(ValueError, match="F m 3 m"):
+        read_cif(text)
+
+    result = read_cif(text, strict=False)
+    assert result.structure.space_group == phasesmith.SpaceGroup.p1()
+    assert result.structure.metadata["symmetry_source"] == "explicit_operations"
+    diagnostic = next(
+        item for item in result.diagnostics if item.code == "invalid_space_group_definition_ignored"
+    )
+    assert diagnostic.tag == "_space_group_name_h-m_alt"
+    assert "F m 3 m" in diagnostic.message
+
+
 def test_missing_required_values_and_conflicting_anisotropic_definitions_fail() -> None:
     with pytest.raises(ValueError, match="required CIF value"):
         read_cif(CELL_ONLY_CIF.replace("_cell_length_a 4", "_cell_length_a ?"))

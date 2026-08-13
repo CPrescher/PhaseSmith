@@ -106,6 +106,65 @@ pass. Zero is the exact disabled limit. The `microstrain` value maps to the
 GSAS-II isotropic `Mustrain` record as `microstrain = Mustrain * 1e-6`; this
 mapping is validated only by black-box arrays from the pinned oracle.
 
+## Stephens orthorhombic anisotropic microstrain
+
+`StephensOrthorhombicBroadening` is the first symmetry-specific production
+slice of the Stephens model. It accepts only orthorhombic cells and the six
+independent coefficients, in the fixed order
+`(S400, S040, S004, S220, S202, S022)`, in ångström⁻⁴. For reflection
+`(h,k,l)`, PhaseSmith defines the physical variance of the inverse squared
+d-spacing as
+
+```text
+P_hkl = S400 h^4 + S040 k^4 + S004 l^4
+      + S220 h^2 k^2 + S202 h^2 l^2 + S022 k^2 l^2
+A_hkl = (180/pi)^2 d_hkl^4 tan(theta)^2
+H_hkl = sqrt(8 ln(2) A_hkl P_hkl).
+```
+
+Thus `A_hkl P_hkl` is the angular variance in degree(2theta)² and `H_hkl`
+is its Gaussian-equivalent FWHM. This follows the Stephens construction of
+the variance of `1/d_hkl²` as a symmetry-constrained fourth-order polynomial
+(P. W. Stephens, *J. Appl. Cryst.* **32** (1999), 281–289,
+[doi:10.1107/S0021889898006001](https://doi.org/10.1107/S0021889898006001)).
+Recent IUCr discussion emphasizes that program coefficient normalizations are
+not interchangeable, which is why PhaseSmith exposes physical ångström⁻⁴
+coefficients rather than adopting a legacy program's stored numbers.
+
+The explicit `lorentzian_fraction = eta` is a PhaseSmith profile-composition
+contract, not an additional Stephens coefficient:
+
+```text
+q_stephens = (1-eta)^2 A_hkl P_hkl
+l_stephens = eta H_hkl,                0 <= eta <= 1.
+```
+
+`eta=0` is purely Gaussian; `eta=1` is purely Lorentzian. Coefficients may be
+signed, because symmetry polynomials can contain cancelling terms, but every
+active reflection must have `P_hkl >= 0`. PhaseSmith rejects a materially
+negative reflection variance. It clamps only roundoff-sized negative values;
+positive Lorentzian mixing also requires strictly positive active variances so
+the coefficient derivative of the square root remains defined.
+
+Values and all chains are evaluated together. For basis monomial `B_j`,
+
+```text
+dq/dS_j = (1-eta)^2 A B_j
+dl/dS_j = l B_j / (2 P_hkl)
+dq/deta = -2(1-eta) A P_hkl
+dl/deta = H_hkl
+d log(A)/d(two_theta_deg) = (pi/180) / [sin(theta) cos(theta)]
+dq/dcell_p = 4 q (dd/dcell_p) / d
+dl/dcell_p = 2 l (dd/dcell_p) / d.
+```
+
+The structural position chain supplies the remaining Bragg-angle dependence
+during lattice refinement. Synthetic tests check the Python and Rust values,
+all coefficient/mixing derivatives, position derivatives, direct cell chains,
+and the combined structural lattice chain by centered finite differences away
+from support boundaries. Other Laue classes remain future, separately reviewed
+slices; this class must not be used as a generic triclinic polynomial.
+
 ## March--Dollase preferred orientation
 
 For preferred reciprocal-lattice direction `a`, reflection vector `h`, and

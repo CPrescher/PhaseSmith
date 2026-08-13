@@ -1,6 +1,6 @@
 """Optional adapters for the pinned GSAS-II validation oracle."""
 
-from .conventions import cw_instrument_from_gsas_centidegrees
+from .conventions import cw_instrument_from_gsas_centidegrees, orthorhombic_stephens_from_gsasii
 from .fixtures import FixtureValidationError, OracleFixture, load_fixture
 from .gsasii import OracleSnapshot, ReflectionTable, extract_project, extract_snapshot
 
@@ -13,4 +13,5 @@ __all__ = [
     "extract_project",
     "extract_snapshot",
     "load_fixture",
+    "orthorhombic_stephens_from_gsasii",
 ]

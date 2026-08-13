@@ -1,0 +1,605 @@
+{
+  "background_shape_probe": {
+    "basis": "Legendre on x mapped to [-1, 1]",
+    "coefficients": [
+      1.780279768152749,
+      -194.24372855711619,
+      -47.27033694232004,
+      -13.190808651922117
+    ],
+    "condition_number": 2.537739875323746,
+    "degree": 3,
+    "fraction_of_base_to_deposited_sse_gap_closed": 0.19066925219553654,
+    "poisson_rwp": 0.0891998072341502,
+    "profile_correlation": 0.964308920243,
+    "rank": 4,
+    "residual_background_summary": {
+      "maximum": 161.944480034871,
+      "minimum": -252.9245943832056,
+      "rms": 114.462831223121
+    },
+    "weighted_sse": 15164.184325641938
+  },
+  "deposited_curve_low_angle": {
+    "poisson_rwp": 0.02710699322050531,
+    "profile_correlation": 0.9982423033616555,
+    "weighted_sse": 1400.4058535738063
+  },
+  "deposited_to_current_peak_group_moments": {
+    "groups": [
+      {
+        "peak_deg": 17.954974,
+        "range_deg": [
+          17.004916,
+          18.84439
+        ],
+        "target_minus_current_centroid_deg": -0.046965269799663645,
+        "target_minus_current_skewness": -0.5496789035180019,
+        "target_over_current_area": 26.839932969904538,
+        "target_over_current_rms_width": 3.8669283832635952
+      },
+      {
+        "peak_deg": 19.774234,
+        "range_deg": [
+          18.864604,
+          20.279584
+        ],
+        "target_minus_current_centroid_deg": -0.19591132407535738,
+        "target_minus_current_skewness": 1.8735377411662375,
+        "target_over_current_area": 31.07678085679606,
+        "target_over_current_rms_width": 2.553205218942029
+      },
+      {
+        "peak_deg": 21.189214,
+        "range_deg": [
+          20.299798,
+          21.37114
+        ],
+        "target_minus_current_centroid_deg": -0.2931427420781141,
+        "target_minus_current_skewness": 2.4701219984332075,
+        "target_over_current_area": 18.960785922593427,
+        "target_over_current_rms_width": 1.7324863984037213
+      },
+      {
+        "peak_deg": 21.67435,
+        "range_deg": [
+          21.391354,
+          22.017988
+        ],
+        "target_minus_current_centroid_deg": 0.01306794188273841,
+        "target_minus_current_skewness": -0.46580641003205747,
+        "target_over_current_area": 3.0099365068168504,
+        "target_over_current_rms_width": 1.9127825770637936
+      },
+      {
+        "peak_deg": 22.604194,
+        "range_deg": [
+          22.038202,
+          23.170186
+        ],
+        "target_minus_current_centroid_deg": 0.010184526088188761,
+        "target_minus_current_skewness": -0.26981901615198933,
+        "target_over_current_area": 1.8321888126227146,
+        "target_over_current_rms_width": 1.966933675693876
+      },
+      {
+        "peak_deg": 23.59468,
+        "range_deg": [
+          23.1904,
+          23.756392
+        ],
+        "target_minus_current_centroid_deg": -0.054321478920538624,
+        "target_minus_current_skewness": 0.994824622046573,
+        "target_over_current_area": 2.143033375601439,
+        "target_over_current_rms_width": 1.7309254077188099
+      },
+      {
+        "peak_deg": 23.877676,
+        "range_deg": [
+          23.776606,
+          23.89789
+        ],
+        "target_minus_current_centroid_deg": -0.008486084390398219,
+        "target_minus_current_skewness": 0.3071071980610536,
+        "target_over_current_area": 1.7231012529409508,
+        "target_over_current_rms_width": 1.144821076686018
+      },
+      {
+        "peak_deg": 23.99896,
+        "range_deg": [
+          23.918104,
+          24.221314
+        ],
+        "target_minus_current_centroid_deg": 0.018946763840901326,
+        "target_minus_current_skewness": -0.3154125234143801,
+        "target_over_current_area": 1.4416755358782638,
+        "target_over_current_rms_width": 1.2192479248869554
+      },
+      {
+        "peak_deg": 24.443668,
+        "range_deg": [
+          24.241528,
+          24.928804
+        ],
+        "target_minus_current_centroid_deg": 0.030381181111415856,
+        "target_minus_current_skewness": -0.2869375738986888,
+        "target_over_current_area": 1.4009929935733736,
+        "target_over_current_rms_width": 1.5091726341349376
+      },
+      {
+        "peak_deg": 25.029874,
+        "range_deg": [
+          24.949018,
+          25.050088
+        ],
+        "target_minus_current_centroid_deg": -0.0034627074108151135,
+        "target_minus_current_skewness": 0.1497180763001273,
+        "target_over_current_area": 5.636995863214525,
+        "target_over_current_rms_width": 1.0170673488880615
+      },
+      {
+        "peak_deg": 25.292656,
+        "range_deg": [
+          25.070302,
+          25.575652
+        ],
+        "target_minus_current_centroid_deg": 0.0144506087410754,
+        "target_minus_current_skewness": -0.2734591292037913,
+        "target_over_current_area": 1.7607883137151064,
+        "target_over_current_rms_width": 1.442529866402652
+      },
+      {
+        "peak_deg": 25.81822,
+        "range_deg": [
+          25.595866,
+          26.808706
+        ],
+        "target_minus_current_centroid_deg": 0.14702224715018275,
+        "target_minus_current_skewness": -2.3012553766770183,
+        "target_over_current_area": 2.1490438993018848,
+        "target_over_current_rms_width": 1.9745034914316726
+      },
+      {
+        "peak_deg": 27.859834,
+        "range_deg": [
+          26.82892,
+          28.021546
+        ],
+        "target_minus_current_centroid_deg": -0.16113629712366873,
+        "target_minus_current_skewness": 2.2680319813802257,
+        "target_over_current_area": 1.766489372862142,
+        "target_over_current_rms_width": 2.111778657831328
+      },
+      {
+        "peak_deg": 28.203472,
+        "range_deg": [
+          28.04176,
+          28.405612
+        ],
+        "target_minus_current_centroid_deg": 0.012758719845717081,
+        "target_minus_current_skewness": -0.15103249528875165,
+        "target_over_current_area": 1.3007214633350344,
+        "target_over_current_rms_width": 1.1040944606407725
+      },
+      {
+        "peak_deg": 28.486468,
+        "range_deg": [
+          28.425826,
+          28.64818
+        ],
+        "target_minus_current_centroid_deg": 0.008039926696408628,
+        "target_minus_current_skewness": -0.18002279336847293,
+        "target_over_current_area": 1.7690530142668324,
+        "target_over_current_rms_width": 1.0242236009503243
+      },
+      {
+        "peak_deg": 28.910962,
+        "range_deg": [
+          28.668394,
+          29.982304
+        ],
+        "target_minus_current_centroid_deg": 0.03145611691413208,
+        "target_minus_current_skewness": -0.8086009631493138,
+        "target_over_current_area": 1.2222205836115012,
+        "target_over_current_rms_width": 1.4136101314723286
+      }
+    ],
+    "median_abs_centroid_delta_deg": 0.02466397247615859,
+    "median_abs_skewness_delta": 0.3906094667232188,
+    "median_target_over_current_area": 1.8006209134447735,
+    "median_target_over_current_rms_width": 1.6200490209268739
+  },
+  "full_range_source_model_low_angle": {
+    "poisson_rwp": 0.16277417619619142,
+    "profile_correlation": 0.9610454744277037,
+    "weighted_sse": 50496.6113585721
+  },
+  "limits_deg": [
+    17.004916,
+    30.0
+  ],
+  "low_angle_local_base": {
+    "full_range_phase_scales": {
+      "silicon": 6.842966451300847,
+      "trirubidium_citrate": 33.016701616555736
+    },
+    "low_angle_phase_scales": {
+      "silicon": 4.71338072530396,
+      "trirubidium_citrate": 32.29886882007327
+    },
+    "poisson_rwp": 0.09827504583444477,
+    "profile_correlation": 0.9611968678123138,
+    "residual_background_summary": {
+      "maximum": 428.54328683271865,
+      "minimum": 428.5432868327184,
+      "rms": 428.54328683271854
+    },
+    "weighted_sse": 18406.7762520867
+  },
+  "oracle_boundary": {
+    "private_probe": false,
+    "public_api": [
+      "GSASIIscriptable.G2Project.add_powder_histogram/add_phase/do_refinements",
+      "GSASIIscriptable.G2PwdrData.set_refinements/getdata/ComputeMassFracs",
+      "GSASIIscriptable.G2Phase.getHAPentryList/setHAPentryValue"
+    ]
+  },
+  "peak_group_intensity_projection": {
+    "active_group_count": 16,
+    "amplitude_maximum": 1.2644985834171367,
+    "amplitude_median": 0.9990058165004989,
+    "amplitude_minimum": 0.11806874801692188,
+    "amplitudes": [
+      0.8408830254404978,
+      0.43315033848162443,
+      0.8029843795146725,
+      1.0569180124192687,
+      1.0847801185929913,
+      0.9080165928330717,
+      0.9024704594060652,
+      0.9972516592835624,
+      1.009176553167087,
+      0.11806874801692188,
+      1.041416331038233,
+      1.0033720618723279,
+      0.9638890639155969,
+      1.1437300038228184,
+      1.2644985834171367,
+      1.0007599737174355
+    ],
+    "background_offset_and_slope": [
+      -4.6585364485817236,
+      -421.42228558794955
+    ],
+    "condition_number": 1971.7010186472808,
+    "fraction_of_base_to_deposited_sse_gap_closed": 0.22652322989979107,
+    "group_count": 16,
+    "poisson_rwp": 0.08738806300763557,
+    "profile_correlation": 0.9643484231147865,
+    "rank": 18,
+    "weighted_sse": 14554.438300543363
+  },
+  "physical_profile_scans": {
+    "combined_best_physical_shape": {
+      "fraction_of_base_to_deposited_sse_gap_closed": 0.44892601121468595,
+      "instrument_overrides": {
+        "SH/L": 0.002,
+        "W": 20.0,
+        "X": 5.0
+      },
+      "low_angle": {
+        "poisson_rwp": 0.07518064941976091,
+        "profile_correlation": 0.9851169740489379,
+        "weighted_sse": 10772.174223842798
+      }
+    },
+    "combined_best_physical_shape_and_background": {
+      "background_projection": {
+        "basis": "Legendre on x mapped to [-1, 1]",
+        "coefficients": [
+          1.8217848580239158,
+          -270.3915941524504,
+          -29.56607583643036,
+          -0.233581523404287
+        ],
+        "condition_number": 2.537739875323746,
+        "degree": 3,
+        "rank": 4,
+        "residual_background_summary": {
+          "maximum": 242.88088469744827,
+          "minimum": -298.3694666542611,
+          "rms": 156.9258973902594
+        }
+      },
+      "fraction_of_base_to_deposited_sse_gap_closed": 0.8047262134145285,
+      "instrument_overrides": {
+        "SH/L": 0.002,
+        "W": 20.0,
+        "X": 5.0
+      },
+      "low_angle": {
+        "poisson_rwp": 0.0497720329642852,
+        "profile_correlation": 0.9922246706441629,
+        "weighted_sse": 4721.304197366493
+      }
+    },
+    "gsasii_sh_over_l_boundary": "Pinned GSAS-II evaluates max(SH/L, 0.002); the scan therefore reports 0.002 as its observable lower boundary.",
+    "method": "Fixed physically admissible one-dimensional scans; two phase scales and a constant residual background are re-refined in every case.",
+    "rejected_unconstrained_fit": "The preliminary unconstrained GSAS-II refinement drove W, X, and SH/L negative in multiple branches and is excluded from scientific results.",
+    "results": {
+      "fcj_asymmetry": {
+        "best": {
+          "fraction_of_base_to_deposited_sse_gap_closed": 0.36294731202114294,
+          "low_angle": {
+            "poisson_rwp": 0.08012075132831599,
+            "profile_correlation": 0.9782282100126718,
+            "weighted_sse": 12234.359828710512
+          },
+          "value": 0.002
+        },
+        "cases": [
+          {
+            "low_angle": {
+              "poisson_rwp": 0.08012075132831599,
+              "profile_correlation": 0.9782282100126718,
+              "weighted_sse": 12234.359828710512
+            },
+            "value": 0.002
+          },
+          {
+            "low_angle": {
+              "poisson_rwp": 0.08087116715546727,
+              "profile_correlation": 0.9775791687635084,
+              "weighted_sse": 12464.608580279715
+            },
+            "value": 0.005
+          },
+          {
+            "low_angle": {
+              "poisson_rwp": 0.08360773748031393,
+              "profile_correlation": 0.9751819859232016,
+              "weighted_sse": 13322.45203382238
+            },
+            "value": 0.0097
+          },
+          {
+            "low_angle": {
+              "poisson_rwp": 0.09827504583444477,
+              "profile_correlation": 0.9611968678123138,
+              "weighted_sse": 18406.7762520867
+            },
+            "value": 0.0194
+          },
+          {
+            "low_angle": {
+              "poisson_rwp": 0.10285631871020702,
+              "profile_correlation": 0.9565828727523772,
+              "weighted_sse": 20162.908361461985
+            },
+            "value": 0.03
+          },
+          {
+            "low_angle": {
+              "poisson_rwp": 0.12988839861552257,
+              "profile_correlation": 0.9263399136916085,
+              "weighted_sse": 32153.77348843152
+            },
+            "value": 0.05
+          },
+          {
+            "low_angle": {
+              "poisson_rwp": 0.17914785846371575,
+              "profile_correlation": 0.8612543622060876,
+              "weighted_sse": 61166.61753643861
+            },
+            "value": 0.08
+          }
+        ],
+        "parameter": "SH/L"
+      },
+      "gaussian_width_W": {
+        "best": {
+          "fraction_of_base_to_deposited_sse_gap_closed": 0.27037730752982825,
+          "low_angle": {
+            "poisson_rwp": 0.08511965134895506,
+            "profile_correlation": 0.9761429573507296,
+            "weighted_sse": 13808.639612881812
+          },
+          "value": 20.0
+        },
+        "cases": [
+          {
+            "low_angle": {
+              "poisson_rwp": 0.1344611223094187,
+              "profile_correlation": 0.9077033755151456,
+              "weighted_sse": 34457.57315333795
+            },
+            "value": 0.5
+          },
+          {
+            "low_angle": {
+              "poisson_rwp": 0.12698503913075862,
+              "profile_correlation": 0.9205252475668879,
+              "weighted_sse": 30732.390107932144
+            },
+            "value": 1.0
+          },
+          {
+            "low_angle": {
+              "poisson_rwp": 0.11179807201712812,
+              "profile_correlation": 0.9438946357223965,
+              "weighted_sse": 23820.99244182168
+            },
+            "value": 2.5
+          },
+          {
+            "low_angle": {
+              "poisson_rwp": 0.09827504583444477,
+              "profile_correlation": 0.9611968678123138,
+              "weighted_sse": 18406.7762520867
+            },
+            "value": 5.109
+          },
+          {
+            "low_angle": {
+              "poisson_rwp": 0.08777506439673749,
+              "profile_correlation": 0.9723115932976568,
+              "weighted_sse": 14683.633518088543
+            },
+            "value": 10.0
+          },
+          {
+            "low_angle": {
+              "poisson_rwp": 0.08511965134895506,
+              "profile_correlation": 0.9761429573507296,
+              "weighted_sse": 13808.639612881812
+            },
+            "value": 20.0
+          },
+          {
+            "low_angle": {
+              "poisson_rwp": 0.1029944595084029,
+              "profile_correlation": 0.9646114304735788,
+              "weighted_sse": 20217.104169692022
+            },
+            "value": 40.0
+          },
+          {
+            "low_angle": {
+              "poisson_rwp": 0.1434609785445231,
+              "profile_correlation": 0.9255458327682031,
+              "weighted_sse": 39224.62504132002
+            },
+            "value": 80.0
+          }
+        ],
+        "parameter": "W"
+      },
+      "lorentzian_size_X": {
+        "best": {
+          "fraction_of_base_to_deposited_sse_gap_closed": 0.15663549611631294,
+          "low_angle": {
+            "poisson_rwp": 0.09088616765759211,
+            "profile_correlation": 0.969303672594825,
+            "weighted_sse": 15742.974987577854
+          },
+          "value": 5.0
+        },
+        "cases": [
+          {
+            "low_angle": {
+              "poisson_rwp": 0.1313724747882349,
+              "profile_correlation": 0.9241691412605795,
+              "weighted_sse": 32892.73495049285
+            },
+            "value": 0.5
+          },
+          {
+            "low_angle": {
+              "poisson_rwp": 0.12235544134889949,
+              "profile_correlation": 0.9356199901647979,
+              "weighted_sse": 28532.366828055827
+            },
+            "value": 1.0
+          },
+          {
+            "low_angle": {
+              "poisson_rwp": 0.11142418960882611,
+              "profile_correlation": 0.946366064974898,
+              "weighted_sse": 23661.931423494632
+            },
+            "value": 2.0
+          },
+          {
+            "low_angle": {
+              "poisson_rwp": 0.09827504583444477,
+              "profile_correlation": 0.9611968678123138,
+              "weighted_sse": 18406.7762520867
+            },
+            "value": 3.634
+          },
+          {
+            "low_angle": {
+              "poisson_rwp": 0.09088616765759211,
+              "profile_correlation": 0.969303672594825,
+              "weighted_sse": 15742.974987577854
+            },
+            "value": 5.0
+          },
+          {
+            "low_angle": {
+              "poisson_rwp": 0.09483120477457373,
+              "profile_correlation": 0.9715074326308865,
+              "weighted_sse": 17139.32678141008
+            },
+            "value": 8.0
+          }
+        ],
+        "parameter": "X"
+      }
+    },
+    "scan_ranges": {
+      "fcj_asymmetry": [
+        0.002,
+        0.005,
+        0.0097,
+        0.0194,
+        0.03,
+        0.05,
+        0.08
+      ],
+      "gaussian_width_W": [
+        0.5,
+        1.0,
+        2.5,
+        5.109,
+        10.0,
+        20.0,
+        40.0,
+        80.0
+      ],
+      "lorentzian_size_X": [
+        0.5,
+        1.0,
+        2.0,
+        3.634,
+        5.0,
+        8.0
+      ]
+    }
+  },
+  "position_probe": {
+    "fraction_of_base_to_deposited_sse_gap_closed": 0.4521075436969096,
+    "low_angle": {
+      "poisson_rwp": 0.07499160360121726,
+      "profile_correlation": 0.9830451464842727,
+      "weighted_sse": 10718.067904015203
+    },
+    "refined_shift_micrometre": -137.40325313702053,
+    "source_shift_micrometre": -108.05049346761132
+  },
+  "review": {
+    "combined_shape_and_background_still_above_deposited_curve": true,
+    "conclusion": "The remaining low-angle gap is coupled across angle-dependent phase intensity/scale, background, position, symmetric width, and axial-profile compression. No isolated component justifies a new production model.",
+    "fcj_scan_hits_lower_boundary": true,
+    "no_single_component_closes_half_the_local_base_to_deposited_sse_gap": true
+  },
+  "revision": "c0bc79b259cdf0065480b5fbd57674ddf12c4a23",
+  "sample_count": 643,
+  "schema_version": 1,
+  "scope": "iucr_trirubidium_citrate_low_angle_component_forensics",
+  "source_dataset_id": "iucr-trirubidium-citrate-si-standard",
+  "source_model": {
+    "enabled_factors": [
+      "legacy_lx_size_axis",
+      "sample_shift",
+      "stephens"
+    ],
+    "fixed_transparency": false,
+    "refined_in_every_low_angle_case": [
+      "trirubidium-citrate scale",
+      "silicon scale",
+      "constant residual background"
+    ]
+  }
+}

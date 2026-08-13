@@ -42,6 +42,138 @@ def composite(size: float = 48.0, strain: float = 6.0e-4) -> phasesmith.Composit
     )
 
 
+def stephens_context(
+    cell: phasesmith.UnitCell | None = None,
+    positions: np.ndarray | None = None,
+) -> phasesmith.PhysicsContext:
+    if cell is None:
+        cell = phasesmith.UnitCell(8.0, 9.0, 10.0, 90.0, 90.0, 90.0)
+    hkl = np.array([[1, 0, 0], [0, 2, 0], [0, 0, 3], [1, 2, 1], [2, 1, 3]])
+    spacing = cell.d_spacings(hkl).d_spacing_angstrom
+    if positions is None:
+        positions = np.rad2deg(2.0 * np.arcsin(instrument().wavelength_angstrom / (2.0 * spacing)))
+    batch = phasesmith.ReflectionGeometryBatch(hkl, spacing, positions, np.ones(len(hkl)))
+    return phasesmith.PhysicsContext(batch, instrument(), cell)
+
+
+def stephens_model(
+    coefficients: tuple[float, ...] = (2.0e-8, 3.0e-8, 1.0e-8, 8.0e-9, 6.0e-9, 7.0e-9),
+    mixing: float = 0.35,
+) -> phasesmith.StephensOrthorhombicBroadening:
+    return phasesmith.StephensOrthorhombicBroadening(coefficients, mixing)
+
+
+def test_stephens_orthorhombic_follows_documented_variance_equation() -> None:
+    context = stephens_context()
+    actual = stephens_model().evaluate(context)
+    h, k, ell = context.reflections.hkl.astype(np.float64).T
+    basis = np.vstack((h**4, k**4, ell**4, h**2 * k**2, h**2 * ell**2, k**2 * ell**2))
+    inverse_metric_variance = np.asarray(stephens_model().coefficients_angstrom_minus4) @ basis
+    theta = np.deg2rad(context.reflections.two_theta_deg / 2.0)
+    angular_scale = (
+        np.rad2deg(1.0) ** 2 * context.reflections.d_spacing_angstrom**4 * np.tan(theta) ** 2
+    )
+    equivalent_fwhm = np.sqrt(8.0 * np.log(2.0) * angular_scale * inverse_metric_variance)
+    np.testing.assert_allclose(
+        actual.gaussian_variance_deg2,
+        (1.0 - stephens_model().lorentzian_fraction) ** 2 * angular_scale * inverse_metric_variance,
+        rtol=3e-15,
+    )
+    np.testing.assert_allclose(
+        actual.lorentzian_fwhm_deg,
+        stephens_model().lorentzian_fraction * equivalent_fwhm,
+        rtol=3e-15,
+    )
+
+
+def test_stephens_parameter_position_and_cell_derivatives_are_analytical() -> None:
+    context = stephens_context()
+    model = stephens_model()
+    actual = model.evaluate(context)
+    coefficients = np.asarray(model.coefficients_angstrom_minus4)
+    for index, value in enumerate(coefficients):
+        step = max(abs(value) * 1.0e-5, 1.0e-14)
+        plus_values = coefficients.copy()
+        minus_values = coefficients.copy()
+        plus_values[index] += step
+        minus_values[index] -= step
+        plus = stephens_model(tuple(plus_values), model.lorentzian_fraction).evaluate(context)
+        minus = stephens_model(tuple(minus_values), model.lorentzian_fraction).evaluate(context)
+        np.testing.assert_allclose(
+            actual.d_gaussian_variance_d_parameters[index],
+            (plus.gaussian_variance_deg2 - minus.gaussian_variance_deg2) / (2.0 * step),
+            rtol=2e-9,
+        )
+        np.testing.assert_allclose(
+            actual.d_lorentzian_fwhm_d_parameters[index],
+            (plus.lorentzian_fwhm_deg - minus.lorentzian_fwhm_deg) / (2.0 * step),
+            rtol=2e-9,
+        )
+
+    step = 1.0e-6
+    plus = stephens_model(tuple(coefficients), model.lorentzian_fraction + step).evaluate(context)
+    minus = stephens_model(tuple(coefficients), model.lorentzian_fraction - step).evaluate(context)
+    np.testing.assert_allclose(
+        actual.d_gaussian_variance_d_parameters[6],
+        (plus.gaussian_variance_deg2 - minus.gaussian_variance_deg2) / (2.0 * step),
+        rtol=2e-10,
+    )
+    np.testing.assert_allclose(
+        actual.d_lorentzian_fwhm_d_parameters[6],
+        (plus.lorentzian_fwhm_deg - minus.lorentzian_fwhm_deg) / (2.0 * step),
+        rtol=2e-10,
+    )
+
+    positions = context.reflections.two_theta_deg
+    plus = model.evaluate(stephens_context(positions=positions + step))
+    minus = model.evaluate(stephens_context(positions=positions - step))
+    np.testing.assert_allclose(
+        actual.d_gaussian_variance_d_position,
+        (plus.gaussian_variance_deg2 - minus.gaussian_variance_deg2) / (2.0 * step),
+        rtol=2e-8,
+    )
+    np.testing.assert_allclose(
+        actual.d_lorentzian_fwhm_d_position,
+        (plus.lorentzian_fwhm_deg - minus.lorentzian_fwhm_deg) / (2.0 * step),
+        rtol=2e-8,
+    )
+
+    for cell_index in range(3):
+        cell_values = np.asarray(context.unit_cell.as_tuple())
+        cell_step = 1.0e-5
+        plus_values = cell_values.copy()
+        minus_values = cell_values.copy()
+        plus_values[cell_index] += cell_step
+        minus_values[cell_index] -= cell_step
+        plus = model.evaluate(
+            stephens_context(phasesmith.UnitCell(*plus_values), positions=positions)
+        )
+        minus = model.evaluate(
+            stephens_context(phasesmith.UnitCell(*minus_values), positions=positions)
+        )
+        row = 7 + cell_index
+        np.testing.assert_allclose(
+            actual.d_gaussian_variance_d_parameters[row],
+            (plus.gaussian_variance_deg2 - minus.gaussian_variance_deg2) / (2.0 * cell_step),
+            rtol=3e-8,
+            atol=2e-12,
+        )
+        np.testing.assert_allclose(
+            actual.d_lorentzian_fwhm_d_parameters[row],
+            (plus.lorentzian_fwhm_deg - minus.lorentzian_fwhm_deg) / (2.0 * cell_step),
+            rtol=3e-8,
+            atol=2e-12,
+        )
+
+
+def test_stephens_rejects_invalid_variance_and_nonorthorhombic_cell() -> None:
+    with pytest.raises(ValueError, match="negative reflection variance"):
+        stephens_model((-1.0e-8, 0.0, 0.0, 0.0, 0.0, 0.0)).evaluate(stephens_context())
+    monoclinic = phasesmith.UnitCell(8.0, 9.0, 10.0, 90.0, 100.0, 90.0)
+    with pytest.raises(ValueError, match="orthorhombic unit cell"):
+        stephens_model().evaluate(stephens_context(monoclinic))
+
+
 def test_isotropic_models_follow_documented_width_equations() -> None:
     context = phasesmith.PhysicsContext(reflections(), instrument())
     size = phasesmith.IsotropicSizeBroadening(50.0, shape_factor=0.9).evaluate(context)

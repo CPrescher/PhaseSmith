@@ -194,6 +194,8 @@ def main() -> None:
         calculated = np.asarray(histogram.getdata("Ycalc"), dtype=np.float64)
         background = np.asarray(histogram.getdata("Background"), dtype=np.float64)
         residual = calculated - observed
+        legacy_weight = 1.0 / np.maximum(observed, 1.0)
+        legacy_residual = legacy_calculated - observed
         legacy_targets = manifest["legacy_gsas_reference"]["weight_fractions"]
         errors = {
             phase_id: fractions[phase_id] - float(legacy_targets[phase_id]) for phase_id in PHASES
@@ -217,7 +219,12 @@ def main() -> None:
             "profile_correlation": float(
                 np.corrcoef(observed - background, calculated - background)[0, 1]
             ),
-            "legacy_curve_poisson_rwp": float(manifest["legacy_gsas_reference"]["rwp"]),
+            "legacy_curve_poisson_rwp": float(
+                np.sqrt(
+                    np.sum(legacy_weight * np.square(legacy_residual))
+                    / np.sum(legacy_weight * np.square(observed))
+                )
+            ),
             "legacy_curve_profile_correlation": float(
                 np.corrcoef(
                     observed - legacy_background,

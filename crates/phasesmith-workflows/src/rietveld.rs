@@ -535,6 +535,10 @@ fn sample_physics_model_identity_matches(
         | (
             RietveldSamplePhysicsModel::IsotropicLorentzianMicrostrain { .. },
             RietveldSamplePhysicsModel::IsotropicLorentzianMicrostrain { .. },
+        )
+        | (
+            RietveldSamplePhysicsModel::StephensOrthorhombic { .. },
+            RietveldSamplePhysicsModel::StephensOrthorhombic { .. },
         ) => true,
         (
             RietveldSamplePhysicsModel::MarchDollase {

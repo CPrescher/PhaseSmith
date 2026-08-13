@@ -98,6 +98,10 @@ nav:
       - Dioptas integration: dioptas-integration.md
   - Validation and development:
       - GSAS-II comparisons: gsasii-performance.md
+      - Real-data benchmark report: gsasii-benchmark-report.md
+      - Benchmark campaign ledger: gsasii-benchmark-campaign.md
+      - XRD-Rust performance: xrd-rust-performance.md
+      - Rowles optics audit: topas-rowles-model.md
       - Documentation development: documentation.md
       - Release process: releasing.md
 
@@ -105,3 +109,4 @@ not_in_nav: |
   crystallography-plan.md
   practical-workflow-plan.md
   real-data-validation-plan.md
+  archive/rowles-optics-roadmap-2026-08-10.md

@@ -6,7 +6,12 @@ from pathlib import Path
 import numpy as np
 import phasesmith
 import pytest
-from phasesmith.oracle import FixtureValidationError, OracleFixture, load_fixture
+from phasesmith.oracle import (
+    FixtureValidationError,
+    OracleFixture,
+    load_fixture,
+    orthorhombic_stephens_from_gsasii,
+)
 from phasesmith.oracle._pinned_probe import PINNED_REVISION
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
@@ -16,6 +21,7 @@ CW_FIXTURE_PATH = REPOSITORY_ROOT / "oracle" / "fixtures" / "cw_instrument_profi
 FCJ_FIXTURE_PATH = REPOSITORY_ROOT / "oracle" / "fixtures" / "fcj_profile_v1"
 COMPONENT_FIXTURE_PATH = REPOSITORY_ROOT / "oracle" / "fixtures" / "wavelength_components_v1"
 SAMPLE_FIXTURE_PATH = REPOSITORY_ROOT / "oracle" / "fixtures" / "sample_physics_v1"
+STEPHENS_FIXTURE_PATH = REPOSITORY_ROOT / "oracle" / "fixtures" / "stephens_orthorhombic_v1"
 MULTIPHASE_FIXTURE_PATH = REPOSITORY_ROOT / "oracle" / "fixtures" / "multiphase_v1"
 NEUTRON_FIXTURE_PATH = REPOSITORY_ROOT / "oracle" / "fixtures" / "neutron_cw_v1"
 TOF_FIXTURE_PATH = REPOSITORY_ROOT / "oracle" / "fixtures" / "tof_v1"
@@ -387,6 +393,87 @@ def test_sample_reflection_parameters_against_pinned_gsasii() -> None:
     assert x.shape == ycalc.shape == background.shape == (4_501,)
     assert np.all(np.diff(x) > 0.0)
     assert np.max(ycalc) > 0.0
+
+
+def test_orthorhombic_stephens_widths_match_pinned_gsasii() -> None:
+    fixture = load_fixture(STEPHENS_FIXTURE_PATH)
+    source = fixture.manifest["input_parameters"]
+    sample = source["sample"]
+    provider = orthorhombic_stephens_from_gsasii(
+        tuple(sample["gsasii_coefficients"]), sample["lorentzian_fraction"]
+    )
+    instrument = phasesmith.ConstantWavelengthInstrument(
+        1.54056, 2.0e-4, -1.0e-4, 1.0e-4, 1.0e-3, 2.0e-3
+    )
+    cell = phasesmith.UnitCell(*source["phase"]["cell"])
+    reflections = fixture.arrays["reflection_list"]
+    columns = fixture.manifest["source"]["reflection_columns"]
+    column = {name: columns.index(name) for name in columns}
+    batch = phasesmith.ReflectionGeometryBatch(
+        reflections[:, :3].astype(np.int64),
+        reflections[:, column["d_spacing_angstrom"]],
+        reflections[:, column["position_deg"]],
+        np.ones(reflections.shape[0]),
+    )
+    contribution = provider.evaluate(phasesmith.PhysicsContext(batch, instrument, cell))
+    widths = phasesmith.cw_profile_parameters(batch.two_theta_deg, instrument)
+    np.testing.assert_allclose(
+        1.0e4 * (widths.gaussian_variance_deg2 + contribution.gaussian_variance_deg2),
+        reflections[:, column["sigma2_centideg2"]],
+        rtol=1.1e-15,
+        atol=3.0e-15,
+    )
+    np.testing.assert_allclose(
+        100.0 * (widths.lorentzian_fwhm_deg + contribution.lorentzian_fwhm_deg),
+        reflections[:, column["gamma_centideg"]],
+        rtol=1.1e-15,
+        atol=5.0e-16,
+    )
+
+
+@pytest.mark.parametrize("case_index", [0, 1, 2])
+def test_orthorhombic_stephens_profiles_match_pinned_gsasii(case_index: int) -> None:
+    fixture = load_fixture(STEPHENS_FIXTURE_PATH)
+    source = fixture.manifest["input_parameters"]
+    sample = source["sample"]
+    provider = orthorhombic_stephens_from_gsasii(
+        tuple(sample["gsasii_coefficients"]), sample["lorentzian_fraction"]
+    )
+    instrument = phasesmith.ConstantWavelengthInstrument(
+        1.54056, 2.0e-4, -1.0e-4, 1.0e-4, 1.0e-3, 2.0e-3
+    )
+    cell = phasesmith.UnitCell(*source["phase"]["cell"])
+    case = fixture.cases[case_index]
+    parameters = case["parameters"]
+    batch = phasesmith.ReflectionGeometryBatch(
+        [parameters["hkl"]],
+        [parameters["d_spacing_angstrom"]],
+        [parameters["position_deg"]],
+        [1.0],
+    )
+    contribution = provider.evaluate(phasesmith.PhysicsContext(batch, instrument, cell))
+    widths = phasesmith.cw_profile_parameters(batch.two_theta_deg, instrument)
+    gaussian_fwhm = np.sqrt(
+        8.0 * np.log(2.0) * (widths.gaussian_variance_deg2 + contribution.gaussian_variance_deg2)
+    )
+    lorentzian_fwhm = widths.lorentzian_fwhm_deg + contribution.lorentzian_fwhm_deg
+    x = fixture.arrays[case["arrays"]["x"]]
+    actual = phasesmith.accumulate_tch(
+        x,
+        batch.two_theta_deg,
+        [1.0],
+        gaussian_fwhm,
+        lorentzian_fwhm,
+        support_fwhm=10_000.0,
+    ).y
+    expected = fixture.arrays[case["arrays"]["profile"]]
+    normalized_maximum_error = float(np.max(np.abs(actual - expected)) / np.max(expected))
+    assert normalized_maximum_error < 2.5e-6
+
+
+def test_gsasii_stephens_translation_rejects_invalid_coefficients() -> None:
+    with pytest.raises(ValueError, match="six finite values"):
+        orthorhombic_stephens_from_gsasii((1.0,) * 5, 0.5)
 
 
 @pytest.mark.parametrize("case_index", [0, 1, 2])

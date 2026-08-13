@@ -6,7 +6,7 @@ use std::path::{Path, PathBuf};
 
 use phasesmith_crystallography::{Rational, SpaceGroup, SymmetryOperation, UnitCell};
 
-use crate::{space_group_by_hall_symbol, space_group_by_number, space_group_by_symbol};
+use crate::{space_group_by_number, space_group_by_symbol, space_group_from_hall_symbol};
 
 use super::syntax::{CifBlock, CifValue, parse_document};
 use super::{
@@ -403,7 +403,8 @@ fn parse_space_group(
     diagnostics: &mut Vec<CifDiagnostic>,
     strict: bool,
 ) -> Result<(SpaceGroup, BTreeMap<String, String>), CifIoError> {
-    let mut candidates: Vec<(&str, String, SpaceGroup)> = Vec::new();
+    let mut candidates: Vec<(&'static str, String, SpaceGroup)> = Vec::new();
+    let mut rejected: Vec<(&'static str, String, CifIoError)> = Vec::new();
     let explicit_values = block
         .first_column(&EXPLICIT_OPERATION_TAGS)
         .map(|(tag, values)| (tag, values.iter().collect::<Vec<_>>()))
@@ -413,7 +414,7 @@ fn parse_space_group(
                 .map(|(tag, value)| (tag, vec![value]))
         });
     if let Some((tag, values)) = explicit_values {
-        let operations = values
+        let result = values
             .iter()
             .enumerate()
             .map(|(row, value)| {
@@ -426,50 +427,97 @@ fn parse_space_group(
                     ))
                 })
             })
-            .collect::<Result<Vec<_>, _>>()?;
-        let group = SpaceGroup::new(operations).map_err(CifIoError::Symmetry)?;
-        candidates.push(("explicit_operations", tag.to_owned(), group));
+            .collect::<Result<Vec<_>, _>>()
+            .and_then(|operations| SpaceGroup::new(operations).map_err(CifIoError::Symmetry));
+        collect_space_group_candidate(
+            result,
+            "explicit_operations",
+            tag,
+            strict,
+            &mut candidates,
+            &mut rejected,
+        )?;
     }
 
     let hall = first_tag_text(block, &HALL_TAGS);
     if let Some((tag, value)) = &hall {
-        let info = space_group_by_hall_symbol(value).map_err(CifIoError::SpaceGroup)?;
-        candidates.push(("hall", (*tag).to_owned(), info.space_group));
+        let result = space_group_from_hall_symbol(value).map_err(CifIoError::SpaceGroup);
+        collect_space_group_candidate(result, "hall", tag, strict, &mut candidates, &mut rejected)?;
     }
 
     let hm = first_tag_text(block, &HM_TAGS);
     if let Some((tag, value)) = &hm {
-        let info = space_group_by_symbol(value).map_err(CifIoError::SpaceGroup)?;
-        candidates.push(("hermann_mauguin", (*tag).to_owned(), info.space_group));
+        let result = space_group_by_symbol(value)
+            .map(|info| info.space_group)
+            .map_err(CifIoError::SpaceGroup);
+        collect_space_group_candidate(
+            result,
+            "hermann_mauguin",
+            tag,
+            strict,
+            &mut candidates,
+            &mut rejected,
+        )?;
     }
 
     let number_text = first_tag_text(block, &NUMBER_TAGS);
     if let Some((tag, value)) = &number_text {
-        let parsed = value
-            .parse::<f64>()
-            .map_err(|_| import_error(format!("invalid space-group number {value:?}")))?;
-        if !parsed.is_finite() || parsed.fract() != 0.0 || !(1.0..=230.0).contains(&parsed) {
-            return Err(import_error(format!(
-                "invalid space-group number {value:?}"
-            )));
-        }
-        #[allow(clippy::cast_possible_truncation)]
-        let number = parsed as i32;
-        let info = space_group_by_number(number).map_err(CifIoError::SpaceGroup)?;
-        candidates.push(("international_number", (*tag).to_owned(), info.space_group));
+        let result = parse_space_group_number(value);
+        collect_space_group_candidate(
+            result,
+            "international_number",
+            tag,
+            strict,
+            &mut candidates,
+            &mut rejected,
+        )?;
     }
 
+    let (source, selected) =
+        select_space_group_candidate(candidates, rejected, diagnostics, strict)?;
+    let mut metadata = BTreeMap::from([("symmetry_source".to_owned(), source.to_owned())]);
+    if let Some((_, value)) = hall {
+        metadata.insert("space_group_hall".to_owned(), value);
+    }
+    if let Some((_, value)) = hm {
+        metadata.insert("space_group_hm".to_owned(), value);
+    }
+    if let Some((_, value)) = number_text {
+        metadata.insert("space_group_number".to_owned(), value);
+    }
+    Ok((selected, metadata))
+}
+
+fn select_space_group_candidate(
+    mut candidates: Vec<(&'static str, String, SpaceGroup)>,
+    rejected: Vec<(&'static str, String, CifIoError)>,
+    diagnostics: &mut Vec<CifDiagnostic>,
+    strict: bool,
+) -> Result<(&'static str, SpaceGroup), CifIoError> {
     if candidates.is_empty() {
+        if let Some((_, _, error)) = rejected.into_iter().next() {
+            return Err(error);
+        }
         diagnostics.push(CifDiagnostic::warning(
             "missing_space_group_assumed_p1",
             "no symmetry identifier was supplied; assumed P1",
         ));
-        return Ok((
-            SpaceGroup::new(vec![SymmetryOperation::identity()]).map_err(CifIoError::Symmetry)?,
-            BTreeMap::from([("symmetry_source".to_owned(), "assumed_p1".to_owned())]),
-        ));
+        let p1 =
+            SpaceGroup::new(vec![SymmetryOperation::identity()]).map_err(CifIoError::Symmetry)?;
+        return Ok(("assumed_p1", p1));
     }
+
     let (source, tag, selected) = candidates.remove(0);
+    for (rejected_source, rejected_tag, error) in rejected {
+        let message = format!(
+            "invalid space-group definition {rejected_source} ({rejected_tag}) ignored because \
+             {source} ({tag}) supplied valid symmetry: {error}"
+        );
+        diagnostics.push(
+            CifDiagnostic::warning("invalid_space_group_definition_ignored", message)
+                .with_tag(rejected_tag),
+        );
+    }
     for (other_source, other_tag, candidate) in candidates {
         if candidate == selected {
             continue;
@@ -486,17 +534,39 @@ fn parse_space_group(
                 .with_tag(other_tag),
         );
     }
-    let mut metadata = BTreeMap::from([("symmetry_source".to_owned(), source.to_owned())]);
-    if let Some((_, value)) = hall {
-        metadata.insert("space_group_hall".to_owned(), value);
+    Ok((source, selected))
+}
+
+fn collect_space_group_candidate(
+    result: Result<SpaceGroup, CifIoError>,
+    source: &'static str,
+    tag: &str,
+    strict: bool,
+    candidates: &mut Vec<(&'static str, String, SpaceGroup)>,
+    rejected: &mut Vec<(&'static str, String, CifIoError)>,
+) -> Result<(), CifIoError> {
+    match result {
+        Ok(space_group) => candidates.push((source, tag.to_owned(), space_group)),
+        Err(error) if strict => return Err(error),
+        Err(error) => rejected.push((source, tag.to_owned(), error)),
     }
-    if let Some((_, value)) = hm {
-        metadata.insert("space_group_hm".to_owned(), value);
+    Ok(())
+}
+
+fn parse_space_group_number(value: &str) -> Result<SpaceGroup, CifIoError> {
+    let parsed = value
+        .parse::<f64>()
+        .map_err(|_| import_error(format!("invalid space-group number {value:?}")))?;
+    if !parsed.is_finite() || parsed.fract() != 0.0 || !(1.0..=230.0).contains(&parsed) {
+        return Err(import_error(format!(
+            "invalid space-group number {value:?}"
+        )));
     }
-    if let Some((_, value)) = number_text {
-        metadata.insert("space_group_number".to_owned(), value);
-    }
-    Ok((selected, metadata))
+    #[allow(clippy::cast_possible_truncation)]
+    let number = parsed as i32;
+    space_group_by_number(number)
+        .map(|info| info.space_group)
+        .map_err(CifIoError::SpaceGroup)
 }
 
 fn parse_symmetry_operation(text: &str) -> Result<SymmetryOperation, CifIoError> {

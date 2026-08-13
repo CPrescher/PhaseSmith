@@ -367,6 +367,14 @@ not configure module-global pools. A fused generic pattern is currently one
 Python-visible task and therefore remains serial at this layer until its native
 kernel receives the remaining budget.
 
+The lower-level `calculate_structure_factor_values` entry point also accepts
+an `ExecutionPolicy`. Its default is the bounded two-thread policy; an explicit
+policy should be reused across repeated calls so the native worker pool is
+retained. Reflection chunks are accumulated independently and returned in the
+original order, so results are bitwise identical across supported worker
+counts. Select one thread when the host application already owns outer
+parallelism.
+
 An external program should need only to provide contiguous `x`, observed
 intensity, optional uncertainty/mask arrays, and typed instrument/phase data.
 It receives NumPy calculated arrays and plain diagnostic records. An adapter
@@ -484,7 +492,13 @@ equations and array semantics are documented in
 contributions add; intensity modifiers compose with the full product rule.
 The built-in March--Dollase provider uses the phase reciprocal metric and an
 explicit preferred reciprocal-lattice axis, and participates in the same
-calculation and derivative interface as broadening providers.
+calculation and derivative interface as broadening providers. The built-in
+`StephensOrthorhombicBroadening` provider supplies the six orthorhombic
+fourth-order inverse-metric-variance coefficients, an explicit
+Gaussian/Lorentzian split, analytical parameter/position/cell chains, native
+Rietveld refinement rows, and both scripting and native persistence. Its
+ångström⁻⁴ convention and orthorhombic-only scope are documented in
+[`sample-physics.md`](sample-physics.md).
 
 Multi-phase flattening, phase-scale rows, durable reflection labels, background
 composition, and the prepared/stateless interfaces are specified in

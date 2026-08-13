@@ -245,3 +245,8 @@ materializes bounded dense structural derivatives, while the fused production
 path is ready for JVP/VJP products. Reproduce these measurements with
 `cargo bench -p phasesmith-engine --bench structural_pattern` and
 `python benchmarks/structural_pattern.py --require-release`.
+
+The separate [XRD-Rust comparison](xrd-rust-performance.md) measures public
+reflection generation, X-ray structure factors, intensity correction, and
+stick output on three larger structures. It records both serial and bounded
+parallel PhaseSmith execution and retains the complete machine-readable run.
