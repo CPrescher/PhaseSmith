@@ -1760,7 +1760,10 @@ parameter/position/cell chains independently. Refinement replacement/scaling,
 direct cell-row mapping, native bridge, scripting/native persistence, invalid
 variance/cell handling, cross-language comparison, full structural lattice
 finite differences, and the realistic structural multi-peak benchmark are
-included. Next: derive and test the explicit pinned-GSAS-II stored-value
-translation as an oracle-only adapter, then run the fixed-nuisance citrate
-Stephens ablation. Other Laue-class reductions remain separate follow-up
-slices rather than silently sharing the orthorhombic basis.
+included. The explicit pinned-GSAS-II stored-value translation is now isolated
+in the oracle adapter and verified on 395 reflection widths plus three full
+profiles at revision `c0bc79b259cdf0065480b5fbd57674ddf12c4a23`; width errors
+are at machine precision and normalized profile error is at most 2.40e-6.
+Next: run the fixed-nuisance citrate Stephens ablation. Other Laue-class
+reductions remain separate follow-up slices rather than silently sharing the
+orthorhombic basis.

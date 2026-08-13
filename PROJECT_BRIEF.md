@@ -1376,7 +1376,10 @@ multi-peak benchmark coverage is present. The provider rejects nonorthorhombic
 cells and any materially negative active-reflection variance, so this slice
 does not overclaim other Laue classes. The remaining acceptance work is the
 pinned GSAS-II convention adapter/black-box comparison and the controlled
-potassium/rubidium citrate refinement with identifiability diagnostics.
+potassium/rubidium citrate refinement with identifiability diagnostics. The
+oracle comparison is now complete: all 395 reflection widths agree at roughly
+machine precision and three complete profile probes agree within 2.40e-6 of
+peak height. Only the real-data sufficiency/identifiability checkpoint remains.
 
 ## Quality bar
 

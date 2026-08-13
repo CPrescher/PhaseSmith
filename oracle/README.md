@@ -149,6 +149,14 @@ public nanometre/RMS-strain/degree conventions. Tests compare every reflection
 width and orientation factor before comparing selected values, areas, and
 moments.
 
+`stephens_orthorhombic_v1` configures GSAS-II generalized microstrain for a
+Pnma phase with six orthorhombic coefficients and a nontrivial mixing value.
+The oracle-only adapter converts pure terms by `1e-12/(8 ln 2)` and GSAS-II's
+factor-three mixed basis by `3e-12/(8 ln 2)`. Across all 395 public reflection
+rows, PhaseSmith matches pinned Gaussian variances within `2.3e-15`
+centidegree² and Lorentzian FWHMs within `3.4e-16` centidegree. Three private
+profile probes differ by at most `2.40e-6` of the oracle peak maximum.
+
 `multiphase_v1` uses the public scripting API to configure two phases with
 different HAP scales and stores public `X`, total `Ycalc`, background, and both
 complete reflection lists. A controlled private two-reflection composition
@@ -201,6 +209,10 @@ GSAS-II and NumPy, but never imports `phasesmith`. Run it with GSAS-II's Python:
   --binary-dir /path/to/compatible/GSASII-bin/platform-directory
 
 /path/to/gsas/python oracle/scripts/generate_sample_physics.py \
+  --gsas-root /path/to/pinned/GSAS-II \
+  --binary-dir /path/to/compatible/GSASII-bin/platform-directory
+
+/path/to/gsas/python oracle/scripts/generate_stephens_orthorhombic.py \
   --gsas-root /path/to/pinned/GSAS-II \
   --binary-dir /path/to/compatible/GSASII-bin/platform-directory
 

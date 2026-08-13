@@ -349,6 +349,20 @@ The intentionally slow external campaign can be repeated with
 `oracle/scripts/benchmark_citrate_isotropic_broadening.py`; it is not part of
 the ordinary test suite.
 
+The orthorhombic Stephens convention is now separately pinned. A Pnma oracle
+fixture at exact GSAS-II revision `c0bc79b259cdf0065480b5fbd57674ddf12c4a23`
+contains 395 public reflection rows and three normalized profile probes. The
+independently derived adapter maps GSAS-II's generalized stored coefficients
+to physical ångström⁻⁴ variance coefficients using `1e-12/(8 ln 2)` for pure
+fourth powers and `3e-12/(8 ln 2)` for its factor-three mixed basis. PhaseSmith
+matches every oracle Gaussian variance to `2.3e-15` centidegree² absolute and
+every Lorentzian FWHM to `3.4e-16` centidegree absolute; selected complete TCH
+profiles differ by at most `2.40e-6` of peak height. This validates the
+convention and profile composition, but is deliberately separate from whether
+Stephens parameters are identifiable or sufficient on the citrate patterns.
+The fixture is `oracle/fixtures/stephens_orthorhombic_v1` and its explicit
+generator is `oracle/scripts/generate_stephens_orthorhombic.py`.
+
 ## Recommended priorities
 
 1. **Unify campaign execution — complete.**
