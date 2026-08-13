@@ -12,6 +12,20 @@ not part of the numerical library.
 
 ## Current implementation status
 
+PhaseSmith 0.3.0 is the current released baseline. The completed library now
+includes Python-free CW and TOF Le Bail/Rietveld workflows, public Python
+facades, native project persistence, and facility-neutral single-/multi-bank
+TOF composition with explicit calibration, correction, background-domain, and
+provenance contracts. The TOF roadmap through implementation unit 38d is
+complete; additional beamline adapters or absorption, extinction, and texture
+models are new evidence-driven scope rather than unfinished POWGEN work.
+
+The remainder of this section is a chronological implementation record. Terms
+such as “next slice”, “pending”, and “follow-on” describe the checkpoint at
+which their paragraph was written; the final current-state summary and next
+milestone are maintained in `IMPLEMENTATION_PLAN.md` under “Definition of the
+next completed milestone”.
+
 Implementation units 0 through 10 in `IMPLEMENTATION_PLAN.md` are complete as
 of 2026-08-05. The repository now includes validated symmetric TCH, CW
 U/V/W/X/Y, FCJ, wavelength-component, sample-physics, multi-phase, neutron CW,
@@ -34,9 +48,9 @@ Unit 15 adds general-symmetry integrated intensities, explicit neutral and
 Bragg--Brentano LP corrections, a fused structural CW pattern kernel with
 analytical JVP/VJP products, scriptable `RietveldPhase` models, version-2
 persistence, independent NumPy comparisons, and combined Rust/Python
-benchmarks. Full structural refinement remains a follow-on unit. The live
-pinned GSAS-II P1 and reflection-behavior fixtures are pending because the
-external checkout is not available in the current environment.
+benchmarks. At that checkpoint, full structural refinement remained a
+follow-on unit and the live pinned GSAS-II P1 and reflection-behavior fixtures
+had not yet been run in the working environment.
 
 A separate-environment benchmark now compares the same symmetric CW profile,
 finite support, and analytical derivative outputs against the pinned GSAS-II
@@ -55,9 +69,9 @@ CW/TOF lattice geometry chains, accepted-step Le Bail topology regeneration,
 and a one-call CIF-backed request constructor. Persistence format 3 retains the
 dynamic phase/domain restart contract while loading formats 1 and 2. The full
 gate passes 367 Python tests (one unavailable external-oracle case deselected),
-55 Rust tests, strict linting, and a realistic release benchmark. The live
-pinned GSAS-II lattice perturbation fixture remains pending because the
-external checkout is unavailable; equations and normal operation contain no
+55 Rust tests, strict linting, and a realistic release benchmark. At that
+checkpoint, the live pinned GSAS-II lattice-perturbation fixture had not yet
+been run in the working environment; equations and normal operation contain no
 GSAS-II dependency.
 
 PhaseSmith 0.3.0 was released on 2026-08-13 and is licensed under the MIT
