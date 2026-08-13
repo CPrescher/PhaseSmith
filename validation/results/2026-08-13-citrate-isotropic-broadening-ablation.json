@@ -1,0 +1,142 @@
+{
+  "campaign": "citrate_isotropic_broadening_ablation",
+  "cases": {
+    "tripotassium": {
+      "base_poisson_rwp": 0.23964816641369163,
+      "deposited_curve_poisson_rwp": 0.04852883258,
+      "dominant_phase": "tripotassium_citrate",
+      "models": {
+        "gaussian": {
+          "best_poisson_rwp": 0.20552218158506758,
+          "best_value": 0.0021939424814721538,
+          "identifiable": false,
+          "jacobian_rank": 4,
+          "parameter": "gaussian_rms_microstrain",
+          "parameter_count": 4,
+          "repeat_rwp_spread": 0.02105600554968487
+        },
+        "lorentzian": {
+          "best_poisson_rwp": 0.20902337109536462,
+          "best_value": 0.005311527011051169,
+          "identifiable": false,
+          "jacobian_rank": 4,
+          "parameter": "lorentzian_microstrain",
+          "parameter_count": 4,
+          "repeat_rwp_spread": 0.02292059001099489
+        },
+        "size": {
+          "best_poisson_rwp": 0.20737383931800818,
+          "crystallite_size_nm": 90.18765791758887,
+          "identifiable": true,
+          "jacobian_rank": 4,
+          "maximum_sample_linear_correlation": 0.48730986888324024,
+          "parameter_count": 4,
+          "profile_correlation": 0.7776614174564199,
+          "repeat_rwp_spread": 8.196033169094452e-07,
+          "silicon_weight_fraction": 0.02045622153749164
+        },
+        "size_gaussian": {
+          "best_poisson_rwp": 0.2051103745878026,
+          "identifiable": false,
+          "jacobian_rank": 5,
+          "parameter_count": 5,
+          "repeat_rwp_spread": 0.006587065901345057
+        },
+        "size_lorentzian": {
+          "best_poisson_rwp": 0.20737435645964455,
+          "identifiable": false,
+          "jacobian_rank": 5,
+          "lorentzian_microstrain": 0.0,
+          "parameter_count": 5,
+          "repeat_rwp_spread": 0.027898654201436113
+        }
+      },
+      "sample_count": 2696
+    },
+    "trirubidium": {
+      "base_poisson_rwp": 0.1826450964896717,
+      "deposited_curve_poisson_rwp": 0.02458326145,
+      "dominant_phase": "trirubidium_citrate",
+      "models": {
+        "gaussian": {
+          "best_poisson_rwp": 0.1517925044641766,
+          "best_value": 0.0030951478396317204,
+          "identifiable": false,
+          "jacobian_rank": 4,
+          "parameter": "gaussian_rms_microstrain",
+          "parameter_count": 4,
+          "repeat_rwp_spread": 0.02470859854647811
+        },
+        "lorentzian": {
+          "best_poisson_rwp": 0.15072600543348663,
+          "best_value": 0.009076316503520549,
+          "identifiable": false,
+          "jacobian_rank": 4,
+          "parameter": "lorentzian_microstrain",
+          "parameter_count": 4,
+          "repeat_rwp_spread": 0.027141656818326643
+        },
+        "size": {
+          "best_poisson_rwp": 0.14823247858583935,
+          "crystallite_size_nm": 56.233677467727446,
+          "identifiable": true,
+          "jacobian_rank": 4,
+          "maximum_sample_linear_correlation": 0.41392849832481277,
+          "parameter_count": 4,
+          "profile_correlation": 0.8080139993742516,
+          "repeat_rwp_spread": 5.311302136989937e-08,
+          "silicon_weight_fraction": 0.007980300287157287
+        },
+        "size_gaussian": {
+          "best_poisson_rwp": 0.14815711754006242,
+          "identifiable": false,
+          "jacobian_rank": 5,
+          "parameter_count": 5,
+          "repeat_rwp_spread": 0.0031886639120167204
+        },
+        "size_lorentzian": {
+          "best_poisson_rwp": 0.14860123293075728,
+          "identifiable": false,
+          "jacobian_rank": 5,
+          "lorentzian_microstrain": 0.0,
+          "parameter_count": 5,
+          "repeat_rwp_spread": 0.017148781193665114
+        }
+      },
+      "sample_count": 4106
+    }
+  },
+  "conclusion": "Finite coherent-domain size is the only repeatable identifiable isotropic improvement in both holdouts; the large remaining residuals justify a separate Stephens anisotropic-broadening implementation.",
+  "date": "2026-08-13",
+  "gsasii": {
+    "generalized_mustrain_is_stephens": true,
+    "hstrain_is_distinct_lattice_metric_motion": true,
+    "revision": "c0bc79b259cdf0065480b5fbd57674ddf12c4a23"
+  },
+  "protocol": {
+    "accepted_repeat_rwp_spread_maximum": 5e-05,
+    "accepted_sample_linear_correlation_maximum": 0.98,
+    "background_terms": 1,
+    "deterministic_starts_per_nonbase_model": 3,
+    "fixed": [
+      "instrument",
+      "wavelength components",
+      "FCJ geometry",
+      "zero and displacement",
+      "cells and structures",
+      "silicon sample broadening"
+    ],
+    "moving": [
+      "dominant-citrate isotropic width parameters",
+      "two phase scales",
+      "one residual-background constant"
+    ],
+    "support_fwhm": 30.0
+  },
+  "schema_version": 1,
+  "stephens_reference": {
+    "doi": "10.1107/S0021889898006001",
+    "journal": "Journal of Applied Crystallography 32 (1999) 281-289",
+    "title": "Phenomenological model of anisotropic peak broadening in powder diffraction"
+  }
+}

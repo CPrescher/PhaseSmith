@@ -301,6 +301,54 @@ Therefore the 18–24% common-subset residuals cannot be attributed to the Rwp
 weight convention; the missing phase-specific profile physics remains the
 dominant diagnosed limitation.
 
+### Isotropic size/strain ablation and Stephens decision
+
+A controlled phase-local ablation now tests whether PhaseSmith's existing
+isotropic coherent-domain size, Gaussian RMS microstrain, and Lorentzian
+microstrain terms can explain the potassium and anhydrous-rubidium gaps. The
+instrument, wavelength doublet, FCJ geometry, zero/displacement, cells,
+structures, and all silicon width terms remain fixed. Each candidate starts
+from the exact two-scale/one-constant-background solution, is run from three
+separated initial values, and finishes with the sample term, both scales, and
+background in one weighted Jacobian. Acceptance requires full rank, no
+zero-width boundary, repeatable Rwp within 0.005 percentage points, and less
+than 0.98 absolute sample-versus-linear column correlation.
+
+Finite size is the only candidate that passes every gate. Potassium refines to
+90.1877 nm, lowers Poisson Rwp from 23.9648% to 20.7374%, raises profile
+correlation from 0.61846 to 0.77766, and changes Si from 4.4503% to 2.0456%.
+Rubidium refines to 56.2337 nm, lowers Rwp from 18.2645% to 14.8232%, raises
+correlation from 0.63318 to 0.80801, and changes Si from 3.1816% to 0.7980%.
+The weighted Jacobians are full rank (4/4); maximum size-versus-scale/background
+column correlations are 0.4873 and 0.4139, and the three-start Rwp spreads are
+8.2e-7 and 5.3e-8. Gaussian and Lorentzian strain can lower the best-run Rwp,
+but do not reach the same basin from the three starts under the declared fixed
+budget. Adding Lorentzian strain to size drives that strain exactly to zero.
+
+This falsifies the stronger hypothesis that the current isotropic width models
+can reproduce the deposited targets: the retained size models still miss the
+4.8529% potassium and 2.4583% rubidium curves by 15.88 and 12.36 percentage
+points. It does not prove that Stephens broadening alone closes the gap because
+the source models also contain other phase-specific semantics. It does isolate
+direction-dependent width as a justified next term rather than an
+undocumented tuning parameter.
+
+GSAS-II does implement this model. In the pinned revision
+`c0bc79b259cdf0065480b5fbd57674ddf12c4a23`, the phase `Mustrain` selector
+offers isotropic, uniaxial, and `generalized`; the latter is explicitly the
+P. W. Stephens model and uses Laue-class-dependent fourth-order polynomials in
+`h`, `k`, and `l`. This is distinct from GSAS-II `HStrain`, which modifies the
+lattice metric and therefore peak positions. PhaseSmith's production version
+must be independently derived from Stephens, J. Appl. Cryst. 32 (1999)
+281–289, DOI `10.1107/S0021889898006001`, with value and analytical derivatives
+in the same pass; GSAS-II remains only the pinned black-box oracle.
+
+The reviewed record is
+`validation/results/2026-08-13-citrate-isotropic-broadening-ablation.json`.
+The intentionally slow external campaign can be repeated with
+`oracle/scripts/benchmark_citrate_isotropic_broadening.py`; it is not part of
+the ordinary test suite.
+
 ## Recommended priorities
 
 1. **Unify campaign execution — complete.**

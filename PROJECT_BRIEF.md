@@ -1352,6 +1352,20 @@ potassium curve and 2.458326% for the deposited rubidium curve, effectively the
 same as their deposited-weight 4.852875% and 2.458338% values. The large
 common-subset gap is therefore not an Rwp-weight-definition artifact.
 
+A phase-local isotropic-width ablation now closes the next diagnostic question.
+With all instrument, geometry, structure, and silicon-width terms fixed, finite
+coherent-domain size is the only three-start model that passes rank, boundary,
+repeatability, and scale/background-correlation gates. It refines to 90.19 nm
+for potassium and 56.23 nm for rubidium, reducing Poisson Rwp to 20.737% and
+14.823%, respectively. These are material improvements but remain far from the
+deposited 4.853% and 2.458% curves. Gaussian/Lorentzian strain alternatives do
+not pass the declared repeatability gate, and size plus Lorentzian strain makes
+the latter inactive. The current isotropic models therefore cannot explain the
+target. Stephens symmetry-dependent microstrain broadening is justified as the
+next separately reviewed production term; it must be independently derived
+from the publication and compared against the pinned GSAS-II generalized
+`Mustrain` oracle rather than translated from its implementation.
+
 ## Quality bar
 
 Public behavior is typed and documented. Invalid shapes, non-finite values,

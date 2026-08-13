@@ -1734,3 +1734,20 @@ radius removes the potassium geometry assumption, but the 2.15 wt% Si windows
 still infer -0.07469/-0.10874 mm displacement. Their 0.03405 mm disagreement
 fails the anchor-transfer gate. The monohydrate remains a lower-priority
 model-rich holdout rather than the next justification for production physics.
+The subsequent controlled isotropic-width ablation is complete on the
+potassium and anhydrous-rubidium patterns. Holding every non-width nonlinear
+term and all silicon width terms fixed, finite citrate size is full rank,
+repeatable from three starts, and only moderately correlated with the exact
+scale/background block. It reaches 90.19 nm and 20.737% Rwp for potassium and
+56.23 nm and 14.823% for rubidium. No isotropic strain alternative passes the
+declared repeatability/boundary gates, and neither accepted size result comes
+close to its deposited curve. This is sufficient evidence to make Stephens
+symmetry-dependent microstrain the next Unit-29 numerical slice. Its exit gate
+requires: published equations and units; Laue-class coefficient reduction;
+non-negative reflection variance semantics; independent NumPy values; Rust
+value and analytical parameter/position/cell derivatives in one pass;
+finite-difference, support, persistence, and realistic multi-peak benchmark
+coverage; and black-box comparison with the exact pinned GSAS-II generalized
+`Mustrain` implementation. The first real-data acceptance must improve both
+citrate patterns without moving omitted texture, roughness, or weak-anchor
+geometry terms, and must report identifiability rather than merely lower Rwp.

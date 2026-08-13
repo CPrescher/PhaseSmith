@@ -1,6 +1,11 @@
 """Explicit, provenance-aware external validation datasets."""
 
 from .bath_ltl import BathLtlResult, run_bath_ltl_workflow
+from .citrate_broadening_ablation import (
+    CitrateBroadeningAblationResult,
+    CitrateBroadeningModelResult,
+    run_citrate_isotropic_broadening_ablation,
+)
 from .datasets import (
     VALIDATION_DATASETS,
     ExternalValidationFile,
@@ -69,6 +74,8 @@ __all__ = [
     "VALIDATION_CASES",
     "VALIDATION_DATASETS",
     "BathLtlResult",
+    "CitrateBroadeningAblationResult",
+    "CitrateBroadeningModelResult",
     "ExternalValidationFile",
     "IucrSiliconStandardResult",
     "IucrSodiumCitrateSiliconResult",
@@ -88,6 +95,7 @@ __all__ = [
     "qarr_1g_readiness",
     "read_nist_srm660c_specimen",
     "run_bath_ltl_workflow",
+    "run_citrate_isotropic_broadening_ablation",
     "run_echidna_lab6_validation",
     "run_iucr_silicon_standard_workflow",
     "run_iucr_sodium_citrate_silicon_workflow",
