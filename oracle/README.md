@@ -272,6 +272,31 @@ audited interval so GSAS-II's fixed-background indexing remains unchanged. It
 uses only public scripting calls, records the `SH/L=0.002` effective evaluator
 floor, rejects nonphysical unconstrained width fits, and emits plain JSON.
 
+The source-axial follow-up uses an isolated profile boundary because the
+GSAS-II scripting API does not expose normalized FCJ profiles. The external
+worker is exact-revision gated, calls only the private
+`GSASIIpwd.getFCJVoigt3` probe, imports no PhaseSmith module, and emits plain
+NPZ arrays plus hashed JSON metadata. The independent PhaseSmith-side audit is:
+
+```shell
+/path/to/gsas/python oracle/scripts/benchmark_citrate_axial_profile.py \
+  --gsas-root /path/to/pinned/GSAS-II \
+  --binary-dir /path/to/compatible/GSASII-bin/platform-directory \
+  --data-directory /path/to/converted/rubidium-bundle \
+  --arrays /path/to/new-axial-arrays.npz \
+  --report /path/to/new-axial-oracle.json
+
+uv run python benchmarks/audit_citrate_axial_profile.py \
+  --oracle-report /path/to/new-axial-oracle.json \
+  --oracle-arrays /path/to/new-axial-arrays.npz \
+  --report /path/to/new-axial-review.json
+```
+
+The checked result preserves the deposited two-parameter geometry in
+PhaseSmith and records that pinned GSAS-II's documented formal-sum input is not
+shape-faithful for these source-specific low-angle peaks. It does not turn the
+empirically closer one-parameter probe into a conversion rule.
+
 The generator refuses to replace `data.npz` or `manifest.json`. Regeneration
 requires the explicit `--force` flag, after which both metadata and numerical
 diffs must be reviewed. Normal tests load fixtures through

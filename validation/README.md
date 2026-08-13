@@ -301,6 +301,15 @@ have deliberately different meanings:
   0.301%. Thus intensity-table choice is visible but not large enough to explain
   the profile residual. The reviewed record is
   `results/2026-08-13-citrate-rubidium-source-reflection-fidelity.json`.
+  The follow-up isolated axial-profile audit confirms that PhaseSmith preserves
+  the deposited `S/L=H/L=0.0097` geometry exactly. Its source-native profile is
+  bit-identical to its formal equal-height `SH/L=0.0194` mapping, but pinned
+  GSAS-II at that documented sum differs by up to 17.53% normalized L1 and
+  0.00847 degrees in centroid for three low-angle source reflections. A tested
+  `SH/L=0.0097` is closer but does not represent the documented sum and is not
+  adopted. The conversion is cleared; exact deposited-shape recovery requires
+  a legacy two-parameter oracle. The reviewed record is
+  `results/2026-08-13-citrate-rubidium-source-axial-profile-fidelity.json`.
 
 The QARR checkpoint evaluates supplied CIF anisotropic displacement tensors
 directly and keeps them fixed; sites without displacement values start from a

@@ -1417,8 +1417,22 @@ weighted L1 and 0.0301% normalized RMS error; d-spacings agree within
 L1 and 0.296% normalized RMS error. The table choice is measurable but far too
 small to explain the profile gap. Structure, symmetry, ADPs, and source
 reflection intensities are cleared; legacy profile-function-4 axial-shape
-fidelity is the next checkpoint. Other Stephens Laue classes remain optional
-completeness work.
+fidelity was therefore the next checkpoint.
+
+That axial-shape checkpoint is now complete. Legacy-GSAS full-height/diameter
+ratios `S/L=H/L=0.0097` are numerically the FCJ half-height/radius ratios, so
+PhaseSmith's native `FcjGeometry(0.0097, 0.0097)` preserves the source geometry.
+It is bit-for-bit identical to PhaseSmith's documented equal-height mapping of
+the GSAS-II formal sum `SH/L=0.0194`. For three low-angle source reflections,
+however, pinned GSAS-II at that formal sum differs from the source-native
+continuous profile by as much as 17.53% normalized L1, 15.38% of peak height,
+and 0.00847 degrees in centroid. A tested `SH/L=0.0097` is empirically closer
+but is not the documented sum and must not replace the physical conversion.
+This clears the PhaseSmith axial conversion while identifying the reduced,
+discretized GSAS-II oracle as non-shape-faithful for the legacy two-parameter
+case. Exact recovery now requires a source-native legacy profile oracle rather
+than another PhaseSmith broadening term. Other Stephens Laue classes remain
+optional completeness work.
 
 ## Quality bar
 

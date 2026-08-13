@@ -1791,8 +1791,15 @@ deposited rows are preserved, and the 20 low-angle rubidium F² values match the
 converted structure plus source Cromer–Mann table with 0.0289% intensity-
 weighted L1 error. Production Waasmaier–Kirfel scattering gives 0.301%, which
 is visible but insufficient to explain the profile gap. Structure, symmetry,
-ADP, and reflection-intensity translation are cleared. Next, audit the
-source-native legacy profile-function-4 axial shape before adding another
-production term.
+ADP, and reflection-intensity translation are cleared. The final axial audit
+preserves the deposited `S/L=H/L=0.0097` directly in PhaseSmith and proves that
+this is exactly its published equal-height representation of the GSAS-II
+formal sum `SH/L=0.0194`. The pinned GSAS-II profile at that sum nevertheless
+differs by up to 17.53% normalized L1 and 0.00847 degrees in centroid on three
+low-angle source reflections; the empirically closer tested `0.0097` value is
+not the documented sum and is rejected as a conversion rule. PhaseSmith's
+native conversion is therefore cleared. Reconstruction of the historical
+curve remains a legacy two-parameter-oracle problem, not a reason to add or
+retune production physics.
 Other Laue-class reductions remain separate follow-up slices rather than
 silently sharing the orthorhombic basis.
