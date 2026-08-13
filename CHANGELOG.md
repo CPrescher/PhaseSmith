@@ -11,6 +11,10 @@ development versions.
   comparison. The shared fixed-geometry model passes parity, while the 1.44 wt%
   Si displacement anchor is explicitly rejected as non-transferable and the
   richer deposited refinement remains a qualified reference.
+- Add the checksum-pinned anhydrous trirubidium-citrate/NIST-Si holdout with its
+  exact beam-spillover mask and source-deposited radius. PhaseSmith and pinned
+  GSAS-II pass the fixed-profile parity gates, while independently rejecting
+  the 2.15 wt% Si displacement anchor as non-transferable.
 
 ## 0.3.0
 

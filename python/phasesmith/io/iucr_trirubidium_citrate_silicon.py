@@ -116,9 +116,10 @@ def convert_iucr_trirubidium_citrate_silicon_bundle(
             "geometry": "reflection, flat specimen",
             "wavelengths_angstrom": [1.540593, 1.544451],
             "k_alpha2_over_k_alpha1": 0.5,
-            "assumed_unpolarized_fraction": 0.5,
+            "polarization_fraction": 0.5,
             "goniometer_radius_mm": 141.5,
             "radius_is_source_deposited": True,
+            "initial_zero_deg": 0.0,
             "source_over_radius": 0.0097,
             "detector_over_radius": 0.0097,
             "matched_sh_over_l": 0.0194,
@@ -180,7 +181,9 @@ def convert_iucr_trirubidium_citrate_silicon_bundle(
             ),
             "geometry_contract": (
                 "The source deposits equal source/specimen and specimen/detector radii "
-                "of 141.5 mm and equal S/L=H/L=0.0097."
+                "of 141.5 mm and equal S/L=H/L=0.0097. The article says Si verifies "
+                "the calibrated goniometer zero, but no nonzero instrument zero is deposited; "
+                "the neutral common model therefore starts at zero."
             ),
             "correction_contract": (
                 "The source declares no absorption or surface-roughness correction. "

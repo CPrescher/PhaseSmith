@@ -279,8 +279,19 @@ profile, the implementations give 23.965%/23.933% Rwp, 0.61846/0.62079
 correlation, and 4.450%/4.343% Si. The close common-subset agreement is a
 qualified parity pass, while the large gap to deposited 4.853% Rwp and 1.44 wt%
 Si is the expected phase-specific-model and weak-anchor failure. The
-trirubidium citrate anhydrous/monohydrate pair must now be source-audited before
-assuming that the Si-anchor contract transfers.
+trirubidium citrate anhydrous/monohydrate pair was therefore source-audited
+before assuming that the Si-anchor contract transfers.
+
+The anhydrous trirubidium case is now source-audited and complete. It improves
+the diagnostic contract by depositing the 141.5 mm goniometer radius, a common
+base profile for both phases, and no surface-roughness correction. PhaseSmith
+and pinned GSAS-II reach 18.265%/18.338% Rwp, 0.63318/0.62922 correlation, and
+3.182%/2.926% Si on the same fixed model, so all full-pattern parity gates pass.
+Nevertheless, the 2.15 wt% Si windows infer -0.07469/-0.10874 mm displacement,
+a 0.03405 mm disagreement. This confirms that the weak-anchor failure is not an
+artifact of an assumed radius. The monohydrate remains lower priority because
+its 1.30 wt% Si, absent radius, phase-specific profiles, Stephens anisotropy,
+and Suortti roughness add no cleaner discriminator.
 
 ## Recommended priorities
 
@@ -297,9 +308,9 @@ assuming that the Si-anchor contract transfers.
 3. **Expand the citrate/Si holdout series.** Sodium passes its restricted
    preferred-orientation common subset; potassium passes implementation parity
    but demonstrates that a 1.44 wt% Si displacement anchor is not transferable.
-   Audit the rubidium deposits independently and reuse the narrow adapter only
-   where complete counts, structures, instrument, standard fraction, and an
-   identifiable fit contract are present.
+   Anhydrous rubidium independently confirms that conclusion at 2.15 wt% with a
+   source-deposited radius. Keep the monohydrate as a lower-priority model-rich
+   holdout rather than treating its 1.30 wt% Si as an accepted position anchor.
 4. **Keep large-FCJ parity as a monitored holdout.** Do not replace the current
    published PhaseSmith mapping merely to mimic one pinned GSAS-II
    discretization. Reconsider only if multiple normal-use datasets fail for the
@@ -319,6 +330,7 @@ records are:
 - `validation/results/2026-08-11-campaign-sucrose.json`
 - `validation/results/2026-08-13-campaign-iucr-sodium-citrate-si.json`
 - `validation/results/2026-08-13-campaign-iucr-tripotassium-citrate-si.json`
+- `validation/results/2026-08-13-campaign-iucr-trirubidium-citrate-si.json`
 - `validation/results/2026-08-11-campaign-echidna.json`
 - `validation/results/2026-08-11-campaign-pbso4.json`
 - `validation/results/2026-08-11-campaign-powgen.json`

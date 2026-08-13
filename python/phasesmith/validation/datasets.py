@@ -117,7 +117,7 @@ VALIDATION_DATASETS: tuple[ValidationDataset, ...] = (
             ),
         ),
         purpose="holdout",
-        expected_status="blocked",
+        expected_status="failed",
     ),
     ValidationDataset(
         dataset_id="iucr-trirubidium-citrate-monohydrate-si-standard",

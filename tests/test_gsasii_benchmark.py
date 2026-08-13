@@ -501,6 +501,39 @@ def test_tripotassium_citrate_comparison_gates_expected_transfer_failure() -> No
     assert benchmark.comparison_checks(native, changed)["status"] == "failed"
 
 
+def test_trirubidium_citrate_comparison_gates_expected_transfer_failure() -> None:
+    benchmark = load_script(
+        "benchmarks/compare_gsasii_iucr_trirubidium_citrate_silicon.py",
+        "trirubidium_citrate_silicon_gate_test",
+    )
+    native = {
+        "sample_count": 4106,
+        "poisson_rwp": 0.18265,
+        "profile_correlation": 0.63318,
+        "weight_fractions": {"trirubidium_citrate": 0.96818, "silicon": 0.03182},
+        "silicon_calibration_poisson_rwp": 0.09931,
+        "calibrated_sample_displacement_mm": -0.07469,
+    }
+    oracle = {
+        "sample_count": 4106,
+        "poisson_rwp": 0.18338,
+        "profile_correlation": 0.62922,
+        "weight_fractions": {"trirubidium_citrate": 0.97074, "silicon": 0.02926},
+        "silicon_calibration": {
+            "poisson_rwp": 0.09919,
+            "calibrated_sample_displacement_mm": -0.10874,
+        },
+    }
+
+    result = benchmark.comparison_checks(native, oracle)
+
+    assert result["status"] == "qualified_pass"
+    assert result["checks"]["silicon_anchor_not_transferable"]["passed"] is True
+    changed = json.loads(json.dumps(oracle))
+    changed["profile_correlation"] = 0.65
+    assert benchmark.comparison_checks(native, changed)["status"] == "failed"
+
+
 @pytest.mark.parametrize(
     "script",
     [
@@ -508,6 +541,7 @@ def test_tripotassium_citrate_comparison_gates_expected_transfer_failure() -> No
         "benchmarks/compare_gsasii_iucr_silicon_standard.py",
         "benchmarks/compare_gsasii_iucr_sodium_citrate_silicon.py",
         "benchmarks/compare_gsasii_iucr_tripotassium_citrate_silicon.py",
+        "benchmarks/compare_gsasii_iucr_trirubidium_citrate_silicon.py",
         "benchmarks/compare_gsasii_nist_srm660c.py",
         "benchmarks/compare_gsasii_pbso4.py",
         "benchmarks/compare_gsasii_powgen_tof.py",

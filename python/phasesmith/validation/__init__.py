@@ -21,6 +21,10 @@ from .iucr_tripotassium_citrate_silicon import (
     IucrTripotassiumCitrateSiliconResult,
     run_iucr_tripotassium_citrate_silicon_workflow,
 )
+from .iucr_trirubidium_citrate_silicon import (
+    IucrTrirubidiumCitrateSiliconResult,
+    run_iucr_trirubidium_citrate_silicon_workflow,
+)
 from .nist_srm660c_parity import (
     NIST_SRM660C_MATCHED_SH_OVER_L,
     NIST_SRM660C_STRESS_SH_OVER_L,
@@ -69,6 +73,7 @@ __all__ = [
     "IucrSiliconStandardResult",
     "IucrSodiumCitrateSiliconResult",
     "IucrTripotassiumCitrateSiliconResult",
+    "IucrTrirubidiumCitrateSiliconResult",
     "NistSrm660cParityResult",
     "QarrParityResult",
     "RealDataValidationReport",
@@ -87,6 +92,7 @@ __all__ = [
     "run_iucr_silicon_standard_workflow",
     "run_iucr_sodium_citrate_silicon_workflow",
     "run_iucr_tripotassium_citrate_silicon_workflow",
+    "run_iucr_trirubidium_citrate_silicon_workflow",
     "run_nickel_tof_validation",
     "run_nist_srm660c_parity_workflow",
     "run_nist_srm660c_validation",

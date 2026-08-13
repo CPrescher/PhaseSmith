@@ -8,6 +8,7 @@ from phasesmith.io import (
     IUCR_TRIRUBIDIUM_CITRATE_SILICON_PHASES,
     convert_iucr_trirubidium_citrate_silicon_bundle,
 )
+from phasesmith.validation import run_iucr_trirubidium_citrate_silicon_workflow
 
 
 def test_real_iucr_trirubidium_citrate_silicon_conversion_when_configured(
@@ -54,3 +55,24 @@ def test_iucr_trirubidium_converter_rejects_wrong_archive(tmp_path: Path) -> Non
 
     with pytest.raises(ValueError, match="reviewed RAMM077C archive"):
         convert_iucr_trirubidium_citrate_silicon_bundle(source, tmp_path / "bundle")
+
+
+def test_real_iucr_trirubidium_common_model_when_configured(tmp_path: Path) -> None:
+    source = os.environ.get("PHASESMITH_IUCR_TRIRUBIDIUM_CITRATE_SILICON_DATA")
+    if not source:
+        pytest.skip("set PHASESMITH_IUCR_TRIRUBIDIUM_CITRATE_SILICON_DATA for the external test")
+    bundle = tmp_path / "bundle"
+    convert_iucr_trirubidium_citrate_silicon_bundle(source, bundle)
+
+    result = run_iucr_trirubidium_citrate_silicon_workflow(bundle)
+
+    assert result.sample_count == 4106
+    assert result.free_parameter_count == 3
+    assert set(result.weight_fractions) == set(IUCR_TRIRUBIDIUM_CITRATE_SILICON_PHASES)
+    assert sum(result.weight_fractions.values()) == pytest.approx(1.0)
+    assert 0.0 < result.profile_correlation < 1.0
+    assert 0.0 < result.poisson_rwp < 1.0
+    assert result.refined_instrument["Zero"] == pytest.approx(0.0)
+    assert result.refined_instrument["W"] == pytest.approx(5.109)
+    assert result.refined_instrument["Y"] == pytest.approx(3.634)
+    assert len(result.model_qualifications) == 7

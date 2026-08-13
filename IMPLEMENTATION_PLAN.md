@@ -1694,7 +1694,7 @@ belongs in production. Failed transfer remains a valid outcome; it must not be
 converted into a production feature by tuning against one specimen.
 
 Unit 29's campaign-orchestration slice is complete. The checked-in version-1
-manifest composes sixteen existing real-data comparison and diagnostic
+manifest composes seventeen existing real-data comparison and diagnostic
 drivers without duplicating their numerical logic. The runner validates the
 exact GSAS-II checkout, registered dataset bytes and hashes, result-carried
 oracle revisions, and case-specific scientific assertions, then writes one
@@ -1725,8 +1725,12 @@ Si, common base profile coefficients, no roughness correction, and a contiguous
 4,106-point deposited fit. The monohydrate is checksum-registered but follows
 later because 1.30 wt% Si, no deposited radius, phase-specific profiles,
 Stephens broadening, and Suortti roughness repeat already isolated limitations.
-The anhydrous converter is now complete and independently recomputes deposited
-Rwp 2.45834% and Rp 1.95046% on exactly source indices 594–4699. It emits both
-structures and a neutral common base-profile record while preserving the
-phase-specific mixing, Stephens, and legacy shift coefficients as diagnostics.
-The next gate is the native/pinned-GSAS-II common-model comparison.
+The anhydrous converter and native/pinned-GSAS-II comparison are now complete.
+The converter independently recomputes deposited Rwp 2.45834% and Rp 1.95046%
+on exactly source indices 594–4699. On the neutral common base profile,
+PhaseSmith/GSAS-II Rwp is 18.265%/18.338%, correlation is 0.63318/0.62922, and
+Si is 3.182%/2.926%; all full-pattern parity gates pass. The source-deposited
+radius removes the potassium geometry assumption, but the 2.15 wt% Si windows
+still infer -0.07469/-0.10874 mm displacement. Their 0.03405 mm disagreement
+fails the anchor-transfer gate. The monohydrate remains a lower-priority
+model-rich holdout rather than the next justification for production physics.

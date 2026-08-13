@@ -1,0 +1,395 @@
+{
+  "common_model": {
+    "data_selection": {
+      "excluded_source_region_two_theta_deg": [
+        5.0,
+        17.0
+      ],
+      "exclusion_reason": "beam spillover in the deposited refinement",
+      "refined_sample_count": 4106,
+      "source_index_interval_inclusive": [
+        594,
+        4699
+      ],
+      "source_sample_count": 4701,
+      "two_theta_max_deg": 99.98338600000001,
+      "two_theta_min_deg": 17.004916
+    },
+    "fixed_parameters": [
+      "shared deposited base U/V/W/X/Y and matched SH/L=0.0194",
+      "instrument zero, specimen displacement=0, radius, and Si lattice",
+      "all phase mixing, size/strain, and orientation parameters"
+    ],
+    "instrument": {
+      "common_base_profile": {
+        "U": 0.0,
+        "V": 0.0,
+        "W": 5.109,
+        "X": 0.0,
+        "Y": 3.634
+      },
+      "detector_over_radius": 0.0097,
+      "device": "Bruker D2 Phaser",
+      "geometry": "reflection, flat specimen",
+      "goniometer_radius_mm": 141.5,
+      "initial_zero_deg": 0.0,
+      "k_alpha2_over_k_alpha1": 0.5,
+      "legacy_phase_profile_functions": {
+        "silicon": 4,
+        "trirubidium_citrate": 4
+      },
+      "legacy_phase_shift_coefficients": {
+        "silicon": -8.7503,
+        "trirubidium_citrate": -8.7503
+      },
+      "matched_sh_over_l": 0.0194,
+      "polarization_fraction": 0.5,
+      "radius_is_source_deposited": true,
+      "source_over_radius": 0.0097,
+      "wavelengths_angstrom": [
+        1.540593,
+        1.544451
+      ]
+    },
+    "refined_parameters": [
+      "two phase scales",
+      "one constant residual background"
+    ],
+    "silicon_standard": {
+      "candidate_calibration_windows_two_theta_deg": [
+        [
+          46.95,
+          47.78
+        ],
+        [
+          55.77,
+          56.63
+        ],
+        [
+          68.78,
+          69.68
+        ]
+      ],
+      "deposited_weight_fraction": 0.0215,
+      "fixed_lattice_a_angstrom": 5.43105,
+      "material": "NIST SRM 640b"
+    }
+  },
+  "cross_implementation_validation": {
+    "checks": {
+      "phase_fraction_delta": {
+        "limit": 0.005,
+        "measured": 0.002553804871492815,
+        "passed": true
+      },
+      "poisson_rwp_delta": {
+        "limit": 0.005,
+        "measured": 0.0007386017916819199,
+        "passed": true
+      },
+      "profile_correlation_delta": {
+        "limit": 0.005,
+        "measured": 0.003957562326713626,
+        "passed": true
+      },
+      "sample_count_equal": {
+        "limit": true,
+        "measured": true,
+        "passed": true
+      },
+      "silicon_anchor_not_transferable": {
+        "measured_displacement_delta_mm": 0.03404764183105333,
+        "minimum_expected_delta_mm": 0.02,
+        "passed": true
+      },
+      "silicon_calibration_rwp_delta": {
+        "limit": 0.005,
+        "measured": 0.00011249644911084933,
+        "passed": true
+      }
+    },
+    "status": "qualified_pass"
+  },
+  "gsasii": {
+    "legacy_curve_poisson_rwp": 0.024583376646074934,
+    "legacy_curve_profile_correlation": 0.9977005959033203,
+    "legacy_weight_fraction_errors": {
+      "silicon": 0.007762061166425138,
+      "trirubidium_citrate": -0.007762061166425194
+    },
+    "maximum_legacy_weight_fraction_error": 0.007762061166425194,
+    "poisson_rwp": 0.18338369828135362,
+    "profile_correlation": 0.6292176171129616,
+    "refined_hap": {
+      "silicon": {
+        "Mustrain": [
+          "isotropic",
+          [
+            0.0,
+            1000.0,
+            0.0
+          ],
+          [
+            false,
+            false,
+            false
+          ],
+          [
+            0,
+            0,
+            1
+          ],
+          [
+            0.01,
+            0.01
+          ],
+          [
+            false,
+            false
+          ]
+        ],
+        "Pref.Ori.": [
+          "MD",
+          1.0,
+          false,
+          [
+            0,
+            0,
+            1
+          ],
+          0,
+          {},
+          [],
+          0.1
+        ],
+        "Scale": [
+          3.7786642436840894,
+          true
+        ],
+        "Size": [
+          "isotropic",
+          [
+            10.0,
+            1.0,
+            1.0
+          ],
+          [
+            false,
+            false,
+            false
+          ],
+          [
+            0,
+            0,
+            1
+          ],
+          [
+            1.0,
+            1.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
+          ]
+        ]
+      },
+      "trirubidium_citrate": {
+        "Mustrain": [
+          "isotropic",
+          [
+            0.0,
+            1000.0,
+            0.0
+          ],
+          [
+            false,
+            false,
+            false
+          ],
+          [
+            0,
+            0,
+            1
+          ],
+          [
+            0.01,
+            0.01,
+            0.01,
+            0.01,
+            0.01,
+            0.01
+          ],
+          [
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
+          ]
+        ],
+        "Pref.Ori.": [
+          "MD",
+          1.0,
+          false,
+          [
+            0,
+            0,
+            1
+          ],
+          0,
+          {},
+          [],
+          0.1
+        ],
+        "Scale": [
+          15.805369299670895,
+          true
+        ],
+        "Size": [
+          "isotropic",
+          [
+            10.0,
+            1.0,
+            1.0
+          ],
+          [
+            false,
+            false,
+            false
+          ],
+          [
+            0,
+            0,
+            1
+          ],
+          [
+            1.0,
+            1.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
+          ]
+        ]
+      }
+    },
+    "refined_instrument": {
+      "SH/L": 0.0194,
+      "U": 0.0,
+      "V": 0.0,
+      "W": 5.109,
+      "X": 0.0,
+      "Y": 3.634,
+      "Zero": 0.0
+    },
+    "revision": "c0bc79b259cdf0065480b5fbd57674ddf12c4a23",
+    "sample_count": 4106,
+    "schema_version": 1,
+    "scope": "iucr_anhydrous_trirubidium_citrate_silicon_holdout",
+    "silicon_calibration": {
+      "calibrated_sample_displacement_mm": -0.10874084696499026,
+      "poisson_rwp": 0.09919370990917137,
+      "sample_count": 128,
+      "windows_two_theta_deg": [
+        [
+          46.95,
+          47.78
+        ],
+        [
+          55.77,
+          56.63
+        ],
+        [
+          68.78,
+          69.68
+        ]
+      ]
+    },
+    "stage_poisson_rwp": {
+      "scale_background": 0.18338369828135362,
+      "silicon_displacement_calibration": 0.09919370990917137,
+      "silicon_scale_background": 0.11726812551927654
+    },
+    "weight_fractions": {
+      "silicon": 0.029262061166425136,
+      "trirubidium_citrate": 0.9707379388335748
+    }
+  },
+  "interpretation": [
+    "The fixed-geometry common subset agrees closely across implementations.",
+    "The source-deposited radius removes the geometry assumption present in the potassium diagnostic.",
+    "The 2.15 wt% silicon windows still do not transfer a displacement anchor; their estimates are diagnostic only.",
+    "Both fits remain far from the phase-specific deposited GSAS model, so this is not physical-model acceptance or justification for undocumented terms."
+  ],
+  "legacy_gsas_reference": {
+    "profile_correlation": 0.9977005959033199,
+    "rexp": 0.0225,
+    "rp": 0.01950459520303016,
+    "rwp": 0.024583376646074934,
+    "weight_fractions": {
+      "silicon": 0.0215,
+      "trirubidium_citrate": 0.9785
+    }
+  },
+  "phasesmith": {
+    "calibrated_sample_displacement_mm": -0.07469320513393693,
+    "elapsed_seconds": 1.3216210000682622,
+    "free_parameter_count": 3,
+    "legacy_curve_poisson_rwp": 0.024583376646074934,
+    "legacy_curve_profile_correlation": 0.9977005959033199,
+    "legacy_weight_fraction_errors": {
+      "silicon": 0.01031586603791794,
+      "trirubidium_citrate": -0.010315866037918009
+    },
+    "maximum_legacy_weight_fraction_error": 0.010315866037918009,
+    "model_qualifications": [
+      "Both phases use their deposited common isotropic base profile.",
+      "Phase-specific mixing and Stephens anisotropy remain fixed out.",
+      "The source declares no absorption or surface-roughness correction.",
+      "The 141.5 mm goniometer radius is source-deposited rather than assumed.",
+      "The source deposits equal source/specimen and specimen/detector radii of 141.5 mm and equal S/L=H/L=0.0097. The article says Si verifies the calibrated goniometer zero, but no nonzero instrument zero is deposited; the neutral common model therefore starts at zero.",
+      "The source declares no absorption or surface-roughness correction. An unpolarized Cu source fraction of 0.5 is an explicit holdout assumption.",
+      "The 2.15 wt% silicon displacement calibration is diagnostic only and is not applied without a cross-implementation identifiability gate."
+    ],
+    "poisson_rwp": 0.1826450964896717,
+    "profile_correlation": 0.6331751794396753,
+    "refined_instrument": {
+      "U": 0.0,
+      "V": 0.0,
+      "W": 5.109,
+      "X": 0.0,
+      "Y": 3.634,
+      "Zero": 0.0
+    },
+    "reflection_count": 601,
+    "sample_count": 4106,
+    "silicon_calibration_poisson_rwp": 0.09930620635828222,
+    "silicon_calibration_sample_count": 128,
+    "weight_fractions": {
+      "silicon": 0.03181586603791794,
+      "trirubidium_citrate": 0.968184133962082
+    }
+  },
+  "pinned_gsasii_revision": "c0bc79b259cdf0065480b5fbd57674ddf12c4a23",
+  "schema_version": 1,
+  "scientific_status": "expected_model_and_silicon_anchor_failure",
+  "scope": "iucr_trirubidium_citrate_silicon_transferability_comparison",
+  "source_dataset_id": "iucr-trirubidium-citrate-si-standard"
+}

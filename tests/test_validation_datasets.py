@@ -119,7 +119,7 @@ def test_reviewed_nonpassing_outcomes_are_explicit() -> None:
     assert (
         by_id["iucr-trirubidium-citrate-si-standard"].purpose,
         by_id["iucr-trirubidium-citrate-si-standard"].expected_status,
-    ) == ("holdout", "blocked")
+    ) == ("holdout", "failed")
     assert (
         by_id["iucr-trirubidium-citrate-monohydrate-si-standard"].purpose,
         by_id["iucr-trirubidium-citrate-monohydrate-si-standard"].expected_status,

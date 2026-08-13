@@ -25,6 +25,10 @@ SUPPORTED_PHASES = {
         "tripotassium_citrate",
         "silicon",
     ),
+    "iucr_anhydrous_trirubidium_citrate_silicon_holdout": (
+        "trirubidium_citrate",
+        "silicon",
+    ),
 }
 
 
@@ -121,7 +125,15 @@ def main() -> None:
     data = np.loadtxt(root / "pattern.csv", delimiter=",", skiprows=1)
     x, observed, legacy_calculated, legacy_background = data.T
     instrument = manifest["instrument"]
-    profile = instrument.get("tripotassium_citrate_profile", instrument["silicon_profile"])
+    if scope == "iucr_sodium_dihydrogen_citrate_silicon_holdout":
+        profile = instrument["silicon_profile"]
+        calibration_profile = profile
+    elif scope == "iucr_anhydrous_tripotassium_citrate_silicon_holdout":
+        profile = instrument["tripotassium_citrate_profile"]
+        calibration_profile = instrument["silicon_profile"]
+    else:
+        profile = instrument["common_base_profile"]
+        calibration_profile = profile
     wavelengths = instrument["wavelengths_angstrom"]
     with tempfile.TemporaryDirectory(prefix="phasesmith-iucr-na-si-gsasii-") as name:
         temporary = Path(name)
@@ -145,7 +157,7 @@ def main() -> None:
         instrument_path = temporary / "instrument.instprm"
         write_instrument(instrument_path, profile)
         calibration_instrument_path = temporary / "silicon-instrument.instprm"
-        write_instrument(calibration_instrument_path, instrument["silicon_profile"])
+        write_instrument(calibration_instrument_path, calibration_profile)
         standard = manifest["silicon_standard"]
         windows = standard.get(
             "calibration_windows_two_theta_deg",

@@ -1340,7 +1340,13 @@ radius, phase-specific profiles, Stephens broadening, and Suortti roughness
 largely repeat the limitations already isolated by the potassium holdout.
 The anhydrous converter now reproduces deposited Rwp 2.45834% and Rp 1.95046%
 on the exact contiguous source-index interval 594–4699, emits both structures,
-and keeps all phase-specific legacy terms outside the neutral common model.
+and keeps all phase-specific legacy terms outside the neutral common model. Its
+completed common-model comparison gives PhaseSmith/pinned-GSAS-II Rwp
+18.265%/18.338%, correlations 0.63318/0.62922, and 3.182%/2.926% Si, passing all
+full-pattern parity gates. Even with the source-deposited radius, the 2.15 wt%
+Si windows infer -0.07469/-0.10874 mm displacement; the 0.03405 mm disagreement
+rejects the anchor and neither value is applied. This independently confirms
+the potassium weak-anchor conclusion without a geometry assumption.
 
 ## Quality bar
 
