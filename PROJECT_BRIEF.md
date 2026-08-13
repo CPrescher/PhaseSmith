@@ -1338,6 +1338,9 @@ surface-roughness correction, and a contiguous 4,106-point refined range. The
 monohydrate is checksum-registered but follows later: its 1.30 wt% Si, absent
 radius, phase-specific profiles, Stephens broadening, and Suortti roughness
 largely repeat the limitations already isolated by the potassium holdout.
+The anhydrous converter now reproduces deposited Rwp 2.45834% and Rp 1.95046%
+on the exact contiguous source-index interval 594–4699, emits both structures,
+and keeps all phase-specific legacy terms outside the neutral common model.
 
 ## Quality bar
 

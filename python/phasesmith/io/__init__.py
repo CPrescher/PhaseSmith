@@ -19,6 +19,10 @@ from .iucr_tripotassium_citrate_silicon import (
     IUCR_TRIPOTASSIUM_CITRATE_SILICON_PHASES,
     convert_iucr_tripotassium_citrate_silicon_bundle,
 )
+from .iucr_trirubidium_citrate_silicon import (
+    IUCR_TRIRUBIDIUM_CITRATE_SILICON_PHASES,
+    convert_iucr_trirubidium_citrate_silicon_bundle,
+)
 from .powder import (
     PowderData,
     PowderFormat,
@@ -46,6 +50,7 @@ __all__ = [
     "IUCR_SILICON_PHASES",
     "IUCR_SODIUM_CITRATE_SILICON_PHASES",
     "IUCR_TRIPOTASSIUM_CITRATE_SILICON_PHASES",
+    "IUCR_TRIRUBIDIUM_CITRATE_SILICON_PHASES",
     "ROWLES_SAMPLES",
     "ROWLES_WEIGHED_WEIGHT_FRACTIONS",
     "CifBackend",
@@ -65,6 +70,7 @@ __all__ = [
     "convert_iucr_silicon_standard_bundle",
     "convert_iucr_sodium_citrate_silicon_bundle",
     "convert_iucr_tripotassium_citrate_silicon_bundle",
+    "convert_iucr_trirubidium_citrate_silicon_bundle",
     "convert_rowles_topas_bundle",
     "convert_xred_tio2_bundle",
     "read_cif",

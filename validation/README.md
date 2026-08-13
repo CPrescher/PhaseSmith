@@ -263,6 +263,14 @@ have deliberately different meanings:
   not applied to either full-pattern fit. The result is a qualified parity pass
   and expected model/anchor failure, not reproduction of the deposited 4.853%
   Rwp or 1.44 wt% Si result.
+- `iucr-trirubidium-citrate-si-standard` is the next independently converted
+  laboratory holdout. Its official pdCIF contributes 4,701 raw counts and an
+  exact contiguous 4,106-point mask after the deposited 5–17° beam-spillover
+  exclusion. It contains both structures, 2.15 wt% NIST SRM 640b Si, a
+  source-deposited 141.5 mm radius, equal S/L=H/L=0.0097, and no absorption or
+  roughness correction. The converter recomputes `Rwp=0.02458338` and
+  `Rp=0.01950460`. Both phases share the same isotropic base profile, while
+  their mixing and Stephens terms remain explicitly source-only.
 
 The QARR checkpoint evaluates supplied CIF anisotropic displacement tensors
 directly and keeps them fixed; sites without displacement values start from a

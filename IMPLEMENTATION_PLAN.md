@@ -1725,3 +1725,8 @@ Si, common base profile coefficients, no roughness correction, and a contiguous
 4,106-point deposited fit. The monohydrate is checksum-registered but follows
 later because 1.30 wt% Si, no deposited radius, phase-specific profiles,
 Stephens broadening, and Suortti roughness repeat already isolated limitations.
+The anhydrous converter is now complete and independently recomputes deposited
+Rwp 2.45834% and Rp 1.95046% on exactly source indices 594–4699. It emits both
+structures and a neutral common base-profile record while preserving the
+phase-specific mixing, Stephens, and legacy shift coefficients as diagnostics.
+The next gate is the native/pinned-GSAS-II common-model comparison.
