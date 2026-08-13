@@ -351,6 +351,54 @@ extinction, or texture models remain explicit errors. Adding one is a new
 equation-, derivative-, provenance-, benchmark-, and oracle-backed increment;
 it is not an unfinished part of Units 26 or 28--38.
 
+## Pinned GSAS-II refinement comparison
+
+The live oracle uses GSAS-II revision
+`c0bc79b259cdf0065480b5fbd57674ddf12c4a23`. It runs in an isolated
+interpreter through the public scripting API and returns only plain records.
+The following values are from the reviewed real-data oracle runs; Rwp is shown
+as a percentage.
+
+| Comparison | PhaseSmith | GSAS-II | Cross-implementation result |
+| --- | ---: | ---: | --- |
+| POWGEN LaB6 one-bank Le Bail Rwp | 26.19186% | 26.29701% | 0.10515 percentage-point difference |
+| POWGEN profile correlation | 0.96762691 | 0.96680192 | 0.00082498 difference |
+| POWGEN same-intensity reconstructed pattern | -- | -- | correlation 0.99999437; relative L2 error 0.00511851 |
+| LANL nickel three-bank Le Bail Rwp | 2.27331% | 2.90085% | context only; the intensity/background optimizers differ |
+| LANL nickel three-bank Le Bail cell | 3.52361196 A | 3.52387369 A | 0.00026173 A difference; 0.0005 A gate passed |
+| LANL same-intensity bank patterns | -- | -- | minimum correlation 0.99999898; maximum relative L2 error 0.00181037 |
+| LANL nickel three-bank structural Rwp | 3.27821% | 3.36736% | both independently pass the 4% gate |
+| LANL minimum structural bank correlation | 0.99749010 | 0.99730908 | both independently pass the 0.995 gate |
+| LANL structural cell | 3.52373113 A | 3.52368699 A | 0.00004414 A difference |
+| LANL structural Ni Uiso | 0.00396507 A^2 | 0.00401813 A^2 | 0.00005306 A^2 difference |
+
+The kernel-level comparisons are the like-for-like numerical tests. POWGEN
+reflection positions agree exactly at the tested precision; its variance and
+tail-rate parameter differences are at floating-point scale. LANL reflection
+positions likewise agree exactly, and the same-extracted-intensity patterns
+above isolate the profile calculation from the two programs' optimizers.
+
+Workflow Rwp equality is deliberately not a cross-gate. The Le Bail workflows
+use independent intensity redistribution and background decomposition. In the
+structural LANL comparison PhaseSmith refines eight variables: the shared cell,
+shared Ni Uiso, three bank scales, and three Zero terms. GSAS-II refines those
+families plus 36 bank-local background coefficients, for 44 live variables.
+The explicit endpoint conventions also select 13,293 PhaseSmith centers and
+13,290 GSAS-II centers. The directly comparable structural quantities are the
+shared cell and Ni Uiso; their agreement is substantially tighter than the
+declared 0.002 A and 0.005 A^2 gates.
+
+POWGEN's structural LaB6 result is a separate published-value acceptance, not
+a matched GSAS-II structural refit. PhaseSmith reaches Rwp 14.41548%, profile
+correlation 0.97638031, `a = 4.15792396 A`, and `x(B) = 0.19954072`; the last
+two values differ from the published SRM-660b refinement by 0.000424 A and
+0.000060. The stricter cross-implementation structural test is therefore the
+three-bank LANL nickel comparison. The executable reports are produced by
+`benchmarks/compare_gsasii_powgen_tof.py`,
+`benchmarks/compare_gsasii_nickel_tof_multibank.py`, and
+`benchmarks/compare_gsasii_nickel_tof_structural.py`, with live test dispatch
+in `tests/test_real_data_oracle.py`.
+
 ## Unit 38 delivery sequence
 
 The structural extension is split into reviewable numerical increments:
