@@ -139,7 +139,12 @@ from .io.powder import (
     read_powder_data,
     read_tof_powder_data,
 )
-from .io.space_groups import SpaceGroupInfo, space_group_by_number, space_group_by_symbol
+from .io.space_groups import (
+    SpaceGroupInfo,
+    space_group_by_number,
+    space_group_by_symbol,
+    space_group_from_hall_symbol,
+)
 from .io.tof_instrument import (
     GsasTofInstrumentData,
     GsasTofInstrumentReadLimits,
@@ -476,6 +481,7 @@ __all__ = [
     "smooth_bruckner",
     "space_group_by_number",
     "space_group_by_symbol",
+    "space_group_from_hall_symbol",
     "species_from_structure",
     "starting_profile_from_fwhm",
     "structure_from_record",

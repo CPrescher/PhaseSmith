@@ -32,7 +32,12 @@ from .powder import (
     read_powder_data,
     read_tof_powder_data,
 )
-from .space_groups import SpaceGroupInfo, space_group_by_number, space_group_by_symbol
+from .space_groups import (
+    SpaceGroupInfo,
+    space_group_by_number,
+    space_group_by_symbol,
+    space_group_from_hall_symbol,
+)
 from .tof_instrument import (
     GsasTofInstrumentData,
     GsasTofInstrumentReadLimits,
@@ -80,4 +85,5 @@ __all__ = [
     "read_tof_powder_data",
     "space_group_by_number",
     "space_group_by_symbol",
+    "space_group_from_hall_symbol",
 ]

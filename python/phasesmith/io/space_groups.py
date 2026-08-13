@@ -23,20 +23,24 @@ class SpaceGroupInfo:
     space_group: SpaceGroup
 
 
-def _convert(record: dict[str, Any]) -> SpaceGroupInfo:
+def _convert_operations(records: list[dict[str, Any]]) -> SpaceGroup:
     operations = []
-    for operation in record["operations"]:
+    for operation in records:
         rotation = np.asarray(operation["rotation"], dtype=np.int64)
         translation = tuple(
             Fraction(int(value[0]), int(value[1])) for value in operation["translation"]
         )
         operations.append(SymmetryOperation(rotation, translation))
+    return SpaceGroup(operations)
+
+
+def _convert(record: dict[str, Any]) -> SpaceGroupInfo:
     return SpaceGroupInfo(
         int(record["number"]),
         str(record["hm_symbol"]),
         str(record["hall_symbol"]),
         str(record["setting"]),
-        SpaceGroup(operations),
+        _convert_operations(record["operations"]),
     )
 
 
@@ -54,3 +58,11 @@ def space_group_by_symbol(symbol: str) -> SpaceGroupInfo:
     if not isinstance(symbol, str) or not symbol.strip():
         raise ValueError("space-group symbol must be a non-empty string")
     return _convert(_core._space_group_by_symbol(symbol.strip()))
+
+
+def space_group_from_hall_symbol(symbol: str) -> SpaceGroup:
+    """Parse a general non-magnetic Hall expression into exact operations."""
+
+    if not isinstance(symbol, str) or not symbol.strip():
+        raise ValueError("Hall symbol must be a non-empty string")
+    return _convert_operations(_core._space_group_from_hall_symbol(symbol.strip()))

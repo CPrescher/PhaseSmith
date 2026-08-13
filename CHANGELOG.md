@@ -6,6 +6,10 @@ development versions.
 
 ## Unreleased
 
+- Parse general non-magnetic CIF Hall expressions through the pinned Moyo
+  grammar instead of requiring an exact canonical-table spelling. Permissive
+  CIF import now retains valid higher-priority symmetry while warning about an
+  invalid secondary identifier, without guessing repairs for malformed symbols.
 - Add the checksum-pinned anhydrous tripotassium-citrate/Si holdout, including
   exact pdCIF conversion, an independent native workflow, and a pinned GSAS-II
   comparison. The shared fixed-geometry model passes parity, while the 1.44 wt%

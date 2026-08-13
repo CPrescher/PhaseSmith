@@ -53,6 +53,7 @@ use phasesmith_io::{
     read_tof_powder_file_as as read_native_tof_powder_file,
     space_group_by_number as native_space_group_by_number,
     space_group_by_symbol as native_space_group_by_symbol,
+    space_group_from_hall_symbol as native_space_group_from_hall_symbol,
 };
 use pyo3::exceptions::{PyNotImplementedError, PyValueError};
 use pyo3::prelude::*;
@@ -3752,6 +3753,17 @@ fn space_group_by_symbol_for_python<'py>(
         .and_then(|info| native_space_group_record(py, info))
 }
 
+/// Parse one general non-magnetic Hall expression into exact operations.
+#[pyfunction(name = "_space_group_from_hall_symbol")]
+fn space_group_from_hall_symbol_for_python<'py>(
+    py: Python<'py>,
+    symbol: &str,
+) -> PyResult<Bound<'py, PyList>> {
+    native_space_group_from_hall_symbol(symbol)
+        .map_err(|error| PyValueError::new_err(error.to_string()))
+        .and_then(|space_group| symmetry_operations_to_python(py, space_group.operations()))
+}
+
 // The record mirrors `structure_to_record` so Python reconstruction uses the
 // same stable parser-independent boundary as JSON persistence.
 #[allow(clippy::too_many_lines)]
@@ -4207,6 +4219,10 @@ fn _core(module: &Bound<'_, PyModule>) -> PyResult<()> {
     )?)?;
     module.add_function(wrap_pyfunction!(space_group_by_number_for_python, module)?)?;
     module.add_function(wrap_pyfunction!(space_group_by_symbol_for_python, module)?)?;
+    module.add_function(wrap_pyfunction!(
+        space_group_from_hall_symbol_for_python,
+        module
+    )?)?;
     module.add_function(wrap_pyfunction!(parse_cif_text_for_python, module)?)?;
     module.add_function(wrap_pyfunction!(parse_powder_text_for_python, module)?)?;
     module.add_function(wrap_pyfunction!(read_powder_file_for_python, module)?)?;

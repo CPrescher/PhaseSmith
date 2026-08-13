@@ -39,9 +39,12 @@ environments.
 The native adapter owns tokenization, blocks, loops, quoted and semicolon text,
 numeric uncertainties, operation-string parsing, and import policy. Conventional
 space-group lookup uses the pinned pure-Rust Moyo 0.15.0 Hall database with all
-530 settings. `SpaceGroup` construction independently revalidates exact integer/
-rational operations and owns closure, systematic absences, multiplicity, and
-reflection generation.
+530 settings. CIF Hall tags additionally use Moyo's general non-magnetic Hall
+parser, so valid redundant translation spellings and explicit origin shifts do
+not need to be present verbatim in that canonical table. Generated operations
+are converted to exact denominator-12 translations. `SpaceGroup` construction
+independently revalidates exact integer/rational operations and owns closure,
+systematic absences, multiplicity, and reflection generation.
 
 ## Symmetry precedence
 
@@ -54,14 +57,22 @@ Definitions are resolved in this order:
 5. P1 with a visible warning when no definition exists.
 
 Lower-priority definitions are also resolved. A disagreement is an error in
-strict mode and a structured warning in permissive mode. The chosen source and
-original identifiers are retained as plain metadata.
+strict mode and a structured warning in permissive mode. An invalid supplied
+definition is always an error in strict mode. In permissive mode it is ignored
+with an `invalid_space_group_definition_ignored` warning only when another
+supplied definition resolves valid symmetry; an invalid identifier never causes
+an implicit P1 fallback. The chosen source and original identifiers are retained
+as plain metadata. In particular, permissive mode may use valid explicit
+operations while warning about a malformed secondary Hermann--Mauguin tag, but
+it does not repair or guess the intended symbol.
 
 Scripts that do not start from a CIF can use `space_group_by_number(1..230)` or
 `space_group_by_symbol(...)`. These native lookup functions
 return `SpaceGroupInfo` with the International number, Hermann--Mauguin and
 Hall symbols, setting qualifier, and an engine-owned `SpaceGroup` made from
 exact integer/rational operations.
+Callers that already have a general Hall expression can use
+`space_group_from_hall_symbol(...)` to obtain the exact `SpaceGroup` directly.
 
 ## Numeric and atom-site conventions
 

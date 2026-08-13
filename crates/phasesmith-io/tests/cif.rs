@@ -200,6 +200,42 @@ fn accepts_a_single_explicit_operation_stored_as_a_tag_value() {
 }
 
 #[test]
+fn imports_general_hall_expressions_outside_canonical_database_spellings() {
+    let text = CELL_ONLY_CIF.replace(
+        "_space_group_name_H-M_alt 'I m -3 m'",
+        "_symmetry_space_group_name_Hall 'A 2 -2ac'",
+    );
+    let imported = parse(&text);
+    assert_eq!(imported.structure.space_group.operations().len(), 8);
+    assert_eq!(imported.structure.metadata["symmetry_source"], "hall");
+    assert_eq!(imported.structure.metadata["space_group_hall"], "A 2 -2ac");
+}
+
+#[test]
+fn permissive_import_uses_valid_operations_without_guessing_malformed_hm() {
+    let text = CELL_ONLY_CIF.replace(
+        "_space_group_name_H-M_alt 'I m -3 m'",
+        "_space_group_name_H-M_alt 'F m 3 m'\n\
+         _space_group_symop_operation_xyz 'x,y,z'",
+    );
+    assert!(parse_cif_text(&text, None, true, CifReadLimits::default()).is_err());
+
+    let imported = parse_cif_text(&text, None, false, CifReadLimits::default()).unwrap();
+    assert_eq!(imported.structure.space_group.operations().len(), 1);
+    assert_eq!(
+        imported.structure.metadata["symmetry_source"],
+        "explicit_operations"
+    );
+    let diagnostic = imported
+        .diagnostics
+        .iter()
+        .find(|item| item.code == "invalid_space_group_definition_ignored")
+        .expect("malformed secondary HM tag must remain visible");
+    assert_eq!(diagnostic.tag.as_deref(), Some("_space_group_name_h-m_alt"));
+    assert!(diagnostic.message.contains("F m 3 m"));
+}
+
+#[test]
 fn unsupported_features_and_duplicate_labels_are_explicit() {
     let magnetic = format!("{CELL_ONLY_CIF}\n_atom_site_moment.label M1\n");
     assert!(matches!(
