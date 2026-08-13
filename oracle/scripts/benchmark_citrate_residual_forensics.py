@@ -276,22 +276,56 @@ def _run_variant(
     *,
     transparency_scale: float = 1.0,
     case_suffix: str = "",
+    fit_window_deg: tuple[float, float] | None = None,
+    sample_refinements: tuple[str, ...] = (),
+    instrument_overrides: dict[str, float] | None = None,
+    include_arrays: bool = False,
 ) -> dict[str, Any]:
     # HAP public lookup searches every key path by substring, including the
     # histogram name. Keep factor words such as "size" and "shift" out of it.
     if not math.isfinite(transparency_scale):
         raise ValueError("transparency scale must be finite")
+    if len(set(sample_refinements)) != len(sample_refinements):
+        raise ValueError("variant refinement controls are invalid")
+    if fit_window_deg is not None and (
+        len(fit_window_deg) != 2
+        or not all(math.isfinite(value) for value in fit_window_deg)
+        or fit_window_deg[0] < float(x[0])
+        or fit_window_deg[1] > float(x[-1])
+        or fit_window_deg[0] >= fit_window_deg[1]
+    ):
+        raise ValueError("variant fit window is invalid")
+    if instrument_overrides is not None and (
+        not instrument_overrides
+        or not all(
+            isinstance(name, str) and math.isfinite(value)
+            for name, value in instrument_overrides.items()
+        )
+    ):
+        raise ValueError("variant instrument overrides are invalid")
     case_id = "case_" + "".join("1" if name in factors else "0" for name in FACTORS)
     case_id += case_suffix
     data_path = work / f"{case_id}.xye"
     instrument_path = work / f"{case_id}.instprm"
-    np.savetxt(data_path, np.column_stack((x, observed, np.sqrt(np.maximum(observed, 1.0)))))
+    uncertainties = np.sqrt(np.maximum(observed, 1.0))
+    if fit_window_deg is not None:
+        active = (x >= fit_window_deg[0]) & (x < fit_window_deg[1])
+        uncertainties = uncertainties.copy()
+        uncertainties[~active] = 1.0e100
+    np.savetxt(data_path, np.column_stack((x, observed, uncertainties)))
     _write_instrument(
         instrument_path, manifest, legacy_lx_size_axis="legacy_lx_size_axis" in factors
     )
     project = scripting.G2Project(newgpx=str(work / f"{case_id}.gpx"))
     histogram = project.add_powder_histogram(str(data_path), str(instrument_path), fmthint="Topas")
-    histogram.set_refinements({"Limits": [float(x[0]), float(x[-1])]})
+    selected_limits = (float(x[0]), float(x[-1]))
+    histogram.set_refinements({"Limits": list(selected_limits)})
+    if instrument_overrides is not None:
+        instrument_values = histogram.data["Instrument Parameters"][0]
+        for name, value in instrument_overrides.items():
+            if name not in instrument_values:
+                raise ValueError(f"unknown instrument override: {name}")
+            instrument_values[name][1] = value
     histogram.data["Sample Parameters"]["Scale"][1] = False
     sample = histogram.data["Sample Parameters"]
     instrument = manifest["instrument"]
@@ -313,6 +347,8 @@ def _run_variant(
     background[0] = ["chebyschev-1", True, 1, 0.0]
     background[1]["fixback"] = legacy_background.copy()
     background[1]["background PWDR"] = ["", 1.0, False]
+    if sample_refinements:
+        histogram.set_refinements({"Sample Parameters": list(sample_refinements)})
     phases = []
     for phase_id in ("trirubidium_citrate", "silicon"):
         phase = project.add_phase(
@@ -342,6 +378,24 @@ def _run_variant(
     weight = 1.0 / np.maximum(observed, 1.0)
     residual = observed - calculated
     diagnostics = residual_diagnostics(x, observed, calculated, fitted_background)
+    phase_scales = {}
+    for phase in phases:
+        scale_entries = phase.getHAPentryList(histogram, "Scale")
+        if len(scale_entries) != 1:
+            raise RuntimeError(f"expected one Scale HAP entry for {phase.name}")
+        phase_scales[phase.name] = float(phase.getHAPentryValue(scale_entries[0][0])[0])
+    residual_background = fitted_background - legacy_background
+    fit_background = (
+        residual_background
+        if fit_window_deg is None
+        else residual_background[(x >= fit_window_deg[0]) & (x < fit_window_deg[1])]
+    )
+    try:
+        mass_fractions = {
+            phase.name: float(histogram.ComputeMassFracs()[phase.name][0]) for phase in phases
+        }
+    except (KeyError, TypeError, ValueError):
+        mass_fractions = None
     diagnostics.update(
         {
             "case_id": case_id,
@@ -350,11 +404,37 @@ def _run_variant(
             "sample_shift_micrometre": float(sample["Shift"][0]),
             "sample_transparency_cm": float(sample["Transparency"][0]),
             "source_transparency_multiplier": transparency_scale,
-            "weight_fractions": {
-                phase.name: float(histogram.ComputeMassFracs()[phase.name][0]) for phase in phases
+            "limits_deg": list(selected_limits),
+            "fit_window_deg": None if fit_window_deg is None else list(fit_window_deg),
+            "instrument_overrides": instrument_overrides,
+            "refined_instrument": {
+                name: float(histogram.data["Instrument Parameters"][0][name][1])
+                for name in ("U", "V", "W", "X", "Y", "SH/L", "Zero")
             },
+            "refined_background_coefficients": [
+                float(value) for value in background[0][3 : 3 + int(background[0][2])]
+            ],
+            "residual_background_summary": {
+                "minimum": float(np.min(residual_background)),
+                "maximum": float(np.max(residual_background)),
+                "rms": float(np.sqrt(np.mean(residual_background**2))),
+            },
+            "fit_window_residual_background_summary": {
+                "minimum": float(np.min(fit_background)),
+                "maximum": float(np.max(fit_background)),
+                "rms": float(np.sqrt(np.mean(fit_background**2))),
+            },
+            "phase_scales": phase_scales,
+            "weight_fractions": mass_fractions,
         }
     )
+    if include_arrays:
+        diagnostics["arrays"] = {
+            "x": x.copy(),
+            "observed": observed.copy(),
+            "calculated": calculated.copy(),
+            "background": fitted_background.copy(),
+        }
     return diagnostics
 
 

@@ -1779,8 +1779,15 @@ Stephens is negligible, and the signed deposited transparency term is
 detrimental. The legacy manual confirms that sign and shows the positive source
 coefficient has formally negative effective absorption; reversing it improves
 the fit but is not the deposited model. The best fixed subset reaches 9.726%
-and leaves 65.8% of its SSE below 30 degrees. Next, audit that
-low-angle profile/intensity/conversion residual before adding another
+and leaves 65.8% of its SSE below 30 degrees. The follow-up 643-sample
+17.004916–30 degree audit is complete: no isolated background, peak-group
+intensity, shift, `W`, `X`, or FCJ probe closes half the local
+source-to-deposited weighted-SSE gap. Best physical width/axial values plus
+four well-conditioned background basis terms reach 4.9772% Rwp from a 9.8275%
+local base, still above the deposited 2.7107%. Pinned GSAS-II's effective
+`SH/L=0.002` lower boundary is explicitly treated as a compressed-oracle
+warning, not zero source divergence. Next, compare source-native reflection
+intensities and legacy profile-function-4 axial shapes before adding another
 production term.
 Other Laue-class reductions remain separate follow-up slices rather than
 silently sharing the orthorhombic basis.

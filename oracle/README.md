@@ -256,6 +256,22 @@ bundle with:
   --report /path/to/new-report.json
 ```
 
+Run the follow-up 17–30 degree component audit with the same pinned checkout
+and neutral bundle:
+
+```shell
+/path/to/gsas/python oracle/scripts/benchmark_citrate_low_angle_forensics.py \
+  --gsas-root /path/to/pinned/GSAS-II \
+  --binary-dir /path/to/compatible/GSASII-bin/platform-directory \
+  --data-directory /path/to/converted/rubidium-bundle \
+  --report /path/to/new-low-angle-report.json
+```
+
+The worker retains the full grid but assigns negligible weight outside the
+audited interval so GSAS-II's fixed-background indexing remains unchanged. It
+uses only public scripting calls, records the `SH/L=0.002` effective evaluator
+floor, rejects nonphysical unconstrained width fits, and emits plain JSON.
+
 The generator refuses to replace `data.npz` or `manifest.json`. Regeneration
 requires the explicit `--force` flag, after which both metadata and numerical
 diffs must be reviewed. Normal tests load fixtures through

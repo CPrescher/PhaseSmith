@@ -1392,9 +1392,22 @@ effective absorption; a reversed-sign sensitivity improves the fit but does
 not represent the deposited model. The best fixed subset reaches 9.726% Rwp and
 closes 73.19% of the former base-to-deposited SSE gap. Of the remaining SSE,
 65.8% is below 30 degrees and its width-mode correlation exceeds its position
-mode. No new production term is justified yet: the next checkpoint is a
-low-angle profile/intensity/conversion audit, while other Stephens Laue classes
-remain optional completeness work.
+mode.
+
+The subsequent 17.004916–30 degree component audit is complete on 643 samples.
+After local phase-scale and constant-background adjustment, the translated
+source profile gives 9.8275% Poisson Rwp versus 2.7107% for the deposited curve.
+No isolated background, peak-group intensity, position, `W`, `X`, or FCJ probe
+closes half of that weighted-SSE gap. Their best physical profile combination
+plus a rank-four, well-conditioned residual-background projection reaches
+4.9772% and closes 80.47%, but still does not reconstruct the source. The FCJ
+scan reaches pinned GSAS-II's
+effective `SH/L=0.002` floor; because the source records separate
+`S/L=H/L=0.0097`, this is an axial-compression fidelity warning rather than
+evidence for zero divergence. No new production term is justified. The next
+checkpoint compares source-native reflection intensities and legacy
+profile-function-4 axial shapes before changing PhaseSmith physics; other
+Stephens Laue classes remain optional completeness work.
 
 ## Quality bar
 

@@ -553,6 +553,7 @@ def test_trirubidium_citrate_comparison_gates_expected_transfer_failure() -> Non
         "benchmarks/practical_workflow.py",
         "benchmarks/real_data.py",
         "oracle/scripts/benchmark_cw_profile.py",
+        "oracle/scripts/benchmark_citrate_low_angle_forensics.py",
         "oracle/scripts/benchmark_citrate_residual_forensics.py",
         "oracle/scripts/benchmark_iucr_silicon_standard.py",
         "oracle/scripts/benchmark_iucr_sodium_citrate_silicon.py",
@@ -579,6 +580,8 @@ def test_benchmark_help_does_not_require_gsasii(script: str) -> None:
 def test_external_worker_does_not_import_rietveld() -> None:
     for relative_path in (
         "oracle/scripts/benchmark_cw_profile.py",
+        "oracle/scripts/benchmark_citrate_low_angle_forensics.py",
+        "oracle/scripts/benchmark_citrate_residual_forensics.py",
         "oracle/scripts/benchmark_iucr_silicon_standard.py",
         "oracle/scripts/benchmark_iucr_sodium_citrate_silicon.py",
         "oracle/scripts/benchmark_nist_srm660c.py",

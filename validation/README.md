@@ -285,6 +285,14 @@ have deliberately different meanings:
   30 degrees. The legacy equation confirms the numerical sign and shows that
   positive `trns=1.30` has formally negative effective absorption; the manifest
   therefore labels its GSAS-II value as an equation field, not physical `1/mu`.
+  The subsequent 643-sample 17–30° audit finds that no isolated background,
+  intensity, position, symmetric-width, or axial-profile probe closes half of
+  the local source-to-deposited weighted-SSE gap. Their combined best physical
+  shape plus background closes 80.47% but remains at `Rwp=0.04977` versus the
+  deposited `0.02711`. The pinned GSAS-II FCJ scan reaches its effective
+  `SH/L=0.002` floor; this is recorded as a compression-fidelity diagnostic,
+  not zero physical source divergence. The reviewed forensic artifact is
+  `results/2026-08-13-citrate-rubidium-low-angle-forensics.json`.
 
 The QARR checkpoint evaluates supplied CIF anisotropic displacement tensors
 directly and keeps them fixed; sites without displacement values start from a
