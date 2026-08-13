@@ -17,6 +17,45 @@ The canonical suite uses native runners. Add `--interactive-qarr` to run QARR
 cancellation: press `q` or Ctrl+C once to stop at the next safe batch boundary;
 a second Ctrl+C forces interruption.
 
+## Unified GSAS-II comparison campaign
+
+The broader black-box comparison campaign is declared in
+`validation/benchmark-campaign.json`. It composes the existing case-specific
+drivers; it does not duplicate their numerical workflows or import GSAS-II into
+PhaseSmith. List the reviewed cases without configuring an oracle:
+
+```bash
+python tools/run_benchmark_campaign.py --list
+```
+
+Run the complete campaign with the normal PhaseSmith interpreter while passing
+the isolated pinned GSAS-II interpreter and checkout explicitly:
+
+```bash
+python tools/run_benchmark_campaign.py \
+  --gsas-python /path/to/gsasii-python \
+  --gsas-root /path/to/GSAS-II \
+  --binary-dir /path/to/GSAS-II/bindist \
+  --data-directory validation/data \
+  --output validation/results/campaign-YYYY-MM-DD.json \
+  --continue-on-error
+```
+
+Before any scientific driver runs, the command verifies the checkout against
+`oracle/PINNED_GSASII.json` and verifies every selected dataset's exact byte
+sizes and SHA-256 hashes. Each generated case result must carry the same oracle
+revision and satisfy the case-level assertions in the manifest. The aggregate
+JSON embeds every driver report and its canonical SHA-256. Existing output is
+never replaced unless `--overwrite` is supplied; reviewed goldens are not
+regenerated implicitly.
+
+Use repeated `--case CASE_ID` options for a focused rerun. `--fetch` downloads
+missing registered inputs from their pinned HTTPS locations before verification.
+The command exits nonzero for a pin, checksum, driver, provenance, or declared
+scientific-gate failure. Diagnostic cases are successful only when their
+reviewed diagnostic executes and records the pinned oracle provenance; they are
+not relabeled as scientific parity passes.
+
 The default command contains only accepted, complete runners. Two additional
 diagnostic cases are intentionally invoked separately because one is a failing
 transferability holdout and the other exposes an unsupported workflow boundary:

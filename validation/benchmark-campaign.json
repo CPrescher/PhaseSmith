@@ -1,0 +1,162 @@
+{
+  "schema_version": 1,
+  "campaign_id": "gsasii-real-data",
+  "cases": [
+    {
+      "case_id": "rowles-qpa",
+      "title": "Rowles 1a/1e laboratory X-ray QPA",
+      "dataset_id": "curtin-rowles-qpa-topas",
+      "driver": "benchmarks/compare_gsasii_rowles_qpa.py",
+      "arguments": ["--sample", "all", "--gsas-cycles", "8", "--phasesmith-threads", "1"],
+      "outcome": "pass",
+      "oracle_revision_paths": [
+        "comparisons.1a.gsasii.revision",
+        "comparisons.1e.gsasii.revision"
+      ],
+      "assertions": [
+        {"path": "comparisons.1a.cross_implementation_validation.status", "equals": "passed"},
+        {"path": "comparisons.1e.cross_implementation_validation.status", "equals": "passed"}
+      ]
+    },
+    {
+      "case_id": "rowles-fpa-diagnostic",
+      "title": "Rowles physical-profile compression transfer diagnostic",
+      "dataset_id": "curtin-rowles-qpa-topas",
+      "driver": "benchmarks/compare_gsasii_rowles_fpa.py",
+      "arguments": ["--sample", "all", "--gsas-cycles", "8"],
+      "outcome": "diagnostic",
+      "oracle_revision_paths": ["calibration.revision"],
+      "assertions": []
+    },
+    {
+      "case_id": "qarr-1g",
+      "title": "IUCr QARR 1g matched common workflow",
+      "dataset_id": "iucr-qarr-1g",
+      "driver": "benchmarks/compare_gsasii_qarr.py",
+      "arguments": ["--sample", "1g", "--warmups", "0", "--repetitions", "1", "--gsas-cycles", "8", "--phasesmith-threads", "1"],
+      "outcome": "pass",
+      "oracle_revision_paths": ["gsasii.revision"],
+      "assertions": [
+        {"path": "cross_implementation_validation.status", "equals": "passed"}
+      ]
+    },
+    {
+      "case_id": "qarr-1h",
+      "title": "IUCr QARR 1h untouched matched holdout",
+      "dataset_id": "iucr-qarr-1h",
+      "driver": "benchmarks/compare_gsasii_qarr.py",
+      "arguments": ["--sample", "1h", "--warmups", "0", "--repetitions", "1", "--gsas-cycles", "8", "--phasesmith-threads", "1"],
+      "outcome": "pass",
+      "oracle_revision_paths": ["gsasii.revision"],
+      "assertions": [
+        {"path": "cross_implementation_validation.status", "equals": "passed"}
+      ]
+    },
+    {
+      "case_id": "nist-srm660c",
+      "title": "NIST SRM 660c matched FCJ and stress holdout",
+      "dataset_id": "nist-srm660c-lab6-xray",
+      "driver": "benchmarks/compare_gsasii_nist_srm660c.py",
+      "arguments": ["--case", "both", "--warmups", "0", "--repetitions", "1", "--cycles", "8", "--phasesmith-threads", "1"],
+      "outcome": "pass",
+      "oracle_revision_paths": ["gsasii.revision"],
+      "assertions": [{"path": "status", "equals": "passed"}]
+    },
+    {
+      "case_id": "aps-sucrose",
+      "title": "APS 11-BM sucrose Le Bail comparison",
+      "dataset_id": "aps-sucrose-11bmb",
+      "driver": "benchmarks/compare_gsasii_real_lebail.py",
+      "arguments": ["--case", "aps-sucrose-11bmb", "--warmups", "0", "--repetitions", "1", "--gsas-cycles", "20"],
+      "outcome": "pass",
+      "oracle_revision_paths": ["gsasii.revision"],
+      "assertions": [
+        {"path": "cross_implementation_validation.status", "equals": "passed"}
+      ]
+    },
+    {
+      "case_id": "ansto-echidna",
+      "title": "ANSTO Echidna LaB6 neutron comparison",
+      "dataset_id": "ansto-echidna-lab6-cw-neutron",
+      "driver": "benchmarks/compare_gsasii_real_lebail.py",
+      "arguments": ["--case", "ansto-echidna-lab6-cw-neutron", "--warmups", "0", "--repetitions", "1", "--gsas-cycles", "20"],
+      "outcome": "pass",
+      "oracle_revision_paths": ["gsasii.revision"],
+      "assertions": [
+        {"path": "cross_implementation_validation.status", "equals": "passed"}
+      ]
+    },
+    {
+      "case_id": "pbso4-combined",
+      "title": "PbSO4 X-ray/neutron workflow comparison",
+      "dataset_id": "gsasii-pbso4-cw",
+      "driver": "benchmarks/compare_gsasii_pbso4.py",
+      "arguments": ["--warmups", "0", "--repetitions", "1", "--gsas-cycles", "8", "--phasesmith-threads", "1"],
+      "outcome": "pass",
+      "oracle_revision_paths": ["gsasii.revision"],
+      "assertions": [
+        {"path": "cross_implementation_validation.status", "equals": "passed"}
+      ]
+    },
+    {
+      "case_id": "powgen-lab6",
+      "title": "POWGEN LaB6 TOF profile and workflow comparison",
+      "dataset_id": "powgen-lab6-tof-calibration",
+      "driver": "benchmarks/compare_gsasii_powgen_tof.py",
+      "arguments": ["--gsas-cycles", "8"],
+      "outcome": "pass",
+      "oracle_revision_paths": ["oracle_revision"],
+      "assertions": [{"path": "native_workflows.PhaseSmith.status", "equals": "passed"}]
+    },
+    {
+      "case_id": "lanl-nickel-lebail",
+      "title": "LANL nickel multi-bank TOF Le Bail comparison",
+      "dataset_id": "lanl-nickel-tof",
+      "driver": "benchmarks/compare_gsasii_nickel_tof_multibank.py",
+      "arguments": ["--gsas-cycles", "20"],
+      "outcome": "pass",
+      "oracle_revision_paths": ["oracle_revision"],
+      "assertions": [{"path": "status", "equals": "passed"}]
+    },
+    {
+      "case_id": "lanl-nickel-structural",
+      "title": "LANL nickel structural TOF comparison",
+      "dataset_id": "lanl-nickel-tof",
+      "driver": "benchmarks/compare_gsasii_nickel_tof_structural.py",
+      "arguments": ["--gsas-cycles", "20"],
+      "outcome": "pass",
+      "oracle_revision_paths": ["oracle_revision"],
+      "assertions": [{"path": "status", "equals": "passed"}]
+    },
+    {
+      "case_id": "bath-ltl",
+      "title": "Bath LTL legacy-conversion capability diagnostic",
+      "dataset_id": "bath-ltl-lab-xray",
+      "driver": "benchmarks/compare_gsasii_bath_ltl.py",
+      "arguments": ["--sample", "all", "--gsas-cycles", "12"],
+      "outcome": "diagnostic",
+      "oracle_revision_paths": ["pinned_gsasii_revision"],
+      "assertions": []
+    },
+    {
+      "case_id": "xred-tio2",
+      "title": "XRED TiO2 missing-metadata capability diagnostic",
+      "dataset_id": "xred-tio2-anatase-rutile",
+      "driver": "benchmarks/compare_gsasii_xred_tio2.py",
+      "arguments": ["--gsas-cycles", "12"],
+      "outcome": "diagnostic",
+      "oracle_revision_paths": ["pinned_gsasii_revision"],
+      "assertions": []
+    },
+    {
+      "case_id": "iucr-citrate-silicon",
+      "title": "IUCr dicesium citrate with Si 640b internal standard",
+      "dataset_id": "iucr-dicesium-citrate-si-standard",
+      "driver": "benchmarks/compare_gsasii_iucr_silicon_standard.py",
+      "arguments": ["--gsas-cycles", "12", "--phasesmith-cycles", "2"],
+      "outcome": "diagnostic",
+      "oracle_revision_paths": ["pinned_gsasii_revision"],
+      "assertions": []
+    }
+  ]
+}

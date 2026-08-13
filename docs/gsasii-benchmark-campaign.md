@@ -5,6 +5,13 @@ This is the working ledger for the real-data comparison campaign requested on
 belongs in `gsasii-benchmark-report.md`; this file records what was actually
 run, what remains unavailable, and why.
 
+The reviewed cases are now also machine-readable in
+`validation/benchmark-campaign.json`. `tools/run_benchmark_campaign.py` verifies
+the exact GSAS-II revision and registered dataset checksums, runs any selected
+comparison drivers, checks their declared result contracts, and writes one
+non-destructive aggregate JSON report. This orchestration changes no numerical
+case and never regenerates the reviewed result files implicitly.
+
 ## Comparison contract
 
 All GSAS-II results must come from revision

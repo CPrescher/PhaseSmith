@@ -263,9 +263,12 @@ similar.
 
 ## Recommended priorities
 
-1. **Unify campaign execution.** Add one manifest-driven command that runs the
-   available comparison drivers, validates the pinned revision, and writes a
-   summary without regenerating reviewed goldens silently.
+1. **Unify campaign execution — complete.**
+   `validation/benchmark-campaign.json` and
+   `tools/run_benchmark_campaign.py` now run the available comparison drivers,
+   validate dataset hashes and the pinned revision, enforce case-level result
+   assertions, and write a non-destructive aggregate report without silently
+   regenerating reviewed goldens.
 2. **Improve conversion diagnostics.** Report missing phases, contradictory
    optics, unsupported legacy records, origin choices, and assumed radiation
    models before refinement. Bath and XRED show that this will improve user

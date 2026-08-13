@@ -60,7 +60,8 @@ pinned GSAS-II lattice perturbation fixture remains pending because the
 external checkout is unavailable; equations and normal operation contain no
 GSAS-II dependency.
 
-The project remains pre-release and is licensed under the MIT License. The
+PhaseSmith 0.3.0 was released on 2026-08-13 and is licensed under the MIT
+License. The
 architecture and delivery gates for CIF import, the remaining native
 crystallographic calculations, and structure-factor-based Rietveld
 orchestration are specified in `docs/crystallography-plan.md`.
@@ -1279,6 +1280,16 @@ milestone is broader independent experimental validation using in-house
 benchmark examples. That evidence must establish transferable profile behavior
 before any specialized LPSD, tube-tail, continuum, or coupled-dispersion term
 is promoted into the production runtime.
+
+The first Unit-29 infrastructure slice is complete. A reviewed JSON manifest
+now describes the existing real-data GSAS-II comparison drivers, their dataset
+identities, oracle-revision locations, scientific assertions, and diagnostic
+classification. One non-destructive command validates the exact pinned
+checkout and every selected dataset checksum before executing the drivers, then
+embeds the finite result records and canonical hashes in a single campaign
+report. This is orchestration only: numerical workflows remain independently
+reviewed, and no golden result is regenerated implicitly. The next Unit-29
+scientific slice is the queued sodium-dihydrogen-citrate plus Si 640b holdout.
 
 ## Quality bar
 

@@ -1633,8 +1633,9 @@ separate application repository.
 ## Maintainer decisions needed
 
 Development can proceed through the next numerical units, but the following
-must be decided before a public release. The project-license question was
-resolved on 2026-08-05 by selecting the MIT License.
+must be decided before stabilizing the 1.0 public API. The project-license
+question was resolved on 2026-08-05 by selecting the MIT License, and version
+0.3.0 was released on 2026-08-13.
 
 1. Whether direct `(H, eta)` remains public as a low-level API or is labeled
    explicitly as a primitive/reference interface.
@@ -1691,3 +1692,14 @@ plain validation artifacts, explicit cross-pattern profile metrics, and a
 decision supported by those results about whether any specialized profile term
 belongs in production. Failed transfer remains a valid outcome; it must not be
 converted into a production feature by tuning against one specimen.
+
+Unit 29's campaign-orchestration slice is complete. The checked-in version-1
+manifest composes fourteen existing real-data comparison and diagnostic
+drivers without duplicating their numerical logic. The runner validates the
+exact GSAS-II checkout, registered dataset bytes and hashes, result-carried
+oracle revisions, and case-specific scientific assertions, then writes one
+finite aggregate JSON record while refusing to overwrite an existing output by
+default. Focused case selection and continue-on-error reporting support review;
+no reviewed golden is silently regenerated. The next scientific slice is the
+queued sodium-dihydrogen-citrate plus Si 640b preferred-orientation holdout,
+followed by the independently reviewed potassium/rubidium citrate series.
