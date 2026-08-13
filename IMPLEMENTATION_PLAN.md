@@ -1630,6 +1630,31 @@ application-neutral native implementation without losing the independent NumPy
 equation references. GUI-specific state and presentation adapters belong in a
 separate application repository.
 
+## External desktop-host checkpoint (2026-08-13)
+
+The separate sibling `Rietveld-Engine` repository now exercises the released
+native boundary with Tauri 2 and no Python sidecar. Reviewed commits provide:
+
+1. typed engine readiness through `phasesmith = 0.3.0`;
+2. a deterministic silicon pattern and native Le Bail W-profile refinement,
+   including observed/calculated/difference plotting and returned Rwp/FWHM;
+3. bounded, explicitly distinct CW-degree and TOF-microsecond powder imports
+   using the public native I/O facade; and
+4. bounded native CIF import with cell, exact symmetry-operation count, sites,
+   elements, provenance, and visible diagnostics.
+
+The host verifies production TypeScript builds, strict Rust formatting/Clippy,
+native tests, a complete Tauri executable build, and responsive layouts at the
+configured 1280x820 and 1024x680 window sizes. PhaseSmith gains no Tauri,
+webview, or serialization dependency from this work.
+
+The next host-only sequence is: compose imported records into a validated
+application project; expose canonical project persistence; then add generic
+TOF bank/instrument setup, fixed-instrument calculation, refinement progress,
+cancellation, and checkpoint controls. Beamline names may select adapters or
+presets, but the host must keep the 15-coefficient TOF model and explicit bin
+conventions as the actual scientific contract.
+
 ## Maintainer decisions needed
 
 Development can proceed through the next numerical units, but the following

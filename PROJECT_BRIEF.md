@@ -654,6 +654,18 @@ workspace, provides application-neutral owned model/I/O/workflow layers, and
 preserves the Python scripting surface without requiring Python in native
 consumers.
 
+That boundary now has a concrete external consumer. The sibling
+`Rietveld-Engine` repository is a Tauri 2/TypeScript desktop host pinned to the
+published `phasesmith = 0.3.0` facade. It owns IPC, browser/webview state, file
+selection, plotting, and presentation DTOs; PhaseSmith still owns validation
+and all scientific calculation. The reviewed host slices establish the native
+engine-status boundary, a real Le Bail effective-profile tutorial, separate
+bounded CW/TOF powder-text imports, and bounded native CIF import. Numerical
+commands run through Tauri's blocking worker boundary, and browser preview mode
+does not substitute JavaScript calculations for the Rust engine. Project
+composition/persistence and instrument-neutral TOF setup/refinement remain
+application milestones, not missing PhaseSmith runtime dependencies.
+
 The core accepts plain numeric slices and explicit peak/instrument batches. It
 does not know about files, refinement iterations, Python phase objects, GUI
 objects, or GSAS-II dictionaries. Higher layers translate domain models into
