@@ -1289,7 +1289,17 @@ checkout and every selected dataset checksum before executing the drivers, then
 embeds the finite result records and canonical hashes in a single campaign
 report. This is orchestration only: numerical workflows remain independently
 reviewed, and no golden result is regenerated implicitly. The next Unit-29
-scientific slice is the queued sodium-dihydrogen-citrate plus Si 640b holdout.
+scientific slice is the sodium-dihydrogen-citrate plus Si 640b holdout. Its
+official IUCr supplement is checksum-registered and the reviewed converter
+extracts the 4,452-point deposited range, both structures, raw counts, and
+legacy calculation. The first native common-model pass fixes the deposited
+zero, uses fixed-cell Si to calibrate specimen displacement, and refines a
+single March--Dollase (001) stress term. It reaches 15.722% Poisson Rwp,
+0.97163 profile correlation, and 21.509 wt% Si versus 18.74 wt% deposited.
+This is not yet a parity result: the deposited spherical-harmonic orientation,
+Stephens anisotropic width, and Suortti surface-roughness terms are explicitly
+outside the common model. A pinned GSAS-II common-subset comparison is the next
+review gate before this holdout can move from blocked to passed or failed.
 
 ## Quality bar
 

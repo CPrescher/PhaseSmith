@@ -113,8 +113,9 @@ def convert_iucr_sodium_citrate_silicon_bundle(source: str | Path, destination: 
             "k_alpha2_over_k_alpha1": 0.5,
             "polarization_fraction": 0.5,
             "initial_zero_deg": -0.04480,
-            "source_over_radius": 0.0182,
-            "detector_over_radius": 0.0005,
+            "legacy_s_over_l": 0.0182,
+            "legacy_h_over_l": 0.0005,
+            "assumed_goniometer_radius_mm": 141.5,
             "silicon_profile": {
                 "U": 2.336,
                 "V": 0.0,
@@ -134,6 +135,14 @@ def convert_iucr_sodium_citrate_silicon_bundle(source: str | Path, destination: 
             "material": "NIST SRM 640b",
             "fixed_lattice_a_angstrom": 5.43105,
             "deposited_weight_fraction": 0.1874,
+            "calibration_windows_two_theta_deg": [
+                [46.95, 47.78],
+                [55.77, 56.63],
+                [68.78, 69.68],
+            ],
+            "excluded_reflections": {
+                "111": "overlaps the dominant citrate peak near 28.28 degrees"
+            },
         },
         "legacy_gsas_reference": {
             "weight_fractions": _LEGACY_WEIGHT_FRACTIONS,
@@ -158,6 +167,11 @@ def convert_iucr_sodium_citrate_silicon_bundle(source: str | Path, destination: 
                 "Suortti surface-roughness correction with coefficients 0.34 and 0.70",
                 "phase-specific legacy profile functions",
             ],
+            "geometry_assumption": (
+                "The source does not deposit a goniometer radius. The holdout uses "
+                "141.5 mm for the Bruker D2 Phaser; specimen displacement in millimetres "
+                "is conditional on that disclosed value."
+            ),
             "review_rule": (
                 "Source-only terms remain disclosed and unmodified; a common-model "
                 "workflow must identify each approximation before claiming parity."

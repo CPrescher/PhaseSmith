@@ -254,12 +254,20 @@ Si as an internal standard.
 The initial search missed the multi-block supplementary CIF for the IUCr
 dicesium hydrogen citrate study. It does combine raw laboratory counts, all
 phase structures, the Si 640b fraction, instrument metadata, and a deposited
-legacy-GSAS result, and is now onboarded. Related public citrate/Si deposits
-are now explicitly queued: sodium dihydrogen citrate polymorph II, anhydrous
-tripotassium citrate, and the trirubidium citrate anhydrous/monohydrate pair.
-They will be onboarded individually because preferred orientation, hydration,
-and phase-specific profile records differ even though the pdCIF layout is
-similar.
+legacy-GSAS result, and is now onboarded. The related sodium dihydrogen citrate
+polymorph-II deposit is also checksum-registered and converted. Its first
+native two-cycle common-model holdout returns 15.722% Poisson Rwp, 0.97163
+profile correlation, and 21.509 wt% Si against the deposited 8.433%, 0.99376,
+and 18.74 wt%. This is a blocked intermediate result, not a PhaseSmith/GSAS-II
+parity claim: the common model substitutes one March--Dollase (001) term for
+the source's generalized spherical harmonics and omits Stephens anisotropic
+broadening and Suortti surface roughness. The refined Y coefficient is negative,
+but the observable `X/cos(theta) + Y tan(theta)` Lorentzian width remains
+strictly positive over the complete fitted range; the regression gates that
+width rather than an individual coefficient sign. A matched pinned-GSAS-II run
+is the next gate. The remaining queued deposits are anhydrous tripotassium citrate
+and the trirubidium citrate anhydrous/monohydrate pair; each requires separate
+review because orientation, hydration, and phase-specific profiles differ.
 
 ## Recommended priorities
 

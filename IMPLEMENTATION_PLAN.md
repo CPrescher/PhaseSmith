@@ -1700,6 +1700,12 @@ exact GSAS-II checkout, registered dataset bytes and hashes, result-carried
 oracle revisions, and case-specific scientific assertions, then writes one
 finite aggregate JSON record while refusing to overwrite an existing output by
 default. Focused case selection and continue-on-error reporting support review;
-no reviewed golden is silently regenerated. The next scientific slice is the
-queued sodium-dihydrogen-citrate plus Si 640b preferred-orientation holdout,
-followed by the independently reviewed potassium/rubidium citrate series.
+no reviewed golden is silently regenerated. The sodium-dihydrogen-citrate plus
+Si 640b preferred-orientation holdout is now checksum-registered, converted,
+and exercised by a native common-model workflow. The two-cycle baseline keeps
+Si-profile U/V and the deposited zero fixed, calibrates specimen displacement
+from three Si windows, and refines W/X/Y, isotropic phase widths, and one
+March--Dollase (001) term. Its 15.722% Rwp and 2.769 percentage-point maximum
+QPA delta remain blocked pending a matched pinned-GSAS-II run. The next slices
+are that oracle comparison and campaign registration, followed by the
+independently reviewed potassium/rubidium citrate series.
