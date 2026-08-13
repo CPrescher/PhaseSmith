@@ -6,6 +6,12 @@ development versions.
 
 ## Unreleased
 
+- Add the checksum-pinned anhydrous tripotassium-citrate/Si holdout, including
+  exact pdCIF conversion, an independent native workflow, and a pinned GSAS-II
+  comparison. The shared fixed-geometry model passes parity, while the 1.44 wt%
+  Si displacement anchor is explicitly rejected as non-transferable and the
+  richer deposited refinement remains a qualified reference.
+
 ## 0.3.0
 
 - Add facility-neutral TOF powder boundaries for center/density columns, packed

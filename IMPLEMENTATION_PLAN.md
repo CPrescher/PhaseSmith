@@ -1694,7 +1694,7 @@ belongs in production. Failed transfer remains a valid outcome; it must not be
 converted into a production feature by tuning against one specimen.
 
 Unit 29's campaign-orchestration slice is complete. The checked-in version-1
-manifest composes fifteen existing real-data comparison and diagnostic
+manifest composes sixteen existing real-data comparison and diagnostic
 drivers without duplicating their numerical logic. The runner validates the
 exact GSAS-II checkout, registered dataset bytes and hashes, result-carried
 oracle revisions, and case-specific scientific assertions, then writes one
@@ -1709,5 +1709,13 @@ March--Dollase (001). PhaseSmith/GSAS-II Rwp is 18.183%/18.945%, the Si-fraction
 delta is 0.522 percentage points, and the March-ratio delta is 0.00614. All
 seven comparison gates pass, while the residual gap to deposited GSAS remains
 qualified by the omitted spherical-harmonic, Stephens, and Suortti terms. The
-next scientific slice is the independently reviewed potassium citrate holdout,
-followed by the rubidium citrate series.
+tripotassium-citrate holdout is also complete as a qualified parity diagnostic
+and expected transferability failure. PhaseSmith/pinned-GSAS-II Rwp is
+23.965%/23.933%, the profile-correlation delta is 0.00233, and the Si-fraction
+delta is 0.107 percentage points, so the shared fixed-geometry implementation
+passes. The 1.44 wt% Si windows infer -0.02492/+0.00180 mm displacement, however;
+their 0.02672 mm disagreement fails the predeclared anchor-identifiability gate
+and is not applied to the full pattern. Both restricted models remain far from
+the deposited 4.853% Rwp and 1.44 wt% Si, which is recorded as missing
+phase-specific model/legacy semantics rather than hidden by tuning. The next
+scientific slice is a source-contract review of the rubidium citrate series.

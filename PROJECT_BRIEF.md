@@ -1318,6 +1318,19 @@ parity, not equivalence to the deposited 8.433% Rwp and 18.74 wt% Si: the
 source's spherical-harmonic orientation, Stephens anisotropy, and Suortti
 surface roughness remain explicitly outside the transferable model.
 
+The independent anhydrous tripotassium-citrate holdout now separates numerical
+parity from physical-model sufficiency. On the same fixed-geometry common
+subset, PhaseSmith/pinned-GSAS-II reach 23.965%/23.933% Rwp, correlations
+0.61846/0.62079, and 4.450%/4.343% Si, passing all full-pattern parity gates.
+The deposited Si fraction is only 1.44 wt%, and the two independent Si-window
+fits infer -0.02492/+0.00180 mm displacement. Their 0.02672 mm disagreement
+fails the declared anchor-identifiability gate, so neither diagnostic value is
+applied. The PhaseSmith millimetre value is conditional on the disclosed
+141.5 mm radius assumption because the source does not deposit that radius.
+The much better deposited 4.853% Rwp and 1.44 wt% Si remain a
+phase-specific richer-model reference; they are not a target for undocumented
+parameter tuning or GSAS-II implementation copying.
+
 ## Quality bar
 
 Public behavior is typed and documented. Invalid shapes, non-finite values,

@@ -117,7 +117,22 @@ def convert_iucr_tripotassium_citrate_silicon_bundle(
             "source_over_radius": 0.0168,
             "detector_over_radius": 0.0200,
             "matched_sh_over_l": 0.0368,
-            "standalone_zero_shift": "not deposited in the supplementary pdCIF",
+            "assumed_goniometer_radius_mm": 141.5,
+            "initial_zero_deg": 0.09073,
+            "silicon_profile": {
+                "U": 1.949,
+                "V": 0.0,
+                "W": 1.735,
+                "X": 2.372,
+                "Y": 11.329,
+            },
+            "tripotassium_citrate_profile": {
+                "U": 2.58,
+                "V": 0.0,
+                "W": 1.999,
+                "X": 0.0,
+                "Y": 2.708,
+            },
             "legacy_phase_profile_functions": {
                 "tripotassium_citrate": 4,
                 "silicon": 2,
@@ -164,10 +179,15 @@ def convert_iucr_tripotassium_citrate_silicon_bundle(
                 "Suortti surface-roughness correction with coefficients 0.37 and 0.70",
                 "phase-specific legacy profile functions",
             ],
+            "geometry_assumption": (
+                "The source does not deposit a goniometer radius. The holdout uses "
+                "141.5 mm for the Bruker D2 Phaser; specimen displacement in millimetres "
+                "is conditional on that disclosed value."
+            ),
             "axial_geometry_translation": (
-                "The deposited unequal S/L=0.0168 and H/L=0.0200 ratios are retained. "
-                "A future common-model comparison may compress them to SH/L=0.0368 "
-                "only with the same disclosed equal-height convention in both programs."
+                "The deposited unequal S/L=0.0168 and H/L=0.0200 ratios are represented "
+                "as matched SH/L=0.0368 under the same disclosed equal-height convention "
+                "in both programs."
             ),
             "review_rule": (
                 "Source-only terms remain disclosed and unmodified; a common-model "

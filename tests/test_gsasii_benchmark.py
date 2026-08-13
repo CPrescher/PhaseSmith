@@ -468,12 +468,46 @@ def test_sodium_citrate_silicon_comparison_gates_orientation_subset() -> None:
     assert benchmark.comparison_checks(native, changed)["status"] == "failed"
 
 
+def test_tripotassium_citrate_comparison_gates_expected_transfer_failure() -> None:
+    benchmark = load_script(
+        "benchmarks/compare_gsasii_iucr_tripotassium_citrate_silicon.py",
+        "tripotassium_citrate_silicon_gate_test",
+    )
+    native = {
+        "sample_count": 2696,
+        "poisson_rwp": 0.23965,
+        "profile_correlation": 0.61846,
+        "weight_fractions": {"tripotassium_citrate": 0.95550, "silicon": 0.04450},
+        "silicon_calibration_poisson_rwp": 0.19993,
+        "calibrated_sample_displacement_mm": -0.02492,
+    }
+    oracle = {
+        "sample_count": 2696,
+        "poisson_rwp": 0.23933,
+        "profile_correlation": 0.62079,
+        "weight_fractions": {"tripotassium_citrate": 0.95657, "silicon": 0.04343},
+        "silicon_calibration": {
+            "poisson_rwp": 0.20083,
+            "calibrated_sample_displacement_mm": 0.00180,
+        },
+    }
+
+    result = benchmark.comparison_checks(native, oracle)
+
+    assert result["status"] == "qualified_pass"
+    assert result["checks"]["silicon_anchor_not_transferable"]["passed"] is True
+    changed = json.loads(json.dumps(oracle))
+    changed["profile_correlation"] = 0.65
+    assert benchmark.comparison_checks(native, changed)["status"] == "failed"
+
+
 @pytest.mark.parametrize(
     "script",
     [
         "benchmarks/compare_gsasii.py",
         "benchmarks/compare_gsasii_iucr_silicon_standard.py",
         "benchmarks/compare_gsasii_iucr_sodium_citrate_silicon.py",
+        "benchmarks/compare_gsasii_iucr_tripotassium_citrate_silicon.py",
         "benchmarks/compare_gsasii_nist_srm660c.py",
         "benchmarks/compare_gsasii_pbso4.py",
         "benchmarks/compare_gsasii_powgen_tof.py",

@@ -113,7 +113,7 @@ def test_reviewed_nonpassing_outcomes_are_explicit() -> None:
     assert (
         by_id["iucr-tripotassium-citrate-si-standard"].purpose,
         by_id["iucr-tripotassium-citrate-si-standard"].expected_status,
-    ) == ("holdout", "blocked")
+    ) == ("holdout", "failed")
 
 
 @pytest.mark.parametrize(

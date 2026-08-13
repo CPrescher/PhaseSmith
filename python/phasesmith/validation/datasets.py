@@ -88,14 +88,12 @@ _XRED_TIO2_SOURCE = (
 )
 _IUCR_SILICON_SOURCE = "https://journals.iucr.org/e/issues/2017/02/00/wm5358"
 _IUCR_SODIUM_CITRATE_SILICON_SOURCE = "https://journals.iucr.org/e/issues/2016/06/00/hb7585"
-_IUCR_TRIPOTASSIUM_CITRATE_SILICON_SOURCE = (
-    "https://journals.iucr.org/e/issues/2016/08/00/wm5301"
-)
+_IUCR_TRIPOTASSIUM_CITRATE_SILICON_SOURCE = "https://journals.iucr.org/e/issues/2016/08/00/wm5301"
 
 VALIDATION_DATASETS: tuple[ValidationDataset, ...] = (
     ValidationDataset(
         dataset_id="iucr-tripotassium-citrate-si-standard",
-        title="Anhydrous tripotassium citrate with NIST silicon internal standard",
+        title="Anhydrous tripotassium citrate with silicon internal standard",
         source_url="https://doi.org/10.1107/S2056989016011506",
         citation=(
             "A. Rammohan and J. A. Kaduk, Acta Cryst. E72 (2016) 1159-1162, "
@@ -116,7 +114,7 @@ VALIDATION_DATASETS: tuple[ValidationDataset, ...] = (
             ),
         ),
         purpose="holdout",
-        expected_status="blocked",
+        expected_status="failed",
     ),
     ValidationDataset(
         dataset_id="iucr-sodium-dihydrogen-citrate-si-standard",

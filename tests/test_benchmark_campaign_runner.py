@@ -32,7 +32,7 @@ def test_reviewed_manifest_is_complete_and_uses_safe_unique_drivers() -> None:
 
     assert manifest.schema_version == 1
     assert manifest.campaign_id == "gsasii-real-data"
-    assert len(manifest.cases) == 15
+    assert len(manifest.cases) == 16
     assert len({case.case_id for case in manifest.cases}) == len(manifest.cases)
     assert {case.outcome for case in manifest.cases} == {"pass", "diagnostic"}
     assert all((REPOSITORY_ROOT / case.driver).is_file() for case in manifest.cases)
@@ -65,6 +65,9 @@ def test_manifest_contract_accepts_every_existing_reviewed_campaign_result() -> 
         "xred-tio2": "2026-08-11-campaign-xred-tio2.json",
         "iucr-citrate-silicon": "2026-08-11-campaign-iucr-si-standard.json",
         "iucr-sodium-citrate-silicon": "2026-08-13-campaign-iucr-sodium-citrate-si.json",
+        "iucr-tripotassium-citrate-silicon": (
+            "2026-08-13-campaign-iucr-tripotassium-citrate-si.json"
+        ),
     }
     revision = RUNNER.pinned_revision(REPOSITORY_ROOT / "oracle/PINNED_GSASII.json")
 

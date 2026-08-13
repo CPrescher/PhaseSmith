@@ -169,6 +169,19 @@
       "assertions": [
         {"path": "cross_implementation_validation.status", "equals": "passed"}
       ]
+    },
+    {
+      "case_id": "iucr-tripotassium-citrate-silicon",
+      "title": "IUCr tripotassium citrate Si-anchor transferability holdout",
+      "dataset_id": "iucr-tripotassium-citrate-si-standard",
+      "driver": "benchmarks/compare_gsasii_iucr_tripotassium_citrate_silicon.py",
+      "arguments": ["--gsas-cycles", "12"],
+      "outcome": "diagnostic",
+      "oracle_revision_paths": ["pinned_gsasii_revision"],
+      "assertions": [
+        {"path": "cross_implementation_validation.status", "equals": "qualified_pass"},
+        {"path": "scientific_status", "equals": "expected_model_and_silicon_anchor_failure"}
+      ]
     }
   ]
 }

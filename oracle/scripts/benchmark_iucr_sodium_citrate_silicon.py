@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the sodium-citrate/Si common model in pinned GSAS-II."""
+"""Run a citrate/Si common model in pinned GSAS-II."""
 
 from __future__ import annotations
 
@@ -16,8 +16,16 @@ from typing import Any
 import numpy as np
 
 PINNED_REVISION = "c0bc79b259cdf0065480b5fbd57674ddf12c4a23"
-SCOPE = "iucr_sodium_dihydrogen_citrate_silicon_holdout"
-PHASES = ("sodium_dihydrogen_citrate", "silicon")
+SUPPORTED_PHASES = {
+    "iucr_sodium_dihydrogen_citrate_silicon_holdout": (
+        "sodium_dihydrogen_citrate",
+        "silicon",
+    ),
+    "iucr_anhydrous_tripotassium_citrate_silicon_holdout": (
+        "tripotassium_citrate",
+        "silicon",
+    ),
+}
 
 
 def parse_args() -> argparse.Namespace:
@@ -43,7 +51,7 @@ def refine(project: Any, histogram: Any) -> float:
     project.do_refinements([{}], outputnames=[None])
     value = histogram.get_wR()
     if value is None or not np.isfinite(value):
-        raise RuntimeError("GSAS-II sodium-citrate/Si stage did not produce finite Rwp")
+        raise RuntimeError("GSAS-II citrate/Si stage did not produce finite Rwp")
     return float(value) / 100.0
 
 
@@ -106,31 +114,45 @@ def main() -> None:
 
     root = arguments.data_directory
     manifest = json.loads((root / "experiment.json").read_text(encoding="utf-8"))
-    if manifest.get("schema_version") != 1 or manifest.get("scope") != SCOPE:
-        raise ValueError("unsupported IUCr sodium-citrate/Si bundle")
+    scope = manifest.get("scope")
+    if manifest.get("schema_version") != 1 or scope not in SUPPORTED_PHASES:
+        raise ValueError("unsupported IUCr citrate/Si bundle")
+    phases_in_scope = SUPPORTED_PHASES[scope]
     data = np.loadtxt(root / "pattern.csv", delimiter=",", skiprows=1)
     x, observed, legacy_calculated, legacy_background = data.T
     instrument = manifest["instrument"]
-    profile = instrument["silicon_profile"]
+    profile = instrument.get("tripotassium_citrate_profile", instrument["silicon_profile"])
     wavelengths = instrument["wavelengths_angstrom"]
     with tempfile.TemporaryDirectory(prefix="phasesmith-iucr-na-si-gsasii-") as name:
         temporary = Path(name)
         data_path = temporary / "pattern.xye"
         np.savetxt(data_path, np.column_stack((x, observed, np.sqrt(np.maximum(observed, 1.0)))))
+
+        def write_instrument(path: Path, profile_record: dict[str, float]) -> None:
+            path.write_text(
+                "#GSAS-II instrument parameter file; do not add/delete items!\n"
+                "Type:PXC\nBank:1.0\n"
+                f"Lam1:{wavelengths[0]}\nLam2:{wavelengths[1]}\n"
+                f"I(L2)/I(L1):{instrument['k_alpha2_over_k_alpha1']}\n"
+                f"Zero:{instrument['initial_zero_deg']}\n"
+                f"Polariz.:{instrument['polarization_fraction']}\n"
+                f"U:{profile_record['U']}\nV:{profile_record['V']}\nW:{profile_record['W']}\n"
+                f"X:{profile_record['X']}\nY:{profile_record['Y']}\nZ:0.0\n"
+                f"SH/L:{instrument['matched_sh_over_l']}\nAzimuth:0.0\nSource:CuKa\n",
+                encoding="utf-8",
+            )
+
         instrument_path = temporary / "instrument.instprm"
-        instrument_path.write_text(
-            "#GSAS-II instrument parameter file; do not add/delete items!\n"
-            "Type:PXC\nBank:1.0\n"
-            f"Lam1:{wavelengths[0]}\nLam2:{wavelengths[1]}\n"
-            f"I(L2)/I(L1):{instrument['k_alpha2_over_k_alpha1']}\n"
-            f"Zero:{instrument['initial_zero_deg']}\n"
-            f"Polariz.:{instrument['polarization_fraction']}\n"
-            f"U:{profile['U']}\nV:{profile['V']}\nW:{profile['W']}\n"
-            f"X:{profile['X']}\nY:{profile['Y']}\nZ:0.0\n"
-            f"SH/L:{instrument['matched_sh_over_l']}\nAzimuth:0.0\nSource:CuKa\n",
-            encoding="utf-8",
+        write_instrument(instrument_path, profile)
+        calibration_instrument_path = temporary / "silicon-instrument.instprm"
+        write_instrument(calibration_instrument_path, instrument["silicon_profile"])
+        standard = manifest["silicon_standard"]
+        windows = standard.get(
+            "calibration_windows_two_theta_deg",
+            standard.get("candidate_calibration_windows_two_theta_deg"),
         )
-        windows = manifest["silicon_standard"]["calibration_windows_two_theta_deg"]
+        if windows is None:
+            raise ValueError("citrate/Si bundle lacks calibration windows")
         calibration_mask = np.logical_or.reduce(
             [(x >= float(low)) & (x <= float(high)) for low, high in windows]
         )
@@ -147,7 +169,7 @@ def main() -> None:
         )
         calibration_project = G2sc.G2Project(newgpx=str(temporary / "calibration.gpx"))
         calibration_histogram = calibration_project.add_powder_histogram(
-            str(calibration_path), str(instrument_path), fmthint="Topas"
+            str(calibration_path), str(calibration_instrument_path), fmthint="Topas"
         )
         calibration_histogram.set_refinements(
             {"Limits": [float(x[calibration_mask][0]), float(x[calibration_mask][-1])]}
@@ -179,7 +201,8 @@ def main() -> None:
         histogram = project.add_powder_histogram(
             str(data_path), str(instrument_path), fmthint="Topas"
         )
-        histogram.data["Sample Parameters"]["Shift"][0] = calibrated_shift_micrometre
+        if scope == "iucr_sodium_dihydrogen_citrate_silicon_holdout":
+            histogram.data["Sample Parameters"]["Shift"][0] = calibrated_shift_micrometre
         histogram.data["Sample Parameters"]["Shift"][1] = False
         histogram.set_refinements({"Limits": [float(x[0]), float(x[-1])]})
         histogram.data["Sample Parameters"]["Scale"][1] = False
@@ -189,7 +212,7 @@ def main() -> None:
         background_record[1]["background PWDR"] = ["", 1.0, False]
         project.set_Controls("cycles", arguments.cycles)
         phases = []
-        for phase_id in PHASES:
+        for phase_id in phases_in_scope:
             phase = project.add_phase(
                 str(root / f"{phase_id}.cif"),
                 phasename=phase_id,
@@ -200,8 +223,9 @@ def main() -> None:
             phase.set_HAP_refinements({"Scale": True})
             phases.append(phase)
         stage_rwp["scale_background"] = refine(project, histogram)
-        phases[0].set_HAP_refinements({"Pref.Ori.": True})
-        stage_rwp["preferred_orientation"] = refine(project, histogram)
+        if scope == "iucr_sodium_dihydrogen_citrate_silicon_holdout":
+            phases[0].set_HAP_refinements({"Pref.Ori.": True})
+            stage_rwp["preferred_orientation"] = refine(project, histogram)
 
         mass_fractions = histogram.ComputeMassFracs()
         fractions = {phase.name: float(mass_fractions[phase.name][0]) for phase in phases}
@@ -209,7 +233,8 @@ def main() -> None:
         background = np.asarray(histogram.getdata("Background"), dtype=np.float64)
         legacy_targets = manifest["legacy_gsas_reference"]["weight_fractions"]
         errors = {
-            phase_id: fractions[phase_id] - float(legacy_targets[phase_id]) for phase_id in PHASES
+            phase_id: fractions[phase_id] - float(legacy_targets[phase_id])
+            for phase_id in phases_in_scope
         }
         hap_parameters = {}
         for phase in phases:
@@ -219,7 +244,7 @@ def main() -> None:
             }
         result = {
             "schema_version": 1,
-            "scope": SCOPE,
+            "scope": scope,
             "revision": actual_revision,
             "sample_count": int(x.size),
             "weight_fractions": fractions,
@@ -259,7 +284,7 @@ def main() -> None:
             result["profile_correlation"],
         )
     ):
-        raise RuntimeError("GSAS-II sodium-citrate/Si result contains non-finite values")
+        raise RuntimeError("GSAS-II citrate/Si result contains non-finite values")
     arguments.report.parent.mkdir(parents=True, exist_ok=True)
     arguments.report.write_text(
         json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8"

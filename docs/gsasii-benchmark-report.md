@@ -266,9 +266,21 @@ those terms and refines only scales, a constant residual, and March--Dollase
 correlation, 22.173%/21.651% Si, and March ratios 0.63851/0.63237. All seven
 cross-implementation gates pass. The deposited 8.433% and 18.74 wt% Si remain
 the richer-model reference, not a parity target, because generalized spherical
-harmonics, Stephens anisotropy, and Suortti roughness are omitted. The next
-queued deposit is anhydrous tripotassium citrate, followed by the trirubidium
-citrate anhydrous/monohydrate pair.
+harmonics, Stephens anisotropy, and Suortti roughness are omitted.
+
+The anhydrous tripotassium-citrate deposit is now also complete. Its 1.44 wt%
+Si content is too weak to transfer the sodium displacement-calibration
+contract: PhaseSmith and pinned GSAS-II infer -0.02492 and +0.00180 mm from the
+same 128 selected Si-window points; the PhaseSmith millimetre value is
+conditional on the disclosed 141.5 mm radius assumption because the source
+does not deposit a radius. That calibration is therefore diagnostic
+and is not applied. With zero displacement and the same fixed dominant-phase
+profile, the implementations give 23.965%/23.933% Rwp, 0.61846/0.62079
+correlation, and 4.450%/4.343% Si. The close common-subset agreement is a
+qualified parity pass, while the large gap to deposited 4.853% Rwp and 1.44 wt%
+Si is the expected phase-specific-model and weak-anchor failure. The
+trirubidium citrate anhydrous/monohydrate pair must now be source-audited before
+assuming that the Si-anchor contract transfers.
 
 ## Recommended priorities
 
@@ -282,10 +294,12 @@ citrate anhydrous/monohydrate pair.
    optics, unsupported legacy records, origin choices, and assumed radiation
    models before refinement. Bath and XRED show that this will improve user
    outcomes more than another profile term.
-3. **Expand the citrate/Si holdout series.** The sodium case now passes its
-   restricted preferred-orientation common subset. Proceed to potassium, then
-   rubidium, reusing the narrow adapter only where the deposits expose the same
-   complete counts, structures, instrument, standard fraction, and fit contract.
+3. **Expand the citrate/Si holdout series.** Sodium passes its restricted
+   preferred-orientation common subset; potassium passes implementation parity
+   but demonstrates that a 1.44 wt% Si displacement anchor is not transferable.
+   Audit the rubidium deposits independently and reuse the narrow adapter only
+   where complete counts, structures, instrument, standard fraction, and an
+   identifiable fit contract are present.
 4. **Keep large-FCJ parity as a monitored holdout.** Do not replace the current
    published PhaseSmith mapping merely to mimic one pinned GSAS-II
    discretization. Reconsider only if multiple normal-use datasets fail for the
@@ -303,6 +317,8 @@ records are:
 - `validation/results/2026-08-11-campaign-qarr-1h.json`
 - `validation/results/2026-08-11-campaign-nist-srm660c.json`
 - `validation/results/2026-08-11-campaign-sucrose.json`
+- `validation/results/2026-08-13-campaign-iucr-sodium-citrate-si.json`
+- `validation/results/2026-08-13-campaign-iucr-tripotassium-citrate-si.json`
 - `validation/results/2026-08-11-campaign-echidna.json`
 - `validation/results/2026-08-11-campaign-pbso4.json`
 - `validation/results/2026-08-11-campaign-powgen.json`

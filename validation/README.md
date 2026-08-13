@@ -244,15 +244,25 @@ have deliberately different meanings:
   cross-implementation gates pass. The deposited 18.74 wt% Si and 8.433% Rwp
   remain richer-model references because spherical-harmonic orientation,
   Stephens anisotropy, and Suortti roughness are outside this common subset.
-- `iucr-tripotassium-citrate-si-standard` is the next independent laboratory
-  holdout. Its official IUCr pdCIF contributes 3,217 raw counts, the contiguous
+- `iucr-tripotassium-citrate-si-standard` is an independent laboratory
+  transferability holdout. Its official IUCr pdCIF contributes 3,217 raw counts, the contiguous
   2,696-point deposited range, both structures, and the deposited legacy-GSAS
   profile. The converter recomputes `Rwp=0.04852875` and `Rp=0.03808683`,
   retains the unequal S/L=0.0168 and H/L=0.0200 axial terms, and discloses the
   phase-specific profiles, Stephens broadening, second-order texture, and
   Suortti roughness. The source identifies a silicon internal standard with
-  `a=5.43105` Å but not a particular NIST SRM; its low 1.44 wt% fraction makes
-  the calibration/refinement contract a separate review gate.
+  `a=5.43105` Å but not a particular NIST SRM. On the fixed-geometry common
+  subset, PhaseSmith and pinned GSAS-II give `Rwp=0.23965/0.23933`, profile
+  correlations `0.61846/0.62079`, and Si fractions `0.04450/0.04343`; all four
+  parity gates pass. Their separate 128-point Si-window fits also have nearly
+  equal Rwp, but infer specimen displacements of `-0.02492/+0.00180 mm`.
+  The millimetre values are conditional on the disclosed 141.5 mm PhaseSmith
+  goniometer-radius assumption because the source does not deposit that radius.
+  Because that `0.02672 mm` disagreement exceeds the predeclared
+  identifiability threshold, the 1.44 wt% Si calibration is diagnostic and is
+  not applied to either full-pattern fit. The result is a qualified parity pass
+  and expected model/anchor failure, not reproduction of the deposited 4.853%
+  Rwp or 1.44 wt% Si result.
 
 The QARR checkpoint evaluates supplied CIF anisotropic displacement tensors
 directly and keeps them fixed; sites without displacement values start from a
