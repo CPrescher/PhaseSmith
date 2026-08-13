@@ -41,10 +41,10 @@ jobs:
         run: python -m pytest -q -m real_data tests/test_real_data_integration.py
       - name: Exercise external Rust reader and CLI contracts
         run: |
-          cargo test -p phasesmith-io --test powder \
+          cargo test --release -p phasesmith-io --test powder \
             reads_pinned_powgen_tof_bank_without_angle_conversion -- --ignored --exact
-          cargo test -p phasesmith-validation --test cli \
-            cli_exit_status_distinguishes_accepted_and_reviewed_blocked_results \
+          cargo test --release -p phasesmith-validation --test cli \
+            cli_exit_status_distinguishes_accepted_and_reviewed_failure_results \
             -- --ignored --exact
       - name: Upload reviewed report
         if: always()
