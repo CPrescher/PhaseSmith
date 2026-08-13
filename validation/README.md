@@ -284,6 +284,10 @@ The sodium-citrate/Si holdout comes from the official
 [IUCr article and supplementary pdCIF](https://journals.iucr.org/e/issues/2016/06/00/hb7585/index.html).
 The tripotassium-citrate/Si holdout comes from its official
 [IUCr article and supplementary pdCIF](https://journals.iucr.org/e/issues/2016/08/00/wm5301/index.html).
+The anhydrous and monohydrate trirubidium-citrate/Si holdouts come from their
+official IUCr articles and supplementary pdCIFs
+([anhydrous](https://journals.iucr.org/e/issues/2017/02/00/vn2123/index.html),
+[monohydrate](https://journals.iucr.org/e/issues/2017/02/00/hb7648/index.html)).
 The LaB6 certification scans and reference fits come from the official
 [NIST SRM 660c data release](https://data.nist.gov/od/id/mds2-2315).
 The TOF bank and instrument parameters come from the commit-pinned official

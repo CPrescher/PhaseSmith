@@ -1331,6 +1331,14 @@ The much better deposited 4.853% Rwp and 1.44 wt% Si remain a
 phase-specific richer-model reference; they are not a target for undocumented
 parameter tuning or GSAS-II implementation copying.
 
+The next source audit qualifies both official trirubidium-citrate/Si pdCIFs,
+but orders them by information value. The anhydrous deposit is next because it
+contains a 141.5 mm radius, 2.15 wt% Si, common base profile coefficients, no
+surface-roughness correction, and a contiguous 4,106-point refined range. The
+monohydrate is checksum-registered but follows later: its 1.30 wt% Si, absent
+radius, phase-specific profiles, Stephens broadening, and Suortti roughness
+largely repeat the limitations already isolated by the potassium holdout.
+
 ## Quality bar
 
 Public behavior is typed and documented. Invalid shapes, non-finite values,

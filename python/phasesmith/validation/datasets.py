@@ -89,8 +89,60 @@ _XRED_TIO2_SOURCE = (
 _IUCR_SILICON_SOURCE = "https://journals.iucr.org/e/issues/2017/02/00/wm5358"
 _IUCR_SODIUM_CITRATE_SILICON_SOURCE = "https://journals.iucr.org/e/issues/2016/06/00/hb7585"
 _IUCR_TRIPOTASSIUM_CITRATE_SILICON_SOURCE = "https://journals.iucr.org/e/issues/2016/08/00/wm5301"
+_IUCR_TRIRUBIDIUM_CITRATE_SILICON_SOURCE = "https://journals.iucr.org/e/issues/2017/02/00/vn2123"
+_IUCR_TRIRUBIDIUM_CITRATE_MONOHYDRATE_SILICON_SOURCE = (
+    "https://journals.iucr.org/e/issues/2017/02/00/hb7648"
+)
 
 VALIDATION_DATASETS: tuple[ValidationDataset, ...] = (
+    ValidationDataset(
+        dataset_id="iucr-trirubidium-citrate-si-standard",
+        title="Anhydrous trirubidium citrate with NIST SRM 640b silicon",
+        source_url="https://doi.org/10.1107/S2056989017001086",
+        citation=(
+            "A. Rammohan and J. A. Kaduk, Acta Cryst. E73 (2017) 250-253, "
+            "doi:10.1107/S2056989017001086"
+        ),
+        license_note=(
+            "External IUCr supplementary CIF containing laboratory counts, structures, "
+            "and deposited legacy-GSAS results; the article is CC BY. The file is "
+            "checksum-pinned and not redistributed."
+        ),
+        files=(
+            ExternalValidationFile(
+                "vn2123sup1.cif",
+                "24b5c9d0d901f8c76c4f2d47b92232e11472ccfbd2c8004b9cbeaa53e2ce3f34",
+                275_362,
+                (f"{_IUCR_TRIRUBIDIUM_CITRATE_SILICON_SOURCE}/vn2123sup1.cif",),
+            ),
+        ),
+        purpose="holdout",
+        expected_status="blocked",
+    ),
+    ValidationDataset(
+        dataset_id="iucr-trirubidium-citrate-monohydrate-si-standard",
+        title="Trirubidium citrate monohydrate with NIST SRM 640b silicon",
+        source_url="https://doi.org/10.1107/S2056989017000743",
+        citation=(
+            "A. Rammohan and J. A. Kaduk, Acta Cryst. E73 (2017) 227-230, "
+            "doi:10.1107/S2056989017000743"
+        ),
+        license_note=(
+            "External IUCr supplementary CIF containing laboratory counts, structures, "
+            "and deposited legacy-GSAS results; the article is CC BY. The file is "
+            "checksum-pinned and not redistributed."
+        ),
+        files=(
+            ExternalValidationFile(
+                "hb7648sup1.cif",
+                "a3155b6c678cedb1d450460f7758fdd973962744e2821aed671600308d0b1f53",
+                518_586,
+                (f"{_IUCR_TRIRUBIDIUM_CITRATE_MONOHYDRATE_SILICON_SOURCE}/hb7648sup1.cif",),
+            ),
+        ),
+        purpose="holdout",
+        expected_status="blocked",
+    ),
     ValidationDataset(
         dataset_id="iucr-tripotassium-citrate-si-standard",
         title="Anhydrous tripotassium citrate with silicon internal standard",

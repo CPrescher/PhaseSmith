@@ -1719,3 +1719,9 @@ and is not applied to the full pattern. Both restricted models remain far from
 the deposited 4.853% Rwp and 1.44 wt% Si, which is recorded as missing
 phase-specific model/legacy semantics rather than hidden by tuning. The next
 scientific slice is a source-contract review of the rubidium citrate series.
+That review now qualifies both official IUCr supplements at the source level.
+The anhydrous case is first: it uniquely supplies a 141.5 mm radius, 2.15 wt%
+Si, common base profile coefficients, no roughness correction, and a contiguous
+4,106-point deposited fit. The monohydrate is checksum-registered but follows
+later because 1.30 wt% Si, no deposited radius, phase-specific profiles,
+Stephens broadening, and Suortti roughness repeat already isolated limitations.
