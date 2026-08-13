@@ -12,10 +12,54 @@ python tools/validate_real_data.py --fetch \
   --output validation/results/local.json
 ```
 
+The reviewed public-API comparison with XRD-Rust is preserved in
+`results/2026-08-13-xrd-rust-performance.json`. Its calculation scope,
+numerical gate, interpretation, and reproduction command are documented in
+`docs/xrd-rust-performance.md`; XRD-Rust remains a benchmark-only dependency.
+
 The canonical suite uses native runners. Add `--interactive-qarr` to run QARR
 1g through the independent Python path with structured progress and cooperative
 cancellation: press `q` or Ctrl+C once to stop at the next safe batch boundary;
 a second Ctrl+C forces interruption.
+
+## Unified GSAS-II comparison campaign
+
+The broader black-box comparison campaign is declared in
+`validation/benchmark-campaign.json`. It composes the existing case-specific
+drivers; it does not duplicate their numerical workflows or import GSAS-II into
+PhaseSmith. List the reviewed cases without configuring an oracle:
+
+```bash
+python tools/run_benchmark_campaign.py --list
+```
+
+Run the complete campaign with the normal PhaseSmith interpreter while passing
+the isolated pinned GSAS-II interpreter and checkout explicitly:
+
+```bash
+python tools/run_benchmark_campaign.py \
+  --gsas-python /path/to/gsasii-python \
+  --gsas-root /path/to/GSAS-II \
+  --binary-dir /path/to/GSAS-II/bindist \
+  --data-directory validation/data \
+  --output validation/results/campaign-YYYY-MM-DD.json \
+  --continue-on-error
+```
+
+Before any scientific driver runs, the command verifies the checkout against
+`oracle/PINNED_GSASII.json` and verifies every selected dataset's exact byte
+sizes and SHA-256 hashes. Each generated case result must carry the same oracle
+revision and satisfy the case-level assertions in the manifest. The aggregate
+JSON embeds every driver report and its canonical SHA-256. Existing output is
+never replaced unless `--overwrite` is supplied; reviewed goldens are not
+regenerated implicitly.
+
+Use repeated `--case CASE_ID` options for a focused rerun. `--fetch` downloads
+missing registered inputs from their pinned HTTPS locations before verification.
+The command exits nonzero for a pin, checksum, driver, provenance, or declared
+scientific-gate failure. Diagnostic cases are successful only when their
+reviewed diagnostic executes and records the pinned oracle provenance; they are
+not relabeled as scientific parity passes.
 
 The default command contains only accepted, complete runners. Two additional
 diagnostic cases are intentionally invoked separately because one is a failing
@@ -192,6 +236,85 @@ have deliberately different meanings:
   and 4.217% neutron Rwp with profile correlations above 0.995. The neutron
   position stage refines typed Debye--Scherrer X/Y displacement at a fixed
   650 mm radius; the report records the geometry and units.
+- `iucr-sodium-dihydrogen-citrate-si-standard` is the preferred-orientation
+  common-subset holdout. Its official IUCr pdCIF contributes 4,701 raw counts,
+  a contiguous 4,452-point deposited range, both structures, the Cu doublet,
+  and the deposited GSAS curve. The converter recomputes deposited
+  `Rwp=0.08432525` and pins every source byte. The accepted comparison fixes
+  the complete silicon-derived U/V/W/X/Y profile, equal-height `SH/L=0.0187`,
+  calibrated displacement, and all size/strain terms; it refines phase scales,
+  one residual constant, and March--Dollase (001). PhaseSmith/GSAS-II return
+  `Rwp=0.18183/0.18945`, correlations `0.95589/0.94997`, Si fractions
+  `0.22173/0.21651`, and March ratios `0.63851/0.63237`. All seven
+  cross-implementation gates pass. The deposited 18.74 wt% Si and 8.433% Rwp
+  remain richer-model references because spherical-harmonic orientation,
+  Stephens anisotropy, and Suortti roughness are outside this common subset.
+- `iucr-tripotassium-citrate-si-standard` is an independent laboratory
+  transferability holdout. Its official IUCr pdCIF contributes 3,217 raw counts, the contiguous
+  2,696-point deposited range, both structures, and the deposited legacy-GSAS
+  profile. The converter recomputes `Rwp=0.04852875` and `Rp=0.03808683`,
+  retains the unequal S/L=0.0168 and H/L=0.0200 axial terms, and discloses the
+  phase-specific profiles, Stephens broadening, second-order texture, and
+  Suortti roughness. The source identifies a silicon internal standard with
+  `a=5.43105` Å but not a particular NIST SRM. On the fixed-geometry common
+  subset, PhaseSmith and pinned GSAS-II give `Rwp=0.23965/0.23933`, profile
+  correlations `0.61846/0.62079`, and Si fractions `0.04450/0.04343`; all four
+  parity gates pass. Their separate 128-point Si-window fits also have nearly
+  equal Rwp, but infer specimen displacements of `-0.02492/+0.00180 mm`.
+  The millimetre values are conditional on the disclosed 141.5 mm PhaseSmith
+  goniometer-radius assumption because the source does not deposit that radius.
+  Because that `0.02672 mm` disagreement exceeds the predeclared
+  identifiability threshold, the 1.44 wt% Si calibration is diagnostic and is
+  not applied to either full-pattern fit. The result is a qualified parity pass
+  and expected model/anchor failure, not reproduction of the deposited 4.853%
+  Rwp or 1.44 wt% Si result.
+- `iucr-trirubidium-citrate-si-standard` is the next independently converted
+  laboratory holdout. Its official pdCIF contributes 4,701 raw counts and an
+  exact contiguous 4,106-point mask after the deposited 5–17° beam-spillover
+  exclusion. It contains both structures, 2.15 wt% NIST SRM 640b Si, a
+  source-deposited 141.5 mm radius, equal S/L=H/L=0.0097, and no absorption or
+  roughness correction. The converter recomputes `Rwp=0.02458338` and
+  `Rp=0.01950460`. Both phases share the same isotropic base profile, while
+  their mixing and Stephens terms remain explicitly source-only. A forensic
+  correction maps legacy `LX=3.634` to the current Lorentzian size axis and
+  `shft=-8.7503` to `-0.1080505 mm` in the current PhaseSmith/GSAS-II
+  displacement convention at the deposited radius; the legacy manual's
+  physical shift variable has the opposite sign. On that corrected common
+  subset, PhaseSmith/pinned-GSAS-II give `Rwp=0.09579/0.09735`,
+  correlations `0.94732/0.94248`, and Si fractions `0.02575/0.02548`; all
+  full-pattern parity gates pass. The 128-point Si-window fits infer
+  `-0.07519/-0.11031 mm`; their `0.03512 mm` disagreement keeps that calibration
+  diagnostic and does not replace the direct source translation. The separate
+  16-case oracle factorial records that the signed deposited transparency term
+  is detrimental and Stephens negligible, while most remaining SSE lies below
+  30 degrees. The legacy equation confirms the numerical sign and shows that
+  positive `trns=1.30` has formally negative effective absorption; the manifest
+  therefore labels its GSAS-II value as an equation field, not physical `1/mu`.
+  The subsequent 643-sample 17–30° audit finds that no isolated background,
+  intensity, position, symmetric-width, or axial-profile probe closes half of
+  the local source-to-deposited weighted-SSE gap. Their combined best physical
+  shape plus background closes 80.47% but remains at `Rwp=0.04977` versus the
+  deposited `0.02711`. The pinned GSAS-II FCJ scan reaches its effective
+  `SH/L=0.002` floor; this is recorded as a compression-fidelity diagnostic,
+  not zero physical source divergence. The reviewed forensic artifact is
+  `results/2026-08-13-citrate-rubidium-low-angle-forensics.json`.
+  The converter also preserves all 1,197 source reflection rows in
+  `source_reflections.csv`. The 600 unique calculated F² values provide a
+  model-independent conversion check. On the 20 low-angle rubidium reflections,
+  the deposited Cromer–Mann table plus converted structure gives 0.0289%
+  source-weighted L1 error; PhaseSmith's production Waasmaier–Kirfel table gives
+  0.301%. Thus intensity-table choice is visible but not large enough to explain
+  the profile residual. The reviewed record is
+  `results/2026-08-13-citrate-rubidium-source-reflection-fidelity.json`.
+  The follow-up isolated axial-profile audit confirms that PhaseSmith preserves
+  the deposited `S/L=H/L=0.0097` geometry exactly. Its source-native profile is
+  bit-identical to its formal equal-height `SH/L=0.0194` mapping, but pinned
+  GSAS-II at that documented sum differs by up to 17.53% normalized L1 and
+  0.00847 degrees in centroid for three low-angle source reflections. A tested
+  `SH/L=0.0097` is closer but does not represent the documented sum and is not
+  adopted. The conversion is cleared; exact deposited-shape recovery requires
+  a legacy two-parameter oracle. The reviewed record is
+  `results/2026-08-13-citrate-rubidium-source-axial-profile-fidelity.json`.
 
 The QARR checkpoint evaluates supplied CIF anisotropic displacement tensors
 directly and keeps them fixed; sites without displacement values start from a
@@ -209,6 +332,14 @@ The PbSO4 patterns, instrument files, CIF, and staged recipe come from the
 commit-pinned official [combined-refinement tutorial](https://github.com/AdvancedPhotonSource/GSAS-II-Tutorials/blob/e2485148a3d7ee4757239b1ba40653f1f715bba5/CWCombined/Combined%20refinement.htm).
 The Echidna pattern is deposited in the
 [ANSTO powder-diffraction Zenodo record](https://zenodo.org/records/14286343).
+The sodium-citrate/Si holdout comes from the official
+[IUCr article and supplementary pdCIF](https://journals.iucr.org/e/issues/2016/06/00/hb7585/index.html).
+The tripotassium-citrate/Si holdout comes from its official
+[IUCr article and supplementary pdCIF](https://journals.iucr.org/e/issues/2016/08/00/wm5301/index.html).
+The anhydrous and monohydrate trirubidium-citrate/Si holdouts come from their
+official IUCr articles and supplementary pdCIFs
+([anhydrous](https://journals.iucr.org/e/issues/2017/02/00/vn2123/index.html),
+[monohydrate](https://journals.iucr.org/e/issues/2017/02/00/hb7648/index.html)).
 The LaB6 certification scans and reference fits come from the official
 [NIST SRM 660c data release](https://data.nist.gov/od/id/mds2-2315).
 The TOF bank and instrument parameters come from the commit-pinned official

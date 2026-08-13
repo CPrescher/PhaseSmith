@@ -1,0 +1,142 @@
+{
+  "campaign": "citrate_isotropic_broadening_ablation",
+  "cases": {
+    "tripotassium": {
+      "base_poisson_rwp": 0.23964816641369163,
+      "deposited_curve_poisson_rwp": 0.04852883258,
+      "dominant_phase": "tripotassium_citrate",
+      "models": {
+        "gaussian": {
+          "best_poisson_rwp": 0.20552218158506758,
+          "best_value": 0.0021939424814721538,
+          "identifiable": false,
+          "jacobian_rank": 4,
+          "parameter": "gaussian_rms_microstrain",
+          "parameter_count": 4,
+          "repeat_rwp_spread": 0.02105600554968487
+        },
+        "lorentzian": {
+          "best_poisson_rwp": 0.20902337109536462,
+          "best_value": 0.005311527011051169,
+          "identifiable": false,
+          "jacobian_rank": 4,
+          "parameter": "lorentzian_microstrain",
+          "parameter_count": 4,
+          "repeat_rwp_spread": 0.02292059001099489
+        },
+        "size": {
+          "best_poisson_rwp": 0.20737383931800818,
+          "crystallite_size_nm": 90.18765791758887,
+          "identifiable": true,
+          "jacobian_rank": 4,
+          "maximum_sample_linear_correlation": 0.48730986888324024,
+          "parameter_count": 4,
+          "profile_correlation": 0.7776614174564199,
+          "repeat_rwp_spread": 8.196033169094452e-07,
+          "silicon_weight_fraction": 0.02045622153749164
+        },
+        "size_gaussian": {
+          "best_poisson_rwp": 0.2051103745878026,
+          "identifiable": false,
+          "jacobian_rank": 5,
+          "parameter_count": 5,
+          "repeat_rwp_spread": 0.006587065901345057
+        },
+        "size_lorentzian": {
+          "best_poisson_rwp": 0.20737435645964455,
+          "identifiable": false,
+          "jacobian_rank": 5,
+          "lorentzian_microstrain": 0.0,
+          "parameter_count": 5,
+          "repeat_rwp_spread": 0.027898654201436113
+        }
+      },
+      "sample_count": 2696
+    },
+    "trirubidium": {
+      "base_poisson_rwp": 0.09579381402613027,
+      "deposited_curve_poisson_rwp": 0.02458326145,
+      "dominant_phase": "trirubidium_citrate",
+      "models": {
+        "gaussian": {
+          "best_poisson_rwp": 0.08177846284733652,
+          "best_value": 0.0012866137455038974,
+          "identifiable": false,
+          "jacobian_rank": 4,
+          "parameter": "gaussian_rms_microstrain",
+          "parameter_count": 4,
+          "repeat_rwp_spread": 0.006501483358330604
+        },
+        "lorentzian": {
+          "best_poisson_rwp": 0.08125179860442065,
+          "best_value": 0.0025806118781691056,
+          "identifiable": false,
+          "jacobian_rank": 4,
+          "parameter": "lorentzian_microstrain",
+          "parameter_count": 4,
+          "repeat_rwp_spread": 0.008538080831895736
+        },
+        "size": {
+          "best_poisson_rwp": 0.08181765625748624,
+          "crystallite_size_nm": 188.82548050297197,
+          "identifiable": false,
+          "jacobian_rank": 4,
+          "maximum_sample_linear_correlation": 0.4131748766812279,
+          "parameter_count": 4,
+          "profile_correlation": 0.9650905707072802,
+          "repeat_rwp_spread": 0.012587126989957675,
+          "silicon_weight_fraction": 0.017984423121886316
+        },
+        "size_gaussian": {
+          "best_poisson_rwp": 0.0805988851946228,
+          "identifiable": false,
+          "jacobian_rank": 5,
+          "parameter_count": 5,
+          "repeat_rwp_spread": 0.025688696855409462
+        },
+        "size_lorentzian": {
+          "best_poisson_rwp": 0.08160974090540557,
+          "identifiable": false,
+          "jacobian_rank": 5,
+          "lorentzian_microstrain": 0.0017266558417351342,
+          "parameter_count": 5,
+          "repeat_rwp_spread": 0.021249871519426713
+        }
+      },
+      "sample_count": 4106
+    }
+  },
+  "conclusion": "After correcting the rubidium legacy LX axis and applying its source-translated specimen shift, no rubidium isotropic size/strain model passes the three-start repeatability gate. Potassium finite size remains identifiable under its unchanged source contract. The corrected rubidium base is 0.095794 Rwp, so the earlier apparent 56.23 nm size solution was an artifact of omitted position/profile translation rather than transferable sample physics.",
+  "date": "2026-08-13",
+  "gsasii": {
+    "generalized_mustrain_is_stephens": true,
+    "hstrain_is_distinct_lattice_metric_motion": true,
+    "revision": "c0bc79b259cdf0065480b5fbd57674ddf12c4a23"
+  },
+  "protocol": {
+    "accepted_repeat_rwp_spread_maximum": 5e-05,
+    "accepted_sample_linear_correlation_maximum": 0.98,
+    "background_terms": 1,
+    "deterministic_starts_per_nonbase_model": 3,
+    "fixed": [
+      "instrument",
+      "wavelength components",
+      "FCJ geometry",
+      "zero and displacement",
+      "cells and structures",
+      "silicon sample broadening"
+    ],
+    "moving": [
+      "dominant-citrate isotropic width parameters",
+      "two phase scales",
+      "one residual-background constant"
+    ],
+    "support_fwhm": 30.0
+  },
+  "schema_version": 1,
+  "stephens_reference": {
+    "doi": "10.1107/S0021889898006001",
+    "journal": "Journal of Applied Crystallography 32 (1999) 281-289",
+    "title": "Phenomenological model of anisotropic peak broadening in powder diffraction"
+  }
+}

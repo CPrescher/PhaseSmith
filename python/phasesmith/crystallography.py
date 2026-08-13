@@ -17,6 +17,7 @@ import numpy as np
 from numpy.typing import ArrayLike, NDArray
 
 from . import _core
+from .execution import ExecutionPolicy
 
 if TYPE_CHECKING:
     from .intensity_corrections import IntegratedIntensityCorrectionProvider
@@ -531,12 +532,19 @@ def calculate_structure_factor_values(
     correction: IntegratedIntensityCorrectionProvider | None = None,
     scale: float = 1.0,
     coordinate_tolerance: float = 1.0e-10,
+    execution: ExecutionPolicy | None = None,
 ) -> StructureFactorValuesResult:
     """Calculate values and integrated intensities without a dense Jacobian.
 
     Providers are evaluated once for the complete reflection batch. Symmetry
     expansion and atom/reflection accumulation remain in the native kernel.
+    ``execution=None`` selects the bounded two-thread default. Reuse an
+    explicit policy across repeated calls to retain its native worker pool.
     """
+
+    selected_execution = ExecutionPolicy() if execution is None else execution
+    if not isinstance(selected_execution, ExecutionPolicy):
+        raise TypeError("execution must be an ExecutionPolicy")
 
     native, correction_values, correction_model_id, _, _ = _prepare_structure_factor_inputs(
         structure,
@@ -547,7 +555,10 @@ def calculate_structure_factor_values(
         scale=scale,
         coordinate_tolerance=coordinate_tolerance,
     )
-    arrays = structure.space_group._native.structure_factor_values(*native)
+    arrays = structure.space_group._native.structure_factor_values(
+        *native,
+        selected_execution._native,
+    )
     f = np.asarray(arrays[0]) + 1j * np.asarray(arrays[1])
     output = tuple(np.asarray(value) for value in arrays[2:6])
     for array in (f, *output):

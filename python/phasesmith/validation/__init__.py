@@ -1,6 +1,21 @@
 """Explicit, provenance-aware external validation datasets."""
 
 from .bath_ltl import BathLtlResult, run_bath_ltl_workflow
+from .citrate_broadening_ablation import (
+    CitrateBroadeningAblationResult,
+    CitrateBroadeningModelResult,
+    run_citrate_isotropic_broadening_ablation,
+)
+from .citrate_source_fidelity import (
+    CitrateSourceReflectionFidelityResult,
+    ReflectionFidelityMetrics,
+    run_citrate_source_reflection_fidelity,
+)
+from .citrate_stephens_ablation import (
+    CitrateStephensAblationResult,
+    CitrateStephensModelResult,
+    run_citrate_stephens_ablation,
+)
 from .datasets import (
     VALIDATION_DATASETS,
     ExternalValidationFile,
@@ -12,6 +27,18 @@ from .datasets import (
 from .iucr_silicon_standard import (
     IucrSiliconStandardResult,
     run_iucr_silicon_standard_workflow,
+)
+from .iucr_sodium_citrate_silicon import (
+    IucrSodiumCitrateSiliconResult,
+    run_iucr_sodium_citrate_silicon_workflow,
+)
+from .iucr_tripotassium_citrate_silicon import (
+    IucrTripotassiumCitrateSiliconResult,
+    run_iucr_tripotassium_citrate_silicon_workflow,
+)
+from .iucr_trirubidium_citrate_silicon import (
+    IucrTrirubidiumCitrateSiliconResult,
+    run_iucr_trirubidium_citrate_silicon_workflow,
 )
 from .nist_srm660c_parity import (
     NIST_SRM660C_MATCHED_SH_OVER_L,
@@ -57,11 +84,20 @@ __all__ = [
     "VALIDATION_CASES",
     "VALIDATION_DATASETS",
     "BathLtlResult",
+    "CitrateBroadeningAblationResult",
+    "CitrateBroadeningModelResult",
+    "CitrateSourceReflectionFidelityResult",
+    "CitrateStephensAblationResult",
+    "CitrateStephensModelResult",
     "ExternalValidationFile",
     "IucrSiliconStandardResult",
+    "IucrSodiumCitrateSiliconResult",
+    "IucrTripotassiumCitrateSiliconResult",
+    "IucrTrirubidiumCitrateSiliconResult",
     "NistSrm660cParityResult",
     "QarrParityResult",
     "RealDataValidationReport",
+    "ReflectionFidelityMetrics",
     "RowlesQpaResult",
     "ValidationCase",
     "ValidationCheck",
@@ -73,8 +109,14 @@ __all__ = [
     "qarr_1g_readiness",
     "read_nist_srm660c_specimen",
     "run_bath_ltl_workflow",
+    "run_citrate_isotropic_broadening_ablation",
+    "run_citrate_source_reflection_fidelity",
+    "run_citrate_stephens_ablation",
     "run_echidna_lab6_validation",
     "run_iucr_silicon_standard_workflow",
+    "run_iucr_sodium_citrate_silicon_workflow",
+    "run_iucr_tripotassium_citrate_silicon_workflow",
+    "run_iucr_trirubidium_citrate_silicon_workflow",
     "run_nickel_tof_validation",
     "run_nist_srm660c_parity_workflow",
     "run_nist_srm660c_validation",

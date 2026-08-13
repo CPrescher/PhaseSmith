@@ -149,6 +149,26 @@ public nanometre/RMS-strain/degree conventions. Tests compare every reflection
 width and orientation factor before comparing selected values, areas, and
 moments.
 
+`stephens_orthorhombic_v1` configures GSAS-II generalized microstrain for a
+Pnma phase with six orthorhombic coefficients and a nontrivial mixing value.
+The oracle-only adapter converts pure terms by `1e-12/(8 ln 2)` and GSAS-II's
+factor-three mixed basis by `3e-12/(8 ln 2)`. Across all 395 public reflection
+rows, PhaseSmith matches pinned Gaussian variances within `2.3e-15`
+centidegree² and Lorentzian FWHMs within `3.4e-16` centidegree. Three private
+profile probes differ by at most `2.40e-6` of the oracle peak maximum.
+
+`benchmark_citrate_residual_forensics.py` is a real-data, public-API-only
+diagnostic rather than a golden fixture generator. It evaluates all 16 on/off
+combinations of the anhydrous-rubidium legacy `LX`, `shft`, `trns`, and
+Stephens terms, refitting only two phase scales and one residual-background
+constant. Its report includes angle-resolved residuals and a Shapley partition
+of weighted-SSE improvement, eight paired transparency penalties, and an
+explicit transparency sign/scale sensitivity. Legacy `shft` and `trns` signs
+are derived from the cited GSAS profile-argument equation; the report separately
+labels the opposite legacy physical-height sign and the nonphysical effective
+absorption implied by the deposited positive `trns`. It imports no PhaseSmith
+module and emits only plain JSON.
+
 `multiphase_v1` uses the public scripting API to configure two phases with
 different HAP scales and stores public `X`, total `Ycalc`, background, and both
 complete reflection lists. A controlled private two-reflection composition
@@ -204,6 +224,10 @@ GSAS-II and NumPy, but never imports `phasesmith`. Run it with GSAS-II's Python:
   --gsas-root /path/to/pinned/GSAS-II \
   --binary-dir /path/to/compatible/GSASII-bin/platform-directory
 
+/path/to/gsas/python oracle/scripts/generate_stephens_orthorhombic.py \
+  --gsas-root /path/to/pinned/GSAS-II \
+  --binary-dir /path/to/compatible/GSASII-bin/platform-directory
+
 /path/to/gsas/python oracle/scripts/generate_multiphase.py \
   --gsas-root /path/to/pinned/GSAS-II \
   --binary-dir /path/to/compatible/GSASII-bin/platform-directory
@@ -220,6 +244,58 @@ GSAS-II and NumPy, but never imports `phasesmith`. Run it with GSAS-II's Python:
   --gsas-root /path/to/pinned/GSAS-II \
   --binary-dir /path/to/compatible/GSASII-bin/platform-directory
 ```
+
+Run the rubidium residual-forensics worker on a separately converted neutral
+bundle with:
+
+```shell
+/path/to/gsas/python oracle/scripts/benchmark_citrate_residual_forensics.py \
+  --gsas-root /path/to/pinned/GSAS-II \
+  --binary-dir /path/to/compatible/GSASII-bin/platform-directory \
+  --data-directory /path/to/converted/rubidium-bundle \
+  --report /path/to/new-report.json
+```
+
+Run the follow-up 17–30 degree component audit with the same pinned checkout
+and neutral bundle:
+
+```shell
+/path/to/gsas/python oracle/scripts/benchmark_citrate_low_angle_forensics.py \
+  --gsas-root /path/to/pinned/GSAS-II \
+  --binary-dir /path/to/compatible/GSASII-bin/platform-directory \
+  --data-directory /path/to/converted/rubidium-bundle \
+  --report /path/to/new-low-angle-report.json
+```
+
+The worker retains the full grid but assigns negligible weight outside the
+audited interval so GSAS-II's fixed-background indexing remains unchanged. It
+uses only public scripting calls, records the `SH/L=0.002` effective evaluator
+floor, rejects nonphysical unconstrained width fits, and emits plain JSON.
+
+The source-axial follow-up uses an isolated profile boundary because the
+GSAS-II scripting API does not expose normalized FCJ profiles. The external
+worker is exact-revision gated, calls only the private
+`GSASIIpwd.getFCJVoigt3` probe, imports no PhaseSmith module, and emits plain
+NPZ arrays plus hashed JSON metadata. The independent PhaseSmith-side audit is:
+
+```shell
+/path/to/gsas/python oracle/scripts/benchmark_citrate_axial_profile.py \
+  --gsas-root /path/to/pinned/GSAS-II \
+  --binary-dir /path/to/compatible/GSASII-bin/platform-directory \
+  --data-directory /path/to/converted/rubidium-bundle \
+  --arrays /path/to/new-axial-arrays.npz \
+  --report /path/to/new-axial-oracle.json
+
+uv run python benchmarks/audit_citrate_axial_profile.py \
+  --oracle-report /path/to/new-axial-oracle.json \
+  --oracle-arrays /path/to/new-axial-arrays.npz \
+  --report /path/to/new-axial-review.json
+```
+
+The checked result preserves the deposited two-parameter geometry in
+PhaseSmith and records that pinned GSAS-II's documented formal-sum input is not
+shape-faithful for these source-specific low-angle peaks. It does not turn the
+empirically closer one-parameter probe into a conversion rule.
 
 The generator refuses to replace `data.npz` or `manifest.json`. Regeneration
 requires the explicit `--force` flag, after which both metadata and numerical

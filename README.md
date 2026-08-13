@@ -77,6 +77,21 @@ uv run python benchmarks/background.py --require-release
 uv run python benchmarks/real_data.py --require-release
 ```
 
+The optional XRD-Rust comparison exercises both libraries through their public
+stick-pattern APIs and validates positions and normalized intensities before
+reporting speed. Install its benchmark-only dependencies, then retain the JSON
+result:
+
+```shell
+uv pip install 'xrd-rust==0.3.5' 'pymatgen==2026.5.4'
+uv run python benchmarks/compare_xrd_rust.py --require-release \
+  --json-output validation/results/local-xrd-rust-performance.json
+```
+
+The reviewed environment, scope, results, and interpretation are in
+[docs/xrd-rust-performance.md](docs/xrd-rust-performance.md). XRD-Rust and
+pymatgen are not PhaseSmith runtime dependencies.
+
 The joint multi-histogram PbSO4 workload is also executable entirely in Rust,
 without building or launching Python:
 
@@ -252,7 +267,7 @@ looping over atoms/reflections in Python. Correction geometry is explicit; the
 default neutral model returns raw multiplicity-weighted structural intensity:
 
 ```python
-from phasesmith import XrayNonResonant, calculate_structure_factor_values
+from phasesmith import ExecutionPolicy, XrayNonResonant, calculate_structure_factor_values
 from phasesmith.io.cif import read_cif
 
 structure = read_cif("phase.cif").structure
@@ -262,9 +277,15 @@ structural = calculate_structure_factor_values(
     multiplicity=[6, 12],
     scattering=XrayNonResonant(),
     scale=1.0,
+    execution=ExecutionPolicy(threads=2),
 )
 print(structural.f, structural.integrated_intensity)
 ```
+
+Reuse the immutable execution policy across repeated calls so its bounded
+native worker pool is retained. Select `threads=1` when an embedding
+application already owns outer parallelism. `execution=None` uses PhaseSmith's
+bounded two-thread default.
 
 Use `calculate_structure_factors` when the bounded dense analytical structural
 Jacobian is also required.

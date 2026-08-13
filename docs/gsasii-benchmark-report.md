@@ -69,6 +69,7 @@ predeclared wider workflow tolerance passed; it is not strict model parity.
 | Bath Cs-LTL | 15.062 | 12.080 | capability failure | Released legacy GSAS curve is 3.492%; same conversion limitation. |
 | XRED TiO2 | 22.256 | 44.801 | diagnostic only | Unknown instrument/composition invalidate residual parity; phase fractions agree. |
 | IUCr citrate + NIST Si 640b | 10.180 | 8.894 | qualified capability pass | Deposited legacy GSAS is 6.226%; displacement-anchored Si is 14.593/14.621/13.02 wt% in PhaseSmith/GSAS-II/legacy. |
+| IUCr sodium citrate + NIST Si 640b | 18.183 | 18.945 | qualified holdout pass | All seven common-subset gates pass; Si is 22.173/21.651/18.74 wt% in PhaseSmith/GSAS-II/deposited GSAS. |
 
 ### IUCr dicesium citrate with NIST silicon internal standard
 
@@ -254,25 +255,285 @@ Si as an internal standard.
 The initial search missed the multi-block supplementary CIF for the IUCr
 dicesium hydrogen citrate study. It does combine raw laboratory counts, all
 phase structures, the Si 640b fraction, instrument metadata, and a deposited
-legacy-GSAS result, and is now onboarded. Related public citrate/Si deposits
-are now explicitly queued: sodium dihydrogen citrate polymorph II, anhydrous
-tripotassium citrate, and the trirubidium citrate anhydrous/monohydrate pair.
-They will be onboarded individually because preferred orientation, hydration,
-and phase-specific profile records differ even though the pdCIF layout is
-similar.
+legacy-GSAS result, and is now onboarded. The related sodium dihydrogen citrate
+polymorph-II deposit is also checksum-registered, converted, and compared with
+the exact pinned GSAS-II revision. Trial refinements correctly rejected two
+non-identifiable models: free W/X/Y made the oracle's standalone Lorentzian
+width nonphysical, while fixed-profile isotropic width refinement drove its Si
+microstrain negative. The accepted preferred-orientation common subset fixes
+those terms and refines only scales, a constant residual, and March--Dollase
+(001). PhaseSmith/GSAS-II return 18.183%/18.945% Rwp, 0.95589/0.94997
+correlation, 22.173%/21.651% Si, and March ratios 0.63851/0.63237. All seven
+cross-implementation gates pass. The deposited 8.433% and 18.74 wt% Si remain
+the richer-model reference, not a parity target, because generalized spherical
+harmonics, Stephens anisotropy, and Suortti roughness are omitted.
+
+The anhydrous tripotassium-citrate deposit is now also complete. Its 1.44 wt%
+Si content is too weak to transfer the sodium displacement-calibration
+contract: PhaseSmith and pinned GSAS-II infer -0.02492 and +0.00180 mm from the
+same 128 selected Si-window points; the PhaseSmith millimetre value is
+conditional on the disclosed 141.5 mm radius assumption because the source
+does not deposit a radius. That calibration is therefore diagnostic
+and is not applied. With zero displacement and the same fixed dominant-phase
+profile, the implementations give 23.965%/23.933% Rwp, 0.61846/0.62079
+correlation, and 4.450%/4.343% Si. The close common-subset agreement is a
+qualified parity pass, while the large gap to deposited 4.853% Rwp and 1.44 wt%
+Si is the expected phase-specific-model and weak-anchor failure. The
+trirubidium citrate anhydrous/monohydrate pair was therefore source-audited
+before assuming that the Si-anchor contract transfers.
+
+The anhydrous trirubidium case is now source-audited and corrected. Legacy GSAS
+profile-function-4 `LX=3.634` is a Lorentzian size term and maps to the current
+`X/cos(theta)` axis, not `Y*tan(theta)`. Its `shft=-8.7503` centidegree
+coefficient maps analytically, at the deposited 141.5 mm radius, to
+-0.1080505 mm in the current PhaseSmith/GSAS-II Bragg--Brentano displacement
+parameter. The legacy manual's physical sample-shift variable has the opposite
+sign (+0.1080505 mm). With those source terms fixed, PhaseSmith and pinned
+GSAS-II reach 9.579%/9.735% Rwp,
+0.94732/0.94248 correlation, and 2.575%/2.548% Si; every common-model parity
+gate passes. The 2.15 wt% Si-only windows still infer -0.07519/-0.11031 mm, so
+their 0.03512 mm disagreement remains a warning against replacing the directly
+translated source value with a weak-window calibration. The monohydrate remains
+lower priority because its 1.30 wt% Si, absent radius, phase-specific profiles,
+Stephens anisotropy, and Suortti roughness add no cleaner discriminator.
+
+The deposited and Poisson-weighted legacy-curve residuals were also recomputed
+separately to exclude weighting vocabulary as an explanation for these gaps.
+They are effectively identical: potassium is 4.852875% deposited versus
+4.852883% Poisson, and anhydrous rubidium is 2.458338% versus 2.458326%.
+Therefore the residual discrepancy cannot be attributed to the Rwp weight
+convention. For rubidium, the largest diagnosed limitation was instead a
+profile-function translation error plus omitted source displacement.
+
+### Isotropic size/strain ablation and Stephens decision
+
+A controlled phase-local ablation now tests whether PhaseSmith's existing
+isotropic coherent-domain size, Gaussian RMS microstrain, and Lorentzian
+microstrain terms can explain the potassium and anhydrous-rubidium gaps. The
+instrument, wavelength doublet, FCJ geometry, zero/displacement, cells,
+structures, and all silicon width terms remain fixed. Each candidate starts
+from the exact two-scale/one-constant-background solution, is run from three
+separated initial values, and finishes with the sample term, both scales, and
+background in one weighted Jacobian. Acceptance requires full rank, no
+zero-width boundary, repeatable Rwp within 0.005 percentage points, and less
+than 0.98 absolute sample-versus-linear column correlation.
+
+For potassium, finite size is the only candidate that passes every gate. It refines to
+90.1877 nm, lowers Poisson Rwp from 23.9648% to 20.7374%, raises profile
+correlation from 0.61846 to 0.77766, and changes Si from 4.4503% to 2.0456%.
+After correcting rubidium `LX` and `shft`, its base Rwp is already 9.5794%.
+Size, Gaussian strain, Lorentzian strain, and both size/strain combinations can
+produce best-run values near 8.06--8.18%, but none reaches the same basin from
+three starts. The earlier accepted 56.23 nm rubidium size solution is therefore
+invalidated: it was compensating for an omitted position/profile translation,
+not demonstrating transferable sample physics.
+
+This still falsifies the stronger hypothesis that current isotropic width
+models reproduce either deposited target, but it also demonstrates that model
+selection performed before correct source translation can assign a false
+physical meaning to a compensating width parameter.
+
+GSAS-II does implement this model. In the pinned revision
+`c0bc79b259cdf0065480b5fbd57674ddf12c4a23`, the phase `Mustrain` selector
+offers isotropic, uniaxial, and `generalized`; the latter is explicitly the
+P. W. Stephens model and uses Laue-class-dependent fourth-order polynomials in
+`h`, `k`, and `l`. This is distinct from GSAS-II `HStrain`, which modifies the
+lattice metric and therefore peak positions. PhaseSmith's production version
+must be independently derived from Stephens, J. Appl. Cryst. 32 (1999)
+281–289, DOI `10.1107/S0021889898006001`, with value and analytical derivatives
+in the same pass; GSAS-II remains only the pinned black-box oracle.
+
+The reviewed record is
+`validation/results/2026-08-13-citrate-isotropic-broadening-ablation.json`.
+The intentionally slow external campaign can be repeated with
+`oracle/scripts/benchmark_citrate_isotropic_broadening.py`; it is not part of
+the ordinary test suite.
+
+The orthorhombic Stephens convention is now separately pinned. A Pnma oracle
+fixture at exact GSAS-II revision `c0bc79b259cdf0065480b5fbd57674ddf12c4a23`
+contains 395 public reflection rows and three normalized profile probes. The
+independently derived adapter maps GSAS-II's generalized stored coefficients
+to physical ångström⁻⁴ variance coefficients using `1e-12/(8 ln 2)` for pure
+fourth powers and `3e-12/(8 ln 2)` for its factor-three mixed basis. PhaseSmith
+matches every oracle Gaussian variance to `2.3e-15` centidegree² absolute and
+every Lorentzian FWHM to `3.4e-16` centidegree absolute; selected complete TCH
+profiles differ by at most `2.40e-6` of peak height. This validates the
+convention and profile composition, but is deliberately separate from whether
+Stephens parameters are identifiable or sufficient on the citrate patterns.
+The fixture is `oracle/fixtures/stephens_orthorhombic_v1` and its explicit
+generator is `oracle/scripts/generate_stephens_orthorhombic.py`.
+
+The corresponding real-data sufficiency test is also complete. It fixes the
+instrument, wavelength doublet, FCJ geometry, zero/displacement, cells,
+structures, silicon widths, six deposited Stephens coefficient ratios, and
+deposited Gaussian/Lorentzian mixing fraction. With only the source Stephens
+width active, potassium changes from 23.9648% to 23.9250% Poisson Rwp. On the
+corrected rubidium contract it changes 9.5794% to 9.5711%. Those changes are
+far too small to explain the deposited 4.8529% and 2.4583% curves.
+
+Allowing one common multiplier of the deposited Stephens shape reaches only
+23.5954% for potassium and 9.4158% for rubidium while requiring 94.4 and
+382.1 times the deposited amplitudes; the potassium result also misses the
+three-start repeatability gate. On corrected rubidium, size plus fixed Stephens
+also fails repeatability; this invalidates the former 56.26 nm conclusion.
+Joint size/amplitude refinement is not repeatable for either pattern. Thus the
+implementation and GSAS-II convention are verified, but Stephens broadening is
+not the missing mechanism that closes these citrate targets under the fixed
+nuisance model. The reviewed record is
+`validation/results/2026-08-13-citrate-stephens-ablation.json`; rerun it with
+`oracle/scripts/benchmark_citrate_stephens.py`.
+
+### Rubidium legacy-profile residual forensics
+
+A 16-case full factorial pinned-GSAS-II ablation separates legacy `LX`, `shft`,
+`trns`, and deposited Stephens terms while refining only two phase scales and
+one residual-background constant. Translating `shft` to -108.0505 micrometres
+dominates the recoverable weighted-SSE improvement (87.3% Shapley share).
+Correcting `LX` contributes 18.0%; Stephens contributes 0.07%. The deposited
+transparency translation has a negative 5.36% contribution and worsens every
+matched fixed-structure branch in which it is enabled.
+
+This sign is not an adapter guess. The
+[legacy GSAS technical manual](https://subversion.xray.aps.anl.gov/EXPGUI/gsas/all/GSAS%20Manual.pdf)
+defines the profile argument as
+`delta_T' = (T - T_phase) + shft*cos(theta) + trns*sin(2theta)`;
+the peak-center motion is therefore the negative of the stored coefficient.
+It also defines `mu_eff = -9000/(pi*R*trns)`, so the deposited positive
+`trns=1.30` has a formally negative effective absorption and is an empirical
+signed position correction rather than a physical transparency measurement.
+A sign/scale sensitivity check confirms the distinction: reversing the
+deposited sign lowers Rwp to 9.3426%, but contradicts the source coefficient;
+the deposited sign raises it to 10.2240%. The worker consequently preserves
+the numerical source convention and does not promote transparency into the
+PhaseSmith production model.
+
+The best fixed subset is corrected `LX` plus source shift plus Stephens at
+9.7261% Rwp and 0.94259 correlation. It closes 73.19% of the weighted-SSE gap
+between the former 18.338% common model and the 2.4583% deposited curve, but
+does not reconstruct the latter. Of its remaining weighted SSE, 65.8% lies in
+17--30 degrees; the residual correlates more strongly with the profile's width
+mode (0.467) than its position mode (-0.291). This points to low-angle
+profile/intensity/conversion behavior, not another global position correction.
+The checked record is
+`validation/results/2026-08-13-citrate-rubidium-residual-forensics.json`,
+generated by `oracle/scripts/benchmark_citrate_residual_forensics.py`.
+
+### Rubidium low-angle component audit
+
+The follow-up audit restricts refinement weight to the 643 samples from
+17.004916 degrees through 30 degrees while retaining the complete pattern in
+the GSAS-II project. This avoids changing the observable fixed-background
+indexing. Each controlled GSAS-II case re-refines only the two phase scales and
+a constant residual background unless the position probe explicitly adds the
+specimen shift. The background-shape checks are independent weighted Legendre
+projections on the audited interval. Unconstrained profile fits are rejected
+because they drive `W`, `X`, and `SH/L` negative; the reviewed result instead
+uses fixed non-negative scans.
+
+The source-translated profile gives 9.8275% local Poisson Rwp after low-angle
+scale/background adjustment, compared with 2.7107% for the deposited curve.
+No isolated component closes half of that weighted-SSE gap: specimen shift
+closes 45.21%, the axial-profile scan 36.29%, `W` 27.04%, peak-group amplitude
+projection 22.65%, residual-background shape 19.07%, and `X` 15.66%. The best
+fixed values are `W=20`, `X=5`, and the pinned GSAS-II observable `SH/L=0.002`
+lower boundary. The latter is not evidence for zero physical axial divergence:
+the pinned evaluator applies `max(SH/L, 0.002)`, while the deposited legacy
+model records separate `S/L=H/L=0.0097` and modern GSAS-II compresses their sum
+into one field.
+
+Combining the three best profile values with a rank-four, condition-2.54
+Legendre residual-background projection reaches 4.9772% Rwp and closes 80.47%
+of the gap, but remains well above the deposited 2.7107%. Deposited/current
+peak-group comparisons have a median area ratio of 1.8006, RMS-width ratio of
+1.6200, absolute centroid shift of 0.02466 degrees, and absolute skewness
+difference of 0.3906. The evidence is
+therefore coupled across reflection intensity/scale, background, position,
+symmetric width, and axial-profile compression. It does not justify another
+production broadening term. The next diagnostic is a source-native comparison
+of reflection intensities and legacy profile-function-4 axial shapes. The
+checked record is
+`validation/results/2026-08-13-citrate-rubidium-low-angle-forensics.json`,
+generated by `oracle/scripts/benchmark_citrate_low_angle_forensics.py`.
+
+### Rubidium source-reflection fidelity
+
+The source pdCIF provides 1,197 reflection rows rather than only a fitted
+profile. The converter now preserves their Miller indices, phase and wavelength
+IDs, measured and calculated F-squared, calculated phase, d-spacing, and I100
+as a neutral CSV. The two wavelength rows have identical calculated F-squared,
+leaving 600 unique reflections: 591 rubidium-citrate and nine silicon. Twenty
+rubidium-citrate reflections lie in the audited 17.004916–30 degree interval.
+
+Using the source-deposited Cromer–Mann coefficients with the converted
+structures reproduces those 20 low-angle F-squared values with correlation
+0.99999994, 0.0397% median absolute relative error, 0.0289%
+source-intensity-weighted L1 error, and 0.0301% source-normalized RMS error.
+Converted d-spacings differ by no more than 1.54e-5 angstrom, consistent with
+the source's five-decimal deposit. This independently clears the converted
+coordinates, symmetry, isotropic displacement values, and source scattering
+contract as the dominant low-angle failure.
+
+PhaseSmith's production Waasmaier–Kirfel table gives 0.406% median and 0.301%
+source-weighted L1 error over the same reflections. Its 6.53% p95 relative error
+is concentrated in weak cancellation-sensitive reflections; the normalized RMS
+error remains 0.296%. The production scattering choice is therefore measurable
+but much too small to explain the seven-percentage-point low-angle Rwp gap. The
+remaining source-native checkpoint is the legacy profile-function-4 axial
+shape. The checked record is
+`validation/results/2026-08-13-citrate-rubidium-source-reflection-fidelity.json`,
+generated by `benchmarks/audit_citrate_source_reflections.py`.
+
+### Rubidium source-axial profile fidelity
+
+The deposited legacy-GSAS `S/L=H/L=0.0097` values are full-height/diameter
+ratios and are numerically the same as the FCJ half-height/radius ratios stored
+by `FcjGeometry`. PhaseSmith therefore preserves the source-native geometry as
+`sample_over_radius=detector_over_radius=0.0097`. GSAS-II documents its reduced
+equal-height field as the formal sum `SH/L=0.0194`; mapping that field back to
+two equal PhaseSmith ratios reproduces the source-native PhaseSmith profile
+bit-for-bit.
+
+The pinned GSAS-II profile does not preserve that continuous shape at this
+source geometry. Isolated profiles for the Rb reflections (102), (013), and
+(221), at 17.9000, 22.5506, and 28.8521 degrees, use the deposited `W=5.109`
+and `X=3.634`. At the formal `SH/L=0.0194`, the largest normalized L1 distance
+from the source-native PhaseSmith profile is 17.53%, the largest peak-normalized
+point error is 15.38%, and the largest centroid difference is 0.00847 degrees.
+The tested `SH/L=0.0097` is empirically closer for all three peaks, with at most
+4.25% normalized L1 distance, but it no longer represents the documented sum.
+
+This is a pinned-oracle compression/discretization limitation, not a reason to
+halve the source geometry. PhaseSmith retains the two physical ratios and the
+GSAS-II common-input comparison retains the disclosed formal sum; neither is
+retuned to imitate the deposited curve. Consequently the earlier low-angle
+preference for GSAS-II's `SH/L=0.002` floor is compensation within a compressed
+model, not evidence that the converted source divergence is wrong or zero. The
+audit clears the PhaseSmith axial conversion and leaves exact legacy-curve
+reconstruction blocked on a source-native two-parameter profile oracle. It
+does not justify another production broadening term. The checked record is
+`validation/results/2026-08-13-citrate-rubidium-source-axial-profile-fidelity.json`,
+generated by the pinned external worker
+`oracle/scripts/benchmark_citrate_axial_profile.py` and the PhaseSmith-side
+comparator `benchmarks/audit_citrate_axial_profile.py`.
 
 ## Recommended priorities
 
-1. **Unify campaign execution.** Add one manifest-driven command that runs the
-   available comparison drivers, validates the pinned revision, and writes a
-   summary without regenerating reviewed goldens silently.
+1. **Unify campaign execution — complete.**
+   `validation/benchmark-campaign.json` and
+   `tools/run_benchmark_campaign.py` now run the available comparison drivers,
+   validate dataset hashes and the pinned revision, enforce case-level result
+   assertions, and write a non-destructive aggregate report without silently
+   regenerating reviewed goldens.
 2. **Improve conversion diagnostics.** Report missing phases, contradictory
    optics, unsupported legacy records, origin choices, and assumed radiation
    models before refinement. Bath and XRED show that this will improve user
    outcomes more than another profile term.
-3. **Expand the citrate/Si holdout series.** Reuse the narrow reviewed adapter
-   only where the related IUCr deposits expose the same complete counts,
-   structures, instrument, standard fraction, and deposited-fit contract.
+3. **Expand the citrate/Si holdout series.** Sodium passes its restricted
+   preferred-orientation common subset; potassium passes implementation parity
+   but demonstrates that a 1.44 wt% Si displacement anchor is not transferable.
+   Anhydrous rubidium independently confirms that conclusion at 2.15 wt% with a
+   source-deposited radius. Keep the monohydrate as a lower-priority model-rich
+   holdout rather than treating its 1.30 wt% Si as an accepted position anchor.
 4. **Keep large-FCJ parity as a monitored holdout.** Do not replace the current
    published PhaseSmith mapping merely to mimic one pinned GSAS-II
    discretization. Reconsider only if multiple normal-use datasets fail for the
@@ -290,6 +551,12 @@ records are:
 - `validation/results/2026-08-11-campaign-qarr-1h.json`
 - `validation/results/2026-08-11-campaign-nist-srm660c.json`
 - `validation/results/2026-08-11-campaign-sucrose.json`
+- `validation/results/2026-08-13-campaign-iucr-sodium-citrate-si.json`
+- `validation/results/2026-08-13-campaign-iucr-tripotassium-citrate-si.json`
+- `validation/results/2026-08-13-campaign-iucr-trirubidium-citrate-si.json`
+- `validation/results/2026-08-13-citrate-rubidium-residual-forensics.json`
+- `validation/results/2026-08-13-citrate-rubidium-low-angle-forensics.json`
+- `validation/results/2026-08-13-citrate-rubidium-source-reflection-fidelity.json`
 - `validation/results/2026-08-11-campaign-echidna.json`
 - `validation/results/2026-08-11-campaign-pbso4.json`
 - `validation/results/2026-08-11-campaign-powgen.json`

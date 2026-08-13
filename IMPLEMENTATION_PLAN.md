@@ -1633,8 +1633,9 @@ separate application repository.
 ## Maintainer decisions needed
 
 Development can proceed through the next numerical units, but the following
-must be decided before a public release. The project-license question was
-resolved on 2026-08-05 by selecting the MIT License.
+must be decided before stabilizing the 1.0 public API. The project-license
+question was resolved on 2026-08-05 by selecting the MIT License, and version
+0.4.0 was released on 2026-08-14.
 
 1. Whether direct `(H, eta)` remains public as a low-level API or is labeled
    explicitly as a primitive/reference interface.
@@ -1691,3 +1692,121 @@ plain validation artifacts, explicit cross-pattern profile metrics, and a
 decision supported by those results about whether any specialized profile term
 belongs in production. Failed transfer remains a valid outcome; it must not be
 converted into a production feature by tuning against one specimen.
+
+Unit 29's campaign-orchestration slice is complete. The checked-in version-1
+manifest composes seventeen existing real-data comparison and diagnostic
+drivers without duplicating their numerical logic. The runner validates the
+exact GSAS-II checkout, registered dataset bytes and hashes, result-carried
+oracle revisions, and case-specific scientific assertions, then writes one
+finite aggregate JSON record while refusing to overwrite an existing output by
+default. Focused case selection and continue-on-error reporting support review;
+no reviewed golden is silently regenerated. The sodium-dihydrogen-citrate plus
+Si 640b preferred-orientation holdout is now checksum-registered, converted,
+and accepted through a matched pinned-GSAS-II comparison. The reviewed model
+fixes U/V/W/X/Y, equal-height SH/L=0.0187, zero, calibrated displacement, and
+all phase size/strain terms; it refines only scales, a constant residual, and
+March--Dollase (001). PhaseSmith/GSAS-II Rwp is 18.183%/18.945%, the Si-fraction
+delta is 0.522 percentage points, and the March-ratio delta is 0.00614. All
+seven comparison gates pass, while the residual gap to deposited GSAS remains
+qualified by the omitted spherical-harmonic, Stephens, and Suortti terms. The
+tripotassium-citrate holdout is also complete as a qualified parity diagnostic
+and expected transferability failure. PhaseSmith/pinned-GSAS-II Rwp is
+23.965%/23.933%, the profile-correlation delta is 0.00233, and the Si-fraction
+delta is 0.107 percentage points, so the shared fixed-geometry implementation
+passes. The 1.44 wt% Si windows infer -0.02492/+0.00180 mm displacement, however;
+their 0.02672 mm disagreement fails the predeclared anchor-identifiability gate
+and is not applied to the full pattern. Both restricted models remain far from
+the deposited 4.853% Rwp and 1.44 wt% Si, which is recorded as missing
+phase-specific model/legacy semantics rather than hidden by tuning. The next
+scientific slice is a source-contract review of the rubidium citrate series.
+That review now qualifies both official IUCr supplements at the source level.
+The anhydrous case is first: it uniquely supplies a 141.5 mm radius, 2.15 wt%
+Si, common base profile coefficients, no roughness correction, and a contiguous
+4,106-point deposited fit. The monohydrate is checksum-registered but follows
+later because 1.30 wt% Si, no deposited radius, phase-specific profiles,
+Stephens broadening, and Suortti roughness repeat already isolated limitations.
+The anhydrous converter and native/pinned-GSAS-II comparison are now complete.
+The converter independently recomputes deposited Rwp 2.45834% and Rp 1.95046%
+on exactly source indices 594–4699. A later source-forensics review corrected
+two translation semantics: legacy `LX=3.634` belongs on the current Lorentzian
+size axis, and `shft=-8.7503` maps to -0.1080505 mm in the current
+PhaseSmith/GSAS-II displacement convention at the deposited radius (the legacy
+manual's physical shift variable uses the opposite sign).
+On this corrected common profile, PhaseSmith/GSAS-II Rwp is 9.579%/9.735%,
+correlation is 0.94732/0.94248, and Si is 2.575%/2.548%; all full-pattern parity
+gates pass. The Si-only windows still infer incompatible -0.07519/-0.11031 mm
+values, so they remain diagnostic rather than replacing the direct source
+translation. The monohydrate remains a lower-priority model-rich holdout.
+The subsequent controlled isotropic-width ablation is complete on the
+potassium and anhydrous-rubidium patterns. Potassium finite size is full rank
+and repeatable at 90.19 nm and 20.737% Rwp. After correcting rubidium source
+translation, every isotropic size/strain variant fails repeatability; the old
+56.23 nm result is invalidated as compensating model error. This was sufficient
+historical evidence to make Stephens
+symmetry-dependent microstrain the next Unit-29 numerical slice. Its exit gate
+requires: published equations and units; Laue-class coefficient reduction;
+non-negative reflection variance semantics; independent NumPy values; Rust
+value and analytical parameter/position/cell derivatives in one pass;
+finite-difference, support, persistence, and realistic multi-peak benchmark
+coverage; and black-box comparison with the exact pinned GSAS-II generalized
+`Mustrain` implementation. The first real-data acceptance must improve both
+citrate patterns without moving omitted texture, roughness, or weak-anchor
+geometry terms, and must report identifiability rather than merely lower Rwp.
+
+Unit-29 checkpoint: the orthorhombic kernel/API slice is complete. The public
+model fixes the coefficient order to `S400,S040,S004,S220,S202,S022` in
+ångström⁻⁴, defines the inverse-metric variance and Gaussian/Lorentzian split in
+`docs/sample-physics.md`, and evaluates Rust/Python values and analytical
+parameter/position/cell chains independently. Refinement replacement/scaling,
+direct cell-row mapping, native bridge, scripting/native persistence, invalid
+variance/cell handling, cross-language comparison, full structural lattice
+finite differences, and the realistic structural multi-peak benchmark are
+included. The explicit pinned-GSAS-II stored-value translation is now isolated
+in the oracle adapter and verified on 395 reflection widths plus three full
+profiles at revision `c0bc79b259cdf0065480b5fbd57674ddf12c4a23`; width errors
+are at machine precision and normalized profile error is at most 2.40e-6.
+The fixed-nuisance citrate Stephens ablation is complete. Deposited Stephens
+widths barely change either common-model residual. A free common amplitude
+requires 94x/382x the source values for only small improvement; potassium and
+corrected-rubidium size/Stephens combinations fail the declared repeatability
+gate.
+The Stephens slice therefore exits with kernel, derivative, persistence,
+oracle-convention, and real-data sufficiency evidence, including the negative
+scientific result that it does not close the citrate targets. The first
+source-specific forensic is now complete: a 16-case factorial shows translated
+sample shift dominates the recoverable rubidium SSE, corrected `LX` is second,
+Stephens is negligible, and the signed deposited transparency term is
+detrimental. The legacy manual confirms that sign and shows the positive source
+coefficient has formally negative effective absorption; reversing it improves
+the fit but is not the deposited model. The best fixed subset reaches 9.726%
+and leaves 65.8% of its SSE below 30 degrees. The follow-up 643-sample
+17.004916–30 degree audit is complete: no isolated background, peak-group
+intensity, shift, `W`, `X`, or FCJ probe closes half the local
+source-to-deposited weighted-SSE gap. Best physical width/axial values plus
+four well-conditioned background basis terms reach 4.9772% Rwp from a 9.8275%
+local base, still above the deposited 2.7107%. Pinned GSAS-II's effective
+`SH/L=0.002` lower boundary is explicitly treated as a compressed-oracle
+warning, not zero source divergence. The reflection half is complete: all 1,197
+deposited rows are preserved, and the 20 low-angle rubidium F² values match the
+converted structure plus source Cromer–Mann table with 0.0289% intensity-
+weighted L1 error. Production Waasmaier–Kirfel scattering gives 0.301%, which
+is visible but insufficient to explain the profile gap. Structure, symmetry,
+ADP, and reflection-intensity translation are cleared. The final axial audit
+preserves the deposited `S/L=H/L=0.0097` directly in PhaseSmith and proves that
+this is exactly its published equal-height representation of the GSAS-II
+formal sum `SH/L=0.0194`. The pinned GSAS-II profile at that sum nevertheless
+differs by up to 17.53% normalized L1 and 0.00847 degrees in centroid on three
+low-angle source reflections; the empirically closer tested `0.0097` value is
+not the documented sum and is rejected as a conversion rule. PhaseSmith's
+native conversion is therefore cleared. Reconstruction of the historical
+curve remains a legacy two-parameter-oracle problem, not a reason to add or
+retune production physics.
+The reviewed Unit-29 work, orthorhombic Stephens slice, Hall-expression import
+hardening, and deterministic bounded structure-factor parallelization form the
+PhaseSmith 0.4.0 release. The checked XRD-Rust comparison covers 8-, 64-, and
+256-site structures; all reference peaks match within 4.3e-14 degrees and
+normalized intensity correlation remains at least 0.999799. Further
+constant-wavelength models require new independent evidence and are not release
+blockers.
+Other Laue-class reductions remain separate follow-up slices rather than
+silently sharing the orthorhombic basis.

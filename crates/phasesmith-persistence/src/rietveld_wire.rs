@@ -67,6 +67,10 @@ enum WireSamplePhysics {
     IsotropicLorentzianMicrostrain {
         microstrain: f64,
     },
+    StephensOrthorhombic {
+        coefficients_angstrom_minus4: [f64; 6],
+        lorentzian_fraction: f64,
+    },
     MarchDollase {
         ratio: f64,
         preferred_axis_hkl: [f64; 3],
@@ -304,6 +308,13 @@ fn encode_sample_physics(value: &RietveldSamplePhysicsModel) -> WireSamplePhysic
                 microstrain: *microstrain,
             }
         }
+        RietveldSamplePhysicsModel::StephensOrthorhombic {
+            coefficients_angstrom_minus4,
+            lorentzian_fraction,
+        } => WireSamplePhysics::StephensOrthorhombic {
+            coefficients_angstrom_minus4: *coefficients_angstrom_minus4,
+            lorentzian_fraction: *lorentzian_fraction,
+        },
         RietveldSamplePhysicsModel::MarchDollase {
             ratio,
             preferred_axis_hkl,
@@ -716,6 +727,13 @@ fn decode_sample_physics(value: WireSamplePhysics) -> RietveldSamplePhysicsModel
         WireSamplePhysics::IsotropicLorentzianMicrostrain { microstrain } => {
             RietveldSamplePhysicsModel::IsotropicLorentzianMicrostrain { microstrain }
         }
+        WireSamplePhysics::StephensOrthorhombic {
+            coefficients_angstrom_minus4,
+            lorentzian_fraction,
+        } => RietveldSamplePhysicsModel::StephensOrthorhombic {
+            coefficients_angstrom_minus4,
+            lorentzian_fraction,
+        },
         WireSamplePhysics::MarchDollase {
             ratio,
             preferred_axis_hkl,

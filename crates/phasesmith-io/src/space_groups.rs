@@ -3,7 +3,8 @@
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 
-use moyo::data::{HallSymbolEntry, Setting, hall_symbol_entry, operations_from_number};
+use moyo::base::Operation;
+use moyo::data::{HallSymbol, HallSymbolEntry, Setting, hall_symbol_entry, operations_from_number};
 use phasesmith_crystallography::{Rational, SpaceGroup, SymmetryError, SymmetryOperation};
 
 const HALL_ENTRY_COUNT: i32 = 530;
@@ -124,6 +125,37 @@ pub fn space_group_by_hall_symbol(symbol: &str) -> Result<SpaceGroupInfo, SpaceG
     info_from_hall_number(entry.hall_number)
 }
 
+/// Parse a general Hall expression into an exact engine-owned operation set.
+///
+/// Unlike [`space_group_by_hall_symbol`], this function is not limited to the
+/// 530 canonical database spellings. It accepts any non-magnetic Hall
+/// expression supported by the pinned Moyo parser, including redundant
+/// translation spellings and explicit origin shifts. CIF quote syntax (`"`)
+/// and underscore component separators are normalized before parsing.
+///
+/// # Errors
+///
+/// Returns [`SpaceGroupLookupError::UnknownSymbol`] when the Hall expression
+/// is invalid, or a structured database/symmetry error when its generated
+/// operations cannot be represented and validated exactly.
+pub fn space_group_from_hall_symbol(symbol: &str) -> Result<SpaceGroup, SpaceGroupLookupError> {
+    let requested = normalize_hall_expression(symbol);
+    if requested.is_empty() {
+        return Err(unknown_symbol(symbol));
+    }
+    let hall_symbol = HallSymbol::new(&requested).ok_or_else(|| unknown_symbol(symbol))?;
+    let coset = hall_symbol.traverse();
+    let mut operations = Vec::with_capacity(coset.len() * hall_symbol.centering.order());
+    for lattice_point in hall_symbol.centering.lattice_points() {
+        for operation in &coset {
+            let translation =
+                (lattice_point + operation.translation).map(|value| value.rem_euclid(1.0));
+            operations.push(Operation::new(operation.rotation, translation));
+        }
+    }
+    exact_space_group_from_moyo_operations(&operations)
+}
+
 /// Resolve a Hermann--Mauguin, full-setting, or Hall symbol.
 ///
 /// Short Hermann--Mauguin symbols select the conventional standard setting.
@@ -188,6 +220,19 @@ fn info_from_hall_number(hall_number: i32) -> Result<SpaceGroupInfo, SpaceGroupL
     let operations =
         operations_from_number(entry.number, Setting::HallNumber(entry.hall_number), false)
             .map_err(|_| SpaceGroupLookupError::InvalidDatabaseEntry)?;
+    let space_group = exact_space_group_from_moyo_operations(&operations)?;
+    Ok(SpaceGroupInfo {
+        number: entry.number,
+        hm_symbol: entry.hm_short.replace('_', ""),
+        hall_symbol: entry.hall_symbol.replace('=', "\""),
+        setting: entry.setting.to_owned(),
+        space_group,
+    })
+}
+
+fn exact_space_group_from_moyo_operations(
+    operations: &[Operation],
+) -> Result<SpaceGroup, SpaceGroupLookupError> {
     let operations = operations
         .iter()
         .map(|operation| {
@@ -203,14 +248,7 @@ fn info_from_hall_number(hall_number: i32) -> Result<SpaceGroupInfo, SpaceGroupL
             SymmetryOperation::new(rotation, translation).map_err(SpaceGroupLookupError::Symmetry)
         })
         .collect::<Result<Vec<_>, _>>()?;
-    let space_group = SpaceGroup::new(operations).map_err(SpaceGroupLookupError::Symmetry)?;
-    Ok(SpaceGroupInfo {
-        number: entry.number,
-        hm_symbol: entry.hm_short.replace('_', ""),
-        hall_symbol: entry.hall_symbol.replace('=', "\""),
-        setting: entry.setting.to_owned(),
-        space_group,
-    })
+    SpaceGroup::new(operations).map_err(SpaceGroupLookupError::Symmetry)
 }
 
 fn rational_from_database_translation(value: f64) -> Result<Rational, SpaceGroupLookupError> {
@@ -233,6 +271,18 @@ fn symbol_key(value: &str) -> String {
         // conventional CIF files use `"`.
         .map(|character| if character == '"' { '=' } else { character })
         .flat_map(char::to_lowercase)
+        .collect()
+}
+
+fn normalize_hall_expression(value: &str) -> String {
+    value
+        .trim()
+        .chars()
+        .map(|character| match character {
+            '"' => '=',
+            '_' => ' ',
+            other => other,
+        })
         .collect()
 }
 

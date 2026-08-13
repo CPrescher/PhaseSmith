@@ -3,7 +3,7 @@
 use phasesmith_crystallography::CrystalSystem;
 use phasesmith_io::{
     SPACE_GROUP_DATABASE_PROVENANCE, SpaceGroupLookupError, space_group_by_hall_symbol,
-    space_group_by_number, space_group_by_symbol,
+    space_group_by_number, space_group_by_symbol, space_group_from_hall_symbol,
 };
 
 #[test]
@@ -76,6 +76,32 @@ fn hall_symbols_and_invalid_inputs_are_explicit() {
     );
     assert!(matches!(
         space_group_by_symbol("not a space group"),
+        Err(SpaceGroupLookupError::UnknownSymbol { .. })
+    ));
+}
+
+#[test]
+fn general_hall_parser_accepts_equivalent_noncanonical_expressions() {
+    let canonical = space_group_from_hall_symbol("A 2 -2ab").unwrap();
+    let redundant = space_group_from_hall_symbol("A 2 -2ac").unwrap();
+    assert_eq!(redundant, canonical);
+    assert_eq!(redundant.operations().len(), 8);
+    assert_eq!(
+        redundant,
+        space_group_by_number(41).unwrap().space_group,
+        "the redundant SHELX-era Hall spelling must retain exact No. 41 symmetry"
+    );
+
+    let shifted = space_group_from_hall_symbol("P 2y (3 0 0)").unwrap();
+    assert_eq!(shifted.operations().len(), 2);
+    assert_ne!(
+        shifted,
+        space_group_from_hall_symbol("P 2y").unwrap(),
+        "an explicit Hall origin shift must remain observable"
+    );
+
+    assert!(matches!(
+        space_group_from_hall_symbol("F m 3 m"),
         Err(SpaceGroupLookupError::UnknownSymbol { .. })
     ));
 }

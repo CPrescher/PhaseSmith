@@ -1,0 +1,275 @@
+{
+  "schema_version": 1,
+  "scope": "Public APIs from already-constructed in-memory structures through reciprocal reflection generation, X-ray structure factors, Bragg-Brentano LP correction, and stick output; excludes CIF parsing, sampled profiles, and derivatives.",
+  "python": "3.13.5",
+  "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O",
+  "packages": {
+    "phasesmith": "0.3.0",
+    "xrd-rust": "0.3.5",
+    "pymatgen": "2026.5.4",
+    "numpy": "2.5.2"
+  },
+  "phasesmith_build_mode": "release",
+  "wavelength_angstrom": 0.71073,
+  "two_theta_range_deg": [
+    2.0,
+    60.0
+  ],
+  "phasesmith_threads": 2,
+  "xrd_rust_threads": 8,
+  "warmups": 2,
+  "cases": [
+    {
+      "name": "small",
+      "atoms": 8,
+      "cell": [
+        10.0,
+        11.0,
+        12.0,
+        88.0,
+        91.0,
+        94.0
+      ],
+      "repetitions": 9,
+      "numerical": {
+        "xrd_rust_peak_count": 7631,
+        "phasesmith_family_count": 7673,
+        "matched_xrd_rust_peaks": 7631,
+        "max_position_error_deg": 4.263256414560601e-14,
+        "normalized_intensity_correlation": 0.9999991973899696
+      },
+      "timing": {
+        "phasesmith_serial": {
+          "min_ms": 5.206,
+          "median_ms": 5.35975,
+          "p95_ms": 5.411625,
+          "timings_ms": [
+            5.411625,
+            5.375,
+            5.380375,
+            5.313,
+            5.206,
+            5.301584,
+            5.300125,
+            5.381792,
+            5.35975
+          ]
+        },
+        "phasesmith_2_thread": {
+          "min_ms": 4.824,
+          "median_ms": 4.8625,
+          "p95_ms": 5.075,
+          "timings_ms": [
+            4.8625,
+            5.075,
+            4.906584,
+            4.839,
+            4.836167,
+            5.054458,
+            4.866041,
+            4.859084,
+            4.824
+          ]
+        },
+        "xrd_rust_serial_simd": {
+          "min_ms": 24.398458,
+          "median_ms": 24.658541,
+          "p95_ms": 25.242167,
+          "timings_ms": [
+            25.142167,
+            25.105208,
+            25.218792,
+            24.48425,
+            24.658541,
+            25.242167,
+            24.4375,
+            24.542083,
+            24.398458
+          ]
+        },
+        "xrd_rust_8_thread_simd": {
+          "min_ms": 19.218583,
+          "median_ms": 19.602208,
+          "p95_ms": 19.964667,
+          "timings_ms": [
+            19.869042,
+            19.857083,
+            19.380791,
+            19.218583,
+            19.964667,
+            19.367208,
+            19.385792,
+            19.623292,
+            19.602208
+          ]
+        }
+      },
+      "ratios": {
+        "phasesmith_parallel_speedup": 1.102262210796915,
+        "xrd_rust_parallel_speedup": 1.2579471149372559,
+        "xrd_rust_serial_over_phasesmith_serial": 4.600688651522925,
+        "xrd_rust_parallel_over_phasesmith_parallel": 4.0313024164524425
+      }
+    },
+    {
+      "name": "medium",
+      "atoms": 64,
+      "cell": [
+        18.0,
+        19.0,
+        20.0,
+        88.0,
+        91.0,
+        94.0
+      ],
+      "repetitions": 7,
+      "numerical": {
+        "xrd_rust_peak_count": 39216,
+        "phasesmith_family_count": 39790,
+        "matched_xrd_rust_peaks": 39216,
+        "max_position_error_deg": 3.552713678800501e-14,
+        "normalized_intensity_correlation": 0.9999885276324265
+      },
+      "timing": {
+        "phasesmith_serial": {
+          "min_ms": 62.728625,
+          "median_ms": 63.167083,
+          "p95_ms": 64.738916,
+          "timings_ms": [
+            64.738916,
+            63.148334,
+            63.949417,
+            63.92325,
+            62.728625,
+            63.1525,
+            63.167083
+          ]
+        },
+        "phasesmith_2_thread": {
+          "min_ms": 50.501959,
+          "median_ms": 51.427583,
+          "p95_ms": 51.741459,
+          "timings_ms": [
+            51.741459,
+            50.805709,
+            51.427583,
+            51.565667,
+            50.501959,
+            50.806,
+            51.61
+          ]
+        },
+        "xrd_rust_serial_simd": {
+          "min_ms": 333.774,
+          "median_ms": 335.341833,
+          "p95_ms": 338.499125,
+          "timings_ms": [
+            335.341833,
+            334.4015,
+            338.499125,
+            336.064625,
+            333.774,
+            335.999542,
+            334.573084
+          ]
+        },
+        "xrd_rust_8_thread_simd": {
+          "min_ms": 140.55625,
+          "median_ms": 142.350875,
+          "p95_ms": 145.633125,
+          "timings_ms": [
+            140.55625,
+            141.052417,
+            145.369458,
+            145.633125,
+            142.350875,
+            141.690208,
+            143.51975
+          ]
+        }
+      },
+      "ratios": {
+        "phasesmith_parallel_speedup": 1.2282724428250886,
+        "xrd_rust_parallel_speedup": 2.3557412836415654,
+        "xrd_rust_serial_over_phasesmith_serial": 5.308806692878314,
+        "xrd_rust_parallel_over_phasesmith_parallel": 2.7679868797256133
+      }
+    },
+    {
+      "name": "large",
+      "atoms": 256,
+      "cell": [
+        26.0,
+        27.0,
+        28.0,
+        88.0,
+        91.0,
+        94.0
+      ],
+      "repetitions": 5,
+      "numerical": {
+        "xrd_rust_peak_count": 110406,
+        "phasesmith_family_count": 114320,
+        "matched_xrd_rust_peaks": 110406,
+        "max_position_error_deg": 4.263256414560601e-14,
+        "normalized_intensity_correlation": 0.9997992728631997
+      },
+      "timing": {
+        "phasesmith_serial": {
+          "min_ms": 511.902167,
+          "median_ms": 512.380458,
+          "p95_ms": 535.582417,
+          "timings_ms": [
+            535.582417,
+            512.380458,
+            512.184333,
+            515.228958,
+            511.902167
+          ]
+        },
+        "phasesmith_2_thread": {
+          "min_ms": 383.311542,
+          "median_ms": 388.279,
+          "p95_ms": 395.676375,
+          "timings_ms": [
+            385.249042,
+            388.279,
+            390.8105,
+            395.676375,
+            383.311542
+          ]
+        },
+        "xrd_rust_serial_simd": {
+          "min_ms": 2888.542667,
+          "median_ms": 2902.616375,
+          "p95_ms": 2928.520583,
+          "timings_ms": [
+            2928.520583,
+            2898.851166,
+            2888.542667,
+            2902.616375,
+            2903.821583
+          ]
+        },
+        "xrd_rust_8_thread_simd": {
+          "min_ms": 735.937583,
+          "median_ms": 749.4865,
+          "p95_ms": 836.754667,
+          "timings_ms": [
+            735.937583,
+            756.922958,
+            743.098334,
+            749.4865,
+            836.754667
+          ]
+        }
+      },
+      "ratios": {
+        "phasesmith_parallel_speedup": 1.3196192892224405,
+        "xrd_rust_parallel_speedup": 3.8728067483537063,
+        "xrd_rust_serial_over_phasesmith_serial": 5.664963075153034,
+        "xrd_rust_parallel_over_phasesmith_parallel": 1.9302782277692072
+      }
+    }
+  ]
+}

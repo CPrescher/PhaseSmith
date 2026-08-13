@@ -427,11 +427,122 @@ def test_practical_workflow_benchmark_covers_xray_and_neutron() -> None:
         assert phases[0].physics.providers[2].descriptor.provider_id == "phasesmith.march-dollase"
 
 
+def test_sodium_citrate_silicon_comparison_gates_orientation_subset() -> None:
+    benchmark = load_script(
+        "benchmarks/compare_gsasii_iucr_sodium_citrate_silicon.py",
+        "sodium_citrate_silicon_gate_test",
+    )
+    native = {
+        "sample_count": 4452,
+        "poisson_rwp": 0.1818,
+        "profile_correlation": 0.9559,
+        "weight_fractions": {
+            "sodium_dihydrogen_citrate": 0.7783,
+            "silicon": 0.2217,
+        },
+        "refined_march_ratio": 0.6385,
+        "silicon_calibration_poisson_rwp": 0.1217,
+        "calibrated_sample_displacement_mm": -0.1398,
+    }
+    oracle = {
+        "sample_count": 4452,
+        "poisson_rwp": 0.1895,
+        "profile_correlation": 0.9500,
+        "weight_fractions": {
+            "sodium_dihydrogen_citrate": 0.7835,
+            "silicon": 0.2165,
+        },
+        "refined_hap": {"sodium_dihydrogen_citrate": {"Pref.Ori.": ["MD", 0.6324]}},
+        "silicon_calibration": {
+            "poisson_rwp": 0.1203,
+            "calibrated_sample_displacement_mm": -0.2010,
+        },
+    }
+
+    result = benchmark.comparison_checks(native, oracle)
+
+    assert result["status"] == "passed"
+    assert all(check["passed"] for check in result["checks"].values())
+    changed = json.loads(json.dumps(oracle))
+    changed["refined_hap"]["sodium_dihydrogen_citrate"]["Pref.Ori."][1] = 0.60
+    assert benchmark.comparison_checks(native, changed)["status"] == "failed"
+
+
+def test_tripotassium_citrate_comparison_gates_expected_transfer_failure() -> None:
+    benchmark = load_script(
+        "benchmarks/compare_gsasii_iucr_tripotassium_citrate_silicon.py",
+        "tripotassium_citrate_silicon_gate_test",
+    )
+    native = {
+        "sample_count": 2696,
+        "poisson_rwp": 0.23965,
+        "profile_correlation": 0.61846,
+        "weight_fractions": {"tripotassium_citrate": 0.95550, "silicon": 0.04450},
+        "silicon_calibration_poisson_rwp": 0.19993,
+        "calibrated_sample_displacement_mm": -0.02492,
+    }
+    oracle = {
+        "sample_count": 2696,
+        "poisson_rwp": 0.23933,
+        "profile_correlation": 0.62079,
+        "weight_fractions": {"tripotassium_citrate": 0.95657, "silicon": 0.04343},
+        "silicon_calibration": {
+            "poisson_rwp": 0.20083,
+            "calibrated_sample_displacement_mm": 0.00180,
+        },
+    }
+
+    result = benchmark.comparison_checks(native, oracle)
+
+    assert result["status"] == "qualified_pass"
+    assert result["checks"]["silicon_anchor_not_transferable"]["passed"] is True
+    changed = json.loads(json.dumps(oracle))
+    changed["profile_correlation"] = 0.65
+    assert benchmark.comparison_checks(native, changed)["status"] == "failed"
+
+
+def test_trirubidium_citrate_comparison_gates_expected_transfer_failure() -> None:
+    benchmark = load_script(
+        "benchmarks/compare_gsasii_iucr_trirubidium_citrate_silicon.py",
+        "trirubidium_citrate_silicon_gate_test",
+    )
+    native = {
+        "sample_count": 4106,
+        "poisson_rwp": 0.09579,
+        "profile_correlation": 0.94732,
+        "weight_fractions": {"trirubidium_citrate": 0.97425, "silicon": 0.02575},
+        "silicon_calibration_poisson_rwp": 0.09571,
+        "calibrated_sample_displacement_mm": -0.07519,
+    }
+    oracle = {
+        "sample_count": 4106,
+        "poisson_rwp": 0.09735,
+        "profile_correlation": 0.94248,
+        "weight_fractions": {"trirubidium_citrate": 0.97452, "silicon": 0.02548},
+        "silicon_calibration": {
+            "poisson_rwp": 0.09568,
+            "calibrated_sample_displacement_mm": -0.11031,
+        },
+    }
+
+    result = benchmark.comparison_checks(native, oracle)
+
+    assert result["status"] == "qualified_pass"
+    assert result["checks"]["silicon_anchor_not_transferable"]["passed"] is True
+    changed = json.loads(json.dumps(oracle))
+    changed["profile_correlation"] = 0.96
+    assert benchmark.comparison_checks(native, changed)["status"] == "failed"
+
+
 @pytest.mark.parametrize(
     "script",
     [
+        "benchmarks/audit_citrate_source_reflections.py",
         "benchmarks/compare_gsasii.py",
         "benchmarks/compare_gsasii_iucr_silicon_standard.py",
+        "benchmarks/compare_gsasii_iucr_sodium_citrate_silicon.py",
+        "benchmarks/compare_gsasii_iucr_tripotassium_citrate_silicon.py",
+        "benchmarks/compare_gsasii_iucr_trirubidium_citrate_silicon.py",
         "benchmarks/compare_gsasii_nist_srm660c.py",
         "benchmarks/compare_gsasii_pbso4.py",
         "benchmarks/compare_gsasii_powgen_tof.py",
@@ -443,7 +554,11 @@ def test_practical_workflow_benchmark_covers_xray_and_neutron() -> None:
         "benchmarks/practical_workflow.py",
         "benchmarks/real_data.py",
         "oracle/scripts/benchmark_cw_profile.py",
+        "oracle/scripts/benchmark_citrate_axial_profile.py",
+        "oracle/scripts/benchmark_citrate_low_angle_forensics.py",
+        "oracle/scripts/benchmark_citrate_residual_forensics.py",
         "oracle/scripts/benchmark_iucr_silicon_standard.py",
+        "oracle/scripts/benchmark_iucr_sodium_citrate_silicon.py",
         "oracle/scripts/benchmark_nist_srm660c.py",
         "oracle/scripts/benchmark_pbso4.py",
         "oracle/scripts/benchmark_powgen_tof.py",
@@ -467,7 +582,11 @@ def test_benchmark_help_does_not_require_gsasii(script: str) -> None:
 def test_external_worker_does_not_import_rietveld() -> None:
     for relative_path in (
         "oracle/scripts/benchmark_cw_profile.py",
+        "oracle/scripts/benchmark_citrate_axial_profile.py",
+        "oracle/scripts/benchmark_citrate_low_angle_forensics.py",
+        "oracle/scripts/benchmark_citrate_residual_forensics.py",
         "oracle/scripts/benchmark_iucr_silicon_standard.py",
+        "oracle/scripts/benchmark_iucr_sodium_citrate_silicon.py",
         "oracle/scripts/benchmark_nist_srm660c.py",
         "oracle/scripts/benchmark_pbso4.py",
         "oracle/scripts/benchmark_powgen_tof.py",

@@ -48,7 +48,7 @@ pub use powder::{
 pub use space_groups::{
     SPACE_GROUP_DATABASE_PROVENANCE, SpaceGroupDatabaseProvenance, SpaceGroupInfo,
     SpaceGroupLookupError, space_group_by_hall_symbol, space_group_by_number,
-    space_group_by_symbol,
+    space_group_by_symbol, space_group_from_hall_symbol,
 };
 pub use tof_instrument::{
     GsasTofInstrumentData, GsasTofInstrumentIoError, GsasTofInstrumentReadLimits,

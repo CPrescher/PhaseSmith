@@ -49,6 +49,7 @@ from ..sample import (
     IsotropicMicrostrainBroadening,
     IsotropicSizeBroadening,
     MarchDollasePreferredOrientation,
+    StephensOrthorhombicBroadening,
 )
 from ..scattering import NeutronNuclear, ScatteringFactorProvider, XrayNonResonant
 from ..structural_calculation import (
@@ -240,7 +241,7 @@ def _instrument_parameter_value(experiment: ConstantWavelengthExperiment, name: 
 
 def _physics_parameter_records(
     provider: object | None,
-) -> tuple[tuple[str, float, str, Bounds], ...]:
+) -> tuple[tuple[str, float, str, Bounds, float], ...]:
     if provider is None:
         return ()
     if type(provider) is IsotropicSizeBroadening:
@@ -252,6 +253,7 @@ def _physics_parameter_records(
                 provider.crystallite_size_nm,
                 "nanometre",
                 Bounds(np.finfo(np.float64).tiny, np.inf),
+                max(abs(provider.crystallite_size_nm), 1.0),
             ),
         )
     if type(provider) is IsotropicMicrostrainBroadening:
@@ -261,6 +263,7 @@ def _physics_parameter_records(
                 provider.rms_microstrain,
                 "fraction",
                 Bounds(0.0, np.inf),
+                max(abs(provider.rms_microstrain), 1.0e-4),
             ),
         )
     if type(provider) is IsotropicLorentzianMicrostrainBroadening:
@@ -270,6 +273,7 @@ def _physics_parameter_records(
                 provider.microstrain,
                 "fraction",
                 Bounds(0.0, np.inf),
+                max(abs(provider.microstrain), 1.0e-4),
             ),
         )
     if type(provider) is MarchDollasePreferredOrientation:
@@ -279,6 +283,32 @@ def _physics_parameter_records(
                 provider.march_ratio,
                 "relative",
                 Bounds(np.finfo(np.float64).tiny, np.inf),
+                max(abs(provider.march_ratio), 1.0),
+            ),
+        )
+    if type(provider) is StephensOrthorhombicBroadening:
+        coefficients = tuple(
+            (
+                f"stephens.{name}",
+                value,
+                "angstrom^-4",
+                Bounds(-np.inf, np.inf),
+                max(abs(value), 1.0e-12),
+            )
+            for name, value in zip(
+                provider.coefficient_names,
+                provider.coefficients_angstrom_minus4,
+                strict=True,
+            )
+        )
+        return (
+            *coefficients,
+            (
+                "stephens.lorentzian_fraction",
+                provider.lorentzian_fraction,
+                "fraction",
+                Bounds(0.0, 1.0),
+                1.0,
             ),
         )
     if type(provider) is CompositePhysicsProvider:
@@ -288,12 +318,16 @@ def _physics_parameter_records(
     raise ValueError("sample-physics refinement requires built-in refinable providers")
 
 
-def _contains_march_dollase(provider: object | None) -> bool:
+def _physics_cell_prefixes(provider: object | None) -> tuple[str, ...]:
     if type(provider) is MarchDollasePreferredOrientation:
-        return True
-    return type(provider) is CompositePhysicsProvider and any(
-        _contains_march_dollase(child) for child in provider.providers
-    )
+        return ("march_dollase",)
+    if type(provider) is StephensOrthorhombicBroadening:
+        return ("stephens",)
+    if type(provider) is CompositePhysicsProvider:
+        return tuple(
+            prefix for child in provider.providers for prefix in _physics_cell_prefixes(child)
+        )
+    return ()
 
 
 def _domain_parameter_values(
@@ -322,7 +356,7 @@ def _domain_parameter_values(
         elif key.module == "sample" and key.owner_id in phase_by_id:
             records = {
                 name: value
-                for name, value, _unit, _bounds in _physics_parameter_records(
+                for name, value, _unit, _bounds, _scale in _physics_parameter_records(
                     phase_by_id[key.owner_id].physics
                 )
             }
@@ -447,14 +481,14 @@ def build_parameter_set(
         )
     for phase, domain in zip(phases, lattice_domains, strict=True):
         if selection.sample_physics:
-            for name, value, unit, bounds in _physics_parameter_records(phase.physics):
+            for name, value, unit, bounds, scale in _physics_parameter_records(phase.physics):
                 specs.append(
                     ParameterSpec(
                         sample_parameter_key(phase.phase_id, name),
                         value,
                         unit,
                         bounds,
-                        max(abs(value), 1.0e-4),
+                        scale,
                     )
                 )
         if selection.phase_scale:
@@ -1361,7 +1395,8 @@ def _global_parameter_rows(
             for key in parameters.keys
             if key.module == "sample" and key.owner_id == phase.phase_id
         )
-        if domain is not None and _contains_march_dollase(phase.physics):
+        cell_prefixes = _physics_cell_prefixes(phase.physics)
+        if domain is not None and cell_prefixes:
             lattice_values = domain.parameterization.values_from_cell(phase.structure.cell)
             lattice_jacobian = domain.parameterization.cell_parameter_jacobian(lattice_values)
             for key in parameters.keys:
@@ -1371,9 +1406,10 @@ def _global_parameter_rows(
                 rows.extend(
                     (
                         row_for_key[key],
-                        f"march_dollase.cell.{cell_name}",
+                        f"{prefix}.cell.{cell_name}",
                         float(lattice_jacobian[cell_row, column]),
                     )
+                    for prefix in cell_prefixes
                     for cell_row, cell_name in enumerate(
                         (
                             "a_angstrom",
@@ -1875,6 +1911,25 @@ def _replace_physics_parameters(
                     provider.march_ratio,
                 ),
                 reciprocal_metric=ReciprocalMetric(structure.cell.geometry().reciprocal_metric),
+            )
+        if type(provider) is StephensOrthorhombicBroadening:
+            return replace(
+                provider,
+                coefficients_angstrom_minus4=tuple(
+                    values.get(
+                        sample_parameter_key(phase.phase_id, f"stephens.{name}"),
+                        value,
+                    )
+                    for name, value in zip(
+                        provider.coefficient_names,
+                        provider.coefficients_angstrom_minus4,
+                        strict=True,
+                    )
+                ),
+                lorentzian_fraction=values.get(
+                    sample_parameter_key(phase.phase_id, "stephens.lorentzian_fraction"),
+                    provider.lorentzian_fraction,
+                ),
             )
         if type(provider) is CompositePhysicsProvider:
             return replace(provider, providers=tuple(update(child) for child in provider.providers))
@@ -2429,6 +2484,16 @@ def _native_physics_records(provider: object | None) -> list[tuple[str, list[flo
             (
                 "march_dollase",
                 [float(provider.march_ratio), *map(float, provider.preferred_axis_hkl)],
+            )
+        ]
+    if type(provider) is StephensOrthorhombicBroadening:
+        return [
+            (
+                "stephens_orthorhombic",
+                [
+                    *map(float, provider.coefficients_angstrom_minus4),
+                    float(provider.lorentzian_fraction),
+                ],
             )
         ]
     if type(provider) is CompositePhysicsProvider:

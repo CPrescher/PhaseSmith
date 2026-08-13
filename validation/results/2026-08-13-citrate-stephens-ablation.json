@@ -1,0 +1,99 @@
+{
+  "protocol": {
+    "coefficient_shape": "fixed to the six deposited orthorhombic GSAS coefficient ratios",
+    "lorentzian_fraction": "fixed to the deposited phase value",
+    "refined_nonlinear_terms": "one common Stephens amplitude and, where stated, finite coherent-domain size",
+    "fixed_terms": "instrument, wavelength doublet, FCJ geometry, zero/displacement, cells, structures, and silicon widths",
+    "linear_terms": "both phase scales and one residual-background constant",
+    "starts": 3,
+    "acceptance": "full free Jacobian rank, Rwp spread <= 5e-5, no inactive width boundary, and sample-linear correlation < 0.98",
+    "delta_reference": "source_fixed within each case"
+  },
+  "cases": {
+    "tripotassium": {
+      "deposited_poisson_rwp": 0.048528752652532176,
+      "isotropic_base_poisson_rwp": 0.23964816641369163,
+      "source_coefficients_gsasii": [0.46, 0.026, 0.049, 0.057, 0.012, 0.026],
+      "source_lorentzian_fraction": 0.9,
+      "models": {
+        "source_fixed": {
+          "poisson_rwp": 0.23925011606437574,
+          "profile_correlation": 0.6202027904451295,
+          "silicon_weight_fraction": 0.04413687716405848,
+          "identifiable": true
+        },
+        "source_shape_scale": {
+          "poisson_rwp": 0.23595399406914935,
+          "source_shape_multiplier": 94.40886148539431,
+          "repeat_rwp_spread": 5.959319275020136e-05,
+          "jacobian_rank": 4,
+          "free_parameter_count": 4,
+          "maximum_sample_linear_correlation": 0.6077319146835123,
+          "identifiable": false
+        },
+        "size_source_fixed": {
+          "poisson_rwp": 0.20737251192189188,
+          "crystallite_size_nm": 90.57429145255153,
+          "repeat_rwp_spread": 4.998796335198286e-07,
+          "jacobian_rank": 4,
+          "free_parameter_count": 4,
+          "maximum_sample_linear_correlation": 0.48730889130387656,
+          "silicon_weight_fraction": 0.020455102804716175,
+          "identifiable": true
+        },
+        "size_source_shape_scale": {
+          "poisson_rwp": 0.20741382823197418,
+          "crystallite_size_nm": 99.69765811103865,
+          "source_shape_multiplier": 91.40940301848461,
+          "repeat_rwp_spread": 0.050109637168939736,
+          "jacobian_rank": 5,
+          "free_parameter_count": 5,
+          "identifiable": false
+        }
+      }
+    },
+    "trirubidium": {
+      "deposited_poisson_rwp": 0.024583376646074934,
+      "isotropic_base_poisson_rwp": 0.09579381402613027,
+      "source_coefficients_gsasii": [0.11, 0.012, 0.0084, 0.017, 0.02, 0.012],
+      "source_lorentzian_fraction": 0.3652,
+      "models": {
+        "source_fixed": {
+          "poisson_rwp": 0.09571105748826005,
+          "profile_correlation": 0.9474216855286153,
+          "silicon_weight_fraction": 0.025721178156673345,
+          "identifiable": true
+        },
+        "source_shape_scale": {
+          "poisson_rwp": 0.09415820347057749,
+          "source_shape_multiplier": 382.0720212795518,
+          "repeat_rwp_spread": 8.365292172712868e-06,
+          "jacobian_rank": 4,
+          "free_parameter_count": 4,
+          "maximum_sample_linear_correlation": 0.4452022450951084,
+          "identifiable": true
+        },
+        "size_source_fixed": {
+          "poisson_rwp": 0.08181232443578092,
+          "crystallite_size_nm": 189.2551693611108,
+          "repeat_rwp_spread": 0.0008583701849007586,
+          "jacobian_rank": 4,
+          "free_parameter_count": 4,
+          "maximum_sample_linear_correlation": 0.4131758157841077,
+          "silicon_weight_fraction": 0.017985446709149623,
+          "identifiable": false
+        },
+        "size_source_shape_scale": {
+          "poisson_rwp": 0.08579546975607913,
+          "crystallite_size_nm": 492.56922730877807,
+          "source_shape_multiplier": 382.06248325446063,
+          "repeat_rwp_spread": 0.08032991510142257,
+          "jacobian_rank": 5,
+          "free_parameter_count": 5,
+          "identifiable": false
+        }
+      }
+    }
+  },
+  "conclusion": "Deposited Stephens widths are real but tiny under the translated physical convention. After correcting rubidium LX and source displacement, fixed Stephens changes Rwp only from 0.095794 to 0.095711. A free common amplitude still requires 382x the deposited value to reach 0.094158. Rubidium size plus fixed Stephens no longer passes repeatability, proving the earlier 56.26 nm result was compensating for the omitted legacy translation. Potassium conclusions are unchanged. Stephens does not explain the remaining target gap."
+}

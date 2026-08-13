@@ -523,10 +523,15 @@ fn append_sample_physics_columns(
     for (phase_index, phase) in input.phases.iter().enumerate() {
         let (_, names) =
             phase.resolved_sample_physics(input.instrument, input.position_correction)?;
-        if !names
-            .iter()
-            .any(|name| name.starts_with("march_dollase.cell."))
-        {
+        let cell_prefixes = ["march_dollase", "stephens"]
+            .into_iter()
+            .filter(|prefix| {
+                names
+                    .iter()
+                    .any(|name| name.starts_with(&format!("{prefix}.cell.")))
+            })
+            .collect::<Vec<_>>();
+        if cell_prefixes.is_empty() {
             continue;
         }
         let parameterization = LatticeParameterization::new(
@@ -547,25 +552,27 @@ fn append_sample_physics_columns(
                 .iter()
                 .position(|name| name == spec.key().name())
                 .ok_or(RietveldGeneralObjectiveError::GlobalDerivativeShape)?;
-            for (cell_row, name) in [
-                "a_angstrom",
-                "b_angstrom",
-                "c_angstrom",
-                "alpha_deg",
-                "beta_deg",
-                "gamma_deg",
-            ]
-            .iter()
-            .enumerate()
-            {
-                let coefficient = jacobian[cell_row * columns + column];
-                if coefficient != 0.0 {
-                    terms.push((
-                        phase_index,
-                        format!("march_dollase.cell.{name}"),
-                        parameter_index,
-                        coefficient,
-                    ));
+            for prefix in &cell_prefixes {
+                for (cell_row, name) in [
+                    "a_angstrom",
+                    "b_angstrom",
+                    "c_angstrom",
+                    "alpha_deg",
+                    "beta_deg",
+                    "gamma_deg",
+                ]
+                .iter()
+                .enumerate()
+                {
+                    let coefficient = jacobian[cell_row * columns + column];
+                    if coefficient != 0.0 {
+                        terms.push((
+                            phase_index,
+                            format!("{prefix}.cell.{name}"),
+                            parameter_index,
+                            coefficient,
+                        ));
+                    }
                 }
             }
         }

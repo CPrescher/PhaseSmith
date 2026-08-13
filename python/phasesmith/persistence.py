@@ -97,6 +97,7 @@ from .sample import (
     IsotropicMicrostrainBroadening,
     IsotropicSizeBroadening,
     MarchDollasePreferredOrientation,
+    StephensOrthorhombicBroadening,
 )
 from .scattering import NeutronNuclear, XrayFixedDispersion, XrayNonResonant
 from .structure import CrystalStructure, structure_from_record, structure_to_record
@@ -615,6 +616,15 @@ def _provider_record(
                 "reciprocal_metric": provider.reciprocal_metric.matrix.tolist(),
             },
         }
+    if isinstance(provider, StephensOrthorhombicBroadening):
+        return {
+            "provider_id": provider.descriptor.provider_id,
+            "provider_version": provider.descriptor.provider_version,
+            "configuration": {
+                "coefficients_angstrom_minus4": list(provider.coefficients_angstrom_minus4),
+                "lorentzian_fraction": provider.lorentzian_fraction,
+            },
+        }
     if isinstance(provider, CompositePhysicsProvider):
         return {
             "provider_id": provider.descriptor.provider_id,
@@ -669,6 +679,13 @@ def _provider_from_record(
             config["march_ratio"],
             tuple(config["preferred_axis_hkl"]),
             ReciprocalMetric(config["reciprocal_metric"]),
+        )
+    if provider_id == "phasesmith.stephens-orthorhombic":
+        if provider_version != "1":
+            raise PersistenceError("unsupported phasesmith.stephens-orthorhombic provider version")
+        return StephensOrthorhombicBroadening(
+            tuple(config["coefficients_angstrom_minus4"]),
+            config["lorentzian_fraction"],
         )
     if provider_id == "phasesmith.composite":
         if provider_version != "1":
