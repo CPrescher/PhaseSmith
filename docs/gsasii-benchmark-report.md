@@ -363,6 +363,27 @@ Stephens parameters are identifiable or sufficient on the citrate patterns.
 The fixture is `oracle/fixtures/stephens_orthorhombic_v1` and its explicit
 generator is `oracle/scripts/generate_stephens_orthorhombic.py`.
 
+The corresponding real-data sufficiency test is also complete. It fixes the
+instrument, wavelength doublet, FCJ geometry, zero/displacement, cells,
+structures, silicon widths, six deposited Stephens coefficient ratios, and
+deposited Gaussian/Lorentzian mixing fraction. With only the source Stephens
+width active, potassium changes from 23.9648% to 23.9250% Poisson Rwp and
+rubidium from 18.2645% to 18.2586%. Those changes are far too small to explain
+the deposited 4.8529% and 2.4583% curves.
+
+Allowing one common multiplier of the deposited Stephens shape reaches only
+23.5954% for potassium and 18.1454% for rubidium while requiring 94.4 and
+382.1 times the deposited amplitudes; the potassium result also misses the
+three-start repeatability gate. Adding the fixed deposited Stephens term to
+finite coherent-domain size gives 90.57/56.26 nm and 20.7373%/14.8233% Rwp,
+which reproduces the earlier size-only result to practical precision. Joint
+size/amplitude refinement is not repeatable for either pattern. Thus the
+implementation and GSAS-II convention are verified, but Stephens broadening is
+not the missing mechanism that closes these citrate targets under the fixed
+nuisance model. The reviewed record is
+`validation/results/2026-08-13-citrate-stephens-ablation.json`; rerun it with
+`oracle/scripts/benchmark_citrate_stephens.py`.
+
 ## Recommended priorities
 
 1. **Unify campaign execution — complete.**

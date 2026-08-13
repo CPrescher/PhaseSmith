@@ -1374,12 +1374,19 @@ mixing, position, and cell derivatives; native and scripting persistence and
 Rietveld parameter rows are wired, and centered-difference plus realistic
 multi-peak benchmark coverage is present. The provider rejects nonorthorhombic
 cells and any materially negative active-reflection variance, so this slice
-does not overclaim other Laue classes. The remaining acceptance work is the
-pinned GSAS-II convention adapter/black-box comparison and the controlled
-potassium/rubidium citrate refinement with identifiability diagnostics. The
-oracle comparison is now complete: all 395 reflection widths agree at roughly
+does not overclaim other Laue classes. The pinned GSAS-II oracle and real-data
+sufficiency checks are now complete. All 395 reflection widths agree at roughly
 machine precision and three complete profile probes agree within 2.40e-6 of
-peak height. Only the real-data sufficiency/identifiability checkpoint remains.
+peak height. On the citrate holdouts, fixed deposited Stephens widths improve
+Poisson Rwp by only 0.040 percentage points for potassium and 0.006 for
+rubidium. Adding them to finite size reproduces the size-only solutions
+(90.57/56.26 nm and 20.737%/14.823% Rwp), while joint size/amplitude refinement
+is not repeatable. Stephens is therefore implemented and convention-verified
+but falsified as the sole explanation for the deposited 4.853%/2.458% targets
+under the fixed nuisance model. Remaining candidate gaps are source-specific
+texture, roughness, legacy profile/shift semantics, or other conversion
+fidelity; other Laue classes remain separate extensions rather than
+prerequisites for this conclusion.
 
 ## Quality bar
 

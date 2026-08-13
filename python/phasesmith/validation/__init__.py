@@ -6,6 +6,11 @@ from .citrate_broadening_ablation import (
     CitrateBroadeningModelResult,
     run_citrate_isotropic_broadening_ablation,
 )
+from .citrate_stephens_ablation import (
+    CitrateStephensAblationResult,
+    CitrateStephensModelResult,
+    run_citrate_stephens_ablation,
+)
 from .datasets import (
     VALIDATION_DATASETS,
     ExternalValidationFile,
@@ -76,6 +81,8 @@ __all__ = [
     "BathLtlResult",
     "CitrateBroadeningAblationResult",
     "CitrateBroadeningModelResult",
+    "CitrateStephensAblationResult",
+    "CitrateStephensModelResult",
     "ExternalValidationFile",
     "IucrSiliconStandardResult",
     "IucrSodiumCitrateSiliconResult",
@@ -96,6 +103,7 @@ __all__ = [
     "read_nist_srm660c_specimen",
     "run_bath_ltl_workflow",
     "run_citrate_isotropic_broadening_ablation",
+    "run_citrate_stephens_ablation",
     "run_echidna_lab6_validation",
     "run_iucr_silicon_standard_workflow",
     "run_iucr_sodium_citrate_silicon_workflow",

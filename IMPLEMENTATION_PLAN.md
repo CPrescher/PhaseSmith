@@ -1764,6 +1764,15 @@ included. The explicit pinned-GSAS-II stored-value translation is now isolated
 in the oracle adapter and verified on 395 reflection widths plus three full
 profiles at revision `c0bc79b259cdf0065480b5fbd57674ddf12c4a23`; width errors
 are at machine precision and normalized profile error is at most 2.40e-6.
-Next: run the fixed-nuisance citrate Stephens ablation. Other Laue-class
-reductions remain separate follow-up slices rather than silently sharing the
-orthorhombic basis.
+The fixed-nuisance citrate Stephens ablation is complete. Deposited Stephens
+widths barely change either common-model residual, and their composition with
+finite size reproduces the earlier size-only results. A free common amplitude
+requires 94x/382x the source values for only small improvement; the potassium
+fit and both joint size/amplitude fits fail the declared repeatability gate.
+The Stephens slice therefore exits with kernel, derivative, persistence,
+oracle-convention, and real-data sufficiency evidence, including the negative
+scientific result that it does not close the citrate targets. Next, diagnose
+the remaining source-specific semantics (texture, roughness, legacy profile or
+shift records, and conversion fidelity) before adding another production term.
+Other Laue-class reductions remain separate follow-up slices rather than
+silently sharing the orthorhombic basis.
