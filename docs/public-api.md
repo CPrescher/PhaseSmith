@@ -367,6 +367,14 @@ not configure module-global pools. A fused generic pattern is currently one
 Python-visible task and therefore remains serial at this layer until its native
 kernel receives the remaining budget.
 
+The lower-level `calculate_structure_factor_values` entry point also accepts
+an `ExecutionPolicy`. Its default is the bounded two-thread policy; an explicit
+policy should be reused across repeated calls so the native worker pool is
+retained. Reflection chunks are accumulated independently and returned in the
+original order, so results are bitwise identical across supported worker
+counts. Select one thread when the host application already owns outer
+parallelism.
+
 An external program should need only to provide contiguous `x`, observed
 intensity, optional uncertainty/mask arrays, and typed instrument/phase data.
 It receives NumPy calculated arrays and plain diagnostic records. An adapter

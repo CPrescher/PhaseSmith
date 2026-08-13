@@ -53,6 +53,15 @@ For shared refinement controls, cancellation, logs, and safe checkpoints, see
 - [Public Python architecture](public-api.md)
 - [Native Rust API and GUI integration](rust-api.md)
 
+## Validation and performance
+
+- [PhaseSmith versus XRD-Rust](xrd-rust-performance.md) — reproducible public
+  stick-pattern timings, numerical checks, and retained raw results.
+- [PhaseSmith versus GSAS-II](gsasii-performance.md) — pinned-oracle kernel and
+  complete-workflow comparisons.
+- [Real-data benchmark report](gsasii-benchmark-report.md) — reviewed
+  scientific results and supported boundaries.
+
 ## Packages and source
 
 - [Python package on PyPI](https://pypi.org/project/phasesmith/)

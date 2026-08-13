@@ -12,6 +12,11 @@ python tools/validate_real_data.py --fetch \
   --output validation/results/local.json
 ```
 
+The reviewed public-API comparison with XRD-Rust is preserved in
+`results/2026-08-13-xrd-rust-performance.json`. Its calculation scope,
+numerical gate, interpretation, and reproduction command are documented in
+`docs/xrd-rust-performance.md`; XRD-Rust remains a benchmark-only dependency.
+
 The canonical suite uses native runners. Add `--interactive-qarr` to run QARR
 1g through the independent Python path with structured progress and cooperative
 cancellation: press `q` or Ctrl+C once to stop at the next safe batch boundary;

@@ -24,8 +24,8 @@ use phasesmith_engine::crystallography::{
     ReflectionRange, ScatteringBatch, SpaceGroup, StructureFactorBatchView,
     StructureFactorDenseResult, StructureFactorValues, SymmetryOperation, UnitCell,
     XRAY_TABLE_PROVENANCE, calculate_p1_dense, calculate_p1_intensity_vjp, calculate_p1_jvp,
-    calculate_structure_factor_dense, calculate_structure_factor_values, neutron_species_metadata,
-    xray_species_metadata,
+    calculate_structure_factor_dense, calculate_structure_factor_values_with_context,
+    neutron_species_metadata, xray_species_metadata,
 };
 use phasesmith_engine::{
     BuiltInScatteringModel, MonochromaticPositionCorrection, PreparedStructuralModel,
@@ -35,7 +35,7 @@ use phasesmith_engine::{
     StructuralPatternJvpResult, StructuralPatternResult, StructuralPatternVjpResult,
     StructuralPhaseDefinition,
 };
-use phasesmith_execution::ExecutionPolicy as NativeExecutionPolicyModel;
+use phasesmith_execution::{ExecutionContext, ExecutionPolicy as NativeExecutionPolicyModel};
 use phasesmith_io::{
     CifDiagnosticSeverity, CifIoError, CifReadLimits as NativeCifReadLimits,
     CifReadResult as NativeCifReadResult, DisplacementConvention,
@@ -507,6 +507,7 @@ impl NativePreparedReflectionGenerator {
         gamma_deg: f64,
         scale: f64,
         coordinate_tolerance: f64,
+        execution: PyRef<'_, NativeExecutionPolicy>,
     ) -> PyResult<StructureFactorValueArrays<'py>> {
         let hkl = hkl_rows(&hkl_flat)?;
         let multiplicity = multiplicity_rows(&multiplicity)?;
@@ -541,8 +542,20 @@ impl NativePreparedReflectionGenerator {
             scale,
             coordinate_tolerance,
         };
+        let execution_context = if execution.policy.worker_count(hkl.len()) == 1 {
+            ExecutionContext::serial()
+        } else {
+            execution.policy.context().clone()
+        };
         let result = py
-            .detach(|| calculate_structure_factor_values(cell, self.generator.space_group(), batch))
+            .detach(|| {
+                calculate_structure_factor_values_with_context(
+                    cell,
+                    self.generator.space_group(),
+                    batch,
+                    &execution_context,
+                )
+            })
             .map_err(|error| PyValueError::new_err(error.to_string()))?;
         Ok(structure_factor_values_to_numpy(py, result))
     }

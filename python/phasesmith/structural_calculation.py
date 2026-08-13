@@ -585,6 +585,7 @@ def _fallback_calculate(
     experiment: ConstantWavelengthExperiment,
     support_fwhm: float,
     jacobian_layout: Literal["support", "dense"],
+    execution: ExecutionPolicy,
 ) -> StructuralPatternCalculationResult:
     structural = calculate_structure_factor_values(
         phase.structure,
@@ -594,6 +595,7 @@ def _fallback_calculate(
         correction=phase.intensity_correction,
         scale=phase.scale,
         coordinate_tolerance=phase.coordinate_tolerance,
+        execution=execution,
     )
     geometry = _geometry(phase, experiment, structural.integrated_intensity)
     contribution = (
@@ -897,6 +899,7 @@ class PreparedStructuralPattern:
             self.experiment,
             self.support_fwhm,
             self.jacobian_layout,
+            self.execution,
         )
 
     def jvp(self, tangent: ArrayLike) -> StructuralPatternJvpResult:
