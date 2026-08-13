@@ -1635,7 +1635,7 @@ separate application repository.
 Development can proceed through the next numerical units, but the following
 must be decided before stabilizing the 1.0 public API. The project-license
 question was resolved on 2026-08-05 by selecting the MIT License, and version
-0.3.0 was released on 2026-08-13.
+0.4.0 was released on 2026-08-14.
 
 1. Whether direct `(H, eta)` remains public as a low-level API or is labeled
    explicitly as a primitive/reference interface.
@@ -1801,5 +1801,12 @@ not the documented sum and is rejected as a conversion rule. PhaseSmith's
 native conversion is therefore cleared. Reconstruction of the historical
 curve remains a legacy two-parameter-oracle problem, not a reason to add or
 retune production physics.
+The reviewed Unit-29 work, orthorhombic Stephens slice, Hall-expression import
+hardening, and deterministic bounded structure-factor parallelization form the
+PhaseSmith 0.4.0 release. The checked XRD-Rust comparison covers 8-, 64-, and
+256-site structures; all reference peaks match within 4.3e-14 degrees and
+normalized intensity correlation remains at least 0.999799. Further
+constant-wavelength models require new independent evidence and are not release
+blockers.
 Other Laue-class reductions remain separate follow-up slices rather than
 silently sharing the orthorhombic basis.

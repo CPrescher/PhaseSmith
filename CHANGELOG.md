@@ -6,10 +6,29 @@ development versions.
 
 ## Unreleased
 
+## 0.4.0
+
+- Add orthorhombic Stephens anisotropic microstrain broadening with explicit
+  angstrom^-4 coefficients, analytical profile/position/cell derivatives,
+  refinement and persistence support, an independent Python reference, and a
+  pinned GSAS-II convention fixture. Other Laue classes remain explicitly
+  outside this slice.
+- Parallelize value-only structure-factor accumulation through the reusable
+  bounded execution policy while preserving bitwise identity across thread
+  counts. Add a public XRD-Rust comparison over realistic small, medium, and
+  large structures; positions agree within floating-point precision and
+  normalized intensity correlation remains above 0.9997.
 - Parse general non-magnetic CIF Hall expressions through the pinned Moyo
   grammar instead of requiring an exact canonical-table spelling. Permissive
   CIF import now retains valid higher-priority symmetry while warning about an
   invalid secondary identifier, without guessing repairs for malformed symbols.
+- Add a machine-readable, checksum- and revision-gated GSAS-II benchmark
+  campaign that composes the existing real-data drivers without importing the
+  oracle into PhaseSmith or silently regenerating reviewed results.
+- Add the checksum-pinned sodium-dihydrogen-citrate/Si holdout and its
+  March--Dollase preferred-orientation common subset. PhaseSmith and pinned
+  GSAS-II pass all seven comparison gates while the richer deposited model
+  remains explicitly outside the matched contract.
 - Add the checksum-pinned anhydrous tripotassium-citrate/Si holdout, including
   exact pdCIF conversion, an independent native workflow, and a pinned GSAS-II
   comparison. The shared fixed-geometry model passes parity, while the 1.44 wt%
@@ -22,6 +41,12 @@ development versions.
 - Correct citrate validation records so `legacy_curve_poisson_rwp` is actually
   recomputed with Poisson weights rather than echoing the deposited-weight Rwp;
   regenerate all affected checked-in oracle artifacts.
+- Add controlled isotropic and orthorhombic-Stephens ablations plus low-angle
+  factorial, component, source-reflection, and source-axial audits for the
+  citrate cases. These clear the converted rubidium structure, intensities, and
+  physical FCJ geometry, reject empirical retuning of the reduced GSAS-II
+  one-parameter profile, and document why no further production broadening term
+  is justified by the remaining legacy-curve discrepancy.
 
 ## 0.3.0
 

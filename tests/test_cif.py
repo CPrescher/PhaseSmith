@@ -263,9 +263,7 @@ _space_group_symop_operation_xyz 'x,y,z'""",
     assert result.structure.space_group == phasesmith.SpaceGroup.p1()
     assert result.structure.metadata["symmetry_source"] == "explicit_operations"
     diagnostic = next(
-        item
-        for item in result.diagnostics
-        if item.code == "invalid_space_group_definition_ignored"
+        item for item in result.diagnostics if item.code == "invalid_space_group_definition_ignored"
     )
     assert diagnostic.tag == "_space_group_name_h-m_alt"
     assert "F m 3 m" in diagnostic.message

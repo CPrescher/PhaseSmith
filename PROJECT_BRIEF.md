@@ -12,13 +12,17 @@ not part of the numerical library.
 
 ## Current implementation status
 
-PhaseSmith 0.3.0 is the current released baseline. The completed library now
+PhaseSmith 0.4.0 is the current released baseline. The completed library now
 includes Python-free CW and TOF Le Bail/Rietveld workflows, public Python
 facades, native project persistence, and facility-neutral single-/multi-bank
 TOF composition with explicit calibration, correction, background-domain, and
 provenance contracts. The TOF roadmap through implementation unit 38d is
 complete; additional beamline adapters or absorption, extinction, and texture
 models are new evidence-driven scope rather than unfinished POWGEN work.
+Version 0.4.0 additionally includes orthorhombic Stephens microstrain with
+analytical derivatives, broader Hall-expression import, bounded parallel
+value-only structure factors, an XRD-Rust comparison, and the reviewed citrate
+conversion-fidelity campaign.
 
 The remainder of this section is a chronological implementation record. Terms
 such as “next slice”, “pending”, and “follow-on” describe the checkpoint at
@@ -74,7 +78,7 @@ checkpoint, the live pinned GSAS-II lattice-perturbation fixture had not yet
 been run in the working environment; equations and normal operation contain no
 GSAS-II dependency.
 
-PhaseSmith 0.3.0 was released on 2026-08-13 and is licensed under the MIT
+PhaseSmith 0.4.0 was released on 2026-08-14 and is licensed under the MIT
 License. The
 architecture and delivery gates for CIF import, the remaining native
 crystallographic calculations, and structure-factor-based Rietveld

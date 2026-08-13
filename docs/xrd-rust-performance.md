@@ -4,8 +4,8 @@ This benchmark records a direct public-API speed comparison with XRD-Rust,
 the implementation described in the 2026 IUCr Journal of Applied
 Crystallography [paper](https://journals.iucr.org/j/issues/2026/04/00/hat5023/index.html).
 The reproducible driver is `benchmarks/compare_xrd_rust.py`; the complete
-timings and provenance from the reviewed run are retained in
-[`validation/results/2026-08-13-xrd-rust-performance.json`](../validation/results/2026-08-13-xrd-rust-performance.json).
+timings and provenance from the reviewed run are retained in the source tree at
+`validation/results/2026-08-13-xrd-rust-performance.json`.
 
 ## Result
 
