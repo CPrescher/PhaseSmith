@@ -157,6 +157,18 @@ rows, PhaseSmith matches pinned Gaussian variances within `2.3e-15`
 centidegree² and Lorentzian FWHMs within `3.4e-16` centidegree. Three private
 profile probes differ by at most `2.40e-6` of the oracle peak maximum.
 
+`benchmark_citrate_residual_forensics.py` is a real-data, public-API-only
+diagnostic rather than a golden fixture generator. It evaluates all 16 on/off
+combinations of the anhydrous-rubidium legacy `LX`, `shft`, `trns`, and
+Stephens terms, refitting only two phase scales and one residual-background
+constant. Its report includes angle-resolved residuals and a Shapley partition
+of weighted-SSE improvement, eight paired transparency penalties, and an
+explicit transparency sign/scale sensitivity. Legacy `shft` and `trns` signs
+are derived from the cited GSAS profile-argument equation; the report separately
+labels the opposite legacy physical-height sign and the nonphysical effective
+absorption implied by the deposited positive `trns`. It imports no PhaseSmith
+module and emits only plain JSON.
+
 `multiphase_v1` uses the public scripting API to configure two phases with
 different HAP scales and stores public `X`, total `Ycalc`, background, and both
 complete reflection lists. A controlled private two-reflection composition
@@ -231,6 +243,17 @@ GSAS-II and NumPy, but never imports `phasesmith`. Run it with GSAS-II's Python:
 /path/to/gsas/python oracle/scripts/generate_lebail.py \
   --gsas-root /path/to/pinned/GSAS-II \
   --binary-dir /path/to/compatible/GSASII-bin/platform-directory
+```
+
+Run the rubidium residual-forensics worker on a separately converted neutral
+bundle with:
+
+```shell
+/path/to/gsas/python oracle/scripts/benchmark_citrate_residual_forensics.py \
+  --gsas-root /path/to/pinned/GSAS-II \
+  --binary-dir /path/to/compatible/GSASII-bin/platform-directory \
+  --data-directory /path/to/converted/rubidium-bundle \
+  --report /path/to/new-report.json
 ```
 
 The generator refuses to replace `data.npz` or `manifest.json`. Regeneration

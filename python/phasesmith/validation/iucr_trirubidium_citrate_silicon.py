@@ -139,7 +139,10 @@ def run_iucr_trirubidium_citrate_silicon_workflow(
         ConstantWavelengthExperiment.x_ray_components(
             instrument,
             components,
-            geometry=BraggBrentanoGeometry(float(instrument_record["goniometer_radius_mm"]), 0.0),
+            geometry=BraggBrentanoGeometry(
+                float(instrument_record["goniometer_radius_mm"]),
+                float(instrument_record["source_translated_sample_displacement_mm"]),
+            ),
             axial_geometry=FcjGeometry(
                 float(instrument_record["matched_sh_over_l"]) / 2.0,
                 float(instrument_record["matched_sh_over_l"]) / 2.0,
@@ -326,14 +329,20 @@ def run_iucr_trirubidium_citrate_silicon_workflow(
             "Zero": experiment.zero_shift_deg,
         },
         model_qualifications=(
-            "Both phases use their deposited common isotropic base profile.",
+            "Both phases use the corrected deposited common isotropic base profile, with "
+            "legacy LX mapped to the current Lorentzian size axis.",
             "Phase-specific mixing and Stephens anisotropy remain fixed out.",
             "The source declares no absorption or surface-roughness correction.",
             "The 141.5 mm goniometer radius is source-deposited rather than assumed.",
+            "The source-deposited legacy shft coefficient is analytically translated to "
+            "the current PhaseSmith/GSAS-II Bragg-Brentano displacement parameter and "
+            "applied to the full pattern; the legacy manual's physical shift variable uses "
+            "the opposite sign.",
             manifest["translation_diagnostics"]["geometry_contract"],
             manifest["translation_diagnostics"]["correction_contract"],
-            "The 2.15 wt% silicon displacement calibration is diagnostic only and is "
-            "not applied without a cross-implementation identifiability gate.",
+            "The 2.15 wt% silicon-only displacement calibration remains diagnostic; it is "
+            "compared with the independently translated source displacement rather than "
+            "used to set the full-pattern value.",
         ),
         elapsed_seconds=perf_counter() - started,
     )

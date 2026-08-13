@@ -38,9 +38,18 @@ def test_real_iucr_trirubidium_citrate_silicon_conversion_when_configured(
         "U": 0.0,
         "V": 0.0,
         "W": 5.109,
-        "X": 0.0,
-        "Y": 3.634,
+        "X": 3.634,
+        "Y": 0.0,
     }
+    assert manifest["instrument"]["source_translated_sample_displacement_mm"] == pytest.approx(
+        -0.10805049346761132
+    )
+    assert manifest["instrument"]["legacy_manual_physical_sample_shift_mm"] == pytest.approx(
+        0.10805049346761132
+    )
+    assert manifest["instrument"]["translated_gsasii_transparency_field_cm"] == pytest.approx(
+        0.6421066318087139
+    )
     assert {path.stem for path in bundle.glob("*.cif")} == set(
         IUCR_TRIRUBIDIUM_CITRATE_SILICON_PHASES
     )
@@ -74,6 +83,7 @@ def test_real_iucr_trirubidium_common_model_when_configured(tmp_path: Path) -> N
     assert 0.0 < result.poisson_rwp < 1.0
     assert result.refined_instrument["Zero"] == pytest.approx(0.0)
     assert result.refined_instrument["W"] == pytest.approx(5.109)
-    assert result.refined_instrument["Y"] == pytest.approx(3.634)
+    assert result.refined_instrument["X"] == pytest.approx(3.634)
+    assert result.refined_instrument["Y"] == pytest.approx(0.0)
     assert result.legacy_curve_poisson_rwp == pytest.approx(0.02458326145)
-    assert len(result.model_qualifications) == 7
+    assert len(result.model_qualifications) == 8

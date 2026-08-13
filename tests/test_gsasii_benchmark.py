@@ -508,20 +508,20 @@ def test_trirubidium_citrate_comparison_gates_expected_transfer_failure() -> Non
     )
     native = {
         "sample_count": 4106,
-        "poisson_rwp": 0.18265,
-        "profile_correlation": 0.63318,
-        "weight_fractions": {"trirubidium_citrate": 0.96818, "silicon": 0.03182},
-        "silicon_calibration_poisson_rwp": 0.09931,
-        "calibrated_sample_displacement_mm": -0.07469,
+        "poisson_rwp": 0.09579,
+        "profile_correlation": 0.94732,
+        "weight_fractions": {"trirubidium_citrate": 0.97425, "silicon": 0.02575},
+        "silicon_calibration_poisson_rwp": 0.09571,
+        "calibrated_sample_displacement_mm": -0.07519,
     }
     oracle = {
         "sample_count": 4106,
-        "poisson_rwp": 0.18338,
-        "profile_correlation": 0.62922,
-        "weight_fractions": {"trirubidium_citrate": 0.97074, "silicon": 0.02926},
+        "poisson_rwp": 0.09735,
+        "profile_correlation": 0.94248,
+        "weight_fractions": {"trirubidium_citrate": 0.97452, "silicon": 0.02548},
         "silicon_calibration": {
-            "poisson_rwp": 0.09919,
-            "calibrated_sample_displacement_mm": -0.10874,
+            "poisson_rwp": 0.09568,
+            "calibrated_sample_displacement_mm": -0.11031,
         },
     }
 
@@ -530,7 +530,7 @@ def test_trirubidium_citrate_comparison_gates_expected_transfer_failure() -> Non
     assert result["status"] == "qualified_pass"
     assert result["checks"]["silicon_anchor_not_transferable"]["passed"] is True
     changed = json.loads(json.dumps(oracle))
-    changed["profile_correlation"] = 0.65
+    changed["profile_correlation"] = 0.96
     assert benchmark.comparison_checks(native, changed)["status"] == "failed"
 
 
@@ -553,6 +553,7 @@ def test_trirubidium_citrate_comparison_gates_expected_transfer_failure() -> Non
         "benchmarks/practical_workflow.py",
         "benchmarks/real_data.py",
         "oracle/scripts/benchmark_cw_profile.py",
+        "oracle/scripts/benchmark_citrate_residual_forensics.py",
         "oracle/scripts/benchmark_iucr_silicon_standard.py",
         "oracle/scripts/benchmark_iucr_sodium_citrate_silicon.py",
         "oracle/scripts/benchmark_nist_srm660c.py",

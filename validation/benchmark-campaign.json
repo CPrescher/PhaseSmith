@@ -193,7 +193,7 @@
       "oracle_revision_paths": ["pinned_gsasii_revision"],
       "assertions": [
         {"path": "cross_implementation_validation.status", "equals": "qualified_pass"},
-        {"path": "scientific_status", "equals": "expected_model_and_silicon_anchor_failure"}
+        {"path": "scientific_status", "equals": "qualified_source_translation_and_remaining_model_gap"}
       ]
     }
   ]

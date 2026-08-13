@@ -215,6 +215,10 @@ def main() -> None:
         )
         if scope == "iucr_sodium_dihydrogen_citrate_silicon_holdout":
             histogram.data["Sample Parameters"]["Shift"][0] = calibrated_shift_micrometre
+        elif "source_translated_sample_displacement_mm" in instrument:
+            histogram.data["Sample Parameters"]["Shift"][0] = 1_000.0 * float(
+                instrument["source_translated_sample_displacement_mm"]
+            )
         histogram.data["Sample Parameters"]["Shift"][1] = False
         histogram.set_refinements({"Limits": [float(x[0]), float(x[-1])]})
         histogram.data["Sample Parameters"]["Scale"][1] = False

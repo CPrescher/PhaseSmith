@@ -190,7 +190,8 @@ def _prepare(
                 float(instrument_record["k_alpha2_over_k_alpha1"]),
             ),
             geometry=BraggBrentanoGeometry(
-                float(instrument_record[configuration["radius_key"]]), 0.0
+                float(instrument_record[configuration["radius_key"]]),
+                float(instrument_record.get("source_translated_sample_displacement_mm", 0.0)),
             ),
             axial_geometry=FcjGeometry(
                 float(instrument_record["matched_sh_over_l"]) / 2.0,

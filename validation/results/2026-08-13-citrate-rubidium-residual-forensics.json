@@ -1,0 +1,1136 @@
+{
+  "conclusion": "The source-translated sample displacement dominates the recoverable gap; placing legacy LX on the Lorentzian size axis is the second material term. Deposited Stephens broadening is negligible. The signed deposited trns term worsens every matched fixed-structure branch; reversing its sign improves the fit but contradicts both the deposited coefficient and its already nonphysical negative-mu_eff interpretation. The best fixed subset remains well above the deposited curve, with most residual weighted SSE below 30 degrees and a stronger width-mode than position-mode correlation.",
+  "factors": [
+    "legacy_lx_size_axis",
+    "sample_shift",
+    "transparency",
+    "stephens"
+  ],
+  "full_factorial": {
+    "base_weighted_sse": 272716.1104121339,
+    "best_fixed_subset": {
+      "enabled_factors": [
+        "legacy_lx_size_axis",
+        "sample_shift",
+        "stephens"
+      ],
+      "fraction_of_base_to_legacy_gap_closed": 0.7318607191502079,
+      "poisson_rwp": 0.0972610020936735,
+      "profile_correlation": 0.9425921326382555
+    },
+    "full_model_fraction_of_base_to_legacy_gap_closed": 0.7017827216747342,
+    "full_weighted_sse": 84767.96351763184,
+    "legacy_curve_weighted_sse": 4900.815036974743,
+    "shapley_fraction_of_total_improvement": {
+      "legacy_lx_size_axis": 0.17969556878667814,
+      "sample_shift": 0.8732039916224756,
+      "stephens": 0.0007180065685311669,
+      "transparency": -0.05361756697768503
+    },
+    "shapley_weighted_sse_improvement": {
+      "legacy_lx_size_axis": 33773.449158609685,
+      "sample_shift": 164117.0720863266,
+      "stephens": 134.94800401351313,
+      "transparency": -10077.32235444775
+    },
+    "transparency_paired_weighted_sse_penalty": {
+      "base": 12044.2934147903,
+      "legacy_lx_size_axis": 13149.574370538467,
+      "legacy_lx_size_axis+sample_shift": 8057.374292365348,
+      "legacy_lx_size_axis+sample_shift+stephens": 8055.347778187279,
+      "legacy_lx_size_axis+stephens": 13153.658397998544,
+      "sample_shift": 7105.891080673275,
+      "sample_shift+stephens": 7113.4056148448,
+      "stephens": 12049.040918019833
+    }
+  },
+  "legacy_curve": {
+    "angle_bins": [
+      {
+        "poisson_rwp": 0.02710699322050531,
+        "range_deg": [
+          17.0,
+          30.0
+        ],
+        "sample_count": 643,
+        "weighted_sse_fraction": 0.2857495830812404
+      },
+      {
+        "poisson_rwp": 0.022940579387710065,
+        "range_deg": [
+          30.0,
+          50.0
+        ],
+        "sample_count": 990,
+        "weighted_sse_fraction": 0.2380734924442621
+      },
+      {
+        "poisson_rwp": 0.02419470441371565,
+        "range_deg": [
+          50.0,
+          70.0
+        ],
+        "sample_count": 989,
+        "weighted_sse_fraction": 0.2030352440361696
+      },
+      {
+        "poisson_rwp": 0.024194778435129523,
+        "range_deg": [
+          70.0,
+          100.0
+        ],
+        "sample_count": 1484,
+        "weighted_sse_fraction": 0.273141680438328
+      }
+    ],
+    "poisson_rwp": 0.024583261453453954,
+    "profile_correlation": 0.9977005959033203,
+    "residual_mode_correlations": {
+      "angle_dependent_intensity": 0.002244134637584004,
+      "background_slope": -0.0001606674924587824,
+      "position_first_derivative": 0.007328964131324406,
+      "width_second_derivative": 0.029594823932959972
+    }
+  },
+  "oracle_boundary": {
+    "private_probe": false,
+    "public_api": [
+      "GSASIIscriptable.G2Project.add_powder_histogram/add_phase/do_refinements",
+      "GSASIIscriptable.G2Phase.getHAPentryList/setHAPentryValue",
+      "GSASIIscriptable.G2PwdrData.getdata/ComputeMassFracs"
+    ]
+  },
+  "revision": "c0bc79b259cdf0065480b5fbd57674ddf12c4a23",
+  "sample_count": 4106,
+  "schema_version": 1,
+  "scope": "iucr_trirubidium_citrate_legacy_profile_residual_forensics",
+  "source_dataset_id": "iucr-trirubidium-citrate-si-standard",
+  "translation": {
+    "formal_legacy_mu_eff": -15.573737296298535,
+    "formal_legacy_physical_sample_shift_mm": 0.10805049346761132,
+    "gsasii_sample_shift_micrometre": -108.05049346761132,
+    "gsasii_transparency_field_cm": 0.6421066318087139,
+    "legacy_lx": "profile-function-4 LX=3.634 mapped to GSAS-II X/cos(theta), not Y*tan(theta)",
+    "legacy_manual": {
+      "citation": "A. C. Larson and R. B. Von Dreele, General Structure Analysis System (GSAS), LAUR 86-748 (2004), CW profile function 2, p. 157",
+      "effective_absorption_relation": "mu_eff = -9000/(pi*R*trns)",
+      "peak_center_motion": "-shft*cos(theta)/100 - trns*sin(2theta)/100 degrees",
+      "physical_sample_shift_relation": "s = -pi*R*shft/36000",
+      "profile_argument": "delta_T_prime = (T - T_phase) + shft*cos(theta) + trns*sin(2theta)",
+      "url": "https://subversion.xray.aps.anl.gov/EXPGUI/gsas/all/GSAS%20Manual.pdf"
+    },
+    "legacy_shft_centideg": -8.7503,
+    "legacy_trns_centideg": 1.3,
+    "stephens": "source-deposited phase-specific generalized microstrain and eta",
+    "transparency_interpretation": "The GSAS-II value is a numerical position-equation translation. Because the deposited positive legacy coefficient implies negative mu_eff, it is not a physically admissible transparency measurement."
+  },
+  "transparency_sign_and_scale_sensitivity": [
+    {
+      "poisson_rwp": 0.09099945605580308,
+      "profile_correlation": 0.9557833318747653,
+      "source_multiplier": -2.0,
+      "transparency_cm": -1.2842132636174277
+    },
+    {
+      "poisson_rwp": 0.09342599502194458,
+      "profile_correlation": 0.9505134206263015,
+      "source_multiplier": -1.0,
+      "transparency_cm": -0.6421066318087139
+    },
+    {
+      "poisson_rwp": 0.09518245635282412,
+      "profile_correlation": 0.9468765403406617,
+      "source_multiplier": -0.5,
+      "transparency_cm": -0.32105331590435693
+    },
+    {
+      "poisson_rwp": 0.09962654622314739,
+      "profile_correlation": 0.9376799813121913,
+      "source_multiplier": 0.5,
+      "transparency_cm": 0.32105331590435693
+    },
+    {
+      "poisson_rwp": 0.10806577799383603,
+      "profile_correlation": 0.9194264341137416,
+      "source_multiplier": 2.0,
+      "transparency_cm": 1.2842132636174277
+    }
+  ],
+  "variants": [
+    {
+      "angle_bins": [
+        {
+          "poisson_rwp": 0.2867306797726679,
+          "range_deg": [
+            17.0,
+            30.0
+          ],
+          "sample_count": 643,
+          "weighted_sse_fraction": 0.5745512284549295
+        },
+        {
+          "poisson_rwp": 0.20852510288425685,
+          "range_deg": [
+            30.0,
+            50.0
+          ],
+          "sample_count": 990,
+          "weighted_sse_fraction": 0.3534894726596651
+        },
+        {
+          "poisson_rwp": 0.07950532629390666,
+          "range_deg": [
+            50.0,
+            70.0
+          ],
+          "sample_count": 989,
+          "weighted_sse_fraction": 0.039398597007474875
+        },
+        {
+          "poisson_rwp": 0.06231545651841477,
+          "range_deg": [
+            70.0,
+            100.0
+          ],
+          "sample_count": 1484,
+          "weighted_sse_fraction": 0.032560701877930344
+        }
+      ],
+      "case_id": "case_0000",
+      "enabled_factors": [],
+      "poisson_rwp": 0.1833837043282076,
+      "profile_correlation": 0.6292175855200286,
+      "residual_mode_correlations": {
+        "angle_dependent_intensity": -0.04103806014725473,
+        "background_slope": -0.3288427947073084,
+        "position_first_derivative": -0.3114023013394852,
+        "width_second_derivative": 0.3616701590509833
+      },
+      "sample_shift_micrometre": 0.0,
+      "sample_transparency_cm": 0.0,
+      "source_transparency_multiplier": 1.0,
+      "weight_fractions": {
+        "silicon": 0.02926206440929771,
+        "trirubidium_citrate": 0.9707379355907022
+      },
+      "weighted_sse": 272716.1104121339
+    },
+    {
+      "angle_bins": [
+        {
+          "poisson_rwp": 0.2771055819529861,
+          "range_deg": [
+            17.0,
+            30.0
+          ],
+          "sample_count": 643,
+          "weighted_sse_fraction": 0.5974467395086336
+        },
+        {
+          "poisson_rwp": 0.19415052377127873,
+          "range_deg": [
+            30.0,
+            50.0
+          ],
+          "sample_count": 990,
+          "weighted_sse_fraction": 0.34116553153179
+        },
+        {
+          "poisson_rwp": 0.07105301252112764,
+          "range_deg": [
+            50.0,
+            70.0
+          ],
+          "sample_count": 989,
+          "weighted_sse_fraction": 0.03503333792158371
+        },
+        {
+          "poisson_rwp": 0.05313262660787744,
+          "range_deg": [
+            70.0,
+            100.0
+          ],
+          "sample_count": 1484,
+          "weighted_sse_fraction": 0.02635439103799262
+        }
+      ],
+      "case_id": "case_1000",
+      "enabled_factors": [
+        "legacy_lx_size_axis"
+      ],
+      "poisson_rwp": 0.17379874342661067,
+      "profile_correlation": 0.6778573567043296,
+      "residual_mode_correlations": {
+        "angle_dependent_intensity": -0.04055565060072332,
+        "background_slope": -0.29474379244354765,
+        "position_first_derivative": -0.4481693223666681,
+        "width_second_derivative": 0.3355757351152123
+      },
+      "sample_shift_micrometre": 0.0,
+      "sample_transparency_cm": 0.0,
+      "source_transparency_multiplier": 1.0,
+      "weight_fractions": {
+        "silicon": 0.030404432374850306,
+        "trirubidium_citrate": 0.9695955676251496
+      },
+      "weighted_sse": 244952.89475128974
+    },
+    {
+      "angle_bins": [
+        {
+          "poisson_rwp": 0.1904992707792025,
+          "range_deg": [
+            17.0,
+            30.0
+          ],
+          "sample_count": 643,
+          "weighted_sse_fraction": 0.5876402110214463
+        },
+        {
+          "poisson_rwp": 0.1213094227856673,
+          "range_deg": [
+            30.0,
+            50.0
+          ],
+          "sample_count": 990,
+          "weighted_sse_fraction": 0.27720005414120197
+        },
+        {
+          "poisson_rwp": 0.07459137410040616,
+          "range_deg": [
+            50.0,
+            70.0
+          ],
+          "sample_count": 989,
+          "weighted_sse_fraction": 0.08035445605113682
+        },
+        {
+          "poisson_rwp": 0.05311141555650446,
+          "range_deg": [
+            70.0,
+            100.0
+          ],
+          "sample_count": 1484,
+          "weighted_sse_fraction": 0.05480527878621502
+        }
+      ],
+      "case_id": "case_0100",
+      "enabled_factors": [
+        "sample_shift"
+      ],
+      "poisson_rwp": 0.12047266572658268,
+      "profile_correlation": 0.902787964605655,
+      "residual_mode_correlations": {
+        "angle_dependent_intensity": -0.12903541232320673,
+        "background_slope": -0.42640248861344615,
+        "position_first_derivative": -0.14988812772126175,
+        "width_second_derivative": 0.5815280806225726
+      },
+      "sample_shift_micrometre": -108.05049346761132,
+      "sample_transparency_cm": 0.0,
+      "source_transparency_multiplier": 1.0,
+      "weight_fractions": {
+        "silicon": 0.0272766089081312,
+        "trirubidium_citrate": 0.9727233910918688
+      },
+      "weighted_sse": 117697.25990113372
+    },
+    {
+      "angle_bins": [
+        {
+          "poisson_rwp": 0.29190306155904744,
+          "range_deg": [
+            17.0,
+            30.0
+          ],
+          "sample_count": 643,
+          "weighted_sse_fraction": 0.570281026904609
+        },
+        {
+          "poisson_rwp": 0.21448822092794095,
+          "range_deg": [
+            30.0,
+            50.0
+          ],
+          "sample_count": 990,
+          "weighted_sse_fraction": 0.35817715638770453
+        },
+        {
+          "poisson_rwp": 0.0809006551796459,
+          "range_deg": [
+            50.0,
+            70.0
+          ],
+          "sample_count": 989,
+          "weighted_sse_fraction": 0.03906821596791683
+        },
+        {
+          "poisson_rwp": 0.06359142079825494,
+          "range_deg": [
+            70.0,
+            100.0
+          ],
+          "sample_count": 1484,
+          "weighted_sse_fraction": 0.03247360073976959
+        }
+      ],
+      "case_id": "case_0010",
+      "enabled_factors": [
+        "transparency"
+      ],
+      "poisson_rwp": 0.1873894532970054,
+      "profile_correlation": 0.6030185934638864,
+      "residual_mode_correlations": {
+        "angle_dependent_intensity": -0.03886343132711467,
+        "background_slope": -0.32654303977573296,
+        "position_first_derivative": -0.30288381951415777,
+        "width_second_derivative": 0.3464330703905997
+      },
+      "sample_shift_micrometre": 0.0,
+      "sample_transparency_cm": 0.6421066318087139,
+      "source_transparency_multiplier": 1.0,
+      "weight_fractions": {
+        "silicon": 0.029259658302707534,
+        "trirubidium_citrate": 0.9707403416972925
+      },
+      "weighted_sse": 284760.4038269242
+    },
+    {
+      "angle_bins": [
+        {
+          "poisson_rwp": 0.2867272825913541,
+          "range_deg": [
+            17.0,
+            30.0
+          ],
+          "sample_count": 643,
+          "weighted_sse_fraction": 0.5747231689477319
+        },
+        {
+          "poisson_rwp": 0.20847051838161126,
+          "range_deg": [
+            30.0,
+            50.0
+          ],
+          "sample_count": 990,
+          "weighted_sse_fraction": 0.3534185393894139
+        },
+        {
+          "poisson_rwp": 0.07943620582053153,
+          "range_deg": [
+            50.0,
+            70.0
+          ],
+          "sample_count": 989,
+          "weighted_sse_fraction": 0.03934282416304408
+        },
+        {
+          "poisson_rwp": 0.06226210275568508,
+          "range_deg": [
+            70.0,
+            100.0
+          ],
+          "sample_count": 1484,
+          "weighted_sse_fraction": 0.03251546749981009
+        }
+      ],
+      "case_id": "case_0001",
+      "enabled_factors": [
+        "stephens"
+      ],
+      "poisson_rwp": 0.18335409833241254,
+      "profile_correlation": 0.6293621578444025,
+      "residual_mode_correlations": {
+        "angle_dependent_intensity": -0.04088271456497929,
+        "background_slope": -0.32870846728794023,
+        "position_first_derivative": -0.3119187231391976,
+        "width_second_derivative": 0.3615295983906632
+      },
+      "sample_shift_micrometre": 0.0,
+      "sample_transparency_cm": 0.0,
+      "source_transparency_multiplier": 1.0,
+      "weight_fractions": {
+        "silicon": 0.02925593817559986,
+        "trirubidium_citrate": 0.9707440618244002
+      },
+      "weighted_sse": 272628.0613643721
+    },
+    {
+      "angle_bins": [
+        {
+          "poisson_rwp": 0.16284545091986813,
+          "range_deg": [
+            17.0,
+            30.0
+          ],
+          "sample_count": 643,
+          "weighted_sse_fraction": 0.6576646421223928
+        },
+        {
+          "poisson_rwp": 0.08317239322565467,
+          "range_deg": [
+            30.0,
+            50.0
+          ],
+          "sample_count": 990,
+          "weighted_sse_fraction": 0.19956804141368098
+        },
+        {
+          "poisson_rwp": 0.06280981181513966,
+          "range_deg": [
+            50.0,
+            70.0
+          ],
+          "sample_count": 989,
+          "weighted_sse_fraction": 0.08726017812548185
+        },
+        {
+          "poisson_rwp": 0.043190369516909785,
+          "range_deg": [
+            70.0,
+            100.0
+          ],
+          "sample_count": 1484,
+          "weighted_sse_fraction": 0.055507138338444194
+        }
+      ],
+      "case_id": "case_1100",
+      "enabled_factors": [
+        "legacy_lx_size_axis",
+        "sample_shift"
+      ],
+      "poisson_rwp": 0.09734739624166462,
+      "profile_correlation": 0.9424764760450719,
+      "residual_mode_correlations": {
+        "angle_dependent_intensity": -0.15110325979363,
+        "background_slope": -0.39647937654889115,
+        "position_first_derivative": -0.2901167133306291,
+        "width_second_derivative": 0.4679436340252779
+      },
+      "sample_shift_micrometre": -108.05049346761132,
+      "sample_transparency_cm": 0.0,
+      "source_transparency_multiplier": 1.0,
+      "weight_fractions": {
+        "silicon": 0.025481918557934868,
+        "trirubidium_citrate": 0.9745180814420651
+      },
+      "weighted_sse": 76848.95948364484
+    },
+    {
+      "angle_bins": [
+        {
+          "poisson_rwp": 0.28278910822576786,
+          "range_deg": [
+            17.0,
+            30.0
+          ],
+          "sample_count": 643,
+          "weighted_sse_fraction": 0.5905061439381325
+        },
+        {
+          "poisson_rwp": 0.20125394764915183,
+          "range_deg": [
+            30.0,
+            50.0
+          ],
+          "sample_count": 990,
+          "weighted_sse_fraction": 0.34791026849326134
+        },
+        {
+          "poisson_rwp": 0.07299251985240364,
+          "range_deg": [
+            50.0,
+            70.0
+          ],
+          "sample_count": 989,
+          "weighted_sse_fraction": 0.03508840737265535
+        },
+        {
+          "poisson_rwp": 0.05468560526445684,
+          "range_deg": [
+            70.0,
+            100.0
+          ],
+          "sample_count": 1484,
+          "weighted_sse_fraction": 0.026495180195950842
+        }
+      ],
+      "case_id": "case_1010",
+      "enabled_factors": [
+        "legacy_lx_size_axis",
+        "transparency"
+      ],
+      "poisson_rwp": 0.17840270035402667,
+      "profile_correlation": 0.6522634848111859,
+      "residual_mode_correlations": {
+        "angle_dependent_intensity": -0.038617245808876786,
+        "background_slope": -0.2938709534559632,
+        "position_first_derivative": -0.4347763922640956,
+        "width_second_derivative": 0.32672922685691264
+      },
+      "sample_shift_micrometre": 0.0,
+      "sample_transparency_cm": 0.6421066318087139,
+      "source_transparency_multiplier": 1.0,
+      "weight_fractions": {
+        "silicon": 0.03073516419484765,
+        "trirubidium_citrate": 0.9692648358051523
+      },
+      "weighted_sse": 258102.4691218282
+    },
+    {
+      "angle_bins": [
+        {
+          "poisson_rwp": 0.2770686516706011,
+          "range_deg": [
+            17.0,
+            30.0
+          ],
+          "sample_count": 643,
+          "weighted_sse_fraction": 0.5975698265196894
+        },
+        {
+          "poisson_rwp": 0.19409268389262152,
+          "range_deg": [
+            30.0,
+            50.0
+          ],
+          "sample_count": 990,
+          "weighted_sse_fraction": 0.341123450483996
+        },
+        {
+          "poisson_rwp": 0.07099518924989431,
+          "range_deg": [
+            50.0,
+            70.0
+          ],
+          "sample_count": 989,
+          "weighted_sse_fraction": 0.03499287290899663
+        },
+        {
+          "poisson_rwp": 0.05307920085847028,
+          "range_deg": [
+            70.0,
+            100.0
+          ],
+          "sample_count": 1484,
+          "weighted_sse_fraction": 0.02631385008731806
+        }
+      ],
+      "case_id": "case_1001",
+      "enabled_factors": [
+        "legacy_lx_size_axis",
+        "stephens"
+      ],
+      "poisson_rwp": 0.1737576829962683,
+      "profile_correlation": 0.6780573780695235,
+      "residual_mode_correlations": {
+        "angle_dependent_intensity": -0.040457307924253165,
+        "background_slope": -0.2946207094379858,
+        "position_first_derivative": -0.44875595558867165,
+        "width_second_derivative": 0.3354598982332912
+      },
+      "sample_shift_micrometre": 0.0,
+      "sample_transparency_cm": 0.0,
+      "source_transparency_multiplier": 1.0,
+      "weight_fractions": {
+        "silicon": 0.03038953408255081,
+        "trirubidium_citrate": 0.9696104659174493
+      },
+      "weighted_sse": 244837.16683549504
+    },
+    {
+      "angle_bins": [
+        {
+          "poisson_rwp": 0.19513918404579667,
+          "range_deg": [
+            17.0,
+            30.0
+          ],
+          "sample_count": 643,
+          "weighted_sse_fraction": 0.5815065917665214
+        },
+        {
+          "poisson_rwp": 0.12749371518898595,
+          "range_deg": [
+            30.0,
+            50.0
+          ],
+          "sample_count": 990,
+          "weighted_sse_fraction": 0.28875039930180024
+        },
+        {
+          "poisson_rwp": 0.07531711493754142,
+          "range_deg": [
+            50.0,
+            70.0
+          ],
+          "sample_count": 989,
+          "weighted_sse_fraction": 0.07726110293048069
+        },
+        {
+          "poisson_rwp": 0.0535193807346922,
+          "range_deg": [
+            70.0,
+            100.0
+          ],
+          "sample_count": 1484,
+          "weighted_sse_fraction": 0.05248190600119755
+        }
+      ],
+      "case_id": "case_0110",
+      "enabled_factors": [
+        "sample_shift",
+        "transparency"
+      ],
+      "poisson_rwp": 0.12405609866326309,
+      "profile_correlation": 0.8925196823030744,
+      "residual_mode_correlations": {
+        "angle_dependent_intensity": -0.1241416733032653,
+        "background_slope": -0.41688057969701797,
+        "position_first_derivative": -0.19812902989120026,
+        "width_second_derivative": 0.5705344342763647
+      },
+      "sample_shift_micrometre": -108.05049346761132,
+      "sample_transparency_cm": 0.6421066318087139,
+      "source_transparency_multiplier": 1.0,
+      "weight_fractions": {
+        "silicon": 0.027374565001792747,
+        "trirubidium_citrate": 0.9726254349982073
+      },
+      "weighted_sse": 124803.15098180699
+    },
+    {
+      "angle_bins": [
+        {
+          "poisson_rwp": 0.19039636262142506,
+          "range_deg": [
+            17.0,
+            30.0
+          ],
+          "sample_count": 643,
+          "weighted_sse_fraction": 0.5882565435386525
+        },
+        {
+          "poisson_rwp": 0.12109174483581292,
+          "range_deg": [
+            30.0,
+            50.0
+          ],
+          "sample_count": 990,
+          "weighted_sse_fraction": 0.27679479155706
+        },
+        {
+          "poisson_rwp": 0.07445706722111553,
+          "range_deg": [
+            50.0,
+            70.0
+          ],
+          "sample_count": 989,
+          "weighted_sse_fraction": 0.08023598773014604
+        },
+        {
+          "poisson_rwp": 0.053010068241371965,
+          "range_deg": [
+            70.0,
+            100.0
+          ],
+          "sample_count": 1484,
+          "weighted_sse_fraction": 0.05471267717414131
+        }
+      ],
+      "case_id": "case_0101",
+      "enabled_factors": [
+        "sample_shift",
+        "stephens"
+      ],
+      "poisson_rwp": 0.1203444924108782,
+      "profile_correlation": 0.9030140135973685,
+      "residual_mode_correlations": {
+        "angle_dependent_intensity": -0.12879710945296577,
+        "background_slope": -0.4264044266166947,
+        "position_first_derivative": -0.15048234941833435,
+        "width_second_derivative": 0.5812613509116565
+      },
+      "sample_shift_micrometre": -108.05049346761132,
+      "sample_transparency_cm": 0.0,
+      "source_transparency_multiplier": 1.0,
+      "weight_fractions": {
+        "silicon": 0.02725777368192126,
+        "trirubidium_citrate": 0.9727422263180787
+      },
+      "weighted_sse": 117446.95211560809
+    },
+    {
+      "angle_bins": [
+        {
+          "poisson_rwp": 0.2918988282228322,
+          "range_deg": [
+            17.0,
+            30.0
+          ],
+          "sample_count": 643,
+          "weighted_sse_fraction": 0.5704313554296971
+        },
+        {
+          "poisson_rwp": 0.21443916100848737,
+          "range_deg": [
+            30.0,
+            50.0
+          ],
+          "sample_count": 990,
+          "weighted_sse_fraction": 0.35811808432603
+        },
+        {
+          "poisson_rwp": 0.08083759166180389,
+          "range_deg": [
+            50.0,
+            70.0
+          ],
+          "sample_count": 989,
+          "weighted_sse_fraction": 0.03901874518511271
+        },
+        {
+          "poisson_rwp": 0.06354119827083746,
+          "range_deg": [
+            70.0,
+            100.0
+          ],
+          "sample_count": 1484,
+          "weighted_sse_fraction": 0.03243181505916012
+        }
+      ],
+      "case_id": "case_0011",
+      "enabled_factors": [
+        "transparency",
+        "stephens"
+      ],
+      "poisson_rwp": 0.18736204258182193,
+      "profile_correlation": 0.6031645706228306,
+      "residual_mode_correlations": {
+        "angle_dependent_intensity": -0.03872128398630629,
+        "background_slope": -0.32641461256399523,
+        "position_first_derivative": -0.30337847170363613,
+        "width_second_derivative": 0.346320581331455
+      },
+      "sample_shift_micrometre": 0.0,
+      "sample_transparency_cm": 0.6421066318087139,
+      "source_transparency_multiplier": 1.0,
+      "weight_fractions": {
+        "silicon": 0.029254548227848225,
+        "trirubidium_citrate": 0.9707454517721518
+      },
+      "weighted_sse": 284677.1022823919
+    },
+    {
+      "angle_bins": [
+        {
+          "poisson_rwp": 0.16948899713721272,
+          "range_deg": [
+            17.0,
+            30.0
+          ],
+          "sample_count": 643,
+          "weighted_sse_fraction": 0.644813549070822
+        },
+        {
+          "poisson_rwp": 0.09242385528096377,
+          "range_deg": [
+            30.0,
+            50.0
+          ],
+          "sample_count": 990,
+          "weighted_sse_fraction": 0.22304816896938992
+        },
+        {
+          "poisson_rwp": 0.06359580744390063,
+          "range_deg": [
+            50.0,
+            70.0
+          ],
+          "sample_count": 989,
+          "weighted_sse_fraction": 0.08096847976589965
+        },
+        {
+          "poisson_rwp": 0.04358834887574363,
+          "range_deg": [
+            70.0,
+            100.0
+          ],
+          "sample_count": 1484,
+          "weighted_sse_fraction": 0.051169802193888426
+        }
+      ],
+      "case_id": "case_1110",
+      "enabled_factors": [
+        "legacy_lx_size_axis",
+        "sample_shift",
+        "transparency"
+      ],
+      "poisson_rwp": 0.10232350035814704,
+      "profile_correlation": 0.9320440012238704,
+      "residual_mode_correlations": {
+        "angle_dependent_intensity": -0.1415752942789066,
+        "background_slope": -0.3822374665969502,
+        "position_first_derivative": -0.35512576160141585,
+        "width_second_derivative": 0.4590273742260603
+      },
+      "sample_shift_micrometre": -108.05049346761132,
+      "sample_transparency_cm": 0.6421066318087139,
+      "source_transparency_multiplier": 1.0,
+      "weight_fractions": {
+        "silicon": 0.025680239744246488,
+        "trirubidium_citrate": 0.9743197602557535
+      },
+      "weighted_sse": 84906.33377601019
+    },
+    {
+      "angle_bins": [
+        {
+          "poisson_rwp": 0.16277417619619142,
+          "range_deg": [
+            17.0,
+            30.0
+          ],
+          "sample_count": 643,
+          "weighted_sse_fraction": 0.6582569356008473
+        },
+        {
+          "poisson_rwp": 0.08303701120548741,
+          "range_deg": [
+            30.0,
+            50.0
+          ],
+          "sample_count": 990,
+          "weighted_sse_fraction": 0.19927243004370732
+        },
+        {
+          "poisson_rwp": 0.06269811530176007,
+          "range_deg": [
+            50.0,
+            70.0
+          ],
+          "sample_count": 989,
+          "weighted_sse_fraction": 0.08710463860728178
+        },
+        {
+          "poisson_rwp": 0.04309714075398045,
+          "range_deg": [
+            70.0,
+            100.0
+          ],
+          "sample_count": 1484,
+          "weighted_sse_fraction": 0.05536599574816377
+        }
+      ],
+      "case_id": "case_1101",
+      "enabled_factors": [
+        "legacy_lx_size_axis",
+        "sample_shift",
+        "stephens"
+      ],
+      "poisson_rwp": 0.0972610020936735,
+      "profile_correlation": 0.9425921326382555,
+      "residual_mode_correlations": {
+        "angle_dependent_intensity": -0.1508802637758517,
+        "background_slope": -0.3963688430680224,
+        "position_first_derivative": -0.29060456572237614,
+        "width_second_derivative": 0.4671990494795857
+      },
+      "sample_shift_micrometre": -108.05049346761132,
+      "sample_transparency_cm": 0.0,
+      "source_transparency_multiplier": 1.0,
+      "weight_fractions": {
+        "silicon": 0.02546692810061288,
+        "trirubidium_citrate": 0.9745330718993871
+      },
+      "weighted_sse": 76712.61573944456
+    },
+    {
+      "angle_bins": [
+        {
+          "poisson_rwp": 0.28275400902841896,
+          "range_deg": [
+            17.0,
+            30.0
+          ],
+          "sample_count": 643,
+          "weighted_sse_fraction": 0.5906150425877733
+        },
+        {
+          "poisson_rwp": 0.2012002766059686,
+          "range_deg": [
+            30.0,
+            50.0
+          ],
+          "sample_count": 990,
+          "weighted_sse_fraction": 0.3478752052661704
+        },
+        {
+          "poisson_rwp": 0.07293908617069274,
+          "range_deg": [
+            50.0,
+            70.0
+          ],
+          "sample_count": 989,
+          "weighted_sse_fraction": 0.035052215774399986
+        },
+        {
+          "poisson_rwp": 0.054634923167547804,
+          "range_deg": [
+            70.0,
+            100.0
+          ],
+          "sample_count": 1484,
+          "weighted_sse_fraction": 0.026457536371656307
+        }
+      ],
+      "case_id": "case_1011",
+      "enabled_factors": [
+        "legacy_lx_size_axis",
+        "transparency",
+        "stephens"
+      ],
+      "poisson_rwp": 0.17836411156105786,
+      "profile_correlation": 0.6524672558587276,
+      "residual_mode_correlations": {
+        "angle_dependent_intensity": -0.03852614159233761,
+        "background_slope": -0.29375299994898063,
+        "position_first_derivative": -0.4353452122468409,
+        "width_second_derivative": 0.3266460535161992
+      },
+      "sample_shift_micrometre": 0.0,
+      "sample_transparency_cm": 0.6421066318087139,
+      "source_transparency_multiplier": 1.0,
+      "weight_fractions": {
+        "silicon": 0.030720705407603573,
+        "trirubidium_citrate": 0.9692792945923965
+      },
+      "weighted_sse": 257990.82523349358
+    },
+    {
+      "angle_bins": [
+        {
+          "poisson_rwp": 0.19504851203833154,
+          "range_deg": [
+            17.0,
+            30.0
+          ],
+          "sample_count": 643,
+          "weighted_sse_fraction": 0.5820987402422697
+        },
+        {
+          "poisson_rwp": 0.12728600023955075,
+          "range_deg": [
+            30.0,
+            50.0
+          ],
+          "sample_count": 990,
+          "weighted_sse_fraction": 0.28837129181827814
+        },
+        {
+          "poisson_rwp": 0.07518496932694799,
+          "range_deg": [
+            50.0,
+            70.0
+          ],
+          "sample_count": 989,
+          "weighted_sse_fraction": 0.07714029748010563
+        },
+        {
+          "poisson_rwp": 0.05342029250078746,
+          "range_deg": [
+            70.0,
+            100.0
+          ],
+          "sample_count": 1484,
+          "weighted_sse_fraction": 0.05238967045934646
+        }
+      ],
+      "case_id": "case_0111",
+      "enabled_factors": [
+        "sample_shift",
+        "transparency",
+        "stephens"
+      ],
+      "poisson_rwp": 0.12393536995368881,
+      "profile_correlation": 0.8927394510838423,
+      "residual_mode_correlations": {
+        "angle_dependent_intensity": -0.1238929071341078,
+        "background_slope": -0.4168541279873736,
+        "position_first_derivative": -0.19880975346331256,
+        "width_second_derivative": 0.5702525238160238
+      },
+      "sample_shift_micrometre": -108.05049346761132,
+      "sample_transparency_cm": 0.6421066318087139,
+      "source_transparency_multiplier": 1.0,
+      "weight_fractions": {
+        "silicon": 0.02735617329260633,
+        "trirubidium_citrate": 0.9726438267073937
+      },
+      "weighted_sse": 124560.35773045289
+    },
+    {
+      "angle_bins": [
+        {
+          "poisson_rwp": 0.1694194336963703,
+          "range_deg": [
+            17.0,
+            30.0
+          ],
+          "sample_count": 643,
+          "weighted_sse_fraction": 0.6453360475389482
+        },
+        {
+          "poisson_rwp": 0.09229788058994015,
+          "range_deg": [
+            30.0,
+            50.0
+          ],
+          "sample_count": 990,
+          "weighted_sse_fraction": 0.22280364825035562
+        },
+        {
+          "poisson_rwp": 0.06348617373482104,
+          "range_deg": [
+            50.0,
+            70.0
+          ],
+          "sample_count": 989,
+          "weighted_sse_fraction": 0.08082126789001542
+        },
+        {
+          "poisson_rwp": 0.04349713101083965,
+          "range_deg": [
+            70.0,
+            100.0
+          ],
+          "sample_count": 1484,
+          "weighted_sse_fraction": 0.0510390363206807
+        }
+      ],
+      "case_id": "case_1111",
+      "enabled_factors": [
+        "legacy_lx_size_axis",
+        "sample_shift",
+        "transparency",
+        "stephens"
+      ],
+      "poisson_rwp": 0.10224008901690605,
+      "profile_correlation": 0.9321663934272187,
+      "residual_mode_correlations": {
+        "angle_dependent_intensity": -0.14135590521049496,
+        "background_slope": -0.38211320130831133,
+        "position_first_derivative": -0.355704128053309,
+        "width_second_derivative": 0.45832716934285495
+      },
+      "sample_shift_micrometre": -108.05049346761132,
+      "sample_transparency_cm": 0.6421066318087139,
+      "source_transparency_multiplier": 1.0,
+      "weight_fractions": {
+        "silicon": 0.025665035582818598,
+        "trirubidium_citrate": 0.9743349644171814
+      },
+      "weighted_sse": 84767.96351763184
+    }
+  ]
+}

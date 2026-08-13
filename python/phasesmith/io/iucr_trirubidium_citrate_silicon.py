@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import math
 from pathlib import Path
 
 import numpy as np
@@ -105,7 +106,17 @@ def convert_iucr_trirubidium_citrate_silicon_bundle(
         encoding="utf-8",
     )
 
-    common_profile = {"U": 0.0, "V": 0.0, "W": 5.109, "X": 0.0, "Y": 3.634}
+    radius_mm = 141.5
+    legacy_shift_centideg = -8.7503
+    legacy_transparency_centideg = 1.30
+    source_translated_displacement_mm = legacy_shift_centideg * math.pi * radius_mm / 36_000.0
+    legacy_manual_physical_sample_shift_mm = -source_translated_displacement_mm
+    translated_gsasii_transparency_field_cm = (
+        legacy_transparency_centideg * math.pi * radius_mm / 900.0
+    )
+    # Legacy GSAS profile-function-4 LX is the Lorentzian size term. In the
+    # current TCH convention that is X/cos(theta), not Y*tan(theta).
+    common_profile = {"U": 0.0, "V": 0.0, "W": 5.109, "X": 3.634, "Y": 0.0}
     manifest = {
         "schema_version": 1,
         "scope": "iucr_anhydrous_trirubidium_citrate_silicon_holdout",
@@ -117,9 +128,13 @@ def convert_iucr_trirubidium_citrate_silicon_bundle(
             "wavelengths_angstrom": [1.540593, 1.544451],
             "k_alpha2_over_k_alpha1": 0.5,
             "polarization_fraction": 0.5,
-            "goniometer_radius_mm": 141.5,
+            "goniometer_radius_mm": radius_mm,
             "radius_is_source_deposited": True,
             "initial_zero_deg": 0.0,
+            "source_translated_sample_displacement_mm": source_translated_displacement_mm,
+            "legacy_manual_physical_sample_shift_mm": legacy_manual_physical_sample_shift_mm,
+            "legacy_transparency_centideg": legacy_transparency_centideg,
+            "translated_gsasii_transparency_field_cm": translated_gsasii_transparency_field_cm,
             "source_over_radius": 0.0097,
             "detector_over_radius": 0.0097,
             "matched_sh_over_l": 0.0194,
@@ -172,22 +187,34 @@ def convert_iucr_trirubidium_citrate_silicon_bundle(
             "source_only_terms": [
                 "phase-specific legacy mixing coefficients",
                 "phase-specific Stephens anisotropic broadening",
-                "legacy profile shift coefficient -8.7503 with no portable interpretation",
+                "legacy signed transparency-position coefficient 1.30; numerically "
+                "translated to the pinned GSAS-II equation but rejected by the "
+                "fixed-structure factorial ablation",
             ],
             "common_profile_basis": (
                 "Both deposited phase profiles share GU=0, GV=0, GW=5.109, GP=0, "
-                "and LX=3.634. The neutral base-profile record maps these to "
-                "U/V/W/X/Y=0/0/5.109/0/3.634 without copying phase-specific terms."
+                "and LX=3.634. Legacy LX is Lorentzian size broadening, so the neutral "
+                "base-profile record maps it to current X/cos(theta): "
+                "U/V/W/X/Y=0/0/5.109/3.634/0."
             ),
             "geometry_contract": (
                 "The source deposits equal source/specimen and specimen/detector radii "
                 "of 141.5 mm and equal S/L=H/L=0.0097. The article says Si verifies "
-                "the calibrated goniometer zero, but no nonzero instrument zero is deposited; "
-                "the neutral common model therefore starts at zero."
+                "the calibrated goniometer zero. Legacy shft=-8.7503 centidegrees maps "
+                f"analytically to {source_translated_displacement_mm:.12g} mm in the current "
+                "PhaseSmith/GSAS-II Bragg-Brentano parameter convention. The legacy manual's "
+                f"physical sample-shift variable uses the opposite sign "
+                f"({legacy_manual_physical_sample_shift_mm:.12g} mm); instrument zero "
+                "remains zero."
             ),
             "correction_contract": (
-                "The source declares no absorption or surface-roughness correction. "
-                "An unpolarized Cu source fraction of 0.5 is an explicit holdout assumption."
+                "The source declares no absorption-intensity or surface-roughness correction. "
+                "In the legacy profile-position equation, trns=1.30 implies a formally "
+                "negative effective absorption. Its numerically equivalent pinned-GSAS-II "
+                f"field is {translated_gsasii_transparency_field_cm:.12g} cm, but this is "
+                "not a physical 1/mu conversion and PhaseSmith does not apply it because the "
+                "factorial oracle ablation worsens the fixed-structure reconstruction. An "
+                "unpolarized Cu source fraction of 0.5 is an explicit holdout assumption."
             ),
             "review_rule": (
                 "Source-only terms remain disclosed and unmodified; a common-model "

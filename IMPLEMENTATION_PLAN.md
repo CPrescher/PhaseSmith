@@ -1727,21 +1727,22 @@ later because 1.30 wt% Si, no deposited radius, phase-specific profiles,
 Stephens broadening, and Suortti roughness repeat already isolated limitations.
 The anhydrous converter and native/pinned-GSAS-II comparison are now complete.
 The converter independently recomputes deposited Rwp 2.45834% and Rp 1.95046%
-on exactly source indices 594–4699. On the neutral common base profile,
-PhaseSmith/GSAS-II Rwp is 18.265%/18.338%, correlation is 0.63318/0.62922, and
-Si is 3.182%/2.926%; all full-pattern parity gates pass. The source-deposited
-radius removes the potassium geometry assumption, but the 2.15 wt% Si windows
-still infer -0.07469/-0.10874 mm displacement. Their 0.03405 mm disagreement
-fails the anchor-transfer gate. The monohydrate remains a lower-priority
-model-rich holdout rather than the next justification for production physics.
+on exactly source indices 594–4699. A later source-forensics review corrected
+two translation semantics: legacy `LX=3.634` belongs on the current Lorentzian
+size axis, and `shft=-8.7503` maps to -0.1080505 mm in the current
+PhaseSmith/GSAS-II displacement convention at the deposited radius (the legacy
+manual's physical shift variable uses the opposite sign).
+On this corrected common profile, PhaseSmith/GSAS-II Rwp is 9.579%/9.735%,
+correlation is 0.94732/0.94248, and Si is 2.575%/2.548%; all full-pattern parity
+gates pass. The Si-only windows still infer incompatible -0.07519/-0.11031 mm
+values, so they remain diagnostic rather than replacing the direct source
+translation. The monohydrate remains a lower-priority model-rich holdout.
 The subsequent controlled isotropic-width ablation is complete on the
-potassium and anhydrous-rubidium patterns. Holding every non-width nonlinear
-term and all silicon width terms fixed, finite citrate size is full rank,
-repeatable from three starts, and only moderately correlated with the exact
-scale/background block. It reaches 90.19 nm and 20.737% Rwp for potassium and
-56.23 nm and 14.823% for rubidium. No isotropic strain alternative passes the
-declared repeatability/boundary gates, and neither accepted size result comes
-close to its deposited curve. This is sufficient evidence to make Stephens
+potassium and anhydrous-rubidium patterns. Potassium finite size is full rank
+and repeatable at 90.19 nm and 20.737% Rwp. After correcting rubidium source
+translation, every isotropic size/strain variant fails repeatability; the old
+56.23 nm result is invalidated as compensating model error. This was sufficient
+historical evidence to make Stephens
 symmetry-dependent microstrain the next Unit-29 numerical slice. Its exit gate
 requires: published equations and units; Laue-class coefficient reduction;
 non-negative reflection variance semantics; independent NumPy values; Rust
@@ -1765,14 +1766,21 @@ in the oracle adapter and verified on 395 reflection widths plus three full
 profiles at revision `c0bc79b259cdf0065480b5fbd57674ddf12c4a23`; width errors
 are at machine precision and normalized profile error is at most 2.40e-6.
 The fixed-nuisance citrate Stephens ablation is complete. Deposited Stephens
-widths barely change either common-model residual, and their composition with
-finite size reproduces the earlier size-only results. A free common amplitude
-requires 94x/382x the source values for only small improvement; the potassium
-fit and both joint size/amplitude fits fail the declared repeatability gate.
+widths barely change either common-model residual. A free common amplitude
+requires 94x/382x the source values for only small improvement; potassium and
+corrected-rubidium size/Stephens combinations fail the declared repeatability
+gate.
 The Stephens slice therefore exits with kernel, derivative, persistence,
 oracle-convention, and real-data sufficiency evidence, including the negative
-scientific result that it does not close the citrate targets. Next, diagnose
-the remaining source-specific semantics (texture, roughness, legacy profile or
-shift records, and conversion fidelity) before adding another production term.
+scientific result that it does not close the citrate targets. The first
+source-specific forensic is now complete: a 16-case factorial shows translated
+sample shift dominates the recoverable rubidium SSE, corrected `LX` is second,
+Stephens is negligible, and the signed deposited transparency term is
+detrimental. The legacy manual confirms that sign and shows the positive source
+coefficient has formally negative effective absorption; reversing it improves
+the fit but is not the deposited model. The best fixed subset reaches 9.726%
+and leaves 65.8% of its SSE below 30 degrees. Next, audit that
+low-angle profile/intensity/conversion residual before adding another
+production term.
 Other Laue-class reductions remain separate follow-up slices rather than
 silently sharing the orthorhombic basis.

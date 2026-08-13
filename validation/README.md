@@ -270,15 +270,21 @@ have deliberately different meanings:
   source-deposited 141.5 mm radius, equal S/L=H/L=0.0097, and no absorption or
   roughness correction. The converter recomputes `Rwp=0.02458338` and
   `Rp=0.01950460`. Both phases share the same isotropic base profile, while
-  their mixing and Stephens terms remain explicitly source-only. On that
-  fixed-geometry common subset, PhaseSmith/pinned-GSAS-II give
-  `Rwp=0.18265/0.18338`, correlations `0.63318/0.62922`, and Si fractions
-  `0.03182/0.02926`; all four full-pattern parity gates pass. The 128-point
-  Si-window fits give nearly equal Rwp but infer `-0.07469/-0.10874 mm`
-  displacement. Their `0.03405 mm` disagreement rejects the 2.15 wt% Si anchor,
-  so neither diagnostic displacement is applied. This is a qualified parity
-  pass and expected model/anchor failure, not reproduction of deposited 2.458%
-  Rwp or 2.15 wt% Si.
+  their mixing and Stephens terms remain explicitly source-only. A forensic
+  correction maps legacy `LX=3.634` to the current Lorentzian size axis and
+  `shft=-8.7503` to `-0.1080505 mm` in the current PhaseSmith/GSAS-II
+  displacement convention at the deposited radius; the legacy manual's
+  physical shift variable has the opposite sign. On that corrected common
+  subset, PhaseSmith/pinned-GSAS-II give `Rwp=0.09579/0.09735`,
+  correlations `0.94732/0.94248`, and Si fractions `0.02575/0.02548`; all
+  full-pattern parity gates pass. The 128-point Si-window fits infer
+  `-0.07519/-0.11031 mm`; their `0.03512 mm` disagreement keeps that calibration
+  diagnostic and does not replace the direct source translation. The separate
+  16-case oracle factorial records that the signed deposited transparency term
+  is detrimental and Stephens negligible, while most remaining SSE lies below
+  30 degrees. The legacy equation confirms the numerical sign and shows that
+  positive `trns=1.30` has formally negative effective absorption; the manifest
+  therefore labels its GSAS-II value as an equation field, not physical `1/mu`.
 
 The QARR checkpoint evaluates supplied CIF anisotropic displacement tensors
 directly and keeps them fixed; sites without displacement values start from a

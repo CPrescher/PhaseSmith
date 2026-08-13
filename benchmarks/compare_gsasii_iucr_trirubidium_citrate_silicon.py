@@ -145,7 +145,7 @@ def main() -> None:
             "scope": "iucr_trirubidium_citrate_silicon_transferability_comparison",
             "source_dataset_id": DATASET_ID,
             "pinned_gsasii_revision": PINNED_REVISION,
-            "scientific_status": "expected_model_and_silicon_anchor_failure",
+            "scientific_status": "qualified_source_translation_and_remaining_model_gap",
             "common_model": {
                 "instrument": manifest["instrument"],
                 "data_selection": manifest["data_selection"],
@@ -153,7 +153,8 @@ def main() -> None:
                 "refined_parameters": ["two phase scales", "one constant residual background"],
                 "fixed_parameters": [
                     "shared deposited base U/V/W/X/Y and matched SH/L=0.0194",
-                    "instrument zero, specimen displacement=0, radius, and Si lattice",
+                    "instrument zero, source-translated specimen displacement, radius, "
+                    "and Si lattice",
                     "all phase mixing, size/strain, and orientation parameters",
                 ],
             },
@@ -165,10 +166,13 @@ def main() -> None:
                 "The fixed-geometry common subset agrees closely across implementations.",
                 "The source-deposited radius removes the geometry assumption present in the "
                 "potassium diagnostic.",
+                "Legacy LX and shft now have explicit equation translations and documented "
+                "sign conventions. Their corrected common subset materially lowers both "
+                "implementations' Rwp while retaining cross-implementation parity.",
                 "The 2.15 wt% silicon windows still do not transfer a displacement anchor; "
-                "their estimates are diagnostic only.",
+                "their estimates remain diagnostic and do not replace the source shft value.",
                 "Both fits remain far from the phase-specific deposited GSAS model, so this "
-                "is not physical-model acceptance or justification for undocumented terms.",
+                "does not justify adding transparency or another broadening term.",
             ],
         }
     print(

@@ -1340,31 +1340,29 @@ radius, phase-specific profiles, Stephens broadening, and Suortti roughness
 largely repeat the limitations already isolated by the potassium holdout.
 The anhydrous converter now reproduces deposited Rwp 2.45834% and Rp 1.95046%
 on the exact contiguous source-index interval 594–4699, emits both structures,
-and keeps all phase-specific legacy terms outside the neutral common model. Its
-completed common-model comparison gives PhaseSmith/pinned-GSAS-II Rwp
-18.265%/18.338%, correlations 0.63318/0.62922, and 3.182%/2.926% Si, passing all
-full-pattern parity gates. Even with the source-deposited radius, the 2.15 wt%
-Si windows infer -0.07469/-0.10874 mm displacement; the 0.03405 mm disagreement
-rejects the anchor and neither value is applied. This independently confirms
-the potassium weak-anchor conclusion without a geometry assumption.
+and explicitly translates its legacy profile contract. Profile-function-4
+`LX=3.634` maps to the current Lorentzian `X/cos(theta)` size axis, while
+`shft=-8.7503` centidegrees maps at the deposited radius to -0.1080505 mm
+in the current PhaseSmith/GSAS-II displacement convention. The legacy manual's
+physical shift variable uses the opposite sign (+0.1080505 mm). The corrected
+common-model comparison gives
+PhaseSmith/pinned-GSAS-II Rwp 9.579%/9.735%, correlations 0.94732/0.94248, and
+2.575%/2.548% Si, passing all full-pattern parity gates. The 2.15 wt% Si-only
+windows still infer incompatible -0.07519/-0.11031 mm values; they remain
+diagnostic and do not replace the directly translated source displacement.
 Separate recomputation under Poisson weights gives 4.852883% for the deposited
 potassium curve and 2.458326% for the deposited rubidium curve, effectively the
 same as their deposited-weight 4.852875% and 2.458338% values. The large
 common-subset gap is therefore not an Rwp-weight-definition artifact.
 
 A phase-local isotropic-width ablation now closes the next diagnostic question.
-With all instrument, geometry, structure, and silicon-width terms fixed, finite
-coherent-domain size is the only three-start model that passes rank, boundary,
-repeatability, and scale/background-correlation gates. It refines to 90.19 nm
-for potassium and 56.23 nm for rubidium, reducing Poisson Rwp to 20.737% and
-14.823%, respectively. These are material improvements but remain far from the
-deposited 4.853% and 2.458% curves. Gaussian/Lorentzian strain alternatives do
-not pass the declared repeatability gate, and size plus Lorentzian strain makes
-the latter inactive. The current isotropic models therefore cannot explain the
-target. Stephens symmetry-dependent microstrain broadening is justified as the
-next separately reviewed production term; it must be independently derived
-from the publication and compared against the pinned GSAS-II generalized
-`Mustrain` oracle rather than translated from its implementation.
+With all instrument, geometry, structure, and silicon-width terms fixed,
+potassium finite coherent-domain size remains the only accepted three-start
+isotropic model, refining to 90.19 nm and 20.737% Rwp. After the rubidium source
+translation is corrected, its base is already 9.579% Rwp and no size/strain
+variant passes repeatability. The former 56.23 nm/14.823% rubidium conclusion is
+invalidated as compensation for omitted position/profile semantics. The
+current isotropic models therefore cannot explain the targets.
 
 The first Stephens production slice is now implemented for orthorhombic cells.
 It uses six physical ångström⁻⁴ coefficients for the fourth-order variance of
@@ -1378,15 +1376,25 @@ does not overclaim other Laue classes. The pinned GSAS-II oracle and real-data
 sufficiency checks are now complete. All 395 reflection widths agree at roughly
 machine precision and three complete profile probes agree within 2.40e-6 of
 peak height. On the citrate holdouts, fixed deposited Stephens widths improve
-Poisson Rwp by only 0.040 percentage points for potassium and 0.006 for
-rubidium. Adding them to finite size reproduces the size-only solutions
-(90.57/56.26 nm and 20.737%/14.823% Rwp), while joint size/amplitude refinement
-is not repeatable. Stephens is therefore implemented and convention-verified
+Poisson Rwp by only 0.040 percentage points for potassium and 0.008 for
+corrected rubidium. A free common rubidium amplitude still requires 382 times
+the deposited value to reach only 9.416% Rwp, while size/Stephens combinations
+are not repeatable. Stephens is therefore implemented and convention-verified
 but falsified as the sole explanation for the deposited 4.853%/2.458% targets
-under the fixed nuisance model. Remaining candidate gaps are source-specific
-texture, roughness, legacy profile/shift semantics, or other conversion
-fidelity; other Laue classes remain separate extensions rather than
-prerequisites for this conclusion.
+under the fixed nuisance model.
+
+A 16-case pinned-GSAS-II factorial forensic closes the legacy translation
+question. Source displacement supplies 87.3% of the Shapley weighted-SSE gain,
+corrected `LX` supplies 18.0%, Stephens supplies 0.07%, and translated
+transparency is detrimental. The legacy manual fixes this sign convention and
+also shows that deposited positive `trns=1.30` implies formally negative
+effective absorption; a reversed-sign sensitivity improves the fit but does
+not represent the deposited model. The best fixed subset reaches 9.726% Rwp and
+closes 73.19% of the former base-to-deposited SSE gap. Of the remaining SSE,
+65.8% is below 30 degrees and its width-mode correlation exceeds its position
+mode. No new production term is justified yet: the next checkpoint is a
+low-angle profile/intensity/conversion audit, while other Stephens Laue classes
+remain optional completeness work.
 
 ## Quality bar
 

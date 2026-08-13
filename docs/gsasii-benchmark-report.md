@@ -282,24 +282,28 @@ Si is the expected phase-specific-model and weak-anchor failure. The
 trirubidium citrate anhydrous/monohydrate pair was therefore source-audited
 before assuming that the Si-anchor contract transfers.
 
-The anhydrous trirubidium case is now source-audited and complete. It improves
-the diagnostic contract by depositing the 141.5 mm goniometer radius, a common
-base profile for both phases, and no surface-roughness correction. PhaseSmith
-and pinned GSAS-II reach 18.265%/18.338% Rwp, 0.63318/0.62922 correlation, and
-3.182%/2.926% Si on the same fixed model, so all full-pattern parity gates pass.
-Nevertheless, the 2.15 wt% Si windows infer -0.07469/-0.10874 mm displacement,
-a 0.03405 mm disagreement. This confirms that the weak-anchor failure is not an
-artifact of an assumed radius. The monohydrate remains lower priority because
-its 1.30 wt% Si, absent radius, phase-specific profiles, Stephens anisotropy,
-and Suortti roughness add no cleaner discriminator.
+The anhydrous trirubidium case is now source-audited and corrected. Legacy GSAS
+profile-function-4 `LX=3.634` is a Lorentzian size term and maps to the current
+`X/cos(theta)` axis, not `Y*tan(theta)`. Its `shft=-8.7503` centidegree
+coefficient maps analytically, at the deposited 141.5 mm radius, to
+-0.1080505 mm in the current PhaseSmith/GSAS-II Bragg--Brentano displacement
+parameter. The legacy manual's physical sample-shift variable has the opposite
+sign (+0.1080505 mm). With those source terms fixed, PhaseSmith and pinned
+GSAS-II reach 9.579%/9.735% Rwp,
+0.94732/0.94248 correlation, and 2.575%/2.548% Si; every common-model parity
+gate passes. The 2.15 wt% Si-only windows still infer -0.07519/-0.11031 mm, so
+their 0.03512 mm disagreement remains a warning against replacing the directly
+translated source value with a weak-window calibration. The monohydrate remains
+lower priority because its 1.30 wt% Si, absent radius, phase-specific profiles,
+Stephens anisotropy, and Suortti roughness add no cleaner discriminator.
 
 The deposited and Poisson-weighted legacy-curve residuals were also recomputed
 separately to exclude weighting vocabulary as an explanation for these gaps.
 They are effectively identical: potassium is 4.852875% deposited versus
 4.852883% Poisson, and anhydrous rubidium is 2.458338% versus 2.458326%.
-Therefore the 18–24% common-subset residuals cannot be attributed to the Rwp
-weight convention; the missing phase-specific profile physics remains the
-dominant diagnosed limitation.
+Therefore the residual discrepancy cannot be attributed to the Rwp weight
+convention. For rubidium, the largest diagnosed limitation was instead a
+profile-function translation error plus omitted source displacement.
 
 ### Isotropic size/strain ablation and Stephens decision
 
@@ -314,24 +318,20 @@ background in one weighted Jacobian. Acceptance requires full rank, no
 zero-width boundary, repeatable Rwp within 0.005 percentage points, and less
 than 0.98 absolute sample-versus-linear column correlation.
 
-Finite size is the only candidate that passes every gate. Potassium refines to
+For potassium, finite size is the only candidate that passes every gate. It refines to
 90.1877 nm, lowers Poisson Rwp from 23.9648% to 20.7374%, raises profile
 correlation from 0.61846 to 0.77766, and changes Si from 4.4503% to 2.0456%.
-Rubidium refines to 56.2337 nm, lowers Rwp from 18.2645% to 14.8232%, raises
-correlation from 0.63318 to 0.80801, and changes Si from 3.1816% to 0.7980%.
-The weighted Jacobians are full rank (4/4); maximum size-versus-scale/background
-column correlations are 0.4873 and 0.4139, and the three-start Rwp spreads are
-8.2e-7 and 5.3e-8. Gaussian and Lorentzian strain can lower the best-run Rwp,
-but do not reach the same basin from the three starts under the declared fixed
-budget. Adding Lorentzian strain to size drives that strain exactly to zero.
+After correcting rubidium `LX` and `shft`, its base Rwp is already 9.5794%.
+Size, Gaussian strain, Lorentzian strain, and both size/strain combinations can
+produce best-run values near 8.06--8.18%, but none reaches the same basin from
+three starts. The earlier accepted 56.23 nm rubidium size solution is therefore
+invalidated: it was compensating for an omitted position/profile translation,
+not demonstrating transferable sample physics.
 
-This falsifies the stronger hypothesis that the current isotropic width models
-can reproduce the deposited targets: the retained size models still miss the
-4.8529% potassium and 2.4583% rubidium curves by 15.88 and 12.36 percentage
-points. It does not prove that Stephens broadening alone closes the gap because
-the source models also contain other phase-specific semantics. It does isolate
-direction-dependent width as a justified next term rather than an
-undocumented tuning parameter.
+This still falsifies the stronger hypothesis that current isotropic width
+models reproduce either deposited target, but it also demonstrates that model
+selection performed before correct source translation can assign a false
+physical meaning to a compensating width parameter.
 
 GSAS-II does implement this model. In the pinned revision
 `c0bc79b259cdf0065480b5fbd57674ddf12c4a23`, the phase `Mustrain` selector
@@ -367,22 +367,56 @@ The corresponding real-data sufficiency test is also complete. It fixes the
 instrument, wavelength doublet, FCJ geometry, zero/displacement, cells,
 structures, silicon widths, six deposited Stephens coefficient ratios, and
 deposited Gaussian/Lorentzian mixing fraction. With only the source Stephens
-width active, potassium changes from 23.9648% to 23.9250% Poisson Rwp and
-rubidium from 18.2645% to 18.2586%. Those changes are far too small to explain
-the deposited 4.8529% and 2.4583% curves.
+width active, potassium changes from 23.9648% to 23.9250% Poisson Rwp. On the
+corrected rubidium contract it changes 9.5794% to 9.5711%. Those changes are
+far too small to explain the deposited 4.8529% and 2.4583% curves.
 
 Allowing one common multiplier of the deposited Stephens shape reaches only
-23.5954% for potassium and 18.1454% for rubidium while requiring 94.4 and
+23.5954% for potassium and 9.4158% for rubidium while requiring 94.4 and
 382.1 times the deposited amplitudes; the potassium result also misses the
-three-start repeatability gate. Adding the fixed deposited Stephens term to
-finite coherent-domain size gives 90.57/56.26 nm and 20.7373%/14.8233% Rwp,
-which reproduces the earlier size-only result to practical precision. Joint
-size/amplitude refinement is not repeatable for either pattern. Thus the
+three-start repeatability gate. On corrected rubidium, size plus fixed Stephens
+also fails repeatability; this invalidates the former 56.26 nm conclusion.
+Joint size/amplitude refinement is not repeatable for either pattern. Thus the
 implementation and GSAS-II convention are verified, but Stephens broadening is
 not the missing mechanism that closes these citrate targets under the fixed
 nuisance model. The reviewed record is
 `validation/results/2026-08-13-citrate-stephens-ablation.json`; rerun it with
 `oracle/scripts/benchmark_citrate_stephens.py`.
+
+### Rubidium legacy-profile residual forensics
+
+A 16-case full factorial pinned-GSAS-II ablation separates legacy `LX`, `shft`,
+`trns`, and deposited Stephens terms while refining only two phase scales and
+one residual-background constant. Translating `shft` to -108.0505 micrometres
+dominates the recoverable weighted-SSE improvement (87.3% Shapley share).
+Correcting `LX` contributes 18.0%; Stephens contributes 0.07%. The deposited
+transparency translation has a negative 5.36% contribution and worsens every
+matched fixed-structure branch in which it is enabled.
+
+This sign is not an adapter guess. The
+[legacy GSAS technical manual](https://subversion.xray.aps.anl.gov/EXPGUI/gsas/all/GSAS%20Manual.pdf)
+defines the profile argument as
+`delta_T' = (T - T_phase) + shft*cos(theta) + trns*sin(2theta)`;
+the peak-center motion is therefore the negative of the stored coefficient.
+It also defines `mu_eff = -9000/(pi*R*trns)`, so the deposited positive
+`trns=1.30` has a formally negative effective absorption and is an empirical
+signed position correction rather than a physical transparency measurement.
+A sign/scale sensitivity check confirms the distinction: reversing the
+deposited sign lowers Rwp to 9.3426%, but contradicts the source coefficient;
+the deposited sign raises it to 10.2240%. The worker consequently preserves
+the numerical source convention and does not promote transparency into the
+PhaseSmith production model.
+
+The best fixed subset is corrected `LX` plus source shift plus Stephens at
+9.7261% Rwp and 0.94259 correlation. It closes 73.19% of the weighted-SSE gap
+between the former 18.338% common model and the 2.4583% deposited curve, but
+does not reconstruct the latter. Of its remaining weighted SSE, 65.8% lies in
+17--30 degrees; the residual correlates more strongly with the profile's width
+mode (0.467) than its position mode (-0.291). This points to low-angle
+profile/intensity/conversion behavior, not another global position correction.
+The checked record is
+`validation/results/2026-08-13-citrate-rubidium-residual-forensics.json`,
+generated by `oracle/scripts/benchmark_citrate_residual_forensics.py`.
 
 ## Recommended priorities
 
@@ -422,6 +456,7 @@ records are:
 - `validation/results/2026-08-13-campaign-iucr-sodium-citrate-si.json`
 - `validation/results/2026-08-13-campaign-iucr-tripotassium-citrate-si.json`
 - `validation/results/2026-08-13-campaign-iucr-trirubidium-citrate-si.json`
+- `validation/results/2026-08-13-citrate-rubidium-residual-forensics.json`
 - `validation/results/2026-08-11-campaign-echidna.json`
 - `validation/results/2026-08-11-campaign-pbso4.json`
 - `validation/results/2026-08-11-campaign-powgen.json`
