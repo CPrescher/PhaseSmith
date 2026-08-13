@@ -82,22 +82,22 @@
     "checks": {
       "march_ratio_delta": {
         "limit": 0.01,
-        "measured": 0.0061400534794481265,
+        "measured": 0.0061400534794483486,
         "passed": true
       },
       "phase_fraction_delta": {
         "limit": 0.01,
-        "measured": 0.005216804358246785,
+        "measured": 0.005216804358246896,
         "passed": true
       },
       "poisson_rwp_delta": {
         "limit": 0.01,
-        "measured": 0.0076165873512062665,
+        "measured": 0.007616587351206239,
         "passed": true
       },
       "profile_correlation_delta": {
         "limit": 0.0075,
-        "measured": 0.005915779905718566,
+        "measured": 0.0059157799057181215,
         "passed": true
       },
       "sample_count_equal": {
@@ -107,7 +107,7 @@
       },
       "sample_displacement_delta_mm": {
         "limit": 0.1,
-        "measured": 0.061264055933555495,
+        "measured": 0.06126405593355541,
         "passed": true
       },
       "silicon_calibration_rwp_delta": {
@@ -116,19 +116,19 @@
         "passed": true
       }
     },
-    "gsasii_march_ratio": 0.6323695954395467,
+    "gsasii_march_ratio": 0.6323695954395465,
     "status": "passed"
   },
   "gsasii": {
-    "legacy_curve_poisson_rwp": 0.08432524795559576,
-    "legacy_curve_profile_correlation": 0.9937647909171597,
+    "legacy_curve_poisson_rwp": 0.08432630934123356,
+    "legacy_curve_profile_correlation": 0.99376479091716,
     "legacy_weight_fraction_errors": {
-      "silicon": 0.02911031858335736,
-      "sodium_dihydrogen_citrate": -0.02911031858335722
+      "silicon": 0.02911031858335733,
+      "sodium_dihydrogen_citrate": -0.02911031858335733
     },
-    "maximum_legacy_weight_fraction_error": 0.02911031858335736,
-    "poisson_rwp": 0.18945026167995824,
-    "profile_correlation": 0.9499712917450116,
+    "maximum_legacy_weight_fraction_error": 0.02911031858335733,
+    "poisson_rwp": 0.1894502616799582,
+    "profile_correlation": 0.9499712917450122,
     "refined_hap": {
       "silicon": {
         "Mustrain": [
@@ -247,7 +247,7 @@
         ],
         "Pref.Ori.": [
           "MD",
-          0.6323695954395467,
+          0.6323695954395465,
           true,
           [
             0,
@@ -260,7 +260,7 @@
           0.1
         ],
         "Scale": [
-          497.24932033848484,
+          497.2493203384849,
           true
         ],
         "Size": [
@@ -313,7 +313,7 @@
     "schema_version": 1,
     "scope": "iucr_sodium_dihydrogen_citrate_silicon_holdout",
     "silicon_calibration": {
-      "calibrated_sample_displacement_mm": -0.2010153046011294,
+      "calibrated_sample_displacement_mm": -0.20101530460112932,
       "poisson_rwp": 0.12032917800249136,
       "sample_count": 128,
       "windows_two_theta_deg": [
@@ -332,14 +332,14 @@
       ]
     },
     "stage_poisson_rwp": {
-      "preferred_orientation": 0.18945026167995824,
+      "preferred_orientation": 0.1894502616799582,
       "scale_background": 0.22585132832431098,
       "silicon_displacement_calibration": 0.12032917800249136,
       "silicon_scale_background": 0.5478233011032254
     },
     "weight_fractions": {
-      "silicon": 0.21651031858335737,
-      "sodium_dihydrogen_citrate": 0.7834896814166428
+      "silicon": 0.21651031858335734,
+      "sodium_dihydrogen_citrate": 0.7834896814166427
     }
   },
   "interpretation": [
@@ -359,15 +359,15 @@
   },
   "phasesmith": {
     "calibrated_sample_displacement_mm": -0.1397512486675739,
-    "elapsed_seconds": 1.684252082835883,
+    "elapsed_seconds": 37.722618042025715,
     "free_parameter_count": 4,
-    "legacy_curve_poisson_rwp": 0.08432524795559576,
+    "legacy_curve_poisson_rwp": 0.08432630934123356,
     "legacy_curve_profile_correlation": 0.9937647909171597,
     "legacy_weight_fraction_errors": {
-      "silicon": 0.03432712294160409,
-      "sodium_dihydrogen_citrate": -0.034327122941604005
+      "silicon": 0.03432712294160417,
+      "sodium_dihydrogen_citrate": -0.03432712294160423
     },
-    "maximum_legacy_weight_fraction_error": 0.03432712294160409,
+    "maximum_legacy_weight_fraction_error": 0.03432712294160423,
     "model_qualifications": [
       "March-Dollase (001) is a one-axis stress model, not the deposited generalized spherical-harmonic correction.",
       "All phase size/strain terms are fixed out because the deposited Stephens anisotropy has no identifiable isotropic common subset in this pattern.",
@@ -377,7 +377,7 @@
       "The complete silicon-derived U/V/W/X/Y profile remains fixed."
     ],
     "poisson_rwp": 0.18183367432875197,
-    "profile_correlation": 0.9558870716507302,
+    "profile_correlation": 0.9558870716507303,
     "refined_instrument": {
       "U": 2.336,
       "V": 0.0,
@@ -396,8 +396,8 @@
       "converged"
     ],
     "weight_fractions": {
-      "silicon": 0.2217271229416041,
-      "sodium_dihydrogen_citrate": 0.778272877058396
+      "silicon": 0.22172712294160418,
+      "sodium_dihydrogen_citrate": 0.7782728770583958
     }
   },
   "pinned_gsasii_revision": "c0bc79b259cdf0065480b5fbd57674ddf12c4a23",

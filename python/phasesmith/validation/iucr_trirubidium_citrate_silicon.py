@@ -292,6 +292,7 @@ def run_iucr_trirubidium_citrate_silicon_workflow(
     errors = {phase_id: fractions[phase_id] - targets[phase_id] for phase_id in targets}
     residual = calculation.y - observed
     weight = 1.0 / np.maximum(observed, 1.0)
+    legacy_residual = legacy_calculated - observed
     return IucrTrirubidiumCitrateSiliconResult(
         sample_count=int(x.size),
         reflection_count=sum(phase.reflections.reflection_count for phase in selected_phases),
@@ -305,7 +306,11 @@ def run_iucr_trirubidium_citrate_silicon_workflow(
         profile_correlation=float(
             np.corrcoef(observed - calculation.background, calculation.profile_y)[0, 1]
         ),
-        legacy_curve_poisson_rwp=float(manifest["legacy_gsas_reference"]["rwp"]),
+        legacy_curve_poisson_rwp=float(
+            np.sqrt(
+                np.sum(weight * np.square(legacy_residual)) / np.sum(weight * np.square(observed))
+            )
+        ),
         legacy_curve_profile_correlation=float(
             np.corrcoef(observed - legacy_background, legacy_calculated - legacy_background)[0, 1]
         ),

@@ -293,6 +293,14 @@ artifact of an assumed radius. The monohydrate remains lower priority because
 its 1.30 wt% Si, absent radius, phase-specific profiles, Stephens anisotropy,
 and Suortti roughness add no cleaner discriminator.
 
+The deposited and Poisson-weighted legacy-curve residuals were also recomputed
+separately to exclude weighting vocabulary as an explanation for these gaps.
+They are effectively identical: potassium is 4.852875% deposited versus
+4.852883% Poisson, and anhydrous rubidium is 2.458338% versus 2.458326%.
+Therefore the 18–24% common-subset residuals cannot be attributed to the Rwp
+weight convention; the missing phase-specific profile physics remains the
+dominant diagnosed limitation.
+
 ## Recommended priorities
 
 1. **Unify campaign execution — complete.**

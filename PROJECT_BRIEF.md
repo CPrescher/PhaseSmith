@@ -1347,6 +1347,10 @@ full-pattern parity gates. Even with the source-deposited radius, the 2.15 wt%
 Si windows infer -0.07469/-0.10874 mm displacement; the 0.03405 mm disagreement
 rejects the anchor and neither value is applied. This independently confirms
 the potassium weak-anchor conclusion without a geometry assumption.
+Separate recomputation under Poisson weights gives 4.852883% for the deposited
+potassium curve and 2.458326% for the deposited rubidium curve, effectively the
+same as their deposited-weight 4.852875% and 2.458338% values. The large
+common-subset gap is therefore not an Rwp-weight-definition artifact.
 
 ## Quality bar
 

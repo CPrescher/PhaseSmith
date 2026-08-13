@@ -91,4 +91,5 @@ def test_real_iucr_tripotassium_common_model_when_configured(tmp_path: Path) -> 
     assert result.refined_instrument["Zero"] == pytest.approx(0.09073)
     assert result.refined_instrument["U"] == pytest.approx(2.58)
     assert result.refined_instrument["Y"] == pytest.approx(2.708)
+    assert result.legacy_curve_poisson_rwp == pytest.approx(0.04852883258)
     assert len(result.model_qualifications) == 7

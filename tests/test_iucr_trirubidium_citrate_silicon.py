@@ -75,4 +75,5 @@ def test_real_iucr_trirubidium_common_model_when_configured(tmp_path: Path) -> N
     assert result.refined_instrument["Zero"] == pytest.approx(0.0)
     assert result.refined_instrument["W"] == pytest.approx(5.109)
     assert result.refined_instrument["Y"] == pytest.approx(3.634)
+    assert result.legacy_curve_poisson_rwp == pytest.approx(0.02458326145)
     assert len(result.model_qualifications) == 7

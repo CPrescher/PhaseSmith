@@ -15,6 +15,9 @@ development versions.
   exact beam-spillover mask and source-deposited radius. PhaseSmith and pinned
   GSAS-II pass the fixed-profile parity gates, while independently rejecting
   the 2.15 wt% Si displacement anchor as non-transferable.
+- Correct citrate validation records so `legacy_curve_poisson_rwp` is actually
+  recomputed with Poisson weights rather than echoing the deposited-weight Rwp;
+  regenerate all affected checked-in oracle artifacts.
 
 ## 0.3.0
 

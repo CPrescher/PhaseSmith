@@ -109,7 +109,7 @@
     "status": "qualified_pass"
   },
   "gsasii": {
-    "legacy_curve_poisson_rwp": 0.048528752652532176,
+    "legacy_curve_poisson_rwp": 0.048528832575195704,
     "legacy_curve_profile_correlation": 0.9929574087297264,
     "legacy_weight_fraction_errors": {
       "silicon": 0.02903404488966731,
@@ -347,9 +347,9 @@
   },
   "phasesmith": {
     "calibrated_sample_displacement_mm": -0.024923521183769462,
-    "elapsed_seconds": 1.316298833116889,
+    "elapsed_seconds": 1.3259687081445009,
     "free_parameter_count": 3,
-    "legacy_curve_poisson_rwp": 0.048528752652532176,
+    "legacy_curve_poisson_rwp": 0.048528832575195704,
     "legacy_curve_profile_correlation": 0.9929574087297257,
     "legacy_weight_fraction_errors": {
       "silicon": 0.03010323302774143,
