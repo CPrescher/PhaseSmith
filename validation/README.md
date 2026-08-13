@@ -293,6 +293,14 @@ have deliberately different meanings:
   `SH/L=0.002` floor; this is recorded as a compression-fidelity diagnostic,
   not zero physical source divergence. The reviewed forensic artifact is
   `results/2026-08-13-citrate-rubidium-low-angle-forensics.json`.
+  The converter also preserves all 1,197 source reflection rows in
+  `source_reflections.csv`. The 600 unique calculated F² values provide a
+  model-independent conversion check. On the 20 low-angle rubidium reflections,
+  the deposited Cromer–Mann table plus converted structure gives 0.0289%
+  source-weighted L1 error; PhaseSmith's production Waasmaier–Kirfel table gives
+  0.301%. Thus intensity-table choice is visible but not large enough to explain
+  the profile residual. The reviewed record is
+  `results/2026-08-13-citrate-rubidium-source-reflection-fidelity.json`.
 
 The QARR checkpoint evaluates supplied CIF anisotropic displacement tensors
 directly and keeps them fixed; sites without displacement values start from a

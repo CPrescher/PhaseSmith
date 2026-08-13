@@ -1405,9 +1405,20 @@ scan reaches pinned GSAS-II's
 effective `SH/L=0.002` floor; because the source records separate
 `S/L=H/L=0.0097`, this is an axial-compression fidelity warning rather than
 evidence for zero divergence. No new production term is justified. The next
-checkpoint compares source-native reflection intensities and legacy
-profile-function-4 axial shapes before changing PhaseSmith physics; other
-Stephens Laue classes remain optional completeness work.
+checkpoint first compares source-native reflection intensities and then legacy
+profile-function-4 axial shapes before changing PhaseSmith physics.
+
+The source-reflection checkpoint is complete. The converter now preserves all
+1,197 deposited reflection rows, which reduce to 600 unique phase/HKL records.
+For the 20 low-angle rubidium reflections, converted structure plus deposited
+Cromer–Mann factors reproduces source calculated F² with 0.0289% intensity-
+weighted L1 and 0.0301% normalized RMS error; d-spacings agree within
+1.54e-5 angstrom. Production Waasmaier–Kirfel scattering gives 0.301% weighted
+L1 and 0.296% normalized RMS error. The table choice is measurable but far too
+small to explain the profile gap. Structure, symmetry, ADPs, and source
+reflection intensities are cleared; legacy profile-function-4 axial-shape
+fidelity is the next checkpoint. Other Stephens Laue classes remain optional
+completeness work.
 
 ## Quality bar
 

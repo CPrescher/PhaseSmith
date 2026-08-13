@@ -22,6 +22,63 @@ _LEGACY_WEIGHT_FRACTIONS = {
     "silicon": 0.0215,
 }
 
+_REFLECTION_COLUMNS = (
+    "h",
+    "k",
+    "l",
+    "phase_id",
+    "wavelength_id",
+    "f_squared_measured",
+    "f_squared_calculated",
+    "phase_deg",
+    "d_spacing_angstrom",
+    "i100_measured",
+)
+
+
+def _source_reflections(powder_block: str) -> np.ndarray:
+    header = (
+        "    _refln_index_h\n"
+        "    _refln_index_k\n"
+        "    _refln_index_l\n"
+        "    _pd_refln_phase_id\n"
+        "    _pd_refln_wavelength_id\n"
+        "    _refln_observed_status\n"
+        "    _refln_F_squared_meas\n"
+        "    _refln_F_squared_calc\n"
+        "    _refln_phase_calc\n"
+        "    _refln_d_spacing\n"
+        "    _gsas_i100_meas\n"
+    )
+    try:
+        remainder = powder_block.split(header, 1)[1]
+    except IndexError as error:
+        raise ValueError("IUCr CIF does not contain the reviewed reflection loop") from error
+    rows: list[list[float]] = []
+    for line in remainder.splitlines():
+        fields = line.split()
+        if len(fields) != 11:
+            break
+        if fields[5] != "o":
+            raise ValueError("IUCr reflection loop contains an unsupported status")
+        rows.append(
+            [
+                *[float(value) for value in fields[:5]],
+                *[float(value) for value in fields[6:]],
+            ]
+        )
+    result = np.asarray(rows, dtype=np.float64)
+    if (
+        result.shape != (1197, len(_REFLECTION_COLUMNS))
+        or not np.isfinite(result).all()
+        or not np.all(result[:, 8] > 0.0)
+        or not np.all(result[:, 6] >= 0.0)
+        or set(result[:, 3]) != {1.0, 2.0}
+        or set(result[:, 4]) != {1.0, 2.0}
+    ):
+        raise ValueError("IUCr reflection loop failed its reviewed numerical contract")
+    return result
+
 
 def convert_iucr_trirubidium_citrate_silicon_bundle(
     source: str | Path, destination: str | Path
@@ -31,7 +88,8 @@ def convert_iucr_trirubidium_citrate_silicon_bundle(
     The deposited refinement excludes the first 594 of 4,701 measured points
     because of beam spillover. The bundle retains that exact finite mask, the
     observed counts, deposited legacy-GSAS curve and background, both
-    structures, and an explicit inventory of source-only model terms.
+    structures, the source-deposited reflection table, and an explicit
+    inventory of source-only model terms.
     """
 
     source_path = Path(source)
@@ -60,6 +118,7 @@ def convert_iucr_trirubidium_citrate_silicon_bundle(
     powder_block = _block(text, "RAMM077C_p_01")
     sample_count = int(_scalar(powder_block, "_pd_meas_number_of_points"))
     rows = _powder_rows(powder_block, expected_rows=sample_count)
+    source_reflections = _source_reflections(powder_block)
     x = np.linspace(
         _scalar(powder_block, "_pd_meas_2theta_range_min"),
         _scalar(powder_block, "_pd_meas_2theta_range_max"),
@@ -95,6 +154,14 @@ def convert_iucr_trirubidium_citrate_silicon_bundle(
         np.column_stack((selected_x, observed, legacy_calculated, legacy_background)),
         delimiter=",",
         header="two_theta_deg,observed,legacy_calculated,legacy_background",
+        comments="",
+        fmt="%.12g",
+    )
+    np.savetxt(
+        destination_root / "source_reflections.csv",
+        source_reflections,
+        delimiter=",",
+        header=",".join(_REFLECTION_COLUMNS),
         comments="",
         fmt="%.12g",
     )
@@ -156,6 +223,20 @@ def convert_iucr_trirubidium_citrate_silicon_bundle(
             "two_theta_max_deg": float(selected_x[-1]),
             "excluded_source_region_two_theta_deg": [5.0, 17.0],
             "exclusion_reason": "beam spillover in the deposited refinement",
+        },
+        "source_reflections": {
+            "file": "source_reflections.csv",
+            "columns": list(_REFLECTION_COLUMNS),
+            "row_count": int(source_reflections.shape[0]),
+            "observed_status": "o",
+            "phase_id_to_name": {
+                "1": "trirubidium_citrate",
+                "2": "silicon",
+            },
+            "provenance": (
+                "Source-deposited pdCIF reflection loop; values are preserved without "
+                "recalculation so structure-factor conversion can be audited independently."
+            ),
         },
         "silicon_standard": {
             "material": "NIST SRM 640b",

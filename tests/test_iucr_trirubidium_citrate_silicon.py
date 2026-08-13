@@ -11,6 +11,33 @@ from phasesmith.io import (
 from phasesmith.validation import run_iucr_trirubidium_citrate_silicon_workflow
 
 
+def test_checked_source_conversion_preserves_reflection_loop(tmp_path: Path) -> None:
+    source = (
+        Path(__file__).resolve().parents[1]
+        / "validation/data/iucr-trirubidium-citrate-si-standard/vn2123sup1.cif"
+    )
+    bundle = tmp_path / "bundle"
+    manifest_path = convert_iucr_trirubidium_citrate_silicon_bundle(source, bundle)
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    reflections = np.loadtxt(bundle / "source_reflections.csv", delimiter=",", skiprows=1)
+
+    assert reflections.shape == (1197, 10)
+    assert manifest["source_reflections"]["columns"] == [
+        "h",
+        "k",
+        "l",
+        "phase_id",
+        "wavelength_id",
+        "f_squared_measured",
+        "f_squared_calculated",
+        "phase_deg",
+        "d_spacing_angstrom",
+        "i100_measured",
+    ]
+    np.testing.assert_array_equal(np.unique(reflections[:, 3], return_counts=True)[1], [1179, 18])
+    assert np.count_nonzero(reflections[:, 6] == 0.0) == 2
+
+
 def test_real_iucr_trirubidium_citrate_silicon_conversion_when_configured(
     tmp_path: Path,
 ) -> None:
@@ -21,8 +48,17 @@ def test_real_iucr_trirubidium_citrate_silicon_conversion_when_configured(
     manifest_path = convert_iucr_trirubidium_citrate_silicon_bundle(source, bundle)
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     pattern = np.loadtxt(bundle / "pattern.csv", delimiter=",", skiprows=1)
+    reflections = np.loadtxt(bundle / "source_reflections.csv", delimiter=",", skiprows=1)
 
     assert pattern.shape == (4106, 4)
+    assert reflections.shape == (1197, 10)
+    assert manifest["source_reflections"]["row_count"] == 1197
+    assert manifest["source_reflections"]["phase_id_to_name"] == {
+        "1": "trirubidium_citrate",
+        "2": "silicon",
+    }
+    assert set(reflections[:, 3]) == {1.0, 2.0}
+    assert set(reflections[:, 4]) == {1.0, 2.0}
     assert manifest["data_selection"]["source_index_interval_inclusive"] == [594, 4699]
     assert manifest["data_selection"]["exclusion_reason"].startswith("beam spillover")
     assert manifest["legacy_gsas_reference"]["rwp"] == pytest.approx(0.02458337665)

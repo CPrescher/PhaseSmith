@@ -1,0 +1,172 @@
+{
+  "duplicate_wavelength_f_squared_max_abs_delta": 0.0,
+  "low_angle_limits_deg": [
+    17.004916,
+    30.0
+  ],
+  "phases": {
+    "silicon": {
+      "d_spacing_max_abs_error_angstrom": 3.940172560890076e-06,
+      "low_angle_reflection_count": 1,
+      "production_waasmaier_kirfel": {
+        "all_positive": {
+          "maximum_abs_relative_error": 0.0005172852369883518,
+          "median_abs_relative_error": 0.00025489858607308236,
+          "median_calculated_over_source": 1.0001436919663833,
+          "p95_abs_relative_error": 0.0005081209474812276,
+          "profile_correlation": 0.9999997851135597,
+          "reflection_count": 8,
+          "rms_log_ratio": 0.0003053285516607117,
+          "source_normalized_rms_error": 0.00033145202954202154,
+          "source_weighted_l1_relative_error": 0.00028177117593612
+        },
+        "low_angle": {
+          "maximum_abs_relative_error": 0.00025424756535041837,
+          "median_abs_relative_error": 0.00025424756535041837,
+          "median_calculated_over_source": 1.0002542475653504,
+          "p95_abs_relative_error": 0.00025424756535041837,
+          "profile_correlation": null,
+          "reflection_count": 1,
+          "rms_log_ratio": 0.0002542152499154728,
+          "source_normalized_rms_error": 0.00025424756535032746,
+          "source_weighted_l1_relative_error": 0.00025424756535032746
+        },
+        "strong": {
+          "maximum_abs_relative_error": 0.0005172852369883518,
+          "median_abs_relative_error": 0.0002896660664425954,
+          "median_calculated_over_source": 1.000254898586073,
+          "p95_abs_relative_error": 0.0005107393159118345,
+          "profile_correlation": 0.9999997048843312,
+          "reflection_count": 6,
+          "rms_log_ratio": 0.0003520436125324297,
+          "source_normalized_rms_error": 0.0003371914973387513,
+          "source_weighted_l1_relative_error": 0.00031072212141066823
+        }
+      },
+      "reflection_count": 9,
+      "source_cromer_mann": {
+        "all_positive": {
+          "maximum_abs_relative_error": 3.887516304423855e-07,
+          "median_abs_relative_error": 2.386677990795505e-07,
+          "median_calculated_over_source": 1.0000001766767634,
+          "p95_abs_relative_error": 3.8875162997609183e-07,
+          "profile_correlation": 0.9999999999999264,
+          "reflection_count": 8,
+          "rms_log_ratio": 2.542653404548856e-07,
+          "source_normalized_rms_error": 1.9867044246887883e-07,
+          "source_weighted_l1_relative_error": 1.9760835124376352e-07
+        },
+        "low_angle": {
+          "maximum_abs_relative_error": 2.691504032981129e-07,
+          "median_abs_relative_error": 2.691504032981129e-07,
+          "median_calculated_over_source": 1.0000002691504033,
+          "p95_abs_relative_error": 2.691504032981129e-07,
+          "profile_correlation": null,
+          "reflection_count": 1,
+          "rms_log_ratio": 2.691503670771496e-07,
+          "source_normalized_rms_error": 2.6915040323440163e-07,
+          "source_weighted_l1_relative_error": 2.6915040323440163e-07
+        },
+        "strong": {
+          "maximum_abs_relative_error": 2.691504032981129e-07,
+          "median_abs_relative_error": 1.7023260751036773e-07,
+          "median_calculated_over_source": 1.0000000807042468,
+          "p95_abs_relative_error": 2.660782430496944e-07,
+          "profile_correlation": 0.9999999999998889,
+          "reflection_count": 6,
+          "rms_log_ratio": 1.8927553330531383e-07,
+          "source_normalized_rms_error": 1.884943532491612e-07,
+          "source_weighted_l1_relative_error": 1.7535169833410178e-07
+        }
+      },
+      "source_phase_id": 2,
+      "strong_f_squared_threshold": 1193.401
+    },
+    "trirubidium_citrate": {
+      "d_spacing_max_abs_error_angstrom": 1.540894071450083e-05,
+      "low_angle_reflection_count": 20,
+      "production_waasmaier_kirfel": {
+        "all_positive": {
+          "maximum_abs_relative_error": 6.4959927972317955,
+          "median_abs_relative_error": 0.0058710805366064545,
+          "median_calculated_over_source": 1.0004478343463945,
+          "p95_abs_relative_error": 0.06968013412775698,
+          "profile_correlation": 0.9999921180414577,
+          "reflection_count": 591,
+          "rms_log_ratio": 0.2045820691546992,
+          "source_normalized_rms_error": 0.0036492469167676107,
+          "source_weighted_l1_relative_error": 0.0041127486439590894
+        },
+        "low_angle": {
+          "maximum_abs_relative_error": 0.06575820786674647,
+          "median_abs_relative_error": 0.004061229442596959,
+          "median_calculated_over_source": 1.0011076694687722,
+          "p95_abs_relative_error": 0.06533964924032697,
+          "profile_correlation": 0.9999939219176831,
+          "reflection_count": 20,
+          "rms_log_ratio": 0.02218984531754988,
+          "source_normalized_rms_error": 0.0029634378838495337,
+          "source_weighted_l1_relative_error": 0.003006209939580019
+        },
+        "strong": {
+          "maximum_abs_relative_error": 0.06935555520906733,
+          "median_abs_relative_error": 0.004377199425008138,
+          "median_calculated_over_source": 1.0003327057111493,
+          "p95_abs_relative_error": 0.02037782671993484,
+          "profile_correlation": 0.9999915754837095,
+          "reflection_count": 443,
+          "rms_log_ratio": 0.009672962943948503,
+          "source_normalized_rms_error": 0.0036450430752232666,
+          "source_weighted_l1_relative_error": 0.004009263723075012
+        }
+      },
+      "reflection_count": 591,
+      "source_cromer_mann": {
+        "all_positive": {
+          "maximum_abs_relative_error": 1.7909520886662675,
+          "median_abs_relative_error": 0.0009895207485388635,
+          "median_calculated_over_source": 1.000024550805894,
+          "p95_abs_relative_error": 0.015132267501517138,
+          "profile_correlation": 0.9999999003579286,
+          "reflection_count": 591,
+          "rms_log_ratio": 0.04791892733540674,
+          "source_normalized_rms_error": 0.0004179197959256253,
+          "source_weighted_l1_relative_error": 0.0005580439751729038
+        },
+        "low_angle": {
+          "maximum_abs_relative_error": 0.006643114169274322,
+          "median_abs_relative_error": 0.0003973680894155396,
+          "median_calculated_over_source": 0.9999214560064644,
+          "p95_abs_relative_error": 0.005668796342070787,
+          "profile_correlation": 0.9999999410088125,
+          "reflection_count": 20,
+          "rms_log_ratio": 0.0023818186140840527,
+          "source_normalized_rms_error": 0.00030121363596240827,
+          "source_weighted_l1_relative_error": 0.00028926706155009174
+        },
+        "strong": {
+          "maximum_abs_relative_error": 0.007801521431132441,
+          "median_abs_relative_error": 0.0006966767793882278,
+          "median_calculated_over_source": 0.9999520034614008,
+          "p95_abs_relative_error": 0.0032594455134557715,
+          "profile_correlation": 0.9999998936767996,
+          "reflection_count": 443,
+          "rms_log_ratio": 0.001505574542770344,
+          "source_normalized_rms_error": 0.0004172921067066723,
+          "source_weighted_l1_relative_error": 0.000542050170646746
+        }
+      },
+      "source_phase_id": 1,
+      "strong_f_squared_threshold": 416.45349999999996
+    }
+  },
+  "review": {
+    "conclusion": "The converted structures, symmetry, displacement values, and source-deposited Cromer-Mann scattering reproduce the low-angle calculated F-squared values. Reflection-intensity conversion is not the dominant residual source.",
+    "converted_d_spacings_match_source": true,
+    "duplicate_wavelength_rows_are_consistent": true,
+    "source_native_low_angle_f_squared_is_faithful": true
+  },
+  "source_dataset_id": "iucr-trirubidium-citrate-si-standard",
+  "source_row_count": 1197,
+  "unique_reflection_count": 600
+}

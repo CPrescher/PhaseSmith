@@ -1786,8 +1786,13 @@ source-to-deposited weighted-SSE gap. Best physical width/axial values plus
 four well-conditioned background basis terms reach 4.9772% Rwp from a 9.8275%
 local base, still above the deposited 2.7107%. Pinned GSAS-II's effective
 `SH/L=0.002` lower boundary is explicitly treated as a compressed-oracle
-warning, not zero source divergence. Next, compare source-native reflection
-intensities and legacy profile-function-4 axial shapes before adding another
+warning, not zero source divergence. The reflection half is complete: all 1,197
+deposited rows are preserved, and the 20 low-angle rubidium F² values match the
+converted structure plus source Cromer–Mann table with 0.0289% intensity-
+weighted L1 error. Production Waasmaier–Kirfel scattering gives 0.301%, which
+is visible but insufficient to explain the profile gap. Structure, symmetry,
+ADP, and reflection-intensity translation are cleared. Next, audit the
+source-native legacy profile-function-4 axial shape before adding another
 production term.
 Other Laue-class reductions remain separate follow-up slices rather than
 silently sharing the orthorhombic basis.

@@ -6,6 +6,11 @@ from .citrate_broadening_ablation import (
     CitrateBroadeningModelResult,
     run_citrate_isotropic_broadening_ablation,
 )
+from .citrate_source_fidelity import (
+    CitrateSourceReflectionFidelityResult,
+    ReflectionFidelityMetrics,
+    run_citrate_source_reflection_fidelity,
+)
 from .citrate_stephens_ablation import (
     CitrateStephensAblationResult,
     CitrateStephensModelResult,
@@ -81,6 +86,7 @@ __all__ = [
     "BathLtlResult",
     "CitrateBroadeningAblationResult",
     "CitrateBroadeningModelResult",
+    "CitrateSourceReflectionFidelityResult",
     "CitrateStephensAblationResult",
     "CitrateStephensModelResult",
     "ExternalValidationFile",
@@ -91,6 +97,7 @@ __all__ = [
     "NistSrm660cParityResult",
     "QarrParityResult",
     "RealDataValidationReport",
+    "ReflectionFidelityMetrics",
     "RowlesQpaResult",
     "ValidationCase",
     "ValidationCheck",
@@ -103,6 +110,7 @@ __all__ = [
     "read_nist_srm660c_specimen",
     "run_bath_ltl_workflow",
     "run_citrate_isotropic_broadening_ablation",
+    "run_citrate_source_reflection_fidelity",
     "run_citrate_stephens_ablation",
     "run_echidna_lab6_validation",
     "run_iucr_silicon_standard_workflow",

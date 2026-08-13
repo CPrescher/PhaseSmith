@@ -537,6 +537,7 @@ def test_trirubidium_citrate_comparison_gates_expected_transfer_failure() -> Non
 @pytest.mark.parametrize(
     "script",
     [
+        "benchmarks/audit_citrate_source_reflections.py",
         "benchmarks/compare_gsasii.py",
         "benchmarks/compare_gsasii_iucr_silicon_standard.py",
         "benchmarks/compare_gsasii_iucr_sodium_citrate_silicon.py",
