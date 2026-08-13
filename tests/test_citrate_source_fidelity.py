@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 import pytest
@@ -11,10 +12,9 @@ from phasesmith.validation import run_citrate_source_reflection_fidelity
 def test_source_reflection_fidelity_clears_low_angle_structure_translation(
     tmp_path: Path,
 ) -> None:
-    source = (
-        Path(__file__).resolve().parents[1]
-        / "validation/data/iucr-trirubidium-citrate-si-standard/vn2123sup1.cif"
-    )
+    source = os.environ.get("PHASESMITH_IUCR_TRIRUBIDIUM_CITRATE_SILICON_DATA")
+    if not source:
+        pytest.skip("set PHASESMITH_IUCR_TRIRUBIDIUM_CITRATE_SILICON_DATA for the external test")
     bundle = tmp_path / "bundle"
     convert_iucr_trirubidium_citrate_silicon_bundle(source, bundle)
     result = run_citrate_source_reflection_fidelity(bundle)

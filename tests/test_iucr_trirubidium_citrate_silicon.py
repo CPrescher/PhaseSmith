@@ -12,10 +12,9 @@ from phasesmith.validation import run_iucr_trirubidium_citrate_silicon_workflow
 
 
 def test_checked_source_conversion_preserves_reflection_loop(tmp_path: Path) -> None:
-    source = (
-        Path(__file__).resolve().parents[1]
-        / "validation/data/iucr-trirubidium-citrate-si-standard/vn2123sup1.cif"
-    )
+    source = os.environ.get("PHASESMITH_IUCR_TRIRUBIDIUM_CITRATE_SILICON_DATA")
+    if not source:
+        pytest.skip("set PHASESMITH_IUCR_TRIRUBIDIUM_CITRATE_SILICON_DATA for the external test")
     bundle = tmp_path / "bundle"
     manifest_path = convert_iucr_trirubidium_citrate_silicon_bundle(source, bundle)
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
