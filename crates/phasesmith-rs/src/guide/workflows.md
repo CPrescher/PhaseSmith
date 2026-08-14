@@ -51,6 +51,17 @@ phases, background, and calculation options. The workflow crate separates:
 
 The runnable `joint_pbso4` example in the `phasesmith-workflows` package shows
 a complete native X-ray/neutron workflow over the pinned validation dataset.
+Use [`crate::guide::real_data_rietveld`] for a line-by-line tour of that
+program and [`crate::guide::refinement_operations`] for parameter staging,
+runtime integration, checkpoint continuation, and acceptance checks.
+
+Do not begin by selecting every parameter family. First calculate the initial
+request and inspect its phase/background decomposition. Then release parameters
+in physically meaningful groups. [`crate::workflows::RietveldParameterSelection`]
+is the caller's authorization boundary; the solver never silently widens it.
+An explicit [`crate::workflows::RietveldRecipe`] or the inspectable output of
+[`crate::workflows::intelligent_rietveld_recipe`] can make a cumulative staged
+sequence, but the caller still decides whether to run it.
 
 ## Runtime controls
 

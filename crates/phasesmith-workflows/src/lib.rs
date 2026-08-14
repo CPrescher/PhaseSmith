@@ -40,6 +40,12 @@
 //! [`RefinementRuntime`] to its cancellation/event bridge, and uses
 //! `phasesmith-persistence` for native project state. The `joint_pbso4` example
 //! in this package demonstrates a complete Rust-only X-ray/neutron refinement.
+//! The facade's
+//! [real-data walkthrough](https://docs.rs/phasesmith/latest/phasesmith/guide/real_data_rietveld/)
+//! explains that example step by step, and its
+//! [operations guide](https://docs.rs/phasesmith/latest/phasesmith/guide/refinement_operations/)
+//! covers staging, bounded runtimes, checkpoint continuation, and result
+//! acceptance.
 //! The facade provides collected mathematical references for
 //! [refinement](https://docs.rs/phasesmith/latest/phasesmith/guide/mathematics/refinement/)
 //! and

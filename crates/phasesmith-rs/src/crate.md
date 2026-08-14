@@ -32,7 +32,32 @@ boundaries:
 - [`guide::mathematics`] documents the implemented equations and analytical
   chains;
 - [`guide::workflows`] maps calculation and refinement entry points;
+- [`guide::cif_inputs`] explains accepted CIF content, strict/permissive
+  import, diagnostics, and conversion into a refinement phase;
+- [`guide::real_data_rietveld`] walks through the repository's measured PbSO4
+  X-ray/neutron refinement from files to validated results;
+- [`guide::refinement_operations`] shows parameter staging, bounded execution,
+  checkpoint continuation, and result interpretation;
 - [`guide::application_hosts`] covers desktop/GUI integration.
+
+## From files to a refinement
+
+A complete analysis crosses several deliberately separate crates. The types
+make each scientific decision visible instead of hiding it in a project-file
+dictionary:
+
+| Step | Input | Output | Guide |
+| --- | --- | --- | --- |
+| Import | powder text and CIF | [`model::PatternRecord`] and [`io::CifStructure`] | [`guide::cif_inputs`] |
+| Prepare | structure, radiation, range | reflections and [`engine::StructuralPhaseDefinition`] | [`guide::real_data_rietveld`] |
+| Calculate | pattern, instrument, phases | [`workflows::RietveldCalculation`] | [`guide::real_data_rietveld`] |
+| Refine | parameter selection, bounds, constraints | accepted state, history, metrics, checkpoint | [`guide::refinement_operations`] |
+| Persist | validated project and analysis | versioned native bundle and reports | [`persistence`] |
+
+If you want a working program before reading the individual types, start with
+the real-data walkthrough. It names the exact repository command, explains
+each construction step, and shows which returned fields should be checked
+before accepting a refinement.
 
 ## Quick start: calculate a profile
 
