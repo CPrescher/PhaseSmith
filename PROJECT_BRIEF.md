@@ -659,6 +659,10 @@ documented; GSAS-II itself is never vendored.
 - `python/phasesmith/io`: optional format adapters; CIF uses a lazy Gemmi backend
   and returns only parser-independent structures and diagnostics; powder text
   readers return immutable arrays and source metadata.
+- `python/phasesmith/refinement/readiness`: non-mutating pre-refinement review
+  that carries import diagnostics forward, exposes retained provenance and
+  active physical models, and reports contradictory optics or risky selected
+  parameter combinations with stable machine-readable codes.
 - `python/phasesmith/quantitative`: phase-scale interpretation and quantitative
   results, separate from iterative refinement.
 - `python/phasesmith/validation`: opt-in external dataset provenance and

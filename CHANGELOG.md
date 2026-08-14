@@ -11,6 +11,11 @@ development versions.
   validated before numerical work, constraints that first become active in a
   later stage are restored from the original request, and a rejected later
   stage cannot silently narrow the next intelligent proposal.
+- Add a deterministic pre-refinement readiness report that aggregates CIF
+  diagnostics and provenance, discloses the active radiation, scattering,
+  intensity-correction, and specimen-geometry models, and warns about model
+  mismatches or high-risk joint parameter selections without mutating the
+  request.
 
 ## 0.4.1
 

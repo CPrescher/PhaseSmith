@@ -433,6 +433,14 @@ rationale; `run_rietveld_recipe` executes explicit stages and stops when a
 stage does not meet its declared termination policy. The solver never invokes
 the planner implicitly.
 
+`review_rietveld_input` is the pre-refinement conversion and configuration
+review boundary. Its immutable report carries CIF warnings/errors forward,
+shows structure provenance and the active radiation, scattering, correction,
+and geometry models, and flags probe/geometry contradictions plus selected
+scale--occupancy, lattice--wavelength, and zero--displacement correlations.
+It neither changes the request nor claims to infer which phases ought to have
+been supplied. `RietveldProject.review_readiness()` exposes the same report.
+
 The initial families are CW U/V/W/X/Y coefficients, constant zero shift,
 Bragg--Brentano sample height, Debye--Scherrer X/Y specimen displacement,
 normalized polynomial background coefficients, phase scale,
