@@ -160,6 +160,7 @@ fn built_in_dataset_manifests_match_the_python_registry() {
             "ansto-echidna-lab6-cw-neutron",
             "aps-sucrose-11bmb",
             "gsasii-pbso4-cw",
+            "iucr-ceria-size-strain-round-robin",
             "iucr-qarr-1g",
             "iucr-qarr-1h",
             "nist-srm660c-lab6-xray",
@@ -181,6 +182,13 @@ fn built_in_dataset_manifests_match_the_python_registry() {
     assert_eq!(
         validation_dataset("gsasii-pbso4-cw").unwrap().files.len(),
         5
+    );
+    assert_eq!(
+        validation_dataset("iucr-ceria-size-strain-round-robin")
+            .unwrap()
+            .files
+            .len(),
+        6
     );
     assert_eq!(validation_dataset("iucr-qarr-1g").unwrap().files.len(), 5);
     assert_eq!(validation_dataset("iucr-qarr-1h").unwrap().files.len(), 5);

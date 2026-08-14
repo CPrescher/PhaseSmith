@@ -1,6 +1,14 @@
 """Explicit, provenance-aware external validation datasets."""
 
 from .bath_ltl import BathLtlResult, run_bath_ltl_workflow
+from .ceria_transferability import (
+    CeriaBroadeningStart,
+    CeriaPeakMetric,
+    CeriaPositionFit,
+    CeriaProfileStart,
+    CeriaTransferabilityResult,
+    run_ceria_profile_transferability,
+)
 from .citrate_broadening_ablation import (
     CitrateBroadeningAblationResult,
     CitrateBroadeningModelResult,
@@ -84,6 +92,11 @@ __all__ = [
     "VALIDATION_CASES",
     "VALIDATION_DATASETS",
     "BathLtlResult",
+    "CeriaBroadeningStart",
+    "CeriaPeakMetric",
+    "CeriaPositionFit",
+    "CeriaProfileStart",
+    "CeriaTransferabilityResult",
     "CitrateBroadeningAblationResult",
     "CitrateBroadeningModelResult",
     "CitrateSourceReflectionFidelityResult",
@@ -109,6 +122,7 @@ __all__ = [
     "qarr_1g_readiness",
     "read_nist_srm660c_specimen",
     "run_bath_ltl_workflow",
+    "run_ceria_profile_transferability",
     "run_citrate_isotropic_broadening_ablation",
     "run_citrate_source_reflection_fidelity",
     "run_citrate_stephens_ablation",

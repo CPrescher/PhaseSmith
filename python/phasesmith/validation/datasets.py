@@ -93,8 +93,63 @@ _IUCR_TRIRUBIDIUM_CITRATE_SILICON_SOURCE = "https://journals.iucr.org/e/issues/2
 _IUCR_TRIRUBIDIUM_CITRATE_MONOHYDRATE_SILICON_SOURCE = (
     "https://journals.iucr.org/e/issues/2017/02/00/hb7648"
 )
+_IUCR_CERIA_SIZE_STRAIN_SOURCE = "https://mysite.du.edu/~balzar"
 
 VALIDATION_DATASETS: tuple[ValidationDataset, ...] = (
+    ValidationDataset(
+        dataset_id="iucr-ceria-size-strain-round-robin",
+        title="IUCr ceria size/strain round-robin laboratory X-ray pair",
+        source_url=f"{_IUCR_CERIA_SIZE_STRAIN_SOURCE}/s-s_rr.htm",
+        citation=(
+            "D. Balzar et al., J. Appl. Cryst. 37 (2004) 911-924, "
+            "doi:10.1107/S0021889804022551"
+        ),
+        license_note=(
+            "The IUCr-sponsored round-robin page explicitly offers the original "
+            "measurements for download but states no redistribution license. Files are "
+            "therefore checksum-pinned external inputs and are not redistributed."
+        ),
+        files=(
+            ExternalValidationFile(
+                "langfsh1.xy",
+                "8b4c0562e3c25f2ed33bade08f03ba990f693c219f991bd408f73b2c6e7c8e9f",
+                93_567,
+                (f"{_IUCR_CERIA_SIZE_STRAIN_SOURCE}/langfsh1.xy",),
+            ),
+            ExternalValidationFile(
+                "langfsh2.xy",
+                "87fc1b17a7f17d441333eafea2aec7ad21cff1e25cb89c1bab915585868be963",
+                40_017,
+                (f"{_IUCR_CERIA_SIZE_STRAIN_SOURCE}/langfsh2.xy",),
+            ),
+            ExternalValidationFile(
+                "langfsh3.xy",
+                "387563d40cb287b0fc528616e38a65cf383382ed26927aca81cfaa3b277867ab",
+                49_992,
+                (f"{_IUCR_CERIA_SIZE_STRAIN_SOURCE}/langfsh3.xy",),
+            ),
+            ExternalValidationFile(
+                "langfbr1.xy",
+                "4c84a0fb8546bc04c12d86316b3eaa00bced244df875ce92af73d400beda6820",
+                46_846,
+                (f"{_IUCR_CERIA_SIZE_STRAIN_SOURCE}/langfbr1.xy",),
+            ),
+            ExternalValidationFile(
+                "langfbr2.xy",
+                "fbe42f048ef653731ebc767467d2a0b5fd0ed537c341901ed50b0a0379f812e4",
+                20_071,
+                (f"{_IUCR_CERIA_SIZE_STRAIN_SOURCE}/langfbr2.xy",),
+            ),
+            ExternalValidationFile(
+                "langfbr3.xy",
+                "ef3d0f202bf1f88cd6adc7d92cbce56906cb358cca7e1c5b0ed490f785741068",
+                20_171,
+                (f"{_IUCR_CERIA_SIZE_STRAIN_SOURCE}/langfbr3.xy",),
+            ),
+        ),
+        purpose="holdout",
+        expected_status="passed",
+    ),
     ValidationDataset(
         dataset_id="iucr-trirubidium-citrate-si-standard",
         title="Anhydrous trirubidium citrate with NIST SRM 640b silicon",

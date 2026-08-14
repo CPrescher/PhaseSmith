@@ -1687,22 +1687,29 @@ Structural parameter and instrument refinement must
 be introduced only with analytical derivatives, finite-difference tests, and
 new oracle contracts; it is not part of the completed Le Bail facade.
 
-Unit 29 remains the next independent constant-wavelength calibration
-milestone: run broader independent experimental validation on in-house
-benchmark examples and define a reviewable
-transferability gate. Completion requires provenance-complete physical inputs,
-plain validation artifacts, explicit cross-pattern profile metrics, and a
-decision supported by those results about whether any specialized profile term
-belongs in production. Failed transfer remains a valid outcome; it must not be
-converted into a production feature by tuning against one specimen.
+Unit 29's first independent constant-wavelength calibration/holdout test is now
+complete on the historical IUCr ceria size/strain round robin. It is explicitly
+external rather than in-house. Six Birmingham scan-range files are registered
+by exact size and SHA-256; annealed narrow-line CeO2 calibrates the empirical
+profile and broadened CeO2 remains untouched until that profile is frozen.
+The 8,726-sample calibration selects the same W-only profile from three starts
+and reaches Rwp 0.192590/correlation 0.953870. On 4,126 holdout samples, the
+no-sample-broadening Rwp 0.553990 falls to 0.058097 with the existing isotropic
+size/Gaussian-microstrain model; correlation is 0.985574 and weighted SSE falls
+98.9002%. Three dispersed starts and twelve deterministic Poisson resamples
+pass the predeclared stability gates. Peak-wise centroid/FWHM/area/L1/moment
+records remain visible and qualify this as an empirical transfer result rather
+than a fundamental-parameters calibration.
 
-The workspace audit on 2026-08-14 found no new independent in-house
-calibration/untouched-holdout pair. Unit 29 is therefore explicitly
-input-blocked, not completed with an external or already reviewed substitute.
-`docs/profile-transferability-gate.md` freezes the required input package,
-calibration-only fit, frozen-profile holdout, repeat/start checks, and candidate
-promotion criteria. Existing evidence retains the decision not to add LPSD,
-tube-tail, continuum, or coupled-dispersion production terms.
+The physical promotion half remains blocked by source metadata, not by missing
+patterns. Radius, apertures/detector geometry, axial lengths, Soller angles,
+monochromator passband, and specimen mounting metrology are not documented, and
+the current Le Bail estimator treats the 1.6% K-alpha2 component as a disclosed
+dominant-line approximation. Unit 29 therefore closes with a reviewed negative
+production decision: do not add LPSD, tube-tail, continuum, or
+coupled-dispersion terms. Reopening one requires a new provenance-complete pair
+for that named physical term; a future in-house pair remains stronger separate
+evidence.
 
 Unit 29's campaign-orchestration slice is complete. The checked-in version-1
 manifest composes seventeen existing real-data comparison and diagnostic

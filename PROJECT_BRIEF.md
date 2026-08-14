@@ -1453,12 +1453,27 @@ case. Exact recovery now requires a source-native legacy profile oracle rather
 than another PhaseSmith broadening term. Other Stephens Laue classes remain
 optional completeness work.
 
-The next independent in-house Unit-29 transfer test is input-blocked: no new
-calibration/untouched-holdout pair is present in the workspace. Public or
-already reviewed patterns are not relabelled to close that gate. The required
-metadata, prospective protocol, and promotion thresholds are frozen in
-`docs/profile-transferability-gate.md`. Until that evidence passes, LPSD,
-tube-tail, continuum, and coupled-dispersion terms remain outside production.
+The first independent Unit-29 constant-wavelength transfer test now uses the
+external IUCr ceria size/strain round robin without relabelling it as in-house
+evidence. Exact-size/SHA-256 registration retains three contiguous Birmingham
+ranges for the annealed calibration specimen and three for the untouched
+broadened specimen. Three calibration starts select the same W-only empirical
+profile on 8,726 samples (Rwp 0.192590, correlation 0.953870). Freezing that
+profile before the 4,126-sample holdout and adding only the existing isotropic
+size/Gaussian-microstrain model lowers Rwp from 0.553990 to 0.058097, reaches
+0.985574 correlation, and reduces weighted SSE by 98.9002%. Three dispersed
+starts and twelve deterministic Poisson resamples pass the stability gates;
+peak-wise centroid, FWHM, area, L1, and moment diagnostics remain visible.
+
+This is an empirical transfer result, not fundamental-parameters calibration.
+The source omits radius, aperture/detector geometry, axial lengths, Soller
+angles, monochromator passband, and specimen mounting metrology, and the current
+Le Bail estimator discloses a dominant-K-alpha1 approximation for the 1.6%
+K-alpha2 component. Those missing physical inputs block a fair specialized-term
+test. Unit 29 therefore closes with the evidence-backed decision not to add
+LPSD, tube-tail, continuum, or coupled-dispersion production terms. The frozen
+promotion protocol in `docs/profile-transferability-gate.md` still applies to
+any future in-house or provenance-complete external pair.
 
 ## Quality bar
 
