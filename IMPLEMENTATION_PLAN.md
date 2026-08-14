@@ -1633,7 +1633,7 @@ separate application repository.
 ## Resolved pre-1.0 API decisions
 
 The project license was resolved on 2026-08-05 by selecting MIT, and version
-0.4.0 was released on 2026-08-14. The remaining direction questions are now
+0.4.1 was released on 2026-08-14. The remaining direction questions are now
 resolved in `docs/api-stability.md`:
 
 1. Direct `(H, eta)` remains public and is explicitly classified as a
@@ -1649,8 +1649,15 @@ resolved in `docs/api-stability.md`:
 5. Additional space-group/scattering data requires its own source, license,
    hash, generation, and scientific-validation review before redistribution.
 
-The remaining release task is a machine-readable exported-name/signature
-snapshot before the 1.0 release candidate, after intentional 0.x cleanup.
+The pre-1.0 exported-name/signature snapshot is complete. The deterministic
+schema-1 record freezes all names in `__all__` across the six explicit public
+namespaces, labels domain/adapter/validation tiers, and records implementation
+targets and introspectable signatures. Release metadata requires the snapshot
+whose version matches the Cargo/Python version, while the live-package test
+reports an exact unified diff for additions, removals, aliases, kinds, or
+signature changes. Existing versioned snapshots are never silently
+overwritten. The next release milestone is intentional 0.x cleanup reviewed
+against this baseline, followed by the 1.0 release candidate gates.
 
 ## Definition of the next completed milestone
 

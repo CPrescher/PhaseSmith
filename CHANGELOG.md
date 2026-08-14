@@ -20,9 +20,14 @@ development versions.
   low-level mathematical primitive, support-block Jacobians remain the Python
   default, physical units remain canonical, and oracle fixtures or scattering
   tables require explicit provenance and redistribution review.
-- Freeze the prospective Unit-29 in-house profile-transferability contract and
-  record that execution is blocked on a new calibration/untouched-holdout pair;
-  current evidence continues to reject specialized profile-term promotion.
+- Add a deterministic, versioned snapshot of all explicitly exported Python
+  names, implementation targets, and callable signatures. Release metadata and
+  live-package tests now reject unreviewed public-surface drift.
+- Complete the external Unit-29 profile-transferability gate on the
+  checksum-pinned IUCr ceria size/strain round robin. The existing empirical
+  profile plus isotropic size/microstrain model transfers to the broadened
+  holdout, while incomplete optics metadata continues to reject specialized
+  profile-term promotion.
 
 ## 0.4.1
 

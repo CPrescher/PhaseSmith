@@ -757,9 +757,7 @@ def run_ceria_profile_transferability(
         "specialized_term_inputs_complete": False,
     }
     empirical_checks = {
-        key: value
-        for key, value in checks.items()
-        if key != "specialized_term_inputs_complete"
+        key: value for key, value in checks.items() if key != "specialized_term_inputs_complete"
     }
     status = "passed" if all(empirical_checks.values()) else "failed"
     qualifications = (

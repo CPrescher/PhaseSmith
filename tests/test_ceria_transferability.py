@@ -54,9 +54,7 @@ def test_ceria_external_transferability_gate() -> None:
 
     assert result.status == "passed"
     assert all(
-        value
-        for key, value in result.checks.items()
-        if key != "specialized_term_inputs_complete"
+        value for key, value in result.checks.items() if key != "specialized_term_inputs_complete"
     )
     assert result.checks["specialized_term_inputs_complete"] is False
     assert result.checks["calibration_profile_identifiable"] is True

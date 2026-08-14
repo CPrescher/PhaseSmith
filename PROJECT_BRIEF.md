@@ -12,7 +12,7 @@ not part of the numerical library.
 
 ## Current implementation status
 
-PhaseSmith 0.4.0 is the current released baseline. The completed library now
+PhaseSmith 0.4.1 is the current released baseline. The completed library now
 includes Python-free CW and TOF Le Bail/Rietveld workflows, public Python
 facades, native project persistence, and facility-neutral single-/multi-bank
 TOF composition with explicit calibration, correction, background-domain, and
@@ -78,7 +78,7 @@ checkpoint, the live pinned GSAS-II lattice-perturbation fixture had not yet
 been run in the working environment; equations and normal operation contain no
 GSAS-II dependency.
 
-PhaseSmith 0.4.0 was released on 2026-08-14 and is licensed under the MIT
+PhaseSmith 0.4.1 was released on 2026-08-14 and is licensed under the MIT
 License. The
 architecture and delivery gates for CIF import, the remaining native
 crystallographic calculations, and structure-factor-based Rietveld
