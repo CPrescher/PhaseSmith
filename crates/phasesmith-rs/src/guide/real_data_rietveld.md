@@ -1,7 +1,7 @@
-# Real-data Rietveld walkthrough: PbSO4
+# Real-data Rietveld walkthrough: `PbSO4`
 
 This walkthrough follows the repository's complete Rust-only
-`joint_pbso4` example. It refines the same PbSO4 structure against a measured
+`joint_pbso4` example. It refines the same `PbSO4` structure against a measured
 constant-wavelength X-ray pattern and a measured neutron pattern. Structural
 coordinates and displacement values are shared; instrument, profile,
 background, correction, and phase scale remain histogram-local.

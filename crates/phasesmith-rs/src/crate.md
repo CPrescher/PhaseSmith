@@ -34,7 +34,7 @@ boundaries:
 - [`guide::workflows`] maps calculation and refinement entry points;
 - [`guide::cif_inputs`] explains accepted CIF content, strict/permissive
   import, diagnostics, and conversion into a refinement phase;
-- [`guide::real_data_rietveld`] walks through the repository's measured PbSO4
+- [`guide::real_data_rietveld`] walks through the repository's measured `PbSO4`
   X-ray/neutron refinement from files to validated results;
 - [`guide::refinement_operations`] shows parameter staging, bounded execution,
   checkpoint continuation, and result interpretation;

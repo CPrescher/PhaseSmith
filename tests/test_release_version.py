@@ -10,13 +10,13 @@ SCRIPT = ROOT / "scripts/release_version.py"
 
 def test_release_version_matches_every_checked_surface() -> None:
     result = subprocess.run(
-        [sys.executable, SCRIPT, "--tag", "v0.4.0"],
+        [sys.executable, SCRIPT, "--tag", "v0.4.1"],
         cwd=ROOT,
         check=True,
         capture_output=True,
         text=True,
     )
-    assert result.stdout.strip() == "0.4.0"
+    assert result.stdout.strip() == "0.4.1"
 
 
 def test_release_version_rejects_a_mismatched_tag() -> None:
@@ -28,4 +28,4 @@ def test_release_version_rejects_a_mismatched_tag() -> None:
         text=True,
     )
     assert result.returncode == 1
-    assert "does not match release version v0.4.0" in result.stderr
+    assert "does not match release version v0.4.1" in result.stderr

@@ -136,10 +136,7 @@ def test_reflection_family_topology_matches_independent_reference() -> None:
     np.testing.assert_array_equal(native.canonical_hkl, [item[0] for item in expected])
     np.testing.assert_array_equal(
         native.conventional_hkl,
-        [
-            reference_conventional_hkl(group, tuple(row), merge_friedel=True)
-            for row in indices
-        ],
+        [reference_conventional_hkl(group, tuple(row), merge_friedel=True) for row in indices],
     )
     np.testing.assert_array_equal(native.multiplicity, [item[1] for item in expected])
     assert native.reflection_ids == tuple(f"hkl:{h},{k},{ell}" for (h, k, ell), _ in expected)
@@ -171,9 +168,7 @@ def test_fcc_conventional_hkl_uses_powder_display_convention() -> None:
     assert not any(np.array_equal(row, [0, 0, 8]) for row in generated.conventional_hkl)
     assert any(
         np.array_equal(canonical, [0, 0, 8]) and np.array_equal(conventional, [8, 0, 0])
-        for canonical, conventional in zip(
-            generated.hkl, generated.conventional_hkl, strict=True
-        )
+        for canonical, conventional in zip(generated.hkl, generated.conventional_hkl, strict=True)
     )
 
 
