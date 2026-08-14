@@ -47,6 +47,24 @@ def reference_family(
     return min(representatives), len(orbit)
 
 
+def reference_conventional_hkl(
+    group: SpaceGroup,
+    hkl: tuple[int, int, int],
+    *,
+    merge_friedel: bool,
+) -> tuple[int, int, int]:
+    """Select a display index from the exact orbit without permuting indices ad hoc."""
+
+    orbit: set[tuple[int, int, int]] = set()
+    for operation in group.operations:
+        member = _reciprocal_index(operation.rotation, hkl)
+        orbit.add(member)
+        if merge_friedel:
+            orbit.add(tuple(-index for index in member))
+    representatives = [_canonical_friedel(member) if merge_friedel else member for member in orbit]
+    return max(representatives)
+
+
 def reference_is_systematically_absent(group: SpaceGroup, hkl: tuple[int, int, int]) -> bool:
     """Evaluate grouped translation phases independently using complex roots."""
 

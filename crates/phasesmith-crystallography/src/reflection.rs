@@ -206,8 +206,10 @@ impl ReflectionRange {
 pub struct GeneratedReflection {
     /// Stable canonical Miller-index ID.
     pub reflection_id: String,
-    /// Canonical Miller representative.
+    /// Canonical Miller representative used for calculation and stable identity.
     pub hkl: [i32; 3],
+    /// Human-facing representative selected from the same exact reciprocal orbit.
+    pub conventional_hkl: [i32; 3],
     /// Powder multiplicity under the configured Friedel policy.
     pub multiplicity: usize,
     /// D-spacing in ångströms.
@@ -336,6 +338,7 @@ impl PreparedReflectionGenerator {
                     reflections.push(GeneratedReflection {
                         reflection_id: family.reflection_id,
                         hkl,
+                        conventional_hkl: family.conventional_hkl,
                         multiplicity: family.multiplicity,
                         d_spacing_angstrom: d_spacing,
                         reciprocal_length_inverse_angstrom: reciprocal_length,

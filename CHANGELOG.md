@@ -6,6 +6,19 @@ development versions.
 
 ## Unreleased
 
+## 0.4.1
+
+- Expose conventional human-facing HKL representatives for generated
+  reflection families while retaining the existing canonical indices for
+  calculation and stable identity. Representatives are selected only from the
+  exact reciprocal orbit, so familiar cubic labels such as `100`, `311`, and
+  `800` are shown without inventing invalid lower-symmetry permutations.
+- Add complete Rust guides for bounded CIF import, measured X-ray/neutron
+  Rietveld refinement, parameter staging, runtime budgets, checkpoint
+  continuation, and result acceptance. Expand the public CIF API documentation
+  with supported syntax, diagnostics, provenance, resource limits, and
+  strict/permissive behavior.
+
 ## 0.4.0
 
 - Add orthorhombic Stephens anisotropic microstrain broadening with explicit

@@ -85,7 +85,12 @@ assert_eq!(data.pattern.observed_y.as_deref(), Some(&[100.0, 120.0][..]));
 
 ## Next steps
 
+- Import and inspect a CIF: [`crate::guide::cif_inputs`].
+- Follow a measured `PbSO4` refinement:
+  [`crate::guide::real_data_rietveld`].
+- Stage parameters, bound a run, or resume a checkpoint:
+  [`crate::guide::refinement_operations`].
 - Calculate from a crystal structure: [`crate::engine`].
-- Extract intensities or refine a structure: [`crate::guide::workflows`].
+- Choose another extraction or refinement family: [`crate::guide::workflows`].
 - Save application state: [`crate::persistence`].
 - Integrate background work into a GUI: [`crate::guide::application_hosts`].

@@ -11,9 +11,9 @@ repository.workspace = true
 readme.workspace = true
 
 [dependencies]
-phasesmith-core = { version = "0.4.0", path = "../phasesmith-core" }
-phasesmith-crystallography = { version = "0.4.0", path = "../phasesmith-crystallography" }
-phasesmith-execution = { version = "0.4.0", path = "../phasesmith-execution" }
+phasesmith-core = { version = "0.4.1", path = "../phasesmith-core" }
+phasesmith-crystallography = { version = "0.4.1", path = "../phasesmith-crystallography" }
+phasesmith-execution = { version = "0.4.1", path = "../phasesmith-execution" }
 
 [dev-dependencies]
 criterion = "0.7"
