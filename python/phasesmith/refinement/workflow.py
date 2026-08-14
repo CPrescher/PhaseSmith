@@ -243,12 +243,19 @@ def _accepted_state(
     input_data: rietveld.RietveldInput,
     result: rietveld.RietveldResult,
 ) -> rietveld.RietveldInput:
+    parameters = rietveld.build_parameter_set(
+        result.phases,
+        result.checkpoint.lattice_domains,
+        input_data.selection,
+        experiment=result.experiment,
+        background=result.background,
+    )
     return replace(
         input_data,
         experiment=result.experiment,
         phases=result.phases,
         lattice_domains=result.checkpoint.lattice_domains,
-        parameters=result.parameters,
+        parameters=parameters,
         background=result.background,
     )
 
@@ -276,6 +283,10 @@ def run_rietveld_recipe(
             raise ValueError(
                 f"stage {stage.name!r} selects parameters outside the input's maximum selection"
             )
+        # Build every stage before numerical work. This validates the complete
+        # caller-owned parameter and constraint contract without allowing an
+        # early stage's filtered view to erase constraints needed later.
+        _stage_input(input_data, stage.selection)
 
     current = input_data
     initial_calculation = rietveld.calculate(
@@ -308,7 +319,7 @@ def run_rietveld_recipe(
         results.append(RietveldStageResult(stage, current_rwp, result, accepted))
         if not accepted:
             break
-        current = _accepted_state(staged_input, result)
+        current = _accepted_state(current, result)
         current_rwp = result.metrics.rwp
     return RietveldWorkflowResult(
         recipe,

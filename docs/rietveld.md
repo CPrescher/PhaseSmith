@@ -194,6 +194,17 @@ advice establishes scale/background, aligns positions, stabilizes structural
 intensities, and finally releases the remaining profile/sample parameters. Each
 stage includes human-readable rationale and the resulting record lists every
 active `ParameterKey`. Iteration exhaustion is not accepted by default.
+The planner is a conservative staging heuristic: it does not infer new
+parameters or adapt its proposal from residual shape, rank, correlations, or a
+database of experiment recipes.
+
+Before the first calculation, the Python and Rust workflow boundaries validate
+every stage against the complete initial parameter and constraint contract.
+Stage-local constraint filtering is temporary: a constraint whose target first
+becomes active in a later stage is selected again from the original request.
+If a later stage is rejected or cancelled, `RietveldProject` retains the last
+policy-accepted physical state while preserving the caller's complete maximum
+selection and constraints for review or a subsequent proposal.
 
 Callers can construct `RietveldRecipe` and `RietveldStage` directly to change
 the order, options, or acceptable termination reasons. This is the appropriate

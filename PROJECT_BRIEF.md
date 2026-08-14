@@ -812,6 +812,11 @@ planned stage was attempted, at least one step was accepted, the returned
 state is finite, and that stage improved Rwp by at least 0.0001. Numerical
 failure, divergence, missing observations, and iteration exhaustion remain
 unsafe; rejected trials never replace the last accepted state or checkpoint.
+The Python staged-workflow adapter now also preserves the complete initial
+constraint graph and maximum authorization across every temporary stage view.
+All stages are validated before numerical work, later-stage constraints cannot
+be erased by an earlier filtered stage, and a stopped workflow retains its
+accepted physical state without narrowing the next planner proposal.
 
 The built-in monochromatic Python Rietveld facade now delegates complete
 refinement and checkpoint continuation to the Rust solver while retaining the

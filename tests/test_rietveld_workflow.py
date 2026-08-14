@@ -6,6 +6,8 @@ import numpy as np
 import phasesmith
 import pytest
 from phasesmith.refinement import (
+    AffineConstraint,
+    FixedConstraint,
     RefinementLimits,
     RietveldOptions,
     RietveldParameterSelection,
@@ -173,6 +175,60 @@ def test_recipe_rejects_parameters_outside_authorized_maximum() -> None:
         run_rietveld_recipe(request, recipe)
 
 
+def test_recipe_restores_constraints_that_first_become_active_in_a_later_stage() -> None:
+    request = shifted_request()
+    zero_key = next(
+        spec.key for spec in request.parameters.specs if spec.key.name == "zero_shift_deg"
+    )
+    request = replace(
+        request,
+        constraints=(FixedConstraint(zero_key, 0.0),),
+    )
+
+    workflow = run_rietveld_recipe(
+        request,
+        intelligent_rietveld_recipe(request),
+        options=RietveldOptions(
+            limits=RefinementLimits(max_iterations=50, max_evaluations=500),
+            estimate_covariance=False,
+        ),
+    )
+
+    assert workflow.completed is True
+    assert workflow.final_result.experiment.zero_shift_deg == 0.0
+
+
+def test_recipe_validates_later_stage_constraint_dependencies_before_work(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    request = shifted_request()
+    zero_key = next(
+        spec.key for spec in request.parameters.specs if spec.key.name == "zero_shift_deg"
+    )
+    scale_key = next(spec.key for spec in request.parameters.specs if spec.key.name == "scale")
+    request = replace(
+        request,
+        constraints=(AffineConstraint(zero_key, scale_key, 0.0, 0.0),),
+    )
+    scale_only = replace(request.selection, instrument_parameters=())
+    zero_only = replace(request.selection, phase_scale=False)
+    recipe = RietveldRecipe(
+        "invalid-later-dependency",
+        (
+            RietveldStage("scale", scale_only, ("Establish scale.",)),
+            RietveldStage("zero", zero_only, ("Deliberately omit the source.",)),
+        ),
+    )
+
+    def unexpected_calculation(*args: object, **kwargs: object) -> None:
+        raise AssertionError("numerical work started before recipe validation")
+
+    monkeypatch.setattr(rietveld, "calculate", unexpected_calculation)
+
+    with pytest.raises(ValueError, match="without dependencies"):
+        run_rietveld_recipe(request, recipe)
+
+
 def test_zero_shift_uses_a_physical_optimization_scale() -> None:
     request = shifted_request()
     zero = next(spec for spec in request.parameters.specs if spec.key.name == "zero_shift_deg")
@@ -231,3 +287,54 @@ def test_project_does_not_promote_a_stage_rejected_by_recipe_policy() -> None:
     assert workflow.last_accepted_stage is None
     assert project.input.experiment == original_experiment
     assert project.last_result == workflow.final_result
+
+
+def test_project_retains_maximum_authorization_after_a_later_stage_is_rejected() -> None:
+    request = shifted_request()
+    original_selection = request.selection
+    zero_key = next(
+        spec.key for spec in request.parameters.specs if spec.key.name == "zero_shift_deg"
+    )
+    constraint = FixedConstraint(zero_key, 0.0)
+    request = replace(
+        request,
+        constraints=(constraint,),
+    )
+    scale_only = replace(original_selection, instrument_parameters=())
+    recipe = RietveldRecipe(
+        "reject-second-stage",
+        (
+            RietveldStage("scale", scale_only, ("Establish the phase scale.",)),
+            RietveldStage(
+                "positions",
+                original_selection,
+                ("Exercise later-stage rejection.",),
+                accepted_terminations=(TerminationReason.CANCELLED,),
+            ),
+        ),
+    )
+    project = phasesmith.RietveldProject(
+        request,
+        RietveldOptions(
+            limits=RefinementLimits(max_iterations=50, max_evaluations=500),
+            estimate_covariance=False,
+        ),
+    )
+
+    workflow = project.refine_recipe(recipe)
+
+    assert workflow.completed is False
+    assert workflow.last_accepted_stage is workflow.stages[0]
+    assert project.input.selection == original_selection
+    assert project.input.parameters.keys == request.parameters.keys
+    assert project.input.constraints == (constraint,)
+    assert [stage.name for stage in project.propose_intelligent_recipe().stages] == [
+        "scale_background",
+        "positions",
+    ]
+
+    project.accept_result()
+
+    assert project.input.selection == original_selection
+    assert project.input.parameters.keys == request.parameters.keys
+    assert project.input.constraints == (constraint,)
