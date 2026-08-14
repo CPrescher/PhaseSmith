@@ -450,21 +450,24 @@ impl SpaceGroup {
         merge_friedel: bool,
     ) -> Result<ReflectionFamily, SymmetryError> {
         let orbit = self.reflection_orbit(hkl, merge_friedel)?;
-        let canonical_hkl = orbit
-            .iter()
-            .copied()
-            .map(|member| {
-                if merge_friedel {
-                    canonical_friedel_sign(member)
-                } else {
-                    member
-                }
-            })
+        let signed_representatives = orbit.iter().copied().map(|member| {
+            if merge_friedel {
+                canonical_friedel_sign(member)
+            } else {
+                member
+            }
+        });
+        let canonical_hkl = signed_representatives
+            .clone()
             .min()
+            .ok_or(SymmetryError::EmptyOperationSet)?;
+        let conventional_hkl = signed_representatives
+            .max()
             .ok_or(SymmetryError::EmptyOperationSet)?;
         Ok(ReflectionFamily {
             reflection_id: reflection_id(canonical_hkl),
             canonical_hkl,
+            conventional_hkl,
             multiplicity: orbit.len(),
             orbit,
         })
@@ -494,6 +497,13 @@ pub struct ReflectionFamily {
     pub reflection_id: String,
     /// Canonical Miller representative.
     pub canonical_hkl: [i32; 3],
+    /// Human-facing representative selected from the exact reciprocal orbit.
+    ///
+    /// Friedel pairs first use the sign with the first nonzero index positive;
+    /// the lexicographically greatest remaining orbit member is then selected.
+    /// For conventional cubic settings this gives `100`, `200`, `311`, and
+    /// `800` rather than axis-reversed equivalents such as `001` or `008`.
+    pub conventional_hkl: [i32; 3],
     /// Number of distinct reciprocal indices in the orbit.
     pub multiplicity: usize,
     /// Sorted distinct orbit members.
@@ -1166,6 +1176,7 @@ mod tests {
         let group = inversion_group();
         let family = group.reflection_family([-1, 2, 3], true).expect("family");
         assert_eq!(family.canonical_hkl, [1, -2, -3]);
+        assert_eq!(family.conventional_hkl, [1, -2, -3]);
         assert_eq!(family.multiplicity, 2);
         assert_eq!(family.reflection_id, "hkl:1,-2,-3");
         assert_eq!(group.crystal_system(), CrystalSystem::Triclinic);

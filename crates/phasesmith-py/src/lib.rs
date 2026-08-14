@@ -252,11 +252,13 @@ type ExpandedSiteArrays<'py> = (Bound<'py, PyArray2<f64>>, Bound<'py, PyArray1<i
 type ReflectionFamilyArrays<'py> = (
     Vec<String>,
     Bound<'py, PyArray2<i64>>,
+    Bound<'py, PyArray2<i64>>,
     Bound<'py, PyArray1<i64>>,
 );
 
 type GeneratedReflectionArrays<'py> = (
     Vec<String>,
+    Bound<'py, PyArray2<i64>>,
     Bound<'py, PyArray2<i64>>,
     Bound<'py, PyArray1<i64>>,
     Bound<'py, PyArray1<f64>>,
@@ -664,10 +666,12 @@ impl NativePreparedReflectionGenerator {
             .map_err(|error| PyValueError::new_err(error.to_string()))?;
         let mut ids = Vec::with_capacity(families.len());
         let mut canonical = Vec::with_capacity(3 * families.len());
+        let mut conventional = Vec::with_capacity(3 * families.len());
         let mut multiplicity = Vec::with_capacity(families.len());
         for family in families {
             ids.push(family.reflection_id);
             canonical.extend(family.canonical_hkl.map(i64::from));
+            conventional.extend(family.conventional_hkl.map(i64::from));
             multiplicity.push(
                 i64::try_from(family.multiplicity)
                     .map_err(|_| PyValueError::new_err("reflection multiplicity overflow"))?,
@@ -676,6 +680,9 @@ impl NativePreparedReflectionGenerator {
         Ok((
             ids,
             Array2::from_shape_vec((multiplicity.len(), 3), canonical)
+                .map_err(|error| PyValueError::new_err(error.to_string()))?
+                .into_pyarray(py),
+            Array2::from_shape_vec((multiplicity.len(), 3), conventional)
                 .map_err(|error| PyValueError::new_err(error.to_string()))?
                 .into_pyarray(py),
             multiplicity.into_pyarray(py),
@@ -710,6 +717,7 @@ impl NativePreparedReflectionGenerator {
         let count = reflections.len();
         let mut ids = Vec::with_capacity(count);
         let mut hkl = Vec::with_capacity(3 * count);
+        let mut conventional_hkl = Vec::with_capacity(3 * count);
         let mut multiplicity = Vec::with_capacity(count);
         let mut d_spacing = Vec::with_capacity(count);
         let mut reciprocal_length = Vec::with_capacity(count);
@@ -717,6 +725,7 @@ impl NativePreparedReflectionGenerator {
         for reflection in reflections {
             ids.push(reflection.reflection_id);
             hkl.extend(reflection.hkl.map(i64::from));
+            conventional_hkl.extend(reflection.conventional_hkl.map(i64::from));
             multiplicity.push(
                 i64::try_from(reflection.multiplicity)
                     .map_err(|_| PyValueError::new_err("reflection multiplicity overflow"))?,
@@ -728,6 +737,9 @@ impl NativePreparedReflectionGenerator {
         Ok((
             ids,
             Array2::from_shape_vec((count, 3), hkl)
+                .map_err(|error| PyValueError::new_err(error.to_string()))?
+                .into_pyarray(py),
+            Array2::from_shape_vec((count, 3), conventional_hkl)
                 .map_err(|error| PyValueError::new_err(error.to_string()))?
                 .into_pyarray(py),
             multiplicity.into_pyarray(py),
