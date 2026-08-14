@@ -101,6 +101,17 @@ may be introduced compatibly. Persistence and provider formats keep their own
 format/API versions; accepting an older format does not make internal Rust ABI
 or serialized implementation details public.
 
-Before the 1.0 release candidate, the exported names and signatures will be
-captured as a machine-readable API snapshot. That snapshot is a release task,
-not a reason to freeze experimental 0.x names prematurely.
+The first machine-readable snapshot is now checked in as
+`api/python-public-api-v0.4.1.json`. It records every name in `__all__` for the
+six explicitly exported namespaces, their domain/adapter/validation tier,
+implementation target, and callable signature when introspection supports one.
+`scripts/public_api_snapshot.py --check` regenerates the record without
+timestamps, platform paths, or evaluated annotations and reports a reviewable
+unified diff on any change.
+
+The exact gate intentionally rejects additions as well as removals, aliases,
+or signature changes. An intentional 0.x change therefore requires a new
+versioned snapshot and changelog review; older snapshots remain immutable
+release records. This establishes the baseline needed for a 1.0 release
+candidate without retroactively promising compatibility for earlier 0.x
+versions.

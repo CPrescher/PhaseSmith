@@ -101,8 +101,7 @@ VALIDATION_DATASETS: tuple[ValidationDataset, ...] = (
         title="IUCr ceria size/strain round-robin laboratory X-ray pair",
         source_url=f"{_IUCR_CERIA_SIZE_STRAIN_SOURCE}/s-s_rr.htm",
         citation=(
-            "D. Balzar et al., J. Appl. Cryst. 37 (2004) 911-924, "
-            "doi:10.1107/S0021889804022551"
+            "D. Balzar et al., J. Appl. Cryst. 37 (2004) 911-924, doi:10.1107/S0021889804022551"
         ),
         license_note=(
             "The IUCr-sponsored round-robin page explicitly offers the original "
