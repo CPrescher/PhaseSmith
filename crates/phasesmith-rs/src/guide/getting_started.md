@@ -86,7 +86,7 @@ assert_eq!(data.pattern.observed_y.as_deref(), Some(&[100.0, 120.0][..]));
 ## Next steps
 
 - Import and inspect a CIF: [`crate::guide::cif_inputs`].
-- Follow a measured PbSO4 refinement:
+- Follow a measured `PbSO4` refinement:
   [`crate::guide::real_data_rietveld`].
 - Stage parameters, bound a run, or resume a checkpoint:
   [`crate::guide::refinement_operations`].

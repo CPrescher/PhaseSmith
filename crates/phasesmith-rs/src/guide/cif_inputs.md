@@ -1,6 +1,6 @@
 # CIF input: from text to native structure
 
-PhaseSmith treats CIF as an external input format, not as live refinement
+`PhaseSmith` treats CIF as an external input format, not as live refinement
 state. [`crate::io::parse_cif_text`] and [`crate::io::read_cif_file`] return an
 owned, parser-independent [`crate::io::CifStructure`]. No parser object, CIF
 tag lookup, or filesystem handle survives the import boundary.
@@ -123,7 +123,7 @@ basis. Cartesian coordinate uncertainties are not transformed because the CIF
 does not provide their covariance, and this decision is reported.
 
 The type symbol is read independently from the label. If it is absent,
-PhaseSmith attempts to infer it from the label. Isotopes and formal charges are
+`PhaseSmith` attempts to infer it from the label. Isotopes and formal charges are
 retained separately, so values such as `13C`, `Fe3+`, and `O2-` can later be
 mapped to the correct built-in scattering key. Occupancy defaults to `1.0`
 when absent, `.` (inapplicable), or `?` (unknown); the latter two remain visible
@@ -196,6 +196,6 @@ The normal conversion is:
 5. combine it with the observed pattern and instrument in
    [`crate::workflows::RietveldInput`].
 
-[`crate::guide::real_data_rietveld`] shows these steps using the measured PbSO4
+[`crate::guide::real_data_rietveld`] shows these steps using the measured `PbSO4`
 dataset. CIF import never selects refinement parameters and never imports a
 GSAS-II project model.

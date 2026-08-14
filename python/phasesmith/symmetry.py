@@ -246,9 +246,7 @@ class SpaceGroup:
 
         indices = _hkl_array(hkl)
         native = _native_generator(self, merge_friedel, 1)
-        ids, canonical, conventional, multiplicity = native.reflection_families(
-            indices.reshape(-1)
-        )
+        ids, canonical, conventional, multiplicity = native.reflection_families(indices.reshape(-1))
         canonical = np.asarray(canonical)
         conventional = np.asarray(conventional)
         multiplicity = np.asarray(multiplicity)

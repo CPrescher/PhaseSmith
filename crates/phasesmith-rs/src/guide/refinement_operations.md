@@ -68,7 +68,7 @@ let options = RietveldRefinementOptions::new(
 # Ok::<(), Box<dyn std::error::Error>>(())
 ```
 
-These values mirror the shape of the real PbSO4 workload, not universal
+These values mirror the shape of the real `PbSO4` workload, not universal
 defaults. Finite profile support is observable numerical behavior. Changing it
 can change normalization tails, derivatives, and the accepted path, so treat it
 as part of the analysis contract. Worker count is also explicit; application
