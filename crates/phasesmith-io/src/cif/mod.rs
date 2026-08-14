@@ -20,6 +20,14 @@ pub const NATIVE_CIF_BACKEND: &str = "phasesmith-native";
 pub const NATIVE_CIF_BACKEND_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 /// Resource limits checked before and during CIF parsing.
+///
+/// The defaults allow 16 MiB of UTF-8 text, 100 data blocks, 1,000,000 rows in
+/// any one loop, and 100,000 atom or anisotropic-site rows. A file's byte size
+/// is checked before its contents are read. Loop and site bounds are checked
+/// before constructing domain records.
+///
+/// Tighten these limits when accepting untrusted uploads. All limits must be
+/// positive; zero does not mean unlimited.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct CifReadLimits {
     /// Maximum UTF-8 byte count.
@@ -61,7 +69,11 @@ impl CifReadLimits {
     }
 }
 
-/// Stable diagnostic severity.
+/// Stable diagnostic severity for a successfully returned import.
+///
+/// Diagnostics describe visible recovery or interpretation decisions. They
+/// are distinct from [`CifIoError`], which prevents a valid structure from
+/// being returned.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum CifDiagnosticSeverity {
     /// Recoverable condition visible to the caller.
@@ -71,6 +83,10 @@ pub enum CifDiagnosticSeverity {
 }
 
 /// One stable CIF import diagnostic.
+///
+/// Branch on [`Self::code`] and [`Self::severity`], not on the human-readable
+/// message. `row` is zero-based within the related loop. `tag` is normalized
+/// to lower case where it originated from parsed CIF syntax.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CifDiagnostic {
     /// Warning or error severity.
@@ -108,6 +124,9 @@ impl CifDiagnostic {
 }
 
 /// Source provenance retained after CIF parsing.
+///
+/// The source path is present only for [`read_cif_file`]. Parsed text retains
+/// the selected block and backend/version but has no invented path.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CifStructureSource {
     /// Source format, currently `CIF`.
@@ -123,6 +142,9 @@ pub struct CifStructureSource {
 }
 
 /// Original CIF displacement convention.
+///
+/// Imported numerical tensors are always stored as U in square ångströms;
+/// this enum records whether the source supplied U or B.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum DisplacementConvention {
     /// CIF `U_ij` components.
@@ -132,6 +154,9 @@ pub enum DisplacementConvention {
 }
 
 /// Fixed anisotropic displacement attached to one site.
+///
+/// Components follow CIF order `11,22,33,23,13,12`. B components and their
+/// uncertainties are converted using `U = B/(8*pi^2)` before storage.
 #[derive(Clone, Debug, PartialEq)]
 pub struct CifAnisotropicDisplacement {
     /// CIF U tensor in component order `11,22,33,23,13,12`.
@@ -143,19 +168,24 @@ pub struct CifAnisotropicDisplacement {
 }
 
 /// One independent atom site imported from CIF.
+///
+/// Sites remain in source order and are not expanded by symmetry. `site_id` is
+/// unique within the returned structure. In permissive mode duplicate source
+/// labels become IDs such as `C1#2` while [`Self::source_label`] preserves the
+/// original text.
 #[derive(Clone, Debug, PartialEq)]
 pub struct CifAtomSite {
     /// Unique stable site identifier within the structure.
     pub site_id: String,
     /// Original CIF label before permissive duplicate renaming.
     pub source_label: String,
-    /// Original atom type symbol.
+    /// Original atom type symbol, including isotope or charge decorations.
     pub type_symbol: String,
-    /// Parsed element symbol.
+    /// Parsed element symbol without isotope or charge decorations.
     pub element_symbol: String,
     /// Fractional coordinates in the selected cell.
     pub fractional_xyz: [f64; 3],
-    /// Site occupancy.
+    /// Site occupancy, defaulting to `1.0` when absent or unknown.
     pub occupancy: f64,
     /// Optional isotropic U in square ångströms.
     pub u_iso_angstrom2: Option<f64>,
@@ -176,6 +206,10 @@ pub struct CifAtomSite {
 }
 
 /// Parser-independent native crystallographic structure.
+///
+/// This record contains only imported structural facts and provenance. It does
+/// not choose radiation, scattering, reflection range, peak profile,
+/// corrections, sample physics, or refinable parameters.
 #[derive(Clone, Debug, PartialEq)]
 pub struct CifStructure {
     /// Stable ID derived from the selected block name.
@@ -190,15 +224,25 @@ pub struct CifStructure {
     pub sites: Vec<CifAtomSite>,
     /// Source provenance.
     pub source: CifStructureSource,
-    /// Optional standard uncertainties for `a,b,c,alpha,beta,gamma`.
+    /// Optional standard uncertainties for `a,b,c,alpha,beta,gamma`, in the
+    /// same ångström/degree units as [`Self::cell`].
     pub cell_standard_uncertainties: [Option<f64>; 6],
     /// Import diagnostics also returned at the top level.
     pub diagnostics: Vec<CifDiagnostic>,
     /// Small textual metadata extracted from CIF.
+    ///
+    /// Known keys include `symmetry_source`, supplied symmetry identifiers,
+    /// `chemical_formula_sum`, `chemical_formula_structural`,
+    /// `formula_units_per_cell`, `formula_mass_g_mol`, and
+    /// `radiation_wavelength` when those values exist.
     pub metadata: BTreeMap<String, String>,
 }
 
 /// One selected CIF structure plus block-selection context.
+///
+/// `selected_block` and `available_blocks` omit the source `data_` prefix.
+/// Diagnostics are duplicated inside [`Self::structure`] so the standalone
+/// parser-independent structure retains its import history.
 #[derive(Clone, Debug, PartialEq)]
 pub struct CifReadResult {
     /// Imported native structure.
@@ -212,6 +256,10 @@ pub struct CifReadResult {
 }
 
 /// Native CIF syntax, limit, lookup, or domain failure.
+///
+/// A returned error means no scientifically valid structure was produced.
+/// Recoverable decisions on a successful permissive import are represented by
+/// [`CifDiagnostic`] instead.
 #[derive(Debug)]
 pub enum CifIoError {
     /// One or more configured limits are zero.

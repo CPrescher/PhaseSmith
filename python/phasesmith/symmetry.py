@@ -124,10 +124,11 @@ class ExpandedSites:
 
 @dataclass(frozen=True, slots=True)
 class ReflectionFamilies:
-    """Canonical family topology for caller-supplied Miller indices."""
+    """Canonical identity and conventional display indices for reflection families."""
 
     reflection_ids: tuple[str, ...]
     canonical_hkl: NDArray[np.int64]
+    conventional_hkl: NDArray[np.int64]
     multiplicity: NDArray[np.int64]
 
 
@@ -241,16 +242,18 @@ class SpaceGroup:
     def reflection_families(
         self, hkl: ArrayLike, *, merge_friedel: bool = True
     ) -> ReflectionFamilies:
-        """Return deterministic canonical representatives and multiplicities."""
+        """Return stable canonical indices, display indices, and multiplicities."""
 
         indices = _hkl_array(hkl)
         native = _native_generator(self, merge_friedel, 1)
-        ids, canonical, multiplicity = native.reflection_families(indices.reshape(-1))
+        ids, canonical, conventional, multiplicity = native.reflection_families(indices.reshape(-1))
         canonical = np.asarray(canonical)
+        conventional = np.asarray(conventional)
         multiplicity = np.asarray(multiplicity)
         _freeze(canonical)
+        _freeze(conventional)
         _freeze(multiplicity)
-        return ReflectionFamilies(tuple(ids), canonical, multiplicity)
+        return ReflectionFamilies(tuple(ids), canonical, conventional, multiplicity)
 
     def __eq__(self, other: object) -> bool:
         """Compare canonical exact operation sets."""
@@ -340,10 +343,11 @@ class TofRange:
 
 @dataclass(frozen=True, slots=True)
 class GeneratedReflectionBatch:
-    """Deterministic generated families with metric values and derivatives."""
+    """Generated families with stable calculation indices and conventional labels."""
 
     reflection_ids: tuple[str, ...]
     hkl: NDArray[np.int64]
+    conventional_hkl: NDArray[np.int64]
     multiplicity: NDArray[np.int64]
     d_spacing_angstrom: NDArray[np.float64]
     reciprocal_length_inverse_angstrom: NDArray[np.float64]
@@ -402,13 +406,15 @@ class PreparedReflectionGenerator:
         result = GeneratedReflectionBatch(
             reflection_ids=tuple(arrays[0]),
             hkl=np.asarray(arrays[1]),
-            multiplicity=np.asarray(arrays[2]),
-            d_spacing_angstrom=np.asarray(arrays[3]),
-            reciprocal_length_inverse_angstrom=np.asarray(arrays[4]),
-            d_spacing_derivatives=np.asarray(arrays[5]),
+            conventional_hkl=np.asarray(arrays[2]),
+            multiplicity=np.asarray(arrays[3]),
+            d_spacing_angstrom=np.asarray(arrays[4]),
+            reciprocal_length_inverse_angstrom=np.asarray(arrays[5]),
+            d_spacing_derivatives=np.asarray(arrays[6]),
         )
         for array in (
             result.hkl,
+            result.conventional_hkl,
             result.multiplicity,
             result.d_spacing_angstrom,
             result.reciprocal_length_inverse_angstrom,

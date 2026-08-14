@@ -6,6 +6,7 @@ import numpy as np
 import phasesmith
 import pytest
 from phasesmith.symmetry_reference import (
+    reference_conventional_hkl,
     reference_expand_sites,
     reference_family,
     reference_generate_d_spacing,
@@ -133,8 +134,49 @@ def test_reflection_family_topology_matches_independent_reference() -> None:
     native = group.reflection_families(indices, merge_friedel=True)
     expected = [reference_family(group, tuple(row), merge_friedel=True) for row in indices]
     np.testing.assert_array_equal(native.canonical_hkl, [item[0] for item in expected])
+    np.testing.assert_array_equal(
+        native.conventional_hkl,
+        [reference_conventional_hkl(group, tuple(row), merge_friedel=True) for row in indices],
+    )
     np.testing.assert_array_equal(native.multiplicity, [item[1] for item in expected])
     assert native.reflection_ids == tuple(f"hkl:{h},{k},{ell}" for (h, k, ell), _ in expected)
+
+
+def test_fcc_conventional_hkl_uses_powder_display_convention() -> None:
+    group = phasesmith.space_group_by_number(225).space_group
+    generator = phasesmith.PreparedReflectionGenerator(group)
+    generated = generator.generate(
+        phasesmith.UnitCell(4.078, 4.078, 4.078, 90.0, 90.0, 90.0),
+        phasesmith.DSpacingRange(4.078 / 8.01, 4.078),
+    )
+
+    expected_prefix = np.array(
+        [
+            [1, 1, 1],
+            [2, 0, 0],
+            [2, 2, 0],
+            [3, 1, 1],
+            [2, 2, 2],
+            [4, 0, 0],
+            [3, 3, 1],
+            [4, 2, 0],
+            [4, 2, 2],
+        ]
+    )
+    np.testing.assert_array_equal(generated.conventional_hkl[:9], expected_prefix)
+    assert any(np.array_equal(row, [8, 0, 0]) for row in generated.conventional_hkl)
+    assert not any(np.array_equal(row, [0, 0, 8]) for row in generated.conventional_hkl)
+    assert any(
+        np.array_equal(canonical, [0, 0, 8]) and np.array_equal(conventional, [8, 0, 0])
+        for canonical, conventional in zip(generated.hkl, generated.conventional_hkl, strict=True)
+    )
+
+
+def test_conventional_hkl_does_not_invent_lower_symmetry_permutations() -> None:
+    group = inversion_group()
+    families = group.reflection_families([[0, 0, 8]], merge_friedel=True)
+    np.testing.assert_array_equal(families.canonical_hkl, [[0, 0, 8]])
+    np.testing.assert_array_equal(families.conventional_hkl, [[0, 0, 8]])
 
 
 def test_randomized_triclinic_reflections_match_independent_brute_force() -> None:

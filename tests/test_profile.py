@@ -9,7 +9,7 @@ from phasesmith import reference
 
 
 def test_package_exposes_installed_version() -> None:
-    assert phasesmith.__version__ == "0.4.0"
+    assert phasesmith.__version__ == "0.4.1"
 
 
 def test_native_profile_matches_independent_numpy_reference() -> None:

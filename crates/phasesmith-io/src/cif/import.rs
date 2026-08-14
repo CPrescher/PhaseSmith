@@ -130,6 +130,34 @@ impl<'a> SiteColumns<'a> {
 
 /// Read and parse one bounded UTF-8 CIF file.
 ///
+/// `block` is the name after `data_`, without the prefix. With one block,
+/// `None` selects it. With multiple blocks, `None` is an error in strict mode;
+/// permissive mode selects the first block and returns a diagnostic.
+///
+/// Strict mode rejects conflicting duplicate definitions, ambiguous block
+/// selection, duplicate site labels, invalid secondary symmetry identifiers,
+/// and deliberately unsupported feature families. Permissive mode can retain
+/// a valid higher-precedence definition or skip an invalid site row, but
+/// records every such decision in [`CifReadResult::diagnostics`].
+///
+/// The file size is checked against [`CifReadLimits::max_bytes`] before the
+/// file is read into memory. Input must be valid UTF-8.
+///
+/// # Example
+///
+/// ```no_run
+/// use phasesmith_io::{CifReadLimits, read_cif_file};
+///
+/// let result = read_cif_file(
+///     "sample.cif",
+///     Some("phase_a"),
+///     true,
+///     CifReadLimits::default(),
+/// )?;
+/// println!("{} independent sites", result.structure.sites.len());
+/// # Ok::<(), Box<dyn std::error::Error>>(())
+/// ```
+///
 /// # Errors
 ///
 /// Returns [`CifIoError`] for filesystem, limit, syntax, lookup, or domain
@@ -154,6 +182,38 @@ pub fn read_cif_file(
 }
 
 /// Parse bounded UTF-8 CIF text into one selected native structure.
+///
+/// This has the same block-selection and strict/permissive import contract as
+/// [`read_cif_file`] but does not attach a source path. Supported syntax
+/// includes data blocks, scalar tags, loops, comments, quoted/bare values,
+/// semicolon text, numeric exponents and standard uncertainties, and distinct
+/// `?`/`.` missing states. Save frames, `stop_`, and `global_` are rejected.
+///
+/// At minimum, a structure requires six cell parameters. Atom sites are
+/// optional for cell-only workflows such as Le Bail extraction. When atom
+/// sites exist they require labels and complete fractional or Cartesian
+/// coordinates.
+///
+/// # Example
+///
+/// ```
+/// use phasesmith_io::{CifReadLimits, parse_cif_text};
+///
+/// let text = r#"
+/// data_cell
+/// _cell_length_a 4
+/// _cell_length_b 4
+/// _cell_length_c 4
+/// _cell_angle_alpha 90
+/// _cell_angle_beta 90
+/// _cell_angle_gamma 90
+/// _space_group_IT_number 221
+/// "#;
+/// let result = parse_cif_text(text, None, true, CifReadLimits::default())?;
+/// assert_eq!(result.selected_block, "cell");
+/// assert!(result.structure.sites.is_empty());
+/// # Ok::<(), Box<dyn std::error::Error>>(())
+/// ```
 ///
 /// # Errors
 ///
