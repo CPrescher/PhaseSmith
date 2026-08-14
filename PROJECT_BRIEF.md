@@ -676,6 +676,12 @@ workspace, provides application-neutral owned model/I/O/workflow layers, and
 preserves the Python scripting surface without requiring Python in native
 consumers.
 
+The 1.0 direction is fixed in `docs/api-stability.md`: typed physical-unit
+domain APIs are the normal surface, direct H/eta remains a public mathematical
+primitive, support-block Jacobians remain the default, and named adapters own
+external conventions. Oracle fixtures and generated scientific tables require
+explicit provenance and redistribution review.
+
 The core accepts plain numeric slices and explicit peak/instrument batches. It
 does not know about files, refinement iterations, Python phase objects, GUI
 objects, or GSAS-II dictionaries. Higher layers translate domain models into
@@ -1446,6 +1452,13 @@ discretized GSAS-II oracle as non-shape-faithful for the legacy two-parameter
 case. Exact recovery now requires a source-native legacy profile oracle rather
 than another PhaseSmith broadening term. Other Stephens Laue classes remain
 optional completeness work.
+
+The next independent in-house Unit-29 transfer test is input-blocked: no new
+calibration/untouched-holdout pair is present in the workspace. Public or
+already reviewed patterns are not relabelled to close that gate. The required
+metadata, prospective protocol, and promotion thresholds are frozen in
+`docs/profile-transferability-gate.md`. Until that evidence passes, LPSD,
+tube-tail, continuum, and coupled-dispersion terms remain outside production.
 
 ## Quality bar
 

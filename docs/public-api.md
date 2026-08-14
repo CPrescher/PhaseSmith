@@ -134,8 +134,11 @@ phasesmith.sample
   the same public protocol as third-party implementations.
 ```
 
-Low-level profile functions remain available for equation testing and advanced
-use. They do not become the only way to calculate a pattern.
+Low-level profile functions remain available as public mathematical primitives
+for equation testing and advanced use. In particular, direct `H, eta` is not
+the recommended instrument-description layer. The normal domain API uses typed
+component widths or instrument models. See the
+[pre-1.0 API decisions](api-stability.md).
 
 The implemented low-level module split already follows this boundary:
 
@@ -456,6 +459,12 @@ notes. Once declared stable, field removal or unit/order changes require a
 versioned migration path. New optional fields and result diagnostics may be
 added compatibly. Integration adapters are kept thin so external release cycles
 do not constrain the numerical core.
+
+The resolved 1.0 direction keeps support-block Jacobians as the default, keeps
+dense local Jacobians as explicit compatibility materialization, and makes
+physical units canonical. GSAS/GSAS-II conventions remain in named readers or
+oracle adapters. The complete rationale and oracle/scattering-data admission
+rules are in [Pre-1.0 API decisions](api-stability.md).
 
 ## Extensible physics providers
 

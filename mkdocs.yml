@@ -94,12 +94,14 @@ nav:
   - API reference:
       - Python API map: api-reference.md
       - Python architecture: public-api.md
+      - Pre-1.0 API decisions: api-stability.md
       - Rust API: rust-api.md
       - Dioptas integration: dioptas-integration.md
   - Validation and development:
       - GSAS-II comparisons: gsasii-performance.md
       - Real-data benchmark report: gsasii-benchmark-report.md
       - Benchmark campaign ledger: gsasii-benchmark-campaign.md
+      - In-house profile transferability gate: profile-transferability-gate.md
       - XRD-Rust performance: xrd-rust-performance.md
       - Rowles optics audit: topas-rowles-model.md
       - Documentation development: documentation.md

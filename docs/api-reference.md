@@ -30,6 +30,9 @@ normalizations, finite-support rules, and analytical derivative chains:
 Python docstrings link to these pages instead of copying long derivations that
 could diverge from the native implementation.
 
+The [pre-1.0 API decisions](api-stability.md) distinguish stable-direction
+domain APIs, public mathematical primitives, and named compatibility adapters.
+
 ## Data import and domain models
 
 | Module | Main public entry points | Purpose |

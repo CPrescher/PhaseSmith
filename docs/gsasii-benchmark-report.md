@@ -541,6 +541,12 @@ comparator `benchmarks/audit_citrate_axial_profile.py`.
 5. **Defer TOPAS FPA, Soller, and spectral-band expansion.** Current data do not
    show that these terms improve the targeted GSAS-II-parity workflows.
 
+The prospective evidence required to reopen that decision is defined in the
+[in-house profile transferability gate](profile-transferability-gate.md). As of
+2026-08-14 the required new calibration/untouched-holdout pair is not present in
+the workspace, so Unit 29 remains input-blocked rather than being completed
+with relabelled public data.
+
 ## Reproducibility artifacts
 
 The detailed working ledger is `docs/gsasii-benchmark-campaign.md`. Fresh JSON

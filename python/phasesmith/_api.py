@@ -87,7 +87,7 @@ def _vector(values: ArrayLike, name: str) -> NDArray[np.float64]:
 
 
 def profile(delta: ArrayLike, fwhm: float, eta: float) -> ProfileResult:
-    """Evaluate the normalized symmetric pseudo-Voigt and its derivatives."""
+    """Evaluate the low-level normalized ``H, eta`` primitive and derivatives."""
 
     arrays = _core.profile(_vector(delta, "delta"), float(fwhm), float(eta))
     return ProfileResult(*arrays)
@@ -157,7 +157,7 @@ def accumulate(
     support_fwhm: float = 20.0,
     jacobian_layout: Literal["support", "dense"] = "support",
 ) -> AccumulationResult:
-    """Accumulate finite-support peaks and their derivatives in one native pass.
+    """Accumulate low-level ``H, eta`` peaks and derivatives in one native pass.
 
     Samples at exactly ``support_fwhm * fwhm`` from a peak center are included.
     Derivatives hold that active sample set fixed.

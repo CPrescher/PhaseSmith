@@ -12,6 +12,10 @@ comparison drivers, checks their declared result contracts, and writes one
 non-destructive aggregate JSON report. This orchestration changes no numerical
 case and never regenerates the reviewed result files implicitly.
 
+The campaign contains no new independent in-house calibration/holdout pair.
+The exact missing-input contract and prospective promotion criteria are in the
+[in-house profile transferability gate](profile-transferability-gate.md).
+
 ## Comparison contract
 
 All GSAS-II results must come from revision
