@@ -3,6 +3,19 @@
 PhaseSmith is independently licensed under the MIT License. The following
 notice covers compatible behavior derived from separately licensed software.
 
+## GSAS-II black-box validation
+
+PhaseSmith's optional oracle fixtures contain plain numerical outputs generated
+with the exact GSAS-II revision recorded in `oracle/PINNED_GSASII.json`.
+PhaseSmith does not redistribute GSAS-II source or binaries and does not use it
+at runtime. GSAS-II is copyright UChicago Argonne, LLC and is distributed under
+its own [open-source license](https://github.com/AdvancedPhotonSource/GSAS-II/blob/c0bc79b259cdf0065480b5fbd57674ddf12c4a23/LICENSE).
+The upstream-requested acknowledgment is: “This product includes software
+produced by UChicago Argonne, LLC under Contract No. DE-AC02-06CH11357 with the
+Department of Energy.” The primary scientific citation is B. H. Toby and
+R. B. Von Dreele, *Journal of Applied Crystallography* **46** (2013), 544–549,
+DOI `10.1107/S0021889813003531`.
+
 ## xypattern Smooth Bruckner background algorithm
 
 The `phasesmith.background` Bruckner smoother reproduces the observable algorithm

@@ -16,6 +16,13 @@ development versions.
   intensity-correction, and specimen-geometry models, and warns about model
   mismatches or high-risk joint parameter selections without mutating the
   request.
+- Resolve the pre-1.0 API direction: direct H/eta remains a documented
+  low-level mathematical primitive, support-block Jacobians remain the Python
+  default, physical units remain canonical, and oracle fixtures or scattering
+  tables require explicit provenance and redistribution review.
+- Freeze the prospective Unit-29 in-house profile-transferability contract and
+  record that execution is blocked on a new calibration/untouched-holdout pair;
+  current evidence continues to reject specialized profile-term promotion.
 
 ## 0.4.1
 

@@ -1630,24 +1630,27 @@ application-neutral native implementation without losing the independent NumPy
 equation references. GUI-specific state and presentation adapters belong in a
 separate application repository.
 
-## Maintainer decisions needed
+## Resolved pre-1.0 API decisions
 
-Development can proceed through the next numerical units, but the following
-must be decided before stabilizing the 1.0 public API. The project-license
-question was resolved on 2026-08-05 by selecting the MIT License, and version
-0.4.0 was released on 2026-08-14.
+The project license was resolved on 2026-08-05 by selecting MIT, and version
+0.4.0 was released on 2026-08-14. The remaining direction questions are now
+resolved in `docs/api-stability.md`:
 
-1. Whether direct `(H, eta)` remains public as a low-level API or is labeled
-   explicitly as a primitive/reference interface.
-2. When support-block Jacobians become the Python default.
-3. Whether the first supported CW convention is strictly GSAS-II-compatible or
-   a physical-unit API with a separately documented GSAS compatibility adapter.
-   This plan recommends the latter.
-4. Which GSAS-II-derived fixtures are lawful and useful to redistribute; fixture
-   provenance must be reviewed before commit.
-5. Any additional space-group/scattering dataset beyond the reviewed Unit-14
-   public-domain XrayDB and `periodictable` sources needs its own source and
-   license review before redistribution.
+1. Direct `(H, eta)` remains public and is explicitly classified as a
+   mathematical primitive/reference interface, not the normal instrument API.
+2. Support-block Jacobians are already the Python default and remain so for
+   1.0; dense storage is explicit compatibility materialization.
+3. Physical units are canonical. GSAS/GSAS-II units and signs remain in named
+   file/oracle adapters with documented conversions.
+4. Existing plain-array oracle fixtures are retained under a conservative
+   provenance, notice, and numerical-utility gate. Source, binaries, project
+   dictionaries, or mechanically translated implementation code are excluded;
+   new redistribution questions require maintainer or counsel review.
+5. Additional space-group/scattering data requires its own source, license,
+   hash, generation, and scientific-validation review before redistribution.
+
+The remaining release task is a machine-readable exported-name/signature
+snapshot before the 1.0 release candidate, after intentional 0.x cleanup.
 
 ## Definition of the next completed milestone
 
@@ -1692,6 +1695,14 @@ plain validation artifacts, explicit cross-pattern profile metrics, and a
 decision supported by those results about whether any specialized profile term
 belongs in production. Failed transfer remains a valid outcome; it must not be
 converted into a production feature by tuning against one specimen.
+
+The workspace audit on 2026-08-14 found no new independent in-house
+calibration/untouched-holdout pair. Unit 29 is therefore explicitly
+input-blocked, not completed with an external or already reviewed substitute.
+`docs/profile-transferability-gate.md` freezes the required input package,
+calibration-only fit, frozen-profile holdout, repeat/start checks, and candidate
+promotion criteria. Existing evidence retains the decision not to add LPSD,
+tube-tail, continuum, or coupled-dispersion production terms.
 
 Unit 29's campaign-orchestration slice is complete. The checked-in version-1
 manifest composes seventeen existing real-data comparison and diagnostic
