@@ -6,6 +6,12 @@ development versions.
 
 ## Unreleased
 
+- Preserve the complete caller-owned constraint graph and maximum parameter
+  authorization across Python staged Rietveld workflows. Every stage is now
+  validated before numerical work, constraints that first become active in a
+  later stage are restored from the original request, and a rejected later
+  stage cannot silently narrow the next intelligent proposal.
+
 ## 0.4.1
 
 - Expose conventional human-facing HKL representatives for generated
