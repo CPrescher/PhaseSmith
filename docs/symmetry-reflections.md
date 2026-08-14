@@ -135,9 +135,16 @@ reflections = generator.generate(
 )
 ```
 
-The returned NumPy arrays contain stable IDs, canonical `hkl`, multiplicity,
-d-spacing, reciprocal length, and all six analytical cell derivatives. Arrays
-are copied or natively allocated and exposed read-only.
+The returned NumPy arrays contain stable IDs, canonical `hkl`, conventional
+`conventional_hkl` display representatives, multiplicity, d-spacing,
+reciprocal length, and all six analytical cell derivatives. The canonical
+indices remain the calculation and stable-identity convention. Display indices
+are selected only from the exact space-group orbit: after choosing the Friedel
+sign with the first nonzero index positive, the lexicographically greatest
+member is used. Thus a conventional cubic setting displays `100`, `311`, and
+`800`, while a lower-symmetry group never acquires an axis permutation that its
+operations do not contain. Arrays are copied or natively allocated and exposed
+read-only.
 
 ## Validation and performance
 
