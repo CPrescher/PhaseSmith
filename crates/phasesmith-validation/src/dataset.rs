@@ -152,12 +152,71 @@ pub fn validation_datasets() -> Vec<ValidationDataset> {
         echidna_dataset(),
         sucrose_dataset(),
         pbso4_dataset(),
+        ceria_size_strain_dataset(),
         qarr_dataset(),
         qarr_1h_dataset(),
         nist_srm660c_dataset(),
         lanl_nickel_tof_dataset(),
         powgen_tof_dataset(),
     ]
+}
+
+fn ceria_size_strain_dataset() -> ValidationDataset {
+    let source = "https://mysite.du.edu/~balzar";
+    dataset(
+        "iucr-ceria-size-strain-round-robin",
+        "IUCr ceria size/strain round-robin laboratory X-ray pair",
+        "https://mysite.du.edu/~balzar/s-s_rr.htm",
+        concat!(
+            "D. Balzar et al., J. Appl. Cryst. 37 (2004) 911-924, ",
+            "doi:10.1107/S0021889804022551"
+        ),
+        concat!(
+            "The IUCr-sponsored round-robin page explicitly offers the original ",
+            "measurements for download but states no redistribution license. Files are ",
+            "therefore checksum-pinned external inputs and are not redistributed."
+        ),
+        ValidationPurpose::Holdout,
+        ValidationStatus::Passed,
+        vec![
+            file(
+                "langfsh1.xy",
+                "8b4c0562e3c25f2ed33bade08f03ba990f693c219f991bd408f73b2c6e7c8e9f",
+                93_567,
+                format!("{source}/langfsh1.xy"),
+            ),
+            file(
+                "langfsh2.xy",
+                "87fc1b17a7f17d441333eafea2aec7ad21cff1e25cb89c1bab915585868be963",
+                40_017,
+                format!("{source}/langfsh2.xy"),
+            ),
+            file(
+                "langfsh3.xy",
+                "387563d40cb287b0fc528616e38a65cf383382ed26927aca81cfaa3b277867ab",
+                49_992,
+                format!("{source}/langfsh3.xy"),
+            ),
+            file(
+                "langfbr1.xy",
+                "4c84a0fb8546bc04c12d86316b3eaa00bced244df875ce92af73d400beda6820",
+                46_846,
+                format!("{source}/langfbr1.xy"),
+            ),
+            file(
+                "langfbr2.xy",
+                "fbe42f048ef653731ebc767467d2a0b5fd0ed537c341901ed50b0a0379f812e4",
+                20_071,
+                format!("{source}/langfbr2.xy"),
+            ),
+            file(
+                "langfbr3.xy",
+                "ef3d0f202bf1f88cd6adc7d92cbce56906cb358cca7e1c5b0ed490f785741068",
+                20_171,
+                format!("{source}/langfbr3.xy"),
+            ),
+        ],
+    )
 }
 
 fn echidna_dataset() -> ValidationDataset {

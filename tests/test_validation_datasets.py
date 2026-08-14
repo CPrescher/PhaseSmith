@@ -13,6 +13,7 @@ def test_registry_has_unique_stable_ids_and_pinned_files() -> None:
         "bath-ltl-lab-xray",
         "curtin-rowles-qpa-topas",
         "gsasii-pbso4-cw",
+        "iucr-ceria-size-strain-round-robin",
         "iucr-qarr-1g",
         "iucr-qarr-1h",
         "iucr-dicesium-citrate-si-standard",
@@ -111,6 +112,10 @@ def test_reviewed_nonpassing_outcomes_are_explicit() -> None:
     assert (
         by_id["iucr-sodium-dihydrogen-citrate-si-standard"].purpose,
         by_id["iucr-sodium-dihydrogen-citrate-si-standard"].expected_status,
+    ) == ("holdout", "passed")
+    assert (
+        by_id["iucr-ceria-size-strain-round-robin"].purpose,
+        by_id["iucr-ceria-size-strain-round-robin"].expected_status,
     ) == ("holdout", "passed")
     assert (
         by_id["iucr-tripotassium-citrate-si-standard"].purpose,

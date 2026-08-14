@@ -12,6 +12,21 @@ python tools/validate_real_data.py --fetch \
   --output validation/results/local.json
 ```
 
+The IUCr ceria size/strain round robin has a separate empirical
+calibration/holdout gate because it does not require GSAS-II:
+
+```bash
+python -c "from phasesmith.validation import fetch_validation_dataset; \
+fetch_validation_dataset('iucr-ceria-size-strain-round-robin', \
+'validation/data/iucr-ceria-size-strain-round-robin')"
+python benchmarks/validate_ceria_transferability.py \
+  --dataset-directory validation/data/iucr-ceria-size-strain-round-robin \
+  --json-output validation/results/local-ceria-transferability.json
+```
+
+The fetch is explicit, source bytes remain ignored, and an existing report is
+not overwritten unless `--overwrite` is passed.
+
 The reviewed public-API comparison with XRD-Rust is preserved in
 `results/2026-08-13-xrd-rust-performance.json`. Its calculation scope,
 numerical gate, interpretation, and reproduction command are documented in
@@ -75,6 +90,16 @@ cargo run -p phasesmith-validation --bin phasesmith-validation -- run \
 `validation/data/` and local result files are ignored. The current cases
 have deliberately different meanings:
 
+- `iucr-ceria-size-strain-round-robin` pins six University of Birmingham
+  laboratory X-ray ranges. Annealed narrow-line CeO2 calibrates the empirical
+  profile; broadened CeO2 is not inspected until that profile is frozen. Three
+  calibration starts select the same W-only profile. The existing isotropic
+  size/Gaussian-microstrain model lowers holdout Rwp from 0.553990 to 0.058097,
+  reaches correlation 0.985574, and reduces weighted SSE by 98.9002%. Three
+  dispersed sample-width starts and twelve deterministic Poisson resamples pass
+  the stability gates. Peak-wise metrics qualify the result, and incomplete
+  physical optics metadata blocks LPSD, tube-tail, continuum, and
+  coupled-dispersion evaluation. No specialized term is promoted.
 - `aps-sucrose-11bmb` exercises the supported monochromatic FXYE → background
   → symmetry/reflection generation → Le Bail → analytical profile-refinement
   path on the official APS 11-BM sucrose tutorial pattern. Its `Rwp <= 0.22`
