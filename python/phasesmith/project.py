@@ -11,6 +11,7 @@ from .control import CancellationToken
 from .persistence import PersistenceBundle, PersistenceError, load_bundle, save_bundle
 from .radiation import MonochromaticRadiation, RadiationProbe
 from .refinement import rietveld as native_rietveld
+from .refinement.readiness import RietveldReadinessReport, review_rietveld_input
 from .refinement.rietveld import (
     RietveldCalculationResult,
     RietveldCheckpoint,
@@ -101,6 +102,11 @@ class RietveldProject:
         """Return transparent staged advice without starting a refinement."""
 
         return intelligent_rietveld_recipe(self.input)
+
+    def review_readiness(self) -> RietveldReadinessReport:
+        """Review provenance, active models, and risky selections without mutation."""
+
+        return review_rietveld_input(self.input)
 
     def refine_recipe(
         self,

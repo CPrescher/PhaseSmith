@@ -172,7 +172,16 @@ The solver always refines exactly the active parameters in one
 workflow layer in `phasesmith.refinement`:
 
 ```python
-from phasesmith.refinement import intelligent_rietveld_recipe, run_rietveld_recipe
+from phasesmith.refinement import (
+    intelligent_rietveld_recipe,
+    review_rietveld_input,
+    run_rietveld_recipe,
+)
+
+# Non-mutating conversion/configuration review before numerical work.
+readiness = review_rietveld_input(request)
+for diagnostic in readiness.diagnostics:
+    print(diagnostic.severity, diagnostic.code, diagnostic.message)
 
 # Advisory only: inspect this record before deciding whether to run it.
 proposal = intelligent_rietveld_recipe(request)
@@ -187,6 +196,16 @@ for stage in workflow.stages:
         stage.result.termination_reason,
     )
 ```
+
+The readiness report retains structured CIF warnings and errors, identifies
+the imported block/backend and symmetry declaration when available, and
+discloses the active radiation, scattering, integrated-intensity correction,
+and specimen geometry. It warns about probe or geometry contradictions and
+about selected scale--occupancy, lattice--wavelength, and
+zero--displacement combinations. It is deterministic, JSON-compatible through
+`to_record()`, and does not mutate the request. Because an input cannot reveal
+an omitted phase, the report does not guess whether the supplied phase list is
+complete.
 
 The intelligent planner is deterministic and transparent. It can activate
 only families already authorized by `request.selection`. Its default cumulative

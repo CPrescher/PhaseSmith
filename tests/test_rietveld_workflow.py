@@ -15,6 +15,7 @@ from phasesmith.refinement import (
     RietveldStage,
     TerminationReason,
     intelligent_rietveld_recipe,
+    review_rietveld_input,
     rietveld,
     run_rietveld_recipe,
 )
@@ -68,6 +69,102 @@ def shifted_request() -> rietveld.RietveldInput:
         initial,
         pattern=phasesmith.PowderPattern(x, observed_y=truth.y),
     )
+
+
+def test_readiness_report_discloses_active_conversion_and_model_choices() -> None:
+    request = shifted_request()
+
+    report = review_rietveld_input(request)
+
+    codes = [item.code for item in report.diagnostics]
+    assert "structure.source" in codes
+    assert "structure.symmetry" in codes
+    assert "experiment.radiation" in codes
+    assert "experiment.geometry_missing" in codes
+    assert "phase.scattering" in codes
+    assert "phase.intensity_correction_geometry_unconfirmed" in codes
+    assert report.has_warnings is True
+    assert report.has_errors is False
+    assert report.to_record()["diagnostics"][0]["phase_id"] == "workflow"
+    assert phasesmith.RietveldProject(request).review_readiness() == report
+
+
+def test_readiness_report_flags_neutral_correction_and_missing_provenance() -> None:
+    request = shifted_request()
+    structure = replace(request.phases[0].structure, source=None)
+    phase = replace(
+        request.phases[0],
+        structure=structure,
+        intensity_correction=phasesmith.NeutralIntegratedIntensityCorrection(),
+    )
+    request = replace(request, phases=(phase,))
+
+    diagnostics = review_rietveld_input(request).diagnostics
+
+    warnings = {item.code for item in diagnostics if item.severity == "warning"}
+    assert "structure.source_missing" in warnings
+    assert "phase.neutral_intensity_correction" in warnings
+
+
+def test_readiness_report_flags_probe_and_experiment_mismatches() -> None:
+    request = shifted_request()
+    phase = replace(
+        request.phases[0],
+        scattering=phasesmith.NeutronNuclear(),
+        intensity_correction=phasesmith.TimeOfFlightNeutronLorentz(90.0),
+    )
+    request = replace(request, phases=(phase,))
+
+    codes = [item.code for item in review_rietveld_input(request).diagnostics]
+
+    assert "phase.scattering_probe_mismatch" in codes
+    assert "phase.intensity_correction_probe_mismatch" in codes
+    assert "phase.intensity_correction_experiment_mismatch" in codes
+
+    phase = replace(
+        request.phases[0],
+        scattering=phasesmith.XrayNonResonant(),
+        intensity_correction=phasesmith.BraggBrentanoUnpolarizedLp(1.0),
+    )
+    request = replace(request, phases=(phase,))
+    codes = [item.code for item in review_rietveld_input(request).diagnostics]
+    assert "phase.intensity_correction_wavelength_mismatch" in codes
+
+    experiment = replace(
+        request.experiment,
+        geometry=phasesmith.DebyeScherrerGeometry(240.0),
+    )
+    request = replace(request, experiment=experiment)
+    codes = [item.code for item in review_rietveld_input(request).diagnostics]
+    assert "phase.intensity_correction_geometry_mismatch" in codes
+
+
+def test_readiness_report_flags_risky_joint_parameter_selection() -> None:
+    request = shifted_request()
+    geometry = phasesmith.BraggBrentanoGeometry(240.0)
+    experiment = replace(request.experiment, geometry=geometry)
+    selection = replace(
+        request.selection,
+        occupancy=True,
+        instrument_parameters=("zero_shift_deg", "sample_displacement_mm"),
+    )
+    parameters = rietveld.build_parameter_set(
+        request.phases,
+        request.lattice_domains,
+        selection,
+        experiment=experiment,
+    )
+    request = replace(
+        request,
+        experiment=experiment,
+        selection=selection,
+        parameters=parameters,
+    )
+
+    codes = [item.code for item in review_rietveld_input(request).diagnostics]
+
+    assert "selection.scale_occupancy_correlation" in codes
+    assert "selection.zero_displacement_correlation" in codes
 
 
 def test_intelligent_recipe_is_cumulative_advice_outside_solver() -> None:

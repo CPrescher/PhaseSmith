@@ -106,6 +106,7 @@ the navigation.
 | `phasesmith.refinement.tof_lebail` | `TofLeBailInput`, `TofLeBailOptions`, `refine_tof_lebail` | Fixed-cell, fixed-instrument TOF extraction. |
 | `phasesmith.refinement.tof_multibank` | `TofMultiBankGeometryInput`, `TofMultiBankGeometryOptions`, `refine_tof_multibank_geometry` | Joint shared-cell and bank-local TOF instrument refinement with restart and identifiability diagnostics. |
 | `phasesmith.refinement.tof_structural` | `StructuralTofMultiBankInput`, `StructuralTofMultiBankProvenance`, `StructuralTofRequestProvenance`, `StructuralTofSourceDigest`, `StructuralTofRefinementOptions`, `refine_structural_tof_multibank` | Structural neutron TOF refinement with shared structure, checksum-retaining one-/multi-bank file composition, explicit bank correction contracts, bounded runtime, and exact restart. |
+| `phasesmith.refinement.readiness` | `review_rietveld_input`, `RietveldReadinessReport` | Non-mutating review of import provenance, active physical models, model mismatches, and risky parameter selections. |
 | `phasesmith.refinement.rietveld` | Rietveld inputs, options, recipes, and results | Structural refinement orchestration. |
 | `phasesmith.refinement.runtime` | Limits, events, logs, checkpoints | Bounded execution and recovery. |
 | `phasesmith.quantitative` | `quantitative_phase_analysis`, `quantitative_phase_analysis_with_covariance`, `weight_fractions_from_scale` | Hill–Howard phase fractions and scale-covariance propagation. |
