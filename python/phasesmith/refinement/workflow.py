@@ -271,22 +271,10 @@ def run_rietveld_recipe(
 ) -> RietveldWorkflowResult:
     """Run explicit stages, preserving only accepted physical states between them."""
 
-    if not isinstance(input_data, rietveld.RietveldInput):
-        raise TypeError("input_data must be RietveldInput")
-    if not isinstance(recipe, RietveldRecipe):
-        raise TypeError("recipe must be RietveldRecipe")
+    validate_rietveld_recipe(input_data, recipe)
     selected_options = rietveld.RietveldOptions() if options is None else options
     if not isinstance(selected_options, rietveld.RietveldOptions):
         raise TypeError("options must be RietveldOptions or None")
-    for stage in recipe.stages:
-        if not _selection_subset(stage.selection, input_data.selection):
-            raise ValueError(
-                f"stage {stage.name!r} selects parameters outside the input's maximum selection"
-            )
-        # Build every stage before numerical work. This validates the complete
-        # caller-owned parameter and constraint contract without allowing an
-        # early stage's filtered view to erase constraints needed later.
-        _stage_input(input_data, stage.selection)
 
     current = input_data
     initial_calculation = rietveld.calculate(
@@ -326,6 +314,27 @@ def run_rietveld_recipe(
         tuple(results),
         len(results) == len(recipe.stages) and results[-1].accepted,
     )
+
+
+def validate_rietveld_recipe(
+    input_data: rietveld.RietveldInput,
+    recipe: RietveldRecipe,
+) -> None:
+    """Validate every recipe stage without evaluating the numerical objective."""
+
+    if not isinstance(input_data, rietveld.RietveldInput):
+        raise TypeError("input_data must be RietveldInput")
+    if not isinstance(recipe, RietveldRecipe):
+        raise TypeError("recipe must be RietveldRecipe")
+    for stage in recipe.stages:
+        if not _selection_subset(stage.selection, input_data.selection):
+            raise ValueError(
+                f"stage {stage.name!r} selects parameters outside the input's maximum selection"
+            )
+        # Build every stage before numerical work. This validates the complete
+        # caller-owned parameter and constraint contract without allowing an
+        # early stage's filtered view to erase constraints needed later.
+        _stage_input(input_data, stage.selection)
 
 
 def _selection(

@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "phasesmith"
-version = "0.4.1"
+version = "0.5.0"
 description = "Fast, validated powder-diffraction profile calculations"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -27,6 +27,9 @@ Homepage = "https://github.com/CPrescher/PhaseSmith"
 Documentation = "https://phasesmith.readthedocs.io/"
 Repository = "https://github.com/CPrescher/PhaseSmith.git"
 Issues = "https://github.com/CPrescher/PhaseSmith/issues"
+
+[project.scripts]
+phasesmith = "phasesmith.cli:main"
 
 [project.optional-dependencies]
 test = ["pytest>=8", "gemmi>=0.7.5,<0.8"]

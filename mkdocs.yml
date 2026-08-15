@@ -57,6 +57,7 @@ nav:
       - Effective starting profile: effective-profile-estimation.md
       - Fundamental-profile calibration: fundamental-profile-calibration.md
       - Rietveld refinement: rietveld.md
+      - AI-guided automation: ai-automation.md
       - Refinement infrastructure: refinement.md
       - Runtime and recovery: refinement-runtime.md
       - Quantitative phase analysis: quantitative-phase-analysis.md

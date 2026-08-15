@@ -18,14 +18,14 @@ crate-type = ["cdylib"]
 [dependencies]
 npy = { package = "numpy", version = "0.27" }
 pyo3 = { version = "0.27", features = ["extension-module", "abi3-py311"] }
-phasesmith-core = { version = "0.4.1", path = "../phasesmith-core" }
-phasesmith-engine = { version = "0.4.1", path = "../phasesmith-engine" }
-phasesmith-execution = { version = "0.4.1", path = "../phasesmith-execution" }
-phasesmith-io = { version = "0.4.1", path = "../phasesmith-io" }
-phasesmith-model = { version = "0.4.1", path = "../phasesmith-model" }
-phasesmith-persistence = { version = "0.4.1", path = "../phasesmith-persistence" }
-phasesmith-validation = { version = "0.4.1", path = "../phasesmith-validation" }
-phasesmith-workflows = { version = "0.4.1", path = "../phasesmith-workflows" }
+phasesmith-core = { version = "0.5.0", path = "../phasesmith-core" }
+phasesmith-engine = { version = "0.5.0", path = "../phasesmith-engine" }
+phasesmith-execution = { version = "0.5.0", path = "../phasesmith-execution" }
+phasesmith-io = { version = "0.5.0", path = "../phasesmith-io" }
+phasesmith-model = { version = "0.5.0", path = "../phasesmith-model" }
+phasesmith-persistence = { version = "0.5.0", path = "../phasesmith-persistence" }
+phasesmith-validation = { version = "0.5.0", path = "../phasesmith-validation" }
+phasesmith-workflows = { version = "0.5.0", path = "../phasesmith-workflows" }
 
 [lints]
 workspace = true

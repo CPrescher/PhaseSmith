@@ -6,6 +6,20 @@ development versions.
 
 ## Unreleased
 
+## 0.5.0
+
+- Add a provider-neutral AI automation boundary for persisted Rietveld
+  projects: strict versioned workflow and recipe-proposal records, read-only
+  byte-bound planning, deterministic scientific guidance, caller-authorized
+  cumulative stages, explicit plan-ID approval, stale-input rejection, bounded
+  execution, real checkpoint continuation, structured errors, and auditable
+  outputs. The new `phasesmith` CLI exposes schema, raw-input inspection,
+  plan, run, resume, and report commands without adding an AI runtime
+  dependency.
+- Export recipe validation independently of numerical evaluation and validate
+  all stages against the complete initial selection and constraint graph before
+  a staged workflow starts.
+
 - Preserve the complete caller-owned constraint graph and maximum parameter
   authorization across Python staged Rietveld workflows. Every stage is now
   validated before numerical work, constraints that first become active in a

@@ -24,6 +24,17 @@ analytical derivatives, broader Hall-expression import, bounded parallel
 value-only structure factors, an XRD-Rust comparison, and the reviewed citrate
 conversion-fidelity campaign.
 
+The 0.5.0 development line adds an application-neutral automation boundary on
+top of persisted typed Rietveld projects. Inspection and planning are
+non-numerical; plans are bound to exact project bytes and finite execution
+budgets. A human or external AI may propose an explicit cumulative staged
+recipe, but PhaseSmith admits only caller-authorized parameters, validates the
+complete constraint graph, requires exact plan-ID approval, rejects stale
+inputs and unintended overwrites, and retains complete audit outputs. Model
+providers are optional external advisors and never become numerical-core or
+runtime dependencies. Raw powder/CIF inspection deliberately reports missing
+physical metadata instead of guessing a runnable project.
+
 The remainder of this section is a chronological implementation record. Terms
 such as “next slice”, “pending”, and “follow-on” describe the checkpoint at
 which their paragraph was written; the final current-state summary and next

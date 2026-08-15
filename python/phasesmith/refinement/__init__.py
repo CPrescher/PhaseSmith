@@ -152,6 +152,7 @@ from .workflow import (
     RietveldWorkflowResult,
     intelligent_rietveld_recipe,
     run_rietveld_recipe,
+    validate_rietveld_recipe,
 )
 
 __all__ = [
@@ -282,4 +283,5 @@ __all__ = [
     "run_rietveld_recipe",
     "tof_lattice_geometry",
     "transpose_jacobian_vector_product",
+    "validate_rietveld_recipe",
 ]

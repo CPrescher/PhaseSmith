@@ -115,6 +115,11 @@ the navigation.
 | `phasesmith.quantitative` | `quantitative_phase_analysis`, `quantitative_phase_analysis_with_covariance`, `weight_fractions_from_scale` | Hill–Howard phase fractions and scale-covariance propagation. |
 | `phasesmith.reporting` | JSON and CSV Rietveld writers | Stable external reports. |
 | `phasesmith.persistence` | `save_bundle`, `load_bundle`, `PersistenceBundle` | Versioned Python workflow persistence. |
+| `phasesmith.automation` | `WorkflowSpec`, `plan_workflow`, `parse_recipe_proposal`, `run_workflow`, `resume_workflow` | Versioned inspect/plan/approve/run boundary for human- or AI-orchestrated persisted projects. |
+
+The `phasesmith` console script exposes the same boundary as finite JSON
+commands. See [AI-guided automation](ai-automation.md) for the schemas,
+scientific recipe rubric, explicit approval flow, and model-facing prompt.
 
 ## Inspect exact signatures
 
@@ -134,7 +139,7 @@ ownership in more detail. Source links in the page header lead to the exact
 implementation for the selected documentation version.
 
 Release review does not rely on documentation pages alone. The versioned
-machine-readable snapshot in `api/python-public-api-v0.4.1.json` covers the
+machine-readable snapshot in `api/python-public-api-v0.5.0.json` covers the
 explicit top-level, I/O, refinement, integration, oracle, and validation
 exports. Run `python scripts/public_api_snapshot.py --check` to compare it with
 the installed package; any name, target, kind, or callable-signature change is
