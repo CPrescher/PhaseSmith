@@ -1,0 +1,16 @@
+{
+  "schema": "phasesmith.workflow-spec.v1",
+  "workflow_id": "reviewed-cw-refinement",
+  "project_path": "../../project",
+  "output_directory": "../../automation-output",
+  "limits": {
+    "max_iterations": 100,
+    "max_evaluations": 1000,
+    "max_runtime_seconds": 300.0,
+    "max_consecutive_rejections": 20
+  },
+  "outputs": {
+    "write_csv": true,
+    "save_project": true
+  }
+}

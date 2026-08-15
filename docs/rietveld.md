@@ -234,6 +234,13 @@ unchanged.
 anything. `RietveldProject.refine_intelligently()` is the explicit opt-in that
 plans and executes it, while `refine_recipe()` runs a caller-owned recipe.
 
+For batch tools and coding agents, the versioned
+[AI-guided automation](ai-automation.md) boundary separates read-only planning,
+an optional external recipe proposal, exact plan approval, bounded execution,
+and checkpoint continuation. External proposals pass the same complete
+selection and constraint validation as Python recipes; no model client runs in
+the solver.
+
 `ConstantWavelengthExperiment.x_ray(...)` selects built-in non-resonant X-ray
 scattering by default. `ConstantWavelengthExperiment.neutron(...)` selects the
 built-in nuclear neutron model through the identical refinement API. The

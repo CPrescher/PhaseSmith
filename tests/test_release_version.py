@@ -22,13 +22,13 @@ def _release_module() -> object:
 
 def test_release_version_matches_every_checked_surface() -> None:
     result = subprocess.run(
-        [sys.executable, SCRIPT, "--tag", "v0.4.1"],
+        [sys.executable, SCRIPT, "--tag", "v0.5.0"],
         cwd=ROOT,
         check=True,
         capture_output=True,
         text=True,
     )
-    assert result.stdout.strip() == "0.4.1"
+    assert result.stdout.strip() == "0.5.0"
 
 
 def test_release_version_rejects_a_mismatched_tag() -> None:
@@ -40,7 +40,7 @@ def test_release_version_rejects_a_mismatched_tag() -> None:
         text=True,
     )
     assert result.returncode == 1
-    assert "does not match release version v0.4.1" in result.stderr
+    assert "does not match release version v0.5.0" in result.stderr
 
 
 def test_api_snapshot_release_metadata_is_versioned(tmp_path: Path) -> None:

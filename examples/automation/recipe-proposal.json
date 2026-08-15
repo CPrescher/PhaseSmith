@@ -1,0 +1,48 @@
+{
+  "schema": "phasesmith.recipe-proposal.v1",
+  "plan_id": "0000000000000000000000000000000000000000000000000000000000000000",
+  "proposal_id": "reviewed-ai-recipe-v1",
+  "generated_by": "gpt-5.6-sol",
+  "assumptions": [
+    "Replace the placeholder plan_id and selections with the exact values from plan.json."
+  ],
+  "recipe": {
+    "name": "scale-then-position-template",
+    "stages": [
+      {
+        "name": "scale_background",
+        "selection": {
+          "phase_scale": true,
+          "lattice": false,
+          "coordinates": false,
+          "occupancy": false,
+          "u_iso": false,
+          "sample_physics": false,
+          "instrument_parameters": [],
+          "background": true
+        },
+        "rationale": [
+          "Establish scale and the authorized background before correlated terms."
+        ]
+      },
+      {
+        "name": "final_authorized_selection",
+        "selection": {
+          "phase_scale": true,
+          "lattice": true,
+          "coordinates": false,
+          "occupancy": false,
+          "u_iso": false,
+          "sample_physics": false,
+          "instrument_parameters": [
+            "zero_shift_deg"
+          ],
+          "background": true
+        },
+        "rationale": [
+          "Replace this template with the exact maximum_selection from the approved plan."
+        ]
+      }
+    ]
+  }
+}

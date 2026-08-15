@@ -596,6 +596,15 @@ continues to call the general solver once with exactly the caller-selected
 parameters, and `project.refine_recipe(recipe)` runs an explicit user-defined
 sequence.
 
+Persisted projects also have a provider-neutral command boundary for coding
+agents and language models. `phasesmith plan workflow.json` prints a read-only,
+byte-bound plan and deterministic recipe; `phasesmith run workflow.json
+--approve PLAN_ID [--proposal recipe.json]` executes only after exact approval
+and full recipe validation. Raw pattern/CIF inspection, checkpoint resume,
+strict schemas, structured errors, and the scientific recipe rubric are
+documented in [AI-guided automation](docs/ai-automation.md). PhaseSmith does not
+depend on an AI SDK or call a model from the solver.
+
 Refinable backgrounds share one analytical interface. Built-ins include power
 and Chebyshev series, fixed-knot linear interpolation, broad normalized
 Gaussian amorphous components, and ordered composites. Smooth Bruckner remains

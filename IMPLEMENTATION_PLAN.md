@@ -1661,6 +1661,45 @@ against this baseline, followed by the 1.0 release candidate gates.
 
 ## Definition of the next completed milestone
 
+### Unit 39: constrained automation and AI recipe guidance (0.5.0)
+
+The first 0.5.0 application entry point is complete. A strict version-1 task
+spec operates only on an already reviewed, persisted `RietveldProject` and
+declares finite runtime and output ownership. Read-only planning fingerprints
+every project file, emits readiness diagnostics, the complete authorized
+selection, stable parameter labels, the deterministic cumulative recipe, and a
+SHA-256 plan identity without evaluating the objective. Raw powder and CIF
+inspectors expose bounded source facts and explicitly retain unknown experiment
+physics rather than constructing a guessed request.
+
+An external human or AI recipe is an untrusted proposal bound to that exact
+plan. Its stages are size-limited, strict-key, cumulative, rationale-bearing,
+unable to set custom solver options or termination policy, and required to end
+with the complete caller-authorized selection. PhaseSmith validates every
+stage and the full original constraint graph before numerical work. Run and
+checkpoint-resume require the exact plan ID, replan immediately before
+execution to reject changed bytes, enforce caller budgets, and reject existing
+owned outputs before starting. JSON audit products retain the plan, exact
+recipe/action, workflow/result, provider provenance, and optional CSV and
+resumable project. Stable structured error codes cover automation failures.
+
+The provider-neutral `phasesmith` CLI exposes `schema`, `inspect-pattern`,
+`inspect-cif`, `plan`, `run`, `resume`, and `report`. There is no model SDK,
+network callback, prompt execution, or hidden adaptive decision inside the
+solver. Guidance documents the conservative order—scale/background, positions,
+structural intensity terms, then profile/sample terms—and requires joint review
+of convergence, rank, correlations, bounds, residuals, provenance, and physical
+plausibility rather than accepting lower Rwp alone. Model names such as
+`gpt-5.6-sol` are recorded only as proposal provenance. Any future adaptive
+loop must create a new byte-bound plan and approval between observations.
+
+Focused acceptance covers stable plans, strict/duplicate-key parsing,
+authorization and cumulative-stage rejection, stale approvals, collision
+checks before numerical work, an externally proposed two-stage refinement,
+raw inspectors, structured CLI errors, and actual persisted-checkpoint
+continuation. No numerical equation, production hot loop, or GSAS-II boundary
+changes in this unit.
+
 Implementation units 0 through 24 are complete, including the Python-free
 Rietveld/Le Bail workflows, persistence and application boundaries, joint
 refinement, and checksum-pinned native real-data validation. Unit 25's
