@@ -1,0 +1,29 @@
+{
+  "$id": "https://phasesmith.org/schema/automation-error-v1.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "code": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$",
+      "type": "string"
+    },
+    "details": {
+      "type": "object"
+    },
+    "message": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "schema": {
+      "const": "phasesmith.automation-error.v1"
+    }
+  },
+  "required": [
+    "schema",
+    "code",
+    "message",
+    "details"
+  ],
+  "title": "phasesmith.automation-error.v1",
+  "type": "object"
+}

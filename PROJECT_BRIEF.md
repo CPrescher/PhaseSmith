@@ -12,7 +12,7 @@ not part of the numerical library.
 
 ## Current implementation status
 
-PhaseSmith 0.4.0 is the current released baseline. The completed library now
+PhaseSmith 0.4.1 is the current released baseline. The completed library now
 includes Python-free CW and TOF Le Bail/Rietveld workflows, public Python
 facades, native project persistence, and facility-neutral single-/multi-bank
 TOF composition with explicit calibration, correction, background-domain, and
@@ -23,6 +23,38 @@ Version 0.4.0 additionally includes orthorhombic Stephens microstrain with
 analytical derivatives, broader Hall-expression import, bounded parallel
 value-only structure factors, an XRD-Rust comparison, and the reviewed citrate
 conversion-fidelity campaign.
+
+The 0.5.0 development line adds an application-neutral automation boundary on
+top of persisted typed Rietveld projects. Inspection and planning are
+non-numerical; plans are bound to exact project bytes and finite execution
+budgets. A human or external AI may propose an explicit cumulative staged
+recipe, but PhaseSmith admits only caller-authorized parameters, validates the
+complete constraint graph, requires exact plan-ID approval, rejects stale
+inputs and unintended overwrites, and retains complete audit outputs. Model
+providers are optional external advisors and never become numerical-core or
+runtime dependencies. Raw powder/CIF inspection deliberately reports missing
+physical metadata instead of guessing a runnable project.
+
+Plans now carry a sanitized scientific advisor context containing model,
+parameter, bound, constraint, and experiment summaries without paths or raw
+pattern/CIF contents. External proposals can be deterministically linted for
+their strict contract and risky scientific ordering. Completed workflow
+directories can produce digest-bound stage/parameter/identifiability/residual
+reviews, then seed a new non-executing plan from the saved accepted project
+state. The child plan records parent/result/review lineage, uses a new output
+directory outside the parent audit directory and a new plan ID, and requires
+fresh approval; no AI callback runs
+inside a numerical solve and no deterministic review auto-accepts a fit.
+
+External handoff is now a first-class path-free packet rather than a manual
+selection of plan fields. A second packet composes the digest-bound prior
+review with the next child plan's sanitized advisor context. Proposals retain
+structured human/model/software provenance and are bound to the advisor-packet
+digest; stored plans are rebuilt and compared before CLI execution so lineage
+cannot be dropped. All automation records have published CLI/static JSON
+Schemas. The repository also carries a compact agent skill, a runnable offline
+two-cycle example, and synthetic high-risk recipe cases; these remain external
+orchestration and add no model-provider dependency.
 
 The remainder of this section is a chronological implementation record. Terms
 such as “next slice”, “pending”, and “follow-on” describe the checkpoint at
@@ -78,7 +110,7 @@ checkpoint, the live pinned GSAS-II lattice-perturbation fixture had not yet
 been run in the working environment; equations and normal operation contain no
 GSAS-II dependency.
 
-PhaseSmith 0.4.0 was released on 2026-08-14 and is licensed under the MIT
+PhaseSmith 0.4.1 was released on 2026-08-14 and is licensed under the MIT
 License. The
 architecture and delivery gates for CIF import, the remaining native
 crystallographic calculations, and structure-factor-based Rietveld
@@ -659,6 +691,10 @@ documented; GSAS-II itself is never vendored.
 - `python/phasesmith/io`: optional format adapters; CIF uses a lazy Gemmi backend
   and returns only parser-independent structures and diagnostics; powder text
   readers return immutable arrays and source metadata.
+- `python/phasesmith/refinement/readiness`: non-mutating pre-refinement review
+  that carries import diagnostics forward, exposes retained provenance and
+  active physical models, and reports contradictory optics or risky selected
+  parameter combinations with stable machine-readable codes.
 - `python/phasesmith/quantitative`: phase-scale interpretation and quantitative
   results, separate from iterative refinement.
 - `python/phasesmith/validation`: opt-in external dataset provenance and
@@ -671,6 +707,12 @@ The native application boundary keeps GUI frameworks outside the scientific
 workspace, provides application-neutral owned model/I/O/workflow layers, and
 preserves the Python scripting surface without requiring Python in native
 consumers.
+
+The 1.0 direction is fixed in `docs/api-stability.md`: typed physical-unit
+domain APIs are the normal surface, direct H/eta remains a public mathematical
+primitive, support-block Jacobians remain the default, and named adapters own
+external conventions. Oracle fixtures and generated scientific tables require
+explicit provenance and redistribution review.
 
 The core accepts plain numeric slices and explicit peak/instrument batches. It
 does not know about files, refinement iterations, Python phase objects, GUI
@@ -812,6 +854,11 @@ planned stage was attempted, at least one step was accepted, the returned
 state is finite, and that stage improved Rwp by at least 0.0001. Numerical
 failure, divergence, missing observations, and iteration exhaustion remain
 unsafe; rejected trials never replace the last accepted state or checkpoint.
+The Python staged-workflow adapter now also preserves the complete initial
+constraint graph and maximum authorization across every temporary stage view.
+All stages are validated before numerical work, later-stage constraints cannot
+be erased by an earlier filtered stage, and a stopped workflow retains its
+accepted physical state without narrowing the next planner proposal.
 
 The built-in monochromatic Python Rietveld facade now delegates complete
 refinement and checkpoint continuation to the Rust solver while retaining the
@@ -1437,6 +1484,28 @@ discretized GSAS-II oracle as non-shape-faithful for the legacy two-parameter
 case. Exact recovery now requires a source-native legacy profile oracle rather
 than another PhaseSmith broadening term. Other Stephens Laue classes remain
 optional completeness work.
+
+The first independent Unit-29 constant-wavelength transfer test now uses the
+external IUCr ceria size/strain round robin without relabelling it as in-house
+evidence. Exact-size/SHA-256 registration retains three contiguous Birmingham
+ranges for the annealed calibration specimen and three for the untouched
+broadened specimen. Three calibration starts select the same W-only empirical
+profile on 8,726 samples (Rwp 0.192590, correlation 0.953870). Freezing that
+profile before the 4,126-sample holdout and adding only the existing isotropic
+size/Gaussian-microstrain model lowers Rwp from 0.553990 to 0.058097, reaches
+0.985574 correlation, and reduces weighted SSE by 98.9002%. Three dispersed
+starts and twelve deterministic Poisson resamples pass the stability gates;
+peak-wise centroid, FWHM, area, L1, and moment diagnostics remain visible.
+
+This is an empirical transfer result, not fundamental-parameters calibration.
+The source omits radius, aperture/detector geometry, axial lengths, Soller
+angles, monochromator passband, and specimen mounting metrology, and the current
+Le Bail estimator discloses a dominant-K-alpha1 approximation for the 1.6%
+K-alpha2 component. Those missing physical inputs block a fair specialized-term
+test. Unit 29 therefore closes with the evidence-backed decision not to add
+LPSD, tube-tail, continuum, or coupled-dispersion production terms. The frozen
+promotion protocol in `docs/profile-transferability-gate.md` still applies to
+any future in-house or provenance-complete external pair.
 
 ## Quality bar
 

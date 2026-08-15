@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from ._native_persistence import load_native_rietveld_project
@@ -11,6 +11,7 @@ from .control import CancellationToken
 from .persistence import PersistenceBundle, PersistenceError, load_bundle, save_bundle
 from .radiation import MonochromaticRadiation, RadiationProbe
 from .refinement import rietveld as native_rietveld
+from .refinement.readiness import RietveldReadinessReport, review_rietveld_input
 from .refinement.rietveld import (
     RietveldCalculationResult,
     RietveldCheckpoint,
@@ -24,6 +25,7 @@ from .refinement.runtime import CheckpointCallback, RefinementLogger
 from .refinement.workflow import (
     RietveldRecipe,
     RietveldWorkflowResult,
+    _accepted_state,
     intelligent_rietveld_recipe,
     run_rietveld_recipe,
 )
@@ -101,6 +103,11 @@ class RietveldProject:
 
         return intelligent_rietveld_recipe(self.input)
 
+    def review_readiness(self) -> RietveldReadinessReport:
+        """Review provenance, active models, and risky selections without mutation."""
+
+        return review_rietveld_input(self.input)
+
     def refine_recipe(
         self,
         recipe: RietveldRecipe,
@@ -122,16 +129,7 @@ class RietveldProject:
         result = workflow.final_result
         accepted = workflow.last_accepted_stage
         if accepted is not None:
-            accepted_result = accepted.result
-            self.input = replace(
-                self.input,
-                experiment=accepted_result.experiment,
-                phases=accepted_result.phases,
-                lattice_domains=accepted_result.checkpoint.lattice_domains,
-                parameters=accepted_result.parameters,
-                selection=accepted.stage.selection,
-                background=accepted_result.background,
-            )
+            self.input = _accepted_state(self.input, accepted.result)
         self.checkpoint = None
         self.last_result = result
         self.last_workflow = workflow
@@ -156,15 +154,7 @@ class RietveldProject:
 
         if self.last_result is None:
             raise ValueError("the project has no refinement result to accept")
-        result = self.last_result
-        self.input = replace(
-            self.input,
-            experiment=result.experiment,
-            phases=result.phases,
-            lattice_domains=result.checkpoint.lattice_domains,
-            parameters=result.parameters,
-            background=result.background,
-        )
+        self.input = _accepted_state(self.input, self.last_result)
         self.checkpoint = None
 
     def save(self, path: str | Path, *, overwrite: bool = False) -> Path:

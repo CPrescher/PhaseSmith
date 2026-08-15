@@ -6,6 +6,59 @@ development versions.
 
 ## Unreleased
 
+## 0.5.0
+
+- Declare and continuously test CPython 3.14 support while retaining the
+  CPython 3.11 ABI3 wheel baseline and Python 3.11--3.13 compatibility.
+- Add a provider-neutral AI automation boundary for persisted Rietveld
+  projects: strict versioned workflow and recipe-proposal records, read-only
+  byte-bound planning, deterministic scientific guidance, caller-authorized
+  cumulative stages, explicit plan-ID approval, stale-input rejection, bounded
+  execution, real checkpoint continuation, structured errors, and auditable
+  outputs. The new `phasesmith` CLI exposes schema, raw-input inspection,
+  plan, run, resume, and report commands without adding an AI runtime
+  dependency.
+- Add a sanitized, versioned scientific advisor context; deterministic recipe
+  lint findings; digest-bound post-run diagnostics for stages, parameters,
+  identifiability, and residual structure; and accepted-state replanning with
+  explicit parent/result/review lineage and a fresh approval boundary. Expose
+  the additions through Python and the `lint-recipe`, `review`, and `replan`
+  CLI commands.
+- Add path-free advisor and review packets, structured human/model/software
+  proposal provenance bound to the exact advisor packet and retained through
+  lint, run, review, and replanning, plus stored-plan input for run/lint/resume
+  so lineage-bound replans are executable through the CLI.
+  Publish every automation JSON Schema through the CLI and reviewed static
+  files, add a reusable PhaseSmith AI workflow skill, provide a runnable
+  two-cycle offline example, and gate deterministic lint behavior with five
+  synthetic scientific-risk cases.
+- Export recipe validation independently of numerical evaluation and validate
+  all stages against the complete initial selection and constraint graph before
+  a staged workflow starts.
+
+- Preserve the complete caller-owned constraint graph and maximum parameter
+  authorization across Python staged Rietveld workflows. Every stage is now
+  validated before numerical work, constraints that first become active in a
+  later stage are restored from the original request, and a rejected later
+  stage cannot silently narrow the next intelligent proposal.
+- Add a deterministic pre-refinement readiness report that aggregates CIF
+  diagnostics and provenance, discloses the active radiation, scattering,
+  intensity-correction, and specimen-geometry models, and warns about model
+  mismatches or high-risk joint parameter selections without mutating the
+  request.
+- Resolve the pre-1.0 API direction: direct H/eta remains a documented
+  low-level mathematical primitive, support-block Jacobians remain the Python
+  default, physical units remain canonical, and oracle fixtures or scattering
+  tables require explicit provenance and redistribution review.
+- Add a deterministic, versioned snapshot of all explicitly exported Python
+  names, implementation targets, and callable signatures. Release metadata and
+  live-package tests now reject unreviewed public-surface drift.
+- Complete the external Unit-29 profile-transferability gate on the
+  checksum-pinned IUCr ceria size/strain round robin. The existing empirical
+  profile plus isotropic size/microstrain model transfers to the broadened
+  holdout, while incomplete optics metadata continues to reject specialized
+  profile-term promotion.
+
 ## 0.4.1
 
 - Expose conventional human-facing HKL representatives for generated

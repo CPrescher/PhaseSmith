@@ -6,6 +6,8 @@ import numpy as np
 import phasesmith
 import pytest
 from phasesmith.refinement import (
+    AffineConstraint,
+    FixedConstraint,
     RefinementLimits,
     RietveldOptions,
     RietveldParameterSelection,
@@ -13,6 +15,7 @@ from phasesmith.refinement import (
     RietveldStage,
     TerminationReason,
     intelligent_rietveld_recipe,
+    review_rietveld_input,
     rietveld,
     run_rietveld_recipe,
 )
@@ -66,6 +69,102 @@ def shifted_request() -> rietveld.RietveldInput:
         initial,
         pattern=phasesmith.PowderPattern(x, observed_y=truth.y),
     )
+
+
+def test_readiness_report_discloses_active_conversion_and_model_choices() -> None:
+    request = shifted_request()
+
+    report = review_rietveld_input(request)
+
+    codes = [item.code for item in report.diagnostics]
+    assert "structure.source" in codes
+    assert "structure.symmetry" in codes
+    assert "experiment.radiation" in codes
+    assert "experiment.geometry_missing" in codes
+    assert "phase.scattering" in codes
+    assert "phase.intensity_correction_geometry_unconfirmed" in codes
+    assert report.has_warnings is True
+    assert report.has_errors is False
+    assert report.to_record()["diagnostics"][0]["phase_id"] == "workflow"
+    assert phasesmith.RietveldProject(request).review_readiness() == report
+
+
+def test_readiness_report_flags_neutral_correction_and_missing_provenance() -> None:
+    request = shifted_request()
+    structure = replace(request.phases[0].structure, source=None)
+    phase = replace(
+        request.phases[0],
+        structure=structure,
+        intensity_correction=phasesmith.NeutralIntegratedIntensityCorrection(),
+    )
+    request = replace(request, phases=(phase,))
+
+    diagnostics = review_rietveld_input(request).diagnostics
+
+    warnings = {item.code for item in diagnostics if item.severity == "warning"}
+    assert "structure.source_missing" in warnings
+    assert "phase.neutral_intensity_correction" in warnings
+
+
+def test_readiness_report_flags_probe_and_experiment_mismatches() -> None:
+    request = shifted_request()
+    phase = replace(
+        request.phases[0],
+        scattering=phasesmith.NeutronNuclear(),
+        intensity_correction=phasesmith.TimeOfFlightNeutronLorentz(90.0),
+    )
+    request = replace(request, phases=(phase,))
+
+    codes = [item.code for item in review_rietveld_input(request).diagnostics]
+
+    assert "phase.scattering_probe_mismatch" in codes
+    assert "phase.intensity_correction_probe_mismatch" in codes
+    assert "phase.intensity_correction_experiment_mismatch" in codes
+
+    phase = replace(
+        request.phases[0],
+        scattering=phasesmith.XrayNonResonant(),
+        intensity_correction=phasesmith.BraggBrentanoUnpolarizedLp(1.0),
+    )
+    request = replace(request, phases=(phase,))
+    codes = [item.code for item in review_rietveld_input(request).diagnostics]
+    assert "phase.intensity_correction_wavelength_mismatch" in codes
+
+    experiment = replace(
+        request.experiment,
+        geometry=phasesmith.DebyeScherrerGeometry(240.0),
+    )
+    request = replace(request, experiment=experiment)
+    codes = [item.code for item in review_rietveld_input(request).diagnostics]
+    assert "phase.intensity_correction_geometry_mismatch" in codes
+
+
+def test_readiness_report_flags_risky_joint_parameter_selection() -> None:
+    request = shifted_request()
+    geometry = phasesmith.BraggBrentanoGeometry(240.0)
+    experiment = replace(request.experiment, geometry=geometry)
+    selection = replace(
+        request.selection,
+        occupancy=True,
+        instrument_parameters=("zero_shift_deg", "sample_displacement_mm"),
+    )
+    parameters = rietveld.build_parameter_set(
+        request.phases,
+        request.lattice_domains,
+        selection,
+        experiment=experiment,
+    )
+    request = replace(
+        request,
+        experiment=experiment,
+        selection=selection,
+        parameters=parameters,
+    )
+
+    codes = [item.code for item in review_rietveld_input(request).diagnostics]
+
+    assert "selection.scale_occupancy_correlation" in codes
+    assert "selection.zero_displacement_correlation" in codes
 
 
 def test_intelligent_recipe_is_cumulative_advice_outside_solver() -> None:
@@ -173,6 +272,60 @@ def test_recipe_rejects_parameters_outside_authorized_maximum() -> None:
         run_rietveld_recipe(request, recipe)
 
 
+def test_recipe_restores_constraints_that_first_become_active_in_a_later_stage() -> None:
+    request = shifted_request()
+    zero_key = next(
+        spec.key for spec in request.parameters.specs if spec.key.name == "zero_shift_deg"
+    )
+    request = replace(
+        request,
+        constraints=(FixedConstraint(zero_key, 0.0),),
+    )
+
+    workflow = run_rietveld_recipe(
+        request,
+        intelligent_rietveld_recipe(request),
+        options=RietveldOptions(
+            limits=RefinementLimits(max_iterations=50, max_evaluations=500),
+            estimate_covariance=False,
+        ),
+    )
+
+    assert workflow.completed is True
+    assert workflow.final_result.experiment.zero_shift_deg == 0.0
+
+
+def test_recipe_validates_later_stage_constraint_dependencies_before_work(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    request = shifted_request()
+    zero_key = next(
+        spec.key for spec in request.parameters.specs if spec.key.name == "zero_shift_deg"
+    )
+    scale_key = next(spec.key for spec in request.parameters.specs if spec.key.name == "scale")
+    request = replace(
+        request,
+        constraints=(AffineConstraint(zero_key, scale_key, 0.0, 0.0),),
+    )
+    scale_only = replace(request.selection, instrument_parameters=())
+    zero_only = replace(request.selection, phase_scale=False)
+    recipe = RietveldRecipe(
+        "invalid-later-dependency",
+        (
+            RietveldStage("scale", scale_only, ("Establish scale.",)),
+            RietveldStage("zero", zero_only, ("Deliberately omit the source.",)),
+        ),
+    )
+
+    def unexpected_calculation(*args: object, **kwargs: object) -> None:
+        raise AssertionError("numerical work started before recipe validation")
+
+    monkeypatch.setattr(rietveld, "calculate", unexpected_calculation)
+
+    with pytest.raises(ValueError, match="without dependencies"):
+        run_rietveld_recipe(request, recipe)
+
+
 def test_zero_shift_uses_a_physical_optimization_scale() -> None:
     request = shifted_request()
     zero = next(spec for spec in request.parameters.specs if spec.key.name == "zero_shift_deg")
@@ -231,3 +384,54 @@ def test_project_does_not_promote_a_stage_rejected_by_recipe_policy() -> None:
     assert workflow.last_accepted_stage is None
     assert project.input.experiment == original_experiment
     assert project.last_result == workflow.final_result
+
+
+def test_project_retains_maximum_authorization_after_a_later_stage_is_rejected() -> None:
+    request = shifted_request()
+    original_selection = request.selection
+    zero_key = next(
+        spec.key for spec in request.parameters.specs if spec.key.name == "zero_shift_deg"
+    )
+    constraint = FixedConstraint(zero_key, 0.0)
+    request = replace(
+        request,
+        constraints=(constraint,),
+    )
+    scale_only = replace(original_selection, instrument_parameters=())
+    recipe = RietveldRecipe(
+        "reject-second-stage",
+        (
+            RietveldStage("scale", scale_only, ("Establish the phase scale.",)),
+            RietveldStage(
+                "positions",
+                original_selection,
+                ("Exercise later-stage rejection.",),
+                accepted_terminations=(TerminationReason.CANCELLED,),
+            ),
+        ),
+    )
+    project = phasesmith.RietveldProject(
+        request,
+        RietveldOptions(
+            limits=RefinementLimits(max_iterations=50, max_evaluations=500),
+            estimate_covariance=False,
+        ),
+    )
+
+    workflow = project.refine_recipe(recipe)
+
+    assert workflow.completed is False
+    assert workflow.last_accepted_stage is workflow.stages[0]
+    assert project.input.selection == original_selection
+    assert project.input.parameters.keys == request.parameters.keys
+    assert project.input.constraints == (constraint,)
+    assert [stage.name for stage in project.propose_intelligent_recipe().stages] == [
+        "scale_background",
+        "positions",
+    ]
+
+    project.accept_result()
+
+    assert project.input.selection == original_selection
+    assert project.input.parameters.keys == request.parameters.keys
+    assert project.input.constraints == (constraint,)

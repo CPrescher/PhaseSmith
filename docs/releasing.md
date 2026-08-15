@@ -52,23 +52,25 @@ crates.io job remains safely skipped while the variable is absent.
 
 1. Update `CHANGELOG.md` and synchronize the versions in `Cargo.toml` and
    `pyproject.toml`.
-2. Run `python scripts/release_version.py --tag v<version>`.
-3. Run the complete Rust and Python gates and the crates.io dry run.
-4. Run the Release workflow manually. This builds and tests artifacts but does
+2. Generate the new versioned public API snapshot when the version changes,
+   review its diff, and run `python scripts/public_api_snapshot.py --check`.
+3. Run `python scripts/release_version.py --tag v<version>`.
+4. Run the complete Rust and Python gates and the crates.io dry run.
+5. Run the Release workflow manually. This builds and tests artifacts but does
    not publish them.
-5. Commit and push the release state to `main`; confirm CI is green.
-6. For version 0.1.0 only, perform the crates.io bootstrap above before tagging.
-7. Create one annotated tag on the reviewed commit and push it:
+6. Commit and push the release state to `main`; confirm CI is green.
+7. For version 0.1.0 only, perform the crates.io bootstrap above before tagging.
+8. Create one annotated tag on the reviewed commit and push it:
 
    ```shell
    git tag -a v<version> -m "PhaseSmith <version>"
    git push origin v<version>
    ```
 
-8. Watch every Release workflow job. Verify the GitHub Release, PyPI files,
+9. Watch every Release workflow job. Verify the GitHub Release, PyPI files,
    crates.io versions, checksums, installation from clean environments, and
    the new Read the Docs version under `stable`.
-9. After the successful 0.1.0 workflow, create the repository variable
+10. After the successful 0.1.0 workflow, create the repository variable
    `CRATES_IO_TRUSTED_PUBLISHING=true`. Later tags will then publish crates.io
    through OIDC as part of the workflow.
 

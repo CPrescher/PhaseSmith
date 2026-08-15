@@ -1,0 +1,26 @@
+{
+  "$id": "https://phasesmith.org/schema/workflow-lineage-v1.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "parent_plan_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "source_result_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "source_review_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    }
+  },
+  "required": [
+    "parent_plan_id",
+    "source_result_sha256",
+    "source_review_sha256"
+  ],
+  "title": "phasesmith.workflow-lineage.v1",
+  "type": "object"
+}

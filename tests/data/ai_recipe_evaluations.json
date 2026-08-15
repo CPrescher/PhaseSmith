@@ -1,0 +1,102 @@
+{
+  "schema": "phasesmith.ai-recipe-evaluation-suite.v1",
+  "description": "Synthetic contract-valid recipes with deterministic scientific-risk expectations.",
+  "authorized_families": [
+    "phase_scale",
+    "lattice",
+    "occupancy",
+    "u_iso",
+    "background",
+    "instrument:zero_shift_deg",
+    "instrument:sample_displacement_mm",
+    "instrument:u_deg2"
+  ],
+  "cases": [
+    {
+      "case_id": "early-occupancy",
+      "description": "Occupancy is released in the foundation stage alongside scale.",
+      "stages": [
+        {
+          "name": "premature_intensity",
+          "active": ["phase_scale", "occupancy", "background"]
+        },
+        {
+          "name": "final",
+          "active": [
+            "phase_scale", "lattice", "occupancy", "u_iso", "background",
+            "instrument:zero_shift_deg", "instrument:sample_displacement_mm",
+            "instrument:u_deg2"
+          ]
+        }
+      ],
+      "expected_finding_codes": ["recipe.early_occupancy", "correlation.scale_occupancy"]
+    },
+    {
+      "case_id": "background-delayed",
+      "description": "A refinable background is authorized but omitted from the first stage.",
+      "stages": [
+        {"name": "scale_only", "active": ["phase_scale"]},
+        {
+          "name": "final",
+          "active": [
+            "phase_scale", "lattice", "occupancy", "u_iso", "background",
+            "instrument:zero_shift_deg", "instrument:sample_displacement_mm",
+            "instrument:u_deg2"
+          ]
+        }
+      ],
+      "expected_finding_codes": ["recipe.background_delayed"]
+    },
+    {
+      "case_id": "width-before-position",
+      "description": "A profile width is released before any position family is active.",
+      "stages": [
+        {"name": "foundation", "active": ["phase_scale", "background"]},
+        {
+          "name": "premature_width",
+          "active": ["phase_scale", "background", "instrument:u_deg2"]
+        },
+        {
+          "name": "final",
+          "active": [
+            "phase_scale", "lattice", "occupancy", "u_iso", "background",
+            "instrument:zero_shift_deg", "instrument:sample_displacement_mm",
+            "instrument:u_deg2"
+          ]
+        }
+      ],
+      "expected_finding_codes": ["recipe.width_before_position_stability"]
+    },
+    {
+      "case_id": "zero-displacement-ambiguity",
+      "description": "Zero shift and specimen displacement are active together.",
+      "stages": [
+        {"name": "foundation", "active": ["phase_scale", "background"]},
+        {
+          "name": "final",
+          "active": [
+            "phase_scale", "lattice", "occupancy", "u_iso", "background",
+            "instrument:zero_shift_deg", "instrument:sample_displacement_mm",
+            "instrument:u_deg2"
+          ]
+        }
+      ],
+      "expected_finding_codes": ["correlation.zero_displacement"]
+    },
+    {
+      "case_id": "broad-release",
+      "description": "All authorized families are released in one stage.",
+      "stages": [
+        {
+          "name": "everything",
+          "active": [
+            "phase_scale", "lattice", "occupancy", "u_iso", "background",
+            "instrument:zero_shift_deg", "instrument:sample_displacement_mm",
+            "instrument:u_deg2"
+          ]
+        }
+      ],
+      "expected_finding_codes": ["recipe.broad_release"]
+    }
+  ]
+}
