@@ -8,6 +8,8 @@ development versions.
 
 ## 0.5.0
 
+- Declare and continuously test CPython 3.14 support while retaining the
+  CPython 3.11 ABI3 wheel baseline and Python 3.11--3.13 compatibility.
 - Add a provider-neutral AI automation boundary for persisted Rietveld
   projects: strict versioned workflow and recipe-proposal records, read-only
   byte-bound planning, deterministic scientific guidance, caller-authorized
