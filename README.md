@@ -598,12 +598,15 @@ sequence.
 
 Persisted projects also have a provider-neutral command boundary for coding
 agents and language models. `phasesmith plan workflow.json` prints a read-only,
-byte-bound plan and deterministic recipe; `phasesmith run workflow.json
---approve PLAN_ID [--proposal recipe.json]` executes only after exact approval
-and full recipe validation. Raw pattern/CIF inspection, checkpoint resume,
-strict schemas, structured errors, and the scientific recipe rubric are
-documented in [AI-guided automation](docs/ai-automation.md). PhaseSmith does not
-depend on an AI SDK or call a model from the solver.
+byte-bound plan, sanitized scientific advisor context, and deterministic
+recipe; `phasesmith lint-recipe workflow.json recipe.json` checks an external
+proposal before `phasesmith run workflow.json --approve PLAN_ID [--proposal
+recipe.json]` executes it. Post-run `review` and lineage-bound `replan` commands
+support safe iterations with a new approval each time. Raw pattern/CIF
+inspection, checkpoint resume, strict schemas, structured errors, and the
+scientific recipe rubric are documented in [AI-guided
+automation](docs/ai-automation.md). PhaseSmith does not depend on an AI SDK or
+call a model from the solver.
 
 Refinable backgrounds share one analytical interface. Built-ins include power
 and Chebyshev series, fixed-knot linear interpolation, broad normalized

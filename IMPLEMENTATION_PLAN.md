@@ -1667,8 +1667,9 @@ The first 0.5.0 application entry point is complete. A strict version-1 task
 spec operates only on an already reviewed, persisted `RietveldProject` and
 declares finite runtime and output ownership. Read-only planning fingerprints
 every project file, emits readiness diagnostics, the complete authorized
-selection, stable parameter labels, the deterministic cumulative recipe, and a
-SHA-256 plan identity without evaluating the objective. Raw powder and CIF
+selection, stable parameter labels, a sanitized scientific advisor context,
+the deterministic cumulative recipe, and a SHA-256 plan identity without
+evaluating the objective. Raw powder and CIF
 inspectors expose bounded source facts and explicitly retain unknown experiment
 physics rather than constructing a guessed request.
 
@@ -1683,20 +1684,31 @@ owned outputs before starting. JSON audit products retain the plan, exact
 recipe/action, workflow/result, provider provenance, and optional CSV and
 resumable project. Stable structured error codes cover automation failures.
 
+The application boundary now also deterministically lints external proposals
+for the strict execution contract and high-risk scientific ordering, derives a
+digest-bound post-run review from stage, parameter, identifiability, and
+residual diagnostics, and creates a new non-executing plan from the saved
+accepted project state. Every replan has a new output directory outside the
+parent audit directory and a new plan ID and
+records its parent plan, terminal-result digest, and review digest. It does not
+reuse approval or place an AI callback inside the solver.
+
 The provider-neutral `phasesmith` CLI exposes `schema`, `inspect-pattern`,
-`inspect-cif`, `plan`, `run`, `resume`, and `report`. There is no model SDK,
+`inspect-cif`, `plan`, `lint-recipe`, `run`, `resume`, `review`, `replan`, and
+`report`. There is no model SDK,
 network callback, prompt execution, or hidden adaptive decision inside the
 solver. Guidance documents the conservative order—scale/background, positions,
 structural intensity terms, then profile/sample terms—and requires joint review
 of convergence, rank, correlations, bounds, residuals, provenance, and physical
 plausibility rather than accepting lower Rwp alone. Model names such as
-`gpt-5.6-sol` are recorded only as proposal provenance. Any future adaptive
-loop must create a new byte-bound plan and approval between observations.
+`gpt-5.6-sol` are recorded only as proposal provenance. Iterative adaptation
+creates a new byte-bound plan and approval between observations.
 
 Focused acceptance covers stable plans, strict/duplicate-key parsing,
 authorization and cumulative-stage rejection, stale approvals, collision
 checks before numerical work, an externally proposed two-stage refinement,
-raw inspectors, structured CLI errors, and actual persisted-checkpoint
+raw inspectors, structured lint/review output, digest-linked accepted-state
+replanning, structured CLI errors, and actual persisted-checkpoint
 continuation. No numerical equation, production hot loop, or GSAS-II boundary
 changes in this unit.
 

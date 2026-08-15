@@ -4,6 +4,12 @@
       "exports": [
         {
           "kind": "constant",
+          "name": "ADVISOR_CONTEXT_SCHEMA",
+          "signature": null,
+          "target": "builtins.str"
+        },
+        {
+          "kind": "constant",
           "name": "AUTOMATION_ERROR_SCHEMA",
           "signature": null,
           "target": "builtins.str"
@@ -13,6 +19,12 @@
           "name": "AccumulationResult",
           "signature": "(y: 'NDArray[np.float64]', derivatives: 'PatternDerivatives', jacobian_layout: \"Literal['support', 'dense']\", _dense_jacobian: 'NDArray[np.float64] | None' = None) -> None",
           "target": "phasesmith.results.AccumulationResult"
+        },
+        {
+          "kind": "class",
+          "name": "AdvisorContext",
+          "signature": "(_record: 'dict[str, object]') -> None",
+          "target": "phasesmith.automation.AdvisorContext"
         },
         {
           "kind": "class",
@@ -580,6 +592,12 @@
         },
         {
           "kind": "constant",
+          "name": "RECIPE_LINT_SCHEMA",
+          "signature": null,
+          "target": "builtins.str"
+        },
+        {
+          "kind": "constant",
           "name": "RECIPE_PROPOSAL_SCHEMA",
           "signature": null,
           "target": "builtins.str"
@@ -964,6 +982,12 @@
         },
         {
           "kind": "constant",
+          "name": "WORKFLOW_REVIEW_SCHEMA",
+          "signature": null,
+          "target": "builtins.str"
+        },
+        {
+          "kind": "constant",
           "name": "WORKFLOW_SPEC_SCHEMA",
           "signature": null,
           "target": "builtins.str"
@@ -976,6 +1000,12 @@
         },
         {
           "kind": "class",
+          "name": "WorkflowLineage",
+          "signature": "(parent_plan_id: 'str', source_result_sha256: 'str', source_review_sha256: 'str') -> None",
+          "target": "phasesmith.automation.WorkflowLineage"
+        },
+        {
+          "kind": "class",
           "name": "WorkflowOutputs",
           "signature": "(write_csv: 'bool' = True, save_project: 'bool' = True) -> None",
           "target": "phasesmith.automation.WorkflowOutputs"
@@ -983,7 +1013,7 @@
         {
           "kind": "class",
           "name": "WorkflowPlan",
-          "signature": "(spec: 'WorkflowSpec', project_fingerprint: 'str', readiness: 'RietveldReadinessReport', default_recipe: 'RietveldRecipe', authorized_selection: 'RietveldParameterSelection', parameter_labels: 'tuple[str, ...]', can_resume: 'bool', plan_id: 'str') -> None",
+          "signature": "(spec: 'WorkflowSpec', project_fingerprint: 'str', readiness: 'RietveldReadinessReport', default_recipe: 'RietveldRecipe', authorized_selection: 'RietveldParameterSelection', parameter_labels: 'tuple[str, ...]', advisor_context: 'AdvisorContext', can_resume: 'bool', plan_id: 'str', lineage: 'WorkflowLineage | None' = None) -> None",
           "target": "phasesmith.automation.WorkflowPlan"
         },
         {
@@ -1222,6 +1252,18 @@
         },
         {
           "kind": "function",
+          "name": "lint_recipe_proposal",
+          "signature": "(record: 'Mapping[str, object]', plan: 'WorkflowPlan') -> 'dict[str, object]'",
+          "target": "phasesmith.automation.lint_recipe_proposal"
+        },
+        {
+          "kind": "function",
+          "name": "lint_recipe_proposal_file",
+          "signature": "(path: 'str | Path', plan: 'WorkflowPlan') -> 'dict[str, object]'",
+          "target": "phasesmith.automation.lint_recipe_proposal_file"
+        },
+        {
+          "kind": "function",
           "name": "load_recipe_proposal",
           "signature": "(path: 'str | Path', plan: 'WorkflowPlan') -> 'RecipeProposal'",
           "target": "phasesmith.automation.load_recipe_proposal"
@@ -1366,6 +1408,12 @@
         },
         {
           "kind": "function",
+          "name": "replan_workflow",
+          "signature": "(result_directory: 'str | Path', *, output_directory: 'str | Path', workflow_id: 'str | None' = None, limits: 'RefinementLimits | None' = None, outputs: 'WorkflowOutputs | None' = None) -> 'WorkflowPlan'",
+          "target": "phasesmith.automation.replan_workflow"
+        },
+        {
+          "kind": "function",
           "name": "resume_workflow",
           "signature": "(plan: 'WorkflowPlan', *, approval_plan_id: 'str', overwrite: 'bool' = False, logger: 'RefinementLogger | None' = None) -> 'ResumeRunResult'",
           "target": "phasesmith.automation.resume_workflow"
@@ -1375,6 +1423,12 @@
           "name": "review_rietveld_input",
           "signature": "(input_data: 'RietveldInput') -> 'RietveldReadinessReport'",
           "target": "phasesmith.refinement.readiness.review_rietveld_input"
+        },
+        {
+          "kind": "function",
+          "name": "review_workflow_output",
+          "signature": "(path: 'str | Path') -> 'dict[str, object]'",
+          "target": "phasesmith.automation.review_workflow_output"
         },
         {
           "kind": "function",

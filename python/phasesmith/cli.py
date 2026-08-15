@@ -13,11 +13,14 @@ from .automation import (
     AutomationError,
     inspect_cif_file,
     inspect_powder_file,
+    lint_recipe_proposal_file,
     load_recipe_proposal,
     load_workflow_spec,
     plan_workflow,
     recipe_proposal_schema,
+    replan_workflow,
     resume_workflow,
+    review_workflow_output,
     run_workflow,
     workflow_spec_schema,
     write_workflow_plan,
@@ -75,6 +78,29 @@ def _parser() -> _JsonArgumentParser:
     resume.add_argument("spec")
     resume.add_argument("--approve", required=True, metavar="PLAN_ID")
     resume.add_argument("--overwrite", action="store_true")
+
+    lint = commands.add_parser(
+        "lint-recipe",
+        help="validate and scientifically lint an external recipe proposal",
+    )
+    lint.add_argument("spec")
+    lint.add_argument("proposal")
+
+    review = commands.add_parser(
+        "review",
+        help="derive deterministic scientific diagnostics from a workflow output",
+    )
+    review.add_argument("path", help="a completed workflow output directory")
+
+    replan = commands.add_parser(
+        "replan",
+        help="create a new digest-linked plan from a saved accepted workflow state",
+    )
+    replan.add_argument("path", help="a completed workflow output directory")
+    replan.add_argument("--output-directory", required=True)
+    replan.add_argument("--workflow-id")
+    replan.add_argument("--plan-output")
+    replan.add_argument("--overwrite", action="store_true")
 
     report = commands.add_parser("report", help="print a completed automation audit record")
     report.add_argument("path", help="an output directory or terminal result JSON file")
@@ -180,6 +206,21 @@ def main(argv: Sequence[str] | None = None) -> int:
                 if resume_result.result.termination_reason.value in {"converged", "stagnated"}
                 else 3
             )
+        elif args.command == "lint-recipe":
+            plan = plan_workflow(load_workflow_spec(args.spec))
+            result = lint_recipe_proposal_file(args.proposal, plan)
+            exit_status = 0 if result["valid_contract"] else 3
+        elif args.command == "review":
+            result = review_workflow_output(args.path)
+        elif args.command == "replan":
+            replanned = replan_workflow(
+                args.path,
+                output_directory=args.output_directory,
+                workflow_id=args.workflow_id,
+            )
+            if args.plan_output is not None:
+                write_workflow_plan(replanned, args.plan_output, overwrite=args.overwrite)
+            result = replanned.to_record()
         else:
             result = _report_record(args.path)
     except AutomationError as error:

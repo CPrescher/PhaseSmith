@@ -35,14 +35,20 @@ Once a typed project has been reviewed and saved, the supported task sequence
 is:
 
 ```text
-workflow spec -> read-only plan -> optional recipe proposal -> approval -> run
-                                                               or resume
+workflow spec -> read-only plan -> optional proposal -> lint -> approval -> run
+                                                                        |
+                                               new approval <- replan <- review
 ```
 
 Planning hashes every regular project file, loads the project, runs the
 deterministic readiness review, discloses the complete authorized parameter
-selection, and supplies PhaseSmith's deterministic recipe. It performs no
-objective evaluation and writes nothing unless an output path is requested.
+selection, supplies PhaseSmith's deterministic recipe, and includes a sanitized
+`advisor_context`. That context summarizes the pattern domain, radiation,
+instrument and geometry, phases, scattering providers, background, parameter
+values/bounds/scales, and constraints. It contains neither filesystem paths nor
+raw pattern/CIF contents; identifiers and scientific metadata remain visible.
+Planning performs no objective evaluation and writes nothing unless an output
+path is requested.
 
 ## Plan and run
 
@@ -78,11 +84,17 @@ means execution returned an auditable but incomplete/stopped refinement.
 
 ## Asking an AI for a recipe
 
-Give the model the complete `plan.json` and the schema from:
+Obtain the proposal schema with:
 
 ```shell
 phasesmith schema recipe
 ```
+
+For a remote advisor, send only the fields it needs: `plan_id`, `readiness`,
+`authorization`, `advisor_context`, `external_recipe_proposal`, and `guidance`,
+plus the recipe schema. The complete plan also contains local paths and should
+not be treated as a sanitized upload packet. Review the advisor context itself
+if identifiers or numerical metadata are sensitive.
 
 A useful prompt is:
 
@@ -105,8 +117,20 @@ selection, and rationale. External proposals cannot set solver options, relax
 accepted termination reasons, expand authorization, remove a parameter in a
 later stage, or omit the complete final authorized selection.
 
-After saving the proposed JSON, validate and run it through the same explicit
-approval gate:
+After saving the proposed JSON, run the deterministic linter before approval:
+
+```shell
+phasesmith lint-recipe workflow-spec.json recipe-proposal.json
+```
+
+The linter first applies the strict executable contract and then flags risky
+stage ordering and combinations such as early occupancy, broad parameter
+release, scale--occupancy, lattice--wavelength, zero--displacement, or widths
+released without an earlier position foundation. Findings are reproducible
+heuristics, not proof that a model is scientifically correct. A contract error
+returns status `3`; boundary or I/O failures return status `2`.
+
+Run the proposal through the same explicit approval gate:
 
 ```shell
 phasesmith run workflow-spec.json \
@@ -118,6 +142,38 @@ PhaseSmith validates all stages and the complete constraint graph before the
 first numerical evaluation. The output directory retains the approved plan,
 the exact recipe, per-stage workflow record, numerical result, terminal audit,
 and optionally pattern CSV and resumable project.
+
+## Review and iterative replanning
+
+After a workflow run, derive a deterministic post-run review:
+
+```shell
+phasesmith review OUTPUT_DIRECTORY > review.json
+```
+
+The review is digest-bound to the stored plan, workflow, result, and optional
+pattern CSV. It reports per-stage Rwp movement, scaled parameter movement,
+bound contacts, rank/correlation findings, and residual magnitude, lag-1
+structure, and ten coordinate-region summaries when CSV output is available.
+Its status is always `review_required`: no threshold silently accepts a fit,
+and plots, provenance, phase completeness, and physical plausibility still
+need scientific judgment.
+
+If the run saved its accepted project state, create a new plan for another
+iteration without executing it:
+
+```shell
+phasesmith replan OUTPUT_DIRECTORY \
+  --output-directory NEXT_OUTPUT_DIRECTORY \
+  --plan-output next-plan.json
+```
+
+The new plan uses an output directory outside the parent audit directory and a
+different plan ID, and records the
+parent plan, terminal-result digest, and review digest in `lineage`. It plans
+from the saved accepted state, repeats readiness and fingerprint checks, and
+still requires a new explicit approval. Replanning never edits the previous
+output and never installs a model callback inside the numerical loop.
 
 ## Scientific recipe rubric
 
@@ -147,13 +203,13 @@ machine-readable errors, byte-bound approvals, finite budgets, collision
 policy, and a complete audit trail that an unconstrained generated script would
 otherwise need to recreate.
 
-## Current boundary and future adaptation
+## Current boundary
 
-Version 1 recipes are fixed before execution. They do not let a model inspect
-an intermediate residual and autonomously choose the next parameters. A future
-adaptive protocol should make each observation produce a new byte-bound plan
-and require a new approval; it should not add an unreviewed model callback
-inside the solver loop.
+Version 1 recipes remain fixed during each execution. Iteration happens only
+between completed/stopped runs through review and a new byte-bound plan. An AI
+may interpret the review and propose the next recipe, but it cannot alter an
+active solve, expand authorization, reuse the old approval, or decide that the
+result is accepted.
 
 There is deliberately no OpenAI, cloud, or model-provider runtime dependency.
 Offline scripts, local models, hosted agents, CI systems, notebooks, and future

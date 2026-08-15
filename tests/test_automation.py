@@ -122,8 +122,20 @@ def test_plan_is_read_only_stable_and_discloses_ai_guidance(tmp_path) -> None:
     assert first.plan_id == second.plan_id
     assert first.blocked is False
     assert first.default_recipe.mode == "intelligent"
-    assert first.to_record()["approval"]["required"] is True
-    guidance = first.to_record()["guidance"]
+    record = first.to_record()
+    assert record["approval"]["required"] is True
+    context = record["advisor_context"]
+    assert context["schema"] == automation.ADVISOR_CONTEXT_SCHEMA
+    assert context["privacy"]["contains_paths"] is False
+    assert context["pattern"]["sample_count"] == 3_401
+    assert context["experiment"]["radiation"]["probe"] == "x-ray"
+    assert context["phases"][0]["independent_site_count"] == 2
+    assert {item["name"] for item in context["parameters"]} >= {
+        "scale",
+        "zero_shift_deg",
+    }
+    assert str(tmp_path) not in json.dumps(context)
+    guidance = record["guidance"]
     assert any("lower Rwp alone" in item for item in guidance)
     assert not spec.output_directory.exists()
 
@@ -149,6 +161,25 @@ def test_external_recipe_is_plan_bound_cumulative_and_fully_authorized(tmp_path)
     stages.reverse()
     with pytest.raises(automation.AutomationError, match="cumulative"):
         automation.parse_recipe_proposal(non_cumulative, plan)
+
+
+def test_recipe_lint_is_structured_and_preserves_strict_validation(tmp_path) -> None:
+    plan = automation.plan_workflow(_spec(tmp_path))
+    record = _proposal_record(plan)
+
+    lint = automation.lint_recipe_proposal(record, plan)
+
+    assert lint["schema"] == automation.RECIPE_LINT_SCHEMA
+    assert lint["valid_contract"] is True
+    assert lint["error_count"] == 0
+    assert any(item["code"] == "recipe.contract_valid" for item in lint["findings"])
+
+    invalid = dict(record)
+    invalid["plan_id"] = "0" * 64
+    rejected = automation.lint_recipe_proposal(invalid, plan)
+    assert rejected["valid_contract"] is False
+    assert rejected["error_count"] == 1
+    assert rejected["findings"][0]["code"] == "proposal.plan_mismatch"
 
 
 def test_run_revalidates_directly_constructed_external_proposals(tmp_path) -> None:
@@ -205,7 +236,7 @@ def test_output_collision_is_rejected_before_numerical_execution(tmp_path, monke
     assert error.value.code == "output.exists"
 
 
-def test_validated_ai_recipe_runs_and_writes_auditable_outputs(tmp_path) -> None:
+def test_validated_ai_recipe_runs_and_writes_auditable_outputs(tmp_path, capsys) -> None:
     spec = _spec(tmp_path)
     plan = automation.plan_workflow(spec)
     proposal = automation.parse_recipe_proposal(_proposal_record(plan), plan)
@@ -225,6 +256,69 @@ def test_validated_ai_recipe_runs_and_writes_auditable_outputs(tmp_path) -> None
     terminal = json.loads((spec.output_directory / "workflow-result.json").read_text())
     assert terminal["plan_id"] == plan.plan_id
     assert terminal["recipe"]["planner_notes"][0].startswith("External proposal")
+
+    review = automation.review_workflow_output(spec.output_directory)
+    assert review["schema"] == automation.WORKFLOW_REVIEW_SCHEMA
+    assert review["plan_id"] == plan.plan_id
+    assert review["status"] == "review_required"
+    assert review["residual"]["included_sample_count"] == 3_401
+    assert len(review["review_id"]) == 64
+    assert automation.review_workflow_output(spec.output_directory) == review
+
+    assert cli_main(["review", str(spec.output_directory)]) == 0
+    cli_review = json.loads(capsys.readouterr().out)
+    assert cli_review["review_id"] == review["review_id"]
+
+    cli_plan_path = tmp_path / "cli-next-plan.json"
+    assert (
+        cli_main(
+            [
+                "replan",
+                str(spec.output_directory),
+                "--output-directory",
+                str(tmp_path / "cli-next-output"),
+                "--plan-output",
+                str(cli_plan_path),
+            ]
+        )
+        == 0
+    )
+    cli_replan = json.loads(capsys.readouterr().out)
+    assert cli_replan["lineage"]["parent_plan_id"] == plan.plan_id
+    assert json.loads(cli_plan_path.read_text())["plan_id"] == cli_replan["plan_id"]
+
+    replanned = automation.replan_workflow(
+        spec.output_directory,
+        output_directory=tmp_path / "next-output",
+    )
+    assert replanned.lineage is not None
+    assert replanned.lineage.parent_plan_id == plan.plan_id
+    assert replanned.lineage.source_review_sha256 == review["review_id"]
+    assert replanned.spec.project_path == spec.output_directory / "project"
+    assert replanned.plan_id != plan.plan_id
+
+    with pytest.raises(automation.AutomationError) as nested_output:
+        automation.replan_workflow(
+            spec.output_directory,
+            output_directory=spec.output_directory / "nested",
+        )
+    assert nested_output.value.code == "replan.output_reuse"
+
+    next_result = automation.run_workflow(
+        replanned,
+        approval_plan_id=replanned.plan_id,
+    )
+    assert next_result.plan.lineage == replanned.lineage
+    stored_next_plan = json.loads((tmp_path / "next-output" / "plan.json").read_text())
+    assert stored_next_plan["lineage"]["parent_plan_id"] == plan.plan_id
+
+    stored_plan_path = spec.output_directory / "plan.json"
+    tampered_plan = json.loads(stored_plan_path.read_text())
+    tampered_plan["guidance"].append("unapproved addition")
+    stored_plan_path.write_text(json.dumps(tampered_plan), encoding="utf-8")
+    with pytest.raises(automation.AutomationError) as tampered:
+        automation.review_workflow_output(spec.output_directory)
+    assert tampered.value.code == "review.plan_digest"
 
 
 def test_resume_requires_a_real_checkpoint(tmp_path) -> None:
@@ -290,6 +384,11 @@ def test_strict_json_loaders_reject_duplicate_keys(tmp_path) -> None:
 
     assert error.value.code == "json.duplicate_key"
 
+    path.write_text('{"schema":"a","value":NaN}', encoding="utf-8")
+    with pytest.raises(automation.AutomationError) as nonfinite:
+        automation.load_workflow_spec(path)
+    assert nonfinite.value.code == "json.nonfinite"
+
 
 def test_cli_plans_json_and_returns_structured_approval_errors(tmp_path, capsys) -> None:
     project_path = _saved_project(tmp_path)
@@ -317,6 +416,13 @@ def test_cli_plans_json_and_returns_structured_approval_errors(tmp_path, capsys)
     planned = json.loads(capsys.readouterr().out)
     assert planned["status"] == "ready_for_approval"
     assert len(planned["plan_id"]) == 64
+
+    proposal_path = tmp_path / "proposal.json"
+    proposal = _proposal_record(automation.plan_workflow(automation.load_workflow_spec(spec_path)))
+    proposal_path.write_text(json.dumps(proposal), encoding="utf-8")
+    assert cli_main(["lint-recipe", str(spec_path), str(proposal_path)]) == 0
+    lint = json.loads(capsys.readouterr().out)
+    assert lint["valid_contract"] is True
 
     assert cli_main(["run", str(spec_path), "--approve", "wrong"]) == 2
     failure = json.loads(capsys.readouterr().err)

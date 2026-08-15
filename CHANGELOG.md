@@ -16,6 +16,12 @@ development versions.
   outputs. The new `phasesmith` CLI exposes schema, raw-input inspection,
   plan, run, resume, and report commands without adding an AI runtime
   dependency.
+- Add a sanitized, versioned scientific advisor context; deterministic recipe
+  lint findings; digest-bound post-run diagnostics for stages, parameters,
+  identifiability, and residual structure; and accepted-state replanning with
+  explicit parent/result/review lineage and a fresh approval boundary. Expose
+  the additions through Python and the `lint-recipe`, `review`, and `replan`
+  CLI commands.
 - Export recipe validation independently of numerical evaluation and validate
   all stages against the complete initial selection and constraint graph before
   a staged workflow starts.
