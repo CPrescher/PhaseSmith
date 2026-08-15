@@ -64,6 +64,12 @@ from .lebail import (
     refine,
     reflection_position_key,
 )
+from .readiness import (
+    ReadinessSeverity,
+    RietveldReadinessDiagnostic,
+    RietveldReadinessReport,
+    review_rietveld_input,
+)
 from .rietveld import (
     RietveldCalculationResult,
     RietveldCheckpoint,
@@ -146,6 +152,7 @@ from .workflow import (
     RietveldWorkflowResult,
     intelligent_rietveld_recipe,
     run_rietveld_recipe,
+    validate_rietveld_recipe,
 )
 
 __all__ = [
@@ -186,6 +193,7 @@ __all__ = [
     "ParameterSpec",
     "PointBackground",
     "PolynomialBackground",
+    "ReadinessSeverity",
     "RefinementEvent",
     "RefinementEventKind",
     "RefinementLimits",
@@ -203,6 +211,8 @@ __all__ = [
     "RietveldParameterChange",
     "RietveldParameterCorrelation",
     "RietveldParameterSelection",
+    "RietveldReadinessDiagnostic",
+    "RietveldReadinessReport",
     "RietveldRecipe",
     "RietveldResult",
     "RietveldStage",
@@ -268,8 +278,10 @@ __all__ = [
     "refine_tof_lebail",
     "refine_tof_multibank_geometry",
     "reflection_position_key",
+    "review_rietveld_input",
     "rietveld",
     "run_rietveld_recipe",
     "tof_lattice_geometry",
     "transpose_jacobian_vector_product",
+    "validate_rietveld_recipe",
 ]

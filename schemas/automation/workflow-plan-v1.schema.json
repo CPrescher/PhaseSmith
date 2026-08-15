@@ -1,0 +1,239 @@
+{
+  "$id": "https://phasesmith.org/schema/workflow-plan-v1.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "advisor_context": {
+      "$id": "https://phasesmith.org/schema/advisor-context-v1.json",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "background": {
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "constraints": {
+          "items": {
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "experiment": {
+          "type": "object"
+        },
+        "limitations": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "parameters": {
+          "items": {
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "pattern": {
+          "type": "object"
+        },
+        "phases": {
+          "items": {
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "privacy": {
+          "type": "object"
+        },
+        "schema": {
+          "const": "phasesmith.advisor-context.v1"
+        }
+      },
+      "required": [
+        "schema",
+        "privacy",
+        "pattern",
+        "experiment",
+        "phases",
+        "background",
+        "parameters",
+        "constraints",
+        "limitations"
+      ],
+      "title": "phasesmith.advisor-context.v1",
+      "type": "object"
+    },
+    "approval": {
+      "type": "object"
+    },
+    "authorization": {
+      "type": "object"
+    },
+    "default_recipe": {
+      "type": "object"
+    },
+    "external_recipe_proposal": {
+      "type": "object"
+    },
+    "guidance": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "lineage": {
+      "oneOf": [
+        {
+          "$id": "https://phasesmith.org/schema/workflow-lineage-v1.json",
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "additionalProperties": false,
+          "properties": {
+            "parent_plan_id": {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            "source_result_sha256": {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            "source_review_sha256": {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            }
+          },
+          "required": [
+            "parent_plan_id",
+            "source_result_sha256",
+            "source_review_sha256"
+          ],
+          "title": "phasesmith.workflow-lineage.v1",
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "plan_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "project": {
+      "type": "object"
+    },
+    "readiness": {
+      "type": "object"
+    },
+    "schema": {
+      "const": "phasesmith.workflow-plan.v1"
+    },
+    "status": {
+      "enum": [
+        "blocked",
+        "ready_for_approval"
+      ]
+    },
+    "workflow_spec": {
+      "$id": "https://phasesmith.org/schema/workflow-spec-v1.json",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "limits": {
+          "additionalProperties": false,
+          "properties": {
+            "max_consecutive_rejections": {
+              "maximum": 1000,
+              "minimum": 1,
+              "type": "integer"
+            },
+            "max_evaluations": {
+              "maximum": 1000000,
+              "minimum": 1,
+              "type": "integer"
+            },
+            "max_iterations": {
+              "maximum": 10000,
+              "minimum": 1,
+              "type": "integer"
+            },
+            "max_runtime_seconds": {
+              "exclusiveMinimum": 0,
+              "maximum": 86400,
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "max_iterations",
+            "max_evaluations",
+            "max_runtime_seconds",
+            "max_consecutive_rejections"
+          ],
+          "type": "object"
+        },
+        "output_directory": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "outputs": {
+          "additionalProperties": false,
+          "properties": {
+            "save_project": {
+              "type": "boolean"
+            },
+            "write_csv": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "write_csv",
+            "save_project"
+          ],
+          "type": "object"
+        },
+        "project_path": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "schema": {
+          "const": "phasesmith.workflow-spec.v1"
+        },
+        "workflow_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema",
+        "workflow_id",
+        "project_path",
+        "output_directory",
+        "limits",
+        "outputs"
+      ],
+      "title": "phasesmith.workflow-spec.v1",
+      "type": "object"
+    }
+  },
+  "required": [
+    "schema",
+    "plan_id",
+    "workflow_spec",
+    "project",
+    "lineage",
+    "status",
+    "readiness",
+    "authorization",
+    "advisor_context",
+    "default_recipe",
+    "external_recipe_proposal",
+    "guidance",
+    "approval"
+  ],
+  "title": "phasesmith.workflow-plan.v1",
+  "type": "object"
+}

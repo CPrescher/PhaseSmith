@@ -172,7 +172,16 @@ The solver always refines exactly the active parameters in one
 workflow layer in `phasesmith.refinement`:
 
 ```python
-from phasesmith.refinement import intelligent_rietveld_recipe, run_rietveld_recipe
+from phasesmith.refinement import (
+    intelligent_rietveld_recipe,
+    review_rietveld_input,
+    run_rietveld_recipe,
+)
+
+# Non-mutating conversion/configuration review before numerical work.
+readiness = review_rietveld_input(request)
+for diagnostic in readiness.diagnostics:
+    print(diagnostic.severity, diagnostic.code, diagnostic.message)
 
 # Advisory only: inspect this record before deciding whether to run it.
 proposal = intelligent_rietveld_recipe(request)
@@ -188,12 +197,33 @@ for stage in workflow.stages:
     )
 ```
 
+The readiness report retains structured CIF warnings and errors, identifies
+the imported block/backend and symmetry declaration when available, and
+discloses the active radiation, scattering, integrated-intensity correction,
+and specimen geometry. It warns about probe or geometry contradictions and
+about selected scale--occupancy, lattice--wavelength, and
+zero--displacement combinations. It is deterministic, JSON-compatible through
+`to_record()`, and does not mutate the request. Because an input cannot reveal
+an omitted phase, the report does not guess whether the supplied phase list is
+complete.
+
 The intelligent planner is deterministic and transparent. It can activate
 only families already authorized by `request.selection`. Its default cumulative
 advice establishes scale/background, aligns positions, stabilizes structural
 intensities, and finally releases the remaining profile/sample parameters. Each
 stage includes human-readable rationale and the resulting record lists every
 active `ParameterKey`. Iteration exhaustion is not accepted by default.
+The planner is a conservative staging heuristic: it does not infer new
+parameters or adapt its proposal from residual shape, rank, correlations, or a
+database of experiment recipes.
+
+Before the first calculation, the Python and Rust workflow boundaries validate
+every stage against the complete initial parameter and constraint contract.
+Stage-local constraint filtering is temporary: a constraint whose target first
+becomes active in a later stage is selected again from the original request.
+If a later stage is rejected or cancelled, `RietveldProject` retains the last
+policy-accepted physical state while preserving the caller's complete maximum
+selection and constraints for review or a subsequent proposal.
 
 Callers can construct `RietveldRecipe` and `RietveldStage` directly to change
 the order, options, or acceptable termination reasons. This is the appropriate
@@ -203,6 +233,13 @@ unchanged.
 `RietveldProject.propose_intelligent_recipe()` returns advice without running
 anything. `RietveldProject.refine_intelligently()` is the explicit opt-in that
 plans and executes it, while `refine_recipe()` runs a caller-owned recipe.
+
+For batch tools and coding agents, the versioned
+[AI-guided automation](ai-automation.md) boundary separates read-only planning,
+an optional external recipe proposal, exact plan approval, bounded execution,
+and checkpoint continuation. External proposals pass the same complete
+selection and constraint validation as Python recipes; no model client runs in
+the solver.
 
 `ConstantWavelengthExperiment.x_ray(...)` selects built-in non-resonant X-ray
 scattering by default. `ConstantWavelengthExperiment.neutron(...)` selects the

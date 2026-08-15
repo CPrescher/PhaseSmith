@@ -1,0 +1,143 @@
+{
+  "$id": "https://phasesmith.org/schema/recipe-lint-v1.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "error_count": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "findings": {
+      "items": {
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "plan_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "proposal_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "provenance": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "allOf": [
+            {
+              "else": {
+                "properties": {
+                  "provider": {
+                    "type": "null"
+                  }
+                }
+              },
+              "if": {
+                "properties": {
+                  "kind": {
+                    "const": "model"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "provider": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          ],
+          "properties": {
+            "advisor_packet_id": {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            "client": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "kind": {
+              "enum": [
+                "human",
+                "model",
+                "software"
+              ]
+            },
+            "name": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "prompt_sha256": {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "provider": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "request_id": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "version": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "name",
+            "provider",
+            "version",
+            "client",
+            "advisor_packet_id",
+            "prompt_sha256",
+            "request_id"
+          ],
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "schema": {
+      "const": "phasesmith.recipe-lint.v1"
+    },
+    "valid_contract": {
+      "type": "boolean"
+    },
+    "warning_count": {
+      "minimum": 0,
+      "type": "integer"
+    }
+  },
+  "required": [
+    "schema",
+    "plan_id",
+    "proposal_id",
+    "provenance",
+    "valid_contract",
+    "error_count",
+    "warning_count",
+    "findings"
+  ],
+  "title": "phasesmith.recipe-lint.v1",
+  "type": "object"
+}

@@ -66,6 +66,8 @@ print(dense.shape)  # (peak, parameter, sample)
   [background subtraction](background-subtraction.md).
 - Extract reflection intensities with [Le Bail](lebail.md).
 - Refine a structural model with [Rietveld refinement](rietveld.md).
+- Use a persisted project from a coding agent or language model through the
+  constrained [AI-guided automation](ai-automation.md) boundary.
 - Save scripted workflow state with [Python persistence](persistence.md), or
   use the Rust-only project boundary described in
   [native persistence](native-persistence.md).

@@ -1630,26 +1630,100 @@ application-neutral native implementation without losing the independent NumPy
 equation references. GUI-specific state and presentation adapters belong in a
 separate application repository.
 
-## Maintainer decisions needed
+## Resolved pre-1.0 API decisions
 
-Development can proceed through the next numerical units, but the following
-must be decided before stabilizing the 1.0 public API. The project-license
-question was resolved on 2026-08-05 by selecting the MIT License, and version
-0.4.0 was released on 2026-08-14.
+The project license was resolved on 2026-08-05 by selecting MIT, and version
+0.4.1 was released on 2026-08-14. The remaining direction questions are now
+resolved in `docs/api-stability.md`:
 
-1. Whether direct `(H, eta)` remains public as a low-level API or is labeled
-   explicitly as a primitive/reference interface.
-2. When support-block Jacobians become the Python default.
-3. Whether the first supported CW convention is strictly GSAS-II-compatible or
-   a physical-unit API with a separately documented GSAS compatibility adapter.
-   This plan recommends the latter.
-4. Which GSAS-II-derived fixtures are lawful and useful to redistribute; fixture
-   provenance must be reviewed before commit.
-5. Any additional space-group/scattering dataset beyond the reviewed Unit-14
-   public-domain XrayDB and `periodictable` sources needs its own source and
-   license review before redistribution.
+1. Direct `(H, eta)` remains public and is explicitly classified as a
+   mathematical primitive/reference interface, not the normal instrument API.
+2. Support-block Jacobians are already the Python default and remain so for
+   1.0; dense storage is explicit compatibility materialization.
+3. Physical units are canonical. GSAS/GSAS-II units and signs remain in named
+   file/oracle adapters with documented conversions.
+4. Existing plain-array oracle fixtures are retained under a conservative
+   provenance, notice, and numerical-utility gate. Source, binaries, project
+   dictionaries, or mechanically translated implementation code are excluded;
+   new redistribution questions require maintainer or counsel review.
+5. Additional space-group/scattering data requires its own source, license,
+   hash, generation, and scientific-validation review before redistribution.
+
+The pre-1.0 exported-name/signature snapshot is complete. The deterministic
+schema-1 record freezes all names in `__all__` across the six explicit public
+namespaces, labels domain/adapter/validation tiers, and records implementation
+targets and introspectable signatures. Release metadata requires the snapshot
+whose version matches the Cargo/Python version, while the live-package test
+reports an exact unified diff for additions, removals, aliases, kinds, or
+signature changes. Existing versioned snapshots are never silently
+overwritten. The next release milestone is intentional 0.x cleanup reviewed
+against this baseline, followed by the 1.0 release candidate gates.
 
 ## Definition of the next completed milestone
+
+### Unit 39: constrained automation and AI recipe guidance (0.5.0)
+
+The first 0.5.0 application entry point is complete. A strict version-1 task
+spec operates only on an already reviewed, persisted `RietveldProject` and
+declares finite runtime and output ownership. Read-only planning fingerprints
+every project file, emits readiness diagnostics, the complete authorized
+selection, stable parameter labels, a sanitized scientific advisor context,
+the deterministic cumulative recipe, and a SHA-256 plan identity without
+evaluating the objective. Raw powder and CIF
+inspectors expose bounded source facts and explicitly retain unknown experiment
+physics rather than constructing a guessed request.
+
+An external human or AI recipe is an untrusted proposal bound to that exact
+plan. Its stages are size-limited, strict-key, cumulative, rationale-bearing,
+unable to set custom solver options or termination policy, and required to end
+with the complete caller-authorized selection. PhaseSmith validates every
+stage and the full original constraint graph before numerical work. Run and
+checkpoint-resume require the exact plan ID, replan immediately before
+execution to reject changed bytes, enforce caller budgets, and reject existing
+owned outputs before starting. JSON audit products retain the plan, exact
+recipe/action, workflow/result, provider provenance, and optional CSV and
+resumable project. Stable structured error codes cover automation failures.
+
+The application boundary now also deterministically lints external proposals
+for the strict execution contract and high-risk scientific ordering, derives a
+digest-bound post-run review from stage, parameter, identifiability, and
+residual diagnostics, and creates a new non-executing plan from the saved
+accepted project state. Every replan has a new output directory outside the
+parent audit directory and a new plan ID and
+records its parent plan, terminal-result digest, and review digest. It does not
+reuse approval or place an AI callback inside the solver.
+
+The final 0.5.0 advisor-entrypoint slice adds path-free, digest-identified
+advisor packets and review-to-next-plan packets. Proposal provenance is a
+strict human/model/software record bound to the exact advisor packet, with
+provider/model name, optional snapshot/version, client, prompt digest, and
+request ID rather than an unaudited free-form generator string. Stored plans
+are reloaded by rebuilding them from current project bytes and comparing the
+complete record, which makes lineage-bound child plans directly executable by
+the normal run/lint/resume CLI commands. Every automation input/output now has
+a CLI-accessible and checked-in JSON Schema. A compact repository agent skill,
+runnable offline two-cycle example, and five synthetic scientific-risk
+evaluation cases cover the complete external-advisor workflow without adding
+a provider SDK.
+
+The provider-neutral `phasesmith` CLI exposes `schema`, `inspect-pattern`,
+`inspect-cif`, `plan`, `advisor-packet`, `lint-recipe`, `run`, `resume`,
+`review`, `review-packet`, `replan`, and `report`. There is no model SDK,
+network callback, prompt execution, or hidden adaptive decision inside the
+solver. Guidance documents the conservative order—scale/background, positions,
+structural intensity terms, then profile/sample terms—and requires joint review
+of convergence, rank, correlations, bounds, residuals, provenance, and physical
+plausibility rather than accepting lower Rwp alone. Model names such as
+`gpt-5.6-sol` are recorded only as proposal provenance. Iterative adaptation
+creates a new byte-bound plan and approval between observations.
+
+Focused acceptance covers stable plans, strict/duplicate-key parsing,
+authorization and cumulative-stage rejection, stale approvals, collision
+checks before numerical work, an externally proposed two-stage refinement,
+raw inspectors, structured lint/review output, digest-linked accepted-state
+replanning, structured CLI errors, and actual persisted-checkpoint
+continuation. No numerical equation, production hot loop, or GSAS-II boundary
+changes in this unit.
 
 Implementation units 0 through 24 are complete, including the Python-free
 Rietveld/Le Bail workflows, persistence and application boundaries, joint
@@ -1684,14 +1758,29 @@ Structural parameter and instrument refinement must
 be introduced only with analytical derivatives, finite-difference tests, and
 new oracle contracts; it is not part of the completed Le Bail facade.
 
-Unit 29 remains the next independent constant-wavelength calibration
-milestone: run broader independent experimental validation on in-house
-benchmark examples and define a reviewable
-transferability gate. Completion requires provenance-complete physical inputs,
-plain validation artifacts, explicit cross-pattern profile metrics, and a
-decision supported by those results about whether any specialized profile term
-belongs in production. Failed transfer remains a valid outcome; it must not be
-converted into a production feature by tuning against one specimen.
+Unit 29's first independent constant-wavelength calibration/holdout test is now
+complete on the historical IUCr ceria size/strain round robin. It is explicitly
+external rather than in-house. Six Birmingham scan-range files are registered
+by exact size and SHA-256; annealed narrow-line CeO2 calibrates the empirical
+profile and broadened CeO2 remains untouched until that profile is frozen.
+The 8,726-sample calibration selects the same W-only profile from three starts
+and reaches Rwp 0.192590/correlation 0.953870. On 4,126 holdout samples, the
+no-sample-broadening Rwp 0.553990 falls to 0.058097 with the existing isotropic
+size/Gaussian-microstrain model; correlation is 0.985574 and weighted SSE falls
+98.9002%. Three dispersed starts and twelve deterministic Poisson resamples
+pass the predeclared stability gates. Peak-wise centroid/FWHM/area/L1/moment
+records remain visible and qualify this as an empirical transfer result rather
+than a fundamental-parameters calibration.
+
+The physical promotion half remains blocked by source metadata, not by missing
+patterns. Radius, apertures/detector geometry, axial lengths, Soller angles,
+monochromator passband, and specimen mounting metrology are not documented, and
+the current Le Bail estimator treats the 1.6% K-alpha2 component as a disclosed
+dominant-line approximation. Unit 29 therefore closes with a reviewed negative
+production decision: do not add LPSD, tube-tail, continuum, or
+coupled-dispersion terms. Reopening one requires a new provenance-complete pair
+for that named physical term; a future in-house pair remains stronger separate
+evidence.
 
 Unit 29's campaign-orchestration slice is complete. The checked-in version-1
 manifest composes seventeen existing real-data comparison and diagnostic

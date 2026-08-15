@@ -30,6 +30,9 @@ normalizations, finite-support rules, and analytical derivative chains:
 Python docstrings link to these pages instead of copying long derivations that
 could diverge from the native implementation.
 
+The [pre-1.0 API decisions](api-stability.md) distinguish stable-direction
+domain APIs, public mathematical primitives, and named compatibility adapters.
+
 ## Data import and domain models
 
 | Module | Main public entry points | Purpose |
@@ -106,11 +109,17 @@ the navigation.
 | `phasesmith.refinement.tof_lebail` | `TofLeBailInput`, `TofLeBailOptions`, `refine_tof_lebail` | Fixed-cell, fixed-instrument TOF extraction. |
 | `phasesmith.refinement.tof_multibank` | `TofMultiBankGeometryInput`, `TofMultiBankGeometryOptions`, `refine_tof_multibank_geometry` | Joint shared-cell and bank-local TOF instrument refinement with restart and identifiability diagnostics. |
 | `phasesmith.refinement.tof_structural` | `StructuralTofMultiBankInput`, `StructuralTofMultiBankProvenance`, `StructuralTofRequestProvenance`, `StructuralTofSourceDigest`, `StructuralTofRefinementOptions`, `refine_structural_tof_multibank` | Structural neutron TOF refinement with shared structure, checksum-retaining one-/multi-bank file composition, explicit bank correction contracts, bounded runtime, and exact restart. |
+| `phasesmith.refinement.readiness` | `review_rietveld_input`, `RietveldReadinessReport` | Non-mutating review of import provenance, active physical models, model mismatches, and risky parameter selections. |
 | `phasesmith.refinement.rietveld` | Rietveld inputs, options, recipes, and results | Structural refinement orchestration. |
 | `phasesmith.refinement.runtime` | Limits, events, logs, checkpoints | Bounded execution and recovery. |
 | `phasesmith.quantitative` | `quantitative_phase_analysis`, `quantitative_phase_analysis_with_covariance`, `weight_fractions_from_scale` | Hill–Howard phase fractions and scale-covariance propagation. |
 | `phasesmith.reporting` | JSON and CSV Rietveld writers | Stable external reports. |
 | `phasesmith.persistence` | `save_bundle`, `load_bundle`, `PersistenceBundle` | Versioned Python workflow persistence. |
+| `phasesmith.automation` | `WorkflowSpec`, `ProposerProvenance`, `plan_workflow`, `advisor_packet`, `lint_recipe_proposal`, `parse_recipe_proposal`, `run_workflow`, `review_workflow_output`, `prepare_review_packet`, `replan_workflow`, `resume_workflow`, `automation_schema` | Versioned inspect/plan/advise/lint/approve/run/review/replan boundary for human- or AI-orchestrated persisted projects. |
+
+The `phasesmith` console script exposes the same boundary as finite JSON
+commands. See [AI-guided automation](ai-automation.md) for the schemas,
+scientific recipe rubric, explicit approval flow, and model-facing prompt.
 
 ## Inspect exact signatures
 
@@ -128,3 +137,10 @@ help(phasesmith.refinement.lebail.refine)
 The [public Python architecture](public-api.md) defines compatibility and data
 ownership in more detail. Source links in the page header lead to the exact
 implementation for the selected documentation version.
+
+Release review does not rely on documentation pages alone. The versioned
+machine-readable snapshot in `api/python-public-api-v0.5.0.json` covers the
+explicit top-level, I/O, refinement, integration, oracle, and validation
+exports. Run `python scripts/public_api_snapshot.py --check` to compare it with
+the installed package; any name, target, kind, or callable-signature change is
+reported as a unified diff.

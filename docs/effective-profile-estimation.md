@@ -136,7 +136,10 @@ not require Python.
 
 Synthetic deterministic tests cover W recovery, fixed-wavelength preservation,
 masking of an unmodelled contaminant peak, automatic rejection of unsupported
-extra terms, and invalid-input behavior in both Rust and Python. No real sample
-has been supplied for this feature yet. Real-pattern acceptance, default tuning,
-and any future Si/CeO2/LaB6 workflow remain explicitly pending a representative
-dataset rather than being inferred from synthetic data.
+extra terms, and invalid-input behavior in both Rust and Python. The
+checksum-pinned IUCr ceria size/strain round robin now supplies the first real
+external calibration/holdout gate. Its Birmingham result supports the existing
+empirical-profile-plus-sample-broadening workflow but also shows peak-wise
+high-angle limitations and incomplete optics provenance. It therefore does not
+turn the estimator into a fundamental-parameters calibration or justify new
+specialized profile terms; see `profile-transferability-gate.md`.

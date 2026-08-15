@@ -1,0 +1,83 @@
+{
+  "$id": "https://phasesmith.org/schema/workflow-spec-v1.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "limits": {
+      "additionalProperties": false,
+      "properties": {
+        "max_consecutive_rejections": {
+          "maximum": 1000,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "max_evaluations": {
+          "maximum": 1000000,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "max_iterations": {
+          "maximum": 10000,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "max_runtime_seconds": {
+          "exclusiveMinimum": 0,
+          "maximum": 86400,
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "max_iterations",
+        "max_evaluations",
+        "max_runtime_seconds",
+        "max_consecutive_rejections"
+      ],
+      "type": "object"
+    },
+    "output_directory": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "outputs": {
+      "additionalProperties": false,
+      "properties": {
+        "save_project": {
+          "type": "boolean"
+        },
+        "write_csv": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "write_csv",
+        "save_project"
+      ],
+      "type": "object"
+    },
+    "project_path": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "schema": {
+      "const": "phasesmith.workflow-spec.v1"
+    },
+    "workflow_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema",
+    "workflow_id",
+    "project_path",
+    "output_directory",
+    "limits",
+    "outputs"
+  ],
+  "title": "phasesmith.workflow-spec.v1",
+  "type": "object"
+}

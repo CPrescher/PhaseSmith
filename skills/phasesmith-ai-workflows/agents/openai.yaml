@@ -1,0 +1,4 @@
+interface:
+  display_name: "PhaseSmith AI Workflows"
+  short_description: "Guide safe AI-assisted PhaseSmith refinements"
+  default_prompt: "Use $phasesmith-ai-workflows to plan, lint, run, review, and safely replan this PhaseSmith refinement."

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import sys
 import tomllib
@@ -29,6 +30,20 @@ def _toml(path: Path) -> dict[str, object]:
         return tomllib.load(stream)
 
 
+def validate_api_snapshot(root: Path, version: str) -> None:
+    """Require the schema-1 public API snapshot for *version*."""
+
+    api_snapshot_path = root / "api" / f"python-public-api-v{version}.json"
+    try:
+        api_snapshot = json.loads(api_snapshot_path.read_text(encoding="utf-8"))
+    except FileNotFoundError as error:
+        raise ValueError(f"public API snapshot is missing: {api_snapshot_path}") from error
+    if api_snapshot.get("schema_version") != 1:
+        raise ValueError("public API snapshot must use schema_version=1")
+    if api_snapshot.get("package_version") != version:
+        raise ValueError("public API snapshot version does not match the release version")
+
+
 def release_version(root: Path = ROOT) -> str:
     """Return the validated release version or raise ``ValueError``."""
 
@@ -48,6 +63,7 @@ def release_version(root: Path = ROOT) -> str:
     changelog = (root / "CHANGELOG.md").read_text()
     if re.search(rf"^## {re.escape(version)}$", changelog, re.MULTILINE) is None:
         raise ValueError(f"CHANGELOG.md has no '## {version}' release section")
+    validate_api_snapshot(root, version)
     manifests = [root / "Cargo.toml", *sorted((root / "crates").glob("*/Cargo.toml"))]
     package_names = set()
     for manifest in manifests:

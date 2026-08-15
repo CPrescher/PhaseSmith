@@ -100,6 +100,12 @@ it to this project's Python environment.
 
 ## Fixture generation
 
+The fixture admission and redistribution policy is fixed in
+[`docs/api-stability.md`](../docs/api-stability.md), and the upstream
+acknowledgment/citation is carried in
+[`THIRD_PARTY_NOTICES.md`](../THIRD_PARTY_NOTICES.md). New fixtures must satisfy
+that policy in addition to the versioned schema below.
+
 `fixtures/schema.json` defines fixture format version 1. The committed
 `symmetric_pseudo_voigt_v1` fixture contains narrow and broad Gaussian-dominant,
 mixed, and Lorentzian-dominant cases plus one overlapping two-peak pattern. The
