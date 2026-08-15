@@ -4,6 +4,7 @@ import importlib.util
 import json
 import subprocess
 import sys
+import tomllib
 from pathlib import Path
 
 import pytest
@@ -29,6 +30,14 @@ def test_release_version_matches_every_checked_surface() -> None:
         text=True,
     )
     assert result.stdout.strip() == "0.5.0"
+
+
+def test_supported_python_versions_include_314() -> None:
+    with (ROOT / "pyproject.toml").open("rb") as stream:
+        project = tomllib.load(stream)["project"]
+
+    assert project["requires-python"] == ">=3.11"
+    assert "Programming Language :: Python :: 3.14" in project["classifiers"]
 
 
 def test_release_version_rejects_a_mismatched_tag() -> None:
