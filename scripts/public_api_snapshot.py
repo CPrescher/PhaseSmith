@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import difflib
+import enum
 import importlib
 import inspect
 import json
@@ -64,6 +65,8 @@ def _target(value: object) -> str:
 
 def _signature(value: object) -> str | None:
     if not callable(value):
+        return None
+    if isinstance(value, enum.EnumMeta):
         return None
     try:
         signature = str(inspect.signature(value, follow_wrapped=False, eval_str=False))

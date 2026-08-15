@@ -35,6 +35,9 @@ def test_checked_in_public_api_snapshot_matches_live_exports() -> None:
         "phasesmith.validation",
     ]
     assert all(item["exports"] for item in expected["modules"])
+    top_level = {item["name"]: item for item in expected["modules"][0]["exports"]}
+    assert top_level["ProfileEstimationMode"]["signature"] is None
+    assert top_level["RadiationProbe"]["signature"] is None
 
 
 def test_snapshot_cli_refuses_implicit_overwrite(tmp_path: Path) -> None:
