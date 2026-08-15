@@ -115,7 +115,7 @@ the navigation.
 | `phasesmith.quantitative` | `quantitative_phase_analysis`, `quantitative_phase_analysis_with_covariance`, `weight_fractions_from_scale` | Hill–Howard phase fractions and scale-covariance propagation. |
 | `phasesmith.reporting` | JSON and CSV Rietveld writers | Stable external reports. |
 | `phasesmith.persistence` | `save_bundle`, `load_bundle`, `PersistenceBundle` | Versioned Python workflow persistence. |
-| `phasesmith.automation` | `WorkflowSpec`, `plan_workflow`, `parse_recipe_proposal`, `run_workflow`, `resume_workflow` | Versioned inspect/plan/approve/run boundary for human- or AI-orchestrated persisted projects. |
+| `phasesmith.automation` | `WorkflowSpec`, `plan_workflow`, `lint_recipe_proposal`, `parse_recipe_proposal`, `run_workflow`, `review_workflow_output`, `replan_workflow`, `resume_workflow` | Versioned inspect/plan/lint/approve/run/review/replan boundary for human- or AI-orchestrated persisted projects. |
 
 The `phasesmith` console script exposes the same boundary as finite JSON
 commands. See [AI-guided automation](ai-automation.md) for the schemas,

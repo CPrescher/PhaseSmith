@@ -35,6 +35,17 @@ providers are optional external advisors and never become numerical-core or
 runtime dependencies. Raw powder/CIF inspection deliberately reports missing
 physical metadata instead of guessing a runnable project.
 
+Plans now carry a sanitized scientific advisor context containing model,
+parameter, bound, constraint, and experiment summaries without paths or raw
+pattern/CIF contents. External proposals can be deterministically linted for
+their strict contract and risky scientific ordering. Completed workflow
+directories can produce digest-bound stage/parameter/identifiability/residual
+reviews, then seed a new non-executing plan from the saved accepted project
+state. The child plan records parent/result/review lineage, uses a new output
+directory outside the parent audit directory and a new plan ID, and requires
+fresh approval; no AI callback runs
+inside a numerical solve and no deterministic review auto-accepts a fit.
+
 The remainder of this section is a chronological implementation record. Terms
 such as “next slice”, “pending”, and “follow-on” describe the checkpoint at
 which their paragraph was written; the final current-state summary and next
