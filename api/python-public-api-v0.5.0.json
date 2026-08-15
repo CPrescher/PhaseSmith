@@ -10,6 +10,12 @@
         },
         {
           "kind": "constant",
+          "name": "ADVISOR_PACKET_SCHEMA",
+          "signature": null,
+          "target": "builtins.str"
+        },
+        {
+          "kind": "constant",
           "name": "AUTOMATION_ERROR_SCHEMA",
           "signature": null,
           "target": "builtins.str"
@@ -574,6 +580,12 @@
         },
         {
           "kind": "class",
+          "name": "ProposerProvenance",
+          "signature": "(kind: \"Literal['human', 'model', 'software']\", name: 'str', provider: 'str | None', version: 'str | None', client: 'str | None', advisor_packet_id: 'str', prompt_sha256: 'str | None' = None, request_id: 'str | None' = None) -> None",
+          "target": "phasesmith.automation.ProposerProvenance"
+        },
+        {
+          "kind": "class",
           "name": "ProviderDescriptor",
           "signature": "(provider_id: 'str', provider_version: 'str', api_version: 'int' = 1, thread_safe: 'bool' = False) -> None",
           "target": "phasesmith.extensions.ProviderDescriptor"
@@ -609,6 +621,12 @@
           "target": "builtins.str"
         },
         {
+          "kind": "constant",
+          "name": "REVIEW_PACKET_SCHEMA",
+          "signature": null,
+          "target": "builtins.str"
+        },
+        {
           "kind": "class",
           "name": "RadiationProbe",
           "signature": "(*values)",
@@ -623,7 +641,7 @@
         {
           "kind": "class",
           "name": "RecipeProposal",
-          "signature": "(plan_id: 'str', proposal_id: 'str', generated_by: 'str', assumptions: 'tuple[str, ...]', recipe: 'RietveldRecipe') -> None",
+          "signature": "(plan_id: 'str', proposal_id: 'str', provenance: 'ProposerProvenance', assumptions: 'tuple[str, ...]', recipe: 'RietveldRecipe') -> None",
           "target": "phasesmith.automation.RecipeProposal"
         },
         {
@@ -1019,7 +1037,7 @@
         {
           "kind": "class",
           "name": "WorkflowRunResult",
-          "signature": "(plan: 'WorkflowPlan', recipe_source: \"Literal['deterministic', 'external_proposal']\", recipe: 'RietveldRecipe', workflow: 'RietveldWorkflowResult', output_directory: 'Path', result_json: 'Path', pattern_csv: 'Path | None', saved_project: 'Path | None') -> None",
+          "signature": "(plan: 'WorkflowPlan', recipe_source: \"Literal['deterministic', 'external_proposal']\", proposal: 'RecipeProposal | None', recipe: 'RietveldRecipe', workflow: 'RietveldWorkflowResult', output_directory: 'Path', result_json: 'Path', pattern_csv: 'Path | None', saved_project: 'Path | None') -> None",
           "target": "phasesmith.automation.WorkflowRunResult"
         },
         {
@@ -1125,10 +1143,28 @@
           "target": "phasesmith.tof.accumulate_tof"
         },
         {
+          "kind": "function",
+          "name": "advisor_packet",
+          "signature": "(plan: 'WorkflowPlan') -> 'dict[str, object]'",
+          "target": "phasesmith.automation.advisor_packet"
+        },
+        {
           "kind": "module",
           "name": "automation",
           "signature": null,
           "target": "phasesmith.automation"
+        },
+        {
+          "kind": "function",
+          "name": "automation_schema",
+          "signature": "(contract: 'str') -> 'dict[str, object]'",
+          "target": "phasesmith.automation.automation_schema"
+        },
+        {
+          "kind": "function",
+          "name": "automation_schema_names",
+          "signature": "() -> 'tuple[str, ...]'",
+          "target": "phasesmith.automation.automation_schema_names"
         },
         {
           "kind": "module",
@@ -1270,6 +1306,12 @@
         },
         {
           "kind": "function",
+          "name": "load_workflow_plan",
+          "signature": "(path: 'str | Path') -> 'WorkflowPlan'",
+          "target": "phasesmith.automation.load_workflow_plan"
+        },
+        {
+          "kind": "function",
           "name": "load_workflow_spec",
           "signature": "(path: 'str | Path') -> 'WorkflowSpec'",
           "target": "phasesmith.automation.load_workflow_spec"
@@ -1315,6 +1357,12 @@
           "name": "plan_workflow",
           "signature": "(spec: 'WorkflowSpec') -> 'WorkflowPlan'",
           "target": "phasesmith.automation.plan_workflow"
+        },
+        {
+          "kind": "function",
+          "name": "prepare_review_packet",
+          "signature": "(result_directory: 'str | Path', *, output_directory: 'str | Path', workflow_id: 'str | None' = None, limits: 'RefinementLimits | None' = None, outputs: 'WorkflowOutputs | None' = None) -> 'tuple[WorkflowPlan, dict[str, object]]'",
+          "target": "phasesmith.automation.prepare_review_packet"
         },
         {
           "kind": "function",

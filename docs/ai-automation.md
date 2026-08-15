@@ -67,6 +67,10 @@ default recipe, and the runtime/output limits. Execution requires the exact
 phasesmith run workflow-spec.json --approve PLAN_ID
 ```
 
+The run/lint/resume commands accept either the original workflow specification
+or a stored plan. This matters after replanning: the stored child plan carries
+lineage that cannot be reconstructed from a plain specification alone.
+
 If any byte in the project or any planning input changes, the old approval is
 stale and execution stops. Existing owned outputs are rejected before
 numerical work unless `--overwrite` is explicit. A saved checkpoint is
@@ -84,17 +88,18 @@ means execution returned an auditable but incomplete/stopped refinement.
 
 ## Asking an AI for a recipe
 
-Obtain the proposal schema with:
+Create the path-free model-facing packet and obtain the proposal schema with:
 
 ```shell
-phasesmith schema recipe
+phasesmith advisor-packet plan.json > advisor-packet.json
+phasesmith schema recipe-proposal
 ```
 
-For a remote advisor, send only the fields it needs: `plan_id`, `readiness`,
-`authorization`, `advisor_context`, `external_recipe_proposal`, and `guidance`,
-plus the recipe schema. The complete plan also contains local paths and should
-not be treated as a sanitized upload packet. Review the advisor context itself
-if identifiers or numerical metadata are sensitive.
+For a remote advisor, send `advisor-packet.json`, not the complete plan. The
+packet contains the plan ID, readiness, authorization, advisor context,
+deterministic recipe, guidance, and proposal schema, but no local paths or raw
+pattern/CIF contents. Review identifiers and numerical metadata if they are
+sensitive. Its `packet_id` binds the exact advisory context.
 
 A useful prompt is:
 
@@ -111,16 +116,21 @@ argument. If the plan lacks information needed for a defensible order, state
 that in assumptions; do not guess.
 ```
 
-The proposal record must be bound to the exact plan. `generated_by` may record
-the model name, for example `gpt-5.6-sol`. Each stage contains only a name,
-selection, and rationale. External proposals cannot set solver options, relax
-accepted termination reasons, expand authorization, remove a parameter in a
-later stage, or omit the complete final authorized selection.
+The proposal record must be bound to both the exact plan and advisor packet.
+Its structured `provenance` records whether the proposer is a human, model, or
+software process; its name; model provider and optional snapshot/version;
+client; advisor-packet ID; and optional prompt digest and request ID. For
+example, an OpenAI proposal can name `gpt-5.6-sol` while retaining the exact
+packet and prompt provenance used. A model name is audit evidence, never
+authority. Each stage contains only a name, selection, and rationale. External
+proposals cannot set solver options, relax accepted termination reasons,
+expand authorization, remove a parameter in a later stage, or omit the
+complete final authorized selection.
 
 After saving the proposed JSON, run the deterministic linter before approval:
 
 ```shell
-phasesmith lint-recipe workflow-spec.json recipe-proposal.json
+phasesmith lint-recipe plan.json recipe-proposal.json
 ```
 
 The linter first applies the strict executable contract and then flags risky
@@ -141,7 +151,10 @@ phasesmith run workflow-spec.json \
 PhaseSmith validates all stages and the complete constraint graph before the
 first numerical evaluation. The output directory retains the approved plan,
 the exact recipe, per-stage workflow record, numerical result, terminal audit,
-and optionally pattern CSV and resumable project.
+and optionally pattern CSV and resumable project. For an external recipe, the
+terminal audit also retains the complete proposal and its provenance; the
+deterministic review and path-free review packet carry that provenance into the
+next cycle.
 
 ## Review and iterative replanning
 
@@ -159,13 +172,13 @@ Its status is always `review_required`: no threshold silently accepts a fit,
 and plots, provenance, phase completeness, and physical plausibility still
 need scientific judgment.
 
-If the run saved its accepted project state, create a new plan for another
-iteration without executing it:
+If the run saved its accepted project state, create a new plan and sanitized
+review packet for another advisory iteration without executing it:
 
 ```shell
-phasesmith replan OUTPUT_DIRECTORY \
+phasesmith review-packet OUTPUT_DIRECTORY \
   --output-directory NEXT_OUTPUT_DIRECTORY \
-  --plan-output next-plan.json
+  --plan-output next-plan.json > review-packet.json
 ```
 
 The new plan uses an output directory outside the parent audit directory and a
@@ -173,7 +186,40 @@ different plan ID, and records the
 parent plan, terminal-result digest, and review digest in `lineage`. It plans
 from the saved accepted state, repeats readiness and fingerprint checks, and
 still requires a new explicit approval. Replanning never edits the previous
-output and never installs a model callback inside the numerical loop.
+output and never installs a model callback inside the numerical loop. The
+review packet strips source paths, embeds deterministic review evidence, and
+contains the next advisor packet. Lint and run the next proposal against
+`next-plan.json` so its lineage remains part of the approved identity.
+
+The lower-level `phasesmith replan` command remains available when no external
+advisor packet is needed.
+
+## Schemas, skill, and runnable example
+
+`phasesmith schema CONTRACT` exposes all versioned automation contracts:
+workflow specs/plans/results, recipe proposals/lint, advisor context/packets,
+reviews/review packets, resume results, lineage, and structured errors. The
+same reviewed files live under `schemas/automation/`; verify them with:
+
+```shell
+python scripts/export_automation_schemas.py --check
+```
+
+The repository skill at `skills/phasesmith-ai-workflows/` gives coding agents
+the approval, provenance, scientific-ordering, review, and stop rules for this
+boundary. Keep this repository copy under review and install it through the
+agent's normal local-skill mechanism when it is not discovered directly from
+the checkout. The complete offline example creates a synthetic project and
+writes the first plan/packet/proposal/lint/run/review plus a second
+lineage-bound plan and review packet:
+
+```shell
+python examples/automation/run_advisor_cycle.py /tmp/phasesmith-advisor-demo
+```
+
+The example labels its proposal as deterministic software provenance. Replace
+that proposal step with a real advisor response and truthful model provenance
+when integrating a hosted or local model.
 
 ## Scientific recipe rubric
 

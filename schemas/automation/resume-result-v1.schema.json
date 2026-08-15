@@ -1,0 +1,40 @@
+{
+  "$id": "https://phasesmith.org/schema/resume-result-v1.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "action": {
+      "const": "resume"
+    },
+    "outputs": {
+      "type": "object"
+    },
+    "plan_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "result": {
+      "type": "object"
+    },
+    "schema": {
+      "const": "phasesmith.resume-result.v1"
+    },
+    "termination": {
+      "type": "string"
+    },
+    "workflow_id": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema",
+    "plan_id",
+    "workflow_id",
+    "action",
+    "termination",
+    "result",
+    "outputs"
+  ],
+  "title": "phasesmith.resume-result.v1",
+  "type": "object"
+}

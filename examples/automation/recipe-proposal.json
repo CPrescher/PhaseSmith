@@ -2,9 +2,18 @@
   "schema": "phasesmith.recipe-proposal.v1",
   "plan_id": "0000000000000000000000000000000000000000000000000000000000000000",
   "proposal_id": "reviewed-ai-recipe-v1",
-  "generated_by": "gpt-5.6-sol",
+  "provenance": {
+    "kind": "model",
+    "name": "gpt-5.6-sol",
+    "provider": "OpenAI",
+    "version": null,
+    "client": "Codex",
+    "advisor_packet_id": "0000000000000000000000000000000000000000000000000000000000000000",
+    "prompt_sha256": null,
+    "request_id": null
+  },
   "assumptions": [
-    "Replace the placeholder plan_id and selections with the exact values from plan.json."
+    "Replace placeholder plan/packet IDs and selections with exact advisor-packet values."
   ],
   "recipe": {
     "name": "scale-then-position-template",

@@ -46,21 +46,26 @@ WORKFLOW_RESULT_SCHEMA = "phasesmith.workflow-result.v1"
 RESUME_RESULT_SCHEMA = "phasesmith.resume-result.v1"
 AUTOMATION_ERROR_SCHEMA = "phasesmith.automation-error.v1"
 ADVISOR_CONTEXT_SCHEMA = "phasesmith.advisor-context.v1"
+ADVISOR_PACKET_SCHEMA = "phasesmith.advisor-packet.v1"
 RECIPE_LINT_SCHEMA = "phasesmith.recipe-lint.v1"
 WORKFLOW_REVIEW_SCHEMA = "phasesmith.workflow-review.v1"
+REVIEW_PACKET_SCHEMA = "phasesmith.review-packet.v1"
 
 __all__ = [
     "ADVISOR_CONTEXT_SCHEMA",
+    "ADVISOR_PACKET_SCHEMA",
     "AUTOMATION_ERROR_SCHEMA",
     "RECIPE_LINT_SCHEMA",
     "RECIPE_PROPOSAL_SCHEMA",
     "RESUME_RESULT_SCHEMA",
+    "REVIEW_PACKET_SCHEMA",
     "WORKFLOW_PLAN_SCHEMA",
     "WORKFLOW_RESULT_SCHEMA",
     "WORKFLOW_REVIEW_SCHEMA",
     "WORKFLOW_SPEC_SCHEMA",
     "AdvisorContext",
     "AutomationError",
+    "ProposerProvenance",
     "RecipeProposal",
     "ResumeRunResult",
     "WorkflowLineage",
@@ -68,14 +73,19 @@ __all__ = [
     "WorkflowPlan",
     "WorkflowRunResult",
     "WorkflowSpec",
+    "advisor_packet",
+    "automation_schema",
+    "automation_schema_names",
     "inspect_cif_file",
     "inspect_powder_file",
     "lint_recipe_proposal",
     "lint_recipe_proposal_file",
     "load_recipe_proposal",
+    "load_workflow_plan",
     "load_workflow_spec",
     "parse_recipe_proposal",
     "plan_workflow",
+    "prepare_review_packet",
     "recipe_proposal_schema",
     "replan_workflow",
     "resume_workflow",
@@ -320,12 +330,118 @@ class WorkflowPlan:
 
 
 @dataclass(frozen=True, slots=True)
+class ProposerProvenance:
+    """Structured provenance for one human, model, or software proposal."""
+
+    kind: Literal["human", "model", "software"]
+    name: str
+    provider: str | None
+    version: str | None
+    client: str | None
+    advisor_packet_id: str
+    prompt_sha256: str | None = None
+    request_id: str | None = None
+
+    def __post_init__(self) -> None:
+        if self.kind not in {"human", "model", "software"}:
+            raise ValueError("proposer kind must be human, model, or software")
+        if not isinstance(self.name, str) or not self.name or self.name != self.name.strip():
+            raise ValueError("name must be a non-empty trimmed string")
+        for field_name in ("provider", "version", "client", "request_id"):
+            value = getattr(self, field_name)
+            if value is not None and (
+                not isinstance(value, str) or not value or value != value.strip()
+            ):
+                raise ValueError(f"{field_name} must be a non-empty trimmed string or None")
+        if self.kind == "model" and self.provider is None:
+            raise ValueError("model provenance requires a provider")
+        if self.kind != "model" and self.provider is not None:
+            raise ValueError("provider is reserved for model provenance")
+        if (
+            not isinstance(self.advisor_packet_id, str)
+            or re.fullmatch(r"[0-9a-f]{64}", self.advisor_packet_id) is None
+        ):
+            raise ValueError("advisor_packet_id must be a lowercase SHA-256 digest")
+        if self.prompt_sha256 is not None and (
+            not isinstance(self.prompt_sha256, str)
+            or re.fullmatch(r"[0-9a-f]{64}", self.prompt_sha256) is None
+        ):
+            raise ValueError("prompt_sha256 must be a lowercase SHA-256 digest or None")
+
+    @classmethod
+    def from_record(
+        cls,
+        record: Mapping[str, object],
+        *,
+        expected_advisor_packet_id: str,
+    ) -> ProposerProvenance:
+        """Parse exact provenance and bind it to the advisor packet used."""
+
+        values = _mapping(record, "proposal provenance")
+        _exact_keys(
+            values,
+            {
+                "kind",
+                "name",
+                "provider",
+                "version",
+                "client",
+                "advisor_packet_id",
+                "prompt_sha256",
+                "request_id",
+            },
+            "proposal provenance",
+        )
+        packet_id = _digest(values["advisor_packet_id"], "provenance.advisor_packet_id")
+        if packet_id != expected_advisor_packet_id:
+            raise AutomationError(
+                "proposal.advisor_packet_mismatch",
+                "proposal provenance is not bound to this plan's advisor packet",
+            )
+        kind = _trimmed(values["kind"], "provenance.kind")
+        if kind not in {"human", "model", "software"}:
+            raise AutomationError(
+                "proposal.provenance_kind",
+                "provenance.kind must be human, model, or software",
+            )
+        try:
+            return cls(
+                kind,
+                _trimmed(values["name"], "provenance.name"),
+                _optional_trimmed(values["provider"], "provenance.provider"),
+                _optional_trimmed(values["version"], "provenance.version"),
+                _optional_trimmed(values["client"], "provenance.client"),
+                packet_id,
+                _optional_digest(values["prompt_sha256"], "provenance.prompt_sha256"),
+                _optional_trimmed(values["request_id"], "provenance.request_id"),
+            )
+        except (TypeError, ValueError) as error:
+            raise AutomationError(
+                "proposal.provenance",
+                "proposal provenance is invalid",
+                reason=str(error),
+            ) from error
+
+    def to_record(self) -> dict[str, object]:
+        return {
+            "kind": self.kind,
+            "name": self.name,
+            "provider": self.provider,
+            "version": self.version,
+            "client": self.client,
+            "advisor_packet_id": self.advisor_packet_id,
+            "prompt_sha256": self.prompt_sha256,
+            "request_id": self.request_id,
+        }
+
+
+@dataclass(frozen=True, slots=True)
 class RecipeProposal:
     """An untrusted external staged proposal after PhaseSmith validation."""
 
     plan_id: str
     proposal_id: str
-    generated_by: str
+    provenance: ProposerProvenance
     assumptions: tuple[str, ...]
     recipe: RietveldRecipe
 
@@ -334,12 +450,8 @@ class RecipeProposal:
             raise ValueError("plan_id must be a lowercase SHA-256 digest")
         if _IDENTIFIER.fullmatch(self.proposal_id) is None:
             raise ValueError("proposal_id must be a stable identifier")
-        if (
-            not isinstance(self.generated_by, str)
-            or not self.generated_by
-            or self.generated_by != self.generated_by.strip()
-        ):
-            raise ValueError("generated_by must be a non-empty trimmed string")
+        if not isinstance(self.provenance, ProposerProvenance):
+            raise TypeError("provenance must be ProposerProvenance")
         assumptions = tuple(self.assumptions)
         if any(
             not isinstance(item, str) or not item or item != item.strip() for item in assumptions
@@ -354,7 +466,7 @@ class RecipeProposal:
             "schema": RECIPE_PROPOSAL_SCHEMA,
             "plan_id": self.plan_id,
             "proposal_id": self.proposal_id,
-            "generated_by": self.generated_by,
+            "provenance": self.provenance.to_record(),
             "assumptions": list(self.assumptions),
             "recipe": {
                 "name": self.recipe.name,
@@ -376,6 +488,7 @@ class WorkflowRunResult:
 
     plan: WorkflowPlan
     recipe_source: Literal["deterministic", "external_proposal"]
+    proposal: RecipeProposal | None
     recipe: RietveldRecipe
     workflow: RietveldWorkflowResult
     output_directory: Path
@@ -389,6 +502,7 @@ class WorkflowRunResult:
             "plan_id": self.plan.plan_id,
             "workflow_id": self.plan.spec.workflow_id,
             "recipe_source": self.recipe_source,
+            "proposal": None if self.proposal is None else self.proposal.to_record(),
             "recipe": self.recipe.to_record(),
             "completed": self.workflow.completed,
             "workflow": self.workflow.to_record(),
@@ -441,6 +555,83 @@ def plan_workflow(spec: WorkflowSpec) -> WorkflowPlan:
     """Load and inspect a project without evaluating or refining it."""
 
     return _build_workflow_plan(spec, lineage=None)
+
+
+def load_workflow_plan(path: str | Path) -> WorkflowPlan:
+    """Build a current plan from either a workflow specification or stored plan."""
+
+    source = Path(path).resolve()
+    record = _read_json(source, max_bytes=16 * 1024 * 1024)
+    schema = record.get("schema")
+    if schema == WORKFLOW_SPEC_SCHEMA:
+        return plan_workflow(WorkflowSpec.from_record(record, base_directory=source.parent))
+    if schema != WORKFLOW_PLAN_SCHEMA:
+        raise AutomationError(
+            "plan.schema",
+            "input is neither a workflow specification nor a stored workflow plan",
+        )
+    specification = WorkflowSpec.from_record(
+        _mapping(record.get("workflow_spec"), "stored workflow specification"),
+        base_directory=source.parent,
+    )
+    lineage_record = record.get("lineage")
+    if lineage_record is None:
+        lineage = None
+    else:
+        values = _mapping(lineage_record, "workflow lineage")
+        _exact_keys(
+            values,
+            {"parent_plan_id", "source_result_sha256", "source_review_sha256"},
+            "workflow lineage",
+        )
+        lineage = WorkflowLineage(
+            _digest(values["parent_plan_id"], "lineage.parent_plan_id"),
+            _digest(values["source_result_sha256"], "lineage.source_result_sha256"),
+            _digest(values["source_review_sha256"], "lineage.source_review_sha256"),
+        )
+    rebuilt = _build_workflow_plan(specification, lineage=lineage)
+    if rebuilt.to_record() != record:
+        raise AutomationError(
+            "plan.stale",
+            "stored plan does not match the current project bytes and planning contract",
+            stored_plan_id=record.get("plan_id"),
+            current_plan_id=rebuilt.plan_id,
+        )
+    return rebuilt
+
+
+def advisor_packet(plan: WorkflowPlan) -> dict[str, object]:
+    """Return a path-free, prompt-ready packet for an external recipe advisor."""
+
+    if not isinstance(plan, WorkflowPlan):
+        raise TypeError("plan must be WorkflowPlan")
+    return _advisor_packet_from_record(plan.to_record())
+
+
+def _advisor_packet_from_record(record: Mapping[str, object]) -> dict[str, object]:
+    base = {
+        "schema": ADVISOR_PACKET_SCHEMA,
+        "packet_id": None,
+        "plan_id": record["plan_id"],
+        "lineage": record["lineage"],
+        "status": record["status"],
+        "readiness": record["readiness"],
+        "authorization": record["authorization"],
+        "advisor_context": record["advisor_context"],
+        "default_recipe": record["default_recipe"],
+        "external_recipe_proposal": record["external_recipe_proposal"],
+        "guidance": record["guidance"],
+        "proposal_schema": recipe_proposal_schema(),
+        "privacy": {
+            "contains_paths": False,
+            "contains_raw_pattern": False,
+            "contains_raw_cif": False,
+            "review_identifiers_before_remote_disclosure": True,
+        },
+    }
+    packet_id = hashlib.sha256(_canonical_json(base)).hexdigest()
+    base["packet_id"] = packet_id
+    return base
 
 
 def _build_workflow_plan(
@@ -502,7 +693,7 @@ def parse_recipe_proposal(
     values = _mapping(record, "recipe proposal")
     _exact_keys(
         values,
-        {"schema", "plan_id", "proposal_id", "generated_by", "assumptions", "recipe"},
+        {"schema", "plan_id", "proposal_id", "provenance", "assumptions", "recipe"},
         "recipe proposal",
     )
     if values["schema"] != RECIPE_PROPOSAL_SCHEMA:
@@ -515,7 +706,13 @@ def parse_recipe_proposal(
     proposal_id = _trimmed(values["proposal_id"], "proposal_id")
     if _IDENTIFIER.fullmatch(proposal_id) is None:
         raise AutomationError("proposal.id", "proposal_id must be a stable identifier")
-    generated_by = _trimmed(values["generated_by"], "generated_by")
+    provenance = ProposerProvenance.from_record(
+        _mapping(values["provenance"], "proposal provenance"),
+        expected_advisor_packet_id=_trimmed(
+            advisor_packet(plan)["packet_id"],
+            "advisor packet ID",
+        ),
+    )
     assumptions = _string_tuple(values["assumptions"], "assumptions", maximum=32)
     recipe_record = _mapping(values["recipe"], "recipe")
     _exact_keys(recipe_record, {"name", "stages"}, "recipe")
@@ -531,14 +728,14 @@ def parse_recipe_proposal(
         stages,
         "explicit",
         (
-            f"External proposal {proposal_id} generated by {generated_by}.",
+            f"External proposal {proposal_id} generated by {provenance.name} ({provenance.kind}).",
             *(f"Declared assumption: {item}" for item in assumptions),
         ),
     )
     project = _load_project(plan.spec.project_path)
     _verify_project_fingerprint(plan.spec.project_path, plan.project_fingerprint)
     _validate_external_recipe(recipe, plan, project)
-    return RecipeProposal(plan.plan_id, proposal_id, generated_by, assumptions, recipe)
+    return RecipeProposal(plan.plan_id, proposal_id, provenance, assumptions, recipe)
 
 
 def load_recipe_proposal(path: str | Path, plan: WorkflowPlan) -> RecipeProposal:
@@ -576,7 +773,13 @@ def lint_recipe_proposal(
                 evidence=error.details,
             )
         )
-        return _lint_record(plan.plan_id, None, findings, valid_contract=False)
+        return _lint_record(
+            plan.plan_id,
+            None,
+            findings,
+            valid_contract=False,
+            provenance=None,
+        )
 
     stages = proposal.recipe.stages
     maximum = plan.authorized_selection
@@ -715,6 +918,7 @@ def lint_recipe_proposal(
         proposal.proposal_id,
         findings,
         valid_contract=True,
+        provenance=proposal.provenance,
     )
 
 
@@ -741,11 +945,13 @@ def _lint_record(
     findings: list[dict[str, object]],
     *,
     valid_contract: bool,
+    provenance: ProposerProvenance | None,
 ) -> dict[str, object]:
     return {
         "schema": RECIPE_LINT_SCHEMA,
         "plan_id": plan_id,
         "proposal_id": proposal_id,
+        "provenance": None if provenance is None else provenance.to_record(),
         "valid_contract": valid_contract,
         "error_count": sum(item["severity"] == "error" for item in findings),
         "warning_count": sum(item["severity"] == "warning" for item in findings),
@@ -846,6 +1052,7 @@ def run_workflow(
     result = WorkflowRunResult(
         refreshed,
         source,
+        proposal,
         recipe,
         workflow,
         output,
@@ -996,6 +1203,45 @@ def review_workflow_output(path: str | Path) -> dict[str, object]:
         raise AutomationError(
             "review.output_mismatch",
             "terminal result path does not identify the reviewed numerical result",
+        )
+    recipe_source = _trimmed(terminal.get("recipe_source"), "workflow-result.recipe_source")
+    terminal_proposal = terminal.get("proposal")
+    if recipe_source == "deterministic":
+        if terminal_proposal is not None:
+            raise AutomationError(
+                "review.proposal_mismatch",
+                "a deterministic run must not declare an external proposal",
+            )
+        proposal_provenance = None
+    elif recipe_source == "external_proposal":
+        proposal_record = _mapping(terminal_proposal, "workflow-result.proposal")
+        _exact_keys(
+            proposal_record,
+            {"schema", "plan_id", "proposal_id", "provenance", "assumptions", "recipe"},
+            "workflow-result proposal",
+        )
+        if proposal_record.get("schema") != RECIPE_PROPOSAL_SCHEMA:
+            raise AutomationError(
+                "review.proposal_schema",
+                "the retained external proposal has an unsupported schema",
+            )
+        if proposal_record.get("plan_id") != plan_id:
+            raise AutomationError(
+                "review.proposal_mismatch",
+                "the retained external proposal is not bound to the reviewed plan",
+            )
+        expected_packet_id = _trimmed(
+            _advisor_packet_from_record(plan)["packet_id"],
+            "review advisor packet ID",
+        )
+        proposal_provenance = ProposerProvenance.from_record(
+            _mapping(proposal_record.get("provenance"), "workflow-result proposal provenance"),
+            expected_advisor_packet_id=expected_packet_id,
+        ).to_record()
+    else:
+        raise AutomationError(
+            "review.recipe_source",
+            "workflow-result.recipe_source must be deterministic or external_proposal",
         )
     declared_csv = terminal_outputs.get("pattern_csv")
     if declared_csv is None:
@@ -1242,6 +1488,7 @@ def review_workflow_output(path: str | Path) -> dict[str, object]:
         "status": "review_required",
         "completed": completed,
         "termination": termination,
+        "proposal_provenance": proposal_provenance,
         "metrics": metrics,
         "stages": stages,
         "parameter_movements": movements,
@@ -1275,6 +1522,26 @@ def replan_workflow(
 ) -> WorkflowPlan:
     """Create a new non-executing plan from the last saved accepted project."""
 
+    return _replan_workflow(
+        result_directory,
+        output_directory=output_directory,
+        workflow_id=workflow_id,
+        limits=limits,
+        outputs=outputs,
+        review=None,
+    )
+
+
+def _replan_workflow(
+    result_directory: str | Path,
+    *,
+    output_directory: str | Path,
+    workflow_id: str | None,
+    limits: RefinementLimits | None,
+    outputs: WorkflowOutputs | None,
+    review: Mapping[str, object] | None,
+) -> WorkflowPlan:
+
     source = Path(result_directory).resolve()
     next_output = Path(output_directory).resolve()
     if next_output == source or next_output.is_relative_to(source):
@@ -1304,7 +1571,7 @@ def replan_workflow(
             "replan.project_missing",
             "source workflow did not retain the expected accepted-state project",
         )
-    review = review_workflow_output(source)
+    reviewed = review_workflow_output(source) if review is None else dict(review)
     selected_id = (
         _next_workflow_id(previous_spec.workflow_id) if workflow_id is None else workflow_id
     )
@@ -1321,9 +1588,64 @@ def replan_workflow(
             _file_digest_record(terminal_path)["sha256"],
             "source workflow result digest",
         ),
-        _trimmed(review["review_id"], "source review digest"),
+        _trimmed(reviewed["review_id"], "source review digest"),
     )
     return _build_workflow_plan(spec, lineage=lineage)
+
+
+def prepare_review_packet(
+    result_directory: str | Path,
+    *,
+    output_directory: str | Path,
+    workflow_id: str | None = None,
+    limits: RefinementLimits | None = None,
+    outputs: WorkflowOutputs | None = None,
+) -> tuple[WorkflowPlan, dict[str, object]]:
+    """Create a child plan and path-free advisor packet from a prior run review."""
+
+    review = review_workflow_output(result_directory)
+    plan = _replan_workflow(
+        result_directory,
+        output_directory=output_directory,
+        workflow_id=workflow_id,
+        limits=limits,
+        outputs=outputs,
+        review=review,
+    )
+    sanitized_review = deepcopy(review)
+    sources = _mapping(sanitized_review.get("sources"), "review sources")
+    sanitized_sources: dict[str, object] = {}
+    for name, value in sources.items():
+        if value is None:
+            sanitized_sources[name] = None
+            continue
+        digest_record = _mapping(value, f"review source {name}")
+        sanitized_sources[name] = {
+            "size_bytes": digest_record.get("size_bytes"),
+            "sha256": digest_record.get("sha256"),
+        }
+    sanitized_review["sources"] = sanitized_sources
+    advisor = advisor_packet(plan)
+    base = {
+        "schema": REVIEW_PACKET_SCHEMA,
+        "packet_id": None,
+        "parent_plan_id": review["plan_id"],
+        "source_review_id": review["review_id"],
+        "review": sanitized_review,
+        "next_advisor_packet": advisor,
+        "instruction": (
+            "Use the review as evidence, propose only against next_advisor_packet, "
+            "and return one recipe proposal bound to its plan and packet IDs."
+        ),
+        "privacy": {
+            "contains_paths": False,
+            "contains_raw_pattern": False,
+            "contains_raw_cif": False,
+            "review_identifiers_before_remote_disclosure": True,
+        },
+    }
+    base["packet_id"] = hashlib.sha256(_canonical_json(base)).hexdigest()
+    return plan, base
 
 
 def _next_workflow_id(previous: str) -> str:
@@ -1623,6 +1945,40 @@ def workflow_spec_schema() -> dict[str, object]:
     }
 
 
+def _provenance_schema() -> dict[str, object]:
+    return {
+        "type": "object",
+        "additionalProperties": False,
+        "required": [
+            "kind",
+            "name",
+            "provider",
+            "version",
+            "client",
+            "advisor_packet_id",
+            "prompt_sha256",
+            "request_id",
+        ],
+        "properties": {
+            "kind": {"enum": ["human", "model", "software"]},
+            "name": {"type": "string", "minLength": 1},
+            "provider": {"type": ["string", "null"]},
+            "version": {"type": ["string", "null"]},
+            "client": {"type": ["string", "null"]},
+            "advisor_packet_id": _digest_schema(),
+            "prompt_sha256": _digest_schema(nullable=True),
+            "request_id": {"type": ["string", "null"]},
+        },
+        "allOf": [
+            {
+                "if": {"properties": {"kind": {"const": "model"}}},
+                "then": {"properties": {"provider": {"type": "string"}}},
+                "else": {"properties": {"provider": {"type": "null"}}},
+            }
+        ],
+    }
+
+
 def recipe_proposal_schema() -> dict[str, object]:
     """Return the JSON Schema advertised to an external recipe advisor."""
 
@@ -1669,7 +2025,7 @@ def recipe_proposal_schema() -> dict[str, object]:
             "schema",
             "plan_id",
             "proposal_id",
-            "generated_by",
+            "provenance",
             "assumptions",
             "recipe",
         ],
@@ -1677,7 +2033,7 @@ def recipe_proposal_schema() -> dict[str, object]:
             "schema": {"const": RECIPE_PROPOSAL_SCHEMA},
             "plan_id": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
             "proposal_id": {"type": "string", "pattern": _IDENTIFIER.pattern},
-            "generated_by": {"type": "string", "minLength": 1},
+            "provenance": _provenance_schema(),
             "assumptions": {
                 "type": "array",
                 "maxItems": 32,
@@ -1715,6 +2071,269 @@ def recipe_proposal_schema() -> dict[str, object]:
     }
 
 
+def automation_schema_names() -> tuple[str, ...]:
+    """Return canonical names for every versioned automation JSON contract."""
+
+    return (
+        "workflow-spec",
+        "workflow-plan",
+        "recipe-proposal",
+        "advisor-context",
+        "advisor-packet",
+        "recipe-lint",
+        "workflow-review",
+        "review-packet",
+        "workflow-result",
+        "resume-result",
+        "lineage",
+        "automation-error",
+    )
+
+
+def automation_schema(contract: str) -> dict[str, object]:
+    """Return the JSON Schema for one named automation input or output contract."""
+
+    aliases = {"workflow": "workflow-spec", "recipe": "recipe-proposal"}
+    name = aliases.get(contract, contract)
+    if name == "workflow-spec":
+        return workflow_spec_schema()
+    if name == "recipe-proposal":
+        return recipe_proposal_schema()
+    builders = {
+        "workflow-plan": _workflow_plan_schema,
+        "advisor-context": _advisor_context_schema,
+        "advisor-packet": _advisor_packet_schema,
+        "recipe-lint": _recipe_lint_schema,
+        "workflow-review": _workflow_review_schema,
+        "review-packet": _review_packet_schema,
+        "workflow-result": _workflow_result_schema,
+        "resume-result": _resume_result_schema,
+        "lineage": _lineage_schema,
+        "automation-error": _automation_error_schema,
+    }
+    builder = builders.get(name)
+    if builder is None:
+        raise AutomationError(
+            "schema.unknown",
+            "unknown automation schema contract",
+            contract=contract,
+            available=list(automation_schema_names()),
+        )
+    return builder()
+
+
+def _schema_record(
+    title: str,
+    name: str,
+    properties: Mapping[str, object],
+) -> dict[str, object]:
+    return {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "$id": f"https://phasesmith.org/schema/{name}-v1.json",
+        "title": title,
+        "type": "object",
+        "additionalProperties": False,
+        "required": list(properties),
+        "properties": dict(properties),
+    }
+
+
+def _digest_schema(*, nullable: bool = False) -> dict[str, object]:
+    return {
+        "type": ["string", "null"] if nullable else "string",
+        "pattern": "^[0-9a-f]{64}$",
+    }
+
+
+def _lineage_schema() -> dict[str, object]:
+    return _schema_record(
+        "phasesmith.workflow-lineage.v1",
+        "workflow-lineage",
+        {
+            "parent_plan_id": _digest_schema(),
+            "source_result_sha256": _digest_schema(),
+            "source_review_sha256": _digest_schema(),
+        },
+    )
+
+
+def _advisor_context_schema() -> dict[str, object]:
+    return _schema_record(
+        ADVISOR_CONTEXT_SCHEMA,
+        "advisor-context",
+        {
+            "schema": {"const": ADVISOR_CONTEXT_SCHEMA},
+            "privacy": {"type": "object"},
+            "pattern": {"type": "object"},
+            "experiment": {"type": "object"},
+            "phases": {"type": "array", "items": {"type": "object"}},
+            "background": {"type": ["object", "null"]},
+            "parameters": {"type": "array", "items": {"type": "object"}},
+            "constraints": {"type": "array", "items": {"type": "object"}},
+            "limitations": {"type": "array", "items": {"type": "string"}},
+        },
+    )
+
+
+def _workflow_plan_schema() -> dict[str, object]:
+    return _schema_record(
+        WORKFLOW_PLAN_SCHEMA,
+        "workflow-plan",
+        {
+            "schema": {"const": WORKFLOW_PLAN_SCHEMA},
+            "plan_id": _digest_schema(),
+            "workflow_spec": workflow_spec_schema(),
+            "project": {"type": "object"},
+            "lineage": {"oneOf": [_lineage_schema(), {"type": "null"}]},
+            "status": {"enum": ["blocked", "ready_for_approval"]},
+            "readiness": {"type": "object"},
+            "authorization": {"type": "object"},
+            "advisor_context": _advisor_context_schema(),
+            "default_recipe": {"type": "object"},
+            "external_recipe_proposal": {"type": "object"},
+            "guidance": {"type": "array", "items": {"type": "string"}},
+            "approval": {"type": "object"},
+        },
+    )
+
+
+def _advisor_packet_schema() -> dict[str, object]:
+    return _schema_record(
+        ADVISOR_PACKET_SCHEMA,
+        "advisor-packet",
+        {
+            "schema": {"const": ADVISOR_PACKET_SCHEMA},
+            "packet_id": _digest_schema(),
+            "plan_id": _digest_schema(),
+            "lineage": {"oneOf": [_lineage_schema(), {"type": "null"}]},
+            "status": {"enum": ["blocked", "ready_for_approval"]},
+            "readiness": {"type": "object"},
+            "authorization": {"type": "object"},
+            "advisor_context": _advisor_context_schema(),
+            "default_recipe": {"type": "object"},
+            "external_recipe_proposal": {"type": "object"},
+            "guidance": {"type": "array", "items": {"type": "string"}},
+            "proposal_schema": recipe_proposal_schema(),
+            "privacy": {"type": "object"},
+        },
+    )
+
+
+def _recipe_lint_schema() -> dict[str, object]:
+    return _schema_record(
+        RECIPE_LINT_SCHEMA,
+        "recipe-lint",
+        {
+            "schema": {"const": RECIPE_LINT_SCHEMA},
+            "plan_id": _digest_schema(),
+            "proposal_id": {"type": ["string", "null"]},
+            "provenance": {
+                "oneOf": [_provenance_schema(), {"type": "null"}],
+            },
+            "valid_contract": {"type": "boolean"},
+            "error_count": {"type": "integer", "minimum": 0},
+            "warning_count": {"type": "integer", "minimum": 0},
+            "findings": {"type": "array", "items": {"type": "object"}},
+        },
+    )
+
+
+def _workflow_review_schema() -> dict[str, object]:
+    return _schema_record(
+        WORKFLOW_REVIEW_SCHEMA,
+        "workflow-review",
+        {
+            "schema": {"const": WORKFLOW_REVIEW_SCHEMA},
+            "review_id": _digest_schema(),
+            "plan_id": _digest_schema(),
+            "workflow_id": {"type": "string"},
+            "status": {"const": "review_required"},
+            "completed": {"type": "boolean"},
+            "termination": {"type": "string"},
+            "proposal_provenance": {
+                "oneOf": [_provenance_schema(), {"type": "null"}],
+            },
+            "metrics": {"type": "object"},
+            "stages": {"type": "array", "items": {"type": "object"}},
+            "parameter_movements": {"type": "array", "items": {"type": "object"}},
+            "bound_contacts": {"type": "array", "items": {"type": "object"}},
+            "jacobian_rank": {"type": ["integer", "null"]},
+            "parameter_count": {"type": "integer", "minimum": 0},
+            "free_parameter_count": {"type": "integer", "minimum": 0},
+            "unresolved_correlations": {"type": "array", "items": {"type": "object"}},
+            "residual": {"type": ["object", "null"]},
+            "findings": {"type": "array", "items": {"type": "object"}},
+            "sources": {"type": "object"},
+        },
+    )
+
+
+def _review_packet_schema() -> dict[str, object]:
+    return _schema_record(
+        REVIEW_PACKET_SCHEMA,
+        "review-packet",
+        {
+            "schema": {"const": REVIEW_PACKET_SCHEMA},
+            "packet_id": _digest_schema(),
+            "parent_plan_id": _digest_schema(),
+            "source_review_id": _digest_schema(),
+            "review": _workflow_review_schema(),
+            "next_advisor_packet": _advisor_packet_schema(),
+            "instruction": {"type": "string", "minLength": 1},
+            "privacy": {"type": "object"},
+        },
+    )
+
+
+def _workflow_result_schema() -> dict[str, object]:
+    return _schema_record(
+        WORKFLOW_RESULT_SCHEMA,
+        "workflow-result",
+        {
+            "schema": {"const": WORKFLOW_RESULT_SCHEMA},
+            "plan_id": _digest_schema(),
+            "workflow_id": {"type": "string"},
+            "recipe_source": {"enum": ["deterministic", "external_proposal"]},
+            "proposal": {
+                "oneOf": [recipe_proposal_schema(), {"type": "null"}],
+            },
+            "recipe": {"type": "object"},
+            "completed": {"type": "boolean"},
+            "workflow": {"type": "object"},
+            "outputs": {"type": "object"},
+        },
+    )
+
+
+def _resume_result_schema() -> dict[str, object]:
+    return _schema_record(
+        RESUME_RESULT_SCHEMA,
+        "resume-result",
+        {
+            "schema": {"const": RESUME_RESULT_SCHEMA},
+            "plan_id": _digest_schema(),
+            "workflow_id": {"type": "string"},
+            "action": {"const": "resume"},
+            "termination": {"type": "string"},
+            "result": {"type": "object"},
+            "outputs": {"type": "object"},
+        },
+    )
+
+
+def _automation_error_schema() -> dict[str, object]:
+    return _schema_record(
+        AUTOMATION_ERROR_SCHEMA,
+        "automation-error",
+        {
+            "schema": {"const": AUTOMATION_ERROR_SCHEMA},
+            "code": {"type": "string", "pattern": _IDENTIFIER.pattern},
+            "message": {"type": "string", "minLength": 1},
+            "details": {"type": "object"},
+        },
+    )
+
+
 def _mapping(value: object, name: str) -> dict[str, object]:
     if not isinstance(value, Mapping) or not all(isinstance(key, str) for key in value):
         raise AutomationError("record.type", f"{name} must be a JSON object")
@@ -1736,6 +2355,21 @@ def _trimmed(value: object, name: str) -> str:
     if not isinstance(value, str) or not value or value != value.strip():
         raise AutomationError("record.string", f"{name} must be a non-empty trimmed string")
     return value
+
+
+def _optional_trimmed(value: object, name: str) -> str | None:
+    return None if value is None else _trimmed(value, name)
+
+
+def _digest(value: object, name: str) -> str:
+    text = _trimmed(value, name)
+    if re.fullmatch(r"[0-9a-f]{64}", text) is None:
+        raise AutomationError("record.digest", f"{name} must be a lowercase SHA-256 digest")
+    return text
+
+
+def _optional_digest(value: object, name: str) -> str | None:
+    return None if value is None else _digest(value, name)
 
 
 def _boolean(value: object, name: str) -> bool:
@@ -2017,7 +2651,7 @@ def _advisor_context(project: RietveldProject) -> AdvisorContext:
         else {
             "kind": type(background).__name__,
             "background_id": background.background_id,
-            "parameter_names": list(background.parameter_names()),
+            "parameter_names": list(background.parameter_names),
             "coefficient_count": len(background.coefficients),
         }
     )

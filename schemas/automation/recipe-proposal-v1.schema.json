@@ -1,0 +1,210 @@
+{
+  "$id": "https://phasesmith.org/schema/recipe-proposal-v1.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "assumptions": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "maxItems": 32,
+      "type": "array"
+    },
+    "plan_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "proposal_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$",
+      "type": "string"
+    },
+    "provenance": {
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "else": {
+            "properties": {
+              "provider": {
+                "type": "null"
+              }
+            }
+          },
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "model"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "provider": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      ],
+      "properties": {
+        "advisor_packet_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "client": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "kind": {
+          "enum": [
+            "human",
+            "model",
+            "software"
+          ]
+        },
+        "name": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "prompt_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "provider": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "request_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "version": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "name",
+        "provider",
+        "version",
+        "client",
+        "advisor_packet_id",
+        "prompt_sha256",
+        "request_id"
+      ],
+      "type": "object"
+    },
+    "recipe": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "stages": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "name": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "rationale": {
+                "items": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "maxItems": 16,
+                "minItems": 1,
+                "type": "array"
+              },
+              "selection": {
+                "additionalProperties": false,
+                "properties": {
+                  "background": {
+                    "type": "boolean"
+                  },
+                  "coordinates": {
+                    "type": "boolean"
+                  },
+                  "instrument_parameters": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array",
+                    "uniqueItems": true
+                  },
+                  "lattice": {
+                    "type": "boolean"
+                  },
+                  "occupancy": {
+                    "type": "boolean"
+                  },
+                  "phase_scale": {
+                    "type": "boolean"
+                  },
+                  "sample_physics": {
+                    "type": "boolean"
+                  },
+                  "u_iso": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "phase_scale",
+                  "lattice",
+                  "coordinates",
+                  "occupancy",
+                  "u_iso",
+                  "sample_physics",
+                  "instrument_parameters",
+                  "background"
+                ],
+                "type": "object"
+              }
+            },
+            "required": [
+              "name",
+              "selection",
+              "rationale"
+            ],
+            "type": "object"
+          },
+          "maxItems": 12,
+          "minItems": 1,
+          "type": "array"
+        }
+      },
+      "required": [
+        "name",
+        "stages"
+      ],
+      "type": "object"
+    },
+    "schema": {
+      "const": "phasesmith.recipe-proposal.v1"
+    }
+  },
+  "required": [
+    "schema",
+    "plan_id",
+    "proposal_id",
+    "provenance",
+    "assumptions",
+    "recipe"
+  ],
+  "title": "phasesmith.recipe-proposal.v1",
+  "type": "object"
+}

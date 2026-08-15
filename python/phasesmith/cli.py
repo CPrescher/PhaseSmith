@@ -11,18 +11,21 @@ from typing import TextIO, cast
 
 from .automation import (
     AutomationError,
+    advisor_packet,
+    automation_schema,
+    automation_schema_names,
     inspect_cif_file,
     inspect_powder_file,
     lint_recipe_proposal_file,
     load_recipe_proposal,
+    load_workflow_plan,
     load_workflow_spec,
     plan_workflow,
-    recipe_proposal_schema,
+    prepare_review_packet,
     replan_workflow,
     resume_workflow,
     review_workflow_output,
     run_workflow,
-    workflow_spec_schema,
     write_workflow_plan,
 )
 from .io.powder import PowderFormat
@@ -41,7 +44,10 @@ def _parser() -> _JsonArgumentParser:
     commands = parser.add_subparsers(dest="command", required=True)
 
     schema = commands.add_parser("schema", help="print an automation JSON Schema")
-    schema.add_argument("contract", choices=("workflow", "recipe"))
+    schema.add_argument(
+        "contract",
+        choices=(*automation_schema_names(), "workflow", "recipe"),
+    )
 
     pattern = commands.add_parser(
         "inspect-pattern",
@@ -68,14 +74,20 @@ def _parser() -> _JsonArgumentParser:
     plan.add_argument("--output")
     plan.add_argument("--overwrite", action="store_true")
 
+    advisor = commands.add_parser(
+        "advisor-packet",
+        help="emit a sanitized prompt-ready packet for an external recipe advisor",
+    )
+    advisor.add_argument("workflow", help="a workflow specification or stored plan")
+
     run = commands.add_parser("run", help="execute an explicitly approved workflow plan")
-    run.add_argument("spec")
+    run.add_argument("workflow", help="a workflow specification or stored plan")
     run.add_argument("--approve", required=True, metavar="PLAN_ID")
     run.add_argument("--proposal", help="validated human- or AI-authored recipe JSON")
     run.add_argument("--overwrite", action="store_true")
 
     resume = commands.add_parser("resume", help="continue an explicitly approved checkpoint")
-    resume.add_argument("spec")
+    resume.add_argument("workflow", help="a workflow specification or stored plan")
     resume.add_argument("--approve", required=True, metavar="PLAN_ID")
     resume.add_argument("--overwrite", action="store_true")
 
@@ -83,7 +95,7 @@ def _parser() -> _JsonArgumentParser:
         "lint-recipe",
         help="validate and scientifically lint an external recipe proposal",
     )
-    lint.add_argument("spec")
+    lint.add_argument("workflow", help="a workflow specification or stored plan")
     lint.add_argument("proposal")
 
     review = commands.add_parser(
@@ -101,6 +113,16 @@ def _parser() -> _JsonArgumentParser:
     replan.add_argument("--workflow-id")
     replan.add_argument("--plan-output")
     replan.add_argument("--overwrite", action="store_true")
+
+    review_packet = commands.add_parser(
+        "review-packet",
+        help="create a child plan and sanitized review packet for an external advisor",
+    )
+    review_packet.add_argument("path", help="a workflow output directory")
+    review_packet.add_argument("--output-directory", required=True)
+    review_packet.add_argument("--workflow-id")
+    review_packet.add_argument("--plan-output", required=True)
+    review_packet.add_argument("--overwrite", action="store_true")
 
     report = commands.add_parser("report", help="print a completed automation audit record")
     report.add_argument("path", help="an output directory or terminal result JSON file")
@@ -162,9 +184,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         exit_status = 0
         args = _parser().parse_args(argv)
         if args.command == "schema":
-            result = (
-                workflow_spec_schema() if args.contract == "workflow" else recipe_proposal_schema()
-            )
+            result = automation_schema(args.contract)
         elif args.command == "inspect-pattern":
             result = inspect_powder_file(
                 args.path,
@@ -182,8 +202,10 @@ def main(argv: Sequence[str] | None = None) -> int:
             if args.output is not None:
                 write_workflow_plan(result, args.output, overwrite=args.overwrite)
             result = result.to_record()
+        elif args.command == "advisor-packet":
+            result = advisor_packet(load_workflow_plan(args.workflow))
         elif args.command == "run":
-            plan = plan_workflow(load_workflow_spec(args.spec))
+            plan = load_workflow_plan(args.workflow)
             proposal = None if args.proposal is None else load_recipe_proposal(args.proposal, plan)
             run_result = run_workflow(
                 plan,
@@ -194,7 +216,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             result = run_result.to_record()
             exit_status = 0 if run_result.workflow.completed else 3
         elif args.command == "resume":
-            plan = plan_workflow(load_workflow_spec(args.spec))
+            plan = load_workflow_plan(args.workflow)
             resume_result = resume_workflow(
                 plan,
                 approval_plan_id=args.approve,
@@ -207,7 +229,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 else 3
             )
         elif args.command == "lint-recipe":
-            plan = plan_workflow(load_workflow_spec(args.spec))
+            plan = load_workflow_plan(args.workflow)
             result = lint_recipe_proposal_file(args.proposal, plan)
             exit_status = 0 if result["valid_contract"] else 3
         elif args.command == "review":
@@ -221,6 +243,13 @@ def main(argv: Sequence[str] | None = None) -> int:
             if args.plan_output is not None:
                 write_workflow_plan(replanned, args.plan_output, overwrite=args.overwrite)
             result = replanned.to_record()
+        elif args.command == "review-packet":
+            replanned, result = prepare_review_packet(
+                args.path,
+                output_directory=args.output_directory,
+                workflow_id=args.workflow_id,
+            )
+            write_workflow_plan(replanned, args.plan_output, overwrite=args.overwrite)
         else:
             result = _report_record(args.path)
     except AutomationError as error:

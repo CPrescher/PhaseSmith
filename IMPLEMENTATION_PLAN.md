@@ -1693,9 +1693,22 @@ parent audit directory and a new plan ID and
 records its parent plan, terminal-result digest, and review digest. It does not
 reuse approval or place an AI callback inside the solver.
 
+The final 0.5.0 advisor-entrypoint slice adds path-free, digest-identified
+advisor packets and review-to-next-plan packets. Proposal provenance is a
+strict human/model/software record bound to the exact advisor packet, with
+provider/model name, optional snapshot/version, client, prompt digest, and
+request ID rather than an unaudited free-form generator string. Stored plans
+are reloaded by rebuilding them from current project bytes and comparing the
+complete record, which makes lineage-bound child plans directly executable by
+the normal run/lint/resume CLI commands. Every automation input/output now has
+a CLI-accessible and checked-in JSON Schema. A compact repository agent skill,
+runnable offline two-cycle example, and five synthetic scientific-risk
+evaluation cases cover the complete external-advisor workflow without adding
+a provider SDK.
+
 The provider-neutral `phasesmith` CLI exposes `schema`, `inspect-pattern`,
-`inspect-cif`, `plan`, `lint-recipe`, `run`, `resume`, `review`, `replan`, and
-`report`. There is no model SDK,
+`inspect-cif`, `plan`, `advisor-packet`, `lint-recipe`, `run`, `resume`,
+`review`, `review-packet`, `replan`, and `report`. There is no model SDK,
 network callback, prompt execution, or hidden adaptive decision inside the
 solver. Guidance documents the conservative order—scale/background, positions,
 structural intensity terms, then profile/sample terms—and requires joint review

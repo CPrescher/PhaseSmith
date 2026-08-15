@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import replace
+from pathlib import Path
 
 import numpy as np
 import phasesmith
@@ -9,6 +10,7 @@ import pytest
 from phasesmith import automation
 from phasesmith.cli import main as cli_main
 from phasesmith.refinement import (
+    PolynomialBackground,
     RefinementLimits,
     RietveldOptions,
     RietveldParameterSelection,
@@ -85,15 +87,89 @@ def _spec(tmp_path) -> automation.WorkflowSpec:
     )
 
 
+def _broad_spec(tmp_path) -> automation.WorkflowSpec:
+    x = np.linspace(15.0, 100.0, 801)
+    instrument = phasesmith.ConstantWavelengthInstrument(
+        1.5406, 2.0e-4, -1.0e-4, 2.0e-4, 1.5e-3, 3.0e-3
+    )
+    experiment = phasesmith.ConstantWavelengthExperiment.x_ray(
+        instrument,
+        geometry=phasesmith.BraggBrentanoGeometry(240.0),
+    )
+    selection = RietveldParameterSelection(
+        phase_scale=True,
+        lattice=True,
+        occupancy=True,
+        u_iso=True,
+        instrument_parameters=(
+            "zero_shift_deg",
+            "sample_displacement_mm",
+            "u_deg2",
+        ),
+        background=True,
+    )
+    request = rietveld.RietveldInput.from_cif(
+        phasesmith.PowderPattern(x, observed_y=np.ones_like(x)),
+        experiment,
+        P1_CIF,
+        phase_id="automation-evaluation",
+        selection=selection,
+        intensity_correction=phasesmith.BraggBrentanoUnpolarizedLp(1.5406),
+        background=PolynomialBackground("evaluation-background", (1.0, 0.0)),
+    )
+    project = phasesmith.RietveldProject(
+        request,
+        RietveldOptions(
+            limits=RefinementLimits(max_iterations=10, max_evaluations=100),
+            estimate_covariance=False,
+        ),
+    )
+    source = project.save(tmp_path / "evaluation-project")
+    return automation.WorkflowSpec(
+        "automation-evaluation",
+        source,
+        tmp_path / "evaluation-output",
+        RefinementLimits(10, 100, None, 10),
+    )
+
+
+def _selection_from_active(active: list[str]) -> RietveldParameterSelection:
+    values = set(active)
+    return RietveldParameterSelection(
+        phase_scale="phase_scale" in values,
+        lattice="lattice" in values,
+        coordinates="coordinates" in values,
+        occupancy="occupancy" in values,
+        u_iso="u_iso" in values,
+        sample_physics="sample_physics" in values,
+        instrument_parameters=tuple(
+            name
+            for name in ("zero_shift_deg", "sample_displacement_mm", "u_deg2")
+            if f"instrument:{name}" in values
+        ),
+        background="background" in values,
+    )
+
+
 def _proposal_record(plan: automation.WorkflowPlan) -> dict[str, object]:
     maximum = plan.to_record()["authorization"]["maximum_selection"]
     scale_only = dict(maximum)
     scale_only["instrument_parameters"] = []
+    packet = automation.advisor_packet(plan)
     return {
         "schema": automation.RECIPE_PROPOSAL_SCHEMA,
         "plan_id": plan.plan_id,
         "proposal_id": "gpt-guided-v1",
-        "generated_by": "gpt-5.6-sol",
+        "provenance": {
+            "kind": "model",
+            "name": "gpt-5.6-sol",
+            "provider": "OpenAI",
+            "version": None,
+            "client": "Codex",
+            "advisor_packet_id": packet["packet_id"],
+            "prompt_sha256": "1" * 64,
+            "request_id": None,
+        },
         "assumptions": ["The persisted project already encodes the physical model."],
         "recipe": {
             "name": "scale-then-position",
@@ -135,6 +211,11 @@ def test_plan_is_read_only_stable_and_discloses_ai_guidance(tmp_path) -> None:
         "zero_shift_deg",
     }
     assert str(tmp_path) not in json.dumps(context)
+    packet = automation.advisor_packet(first)
+    assert packet["schema"] == automation.ADVISOR_PACKET_SCHEMA
+    assert packet["plan_id"] == first.plan_id
+    assert packet["proposal_schema"]["title"] == automation.RECIPE_PROPOSAL_SCHEMA
+    assert str(tmp_path) not in json.dumps(packet)
     guidance = record["guidance"]
     assert any("lower Rwp alone" in item for item in guidance)
     assert not spec.output_directory.exists()
@@ -146,7 +227,8 @@ def test_external_recipe_is_plan_bound_cumulative_and_fully_authorized(tmp_path)
 
     proposal = automation.parse_recipe_proposal(record, plan)
 
-    assert proposal.generated_by == "gpt-5.6-sol"
+    assert proposal.provenance.name == "gpt-5.6-sol"
+    assert proposal.provenance.provider == "OpenAI"
     assert proposal.recipe.stages[-1].selection == plan.authorized_selection
     assert automation.parse_recipe_proposal(proposal.to_record(), plan) == proposal
 
@@ -155,6 +237,12 @@ def test_external_recipe_is_plan_bound_cumulative_and_fully_authorized(tmp_path)
     with pytest.raises(automation.AutomationError, match="not bound") as error:
         automation.parse_recipe_proposal(wrong_plan, plan)
     assert error.value.code == "proposal.plan_mismatch"
+
+    wrong_packet = _proposal_record(plan)
+    wrong_packet["provenance"]["advisor_packet_id"] = "0" * 64
+    with pytest.raises(automation.AutomationError) as packet_error:
+        automation.parse_recipe_proposal(wrong_packet, plan)
+    assert packet_error.value.code == "proposal.advisor_packet_mismatch"
 
     non_cumulative = _proposal_record(plan)
     stages = non_cumulative["recipe"]["stages"]
@@ -172,14 +260,68 @@ def test_recipe_lint_is_structured_and_preserves_strict_validation(tmp_path) -> 
     assert lint["schema"] == automation.RECIPE_LINT_SCHEMA
     assert lint["valid_contract"] is True
     assert lint["error_count"] == 0
+    assert lint["provenance"]["name"] == "gpt-5.6-sol"
     assert any(item["code"] == "recipe.contract_valid" for item in lint["findings"])
 
     invalid = dict(record)
     invalid["plan_id"] = "0" * 64
     rejected = automation.lint_recipe_proposal(invalid, plan)
     assert rejected["valid_contract"] is False
+    assert rejected["provenance"] is None
     assert rejected["error_count"] == 1
     assert rejected["findings"][0]["code"] == "proposal.plan_mismatch"
+
+
+def test_scientific_recipe_evaluation_suite_flags_known_risks(tmp_path) -> None:
+    suite_path = Path(__file__).parent / "data" / "ai_recipe_evaluations.json"
+    suite = json.loads(suite_path.read_text(encoding="utf-8"))
+    plan = automation.plan_workflow(_broad_spec(tmp_path))
+    packet_id = automation.advisor_packet(plan)["packet_id"]
+
+    assert suite["schema"] == "phasesmith.ai-recipe-evaluation-suite.v1"
+    assert len(suite["cases"]) >= 5
+    for case in suite["cases"]:
+        proposal = {
+            "schema": automation.RECIPE_PROPOSAL_SCHEMA,
+            "plan_id": plan.plan_id,
+            "proposal_id": case["case_id"],
+            "provenance": {
+                "kind": "software",
+                "name": "PhaseSmith evaluation suite",
+                "provider": None,
+                "version": "1",
+                "client": "pytest",
+                "advisor_packet_id": packet_id,
+                "prompt_sha256": None,
+                "request_id": case["case_id"],
+            },
+            "assumptions": [case["description"]],
+            "recipe": {
+                "name": case["case_id"],
+                "stages": [
+                    {
+                        "name": stage["name"],
+                        "selection": {
+                            "phase_scale": selected.phase_scale,
+                            "lattice": selected.lattice,
+                            "coordinates": selected.coordinates,
+                            "occupancy": selected.occupancy,
+                            "u_iso": selected.u_iso,
+                            "sample_physics": selected.sample_physics,
+                            "instrument_parameters": list(selected.instrument_parameters),
+                            "background": selected.background,
+                        },
+                        "rationale": [case["description"]],
+                    }
+                    for stage in case["stages"]
+                    for selected in (_selection_from_active(stage["active"]),)
+                ],
+            },
+        }
+        lint = automation.lint_recipe_proposal(proposal, plan)
+        codes = {item["code"] for item in lint["findings"]}
+        assert lint["valid_contract"] is True, case["case_id"]
+        assert set(case["expected_finding_codes"]).issubset(codes), case["case_id"]
 
 
 def test_run_revalidates_directly_constructed_external_proposals(tmp_path) -> None:
@@ -191,7 +333,14 @@ def test_run_revalidates_directly_constructed_external_proposals(tmp_path) -> No
     bypass = automation.RecipeProposal(
         plan.plan_id,
         "attempted-bypass",
-        "direct-constructor",
+        automation.ProposerProvenance(
+            "software",
+            "direct-constructor",
+            None,
+            None,
+            None,
+            automation.advisor_packet(plan)["packet_id"],
+        ),
         (),
         bypass_recipe,
     )
@@ -255,12 +404,17 @@ def test_validated_ai_recipe_runs_and_writes_auditable_outputs(tmp_path, capsys)
     assert completed.saved_project is not None and completed.saved_project.is_dir()
     terminal = json.loads((spec.output_directory / "workflow-result.json").read_text())
     assert terminal["plan_id"] == plan.plan_id
+    assert terminal["proposal"]["provenance"]["name"] == "gpt-5.6-sol"
     assert terminal["recipe"]["planner_notes"][0].startswith("External proposal")
 
     review = automation.review_workflow_output(spec.output_directory)
     assert review["schema"] == automation.WORKFLOW_REVIEW_SCHEMA
     assert review["plan_id"] == plan.plan_id
     assert review["status"] == "review_required"
+    assert (
+        review["proposal_provenance"]["advisor_packet_id"]
+        == automation.advisor_packet(plan)["packet_id"]
+    )
     assert review["residual"]["included_sample_count"] == 3_401
     assert len(review["review_id"]) == 64
     assert automation.review_workflow_output(spec.output_directory) == review
@@ -286,6 +440,43 @@ def test_validated_ai_recipe_runs_and_writes_auditable_outputs(tmp_path, capsys)
     cli_replan = json.loads(capsys.readouterr().out)
     assert cli_replan["lineage"]["parent_plan_id"] == plan.plan_id
     assert json.loads(cli_plan_path.read_text())["plan_id"] == cli_replan["plan_id"]
+
+    assert (
+        cli_main(
+            [
+                "run",
+                str(cli_plan_path),
+                "--approve",
+                cli_replan["plan_id"],
+            ]
+        )
+        == 0
+    )
+    cli_child_result = json.loads(capsys.readouterr().out)
+    assert cli_child_result["plan_id"] == cli_replan["plan_id"]
+
+    packet_plan_path = tmp_path / "packet-next-plan.json"
+    assert (
+        cli_main(
+            [
+                "review-packet",
+                str(spec.output_directory),
+                "--output-directory",
+                str(tmp_path / "packet-next-output"),
+                "--plan-output",
+                str(packet_plan_path),
+            ]
+        )
+        == 0
+    )
+    review_packet = json.loads(capsys.readouterr().out)
+    assert review_packet["schema"] == automation.REVIEW_PACKET_SCHEMA
+    assert review_packet["review"]["proposal_provenance"]["name"] == "gpt-5.6-sol"
+    assert (
+        review_packet["next_advisor_packet"]["plan_id"]
+        == json.loads(packet_plan_path.read_text())["plan_id"]
+    )
+    assert str(tmp_path) not in json.dumps(review_packet)
 
     replanned = automation.replan_workflow(
         spec.output_directory,
@@ -417,6 +608,15 @@ def test_cli_plans_json_and_returns_structured_approval_errors(tmp_path, capsys)
     assert planned["status"] == "ready_for_approval"
     assert len(planned["plan_id"]) == 64
 
+    assert cli_main(["advisor-packet", str(spec_path)]) == 0
+    packet = json.loads(capsys.readouterr().out)
+    assert packet["plan_id"] == planned["plan_id"]
+    assert str(tmp_path) not in json.dumps(packet)
+
+    assert cli_main(["schema", "review-packet"]) == 0
+    schema = json.loads(capsys.readouterr().out)
+    assert schema["title"] == automation.REVIEW_PACKET_SCHEMA
+
     proposal_path = tmp_path / "proposal.json"
     proposal = _proposal_record(automation.plan_workflow(automation.load_workflow_spec(spec_path)))
     proposal_path.write_text(json.dumps(proposal), encoding="utf-8")
@@ -432,3 +632,27 @@ def test_cli_plans_json_and_returns_structured_approval_errors(tmp_path, capsys)
     assert cli_main(["run", str(spec_path)]) == 2
     arguments = json.loads(capsys.readouterr().err)
     assert arguments["code"] == "cli.arguments"
+
+
+def test_every_automation_contract_has_a_versioned_schema() -> None:
+    names = automation.automation_schema_names()
+
+    assert {
+        "workflow-plan",
+        "advisor-context",
+        "advisor-packet",
+        "recipe-lint",
+        "workflow-review",
+        "review-packet",
+        "workflow-result",
+        "resume-result",
+        "lineage",
+        "automation-error",
+    }.issubset(names)
+    for name in names:
+        schema = automation.automation_schema(name)
+        assert schema["$schema"] == "https://json-schema.org/draft/2020-12/schema"
+        assert schema["type"] == "object"
+        assert schema["additionalProperties"] is False
+        stored = Path(__file__).parents[1] / "schemas" / "automation" / f"{name}-v1.schema.json"
+        assert json.loads(stored.read_text(encoding="utf-8")) == schema
