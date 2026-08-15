@@ -539,7 +539,7 @@
         {
           "kind": "class",
           "name": "ProfileEstimationMode",
-          "signature": "(*values)",
+          "signature": null,
           "target": "phasesmith.profile_estimation.ProfileEstimationMode"
         },
         {
@@ -629,7 +629,7 @@
         {
           "kind": "class",
           "name": "RadiationProbe",
-          "signature": "(*values)",
+          "signature": null,
           "target": "phasesmith.radiation.RadiationProbe"
         },
         {
@@ -2051,7 +2051,7 @@
         {
           "kind": "class",
           "name": "RefinementEventKind",
-          "signature": "(*values)",
+          "signature": null,
           "target": "phasesmith.refinement.runtime.RefinementEventKind"
         },
         {
@@ -2285,7 +2285,7 @@
         {
           "kind": "class",
           "name": "TerminationReason",
-          "signature": "(*values)",
+          "signature": null,
           "target": "phasesmith.refinement.core.TerminationReason"
         },
         {
