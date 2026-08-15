@@ -22,6 +22,14 @@ development versions.
   explicit parent/result/review lineage and a fresh approval boundary. Expose
   the additions through Python and the `lint-recipe`, `review`, and `replan`
   CLI commands.
+- Add path-free advisor and review packets, structured human/model/software
+  proposal provenance bound to the exact advisor packet and retained through
+  lint, run, review, and replanning, plus stored-plan input for run/lint/resume
+  so lineage-bound replans are executable through the CLI.
+  Publish every automation JSON Schema through the CLI and reviewed static
+  files, add a reusable PhaseSmith AI workflow skill, provide a runnable
+  two-cycle offline example, and gate deterministic lint behavior with five
+  synthetic scientific-risk cases.
 - Export recipe validation independently of numerical evaluation and validate
   all stages against the complete initial selection and constraint graph before
   a staged workflow starts.

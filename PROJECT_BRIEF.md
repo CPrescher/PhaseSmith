@@ -46,6 +46,16 @@ directory outside the parent audit directory and a new plan ID, and requires
 fresh approval; no AI callback runs
 inside a numerical solve and no deterministic review auto-accepts a fit.
 
+External handoff is now a first-class path-free packet rather than a manual
+selection of plan fields. A second packet composes the digest-bound prior
+review with the next child plan's sanitized advisor context. Proposals retain
+structured human/model/software provenance and are bound to the advisor-packet
+digest; stored plans are rebuilt and compared before CLI execution so lineage
+cannot be dropped. All automation records have published CLI/static JSON
+Schemas. The repository also carries a compact agent skill, a runnable offline
+two-cycle example, and synthetic high-risk recipe cases; these remain external
+orchestration and add no model-provider dependency.
+
 The remainder of this section is a chronological implementation record. Terms
 such as “next slice”, “pending”, and “follow-on” describe the checkpoint at
 which their paragraph was written; the final current-state summary and next

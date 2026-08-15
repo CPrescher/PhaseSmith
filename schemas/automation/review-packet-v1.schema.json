@@ -1,0 +1,611 @@
+{
+  "$id": "https://phasesmith.org/schema/review-packet-v1.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "instruction": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "next_advisor_packet": {
+      "$id": "https://phasesmith.org/schema/advisor-packet-v1.json",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "advisor_context": {
+          "$id": "https://phasesmith.org/schema/advisor-context-v1.json",
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "additionalProperties": false,
+          "properties": {
+            "background": {
+              "type": [
+                "object",
+                "null"
+              ]
+            },
+            "constraints": {
+              "items": {
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "experiment": {
+              "type": "object"
+            },
+            "limitations": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "parameters": {
+              "items": {
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "pattern": {
+              "type": "object"
+            },
+            "phases": {
+              "items": {
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "privacy": {
+              "type": "object"
+            },
+            "schema": {
+              "const": "phasesmith.advisor-context.v1"
+            }
+          },
+          "required": [
+            "schema",
+            "privacy",
+            "pattern",
+            "experiment",
+            "phases",
+            "background",
+            "parameters",
+            "constraints",
+            "limitations"
+          ],
+          "title": "phasesmith.advisor-context.v1",
+          "type": "object"
+        },
+        "authorization": {
+          "type": "object"
+        },
+        "default_recipe": {
+          "type": "object"
+        },
+        "external_recipe_proposal": {
+          "type": "object"
+        },
+        "guidance": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "lineage": {
+          "oneOf": [
+            {
+              "$id": "https://phasesmith.org/schema/workflow-lineage-v1.json",
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "additionalProperties": false,
+              "properties": {
+                "parent_plan_id": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string"
+                },
+                "source_result_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string"
+                },
+                "source_review_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "parent_plan_id",
+                "source_result_sha256",
+                "source_review_sha256"
+              ],
+              "title": "phasesmith.workflow-lineage.v1",
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "packet_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "plan_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "privacy": {
+          "type": "object"
+        },
+        "proposal_schema": {
+          "$id": "https://phasesmith.org/schema/recipe-proposal-v1.json",
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "additionalProperties": false,
+          "properties": {
+            "assumptions": {
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "maxItems": 32,
+              "type": "array"
+            },
+            "plan_id": {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            "proposal_id": {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$",
+              "type": "string"
+            },
+            "provenance": {
+              "additionalProperties": false,
+              "allOf": [
+                {
+                  "else": {
+                    "properties": {
+                      "provider": {
+                        "type": "null"
+                      }
+                    }
+                  },
+                  "if": {
+                    "properties": {
+                      "kind": {
+                        "const": "model"
+                      }
+                    }
+                  },
+                  "then": {
+                    "properties": {
+                      "provider": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              ],
+              "properties": {
+                "advisor_packet_id": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string"
+                },
+                "client": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "kind": {
+                  "enum": [
+                    "human",
+                    "model",
+                    "software"
+                  ]
+                },
+                "name": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "prompt_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "provider": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "request_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "version": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "kind",
+                "name",
+                "provider",
+                "version",
+                "client",
+                "advisor_packet_id",
+                "prompt_sha256",
+                "request_id"
+              ],
+              "type": "object"
+            },
+            "recipe": {
+              "additionalProperties": false,
+              "properties": {
+                "name": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "stages": {
+                  "items": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "name": {
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "rationale": {
+                        "items": {
+                          "minLength": 1,
+                          "type": "string"
+                        },
+                        "maxItems": 16,
+                        "minItems": 1,
+                        "type": "array"
+                      },
+                      "selection": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "background": {
+                            "type": "boolean"
+                          },
+                          "coordinates": {
+                            "type": "boolean"
+                          },
+                          "instrument_parameters": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array",
+                            "uniqueItems": true
+                          },
+                          "lattice": {
+                            "type": "boolean"
+                          },
+                          "occupancy": {
+                            "type": "boolean"
+                          },
+                          "phase_scale": {
+                            "type": "boolean"
+                          },
+                          "sample_physics": {
+                            "type": "boolean"
+                          },
+                          "u_iso": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "phase_scale",
+                          "lattice",
+                          "coordinates",
+                          "occupancy",
+                          "u_iso",
+                          "sample_physics",
+                          "instrument_parameters",
+                          "background"
+                        ],
+                        "type": "object"
+                      }
+                    },
+                    "required": [
+                      "name",
+                      "selection",
+                      "rationale"
+                    ],
+                    "type": "object"
+                  },
+                  "maxItems": 12,
+                  "minItems": 1,
+                  "type": "array"
+                }
+              },
+              "required": [
+                "name",
+                "stages"
+              ],
+              "type": "object"
+            },
+            "schema": {
+              "const": "phasesmith.recipe-proposal.v1"
+            }
+          },
+          "required": [
+            "schema",
+            "plan_id",
+            "proposal_id",
+            "provenance",
+            "assumptions",
+            "recipe"
+          ],
+          "title": "phasesmith.recipe-proposal.v1",
+          "type": "object"
+        },
+        "readiness": {
+          "type": "object"
+        },
+        "schema": {
+          "const": "phasesmith.advisor-packet.v1"
+        },
+        "status": {
+          "enum": [
+            "blocked",
+            "ready_for_approval"
+          ]
+        }
+      },
+      "required": [
+        "schema",
+        "packet_id",
+        "plan_id",
+        "lineage",
+        "status",
+        "readiness",
+        "authorization",
+        "advisor_context",
+        "default_recipe",
+        "external_recipe_proposal",
+        "guidance",
+        "proposal_schema",
+        "privacy"
+      ],
+      "title": "phasesmith.advisor-packet.v1",
+      "type": "object"
+    },
+    "packet_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "parent_plan_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "privacy": {
+      "type": "object"
+    },
+    "review": {
+      "$id": "https://phasesmith.org/schema/workflow-review-v1.json",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "bound_contacts": {
+          "items": {
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "completed": {
+          "type": "boolean"
+        },
+        "findings": {
+          "items": {
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "free_parameter_count": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "jacobian_rank": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "metrics": {
+          "type": "object"
+        },
+        "parameter_count": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "parameter_movements": {
+          "items": {
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "plan_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "proposal_provenance": {
+          "oneOf": [
+            {
+              "additionalProperties": false,
+              "allOf": [
+                {
+                  "else": {
+                    "properties": {
+                      "provider": {
+                        "type": "null"
+                      }
+                    }
+                  },
+                  "if": {
+                    "properties": {
+                      "kind": {
+                        "const": "model"
+                      }
+                    }
+                  },
+                  "then": {
+                    "properties": {
+                      "provider": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              ],
+              "properties": {
+                "advisor_packet_id": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string"
+                },
+                "client": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "kind": {
+                  "enum": [
+                    "human",
+                    "model",
+                    "software"
+                  ]
+                },
+                "name": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "prompt_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "provider": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "request_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "version": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "kind",
+                "name",
+                "provider",
+                "version",
+                "client",
+                "advisor_packet_id",
+                "prompt_sha256",
+                "request_id"
+              ],
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "residual": {
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "review_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "schema": {
+          "const": "phasesmith.workflow-review.v1"
+        },
+        "sources": {
+          "type": "object"
+        },
+        "stages": {
+          "items": {
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "status": {
+          "const": "review_required"
+        },
+        "termination": {
+          "type": "string"
+        },
+        "unresolved_correlations": {
+          "items": {
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "workflow_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema",
+        "review_id",
+        "plan_id",
+        "workflow_id",
+        "status",
+        "completed",
+        "termination",
+        "proposal_provenance",
+        "metrics",
+        "stages",
+        "parameter_movements",
+        "bound_contacts",
+        "jacobian_rank",
+        "parameter_count",
+        "free_parameter_count",
+        "unresolved_correlations",
+        "residual",
+        "findings",
+        "sources"
+      ],
+      "title": "phasesmith.workflow-review.v1",
+      "type": "object"
+    },
+    "schema": {
+      "const": "phasesmith.review-packet.v1"
+    },
+    "source_review_id": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema",
+    "packet_id",
+    "parent_plan_id",
+    "source_review_id",
+    "review",
+    "next_advisor_packet",
+    "instruction",
+    "privacy"
+  ],
+  "title": "phasesmith.review-packet.v1",
+  "type": "object"
+}
