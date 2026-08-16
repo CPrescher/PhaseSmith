@@ -1,11 +1,8 @@
 # Scattering models and data provenance
 
-Status: implementation unit 14 design and source gate approved; kernels and
-public providers are in progress.
-
 This document is the source ledger for built-in atomic scattering data. GSAS-II
 is not a source for equations, coefficients, species names, or table contents.
-It may later produce external comparison fixtures only.
+It is used only as an external black-box comparison oracle.
 
 ## Public model boundary
 
@@ -153,7 +150,7 @@ API version, probe/unit descriptor, result type, descriptor identity, and
 matrix shape. A user provider receives the complete batch in one call; it is
 never invoked once per atom or reflection by library orchestration.
 
-## Unit 14 review result
+## Validation and performance
 
 The source/license decision, checksum-verifying generator, generated native
 tables, Rust prepared kernels, PyO3 boundary, typed Python providers, compact
@@ -172,21 +169,5 @@ development machine. These figures are baselines, not cross-machine promises.
 The optimized public Python boundary measured approximately 1.61 ms and
 0.65 ms respectively for the same shapes, including NumPy complex-array
 construction and immutable result validation. The final quality gate passes 46
-Rust tests and 317 normal Python tests; one external-oracle test remains
-explicitly deselected in normal development.
-
-## Unit 14 execution sequence
-
-1. Commit this source/license and interface decision before table generation.
-2. Add the checksum-verifying deterministic generator and generated native
-   tables.
-3. Implement dependency-free Rust lookup, prepared unique-species caches,
-   X-ray/neutron batch values, and `df/ds` together.
-4. Add thin PyO3 prepared-model bindings and the typed
-   `phasesmith.scattering` provider protocol.
-5. Add an independent NumPy reference, boundary/invalid-input tests, table
-   integrity tests, and finite-difference derivative tests.
-6. Benchmark prepared multi-species batches and review that lookup is outside
-   the reflection/site hot loop.
-7. Run the full Rust/Python quality gate, update project status, review the
-   complete diff, and commit the numerical slice.
+Rust tests and 317 normal Python tests; external-oracle tests remain opt-in so
+the normal package has no GSAS-II dependency.

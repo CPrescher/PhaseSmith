@@ -12,6 +12,47 @@ explaining correlations and choosing a conservative order, but its name is
 provenance, not authority. The same validation and approval gates apply to
 every model and to hand-written proposals.
 
+## Five-minute workflow
+
+Start with a reviewed, persisted `RietveldProject` and the example workflow
+specification. Planning and packet creation do not run a refinement:
+
+```shell
+phasesmith plan workflow-spec.json --output plan.json
+phasesmith advisor-packet plan.json > advisor-packet.json
+phasesmith schema recipe-proposal
+```
+
+Give `advisor-packet.json` and the recipe-proposal schema to the advisor. Save
+its JSON response as `recipe-proposal.json`, then lint it:
+
+```shell
+phasesmith lint-recipe plan.json recipe-proposal.json
+```
+
+Review the readiness findings, recipe, assumptions, lint findings, limits,
+outputs, and exact plan ID. Only after that review, execute the approved plan:
+
+```shell
+phasesmith run plan.json \
+  --proposal recipe-proposal.json \
+  --approve PLAN_ID
+```
+
+After execution, create deterministic review evidence with `phasesmith review
+OUTPUT_DIRECTORY`. A further AI-assisted cycle starts with `review-packet` and
+a new plan ID; approval never carries over from the previous cycle.
+
+## Trust and data boundary
+
+| Boundary | Contract |
+| --- | --- |
+| What the AI receives | A path-free advisor packet containing readiness, authorized parameters, sanitized scientific context, deterministic guidance, and a response schema. |
+| What the AI may do | Propose a cumulative staged recipe, explain its reasoning, state assumptions, and identify scientific risks. |
+| What the AI cannot do | Change project data, constraints, parameter authorization, solver limits, termination policy, or an active numerical solve. |
+| What PhaseSmith enforces | Schema validation, exact parameter names, complete constraints, finite budgets, stale-input rejection, output ownership, and audit retention. |
+| What requires a person | Disclosure review before sending a packet, approval of the exact plan ID, and scientific acceptance of the result. |
+
 ## What version 1 automates
 
 The workflow contract operates on a persisted `RietveldProject`. Project
@@ -220,6 +261,35 @@ python examples/automation/run_advisor_cycle.py /tmp/phasesmith-advisor-demo
 The example labels its proposal as deterministic software provenance. Replace
 that proposal step with a real advisor response and truthful model provenance
 when integrating a hosted or local model.
+
+### Contract compatibility
+
+Automation records use explicit schema identifiers such as
+`phasesmith.recipe-proposal.v1`. Additive optional fields may be introduced
+within a schema version, but changing required fields, meanings, authorization
+semantics, or digest inputs requires a new version and an explicit migration
+path. Stored plans and approvals are never rewritten into a newer contract:
+replan from the persisted accepted project and approve the newly generated
+plan ID. Checked-in schemas remain immutable records of the contracts that
+produced retained audit directories.
+
+### Reporting AI-assisted results
+
+When an AI-assisted workflow contributes to a reported result, retain and
+report enough information to reproduce the advisory boundary:
+
+- the workflow schema version, plan ID, and advisor-packet ID;
+- the provider, model name, and model snapshot/version when available;
+- the client, prompt SHA-256, and provider request ID when available;
+- the exact approved proposal and its lint result;
+- the terminal audit directory, result/review digests, and any child-plan
+  lineage; and
+- the human review that judged provenance, phase completeness, residuals,
+  identifiability, and physical plausibility.
+
+Do not describe the model as having performed the numerical refinement.
+PhaseSmith performs the calculation; the recorded model or human proposed a
+recipe through a constrained advisory interface.
 
 ## Scientific recipe rubric
 

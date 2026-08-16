@@ -1,8 +1,8 @@
 # Multi-phase pattern composition
 
-Implementation unit 6 introduces the first domain-level pattern calculation.
-It composes typed phases above the reflection-profile kernel; the Rust core
-continues to receive only flat contiguous reflection and contribution arrays.
+The domain-level pattern calculation composes typed phases above the
+reflection-profile kernel. The Rust core receives only flat contiguous
+reflection and contribution arrays.
 
 ## Intensity and derivative convention
 
