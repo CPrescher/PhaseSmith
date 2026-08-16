@@ -1,7 +1,5 @@
 # Native CIF import and CIF-backed Le Bail
 
-Status: implemented and internally validated in implementation unit 13.
-
 CIF is an input format, not calculation state. The default pure-Rust adapter
 returns immutable `CrystalStructure`, `UnitCell`, `SpaceGroup`, and `AtomSite` models.
 It does not require CPython, Gemmi, or another native parser library. The same

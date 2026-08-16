@@ -1,9 +1,9 @@
 # Structural intensities and fused-pattern conventions
 
-This document freezes the equations, units, parameter ordering, correction
-ownership, and derivative contract for implementation unit 15. GSAS-II is not
-an equation or data source. Its pinned external process may later validate the
-observable reflection fields and perturbation scales described in
+This document defines the equations, parameter ordering, correction ownership,
+and derivative contract for structural intensities. GSAS-II is not an equation
+or data source. Its pinned external process validates selected observable
+reflection fields and perturbation scales described in
 `oracle/STRUCTURAL_PARAMETER_STUDY.md`.
 
 ## Reciprocal and symmetry conventions
@@ -56,8 +56,8 @@ the representative exact rotation for each unique position so coordinate
 derivatives use the same fixed orbit topology. At a special position, a free
 Cartesian coordinate perturbation can change orbit multiplicity and is not a
 valid derivative. Refinement therefore applies only site-stabilizer-compatible
-tangents; unit 17 will construct those constraints. Values are valid regardless
-of whether structural derivatives are requested.
+tangents. Values are valid regardless of whether structural derivatives are
+requested.
 
 Non-resonant X-ray and constant real nuclear-neutron scattering obey Friedel's
 law. A generated powder family merges Friedel mates exactly once and supplies
@@ -204,10 +204,10 @@ structure factors, integrated intensities, CW positions, and support-limited
 profile accumulation; no Python loop over sites, reflections, or samples is a
 production orchestration step.
 
-## Unit 15 implementation sequence
+## Numerical implementation
 
-Current status: all seven steps are implemented. Built-in monochromatic X-ray
-and neutron models use one native values/JVP/VJP call. Built-in isotropic size
+Built-in monochromatic X-ray and neutron models use one native values/JVP/VJP
+call. Built-in isotropic size
 and microstrain contributions remain on that fused path. Custom scattering and
 correction providers use a vectorized fallback and are each called once.
 Preferred orientation also remains on the fallback until its cell-metric
@@ -215,21 +215,6 @@ derivative is explicit; structural derivative products never omit that chain.
 `RietveldPhase` remains distinct from the reflection-intensity `Phase` used by
 Le Bail. Persistence format 2 adds structural phases and explicitly migrates
 format-1 projects with an empty structural-phase collection.
-
-1. Extend exact symmetry expansion with representative rotations and tests.
-2. Add a general-symmetry Rust values/dense/JVP/VJP structure-factor kernel
-   consuming scattering values plus `df/ds`.
-3. Add typed neutral and Bragg--Brentano LP correction kernels with derivatives.
-4. Bind the structural result and provider-facing Python API; retain the P1
-   compatibility API unchanged.
-5. Compose reflection generation, built-in scattering, structural intensity,
-   CW position, existing sample physics, and profile accumulation in one
-   `phasesmith-engine` call.
-6. Add `RietveldPhase`, stable diagnostics, persistence migration, independent
-   NumPy references, invariance/finite-difference/adjoint tests, and realistic
-   separate/combined benchmarks.
-7. Run the full quality gate, review the complete unit, and commit. External
-   GSAS-II fixtures remain a separately generated validation artifact.
 
 ## Recorded combined benchmarks
 

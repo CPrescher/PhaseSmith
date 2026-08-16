@@ -1,83 +1,99 @@
 # Crystallography foundation: cells and P1 structure factors
 
-Implementation unit 11 establishes the file-independent numerical boundary for
-crystallography. It intentionally accepts caller-supplied complex scattering
-amplitudes. Element tables, symmetry expansion, reflection generation,
-integrated-intensity corrections, CIF import, and profile fusion belong to
-later units.
+This page defines PhaseSmith's file-independent unit-cell and P1
+structure-factor conventions. The foundation accepts caller-supplied complex
+scattering amplitudes; the higher-level crystallography APIs add symmetry,
+reflection generation, built-in scattering models, intensity corrections, CIF
+import, and profile calculation.
 
 ## Unit-cell convention
 
-The public cell is
-
-```text
-(a, b, c, alpha, beta, gamma)
-```
-
-with lengths in ångströms and angles in degrees. `alpha` is the angle between
-`b` and `c`, `beta` between `a` and `c`, and `gamma` between `a` and `b`.
+The public cell is \((a,b,c,\alpha,\beta,\gamma)\), with lengths in
+ångströms and angles in degrees. \(\alpha\) is the angle between \(b\) and
+\(c\), \(\beta\) between \(a\) and \(c\), and \(\gamma\) between \(a\) and
+\(b\).
 Trigonometric calculations convert degrees to radians explicitly.
 
 The direct metric is
 
-```text
-G = [[a^2,       ab cos(gamma), ac cos(beta)],
-     [ab cos(g), b^2,           bc cos(alpha)],
-     [ac cos(b), bc cos(a),     c^2]].
-```
+\[
+G =
+\begin{pmatrix}
+a^2 & ab\cos\gamma & ac\cos\beta \\
+ab\cos\gamma & b^2 & bc\cos\alpha \\
+ac\cos\beta & bc\cos\alpha & c^2
+\end{pmatrix}.
+\]
 
-The reciprocal metric is `G* = inverse(G)`. For Miller column vector `h`,
+The reciprocal metric is \(G^* = G^{-1}\). For Miller column vector
+\(\mathbf{h}\),
 
-```text
-q^2 = h^T G* h
-d   = 1 / sqrt(q^2).
-```
+\[
+q^2 = \mathbf{h}^{\mathsf T}G^*\mathbf{h},
+\qquad
+d = \frac{1}{\sqrt{q^2}}.
+\]
 
-Reciprocal vectors use cycles per ångström, without a `2 pi` factor. The cell
-volume is `sqrt(det(G))`.
+Reciprocal vectors use cycles per ångström, without a \(2\pi\) factor. The
+cell volume is \(V=\sqrt{\det G}\).
 
-For any direct-cell parameter `p`, derivatives are evaluated analytically:
+For any direct-cell parameter \(p\), derivatives are evaluated analytically:
 
-```text
-dG*/dp = -G* (dG/dp) G*
-dq^2/dp = h^T (dG*/dp) h
-dd/dp = -(1/2) d^3 dq^2/dp
-dV/dp = (V/2) trace(G* dG/dp).
-```
+\[
+\begin{aligned}
+\frac{\partial G^*}{\partial p}
+  &= -G^*\frac{\partial G}{\partial p}G^*, \\
+\frac{\partial q^2}{\partial p}
+  &= \mathbf{h}^{\mathsf T}
+     \frac{\partial G^*}{\partial p}\mathbf{h}, \\
+\frac{\partial d}{\partial p}
+  &= -\frac{1}{2}d^3\frac{\partial q^2}{\partial p}, \\
+\frac{\partial V}{\partial p}
+  &= \frac{V}{2}\operatorname{tr}\!\left(
+     G^*\frac{\partial G}{\partial p}\right).
+\end{aligned}
+\]
 
-The stable derivative order is `a`, `b`, `c`, `alpha`, `beta`, `gamma`; angle
-rows include the radians-per-degree chain.
+The stable derivative order is \(a,b,c,\alpha,\beta,\gamma\); angle rows
+include the radians-per-degree chain.
 
 ## P1 structure-factor convention
 
-For reflection `h` and independent P1 site `j`, the foundation kernel receives
-the complex scattering amplitude `f_hj` and calculates
+For reflection \(\mathbf{h}\) and independent P1 site \(j\), the foundation
+kernel receives the complex scattering amplitude \(f_{hj}\) and calculates
 
-```text
-T_hj = exp(-2 pi^2 Uiso_j q_h^2)
-A_hj = occupancy_j f_hj T_hj exp(2 pi i h dot x_j)
-F_h = sum_j A_hj
-I_h = scale |F_h|^2.
-```
+\[
+\begin{aligned}
+T_{hj} &= \exp\!\left(-2\pi^2 U_{\mathrm{iso},j}q_h^2\right), \\
+A_{hj} &= o_j f_{hj}T_{hj}
+          \exp\!\left(2\pi i\,\mathbf{h}\!\cdot\!\mathbf{x}_j\right), \\
+F_h &= \sum_j A_{hj}, \\
+I_h &= S\lvert F_h\rvert^2.
+\end{aligned}
+\]
 
-`Uiso` is in square ångströms and fractional coordinates are dimensionless.
-`I_h` has multiplicity and all Lorentz/polarization/sample corrections set to
-one. Those factors are added once, through typed owners, in implementation unit
-15.
+Here \(o_j\) is occupancy and \(S\) is phase scale.
+\(U_{\mathrm{iso}}\) is in square ångströms and fractional coordinates are
+dimensionless. In this foundation calculation, multiplicity and all
+Lorentz/polarization/sample corrections are one. Higher-level structural
+calculations apply those factors exactly once through typed models.
 
-Caller-supplied `f_hj` is held fixed with respect to cell parameters in this
-slice. A later scattering model supplies `df/ds`, where
-`s = sqrt(q^2) / 2`, and adds that chain without changing this API convention.
+Caller-supplied \(f_{hj}\) is held fixed with respect to cell parameters.
+Built-in scattering models supply \(\mathrm{d}f/\mathrm{d}s\), where
+\(s=\sqrt{q^2}/2\), and add that chain without changing this API convention.
 
 The structural derivative identity is
 
-```text
-dI/dp = 2 scale Re(conjugate(F) dF/dp)
-```
+\[
+\frac{\partial I}{\partial p}
+= 2S\,\operatorname{Re}\!\left(
+  \overline{F}\frac{\partial F}{\partial p}\right).
+\]
 
-with an additional `dI/dscale = |F|^2`. Coordinate derivatives use
-`2 pi i h_component A_hj`; occupancy derivatives use the unoccupied site
-amplitude; isotropic-displacement derivatives use `-2 pi^2 q^2 A_hj`.
+For phase scale, \(\partial I/\partial S=\lvert F\rvert^2\). Coordinate
+derivatives use \(2\pi i h_kA_{hj}\); occupancy derivatives use the
+unoccupied site amplitude; isotropic-displacement derivatives use
+\(-2\pi^2q^2A_{hj}\).
 
 ## Parameter and array layout
 

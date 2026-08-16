@@ -6,9 +6,8 @@ calibrations, but those capabilities alone do not make a structural Rietveld
 model. Structural TOF intensities need an explicit observation convention in
 addition to a peak shape.
 
-This document records the Unit 38 capability review, the implemented single-bank
-calculation primitive, and the remaining contract before PhaseSmith claims a
-complete structural TOF refinement workflow.
+This document defines the supported structural TOF workflow and the observation,
+correction, provenance, and validation contracts required for that claim.
 
 ## What is already reusable
 
@@ -104,8 +103,8 @@ physical flight path or bank angle.
 
 ## Implemented single-bank structural calculation
 
-Unit 38b provides the Rust `phasesmith-engine` structural TOF primitive. One
-request combines a unit cell, exact space group, canonical reflections,
+The Rust `phasesmith-engine` structural TOF primitive combines a unit cell,
+exact space group, canonical reflections,
 asymmetric sites, constant bound-coherent neutron species, explicit correction,
 typed bank geometry, and bank-local `TofInstrument` on a strictly increasing
 microsecond bin-center grid. It evaluates
@@ -171,9 +170,9 @@ calibration from their native metadata.
 
 ## Implemented multi-bank objective
 
-The first Unit 38c slice composes the single-bank primitive into
-`PreparedStructuralTofMultiBankObjective`. It requires one or more unique bank
-IDs and evaluates one summed objective atomically. The established `MultiBank`
+`PreparedStructuralTofMultiBankObjective` composes the single-bank primitive
+across one or more uniquely identified banks and evaluates one summed objective
+atomically. The established `MultiBank`
 type names are retained for API stability, but a one-bank request is valid:
 
 ```text
@@ -207,8 +206,8 @@ policy while allowing only the declared numerical parameters to change.
 
 ## Implemented bounded solver
 
-`refine_structural_tof_multibank` completes Unit 38c without alternating bank
-fits. At every attempted iteration it evaluates the current atomic objective
+`refine_structural_tof_multibank` performs a joint solve without alternating
+bank fits. At every attempted iteration it evaluates the current atomic objective
 and obtains the full scaled normal matrix by applying the objective's analytical
 normal product to each scaled coordinate basis vector. Positive Levenberg
 damping is added in scaled coordinates. The guarded LU solve falls back to SVD;
@@ -304,7 +303,7 @@ exact-resume checkpoint. `StructuralTofCancellation` reuses the thread-safe TOF
 cancellation token. End-to-end Python tests recover two distinct bank scales
 and Zero terms, resume bitwise-identical accepted state after cancellation, and
 recover a shared cubic lattice parameter. The structural real-data/oracle
-acceptance described below completes the final Unit 38d gate.
+acceptance is described below.
 
 Symmetry-constrained coordinates use the same local-tangent convention as the
 general structural solver. A special-position `q` value describes the current
@@ -347,9 +346,9 @@ reduction convention.
 | Structural TOF Rietveld | Fused structural TOF values/dense/JVP/VJP products, shared structural solver, explicit incident/Lorentz/background contracts | Structural finite differences/adjoint tests, checkpoint/special-position tests, LANL cell/Uiso oracle, and POWGEN LaB6 structural acceptance |
 
 Unsupported profile functions, calibration syntaxes, and named absorption,
-extinction, or texture models remain explicit errors. Adding one is a new
-equation-, derivative-, provenance-, benchmark-, and oracle-backed increment;
-it is not an unfinished part of Units 26 or 28--38.
+extinction, or texture models remain explicit errors. Adding one requires its
+own equations, derivatives, provenance, benchmarks, and oracle evidence; it is
+new scope rather than an unfinished part of the supported workflow.
 
 ## Pinned GSAS-II refinement comparison
 
@@ -399,27 +398,7 @@ three-bank LANL nickel comparison. The executable reports are produced by
 `benchmarks/compare_gsasii_nickel_tof_structural.py`, with live test dispatch
 in `tests/test_real_data_oracle.py`.
 
-## Unit 38 delivery sequence
-
-The structural extension is split into reviewable numerical increments:
-
-1. Add the explicit TOF neutron Lorentz correction with an independent NumPy
-   equation, analytical reciprocal-metric derivative, invalid-angle tests, and
-   centered finite differences.
-2. **Complete:** add typed TOF bank geometry and parse the independently
-   documented scattering angle from bounded legacy instrument input.
-3. **Complete:** add a Rust structural-TOF calculation primitive that evaluates
-   values and structural/profile derivatives through the same finite-support
-   accumulation. Dense, JVP, VJP, independent-reference, and realistic
-   multi-reflection benchmark gates are present.
-4. **Complete:** compose the primitive into a guarded
-   multi-bank structural objective and solver with shared structure/cell and
-   bank-local scale, background, instrument, geometry, masks, and uncertainties.
-5. **Complete:** expose the same native contract through Python and project
-   persistence, then validate a checksum-pinned real structural dataset against
-   an isolated pinned oracle. Python refinement, format-5 persistence, native
-   LANL nickel acceptance, public incident-spectrum exposure, and the
-   pinned-GSAS-II structural comparison all pass.
+## Oracle execution detail
 
 The isolated worker uses only GSAS-II's public scripting API and exports plain
 JSON/NPZ records. It creates temporary checksum-derived one-bank RAW files
