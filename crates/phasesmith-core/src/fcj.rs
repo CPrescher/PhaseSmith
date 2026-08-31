@@ -412,6 +412,8 @@ impl FcjProfile {
             } else if self.geometry.detector_over_radius > self.geometry.sample_over_radius {
                 (d_minor, d_major)
             } else {
+                // Preserve the established arithmetic order for deterministic profile derivatives.
+                #[allow(clippy::manual_midpoint)]
                 let equal = 0.5 * (d_major + d_minor);
                 (equal, equal)
             };
