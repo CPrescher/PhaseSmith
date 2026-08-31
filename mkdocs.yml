@@ -96,6 +96,7 @@ nav:
       - Python API map: api-reference.md
       - Python architecture: public-api.md
       - Pre-1.0 API decisions: api-stability.md
+      - Migrating to 0.6: migration-0.6.md
       - Rust API: rust-api.md
       - Dioptas integration: dioptas-integration.md
   - Validation and development:

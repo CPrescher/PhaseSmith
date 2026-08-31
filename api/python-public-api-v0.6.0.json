@@ -1,0 +1,2107 @@
+{
+  "modules": [
+    {
+      "exports": [
+        {
+          "kind": "class",
+          "name": "AccumulationResult",
+          "signature": "(y: 'NDArray[np.float64]', derivatives: 'PatternDerivatives', jacobian_layout: \"Literal['support', 'dense']\", _dense_jacobian: 'NDArray[np.float64] | None' = None) -> None",
+          "target": "phasesmith.results.AccumulationResult"
+        },
+        {
+          "kind": "class",
+          "name": "AnisotropicDisplacement",
+          "signature": "(u_cif_angstrom2: 'tuple[float, float, float, float, float, float]', source_convention: \"Literal['U_cif', 'B_cif']\", standard_uncertainty: 'tuple[float | None, float | None, float | None, float | None, float | None, float | None]' = (None, None, None, None, None, None)) -> None",
+          "target": "phasesmith.structure.AnisotropicDisplacement"
+        },
+        {
+          "kind": "class",
+          "name": "AtomSite",
+          "signature": "(site_id: 'str', source_label: 'str', type_symbol: 'str', element_symbol: 'str', fractional_xyz: 'tuple[float, float, float]', occupancy: 'float' = 1.0, u_iso_angstrom2: 'float | None' = None, anisotropic_displacement: 'AnisotropicDisplacement | None' = None, charge: 'int | None' = None, isotope: 'int | None' = None, disorder_group: 'str | None' = None, fractional_xyz_standard_uncertainty: 'tuple[float | None, float | None, float | None]' = (None, None, None), occupancy_standard_uncertainty: 'float | None' = None, u_iso_standard_uncertainty: 'float | None' = None) -> None",
+          "target": "phasesmith.structure.AtomSite"
+        },
+        {
+          "kind": "class",
+          "name": "AtomSiteBatch",
+          "signature": "(site_ids: 'tuple[str, ...] | list[str]', species: 'tuple[str, ...] | list[str]', fractional_xyz: 'ArrayLike', occupancy: 'ArrayLike', u_iso_angstrom2: 'ArrayLike', *, anisotropic_mask: 'ArrayLike | None' = None, u_aniso_cif_angstrom2: 'ArrayLike | None' = None) -> 'None'",
+          "target": "phasesmith.crystallography.AtomSiteBatch"
+        },
+        {
+          "kind": "class",
+          "name": "BackgroundSubtractionResult",
+          "signature": "(background: 'NDArray[np.float64]', corrected_y: 'NDArray[np.float64]', smoothed_y: 'NDArray[np.float64]', smooth_points: 'int') -> None",
+          "target": "phasesmith.background.BackgroundSubtractionResult"
+        },
+        {
+          "kind": "class",
+          "name": "BraggBrentanoFundamentalProfile",
+          "signature": "(radius_mm: 'float', source_width_mm: 'float', receiving_slit_width_mm: 'float', sample_half_length_mm: 'float', detector_half_length_mm: 'float', emission_lines: 'tuple[FundamentalEmissionLine, ...]', soller_axial_geometry: 'SollerAxialGeometry | None' = None, spectral_passband: 'GaussianSpectralPassband | None' = None) -> None",
+          "target": "phasesmith.fpa_calibration.BraggBrentanoFundamentalProfile"
+        },
+        {
+          "kind": "class",
+          "name": "BraggBrentanoGeometry",
+          "signature": "(goniometer_radius_mm: 'float', sample_displacement_mm: 'float' = 0.0) -> None",
+          "target": "phasesmith.radiation.BraggBrentanoGeometry"
+        },
+        {
+          "kind": "class",
+          "name": "BraggBrentanoPolarizedLp",
+          "signature": "(wavelength_angstrom: 'float', polarization: 'float') -> None",
+          "target": "phasesmith.intensity_corrections.BraggBrentanoPolarizedLp"
+        },
+        {
+          "kind": "class",
+          "name": "BraggBrentanoUnpolarizedLp",
+          "signature": "(wavelength_angstrom: 'float') -> None",
+          "target": "phasesmith.intensity_corrections.BraggBrentanoUnpolarizedLp"
+        },
+        {
+          "kind": "constant",
+          "name": "CELL_PARAMETER_NAMES",
+          "signature": null,
+          "target": "builtins.tuple"
+        },
+        {
+          "kind": "constant",
+          "name": "CW_FCJ_GLOBAL_PARAMETER_ORDER",
+          "signature": null,
+          "target": "builtins.tuple"
+        },
+        {
+          "kind": "constant",
+          "name": "CW_FCJ_LOCAL_PARAMETER_ORDER",
+          "signature": null,
+          "target": "builtins.tuple"
+        },
+        {
+          "kind": "constant",
+          "name": "CW_GLOBAL_PARAMETER_ORDER",
+          "signature": null,
+          "target": "builtins.tuple"
+        },
+        {
+          "kind": "constant",
+          "name": "CW_LOCAL_PARAMETER_ORDER",
+          "signature": null,
+          "target": "builtins.tuple"
+        },
+        {
+          "kind": "class",
+          "name": "CalculationOptions",
+          "signature": "(support_fwhm: 'float' = 20.0, jacobian_layout: \"Literal['support', 'dense']\" = 'support', return_phase_components: 'bool' = False, execution: 'ExecutionPolicy' = <factory>) -> None",
+          "target": "phasesmith.calculation.CalculationOptions"
+        },
+        {
+          "kind": "class",
+          "name": "CancellationCallback",
+          "signature": "(*args, **kwargs)",
+          "target": "phasesmith.control.CancellationCallback"
+        },
+        {
+          "kind": "class",
+          "name": "CancellationToken",
+          "signature": "() -> 'None'",
+          "target": "phasesmith.control.CancellationToken"
+        },
+        {
+          "kind": "class",
+          "name": "CellGeometry",
+          "signature": "(direct_basis: 'NDArray[np.float64]', reciprocal_basis: 'NDArray[np.float64]', direct_metric: 'NDArray[np.float64]', reciprocal_metric: 'NDArray[np.float64]', volume_angstrom3: 'float', d_volume_d_cell_parameters: 'NDArray[np.float64]') -> None",
+          "target": "phasesmith.crystallography.CellGeometry"
+        },
+        {
+          "kind": "class",
+          "name": "ComponentRadiation",
+          "signature": "(probe: 'RadiationProbe', components: 'WavelengthComponents') -> None",
+          "target": "phasesmith.radiation.ComponentRadiation"
+        },
+        {
+          "kind": "class",
+          "name": "CompositePhysicsProvider",
+          "signature": "(providers: 'tuple[ReflectionPhysicsProvider, ...]') -> None",
+          "target": "phasesmith.extensions.CompositePhysicsProvider"
+        },
+        {
+          "kind": "class",
+          "name": "ConstantWavelengthExperiment",
+          "signature": "(radiation: 'MonochromaticRadiation | ComponentRadiation', instrument: 'ConstantWavelengthInstrument', zero_shift_deg: 'float' = 0.0, geometry: 'BraggBrentanoGeometry | DebyeScherrerGeometry | None' = None, axial_geometry: 'FcjGeometry | None' = None) -> None",
+          "target": "phasesmith.radiation.ConstantWavelengthExperiment"
+        },
+        {
+          "kind": "class",
+          "name": "ConstantWavelengthInstrument",
+          "signature": "(wavelength_angstrom: 'float', u_deg2: 'float', v_deg2: 'float', w_deg2: 'float', x_deg: 'float', y_deg: 'float') -> None",
+          "target": "phasesmith.instrument.ConstantWavelengthInstrument"
+        },
+        {
+          "kind": "class",
+          "name": "ConstantWavelengthNeutronLorentz",
+          "signature": "(wavelength_angstrom: 'float') -> None",
+          "target": "phasesmith.intensity_corrections.ConstantWavelengthNeutronLorentz"
+        },
+        {
+          "kind": "class",
+          "name": "CrystalStructure",
+          "signature": "(structure_id: 'str', name: 'str', cell: 'UnitCell', space_group: 'SpaceGroup', sites: 'tuple[AtomSite, ...]' = (), source: 'StructureSource | None' = None, cell_standard_uncertainties: 'tuple[float | None, float | None, float | None, float | None, float | None, float | None]' = (None, None, None, None, None, None), diagnostics: 'tuple[StructureDiagnostic, ...]' = (), metadata: 'Mapping[str, str]' = <factory>) -> None",
+          "target": "phasesmith.structure.CrystalStructure"
+        },
+        {
+          "kind": "class",
+          "name": "CwProfileParameters",
+          "signature": "(gaussian_variance_deg2: 'NDArray[np.float64]', gaussian_fwhm_deg: 'NDArray[np.float64]', lorentzian_fwhm_deg: 'NDArray[np.float64]', total_fwhm_deg: 'NDArray[np.float64]', eta: 'NDArray[np.float64]', d_gaussian_fwhm_d_instrument: 'NDArray[np.float64]', d_lorentzian_fwhm_d_instrument: 'NDArray[np.float64]', d_component_fwhm_d_two_theta: 'NDArray[np.float64]') -> None",
+          "target": "phasesmith.cw.CwProfileParameters"
+        },
+        {
+          "kind": "class",
+          "name": "CwTwoThetaRange",
+          "signature": "(min_deg: 'float', max_deg: 'float', wavelength_angstrom: 'float') -> None",
+          "target": "phasesmith.symmetry.CwTwoThetaRange"
+        },
+        {
+          "kind": "constant",
+          "name": "DEFAULT_MAX_REFLECTION_CANDIDATES",
+          "signature": null,
+          "target": "builtins.int"
+        },
+        {
+          "kind": "class",
+          "name": "DSpacingRange",
+          "signature": "(min_angstrom: 'float', max_angstrom: 'float') -> None",
+          "target": "phasesmith.symmetry.DSpacingRange"
+        },
+        {
+          "kind": "class",
+          "name": "DSpacingResult",
+          "signature": "(d_spacing_angstrom: 'NDArray[np.float64]', derivatives: 'NDArray[np.float64]') -> None",
+          "target": "phasesmith.crystallography.DSpacingResult"
+        },
+        {
+          "kind": "class",
+          "name": "DebyeScherrerGeometry",
+          "signature": "(goniometer_radius_mm: 'float', displace_x_micrometre: 'float' = 0.0, displace_y_micrometre: 'float' = 0.0) -> None",
+          "target": "phasesmith.radiation.DebyeScherrerGeometry"
+        },
+        {
+          "kind": "class",
+          "name": "ExecutionPolicy",
+          "signature": "(threads: 'int | None' = 2, minimum_parallel_tasks: 'int' = 2) -> None",
+          "target": "phasesmith.execution.ExecutionPolicy"
+        },
+        {
+          "kind": "class",
+          "name": "ExpandedSites",
+          "signature": "(fractional_xyz: 'NDArray[np.float64]', source_site: 'NDArray[np.int64]') -> None",
+          "target": "phasesmith.symmetry.ExpandedSites"
+        },
+        {
+          "kind": "constant",
+          "name": "FCJ_PARAMETER_ORDER",
+          "signature": null,
+          "target": "builtins.tuple"
+        },
+        {
+          "kind": "class",
+          "name": "FcjGeometry",
+          "signature": "(sample_over_radius: 'float', detector_over_radius: 'float') -> None",
+          "target": "phasesmith.instrument.FcjGeometry"
+        },
+        {
+          "kind": "class",
+          "name": "FcjProfileResult",
+          "signature": "(value: 'NDArray[np.float64]', d_position: 'NDArray[np.float64]', d_gaussian_fwhm: 'NDArray[np.float64]', d_lorentzian_fwhm: 'NDArray[np.float64]', d_sample_over_radius: 'NDArray[np.float64]', d_detector_over_radius: 'NDArray[np.float64]') -> None",
+          "target": "phasesmith.fcj.FcjProfileResult"
+        },
+        {
+          "kind": "class",
+          "name": "FundamentalEmissionLine",
+          "signature": "(wavelength_angstrom: 'float', relative_intensity: 'float', gaussian_fwhm_angstrom: 'float', lorentzian_fwhm_angstrom: 'float') -> None",
+          "target": "phasesmith.fpa_calibration.FundamentalEmissionLine"
+        },
+        {
+          "kind": "class",
+          "name": "FundamentalPeakDiagnostic",
+          "signature": "(position_deg: 'float', scale: 'float', relative_l2_error: 'float', profile_correlation: 'float') -> None",
+          "target": "phasesmith.fpa_calibration.FundamentalPeakDiagnostic"
+        },
+        {
+          "kind": "class",
+          "name": "FundamentalPeakPattern",
+          "signature": "(positions_deg: 'NDArray[np.float64]', grid_deg: 'NDArray[np.float64]', intensity: 'NDArray[np.float64]', peak_slices: 'tuple[slice, ...]') -> None",
+          "target": "phasesmith.fpa_calibration.FundamentalPeakPattern"
+        },
+        {
+          "kind": "class",
+          "name": "FundamentalProfileCalibrationOptions",
+          "signature": "(peak_positions_deg: 'tuple[float, ...]' = (20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0, 90.0, 100.0, 110.0, 120.0, 130.0, 140.0), window_half_width_deg: 'float' = 0.8, step_deg: 'float' = 0.002, aperture_quadrature_order: 'int' = 3, axial_ray_quadrature_order: 'int' = 255, spectral_transmission_quadrature_order: 'int' = 255, fcj_quadrature_order: 'int' = 48, support_fwhm: 'float' = 40.0, max_iterations: 'int' = 40, damping: 'float' = 1e-08, step_tolerance: 'float' = 1e-08, objective_tolerance: 'float' = 1e-10, maximum_relative_l2_error: 'float' = 0.03, maximum_peak_relative_l2_error: 'float' = 0.05, minimum_profile_correlation: 'float' = 0.995) -> None",
+          "target": "phasesmith.fpa_calibration.FundamentalProfileCalibrationOptions"
+        },
+        {
+          "kind": "class",
+          "name": "FundamentalProfileCalibrationResult",
+          "signature": "(instrument: 'ConstantWavelengthInstrument', components: 'WavelengthComponents', axial_geometry: 'FcjGeometry', sh_over_l: 'float', parameter_names: 'tuple[str, ...]', iterations: 'int', converged: 'bool', accepted: 'bool', relative_l2_error: 'float', maximum_peak_relative_l2_error: 'float', minimum_profile_correlation: 'float', peak_diagnostics: 'tuple[FundamentalPeakDiagnostic, ...]', grid_deg: 'NDArray[np.float64]', target_y: 'NDArray[np.float64]', calculated_y: 'NDArray[np.float64]', warnings: 'tuple[str, ...]') -> None",
+          "target": "phasesmith.fpa_calibration.FundamentalProfileCalibrationResult"
+        },
+        {
+          "kind": "class",
+          "name": "GaussianSpectralPassband",
+          "signature": "(center_wavelength_angstrom: 'float', gaussian_fwhm_angstrom: 'float') -> None",
+          "target": "phasesmith.fpa_calibration.GaussianSpectralPassband"
+        },
+        {
+          "kind": "class",
+          "name": "GeneratedReflectionBatch",
+          "signature": "(reflection_ids: 'tuple[str, ...]', hkl: 'NDArray[np.int64]', conventional_hkl: 'NDArray[np.int64]', multiplicity: 'NDArray[np.int64]', d_spacing_angstrom: 'NDArray[np.float64]', reciprocal_length_inverse_angstrom: 'NDArray[np.float64]', d_spacing_derivatives: 'NDArray[np.float64]') -> None",
+          "target": "phasesmith.symmetry.GeneratedReflectionBatch"
+        },
+        {
+          "kind": "class",
+          "name": "IntegratedIntensityCorrection",
+          "signature": "(values: 'ArrayLike', d_values_d_q_squared: 'ArrayLike', model_id: 'str') -> 'None'",
+          "target": "phasesmith.intensity_corrections.IntegratedIntensityCorrection"
+        },
+        {
+          "kind": "class",
+          "name": "IntegratedIntensityCorrectionProvider",
+          "signature": "(*args, **kwargs)",
+          "target": "phasesmith.intensity_corrections.IntegratedIntensityCorrectionProvider"
+        },
+        {
+          "kind": "class",
+          "name": "IsotropicLorentzianMicrostrainBroadening",
+          "signature": "(microstrain: 'float') -> None",
+          "target": "phasesmith.sample.IsotropicLorentzianMicrostrainBroadening"
+        },
+        {
+          "kind": "class",
+          "name": "IsotropicMicrostrainBroadening",
+          "signature": "(rms_microstrain: 'float') -> None",
+          "target": "phasesmith.sample.IsotropicMicrostrainBroadening"
+        },
+        {
+          "kind": "class",
+          "name": "IsotropicSizeBroadening",
+          "signature": "(crystallite_size_nm: 'float', shape_factor: 'float' = 0.9) -> None",
+          "target": "phasesmith.sample.IsotropicSizeBroadening"
+        },
+        {
+          "kind": "constant",
+          "name": "MAX_DENSE_DERIVATIVE_ELEMENTS",
+          "signature": null,
+          "target": "builtins.int"
+        },
+        {
+          "kind": "class",
+          "name": "MarchDollasePreferredOrientation",
+          "signature": "(march_ratio: 'float', preferred_axis_hkl: 'tuple[float, float, float]', reciprocal_metric: 'ReciprocalMetric') -> None",
+          "target": "phasesmith.sample.MarchDollasePreferredOrientation"
+        },
+        {
+          "kind": "class",
+          "name": "MetricConstraints",
+          "signature": "(equations: 'NDArray[np.int64]', parameterization_basis: 'NDArray[np.int64]', independent_parameter_count: 'int') -> None",
+          "target": "phasesmith.symmetry.MetricConstraints"
+        },
+        {
+          "kind": "class",
+          "name": "MonochromaticRadiation",
+          "signature": "(probe: 'RadiationProbe', wavelength_angstrom: 'float') -> None",
+          "target": "phasesmith.radiation.MonochromaticRadiation"
+        },
+        {
+          "kind": "constant",
+          "name": "NEUTRON_NUCLEAR_DESCRIPTOR",
+          "signature": null,
+          "target": "phasesmith.scattering.ScatteringProviderDescriptor"
+        },
+        {
+          "kind": "constant",
+          "name": "NEUTRON_TABLE_PROVENANCE",
+          "signature": null,
+          "target": "phasesmith.scattering.ScatteringTableProvenance"
+        },
+        {
+          "kind": "class",
+          "name": "NeutralIntegratedIntensityCorrection",
+          "signature": "() -> None",
+          "target": "phasesmith.intensity_corrections.NeutralIntegratedIntensityCorrection"
+        },
+        {
+          "kind": "class",
+          "name": "NeutronNuclear",
+          "signature": "() -> None",
+          "target": "phasesmith.scattering.NeutronNuclear"
+        },
+        {
+          "kind": "class",
+          "name": "NeutronSpeciesMetadata",
+          "signature": "(key: 'str', atomic_number: 'int', isotope: 'int | None', b_c_fm: 'float', uncertainty_fm: 'float | None', energy_dependent: 'bool', derived_alias_of: 'str | None') -> None",
+          "target": "phasesmith.scattering.NeutronSpeciesMetadata"
+        },
+        {
+          "kind": "class",
+          "name": "OperationCancelled",
+          "signature": "(reason: 'str' = 'operation cancelled') -> 'None'",
+          "target": "phasesmith.control.OperationCancelled"
+        },
+        {
+          "kind": "class",
+          "name": "P1JvpResult",
+          "signature": "(f: 'NDArray[np.complex128]', intensity: 'NDArray[np.float64]', d_f: 'NDArray[np.complex128]', d_intensity: 'NDArray[np.float64]') -> None",
+          "target": "phasesmith.crystallography.P1JvpResult"
+        },
+        {
+          "kind": "class",
+          "name": "P1StructureFactorResult",
+          "signature": "(f: 'NDArray[np.complex128]', intensity: 'NDArray[np.float64]', parameter_names: 'tuple[str, ...]', d_f_d_parameters: 'NDArray[np.complex128]', d_intensity_d_parameters: 'NDArray[np.float64]') -> None",
+          "target": "phasesmith.crystallography.P1StructureFactorResult"
+        },
+        {
+          "kind": "class",
+          "name": "P1VjpResult",
+          "signature": "(f: 'NDArray[np.complex128]', intensity: 'NDArray[np.float64]', parameter_names: 'tuple[str, ...]', gradient: 'NDArray[np.float64]') -> None",
+          "target": "phasesmith.crystallography.P1VjpResult"
+        },
+        {
+          "kind": "constant",
+          "name": "PARAMETER_ORDER",
+          "signature": null,
+          "target": "builtins.tuple"
+        },
+        {
+          "kind": "constant",
+          "name": "PHYSICS_PROVIDER_API_VERSION",
+          "signature": null,
+          "target": "builtins.int"
+        },
+        {
+          "kind": "class",
+          "name": "PatternCalculationResult",
+          "signature": "(y: 'NDArray[np.float64]', profile_y: 'NDArray[np.float64]', background: 'NDArray[np.float64]', accumulation: 'AccumulationResult', reflection_keys: 'tuple[tuple[str, str], ...]', phase_offsets: 'NDArray[np.int64]', phase_components: 'tuple[PhasePatternComponent, ...]' = ()) -> None",
+          "target": "phasesmith.pattern.PatternCalculationResult"
+        },
+        {
+          "kind": "class",
+          "name": "PatternDerivatives",
+          "signature": "(local: 'SupportJacobian', global_jacobian: 'NDArray[np.float64]', local_parameter_names: 'tuple[str, ...]', global_parameter_names: 'tuple[str, ...]' = ()) -> None",
+          "target": "phasesmith.results.PatternDerivatives"
+        },
+        {
+          "kind": "class",
+          "name": "Phase",
+          "signature": "(phase_id: 'str', name: 'str', reflections: 'ReflectionBatch', scale: 'float' = 1.0, physics: 'ReflectionPhysicsProvider | None' = None) -> None",
+          "target": "phasesmith.phase.Phase"
+        },
+        {
+          "kind": "class",
+          "name": "PhasePatternComponent",
+          "signature": "(phase_id: 'str', y: 'NDArray[np.float64]') -> None",
+          "target": "phasesmith.pattern.PhasePatternComponent"
+        },
+        {
+          "kind": "class",
+          "name": "PhaseWeightFraction",
+          "signature": "(phase_id: 'str', weight_fraction: 'float') -> None",
+          "target": "phasesmith.quantitative.PhaseWeightFraction"
+        },
+        {
+          "kind": "class",
+          "name": "PhysicsContext",
+          "signature": "(reflections: 'ReflectionGeometryBatch', instrument: 'ConstantWavelengthInstrument', unit_cell: 'UnitCell | None' = None) -> None",
+          "target": "phasesmith.extensions.PhysicsContext"
+        },
+        {
+          "kind": "class",
+          "name": "PhysicsContribution",
+          "signature": "(*, gaussian_variance_deg2: 'ArrayLike', lorentzian_fwhm_deg: 'ArrayLike', intensity_multiplier: 'ArrayLike', d_gaussian_variance_d_position: 'ArrayLike', d_lorentzian_fwhm_d_position: 'ArrayLike', d_intensity_multiplier_d_position: 'ArrayLike', parameter_names: 'tuple[str, ...] | list[str]', d_gaussian_variance_d_parameters: 'ArrayLike', d_lorentzian_fwhm_d_parameters: 'ArrayLike', d_intensity_multiplier_d_parameters: 'ArrayLike') -> 'None'",
+          "target": "phasesmith.extensions.PhysicsContribution"
+        },
+        {
+          "kind": "class",
+          "name": "PowderPattern",
+          "signature": "(x: 'ArrayLike', *, observed_y: 'ArrayLike | None' = None, uncertainty: 'ArrayLike | None' = None, mask: 'ArrayLike | None' = None, background: 'ArrayLike | None' = None) -> 'None'",
+          "target": "phasesmith.pattern.PowderPattern"
+        },
+        {
+          "kind": "class",
+          "name": "PreparedNeutronNuclear",
+          "signature": "(species: 'tuple[ScatteringSpecies, ...] | list[ScatteringSpecies]') -> 'None'",
+          "target": "phasesmith.scattering.PreparedNeutronNuclear"
+        },
+        {
+          "kind": "class",
+          "name": "PreparedPattern",
+          "signature": "(pattern: 'PowderPattern', instrument: 'ConstantWavelengthInstrument', phases: 'tuple[Phase, ...] | list[Phase]', *, options: 'CalculationOptions | None' = None) -> 'None'",
+          "target": "phasesmith.calculation.PreparedPattern"
+        },
+        {
+          "kind": "class",
+          "name": "PreparedReflectionGenerator",
+          "signature": "(space_group: 'SpaceGroup', *, merge_friedel: 'bool' = True, max_candidates: 'int' = 50000000) -> 'None'",
+          "target": "phasesmith.symmetry.PreparedReflectionGenerator"
+        },
+        {
+          "kind": "class",
+          "name": "PreparedStructuralPattern",
+          "signature": "(pattern: 'PowderPattern', experiment: 'ConstantWavelengthExperiment', phase: 'RietveldPhase', *, support_fwhm: 'float' = 20.0, jacobian_layout: \"Literal['support', 'dense']\" = 'support', execution: 'ExecutionPolicy | None' = None) -> 'None'",
+          "target": "phasesmith.structural_calculation.PreparedStructuralPattern"
+        },
+        {
+          "kind": "class",
+          "name": "PreparedXrayNonResonant",
+          "signature": "(species: 'tuple[ScatteringSpecies, ...] | list[ScatteringSpecies]') -> 'None'",
+          "target": "phasesmith.scattering.PreparedXrayNonResonant"
+        },
+        {
+          "kind": "class",
+          "name": "ProfileEstimationMode",
+          "signature": null,
+          "target": "phasesmith.profile_estimation.ProfileEstimationMode"
+        },
+        {
+          "kind": "class",
+          "name": "ProfileEstimationOptions",
+          "signature": "(mode: 'ProfileEstimationMode' = <ProfileEstimationMode.AUTOMATIC: 'automatic'>, align_lattice: 'bool' = False, minimum_relative_rwp_improvement: 'float' = 0.002, minimum_absolute_rwp_improvement: 'float' = 1e-05, maximum_absolute_correlation: 'float' = 0.98, lebail: 'LeBailOptions' = <factory>) -> None",
+          "target": "phasesmith.profile_estimation.ProfileEstimationOptions"
+        },
+        {
+          "kind": "class",
+          "name": "ProfileEstimationResult",
+          "signature": "(instrument: 'ConstantWavelengthInstrument', active_parameters: 'tuple[str, ...]', phase: 'LeBailPhase', integrated_intensity: 'NDArray[np.float64]', calculated_y: 'NDArray[np.float64]', rp: 'float', rwp: 'float', chi_square: 'float', termination_reason: 'str', stages: 'tuple[ProfileEstimationStage, ...]', warnings: 'tuple[str, ...]') -> None",
+          "target": "phasesmith.profile_estimation.ProfileEstimationResult"
+        },
+        {
+          "kind": "class",
+          "name": "ProfileEstimationStage",
+          "signature": "(kind: 'str', instrument_parameters: 'tuple[str, ...]', accepted: 'bool', decision: 'str', rwp: 'float', maximum_absolute_correlation: 'float | None') -> None",
+          "target": "phasesmith.profile_estimation.ProfileEstimationStage"
+        },
+        {
+          "kind": "class",
+          "name": "ProfileResult",
+          "signature": "(value: 'NDArray[np.float64]', d_delta: 'NDArray[np.float64]', d_fwhm: 'NDArray[np.float64]', d_eta: 'NDArray[np.float64]') -> None",
+          "target": "phasesmith._api.ProfileResult"
+        },
+        {
+          "kind": "class",
+          "name": "ProgressCallback",
+          "signature": "(*args, **kwargs)",
+          "target": "phasesmith.control.ProgressCallback"
+        },
+        {
+          "kind": "class",
+          "name": "ProgressEvent",
+          "signature": "(stage: 'str', completed: 'int', total: 'int', diagnostics: 'tuple[tuple[str, float], ...]' = ()) -> None",
+          "target": "phasesmith.control.ProgressEvent"
+        },
+        {
+          "kind": "class",
+          "name": "ProviderDescriptor",
+          "signature": "(provider_id: 'str', provider_version: 'str', api_version: 'int' = 1, thread_safe: 'bool' = False) -> None",
+          "target": "phasesmith.extensions.ProviderDescriptor"
+        },
+        {
+          "kind": "class",
+          "name": "QuantitativePhase",
+          "signature": "(phase_id: 'str', scale: 'float', formula_units_per_cell: 'float', formula_mass_g_mol: 'float', cell_volume_angstrom3: 'float') -> None",
+          "target": "phasesmith.quantitative.QuantitativePhase"
+        },
+        {
+          "kind": "class",
+          "name": "QuantitativePhaseAnalysis",
+          "signature": "(phases: 'tuple[PhaseWeightFraction, ...]', covariance: 'NDArray[np.float64]') -> None",
+          "target": "phasesmith.quantitative.QuantitativePhaseAnalysis"
+        },
+        {
+          "kind": "class",
+          "name": "RadiationProbe",
+          "signature": null,
+          "target": "phasesmith.radiation.RadiationProbe"
+        },
+        {
+          "kind": "class",
+          "name": "ReciprocalAngleGeometry",
+          "signature": "(cosine_squared: 'NDArray[np.float64]', d_cosine_squared_d_axis_hkl: 'NDArray[np.float64]') -> None",
+          "target": "phasesmith.sample.ReciprocalAngleGeometry"
+        },
+        {
+          "kind": "class",
+          "name": "ReciprocalMetric",
+          "signature": "(matrix: 'ArrayLike') -> 'None'",
+          "target": "phasesmith.phase.ReciprocalMetric"
+        },
+        {
+          "kind": "class",
+          "name": "ReflectionBatch",
+          "signature": "(reflection_ids: 'tuple[str, ...] | list[str]', hkl: 'ArrayLike', d_spacing_angstrom: 'ArrayLike', two_theta_deg: 'ArrayLike', integrated_intensity: 'ArrayLike') -> 'None'",
+          "target": "phasesmith.phase.ReflectionBatch"
+        },
+        {
+          "kind": "class",
+          "name": "ReflectionFamilies",
+          "signature": "(reflection_ids: 'tuple[str, ...]', canonical_hkl: 'NDArray[np.int64]', conventional_hkl: 'NDArray[np.int64]', multiplicity: 'NDArray[np.int64]') -> None",
+          "target": "phasesmith.symmetry.ReflectionFamilies"
+        },
+        {
+          "kind": "class",
+          "name": "ReflectionGeometryBatch",
+          "signature": "(hkl: 'ArrayLike', d_spacing_angstrom: 'ArrayLike', two_theta_deg: 'ArrayLike', base_integrated_intensity: 'ArrayLike') -> 'None'",
+          "target": "phasesmith.phase.ReflectionGeometryBatch"
+        },
+        {
+          "kind": "class",
+          "name": "ReflectionPhysicsProvider",
+          "signature": "(*args, **kwargs)",
+          "target": "phasesmith.extensions.ReflectionPhysicsProvider"
+        },
+        {
+          "kind": "class",
+          "name": "ReflectionRange",
+          "signature": "(*args, **kwargs)",
+          "target": "phasesmith.symmetry.ReflectionRange"
+        },
+        {
+          "kind": "class",
+          "name": "RietveldPhase",
+          "signature": "(phase_id: 'str', name: 'str', structure: 'CrystalStructure', reflections: 'StructuralReflectionBatch', scattering: 'ScatteringFactorProvider', intensity_correction: 'IntegratedIntensityCorrectionProvider', scale: 'float' = 1.0, physics: 'ReflectionPhysicsProvider | None' = None, coordinate_tolerance: 'float' = 1e-10) -> None",
+          "target": "phasesmith.phase.RietveldPhase"
+        },
+        {
+          "kind": "class",
+          "name": "RietveldProject",
+          "signature": "(input: 'RietveldInput', options: 'RietveldOptions' = <factory>, checkpoint: 'RietveldCheckpoint | None' = None) -> None",
+          "target": "phasesmith.project.RietveldProject"
+        },
+        {
+          "kind": "constant",
+          "name": "SCATTERING_PROVIDER_API_VERSION",
+          "signature": null,
+          "target": "builtins.int"
+        },
+        {
+          "kind": "class",
+          "name": "ScatteringContext",
+          "signature": "(species: 'tuple[ScatteringSpecies, ...] | list[ScatteringSpecies]', s_inverse_angstrom: 'ArrayLike') -> 'None'",
+          "target": "phasesmith.scattering.ScatteringContext"
+        },
+        {
+          "kind": "class",
+          "name": "ScatteringFactorBatch",
+          "signature": "(amplitudes: 'ArrayLike', d_amplitudes_d_s: 'ArrayLike', descriptor: 'ScatteringProviderDescriptor') -> 'None'",
+          "target": "phasesmith.scattering.ScatteringFactorBatch"
+        },
+        {
+          "kind": "class",
+          "name": "ScatteringFactorProvider",
+          "signature": "(*args, **kwargs)",
+          "target": "phasesmith.scattering.ScatteringFactorProvider"
+        },
+        {
+          "kind": "class",
+          "name": "ScatteringProviderDescriptor",
+          "signature": "(provider_id: 'str', provider_version: 'str', probe: \"Literal['xray', 'neutron']\", amplitude_unit: \"Literal['electrons', 'fm']\", api_version: 'int' = 1, thread_safe: 'bool' = False) -> None",
+          "target": "phasesmith.scattering.ScatteringProviderDescriptor"
+        },
+        {
+          "kind": "class",
+          "name": "ScatteringSpecies",
+          "signature": "(element_symbol: 'str', isotope: 'int | None' = None, charge: 'int | None' = None, xray_table_key: 'str | None' = None) -> None",
+          "target": "phasesmith.scattering.ScatteringSpecies"
+        },
+        {
+          "kind": "class",
+          "name": "ScatteringTableProvenance",
+          "signature": "(name: 'str', upstream_commit: 'str', source_sha256: 'str', table_fnv64: 'int', row_count: 'int') -> None",
+          "target": "phasesmith.scattering.ScatteringTableProvenance"
+        },
+        {
+          "kind": "class",
+          "name": "ScatteringVectorRange",
+          "signature": "(min_inverse_angstrom: 'float', max_inverse_angstrom: 'float') -> None",
+          "target": "phasesmith.symmetry.ScatteringVectorRange"
+        },
+        {
+          "kind": "class",
+          "name": "SmoothBrucknerBackground",
+          "signature": "(smooth_width: 'float' = 0.1, iterations: 'int' = 50, chebyshev_order: 'int | None' = 50) -> None",
+          "target": "phasesmith.background.SmoothBrucknerBackground"
+        },
+        {
+          "kind": "class",
+          "name": "SollerAxialGeometry",
+          "signature": "(source_full_length_mm: 'float', sample_full_length_mm: 'float', receiving_slit_full_length_mm: 'float', incident_soller_full_width_deg: 'float | None' = None, diffracted_soller_full_width_deg: 'float | None' = None) -> None",
+          "target": "phasesmith.fpa_calibration.SollerAxialGeometry"
+        },
+        {
+          "kind": "class",
+          "name": "SpaceGroup",
+          "signature": "(operations: 'tuple[SymmetryOperation, ...] | list[SymmetryOperation]') -> 'None'",
+          "target": "phasesmith.symmetry.SpaceGroup"
+        },
+        {
+          "kind": "class",
+          "name": "StephensOrthorhombicBroadening",
+          "signature": "(coefficients_angstrom_minus4: 'tuple[float, float, float, float, float, float]', lorentzian_fraction: 'float' = 0.0) -> None",
+          "target": "phasesmith.sample.StephensOrthorhombicBroadening"
+        },
+        {
+          "kind": "class",
+          "name": "StructuralPatternCalculationResult",
+          "signature": "(phase_id: 'str', y: 'NDArray[np.float64]', profile_y: 'NDArray[np.float64]', background: 'NDArray[np.float64]', accumulation: 'AccumulationResult', reflections: 'StructuralReflectionResult') -> None",
+          "target": "phasesmith.pattern.StructuralPatternCalculationResult"
+        },
+        {
+          "kind": "class",
+          "name": "StructuralPatternJvpResult",
+          "signature": "(result: 'StructuralPatternCalculationResult', parameter_names: 'tuple[str, ...]', d_y: 'NDArray[np.float64]', d_integrated_intensity: 'NDArray[np.float64]', d_two_theta_deg: 'NDArray[np.float64]') -> None",
+          "target": "phasesmith.pattern.StructuralPatternJvpResult"
+        },
+        {
+          "kind": "class",
+          "name": "StructuralPatternLinearizationResult",
+          "signature": "(result: 'StructuralPatternCalculationResult', parameter_names: 'tuple[str, ...]', jacobian: 'NDArray[np.float64]') -> None",
+          "target": "phasesmith.pattern.StructuralPatternLinearizationResult"
+        },
+        {
+          "kind": "class",
+          "name": "StructuralPatternVjpResult",
+          "signature": "(result: 'StructuralPatternCalculationResult', parameter_names: 'tuple[str, ...]', gradient: 'NDArray[np.float64]') -> None",
+          "target": "phasesmith.pattern.StructuralPatternVjpResult"
+        },
+        {
+          "kind": "class",
+          "name": "StructuralReflectionBatch",
+          "signature": "(reflection_ids: 'tuple[str, ...] | list[str]', hkl: 'ArrayLike', multiplicity: 'ArrayLike') -> 'None'",
+          "target": "phasesmith.phase.StructuralReflectionBatch"
+        },
+        {
+          "kind": "class",
+          "name": "StructuralReflectionResult",
+          "signature": "(reflection_ids: 'tuple[str, ...]', f: 'NDArray[np.complex128]', f_squared: 'NDArray[np.float64]', integrated_intensity: 'NDArray[np.float64]', q_squared_inverse_angstrom2: 'NDArray[np.float64]', s_inverse_angstrom: 'NDArray[np.float64]', d_spacing_angstrom: 'NDArray[np.float64]', two_theta_deg: 'NDArray[np.float64]', component_index: 'NDArray[np.int64] | None' = None, base_reflection_index: 'NDArray[np.int64] | None' = None) -> None",
+          "target": "phasesmith.pattern.StructuralReflectionResult"
+        },
+        {
+          "kind": "class",
+          "name": "StructureDiagnostic",
+          "signature": "(severity: \"Literal['warning', 'error']\", code: 'str', message: 'str', tag: 'str | None' = None, row: 'int | None' = None) -> None",
+          "target": "phasesmith.structure.StructureDiagnostic"
+        },
+        {
+          "kind": "class",
+          "name": "StructureFactorResult",
+          "signature": "(f: 'NDArray[np.complex128]', f_squared: 'NDArray[np.float64]', integrated_intensity: 'NDArray[np.float64]', q_squared_inverse_angstrom2: 'NDArray[np.float64]', s_inverse_angstrom: 'NDArray[np.float64]', correction: 'NDArray[np.float64]', correction_model_id: 'str', parameter_names: 'tuple[str, ...]', d_f_d_parameters: 'NDArray[np.complex128]', d_integrated_intensity_d_parameters: 'NDArray[np.float64]') -> None",
+          "target": "phasesmith.crystallography.StructureFactorResult"
+        },
+        {
+          "kind": "class",
+          "name": "StructureFactorValuesResult",
+          "signature": "(f: 'NDArray[np.complex128]', f_squared: 'NDArray[np.float64]', integrated_intensity: 'NDArray[np.float64]', q_squared_inverse_angstrom2: 'NDArray[np.float64]', s_inverse_angstrom: 'NDArray[np.float64]', correction: 'NDArray[np.float64]', correction_model_id: 'str') -> None",
+          "target": "phasesmith.crystallography.StructureFactorValuesResult"
+        },
+        {
+          "kind": "class",
+          "name": "StructureSource",
+          "signature": "(format: 'str', block_name: 'str', backend: 'str', backend_version: 'str', source_name: 'str | None' = None) -> None",
+          "target": "phasesmith.structure.StructureSource"
+        },
+        {
+          "kind": "class",
+          "name": "SupportJacobian",
+          "signature": "(starts: 'NDArray[np.int64]', offsets: 'NDArray[np.int64]', values: 'NDArray[np.float64]') -> None",
+          "target": "phasesmith.results.SupportJacobian"
+        },
+        {
+          "kind": "class",
+          "name": "SymmetryOperation",
+          "signature": "(rotation: 'ArrayLike', translation: 'tuple[Fraction | int | str, Fraction | int | str, Fraction | int | str] | list[Fraction | int | str]') -> 'None'",
+          "target": "phasesmith.symmetry.SymmetryOperation"
+        },
+        {
+          "kind": "constant",
+          "name": "TCH_PARAMETER_ORDER",
+          "signature": null,
+          "target": "builtins.tuple"
+        },
+        {
+          "kind": "constant",
+          "name": "TOF_GLOBAL_PARAMETER_ORDER",
+          "signature": null,
+          "target": "builtins.tuple"
+        },
+        {
+          "kind": "constant",
+          "name": "TOF_LOCAL_PARAMETER_ORDER",
+          "signature": null,
+          "target": "builtins.tuple"
+        },
+        {
+          "kind": "class",
+          "name": "TchFwhmShape",
+          "signature": "(total_fwhm: 'float', eta: 'float', d_total_fwhm_d_gaussian_fwhm: 'float', d_total_fwhm_d_lorentzian_fwhm: 'float', d_eta_d_gaussian_fwhm: 'float', d_eta_d_lorentzian_fwhm: 'float') -> None",
+          "target": "phasesmith._api.TchFwhmShape"
+        },
+        {
+          "kind": "class",
+          "name": "TchProfileResult",
+          "signature": "(value: 'NDArray[np.float64]', d_delta: 'NDArray[np.float64]', d_gaussian_fwhm: 'NDArray[np.float64]', d_lorentzian_fwhm: 'NDArray[np.float64]') -> None",
+          "target": "phasesmith._api.TchProfileResult"
+        },
+        {
+          "kind": "class",
+          "name": "TchSigmaProfileResult",
+          "signature": "(value: 'NDArray[np.float64]', d_delta: 'NDArray[np.float64]', d_gaussian_sigma: 'NDArray[np.float64]', d_lorentzian_fwhm: 'NDArray[np.float64]') -> None",
+          "target": "phasesmith._api.TchSigmaProfileResult"
+        },
+        {
+          "kind": "class",
+          "name": "TchSigmaShape",
+          "signature": "(total_fwhm: 'float', eta: 'float', d_total_fwhm_d_gaussian_sigma: 'float', d_total_fwhm_d_lorentzian_fwhm: 'float', d_eta_d_gaussian_sigma: 'float', d_eta_d_lorentzian_fwhm: 'float') -> None",
+          "target": "phasesmith._api.TchSigmaShape"
+        },
+        {
+          "kind": "class",
+          "name": "TerminalCancellationController",
+          "signature": "(token: 'CancellationToken | None' = None, *, input_stream: 'IO[str] | None' = None, output_stream: 'IO[str] | None' = None, quit_key: 'str' = 'q', enable_quit_key: 'bool' = True) -> 'None'",
+          "target": "phasesmith.terminal.TerminalCancellationController"
+        },
+        {
+          "kind": "class",
+          "name": "TimeOfFlightNeutronLorentz",
+          "signature": "(two_theta_deg: 'float') -> None",
+          "target": "phasesmith.intensity_corrections.TimeOfFlightNeutronLorentz"
+        },
+        {
+          "kind": "class",
+          "name": "TofBankGeometry",
+          "signature": "(two_theta_deg: 'float') -> None",
+          "target": "phasesmith.instrument.TofBankGeometry"
+        },
+        {
+          "kind": "class",
+          "name": "TofIncidentSpectrum",
+          "signature": "(min_tof_us: 'float', max_tof_us: 'float', coefficients: 'ArrayLike') -> 'None'",
+          "target": "phasesmith.instrument.TofIncidentSpectrum"
+        },
+        {
+          "kind": "class",
+          "name": "TofIncidentSpectrumEvaluation",
+          "signature": "(values: 'ArrayLike', d_values_d_tof_us: 'ArrayLike') -> 'None'",
+          "target": "phasesmith.instrument.TofIncidentSpectrumEvaluation"
+        },
+        {
+          "kind": "class",
+          "name": "TofInstrument",
+          "signature": "(zero_us: 'float', difc_us_per_angstrom: 'float', difa_us_per_angstrom2: 'float', difb_us_angstrom: 'float', alpha_coefficient: 'float', beta0_per_us: 'float', beta1_angstrom4_per_us: 'float', betaq_angstrom2_per_us: 'float', sigma0_us2: 'float', sigma1_us2_per_angstrom2: 'float', sigma2_us2_per_angstrom4: 'float', sigmaq_us2_per_angstrom: 'float', x_us_per_angstrom: 'float', y_us_per_angstrom2: 'float', z_us: 'float') -> None",
+          "target": "phasesmith.instrument.TofInstrument"
+        },
+        {
+          "kind": "class",
+          "name": "TofPowderPattern",
+          "signature": "(tof_us: 'ArrayLike', *, observed_y: 'ArrayLike | None' = None, uncertainty: 'ArrayLike | None' = None, mask: 'ArrayLike | None' = None, background: 'ArrayLike | None' = None) -> 'None'",
+          "target": "phasesmith.pattern.TofPowderPattern"
+        },
+        {
+          "kind": "class",
+          "name": "TofProfileParameters",
+          "signature": "(position_us: 'NDArray[np.float64]', alpha_per_us: 'NDArray[np.float64]', beta_per_us: 'NDArray[np.float64]', gaussian_variance_us2: 'NDArray[np.float64]', gaussian_fwhm_us: 'NDArray[np.float64]', lorentzian_fwhm_us: 'NDArray[np.float64]', total_fwhm_us: 'NDArray[np.float64]', eta: 'NDArray[np.float64]') -> None",
+          "target": "phasesmith.tof.TofProfileParameters"
+        },
+        {
+          "kind": "class",
+          "name": "TofProfileResult",
+          "signature": "(value: 'NDArray[np.float64]', d_position: 'NDArray[np.float64]', d_alpha: 'NDArray[np.float64]', d_beta: 'NDArray[np.float64]', d_gaussian_fwhm: 'NDArray[np.float64]', d_lorentzian_fwhm: 'NDArray[np.float64]') -> None",
+          "target": "phasesmith.tof.TofProfileResult"
+        },
+        {
+          "kind": "class",
+          "name": "TofRange",
+          "signature": "(min_us: 'float', max_us: 'float', search_min_d_angstrom: 'float', search_max_d_angstrom: 'float', zero_us: 'float', difc_us_per_angstrom: 'float', difa_us_per_angstrom2: 'float' = 0.0, difb_us_angstrom: 'float' = 0.0) -> None",
+          "target": "phasesmith.symmetry.TofRange"
+        },
+        {
+          "kind": "class",
+          "name": "UnitCell",
+          "signature": "(a_angstrom: 'float', b_angstrom: 'float', c_angstrom: 'float', alpha_deg: 'float', beta_deg: 'float', gamma_deg: 'float') -> None",
+          "target": "phasesmith.crystallography.UnitCell"
+        },
+        {
+          "kind": "class",
+          "name": "WavelengthComponents",
+          "signature": "(wavelengths_angstrom: 'ArrayLike', relative_intensities: 'ArrayLike') -> 'None'",
+          "target": "phasesmith.radiation.WavelengthComponents"
+        },
+        {
+          "kind": "constant",
+          "name": "XRAY_FIXED_DISPERSION_DESCRIPTOR",
+          "signature": null,
+          "target": "phasesmith.scattering.ScatteringProviderDescriptor"
+        },
+        {
+          "kind": "constant",
+          "name": "XRAY_NON_RESONANT_DESCRIPTOR",
+          "signature": null,
+          "target": "phasesmith.scattering.ScatteringProviderDescriptor"
+        },
+        {
+          "kind": "constant",
+          "name": "XRAY_TABLE_PROVENANCE",
+          "signature": null,
+          "target": "phasesmith.scattering.ScatteringTableProvenance"
+        },
+        {
+          "kind": "constant",
+          "name": "XYPATTERN_REVISION",
+          "signature": null,
+          "target": "builtins.str"
+        },
+        {
+          "kind": "class",
+          "name": "XrayFixedDispersion",
+          "signature": "(corrections: 'dict[str, complex]') -> 'None'",
+          "target": "phasesmith.scattering.XrayFixedDispersion"
+        },
+        {
+          "kind": "class",
+          "name": "XrayNonResonant",
+          "signature": "() -> None",
+          "target": "phasesmith.scattering.XrayNonResonant"
+        },
+        {
+          "kind": "class",
+          "name": "XraySpeciesMetadata",
+          "signature": "(key: 'str', atomic_number: 'int') -> None",
+          "target": "phasesmith.scattering.XraySpeciesMetadata"
+        },
+        {
+          "kind": "constant",
+          "name": "__version__",
+          "signature": null,
+          "target": "builtins.str"
+        },
+        {
+          "kind": "function",
+          "name": "accumulate",
+          "signature": "(x: 'ArrayLike', positions: 'ArrayLike', intensities: 'ArrayLike', fwhms: 'ArrayLike', etas: 'ArrayLike', *, support_fwhm: 'float' = 20.0, jacobian_layout: \"Literal['support', 'dense']\" = 'support') -> 'AccumulationResult'",
+          "target": "phasesmith._api.accumulate"
+        },
+        {
+          "kind": "function",
+          "name": "accumulate_cw",
+          "signature": "(x: 'ArrayLike', two_theta_deg: 'ArrayLike', integrated_intensities: 'ArrayLike', instrument: 'ConstantWavelengthInstrument', *, support_fwhm: 'float' = 20.0, jacobian_layout: \"Literal['support', 'dense']\" = 'support') -> 'AccumulationResult'",
+          "target": "phasesmith.cw.accumulate_cw"
+        },
+        {
+          "kind": "function",
+          "name": "accumulate_cw_components",
+          "signature": "(x: 'ArrayLike', two_theta_deg: 'ArrayLike', integrated_intensities: 'ArrayLike', instrument: 'ConstantWavelengthInstrument', components: 'WavelengthComponents', *, support_fwhm: 'float' = 20.0, jacobian_layout: \"Literal['support', 'dense']\" = 'support') -> 'AccumulationResult'",
+          "target": "phasesmith.cw.accumulate_cw_components"
+        },
+        {
+          "kind": "function",
+          "name": "accumulate_cw_contributions",
+          "signature": "(x: 'ArrayLike', two_theta_deg: 'ArrayLike', base_integrated_intensities: 'ArrayLike', instrument: 'ConstantWavelengthInstrument', contributions: 'PhysicsContribution', *, geometry: 'FcjGeometry | None' = None, support_fwhm: 'float' = 20.0, jacobian_layout: \"Literal['support', 'dense']\" = 'support') -> 'AccumulationResult'",
+          "target": "phasesmith.cw.accumulate_cw_contributions"
+        },
+        {
+          "kind": "function",
+          "name": "accumulate_cw_fcj",
+          "signature": "(x: 'ArrayLike', two_theta_deg: 'ArrayLike', integrated_intensities: 'ArrayLike', instrument: 'ConstantWavelengthInstrument', geometry: 'FcjGeometry', *, support_fwhm: 'float' = 20.0, jacobian_layout: \"Literal['support', 'dense']\" = 'support') -> 'AccumulationResult'",
+          "target": "phasesmith.fcj.accumulate_cw_fcj"
+        },
+        {
+          "kind": "function",
+          "name": "accumulate_cw_fcj_components",
+          "signature": "(x: 'ArrayLike', two_theta_deg: 'ArrayLike', integrated_intensities: 'ArrayLike', instrument: 'ConstantWavelengthInstrument', components: 'WavelengthComponents', geometry: 'FcjGeometry', *, support_fwhm: 'float' = 20.0, jacobian_layout: \"Literal['support', 'dense']\" = 'support') -> 'AccumulationResult'",
+          "target": "phasesmith.fcj.accumulate_cw_fcj_components"
+        },
+        {
+          "kind": "function",
+          "name": "accumulate_tch",
+          "signature": "(x: 'ArrayLike', positions: 'ArrayLike', intensities: 'ArrayLike', gaussian_fwhms: 'ArrayLike', lorentzian_fwhms: 'ArrayLike', *, support_fwhm: 'float' = 20.0, jacobian_layout: \"Literal['support', 'dense']\" = 'support') -> 'AccumulationResult'",
+          "target": "phasesmith._api.accumulate_tch"
+        },
+        {
+          "kind": "function",
+          "name": "accumulate_tof",
+          "signature": "(x_us: 'ArrayLike', d_spacing_angstrom: 'ArrayLike', integrated_intensities: 'ArrayLike', instrument: 'TofInstrument', *, support_fwhm: 'float' = 20.0, tail_log: 'float' = 20.0, jacobian_layout: \"Literal['support', 'dense']\" = 'support', execution: 'ExecutionPolicy | None' = None) -> 'AccumulationResult'",
+          "target": "phasesmith.tof.accumulate_tof"
+        },
+        {
+          "kind": "module",
+          "name": "automation",
+          "signature": null,
+          "target": "phasesmith.automation"
+        },
+        {
+          "kind": "module",
+          "name": "background",
+          "signature": null,
+          "target": "phasesmith.background"
+        },
+        {
+          "kind": "function",
+          "name": "calculate_cw_pattern",
+          "signature": "(x: 'ArrayLike', reflections: 'ReflectionGeometryBatch', instrument: 'ConstantWavelengthInstrument', *, physics: 'ReflectionPhysicsProvider | None' = None, support_fwhm: 'float' = 20.0, jacobian_layout: \"Literal['support', 'dense']\" = 'support') -> 'AccumulationResult'",
+          "target": "phasesmith.calculation.calculate_cw_pattern"
+        },
+        {
+          "kind": "function",
+          "name": "calculate_monochromatic_cw_pattern",
+          "signature": "(x: 'ArrayLike', reflections: 'ReflectionGeometryBatch', experiment: 'ConstantWavelengthExperiment', *, physics: 'ReflectionPhysicsProvider | None' = None, support_fwhm: 'float' = 20.0, jacobian_layout: \"Literal['support', 'dense']\" = 'support') -> 'AccumulationResult'",
+          "target": "phasesmith.calculation.calculate_monochromatic_cw_pattern"
+        },
+        {
+          "kind": "function",
+          "name": "calculate_monochromatic_pattern",
+          "signature": "(pattern: 'PowderPattern', experiment: 'ConstantWavelengthExperiment', phases: 'tuple[Phase, ...] | list[Phase]', *, options: 'CalculationOptions | None' = None) -> 'PatternCalculationResult'",
+          "target": "phasesmith.calculation.calculate_monochromatic_pattern"
+        },
+        {
+          "kind": "function",
+          "name": "calculate_neutron_fcj_pattern",
+          "signature": "(x: 'ArrayLike', reflections: 'ReflectionGeometryBatch', experiment: 'ConstantWavelengthExperiment', geometry: 'FcjGeometry', *, support_fwhm: 'float' = 20.0, jacobian_layout: \"Literal['support', 'dense']\" = 'support') -> 'AccumulationResult'",
+          "target": "phasesmith.calculation.calculate_neutron_fcj_pattern"
+        },
+        {
+          "kind": "function",
+          "name": "calculate_neutron_pattern",
+          "signature": "(pattern: 'PowderPattern', experiment: 'ConstantWavelengthExperiment', phases: 'tuple[Phase, ...] | list[Phase]', *, options: 'CalculationOptions | None' = None) -> 'PatternCalculationResult'",
+          "target": "phasesmith.calculation.calculate_neutron_pattern"
+        },
+        {
+          "kind": "function",
+          "name": "calculate_p1_structure_factors",
+          "signature": "(cell: 'UnitCell', hkl: 'ArrayLike', sites: 'AtomSiteBatch', scattering_amplitudes: 'ArrayLike', *, scale: 'float' = 1.0, max_dense_derivative_elements: 'int' = 50000000) -> 'P1StructureFactorResult'",
+          "target": "phasesmith.crystallography.calculate_p1_structure_factors"
+        },
+        {
+          "kind": "function",
+          "name": "calculate_pattern",
+          "signature": "(pattern: 'PowderPattern', instrument: 'ConstantWavelengthInstrument', phases: 'tuple[Phase, ...] | list[Phase]', *, options: 'CalculationOptions | None' = None, progress: 'ProgressCallback | None' = None, cancellation: 'CancellationCallback | None' = None) -> 'PatternCalculationResult'",
+          "target": "phasesmith.calculation.calculate_pattern"
+        },
+        {
+          "kind": "function",
+          "name": "calculate_structural_pattern",
+          "signature": "(pattern: 'PowderPattern', experiment: 'ConstantWavelengthExperiment', phase: 'RietveldPhase', *, support_fwhm: 'float' = 20.0, jacobian_layout: \"Literal['support', 'dense']\" = 'support', execution: 'ExecutionPolicy | None' = None) -> 'StructuralPatternCalculationResult'",
+          "target": "phasesmith.structural_calculation.calculate_structural_pattern"
+        },
+        {
+          "kind": "function",
+          "name": "calculate_structure_factor_values",
+          "signature": "(structure: 'CrystalStructure', hkl: 'ArrayLike', multiplicity: 'ArrayLike', scattering: 'ScatteringFactorProvider', *, correction: 'IntegratedIntensityCorrectionProvider | None' = None, scale: 'float' = 1.0, coordinate_tolerance: 'float' = 1e-10, execution: 'ExecutionPolicy | None' = None) -> 'StructureFactorValuesResult'",
+          "target": "phasesmith.crystallography.calculate_structure_factor_values"
+        },
+        {
+          "kind": "function",
+          "name": "calculate_structure_factors",
+          "signature": "(structure: 'CrystalStructure', hkl: 'ArrayLike', multiplicity: 'ArrayLike', scattering: 'ScatteringFactorProvider', *, correction: 'IntegratedIntensityCorrectionProvider | None' = None, scale: 'float' = 1.0, coordinate_tolerance: 'float' = 1e-10, max_dense_derivative_elements: 'int' = 50000000) -> 'StructureFactorResult'",
+          "target": "phasesmith.crystallography.calculate_structure_factors"
+        },
+        {
+          "kind": "function",
+          "name": "calibrate_fundamental_profile",
+          "signature": "(model: 'BraggBrentanoFundamentalProfile', options: 'FundamentalProfileCalibrationOptions | None' = None) -> 'FundamentalProfileCalibrationResult'",
+          "target": "phasesmith.fpa_calibration.calibrate_fundamental_profile"
+        },
+        {
+          "kind": "function",
+          "name": "cw_profile_parameters",
+          "signature": "(two_theta_deg: 'ArrayLike', instrument: 'ConstantWavelengthInstrument') -> 'CwProfileParameters'",
+          "target": "phasesmith.cw.cw_profile_parameters"
+        },
+        {
+          "kind": "function",
+          "name": "estimate_effective_profile",
+          "signature": "(input_data: 'LeBailInput', options: 'ProfileEstimationOptions | None' = None) -> 'ProfileEstimationResult'",
+          "target": "phasesmith.profile_estimation.estimate_effective_profile"
+        },
+        {
+          "kind": "function",
+          "name": "evaluate_intensity_correction",
+          "signature": "(provider: 'IntegratedIntensityCorrectionProvider', q_squared_inverse_angstrom2: 'ArrayLike') -> 'IntegratedIntensityCorrection'",
+          "target": "phasesmith.intensity_corrections.evaluate_intensity_correction"
+        },
+        {
+          "kind": "function",
+          "name": "evaluate_scattering_provider",
+          "signature": "(provider: 'ScatteringFactorProvider', context: 'ScatteringContext') -> 'ScatteringFactorBatch'",
+          "target": "phasesmith.scattering.evaluate_scattering_provider"
+        },
+        {
+          "kind": "module",
+          "name": "fpa_calibration",
+          "signature": null,
+          "target": "phasesmith.fpa_calibration"
+        },
+        {
+          "kind": "module",
+          "name": "integrations",
+          "signature": null,
+          "target": "phasesmith.integrations"
+        },
+        {
+          "kind": "function",
+          "name": "neutron_species_metadata",
+          "signature": "(key: 'str') -> 'NeutronSpeciesMetadata | None'",
+          "target": "phasesmith.scattering.neutron_species_metadata"
+        },
+        {
+          "kind": "function",
+          "name": "p1_intensity_transpose_jacobian_vector_product",
+          "signature": "(cell: 'UnitCell', hkl: 'ArrayLike', sites: 'AtomSiteBatch', scattering_amplitudes: 'ArrayLike', weights: 'ArrayLike', *, scale: 'float' = 1.0) -> 'P1VjpResult'",
+          "target": "phasesmith.crystallography.p1_intensity_transpose_jacobian_vector_product"
+        },
+        {
+          "kind": "function",
+          "name": "p1_jacobian_vector_product",
+          "signature": "(cell: 'UnitCell', hkl: 'ArrayLike', sites: 'AtomSiteBatch', scattering_amplitudes: 'ArrayLike', tangent: 'ArrayLike', *, scale: 'float' = 1.0) -> 'P1JvpResult'",
+          "target": "phasesmith.crystallography.p1_jacobian_vector_product"
+        },
+        {
+          "kind": "function",
+          "name": "p1_parameter_names",
+          "signature": "(sites: 'AtomSiteBatch') -> 'tuple[str, ...]'",
+          "target": "phasesmith.crystallography.p1_parameter_names"
+        },
+        {
+          "kind": "module",
+          "name": "persistence",
+          "signature": null,
+          "target": "phasesmith.persistence"
+        },
+        {
+          "kind": "function",
+          "name": "profile",
+          "signature": "(delta: 'ArrayLike', fwhm: 'float', eta: 'float') -> 'ProfileResult'",
+          "target": "phasesmith._api.profile"
+        },
+        {
+          "kind": "module",
+          "name": "profile_estimation",
+          "signature": null,
+          "target": "phasesmith.profile_estimation"
+        },
+        {
+          "kind": "function",
+          "name": "profile_fcj",
+          "signature": "(x_deg: 'ArrayLike', position_deg: 'float', gaussian_fwhm_deg: 'float', lorentzian_fwhm_deg: 'float', geometry: 'FcjGeometry') -> 'FcjProfileResult'",
+          "target": "phasesmith.fcj.profile_fcj"
+        },
+        {
+          "kind": "function",
+          "name": "profile_tch",
+          "signature": "(delta: 'ArrayLike', gaussian_fwhm: 'float', lorentzian_fwhm: 'float') -> 'TchProfileResult'",
+          "target": "phasesmith._api.profile_tch"
+        },
+        {
+          "kind": "function",
+          "name": "profile_tch_from_gaussian_sigma",
+          "signature": "(delta: 'ArrayLike', gaussian_sigma: 'float', lorentzian_fwhm: 'float') -> 'TchSigmaProfileResult'",
+          "target": "phasesmith._api.profile_tch_from_gaussian_sigma"
+        },
+        {
+          "kind": "function",
+          "name": "profile_tof",
+          "signature": "(x_us: 'ArrayLike', position_us: 'float', alpha_per_us: 'float', beta_per_us: 'float', gaussian_fwhm_us: 'float', lorentzian_fwhm_us: 'float', *, tail_log: 'float' = 20.0) -> 'TofProfileResult'",
+          "target": "phasesmith.tof.profile_tof"
+        },
+        {
+          "kind": "function",
+          "name": "quantitative_phase_analysis",
+          "signature": "(phases: 'Iterable[QuantitativePhase]') -> 'tuple[PhaseWeightFraction, ...]'",
+          "target": "phasesmith.quantitative.quantitative_phase_analysis"
+        },
+        {
+          "kind": "function",
+          "name": "quantitative_phase_analysis_with_covariance",
+          "signature": "(phases: 'Iterable[QuantitativePhase]', scale_covariance: 'ArrayLike') -> 'QuantitativePhaseAnalysis'",
+          "target": "phasesmith.quantitative.quantitative_phase_analysis_with_covariance"
+        },
+        {
+          "kind": "function",
+          "name": "reciprocal_angle_geometry",
+          "signature": "(hkl: 'ArrayLike', preferred_axis_hkl: 'ArrayLike', reciprocal_metric: 'ReciprocalMetric') -> 'ReciprocalAngleGeometry'",
+          "target": "phasesmith.sample.reciprocal_angle_geometry"
+        },
+        {
+          "kind": "module",
+          "name": "refinement",
+          "signature": null,
+          "target": "phasesmith.refinement"
+        },
+        {
+          "kind": "function",
+          "name": "simulate_fundamental_peaks",
+          "signature": "(model: 'BraggBrentanoFundamentalProfile', options: 'FundamentalProfileCalibrationOptions | None' = None) -> 'FundamentalPeakPattern'",
+          "target": "phasesmith.fpa_calibration.simulate_fundamental_peaks"
+        },
+        {
+          "kind": "function",
+          "name": "smooth_bruckner",
+          "signature": "(y: 'ArrayLike', smooth_points: 'int', iterations: 'int' = 50) -> 'NDArray[np.float64]'",
+          "target": "phasesmith.background.smooth_bruckner"
+        },
+        {
+          "kind": "function",
+          "name": "species_from_structure",
+          "signature": "(structure: 'CrystalStructure') -> 'tuple[ScatteringSpecies, ...]'",
+          "target": "phasesmith.scattering.species_from_structure"
+        },
+        {
+          "kind": "function",
+          "name": "starting_profile_from_fwhm",
+          "signature": "(wavelength_angstrom: 'float', fwhm_deg: 'float') -> 'ConstantWavelengthInstrument'",
+          "target": "phasesmith.profile_estimation.starting_profile_from_fwhm"
+        },
+        {
+          "kind": "function",
+          "name": "structure_from_record",
+          "signature": "(record: 'Mapping[str, Any]') -> 'CrystalStructure'",
+          "target": "phasesmith.structure.structure_from_record"
+        },
+        {
+          "kind": "function",
+          "name": "structure_to_record",
+          "signature": "(structure: 'CrystalStructure') -> 'dict[str, Any]'",
+          "target": "phasesmith.structure.structure_to_record"
+        },
+        {
+          "kind": "function",
+          "name": "tch_shape_from_fwhm",
+          "signature": "(gaussian_fwhm: 'float', lorentzian_fwhm: 'float') -> 'TchFwhmShape'",
+          "target": "phasesmith._api.tch_shape_from_fwhm"
+        },
+        {
+          "kind": "function",
+          "name": "tch_shape_from_gaussian_sigma",
+          "signature": "(gaussian_sigma: 'float', lorentzian_fwhm: 'float') -> 'TchSigmaShape'",
+          "target": "phasesmith._api.tch_shape_from_gaussian_sigma"
+        },
+        {
+          "kind": "function",
+          "name": "tof_profile_parameters",
+          "signature": "(d_spacing_angstrom: 'ArrayLike', instrument: 'TofInstrument') -> 'TofProfileParameters'",
+          "target": "phasesmith.tof.tof_profile_parameters"
+        },
+        {
+          "kind": "function",
+          "name": "weight_fractions_from_scale",
+          "signature": "(scale: 'ArrayLike', formula_units_per_cell: 'ArrayLike', formula_mass_g_mol: 'ArrayLike', cell_volume_angstrom3: 'ArrayLike') -> 'NDArray[np.float64]'",
+          "target": "phasesmith.quantitative.weight_fractions_from_scale"
+        },
+        {
+          "kind": "function",
+          "name": "xray_species_metadata",
+          "signature": "(key: 'str') -> 'XraySpeciesMetadata | None'",
+          "target": "phasesmith.scattering.xray_species_metadata"
+        }
+      ],
+      "module": "phasesmith",
+      "tier": "domain"
+    },
+    {
+      "exports": [
+        {
+          "kind": "class",
+          "name": "CifBackend",
+          "signature": "(*args, **kwargs)",
+          "target": "phasesmith.io.cif.CifBackend"
+        },
+        {
+          "kind": "class",
+          "name": "CifReadLimits",
+          "signature": "(max_bytes: 'int' = 16777216, max_blocks: 'int' = 100, max_loop_rows: 'int' = 1000000, max_atom_sites: 'int' = 100000) -> None",
+          "target": "phasesmith.io.cif.CifReadLimits"
+        },
+        {
+          "kind": "class",
+          "name": "CifReadResult",
+          "signature": "(structure: 'CrystalStructure', diagnostics: 'tuple[StructureDiagnostic, ...]', selected_block: 'str', available_blocks: 'tuple[str, ...]') -> None",
+          "target": "phasesmith.io.cif.CifReadResult"
+        },
+        {
+          "kind": "class",
+          "name": "GsasTofInstrumentData",
+          "signature": "(instrument: 'TofInstrument', bank: 'int', profile_function: 'int', source_name: 'str | None' = None, bank_geometry: 'TofBankGeometry | None' = None, incident_spectrum: 'TofIncidentSpectrum | None' = None) -> None",
+          "target": "phasesmith.io.tof_instrument.GsasTofInstrumentData"
+        },
+        {
+          "kind": "class",
+          "name": "GsasTofInstrumentReadLimits",
+          "signature": "(max_bytes: 'int' = 4194304) -> None",
+          "target": "phasesmith.io.tof_instrument.GsasTofInstrumentReadLimits"
+        },
+        {
+          "kind": "class",
+          "name": "NativeCifBackend",
+          "signature": "()",
+          "target": "phasesmith.io.cif.NativeCifBackend"
+        },
+        {
+          "kind": "class",
+          "name": "PowderData",
+          "signature": "(x: 'NDArray[np.float64]', observed_y: 'NDArray[np.float64]', uncertainty: 'NDArray[np.float64] | None', format: \"Literal['columns', 'gsas_fxye', 'gsas_std']\", source_name: 'str | None' = None, bank: 'int | None' = None, mask: 'NDArray[np.bool_] | None' = None) -> None",
+          "target": "phasesmith.io.powder.PowderData"
+        },
+        {
+          "kind": "callable",
+          "name": "PowderFormat",
+          "signature": "(*args, **kwargs)",
+          "target": "typing.Literal"
+        },
+        {
+          "kind": "class",
+          "name": "PowderReadLimits",
+          "signature": "(max_bytes: 'int' = 67108864, max_rows: 'int' = 5000000) -> None",
+          "target": "phasesmith.io.powder.PowderReadLimits"
+        },
+        {
+          "kind": "class",
+          "name": "SpaceGroupInfo",
+          "signature": "(number: 'int', hm_symbol: 'str', hall_symbol: 'str', setting: 'str', space_group: 'SpaceGroup') -> None",
+          "target": "phasesmith.io.space_groups.SpaceGroupInfo"
+        },
+        {
+          "kind": "class",
+          "name": "TofPowderData",
+          "signature": "(tof_us: 'NDArray[np.float64]', observed_y: 'NDArray[np.float64]', uncertainty: 'NDArray[np.float64] | None', format: \"Literal['columns', 'gsas_slog_fxye', 'gsas_const_std']\", source_name: 'str | None', bank: 'int | None', logarithmic_grid: 'bool', mask: 'NDArray[np.bool_] | None' = None) -> None",
+          "target": "phasesmith.io.powder.TofPowderData"
+        },
+        {
+          "kind": "callable",
+          "name": "TofPowderFormat",
+          "signature": "(*args, **kwargs)",
+          "target": "typing.Literal"
+        },
+        {
+          "kind": "module",
+          "name": "cif",
+          "signature": null,
+          "target": "phasesmith.io.cif"
+        },
+        {
+          "kind": "module",
+          "name": "powder",
+          "signature": null,
+          "target": "phasesmith.io.powder"
+        },
+        {
+          "kind": "function",
+          "name": "read_cif",
+          "signature": "(path_or_text: 'str | Path', *, block: 'str | None' = None, strict: 'bool' = True, limits: 'CifReadLimits | None' = None, backend: 'CifBackend | None' = None) -> 'CifReadResult'",
+          "target": "phasesmith.io.cif.read_cif"
+        },
+        {
+          "kind": "function",
+          "name": "read_gsas_tof_instrument",
+          "signature": "(path_or_text: 'str | Path', *, bank: 'int' = 1, limits: 'GsasTofInstrumentReadLimits | None' = None) -> 'GsasTofInstrumentData'",
+          "target": "phasesmith.io.tof_instrument.read_gsas_tof_instrument"
+        },
+        {
+          "kind": "function",
+          "name": "read_powder_data",
+          "signature": "(path_or_text: 'str | Path', *, format: 'PowderFormat' = 'auto', bank: 'int' = 1, limits: 'PowderReadLimits | None' = None) -> 'PowderData'",
+          "target": "phasesmith.io.powder.read_powder_data"
+        },
+        {
+          "kind": "function",
+          "name": "read_tof_powder_data",
+          "signature": "(path_or_text: 'str | Path', *, format: 'TofPowderFormat' = 'auto', bank: 'int' = 1, limits: 'PowderReadLimits | None' = None) -> 'TofPowderData'",
+          "target": "phasesmith.io.powder.read_tof_powder_data"
+        },
+        {
+          "kind": "function",
+          "name": "space_group_by_number",
+          "signature": "(number: 'int') -> 'SpaceGroupInfo'",
+          "target": "phasesmith.io.space_groups.space_group_by_number"
+        },
+        {
+          "kind": "function",
+          "name": "space_group_by_symbol",
+          "signature": "(symbol: 'str') -> 'SpaceGroupInfo'",
+          "target": "phasesmith.io.space_groups.space_group_by_symbol"
+        },
+        {
+          "kind": "function",
+          "name": "space_group_from_hall_symbol",
+          "signature": "(symbol: 'str') -> 'SpaceGroup'",
+          "target": "phasesmith.io.space_groups.space_group_from_hall_symbol"
+        },
+        {
+          "kind": "module",
+          "name": "space_groups",
+          "signature": null,
+          "target": "phasesmith.io.space_groups"
+        },
+        {
+          "kind": "module",
+          "name": "tof_instrument",
+          "signature": null,
+          "target": "phasesmith.io.tof_instrument"
+        }
+      ],
+      "module": "phasesmith.io",
+      "tier": "adapter"
+    },
+    {
+      "exports": [
+        {
+          "kind": "class",
+          "name": "AffineConstraint",
+          "signature": "(target: 'ParameterKey', source: 'ParameterKey', multiplier: 'float' = 1.0, offset: 'float' = 0.0) -> None",
+          "target": "phasesmith.refinement.core.AffineConstraint"
+        },
+        {
+          "kind": "class",
+          "name": "AmorphousBackground",
+          "signature": "(background_id: 'str', peaks: 'tuple[AmorphousPeak, ...]') -> None",
+          "target": "phasesmith.refinement.background.AmorphousBackground"
+        },
+        {
+          "kind": "class",
+          "name": "AmorphousPeak",
+          "signature": "(area: 'float', center_deg: 'float', fwhm_deg: 'float') -> None",
+          "target": "phasesmith.refinement.background.AmorphousPeak"
+        },
+        {
+          "kind": "class",
+          "name": "Bounds",
+          "signature": "(lower: 'float' = -inf, upper: 'float' = inf) -> None",
+          "target": "phasesmith.refinement.core.Bounds"
+        },
+        {
+          "kind": "class",
+          "name": "ChebyshevBackground",
+          "signature": "(background_id: 'str', coefficients: 'tuple[float, ...]', domain_deg: 'tuple[float, float]') -> None",
+          "target": "phasesmith.refinement.background.ChebyshevBackground"
+        },
+        {
+          "kind": "class",
+          "name": "CheckpointCallback",
+          "signature": "(*args, **kwargs)",
+          "target": "phasesmith.refinement.runtime.CheckpointCallback"
+        },
+        {
+          "kind": "class",
+          "name": "CheckpointCallbackError",
+          "signature": null,
+          "target": "phasesmith.refinement.runtime.CheckpointCallbackError"
+        },
+        {
+          "kind": "class",
+          "name": "CompositeBackground",
+          "signature": "(background_id: 'str', components: 'tuple[DifferentiableBackground, ...]') -> None",
+          "target": "phasesmith.refinement.background.CompositeBackground"
+        },
+        {
+          "kind": "class",
+          "name": "ConsoleRefinementLogger",
+          "signature": "(stream: 'IO[str] | None' = None, *, include_trials: 'bool' = False) -> 'None'",
+          "target": "phasesmith.refinement.runtime.ConsoleRefinementLogger"
+        },
+        {
+          "kind": "class",
+          "name": "ConstraintTransform",
+          "signature": "(parameters: 'ParameterSet', constraints: 'tuple[Constraint, ...] | list[Constraint]' = ()) -> 'None'",
+          "target": "phasesmith.refinement.core.ConstraintTransform"
+        },
+        {
+          "kind": "class",
+          "name": "CwLatticeReflectionDomain",
+          "signature": "(space_group: 'SpaceGroup', parameterization: 'LatticeParameterization', bounds: 'LatticeParameterBounds', wavelength_angstrom: 'float', visible_two_theta_min_deg: 'float', visible_two_theta_max_deg: 'float', initial_intensity: 'float' = 1.0, merge_friedel: 'bool' = True, max_candidates: 'int' = 50000000, guard_scale: 'float' = 1.001) -> None",
+          "target": "phasesmith.refinement.lattice.CwLatticeReflectionDomain"
+        },
+        {
+          "kind": "class",
+          "name": "CwStructuralReflectionDomain",
+          "signature": "(space_group: 'SpaceGroup', parameterization: 'LatticeParameterization', bounds: 'LatticeParameterBounds', wavelength_angstrom: 'float', visible_two_theta_min_deg: 'float', visible_two_theta_max_deg: 'float', merge_friedel: 'bool' = True, max_candidates: 'int' = 50000000, guard_scale: 'float' = 1.001) -> None",
+          "target": "phasesmith.refinement.lattice.CwStructuralReflectionDomain"
+        },
+        {
+          "kind": "class",
+          "name": "DifferentiableBackground",
+          "signature": "(*args, **kwargs)",
+          "target": "phasesmith.refinement.background.DifferentiableBackground"
+        },
+        {
+          "kind": "class",
+          "name": "FixedConstraint",
+          "signature": "(target: 'ParameterKey', value: 'float') -> None",
+          "target": "phasesmith.refinement.core.FixedConstraint"
+        },
+        {
+          "kind": "class",
+          "name": "GeneratedReflectionDomainResult",
+          "signature": "(reflections: 'ReflectionBatch', visible: 'NDArray[np.bool_]', guarded_d_min_angstrom: 'float', guarded_d_max_angstrom: 'float', added_reflection_ids: 'tuple[str, ...]', removed_reflection_ids: 'tuple[str, ...]', preserved_reflection_count: 'int') -> None",
+          "target": "phasesmith.refinement.lattice.GeneratedReflectionDomainResult"
+        },
+        {
+          "kind": "class",
+          "name": "GeneratedStructuralReflectionDomainResult",
+          "signature": "(reflections: 'StructuralReflectionBatch', d_spacing_angstrom: 'NDArray[np.float64]', two_theta_deg: 'NDArray[np.float64]', visible: 'NDArray[np.bool_]', guarded_d_min_angstrom: 'float', guarded_d_max_angstrom: 'float', added_reflection_ids: 'tuple[str, ...]', removed_reflection_ids: 'tuple[str, ...]', preserved_reflection_count: 'int') -> None",
+          "target": "phasesmith.refinement.lattice.GeneratedStructuralReflectionDomainResult"
+        },
+        {
+          "kind": "class",
+          "name": "JsonLinesRefinementLogger",
+          "signature": "(stream: 'IO[str]') -> 'None'",
+          "target": "phasesmith.refinement.runtime.JsonLinesRefinementLogger"
+        },
+        {
+          "kind": "class",
+          "name": "LatticeParameterBounds",
+          "signature": "(parameterization: 'LatticeParameterization', lower: 'ArrayLike', upper: 'ArrayLike') -> 'None'",
+          "target": "phasesmith.refinement.lattice.LatticeParameterBounds"
+        },
+        {
+          "kind": "class",
+          "name": "LatticeParameterization",
+          "signature": "(space_group: 'SpaceGroup', cell: 'UnitCell') -> 'None'",
+          "target": "phasesmith.refinement.lattice.LatticeParameterization"
+        },
+        {
+          "kind": "class",
+          "name": "LatticeReflectionGeometry",
+          "signature": "(d_spacing_angstrom: 'NDArray[np.float64]', coordinate: 'NDArray[np.float64]', d_d_spacing_d_parameters: 'NDArray[np.float64]', d_coordinate_d_parameters: 'NDArray[np.float64]', parameter_names: 'tuple[str, ...]') -> None",
+          "target": "phasesmith.refinement.lattice.LatticeReflectionGeometry"
+        },
+        {
+          "kind": "class",
+          "name": "LeastSquaresOptimizer",
+          "signature": "(*args, **kwargs)",
+          "target": "phasesmith.refinement.core.LeastSquaresOptimizer"
+        },
+        {
+          "kind": "class",
+          "name": "LinearConstraint",
+          "signature": "(target: 'ParameterKey', terms: 'tuple[tuple[ParameterKey, float], ...]', offset: 'float' = 0.0) -> None",
+          "target": "phasesmith.refinement.core.LinearConstraint"
+        },
+        {
+          "kind": "class",
+          "name": "ParameterKey",
+          "signature": "(module: 'str', owner_id: 'str', name: 'str') -> None",
+          "target": "phasesmith.refinement.core.ParameterKey"
+        },
+        {
+          "kind": "class",
+          "name": "ParameterSet",
+          "signature": "(specs: 'tuple[ParameterSpec, ...] | list[ParameterSpec]') -> 'None'",
+          "target": "phasesmith.refinement.core.ParameterSet"
+        },
+        {
+          "kind": "class",
+          "name": "ParameterSpec",
+          "signature": "(key: 'ParameterKey', value: 'float', unit: 'str', bounds: 'Bounds' = Bounds(lower=-inf, upper=inf), scale: 'float' = 1.0, refine: 'bool' = True) -> None",
+          "target": "phasesmith.refinement.core.ParameterSpec"
+        },
+        {
+          "kind": "class",
+          "name": "PointBackground",
+          "signature": "(background_id: 'str', knot_x: 'tuple[float, ...]', values: 'tuple[float, ...]') -> None",
+          "target": "phasesmith.refinement.background.PointBackground"
+        },
+        {
+          "kind": "class",
+          "name": "PolynomialBackground",
+          "signature": "(background_id: 'str', coefficients: 'tuple[float, ...]') -> None",
+          "target": "phasesmith.refinement.background.PolynomialBackground"
+        },
+        {
+          "kind": "class",
+          "name": "RefinementEvent",
+          "signature": "(kind: 'RefinementEventKind', stage: 'str', attempted_iteration: 'int', accepted_iterations: 'int', evaluations: 'int', elapsed_seconds: 'float', message: 'str', diagnostics: 'tuple[tuple[str, DiagnosticValue], ...]' = ()) -> None",
+          "target": "phasesmith.refinement.runtime.RefinementEvent"
+        },
+        {
+          "kind": "class",
+          "name": "RefinementEventKind",
+          "signature": null,
+          "target": "phasesmith.refinement.runtime.RefinementEventKind"
+        },
+        {
+          "kind": "class",
+          "name": "RefinementLimits",
+          "signature": "(max_iterations: 'int' = 100, max_evaluations: 'int' = 1000, max_runtime_seconds: 'float | None' = None, max_consecutive_rejections: 'int' = 20) -> None",
+          "target": "phasesmith.refinement.runtime.RefinementLimits"
+        },
+        {
+          "kind": "class",
+          "name": "RefinementLogger",
+          "signature": "(*args, **kwargs)",
+          "target": "phasesmith.refinement.runtime.RefinementLogger"
+        },
+        {
+          "kind": "class",
+          "name": "RefinementRuntime",
+          "signature": "(limits: 'RefinementLimits', *, cancellation: 'CancellationCallback | None' = None, logger: 'RefinementLogger | None' = None, checkpoint: 'CheckpointCallback | None' = None, clock: 'Clock' = <built-in function monotonic>) -> 'None'",
+          "target": "phasesmith.refinement.runtime.RefinementRuntime"
+        },
+        {
+          "kind": "class",
+          "name": "RefinementStopped",
+          "signature": "(reason: 'TerminationReason', message: 'str') -> 'None'",
+          "target": "phasesmith.refinement.runtime.RefinementStopped"
+        },
+        {
+          "kind": "class",
+          "name": "ResidualEvaluation",
+          "signature": "(included: 'NDArray[np.bool_]', residual: 'NDArray[np.float64]', weighted_residual: 'NDArray[np.float64]', rp: 'float', rwp: 'float', chi_square: 'float', reduced_chi_square: 'float') -> None",
+          "target": "phasesmith.refinement.core.ResidualEvaluation"
+        },
+        {
+          "kind": "class",
+          "name": "ResidualOptions",
+          "signature": "(use_uncertainty: 'bool' = True, parameter_count: 'int' = 0) -> None",
+          "target": "phasesmith.refinement.core.ResidualOptions"
+        },
+        {
+          "kind": "class",
+          "name": "ScipyLeastSquaresAdapter",
+          "signature": "(tolerance: 'float' = 1e-12, max_iterations: 'int' = 200) -> None",
+          "target": "phasesmith.refinement.scipy.ScipyLeastSquaresAdapter"
+        },
+        {
+          "kind": "class",
+          "name": "TerminationReason",
+          "signature": null,
+          "target": "phasesmith.refinement.core.TerminationReason"
+        },
+        {
+          "kind": "function",
+          "name": "cw_lattice_geometry",
+          "signature": "(parameterization: 'LatticeParameterization', cell: 'UnitCell', hkl: 'ArrayLike', wavelength_angstrom: 'float') -> 'LatticeReflectionGeometry'",
+          "target": "phasesmith.refinement.lattice.cw_lattice_geometry"
+        },
+        {
+          "kind": "function",
+          "name": "evaluate_residuals",
+          "signature": "(pattern: 'PowderPattern', calculated_y: 'ArrayLike', options: 'ResidualOptions | None' = None) -> 'ResidualEvaluation'",
+          "target": "phasesmith.refinement.core.evaluate_residuals"
+        },
+        {
+          "kind": "function",
+          "name": "jacobian_vector_product",
+          "signature": "(derivatives: 'PatternDerivatives', local_vector: 'ArrayLike', global_vector: 'ArrayLike') -> 'NDArray[np.float64]'",
+          "target": "phasesmith.refinement.core.jacobian_vector_product"
+        },
+        {
+          "kind": "module",
+          "name": "lebail",
+          "signature": null,
+          "target": "phasesmith.refinement.lebail"
+        },
+        {
+          "kind": "module",
+          "name": "readiness",
+          "signature": null,
+          "target": "phasesmith.refinement.readiness"
+        },
+        {
+          "kind": "module",
+          "name": "rietveld",
+          "signature": null,
+          "target": "phasesmith.refinement.rietveld"
+        },
+        {
+          "kind": "function",
+          "name": "tof_lattice_geometry",
+          "signature": "(parameterization: 'LatticeParameterization', cell: 'UnitCell', hkl: 'ArrayLike', instrument: 'TofInstrument') -> 'LatticeReflectionGeometry'",
+          "target": "phasesmith.refinement.lattice.tof_lattice_geometry"
+        },
+        {
+          "kind": "module",
+          "name": "tof_lebail",
+          "signature": null,
+          "target": "phasesmith.refinement.tof_lebail"
+        },
+        {
+          "kind": "module",
+          "name": "tof_multibank",
+          "signature": null,
+          "target": "phasesmith.refinement.tof_multibank"
+        },
+        {
+          "kind": "module",
+          "name": "tof_structural",
+          "signature": null,
+          "target": "phasesmith.refinement.tof_structural"
+        },
+        {
+          "kind": "function",
+          "name": "transpose_jacobian_vector_product",
+          "signature": "(derivatives: 'PatternDerivatives', sample_vector: 'ArrayLike') -> 'tuple[NDArray[np.float64], NDArray[np.float64]]'",
+          "target": "phasesmith.refinement.core.transpose_jacobian_vector_product"
+        },
+        {
+          "kind": "module",
+          "name": "workflow",
+          "signature": null,
+          "target": "phasesmith.refinement.workflow"
+        }
+      ],
+      "module": "phasesmith.refinement",
+      "tier": "domain"
+    },
+    {
+      "exports": [
+        {
+          "kind": "module",
+          "name": "dioptas",
+          "signature": null,
+          "target": "phasesmith.integrations.dioptas"
+        }
+      ],
+      "module": "phasesmith.integrations",
+      "tier": "adapter"
+    },
+    {
+      "exports": [
+        {
+          "kind": "class",
+          "name": "FixtureValidationError",
+          "signature": null,
+          "target": "phasesmith.oracle.fixtures.FixtureValidationError"
+        },
+        {
+          "kind": "class",
+          "name": "OracleFixture",
+          "signature": "(path: 'Path', manifest: 'Mapping[str, Any]', arrays: 'Mapping[str, NDArray[np.generic]]') -> None",
+          "target": "phasesmith.oracle.fixtures.OracleFixture"
+        },
+        {
+          "kind": "class",
+          "name": "OracleSnapshot",
+          "signature": "(histogram_name: 'str', x: 'NDArray[np.float64]', ycalc: 'NDArray[np.float64]', background: 'NDArray[np.float64]', reflections: 'tuple[ReflectionTable, ...]') -> None",
+          "target": "phasesmith.oracle.gsasii.OracleSnapshot"
+        },
+        {
+          "kind": "class",
+          "name": "ReflectionTable",
+          "signature": "(phase: 'str', ref_list: 'NDArray[np.float64]', histogram_type: 'str', superspace: 'bool') -> None",
+          "target": "phasesmith.oracle.gsasii.ReflectionTable"
+        },
+        {
+          "kind": "function",
+          "name": "cw_instrument_from_gsas_centidegrees",
+          "signature": "(*, wavelength_angstrom: 'float', u: 'float', v: 'float', w: 'float', x: 'float', y: 'float') -> 'ConstantWavelengthInstrument'",
+          "target": "phasesmith.oracle.conventions.cw_instrument_from_gsas_centidegrees"
+        },
+        {
+          "kind": "function",
+          "name": "extract_project",
+          "signature": "(project_file: 'str | Path', *, histogram: 'int | str' = 0, gsas_root: 'str | Path | None' = None) -> 'OracleSnapshot'",
+          "target": "phasesmith.oracle.gsasii.extract_project"
+        },
+        {
+          "kind": "function",
+          "name": "extract_snapshot",
+          "signature": "(histogram: 'Any') -> 'OracleSnapshot'",
+          "target": "phasesmith.oracle.gsasii.extract_snapshot"
+        },
+        {
+          "kind": "function",
+          "name": "load_fixture",
+          "signature": "(path: 'str | Path') -> 'OracleFixture'",
+          "target": "phasesmith.oracle.fixtures.load_fixture"
+        },
+        {
+          "kind": "function",
+          "name": "orthorhombic_stephens_from_gsasii",
+          "signature": "(coefficients: 'tuple[float, float, float, float, float, float]', lorentzian_fraction: 'float') -> 'StephensOrthorhombicBroadening'",
+          "target": "phasesmith.oracle.conventions.orthorhombic_stephens_from_gsasii"
+        }
+      ],
+      "module": "phasesmith.oracle",
+      "tier": "validation"
+    },
+    {
+      "exports": [
+        {
+          "kind": "class",
+          "name": "BathLtlResult",
+          "signature": "(sample: 'str', sample_count: 'int', reflection_count: 'int', released_poisson_rwp: 'float', fixed_profile_poisson_rwp: 'float', refined_profile_poisson_rwp: 'float', unit_weight_rwp: 'float', profile_correlation: 'float', elapsed_seconds: 'float') -> None",
+          "target": "phasesmith.validation.bath_ltl.BathLtlResult"
+        },
+        {
+          "kind": "class",
+          "name": "CeriaBroadeningStart",
+          "signature": "(starting_size_nm: 'float', starting_rms_microstrain: 'float', crystallite_size_nm: 'float', rms_microstrain: 'float', poisson_rwp: 'float', profile_correlation: 'float') -> None",
+          "target": "phasesmith.validation.ceria_transferability.CeriaBroadeningStart"
+        },
+        {
+          "kind": "class",
+          "name": "CeriaPeakMetric",
+          "signature": "(squared_hkl_norm: 'int', two_theta_deg: 'float', observed_area: 'float', calculated_area: 'float', relative_area_error: 'float', observed_centroid_deg: 'float', calculated_centroid_deg: 'float', centroid_error_deg: 'float', observed_fwhm_deg: 'float', calculated_fwhm_deg: 'float', observed_rms_width_deg: 'float', calculated_rms_width_deg: 'float', rms_width_error_deg: 'float', normalized_l1: 'float') -> None",
+          "target": "phasesmith.validation.ceria_transferability.CeriaPeakMetric"
+        },
+        {
+          "kind": "class",
+          "name": "CeriaPositionFit",
+          "signature": "(lattice_angstrom: 'float', zero_shift_deg: 'float', reflection_count: 'int', centroid_rms_error_deg: 'float', centroid_max_error_deg: 'float') -> None",
+          "target": "phasesmith.validation.ceria_transferability.CeriaPositionFit"
+        },
+        {
+          "kind": "class",
+          "name": "CeriaProfileStart",
+          "signature": "(starting_fwhm_deg: 'float', active_parameters: 'tuple[str, ...]', weighted_rank: 'int', free_parameter_count: 'int', maximum_absolute_correlation: 'float', u_deg2: 'float', v_deg2: 'float', w_deg2: 'float', x_deg: 'float', y_deg: 'float', poisson_rwp: 'float', profile_correlation: 'float', termination_reason: 'str') -> None",
+          "target": "phasesmith.validation.ceria_transferability.CeriaProfileStart"
+        },
+        {
+          "kind": "class",
+          "name": "CeriaTransferabilityResult",
+          "signature": "(dataset_id: 'str', status: 'str', source_provenance: 'dict[str, Any]', calibration_sample_count: 'int', holdout_sample_count: 'int', calibration_position: 'CeriaPositionFit', holdout_position: 'CeriaPositionFit', profile_starts: 'tuple[CeriaProfileStart, ...]', frozen_instrument: 'dict[str, float]', calibration_poisson_rwp: 'float', calibration_profile_correlation: 'float', calibration_relative_width_spread: 'float', calibration_peak_metrics: 'tuple[CeriaPeakMetric, ...]', holdout_base_poisson_rwp: 'float', holdout_base_profile_correlation: 'float', broadening_starts: 'tuple[CeriaBroadeningStart, ...]', holdout_poisson_rwp: 'float', holdout_profile_correlation: 'float', holdout_peak_metrics: 'tuple[CeriaPeakMetric, ...]', weighted_sse_improvement_fraction: 'float', broadening_rwp_spread: 'float', broadening_size_spread_nm: 'float', broadening_microstrain_spread: 'float', poisson_resampling_count: 'int', poisson_improvement_standard_deviation: 'float', poisson_improvement_maximum_deviation: 'float', instrument_configuration: 'dict[str, Any]', range_semantics: 'str', promotion_decision: 'str', blocked_specialized_terms: 'tuple[str, ...]', missing_physical_inputs: 'tuple[str, ...]', qualifications: 'tuple[str, ...]', checks: 'dict[str, bool]', conclusion: 'str') -> None",
+          "target": "phasesmith.validation.ceria_transferability.CeriaTransferabilityResult"
+        },
+        {
+          "kind": "class",
+          "name": "CitrateBroadeningAblationResult",
+          "signature": "(case: 'CitrateCase', scope: 'str', dominant_phase: 'str', sample_count: 'int', model_results: 'tuple[CitrateBroadeningModelResult, ...]', conclusion: 'str') -> None",
+          "target": "phasesmith.validation.citrate_broadening_ablation.CitrateBroadeningAblationResult"
+        },
+        {
+          "kind": "class",
+          "name": "CitrateBroadeningModelResult",
+          "signature": "(model: 'str', free_parameter_count: 'int', jacobian_rank: 'int | None', poisson_rwp: 'float', delta_poisson_rwp: 'float', profile_correlation: 'float', weight_fractions: 'dict[str, float]', sample_parameters: 'dict[str, float]', repeat_rwp_spread: 'float', maximum_sample_linear_correlation: 'float | None', identifiable: 'bool', qualifications: 'tuple[str, ...]') -> None",
+          "target": "phasesmith.validation.citrate_broadening_ablation.CitrateBroadeningModelResult"
+        },
+        {
+          "kind": "class",
+          "name": "CitrateSourceReflectionFidelityResult",
+          "signature": "(source_dataset_id: 'str', source_row_count: 'int', unique_reflection_count: 'int', duplicate_wavelength_f_squared_max_abs_delta: 'float', low_angle_limits_deg: 'tuple[float, float]', phases: 'dict[str, dict[str, Any]]', review: 'dict[str, Any]') -> None",
+          "target": "phasesmith.validation.citrate_source_fidelity.CitrateSourceReflectionFidelityResult"
+        },
+        {
+          "kind": "class",
+          "name": "CitrateStephensAblationResult",
+          "signature": "(case: 'CitrateCase', scope: 'str', dominant_phase: 'str', sample_count: 'int', source_coefficients_gsasii: 'tuple[float, ...]', source_lorentzian_fraction: 'float', model_results: 'tuple[CitrateStephensModelResult, ...]', conclusion: 'str') -> None",
+          "target": "phasesmith.validation.citrate_stephens_ablation.CitrateStephensAblationResult"
+        },
+        {
+          "kind": "class",
+          "name": "CitrateStephensModelResult",
+          "signature": "(model: 'str', poisson_rwp: 'float', delta_poisson_rwp: 'float', profile_correlation: 'float', weight_fractions: 'dict[str, float]', crystallite_size_nm: 'float | None', source_shape_multiplier: 'float', repeat_rwp_spread: 'float', free_parameter_count: 'int', jacobian_rank: 'int | None', maximum_sample_linear_correlation: 'float | None', identifiable: 'bool', qualifications: 'tuple[str, ...]') -> None",
+          "target": "phasesmith.validation.citrate_stephens_ablation.CitrateStephensModelResult"
+        },
+        {
+          "kind": "class",
+          "name": "ExternalValidationFile",
+          "signature": "(name: 'str', sha256: 'str', size_bytes: 'int', urls: 'tuple[str, ...]') -> None",
+          "target": "phasesmith.validation.datasets.ExternalValidationFile"
+        },
+        {
+          "kind": "class",
+          "name": "IucrSiliconStandardResult",
+          "signature": "(sample_count: 'int', reflection_count: 'int', free_parameter_count: 'int', weight_fractions: 'dict[str, float]', legacy_weight_fraction_errors: 'dict[str, float]', maximum_legacy_weight_fraction_error: 'float', poisson_rwp: 'float', unit_weight_rwp: 'float', profile_correlation: 'float', legacy_curve_poisson_rwp: 'float', legacy_curve_profile_correlation: 'float', silicon_calibration_sample_count: 'int', silicon_calibration_poisson_rwp: 'float', calibrated_zero_shift_deg: 'float', calibrated_sample_displacement_mm: 'float', refined_instrument: 'dict[str, float]', termination_reasons: 'tuple[str, ...]', elapsed_seconds: 'float') -> None",
+          "target": "phasesmith.validation.iucr_silicon_standard.IucrSiliconStandardResult"
+        },
+        {
+          "kind": "class",
+          "name": "IucrSodiumCitrateSiliconResult",
+          "signature": "(sample_count: 'int', reflection_count: 'int', free_parameter_count: 'int', weight_fractions: 'dict[str, float]', legacy_weight_fraction_errors: 'dict[str, float]', maximum_legacy_weight_fraction_error: 'float', poisson_rwp: 'float', profile_correlation: 'float', legacy_curve_poisson_rwp: 'float', legacy_curve_profile_correlation: 'float', silicon_calibration_sample_count: 'int', silicon_calibration_poisson_rwp: 'float', calibrated_sample_displacement_mm: 'float', refined_instrument: 'dict[str, float]', refined_march_ratio: 'float', model_qualifications: 'tuple[str, ...]', termination_reasons: 'tuple[str, ...]', elapsed_seconds: 'float') -> None",
+          "target": "phasesmith.validation.iucr_sodium_citrate_silicon.IucrSodiumCitrateSiliconResult"
+        },
+        {
+          "kind": "class",
+          "name": "IucrTripotassiumCitrateSiliconResult",
+          "signature": "(sample_count: 'int', reflection_count: 'int', free_parameter_count: 'int', weight_fractions: 'dict[str, float]', legacy_weight_fraction_errors: 'dict[str, float]', maximum_legacy_weight_fraction_error: 'float', poisson_rwp: 'float', profile_correlation: 'float', legacy_curve_poisson_rwp: 'float', legacy_curve_profile_correlation: 'float', silicon_calibration_sample_count: 'int', silicon_calibration_poisson_rwp: 'float', calibrated_sample_displacement_mm: 'float', refined_instrument: 'dict[str, float]', model_qualifications: 'tuple[str, ...]', elapsed_seconds: 'float') -> None",
+          "target": "phasesmith.validation.iucr_tripotassium_citrate_silicon.IucrTripotassiumCitrateSiliconResult"
+        },
+        {
+          "kind": "class",
+          "name": "IucrTrirubidiumCitrateSiliconResult",
+          "signature": "(sample_count: 'int', reflection_count: 'int', free_parameter_count: 'int', weight_fractions: 'dict[str, float]', legacy_weight_fraction_errors: 'dict[str, float]', maximum_legacy_weight_fraction_error: 'float', poisson_rwp: 'float', profile_correlation: 'float', legacy_curve_poisson_rwp: 'float', legacy_curve_profile_correlation: 'float', silicon_calibration_sample_count: 'int', silicon_calibration_poisson_rwp: 'float', calibrated_sample_displacement_mm: 'float', refined_instrument: 'dict[str, float]', model_qualifications: 'tuple[str, ...]', elapsed_seconds: 'float') -> None",
+          "target": "phasesmith.validation.iucr_trirubidium_citrate_silicon.IucrTrirubidiumCitrateSiliconResult"
+        },
+        {
+          "kind": "constant",
+          "name": "NIST_SRM660C_MATCHED_SH_OVER_L",
+          "signature": null,
+          "target": "builtins.float"
+        },
+        {
+          "kind": "constant",
+          "name": "NIST_SRM660C_STRESS_SH_OVER_L",
+          "signature": null,
+          "target": "builtins.float"
+        },
+        {
+          "kind": "class",
+          "name": "NistSrm660cParityResult",
+          "signature": "(specimen: 'str', sample_count: 'int', reflection_count: 'int', free_parameter_count: 'int', sh_over_l: 'float', poisson_rwp: 'float', unit_weight_rwp: 'float', profile_correlation: 'float', nist_reference_rwp: 'float', nist_reference_correlation: 'float', termination_reasons: 'tuple[str, ...]', elapsed_seconds: 'float') -> None",
+          "target": "phasesmith.validation.nist_srm660c_parity.NistSrm660cParityResult"
+        },
+        {
+          "kind": "constant",
+          "name": "QARR_1G_CUKA_FIXED_DISPERSION",
+          "signature": null,
+          "target": "builtins.dict"
+        },
+        {
+          "kind": "constant",
+          "name": "QARR_1G_WEIGHED_WEIGHT_FRACTIONS",
+          "signature": null,
+          "target": "builtins.dict"
+        },
+        {
+          "kind": "class",
+          "name": "QarrParityResult",
+          "signature": "(sample: 'str', sample_count: 'int', reflection_count: 'int', free_parameter_count: 'int', weight_fractions: 'dict[str, float]', maximum_weight_fraction_error: 'float', poisson_rwp: 'float', unit_weight_rwp: 'float', profile_correlation: 'float', termination_reasons: 'tuple[str, ...]', elapsed_seconds: 'float') -> None",
+          "target": "phasesmith.validation.qarr_parity.QarrParityResult"
+        },
+        {
+          "kind": "class",
+          "name": "RealDataValidationReport",
+          "signature": "(dataset_id: 'str', status: 'ValidationStatus', sample_count: 'int', reflection_count: 'int | None', elapsed_seconds: 'float', checks: 'tuple[ValidationCheck, ...]', notes: 'tuple[str, ...]' = ()) -> None",
+          "target": "phasesmith.validation.real_data.RealDataValidationReport"
+        },
+        {
+          "kind": "class",
+          "name": "ReflectionFidelityMetrics",
+          "signature": "(reflection_count: 'int', profile_correlation: 'float | None', median_abs_relative_error: 'float', p95_abs_relative_error: 'float', maximum_abs_relative_error: 'float', median_calculated_over_source: 'float', rms_log_ratio: 'float', source_weighted_l1_relative_error: 'float', source_normalized_rms_error: 'float') -> None",
+          "target": "phasesmith.validation.citrate_source_fidelity.ReflectionFidelityMetrics"
+        },
+        {
+          "kind": "class",
+          "name": "RowlesQpaResult",
+          "signature": "(sample: 'str', sample_count: 'int', reflection_count: 'int', free_parameter_count: 'int', weight_fractions: 'dict[str, float]', maximum_weight_fraction_error: 'float', poisson_rwp: 'float', unit_weight_rwp: 'float', profile_correlation: 'float', termination_reasons: 'tuple[str, ...]', elapsed_seconds: 'float') -> None",
+          "target": "phasesmith.validation.rowles.RowlesQpaResult"
+        },
+        {
+          "kind": "constant",
+          "name": "VALIDATION_CASES",
+          "signature": null,
+          "target": "builtins.tuple"
+        },
+        {
+          "kind": "constant",
+          "name": "VALIDATION_DATASETS",
+          "signature": null,
+          "target": "builtins.tuple"
+        },
+        {
+          "kind": "class",
+          "name": "ValidationCase",
+          "signature": "(case_id: 'str', dataset_id: 'str', purpose: 'ValidationPurpose', expected_status: 'ValidationStatus') -> None",
+          "target": "phasesmith.validation.suite.ValidationCase"
+        },
+        {
+          "kind": "class",
+          "name": "ValidationCheck",
+          "signature": "(check_id: 'str', status: 'ValidationStatus', detail: 'str', measured: 'float | None' = None, criterion: 'str | None' = None) -> None",
+          "target": "phasesmith.validation.real_data.ValidationCheck"
+        },
+        {
+          "kind": "class",
+          "name": "ValidationDataset",
+          "signature": "(dataset_id: 'str', title: 'str', source_url: 'str', citation: 'str', license_note: 'str', files: 'tuple[ExternalValidationFile, ...]', purpose: \"Literal['acceptance', 'oracle_integrity', 'holdout', 'capability']\" = 'acceptance', expected_status: \"Literal['passed', 'failed', 'blocked']\" = 'passed') -> None",
+          "target": "phasesmith.validation.datasets.ValidationDataset"
+        },
+        {
+          "kind": "class",
+          "name": "XredTio2Result",
+          "signature": "(sample_count: 'int', reflection_count: 'int', weight_fractions: 'dict[str, float]', cells_angstrom: 'dict[str, tuple[float, float]]', poisson_rwp: 'float', unit_weight_rwp: 'float', profile_correlation: 'float', elapsed_seconds: 'float') -> None",
+          "target": "phasesmith.validation.xred_tio2.XredTio2Result"
+        },
+        {
+          "kind": "function",
+          "name": "build_validation_suite_record",
+          "signature": "(case_reports: 'tuple[tuple[ValidationCase, RealDataValidationReport], ...]', *, generated_at_utc: 'str', phasesmith_version: 'str', phasesmith_revision: 'str | None', python_version: 'str', platform: 'str') -> 'dict[str, object]'",
+          "target": "phasesmith.validation.suite.build_validation_suite_record"
+        },
+        {
+          "kind": "function",
+          "name": "compare_validation_suite_records",
+          "signature": "(baseline: 'dict[str, object]', candidate: 'dict[str, object]') -> 'tuple[str, ...]'",
+          "target": "phasesmith.validation.suite.compare_validation_suite_records"
+        },
+        {
+          "kind": "function",
+          "name": "fetch_validation_dataset",
+          "signature": "(dataset_id: 'str', destination: 'str | Path', *, force: 'bool' = False) -> 'tuple[Path, ...]'",
+          "target": "phasesmith.validation.datasets.fetch_validation_dataset"
+        },
+        {
+          "kind": "function",
+          "name": "qarr_1g_readiness",
+          "signature": "(dataset_directory: 'str | Path') -> 'RealDataValidationReport'",
+          "target": "phasesmith.validation.real_data.qarr_1g_readiness"
+        },
+        {
+          "kind": "function",
+          "name": "read_nist_srm660c_specimen",
+          "signature": "(dataset_directory: 'str | Path', specimen: 'str') -> 'tuple[str, np.ndarray, np.ndarray, np.ndarray, np.ndarray, float]'",
+          "target": "phasesmith.validation.nist_srm660c_parity.read_nist_srm660c_specimen"
+        },
+        {
+          "kind": "function",
+          "name": "run_bath_ltl_workflow",
+          "signature": "(bundle_directory: 'str | Path', sample: 'str', *, execution: 'ExecutionPolicy | None' = None, profile_cycles: 'int' = 2) -> 'BathLtlResult'",
+          "target": "phasesmith.validation.bath_ltl.run_bath_ltl_workflow"
+        },
+        {
+          "kind": "function",
+          "name": "run_ceria_profile_transferability",
+          "signature": "(dataset_directory: 'str | Path') -> 'CeriaTransferabilityResult'",
+          "target": "phasesmith.validation.ceria_transferability.run_ceria_profile_transferability"
+        },
+        {
+          "kind": "function",
+          "name": "run_citrate_isotropic_broadening_ablation",
+          "signature": "(bundle_directory: 'str | Path', case: 'CitrateCase', *, execution: 'ExecutionPolicy | None' = None) -> 'CitrateBroadeningAblationResult'",
+          "target": "phasesmith.validation.citrate_broadening_ablation.run_citrate_isotropic_broadening_ablation"
+        },
+        {
+          "kind": "function",
+          "name": "run_citrate_source_reflection_fidelity",
+          "signature": "(bundle_directory: 'str | Path') -> 'CitrateSourceReflectionFidelityResult'",
+          "target": "phasesmith.validation.citrate_source_fidelity.run_citrate_source_reflection_fidelity"
+        },
+        {
+          "kind": "function",
+          "name": "run_citrate_stephens_ablation",
+          "signature": "(bundle_directory: 'str | Path', case: 'CitrateCase', *, execution: 'ExecutionPolicy | None' = None) -> 'CitrateStephensAblationResult'",
+          "target": "phasesmith.validation.citrate_stephens_ablation.run_citrate_stephens_ablation"
+        },
+        {
+          "kind": "function",
+          "name": "run_echidna_lab6_validation",
+          "signature": "(dataset_directory: 'str | Path') -> 'RealDataValidationReport'",
+          "target": "phasesmith.validation.real_data.run_echidna_lab6_validation"
+        },
+        {
+          "kind": "function",
+          "name": "run_iucr_silicon_standard_workflow",
+          "signature": "(bundle_directory: 'str | Path', *, execution: 'ExecutionPolicy | None' = None, cycles: 'int' = 2) -> 'IucrSiliconStandardResult'",
+          "target": "phasesmith.validation.iucr_silicon_standard.run_iucr_silicon_standard_workflow"
+        },
+        {
+          "kind": "function",
+          "name": "run_iucr_sodium_citrate_silicon_workflow",
+          "signature": "(bundle_directory: 'str | Path', *, execution: 'ExecutionPolicy | None' = None, cycles: 'int' = 2) -> 'IucrSodiumCitrateSiliconResult'",
+          "target": "phasesmith.validation.iucr_sodium_citrate_silicon.run_iucr_sodium_citrate_silicon_workflow"
+        },
+        {
+          "kind": "function",
+          "name": "run_iucr_tripotassium_citrate_silicon_workflow",
+          "signature": "(bundle_directory: 'str | Path', *, execution: 'ExecutionPolicy | None' = None) -> 'IucrTripotassiumCitrateSiliconResult'",
+          "target": "phasesmith.validation.iucr_tripotassium_citrate_silicon.run_iucr_tripotassium_citrate_silicon_workflow"
+        },
+        {
+          "kind": "function",
+          "name": "run_iucr_trirubidium_citrate_silicon_workflow",
+          "signature": "(bundle_directory: 'str | Path', *, execution: 'ExecutionPolicy | None' = None) -> 'IucrTrirubidiumCitrateSiliconResult'",
+          "target": "phasesmith.validation.iucr_trirubidium_citrate_silicon.run_iucr_trirubidium_citrate_silicon_workflow"
+        },
+        {
+          "kind": "function",
+          "name": "run_nickel_tof_validation",
+          "signature": "(dataset_directory: 'str | Path') -> 'RealDataValidationReport'",
+          "target": "phasesmith.validation.real_data.run_nickel_tof_validation"
+        },
+        {
+          "kind": "function",
+          "name": "run_nist_srm660c_parity_workflow",
+          "signature": "(dataset_directory: 'str | Path', specimen: 'str' = '100a', *, execution: 'ExecutionPolicy | None' = None, sh_over_l: 'float' = 0.002) -> 'NistSrm660cParityResult'",
+          "target": "phasesmith.validation.nist_srm660c_parity.run_nist_srm660c_parity_workflow"
+        },
+        {
+          "kind": "function",
+          "name": "run_nist_srm660c_validation",
+          "signature": "(dataset_directory: 'str | Path') -> 'RealDataValidationReport'",
+          "target": "phasesmith.validation.real_data.run_nist_srm660c_validation"
+        },
+        {
+          "kind": "function",
+          "name": "run_pbso4_cw_validation",
+          "signature": "(dataset_directory: 'str | Path', probe: 'RadiationProbe', *, execution: 'ExecutionPolicy | None' = None) -> 'RealDataValidationReport'",
+          "target": "phasesmith.validation.real_data.run_pbso4_cw_validation"
+        },
+        {
+          "kind": "function",
+          "name": "run_powgen_tof_readiness",
+          "signature": "(dataset_directory: 'str | Path') -> 'RealDataValidationReport'",
+          "target": "phasesmith.validation.real_data.run_powgen_tof_readiness"
+        },
+        {
+          "kind": "function",
+          "name": "run_powgen_tof_validation",
+          "signature": "(dataset_directory: 'str | Path') -> 'RealDataValidationReport'",
+          "target": "phasesmith.validation.real_data.run_powgen_tof_validation"
+        },
+        {
+          "kind": "function",
+          "name": "run_qarr_1g_validation",
+          "signature": "(dataset_directory: 'str | Path', *, cancellation: 'CancellationCallback | None' = None, logger: 'RefinementLogger | None' = None, execution: 'ExecutionPolicy | None' = None) -> 'RealDataValidationReport'",
+          "target": "phasesmith.validation.real_data.run_qarr_1g_validation"
+        },
+        {
+          "kind": "function",
+          "name": "run_qarr_1h_validation",
+          "signature": "(dataset_directory: 'str | Path') -> 'RealDataValidationReport'",
+          "target": "phasesmith.validation.real_data.run_qarr_1h_validation"
+        },
+        {
+          "kind": "function",
+          "name": "run_qarr_gsasii_parity_workflow",
+          "signature": "(dataset_directory: 'str | Path', sample: 'str', *, execution: 'ExecutionPolicy | None' = None) -> 'QarrParityResult'",
+          "target": "phasesmith.validation.qarr_parity.run_qarr_gsasii_parity_workflow"
+        },
+        {
+          "kind": "function",
+          "name": "run_rowles_qpa_workflow",
+          "signature": "(bundle_directory: 'str | Path', sample: 'str', *, execution: 'ExecutionPolicy | None' = None) -> 'RowlesQpaResult'",
+          "target": "phasesmith.validation.rowles.run_rowles_qpa_workflow"
+        },
+        {
+          "kind": "function",
+          "name": "run_sucrose_lebail_validation",
+          "signature": "(dataset_directory: 'str | Path') -> 'RealDataValidationReport'",
+          "target": "phasesmith.validation.real_data.run_sucrose_lebail_validation"
+        },
+        {
+          "kind": "function",
+          "name": "run_validation_case",
+          "signature": "(case: 'ValidationCase', dataset_directory: 'str | Path') -> 'RealDataValidationReport'",
+          "target": "phasesmith.validation.suite.run_validation_case"
+        },
+        {
+          "kind": "function",
+          "name": "run_xred_tio2_workflow",
+          "signature": "(dataset_directory: 'str | Path', *, execution: 'ExecutionPolicy | None' = None, cycles: 'int' = 3) -> 'XredTio2Result'",
+          "target": "phasesmith.validation.xred_tio2.run_xred_tio2_workflow"
+        },
+        {
+          "kind": "function",
+          "name": "scientific_fingerprint",
+          "signature": "(record: 'dict[str, object]') -> 'str'",
+          "target": "phasesmith.validation.suite.scientific_fingerprint"
+        },
+        {
+          "kind": "function",
+          "name": "scientific_record",
+          "signature": "(case: 'ValidationCase', report: 'RealDataValidationReport') -> 'dict[str, object]'",
+          "target": "phasesmith.validation.suite.scientific_record"
+        },
+        {
+          "kind": "function",
+          "name": "validation_dataset",
+          "signature": "(dataset_id: 'str') -> 'ValidationDataset'",
+          "target": "phasesmith.validation.datasets.validation_dataset"
+        },
+        {
+          "kind": "function",
+          "name": "verify_validation_dataset",
+          "signature": "(dataset_id: 'str', destination: 'str | Path') -> 'tuple[Path, ...]'",
+          "target": "phasesmith.validation.datasets.verify_validation_dataset"
+        }
+      ],
+      "module": "phasesmith.validation",
+      "tier": "validation"
+    }
+  ],
+  "package_version": "0.6.0",
+  "schema_version": 1,
+  "scope": "Names in __all__ for the listed modules; callable signatures use inspect.signature without evaluating string annotations"
+}

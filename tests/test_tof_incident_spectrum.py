@@ -5,6 +5,7 @@ from __future__ import annotations
 import numpy as np
 import phasesmith
 import pytest
+from phasesmith.io.tof_instrument import read_gsas_tof_instrument
 
 COEFFICIENTS = np.array(
     [12.0, 40_000.0, 3.0, 2.0, -0.5, 0.25, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
@@ -58,7 +59,7 @@ def test_pattern_normalization_scales_all_intensity_domain_arrays() -> None:
 
 
 def test_bounded_gsas_adapter_exposes_type_four_without_facility_assumptions() -> None:
-    calibration = phasesmith.read_gsas_tof_instrument(
+    calibration = read_gsas_tof_instrument(
         "INS  2 ICONS   4368.97      0.02      2.11         0\n"
         "INS  2I ITYP    4    0.7500    8.1904     76288\n"
         "INS  2ICOFF1   0.177427E+04   0.783794E+07   0.237297E+02   0.305645E+04\n"
