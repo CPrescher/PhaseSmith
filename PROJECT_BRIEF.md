@@ -1539,3 +1539,20 @@ available as ordinary project commands.
 
 The dependency-ordered delivery plan and milestone exit gates are maintained in
 `IMPLEMENTATION_PLAN.md`.
+
+The opXRD corpus is now onboarded as an opt-in robustness/capability campaign,
+not a bulk Rietveld oracle. The exact non-time-series archive and 14 fixed
+members are checksum-pinned across all nine archive directories. Source axes
+and intensities are never sorted, resampled, shifted, or clipped: five
+nonuniform-grid background rejections and two nonmonotonic-grid rejections are
+reported as observable boundaries, while negative observations disable only
+the inapplicable Poisson metric. Three fully labelled single-phase cases also
+run a disclosed expanded-P1 common model in PhaseSmith and exact-revision
+GSAS-II. A bounded global-zero scan and zero-only polish now precede width
+refinement. This preserves close Li2TeC2 agreement and closes the former ZrC
+optimizer gap. NbS2 instead requires the same approximately +0.521 degree
+offset in both programs and remains an explicit calibration warning; GSAS-II's
+lower residual is accompanied by a 1.65 degree maximum instrument Gaussian
+FWHM and is not treated as physical superiority. Residual and parameter-
+plausibility evidence remain separate. No production numerical behavior or
+GSAS-II runtime boundary changes.
