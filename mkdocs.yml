@@ -41,11 +41,17 @@ markdown_extensions:
   - pymdownx.details
   - pymdownx.highlight:
       anchor_linenums: true
+  - pymdownx.arithmatex:
+      generic: true
   - pymdownx.superfences
   - tables
 
 plugins:
   - search
+
+extra_javascript:
+  - javascripts/mathjax.js
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
 
 nav:
   - Home: index.md
@@ -102,6 +108,7 @@ nav:
       - GSAS-II comparisons: gsasii-performance.md
       - Real-data benchmark report: gsasii-benchmark-report.md
       - Benchmark campaign ledger: gsasii-benchmark-campaign.md
+      - opXRD robustness campaign: opxrd-robustness.md
       - In-house profile transferability gate: profile-transferability-gate.md
       - XRD-Rust performance: xrd-rust-performance.md
       - Rowles optics audit: topas-rowles-model.md

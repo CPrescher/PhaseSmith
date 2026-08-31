@@ -242,9 +242,18 @@ description](https://pmc.ncbi.nlm.nih.gov/articles/PMC11239193/).
 The [opXRD deposit](https://zenodo.org/records/14279434) contains 92,552
 patterns in two archives totaling 988 MB, but only 2,179 have even partial
 structural information. Its authors explicitly state that further metadata
-annotation is needed. It is useful for machine-learning robustness, not as a
-bulk Rietveld oracle. The already benchmarked XRED TiO2 subset remains the
-tractable labeled case.
+annotation is needed, so it is not treated as a bulk Rietveld oracle. A new
+checksum-pinned campaign instead fixes 14 examples across all nine
+non-time-series archive directories. Twelve receive independent robustness
+metrics; two concatenated/nonmonotonic grids are explicitly rejected without
+sorting or resampling. Three full-structure cases also run a disclosed P1
+common model in PhaseSmith and pinned GSAS-II. Li2TeC2 agrees closely
+(Poisson Rwp 14.672%/14.487%, relative L2 0.1660/0.1645), and a new bounded
+position-first workflow closes the former ZrC optimizer gap
+(29.341%/29.136%). NbS2 requires the same approximately +0.521 degree zero
+offset in both programs and remains a calibration warning; GSAS-II's lower
+residual coincides with an implausibly broad instrument profile. See
+[`opxrd-robustness.md`](opxrd-robustness.md).
 
 The [APS 11-BM standards page](https://wiki-ext.aps.anl.gov/ug11bm/index.php/Standards_Data)
 provides raw patterns, CIFs, and GSAS-II instrument files for several standards,
@@ -569,6 +578,8 @@ records are:
 - `validation/results/2026-08-11-campaign-bath-ltl.json`
 - `validation/results/2026-08-11-campaign-xred-tio2.json`
 - `validation/results/2026-08-11-campaign-iucr-si-standard.json`
+- `validation/results/2026-08-31-opxrd-robustness.json`
+- `validation/results/2026-08-31-opxrd-gsasii.json`
 
 The Rowles FPA diagnostic remains in
 `validation/results/2026-08-11-rowles-gsasii-fpa.json`.
