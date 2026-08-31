@@ -94,8 +94,34 @@ _IUCR_TRIRUBIDIUM_CITRATE_MONOHYDRATE_SILICON_SOURCE = (
     "https://journals.iucr.org/e/issues/2017/02/00/hb7648"
 )
 _IUCR_CERIA_SIZE_STRAIN_SOURCE = "https://mysite.du.edu/~balzar"
+_OPXRD_SOURCE = "https://zenodo.org/api/records/14279434/files"
 
 VALIDATION_DATASETS: tuple[ValidationDataset, ...] = (
+    ValidationDataset(
+        dataset_id="opxrd-robustness-v1",
+        title="opXRD non-time-series experimental powder X-ray robustness corpus",
+        source_url="https://zenodo.org/records/14279434",
+        citation=(
+            "D. Hollarek et al., opXRD: Open Experimental Powder X-Ray Diffraction "
+            "Database, Adv. Intell. Discov., doi:10.1002/aidi.202500044; "
+            "Zenodo 10.5281/zenodo.14279434"
+        ),
+        license_note=(
+            "Exact Zenodo record 14279434 declares CC BY 4.0. The 615 MB archive is "
+            "checksum-pinned but not redistributed; the checked-in selection manifest "
+            "identifies and hashes individual members used by the opt-in campaign."
+        ),
+        files=(
+            ExternalValidationFile(
+                "opxrd.zip",
+                "b5b6c9622f4a82031dc2185fe383fefea85181104ac5ef80edc567f516984584",
+                614_842_839,
+                (f"{_OPXRD_SOURCE}/opxrd.zip/content",),
+            ),
+        ),
+        purpose="capability",
+        expected_status="passed",
+    ),
     ValidationDataset(
         dataset_id="iucr-ceria-size-strain-round-robin",
         title="IUCr ceria size/strain round-robin laboratory X-ray pair",
