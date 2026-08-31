@@ -18,8 +18,8 @@ python scripts/public_api_snapshot.py --check
 ```
 
 When an intentional pre-1.0 API change is approved, first update the project
-version and changelog, then write the new versioned path without overwriting an
-older baseline:
+version, changelog, and migration notes, then write the new versioned path
+without overwriting an older baseline:
 
 ```shell
 python scripts/public_api_snapshot.py --write

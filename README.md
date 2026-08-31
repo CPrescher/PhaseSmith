@@ -403,7 +403,7 @@ the fixed background alone. Python can build a complete fixed-instrument request
 from one bank, calibration, and CIF:
 
 ```python
-from phasesmith.refinement import (
+from phasesmith.refinement.tof_lebail import (
     TofLeBailCancellation,
     TofLeBailInput,
     TofLeBailOptions,

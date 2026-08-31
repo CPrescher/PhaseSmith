@@ -11,7 +11,7 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
-from phasesmith.io import convert_rowles_topas_bundle
+from phasesmith.io.topas import convert_rowles_topas_bundle
 from phasesmith.validation import verify_validation_dataset
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]

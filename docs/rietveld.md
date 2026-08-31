@@ -169,14 +169,11 @@ checkpoints to a host such as Python or Tauri.
 
 The solver always refines exactly the active parameters in one
 `RietveldInput`; it never inserts a hidden sequence. Staging is an optional
-workflow layer in `phasesmith.refinement`:
+workflow layer in `phasesmith.refinement.workflow`:
 
 ```python
-from phasesmith.refinement import (
-    intelligent_rietveld_recipe,
-    review_rietveld_input,
-    run_rietveld_recipe,
-)
+from phasesmith.refinement.readiness import review_rietveld_input
+from phasesmith.refinement.workflow import intelligent_rietveld_recipe, run_rietveld_recipe
 
 # Non-mutating conversion/configuration review before numerical work.
 readiness = review_rietveld_input(request)

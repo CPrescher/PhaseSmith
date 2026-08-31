@@ -10,7 +10,7 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-from phasesmith.io import (
+from phasesmith.io.iucr_trirubidium_citrate_silicon import (
     IUCR_TRIRUBIDIUM_CITRATE_SILICON_PHASES,
     convert_iucr_trirubidium_citrate_silicon_bundle,
 )
