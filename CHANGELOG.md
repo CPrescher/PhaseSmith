@@ -24,6 +24,11 @@ development versions.
   known-structure reflection generation, HKL indexing, and database phase
   identification; no peak-picking implementation or private validation helper
   is exposed here.
+- Add an opt-in, checksum-pinned opXRD robustness campaign with a fixed
+  14-pattern stratified selection, explicit grid and negative-count boundaries,
+  independent background diagnostics, five residual measures, three disclosed
+  structural common models, position-first zero alignment, parameter-
+  plausibility warnings, and an isolated exact-revision GSAS-II comparison.
 
 ## 0.5.0
 

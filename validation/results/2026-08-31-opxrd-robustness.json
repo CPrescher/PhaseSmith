@@ -1,0 +1,1005 @@
+{
+  "archive_member_count": 22043,
+  "archive_sha256": "b5b6c9622f4a82031dc2185fe383fefea85181104ac5ef80edc567f516984584",
+  "cases": [
+    {
+      "background_agreement_normalized_l1": 0.05080797247151227,
+      "background_deterministic": true,
+      "bkg_only_metrics": {
+        "cosine_similarity": 0.9931318020625813,
+        "normalized_l1": 0.09064785467337465,
+        "pearson_correlation": 0.9103756042496901,
+        "poisson_block_reason": null,
+        "poisson_rwp": 0.12041546382626556,
+        "relative_l2": 0.15303461786166184
+      },
+      "bkg_to_positive_signal_area": 10.024936389070547,
+      "case_id": "cnrs-nbs2-synchrotron-full",
+      "decoded_phase_count": 1,
+      "detected_peak_count": 14,
+      "diagnostics": [
+        "structural fit requires a large zero offset; treat it as a calibration warning",
+        "structural parameter plausibility warning is separate from residuals"
+      ],
+      "intensity_range": [
+        272.0,
+        1617.0
+      ],
+      "lattice_diagnostic": {
+        "claim": "position-only diagnostic; unweighted predicted reflections are not ground truth",
+        "detected_peak_count": 14,
+        "match_tolerance_deg": 0.20000000000000284,
+        "median_observed_to_predicted_delta_deg": 0.6253001850000004,
+        "observed_peak_coverage": 0.07142857142857142,
+        "phase_count": 1,
+        "predicted_position_count": 18,
+        "predicted_position_coverage": 0.05555555555555555,
+        "q90_observed_to_predicted_delta_deg": 5.709240135000001,
+        "status": "diagnostic",
+        "wavelength_order_corrected": false
+      },
+      "maximum_relative_step_deviation": 3.5527136788004504e-13,
+      "median_step_deg": 0.05000000000000071,
+      "member_path": "coudert_hardiagon_0/pattern_10.json",
+      "metadata_class": "full_structure",
+      "negative_fraction": 0.0,
+      "phasesmith_background_status": "evaluated",
+      "quantile_only_metrics": {
+        "cosine_similarity": 0.9824436928846324,
+        "normalized_l1": 0.08928283621454348,
+        "pearson_correlation": 0.723619932879306,
+        "poisson_block_reason": null,
+        "poisson_rwp": 0.14420281488770822,
+        "relative_l2": 0.20394345186118706
+      },
+      "role": "structural_common_model",
+      "sample_count": 1200,
+      "smooth_points": 1,
+      "source_group": "coudert_hardiagon_0",
+      "strongest_peak_positions_deg": [
+        28.85,
+        25.8,
+        45.4,
+        12.9,
+        36.7,
+        36.85,
+        12.75,
+        17.8,
+        47.15,
+        36.55
+      ],
+      "structural_result": {
+        "assumed_relative_intensities": [
+          1.0
+        ],
+        "elapsed_seconds": 0.2421577079949202,
+        "maximum_gaussian_fwhm_deg": 0.02877366517788333,
+        "parameter_plausibility": "warning",
+        "phase_count": 1,
+        "position_alignment": {
+          "candidate_count": 81,
+          "coarse_poisson_rwp": 0.1556054643310465,
+          "coarse_zero_shift_deg": 0.5250000000000001,
+          "initial_poisson_rwp": 0.16908971769922712,
+          "poisson_rwp_improvement": 0.013561414397391391,
+          "polished_zero_shift_deg": 0.5208723150090083,
+          "scan_range_deg": [
+            -1.0,
+            1.0
+          ],
+          "scan_step_deg": 0.025,
+          "selected_poisson_rwp": 0.15552830330183573,
+          "selected_zero_shift_deg": 0.5208723150090083,
+          "status": "large_offset_warning"
+        },
+        "profile_correlation": 0.6765668354144003,
+        "profile_parameters": {
+          "u_deg2": 0.0013831661956290567,
+          "v_deg2": -0.0008888535936877573,
+          "w_deg2": 0.0007728331967342151,
+          "x_deg": 0.0,
+          "y_deg": 0.0,
+          "zero_shift_deg": 0.5208723150090083
+        },
+        "reflection_count": 74,
+        "residual_metrics": {
+          "cosine_similarity": 0.9849888128071954,
+          "normalized_l1": 0.0941763439592641,
+          "pearson_correlation": 0.7407193228725693,
+          "poisson_block_reason": null,
+          "poisson_rwp": 0.13890187614774427,
+          "relative_l2": 0.1741325886787636
+        },
+        "sample_count": 1200,
+        "wavelength_order_corrected": false,
+        "wavelengths_angstrom": [
+          1.2982
+        ]
+      },
+      "two_theta_range_deg": [
+        10.0,
+        69.95
+      ],
+      "wavelength_count": 1,
+      "wavelength_order_corrected": false,
+      "zero_fraction": 0.0
+    },
+    {
+      "background_agreement_normalized_l1": 0.04772383749734892,
+      "background_deterministic": true,
+      "bkg_only_metrics": {
+        "cosine_similarity": 0.5988135081665826,
+        "normalized_l1": 0.24539072716141624,
+        "pearson_correlation": 0.48784944279510406,
+        "poisson_block_reason": null,
+        "poisson_rwp": 0.41404576058155823,
+        "relative_l2": 0.8262921828515959
+      },
+      "bkg_to_positive_signal_area": 3.074553949453579,
+      "case_id": "cnrs-zrc-laboratory-full",
+      "decoded_phase_count": 1,
+      "detected_peak_count": 94,
+      "diagnostics": [],
+      "intensity_range": [
+        966.0,
+        83431.0
+      ],
+      "lattice_diagnostic": {
+        "claim": "position-only diagnostic; unweighted predicted reflections are not ground truth",
+        "detected_peak_count": 94,
+        "match_tolerance_deg": 0.1,
+        "median_observed_to_predicted_delta_deg": 2.4936792100000034,
+        "observed_peak_coverage": 0.10638297872340426,
+        "phase_count": 1,
+        "predicted_position_count": 11,
+        "predicted_position_coverage": 0.9090909090909091,
+        "q90_observed_to_predicted_delta_deg": 7.270294679999999,
+        "status": "diagnostic",
+        "wavelength_order_corrected": false
+      },
+      "maximum_relative_step_deviation": 1.6718652606124028e-12,
+      "median_step_deg": 0.016999999999995907,
+      "member_path": "coudert_hardiagon_0/pattern_514.json",
+      "metadata_class": "full_structure",
+      "negative_fraction": 0.0,
+      "phasesmith_background_status": "evaluated",
+      "quantile_only_metrics": {
+        "cosine_similarity": 0.5382431492605982,
+        "normalized_l1": 0.2636814138295821,
+        "pearson_correlation": 0.23606091135658633,
+        "poisson_block_reason": null,
+        "poisson_rwp": 0.4456498355102495,
+        "relative_l2": 0.8566959370070982
+      },
+      "role": "structural_common_model",
+      "sample_count": 7350,
+      "smooth_points": 5,
+      "source_group": "coudert_hardiagon_0",
+      "strongest_peak_positions_deg": [
+        38.31936,
+        33.03236,
+        28.49336,
+        55.28536,
+        65.89336,
+        47.36336,
+        55.42136000000001,
+        66.08036,
+        94.30036,
+        116.79136
+      ],
+      "structural_result": {
+        "assumed_relative_intensities": [
+          1.0
+        ],
+        "elapsed_seconds": 5.473101249997853,
+        "maximum_gaussian_fwhm_deg": 0.11478939776370735,
+        "parameter_plausibility": "plausible",
+        "phase_count": 1,
+        "position_alignment": {
+          "candidate_count": 81,
+          "coarse_poisson_rwp": 0.31821269236417055,
+          "coarse_zero_shift_deg": 0.025000000000000133,
+          "initial_poisson_rwp": 0.3275791341346603,
+          "poisson_rwp_improvement": 0.010704232090778865,
+          "polished_zero_shift_deg": 0.01844099752984175,
+          "scan_range_deg": [
+            -1.0,
+            1.0
+          ],
+          "scan_step_deg": 0.025,
+          "selected_poisson_rwp": 0.3168749020438814,
+          "selected_zero_shift_deg": 0.01844099752984175,
+          "status": "aligned"
+        },
+        "profile_correlation": 0.8194717085489912,
+        "profile_parameters": {
+          "u_deg2": 0.0011936874484697686,
+          "v_deg2": -0.001100954283569369,
+          "w_deg2": 0.0007189721908480709,
+          "x_deg": 0.0,
+          "y_deg": 0.0,
+          "zero_shift_deg": 0.01844099752984175
+        },
+        "reflection_count": 420,
+        "residual_metrics": {
+          "cosine_similarity": 0.8736207539670516,
+          "normalized_l1": 0.1664248286254977,
+          "pearson_correlation": 0.8260842428606562,
+          "poisson_block_reason": null,
+          "poisson_rwp": 0.2934114101389734,
+          "relative_l2": 0.496295443306505
+        },
+        "sample_count": 7350,
+        "wavelength_order_corrected": false,
+        "wavelengths_angstrom": [
+          1.5418
+        ]
+      },
+      "two_theta_range_deg": [
+        25.00836,
+        149.94136
+      ],
+      "wavelength_count": 1,
+      "wavelength_order_corrected": false,
+      "zero_fraction": 0.0
+    },
+    {
+      "background_agreement_normalized_l1": 0.03149921245109893,
+      "background_deterministic": true,
+      "bkg_only_metrics": {
+        "cosine_similarity": 0.9971666726177312,
+        "normalized_l1": 0.054195220013887976,
+        "pearson_correlation": 0.9950352104250142,
+        "poisson_block_reason": null,
+        "poisson_rwp": 0.08439629657382158,
+        "relative_l2": 0.08702466824817234
+      },
+      "bkg_to_positive_signal_area": 17.45111958653439,
+      "case_id": "cnrs-li2tec2-doublet-full",
+      "decoded_phase_count": 1,
+      "detected_peak_count": 142,
+      "diagnostics": [],
+      "intensity_range": [
+        196.0,
+        9475.0
+      ],
+      "lattice_diagnostic": {
+        "claim": "position-only diagnostic; unweighted predicted reflections are not ground truth",
+        "detected_peak_count": 142,
+        "match_tolerance_deg": 0.1,
+        "median_observed_to_predicted_delta_deg": 1.6170551600000005,
+        "observed_peak_coverage": 0.11971830985915492,
+        "phase_count": 1,
+        "predicted_position_count": 100,
+        "predicted_position_coverage": 0.22,
+        "q90_observed_to_predicted_delta_deg": 8.226901340000001,
+        "status": "diagnostic",
+        "wavelength_order_corrected": false
+      },
+      "maximum_relative_step_deviation": 5.27265312971301e-13,
+      "median_step_deg": 0.020213999999999288,
+      "member_path": "coudert_hardiagon_0/pattern_594.json",
+      "metadata_class": "full_structure",
+      "negative_fraction": 0.0,
+      "phasesmith_background_status": "evaluated",
+      "quantile_only_metrics": {
+        "cosine_similarity": 0.9956744096194391,
+        "normalized_l1": 0.06018908155127141,
+        "pearson_correlation": 0.9923099538562195,
+        "poisson_block_reason": null,
+        "poisson_rwp": 0.09487845523455124,
+        "relative_l2": 0.11045548431568943
+      },
+      "role": "structural_common_model",
+      "sample_count": 4701,
+      "smooth_points": 4,
+      "source_group": "coudert_hardiagon_0",
+      "strongest_peak_positions_deg": [
+        16.297426,
+        25.717150000000004,
+        28.385398000000002,
+        10.738576000000002,
+        10.920502,
+        19.834876,
+        13.042972,
+        10.455580000000001,
+        11.041786000000002,
+        12.941902
+      ],
+      "structural_result": {
+        "assumed_relative_intensities": [
+          1.0,
+          0.5
+        ],
+        "elapsed_seconds": 4.610618666003575,
+        "maximum_gaussian_fwhm_deg": 0.044026553818150176,
+        "parameter_plausibility": "plausible",
+        "phase_count": 1,
+        "position_alignment": {
+          "candidate_count": 81,
+          "coarse_poisson_rwp": 0.1476972186508344,
+          "coarse_zero_shift_deg": 0.050000000000000044,
+          "initial_poisson_rwp": 0.14925903512196187,
+          "poisson_rwp_improvement": 0.0015739600344128746,
+          "polished_zero_shift_deg": 0.05453252228682984,
+          "scan_range_deg": [
+            -1.0,
+            1.0
+          ],
+          "scan_step_deg": 0.025,
+          "selected_poisson_rwp": 0.147685075087549,
+          "selected_zero_shift_deg": 0.05453252228682984,
+          "status": "aligned"
+        },
+        "profile_correlation": 0.3172188509679103,
+        "profile_parameters": {
+          "u_deg2": 0.0014986198206274103,
+          "v_deg2": -0.0007742605149346536,
+          "w_deg2": 0.0007323977484841818,
+          "x_deg": 0.0,
+          "y_deg": 0.0,
+          "zero_shift_deg": 0.05453252228682984
+        },
+        "reflection_count": 316,
+        "residual_metrics": {
+          "cosine_similarity": 0.9864299457824005,
+          "normalized_l1": 0.11880193632829167,
+          "pearson_correlation": 0.9757421671352017,
+          "poisson_block_reason": null,
+          "poisson_rwp": 0.14671613366520217,
+          "relative_l2": 0.16597984685799688
+        },
+        "sample_count": 4701,
+        "wavelength_order_corrected": false,
+        "wavelengths_angstrom": [
+          1.540629,
+          1.544451
+        ]
+      },
+      "two_theta_range_deg": [
+        4.9978,
+        100.0036
+      ],
+      "wavelength_count": 2,
+      "wavelength_order_corrected": false,
+      "zero_fraction": 0.0
+    },
+    {
+      "background_agreement_normalized_l1": 0.0584706548053822,
+      "background_deterministic": true,
+      "bkg_only_metrics": {
+        "cosine_similarity": 0.8212721176699264,
+        "normalized_l1": 0.2354897483332483,
+        "pearson_correlation": 0.644249373877092,
+        "poisson_block_reason": null,
+        "poisson_rwp": 0.3326540938011041,
+        "relative_l2": 0.6008684803253171
+      },
+      "bkg_to_positive_signal_area": 3.246416053848015,
+      "case_id": "cnrs-fese-high-density",
+      "decoded_phase_count": 1,
+      "detected_peak_count": 153,
+      "diagnostics": [
+        "no structural-fit claim is made for this selected role"
+      ],
+      "intensity_range": [
+        19.44,
+        6598.34
+      ],
+      "lattice_diagnostic": {
+        "claim": "position-only diagnostic; unweighted predicted reflections are not ground truth",
+        "detected_peak_count": 153,
+        "match_tolerance_deg": 0.1,
+        "median_observed_to_predicted_delta_deg": 0.06539761999999882,
+        "observed_peak_coverage": 0.5882352941176471,
+        "phase_count": 1,
+        "predicted_position_count": 227,
+        "predicted_position_coverage": 0.5242290748898678,
+        "q90_observed_to_predicted_delta_deg": 0.8070036080000001,
+        "status": "diagnostic",
+        "wavelength_order_corrected": false
+      },
+      "maximum_relative_step_deviation": 5.329070518203705e-12,
+      "median_step_deg": 0.0009999999999994458,
+      "member_path": "coudert_hardiagon_0/pattern_368.json",
+      "metadata_class": "full_structure",
+      "negative_fraction": 0.0,
+      "phasesmith_background_status": "evaluated",
+      "quantile_only_metrics": {
+        "cosine_similarity": 0.8168063479950508,
+        "normalized_l1": 0.1939620155814359,
+        "pearson_correlation": 0.6341486379059287,
+        "poisson_block_reason": null,
+        "poisson_rwp": 0.31119362074989704,
+        "relative_l2": 0.5980328040424716
+      },
+      "role": "robustness_only",
+      "sample_count": 46995,
+      "smooth_points": 100,
+      "source_group": "coudert_hardiagon_0",
+      "strongest_peak_positions_deg": [
+        7.604,
+        12.369,
+        4.297,
+        9.861,
+        12.555,
+        14.697,
+        21.737,
+        14.373,
+        17.791,
+        12.267
+      ],
+      "structural_result": null,
+      "two_theta_range_deg": [
+        2.998,
+        49.992
+      ],
+      "wavelength_count": 1,
+      "wavelength_order_corrected": false,
+      "zero_fraction": 0.0
+    },
+    {
+      "background_agreement_normalized_l1": null,
+      "background_deterministic": null,
+      "bkg_only_metrics": null,
+      "bkg_to_positive_signal_area": null,
+      "case_id": "cnrs-kfeas-negative-counts",
+      "decoded_phase_count": 1,
+      "detected_peak_count": 113,
+      "diagnostics": [
+        "PhaseSmith physical-width background rejected the nonuniform grid; the source grid was not resampled",
+        "negative intensities make Poisson Rwp scientifically invalid"
+      ],
+      "intensity_range": [
+        -2907.0,
+        2070.0
+      ],
+      "lattice_diagnostic": {
+        "claim": "position-only diagnostic; unweighted predicted reflections are not ground truth",
+        "detected_peak_count": 113,
+        "match_tolerance_deg": 0.1,
+        "median_observed_to_predicted_delta_deg": 0.17700433000000082,
+        "observed_peak_coverage": 0.36283185840707965,
+        "phase_count": 1,
+        "predicted_position_count": 297,
+        "predicted_position_coverage": 0.2222222222222222,
+        "q90_observed_to_predicted_delta_deg": 1.5676409459999996,
+        "status": "diagnostic",
+        "wavelength_order_corrected": false
+      },
+      "maximum_relative_step_deviation": 0.10000000000555112,
+      "median_step_deg": 0.0009999999999998899,
+      "member_path": "coudert_hardiagon_0/pattern_767.json",
+      "metadata_class": "full_structure",
+      "negative_fraction": 0.06671246161305965,
+      "phasesmith_background_status": "rejected_nonuniform_grid",
+      "quantile_only_metrics": {
+        "cosine_similarity": 0.8540232506218242,
+        "normalized_l1": 0.32743301046222295,
+        "pearson_correlation": 0.8638051298421651,
+        "poisson_block_reason": "observed intensities contain negative values",
+        "poisson_rwp": null,
+        "relative_l2": 0.5777005706983317
+      },
+      "role": "negative_intensity",
+      "sample_count": 49496,
+      "smooth_points": null,
+      "source_group": "coudert_hardiagon_0",
+      "strongest_peak_positions_deg": [
+        8.0246,
+        3.4181,
+        0.5025,
+        11.0942,
+        1.0584,
+        0.9474,
+        1.1704,
+        1.2844,
+        13.4879,
+        0.8425
+      ],
+      "structural_result": null,
+      "two_theta_range_deg": [
+        0.5005,
+        49.9894
+      ],
+      "wavelength_count": 1,
+      "wavelength_order_corrected": false,
+      "zero_fraction": 0.0
+    },
+    {
+      "case_id": "usc-cuni-cell-label",
+      "decoded_phase_count": 2,
+      "diagnostics": [
+        "PhaseSmith rejected the source grid because 2theta is not strictly increasing; the pattern was not sorted, segmented, or resampled",
+        "wavelength components reordered from shortest to longest"
+      ],
+      "intensity_range": [
+        0.0,
+        17508.0
+      ],
+      "member_path": "hodge_alwen_0/pattern_0.json",
+      "metadata_class": "partial_structure",
+      "negative_fraction": 0.0,
+      "nonincreasing_step_count": 2,
+      "rejection_status": "rejected_nonmonotonic_grid",
+      "role": "lattice_diagnostic",
+      "sample_count": 3050,
+      "source_group": "hodge_alwen_0",
+      "two_theta_range_deg": [
+        30.00313028,
+        110.0656187
+      ],
+      "wavelength_count": 2,
+      "wavelength_order_corrected": true,
+      "zero_fraction": 0.0003278688524590164
+    },
+    {
+      "case_id": "usc-cual-partial-label",
+      "decoded_phase_count": 2,
+      "diagnostics": [
+        "PhaseSmith rejected the source grid because 2theta is not strictly increasing; the pattern was not sorted, segmented, or resampled",
+        "wavelength components reordered from shortest to longest"
+      ],
+      "intensity_range": [
+        0.0,
+        352142.0
+      ],
+      "member_path": "hodge_alwen_1/pattern_84.json",
+      "metadata_class": "partial_structure",
+      "negative_fraction": 0.0,
+      "nonincreasing_step_count": 2,
+      "rejection_status": "rejected_nonmonotonic_grid",
+      "role": "metadata_boundary",
+      "sample_count": 3050,
+      "source_group": "hodge_alwen_1",
+      "two_theta_range_deg": [
+        30.00313028,
+        110.0656187
+      ],
+      "wavelength_count": 2,
+      "wavelength_order_corrected": true,
+      "zero_fraction": 0.0003278688524590164
+    },
+    {
+      "background_agreement_normalized_l1": null,
+      "background_deterministic": null,
+      "bkg_only_metrics": null,
+      "bkg_to_positive_signal_area": null,
+      "case_id": "empa-perovskite-thin-film",
+      "decoded_phase_count": 2,
+      "detected_peak_count": 19,
+      "diagnostics": [
+        "PhaseSmith physical-width background rejected the nonuniform grid; the source grid was not resampled",
+        "wavelength components reordered from shortest to longest",
+        "no structural-fit claim is made for this selected role"
+      ],
+      "intensity_range": [
+        1.630219,
+        50.428276
+      ],
+      "lattice_diagnostic": null,
+      "maximum_relative_step_deviation": 0.0033993399340878348,
+      "median_step_deg": 0.030299999999996885,
+      "member_path": "siol_wieczorek_0/pattern_193.json",
+      "metadata_class": "partial_structure",
+      "negative_fraction": 0.0,
+      "phasesmith_background_status": "rejected_nonuniform_grid",
+      "quantile_only_metrics": {
+        "cosine_similarity": 0.7600346409275273,
+        "normalized_l1": 0.21329645880323014,
+        "pearson_correlation": 0.3853347775937828,
+        "poisson_block_reason": null,
+        "poisson_rwp": 0.34474480948452607,
+        "relative_l2": 0.6707550776702048
+      },
+      "role": "unsupported_geometry",
+      "sample_count": 1488,
+      "smooth_points": null,
+      "source_group": "siol_wieczorek_0",
+      "strongest_peak_positions_deg": [
+        14.1087,
+        28.422501,
+        12.6865,
+        19.7677,
+        9.8419,
+        31.8421,
+        19.555799,
+        19.9492,
+        38.681198,
+        22.007
+      ],
+      "structural_result": null,
+      "two_theta_range_deg": [
+        5.0,
+        49.999001
+      ],
+      "wavelength_count": 2,
+      "wavelength_order_corrected": true,
+      "zero_fraction": 0.0
+    },
+    {
+      "background_agreement_normalized_l1": 0.11571261594899089,
+      "background_deterministic": true,
+      "bkg_only_metrics": {
+        "cosine_similarity": 0.9377802262697065,
+        "normalized_l1": 0.1435355604403891,
+        "pearson_correlation": 0.9212386600258221,
+        "poisson_block_reason": "observed intensities contain negative values",
+        "poisson_rwp": null,
+        "relative_l2": 0.4287348009163797
+      },
+      "bkg_to_positive_signal_area": 6.008404520001133,
+      "case_id": "empa-zn3n2-negative-thin-film",
+      "decoded_phase_count": 2,
+      "detected_peak_count": 7,
+      "diagnostics": [
+        "negative intensities make Poisson Rwp scientifically invalid",
+        "wavelength components reordered from shortest to longest"
+      ],
+      "intensity_range": [
+        -0.074688,
+        7.073564
+      ],
+      "lattice_diagnostic": null,
+      "maximum_relative_step_deviation": 1.987439378080644e-05,
+      "median_step_deg": 0.05031600000000935,
+      "member_path": "siol_zhuk_0/pattern_0.json",
+      "metadata_class": "partial_structure",
+      "negative_fraction": 0.04310344827586207,
+      "phasesmith_background_status": "evaluated",
+      "quantile_only_metrics": {
+        "cosine_similarity": 0.7851319477703793,
+        "normalized_l1": 0.2268158565452126,
+        "pearson_correlation": 0.680590918364103,
+        "poisson_block_reason": "observed intensities contain negative values",
+        "poisson_rwp": null,
+        "relative_l2": 0.6679522612304587
+      },
+      "role": "negative_intensity",
+      "sample_count": 1392,
+      "smooth_points": 1,
+      "source_group": "siol_zhuk_0",
+      "strongest_peak_positions_deg": [
+        36.315522,
+        34.453812,
+        47.586415,
+        68.014909,
+        62.932944,
+        31.736722,
+        31.636089
+      ],
+      "structural_result": null,
+      "two_theta_range_deg": [
+        10.0,
+        79.990233
+      ],
+      "wavelength_count": 2,
+      "wavelength_order_corrected": true,
+      "zero_fraction": 0.0
+    },
+    {
+      "background_agreement_normalized_l1": null,
+      "background_deterministic": null,
+      "bkg_only_metrics": null,
+      "bkg_to_positive_signal_area": null,
+      "case_id": "kit-int-low-dynamic-range",
+      "decoded_phase_count": 1,
+      "detected_peak_count": 0,
+      "diagnostics": [
+        "PhaseSmith physical-width background rejected the nonuniform grid; the source grid was not resampled",
+        "no structural-fit claim is made for this selected role"
+      ],
+      "intensity_range": [
+        15.0,
+        65.0
+      ],
+      "lattice_diagnostic": null,
+      "maximum_relative_step_deviation": 4.8887803064589526e-05,
+      "median_step_deg": 0.020454999999998336,
+      "member_path": "breitung_schweidler_0/pattern_454.json",
+      "metadata_class": "unlabeled",
+      "negative_fraction": 0.0,
+      "phasesmith_background_status": "rejected_nonuniform_grid",
+      "quantile_only_metrics": {
+        "cosine_similarity": 0.9870014489534534,
+        "normalized_l1": 0.16652680714884222,
+        "pearson_correlation": 0.25409568980889796,
+        "poisson_block_reason": null,
+        "poisson_rwp": 0.19616359144873693,
+        "relative_l2": 0.20690175916662268
+      },
+      "role": "robustness_only",
+      "sample_count": 3911,
+      "smooth_points": null,
+      "source_group": "breitung_schweidler_0",
+      "strongest_peak_positions_deg": [],
+      "structural_result": null,
+      "two_theta_range_deg": [
+        10.0001,
+        89.977371
+      ],
+      "wavelength_count": 2,
+      "wavelength_order_corrected": false,
+      "zero_fraction": 0.0
+    },
+    {
+      "background_agreement_normalized_l1": null,
+      "background_deterministic": null,
+      "bkg_only_metrics": null,
+      "bkg_to_positive_signal_area": null,
+      "case_id": "kit-int-negative-sentinel",
+      "decoded_phase_count": 1,
+      "detected_peak_count": 97,
+      "diagnostics": [
+        "PhaseSmith physical-width background rejected the nonuniform grid; the source grid was not resampled",
+        "negative intensities make Poisson Rwp scientifically invalid"
+      ],
+      "intensity_range": [
+        -9999.0,
+        20697.0
+      ],
+      "lattice_diagnostic": null,
+      "maximum_relative_step_deviation": 4.8887803064589526e-05,
+      "median_step_deg": 0.020454999999998336,
+      "member_path": "breitung_schweidler_0/pattern_97.json",
+      "metadata_class": "unlabeled",
+      "negative_fraction": 0.09128100230120174,
+      "phasesmith_background_status": "rejected_nonuniform_grid",
+      "quantile_only_metrics": {
+        "cosine_similarity": 0.9973437274979501,
+        "normalized_l1": 0.03573691349104896,
+        "pearson_correlation": 0.9959010506808783,
+        "poisson_block_reason": "observed intensities contain negative values",
+        "poisson_rwp": null,
+        "relative_l2": 0.07808681301793248
+      },
+      "role": "negative_intensity",
+      "sample_count": 3911,
+      "smooth_points": null,
+      "source_group": "breitung_schweidler_0",
+      "strongest_peak_positions_deg": [
+        82.675098,
+        82.552371,
+        56.391008,
+        33.154645,
+        21.331918,
+        21.229645,
+        37.18419,
+        21.495554,
+        21.597827,
+        22.231918
+      ],
+      "structural_result": null,
+      "two_theta_range_deg": [
+        10.0001,
+        89.977371
+      ],
+      "wavelength_count": 2,
+      "wavelength_order_corrected": false,
+      "zero_fraction": 0.0
+    },
+    {
+      "background_agreement_normalized_l1": 0.03267940641270044,
+      "background_deterministic": true,
+      "bkg_only_metrics": {
+        "cosine_similarity": 0.9982378040970156,
+        "normalized_l1": 0.06316296047634755,
+        "pearson_correlation": 0.9834418539186881,
+        "poisson_block_reason": null,
+        "poisson_rwp": 0.07752075631066123,
+        "relative_l2": 0.08669051210723148
+      },
+      "bkg_to_positive_signal_area": 14.826422390531999,
+      "case_id": "kit-int-ga-jet-unlabeled",
+      "decoded_phase_count": 1,
+      "detected_peak_count": 28,
+      "diagnostics": [
+        "wavelength components reordered from shortest to longest",
+        "no structural-fit claim is made for this selected role"
+      ],
+      "intensity_range": [
+        424.0,
+        1828.0
+      ],
+      "lattice_diagnostic": null,
+      "maximum_relative_step_deviation": 9.471067898236929e-13,
+      "median_step_deg": 0.015004490378373703,
+      "member_path": "breitung_schweidler_1/pattern_2475.json",
+      "metadata_class": "unlabeled",
+      "negative_fraction": 0.0,
+      "phasesmith_background_status": "evaluated",
+      "quantile_only_metrics": {
+        "cosine_similarity": 0.9979429496009508,
+        "normalized_l1": 0.038401452388421915,
+        "pearson_correlation": 0.980903764019504,
+        "poisson_block_reason": null,
+        "poisson_rwp": 0.05877222240796678,
+        "relative_l2": 0.07278053331179733
+      },
+      "role": "robustness_only",
+      "sample_count": 3341,
+      "smooth_points": 6,
+      "source_group": "breitung_schweidler_1",
+      "strongest_peak_positions_deg": [
+        31.49343962983457,
+        31.628480043239936,
+        31.358399216429202,
+        31.74851596626693,
+        31.23836329340221,
+        31.868551889293922,
+        31.13333186075359,
+        24.36630670010687,
+        37.450222310049085,
+        20.72021553816196
+      ],
+      "structural_result": null,
+      "two_theta_range_deg": [
+        20.0,
+        70.11499786376953
+      ],
+      "wavelength_count": 2,
+      "wavelength_order_corrected": true,
+      "zero_fraction": 0.0
+    },
+    {
+      "background_agreement_normalized_l1": null,
+      "background_deterministic": null,
+      "bkg_only_metrics": null,
+      "bkg_to_positive_signal_area": null,
+      "case_id": "kit-ikft-high-background",
+      "decoded_phase_count": 1,
+      "detected_peak_count": 29,
+      "diagnostics": [
+        "PhaseSmith physical-width background rejected the nonuniform grid; the source grid was not resampled",
+        "wavelength components reordered from shortest to longest",
+        "no structural-fit claim is made for this selected role"
+      ],
+      "intensity_range": [
+        7471.0,
+        17060.0
+      ],
+      "lattice_diagnostic": null,
+      "maximum_relative_step_deviation": 0.0005984440458843196,
+      "median_step_deg": 0.01670999999999978,
+      "member_path": "wolf_wolf_0/pattern_22.json",
+      "metadata_class": "unlabeled",
+      "negative_fraction": 0.0,
+      "phasesmith_background_status": "rejected_nonuniform_grid",
+      "quantile_only_metrics": {
+        "cosine_similarity": 0.9991944429732067,
+        "normalized_l1": 0.02036278897606861,
+        "pearson_correlation": 0.9799230589794499,
+        "poisson_block_reason": null,
+        "poisson_rwp": 0.039859990296588176,
+        "relative_l2": 0.044201048660834505
+      },
+      "role": "robustness_only",
+      "sample_count": 4488,
+      "smooth_points": null,
+      "source_group": "wolf_wolf_0",
+      "strongest_peak_positions_deg": [
+        42.22435,
+        36.34199,
+        36.44225,
+        42.32462,
+        42.10738,
+        42.42489,
+        36.57594,
+        36.15816,
+        42.52516,
+        36.67621
+      ],
+      "structural_result": null,
+      "two_theta_range_deg": [
+        5.00836,
+        79.99182
+      ],
+      "wavelength_count": 2,
+      "wavelength_order_corrected": true,
+      "zero_fraction": 0.0
+    },
+    {
+      "background_agreement_normalized_l1": 0.163140182724352,
+      "background_deterministic": true,
+      "bkg_only_metrics": {
+        "cosine_similarity": 0.8786075645064322,
+        "normalized_l1": 0.5488413063903321,
+        "pearson_correlation": 0.8655869974225743,
+        "poisson_block_reason": null,
+        "poisson_rwp": 0.5919671799987097,
+        "relative_l2": 0.7395406691618166
+      },
+      "bkg_to_positive_signal_area": 0.8216623150369329,
+      "case_id": "xred-tio2-multiphase-full",
+      "decoded_phase_count": 2,
+      "detected_peak_count": 42,
+      "diagnostics": [
+        "wavelength components reordered from shortest to longest",
+        "no structural-fit claim is made for this selected role"
+      ],
+      "intensity_range": [
+        1.0,
+        955.0
+      ],
+      "lattice_diagnostic": null,
+      "maximum_relative_step_deviation": 1.7763568394002883e-13,
+      "median_step_deg": 0.019999999999999574,
+      "member_path": "zhang_cao_0/pattern_0.json",
+      "metadata_class": "full_structure",
+      "negative_fraction": 0.0,
+      "phasesmith_background_status": "evaluated",
+      "quantile_only_metrics": {
+        "cosine_similarity": 0.878887351632205,
+        "normalized_l1": 0.4374190072749131,
+        "pearson_correlation": 0.8682038306889385,
+        "poisson_block_reason": null,
+        "poisson_rwp": 0.5030544472983426,
+        "relative_l2": 0.665661352885445
+      },
+      "role": "metadata_boundary",
+      "sample_count": 2501,
+      "smooth_points": 5,
+      "source_group": "zhang_cao_0",
+      "strongest_peak_positions_deg": [
+        25.22,
+        25.52,
+        48.04,
+        47.94,
+        27.42,
+        37.72,
+        37.82,
+        55.12,
+        54.98,
+        24.94
+      ],
+      "structural_result": null,
+      "two_theta_range_deg": [
+        10.0,
+        60.0
+      ],
+      "wavelength_count": 2,
+      "wavelength_order_corrected": true,
+      "zero_fraction": 0.0
+    }
+  ],
+  "checks": {
+    "all_selected_members_accounted_for": true,
+    "archive_verified": true,
+    "background_outcomes_are_explicit": true,
+    "evaluated_backgrounds_are_bitwise_deterministic": true,
+    "negative_cases_block_poisson": true,
+    "nonmonotonic_grids_are_explicitly_rejected": true,
+    "nonnegative_cases_have_poisson": true,
+    "requested_structural_results_are_finite": true,
+    "selected_members_verified": true,
+    "structural_position_alignment_is_nonworsening": true,
+    "structural_position_scans_do_not_hit_bounds": true
+  },
+  "dataset_id": "opxrd-robustness-v1",
+  "elapsed_seconds": 10.821978958003456,
+  "interpretation": [
+    "The selected patterns are grouped by contributor source; no pattern is counted as an independent scientific replicate of another.",
+    "Smooth-Bruckner and piecewise-quantile background metrics are diagnostics, not competing ground-truth backgrounds.",
+    "Poisson Rwp is omitted for negative observations instead of shifting or clipping source intensities.",
+    "Position-only lattice coverage does not weight calculated reflection intensities and is never an acceptance oracle.",
+    "Structural common-model results use disclosed missing-metadata assumptions and are suitable only for same-input cross-program comparison.",
+    "Structural fits align zero before widths and report large-offset or broad-profile warnings separately from residual metrics."
+  ],
+  "metadata_class_counts": {
+    "full_structure": 6,
+    "partial_structure": 4,
+    "unlabeled": 4
+  },
+  "role_counts": {
+    "lattice_diagnostic": 1,
+    "metadata_boundary": 2,
+    "negative_intensity": 3,
+    "robustness_only": 4,
+    "structural_common_model": 3,
+    "unsupported_geometry": 1
+  },
+  "schema_version": 1,
+  "selected_case_count": 14,
+  "selection_sha256": "f1ae61b72634ae9379d73fc24c513f12f08d4246a314a463d728fad581820eeb",
+  "source_group_count": 9
+}

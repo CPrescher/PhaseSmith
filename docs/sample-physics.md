@@ -1,9 +1,8 @@
 # Sample broadening, preferred orientation, and provider contract
 
-This document is the equation and convention ledger for implementation unit 5.
-It separates reflection-batch physics from the intrinsic TCH peak primitive.
-All provider outputs are evaluated before the native peak/sample loop and are
-plain contiguous arrays.
+PhaseSmith separates reflection-batch sample physics from the intrinsic TCH
+peak primitive. All provider outputs are evaluated before the native
+peak/sample loop and are plain contiguous arrays.
 
 ## Composable quantities
 

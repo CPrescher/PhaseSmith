@@ -23,6 +23,7 @@ def test_registry_has_unique_stable_ids_and_pinned_files() -> None:
         "iucr-trirubidium-citrate-monohydrate-si-standard",
         "lanl-nickel-tof",
         "nist-srm660c-lab6-xray",
+        "opxrd-robustness-v1",
         "powgen-lab6-tof-calibration",
         "xred-tio2-anatase-rutile",
     }
@@ -129,6 +130,10 @@ def test_reviewed_nonpassing_outcomes_are_explicit() -> None:
         by_id["iucr-trirubidium-citrate-monohydrate-si-standard"].purpose,
         by_id["iucr-trirubidium-citrate-monohydrate-si-standard"].expected_status,
     ) == ("holdout", "blocked")
+    assert (
+        by_id["opxrd-robustness-v1"].purpose,
+        by_id["opxrd-robustness-v1"].expected_status,
+    ) == ("capability", "passed")
 
 
 @pytest.mark.parametrize(

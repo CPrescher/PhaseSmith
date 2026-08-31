@@ -17,10 +17,12 @@ consume directly—no Python process or sidecar is required for a Rust GUI.
    intensities and optionally refine profile or lattice parameters.
 5. [Rietveld refinement](rietveld.md) — run the matrix-free structural workflow
    with checkpoints and reports.
-6. [Persistence](persistence.md) — save and restore Python workflow state.
-7. [Native project persistence](native-persistence.md) — use the Rust-only,
+6. [AI-guided automation](ai-automation.md) — let an external AI propose
+   auditable staged recipes without giving it numerical or execution authority.
+7. [Persistence](persistence.md) — save and restore Python workflow state.
+8. [Native project persistence](native-persistence.md) — use the Rust-only,
    multi-histogram JSON+NPZ project and reporting boundary.
-8. [Python API map](api-reference.md) — find public types and functions by
+9. [Python API map](api-reference.md) — find public types and functions by
    task.
 
 For shared refinement controls, cancellation, logs, and safe checkpoints, see
