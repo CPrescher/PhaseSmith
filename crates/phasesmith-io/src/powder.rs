@@ -402,6 +402,8 @@ fn read_tof_gsas_slog_fxye(
         if supplied < 0.0 {
             return Err(parse_error(0, "GSAS TOF uncertainty must be nonnegative"));
         }
+        // Preserve the established bin-center arithmetic for persisted input parity.
+        #[allow(clippy::manual_midpoint)]
         tof_us.push(0.5 * (row[0] + next[0]));
         observed_y.push(row[1] / width);
         uncertainty.push(if supplied == 0.0 {
