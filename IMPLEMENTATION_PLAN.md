@@ -1899,3 +1899,23 @@ constant-wavelength models require new independent evidence and are not release
 blockers.
 Other Laue-class reductions remain separate follow-up slices rather than
 silently sharing the orthorhombic basis.
+
+The opXRD validation follow-up is complete. A checksum-pinned 14-member
+selection spans all nine non-time-series archive directories and explicitly
+separates schema/grid robustness, two independent background diagnostics,
+five complementary residual measures, position-only lattice coverage, and
+three structural common-model cases. The runner preserves source data and
+records five nonuniform and two nonmonotonic grid boundaries; it omits Poisson
+Rwp for all three negative-observation cases. Independent GSAS-II workers at
+revision `c0bc79b259cdf0065480b5fbd57674ddf12c4a23` compare fixed expanded-P1
+models for NbS2, ZrC, and Li2TeC2 without importing GSAS-II into PhaseSmith.
+A subsequent workflow audit adds a deterministic -1 to +1 degree global-zero
+scan, exact scale/background resolution at every 0.025 degree candidate, and a
+zero-only local polish before widths are released. Li2TeC2 reaches
+PhaseSmith/GSAS-II Poisson Rwp 14.672%/14.487% and relative L2 0.1660/0.1645;
+ZrC now reaches 29.341%/29.136% and 0.4963/0.4946. NbS2 improves materially but
+both programs require approximately +0.521 degree zero, so it remains an
+explicit calibration warning. GSAS-II's lower NbS2 residual coincides with a
+1.65 degree maximum instrument Gaussian FWHM; separate zero/width plausibility
+diagnostics prevent that compensating fit from becoming a parity claim. The
+result adds validation evidence and no production profile term.

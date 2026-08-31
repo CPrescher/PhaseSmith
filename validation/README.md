@@ -27,6 +27,21 @@ python benchmarks/validate_ceria_transferability.py \
 The fetch is explicit, source bytes remain ignored, and an existing report is
 not overwritten unless `--overwrite` is passed.
 
+The checksum-pinned opXRD campaign is an opt-in robustness and sparse-metadata
+capability diagnostic, not a bulk Rietveld oracle:
+
+```bash
+python -c "from phasesmith.validation import fetch_validation_dataset; \
+fetch_validation_dataset('opxrd-robustness-v1', \
+'validation/data/opxrd-robustness-v1')"
+python benchmarks/opxrd_robustness.py --structural \
+  --json-output validation/results/local-opxrd.json
+```
+
+Its fixed selection, complementary metrics, explicit grid-rejection semantics,
+and optional pinned-GSAS-II comparison are documented in the
+[opXRD robustness campaign](../docs/opxrd-robustness.md).
+
 The reviewed public-API comparison with XRD-Rust is preserved in
 `results/2026-08-13-xrd-rust-performance.json`. Its calculation scope,
 numerical gate, interpretation, and reproduction command are documented in

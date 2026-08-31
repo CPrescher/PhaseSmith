@@ -41,6 +41,31 @@ the matching Python modules, and links both API references. Edit the canonical
 Rust Markdown and regenerate; do not edit the generated pages directly. CI
 rejects stale generated copies before building MkDocs.
 
+## Mathematical notation
+
+MkDocs-authored pages render TeX with MathJax. Use `\(...\)` for inline
+notation and `\[...\]` for display equations. Use an aligned environment for
+related rows:
+
+```text
+\[
+\begin{aligned}
+y &= f(x), \\
+\frac{\partial y}{\partial x} &= f'(x).
+\end{aligned}
+\]
+```
+
+In MkDocs-only source, do not put mathematical formulas in fenced `text`
+blocks. Fences are reserved for literal file formats, array layouts, CLI
+output, and pseudocode that users may need to copy. The shared mathematical
+reference remains generated from rustdoc-compatible Markdown; migrate its
+literal formulas only through a coordinated canonical-source and generator
+change, never by editing `docs/mathematics/` directly. Keep physical units and
+parameter conventions next to the equation or public field they disambiguate;
+keep implementation-milestone history in planning documents rather than user
+guides.
+
 ## Build the Rust API documentation
 
 docs.rs renders the rustdoc content shipped inside each crate. Build the same
