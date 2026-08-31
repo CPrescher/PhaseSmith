@@ -910,7 +910,12 @@ fn selected_pattern(
     .map_err(Into::into)
 }
 
-#[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+#[allow(
+    unknown_lints,
+    clippy::cast_possible_truncation,
+    clippy::cast_sign_loss,
+    clippy::manual_midpoint
+)]
 fn smoothing_points(grid: &[f64], physical_width: f64) -> usize {
     let mut spacing = grid
         .windows(2)
