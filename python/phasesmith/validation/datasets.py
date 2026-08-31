@@ -3,12 +3,16 @@
 from __future__ import annotations
 
 import tempfile
+import time
 from dataclasses import dataclass
 from hashlib import sha256
 from pathlib import Path
 from typing import Literal
 from urllib.error import URLError
 from urllib.request import Request, urlopen
+
+_DOWNLOAD_TIMEOUT_SECONDS = 120
+_DOWNLOAD_RETRY_DELAYS_SECONDS = (1.0, 2.0)
 
 
 @dataclass(frozen=True, slots=True)
@@ -761,27 +765,34 @@ def verify_validation_dataset(
 def _fetch_file(external_file: ExternalValidationFile, target: Path) -> None:
     errors: list[str] = []
     for url in external_file.urls:
-        temporary: Path | None = None
-        try:
-            with tempfile.NamedTemporaryFile(
-                prefix=f".{external_file.name}.", suffix=".part", dir=target.parent, delete=False
-            ) as stream:
-                temporary = Path(stream.name)
-                request = Request(url, headers={"User-Agent": "PhaseSmith-validation/0.1"})
-                with urlopen(request, timeout=60) as response:
-                    if not response.geturl().startswith("https://"):
-                        raise ValueError("download redirected away from HTTPS")
-                    while block := response.read(1024 * 1024):
-                        stream.write(block)
-                        if stream.tell() > external_file.size_bytes:
-                            raise ValueError("download exceeds pinned byte size")
-            _verify_file(temporary, external_file)
-            temporary.replace(target)
-            return
-        except (OSError, URLError, ValueError) as error:
-            errors.append(f"{url}: {error}")
-            if temporary is not None:
-                temporary.unlink(missing_ok=True)
+        attempt_count = len(_DOWNLOAD_RETRY_DELAYS_SECONDS) + 1
+        for attempt in range(1, attempt_count + 1):
+            temporary: Path | None = None
+            try:
+                with tempfile.NamedTemporaryFile(
+                    prefix=f".{external_file.name}.",
+                    suffix=".part",
+                    dir=target.parent,
+                    delete=False,
+                ) as stream:
+                    temporary = Path(stream.name)
+                    request = Request(url, headers={"User-Agent": "PhaseSmith-validation/0.1"})
+                    with urlopen(request, timeout=_DOWNLOAD_TIMEOUT_SECONDS) as response:
+                        if not response.geturl().startswith("https://"):
+                            raise ValueError("download redirected away from HTTPS")
+                        while block := response.read(1024 * 1024):
+                            stream.write(block)
+                            if stream.tell() > external_file.size_bytes:
+                                raise ValueError("download exceeds pinned byte size")
+                _verify_file(temporary, external_file)
+                temporary.replace(target)
+                return
+            except (OSError, URLError, ValueError) as error:
+                errors.append(f"{url} (attempt {attempt}/{attempt_count}): {error}")
+                if temporary is not None:
+                    temporary.unlink(missing_ok=True)
+                if attempt < attempt_count:
+                    time.sleep(_DOWNLOAD_RETRY_DELAYS_SECONDS[attempt - 1])
     details = "; ".join(errors)
     raise RuntimeError(f"could not fetch {external_file.name}: {details}")
 

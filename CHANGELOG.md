@@ -6,6 +6,10 @@ development versions.
 
 ## Unreleased
 
+- Harden explicit external-validation downloads with three bounded HTTPS
+  attempts, short backoff, and a 120-second per-attempt timeout while retaining
+  atomic writes and exact pinned-size and SHA-256 verification.
+
 ## 0.6.0
 
 - Align aggregate Python namespaces with their documented ownership before

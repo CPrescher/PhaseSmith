@@ -96,6 +96,114 @@ def test_unknown_dataset_lists_available_ids(tmp_path: Path) -> None:
         fetch_validation_dataset("not-registered", tmp_path)
 
 
+class _DownloadResponse:
+    def __init__(self, payload: bytes) -> None:
+        self._blocks = iter((payload, b""))
+
+    def __enter__(self) -> "_DownloadResponse":
+        return self
+
+    def __exit__(self, *args: object) -> None:
+        return None
+
+    def geturl(self) -> str:
+        return "https://example.invalid/pattern.xy"
+
+    def read(self, _size: int) -> bytes:
+        return next(self._blocks)
+
+
+def _download_descriptor(payload: bytes) -> datasets_module.ExternalValidationFile:
+    return datasets_module.ExternalValidationFile(
+        name="pattern.xy",
+        sha256=sha256(payload).hexdigest(),
+        size_bytes=len(payload),
+        urls=("https://example.invalid/pattern.xy",),
+    )
+
+
+def test_fetch_retries_a_transient_timeout_then_verifies_success(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    payload = b"pinned pattern\n"
+    descriptor = _download_descriptor(payload)
+    calls = 0
+    sleeps: list[float] = []
+
+    def fake_urlopen(_request: object, *, timeout: int) -> _DownloadResponse:
+        nonlocal calls
+        calls += 1
+        assert timeout == 120
+        if calls == 1:
+            raise TimeoutError("transient read timeout")
+        return _DownloadResponse(payload)
+
+    monkeypatch.setattr(datasets_module, "urlopen", fake_urlopen)
+    monkeypatch.setattr(datasets_module.time, "sleep", sleeps.append)
+
+    target = tmp_path / descriptor.name
+    datasets_module._fetch_file(descriptor, target)
+
+    assert calls == 2
+    assert sleeps == [1.0]
+    assert target.read_bytes() == payload
+    assert not list(tmp_path.glob("*.part"))
+
+
+def test_fetch_exhausts_bounded_retries_and_cleans_partial_files(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    payload = b"pinned pattern\n"
+    descriptor = _download_descriptor(payload)
+    calls = 0
+    sleeps: list[float] = []
+
+    def fake_urlopen(_request: object, *, timeout: int) -> _DownloadResponse:
+        nonlocal calls
+        calls += 1
+        assert timeout == 120
+        raise TimeoutError("persistent read timeout")
+
+    monkeypatch.setattr(datasets_module, "urlopen", fake_urlopen)
+    monkeypatch.setattr(datasets_module.time, "sleep", sleeps.append)
+
+    target = tmp_path / descriptor.name
+    with pytest.raises(RuntimeError, match=r"attempt 3/3.*persistent read timeout"):
+        datasets_module._fetch_file(descriptor, target)
+
+    assert calls == 3
+    assert sleeps == [1.0, 2.0]
+    assert not target.exists()
+    assert not list(tmp_path.glob("*.part"))
+
+
+def test_fetch_retries_but_never_accepts_a_checksum_mismatch(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    payload = b"pinned pattern\n"
+    corrupt = b"corrupt bytes!\n"
+    assert len(corrupt) == len(payload)
+    descriptor = _download_descriptor(payload)
+    calls = 0
+
+    def fake_urlopen(_request: object, *, timeout: int) -> _DownloadResponse:
+        nonlocal calls
+        calls += 1
+        assert timeout == 120
+        return _DownloadResponse(corrupt)
+
+    monkeypatch.setattr(datasets_module, "urlopen", fake_urlopen)
+    monkeypatch.setattr(datasets_module.time, "sleep", lambda _delay: None)
+
+    target = tmp_path / descriptor.name
+    with pytest.raises(RuntimeError, match=r"attempt 3/3.*SHA-256 mismatch"):
+        datasets_module._fetch_file(descriptor, target)
+
+    assert calls == 3
+    assert not target.exists()
+    assert not list(tmp_path.glob("*.part"))
+
+
 def test_reviewed_nonpassing_outcomes_are_explicit() -> None:
     by_id = {dataset.dataset_id: dataset for dataset in VALIDATION_DATASETS}
     assert (by_id["iucr-qarr-1h"].purpose, by_id["iucr-qarr-1h"].expected_status) == (
