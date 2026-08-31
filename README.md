@@ -126,6 +126,16 @@ performance gates. The corresponding slow regression tests are opt-in:
 uv run pytest -m real_data
 ```
 
+The opt-in [opXRD robustness campaign](docs/opxrd-robustness.md) verifies a
+checksum-pinned 14-pattern stratified selection, compares five residual and
+background diagnostics, preserves invalid-grid and negative-count boundaries,
+and can run three assumption-explicit common models against pinned GSAS-II:
+
+```shell
+uv run python benchmarks/opxrd_robustness.py --structural \
+  --json-output validation/results/local-opxrd.json
+```
+
 The pinned external-oracle environment can compare the same support-limited CW
 profile-and-derivative workload against GSAS-II. A second benchmark starts from
 the crystal structure and compares structure factors, integrated intensities,

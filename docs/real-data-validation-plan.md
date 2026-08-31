@@ -145,9 +145,27 @@ Despite those optimizer minima, the inferred anatase fractions agree closely:
 shared structure-factor, phase-scale and Hill--Howard paths while leaving the
 unknown instrument and optimizer recipe outside strict parity acceptance.
 
+The opXRD follow-up adds a corpus-level robustness layer without promoting the
+deposit to a truth oracle. The exact 615 MB non-time-series archive and 14
+members are independently checksum-pinned. The fixed selection spans every
+archive directory and three metadata depths. It compares Smooth Bruckner with
+an independent piecewise-quantile baseline, reports five complementary
+residual measures, blocks Poisson weights for negative observations, and
+records nonuniform/nonmonotonic grid boundaries without source-data repair.
+Three single-phase full-structure cases additionally run an assumption-explicit
+P1 common model in PhaseSmith and pinned GSAS-II. The reviewed Li2TeC2 metrics
+agree closely. A bounded global-zero scan followed by zero-only polishing now
+precedes width refinement; this closes the former ZrC optimizer gap without
+letting widths hide non-overlapping peaks. NbS2 is retained as an explicit
+large-offset calibration warning, and effective instrument-width warnings are
+reported separately from residuals. Full procedure and results are in
+`docs/opxrd-robustness.md`.
+
 Reviewed machine-readable results are stored in
 `validation/results/2026-08-11-bath-ltl-gsasii.json` and
-`validation/results/2026-08-11-xred-tio2-gsasii.json`.
+`validation/results/2026-08-11-xred-tio2-gsasii.json`; the opXRD records are
+`validation/results/2026-08-31-opxrd-robustness.json` and
+`validation/results/2026-08-31-opxrd-gsasii.json`.
 
 The in-house internal-standard capability case uses the IUCr dicesium hydrogen
 citrate supplementary CIF (`wm5358sup1.cif`). It is registered by exact size

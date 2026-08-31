@@ -108,6 +108,7 @@ nav:
       - GSAS-II comparisons: gsasii-performance.md
       - Real-data benchmark report: gsasii-benchmark-report.md
       - Benchmark campaign ledger: gsasii-benchmark-campaign.md
+      - opXRD robustness campaign: opxrd-robustness.md
       - In-house profile transferability gate: profile-transferability-gate.md
       - XRD-Rust performance: xrd-rust-performance.md
       - Rowles optics audit: topas-rowles-model.md

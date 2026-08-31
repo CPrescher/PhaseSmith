@@ -1,0 +1,439 @@
+{
+  "archive_sha256": "b5b6c9622f4a82031dc2185fe383fefea85181104ac5ef80edc567f516984584",
+  "common_model": {
+    "axial_detector_over_radius": 0.001,
+    "axial_sample_over_radius": 0.001,
+    "background_terms": 8,
+    "doublet_secondary_to_primary_intensity": 0.5,
+    "initial_profile_deg2": [
+      0.0002,
+      -0.0002,
+      0.0005
+    ],
+    "large_gaussian_fwhm_warning_deg": 0.5,
+    "large_zero_shift_warning_deg": 0.2,
+    "polarization_fraction": 0.5,
+    "support_fwhm": 30.0,
+    "zero_alignment_max_deg": 1.0,
+    "zero_alignment_min_deg": -1.0,
+    "zero_alignment_step_deg": 0.025
+  },
+  "comparisons": [
+    {
+      "case_id": "cnrs-nbs2-synchrotron-full",
+      "checks": {
+        "same_member_sha256": true,
+        "same_sample_count": true,
+        "same_selection_sha256": true,
+        "same_starting_zero_shift": true,
+        "same_wavelength_components": true
+      },
+      "common_model_assumptions": [
+        "Expanded opXRD atoms are represented in P1 to avoid inventing an asymmetric unit.",
+        "Missing displacement values are fixed at Uiso=0.005 angstrom^2.",
+        "Unknown geometry uses an assumed Bragg-Brentano polarized correction.",
+        "A present secondary wavelength uses an assumed 0.5 intensity ratio.",
+        "A bounded global zero scan precedes local zero-only and width refinement.",
+        "The fitted result is a cross-program capability diagnostic, not structural truth."
+      ],
+      "gsasii": {
+        "case_id": "cnrs-nbs2-synchrotron-full",
+        "initial_zero_shift_deg": 0.5208723150090083,
+        "member_sha256": "8201e1547bdb8583dcfe70153fdf3c5f829293a95b25d5c68c32394315c77734",
+        "profile_correlation": 0.9005650013100266,
+        "profile_parameters": {
+          "SH/L": 0.002,
+          "U": 140969.61667314955,
+          "V": -73850.2565337577,
+          "W": 9840.783017185713,
+          "X": 0.0,
+          "Y": 0.0,
+          "Zero": 0.5210714452458884
+        },
+        "reflection_count": 74,
+        "relative_intensities": [
+          1.0
+        ],
+        "residual_metrics": {
+          "cosine_similarity": 0.9946711883490446,
+          "normalized_l1": 0.0699406056074612,
+          "pearson_correlation": 0.915467405588451,
+          "poisson_block_reason": null,
+          "poisson_rwp": 0.09470858261667749,
+          "relative_l2": 0.1037041083988597
+        },
+        "revision": "c0bc79b259cdf0065480b5fbd57674ddf12c4a23",
+        "sample_count": 1200,
+        "schema_version": 1,
+        "scope": "opxrd_structural_common_model",
+        "selection_sha256": "f1ae61b72634ae9379d73fc24c513f12f08d4246a314a463d728fad581820eeb",
+        "stage_poisson_rwp": {
+          "instrument_widths": 0.0958928188563775,
+          "position": 0.15885160799863088,
+          "sample_broadening": 0.09470858261667975,
+          "scale_background": 0.15885216840708338
+        },
+        "wavelengths_angstrom": [
+          1.2982
+        ]
+      },
+      "metric_differences_phasesmith_minus_gsasii": {
+        "cosine_similarity": -0.009682375541849142,
+        "normalized_l1": 0.0242357383518029,
+        "pearson_correlation": -0.17474808271588171,
+        "poisson_rwp": 0.04419329353106678,
+        "relative_l2": 0.07042848027990391
+      },
+      "parameter_plausibility": {
+        "gsasii": {
+          "absolute_zero_shift_deg": 0.5210714452458884,
+          "large_gaussian_width_warning": true,
+          "large_zero_shift_warning": true,
+          "maximum_gaussian_fwhm_deg": 1.648213826303464,
+          "status": "warning"
+        },
+        "phasesmith": {
+          "absolute_zero_shift_deg": 0.5208723150090083,
+          "large_gaussian_width_warning": false,
+          "large_zero_shift_warning": true,
+          "maximum_gaussian_fwhm_deg": 0.02877366517788333,
+          "status": "warning"
+        }
+      },
+      "phasesmith": {
+        "assumed_relative_intensities": [
+          1.0
+        ],
+        "elapsed_seconds": 0.25404816700029187,
+        "maximum_gaussian_fwhm_deg": 0.02877366517788333,
+        "parameter_plausibility": "warning",
+        "phase_count": 1,
+        "position_alignment": {
+          "candidate_count": 81,
+          "coarse_poisson_rwp": 0.1556054643310465,
+          "coarse_zero_shift_deg": 0.5250000000000001,
+          "initial_poisson_rwp": 0.16908971769922712,
+          "poisson_rwp_improvement": 0.013561414397391391,
+          "polished_zero_shift_deg": 0.5208723150090083,
+          "scan_range_deg": [
+            -1.0,
+            1.0
+          ],
+          "scan_step_deg": 0.025,
+          "selected_poisson_rwp": 0.15552830330183573,
+          "selected_zero_shift_deg": 0.5208723150090083,
+          "status": "large_offset_warning"
+        },
+        "profile_correlation": 0.6765668354144003,
+        "profile_parameters": {
+          "u_deg2": 0.0013831661956290567,
+          "v_deg2": -0.0008888535936877573,
+          "w_deg2": 0.0007728331967342151,
+          "x_deg": 0.0,
+          "y_deg": 0.0,
+          "zero_shift_deg": 0.5208723150090083
+        },
+        "reflection_count": 74,
+        "residual_metrics": {
+          "cosine_similarity": 0.9849888128071954,
+          "normalized_l1": 0.0941763439592641,
+          "pearson_correlation": 0.7407193228725693,
+          "poisson_block_reason": null,
+          "poisson_rwp": 0.13890187614774427,
+          "relative_l2": 0.1741325886787636
+        },
+        "sample_count": 1200,
+        "wavelength_order_corrected": false,
+        "wavelengths_angstrom": [
+          1.2982
+        ]
+      }
+    },
+    {
+      "case_id": "cnrs-zrc-laboratory-full",
+      "checks": {
+        "same_member_sha256": true,
+        "same_sample_count": true,
+        "same_selection_sha256": true,
+        "same_starting_zero_shift": true,
+        "same_wavelength_components": true
+      },
+      "common_model_assumptions": [
+        "Expanded opXRD atoms are represented in P1 to avoid inventing an asymmetric unit.",
+        "Missing displacement values are fixed at Uiso=0.005 angstrom^2.",
+        "Unknown geometry uses an assumed Bragg-Brentano polarized correction.",
+        "A present secondary wavelength uses an assumed 0.5 intensity ratio.",
+        "A bounded global zero scan precedes local zero-only and width refinement.",
+        "The fitted result is a cross-program capability diagnostic, not structural truth."
+      ],
+      "gsasii": {
+        "case_id": "cnrs-zrc-laboratory-full",
+        "initial_zero_shift_deg": 0.01844099752984175,
+        "member_sha256": "79fab6a6596bb52fda42419448e5e7c1fa5d3684b9481757a5b463ac62117e0c",
+        "profile_correlation": 0.827825897561699,
+        "profile_parameters": {
+          "SH/L": 0.002,
+          "U": 568.1924961332488,
+          "V": -476.5911169725364,
+          "W": 87.20604363596786,
+          "X": 0.0,
+          "Y": 0.0,
+          "Zero": 0.01591915463055659
+        },
+        "reflection_count": 420,
+        "relative_intensities": [
+          1.0
+        ],
+        "residual_metrics": {
+          "cosine_similarity": 0.8782251850805136,
+          "normalized_l1": 0.1633467299788764,
+          "pearson_correlation": 0.8339250262075238,
+          "poisson_block_reason": null,
+          "poisson_rwp": 0.2913553562746519,
+          "relative_l2": 0.4945824915499829
+        },
+        "revision": "c0bc79b259cdf0065480b5fbd57674ddf12c4a23",
+        "sample_count": 7350,
+        "schema_version": 1,
+        "scope": "opxrd_structural_common_model",
+        "selection_sha256": "f1ae61b72634ae9379d73fc24c513f12f08d4246a314a463d728fad581820eeb",
+        "stage_poisson_rwp": {
+          "instrument_widths": 0.29910946759760804,
+          "position": 0.34109739353906376,
+          "sample_broadening": 0.29135535627466425,
+          "scale_background": 0.3414070737414116
+        },
+        "wavelengths_angstrom": [
+          1.5418
+        ]
+      },
+      "metric_differences_phasesmith_minus_gsasii": {
+        "cosine_similarity": -0.004604431113461982,
+        "normalized_l1": 0.0030780986466213134,
+        "pearson_correlation": -0.007840783346867664,
+        "poisson_rwp": 0.0020560538643215054,
+        "relative_l2": 0.0017129517565220853
+      },
+      "parameter_plausibility": {
+        "gsasii": {
+          "absolute_zero_shift_deg": 0.01591915463055659,
+          "large_gaussian_width_warning": true,
+          "large_zero_shift_warning": false,
+          "maximum_gaussian_fwhm_deg": 0.7870053807527775,
+          "status": "warning"
+        },
+        "phasesmith": {
+          "absolute_zero_shift_deg": 0.01844099752984175,
+          "large_gaussian_width_warning": false,
+          "large_zero_shift_warning": false,
+          "maximum_gaussian_fwhm_deg": 0.11478939776370735,
+          "status": "plausible"
+        }
+      },
+      "phasesmith": {
+        "assumed_relative_intensities": [
+          1.0
+        ],
+        "elapsed_seconds": 5.650706666987389,
+        "maximum_gaussian_fwhm_deg": 0.11478939776370735,
+        "parameter_plausibility": "plausible",
+        "phase_count": 1,
+        "position_alignment": {
+          "candidate_count": 81,
+          "coarse_poisson_rwp": 0.31821269236417055,
+          "coarse_zero_shift_deg": 0.025000000000000133,
+          "initial_poisson_rwp": 0.3275791341346603,
+          "poisson_rwp_improvement": 0.010704232090778865,
+          "polished_zero_shift_deg": 0.01844099752984175,
+          "scan_range_deg": [
+            -1.0,
+            1.0
+          ],
+          "scan_step_deg": 0.025,
+          "selected_poisson_rwp": 0.3168749020438814,
+          "selected_zero_shift_deg": 0.01844099752984175,
+          "status": "aligned"
+        },
+        "profile_correlation": 0.8194717085489912,
+        "profile_parameters": {
+          "u_deg2": 0.0011936874484697686,
+          "v_deg2": -0.001100954283569369,
+          "w_deg2": 0.0007189721908480709,
+          "x_deg": 0.0,
+          "y_deg": 0.0,
+          "zero_shift_deg": 0.01844099752984175
+        },
+        "reflection_count": 420,
+        "residual_metrics": {
+          "cosine_similarity": 0.8736207539670516,
+          "normalized_l1": 0.1664248286254977,
+          "pearson_correlation": 0.8260842428606562,
+          "poisson_block_reason": null,
+          "poisson_rwp": 0.2934114101389734,
+          "relative_l2": 0.496295443306505
+        },
+        "sample_count": 7350,
+        "wavelength_order_corrected": false,
+        "wavelengths_angstrom": [
+          1.5418
+        ]
+      }
+    },
+    {
+      "case_id": "cnrs-li2tec2-doublet-full",
+      "checks": {
+        "same_member_sha256": true,
+        "same_sample_count": true,
+        "same_selection_sha256": true,
+        "same_starting_zero_shift": true,
+        "same_wavelength_components": true
+      },
+      "common_model_assumptions": [
+        "Expanded opXRD atoms are represented in P1 to avoid inventing an asymmetric unit.",
+        "Missing displacement values are fixed at Uiso=0.005 angstrom^2.",
+        "Unknown geometry uses an assumed Bragg-Brentano polarized correction.",
+        "A present secondary wavelength uses an assumed 0.5 intensity ratio.",
+        "A bounded global zero scan precedes local zero-only and width refinement.",
+        "The fitted result is a cross-program capability diagnostic, not structural truth."
+      ],
+      "gsasii": {
+        "case_id": "cnrs-li2tec2-doublet-full",
+        "initial_zero_shift_deg": 0.05453252228682984,
+        "member_sha256": "9c377f15018332cb81acccc2ffa5193e88e958053d7f7820c5e4da40134c2a9e",
+        "profile_correlation": 0.34267713772283054,
+        "profile_parameters": {
+          "SH/L": 0.002,
+          "U": 14663.127651504074,
+          "V": -5580.726287291104,
+          "W": 578.5447000828892,
+          "X": 0.0,
+          "Y": 0.0,
+          "Zero": 0.05454026353961327
+        },
+        "reflection_count": 316,
+        "relative_intensities": [
+          1.0,
+          0.5
+        ],
+        "residual_metrics": {
+          "cosine_similarity": 0.9866771187462338,
+          "normalized_l1": 0.1176621624235239,
+          "pearson_correlation": 0.9761868230459364,
+          "poisson_block_reason": null,
+          "poisson_rwp": 0.14486876629973658,
+          "relative_l2": 0.16451897298587173
+        },
+        "revision": "c0bc79b259cdf0065480b5fbd57674ddf12c4a23",
+        "sample_count": 4701,
+        "schema_version": 1,
+        "scope": "opxrd_structural_common_model",
+        "selection_sha256": "f1ae61b72634ae9379d73fc24c513f12f08d4246a314a463d728fad581820eeb",
+        "stage_poisson_rwp": {
+          "instrument_widths": 0.14495960560581453,
+          "position": 0.14867883629622825,
+          "sample_broadening": 0.144868766299736,
+          "scale_background": 0.14867888653708003
+        },
+        "wavelengths_angstrom": [
+          1.540629,
+          1.544451
+        ]
+      },
+      "metric_differences_phasesmith_minus_gsasii": {
+        "cosine_similarity": -0.00024717296383325316,
+        "normalized_l1": 0.0011397739047677713,
+        "pearson_correlation": -0.0004446559107347259,
+        "poisson_rwp": 0.0018473673654655909,
+        "relative_l2": 0.0014608738721251513
+      },
+      "parameter_plausibility": {
+        "gsasii": {
+          "absolute_zero_shift_deg": 0.05454026353961327,
+          "large_gaussian_width_warning": true,
+          "large_zero_shift_warning": false,
+          "maximum_gaussian_fwhm_deg": 1.214727327443086,
+          "status": "warning"
+        },
+        "phasesmith": {
+          "absolute_zero_shift_deg": 0.05453252228682984,
+          "large_gaussian_width_warning": false,
+          "large_zero_shift_warning": false,
+          "maximum_gaussian_fwhm_deg": 0.044026553818150176,
+          "status": "plausible"
+        }
+      },
+      "phasesmith": {
+        "assumed_relative_intensities": [
+          1.0,
+          0.5
+        ],
+        "elapsed_seconds": 4.718212792009581,
+        "maximum_gaussian_fwhm_deg": 0.044026553818150176,
+        "parameter_plausibility": "plausible",
+        "phase_count": 1,
+        "position_alignment": {
+          "candidate_count": 81,
+          "coarse_poisson_rwp": 0.1476972186508344,
+          "coarse_zero_shift_deg": 0.050000000000000044,
+          "initial_poisson_rwp": 0.14925903512196187,
+          "poisson_rwp_improvement": 0.0015739600344128746,
+          "polished_zero_shift_deg": 0.05453252228682984,
+          "scan_range_deg": [
+            -1.0,
+            1.0
+          ],
+          "scan_step_deg": 0.025,
+          "selected_poisson_rwp": 0.147685075087549,
+          "selected_zero_shift_deg": 0.05453252228682984,
+          "status": "aligned"
+        },
+        "profile_correlation": 0.3172188509679103,
+        "profile_parameters": {
+          "u_deg2": 0.0014986198206274103,
+          "v_deg2": -0.0007742605149346536,
+          "w_deg2": 0.0007323977484841818,
+          "x_deg": 0.0,
+          "y_deg": 0.0,
+          "zero_shift_deg": 0.05453252228682984
+        },
+        "reflection_count": 316,
+        "residual_metrics": {
+          "cosine_similarity": 0.9864299457824005,
+          "normalized_l1": 0.11880193632829167,
+          "pearson_correlation": 0.9757421671352017,
+          "poisson_block_reason": null,
+          "poisson_rwp": 0.14671613366520217,
+          "relative_l2": 0.16597984685799688
+        },
+        "sample_count": 4701,
+        "wavelength_order_corrected": false,
+        "wavelengths_angstrom": [
+          1.540629,
+          1.544451
+        ]
+      }
+    }
+  ],
+  "interpretation": [
+    "The common models use only the archived observations, wavelengths, cells, and expanded atoms; missing geometry and displacement metadata are disclosed assumptions.",
+    "The five residual measures expose weighting and baseline sensitivity that a single Rwp value would hide.",
+    "Large zero offsets and effective Gaussian widths are reported separately so a lower residual cannot hide compensating instrument parameters.",
+    "The comparison tests same-input execution and optimization behavior; it is not a structural-accuracy or GSAS-II-equivalence acceptance test."
+  ],
+  "pinned_gsasii_revision": "c0bc79b259cdf0065480b5fbd57674ddf12c4a23",
+  "recipe": {
+    "cell_and_atoms": "fixed expanded P1 structure from the opXRD label",
+    "gsasii_cycles": 8,
+    "phasesmith_cycles": 2,
+    "refined_blocks": [
+      "phase scale plus eight-term Chebyshev background",
+      "bounded global zero scan and zero-only local polish",
+      "U, V, and W with the aligned zero fixed",
+      "isotropic size and microstrain broadening"
+    ]
+  },
+  "schema_version": 1,
+  "scope": "opxrd_structural_common_model_cross_program_diagnostic",
+  "selection_sha256": "f1ae61b72634ae9379d73fc24c513f12f08d4246a314a463d728fad581820eeb",
+  "source_dataset_id": "opxrd-robustness-v1"
+}
