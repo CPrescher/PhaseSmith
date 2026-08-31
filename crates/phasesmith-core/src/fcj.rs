@@ -412,6 +412,8 @@ impl FcjProfile {
             } else if self.geometry.detector_over_radius > self.geometry.sample_over_radius {
                 (d_minor, d_major)
             } else {
+                // Preserve this summation and rounding order as part of the numerical contract.
+                #[allow(unknown_lints, clippy::manual_midpoint)]
                 let equal = 0.5 * (d_major + d_minor);
                 (equal, equal)
             };
