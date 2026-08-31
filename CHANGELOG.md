@@ -6,6 +6,25 @@ development versions.
 
 ## Unreleased
 
+## 0.6.0
+
+- Align aggregate Python namespaces with their documented ownership before
+  1.0. `phasesmith.refinement` now exports shared refinement infrastructure and
+  named method modules instead of flattening Le Bail, Rietveld, workflow, and
+  TOF entry points into ambiguous names such as `refine`. `phasesmith.io` now
+  exports general readers and named adapter modules rather than validation-
+  dataset converters.
+- Move automation, file-adapter, readiness, and reporting names out of the
+  top-level `phasesmith` export set. Module-qualified replacements are the
+  durable paths. Explicit old imports remain warning-backed compatibility
+  aliases for the 0.6 release and are scheduled for removal in 1.0; see the
+  0.6 migration guide.
+- Record deterministic measured-pattern peak picking as a future public
+  post-1.0 roadmap target. The detector is explicitly separate from
+  known-structure reflection generation, HKL indexing, and database phase
+  identification; no peak-picking implementation or private validation helper
+  is exposed here.
+
 ## 0.5.0
 
 - Declare and continuously test CPython 3.14 support while retaining the

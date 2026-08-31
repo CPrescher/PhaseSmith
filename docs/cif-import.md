@@ -75,7 +75,7 @@ Callers that already have a general Hall expression can use
 `space_group_from_hall_symbol(...)` to obtain the exact `SpaceGroup` directly.
 
 For a constructed structural Rietveld request,
-`phasesmith.refinement.review_rietveld_input(request)` aggregates these retained
+`phasesmith.refinement.readiness.review_rietveld_input(request)` aggregates these retained
 structure diagnostics with source/symmetry provenance and the active radiation,
 scattering, intensity-correction, and specimen-geometry choices. It reports
 contradictory optics and risky joint selections before refinement without

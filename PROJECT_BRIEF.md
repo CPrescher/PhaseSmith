@@ -12,7 +12,7 @@ not part of the numerical library.
 
 ## Current implementation status
 
-PhaseSmith 0.4.1 is the current released baseline. The completed library now
+PhaseSmith 0.5.0 is the current released baseline. The completed library now
 includes Python-free CW and TOF Le Bail/Rietveld workflows, public Python
 facades, native project persistence, and facility-neutral single-/multi-bank
 TOF composition with explicit calibration, correction, background-domain, and
@@ -45,6 +45,13 @@ state. The child plan records parent/result/review lineage, uses a new output
 directory outside the parent audit directory and a new plan ID, and requires
 fresh approval; no AI callback runs
 inside a numerical solve and no deterministic review auto-accepts a fit.
+
+The 0.6.0 line is the deliberate pre-1.0 Python API cleanup. It aligns the
+top-level, I/O, and refinement aggregate namespaces with their documented
+module ownership, keeps one warning-backed compatibility window for moved 0.5
+imports, and records the resulting exported names and signatures in a new
+immutable snapshot. It changes no numerical equation, tolerance, support
+boundary, default representation, or persistence format.
 
 External handoff is now a first-class path-free packet rather than a manual
 selection of plan fields. A second packet composes the digest-bound prior
@@ -765,6 +772,21 @@ not inherit X-ray doublet or polarization assumptions.
 13. Native X-ray and neutron scattering models with reviewed data provenance.
 14. Fused structural-intensity/profile calculation with analytical JVP/VJP.
 15. First full CIF-backed Rietveld refinement.
+
+## Deferred post-1.0 roadmap
+
+Public automatic peak picking is a future usability target only after the 0.6
+cleanup and 1.0 API stabilization. Its claim is deterministic detection of
+candidate peaks in a measured one-dimensional powder pattern, with explicit
+preprocessing, threshold, boundary, uncertainty, and repeatability contracts.
+It is not known-structure reflection generation, assignment of Miller indices
+(HKL indexing), or database-backed phase identification. Those are separate
+problems with separate inputs and validation claims.
+
+No peak picker is implemented or exported in the 0.6 cleanup. In particular,
+the private opXRD validation helper is not promoted as the public design; a
+future implementation needs an independently reviewed API, algorithm source,
+real-pattern validation set, and deterministic edge-case contract.
 
 ## Non-goals
 

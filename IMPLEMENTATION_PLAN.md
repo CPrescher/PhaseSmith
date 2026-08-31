@@ -1656,10 +1656,11 @@ targets and introspectable signatures. Release metadata requires the snapshot
 whose version matches the Cargo/Python version, while the live-package test
 reports an exact unified diff for additions, removals, aliases, kinds, or
 signature changes. Existing versioned snapshots are never silently
-overwritten. The next release milestone is intentional 0.x cleanup reviewed
-against this baseline, followed by the 1.0 release candidate gates.
+overwritten. The intentional 0.6 cleanup has now been reviewed against this
+baseline. The next release milestone is the 1.0 release candidate gate and
+removal of the documented one-release compatibility aliases.
 
-## Definition of the next completed milestone
+## Recent completed milestones and next release gates
 
 ### Unit 39: constrained automation and AI recipe guidance (0.5.0)
 
@@ -1724,6 +1725,47 @@ raw inspectors, structured lint/review output, digest-linked accepted-state
 replanning, structured CLI errors, and actual persisted-checkpoint
 continuation. No numerical equation, production hot loop, or GSAS-II boundary
 changes in this unit.
+
+### Unit 40: intentional pre-1.0 Python API cleanup (0.6.0)
+
+This milestone is complete. The 0.5 exported-name/signature snapshot was used
+as the review baseline. The cleanup makes three ownership rules observable:
+
+1. The top-level namespace remains a notebook convenience for domain models,
+   calculations, and mathematical primitives; automation, I/O adapters,
+   readiness review, and reporting use their named modules.
+2. `phasesmith.refinement` exports shared refinement infrastructure and named
+   method modules. Le Bail, Rietveld, workflow, and TOF records and entry
+   points are imported from the module that owns their contract, eliminating
+   the ambiguous aggregate `refine` name.
+3. `phasesmith.io` exports general CIF, powder, space-group, and TOF-instrument
+   adapters. Dataset-specific converters remain available from their named
+   submodules rather than appearing to be general file-format contracts.
+
+Moved 0.5 spellings are absent from the 0.6 `__all__` lists and snapshot but
+remain explicit warning-backed aliases for this release. They are scheduled
+for removal at 1.0. The migration table, new immutable snapshot, release
+metadata, source and fresh-package gates form the exit evidence. No numerical
+behavior or persistence schema changes in this unit.
+
+The next release gate is the 1.0 release candidate: remove the documented 0.6
+compatibility aliases, run the complete numerical/oracle/performance matrix,
+and freeze the stable module-qualified contract. Additive work that is not
+required for that gate remains outside the release-critical path.
+
+### Deferred post-1.0 target: automatic measured-pattern peak picking
+
+After API stabilization, add a public deterministic detector for candidate
+peaks in measured one-dimensional powder patterns. Its contract must state
+preprocessing, thresholds, minimum separation, boundary behavior, uncertainty
+or prominence diagnostics, ordering, and repeatability, and it must be tested
+on synthetic edge cases plus representative measured patterns.
+
+This target does not generate reflections from a known structure, assign HKLs,
+or identify phases from a database. Reflection generation, HKL indexing, and
+database phase identification retain separate APIs and validation claims. The
+existing private opXRD validation helper is not to be exposed as-is; it may
+inform test-case discovery only after its provenance and behavior are reviewed.
 
 Implementation units 0 through 24 are complete, including the Python-free
 Rietveld/Le Bail workflows, persistence and application boundaries, joint

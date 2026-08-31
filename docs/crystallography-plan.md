@@ -16,8 +16,8 @@ The first completed crystallography program must support two short, fully
 scripted workflows:
 
 ```python
-structure = phasesmith.read_cif("silicon.cif").structure
-phase = phasesmith.refinement.LeBailPhase.from_structure(
+structure = phasesmith.io.cif.read_cif("silicon.cif").structure
+phase = phasesmith.refinement.lebail.LeBailPhase.from_structure(
     phase_id="si",
     structure=structure,
     experiment=experiment,
@@ -31,7 +31,7 @@ result = phasesmith.refinement.lebail.refine(
 and, after the structure-factor and refinement units are complete:
 
 ```python
-structure = phasesmith.read_cif("silicon.cif").structure
+structure = phasesmith.io.cif.read_cif("silicon.cif").structure
 phase = phasesmith.phase.RietveldPhase(
     phase_id="si",
     structure=structure,

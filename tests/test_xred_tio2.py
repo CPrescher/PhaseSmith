@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 
 import pytest
-from phasesmith.io import convert_xred_tio2_bundle
+from phasesmith.io.xred import convert_xred_tio2_bundle
 from phasesmith.validation import run_xred_tio2_workflow
 
 

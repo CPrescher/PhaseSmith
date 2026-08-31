@@ -3,7 +3,8 @@ from pathlib import Path
 import numpy as np
 import phasesmith
 import pytest
-from phasesmith.refinement import (
+from phasesmith.io.tof_instrument import read_gsas_tof_instrument
+from phasesmith.refinement.tof_lebail import (
     TofLeBailCancellation,
     TofLeBailCheckpoint,
     TofLeBailInput,
@@ -71,7 +72,7 @@ def test_native_tof_lebail_recovers_one_integrated_intensity() -> None:
 
 
 def test_public_calibration_reader_maps_powgen_type_three_records() -> None:
-    data = phasesmith.read_gsas_tof_instrument(
+    data = read_gsas_tof_instrument(
         "INS  2 ICONS22581.63 0 4.41 0\n"
         "INS  2BNKPAR     3.183    90.000     0.000     0.000     0.200    1    1\n"
         "INS  2PRCF1     3 21 0.002\n"
@@ -88,7 +89,7 @@ def test_public_calibration_reader_maps_powgen_type_three_records() -> None:
     assert data.bank_geometry == phasesmith.TofBankGeometry(90.0)
     assert data.bank_geometry.theta_radians == pytest.approx(np.pi / 4.0)
 
-    profile_only = phasesmith.read_gsas_tof_instrument(
+    profile_only = read_gsas_tof_instrument(
         "INS  2 ICONS22581.63 0 4.41 0\n"
         "INS  2PRCF1     3 21 0.002\n"
         "INS  2PRCF11 0.257460 0.091563 0.017334 0\n"

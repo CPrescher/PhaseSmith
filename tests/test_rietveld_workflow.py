@@ -9,14 +9,18 @@ from phasesmith.refinement import (
     AffineConstraint,
     FixedConstraint,
     RefinementLimits,
+    TerminationReason,
+    rietveld,
+)
+from phasesmith.refinement.readiness import review_rietveld_input
+from phasesmith.refinement.rietveld import (
     RietveldOptions,
     RietveldParameterSelection,
+)
+from phasesmith.refinement.workflow import (
     RietveldRecipe,
     RietveldStage,
-    TerminationReason,
     intelligent_rietveld_recipe,
-    review_rietveld_input,
-    rietveld,
     run_rietveld_recipe,
 )
 

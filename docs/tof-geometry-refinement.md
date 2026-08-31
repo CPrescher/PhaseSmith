@@ -78,7 +78,7 @@ background contracts, and contiguous bank-aligned history. A cancelled
 four-cycle checkpoint resumes identically to an uninterrupted twelve-cycle run.
 
 Python applications use the same solver through
-`phasesmith.refinement.refine_tof_multibank_geometry`. The facade accepts typed
+`phasesmith.refinement.tof_multibank.refine_tof_multibank_geometry`. The facade accepts typed
 `TofLeBailBank`, `TofSharedLatticePhase`, and `TofBankInstrumentModel` records.
 The shared lattice reuses the exact native `SpaceGroup` topology already owned
 by `LatticeParameterization`, including nonstandard setting checks. The GIL is

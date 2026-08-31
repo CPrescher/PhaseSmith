@@ -3,7 +3,7 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-from phasesmith.io import convert_bath_ltl_bundle, read_rigaku_asc_text
+from phasesmith.io.bath_ltl import convert_bath_ltl_bundle, read_rigaku_asc_text
 from phasesmith.validation import run_bath_ltl_workflow
 
 

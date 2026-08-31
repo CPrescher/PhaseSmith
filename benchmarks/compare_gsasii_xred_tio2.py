@@ -10,7 +10,7 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-from phasesmith.io import convert_xred_tio2_bundle
+from phasesmith.io.xred import convert_xred_tio2_bundle
 from phasesmith.validation import run_xred_tio2_workflow, verify_validation_dataset
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
