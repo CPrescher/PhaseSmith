@@ -3,20 +3,24 @@
 from __future__ import annotations
 
 import numpy as np
-import phasesmith
 from phasesmith.crystallography import UnitCell
 from phasesmith.instrument import TofInstrument
+from phasesmith.io.space_groups import space_group_by_number
 from phasesmith.pattern import TofPowderPattern
 from phasesmith.refinement import (
     LatticeParameterBounds,
     LatticeParameterization,
-    TofBankInstrumentModel,
-    TofInstrumentParameterBound,
-    TofLeBailBank,
+)
+from phasesmith.refinement.tof_lebail import (
     TofLeBailCancellation,
     TofLeBailInput,
     TofLeBailOptions,
     TofLeBailPhase,
+)
+from phasesmith.refinement.tof_multibank import (
+    TofBankInstrumentModel,
+    TofInstrumentParameterBound,
+    TofLeBailBank,
     TofMultiBankGeometryInput,
     TofMultiBankGeometryIteration,
     TofMultiBankGeometryOptions,
@@ -66,7 +70,7 @@ def _phase(cell: UnitCell, intensities: list[float], scale: float) -> TofLeBailP
 def _request() -> tuple[TofMultiBankGeometryInput, list[TofInstrument]]:
     initial_cell = _cell(3.992)
     truth_cell = _cell(4.0)
-    group = phasesmith.space_group_by_number(221).space_group
+    group = space_group_by_number(221).space_group
     parameterization = LatticeParameterization(group, initial_cell)
     lattice = TofSharedLatticePhase(
         "alpha",

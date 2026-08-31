@@ -9,13 +9,12 @@ import phasesmith
 import pytest
 from phasesmith import automation
 from phasesmith.cli import main as cli_main
-from phasesmith.refinement import (
-    PolynomialBackground,
-    RefinementLimits,
+from phasesmith.refinement import PolynomialBackground, RefinementLimits, rietveld
+from phasesmith.refinement.rietveld import (
     RietveldOptions,
     RietveldParameterSelection,
-    rietveld,
 )
+from phasesmith.refinement.workflow import RietveldRecipe
 
 P1_CIF = """
 data_automation
@@ -326,7 +325,7 @@ def test_scientific_recipe_evaluation_suite_flags_known_risks(tmp_path) -> None:
 
 def test_run_revalidates_directly_constructed_external_proposals(tmp_path) -> None:
     plan = automation.plan_workflow(_spec(tmp_path))
-    bypass_recipe = phasesmith.refinement.RietveldRecipe(
+    bypass_recipe = RietveldRecipe(
         "attempted-bypass",
         tuple(reversed(plan.default_recipe.stages)),
     )

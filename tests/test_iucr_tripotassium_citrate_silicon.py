@@ -4,7 +4,7 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-from phasesmith.io import (
+from phasesmith.io.iucr_tripotassium_citrate_silicon import (
     IUCR_TRIPOTASSIUM_CITRATE_SILICON_PHASES,
     convert_iucr_tripotassium_citrate_silicon_bundle,
 )
