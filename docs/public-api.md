@@ -117,7 +117,9 @@ phasesmith.quantitative  [implemented]
 
 phasesmith.validation  [implemented]
   Explicit checksum-pinned external dataset retrieval and reproducible
-  real-data workflows. Downloads never occur at import time.
+  real-data workflows. Downloads never occur at import time. Explicit fetches
+  use three bounded HTTPS attempts with short backoff and accept a file only
+  after its pinned byte size and SHA-256 digest are verified.
 
 phasesmith.integrations.dioptas
   Compatibility-only conversion between Dioptas-facing NumPy data and the
