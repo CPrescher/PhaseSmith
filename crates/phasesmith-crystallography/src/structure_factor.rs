@@ -304,9 +304,26 @@ pub fn calculate_structure_factor_dense_with_context(
     batch: StructureFactorBatchView<'_>,
     execution: &ExecutionContext,
 ) -> Result<StructureFactorDenseResult, StructureFactorBatchError> {
+    calculate_structure_factor_selected_with_context(cell, space_group, batch, execution, None)
+}
+
+/// Calculate only selected structural derivative rows; omitted rows are zero.
+/// Values and selected derivatives are evaluated together in reflection order.
+/// # Errors
+/// Returns an error for invalid inputs or a mask of the wrong length.
+pub fn calculate_structure_factor_selected_with_context(
+    cell: UnitCell,
+    space_group: &SpaceGroup,
+    batch: StructureFactorBatchView<'_>,
+    execution: &ExecutionContext,
+    selected: Option<&[bool]>,
+) -> Result<StructureFactorDenseResult, StructureFactorBatchError> {
     let validated = validate(cell, space_group, batch)?;
     let reflection_count = batch.hkl.len();
     let parameter_count = validated.layout.parameter_count();
+    if selected.is_some_and(|mask| mask.len() != parameter_count) {
+        return Err(StructureFactorBatchError::TangentLengthMismatch);
+    }
     let element_count = parameter_count
         .checked_mul(reflection_count)
         .ok_or(StructureFactorBatchError::AllocationOverflow)?;
@@ -326,6 +343,7 @@ pub fn calculate_structure_factor_dense_with_context(
                 reflection,
                 reflection_count,
                 &mut result,
+                selected,
             );
         }
         return Ok(result);
@@ -341,7 +359,14 @@ pub fn calculate_structure_factor_dense_with_context(
             layout: validated.layout,
         };
         for (local, reflection) in range.enumerate() {
-            evaluate_dense_reflection(&validated, reflection, local, local_count, &mut partial);
+            evaluate_dense_reflection(
+                &validated,
+                reflection,
+                local,
+                local_count,
+                &mut partial,
+                selected,
+            );
         }
         partial
     });
@@ -778,6 +803,7 @@ fn evaluate_dense_reflection(
     output_reflection: usize,
     output_reflection_count: usize,
     result: &mut StructureFactorDenseResult,
+    selected: Option<&[bool]>,
 ) {
     let batch = validated.batch;
     let (q_squared, d_q_squared) = validated
@@ -798,6 +824,7 @@ fn evaluate_dense_reflection(
             root_q,
             d_q_squared,
             result,
+            selected,
         );
         f_real += contribution_real;
         f_imag += contribution_imag;
@@ -820,14 +847,20 @@ fn evaluate_dense_reflection(
         .chain(std::iter::repeat(0.0))
         .take(validated.layout.parameter_count());
     for (parameter, d_q) in q_derivatives.enumerate() {
+        if selected.is_some_and(|mask| !mask[parameter]) {
+            continue;
+        }
         let index = parameter * output_reflection_count + output_reflection;
         let d_norm = 2.0 * (f_real * result.d_f_real[index] + f_imag * result.d_f_imag[index]);
         let d_correction = batch.d_correction_d_q_squared[reflection] * d_q;
         result.d_intensity[index] =
             multiplicity * batch.scale * (correction * d_norm + d_correction * norm);
     }
-    result.d_intensity[validated.layout.scale() * output_reflection_count + output_reflection] =
-        multiplicity * correction * norm;
+    if selected.is_none_or(|mask| mask[validated.layout.scale()]) {
+        result.d_intensity
+            [validated.layout.scale() * output_reflection_count + output_reflection] =
+            multiplicity * correction * norm;
+    }
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -841,6 +874,7 @@ fn accumulate_dense_site(
     root_q: f64,
     d_q_squared: [f64; CELL_PARAMETER_COUNT],
     result: &mut StructureFactorDenseResult,
+    selected: Option<&[bool]>,
 ) -> (f64, f64) {
     let batch = validated.batch;
     let terms = symmetry_terms(
@@ -848,7 +882,11 @@ fn accumulate_dense_site(
         batch.hkl[reflection],
         site,
         q_squared,
-        Some(d_q_squared),
+        if selected.is_none_or(|mask| mask[..CELL_PARAMETER_COUNT].iter().any(|v| *v)) {
+            Some(d_q_squared)
+        } else {
+            None
+        },
     );
     let (base_real, base_imag) = site_base(validated, reflection, site, terms);
     let occupancy = batch.occupancy[site];
@@ -863,6 +901,9 @@ fn accumulate_dense_site(
         batch.d_scattering_imag_d_s[scattering_index],
     );
     for (parameter, d_q) in d_q_squared.into_iter().enumerate() {
+        if selected.is_some_and(|mask| !mask[parameter]) {
+            continue;
+        }
         let d_s = d_q / (4.0 * root_q);
         let scattering_derivative = (d_scattering.0 * d_s, d_scattering.1 * d_s);
         let rotated_scattering = complex_multiply(
@@ -891,6 +932,9 @@ fn accumulate_dense_site(
         .zip(&terms.d_symmetry_imag)
         .enumerate()
     {
+        if selected.is_some_and(|mask| !mask[validated.layout.coordinate(site, component)]) {
+            continue;
+        }
         let rotated = complex_multiply(scattering, (d_real, d_imag));
         set_f_derivative(
             result,
@@ -901,15 +945,19 @@ fn accumulate_dense_site(
             occupancy * rotated.1,
         );
     }
-    set_f_derivative(
-        result,
-        validated.layout.occupancy(site),
-        output_reflection,
-        output_reflection_count,
-        base_real,
-        base_imag,
-    );
-    if !batch.anisotropic_mask[site] {
+    if selected.is_none_or(|mask| mask[validated.layout.occupancy(site)]) {
+        set_f_derivative(
+            result,
+            validated.layout.occupancy(site),
+            output_reflection,
+            output_reflection_count,
+            base_real,
+            base_imag,
+        );
+    }
+    if !batch.anisotropic_mask[site]
+        && selected.is_none_or(|mask| mask[validated.layout.u_iso(site)])
+    {
         set_f_derivative(
             result,
             validated.layout.u_iso(site),

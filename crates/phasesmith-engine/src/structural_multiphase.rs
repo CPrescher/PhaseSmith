@@ -4,6 +4,8 @@ use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::sync::Arc;
 
+use crate::structural_pattern::StructuralPreparationCache;
+
 use phasesmith_core::{
     ConstantWavelengthInstrument, CwContributionsView, FcjGeometry, OwnedCwContributions,
     SupportPolicy,
@@ -72,6 +74,22 @@ impl PreparedStructuralModel {
                 .map_err(StructuralMultiphaseError::Structural),
             Self::FixedSpectrum(spectrum) => spectrum
                 .linearize(&input.spectrum_input())
+                .map_err(StructuralMultiphaseError::Spectrum),
+        }
+    }
+
+    fn linearize_selected(
+        &self,
+        input: &PreparedStructuralModelInputView<'_>,
+        selected: &[bool],
+        cache: Option<&StructuralPreparationCache>,
+    ) -> Result<StructuralPatternDenseResult, StructuralMultiphaseError> {
+        match self {
+            Self::Monochromatic(phase) => phase
+                .linearize_selected(&input.monochromatic_input()?, selected, cache)
+                .map_err(StructuralMultiphaseError::Structural),
+            Self::FixedSpectrum(spectrum) => spectrum
+                .linearize_selected(&input.spectrum_input(), selected, cache)
                 .map_err(StructuralMultiphaseError::Spectrum),
         }
     }
@@ -356,6 +374,23 @@ impl PreparedStructuralMultiphase {
         inputs: &[PreparedStructuralModelInputView<'_>],
     ) -> Result<Vec<StructuralPatternDenseResult>, StructuralMultiphaseError> {
         self.map_models(inputs, PreparedStructuralModel::linearize)
+    }
+
+    /// Linearize only the selected native rows of each phase.
+    /// # Errors
+    /// Returns an error for incompatible phase masks or invalid inputs.
+    pub fn linearize_selected(
+        &self,
+        inputs: &[PreparedStructuralModelInputView<'_>],
+        selected: &[Vec<bool>],
+        cache: Option<&StructuralPreparationCache>,
+    ) -> Result<Vec<StructuralPatternDenseResult>, StructuralMultiphaseError> {
+        if selected.len() != self.phase_count() {
+            return Err(StructuralMultiphaseError::TangentCountMismatch);
+        }
+        self.map_models_indexed(inputs, |index, model, input| {
+            model.linearize_selected(input, &selected[index], cache)
+        })
     }
 
     /// Calculate one structural forward product per phase.

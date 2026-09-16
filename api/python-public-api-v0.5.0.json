@@ -262,6 +262,18 @@
         },
         {
           "kind": "class",
+          "name": "FitAdvice",
+          "signature": "(code: 'str', message: 'str', parameter_labels: 'tuple[str, ...]' = ()) -> None",
+          "target": "phasesmith.fit_report.FitAdvice"
+        },
+        {
+          "kind": "class",
+          "name": "FitReport",
+          "signature": "(residuals: 'ResidualDiagnostics', termination_reason: 'str', jacobian_rank: 'int | None', covariance_available: 'bool', advice: 'tuple[FitAdvice, ...]', attribution_available: 'bool' = False, attribution_unavailable_reason: 'str' = 'Residual location alone does not distinguish background, profile, structure, missing phases, or experimental errors. No cause or parameter gain is inferred.') -> None",
+          "target": "phasesmith.fit_report.FitReport"
+        },
+        {
+          "kind": "class",
           "name": "FundamentalEmissionLine",
           "signature": "(wavelength_angstrom: 'float', relative_intensity: 'float', gaussian_fwhm_angstrom: 'float', lorentzian_fwhm_angstrom: 'float') -> None",
           "target": "phasesmith.fpa_calibration.FundamentalEmissionLine"
@@ -685,6 +697,18 @@
           "name": "ReflectionRange",
           "signature": "(*args, **kwargs)",
           "target": "phasesmith.symmetry.ReflectionRange"
+        },
+        {
+          "kind": "class",
+          "name": "ResidualDiagnostics",
+          "signature": "(included_count: 'int', adjacent_pair_count: 'int', chi_square: 'float', mean: 'float', weighted_rms: 'float', durbin_watson: 'float | None', regions: 'tuple[ResidualRegion, ...]') -> None",
+          "target": "phasesmith.fit_report.ResidualDiagnostics"
+        },
+        {
+          "kind": "class",
+          "name": "ResidualRegion",
+          "signature": "(lower: 'float', upper: 'float', count: 'int', chi_square: 'float', chi_square_fraction: 'float', maximum_absolute_weighted_residual: 'float') -> None",
+          "target": "phasesmith.fit_report.ResidualRegion"
         },
         {
           "kind": "class",
@@ -1174,6 +1198,12 @@
         },
         {
           "kind": "function",
+          "name": "build_fit_report",
+          "signature": "(result: 'RietveldResult', pattern: 'PowderPattern', *, region_count: 'int' = 20) -> 'FitReport'",
+          "target": "phasesmith.fit_report.build_fit_report"
+        },
+        {
+          "kind": "function",
           "name": "calculate_cw_pattern",
           "signature": "(x: 'ArrayLike', reflections: 'ReflectionGeometryBatch', instrument: 'ConstantWavelengthInstrument', *, physics: 'ReflectionPhysicsProvider | None' = None, support_fwhm: 'float' = 20.0, jacobian_layout: \"Literal['support', 'dense']\" = 'support') -> 'AccumulationResult'",
           "target": "phasesmith.calculation.calculate_cw_pattern"
@@ -1243,6 +1273,12 @@
           "name": "cw_profile_parameters",
           "signature": "(two_theta_deg: 'ArrayLike', instrument: 'ConstantWavelengthInstrument') -> 'CwProfileParameters'",
           "target": "phasesmith.cw.cw_profile_parameters"
+        },
+        {
+          "kind": "function",
+          "name": "diagnose_residuals",
+          "signature": "(x: 'ArrayLike', residual: 'ArrayLike', *, weighted_residual: 'ArrayLike | None' = None, included: 'ArrayLike | None' = None, region_count: 'int' = 20) -> 'ResidualDiagnostics'",
+          "target": "phasesmith.fit_report.diagnose_residuals"
         },
         {
           "kind": "function",

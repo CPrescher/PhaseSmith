@@ -1661,6 +1661,35 @@ against this baseline, followed by the 1.0 release candidate gates.
 
 ## Definition of the next completed milestone
 
+The second refinement performance pass implements ordered four-sample FCJ
+evaluation, contiguous active structural rows, reusable unit-scale profiles
+for scale-only fits, and native phase-diagnostic export with complete axial
+derivatives. The general solver continues to enforce bounds, constraints and
+checkpoint semantics. See `docs/refinement-performance-round2.md` for the
+numerical contract, real-data measurements and limits of diagnostic reuse.
+
+The QARR performance unit implements selected derivative rows, fixed-axial
+derivative elision, bounded exact-key preparation reuse, cheaper backtracking,
+native fixed-spectrum facade routing, and residual-checked small direct solves
+with CG fallback. The numerical contract is in `docs/refinement-performance.md`.
+No support truncation or scientific acceptance threshold is relaxed.
+
+The rietx comparison adds a completed first fit-report slice and a measured
+performance baseline, documented in `docs/fit-report.md` and
+`docs/rietx-comparison.md`. Native residual diagnostics and the read-only
+Python/project report preserve weighting and masks, disclose unavailable
+attribution, and do not expand automation authority. Constraint-aware
+parameter-gain suggestions, additional anisotropic models, vendor imports,
+Pawley, restraints and indexing remain proposed independent units, not
+capabilities claimed by this slice. See the comparison for their validation
+requirements and order.
+
+The primary speed evidence is the unchanged measured IUCr QARR 1g validation,
+paired with a mapped rietx workflow. Every run passes real-data profile/QPA
+acceptance and repeatability checks. Stricter model-equivalence checks fail
+and remain visible; no identical-workload speed ratio is claimed. Synthetic
+refinement and multi-peak kernel timings serve as supporting diagnostics.
+
 ### Unit 39: constrained automation and AI recipe guidance (0.5.0)
 
 The first 0.5.0 application entry point is complete. A strict version-1 task

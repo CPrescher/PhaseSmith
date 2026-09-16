@@ -1,0 +1,93 @@
+{
+  "schema": "phasesmith.rietx-refinement-benchmark.v1",
+  "scope": "complete_public_single_phase_scale_width_background_refinement",
+  "samples": 20001,
+  "reflections": 423,
+  "sites": 8,
+  "free_parameters": 4,
+  "threads": 1,
+  "environment": {
+    "platform": "macOS-26.6.2-arm64-arm-64bit",
+    "python": "3.12.13",
+    "versions": {
+      "phasesmith": "0.5.0",
+      "rietx": "1.4.0",
+      "numpy": "2.5.3",
+      "scipy": "1.18.1",
+      "numba": "0.67.0"
+    }
+  },
+  "physical_parameter_order": [
+    "scale",
+    "gaussian_W_variance_deg2",
+    "background_c0",
+    "background_c1"
+  ],
+  "forward_relative_l2": 1.2114119975779894e-09,
+  "gate": {
+    "passed": true,
+    "forward_relative_l2_limit": 1e-07,
+    "parameter_rtol": 2e-06,
+    "parameter_atol": 2e-06,
+    "rwp_limit": 1e-06
+  },
+  "notes": [
+    "Common noiseless synthetic observations and explicit uncertainties.",
+    "Gaussian U/V/W: rietx FWHM squared = 8 ln(2) times PhaseSmith variance.",
+    "Default support policies retained; Gaussian tails agree under the declared gate.",
+    "Both fit covariance enabled; rietx history and stage reports disabled.",
+    "Input construction and imports excluded; native preparation, optimization and result assembly included.",
+    "PhaseSmith owns pre-generated fixed HKLs; rietx compiles reflections within fit.",
+    "All repeats start from identical perturbed inputs; every recovery is checked.",
+    "Different solvers/stopping rules; same recovery requirements. Not a general refinement speed claim."
+  ],
+  "scientific_results": {
+    "phasesmith": {
+      "physical_parameters": [
+        0.9999999999999999,
+        0.0030000000000000022,
+        500.00000000000114,
+        99.99999999999892
+      ],
+      "rwp": 7.248331251497509e-16,
+      "termination": "converged"
+    },
+    "rietx": {
+      "physical_parameters": [
+        0.9999999999539948,
+        0.002999999999798867,
+        500.0000037267849,
+        100.00000886604583
+      ],
+      "rwp": 3.059678642710222e-08,
+      "termination": "converged"
+    }
+  },
+  "timings": {
+    "phasesmith": {
+      "min_ms": 73.038167,
+      "median_ms": 73.106334,
+      "p95_ms": 73.674708,
+      "timings_ms": [
+        73.038167,
+        73.106334,
+        73.4015,
+        73.674708,
+        73.096292
+      ]
+    },
+    "rietx": {
+      "min_ms": 60.968125,
+      "median_ms": 61.719541,
+      "p95_ms": 62.986583,
+      "timings_ms": [
+        62.986583,
+        62.22775,
+        60.968125,
+        61.719541,
+        61.140083
+      ]
+    }
+  },
+  "rietx_over_phasesmith_median": 0.8442434139838005
+}

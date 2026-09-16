@@ -2604,7 +2604,7 @@ def _native_request(input_data: RietveldInput, options: RietveldOptions) -> obje
     axial = experiment.axial_geometry
     instrument = experiment.instrument
     limits = options.limits
-    return _core._RietveldRequest(
+    request = _core._RietveldRequest(
         input_data.pattern.x,
         input_data.pattern.observed_y,
         input_data.pattern.uncertainty,
@@ -2655,6 +2655,13 @@ def _native_request(input_data: RietveldInput, options: RietveldOptions) -> obje
         options.max_covariance_parameters,
         options.unresolved_correlation,
     )
+
+    if isinstance(experiment.radiation, ComponentRadiation):
+        components = experiment.radiation.components
+        request.set_fixed_spectrum(
+            components.wavelengths_angstrom.tolist(), components.relative_intensities.tolist()
+        )
+    return request
 
 
 def _native_termination_message(reason: TerminationReason) -> str:
@@ -2722,19 +2729,21 @@ def _refine_native(
         values,
         wavelength_angstrom=wavelength,
     )
-    diagnostic = calculate(
-        input_data.pattern,
-        experiment,
-        phases,
-        background=background,
-        support_fwhm=options.support_fwhm,
-        execution=options.execution,
+    phase_diagnostics = tuple(
+        PreparedStructuralPattern(
+            input_data.pattern,
+            experiment,
+            phase,
+            support_fwhm=options.support_fwhm,
+            execution=options.execution,
+        )._calculation_from_native_arrays(arrays)
+        for phase, arrays in zip(phases, native.phase_calculations(), strict=True)
     )
     calculation = RietveldCalculationResult(
         native.calculated_y(),
         native.profile_y(),
         native.background_y(),
-        diagnostic.phase_calculations,
+        phase_diagnostics,
     )
     rp, rwp, chi_square, reduced_chi_square = native.metrics()
     metrics = ResidualEvaluation(
@@ -2846,12 +2855,12 @@ def refine(
     native_checkpoint_available = checkpoint is None or checkpoint._native is not None
     if (
         native_only
-        and not isinstance(input_data.experiment.radiation, ComponentRadiation)
         and _supports_native_background(input_data.background)
         and _supports_native_constraints(input_data.constraints)
         and native_callbacks_absent
         and native_cancellation_available
         and native_checkpoint_available
+        and selected.max_linearization_elements == 10_000_000
     ):
         return _refine_native(input_data, selected, checkpoint, cancellation)
     pool = (

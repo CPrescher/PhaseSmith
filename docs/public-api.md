@@ -115,6 +115,11 @@ phasesmith.quantitative  [implemented]
   crystalline weight fractions, with optional analytical scale-covariance
   propagation. This interpretation remains separate from the refinement solver.
 
+phasesmith.fit_report  [implemented]
+  Native mask-aware residual localization and typed read-only fit evidence.
+  build_fit_report and RietveldProject.fit_report preserve actual fit weights
+  and disclose unavailable attribution; advice never executes a fit.
+
 phasesmith.validation  [implemented]
   Explicit checksum-pinned external dataset retrieval and reproducible
   real-data workflows. Downloads never occur at import time.

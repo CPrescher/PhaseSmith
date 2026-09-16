@@ -12,6 +12,37 @@ not part of the numerical library.
 
 ## Current implementation status
 
+The second refinement performance pass batches four FCJ sample evaluations
+without reordering any sample's quadrature sum, assembles selected structural
+Jacobian rows contiguously, and reuses a unit-scale profile basis for native
+scale-only fits under the existing dense-memory ceiling. Bounds, constraints,
+step limits and checkpoint rules remain in the general solver. Python receives
+native phase diagnostics; missing fixed-axial rows are completed once on the
+native side, while scale-only bases already retain those rows. Numerical
+contracts and measurements are in `docs/refinement-performance-round2.md`.
+
+The QARR performance follow-up adds selected native structural derivatives,
+fixed-axial derivative elision, a bounded per-refinement geometry/scattering
+cache, value/local-derivative backtracking without dense structural assembly,
+native fixed-spectrum Python dispatch, and residual-checked small Cholesky
+solves with the established CG fallback. Support and physical equations are
+unchanged. Algorithm contracts and validation are in
+`docs/refinement-performance.md`; fit trajectories may change with the solver's
+floating-point summation, so real-data gates and determinism remain mandatory.
+
+The rietx capability comparison now has a first implemented reporting slice:
+native, mask-aware residual localization with a typed Python `FitReport` and
+`RietveldProject.fit_report()`. Reports preserve the fit's actual weights,
+rank intervals by chi-square contribution, disclose missing covariance/rank,
+and retain advisory-only review actions. Residual location is not physical
+attribution; parameter-gain ranking remains future work. The equations and
+boundaries are in `docs/fit-report.md`. The existing measured IUCr QARR 1g
+workflow is the primary rietx 1.4.0 performance comparison, with retained
+quality gates and explicitly failed cross-implementation equivalence gates.
+Controlled kernel and synthetic-fit measurements are supporting diagnostics.
+Results and limitations are in `docs/rietx-comparison.md`; neither library
+has a blanket speed advantage.
+
 PhaseSmith 0.4.1 is the current released baseline. The completed library now
 includes Python-free CW and TOF Le Bail/Rietveld workflows, public Python
 facades, native project persistence, and facility-neutral single-/multi-bank
