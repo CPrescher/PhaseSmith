@@ -15,13 +15,14 @@ use phasesmith_persistence::{
 };
 use phasesmith_workflows::{
     AffineConstraint, AmorphousBackground, AmorphousPeak, BackgroundModel, CancellationToken,
-    ChebyshevBackground, CompositeBackground, Constraint, FixedConstraint, LatticeBounds,
-    LatticeParameterization, LatticeReflectionDomain, LinearConstraint, LinearTerm, ParameterKey,
-    ParameterSet, PointBackground, PolynomialBackground, RefinementLimits, RietveldAnalysis,
-    RietveldCalculationOptions, RietveldCovarianceOptions, RietveldGeneralCheckpoint,
-    RietveldGeneralRefinementResult, RietveldInput, RietveldInstrumentParameter,
-    RietveldParameterSelection, RietveldPhase, RietveldProjectState, RietveldRefinementOptions,
-    RietveldSamplePhysicsModel, RietveldStructuralSelection, refine_general_rietveld,
+    ChebyshevBackground, CompositeBackground, Constraint, DEFAULT_MAX_LINEARIZATION_ELEMENTS,
+    FixedConstraint, LatticeBounds, LatticeParameterization, LatticeReflectionDomain,
+    LinearConstraint, LinearTerm, ParameterKey, ParameterSet, PointBackground,
+    PolynomialBackground, RefinementLimits, RietveldAnalysis, RietveldCalculationOptions,
+    RietveldCovarianceOptions, RietveldGeneralCheckpoint, RietveldGeneralRefinementResult,
+    RietveldInput, RietveldInstrumentParameter, RietveldParameterSelection, RietveldPhase,
+    RietveldProjectState, RietveldRefinementOptions, RietveldSamplePhysicsModel,
+    RietveldStructuralSelection, calculate_rietveld_pattern, refine_general_rietveld,
 };
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
@@ -439,6 +440,18 @@ impl NativeRietveldCancellation {
 
 #[pymethods]
 impl NativeRietveldRequest {
+    /// Attach a validated fixed spectrum before refinement or serialization.
+    fn set_fixed_spectrum(&mut self, wavelengths: Vec<f64>, weights: Vec<f64>) -> PyResult<()> {
+        let mut input = self.input.clone();
+        input.fixed_spectrum = Some(
+            phasesmith_model::FixedWavelengthSpectrum::new(wavelengths, weights)
+                .map_err(value_error)?,
+        );
+        input.validate().map_err(value_error)?;
+        self.input = input;
+        Ok(())
+    }
+
     #[new]
     #[allow(
         clippy::too_many_arguments,
@@ -621,9 +634,9 @@ impl NativeRietveldRequest {
         let covariance = self.covariance;
         let cancellation = cancellation.map(|value| value.token.clone());
         let checkpoint = checkpoint.map(|value| value.checkpoint.clone());
-        let result = py
+        let (result, phase_diagnostics) = py
             .detach(move || {
-                refine_general_rietveld(
+                let result = refine_general_rietveld(
                     &input,
                     &selection,
                     &bounds,
@@ -632,10 +645,43 @@ impl NativeRietveldRequest {
                     covariance,
                     checkpoint.as_ref(),
                     cancellation,
-                )
+                )?;
+                // Selected solver profiles omit fixed axial rows. Materialize those
+                // only for final diagnostics; scale bases already carry complete rows.
+                let complete = input.axial_geometry.is_none()
+                    || (result.parameters.specs().iter().all(|spec| {
+                        spec.key().module() == "phase" && spec.key().name() == "scale"
+                    }) && !result.parameters.specs().is_empty()
+                        && result
+                            .parameters
+                            .specs()
+                            .len()
+                            .checked_mul(input.pattern.sample_count())
+                            .is_some_and(|size| size <= DEFAULT_MAX_LINEARIZATION_ELEMENTS));
+                let phase_diagnostics = if complete {
+                    result
+                        .calculation
+                        .phases
+                        .iter()
+                        .map(|phase| phase.result.clone())
+                        .collect()
+                } else {
+                    calculate_rietveld_pattern(&result.input, &options.calculation)?
+                        .phases
+                        .into_iter()
+                        .map(|phase| phase.result)
+                        .collect()
+                };
+                Ok::<_, phasesmith_workflows::RietveldGeneralRefinementError>((
+                    result,
+                    phase_diagnostics,
+                ))
             })
             .map_err(value_error)?;
-        Ok(NativeRietveldResult { result })
+        Ok(NativeRietveldResult {
+            result,
+            phase_diagnostics,
+        })
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -678,10 +724,16 @@ impl NativeRietveldRequest {
             .collect();
         let experiment = ExperimentRecord::new(
             self.input.instrument,
-            RadiationDefinition::Monochromatic {
-                probe,
-                wavelength_angstrom: self.input.instrument.wavelength_angstrom,
-            },
+            self.input.fixed_spectrum.as_ref().map_or(
+                RadiationDefinition::Monochromatic {
+                    probe,
+                    wavelength_angstrom: self.input.instrument.wavelength_angstrom,
+                },
+                |spectrum| RadiationDefinition::FixedSpectrum {
+                    probe,
+                    spectrum: spectrum.clone(),
+                },
+            ),
             self.input.axial_geometry,
             self.input.position_correction,
         )
@@ -783,6 +835,7 @@ impl NativeStoredRietveldProject {
 #[pyclass(name = "_RietveldResult")]
 pub(super) struct NativeRietveldResult {
     result: RietveldGeneralRefinementResult,
+    phase_diagnostics: Vec<phasesmith_engine::StructuralPatternResult>,
 }
 
 #[pymethods]
@@ -816,6 +869,17 @@ impl NativeRietveldResult {
     #[getter]
     fn damping(&self) -> f64 {
         self.result.checkpoint.damping
+    }
+
+    fn phase_calculations<'py>(
+        &self,
+        py: Python<'py>,
+    ) -> PyResult<Vec<super::StructuralPatternArrays<'py>>> {
+        self.phase_diagnostics
+            .iter()
+            .cloned()
+            .map(|result| super::structural_pattern_to_numpy(py, result))
+            .collect()
     }
 
     fn calculated_y<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray1<f64>> {

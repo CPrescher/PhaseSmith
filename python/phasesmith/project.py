@@ -8,6 +8,7 @@ from pathlib import Path
 
 from ._native_persistence import load_native_rietveld_project
 from .control import CancellationToken
+from .fit_report import FitReport, build_fit_report
 from .persistence import PersistenceBundle, PersistenceError, load_bundle, save_bundle
 from .radiation import MonochromaticRadiation, RadiationProbe
 from .refinement import rietveld as native_rietveld
@@ -107,6 +108,13 @@ class RietveldProject:
         """Review provenance, active models, and risky selections without mutation."""
 
         return review_rietveld_input(self.input)
+
+    def fit_report(self, *, region_count: int = 20) -> FitReport:
+        """Return read-only residual evidence and advice for the last fit."""
+
+        if self.last_result is None:
+            raise ValueError("the project has no refinement result to report")
+        return build_fit_report(self.last_result, self.input.pattern, region_count=region_count)
 
     def refine_recipe(
         self,

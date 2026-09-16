@@ -59,6 +59,7 @@ use pyo3::exceptions::{PyNotImplementedError, PyValueError};
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyTuple};
 
+mod fit_diagnostics;
 mod profile_estimation;
 mod rietveld;
 mod tof_lebail;
@@ -4226,6 +4227,7 @@ fn _core(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_class::<NativePreparedStructuralModel>()?;
     module.add_class::<NativeStructuralMultiphase>()?;
     rietveld::register(module)?;
+    fit_diagnostics::register(module)?;
     profile_estimation::register(module)?;
     tof_lebail::register(module)?;
     tof_multibank::register(module)?;

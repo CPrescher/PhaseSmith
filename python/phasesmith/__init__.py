@@ -142,6 +142,14 @@ from .fcj import (
     accumulate_cw_fcj_components,
     profile_fcj,
 )
+from .fit_report import (
+    FitAdvice,
+    FitReport,
+    ResidualDiagnostics,
+    ResidualRegion,
+    build_fit_report,
+    diagnose_residuals,
+)
 from .fpa_calibration import (
     BraggBrentanoFundamentalProfile,
     FundamentalEmissionLine,
@@ -386,6 +394,8 @@ __all__ = [
     "ExpandedSites",
     "FcjGeometry",
     "FcjProfileResult",
+    "FitAdvice",
+    "FitReport",
     "FundamentalEmissionLine",
     "FundamentalPeakDiagnostic",
     "FundamentalPeakPattern",
@@ -448,6 +458,8 @@ __all__ = [
     "ReflectionGeometryBatch",
     "ReflectionPhysicsProvider",
     "ReflectionRange",
+    "ResidualDiagnostics",
+    "ResidualRegion",
     "ResumeRunResult",
     "RietveldPhase",
     "RietveldProject",
@@ -517,6 +529,7 @@ __all__ = [
     "automation_schema",
     "automation_schema_names",
     "background",
+    "build_fit_report",
     "calculate_cw_pattern",
     "calculate_monochromatic_cw_pattern",
     "calculate_monochromatic_pattern",
@@ -529,6 +542,7 @@ __all__ = [
     "calculate_structure_factors",
     "calibrate_fundamental_profile",
     "cw_profile_parameters",
+    "diagnose_residuals",
     "estimate_effective_profile",
     "evaluate_intensity_correction",
     "evaluate_scattering_provider",

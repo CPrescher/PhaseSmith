@@ -27,6 +27,9 @@ consume directly—no Python process or sidecar is required for a Rust GUI.
 
 For shared refinement controls, cancellation, logs, and safe checkpoints, see
 [refinement](refinement.md) and [refinement runtime](refinement-runtime.md).
+For post-fit evidence, see [fit reports](fit-report.md). The
+[rietx comparison](rietx-comparison.md) records controlled speed measurements
+and the proposed capability development sequence.
 
 ## Numerical conventions
 
@@ -57,6 +60,9 @@ For shared refinement controls, cancellation, logs, and safe checkpoints, see
 
 ## Validation and performance
 
+- [Refinement performance improvements](refinement-performance-round2.md) —
+  batched FCJ evaluation, reusable scale profiles, native diagnostics and real
+  QARR measurements, with links to the earlier optimization work.
 - [PhaseSmith versus XRD-Rust](xrd-rust-performance.md) — reproducible public
   stick-pattern timings, numerical checks, and retained raw results.
 - [PhaseSmith versus GSAS-II](gsasii-performance.md) — pinned-oracle kernel and

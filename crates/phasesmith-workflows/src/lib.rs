@@ -53,6 +53,7 @@
 
 mod backgrounds;
 mod constraints;
+mod fit_diagnostics;
 mod lattice;
 mod lebail;
 mod parameters;
@@ -93,6 +94,7 @@ pub use constraints::{
     AffineConstraint, Constraint, ConstraintDerivativeMatrix, ConstraintError, ConstraintTransform,
     FixedConstraint, LinearConstraint, LinearTerm,
 };
+pub use fit_diagnostics::{ResidualDiagnostics, ResidualRegion, diagnose_residuals};
 pub use lattice::{
     CwLatticeGeometry, GeneratedLatticeDomain, LatticeBounds, LatticeError,
     LatticeParameterization, LatticeReflectionDomain, TofLatticeGeometry, cw_lattice_geometry,

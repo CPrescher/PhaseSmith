@@ -1,5 +1,7 @@
 //! Owned structural-phase preparation for application-neutral callers.
 
+use crate::structural_pattern::StructuralPreparationCache;
+
 use phasesmith_core::{
     ConstantWavelengthInstrument, CwContributionsView, FcjGeometry, SupportPolicy,
 };
@@ -14,6 +16,7 @@ use crate::structural_pattern::{
     StructuralPatternError, StructuralPatternInputView, StructuralPatternJvpResult,
     StructuralPatternResult, StructuralPatternVjpResult,
     calculate_structural_pattern_dense_with_context, calculate_structural_pattern_jvp_with_context,
+    calculate_structural_pattern_selected_with_context,
     calculate_structural_pattern_vjp_with_context, calculate_structural_pattern_with_context,
 };
 
@@ -156,6 +159,27 @@ impl PreparedStructuralPhase {
         input: &PreparedStructuralPatternInputView<'_>,
     ) -> Result<StructuralPatternDenseResult, StructuralPatternError> {
         self.with_input(input, calculate_structural_pattern_dense_with_context)
+    }
+
+    /// Linearize selected native rows; omitted structural/axial rows are zero.
+    /// # Errors
+    /// Returns an error for invalid inputs or mask dimensions.
+    pub fn linearize_selected(
+        &self,
+        input: &PreparedStructuralPatternInputView<'_>,
+        selected: &[bool],
+        cache: Option<&StructuralPreparationCache>,
+    ) -> Result<StructuralPatternDenseResult, StructuralPatternError> {
+        self.with_input(input, |cell, group, input, execution| {
+            calculate_structural_pattern_selected_with_context(
+                cell,
+                group,
+                input,
+                execution,
+                Some(selected),
+                cache,
+            )
+        })
     }
 
     /// Calculate values and a structural forward derivative product.
@@ -355,6 +379,89 @@ mod tests {
             coordinate_tolerance: 1.0e-10,
             scattering_model: BuiltInScatteringModel::XrayNonResonant,
             correction_model: IntegratedIntensityCorrectionModel::Neutral,
+        }
+    }
+
+    #[test]
+    fn selected_rows_and_cached_tables_match_full_fused_values() {
+        use phasesmith_core::OwnedCwContributions;
+        let cache = StructuralPreparationCache::default();
+        let x = (0..4001)
+            .map(|i| 10.0 + f64::from(i) * 0.02)
+            .collect::<Vec<_>>();
+        let contributions = OwnedCwContributions::neutral(1);
+        for variant in 0..8 {
+            let mut definition = definition();
+            definition.fractional_xyz.push([0.21, 0.17, 0.33]);
+            definition.occupancy.push(0.6);
+            definition.u_iso_angstrom2.push(0.02);
+            definition.anisotropic_mask.push(false);
+            definition.u_aniso_cif_angstrom2.push([0.0; 6]);
+            definition.scattering_species.push("O".to_owned());
+            // Exercise keys that must invalidate tables and changes that may reuse them.
+            definition.cell.a_angstrom += 0.01 * f64::from(variant % 2);
+            definition.fractional_xyz[0][0] = 0.013 * f64::from(variant);
+            definition.u_iso_angstrom2[0] += 0.001 * f64::from(variant);
+            definition.scale = 0.7 + 0.1 * f64::from(variant);
+            definition.scattering_real_offset = vec![0.1 * f64::from(variant % 3), 0.04];
+            definition.scattering_imag_offset = vec![0.03, 0.02];
+            let phase = PreparedStructuralPhase::new(definition, ExecutionContext::serial())
+                .expect("phase");
+            let input = PreparedStructuralPatternInputView {
+                x_deg: &x,
+                instrument: ConstantWavelengthInstrument {
+                    wavelength_angstrom: 1.5406 + 0.001 * f64::from(variant % 2),
+                    u_deg2: 0.002,
+                    v_deg2: 0.0,
+                    w_deg2: 0.003,
+                    x_deg: 0.002,
+                    y_deg: 0.004,
+                },
+                axial_geometry: Some(FcjGeometry {
+                    sample_over_radius: 0.002,
+                    detector_over_radius: 0.001,
+                }),
+                position_correction: MonochromaticPositionCorrection {
+                    zero_shift_deg: 0.001 * f64::from(variant),
+                    bragg_brentano_mm: None,
+                    debye_scherrer_micrometre: None,
+                },
+                contributions: contributions.as_view(),
+                support: SupportPolicy::FwhmMultiple(30.0),
+            };
+            let full = phase.linearize(&input).expect("full");
+            for mask in [
+                vec![false; 17],
+                vec![true; 17],
+                (0..17).map(|i| i % 2 == 0).collect(),
+            ] {
+                let selected = phase
+                    .linearize_selected(&input, &mask, Some(&cache))
+                    .expect("selected");
+                let uncached = phase
+                    .linearize_selected(&input, &mask, None)
+                    .expect("uncached");
+                assert_eq!(selected, uncached);
+                assert_eq!(selected.result.accumulation.y, full.result.accumulation.y);
+                for (parameter, active) in mask.iter().enumerate() {
+                    for sample in 0..x.len() {
+                        let expected = if *active {
+                            full.d_y[parameter * x.len() + sample]
+                        } else {
+                            0.0
+                        };
+                        assert_eq!(
+                            selected.d_y[parameter * x.len() + sample].to_bits(),
+                            expected.to_bits()
+                        );
+                    }
+                }
+            }
+            assert!(
+                phase
+                    .linearize_selected(&input, &[true], Some(&cache))
+                    .is_err()
+            );
         }
     }
 

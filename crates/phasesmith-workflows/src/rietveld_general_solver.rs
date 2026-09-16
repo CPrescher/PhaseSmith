@@ -1,7 +1,11 @@
 //! Constraint-aware bounded solver over the complete native Rietveld layout.
 
+use crate::DEFAULT_MAX_LINEARIZATION_ELEMENTS;
+use crate::rietveld_general_objective::ScaleProfileBasis;
+use phasesmith_engine::StructuralPreparationCache;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
+use std::sync::Arc;
 
 use nalgebra::DMatrix;
 
@@ -286,6 +290,9 @@ pub fn refine_general_rietveld_with_runtime(
     } else {
         history.len()
     };
+    let preparation_cache = Arc::<StructuralPreparationCache>::default();
+    let use_scale_basis = ScaleProfileBasis::eligible(&live_input, &stable_layout);
+    let mut scale_basis = None;
     let mut prepared_objective = None;
     let mut final_calculation = None;
     'iterations: for iteration in first_iteration..=last_iteration {
@@ -293,13 +300,27 @@ pub fn refine_general_rietveld_with_runtime(
             termination = normal_stop(&error)?;
             break;
         }
+        if use_scale_basis && scale_basis.is_none() {
+            if let Err(error) = runtime.begin_evaluation() {
+                termination = normal_stop(&error)?;
+                break;
+            }
+            scale_basis = Some(ScaleProfileBasis::new(
+                &live_input,
+                &stable_layout,
+                &options.calculation,
+            )?);
+        }
         let objective = if let Some(objective) = prepared_objective.take() {
             objective
         } else {
-            let objective = PreparedGeneralRietveldObjective::new(
+            let objective = PreparedGeneralRietveldObjective::new_cached(
                 live_input.clone(),
                 options.calculation.clone(),
                 stable_layout.clone(),
+                DEFAULT_MAX_LINEARIZATION_ELEMENTS,
+                Arc::clone(&preparation_cache),
+                scale_basis.as_ref(),
             )?;
             if let Err(error) = reserve_products(runtime, objective.preparation_evaluation_count())
             {
@@ -333,25 +354,32 @@ pub fn refine_general_rietveld_with_runtime(
             .iter()
             .map(|value| -value)
             .collect::<Vec<_>>();
-        let solve = conjugate_gradient(
-            &right_hand_side,
-            options.cg_tolerance,
-            options.max_cg_iterations,
-            |direction| {
-                if let Some(linearization) = &free_linearization {
-                    Ok(linearization.normal_product(direction, damping)?)
-                } else {
-                    reserve_products(runtime, objective.normal_product_evaluation_count())?;
-                    let physical = forward_product(&derivative, direction);
-                    let physical_product = objective.normal_product(&physical, 0.0)?;
-                    let mut result = transpose_product(&derivative, &physical_product);
-                    for (value, direction) in result.iter_mut().zip(direction) {
-                        *value += damping * direction;
+        let direct = free_linearization.as_ref().and_then(|linearization| {
+            linearization.solve_damped(&right_hand_side, damping, options.cg_tolerance)
+        });
+        let solve = if let Some(step) = direct {
+            Ok((step, 0))
+        } else {
+            conjugate_gradient(
+                &right_hand_side,
+                options.cg_tolerance,
+                options.max_cg_iterations,
+                |direction| {
+                    if let Some(linearization) = &free_linearization {
+                        Ok(linearization.normal_product(direction, damping)?)
+                    } else {
+                        reserve_products(runtime, objective.normal_product_evaluation_count())?;
+                        let physical = forward_product(&derivative, direction);
+                        let physical_product = objective.normal_product(&physical, 0.0)?;
+                        let mut result = transpose_product(&derivative, &physical_product);
+                        for (value, direction) in result.iter_mut().zip(direction) {
+                            *value += damping * direction;
+                        }
+                        Ok(result)
                     }
-                    Ok(result)
-                }
-            },
-        );
+                },
+            )
+        };
         let (mut step, cg_iterations) = match solve {
             Ok(result) => result,
             Err(RietveldRefinementError::Runtime(RuntimeError::Stopped(stop))) => {
@@ -421,15 +449,19 @@ pub fn refine_general_rietveld_with_runtime(
                 continue;
             };
             let (trial_calculation, trial_objective_state) = if objective.uses_dense_linearization()
+                && (backtrack == 0 || scale_basis.is_some())
             {
                 if let Err(error) = runtime.begin_evaluation() {
                     termination = normal_stop(&error)?;
                     break 'iterations;
                 }
-                let Ok(trial_objective) = PreparedGeneralRietveldObjective::new(
+                let Ok(trial_objective) = PreparedGeneralRietveldObjective::new_cached(
                     trial_input.clone(),
                     options.calculation.clone(),
                     stable_layout.clone(),
+                    DEFAULT_MAX_LINEARIZATION_ELEMENTS,
+                    Arc::clone(&preparation_cache),
+                    scale_basis.as_ref(),
                 ) else {
                     emit_rejected_trial(runtime, "trial outside the calculation domain")?;
                     if let Err(error) = runtime.reject_step() {
@@ -628,6 +660,7 @@ pub fn refine_general_rietveld_with_runtime(
         covariance,
         &calculation,
         runtime,
+        scale_basis.as_ref(),
     ) {
         Ok(value) => value,
         Err(RietveldGeneralRefinementError::Runtime(RuntimeError::Stopped(_))) => {
@@ -770,6 +803,7 @@ fn covariance_diagnostics(
     covariance_options: RietveldCovarianceOptions,
     calculation: &RietveldCalculation,
     runtime: &mut RefinementRuntime<RietveldGeneralCheckpoint>,
+    scale_basis: Option<&ScaleProfileBasis>,
 ) -> Result<CovarianceDiagnostics, RietveldGeneralRefinementError> {
     let free_count = transform.free_keys().len();
     if !covariance_options.enabled
@@ -778,10 +812,13 @@ fn covariance_diagnostics(
     {
         return Ok(CovarianceDiagnostics::default());
     }
-    let objective = PreparedGeneralRietveldObjective::new(
+    let objective = PreparedGeneralRietveldObjective::new_cached(
         input.clone(),
         options.calculation.clone(),
         layout.clone(),
+        DEFAULT_MAX_LINEARIZATION_ELEMENTS,
+        Arc::default(),
+        scale_basis,
     )?;
     reserve_products(runtime, objective.preparation_evaluation_count())?;
     let derivative = transform.derivative_matrix()?;

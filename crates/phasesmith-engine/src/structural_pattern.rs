@@ -2,21 +2,23 @@
 
 use std::error::Error;
 use std::fmt::{Display, Formatter};
+use std::sync::{Arc, Mutex};
 
 use phasesmith_core::{
     Accumulation, ConstantWavelengthInstrument, CwContributionsError, CwContributionsView, CwError,
     FcjGeometry, GridView, ProfileError, SupportPolicy,
     accumulate_cw_contributions_batch_with_context,
     accumulate_cw_fcj_contributions_batch_with_context,
+    accumulate_cw_fixed_axial_contributions_with_context,
 };
 use phasesmith_crystallography::{
     CellError, IntegratedIntensityCorrection, IntegratedIntensityCorrectionError,
     IntegratedIntensityCorrectionModel, PreparedNeutronScattering, PreparedXrayScattering,
     ScatteringBatch, ScatteringError, SpaceGroup, StructureFactorBatchError,
     StructureFactorBatchView, StructureFactorValues, UnitCell,
-    calculate_structure_factor_dense_with_context,
     calculate_structure_factor_intensity_vjp_with_context,
-    calculate_structure_factor_jvp_with_context, calculate_structure_factor_values_with_context,
+    calculate_structure_factor_jvp_with_context, calculate_structure_factor_selected_with_context,
+    calculate_structure_factor_values_with_context,
 };
 use phasesmith_execution::ExecutionContext;
 
@@ -277,6 +279,32 @@ impl Display for StructuralPatternError {
 
 impl Error for StructuralPatternError {}
 
+/// Bounded per-refinement cache of invariant reciprocal geometry and scattering.
+/// At most 32 exact keys are retained. No process-global state or tolerance
+/// comparisons are used; changing cell, HKLs, species, dispersion or correction
+/// invalidates the entry. Widths, scales, sites and zero shifts do not affect it.
+#[derive(Default)]
+pub struct StructuralPreparationCache {
+    entries: Mutex<Vec<(PreparationKey, Arc<PreparedTables>)>>,
+}
+
+#[derive(Clone, PartialEq)]
+struct PreparationKey {
+    cell: UnitCell,
+    hkl: Vec<[i32; 3]>,
+    species: Vec<String>,
+    real: Vec<f64>,
+    imag: Vec<f64>,
+    scattering: BuiltInScatteringModel,
+    correction: IntegratedIntensityCorrectionModel,
+}
+
+struct PreparedTables {
+    geometry: Vec<(f64, [f64; CELL_PARAMETER_COUNT])>,
+    scattering: ScatteringBatch,
+    correction: IntegratedIntensityCorrection,
+}
+
 struct PreparedNumerics {
     scattering: ScatteringBatch,
     correction: IntegratedIntensityCorrection,
@@ -352,6 +380,82 @@ fn validate_position_correction(
         return Err(StructuralPatternError::InvalidPositionCorrection);
     }
     Ok(())
+}
+
+fn prepared_tables(
+    cell: UnitCell,
+    input: &StructuralPatternInputView<'_>,
+    cache: Option<&StructuralPreparationCache>,
+) -> Result<Arc<PreparedTables>, StructuralPatternError> {
+    let key = PreparationKey {
+        cell,
+        hkl: input.hkl.to_vec(),
+        species: input
+            .scattering_species
+            .iter()
+            .map(|s| (*s).to_owned())
+            .collect(),
+        real: input.scattering_real_offset.to_vec(),
+        imag: input.scattering_imag_offset.to_vec(),
+        scattering: input.scattering_model,
+        correction: input.correction_model,
+    };
+    if let Some(cache) = cache {
+        if let Some((_, tables)) = cache
+            .entries
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .iter()
+            .find(|(candidate, _)| candidate == &key)
+        {
+            return Ok(Arc::clone(tables));
+        }
+    }
+    let geometry = cell
+        .geometry()
+        .map_err(StructuralPatternError::InvalidCell)?;
+    let geometry = input
+        .hkl
+        .iter()
+        .map(|&hkl| geometry.q_squared_and_derivatives(hkl))
+        .collect::<Vec<_>>();
+    if geometry.iter().any(|(q, _)| !q.is_finite() || *q <= 0.0) {
+        return Err(StructuralPatternError::ReflectionOutsideAngularDomain);
+    }
+    let q_squared = geometry.iter().map(|(q, _)| *q).collect::<Vec<_>>();
+    let s = q_squared.iter().map(|q| 0.5 * q.sqrt()).collect::<Vec<_>>();
+    let mut scattering = match input.scattering_model {
+        BuiltInScatteringModel::XrayNonResonant => {
+            PreparedXrayScattering::new(input.scattering_species.iter().copied())
+                .and_then(|model| model.evaluate(&s))
+        }
+        BuiltInScatteringModel::NeutronNuclear => {
+            PreparedNeutronScattering::new(input.scattering_species.iter().copied())
+                .and_then(|model| model.evaluate(&s))
+        }
+    }
+    .map_err(StructuralPatternError::Scattering)?;
+    apply_scattering_offsets(&mut scattering, input);
+    let correction = input
+        .correction_model
+        .evaluate(&q_squared)
+        .map_err(StructuralPatternError::Correction)?;
+    let tables = Arc::new(PreparedTables {
+        geometry,
+        scattering,
+        correction,
+    });
+    if let Some(cache) = cache {
+        let mut entries = cache
+            .entries
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        if entries.len() == 32 {
+            entries.remove(0);
+        }
+        entries.push((key, Arc::clone(&tables)));
+    }
+    Ok(tables)
 }
 
 fn validate_scattering_offsets(
@@ -484,12 +588,43 @@ pub fn calculate_structural_pattern_dense_with_context(
     input: &StructuralPatternInputView<'_>,
     execution: &ExecutionContext,
 ) -> Result<StructuralPatternDenseResult, StructuralPatternError> {
-    let prepared = prepare(cell, input)?;
-    let structural = calculate_structure_factor_dense_with_context(
+    calculate_structural_pattern_selected_with_context(
+        cell,
+        space_group,
+        input,
+        execution,
+        None,
+        None,
+    )
+}
+
+/// Evaluate selected native structural rows, retaining zeros for omitted rows.
+/// `None` requests the complete public derivative contract. A mask skips fixed
+/// structural chains and axial derivatives (the refinement layout fixes axial
+/// geometry). Values and requested derivatives share the peak/sample pass.
+/// # Errors
+/// Returns an error for invalid inputs or a mask of the wrong length.
+#[allow(clippy::too_many_lines)]
+pub fn calculate_structural_pattern_selected_with_context(
+    cell: UnitCell,
+    space_group: &SpaceGroup,
+    input: &StructuralPatternInputView<'_>,
+    execution: &ExecutionContext,
+    selected: Option<&[bool]>,
+    cache: Option<&StructuralPreparationCache>,
+) -> Result<StructuralPatternDenseResult, StructuralPatternError> {
+    if selected.is_some_and(|mask| mask.len() != 7 + 5 * input.fractional_xyz.len()) {
+        return Err(StructuralPatternError::StructureFactor(
+            StructureFactorBatchError::TangentLengthMismatch,
+        ));
+    }
+    let prepared = prepare_cached(cell, input, cache)?;
+    let structural = calculate_structure_factor_selected_with_context(
         cell,
         space_group,
         prepared.structure_batch(input),
         execution,
+        selected,
     )
     .map_err(StructuralPatternError::StructureFactor)?;
     let parameter_count = structural.layout.parameter_count();
@@ -500,31 +635,36 @@ pub fn calculate_structural_pattern_dense_with_context(
             .ok_or(StructuralPatternError::Contributions(
                 CwContributionsError::AllocationOverflow,
             ))?;
-    let mut accumulation = accumulate(
+    let mut accumulation = accumulate_selected(
         input,
         &prepared.two_theta_deg,
         &structural.values.intensity,
         execution,
+        selected.is_none(),
     )?;
     append_instrument_derivatives(&mut accumulation, &structural.values, input, &prepared)?;
     let reflection_count = input.hkl.len();
     let local = &accumulation.derivatives.local;
     let d_y = if execution.threads() == 1 || parameter_count < 2 {
         let mut values = zeroed_values(element_count)?;
-        for reflection in 0..reflection_count {
-            let begin = local.offsets[reflection];
-            let end = local.offsets[reflection + 1];
-            for active in begin..end {
-                let sample = local.starts[reflection] + active - begin;
-                let local_base = 2 * active;
-                for parameter in 0..parameter_count {
-                    let structural_index = parameter * reflection_count + reflection;
-                    let position_derivative = if parameter < CELL_PARAMETER_COUNT {
-                        prepared.d_two_theta_d_cell[reflection][parameter]
-                    } else {
-                        0.0
-                    };
-                    values[parameter * sample_count + sample] += local.values[local_base]
+        for parameter in 0..parameter_count {
+            if selected.is_some_and(|mask| !mask[parameter]) {
+                continue;
+            }
+            let row = &mut values[parameter * sample_count..(parameter + 1) * sample_count];
+            for reflection in 0..reflection_count {
+                let structural_index = parameter * reflection_count + reflection;
+                let position_derivative = if parameter < CELL_PARAMETER_COUNT {
+                    prepared.d_two_theta_d_cell[reflection][parameter]
+                } else {
+                    0.0
+                };
+                let begin = local.offsets[reflection];
+                let end = local.offsets[reflection + 1];
+                for active in begin..end {
+                    let sample = local.starts[reflection] + active - begin;
+                    let local_base = 2 * active;
+                    row[sample] += local.values[local_base]
                         * structural.d_intensity[structural_index]
                         + local.values[local_base + 1] * position_derivative;
                 }
@@ -534,6 +674,9 @@ pub fn calculate_structural_pattern_dense_with_context(
     } else {
         let rows = execution.map_ordered(parameter_count, 2, |parameter| {
             let mut row = zeroed_values(sample_count)?;
+            if selected.is_some_and(|mask| !mask[parameter]) {
+                return Ok::<_, StructuralPatternError>(row);
+            }
             for reflection in 0..reflection_count {
                 let begin = local.offsets[reflection];
                 let end = local.offsets[reflection + 1];
@@ -736,6 +879,14 @@ fn prepare(
     cell: UnitCell,
     input: &StructuralPatternInputView<'_>,
 ) -> Result<PreparedNumerics, StructuralPatternError> {
+    prepare_cached(cell, input, None)
+}
+
+fn prepare_cached(
+    cell: UnitCell,
+    input: &StructuralPatternInputView<'_>,
+    cache: Option<&StructuralPreparationCache>,
+) -> Result<PreparedNumerics, StructuralPatternError> {
     validate_constant_wavelength_correction(input.correction_model)?;
     if input.scattering_species.len() != input.fractional_xyz.len() {
         return Err(StructuralPatternError::SpeciesLengthMismatch);
@@ -746,10 +897,7 @@ fn prepare(
         .validate()
         .map_err(StructuralPatternError::InvalidInstrument)?;
     validate_position_correction(input.position_correction)?;
-    let geometry = cell
-        .geometry()
-        .map_err(StructureFactorBatchError::Cell)
-        .map_err(StructuralPatternError::StructureFactor)?;
+    let tables = prepared_tables(cell, input, cache)?;
     let mut q_squared = Vec::with_capacity(input.hkl.len());
     let mut d_spacing = Vec::with_capacity(input.hkl.len());
     let mut two_theta_deg = Vec::with_capacity(input.hkl.len());
@@ -767,8 +915,7 @@ fn prepare(
         .position_correction
         .debye_scherrer_micrometre
         .map(|_| Vec::with_capacity(input.hkl.len()));
-    for &hkl in input.hkl {
-        let (q_value, d_q) = geometry.q_squared_and_derivatives(hkl);
+    for &(q_value, d_q) in &tables.geometry {
         if !q_value.is_finite() || q_value <= 0.0 {
             return Err(StructuralPatternError::ReflectionOutsideAngularDomain);
         }
@@ -808,26 +955,9 @@ fn prepare(
             values.push(derivative);
         }
     }
-    let s: Vec<f64> = q_squared.iter().map(|value| 0.5 * value.sqrt()).collect();
-    let mut scattering = match input.scattering_model {
-        BuiltInScatteringModel::XrayNonResonant => {
-            PreparedXrayScattering::new(input.scattering_species.iter().copied())
-                .and_then(|model| model.evaluate(&s))
-        }
-        BuiltInScatteringModel::NeutronNuclear => {
-            PreparedNeutronScattering::new(input.scattering_species.iter().copied())
-                .and_then(|model| model.evaluate(&s))
-        }
-    }
-    .map_err(StructuralPatternError::Scattering)?;
-    apply_scattering_offsets(&mut scattering, input);
-    let correction = input
-        .correction_model
-        .evaluate(&q_squared)
-        .map_err(StructuralPatternError::Correction)?;
     Ok(PreparedNumerics {
-        scattering,
-        correction,
+        scattering: tables.scattering.clone(),
+        correction: tables.correction.clone(),
         d_spacing,
         two_theta_deg,
         d_two_theta_d_cell,
@@ -980,8 +1110,30 @@ fn accumulate(
     intensities: &[f64],
     execution: &ExecutionContext,
 ) -> Result<Accumulation, StructuralPatternError> {
+    accumulate_selected(input, two_theta_deg, intensities, execution, true)
+}
+
+fn accumulate_selected(
+    input: &StructuralPatternInputView<'_>,
+    two_theta_deg: &[f64],
+    intensities: &[f64],
+    execution: &ExecutionContext,
+    axial_derivatives: bool,
+) -> Result<Accumulation, StructuralPatternError> {
     let grid = GridView::new(input.x_deg).map_err(StructuralPatternError::Profile)?;
     let result = match input.axial_geometry {
+        Some(geometry) if !axial_derivatives => {
+            accumulate_cw_fixed_axial_contributions_with_context(
+                grid,
+                two_theta_deg,
+                intensities,
+                input.instrument,
+                input.contributions,
+                geometry,
+                input.support,
+                execution,
+            )
+        }
         Some(geometry) => accumulate_cw_fcj_contributions_batch_with_context(
             grid,
             two_theta_deg,

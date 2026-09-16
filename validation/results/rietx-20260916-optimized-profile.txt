@@ -1,0 +1,103 @@
+Optimized QARR 1g, one requested worker, release wheel, 2026-09-16
+cProfile: three warmed complete workflows. Timings include profiling overhead.
+Native sample: 1 ms interval, requested 8 seconds; process completed during sampling.
+3,651 main-thread samples plus 70 short-lived worker-thread samples.
+Top-of-stack counts below are exclusive; do not sum them with inclusive call stacks.
+
+         705826 function calls (704311 primitive calls) in 2.949 seconds
+
+   Ordered by: cumulative time
+   List reduced from 559 to 45 due to restriction <45>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        3    0.000    0.000    2.952    0.984 /tmp/profile_phasesmith_rietx.py:14(<lambda>)
+        3    0.000    0.000    2.951    0.984 /tmp/phasesmith-rietx-benchmark-20260916/lib/python3.12/site-packages/phasesmith/validation/real_data.py:407(run_qarr_1g_validation)
+        9    0.000    0.000    2.730    0.303 /tmp/profile_phasesmith_rietx.py:22(wrapped)
+        9    0.000    0.000    2.730    0.303 /tmp/phasesmith-rietx-benchmark-20260916/lib/python3.12/site-packages/phasesmith/refinement/rietveld.py:2821(refine)
+        9    0.001    0.000    2.729    0.303 /tmp/phasesmith-rietx-benchmark-20260916/lib/python3.12/site-packages/phasesmith/refinement/rietveld.py:2682(_refine_native)
+        9    2.511    0.279    2.511    0.279 {method 'refine' of 'builtins._RietveldRequest' objects}
+       12    0.000    0.000    0.160    0.013 /tmp/phasesmith-rietx-benchmark-20260916/lib/python3.12/site-packages/phasesmith/refinement/rietveld.py:814(calculate)
+        9    0.000    0.000    0.153    0.017 /tmp/phasesmith-rietx-benchmark-20260916/lib/python3.12/site-packages/phasesmith/refinement/rietveld.py:929(from_cif)
+       12    0.000    0.000    0.129    0.011 /tmp/phasesmith-rietx-benchmark-20260916/lib/python3.12/site-packages/phasesmith/refinement/rietveld.py:667(_calculate_prepared_batch)
+       12    0.124    0.010    0.124    0.010 {method 'calculate' of 'builtins._StructuralMultiphase' objects}
+        9    0.000    0.000    0.112    0.012 /tmp/phasesmith-rietx-benchmark-20260916/lib/python3.12/site-packages/phasesmith/io/cif.py:106(read_cif)
+        9    0.000    0.000    0.111    0.012 /tmp/phasesmith-rietx-benchmark-20260916/lib/python3.12/site-packages/phasesmith/io/cif.py:76(parse_text)
+       66    0.014    0.000    0.092    0.001 /tmp/phasesmith-rietx-benchmark-20260916/lib/python3.12/site-packages/phasesmith/refinement/rietveld.py:172(_site_coordinate_model)
+        9    0.000    0.000    0.076    0.008 /tmp/phasesmith-rietx-benchmark-20260916/lib/python3.12/site-packages/phasesmith/refinement/rietveld.py:1753(_apply_parameter_values)
+       36    0.000    0.000    0.071    0.002 /tmp/phasesmith-rietx-benchmark-20260916/lib/python3.12/site-packages/phasesmith/refinement/rietveld.py:1768(<genexpr>)
+     5619    0.003    0.000    0.068    0.000 /tmp/phasesmith-rietx-benchmark-20260916/lib/python3.12/site-packages/numpy/_core/numeric.py:2226(allclose)
+        9    0.063    0.007    0.063    0.007 {built-in method phasesmith._core._parse_cif_text}
+     5811    0.029    0.000    0.061    0.000 /tmp/phasesmith-rietx-benchmark-20260916/lib/python3.12/site-packages/numpy/_core/numeric.py:2320(isclose)
+        9    0.001    0.000    0.048    0.005 /tmp/phasesmith-rietx-benchmark-20260916/lib/python3.12/site-packages/phasesmith/structure.py:280(structure_from_record)
+        3    0.000    0.000    0.033    0.011 /tmp/phasesmith-rietx-benchmark-20260916/lib/python3.12/site-packages/phasesmith/validation/real_data.py:359(_qarr_initial_scales)
+        9    0.016    0.002    0.032    0.004 /tmp/phasesmith-rietx-benchmark-20260916/lib/python3.12/site-packages/phasesmith/symmetry.py:175(__init__)
+       48    0.000    0.000    0.030    0.001 /tmp/phasesmith-rietx-benchmark-20260916/lib/python3.12/site-packages/phasesmith/refinement/rietveld.py:831(<genexpr>)
+   108/36    0.001    0.000    0.030    0.001 /tmp/phasesmith-rietx-benchmark-20260916/lib/python3.12/site-packages/phasesmith/structural_calculation.py:656(__init__)
+     1440    0.001    0.000    0.026    0.000 /tmp/phasesmith-rietx-benchmark-20260916/lib/python3.12/site-packages/phasesmith/symmetry.py:59(__init__)
+      108    0.000    0.000    0.025    0.000 /tmp/phasesmith-rietx-benchmark-20260916/lib/python3.12/site-packages/phasesmith/structural_calculation.py:692(<genexpr>)
+       18    0.000    0.000    0.024    0.001 /tmp/phasesmith-rietx-benchmark-20260916/lib/python3.12/site-packages/phasesmith/refinement/rietveld.py:872(__post_init__)
+        9    0.000    0.000    0.023    0.003 /tmp/phasesmith-rietx-benchmark-20260916/lib/python3.12/site-packages/phasesmith/symmetry.py:397(generate)
+        9    0.023    0.003    0.023    0.003 {method 'generate' of 'builtins._PreparedReflectionGenerator' objects}
+    17268    0.004    0.000    0.022    0.000 /tmp/phasesmith-rietx-benchmark-20260916/lib/python3.12/site-packages/numpy/_core/fromnumeric.py:2586(all)
+       18    0.000    0.000    0.021    0.001 /tmp/phasesmith-rietx-benchmark-20260916/lib/python3.12/site-packages/phasesmith/refinement/rietveld.py:333(_domain_parameter_values)
+    18996    0.008    0.000    0.020    0.000 /tmp/phasesmith-rietx-benchmark-20260916/lib/python3.12/site-packages/numpy/_core/fromnumeric.py:86(_wrapreduction_any_all)
+   264/72    0.000    0.000    0.018    0.000 /tmp/phasesmith-rietx-benchmark-20260916/lib/python3.12/site-packages/phasesmith/extensions.py:199(evaluate_provider)
+       72    0.000    0.000    0.018    0.000 /tmp/phasesmith-rietx-benchmark-20260916/lib/python3.12/site-packages/phasesmith/extensions.py:286(evaluate)
+        9    0.000    0.000    0.016    0.002 /tmp/phasesmith-rietx-benchmark-20260916/lib/python3.12/site-packages/phasesmith/symmetry.py:377(__init__)
+        9    0.015    0.002    0.016    0.002 /tmp/phasesmith-rietx-benchmark-20260916/lib/python3.12/site-packages/phasesmith/symmetry.py:357(_native_generator)
+     5760    0.001    0.000    0.016    0.000 /tmp/phasesmith-rietx-benchmark-20260916/lib/python3.12/site-packages/phasesmith/symmetry.py:72(<genexpr>)
+      729    0.001    0.000    0.015    0.000 /tmp/phasesmith-rietx-benchmark-20260916/lib/python3.12/site-packages/phasesmith/symmetry.py:190(<genexpr>)
+     4320    0.001    0.000    0.015    0.000 /tmp/phasesmith-rietx-benchmark-20260916/lib/python3.12/site-packages/phasesmith/symmetry.py:42(_fraction)
+      264    0.000    0.000    0.014    0.000 /tmp/phasesmith-rietx-benchmark-20260916/lib/python3.12/site-packages/phasesmith/extensions.py:290(<genexpr>)
+       48    0.002    0.000    0.009    0.000 /tmp/phasesmith-rietx-benchmark-20260916/lib/python3.12/site-packages/phasesmith/sample.py:412(evaluate)
+    17280    0.006    0.000    0.009    0.000 /Users/clemens/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/fractions.py:186(__new__)
+     4320    0.002    0.000    0.009    0.000 /Users/clemens/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/fractions.py:613(forward)
+    11622    0.004    0.000    0.008    0.000 {method 'all' of 'numpy.generic' objects}
+9291/8733    0.003    0.000    0.007    0.000 {built-in method builtins.any}
+    24900    0.007    0.000    0.007    0.000 {method 'reduce' of 'numpy.ufunc' objects}
+
+
+
+Native top-of-stack summary:
+
+        phasesmith_core::fcj::FcjProfile::evaluate_with_radius::h2123ec93b2a06d56  (in _core.abi3.so)        1244
+        exp  (in libsystem_m.dylib)        452
+        phasesmith_core::fcj::FcjProfile::evaluate_with_radius::hb636905dbf2af580  (in _core.abi3.so)        341
+        phasesmith_core::cw_contributions::accumulate_cw_fixed_axial_contributions_with_context::h42f5a15051ed3719  (in _core.abi3.so)        335
+        phasesmith_engine::structural_pattern::calculate_structural_pattern_selected_with_context::he379dbc856629419  (in _core.abi3.so)        156
+        phasesmith_core::cw_contributions::accumulate_cw_contributions_impl::h343046d76a778d61  (in _core.abi3.so)        103
+        DYLD-STUB$$exp  (in _core.abi3.so)        100
+        _platform_memmove  (in libsystem_platform.dylib)        100
+        phasesmith_workflows::rietveld_general_objective::PreparedGeneralFreeLinearization::solve_damped::h2386ca646c28dc30  (in _core.abi3.so)        81
+        _$LT$alloc..vec..Vec$LT$T$GT$$u20$as$u20$alloc..vec..spec_from_iter_nested..SpecFromIterNested$LT$T$C$I$GT$$GT$::from_iter::ha101accc48ca09a3  (in _core.abi3.so)        68
+        phasesmith_crystallography::symmetry::Rational::checked_add::h3d42d917972059d8  (in _core.abi3.so)        46
+        __psynch_cvwait  (in libsystem_kernel.dylib)        44
+        _PyEval_EvalFrameDefault  (in python3.12)        31
+        phasesmith_workflows::rietveld_general_objective::PreparedGeneralRietveldObjective::jvp::h1740dd6e4d69d69f  (in _core.abi3.so)        31
+        core::slice::_$LT$impl$u20$$u5b$T$u5d$$GT$::binary_search_by::h7205ab2d4c3e3539  (in _core.abi3.so)        29
+        phasesmith_engine::structural_pattern::append_instrument_derivatives::h5f3c5d978b4a1def  (in _core.abi3.so)        28
+        gc_collect_main.llvm.17606028834750380902  (in python3.12)        23
+        phasesmith_workflows::rietveld_general_objective::PreparedGeneralFreeLinearization::normal_product::hb9129520f5f5e1b8  (in _core.abi3.so)        23
+        _$LT$phasesmith_workflows..backgrounds..ChebyshevBackground$u20$as$u20$phasesmith_workflows..backgrounds..DifferentiableBackground$GT$::basis::hb29fe015d817882c  (in _core.abi3.so)        20
+        alloc::collections::btree::map::BTreeMap$LT$K$C$V$C$A$GT$::insert::h77fa5d7dc1d89102  (in _core.abi3.so)        20
+        phasesmith_crystallography::symmetry::SymmetryOperation::compose::ha83b81bcbbd233aa  (in _core.abi3.so)        19
+        phasesmith_engine::structural_spectrum::combine_dense_products::h506b0367c6b27e95  (in _core.abi3.so)        19
+        phasesmith_engine::structural_spectrum::combine_pattern_results::hc3206764c55ba5f8  (in _core.abi3.so)        19
+        deduce_unreachable  (in python3.12)        18
+        madvise  (in libsystem_kernel.dylib)        16
+        __bzero  (in libsystem_platform.dylib)        14
+        core::ops::function::impls::_$LT$impl$u20$core..ops..function..FnMut$LT$A$GT$$u20$for$u20$$RF$F$GT$::call_mut::hd4e53d79513e3cb5  (in _core.abi3.so)        14
+        phasesmith_crystallography::symmetry::SymmetryOperation::new::h9073b96cac66e871  (in _core.abi3.so)        12
+        _xzm_free  (in libsystem_malloc.dylib)        9
+        _xzm_xzone_malloc_tiny  (in libsystem_malloc.dylib)        9
+        phasesmith_model::PatternRecord::validate::hef3aa0a43606b566  (in _core.abi3.so)        9
+        _platform_memset  (in libsystem_platform.dylib)        7
+        phasesmith_core::profile::GridView::new::h83ce6ca74caa4826  (in _core.abi3.so)        7
+        _platform_strcmp$VARIANT$Base  (in libsystem_platform.dylib)        6
+        tupledealloc  (in python3.12)        6
+        visit_reachable  (in python3.12)        6
+        _tlv_get_addr  (in libdyld.dylib)        5
+        fetestexcept  (in libsystem_m.dylib)        5
+        phasesmith_core::cw_contributions::CwContributionsView::new::hb9c51427eda31208  (in _core.abi3.so)        5
+        phasesmith_workflows::sample_physics::compose::h18f2e522ab6e10b9  (in _core.abi3.so)        5
+        visit_decref  (in python3.12)        5

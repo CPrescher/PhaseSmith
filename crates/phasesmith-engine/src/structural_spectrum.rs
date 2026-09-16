@@ -3,6 +3,8 @@
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 
+use crate::structural_pattern::StructuralPreparationCache;
+
 use phasesmith_core::{
     Accumulation, ConstantWavelengthInstrument, CwContributionsView, DenseJacobian, FcjGeometry,
     PatternDerivatives, SupportJacobian, SupportPolicy,
@@ -220,6 +222,21 @@ impl PreparedStructuralSpectrum {
     ) -> Result<StructuralPatternDenseResult, StructuralSpectrumError> {
         let products = self.map_components(input, |phase, component_input| {
             phase.linearize(&component_input)
+        })?;
+        combine_dense_products(products, &self.normalized_weights)
+    }
+
+    /// Linearize selected structural rows with fixed axial geometry.
+    /// # Errors
+    /// Returns an error for invalid component inputs or mask dimensions.
+    pub fn linearize_selected(
+        &self,
+        input: &PreparedStructuralSpectrumInputView<'_>,
+        selected: &[bool],
+        cache: Option<&StructuralPreparationCache>,
+    ) -> Result<StructuralPatternDenseResult, StructuralSpectrumError> {
+        let products = self.map_components(input, |phase, component| {
+            phase.linearize_selected(&component, selected, cache)
         })?;
         combine_dense_products(products, &self.normalized_weights)
     }
