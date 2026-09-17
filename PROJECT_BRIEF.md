@@ -25,8 +25,89 @@ and endpoints are unchanged. Matrix-free mode omits global rank/covariance;
 dense mode remains the small-problem reference. The separate measured LaB6
 cell/profile gate passes at Rwp 0.2184. Mixed-method bundle integration, fixed
 spectra, TOF and live GSAS-II optimizer comparison remain unfinished, and the
-latest upstream numerical work must be reconciled before final validation.
+latest upstream numerical work is reconciled; combined-state validation follows.
 See `docs/pawley.md`, `docs/pawley-validation.md` and the completion audit.
+
+Refinement optimization priority: seek the lowest stable, scientifically valid
+Rwp with verified convergence, retaining QPA and physical-model checks. Judge
+speed at comparable attained fit quality; a faster iteration-limited fit with
+a higher Rwp is a diagnostic tradeoff, not the target outcome.
+
+The subsequent QARR holdout investigation separates budget exhaustion from
+width decomposition. The common diagnostic's original-width recipe converges
+on 1h at Rwp 20.10151% with a 500-iteration allowance; the already-established
+empirical frozen-background recipe reaches 19.44367%, with all stages converged
+and maximum composition error 1.55045 percentage points. Tight-tolerance and
+one/eight-worker controls agree. Joint background lowers Rwp but fails the
+unchanged 2-percentage-point composition gate. These exploratory results do
+not replace the frozen native holdout validator or make 1h an untouched test
+for future tuning. See `docs/qarr-holdout-investigation.md`.
+
+Rietveld rejected-step recovery now retains the unchanged accepted-state
+Jacobian and restores damping to at least the caller's initial value after a
+failed backtracking sequence. The independent Python and native structural
+solver share the damping rule; forward equations, bounds and convergence
+criteria are unchanged. A native-only benchmark trace measures time to Rwp
+targets while keeping final convergence, QPA and profile checks separate.
+On the QARR empirical frozen-background recipe, total evaluations fall from
+376 to 251 with identical final profiles, parameters and covariance at Rwp
+19.21994%. The joint-background diagnostic also retains its solution but its
+larger composition error; it remains a separate recipe. Unchanged PbSO4 and
+QARR reference checks pass, while the existing QARR 1h holdout failure remains.
+See `docs/refinement-quality-recovery.md` for the contract and validation.
+
+Opt-in `EmpiricalGaussianConvention` now anchors a caller-selected phase's RMS
+strain and transfers shared Gaussian variance into U while preserving the
+starting profile. It removes the isotropic U/strain redundancy using existing
+Rust kernels and fixed constraints. Python input/checkpoint, project metadata,
+readiness and fit reports preserve the explicitly empirical interpretation.
+Defaults and physical width domains remain unchanged. On QARR the bounded
+fast-profile recipe improves Rwp from 19.9888% to 19.6776%; a longer default-
+profile fit reaches 19.2199% but is substantially slower. The longer fast case
+fails the termination gate. See `docs/empirical-gaussian.md` for equations,
+constraints, reproducible measurements and interpretation limits.
+
+The rietx solver audit identifies width parameterization, coupled instrument/
+sample variance, early background freezing and rejected-step recovery as the
+next fit-quality priorities. A PhaseSmith-only diagnostic reaches 18.9115%
+QARR Rwp with convergence at all stages, but takes many more evaluations and
+worsens maximum phase-fraction error to 1.863 percentage points. It is not a
+new default or an equal-quality speed win. See `docs/rietx-solver-audit.md`;
+the diagnostic did not change production solver behavior or validation recipes.
+The later recovery change above is evaluated separately.
+
+A subsequent same-objective comparison feeds PhaseSmith's residuals and
+analytical Jacobian to SciPy TRF with identical starting values, scaled
+physical parameters and bounds. A direct solver replacement does not recover
+rietx's advantage: SciPy repeatedly hits PhaseSmith's coupled instrument-width
+domain and stops early. Fixing instrument parameters gives close solver
+agreement. Finite-difference and objective parity checks pass; details and
+controls are in `docs/solver-isolation.md`. Prioritize identifiable, feasible
+width coordinates before deciding on an optimizer replacement.
+
+Structural powder intensities now average Friedel mates before profile
+accumulation, correcting merged-family intensities for non-centrosymmetric
+structures with anomalous scattering. Individual complex structure-factor
+APIs retain their representative-reflection meaning. Dense, selected and
+matrix-free intensity derivatives follow the same average, including custom
+provider derivatives. This is an unconditional powder-physics correction,
+separate from optional numerical accuracy controls. See `docs/powder-friedel.md`.
+
+Opt-in CW `ProfileAccuracy` now separates conservative tail-area support from
+lower-order small-span FCJ quadrature. The Rust kernel retains the physical
+axial correction and fused analytical derivatives; established support and
+quadrature remain the default. The policy travels through structural engines,
+native/Python refinement, project persistence and checkpoints. Resume rejects
+a changed policy. Rejected native trials omit unused fixed-axial rows, with
+complete final diagnostics retained. Equations, boundaries, supported paths
+and validation are in `docs/profile-accuracy.md`.
+
+The post-optimization rietx workload audit identifies a major numerical-policy
+difference: rietx 1.4.0 skips FCJ convolution for every reflection in the QARR
+case and uses smaller area-based windows. Controlled interventions and native
+sampling are recorded in `docs/rietx-workload-audit.md`. They motivate validated
+small-span acceleration and cheaper rejected trials; default numerical
+policies and the existing equivalence gates remain unchanged.
 
 The second refinement performance pass batches four FCJ sample evaluations
 without reordering any sample's quadrature sum, assembles selected structural

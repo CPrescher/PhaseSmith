@@ -18,8 +18,10 @@ import numpy as np
 from numpy.typing import NDArray
 
 from .. import _core
+from ..accuracy import ProfileAccuracy
 from ..control import CancellationCallback, CancellationToken
 from ..crystallography import p1_parameter_names
+from ..empirical import EmpiricalGaussianConvention
 from ..execution import ExecutionPolicy, execution_pool
 from ..extensions import CompositePhysicsProvider
 from ..intensity_corrections import (
@@ -611,10 +613,12 @@ def _native_multiphase(
 ) -> object | None:
     if not prepared or any(item._native_model is None for item in prepared):
         return None
-    return _core._StructuralMultiphase(
+    native = _core._StructuralMultiphase(
         [item._native_model for item in prepared],
         prepared[0].execution._native,
     )
+    prepared[0].profile_accuracy._apply(native)
+    return native
 
 
 def _prepared_for_task(task: object) -> PreparedStructuralPattern:
@@ -817,6 +821,7 @@ def calculate(
     phases: tuple[RietveldPhase, ...],
     *,
     support_fwhm: float = 20.0,
+    profile_accuracy: ProfileAccuracy | None = None,
     background: DifferentiableBackground | None = None,
     execution: ExecutionPolicy | None = None,
 ) -> RietveldCalculationResult:
@@ -834,6 +839,7 @@ def calculate(
             experiment,
             phase,
             support_fwhm=support_fwhm,
+            profile_accuracy=profile_accuracy,
             execution=selected_execution,
         )
         for phase in selected
@@ -868,6 +874,7 @@ class RietveldInput:
     constraints: tuple[Constraint, ...] = ()
     selection: RietveldParameterSelection = RietveldParameterSelection()
     background: DifferentiableBackground | None = None
+    empirical_gaussian: EmpiricalGaussianConvention | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "phases", tuple(self.phases))
@@ -920,6 +927,24 @@ class RietveldInput:
                 atol=2.0e-12,
             ):
                 raise ValueError(f"parameter value for {key.label} does not match its domain")
+        if self.empirical_gaussian is not None:
+            if not isinstance(self.empirical_gaussian, EmpiricalGaussianConvention):
+                raise TypeError("empirical_gaussian must be EmpiricalGaussianConvention")
+            self.empirical_gaussian.validate_phases(self.phases)
+            reference_key = sample_parameter_key(
+                self.empirical_gaussian.reference_phase_id, "isotropic_microstrain.rms"
+            )
+            if reference_key in self.parameters.keys:
+                from .workflow import _constraint_keys
+
+                required = FixedConstraint(
+                    reference_key, self.empirical_gaussian.reference_rms_microstrain
+                )
+                related = tuple(c for c in self.constraints if reference_key in _constraint_keys(c))
+                if related and related != (required,):
+                    raise ValueError("constraint conflicts with empirical Gaussian reference")
+                if not related:
+                    object.__setattr__(self, "constraints", (*self.constraints, required))
         transform = ConstraintTransform(self.parameters, self.constraints)
         constrained_values = transform.unpack(transform.pack())
         for key, value in domain_values.items():
@@ -1112,6 +1137,7 @@ class RietveldOptions:
     max_backtracks: int = 8
     use_uncertainty: bool = True
     support_fwhm: float = 20.0
+    profile_accuracy: ProfileAccuracy = field(default_factory=ProfileAccuracy)
     max_linearization_elements: int = 10_000_000
     estimate_covariance: bool = True
     max_covariance_parameters: int = 64
@@ -1119,6 +1145,8 @@ class RietveldOptions:
     execution: ExecutionPolicy = field(default_factory=ExecutionPolicy)
 
     def __post_init__(self) -> None:
+        if not isinstance(self.profile_accuracy, ProfileAccuracy):
+            raise TypeError("profile_accuracy must be ProfileAccuracy")
         if not isinstance(self.limits, RefinementLimits):
             raise TypeError("limits must be RefinementLimits")
         if not isinstance(self.execution, ExecutionPolicy):
@@ -1227,8 +1255,16 @@ class RietveldCheckpoint:
     experiment: ConstantWavelengthExperiment | None = None
     background: DifferentiableBackground | None = None
     _native: object | None = field(default=None, repr=False, compare=False)
+    profile_accuracy: ProfileAccuracy = field(default_factory=ProfileAccuracy)
+    empirical_gaussian: EmpiricalGaussianConvention | None = None
 
     def __post_init__(self) -> None:
+        if self.empirical_gaussian is not None:
+            if not isinstance(self.empirical_gaussian, EmpiricalGaussianConvention):
+                raise TypeError("checkpoint empirical_gaussian must be EmpiricalGaussianConvention")
+            self.empirical_gaussian.validate_phases(self.phases)
+        if not isinstance(self.profile_accuracy, ProfileAccuracy):
+            raise TypeError("checkpoint profile_accuracy must be ProfileAccuracy")
         object.__setattr__(self, "phases", tuple(self.phases))
         object.__setattr__(self, "lattice_domains", tuple(self.lattice_domains))
         object.__setattr__(self, "history", tuple(self.history))
@@ -1590,6 +1626,7 @@ class _RietveldLinearization:
                 experiment,
                 phase,
                 support_fwhm=options.support_fwhm,
+                profile_accuracy=options.profile_accuracy,
                 execution=(options.execution if executor is None else ExecutionPolicy(threads=1)),
             )
             for phase in phases
@@ -2064,6 +2101,8 @@ def _checkpoint(
     objective: float,
     damping: float,
     history: list[RietveldIterationRecord],
+    profile_accuracy: ProfileAccuracy,
+    empirical_gaussian: EmpiricalGaussianConvention | None,
 ) -> RietveldCheckpoint:
     return RietveldCheckpoint(
         len(history),
@@ -2075,6 +2114,8 @@ def _checkpoint(
         tuple(history),
         experiment,
         background,
+        profile_accuracy=profile_accuracy,
+        empirical_gaussian=empirical_gaussian,
     )
 
 
@@ -2147,6 +2188,12 @@ def _refine_with_executor(
     selected = RietveldOptions() if options is None else options
     if not isinstance(selected, RietveldOptions):
         raise TypeError("options must be RietveldOptions")
+    if checkpoint is not None and not isinstance(checkpoint, RietveldCheckpoint):
+        raise TypeError("checkpoint must be RietveldCheckpoint")
+    if checkpoint is not None and checkpoint.empirical_gaussian != input_data.empirical_gaussian:
+        raise ValueError("checkpoint empirical Gaussian convention changed")
+    if checkpoint is not None and checkpoint.profile_accuracy != selected.profile_accuracy:
+        raise ValueError("checkpoint profile accuracy changed")
     runtime = RefinementRuntime(
         selected.limits,
         cancellation=cancellation,
@@ -2345,6 +2392,8 @@ def _refine_with_executor(
                             objective,
                             damping,
                             history,
+                            selected.profile_accuracy,
+                            input_data.empirical_gaussian,
                         )
                         runtime.accept_step(state)
                         runtime.emit(
@@ -2371,7 +2420,7 @@ def _refine_with_executor(
                 if termination is TerminationReason.CONVERGED:
                     break
                 if not accepted:
-                    damping *= selected.damping_increase
+                    damping = max(damping * selected.damping_increase, selected.initial_damping)
                     continue
                 runtime.emit(
                     RefinementEventKind.ITERATION,
@@ -2409,6 +2458,8 @@ def _refine_with_executor(
             0.5 * metrics.chi_square if calculation is not None else 0.0,
             damping,
             history,
+            selected.profile_accuracy,
+            input_data.empirical_gaussian,
         )
         if checkpoint_callback is not None:
             with suppress(Exception):
@@ -2425,6 +2476,8 @@ def _refine_with_executor(
         objective,
         damping,
         history,
+        selected.profile_accuracy,
+        input_data.empirical_gaussian,
     )
     try:
         jacobian_rank, covariance, correlations = _covariance_diagnostics(
@@ -2656,6 +2709,7 @@ def _native_request(input_data: RietveldInput, options: RietveldOptions) -> obje
         options.unresolved_correlation,
     )
 
+    options.profile_accuracy._apply(request)
     if isinstance(experiment.radiation, ComponentRadiation):
         components = experiment.radiation.components
         request.set_fixed_spectrum(
@@ -2735,6 +2789,7 @@ def _refine_native(
             experiment,
             phase,
             support_fwhm=options.support_fwhm,
+            profile_accuracy=options.profile_accuracy,
             execution=options.execution,
         )._calculation_from_native_arrays(arrays)
         for phase, arrays in zip(phases, native.phase_calculations(), strict=True)
@@ -2787,6 +2842,8 @@ def _refine_native(
         experiment,
         background,
         native.checkpoint(),
+        profile_accuracy=options.profile_accuracy,
+        empirical_gaussian=input_data.empirical_gaussian,
     )
     reason = TerminationReason(native.termination_reason)
     termination_message = (
@@ -2840,6 +2897,12 @@ def refine(
     selected = RietveldOptions() if options is None else options
     if not isinstance(selected, RietveldOptions):
         raise TypeError("options must be RietveldOptions")
+    if checkpoint is not None and not isinstance(checkpoint, RietveldCheckpoint):
+        raise TypeError("checkpoint must be RietveldCheckpoint")
+    if checkpoint is not None and checkpoint.empirical_gaussian != input_data.empirical_gaussian:
+        raise ValueError("checkpoint empirical Gaussian convention changed")
+    if checkpoint is not None and checkpoint.profile_accuracy != selected.profile_accuracy:
+        raise ValueError("checkpoint profile accuracy changed")
     native_only = all(
         _native_model_configuration(phase) is not None
         and _supports_fused_structural_physics(phase.physics)

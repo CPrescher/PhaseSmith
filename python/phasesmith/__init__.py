@@ -30,6 +30,7 @@ from ._api import (
     tch_shape_from_fwhm,
     tch_shape_from_gaussian_sigma,
 )
+from .accuracy import ProfileAccuracy
 from .automation import (
     ADVISOR_CONTEXT_SCHEMA,
     ADVISOR_PACKET_SCHEMA,
@@ -124,6 +125,7 @@ from .cw import (
     accumulate_cw_contributions,
     cw_profile_parameters,
 )
+from .empirical import EmpiricalGaussianConvention
 from .execution import ExecutionPolicy
 from .extensions import (
     PHYSICS_PROVIDER_API_VERSION,
@@ -390,6 +392,7 @@ __all__ = [
     "DSpacingRange",
     "DSpacingResult",
     "DebyeScherrerGeometry",
+    "EmpiricalGaussianConvention",
     "ExecutionPolicy",
     "ExpandedSites",
     "FcjGeometry",
@@ -437,6 +440,7 @@ __all__ = [
     "PreparedReflectionGenerator",
     "PreparedStructuralPattern",
     "PreparedXrayNonResonant",
+    "ProfileAccuracy",
     "ProfileEstimationMode",
     "ProfileEstimationOptions",
     "ProfileEstimationResult",

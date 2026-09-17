@@ -138,6 +138,17 @@ def build_fit_report(
     )
     reason = result.termination_reason.value
     advice = []
+    if result.checkpoint.empirical_gaussian is not None:
+        convention = result.checkpoint.empirical_gaussian
+        advice.append(
+            FitAdvice(
+                "empirical_gaussian_convention",
+                f"RMS strain of {convention.reference_phase_id} is fixed by convention to "
+                f"{convention.reference_rms_microstrain:g}. Instrument Gaussian widths, sample "
+                "strains and their conditional uncertainties depend on this assumption; "
+                "they are not an independent instrument/sample measurement.",
+            )
+        )
     if reason != "converged":
         advice.append(
             FitAdvice(

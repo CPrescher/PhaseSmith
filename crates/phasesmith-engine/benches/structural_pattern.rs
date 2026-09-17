@@ -177,6 +177,8 @@ impl BenchmarkCase {
                 scattering_model: BuiltInScatteringModel::XrayNonResonant,
                 contributions: self.contributions(),
                 support: SupportPolicy::FwhmMultiple(20.0),
+                profile_accuracy: phasesmith_core::ProfileAccuracy::default(),
+                calculate_axial_derivatives: true,
             },
         )
         .expect("fused structural pattern")

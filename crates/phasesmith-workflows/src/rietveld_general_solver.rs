@@ -96,6 +96,8 @@ pub struct RietveldCovarianceMatrix {
 /// Complete accepted state for deterministic constrained continuation.
 #[derive(Clone, Debug, PartialEq)]
 pub struct RietveldGeneralCheckpoint {
+    /// Numerical profile policy used to evaluate the accepted state.
+    pub profile_accuracy: phasesmith_core::ProfileAccuracy,
     /// Accepted iteration count.
     pub completed_iterations: usize,
     /// Last accepted complete request state.
@@ -253,6 +255,11 @@ pub fn refine_general_rietveld_with_runtime(
     let (mut live_input, mut history, mut damping, mut live_parameters) =
         if let Some(checkpoint) = checkpoint {
             checkpoint.validate_for(input, selection, lattice_bounds, constraints)?;
+            if checkpoint.profile_accuracy != options.calculation.profile_accuracy {
+                return Err(RietveldGeneralRefinementError::InvalidCheckpoint {
+                    reason: "profile accuracy changed",
+                });
+            }
             runtime.resume_accepted(checkpoint.completed_iterations)?;
             (
                 checkpoint.input.clone(),
@@ -477,7 +484,7 @@ pub fn refine_general_rietveld_with_runtime(
                     break 'iterations;
                 }
                 let Ok(trial_calculation) =
-                    calculate_rietveld_pattern(&trial_input, &options.calculation)
+                    crate::rietveld::calculate_rietveld_trial(&trial_input, &options.calculation)
                 else {
                     emit_rejected_trial(runtime, "trial outside the calculation domain")?;
                     if let Err(error) = runtime.reject_step() {
@@ -525,8 +532,12 @@ pub fn refine_general_rietveld_with_runtime(
             objective,
         )) = accepted
         else {
-            damping *= options.damping_increase;
+            // Rejected trials do not change the accepted state or its Jacobian.
+            // Recover a useful regularization scale without traversing decades
+            // below the caller's initial damping after a long accepted sequence.
+            damping = (damping * options.damping_increase).max(options.initial_damping);
             if termination == TerminationReason::MaxIterations {
+                prepared_objective = Some(objective);
                 continue;
             }
             break;
@@ -584,6 +595,7 @@ pub fn refine_general_rietveld_with_runtime(
         prepared_objective = trial_objective_state;
         damping = (damping * options.damping_decrease).max(1.0e-18);
         let state = RietveldGeneralCheckpoint {
+            profile_accuracy: options.calculation.profile_accuracy,
             completed_iterations: history.len(),
             input: live_input.clone(),
             selection: selection.clone(),
@@ -641,6 +653,7 @@ pub fn refine_general_rietveld_with_runtime(
         },
     )?;
     let checkpoint = RietveldGeneralCheckpoint {
+        profile_accuracy: options.calculation.profile_accuracy,
         completed_iterations: history.len(),
         input: live_input.clone(),
         selection: selection.clone(),

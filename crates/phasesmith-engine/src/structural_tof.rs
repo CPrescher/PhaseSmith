@@ -12,9 +12,10 @@ use phasesmith_crystallography::{
     IntegratedIntensityCorrectionError, IntegratedIntensityCorrectionModel,
     PreparedNeutronScattering, ScatteringBatch, ScatteringError, SpaceGroup,
     StructureFactorBatchError, StructureFactorBatchView, StructureFactorValues, UnitCell,
-    calculate_structure_factor_dense_with_context,
-    calculate_structure_factor_intensity_vjp_with_context,
-    calculate_structure_factor_jvp_with_context, calculate_structure_factor_values_with_context,
+    calculate_powder_structure_factor_dense_with_context,
+    calculate_powder_structure_factor_intensity_vjp_with_context,
+    calculate_powder_structure_factor_jvp_with_context,
+    calculate_powder_structure_factor_values_with_context,
 };
 use phasesmith_execution::ExecutionContext;
 
@@ -211,7 +212,7 @@ pub fn calculate_structural_tof_pattern_with_context(
     execution: &ExecutionContext,
 ) -> Result<StructuralTofResult, StructuralTofError> {
     let prepared = prepare(cell, input)?;
-    let values = calculate_structure_factor_values_with_context(
+    let values = calculate_powder_structure_factor_values_with_context(
         cell,
         space_group,
         prepared.structure_batch(input),
@@ -251,7 +252,7 @@ pub fn calculate_structural_tof_pattern_dense_with_context(
     execution: &ExecutionContext,
 ) -> Result<StructuralTofDenseResult, StructuralTofError> {
     let prepared = prepare(cell, input)?;
-    let structural = calculate_structure_factor_dense_with_context(
+    let structural = calculate_powder_structure_factor_dense_with_context(
         cell,
         space_group,
         prepared.structure_batch(input),
@@ -334,7 +335,7 @@ pub fn calculate_structural_tof_pattern_jvp_with_context(
     execution: &ExecutionContext,
 ) -> Result<StructuralTofJvpResult, StructuralTofError> {
     let prepared = prepare(cell, input)?;
-    let structural = calculate_structure_factor_jvp_with_context(
+    let structural = calculate_powder_structure_factor_jvp_with_context(
         cell,
         space_group,
         prepared.structure_batch(input),
@@ -411,7 +412,7 @@ pub fn calculate_structural_tof_pattern_vjp_with_context(
         return Err(StructuralTofError::NonFinitePatternWeight);
     }
     let prepared = prepare(cell, input)?;
-    let values = calculate_structure_factor_values_with_context(
+    let values = calculate_powder_structure_factor_values_with_context(
         cell,
         space_group,
         prepared.structure_batch(input),
@@ -420,7 +421,7 @@ pub fn calculate_structural_tof_pattern_vjp_with_context(
     .map_err(StructuralTofError::StructureFactor)?;
     let accumulation = accumulate(input, &prepared.d_spacing, &values.intensity, execution)?;
     let (intensity_weights, d_spacing_weights) = local_transpose(&accumulation, sample_weights);
-    let mut structural = calculate_structure_factor_intensity_vjp_with_context(
+    let mut structural = calculate_powder_structure_factor_intensity_vjp_with_context(
         cell,
         space_group,
         prepared.structure_batch(input),

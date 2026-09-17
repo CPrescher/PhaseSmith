@@ -1,0 +1,369 @@
+{
+  "seconds": 0.8330544999989797,
+  "stages": [
+    {
+      "stage": 1,
+      "seconds": 0.28524437499436317,
+      "diagnostic_calculation_seconds": 0,
+      "backend": "native",
+      "evaluations": 31,
+      "iterations": 7,
+      "rwp": 0.26375366336459,
+      "termination": "max_iterations",
+      "history": [
+        {
+          "backtracks": 0,
+          "step_norm": 0.2,
+          "damping": 1e-06,
+          "cg_iterations": 0,
+          "rwp": 0.2647320768341446
+        },
+        {
+          "backtracks": 0,
+          "step_norm": 0.2,
+          "damping": 3e-07,
+          "cg_iterations": 0,
+          "rwp": 0.2644580345284166
+        },
+        {
+          "backtracks": 0,
+          "step_norm": 0.2,
+          "damping": 9e-08,
+          "cg_iterations": 0,
+          "rwp": 0.26418406420710405
+        },
+        {
+          "backtracks": 0,
+          "step_norm": 0.2,
+          "damping": 2.6999999999999997e-08,
+          "cg_iterations": 0,
+          "rwp": 0.26391133015802964
+        },
+        {
+          "backtracks": 1,
+          "step_norm": 0.1,
+          "damping": 8.099999999999998e-09,
+          "cg_iterations": 0,
+          "rwp": 0.2637750014505811
+        },
+        {
+          "backtracks": 4,
+          "step_norm": 0.0125,
+          "damping": 2.4299999999999993e-09,
+          "cg_iterations": 0,
+          "rwp": 0.2637579174105021
+        },
+        {
+          "backtracks": 6,
+          "step_norm": 0.003125,
+          "damping": 7.289999999999998e-10,
+          "cg_iterations": 0,
+          "rwp": 0.26375366336459
+        }
+      ]
+    },
+    {
+      "stage": 2,
+      "seconds": 0.4579857080025249,
+      "diagnostic_calculation_seconds": 0,
+      "backend": "native",
+      "evaluations": 29,
+      "iterations": 28,
+      "rwp": 0.19816792101508607,
+      "termination": "max_iterations",
+      "history": [
+        {
+          "backtracks": 0,
+          "step_norm": 0.15,
+          "damping": 1e-06,
+          "cg_iterations": 0,
+          "rwp": 0.25753289283930175
+        },
+        {
+          "backtracks": 0,
+          "step_norm": 0.15,
+          "damping": 3e-07,
+          "cg_iterations": 0,
+          "rwp": 0.2524230018278759
+        },
+        {
+          "backtracks": 0,
+          "step_norm": 0.15,
+          "damping": 9e-08,
+          "cg_iterations": 0,
+          "rwp": 0.24775033775199937
+        },
+        {
+          "backtracks": 0,
+          "step_norm": 0.15,
+          "damping": 2.6999999999999997e-08,
+          "cg_iterations": 0,
+          "rwp": 0.24327741131726854
+        },
+        {
+          "backtracks": 0,
+          "step_norm": 0.15,
+          "damping": 8.099999999999998e-09,
+          "cg_iterations": 0,
+          "rwp": 0.23886398270656878
+        },
+        {
+          "backtracks": 0,
+          "step_norm": 0.15,
+          "damping": 2.4299999999999993e-09,
+          "cg_iterations": 0,
+          "rwp": 0.23446216456151397
+        },
+        {
+          "backtracks": 0,
+          "step_norm": 0.15,
+          "damping": 7.289999999999998e-10,
+          "cg_iterations": 0,
+          "rwp": 0.2300620171243655
+        },
+        {
+          "backtracks": 0,
+          "step_norm": 0.15,
+          "damping": 2.1869999999999993e-10,
+          "cg_iterations": 0,
+          "rwp": 0.2257044594371972
+        },
+        {
+          "backtracks": 0,
+          "step_norm": 0.15,
+          "damping": 6.560999999999998e-11,
+          "cg_iterations": 0,
+          "rwp": 0.22148809810044442
+        },
+        {
+          "backtracks": 0,
+          "step_norm": 0.15,
+          "damping": 1.9682999999999994e-11,
+          "cg_iterations": 0,
+          "rwp": 0.2174927008281352
+        },
+        {
+          "backtracks": 0,
+          "step_norm": 0.15,
+          "damping": 5.9048999999999976e-12,
+          "cg_iterations": 0,
+          "rwp": 0.21383645362423775
+        },
+        {
+          "backtracks": 0,
+          "step_norm": 0.15,
+          "damping": 1.7714699999999991e-12,
+          "cg_iterations": 0,
+          "rwp": 0.21058665413149028
+        },
+        {
+          "backtracks": 0,
+          "step_norm": 0.15,
+          "damping": 5.314409999999997e-13,
+          "cg_iterations": 0,
+          "rwp": 0.20782387497079338
+        },
+        {
+          "backtracks": 0,
+          "step_norm": 0.15,
+          "damping": 1.594322999999999e-13,
+          "cg_iterations": 0,
+          "rwp": 0.2063129397427873
+        },
+        {
+          "backtracks": 0,
+          "step_norm": 0.15,
+          "damping": 4.782968999999997e-14,
+          "cg_iterations": 0,
+          "rwp": 0.20494920458026264
+        },
+        {
+          "backtracks": 0,
+          "step_norm": 0.15,
+          "damping": 1.4348906999999992e-14,
+          "cg_iterations": 0,
+          "rwp": 0.2044669957952051
+        },
+        {
+          "backtracks": 0,
+          "step_norm": 0.15,
+          "damping": 4.304672099999997e-15,
+          "cg_iterations": 0,
+          "rwp": 0.20414824893898667
+        },
+        {
+          "backtracks": 0,
+          "step_norm": 0.15,
+          "damping": 1.2914016299999992e-15,
+          "cg_iterations": 28,
+          "rwp": 0.20248348447803
+        },
+        {
+          "backtracks": 0,
+          "step_norm": 0.15,
+          "damping": 3.8742048899999974e-16,
+          "cg_iterations": 27,
+          "rwp": 0.20118034262537438
+        },
+        {
+          "backtracks": 0,
+          "step_norm": 0.15,
+          "damping": 1.162261466999999e-16,
+          "cg_iterations": 28,
+          "rwp": 0.2001757638340011
+        },
+        {
+          "backtracks": 0,
+          "step_norm": 0.15,
+          "damping": 3.486784400999997e-17,
+          "cg_iterations": 28,
+          "rwp": 0.1994326385640345
+        },
+        {
+          "backtracks": 0,
+          "step_norm": 0.15,
+          "damping": 1.0460353202999991e-17,
+          "cg_iterations": 0,
+          "rwp": 0.1992650926152887
+        },
+        {
+          "backtracks": 0,
+          "step_norm": 0.15,
+          "damping": 3.138105960899997e-18,
+          "cg_iterations": 28,
+          "rwp": 0.19877746472021382
+        },
+        {
+          "backtracks": 0,
+          "step_norm": 0.15,
+          "damping": 1e-18,
+          "cg_iterations": 28,
+          "rwp": 0.19845367366189062
+        },
+        {
+          "backtracks": 0,
+          "step_norm": 0.15,
+          "damping": 1e-18,
+          "cg_iterations": 28,
+          "rwp": 0.19825654154230307
+        },
+        {
+          "backtracks": 0,
+          "step_norm": 0.15,
+          "damping": 1e-18,
+          "cg_iterations": 0,
+          "rwp": 0.19823430483137938
+        },
+        {
+          "backtracks": 0,
+          "step_norm": 0.15,
+          "damping": 1e-18,
+          "cg_iterations": 0,
+          "rwp": 0.19818540415745473
+        },
+        {
+          "backtracks": 0,
+          "step_norm": 0.15,
+          "damping": 1e-18,
+          "cg_iterations": 0,
+          "rwp": 0.19816792101508607
+        }
+      ]
+    },
+    {
+      "stage": 3,
+      "seconds": 0.0228426670000772,
+      "diagnostic_calculation_seconds": 0,
+      "backend": "native",
+      "evaluations": 2,
+      "iterations": 1,
+      "rwp": 0.19816460010715792,
+      "termination": "converged",
+      "history": [
+        {
+          "backtracks": 0,
+          "step_norm": 0.0022090076729940713,
+          "damping": 1e-06,
+          "cg_iterations": 0,
+          "rwp": 0.19816460010715792
+        }
+      ]
+    }
+  ],
+  "scientific_result": {
+    "dataset_id": "iucr-qarr-1g",
+    "status": "passed",
+    "sample_count": 7251,
+    "reflection_count": 110,
+    "checks": [
+      {
+        "check_id": "observed_grid",
+        "status": "passed",
+        "detail": "QARR 1g pattern spans the published 5-150 degree grid.",
+        "measured": 7251.0,
+        "criterion": "7251 samples with endpoints 5 and 150 degrees"
+      },
+      {
+        "check_id": "site_expansion",
+        "status": "passed",
+        "detail": "The documented 1e-4 CIF coordinate tolerance gives physical unit-cell contents.",
+        "measured": 46.0,
+        "criterion": "expanded site counts Al2O3=30, ZnO=4, CaF2=12"
+      },
+      {
+        "check_id": "refinement_termination",
+        "status": "passed",
+        "detail": "Refinement returns a finite last accepted state under explicit iteration budgets.",
+        "measured": null,
+        "criterion": "no numerical failure, divergence, repeated rejection, or empty data"
+      },
+      {
+        "check_id": "poisson_rwp",
+        "status": "passed",
+        "detail": "Poisson-weighted QARR profile gate with fixed CIF anisotropic displacement.",
+        "measured": 0.19816460010715792,
+        "criterion": "Rwp with sigma=sqrt(max(counts, 1)) <= 0.20"
+      },
+      {
+        "check_id": "unit_weight_rwp",
+        "status": "passed",
+        "detail": "Unit-weight profile residual is reported separately from Poisson-weighted Rwp.",
+        "measured": 0.1317936160063607,
+        "criterion": "unit-weight Rwp <= 0.15"
+      },
+      {
+        "check_id": "profile_correlation",
+        "status": "passed",
+        "detail": "Background-subtracted observed and calculated profiles remain strongly aligned.",
+        "measured": 0.9906400670400214,
+        "criterion": "Pearson correlation >= 0.98"
+      },
+      {
+        "check_id": "qpa_weight_fraction",
+        "status": "passed",
+        "detail": "Hill--Howard weight fractions agree with the independently weighed phase fractions.",
+        "measured": 0.006179751338108996,
+        "criterion": "maximum absolute phase error <= 0.02"
+      },
+      {
+        "check_id": "qpa_covariance",
+        "status": "passed",
+        "detail": "The final scale covariance propagates analytically to finite phase-fraction uncertainties.",
+        "measured": 0.0008580507980025356,
+        "criterion": "finite nonnegative propagated variance for every phase fraction"
+      }
+    ],
+    "notes": [
+      "Calculated crystalline weight fractions: Al2O3=30.752%, ZnO=34.223%, CaF2=35.025%.",
+      "Maximum propagated phase-fraction standard uncertainty=0.00085805.",
+      "Stage 1 termination=max_iterations, iterations=7, evaluations=31, Rwp=0.26375366.",
+      "Stage 2 termination=max_iterations, iterations=28, evaluations=29, Rwp=0.19816792.",
+      "Stage 3 scale polish termination=converged, iterations=1, evaluations=2, Poisson Rwp=0.19816460, unit-weight Rwp=0.13179362, Rp=0.15539767.",
+      "Expanded sites at tolerance 1e-4: {'Al2O3': 30, 'ZnO': 4, 'CaF2': 12}.",
+      "CIF anisotropic displacement tensors are evaluated directly and remain fixed.",
+      "Sites without CIF displacement values start from Uiso=0.005 \u00c5\u00b2 and are refined.",
+      "Fixed Cu K-alpha1 Cromer--Liberman offsets are used for both doublet components; component-dependent dispersion is not interpolated.",
+      "The supplied SH/L=0.002 is included through the documented equal-height FCJ mapping; absorption is not yet included, and lattice/component wavelengths remain fixed."
+    ]
+  }
+}

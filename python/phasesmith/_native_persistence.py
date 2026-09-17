@@ -12,7 +12,9 @@ import numpy as np
 from numpy.typing import NDArray
 
 from . import _core
+from .accuracy import ProfileAccuracy
 from .crystallography import UnitCell
+from .empirical import _from_metadata
 from .execution import ExecutionPolicy
 from .extensions import CompositePhysicsProvider
 from .instrument import ConstantWavelengthInstrument, FcjGeometry
@@ -140,6 +142,7 @@ def load_native_rietveld_project(
         constraints,
         selection,
         background,
+        empirical_gaussian=_from_metadata(project.get("metadata")),
     )
     options = _options(analysis["options"], analysis["covariance"])
     checkpoint = _checkpoint(
@@ -447,6 +450,10 @@ def _options(record: dict[str, Any], covariance: dict[str, Any]) -> RietveldOpti
         max_backtracks=int(record["max_backtracks"]),
         use_uncertainty=bool(record["use_uncertainty"]),
         support_fwhm=float(record["support_fwhm"]),
+        profile_accuracy=ProfileAccuracy(
+            fast_fcj=record.get("fast_fcj", False),
+            tail_area_tolerance=record.get("tail_area_tolerance"),
+        ),
         estimate_covariance=bool(covariance["enabled"]),
         max_covariance_parameters=int(covariance["max_parameters"]),
         unresolved_correlation=float(covariance["unresolved_correlation"]),
@@ -521,6 +528,11 @@ def _checkpoint(
         experiment,
         background,
         native,
+        empirical_gaussian=input_data.empirical_gaussian,
+        profile_accuracy=ProfileAccuracy(
+            fast_fcj=record.get("fast_fcj", False),
+            tail_area_tolerance=record.get("tail_area_tolerance"),
+        ),
     )
 
 

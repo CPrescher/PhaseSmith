@@ -3,6 +3,7 @@
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 
+use crate::ProfileAccuracy;
 use crate::cw::{ConstantWavelengthInstrument, CwBatchError, CwError, CwProfileParameters};
 use crate::fcj::{FcjError, FcjGeometry, FcjProfile, FcjProfilePoint};
 use crate::profile::{
@@ -469,6 +470,7 @@ fn prepare_profile(
     contributions: CwContributionsView<'_>,
     geometry: Option<FcjGeometry>,
     support: SupportPolicy,
+    accuracy: ProfileAccuracy,
 ) -> Result<PreparedProfile, CwContributionsError> {
     let base =
         CwProfileParameters::from_validated_instrument(position, instrument).map_err(|reason| {
@@ -502,16 +504,17 @@ fn prepare_profile(
         .d_gaussian_fwhm_d_instrument
         .map(|value| value * instrument_gaussian_scale);
     let d_gaussian_d_variance = GAUSSIAN_FWHM_PER_SIGMA / (2.0 * variance.sqrt());
-    let support_radius_deg = support.radius(tch.total_fwhm);
+    let support_radius_deg = accuracy.radius(tch.total_fwhm, tch.eta, support);
     let fcj = geometry
         .map(|geometry| {
-            FcjProfile::new(
+            FcjProfile::new_with_accuracy(
                 position,
                 TchWidths {
                     gaussian_fwhm: gaussian,
                     lorentzian_fwhm: lorentzian,
                 },
                 geometry,
+                accuracy.fast_fcj,
             )
             .map_err(|reason| CwContributionsError::Fcj { reflection, reason })
         })
@@ -537,6 +540,7 @@ fn prepare_batch(
     contributions: CwContributionsView<'_>,
     geometry: Option<FcjGeometry>,
     support: SupportPolicy,
+    accuracy: ProfileAccuracy,
 ) -> Result<PreparedBatch, CwContributionsError> {
     let reflection_count = positions_deg.len();
     let mut profiles = Vec::new();
@@ -564,10 +568,14 @@ fn prepare_batch(
             contributions,
             geometry,
             support,
+            accuracy,
         )?;
         let range = match &profile.fcj {
             Some(fcj) => fcj.support_range(profile.support_radius_deg),
-            None => support.range(positions_deg[reflection], profile.tch.total_fwhm),
+            None => crate::SupportRange {
+                left: positions_deg[reflection] - profile.support_radius_deg,
+                right: positions_deg[reflection] + profile.support_radius_deg,
+            },
         };
         let lower = x.partition_point(|value| *value < range.left);
         let upper = x.partition_point(|value| *value <= range.right);
@@ -635,6 +643,7 @@ pub fn accumulate_cw_contributions_batch_with_context(
         contributions,
         None,
         support,
+        ProfileAccuracy::default(),
         execution,
     )
 }
@@ -693,6 +702,7 @@ pub fn accumulate_cw_fcj_contributions_batch_with_context(
         contributions,
         Some(geometry),
         support,
+        ProfileAccuracy::default(),
         execution,
     )
 }
@@ -721,8 +731,53 @@ pub fn accumulate_cw_fixed_axial_contributions_with_context(
         contributions,
         Some(geometry),
         support,
+        ProfileAccuracy::default(),
         execution,
     )
+}
+
+/// Accumulate structural CW profiles with an explicit numerical accuracy policy.
+/// Values and requested derivatives are fused; fixed axial rows can be omitted.
+/// # Errors
+/// Returns an error for invalid arrays, geometry or accuracy controls.
+#[allow(clippy::too_many_arguments)]
+pub fn accumulate_cw_contributions_with_accuracy(
+    grid: GridView<'_>,
+    positions_deg: &[f64],
+    base_intensities: &[f64],
+    instrument: ConstantWavelengthInstrument,
+    contributions: CwContributionsView<'_>,
+    geometry: Option<FcjGeometry>,
+    support: SupportPolicy,
+    accuracy: ProfileAccuracy,
+    axial_derivatives: bool,
+    execution: &ExecutionContext,
+) -> Result<Accumulation, CwContributionsError> {
+    if axial_derivatives {
+        accumulate_cw_contributions_impl::<true>(
+            grid,
+            positions_deg,
+            base_intensities,
+            instrument,
+            contributions,
+            geometry,
+            support,
+            accuracy,
+            execution,
+        )
+    } else {
+        accumulate_cw_contributions_impl::<false>(
+            grid,
+            positions_deg,
+            base_intensities,
+            instrument,
+            contributions,
+            geometry,
+            support,
+            accuracy,
+            execution,
+        )
+    }
 }
 
 #[allow(clippy::too_many_arguments, clippy::too_many_lines)]
@@ -734,9 +789,11 @@ fn accumulate_cw_contributions_impl<const AXIAL: bool>(
     contributions: CwContributionsView<'_>,
     geometry: Option<FcjGeometry>,
     support: SupportPolicy,
+    accuracy: ProfileAccuracy,
     execution: &ExecutionContext,
 ) -> Result<Accumulation, CwContributionsError> {
     support.validate()?;
+    accuracy.validate()?;
     let reflections = crate::cw::CwReflectionBatchView::new(positions_deg, base_intensities)
         .map_err(|reason| CwContributionsError::Cw { reason })?;
     instrument
@@ -768,6 +825,7 @@ fn accumulate_cw_contributions_impl<const AXIAL: bool>(
         contributions,
         geometry,
         support,
+        accuracy,
     )?;
 
     let active_count = prepared.offsets.last().copied().unwrap_or(0);
@@ -971,6 +1029,88 @@ fn accumulate_cw_contributions_impl<const AXIAL: bool>(
 mod tests {
     use super::*;
     use crate::cw::{CwReflectionBatchView, accumulate_cw_batch};
+
+    #[test]
+    fn accuracy_support_is_closed_and_omitted_axial_rows_preserve_values() {
+        let position = 40.0;
+        let accuracy = ProfileAccuracy {
+            fast_fcj: true,
+            tail_area_tolerance: Some(0.01),
+        };
+        let owned = OwnedCwContributions::neutral(1);
+        let contributions = owned.as_view();
+        let support = SupportPolicy::FwhmMultiple(20.0);
+        let profile = prepare_profile(
+            0,
+            position,
+            instrument(),
+            contributions,
+            None,
+            support,
+            accuracy,
+        )
+        .unwrap();
+        let right = position + profile.support_radius_deg;
+        let x = [
+            position,
+            f64::from_bits(right.to_bits() - 1),
+            right,
+            f64::from_bits(right.to_bits() + 1),
+        ];
+        let context = ExecutionContext::serial();
+        let result = accumulate_cw_contributions_with_accuracy(
+            GridView::new(&x).unwrap(),
+            &[position],
+            &[1.0],
+            instrument(),
+            contributions,
+            None,
+            support,
+            accuracy,
+            true,
+            &context,
+        )
+        .unwrap();
+        assert!(result.y[1] > 0.0 && result.y[2] > 0.0);
+        assert_eq!(result.y[3].to_bits(), 0.0_f64.to_bits());
+        let axial = Some(FcjGeometry {
+            sample_over_radius: 0.001,
+            detector_over_radius: 0.001,
+        });
+        let full = accumulate_cw_contributions_with_accuracy(
+            GridView::new(&x).unwrap(),
+            &[position],
+            &[1.0],
+            instrument(),
+            contributions,
+            axial,
+            support,
+            accuracy,
+            true,
+            &context,
+        )
+        .unwrap();
+        let selected = accumulate_cw_contributions_with_accuracy(
+            GridView::new(&x).unwrap(),
+            &[position],
+            &[1.0],
+            instrument(),
+            contributions,
+            axial,
+            support,
+            accuracy,
+            false,
+            &context,
+        )
+        .unwrap();
+        assert_eq!(full.y, selected.y);
+        assert_eq!(full.derivatives.local, selected.derivatives.local);
+        assert!(
+            selected.derivatives.global.unwrap().values[5 * x.len()..]
+                .iter()
+                .all(|&v| v == 0.0)
+        );
+    }
 
     fn instrument() -> ConstantWavelengthInstrument {
         ConstantWavelengthInstrument {

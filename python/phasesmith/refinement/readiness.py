@@ -395,4 +395,16 @@ def review_rietveld_input(input_data: RietveldInput) -> RietveldReadinessReport:
         *_review_models(input_data),
         *_review_selection(input_data),
     ]
+    if input_data.empirical_gaussian is not None:
+        convention = input_data.empirical_gaussian
+        diagnostics.append(
+            RietveldReadinessDiagnostic(
+                "info",
+                "profile.empirical_gaussian",
+                f"RMS strain of {convention.reference_phase_id} is fixed by convention to "
+                f"{convention.reference_rms_microstrain:g}. Instrument Gaussian widths and "
+                "sample strains are convention-dependent, not independently measured.",
+                phase_id=convention.reference_phase_id,
+            )
+        )
     return RietveldReadinessReport(tuple(diagnostics))

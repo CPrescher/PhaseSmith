@@ -67,6 +67,13 @@ impl RietveldAnalysis {
             return Err(RietveldProjectError::UnsatisfiedConstraint);
         }
         if let Some(checkpoint) = &self.checkpoint {
+            if checkpoint.profile_accuracy != self.options.calculation.profile_accuracy {
+                return Err(RietveldProjectError::General(
+                    RietveldGeneralRefinementError::InvalidCheckpoint {
+                        reason: "profile accuracy changed",
+                    },
+                ));
+            }
             if checkpoint.completed_iterations > self.options.limits.max_iterations() {
                 return Err(RietveldProjectError::CheckpointExceedsIterationLimit);
             }

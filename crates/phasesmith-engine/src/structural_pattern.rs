@@ -7,18 +7,16 @@ use std::sync::{Arc, Mutex};
 use phasesmith_core::{
     Accumulation, ConstantWavelengthInstrument, CwContributionsError, CwContributionsView, CwError,
     FcjGeometry, GridView, ProfileError, SupportPolicy,
-    accumulate_cw_contributions_batch_with_context,
-    accumulate_cw_fcj_contributions_batch_with_context,
-    accumulate_cw_fixed_axial_contributions_with_context,
 };
 use phasesmith_crystallography::{
     CellError, IntegratedIntensityCorrection, IntegratedIntensityCorrectionError,
     IntegratedIntensityCorrectionModel, PreparedNeutronScattering, PreparedXrayScattering,
     ScatteringBatch, ScatteringError, SpaceGroup, StructureFactorBatchError,
     StructureFactorBatchView, StructureFactorValues, UnitCell,
-    calculate_structure_factor_intensity_vjp_with_context,
-    calculate_structure_factor_jvp_with_context, calculate_structure_factor_selected_with_context,
-    calculate_structure_factor_values_with_context,
+    calculate_powder_structure_factor_intensity_vjp_with_context,
+    calculate_powder_structure_factor_jvp_with_context,
+    calculate_powder_structure_factor_selected_with_context,
+    calculate_powder_structure_factor_values_with_context,
 };
 use phasesmith_execution::ExecutionContext;
 
@@ -143,6 +141,10 @@ pub struct StructuralPatternInputView<'a> {
     pub contributions: CwContributionsView<'a>,
     /// Exact finite profile-support policy.
     pub support: SupportPolicy,
+    /// Explicit CW profile accuracy controls.
+    pub profile_accuracy: phasesmith_core::ProfileAccuracy,
+    /// Whether calculation includes axial derivative rows; omitted rows are zero.
+    pub calculate_axial_derivatives: bool,
 }
 
 /// Structural reflection intermediates and fused profile result.
@@ -619,7 +621,7 @@ pub fn calculate_structural_pattern_selected_with_context(
         ));
     }
     let prepared = prepare_cached(cell, input, cache)?;
-    let structural = calculate_structure_factor_selected_with_context(
+    let structural = calculate_powder_structure_factor_selected_with_context(
         cell,
         space_group,
         prepared.structure_batch(input),
@@ -759,7 +761,7 @@ pub fn calculate_structural_pattern_jvp_with_context(
     execution: &ExecutionContext,
 ) -> Result<StructuralPatternJvpResult, StructuralPatternError> {
     let prepared = prepare(cell, input)?;
-    let structural = calculate_structure_factor_jvp_with_context(
+    let structural = calculate_powder_structure_factor_jvp_with_context(
         cell,
         space_group,
         prepared.structure_batch(input),
@@ -838,7 +840,7 @@ pub fn calculate_structural_pattern_vjp_with_context(
         return Err(StructuralPatternError::NonFinitePatternWeight);
     }
     let prepared = prepare(cell, input)?;
-    let values = calculate_structure_factor_values_with_context(
+    let values = calculate_powder_structure_factor_values_with_context(
         cell,
         space_group,
         prepared.structure_batch(input),
@@ -850,7 +852,7 @@ pub fn calculate_structural_pattern_vjp_with_context(
     append_instrument_derivatives(&mut accumulation, &values, input, &prepared)?;
     let (intensity_weights, position_weights) =
         local_transpose_weights(&accumulation, sample_weights);
-    let mut structural = calculate_structure_factor_intensity_vjp_with_context(
+    let mut structural = calculate_powder_structure_factor_intensity_vjp_with_context(
         cell,
         space_group,
         prepared.structure_batch(input),
@@ -988,7 +990,7 @@ fn calculate_values(
     prepared: &PreparedNumerics,
     execution: &ExecutionContext,
 ) -> Result<StructuralPatternResult, StructuralPatternError> {
-    let structure_factors = calculate_structure_factor_values_with_context(
+    let structure_factors = calculate_powder_structure_factor_values_with_context(
         cell,
         space_group,
         prepared.structure_batch(input),
@@ -1121,39 +1123,18 @@ fn accumulate_selected(
     axial_derivatives: bool,
 ) -> Result<Accumulation, StructuralPatternError> {
     let grid = GridView::new(input.x_deg).map_err(StructuralPatternError::Profile)?;
-    let result = match input.axial_geometry {
-        Some(geometry) if !axial_derivatives => {
-            accumulate_cw_fixed_axial_contributions_with_context(
-                grid,
-                two_theta_deg,
-                intensities,
-                input.instrument,
-                input.contributions,
-                geometry,
-                input.support,
-                execution,
-            )
-        }
-        Some(geometry) => accumulate_cw_fcj_contributions_batch_with_context(
-            grid,
-            two_theta_deg,
-            intensities,
-            input.instrument,
-            input.contributions,
-            geometry,
-            input.support,
-            execution,
-        ),
-        None => accumulate_cw_contributions_batch_with_context(
-            grid,
-            two_theta_deg,
-            intensities,
-            input.instrument,
-            input.contributions,
-            input.support,
-            execution,
-        ),
-    };
+    let result = phasesmith_core::cw_contributions::accumulate_cw_contributions_with_accuracy(
+        grid,
+        two_theta_deg,
+        intensities,
+        input.instrument,
+        input.contributions,
+        input.axial_geometry,
+        input.support,
+        input.profile_accuracy,
+        axial_derivatives && input.calculate_axial_derivatives,
+        execution,
+    );
     result.map_err(StructuralPatternError::Contributions)
 }
 
@@ -1319,6 +1300,8 @@ mod tests {
                 scattering_model: BuiltInScatteringModel::XrayNonResonant,
                 contributions,
                 support: SupportPolicy::FwhmMultiple(20.0),
+                profile_accuracy: phasesmith_core::ProfileAccuracy::default(),
+                calculate_axial_derivatives: true,
             },
         )
     }
@@ -1471,6 +1454,8 @@ mod tests {
             scattering_model: BuiltInScatteringModel::XrayNonResonant,
             contributions,
             support: SupportPolicy::FwhmMultiple(20.0),
+            profile_accuracy: phasesmith_core::ProfileAccuracy::default(),
+            calculate_axial_derivatives: true,
         };
         let layout = P1ParameterLayout { site_count: 2 };
         let tangent: Vec<f64> = (0..layout.parameter_count())

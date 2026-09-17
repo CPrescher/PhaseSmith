@@ -96,6 +96,8 @@ fn calculation_request() -> StructuralCalculationRequest {
             },
         ],
         support: SupportPolicy::FwhmMultiple(20.0),
+        profile_accuracy: phasesmith_core::ProfileAccuracy::default(),
+        calculate_axial_derivatives: true,
     }
 }
 

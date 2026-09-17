@@ -1,0 +1,254 @@
+{
+  "scope": "PhaseSmith-only recipe diagnostics; not a performance comparison",
+  "threads": 1,
+  "dataset_sha256": {
+    "cpd-1g.prn": "afd16d03c8742abf315ab5f94585a6e540ab5c2e2c6df6917ac8dbf6be69d990",
+    "Al2O3.cif": "bc8b07c4e27fdb9df562c7b72d181a05394df20274a56b7e1ef50f6ec2c85709",
+    "CaF2.cif": "b55fd04a3e344f73d4ece983da412056d04874b8ada7dfd4ecb93118e7905cd9",
+    "ZnO.cif": "021db20c9bdabcfd63bc794367fae3536197425ca5826d63541b2417e47d3c1a",
+    "cuka.instprm": "aef315a10622fdb1afae5b264d43e7f9dcc053aba80aa3d9fa05067146922a08"
+  },
+  "cases": {
+    "partition_bg_anchor_recovery_default": {
+      "config": {
+        "strain": 0.0002,
+        "bg": true,
+        "anchor": true,
+        "long": true,
+        "rejections": 200,
+        "default_accuracy": true
+      },
+      "stages": [
+        {
+          "rwp": 0.21480470931881418,
+          "termination": "converged",
+          "iterations": 34,
+          "evaluations": 330,
+          "backend": "native",
+          "seconds": 2.9855785410036333,
+          "free_parameters": 10,
+          "damping_history": [
+            1e-06,
+            3e-07,
+            9e-08,
+            2.6999999999999997e-08,
+            8.099999999999998e-09,
+            2.4299999999999993e-09,
+            7.289999999999998e-10,
+            2.1869999999999993e-10,
+            6.560999999999998e-11,
+            1.9682999999999994e-11,
+            5.9048999999999976e-12,
+            1.7714699999999991e-12,
+            5.314409999999997e-13,
+            1.594322999999999e-13,
+            4.782968999999997e-14,
+            1.4348906999999992e-14,
+            4.304672099999997e-15,
+            1.2914016299999992e-15,
+            3.8742048899999974e-16,
+            1.162261466999999e-16,
+            3.486784400999997e-17,
+            1.0460353202999991e-17,
+            3.138105960899997e-18,
+            1e-18,
+            1e-18,
+            1e-18,
+            1e-18,
+            1e-18,
+            1e-18,
+            1e-18,
+            100.00000000000007,
+            30.00000000000002,
+            900000.0000000006,
+            2700000.000000002
+          ],
+          "last_backtracks": [
+            7,
+            1,
+            8,
+            6,
+            7
+          ]
+        },
+        {
+          "rwp": 0.18911533816743759,
+          "termination": "converged",
+          "iterations": 55,
+          "evaluations": 406,
+          "backend": "native",
+          "seconds": 4.461319583002478,
+          "free_parameters": 21,
+          "damping_history": [
+            1e-06,
+            3e-07,
+            9e-08,
+            2.6999999999999997e-08,
+            8.099999999999998e-09,
+            2.4299999999999993e-09,
+            7.289999999999998e-10,
+            2.1869999999999993e-10,
+            6.560999999999998e-11,
+            1.9682999999999994e-11,
+            5.9048999999999976e-12,
+            1.7714699999999991e-12,
+            5.314409999999997e-13,
+            1.594322999999999e-13,
+            4.782968999999997e-14,
+            1.4348906999999992e-14,
+            4.304672099999997e-15,
+            1.2914016299999992e-15,
+            3.8742048899999974e-16,
+            1.162261466999999e-16,
+            3.486784400999997e-17,
+            1.0460353202999991e-17,
+            3.138105960899997e-18,
+            1e-18,
+            1e-18,
+            1e-18,
+            1e-18,
+            1e-18,
+            1e-18,
+            1e-18,
+            1e-18,
+            1e-18,
+            1e-18,
+            1e-18,
+            1e-18,
+            1e-18,
+            1e-18,
+            1e-18,
+            1e-18,
+            1e-18,
+            1e-18,
+            1e-18,
+            1e-18,
+            1e-18,
+            1e-18,
+            1e-18,
+            1e-18,
+            1e-18,
+            1e-18,
+            1e-18,
+            1000.0000000000007,
+            300000.0000000002,
+            900000.0000000005,
+            2700000.000000001,
+            81000000.00000001
+          ],
+          "last_backtracks": [
+            7,
+            7,
+            6,
+            7,
+            7
+          ]
+        },
+        {
+          "rwp": 0.18911533549194692,
+          "termination": "converged",
+          "iterations": 1,
+          "evaluations": 2,
+          "backend": "native",
+          "seconds": 0.021924874992691912,
+          "free_parameters": 3,
+          "damping_history": [
+            1e-06
+          ],
+          "last_backtracks": [
+            0
+          ]
+        }
+      ],
+      "initial_profile_relative_l2": [
+        5.792828290935476e-17
+      ],
+      "scientific": {
+        "dataset_id": "iucr-qarr-1g",
+        "status": "passed",
+        "sample_count": 7251,
+        "reflection_count": 110,
+        "checks": [
+          {
+            "check_id": "observed_grid",
+            "status": "passed",
+            "detail": "QARR 1g pattern spans the published 5-150 degree grid.",
+            "measured": 7251.0,
+            "criterion": "7251 samples with endpoints 5 and 150 degrees"
+          },
+          {
+            "check_id": "site_expansion",
+            "status": "passed",
+            "detail": "The documented 1e-4 CIF coordinate tolerance gives physical unit-cell contents.",
+            "measured": 46.0,
+            "criterion": "expanded site counts Al2O3=30, ZnO=4, CaF2=12"
+          },
+          {
+            "check_id": "refinement_termination",
+            "status": "passed",
+            "detail": "Refinement returns a finite last accepted state under explicit iteration budgets.",
+            "measured": null,
+            "criterion": "no numerical failure, divergence, repeated rejection, or empty data"
+          },
+          {
+            "check_id": "poisson_rwp",
+            "status": "passed",
+            "detail": "Poisson-weighted QARR profile gate with fixed CIF anisotropic displacement.",
+            "measured": 0.18911533549194692,
+            "criterion": "Rwp with sigma=sqrt(max(counts, 1)) <= 0.20"
+          },
+          {
+            "check_id": "unit_weight_rwp",
+            "status": "passed",
+            "detail": "Unit-weight profile residual is reported separately from Poisson-weighted Rwp.",
+            "measured": 0.13195035402186334,
+            "criterion": "unit-weight Rwp <= 0.15"
+          },
+          {
+            "check_id": "profile_correlation",
+            "status": "passed",
+            "detail": "Background-subtracted observed and calculated profiles remain strongly aligned.",
+            "measured": 0.9904511049282749,
+            "criterion": "Pearson correlation >= 0.98"
+          },
+          {
+            "check_id": "qpa_weight_fraction",
+            "status": "passed",
+            "detail": "Hill--Howard weight fractions agree with the independently weighed phase fractions.",
+            "measured": 0.018628129403064964,
+            "criterion": "maximum absolute phase error <= 0.02"
+          },
+          {
+            "check_id": "qpa_covariance",
+            "status": "passed",
+            "detail": "The final scale covariance propagates analytically to finite phase-fraction uncertainties.",
+            "measured": 0.0008655453975719119,
+            "criterion": "finite nonnegative propagated variance for every phase fraction"
+          }
+        ],
+        "notes": [
+          "Calculated crystalline weight fractions: Al2O3=29.507%, ZnO=34.843%, CaF2=35.649%.",
+          "Maximum propagated phase-fraction standard uncertainty=0.00086555.",
+          "Stage 1 termination=converged, iterations=34, evaluations=330, Rwp=0.21480471.",
+          "Stage 2 termination=converged, iterations=55, evaluations=406, Rwp=0.18911534.",
+          "Stage 3 scale polish termination=converged, iterations=1, evaluations=2, Poisson Rwp=0.18911534, unit-weight Rwp=0.13195035, Rp=0.14664134.",
+          "Expanded sites at tolerance 1e-4: {'Al2O3': 30, 'ZnO': 4, 'CaF2': 12}.",
+          "CIF anisotropic displacement tensors are evaluated directly and remain fixed.",
+          "Sites without CIF displacement values start from Uiso=0.005 \u00c5\u00b2 and are refined.",
+          "Fixed Cu K-alpha1 Cromer--Liberman offsets are used for both doublet components; component-dependent dispersion is not interpolated.",
+          "The supplied SH/L=0.002 is included through the documented equal-height FCJ mapping; absorption is not yet included, and lattice/component wavelengths remain fixed."
+        ]
+      }
+    }
+  },
+  "notes": [
+    "No rietx fitted parameters or calculations are used by these candidates.",
+    "Variance transfer preserves the initial total profile, but changes which widths stage one can reach with sample strain held fixed.",
+    "The stage-two U anchor fixes an empirical decomposition, not measured resolution.",
+    "Free-background anchored stage two has 21 parameters instead of the original 19.",
+    "Long cases use 100 iterations and 3000 evaluations per first/second stage.",
+    "The 200-rejection allowance is a diagnostic, not a proposed production default.",
+    "Times include no repetitions or controlled warmup and are not benchmark results.",
+    "Shared input preparation retains the validation helper's default two workers."
+  ]
+}
