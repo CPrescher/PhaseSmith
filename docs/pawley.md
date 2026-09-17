@@ -27,7 +27,7 @@ quantitative phase mass fractions.
 | U/V/W/X/Y and bounded symmetry-independent cell variables | Supported |
 | Fixed plus polynomial/Chebyshev/point/composite linear background | Supported |
 | Fixed, affine and linear parameter ties, including dependent bounds | Supported |
-| Native/Python cancellation, accepted checkpoint continuation and standalone persistence | Supported |
+| Native/Python cancellation, accepted checkpoint continuation, standalone and shared-bundle persistence | Supported |
 | Dense full analytical Jacobian and full-rank interior covariance | Supported within explicit allocation limit |
 | Matrix-free bounded solving with analytical JVP/VJP | Supported; rank and covariance omitted |
 | Component spectra, TOF, structural restraints | Deferred |
@@ -203,8 +203,8 @@ Version-1 projects remain readable, including their original checkpoint digest.
 Checkpoints bind the canonical request/options with SHA-256. Load checks byte
 limits, version, unknown fields, identities, array and constraint contracts;
 resuming also recomputes the saved objective. No pickle or matrix factorization
-is stored. Saving never overwrites an existing file. The format does not yet
-embed Pawley analyses in a mixed-method multi-histogram bundle.
+is stored. Saving never overwrites an existing file. Pawley analyses also integrate with the [shared native bundle](native-persistence.md#mixed-analyses-and-pawley)
+format 6; use its `ProjectBundle` API to preserve multiple methods together.
 
 Rust consumers use `phasesmith::workflows::{PawleyInput, refine_pawley}` and
 `phasesmith::persistence::{PawleyProject, save_pawley_project, load_pawley_project}`.

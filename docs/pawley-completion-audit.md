@@ -12,9 +12,9 @@ thresholds and budgets. Sucrose converges locally in 137–138 seconds at Rwp
 checkpoint mode checks and format-1 migration are tested. The executable
 manifest, covariance tests, measured LaB6 cell/profile gate and multiphase
 recovery are complete. Sections below retain the original findings as an audit
-trail. Mixed bundles, external optimizer comparison, spectra and TOF remain
-unfinished. The original checkout's numerical work is now committed upstream
-and can be reconciled normally before final combined-state validation.
+trail. Mixed native format-6 bundles and cross-language resume are now implemented.
+External optimizer comparison, spectra and TOF remain unfinished. The original checkout's numerical work is now committed upstream
+and has been merged; the combined Python suite and native checks pass.
 
 The single-histogram, fixed-wavelength CW method is implemented. Its native
 objective/solver, NumPy interface, bounded/tied areas, selected cell/profile/

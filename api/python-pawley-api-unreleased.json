@@ -71,6 +71,18 @@
       ],
       "module": "phasesmith.refinement.pawley",
       "tier": "workflow"
+    },
+    {
+      "exports": [
+        {
+          "kind": "class",
+          "name": "ProjectBundle",
+          "signature": "(_native: 'object') -> None",
+          "target": "phasesmith.project_bundle.ProjectBundle"
+        }
+      ],
+      "module": "phasesmith.project_bundle",
+      "tier": "workflow"
     }
   ],
   "package_version": "0.5.0",

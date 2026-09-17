@@ -8,19 +8,63 @@ crate has no PyO3, NumPy, CPython, webview, or Tauri dependency.
 
 A native project is a directory with two library-owned files:
 
-- `manifest.json` contains format version 5, explicit wire records, array
+- `manifest.json` contains format version 6, explicit wire records, array
   descriptors, units in field names, and SHA-256 hashes;
 - `arrays.npz` contains only contiguous little-endian `float64`, `int32`,
   `uint64`, and boolean NPY members.
 
 The complete manifest contract is
-[`schemas/native-project-v5.schema.json`](https://github.com/CPrescher/PhaseSmith/blob/main/schemas/native-project-v5.schema.json).
-Versions 1 through 4 remain readable. Versions 1 and 2 have no TOF histograms
+[`schemas/native-project-v6.schema.json`](https://github.com/CPrescher/PhaseSmith/blob/main/schemas/native-project-v6.schema.json).
+Versions 1 through 5 remain readable; they have no Pawley analysis field. Versions 1 and 2 have no TOF histograms
 or TOF Le Bail analyses; version 1 also has no Rietveld analyses; versions 1
 through 3 have no joint multi-bank TOF geometry analyses; versions 1 through 4
 have no structural multi-bank TOF analyses.
 Internal kernel enums are not serialized directly. Every persisted record has
 an explicit conversion to and from the validated `phasesmith-model` domain.
+
+## Mixed analyses and Pawley
+
+Use native `ProjectBundle`, `load_project_bundle` and `save_project_bundle` to
+retain **all** supported methods together. Method-specific loaders remain
+validated views selecting one family; saving such a view writes that family.
+The mixed bundle API preserves Rietveld, single-bank TOF Le Bail, joint TOF
+geometry, structural TOF and Pawley analyses, including accepted checkpoints.
+All families validate against the same owned histogram records. Unknown future
+formats and fields are rejected rather than silently dropped.
+
+Pawley analyses own typed cell-only phase/domain metadata and stable family IDs;
+they do not require fictitious structural atoms. When a histogram references
+structural phases, Pawley phase IDs must match their ordered identities. The
+histogram pattern and experiment must match exactly. Observations are stored
+once in the shared NPZ arrays; native format 6 hydrates the standalone scientific
+codec from that histogram before checking the checkpoint request digest.
+
+Python exposes `phasesmith.project_bundle.ProjectBundle`:
+
+```python
+from phasesmith.project_bundle import ProjectBundle
+from phasesmith.radiation import RadiationProbe
+
+bundle = ProjectBundle.from_pawley(pawley_project, probe=RadiationProbe.NEUTRON)
+bundle.save("sample.psproj")
+restored = ProjectBundle.load("sample.psproj")
+analysis = restored.pawley("histogram")
+result = analysis.refine()
+updated = restored.with_pawley("histogram", analysis)
+updated.save("sample-resumed.psproj")
+```
+
+The Python bundle is an immutable snapshot. Retrieved Pawley projects are
+independently editable; explicit replacement prevents unnoticed mutation of
+shared state. Load an existing native Rietveld/TOF bundle and use `with_pawley`
+to add the method to an existing CW histogram while preserving other analyses.
+`analysis_counts` reports every retained family. Saving has an explicit
+`overwrite=True` option and preserves unrelated application files.
+
+`crates/phasesmith-persistence/examples/pawley_bundle_exchange.rs` is an
+executable Python-free load/resume/save adapter. Tests exercise Python-save /
+Rust-load-resume / Rust-save / Python-load-resume, exact profiles and histories,
+mixed-method retention, legacy migration, corruption and stale shared inputs.
 
 Rust callers use:
 

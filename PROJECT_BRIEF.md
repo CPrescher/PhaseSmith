@@ -12,6 +12,14 @@ not part of the numerical library.
 
 ## Current implementation status
 
+Native project format 6 now adds typed Pawley analysis ownership and a lossless
+mixed-method `ProjectBundle` API. Shared histogram arrays are stored once;
+cell-only Pawley domains require no atom models. All existing native analysis
+families and checkpoints survive mixed load/save, formats 1–5 migrate, and
+Python/native save/load/resume tests verify exact accepted profiles and history.
+Standalone Pawley formats remain compatible. The latest upstream numerical
+work is merged into the Pawley worktree; the combined Python suite passes.
+
 Pawley now provides bounded CW family-area refinement in dense and matrix-free
 modes, analytical cell/profile/background derivatives, exact ties, independent
 NumPy validation, accepted-state restart and standalone format-2 persistence
@@ -23,8 +31,7 @@ positive finite cutoff jumps define one-sided feasible directions, with
 conservative exclusions for interacting or cancelling events. Support values
 and endpoints are unchanged. Matrix-free mode omits global rank/covariance;
 dense mode remains the small-problem reference. The separate measured LaB6
-cell/profile gate passes at Rwp 0.2184. Mixed-method bundle integration, fixed
-spectra, TOF and live GSAS-II optimizer comparison remain unfinished, and the
+cell/profile gate passes at Rwp 0.2184. Fixed spectra, TOF and live GSAS-II optimizer comparison remain unfinished, and the
 latest upstream numerical work is reconciled; combined-state validation follows.
 See `docs/pawley.md`, `docs/pawley-validation.md` and the completion audit.
 

@@ -223,10 +223,10 @@ fn project_summary_file_export_has_an_explicit_overwrite_policy() {
 #[test]
 fn native_manifest_schema_is_valid_json_and_tracks_the_wire_version() {
     let schema_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../schemas/native-project-v5.schema.json");
+        .join("../../schemas/native-project-v6.schema.json");
     let schema: serde_json::Value =
         serde_json::from_slice(&fs::read(schema_path).unwrap()).unwrap();
-    assert_eq!(schema["properties"]["format_version"]["const"], 5);
+    assert_eq!(schema["properties"]["format_version"]["const"], 6);
     assert_eq!(
         schema["properties"]["format_version"]["const"],
         PROJECT_FORMAT_VERSION
@@ -242,6 +242,7 @@ fn old_projects_migrate_but_each_version_requires_its_analysis_fields() {
     let manifest_path = directory.join(PROJECT_MANIFEST_NAME);
     let mut manifest: serde_json::Value =
         serde_json::from_slice(&fs::read(&manifest_path).unwrap()).unwrap();
+    manifest.as_object_mut().unwrap().remove("pawley_analyses");
     manifest["format_version"] = serde_json::json!(1);
     manifest
         .as_object_mut()

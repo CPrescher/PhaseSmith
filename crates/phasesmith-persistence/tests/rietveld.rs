@@ -431,3 +431,126 @@ fn cleanup(path: PathBuf) {
         fs::remove_dir_all(path).unwrap();
     }
 }
+
+#[test]
+fn mixed_rietveld_and_pawley_bundle_preserves_methods_and_resume() {
+    use phasesmith_persistence::{ProjectBundle, load_project_bundle, save_project_bundle};
+    use phasesmith_workflows::{
+        PawleyAnalysis, PawleyInput, PawleyOptions, PawleyPhase, RefinementRuntime,
+        pawley_parameters, refine_pawley, refine_pawley_with_runtime,
+    };
+    let structural = state();
+    let histogram = &structural.project.histograms[0];
+    let phases: Vec<_> = histogram
+        .phase_ids
+        .iter()
+        .map(|id| PawleyPhase {
+            id: id.as_str().into(),
+            reflection_ids: vec!["family".into()],
+            two_theta_deg: vec![25.0],
+            intensities: vec![1.0],
+            hkl: Vec::new(),
+            lattice: None,
+        })
+        .collect();
+    let input = PawleyInput {
+        pattern: histogram.pattern.clone(),
+        instrument: histogram.experiment.instrument,
+        axial: histogram.experiment.axial_geometry,
+        parameters: pawley_parameters(&phases, histogram.experiment.instrument, None, false)
+            .unwrap(),
+        phases,
+        background: None,
+        signed_intensities: false,
+        constraints: Vec::new(),
+    };
+    let options = PawleyOptions::default();
+    let fitted = refine_pawley(&input, &options).unwrap();
+    let mut bundle = ProjectBundle::new(structural.project.clone());
+    bundle.rietveld_analyses.clone_from(&structural.analyses);
+    bundle.pawley_analyses.push(PawleyAnalysis {
+        histogram_id: histogram.histogram_id.clone(),
+        input,
+        options,
+        checkpoint: Some(fitted.checkpoint),
+    });
+    let directory = temporary_path("mixed-pawley");
+    save_project_bundle(&directory, &bundle, ProjectSaveOptions::default()).unwrap();
+    let restored = load_project_bundle(&directory, ProjectReadLimits::default()).unwrap();
+    assert_eq!(restored, bundle);
+    let a = &restored.pawley_analyses[0];
+    let mut runtime =
+        RefinementRuntime::new(phasesmith_workflows::RefinementLimits::default(), None).unwrap();
+    let resumed =
+        refine_pawley_with_runtime(&a.input, &a.options, a.checkpoint.as_ref(), &mut runtime)
+            .unwrap();
+    assert_eq!(
+        resumed.evaluation.calculated_y,
+        fitted.evaluation.calculated_y
+    );
+    let manifest_path = directory.join(PROJECT_MANIFEST_NAME);
+    let mut wire: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(&manifest_path).unwrap()).unwrap();
+    assert!(wire["pawley_analyses"][0].get("x_deg").is_none());
+    wire["pawley_analyses"][0]["histogram_id"] = serde_json::json!("missing");
+    std::fs::write(&manifest_path, serde_json::to_vec(&wire).unwrap()).unwrap();
+    assert!(load_project_bundle(&directory, ProjectReadLimits::default()).is_err());
+    cleanup(directory);
+}
+
+#[test]
+fn pawley_cell_metadata_must_match_a_shared_structural_phase() {
+    use phasesmith_workflows::{
+        PawleyAnalysis, PawleyInput, PawleyOptions, PawleyPhase, PawleyProjectState,
+        pawley_parameters,
+    };
+    let structural = state();
+    let shared = &structural.project.phases[0];
+    let par = LatticeParameterization::new(
+        shared.definition.space_group.clone(),
+        shared.definition.cell,
+    )
+    .unwrap();
+    let bounds = LatticeBounds::around(&par, 0.01, 1.0).unwrap();
+    let domain = LatticeReflectionDomain::new(
+        par,
+        bounds,
+        1.5406,
+        [20.0, 30.0],
+        1.0,
+        true,
+        1_000_000,
+        1.001,
+    )
+    .unwrap();
+    let phases = vec![PawleyPhase::from_domain(shared.phase_id.as_str().into(), domain).unwrap()];
+    let h = &structural.project.histograms[0];
+    let input = PawleyInput {
+        pattern: h.pattern.clone(),
+        instrument: h.experiment.instrument,
+        axial: h.experiment.axial_geometry,
+        parameters: pawley_parameters(&phases, h.experiment.instrument, None, false).unwrap(),
+        phases,
+        background: None,
+        signed_intensities: false,
+        constraints: Vec::new(),
+    };
+    let mut state = PawleyProjectState {
+        project: structural.project.clone(),
+        analyses: vec![PawleyAnalysis {
+            histogram_id: h.histogram_id.clone(),
+            input,
+            options: PawleyOptions::default(),
+            checkpoint: None,
+        }],
+    };
+    state.validate().unwrap();
+    state.project.phases[0].definition.cell.a_angstrom += 0.001;
+    assert!(
+        state
+            .validate()
+            .unwrap_err()
+            .to_string()
+            .contains("cell/symmetry")
+    );
+}

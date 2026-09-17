@@ -24,7 +24,7 @@ pub struct PawleyProject {
     /// Accepted restart state.
     pub checkpoint: Option<PawleyCheckpoint>,
 }
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct WireProject {
     format: String,
@@ -33,7 +33,7 @@ struct WireProject {
     options: WireOptions,
     checkpoint: Option<WireCheckpoint>,
 }
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct WireInput {
     x_deg: Vec<f64>,
@@ -49,7 +49,7 @@ struct WireInput {
     parameters: Option<Vec<WireSpec>>,
     constraints: Vec<WireConstraint>,
 }
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct WirePhase {
     id: String,
@@ -59,7 +59,7 @@ struct WirePhase {
     hkl: Vec<[i32; 3]>,
     lattice: Option<WireDomain>,
 }
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct WireDomain {
     cell: [f64; 6],
@@ -73,13 +73,13 @@ struct WireDomain {
     max_candidates: usize,
     guard_scale: f64,
 }
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct WireOperation {
     rotation: [[i32; 3]; 3],
     translation: [[i64; 2]; 3],
 }
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct WireSpec {
     key: [String; 3],
@@ -90,7 +90,7 @@ struct WireSpec {
     scale: f64,
     refine: bool,
 }
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
 enum WireConstraint {
     Fixed {
@@ -109,7 +109,7 @@ enum WireConstraint {
         offset: f64,
     },
 }
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
 enum WireBackground {
     Polynomial {
@@ -131,7 +131,7 @@ enum WireBackground {
         components: Vec<Self>,
     },
 }
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct WireOptions {
     #[serde(default = "dense_solver", skip_serializing_if = "is_dense")]
@@ -178,7 +178,7 @@ const fn linear_iterations() -> usize {
 fn default_linear_iterations(v: &usize) -> bool {
     *v == linear_iterations()
 }
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct WireCheckpoint {
     #[serde(default, skip_serializing_if = "is_false")]
@@ -703,4 +703,117 @@ pub fn load_pawley_project(
         .read_to_string(&mut text)
         .map_err(err)?;
     decode_pawley_project(&text, max_bytes)
+}
+
+/// Bundle records reuse the standalone scientific codec but take observations
+/// and experiment values from the owning histogram, stored once in JSON+NPZ.
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WirePawleyAnalysis {
+    histogram_id: String,
+    phases: Vec<WirePhase>,
+    background: Option<WireBackground>,
+    signed_intensities: bool,
+    parameters: Option<Vec<WireSpec>>,
+    constraints: Vec<WireConstraint>,
+    options: WireOptions,
+    checkpoint: Option<WireCheckpoint>,
+}
+pub(crate) fn encode_analyses(
+    state: &phasesmith_workflows::PawleyProjectState,
+) -> Result<Vec<WirePawleyAnalysis>, crate::PersistenceError> {
+    state.validate().map_err(bundle_error)?;
+    state
+        .analyses
+        .iter()
+        .map(|a| {
+            let encoded = encode_pawley_project(&PawleyProject {
+                input: a.input.clone(),
+                options: a.options.clone(),
+                checkpoint: a.checkpoint.clone(),
+            })
+            .map_err(bundle_error)?;
+            let w: WireProject = serde_json::from_str(&encoded)?;
+            Ok(WirePawleyAnalysis {
+                histogram_id: a.histogram_id.as_str().into(),
+                phases: w.input.phases,
+                background: w.input.background,
+                signed_intensities: w.input.signed_intensities,
+                parameters: w.input.parameters,
+                constraints: w.input.constraints,
+                options: w.options,
+                checkpoint: w.checkpoint,
+            })
+        })
+        .collect()
+}
+fn bundle_error(e: impl std::fmt::Display) -> crate::PersistenceError {
+    crate::PersistenceError::InvalidRecord {
+        message: e.to_string(),
+    }
+}
+pub(crate) fn decode_state(
+    project: phasesmith_model::ProjectRecord,
+    records: Vec<WirePawleyAnalysis>,
+    limits: crate::ProjectReadLimits,
+) -> Result<phasesmith_workflows::PawleyProjectState, crate::PersistenceError> {
+    if records.len() > limits.max_histograms {
+        return Err(bundle_error("too many Pawley analyses"));
+    }
+    let analyses = records
+        .into_iter()
+        .map(|w| {
+            let histogram_id =
+                phasesmith_model::RecordId::new(w.histogram_id).map_err(bundle_error)?;
+            let h = project
+                .histograms
+                .iter()
+                .find(|h| h.histogram_id == histogram_id)
+                .ok_or_else(|| bundle_error("unknown Pawley histogram owner"))?;
+            let i = h.experiment.instrument;
+            let record = WireProject {
+                format: "phasesmith-pawley".into(),
+                version: 2,
+                input: WireInput {
+                    x_deg: h.pattern.x_deg.clone(),
+                    observed_y: h.pattern.observed_y.clone(),
+                    uncertainty: h.pattern.uncertainty.clone(),
+                    mask: h.pattern.mask.clone(),
+                    background_y: h.pattern.background_y.clone(),
+                    instrument: [
+                        i.wavelength_angstrom,
+                        i.u_deg2,
+                        i.v_deg2,
+                        i.w_deg2,
+                        i.x_deg,
+                        i.y_deg,
+                    ],
+                    axial: h
+                        .experiment
+                        .axial_geometry
+                        .map(|g| [g.sample_over_radius, g.detector_over_radius]),
+                    phases: w.phases,
+                    background: w.background,
+                    signed_intensities: w.signed_intensities,
+                    parameters: w.parameters,
+                    constraints: w.constraints,
+                },
+                options: w.options,
+                checkpoint: w.checkpoint,
+            };
+            let text = serde_json::to_string(&record)?;
+            // The source manifest and NPZ arrays already passed their independent
+            // bounded readers. Hydration is not a second on-disk byte budget.
+            let restored = decode_pawley_project(&text, text.len()).map_err(bundle_error)?;
+            Ok(phasesmith_workflows::PawleyAnalysis {
+                histogram_id,
+                input: restored.input,
+                options: restored.options,
+                checkpoint: restored.checkpoint,
+            })
+        })
+        .collect::<Result<Vec<_>, crate::PersistenceError>>()?;
+    let state = phasesmith_workflows::PawleyProjectState { project, analyses };
+    state.validate().map_err(bundle_error)?;
+    Ok(state)
 }
