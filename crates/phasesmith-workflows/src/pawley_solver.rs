@@ -723,54 +723,65 @@ fn inequalities(
             None
         };
         for r in 0..phase.reflection_ids.len() {
-            let theta = evaluation.positions[reflection].to_radians() * 0.5;
-            let tangent = theta.tan();
-            let secant = theta.cos().recip();
-            let half_degree = std::f64::consts::PI / 360.0;
-            let variance = profile[0] * tangent * tangent + profile[1] * tangent + profile[2];
-            let lorentz = profile[3] * secant + profile[4] * tangent;
-            let bases = [
-                [tangent * tangent, tangent, 1.0, 0.0, 0.0],
-                [0.0, 0.0, 0.0, secant, tangent],
-            ];
-            let position_chains = [
-                (2.0 * profile[0] * tangent + profile[1]) * secant * secant * half_degree,
-                (profile[3] * secant * tangent + profile[4] * secant * secant) * half_degree,
-            ];
-            for term in 0..2 {
-                let mut physical = vec![0.0; input.parameters.specs().len()];
-                for (j, &index) in profile_indices.iter().enumerate() {
-                    physical[index] = bases[term][j];
-                }
-                if let Some(g) = &geometry {
-                    for (j, name) in g.parameter_names.iter().enumerate() {
-                        let index = input
-                            .parameters
-                            .index_of(&crate::pawley_key("lattice", &phase.id, name)?)
-                            .ok_or_else(|| err("missing cell parameter"))?;
-                        physical[index] = position_chains[term]
-                            * g.d_two_theta_d_parameters[r * g.parameter_names.len() + j];
+            let reference_theta = evaluation.positions[reflection].to_radians() * 0.5;
+            let wavelengths = [input.instrument.wavelength_angstrom];
+            for &wavelength in input
+                .fixed_spectrum
+                .as_ref()
+                .map_or(wavelengths.as_slice(), |s| s.wavelengths_angstrom())
+            {
+                let ratio = wavelength / input.instrument.wavelength_angstrom;
+                let theta = (ratio * reference_theta.sin()).asin();
+                let component_chain = ratio * reference_theta.cos() / theta.cos();
+                let tangent = theta.tan();
+                let secant = theta.cos().recip();
+                let half_degree = std::f64::consts::PI / 360.0;
+                let variance = profile[0] * tangent * tangent + profile[1] * tangent + profile[2];
+                let lorentz = profile[3] * secant + profile[4] * tangent;
+                let bases = [
+                    [tangent * tangent, tangent, 1.0, 0.0, 0.0],
+                    [0.0, 0.0, 0.0, secant, tangent],
+                ];
+                let position_chains = [
+                    (2.0 * profile[0] * tangent + profile[1]) * secant * secant * half_degree,
+                    (profile[3] * secant * tangent + profile[4] * secant * secant) * half_degree,
+                ];
+                for term in 0..2 {
+                    let mut physical = vec![0.0; input.parameters.specs().len()];
+                    for (j, &index) in profile_indices.iter().enumerate() {
+                        physical[index] = bases[term][j];
                     }
-                }
-                let terms: Vec<(usize, f64)> = physical
-                    .iter()
-                    .copied()
-                    .enumerate()
-                    .filter(|(_, v)| *v != 0.0)
-                    .collect();
-                let row: Vec<f64> = (0..z.len())
-                    .map(|j| {
-                        terms
-                            .iter()
-                            .map(|(i, v)| v * chain.values[i * z.len() + j])
-                            .sum::<f64>()
-                            / norms[j]
-                    })
-                    .collect();
-                let scale = row.iter().map(|v| v * v).sum::<f64>().sqrt();
-                if scale > 0.0 {
-                    rows.extend(row.iter().map(|v| v / scale));
-                    rhs.push(-[variance, lorentz][term] / scale);
+                    if let Some(g) = &geometry {
+                        for (j, name) in g.parameter_names.iter().enumerate() {
+                            let index = input
+                                .parameters
+                                .index_of(&crate::pawley_key("lattice", &phase.id, name)?)
+                                .ok_or_else(|| err("missing cell parameter"))?;
+                            physical[index] = position_chains[term]
+                                * component_chain
+                                * g.d_two_theta_d_parameters[r * g.parameter_names.len() + j];
+                        }
+                    }
+                    let terms: Vec<(usize, f64)> = physical
+                        .iter()
+                        .copied()
+                        .enumerate()
+                        .filter(|(_, v)| *v != 0.0)
+                        .collect();
+                    let row: Vec<f64> = (0..z.len())
+                        .map(|j| {
+                            terms
+                                .iter()
+                                .map(|(i, v)| v * chain.values[i * z.len() + j])
+                                .sum::<f64>()
+                                / norms[j]
+                        })
+                        .collect();
+                    let scale = row.iter().map(|v| v * v).sum::<f64>().sqrt();
+                    if scale > 0.0 {
+                        rows.extend(row.iter().map(|v| v / scale));
+                        rhs.push(-[variance, lorentz][term] / scale);
+                    }
                 }
             }
             reflection += 1;

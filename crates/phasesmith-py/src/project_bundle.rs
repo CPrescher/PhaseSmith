@@ -49,9 +49,15 @@ impl NativeProjectBundle {
         let histogram_id = RecordId::new(histogram_id).map_err(error)?;
         let experiment = ExperimentRecord::new(
             p.input.instrument,
-            RadiationDefinition::Monochromatic {
-                probe,
-                wavelength_angstrom: p.input.instrument.wavelength_angstrom,
+            match &p.input.fixed_spectrum {
+                Some(spectrum) => RadiationDefinition::FixedSpectrum {
+                    probe,
+                    spectrum: spectrum.clone(),
+                },
+                None => RadiationDefinition::Monochromatic {
+                    probe,
+                    wavelength_angstrom: p.input.instrument.wavelength_angstrom,
+                },
             },
             p.input.axial,
             MonochromaticPositionCorrection {

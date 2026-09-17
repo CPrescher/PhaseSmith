@@ -21,6 +21,7 @@ from ..control import CancellationToken
 from ..crystallography import UnitCell
 from ..instrument import ConstantWavelengthInstrument, FcjGeometry
 from ..pattern import PowderPattern
+from ..radiation import WavelengthComponents
 from ..symmetry import SpaceGroup, SymmetryOperation
 from .background import (
     ChebyshevBackground,
@@ -119,6 +120,7 @@ class PawleyPhase:
         two_theta_range: tuple[float, float],
         bounds: LatticeParameterBounds | None = None,
         initial_intensity: float = 1.0,
+        fixed_spectrum: WavelengthComponents | None = None,
     ) -> PawleyPhase:
         """Read cell/symmetry from CIF; atom coordinates do not determine areas."""
         from ..io import read_cif
@@ -132,6 +134,7 @@ class PawleyPhase:
             two_theta_range=two_theta_range,
             bounds=bounds,
             initial_intensity=initial_intensity,
+            fixed_spectrum=fixed_spectrum,
         )
 
     @classmethod
@@ -145,6 +148,7 @@ class PawleyPhase:
         two_theta_range: tuple[float, float],
         bounds: LatticeParameterBounds | None = None,
         initial_intensity: float = 1.0,
+        fixed_spectrum: WavelengthComponents | None = None,
     ) -> PawleyPhase:
         """Generate a bounded family superset in Rust; no atom model is needed.
 
@@ -174,6 +178,7 @@ class PawleyPhase:
             "background_y": [0.0, 0.0],
             "instrument": [wavelength_angstrom, 0.0, 0.0, 0.001, 0.001, 0.0],
             "axial": None,
+            "fixed_spectrum": _spectrum(fixed_spectrum),
             "phases": [phase],
             "background": None,
             "signed_intensities": False,
@@ -235,6 +240,7 @@ class PawleyInput:
     signed_intensities: bool = False
     parameters: ParameterSet | None = None
     constraints: tuple[Constraint, ...] = ()
+    fixed_spectrum: WavelengthComponents | None = None
 
     def __post_init__(self):
         object.__setattr__(self, "phases", tuple(self.phases))
@@ -558,6 +564,14 @@ def _constraint(c):
     raise TypeError("unsupported constraint")
 
 
+def _spectrum(spectrum):
+    if spectrum is None:
+        return None
+    if not isinstance(spectrum, WavelengthComponents):
+        raise TypeError("fixed_spectrum must be WavelengthComponents")
+    return [spectrum.wavelengths_angstrom.tolist(), spectrum.relative_intensities.tolist()]
+
+
 def _input(r):
     p, i, a = r.pattern, r.instrument, r.axial_geometry
 
@@ -588,6 +602,7 @@ def _input(r):
         background_y=p.background.tolist(),
         instrument=[i.wavelength_angstrom, i.u_deg2, i.v_deg2, i.w_deg2, i.x_deg, i.y_deg],
         axial=None if a is None else [a.sample_over_radius, a.detector_over_radius],
+        fixed_spectrum=_spectrum(r.fixed_spectrum),
         phases=[
             dict(
                 id=v.phase_id,
@@ -702,4 +717,5 @@ def _decode_input(i):
         i["signed_intensities"],
         _parameters(i["parameters"]),
         tuple(constraints),
+        None if i.get("fixed_spectrum") is None else WavelengthComponents(*i["fixed_spectrum"]),
     )

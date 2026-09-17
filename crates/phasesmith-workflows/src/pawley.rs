@@ -9,10 +9,10 @@ use crate::{
 use nalgebra::{DMatrix, DVector};
 use phasesmith_core::{
     ConstantWavelengthInstrument, CwReflectionBatchView, FcjGeometry, GridView, SupportPolicy,
-    WavelengthComponentsView, accumulate_cw_batch, accumulate_cw_fcj_batch,
-    cw_components_support_samples,
+    WavelengthComponentsView, accumulate_cw_batch, accumulate_cw_components_batch,
+    accumulate_cw_fcj_batch, accumulate_cw_fcj_components_batch, cw_components_support_samples,
 };
-use phasesmith_model::PatternRecord;
+use phasesmith_model::{FixedWavelengthSpectrum, PatternRecord};
 use std::collections::BTreeSet;
 use std::fmt::{Display, Formatter};
 
@@ -46,6 +46,45 @@ pub struct PawleyPhase {
     pub lattice: Option<LatticeReflectionDomain>,
 }
 impl PawleyPhase {
+    /// Generate the union of component-visible families, retaining reference-wavelength positions.
+    /// # Errors
+    /// Rejects invalid domains or families outside the reference Bragg domain.
+    pub fn from_spectrum_domain(
+        id: String,
+        domain: LatticeReflectionDomain,
+        spectrum: &FixedWavelengthSpectrum,
+    ) -> Result<Self, PawleyError> {
+        if spectrum.wavelengths_angstrom().len() == 1 {
+            return Self::from_domain(id, domain);
+        }
+        let mut families = std::collections::BTreeMap::new();
+        for &wavelength in spectrum.wavelengths_angstrom() {
+            let generated = domain
+                .with_wavelength(wavelength)
+                .map_err(err)?
+                .generate(domain.parameterization().reference_cell(), None)
+                .map_err(err)?;
+            for (id, hkl) in generated.reflection_ids.into_iter().zip(generated.hkl) {
+                families.insert(id, hkl);
+            }
+        }
+        let (reflection_ids, hkl): (Vec<_>, Vec<_>) = families.into_iter().unzip();
+        let geometry = cw_lattice_geometry(
+            domain.parameterization(),
+            domain.parameterization().reference_cell(),
+            &hkl,
+            domain.wavelength_angstrom(),
+        )
+        .map_err(err)?;
+        Ok(Self {
+            id,
+            intensities: vec![domain.initial_intensity(); hkl.len()],
+            reflection_ids,
+            hkl,
+            two_theta_deg: geometry.two_theta_deg,
+            lattice: Some(domain),
+        })
+    }
     /// Construct a fixed family superset from a validated lattice domain.
     ///
     /// # Errors
@@ -71,6 +110,8 @@ pub struct PawleyInput {
     pub pattern: PatternRecord,
     /// Fixed wavelength and initial CW coefficients.
     pub instrument: ConstantWavelengthInstrument,
+    /// Fixed detected-area spectrum; relative weights are normalized by the kernel.
+    pub fixed_spectrum: Option<FixedWavelengthSpectrum>,
     /// Fixed axial geometry, or a symmetric profile.
     pub axial: Option<FcjGeometry>,
     /// Ordered phases.
@@ -191,6 +232,18 @@ impl PawleyInput {
     pub fn validate(&self) -> Result<(), PawleyError> {
         self.pattern.validate().map_err(err)?;
         self.instrument.validate().map_err(err)?;
+        if let Some(s) = &self.fixed_spectrum {
+            let reference = s.wavelengths_angstrom()[0];
+            if (reference - self.instrument.wavelength_angstrom).abs()
+                > 16.0
+                    * f64::EPSILON
+                    * reference
+                        .abs()
+                        .max(self.instrument.wavelength_angstrom.abs())
+            {
+                return Err(err("spectrum reference wavelength differs from instrument"));
+            }
+        }
         if self.phases.is_empty() {
             return Err(err("Pawley requires phases"));
         }
@@ -323,10 +376,20 @@ pub fn evaluate_pawley_with_storage(
     let k = free.len();
     let reflections: usize = input.phases.iter().map(|p| p.intensities.len()).sum();
     // Includes worst-case support storage, both dense Jacobians, derivative transform and normal workspace.
+    let components_count = input
+        .fixed_spectrum
+        .as_ref()
+        .map_or(1, |s| s.wavelengths_angstrom().len());
+    let extra_rows = components_count
+        .saturating_sub(1)
+        .checked_mul(2)
+        .ok_or_else(|| err("size overflow"))?;
     let allocation = n
         .checked_mul(
             p.checked_add(k)
-                .and_then(|v| v.checked_add(reflections.checked_mul(2)?.checked_add(10)?))
+                .and_then(|v| {
+                    v.checked_add(reflections.checked_mul(2)?.checked_add(10 + extra_rows)?)
+                })
                 .ok_or_else(|| err("size overflow"))?,
         )
         .and_then(|v| v.checked_add(p.checked_mul(k)?))
@@ -381,10 +444,16 @@ pub fn evaluate_pawley_with_storage(
     }
     let grid = GridView::new(&input.pattern.x_deg).map_err(err)?;
     let batch = CwReflectionBatchView::new(&positions, &intensities).map_err(err)?;
+    let wavelengths = [instrument.wavelength_angstrom];
+    let weights = [1.0];
+    let components = match &input.fixed_spectrum {
+        Some(s) => {
+            WavelengthComponentsView::new(s.wavelengths_angstrom(), s.relative_intensities())
+        }
+        None => WavelengthComponentsView::new(&wavelengths, &weights),
+    }
+    .map_err(err)?;
     if !dense {
-        let wavelengths = [instrument.wavelength_angstrom];
-        let weights = [1.0];
-        let components = WavelengthComponentsView::new(&wavelengths, &weights).map_err(err)?;
         let active = cw_components_support_samples(
             grid,
             batch,
@@ -402,7 +471,13 @@ pub fn evaluate_pawley_with_storage(
         let allocation = active
             .checked_mul(6)
             .and_then(|v| {
-                v.checked_add(n.checked_mul((p - reflections).checked_mul(2)?.checked_add(24)?)?)
+                v.checked_add(
+                    n.checked_mul(
+                        (p - reflections)
+                            .checked_mul(2)?
+                            .checked_add(24 + 2 * extra_rows)?,
+                    )?,
+                )
             })
             .and_then(|v| v.checked_add(p.checked_mul(k)?.checked_mul(8)?))
             .and_then(|v| v.checked_add(k.checked_mul(k)?.checked_mul(16)?))
@@ -411,22 +486,44 @@ pub fn evaluate_pawley_with_storage(
             return Err(err("Pawley product memory element limit exceeded"));
         }
     }
-    let accumulation = match input.axial {
-        Some(geometry) => accumulate_cw_fcj_batch(
-            grid,
-            batch,
-            instrument,
-            geometry,
-            SupportPolicy::FwhmMultiple(support),
-        )
-        .map_err(err)?,
-        None => accumulate_cw_batch(
-            grid,
-            batch,
-            instrument,
-            SupportPolicy::FwhmMultiple(support),
-        )
-        .map_err(err)?,
+    let accumulation = if input.fixed_spectrum.is_some() {
+        match input.axial {
+            Some(geometry) => accumulate_cw_fcj_components_batch(
+                grid,
+                batch,
+                instrument,
+                components,
+                geometry,
+                SupportPolicy::FwhmMultiple(support),
+            )
+            .map_err(err)?,
+            None => accumulate_cw_components_batch(
+                grid,
+                batch,
+                instrument,
+                components,
+                SupportPolicy::FwhmMultiple(support),
+            )
+            .map_err(err)?,
+        }
+    } else {
+        match input.axial {
+            Some(geometry) => accumulate_cw_fcj_batch(
+                grid,
+                batch,
+                instrument,
+                geometry,
+                SupportPolicy::FwhmMultiple(support),
+            )
+            .map_err(err)?,
+            None => accumulate_cw_batch(
+                grid,
+                batch,
+                instrument,
+                SupportPolicy::FwhmMultiple(support),
+            )
+            .map_err(err)?,
+        }
     };
     let mut physical = vec![PawleyColumn::empty(); p];
     let local = &accumulation.derivatives.local;

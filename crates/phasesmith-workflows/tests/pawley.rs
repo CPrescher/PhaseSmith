@@ -33,6 +33,7 @@ fn input(positions: Vec<f64>, areas: Vec<f64>, signed: bool) -> PawleyInput {
     let parameters =
         pawley_parameters(std::slice::from_ref(&phase), instrument, None, signed).unwrap();
     PawleyInput {
+        fixed_spectrum: None,
         pattern,
         instrument,
         axial: None,

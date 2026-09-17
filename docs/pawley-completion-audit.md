@@ -14,7 +14,9 @@ manifest, covariance tests, measured LaB6 cell/profile gate and multiphase
 recovery are complete. Sections below retain the original findings as an audit
 trail. Mixed native format-6 bundles and cross-language resume are now implemented.
 The pinned external optimizer comparison is complete with its explicit
-profile-model exception; spectra and TOF remain unfinished. The original checkout's numerical work is now committed upstream
+profile-model exception. Fixed CW spectra now have union domains, native derivative
+chains, persistence, pinned doublet checks and measured ceria comparisons; TOF
+remains unfinished. The original checkout's numerical work is now committed upstream
 and has been merged; the combined Python suite and native checks pass.
 
 The single-histogram, fixed-wavelength CW method is implemented. Its native

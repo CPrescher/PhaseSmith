@@ -38,7 +38,10 @@ positive finite cutoff jumps define one-sided feasible directions, with
 conservative exclusions for interacting or cancelling events. Support values
 and endpoints are unchanged. Matrix-free mode omits global rank/covariance;
 dense mode remains the small-problem reference. The separate measured LaB6
-cell/profile gate passes at Rwp 0.2184. Fixed spectra and TOF remain unfinished, and the
+cell/profile gate passes at Rwp 0.2184. Fixed CW spectra now use one area per family, normalized fixed detected weights,
+component-union domains and native analytical chains. Standalone and shared
+bundles retain spectra; independent derivatives, pinned doublet profiles and
+measured ceria comparisons are covered. TOF remains unfinished, and the
 latest upstream numerical work is reconciled; combined-state validation follows.
 See `docs/pawley.md`, `docs/pawley-validation.md` and the completion audit.
 
