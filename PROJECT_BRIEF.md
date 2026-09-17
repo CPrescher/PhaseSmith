@@ -17,6 +17,17 @@ Rwp with verified convergence, retaining QPA and physical-model checks. Judge
 speed at comparable attained fit quality; a faster iteration-limited fit with
 a higher Rwp is a diagnostic tradeoff, not the target outcome.
 
+The subsequent original-recipe convergence audit identifies a termination
+weakness: the general solver can report convergence when repeated damping
+increases make its proposed step tiny, even though valid descent directions
+remain. Large-budget original-width fits report Rwp 19.87759% on 1g and
+20.10151% on 1h, with repeatable full-workflow timings of 1.720/2.413 seconds
+at eight workers. These are times to reported convergence, not stationarity
+certificates. Tighter 1h fits can stall at worse results; feasible coordinate
+probes demonstrate the issue. See `docs/qarr-convergence-audit.md`. Production
+solver behavior is unchanged by the audit; convergence/stagnation detection
+and feasible-step recovery are the next implementation priorities.
+
 The subsequent QARR holdout investigation separates budget exhaustion from
 width decomposition. The common diagnostic's original-width recipe converges
 on 1h at Rwp 20.10151% with a 500-iteration allowance; the already-established

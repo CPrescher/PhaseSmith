@@ -13,6 +13,11 @@ globally optimal refinement. The frozen native holdout validator still reports
 its existing failure at 28.65443% Rwp. No golden data, default refinement recipe,
 physical equation, derivative or acceptance threshold changed in this work.
 
+The later [convergence audit](qarr-convergence-audit.md) finds that the solver's
+convergence flag can reflect damping-induced stagnation. Accordingly, “every
+stage converged” below records the returned status, not an independent proof
+of stationarity. The Rwp and composition measurements themselves are unchanged.
+
 ## Comparison contract
 
 `benchmarks/investigate_qarr_holdout.py` verifies both checksum-pinned datasets
