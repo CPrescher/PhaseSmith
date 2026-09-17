@@ -620,6 +620,20 @@ impl NativeRietveldRequest {
         })
     }
 
+    fn set_profile_accuracy(
+        &mut self,
+        fast_fcj: bool,
+        tail_area_tolerance: Option<f64>,
+    ) -> PyResult<()> {
+        let accuracy = phasesmith_core::ProfileAccuracy {
+            fast_fcj,
+            tail_area_tolerance,
+        };
+        accuracy.validate().map_err(value_error)?;
+        self.options.calculation.profile_accuracy = accuracy;
+        Ok(())
+    }
+
     fn refine(
         &self,
         py: Python<'_>,
@@ -685,6 +699,7 @@ impl NativeRietveldRequest {
     }
 
     #[allow(clippy::too_many_arguments)]
+    #[pyo3(signature = (path, project_id, revision, project_name, histogram_id, histogram_name, probe, checkpoint, overwrite, metadata=None))]
     fn save_project(
         &self,
         py: Python<'_>,
@@ -697,6 +712,7 @@ impl NativeRietveldRequest {
         probe: &str,
         checkpoint: Option<PyRef<'_, NativeRietveldCheckpoint>>,
         overwrite: bool,
+        metadata: Option<BTreeMap<String, String>>,
     ) -> PyResult<String> {
         let project_id = RecordId::new(project_id).map_err(value_error)?;
         let histogram_id = RecordId::new(histogram_id).map_err(value_error)?;
@@ -752,7 +768,7 @@ impl NativeRietveldRequest {
                 }],
                 tof_histograms: Vec::new(),
                 phases,
-                metadata: BTreeMap::default(),
+                metadata: metadata.unwrap_or_default(),
             },
             analyses: vec![RietveldAnalysis {
                 histogram_id,

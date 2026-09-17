@@ -13,9 +13,8 @@ use phasesmith_core::{
     OwnedCwContributionArrays, OwnedCwContributions, PeakBatchView, SupportPolicy,
     TOF_GLOBAL_PARAMETER_NAMES, TchPeakBatchView, TchShape, TchWidths, TofError, TofInstrument,
     TofProfile, TofProfileParameters, WavelengthComponentsView, accumulate_batch,
-    accumulate_cw_batch, accumulate_cw_components_batch, accumulate_cw_contributions_batch,
-    accumulate_cw_fcj_batch, accumulate_cw_fcj_components_batch,
-    accumulate_cw_fcj_contributions_batch, accumulate_tch_batch, accumulate_tof_batch_with_context,
+    accumulate_cw_batch, accumulate_cw_components_batch, accumulate_cw_fcj_batch,
+    accumulate_cw_fcj_components_batch, accumulate_tch_batch, accumulate_tof_batch_with_context,
     accumulate_values_batch, smooth_bruckner as native_smooth_bruckner, symmetric_pseudo_voigt,
 };
 use phasesmith_engine::crystallography::{
@@ -511,6 +510,7 @@ impl NativePreparedReflectionGenerator {
         scale: f64,
         coordinate_tolerance: f64,
         execution: PyRef<'_, NativeExecutionPolicy>,
+        powder_average: bool,
     ) -> PyResult<StructureFactorValueArrays<'py>> {
         let hkl = hkl_rows(&hkl_flat)?;
         let multiplicity = multiplicity_rows(&multiplicity)?;
@@ -552,7 +552,8 @@ impl NativePreparedReflectionGenerator {
         };
         let result = py
             .detach(|| {
-                calculate_structure_factor_values_with_context(
+                let calculate = if powder_average { phasesmith_engine::crystallography::calculate_powder_structure_factor_values_with_context } else { calculate_structure_factor_values_with_context };
+                calculate(
                     cell,
                     self.generator.space_group(),
                     batch,
@@ -588,6 +589,7 @@ impl NativePreparedReflectionGenerator {
         gamma_deg: f64,
         scale: f64,
         coordinate_tolerance: f64,
+        powder_average: bool,
     ) -> PyResult<StructureFactorDenseArrays<'py>> {
         let hkl = hkl_rows(&hkl_flat)?;
         let multiplicity = multiplicity_rows(&multiplicity)?;
@@ -623,7 +625,11 @@ impl NativePreparedReflectionGenerator {
             coordinate_tolerance,
         };
         let result = py
-            .detach(|| calculate_structure_factor_dense(cell, self.generator.space_group(), batch))
+            .detach(|| {
+                if powder_average {
+                    phasesmith_engine::crystallography::calculate_powder_structure_factor_dense_with_context(cell, self.generator.space_group(), batch, &ExecutionContext::serial())
+                } else { calculate_structure_factor_dense(cell, self.generator.space_group(), batch) }
+            })
             .map_err(|error| PyValueError::new_err(error.to_string()))?;
         structure_factor_dense_to_numpy(py, result)
     }
@@ -1104,6 +1110,8 @@ impl NativeStructuralPhase {
             axial_geometry: axial,
             contributions,
             support: SupportPolicy::FwhmMultiple(support_fwhm),
+            profile_accuracy: phasesmith_core::ProfileAccuracy::default(),
+            calculate_axial_derivatives: true,
         };
         let result = py
             .detach(|| self.phase.calculate(&input))
@@ -1177,6 +1185,8 @@ impl NativeStructuralPhase {
             axial_geometry: axial,
             contributions,
             support: SupportPolicy::FwhmMultiple(support_fwhm),
+            profile_accuracy: phasesmith_core::ProfileAccuracy::default(),
+            calculate_axial_derivatives: true,
         };
         let result = py
             .detach(|| self.phase.linearize(&input))
@@ -1252,6 +1262,8 @@ impl NativeStructuralPhase {
             axial_geometry: axial,
             contributions,
             support: SupportPolicy::FwhmMultiple(support_fwhm),
+            profile_accuracy: phasesmith_core::ProfileAccuracy::default(),
+            calculate_axial_derivatives: true,
         };
         let result = py
             .detach(|| self.phase.jvp(&input, tangent))
@@ -1327,6 +1339,8 @@ impl NativeStructuralPhase {
             axial_geometry: axial,
             contributions,
             support: SupportPolicy::FwhmMultiple(support_fwhm),
+            profile_accuracy: phasesmith_core::ProfileAccuracy::default(),
+            calculate_axial_derivatives: true,
         };
         let result = py
             .detach(|| self.phase.vjp(&input, sample_weights))
@@ -1363,6 +1377,8 @@ impl NativeStructuralSpectrum {
             position_correction,
             contributions: &contributions,
             support: SupportPolicy::FwhmMultiple(support_fwhm),
+            profile_accuracy: phasesmith_core::ProfileAccuracy::default(),
+            calculate_axial_derivatives: true,
         };
         operation(&self.spectrum, &input).map_err(|error| PyValueError::new_err(error.to_string()))
     }
@@ -1789,6 +1805,7 @@ impl NativePreparedStructuralModel {
 #[pyclass(name = "_StructuralMultiphase")]
 struct NativeStructuralMultiphase {
     prepared: PreparedStructuralMultiphase,
+    accuracy: phasesmith_core::ProfileAccuracy,
     contributions: Vec<NativeComponentContributions>,
 }
 
@@ -1819,6 +1836,8 @@ impl NativeStructuralMultiphase {
                 position_correction,
                 contributions,
                 support: SupportPolicy::FwhmMultiple(support_fwhm),
+                profile_accuracy: self.accuracy,
+                calculate_axial_derivatives: true,
             })
             .collect::<Vec<_>>();
         operation(&self.prepared, &inputs).map_err(|error| PyValueError::new_err(error.to_string()))
@@ -1843,7 +1862,24 @@ impl NativeStructuralMultiphase {
             prepared: PreparedStructuralMultiphase::new(prepared_models, execution.policy.clone())
                 .map_err(|error| PyValueError::new_err(error.to_string()))?,
             contributions,
+            accuracy: phasesmith_core::ProfileAccuracy::default(),
         })
+    }
+
+    fn set_profile_accuracy(
+        &mut self,
+        fast_fcj: bool,
+        tail_area_tolerance: Option<f64>,
+    ) -> PyResult<()> {
+        let accuracy = phasesmith_core::ProfileAccuracy {
+            fast_fcj,
+            tail_area_tolerance,
+        };
+        accuracy
+            .validate()
+            .map_err(|error| PyValueError::new_err(error.to_string()))?;
+        self.accuracy = accuracy;
+        Ok(())
     }
 
     #[getter]
@@ -2415,6 +2451,7 @@ fn profile_fcj<'py>(
     lorentzian_fwhm_deg: f64,
     sample_over_radius: f64,
     detector_over_radius: f64,
+    fast_fcj: bool,
 ) -> PyResult<FcjProfileArrays<'py>> {
     let x_deg = contiguous_slice(&x_deg, "x_deg")?;
     if x_deg.iter().any(|value| !value.is_finite()) {
@@ -2422,7 +2459,7 @@ fn profile_fcj<'py>(
             "x_deg must contain only finite values",
         ));
     }
-    let profile = FcjProfile::new(
+    let profile = FcjProfile::new_with_accuracy(
         position_deg,
         TchWidths {
             gaussian_fwhm: gaussian_fwhm_deg,
@@ -2432,6 +2469,7 @@ fn profile_fcj<'py>(
             sample_over_radius,
             detector_over_radius,
         },
+        fast_fcj,
     )
     .map_err(|error| PyValueError::new_err(error.to_string()))?;
     let (value, d_position, d_gaussian, d_lorentzian, d_sample, d_detector) = py.detach(|| {
@@ -2980,6 +3018,8 @@ fn accumulate_cw_contributions<'py>(
     support_fwhm: f64,
     fcj_sample_over_radius: Option<f64>,
     fcj_detector_over_radius: Option<f64>,
+    fast_fcj: bool,
+    tail_area_tolerance: Option<f64>,
 ) -> PyResult<AccumulationArrays<'py>> {
     let x = contiguous_slice(&x, "x")?;
     let two_theta_deg = contiguous_slice(&two_theta_deg, "two_theta_deg")?;
@@ -3032,9 +3072,13 @@ fn accumulate_cw_contributions<'py>(
     let instrument = cw_instrument(wavelength_angstrom, u_deg2, v_deg2, w_deg2, x_deg, y_deg);
     let support = SupportPolicy::FwhmMultiple(support_fwhm);
     let geometry = axial_geometry(fcj_sample_over_radius, fcj_detector_over_radius)?;
+    let accuracy = phasesmith_core::ProfileAccuracy {
+        fast_fcj,
+        tail_area_tolerance,
+    };
     let accumulation = py
-        .detach(|| match geometry {
-            Some(geometry) => accumulate_cw_fcj_contributions_batch(
+        .detach(|| {
+            phasesmith_core::cw_contributions::accumulate_cw_contributions_with_accuracy(
                 grid,
                 two_theta_deg,
                 base_intensities,
@@ -3042,15 +3086,10 @@ fn accumulate_cw_contributions<'py>(
                 contributions,
                 geometry,
                 support,
-            ),
-            None => accumulate_cw_contributions_batch(
-                grid,
-                two_theta_deg,
-                base_intensities,
-                instrument,
-                contributions,
-                support,
-            ),
+                accuracy,
+                true,
+                &phasesmith_execution::ExecutionContext::serial(),
+            )
         })
         .map_err(|error| PyValueError::new_err(error.to_string()))?;
     accumulation_to_numpy(py, accumulation)

@@ -280,6 +280,8 @@ impl PreparedRietveldObjective {
                 position_correction: self.input.position_correction,
                 contributions,
                 support: SupportPolicy::FwhmMultiple(self.options.support_fwhm),
+                profile_accuracy: self.options.profile_accuracy,
+                calculate_axial_derivatives: true,
             })
             .collect::<Vec<_>>();
         operation(&inputs).map_err(Into::into)

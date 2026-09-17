@@ -4,6 +4,21 @@ The Python package is a scientific library first. Every normal calculation and
 refinement workflow must be expressible from a script without project files,
 global state, callbacks per reflection, or GUI objects.
 
+CW numerical performance controls are explicit through `ProfileAccuracy`:
+see [profile accuracy](profile-accuracy.md) for opt-in quadrature and tail-area
+budgets, their numerical contracts, and persistence behavior.
+
+Structural powder calculations use [Friedel-averaged intensities](powder-friedel.md).
+The individual structure-factor API retains representative complex amplitudes;
+its explicit `powder_average=True` mode averages squared amplitudes and intensity
+derivatives without changing the meaning of complex `f` or `d_f`.
+
+CW requests can opt into `EmpiricalGaussianConvention(reference_phase_id,
+reference_rms_microstrain).apply(request)` when a calibrated instrument/sample
+Gaussian decomposition is unavailable. The reference constraint and empirical
+interpretation persist across stages, checkpoints and project saves. See
+[empirical Gaussian widths](empirical-gaussian.md) for domain and reporting rules.
+
 ## Stable module boundaries
 
 ```text

@@ -58,8 +58,15 @@ and the proposed capability development sequence.
 - [Public Python architecture](public-api.md)
 - [Native Rust API and GUI integration](rust-api.md)
 
+- [Empirical Gaussian widths](empirical-gaussian.md) — explicit reference-phase
+  convention when independent instrument calibration is unavailable.
+
 ## Validation and performance
 
+- [Powder Friedel averaging](powder-friedel.md) — corrected anomalous powder
+  intensities and analytical derivatives; individual-reflection API semantics.
+- [Choosing profile accuracy](profile-accuracy.md) — explicit FCJ quadrature
+  and tail-area controls with persistence and validation contracts.
 - [Refinement performance improvements](refinement-performance-round2.md) —
   batched FCJ evaluation, reusable scale profiles, native diagnostics and real
   QARR measurements, with links to the earlier optimization work.

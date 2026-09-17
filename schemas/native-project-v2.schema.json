@@ -219,6 +219,8 @@
         "cg_tolerance", "max_cg_iterations", "max_scaled_parameter_step", "max_backtracks"
       ],
       "properties": {
+        "fast_fcj": { "type": "boolean", "default": false },
+        "tail_area_tolerance": { "type": ["number", "null"], "minimum": 1e-8, "maximum": 0.1, "default": null },
         "support_fwhm": { "type": "number", "exclusiveMinimum": 0 },
         "use_uncertainty": { "type": "boolean" },
         "requested_threads": { "type": ["integer", "null"], "minimum": 1 },
@@ -293,6 +295,8 @@
       "type": "object", "additionalProperties": false,
       "required": ["completed_iterations", "parameters", "objective", "damping", "history"],
       "properties": {
+        "fast_fcj": { "type": "boolean", "default": false },
+        "tail_area_tolerance": { "type": ["number", "null"], "minimum": 1e-8, "maximum": 0.1, "default": null },
         "completed_iterations": { "type": "integer", "minimum": 0 },
         "parameters": {
           "type": "array",

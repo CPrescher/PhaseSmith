@@ -232,6 +232,12 @@
         },
         {
           "kind": "class",
+          "name": "EmpiricalGaussianConvention",
+          "signature": "(reference_phase_id: 'str', reference_rms_microstrain: 'float') -> None",
+          "target": "phasesmith.empirical.EmpiricalGaussianConvention"
+        },
+        {
+          "kind": "class",
           "name": "ExecutionPolicy",
           "signature": "(threads: 'int | None' = 2, minimum_parallel_tasks: 'int' = 2) -> None",
           "target": "phasesmith.execution.ExecutionPolicy"
@@ -539,7 +545,7 @@
         {
           "kind": "class",
           "name": "PreparedStructuralPattern",
-          "signature": "(pattern: 'PowderPattern', experiment: 'ConstantWavelengthExperiment', phase: 'RietveldPhase', *, support_fwhm: 'float' = 20.0, jacobian_layout: \"Literal['support', 'dense']\" = 'support', execution: 'ExecutionPolicy | None' = None) -> 'None'",
+          "signature": "(pattern: 'PowderPattern', experiment: 'ConstantWavelengthExperiment', phase: 'RietveldPhase', *, support_fwhm: 'float' = 20.0, profile_accuracy: 'ProfileAccuracy | None' = None, jacobian_layout: \"Literal['support', 'dense']\" = 'support', execution: 'ExecutionPolicy | None' = None) -> 'None'",
           "target": "phasesmith.structural_calculation.PreparedStructuralPattern"
         },
         {
@@ -547,6 +553,12 @@
           "name": "PreparedXrayNonResonant",
           "signature": "(species: 'tuple[ScatteringSpecies, ...] | list[ScatteringSpecies]') -> 'None'",
           "target": "phasesmith.scattering.PreparedXrayNonResonant"
+        },
+        {
+          "kind": "class",
+          "name": "ProfileAccuracy",
+          "signature": "(fast_fcj: bool = False, tail_area_tolerance: float | None = None) -> None",
+          "target": "phasesmith.accuracy.ProfileAccuracy"
         },
         {
           "kind": "class",
@@ -1139,7 +1151,7 @@
         {
           "kind": "function",
           "name": "accumulate_cw_contributions",
-          "signature": "(x: 'ArrayLike', two_theta_deg: 'ArrayLike', base_integrated_intensities: 'ArrayLike', instrument: 'ConstantWavelengthInstrument', contributions: 'PhysicsContribution', *, geometry: 'FcjGeometry | None' = None, support_fwhm: 'float' = 20.0, jacobian_layout: \"Literal['support', 'dense']\" = 'support') -> 'AccumulationResult'",
+          "signature": "(x: 'ArrayLike', two_theta_deg: 'ArrayLike', base_integrated_intensities: 'ArrayLike', instrument: 'ConstantWavelengthInstrument', contributions: 'PhysicsContribution', *, geometry: 'FcjGeometry | None' = None, support_fwhm: 'float' = 20.0, profile_accuracy: 'ProfileAccuracy | None' = None, jacobian_layout: \"Literal['support', 'dense']\" = 'support') -> 'AccumulationResult'",
           "target": "phasesmith.cw.accumulate_cw_contributions"
         },
         {
@@ -1247,19 +1259,19 @@
         {
           "kind": "function",
           "name": "calculate_structural_pattern",
-          "signature": "(pattern: 'PowderPattern', experiment: 'ConstantWavelengthExperiment', phase: 'RietveldPhase', *, support_fwhm: 'float' = 20.0, jacobian_layout: \"Literal['support', 'dense']\" = 'support', execution: 'ExecutionPolicy | None' = None) -> 'StructuralPatternCalculationResult'",
+          "signature": "(pattern: 'PowderPattern', experiment: 'ConstantWavelengthExperiment', phase: 'RietveldPhase', *, support_fwhm: 'float' = 20.0, profile_accuracy: 'ProfileAccuracy | None' = None, jacobian_layout: \"Literal['support', 'dense']\" = 'support', execution: 'ExecutionPolicy | None' = None) -> 'StructuralPatternCalculationResult'",
           "target": "phasesmith.structural_calculation.calculate_structural_pattern"
         },
         {
           "kind": "function",
           "name": "calculate_structure_factor_values",
-          "signature": "(structure: 'CrystalStructure', hkl: 'ArrayLike', multiplicity: 'ArrayLike', scattering: 'ScatteringFactorProvider', *, correction: 'IntegratedIntensityCorrectionProvider | None' = None, scale: 'float' = 1.0, coordinate_tolerance: 'float' = 1e-10, execution: 'ExecutionPolicy | None' = None) -> 'StructureFactorValuesResult'",
+          "signature": "(structure: 'CrystalStructure', hkl: 'ArrayLike', multiplicity: 'ArrayLike', scattering: 'ScatteringFactorProvider', *, powder_average: 'bool' = False, correction: 'IntegratedIntensityCorrectionProvider | None' = None, scale: 'float' = 1.0, coordinate_tolerance: 'float' = 1e-10, execution: 'ExecutionPolicy | None' = None) -> 'StructureFactorValuesResult'",
           "target": "phasesmith.crystallography.calculate_structure_factor_values"
         },
         {
           "kind": "function",
           "name": "calculate_structure_factors",
-          "signature": "(structure: 'CrystalStructure', hkl: 'ArrayLike', multiplicity: 'ArrayLike', scattering: 'ScatteringFactorProvider', *, correction: 'IntegratedIntensityCorrectionProvider | None' = None, scale: 'float' = 1.0, coordinate_tolerance: 'float' = 1e-10, max_dense_derivative_elements: 'int' = 50000000) -> 'StructureFactorResult'",
+          "signature": "(structure: 'CrystalStructure', hkl: 'ArrayLike', multiplicity: 'ArrayLike', scattering: 'ScatteringFactorProvider', *, powder_average: 'bool' = False, correction: 'IntegratedIntensityCorrectionProvider | None' = None, scale: 'float' = 1.0, coordinate_tolerance: 'float' = 1e-10, max_dense_derivative_elements: 'int' = 50000000) -> 'StructureFactorResult'",
           "target": "phasesmith.crystallography.calculate_structure_factors"
         },
         {
@@ -1415,7 +1427,7 @@
         {
           "kind": "function",
           "name": "profile_fcj",
-          "signature": "(x_deg: 'ArrayLike', position_deg: 'float', gaussian_fwhm_deg: 'float', lorentzian_fwhm_deg: 'float', geometry: 'FcjGeometry') -> 'FcjProfileResult'",
+          "signature": "(x_deg: 'ArrayLike', position_deg: 'float', gaussian_fwhm_deg: 'float', lorentzian_fwhm_deg: 'float', geometry: 'FcjGeometry', *, profile_accuracy: 'ProfileAccuracy | None' = None) -> 'FcjProfileResult'",
           "target": "phasesmith.fcj.profile_fcj"
         },
         {
@@ -2141,13 +2153,13 @@
         {
           "kind": "class",
           "name": "RietveldCheckpoint",
-          "signature": "(completed_iterations: 'int', phases: 'tuple[RietveldPhase, ...]', lattice_domains: 'tuple[CwStructuralReflectionDomain | None, ...]', parameters: 'ParameterSet', objective: 'float', damping: 'float', history: 'tuple[RietveldIterationRecord, ...]', experiment: 'ConstantWavelengthExperiment | None' = None, background: 'DifferentiableBackground | None' = None, _native: 'object | None' = None) -> None",
+          "signature": "(completed_iterations: 'int', phases: 'tuple[RietveldPhase, ...]', lattice_domains: 'tuple[CwStructuralReflectionDomain | None, ...]', parameters: 'ParameterSet', objective: 'float', damping: 'float', history: 'tuple[RietveldIterationRecord, ...]', experiment: 'ConstantWavelengthExperiment | None' = None, background: 'DifferentiableBackground | None' = None, _native: 'object | None' = None, profile_accuracy: 'ProfileAccuracy' = <factory>, empirical_gaussian: 'EmpiricalGaussianConvention | None' = None) -> None",
           "target": "phasesmith.refinement.rietveld.RietveldCheckpoint"
         },
         {
           "kind": "class",
           "name": "RietveldInput",
-          "signature": "(pattern: 'PowderPattern', experiment: 'ConstantWavelengthExperiment', phases: 'tuple[RietveldPhase, ...]', lattice_domains: 'tuple[CwStructuralReflectionDomain | None, ...]', parameters: 'ParameterSet', constraints: 'tuple[Constraint, ...]' = (), selection: 'RietveldParameterSelection' = RietveldParameterSelection(phase_scale=True, lattice=True, coordinates=False, occupancy=False, u_iso=False, sample_physics=False, instrument_parameters=(), background=False), background: 'DifferentiableBackground | None' = None) -> None",
+          "signature": "(pattern: 'PowderPattern', experiment: 'ConstantWavelengthExperiment', phases: 'tuple[RietveldPhase, ...]', lattice_domains: 'tuple[CwStructuralReflectionDomain | None, ...]', parameters: 'ParameterSet', constraints: 'tuple[Constraint, ...]' = (), selection: 'RietveldParameterSelection' = RietveldParameterSelection(phase_scale=True, lattice=True, coordinates=False, occupancy=False, u_iso=False, sample_physics=False, instrument_parameters=(), background=False), background: 'DifferentiableBackground | None' = None, empirical_gaussian: 'EmpiricalGaussianConvention | None' = None) -> None",
           "target": "phasesmith.refinement.rietveld.RietveldInput"
         },
         {
@@ -2159,7 +2171,7 @@
         {
           "kind": "class",
           "name": "RietveldOptions",
-          "signature": "(limits: 'RefinementLimits' = <factory>, min_iterations: 'int' = 1, objective_tolerance: 'float' = 1e-10, parameter_tolerance: 'float' = 1e-07, initial_damping: 'float' = 1e-06, damping_increase: 'float' = 10.0, damping_decrease: 'float' = 0.3, cg_tolerance: 'float' = 1e-06, max_cg_iterations: 'int' = 30, max_scaled_parameter_step: 'float' = 0.25, max_backtracks: 'int' = 8, use_uncertainty: 'bool' = True, support_fwhm: 'float' = 20.0, max_linearization_elements: 'int' = 10000000, estimate_covariance: 'bool' = True, max_covariance_parameters: 'int' = 64, unresolved_correlation: 'float' = 0.9999999999, execution: 'ExecutionPolicy' = <factory>) -> None",
+          "signature": "(limits: 'RefinementLimits' = <factory>, min_iterations: 'int' = 1, objective_tolerance: 'float' = 1e-10, parameter_tolerance: 'float' = 1e-07, initial_damping: 'float' = 1e-06, damping_increase: 'float' = 10.0, damping_decrease: 'float' = 0.3, cg_tolerance: 'float' = 1e-06, max_cg_iterations: 'int' = 30, max_scaled_parameter_step: 'float' = 0.25, max_backtracks: 'int' = 8, use_uncertainty: 'bool' = True, support_fwhm: 'float' = 20.0, profile_accuracy: 'ProfileAccuracy' = <factory>, max_linearization_elements: 'int' = 10000000, estimate_covariance: 'bool' = True, max_covariance_parameters: 'int' = 64, unresolved_correlation: 'float' = 0.9999999999, execution: 'ExecutionPolicy' = <factory>) -> None",
           "target": "phasesmith.refinement.rietveld.RietveldOptions"
         },
         {

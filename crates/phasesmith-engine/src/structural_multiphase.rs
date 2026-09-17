@@ -140,6 +140,10 @@ pub struct PreparedStructuralModelInputView<'a> {
     pub contributions: &'a [CwContributionsView<'a>],
     /// Exact finite profile-support policy.
     pub support: SupportPolicy,
+    /// Explicit CW profile accuracy controls.
+    pub profile_accuracy: phasesmith_core::ProfileAccuracy,
+    /// Whether calculation includes axial derivative rows; omitted rows are zero.
+    pub calculate_axial_derivatives: bool,
 }
 
 /// Owned sample-physics inputs for one prepared structural model.
@@ -164,6 +168,10 @@ pub struct StructuralCalculationRequest {
     pub phase_inputs: Vec<StructuralModelInput>,
     /// Exact finite profile-support policy.
     pub support: SupportPolicy,
+    /// Explicit CW profile accuracy controls.
+    pub profile_accuracy: phasesmith_core::ProfileAccuracy,
+    /// Whether calculation includes axial derivative rows; omitted rows are zero.
+    pub calculate_axial_derivatives: bool,
 }
 
 impl<'a> PreparedStructuralModelInputView<'a> {
@@ -180,6 +188,8 @@ impl<'a> PreparedStructuralModelInputView<'a> {
             position_correction: self.position_correction,
             contributions: self.contributions[0],
             support: self.support,
+            profile_accuracy: self.profile_accuracy,
+            calculate_axial_derivatives: self.calculate_axial_derivatives,
         })
     }
 
@@ -191,6 +201,8 @@ impl<'a> PreparedStructuralModelInputView<'a> {
             position_correction: self.position_correction,
             contributions: self.contributions,
             support: self.support,
+            profile_accuracy: self.profile_accuracy,
+            calculate_axial_derivatives: self.calculate_axial_derivatives,
         }
     }
 }
@@ -354,6 +366,8 @@ impl PreparedStructuralMultiphase {
                 position_correction: request.position_correction,
                 contributions,
                 support: request.support,
+                profile_accuracy: request.profile_accuracy,
+                calculate_axial_derivatives: request.calculate_axial_derivatives,
             })
             .collect::<Vec<_>>();
         let result = self.calculate(&inputs)?;
@@ -575,6 +589,8 @@ mod tests {
             },
             phase_inputs: Vec::new(),
             support: SupportPolicy::FwhmMultiple(8.0),
+            profile_accuracy: phasesmith_core::ProfileAccuracy::default(),
+            calculate_axial_derivatives: true,
         };
         assert!(matches!(
             prepared.calculate_request(request),

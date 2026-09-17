@@ -5,6 +5,11 @@ This implements the main candidates from the
 equations, support, quadrature orders, solver tolerances and iteration budgets
 are unchanged.
 
+The subsequent [workload audit](rietx-workload-audit.md) isolates why rietx's
+default single-worker timings remain lower: it skips all small FCJ corrections
+in this QARR case and uses narrower tail windows. Controlled interventions
+quantify both effects without changing production defaults.
+
 ## Batched FCJ values and derivatives
 
 Production CW contribution accumulation evaluates four adjacent samples at a
