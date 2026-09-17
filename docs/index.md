@@ -63,6 +63,9 @@ and the proposed capability development sequence.
 
 ## Validation and performance
 
+- [Original-recipe convergence audit](qarr-convergence-audit.md) — repeated
+  timings and feasible-descent checks expose a stopping-condition weakness.
+
 - [QARR holdout investigation](qarr-holdout-investigation.md) — distinguish
   convergence, width assumptions and phase-fraction accuracy on a second sample.
 
