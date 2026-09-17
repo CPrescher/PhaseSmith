@@ -63,6 +63,9 @@ and the proposed capability development sequence.
 
 ## Validation and performance
 
+- [QARR holdout investigation](qarr-holdout-investigation.md) — distinguish
+  convergence, width assumptions and phase-fraction accuracy on a second sample.
+
 - [Quality-first recovery](refinement-quality-recovery.md) — fixed-quality
   convergence benchmarks and retained-state damping recovery.
 

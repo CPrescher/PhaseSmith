@@ -17,6 +17,16 @@ Rwp with verified convergence, retaining QPA and physical-model checks. Judge
 speed at comparable attained fit quality; a faster iteration-limited fit with
 a higher Rwp is a diagnostic tradeoff, not the target outcome.
 
+The subsequent QARR holdout investigation separates budget exhaustion from
+width decomposition. The common diagnostic's original-width recipe converges
+on 1h at Rwp 20.10151% with a 500-iteration allowance; the already-established
+empirical frozen-background recipe reaches 19.44367%, with all stages converged
+and maximum composition error 1.55045 percentage points. Tight-tolerance and
+one/eight-worker controls agree. Joint background lowers Rwp but fails the
+unchanged 2-percentage-point composition gate. These exploratory results do
+not replace the frozen native holdout validator or make 1h an untouched test
+for future tuning. See `docs/qarr-holdout-investigation.md`.
+
 Rietveld rejected-step recovery now retains the unchanged accepted-state
 Jacobian and restores damping to at least the caller's initial value after a
 failed backtracking sequence. The independent Python and native structural
