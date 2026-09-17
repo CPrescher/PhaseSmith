@@ -86,5 +86,8 @@ def test_pawley_supplemental_snapshot_matches_live_exports() -> None:
     module = _snapshot_module()
     module.verify_snapshot(
         ROOT / "api" / "python-pawley-api-unreleased.json",
-        modules=(("phasesmith.refinement.pawley", "workflow"),),
+        modules=(
+            ("phasesmith.refinement.pawley", "workflow"),
+            ("phasesmith.project_bundle", "workflow"),
+        ),
     )

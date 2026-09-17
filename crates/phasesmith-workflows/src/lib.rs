@@ -243,3 +243,6 @@ pub use pawley_solver::{
     PawleyCheckpoint, PawleyDiagnostics, PawleyOptions, PawleyResult, PawleySolver, refine_pawley,
     refine_pawley_with_runtime,
 };
+
+mod pawley_project;
+pub use pawley_project::{PawleyAnalysis, PawleyProjectState};

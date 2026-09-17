@@ -85,6 +85,7 @@ fn format_three_round_trips_tof_histogram_analysis_and_checkpoint() {
     assert_eq!(report.histograms[0].probe, "neutron");
 
     let mut legacy = manifest;
+    legacy.as_object_mut().unwrap().remove("pawley_analyses");
     legacy["format_version"] = serde_json::json!(3);
     legacy
         .as_object_mut()
@@ -214,7 +215,7 @@ fn format_five_round_trips_structural_tof_and_complete_checkpoint() {
 
     let mut manifest: serde_json::Value =
         serde_json::from_slice(&fs::read(directory.join(PROJECT_MANIFEST_NAME)).unwrap()).unwrap();
-    assert_eq!(manifest["format_version"], 5);
+    assert_eq!(manifest["format_version"], 6);
     assert_eq!(
         manifest["structural_tof_multibank_analyses"]
             .as_array()
