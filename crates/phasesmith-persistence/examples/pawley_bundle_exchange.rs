@@ -20,6 +20,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         )?;
         analysis.checkpoint = Some(result.checkpoint);
     }
+    for analysis in &mut bundle.tof_pawley_analyses {
+        let mut runtime =
+            RefinementRuntime::new(phasesmith_workflows::RefinementLimits::default(), None)?;
+        let result = phasesmith_workflows::refine_tof_pawley_with_runtime(
+            &analysis.input,
+            &analysis.options,
+            analysis.checkpoint.as_ref(),
+            &mut runtime,
+        )?;
+        analysis.checkpoint = Some(result.checkpoint);
+    }
     save_project_bundle(&args[2], &bundle, ProjectSaveOptions::default())?;
     Ok(())
 }

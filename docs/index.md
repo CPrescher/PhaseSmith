@@ -66,7 +66,8 @@ and the proposed capability development sequence.
 - [CW Pawley user guide](pawley.md) — bounded family areas, joint cell/profile
   refinement, diagnostics and restart.
 - [Pawley validation](pawley-validation.md) and
-  [implementation roadmap](pawley-plan.md), including deferred spectra/TOF.
+  [implementation roadmap](pawley-plan.md), including fixed CW spectra and
+  [joint multi-bank TOF](tof-pawley.md).
 
 ## Validation and performance
 

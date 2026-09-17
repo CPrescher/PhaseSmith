@@ -1,0 +1,45 @@
+{
+  "native_binary_sha256": "ace0868385eeda2cbdc7a340840271e12de1b280f8fba6586de4511a8f4f1b83",
+  "reconciled_upstream_commit": "9afd808c8e273f235e56e0da7f911736aeb3f964",
+  "rust": {
+    "passed": 362,
+    "failed": 0,
+    "ignored": 34
+  },
+  "python": {
+    "passed": 934,
+    "skipped": 11,
+    "deselected": 33
+  },
+  "checks": [
+    "cargo fmt --all -- --check",
+    "cargo clippy --workspace --all-targets --all-features -- -D warnings",
+    "cargo test --workspace --all-features",
+    "RUSTDOCFLAGS=-Dwarnings cargo doc --workspace --all-features --no-deps",
+    "PYTHONPATH=python pytest -q",
+    "ruff check .",
+    "ruff format --check .",
+    "mkdocs build --strict",
+    "scripts/sync_math_docs.py --check",
+    "released and three-module supplemental public API snapshots",
+    "saved standalone TOF and native format-7 manifests against JSON Schemas",
+    "Python and native TOF examples"
+  ],
+  "reports_sha256": {
+    "pawley-20260917-release-benchmark-cw.json": "ecf2ad7858111b4bbaf2cda40e775251d250361f0c7e73479b3eb52ac857a1bb",
+    "pawley-20260917-release-benchmark-spectrum.json": "620a9e045dd6006d1f25fc29844067c077e2cefc67d73df0e7f165c496a9663a",
+    "pawley-20260917-release-benchmark-tof.json": "55dec8300527d727f05f582e05cb7550937d8df63f15a007d0e18ae379d38c09",
+    "pawley-20260917-release-cell.json": "0359f8e7d45ab576af4479902c577491ced864bc3ac3784588b5285489b712dd",
+    "pawley-20260917-release-cw.json": "25fcd2482359a9dff019bf05d3f36a141eb224fe35e180137c348890a9a02b57",
+    "pawley-20260917-release-oracle.json": "345d71cb3919fbf52c7466631b5e6cb8d694f9b1f77b639814bf791ff2f13cd5",
+    "pawley-20260917-release-spectrum.json": "d2670d5eeb283e396e420dab8d73cb407fa47771673b0142008f42f8ba72ba92",
+    "pawley-20260917-release-tof.json": "961efaaa5abb3ae12c83667a20792a81e2f3437303cb03c1dbf067e70d7ab09d"
+  },
+  "limitations": [
+    "Remote CI is configured but not executed here.",
+    "Strict GSAS-II CW profile equivalence remains a documented model exception.",
+    "TOF oracle coverage uses pinned profiles, not live optimizer parity.",
+    "Acceptance CW timings overlapped verification; final benchmark workloads ran sequentially.",
+    "Later concurrent changes in the original checkout were left untouched."
+  ]
+}

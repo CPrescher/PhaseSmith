@@ -1,7 +1,7 @@
 //! Deterministic bounded dense and matrix-free Pawley Gauss–Newton solvers.
 // Matrix equations use conventional short names.
 #![allow(clippy::many_single_char_names)]
-use crate::pawley::{err, weighted};
+use crate::pawley::err;
 use crate::pawley_support::{support_guard, support_membership};
 use crate::{
     ConstraintTransform, PawleyError, PawleyEvaluation, PawleyInput, RefinementEventKind,
@@ -89,9 +89,9 @@ impl PawleyOptions {
 }
 /// Last accepted state bound to the full scientific request and algorithm controls.
 #[derive(Clone, Debug, PartialEq)]
-pub struct PawleyCheckpoint {
+pub struct PawleyCheckpoint<I = PawleyInput> {
     /// Exact original request, including data, constraints and topology.
-    pub input: PawleyInput,
+    pub input: I,
     /// Immutable numerical controls.
     pub options: PawleyOptions,
     /// Scaled free coordinates at acceptance.
@@ -139,13 +139,13 @@ pub struct PawleyDiagnostics {
 }
 /// Accepted solution and uncertainty diagnostics.
 #[derive(Clone, Debug)]
-pub struct PawleyResult {
+pub struct PawleyResult<I = PawleyInput> {
     /// Work counters, timings and convergence explanation.
     pub diagnostics: PawleyDiagnostics,
     /// Values, derivatives and fit metrics at the accepted state.
     pub evaluation: PawleyEvaluation,
     /// Restart state; rejected trials never replace it.
-    pub checkpoint: PawleyCheckpoint,
+    pub checkpoint: PawleyCheckpoint<I>,
     /// Stable stop category; budget exhaustion is not convergence.
     pub termination_reason: TerminationReason,
     /// Rank of the normalized, undamped weighted free Jacobian.
@@ -183,15 +183,103 @@ pub fn refine_pawley_with_runtime(
     restart: Option<&PawleyCheckpoint>,
     runtime: &mut RefinementRuntime<PawleyCheckpoint>,
 ) -> Result<PawleyResult, PawleyError> {
+    refine_problem_with_runtime(input, options, restart, runtime)
+}
+
+/// Internal equation boundary; keeps CW and TOF on the same bounded solver.
+pub(crate) trait PawleyProblem: Clone + PartialEq {
+    fn validate(&self) -> Result<(), PawleyError>;
+    fn parameters(&self) -> &crate::ParameterSet;
+    fn constraints(&self) -> &[crate::Constraint];
+    fn sigma(&self, sample: usize) -> f64;
+    fn known_uncertainties(&self) -> bool;
+    fn cw(&self) -> Option<&PawleyInput> {
+        None
+    }
+    fn evaluate(
+        &self,
+        options: &PawleyOptions,
+        free: &[f64],
+    ) -> Result<PawleyEvaluation, PawleyError>;
+}
+impl PawleyProblem for PawleyInput {
+    fn validate(&self) -> Result<(), PawleyError> {
+        self.validate()
+    }
+    fn parameters(&self) -> &crate::ParameterSet {
+        &self.parameters
+    }
+    fn constraints(&self) -> &[crate::Constraint] {
+        &self.constraints
+    }
+    fn sigma(&self, sample: usize) -> f64 {
+        self.pattern.uncertainty.as_ref().map_or(1.0, |s| s[sample])
+    }
+    fn known_uncertainties(&self) -> bool {
+        self.pattern.uncertainty.is_some()
+    }
+    fn cw(&self) -> Option<&PawleyInput> {
+        Some(self)
+    }
+    fn evaluate(
+        &self,
+        options: &PawleyOptions,
+        free: &[f64],
+    ) -> Result<PawleyEvaluation, PawleyError> {
+        evaluate_pawley_with_storage(
+            self,
+            free,
+            options.support_fwhm,
+            options.use_uncertainty,
+            options.max_elements,
+            options.solver == PawleySolver::Dense,
+        )
+    }
+}
+fn problem_support_guard<I: PawleyProblem>(
+    input: &I,
+    transform: &ConstraintTransform,
+    free: &[f64],
+    evaluation: &PawleyEvaluation,
+    support: f64,
+    uncertainty: bool,
+) -> Result<Option<crate::pawley_support::SupportGuards>, PawleyError> {
+    input
+        .cw()
+        .map(|cw| support_guard(cw, transform, free, evaluation, support, uncertainty))
+        .transpose()
+        .map(Option::flatten)
+}
+fn problem_support_membership<I: PawleyProblem>(
+    input: &I,
+    transform: &ConstraintTransform,
+    free: &[f64],
+    positions: &[f64],
+    support: f64,
+) -> Result<Option<Vec<(usize, usize)>>, PawleyError> {
+    input
+        .cw()
+        .map(|cw| support_membership(cw, transform, free, positions, support))
+        .transpose()
+        .map(Option::flatten)
+}
+#[allow(clippy::too_many_lines)]
+pub(crate) fn refine_problem_with_runtime<I: PawleyProblem>(
+    input: &I,
+    options: &PawleyOptions,
+    restart: Option<&PawleyCheckpoint<I>>,
+    runtime: &mut RefinementRuntime<PawleyCheckpoint<I>>,
+) -> Result<PawleyResult<I>, PawleyError> {
     input.validate()?;
     options.validate()?;
-    let transform = ConstraintTransform::new(input.parameters.clone(), input.constraints.clone())
-        .map_err(err)?;
+    let transform =
+        ConstraintTransform::new(input.parameters().clone(), input.constraints().to_vec())
+            .map_err(err)?;
     let mut diagnostics = PawleyDiagnostics::default();
     let chain = transform.derivative_matrix().map_err(err)?;
     let nonlinear_columns: Vec<usize> = (0..transform.free_keys().len())
         .filter(|&j| {
-            input.parameters.specs().iter().enumerate().any(|(i, s)| {
+            input.parameters().specs().iter().enumerate().any(|(i, s)| {
                 matches!(s.key().module(), "pawley_profile" | "pawley_lattice")
                     && chain.values[i * chain.columns + j] != 0.0
             })
@@ -294,7 +382,7 @@ pub fn refine_pawley_with_runtime(
             );
             let guard = if !initializing && (checkpoint.support_local || damping > options.damping)
             {
-                support_guard(
+                problem_support_guard(
                     input,
                     &transform,
                     &checkpoint.free,
@@ -469,9 +557,13 @@ pub fn refine_pawley_with_runtime(
                     .zip(delta.iter().zip(&norms))
                     .map(|(v, (d, n))| v + fraction * d / n)
                     .collect();
-                let retracted = guard
-                    .as_ref()
-                    .map_or(Ok(()), |g| g.retract(input, &transform, &mut trial));
+                let retracted = guard.as_ref().map_or(Ok(()), |g| {
+                    g.retract(
+                        input.cw().expect("CW support guard"),
+                        &transform,
+                        &mut trial,
+                    )
+                });
                 match retracted
                     .and_then(|()| timed_evaluate(input, options, &trial, &mut diagnostics))
                 {
@@ -502,13 +594,13 @@ pub fn refine_pawley_with_runtime(
                         .map(|(v, (d, n))| v + f * d / n)
                         .collect();
                     if let Some(g) = &guard {
-                        g.retract(input, &transform, &mut v)?;
+                        g.retract(input.cw().expect("CW support guard"), &transform, &mut v)?;
                     }
                     Ok(v)
                 };
                 let membership_at = |f| {
                     trial_at(f).and_then(|v| {
-                        support_membership(
+                        problem_support_membership(
                             input,
                             &transform,
                             &v,
@@ -641,28 +733,21 @@ pub fn refine_pawley_with_runtime(
     Ok(result)
 }
 
-fn timed_evaluate(
-    input: &PawleyInput,
+fn timed_evaluate<I: PawleyProblem>(
+    input: &I,
     options: &PawleyOptions,
     free: &[f64],
     diagnostics: &mut PawleyDiagnostics,
 ) -> Result<PawleyEvaluation, PawleyError> {
     let start = Instant::now();
-    let result = evaluate_pawley_with_storage(
-        input,
-        free,
-        options.support_fwhm,
-        options.use_uncertainty,
-        options.max_elements,
-        options.solver == PawleySolver::Dense,
-    );
+    let result = input.evaluate(options, free);
     diagnostics.evaluations += 1;
     diagnostics.evaluation_seconds += start.elapsed().as_secs_f64();
     result
 }
 #[allow(clippy::too_many_lines)] // Physical bounds and composed-width chains share one ordering.
-fn inequalities(
-    input: &PawleyInput,
+fn inequalities<I: PawleyProblem>(
+    input: &I,
     t: &ConstraintTransform,
     z: &[f64],
     norms: &[f64],
@@ -672,7 +757,7 @@ fn inequalities(
     let chain = t.derivative_matrix().map_err(err)?;
     let mut rows = Vec::new();
     let mut rhs = Vec::new();
-    for (i, spec) in input.parameters.specs().iter().enumerate() {
+    for (i, spec) in input.parameters().specs().iter().enumerate() {
         let row: Vec<f64> = (0..z.len())
             .map(|j| chain.values[i * z.len() + j] / norms[j])
             .collect();
@@ -687,104 +772,108 @@ fn inequalities(
             }
         }
     }
-    // Positive composed widths are physical inequalities, not independent signs on U/V/W/X/Y.
-    let profile_indices: Vec<usize> = crate::PAWLEY_PROFILE_NAMES
-        .iter()
-        .map(|name| {
-            input
-                .parameters
-                .index_of(&crate::pawley_key("profile", "instrument", name)?)
-                .ok_or_else(|| err("missing profile parameter"))
-        })
-        .collect::<Result<_, PawleyError>>()?;
-    let profile: Vec<f64> = profile_indices
-        .iter()
-        .map(|i| values[input.parameters.specs()[*i].key()])
-        .collect();
-    let mut reflection = 0;
-    for phase in &input.phases {
-        let geometry = if let Some(domain) = &phase.lattice {
-            let par = domain.parameterization();
-            let v: Vec<f64> = par
-                .parameter_names()
-                .iter()
-                .map(|name| Ok(values[&crate::pawley_key("lattice", &phase.id, name)?]))
-                .collect::<Result<_, PawleyError>>()?;
-            Some(
-                crate::cw_lattice_geometry(
-                    par,
-                    par.to_cell(&v).map_err(err)?,
-                    &phase.hkl,
-                    input.instrument.wavelength_angstrom,
+    if let Some(input) = input.cw() {
+        // Positive composed widths are physical inequalities, not independent signs on U/V/W/X/Y.
+        let profile_indices: Vec<usize> = crate::PAWLEY_PROFILE_NAMES
+            .iter()
+            .map(|name| {
+                input
+                    .parameters
+                    .index_of(&crate::pawley_key("profile", "instrument", name)?)
+                    .ok_or_else(|| err("missing profile parameter"))
+            })
+            .collect::<Result<_, PawleyError>>()?;
+        let profile: Vec<f64> = profile_indices
+            .iter()
+            .map(|i| values[input.parameters.specs()[*i].key()])
+            .collect();
+        let mut reflection = 0;
+        for phase in &input.phases {
+            let geometry = if let Some(domain) = &phase.lattice {
+                let par = domain.parameterization();
+                let v: Vec<f64> = par
+                    .parameter_names()
+                    .iter()
+                    .map(|name| Ok(values[&crate::pawley_key("lattice", &phase.id, name)?]))
+                    .collect::<Result<_, PawleyError>>()?;
+                Some(
+                    crate::cw_lattice_geometry(
+                        par,
+                        par.to_cell(&v).map_err(err)?,
+                        &phase.hkl,
+                        input.instrument.wavelength_angstrom,
+                    )
+                    .map_err(err)?,
                 )
-                .map_err(err)?,
-            )
-        } else {
-            None
-        };
-        for r in 0..phase.reflection_ids.len() {
-            let reference_theta = evaluation.positions[reflection].to_radians() * 0.5;
-            let wavelengths = [input.instrument.wavelength_angstrom];
-            for &wavelength in input
-                .fixed_spectrum
-                .as_ref()
-                .map_or(wavelengths.as_slice(), |s| s.wavelengths_angstrom())
-            {
-                let ratio = wavelength / input.instrument.wavelength_angstrom;
-                let theta = (ratio * reference_theta.sin()).asin();
-                let component_chain = ratio * reference_theta.cos() / theta.cos();
-                let tangent = theta.tan();
-                let secant = theta.cos().recip();
-                let half_degree = std::f64::consts::PI / 360.0;
-                let variance = profile[0] * tangent * tangent + profile[1] * tangent + profile[2];
-                let lorentz = profile[3] * secant + profile[4] * tangent;
-                let bases = [
-                    [tangent * tangent, tangent, 1.0, 0.0, 0.0],
-                    [0.0, 0.0, 0.0, secant, tangent],
-                ];
-                let position_chains = [
-                    (2.0 * profile[0] * tangent + profile[1]) * secant * secant * half_degree,
-                    (profile[3] * secant * tangent + profile[4] * secant * secant) * half_degree,
-                ];
-                for term in 0..2 {
-                    let mut physical = vec![0.0; input.parameters.specs().len()];
-                    for (j, &index) in profile_indices.iter().enumerate() {
-                        physical[index] = bases[term][j];
-                    }
-                    if let Some(g) = &geometry {
-                        for (j, name) in g.parameter_names.iter().enumerate() {
-                            let index = input
-                                .parameters
-                                .index_of(&crate::pawley_key("lattice", &phase.id, name)?)
-                                .ok_or_else(|| err("missing cell parameter"))?;
-                            physical[index] = position_chains[term]
-                                * component_chain
-                                * g.d_two_theta_d_parameters[r * g.parameter_names.len() + j];
+            } else {
+                None
+            };
+            for r in 0..phase.reflection_ids.len() {
+                let reference_theta = evaluation.positions[reflection].to_radians() * 0.5;
+                let wavelengths = [input.instrument.wavelength_angstrom];
+                for &wavelength in input
+                    .fixed_spectrum
+                    .as_ref()
+                    .map_or(wavelengths.as_slice(), |s| s.wavelengths_angstrom())
+                {
+                    let ratio = wavelength / input.instrument.wavelength_angstrom;
+                    let theta = (ratio * reference_theta.sin()).asin();
+                    let component_chain = ratio * reference_theta.cos() / theta.cos();
+                    let tangent = theta.tan();
+                    let secant = theta.cos().recip();
+                    let half_degree = std::f64::consts::PI / 360.0;
+                    let variance =
+                        profile[0] * tangent * tangent + profile[1] * tangent + profile[2];
+                    let lorentz = profile[3] * secant + profile[4] * tangent;
+                    let bases = [
+                        [tangent * tangent, tangent, 1.0, 0.0, 0.0],
+                        [0.0, 0.0, 0.0, secant, tangent],
+                    ];
+                    let position_chains = [
+                        (2.0 * profile[0] * tangent + profile[1]) * secant * secant * half_degree,
+                        (profile[3] * secant * tangent + profile[4] * secant * secant)
+                            * half_degree,
+                    ];
+                    for term in 0..2 {
+                        let mut physical = vec![0.0; input.parameters.specs().len()];
+                        for (j, &index) in profile_indices.iter().enumerate() {
+                            physical[index] = bases[term][j];
+                        }
+                        if let Some(g) = &geometry {
+                            for (j, name) in g.parameter_names.iter().enumerate() {
+                                let index = input
+                                    .parameters
+                                    .index_of(&crate::pawley_key("lattice", &phase.id, name)?)
+                                    .ok_or_else(|| err("missing cell parameter"))?;
+                                physical[index] = position_chains[term]
+                                    * component_chain
+                                    * g.d_two_theta_d_parameters[r * g.parameter_names.len() + j];
+                            }
+                        }
+                        let terms: Vec<(usize, f64)> = physical
+                            .iter()
+                            .copied()
+                            .enumerate()
+                            .filter(|(_, v)| *v != 0.0)
+                            .collect();
+                        let row: Vec<f64> = (0..z.len())
+                            .map(|j| {
+                                terms
+                                    .iter()
+                                    .map(|(i, v)| v * chain.values[i * z.len() + j])
+                                    .sum::<f64>()
+                                    / norms[j]
+                            })
+                            .collect();
+                        let scale = row.iter().map(|v| v * v).sum::<f64>().sqrt();
+                        if scale > 0.0 {
+                            rows.extend(row.iter().map(|v| v / scale));
+                            rhs.push(-[variance, lorentz][term] / scale);
                         }
                     }
-                    let terms: Vec<(usize, f64)> = physical
-                        .iter()
-                        .copied()
-                        .enumerate()
-                        .filter(|(_, v)| *v != 0.0)
-                        .collect();
-                    let row: Vec<f64> = (0..z.len())
-                        .map(|j| {
-                            terms
-                                .iter()
-                                .map(|(i, v)| v * chain.values[i * z.len() + j])
-                                .sum::<f64>()
-                                / norms[j]
-                        })
-                        .collect();
-                    let scale = row.iter().map(|v| v * v).sum::<f64>().sqrt();
-                    if scale > 0.0 {
-                        rows.extend(row.iter().map(|v| v / scale));
-                        rhs.push(-[variance, lorentz][term] / scale);
-                    }
                 }
+                reflection += 1;
             }
-            reflection += 1;
         }
     }
     Ok((
@@ -818,8 +907,8 @@ struct LinearDesign<'a> {
     frozen: Vec<usize>,
 }
 impl<'a> LinearDesign<'a> {
-    fn new(
-        input: &PawleyInput,
+    fn new<I: PawleyProblem>(
+        input: &I,
         evaluation: &'a PawleyEvaluation,
         uncertainty: bool,
         frozen: Vec<usize>,
@@ -833,20 +922,19 @@ impl<'a> LinearDesign<'a> {
                 if !yes {
                     0.0
                 } else if uncertainty {
-                    input
-                        .pattern
-                        .uncertainty
-                        .as_ref()
-                        .map_or(1.0, |s| 1.0 / s[i])
+                    1.0 / input.sigma(i)
                 } else {
                     1.0
                 }
             })
             .collect();
-        let mut dense = evaluation
-            .jacobian
-            .as_ref()
-            .map(|_| weighted(input, evaluation, uncertainty).0);
+        let mut dense = evaluation.jacobian.as_ref().map(|j| {
+            let mut j = j.clone();
+            for (i, &w) in weights.iter().enumerate() {
+                j.row_mut(i).scale_mut(w);
+            }
+            j
+        });
         let mut norms = if let Some(j) = &mut dense {
             for &c in &frozen {
                 j.column_mut(c).fill(0.0);
@@ -924,16 +1012,16 @@ fn preconditioner(design: &LinearDesign<'_>, damping: f64) -> Vec<BlockFactor> {
         })
         .collect()
 }
-struct ProductStep<'a, 'b> {
+struct ProductStep<'a, 'b, C> {
     preconditioner: Vec<BlockFactor>,
     iterations: std::cell::Cell<usize>,
     design: &'a LinearDesign<'b>,
     residual: &'a DVector<f64>,
     damping: f64,
     options: &'a PawleyOptions,
-    runtime: &'a RefinementRuntime<PawleyCheckpoint>,
+    runtime: &'a RefinementRuntime<C>,
 }
-impl ProductStep<'_, '_> {
+impl<C> ProductStep<'_, '_, C> {
     fn precondition(&self, residual: &DVector<f64>, tangent: &Tangent) -> DVector<f64> {
         let mut result = residual.clone();
         for (start, factor) in &self.preconditioner {
@@ -952,7 +1040,7 @@ impl ProductStep<'_, '_> {
             + v * self.damping)
     }
 }
-impl StepModel for ProductStep<'_, '_> {
+impl<C> StepModel for ProductStep<'_, '_, C> {
     fn dimensions(&self) -> usize {
         self.design.norms.len()
     }
@@ -1181,13 +1269,13 @@ fn face_candidate(
 // Feasible active-set least squares in a QR-reduced design. Constraints use A d >= b.
 // Each face is solved by an SVD in its exact constraint null space.
 #[allow(clippy::too_many_lines)] // Feasible block entry and general active-face iteration.
-fn active_step(
+fn active_step<C>(
     design: &DMatrix<f64>,
     target: &DVector<f64>,
     a: &DMatrix<f64>,
     b: &DVector<f64>,
     limit: usize,
-    runtime: &RefinementRuntime<PawleyCheckpoint>,
+    runtime: &RefinementRuntime<C>,
     diagnostics: &mut PawleyDiagnostics,
 ) -> Result<DVector<f64>, StepError> {
     active_step_model(
@@ -1248,12 +1336,12 @@ impl StepModel for DenseStep<'_> {
     }
 }
 #[allow(clippy::too_many_lines)]
-fn active_step_model(
+fn active_step_model<C>(
     model: &impl StepModel,
     a: &DMatrix<f64>,
     b: &DVector<f64>,
     limit: usize,
-    runtime: &RefinementRuntime<PawleyCheckpoint>,
+    runtime: &RefinementRuntime<C>,
     diagnostics: &mut PawleyDiagnostics,
 ) -> Result<DVector<f64>, StepError> {
     let n = model.dimensions();
@@ -1405,23 +1493,23 @@ fn active_step_model(
     Err(StepError::Numerical)
 }
 #[allow(clippy::too_many_lines)] // Diagnostics are assembled from one undamped factorization.
-fn result(
-    input: &PawleyInput,
+fn result<I: PawleyProblem>(
+    input: &I,
     options: &PawleyOptions,
-    checkpoint: PawleyCheckpoint,
+    checkpoint: PawleyCheckpoint<I>,
     evaluation: PawleyEvaluation,
     reason: TerminationReason,
-) -> Result<PawleyResult, PawleyError> {
+) -> Result<PawleyResult<I>, PawleyError> {
     let design = LinearDesign::new(input, &evaluation, options.use_uncertainty, Vec::new())?;
     let n = design.norms.len();
     let norms = design.norms.clone();
     let dense = design.dense.clone();
-    let t = ConstraintTransform::new(input.parameters.clone(), input.constraints.clone())
+    let t = ConstraintTransform::new(input.parameters().clone(), input.constraints().to_vec())
         .map_err(err)?;
     let values = t.unpack(&checkpoint.free, false).map_err(err)?;
     let chain = t.derivative_matrix().map_err(err)?;
     let active_bounds: Vec<usize> = input
-        .parameters
+        .parameters()
         .specs()
         .iter()
         .enumerate()
@@ -1434,7 +1522,7 @@ fn result(
         .map(|(i, _)| i)
         .collect();
     let physical_bound_rows: usize = input
-        .parameters
+        .parameters()
         .specs()
         .iter()
         .enumerate()
@@ -1492,7 +1580,7 @@ fn result(
         .filter(|v| **v > threshold)
         .count();
     let observed_free_parameters = n - evaluation.inactive_columns.len();
-    let support_boundary = support_guard(
+    let support_boundary = problem_support_guard(
         input,
         &t,
         &checkpoint.free,
@@ -1519,7 +1607,7 @@ fn result(
     let covariance = if limitation.is_none() {
         let vt = svd.v_t.ok_or_else(|| err("missing singular vectors"))?;
         let mut c = DMatrix::zeros(n, n);
-        let variance = if options.use_uncertainty && input.pattern.uncertainty.is_some() {
+        let variance = if options.use_uncertainty && input.known_uncertainties() {
             1.0
         } else {
             evaluation.residuals.reduced_chi_square
@@ -1595,7 +1683,7 @@ mod tests {
     #[test]
     fn roundoff_sized_inactive_box_violation_returns_a_physically_feasible_step() {
         // Exact constrained minimizer of (x + 1e-14)^2 + (y - 1)^2, x >= 0.
-        let runtime = RefinementRuntime::new(RefinementLimits::default(), None).unwrap();
+        let runtime = RefinementRuntime::<()>::new(RefinementLimits::default(), None).unwrap();
         let result = active_step(
             &DMatrix::identity(2, 2),
             &DVector::from_vec(vec![-1e-14, 1.0]),

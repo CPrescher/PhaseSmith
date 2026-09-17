@@ -42,7 +42,7 @@ def test_shared_pawley_bundle_and_explicit_native_exchange(tmp_path):
     assert bundle.pawley_histograms == ("measured",)
     assert bundle.analysis_counts["pawley"] == 1
     wire = json.loads((source / "manifest.json").read_text())
-    assert wire["format_version"] == 6
+    assert wire["format_version"] == 7
     assert wire["project"]["phases"] == []  # No fictitious atom-bearing phases.
     assert "x_deg" not in wire["pawley_analyses"][0]
     loaded = ProjectBundle.load(source)
@@ -112,8 +112,9 @@ def test_bundle_stale_shared_state_corruption_and_legacy_migration(tmp_path):
         ProjectBundle.load(path)
     original["format_version"] = 5
     original.pop("pawley_analyses")
+    original.pop("tof_pawley_analyses")
     manifest.write_text(json.dumps(original))
     legacy = ProjectBundle.load(path)
     assert legacy.pawley_histograms == ()
     legacy.save(tmp_path / "migrated")
-    assert json.loads((tmp_path / "migrated/manifest.json").read_text())["format_version"] == 6
+    assert json.loads((tmp_path / "migrated/manifest.json").read_text())["format_version"] == 7

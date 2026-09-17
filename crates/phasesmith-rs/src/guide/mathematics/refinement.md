@@ -260,8 +260,8 @@ positive residual degrees of freedom; active width or parameter boundaries
 suppress it. Covariance lives in scaled free coordinates and follows the `D`
 propagation above. Matrix-free mode reports neither global numerical rank nor
 covariance; observed-column counts and exact-coincidence diagnostics remain.
-Allocation is explicitly bounded in both modes. Wavelength spectra/TOF are
-later extensions.
+Allocation is explicitly bounded in both modes. Fixed spectra and joint TOF
+use the same area objective, as described below.
 
 Methodological source: G. S. Pawley, *J. Appl. Cryst.* **14**, 357–361 (1981),
 [doi:10.1107/S0021889881009618](https://doi.org/10.1107/S0021889881009618).
@@ -284,3 +284,32 @@ widths. The existing fused component kernel accumulates values and derivatives
 in one pass. Component ratios are fixed detected-area ratios and no extra
 multiplicity, LP or structural correction is applied. Each component retains
 its own finite support, with the observable family support equal to their union.
+
+### Joint TOF Pawley
+
+The joint objective concatenates native microsecond-density banks:
+
+```text
+y[b,i] = fixed_background[b,i] + sum(j, c[b,j] T[j](u[b,i]))
+         + sum(k, I[b,k] p_TOF(t[b,i]; d[k](cell), q[b]))
+Phi = 0.5 * sum(b,i included, ((y[b,i] - observed[b,i]) / sigma[b,i])^2)
+t0(d) = zero + DIFC*d + DIFA*d^2 + DIFB/d
+support = [t0 - support_fwhm*H - tail_log/alpha,
+           t0 + support_fwhm*H + tail_log/beta]   (inclusive)
+dy/d(cell[j]) = sum(k, I[b,k] * dp_TOF/dd[k] * dd[k]/d(cell[j]))
+```
+
+Areas, backgrounds and all fifteen calibration/profile coefficients are bank
+local; symmetry-independent cells are shared by phase identity. Areas have
+units density times microseconds. They absorb fixed amplitude corrections;
+no second multiplicity or incident-spectrum factor is applied. Bin widths do
+not enter statistical weights. Uncertainty weighting requires sigmas in every
+bank or none; unit weighting can be selected explicitly.
+
+The existing fused TOF kernel provides calibration/profile and d-spacing
+chains in the same evaluation. Fixed HKL lists must cover allowed-cell and
+tail margins. Physical trials validate the increasing calibration and positive
+composed shapes. At least one DIFC stays fixed when shared lengths vary, to
+anchor their scale gauge. Support-local CW certificates do not apply to TOF.
+A joint checkpoint stores one accepted state and is bound to every bank,
+normalization record, shared cell, support policy and constraint.

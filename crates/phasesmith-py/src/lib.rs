@@ -65,6 +65,7 @@ mod project_bundle;
 mod rietveld;
 mod tof_lebail;
 mod tof_multibank;
+mod tof_pawley;
 mod tof_structural_multibank;
 
 type ProfileArrays<'py> = (
@@ -4272,6 +4273,7 @@ fn _core(module: &Bound<'_, PyModule>) -> PyResult<()> {
     profile_estimation::register(module)?;
     tof_lebail::register(module)?;
     pawley::register(module)?;
+    tof_pawley::register(module)?;
     project_bundle::register(module)?;
     tof_multibank::register(module)?;
     tof_structural_multibank::register(module)?;

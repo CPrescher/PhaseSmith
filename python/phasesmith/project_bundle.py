@@ -11,6 +11,13 @@ from types import MappingProxyType
 from . import _core
 from .radiation import RadiationProbe
 from .refinement.pawley import PawleyOptions, PawleyProject, _decode_input, _input, _record
+from .refinement.tof_pawley import (
+    TofPawleyProject,
+    _bound_record,
+)
+from .refinement.tof_pawley import (
+    _decode_input as _decode_tof_input,
+)
 
 __all__ = ["ProjectBundle"]
 
@@ -41,7 +48,7 @@ class ProjectBundle:
 
     @classmethod
     def load(cls, path: str | Path) -> ProjectBundle:
-        """Load native bundle formats 1-6 through the bounded Rust codec."""
+        """Load native bundle formats 1-7 through the bounded Rust codec."""
         return cls(_core._ProjectBundle.load(str(path)))
 
     @classmethod
@@ -66,6 +73,43 @@ class ProjectBundle:
                 _serialized(project), str(probe), project_id, histogram_id, name
             )
         )
+
+    @classmethod
+    def from_tof_pawley(
+        cls,
+        project: TofPawleyProject,
+        *,
+        project_id: str = "project",
+        analysis_id: str = "tof-pawley",
+        name: str = "TOF Pawley analysis",
+    ) -> ProjectBundle:
+        """Create a shared bundle with one density histogram for each participating bank."""
+        if not isinstance(project, TofPawleyProject):
+            raise TypeError("project must be TofPawleyProject")
+        record = _bound_record(project.input, project.options, project.checkpoint)
+        return cls(_core._ProjectBundle.from_tof_pawley(record, project_id, analysis_id, name))
+
+    @property
+    def tof_pawley_analyses(self) -> tuple[str, ...]:
+        """Joint TOF analysis IDs in stored order."""
+        return tuple(self._native.tof_pawley_analyses)
+
+    def tof_pawley(self, analysis_id: str) -> TofPawleyProject:
+        """Obtain an independently editable, atomically resumable multi-bank analysis."""
+        record = self._native.tof_pawley(analysis_id)
+        wire = json.loads(record)
+        return TofPawleyProject(
+            _decode_tof_input(wire["input"]),
+            PawleyOptions(**wire["options"]),
+            record if wire["checkpoint"] is not None else None,
+        )
+
+    def with_tof_pawley(self, analysis_id: str, project: TofPawleyProject) -> ProjectBundle:
+        """Insert a complete joint analysis after checking all shared histogram owners."""
+        if not isinstance(project, TofPawleyProject):
+            raise TypeError("project must be TofPawleyProject")
+        record = _bound_record(project.input, project.options, project.checkpoint)
+        return ProjectBundle(self._native.with_tof_pawley(analysis_id, record))
 
     @property
     def pawley_histograms(self) -> tuple[str, ...]:
@@ -92,7 +136,7 @@ class ProjectBundle:
         return ProjectBundle(self._native.with_pawley(histogram_id, _serialized(project)))
 
     def save(self, path: str | Path, *, overwrite: bool = False) -> None:
-        """Save format 6 atomically; preserve unrelated files in the directory."""
+        """Save format 7 atomically; preserve unrelated files in the directory."""
         if not isinstance(overwrite, bool):
             raise TypeError("overwrite must be boolean")
         self._native.save(str(path), overwrite)

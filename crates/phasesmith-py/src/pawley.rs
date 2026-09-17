@@ -58,7 +58,7 @@ fn _pawley_prepare(py: Python<'_>, record: String) -> PyResult<String> {
     })
     .map_err(error)
 }
-fn arrays<'py>(py: Python<'py>, e: &PawleyEvaluation) -> PyResult<Bound<'py, PyDict>> {
+pub(crate) fn arrays<'py>(py: Python<'py>, e: &PawleyEvaluation) -> PyResult<Bound<'py, PyDict>> {
     let d = PyDict::new(py);
     d.set_item("calculated_y", e.calculated_y.clone().into_pyarray(py))?;
     d.set_item("background_y", e.background_y.clone().into_pyarray(py))?;
@@ -167,6 +167,19 @@ fn _pawley_refine<'py>(
                 .map_err(|e| e.to_string())
         })
         .map_err(error)?;
+    let record = encode_pawley_project(&PawleyProject {
+        input: result.checkpoint.input.clone(),
+        options: result.checkpoint.options.clone(),
+        checkpoint: Some(result.checkpoint.clone()),
+    })
+    .map_err(error)?;
+    result_arrays(py, result, record)
+}
+pub(crate) fn result_arrays<I>(
+    py: Python<'_>,
+    result: phasesmith_workflows::PawleyResult<I>,
+    record: String,
+) -> PyResult<Bound<'_, PyDict>> {
     let d = arrays(py, &result.evaluation)?;
     d.set_item("termination_reason", result.termination_reason.as_str())?;
     d.set_item("rank", result.rank)?;
@@ -216,17 +229,10 @@ fn _pawley_refine<'py>(
         checkpoint.chi_square_history.clone().into_pyarray(py),
     )?;
     d.set_item("free", checkpoint.free.clone().into_pyarray(py))?;
-    let project = PawleyProject {
-        input: checkpoint.input.clone(),
-        options: checkpoint.options.clone(),
-        checkpoint: Some(checkpoint),
-    };
-    d.set_item(
-        "checkpoint",
-        encode_pawley_project(&project).map_err(error)?,
-    )?;
+    d.set_item("checkpoint", record)?;
     Ok(d)
 }
+
 pub(crate) fn register(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<NativePawleyJacobian>()?;
     m.add_function(wrap_pyfunction!(_pawley_prepare, m)?)?;

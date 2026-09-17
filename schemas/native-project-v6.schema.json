@@ -689,29 +689,29 @@
       ],
       "properties": {
         "phases": {
-          "$ref": "pawley-project-v2.schema.json#/$defs/input/properties/phases"
+          "$ref": "https://phasesmith.readthedocs.io/schemas/pawley-project-v2.schema.json#/$defs/input/properties/phases"
         },
         "background": {
-          "$ref": "pawley-project-v2.schema.json#/$defs/input/properties/background"
+          "$ref": "https://phasesmith.readthedocs.io/schemas/pawley-project-v2.schema.json#/$defs/input/properties/background"
         },
         "signed_intensities": {
-          "$ref": "pawley-project-v2.schema.json#/$defs/input/properties/signed_intensities"
+          "$ref": "https://phasesmith.readthedocs.io/schemas/pawley-project-v2.schema.json#/$defs/input/properties/signed_intensities"
         },
         "parameters": {
-          "$ref": "pawley-project-v2.schema.json#/$defs/input/properties/parameters"
+          "$ref": "https://phasesmith.readthedocs.io/schemas/pawley-project-v2.schema.json#/$defs/input/properties/parameters"
         },
         "constraints": {
-          "$ref": "pawley-project-v2.schema.json#/$defs/input/properties/constraints"
+          "$ref": "https://phasesmith.readthedocs.io/schemas/pawley-project-v2.schema.json#/$defs/input/properties/constraints"
         },
         "histogram_id": {
           "type": "string",
           "minLength": 1
         },
         "options": {
-          "$ref": "pawley-project-v2.schema.json#/$defs/options"
+          "$ref": "https://phasesmith.readthedocs.io/schemas/pawley-project-v2.schema.json#/$defs/options"
         },
         "checkpoint": {
-          "$ref": "pawley-project-v2.schema.json#/properties/checkpoint"
+          "$ref": "https://phasesmith.readthedocs.io/schemas/pawley-project-v2.schema.json#/properties/checkpoint"
         }
       }
     }

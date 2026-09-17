@@ -8,14 +8,15 @@ crate has no PyO3, NumPy, CPython, webview, or Tauri dependency.
 
 A native project is a directory with two library-owned files:
 
-- `manifest.json` contains format version 6, explicit wire records, array
+- `manifest.json` contains format version 7, explicit wire records, array
   descriptors, units in field names, and SHA-256 hashes;
 - `arrays.npz` contains only contiguous little-endian `float64`, `int32`,
   `uint64`, and boolean NPY members.
 
 The complete manifest contract is
-[`schemas/native-project-v6.schema.json`](https://github.com/CPrescher/PhaseSmith/blob/main/schemas/native-project-v6.schema.json).
-Versions 1 through 5 remain readable; they have no Pawley analysis field. Versions 1 and 2 have no TOF histograms
+[`schemas/native-project-v7.schema.json`](https://github.com/CPrescher/PhaseSmith/blob/main/schemas/native-project-v7.schema.json).
+Versions 1 through 6 remain readable. Versions 1–5 have no CW Pawley field;
+version 6 adds CW Pawley, and version 7 adds joint TOF Pawley analyses. Versions 1 and 2 have no TOF histograms
 or TOF Le Bail analyses; version 1 also has no Rietveld analyses; versions 1
 through 3 have no joint multi-bank TOF geometry analyses; versions 1 through 4
 have no structural multi-bank TOF analyses.
@@ -28,7 +29,7 @@ Use native `ProjectBundle`, `load_project_bundle` and `save_project_bundle` to
 retain **all** supported methods together. Method-specific loaders remain
 validated views selecting one family; saving such a view writes that family.
 The mixed bundle API preserves Rietveld, single-bank TOF Le Bail, joint TOF
-geometry, structural TOF and Pawley analyses, including accepted checkpoints.
+geometry, structural TOF, CW Pawley and joint TOF Pawley analyses, including accepted checkpoints.
 All families validate against the same owned histogram records. Unknown future
 formats and fields are rejected rather than silently dropped.
 
@@ -36,8 +37,16 @@ Pawley analyses own typed cell-only phase/domain metadata and stable family IDs;
 they do not require fictitious structural atoms. When a histogram references
 structural phases, Pawley phase IDs must match their ordered identities. The
 histogram pattern and experiment must match exactly. Observations are stored
-once in the shared NPZ arrays; native format 6 hydrates the standalone scientific
+once in the shared NPZ arrays; native format 7 hydrates the standalone scientific
 codec from that histogram before checking the checkpoint request digest.
+
+TOF Pawley analyses have a stable analysis ID and reference one or more TOF
+histogram IDs. They retain shared cells and fixed HKL topology, bank-local
+areas/backgrounds, normalization provenance, selected calibration/profile
+parameters, exact ties and one atomic joint checkpoint. Each bank hydrates
+its observations and instrument from the corresponding shared histogram.
+Python `from_tof_pawley`, `tof_pawley` and `with_tof_pawley` mirror the CW methods
+below; see the [TOF example](tof-pawley.md#restart-and-shared-bundles).
 
 Python exposes `phasesmith.project_bundle.ProjectBundle`:
 

@@ -7,7 +7,7 @@ use super::{
 };
 use phasesmith_workflows::{
     PawleyAnalysis, PawleyProjectState, RietveldAnalysis, StructuralTofMultiBankAnalysis,
-    TofLeBailAnalysis, TofMultiBankGeometryAnalysis,
+    TofLeBailAnalysis, TofMultiBankGeometryAnalysis, TofPawleyAnalysis, TofPawleyProjectState,
 };
 use std::fmt::Display;
 use std::path::{Path, PathBuf};
@@ -27,6 +27,8 @@ pub struct ProjectBundle {
     pub structural_tof_multibank_analyses: Vec<StructuralTofMultiBankAnalysis>,
     /// Cell-only CW Pawley analyses.
     pub pawley_analyses: Vec<PawleyAnalysis>,
+    /// Joint cell-only TOF Pawley analyses.
+    pub tof_pawley_analyses: Vec<TofPawleyAnalysis>,
 }
 fn invalid(e: impl Display) -> PersistenceError {
     PersistenceError::InvalidRecord {
@@ -44,6 +46,7 @@ impl ProjectBundle {
             tof_multibank_geometry_analyses: Vec::new(),
             structural_tof_multibank_analyses: Vec::new(),
             pawley_analyses: Vec::new(),
+            tof_pawley_analyses: Vec::new(),
         }
     }
     /// Validate every family and its shared histogram/phase references.
@@ -72,6 +75,12 @@ impl ProjectBundle {
         StructuralTofMultiBankProjectState {
             project: self.project.clone(),
             analyses: self.structural_tof_multibank_analyses.clone(),
+        }
+        .validate()
+        .map_err(invalid)?;
+        TofPawleyProjectState {
+            project: self.project.clone(),
+            analyses: self.tof_pawley_analyses.clone(),
         }
         .validate()
         .map_err(invalid)?;
@@ -118,6 +127,10 @@ pub fn save_project_bundle(
         project: bundle.project.clone(),
         analyses: bundle.pawley_analyses.clone(),
     })?;
+    let tof_pawley = super::tof_pawley::encode_analyses(&TofPawleyProjectState {
+        project: bundle.project.clone(),
+        analyses: bundle.tof_pawley_analyses.clone(),
+    })?;
     save_project_parts(
         path.as_ref(),
         &bundle.project,
@@ -126,18 +139,19 @@ pub fn save_project_bundle(
         geometry,
         structural,
         pawley,
+        tof_pawley,
         arrays,
         options,
     )
 }
-/// Load formats 1–6 and retain all analysis families in stable stored order.
+/// Load formats 1–7 and retain all analysis families in stable stored order.
 /// # Errors
 /// Rejects unsupported versions, corruption, resource limits and inconsistent state.
 pub fn load_project_bundle(
     path: impl AsRef<Path>,
     limits: ProjectReadLimits,
 ) -> Result<ProjectBundle, PersistenceError> {
-    let (project, rietveld, tof, geometry, structural, pawley, mut arrays) =
+    let (project, rietveld, tof, geometry, structural, pawley, tof_pawley, mut arrays) =
         load_project_parts(path.as_ref(), limits)?;
     let rietveld_analyses =
         rietveld_wire::decode_state(project.clone(), rietveld, limits)?.analyses;
@@ -148,6 +162,8 @@ pub fn load_project_bundle(
     let structural_tof_multibank_analyses =
         tof_structural_wire::decode_state(project.clone(), structural, limits)?.analyses;
     let pawley_analyses = pawley::decode_state(project.clone(), pawley, limits)?.analyses;
+    let tof_pawley_analyses =
+        super::tof_pawley::decode_state(project.clone(), tof_pawley, limits)?.analyses;
     if !arrays.is_empty() {
         return Err(invalid(
             "manifest contains arrays that are not referenced by the project",
@@ -160,6 +176,7 @@ pub fn load_project_bundle(
         tof_multibank_geometry_analyses,
         structural_tof_multibank_analyses,
         pawley_analyses,
+        tof_pawley_analyses,
     })
 }
 /// Save a shared project containing only Pawley analyses.

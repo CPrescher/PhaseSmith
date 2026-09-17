@@ -6,13 +6,13 @@ development versions.
 
 ## Unreleased
 
-- Add native CW Pawley family-area refinement with joint analytical cell/profile
-  and linear background derivatives, bounded/tied parameters, rank and boundary
-  diagnostics, cancellation and accepted-state restart. Expose a NumPy facade
-  and standalone version-1 JSON persistence. Dense memory limits and deferred
-  matrix-free, spectra, TOF and live oracle scope are documented. The measured
-  neutron gate passes; large sucrose convergence remains limited by the time
-  budget and is explicitly reported as an open release gate.
+- Add native CW and single-/multi-bank TOF Pawley refinement with bounded/tied
+  family areas, analytical shared-cell and bank-local profile/background chains,
+  dense and matrix-free solving, diagnostics, cancellation and exact accepted-state
+  restart. CW supports fixed detected-area spectra. Add independent NumPy references,
+  measured CW/spectrum/TOF gates and pinned external comparisons with explicit
+  profile-model limits. Provide Python/Rust examples, standalone CW v2/TOF v1
+  codecs, lossless mixed native format-7 bundles and backward migration.
 
 - Add an opt-in, checksum-pinned opXRD robustness campaign with a fixed
   14-pattern stratified selection, explicit grid and negative-count boundaries,

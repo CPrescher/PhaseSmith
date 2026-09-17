@@ -89,5 +89,6 @@ def test_pawley_supplemental_snapshot_matches_live_exports() -> None:
         modules=(
             ("phasesmith.refinement.pawley", "workflow"),
             ("phasesmith.project_bundle", "workflow"),
+            ("phasesmith.refinement.tof_pawley", "workflow"),
         ),
     )

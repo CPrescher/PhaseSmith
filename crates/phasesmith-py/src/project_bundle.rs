@@ -92,6 +92,96 @@ impl NativeProjectBundle {
         bundle.validate().map_err(error)?;
         Ok(Self { bundle })
     }
+    #[staticmethod]
+    fn from_tof_pawley(
+        record: &str,
+        project_id: &str,
+        analysis_id: &str,
+        name: &str,
+    ) -> PyResult<Self> {
+        let p =
+            phasesmith_persistence::decode_tof_pawley_project(record, MAX_BYTES).map_err(error)?;
+        let histograms = p
+            .input
+            .banks
+            .iter()
+            .map(|bank| {
+                Ok(phasesmith_model::TofHistogramRecord {
+                    histogram_id: RecordId::new(&bank.id).map_err(error)?,
+                    name: bank.id.clone(),
+                    pattern: bank.pattern.clone(),
+                    experiment: phasesmith_model::TofExperimentRecord::new(bank.instrument)
+                        .map_err(error)?,
+                    phase_ids: Vec::new(),
+                })
+            })
+            .collect::<PyResult<Vec<_>>>()?;
+        let mut bundle = ProjectBundle::new(ProjectRecord {
+            project_id: RecordId::new(project_id).map_err(error)?,
+            revision: 0,
+            name: name.into(),
+            histograms: Vec::new(),
+            tof_histograms: histograms,
+            phases: Vec::new(),
+            metadata: BTreeMap::new(),
+        });
+        bundle
+            .tof_pawley_analyses
+            .push(phasesmith_workflows::TofPawleyAnalysis {
+                analysis_id: RecordId::new(analysis_id).map_err(error)?,
+                input: p.input,
+                options: p.options,
+                checkpoint: p.checkpoint,
+            });
+        bundle.validate().map_err(error)?;
+        Ok(Self { bundle })
+    }
+    fn tof_pawley(&self, analysis_id: &str) -> PyResult<String> {
+        let a = self
+            .bundle
+            .tof_pawley_analyses
+            .iter()
+            .find(|a| a.analysis_id.as_str() == analysis_id)
+            .ok_or_else(|| error("unknown TOF Pawley analysis"))?;
+        phasesmith_persistence::encode_tof_pawley_project(
+            &phasesmith_persistence::TofPawleyProject {
+                input: a.input.clone(),
+                options: a.options.clone(),
+                checkpoint: a.checkpoint.clone(),
+            },
+        )
+        .map_err(error)
+    }
+    fn with_tof_pawley(&self, analysis_id: &str, record: &str) -> PyResult<Self> {
+        let p =
+            phasesmith_persistence::decode_tof_pawley_project(record, MAX_BYTES).map_err(error)?;
+        let analysis = phasesmith_workflows::TofPawleyAnalysis {
+            analysis_id: RecordId::new(analysis_id).map_err(error)?,
+            input: p.input,
+            options: p.options,
+            checkpoint: p.checkpoint,
+        };
+        let mut bundle = self.bundle.clone();
+        if let Some(old) = bundle
+            .tof_pawley_analyses
+            .iter_mut()
+            .find(|a| a.analysis_id == analysis.analysis_id)
+        {
+            *old = analysis;
+        } else {
+            bundle.tof_pawley_analyses.push(analysis);
+        }
+        bundle.validate().map_err(error)?;
+        Ok(Self { bundle })
+    }
+    #[getter]
+    fn tof_pawley_analyses(&self) -> Vec<String> {
+        self.bundle
+            .tof_pawley_analyses
+            .iter()
+            .map(|a| a.analysis_id.as_str().into())
+            .collect()
+    }
     fn with_pawley(&self, histogram_id: &str, record: &str) -> PyResult<Self> {
         let p = decode_pawley_project(record, MAX_BYTES).map_err(error)?;
         let histogram_id = RecordId::new(histogram_id).map_err(error)?;
@@ -150,6 +240,7 @@ impl NativeProjectBundle {
                 self.bundle.structural_tof_multibank_analyses.len(),
             ),
             ("pawley".into(), self.bundle.pawley_analyses.len()),
+            ("tof_pawley".into(), self.bundle.tof_pawley_analyses.len()),
         ])
     }
 }
