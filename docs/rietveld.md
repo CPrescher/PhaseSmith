@@ -433,3 +433,12 @@ directly. Structural TOF refinement is now a separate completed workflow under
 the contracts in [Structural TOF readiness](tof-structural-readiness.md). The
 remaining capabilities can be added as typed parameter families without
 changing the accepted-state runtime or crystal-structure ownership model.
+
+## CW Pawley workflow
+
+[CW Pawley refinement](pawley.md) provides independent bounded family areas,
+selected analytical cell/profile/background refinement and accepted-state restart.
+Use `phasesmith.refinement.pawley` in Python or `phasesmith::workflows` in Rust.
+Its [standalone version-1 JSON format](pawley.md#runtime-and-persistence) is separate
+from existing mixed-method project bundles. See the [validation report](pawley-validation.md)
+for current scientific coverage and limitations.

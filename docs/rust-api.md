@@ -80,3 +80,12 @@ project TOF histogram arrays/instruments, enforces disjoint histogram
 ownership, matches the one shared built-in phase, and revalidates optional
 checkpoints. Versioned serialization of this state is documented in
 [native project persistence](native-persistence.md).
+
+## CW Pawley workflow
+
+[CW Pawley refinement](pawley.md) provides independent bounded family areas,
+selected analytical cell/profile/background refinement and accepted-state restart.
+Use `phasesmith.refinement.pawley` in Python or `phasesmith::workflows` in Rust.
+Its [standalone version-1 JSON format](pawley.md#runtime-and-persistence) is separate
+from existing mixed-method project bundles. See the [validation report](pawley-validation.md)
+for current scientific coverage and limitations.

@@ -1,0 +1,75 @@
+{
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "python": "3.13.7",
+  "numpy": "2.5.3",
+  "build": "maturin develop --release",
+  "native_binary_sha256": "1d457593de812c9118e1a6bdc474149835b7b956e1760c5dd9b1da6010a96825",
+  "runner_sha256": "b8f5ba2b80064559574791f24418c6739681b6b6e9e792eab9d12c3117253401",
+  "peak_process_rss_bytes": 1254735872,
+  "cases": [
+    {
+      "reflections": 256,
+      "samples": 10001,
+      "phases": 2,
+      "fcj": false,
+      "joint_width": false,
+      "serial_native": true,
+      "times_seconds": [
+        0.8608898340025917,
+        0.8514608339901315,
+        0.8607820829929551
+      ],
+      "median_seconds": 0.8607820829929551,
+      "p95_seconds": 0.860879058901628,
+      "scientific": {
+        "relative_l2": 3.820087038912135e-14,
+        "rank": 256,
+        "accepted_steps": 2,
+        "termination": "converged"
+      }
+    },
+    {
+      "reflections": 256,
+      "samples": 10001,
+      "phases": 2,
+      "fcj": true,
+      "joint_width": true,
+      "serial_native": true,
+      "times_seconds": [
+        1.371778542001266,
+        1.3566813340003137,
+        1.330214583009365
+      ],
+      "median_seconds": 1.3566813340003137,
+      "p95_seconds": 1.3702688212011709,
+      "scientific": {
+        "relative_l2": 1.89486699958142e-16,
+        "rank": 257,
+        "accepted_steps": 5,
+        "termination": "converged"
+      }
+    },
+    {
+      "reflections": 811,
+      "samples": 23003,
+      "phases": 2,
+      "fcj": false,
+      "joint_width": false,
+      "serial_native": true,
+      "times_seconds": [
+        20.705642625005567,
+        19.419989000001806,
+        19.494191541001783
+      ],
+      "median_seconds": 19.494191541001783,
+      "p95_seconds": 20.58449751660519,
+      "scientific": {
+        "relative_l2": 3.670938619689737e-14,
+        "rank": 811,
+        "accepted_steps": 2,
+        "termination": "converged"
+      }
+    }
+  ],
+  "note": "Process RSS includes Python, reference data and returned dense Jacobians."
+}

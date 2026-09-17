@@ -100,7 +100,7 @@ def _module_record(module_name: str, tier: str) -> dict[str, Any]:
     return {"module": module_name, "tier": tier, "exports": entries}
 
 
-def build_snapshot(root: Path = ROOT) -> dict[str, Any]:
+def build_snapshot(root: Path = ROOT, modules: tuple | None = None) -> dict[str, Any]:
     """Build a deterministic JSON-compatible record from explicit exports."""
 
     return {
@@ -110,7 +110,10 @@ def build_snapshot(root: Path = ROOT) -> dict[str, Any]:
             "Names in __all__ for the listed modules; callable signatures use "
             "inspect.signature without evaluating string annotations"
         ),
-        "modules": [_module_record(module_name, tier) for module_name, tier in PUBLIC_MODULES],
+        "modules": [
+            _module_record(module_name, tier)
+            for module_name, tier in (PUBLIC_MODULES if modules is None else modules)
+        ],
     }
 
 
@@ -120,11 +123,11 @@ def encoded_snapshot(snapshot: dict[str, Any]) -> str:
     return json.dumps(snapshot, allow_nan=False, indent=2, sort_keys=True) + "\n"
 
 
-def verify_snapshot(path: Path, root: Path = ROOT) -> None:
+def verify_snapshot(path: Path, root: Path = ROOT, modules: tuple | None = None) -> None:
     """Raise ``ValueError`` when *path* differs from the live public API."""
 
     expected = path.read_text(encoding="utf-8")
-    actual = encoded_snapshot(build_snapshot(root))
+    actual = encoded_snapshot(build_snapshot(root, modules))
     if expected == actual:
         return
     difference = "".join(
@@ -147,19 +150,25 @@ def main() -> int:
     mode.add_argument("--write", action="store_true", help="write the live export snapshot")
     parser.add_argument("--snapshot", type=Path, help="override the versioned snapshot path")
     parser.add_argument("--overwrite", action="store_true", help="allow replacing a snapshot")
+    parser.add_argument(
+        "--module", action="append", help="snapshot only this module (requires --snapshot)"
+    )
     arguments = parser.parse_args()
+    if arguments.module and arguments.snapshot is None:
+        parser.error("--module requires --snapshot to preserve released snapshots")
+    modules = tuple((name, "workflow") for name in arguments.module) if arguments.module else None
     path = default_snapshot_path() if arguments.snapshot is None else arguments.snapshot
     try:
         if arguments.check:
             if arguments.overwrite:
                 raise ValueError("--overwrite is valid only with --write")
-            verify_snapshot(path)
+            verify_snapshot(path, modules=modules)
             print(f"public API snapshot matches {path}")
             return 0
         if path.exists() and not arguments.overwrite:
             raise FileExistsError(f"refusing to overwrite existing snapshot {path}")
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(encoded_snapshot(build_snapshot()), encoding="utf-8")
+        path.write_text(encoded_snapshot(build_snapshot(modules=modules)), encoding="utf-8")
         print(path)
         return 0
     except (

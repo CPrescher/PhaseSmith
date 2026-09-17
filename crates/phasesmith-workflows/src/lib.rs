@@ -57,6 +57,8 @@ mod fit_diagnostics;
 mod lattice;
 mod lebail;
 mod parameters;
+mod pawley;
+mod pawley_solver;
 mod phase_scale_estimation;
 mod profile_estimation;
 mod quantitative;
@@ -228,4 +230,12 @@ pub use tof_structural_multibank_solver::{
 };
 pub use tof_structural_project::{
     StructuralTofMultiBankAnalysis, StructuralTofMultiBankProjectState, StructuralTofProjectError,
+};
+
+pub use pawley::{
+    PAWLEY_PROFILE_NAMES, PawleyCoincidentGroup, PawleyError, PawleyEvaluation, PawleyInput,
+    PawleyPhase, evaluate_pawley, pawley_key, pawley_parameters,
+};
+pub use pawley_solver::{
+    PawleyCheckpoint, PawleyOptions, PawleyResult, refine_pawley, refine_pawley_with_runtime,
 };

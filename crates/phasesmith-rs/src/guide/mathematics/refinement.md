@@ -145,3 +145,64 @@ All scales must come from the same calculation and share structure-factor,
 multiplicity, correction, and scale conventions. Fractions normalize only over
 the supplied crystalline phases; amorphous or unidentified material requires a
 separate experimental/internal-standard model.
+
+## Pawley family-area least squares
+
+[`crate::workflows::evaluate_pawley`] implements one fixed-wavelength CW histogram:
+
+```text
+y_i = b_fixed,i + sum_k c_k B_ik + sum_r A_r p(x_i; q_r(cell), profile)
+r_i = (y_i - y_obs,i) / sigma_i, for included samples only
+chi² = sum_i r_i².
+```
+
+`A_r` is a powder-family integrated area in observed-y times degrees, before
+finite-support truncation. It already absorbs multiplicity, phase scale and
+fixed amplitude corrections; there is no independent phase scale or atomic
+structure factor. Default bounds are `A_r >= 0`; signed areas require explicit
+opt-in. Observations remain signed. Unit weights replace missing sigmas, and
+least squares has no bin-width factor.
+
+Native CW/FCJ kernels evaluate profiles and derivatives in the same sample pass:
+
+```text
+dy_i/dA_r = p_ir
+dy_i/dcell_j = sum_r A_r (dp_ir/dq_r)(dq_r/dcell_j)
+dy_i/dprofile_j = sum_r A_r dp_ir/dprofile_j
+dy_i/dc_k = B_ik
+J_free = W J_physical D,  D = d physical / d scaled_free.
+```
+
+The position derivative includes the position dependence of CW widths and FCJ
+shape. Finite-support endpoints follow the native kernel; no observed-grid
+renormalization occurs. Derivatives hold support membership fixed and are not
+defined at a moving cutoff. Cell trials preserve the fixed conservative
+reflection domain and reject inaccessible reflections.
+
+[`crate::workflows::refine_pawley`] initializes areas/background at fixed
+geometry, then uses joint damped Gauss–Newton steps. Column-normalized augmented
+QR avoids forming normal equations. An active-face solve uses QR for independent boxes and SVD for coupled
+parameter bounds through `D`, including bounds on tied dependent parameters.
+Independent box faces may enter together only when their projection satisfies
+all coupled constraints. Initialization and unsupported columns are frozen
+inside the constrained solve. Composed Gaussian variance and Lorentzian width
+inequalities include their cell
+chains. Complete-profile backtracking rejects infeasible or non-improving trials.
+Convergence uses the normalized feasible step, the undamped projected gradient,
+or relative objective reduction with positive predicted reduction and actual
+reduction at least 0.1 times that prediction. Both reductions must be below the
+requested relative tolerance, damping cannot exceed its initial value, and the
+accepted step must be at least one tenth of the proposed step. Heavy damping
+alone cannot imply convergence.
+
+Rank is measured from the undamped weighted normalized Jacobian. Exactly
+coincident families report their total area and identities; their individual
+split is not identifiable. Unobserved columns retain their accepted value.
+Covariance is available only at converged interior full-rank solutions with
+positive residual degrees of freedom; active width or parameter boundaries
+suppress it. Covariance lives in scaled free coordinates and follows the `D`
+propagation above. Dense allocation is explicitly bounded; matrix-free Pawley
+and wavelength spectra/TOF are later extensions.
+
+Methodological source: G. S. Pawley, *J. Appl. Cryst.* **14**, 357–361 (1981),
+[doi:10.1107/S0021889881009618](https://doi.org/10.1107/S0021889881009618).

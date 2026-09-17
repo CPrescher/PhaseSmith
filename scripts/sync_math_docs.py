@@ -86,12 +86,14 @@ PAGES = (
         (
             "phasesmith.refinement",
             "phasesmith.refinement.lebail",
+            "phasesmith.refinement.pawley",
             "phasesmith.refinement.rietveld",
             "phasesmith.quantitative",
         ),
         "refinement",
         (
             ("Le Bail extraction", "../lebail.md"),
+            ("Pawley refinement", "../pawley.md"),
             ("Shared refinement infrastructure", "../refinement.md"),
             ("Rietveld workflow", "../rietveld.md"),
             ("Quantitative phase analysis and source", "../quantitative-phase-analysis.md"),
