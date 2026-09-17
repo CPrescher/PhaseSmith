@@ -1,0 +1,2448 @@
+{
+  "schema": "phasesmith.qarr-holdout-diagnostic.v1",
+  "threads": 1,
+  "source_revision": "42114d948cdd9ac2bbb5d0f17b2a6f8b0b0d71fc",
+  "native_sha256": "286ad235a891aeb8752e23d46f51681245de4f43bb4add78743940c3f506ad4a",
+  "driver_sha256": "8573150e702ebcef4e9a66ff4c9d49392980b4524a9b0286e38992b673d6066f",
+  "dataset_sha256": {
+    "1g": {
+      "cpd-1g.prn": "afd16d03c8742abf315ab5f94585a6e540ab5c2e2c6df6917ac8dbf6be69d990",
+      "Al2O3.cif": "bc8b07c4e27fdb9df562c7b72d181a05394df20274a56b7e1ef50f6ec2c85709",
+      "CaF2.cif": "b55fd04a3e344f73d4ece983da412056d04874b8ada7dfd4ecb93118e7905cd9",
+      "ZnO.cif": "021db20c9bdabcfd63bc794367fae3536197425ca5826d63541b2417e47d3c1a",
+      "cuka.instprm": "aef315a10622fdb1afae5b264d43e7f9dcc053aba80aa3d9fa05067146922a08"
+    },
+    "1h": {
+      "cpd-1h.prn": "0c36af18d7a341f03f4d8f24972608791351c45c951c431dd93fb54eb8e56da3",
+      "Al2O3.cif": "bc8b07c4e27fdb9df562c7b72d181a05394df20274a56b7e1ef50f6ec2c85709",
+      "CaF2.cif": "b55fd04a3e344f73d4ece983da412056d04874b8ada7dfd4ecb93118e7905cd9",
+      "ZnO.cif": "021db20c9bdabcfd63bc794367fae3536197425ca5826d63541b2417e47d3c1a",
+      "cuka.instprm": "aef315a10622fdb1afae5b264d43e7f9dcc053aba80aa3d9fa05067146922a08"
+    }
+  },
+  "results": {
+    "1g": {
+      "extended_500": {
+        "config": {
+          "iterations": [
+            500,
+            500,
+            100
+          ],
+          "rejections": 200,
+          "empirical": false,
+          "joint": false,
+          "objective_tolerance": 1e-10,
+          "parameter_tolerance": 1e-07
+        },
+        "initial_profile_relative_l2": 0.0,
+        "stages": [
+          {
+            "rwp": 0.26389000240440585,
+            "termination": "converged",
+            "iterations": 17,
+            "evaluations": 311,
+            "rwp_history": [
+              0.2648813778486372,
+              0.2646083380599301,
+              0.264335358070143,
+              0.2640636159636686,
+              0.26392777776380666,
+              0.2639107478438252,
+              0.26390649159649987,
+              0.26390047118278837,
+              0.2638950836064136,
+              0.2638909675375124,
+              0.2638902606584618,
+              0.2638900211381329,
+              0.2638900050385405,
+              0.2638900036966706,
+              0.2638900028020272,
+              0.26389000250381356,
+              0.26389000240440585
+            ],
+            "parameters": [
+              {
+                "label": "instrument[cw].u_deg2",
+                "value": 1.7431182059894558e-05,
+                "lower": null,
+                "upper": null
+              },
+              {
+                "label": "instrument[cw].v_deg2",
+                "value": -0.00019509284397539075,
+                "lower": null,
+                "upper": null
+              },
+              {
+                "label": "instrument[cw].w_deg2",
+                "value": 0.0004941644050545928,
+                "lower": null,
+                "upper": null
+              },
+              {
+                "label": "instrument[cw].zero_shift_deg",
+                "value": -9.259367105667023e-05,
+                "lower": null,
+                "upper": null
+              },
+              {
+                "label": "background[qarr_residual].coefficient_0",
+                "value": 0.040847093873038504,
+                "lower": null,
+                "upper": null
+              },
+              {
+                "label": "background[qarr_residual].coefficient_1",
+                "value": -0.05615029180796497,
+                "lower": null,
+                "upper": null
+              },
+              {
+                "label": "background[qarr_residual].coefficient_2",
+                "value": 0.013403063887711888,
+                "lower": null,
+                "upper": null
+              },
+              {
+                "label": "phase[Al2O3].scale",
+                "value": 0.0005375180525252779,
+                "lower": 0.0,
+                "upper": null
+              },
+              {
+                "label": "phase[ZnO].scale",
+                "value": 0.010954299557211333,
+                "lower": 0.0,
+                "upper": null
+              },
+              {
+                "label": "phase[CaF2].scale",
+                "value": 0.0017148794048596997,
+                "lower": 0.0,
+                "upper": null
+              }
+            ],
+            "jacobian_rank": 10,
+            "covariance_available": true
+          },
+          {
+            "rwp": 0.19877586454640428,
+            "termination": "converged",
+            "iterations": 41,
+            "evaluations": 270,
+            "rwp_history": [
+              0.25790337214895825,
+              0.25292041941997745,
+              0.2483315443102497,
+              0.24391373286903056,
+              0.23953814882778166,
+              0.2351472595813781,
+              0.23073578462006442,
+              0.22634488131860522,
+              0.2220752992602252,
+              0.21802005424279539,
+              0.2143105066666199,
+              0.21105349740015678,
+              0.20829161494030504,
+              0.20741859364048862,
+              0.20689284496564872,
+              0.20477998230260755,
+              0.2046291784763198,
+              0.2043190796696657,
+              0.20272973077219422,
+              0.2014975193617446,
+              0.20056802318991293,
+              0.19989126155301246,
+              0.19941491920412877,
+              0.19938574090376504,
+              0.19908643827804443,
+              0.19890879249933913,
+              0.19890044090765854,
+              0.19887429462808698,
+              0.1988016078899351,
+              0.1987769049053105,
+              0.1987759420872179,
+              0.19877591146763798,
+              0.1987759090128294,
+              0.1987759030270693,
+              0.19877586574922496,
+              0.1987758654828182,
+              0.1987758650504781,
+              0.19877586459936453,
+              0.19877586455870117,
+              0.19877586454735818,
+              0.19877586454640428
+            ],
+            "parameters": [
+              {
+                "label": "instrument[cw].u_deg2",
+                "value": -8.161283082246658e-06,
+                "lower": null,
+                "upper": null
+              },
+              {
+                "label": "instrument[cw].v_deg2",
+                "value": 0.00038631761861870385,
+                "lower": null,
+                "upper": null
+              },
+              {
+                "label": "instrument[cw].w_deg2",
+                "value": 0.0009347982619179192,
+                "lower": null,
+                "upper": null
+              },
+              {
+                "label": "instrument[cw].zero_shift_deg",
+                "value": -0.0015512273398159198,
+                "lower": null,
+                "upper": null
+              },
+              {
+                "label": "sample[Al2O3].isotropic_size.crystallite_size_nm",
+                "value": 117.68926474982806,
+                "lower": 2.2250738585072014e-308,
+                "upper": null
+              },
+              {
+                "label": "sample[Al2O3].isotropic_microstrain.rms",
+                "value": 0.0006332025032296004,
+                "lower": 0.0,
+                "upper": null
+              },
+              {
+                "label": "sample[Al2O3].march_dollase.ratio",
+                "value": 1.003466082062155,
+                "lower": 2.2250738585072014e-308,
+                "upper": null
+              },
+              {
+                "label": "sample[ZnO].isotropic_size.crystallite_size_nm",
+                "value": 134.91095762298778,
+                "lower": 2.2250738585072014e-308,
+                "upper": null
+              },
+              {
+                "label": "sample[ZnO].isotropic_microstrain.rms",
+                "value": 0.0002543543944856105,
+                "lower": 0.0,
+                "upper": null
+              },
+              {
+                "label": "sample[ZnO].march_dollase.ratio",
+                "value": 0.978942820883099,
+                "lower": 2.2250738585072014e-308,
+                "upper": null
+              },
+              {
+                "label": "sample[CaF2].isotropic_size.crystallite_size_nm",
+                "value": 137.66768696580965,
+                "lower": 2.2250738585072014e-308,
+                "upper": null
+              },
+              {
+                "label": "sample[CaF2].isotropic_microstrain.rms",
+                "value": 0.00034037975004539306,
+                "lower": 0.0,
+                "upper": null
+              },
+              {
+                "label": "phase[Al2O3].scale",
+                "value": 0.0005623922465712784,
+                "lower": 0.0,
+                "upper": null
+              },
+              {
+                "label": "site[ZnO/Zn].u_iso_angstrom2",
+                "value": 0.011148570245581243,
+                "lower": 0.0,
+                "upper": 0.5
+              },
+              {
+                "label": "site[ZnO/O].u_iso_angstrom2",
+                "value": 0.014500516598569838,
+                "lower": 0.0,
+                "upper": 0.5
+              },
+              {
+                "label": "phase[ZnO].scale",
+                "value": 0.012490308036653418,
+                "lower": 0.0,
+                "upper": null
+              },
+              {
+                "label": "site[CaF2/Ca1].u_iso_angstrom2",
+                "value": 0.010405440349869946,
+                "lower": 0.0,
+                "upper": 0.5
+              },
+              {
+                "label": "site[CaF2/F1].u_iso_angstrom2",
+                "value": 0.013905450806256945,
+                "lower": 0.0,
+                "upper": 0.5
+              },
+              {
+                "label": "phase[CaF2].scale",
+                "value": 0.001963527152480227,
+                "lower": 0.0,
+                "upper": null
+              }
+            ],
+            "jacobian_rank": 18,
+            "covariance_available": false
+          },
+          {
+            "rwp": 0.19877585975285172,
+            "termination": "converged",
+            "iterations": 1,
+            "evaluations": 2,
+            "rwp_history": [
+              0.19877585975285172
+            ],
+            "parameters": [
+              {
+                "label": "phase[Al2O3].scale",
+                "value": 0.0005624248962424165,
+                "lower": 0.0,
+                "upper": null
+              },
+              {
+                "label": "phase[ZnO].scale",
+                "value": 0.012491143818570489,
+                "lower": 0.0,
+                "upper": null
+              },
+              {
+                "label": "phase[CaF2].scale",
+                "value": 0.00196347889477489,
+                "lower": 0.0,
+                "upper": null
+              }
+            ],
+            "jacobian_rank": 3,
+            "covariance_available": true
+          }
+        ],
+        "rwp": 0.19877585975285172,
+        "unit_rwp": 0.1332446064922752,
+        "correlation": 0.9903877493617257,
+        "fractions": {
+          "Al2O3": 0.3084521446789296,
+          "ZnO": 0.3402494878955369,
+          "CaF2": 0.3512983674255336
+        },
+        "max_fraction_error": 0.007098367425533603,
+        "maximum_conditional_fraction_su": 0.0008574070101947389,
+        "checks": {
+          "poisson_rwp": true,
+          "unit_weight_rwp": true,
+          "profile_correlation": true,
+          "qpa_weight_fraction": true,
+          "conditional_qpa_covariance": true,
+          "all_stages_converged": true
+        },
+        "profile_sha256": "e7fd74bc2386093796480ff9df89422a85acb10008057f3a0c7fd2fc0fcae45a",
+        "worst_residual_regions": [
+          {
+            "lower": 30.0,
+            "upper": 35.0,
+            "count": 250,
+            "chi_square": 2976.5960683207963,
+            "chi_square_fraction": 0.08679414107914742,
+            "maximum_absolute_weighted_residual": 14.664532208805149
+          },
+          {
+            "lower": 25.0,
+            "upper": 30.0,
+            "count": 250,
+            "chi_square": 2697.1393957981954,
+            "chi_square_fraction": 0.07864550374182844,
+            "maximum_absolute_weighted_residual": 14.282138323369386
+          },
+          {
+            "lower": 145.0,
+            "upper": 150.0,
+            "count": 251,
+            "chi_square": 2069.3770207969374,
+            "chi_square_fraction": 0.060340670002402924,
+            "maximum_absolute_weighted_residual": 7.713938093056451
+          },
+          {
+            "lower": 35.0,
+            "upper": 40.0,
+            "count": 250,
+            "chi_square": 1901.6851478845938,
+            "chi_square_fraction": 0.05545096654875588,
+            "maximum_absolute_weighted_residual": 11.76459239879575
+          },
+          {
+            "lower": 55.0,
+            "upper": 60.0,
+            "count": 250,
+            "chi_square": 1643.6864020326377,
+            "chi_square_fraction": 0.047928017840989046,
+            "maximum_absolute_weighted_residual": 11.758809994417234
+          }
+        ]
+      },
+      "empirical": {
+        "config": {
+          "iterations": [
+            100,
+            100,
+            100
+          ],
+          "rejections": 200,
+          "empirical": true,
+          "joint": false,
+          "objective_tolerance": 1e-10,
+          "parameter_tolerance": 1e-07
+        },
+        "initial_profile_relative_l2": 5.792828290935476e-17,
+        "stages": [
+          {
+            "rwp": 0.21480470931881418,
+            "termination": "converged",
+            "iterations": 34,
+            "evaluations": 206,
+            "rwp_history": [
+              0.2619599273143054,
+              0.25871997746338193,
+              0.25544540433402435,
+              0.25216514639657356,
+              0.24892584935569184,
+              0.24576276638815625,
+              0.242698547693732,
+              0.23974970291920483,
+              0.23693531158203252,
+              0.23427399261367685,
+              0.23179047984187037,
+              0.22950501718963803,
+              0.2274129599439441,
+              0.2255166418730043,
+              0.22380793640630312,
+              0.2222834086238568,
+              0.22092732787933964,
+              0.21972740186521264,
+              0.21868087255101287,
+              0.21778011603674047,
+              0.2170112473834501,
+              0.21635738834469145,
+              0.21583340196193865,
+              0.21541238133635804,
+              0.21510471051654512,
+              0.21490241318028397,
+              0.21480994685381855,
+              0.2148048731400457,
+              0.21480472825549612,
+              0.21480472759821692,
+              0.21480470948926156,
+              0.21480470937705962,
+              0.2148047093277421,
+              0.21480470931881418
+            ],
+            "parameters": [
+              {
+                "label": "instrument[cw].u_deg2",
+                "value": 0.0006950048078994907,
+                "lower": null,
+                "upper": null
+              },
+              {
+                "label": "instrument[cw].v_deg2",
+                "value": 0.00022255578891681874,
+                "lower": null,
+                "upper": null
+              },
+              {
+                "label": "instrument[cw].w_deg2",
+                "value": 0.00018984052019847965,
+                "lower": null,
+                "upper": null
+              },
+              {
+                "label": "instrument[cw].zero_shift_deg",
+                "value": -0.0006241434458059226,
+                "lower": null,
+                "upper": null
+              },
+              {
+                "label": "background[qarr_residual].coefficient_0",
+                "value": 2.7238824441358624,
+                "lower": null,
+                "upper": null
+              },
+              {
+                "label": "background[qarr_residual].coefficient_1",
+                "value": -3.6432270267097437,
+                "lower": null,
+                "upper": null
+              },
+              {
+                "label": "background[qarr_residual].coefficient_2",
+                "value": 1.156089787722306,
+                "lower": null,
+                "upper": null
+              },
+              {
+                "label": "phase[Al2O3].scale",
+                "value": 0.0005194565692164023,
+                "lower": 0.0,
+                "upper": null
+              },
+              {
+                "label": "phase[ZnO].scale",
+                "value": 0.011277473184751925,
+                "lower": 0.0,
+                "upper": null
+              },
+              {
+                "label": "phase[CaF2].scale",
+                "value": 0.0017569848885032068,
+                "lower": 0.0,
+                "upper": null
+              }
+            ],
+            "jacobian_rank": 10,
+            "covariance_available": true
+          },
+          {
+            "rwp": 0.19219935774717287,
+            "termination": "converged",
+            "iterations": 44,
+            "evaluations": 46,
+            "rwp_history": [
+              0.2136205618255205,
+              0.212458173906545,
+              0.21132287266711633,
+              0.2102110280528031,
+              0.20912956211783973,
+              0.20807978727780593,
+              0.2070642532741248,
+              0.2060814909208582,
+              0.20513621794628825,
+              0.20422383476859118,
+              0.2033408253587655,
+              0.2025021224251224,
+              0.2016980288756635,
+              0.20092144000960188,
+              0.20018248808597028,
+              0.1994778174863569,
+              0.198809273314696,
+              0.19817344700400816,
+              0.1975699375813909,
+              0.19699728590396798,
+              0.19646257890329152,
+              0.19595928902555165,
+              0.19548530879560788,
+              0.19504270617068387,
+              0.1946345723263023,
+              0.19425735112138287,
+              0.19391091423079607,
+              0.1935967113281435,
+              0.19331165286579793,
+              0.19306068754189717,
+              0.19284459682526042,
+              0.19265864940974647,
+              0.19250430222067338,
+              0.19237982222497468,
+              0.19229024257830438,
+              0.19223069731546702,
+              0.19220308416534296,
+              0.19220022445317494,
+              0.192199556169495,
+              0.19219948060326825,
+              0.19219938872939465,
+              0.19219937613206015,
+              0.19219935774741181,
+              0.19219935774717287
+            ],
+            "parameters": [
+              {
+                "label": "instrument[cw].u_deg2",
+                "value": 0.0004490039599883338,
+                "lower": null,
+                "upper": null
+              },
+              {
+                "label": "instrument[cw].v_deg2",
+                "value": 0.00024318828454769883,
+                "lower": null,
+                "upper": null
+              },
+              {
+                "label": "instrument[cw].w_deg2",
+                "value": 0.001094358961712044,
+                "lower": null,
+                "upper": null
+              },
+              {
+                "label": "instrument[cw].zero_shift_deg",
+                "value": -0.001512312398132373,
+                "lower": null,
+                "upper": null
+              },
+              {
+                "label": "sample[Al2O3].isotropic_size.crystallite_size_nm",
+                "value": 136.07297107949273,
+                "lower": 2.2250738585072014e-308,
+                "upper": null
+              },
+              {
+                "label": "sample[Al2O3].isotropic_microstrain.rms",
+                "value": 0.0006466312692006993,
+                "lower": 0.0,
+                "upper": null
+              },
+              {
+                "label": "sample[Al2O3].march_dollase.ratio",
+                "value": 1.000882739115281,
+                "lower": 2.2250738585072014e-308,
+                "upper": null
+              },
+              {
+                "label": "sample[ZnO].isotropic_size.crystallite_size_nm",
+                "value": 142.3277783807802,
+                "lower": 2.2250738585072014e-308,
+                "upper": null
+              },
+              {
+                "label": "sample[ZnO].isotropic_microstrain.rms",
+                "value": 0.0002,
+                "lower": 0.0,
+                "upper": null
+              },
+              {
+                "label": "sample[ZnO].march_dollase.ratio",
+                "value": 0.9797840948864665,
+                "lower": 2.2250738585072014e-308,
+                "upper": null
+              },
+              {
+                "label": "sample[CaF2].isotropic_size.crystallite_size_nm",
+                "value": 147.1956607480304,
+                "lower": 2.2250738585072014e-308,
+                "upper": null
+              },
+              {
+                "label": "sample[CaF2].isotropic_microstrain.rms",
+                "value": 0.0003099458496135295,
+                "lower": 0.0,
+                "upper": null
+              },
+              {
+                "label": "phase[Al2O3].scale",
+                "value": 0.0005482353566258445,
+                "lower": 0.0,
+                "upper": null
+              },
+              {
+                "label": "site[ZnO/Zn].u_iso_angstrom2",
+                "value": 0.011113677623588692,
+                "lower": 0.0,
+                "upper": 0.5
+              },
+              {
+                "label": "site[ZnO/O].u_iso_angstrom2",
+                "value": 0.014370972900155819,
+                "lower": 0.0,
+                "upper": 0.5
+              },
+              {
+                "label": "phase[ZnO].scale",
+                "value": 0.012395761657334936,
+                "lower": 0.0,
+                "upper": null
+              },
+              {
+                "label": "site[CaF2/Ca1].u_iso_angstrom2",
+                "value": 0.01040031677472341,
+                "lower": 0.0,
+                "upper": 0.5
+              },
+              {
+                "label": "site[CaF2/F1].u_iso_angstrom2",
+                "value": 0.013521465734920784,
+                "lower": 0.0,
+                "upper": 0.5
+              },
+              {
+                "label": "phase[CaF2].scale",
+                "value": 0.0019426972010676824,
+                "lower": 0.0,
+                "upper": null
+              }
+            ],
+            "jacobian_rank": 18,
+            "covariance_available": true
+          },
+          {
+            "rwp": 0.19219935774717287,
+            "termination": "converged",
+            "iterations": 0,
+            "evaluations": 1,
+            "rwp_history": [],
+            "parameters": [
+              {
+                "label": "phase[Al2O3].scale",
+                "value": 0.0005482353566258445,
+                "lower": 0.0,
+                "upper": null
+              },
+              {
+                "label": "phase[ZnO].scale",
+                "value": 0.012395761657334936,
+                "lower": 0.0,
+                "upper": null
+              },
+              {
+                "label": "phase[CaF2].scale",
+                "value": 0.0019426972010676824,
+                "lower": 0.0,
+                "upper": null
+              }
+            ],
+            "jacobian_rank": 3,
+            "covariance_available": true
+          }
+        ],
+        "rwp": 0.19219935774717287,
+        "unit_rwp": 0.13253923789026203,
+        "correlation": 0.9904354209693635,
+        "fractions": {
+          "Al2O3": 0.3049697018316875,
+          "ZnO": 0.34247974064210135,
+          "CaF2": 0.3525505575262112
+        },
+        "max_fraction_error": 0.0087302981683125,
+        "maximum_conditional_fraction_su": 0.0008617398786157801,
+        "checks": {
+          "poisson_rwp": true,
+          "unit_weight_rwp": true,
+          "profile_correlation": true,
+          "qpa_weight_fraction": true,
+          "conditional_qpa_covariance": true,
+          "all_stages_converged": true
+        },
+        "profile_sha256": "9eff94495ab8ae831d5e58c13f7e6b2840ffeb8b88c0647f09046ad751604cf0",
+        "worst_residual_regions": [
+          {
+            "lower": 30.0,
+            "upper": 35.0,
+            "count": 250,
+            "chi_square": 3033.382259269485,
+            "chi_square_fraction": 0.09460651947832321,
+            "maximum_absolute_weighted_residual": 14.769255367541723
+          },
+          {
+            "lower": 25.0,
+            "upper": 30.0,
+            "count": 250,
+            "chi_square": 2812.496150197043,
+            "chi_square_fraction": 0.08771742203055032,
+            "maximum_absolute_weighted_residual": 14.242762486789154
+          },
+          {
+            "lower": 145.0,
+            "upper": 150.0,
+            "count": 251,
+            "chi_square": 2037.2064715245067,
+            "chi_square_fraction": 0.06353733135370296,
+            "maximum_absolute_weighted_residual": 7.587623671133861
+          },
+          {
+            "lower": 35.0,
+            "upper": 40.0,
+            "count": 250,
+            "chi_square": 1881.093273042908,
+            "chi_square_fraction": 0.058668401198975435,
+            "maximum_absolute_weighted_residual": 11.53342596385635
+          },
+          {
+            "lower": 55.0,
+            "upper": 60.0,
+            "count": 250,
+            "chi_square": 1588.9694909681446,
+            "chi_square_fraction": 0.04955751047806998,
+            "maximum_absolute_weighted_residual": 11.550879580313367
+          }
+        ]
+      },
+      "empirical_tight": {
+        "config": {
+          "iterations": [
+            500,
+            500,
+            100
+          ],
+          "rejections": 200,
+          "empirical": true,
+          "joint": false,
+          "objective_tolerance": 1e-12,
+          "parameter_tolerance": 1e-09
+        },
+        "initial_profile_relative_l2": 5.792828290935476e-17,
+        "stages": [
+          {
+            "rwp": 0.21480470931723097,
+            "termination": "converged",
+            "iterations": 36,
+            "evaluations": 253,
+            "rwp_history": [
+              0.2619599273143054,
+              0.25871997746338193,
+              0.25544540433402435,
+              0.25216514639657356,
+              0.24892584935569184,
+              0.24576276638815625,
+              0.242698547693732,
+              0.23974970291920483,
+              0.23693531158203252,
+              0.23427399261367685,
+              0.23179047984187037,
+              0.22950501718963803,
+              0.2274129599439441,
+              0.2255166418730043,
+              0.22380793640630312,
+              0.2222834086238568,
+              0.22092732787933964,
+              0.21972740186521264,
+              0.21868087255101287,
+              0.21778011603674047,
+              0.2170112473834501,
+              0.21635738834469145,
+              0.21583340196193865,
+              0.21541238133635804,
+              0.21510471051654512,
+              0.21490241318028397,
+              0.21480994685381855,
+              0.2148048731400457,
+              0.21480472825549612,
+              0.21480472759821692,
+              0.21480470948926156,
+              0.21480470937705962,
+              0.2148047093277421,
+              0.21480470931881418,
+              0.21480470931727852,
+              0.21480470931723097
+            ],
+            "parameters": [
+              {
+                "label": "instrument[cw].u_deg2",
+                "value": 0.0006950047554503089,
+                "lower": null,
+                "upper": null
+              },
+              {
+                "label": "instrument[cw].v_deg2",
+                "value": 0.00022255578888406534,
+                "lower": null,
+                "upper": null
+              },
+              {
+                "label": "instrument[cw].w_deg2",
+                "value": 0.00018984051993026015,
+                "lower": null,
+                "upper": null
+              },
+              {
+                "label": "instrument[cw].zero_shift_deg",
+                "value": -0.0006241430121388679,
+                "lower": null,
+                "upper": null
+              },
+              {
+                "label": "background[qarr_residual].coefficient_0",
+                "value": 2.7238824441948832,
+                "lower": null,
+                "upper": null
+              },
+              {
+                "label": "background[qarr_residual].coefficient_1",
+                "value": -3.643227026693882,
+                "lower": null,
+                "upper": null
+              },
+              {
+                "label": "background[qarr_residual].coefficient_2",
+                "value": 1.1560897876860794,
+                "lower": null,
+                "upper": null
+              },
+              {
+                "label": "phase[Al2O3].scale",
+                "value": 0.0005194565695821182,
+                "lower": 0.0,
+                "upper": null
+              },
+              {
+                "label": "phase[ZnO].scale",
+                "value": 0.01127747322416393,
+                "lower": 0.0,
+                "upper": null
+              },
+              {
+                "label": "phase[CaF2].scale",
+                "value": 0.0017569848821122104,
+                "lower": 0.0,
+                "upper": null
+              }
+            ],
+            "jacobian_rank": 10,
+            "covariance_available": true
+          },
+          {
+            "rwp": 0.1921993577470087,
+            "termination": "converged",
+            "iterations": 45,
+            "evaluations": 47,
+            "rwp_history": [
+              0.21362056181818365,
+              0.21245817389510072,
+              0.21132287265289398,
+              0.2102110280367536,
+              0.20912956210070446,
+              0.20807978726021142,
+              0.20706425325652902,
+              0.2060814909036515,
+              0.2051362179297604,
+              0.20422383475293984,
+              0.2033408253441639,
+              0.20250212241165796,
+              0.20169802886344376,
+              0.20092143999863007,
+              0.20018248807626546,
+              0.19947781747795523,
+              0.19880927330752596,
+              0.1981734469980456,
+              0.19756993757657623,
+              0.19699728590026133,
+              0.19646257890059418,
+              0.19595928902379936,
+              0.19548530879470563,
+              0.19504270617055194,
+              0.1946345723268363,
+              0.19425735112247955,
+              0.19391091423236181,
+              0.19359671133007958,
+              0.19331165286798885,
+              0.19306068754423683,
+              0.19284459682763538,
+              0.19265864941204403,
+              0.19250430222276307,
+              0.19237982222674302,
+              0.1922902425796218,
+              0.1922306973162003,
+              0.1922030841653843,
+              0.19220022445305132,
+              0.19219955616934667,
+              0.19219948060312333,
+              0.1921993887292471,
+              0.19219937613191893,
+              0.19219935774725957,
+              0.19219935774702307,
+              0.1921993577470087
+            ],
+            "parameters": [
+              {
+                "label": "instrument[cw].u_deg2",
+                "value": 0.0004490050397039395,
+                "lower": null,
+                "upper": null
+              },
+              {
+                "label": "instrument[cw].v_deg2",
+                "value": 0.00024318778560570903,
+                "lower": null,
+                "upper": null
+              },
+              {
+                "label": "instrument[cw].w_deg2",
+                "value": 0.00109435938692873,
+                "lower": null,
+                "upper": null
+              },
+              {
+                "label": "instrument[cw].zero_shift_deg",
+                "value": -0.0015123173507265303,
+                "lower": null,
+                "upper": null
+              },
+              {
+                "label": "sample[Al2O3].isotropic_size.crystallite_size_nm",
+                "value": 136.07297108545504,
+                "lower": 2.2250738585072014e-308,
+                "upper": null
+              },
+              {
+                "label": "sample[Al2O3].isotropic_microstrain.rms",
+                "value": 0.000646631454675043,
+                "lower": 0.0,
+                "upper": null
+              },
+              {
+                "label": "sample[Al2O3].march_dollase.ratio",
+                "value": 1.000882748263673,
+                "lower": 2.2250738585072014e-308,
+                "upper": null
+              },
+              {
+                "label": "sample[ZnO].isotropic_size.crystallite_size_nm",
+                "value": 142.3277871405987,
+                "lower": 2.2250738585072014e-308,
+                "upper": null
+              },
+              {
+                "label": "sample[ZnO].isotropic_microstrain.rms",
+                "value": 0.0002,
+                "lower": 0.0,
+                "upper": null
+              },
+              {
+                "label": "sample[ZnO].march_dollase.ratio",
+                "value": 0.9797841004616635,
+                "lower": 2.2250738585072014e-308,
+                "upper": null
+              },
+              {
+                "label": "sample[CaF2].isotropic_size.crystallite_size_nm",
+                "value": 147.19567157533547,
+                "lower": 2.2250738585072014e-308,
+                "upper": null
+              },
+              {
+                "label": "sample[CaF2].isotropic_microstrain.rms",
+                "value": 0.00030994571364676397,
+                "lower": 0.0,
+                "upper": null
+              },
+              {
+                "label": "phase[Al2O3].scale",
+                "value": 0.0005482353465681343,
+                "lower": 0.0,
+                "upper": null
+              },
+              {
+                "label": "site[ZnO/Zn].u_iso_angstrom2",
+                "value": 0.011113679293771604,
+                "lower": 0.0,
+                "upper": 0.5
+              },
+              {
+                "label": "site[ZnO/O].u_iso_angstrom2",
+                "value": 0.014370973344140598,
+                "lower": 0.0,
+                "upper": 0.5
+              },
+              {
+                "label": "phase[ZnO].scale",
+                "value": 0.012395761884334276,
+                "lower": 0.0,
+                "upper": null
+              },
+              {
+                "label": "site[CaF2/Ca1].u_iso_angstrom2",
+                "value": 0.010400317954214493,
+                "lower": 0.0,
+                "upper": 0.5
+              },
+              {
+                "label": "site[CaF2/F1].u_iso_angstrom2",
+                "value": 0.013521467562469719,
+                "lower": 0.0,
+                "upper": 0.5
+              },
+              {
+                "label": "phase[CaF2].scale",
+                "value": 0.0019426972927886418,
+                "lower": 0.0,
+                "upper": null
+              }
+            ],
+            "jacobian_rank": 18,
+            "covariance_available": true
+          },
+          {
+            "rwp": 0.19219935774700844,
+            "termination": "converged",
+            "iterations": 1,
+            "evaluations": 2,
+            "rwp_history": [
+              0.19219935774700844
+            ],
+            "parameters": [
+              {
+                "label": "phase[Al2O3].scale",
+                "value": 0.0005482353422496477,
+                "lower": 0.0,
+                "upper": null
+              },
+              {
+                "label": "phase[ZnO].scale",
+                "value": 0.012395761869781134,
+                "lower": 0.0,
+                "upper": null
+              },
+              {
+                "label": "phase[CaF2].scale",
+                "value": 0.0019426973052470708,
+                "lower": 0.0,
+                "upper": null
+              }
+            ],
+            "jacobian_rank": 3,
+            "covariance_available": true
+          }
+        ],
+        "rwp": 0.19219935774700844,
+        "unit_rwp": 0.13253922502194249,
+        "correlation": 0.9904354227471209,
+        "fractions": {
+          "Al2O3": 0.3049696887176509,
+          "ZnO": 0.3424797407654543,
+          "CaF2": 0.35255057051689487
+        },
+        "max_fraction_error": 0.00873031128234908,
+        "maximum_conditional_fraction_su": 0.0008617398807741344,
+        "checks": {
+          "poisson_rwp": true,
+          "unit_weight_rwp": true,
+          "profile_correlation": true,
+          "qpa_weight_fraction": true,
+          "conditional_qpa_covariance": true,
+          "all_stages_converged": true
+        },
+        "profile_sha256": "cbd77924277651927915c056d94293f22f69207547283838f71219c36aa65d61",
+        "worst_residual_regions": [
+          {
+            "lower": 30.0,
+            "upper": 35.0,
+            "count": 250,
+            "chi_square": 3033.381809558494,
+            "chi_square_fraction": 0.0946065054526921,
+            "maximum_absolute_weighted_residual": 14.76925714218763
+          },
+          {
+            "lower": 25.0,
+            "upper": 30.0,
+            "count": 250,
+            "chi_square": 2812.4950034828967,
+            "chi_square_fraction": 0.08771738626645278,
+            "maximum_absolute_weighted_residual": 14.242756535783824
+          },
+          {
+            "lower": 145.0,
+            "upper": 150.0,
+            "count": 251,
+            "chi_square": 2037.2063056647498,
+            "chi_square_fraction": 0.06353732618090137,
+            "maximum_absolute_weighted_residual": 7.5876221592588475
+          },
+          {
+            "lower": 35.0,
+            "upper": 40.0,
+            "count": 250,
+            "chi_square": 1881.0930879232874,
+            "chi_square_fraction": 0.05866839542548004,
+            "maximum_absolute_weighted_residual": 11.533422128974614
+          },
+          {
+            "lower": 55.0,
+            "upper": 60.0,
+            "count": 250,
+            "chi_square": 1588.9698998766376,
+            "chi_square_fraction": 0.04955752323138071,
+            "maximum_absolute_weighted_residual": 11.550883496727275
+          }
+        ]
+      }
+    },
+    "1h": {
+      "extended_500": {
+        "config": {
+          "iterations": [
+            500,
+            500,
+            100
+          ],
+          "rejections": 200,
+          "empirical": false,
+          "joint": false,
+          "objective_tolerance": 1e-10,
+          "parameter_tolerance": 1e-07
+        },
+        "initial_profile_relative_l2": 0.0,
+        "stages": [
+          {
+            "rwp": 0.3047171819299888,
+            "termination": "converged",
+            "iterations": 21,
+            "evaluations": 367,
+            "rwp_history": [
+              0.3066004713614785,
+              0.30626641449115494,
+              0.30593186705209635,
+              0.3055960957198202,
+              0.30525891778066766,
+              0.3051740325343576,
+              0.305163421557847,
+              0.30516077150830706,
+              0.30515944717530635,
+              0.30492036459416316,
+              0.3047908276959687,
+              0.30474075296445374,
+              0.30472311305557026,
+              0.3047201159756101,
+              0.30471810476276384,
+              0.3047174328967355,
+              0.3047172087784536,
+              0.30471719383193224,
+              0.30471718386751684,
+              0.30471718220678184,
+              0.3047171819299888
+            ],
+            "parameters": [
+              {
+                "label": "instrument[cw].u_deg2",
+                "value": 8.427317381997519e-07,
+                "lower": null,
+                "upper": null
+              },
+              {
+                "label": "instrument[cw].v_deg2",
+                "value": -0.00012956892825780056,
+                "lower": null,
+                "upper": null
+              },
+              {
+                "label": "instrument[cw].w_deg2",
+                "value": 0.000489271132142694,
+                "lower": null,
+                "upper": null
+              },
+              {
+                "label": "instrument[cw].zero_shift_deg",
+                "value": 0.0005022724026519735,
+                "lower": null,
+                "upper": null
+              },
+              {
+                "label": "background[qarr_residual].coefficient_0",
+                "value": 0.03532718152838974,
+                "lower": null,
+                "upper": null
+              },
+              {
+                "label": "background[qarr_residual].coefficient_1",
+                "value": -0.056368381904071015,
+                "lower": null,
+                "upper": null
+              },
+              {
+                "label": "background[qarr_residual].coefficient_2",
+                "value": 0.01325669105740314,
+                "lower": null,
+                "upper": null
+              },
+              {
+                "label": "phase[Al2O3].scale",
+                "value": 0.0005549984150026175,
+                "lower": 0.0,
+                "upper": null
+              },
+              {
+                "label": "phase[ZnO].scale",
+                "value": 0.009368205478316126,
+                "lower": 0.0,
+                "upper": null
+              },
+              {
+                "label": "phase[CaF2].scale",
+                "value": 0.001767928378757288,
+                "lower": 0.0,
+                "upper": null
+              }
+            ],
+            "jacobian_rank": 10,
+            "covariance_available": true
+          },
+          {
+            "rwp": 0.2010150993273976,
+            "termination": "converged",
+            "iterations": 131,
+            "evaluations": 313,
+            "rwp_history": [
+              0.3041288883208625,
+              0.30353697863925605,
+              0.3029389930122981,
+              0.30233677991796215,
+              0.3017296487844461,
+              0.3011178038378883,
+              0.3005004930617663,
+              0.29987702691448526,
+              0.2992485996095553,
+              0.2986134188746531,
+              0.29797231654867484,
+              0.2973239197415577,
+              0.29666884037463154,
+              0.29600946807709305,
+              0.29534158050253323,
+              0.294807681196,
+              0.29463594968857487,
+              0.29452921300070994,
+              0.2939623802306871,
+              0.2932668595958106,
+              0.29256211507710045,
+              0.29237808096216167,
+              0.29166030854017777,
+              0.29120161294495805,
+              0.2904661810307827,
+              0.28971859145434986,
+              0.28925718050306376,
+              0.2890406203633647,
+              0.2882676539648115,
+              0.28820893668686665,
+              0.2874211306411447,
+              0.28661975140977886,
+              0.286566740834486,
+              0.28651398773796866,
+              0.2856920959288668,
+              0.28485353857364326,
+              0.28422008171568525,
+              0.2841917557741597,
+              0.28349953882743284,
+              0.2826061351970833,
+              0.2816880672508454,
+              0.2811676620602078,
+              0.2809731916930688,
+              0.2806526298014125,
+              0.28061739492807286,
+              0.2796397298471696,
+              0.2794839853627471,
+              0.2794740128949961,
+              0.2784587456569315,
+              0.27825750389346704,
+              0.2771969478156474,
+              0.2770693311093808,
+              0.27702105583827025,
+              0.275910512182139,
+              0.2747518054076434,
+              0.27353421291718605,
+              0.27224934483401786,
+              0.27088602481268304,
+              0.26942818421006076,
+              0.26785039001455596,
+              0.2678424171979682,
+              0.2661104473656009,
+              0.26417580971210636,
+              0.26368536454051344,
+              0.2625669826100753,
+              0.26165229147562935,
+              0.25890251840020934,
+              0.2588840185112126,
+              0.25522230209401275,
+              0.25454474835887453,
+              0.2542785302160992,
+              0.24773232668255485,
+              0.2475838567408699,
+              0.24721841491808366,
+              0.24705702428276138,
+              0.24246172446357414,
+              0.2395428233777555,
+              0.23871510129029985,
+              0.23645432721581022,
+              0.2344533154089805,
+              0.23263321567981948,
+              0.23094555085066198,
+              0.2307602343988951,
+              0.2302057623772393,
+              0.22866185025266414,
+              0.2271954225749115,
+              0.22689331660365672,
+              0.2255002996760653,
+              0.22416168644859416,
+              0.22286685217508317,
+              0.2216127358282776,
+              0.2203950630089679,
+              0.22009815276162317,
+              0.2189194807353023,
+              0.21777237528217958,
+              0.2176395335328502,
+              0.21685925287427,
+              0.2157561390373062,
+              0.21467201960630433,
+              0.21458939281099032,
+              0.21352929943489982,
+              0.2133414405740204,
+              0.21230691579021355,
+              0.21129254068480843,
+              0.21104249478968168,
+              0.21005466428086877,
+              0.20908217291157793,
+              0.20812692415715012,
+              0.20777798362162644,
+              0.20685183787467384,
+              0.2059478947853465,
+              0.20551098798376646,
+              0.20464296982365923,
+              0.20455728674778542,
+              0.20372073078578984,
+              0.20371907530513353,
+              0.20343222993308416,
+              0.2026334051215915,
+              0.2018641768541208,
+              0.20116140635752897,
+              0.20101863977055712,
+              0.20101789495948486,
+              0.2010152390868157,
+              0.2010151044285628,
+              0.20101510217238802,
+              0.2010151005119516,
+              0.20101509982747592,
+              0.20101509949207325,
+              0.2010150993653795,
+              0.20101509933039594,
+              0.2010150993273976
+            ],
+            "parameters": [
+              {
+                "label": "instrument[cw].u_deg2",
+                "value": -3.937395542032772e-05,
+                "lower": null,
+                "upper": null
+              },
+              {
+                "label": "instrument[cw].v_deg2",
+                "value": 0.00022849625634917462,
+                "lower": null,
+                "upper": null
+              },
+              {
+                "label": "instrument[cw].w_deg2",
+                "value": 0.0008983220095558957,
+                "lower": null,
+                "upper": null
+              },
+              {
+                "label": "instrument[cw].zero_shift_deg",
+                "value": 0.022870329828475068,
+                "lower": null,
+                "upper": null
+              },
+              {
+                "label": "sample[Al2O3].isotropic_size.crystallite_size_nm",
+                "value": 119.12656766846,
+                "lower": 2.2250738585072014e-308,
+                "upper": null
+              },
+              {
+                "label": "sample[Al2O3].isotropic_microstrain.rms",
+                "value": 0.0005849129127803263,
+                "lower": 0.0,
+                "upper": null
+              },
+              {
+                "label": "sample[Al2O3].march_dollase.ratio",
+                "value": 0.9922316633727989,
+                "lower": 2.2250738585072014e-308,
+                "upper": null
+              },
+              {
+                "label": "sample[ZnO].isotropic_size.crystallite_size_nm",
+                "value": 133.54240282333527,
+                "lower": 2.2250738585072014e-308,
+                "upper": null
+              },
+              {
+                "label": "sample[ZnO].isotropic_microstrain.rms",
+                "value": 0.0002470762658369961,
+                "lower": 0.0,
+                "upper": null
+              },
+              {
+                "label": "sample[ZnO].march_dollase.ratio",
+                "value": 0.9850118324824121,
+                "lower": 2.2250738585072014e-308,
+                "upper": null
+              },
+              {
+                "label": "sample[CaF2].isotropic_size.crystallite_size_nm",
+                "value": 139.8752656799275,
+                "lower": 2.2250738585072014e-308,
+                "upper": null
+              },
+              {
+                "label": "sample[CaF2].isotropic_microstrain.rms",
+                "value": 0.00037204617360938995,
+                "lower": 0.0,
+                "upper": null
+              },
+              {
+                "label": "phase[Al2O3].scale",
+                "value": 0.0006246713074136136,
+                "lower": 0.0,
+                "upper": null
+              },
+              {
+                "label": "site[ZnO/Zn].u_iso_angstrom2",
+                "value": 0.010765318994509856,
+                "lower": 0.0,
+                "upper": 0.5
+              },
+              {
+                "label": "site[ZnO/O].u_iso_angstrom2",
+                "value": 0.01591891510212081,
+                "lower": 0.0,
+                "upper": 0.5
+              },
+              {
+                "label": "phase[ZnO].scale",
+                "value": 0.011153740979330294,
+                "lower": 0.0,
+                "upper": null
+              },
+              {
+                "label": "site[CaF2/Ca1].u_iso_angstrom2",
+                "value": 0.01134098046172906,
+                "lower": 0.0,
+                "upper": 0.5
+              },
+              {
+                "label": "site[CaF2/F1].u_iso_angstrom2",
+                "value": 0.015177821982351736,
+                "lower": 0.0,
+                "upper": 0.5
+              },
+              {
+                "label": "phase[CaF2].scale",
+                "value": 0.0020443840050654244,
+                "lower": 0.0,
+                "upper": null
+              }
+            ],
+            "jacobian_rank": 18,
+            "covariance_available": false
+          },
+          {
+            "rwp": 0.2010150976127672,
+            "termination": "converged",
+            "iterations": 1,
+            "evaluations": 2,
+            "rwp_history": [
+              0.2010150976127672
+            ],
+            "parameters": [
+              {
+                "label": "phase[Al2O3].scale",
+                "value": 0.000624704607247633,
+                "lower": 0.0,
+                "upper": null
+              },
+              {
+                "label": "phase[ZnO].scale",
+                "value": 0.011153838303820511,
+                "lower": 0.0,
+                "upper": null
+              },
+              {
+                "label": "phase[CaF2].scale",
+                "value": 0.002044296052507769,
+                "lower": 0.0,
+                "upper": null
+              }
+            ],
+            "jacobian_rank": 3,
+            "covariance_available": true
+          }
+        ],
+        "rwp": 0.2010150976127672,
+        "unit_rwp": 0.13061431763774822,
+        "correlation": 0.9908058039710584,
+        "fractions": {
+          "Al2O3": 0.3384827641842629,
+          "ZnO": 0.30016372650637085,
+          "CaF2": 0.36135350930936627
+        },
+        "max_fraction_error": 0.014453509309366286,
+        "maximum_conditional_fraction_su": 0.0008547904259674119,
+        "checks": {
+          "poisson_rwp": false,
+          "unit_weight_rwp": true,
+          "profile_correlation": true,
+          "qpa_weight_fraction": true,
+          "conditional_qpa_covariance": true,
+          "all_stages_converged": true
+        },
+        "profile_sha256": "73aa957eac7c7028180e44285f3bad8f0a2ba2b1e3185c5e18c7a570926528d4",
+        "worst_residual_regions": [
+          {
+            "lower": 25.0,
+            "upper": 30.0,
+            "count": 250,
+            "chi_square": 2944.2732874715134,
+            "chi_square_fraction": 0.08622469709524914,
+            "maximum_absolute_weighted_residual": 14.778481184679483
+          },
+          {
+            "lower": 30.0,
+            "upper": 35.0,
+            "count": 250,
+            "chi_square": 2414.305451846005,
+            "chi_square_fraction": 0.07070429133282163,
+            "maximum_absolute_weighted_residual": 15.175950309662806
+          },
+          {
+            "lower": 145.0,
+            "upper": 150.0,
+            "count": 251,
+            "chi_square": 2258.9904788801664,
+            "chi_square_fraction": 0.06615580510522792,
+            "maximum_absolute_weighted_residual": 8.15591775077276
+          },
+          {
+            "lower": 55.0,
+            "upper": 60.0,
+            "count": 250,
+            "chi_square": 1842.6846850180248,
+            "chi_square_fraction": 0.05396405608264073,
+            "maximum_absolute_weighted_residual": 11.848431253344097
+          },
+          {
+            "lower": 35.0,
+            "upper": 40.0,
+            "count": 250,
+            "chi_square": 1767.6606280324827,
+            "chi_square_fraction": 0.051766934430937515,
+            "maximum_absolute_weighted_residual": 9.874170103469606
+          }
+        ]
+      },
+      "empirical": {
+        "config": {
+          "iterations": [
+            100,
+            100,
+            100
+          ],
+          "rejections": 200,
+          "empirical": true,
+          "joint": false,
+          "objective_tolerance": 1e-10,
+          "parameter_tolerance": 1e-07
+        },
+        "initial_profile_relative_l2": 5.90765185674949e-17,
+        "stages": [
+          {
+            "rwp": 0.21702223631234785,
+            "termination": "converged",
+            "iterations": 48,
+            "evaluations": 226,
+            "rwp_history": [
+              0.3059658717998399,
+              0.3049755072533987,
+              0.30395833144498535,
+              0.3029110350919099,
+              0.3018319554658613,
+              0.3007169224301379,
+              0.2995612072023747,
+              0.29836317647874666,
+              0.29711472883528367,
+              0.29580834174274473,
+              0.294438615465539,
+              0.292994692110233,
+              0.2914606522193836,
+              0.28982117583648037,
+              0.2880544953158995,
+              0.28613349438747815,
+              0.2840123588126687,
+              0.28163388724322963,
+              0.27890501385559724,
+              0.2756839260439604,
+              0.27179777844129216,
+              0.26717519955310304,
+              0.26244109611779964,
+              0.2583239393855969,
+              0.2547672181059815,
+              0.25159355278261625,
+              0.24867867950514522,
+              0.2459386912438756,
+              0.24333164615139238,
+              0.240823920914685,
+              0.23839444742293314,
+              0.23602754548737576,
+              0.23371006110519,
+              0.23144588682304026,
+              0.22923436210384993,
+              0.2270789720734367,
+              0.22499359255680565,
+              0.223034954771291,
+              0.22122546350832095,
+              0.2196385277012542,
+              0.21834279122539893,
+              0.217451569992357,
+              0.2170376494984199,
+              0.2170222390248981,
+              0.21702223659376785,
+              0.21702223635395065,
+              0.21702223631830184,
+              0.21702223631234785
+            ],
+            "parameters": [
+              {
+                "label": "instrument[cw].u_deg2",
+                "value": 0.0007903943535106011,
+                "lower": null,
+                "upper": null
+              },
+              {
+                "label": "instrument[cw].v_deg2",
+                "value": 0.00011436905200134151,
+                "lower": null,
+                "upper": null
+              },
+              {
+                "label": "instrument[cw].w_deg2",
+                "value": 0.00016247793417181934,
+                "lower": null,
+                "upper": null
+              },
+              {
+                "label": "instrument[cw].zero_shift_deg",
+                "value": 0.023521539701919544,
+                "lower": null,
+                "upper": null
+              },
+              {
+                "label": "background[qarr_residual].coefficient_0",
+                "value": 2.429904052436915,
+                "lower": null,
+                "upper": null
+              },
+              {
+                "label": "background[qarr_residual].coefficient_1",
+                "value": -3.955336666506006,
+                "lower": null,
+                "upper": null
+              },
+              {
+                "label": "background[qarr_residual].coefficient_2",
+                "value": 0.8265164458370942,
+                "lower": null,
+                "upper": null
+              },
+              {
+                "label": "phase[Al2O3].scale",
+                "value": 0.0005862522086929921,
+                "lower": 0.0,
+                "upper": null
+              },
+              {
+                "label": "phase[ZnO].scale",
+                "value": 0.010132378459411104,
+                "lower": 0.0,
+                "upper": null
+              },
+              {
+                "label": "phase[CaF2].scale",
+                "value": 0.0017981620448980498,
+                "lower": 0.0,
+                "upper": null
+              }
+            ],
+            "jacobian_rank": 10,
+            "covariance_available": true
+          },
+          {
+            "rwp": 0.19443669172128195,
+            "termination": "converged",
+            "iterations": 50,
+            "evaluations": 189,
+            "rwp_history": [
+              0.21593099925069795,
+              0.21485374239538052,
+              0.21380056395038566,
+              0.2127662172617837,
+              0.2117617467583432,
+              0.21078257219463667,
+              0.20983381085727393,
+              0.2089150010937092,
+              0.20802829272353424,
+              0.20717112231857243,
+              0.20635108604719002,
+              0.20555321845663196,
+              0.20479104246712154,
+              0.20405500007513377,
+              0.20335874832176806,
+              0.20268605405937334,
+              0.2020466797971683,
+              0.20143687612581657,
+              0.20084944438028313,
+              0.20029614768397186,
+              0.1997699178415874,
+              0.19927270861833157,
+              0.19880114360583584,
+              0.1983564279252745,
+              0.19793858699363043,
+              0.1975455030648295,
+              0.19717472482340254,
+              0.19683218583283366,
+              0.1965133050927123,
+              0.196213925480916,
+              0.19593902961277182,
+              0.1956915787967995,
+              0.19546538553745568,
+              0.19526350648240362,
+              0.19508460834368616,
+              0.194925502373231,
+              0.1947871167436249,
+              0.19467262172506705,
+              0.19457910716570131,
+              0.19451064446445693,
+              0.19446336420933424,
+              0.1944395443921988,
+              0.1944369654052312,
+              0.1944367020238737,
+              0.19443669858316956,
+              0.19443669192931876,
+              0.19443669180811396,
+              0.19443669175223172,
+              0.19443669172537575,
+              0.19443669172128195
+            ],
+            "parameters": [
+              {
+                "label": "instrument[cw].u_deg2",
+                "value": 0.0004293932983824602,
+                "lower": null,
+                "upper": null
+              },
+              {
+                "label": "instrument[cw].v_deg2",
+                "value": 2.9754096520395158e-05,
+                "lower": null,
+                "upper": null
+              },
+              {
+                "label": "instrument[cw].w_deg2",
+                "value": 0.0010645068024893387,
+                "lower": null,
+                "upper": null
+              },
+              {
+                "label": "instrument[cw].zero_shift_deg",
+                "value": 0.02291608482292386,
+                "lower": null,
+                "upper": null
+              },
+              {
+                "label": "sample[Al2O3].isotropic_size.crystallite_size_nm",
+                "value": 135.50325141757753,
+                "lower": 2.2250738585072014e-308,
+                "upper": null
+              },
+              {
+                "label": "sample[Al2O3].isotropic_microstrain.rms",
+                "value": 0.0005948193317341877,
+                "lower": 0.0,
+                "upper": null
+              },
+              {
+                "label": "sample[Al2O3].march_dollase.ratio",
+                "value": 0.989489771388087,
+                "lower": 2.2250738585072014e-308,
+                "upper": null
+              },
+              {
+                "label": "sample[ZnO].isotropic_size.crystallite_size_nm",
+                "value": 140.9373025417589,
+                "lower": 2.2250738585072014e-308,
+                "upper": null
+              },
+              {
+                "label": "sample[ZnO].isotropic_microstrain.rms",
+                "value": 0.0002,
+                "lower": 0.0,
+                "upper": null
+              },
+              {
+                "label": "sample[ZnO].march_dollase.ratio",
+                "value": 0.9859954722052253,
+                "lower": 2.2250738585072014e-308,
+                "upper": null
+              },
+              {
+                "label": "sample[CaF2].isotropic_size.crystallite_size_nm",
+                "value": 149.28415850619444,
+                "lower": 2.2250738585072014e-308,
+                "upper": null
+              },
+              {
+                "label": "sample[CaF2].isotropic_microstrain.rms",
+                "value": 0.0003490667764253877,
+                "lower": 0.0,
+                "upper": null
+              },
+              {
+                "label": "phase[Al2O3].scale",
+                "value": 0.0006117188267674601,
+                "lower": 0.0,
+                "upper": null
+              },
+              {
+                "label": "site[ZnO/Zn].u_iso_angstrom2",
+                "value": 0.010571191598822558,
+                "lower": 0.0,
+                "upper": 0.5
+              },
+              {
+                "label": "site[ZnO/O].u_iso_angstrom2",
+                "value": 0.015587244451619478,
+                "lower": 0.0,
+                "upper": 0.5
+              },
+              {
+                "label": "phase[ZnO].scale",
+                "value": 0.011040460709290555,
+                "lower": 0.0,
+                "upper": null
+              },
+              {
+                "label": "site[CaF2/Ca1].u_iso_angstrom2",
+                "value": 0.011224152765141193,
+                "lower": 0.0,
+                "upper": 0.5
+              },
+              {
+                "label": "site[CaF2/F1].u_iso_angstrom2",
+                "value": 0.014795193158220752,
+                "lower": 0.0,
+                "upper": 0.5
+              },
+              {
+                "label": "phase[CaF2].scale",
+                "value": 0.002021158411417423,
+                "lower": 0.0,
+                "upper": null
+              }
+            ],
+            "jacobian_rank": 18,
+            "covariance_available": true
+          },
+          {
+            "rwp": 0.19443669166783403,
+            "termination": "converged",
+            "iterations": 1,
+            "evaluations": 2,
+            "rwp_history": [
+              0.19443669166783403
+            ],
+            "parameters": [
+              {
+                "label": "phase[Al2O3].scale",
+                "value": 0.0006117129724199888,
+                "lower": 0.0,
+                "upper": null
+              },
+              {
+                "label": "phase[ZnO].scale",
+                "value": 0.011040446002982526,
+                "lower": 0.0,
+                "upper": null
+              },
+              {
+                "label": "phase[CaF2].scale",
+                "value": 0.0020211734180674503,
+                "lower": 0.0,
+                "upper": null
+              }
+            ],
+            "jacobian_rank": 3,
+            "covariance_available": true
+          }
+        ],
+        "rwp": 0.19443669166783403,
+        "unit_rwp": 0.12991034562088438,
+        "correlation": 0.9908624701477788,
+        "fractions": {
+          "Al2O3": 0.33621030427332355,
+          "ZnO": 0.30138522743099944,
+          "CaF2": 0.36240446829567696
+        },
+        "max_fraction_error": 0.015504468295676976,
+        "maximum_conditional_fraction_su": 0.0008596045986664717,
+        "checks": {
+          "poisson_rwp": true,
+          "unit_weight_rwp": true,
+          "profile_correlation": true,
+          "qpa_weight_fraction": true,
+          "conditional_qpa_covariance": true,
+          "all_stages_converged": true
+        },
+        "profile_sha256": "777d20afb7076882bda4bcbb1ebd4c393be2c6b3bf579185530efbd80ed2dc1d",
+        "worst_residual_regions": [
+          {
+            "lower": 25.0,
+            "upper": 30.0,
+            "count": 250,
+            "chi_square": 3000.4370900480217,
+            "chi_square_fraction": 0.09391587137561443,
+            "maximum_absolute_weighted_residual": 15.073927152916204
+          },
+          {
+            "lower": 30.0,
+            "upper": 35.0,
+            "count": 250,
+            "chi_square": 2464.8236339712535,
+            "chi_square_fraction": 0.07715077917794766,
+            "maximum_absolute_weighted_residual": 15.121765133670806
+          },
+          {
+            "lower": 145.0,
+            "upper": 150.0,
+            "count": 251,
+            "chi_square": 2164.2710872464854,
+            "chi_square_fraction": 0.06774326504827634,
+            "maximum_absolute_weighted_residual": 7.938859613235886
+          },
+          {
+            "lower": 55.0,
+            "upper": 60.0,
+            "count": 250,
+            "chi_square": 1802.5403558976975,
+            "chi_square_fraction": 0.05642082907698391,
+            "maximum_absolute_weighted_residual": 11.612244810009706
+          },
+          {
+            "lower": 65.0,
+            "upper": 70.0,
+            "count": 250,
+            "chi_square": 1752.357176888692,
+            "chi_square_fraction": 0.05485005893797268,
+            "maximum_absolute_weighted_residual": 9.037978679213436
+          }
+        ]
+      },
+      "empirical_tight": {
+        "config": {
+          "iterations": [
+            500,
+            500,
+            100
+          ],
+          "rejections": 200,
+          "empirical": true,
+          "joint": false,
+          "objective_tolerance": 1e-12,
+          "parameter_tolerance": 1e-09
+        },
+        "initial_profile_relative_l2": 5.90765185674949e-17,
+        "stages": [
+          {
+            "rwp": 0.21702223631160403,
+            "termination": "converged",
+            "iterations": 51,
+            "evaluations": 289,
+            "rwp_history": [
+              0.3059658717998399,
+              0.3049755072533987,
+              0.30395833144498535,
+              0.3029110350919099,
+              0.3018319554658613,
+              0.3007169224301379,
+              0.2995612072023747,
+              0.29836317647874666,
+              0.29711472883528367,
+              0.29580834174274473,
+              0.294438615465539,
+              0.292994692110233,
+              0.2914606522193836,
+              0.28982117583648037,
+              0.2880544953158995,
+              0.28613349438747815,
+              0.2840123588126687,
+              0.28163388724322963,
+              0.27890501385559724,
+              0.2756839260439604,
+              0.27179777844129216,
+              0.26717519955310304,
+              0.26244109611779964,
+              0.2583239393855969,
+              0.2547672181059815,
+              0.25159355278261625,
+              0.24867867950514522,
+              0.2459386912438756,
+              0.24333164615139238,
+              0.240823920914685,
+              0.23839444742293314,
+              0.23602754548737576,
+              0.23371006110519,
+              0.23144588682304026,
+              0.22923436210384993,
+              0.2270789720734367,
+              0.22499359255680565,
+              0.223034954771291,
+              0.22122546350832095,
+              0.2196385277012542,
+              0.21834279122539893,
+              0.217451569992357,
+              0.2170376494984199,
+              0.2170222390248981,
+              0.21702223659376785,
+              0.21702223635395065,
+              0.21702223631830184,
+              0.21702223631234785,
+              0.21702223631195483,
+              0.2170222363116204,
+              0.21702223631160403
+            ],
+            "parameters": [
+              {
+                "label": "instrument[cw].u_deg2",
+                "value": 0.0007903943493458016,
+                "lower": null,
+                "upper": null
+              },
+              {
+                "label": "instrument[cw].v_deg2",
+                "value": 0.00011436905199803065,
+                "lower": null,
+                "upper": null
+              },
+              {
+                "label": "instrument[cw].w_deg2",
+                "value": 0.00016247793413628976,
+                "lower": null,
+                "upper": null
+              },
+              {
+                "label": "instrument[cw].zero_shift_deg",
+                "value": 0.023521539745543392,
+                "lower": null,
+                "upper": null
+              },
+              {
+                "label": "background[qarr_residual].coefficient_0",
+                "value": 2.429904052439694,
+                "lower": null,
+                "upper": null
+              },
+              {
+                "label": "background[qarr_residual].coefficient_1",
+                "value": -3.955336666505926,
+                "lower": null,
+                "upper": null
+              },
+              {
+                "label": "background[qarr_residual].coefficient_2",
+                "value": 0.8265164458353907,
+                "lower": null,
+                "upper": null
+              },
+              {
+                "label": "phase[Al2O3].scale",
+                "value": 0.0005862522088496389,
+                "lower": 0.0,
+                "upper": null
+              },
+              {
+                "label": "phase[ZnO].scale",
+                "value": 0.010132378462238136,
+                "lower": 0.0,
+                "upper": null
+              },
+              {
+                "label": "phase[CaF2].scale",
+                "value": 0.0017981620439268937,
+                "lower": 0.0,
+                "upper": null
+              }
+            ],
+            "jacobian_rank": 10,
+            "covariance_available": true
+          },
+          {
+            "rwp": 0.19443669171836,
+            "termination": "converged",
+            "iterations": 54,
+            "evaluations": 272,
+            "rwp_history": [
+              0.21593099924964246,
+              0.21485374239411018,
+              0.21380056394898267,
+              0.21276621726032302,
+              0.21176174675687762,
+              0.21078257219320296,
+              0.20983381085590708,
+              0.20891500109243036,
+              0.20802829272235826,
+              0.20717112231752735,
+              0.20635108604627675,
+              0.20555321845584396,
+              0.204791042466465,
+              0.20405500007460686,
+              0.20335874832136117,
+              0.20268605405909157,
+              0.20204667979699548,
+              0.20143687612574454,
+              0.20084944438030314,
+              0.20029614768406934,
+              0.1997699178417551,
+              0.19927270861856936,
+              0.1988011436061205,
+              0.1983564279256134,
+              0.19793858699400843,
+              0.19754550306522783,
+              0.19717472482382703,
+              0.19683218583326814,
+              0.19651330509316353,
+              0.1962139254813725,
+              0.19593902961322615,
+              0.19569157879725793,
+              0.1954653855378957,
+              0.19526350648283122,
+              0.19508460834409688,
+              0.19492550237361422,
+              0.19478711674397087,
+              0.19467262172538208,
+              0.194579107165962,
+              0.19451064446467167,
+              0.19446336420947818,
+              0.1944395443922428,
+              0.1944369654052213,
+              0.1944367020238632,
+              0.194436698583156,
+              0.1944366919293179,
+              0.19443669180810758,
+              0.19443669175222153,
+              0.19443669172537448,
+              0.19443669172127376,
+              0.194436691719129,
+              0.19443669171869307,
+              0.19443669171836656,
+              0.19443669171836
+            ],
+            "parameters": [
+              {
+                "label": "instrument[cw].u_deg2",
+                "value": 0.00042939330130392856,
+                "lower": null,
+                "upper": null
+              },
+              {
+                "label": "instrument[cw].v_deg2",
+                "value": 2.9754096618375156e-05,
+                "lower": null,
+                "upper": null
+              },
+              {
+                "label": "instrument[cw].w_deg2",
+                "value": 0.001064506802882229,
+                "lower": null,
+                "upper": null
+              },
+              {
+                "label": "instrument[cw].zero_shift_deg",
+                "value": 0.022916079809229193,
+                "lower": null,
+                "upper": null
+              },
+              {
+                "label": "sample[Al2O3].isotropic_size.crystallite_size_nm",
+                "value": 135.5032500737545,
+                "lower": 2.2250738585072014e-308,
+                "upper": null
+              },
+              {
+                "label": "sample[Al2O3].isotropic_microstrain.rms",
+                "value": 0.0005948193332388376,
+                "lower": 0.0,
+                "upper": null
+              },
+              {
+                "label": "sample[Al2O3].march_dollase.ratio",
+                "value": 0.9894897741560384,
+                "lower": 2.2250738585072014e-308,
+                "upper": null
+              },
+              {
+                "label": "sample[ZnO].isotropic_size.crystallite_size_nm",
+                "value": 140.9373013285259,
+                "lower": 2.2250738585072014e-308,
+                "upper": null
+              },
+              {
+                "label": "sample[ZnO].isotropic_microstrain.rms",
+                "value": 0.0002,
+                "lower": 0.0,
+                "upper": null
+              },
+              {
+                "label": "sample[ZnO].march_dollase.ratio",
+                "value": 0.9859954703552161,
+                "lower": 2.2250738585072014e-308,
+                "upper": null
+              },
+              {
+                "label": "sample[CaF2].isotropic_size.crystallite_size_nm",
+                "value": 149.2841590581451,
+                "lower": 2.2250738585072014e-308,
+                "upper": null
+              },
+              {
+                "label": "sample[CaF2].isotropic_microstrain.rms",
+                "value": 0.0003490667759091481,
+                "lower": 0.0,
+                "upper": null
+              },
+              {
+                "label": "phase[Al2O3].scale",
+                "value": 0.0006117188132929915,
+                "lower": 0.0,
+                "upper": null
+              },
+              {
+                "label": "site[ZnO/Zn].u_iso_angstrom2",
+                "value": 0.010571191681871782,
+                "lower": 0.0,
+                "upper": 0.5
+              },
+              {
+                "label": "site[ZnO/O].u_iso_angstrom2",
+                "value": 0.015587244456593492,
+                "lower": 0.0,
+                "upper": 0.5
+              },
+              {
+                "label": "phase[ZnO].scale",
+                "value": 0.011040460626994443,
+                "lower": 0.0,
+                "upper": null
+              },
+              {
+                "label": "site[CaF2/Ca1].u_iso_angstrom2",
+                "value": 0.011224152741435327,
+                "lower": 0.0,
+                "upper": 0.5
+              },
+              {
+                "label": "site[CaF2/F1].u_iso_angstrom2",
+                "value": 0.014795193152884852,
+                "lower": 0.0,
+                "upper": 0.5
+              },
+              {
+                "label": "phase[CaF2].scale",
+                "value": 0.0020211584615709537,
+                "lower": 0.0,
+                "upper": null
+              }
+            ],
+            "jacobian_rank": 18,
+            "covariance_available": true
+          },
+          {
+            "rwp": 0.19443669166505947,
+            "termination": "converged",
+            "iterations": 1,
+            "evaluations": 2,
+            "rwp_history": [
+              0.19443669166505947
+            ],
+            "parameters": [
+              {
+                "label": "phase[Al2O3].scale",
+                "value": 0.0006117129643991631,
+                "lower": 0.0,
+                "upper": null
+              },
+              {
+                "label": "phase[ZnO].scale",
+                "value": 0.01104044598858901,
+                "lower": 0.0,
+                "upper": null
+              },
+              {
+                "label": "phase[CaF2].scale",
+                "value": 0.0020211734444632538,
+                "lower": 0.0,
+                "upper": null
+              }
+            ],
+            "jacobian_rank": 3,
+            "covariance_available": true
+          }
+        ],
+        "rwp": 0.19443669166505947,
+        "unit_rwp": 0.12991033806316046,
+        "correlation": 0.9908624712185334,
+        "fractions": {
+          "Al2O3": 0.33621029988792606,
+          "ZnO": 0.30138522705871396,
+          "CaF2": 0.36240447305336015
+        },
+        "max_fraction_error": 0.015504473053360168,
+        "maximum_conditional_fraction_su": 0.0008596045981585285,
+        "checks": {
+          "poisson_rwp": true,
+          "unit_weight_rwp": true,
+          "profile_correlation": true,
+          "qpa_weight_fraction": true,
+          "conditional_qpa_covariance": true,
+          "all_stages_converged": true
+        },
+        "profile_sha256": "05231cd857e882ad1f8a06319b3e460c6579b09834ee3d77e981c9b4125bb7fd",
+        "worst_residual_regions": [
+          {
+            "lower": 25.0,
+            "upper": 30.0,
+            "count": 250,
+            "chi_square": 3000.436081956325,
+            "chi_square_fraction": 0.09391583982428867,
+            "maximum_absolute_weighted_residual": 15.07392497558714
+          },
+          {
+            "lower": 30.0,
+            "upper": 35.0,
+            "count": 250,
+            "chi_square": 2464.8234895596397,
+            "chi_square_fraction": 0.07715077465996055,
+            "maximum_absolute_weighted_residual": 15.121766134649626
+          },
+          {
+            "lower": 145.0,
+            "upper": 150.0,
+            "count": 251,
+            "chi_square": 2164.2710685529714,
+            "chi_square_fraction": 0.06774326446508906,
+            "maximum_absolute_weighted_residual": 7.938859507238356
+          },
+          {
+            "lower": 55.0,
+            "upper": 60.0,
+            "count": 250,
+            "chi_square": 1802.5406538295797,
+            "chi_square_fraction": 0.05642083840407954,
+            "maximum_absolute_weighted_residual": 11.612246636321498
+          },
+          {
+            "lower": 65.0,
+            "upper": 70.0,
+            "count": 250,
+            "chi_square": 1752.3574649983075,
+            "chi_square_fraction": 0.05485006795757936,
+            "maximum_absolute_weighted_residual": 9.03798015670297
+          }
+        ]
+      }
+    }
+  },
+  "notes": [
+    "Default full profiles, fixed physical bounds and convergence tolerances.",
+    "Same diagnostic recipes on both samples; weighed fractions only score final fits.",
+    "Python initial scale least squares can differ slightly from native preparation.",
+    "Exploration does not change the frozen validation recipe or its holdout status.",
+    "No timings are interpreted as benchmark measurements."
+  ]
+}
