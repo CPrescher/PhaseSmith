@@ -6,7 +6,7 @@ use crate::{
     LatticeReflectionDomain, ParameterBounds, ParameterKey, ParameterSet, ParameterSpec,
     ResidualEvaluation, ResidualOptions, cw_lattice_geometry, evaluate_residuals,
 };
-use nalgebra::{DMatrix, DVector};
+use nalgebra::DMatrix;
 use phasesmith_core::{
     ConstantWavelengthInstrument, CwReflectionBatchView, FcjGeometry, GridView, SupportPolicy,
     WavelengthComponentsView, accumulate_cw_batch, accumulate_cw_components_batch,
@@ -672,42 +672,4 @@ pub fn evaluate_pawley_with_storage(
         unobserved_reflections,
         coincident_groups,
     })
-}
-/// Weighted sample-major Jacobian and residual, with excluded rows exactly zero.
-pub(crate) fn weighted(
-    input: &PawleyInput,
-    evaluation: &PawleyEvaluation,
-    uncertainty: bool,
-) -> (DMatrix<f64>, DVector<f64>) {
-    let mut j = evaluation
-        .jacobian
-        .as_ref()
-        .expect("dense evaluator required")
-        .clone();
-    for i in 0..j.nrows() {
-        let w = if !evaluation.residuals.included[i] {
-            0.0
-        } else if uncertainty {
-            input
-                .pattern
-                .uncertainty
-                .as_ref()
-                .map_or(1.0, |s| 1.0 / s[i])
-        } else {
-            1.0
-        };
-        j.row_mut(i).scale_mut(w);
-    }
-    (
-        j,
-        DVector::from_iterator(
-            evaluation.residuals.weighted_residual.len(),
-            evaluation
-                .residuals
-                .weighted_residual
-                .iter()
-                .zip(&evaluation.residuals.included)
-                .map(|(r, included)| if *included { *r } else { 0.0 }),
-        ),
-    )
 }

@@ -81,11 +81,13 @@ ownership, matches the one shared built-in phase, and revalidates optional
 checkpoints. Versioned serialization of this state is documented in
 [native project persistence](native-persistence.md).
 
-## CW Pawley workflow
+## Pawley workflows
 
-[CW Pawley refinement](pawley.md) provides independent bounded family areas,
-selected analytical cell/profile/background refinement and accepted-state restart.
-Use `phasesmith.refinement.pawley` in Python or `phasesmith::workflows` in Rust.
-Its [standalone version-1 JSON format](pawley.md#runtime-and-persistence) is separate
-from existing mixed-method project bundles. See the [validation report](pawley-validation.md)
-for current scientific coverage and limitations.
+[CW Pawley refinement](pawley.md) supports monochromatic and fixed-spectrum
+family areas; [TOF Pawley](tof-pawley.md) supports single banks and joint banks
+with shared cells. Both provide bounded/tied parameters, analytical derivatives,
+dense or matrix-free solving, cancellation and accepted-state restart.
+Use `phasesmith.refinement.pawley` or `phasesmith.refinement.tof_pawley` in Python,
+and `phasesmith::workflows` in Rust. Standalone CW version 2 and TOF version 1
+codecs also integrate into lossless [native format-7 bundles](native-persistence.md).
+See [validation](pawley-validation.md) for measured gates and model limitations.

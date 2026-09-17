@@ -37,6 +37,24 @@ jobs:
           --include-diagnostics
           --data-directory validation/data
           --output validation/results/scheduled.json
+      - name: Fetch fixed-spectrum Pawley regression data
+        run: >-
+          python -c "from phasesmith.validation import fetch_validation_dataset;
+          fetch_validation_dataset('iucr-ceria-size-strain-round-robin',
+          'validation/data/iucr-ceria-size-strain-round-robin')"
+      - name: Run Pawley measured acceptance contracts
+        run: |
+          python -m phasesmith.validation.pawley --data-root validation/data \
+            --manifest validation/pawley-matrix-free-acceptance-v4.json \
+            --output validation/results/scheduled-pawley-cw.json
+          python -m phasesmith.validation.pawley --data-root validation/data \
+            --manifest validation/pawley-cell-acceptance-v3.json \
+            --output validation/results/scheduled-pawley-cell.json
+          python -m phasesmith.validation.tof_pawley --data-root validation/data \
+            --output validation/results/scheduled-pawley-tof.json
+          python -m phasesmith.validation.pawley_spectrum \
+            --data-root validation/data/iucr-ceria-size-strain-round-robin \
+            --output validation/results/scheduled-pawley-spectrum.json
       - name: Exercise Python integration contracts
         run: python -m pytest -q -m real_data tests/test_real_data_integration.py
       - name: Exercise external Rust reader and CLI contracts
@@ -51,6 +69,6 @@ jobs:
         uses: actions/upload-artifact@v7.0.0
         with:
           name: real-data-validation-${{ github.run_id }}
-          path: validation/results/scheduled.json
+          path: validation/results/scheduled*.json
           if-no-files-found: warn
           retention-days: 90

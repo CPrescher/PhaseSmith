@@ -19,10 +19,10 @@ and executable comparison are committed separately from production code.
 Declared engineering agreement checks pass; a stricter 1e-5 profile-equivalence
 check remains false and is explicitly documented as a profile-model exception.
 
-Native project format 6 now adds typed Pawley analysis ownership and a lossless
+Native project format 7 now adds typed CW and joint TOF Pawley analysis ownership and a lossless
 mixed-method `ProjectBundle` API. Shared histogram arrays are stored once;
 cell-only Pawley domains require no atom models. All existing native analysis
-families and checkpoints survive mixed load/save, formats 1–5 migrate, and
+families and checkpoints survive mixed load/save, formats 1–6 migrate, and
 Python/native save/load/resume tests verify exact accepted profiles and history.
 Standalone Pawley formats remain compatible. The latest upstream numerical
 work is merged into the Pawley worktree; the combined Python suite passes.
@@ -41,9 +41,15 @@ dense mode remains the small-problem reference. The separate measured LaB6
 cell/profile gate passes at Rwp 0.2184. Fixed CW spectra now use one area per family, normalized fixed detected weights,
 component-union domains and native analytical chains. Standalone and shared
 bundles retain spectra; independent derivatives, pinned doublet profiles and
-measured ceria comparisons are covered. TOF remains unfinished, and the
-latest upstream numerical work is reconciled; combined-state validation follows.
-See `docs/pawley.md`, `docs/pawley-validation.md` and the completion audit.
+measured ceria comparisons are covered. TOF now reuses the same bounded native
+solver with microsecond density observations, bank-local areas/calibration/profile
+and backgrounds, and symmetry-constrained shared cells. Analytical chains,
+nonuniform support, uncertainty conventions, a DIFC/cell gauge guard, atomic
+restart, native format-7 bundles and independent NumPy/pinned-profile checks
+are implemented. The measured POWGEN gate converges at Rwp 0.21680; the joint
+three-bank nickel gate converges at Rwp 0.02099 with all banks below 0.03.
+Upstream committed numerical work through `9afd808c` is reconciled. See `docs/pawley.md`,
+`docs/tof-pawley.md`, `docs/pawley-validation.md` and the completion audit.
 
 Refinement optimization priority: seek the lowest stable, scientifically valid
 Rwp with verified convergence, retaining QPA and physical-model checks. Judge

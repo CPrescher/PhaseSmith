@@ -246,3 +246,10 @@ pub use pawley_solver::{
 
 mod pawley_project;
 pub use pawley_project::{PawleyAnalysis, PawleyProjectState};
+
+mod tof_pawley;
+pub use tof_pawley::{
+    TofPawleyAnalysis, TofPawleyBank, TofPawleyCheckpoint, TofPawleyInput, TofPawleyPhase,
+    TofPawleyProjectState, TofPawleyResult, evaluate_tof_pawley, refine_tof_pawley,
+    refine_tof_pawley_with_runtime, tof_pawley_parameters,
+};

@@ -4,7 +4,7 @@ PhaseSmith is an early-stage powder-diffraction computation library with a
 Rust numerical core and a typed Python/NumPy API. The current implementation
 includes symmetric TCH, CW U/V/W/X/Y broadening, FCJ asymmetry, wavelength
 components, extensible sample physics, multi-phase CW X-ray/neutron and neutron
-TOF calculation, plus scripted Le Bail and [CW Pawley](docs/pawley.md) workflows. Analytical
+TOF calculation, plus scripted Le Bail, [CW Pawley](docs/pawley.md) and [TOF Pawley](docs/tof-pawley.md) workflows. Analytical
 derivatives are computed during fused peak accumulation. The crystallography
 foundation includes native general-cell mathematics, P1 complex structure
 factors, exact symmetry, bounded reflection generation, and prepared X-ray and

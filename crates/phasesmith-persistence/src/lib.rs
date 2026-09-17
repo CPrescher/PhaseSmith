@@ -89,7 +89,7 @@ pub use report::{
 };
 
 /// Current native project bundle wire version.
-pub const PROJECT_FORMAT_VERSION: u32 = 6;
+pub const PROJECT_FORMAT_VERSION: u32 = 7;
 /// Canonical manifest filename within a project directory.
 pub const PROJECT_MANIFEST_NAME: &str = "manifest.json";
 /// Canonical `NumPy` archive filename within a project directory.
@@ -266,6 +266,8 @@ struct ProjectManifest {
     structural_tof_multibank_analyses: Option<Vec<tof_structural_wire::WireStructuralTofAnalysis>>,
     #[serde(default)]
     pawley_analyses: Option<Vec<pawley::WirePawleyAnalysis>>,
+    #[serde(default)]
+    tof_pawley_analyses: Option<Vec<tof_pawley::WireTofPawleyAnalysis>>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -280,6 +282,7 @@ type LoadedProjectParts = (
     Vec<tof_multibank_wire::WireTofMultiBankGeometryAnalysis>,
     Vec<tof_structural_wire::WireStructuralTofAnalysis>,
     Vec<pawley::WirePawleyAnalysis>,
+    Vec<tof_pawley::WireTofPawleyAnalysis>,
     BTreeMap<String, arrays::ArrayData>,
 );
 
@@ -301,6 +304,7 @@ pub fn save_project(
     save_project_parts(
         path.as_ref(),
         project,
+        Vec::new(),
         Vec::new(),
         Vec::new(),
         Vec::new(),
@@ -335,6 +339,7 @@ pub fn save_rietveld_project(
         Vec::new(),
         Vec::new(),
         Vec::new(),
+        Vec::new(),
         BTreeMap::new(),
         options,
     )
@@ -362,6 +367,7 @@ pub fn save_tof_lebail_project(
         &state.project,
         Vec::new(),
         analyses,
+        Vec::new(),
         Vec::new(),
         Vec::new(),
         Vec::new(),
@@ -395,6 +401,7 @@ pub fn save_tof_multibank_geometry_project(
         analyses,
         Vec::new(),
         Vec::new(),
+        Vec::new(),
         arrays,
         options,
     )
@@ -424,6 +431,7 @@ pub fn save_structural_tof_multibank_project(
         Vec::new(),
         tof_structural_wire::encode_analyses(state),
         Vec::new(),
+        Vec::new(),
         BTreeMap::new(),
         options,
     )
@@ -438,6 +446,7 @@ fn save_project_parts(
     tof_multibank_geometry_analyses: Vec<tof_multibank_wire::WireTofMultiBankGeometryAnalysis>,
     structural_tof_multibank_analyses: Vec<tof_structural_wire::WireStructuralTofAnalysis>,
     pawley_analyses: Vec<pawley::WirePawleyAnalysis>,
+    tof_pawley_analyses: Vec<tof_pawley::WireTofPawleyAnalysis>,
     analysis_arrays: BTreeMap<String, arrays::ArrayData>,
     options: ProjectSaveOptions,
 ) -> Result<PathBuf, PersistenceError> {
@@ -472,6 +481,7 @@ fn save_project_parts(
         tof_multibank_geometry_analyses: Some(tof_multibank_geometry_analyses),
         structural_tof_multibank_analyses: Some(structural_tof_multibank_analyses),
         pawley_analyses: Some(pawley_analyses),
+        tof_pawley_analyses: Some(tof_pawley_analyses),
     };
     let mut encoded_manifest = serde_json::to_string_pretty(&manifest)?;
     encoded_manifest.push('\n');
@@ -643,8 +653,8 @@ fn load_project_parts(
                 message: "native project format 1 cannot declare Rietveld analyses".to_owned(),
             });
         }
-        (2..=6, Some(analyses)) => analyses,
-        (2..=6, None) => {
+        (2..=7, Some(analyses)) => analyses,
+        (2..=7, None) => {
             return Err(PersistenceError::InvalidRecord {
                 message: format!(
                     "native project format {} requires Rietveld analyses",
@@ -664,8 +674,8 @@ fn load_project_parts(
                 ),
             });
         }
-        (3..=6, Some(analyses)) => analyses,
-        (3..=6, None) => {
+        (3..=7, Some(analyses)) => analyses,
+        (3..=7, None) => {
             return Err(PersistenceError::InvalidRecord {
                 message: format!(
                     "native project format {} requires TOF Le Bail analyses",
@@ -688,8 +698,8 @@ fn load_project_parts(
                 ),
             });
         }
-        (4..=6, Some(analyses)) => analyses,
-        (4..=6, None) => {
+        (4..=7, Some(analyses)) => analyses,
+        (4..=7, None) => {
             return Err(PersistenceError::InvalidRecord {
                 message: format!(
                     "native project format {} requires joint TOF analyses",
@@ -712,8 +722,8 @@ fn load_project_parts(
                 ),
             });
         }
-        (5 | 6, Some(analyses)) => analyses,
-        (5 | 6, None) => {
+        (5..=7, Some(analyses)) => analyses,
+        (5..=7, None) => {
             return Err(PersistenceError::InvalidRecord {
                 message: "native project format 5 requires structural TOF analyses".to_owned(),
             });
@@ -722,7 +732,7 @@ fn load_project_parts(
     };
     let pawley_analyses = match (manifest.format_version, manifest.pawley_analyses) {
         (1..=5, None) => Vec::new(),
-        (6, Some(analyses)) => analyses,
+        (6 | 7, Some(analyses)) => analyses,
         _ => {
             return Err(PersistenceError::InvalidRecord {
                 message: "Pawley analyses require native format 6 and its explicit analysis field"
@@ -730,6 +740,16 @@ fn load_project_parts(
             });
         }
     };
+    let tof_pawley_analyses =
+        match (manifest.format_version, manifest.tof_pawley_analyses) {
+            (1..=6, None) => Vec::new(),
+            (7, Some(analyses)) => analyses,
+            _ => return Err(PersistenceError::InvalidRecord {
+                message:
+                    "TOF Pawley analyses require native format 7 and its explicit analysis field"
+                        .into(),
+            }),
+        };
     if manifest.format_version < 3 && wire::has_tof_histograms(&manifest.project) {
         return Err(PersistenceError::InvalidRecord {
             message: format!(
@@ -767,6 +787,7 @@ fn load_project_parts(
         multibank_analyses,
         structural_analyses,
         pawley_analyses,
+        tof_pawley_analyses,
         arrays,
     ))
 }
@@ -902,3 +923,9 @@ fn recover_interrupted_save(directory: &Path) -> Result<(), PersistenceError> {
     sync_directory(directory)?;
     Ok(())
 }
+
+mod tof_pawley;
+pub use tof_pawley::{
+    TofPawleyProject, decode_tof_pawley_project, encode_tof_pawley_project,
+    load_tof_pawley_project, save_tof_pawley_project,
+};

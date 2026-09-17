@@ -1,12 +1,15 @@
 # Pawley refinement implementation plan
 
-Status: P1–P6 are implemented: native dense/matrix-free CW Pawley, joint
-cell/profile/background fits, shared format-6 bundles, measured convergence
-gates, pinned live optimizer comparisons and fixed detected-area spectra.
+Status: P1–P7 are implemented: native dense/matrix-free CW and TOF Pawley,
+joint cell/profile/background fits, shared format-7 bundles, measured convergence
+gates, pinned live CW optimizer comparisons, fixed detected-area spectra and
+joint multi-bank TOF with shared cells and bank-local areas/calibration.
 The detailed original roadmap below is retained; current evidence and limits
 are in [the guide](pawley.md), [validation](pawley-validation.md) and
-[completion audit](pawley-completion-audit.md). P7 TOF remains in progress.
-The original checkout's numerical work has been reconciled in this worktree.
+[completion audit](pawley-completion-audit.md). The original proposal below is
+retained as history; current TOF conventions are in [the TOF guide](tof-pawley.md).
+The original checkout's committed numerical work through `9afd808c` has been
+reconciled in this worktree.
 
 ## Goal and first release boundary
 

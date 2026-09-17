@@ -1,4 +1,94 @@
-# CW Pawley validation and performance
+# Pawley validation and performance
+
+## Completed scope and final checks
+
+The final combined implementation covers bounded/tied CW and TOF areas,
+symmetry-constrained cells, selected profile/calibration parameters, linear
+backgrounds, fixed CW spectra, dense and matrix-free solving, cancellation,
+accepted-state restart and lossless native format-7 bundles. The original
+checkout's committed changes through `9afd808c` are included; later concurrent
+work in that checkout is outside this validated worktree. The historical reports below remain
+unchanged so that failed experiments and intermediate limitations stay visible.
+
+| Measured regression | Final scientific outcome |
+| --- | --- |
+| APS sucrose, 811 CW families | Converged, Rwp 0.06605375; hard-support local convergence is explicitly reported |
+| Echidna LaB6, fixed cell | Converged, Rwp 0.28486929 |
+| Echidna LaB6, selected cell/profile | Converged, Rwp approximately 0.2184 |
+| Birmingham ceria, fixed detected spectrum | Converged, Rwp 0.20951987; exploratory comparison, not an independent holdout |
+| POWGEN LaB6, 330 TOF families | Converged, Rwp 0.21679733, correlation 0.96900 |
+| LANL nickel, three TOF banks and shared cell | Converged, joint Rwp 0.02098942; each bank below 0.03; a = 3.523669 Å |
+
+Final release-build reports are
+`validation/results/pawley-20260917-release-{cw,cell,tof,spectrum,oracle}.json`.
+They record dataset/fixture, runner and native-binary provenance. Measured
+repetitions compare complete arrays and histories exactly. Run the contracts
+without changing the predeclared scientific thresholds:
+
+```sh
+python -m phasesmith.validation.pawley --data-root PATH \
+  --manifest validation/pawley-matrix-free-acceptance-v4.json --output NEW_CW_REPORT
+python -m phasesmith.validation.pawley --data-root PATH \
+  --manifest validation/pawley-cell-acceptance-v3.json --output NEW_CELL_REPORT
+python -m phasesmith.validation.tof_pawley --data-root PATH --output NEW_TOF_REPORT
+python -m phasesmith.validation.pawley_spectrum \
+  --data-root PATH/iucr-ceria-size-strain-round-robin --output NEW_SPECTRUM_REPORT
+python -m phasesmith.validation.pawley_oracle --fixture oracle/fixtures/pawley_optimizer_v1 \
+  --output NEW_ORACLE_REPORT
+```
+
+The scheduled real-data CI job fetches the pinned sources, runs these measured
+contracts and uploads their reports. Normal pytest uses synthetic and committed
+oracle fixtures; it does not require external measurement downloads or GSAS-II.
+The fixed-spectrum and CW live-optimizer model exceptions remain explicit.
+TOF is checked against pinned profile fixtures; live TOF optimizer parity is
+not an acceptance claim.
+
+The independent TOF reference and tests cover nonuniform grids, all fifteen
+profile/calibration coefficients, six triclinic cell chains, dense/product
+and adjoint agreement, area/centroid/support semantics, bank-local zero-area
+release, single-bank reduction, DIFC/cell anchoring, complete joint cancellation
+and restart, schema validation and Python/native bundle exchange. Observational
+uncertainty conventions and matrix-free rank/covariance limits are documented
+in [the TOF guide](tof-pawley.md).
+
+## Final benchmarks and verification
+
+`benchmarks/pawley.py` and `benchmarks/tof_pawley.py` ran sequentially after
+the test workloads using the same release binary as all five final reports.
+Each case repeats twice, requires convergence and profile error below `1e-6`,
+and compares complete calculated arrays and accepted histories exactly.
+
+| Workload | Median seconds |
+| --- | ---: |
+| 256 CW families / 10,001 samples, fixed symmetric | 0.0376 |
+| 256 CW FCJ families / 10,001 samples, joint W | 0.0927 |
+| 811 CW families / 23,003 samples, fixed symmetric | 0.2069 |
+| Same CW workloads with a fixed two-component spectrum | 0.0472 / 0.1338 / 0.2997 |
+| 256 TOF families / 10,001 nonuniform samples, dense | 1.9699 |
+| Same single-bank TOF workload, matrix-free | 1.3662 |
+| Three TOF banks, each 256 families / 10,001 samples, matrix-free | 4.1799 |
+
+CW medians are comparable to the earlier 0.0394/0.0957/0.2145-second matrix-free
+baseline; this run shows no meaningful regression from sharing the solver.
+TOF maximum relative profile error is below `9e-12`. TOF process peak RSS is
+262,471,680 bytes and includes the preceding dense case, Python and returned
+arrays; it is not a per-fit or matrix-free-only memory measurement. The CW and
+spectrum processes peak at 175,931,392 and 183,484,416 bytes respectively.
+The `release-benchmark-*.json` reports retain diagnostics and hashes.
+
+The final measured sucrose repetitions take 152.61/152.14 seconds and remain
+within the unchanged 240-second budget. Some verification work ran concurrently
+with this acceptance run, so these timings are not isolated speed comparisons.
+Final nickel repetitions take 11.75/11.93 seconds with unchanged exact profiles.
+
+Verification: 362 Rust tests/doctests pass (34 external/opt-in tests ignored),
+and pytest reports 934 passed, 11 skipped, 33 deselected. External measured
+checks above run separately from default pytest. Formatting, strict Clippy,
+strict Rustdoc/MkDocs, synchronized mathematics, both API snapshots and actual
+standalone/bundle schema validation pass. The Python-free TOF example and
+Python guide example also execute successfully. CI definitions are updated;
+remote CI has not been run from this worktree.
 
 ## Matrix-free follow-up
 
@@ -27,14 +117,17 @@ convergence of the exact hard-truncated objective, not of an infinite-support
 profile. LaB6 takes about 0.015 seconds and reaches Rwp 0.284869293. Both runs
 have identical profiles and accepted histories. Earlier dense failures below
 are historical evidence; they are preserved rather than silently overwritten.
-The combined state after upstream reconciliation still requires revalidation.
+The combined state after upstream reconciliation also passes both gates; see
+the final evidence above. Historical timings are not isolated comparisons to
+the combined-state runs.
 
 
-This implementation targets one fixed-wavelength CW histogram, independent
-family areas and selected joint cell/profile/background variables. It uses the
-existing native CW/FCJ kernels; no GSAS-II runtime is imported. Full live GSAS-II
-Pawley optimizer equivalence, matrix-free solving, wavelength spectra and TOF
-are not claimed.
+Current coverage includes monochromatic/fixed-spectrum CW and single-/multi-bank
+TOF Pawley. Production uses the existing fused native profile kernels, without
+GSAS-II runtime dependencies. The live pinned CW optimizer comparison passes
+its declared engineering agreement gates; strict profile-model equivalence is
+not claimed. TOF has independent NumPy/derivative and pinned-profile checks,
+not a live external optimizer comparison.
 
 ## Reproducible checks
 
@@ -61,6 +154,7 @@ cargo test --workspace --all-features
 pytest
 python scripts/public_api_snapshot.py --check
 python scripts/public_api_snapshot.py --check --module phasesmith.refinement.pawley \
+  --module phasesmith.project_bundle --module phasesmith.refinement.tof_pawley \
   --snapshot api/python-pawley-api-unreleased.json
 python scripts/sync_math_docs.py --check
 mkdocs build --strict

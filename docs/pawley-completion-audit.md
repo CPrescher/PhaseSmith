@@ -5,25 +5,24 @@ Reviewed 2026-09-17 against implementation commit `e39cf72` on
 tests and recorded evidence with the [original plan](pawley-plan.md), not a new
 numerical validation run.
 
-Follow-up status: the matrix-free solver and exact finite-support boundary
-treatment now pass both repeated measured CW gates under unchanged scientific
-thresholds and budgets. Sucrose converges locally in 137–138 seconds at Rwp
-0.066054. Matrix-free products, dependent constraints, allocation limits,
-checkpoint mode checks and format-1 migration are tested. The executable
-manifest, covariance tests, measured LaB6 cell/profile gate and multiphase
-recovery are complete. Sections below retain the original findings as an audit
-trail. Mixed native format-6 bundles and cross-language resume are now implemented.
-The pinned external optimizer comparison is complete with its explicit
-profile-model exception. Fixed CW spectra now have union domains, native derivative
-chains, persistence, pinned doublet checks and measured ceria comparisons; TOF
-remains unfinished. The original checkout's numerical work is now committed upstream
-and has been merged; the combined Python suite and native checks pass.
+Completion status: P1–P7 are implemented. Dense/matrix-free CW, fixed detected
+spectra and joint TOF share the bounded native solver. Measured sucrose and
+LaB6 converge; fixed-spectrum ceria and POWGEN/three-bank nickel checks pass.
+Native format-7 bundles retain every analysis family and atomic checkpoints,
+with Python/native exchange and legacy migration coverage. The pinned live CW
+optimizer comparison passes its declared agreement gates with a documented
+strict profile-equivalence exception. TOF uses the existing pinned profile
+oracle, not a claimed live TOF optimizer equivalence experiment.
 
-The single-histogram, fixed-wavelength CW method is implemented. Its native
-objective/solver, NumPy interface, bounded/tied areas, selected cell/profile/
-background variables, diagnostics and standalone restart/persistence exist.
-“Fully implemented” still has two boundaries: completing the CW release and
-completing the broader spectra/TOF roadmap.
+The original checkout's committed numerical changes through `9afd808c` have
+been merged into this worktree. Later concurrent edits remain in that checkout.
+Current usage, final evidence and limits are in [CW](pawley.md), [TOF](tof-pawley.md)
+and [validation](pawley-validation.md). No remaining item below is an open
+implementation blocker; these original findings are retained as an audit trail.
+Optional Schur/variable-projection acceleration, automatic recipe integration,
+indexing and structure determination remain outside the accepted method scope.
+
+## Historical audit at e39cf72
 
 ## Complete the CW release
 

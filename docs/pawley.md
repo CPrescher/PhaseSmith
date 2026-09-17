@@ -31,7 +31,8 @@ quantitative phase mass fractions.
 | Dense full analytical Jacobian and full-rank interior covariance | Supported within explicit allocation limit |
 | Matrix-free bounded solving with analytical JVP/VJP | Supported; rank and covariance omitted |
 | Fixed detected-area CW spectra | Implemented, including union domains and restart |
-| TOF, structural restraints | Deferred |
+| Single-/multi-bank TOF | Supported in the [TOF workflow](tof-pawley.md) |
+| Structural restraints and automatic recipe integration | Outside Pawley scope |
 | Live pinned GSAS-II optimizer comparison | Fixed-cell and cell-refinement agreement tested; strict profile equivalence not established |
 
 The implementation uses deterministic serial kernels and bounded dense or
@@ -205,7 +206,7 @@ Checkpoints bind the canonical request/options with SHA-256. Load checks byte
 limits, version, unknown fields, identities, array and constraint contracts;
 resuming also recomputes the saved objective. No pickle or matrix factorization
 is stored. Saving never overwrites an existing file. Pawley analyses also integrate with the [shared native bundle](native-persistence.md#mixed-analyses-and-pawley)
-format 6; use its `ProjectBundle` API to preserve multiple methods together.
+format 7; use its `ProjectBundle` API to preserve multiple methods together.
 
 Rust consumers use `phasesmith::workflows::{PawleyInput, refine_pawley}` and
 `phasesmith::persistence::{PawleyProject, save_pawley_project, load_pawley_project}`.
@@ -224,7 +225,8 @@ a live pinned optimizer fixture now compares fixed states, fitted profiles,
 cells, isolated areas and overlap sums. Declared model-agreement checks pass;
 strict profile equivalence is not claimed.
 See [Pawley validation and performance](pawley-validation.md) for measured gates
-and [the implementation plan](pawley-plan.md) for remaining extensions.
+and [the implementation plan](pawley-plan.md) for the completed implementation scope.
+[TOF Pawley](tof-pawley.md) provides the single- and multi-bank workflow.
 
 Method: G. S. Pawley (1981), *J. Appl. Cryst.* **14**, 357–361,
 [doi:10.1107/S0021889881009618](https://doi.org/10.1107/S0021889881009618).

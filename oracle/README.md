@@ -420,3 +420,8 @@ worsens real-pattern Rwp from 9.085% to 13.928% (`1a`) and from 8.195% to
 
 GSAS-II is separately licensed and must be cited as requested by its authors.
 No GSAS-II source is copied into this repository.
+
+TOF Pawley reuses the three pinned `tof_v1` profile fixtures through its native
+objective and bounded area extraction (`tests/test_tof_pawley.py`). Their
+existing `2.5e-4` profile/area tolerance is retained. This covers profile
+conventions; a live external TOF Pawley optimizer comparison is not claimed.

@@ -77,13 +77,13 @@ struct WireDomain {
 }
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
-struct WireOperation {
-    rotation: [[i32; 3]; 3],
-    translation: [[i64; 2]; 3],
+pub(crate) struct WireOperation {
+    pub(crate) rotation: [[i32; 3]; 3],
+    pub(crate) translation: [[i64; 2]; 3],
 }
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
-struct WireSpec {
+pub(crate) struct WireSpec {
     key: [String; 3],
     value: f64,
     unit: String,
@@ -94,7 +94,7 @@ struct WireSpec {
 }
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
-enum WireConstraint {
+pub(crate) enum WireConstraint {
     Fixed {
         target: [String; 3],
         value: f64,
@@ -135,7 +135,7 @@ enum WireBackground {
 }
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
-struct WireOptions {
+pub(crate) struct WireOptions {
     #[serde(default = "dense_solver", skip_serializing_if = "is_dense")]
     solver: String,
     #[serde(
@@ -182,19 +182,19 @@ fn default_linear_iterations(v: &usize) -> bool {
 }
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
-struct WireCheckpoint {
+pub(crate) struct WireCheckpoint {
     #[serde(default, skip_serializing_if = "is_false")]
-    support_local: bool,
-    request_sha256: String,
-    linear_initialized: bool,
-    free: Vec<f64>,
-    chi_square_history: Vec<f64>,
-    damping: f64,
+    pub(crate) support_local: bool,
+    pub(crate) request_sha256: String,
+    pub(crate) linear_initialized: bool,
+    pub(crate) free: Vec<f64>,
+    pub(crate) chi_square_history: Vec<f64>,
+    pub(crate) damping: f64,
 }
-fn key(k: &ParameterKey) -> [String; 3] {
+pub(crate) fn key(k: &ParameterKey) -> [String; 3] {
     [k.module().into(), k.owner_id().into(), k.name().into()]
 }
-fn decode_key(k: [String; 3]) -> Result<ParameterKey, PawleyError> {
+pub(crate) fn decode_key(k: [String; 3]) -> Result<ParameterKey, PawleyError> {
     {
         let [module, owner, name] = k;
         ParameterKey::new(module, owner, name).map_err(err)
@@ -362,46 +362,8 @@ fn encode_input(i: &PawleyInput) -> Result<WireInput, PawleyError> {
             .collect(),
         background: i.background.as_ref().map(encode_background).transpose()?,
         signed_intensities: i.signed_intensities,
-        parameters: Some(
-            i.parameters
-                .specs()
-                .iter()
-                .map(|s| WireSpec {
-                    key: key(s.key()),
-                    value: s.value(),
-                    unit: s.unit().into(),
-                    lower: s.bounds().lower().is_finite().then_some(s.bounds().lower()),
-                    upper: s.bounds().upper().is_finite().then_some(s.bounds().upper()),
-                    scale: s.scale(),
-                    refine: s.refine(),
-                })
-                .collect(),
-        ),
-        constraints: i
-            .constraints
-            .iter()
-            .map(|c| match c {
-                Constraint::Fixed(v) => WireConstraint::Fixed {
-                    target: key(v.target()),
-                    value: v.value(),
-                },
-                Constraint::Affine(v) => WireConstraint::Affine {
-                    target: key(v.target()),
-                    source: key(v.source()),
-                    multiplier: v.multiplier(),
-                    offset: v.offset(),
-                },
-                Constraint::Linear(v) => WireConstraint::Linear {
-                    target: key(v.target()),
-                    terms: v
-                        .terms()
-                        .iter()
-                        .map(|t| (key(t.source()), t.coefficient()))
-                        .collect(),
-                    offset: v.offset(),
-                },
-            })
-            .collect(),
+        parameters: Some(encode_parameters(&i.parameters)),
+        constraints: encode_constraints(&i.constraints),
     })
 }
 #[allow(clippy::too_many_lines)]
@@ -448,27 +410,7 @@ fn decode_input(i: WireInput) -> Result<PawleyInput, PawleyError> {
         .collect::<Result<Vec<_>, _>>()?;
     let background = i.background.map(decode_background).transpose()?;
     let parameters = if let Some(specs) = i.parameters {
-        ParameterSet::new(
-            specs
-                .into_iter()
-                .map(|s| {
-                    ParameterSpec::new(
-                        decode_key(s.key)?,
-                        s.value,
-                        s.unit,
-                        ParameterBounds::new(
-                            s.lower.unwrap_or(f64::NEG_INFINITY),
-                            s.upper.unwrap_or(f64::INFINITY),
-                        )
-                        .map_err(err)?,
-                        s.scale,
-                        s.refine,
-                    )
-                    .map_err(err)
-                })
-                .collect::<Result<Vec<_>, PawleyError>>()?,
-        )
-        .map_err(err)?
+        decode_parameters(specs)?
     } else {
         pawley_parameters(
             &phases,
@@ -477,46 +419,7 @@ fn decode_input(i: WireInput) -> Result<PawleyInput, PawleyError> {
             i.signed_intensities,
         )?
     };
-    let constraints = i
-        .constraints
-        .into_iter()
-        .map(|c| {
-            Ok(match c {
-                WireConstraint::Fixed { target, value } => Constraint::Fixed(
-                    FixedConstraint::new(decode_key(target)?, value).map_err(err)?,
-                ),
-                WireConstraint::Affine {
-                    target,
-                    source,
-                    multiplier,
-                    offset,
-                } => Constraint::Affine(
-                    AffineConstraint::new(
-                        decode_key(target)?,
-                        decode_key(source)?,
-                        multiplier,
-                        offset,
-                    )
-                    .map_err(err)?,
-                ),
-                WireConstraint::Linear {
-                    target,
-                    terms,
-                    offset,
-                } => Constraint::Linear(
-                    LinearConstraint::new(
-                        decode_key(target)?,
-                        terms
-                            .into_iter()
-                            .map(|(k, c)| LinearTerm::new(decode_key(k)?, c).map_err(err))
-                            .collect::<Result<_, _>>()?,
-                        offset,
-                    )
-                    .map_err(err)?,
-                ),
-            })
-        })
-        .collect::<Result<Vec<_>, PawleyError>>()?;
+    let constraints = decode_constraints(i.constraints)?;
     let input = PawleyInput {
         fixed_spectrum,
         pattern: PatternRecord::new(
@@ -541,7 +444,7 @@ fn decode_input(i: WireInput) -> Result<PawleyInput, PawleyError> {
     input.validate()?;
     Ok(input)
 }
-fn encode_options(o: &PawleyOptions) -> WireOptions {
+pub(crate) fn encode_options(o: &PawleyOptions) -> WireOptions {
     WireOptions {
         solver: match o.solver {
             phasesmith_workflows::PawleySolver::Dense => "dense",
@@ -651,22 +554,7 @@ pub fn decode_pawley_project(text: &str, max_bytes: usize) -> Result<PawleyProje
     }
     let input = decode_input(w.input)?;
     let o = w.options;
-    let options = PawleyOptions {
-        solver: match o.solver.as_str() {
-            "dense" => phasesmith_workflows::PawleySolver::Dense,
-            "matrix_free" => phasesmith_workflows::PawleySolver::MatrixFree,
-            _ => return Err(err("unknown Pawley solver")),
-        },
-        linear_tolerance: o.linear_tolerance,
-        max_linear_iterations: o.max_linear_iterations,
-        support_fwhm: o.support_fwhm,
-        use_uncertainty: o.use_uncertainty,
-        max_elements: o.max_elements,
-        rank_tolerance: o.rank_tolerance,
-        tolerance: o.tolerance,
-        damping: o.damping,
-        max_active_iterations: o.max_active_iterations,
-    };
+    let options = decode_options(&o)?;
     options.validate()?;
     let checkpoint = w.checkpoint.map(|c| PawleyCheckpoint {
         input: input.clone(),
@@ -842,4 +730,136 @@ pub(crate) fn decode_state(
     let state = phasesmith_workflows::PawleyProjectState { project, analyses };
     state.validate().map_err(bundle_error)?;
     Ok(state)
+}
+
+pub(crate) fn encode_parameters(parameters: &ParameterSet) -> Vec<WireSpec> {
+    parameters
+        .specs()
+        .iter()
+        .map(|s| WireSpec {
+            key: key(s.key()),
+            value: s.value(),
+            unit: s.unit().into(),
+            lower: s.bounds().lower().is_finite().then_some(s.bounds().lower()),
+            upper: s.bounds().upper().is_finite().then_some(s.bounds().upper()),
+            scale: s.scale(),
+            refine: s.refine(),
+        })
+        .collect()
+}
+
+pub(crate) fn encode_constraints(constraints: &[Constraint]) -> Vec<WireConstraint> {
+    constraints
+        .iter()
+        .map(|c| match c {
+            Constraint::Fixed(v) => WireConstraint::Fixed {
+                target: key(v.target()),
+                value: v.value(),
+            },
+            Constraint::Affine(v) => WireConstraint::Affine {
+                target: key(v.target()),
+                source: key(v.source()),
+                multiplier: v.multiplier(),
+                offset: v.offset(),
+            },
+            Constraint::Linear(v) => WireConstraint::Linear {
+                target: key(v.target()),
+                terms: v
+                    .terms()
+                    .iter()
+                    .map(|t| (key(t.source()), t.coefficient()))
+                    .collect(),
+                offset: v.offset(),
+            },
+        })
+        .collect()
+}
+
+pub(crate) fn decode_parameters(specs: Vec<WireSpec>) -> Result<ParameterSet, PawleyError> {
+    ParameterSet::new(
+        specs
+            .into_iter()
+            .map(|s| {
+                ParameterSpec::new(
+                    decode_key(s.key)?,
+                    s.value,
+                    s.unit,
+                    ParameterBounds::new(
+                        s.lower.unwrap_or(f64::NEG_INFINITY),
+                        s.upper.unwrap_or(f64::INFINITY),
+                    )
+                    .map_err(err)?,
+                    s.scale,
+                    s.refine,
+                )
+                .map_err(err)
+            })
+            .collect::<Result<Vec<_>, PawleyError>>()?,
+    )
+    .map_err(err)
+}
+
+pub(crate) fn decode_constraints(
+    constraints: Vec<WireConstraint>,
+) -> Result<Vec<Constraint>, PawleyError> {
+    constraints
+        .into_iter()
+        .map(|c| {
+            Ok(match c {
+                WireConstraint::Fixed { target, value } => Constraint::Fixed(
+                    FixedConstraint::new(decode_key(target)?, value).map_err(err)?,
+                ),
+                WireConstraint::Affine {
+                    target,
+                    source,
+                    multiplier,
+                    offset,
+                } => Constraint::Affine(
+                    AffineConstraint::new(
+                        decode_key(target)?,
+                        decode_key(source)?,
+                        multiplier,
+                        offset,
+                    )
+                    .map_err(err)?,
+                ),
+                WireConstraint::Linear {
+                    target,
+                    terms,
+                    offset,
+                } => Constraint::Linear(
+                    LinearConstraint::new(
+                        decode_key(target)?,
+                        terms
+                            .into_iter()
+                            .map(|(k, c)| LinearTerm::new(decode_key(k)?, c).map_err(err))
+                            .collect::<Result<_, _>>()?,
+                        offset,
+                    )
+                    .map_err(err)?,
+                ),
+            })
+        })
+        .collect::<Result<Vec<_>, PawleyError>>()
+}
+
+pub(crate) fn decode_options(o: &WireOptions) -> Result<PawleyOptions, PawleyError> {
+    let options = PawleyOptions {
+        solver: match o.solver.as_str() {
+            "dense" => phasesmith_workflows::PawleySolver::Dense,
+            "matrix_free" => phasesmith_workflows::PawleySolver::MatrixFree,
+            _ => return Err(err("unknown Pawley solver")),
+        },
+        linear_tolerance: o.linear_tolerance,
+        max_linear_iterations: o.max_linear_iterations,
+        support_fwhm: o.support_fwhm,
+        use_uncertainty: o.use_uncertainty,
+        max_elements: o.max_elements,
+        rank_tolerance: o.rank_tolerance,
+        tolerance: o.tolerance,
+        damping: o.damping,
+        max_active_iterations: o.max_active_iterations,
+    };
+    options.validate()?;
+    Ok(options)
 }

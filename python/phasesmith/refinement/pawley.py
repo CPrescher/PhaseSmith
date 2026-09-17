@@ -405,6 +405,10 @@ def refine(
         None if cancellation is None else cancellation._native,
         progress,
     )
+    return _result(request, raw)
+
+
+def _result(request, raw):
     calculation = _calculation(raw)
     transform = ConstraintTransform(request.parameters, request.constraints)
     fitted = request.parameters.replace_values(transform.unpack(raw["free"]))
