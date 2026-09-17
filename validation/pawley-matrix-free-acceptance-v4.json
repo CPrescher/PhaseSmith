@@ -1,0 +1,105 @@
+{
+  "schema_version": 4,
+  "scope": "Original CW scientific requests and gates, with matrix-free bounded steps.",
+  "common": {
+    "profile_parameters": [
+      "u_deg2",
+      "v_deg2",
+      "w_deg2",
+      "x_deg",
+      "y_deg"
+    ],
+    "signed_intensities": false,
+    "use_uncertainty": true,
+    "merge_friedel": true,
+    "initial_intensity": 1.0,
+    "background_iterations": 50,
+    "max_evaluations": 1000,
+    "max_rejections": 20,
+    "max_seconds": 240.0,
+    "max_elements": 150000000,
+    "rank_tolerance": 1e-10,
+    "tolerance": 1e-09,
+    "damping": 1e-06,
+    "max_active_iterations": 2000,
+    "minimum_relative_chi_square_improvement": 0.05,
+    "rwp_recomputation_absolute_tolerance": 1e-12,
+    "accepted_terminations": [
+      "converged"
+    ],
+    "repeats": 2,
+    "solver": "matrix_free",
+    "linear_tolerance": 1e-11,
+    "max_linear_iterations": 4000
+  },
+  "datasets": {
+    "aps-sucrose-11bmb": {
+      "range_deg": [
+        1.0,
+        24.0
+      ],
+      "maximum_rwp": 0.25,
+      "minimum_profile_correlation": 0.95,
+      "max_iterations": 40,
+      "instrument": [
+        0.413259,
+        0.0001163,
+        -1.26e-05,
+        6.3e-06,
+        0.00173,
+        0.0
+      ],
+      "data_file": "11bmb_8716.fxye",
+      "data_format": "gsas_fxye",
+      "cell": [
+        7.715231369389035,
+        8.663866877499101,
+        10.809618877725404,
+        90.0,
+        102.98249193732556,
+        90.0
+      ],
+      "space_group_number": 4,
+      "support_fwhm": 30.0,
+      "background": {
+        "kind": "physical_width",
+        "width_deg": 0.1
+      },
+      "lattice": null
+    },
+    "ansto-echidna-lab6-cw-neutron": {
+      "range_deg": [
+        20.0,
+        125.5
+      ],
+      "maximum_rwp": 0.3,
+      "minimum_profile_correlation": 0.9,
+      "max_iterations": 40,
+      "instrument": [
+        2.047,
+        0.014,
+        -0.253,
+        0.516,
+        0.05,
+        0.0
+      ],
+      "data_file": "ECH0034258_LaB6.xyd",
+      "data_format": "columns",
+      "cell": [
+        4.156826,
+        4.156826,
+        4.156826,
+        90.0,
+        90.0,
+        90.0
+      ],
+      "space_group_number": 221,
+      "support_fwhm": 8.0,
+      "background": {
+        "kind": "sample_window",
+        "points": 20
+      },
+      "lattice": null
+    }
+  }
+}

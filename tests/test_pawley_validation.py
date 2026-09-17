@@ -147,3 +147,26 @@ def test_cell_manifest_selection_and_bounds_are_executable(monkeypatch, tmp_path
     changed["datasets"][name]["lattice"]["accepted_ranges"]["a_angstrom"] = [4.2, 4.1]
     with pytest.raises(ValueError, match="interval"):
         pawley.validate_manifest(changed)
+
+
+def test_matrix_free_manifest_preserves_science_and_validates_iterative_controls():
+    m = json.loads(
+        (Path(__file__).parents[1] / "validation/pawley-matrix-free-acceptance-v4.json").read_text()
+    )
+    pawley.validate_manifest(m)
+    original = manifest()
+    for key, value in original["common"].items():
+        assert m["common"][key] == value
+    for dataset, gate in original["datasets"].items():
+        assert {k: v for k, v in m["datasets"][dataset].items() if k != "lattice"} == gate
+    options = pawley._options(m["datasets"]["aps-sucrose-11bmb"], m["common"])
+    assert options.solver == "matrix_free" and options.max_linear_iterations == 4000
+    for key, value in [
+        ("solver", "ignored"),
+        ("max_linear_iterations", True),
+        ("linear_tolerance", 0.0),
+    ]:
+        bad = copy.deepcopy(m)
+        bad["common"][key] = value
+        with pytest.raises(ValueError):
+            pawley.validate_manifest(bad)

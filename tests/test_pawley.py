@@ -276,7 +276,8 @@ def test_boundaries_invalid_and_finite_support():
     assert np.all(calculate(r, PawleyOptions(support_fwhm=1.0)).calculated_y[:100] == 0)
 
 
-def test_dependent_bound_is_enforced():
+@pytest.mark.parametrize("solver", ["dense", "matrix_free"])
+def test_dependent_bound_is_enforced(solver):
     r = with_observations(
         request((0.0, 0.0), (40.0, 40.0)),
         calculate(request((10.0, 10.0), (40.0, 40.0))).calculated_y,
@@ -289,7 +290,7 @@ def test_dependent_bound_is_enforced():
         ),
         constraints=(AffineConstraint(target, parameter_key("intensity", "a", "0"), 2),),
     )
-    fit = refine(r)
+    fit = refine(r, PawleyOptions(solver=solver))
     np.testing.assert_allclose(fit.intensities, [2, 4], atol=1e-7)
 
 
@@ -336,7 +337,8 @@ def test_extraction_from_existing_pinned_gsasii_profile_fixture():
     assert np.max(np.abs(fit.calculation.calculated_y - y)) / np.max(y) < 6e-6
 
 
-def test_joint_composed_lorentzian_boundary():
+@pytest.mark.parametrize("solver", ["dense", "matrix_free"])
+def test_joint_composed_lorentzian_boundary(solver):
     x = np.linspace(20.0, 120.0, 5001)
     instrument = ConstantWavelengthInstrument(1.54, 0.001, 0.0, 0.002, 0.0, 0.0)
     phase = PawleyPhase("boundary", ("1", "2", "3"), [30.0, 60.0, 110.0], [5.0, 7.0, 3.0])
@@ -349,7 +351,7 @@ def test_joint_composed_lorentzian_boundary():
         pattern=PowderPattern(x, observed_y=y),
     )
     r = replace(r, parameters=build_parameter_set(r, profile_parameters=("x_deg", "y_deg")))
-    fit = refine(r)
+    fit = refine(r, PawleyOptions(solver=solver))
     assert fit.calculation.rwp < 1e-6
     assert fit.termination_reason == "converged"
     assert fit.active_width_bounds
@@ -368,7 +370,8 @@ def test_multiple_bound_faces_match_independent_enumeration(seed):
     assert fit.termination_reason == "converged"
 
 
-def test_initialization_preserves_coupled_geometry_and_area_bounds():
+@pytest.mark.parametrize("solver", ["dense", "matrix_free"])
+def test_initialization_preserves_coupled_geometry_and_area_bounds(solver):
     from phasesmith.refinement import LinearConstraint
 
     truth = request((2.0, 10.0), (39.9, 40.1))
@@ -383,7 +386,7 @@ def test_initialization_preserves_coupled_geometry_and_area_bounds():
         parameters=ParameterSet(specs),
         constraints=(LinearConstraint(second, ((first, 1.0), (width, -1000.0)), 10.0),),
     )
-    fit = refine(r)
+    fit = refine(r, PawleyOptions(solver=solver))
     assert fit.termination_reason == "converged"
     np.testing.assert_allclose(fit.intensities, [2.0, 10.0], rtol=1e-6)
     assert fit.parameters.spec(width).value == pytest.approx(0.002, rel=1e-6)
@@ -420,8 +423,11 @@ _space_group_IT_number 1
     np.testing.assert_array_equal(loaded.calculate().calculated_y, project.calculate().calculated_y)
 
 
-def test_joint_multiphase_cell_and_profile_recovery():
-    group = SpaceGroup((SymmetryOperation(np.eye(3, dtype=np.int64), (0, 0, 0)),))
+@pytest.mark.parametrize("solver", ["dense", "matrix_free"])
+def test_joint_multiphase_cell_and_profile_recovery(solver):
+    from phasesmith.io import space_group_by_number
+
+    group = space_group_by_number(47).space_group
     phases = tuple(
         PawleyPhase.from_cell(
             name,
@@ -457,9 +463,9 @@ def test_joint_multiphase_cell_and_profile_recovery():
         parameter_key("profile", "instrument", "w_deg2"): 0.0012,
     }
     truth = replace(r, parameters=r.parameters.replace_values(targets))
-    options = PawleyOptions(support_fwhm=1000.0)
+    options = PawleyOptions(support_fwhm=1000.0, solver=solver)
     r = with_observations(r, calculate(truth, options).calculated_y)
-    fit = refine(r, options)
+    fit = refine(r, options, max_seconds=60)
     assert fit.termination_reason == "converged"
     for key, expected in targets.items():
         assert fit.parameters.spec(key).value == pytest.approx(expected, rel=2e-7, abs=1e-9)
@@ -496,3 +502,74 @@ def test_uncertainty_rescaling_and_tied_physical_covariance():
     physical = chain @ fits[0].covariance @ chain.T
     assert physical[1, 1] == pytest.approx(4.0 * physical[0, 0], rel=2e-13)
     assert physical[0, 1] == pytest.approx(2.0 * physical[0, 0], rel=2e-13)
+
+
+@pytest.mark.parametrize("axial", [None, FcjGeometry(0.005, 0.005)])
+def test_matrix_free_products_and_bounded_solution_match_dense(axial):
+    rng = np.random.default_rng(451)
+    r = request((0.0, 0.0, 0.0), (39.8, 40.0, 40.08), axial=axial)
+    dense = calculate(r)
+    options = PawleyOptions(solver="matrix_free")
+    products = calculate(r, options)
+    assert products.jacobian is None
+    op = products.jacobian_operator
+    v, u = rng.normal(size=3), rng.normal(size=len(r.pattern.x))
+    np.testing.assert_allclose(op.jvp(v), dense.jacobian @ v, rtol=2e-13, atol=1e-14)
+    np.testing.assert_allclose(op.vjp(u), dense.jacobian.T @ u, rtol=2e-13, atol=1e-13)
+    assert u @ op.jvp(v) == pytest.approx(op.vjp(u) @ v, rel=2e-13, abs=1e-13)
+    with pytest.raises(ValueError):
+        op.jvp(np.zeros(2))
+    with pytest.raises(ValueError):
+        op.vjp(np.full(len(u), np.nan))
+    r = with_observations(r, dense.jacobian @ np.array([3000.0, -500.0, 5000.0]))
+    expected, actual = refine(r), refine(r, options)
+    assert actual.termination_reason == "converged"
+    assert actual.rank is None and actual.covariance is None
+    assert "matrix-free" in actual.covariance_limitation
+    np.testing.assert_allclose(actual.intensities, expected.intensities, rtol=2e-7, atol=1e-9)
+    np.testing.assert_allclose(
+        actual.calculation.calculated_y, expected.calculation.calculated_y, rtol=2e-7, atol=1e-8
+    )
+
+
+def test_matrix_free_memory_restart_and_old_project_migration(tmp_path):
+    # The same peak count and grid need a much smaller product workspace.
+    r = request(np.ones(80), np.linspace(10.0, 140.0, 80))
+    grid = np.linspace(5.0, 145.0, 10001)
+    r = replace(r, pattern=PowderPattern(grid, observed_y=np.zeros_like(grid)))
+    options = PawleyOptions(solver="matrix_free", max_elements=800_000)
+    product = calculate(r, options)
+    assert product.jacobian_operator.storage_elements < 80 * len(r.pattern.x)
+    with pytest.raises(ValueError, match="memory"):
+        calculate(r, replace(options, solver="dense"))
+    with pytest.raises(ValueError, match="memory"):
+        calculate(r, replace(options, max_elements=10))
+    small = with_observations(request((0.0, 0.0)), calculate(request()).calculated_y)
+    options = PawleyOptions(solver="matrix_free")
+    token = CancellationToken()
+
+    def progress(event):
+        if event["kind"] == "step_accepted":
+            token.request()
+
+    first = refine(small, options, cancellation=token, progress=progress)
+    path = tmp_path / "matrix.pawley.json"
+    PawleyProject(small, options, first.checkpoint).save(path)
+    loaded = PawleyProject.load(path)
+    assert loaded.options == options
+    resumed, full = loaded.refine(), refine(small, options)
+    np.testing.assert_array_equal(resumed.history, full.history)
+    np.testing.assert_array_equal(resumed.intensities, full.intensities)
+    with pytest.raises(ValueError, match="match"):
+        refine(small, checkpoint=first.checkpoint)
+    old = tmp_path / "old.pawley.json"
+    old_fit = refine(small, max_iterations=1)
+    PawleyProject(small, checkpoint=old_fit.checkpoint).save(old)
+    record = json.loads(old.read_text())
+    record["version"] = 1
+    old.write_text(json.dumps(record))
+    migrated = PawleyProject.load(old)
+    assert migrated.options.solver == "dense"
+    np.testing.assert_array_equal(migrated.refine().history, refine(small).history)
+    migrated.save(tmp_path / "migrated.pawley.json")
+    assert json.loads((tmp_path / "migrated.pawley.json").read_text())["version"] == 2

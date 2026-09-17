@@ -134,6 +134,18 @@ enum WireBackground {
 #[derive(Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct WireOptions {
+    #[serde(default = "dense_solver", skip_serializing_if = "is_dense")]
+    solver: String,
+    #[serde(
+        default = "linear_tolerance",
+        skip_serializing_if = "default_linear_tolerance"
+    )]
+    linear_tolerance: f64,
+    #[serde(
+        default = "linear_iterations",
+        skip_serializing_if = "default_linear_iterations"
+    )]
+    max_linear_iterations: usize,
     support_fwhm: f64,
     use_uncertainty: bool,
     max_elements: usize,
@@ -142,9 +154,35 @@ struct WireOptions {
     damping: f64,
     max_active_iterations: usize,
 }
+#[allow(clippy::trivially_copy_pass_by_ref)] // Serde predicate signature.
+fn is_false(value: &bool) -> bool {
+    !value
+}
+fn dense_solver() -> String {
+    "dense".into()
+}
+fn is_dense(v: &str) -> bool {
+    v == "dense"
+}
+const fn linear_tolerance() -> f64 {
+    1e-11
+}
+#[allow(clippy::trivially_copy_pass_by_ref)] // Serde predicate signature.
+fn default_linear_tolerance(v: &f64) -> bool {
+    v.to_bits() == linear_tolerance().to_bits()
+}
+const fn linear_iterations() -> usize {
+    4000
+}
+#[allow(clippy::trivially_copy_pass_by_ref)] // Serde predicate signature.
+fn default_linear_iterations(v: &usize) -> bool {
+    *v == linear_iterations()
+}
 #[derive(Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct WireCheckpoint {
+    #[serde(default, skip_serializing_if = "is_false")]
+    support_local: bool,
     request_sha256: String,
     linear_initialized: bool,
     free: Vec<f64>,
@@ -489,6 +527,13 @@ fn decode_input(i: WireInput) -> Result<PawleyInput, PawleyError> {
 }
 fn encode_options(o: &PawleyOptions) -> WireOptions {
     WireOptions {
+        solver: match o.solver {
+            phasesmith_workflows::PawleySolver::Dense => "dense",
+            phasesmith_workflows::PawleySolver::MatrixFree => "matrix_free",
+        }
+        .into(),
+        linear_tolerance: o.linear_tolerance,
+        max_linear_iterations: o.max_linear_iterations,
         support_fwhm: o.support_fwhm,
         use_uncertainty: o.use_uncertainty,
         max_elements: o.max_elements,
@@ -536,6 +581,7 @@ pub fn encode_pawley_project(project: &PawleyProject) -> Result<String, PawleyEr
                 return Err(err("Pawley accepted history must decrease"));
             }
             Ok(WireCheckpoint {
+                support_local: c.support_local,
                 request_sha256: digest(&input, &options)?,
                 linear_initialized: c.linear_initialized,
                 free: c.free.clone(),
@@ -546,7 +592,7 @@ pub fn encode_pawley_project(project: &PawleyProject) -> Result<String, PawleyEr
         .transpose()?;
     serde_json::to_string(&WireProject {
         format: "phasesmith-pawley".into(),
-        version: 1,
+        version: 2,
         input,
         options,
         checkpoint,
@@ -562,10 +608,24 @@ pub fn decode_pawley_project(text: &str, max_bytes: usize) -> Result<PawleyProje
         return Err(err("Pawley project byte limit exceeded"));
     }
     let w: WireProject = serde_json::from_str(text).map_err(err)?;
-    if w.format != "phasesmith-pawley" || w.version != 1 {
+    if w.format != "phasesmith-pawley" || !matches!(w.version, 1 | 2) {
         return Err(err("unsupported Pawley project format/version"));
     }
+    if w.version == 1
+        && (!is_dense(&w.options.solver)
+            || !default_linear_tolerance(&w.options.linear_tolerance)
+            || !default_linear_iterations(&w.options.max_linear_iterations))
+    {
+        return Err(err(
+            "version-1 Pawley projects require the original dense controls",
+        ));
+    }
     if let Some(cp) = &w.checkpoint {
+        if w.version == 1 && cp.support_local {
+            return Err(err(
+                "version-1 checkpoints cannot select support-local optimization",
+            ));
+        }
         if cp.request_sha256 != digest(&w.input, &w.options)? {
             return Err(err("Pawley checkpoint request digest mismatch"));
         }
@@ -573,6 +633,13 @@ pub fn decode_pawley_project(text: &str, max_bytes: usize) -> Result<PawleyProje
     let input = decode_input(w.input)?;
     let o = w.options;
     let options = PawleyOptions {
+        solver: match o.solver.as_str() {
+            "dense" => phasesmith_workflows::PawleySolver::Dense,
+            "matrix_free" => phasesmith_workflows::PawleySolver::MatrixFree,
+            _ => return Err(err("unknown Pawley solver")),
+        },
+        linear_tolerance: o.linear_tolerance,
+        max_linear_iterations: o.max_linear_iterations,
         support_fwhm: o.support_fwhm,
         use_uncertainty: o.use_uncertainty,
         max_elements: o.max_elements,
@@ -589,6 +656,7 @@ pub fn decode_pawley_project(text: &str, max_bytes: usize) -> Result<PawleyProje
         chi_square_history: c.chi_square_history,
         damping: c.damping,
         linear_initialized: c.linear_initialized,
+        support_local: c.support_local,
     });
     let project = PawleyProject {
         input,

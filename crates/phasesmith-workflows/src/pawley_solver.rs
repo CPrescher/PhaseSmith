@@ -1,17 +1,34 @@
-//! Deterministic, bounded, dense Pawley Gauss–Newton solver.
+//! Deterministic bounded dense and matrix-free Pawley Gauss–Newton solvers.
 // Matrix equations use conventional short names.
 #![allow(clippy::many_single_char_names)]
 use crate::pawley::{err, weighted};
+use crate::pawley_support::{support_guard, support_membership};
 use crate::{
     ConstraintTransform, PawleyError, PawleyEvaluation, PawleyInput, RefinementEventKind,
-    RefinementLimits, RefinementRuntime, RuntimeError, TerminationReason, evaluate_pawley,
+    RefinementLimits, RefinementRuntime, RuntimeError, TerminationReason,
+    evaluate_pawley_with_storage,
 };
 use nalgebra::{DMatrix, DVector};
 use std::time::Instant;
 
+/// Linear algebra used for bounded Gauss–Newton steps.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum PawleySolver {
+    /// Column-scaled dense QR reference solver.
+    #[default]
+    Dense,
+    /// Support-block products and projected conjugate-gradient face solves.
+    MatrixFree,
+}
 /// Scientific and allocation controls. Runtime budgets are separate.
 #[derive(Clone, Debug, PartialEq)]
 pub struct PawleyOptions {
+    /// Dense reference or matrix-free products.
+    pub solver: PawleySolver,
+    /// Relative residual tolerance for iterative linear face solves.
+    pub linear_tolerance: f64,
+    /// Iterative linear solve ceiling per active face.
+    pub max_linear_iterations: usize,
     /// Exact finite-support multiplier.
     pub support_fwhm: f64,
     /// Use supplied standard deviations.
@@ -30,6 +47,9 @@ pub struct PawleyOptions {
 impl Default for PawleyOptions {
     fn default() -> Self {
         Self {
+            solver: PawleySolver::Dense,
+            linear_tolerance: 1e-11,
+            max_linear_iterations: 4000,
             support_fwhm: 20.0,
             use_uncertainty: true,
             max_elements: 50_000_000,
@@ -51,6 +71,7 @@ impl PawleyOptions {
             self.rank_tolerance,
             self.tolerance,
             self.damping,
+            self.linear_tolerance,
         ]
         .iter()
         .all(|v| v.is_finite() && *v > 0.0)
@@ -58,6 +79,8 @@ impl PawleyOptions {
             || self.tolerance >= 1.0
             || self.max_elements == 0
             || self.max_active_iterations == 0
+            || self.max_linear_iterations == 0
+            || self.linear_tolerance >= 1.0
         {
             return Err(err("invalid Pawley controls"));
         }
@@ -79,6 +102,8 @@ pub struct PawleyCheckpoint {
     pub damping: f64,
     /// Whether the fixed-geometry initialization has completed.
     pub linear_initialized: bool,
+    /// Continue one-sided local optimization after an upward support jump.
+    pub support_local: bool,
 }
 /// Work counters and wall times; excluded from scientific checkpoint identity.
 #[derive(Clone, Debug, Default)]
@@ -87,6 +112,8 @@ pub struct PawleyDiagnostics {
     pub evaluations: usize,
     /// Active-face iterations in this invocation.
     pub linear_iterations: usize,
+    /// Conjugate-gradient iterations in matrix-free face solves.
+    pub krylov_iterations: usize,
     /// Time in native objective evaluation.
     pub evaluation_seconds: f64,
     /// Time in augmented QR reduction.
@@ -122,7 +149,7 @@ pub struct PawleyResult {
     /// Stable stop category; budget exhaustion is not convergence.
     pub termination_reason: TerminationReason,
     /// Rank of the normalized, undamped weighted free Jacobian.
-    pub rank: usize,
+    pub rank: Option<usize>,
     /// Number of supported free columns.
     pub observed_free_parameters: usize,
     /// Physical bound-active parameter indices with nonzero free derivative.
@@ -194,6 +221,7 @@ pub fn refine_pawley_with_runtime(
             chi_square_history: Vec::new(),
             damping: options.damping,
             linear_initialized: nonlinear_columns.is_empty(),
+            support_local: false,
         }
     };
     // Initial/restart evaluation is necessary to return a usable accepted state even on pre-cancellation.
@@ -246,24 +274,52 @@ pub fn refine_pawley_with_runtime(
                 break;
             }
             attempt += 1;
-            let (mut j, r) = weighted(input, &current, options.use_uncertainty);
             let initializing = !checkpoint.linear_initialized;
-            if initializing {
-                for &column in &nonlinear_columns {
-                    j.column_mut(column).fill(0.0);
-                }
-            }
-
-            let norms: Vec<f64> = (0..j.ncols())
-                .map(|c| {
-                    let norm = j.column(c).norm();
-                    if norm == 0.0 { 1.0 } else { norm }
-                })
-                .collect();
-            for (c, norm) in norms.iter().enumerate() {
-                j.column_mut(c).scale_mut(1.0 / norm);
+            let frozen_nonlinear = if initializing {
+                nonlinear_columns.clone()
+            } else {
+                Vec::new()
+            };
+            let design =
+                LinearDesign::new(input, &current, options.use_uncertainty, frozen_nonlinear)?;
+            let norms = design.norms.clone();
+            let r = DVector::from_iterator(
+                current.residuals.weighted_residual.len(),
+                current
+                    .residuals
+                    .weighted_residual
+                    .iter()
+                    .zip(&current.residuals.included)
+                    .map(|(r, yes)| if *yes { *r } else { 0.0 }),
+            );
+            let guard = if !initializing && (checkpoint.support_local || damping > options.damping)
+            {
+                support_guard(
+                    input,
+                    &transform,
+                    &checkpoint.free,
+                    &current,
+                    options.support_fwhm,
+                    options.use_uncertainty,
+                )?
+            } else {
+                None
+            };
+            let guard = guard.filter(|g| {
+                g.near(
+                    &norms,
+                    options.tolerance * (1.0 + current.residuals.chi_square.sqrt()),
+                )
+            });
+            if guard.is_some() && !checkpoint.support_local {
+                damping = options.damping;
             }
             let (a, b) = inequalities(input, &transform, &checkpoint.free, &norms, &current)?;
+            let (a, b) = if let Some(g) = &guard {
+                g.constrain(&a, &b, &norms)
+            } else {
+                (a, b)
+            };
             // Freeze unsupported and initialization-only coordinates inside the
             // constrained solve, rather than repairing a coupled feasible step afterwards.
             let mut frozen = current.inactive_columns.clone();
@@ -274,31 +330,53 @@ pub fn refine_pawley_with_runtime(
             frozen.dedup();
             let (a, b) = freeze_columns(a, b, &frozen);
 
-            // Orthogonal reduction avoids squaring the profile design's condition number.
-            let rows = j.nrows();
-            let columns = j.ncols();
-            let qr_start = Instant::now();
-            let mut augmented = DMatrix::zeros(rows + columns, columns);
-            augmented.rows_mut(0, rows).copy_from(&j);
-            for c in 0..columns {
-                augmented[(rows + c, c)] = damping.sqrt();
-            }
-            let mut target = DVector::zeros(rows + columns);
-            target.rows_mut(0, rows).copy_from(&(-&r));
-            let qr = augmented.qr();
-            qr.q_tr_mul(&mut target);
-            let reduced = qr.r();
-            let target = target.rows(0, columns).into_owned();
-            diagnostics.qr_seconds += qr_start.elapsed().as_secs_f64();
-            let mut delta = match active_step(
-                &reduced,
-                &target,
-                &a,
-                &b,
-                options.max_active_iterations,
-                runtime,
-                &mut diagnostics,
-            ) {
+            let columns = norms.len();
+            let proposal = if let Some(j) = &design.dense {
+                let rows = j.nrows();
+                let qr_start = Instant::now();
+                let mut augmented = DMatrix::zeros(rows + columns, columns);
+                augmented.rows_mut(0, rows).copy_from(j);
+                for c in 0..columns {
+                    augmented[(rows + c, c)] = damping.sqrt();
+                }
+                let mut target = DVector::zeros(rows + columns);
+                target.rows_mut(0, rows).copy_from(&(-&r));
+                let qr = augmented.qr();
+                qr.q_tr_mul(&mut target);
+                let reduced = qr.r();
+                let target = target.rows(0, columns).into_owned();
+                diagnostics.qr_seconds += qr_start.elapsed().as_secs_f64();
+                active_step(
+                    &reduced,
+                    &target,
+                    &a,
+                    &b,
+                    options.max_active_iterations,
+                    runtime,
+                    &mut diagnostics,
+                )
+            } else {
+                let model = ProductStep {
+                    design: &design,
+                    residual: &r,
+                    damping,
+                    options,
+                    runtime,
+                    iterations: std::cell::Cell::new(0),
+                    preconditioner: preconditioner(&design, damping),
+                };
+                let proposal = active_step_model(
+                    &model,
+                    &a,
+                    &b,
+                    options.max_active_iterations,
+                    runtime,
+                    &mut diagnostics,
+                );
+                diagnostics.krylov_iterations += model.iterations.get();
+                proposal
+            };
+            let mut delta = match proposal {
                 Ok(d) => d,
                 Err(StepError::Runtime(e)) => {
                     reason = stop(e)?;
@@ -326,10 +404,9 @@ pub fn refine_pawley_with_runtime(
                 && delta.norm()
                     <= options.tolerance.sqrt() * (1.0 + current.residuals.chi_square.sqrt())
             {
-                let gradient = j.transpose() * &r;
-                match active_step(
-                    &DMatrix::identity(columns, columns),
-                    &(-gradient),
+                let gradient = design.transpose(&r)?;
+                match active_step_model(
+                    &IdentityStep { target: -gradient },
                     &a,
                     &b,
                     options.max_active_iterations,
@@ -341,7 +418,11 @@ pub fn refine_pawley_with_runtime(
                             <= options.tolerance * (1.0 + current.residuals.chi_square.sqrt()) =>
                     {
                         diagnostics.projected_gradient_norm = Some(projected.norm());
-                        diagnostics.convergence_criterion = Some("projected_gradient");
+                        diagnostics.convergence_criterion = Some(if guard.is_some() {
+                            "support_projected_gradient"
+                        } else {
+                            "projected_gradient"
+                        });
                         reason = TerminationReason::Converged;
                         break;
                     }
@@ -361,7 +442,11 @@ pub fn refine_pawley_with_runtime(
                     continue;
                 }
                 reason = if damping <= options.damping {
-                    diagnostics.convergence_criterion = Some("normalized_step");
+                    diagnostics.convergence_criterion = Some(if guard.is_some() {
+                        "support_feasible_step"
+                    } else {
+                        "normalized_step"
+                    });
                     TerminationReason::Converged
                 } else {
                     TerminationReason::Stagnated
@@ -378,13 +463,18 @@ pub fn refine_pawley_with_runtime(
                     stopped = Some(stop(e)?);
                     break;
                 }
-                let trial: Vec<f64> = checkpoint
+                let mut trial: Vec<f64> = checkpoint
                     .free
                     .iter()
                     .zip(delta.iter().zip(&norms))
                     .map(|(v, (d, n))| v + fraction * d / n)
                     .collect();
-                match timed_evaluate(input, options, &trial, &mut diagnostics) {
+                let retracted = guard
+                    .as_ref()
+                    .map_or(Ok(()), |g| g.retract(input, &transform, &mut trial));
+                match retracted
+                    .and_then(|()| timed_evaluate(input, options, &trial, &mut diagnostics))
+                {
                     Ok(evaluation)
                         if evaluation.residuals.chi_square < current.residuals.chi_square =>
                     {
@@ -400,6 +490,66 @@ pub fn refine_pawley_with_runtime(
                 diagnostics.backtrack_rejections += 1;
                 fraction *= 0.5;
             }
+            // Locate a detected support jump with width-only membership checks.
+            // Keep the original improving trial unless the final full evaluation
+            // also improves the objective. No extra objective is synthesized.
+            if accepted.is_some() && !initializing && fraction < 0.1 {
+                let trial_at = |f: f64| -> Result<Vec<f64>, PawleyError> {
+                    let mut v: Vec<f64> = checkpoint
+                        .free
+                        .iter()
+                        .zip(delta.iter().zip(&norms))
+                        .map(|(v, (d, n))| v + f * d / n)
+                        .collect();
+                    if let Some(g) = &guard {
+                        g.retract(input, &transform, &mut v)?;
+                    }
+                    Ok(v)
+                };
+                let membership_at = |f| {
+                    trial_at(f).and_then(|v| {
+                        support_membership(
+                            input,
+                            &transform,
+                            &v,
+                            &current.positions,
+                            options.support_fwhm,
+                        )
+                    })
+                };
+                let mut lower = fraction;
+                let mut upper = 2.0 * fraction;
+                if let (Ok(Some(base)), Ok(Some(end))) =
+                    (membership_at(lower), membership_at(upper))
+                {
+                    if base != end {
+                        for _ in 0..48 {
+                            let middle = lower + (upper - lower) * 0.5;
+                            if middle.to_bits() == lower.to_bits()
+                                || middle.to_bits() == upper.to_bits()
+                            {
+                                break;
+                            }
+                            match membership_at(middle) {
+                                Ok(Some(m)) if m == base => lower = middle,
+                                _ => upper = middle,
+                            }
+                        }
+                        if let Err(e) = runtime.begin_evaluation() {
+                            stopped = Some(stop(e)?);
+                        } else if let Ok(trial) = trial_at(lower) {
+                            if let Ok(evaluation) =
+                                timed_evaluate(input, options, &trial, &mut diagnostics)
+                            {
+                                if evaluation.residuals.chi_square < current.residuals.chi_square {
+                                    fraction = lower;
+                                    accepted = Some((trial, evaluation));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
             if let Some(stop) = stopped {
                 reason = stop;
                 break;
@@ -414,7 +564,7 @@ pub fn refine_pawley_with_runtime(
                         .map(|((new, old), norm)| (new - old) * norm),
                 );
                 let full_step = scaled_step.norm() >= 0.1 * delta.norm();
-                let change = &j * scaled_step;
+                let change = design.apply(&scaled_step)?;
                 let predicted_reduction = -2.0 * r.dot(&change) - change.norm_squared();
                 let actual_reduction =
                     current.residuals.chi_square - evaluation.residuals.chi_square;
@@ -430,6 +580,7 @@ pub fn refine_pawley_with_runtime(
                     && actual_reduction >= 0.1 * predicted_reduction;
                 current = evaluation;
                 checkpoint.linear_initialized = true;
+                checkpoint.support_local = guard.is_some();
                 checkpoint.free = trial;
                 checkpoint
                     .chi_square_history
@@ -454,7 +605,11 @@ pub fn refine_pawley_with_runtime(
                     )
                     .map_err(err)?;
                 if cost_converged {
-                    diagnostics.convergence_criterion = Some("relative_objective");
+                    diagnostics.convergence_criterion = Some(if guard.is_some() {
+                        "support_relative_objective"
+                    } else {
+                        "relative_objective"
+                    });
                     reason = TerminationReason::Converged;
                     break;
                 }
@@ -493,12 +648,13 @@ fn timed_evaluate(
     diagnostics: &mut PawleyDiagnostics,
 ) -> Result<PawleyEvaluation, PawleyError> {
     let start = Instant::now();
-    let result = evaluate_pawley(
+    let result = evaluate_pawley_with_storage(
         input,
         free,
         options.support_fwhm,
         options.use_uncertainty,
         options.max_elements,
+        options.solver == PawleySolver::Dense,
     );
     diagnostics.evaluations += 1;
     diagnostics.evaluation_seconds += start.elapsed().as_secs_f64();
@@ -643,6 +799,268 @@ fn freeze_columns(
     }
     (extended, rhs)
 }
+struct LinearDesign<'a> {
+    evaluation: &'a PawleyEvaluation,
+    dense: Option<DMatrix<f64>>,
+    weights: Vec<f64>,
+    norms: Vec<f64>,
+    frozen: Vec<usize>,
+}
+impl<'a> LinearDesign<'a> {
+    fn new(
+        input: &PawleyInput,
+        evaluation: &'a PawleyEvaluation,
+        uncertainty: bool,
+        frozen: Vec<usize>,
+    ) -> Result<Self, PawleyError> {
+        let weights: Vec<f64> = evaluation
+            .residuals
+            .included
+            .iter()
+            .enumerate()
+            .map(|(i, yes)| {
+                if !yes {
+                    0.0
+                } else if uncertainty {
+                    input
+                        .pattern
+                        .uncertainty
+                        .as_ref()
+                        .map_or(1.0, |s| 1.0 / s[i])
+                } else {
+                    1.0
+                }
+            })
+            .collect();
+        let mut dense = evaluation
+            .jacobian
+            .as_ref()
+            .map(|_| weighted(input, evaluation, uncertainty).0);
+        let mut norms = if let Some(j) = &mut dense {
+            for &c in &frozen {
+                j.column_mut(c).fill(0.0);
+            }
+            (0..j.ncols())
+                .map(|c| j.column(c).norm())
+                .collect::<Vec<_>>()
+        } else {
+            evaluation.jacobian_operator.column_norms(&weights)?
+        };
+        for &c in &frozen {
+            norms[c] = 0.0;
+        }
+        for v in &mut norms {
+            if *v == 0.0 {
+                *v = 1.0;
+            }
+        }
+        if let Some(j) = &mut dense {
+            for (c, n) in norms.iter().enumerate() {
+                j.column_mut(c).scale_mut(1.0 / n);
+            }
+        }
+        Ok(Self {
+            evaluation,
+            dense,
+            weights,
+            norms,
+            frozen,
+        })
+    }
+    fn apply(&self, v: &DVector<f64>) -> Result<DVector<f64>, PawleyError> {
+        if let Some(j) = &self.dense {
+            return Ok(j * v);
+        }
+        let mut scaled: Vec<f64> = v.iter().zip(&self.norms).map(|(v, n)| v / n).collect();
+        for &c in &self.frozen {
+            scaled[c] = 0.0;
+        }
+        let values = self.evaluation.jacobian_operator.jvp(&scaled)?;
+        Ok(DVector::from_iterator(
+            values.len(),
+            values.iter().zip(&self.weights).map(|(v, w)| v * w),
+        ))
+    }
+    fn transpose(&self, v: &DVector<f64>) -> Result<DVector<f64>, PawleyError> {
+        if let Some(j) = &self.dense {
+            return Ok(j.transpose() * v);
+        }
+        let scaled: Vec<f64> = v.iter().zip(&self.weights).map(|(v, w)| v * w).collect();
+        let mut values = self.evaluation.jacobian_operator.vjp(&scaled)?;
+        for (v, n) in values.iter_mut().zip(&self.norms) {
+            *v /= n;
+        }
+        for &c in &self.frozen {
+            values[c] = 0.0;
+        }
+        Ok(DVector::from_vec(values))
+    }
+}
+type BlockFactor = (usize, nalgebra::linalg::Cholesky<f64, nalgebra::Dyn>);
+fn preconditioner(design: &LinearDesign<'_>, damping: f64) -> Vec<BlockFactor> {
+    design
+        .evaluation
+        .jacobian_operator
+        .gram_blocks(&design.weights, &design.norms, &design.frozen, 32)
+        .into_iter()
+        .filter_map(|(start, mut block)| {
+            // Stabilization changes only the preconditioner, never the objective
+            // or the operator used to check the actual linear residual.
+            for i in 0..block.nrows() {
+                block[(i, i)] += damping.max(1e-2);
+            }
+            block.cholesky().map(|factor| (start, factor))
+        })
+        .collect()
+}
+struct ProductStep<'a, 'b> {
+    preconditioner: Vec<BlockFactor>,
+    iterations: std::cell::Cell<usize>,
+    design: &'a LinearDesign<'b>,
+    residual: &'a DVector<f64>,
+    damping: f64,
+    options: &'a PawleyOptions,
+    runtime: &'a RefinementRuntime<PawleyCheckpoint>,
+}
+impl ProductStep<'_, '_> {
+    fn precondition(&self, residual: &DVector<f64>, tangent: &Tangent) -> DVector<f64> {
+        let mut result = residual.clone();
+        for (start, factor) in &self.preconditioner {
+            let size = factor.l_dirty().nrows();
+            let block = factor.solve(&residual.rows(*start, size).into_owned());
+            result.rows_mut(*start, size).copy_from(&block);
+        }
+        tangent.project(&result)
+    }
+    fn hessian(&self, v: &DVector<f64>) -> Result<DVector<f64>, StepError> {
+        let product = self.design.apply(v).map_err(|_| StepError::Numerical)?;
+        Ok(self
+            .design
+            .transpose(&product)
+            .map_err(|_| StepError::Numerical)?
+            + v * self.damping)
+    }
+}
+impl StepModel for ProductStep<'_, '_> {
+    fn dimensions(&self) -> usize {
+        self.design.norms.len()
+    }
+    fn gradient(&self, point: &DVector<f64>) -> Result<DVector<f64>, StepError> {
+        Ok(self.hessian(point)?
+            + self
+                .design
+                .transpose(self.residual)
+                .map_err(|_| StepError::Numerical)?)
+    }
+    fn candidate(
+        &self,
+        constraint: &DMatrix<f64>,
+        bound: &DVector<f64>,
+    ) -> Result<DVector<f64>, StepError> {
+        let (particular, tangent) = tangent_space(constraint, bound)?;
+        let mut solution = particular;
+        let mut residual = -tangent.project(&self.gradient(&solution)?);
+        let threshold = self.options.linear_tolerance * (1.0 + residual.norm());
+        let mut direction = self.precondition(&residual, &tangent);
+        let mut squared = residual.dot(&direction);
+        for _ in 0..self.options.max_linear_iterations {
+            self.runtime.check_boundary().map_err(StepError::Runtime)?;
+            if residual.norm() <= threshold {
+                return Ok(solution);
+            }
+            self.iterations.set(self.iterations.get() + 1);
+            let product = tangent.project(&self.hessian(&direction)?);
+            let denominator = direction.dot(&product);
+            if !denominator.is_finite() || denominator <= 0.0 {
+                return Err(StepError::Numerical);
+            }
+            let alpha = squared / denominator;
+            solution += &direction * alpha;
+            residual -= product * alpha;
+            let preconditioned = self.precondition(&residual, &tangent);
+            let next = residual.dot(&preconditioned);
+            if residual.norm() <= threshold {
+                // Recursive CG residuals drift on ill-conditioned overlaps.
+                // Convergence is based on the recomputed undelayed product.
+                residual = -tangent.project(&self.gradient(&solution)?);
+                if residual.norm() <= threshold {
+                    return Ok(solution);
+                }
+                direction = self.precondition(&residual, &tangent);
+                squared = residual.dot(&direction);
+            } else {
+                direction = preconditioned + direction * (next / squared);
+                squared = next;
+            }
+        }
+        Err(StepError::Numerical)
+    }
+}
+enum Tangent {
+    All,
+    Coordinates(Vec<usize>),
+    RowSpace(DMatrix<f64>),
+}
+impl Tangent {
+    fn project(&self, v: &DVector<f64>) -> DVector<f64> {
+        match self {
+            Self::All => v.clone(),
+            Self::Coordinates(free) => {
+                let mut result = DVector::zeros(v.len());
+                for &i in free {
+                    result[i] = v[i];
+                }
+                result
+            }
+            Self::RowSpace(rows) => {
+                let mut result = v.clone();
+                // Reorthogonalize vector products directly; never materialize
+                // a nearly singular full projector or a dense null basis.
+                for _ in 0..2 {
+                    result -= rows.transpose() * (rows * &result);
+                }
+                result
+            }
+        }
+    }
+}
+fn tangent_space(c: &DMatrix<f64>, b: &DVector<f64>) -> Result<(DVector<f64>, Tangent), StepError> {
+    let n = c.ncols();
+    if c.nrows() == 0 {
+        return Ok((DVector::zeros(n), Tangent::All));
+    }
+    let mut fixed = vec![None; n];
+    let mut boxes = true;
+    for row in 0..c.nrows() {
+        let columns = (0..n).filter(|&j| c[(row, j)] != 0.0).collect::<Vec<_>>();
+        if let [j] = columns.as_slice() {
+            fixed[*j] = Some(b[row] / c[(row, *j)]);
+        } else {
+            boxes = false;
+            break;
+        }
+    }
+    if boxes {
+        return Ok((
+            DVector::from_iterator(n, fixed.iter().map(|v| v.unwrap_or(0.0))),
+            Tangent::Coordinates((0..n).filter(|&j| fixed[j].is_none()).collect()),
+        ));
+    }
+    let svd = c.clone().svd(true, true);
+    let threshold = svd.singular_values.amax() * 1e-13;
+    let rank = svd
+        .singular_values
+        .iter()
+        .filter(|v| **v > threshold)
+        .count();
+    let vt = svd.v_t.as_ref().ok_or(StepError::Numerical)?.clone();
+    let particular = svd.solve(b, threshold).map_err(|_| StepError::Numerical)?;
+    if rank == n {
+        return Ok((particular, Tangent::Coordinates(Vec::new())));
+    }
+    Ok((particular, Tangent::RowSpace(vt.rows(0, rank).into_owned())))
+}
+
 enum StepError {
     Runtime(RuntimeError),
     Numerical,
@@ -761,7 +1179,73 @@ fn active_step(
     runtime: &RefinementRuntime<PawleyCheckpoint>,
     diagnostics: &mut PawleyDiagnostics,
 ) -> Result<DVector<f64>, StepError> {
-    let n = target.len();
+    active_step_model(
+        &DenseStep { design, target },
+        a,
+        b,
+        limit,
+        runtime,
+        diagnostics,
+    )
+}
+trait StepModel {
+    fn dimensions(&self) -> usize;
+    fn candidate(
+        &self,
+        constraint: &DMatrix<f64>,
+        bound: &DVector<f64>,
+    ) -> Result<DVector<f64>, StepError>;
+    fn gradient(&self, point: &DVector<f64>) -> Result<DVector<f64>, StepError>;
+}
+// Euclidean projection needs no dense identity factorization.
+struct IdentityStep {
+    target: DVector<f64>,
+}
+impl StepModel for IdentityStep {
+    fn dimensions(&self) -> usize {
+        self.target.len()
+    }
+    fn candidate(
+        &self,
+        constraint: &DMatrix<f64>,
+        bound: &DVector<f64>,
+    ) -> Result<DVector<f64>, StepError> {
+        let (particular, tangent) = tangent_space(constraint, bound)?;
+        Ok(&particular + tangent.project(&(&self.target - &particular)))
+    }
+    fn gradient(&self, point: &DVector<f64>) -> Result<DVector<f64>, StepError> {
+        Ok(point - &self.target)
+    }
+}
+struct DenseStep<'a> {
+    design: &'a DMatrix<f64>,
+    target: &'a DVector<f64>,
+}
+impl StepModel for DenseStep<'_> {
+    fn dimensions(&self) -> usize {
+        self.target.len()
+    }
+    fn candidate(
+        &self,
+        constraint: &DMatrix<f64>,
+        bound: &DVector<f64>,
+    ) -> Result<DVector<f64>, StepError> {
+        face_candidate(self.design, self.target, constraint, bound)
+    }
+    fn gradient(&self, point: &DVector<f64>) -> Result<DVector<f64>, StepError> {
+        Ok(self.design.transpose() * (self.design * point - self.target))
+    }
+}
+#[allow(clippy::too_many_lines)]
+fn active_step_model(
+    model: &impl StepModel,
+    a: &DMatrix<f64>,
+    b: &DVector<f64>,
+    limit: usize,
+    runtime: &RefinementRuntime<PawleyCheckpoint>,
+    diagnostics: &mut PawleyDiagnostics,
+) -> Result<DVector<f64>, StepError> {
+    let n = model.dimensions();
     let mut d = DVector::zeros(n);
     let mut active = Vec::<usize>::new();
     for _ in 0..limit {
@@ -774,7 +1258,7 @@ fn active_step(
         }
         diagnostics.linear_iterations += 1;
         let face_start = Instant::now();
-        let candidate = face_candidate(design, target, &constraint, &bound)?;
+        let candidate = model.candidate(&constraint, &bound)?;
         diagnostics.face_seconds += face_start.elapsed().as_secs_f64();
         if candidate.iter().any(|v| !v.is_finite()) {
             return Err(StepError::Numerical);
@@ -796,6 +1280,33 @@ fn active_step(
                     box_faces.push(row);
                 }
             }
+            // A homogeneous coupled face (for example a support-radius
+            // boundary) can be entered together with independent area bounds.
+            // The global feasibility check below remains authoritative.
+            let coupled: Vec<usize> = (0..a.nrows())
+                .filter(|&row| {
+                    b[row] == 0.0
+                        && a.row(row).transpose().dot(&projected) < 0.0
+                        && !box_faces.contains(&row)
+                })
+                .collect();
+            if box_faces.len() > 1 && !coupled.is_empty() {
+                let faces: Vec<usize> = box_faces.iter().chain(&coupled).copied().collect();
+                let mut c = DMatrix::zeros(faces.len(), n);
+                let mut rhs = DVector::zeros(faces.len());
+                for (i, &row) in faces.iter().enumerate() {
+                    c.row_mut(i).copy_from(&a.row(row));
+                    rhs[i] = b[row];
+                }
+                if let Ok(p) = (IdentityStep {
+                    target: candidate.clone(),
+                })
+                .candidate(&c, &rhs)
+                {
+                    projected = p;
+                    box_faces = faces;
+                }
+            }
             if box_faces.len() > 1
                 && (0..a.nrows()).all(|row| {
                     a.row(row).transpose().dot(&projected) >= b[row] - 1e-13 * (1.0 + b[row].abs())
@@ -810,7 +1321,7 @@ fn active_step(
         let multipliers = if active.is_empty() {
             DVector::zeros(0)
         } else {
-            let gradient = design.transpose() * (design * &candidate - target);
+            let gradient = model.gradient(&candidate)?;
             constraint
                 .transpose()
                 .svd(true, true)
@@ -890,17 +1401,10 @@ fn result(
     evaluation: PawleyEvaluation,
     reason: TerminationReason,
 ) -> Result<PawleyResult, PawleyError> {
-    let (mut j, _) = weighted(input, &evaluation, options.use_uncertainty);
-    let n = j.ncols();
-    let norms: Vec<f64> = (0..n)
-        .map(|c| {
-            let norm = j.column(c).norm();
-            if norm == 0.0 { 1.0 } else { norm }
-        })
-        .collect();
-    for (c, norm) in norms.iter().enumerate() {
-        j.column_mut(c).scale_mut(1.0 / norm);
-    }
+    let design = LinearDesign::new(input, &evaluation, options.use_uncertainty, Vec::new())?;
+    let n = design.norms.len();
+    let norms = design.norms.clone();
+    let dense = design.dense.clone();
     let t = ConstraintTransform::new(input.parameters.clone(), input.constraints.clone())
         .map_err(err)?;
     let values = t.unpack(&checkpoint.free, false).map_err(err)?;
@@ -944,7 +1448,7 @@ fn result(
             evaluation,
             checkpoint,
             termination_reason: reason,
-            rank: 0,
+            rank: Some(0),
             observed_free_parameters: 0,
             active_bounds,
             active_width_bounds,
@@ -952,6 +1456,23 @@ fn result(
             covariance_limitation: Some("no free parameters".into()),
         });
     }
+    let Some(j) = dense else {
+        let observed_free_parameters = n - evaluation.inactive_columns.len();
+        return Ok(PawleyResult {
+            diagnostics: PawleyDiagnostics::default(),
+            evaluation,
+            checkpoint,
+            termination_reason: reason,
+            rank: None,
+            observed_free_parameters,
+            active_bounds,
+            active_width_bounds,
+            covariance: None,
+            covariance_limitation: Some(
+                "matrix-free solve: exact rank and full covariance not computed".into(),
+            ),
+        });
+    };
     let svd = j.svd(false, true);
     let threshold = options.rank_tolerance * svd.singular_values.amax();
     let rank = svd
@@ -960,7 +1481,18 @@ fn result(
         .filter(|v| **v > threshold)
         .count();
     let observed_free_parameters = n - evaluation.inactive_columns.len();
-    let limitation = if rank < n {
+    let support_boundary = support_guard(
+        input,
+        &t,
+        &checkpoint.free,
+        &evaluation,
+        options.support_fwhm,
+        options.use_uncertainty,
+    )?
+    .is_some();
+    let limitation = if support_boundary {
+        Some("hard-support boundary: Gaussian covariance omitted")
+    } else if rank < n {
         Some("rank deficient or unobserved free columns")
     } else if !active_bounds.is_empty() || active_width_bounds {
         Some("bound-active solution: Gaussian covariance omitted")
@@ -999,7 +1531,7 @@ fn result(
         evaluation,
         checkpoint,
         termination_reason: reason,
-        rank,
+        rank: Some(rank),
         observed_free_parameters,
         active_bounds,
         active_width_bounds,
@@ -1011,6 +1543,23 @@ fn result(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn identity_projection_matches_dense_for_dependent_coupled_faces() {
+        let target = DVector::from_vec(vec![3.0, -2.0, 1.0, 4.0]);
+        let c = DMatrix::from_row_slice(
+            3,
+            4,
+            &[1.0, 1.0, 0.0, 0.0, 2.0, 2.0, 0.0, 0.0, 0.0, 1.0, -1.0, 0.0],
+        );
+        let b = DVector::from_vec(vec![1.0, 2.0, 0.5]);
+        let expected = face_candidate(&DMatrix::identity(4, 4), &target, &c, &b)
+            .ok()
+            .unwrap();
+        let actual = IdentityStep { target }.candidate(&c, &b).ok().unwrap();
+        assert!((&actual - expected).norm() < 1e-12);
+        assert!((c * actual - b).norm() < 1e-12);
+    }
 
     #[test]
     fn coupled_faces_do_not_create_spurious_null_directions() {

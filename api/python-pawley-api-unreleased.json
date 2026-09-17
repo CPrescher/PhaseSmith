@@ -5,7 +5,7 @@
         {
           "kind": "class",
           "name": "PawleyCalculation",
-          "signature": "(calculated_y: 'NDArray[np.float64]', background_y: 'NDArray[np.float64]', intensities: 'NDArray[np.float64]', positions: 'NDArray[np.float64]', jacobian: 'NDArray[np.float64]', residual: 'NDArray[np.float64]', weighted_residual: 'NDArray[np.float64]', included: 'NDArray[np.bool_]', rp: 'float', rwp: 'float', chi_square: 'float', reduced_chi_square: 'float', inactive_columns: 'tuple[int, ...]', unobserved_reflections: 'tuple[tuple[str, str], ...]', coincident_groups: 'tuple[tuple[tuple[tuple[str, str], ...], float], ...]') -> None",
+          "signature": "(calculated_y: 'NDArray[np.float64]', background_y: 'NDArray[np.float64]', intensities: 'NDArray[np.float64]', positions: 'NDArray[np.float64]', jacobian: 'NDArray[np.float64] | None', jacobian_operator: 'PawleyJacobian', residual: 'NDArray[np.float64]', weighted_residual: 'NDArray[np.float64]', included: 'NDArray[np.bool_]', rp: 'float', rwp: 'float', chi_square: 'float', reduced_chi_square: 'float', inactive_columns: 'tuple[int, ...]', unobserved_reflections: 'tuple[tuple[str, str], ...]', coincident_groups: 'tuple[tuple[tuple[tuple[str, str], ...], float], ...]') -> None",
           "target": "phasesmith.refinement.pawley.PawleyCalculation"
         },
         {
@@ -16,8 +16,14 @@
         },
         {
           "kind": "class",
+          "name": "PawleyJacobian",
+          "signature": "(_native: 'object') -> None",
+          "target": "phasesmith.refinement.pawley.PawleyJacobian"
+        },
+        {
+          "kind": "class",
           "name": "PawleyOptions",
-          "signature": "(support_fwhm: 'float' = 20.0, use_uncertainty: 'bool' = True, max_elements: 'int' = 50000000, rank_tolerance: 'float' = 1e-10, tolerance: 'float' = 1e-09, damping: 'float' = 1e-06, max_active_iterations: 'int' = 2000) -> None",
+          "signature": "(solver: 'str' = 'dense', linear_tolerance: 'float' = 1e-11, max_linear_iterations: 'int' = 4000, support_fwhm: 'float' = 20.0, use_uncertainty: 'bool' = True, max_elements: 'int' = 50000000, rank_tolerance: 'float' = 1e-10, tolerance: 'float' = 1e-09, damping: 'float' = 1e-06, max_active_iterations: 'int' = 2000) -> None",
           "target": "phasesmith.refinement.pawley.PawleyOptions"
         },
         {
@@ -29,13 +35,13 @@
         {
           "kind": "class",
           "name": "PawleyProject",
-          "signature": "(input: 'PawleyInput', options: 'PawleyOptions' = PawleyOptions(support_fwhm=20.0, use_uncertainty=True, max_elements=50000000, rank_tolerance=1e-10, tolerance=1e-09, damping=1e-06, max_active_iterations=2000), checkpoint: 'str | None' = None) -> None",
+          "signature": "(input: 'PawleyInput', options: 'PawleyOptions' = PawleyOptions(solver='dense', linear_tolerance=1e-11, max_linear_iterations=4000, support_fwhm=20.0, use_uncertainty=True, max_elements=50000000, rank_tolerance=1e-10, tolerance=1e-09, damping=1e-06, max_active_iterations=2000), checkpoint: 'str | None' = None) -> None",
           "target": "phasesmith.refinement.pawley.PawleyProject"
         },
         {
           "kind": "class",
           "name": "PawleyResult",
-          "signature": "(calculation: 'PawleyCalculation', termination_reason: 'str', rank: 'int', observed_free_parameters: 'int', active_bounds: 'tuple[int, ...]', active_width_bounds: 'bool', covariance: 'NDArray[np.float64] | None', covariance_limitation: 'str | None', history: 'NDArray[np.float64]', free: 'NDArray[np.float64]', checkpoint: 'str', parameters: 'ParameterSet', diagnostics: 'Mapping[str, float | int | str | None]') -> None",
+          "signature": "(calculation: 'PawleyCalculation', termination_reason: 'str', rank: 'int | None', observed_free_parameters: 'int', active_bounds: 'tuple[int, ...]', active_width_bounds: 'bool', covariance: 'NDArray[np.float64] | None', covariance_limitation: 'str | None', history: 'NDArray[np.float64]', free: 'NDArray[np.float64]', checkpoint: 'str', parameters: 'ParameterSet', diagnostics: 'Mapping[str, float | int | str | None]') -> None",
           "target": "phasesmith.refinement.pawley.PawleyResult"
         },
         {
@@ -47,7 +53,7 @@
         {
           "kind": "function",
           "name": "calculate",
-          "signature": "(request: 'PawleyInput', options: 'PawleyOptions' = PawleyOptions(support_fwhm=20.0, use_uncertainty=True, max_elements=50000000, rank_tolerance=1e-10, tolerance=1e-09, damping=1e-06, max_active_iterations=2000)) -> 'PawleyCalculation'",
+          "signature": "(request: 'PawleyInput', options: 'PawleyOptions' = PawleyOptions(solver='dense', linear_tolerance=1e-11, max_linear_iterations=4000, support_fwhm=20.0, use_uncertainty=True, max_elements=50000000, rank_tolerance=1e-10, tolerance=1e-09, damping=1e-06, max_active_iterations=2000)) -> 'PawleyCalculation'",
           "target": "phasesmith.refinement.pawley.calculate"
         },
         {
@@ -59,7 +65,7 @@
         {
           "kind": "function",
           "name": "refine",
-          "signature": "(request: 'PawleyInput', options: 'PawleyOptions' = PawleyOptions(support_fwhm=20.0, use_uncertainty=True, max_elements=50000000, rank_tolerance=1e-10, tolerance=1e-09, damping=1e-06, max_active_iterations=2000), *, checkpoint: 'str | None' = None, max_iterations: 'int' = 100, max_evaluations: 'int' = 1000, max_rejections: 'int' = 20, max_seconds: 'float | None' = None, cancellation: 'CancellationToken | None' = None, progress: 'Callable[[dict], None] | None' = None) -> 'PawleyResult'",
+          "signature": "(request: 'PawleyInput', options: 'PawleyOptions' = PawleyOptions(solver='dense', linear_tolerance=1e-11, max_linear_iterations=4000, support_fwhm=20.0, use_uncertainty=True, max_elements=50000000, rank_tolerance=1e-10, tolerance=1e-09, damping=1e-06, max_active_iterations=2000), *, checkpoint: 'str | None' = None, max_iterations: 'int' = 100, max_evaluations: 'int' = 1000, max_rejections: 'int' = 20, max_seconds: 'float | None' = None, cancellation: 'CancellationToken | None' = None, progress: 'Callable[[dict], None] | None' = None) -> 'PawleyResult'",
           "target": "phasesmith.refinement.pawley.refine"
         }
       ],

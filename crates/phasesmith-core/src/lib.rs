@@ -60,6 +60,7 @@ pub use cw::{
 };
 pub use cw_components::{
     CwComponentsBatchError, accumulate_cw_components_batch, accumulate_cw_fcj_components_batch,
+    cw_components_support_samples,
 };
 pub use cw_contributions::{
     CwContributionArrays, CwContributionsError, CwContributionsView, OwnedCwContributionArrays,

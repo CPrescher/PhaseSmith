@@ -5,17 +5,16 @@ Reviewed 2026-09-17 against implementation commit `e39cf72` on
 tests and recorded evidence with the [original plan](pawley-plan.md), not a new
 numerical validation run.
 
-Follow-up status: native stage counters/timings and the executable version-2
-manifest are now implemented. Exact resolved-request checks preserve the
-version-1 scientific setup. The synthetic benchmark now checks arrays and
-histories directly. Sections below describe the findings at the audited commit;
-remaining larger-workload and integration work continues. The follow-up now also
-has a passing measured LaB6 cell/profile gate, synthetic joint multiphase
-cell/profile recovery and tied covariance scaling. Support-block JVP/VJP and
-adjoint checks are implemented, but the solver still materializes its free
-Jacobian. An explicit orthonormal null-space solve fixes coupled-face cycling.
-Sucrose convergence, full matrix-free solving, mixed bundles, live optimizer
-comparison, spectra and TOF remain open; these are not marked complete.
+Follow-up status: the matrix-free solver and exact finite-support boundary
+treatment now pass both repeated measured CW gates under unchanged scientific
+thresholds and budgets. Sucrose converges locally in 137–138 seconds at Rwp
+0.066054. Matrix-free products, dependent constraints, allocation limits,
+checkpoint mode checks and format-1 migration are tested. The executable
+manifest, covariance tests, measured LaB6 cell/profile gate and multiphase
+recovery are complete. Sections below retain the original findings as an audit
+trail. Mixed bundles, external optimizer comparison, spectra and TOF remain
+unfinished. The original checkout's numerical work is now committed upstream
+and can be reconciled normally before final combined-state validation.
 
 The single-histogram, fixed-wavelength CW method is implemented. Its native
 objective/solver, NumPy interface, bounded/tied areas, selected cell/profile/
@@ -118,8 +117,9 @@ to completing the full external-comparison roadmap.
 | Fixed CW spectra (P6) | One intensity per family across weighted wavelength components; component positions/shapes and union-domain coverage; fixed detected-area weight conventions; derivatives, persistence, doublet and measured-data validation. |
 | TOF (P7) | Single-bank microsecond/density contracts, then selected calibration/cell refinement and joint multi-bank acceptance. Share cell/symmetry; keep bank-local areas/background/profile by default. Test calibration degeneracies, nonuniform support, atomic resume and measured POWGEN/LANL nickel cases. |
 
-Matrix-free solving was planned in P3 and remains absent; dense-only support is
-an explicit current deviation. Schur/variable-projection acceleration is optional
+Matrix-free solving planned in P3 is now implemented, with dense/product,
+constraint, restart and memory-limit tests. Its measured acceptance gate is
+still under investigation. Schur/variable-projection acceleration is optional
 and needs independent bound/derivative validation before adoption. P6 and P7
 are follow-on scope and do not block a clearly labelled CW release.
 

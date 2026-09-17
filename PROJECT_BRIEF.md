@@ -12,28 +12,21 @@ not part of the numerical library.
 
 ## Current implementation status
 
-Pawley completion work now records stage counters/timings and convergence
-criteria; versioned executable manifests preserve the original measured
-scientific setup and add a separate measured cell/profile gate. That LaB6 gate
-converges with Rwp 0.2184. Coupled-face solves now use an explicit orthonormal
-null basis, fixing numerical cycling from spurious projector directions.
-Support-block analytical products replace dense physical Jacobian storage;
-constraint chains skip exact zero terms in physical-parameter order. The free
-Jacobian and optimizer remain dense. Existing finite-support behavior and
-scientific thresholds are unchanged. Sucrose convergence is still an open gate.
-
-The first CW Pawley implementation now provides native bounded least-squares
-family areas, joint analytical cell/profile/background derivatives, exact
-parameter ties, rank/overlap/bound diagnostics, cancellation and accepted-state
-restart, a NumPy facade and standalone version-1 JSON persistence. See
-`docs/pawley.md` and `docs/pawley-validation.md` for the tested scope and remaining
-scientific gates. Neutron validation passes; the 811-family sucrose case meets
-quality thresholds but stagnates without satisfying first-order convergence, so
-the full large-data release gate remains open. This bounded dense solver precedes matrix-free
-Pawley. Mixed-method bundle integration, fixed spectra, TOF and live GSAS-II
-optimizer parity remain deferred. The standalone format avoids changing existing
-project schemas. Original-checkout uncommitted work remains separate and needs
-reconciliation before merging. `docs/pawley-plan.md` records these deviations.
+Pawley now provides bounded CW family-area refinement in dense and matrix-free
+modes, analytical cell/profile/background derivatives, exact ties, independent
+NumPy validation, accepted-state restart and standalone format-2 persistence
+with format-1 migration. The matrix-free measured release gate passes unchanged
+scientific thresholds and budgets: sucrose converges in 137–138 seconds with
+Rwp 0.066054, and LaB6 converges with Rwp 0.284869. Repeated arrays and histories
+are exact. Sucrose convergence is explicitly local to the hard-support objective;
+positive finite cutoff jumps define one-sided feasible directions, with
+conservative exclusions for interacting or cancelling events. Support values
+and endpoints are unchanged. Matrix-free mode omits global rank/covariance;
+dense mode remains the small-problem reference. The separate measured LaB6
+cell/profile gate passes at Rwp 0.2184. Mixed-method bundle integration, fixed
+spectra, TOF and live GSAS-II optimizer comparison remain unfinished, and the
+latest upstream numerical work must be reconciled before final validation.
+See `docs/pawley.md`, `docs/pawley-validation.md` and the completion audit.
 
 The second refinement performance pass batches four FCJ sample evaluations
 without reordering any sample's quadrature sum, assembles selected structural

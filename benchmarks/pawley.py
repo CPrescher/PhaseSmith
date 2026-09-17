@@ -24,7 +24,7 @@ from phasesmith.refinement.pawley import (
 )
 
 
-def run_case(reflections, samples, axial, joint, repeats):
+def run_case(reflections, samples, axial, joint, repeats, solver="dense"):
     x = np.linspace(10.0, 90.0, samples)
     positions = np.linspace(12.0, 88.0, reflections)
     # Adjacent pairs overlap heavily without being exactly coincident.
@@ -43,7 +43,7 @@ def run_case(reflections, samples, axial, joint, repeats):
         phases,
         axial_geometry=FcjGeometry(0.002, 0.002) if axial else None,
     )
-    options = PawleyOptions(max_elements=150_000_000)
+    options = PawleyOptions(max_elements=150_000_000, solver=solver)
     y = calculate(truth, options).calculated_y
     request = replace(
         truth,
@@ -92,6 +92,8 @@ def run_case(reflections, samples, axial, joint, repeats):
         fcj=axial,
         joint_width=joint,
         serial_native=True,
+        solver=solver,
+        jacobian_storage_elements=fit.calculation.jacobian_operator.storage_elements,
         times_seconds=timings,
         median_seconds=float(np.median(timings)),
         p95_seconds=float(np.quantile(timings, 0.95)),
@@ -104,6 +106,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--repeats", type=int, default=3)
     parser.add_argument("--large", action="store_true")
+    parser.add_argument("--solver", choices=("dense", "matrix_free"), default="dense")
     parser.add_argument("--output", required=True)
     args = parser.parse_args()
     cases = [(256, 10001, False, False), (256, 10001, True, True)]
@@ -111,7 +114,7 @@ def main():
         cases.append((811, 23003, False, False))
     binary_hash = hashlib.sha256(Path(_core.__file__).read_bytes()).hexdigest()
     runner_hash = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
-    results = [run_case(*c, args.repeats) for c in cases]
+    results = [run_case(*c, args.repeats, args.solver) for c in cases]
     peak = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
     record = dict(
         platform=platform.platform(),
@@ -122,7 +125,10 @@ def main():
         runner_sha256=runner_hash,
         peak_process_rss_bytes=peak if platform.system() == "Darwin" else peak * 1024,
         cases=results,
-        note="Process RSS includes Python, reference data and returned dense Jacobians.",
+        note=(
+            "Process RSS includes Python, reference data and returned derivatives "
+            "for the selected solver."
+        ),
     )
     with open(args.output, "x", encoding="utf-8") as stream:
         json.dump(record, stream, indent=2, allow_nan=False)

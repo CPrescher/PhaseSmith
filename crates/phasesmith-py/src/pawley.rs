@@ -1,14 +1,51 @@
 //! Thin detached adapters for native Pawley calculation, refinement and persistence.
 use crate::rietveld::NativeRietveldCancellation;
-use npy::{IntoPyArray, PyArray2};
+use npy::{IntoPyArray, PyArray1, PyArray2, PyReadonlyArray1};
 use phasesmith_persistence::{PawleyProject, decode_pawley_project, encode_pawley_project};
 use phasesmith_workflows::{
-    ConstraintTransform, PawleyEvaluation, RefinementLimits, RefinementRuntime, evaluate_pawley,
-    refine_pawley_with_runtime,
+    ConstraintTransform, PawleyEvaluation, PawleyJacobian, PawleySolver, RefinementLimits,
+    RefinementRuntime, evaluate_pawley_with_storage, refine_pawley_with_runtime,
 };
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
+#[pyclass(name = "_PawleyJacobian", frozen)]
+struct NativePawleyJacobian {
+    operator: PawleyJacobian,
+}
+#[pymethods]
+impl NativePawleyJacobian {
+    #[getter]
+    fn shape(&self) -> (usize, usize) {
+        (self.operator.sample_count(), self.operator.free_count())
+    }
+    #[getter]
+    fn storage_elements(&self) -> usize {
+        self.operator.storage_elements()
+    }
+    fn jvp<'py>(
+        &self,
+        py: Python<'py>,
+        vector: PyReadonlyArray1<'py, f64>,
+    ) -> PyResult<Bound<'py, PyArray1<f64>>> {
+        let values = vector.as_slice()?.to_vec();
+        Ok(py
+            .detach(|| self.operator.jvp(&values))
+            .map_err(error)?
+            .into_pyarray(py))
+    }
+    fn vjp<'py>(
+        &self,
+        py: Python<'py>,
+        vector: PyReadonlyArray1<'py, f64>,
+    ) -> PyResult<Bound<'py, PyArray1<f64>>> {
+        let values = vector.as_slice()?.to_vec();
+        Ok(py
+            .detach(|| self.operator.vjp(&values))
+            .map_err(error)?
+            .into_pyarray(py))
+    }
+}
 const MAX_BYTES: usize = 256 * 1024 * 1024;
 fn error(e: impl std::fmt::Display) -> PyErr {
     PyValueError::new_err(e.to_string())
@@ -27,14 +64,23 @@ fn arrays<'py>(py: Python<'py>, e: &PawleyEvaluation) -> PyResult<Bound<'py, PyD
     d.set_item("background_y", e.background_y.clone().into_pyarray(py))?;
     d.set_item("intensities", e.intensities.clone().into_pyarray(py))?;
     d.set_item("positions", e.positions.clone().into_pyarray(py))?;
-    let rows: Vec<Vec<f64>> = (0..e.jacobian.nrows())
-        .map(|i| {
-            (0..e.jacobian.ncols())
-                .map(|j| e.jacobian[(i, j)])
-                .collect()
-        })
-        .collect();
-    d.set_item("jacobian", PyArray2::from_vec2(py, &rows)?)?;
+    if let Some(jacobian) = &e.jacobian {
+        let rows: Vec<Vec<f64>> = (0..jacobian.nrows())
+            .map(|i| (0..jacobian.ncols()).map(|j| jacobian[(i, j)]).collect())
+            .collect();
+        d.set_item("jacobian", PyArray2::from_vec2(py, &rows)?)?;
+    } else {
+        d.set_item("jacobian", py.None())?;
+    }
+    d.set_item(
+        "jacobian_operator",
+        Py::new(
+            py,
+            NativePawleyJacobian {
+                operator: e.jacobian_operator.clone(),
+            },
+        )?,
+    )?;
     d.set_item("residual", e.residuals.residual.clone().into_pyarray(py))?;
     d.set_item(
         "weighted_residual",
@@ -72,12 +118,13 @@ fn _pawley_calculate(py: Python<'_>, record: String) -> PyResult<Bound<'_, PyDic
                 .as_ref()
                 .map_or_else(|| t.pack(), |cp| Ok(cp.free.clone()))
                 .map_err(|e| phasesmith_workflows::PawleyError(e.to_string()))?;
-            evaluate_pawley(
+            evaluate_pawley_with_storage(
                 &p.input,
                 &free,
                 p.options.support_fwhm,
                 p.options.use_uncertainty,
                 p.options.max_elements,
+                p.options.solver == PawleySolver::Dense,
             )
         })
         .map_err(error)?;
@@ -126,6 +173,7 @@ fn _pawley_refine<'py>(
     let diagnostics = PyDict::new(py);
     diagnostics.set_item("evaluations", result.diagnostics.evaluations)?;
     diagnostics.set_item("linear_iterations", result.diagnostics.linear_iterations)?;
+    diagnostics.set_item("krylov_iterations", result.diagnostics.krylov_iterations)?;
     diagnostics.set_item("evaluation_seconds", result.diagnostics.evaluation_seconds)?;
     diagnostics.set_item("qr_seconds", result.diagnostics.qr_seconds)?;
     diagnostics.set_item("face_seconds", result.diagnostics.face_seconds)?;
@@ -180,6 +228,7 @@ fn _pawley_refine<'py>(
     Ok(d)
 }
 pub(crate) fn register(m: &Bound<'_, PyModule>) -> PyResult<()> {
+    m.add_class::<NativePawleyJacobian>()?;
     m.add_function(wrap_pyfunction!(_pawley_prepare, m)?)?;
     m.add_function(wrap_pyfunction!(_pawley_calculate, m)?)?;
     m.add_function(wrap_pyfunction!(_pawley_refine, m)?)?;

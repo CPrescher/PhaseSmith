@@ -5,11 +5,11 @@ with bounded least squares. Atomic coordinates and structure factors are not
 required. Selected cell, CW profile and linear background parameters can join
 the same fit. Production calculations and refinement run in Rust.
 
-The measured neutron validation passes. The 811-family sucrose fit meets
-profile-quality thresholds but reaches the time budget before convergence;
-the complete large-data release gate remains open. See the
-[validation report](pawley-validation.md) before using this first dense version
-for large joint refinements.
+The matrix-free measured acceptance gate passes for sucrose and neutron LaB6,
+including convergence under the declared budgets and exact repeatability.
+Sucrose converges locally at a hard-support boundary. Use matrix-free mode for
+large joint fits; dense mode remains the default small-problem reference.
+See the [validation report](pawley-validation.md) for evidence and limitations.
 
 Use Pawley when the cell and symmetry are known but individual reflection
 intensities should remain free. Le Bail uses iterative intensity redistribution;
@@ -29,11 +29,12 @@ quantitative phase mass fractions.
 | Fixed, affine and linear parameter ties, including dependent bounds | Supported |
 | Native/Python cancellation, accepted checkpoint continuation and standalone persistence | Supported |
 | Dense full analytical Jacobian and full-rank interior covariance | Supported within explicit allocation limit |
-| Matrix-free solving, component spectra, TOF, structural restraints | Deferred |
+| Matrix-free bounded solving with analytical JVP/VJP | Supported; rank and covariance omitted |
+| Component spectra, TOF, structural restraints | Deferred |
 | Live GSAS-II Pawley optimizer equivalence | Not established |
 
-The first implementation uses deterministic serial kernels and a bounded dense
-solver. `max_elements` is a conservative estimate of native floating-point
+The implementation uses deterministic serial kernels and bounded dense or
+matrix-free solvers. `max_elements` is a conservative estimate of native floating-point
 workspace elements, not a total process RSS limit. Python result arrays,
 serialization and allocator overhead consume additional memory. Requests above
 the estimate fail before allocating the dense workspace. Default 50 million
@@ -71,6 +72,30 @@ in the requested reflection range; an explicit family list makes no completeness
 claim. The generated domain is conservative over its supplied cell bounds.
 Keep those bounds tight enough to avoid unnecessary guard families. Inaccessible
 Bragg reflections or out-of-domain trials are rejected, not silently removed.
+
+## Matrix-free calculations and fits
+
+Set `PawleyOptions(solver="matrix_free")` to retain support-block derivatives
+and solve bounded steps with projected, preconditioned conjugate gradients.
+`calculation.jacobian` is then `None`; use `calculation.jacobian_operator.jvp(v)`
+and `.vjp(u)` for analytical products in the same scaled-free coordinates.
+Both modes expose this operator and its `shape` and `storage_elements`.
+Dense mode remains the default and a reference for small problems.
+
+The iterative solver checks the recomputed linear residual against
+`linear_tolerance * (1 + initial_residual_norm)` and respects
+`max_linear_iterations`. Failure to satisfy that check is a numerical failure,
+not convergence. Both controls and the solver mode are bound into checkpoints.
+The preconditioner uses 32-column diagonal Gram blocks with a positive diagonal
+stabilizer; this changes neither the objective nor the checked normal operator.
+Dense physical/free Jacobians are absent in this mode, but constraint transforms
+and active-face work still have quadratic parameter storage. `max_elements`
+includes those workspaces and the exact native support count.
+
+Matrix-free results return `rank=None` and no covariance rather than claiming
+full rank from an iterative solve. Exact coincident-family and unobserved-column
+diagnostics remain available. `diagnostics["krylov_iterations"]` distinguishes
+inner product iterations from active-set iterations.
 
 ## Joint parameter selection
 
@@ -114,6 +139,14 @@ are fixed in this release.
 Support follows the existing CW/FCJ kernels, including physical endpoints. No
 normalization to the observed grid occurs. Jacobians differentiate the profile
 with support membership held fixed; derivatives at moving cutoffs are undefined.
+For symmetric fixed-position CW fits, positive objective jumps at cutoffs can
+form local barriers. The solver checks those finite jumps separately from the
+smooth derivatives, optimizes on the permitted side, and reports a `support_`
+convergence criterion when appropriate. This is local convergence of the exact
+truncated objective; covariance is omitted there. The treatment is deliberately
+conservative for simultaneous events and does not certify moving-position or
+axial-profile cutoffs. See the [mathematical contract](mathematics/refinement.md#pawley-family-area-least-squares).
+
 Mask and uncertainty weights are applied once; least squares adds no bin-width
 factor. Integration diagnostics do use physical grid spacing.
 
@@ -125,7 +158,7 @@ scientific checkpoint identity.
 Inspect `rank`, `active_bounds`, `active_width_bounds`, `calculation.unobserved_reflections` and
 `calculation.coincident_groups`. Each exact-coincidence record contains stable
 family identities and their area sum; an arbitrary split is not a measurement.
-Other near-dependencies are reflected in numerical rank. Damping does not enter
+Other near-dependencies are reflected in numerical rank when dense mode is selected. Damping does not enter
 the rank estimate. Unobserved free columns preserve their accepted values.
 
 The Jacobian and covariance use **scaled free coordinates**, in
@@ -163,9 +196,10 @@ project. Data, masks, background, identities, bounds, ties, support and numerica
 controls must match. Runtime budgets may change; iteration continuation starts
 from the accepted history count. Rejected attempts are discarded on restart.
 
-The standalone `phasesmith-pawley` JSON format version 1 is shared by Rust and
+The standalone `phasesmith-pawley` JSON format version 2 is shared by Rust and
 Python and is distinct from the existing multi-histogram JSON+NPZ format. It
 contains plain finite arrays and typed records; nullable bounds denote infinity.
+Version-1 projects remain readable, including their original checkpoint digest.
 Checkpoints bind the canonical request/options with SHA-256. Load checks byte
 limits, version, unknown fields, identities, array and constraint contracts;
 resuming also recomputes the saved objective. No pickle or matrix factorization

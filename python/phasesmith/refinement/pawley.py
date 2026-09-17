@@ -45,6 +45,7 @@ from .lattice import CwLatticeReflectionDomain, LatticeParameterBounds, LatticeP
 __all__ = [
     "PawleyCalculation",
     "PawleyInput",
+    "PawleyJacobian",
     "PawleyOptions",
     "PawleyPhase",
     "PawleyProject",
@@ -187,6 +188,9 @@ class PawleyPhase:
 class PawleyOptions:
     """Scientific controls; dense allocation limit counts f64 elements, not bytes."""
 
+    solver: str = "dense"
+    linear_tolerance: float = 1e-11
+    max_linear_iterations: int = 4000
     support_fwhm: float = 20.0
     use_uncertainty: bool = True
     max_elements: int = 50_000_000
@@ -196,12 +200,20 @@ class PawleyOptions:
     max_active_iterations: int = 2000
 
     def __post_init__(self):
-        controls = (self.support_fwhm, self.rank_tolerance, self.tolerance, self.damping)
+        if self.solver not in ("dense", "matrix_free"):
+            raise ValueError("unknown Pawley solver")
+        controls = (
+            self.support_fwhm,
+            self.rank_tolerance,
+            self.tolerance,
+            self.damping,
+            self.linear_tolerance,
+        )
         if not np.isfinite(controls).all() or min(controls) <= 0:
             raise ValueError("Pawley controls must be positive and finite")
-        if self.rank_tolerance >= 1 or self.tolerance >= 1:
+        if self.rank_tolerance >= 1 or self.tolerance >= 1 or self.linear_tolerance >= 1:
             raise ValueError("Pawley tolerances must be below one")
-        for value in (self.max_elements, self.max_active_iterations):
+        for value in (self.max_elements, self.max_active_iterations, self.max_linear_iterations):
             if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
                 raise ValueError("Pawley allocation/iteration limits must be positive integers")
         if not isinstance(self.use_uncertainty, bool):
@@ -259,6 +271,35 @@ def build_parameter_set(
 
 
 @dataclass(frozen=True, slots=True)
+class PawleyJacobian:
+    """Support-block analytical products in scaled free coordinates."""
+
+    _native: object = field(repr=False)
+
+    @property
+    def shape(self) -> tuple[int, int]:
+        """Full-grid sample and free-parameter dimensions."""
+        return self._native.shape
+
+    @property
+    def storage_elements(self) -> int:
+        """Stored derivative and constraint coefficients, excluding integer indices."""
+        return self._native.storage_elements
+
+    def jvp(self, vector: NDArray[np.float64]) -> NDArray[np.float64]:
+        """Apply J to a finite free-coordinate vector."""
+        result = self._native.jvp(_array(vector, "free vector"))
+        result.flags.writeable = False
+        return result
+
+    def vjp(self, vector: NDArray[np.float64]) -> NDArray[np.float64]:
+        """Apply J transpose to a finite full-grid vector."""
+        result = self._native.vjp(_array(vector, "sample vector"))
+        result.flags.writeable = False
+        return result
+
+
+@dataclass(frozen=True, slots=True)
 class PawleyCalculation:
     """Immutable values and analytical Jacobian over scaled free coordinates."""
 
@@ -266,7 +307,8 @@ class PawleyCalculation:
     background_y: NDArray[np.float64]
     intensities: NDArray[np.float64]
     positions: NDArray[np.float64]
-    jacobian: NDArray[np.float64]
+    jacobian: NDArray[np.float64] | None
+    jacobian_operator: PawleyJacobian
     residual: NDArray[np.float64]
     weighted_residual: NDArray[np.float64]
     included: NDArray[np.bool_]
@@ -285,7 +327,7 @@ class PawleyResult:
 
     calculation: PawleyCalculation
     termination_reason: str
-    rank: int
+    rank: int | None
     observed_free_parameters: int
     active_bounds: tuple[int, ...]
     active_width_bounds: bool
@@ -309,6 +351,7 @@ def _calculation(raw):
             value.flags.writeable = False
     fields = PawleyCalculation.__dataclass_fields__
     values = {key: raw[key] for key in fields}
+    values["jacobian_operator"] = PawleyJacobian(values["jacobian_operator"])
     values["inactive_columns"] = tuple(values["inactive_columns"])
     values["unobserved_reflections"] = tuple(values["unobserved_reflections"])
     values["coincident_groups"] = tuple(
@@ -452,7 +495,7 @@ def _record(i, options):
     return json.dumps(
         {
             "format": "phasesmith-pawley",
-            "version": 1,
+            "version": 2,
             "input": i,
             "options": asdict(options),
             "checkpoint": None,

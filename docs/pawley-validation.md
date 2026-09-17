@@ -1,5 +1,35 @@
 # CW Pawley validation and performance
 
+## Matrix-free follow-up
+
+The optional matrix-free solver has dense/product/adjoint comparisons, bounded
+and tied-step tests, multiphase cell/profile recovery, explicit memory limits,
+and exact accepted-checkpoint continuation. Its standalone format-2 controls
+are checked during restart; format-1 dense checkpoints remain readable.
+
+The release-build two-repeat benchmark in
+`validation/results/pawley-20260917-matrix-free-benchmark.json` records median
+0.0394 s for 256 fixed symmetric families, 0.0957 s for 256 FCJ families with
+joint W, and 0.2145 s for 811 fixed symmetric families on 23,003 samples.
+Peak process RSS is 181,174,272 bytes, including Python and returned arrays.
+Both repetitions have exactly equal profiles and accepted histories; relative
+profile errors are below 4e-14. These are synthetic fixed-domain comparisons,
+not replacements for measured convergence. Matrix-free mode omits global rank
+and covariance explicitly. The matching previous dense benchmark required
+14.66 s for the 811-family case and 1.21 GB peak process RSS.
+
+The version-4 acceptance manifest selects this solver while retaining every
+version-2 scientific input, quality threshold and runtime/iteration budget.
+`validation/results/pawley-20260917-matrix-free-acceptance.json` passes both
+measured cases. Sucrose takes 137.27/138.08 seconds, accepts 20 steps, and reaches
+Rwp 0.0660537487 with `support_relative_objective` convergence. This is local
+convergence of the exact hard-truncated objective, not of an infinite-support
+profile. LaB6 takes about 0.015 seconds and reaches Rwp 0.284869293. Both runs
+have identical profiles and accepted histories. Earlier dense failures below
+are historical evidence; they are preserved rather than silently overwritten.
+The combined state after upstream reconciliation still requires revalidation.
+
+
 This implementation targets one fixed-wavelength CW histogram, independent
 family areas and selected joint cell/profile/background variables. It uses the
 existing native CW/FCJ kernels; no GSAS-II runtime is imported. Full live GSAS-II
