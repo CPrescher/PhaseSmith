@@ -70,7 +70,7 @@ fn recovers_overlapping_areas_from_zero_and_reports_covariance() {
     assert_eq!(result.termination_reason, TerminationReason::Converged);
     assert!((result.evaluation.intensities[0] - 3.0).abs() < 1e-7);
     assert!((result.evaluation.intensities[1] - 8.0).abs() < 1e-7);
-    assert_eq!(result.rank, 2);
+    assert_eq!(result.rank, Some(2));
     assert!(result.covariance.is_some());
 }
 #[test]
@@ -81,7 +81,7 @@ fn coincidence_has_rank_one_and_identifiable_sum() {
     );
     let result = refine_pawley(&request, &PawleyOptions::default()).unwrap();
     assert!((result.evaluation.intensities.iter().sum::<f64>() - 11.0).abs() < 1e-7);
-    assert_eq!(result.rank, 1);
+    assert_eq!(result.rank, Some(1));
     assert!(result.covariance.is_none());
 }
 #[test]
@@ -127,7 +127,7 @@ fn explicit_ratio_constraint_removes_ambiguity() {
     let result = refine_pawley(&request, &PawleyOptions::default()).unwrap();
     assert!((result.evaluation.intensities[0] - 3.0).abs() < 1e-7);
     assert!((result.evaluation.intensities[1] - 6.0).abs() < 1e-7);
-    assert_eq!(result.rank, 1);
+    assert_eq!(result.rank, Some(1));
     assert!(result.covariance.is_some());
 }
 #[test]
@@ -141,7 +141,9 @@ fn intensity_columns_are_analytic_at_zero_and_memory_is_bounded() {
     let p = evaluate_pawley(&request, &plus, 20.0, true, 50_000_000).unwrap();
     for i in 0..1201 {
         assert!(
-            ((p.calculated_y[i] - e.calculated_y[i]) / 1e-4 - e.jacobian[(i, 0)]).abs() < 1e-10
+            ((p.calculated_y[i] - e.calculated_y[i]) / 1e-4 - e.jacobian.as_ref().unwrap()[(i, 0)])
+                .abs()
+                < 1e-10
         );
     }
     assert!(evaluate_pawley(&request, &z, 20.0, true, 10).is_err());
@@ -199,8 +201,9 @@ fn support_products_match_dense_and_are_adjoint_with_tied_areas() {
         .collect();
     let jv = op.jvp(&v).unwrap();
     let jtu = op.vjp(&u).unwrap();
-    let dense_jv = &e.jacobian * nalgebra::DVector::from_column_slice(&v);
-    let dense_jtu = e.jacobian.transpose() * nalgebra::DVector::from_column_slice(&u);
+    let dense_jv = e.jacobian.as_ref().unwrap() * nalgebra::DVector::from_column_slice(&v);
+    let dense_jtu =
+        e.jacobian.as_ref().unwrap().transpose() * nalgebra::DVector::from_column_slice(&u);
     for (a, b) in jv.iter().zip(dense_jv.iter()) {
         assert!((a - b).abs() < 2e-14);
     }
@@ -215,7 +218,7 @@ fn support_products_match_dense_and_are_adjoint_with_tied_areas() {
         .collect();
     for (j, norm) in op.column_norms(&weights).unwrap().iter().enumerate() {
         let expected = (0..weights.len())
-            .map(|i| (weights[i] * e.jacobian[(i, j)]).powi(2))
+            .map(|i| (weights[i] * e.jacobian.as_ref().unwrap()[(i, j)]).powi(2))
             .sum::<f64>()
             .sqrt();
         assert!((norm - expected).abs() < 2e-14);
@@ -224,4 +227,189 @@ fn support_products_match_dense_and_are_adjoint_with_tied_areas() {
     assert!(op.vjp(&vec![f64::NAN; op.sample_count()]).is_err());
     assert!(op.column_norms(&vec![-1.0; op.sample_count()]).is_err());
     assert!(op.materialize(1).is_err());
+}
+
+#[test]
+fn hard_support_local_convergence_has_two_sided_objective_evidence() {
+    let mut request = input(vec![40.0], vec![1.0], false);
+    let profile =
+        phasesmith_core::CwProfileParameters::from_instrument(40.0, request.instrument).unwrap();
+    let edge = (40.0 + 20.0 * profile.tch.total_fwhm).next_up();
+    request.pattern = PatternRecord::new(
+        vec![39.8, 40.0, 40.2, edge],
+        Some(vec![0.0; 4]),
+        None,
+        None,
+        None,
+    )
+    .unwrap();
+    request.parameters = ParameterSet::new(
+        request
+            .parameters
+            .specs()
+            .iter()
+            .map(|s| {
+                ParameterSpec::new(
+                    s.key().clone(),
+                    s.value(),
+                    s.unit(),
+                    s.bounds(),
+                    s.scale(),
+                    s.key().name() == "w_deg2",
+                )
+                .unwrap()
+            })
+            .collect(),
+    )
+    .unwrap();
+    let mut observed = calc(&request).calculated_y;
+    observed[1] -= 0.01;
+    request.pattern.observed_y = Some(observed);
+    let options = PawleyOptions::default();
+    let transform = ConstraintTransform::new(request.parameters.clone(), vec![]).unwrap();
+    let free = transform.pack().unwrap();
+    let current = calc(&request);
+    // In this one-width problem the central sample wants a broader peak,
+    // but entering the rightmost sample raises the complete objective.
+    for sign in [-1.0, 1.0] {
+        let mut trial = free.clone();
+        trial[0] += sign * 1e-10;
+        let neighbor = evaluate_pawley(&request, &trial, 20.0, true, 50_000_000).unwrap();
+        assert!(neighbor.residuals.chi_square > current.residuals.chi_square);
+    }
+    let checkpoint = PawleyCheckpoint {
+        input: request.clone(),
+        options: options.clone(),
+        free,
+        chi_square_history: vec![current.residuals.chi_square],
+        damping: options.damping,
+        linear_initialized: true,
+        support_local: true,
+    };
+    let mut runtime = RefinementRuntime::new(RefinementLimits::default(), None).unwrap();
+    let fit =
+        refine_pawley_with_runtime(&request, &options, Some(&checkpoint), &mut runtime).unwrap();
+    assert_eq!(fit.termination_reason, TerminationReason::Converged);
+    assert_eq!(
+        fit.diagnostics.convergence_criterion,
+        Some("support_projected_gradient")
+    );
+    assert!(
+        fit.covariance_limitation
+            .as_ref()
+            .unwrap()
+            .contains("support")
+    );
+    // A downward jump must not be classified as a barrier.
+    let mut changed = request.clone();
+    let tail = profile.tch.evaluate(edge - 40.0).value;
+    changed.pattern.observed_y.as_mut().unwrap()[3] = 2.0 * tail;
+    let point = calc(&changed);
+    let mut checkpoint = checkpoint;
+    checkpoint.input = changed.clone();
+    checkpoint.chi_square_history = vec![point.residuals.chi_square];
+    let mut runtime = RefinementRuntime::new(RefinementLimits::default(), None).unwrap();
+    let fit =
+        refine_pawley_with_runtime(&changed, &options, Some(&checkpoint), &mut runtime).unwrap();
+    assert!(
+        !fit.diagnostics
+            .convergence_criterion
+            .unwrap_or("")
+            .starts_with("support_")
+    );
+    assert!(fit.evaluation.residuals.chi_square < point.residuals.chi_square);
+}
+
+#[test]
+fn simultaneous_support_events_require_non_cancelling_jumps() {
+    let mut request = input(vec![40.0, 60.0], vec![1.0, 1.0], false);
+    let edges: Vec<_> = [40.0, 60.0]
+        .iter()
+        .map(|&p| {
+            let profile =
+                phasesmith_core::CwProfileParameters::from_instrument(p, request.instrument)
+                    .unwrap();
+            (p + 20.0 * profile.tch.total_fwhm).next_up()
+        })
+        .collect();
+    request.pattern = PatternRecord::new(
+        vec![40.0, edges[0], 60.0, edges[1]],
+        Some(vec![0.0; 4]),
+        None,
+        None,
+        None,
+    )
+    .unwrap();
+    request.parameters = ParameterSet::new(
+        request
+            .parameters
+            .specs()
+            .iter()
+            .map(|s| {
+                ParameterSpec::new(
+                    s.key().clone(),
+                    s.value(),
+                    s.unit(),
+                    s.bounds(),
+                    s.scale(),
+                    s.key().name() == "w_deg2",
+                )
+                .unwrap()
+            })
+            .collect(),
+    )
+    .unwrap();
+    let mut observed = calc(&request).calculated_y;
+    observed[0] -= 0.01;
+    observed[2] -= 0.01;
+    request.pattern.observed_y = Some(observed);
+    let options = PawleyOptions {
+        solver: phasesmith_workflows::PawleySolver::MatrixFree,
+        ..PawleyOptions::default()
+    };
+    let free = ConstraintTransform::new(request.parameters.clone(), vec![])
+        .unwrap()
+        .pack()
+        .unwrap();
+    let current = calc(&request);
+    for sign in [-1.0, 1.0] {
+        let mut trial = free.clone();
+        trial[0] += sign * 1e-10;
+        assert!(
+            evaluate_pawley(&request, &trial, 20.0, true, 50_000_000)
+                .unwrap()
+                .residuals
+                .chi_square
+                > current.residuals.chi_square
+        );
+    }
+    let mut checkpoint = PawleyCheckpoint {
+        input: request.clone(),
+        options: options.clone(),
+        free,
+        chi_square_history: vec![current.residuals.chi_square],
+        damping: options.damping,
+        linear_initialized: true,
+        support_local: true,
+    };
+    let mut runtime = RefinementRuntime::new(RefinementLimits::default(), None).unwrap();
+    let fit =
+        refine_pawley_with_runtime(&request, &options, Some(&checkpoint), &mut runtime).unwrap();
+    assert_eq!(
+        fit.diagnostics.convergence_criterion,
+        Some("support_projected_gradient")
+    );
+    // One negative event invalidates certification of the independent jumps.
+    request.pattern.observed_y.as_mut().unwrap()[3] = 1.0;
+    checkpoint.input = request.clone();
+    checkpoint.chi_square_history = vec![calc(&request).residuals.chi_square];
+    let mut runtime = RefinementRuntime::new(RefinementLimits::default(), None).unwrap();
+    let fit =
+        refine_pawley_with_runtime(&request, &options, Some(&checkpoint), &mut runtime).unwrap();
+    assert!(
+        !fit.diagnostics
+            .convergence_criterion
+            .unwrap_or("")
+            .starts_with("support_")
+    );
 }

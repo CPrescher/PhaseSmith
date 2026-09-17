@@ -80,10 +80,29 @@ def _keys(value, expected, name):
 def validate_manifest(manifest):
     """Reject unsupported contracts rather than silently ignoring controls."""
     _keys(manifest, {"schema_version", "scope", "common", "datasets"}, "manifest")
-    if manifest["schema_version"] not in (2, 3):
-        raise ValueError("use an explicit version-2 or version-3 Pawley acceptance manifest")
+    if manifest["schema_version"] not in (2, 3, 4):
+        raise ValueError(
+            "use an explicit version-2, version-3 or version-4 Pawley acceptance manifest"
+        )
     common = manifest["common"]
-    _keys(common, _COMMON, "common")
+    _keys(
+        common,
+        _COMMON
+        | (
+            {"solver", "linear_tolerance", "max_linear_iterations"}
+            if manifest["schema_version"] == 4
+            else set()
+        ),
+        "common",
+    )
+    if manifest["schema_version"] == 4:
+        if common["solver"] not in ("dense", "matrix_free"):
+            raise ValueError("invalid Pawley solver")
+        if type(common["max_linear_iterations"]) is not int or common["max_linear_iterations"] < 1:
+            raise ValueError("max_linear_iterations must be a positive integer")
+        value = common["linear_tolerance"]
+        if isinstance(value, bool) or not np.isfinite(value) or value <= 0:
+            raise ValueError("linear_tolerance must be finite and positive")
     for name in ("signed_intensities", "use_uncertainty", "merge_friedel"):
         if type(common[name]) is not bool:
             raise ValueError(f"{name} must be boolean")
@@ -124,7 +143,7 @@ def validate_manifest(manifest):
     if not isinstance(manifest["datasets"], dict) or not manifest["datasets"]:
         raise ValueError("datasets must be a nonempty object")
     for dataset, gate in manifest["datasets"].items():
-        _keys(gate, _DATASET | ({"lattice"} if manifest["schema_version"] == 3 else set()), dataset)
+        _keys(gate, _DATASET | ({"lattice"} if manifest["schema_version"] >= 3 else set()), dataset)
         if Path(gate["data_file"]).name != gate["data_file"]:
             raise ValueError("data_file must be a verified dataset basename")
         if type(gate["max_iterations"]) is not int or gate["max_iterations"] < 1:
@@ -193,7 +212,15 @@ def _options(gate, common):
         "max_active_iterations",
         "use_uncertainty",
     )
-    return PawleyOptions(support_fwhm=gate["support_fwhm"], **{k: common[k] for k in names})
+    return PawleyOptions(
+        support_fwhm=gate["support_fwhm"],
+        **{k: common[k] for k in names},
+        **{
+            k: common[k]
+            for k in ("solver", "linear_tolerance", "max_linear_iterations")
+            if k in common
+        },
+    )
 
 
 def build_request(dataset_id, directory, gate, common):

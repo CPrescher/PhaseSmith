@@ -9,7 +9,8 @@ use crate::{
 use nalgebra::{DMatrix, DVector};
 use phasesmith_core::{
     ConstantWavelengthInstrument, CwReflectionBatchView, FcjGeometry, GridView, SupportPolicy,
-    accumulate_cw_batch, accumulate_cw_fcj_batch,
+    WavelengthComponentsView, accumulate_cw_batch, accumulate_cw_fcj_batch,
+    cw_components_support_samples,
 };
 use phasesmith_model::PatternRecord;
 use std::collections::BTreeSet;
@@ -274,7 +275,7 @@ pub struct PawleyEvaluation {
     /// Current ideal positions in phase/reflection order.
     pub positions: Vec<f64>,
     /// Dense Jacobian over scaled free variables, including masked samples.
-    pub jacobian: DMatrix<f64>,
+    pub jacobian: Option<DMatrix<f64>>,
     /// Support-block products from the same analytical evaluation pass.
     pub jacobian_operator: PawleyJacobian,
     /// Weighted masked residuals and agreement factors.
@@ -298,6 +299,21 @@ pub fn evaluate_pawley(
     use_uncertainty: bool,
     max_elements: usize,
 ) -> Result<PawleyEvaluation, PawleyError> {
+    evaluate_pawley_with_storage(input, free, support, use_uncertainty, max_elements, true)
+}
+/// Evaluate with optional dense materialization; products always remain available.
+///
+/// # Errors
+/// Rejects invalid models and workspaces above the explicit element ceiling.
+#[allow(clippy::too_many_lines)]
+pub fn evaluate_pawley_with_storage(
+    input: &PawleyInput,
+    free: &[f64],
+    support: f64,
+    use_uncertainty: bool,
+    max_elements: usize,
+    dense: bool,
+) -> Result<PawleyEvaluation, PawleyError> {
     input.validate()?;
     let transform = ConstraintTransform::new(input.parameters.clone(), input.constraints.clone())
         .map_err(err)?;
@@ -316,7 +332,7 @@ pub fn evaluate_pawley(
         .and_then(|v| v.checked_add(p.checked_mul(k)?))
         .and_then(|v| v.checked_add(k.checked_mul(k)?.checked_mul(8)?))
         .ok_or_else(|| err("size overflow"))?;
-    if allocation > max_elements {
+    if dense && allocation > max_elements {
         return Err(err("Pawley dense memory element limit exceeded"));
     }
     let get = |family, owner: &str, name: &str| -> Result<f64, PawleyError> {
@@ -365,6 +381,36 @@ pub fn evaluate_pawley(
     }
     let grid = GridView::new(&input.pattern.x_deg).map_err(err)?;
     let batch = CwReflectionBatchView::new(&positions, &intensities).map_err(err)?;
+    if !dense {
+        let wavelengths = [instrument.wavelength_angstrom];
+        let weights = [1.0];
+        let components = WavelengthComponentsView::new(&wavelengths, &weights).map_err(err)?;
+        let active = cw_components_support_samples(
+            grid,
+            batch,
+            instrument,
+            components,
+            input.axial.unwrap_or(FcjGeometry {
+                sample_over_radius: 0.0,
+                detector_over_radius: 0.0,
+            }),
+            SupportPolicy::FwhmMultiple(support),
+        )
+        .map_err(err)?;
+        // Native local pairs plus stored areas, global columns, constraint chain,
+        // general coupled-face workspace and two accepted/trial evaluations.
+        let allocation = active
+            .checked_mul(6)
+            .and_then(|v| {
+                v.checked_add(n.checked_mul((p - reflections).checked_mul(2)?.checked_add(24)?)?)
+            })
+            .and_then(|v| v.checked_add(p.checked_mul(k)?.checked_mul(8)?))
+            .and_then(|v| v.checked_add(k.checked_mul(k)?.checked_mul(16)?))
+            .ok_or_else(|| err("size overflow"))?;
+        if allocation > max_elements {
+            return Err(err("Pawley product memory element limit exceeded"));
+        }
+    }
     let accumulation = match input.axial {
         Some(geometry) => accumulate_cw_fcj_batch(
             grid,
@@ -461,14 +507,24 @@ pub fn evaluate_pawley(
         .collect();
     let chain = transform.derivative_matrix().map_err(err)?;
     let jacobian_operator = PawleyJacobian::new(n, k, physical, &chain.values)?;
-    let jacobian = jacobian_operator.materialize(max_elements)?;
-    let inactive_columns: Vec<usize> = (0..k)
-        .filter(|&j| {
-            (0..n).all(|i| {
-                input.pattern.mask.as_ref().is_some_and(|m| !m[i]) || jacobian[(i, j)] == 0.0
-            })
+    let jacobian = dense
+        .then(|| jacobian_operator.materialize(max_elements))
+        .transpose()?;
+    let weights: Vec<f64> = (0..n)
+        .map(|i| {
+            if input.pattern.mask.as_ref().is_some_and(|m| !m[i]) {
+                0.0
+            } else {
+                1.0
+            }
         })
         .collect();
+    let inactive_columns = jacobian_operator
+        .column_norms(&weights)?
+        .iter()
+        .enumerate()
+        .filter_map(|(i, v)| (*v == 0.0).then_some(i))
+        .collect::<Vec<_>>();
     let residuals = evaluate_residuals(
         &input.pattern,
         &calculated_y,
@@ -526,7 +582,11 @@ pub(crate) fn weighted(
     evaluation: &PawleyEvaluation,
     uncertainty: bool,
 ) -> (DMatrix<f64>, DVector<f64>) {
-    let mut j = evaluation.jacobian.clone();
+    let mut j = evaluation
+        .jacobian
+        .as_ref()
+        .expect("dense evaluator required")
+        .clone();
     for i in 0..j.nrows() {
         let w = if !evaluation.residuals.included[i] {
             0.0

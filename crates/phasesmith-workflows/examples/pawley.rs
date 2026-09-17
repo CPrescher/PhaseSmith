@@ -42,7 +42,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     input.parameters = pawley_parameters(&input.phases, instrument, None, false)?;
     let fit = refine_pawley(&input, &PawleyOptions::default())?;
     println!(
-        "{}: areas={:?}, Rwp={:.8}, rank={}",
+        "{}: areas={:?}, Rwp={:.8}, rank={:?}",
         fit.termination_reason.as_str(),
         fit.evaluation.intensities,
         fit.evaluation.residuals.rwp,

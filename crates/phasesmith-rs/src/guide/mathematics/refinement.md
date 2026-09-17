@@ -181,8 +181,17 @@ are stored only over their native contiguous support; profile, cell and
 background columns use full-grid storage. `PawleyJacobian` applies `J v` and
 `J^T u` through these columns and the sparse constraint chain. Its adjoint and
 weighted column norms are tested against dense materialization, including ties
-and unobserved columns. The current optimizer still materializes the free
-Jacobian and uses dense QR; support products alone are not a matrix-free solver.
+and unobserved columns. Optional matrix-free mode uses these products directly.
+Let `N` contain column norms of `W J_physical D`, and `K = W J_physical D N^-1`.
+On each active constraint face, projected preconditioned CG solves
+`P (K^T K + damping I) P z = -P (K^T r + H particular)`.
+`P` is applied through coordinate selection or a twice-reorthogonalized SVD row
+space; neither a dense projector nor the observation-by-free matrix is formed.
+The recomputed residual must satisfy `linear_tolerance * (1 + initial_norm)`.
+Diagonal 32-column Gram blocks, stabilized by `max(damping, 0.01) I`, serve only
+as a preconditioner. The checked operator retains the requested damping.
+Euclidean projected-gradient checks use direct tangent projection, not QR of
+an identity matrix. Quadratic constraint workspace remains explicitly bounded.
 
 The position derivative includes the position dependence of CW widths and FCJ
 shape. Finite-support endpoints follow the native kernel; no observed-grid
@@ -214,14 +223,45 @@ steps decrease damping by four. The hard-support objective can be discontinuous,
 so neither this damping rule nor a good Rwp guarantees convergence. Stagnation
 and budget exhaustion remain unsuccessful stops.
 
+For symmetric fixed-position CW profiles, the optimizer can identify local
+barriers at moving hard-support cutoffs. If a sample enters or leaves a unit
+profile, its weighted residual changes by `delta = +/- A p / sigma`. Its exact
+finite objective jump is `2 r delta + delta²`; the smooth Jacobian does not
+include this discontinuity. A strictly positive jump excludes that crossing
+from infinitesimal descent. The support-radius gradient adds the corresponding
+one-sided inequality to the local feasible cone. Several events are certified
+only if their sample sets are disjoint and none has a negative jump; otherwise
+ordinary line search continues without this certificate. Coincident profiles
+are combined before evaluating a jump.
+
+Event detection uses a roundoff-sized geometric interval and additionally
+requires the parameter distance to lie within the requested normalized step
+tolerance. Nonlinear radius constraints are retracted together by an analytical
+Newton correction, then the original physical validation and full objective
+are checked again. A newly entered local support face resets damping to its
+initial value. Heavy backtracking can bisect its final improving interval,
+retaining only states that decrease the full objective; this avoids spending
+many outer steps approaching a discontinuity asymptotically.
+
+Convergence on such a face is explicitly identified by a `support_` criterion.
+It means local stationarity for this discontinuous finite-support objective,
+not stationarity of an untruncated profile or a global optimum. The same step,
+projected-gradient and relative-objective tolerances apply. Gaussian covariance
+is omitted at a support boundary. Axial profiles, moving peak positions,
+interacting sample jumps and negative-jump combinations are not certified by
+this local treatment. None of these rules changes profile values, support
+endpoints or observation weights.
+
 Rank is measured from the undamped weighted normalized Jacobian. Exactly
 coincident families report their total area and identities; their individual
 split is not identifiable. Unobserved columns retain their accepted value.
 Covariance is available only at converged interior full-rank solutions with
 positive residual degrees of freedom; active width or parameter boundaries
 suppress it. Covariance lives in scaled free coordinates and follows the `D`
-propagation above. Dense allocation is explicitly bounded; matrix-free Pawley
-and wavelength spectra/TOF are later extensions.
+propagation above. Matrix-free mode reports neither global numerical rank nor
+covariance; observed-column counts and exact-coincidence diagnostics remain.
+Allocation is explicitly bounded in both modes. Wavelength spectra/TOF are
+later extensions.
 
 Methodological source: G. S. Pawley, *J. Appl. Cryst.* **14**, 357–361 (1981),
 [doi:10.1107/S0021889881009618](https://doi.org/10.1107/S0021889881009618).

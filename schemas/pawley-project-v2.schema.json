@@ -1,0 +1,703 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://phasesmith.readthedocs.io/schemas/pawley-project-v2.schema.json",
+  "title": "PhaseSmith standalone CW Pawley project version 2",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "format": {
+      "const": "phasesmith-pawley"
+    },
+    "version": {
+      "const": 2
+    },
+    "input": {
+      "$ref": "#/$defs/input"
+    },
+    "options": {
+      "$ref": "#/$defs/options"
+    },
+    "checkpoint": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/checkpoint"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "format",
+    "version",
+    "input",
+    "options",
+    "checkpoint"
+  ],
+  "$defs": {
+    "parameter": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "key": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "value": {
+          "type": "number"
+        },
+        "unit": {
+          "type": "string"
+        },
+        "lower": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "upper": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "scale": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "refine": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "key",
+        "value",
+        "unit",
+        "lower",
+        "upper",
+        "scale",
+        "refine"
+      ]
+    },
+    "constraint": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "fixed"
+            },
+            "target": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "minItems": 3,
+              "maxItems": 3
+            },
+            "value": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "type",
+            "target",
+            "value"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "affine"
+            },
+            "target": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "minItems": 3,
+              "maxItems": 3
+            },
+            "source": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "minItems": 3,
+              "maxItems": 3
+            },
+            "multiplier": {
+              "type": "number"
+            },
+            "offset": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "type",
+            "target",
+            "source",
+            "multiplier",
+            "offset"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "linear"
+            },
+            "target": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "minItems": 3,
+              "maxItems": 3
+            },
+            "terms": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "prefixItems": [
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "minItems": 3,
+                    "maxItems": 3
+                  },
+                  {
+                    "type": "number"
+                  }
+                ],
+                "minItems": 2,
+                "maxItems": 2
+              }
+            },
+            "offset": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "type",
+            "target",
+            "terms",
+            "offset"
+          ]
+        }
+      ]
+    },
+    "background": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "polynomial"
+            },
+            "id": {
+              "type": "string"
+            },
+            "coefficients": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            }
+          },
+          "required": [
+            "type",
+            "id",
+            "coefficients"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "chebyshev"
+            },
+            "id": {
+              "type": "string"
+            },
+            "coefficients": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            },
+            "domain_deg": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "maxItems": 2
+            }
+          },
+          "required": [
+            "type",
+            "id",
+            "coefficients",
+            "domain_deg"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "point"
+            },
+            "id": {
+              "type": "string"
+            },
+            "knot_x": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            },
+            "values": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            }
+          },
+          "required": [
+            "type",
+            "id",
+            "knot_x",
+            "values"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "composite"
+            },
+            "id": {
+              "type": "string"
+            },
+            "components": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/background"
+              }
+            }
+          },
+          "required": [
+            "type",
+            "id",
+            "components"
+          ]
+        }
+      ]
+    },
+    "domain": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "cell": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 6,
+          "maxItems": 6
+        },
+        "operations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "rotation": {
+                "type": "array",
+                "items": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer"
+                  },
+                  "minItems": 3,
+                  "maxItems": 3
+                },
+                "minItems": 3,
+                "maxItems": 3
+              },
+              "translation": {
+                "type": "array",
+                "items": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer"
+                  },
+                  "minItems": 2,
+                  "maxItems": 2
+                },
+                "minItems": 3,
+                "maxItems": 3
+              }
+            },
+            "required": [
+              "rotation",
+              "translation"
+            ]
+          }
+        },
+        "lower": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        },
+        "upper": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        },
+        "wavelength_angstrom": {
+          "type": "number"
+        },
+        "visible_two_theta_deg": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "initial_intensity": {
+          "type": "number"
+        },
+        "merge_friedel": {
+          "type": "boolean"
+        },
+        "max_candidates": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "guard_scale": {
+          "type": "number",
+          "minimum": 1
+        }
+      },
+      "required": [
+        "cell",
+        "operations",
+        "lower",
+        "upper",
+        "wavelength_angstrom",
+        "visible_two_theta_deg",
+        "initial_intensity",
+        "merge_friedel",
+        "max_candidates",
+        "guard_scale"
+      ]
+    },
+    "phase": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "reflection_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "two_theta_deg": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        },
+        "intensities": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        },
+        "hkl": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            },
+            "minItems": 3,
+            "maxItems": 3
+          }
+        },
+        "lattice": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/domain"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "reflection_ids",
+        "two_theta_deg",
+        "intensities",
+        "hkl",
+        "lattice"
+      ]
+    },
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "x_deg": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        },
+        "observed_y": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "uncertainty": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "mask": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "boolean"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "background_y": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        },
+        "instrument": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 6,
+          "maxItems": 6
+        },
+        "axial": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "maxItems": 2
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "phases": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/phase"
+          }
+        },
+        "background": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/background"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "signed_intensities": {
+          "type": "boolean"
+        },
+        "parameters": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/parameter"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "constraints": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/constraint"
+          }
+        }
+      },
+      "required": [
+        "x_deg",
+        "observed_y",
+        "uncertainty",
+        "mask",
+        "background_y",
+        "instrument",
+        "axial",
+        "phases",
+        "background",
+        "signed_intensities",
+        "parameters",
+        "constraints"
+      ]
+    },
+    "options": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "support_fwhm": {
+          "type": "number"
+        },
+        "use_uncertainty": {
+          "type": "boolean"
+        },
+        "max_elements": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "rank_tolerance": {
+          "type": "number"
+        },
+        "tolerance": {
+          "type": "number"
+        },
+        "damping": {
+          "type": "number"
+        },
+        "max_active_iterations": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "solver": {
+          "enum": [
+            "dense",
+            "matrix_free"
+          ]
+        },
+        "linear_tolerance": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "exclusiveMaximum": 1
+        },
+        "max_linear_iterations": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "required": [
+        "support_fwhm",
+        "use_uncertainty",
+        "max_elements",
+        "rank_tolerance",
+        "tolerance",
+        "damping",
+        "max_active_iterations"
+      ]
+    },
+    "checkpoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "request_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "linear_initialized": {
+          "type": "boolean"
+        },
+        "free": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        },
+        "chi_square_history": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        },
+        "damping": {
+          "type": "number"
+        },
+        "support_local": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "request_sha256",
+        "linear_initialized",
+        "free",
+        "chi_square_history",
+        "damping"
+      ]
+    }
+  }
+}

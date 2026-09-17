@@ -60,6 +60,7 @@ mod parameters;
 mod pawley;
 mod pawley_operator;
 mod pawley_solver;
+mod pawley_support;
 pub use pawley_operator::PawleyJacobian;
 mod phase_scale_estimation;
 mod profile_estimation;
@@ -236,9 +237,9 @@ pub use tof_structural_project::{
 
 pub use pawley::{
     PAWLEY_PROFILE_NAMES, PawleyCoincidentGroup, PawleyError, PawleyEvaluation, PawleyInput,
-    PawleyPhase, evaluate_pawley, pawley_key, pawley_parameters,
+    PawleyPhase, evaluate_pawley, evaluate_pawley_with_storage, pawley_key, pawley_parameters,
 };
 pub use pawley_solver::{
-    PawleyCheckpoint, PawleyDiagnostics, PawleyOptions, PawleyResult, refine_pawley,
+    PawleyCheckpoint, PawleyDiagnostics, PawleyOptions, PawleyResult, PawleySolver, refine_pawley,
     refine_pawley_with_runtime,
 };
