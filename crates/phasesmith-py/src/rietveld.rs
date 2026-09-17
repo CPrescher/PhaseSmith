@@ -416,7 +416,7 @@ pub(super) struct NativeRietveldRequest {
 /// Thread-safe native cancellation shared with a detached solver call.
 #[pyclass(name = "_RietveldCancellation")]
 pub(super) struct NativeRietveldCancellation {
-    token: CancellationToken,
+    pub(super) token: CancellationToken,
 }
 
 #[pymethods]

@@ -58,6 +58,13 @@ and the proposed capability development sequence.
 - [Public Python architecture](public-api.md)
 - [Native Rust API and GUI integration](rust-api.md)
 
+## Pawley refinement
+
+- [CW Pawley user guide](pawley.md) — bounded family areas, joint cell/profile
+  refinement, diagnostics and restart.
+- [Pawley validation](pawley-validation.md) and
+  [implementation roadmap](pawley-plan.md), including deferred spectra/TOF.
+
 ## Validation and performance
 
 - [Refinement performance improvements](refinement-performance-round2.md) —

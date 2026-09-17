@@ -12,6 +12,19 @@ not part of the numerical library.
 
 ## Current implementation status
 
+The first CW Pawley implementation now provides native bounded least-squares
+family areas, joint analytical cell/profile/background derivatives, exact
+parameter ties, rank/overlap/bound diagnostics, cancellation and accepted-state
+restart, a NumPy facade and standalone version-1 JSON persistence. See
+`docs/pawley.md` and `docs/pawley-validation.md` for the tested scope and remaining
+scientific gates. Neutron validation passes; the 811-family sucrose case meets
+quality thresholds but reaches its time budget before convergence, so the full
+large-data release gate remains open. This bounded dense solver precedes matrix-free
+Pawley. Mixed-method bundle integration, fixed spectra, TOF and live GSAS-II
+optimizer parity remain deferred. The standalone format avoids changing existing
+project schemas. Original-checkout uncommitted work remains separate and needs
+reconciliation before merging. `docs/pawley-plan.md` records these deviations.
+
 The second refinement performance pass batches four FCJ sample evaluations
 without reordering any sample's quadrature sum, assembles selected structural
 Jacobian rows contiguously, and reuses a unit-scale profile basis for native

@@ -144,3 +144,12 @@ explicit top-level, I/O, refinement, integration, oracle, and validation
 exports. Run `python scripts/public_api_snapshot.py --check` to compare it with
 the installed package; any name, target, kind, or callable-signature change is
 reported as a unified diff.
+
+## CW Pawley workflow
+
+[CW Pawley refinement](pawley.md) provides independent bounded family areas,
+selected analytical cell/profile/background refinement and accepted-state restart.
+Use `phasesmith.refinement.pawley` in Python or `phasesmith::workflows` in Rust.
+Its [standalone version-1 JSON format](pawley.md#runtime-and-persistence) is separate
+from existing mixed-method project bundles. See the [validation report](pawley-validation.md)
+for current scientific coverage and limitations.

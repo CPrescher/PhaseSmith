@@ -51,6 +51,11 @@
 //! produce stable JSON summaries without exposing internal wire records.
 
 mod arrays;
+mod pawley;
+pub use pawley::{
+    PawleyProject, decode_pawley_project, encode_pawley_project, load_pawley_project,
+    save_pawley_project,
+};
 mod report;
 mod rietveld_wire;
 mod tof_multibank_wire;

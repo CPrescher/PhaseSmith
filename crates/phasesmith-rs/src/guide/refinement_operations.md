@@ -175,3 +175,14 @@ termination reason and weighting convention alongside Rwp or chi-square.
 
 For a complete measured-data construction leading into these operations, see
 [`crate::guide::real_data_rietveld`].
+
+## Pawley family-area refinement
+
+[`crate::workflows::refine_pawley`] fits independent family areas without an
+atomic model; [`crate::workflows::refine_pawley_with_runtime`] accepts the shared
+runtime for cancellation, limits and checkpoint events. The returned accepted
+checkpoint binds the full input and numerical controls. Inspect rank, active
+parameter/width bounds and covariance limitations before interpreting areas.
+[`crate::persistence::PawleyProject`] uses standalone version-1 finite JSON,
+separate from mixed-method bundles. The workflow-crate `pawley` example runs
+without Python. Only fixed-wavelength CW and fixed axial geometry are supported.

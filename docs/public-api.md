@@ -552,3 +552,12 @@ continuation, and a progress callback receiving plain event dictionaries. The
 result reports its stable termination reason and the last accepted checkpoint.
 Callback delivery occurs only at orchestration boundaries; no Python code runs
 inside the reflection/sample loop.
+
+## CW Pawley workflow
+
+[CW Pawley refinement](pawley.md) provides independent bounded family areas,
+selected analytical cell/profile/background refinement and accepted-state restart.
+Use `phasesmith.refinement.pawley` in Python or `phasesmith::workflows` in Rust.
+Its [standalone version-1 JSON format](pawley.md#runtime-and-persistence) is separate
+from existing mixed-method project bundles. See the [validation report](pawley-validation.md)
+for current scientific coverage and limitations.
