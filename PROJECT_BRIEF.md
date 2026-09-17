@@ -12,6 +12,13 @@ not part of the numerical library.
 
 ## Current implementation status
 
+The live pinned GSAS-II Pawley optimizer comparison now covers fixed-cell and
+six-cell-parameter fits with 53 families, isolated areas and overlap sums.
+The revision-gated initializer, immutable fixture, compiled-binary provenance
+and executable comparison are committed separately from production code.
+Declared engineering agreement checks pass; a stricter 1e-5 profile-equivalence
+check remains false and is explicitly documented as a profile-model exception.
+
 Native project format 6 now adds typed Pawley analysis ownership and a lossless
 mixed-method `ProjectBundle` API. Shared histogram arrays are stored once;
 cell-only Pawley domains require no atom models. All existing native analysis
@@ -31,7 +38,7 @@ positive finite cutoff jumps define one-sided feasible directions, with
 conservative exclusions for interacting or cancelling events. Support values
 and endpoints are unchanged. Matrix-free mode omits global rank/covariance;
 dense mode remains the small-problem reference. The separate measured LaB6
-cell/profile gate passes at Rwp 0.2184. Fixed spectra, TOF and live GSAS-II optimizer comparison remain unfinished, and the
+cell/profile gate passes at Rwp 0.2184. Fixed spectra and TOF remain unfinished, and the
 latest upstream numerical work is reconciled; combined-state validation follows.
 See `docs/pawley.md`, `docs/pawley-validation.md` and the completion audit.
 
