@@ -532,8 +532,12 @@ pub fn refine_general_rietveld_with_runtime(
             objective,
         )) = accepted
         else {
-            damping *= options.damping_increase;
+            // Rejected trials do not change the accepted state or its Jacobian.
+            // Recover a useful regularization scale without traversing decades
+            // below the caller's initial damping after a long accepted sequence.
+            damping = (damping * options.damping_increase).max(options.initial_damping);
             if termination == TerminationReason::MaxIterations {
+                prepared_objective = Some(objective);
                 continue;
             }
             break;

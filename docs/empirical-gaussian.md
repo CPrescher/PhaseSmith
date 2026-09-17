@@ -197,3 +197,7 @@ preceding run. Reproduce with `benchmarks/empirical_gaussian_scaling.py
 in the same environment and with the three numerical-library thread limits
 set to one. The raw record contains all samples, stage limits and results.
 See also [rietx multicore](rietx-multicore.md) for the forced-thread control.
+
+Later [rejected-step recovery improvements](refinement-quality-recovery.md)
+compare this same converged model at unchanged numerical settings. The timing
+tables above describe the preceding solver build.

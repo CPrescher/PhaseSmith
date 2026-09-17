@@ -1,6 +1,7 @@
 //! Thin Python adapter for the application-neutral native Rietveld workflow.
 
 use std::collections::BTreeMap;
+use std::sync::{Arc, Mutex};
 
 use npy::ndarray::Array2;
 use npy::{IntoPyArray, PyArray1, PyArray2, PyReadonlyArray1};
@@ -16,13 +17,14 @@ use phasesmith_persistence::{
 use phasesmith_workflows::{
     AffineConstraint, AmorphousBackground, AmorphousPeak, BackgroundModel, CancellationToken,
     ChebyshevBackground, CompositeBackground, Constraint, DEFAULT_MAX_LINEARIZATION_ELEMENTS,
-    FixedConstraint, LatticeBounds, LatticeParameterization, LatticeReflectionDomain,
-    LinearConstraint, LinearTerm, ParameterKey, ParameterSet, PointBackground,
-    PolynomialBackground, RefinementLimits, RietveldAnalysis, RietveldCalculationOptions,
-    RietveldCovarianceOptions, RietveldGeneralCheckpoint, RietveldGeneralRefinementResult,
-    RietveldInput, RietveldInstrumentParameter, RietveldParameterSelection, RietveldPhase,
-    RietveldProjectState, RietveldRefinementOptions, RietveldSamplePhysicsModel,
-    RietveldStructuralSelection, calculate_rietveld_pattern, refine_general_rietveld,
+    DiagnosticValue, FixedConstraint, LatticeBounds, LatticeParameterization,
+    LatticeReflectionDomain, LinearConstraint, LinearTerm, ParameterKey, ParameterSet,
+    PointBackground, PolynomialBackground, RefinementEvent, RefinementLimits, RefinementRuntime,
+    RietveldAnalysis, RietveldCalculationOptions, RietveldCovarianceOptions,
+    RietveldGeneralCheckpoint, RietveldGeneralRefinementResult, RietveldInput,
+    RietveldInstrumentParameter, RietveldParameterSelection, RietveldPhase, RietveldProjectState,
+    RietveldRefinementOptions, RietveldSamplePhysicsModel, RietveldStructuralSelection,
+    calculate_rietveld_pattern, refine_general_rietveld, refine_general_rietveld_with_runtime,
 };
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
@@ -32,6 +34,8 @@ use super::{
     NativeExecutionPolicy, NativeStructuralPhase, axial_geometry, bool_slice, contiguous_slice,
     cw_instrument, position_correction,
 };
+
+type PyTraceRecord = (String, usize, usize, usize, f64, Option<f64>, String);
 
 type PyParameterRecord = (String, String, String, f64, String, f64, f64, f64, bool);
 type PyKeyRecord = (String, String, String);
@@ -634,11 +638,13 @@ impl NativeRietveldRequest {
         Ok(())
     }
 
+    #[pyo3(signature = (cancellation, checkpoint, *, trace=false))]
     fn refine(
         &self,
         py: Python<'_>,
         cancellation: Option<PyRef<'_, NativeRietveldCancellation>>,
         checkpoint: Option<PyRef<'_, NativeRietveldCheckpoint>>,
+        trace: bool,
     ) -> PyResult<NativeRietveldResult> {
         let input = self.input.clone();
         let selection = self.selection.clone();
@@ -648,18 +654,59 @@ impl NativeRietveldRequest {
         let covariance = self.covariance;
         let cancellation = cancellation.map(|value| value.token.clone());
         let checkpoint = checkpoint.map(|value| value.checkpoint.clone());
-        let (result, phase_diagnostics) = py
+        let (result, phase_diagnostics, trace_records) = py
             .detach(move || {
-                let result = refine_general_rietveld(
-                    &input,
-                    &selection,
-                    &bounds,
-                    &constraints,
-                    &options,
-                    covariance,
-                    checkpoint.as_ref(),
-                    cancellation,
-                )?;
+                // Optional native-only benchmark trace: no Python callbacks and no
+                // nondeterministic timing fields in numerical history/checkpoints.
+                let records = Arc::new(Mutex::new(Vec::<PyTraceRecord>::new()));
+                let result = if trace {
+                    let sink = Arc::clone(&records);
+                    let mut runtime = RefinementRuntime::new(options.limits, cancellation)?;
+                    runtime.set_event_sink(move |event: &RefinementEvent| {
+                        let objective = event.diagnostics().iter().find_map(|(name, value)| {
+                            if name == "objective" {
+                                if let DiagnosticValue::Float(value) = value {
+                                    return Some(*value);
+                                }
+                            }
+                            None
+                        });
+                        sink.lock().map_err(|error| error.to_string())?.push((
+                            event.kind().as_str().to_owned(),
+                            event.attempted_iteration(),
+                            event.accepted_iterations(),
+                            event.evaluations(),
+                            event.elapsed_seconds(),
+                            objective,
+                            event.message().to_owned(),
+                        ));
+                        Ok(())
+                    });
+                    refine_general_rietveld_with_runtime(
+                        &input,
+                        &selection,
+                        &bounds,
+                        &constraints,
+                        &options,
+                        covariance,
+                        checkpoint.as_ref(),
+                        &mut runtime,
+                    )?
+                } else {
+                    refine_general_rietveld(
+                        &input,
+                        &selection,
+                        &bounds,
+                        &constraints,
+                        &options,
+                        covariance,
+                        checkpoint.as_ref(),
+                        cancellation,
+                    )?
+                };
+                let trace_records = records
+                    .lock()
+                    .map_or_else(|_| Vec::new(), |records| records.clone());
                 // Selected solver profiles omit fixed axial rows. Materialize those
                 // only for final diagnostics; scale bases already carry complete rows.
                 let complete = input.axial_geometry.is_none()
@@ -689,12 +736,14 @@ impl NativeRietveldRequest {
                 Ok::<_, phasesmith_workflows::RietveldGeneralRefinementError>((
                     result,
                     phase_diagnostics,
+                    trace_records,
                 ))
             })
             .map_err(value_error)?;
         Ok(NativeRietveldResult {
             result,
             phase_diagnostics,
+            trace_records,
         })
     }
 
@@ -852,10 +901,15 @@ impl NativeStoredRietveldProject {
 pub(super) struct NativeRietveldResult {
     result: RietveldGeneralRefinementResult,
     phase_diagnostics: Vec<phasesmith_engine::StructuralPatternResult>,
+    trace_records: Vec<PyTraceRecord>,
 }
 
 #[pymethods]
 impl NativeRietveldResult {
+    fn trace_records(&self) -> Vec<PyTraceRecord> {
+        self.trace_records.clone()
+    }
+
     fn checkpoint(&self) -> NativeRietveldCheckpoint {
         NativeRietveldCheckpoint {
             checkpoint: self.result.checkpoint.clone(),

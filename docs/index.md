@@ -63,6 +63,9 @@ and the proposed capability development sequence.
 
 ## Validation and performance
 
+- [Quality-first recovery](refinement-quality-recovery.md) — fixed-quality
+  convergence benchmarks and retained-state damping recovery.
+
 - [Powder Friedel averaging](powder-friedel.md) — corrected anomalous powder
   intensities and analytical derivatives; individual-reflection API semantics.
 - [Choosing profile accuracy](profile-accuracy.md) — explicit FCJ quadrature
