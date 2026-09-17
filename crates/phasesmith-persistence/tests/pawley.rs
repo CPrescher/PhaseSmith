@@ -28,6 +28,7 @@ fn native_roundtrip_and_digest_checks() {
     let x: Vec<f64> = (0..1001).map(|i| 39.0 + f64::from(i) * 0.002).collect();
     let pattern = PatternRecord::new(x, Some(vec![0.0; 1001]), None, None, None).unwrap();
     let input = PawleyInput {
+        fixed_spectrum: None,
         pattern,
         instrument,
         phases,

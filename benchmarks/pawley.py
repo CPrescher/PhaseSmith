@@ -14,6 +14,7 @@ from time import perf_counter
 import numpy as np
 from phasesmith import ConstantWavelengthInstrument, PowderPattern, _core
 from phasesmith.instrument import FcjGeometry
+from phasesmith.radiation import WavelengthComponents
 from phasesmith.refinement.pawley import (
     PawleyInput,
     PawleyOptions,
@@ -24,7 +25,7 @@ from phasesmith.refinement.pawley import (
 )
 
 
-def run_case(reflections, samples, axial, joint, repeats, solver="dense"):
+def run_case(reflections, samples, axial, joint, repeats, solver="dense", spectrum=False):
     x = np.linspace(10.0, 90.0, samples)
     positions = np.linspace(12.0, 88.0, reflections)
     # Adjacent pairs overlap heavily without being exactly coincident.
@@ -42,6 +43,7 @@ def run_case(reflections, samples, axial, joint, repeats, solver="dense"):
         instrument,
         phases,
         axial_geometry=FcjGeometry(0.002, 0.002) if axial else None,
+        fixed_spectrum=WavelengthComponents([1.54, 1.544], [1.0, 0.5]) if spectrum else None,
     )
     options = PawleyOptions(max_elements=150_000_000, solver=solver)
     y = calculate(truth, options).calculated_y
@@ -93,6 +95,7 @@ def run_case(reflections, samples, axial, joint, repeats, solver="dense"):
         joint_width=joint,
         serial_native=True,
         solver=solver,
+        fixed_spectrum=spectrum,
         jacobian_storage_elements=fit.calculation.jacobian_operator.storage_elements,
         times_seconds=timings,
         median_seconds=float(np.median(timings)),
@@ -106,6 +109,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--repeats", type=int, default=3)
     parser.add_argument("--large", action="store_true")
+    parser.add_argument("--spectrum", action="store_true")
     parser.add_argument("--solver", choices=("dense", "matrix_free"), default="dense")
     parser.add_argument("--output", required=True)
     args = parser.parse_args()
@@ -114,7 +118,7 @@ def main():
         cases.append((811, 23003, False, False))
     binary_hash = hashlib.sha256(Path(_core.__file__).read_bytes()).hexdigest()
     runner_hash = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
-    results = [run_case(*c, args.repeats, args.solver) for c in cases]
+    results = [run_case(*c, args.repeats, args.solver, args.spectrum) for c in cases]
     peak = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
     record = dict(
         platform=platform.platform(),

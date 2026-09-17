@@ -77,7 +77,21 @@ def evaluate(request, free=None, options=_DEFAULT_OPTIONS):
             ]
         )
         kwargs = dict(instrument, support_fwhm=options.support_fwhm)
-        if request.axial_geometry is None:
+        if request.fixed_spectrum is not None:
+            s = request.fixed_spectrum
+            g = request.axial_geometry
+            y, local, global_j = reference.accumulate_cw_components(
+                x,
+                positions,
+                areas,
+                reference_wavelength_angstrom=request.instrument.wavelength_angstrom,
+                wavelengths_angstrom=s.wavelengths_angstrom,
+                relative_component_intensities=s.relative_intensities,
+                sample_over_radius=None if g is None else g.sample_over_radius,
+                detector_over_radius=None if g is None else g.detector_over_radius,
+                **kwargs,
+            )
+        elif request.axial_geometry is None:
             y, local, global_j = reference.accumulate_cw(x, positions, areas, **kwargs)
         else:
             g = request.axial_geometry

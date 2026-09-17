@@ -1,35 +1,12 @@
 # Pawley refinement implementation plan
 
-Status: first CW implementation delivered in this worktree; the original plan
-below remains the broader roadmap. See [the user guide](pawley.md) and
-[validation evidence](pawley-validation.md) for the actual supported boundary.
-
-Implementation deviations: objective and contracts share `pawley.rs`; a bounded
-dense QR/SVD solver is delivered before matrix-free products. Native/Python
-persistence uses a distinct standalone JSON format, without migrating existing
-mixed-method bundles. A supplemental unreleased Python API snapshot preserves
-the released 0.5.0 snapshot. Existing GSAS-II CW fixtures validate profile/area
-conventions; live Pawley optimizer parity remains an explicit deferred gate.
-P6 spectra and P7 TOF are not implemented.
-Prepared 2026-09-17 against commit `28a10e5` on the separate
-`codex/pawley-implementation-plan` worktree. The original checkout contains
-uncommitted numerical/performance changes that are deliberately not included.
-Reconcile those changes before merging, particularly profile accuracy,
-solver controls, reflection-family conventions, and persistence versions.
-
-See the [completion audit](pawley-completion-audit.md) for the prioritized
-remaining work and concrete acceptance criteria.
-
-## Delivered scope versus the original roadmap
-
-| Slice | Current state |
-| --- | --- |
-| P1 | Equations, independent NumPy reference and explicit area/constraint contracts implemented. |
-| P2 | Dense bounded extraction, overlap/rank diagnostics and exhaustive small-problem validation implemented. Matrix-free solving remains deferred. |
-| P3 | Analytical joint cell/profile/background refinement and accepted-state runtime implemented. |
-| P4 | Native/Python API, examples, standalone version-1 persistence and supplemental API snapshot implemented. Mixed-method bundle integration remains deferred. |
-| P5 | Regression tests, pinned profile fixture, measured gates and dense benchmark runner implemented. See the validation report for passing and failed measured gates; full live optimizer parity remains deferred. |
-| P6–P7 | Fixed wavelength spectra and TOF remain future work. |
+Status: P1–P6 are implemented: native dense/matrix-free CW Pawley, joint
+cell/profile/background fits, shared format-6 bundles, measured convergence
+gates, pinned live optimizer comparisons and fixed detected-area spectra.
+The detailed original roadmap below is retained; current evidence and limits
+are in [the guide](pawley.md), [validation](pawley-validation.md) and
+[completion audit](pawley-completion-audit.md). P7 TOF remains in progress.
+The original checkout's numerical work has been reconciled in this worktree.
 
 ## Goal and first release boundary
 

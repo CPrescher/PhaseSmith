@@ -64,7 +64,7 @@ pub(crate) fn support_guard(
     support: f64,
     uncertainty: bool,
 ) -> Result<Option<SupportGuards>, PawleyError> {
-    if input.axial.is_some() {
+    if input.axial.is_some() || input.fixed_spectrum.is_some() {
         return Ok(None);
     }
     let chain = transform.derivative_matrix().map_err(err)?;
@@ -272,7 +272,7 @@ pub(crate) fn support_membership(
     positions: &[f64],
     support: f64,
 ) -> Result<Option<Vec<(usize, usize)>>, PawleyError> {
-    if input.axial.is_some() {
+    if input.axial.is_some() || input.fixed_spectrum.is_some() {
         return Ok(None);
     }
     let chain = transform.derivative_matrix().map_err(err)?;

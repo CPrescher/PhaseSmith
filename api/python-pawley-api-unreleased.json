@@ -11,7 +11,7 @@
         {
           "kind": "class",
           "name": "PawleyInput",
-          "signature": "(pattern: 'PowderPattern', instrument: 'ConstantWavelengthInstrument', phases: 'tuple[PawleyPhase, ...]', background: 'DifferentiableBackground | None' = None, axial_geometry: 'FcjGeometry | None' = None, signed_intensities: 'bool' = False, parameters: 'ParameterSet | None' = None, constraints: 'tuple[Constraint, ...]' = ()) -> None",
+          "signature": "(pattern: 'PowderPattern', instrument: 'ConstantWavelengthInstrument', phases: 'tuple[PawleyPhase, ...]', background: 'DifferentiableBackground | None' = None, axial_geometry: 'FcjGeometry | None' = None, signed_intensities: 'bool' = False, parameters: 'ParameterSet | None' = None, constraints: 'tuple[Constraint, ...]' = (), fixed_spectrum: 'WavelengthComponents | None' = None) -> None",
           "target": "phasesmith.refinement.pawley.PawleyInput"
         },
         {

@@ -26,6 +26,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let x: Vec<f64> = (0..1001).map(|i| 39.0 + f64::from(i) * 0.002).collect();
     let parameters = pawley_parameters(&phases, instrument, None, false)?;
     let mut input = PawleyInput {
+        fixed_spectrum: None,
         pattern: PatternRecord::new(x, Some(vec![0.0; 1001]), None, None, None)?,
         instrument,
         axial: None,

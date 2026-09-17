@@ -89,10 +89,14 @@ impl PawleyProjectState {
                     .position_correction
                     .debye_scherrer_micrometre
                     .is_some()
-                || !matches!(
-                    histogram.experiment.radiation,
-                    RadiationDefinition::Monochromatic { .. }
-                )
+                || match &histogram.experiment.radiation {
+                    RadiationDefinition::Monochromatic { .. } => {
+                        analysis.input.fixed_spectrum.is_some()
+                    }
+                    RadiationDefinition::FixedSpectrum { spectrum, .. } => {
+                        analysis.input.fixed_spectrum.as_ref() != Some(spectrum)
+                    }
+                }
             {
                 return Err(err("Pawley analysis differs from shared histogram state"));
             }

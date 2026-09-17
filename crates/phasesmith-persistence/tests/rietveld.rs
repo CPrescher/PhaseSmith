@@ -454,6 +454,7 @@ fn mixed_rietveld_and_pawley_bundle_preserves_methods_and_resume() {
         })
         .collect();
     let input = PawleyInput {
+        fixed_spectrum: None,
         pattern: histogram.pattern.clone(),
         instrument: histogram.experiment.instrument,
         axial: histogram.experiment.axial_geometry,
@@ -526,6 +527,7 @@ fn pawley_cell_metadata_must_match_a_shared_structural_phase() {
     let phases = vec![PawleyPhase::from_domain(shared.phase_id.as_str().into(), domain).unwrap()];
     let h = &structural.project.histograms[0];
     let input = PawleyInput {
+        fixed_spectrum: None,
         pattern: h.pattern.clone(),
         instrument: h.experiment.instrument,
         axial: h.experiment.axial_geometry,

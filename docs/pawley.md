@@ -30,7 +30,8 @@ quantitative phase mass fractions.
 | Native/Python cancellation, accepted checkpoint continuation, standalone and shared-bundle persistence | Supported |
 | Dense full analytical Jacobian and full-rank interior covariance | Supported within explicit allocation limit |
 | Matrix-free bounded solving with analytical JVP/VJP | Supported; rank and covariance omitted |
-| Component spectra, TOF, structural restraints | Deferred |
+| Fixed detected-area CW spectra | Implemented, including union domains and restart |
+| TOF, structural restraints | Deferred |
 | Live pinned GSAS-II optimizer comparison | Fixed-cell and cell-refinement agreement tested; strict profile equivalence not established |
 
 The implementation uses deterministic serial kernels and bounded dense or
@@ -227,3 +228,35 @@ and [the implementation plan](pawley-plan.md) for remaining extensions.
 
 Method: G. S. Pawley (1981), *J. Appl. Cryst.* **14**, 357–361,
 [doi:10.1107/S0021889881009618](https://doi.org/10.1107/S0021889881009618).
+
+## Fixed wavelength spectra
+
+Pass `fixed_spectrum=WavelengthComponents([1.5406, 1.5444], [1.0, 0.5])`
+to both `PawleyPhase.from_cell` (or `from_cif`) and `PawleyInput`. Component
+zero must match the instrument reference wavelength. One fitted family area
+multiplies the normalized weighted sum of all component profiles; the weights
+are fixed effective **detected areas**, not source fluxes awaiting LP or
+structure-factor corrections. Neither wavelength nor component ratios are
+refined. Native generation takes the union of component-visible family domains;
+one-component requests retain the monochromatic ordering and numerical result.
+Each component uses its own Bragg position and composed U/V/W/X/Y widths.
+Analytical cell and profile chains, bounds, matrix-free products and both
+standalone/shared-bundle persistence retain this contract.
+
+Every retained family must be Bragg-accessible at every supplied wavelength,
+including zero-weight components, as required by the existing component kernel.
+Inaccessible combinations fail explicitly. Reflection-domain margins and
+finite support remain caller-visible; components are not renormalized to the
+observed range. The support-local boundary certificate currently applies only
+to monochromatic symmetric fixed-position fits. Spectral fits use ordinary
+full-objective acceptance and may report stagnation at moving cutoffs.
+
+`python -m phasesmith.validation.pawley_spectrum --data-root PATH --output REPORT`
+compares the pinned low/middle/high-angle doublet profiles under their existing
+FCJ tolerances and runs the measured Birmingham ceria regression with and without
+the disclosed 1.6% secondary detected-area component. This is an exploratory
+regression, not independent holdout qualification. At support 10000 the spectrum
+fit converges at Rwp 0.20952 with exact repeated arrays/history. A support-100
+probe stagnates at 0.20997 and is not labelled converged. The wide-support recipe
+avoids moving cutoffs within these observations; it does not change the kernel's
+support convention. The report retains both measured recipes and provenance.

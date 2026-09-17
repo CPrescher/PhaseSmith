@@ -1,7 +1,7 @@
 //! Versioned standalone Pawley project codec, shared by Rust and Python.
 use phasesmith_core::{ConstantWavelengthInstrument, FcjGeometry};
 use phasesmith_crystallography::{Rational, SpaceGroup, SymmetryOperation, UnitCell};
-use phasesmith_model::PatternRecord;
+use phasesmith_model::{FixedWavelengthSpectrum, PatternRecord, RadiationDefinition};
 use phasesmith_workflows::{
     AffineConstraint, BackgroundModel, ChebyshevBackground, CompositeBackground, Constraint,
     DifferentiableBackground, FixedConstraint, LatticeBounds, LatticeParameterization,
@@ -43,6 +43,8 @@ struct WireInput {
     background_y: Vec<f64>,
     instrument: [f64; 6],
     axial: Option<[f64; 2]>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    fixed_spectrum: Option<[Vec<f64>; 2]>,
     phases: Vec<WirePhase>,
     background: Option<WireBackground>,
     signed_intensities: bool,
@@ -337,6 +339,12 @@ fn encode_input(i: &PawleyInput) -> Result<WireInput, PawleyError> {
             v.x_deg,
             v.y_deg,
         ],
+        fixed_spectrum: i.fixed_spectrum.as_ref().map(|s| {
+            [
+                s.wavelengths_angstrom().to_vec(),
+                s.relative_intensities().to_vec(),
+            ]
+        }),
         axial: i
             .axial
             .map(|g| [g.sample_over_radius, g.detector_over_radius]),
@@ -407,6 +415,10 @@ fn decode_input(i: WireInput) -> Result<PawleyInput, PawleyError> {
         x_deg: v[4],
         y_deg: v[5],
     };
+    let fixed_spectrum = i
+        .fixed_spectrum
+        .map(|[w, r]| FixedWavelengthSpectrum::new(w, r).map_err(err))
+        .transpose()?;
     let phases = i
         .phases
         .into_iter()
@@ -418,7 +430,10 @@ fn decode_input(i: WireInput) -> Result<PawleyInput, PawleyError> {
                 && p.hkl.is_empty()
             {
                 if let Some(domain) = lattice {
-                    return PawleyPhase::from_domain(p.id, domain);
+                    return match &fixed_spectrum {
+                        Some(s) => PawleyPhase::from_spectrum_domain(p.id, domain, s),
+                        None => PawleyPhase::from_domain(p.id, domain),
+                    };
                 }
             }
             Ok(PawleyPhase {
@@ -503,6 +518,7 @@ fn decode_input(i: WireInput) -> Result<PawleyInput, PawleyError> {
         })
         .collect::<Result<Vec<_>, PawleyError>>()?;
     let input = PawleyInput {
+        fixed_spectrum,
         pattern: PatternRecord::new(
             i.x_deg,
             i.observed_y,
@@ -610,6 +626,9 @@ pub fn decode_pawley_project(text: &str, max_bytes: usize) -> Result<PawleyProje
     let w: WireProject = serde_json::from_str(text).map_err(err)?;
     if w.format != "phasesmith-pawley" || !matches!(w.version, 1 | 2) {
         return Err(err("unsupported Pawley project format/version"));
+    }
+    if w.version == 1 && w.input.fixed_spectrum.is_some() {
+        return Err(err("version-1 projects cannot contain a fixed spectrum"));
     }
     if w.version == 1
         && (!is_dense(&w.options.solver)
@@ -775,6 +794,13 @@ pub(crate) fn decode_state(
                 format: "phasesmith-pawley".into(),
                 version: 2,
                 input: WireInput {
+                    fixed_spectrum: match &h.experiment.radiation {
+                        RadiationDefinition::FixedSpectrum { spectrum, .. } => Some([
+                            spectrum.wavelengths_angstrom().to_vec(),
+                            spectrum.relative_intensities().to_vec(),
+                        ]),
+                        RadiationDefinition::Monochromatic { .. } => None,
+                    },
                     x_deg: h.pattern.x_deg.clone(),
                     observed_y: h.pattern.observed_y.clone(),
                     uncertainty: h.pattern.uncertainty.clone(),

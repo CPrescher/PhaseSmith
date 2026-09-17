@@ -265,3 +265,22 @@ later extensions.
 
 Methodological source: G. S. Pawley, *J. Appl. Cryst.* **14**, 357–361 (1981),
 [doi:10.1107/S0021889881009618](https://doi.org/10.1107/S0021889881009618).
+
+
+### Pawley fixed detected spectra
+
+For fixed component wavelengths and nonnegative relative weights, the family
+basis and position chain are:
+
+```text
+w[c] = r[c] / sum(r)
+P[k](x) = sum(c, w[c] * p(x; 2 asin((lambda[c]/lambda[0]) sin(theta[k,0])), q))
+d(2 theta[k,c])/d(2 theta[k,0]) = (lambda[c]/lambda[0]) cos(theta[k,0])/cos(theta[k,c])
+```
+
+The complete family area multiplies this basis once.
+The cell chain multiplies that factor; each component uses its own composed
+widths. The existing fused component kernel accumulates values and derivatives
+in one pass. Component ratios are fixed detected-area ratios and no extra
+multiplicity, LP or structural correction is applied. Each component retains
+its own finite support, with the observable family support equal to their union.
