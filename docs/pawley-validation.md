@@ -1,5 +1,10 @@
 # Pawley validation and performance
 
+Follow-up: [the fixed-profile diagnosis](pawley-profile-diagnosis.md) isolates the discrepancy
+to the pinned FCJ numerical evaluator and finite cutoff policy. Production
+quadrature, width/area conversion and the Pawley optimizer pass the isolation
+controls; “different physical models” is not established.
+
 ## Completed scope and final checks
 
 The final combined implementation covers bounded/tied CW and TOF areas,

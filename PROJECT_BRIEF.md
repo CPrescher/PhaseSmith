@@ -17,7 +17,12 @@ six-cell-parameter fits with 53 families, isolated areas and overlap sums.
 The revision-gated initializer, immutable fixture, compiled-binary provenance
 and executable comparison are committed separately from production code.
 Declared engineering agreement checks pass; a stricter 1e-5 profile-equivalence
-check remains false and is explicitly documented as a profile-model exception.
+check remains false. A subsequent black-box diagnosis isolates the mismatch
+to the pinned FCJ numerical profile evaluator and finite cutoff policy: native
+quadrature matches a converged independent reference, oracle profiles with their
+cutoffs reconstruct the histogram, and an independent linear solve attributes
+the overlapping-area difference to the profile basis rather than the optimizer.
+See `docs/pawley-profile-diagnosis.md`; no production equations were changed.
 
 Native project format 7 now adds typed CW and joint TOF Pawley analysis ownership and a lossless
 mixed-method `ProjectBundle` API. Shared histogram arrays are stored once;
