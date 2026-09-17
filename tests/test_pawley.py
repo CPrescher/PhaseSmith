@@ -418,3 +418,81 @@ _space_group_IT_number 1
     loaded = PawleyProject.load(path)
     assert loaded.input.phases[0].reflection_ids == phase.reflection_ids
     np.testing.assert_array_equal(loaded.calculate().calculated_y, project.calculate().calculated_y)
+
+
+def test_joint_multiphase_cell_and_profile_recovery():
+    group = SpaceGroup((SymmetryOperation(np.eye(3, dtype=np.int64), (0, 0, 0)),))
+    phases = tuple(
+        PawleyPhase.from_cell(
+            name,
+            UnitCell(a, b, c, 90, 90, 90),
+            group,
+            wavelength_angstrom=1.54,
+            two_theta_range=(24.0, 34.0),
+            initial_intensity=area,
+        )
+        for name, a, b, c, area in [("one", 4.0, 5.0, 6.0, 3.0), ("two", 4.3, 5.2, 6.2, 5.0)]
+    )
+    x = np.linspace(24.0, 34.0, 2001)
+    r = PawleyInput(
+        PowderPattern(x, observed_y=np.zeros_like(x)),
+        ConstantWavelengthInstrument(1.54, 0, 0, 0.001, 0.002, 0),
+        phases,
+    )
+    specs = build_parameter_set(r, profile_parameters=("w_deg2",)).specs
+    r = replace(
+        r,
+        parameters=ParameterSet(
+            [
+                replace(s, refine=s.key.name == "a_angstrom")
+                if s.key.module == "pawley_lattice"
+                else s
+                for s in specs
+            ]
+        ),
+    )
+    targets = {
+        parameter_key("lattice", "one", "a_angstrom"): 4.001,
+        parameter_key("lattice", "two", "a_angstrom"): 4.299,
+        parameter_key("profile", "instrument", "w_deg2"): 0.0012,
+    }
+    truth = replace(r, parameters=r.parameters.replace_values(targets))
+    options = PawleyOptions(support_fwhm=1000.0)
+    r = with_observations(r, calculate(truth, options).calculated_y)
+    fit = refine(r, options)
+    assert fit.termination_reason == "converged"
+    for key, expected in targets.items():
+        assert fit.parameters.spec(key).value == pytest.approx(expected, rel=2e-7, abs=1e-9)
+    np.testing.assert_allclose(
+        fit.calculation.calculated_y, r.pattern.observed_y, rtol=2e-6, atol=1e-6
+    )
+
+
+def test_uncertainty_rescaling_and_tied_physical_covariance():
+    r = request((2.0, 4.0), (39.8, 40.2))
+    r = replace(
+        r,
+        constraints=(
+            AffineConstraint(
+                parameter_key("intensity", "a", "1"), parameter_key("intensity", "a", "0"), 2.0
+            ),
+        ),
+    )
+    r = with_observations(r, calculate(r).calculated_y)
+    fits = []
+    for sigma in [1.0, 3.0]:
+        weighted = replace(
+            r,
+            pattern=PowderPattern(
+                r.pattern.x,
+                observed_y=r.pattern.observed_y,
+                uncertainty=np.full(len(r.pattern.x), sigma),
+            ),
+        )
+        fits.append(refine(weighted))
+    np.testing.assert_allclose(fits[1].covariance, 9.0 * fits[0].covariance, rtol=2e-13)
+    t = ConstraintTransform(r.parameters, r.constraints)
+    chain = t.derivative_matrix()
+    physical = chain @ fits[0].covariance @ chain.T
+    assert physical[1, 1] == pytest.approx(4.0 * physical[0, 0], rel=2e-13)
+    assert physical[0, 1] == pytest.approx(2.0 * physical[0, 0], rel=2e-13)

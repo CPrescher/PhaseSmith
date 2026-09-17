@@ -176,3 +176,52 @@ fn accepted_checkpoint_resumes_exactly_and_rejects_changed_data() {
             .is_err()
     );
 }
+
+#[test]
+fn support_products_match_dense_and_are_adjoint_with_tied_areas() {
+    let mut request = input(vec![40.0, 40.06, 80.0], vec![3.0, 6.0, 1.0], false);
+    request.constraints.push(Constraint::Affine(
+        AffineConstraint::new(
+            pawley_key("intensity", "phase", "1").unwrap(),
+            pawley_key("intensity", "phase", "0").unwrap(),
+            2.0,
+            0.0,
+        )
+        .unwrap(),
+    ));
+    let e = calc(&request);
+    let op = &e.jacobian_operator;
+    let v: Vec<f64> = (0..op.free_count())
+        .map(|i| (f64::from(u32::try_from(i).unwrap()) + 0.7).sin())
+        .collect();
+    let u: Vec<f64> = (0..op.sample_count())
+        .map(|i| (f64::from(u32::try_from(i).unwrap()) * 0.37).cos())
+        .collect();
+    let jv = op.jvp(&v).unwrap();
+    let jtu = op.vjp(&u).unwrap();
+    let dense_jv = &e.jacobian * nalgebra::DVector::from_column_slice(&v);
+    let dense_jtu = e.jacobian.transpose() * nalgebra::DVector::from_column_slice(&u);
+    for (a, b) in jv.iter().zip(dense_jv.iter()) {
+        assert!((a - b).abs() < 2e-14);
+    }
+    for (a, b) in jtu.iter().zip(dense_jtu.iter()) {
+        assert!((a - b).abs() < 2e-13);
+    }
+    let lhs: f64 = u.iter().zip(&jv).map(|(a, b)| a * b).sum();
+    let rhs: f64 = v.iter().zip(&jtu).map(|(a, b)| a * b).sum();
+    assert!((lhs - rhs).abs() < 2e-13);
+    let weights: Vec<f64> = (0..op.sample_count())
+        .map(|i| if i % 7 == 0 { 0.0 } else { 0.5 })
+        .collect();
+    for (j, norm) in op.column_norms(&weights).unwrap().iter().enumerate() {
+        let expected = (0..weights.len())
+            .map(|i| (weights[i] * e.jacobian[(i, j)]).powi(2))
+            .sum::<f64>()
+            .sqrt();
+        assert!((norm - expected).abs() < 2e-14);
+    }
+    assert!(op.jvp(&[]).is_err());
+    assert!(op.vjp(&vec![f64::NAN; op.sample_count()]).is_err());
+    assert!(op.column_norms(&vec![-1.0; op.sample_count()]).is_err());
+    assert!(op.materialize(1).is_err());
+}

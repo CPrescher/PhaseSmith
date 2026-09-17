@@ -35,7 +35,7 @@
         {
           "kind": "class",
           "name": "PawleyResult",
-          "signature": "(calculation: 'PawleyCalculation', termination_reason: 'str', rank: 'int', observed_free_parameters: 'int', active_bounds: 'tuple[int, ...]', active_width_bounds: 'bool', covariance: 'NDArray[np.float64] | None', covariance_limitation: 'str | None', history: 'NDArray[np.float64]', free: 'NDArray[np.float64]', checkpoint: 'str', parameters: 'ParameterSet') -> None",
+          "signature": "(calculation: 'PawleyCalculation', termination_reason: 'str', rank: 'int', observed_free_parameters: 'int', active_bounds: 'tuple[int, ...]', active_width_bounds: 'bool', covariance: 'NDArray[np.float64] | None', covariance_limitation: 'str | None', history: 'NDArray[np.float64]', free: 'NDArray[np.float64]', checkpoint: 'str', parameters: 'ParameterSet', diagnostics: 'Mapping[str, float | int | str | None]') -> None",
           "target": "phasesmith.refinement.pawley.PawleyResult"
         },
         {

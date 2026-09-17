@@ -1,0 +1,80 @@
+{
+  "schema_version": 3,
+  "scope": "Additional measured CW Pawley joint cell/profile gate; conditional on the declared fixed wavelength, not an absolute lattice calibration.",
+  "common": {
+    "profile_parameters": [
+      "u_deg2",
+      "v_deg2",
+      "w_deg2",
+      "x_deg",
+      "y_deg"
+    ],
+    "signed_intensities": false,
+    "use_uncertainty": true,
+    "merge_friedel": true,
+    "initial_intensity": 1.0,
+    "background_iterations": 50,
+    "max_evaluations": 1000,
+    "max_rejections": 20,
+    "max_seconds": 240.0,
+    "max_elements": 150000000,
+    "rank_tolerance": 1e-10,
+    "tolerance": 1e-09,
+    "damping": 1e-06,
+    "max_active_iterations": 2000,
+    "minimum_relative_chi_square_improvement": 0.05,
+    "rwp_recomputation_absolute_tolerance": 1e-12,
+    "accepted_terminations": [
+      "converged"
+    ],
+    "repeats": 2
+  },
+  "datasets": {
+    "ansto-echidna-lab6-cw-neutron": {
+      "range_deg": [
+        20.0,
+        125.5
+      ],
+      "maximum_rwp": 0.3,
+      "minimum_profile_correlation": 0.9,
+      "max_iterations": 40,
+      "instrument": [
+        2.047,
+        0.04,
+        -0.253,
+        0.516,
+        0.05,
+        0.0
+      ],
+      "data_file": "ECH0034258_LaB6.xyd",
+      "data_format": "columns",
+      "cell": [
+        4.16,
+        4.16,
+        4.16,
+        90.0,
+        90.0,
+        90.0
+      ],
+      "space_group_number": 221,
+      "support_fwhm": 8.0,
+      "background": {
+        "kind": "sample_window",
+        "points": 20
+      },
+      "lattice": {
+        "refine": [
+          "a_angstrom"
+        ],
+        "relative_length": 0.01,
+        "angle_delta_deg": 0.5,
+        "accepted_ranges": {
+          "a_angstrom": [
+            4.15,
+            4.17
+          ]
+        }
+      }
+    }
+  }
+}

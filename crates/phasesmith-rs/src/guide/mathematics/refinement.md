@@ -173,6 +173,17 @@ dy_i/dc_k = B_ik
 J_free = W J_physical D,  D = d physical / d scaled_free.
 ```
 
+The constraint-chain product skips exact zero entries of `D` and accumulates
+nonzero terms in physical-parameter order. Composed-width constraints likewise
+skip zero physical derivatives. These are sparse evaluations of the same
+linear map, without changing weights, support or bounds. Physical area columns
+are stored only over their native contiguous support; profile, cell and
+background columns use full-grid storage. `PawleyJacobian` applies `J v` and
+`J^T u` through these columns and the sparse constraint chain. Its adjoint and
+weighted column norms are tested against dense materialization, including ties
+and unobserved columns. The current optimizer still materializes the free
+Jacobian and uses dense QR; support products alone are not a matrix-free solver.
+
 The position derivative includes the position dependence of CW widths and FCJ
 shape. Finite-support endpoints follow the native kernel; no observed-grid
 renormalization occurs. Derivatives hold support membership fixed and are not
@@ -181,8 +192,12 @@ reflection domain and reject inaccessible reflections.
 
 [`crate::workflows::refine_pawley`] initializes areas/background at fixed
 geometry, then uses joint damped Gauss–Newton steps. Column-normalized augmented
-QR avoids forming normal equations. An active-face solve uses QR for independent boxes and SVD for coupled
-parameter bounds through `D`, including bounds on tied dependent parameters.
+QR avoids forming normal equations. An active-face solve uses QR for independent
+boxes. For coupled parameter bounds through `D`, including tied dependent
+parameters, SVD identifies the constraint row space and a particular solution.
+Twice-reorthogonalized basis completion constructs its null space; QR solves the
+reduced least-squares problem there. This avoids treating roundoff in an
+`I - C^+ C` projector as additional physical directions.
 Independent box faces may enter together only when their projection satisfies
 all coupled constraints. Initialization and unsupported columns are frozen
 inside the constrained solve. Composed Gaussian variance and Lorentzian width
@@ -193,7 +208,11 @@ or relative objective reduction with positive predicted reduction and actual
 reduction at least 0.1 times that prediction. Both reductions must be below the
 requested relative tolerance, damping cannot exceed its initial value, and the
 accepted step must be at least one tenth of the proposed step. Heavy damping
-alone cannot imply convergence.
+alone cannot imply convergence. Accepting less than one tenth of a proposed
+step increases the next damping by ten instead of decreasing it; larger accepted
+steps decrease damping by four. The hard-support objective can be discontinuous,
+so neither this damping rule nor a good Rwp guarantees convergence. Stagnation
+and budget exhaustion remain unsuccessful stops.
 
 Rank is measured from the undamped weighted normalized Jacobian. Exactly
 coincident families report their total area and identities; their individual

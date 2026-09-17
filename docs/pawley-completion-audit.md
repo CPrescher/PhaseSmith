@@ -5,6 +5,18 @@ Reviewed 2026-09-17 against implementation commit `e39cf72` on
 tests and recorded evidence with the [original plan](pawley-plan.md), not a new
 numerical validation run.
 
+Follow-up status: native stage counters/timings and the executable version-2
+manifest are now implemented. Exact resolved-request checks preserve the
+version-1 scientific setup. The synthetic benchmark now checks arrays and
+histories directly. Sections below describe the findings at the audited commit;
+remaining larger-workload and integration work continues. The follow-up now also
+has a passing measured LaB6 cell/profile gate, synthetic joint multiphase
+cell/profile recovery and tied covariance scaling. Support-block JVP/VJP and
+adjoint checks are implemented, but the solver still materializes its free
+Jacobian. An explicit orthonormal null-space solve fixes coupled-face cycling.
+Sucrose convergence, full matrix-free solving, mixed bundles, live optimizer
+comparison, spectra and TOF remain open; these are not marked complete.
+
 The single-histogram, fixed-wavelength CW method is implemented. Its native
 objective/solver, NumPy interface, bounded/tied areas, selected cell/profile/
 background variables, diagnostics and standalone restart/persistence exist.

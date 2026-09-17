@@ -58,7 +58,9 @@ mod lattice;
 mod lebail;
 mod parameters;
 mod pawley;
+mod pawley_operator;
 mod pawley_solver;
+pub use pawley_operator::PawleyJacobian;
 mod phase_scale_estimation;
 mod profile_estimation;
 mod quantitative;
@@ -237,5 +239,6 @@ pub use pawley::{
     PawleyPhase, evaluate_pawley, pawley_key, pawley_parameters,
 };
 pub use pawley_solver::{
-    PawleyCheckpoint, PawleyOptions, PawleyResult, refine_pawley, refine_pawley_with_runtime,
+    PawleyCheckpoint, PawleyDiagnostics, PawleyOptions, PawleyResult, refine_pawley,
+    refine_pawley_with_runtime,
 };

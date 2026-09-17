@@ -93,8 +93,10 @@ corrections. Unknown parameter families or widened domain bounds are rejected.
 
 Refinement first estimates areas/background with geometry held fixed, then
 moves all selected variables jointly. The implementation uses column scaling,
-QR reduction and box-face solves, with SVD for coupled active faces, with exact constraint
-chains and damped complete-objective backtracking. Convergence checks use the
+QR reduction and box-face solves, with SVD-derived constraint row spaces and
+explicit orthonormal null-space bases for coupled faces. Constraint chains are
+exact and backtracking evaluates the complete objective. Severe backtracking
+increases damping for the next step. Convergence checks use the
 normalized feasible step, undamped projected gradient, or small relative cost
 reduction with agreement between the actual and predicted reduction, modest
 damping and at least one tenth of the proposed step. A step
@@ -114,6 +116,11 @@ normalization to the observed grid occurs. Jacobians differentiate the profile
 with support membership held fixed; derivatives at moving cutoffs are undefined.
 Mask and uncertainty weights are applied once; least squares adds no bin-width
 factor. Integration diagnostics do use physical grid spacing.
+
+`result.diagnostics` reports evaluation and active-set iteration counts,
+stage wall times, rejected backtracks, the last normalized step and projected
+gradient when checked, and the convergence criterion. Timings are not part of
+scientific checkpoint identity.
 
 Inspect `rank`, `active_bounds`, `active_width_bounds`, `calculation.unobserved_reflections` and
 `calculation.coincident_groups`. Each exact-coincidence record contains stable
