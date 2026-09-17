@@ -46,6 +46,7 @@
 pub mod cell;
 pub mod intensity_correction;
 pub mod p1;
+pub mod powder_structure_factor;
 pub mod reflection;
 pub mod scattering;
 pub mod structure_factor;
@@ -82,4 +83,12 @@ pub use structure_factor::{
 pub use symmetry::{
     CrystalSystem, ExpandedSites, MetricConstraints, Rational, ReflectionFamily, SpaceGroup,
     SymmetryError, SymmetryOperation,
+};
+
+pub use powder_structure_factor::{
+    calculate_powder_structure_factor_dense_with_context,
+    calculate_powder_structure_factor_intensity_vjp_with_context,
+    calculate_powder_structure_factor_jvp_with_context,
+    calculate_powder_structure_factor_selected_with_context,
+    calculate_powder_structure_factor_values_with_context,
 };

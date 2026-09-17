@@ -6,6 +6,19 @@ use std::fmt::{Display, Formatter};
 use crate::profile::SupportRange;
 use crate::tch::{TchError, TchShape, TchWidths};
 
+const FAST_SMALL_SPAN_NODES: [f64; 4] = [
+    0.069_431_844_202_973_71,
+    0.330_009_478_207_571_87,
+    0.669_990_521_792_428_1,
+    0.930_568_155_797_026_2,
+];
+const FAST_SMALL_SPAN_WEIGHTS: [f64; 4] = [
+    0.173_927_422_568_726_92,
+    0.326_072_577_431_273_07,
+    0.326_072_577_431_273_07,
+    0.173_927_422_568_726_92,
+];
+
 const DEGREE_TO_RADIAN: f64 = std::f64::consts::PI / 180.0;
 const RADIAN_TO_DEGREE: f64 = 180.0 / std::f64::consts::PI;
 pub(crate) const QUADRATURE_ORDER: usize = 48;
@@ -251,6 +264,20 @@ impl FcjProfile {
         widths: TchWidths,
         geometry: FcjGeometry,
     ) -> Result<Self, FcjError> {
+        Self::new_with_accuracy(position_deg, widths, geometry, false)
+    }
+
+    /// Prepare with optional lower-order small-span quadrature. Physical axial
+    /// geometry and all analytical derivatives remain active.
+    /// # Errors
+    /// Returns the same validation errors as [`Self::new`].
+    #[allow(clippy::too_many_lines)] // Keep geometry and derivative normalization together.
+    pub fn new_with_accuracy(
+        position_deg: f64,
+        widths: TchWidths,
+        geometry: FcjGeometry,
+        fast_fcj: bool,
+    ) -> Result<Self, FcjError> {
         validate_position(position_deg)?;
         validate_geometry(geometry)?;
         let shape = TchShape::from_component_fwhm(widths)
@@ -293,8 +320,14 @@ impl FcjProfile {
             .sample_over_radius
             .min(geometry.detector_over_radius);
         let difference = major - minor;
-        let (quadrature_nodes, quadrature_weights) =
-            quadrature_rule((apparent_limit_deg - position_deg).abs(), shape.total_fwhm);
+        let span = (apparent_limit_deg - position_deg).abs();
+        let ratio = span / shape.total_fwhm;
+        let (quadrature_nodes, quadrature_weights): (&[f64], &[f64]) = if fast_fcj && ratio <= 0.02
+        {
+            (&FAST_SMALL_SPAN_NODES, &FAST_SMALL_SPAN_WEIGHTS)
+        } else {
+            quadrature_rule(span, shape.total_fwhm)
+        };
         let piece_count = if difference == 0.0 { 1 } else { 2 };
         let mut nodes = Vec::with_capacity(piece_count * quadrature_nodes.len());
         let mut normalization = 0.0;

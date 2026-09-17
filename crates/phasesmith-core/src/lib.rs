@@ -42,6 +42,7 @@
 //! [profile mathematics guide](https://docs.rs/phasesmith/latest/phasesmith/guide/mathematics/peak_profiles/)
 //! derives every implemented profile and broadening equation together.
 
+pub mod accuracy;
 pub mod background;
 pub mod cw;
 pub mod cw_components;
@@ -53,6 +54,7 @@ pub mod radiation;
 pub mod tch;
 pub mod tof;
 
+pub use accuracy::ProfileAccuracy;
 pub use background::{BackgroundError, smooth_bruckner};
 pub use cw::{
     ConstantWavelengthInstrument, CwBatchError, CwError, CwProfileParameters,

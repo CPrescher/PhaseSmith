@@ -12,6 +12,39 @@ not part of the numerical library.
 
 ## Current implementation status
 
+Refinement optimization priority: seek the lowest stable, scientifically valid
+Rwp with verified convergence, retaining QPA and physical-model checks. Judge
+speed at comparable attained fit quality; a faster iteration-limited fit with
+a higher Rwp is a diagnostic tradeoff, not the target outcome.
+
+Opt-in `EmpiricalGaussianConvention` now anchors a caller-selected phase's RMS
+strain and transfers shared Gaussian variance into U while preserving the
+starting profile. It removes the isotropic U/strain redundancy using existing
+Rust kernels and fixed constraints. Python input/checkpoint, project metadata,
+readiness and fit reports preserve the explicitly empirical interpretation.
+Defaults and physical width domains remain unchanged. On QARR the bounded
+fast-profile recipe improves Rwp from 19.9888% to 19.6776%; a longer default-
+profile fit reaches 19.2199% but is substantially slower. The longer fast case
+fails the termination gate. See `docs/empirical-gaussian.md` for equations,
+constraints, reproducible measurements and interpretation limits.
+
+Structural powder intensities now average Friedel mates before profile
+accumulation, correcting merged-family intensities for non-centrosymmetric
+structures with anomalous scattering. Individual complex structure-factor
+APIs retain their representative-reflection meaning. Dense, selected and
+matrix-free intensity derivatives follow the same average, including custom
+provider derivatives. This is an unconditional powder-physics correction,
+separate from optional numerical accuracy controls. See `docs/powder-friedel.md`.
+
+Opt-in CW `ProfileAccuracy` now separates conservative tail-area support from
+lower-order small-span FCJ quadrature. The Rust kernel retains the physical
+axial correction and fused analytical derivatives; established support and
+quadrature remain the default. The policy travels through structural engines,
+native/Python refinement, project persistence and checkpoints. Resume rejects
+a changed policy. Rejected native trials omit unused fixed-axial rows, with
+complete final diagnostics retained. Equations, boundaries, supported paths
+and validation are in `docs/profile-accuracy.md`.
+
 The second refinement performance pass batches four FCJ sample evaluations
 without reordering any sample's quadrature sum, assembles selected structural
 Jacobian rows contiguously, and reuses a unit-scale profile basis for native
