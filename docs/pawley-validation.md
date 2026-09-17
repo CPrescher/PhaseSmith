@@ -101,7 +101,7 @@ and remains untouched.
 `benchmarks/pawley.py --large --output /new/path/timing.json` measures three
 serial release-build fits: 256 overlapping families on 10,001 samples, the same
 size with fixed FCJ geometry and joint W refinement, and 811 families on 23,003
-samples. Every repetition must converge, reproduce results exactly and recover
+samples. Every repetition must converge, reproduce the recorded summary metrics exactly and recover
 the synthetic profile with relative L2 below 1e-6 before any timing is reported.
 The report records median/p95 wall time, process peak RSS, platform, Python and
 NumPy versions, and binary/runner SHA-256 provenance.
@@ -116,7 +116,10 @@ against Le Bail, Rietveld or another program with a different objective.
 
 The final release-build synthetic report is
 `validation/results/pawley-20260917-synthetic-final.json` (three repetitions).
-All cases converged with exactly repeatable accepted histories and profiles.
+All cases converged with exactly repeatable recorded summary metrics. The
+benchmark currently compares relative L2, rank, accepted-step count and
+termination; it does not directly compare arrays or histories. See the
+[completion audit](pawley-completion-audit.md) for the follow-up validation work.
 
 | Families / samples | Model | Median / p95 seconds | Relative profile L2 |
 | --- | --- | --- | --- |

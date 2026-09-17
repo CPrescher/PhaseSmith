@@ -17,6 +17,9 @@ uncommitted numerical/performance changes that are deliberately not included.
 Reconcile those changes before merging, particularly profile accuracy,
 solver controls, reflection-family conventions, and persistence versions.
 
+See the [completion audit](pawley-completion-audit.md) for the prioritized
+remaining work and concrete acceptance criteria.
+
 ## Delivered scope versus the original roadmap
 
 | Slice | Current state |
