@@ -2420,7 +2420,7 @@ def _refine_with_executor(
                 if termination is TerminationReason.CONVERGED:
                     break
                 if not accepted:
-                    damping *= selected.damping_increase
+                    damping = max(damping * selected.damping_increase, selected.initial_damping)
                     continue
                 runtime.emit(
                     RefinementEventKind.ITERATION,

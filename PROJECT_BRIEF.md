@@ -17,6 +17,19 @@ Rwp with verified convergence, retaining QPA and physical-model checks. Judge
 speed at comparable attained fit quality; a faster iteration-limited fit with
 a higher Rwp is a diagnostic tradeoff, not the target outcome.
 
+Rietveld rejected-step recovery now retains the unchanged accepted-state
+Jacobian and restores damping to at least the caller's initial value after a
+failed backtracking sequence. The independent Python and native structural
+solver share the damping rule; forward equations, bounds and convergence
+criteria are unchanged. A native-only benchmark trace measures time to Rwp
+targets while keeping final convergence, QPA and profile checks separate.
+On the QARR empirical frozen-background recipe, total evaluations fall from
+376 to 251 with identical final profiles, parameters and covariance at Rwp
+19.21994%. The joint-background diagnostic also retains its solution but its
+larger composition error; it remains a separate recipe. Unchanged PbSO4 and
+QARR reference checks pass, while the existing QARR 1h holdout failure remains.
+See `docs/refinement-quality-recovery.md` for the contract and validation.
+
 Opt-in `EmpiricalGaussianConvention` now anchors a caller-selected phase's RMS
 strain and transfers shared Gaussian variance into U while preserving the
 starting profile. It removes the isotropic U/strain redundancy using existing
@@ -35,6 +48,7 @@ QARR Rwp with convergence at all stages, but takes many more evaluations and
 worsens maximum phase-fraction error to 1.863 percentage points. It is not a
 new default or an equal-quality speed win. See `docs/rietx-solver-audit.md`;
 the diagnostic did not change production solver behavior or validation recipes.
+The later recovery change above is evaluated separately.
 
 A subsequent same-objective comparison feeds PhaseSmith's residuals and
 analytical Jacobian to SciPy TRF with identical starting values, scaled
