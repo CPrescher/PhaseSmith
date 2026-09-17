@@ -42,7 +42,13 @@
         "numpy_version": { "type": "string" },
         "platform": { "type": "string" },
         "generated_at_utc": { "type": "string", "format": "date-time" },
-        "generator_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+        "generator_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "adapter_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "helper_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "binary_sha256": {
+          "type": "object",
+          "additionalProperties": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+        }
       }
     },
     "source": {

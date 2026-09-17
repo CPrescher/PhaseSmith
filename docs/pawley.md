@@ -31,7 +31,7 @@ quantitative phase mass fractions.
 | Dense full analytical Jacobian and full-rank interior covariance | Supported within explicit allocation limit |
 | Matrix-free bounded solving with analytical JVP/VJP | Supported; rank and covariance omitted |
 | Component spectra, TOF, structural restraints | Deferred |
-| Live GSAS-II Pawley optimizer equivalence | Not established |
+| Live pinned GSAS-II optimizer comparison | Fixed-cell and cell-refinement agreement tested; strict profile equivalence not established |
 
 The implementation uses deterministic serial kernels and bounded dense or
 matrix-free solvers. `max_elements` is a conservative estimate of native floating-point
@@ -219,7 +219,9 @@ finite differences, an exhaustive small bounded least-squares oracle, exact
 coincidences, explicit ties/dependent bounds, signed fits, masks, support
 endpoints, area/centroid behavior, and exact checkpoint continuation.
 The existing pinned GSAS-II CW fixture checks extracted area conventions;
-full GSAS-II Pawley optimizer parity remains deferred pending a reviewed probe.
+a live pinned optimizer fixture now compares fixed states, fitted profiles,
+cells, isolated areas and overlap sums. Declared model-agreement checks pass;
+strict profile equivalence is not claimed.
 See [Pawley validation and performance](pawley-validation.md) for measured gates
 and [the implementation plan](pawley-plan.md) for remaining extensions.
 

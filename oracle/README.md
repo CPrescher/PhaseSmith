@@ -10,6 +10,13 @@ and `G2PwdrData.reflections()`. The private adapter `_pinned_probe.py` exposes
 only a small allowlist and verifies the checkout's exact Git revision before
 reading internal data.
 
+The Pawley optimizer generator `scripts/generate_pawley.py` uses a narrow,
+revision-gated private initializer because the pinned public API has no table
+constructor. Public scripting runs fixed-cell and cell-refinement fits; the
+fixture records compiled-binary provenance. [Pawley comparison details](PAWLEY_STUDY.md)
+separate profile/area/cell agreement from the retained failed strict-equivalence
+diagnostic. This probe adds no runtime GSAS-II dependency.
+
 The external benchmark workers in `scripts/benchmark_cw_profile.py` and
 `scripts/benchmark_structural_pattern.py` use the same revision gate. The
 QARR worker in `scripts/benchmark_qarr.py` additionally runs a complete,
