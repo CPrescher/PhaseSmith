@@ -529,6 +529,7 @@ def calculate_structure_factor_values(
     multiplicity: ArrayLike,
     scattering: ScatteringFactorProvider,
     *,
+    powder_average: bool = False,
     correction: IntegratedIntensityCorrectionProvider | None = None,
     scale: float = 1.0,
     coordinate_tolerance: float = 1.0e-10,
@@ -540,7 +541,13 @@ def calculate_structure_factor_values(
     expansion and atom/reflection accumulation remain in the native kernel.
     ``execution=None`` selects the bounded two-thread default. Reuse an
     explicit policy across repeated calls to retain its native worker pool.
+    ``powder_average=True`` averages opposite-reflection intensities; ``f``
+    remains the representative complex amplitude, so ``f_squared`` can differ
+    from ``abs(f)**2``. The default retains individual-reflection values.
     """
+
+    if not isinstance(powder_average, bool):
+        raise TypeError("powder_average must be boolean")
 
     selected_execution = ExecutionPolicy() if execution is None else execution
     if not isinstance(selected_execution, ExecutionPolicy):
@@ -558,6 +565,7 @@ def calculate_structure_factor_values(
     arrays = structure.space_group._native.structure_factor_values(
         *native,
         selected_execution._native,
+        powder_average,
     )
     f = np.asarray(arrays[0]) + 1j * np.asarray(arrays[1])
     output = tuple(np.asarray(value) for value in arrays[2:6])
@@ -580,6 +588,7 @@ def calculate_structure_factors(
     multiplicity: ArrayLike,
     scattering: ScatteringFactorProvider,
     *,
+    powder_average: bool = False,
     correction: IntegratedIntensityCorrectionProvider | None = None,
     scale: float = 1.0,
     coordinate_tolerance: float = 1.0e-10,
@@ -590,7 +599,12 @@ def calculate_structure_factors(
     A custom scattering provider and correction provider are each called once
     for the complete reflection batch. Symmetry expansion, atom summation, and
     all structural derivatives remain native.
+    ``powder_average=True`` averages opposite-reflection intensities and their
+    derivatives. ``f`` and its derivatives remain those of the representative.
     """
+
+    if not isinstance(powder_average, bool):
+        raise TypeError("powder_average must be boolean")
 
     (
         native,
@@ -613,7 +627,7 @@ def calculate_structure_factors(
             f"dense structure-factor result requires {derivative_elements} derivative elements; "
             f"limit is {max_dense_derivative_elements}"
         )
-    arrays = structure.space_group._native.structure_factor_dense(*native)
+    arrays = structure.space_group._native.structure_factor_dense(*native, powder_average)
     f = np.asarray(arrays[0]) + 1j * np.asarray(arrays[1])
     d_f = np.asarray(arrays[6]) + 1j * np.asarray(arrays[7])
     output = tuple(np.asarray(value) for value in arrays[2:6])

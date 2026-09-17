@@ -84,6 +84,10 @@ pub struct PreparedStructuralPatternInputView<'a> {
     pub contributions: CwContributionsView<'a>,
     /// Exact finite profile-support policy.
     pub support: SupportPolicy,
+    /// Explicit CW profile accuracy controls.
+    pub profile_accuracy: phasesmith_core::ProfileAccuracy,
+    /// Whether calculation includes axial derivative rows; omitted rows are zero.
+    pub calculate_axial_derivatives: bool,
 }
 
 /// Reusable, application-neutral structural phase with an owned worker budget.
@@ -264,6 +268,8 @@ impl PreparedStructuralPhase {
             scattering_model: definition.scattering_model,
             contributions: input.contributions,
             support: input.support,
+            profile_accuracy: input.profile_accuracy,
+            calculate_axial_derivatives: input.calculate_axial_derivatives,
         };
         operation(
             definition.cell,
@@ -428,6 +434,8 @@ mod tests {
                 },
                 contributions: contributions.as_view(),
                 support: SupportPolicy::FwhmMultiple(30.0),
+                profile_accuracy: phasesmith_core::ProfileAccuracy::default(),
+                calculate_axial_derivatives: true,
             };
             let full = phase.linearize(&input).expect("full");
             for mask in [

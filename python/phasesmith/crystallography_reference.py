@@ -165,6 +165,7 @@ def reference_structure_factor_values(
     correction: ArrayLike,
     *,
     scale: float,
+    powder_average: bool = False,
     coordinate_tolerance: float = 1.0e-10,
 ) -> ReferenceStructureFactorValues:
     """Evaluate general-symmetry structural values with readable NumPy loops."""
@@ -185,6 +186,7 @@ def reference_structure_factor_values(
     h_float = indices.astype(np.float64)
     q_squared = np.einsum("ri,ij,rj->r", h_float, geometry.reciprocal_metric, h_float)
     f = np.zeros(reflection_count, dtype=np.complex128)
+    f_opposite = np.zeros_like(f)
     for site_index, site in enumerate(structure.sites):
         unique_positions: list[tuple[NDArray[np.float64], NDArray[np.int64]]] = []
         for operation in structure.space_group.operations:
@@ -220,7 +222,10 @@ def reference_structure_factor_values(
                     2j * np.pi * (h_float @ position) - 2.0 * np.pi**2 * quadratic
                 )
         f += site.occupancy * amplitudes[:, site_index] * symmetry_sum
+        f_opposite += site.occupancy * amplitudes[:, site_index] * symmetry_sum.conj()
     f_squared = np.abs(f) ** 2
+    if powder_average:
+        f_squared = 0.5 * (f_squared + np.abs(f_opposite) ** 2)
     intensity = float(scale) * multiplicities * corrections * f_squared
     return ReferenceStructureFactorValues(
         f,
@@ -255,6 +260,7 @@ def reference_structural_tof_pattern(
         scattering_amplitudes,
         correction,
         scale=scale,
+        powder_average=True,
         coordinate_tolerance=coordinate_tolerance,
     )
     d_spacing = 1.0 / np.sqrt(structural.q_squared_inverse_angstrom2)

@@ -54,7 +54,8 @@ pub struct StructureFactorValues {
     pub f_real: Vec<f64>,
     /// Imaginary part of `F_h`.
     pub f_imag: Vec<f64>,
-    /// `|F_h|²` before scale, multiplicity, and correction.
+    /// `|F_h|²` before scale, multiplicity, and correction. The powder evaluators
+    /// instead return the mean squared amplitude of the two Friedel mates.
     pub f_squared: Vec<f64>,
     /// Integrated reflection intensity.
     pub intensity: Vec<f64>,

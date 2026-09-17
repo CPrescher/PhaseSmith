@@ -58,6 +58,9 @@ and the proposed capability development sequence.
 - [Public Python architecture](public-api.md)
 - [Native Rust API and GUI integration](rust-api.md)
 
+- [Empirical Gaussian widths](empirical-gaussian.md) — explicit reference-phase
+  convention when independent instrument calibration is unavailable.
+
 ## Pawley refinement
 
 - [CW Pawley user guide](pawley.md) — bounded family areas, joint cell/profile
@@ -67,6 +70,18 @@ and the proposed capability development sequence.
 
 ## Validation and performance
 
+- [QARR holdout investigation](qarr-holdout-investigation.md) — distinguish
+  convergence, width assumptions and phase-fraction accuracy on a second sample.
+
+- [Quality-first recovery](refinement-quality-recovery.md) — fixed-quality
+  convergence benchmarks and retained-state damping recovery.
+
+- [Powder Friedel averaging](powder-friedel.md) — corrected anomalous powder
+  intensities and analytical derivatives; individual-reflection API semantics.
+- [Choosing profile accuracy](profile-accuracy.md) — explicit FCJ quadrature
+  and tail-area controls with persistence and validation contracts.
+- [rietx workload audit](rietx-workload-audit.md) — controlled real-data
+  experiments isolate axial approximations, support windows and solver work.
 - [Refinement performance improvements](refinement-performance-round2.md) —
   batched FCJ evaluation, reusable scale profiles, native diagnostics and real
   QARR measurements, with links to the earlier optimization work.

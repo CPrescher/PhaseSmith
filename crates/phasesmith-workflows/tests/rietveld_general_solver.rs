@@ -724,3 +724,142 @@ print(" ".join(format(row.objective, ".17g") for row in result.history))
         assert!((native.objective - python).abs() <= 2.0e-8 * python.abs().max(1.0));
     }
 }
+
+#[test]
+#[allow(clippy::too_many_lines)]
+fn rejected_trials_reuse_the_accepted_jacobian_and_recover_tiny_damping() {
+    use phasesmith_workflows::{
+        RefinementEvent, RefinementEventKind, RefinementRuntime,
+        refine_general_rietveld_with_runtime,
+    };
+    use std::sync::{Arc, Mutex};
+
+    // I is proportional to occupancy squared. From 0.01 toward 0.5 the
+    // undamped Newton trial overshoots the valid [0, 1] interval and its clipped
+    // endpoint has a worse objective. This exercises real rejected solves.
+    let input = input_from_truth(phase(1.0, 0.01), vec![0.0], phase(1.0, 0.5), vec![0.0]);
+    let selection = RietveldParameterSelection::new(
+        RietveldStructuralSelection {
+            occupancy: true,
+            ..RietveldStructuralSelection::default()
+        },
+        Vec::new(),
+        false,
+        false,
+    )
+    .unwrap();
+    let mut controls = options(100);
+    controls.limits = RefinementLimits::new(100, 300, None, 100).unwrap();
+    controls.max_backtracks = 0;
+    controls.max_scaled_parameter_step = 100.0;
+    let no_covariance = RietveldCovarianceOptions::new(false, 1, 1.0).unwrap();
+    let cancel = CancellationToken::default();
+    cancel.request("initial state").unwrap();
+    let initial = refine_general_rietveld(
+        &input,
+        &selection,
+        &[None],
+        &[],
+        &controls,
+        no_covariance,
+        None,
+        Some(cancel),
+    )
+    .unwrap();
+    let mut checkpoint = initial.checkpoint;
+    checkpoint.damping = 1.0e-18;
+
+    let events = Arc::new(Mutex::new(Vec::new()));
+    let sink = Arc::clone(&events);
+    let mut runtime = RefinementRuntime::new(controls.limits, None).unwrap();
+    runtime.set_event_sink(move |event: &RefinementEvent| {
+        sink.lock().unwrap().push(event.clone());
+        Ok(())
+    });
+    let result = refine_general_rietveld_with_runtime(
+        &input,
+        &selection,
+        &[None],
+        &[],
+        &controls,
+        no_covariance,
+        Some(&checkpoint),
+        &mut runtime,
+    )
+    .unwrap();
+    let events = events.lock().unwrap();
+    let trials = events
+        .iter()
+        .filter(|e| e.kind() == RefinementEventKind::Trial)
+        .count();
+    assert!(
+        trials > result.history.len(),
+        "fixture must reject a computed trial"
+    );
+    // One initial profile/Jacobian; each attempted full trial supplies the next
+    // one. No reevaluation of the same accepted model after rejection.
+    assert_eq!(result.evaluations, 1 + trials);
+    assert!(result.history[0].damping >= controls.initial_damping);
+    assert_eq!(result.termination_reason, TerminationReason::Converged);
+    assert!((result.input.phases[0].definition().occupancy[0] - 0.5).abs() < 2.0e-9);
+    assert!(result.calculation.metrics.rwp < 1.0e-8);
+    assert!(
+        result
+            .history
+            .windows(2)
+            .all(|pair| pair[1].objective < pair[0].objective)
+    );
+
+    let mut partial_controls = controls.clone();
+    partial_controls.limits = RefinementLimits::new(1, 300, None, 100).unwrap();
+    let partial = refine_general_rietveld(
+        &input,
+        &selection,
+        &[None],
+        &[],
+        &partial_controls,
+        no_covariance,
+        Some(&checkpoint),
+        None,
+    )
+    .unwrap();
+    assert!(partial.history.is_empty());
+    assert_eq!(partial.input, input);
+    assert_eq!(
+        partial.checkpoint.damping.to_bits(),
+        controls.initial_damping.to_bits()
+    );
+    let resumed = refine_general_rietveld(
+        &input,
+        &selection,
+        &[None],
+        &[],
+        &controls,
+        no_covariance,
+        Some(&partial.checkpoint),
+        None,
+    )
+    .unwrap();
+    assert_eq!(resumed.history, result.history);
+    assert_eq!(resumed.input, result.input);
+
+    let mut limited = controls.clone();
+    limited.limits = RefinementLimits::new(100, 300, None, 1).unwrap();
+    let rejected = refine_general_rietveld(
+        &input,
+        &selection,
+        &[None],
+        &[],
+        &limited,
+        no_covariance,
+        Some(&checkpoint),
+        None,
+    )
+    .unwrap();
+    assert_eq!(
+        rejected.termination_reason,
+        TerminationReason::RepeatedRejections
+    );
+    assert_eq!(rejected.input, input);
+    assert!(rejected.history.is_empty());
+}

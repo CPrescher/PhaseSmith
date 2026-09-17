@@ -1,0 +1,59 @@
+PhaseSmith commit 28a10e5 release wheel, one worker; repeated real QARR validation.
+macOS sample, 8 seconds, 1 ms sampling interval; profiling is separate from benchmark timing.
+Main-thread call graph contains 6,635 samples. Counts below are leaf attribution, not inclusive cost.
+
+Sort by top of stack, same collapsed (when >= 5):
+        phasesmith_core::fcj::FcjProfile::evaluate_batch::h13d1c26a9a274c59  (in _core.abi3.so)        1896
+        phasesmith_core::cw_contributions::accumulate_cw_fixed_axial_contributions_with_context::h42f5a15051ed3719  (in _core.abi3.so)        818
+        phasesmith_core::fcj::FcjProfile::evaluate_batch::haddc474c62bb9576  (in _core.abi3.so)        815
+        exp  (in libsystem_m.dylib)        665
+        phasesmith_core::cw_contributions::accumulate_cw_contributions_impl::h343046d76a778d61  (in _core.abi3.so)        330
+        _platform_memmove  (in libsystem_platform.dylib)        215
+        phasesmith_workflows::rietveld_general_objective::PreparedGeneralFreeLinearization::solve_damped::h2386ca646c28dc30  (in _core.abi3.so)        186
+        DYLD-STUB$$exp  (in _core.abi3.so)        150
+        _$LT$alloc..vec..Vec$LT$T$GT$$u20$as$u20$alloc..vec..spec_from_iter_nested..SpecFromIterNested$LT$T$C$I$GT$$GT$::from_iter::ha101accc48ca09a3  (in _core.abi3.so)        149
+        __psynch_cvwait  (in libsystem_kernel.dylib)        113
+        phasesmith_crystallography::symmetry::Rational::checked_add::h3d42d917972059d8  (in _core.abi3.so)        107
+        phasesmith_engine::structural_pattern::append_instrument_derivatives::h5f3c5d978b4a1def  (in _core.abi3.so)        84
+        core::slice::_$LT$impl$u20$$u5b$T$u5d$$GT$::binary_search_by::h7205ab2d4c3e3539  (in _core.abi3.so)        71
+        phasesmith_engine::structural_pattern::calculate_structural_pattern_selected_with_context::he379dbc856629419  (in _core.abi3.so)        68
+        phasesmith_engine::structural_spectrum::combine_pattern_results::hc3206764c55ba5f8  (in _core.abi3.so)        61
+        phasesmith_crystallography::symmetry::SymmetryOperation::compose::ha83b81bcbbd233aa  (in _core.abi3.so)        55
+        _PyEval_EvalFrameDefault  (in python3.12)        54
+        phasesmith_workflows::rietveld_general_objective::PreparedGeneralRietveldObjective::jvp::hc25f6345da5938d9  (in _core.abi3.so)        53
+        _$LT$phasesmith_workflows..backgrounds..ChebyshevBackground$u20$as$u20$phasesmith_workflows..backgrounds..DifferentiableBackground$GT$::basis::hb29fe015d817882c  (in _core.abi3.so)        45
+        alloc::collections::btree::map::BTreeMap$LT$K$C$V$C$A$GT$::insert::h77fa5d7dc1d89102  (in _core.abi3.so)        41
+        madvise  (in libsystem_kernel.dylib)        40
+        phasesmith_engine::structural_spectrum::combine_dense_products::h506b0367c6b27e95  (in _core.abi3.so)        37
+        _xzm_free  (in libsystem_malloc.dylib)        36
+        core::ops::function::impls::_$LT$impl$u20$core..ops..function..FnMut$LT$A$GT$$u20$for$u20$$RF$F$GT$::call_mut::hdb888de6e03472ff  (in _core.abi3.so)        35
+        phasesmith_workflows::rietveld_general_objective::PreparedGeneralFreeLinearization::normal_product::hb9129520f5f5e1b8  (in _core.abi3.so)        35
+        __bzero  (in libsystem_platform.dylib)        33
+        phasesmith_model::PatternRecord::validate::hef3aa0a43606b566  (in _core.abi3.so)        27
+        _xzm_xzone_malloc_tiny  (in libsystem_malloc.dylib)        21
+        <deduplicated_symbol>  (in _core.abi3.so)        20
+        phasesmith_crystallography::symmetry::SymmetryOperation::new::h9073b96cac66e871  (in _core.abi3.so)        18
+        phasesmith_core::profile::GridView::new::h83ce6ca74caa4826  (in _core.abi3.so)        14
+        _platform_memset  (in libsystem_platform.dylib)        13
+        mach_absolute_time  (in libsystem_kernel.dylib)        13
+        phasesmith_core::fcj::FcjProfile::new::hf159b051092a4b24  (in _core.abi3.so)        13
+        phasesmith_core::background::smooth_bruckner::h144dbc608f457bc1  (in _core.abi3.so)        12
+        phasesmith_workflows::sample_physics::march::h1d35ff0ed9628ed1  (in _core.abi3.so)        11
+        phasesmith_workflows::rietveld_general_objective::PreparedGeneralRietveldObjective::new_cached::h7b18e4ab2a431a8f  (in _core.abi3.so)        10
+        phasesmith_workflows::sample_physics::compose::h18f2e522ab6e10b9  (in _core.abi3.so)        10
+        <deduplicated_symbol>  (in libsystem_malloc.dylib)        9
+        _platform_memcmp  (in libsystem_platform.dylib)        9
+        phasesmith_crystallography::symmetry::SpaceGroup::reflection_orbit::hd248f09d240b3c44  (in _core.abi3.so)        9
+        __sincos_stret  (in libsystem_m.dylib)        8
+        core::array::_$LT$impl$u20$$u5b$T$u3b$$u20$N$u5d$$GT$::try_map::h70f8b6f78de21ce2  (in _core.abi3.so)        8
+        phasesmith_crystallography::symmetry::multiply_rotation::he841d6f240f643ce  (in _core.abi3.so)        8
+        _tlv_get_addr  (in libdyld.dylib)        7
+        phasesmith_core::cw_contributions::CwContributionsView::new::hb9c51427eda31208  (in _core.abi3.so)        7
+        _PyObject_Free  (in python3.12)        6
+        _PyObject_Malloc  (in python3.12)        6
+        fetestexcept  (in libsystem_m.dylib)        6
+        phasesmith_crystallography::structure_factor::symmetry_terms::h6a7835eefac8b6b1  (in _core.abi3.so)        6
+        core::fmt::num::imp::_$LT$impl$u20$u32$GT$::_fmt_inner::h94157436147dabcf  (in _core.abi3.so)        5
+        phasesmith_crystallography::symmetry::SpaceGroup::expand_sites::hfa3945f7fbb6daff  (in _core.abi3.so)        5
+        phasesmith_workflows::residuals::evaluate_residual_arrays::h80cf7be88bb102fa  (in _core.abi3.so)        5
+        resolve_descriptors  (in _multiarray_umath.cpython-312-darwin.so)        5

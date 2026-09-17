@@ -32,6 +32,15 @@ def rietveld_result_record(result: RietveldResult) -> dict[str, Any]:
         raise TypeError("result must be RietveldResult")
     metrics = result.metrics
     return {
+        "profile_accuracy": {
+            "fast_fcj": result.checkpoint.profile_accuracy.fast_fcj,
+            "tail_area_tolerance": result.checkpoint.profile_accuracy.tail_area_tolerance,
+        },
+        "empirical_gaussian": (
+            None
+            if result.checkpoint.empirical_gaussian is None
+            else result.checkpoint.empirical_gaussian.to_record()
+        ),
         "schema": "phasesmith.result-report.v1",
         "provenance": {
             "package": "phasesmith",

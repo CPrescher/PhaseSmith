@@ -27,7 +27,8 @@ pub struct RietveldRefinementOptions {
     pub parameter_tolerance: f64,
     /// Initial positive Levenberg damping in scaled coordinates.
     pub initial_damping: f64,
-    /// Multiplier applied after an unsuccessful iteration.
+    /// Multiplier applied after an unsuccessful iteration. Recovery is floored
+    /// at `initial_damping` to avoid ineffective near-zero retry sequences.
     pub damping_increase: f64,
     /// Multiplier applied after an accepted iteration.
     pub damping_decrease: f64,
@@ -446,7 +447,7 @@ pub fn refine_rietveld_with_runtime(
         let Some((backtracks, factor, trial_values, trial_phases, trial_calculation, objective)) =
             accepted
         else {
-            damping *= options.damping_increase;
+            damping = (damping * options.damping_increase).max(options.initial_damping);
             if termination == TerminationReason::MaxIterations {
                 continue;
             }

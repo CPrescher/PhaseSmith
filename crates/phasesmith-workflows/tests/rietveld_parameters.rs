@@ -277,6 +277,8 @@ fn transformed_jvp_and_vjp_are_adjoint_consistent() {
         },
         contributions: phase.contributions().as_view(),
         support: SupportPolicy::FwhmMultiple(20.0),
+        profile_accuracy: phasesmith_core::ProfileAccuracy::default(),
+        calculate_axial_derivatives: true,
     };
     let forward = prepared.jvp(&input, &tangents[0]).unwrap();
     let weights = x_deg
