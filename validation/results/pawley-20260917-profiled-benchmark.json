@@ -1,0 +1,210 @@
+{
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "python": "3.13.7",
+  "numpy": "2.5.3",
+  "build": "maturin develop --release",
+  "native_binary_sha256": "bd937f1960557a1586154b9d402a3ee655d78312c86be368fd8445edee8a4bf4",
+  "runner_sha256": "90f7b296074cceed2922a5989313cc3348f251968c3197a0253abcaa23cea39d",
+  "peak_process_rss_bytes": 1371684864,
+  "cases": [
+    {
+      "reflections": 256,
+      "samples": 10001,
+      "phases": 2,
+      "fcj": false,
+      "joint_width": false,
+      "serial_native": true,
+      "times_seconds": [
+        0.7169499159936095,
+        0.7389104169997154,
+        0.7135409589973278
+      ],
+      "median_seconds": 0.7169499159936095,
+      "p95_seconds": 0.7367143668991047,
+      "scientific": {
+        "relative_l2": 3.820087038912135e-14,
+        "rank": 256,
+        "accepted_steps": 2,
+        "termination": "converged",
+        "profile_sha256": "98828b1284c8e8546715f4cb55e2b4d90fb9802fce74294a6c5f4900a6238a41",
+        "history_sha256": "8d744ca75fff7bc2279c5aa0db15e74bdda98c59452eed350991903bc49a1492",
+        "evaluations": 3,
+        "linear_iterations": 4
+      },
+      "diagnostics": [
+        {
+          "evaluations": 3,
+          "linear_iterations": 4,
+          "evaluation_seconds": 0.016696332999999997,
+          "qr_seconds": 0.35500558299999996,
+          "face_seconds": 2.8834000000000002e-05,
+          "multiplier_seconds": 1.67e-07,
+          "diagnostic_seconds": 0.305756583,
+          "convergence_criterion": "projected_gradient",
+          "backtrack_rejections": 0,
+          "last_step_norm": 1.173225133560812e-10,
+          "projected_gradient_norm": 1.0059540308279614e-10
+        },
+        {
+          "evaluations": 3,
+          "linear_iterations": 4,
+          "evaluation_seconds": 0.015483792,
+          "qr_seconds": 0.378219333,
+          "face_seconds": 2.9001000000000002e-05,
+          "multiplier_seconds": 0.0,
+          "diagnostic_seconds": 0.310645875,
+          "convergence_criterion": "projected_gradient",
+          "backtrack_rejections": 0,
+          "last_step_norm": 1.173225133560812e-10,
+          "projected_gradient_norm": 1.0059540308279614e-10
+        },
+        {
+          "evaluations": 3,
+          "linear_iterations": 4,
+          "evaluation_seconds": 0.013762083000000001,
+          "qr_seconds": 0.357628708,
+          "face_seconds": 2.9084e-05,
+          "multiplier_seconds": 8.4e-08,
+          "diagnostic_seconds": 0.308342083,
+          "convergence_criterion": "projected_gradient",
+          "backtrack_rejections": 0,
+          "last_step_norm": 1.173225133560812e-10,
+          "projected_gradient_norm": 1.0059540308279614e-10
+        }
+      ]
+    },
+    {
+      "reflections": 256,
+      "samples": 10001,
+      "phases": 2,
+      "fcj": true,
+      "joint_width": true,
+      "serial_native": true,
+      "times_seconds": [
+        1.11815083300462,
+        1.115165249997517,
+        1.1151876249932684
+      ],
+      "median_seconds": 1.1151876249932684,
+      "p95_seconds": 1.1178545122034849,
+      "scientific": {
+        "relative_l2": 1.89486699958142e-16,
+        "rank": 257,
+        "accepted_steps": 5,
+        "termination": "converged",
+        "profile_sha256": "42a98ba36dc55c6e2a881e3a62233c420831966dee939f2344b184ecfd0a2433",
+        "history_sha256": "c068d22d984c22ff62238e52a5c90acda3b57f90624b75fc3f65e92f5696c7dc",
+        "evaluations": 6,
+        "linear_iterations": 8
+      },
+      "diagnostics": [
+        {
+          "evaluations": 6,
+          "linear_iterations": 8,
+          "evaluation_seconds": 0.055229542,
+          "qr_seconds": 0.7417252919999999,
+          "face_seconds": 5.3042e-05,
+          "multiplier_seconds": 3.7299999999999997e-07,
+          "diagnostic_seconds": 0.26226525,
+          "convergence_criterion": "projected_gradient",
+          "backtrack_rejections": 0,
+          "last_step_norm": 4.5159706385043423e-13,
+          "projected_gradient_norm": 3.748723849180487e-13
+        },
+        {
+          "evaluations": 6,
+          "linear_iterations": 8,
+          "evaluation_seconds": 0.058317168,
+          "qr_seconds": 0.724849959,
+          "face_seconds": 5.8040999999999995e-05,
+          "multiplier_seconds": 2.9199999999999997e-07,
+          "diagnostic_seconds": 0.273592,
+          "convergence_criterion": "projected_gradient",
+          "backtrack_rejections": 0,
+          "last_step_norm": 4.5159706385043423e-13,
+          "projected_gradient_norm": 3.748723849180487e-13
+        },
+        {
+          "evaluations": 6,
+          "linear_iterations": 8,
+          "evaluation_seconds": 0.054551127000000005,
+          "qr_seconds": 0.731295916,
+          "face_seconds": 5.3083999999999995e-05,
+          "multiplier_seconds": 4.18e-07,
+          "diagnostic_seconds": 0.268719542,
+          "convergence_criterion": "projected_gradient",
+          "backtrack_rejections": 0,
+          "last_step_norm": 4.5159706385043423e-13,
+          "projected_gradient_norm": 3.748723849180487e-13
+        }
+      ]
+    },
+    {
+      "reflections": 811,
+      "samples": 23003,
+      "phases": 2,
+      "fcj": false,
+      "joint_width": false,
+      "serial_native": true,
+      "times_seconds": [
+        16.858917665987974,
+        15.327044916994055,
+        14.765059541998198
+      ],
+      "median_seconds": 15.327044916994055,
+      "p95_seconds": 16.705730391088583,
+      "scientific": {
+        "relative_l2": 3.670938619689737e-14,
+        "rank": 811,
+        "accepted_steps": 2,
+        "termination": "converged",
+        "profile_sha256": "6ae1f4c6a9065ab641d32e64116529821cf76a79664e59a84dcfb74d818b2471",
+        "history_sha256": "6b684b4eb44350ff76e1529bb3c331bb93302692999580184b3ed25037819c25",
+        "evaluations": 3,
+        "linear_iterations": 4
+      },
+      "diagnostics": [
+        {
+          "evaluations": 3,
+          "linear_iterations": 4,
+          "evaluation_seconds": 0.105915333,
+          "qr_seconds": 8.748174958,
+          "face_seconds": 0.000338584,
+          "multiplier_seconds": 8.3e-08,
+          "diagnostic_seconds": 7.805608041,
+          "convergence_criterion": "projected_gradient",
+          "backtrack_rejections": 0,
+          "last_step_norm": 3.0960008953661237e-10,
+          "projected_gradient_norm": 2.6692526962681137e-10
+        },
+        {
+          "evaluations": 3,
+          "linear_iterations": 4,
+          "evaluation_seconds": 0.10156454200000001,
+          "qr_seconds": 8.7396845,
+          "face_seconds": 0.000279208,
+          "multiplier_seconds": 4.2e-08,
+          "diagnostic_seconds": 6.296172833,
+          "convergence_criterion": "projected_gradient",
+          "backtrack_rejections": 0,
+          "last_step_norm": 3.0960008953661237e-10,
+          "projected_gradient_norm": 2.6692526962681137e-10
+        },
+        {
+          "evaluations": 3,
+          "linear_iterations": 4,
+          "evaluation_seconds": 0.086520666,
+          "qr_seconds": 8.326774999,
+          "face_seconds": 0.000256666,
+          "multiplier_seconds": 8.3e-08,
+          "diagnostic_seconds": 6.167459583,
+          "convergence_criterion": "projected_gradient",
+          "backtrack_rejections": 0,
+          "last_step_norm": 3.0960008953661237e-10,
+          "projected_gradient_norm": 2.6692526962681137e-10
+        }
+      ]
+    }
+  ],
+  "note": "Process RSS includes Python, reference data and returned dense Jacobians."
+}

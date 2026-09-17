@@ -7,10 +7,11 @@ See https://phasesmith.readthedocs.io/en/latest/pawley/ for supported boundaries
 from __future__ import annotations
 
 import json
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import asdict, dataclass, field, replace
 from fractions import Fraction
 from pathlib import Path
+from types import MappingProxyType
 
 import numpy as np
 from numpy.typing import NDArray
@@ -294,6 +295,7 @@ class PawleyResult:
     free: NDArray[np.float64]
     checkpoint: str
     parameters: ParameterSet
+    diagnostics: Mapping[str, float | int | str | None]
 
     @property
     def intensities(self):
@@ -370,6 +372,7 @@ def refine(
         raw["free"],
         raw["checkpoint"],
         fitted,
+        MappingProxyType(raw["diagnostics"]),
     )
 
 

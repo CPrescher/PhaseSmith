@@ -56,11 +56,17 @@ def run_case(reflections, samples, axial, joint, repeats):
         request,
         parameters=build_parameter_set(request, profile_parameters=("w_deg2",) if joint else ()),
     )
-    timings, records = [], []
+    timings, records, diagnostics = [], [], []
+    previous = None
     for _ in range(repeats):
         start = perf_counter()
         fit = refine(request, options, max_iterations=30)
         timings.append(perf_counter() - start)
+        if previous is not None:
+            np.testing.assert_array_equal(fit.calculation.calculated_y, previous[0])
+            np.testing.assert_array_equal(fit.history, previous[1])
+        previous = (fit.calculation.calculated_y.copy(), fit.history.copy())
+        diagnostics.append(dict(fit.diagnostics))
         error = np.linalg.norm(fit.calculation.calculated_y - y) / np.linalg.norm(y)
         assert error < 1e-6, (fit.termination_reason, error)
         assert fit.termination_reason == "converged", fit.termination_reason
@@ -70,6 +76,12 @@ def run_case(reflections, samples, axial, joint, repeats):
                 "rank": fit.rank,
                 "accepted_steps": len(fit.history) - 1,
                 "termination": fit.termination_reason,
+                "profile_sha256": hashlib.sha256(
+                    fit.calculation.calculated_y.tobytes()
+                ).hexdigest(),
+                "history_sha256": hashlib.sha256(fit.history.tobytes()).hexdigest(),
+                "evaluations": fit.diagnostics["evaluations"],
+                "linear_iterations": fit.diagnostics["linear_iterations"],
             }
         )
     assert all(r == records[0] for r in records), "repeatability failed"
@@ -84,6 +96,7 @@ def run_case(reflections, samples, axial, joint, repeats):
         median_seconds=float(np.median(timings)),
         p95_seconds=float(np.quantile(timings, 0.95)),
         scientific=records[0],
+        diagnostics=diagnostics,
     )
 
 
@@ -96,6 +109,8 @@ def main():
     cases = [(256, 10001, False, False), (256, 10001, True, True)]
     if args.large:
         cases.append((811, 23003, False, False))
+    binary_hash = hashlib.sha256(Path(_core.__file__).read_bytes()).hexdigest()
+    runner_hash = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
     results = [run_case(*c, args.repeats) for c in cases]
     peak = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
     record = dict(
@@ -103,8 +118,8 @@ def main():
         python=platform.python_version(),
         numpy=np.__version__,
         build="maturin develop --release",
-        native_binary_sha256=hashlib.sha256(Path(_core.__file__).read_bytes()).hexdigest(),
-        runner_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+        native_binary_sha256=binary_hash,
+        runner_sha256=runner_hash,
         peak_process_rss_bytes=peak if platform.system() == "Darwin" else peak * 1024,
         cases=results,
         note="Process RSS includes Python, reference data and returned dense Jacobians.",

@@ -12,14 +12,24 @@ not part of the numerical library.
 
 ## Current implementation status
 
+Pawley completion work now records stage counters/timings and convergence
+criteria; versioned executable manifests preserve the original measured
+scientific setup and add a separate measured cell/profile gate. That LaB6 gate
+converges with Rwp 0.2184. Coupled-face solves now use an explicit orthonormal
+null basis, fixing numerical cycling from spurious projector directions.
+Support-block analytical products replace dense physical Jacobian storage;
+constraint chains skip exact zero terms in physical-parameter order. The free
+Jacobian and optimizer remain dense. Existing finite-support behavior and
+scientific thresholds are unchanged. Sucrose convergence is still an open gate.
+
 The first CW Pawley implementation now provides native bounded least-squares
 family areas, joint analytical cell/profile/background derivatives, exact
 parameter ties, rank/overlap/bound diagnostics, cancellation and accepted-state
 restart, a NumPy facade and standalone version-1 JSON persistence. See
 `docs/pawley.md` and `docs/pawley-validation.md` for the tested scope and remaining
 scientific gates. Neutron validation passes; the 811-family sucrose case meets
-quality thresholds but reaches its time budget before convergence, so the full
-large-data release gate remains open. This bounded dense solver precedes matrix-free
+quality thresholds but stagnates without satisfying first-order convergence, so
+the full large-data release gate remains open. This bounded dense solver precedes matrix-free
 Pawley. Mixed-method bundle integration, fixed spectra, TOF and live GSAS-II
 optimizer parity remain deferred. The standalone format avoids changing existing
 project schemas. Original-checkout uncommitted work remains separate and needs

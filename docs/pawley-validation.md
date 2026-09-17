@@ -58,7 +58,7 @@ background.
 
 ```sh
 python -m phasesmith.validation.pawley --data-root /path/to/validation/data \
-  --manifest validation/pawley-acceptance-v1.json --output /new/path/results.json
+  --manifest validation/pawley-acceptance-v2.json --output /new/path/results.json
 ```
 
 Results are retained under `validation/results/pawley-20260917-*.json`.
@@ -133,3 +133,63 @@ they are a reproducibility baseline, not isolated comparative performance.
 The earlier `synthetic` development report precedes solver initialization and
 constraint changes and is retained as historical evidence. No performance
 claim is made for unchanged Le Bail/Rietveld workflows.
+
+## Executable acceptance controls
+
+Version 2 makes the resolved data range, cell/symmetry, instrument, support,
+background window/iterations, profile selection, weights, intensity policy,
+solver controls, runtime budgets and acceptance thresholds explicit. Both
+resolved requests were compared exactly against the original version-1 runner;
+the scientific inputs and thresholds are unchanged. The runner rejects obsolete
+or unknown manifest fields instead of ignoring them. Version-1 reports remain
+historical evidence; use version 2 for new runs.
+
+New reports include checksum-verified input hashes, the complete request digest,
+accepted history and native stage diagnostics. `--checkpoint-directory` can save
+accepted states for follow-up diagnostics without overwriting files. The updated
+synthetic benchmark compares actual arrays/histories and records their hashes,
+plus evaluation and linear-iteration counts.
+
+
+## Completion follow-up: cell fitting and support products
+
+`validation/pawley-cell-acceptance-v3.json` adds an independent measured LaB6
+cell/profile gate; it does not replace the unchanged version-2 sucrose gate.
+Version 3 explicitly specifies selected lattice parameters, the conservative
+cell domain and acceptance intervals. Its initial cubic cell is 4.16 Å and
+initial U is 0.04 deg², keeping widths positive over the larger family envelope.
+The fixed wavelength remains 2.047 Å. Run it with the same command above,
+substituting that manifest and a new output filename.
+
+`pawley-20260917-measured-cell.json` records convergence in both repetitions,
+Rwp 0.2184121 and cubic a = 4.1593457 Å. Actual profiles and accepted histories
+are identical. The declared cell interval is a sanity gate conditional on the
+fixed calibration, not an independent certification of absolute cell accuracy.
+Synthetic tests also recover two simultaneous cells and a shared profile width,
+and check covariance scaling with supplied uncertainty and propagation through
+a tied area ratio.
+
+The native coupled-face regression fixes a numerical failure exposed by this
+measured case: a nearly singular constraint projector admitted spurious tangent
+directions. Explicit orthonormal null-space bases preserve the face equations.
+Support-block JVP/VJP, weighted norms and adjoint identities now agree with the
+dense Jacobian. The production solver is still dense.
+
+`pawley-20260917-support-products-benchmark.json` records three repeated runs
+with identical arrays and accepted histories: medians 0.680 s (256 fixed),
+1.056 s (256 FCJ/joint W) and 14.657 s (811 fixed); relative profile errors are
+unchanged. Peak process RSS is 1,210,236,928 bytes. Earlier timings were collected
+under a different concurrent workload, so these numbers are not a controlled
+speedup ratio.
+
+
+The final follow-up report, `pawley-20260917-diagnostics-final.json`, preserves
+both original measured requests and their thresholds. Neutron LaB6 passes.
+Sucrose gives Rwp 0.0660539713 in 84.54/85.07 seconds but stops as `stagnated`,
+with projected-gradient norm about 0.08467. It **fails the convergence gate**.
+Damping reacts to severe backtracking and avoids spending the entire budget
+repeating large proposals, but does not manufacture convergence. Diagnostic
+coordinate polling improved the objective slightly but did not close the gate;
+that experimental fallback is not included in the implementation. Hard-support
+transitions remain a solver issue to resolve without silently changing the
+finite-support convention or loosening acceptance thresholds.

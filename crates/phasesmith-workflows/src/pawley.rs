@@ -1,5 +1,6 @@
 //! CW Pawley least squares: independent integrated areas and analytical geometry.
 
+use crate::pawley_operator::{PawleyColumn, PawleyJacobian};
 use crate::{
     BackgroundModel, Constraint, ConstraintTransform, DifferentiableBackground,
     LatticeReflectionDomain, ParameterBounds, ParameterKey, ParameterSet, ParameterSpec,
@@ -274,6 +275,8 @@ pub struct PawleyEvaluation {
     pub positions: Vec<f64>,
     /// Dense Jacobian over scaled free variables, including masked samples.
     pub jacobian: DMatrix<f64>,
+    /// Support-block products from the same analytical evaluation pass.
+    pub jacobian_operator: PawleyJacobian,
     /// Weighted masked residuals and agreement factors.
     pub residuals: ResidualEvaluation,
     /// Free columns without any included weighted support.
@@ -379,7 +382,7 @@ pub fn evaluate_pawley(
         )
         .map_err(err)?,
     };
-    let mut physical = DMatrix::zeros(n, p);
+    let mut physical = vec![PawleyColumn::empty(); p];
     let local = &accumulation.derivatives.local;
     let global = accumulation
         .derivatives
@@ -396,14 +399,22 @@ pub fn evaluate_pawley(
     for (phase, geometry) in input.phases.iter().zip(&chains) {
         for (r, id) in phase.reflection_ids.iter().enumerate() {
             let col = index("intensity", &phase.id, id)?;
+            physical[col] = PawleyColumn {
+                start: local.starts[reflection],
+                values: (local.offsets[reflection]..local.offsets[reflection + 1])
+                    .map(|a| local.values[a * local.parameter_count])
+                    .collect(),
+            };
             for a in local.offsets[reflection]..local.offsets[reflection + 1] {
                 let i = local.starts[reflection] + a - local.offsets[reflection];
-                physical[(i, col)] = local.values[a * local.parameter_count];
                 if let Some(g) = geometry {
                     for (j, name) in g.parameter_names.iter().enumerate() {
-                        physical[(i, index("lattice", &phase.id, name)?)] += local.values
-                            [a * local.parameter_count + 1]
-                            * g.d_two_theta_d_parameters[r * g.parameter_names.len() + j];
+                        physical[index("lattice", &phase.id, name)?].add_global(
+                            i,
+                            local.values[a * local.parameter_count + 1]
+                                * g.d_two_theta_d_parameters[r * g.parameter_names.len() + j],
+                            n,
+                        );
                     }
                 }
             }
@@ -412,9 +423,10 @@ pub fn evaluate_pawley(
     }
     for (j, name) in PAWLEY_PROFILE_NAMES.iter().enumerate() {
         let col = index("profile", "instrument", name)?;
-        for i in 0..n {
-            physical[(i, col)] = global.values[j * n + i];
-        }
+        physical[col] = PawleyColumn {
+            start: 0,
+            values: global.values[j * n..(j + 1) * n].to_vec(),
+        };
     }
     let mut background_y = input.pattern.background_y.clone();
     if let Some(bg) = &input.background {
@@ -435,9 +447,10 @@ pub fn evaluate_pawley(
         }
         for (j, name) in names.iter().enumerate() {
             let col = index("background", bg.background_id(), name)?;
-            for i in 0..n {
-                physical[(i, col)] = basis.values[i * names.len() + j];
-            }
+            physical[col] = PawleyColumn {
+                start: 0,
+                values: (0..n).map(|i| basis.values[i * names.len() + j]).collect(),
+            };
         }
     }
     let calculated_y: Vec<f64> = accumulation
@@ -447,7 +460,8 @@ pub fn evaluate_pawley(
         .map(|(a, b)| a + b)
         .collect();
     let chain = transform.derivative_matrix().map_err(err)?;
-    let jacobian = physical * DMatrix::from_row_slice(p, k, &chain.values);
+    let jacobian_operator = PawleyJacobian::new(n, k, physical, &chain.values)?;
+    let jacobian = jacobian_operator.materialize(max_elements)?;
     let inactive_columns: Vec<usize> = (0..k)
         .filter(|&j| {
             (0..n).all(|i| {
@@ -499,6 +513,7 @@ pub fn evaluate_pawley(
         intensities,
         positions,
         jacobian,
+        jacobian_operator,
         residuals,
         inactive_columns,
         unobserved_reflections,

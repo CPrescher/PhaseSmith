@@ -123,6 +123,33 @@ fn _pawley_refine<'py>(
     let d = arrays(py, &result.evaluation)?;
     d.set_item("termination_reason", result.termination_reason.as_str())?;
     d.set_item("rank", result.rank)?;
+    let diagnostics = PyDict::new(py);
+    diagnostics.set_item("evaluations", result.diagnostics.evaluations)?;
+    diagnostics.set_item("linear_iterations", result.diagnostics.linear_iterations)?;
+    diagnostics.set_item("evaluation_seconds", result.diagnostics.evaluation_seconds)?;
+    diagnostics.set_item("qr_seconds", result.diagnostics.qr_seconds)?;
+    diagnostics.set_item("face_seconds", result.diagnostics.face_seconds)?;
+    diagnostics.set_item("multiplier_seconds", result.diagnostics.multiplier_seconds)?;
+    diagnostics.set_item("diagnostic_seconds", result.diagnostics.diagnostic_seconds)?;
+    diagnostics.set_item(
+        "convergence_criterion",
+        result.diagnostics.convergence_criterion,
+    )?;
+    diagnostics.set_item(
+        "backtrack_rejections",
+        result.diagnostics.backtrack_rejections,
+    )?;
+    diagnostics.set_item("last_step_norm", result.diagnostics.last_step_norm)?;
+    diagnostics.set_item(
+        "projected_gradient_norm",
+        result.diagnostics.projected_gradient_norm,
+    )?;
+    diagnostics.set_item("infeasible_trials", result.diagnostics.infeasible_trials)?;
+    diagnostics.set_item(
+        "last_rejected_error",
+        result.diagnostics.last_rejected_error,
+    )?;
+    d.set_item("diagnostics", diagnostics)?;
     d.set_item("observed_free_parameters", result.observed_free_parameters)?;
     d.set_item("active_bounds", result.active_bounds)?;
     d.set_item("active_width_bounds", result.active_width_bounds)?;
