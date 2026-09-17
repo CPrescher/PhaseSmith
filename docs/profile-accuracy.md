@@ -179,8 +179,8 @@ degrees, zero geometry, and all five FCJ derivatives.
 
 Raw measurements:
 
-- [Policies and PbSO4 checks](../validation/results/rietx-20260916-profile-accuracy.json)
-- [Default before/after comparison](../validation/results/rietx-20260916-accuracy-default-comparison.json)
+- [Policies and PbSO4 checks](https://github.com/CPrescher/PhaseSmith/blob/main/validation/results/rietx-20260916-profile-accuracy.json)
+- [Default before/after comparison](https://github.com/CPrescher/PhaseSmith/blob/main/validation/results/rietx-20260916-accuracy-default-comparison.json)
 
 ### Fresh paired rietx comparison
 
@@ -207,5 +207,5 @@ Reproduce with `benchmarks/compare_rietx_qarr.py --fast-fcj
 under the same single-thread BLAS/OpenMP environment, then repeat at eight
 workers. Records include the selected accuracy policy and unchanged gates:
 
-- [One worker](../validation/results/rietx-20260916-profile-accuracy-vs-rietx-1thread.json)
-- [Eight workers](../validation/results/rietx-20260916-profile-accuracy-vs-rietx-8threads.json)
+- [One worker](https://github.com/CPrescher/PhaseSmith/blob/main/validation/results/rietx-20260916-profile-accuracy-vs-rietx-1thread.json)
+- [Eight workers](https://github.com/CPrescher/PhaseSmith/blob/main/validation/results/rietx-20260916-profile-accuracy-vs-rietx-8threads.json)

@@ -2,7 +2,7 @@
 
 The installed rietx 1.4.0 source was inspected on 2026-09-16, following the
 [Rwp attribution experiments](powder-friedel.md#rwp-attribution-experiments).
-Source hashes are in the [audit record](../validation/results/rietx-20260916-solver-source-audit.json).
+Source hashes are in the [audit record](https://github.com/CPrescher/PhaseSmith/blob/main/validation/results/rietx-20260916-solver-source-audit.json).
 This is a source audit and diagnostic experiment, not a production solver change.
 The subsequent [same-objective solver comparison](solver-isolation.md) finds
 that directly substituting SciPy TRF does not recover rietx's residual advantage;
@@ -27,10 +27,10 @@ TRF call at 1190), `params/transforms.py` (forward/inverse mappings at 23/35),
 `model/profiles/caglioti.py` (combined Gaussian width near 269).
 
 PhaseSmith's corresponding logic is in
-[`rietveld_general_solver.rs`](../crates/phasesmith-workflows/src/rietveld_general_solver.rs),
-[`rietveld.py`](../python/phasesmith/refinement/rietveld.py),
-[`cw.rs`](../crates/phasesmith-core/src/cw.rs), and
-[`cw_contributions.rs`](../crates/phasesmith-core/src/cw_contributions.rs).
+[`rietveld_general_solver.rs`](https://github.com/CPrescher/PhaseSmith/blob/main/crates/phasesmith-workflows/src/rietveld_general_solver.rs),
+[`rietveld.py`](https://github.com/CPrescher/PhaseSmith/blob/main/python/phasesmith/refinement/rietveld.py),
+[`cw.rs`](https://github.com/CPrescher/PhaseSmith/blob/main/crates/phasesmith-core/src/cw.rs), and
+[`cw_contributions.rs`](https://github.com/CPrescher/PhaseSmith/blob/main/crates/phasesmith-core/src/cw_contributions.rs).
 
 These differences are not all proven causes of the residual gap. In particular,
 rietx also uses approximate scalar finite differences for many reflection-level
@@ -136,13 +136,13 @@ OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 \
   --json-output solver-recipe.json
 ```
 
-The [driver](../benchmarks/investigate_rietx_solver_recipe.py) verifies dataset
+The [driver](https://github.com/CPrescher/PhaseSmith/blob/main/benchmarks/investigate_rietx_solver_recipe.py) verifies dataset
 hashes and unchanged initial profiles, preserves all scientific checks, and
-uses the existing native solver. The [record](../validation/results/rietx-20260916-solver-recipe-diagnostic.json)
+uses the existing native solver. The [record](https://github.com/CPrescher/PhaseSmith/blob/main/validation/results/rietx-20260916-solver-recipe-diagnostic.json)
 contains all cases, stage counters and damping histories. Its times are
 diagnostic only. Production code and defaults are unchanged.
 The successful candidate was repeated at one worker; its full scientific
 record and all non-time stage diagnostics match the eight-worker result
-exactly. See the [one-worker record](../validation/results/rietx-20260916-solver-recipe-1worker.json).
+exactly. See the [one-worker record](https://github.com/CPrescher/PhaseSmith/blob/main/validation/results/rietx-20260916-solver-recipe-1worker.json).
 Initial profile relative L2 difference under the default policy is 5.79e-17.
 Ruff formatting/lint and diff checks pass for this diagnostic-only addition.

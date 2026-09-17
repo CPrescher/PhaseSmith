@@ -125,7 +125,7 @@ change. Background staging and phase-fraction accuracy remain separate checks.
 
 ## Artifacts and reproduction
 
-The [driver](../benchmarks/compare_solvers_qarr.py) uses SciPy only in the
+The [driver](https://github.com/CPrescher/PhaseSmith/blob/main/benchmarks/compare_solvers_qarr.py) uses SciPy only in the
 optional benchmark environment. Production code and dependencies are unchanged.
 
 ```sh
@@ -136,9 +136,9 @@ OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 \
 
 Repeat with `--suite controls` and `--suite scaling`. Recorded artifacts:
 
-- [Primary comparison](../validation/results/solver-isolation-20260917.json)
-- [Tolerance and fixed-instrument controls](../validation/results/solver-isolation-20260917-controls.json)
-- [Scaling and linear-solver sensitivity](../validation/results/solver-isolation-20260917-scaling.json)
+- [Primary comparison](https://github.com/CPrescher/PhaseSmith/blob/main/validation/results/solver-isolation-20260917.json)
+- [Tolerance and fixed-instrument controls](https://github.com/CPrescher/PhaseSmith/blob/main/validation/results/solver-isolation-20260917-controls.json)
+- [Scaling and linear-solver sensitivity](https://github.com/CPrescher/PhaseSmith/blob/main/validation/results/solver-isolation-20260917-scaling.json)
 
 Records include dataset hashes, the installed native-extension hash, SciPy/
 NumPy versions, individual stage results and rejected trial reasons. Timings
