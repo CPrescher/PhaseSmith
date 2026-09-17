@@ -1,0 +1,321 @@
+{
+  "schema": "phasesmith.rietx-qarr-benchmark.v1",
+  "scope": "real_qarr_1g_bounded_workflows_with_quality_gates",
+  "dataset_sha256": {
+    "cpd-1g.prn": "afd16d03c8742abf315ab5f94585a6e540ab5c2e2c6df6917ac8dbf6be69d990",
+    "Al2O3.cif": "bc8b07c4e27fdb9df562c7b72d181a05394df20274a56b7e1ef50f6ec2c85709",
+    "CaF2.cif": "b55fd04a3e344f73d4ece983da412056d04874b8ada7dfd4ecb93118e7905cd9",
+    "ZnO.cif": "021db20c9bdabcfd63bc794367fae3536197425ca5826d63541b2417e47d3c1a",
+    "cuka.instprm": "aef315a10622fdb1afae5b264d43e7f9dcc053aba80aa3d9fa05067146922a08"
+  },
+  "samples": 7251,
+  "phases": 3,
+  "reflections": 110,
+  "threads": 8,
+  "shared_preparation_threads": 8,
+  "phasesmith_refinement_backend": "native_fixed_spectrum",
+  "phasesmith_profile_accuracy": {
+    "fast_fcj": true,
+    "tail_area_tolerance": 0.01
+  },
+  "phasesmith_powder_intensity_convention": "friedel_pair_average",
+  "warmups": 1,
+  "repetitions": 10,
+  "environment": {
+    "platform": "macOS-26.6.2-arm64-arm-64bit",
+    "python": "3.12.13",
+    "cpu_count": 14,
+    "phasesmith_build": "release",
+    "versions": {
+      "phasesmith": "0.5.0",
+      "rietx": "1.4.0",
+      "numpy": "2.5.3",
+      "scipy": "1.18.1",
+      "numba": "0.67.0"
+    },
+    "thread_environment": {
+      "OPENBLAS_NUM_THREADS": "1",
+      "OMP_NUM_THREADS": "1",
+      "VECLIB_MAXIMUM_THREADS": "1",
+      "RIETX_COMPILED_THREADS": "8"
+    }
+  },
+  "quality_gates_passed": true,
+  "equivalence": {
+    "forward_relative_l2": 0.003554995013967741,
+    "forward_relative_l2_limit": 0.001,
+    "poisson_rwp_difference": 0.007286507594506719,
+    "poisson_rwp_difference_limit": 0.005,
+    "passed": false
+  },
+  "notes": [
+    "Thread counts are requested worker budgets, not measured active cores; rietx may execute serially below its parallel row threshold.",
+    "Shared PhaseSmith preparation honors the requested worker count. Earlier records without shared_preparation_threads used the default two workers.",
+    "Timings describe bounded workflows at accepted real-data quality, not identical math.",
+    "No speed ratio is emitted when forward/fit equivalence fails.",
+    "Python validation orchestrates three fits; each compatible fixed-spectrum fit dispatches to the native Rust solver.",
+    "PhaseSmith validation recipe: fixed Bruckner + 3 Chebyshev, doublet, FCJ, fixed CIF anisotropic displacement, 3 phases, size/strain/texture and isotropic ADPs.",
+    "rietx receives explicit fixed anisotropic tensors, normalized line weights, Gaussian FWHM squared = 8 ln(2) times PhaseSmith variance, Biso = 8 pi^2 Uiso.",
+    "rietx size coefficient uses the primary wavelength; PhaseSmith size is component-aware.",
+    "Default support differs: PhaseSmith 30 FWHM, rietx area-tail windows frozen per stage.",
+    "Explicit PhaseSmith profile_accuracy overrides apply to refinement and the forward comparison; shared input/initial-scale preparation stays unchanged.",
+    "Budgets 8/28/10 and parameter roles match; stopping rules and bounds do not.",
+    "rietx public fits calculate covariance each stage; PhaseSmith only at scale polish.",
+    "Both rebuild inputs each run; rietx time includes shared PhaseSmith initialization and model mapping. Imports/JIT warmup/checksums excluded. History/stage reports off."
+  ],
+  "scientific_results": {
+    "phasesmith": {
+      "dataset_id": "iucr-qarr-1g",
+      "status": "passed",
+      "sample_count": 7251,
+      "reflection_count": 110,
+      "checks": [
+        {
+          "check_id": "observed_grid",
+          "status": "passed",
+          "detail": "QARR 1g pattern spans the published 5-150 degree grid.",
+          "measured": 7251.0,
+          "criterion": "7251 samples with endpoints 5 and 150 degrees"
+        },
+        {
+          "check_id": "site_expansion",
+          "status": "passed",
+          "detail": "The documented 1e-4 CIF coordinate tolerance gives physical unit-cell contents.",
+          "measured": 46.0,
+          "criterion": "expanded site counts Al2O3=30, ZnO=4, CaF2=12"
+        },
+        {
+          "check_id": "refinement_termination",
+          "status": "passed",
+          "detail": "Refinement returns a finite last accepted state under explicit iteration budgets.",
+          "measured": null,
+          "criterion": "no numerical failure, divergence, repeated rejection, or empty data"
+        },
+        {
+          "check_id": "poisson_rwp",
+          "status": "passed",
+          "detail": "Poisson-weighted QARR profile gate with fixed CIF anisotropic displacement.",
+          "measured": 0.19988761199834007,
+          "criterion": "Rwp with sigma=sqrt(max(counts, 1)) <= 0.20"
+        },
+        {
+          "check_id": "unit_weight_rwp",
+          "status": "passed",
+          "detail": "Unit-weight profile residual is reported separately from Poisson-weighted Rwp.",
+          "measured": 0.1333990331032814,
+          "criterion": "unit-weight Rwp <= 0.15"
+        },
+        {
+          "check_id": "profile_correlation",
+          "status": "passed",
+          "detail": "Background-subtracted observed and calculated profiles remain strongly aligned.",
+          "measured": 0.9903959710605332,
+          "criterion": "Pearson correlation >= 0.98"
+        },
+        {
+          "check_id": "qpa_weight_fraction",
+          "status": "passed",
+          "detail": "Hill--Howard weight fractions agree with the independently weighed phase fractions.",
+          "measured": 0.006558469194280492,
+          "criterion": "maximum absolute phase error <= 0.02"
+        },
+        {
+          "check_id": "qpa_covariance",
+          "status": "passed",
+          "detail": "The final scale covariance propagates analytically to finite phase-fraction uncertainties.",
+          "measured": 0.0008584044176067025,
+          "criterion": "finite nonnegative propagated variance for every phase fraction"
+        }
+      ],
+      "notes": [
+        "Calculated crystalline weight fractions: Al2O3=30.931%, ZnO=33.994%, CaF2=35.076%.",
+        "Maximum propagated phase-fraction standard uncertainty=0.00085840.",
+        "Stage 1 termination=max_iterations, iterations=8, evaluations=32, Rwp=0.26397918.",
+        "Stage 2 termination=max_iterations, iterations=28, evaluations=29, Rwp=0.19989157.",
+        "Stage 3 scale polish termination=converged, iterations=1, evaluations=2, Poisson Rwp=0.19988761, unit-weight Rwp=0.13339903, Rp=0.15733145.",
+        "Expanded sites at tolerance 1e-4: {'Al2O3': 30, 'ZnO': 4, 'CaF2': 12}.",
+        "CIF anisotropic displacement tensors are evaluated directly and remain fixed.",
+        "Sites without CIF displacement values start from Uiso=0.005 \u00c5\u00b2 and are refined.",
+        "Fixed Cu K-alpha1 Cromer--Liberman offsets are used for both doublet components; component-dependent dispersion is not interpolated.",
+        "The supplied SH/L=0.002 is included through the documented equal-height FCJ mapping; absorption is not yet included, and lattice/component wavelengths remain fixed."
+      ]
+    },
+    "rietx": {
+      "poisson_rwp": 0.19260110440383335,
+      "unit_weight_rwp": 0.13268418941267238,
+      "profile_correlation": 0.9903820634353105,
+      "weight_fractions": {
+        "Al2O3": 0.304574617241206,
+        "ZnO": 0.3431431747718534,
+        "CaF2": 0.3522822079869405
+      },
+      "maximum_weight_fraction_error": 0.009125382758793987,
+      "qpa_covariance_available": true,
+      "stages": [
+        {
+          "termination": "converged",
+          "rwp": 0.21489338418817033,
+          "parameters": [
+            "phases.0.scale",
+            "phases.1.scale",
+            "phases.2.scale",
+            "instrument.zero_shift",
+            "instrument.profile.u",
+            "instrument.profile.v",
+            "instrument.profile.w",
+            "instrument.background.c0",
+            "instrument.background.c1",
+            "instrument.background.c2"
+          ],
+          "stages": [
+            {
+              "name": "stage1",
+              "status": "converged",
+              "n_iterations": 13,
+              "cost_initial": 30799.277858708927,
+              "cost_final": 20040.950155029608,
+              "freed": [
+                "phases.0.scale",
+                "phases.1.scale",
+                "phases.2.scale",
+                "instrument.zero_shift",
+                "instrument.profile.u",
+                "instrument.profile.v",
+                "instrument.profile.w",
+                "instrument.background.c0",
+                "instrument.background.c1",
+                "instrument.background.c2"
+              ],
+              "ftol": null,
+              "n_constraint_truncations": 0,
+              "held": [],
+              "released": []
+            }
+          ]
+        },
+        {
+          "termination": "converged",
+          "rwp": 0.19217750037605663,
+          "parameters": [
+            "phases.0.scale",
+            "phases.0.preferred_orientation.r",
+            "phases.0.lor_size",
+            "phases.0.gauss_strain",
+            "phases.1.scale",
+            "phases.1.preferred_orientation.r",
+            "phases.1.lor_size",
+            "phases.1.gauss_strain",
+            "phases.1.atoms.0.biso",
+            "phases.1.atoms.1.biso",
+            "phases.2.scale",
+            "phases.2.lor_size",
+            "phases.2.gauss_strain",
+            "phases.2.atoms.0.biso",
+            "phases.2.atoms.1.biso",
+            "instrument.zero_shift",
+            "instrument.profile.u",
+            "instrument.profile.v",
+            "instrument.profile.w"
+          ],
+          "stages": [
+            {
+              "name": "stage2",
+              "status": "converged",
+              "n_iterations": 29,
+              "cost_initial": 20054.614413204894,
+              "cost_final": 16027.924863088641,
+              "freed": [
+                "phases.0.scale",
+                "phases.0.preferred_orientation.r",
+                "phases.0.lor_size",
+                "phases.0.gauss_strain",
+                "phases.1.scale",
+                "phases.1.preferred_orientation.r",
+                "phases.1.lor_size",
+                "phases.1.gauss_strain",
+                "phases.1.atoms.0.biso",
+                "phases.1.atoms.1.biso",
+                "phases.2.scale",
+                "phases.2.lor_size",
+                "phases.2.gauss_strain",
+                "phases.2.atoms.0.biso",
+                "phases.2.atoms.1.biso",
+                "instrument.zero_shift",
+                "instrument.profile.u",
+                "instrument.profile.v",
+                "instrument.profile.w"
+              ],
+              "ftol": null,
+              "n_constraint_truncations": 0,
+              "held": [],
+              "released": []
+            }
+          ]
+        },
+        {
+          "termination": "converged",
+          "rwp": 0.19260110440383335,
+          "parameters": [
+            "phases.0.scale",
+            "phases.1.scale",
+            "phases.2.scale"
+          ],
+          "stages": [
+            {
+              "name": "stage3",
+              "status": "converged",
+              "n_iterations": 3,
+              "cost_initial": 16099.339985698625,
+              "cost_final": 16098.66130548331,
+              "freed": [
+                "phases.0.scale",
+                "phases.1.scale",
+                "phases.2.scale"
+              ],
+              "ftol": null,
+              "n_constraint_truncations": 0,
+              "held": [],
+              "released": []
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "timings": {
+    "phasesmith": {
+      "min_ms": 245.650334,
+      "median_ms": 249.295187,
+      "p95_ms": 267.974167,
+      "timings_ms": [
+        246.655625,
+        247.567459,
+        245.650334,
+        248.567916,
+        247.526208,
+        267.974167,
+        252.358042,
+        251.110667,
+        250.022458,
+        259.979041
+      ]
+    },
+    "rietx": {
+      "min_ms": 395.800625,
+      "median_ms": 399.8667085,
+      "p95_ms": 406.601208,
+      "timings_ms": [
+        400.302792,
+        396.4245,
+        395.800625,
+        396.826083,
+        399.150667,
+        401.439708,
+        403.157625,
+        401.024708,
+        406.601208,
+        399.430625
+      ]
+    }
+  }
+}

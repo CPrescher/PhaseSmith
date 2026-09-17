@@ -1,0 +1,12 @@
+{
+  "rietx_version": "1.4.0",
+  "source_sha256": {
+    "optimize/least_squares.py": "d69d7965ee0bbcb6ede5200523b44bd78e0c6329b2f505dda5d4e4f25f30adbe",
+    "params/transforms.py": "c050db33a0ac23e56b718e60179f3773dc43d279156f4c5ce7528bcae62305d7",
+    "params/vector.py": "3d869318459d8034d9fa7b67cf73d70ddd03d9960a4316574c79363531f3a422",
+    "schemas/instrument.py": "ccf1efb2b15eb3dbdae889d3802fba6da3993f3360db3d332a470ff6957c4f84",
+    "schemas/structure.py": "9c96ccdb9da19d93ef31b29fe51d9c3d349bbffe228fb7d5bf5a3d401201cfb3",
+    "model/profiles/caglioti.py": "e239fbacacf9994b2c082220f4679104d274f77ca821c2169b7ff17515f285be"
+  },
+  "scope": "Installed source read for algorithm comparison; no implementation copied"
+}

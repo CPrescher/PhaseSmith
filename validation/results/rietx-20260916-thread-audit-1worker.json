@@ -1,0 +1,277 @@
+{
+  "schema": "phasesmith.rietx-thread-audit.v1",
+  "rietx_version": "1.4.0",
+  "requested_workers": 1,
+  "compiled_source_sha256": "3aae419bd8992f34e19c45314d690deaa8f28c48779b8a96ad020fea35310392",
+  "parallel_row_threshold": 512,
+  "warmup_spread_row_histogram": {
+    "36": 99,
+    "58": 99,
+    "128": 99
+  },
+  "warmup_pool_requests": 0,
+  "pool_created_after_measurements": false,
+  "loaded_native_threadpools": [],
+  "shared_phasesmith_preparation_default_workers": 2,
+  "repetitions": 10,
+  "median_after_preparation_cpu_to_wall": 0.9996928140403045,
+  "measurements": [
+    {
+      "workflow_wall_seconds": 0.4218611249962123,
+      "workflow_cpu_seconds": 0.42823600000000006,
+      "preparation": {
+        "cpu_seconds": 0.06849399999999983,
+        "wall_seconds": 0.05969641600677278
+      },
+      "after_preparation_wall_seconds": 0.36216470898943953,
+      "after_preparation_cpu_seconds": 0.35974200000000023,
+      "after_preparation_cpu_to_wall": 0.9933104774449187
+    },
+    {
+      "workflow_wall_seconds": 0.4095398330100579,
+      "workflow_cpu_seconds": 0.4182459999999999,
+      "preparation": {
+        "cpu_seconds": 0.068635,
+        "wall_seconds": 0.059861082991119474
+      },
+      "after_preparation_wall_seconds": 0.34967875001893844,
+      "after_preparation_cpu_seconds": 0.3496109999999999,
+      "after_preparation_cpu_to_wall": 0.9998062506831346
+    },
+    {
+      "workflow_wall_seconds": 0.40804420798667707,
+      "workflow_cpu_seconds": 0.4164850000000002,
+      "preparation": {
+        "cpu_seconds": 0.0694189999999999,
+        "wall_seconds": 0.06085191699094139
+      },
+      "after_preparation_wall_seconds": 0.3471922909957357,
+      "after_preparation_cpu_seconds": 0.3470660000000003,
+      "after_preparation_cpu_to_wall": 0.999636250576379
+    },
+    {
+      "workflow_wall_seconds": 0.40558091599086765,
+      "workflow_cpu_seconds": 0.41407099999999986,
+      "preparation": {
+        "cpu_seconds": 0.06949400000000017,
+        "wall_seconds": 0.060957541994866915
+      },
+      "after_preparation_wall_seconds": 0.34462337399600074,
+      "after_preparation_cpu_seconds": 0.3445769999999997,
+      "after_preparation_cpu_to_wall": 0.9998654357205569
+    },
+    {
+      "workflow_wall_seconds": 0.4108560829918133,
+      "workflow_cpu_seconds": 0.419416,
+      "preparation": {
+        "cpu_seconds": 0.06921,
+        "wall_seconds": 0.060538833000464365
+      },
+      "after_preparation_wall_seconds": 0.35031724999134894,
+      "after_preparation_cpu_seconds": 0.350206,
+      "after_preparation_cpu_to_wall": 0.999682430735707
+    },
+    {
+      "workflow_wall_seconds": 0.4201218329981202,
+      "workflow_cpu_seconds": 0.42886099999999994,
+      "preparation": {
+        "cpu_seconds": 0.07311899999999971,
+        "wall_seconds": 0.06406629200500902
+      },
+      "after_preparation_wall_seconds": 0.3560555409931112,
+      "after_preparation_cpu_seconds": 0.3557420000000002,
+      "after_preparation_cpu_to_wall": 0.9991194042585703
+    },
+    {
+      "workflow_wall_seconds": 0.4302787500055274,
+      "workflow_cpu_seconds": 0.438828,
+      "preparation": {
+        "cpu_seconds": 0.06871800000000006,
+        "wall_seconds": 0.06011358299292624
+      },
+      "after_preparation_wall_seconds": 0.37016516701260116,
+      "after_preparation_cpu_seconds": 0.37010999999999994,
+      "after_preparation_cpu_to_wall": 0.999850966494102
+    },
+    {
+      "workflow_wall_seconds": 0.4116904999973485,
+      "workflow_cpu_seconds": 0.4201929999999994,
+      "preparation": {
+        "cpu_seconds": 0.06906799999999969,
+        "wall_seconds": 0.06044766599370632
+      },
+      "after_preparation_wall_seconds": 0.3512428340036422,
+      "after_preparation_cpu_seconds": 0.3511249999999997,
+      "after_preparation_cpu_to_wall": 0.999664522682785
+    },
+    {
+      "workflow_wall_seconds": 0.4129057500103954,
+      "workflow_cpu_seconds": 0.42146600000000056,
+      "preparation": {
+        "cpu_seconds": 0.07150500000000015,
+        "wall_seconds": 0.06289929100603331
+      },
+      "after_preparation_wall_seconds": 0.3500064590043621,
+      "after_preparation_cpu_seconds": 0.3499610000000004,
+      "after_preparation_cpu_to_wall": 0.9998701195272481
+    },
+    {
+      "workflow_wall_seconds": 0.41394291700271424,
+      "workflow_cpu_seconds": 0.42242600000000063,
+      "preparation": {
+        "cpu_seconds": 0.07465499999999992,
+        "wall_seconds": 0.06606866700167302
+      },
+      "after_preparation_wall_seconds": 0.3478742500010412,
+      "after_preparation_cpu_seconds": 0.3477710000000007,
+      "after_preparation_cpu_to_wall": 0.9997031973449021
+    }
+  ],
+  "scientific_results": {
+    "poisson_rwp": 0.19260110440383335,
+    "unit_weight_rwp": 0.13268418941267238,
+    "profile_correlation": 0.9903820634353105,
+    "weight_fractions": {
+      "Al2O3": 0.304574617241206,
+      "ZnO": 0.3431431747718534,
+      "CaF2": 0.3522822079869405
+    },
+    "maximum_weight_fraction_error": 0.009125382758793987,
+    "qpa_covariance_available": true,
+    "stages": [
+      {
+        "termination": "converged",
+        "rwp": 0.21489338418817033,
+        "parameters": [
+          "phases.0.scale",
+          "phases.1.scale",
+          "phases.2.scale",
+          "instrument.zero_shift",
+          "instrument.profile.u",
+          "instrument.profile.v",
+          "instrument.profile.w",
+          "instrument.background.c0",
+          "instrument.background.c1",
+          "instrument.background.c2"
+        ],
+        "stages": [
+          {
+            "name": "stage1",
+            "status": "converged",
+            "n_iterations": 13,
+            "cost_initial": 30799.277858708927,
+            "cost_final": 20040.950155029608,
+            "freed": [
+              "phases.0.scale",
+              "phases.1.scale",
+              "phases.2.scale",
+              "instrument.zero_shift",
+              "instrument.profile.u",
+              "instrument.profile.v",
+              "instrument.profile.w",
+              "instrument.background.c0",
+              "instrument.background.c1",
+              "instrument.background.c2"
+            ],
+            "ftol": null,
+            "n_constraint_truncations": 0,
+            "held": [],
+            "released": []
+          }
+        ]
+      },
+      {
+        "termination": "converged",
+        "rwp": 0.19217750037605663,
+        "parameters": [
+          "phases.0.scale",
+          "phases.0.preferred_orientation.r",
+          "phases.0.lor_size",
+          "phases.0.gauss_strain",
+          "phases.1.scale",
+          "phases.1.preferred_orientation.r",
+          "phases.1.lor_size",
+          "phases.1.gauss_strain",
+          "phases.1.atoms.0.biso",
+          "phases.1.atoms.1.biso",
+          "phases.2.scale",
+          "phases.2.lor_size",
+          "phases.2.gauss_strain",
+          "phases.2.atoms.0.biso",
+          "phases.2.atoms.1.biso",
+          "instrument.zero_shift",
+          "instrument.profile.u",
+          "instrument.profile.v",
+          "instrument.profile.w"
+        ],
+        "stages": [
+          {
+            "name": "stage2",
+            "status": "converged",
+            "n_iterations": 29,
+            "cost_initial": 20054.614413204894,
+            "cost_final": 16027.924863088641,
+            "freed": [
+              "phases.0.scale",
+              "phases.0.preferred_orientation.r",
+              "phases.0.lor_size",
+              "phases.0.gauss_strain",
+              "phases.1.scale",
+              "phases.1.preferred_orientation.r",
+              "phases.1.lor_size",
+              "phases.1.gauss_strain",
+              "phases.1.atoms.0.biso",
+              "phases.1.atoms.1.biso",
+              "phases.2.scale",
+              "phases.2.lor_size",
+              "phases.2.gauss_strain",
+              "phases.2.atoms.0.biso",
+              "phases.2.atoms.1.biso",
+              "instrument.zero_shift",
+              "instrument.profile.u",
+              "instrument.profile.v",
+              "instrument.profile.w"
+            ],
+            "ftol": null,
+            "n_constraint_truncations": 0,
+            "held": [],
+            "released": []
+          }
+        ]
+      },
+      {
+        "termination": "converged",
+        "rwp": 0.19260110440383335,
+        "parameters": [
+          "phases.0.scale",
+          "phases.1.scale",
+          "phases.2.scale"
+        ],
+        "stages": [
+          {
+            "name": "stage3",
+            "status": "converged",
+            "n_iterations": 3,
+            "cost_initial": 16099.339985698625,
+            "cost_final": 16098.66130548331,
+            "freed": [
+              "phases.0.scale",
+              "phases.1.scale",
+              "phases.2.scale"
+            ],
+            "ftol": null,
+            "n_constraint_truncations": 0,
+            "held": [],
+            "released": []
+          }
+        ]
+      }
+    ]
+  },
+  "notes": [
+    "Dispatch instrumentation runs only during the warmup, outside measured runs.",
+    "CPU time sums all process threads; CPU/wall estimates average busy cores, not affinity.",
+    "After-preparation timing includes all three rietx fits and final result reporting.",
+    "Shared preparation uses the existing PhaseSmith default of two workers; the original workflow timing is not a strict single-core measurement."
+  ]
+}

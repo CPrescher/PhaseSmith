@@ -1,0 +1,1224 @@
+{
+  "scope": "causal rietx support/axial ablations on real QARR; not identical models",
+  "platform": "macOS-26.6.2-arm64-arm-64bit",
+  "python": "3.12.13",
+  "rietx": "1.4.0",
+  "phasesmith_build": "release",
+  "threads": 1,
+  "thread_environment": {
+    "OPENBLAS_NUM_THREADS": "1",
+    "OMP_NUM_THREADS": "1",
+    "VECLIB_MAXIMUM_THREADS": "1"
+  },
+  "warmups": 1,
+  "repetitions": 5,
+  "quality_gates_passed": true,
+  "cases": {
+    "phasesmith": {
+      "seconds": [
+        0.8329357499969774,
+        0.8337909999972908,
+        0.8335791249992326,
+        0.83409512500657,
+        0.8555420000047889
+      ],
+      "scientific": {
+        "dataset_id": "iucr-qarr-1g",
+        "status": "passed",
+        "sample_count": 7251,
+        "reflection_count": 110,
+        "checks": [
+          {
+            "check_id": "observed_grid",
+            "status": "passed",
+            "detail": "QARR 1g pattern spans the published 5-150 degree grid.",
+            "measured": 7251.0,
+            "criterion": "7251 samples with endpoints 5 and 150 degrees"
+          },
+          {
+            "check_id": "site_expansion",
+            "status": "passed",
+            "detail": "The documented 1e-4 CIF coordinate tolerance gives physical unit-cell contents.",
+            "measured": 46.0,
+            "criterion": "expanded site counts Al2O3=30, ZnO=4, CaF2=12"
+          },
+          {
+            "check_id": "refinement_termination",
+            "status": "passed",
+            "detail": "Refinement returns a finite last accepted state under explicit iteration budgets.",
+            "measured": null,
+            "criterion": "no numerical failure, divergence, repeated rejection, or empty data"
+          },
+          {
+            "check_id": "poisson_rwp",
+            "status": "passed",
+            "detail": "Poisson-weighted QARR profile gate with fixed CIF anisotropic displacement.",
+            "measured": 0.19816460010715792,
+            "criterion": "Rwp with sigma=sqrt(max(counts, 1)) <= 0.20"
+          },
+          {
+            "check_id": "unit_weight_rwp",
+            "status": "passed",
+            "detail": "Unit-weight profile residual is reported separately from Poisson-weighted Rwp.",
+            "measured": 0.1317936160063607,
+            "criterion": "unit-weight Rwp <= 0.15"
+          },
+          {
+            "check_id": "profile_correlation",
+            "status": "passed",
+            "detail": "Background-subtracted observed and calculated profiles remain strongly aligned.",
+            "measured": 0.9906400670400214,
+            "criterion": "Pearson correlation >= 0.98"
+          },
+          {
+            "check_id": "qpa_weight_fraction",
+            "status": "passed",
+            "detail": "Hill--Howard weight fractions agree with the independently weighed phase fractions.",
+            "measured": 0.006179751338108996,
+            "criterion": "maximum absolute phase error <= 0.02"
+          },
+          {
+            "check_id": "qpa_covariance",
+            "status": "passed",
+            "detail": "The final scale covariance propagates analytically to finite phase-fraction uncertainties.",
+            "measured": 0.0008580507980025356,
+            "criterion": "finite nonnegative propagated variance for every phase fraction"
+          }
+        ],
+        "notes": [
+          "Calculated crystalline weight fractions: Al2O3=30.752%, ZnO=34.223%, CaF2=35.025%.",
+          "Maximum propagated phase-fraction standard uncertainty=0.00085805.",
+          "Stage 1 termination=max_iterations, iterations=7, evaluations=31, Rwp=0.26375366.",
+          "Stage 2 termination=max_iterations, iterations=28, evaluations=29, Rwp=0.19816792.",
+          "Stage 3 scale polish termination=converged, iterations=1, evaluations=2, Poisson Rwp=0.19816460, unit-weight Rwp=0.13179362, Rp=0.15539767.",
+          "Expanded sites at tolerance 1e-4: {'Al2O3': 30, 'ZnO': 4, 'CaF2': 12}.",
+          "CIF anisotropic displacement tensors are evaluated directly and remain fixed.",
+          "Sites without CIF displacement values start from Uiso=0.005 \u00c5\u00b2 and are refined.",
+          "Fixed Cu K-alpha1 Cromer--Liberman offsets are used for both doublet components; component-dependent dispersion is not interpolated.",
+          "The supplied SH/L=0.002 is included through the documented equal-height FCJ mapping; absorption is not yet included, and lattice/component wavelengths remain fixed."
+        ]
+      },
+      "median_seconds": 0.8337909999972908
+    },
+    "phasesmith_symmetric": {
+      "seconds": [
+        0.4564695419976488,
+        0.4534355419964413,
+        0.46115191699936986,
+        0.45534649999899557,
+        0.45644220800022595
+      ],
+      "scientific": {
+        "dataset_id": "iucr-qarr-1g",
+        "status": "passed",
+        "sample_count": 7251,
+        "reflection_count": 110,
+        "checks": [
+          {
+            "check_id": "observed_grid",
+            "status": "passed",
+            "detail": "QARR 1g pattern spans the published 5-150 degree grid.",
+            "measured": 7251.0,
+            "criterion": "7251 samples with endpoints 5 and 150 degrees"
+          },
+          {
+            "check_id": "site_expansion",
+            "status": "passed",
+            "detail": "The documented 1e-4 CIF coordinate tolerance gives physical unit-cell contents.",
+            "measured": 46.0,
+            "criterion": "expanded site counts Al2O3=30, ZnO=4, CaF2=12"
+          },
+          {
+            "check_id": "refinement_termination",
+            "status": "passed",
+            "detail": "Refinement returns a finite last accepted state under explicit iteration budgets.",
+            "measured": null,
+            "criterion": "no numerical failure, divergence, repeated rejection, or empty data"
+          },
+          {
+            "check_id": "poisson_rwp",
+            "status": "passed",
+            "detail": "Poisson-weighted QARR profile gate with fixed CIF anisotropic displacement.",
+            "measured": 0.1984372306950975,
+            "criterion": "Rwp with sigma=sqrt(max(counts, 1)) <= 0.20"
+          },
+          {
+            "check_id": "unit_weight_rwp",
+            "status": "passed",
+            "detail": "Unit-weight profile residual is reported separately from Poisson-weighted Rwp.",
+            "measured": 0.13216463699078446,
+            "criterion": "unit-weight Rwp <= 0.15"
+          },
+          {
+            "check_id": "profile_correlation",
+            "status": "passed",
+            "detail": "Background-subtracted observed and calculated profiles remain strongly aligned.",
+            "measured": 0.9906284697680711,
+            "criterion": "Pearson correlation >= 0.98"
+          },
+          {
+            "check_id": "qpa_weight_fraction",
+            "status": "passed",
+            "detail": "Hill--Howard weight fractions agree with the independently weighed phase fractions.",
+            "measured": 0.006085666641786003,
+            "criterion": "maximum absolute phase error <= 0.02"
+          },
+          {
+            "check_id": "qpa_covariance",
+            "status": "passed",
+            "detail": "The final scale covariance propagates analytically to finite phase-fraction uncertainties.",
+            "measured": 0.0008602259451657782,
+            "criterion": "finite nonnegative propagated variance for every phase fraction"
+          }
+        ],
+        "notes": [
+          "Calculated crystalline weight fractions: Al2O3=30.761%, ZnO=34.215%, CaF2=35.023%.",
+          "Maximum propagated phase-fraction standard uncertainty=0.00086023.",
+          "Stage 1 termination=max_iterations, iterations=7, evaluations=31, Rwp=0.26377830.",
+          "Stage 2 termination=max_iterations, iterations=28, evaluations=29, Rwp=0.19845191.",
+          "Stage 3 scale polish termination=converged, iterations=1, evaluations=2, Poisson Rwp=0.19843723, unit-weight Rwp=0.13216464, Rp=0.15555900.",
+          "Expanded sites at tolerance 1e-4: {'Al2O3': 30, 'ZnO': 4, 'CaF2': 12}.",
+          "CIF anisotropic displacement tensors are evaluated directly and remain fixed.",
+          "Sites without CIF displacement values start from Uiso=0.005 \u00c5\u00b2 and are refined.",
+          "Fixed Cu K-alpha1 Cromer--Liberman offsets are used for both doublet components; component-dependent dispersion is not interpolated.",
+          "The supplied SH/L=0.002 is included through the documented equal-height FCJ mapping; absorption is not yet included, and lattice/component wavelengths remain fixed."
+        ]
+      },
+      "median_seconds": 0.45644220800022595,
+      "initial_forward_relative_l2_vs_phasesmith": 0.00021661774974963602
+    },
+    "default": {
+      "seconds": [
+        0.4089095000017551,
+        0.41138816599413985,
+        0.4083273750002263,
+        0.41113233400392346,
+        0.41142420799587853
+      ],
+      "scientific": {
+        "poisson_rwp": 0.19260110430404476,
+        "unit_weight_rwp": 0.1326841858098463,
+        "profile_correlation": 0.9903820639405592,
+        "weight_fractions": {
+          "Al2O3": 0.3045746160138045,
+          "ZnO": 0.34314317512391973,
+          "CaF2": 0.35228220886227585
+        },
+        "maximum_weight_fraction_error": 0.009125383986195501,
+        "qpa_covariance_available": true,
+        "stages": [
+          {
+            "termination": "converged",
+            "rwp": 0.2148933841882496,
+            "parameters": [
+              "phases.0.scale",
+              "phases.1.scale",
+              "phases.2.scale",
+              "instrument.zero_shift",
+              "instrument.profile.u",
+              "instrument.profile.v",
+              "instrument.profile.w",
+              "instrument.background.c0",
+              "instrument.background.c1",
+              "instrument.background.c2"
+            ],
+            "stages": [
+              {
+                "name": "stage1",
+                "status": "converged",
+                "n_iterations": 13,
+                "cost_initial": 30796.758776193983,
+                "cost_final": 20040.950155044397,
+                "freed": [
+                  "phases.0.scale",
+                  "phases.1.scale",
+                  "phases.2.scale",
+                  "instrument.zero_shift",
+                  "instrument.profile.u",
+                  "instrument.profile.v",
+                  "instrument.profile.w",
+                  "instrument.background.c0",
+                  "instrument.background.c1",
+                  "instrument.background.c2"
+                ],
+                "ftol": null,
+                "n_constraint_truncations": 0,
+                "held": [],
+                "released": []
+              }
+            ]
+          },
+          {
+            "termination": "converged",
+            "rwp": 0.1921775002942673,
+            "parameters": [
+              "phases.0.scale",
+              "phases.0.preferred_orientation.r",
+              "phases.0.lor_size",
+              "phases.0.gauss_strain",
+              "phases.1.scale",
+              "phases.1.preferred_orientation.r",
+              "phases.1.lor_size",
+              "phases.1.gauss_strain",
+              "phases.1.atoms.0.biso",
+              "phases.1.atoms.1.biso",
+              "phases.2.scale",
+              "phases.2.lor_size",
+              "phases.2.gauss_strain",
+              "phases.2.atoms.0.biso",
+              "phases.2.atoms.1.biso",
+              "instrument.zero_shift",
+              "instrument.profile.u",
+              "instrument.profile.v",
+              "instrument.profile.w"
+            ],
+            "stages": [
+              {
+                "name": "stage2",
+                "status": "converged",
+                "n_iterations": 30,
+                "cost_initial": 20054.61441319089,
+                "cost_final": 16027.92484944591,
+                "freed": [
+                  "phases.0.scale",
+                  "phases.0.preferred_orientation.r",
+                  "phases.0.lor_size",
+                  "phases.0.gauss_strain",
+                  "phases.1.scale",
+                  "phases.1.preferred_orientation.r",
+                  "phases.1.lor_size",
+                  "phases.1.gauss_strain",
+                  "phases.1.atoms.0.biso",
+                  "phases.1.atoms.1.biso",
+                  "phases.2.scale",
+                  "phases.2.lor_size",
+                  "phases.2.gauss_strain",
+                  "phases.2.atoms.0.biso",
+                  "phases.2.atoms.1.biso",
+                  "instrument.zero_shift",
+                  "instrument.profile.u",
+                  "instrument.profile.v",
+                  "instrument.profile.w"
+                ],
+                "ftol": null,
+                "n_constraint_truncations": 0,
+                "held": [],
+                "released": []
+              }
+            ]
+          },
+          {
+            "termination": "converged",
+            "rwp": 0.19260110430404476,
+            "parameters": [
+              "phases.0.scale",
+              "phases.1.scale",
+              "phases.2.scale"
+            ],
+            "stages": [
+              {
+                "name": "stage3",
+                "status": "converged",
+                "n_iterations": 3,
+                "cost_initial": 16099.339969524375,
+                "cost_final": 16098.661288801552,
+                "freed": [
+                  "phases.0.scale",
+                  "phases.1.scale",
+                  "phases.2.scale"
+                ],
+                "ftol": null,
+                "n_constraint_truncations": 0,
+                "held": [],
+                "released": []
+              }
+            ]
+          }
+        ]
+      },
+      "median_seconds": 0.41113233400392346,
+      "workload": [
+        {
+          "free_parameters": 10,
+          "phases": [
+            {
+              "reflection_line_rows": 128,
+              "symmetric_rows": 128,
+              "requested_node_histogram": {
+                "0": 128
+              },
+              "sample_visits": 37512,
+              "sample_node_visits": 37512
+            },
+            {
+              "reflection_line_rows": 58,
+              "symmetric_rows": 58,
+              "requested_node_histogram": {
+                "0": 58
+              },
+              "sample_visits": 16470,
+              "sample_node_visits": 16470
+            },
+            {
+              "reflection_line_rows": 36,
+              "symmetric_rows": 36,
+              "requested_node_histogram": {
+                "0": 36
+              },
+              "sample_visits": 9678,
+              "sample_node_visits": 9678
+            }
+          ],
+          "nfev": 13,
+          "njev": 13
+        },
+        {
+          "free_parameters": 19,
+          "phases": [
+            {
+              "reflection_line_rows": 128,
+              "symmetric_rows": 128,
+              "requested_node_histogram": {
+                "0": 128
+              },
+              "sample_visits": 34740,
+              "sample_node_visits": 34740
+            },
+            {
+              "reflection_line_rows": 58,
+              "symmetric_rows": 58,
+              "requested_node_histogram": {
+                "0": 58
+              },
+              "sample_visits": 15268,
+              "sample_node_visits": 15268
+            },
+            {
+              "reflection_line_rows": 36,
+              "symmetric_rows": 36,
+              "requested_node_histogram": {
+                "0": 36
+              },
+              "sample_visits": 8981,
+              "sample_node_visits": 8981
+            }
+          ],
+          "nfev": 30,
+          "njev": 14
+        },
+        {
+          "free_parameters": 3,
+          "phases": [
+            {
+              "reflection_line_rows": 128,
+              "symmetric_rows": 128,
+              "requested_node_histogram": {
+                "0": 128
+              },
+              "sample_visits": 28868,
+              "sample_node_visits": 28868
+            },
+            {
+              "reflection_line_rows": 58,
+              "symmetric_rows": 58,
+              "requested_node_histogram": {
+                "0": 58
+              },
+              "sample_visits": 11714,
+              "sample_node_visits": 11714
+            },
+            {
+              "reflection_line_rows": 36,
+              "symmetric_rows": 36,
+              "requested_node_histogram": {
+                "0": 36
+              },
+              "sample_visits": 6786,
+              "sample_node_visits": 6786
+            }
+          ],
+          "nfev": 3,
+          "njev": 3
+        }
+      ],
+      "initial_forward_relative_l2_vs_phasesmith": 0.00909227579168817
+    },
+    "retain_small_axial": {
+      "seconds": [
+        0.619717750007112,
+        0.6032964999976684,
+        0.5990092499996535,
+        0.6013882919942262,
+        0.6011801249987911
+      ],
+      "scientific": {
+        "poisson_rwp": 0.19256924666334418,
+        "unit_weight_rwp": 0.13265283348062645,
+        "profile_correlation": 0.9903865648514816,
+        "weight_fractions": {
+          "Al2O3": 0.304574423581032,
+          "ZnO": 0.3431357202278475,
+          "CaF2": 0.3522898561911204
+        },
+        "maximum_weight_fraction_error": 0.009125576418967996,
+        "qpa_covariance_available": true,
+        "stages": [
+          {
+            "termination": "converged",
+            "rwp": 0.2148634773999788,
+            "parameters": [
+              "phases.0.scale",
+              "phases.1.scale",
+              "phases.2.scale",
+              "instrument.zero_shift",
+              "instrument.profile.u",
+              "instrument.profile.v",
+              "instrument.profile.w",
+              "instrument.background.c0",
+              "instrument.background.c1",
+              "instrument.background.c2"
+            ],
+            "stages": [
+              {
+                "name": "stage1",
+                "status": "converged",
+                "n_iterations": 13,
+                "cost_initial": 30790.883679732833,
+                "cost_final": 20035.372330964852,
+                "freed": [
+                  "phases.0.scale",
+                  "phases.1.scale",
+                  "phases.2.scale",
+                  "instrument.zero_shift",
+                  "instrument.profile.u",
+                  "instrument.profile.v",
+                  "instrument.profile.w",
+                  "instrument.background.c0",
+                  "instrument.background.c1",
+                  "instrument.background.c2"
+                ],
+                "ftol": null,
+                "n_constraint_truncations": 0,
+                "held": [],
+                "released": []
+              }
+            ]
+          },
+          {
+            "termination": "converged",
+            "rwp": 0.1921455425252404,
+            "parameters": [
+              "phases.0.scale",
+              "phases.0.preferred_orientation.r",
+              "phases.0.lor_size",
+              "phases.0.gauss_strain",
+              "phases.1.scale",
+              "phases.1.preferred_orientation.r",
+              "phases.1.lor_size",
+              "phases.1.gauss_strain",
+              "phases.1.atoms.0.biso",
+              "phases.1.atoms.1.biso",
+              "phases.2.scale",
+              "phases.2.lor_size",
+              "phases.2.gauss_strain",
+              "phases.2.atoms.0.biso",
+              "phases.2.atoms.1.biso",
+              "instrument.zero_shift",
+              "instrument.profile.u",
+              "instrument.profile.v",
+              "instrument.profile.w"
+            ],
+            "stages": [
+              {
+                "name": "stage2",
+                "status": "converged",
+                "n_iterations": 30,
+                "cost_initial": 20049.03519149916,
+                "cost_final": 16022.594629929965,
+                "freed": [
+                  "phases.0.scale",
+                  "phases.0.preferred_orientation.r",
+                  "phases.0.lor_size",
+                  "phases.0.gauss_strain",
+                  "phases.1.scale",
+                  "phases.1.preferred_orientation.r",
+                  "phases.1.lor_size",
+                  "phases.1.gauss_strain",
+                  "phases.1.atoms.0.biso",
+                  "phases.1.atoms.1.biso",
+                  "phases.2.scale",
+                  "phases.2.lor_size",
+                  "phases.2.gauss_strain",
+                  "phases.2.atoms.0.biso",
+                  "phases.2.atoms.1.biso",
+                  "instrument.zero_shift",
+                  "instrument.profile.u",
+                  "instrument.profile.v",
+                  "instrument.profile.w"
+                ],
+                "ftol": null,
+                "n_constraint_truncations": 0,
+                "held": [],
+                "released": []
+              }
+            ]
+          },
+          {
+            "termination": "converged",
+            "rwp": 0.19256924666334418,
+            "parameters": [
+              "phases.0.scale",
+              "phases.1.scale",
+              "phases.2.scale"
+            ],
+            "stages": [
+              {
+                "name": "stage3",
+                "status": "converged",
+                "n_iterations": 3,
+                "cost_initial": 16094.014743310112,
+                "cost_final": 16093.336055043439,
+                "freed": [
+                  "phases.0.scale",
+                  "phases.1.scale",
+                  "phases.2.scale"
+                ],
+                "ftol": null,
+                "n_constraint_truncations": 0,
+                "held": [],
+                "released": []
+              }
+            ]
+          }
+        ]
+      },
+      "median_seconds": 0.6013882919942262,
+      "workload": [
+        {
+          "free_parameters": 10,
+          "phases": [
+            {
+              "reflection_line_rows": 128,
+              "symmetric_rows": 0,
+              "requested_node_histogram": {
+                "8": 128
+              },
+              "sample_visits": 37512,
+              "sample_node_visits": 300096
+            },
+            {
+              "reflection_line_rows": 58,
+              "symmetric_rows": 0,
+              "requested_node_histogram": {
+                "8": 58
+              },
+              "sample_visits": 16470,
+              "sample_node_visits": 131760
+            },
+            {
+              "reflection_line_rows": 36,
+              "symmetric_rows": 0,
+              "requested_node_histogram": {
+                "8": 36
+              },
+              "sample_visits": 9678,
+              "sample_node_visits": 77424
+            }
+          ],
+          "nfev": 13,
+          "njev": 13
+        },
+        {
+          "free_parameters": 19,
+          "phases": [
+            {
+              "reflection_line_rows": 128,
+              "symmetric_rows": 0,
+              "requested_node_histogram": {
+                "8": 128
+              },
+              "sample_visits": 34740,
+              "sample_node_visits": 277920
+            },
+            {
+              "reflection_line_rows": 58,
+              "symmetric_rows": 0,
+              "requested_node_histogram": {
+                "8": 58
+              },
+              "sample_visits": 15268,
+              "sample_node_visits": 122144
+            },
+            {
+              "reflection_line_rows": 36,
+              "symmetric_rows": 0,
+              "requested_node_histogram": {
+                "8": 36
+              },
+              "sample_visits": 8981,
+              "sample_node_visits": 71848
+            }
+          ],
+          "nfev": 30,
+          "njev": 14
+        },
+        {
+          "free_parameters": 3,
+          "phases": [
+            {
+              "reflection_line_rows": 128,
+              "symmetric_rows": 0,
+              "requested_node_histogram": {
+                "8": 128
+              },
+              "sample_visits": 28869,
+              "sample_node_visits": 230952
+            },
+            {
+              "reflection_line_rows": 58,
+              "symmetric_rows": 0,
+              "requested_node_histogram": {
+                "8": 58
+              },
+              "sample_visits": 11714,
+              "sample_node_visits": 93712
+            },
+            {
+              "reflection_line_rows": 36,
+              "symmetric_rows": 0,
+              "requested_node_histogram": {
+                "8": 36
+              },
+              "sample_visits": 6786,
+              "sample_node_visits": 54288
+            }
+          ],
+          "nfev": 3,
+          "njev": 3
+        }
+      ],
+      "initial_forward_relative_l2_vs_phasesmith": 0.009083811928500045
+    },
+    "30_fwhm_windows": {
+      "seconds": [
+        0.4698801669946988,
+        0.47151645800477127,
+        0.4698381249982049,
+        0.47158925000258023,
+        0.46769424999365583
+      ],
+      "scientific": {
+        "poisson_rwp": 0.19315064494149933,
+        "unit_weight_rwp": 0.1327659924352247,
+        "profile_correlation": 0.9903785916171981,
+        "weight_fractions": {
+          "Al2O3": 0.3050733170810055,
+          "ZnO": 0.3423720262129968,
+          "CaF2": 0.3525546567059976
+        },
+        "maximum_weight_fraction_error": 0.008626682918994488,
+        "qpa_covariance_available": true,
+        "stages": [
+          {
+            "termination": "converged",
+            "rwp": 0.21528140084388175,
+            "parameters": [
+              "phases.0.scale",
+              "phases.1.scale",
+              "phases.2.scale",
+              "instrument.zero_shift",
+              "instrument.profile.u",
+              "instrument.profile.v",
+              "instrument.profile.w",
+              "instrument.background.c0",
+              "instrument.background.c1",
+              "instrument.background.c2"
+            ],
+            "stages": [
+              {
+                "name": "stage1",
+                "status": "converged",
+                "n_iterations": 13,
+                "cost_initial": 30588.18831906205,
+                "cost_final": 20113.388335970863,
+                "freed": [
+                  "phases.0.scale",
+                  "phases.1.scale",
+                  "phases.2.scale",
+                  "instrument.zero_shift",
+                  "instrument.profile.u",
+                  "instrument.profile.v",
+                  "instrument.profile.w",
+                  "instrument.background.c0",
+                  "instrument.background.c1",
+                  "instrument.background.c2"
+                ],
+                "ftol": null,
+                "n_constraint_truncations": 0,
+                "held": [],
+                "released": []
+              }
+            ]
+          },
+          {
+            "termination": "converged",
+            "rwp": 0.1932211511103676,
+            "parameters": [
+              "phases.0.scale",
+              "phases.0.preferred_orientation.r",
+              "phases.0.lor_size",
+              "phases.0.gauss_strain",
+              "phases.1.scale",
+              "phases.1.preferred_orientation.r",
+              "phases.1.lor_size",
+              "phases.1.gauss_strain",
+              "phases.1.atoms.0.biso",
+              "phases.1.atoms.1.biso",
+              "phases.2.scale",
+              "phases.2.lor_size",
+              "phases.2.gauss_strain",
+              "phases.2.atoms.0.biso",
+              "phases.2.atoms.1.biso",
+              "instrument.zero_shift",
+              "instrument.profile.u",
+              "instrument.profile.v",
+              "instrument.profile.w"
+            ],
+            "stages": [
+              {
+                "name": "stage2",
+                "status": "converged",
+                "n_iterations": 30,
+                "cost_initial": 20095.300228194857,
+                "cost_final": 16202.4819923727,
+                "freed": [
+                  "phases.0.scale",
+                  "phases.0.preferred_orientation.r",
+                  "phases.0.lor_size",
+                  "phases.0.gauss_strain",
+                  "phases.1.scale",
+                  "phases.1.preferred_orientation.r",
+                  "phases.1.lor_size",
+                  "phases.1.gauss_strain",
+                  "phases.1.atoms.0.biso",
+                  "phases.1.atoms.1.biso",
+                  "phases.2.scale",
+                  "phases.2.lor_size",
+                  "phases.2.gauss_strain",
+                  "phases.2.atoms.0.biso",
+                  "phases.2.atoms.1.biso",
+                  "instrument.zero_shift",
+                  "instrument.profile.u",
+                  "instrument.profile.v",
+                  "instrument.profile.w"
+                ],
+                "ftol": null,
+                "n_constraint_truncations": 0,
+                "held": [],
+                "released": []
+              }
+            ]
+          },
+          {
+            "termination": "converged",
+            "rwp": 0.19315064494149933,
+            "parameters": [
+              "phases.0.scale",
+              "phases.1.scale",
+              "phases.2.scale"
+            ],
+            "stages": [
+              {
+                "name": "stage3",
+                "status": "converged",
+                "n_iterations": 3,
+                "cost_initial": 16190.681551912188,
+                "cost_final": 16190.659616827917,
+                "freed": [
+                  "phases.0.scale",
+                  "phases.1.scale",
+                  "phases.2.scale"
+                ],
+                "ftol": null,
+                "n_constraint_truncations": 0,
+                "held": [],
+                "released": []
+              }
+            ]
+          }
+        ]
+      },
+      "median_seconds": 0.4698801669946988,
+      "workload": [
+        {
+          "free_parameters": 10,
+          "phases": [
+            {
+              "reflection_line_rows": 128,
+              "symmetric_rows": 128,
+              "requested_node_histogram": {
+                "0": 128
+              },
+              "sample_visits": 141075,
+              "sample_node_visits": 141075
+            },
+            {
+              "reflection_line_rows": 58,
+              "symmetric_rows": 58,
+              "requested_node_histogram": {
+                "0": 58
+              },
+              "sample_visits": 59179,
+              "sample_node_visits": 59179
+            },
+            {
+              "reflection_line_rows": 36,
+              "symmetric_rows": 36,
+              "requested_node_histogram": {
+                "0": 36
+              },
+              "sample_visits": 34972,
+              "sample_node_visits": 34972
+            }
+          ],
+          "nfev": 13,
+          "njev": 13
+        },
+        {
+          "free_parameters": 19,
+          "phases": [
+            {
+              "reflection_line_rows": 128,
+              "symmetric_rows": 128,
+              "requested_node_histogram": {
+                "0": 128
+              },
+              "sample_visits": 83711,
+              "sample_node_visits": 83711
+            },
+            {
+              "reflection_line_rows": 58,
+              "symmetric_rows": 58,
+              "requested_node_histogram": {
+                "0": 58
+              },
+              "sample_visits": 36544,
+              "sample_node_visits": 36544
+            },
+            {
+              "reflection_line_rows": 36,
+              "symmetric_rows": 36,
+              "requested_node_histogram": {
+                "0": 36
+              },
+              "sample_visits": 21552,
+              "sample_node_visits": 21552
+            }
+          ],
+          "nfev": 30,
+          "njev": 15
+        },
+        {
+          "free_parameters": 3,
+          "phases": [
+            {
+              "reflection_line_rows": 128,
+              "symmetric_rows": 128,
+              "requested_node_histogram": {
+                "0": 128
+              },
+              "sample_visits": 121303,
+              "sample_node_visits": 121303
+            },
+            {
+              "reflection_line_rows": 58,
+              "symmetric_rows": 58,
+              "requested_node_histogram": {
+                "0": 58
+              },
+              "sample_visits": 34164,
+              "sample_node_visits": 34164
+            },
+            {
+              "reflection_line_rows": 36,
+              "symmetric_rows": 36,
+              "requested_node_histogram": {
+                "0": 36
+              },
+              "sample_visits": 22261,
+              "sample_node_visits": 22261
+            }
+          ],
+          "nfev": 3,
+          "njev": 3
+        }
+      ],
+      "initial_forward_relative_l2_vs_phasesmith": 0.008503536047792283
+    },
+    "both": {
+      "seconds": [
+        0.9087407919942052,
+        0.9125724579935195,
+        0.9112710830013384,
+        0.911463916003413,
+        0.9067756670046947
+      ],
+      "scientific": {
+        "poisson_rwp": 0.19311905675383179,
+        "unit_weight_rwp": 0.1327345518549735,
+        "profile_correlation": 0.9903830998771196,
+        "weight_fractions": {
+          "Al2O3": 0.30507308368426045,
+          "ZnO": 0.34236466795510906,
+          "CaF2": 0.35256224836063044
+        },
+        "maximum_weight_fraction_error": 0.00862691631573953,
+        "qpa_covariance_available": true,
+        "stages": [
+          {
+            "termination": "converged",
+            "rwp": 0.21525155822091435,
+            "parameters": [
+              "phases.0.scale",
+              "phases.1.scale",
+              "phases.2.scale",
+              "instrument.zero_shift",
+              "instrument.profile.u",
+              "instrument.profile.v",
+              "instrument.profile.w",
+              "instrument.background.c0",
+              "instrument.background.c1",
+              "instrument.background.c2"
+            ],
+            "stages": [
+              {
+                "name": "stage1",
+                "status": "converged",
+                "n_iterations": 13,
+                "cost_initial": 30582.295843796215,
+                "cost_final": 20107.81242779171,
+                "freed": [
+                  "phases.0.scale",
+                  "phases.1.scale",
+                  "phases.2.scale",
+                  "instrument.zero_shift",
+                  "instrument.profile.u",
+                  "instrument.profile.v",
+                  "instrument.profile.w",
+                  "instrument.background.c0",
+                  "instrument.background.c1",
+                  "instrument.background.c2"
+                ],
+                "ftol": null,
+                "n_constraint_truncations": 0,
+                "held": [],
+                "released": []
+              }
+            ]
+          },
+          {
+            "termination": "converged",
+            "rwp": 0.19318935384275293,
+            "parameters": [
+              "phases.0.scale",
+              "phases.0.preferred_orientation.r",
+              "phases.0.lor_size",
+              "phases.0.gauss_strain",
+              "phases.1.scale",
+              "phases.1.preferred_orientation.r",
+              "phases.1.lor_size",
+              "phases.1.gauss_strain",
+              "phases.1.atoms.0.biso",
+              "phases.1.atoms.1.biso",
+              "phases.2.scale",
+              "phases.2.lor_size",
+              "phases.2.gauss_strain",
+              "phases.2.atoms.0.biso",
+              "phases.2.atoms.1.biso",
+              "instrument.zero_shift",
+              "instrument.profile.u",
+              "instrument.profile.v",
+              "instrument.profile.w"
+            ],
+            "stages": [
+              {
+                "name": "stage2",
+                "status": "converged",
+                "n_iterations": 26,
+                "cost_initial": 20089.7167663403,
+                "cost_final": 16197.149736957625,
+                "freed": [
+                  "phases.0.scale",
+                  "phases.0.preferred_orientation.r",
+                  "phases.0.lor_size",
+                  "phases.0.gauss_strain",
+                  "phases.1.scale",
+                  "phases.1.preferred_orientation.r",
+                  "phases.1.lor_size",
+                  "phases.1.gauss_strain",
+                  "phases.1.atoms.0.biso",
+                  "phases.1.atoms.1.biso",
+                  "phases.2.scale",
+                  "phases.2.lor_size",
+                  "phases.2.gauss_strain",
+                  "phases.2.atoms.0.biso",
+                  "phases.2.atoms.1.biso",
+                  "instrument.zero_shift",
+                  "instrument.profile.u",
+                  "instrument.profile.v",
+                  "instrument.profile.w"
+                ],
+                "ftol": null,
+                "n_constraint_truncations": 0,
+                "held": [],
+                "released": []
+              }
+            ]
+          },
+          {
+            "termination": "converged",
+            "rwp": 0.1931190567538318,
+            "parameters": [
+              "phases.0.scale",
+              "phases.1.scale",
+              "phases.2.scale"
+            ],
+            "stages": [
+              {
+                "name": "stage3",
+                "status": "converged",
+                "n_iterations": 3,
+                "cost_initial": 16185.386275033856,
+                "cost_final": 16185.364353390109,
+                "freed": [
+                  "phases.0.scale",
+                  "phases.1.scale",
+                  "phases.2.scale"
+                ],
+                "ftol": null,
+                "n_constraint_truncations": 0,
+                "held": [],
+                "released": []
+              }
+            ]
+          }
+        ]
+      },
+      "median_seconds": 0.9112710830013384,
+      "workload": [
+        {
+          "free_parameters": 10,
+          "phases": [
+            {
+              "reflection_line_rows": 128,
+              "symmetric_rows": 0,
+              "requested_node_histogram": {
+                "8": 128
+              },
+              "sample_visits": 141075,
+              "sample_node_visits": 1128600
+            },
+            {
+              "reflection_line_rows": 58,
+              "symmetric_rows": 0,
+              "requested_node_histogram": {
+                "8": 58
+              },
+              "sample_visits": 59179,
+              "sample_node_visits": 473432
+            },
+            {
+              "reflection_line_rows": 36,
+              "symmetric_rows": 0,
+              "requested_node_histogram": {
+                "8": 36
+              },
+              "sample_visits": 34972,
+              "sample_node_visits": 279776
+            }
+          ],
+          "nfev": 13,
+          "njev": 13
+        },
+        {
+          "free_parameters": 19,
+          "phases": [
+            {
+              "reflection_line_rows": 128,
+              "symmetric_rows": 0,
+              "requested_node_histogram": {
+                "8": 128
+              },
+              "sample_visits": 83708,
+              "sample_node_visits": 669664
+            },
+            {
+              "reflection_line_rows": 58,
+              "symmetric_rows": 0,
+              "requested_node_histogram": {
+                "8": 58
+              },
+              "sample_visits": 36542,
+              "sample_node_visits": 292336
+            },
+            {
+              "reflection_line_rows": 36,
+              "symmetric_rows": 0,
+              "requested_node_histogram": {
+                "8": 36
+              },
+              "sample_visits": 21552,
+              "sample_node_visits": 172416
+            }
+          ],
+          "nfev": 26,
+          "njev": 16
+        },
+        {
+          "free_parameters": 3,
+          "phases": [
+            {
+              "reflection_line_rows": 128,
+              "symmetric_rows": 0,
+              "requested_node_histogram": {
+                "8": 128
+              },
+              "sample_visits": 121283,
+              "sample_node_visits": 970264
+            },
+            {
+              "reflection_line_rows": 58,
+              "symmetric_rows": 0,
+              "requested_node_histogram": {
+                "8": 58
+              },
+              "sample_visits": 34158,
+              "sample_node_visits": 273264
+            },
+            {
+              "reflection_line_rows": 36,
+              "symmetric_rows": 0,
+              "requested_node_histogram": {
+                "8": 36
+              },
+              "sample_visits": 22261,
+              "sample_node_visits": 178088
+            }
+          ],
+          "nfev": 3,
+          "njev": 3
+        }
+      ],
+      "initial_forward_relative_l2_vs_phasesmith": 0.008494006897922712
+    }
+  },
+  "limitations": [
+    "30-FWHM intervention retains rietx's frozen windows and movement slack.",
+    "Retaining small axial terms retains rietx's quadrature count rule.",
+    "Timing changes include changes in solver trajectory and evaluation counts.",
+    "Workload counts describe each frozen stage, not total optimizer kernel calls.",
+    "Node visits include zero-weight nodes in rietx's equal-height split rule.",
+    "phasesmith is the unchanged native benchmark; no production policies were modified.",
+    "phasesmith_symmetric explicitly removes axial geometry for all fit stages only; initial scale preparation remains unchanged and 30-FWHM support is retained."
+  ]
+}

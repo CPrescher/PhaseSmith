@@ -15,8 +15,9 @@ import importlib.metadata
 import json
 import os
 import platform
-from dataclasses import replace
+from dataclasses import asdict, replace
 from pathlib import Path
+from unittest.mock import patch
 
 import numpy as np
 import phasesmith as ps
@@ -256,7 +257,9 @@ def run_rietx(root: Path) -> dict:
     return record
 
 
-def run(root: Path, threads: int, repetitions: int) -> dict:
+def run(
+    root: Path, threads: int, repetitions: int, profile_accuracy: ps.ProfileAccuracy | None = None
+) -> dict:
     from rietx._about import COMPILED_THREADS_ENV
     from rietx.model import compiled
 
@@ -267,14 +270,41 @@ def run(root: Path, threads: int, repetitions: int) -> dict:
     compiled.warm(block=True)
     if not compiled.enabled():
         raise RuntimeError("rietx compiled kernels unavailable")
-    pattern, experiment, phases, structure, instrument = prepare(root)
-    py = rv.calculate(pattern, experiment, phases, support_fwhm=30).profile_y
+    execution = ps.ExecutionPolicy(threads=threads)
+    original_calculate = rv.calculate
+
+    def controlled_calculate(*args, **kwargs):
+        # The validation's initial-scale helper otherwise uses the default two
+        # workers, including inside the rietx workflow's shared preparation.
+        kwargs.setdefault("execution", execution)
+        return original_calculate(*args, **kwargs)
+
+    with patch.object(rv, "calculate", controlled_calculate):
+        pattern, experiment, phases, structure, instrument = prepare(root)
+    accuracy = profile_accuracy or ps.ProfileAccuracy()
+    py = rv.calculate(
+        pattern,
+        experiment,
+        phases,
+        support_fwhm=30,
+        profile_accuracy=accuracy,
+        execution=execution,
+    ).profile_y
     ry = rx.Refinement(structure, instrument, history=False).predict(pattern.x) - pattern.background
     forward_delta = float(np.linalg.norm(py - ry) / np.linalg.norm(py))
     records = {"phasesmith": [], "rietx": []}
 
     def native():
-        result = run_qarr_1g_validation(root, execution=ps.ExecutionPolicy(threads=threads))
+        original = rv.refine
+
+        def refine(request, options, **kwargs):
+            return original(request, replace(options, profile_accuracy=accuracy), **kwargs)
+
+        with (
+            patch.object(rv, "refine", refine),
+            patch.object(rv, "calculate", controlled_calculate),
+        ):
+            result = run_qarr_1g_validation(root, execution=execution)
         if result.status != "passed":
             raise RuntimeError("PhaseSmith real-data validation failed")
         record = result.to_record()
@@ -283,7 +313,8 @@ def run(root: Path, threads: int, repetitions: int) -> dict:
         return record
 
     def external():
-        record = run_rietx(root)
+        with patch.object(rv, "calculate", controlled_calculate):
+            record = run_rietx(root)
         records["rietx"].append(record)
         return record
 
@@ -303,7 +334,10 @@ def run(root: Path, threads: int, repetitions: int) -> dict:
         "phases": 3,
         "reflections": sum(p.reflections.reflection_count for p in phases),
         "threads": threads,
+        "shared_preparation_threads": threads,
         "phasesmith_refinement_backend": "native_fixed_spectrum",
+        "phasesmith_profile_accuracy": asdict(accuracy),
+        "phasesmith_powder_intensity_convention": "friedel_pair_average",
         "warmups": 1,
         "repetitions": repetitions,
         "environment": {
@@ -335,11 +369,15 @@ def run(root: Path, threads: int, repetitions: int) -> dict:
             and rwp_delta <= RWP_DIFFERENCE_LIMIT,
         },
         "notes": [
+            "Thread counts are requested worker budgets, not measured active cores; "
+            "rietx may execute serially below its parallel row threshold.",
+            "Shared PhaseSmith preparation honors the requested worker count. "
+            "Earlier records without shared_preparation_threads used the default two workers.",
             "Timings describe bounded workflows at accepted real-data quality, not identical math.",
             "No speed ratio is emitted when forward/fit equivalence fails.",
             "Python validation orchestrates three fits; each compatible fixed-spectrum "
             "fit dispatches to the native Rust solver.",
-            "Unchanged PhaseSmith validation: fixed Bruckner + 3 Chebyshev, doublet, FCJ, "
+            "PhaseSmith validation recipe: fixed Bruckner + 3 Chebyshev, doublet, FCJ, "
             "fixed CIF anisotropic displacement, 3 phases, size/strain/texture and isotropic ADPs.",
             "rietx receives explicit fixed anisotropic tensors, normalized line weights, "
             "Gaussian FWHM squared = 8 ln(2) times PhaseSmith variance, Biso = 8 pi^2 Uiso.",
@@ -347,6 +385,8 @@ def run(root: Path, threads: int, repetitions: int) -> dict:
             "PhaseSmith size is component-aware.",
             "Default support differs: PhaseSmith 30 FWHM, "
             "rietx area-tail windows frozen per stage.",
+            "Explicit PhaseSmith profile_accuracy overrides apply to refinement and the "
+            "forward comparison; shared input/initial-scale preparation stays unchanged.",
             "Budgets 8/28/10 and parameter roles match; stopping rules and bounds do not.",
             "rietx public fits calculate covariance each stage; PhaseSmith only at scale polish.",
             "Both rebuild inputs each run; rietx time includes shared PhaseSmith initialization "
@@ -365,10 +405,15 @@ def main():
     parser.add_argument("--threads", type=int, default=1)
     parser.add_argument("--repetitions", type=int, default=3)
     parser.add_argument("--json-output", type=Path, required=True)
+    parser.add_argument("--fast-fcj", action="store_true")
+    parser.add_argument("--tail-area-tolerance", type=float)
     args = parser.parse_args()
     if args.threads <= 0 or args.repetitions <= 0:
         parser.error("threads and repetitions must be positive")
-    record = run(args.data_directory, args.threads, args.repetitions)
+    accuracy = ps.ProfileAccuracy(
+        fast_fcj=args.fast_fcj, tail_area_tolerance=args.tail_area_tolerance
+    )
+    record = run(args.data_directory, args.threads, args.repetitions, accuracy)
     args.json_output.write_text(json.dumps(record, indent=2, allow_nan=False) + "\n")
     print(
         json.dumps(

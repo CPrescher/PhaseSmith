@@ -28,6 +28,23 @@ profile fit reaches 19.2199% but is substantially slower. The longer fast case
 fails the termination gate. See `docs/empirical-gaussian.md` for equations,
 constraints, reproducible measurements and interpretation limits.
 
+The rietx solver audit identifies width parameterization, coupled instrument/
+sample variance, early background freezing and rejected-step recovery as the
+next fit-quality priorities. A PhaseSmith-only diagnostic reaches 18.9115%
+QARR Rwp with convergence at all stages, but takes many more evaluations and
+worsens maximum phase-fraction error to 1.863 percentage points. It is not a
+new default or an equal-quality speed win. See `docs/rietx-solver-audit.md`;
+the diagnostic did not change production solver behavior or validation recipes.
+
+A subsequent same-objective comparison feeds PhaseSmith's residuals and
+analytical Jacobian to SciPy TRF with identical starting values, scaled
+physical parameters and bounds. A direct solver replacement does not recover
+rietx's advantage: SciPy repeatedly hits PhaseSmith's coupled instrument-width
+domain and stops early. Fixing instrument parameters gives close solver
+agreement. Finite-difference and objective parity checks pass; details and
+controls are in `docs/solver-isolation.md`. Prioritize identifiable, feasible
+width coordinates before deciding on an optimizer replacement.
+
 Structural powder intensities now average Friedel mates before profile
 accumulation, correcting merged-family intensities for non-centrosymmetric
 structures with anomalous scattering. Individual complex structure-factor
@@ -44,6 +61,13 @@ native/Python refinement, project persistence and checkpoints. Resume rejects
 a changed policy. Rejected native trials omit unused fixed-axial rows, with
 complete final diagnostics retained. Equations, boundaries, supported paths
 and validation are in `docs/profile-accuracy.md`.
+
+The post-optimization rietx workload audit identifies a major numerical-policy
+difference: rietx 1.4.0 skips FCJ convolution for every reflection in the QARR
+case and uses smaller area-based windows. Controlled interventions and native
+sampling are recorded in `docs/rietx-workload-audit.md`. They motivate validated
+small-span acceleration and cheaper rejected trials; default numerical
+policies and the existing equivalence gates remain unchanged.
 
 The second refinement performance pass batches four FCJ sample evaluations
 without reordering any sample's quadrature sum, assembles selected structural
