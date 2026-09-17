@@ -171,3 +171,30 @@ def initialize_pawley(
         general["Cell"][7] = float(np.prod(cell[:3]) * np.sqrt(volume_factor))
     values[1][:] = y
     values[2][:] = 1.0
+
+
+def probe_fcj_profile_and_support(
+    gsas_pwd_module: ModuleType,
+    x: ArrayLike,
+    *,
+    position_deg: float,
+    sigma2_centideg2: float,
+    gamma_centideg: float,
+    axial_sum: float,
+) -> tuple[NDArray[np.float64], tuple[float, float]]:
+    """Probe the pinned compiled FCJ value and reported histogram cutoff distances.
+
+    This is an external black-box call, not an implementation of its equations.
+    The output density is converted from inverse centidegrees to inverse degrees.
+    """
+    revision = detected_revision(gsas_pwd_module)
+    if revision != PINNED_REVISION:
+        raise RuntimeError(f"private GSAS-II probe requires {PINNED_REVISION}, detected {revision}")
+    x = np.ascontiguousarray(x, dtype=np.float64)
+    values, _ = gsas_pwd_module.getFCJVoigt3(
+        position_deg, sigma2_centideg2, gamma_centideg, axial_sum, x
+    )
+    _, left, right = gsas_pwd_module.getWidthsCW(
+        position_deg, sigma2_centideg2, gamma_centideg, axial_sum
+    )
+    return 100.0 * np.asarray(values, dtype=np.float64), (float(left), float(right))

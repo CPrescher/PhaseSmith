@@ -74,3 +74,40 @@ def test_pinned_optimizer_fixture_and_profile_model_agreement():
         assert case["strict_fixed_profile_equivalence"] == (
             case["fixed_profile_relative_l2"] < 1e-5
         )
+
+
+def test_fixed_profile_diagnosis_separates_axial_kernel_and_cutoffs():
+    from phasesmith.validation.pawley_profile_diagnostic import investigate
+
+    report = investigate(FIXTURE, ROOT / "oracle/diagnostics/pawley-profile-controls-20260917")
+    assert report["passed"]
+    metrics = report["metrics"]
+    assert metrics["original_full_pattern_relative_l2"] == pytest.approx(
+        3.691308764333e-4, rel=1e-7
+    )
+    assert (
+        metrics["axial_kernel_component_relative_l2"] > 30 * metrics["cutoff_component_relative_l2"]
+    )
+    assert metrics["histogram_reconstruction_relative_l2"] < 1e-8
+    assert metrics["diagnostic_translation_area_and_cutoff_relative_l2"] < 1e-6
+    assert metrics["symmetric_kernel_relative_l2"] < 3e-6
+    assert metrics["oracle_basis_area_max_relative_error"] < 2e-7
+    assert max(q["native_vs_order128"] for q in report["independent_quadrature"]) < 2e-11
+    # A 100-fold refinement of observation spacing leaves the isolated mismatch unchanged.
+    errors = [g["relative_l2"] for g in report["grid_checks"]]
+    assert max(errors) - min(errors) < 3e-8
+
+
+def test_fcj_diagnostic_probe_checks_revision_before_private_calls(monkeypatch):
+    from phasesmith.oracle import _pinned_probe as probe
+
+    monkeypatch.setattr(probe, "detected_revision", lambda module: "wrong")
+    with pytest.raises(RuntimeError, match="requires"):
+        probe.probe_fcj_profile_and_support(
+            SimpleNamespace(),
+            [20.0],
+            position_deg=20.0,
+            sigma2_centideg2=1.0,
+            gamma_centideg=0.1,
+            axial_sum=0.002,
+        )

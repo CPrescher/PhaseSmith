@@ -1,5 +1,10 @@
 # Pawley oracle coverage
 
+Follow-up: [the fixed-profile diagnosis](../docs/pawley-profile-diagnosis.md) isolates the discrepancy
+to the pinned FCJ numerical evaluator and finite cutoff policy. Production
+quadrature, width/area conversion and the Pawley optimizer pass the isolation
+controls; “different physical models” is not established.
+
 The external oracle remains pinned by `PINNED_GSASII.json` to
 `c0bc79b259cdf0065480b5fbd57674ddf12c4a23` (#5838). No GSAS-II implementation
 code was copied, translated, or added as a dependency.
