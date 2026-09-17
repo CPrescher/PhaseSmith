@@ -1,0 +1,1424 @@
+{
+  "scope": "isolated fixed-start QARR stages, same PhaseSmith physical objective",
+  "suite": "primary",
+  "scipy_version": "1.18.1",
+  "numpy_version": "2.5.3",
+  "native_extension_sha256": "8009b5d0d9a0e3d77f09dc6fbe014a02acabf1f7232dcde519a6d4da00fa8146",
+  "budget": 300,
+  "dataset_sha256": {
+    "cpd-1g.prn": "afd16d03c8742abf315ab5f94585a6e540ab5c2e2c6df6917ac8dbf6be69d990",
+    "Al2O3.cif": "bc8b07c4e27fdb9df562c7b72d181a05394df20274a56b7e1ef50f6ec2c85709",
+    "CaF2.cif": "b55fd04a3e344f73d4ece983da412056d04874b8ada7dfd4ecb93118e7905cd9",
+    "ZnO.cif": "021db20c9bdabcfd63bc794367fae3536197425ca5826d63541b2417e47d3c1a",
+    "cuka.instprm": "aef315a10622fdb1afae5b264d43e7f9dcc053aba80aa3d9fa05067146922a08"
+  },
+  "cases": {
+    "default_stage1": {
+      "initial": {
+        "rwp": 0.26515048393690877,
+        "weighted_sse": 61022.08761928636,
+        "scaled_gradient_inf": 5185.285384594839,
+        "jacobian_singular_values": [
+          500.43785430090276,
+          386.7228572909693,
+          287.22763813731007,
+          258.9530189632897,
+          21.939768165867285,
+          12.775169933945108,
+          7.000420418675586,
+          6.563288205774986,
+          1.9657884187342072,
+          0.378074534006482
+        ],
+        "scaled_values": [
+          1.0,
+          -1.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "parameter_keys": [
+        "instrument[cw].u_deg2",
+        "instrument[cw].v_deg2",
+        "instrument[cw].w_deg2",
+        "instrument[cw].zero_shift_deg",
+        "background[qarr_residual].coefficient_0",
+        "background[qarr_residual].coefficient_1",
+        "background[qarr_residual].coefficient_2",
+        "phase[Al2O3].scale",
+        "phase[ZnO].scale",
+        "phase[CaF2].scale"
+      ],
+      "scaled_bounds": [
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ]
+      ],
+      "initial_fd_column_relative_errors": [
+        3.8923759974537526e-07,
+        2.42128779162202e-07,
+        3.8131382053883023e-08,
+        5.603347361608171e-07,
+        2.8412880725975147e-08,
+        4.732238388497454e-08,
+        3.9478308453844445e-08,
+        1.8139143397289529e-09,
+        9.236493319706812e-10,
+        1.3781319345789642e-09
+      ],
+      "adapter_native_final_rwp_difference": 2.7755575615628914e-16,
+      "adapter_native_final_profile_relative_l2": 6.255130354140469e-17,
+      "original_recipe_native_rwp": 0.26390649159649987,
+      "native": {
+        "rwp": 0.26388197060333957,
+        "weighted_sse": 60439.60956814319,
+        "scaled_gradient_inf": 4943.496086335521,
+        "jacobian_singular_values": [
+          500.293234482315,
+          386.5917605855915,
+          287.8861720878998,
+          259.0524439118745,
+          22.118381619102465,
+          12.777543795230995,
+          7.000810943109648,
+          6.5633261514737224,
+          2.002326688288518,
+          0.38532129721128466
+        ],
+        "scaled_values": [
+          0.0872110908927668,
+          -0.9754591228073237,
+          0.9879895265844991,
+          -0.0020975501041590044,
+          0.04083233380751264,
+          -0.056102967729960256,
+          0.013390679164897529,
+          0.9997992679663376,
+          1.000195975011971,
+          1.0003149499792037
+        ],
+        "termination": "max_evaluations",
+        "evaluations": 300,
+        "accepted_iterations": 13,
+        "seconds": 2.4256213750049938,
+        "accepted_rwp": [
+          0.2648813778486372,
+          0.2646083380599301,
+          0.264335358070143,
+          0.2640636159636686,
+          0.26392777776380666,
+          0.2639107478438252,
+          0.26390649159649987,
+          0.2638998327083989,
+          0.26389193891679036,
+          0.2638845161420744,
+          0.2638830429565365,
+          0.263881988829251,
+          0.26388197060333984
+        ]
+      },
+      "scipy_trf": {
+        "rwp": 0.2574191629301616,
+        "weighted_sse": 57515.37562321076,
+        "scaled_gradient_inf": 1605.0533501614882,
+        "jacobian_singular_values": [
+          499.51691660011,
+          384.9369097253737,
+          298.15326726729694,
+          260.0240326072399,
+          25.66554190271159,
+          12.787813795748415,
+          7.000192773220038,
+          6.563136029514071,
+          2.140091869150686,
+          0.410883049151062
+        ],
+        "scaled_values": [
+          0.8675965311708262,
+          -1.1816776681012373,
+          0.16094500189069913,
+          -0.048209606515252655,
+          0.050002216152043796,
+          -0.11739817643265923,
+          0.024417136882405124,
+          0.9951424756494719,
+          1.0057450714898102,
+          1.0106383185670267
+        ],
+        "status": 3,
+        "message": "`xtol` termination condition is satisfied.",
+        "nfev": 35,
+        "njev": 16,
+        "seconds": 0.4411424580030143,
+        "invalid_trials": {
+          "constant-wavelength reflection 0 is invalid: derived Gaussian variance must be positive and finite": 3,
+          "constant-wavelength reflection 3 is invalid: derived Gaussian variance must be positive and finite": 2,
+          "constant-wavelength reflection 6 is invalid: derived Gaussian variance must be positive and finite": 1,
+          "constant-wavelength reflection 7 is invalid: derived Gaussian variance must be positive and finite": 2,
+          "constant-wavelength reflection 11 is invalid: derived Gaussian variance must be positive and finite": 3,
+          "constant-wavelength reflection 12 is invalid: derived Gaussian variance must be positive and finite": 8
+        },
+        "rwp_trace": [
+          {
+            "evaluation": 1,
+            "rwp": 0.26515048393690877
+          },
+          {
+            "evaluation": 3,
+            "rwp": 0.2595390968438234
+          },
+          {
+            "evaluation": 6,
+            "rwp": 0.25889315960069254
+          },
+          {
+            "evaluation": 7,
+            "rwp": 0.2577230356581776
+          },
+          {
+            "evaluation": 10,
+            "rwp": 0.25757786208467
+          },
+          {
+            "evaluation": 12,
+            "rwp": 0.2575093573299091
+          },
+          {
+            "evaluation": 14,
+            "rwp": 0.2574736639709207
+          },
+          {
+            "evaluation": 16,
+            "rwp": 0.2574558850257763
+          },
+          {
+            "evaluation": 17,
+            "rwp": 0.2574201361509178
+          },
+          {
+            "evaluation": 22,
+            "rwp": 0.25741985371146775
+          },
+          {
+            "evaluation": 23,
+            "rwp": 0.25741929100889505
+          },
+          {
+            "evaluation": 26,
+            "rwp": 0.25741922263671296
+          },
+          {
+            "evaluation": 28,
+            "rwp": 0.2574191873886089
+          },
+          {
+            "evaluation": 30,
+            "rwp": 0.2574191728436791
+          },
+          {
+            "evaluation": 32,
+            "rwp": 0.25741916403166465
+          },
+          {
+            "evaluation": 35,
+            "rwp": 0.2574191629301616
+          }
+        ]
+      }
+    },
+    "default_stage2": {
+      "initial": {
+        "rwp": 0.2639064915965003,
+        "weighted_sse": 60450.84268200882,
+        "scaled_gradient_inf": 15594.566203405462,
+        "jacobian_singular_values": [
+          669.8050634437567,
+          505.17450196369884,
+          391.2025530943631,
+          291.009270477166,
+          278.5879868091934,
+          252.9458763982145,
+          211.39170299671045,
+          162.7051784432246,
+          102.1641885441193,
+          92.53543673814522,
+          74.33259439795395,
+          66.10198402951676,
+          49.39321318266147,
+          44.1537067950404,
+          26.55306191131126,
+          13.54448278488007,
+          13.487322222082158,
+          0.4715820620711737,
+          1.038712902684423e-15
+        ],
+        "scaled_values": [
+          0.17497560093682316,
+          -1.0,
+          1.0,
+          -0.0014378054209573776,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          0.5,
+          0.5,
+          1.0,
+          1.0,
+          1.0,
+          0.5,
+          0.5
+        ]
+      },
+      "parameter_keys": [
+        "instrument[cw].u_deg2",
+        "instrument[cw].v_deg2",
+        "instrument[cw].w_deg2",
+        "instrument[cw].zero_shift_deg",
+        "sample[Al2O3].isotropic_size.crystallite_size_nm",
+        "sample[Al2O3].isotropic_microstrain.rms",
+        "sample[Al2O3].march_dollase.ratio",
+        "phase[Al2O3].scale",
+        "sample[ZnO].isotropic_size.crystallite_size_nm",
+        "sample[ZnO].isotropic_microstrain.rms",
+        "sample[ZnO].march_dollase.ratio",
+        "phase[ZnO].scale",
+        "site[ZnO/Zn].u_iso_angstrom2",
+        "site[ZnO/O].u_iso_angstrom2",
+        "sample[CaF2].isotropic_size.crystallite_size_nm",
+        "sample[CaF2].isotropic_microstrain.rms",
+        "phase[CaF2].scale",
+        "site[CaF2/Ca1].u_iso_angstrom2",
+        "site[CaF2/F1].u_iso_angstrom2"
+      ],
+      "scaled_bounds": [
+        [
+          null,
+          null,
+          null,
+          null,
+          2.2250738585072e-310,
+          0.0,
+          2.2250738585072014e-308,
+          0.0,
+          2.2250738585072e-310,
+          0.0,
+          2.2250738585072014e-308,
+          0.0,
+          0.0,
+          0.0,
+          2.2250738585072e-310,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          50.0,
+          50.0,
+          null,
+          null,
+          null,
+          50.0,
+          50.0
+        ]
+      ],
+      "initial_fd_column_relative_errors": [
+        7.865744900688457e-07,
+        2.3480040048374087e-07,
+        4.024242825927563e-08,
+        5.284259461277465e-07,
+        5.046403623467941e-09,
+        6.29307675652445e-09,
+        1.572182925112519e-09,
+        1.4981521482393888e-09,
+        3.6131971692717158e-09,
+        4.559263318086024e-09,
+        8.205204189832013e-10,
+        9.872508446889561e-10,
+        5.527510964250724e-09,
+        4.0518627926350705e-08,
+        3.361410087187568e-09,
+        4.85610538940076e-09,
+        1.1506436647084837e-09,
+        8.521866462578676e-09,
+        1.1549589805534967e-08
+      ],
+      "adapter_native_final_rwp_difference": 5.551115123125783e-17,
+      "adapter_native_final_profile_relative_l2": 5.30428223504159e-17,
+      "original_recipe_native_rwp": 0.1988585013406427,
+      "native": {
+        "rwp": 0.19877607077567389,
+        "weighted_sse": 34294.969122276685,
+        "scaled_gradient_inf": 110.01345645469874,
+        "jacobian_singular_values": [
+          728.5698525901106,
+          461.95938386373206,
+          377.7486821071384,
+          351.5039476009644,
+          298.5281947627574,
+          262.1112129758747,
+          190.4304161730662,
+          158.04251177024318,
+          103.70801702149937,
+          94.27479670838527,
+          76.41275371679018,
+          62.7545401865409,
+          49.77202584010395,
+          47.02882061282216,
+          25.354151166624188,
+          22.779291723674348,
+          12.211817867746046,
+          1.2374367335762821,
+          2.3895187092374264e-15
+        ],
+        "scaled_values": [
+          -0.3873805702600242,
+          1.9145328449195054,
+          1.8934740387409577,
+          -0.031634846534185364,
+          1.1762006669290233,
+          0.7951493095379287,
+          1.0034855420503765,
+          1.0460508601834475,
+          1.3478716150707486,
+          0.3276000038916109,
+          0.9790483571617898,
+          1.1398121570257886,
+          1.1132977428748938,
+          1.445109615657589,
+          1.3757864775672388,
+          0.43317072731384915,
+          1.1447830406918398,
+          1.0391753002621367,
+          1.388171891300581
+        ],
+        "termination": "max_evaluations",
+        "evaluations": 300,
+        "accepted_iterations": 36,
+        "seconds": 3.3648338339990005,
+        "accepted_rwp": [
+          0.2578992949611297,
+          0.2529035896318685,
+          0.248304745879439,
+          0.24387845076579343,
+          0.23949476093660854,
+          0.23509698613257585,
+          0.2306796008595259,
+          0.22628662984383638,
+          0.2220167975082639,
+          0.21796511456211456,
+          0.21426702124288374,
+          0.2111210300190077,
+          0.20931948179280987,
+          0.20833723305246515,
+          0.20627564116481703,
+          0.2060975537038618,
+          0.20413740882770953,
+          0.20259191677361407,
+          0.20247444862428315,
+          0.20130526195282958,
+          0.20121531150031535,
+          0.20035975926806096,
+          0.2002443404456305,
+          0.19966085113127102,
+          0.19926210151533683,
+          0.19923498551569296,
+          0.1989938340916236,
+          0.1988585013406427,
+          0.19879711425816587,
+          0.19877642327077666,
+          0.19877621930062245,
+          0.19877611651130703,
+          0.19877608864393792,
+          0.19877607875664255,
+          0.1987760731190415,
+          0.19877607077567394
+        ]
+      },
+      "scipy_trf": {
+        "rwp": 0.25899195649516743,
+        "weighted_sse": 58220.34381416746,
+        "scaled_gradient_inf": 14512.186670632766,
+        "jacobian_singular_values": [
+          665.302354313842,
+          495.09486884289566,
+          386.4605298434722,
+          291.2956890188458,
+          278.8283082039573,
+          253.0614118193857,
+          206.1004800085438,
+          160.23360052824748,
+          102.04420138799459,
+          91.76099139639165,
+          73.8495295413825,
+          63.721845063022975,
+          48.11027669492163,
+          44.25858801539369,
+          26.01268739985637,
+          13.670822610594117,
+          13.24510277367519,
+          0.4748335868693343,
+          6.54609890407601e-16
+        ],
+        "scaled_values": [
+          0.17481952740952478,
+          -1.0004344281727742,
+          0.9978639683222467,
+          -0.0068881446735219645,
+          1.0024899934653873,
+          0.9983332728234674,
+          0.9995765493848104,
+          1.0006497842368776,
+          1.0174308119204536,
+          0.9843050544591705,
+          0.9951027717132486,
+          1.0041876871212807,
+          0.6200167412452023,
+          0.5113395125281873,
+          1.0100138992161352,
+          0.9914575155166868,
+          1.0017666351420977,
+          0.5776475838916992,
+          0.5280227722866446
+        ],
+        "status": 3,
+        "message": "`xtol` termination condition is satisfied.",
+        "nfev": 28,
+        "njev": 10,
+        "seconds": 0.4622199580044253,
+        "invalid_trials": {
+          "constant-wavelength reflection 6 is invalid: derived Gaussian variance must be positive and finite": 1,
+          "constant-wavelength reflection 30 is invalid: derived Gaussian variance must be positive and finite": 1,
+          "constant-wavelength reflection 62 is invalid: derived Gaussian variance must be positive and finite": 16
+        },
+        "rwp_trace": [
+          {
+            "evaluation": 1,
+            "rwp": 0.2639064915965003
+          },
+          {
+            "evaluation": 6,
+            "rwp": 0.2618173218062284
+          },
+          {
+            "evaluation": 8,
+            "rwp": 0.2608439393542892
+          },
+          {
+            "evaluation": 9,
+            "rwp": 0.25900700135500043
+          },
+          {
+            "evaluation": 14,
+            "rwp": 0.2589930982940613
+          },
+          {
+            "evaluation": 18,
+            "rwp": 0.25899266394661075
+          },
+          {
+            "evaluation": 20,
+            "rwp": 0.25899244678952293
+          },
+          {
+            "evaluation": 21,
+            "rwp": 0.2589920124799368
+          },
+          {
+            "evaluation": 24,
+            "rwp": 0.25899195819167303
+          },
+          {
+            "evaluation": 28,
+            "rwp": 0.25899195649516743
+          }
+        ]
+      }
+    },
+    "default_stage3": {
+      "initial": {
+        "rwp": 0.19885850134064242,
+        "weighted_sse": 34323.41862150294,
+        "scaled_gradient_inf": 509.5815115649825,
+        "jacobian_singular_values": [
+          516.9598248220544,
+          401.8197868329277,
+          278.46424337441977
+        ],
+        "scaled_values": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "parameter_keys": [
+        "phase[Al2O3].scale",
+        "phase[ZnO].scale",
+        "phase[CaF2].scale"
+      ],
+      "scaled_bounds": [
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          null,
+          null,
+          null
+        ]
+      ],
+      "initial_fd_column_relative_errors": [
+        1.4327481634446807e-09,
+        1.0392217656621657e-09,
+        9.818902351498898e-10
+      ],
+      "adapter_native_final_rwp_difference": 3.608224830031759e-16,
+      "adapter_native_final_profile_relative_l2": 1.935199258018829e-16,
+      "original_recipe_native_rwp": 0.1988547970458981,
+      "native": {
+        "rwp": 0.19885479704589773,
+        "weighted_sse": 34322.13989442658,
+        "scaled_gradient_inf": 1.9138042262056842e-09,
+        "jacobian_singular_values": [
+          516.9598248220544,
+          401.8197868329277,
+          278.46424337441977
+        ],
+        "scaled_values": [
+          0.9998789640698839,
+          1.0018989105007012,
+          1.0013654756119061
+        ],
+        "termination": "converged",
+        "evaluations": 2,
+        "accepted_iterations": 1,
+        "seconds": 0.02095858300162945,
+        "accepted_rwp": [
+          0.1988547970458981
+        ]
+      },
+      "scipy_trf": {
+        "rwp": 0.19885479704589773,
+        "weighted_sse": 34322.13989442658,
+        "scaled_gradient_inf": 2.97859514830634e-11,
+        "jacobian_singular_values": [
+          516.9598248220544,
+          401.8197868329277,
+          278.46424337441977
+        ],
+        "scaled_values": [
+          0.9998789640698807,
+          1.0018989105007086,
+          1.0013654756119144
+        ],
+        "status": 4,
+        "message": "Both `ftol` and `xtol` termination conditions are satisfied.",
+        "nfev": 3,
+        "njev": 3,
+        "seconds": 0.04884370800573379,
+        "invalid_trials": {},
+        "rwp_trace": [
+          {
+            "evaluation": 1,
+            "rwp": 0.19885850134064242
+          },
+          {
+            "evaluation": 2,
+            "rwp": 0.19885479704589773
+          },
+          {
+            "evaluation": 3,
+            "rwp": 0.19885479704589773
+          }
+        ]
+      }
+    },
+    "combined_stage1": {
+      "initial": {
+        "rwp": 0.26522702177903823,
+        "weighted_sse": 61057.32174692581,
+        "scaled_gradient_inf": 5190.7834637948945,
+        "jacobian_singular_values": [
+          499.8160302494486,
+          386.6705180477782,
+          287.20998021687325,
+          258.86383018347806,
+          21.933016454679475,
+          12.80448366066801,
+          7.000463844235357,
+          6.563285266832646,
+          1.9656891752288836,
+          0.37801082088994736
+        ],
+        "scaled_values": [
+          1.0,
+          -1.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "parameter_keys": [
+        "instrument[cw].u_deg2",
+        "instrument[cw].v_deg2",
+        "instrument[cw].w_deg2",
+        "instrument[cw].zero_shift_deg",
+        "background[qarr_residual].coefficient_0",
+        "background[qarr_residual].coefficient_1",
+        "background[qarr_residual].coefficient_2",
+        "phase[Al2O3].scale",
+        "phase[ZnO].scale",
+        "phase[CaF2].scale"
+      ],
+      "scaled_bounds": [
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ]
+      ],
+      "initial_fd_column_relative_errors": [
+        3.562378138297565e-07,
+        2.219787479970196e-07,
+        3.498414874103044e-08,
+        7.035345411332751e-07,
+        2.8020652220408185e-08,
+        4.7400646881373564e-08,
+        3.8899522860138616e-08,
+        1.8095263359277835e-09,
+        8.96243430386227e-10,
+        1.2881255096190867e-09
+      ],
+      "adapter_native_final_rwp_difference": 6.106226635438361e-16,
+      "adapter_native_final_profile_relative_l2": 8.905529389838276e-17,
+      "original_recipe_native_rwp": 0.2639791804066219,
+      "native": {
+        "rwp": 0.2639575207389986,
+        "weighted_sse": 60474.22257601486,
+        "scaled_gradient_inf": 4955.158930867536,
+        "jacobian_singular_values": [
+          499.68139121670055,
+          386.54151783847004,
+          287.873419765302,
+          258.9628443525673,
+          22.111014634205517,
+          12.806636902589057,
+          7.000859771192529,
+          6.56332233117548,
+          2.002268030397044,
+          0.3852622668564842
+        ],
+        "scaled_values": [
+          0.08796906619780107,
+          -0.9789331886066583,
+          0.9888230703259254,
+          -0.0020403481086268774,
+          0.04437817720262652,
+          -0.057484349605747984,
+          0.01011878003014113,
+          0.9998598877501776,
+          1.0002346495745285,
+          1.0003171926531484
+        ],
+        "termination": "max_evaluations",
+        "evaluations": 300,
+        "accepted_iterations": 14,
+        "seconds": 0.9754683339997428,
+        "accepted_rwp": [
+          0.26495594563723257,
+          0.26468389025550526,
+          0.264410561834061,
+          0.2641367680381823,
+          0.263999574787313,
+          0.26398240090509106,
+          0.2639802539187815,
+          0.2639791804066219,
+          0.26397347926401904,
+          0.26395831624945804,
+          0.2639576536029209,
+          0.26395754189815696,
+          0.26395752323123167,
+          0.263957520738998
+        ]
+      },
+      "scipy_trf": {
+        "rwp": 0.2574925045108073,
+        "weighted_sse": 57548.15383154158,
+        "scaled_gradient_inf": 1598.2017741018792,
+        "jacobian_singular_values": [
+          498.97903272461167,
+          384.8874115752712,
+          298.59448921449626,
+          259.9328323635723,
+          25.696052832205513,
+          12.81497766097225,
+          7.00046580519236,
+          6.563143622408369,
+          2.143247014090722,
+          0.41153026082577315
+        ],
+        "scaled_values": [
+          0.86750959232529,
+          -1.1817763361720472,
+          0.16098801060641432,
+          -0.04801225113844611,
+          0.0716704641227678,
+          -0.12042688595249643,
+          0.010645939423342136,
+          0.9995133791476118,
+          1.0070645412123438,
+          1.0114161632854464
+        ],
+        "status": 3,
+        "message": "`xtol` termination condition is satisfied.",
+        "nfev": 46,
+        "njev": 23,
+        "seconds": 0.33165658300276846,
+        "invalid_trials": {
+          "constant-wavelength reflection 0 is invalid: derived Gaussian variance must be positive and finite": 3,
+          "constant-wavelength reflection 3 is invalid: derived Gaussian variance must be positive and finite": 2,
+          "constant-wavelength reflection 6 is invalid: derived Gaussian variance must be positive and finite": 1,
+          "constant-wavelength reflection 8 is invalid: derived Gaussian variance must be positive and finite": 1,
+          "constant-wavelength reflection 11 is invalid: derived Gaussian variance must be positive and finite": 4,
+          "constant-wavelength reflection 7 is invalid: derived Gaussian variance must be positive and finite": 1,
+          "constant-wavelength reflection 12 is invalid: derived Gaussian variance must be positive and finite": 8,
+          "constant-wavelength reflection 5 is invalid: derived Gaussian variance must be positive and finite": 3
+        },
+        "rwp_trace": [
+          {
+            "evaluation": 1,
+            "rwp": 0.26522702177903823
+          },
+          {
+            "evaluation": 3,
+            "rwp": 0.2596408083932147
+          },
+          {
+            "evaluation": 6,
+            "rwp": 0.2589949198285916
+          },
+          {
+            "evaluation": 7,
+            "rwp": 0.2578134618018384
+          },
+          {
+            "evaluation": 10,
+            "rwp": 0.2576686447488243
+          },
+          {
+            "evaluation": 12,
+            "rwp": 0.2575964351366298
+          },
+          {
+            "evaluation": 14,
+            "rwp": 0.2575603423334777
+          },
+          {
+            "evaluation": 16,
+            "rwp": 0.2575422307054759
+          },
+          {
+            "evaluation": 17,
+            "rwp": 0.25750594941382443
+          },
+          {
+            "evaluation": 20,
+            "rwp": 0.2575014489574299
+          },
+          {
+            "evaluation": 22,
+            "rwp": 0.25749919909754126
+          },
+          {
+            "evaluation": 23,
+            "rwp": 0.2574946996307507
+          },
+          {
+            "evaluation": 26,
+            "rwp": 0.25749413724338094
+          },
+          {
+            "evaluation": 27,
+            "rwp": 0.2574930124994184
+          },
+          {
+            "evaluation": 30,
+            "rwp": 0.25749287190929543
+          },
+          {
+            "evaluation": 31,
+            "rwp": 0.25749259073099023
+          },
+          {
+            "evaluation": 34,
+            "rwp": 0.2574925555838748
+          },
+          {
+            "evaluation": 36,
+            "rwp": 0.2574925380103326
+          },
+          {
+            "evaluation": 38,
+            "rwp": 0.25749252922357174
+          },
+          {
+            "evaluation": 39,
+            "rwp": 0.25749251165005094
+          },
+          {
+            "evaluation": 42,
+            "rwp": 0.2574925094533568
+          },
+          {
+            "evaluation": 43,
+            "rwp": 0.2574925050599802
+          },
+          {
+            "evaluation": 46,
+            "rwp": 0.2574925045108073
+          }
+        ]
+      }
+    },
+    "combined_stage2": {
+      "initial": {
+        "rwp": 0.2639791804066218,
+        "weighted_sse": 60484.14769804666,
+        "scaled_gradient_inf": 15362.515352540679,
+        "jacobian_singular_values": [
+          670.091840650839,
+          504.54419763527693,
+          391.128769547821,
+          290.9645358487544,
+          278.55128792681455,
+          252.85890121265672,
+          210.98144106405476,
+          162.68182809474007,
+          101.98631225597687,
+          92.50970232555655,
+          74.32162165353552,
+          66.00872189244475,
+          49.379135345590335,
+          44.14082393251535,
+          26.565082682239286,
+          13.531685257180497,
+          13.474476806763397,
+          0.47307302677813945,
+          1.2651213570808442e-15
+        ],
+        "scaled_values": [
+          0.17675751491518388,
+          -1.0,
+          1.0,
+          -0.0014375469567981516,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          0.5,
+          0.5,
+          1.0,
+          1.0,
+          1.0,
+          0.5,
+          0.5
+        ]
+      },
+      "parameter_keys": [
+        "instrument[cw].u_deg2",
+        "instrument[cw].v_deg2",
+        "instrument[cw].w_deg2",
+        "instrument[cw].zero_shift_deg",
+        "sample[Al2O3].isotropic_size.crystallite_size_nm",
+        "sample[Al2O3].isotropic_microstrain.rms",
+        "sample[Al2O3].march_dollase.ratio",
+        "phase[Al2O3].scale",
+        "sample[ZnO].isotropic_size.crystallite_size_nm",
+        "sample[ZnO].isotropic_microstrain.rms",
+        "sample[ZnO].march_dollase.ratio",
+        "phase[ZnO].scale",
+        "site[ZnO/Zn].u_iso_angstrom2",
+        "site[ZnO/O].u_iso_angstrom2",
+        "sample[CaF2].isotropic_size.crystallite_size_nm",
+        "sample[CaF2].isotropic_microstrain.rms",
+        "phase[CaF2].scale",
+        "site[CaF2/Ca1].u_iso_angstrom2",
+        "site[CaF2/F1].u_iso_angstrom2"
+      ],
+      "scaled_bounds": [
+        [
+          null,
+          null,
+          null,
+          null,
+          2.2250738585072e-310,
+          0.0,
+          2.2250738585072014e-308,
+          0.0,
+          2.2250738585072e-310,
+          0.0,
+          2.2250738585072014e-308,
+          0.0,
+          0.0,
+          0.0,
+          2.2250738585072e-310,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          50.0,
+          50.0,
+          null,
+          null,
+          null,
+          50.0,
+          50.0
+        ]
+      ],
+      "initial_fd_column_relative_errors": [
+        7.072194294203216e-07,
+        2.248103096704376e-07,
+        3.58400464110997e-08,
+        5.529602362725113e-07,
+        4.750107382175266e-09,
+        5.96667912332615e-09,
+        1.4599996787606406e-09,
+        1.5066382257932376e-09,
+        3.4992468920675597e-09,
+        4.611104417213465e-09,
+        8.220109342529059e-10,
+        9.661664907288241e-10,
+        5.285785445816069e-09,
+        4.004802609966264e-08,
+        3.328523471314366e-09,
+        5.0009209301149065e-09,
+        1.1194003081293685e-09,
+        8.527212985803605e-09,
+        1.0010488111205685e-08
+      ],
+      "adapter_native_final_rwp_difference": 2.7755575615628914e-17,
+      "adapter_native_final_profile_relative_l2": 4.492372859597375e-17,
+      "original_recipe_native_rwp": 0.19989156900369034,
+      "native": {
+        "rwp": 0.1998250805302448,
+        "weighted_sse": 34657.896965943226,
+        "scaled_gradient_inf": 0.16677874300526696,
+        "jacobian_singular_values": [
+          730.7506638513565,
+          461.33392458391114,
+          378.1334901553525,
+          351.39844064079097,
+          299.2003079934797,
+          261.85733860341037,
+          189.4177393677924,
+          157.6018079572098,
+          104.22061154204286,
+          94.06554498762803,
+          76.35107550352464,
+          62.728980678794585,
+          49.94317561674646,
+          47.874841783447465,
+          25.339577298937943,
+          22.800771166701892,
+          12.197780721769623,
+          1.2494689451414074,
+          2.2629229194060094e-15
+        ],
+        "scaled_values": [
+          -0.3119986754803598,
+          1.9565068803987784,
+          1.8752637187332033,
+          -0.03054415772346541,
+          1.1575809507774177,
+          0.7873547707835763,
+          1.004505670825445,
+          1.0511672881303467,
+          1.340971393266419,
+          0.31911520576464075,
+          0.9784827645681577,
+          1.1417975972828445,
+          1.1153366893631285,
+          1.45793489099463,
+          1.3756508174018653,
+          0.42899878888847615,
+          1.1453308549229029,
+          1.0402046264294438,
+          1.3978062524793762
+        ],
+        "termination": "converged",
+        "evaluations": 61,
+        "accepted_iterations": 44,
+        "seconds": 0.4248434999899473,
+        "accepted_rwp": [
+          0.2574729959630973,
+          0.25218648839485514,
+          0.24736409614102137,
+          0.24273880221573518,
+          0.2381921039635992,
+          0.2336955151915377,
+          0.22925848991725414,
+          0.22491537965021016,
+          0.22075309611281943,
+          0.21688353578890815,
+          0.21341651664346692,
+          0.21051288602004772,
+          0.20800951588878283,
+          0.20691112968452896,
+          0.20681911658668264,
+          0.2049814037333177,
+          0.2034640836541944,
+          0.2032111621323736,
+          0.20285651586080325,
+          0.20274451032164967,
+          0.20175260603419817,
+          0.2017050475984287,
+          0.20099260779963993,
+          0.2006857803891976,
+          0.2002829550416483,
+          0.2000390654800076,
+          0.20001163322253368,
+          0.19989156900369034,
+          0.1998834400926701,
+          0.19983932100569618,
+          0.19983607685994512,
+          0.19982579788600952,
+          0.19982544906641747,
+          0.19982543894750274,
+          0.1998254069876902,
+          0.19982539049237522,
+          0.19982539003428806,
+          0.19982530490021808,
+          0.1998253042972386,
+          0.19982522919227785,
+          0.19982522917455703,
+          0.1998250805412648,
+          0.1998250805302799,
+          0.19982508053024484
+        ]
+      },
+      "scipy_trf": {
+        "rwp": 0.25843882167225,
+        "weighted_sse": 57971.92443523286,
+        "scaled_gradient_inf": 14140.162789861612,
+        "jacobian_singular_values": [
+          666.3874661112818,
+          493.4835912959224,
+          385.75801956453205,
+          291.575996399667,
+          279.01838574354684,
+          253.0576271971376,
+          205.24332720944838,
+          159.90362631002301,
+          101.96373174353516,
+          91.81321835698145,
+          73.83928203432254,
+          63.453783930134946,
+          47.95542252864271,
+          44.286015353024766,
+          25.96332052259966,
+          13.688961791501242,
+          13.233561120411489,
+          0.4778710637533675,
+          1.797314422731119e-15
+        ],
+        "scaled_values": [
+          0.1765720423696589,
+          -1.0005177069603037,
+          0.9974648096691506,
+          -0.00788747135674404,
+          1.0028047241731828,
+          0.9980587909773946,
+          0.999533064332461,
+          1.001274143003399,
+          1.0204131782328223,
+          0.9813841075160634,
+          0.9941705701421094,
+          1.0058214542485537,
+          0.6329161480114966,
+          0.513165562271757,
+          1.0118615012622472,
+          0.9898460321454158,
+          1.002465149948837,
+          0.588005666408536,
+          0.5328190203876316
+        ],
+        "status": 3,
+        "message": "`xtol` termination condition is satisfied.",
+        "nfev": 36,
+        "njev": 16,
+        "seconds": 0.32652633399993647,
+        "invalid_trials": {
+          "constant-wavelength reflection 6 is invalid: derived Gaussian variance must be positive and finite": 1,
+          "constant-wavelength reflection 29 is invalid: derived Gaussian variance must be positive and finite": 1,
+          "constant-wavelength reflection 62 is invalid: derived Gaussian variance must be positive and finite": 18
+        },
+        "rwp_trace": [
+          {
+            "evaluation": 1,
+            "rwp": 0.2639791804066218
+          },
+          {
+            "evaluation": 6,
+            "rwp": 0.2619333989682759
+          },
+          {
+            "evaluation": 8,
+            "rwp": 0.2609804286180809
+          },
+          {
+            "evaluation": 9,
+            "rwp": 0.25917178073491487
+          },
+          {
+            "evaluation": 12,
+            "rwp": 0.25895185469706034
+          },
+          {
+            "evaluation": 13,
+            "rwp": 0.25851638924627074
+          },
+          {
+            "evaluation": 16,
+            "rwp": 0.258461439974804
+          },
+          {
+            "evaluation": 19,
+            "rwp": 0.258454732499539
+          },
+          {
+            "evaluation": 20,
+            "rwp": 0.25844127301309433
+          },
+          {
+            "evaluation": 23,
+            "rwp": 0.25843959057366794
+          },
+          {
+            "evaluation": 26,
+            "rwp": 0.25843938027424895
+          },
+          {
+            "evaluation": 27,
+            "rwp": 0.2584389596790003
+          },
+          {
+            "evaluation": 30,
+            "rwp": 0.25843890710494205
+          },
+          {
+            "evaluation": 32,
+            "rwp": 0.2584388808179364
+          },
+          {
+            "evaluation": 33,
+            "rwp": 0.258438828243988
+          },
+          {
+            "evaluation": 36,
+            "rwp": 0.25843882167225
+          }
+        ]
+      }
+    },
+    "combined_stage3": {
+      "initial": {
+        "rwp": 0.19989156900369034,
+        "weighted_sse": 34680.964481023606,
+        "scaled_gradient_inf": 533.1887584334863,
+        "jacobian_singular_values": [
+          516.9004517707909,
+          401.83136373491686,
+          279.12404071808896
+        ],
+        "scaled_values": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "parameter_keys": [
+        "phase[Al2O3].scale",
+        "phase[ZnO].scale",
+        "phase[CaF2].scale"
+      ],
+      "scaled_bounds": [
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          null,
+          null,
+          null
+        ]
+      ],
+      "initial_fd_column_relative_errors": [
+        1.4226034113671959e-09,
+        9.447231486206097e-10,
+        9.50339125519056e-10
+      ],
+      "adapter_native_final_rwp_difference": 3.0531133177191805e-16,
+      "adapter_native_final_profile_relative_l2": 2.0682566530877294e-16,
+      "original_recipe_native_rwp": 0.19988761199834007,
+      "native": {
+        "rwp": 0.19988761199834038,
+        "weighted_sse": 34679.591422576326,
+        "scaled_gradient_inf": 1.9631443137768656e-09,
+        "jacobian_singular_values": [
+          516.9004517707909,
+          401.83136373491686,
+          279.12404071808896
+        ],
+        "scaled_values": [
+          1.0000291705671844,
+          1.0019798788752834,
+          1.0013690008027745
+        ],
+        "termination": "converged",
+        "evaluations": 2,
+        "accepted_iterations": 1,
+        "seconds": 0.014644916998804547,
+        "accepted_rwp": [
+          0.19988761199834007
+        ]
+      },
+      "scipy_trf": {
+        "rwp": 0.19988761199834038,
+        "weighted_sse": 34679.591422576326,
+        "scaled_gradient_inf": 8.594724931754172e-11,
+        "jacobian_singular_values": [
+          516.9004517707909,
+          401.83136373491686,
+          279.12404071808896
+        ],
+        "scaled_values": [
+          1.0000291705671829,
+          1.0019798788752907,
+          1.0013690008027827
+        ],
+        "status": 3,
+        "message": "`xtol` termination condition is satisfied.",
+        "nfev": 3,
+        "njev": 2,
+        "seconds": 0.02675345899478998,
+        "invalid_trials": {},
+        "rwp_trace": [
+          {
+            "evaluation": 1,
+            "rwp": 0.19989156900369034
+          },
+          {
+            "evaluation": 2,
+            "rwp": 0.19988761199834038
+          },
+          {
+            "evaluation": 3,
+            "rwp": 0.19988761199834038
+          },
+          {
+            "evaluation": 4,
+            "rwp": 0.19988761199834038
+          }
+        ]
+      }
+    }
+  },
+  "notes": [
+    "Each stage starts from the original native recipe's captured input for that policy.",
+    "No rietx calculations, transformed variables, changed backgrounds or seeds are used.",
+    "Numerical-domain violations return infinite trial residuals to SciPy, which rejects them; the valid objective and Jacobian remain unchanged.",
+    "Both use PhaseSmith's scaled physical coordinates and physical parameter bounds.",
+    "Common evaluation ceilings and ftol/xtol numbers do not make solver-specific evaluation accounting or stopping formulas identical. SciPy gtol is disabled.",
+    "Adapter builds derivatives for every valid SciPy trial; times are diagnostic only, not an optimized native-versus-SciPy speed comparison.",
+    "Controls retain the primary physical problem except the explicitly labelled fixed-instrument stage, which removes the same four variables from both solvers.",
+    "Scaling suite changes only SciPy internal linear algebra or automatic scaling; it is a sensitivity experiment, not the fixed-scaling primary comparison."
+  ]
+}

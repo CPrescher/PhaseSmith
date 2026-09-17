@@ -67,6 +67,8 @@ and the proposed capability development sequence.
   intensities and analytical derivatives; individual-reflection API semantics.
 - [Choosing profile accuracy](profile-accuracy.md) — explicit FCJ quadrature
   and tail-area controls with persistence and validation contracts.
+- [rietx workload audit](rietx-workload-audit.md) — controlled real-data
+  experiments isolate axial approximations, support windows and solver work.
 - [Refinement performance improvements](refinement-performance-round2.md) —
   batched FCJ evaluation, reusable scale profiles, native diagnostics and real
   QARR measurements, with links to the earlier optimization work.

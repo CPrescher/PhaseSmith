@@ -1,0 +1,24 @@
+{
+  "scope": "Read-only initial-profile diagnostic: PhaseSmith default; rietx retains small axial terms and uses 30-FWHM windows. Diagnostic averaging of opposite hkl; no production changes.",
+  "phases": {
+    "Al2O3": {
+      "original_relative_l2": 0.0034632526415111376,
+      "friedel_averaged_relative_l2": 0.0034632526415111367,
+      "original_vs_averaged_relative_l2": 9.066674016607724e-17
+    },
+    "ZnO": {
+      "original_relative_l2": 0.011067268195083333,
+      "friedel_averaged_relative_l2": 0.0005429178116962398,
+      "original_vs_averaged_relative_l2": 0.01083493700160256
+    },
+    "CaF2": {
+      "original_relative_l2": 0.0005242450950506297,
+      "friedel_averaged_relative_l2": 0.0005242450950506299,
+      "original_vs_averaged_relative_l2": 2.2575531339868605e-17
+    }
+  },
+  "total": {
+    "original_relative_l2": 0.008494006897922712,
+    "friedel_averaged_relative_l2": 0.0008852546283935482
+  }
+}
