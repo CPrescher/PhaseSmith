@@ -39,7 +39,9 @@ For example, compare a fitted state with the established calculation using:
 from phasesmith.refinement import rietveld
 
 reference = rietveld.calculate(
-    request.pattern, result.experiment, result.phases,
+    request.pattern,
+    result.experiment,
+    result.phases,
     background=result.background,
     support_fwhm=options.support_fwhm,
     profile_accuracy=ProfileAccuracy(),
