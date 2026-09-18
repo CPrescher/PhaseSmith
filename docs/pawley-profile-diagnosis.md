@@ -141,8 +141,8 @@ finite-source ray model is outside this FCJ audit's scope.
 The high-precision audit is an offline validation dependency, never a runtime
 dependency. No GSAS-II implementation source was used to derive this correction.
 This establishes agreement with the published integral for the tested cases;
-it does not identify the internal cause of the pinned binary's discrepancy or
-make a claim about every GSAS-II version or diffraction geometry.
+the subsequent source audit below identifies the quadrature cause. Neither
+audit makes a claim about every GSAS-II version or diffraction geometry.
 
 Validation after correction: 362 Rust tests and 941 Python tests pass (11
 external-data tests skipped and 33 opt-in tests deselected); strict Clippy,
@@ -161,6 +161,66 @@ python -m phasesmith.validation.fcj_angular_reference \
   --controls oracle/diagnostics/pawley-profile-controls-20260917 \
   --output /new/angular-audit.json
 ```
+
+## Source audit: the pinned path uses one convolution node
+
+Reading the pinned GSAS-II source is compatible with the clean implementation
+boundary: no source was copied or translated into PhaseSmith. The actual call
+chain is `getFCJVoigt3` → `PYPSVFCJO` → `PSVFCJO`. The separate newer
+`psvfcj.f90` routine is not the function called by this histogram path.
+The wrapper divides `(S+H)/L` equally between `S/L` and `H/L`, confirming the
+geometry mapping used in the independent audit.
+
+In the pinned
+[PSVFCJO source](https://github.com/AdvancedPhotonSource/GSAS-II/blob/c0bc79b259cdf0065480b5fbd57674ddf12c4a23/sources/powsubs/psvfcjo.for#L172),
+the table selector truncates `300 × axial_span_degrees / gamma_centidegrees`
+to an integer. This indicator ranges from 0.04583 to 0.41287 over all 53
+fixture reflections, so every reflection selects the first, two-node table.
+The convolution loop at lines 218–221 uses only its positive half: **one node**.
+At lines 277–279 the normalization cancels that single node's weight, leaving
+one intrinsic pseudo-Voigt profile displaced to the selected apparent angle.
+This is an under-resolved approximation to the FCJ convolution, not an
+alternative physical model. The selector's unit combination is recorded as
+implemented; this audit does not claim an unverified unit-conversion fix.
+
+An independent consequence of a two-point Legendre rule is that its positive
+node is `1/sqrt(3)`. If the axial angular span is `d`, the single-node profile
+is shifted by `-d(1-1/sqrt(3))`. In contrast, the small-height, equal-height
+FCJ distribution has leading-order mean shift `-d/6`. For the first fixture
+reflection these are approximately -1.2216e-4 and -4.8171e-5 degrees,
+explaining the previously measured excess low-angle translation.
+
+To separate this from floating-point effects, the **unmodified external
+sources** were compiled normally and again with gfortran's real-kind promotion
+flags. No GSAS-II files were edited. The double-precision build retains the
+same quadrature selection. Calling its intrinsic `PSVOIGT` at the independently
+predicted shifted angle reproduces its FCJ result within 4.9e-13 relative L2 at
+all four sampled reflections. Nevertheless, that build differs from the direct
+angular integral by 7.90e-4–4.69e-3: higher precision alone does not cure the
+under-integration. The normal rebuild reproduces two sampled pinned profiles
+exactly; another differs by 9.7e-8 and one by 2.4e-4 relative L2. Compiler/build
+roundoff differences therefore remain secondary and are not claimed to be
+bit-for-bit identical across the whole fixture.
+
+The confirmed main cause is thus **single-node FCJ quadrature in this pinned
+GSAS-II call path**, with secondary floating-point effects and the separately
+documented finite-support difference. A fix on the oracle side would require
+converged quadrature and stable arithmetic, validated against the angular
+integral; merely increasing arithmetic precision is insufficient. PhaseSmith's
+corrected integral should not acquire an empirical shift to imitate it.
+
+The executable audit builds from external files in place and records their
+hashes, compiler version, build flags and output comparisons. It refuses a
+different revision, modified source files or an existing output directory:
+
+```sh
+python oracle/scripts/audit_fcj_source.py \
+  --gsas-root /path/to/pinned/GSAS-II \
+  --compiler gfortran --output /new/source-audit
+```
+
+The retained report is `validation/results/fcj-source-20260918-audit.json`.
+No production code or golden fixture changed during this source audit.
 
 ## Reproduction and outcome
 

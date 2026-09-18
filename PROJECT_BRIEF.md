@@ -30,6 +30,12 @@ points and does not account for the much larger pinned-oracle mismatch.
 The new angular reference uses adaptive tanh-sinh integration without the
 production substitution; mpmath is a test-only dependency.
 See `docs/pawley-profile-diagnosis.md` for the before/after equation audit.
+Direct inspection of the pinned GSAS-II call path subsequently confirmed
+single-node FCJ quadrature for every reflection in this fixture. Rebuilding
+the unmodified external routine in double precision preserves the discrepancy
+and reproduces the predicted single shifted intrinsic peak. This identifies
+under-integration as the dominant oracle cause, with secondary roundoff and
+support differences; no GSAS-II implementation was copied into PhaseSmith.
 
 Native project format 7 now adds typed CW and joint TOF Pawley analysis ownership and a lossless
 mixed-method `ProjectBundle` API. Shared histogram arrays are stored once;
