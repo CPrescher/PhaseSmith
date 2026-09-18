@@ -84,3 +84,13 @@ PYTHONPATH=python python -m phasesmith.validation.pawley_oracle \
 The independently designed least-squares objective follows Pawley's published
 method: G. S. Pawley (1981), J. Appl. Cryst. 14, 357–361,
 [doi:10.1107/S0021889881009618](https://doi.org/10.1107/S0021889881009618).
+
+The September 18 direct angular-integral audit found and corrected a shared
+Rust/NumPy geometric-factor error. It is about 1e-9 relative at the sampled
+fixture points, far smaller than the pinned-oracle discrepancy. The corrected
+native evaluator agrees with the original FCJ angular integral below 8.2e-13
+at those points. Original oracle data remain immutable; the corrected
+decomposition is recorded separately in
+`validation/results/pawley-20260918-profile-diagnosis-corrected.json`.
+See [the equation audit](../docs/pawley-profile-diagnosis.md) for the independent
+formulation, retained before/after reports and limits of the conclusion.

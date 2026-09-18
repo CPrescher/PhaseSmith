@@ -3,7 +3,9 @@
 The fixed-cell discrepancy is dominated by the **pinned GSAS-II FCJ axial-profile
 calculation**, with a smaller contribution from different finite peak cutoffs.
 It is not caused by the Pawley optimizer, F-squared-to-area conversion, or
-Gaussian/Lorentzian width translation. The production equations are unchanged.
+Gaussian/Lorentzian width translation. A subsequent direct angular-integral
+audit found and corrected a much smaller geometric-factor error in PhaseSmith;
+see the independent equation audit below. It does not explain the main mismatch.
 
 This investigation uses the original immutable 53-family Pawley fixture and
 new black-box controls against the same GSAS-II revision and compiled binary.
@@ -14,6 +16,9 @@ adapter, archive and binary hashes. The executable report is
 `validation/results/pawley-20260917-profile-diagnosis.json`.
 
 ## Separating the effects
+
+The decomposition and metrics in this section record the original September 17
+investigation, before the September 18 geometric-factor correction.
 
 All full-pattern numbers below use the same denominator as the original
 comparison, including its constant background of 1. Subtracting that background
@@ -96,6 +101,67 @@ this is consistent with the previously recorded approximately 2 ppm cell-length
 agreement. The detailed decomposition above uses the fixed-cell case so that
 cell motion and optimizer behavior cannot obscure the source.
 
+## Independent equation audit and native correction
+
+On September 18, the original angular density in FCJ equations 1 and 4–8 was
+evaluated directly using mpmath adaptive tanh-sinh integration at 35 and 60
+decimal digits. This reference does not use the height substitution or
+Gauss-Legendre quadrature shared by the Rust and NumPy implementations. It
+normalizes the angular convolution explicitly and evaluates the intrinsic TCH
+profile separately in arbitrary precision. The published dimensions are
+sample height `2S` and detector opening `2H`; the existing half-height mapping
+is correct. See [FCJ (1994)](https://doi.org/10.1107/S0021889894004218).
+
+This audit found a real PhaseSmith error. With `z` the axial separation divided
+by radius, the angular density is proportional to `W(z)/(z cos(a))`.
+Multiplication by the angular Jacobian gives
+`W(z)/[(1+z²) sin(a)]`, not `W(z)/[sqrt(1+z²) sin(a)]`.
+The missing square-root factor affected both Rust and the NumPy reference,
+which explains why their mutual comparisons did not expose it. The kernel,
+reference, analytical height derivatives and equation documentation are now
+corrected together. Normalization and support conventions are preserved.
+
+The retained before/after reports are
+`validation/results/fcj-angular-20260918-before.json` and
+`validation/results/fcj-angular-20260918-corrected.json`. They compare seven
+observation points around each of four fixture reflections, rather than a
+whole-grid error norm. Before correction, native errors were 2.4e-10–1.4e-9
+relative L2 at those samples, while pinned-oracle errors were
+9.23e-4–4.93e-3. After correction, native errors are below 8.2e-13;
+the 35- and 60-digit references round to the same float64 sample values.
+Thus there were **two issues**: a small native formula error
+and a much larger discrepancy in this pinned oracle's evaluation of the same
+published model. Fixing our error does not remove the latter.
+
+Regression tests also compare equal and unequal larger axial dimensions with
+a Gaussian-only intrinsic profile and verify the reflected high-angle case.
+The calibration tool's separate point-source/point-sample FCJ branch receives
+the same correction, without relaxing its equality test. Its general
+finite-source ray model is outside this FCJ audit's scope.
+The high-precision audit is an offline validation dependency, never a runtime
+dependency. No GSAS-II implementation source was used to derive this correction.
+This establishes agreement with the published integral for the tested cases;
+it does not identify the internal cause of the pinned binary's discrepancy or
+make a claim about every GSAS-II version or diffraction geometry.
+
+Validation after correction: 362 Rust tests and 941 Python tests pass (11
+external-data tests skipped and 33 opt-in tests deselected); strict Clippy,
+formatting, targeted Ruff and the strict documentation build pass. The existing
+200-peak, 5,001-sample benchmark with two warmups and nine repetitions shows no
+median regression: CW FCJ 2.249→2.195 ms, neutron FCJ 2.225→2.191 ms, and
+doublet FCJ 4.519→4.492 ms. These small differences are timing noise, not a
+speedup claim. Raw output is retained in
+`validation/results/fcj-angular-20260918-benchmark.json`.
+
+Reproduce the direct equation audit with the test dependencies installed:
+
+```sh
+python -m phasesmith.validation.fcj_angular_reference \
+  --fixture oracle/fixtures/pawley_optimizer_v1 \
+  --controls oracle/diagnostics/pawley-profile-controls-20260917 \
+  --output /new/angular-audit.json
+```
+
 ## Reproduction and outcome
 
 Generate new external controls in the separate pinned oracle environment;
@@ -116,9 +182,9 @@ python -m phasesmith.validation.pawley_profile_diagnostic \
   --output /new/report.json
 ```
 
-Regression tests cover the decomposition, independent quadrature, grid control,
-and revision guard. No numerical core, solver, production support convention,
-original golden fixture, or existing acceptance tolerance was changed. Exact
-GSAS-II equivalence remains unclaimed, but its failure now has an experimentally
-isolated explanation. Altering production physics to imitate this particular
-compiled oracle approximation is not justified by these controls.
+Regression tests cover the decomposition, direct angular integral, independent
+quadrature, grid control and revision guard. The native geometric factor and
+its derivative were corrected after the equation audit; the solver, production
+support convention, original golden fixtures and acceptance thresholds are
+unchanged. Exact GSAS-II equivalence remains unclaimed. An empirical shift to
+imitate this particular compiled oracle is not part of the correction.

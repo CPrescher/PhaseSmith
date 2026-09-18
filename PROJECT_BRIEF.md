@@ -22,7 +22,14 @@ to the pinned FCJ numerical profile evaluator and finite cutoff policy: native
 quadrature matches a converged independent reference, oracle profiles with their
 cutoffs reconstruct the histogram, and an independent linear solve attributes
 the overlapping-area difference to the profile basis rather than the optimizer.
-See `docs/pawley-profile-diagnosis.md`; no production equations were changed.
+A subsequent direct, high-precision angular-integral audit exposed a shared
+native/NumPy change-of-variable error: the geometric denominator must contain
+`1+z²`, not `sqrt(1+z²)`. Values and analytical height derivatives are corrected
+together. Its effect in the Pawley fixture is about 1e-9 relative at sampled
+points and does not account for the much larger pinned-oracle mismatch.
+The new angular reference uses adaptive tanh-sinh integration without the
+production substitution; mpmath is a test-only dependency.
+See `docs/pawley-profile-diagnosis.md` for the before/after equation audit.
 
 Native project format 7 now adds typed CW and joint TOF Pawley analysis ownership and a lossless
 mixed-method `ProjectBundle` API. Shared histogram arrays are stored once;

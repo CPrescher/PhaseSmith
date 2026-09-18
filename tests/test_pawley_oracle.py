@@ -83,7 +83,7 @@ def test_fixed_profile_diagnosis_separates_axial_kernel_and_cutoffs():
     assert report["passed"]
     metrics = report["metrics"]
     assert metrics["original_full_pattern_relative_l2"] == pytest.approx(
-        3.691308764333e-4, rel=1e-7
+        3.691309812920e-4, rel=1e-7
     )
     assert (
         metrics["axial_kernel_component_relative_l2"] > 30 * metrics["cutoff_component_relative_l2"]
