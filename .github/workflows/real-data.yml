@@ -51,8 +51,10 @@ jobs:
             --manifest validation/pawley-cell-acceptance-v3.json \
             --output validation/results/scheduled-pawley-cell.json
           python -m phasesmith.validation.tof_pawley --data-root validation/data \
+            --manifest validation/pawley-tof-acceptance-v1.json \
             --output validation/results/scheduled-pawley-tof.json
           python -m phasesmith.validation.pawley_spectrum \
+            --oracle-fixture oracle/fixtures/wavelength_components_v1 \
             --data-root validation/data/iucr-ceria-size-strain-round-robin \
             --output validation/results/scheduled-pawley-spectrum.json
       - name: Exercise Python integration contracts

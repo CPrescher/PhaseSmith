@@ -253,7 +253,8 @@ observed range. The support-local boundary certificate currently applies only
 to monochromatic symmetric fixed-position fits. Spectral fits use ordinary
 full-objective acceptance and may report stagnation at moving cutoffs.
 
-`python -m phasesmith.validation.pawley_spectrum --data-root PATH --output REPORT`
+`python -m phasesmith.validation.pawley_spectrum --data-root PATH
+--oracle-fixture FIXTURE_DIRECTORY --output REPORT`
 compares the pinned low/middle/high-angle doublet profiles under their existing
 FCJ tolerances and runs the measured Birmingham ceria regression with and without
 the disclosed 1.6% secondary detected-area component. This is an exploratory

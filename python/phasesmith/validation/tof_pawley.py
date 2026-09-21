@@ -288,10 +288,13 @@ def main():
     parser.add_argument(
         "--manifest",
         type=Path,
-        default=Path(__file__).resolve().parents[3] / "validation/pawley-tof-acceptance-v1.json",
+        default=Path("validation/pawley-tof-acceptance-v1.json"),
+        help="Acceptance manifest (relative to the working directory, or an absolute path)",
     )
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
+    if not args.manifest.is_file():
+        parser.error(f"acceptance manifest not found: {args.manifest}; supply --manifest PATH")
     manifest = validate_manifest(json.loads(args.manifest.read_text()))
     cases = [run_case(c, manifest, args.data_root) for c in manifest["cases"]]
     record = dict(
