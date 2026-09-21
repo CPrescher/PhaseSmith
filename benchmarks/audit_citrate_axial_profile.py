@@ -12,6 +12,7 @@ from typing import Any
 
 import numpy as np
 import phasesmith
+from phasesmith._numpy_compat import trapezoid
 
 PINNED_REVISION = "c0bc79b259cdf0065480b5fbd57674ddf12c4a23"
 
@@ -33,16 +34,16 @@ def _sha256_file(path: Path) -> str:
 
 
 def _moments(x: np.ndarray, profile: np.ndarray) -> dict[str, float]:
-    area = float(np.trapezoid(profile, x))
+    area = float(trapezoid(profile, x))
     if not math.isfinite(area) or area <= 0.0:
         raise ValueError("profile sampled area must be positive and finite")
-    centroid = float(np.trapezoid(profile * x, x) / area)
+    centroid = float(trapezoid(profile * x, x) / area)
     centered = x - centroid
-    variance = float(np.trapezoid(profile * centered**2, x) / area)
+    variance = float(trapezoid(profile * centered**2, x) / area)
     if not math.isfinite(variance) or variance <= 0.0:
         raise ValueError("profile sampled variance must be positive and finite")
     width = math.sqrt(variance)
-    skewness = float(np.trapezoid(profile * centered**3, x) / area / width**3)
+    skewness = float(trapezoid(profile * centered**3, x) / area / width**3)
     return {
         "sampled_area": area,
         "centroid_deg": centroid,
@@ -75,9 +76,9 @@ def profile_difference(
     candidate_normalized = candidate / candidate_moments["sampled_area"]
     difference = candidate_normalized - reference_normalized
     return {
-        "normalized_l1_distance": float(np.trapezoid(np.abs(difference), x)),
+        "normalized_l1_distance": float(trapezoid(np.abs(difference), x)),
         "normalized_rms_distance": float(
-            math.sqrt(np.trapezoid(difference**2, x) / np.trapezoid(reference_normalized**2, x))
+            math.sqrt(trapezoid(difference**2, x) / trapezoid(reference_normalized**2, x))
         ),
         "normalized_maximum_abs_error": float(
             np.max(np.abs(difference)) / np.max(reference_normalized)

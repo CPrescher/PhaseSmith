@@ -7,6 +7,7 @@ import numpy as np
 import phasesmith
 import pytest
 from phasesmith import TofInstrument, UnitCell
+from phasesmith._numpy_compat import trapezoid
 from phasesmith.control import CancellationToken
 from phasesmith.io.space_groups import space_group_by_number
 from phasesmith.pattern import TofPowderPattern
@@ -352,7 +353,7 @@ def test_tof_area_and_centroid_and_inclusive_support():
     assert y[1] >= 0 and y[-2] >= 0 and y[3] > 0
     x = np.linspace(left, right, 10001)
     y = calculation(x)
-    integral = np.trapezoid(y, x)
+    integral = trapezoid(y, x)
     eta = p.eta[0]
     # Truncation removes the symmetric TCH base tails. The normalized truncated
     # exponential convolution preserves that base area and adds its own mean shift.
@@ -363,7 +364,7 @@ def test_tof_area_and_centroid_and_inclusive_support():
     alpha, beta = p.alpha_per_us[0], p.beta_per_us[0]
     factor = 1 - tail / math.expm1(tail)
     expected = p.position_us[0] + factor * (alpha / beta - beta / alpha) / (alpha + beta)
-    assert np.trapezoid(x * y, x) / integral == pytest.approx(expected, abs=2e-4)
+    assert trapezoid(x * y, x) / integral == pytest.approx(expected, abs=2e-4)
 
 
 @pytest.mark.parametrize("case_index", [1, 2, 3])

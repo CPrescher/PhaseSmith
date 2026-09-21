@@ -5,6 +5,7 @@ from dataclasses import fields, replace
 import numpy as np
 import phasesmith
 import pytest
+from phasesmith._numpy_compat import trapezoid
 
 
 def instrument() -> phasesmith.ConstantWavelengthInstrument:
@@ -132,8 +133,8 @@ def test_neutron_profile_retains_integrated_intensity_and_centroid() -> None:
         phasesmith.ConstantWavelengthExperiment.neutron(instrument()),
         support_fwhm=100.0,
     ).y
-    area = np.trapezoid(actual, x)
-    centroid = np.trapezoid(x * actual, x) / area
+    area = trapezoid(actual, x)
+    centroid = trapezoid(x * actual, x) / area
     assert area == pytest.approx(intensity, rel=7e-4)
     assert centroid == pytest.approx(position, abs=3e-12)
 

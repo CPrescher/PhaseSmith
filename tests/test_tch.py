@@ -6,6 +6,7 @@ import numpy as np
 import phasesmith
 import pytest
 from phasesmith import reference
+from phasesmith._numpy_compat import trapezoid
 
 
 def test_tch_transform_matches_independent_reference() -> None:
@@ -147,9 +148,9 @@ def test_tch_support_integral_and_centroid() -> None:
     expected_integral = intensity * (
         shape.eta * lorentzian_fraction + (1.0 - shape.eta) * gaussian_fraction
     )
-    sampled_integral = np.trapezoid(result.y, x)
+    sampled_integral = trapezoid(result.y, x)
     assert sampled_integral == pytest.approx(expected_integral, rel=2e-10)
-    centroid = np.trapezoid(x * result.y, x) / sampled_integral
+    centroid = trapezoid(x * result.y, x) / sampled_integral
     assert centroid == pytest.approx(position, abs=5e-15)
 
 

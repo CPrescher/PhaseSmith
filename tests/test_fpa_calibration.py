@@ -5,6 +5,7 @@ from dataclasses import replace
 import numpy as np
 import phasesmith
 from phasesmith import fpa_calibration
+from phasesmith._numpy_compat import trapezoid
 
 
 def _options() -> phasesmith.FundamentalProfileCalibrationOptions:
@@ -146,10 +147,9 @@ def test_spectral_transmission_integral_matches_dense_wavelength_reference() -> 
         line.gaussian_fwhm_angstrom,
         line.lorentzian_fwhm_angstrom,
     ).value
-    expected = np.trapezoid(density * passband.transmission(wavelength), wavelength)
+    expected = trapezoid(density * passband.transmission(wavelength), wavelength)
     expected_centroid = (
-        np.trapezoid(wavelength * density * passband.transmission(wavelength), wavelength)
-        / expected
+        trapezoid(wavelength * density * passband.transmission(wavelength), wavelength) / expected
     )
 
     actual = fpa_calibration._line_transmission(line, passband, 255)

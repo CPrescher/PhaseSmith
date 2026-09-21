@@ -6,6 +6,7 @@ import numpy as np
 import phasesmith
 import pytest
 from phasesmith import reference
+from phasesmith._numpy_compat import trapezoid
 
 
 def test_package_exposes_installed_version() -> None:
@@ -51,10 +52,10 @@ def test_support_integral_matches_analytic_truncation() -> None:
     gaussian_fraction = math.erf(2.0 * math.sqrt(math.log(2.0)) * support)
     lorentzian_fraction = 2.0 / math.pi * math.atan(2.0 * support)
     expected_integral = intensity * (eta * lorentzian_fraction + (1.0 - eta) * gaussian_fraction)
-    sampled_integral = np.trapezoid(result.y, x)
+    sampled_integral = trapezoid(result.y, x)
     assert sampled_integral == pytest.approx(expected_integral, rel=2e-10)
 
-    centroid = np.trapezoid(x * result.y, x) / sampled_integral
+    centroid = trapezoid(x * result.y, x) / sampled_integral
     assert centroid == pytest.approx(position, abs=2e-15)
 
 

@@ -6,6 +6,7 @@ import numpy as np
 import phasesmith
 import pytest
 from phasesmith import reference
+from phasesmith._numpy_compat import trapezoid
 
 
 def instrument() -> phasesmith.ConstantWavelengthInstrument:
@@ -283,9 +284,9 @@ def test_area_centroid_and_skew_reverse_above_ninety_degrees() -> None:
         values = phasesmith.profile_fcj(
             x, position, 0.05, 0.0, phasesmith.FcjGeometry(0.02, 0.01)
         ).value
-        area = np.trapezoid(values, x)
-        centroid = np.trapezoid(x * values, x) / area
-        skew_moment = np.trapezoid((x - centroid) ** 3 * values, x) / area
+        area = trapezoid(values, x)
+        centroid = trapezoid(x * values, x) / area
+        skew_moment = trapezoid((x - centroid) ** 3 * values, x) / area
         moments.append((area, centroid - position, skew_moment))
 
     for area, _shift, _skew in moments:

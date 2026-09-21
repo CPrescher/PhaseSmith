@@ -6,6 +6,7 @@ import numpy as np
 import phasesmith
 import pytest
 from phasesmith import reference
+from phasesmith._numpy_compat import trapezoid
 from phasesmith.oracle import cw_instrument_from_gsas_centidegrees
 
 
@@ -204,8 +205,8 @@ def test_area_and_centroid_for_isolated_reflection() -> None:
         instrument(),
         support_fwhm=80.0,
     )
-    area = np.trapezoid(result.y, x)
-    centroid = np.trapezoid(x * result.y, x) / area
+    area = trapezoid(result.y, x)
+    centroid = trapezoid(x * result.y, x) / area
 
     assert area == pytest.approx(intensity, rel=1.2e-3)
     assert centroid == pytest.approx(position, abs=2e-12)
