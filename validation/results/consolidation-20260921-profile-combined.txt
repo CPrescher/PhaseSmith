@@ -1,0 +1,20 @@
+python=3.13.5 numpy=2.5.3
+platform=macOS-26.6.2-arm64-arm-64bit-Mach-O
+native_build_mode=release native_module=/Users/clemens/PhaseSmith-work/combined-venv/lib/python3.13/site-packages/phasesmith/_core.abi3.so
+peaks=200 samples=5001 active_peak_samples=14410 tch_active_peak_samples=13644 cw_active_peak_samples=12444 sample_active_peak_samples=91741 fcj_active_peak_samples=12620 tof_active_peak_samples=8:63837,20:85142 wavelength_component_counts=1,2 support_fwhm=20
+input_mb=0.046 repetitions=3
+case=values_only output_mb=0.040 min_ms=0.045 median_ms=0.047 p95_ms=0.048
+case=support_jacobian output_mb=0.504 min_ms=0.084 median_ms=0.089 p95_ms=0.110
+case=dense_jacobian output_mb=32.046 min_ms=0.532 median_ms=0.823 p95_ms=1.211
+case=tch_support_jacobian output_mb=0.480 min_ms=0.101 median_ms=0.102 p95_ms=0.120
+case=cw_local_and_global_jacobian output_mb=0.442 min_ms=0.137 median_ms=0.137 p95_ms=0.160
+case=cw_size_strain_provider_and_native_jacobian output_mb=1.791 min_ms=1.469 median_ms=1.507 p95_ms=1.533
+case=cw_size_strain_orientation_provider_and_native_jacobian output_mb=1.831 min_ms=1.597 median_ms=1.608 p95_ms=1.695
+case=cw_four_phase_size_strain_provider_and_native_jacobian output_mb=2.191 min_ms=2.537 median_ms=2.542 p95_ms=2.653
+case=cw_prepared_four_phase_native_jacobian output_mb=2.191 min_ms=2.212 median_ms=2.215 p95_ms=2.319
+case=neutron_cw_typed_local_and_global_jacobian output_mb=0.442 min_ms=0.137 median_ms=0.142 p95_ms=0.150
+case=neutron_cw_fcj_typed_local_and_global_jacobian output_mb=0.525 min_ms=2.177 median_ms=2.181 p95_ms=2.186
+case=cw_fcj_local_and_global_jacobian_order_48 output_mb=0.525 min_ms=2.179 median_ms=2.182 p95_ms=2.183
+case=cw_fcj_doublet_local_and_global_jacobian_order_48 output_mb=0.633 min_ms=4.387 median_ms=4.395 p95_ms=4.402
+case=tof_tail_log_8_local_and_global_jacobian_order_192 output_mb=1.665 min_ms=69.248 median_ms=69.358 p95_ms=69.449
+case=tof_tail_log_20_local_and_global_jacobian_order_192 output_mb=2.006 min_ms=82.310 median_ms=82.408 p95_ms=82.442
