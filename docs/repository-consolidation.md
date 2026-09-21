@@ -38,8 +38,9 @@ sdist and are outside this numerical integration.
 
 `main` contains a separate API cleanup and download-maintenance history.
 This consolidation advances develop without rewriting or overwriting main.
-Reconciliation with that API cleanup remains a distinct review before a
-future merge to main. No release tag or package publication is part of this work.
+The subsequent [0.7 candidate review](release-candidate-0.7.md) reconciles
+that API cleanup without rewriting either history. No release tag or package
+publication is part of the consolidation.
 
 ## Numerical outcome and performance tradeoff
 
@@ -130,7 +131,7 @@ The [repair report](pawley-repair-20260921.md) records the fixes, 970 passing
 Python tests on each local architecture, 365 Rust tests, 11 differential tests,
 unchanged measured gates and successful final CI/distribution checks. No physics,
 support or acceptance threshold was loosened. The original findings remain in
-`docs/pawley-consolidation-review.md`. Main's separate API cleanup remains a
+`docs/pawley-consolidation-review.md`. At that checkpoint, main's separate API cleanup remained a
 future reconciliation task.
 
 ## Final accounting

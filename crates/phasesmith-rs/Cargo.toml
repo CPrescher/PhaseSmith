@@ -13,14 +13,14 @@ keywords = ["diffraction", "rietveld", "crystallography", "powder", "science"]
 categories = ["science"]
 
 [dependencies]
-phasesmith-core = { version = "0.5.0", path = "../phasesmith-core" }
-phasesmith-crystallography = { version = "0.5.0", path = "../phasesmith-crystallography" }
-phasesmith-engine = { version = "0.5.0", path = "../phasesmith-engine" }
-phasesmith-execution = { version = "0.5.0", path = "../phasesmith-execution" }
-phasesmith-io = { version = "0.5.0", path = "../phasesmith-io" }
-phasesmith-model = { version = "0.5.0", path = "../phasesmith-model" }
-phasesmith-persistence = { version = "0.5.0", path = "../phasesmith-persistence" }
-phasesmith-workflows = { version = "0.5.0", path = "../phasesmith-workflows" }
+phasesmith-core = { version = "0.7.0", path = "../phasesmith-core" }
+phasesmith-crystallography = { version = "0.7.0", path = "../phasesmith-crystallography" }
+phasesmith-engine = { version = "0.7.0", path = "../phasesmith-engine" }
+phasesmith-execution = { version = "0.7.0", path = "../phasesmith-execution" }
+phasesmith-io = { version = "0.7.0", path = "../phasesmith-io" }
+phasesmith-model = { version = "0.7.0", path = "../phasesmith-model" }
+phasesmith-persistence = { version = "0.7.0", path = "../phasesmith-persistence" }
+phasesmith-workflows = { version = "0.7.0", path = "../phasesmith-workflows" }
 
 [lints]
 workspace = true

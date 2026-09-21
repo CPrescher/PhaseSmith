@@ -10,10 +10,10 @@ controls; “different physical models” is not established.
 The final combined implementation covers bounded/tied CW and TOF areas,
 symmetry-constrained cells, selected profile/calibration parameters, linear
 backgrounds, fixed CW spectra, dense and matrix-free solving, cancellation,
-accepted-state restart and lossless native format-7 bundles. The original
-checkout's committed changes through `9afd808c` are included; later concurrent
-work in that checkout is outside this validated worktree. The historical reports below remain
-unchanged so that failed experiments and intermediate limitations stay visible.
+accepted-state restart and lossless native format-7 bundles. The final repaired integration is on develop; see the
+[2026-09-21 repair review](pawley-repair-20260921.md) for the latest measured
+and distribution evidence. The historical reports below remain unchanged so
+that failed experiments and intermediate limitations stay visible.
 
 | Measured regression | Final scientific outcome |
 | --- | --- |

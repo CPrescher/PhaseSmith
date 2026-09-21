@@ -1,8 +1,9 @@
 # Python API map
 
 PhaseSmith exposes a typed, array-oriented scripting API. Top-level imports are
-convenient for notebooks and short scripts; module-qualified imports make
-ownership clearer in applications and reusable packages.
+convenient for domain models, calculations, and mathematical primitives;
+module-qualified imports are the durable paths for adapters, automation,
+reporting, and refinement methods.
 
 ```python
 import phasesmith
@@ -139,11 +140,16 @@ ownership in more detail. Source links in the page header lead to the exact
 implementation for the selected documentation version.
 
 Release review does not rely on documentation pages alone. The versioned
-machine-readable snapshot in `api/python-public-api-v0.5.0.json` covers the
+machine-readable snapshot in `api/python-public-api-v0.7.0.json` covers the
 explicit top-level, I/O, refinement, integration, oracle, and validation
 exports. Run `python scripts/public_api_snapshot.py --check` to compare it with
 the installed package; any name, target, kind, or callable-signature change is
 reported as a unified diff.
+
+Version 0.6 removes method-owned refinement names, dataset-specific converters,
+and adapter/orchestration aliases from aggregate `__all__` lists. Explicit 0.5
+imports remain warning-backed aliases until 1.0. See [Migrating to
+0.6](migration-0.6.md) for exact replacements.
 
 ## Pawley workflows
 

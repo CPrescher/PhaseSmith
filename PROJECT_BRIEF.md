@@ -12,6 +12,15 @@ not part of the numerical library.
 
 ## Current implementation status
 
+The 0.7.0 release candidate reconciles main's 0.6 API cleanup and bounded
+validation-download retries with the validated develop/Pawley implementation.
+Module-owned imports and warning-backed 0.5 compatibility aliases are retained;
+Pawley modules are explicit refinement exports. Existing snapshots remain
+immutable, with new 0.7 snapshots covering the combined surface. This
+reconciliation changes no numerical equations or persistence formats.
+See `docs/release-candidate-0.7.md` for the version proposal and release review.
+No tag or publication is included.
+
 Pawley integration is validated after the 2026-09-21 repair. Scale-relative
 active-set feasibility fixes the Intel dense-solver boundary failure without
 relaxing convergence or physics; cached norms preserve performance and exact
@@ -20,8 +29,8 @@ the working directory. Both architectures pass 970 Python tests; full Rust,
 measured Pawley gates and the cross-platform distribution dry run pass.
 See `docs/pawley-boundary-feasibility.md` and `docs/pawley-repair-20260921.md`.
 The shared FCJ correction and Pawley APIs accompany the consolidated develop
-baseline; feasible-width research and main's separate API cleanup remain outside
-this integration. No release is published by the consolidation.
+baseline. Feasible-width research remains outside this integration; the API
+cleanup is now reconciled in the 0.7 candidate. No release is published.
 
 Repository consolidation (2026-09-21) preserves the original working state,
 Pawley history and feasible-width research on separate remote branches. The
@@ -70,8 +79,8 @@ mixed-method `ProjectBundle` API. Shared histogram arrays are stored once;
 cell-only Pawley domains require no atom models. All existing native analysis
 families and checkpoints survive mixed load/save, formats 1–6 migrate, and
 Python/native save/load/resume tests verify exact accepted profiles and history.
-Standalone Pawley formats remain compatible. The latest upstream numerical
-work is merged into the Pawley worktree; the combined Python suite passes.
+Standalone Pawley formats remain compatible. The latest validated numerical
+work is integrated into develop and retained in the release candidate.
 
 Pawley now provides bounded CW family-area refinement in dense and matrix-free
 modes, analytical cell/profile/background derivatives, exact ties, independent
@@ -255,6 +264,13 @@ directory outside the parent audit directory and a new plan ID, and requires
 fresh approval; no AI callback runs
 inside a numerical solve and no deterministic review auto-accepts a fit.
 
+The 0.6.0 line is the deliberate pre-1.0 Python API cleanup. It aligns the
+top-level, I/O, and refinement aggregate namespaces with their documented
+module ownership, keeps warning-backed compatibility aliases until 1.0 for moved 0.5
+imports, and records the resulting exported names and signatures in a new
+immutable snapshot. It changes no numerical equation, tolerance, support
+boundary, default representation, or persistence format.
+
 External handoff is now a first-class path-free packet rather than a manual
 selection of plan fields. A second packet composes the digest-bound prior
 review with the next child plan's sanitized advisor context. Proposals retain
@@ -268,8 +284,8 @@ orchestration and add no model-provider dependency.
 The remainder of this section is a chronological implementation record. Terms
 such as “next slice”, “pending”, and “follow-on” describe the checkpoint at
 which their paragraph was written; the final current-state summary and next
-milestone are maintained in `IMPLEMENTATION_PLAN.md` under “Definition of the
-next completed milestone”.
+milestone are maintained in `IMPLEMENTATION_PLAN.md` under “Recent completed
+milestones and next release gates”.
 
 Implementation units 0 through 10 in `IMPLEMENTATION_PLAN.md` are complete as
 of 2026-08-05. The repository now includes validated symmetric TCH, CW
@@ -974,6 +990,21 @@ not inherit X-ray doublet or polarization assumptions.
 13. Native X-ray and neutron scattering models with reviewed data provenance.
 14. Fused structural-intensity/profile calculation with analytical JVP/VJP.
 15. First full CIF-backed Rietveld refinement.
+
+## Deferred post-1.0 roadmap
+
+Public automatic peak picking is a future usability target only after the 0.6
+cleanup and 1.0 API stabilization. Its claim is deterministic detection of
+candidate peaks in a measured one-dimensional powder pattern, with explicit
+preprocessing, threshold, boundary, uncertainty, and repeatability contracts.
+It is not known-structure reflection generation, assignment of Miller indices
+(HKL indexing), or database-backed phase identification. Those are separate
+problems with separate inputs and validation claims.
+
+No peak picker is implemented or exported in the 0.6 cleanup. In particular,
+the private opXRD validation helper is not promoted as the public design; a
+future implementation needs an independently reviewed API, algorithm source,
+real-pattern validation set, and deterministic edge-case contract.
 
 ## Non-goals
 

@@ -10,7 +10,10 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-from phasesmith.io import IUCR_SILICON_PHASES, convert_iucr_silicon_standard_bundle
+from phasesmith.io.iucr_silicon_standard import (
+    IUCR_SILICON_PHASES,
+    convert_iucr_silicon_standard_bundle,
+)
 from phasesmith.validation import run_iucr_silicon_standard_workflow, verify_validation_dataset
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]

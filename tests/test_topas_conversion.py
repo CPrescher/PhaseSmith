@@ -3,11 +3,8 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-from phasesmith.io import (
-    convert_rowles_topas_bundle,
-    read_cif,
-    read_powder_data,
-)
+from phasesmith.io import read_cif, read_powder_data
+from phasesmith.io.topas import convert_rowles_topas_bundle
 
 TOPAS_TEMPLATE = """#include "row119.inc"
 macro sample {{ {sample} }}

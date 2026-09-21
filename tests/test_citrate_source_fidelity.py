@@ -5,7 +5,9 @@ import os
 from pathlib import Path
 
 import pytest
-from phasesmith.io import convert_iucr_trirubidium_citrate_silicon_bundle
+from phasesmith.io.iucr_trirubidium_citrate_silicon import (
+    convert_iucr_trirubidium_citrate_silicon_bundle,
+)
 from phasesmith.validation import run_citrate_source_reflection_fidelity
 
 

@@ -23,6 +23,7 @@ from phasesmith.refinement import (
     PolynomialBackground,
 )
 from phasesmith.refinement import rietveld as structural_refinement
+from phasesmith.reporting import rietveld_result_record
 
 P1_CIF = """
 data_p1
@@ -399,7 +400,7 @@ def test_fixed_component_phase_scale_refines_and_reports_component_rows() -> Non
     )
     assert result.phases[0].scale == pytest.approx(1.0, rel=2.0e-8)
     assert result.metrics.rwp < 1.0e-8
-    report = phasesmith.rietveld_result_record(result)
+    report = rietveld_result_record(result)
     phase_record = report["phases"][0]
     count = result.phases[0].reflections.reflection_count
     assert phase_record["reflection_count"] == count

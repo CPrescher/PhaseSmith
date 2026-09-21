@@ -11,11 +11,10 @@ from pathlib import Path
 import numpy as np
 import phasesmith
 from phasesmith import automation
-from phasesmith.refinement import (
-    RefinementLimits,
+from phasesmith.refinement import RefinementLimits, rietveld
+from phasesmith.refinement.rietveld import (
     RietveldOptions,
     RietveldParameterSelection,
-    rietveld,
 )
 
 P1_CIF = """

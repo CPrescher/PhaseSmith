@@ -8,14 +8,15 @@ import phasesmith
 import pytest
 from phasesmith import TofInstrument, UnitCell
 from phasesmith.control import CancellationToken
+from phasesmith.io.space_groups import space_group_by_number
 from phasesmith.pattern import TofPowderPattern
 from phasesmith.refinement import (
     LatticeParameterBounds,
     LatticeParameterization,
-    TofSharedLatticePhase,
 )
 from phasesmith.refinement.core import ConstraintTransform
 from phasesmith.refinement.pawley import PawleyOptions, parameter_key
+from phasesmith.refinement.tof_multibank import TofSharedLatticePhase
 from phasesmith.refinement.tof_pawley import (
     TofPawleyBackground,
     TofPawleyBank,
@@ -37,7 +38,7 @@ def instrument(difc=5000.0):
 
 def request(*, cell=False, points=501):
     lattice = UnitCell(4, 4, 4, 90, 90, 90)
-    group = phasesmith.space_group_by_number(221).space_group
+    group = space_group_by_number(221).space_group
     par = LatticeParameterization(group, lattice)
     cells = (
         (
@@ -455,7 +456,7 @@ def test_distinct_reference_cell_and_initial_cell_roundtrip(tmp_path):
 
 def test_triclinic_shared_cell_six_derivative_chains():
     cell = UnitCell(4.1, 4.4, 4.7, 85, 92, 103)
-    group = phasesmith.space_group_by_number(1).space_group
+    group = space_group_by_number(1).space_group
     par = LatticeParameterization(group, cell)
     shared = TofSharedLatticePhase(
         "phase",

@@ -3,7 +3,10 @@ import os
 from pathlib import Path
 
 import pytest
-from phasesmith.io import IUCR_SILICON_PHASES, convert_iucr_silicon_standard_bundle
+from phasesmith.io.iucr_silicon_standard import (
+    IUCR_SILICON_PHASES,
+    convert_iucr_silicon_standard_bundle,
+)
 from phasesmith.validation import run_iucr_silicon_standard_workflow
 
 
