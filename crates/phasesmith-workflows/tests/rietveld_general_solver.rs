@@ -582,8 +582,8 @@ fn final_axial_calculation_matches_the_complete_accepted_state() {
         assert_eq!(result.history.len(), accepted_steps);
         let expected = calculate_rietveld_pattern(&result.input, &calculation()).unwrap();
         assert_eq!(result.calculation.y, expected.y);
-        assert!(
-            result.calculation.phases == expected.phases,
+        assert_eq!(
+            result.calculation.phases, expected.phases,
             "final phase calculations must retain complete local/global derivatives"
         );
     }
@@ -631,7 +631,7 @@ fn accepted_backtracked_trial_retains_axial_derivatives_at_the_iteration_limit()
     assert!(result.history[0].backtracks > 0);
     let expected = calculate_rietveld_pattern(&result.input, &calculation()).unwrap();
     assert_eq!(result.calculation.y, expected.y);
-    assert!(result.calculation.phases == expected.phases);
+    assert_eq!(result.calculation.phases, expected.phases);
 }
 
 #[test]
