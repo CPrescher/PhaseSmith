@@ -1335,6 +1335,13 @@ impl StepModel for DenseStep<'_> {
         Ok(self.design.transpose() * (self.design * point - self.target))
     }
 }
+// Account for roundoff in the constrained solve at the current step scale.
+// A unit floor admits outward motion near zero-width faces even after all
+// coordinates have become small; the full norm allows null-space solve error.
+fn feasibility_roundoff(a: &DMatrix<f64>, b: &DVector<f64>, row: usize, d: &DVector<f64>) -> f64 {
+    1e-13 * (b[row].abs() + a.row(row).norm() * d.norm())
+}
+
 #[allow(clippy::too_many_lines)]
 fn active_step_model<C>(
     model: &impl StepModel,
@@ -1408,7 +1415,8 @@ fn active_step_model<C>(
             }
             if box_faces.len() > 1
                 && (0..a.nrows()).all(|row| {
-                    a.row(row).transpose().dot(&projected) >= b[row] - 1e-13 * (1.0 + b[row].abs())
+                    a.row(row).transpose().dot(&projected)
+                        >= b[row] - feasibility_roundoff(a, b, row, &projected)
                 })
             {
                 d = projected;
@@ -1436,13 +1444,13 @@ fn active_step_model<C>(
                 continue;
             }
             let candidate_slack = a.row(row).transpose().dot(&candidate) - b[row];
-            let feasibility_tolerance = 1e-13 * (1.0 + b[row].abs() + candidate.norm());
+            let feasibility_tolerance = feasibility_roundoff(a, b, row, &candidate);
             // A numerically satisfied face must not be re-added as a dependent blocker.
             if candidate_slack >= -feasibility_tolerance {
                 continue;
             }
             let motion = a.row(row).transpose().dot(&direction);
-            if motion < -1e-14 {
+            if motion < 0.0 {
                 let fraction = ((a.row(row).transpose().dot(&d) - b[row]) / (-motion)).max(0.0);
                 if fraction < alpha {
                     alpha = fraction;
@@ -1465,7 +1473,7 @@ fn active_step_model<C>(
             active.remove(q);
         } else {
             if (0..a.nrows()).any(|row| {
-                a.row(row).transpose().dot(&d) < b[row] - 1e-13 * (1.0 + b[row].abs() + d.norm())
+                a.row(row).transpose().dot(&d) < b[row] - feasibility_roundoff(a, b, row, &d)
             }) {
                 return Err(StepError::Numerical);
             }
@@ -1483,7 +1491,7 @@ fn active_step_model<C>(
                 }
             }
             if (0..a.nrows()).any(|row| {
-                a.row(row).transpose().dot(&d) < b[row] - 1e-13 * (1.0 + b[row].abs() + d.norm())
+                a.row(row).transpose().dot(&d) < b[row] - feasibility_roundoff(a, b, row, &d)
             }) {
                 return Err(StepError::Numerical);
             }
@@ -1643,6 +1651,32 @@ fn result<I: PawleyProblem>(
 mod tests {
     use super::*;
 
+    #[test]
+    fn coupled_feasibility_is_independent_of_step_scale() {
+        // Project (s, -2s, z) onto x+y >= 0. The exact solution is
+        // (1.5s, -1.5s, z), including steps smaller than the former absolute floor.
+        let runtime = RefinementRuntime::<()>::new(RefinementLimits::default(), None).unwrap();
+        let a = DMatrix::from_row_slice(1, 3, &[1.0, 1.0, 0.0]);
+        for scale in [1.0, 1e-10, 1e-14, 1e-20] {
+            for unrelated in [0.0, scale, 10.0 * scale] {
+                let target = DVector::from_vec(vec![scale, -2.0 * scale, unrelated]);
+                let result = active_step(
+                    &DMatrix::identity(3, 3),
+                    &target,
+                    &a,
+                    &DVector::zeros(1),
+                    20,
+                    &runtime,
+                    &mut PawleyDiagnostics::default(),
+                )
+                .ok()
+                .unwrap();
+                assert!((result[0] / scale - 1.5).abs() < 1e-12);
+                assert!((result[1] / scale + 1.5).abs() < 1e-12);
+                assert!((result[2] - unrelated).abs() < 1e-12);
+            }
+        }
+    }
     #[test]
     fn identity_projection_matches_dense_for_dependent_coupled_faces() {
         let target = DVector::from_vec(vec![3.0, -2.0, 1.0, 4.0]);

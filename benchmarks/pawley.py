@@ -25,7 +25,9 @@ from phasesmith.refinement.pawley import (
 )
 
 
-def run_case(reflections, samples, axial, joint, repeats, solver="dense", spectrum=False):
+def run_case(
+    reflections, samples, axial, joint, repeats, solver="dense", spectrum=False, boundary=False
+):
     x = np.linspace(10.0, 90.0, samples)
     positions = np.linspace(12.0, 88.0, reflections)
     # Adjacent pairs overlap heavily without being exactly coincident.
@@ -38,6 +40,8 @@ def run_case(reflections, samples, axial, joint, repeats, solver="dense", spectr
         for k in range(2)
     )
     instrument = ConstantWavelengthInstrument(1.54, 0.0001, 0.0, 0.001, 0.002, 0.001)
+    if boundary:
+        instrument = replace(instrument, x_deg=0.0, y_deg=0.0)
     truth = PawleyInput(
         PowderPattern(x, observed_y=np.zeros_like(x)),
         instrument,
@@ -52,11 +56,20 @@ def run_case(reflections, samples, axial, joint, repeats, solver="dense", spectr
         pattern=PowderPattern(x, observed_y=y),
         parameters=None,
         phases=tuple(replace(p, intensities=p.intensities * 0.8) for p in phases),
-        instrument=replace(instrument, w_deg2=0.0011) if joint else instrument,
+        instrument=(
+            replace(instrument, x_deg=0.002)
+            if boundary
+            else replace(instrument, w_deg2=0.0011)
+            if joint
+            else instrument
+        ),
     )
     request = replace(
         request,
-        parameters=build_parameter_set(request, profile_parameters=("w_deg2",) if joint else ()),
+        parameters=build_parameter_set(
+            request,
+            profile_parameters=("x_deg", "y_deg") if boundary else ("w_deg2",) if joint else (),
+        ),
     )
     timings, records, diagnostics = [], [], []
     previous = None
@@ -96,6 +109,7 @@ def run_case(reflections, samples, axial, joint, repeats, solver="dense", spectr
         serial_native=True,
         solver=solver,
         fixed_spectrum=spectrum,
+        lorentzian_boundary=boundary,
         jacobian_storage_elements=fit.calculation.jacobian_operator.storage_elements,
         times_seconds=timings,
         median_seconds=float(np.median(timings)),
@@ -110,6 +124,9 @@ def main():
     parser.add_argument("--repeats", type=int, default=3)
     parser.add_argument("--large", action="store_true")
     parser.add_argument("--spectrum", action="store_true")
+    parser.add_argument(
+        "--boundary", action="store_true", help="Add a 256-peak zero-width face fit"
+    )
     parser.add_argument("--solver", choices=("dense", "matrix_free"), default="dense")
     parser.add_argument("--output", required=True)
     args = parser.parse_args()
@@ -119,6 +136,10 @@ def main():
     binary_hash = hashlib.sha256(Path(_core.__file__).read_bytes()).hexdigest()
     runner_hash = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
     results = [run_case(*c, args.repeats, args.solver, args.spectrum) for c in cases]
+    if args.boundary:
+        results.append(
+            run_case(256, 10001, False, True, args.repeats, args.solver, args.spectrum, True)
+        )
     peak = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
     record = dict(
         platform=platform.platform(),
