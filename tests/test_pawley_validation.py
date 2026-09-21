@@ -170,3 +170,81 @@ def test_matrix_free_manifest_preserves_science_and_validates_iterative_controls
         bad["common"][key] = value
         with pytest.raises(ValueError):
             pawley.validate_manifest(bad)
+
+
+@pytest.mark.parametrize(
+    "module,flag", [("tof_pawley", "--manifest"), ("pawley_spectrum", "--oracle-fixture")]
+)
+def test_installed_validation_reports_missing_external_asset(
+    monkeypatch, tmp_path, capsys, module, flag
+):
+    import importlib
+    import sys
+
+    runner = importlib.import_module(f"phasesmith.validation.{module}")
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(
+        sys, "argv", [module, "--data-root", str(tmp_path), "--output", "report.json"]
+    )
+    with pytest.raises(SystemExit) as error:
+        runner.main()
+    assert error.value.code == 2
+    assert f"supply {flag} PATH" in capsys.readouterr().err
+    assert not (tmp_path / "report.json").exists()
+
+
+@pytest.mark.parametrize("explicit", [False, True])
+def test_tof_cli_resolves_manifest_from_caller_location(monkeypatch, tmp_path, explicit):
+    import hashlib
+    import sys
+
+    from phasesmith.validation import tof_pawley
+
+    source = Path(__file__).parents[1] / "validation/pawley-tof-acceptance-v1.json"
+    target = tmp_path / (
+        "external.json" if explicit else "validation/pawley-tof-acceptance-v1.json"
+    )
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_bytes(source.read_bytes())
+    monkeypatch.chdir(tmp_path)
+    argv = ["tof_pawley", "--data-root", str(tmp_path), "--output", "report.json"]
+    if explicit:
+        argv.extend(["--manifest", str(target)])
+    monkeypatch.setattr(sys, "argv", argv)
+    seen = []
+
+    def run_case(case, manifest, root):
+        seen.append((case["id"], root))
+        return {"passed": True}
+
+    monkeypatch.setattr(tof_pawley, "run_case", run_case)
+    tof_pawley.main()
+    record = json.loads((tmp_path / "report.json").read_text())
+    assert record["manifest_sha256"] == hashlib.sha256(source.read_bytes()).hexdigest()
+    assert seen == [(case["id"], tmp_path) for case in record["manifest"]["cases"]]
+
+
+@pytest.mark.parametrize("explicit", [False, True])
+def test_spectrum_cli_resolves_external_fixture(monkeypatch, tmp_path, explicit):
+    import sys
+
+    from phasesmith.validation import pawley_spectrum
+
+    fixture = tmp_path / ("external" if explicit else "oracle/fixtures/wavelength_components_v1")
+    fixture.mkdir(parents=True)
+    monkeypatch.chdir(tmp_path)
+    argv = ["pawley_spectrum", "--data-root", str(tmp_path), "--output", "report.json"]
+    if explicit:
+        argv.extend(["--oracle-fixture", str(fixture)])
+    monkeypatch.setattr(sys, "argv", argv)
+    seen = []
+
+    def oracle(path):
+        seen.append(path.resolve())
+        return []
+
+    monkeypatch.setattr(pawley_spectrum, "oracle_comparison", oracle)
+    monkeypatch.setattr(pawley_spectrum, "measured_comparison", lambda root: [])
+    pawley_spectrum.main()
+    assert seen == [fixture]
+    assert (tmp_path / "report.json").is_file()

@@ -35,12 +35,19 @@ python -m phasesmith.validation.pawley --data-root PATH \
   --manifest validation/pawley-matrix-free-acceptance-v4.json --output NEW_CW_REPORT
 python -m phasesmith.validation.pawley --data-root PATH \
   --manifest validation/pawley-cell-acceptance-v3.json --output NEW_CELL_REPORT
-python -m phasesmith.validation.tof_pawley --data-root PATH --output NEW_TOF_REPORT
+python -m phasesmith.validation.tof_pawley --data-root PATH \
+  --manifest validation/pawley-tof-acceptance-v1.json --output NEW_TOF_REPORT
 python -m phasesmith.validation.pawley_spectrum \
+  --oracle-fixture oracle/fixtures/wavelength_components_v1 \
   --data-root PATH/iucr-ceria-size-strain-round-robin --output NEW_SPECTRUM_REPORT
 python -m phasesmith.validation.pawley_oracle --fixture oracle/fixtures/pawley_optimizer_v1 \
   --output NEW_ORACLE_REPORT
 ```
+
+Manifest and oracle fixture defaults are relative to the caller's working
+directory. Outside a repository checkout, pass their external paths explicitly
+with `--manifest` and `--oracle-fixture`. Missing assets produce an argument
+error before fitting; assets are not inferred from `site-packages`.
 
 The scheduled real-data CI job fetches the pinned sources, runs these measured
 contracts and uploads their reports. Normal pytest uses synthetic and committed

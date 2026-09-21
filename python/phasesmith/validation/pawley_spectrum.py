@@ -136,13 +136,22 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--data-root", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument(
+        "--oracle-fixture",
+        type=Path,
+        default=Path("oracle/fixtures/wavelength_components_v1"),
+        help="Pinned fixture directory (relative to the working directory, or an absolute path)",
+    )
     args = parser.parse_args()
-    root = Path(__file__).resolve().parents[3]
+    if not args.oracle_fixture.is_dir():
+        parser.error(
+            f"oracle fixture not found: {args.oracle_fixture}; supply --oracle-fixture PATH"
+        )
     record = dict(
         platform=platform.platform(),
         native_binary_sha256=hashlib.sha256(Path(_core.__file__).read_bytes()).hexdigest(),
         runner_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
-        oracle=oracle_comparison(root / "oracle/fixtures/wavelength_components_v1"),
+        oracle=oracle_comparison(args.oracle_fixture),
         measured=measured_comparison(args.data_root),
         conventions=(
             "Ceria is an exploratory measured regression, not a holdout. Source 1.6% "
