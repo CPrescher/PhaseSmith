@@ -1,5 +1,9 @@
 # Experimental feasible CW width steps
 
+This experiment is preserved on `codex/feasible-width-experiment-20260917`.
+Its option is not included in the consolidated develop API. The evidence below
+records the original experiment and does not establish a production default.
+
 Development status, 2026-09-17: **parked** pending broader demonstrated benefit.
 The option remains off by default. The fixed-workflow assessment and promotion
 criteria in [refinement-assessment.md](refinement-assessment.md) supersede any

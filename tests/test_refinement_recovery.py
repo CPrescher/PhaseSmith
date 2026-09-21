@@ -4,6 +4,7 @@ from dataclasses import replace
 
 import numpy as np
 import phasesmith as ps
+import pytest
 from phasesmith.refinement import RefinementLimits
 from phasesmith.refinement import rietveld as rv
 from test_rietveld_refinement import P1_CIF, experiment, selection
@@ -90,3 +91,129 @@ def test_python_tiny_damping_recovery_matches_native_solution_and_resumes():
     resumed = rv.refine(q, options, checkpoint=partial.checkpoint)
     assert resumed.history == recovered.history
     np.testing.assert_array_equal(resumed.calculation.y, recovered.calculation.y)
+
+
+def test_large_damping_cannot_certify_convergence_far_from_solution():
+    q = occupancy_request()
+    options = replace(
+        controls(), initial_damping=1e20, max_scaled_parameter_step=0.25, max_backtracks=8
+    )
+    native = rv.refine(q, options)
+    python = rv.refine(q, options, logger=lambda event: None)
+    assert native.backend == "native" and python.backend != "native"
+    for result in (native, python):
+        assert result.history
+        assert result.termination_reason.value == "converged"
+        assert result.metrics.rwp < 1e-8
+        assert abs(result.phases[0].structure.sites[0].occupancy - 0.5) < 2e-9
+        assert all(
+            b.objective < a.objective
+            for a, b in zip(result.history, result.history[1:], strict=False)
+        )
+    np.testing.assert_allclose(native.calculation.y, python.calculation.y, rtol=1e-8, atol=1e-8)
+    for logger, complete in ((None, native), (lambda event: None, python)):
+        partial = rv.refine(
+            q,
+            replace(options, limits=replace(options.limits, max_iterations=1)),
+            logger=logger,
+        )
+        resumed = rv.refine(q, options, checkpoint=partial.checkpoint, logger=logger)
+        assert resumed.history == complete.history
+        np.testing.assert_array_equal(resumed.calculation.y, complete.calculation.y)
+
+
+def test_projected_stationarity_accepts_a_physical_bound_optimum():
+    q = occupancy_request()
+    # Data require occupancy 2, outside its [0, 1] domain. The best feasible
+    # solution is exactly 1, with a nonzero unprojected gradient.
+    q = replace(q, pattern=ps.PowderPattern(q.pattern.x, observed_y=q.pattern.observed_y * 16))
+    options = replace(controls(), max_backtracks=8, max_scaled_parameter_step=0.25)
+    for logger in (None, lambda event: None):
+        result = rv.refine(q, options, logger=logger)
+        assert result.termination_reason.value == "converged"
+        assert result.phases[0].structure.sites[0].occupancy == 1.0
+        assert result.metrics.rwp > 0.5
+
+
+def test_tiny_user_step_cap_cannot_certify_convergence():
+    q = occupancy_request()
+    options = replace(controls(), max_scaled_parameter_step=1e-20)
+    for logger in (None, lambda event: None):
+        result = rv.refine(q, options, logger=logger)
+        assert result.termination_reason.value != "converged"
+        assert result.metrics.rwp > 0.99
+
+
+def test_small_damped_objective_change_does_not_stop_a_linear_scale_fit():
+    x = np.linspace(15, 100, 2501)
+    q = rv.RietveldInput.from_cif(
+        ps.PowderPattern(x, observed_y=np.zeros_like(x)),
+        experiment(),
+        P1_CIF,
+        phase_id="alpha",
+        selection=selection(phase_scale=True),
+        scale=0.5,
+    )
+    truth = rv.calculate(q.pattern, q.experiment, (replace(q.phases[0], scale=1.0),)).y
+    q = replace(q, pattern=ps.PowderPattern(x, observed_y=truth))
+    # For this linear problem J = truth * initial_scale in canonical scaled
+    # coordinates. Heavy damping gives a tiny accepted improvement while the
+    # physical scale is still approximately 0.5 rather than its true value 1.
+    curvature = float(np.sum((truth * 0.5) ** 2))
+    options = replace(
+        controls(),
+        initial_damping=1e6 * curvature,
+        objective_tolerance=1e-5,
+        min_iterations=1,
+        max_scaled_parameter_step=0.25,
+        max_backtracks=8,
+    )
+    for logger in (None, lambda event: None):
+        result = rv.refine(q, options, logger=logger)
+        first = result.history[0]
+        assert first.objective_change < options.objective_tolerance * first.objective
+        assert first.scaled_step_norm > options.parameter_tolerance
+        assert len(result.history) > 1
+        assert result.termination_reason.value == "converged"
+        assert abs(result.phases[0].scale - 1.0) < 1e-8
+        assert result.metrics.rwp < 1e-8
+
+
+@pytest.mark.parametrize(
+    "rejection_limit, expected", [(10, "stagnated"), (3, "repeated_rejections")]
+)
+def test_coordinate_recovery_shares_one_trial_allowance_and_preserves_runtime_guard(
+    rejection_limit, expected
+):
+    # Several locally promising coordinates, but the user cap prevents any
+    # trial from making the required material improvement. Recovery must not
+    # multiply max_backtracks by the number of free parameters.
+    x = np.linspace(15, 100, 2501)
+    q = rv.RietveldInput.from_cif(
+        ps.PowderPattern(x, observed_y=np.zeros_like(x)),
+        experiment(),
+        P1_CIF,
+        phase_id="alpha",
+        selection=selection(phase_scale=True, occupancy=True),
+        scale=0.5,
+    )
+    truth = rv.calculate(q.pattern, q.experiment, (replace(q.phases[0], scale=1.0),)).y
+    q = replace(q, pattern=ps.PowderPattern(x, observed_y=truth))
+    options = replace(
+        controls(),
+        max_backtracks=8,
+        max_scaled_parameter_step=1e-10,
+        parameter_tolerance=1e-8,
+        objective_tolerance=1e-5,
+        limits=RefinementLimits(
+            max_iterations=100,
+            max_evaluations=500,
+            max_consecutive_rejections=rejection_limit,
+        ),
+    )
+    for logger in (None, lambda event: None):
+        result = rv.refine(q, options, logger=logger)
+        assert result.termination_reason.value == expected
+        assert not result.history
+        assert result.phases[0].scale == 0.5
+        assert result.metrics.rwp > 0.49

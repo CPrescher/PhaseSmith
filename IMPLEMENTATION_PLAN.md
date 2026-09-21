@@ -1661,6 +1661,14 @@ against this baseline, followed by the 1.0 release candidate gates.
 
 ## Definition of the next completed milestone
 
+Repository consolidation takes priority over further QARR tuning. Preserve all
+local histories, integrate the packaged agent skill and bounded truthful
+stopping, and require the canonical native QARR regression plus the fixed
+assessment panel before promotion. Feasible-width research remains on its
+preserved experimental branch. Pawley and its shared FCJ correction require a
+separate integration review. The execution sequence and exit gates are in
+`docs/repository-consolidation-plan.md`.
+
 The second refinement performance pass implements ordered four-sample FCJ
 evaluation, contiguous active structural rows, reusable unit-scale profiles
 for scale-only fits, and native phase-diagnostic export with complete axial

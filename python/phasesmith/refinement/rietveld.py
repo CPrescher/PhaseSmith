@@ -11,6 +11,7 @@ from concurrent.futures import Executor
 from contextlib import nullcontext, suppress
 from dataclasses import dataclass, field, replace
 from functools import partial
+from itertools import islice
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal, TypeVar, cast
 
@@ -2276,38 +2277,133 @@ def _refine_with_executor(
                 if step_norm > selected.max_scaled_parameter_step:
                     step *= selected.max_scaled_parameter_step / step_norm
                     step_norm = selected.max_scaled_parameter_step
-                if step_norm < selected.parameter_tolerance:
-                    termination = TerminationReason.CONVERGED
-                    termination_message = "scaled parameter step reached tolerance"
-                    break
                 packed = transform.pack()
-                accepted = False
-                for backtrack in range(selected.max_backtracks + 1):
-                    factor = 0.5**backtrack
-                    trial_values = transform.unpack(packed + factor * step, clip=True)
-                    trial_experiment, trial_background = _apply_profile_background_values(
-                        experiment,
-                        background,
-                        trial_values,
-                    )
-                    trial_lattice_domains = tuple(
-                        None
-                        if domain is None
-                        else replace(
-                            domain,
-                            wavelength_angstrom=trial_experiment.radiation.wavelength_angstrom,
+                projected_step = np.array(
+                    [
+                        np.clip(
+                            (value + delta) * parameters.spec(key).scale,
+                            parameters.spec(key).bounds.lower,
+                            parameters.spec(key).bounds.upper,
                         )
-                        for domain in lattice_domains
-                    )
-                    trial_phases, topology_changes = _apply_parameter_values(
-                        phases,
-                        trial_lattice_domains,
-                        parameters,
-                        trial_values,
-                        coordinate_models=linearization.coordinate_models,
-                    )
-                    trial_parameters = parameters.replace_values(trial_values)
+                        / parameters.spec(key).scale
+                        - value
+                        for value, delta, key in zip(packed, step, transform.free_keys, strict=True)
+                    ]
+                )
+                recovery = np.linalg.norm(projected_step) < selected.parameter_tolerance or (
+                    len(history) >= selected.min_iterations
+                    and bool(history)
+                    and history[-1].objective_change
+                    <= selected.objective_tolerance * max(objective, 1.0)
+                )
+                directions: list[tuple[int, float] | None] = [None]
+                if recovery:
                     try:
+                        undamped, _ = _conjugate_gradient(
+                            partial(_normal_product, linearization, 1.0e-18),
+                            -gradient,
+                            selected.cg_tolerance,
+                            selected.max_cg_iterations,
+                        )
+                        residual = _normal_product(linearization, 1.0e-18, undamped) + gradient
+                        small_undamped_step = np.linalg.norm(
+                            undamped
+                        ) < selected.parameter_tolerance and np.linalg.norm(
+                            residual
+                        ) <= selected.cg_tolerance * max(float(np.linalg.norm(gradient)), 1.0)
+                    except FloatingPointError:
+                        # A singular or numerically indefinite undamped solve
+                        # cannot certify a stop; retain the diagonal check.
+                        small_undamped_step = False
+                    if small_undamped_step:
+                        termination = TerminationReason.CONVERGED
+                        termination_message = "undamped parameter step reached tolerance"
+                        break
+                    if linearization.weighted_free_jacobian is not None:
+                        diagonal = np.sum(linearization.weighted_free_jacobian**2, axis=1)
+                    else:
+                        diagonal = np.empty(len(gradient))
+                        for index in range(len(gradient)):
+                            unit = np.zeros_like(gradient)
+                            unit[index] = 1.0
+                            column = linearization.jvp(unit)
+                            diagonal[index] = column @ column
+                    candidates = []
+                    predicted_gain = 0.0
+                    for index, (g, curvature) in enumerate(zip(gradient, diagonal, strict=True)):
+                        if curvature <= 0.0 or not np.isfinite(curvature):
+                            continue
+                        spec = parameters.spec(transform.free_keys[index])
+                        full_target = np.clip(
+                            (packed[index] - g / curvature) * spec.scale,
+                            spec.bounds.lower,
+                            spec.bounds.upper,
+                        )
+                        full_delta = full_target / spec.scale - packed[index]
+                        predicted_gain += max(
+                            -g * full_delta - 0.5 * curvature * full_delta**2, 0.0
+                        )
+                        delta = np.clip(
+                            full_delta,
+                            -selected.max_scaled_parameter_step,
+                            selected.max_scaled_parameter_step,
+                        )
+                        target = np.clip(
+                            (packed[index] + delta) * spec.scale,
+                            spec.bounds.lower,
+                            spec.bounds.upper,
+                        )
+                        delta = target / spec.scale - packed[index]
+                        gain = -g * delta - 0.5 * curvature * delta**2
+                        if gain > 0.0:
+                            candidates.append((index, delta, gain))
+                    if predicted_gain <= selected.objective_tolerance * max(objective, 1.0):
+                        termination = TerminationReason.CONVERGED
+                        termination_message = (
+                            "projected undamped local improvement reached tolerance"
+                        )
+                        break
+                    candidates.sort(key=lambda candidate: -candidate[2])
+                    directions = [(index, delta) for index, delta, _ in candidates]
+                accepted = False
+                # One shared line-search allowance, independent of parameter
+                # count. Visit ranked coordinates before halving their steps.
+                trials = (
+                    (coordinate, backtrack)
+                    for backtrack in range(selected.max_backtracks + 1)
+                    for coordinate in directions
+                )
+                for coordinate, backtrack in islice(trials, selected.max_backtracks + 1):
+                    if coordinate is not None:
+                        index, delta = coordinate
+                        step = np.zeros_like(gradient)
+                        step[index] = delta
+                    step_norm = float(np.linalg.norm(step))
+                    factor = 0.5**backtrack
+                    try:
+                        trial_values = transform.unpack(packed + factor * step, clip=True)
+                        trial_experiment, trial_background = _apply_profile_background_values(
+                            experiment,
+                            background,
+                            trial_values,
+                        )
+                        trial_lattice_domains = tuple(
+                            None
+                            if domain is None
+                            else replace(
+                                domain,
+                                wavelength_angstrom=trial_experiment.radiation.wavelength_angstrom,
+                            )
+                            for domain in lattice_domains
+                        )
+                        trial_phases, topology_changes = _apply_parameter_values(
+                            phases,
+                            trial_lattice_domains,
+                            parameters,
+                            trial_values,
+                            coordinate_models=linearization.coordinate_models,
+                        )
+                        trial_parameters = parameters.replace_values(trial_values)
                         trial_linearization = _RietveldLinearization.prepare(
                             input_data,
                             trial_experiment,
@@ -2343,7 +2439,10 @@ def _refine_with_executor(
                         "structural trial evaluated",
                         (("objective", trial_objective), ("backtrack", backtrack)),
                     )
-                    if trial_objective < objective:
+                    required_improvement = (
+                        selected.objective_tolerance * max(objective, 1.0) if recovery else 0.0
+                    )
+                    if objective - trial_objective > required_improvement:
                         before = parameters.values()
                         changes = tuple(
                             RietveldParameterChange(
@@ -2403,12 +2502,6 @@ def _refine_with_executor(
                             (("objective", objective), ("rwp", metrics.rwp)),
                         )
                         accepted = True
-                        if (
-                            len(history) >= selected.min_iterations
-                            and change <= selected.objective_tolerance * max(objective, 1.0)
-                        ):
-                            termination = TerminationReason.CONVERGED
-                            termination_message = "objective change reached tolerance"
                         break
                     runtime.emit(
                         RefinementEventKind.STEP_REJECTED,
@@ -2420,6 +2513,10 @@ def _refine_with_executor(
                 if termination is TerminationReason.CONVERGED:
                     break
                 if not accepted:
+                    if recovery:
+                        termination = TerminationReason.STAGNATED
+                        termination_message = "no improving bounded recovery step was found"
+                        break
                     damping = max(damping * selected.damping_increase, selected.initial_damping)
                     continue
                 runtime.emit(

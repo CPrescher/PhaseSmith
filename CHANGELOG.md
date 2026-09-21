@@ -6,6 +6,11 @@ development versions.
 
 ## Unreleased
 
+- Verify CW Rietveld stopping independently of damping and share one bounded
+  recovery trial allowance across coordinates. Preserve truthful stagnation,
+  caller runtime guards, physical bounds and scientific acceptance gates.
+  Cover the canonical native QARR entry point in real-data regression tests.
+
 - Ship the PhaseSmith agent skill with the Python distribution, expose
   `phasesmith skill --path` and `--print`, and publish generated documentation
   from its canonical instructions. Add scientific references for experimental

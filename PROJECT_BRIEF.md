@@ -12,6 +12,24 @@ not part of the numerical library.
 
 ## Current implementation status
 
+
+Repository consolidation (2026-09-21) preserves the original working state,
+Pawley history and feasible-width research on separate remote branches. The
+agent skill now ships as version-matched package resources with CLI discovery,
+generated documentation and CI drift checks. No model-provider dependency is
+introduced.
+
+The complete CW solver and independent Python fallback now verify candidate
+stops with undamped local information. Coordinate recovery shares one ordinary
+line-search trial allowance across ranked directions, rather than multiplying
+it by the parameter count. Exhausting this bounded search reports stagnation;
+actual caller runtime guards retain their own stop reasons. Scientific gates,
+physical models and budgets are unchanged. The canonical QARR 1g entry point
+has a dedicated regression test, and the fixed eight-case assessment remains
+the promotion boundary. See `docs/refinement-bounded-recovery.md` and the
+repository consolidation record. The feasible-width option remains solely on
+its preserved experimental branch and is not added to the committed public API.
+
 Refinement optimization priority: seek the lowest stable, scientifically valid
 Rwp with verified convergence, retaining QPA and physical-model checks. Judge
 speed at comparable attained fit quality; a faster iteration-limited fit with
