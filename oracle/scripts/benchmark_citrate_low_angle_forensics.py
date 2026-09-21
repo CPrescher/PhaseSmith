@@ -23,6 +23,9 @@ from typing import Any
 
 import numpy as np
 
+# Keep this external worker independent of PhaseSmith on NumPy 1.26 and 2.x.
+_trapezoid = np.trapezoid if hasattr(np, "trapezoid") else np.trapz
+
 PINNED_REVISION = "c0bc79b259cdf0065480b5fbd57674ddf12c4a23"
 LOW_ANGLE_LIMITS_DEG = (17.004916, 30.0)
 PHYSICAL_SCANS = {
@@ -265,16 +268,16 @@ def fit_residual_background(
 
 def _moments(x: np.ndarray, signal: np.ndarray) -> tuple[float, float, float, float]:
     positive = np.maximum(np.asarray(signal, dtype=np.float64), 0.0)
-    area = float(np.trapezoid(positive, x))
+    area = float(_trapezoid(positive, x))
     if not math.isfinite(area) or area <= 0.0:
         raise ValueError("peak-group area must be positive")
-    centroid = float(np.trapezoid(positive * x, x) / area)
+    centroid = float(_trapezoid(positive * x, x) / area)
     centered = x - centroid
-    variance = float(np.trapezoid(positive * centered**2, x) / area)
+    variance = float(_trapezoid(positive * centered**2, x) / area)
     if variance <= 0.0:
         raise ValueError("peak-group variance must be positive")
     width = math.sqrt(variance)
-    skewness = float(np.trapezoid(positive * centered**3, x) / area / width**3)
+    skewness = float(_trapezoid(positive * centered**3, x) / area / width**3)
     return area, centroid, width, skewness
 
 

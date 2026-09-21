@@ -7,6 +7,7 @@ import numpy as np
 import phasesmith
 import pytest
 from phasesmith import reference
+from phasesmith._numpy_compat import trapezoid
 
 
 def instrument(wavelength: float = 1.54056) -> phasesmith.ConstantWavelengthInstrument:
@@ -330,8 +331,8 @@ def test_sample_broadening_preserves_area_and_symmetric_centroid() -> None:
     result = phasesmith.calculate_cw_pattern(
         x, batch, instrument(), physics=composite(), support_fwhm=support
     )
-    area = np.trapezoid(result.y, x)
-    centroid = np.trapezoid(x * result.y, x) / area
+    area = trapezoid(result.y, x)
+    centroid = trapezoid(x * result.y, x) / area
     contribution = composite().evaluate(phasesmith.PhysicsContext(batch, instrument()))
     base = phasesmith.cw_profile_parameters([position], instrument())
     gaussian = reference.GAUSSIAN_FWHM_PER_SIGMA * np.sqrt(

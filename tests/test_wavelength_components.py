@@ -6,6 +6,7 @@ import numpy as np
 import phasesmith
 import pytest
 from phasesmith import reference
+from phasesmith._numpy_compat import trapezoid
 
 
 def instrument() -> phasesmith.ConstantWavelengthInstrument:
@@ -290,9 +291,9 @@ def test_resolved_doublet_conserves_area_and_intensity_ratio() -> None:
         x, [base_position], [9.0], narrow, doublet(), support_fwhm=100.0
     )
     midpoint = float(np.mean(positions[0]))
-    first = np.trapezoid(result.y[x < midpoint], x[x < midpoint])
-    second = np.trapezoid(result.y[x > midpoint], x[x > midpoint])
-    total = np.trapezoid(result.y, x)
+    first = trapezoid(result.y[x < midpoint], x[x < midpoint])
+    second = trapezoid(result.y[x > midpoint], x[x > midpoint])
+    total = trapezoid(result.y, x)
 
     assert total == pytest.approx(9.0, rel=2e-6)
     assert second / first == pytest.approx(0.5, rel=3e-6)

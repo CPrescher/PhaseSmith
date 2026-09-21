@@ -6,6 +6,7 @@ from pathlib import Path
 import numpy as np
 import phasesmith
 import pytest
+from phasesmith._numpy_compat import trapezoid
 from phasesmith.oracle import (
     FixtureValidationError,
     OracleFixture,
@@ -257,9 +258,9 @@ def test_tof_profiles_derivatives_and_moments_against_pinned_gsasii(
         normalized_error = float(np.max(np.abs(computed - oracle)) / np.max(np.abs(oracle)))
         assert normalized_error < tolerance
 
-    area = np.trapezoid(actual.value, x)
-    centroid = np.trapezoid(x * actual.value, x) / area
-    third = np.trapezoid((x - centroid) ** 3 * actual.value, x) / area
+    area = trapezoid(actual.value, x)
+    centroid = trapezoid(x * actual.value, x) / area
+    third = trapezoid((x - centroid) ** 3 * actual.value, x) / area
     moments = case["sampled_moments"]
     assert area == pytest.approx(moments["integral"], rel=1.0e-5)
     assert centroid == pytest.approx(moments["centroid_us"], abs=3.0e-3)
@@ -311,9 +312,9 @@ def test_neutron_symmetric_and_fcj_profiles_against_pinned_gsasii(case_index: in
     fcj_oracle = fixture.arrays[case["arrays"]["fcj_profile"]]
     fcj_error = float(np.max(np.abs(fcj - fcj_oracle)) / np.max(np.abs(fcj_oracle)))
     assert fcj_error < 4.3e-4
-    area = np.trapezoid(fcj, x)
-    centroid = np.trapezoid(x * fcj, x) / area
-    third = np.trapezoid((x - centroid) ** 3 * fcj, x) / area
+    area = trapezoid(fcj, x)
+    centroid = trapezoid(x * fcj, x) / area
+    third = trapezoid((x - centroid) ** 3 * fcj, x) / area
     moments = case["sampled_fcj_moments"]
     assert area == pytest.approx(moments["integral"], rel=1.7e-6)
     assert centroid == pytest.approx(moments["centroid_deg"], abs=1.4e-4)
@@ -498,9 +499,9 @@ def test_sample_profiles_and_moments_against_pinned_gsasii(case_index: int) -> N
     # translation validated independently against every reflection above.
     assert normalized_maximum_error < 2.0e-5
 
-    actual_area = np.trapezoid(actual, x)
-    actual_centroid = np.trapezoid(x * actual, x) / actual_area
-    actual_second = np.trapezoid((x - actual_centroid) ** 2 * actual, x) / actual_area
+    actual_area = trapezoid(actual, x)
+    actual_centroid = trapezoid(x * actual, x) / actual_area
+    actual_second = trapezoid((x - actual_centroid) ** 2 * actual, x) / actual_area
     oracle_moments = case["sampled_corrected_moments"]
     assert actual_area == pytest.approx(oracle_moments["integral"], rel=2.1e-5)
     assert actual_centroid == pytest.approx(oracle_moments["centroid_deg"], abs=3e-14)
@@ -580,9 +581,9 @@ def test_tch_profile_and_derivatives_against_pinned_gsasii_fixture(
             np.max(np.abs(native_derivative - oracle_derivative)) / peak_scale
         )
         assert normalized_maximum_error < 6e-5
-    sampled_integral = np.trapezoid(oracle, x)
+    sampled_integral = trapezoid(oracle, x)
     assert sampled_integral == pytest.approx(case["sampled_integral_per_degree"], rel=2e-15)
-    centroid = np.trapezoid(x * oracle, x) / sampled_integral
+    centroid = trapezoid(x * oracle, x) / sampled_integral
     assert centroid == pytest.approx(parameters["position_deg"], abs=2e-5)
 
 
@@ -642,9 +643,9 @@ def test_cw_profile_widths_and_derivatives_against_pinned_gsasii(
         normalized_maximum_error = float(np.max(np.abs(native - oracle)) / np.max(np.abs(oracle)))
         # Local to the pinned #5838 TCH implementation and public unit chain.
         assert normalized_maximum_error < 6e-6
-    sampled_integral = np.trapezoid(actual.y, x)
+    sampled_integral = trapezoid(actual.y, x)
     assert sampled_integral == pytest.approx(parameters["integrated_intensity"], rel=2.2e-3)
-    centroid = np.trapezoid(x * actual.y, x) / sampled_integral
+    centroid = trapezoid(x * actual.y, x) / sampled_integral
     assert centroid == pytest.approx(position, abs=2e-11)
 
 
@@ -696,9 +697,9 @@ def test_fcj_values_and_moments_against_pinned_gsasii(angular_regime: str) -> No
     # middle/high angle; this tolerance is local to that pinned behavior.
     assert normalized_maximum_error < 2.4e-2
 
-    actual_area = np.trapezoid(actual, x)
-    actual_centroid = np.trapezoid(x * actual, x) / actual_area
-    actual_third = np.trapezoid((x - actual_centroid) ** 3 * actual, x) / actual_area
+    actual_area = trapezoid(actual, x)
+    actual_centroid = trapezoid(x * actual, x) / actual_area
+    actual_third = trapezoid((x - actual_centroid) ** 3 * actual, x) / actual_area
     oracle_moments = case["sampled_moments"]
     assert actual_area == pytest.approx(oracle_moments["integral"], rel=4e-6)
     assert actual_centroid == pytest.approx(oracle_moments["centroid_deg"], abs=1.6e-3)
@@ -764,9 +765,9 @@ def test_fcj_doublet_values_positions_and_moments_against_pinned_gsasii(
         rtol=2e-15,
         atol=2e-14,
     )
-    actual_area = np.trapezoid(actual, x)
-    actual_centroid = np.trapezoid(x * actual, x) / actual_area
-    actual_third = np.trapezoid((x - actual_centroid) ** 3 * actual, x) / actual_area
+    actual_area = trapezoid(actual, x)
+    actual_centroid = trapezoid(x * actual, x) / actual_area
+    actual_third = trapezoid((x - actual_centroid) ** 3 * actual, x) / actual_area
     oracle_moments = case["sampled_moments"]
     assert actual_area == pytest.approx(oracle_moments["integral"], rel=4e-6)
     assert actual_centroid == pytest.approx(oracle_moments["centroid_deg"], abs=1.6e-3)

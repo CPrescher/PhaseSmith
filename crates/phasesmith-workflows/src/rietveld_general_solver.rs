@@ -133,6 +133,11 @@ impl RietveldGeneralCheckpoint {
         constraints: &[Constraint],
     ) -> Result<(), RietveldGeneralRefinementError> {
         self.input.validate()?;
+        self.profile_accuracy.validate().map_err(|_| {
+            RietveldGeneralRefinementError::InvalidCheckpoint {
+                reason: "profile accuracy is invalid",
+            }
+        })?;
         let invalid = if &self.selection != selection {
             Some("parameter selection changed")
         } else if self.lattice_bounds != lattice_bounds {
@@ -588,7 +593,7 @@ pub fn refine_general_rietveld_with_runtime(
                     break 'iterations;
                 }
                 let Ok(trial_calculation) =
-                    crate::rietveld::calculate_rietveld_trial(&trial_input, &options.calculation)
+                    calculate_rietveld_pattern(&trial_input, &options.calculation)
                 else {
                     emit_rejected_trial(runtime, "trial outside the calculation domain")?;
                     if let Err(error) = runtime.reject_step() {
@@ -699,7 +704,9 @@ pub fn refine_general_rietveld_with_runtime(
             reduced_chi_square: accepted_metrics.reduced_chi_square,
         });
         live_input = trial_input;
-        final_calculation = Some(trial_calculation.clone());
+        // Every trial retains complete diagnostic rows in its existing pass,
+        // so returning it requires no extra evaluation after a runtime stop.
+        final_calculation = Some(trial_calculation);
         let accepted_layout = RietveldParameterLayout::new(&live_input, selection, lattice_bounds)?;
         live_parameters = stable_layout
             .parameters()

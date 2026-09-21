@@ -585,7 +585,7 @@ and `phasesmith::workflows` in Rust. Standalone CW version 2 and TOF version 1
 codecs also integrate into lossless [native format-7 bundles](native-persistence.md).
 See [validation](pawley-validation.md) for measured gates and model limitations.
 
-The unreleased supplement `api/python-pawley-api-unreleased.json` covers
+The 0.7 supplement `api/python-pawley-api-v0.7.0.json` covers
 `phasesmith.refinement.pawley`, `phasesmith.refinement.tof_pawley` and
 `phasesmith.project_bundle`; pytest checks all three modules. The historical
 0.5.0 snapshot remains unchanged.

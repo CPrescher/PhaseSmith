@@ -64,6 +64,12 @@ def _array(value, name, dtype=np.float64, ndim=1):
         raise TypeError(f"{name} must be real-valued")
     if dtype == np.int64 and not np.issubdtype(raw.dtype, np.integer):
         raise TypeError(f"{name} must contain integers")
+    if (
+        dtype == np.int64
+        and np.issubdtype(raw.dtype, np.unsignedinteger)
+        and np.any(raw > np.iinfo(np.int64).max)
+    ):
+        raise ValueError(f"{name} exceeds the int64 range")
     a = np.array(value, dtype=dtype, order="C", copy=True)
     if a.ndim != ndim or not np.isfinite(a).all():
         raise ValueError(f"{name} must be a finite {ndim}-dimensional array")

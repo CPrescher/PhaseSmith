@@ -17,6 +17,7 @@ from time import perf_counter
 import numpy as np
 
 from phasesmith import ConstantWavelengthInstrument, PowderPattern, _core
+from phasesmith._numpy_compat import trapezoid
 from phasesmith.instrument import FcjGeometry
 from phasesmith.oracle import load_fixture
 from phasesmith.radiation import WavelengthComponents
@@ -59,7 +60,7 @@ def oracle_comparison(root):
         # Existing pinned FCJ comparison contract, retained unchanged.
         assert error < 2.4e-2
         assert fit.termination_reason == "converged"
-        area = float(np.trapezoid(calculated, x))
+        area = float(trapezoid(calculated, x))
         assert abs(area / case["sampled_moments"]["integral"] - 1) < 4e-6
         rows.append(
             dict(

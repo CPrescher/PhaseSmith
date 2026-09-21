@@ -601,9 +601,9 @@ pub fn calculate_structural_pattern_dense_with_context(
 }
 
 /// Evaluate selected native structural rows, retaining zeros for omitted rows.
-/// `None` requests the complete public derivative contract. A mask skips fixed
-/// structural chains and axial derivatives (the refinement layout fixes axial
-/// geometry). Values and requested derivatives share the peak/sample pass.
+/// `None` requests every structural row. A mask skips fixed structural chains;
+/// axial derivatives follow the input's `calculate_axial_derivatives` flag.
+/// Values and requested derivatives share the peak/sample pass.
 /// # Errors
 /// Returns an error for invalid inputs or a mask of the wrong length.
 #[allow(clippy::too_many_lines)]
@@ -642,7 +642,7 @@ pub fn calculate_structural_pattern_selected_with_context(
         &prepared.two_theta_deg,
         &structural.values.intensity,
         execution,
-        selected.is_none(),
+        true,
     )?;
     append_instrument_derivatives(&mut accumulation, &structural.values, input, &prepared)?;
     let reflection_count = input.hkl.len();
