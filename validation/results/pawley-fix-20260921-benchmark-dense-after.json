@@ -1,0 +1,170 @@
+{
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "python": "3.13.5",
+  "numpy": "2.5.3",
+  "build": "maturin develop --release",
+  "native_binary_sha256": "b083b0be1151462b9a8fdf788d54875a1fa12a3ac4c3f617e909357c186d442e",
+  "runner_sha256": "1358b97812291b9ae50510a9d1bee9a58e532e0d95678a1efeabb396cd2d2f8a",
+  "peak_process_rss_bytes": 254410752,
+  "cases": [
+    {
+      "reflections": 256,
+      "samples": 10001,
+      "phases": 2,
+      "fcj": false,
+      "joint_width": false,
+      "serial_native": true,
+      "solver": "dense",
+      "fixed_spectrum": false,
+      "lorentzian_boundary": false,
+      "jacobian_storage_elements": 148865,
+      "times_seconds": [
+        0.6850121669704095,
+        0.6902752089663409,
+        0.6970640409854241
+      ],
+      "median_seconds": 0.6902752089663409,
+      "p95_seconds": 0.6963851577835157,
+      "scientific": {
+        "relative_l2": 3.820087038912135e-14,
+        "rank": 256,
+        "accepted_steps": 2,
+        "termination": "converged",
+        "profile_sha256": "98828b1284c8e8546715f4cb55e2b4d90fb9802fce74294a6c5f4900a6238a41",
+        "history_sha256": "8d744ca75fff7bc2279c5aa0db15e74bdda98c59452eed350991903bc49a1492",
+        "evaluations": 3,
+        "linear_iterations": 4
+      },
+      "diagnostics": [
+        {
+          "evaluations": 3,
+          "linear_iterations": 4,
+          "krylov_iterations": 0,
+          "evaluation_seconds": 0.011911041,
+          "qr_seconds": 0.343655626,
+          "face_seconds": 2.6375e-05,
+          "multiplier_seconds": 2.91e-07,
+          "diagnostic_seconds": 0.297937875,
+          "convergence_criterion": "projected_gradient",
+          "backtrack_rejections": 0,
+          "last_step_norm": 1.173225133560812e-10,
+          "projected_gradient_norm": 1.0059540308279614e-10,
+          "infeasible_trials": 0,
+          "last_rejected_error": null
+        },
+        {
+          "evaluations": 3,
+          "linear_iterations": 4,
+          "krylov_iterations": 0,
+          "evaluation_seconds": 0.012180416,
+          "qr_seconds": 0.345960916,
+          "face_seconds": 2.1126e-05,
+          "multiplier_seconds": 1.67e-07,
+          "diagnostic_seconds": 0.299407,
+          "convergence_criterion": "projected_gradient",
+          "backtrack_rejections": 0,
+          "last_step_norm": 1.173225133560812e-10,
+          "projected_gradient_norm": 1.0059540308279614e-10,
+          "infeasible_trials": 0,
+          "last_rejected_error": null
+        },
+        {
+          "evaluations": 3,
+          "linear_iterations": 4,
+          "krylov_iterations": 0,
+          "evaluation_seconds": 0.01208425,
+          "qr_seconds": 0.349322208,
+          "face_seconds": 1.9083e-05,
+          "multiplier_seconds": 4.1e-08,
+          "diagnostic_seconds": 0.302325542,
+          "convergence_criterion": "projected_gradient",
+          "backtrack_rejections": 0,
+          "last_step_norm": 1.173225133560812e-10,
+          "projected_gradient_norm": 1.0059540308279614e-10,
+          "infeasible_trials": 0,
+          "last_rejected_error": null
+        }
+      ]
+    },
+    {
+      "reflections": 256,
+      "samples": 10001,
+      "phases": 2,
+      "fcj": true,
+      "joint_width": true,
+      "serial_native": true,
+      "solver": "dense",
+      "fixed_spectrum": false,
+      "lorentzian_boundary": false,
+      "jacobian_storage_elements": 148881,
+      "times_seconds": [
+        1.0782985829864629,
+        1.0661002910346724,
+        1.062734958017245
+      ],
+      "median_seconds": 1.0661002910346724,
+      "p95_seconds": 1.0770787537912838,
+      "scientific": {
+        "relative_l2": 1.9871063418751376e-16,
+        "rank": 257,
+        "accepted_steps": 5,
+        "termination": "converged",
+        "profile_sha256": "1d907905e7746c8dac96688ff42786c63a9ac263b66cd5b957098c03ff5ee755",
+        "history_sha256": "278489c690661e3ef598ee941cac24f9821e8b0af914e851523fffef92f80ec0",
+        "evaluations": 6,
+        "linear_iterations": 8
+      },
+      "diagnostics": [
+        {
+          "evaluations": 6,
+          "linear_iterations": 8,
+          "krylov_iterations": 0,
+          "evaluation_seconds": 0.050454917999999994,
+          "qr_seconds": 0.7033514580000001,
+          "face_seconds": 4.0249e-05,
+          "multiplier_seconds": 1.25e-07,
+          "diagnostic_seconds": 0.26328675,
+          "convergence_criterion": "projected_gradient",
+          "backtrack_rejections": 0,
+          "last_step_norm": 4.769230548428354e-13,
+          "projected_gradient_norm": 4.038917138100882e-13,
+          "infeasible_trials": 0,
+          "last_rejected_error": null
+        },
+        {
+          "evaluations": 6,
+          "linear_iterations": 8,
+          "krylov_iterations": 0,
+          "evaluation_seconds": 0.050575168000000004,
+          "qr_seconds": 0.6982692909999999,
+          "face_seconds": 3.8793e-05,
+          "multiplier_seconds": 2.5e-07,
+          "diagnostic_seconds": 0.258794667,
+          "convergence_criterion": "projected_gradient",
+          "backtrack_rejections": 0,
+          "last_step_norm": 4.769230548428354e-13,
+          "projected_gradient_norm": 4.038917138100882e-13,
+          "infeasible_trials": 0,
+          "last_rejected_error": null
+        },
+        {
+          "evaluations": 6,
+          "linear_iterations": 8,
+          "krylov_iterations": 0,
+          "evaluation_seconds": 0.049250458,
+          "qr_seconds": 0.690158207,
+          "face_seconds": 4.0418000000000005e-05,
+          "multiplier_seconds": 4.17e-07,
+          "diagnostic_seconds": 0.262975791,
+          "convergence_criterion": "projected_gradient",
+          "backtrack_rejections": 0,
+          "last_step_norm": 4.769230548428354e-13,
+          "projected_gradient_norm": 4.038917138100882e-13,
+          "infeasible_trials": 0,
+          "last_rejected_error": null
+        }
+      ]
+    }
+  ],
+  "note": "Process RSS includes Python, reference data and returned derivatives for the selected solver."
+}

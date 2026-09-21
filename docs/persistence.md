@@ -118,3 +118,12 @@ Previous formats remain documented by
 [`schemas/persistence-v3.schema.json`](https://github.com/CPrescher/PhaseSmith/blob/main/schemas/persistence-v3.schema.json),
 [`schemas/persistence-v2.schema.json`](https://github.com/CPrescher/PhaseSmith/blob/main/schemas/persistence-v2.schema.json) and
 [`schemas/persistence-v1.schema.json`](https://github.com/CPrescher/PhaseSmith/blob/main/schemas/persistence-v1.schema.json).
+
+## CW Pawley workflow
+
+[CW Pawley refinement](pawley.md) provides independent bounded family areas,
+selected analytical cell/profile/background refinement and accepted-state restart.
+Use `phasesmith.refinement.pawley` in Python or `phasesmith::workflows` in Rust.
+Its [standalone version-1 JSON format](pawley.md#runtime-and-persistence) is separate
+from existing mixed-method project bundles. See the [validation report](pawley-validation.md)
+for current scientific coverage and limitations.

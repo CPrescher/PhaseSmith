@@ -12,7 +12,17 @@ from __future__ import annotations
 import importlib as _importlib
 import warnings as _warnings
 
-from . import lebail, readiness, rietveld, tof_lebail, tof_multibank, tof_structural, workflow
+from . import (
+    lebail,
+    pawley,
+    readiness,
+    rietveld,
+    tof_lebail,
+    tof_multibank,
+    tof_pawley,
+    tof_structural,
+    workflow,
+)
 from .background import (
     AmorphousBackground,
     AmorphousPeak,
@@ -106,11 +116,13 @@ __all__ = [
     "evaluate_residuals",
     "jacobian_vector_product",
     "lebail",
+    "pawley",
     "readiness",
     "rietveld",
     "tof_lattice_geometry",
     "tof_lebail",
     "tof_multibank",
+    "tof_pawley",
     "tof_structural",
     "transpose_jacobian_vector_product",
     "workflow",

@@ -1,0 +1,232 @@
+[
+  {
+    "name": "pawley-cw",
+    "command": [
+      "/Users/clemens/PhaseSmith-work/combined-venv/bin/python",
+      "-m",
+      "phasesmith.validation.pawley",
+      "--data-root",
+      "/Users/clemens/PhaseSmith-work/combined/validation/data",
+      "--manifest",
+      "/Users/clemens/PhaseSmith-work/combined/validation/pawley-matrix-free-acceptance-v4.json",
+      "--output",
+      "/Users/clemens/PhaseSmith-preservation/pawley-fix-20260921/final-validation/pawley-cw.json"
+    ],
+    "cwd": "/Users/clemens/PhaseSmith-preservation/pawley-fix-20260921/final-validation",
+    "exit_code": 0,
+    "seconds": 274.2423288822174
+  },
+  {
+    "name": "pawley-cell",
+    "command": [
+      "/Users/clemens/PhaseSmith-work/combined-venv/bin/python",
+      "-m",
+      "phasesmith.validation.pawley",
+      "--data-root",
+      "/Users/clemens/PhaseSmith-work/combined/validation/data",
+      "--manifest",
+      "/Users/clemens/PhaseSmith-work/combined/validation/pawley-cell-acceptance-v3.json",
+      "--output",
+      "/Users/clemens/PhaseSmith-preservation/pawley-fix-20260921/final-validation/pawley-cell.json"
+    ],
+    "cwd": "/Users/clemens/PhaseSmith-preservation/pawley-fix-20260921/final-validation",
+    "exit_code": 0,
+    "seconds": 0.26280975341796875
+  },
+  {
+    "name": "pawley-tof",
+    "command": [
+      "/Users/clemens/PhaseSmith-work/combined-venv/bin/python",
+      "-m",
+      "phasesmith.validation.tof_pawley",
+      "--data-root",
+      "/Users/clemens/PhaseSmith-work/combined/validation/data",
+      "--manifest",
+      "/Users/clemens/PhaseSmith-work/combined/validation/pawley-tof-acceptance-v1.json",
+      "--output",
+      "/Users/clemens/PhaseSmith-preservation/pawley-fix-20260921/final-validation/pawley-tof.json"
+    ],
+    "cwd": "/Users/clemens/PhaseSmith-preservation/pawley-fix-20260921/final-validation",
+    "exit_code": 0,
+    "seconds": 25.993690252304077
+  },
+  {
+    "name": "pawley-spectrum",
+    "command": [
+      "/Users/clemens/PhaseSmith-work/combined-venv/bin/python",
+      "-m",
+      "phasesmith.validation.pawley_spectrum",
+      "--data-root",
+      "/Users/clemens/PhaseSmith-work/combined/validation/data/iucr-ceria-size-strain-round-robin",
+      "--oracle-fixture",
+      "/Users/clemens/PhaseSmith-work/combined/oracle/fixtures/wavelength_components_v1",
+      "--output",
+      "/Users/clemens/PhaseSmith-preservation/pawley-fix-20260921/final-validation/pawley-spectrum.json"
+    ],
+    "cwd": "/Users/clemens/PhaseSmith-preservation/pawley-fix-20260921/final-validation",
+    "exit_code": 0,
+    "seconds": 5.4812541007995605
+  },
+  {
+    "name": "pawley-oracle",
+    "command": [
+      "/Users/clemens/PhaseSmith-work/combined-venv/bin/python",
+      "-m",
+      "phasesmith.validation.pawley_oracle",
+      "--fixture",
+      "/Users/clemens/PhaseSmith-work/combined/oracle/fixtures/pawley_optimizer_v1",
+      "--output",
+      "/Users/clemens/PhaseSmith-preservation/pawley-fix-20260921/final-validation/pawley-oracle.json"
+    ],
+    "cwd": "/Users/clemens/PhaseSmith-preservation/pawley-fix-20260921/final-validation",
+    "exit_code": 0,
+    "seconds": 10.360305309295654
+  },
+  {
+    "name": "benchmark-dense-before",
+    "command": [
+      "/Users/clemens/PhaseSmith-work/combined-venv/bin/python",
+      "benchmarks/pawley.py",
+      "--solver",
+      "dense",
+      "--repeats",
+      "3",
+      "--output",
+      "/Users/clemens/PhaseSmith-preservation/pawley-fix-20260921/final-validation/benchmark-dense-before.json"
+    ],
+    "cwd": "/Users/clemens/PhaseSmith-work/combined",
+    "exit_code": 0,
+    "seconds": 6.1050028800964355
+  },
+  {
+    "name": "benchmark-dense-after",
+    "command": [
+      "/Users/clemens/PhaseSmith-work/combined-venv/bin/python",
+      "benchmarks/pawley.py",
+      "--solver",
+      "dense",
+      "--repeats",
+      "3",
+      "--output",
+      "/Users/clemens/PhaseSmith-preservation/pawley-fix-20260921/final-validation/benchmark-dense-after.json"
+    ],
+    "cwd": "/Users/clemens/PhaseSmith-work/combined",
+    "exit_code": 0,
+    "seconds": 5.5652220249176025
+  },
+  {
+    "name": "benchmark-dense-boundary",
+    "command": [
+      "/Users/clemens/PhaseSmith-work/combined-venv/bin/python",
+      "benchmarks/pawley.py",
+      "--solver",
+      "dense",
+      "--boundary",
+      "--repeats",
+      "3",
+      "--output",
+      "/Users/clemens/PhaseSmith-preservation/pawley-fix-20260921/final-validation/benchmark-dense-boundary.json"
+    ],
+    "cwd": "/Users/clemens/PhaseSmith-work/combined",
+    "exit_code": 0,
+    "seconds": 8.56705617904663
+  },
+  {
+    "name": "benchmark-matrix_free-before",
+    "command": [
+      "/Users/clemens/PhaseSmith-work/combined-venv/bin/python",
+      "benchmarks/pawley.py",
+      "--solver",
+      "matrix_free",
+      "--repeats",
+      "3",
+      "--output",
+      "/Users/clemens/PhaseSmith-preservation/pawley-fix-20260921/final-validation/benchmark-matrix_free-before.json"
+    ],
+    "cwd": "/Users/clemens/PhaseSmith-work/combined",
+    "exit_code": 0,
+    "seconds": 0.6660621166229248
+  },
+  {
+    "name": "benchmark-matrix_free-after",
+    "command": [
+      "/Users/clemens/PhaseSmith-work/combined-venv/bin/python",
+      "benchmarks/pawley.py",
+      "--solver",
+      "matrix_free",
+      "--repeats",
+      "3",
+      "--output",
+      "/Users/clemens/PhaseSmith-preservation/pawley-fix-20260921/final-validation/benchmark-matrix_free-after.json"
+    ],
+    "cwd": "/Users/clemens/PhaseSmith-work/combined",
+    "exit_code": 0,
+    "seconds": 0.6571230888366699
+  },
+  {
+    "name": "benchmark-matrix_free-boundary",
+    "command": [
+      "/Users/clemens/PhaseSmith-work/combined-venv/bin/python",
+      "benchmarks/pawley.py",
+      "--solver",
+      "matrix_free",
+      "--boundary",
+      "--repeats",
+      "3",
+      "--output",
+      "/Users/clemens/PhaseSmith-preservation/pawley-fix-20260921/final-validation/benchmark-matrix_free-boundary.json"
+    ],
+    "cwd": "/Users/clemens/PhaseSmith-work/combined",
+    "exit_code": 0,
+    "seconds": 0.9592561721801758
+  },
+  {
+    "name": "benchmark-spectrum",
+    "command": [
+      "/Users/clemens/PhaseSmith-work/combined-venv/bin/python",
+      "benchmarks/pawley.py",
+      "--solver",
+      "matrix_free",
+      "--large",
+      "--spectrum",
+      "--repeats",
+      "2",
+      "--output",
+      "/Users/clemens/PhaseSmith-preservation/pawley-fix-20260921/final-validation/benchmark-spectrum.json"
+    ],
+    "cwd": "/Users/clemens/PhaseSmith-work/combined",
+    "exit_code": 0,
+    "seconds": 1.4214270114898682
+  },
+  {
+    "name": "benchmark-tof",
+    "command": [
+      "/Users/clemens/PhaseSmith-work/combined-venv/bin/python",
+      "benchmarks/tof_pawley.py",
+      "--repeats",
+      "2",
+      "--output",
+      "/Users/clemens/PhaseSmith-preservation/pawley-fix-20260921/final-validation/benchmark-tof.json"
+    ],
+    "cwd": "/Users/clemens/PhaseSmith-work/combined",
+    "exit_code": 0,
+    "seconds": 17.95618724822998
+  },
+  {
+    "name": "canonical-qarr",
+    "command": [
+      "/Users/clemens/PhaseSmith-work/combined-venv/bin/python",
+      "-m",
+      "pytest",
+      "-q",
+      "-m",
+      "real_data",
+      "tests/test_real_data_integration.py",
+      "-k",
+      "qarr_canonical_native_entry_point_regression or qarr_real_pattern_two_thread_regression"
+    ],
+    "cwd": "/Users/clemens/PhaseSmith-work/combined",
+    "exit_code": 0,
+    "seconds": 1.6396057605743408
+  }
+]

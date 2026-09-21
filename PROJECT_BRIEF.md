@@ -12,6 +12,224 @@ not part of the numerical library.
 
 ## Current implementation status
 
+The 0.7.0 release candidate reconciles main's 0.6 API cleanup and bounded
+validation-download retries with the validated develop/Pawley implementation.
+Module-owned imports and warning-backed 0.5 compatibility aliases are retained;
+Pawley modules are explicit refinement exports. Existing snapshots remain
+immutable, with new 0.7 snapshots covering the combined surface. This
+reconciliation changes no numerical equations or persistence formats.
+See `docs/release-candidate-0.7.md` for the version proposal and release review.
+No tag or publication is included.
+
+Pawley integration is validated after the 2026-09-21 repair. Scale-relative
+active-set feasibility fixes the Intel dense-solver boundary failure without
+relaxing convergence or physics; cached norms preserve performance and exact
+scientific records. Installed validation assets resolve from explicit paths or
+the working directory. Both architectures pass 970 Python tests; full Rust,
+measured Pawley gates and the cross-platform distribution dry run pass.
+See `docs/pawley-boundary-feasibility.md` and `docs/pawley-repair-20260921.md`.
+The shared FCJ correction and Pawley APIs accompany the consolidated develop
+baseline. Feasible-width research remains outside this integration; the API
+cleanup is now reconciled in the 0.7 candidate. No release is published.
+
+Repository consolidation (2026-09-21) preserves the original working state,
+Pawley history and feasible-width research on separate remote branches. The
+agent skill now ships as version-matched package resources with CLI discovery,
+generated documentation and CI drift checks. No model-provider dependency is
+introduced.
+
+The complete CW solver and independent Python fallback now verify candidate
+stops with undamped local information. Coordinate recovery shares one ordinary
+line-search trial allowance across ranked directions, rather than multiplying
+it by the parameter count. Exhausting this bounded search reports stagnation;
+actual caller runtime guards retain their own stop reasons. Scientific gates,
+physical models and budgets are unchanged. The canonical QARR 1g entry point
+has a dedicated regression test, and the fixed eight-case assessment remains
+the promotion boundary. See `docs/refinement-bounded-recovery.md` and the
+`docs/repository-consolidation.md`. The feasible-width option remains solely on
+its preserved experimental branch and is not added to the committed public API.
+
+The live pinned GSAS-II Pawley optimizer comparison now covers fixed-cell and
+six-cell-parameter fits with 53 families, isolated areas and overlap sums.
+The revision-gated initializer, immutable fixture, compiled-binary provenance
+and executable comparison are committed separately from production code.
+Declared engineering agreement checks pass; a stricter 1e-5 profile-equivalence
+check remains false. A subsequent black-box diagnosis isolates the mismatch
+to the pinned FCJ numerical profile evaluator and finite cutoff policy: native
+quadrature matches a converged independent reference, oracle profiles with their
+cutoffs reconstruct the histogram, and an independent linear solve attributes
+the overlapping-area difference to the profile basis rather than the optimizer.
+A subsequent direct, high-precision angular-integral audit exposed a shared
+native/NumPy change-of-variable error: the geometric denominator must contain
+`1+z²`, not `sqrt(1+z²)`. Values and analytical height derivatives are corrected
+together. Its effect in the Pawley fixture is about 1e-9 relative at sampled
+points and does not account for the much larger pinned-oracle mismatch.
+The new angular reference uses adaptive tanh-sinh integration without the
+production substitution; mpmath is a test-only dependency.
+See `docs/pawley-profile-diagnosis.md` for the before/after equation audit.
+Direct inspection of the pinned GSAS-II call path subsequently confirmed
+single-node FCJ quadrature for every reflection in this fixture. Rebuilding
+the unmodified external routine in double precision preserves the discrepancy
+and reproduces the predicted single shifted intrinsic peak. This identifies
+under-integration as the dominant oracle cause, with secondary roundoff and
+support differences; no GSAS-II implementation was copied into PhaseSmith.
+
+Native project format 7 now adds typed CW and joint TOF Pawley analysis ownership and a lossless
+mixed-method `ProjectBundle` API. Shared histogram arrays are stored once;
+cell-only Pawley domains require no atom models. All existing native analysis
+families and checkpoints survive mixed load/save, formats 1–6 migrate, and
+Python/native save/load/resume tests verify exact accepted profiles and history.
+Standalone Pawley formats remain compatible. The latest validated numerical
+work is integrated into develop and retained in the release candidate.
+
+Pawley now provides bounded CW family-area refinement in dense and matrix-free
+modes, analytical cell/profile/background derivatives, exact ties, independent
+NumPy validation, accepted-state restart and standalone format-2 persistence
+with format-1 migration. The matrix-free measured release gate passes unchanged
+scientific thresholds and budgets: sucrose converges in 137–138 seconds with
+Rwp 0.066054, and LaB6 converges with Rwp 0.284869. Repeated arrays and histories
+are exact. Sucrose convergence is explicitly local to the hard-support objective;
+positive finite cutoff jumps define one-sided feasible directions, with
+conservative exclusions for interacting or cancelling events. Support values
+and endpoints are unchanged. Matrix-free mode omits global rank/covariance;
+dense mode remains the small-problem reference. The separate measured LaB6
+cell/profile gate passes at Rwp 0.2184. Fixed CW spectra now use one area per family, normalized fixed detected weights,
+component-union domains and native analytical chains. Standalone and shared
+bundles retain spectra; independent derivatives, pinned doublet profiles and
+measured ceria comparisons are covered. TOF now reuses the same bounded native
+solver with microsecond density observations, bank-local areas/calibration/profile
+and backgrounds, and symmetry-constrained shared cells. Analytical chains,
+nonuniform support, uncertainty conventions, a DIFC/cell gauge guard, atomic
+restart, native format-7 bundles and independent NumPy/pinned-profile checks
+are implemented. The measured POWGEN gate converges at Rwp 0.21680; the joint
+three-bank nickel gate converges at Rwp 0.02099 with all banks below 0.03.
+Upstream committed numerical work through `9afd808c` is reconciled. See `docs/pawley.md`,
+`docs/tof-pawley.md`, `docs/pawley-validation.md` and the completion audit.
+
+Refinement development priority: validate practical bounded workflows across
+the fixed assessment panel. Preserve fit/composition gates, truthful stops and
+acceptable cost together. Further QARR-specific tuning and feasible-width
+development remain paused. Historical timings and convergence claims below
+refer to their stated implementation checkpoints.
+
+The pre-consolidation original-recipe convergence audit identified a termination
+weakness: the general solver can report convergence when repeated damping
+increases make its proposed step tiny, even though valid descent directions
+remain. Large-budget original-width fits report Rwp 19.87759% on 1g and
+20.10151% on 1h, with repeatable full-workflow timings of 1.720/2.413 seconds
+at eight workers. These are times to reported convergence, not stationarity
+certificates. Tighter 1h fits can stall at worse results; feasible coordinate
+probes demonstrate the issue. See `docs/qarr-convergence-audit.md`. That audit did not itself change production
+behavior; the bounded stopping repair described above now addresses the
+reported termination weakness, with its measured runtime cost retained.
+
+The subsequent QARR holdout investigation separates budget exhaustion from
+width decomposition. The common diagnostic's original-width recipe converges
+on 1h at Rwp 20.10151% with a 500-iteration allowance; the already-established
+empirical frozen-background recipe reaches 19.44367%, with all stages converged
+and maximum composition error 1.55045 percentage points. Tight-tolerance and
+one/eight-worker controls agree. Joint background lowers Rwp but fails the
+unchanged 2-percentage-point composition gate. These exploratory results do
+not replace the frozen native holdout validator or make 1h an untouched test
+for future tuning. See `docs/qarr-holdout-investigation.md`.
+
+Rietveld rejected-step recovery now retains the unchanged accepted-state
+Jacobian and restores damping to at least the caller's initial value after a
+failed backtracking sequence. The independent Python and native structural
+solver share the damping rule; forward equations, bounds and convergence
+criteria are unchanged. A native-only benchmark trace measures time to Rwp
+targets while keeping final convergence, QPA and profile checks separate.
+On the QARR empirical frozen-background recipe, total evaluations fall from
+376 to 251 with identical final profiles, parameters and covariance at Rwp
+19.21994%. The joint-background diagnostic also retains its solution but its
+larger composition error; it remains a separate recipe. Unchanged PbSO4 and
+QARR reference checks pass, while the existing QARR 1h holdout failure remains.
+See `docs/refinement-quality-recovery.md` for the contract and validation.
+
+Opt-in `EmpiricalGaussianConvention` now anchors a caller-selected phase's RMS
+strain and transfers shared Gaussian variance into U while preserving the
+starting profile. It removes the isotropic U/strain redundancy using existing
+Rust kernels and fixed constraints. Python input/checkpoint, project metadata,
+readiness and fit reports preserve the explicitly empirical interpretation.
+Defaults and physical width domains remain unchanged. On QARR the bounded
+fast-profile recipe improves Rwp from 19.9888% to 19.6776%; a longer default-
+profile fit reaches 19.2199% but is substantially slower. The longer fast case
+fails the termination gate. See `docs/empirical-gaussian.md` for equations,
+constraints, reproducible measurements and interpretation limits.
+
+The rietx solver audit identifies width parameterization, coupled instrument/
+sample variance, early background freezing and rejected-step recovery as the
+next fit-quality priorities. A PhaseSmith-only diagnostic reaches 18.9115%
+QARR Rwp with convergence at all stages, but takes many more evaluations and
+worsens maximum phase-fraction error to 1.863 percentage points. It is not a
+new default or an equal-quality speed win. See `docs/rietx-solver-audit.md`;
+the diagnostic did not change production solver behavior or validation recipes.
+The later recovery change above is evaluated separately.
+
+A subsequent same-objective comparison feeds PhaseSmith's residuals and
+analytical Jacobian to SciPy TRF with identical starting values, scaled
+physical parameters and bounds. A direct solver replacement does not recover
+rietx's advantage: SciPy repeatedly hits PhaseSmith's coupled instrument-width
+domain and stops early. Fixing instrument parameters gives close solver
+agreement. Finite-difference and objective parity checks pass; details and
+controls are in `docs/solver-isolation.md`. Prioritize identifiable, feasible
+width coordinates before deciding on an optimizer replacement.
+
+Structural powder intensities now average Friedel mates before profile
+accumulation, correcting merged-family intensities for non-centrosymmetric
+structures with anomalous scattering. Individual complex structure-factor
+APIs retain their representative-reflection meaning. Dense, selected and
+matrix-free intensity derivatives follow the same average, including custom
+provider derivatives. This is an unconditional powder-physics correction,
+separate from optional numerical accuracy controls. See `docs/powder-friedel.md`.
+
+Opt-in CW `ProfileAccuracy` now separates conservative tail-area support from
+lower-order small-span FCJ quadrature. The Rust kernel retains the physical
+axial correction and fused analytical derivatives; established support and
+quadrature remain the default. The policy travels through structural engines,
+native/Python refinement, project persistence and checkpoints. Resume rejects
+a changed policy. Rejected native trials omit unused fixed-axial rows, with
+complete final diagnostics retained. Equations, boundaries, supported paths
+and validation are in `docs/profile-accuracy.md`.
+
+The post-optimization rietx workload audit identifies a major numerical-policy
+difference: rietx 1.4.0 skips FCJ convolution for every reflection in the QARR
+case and uses smaller area-based windows. Controlled interventions and native
+sampling are recorded in `docs/rietx-workload-audit.md`. They motivate validated
+small-span acceleration and cheaper rejected trials; default numerical
+policies and the existing equivalence gates remain unchanged.
+
+The second refinement performance pass batches four FCJ sample evaluations
+without reordering any sample's quadrature sum, assembles selected structural
+Jacobian rows contiguously, and reuses a unit-scale profile basis for native
+scale-only fits under the existing dense-memory ceiling. Bounds, constraints,
+step limits and checkpoint rules remain in the general solver. Python receives
+native phase diagnostics; missing fixed-axial rows are completed once on the
+native side, while scale-only bases already retain those rows. Numerical
+contracts and measurements are in `docs/refinement-performance-round2.md`.
+
+The QARR performance follow-up adds selected native structural derivatives,
+fixed-axial derivative elision, a bounded per-refinement geometry/scattering
+cache, value/local-derivative backtracking without dense structural assembly,
+native fixed-spectrum Python dispatch, and residual-checked small Cholesky
+solves with the established CG fallback. Support and physical equations are
+unchanged. Algorithm contracts and validation are in
+`docs/refinement-performance.md`; fit trajectories may change with the solver's
+floating-point summation, so real-data gates and determinism remain mandatory.
+
+The rietx capability comparison now has a first implemented reporting slice:
+native, mask-aware residual localization with a typed Python `FitReport` and
+`RietveldProject.fit_report()`. Reports preserve the fit's actual weights,
+rank intervals by chi-square contribution, disclose missing covariance/rank,
+and retain advisory-only review actions. Residual location is not physical
+attribution; parameter-gain ranking remains future work. The equations and
+boundaries are in `docs/fit-report.md`. The existing measured IUCr QARR 1g
+workflow is the primary rietx 1.4.0 performance comparison, with retained
+quality gates and explicitly failed cross-implementation equivalence gates.
+Controlled kernel and synthetic-fit measurements are supporting diagnostics.
+Results and limitations are in `docs/rietx-comparison.md`; neither library
+has a blanket speed advantage.
+
 PhaseSmith 0.5.0 is the current released baseline. The completed library now
 includes Python-free CW and TOF Le Bail/Rietveld workflows, public Python
 facades, native project persistence, and facility-neutral single-/multi-bank
@@ -48,7 +266,7 @@ inside a numerical solve and no deterministic review auto-accepts a fit.
 
 The 0.6.0 line is the deliberate pre-1.0 Python API cleanup. It aligns the
 top-level, I/O, and refinement aggregate namespaces with their documented
-module ownership, keeps one warning-backed compatibility window for moved 0.5
+module ownership, keeps warning-backed compatibility aliases until 1.0 for moved 0.5
 imports, and records the resulting exported names and signatures in a new
 immutable snapshot. It changes no numerical equation, tolerance, support
 boundary, default representation, or persistence format.
@@ -66,8 +284,8 @@ orchestration and add no model-provider dependency.
 The remainder of this section is a chronological implementation record. Terms
 such as “next slice”, “pending”, and “follow-on” describe the checkpoint at
 which their paragraph was written; the final current-state summary and next
-milestone are maintained in `IMPLEMENTATION_PLAN.md` under “Definition of the
-next completed milestone”.
+milestone are maintained in `IMPLEMENTATION_PLAN.md` under “Recent completed
+milestones and next release gates”.
 
 Implementation units 0 through 10 in `IMPLEMENTATION_PLAN.md` are complete as
 of 2026-08-05. The repository now includes validated symmetric TCH, CW

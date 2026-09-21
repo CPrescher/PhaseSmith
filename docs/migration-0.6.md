@@ -1,9 +1,11 @@
 # Migrating to 0.6
 
 PhaseSmith 0.6 makes the documented module ownership visible in the exported
-Python namespaces before the 1.0 compatibility boundary. Numerical equations,
-units, finite support, defaults, persistence formats, and result values are
-unchanged.
+Python namespaces before the 1.0 compatibility boundary. The namespace cleanup
+itself does not change numerical equations, units, finite support, defaults,
+persistence formats or result values. It is included in the combined
+[0.7 candidate](release-candidate-0.7.md), which also contains separately
+documented numerical fixes and Pawley persistence additions.
 
 ## Refinement methods use their owning modules
 
@@ -21,6 +23,8 @@ from phasesmith.refinement.lebail import LeBailInput, LeBailOptions, refine
 
 The same rule applies to:
 
+- `phasesmith.refinement.pawley` for CW and fixed-spectrum Pawley;
+- `phasesmith.refinement.tof_pawley` for single-/multi-bank TOF Pawley;
 - `phasesmith.refinement.rietveld` for Rietveld records;
 - `phasesmith.refinement.workflow` for staged Rietveld recipes;
 - `phasesmith.refinement.readiness` for readiness review;
@@ -75,7 +79,7 @@ remains exported.
 ## Compatibility window
 
 The moved 0.5 spellings are absent from the 0.6 `__all__` lists and public API
-snapshot. Explicit access still resolves to the same object in 0.6 and emits a
+snapshot. Explicit access still resolves to the same object throughout 0.6 and 0.7 and emits a
 `DeprecationWarning`. This compatibility layer performs no data conversion and
 does not change numerical behavior. It is scheduled for removal at 1.0, so
 applications should migrate to the module-qualified paths now.

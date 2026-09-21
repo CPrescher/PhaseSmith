@@ -1,0 +1,37 @@
+{
+  "scope": "Corrected production powder values, before refinement. rietx both retains axial terms and widens windows; support semantics still differ.",
+  "powder_intensity_convention": "friedel_pair_average",
+  "rietx": "1.4.0",
+  "dataset_sha256": {
+    "cpd-1g.prn": "afd16d03c8742abf315ab5f94585a6e540ab5c2e2c6df6917ac8dbf6be69d990",
+    "Al2O3.cif": "bc8b07c4e27fdb9df562c7b72d181a05394df20274a56b7e1ef50f6ec2c85709",
+    "CaF2.cif": "b55fd04a3e344f73d4ece983da412056d04874b8ada7dfd4ecb93118e7905cd9",
+    "ZnO.cif": "021db20c9bdabcfd63bc794367fae3536197425ca5826d63541b2417e47d3c1a",
+    "cuka.instprm": "aef315a10622fdb1afae5b264d43e7f9dcc053aba80aa3d9fa05067146922a08"
+  },
+  "forward_relative_l2_limit": 0.001,
+  "comparisons": {
+    "default_vs_rietx_default": {
+      "relative_l2": 0.00431753112824992,
+      "passes_forward_gate": false
+    },
+    "default_vs_rietx_both": {
+      "relative_l2": 0.0008872716397077929,
+      "passes_forward_gate": true
+    },
+    "combined_1_percent_vs_rietx_default": {
+      "relative_l2": 0.003554995013967741,
+      "passes_forward_gate": false
+    },
+    "combined_1_percent_vs_rietx_both": {
+      "relative_l2": 0.001892621930919317,
+      "passes_forward_gate": false
+    }
+  },
+  "default_per_phase_vs_rietx_both": {
+    "Al2O3": 0.0034632526415111363,
+    "ZnO": 0.0005429178116962485,
+    "CaF2": 0.0005242450950506523
+  },
+  "samples": 7251
+}

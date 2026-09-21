@@ -102,8 +102,9 @@ format/API versions; accepting an older format does not make internal Rust ABI
 or serialized implementation details public.
 
 The first machine-readable snapshot was checked in as
-`api/python-public-api-v0.4.1.json`. The current cleanup baseline is
-`api/python-public-api-v0.6.0.json`. Each record contains every name in
+`api/python-public-api-v0.4.1.json`. The cleanup baseline is
+`api/python-public-api-v0.6.0.json`, and the reconciled candidate is
+`api/python-public-api-v0.7.0.json`. Each record contains every name in
 `__all__` for the six explicitly exported namespaces, their
 domain/adapter/validation tier,
 implementation target, and callable signature when introspection supports one.
@@ -119,11 +120,11 @@ candidate without retroactively promising compatibility for earlier 0.x
 versions.
 
 The 0.6 cleanup makes module ownership explicit. The top level no longer
-exports automation, I/O-adapter, readiness, or reporting members individually;
+exports automation, I/O-adapter, readiness, or reporting serialization members individually;
 `phasesmith.refinement` exports shared infrastructure and named method modules;
 and `phasesmith.io` exports general adapters rather than dataset-specific
 validation converters. Explicit 0.5 spellings resolve with
-`DeprecationWarning` during 0.6 and are scheduled for removal in 1.0. This
-one-release compatibility window is documented in [Migrating to
+`DeprecationWarning` during 0.6 and 0.7 and are scheduled for removal in 1.0. This
+pre-1.0 compatibility window is documented in [Migrating to
 0.6](migration-0.6.md); it does not restore those aliases to `__all__` or the
 new public snapshot.

@@ -8,7 +8,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts" / "public_api_snapshot.py"
-SNAPSHOT = ROOT / "api" / "python-public-api-v0.6.0.json"
+SNAPSHOT = ROOT / "api" / "python-public-api-v0.7.0.json"
 PREVIOUS_SNAPSHOT = ROOT / "api" / "python-public-api-v0.5.0.json"
 
 
@@ -26,7 +26,7 @@ def test_checked_in_public_api_snapshot_matches_live_exports() -> None:
 
     assert module.build_snapshot() == expected
     assert expected["schema_version"] == 1
-    assert expected["package_version"] == "0.6.0"
+    assert expected["package_version"] == "0.7.0"
     assert [item["module"] for item in expected["modules"]] == [
         "phasesmith",
         "phasesmith.io",
@@ -95,6 +95,18 @@ def test_snapshot_cli_reports_a_reviewable_diff(tmp_path: Path) -> None:
     assert "public API snapshot differs from the live package" in result.stderr
     assert "removed_or_renamed" in result.stderr
     assert "live-public-api" in result.stderr
+
+
+def test_pawley_supplemental_snapshot_matches_live_exports() -> None:
+    module = _snapshot_module()
+    module.verify_snapshot(
+        ROOT / "api" / "python-pawley-api-v0.7.0.json",
+        modules=(
+            ("phasesmith.refinement.pawley", "workflow"),
+            ("phasesmith.project_bundle", "workflow"),
+            ("phasesmith.refinement.tof_pawley", "workflow"),
+        ),
+    )
 
 
 def test_moved_exports_are_warning_backed_compatibility_aliases() -> None:

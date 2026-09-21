@@ -1,0 +1,63 @@
+{
+  "scope": "Diagnostic three-iteration profile, not a release-gate run",
+  "result": {
+    "dataset": "aps-sucrose-11bmb",
+    "verified_files": [
+      "11bmb_8716.fxye",
+      "11bmb_8716.prm"
+    ],
+    "samples": 23003,
+    "reflections": 811,
+    "times_seconds": [
+      21.484762125008274,
+      21.434327916998882
+    ],
+    "rwp": 0.06606018726712588,
+    "initial_rwp": 0.6276574517481527,
+    "profile_correlation": 0.996741650131551,
+    "rank": 817,
+    "termination": "max_iterations",
+    "accepted_steps": 3,
+    "active_width_bounds": false,
+    "covariance_limitation": "bound-active solution: Gaussian covariance omitted",
+    "profile_coefficients": {
+      "u_deg2": 0.0005906461916574166,
+      "v_deg2": -8.364130533835457e-05,
+      "w_deg2": 4.680676864854269e-06,
+      "x_deg": 0.0022050834367705486,
+      "y_deg": 0.02039878719474094
+    },
+    "checks": {
+      "rwp": true,
+      "correlation": true,
+      "improvement": true,
+      "manual_weighting": true,
+      "nonnegative": true,
+      "converged": false,
+      "repeatable": true
+    },
+    "passed": false
+  },
+  "diagnostics": [
+    {
+      "evaluations": 4,
+      "linear_iterations": 51,
+      "evaluation_seconds": 2.277818875,
+      "qr_seconds": 8.243762541999999,
+      "face_seconds": 1.9383827520000005,
+      "multiplier_seconds": 0.14467591700000001,
+      "diagnostic_seconds": 6.619466875,
+      "convergence_criterion": null
+    },
+    {
+      "evaluations": 4,
+      "linear_iterations": 51,
+      "evaluation_seconds": 2.209135708,
+      "qr_seconds": 8.277552626,
+      "face_seconds": 1.905009334,
+      "multiplier_seconds": 0.141754582,
+      "diagnostic_seconds": 6.548686583,
+      "convergence_criterion": null
+    }
+  ]
+}

@@ -1,0 +1,1957 @@
+{
+  "scope": "explicit profile approximations on existing real data; defaults unchanged",
+  "platform": "macOS-26.6.2-arm64-arm-64bit",
+  "python": "3.12.13",
+  "build": "release",
+  "thread_environment": {
+    "OPENBLAS_NUM_THREADS": "1",
+    "OMP_NUM_THREADS": "1",
+    "VECLIB_MAXIMUM_THREADS": "1"
+  },
+  "dataset_sha256": {
+    "cpd-1g.prn": "afd16d03c8742abf315ab5f94585a6e540ab5c2e2c6df6917ac8dbf6be69d990",
+    "Al2O3.cif": "bc8b07c4e27fdb9df562c7b72d181a05394df20274a56b7e1ef50f6ec2c85709",
+    "CaF2.cif": "b55fd04a3e344f73d4ece983da412056d04874b8ada7dfd4ecb93118e7905cd9",
+    "ZnO.cif": "021db20c9bdabcfd63bc794367fae3536197425ca5826d63541b2417e47d3c1a",
+    "cuka.instprm": "aef315a10622fdb1afae5b264d43e7f9dcc053aba80aa3d9fa05067146922a08"
+  },
+  "warmups": 1,
+  "repetitions": 5,
+  "qarr": {
+    "reference_1": {
+      "accuracy": {
+        "fast_fcj": false,
+        "tail_area_tolerance": null
+      },
+      "threads": 1,
+      "seconds": [
+        0.7786831249977695,
+        0.7778030409972416,
+        0.7815951659940765,
+        0.7877589590061689,
+        0.7797264160035411
+      ],
+      "scientific": {
+        "dataset_id": "iucr-qarr-1g",
+        "status": "passed",
+        "sample_count": 7251,
+        "reflection_count": 110,
+        "checks": [
+          {
+            "check_id": "observed_grid",
+            "status": "passed",
+            "detail": "QARR 1g pattern spans the published 5-150 degree grid.",
+            "measured": 7251.0,
+            "criterion": "7251 samples with endpoints 5 and 150 degrees"
+          },
+          {
+            "check_id": "site_expansion",
+            "status": "passed",
+            "detail": "The documented 1e-4 CIF coordinate tolerance gives physical unit-cell contents.",
+            "measured": 46.0,
+            "criterion": "expanded site counts Al2O3=30, ZnO=4, CaF2=12"
+          },
+          {
+            "check_id": "refinement_termination",
+            "status": "passed",
+            "detail": "Refinement returns a finite last accepted state under explicit iteration budgets.",
+            "measured": null,
+            "criterion": "no numerical failure, divergence, repeated rejection, or empty data"
+          },
+          {
+            "check_id": "poisson_rwp",
+            "status": "passed",
+            "detail": "Poisson-weighted QARR profile gate with fixed CIF anisotropic displacement.",
+            "measured": 0.19816460010715792,
+            "criterion": "Rwp with sigma=sqrt(max(counts, 1)) <= 0.20"
+          },
+          {
+            "check_id": "unit_weight_rwp",
+            "status": "passed",
+            "detail": "Unit-weight profile residual is reported separately from Poisson-weighted Rwp.",
+            "measured": 0.1317936160063607,
+            "criterion": "unit-weight Rwp <= 0.15"
+          },
+          {
+            "check_id": "profile_correlation",
+            "status": "passed",
+            "detail": "Background-subtracted observed and calculated profiles remain strongly aligned.",
+            "measured": 0.9906400670400214,
+            "criterion": "Pearson correlation >= 0.98"
+          },
+          {
+            "check_id": "qpa_weight_fraction",
+            "status": "passed",
+            "detail": "Hill--Howard weight fractions agree with the independently weighed phase fractions.",
+            "measured": 0.006179751338108996,
+            "criterion": "maximum absolute phase error <= 0.02"
+          },
+          {
+            "check_id": "qpa_covariance",
+            "status": "passed",
+            "detail": "The final scale covariance propagates analytically to finite phase-fraction uncertainties.",
+            "measured": 0.0008580507980025356,
+            "criterion": "finite nonnegative propagated variance for every phase fraction"
+          }
+        ],
+        "notes": [
+          "Calculated crystalline weight fractions: Al2O3=30.752%, ZnO=34.223%, CaF2=35.025%.",
+          "Maximum propagated phase-fraction standard uncertainty=0.00085805.",
+          "Stage 1 termination=max_iterations, iterations=7, evaluations=31, Rwp=0.26375366.",
+          "Stage 2 termination=max_iterations, iterations=28, evaluations=29, Rwp=0.19816792.",
+          "Stage 3 scale polish termination=converged, iterations=1, evaluations=2, Poisson Rwp=0.19816460, unit-weight Rwp=0.13179362, Rp=0.15539767.",
+          "Expanded sites at tolerance 1e-4: {'Al2O3': 30, 'ZnO': 4, 'CaF2': 12}.",
+          "CIF anisotropic displacement tensors are evaluated directly and remain fixed.",
+          "Sites without CIF displacement values start from Uiso=0.005 \u00c5\u00b2 and are refined.",
+          "Fixed Cu K-alpha1 Cromer--Liberman offsets are used for both doublet components; component-dependent dispersion is not interpolated.",
+          "The supplied SH/L=0.002 is included through the documented equal-height FCJ mapping; absorption is not yet included, and lattice/component wavelengths remain fixed."
+        ]
+      },
+      "stage_seconds": [
+        [
+          0.25853600000118604,
+          0.4351247090016841,
+          0.020658374996855855
+        ],
+        [
+          0.2586154999953578,
+          0.4346374160013511,
+          0.020671916005085222
+        ],
+        [
+          0.259967083002266,
+          0.4368297920009354,
+          0.021027790993684903
+        ],
+        [
+          0.26318541699583875,
+          0.43923583300056634,
+          0.020962750000762753
+        ],
+        [
+          0.2594833750044927,
+          0.4358968329979689,
+          0.0205902910020086
+        ]
+      ],
+      "median_seconds": 0.7797264160035411
+    },
+    "fast_fcj_1": {
+      "accuracy": {
+        "fast_fcj": true,
+        "tail_area_tolerance": null
+      },
+      "threads": 1,
+      "seconds": [
+        0.5746112499982701,
+        0.5681211249975604,
+        0.56917083299777,
+        0.5687357909991988,
+        0.5730831250039046
+      ],
+      "scientific": {
+        "dataset_id": "iucr-qarr-1g",
+        "status": "passed",
+        "sample_count": 7251,
+        "reflection_count": 110,
+        "checks": [
+          {
+            "check_id": "observed_grid",
+            "status": "passed",
+            "detail": "QARR 1g pattern spans the published 5-150 degree grid.",
+            "measured": 7251.0,
+            "criterion": "7251 samples with endpoints 5 and 150 degrees"
+          },
+          {
+            "check_id": "site_expansion",
+            "status": "passed",
+            "detail": "The documented 1e-4 CIF coordinate tolerance gives physical unit-cell contents.",
+            "measured": 46.0,
+            "criterion": "expanded site counts Al2O3=30, ZnO=4, CaF2=12"
+          },
+          {
+            "check_id": "refinement_termination",
+            "status": "passed",
+            "detail": "Refinement returns a finite last accepted state under explicit iteration budgets.",
+            "measured": null,
+            "criterion": "no numerical failure, divergence, repeated rejection, or empty data"
+          },
+          {
+            "check_id": "poisson_rwp",
+            "status": "passed",
+            "detail": "Poisson-weighted QARR profile gate with fixed CIF anisotropic displacement.",
+            "measured": 0.19888449842424982,
+            "criterion": "Rwp with sigma=sqrt(max(counts, 1)) <= 0.20"
+          },
+          {
+            "check_id": "unit_weight_rwp",
+            "status": "passed",
+            "detail": "Unit-weight profile residual is reported separately from Poisson-weighted Rwp.",
+            "measured": 0.1327658759927708,
+            "criterion": "unit-weight Rwp <= 0.15"
+          },
+          {
+            "check_id": "profile_correlation",
+            "status": "passed",
+            "detail": "Background-subtracted observed and calculated profiles remain strongly aligned.",
+            "measured": 0.990604714868621,
+            "criterion": "Pearson correlation >= 0.98"
+          },
+          {
+            "check_id": "qpa_weight_fraction",
+            "status": "passed",
+            "detail": "Hill--Howard weight fractions agree with the independently weighed phase fractions.",
+            "measured": 0.005975486440563782,
+            "criterion": "maximum absolute phase error <= 0.02"
+          },
+          {
+            "check_id": "qpa_covariance",
+            "status": "passed",
+            "detail": "The final scale covariance propagates analytically to finite phase-fraction uncertainties.",
+            "measured": 0.0008627884852261613,
+            "criterion": "finite nonnegative propagated variance for every phase fraction"
+          }
+        ],
+        "notes": [
+          "Calculated crystalline weight fractions: Al2O3=30.778%, ZnO=34.205%, CaF2=35.018%.",
+          "Maximum propagated phase-fraction standard uncertainty=0.00086279.",
+          "Stage 1 termination=max_iterations, iterations=7, evaluations=31, Rwp=0.26375365.",
+          "Stage 2 termination=max_iterations, iterations=28, evaluations=29, Rwp=0.19892088.",
+          "Stage 3 scale polish termination=converged, iterations=1, evaluations=2, Poisson Rwp=0.19888450, unit-weight Rwp=0.13276588, Rp=0.15590696.",
+          "Expanded sites at tolerance 1e-4: {'Al2O3': 30, 'ZnO': 4, 'CaF2': 12}.",
+          "CIF anisotropic displacement tensors are evaluated directly and remain fixed.",
+          "Sites without CIF displacement values start from Uiso=0.005 \u00c5\u00b2 and are refined.",
+          "Fixed Cu K-alpha1 Cromer--Liberman offsets are used for both doublet components; component-dependent dispersion is not interpolated.",
+          "The supplied SH/L=0.002 is included through the documented equal-height FCJ mapping; absorption is not yet included, and lattice/component wavelengths remain fixed."
+        ]
+      },
+      "stage_seconds": [
+        [
+          0.17699224999523722,
+          0.3165990419947775,
+          0.0168744170005084
+        ],
+        [
+          0.17466870899806963,
+          0.3124565839971183,
+          0.016982540997560136
+        ],
+        [
+          0.17486508300498826,
+          0.3131371659983415,
+          0.01695274999656249
+        ],
+        [
+          0.17401470800541574,
+          0.3138725829994655,
+          0.016828792002343107
+        ],
+        [
+          0.17415662499843165,
+          0.3184607080038404,
+          0.01671787499799393
+        ]
+      ],
+      "median_seconds": 0.56917083299777
+    },
+    "tail_1_percent_1": {
+      "accuracy": {
+        "fast_fcj": false,
+        "tail_area_tolerance": 0.01
+      },
+      "threads": 1,
+      "seconds": [
+        0.5444677499981481,
+        0.5520509170019068,
+        0.5473160840047058,
+        0.5454994160027127,
+        0.5457390420051524
+      ],
+      "scientific": {
+        "dataset_id": "iucr-qarr-1g",
+        "status": "passed",
+        "sample_count": 7251,
+        "reflection_count": 110,
+        "checks": [
+          {
+            "check_id": "observed_grid",
+            "status": "passed",
+            "detail": "QARR 1g pattern spans the published 5-150 degree grid.",
+            "measured": 7251.0,
+            "criterion": "7251 samples with endpoints 5 and 150 degrees"
+          },
+          {
+            "check_id": "site_expansion",
+            "status": "passed",
+            "detail": "The documented 1e-4 CIF coordinate tolerance gives physical unit-cell contents.",
+            "measured": 46.0,
+            "criterion": "expanded site counts Al2O3=30, ZnO=4, CaF2=12"
+          },
+          {
+            "check_id": "refinement_termination",
+            "status": "passed",
+            "detail": "Refinement returns a finite last accepted state under explicit iteration budgets.",
+            "measured": null,
+            "criterion": "no numerical failure, divergence, repeated rejection, or empty data"
+          },
+          {
+            "check_id": "poisson_rwp",
+            "status": "passed",
+            "detail": "Poisson-weighted QARR profile gate with fixed CIF anisotropic displacement.",
+            "measured": 0.19930230671643076,
+            "criterion": "Rwp with sigma=sqrt(max(counts, 1)) <= 0.20"
+          },
+          {
+            "check_id": "unit_weight_rwp",
+            "status": "passed",
+            "detail": "Unit-weight profile residual is reported separately from Poisson-weighted Rwp.",
+            "measured": 0.1320629152622462,
+            "criterion": "unit-weight Rwp <= 0.15"
+          },
+          {
+            "check_id": "profile_correlation",
+            "status": "passed",
+            "detail": "Background-subtracted observed and calculated profiles remain strongly aligned.",
+            "measured": 0.9906276630207598,
+            "criterion": "Pearson correlation >= 0.98"
+          },
+          {
+            "check_id": "qpa_weight_fraction",
+            "status": "passed",
+            "detail": "Hill--Howard weight fractions agree with the independently weighed phase fractions.",
+            "measured": 0.005486111632034163,
+            "criterion": "maximum absolute phase error <= 0.02"
+          },
+          {
+            "check_id": "qpa_covariance",
+            "status": "passed",
+            "detail": "The final scale covariance propagates analytically to finite phase-fraction uncertainties.",
+            "measured": 0.0008582417990739013,
+            "criterion": "finite nonnegative propagated variance for every phase fraction"
+          }
+        ],
+        "notes": [
+          "Calculated crystalline weight fractions: Al2O3=30.839%, ZnO=34.192%, CaF2=34.969%.",
+          "Maximum propagated phase-fraction standard uncertainty=0.00085824.",
+          "Stage 1 termination=max_iterations, iterations=8, evaluations=32, Rwp=0.26381966.",
+          "Stage 2 termination=max_iterations, iterations=28, evaluations=29, Rwp=0.19931143.",
+          "Stage 3 scale polish termination=converged, iterations=1, evaluations=2, Poisson Rwp=0.19930231, unit-weight Rwp=0.13206292, Rp=0.15639017.",
+          "Expanded sites at tolerance 1e-4: {'Al2O3': 30, 'ZnO': 4, 'CaF2': 12}.",
+          "CIF anisotropic displacement tensors are evaluated directly and remain fixed.",
+          "Sites without CIF displacement values start from Uiso=0.005 \u00c5\u00b2 and are refined.",
+          "Fixed Cu K-alpha1 Cromer--Liberman offsets are used for both doublet components; component-dependent dispersion is not interpolated.",
+          "The supplied SH/L=0.002 is included through the documented equal-height FCJ mapping; absorption is not yet included, and lattice/component wavelengths remain fixed."
+        ]
+      },
+      "stage_seconds": [
+        [
+          0.1665254580002511,
+          0.29786195799533743,
+          0.01616883300448535
+        ],
+        [
+          0.16961133300355868,
+          0.30230416700214846,
+          0.016034250002121553
+        ],
+        [
+          0.16757091700128512,
+          0.29903145800199127,
+          0.016346083000826184
+        ],
+        [
+          0.16722899999876972,
+          0.29763541600550525,
+          0.016399249994719867
+        ],
+        [
+          0.16747558300266974,
+          0.29803166700003203,
+          0.016180332997464575
+        ]
+      ],
+      "median_seconds": 0.5457390420051524
+    },
+    "combined_1_percent_1": {
+      "accuracy": {
+        "fast_fcj": true,
+        "tail_area_tolerance": 0.01
+      },
+      "threads": 1,
+      "seconds": [
+        0.4233858750012587,
+        0.42433608300052583,
+        0.4247132500022417,
+        0.4236987920012325,
+        0.42486016700422624
+      ],
+      "scientific": {
+        "dataset_id": "iucr-qarr-1g",
+        "status": "passed",
+        "sample_count": 7251,
+        "reflection_count": 110,
+        "checks": [
+          {
+            "check_id": "observed_grid",
+            "status": "passed",
+            "detail": "QARR 1g pattern spans the published 5-150 degree grid.",
+            "measured": 7251.0,
+            "criterion": "7251 samples with endpoints 5 and 150 degrees"
+          },
+          {
+            "check_id": "site_expansion",
+            "status": "passed",
+            "detail": "The documented 1e-4 CIF coordinate tolerance gives physical unit-cell contents.",
+            "measured": 46.0,
+            "criterion": "expanded site counts Al2O3=30, ZnO=4, CaF2=12"
+          },
+          {
+            "check_id": "refinement_termination",
+            "status": "passed",
+            "detail": "Refinement returns a finite last accepted state under explicit iteration budgets.",
+            "measured": null,
+            "criterion": "no numerical failure, divergence, repeated rejection, or empty data"
+          },
+          {
+            "check_id": "poisson_rwp",
+            "status": "passed",
+            "detail": "Poisson-weighted QARR profile gate with fixed CIF anisotropic displacement.",
+            "measured": 0.19923659272059474,
+            "criterion": "Rwp with sigma=sqrt(max(counts, 1)) <= 0.20"
+          },
+          {
+            "check_id": "unit_weight_rwp",
+            "status": "passed",
+            "detail": "Unit-weight profile residual is reported separately from Poisson-weighted Rwp.",
+            "measured": 0.1319583247713846,
+            "criterion": "unit-weight Rwp <= 0.15"
+          },
+          {
+            "check_id": "profile_correlation",
+            "status": "passed",
+            "detail": "Background-subtracted observed and calculated profiles remain strongly aligned.",
+            "measured": 0.9906298440663034,
+            "criterion": "Pearson correlation >= 0.98"
+          },
+          {
+            "check_id": "qpa_weight_fraction",
+            "status": "passed",
+            "detail": "Hill--Howard weight fractions agree with the independently weighed phase fractions.",
+            "measured": 0.005486346802763331,
+            "criterion": "maximum absolute phase error <= 0.02"
+          },
+          {
+            "check_id": "qpa_covariance",
+            "status": "passed",
+            "detail": "The final scale covariance propagates analytically to finite phase-fraction uncertainties.",
+            "measured": 0.0008575441125098628,
+            "criterion": "finite nonnegative propagated variance for every phase fraction"
+          }
+        ],
+        "notes": [
+          "Calculated crystalline weight fractions: Al2O3=30.836%, ZnO=34.196%, CaF2=34.969%.",
+          "Maximum propagated phase-fraction standard uncertainty=0.00085754.",
+          "Stage 1 termination=max_iterations, iterations=8, evaluations=32, Rwp=0.26381966.",
+          "Stage 2 termination=max_iterations, iterations=28, evaluations=29, Rwp=0.19924204.",
+          "Stage 3 scale polish termination=converged, iterations=1, evaluations=2, Poisson Rwp=0.19923659, unit-weight Rwp=0.13195832, Rp=0.15635852.",
+          "Expanded sites at tolerance 1e-4: {'Al2O3': 30, 'ZnO': 4, 'CaF2': 12}.",
+          "CIF anisotropic displacement tensors are evaluated directly and remain fixed.",
+          "Sites without CIF displacement values start from Uiso=0.005 \u00c5\u00b2 and are refined.",
+          "Fixed Cu K-alpha1 Cromer--Liberman offsets are used for both doublet components; component-dependent dispersion is not interpolated.",
+          "The supplied SH/L=0.002 is included through the documented equal-height FCJ mapping; absorption is not yet included, and lattice/component wavelengths remain fixed."
+        ]
+      },
+      "stage_seconds": [
+        [
+          0.11892304199864157,
+          0.22680066699831514,
+          0.013655750000907574
+        ],
+        [
+          0.11840483300329652,
+          0.22749266699975124,
+          0.013979457995446865
+        ],
+        [
+          0.11826979200122878,
+          0.22839754199958406,
+          0.013827290997141972
+        ],
+        [
+          0.11797329199907836,
+          0.22823424999660347,
+          0.01369729200087022
+        ],
+        [
+          0.11817312499624677,
+          0.22878749999654246,
+          0.01370212499750778
+        ]
+      ],
+      "median_seconds": 0.42433608300052583
+    },
+    "reference_2": {
+      "accuracy": {
+        "fast_fcj": false,
+        "tail_area_tolerance": null
+      },
+      "threads": 2,
+      "seconds": [
+        0.5732097910004086,
+        0.567041166999843,
+        0.5730830829998013,
+        0.5706874169991352,
+        0.5720349999974133
+      ],
+      "scientific": {
+        "dataset_id": "iucr-qarr-1g",
+        "status": "passed",
+        "sample_count": 7251,
+        "reflection_count": 110,
+        "checks": [
+          {
+            "check_id": "observed_grid",
+            "status": "passed",
+            "detail": "QARR 1g pattern spans the published 5-150 degree grid.",
+            "measured": 7251.0,
+            "criterion": "7251 samples with endpoints 5 and 150 degrees"
+          },
+          {
+            "check_id": "site_expansion",
+            "status": "passed",
+            "detail": "The documented 1e-4 CIF coordinate tolerance gives physical unit-cell contents.",
+            "measured": 46.0,
+            "criterion": "expanded site counts Al2O3=30, ZnO=4, CaF2=12"
+          },
+          {
+            "check_id": "refinement_termination",
+            "status": "passed",
+            "detail": "Refinement returns a finite last accepted state under explicit iteration budgets.",
+            "measured": null,
+            "criterion": "no numerical failure, divergence, repeated rejection, or empty data"
+          },
+          {
+            "check_id": "poisson_rwp",
+            "status": "passed",
+            "detail": "Poisson-weighted QARR profile gate with fixed CIF anisotropic displacement.",
+            "measured": 0.19816460010715792,
+            "criterion": "Rwp with sigma=sqrt(max(counts, 1)) <= 0.20"
+          },
+          {
+            "check_id": "unit_weight_rwp",
+            "status": "passed",
+            "detail": "Unit-weight profile residual is reported separately from Poisson-weighted Rwp.",
+            "measured": 0.1317936160063607,
+            "criterion": "unit-weight Rwp <= 0.15"
+          },
+          {
+            "check_id": "profile_correlation",
+            "status": "passed",
+            "detail": "Background-subtracted observed and calculated profiles remain strongly aligned.",
+            "measured": 0.9906400670400214,
+            "criterion": "Pearson correlation >= 0.98"
+          },
+          {
+            "check_id": "qpa_weight_fraction",
+            "status": "passed",
+            "detail": "Hill--Howard weight fractions agree with the independently weighed phase fractions.",
+            "measured": 0.006179751338108996,
+            "criterion": "maximum absolute phase error <= 0.02"
+          },
+          {
+            "check_id": "qpa_covariance",
+            "status": "passed",
+            "detail": "The final scale covariance propagates analytically to finite phase-fraction uncertainties.",
+            "measured": 0.0008580507980025356,
+            "criterion": "finite nonnegative propagated variance for every phase fraction"
+          }
+        ],
+        "notes": [
+          "Calculated crystalline weight fractions: Al2O3=30.752%, ZnO=34.223%, CaF2=35.025%.",
+          "Maximum propagated phase-fraction standard uncertainty=0.00085805.",
+          "Stage 1 termination=max_iterations, iterations=7, evaluations=31, Rwp=0.26375366.",
+          "Stage 2 termination=max_iterations, iterations=28, evaluations=29, Rwp=0.19816792.",
+          "Stage 3 scale polish termination=converged, iterations=1, evaluations=2, Poisson Rwp=0.19816460, unit-weight Rwp=0.13179362, Rp=0.15539767.",
+          "Expanded sites at tolerance 1e-4: {'Al2O3': 30, 'ZnO': 4, 'CaF2': 12}.",
+          "CIF anisotropic displacement tensors are evaluated directly and remain fixed.",
+          "Sites without CIF displacement values start from Uiso=0.005 \u00c5\u00b2 and are refined.",
+          "Fixed Cu K-alpha1 Cromer--Liberman offsets are used for both doublet components; component-dependent dispersion is not interpolated.",
+          "The supplied SH/L=0.002 is included through the documented equal-height FCJ mapping; absorption is not yet included, and lattice/component wavelengths remain fixed."
+        ]
+      },
+      "stage_seconds": [
+        [
+          0.17390512500423938,
+          0.3181266669998877,
+          0.0172320830024546
+        ],
+        [
+          0.17272187499474967,
+          0.31286516699765343,
+          0.01718687500397209
+        ],
+        [
+          0.1763439170026686,
+          0.31478270899970084,
+          0.016974541002127808
+        ],
+        [
+          0.17389100000582403,
+          0.3158564999976079,
+          0.01692429099784931
+        ],
+        [
+          0.17307166699902155,
+          0.31770462499844143,
+          0.017081166995922104
+        ]
+      ],
+      "median_seconds": 0.5720349999974133
+    },
+    "fast_fcj_2": {
+      "accuracy": {
+        "fast_fcj": true,
+        "tail_area_tolerance": null
+      },
+      "threads": 2,
+      "seconds": [
+        0.4570978749979986,
+        0.46703379200334894,
+        0.457123041000159,
+        0.4579343329969561,
+        0.45643075000407407
+      ],
+      "scientific": {
+        "dataset_id": "iucr-qarr-1g",
+        "status": "passed",
+        "sample_count": 7251,
+        "reflection_count": 110,
+        "checks": [
+          {
+            "check_id": "observed_grid",
+            "status": "passed",
+            "detail": "QARR 1g pattern spans the published 5-150 degree grid.",
+            "measured": 7251.0,
+            "criterion": "7251 samples with endpoints 5 and 150 degrees"
+          },
+          {
+            "check_id": "site_expansion",
+            "status": "passed",
+            "detail": "The documented 1e-4 CIF coordinate tolerance gives physical unit-cell contents.",
+            "measured": 46.0,
+            "criterion": "expanded site counts Al2O3=30, ZnO=4, CaF2=12"
+          },
+          {
+            "check_id": "refinement_termination",
+            "status": "passed",
+            "detail": "Refinement returns a finite last accepted state under explicit iteration budgets.",
+            "measured": null,
+            "criterion": "no numerical failure, divergence, repeated rejection, or empty data"
+          },
+          {
+            "check_id": "poisson_rwp",
+            "status": "passed",
+            "detail": "Poisson-weighted QARR profile gate with fixed CIF anisotropic displacement.",
+            "measured": 0.19888449842424982,
+            "criterion": "Rwp with sigma=sqrt(max(counts, 1)) <= 0.20"
+          },
+          {
+            "check_id": "unit_weight_rwp",
+            "status": "passed",
+            "detail": "Unit-weight profile residual is reported separately from Poisson-weighted Rwp.",
+            "measured": 0.1327658759927708,
+            "criterion": "unit-weight Rwp <= 0.15"
+          },
+          {
+            "check_id": "profile_correlation",
+            "status": "passed",
+            "detail": "Background-subtracted observed and calculated profiles remain strongly aligned.",
+            "measured": 0.990604714868621,
+            "criterion": "Pearson correlation >= 0.98"
+          },
+          {
+            "check_id": "qpa_weight_fraction",
+            "status": "passed",
+            "detail": "Hill--Howard weight fractions agree with the independently weighed phase fractions.",
+            "measured": 0.005975486440563782,
+            "criterion": "maximum absolute phase error <= 0.02"
+          },
+          {
+            "check_id": "qpa_covariance",
+            "status": "passed",
+            "detail": "The final scale covariance propagates analytically to finite phase-fraction uncertainties.",
+            "measured": 0.0008627884852261613,
+            "criterion": "finite nonnegative propagated variance for every phase fraction"
+          }
+        ],
+        "notes": [
+          "Calculated crystalline weight fractions: Al2O3=30.778%, ZnO=34.205%, CaF2=35.018%.",
+          "Maximum propagated phase-fraction standard uncertainty=0.00086279.",
+          "Stage 1 termination=max_iterations, iterations=7, evaluations=31, Rwp=0.26375365.",
+          "Stage 2 termination=max_iterations, iterations=28, evaluations=29, Rwp=0.19892088.",
+          "Stage 3 scale polish termination=converged, iterations=1, evaluations=2, Poisson Rwp=0.19888450, unit-weight Rwp=0.13276588, Rp=0.15590696.",
+          "Expanded sites at tolerance 1e-4: {'Al2O3': 30, 'ZnO': 4, 'CaF2': 12}.",
+          "CIF anisotropic displacement tensors are evaluated directly and remain fixed.",
+          "Sites without CIF displacement values start from Uiso=0.005 \u00c5\u00b2 and are refined.",
+          "Fixed Cu K-alpha1 Cromer--Liberman offsets are used for both doublet components; component-dependent dispersion is not interpolated.",
+          "The supplied SH/L=0.002 is included through the documented equal-height FCJ mapping; absorption is not yet included, and lattice/component wavelengths remain fixed."
+        ]
+      },
+      "stage_seconds": [
+        [
+          0.1300730829971144,
+          0.24802962499961723,
+          0.014903333998518065
+        ],
+        [
+          0.13009266700100852,
+          0.25402274999942165,
+          0.014690500000142492
+        ],
+        [
+          0.1301721659983741,
+          0.24770900000294205,
+          0.015205832998617552
+        ],
+        [
+          0.13028304199542617,
+          0.2486680419970071,
+          0.014914250001311302
+        ],
+        [
+          0.12983545800670981,
+          0.24761833299999125,
+          0.014752167000551708
+        ]
+      ],
+      "median_seconds": 0.457123041000159
+    },
+    "tail_1_percent_2": {
+      "accuracy": {
+        "fast_fcj": false,
+        "tail_area_tolerance": 0.01
+      },
+      "threads": 2,
+      "seconds": [
+        0.41303541700472124,
+        0.4112868329975754,
+        0.4125589579998632,
+        0.41556641700299224,
+        0.4106421250035055
+      ],
+      "scientific": {
+        "dataset_id": "iucr-qarr-1g",
+        "status": "passed",
+        "sample_count": 7251,
+        "reflection_count": 110,
+        "checks": [
+          {
+            "check_id": "observed_grid",
+            "status": "passed",
+            "detail": "QARR 1g pattern spans the published 5-150 degree grid.",
+            "measured": 7251.0,
+            "criterion": "7251 samples with endpoints 5 and 150 degrees"
+          },
+          {
+            "check_id": "site_expansion",
+            "status": "passed",
+            "detail": "The documented 1e-4 CIF coordinate tolerance gives physical unit-cell contents.",
+            "measured": 46.0,
+            "criterion": "expanded site counts Al2O3=30, ZnO=4, CaF2=12"
+          },
+          {
+            "check_id": "refinement_termination",
+            "status": "passed",
+            "detail": "Refinement returns a finite last accepted state under explicit iteration budgets.",
+            "measured": null,
+            "criterion": "no numerical failure, divergence, repeated rejection, or empty data"
+          },
+          {
+            "check_id": "poisson_rwp",
+            "status": "passed",
+            "detail": "Poisson-weighted QARR profile gate with fixed CIF anisotropic displacement.",
+            "measured": 0.19930230671643076,
+            "criterion": "Rwp with sigma=sqrt(max(counts, 1)) <= 0.20"
+          },
+          {
+            "check_id": "unit_weight_rwp",
+            "status": "passed",
+            "detail": "Unit-weight profile residual is reported separately from Poisson-weighted Rwp.",
+            "measured": 0.1320629152622462,
+            "criterion": "unit-weight Rwp <= 0.15"
+          },
+          {
+            "check_id": "profile_correlation",
+            "status": "passed",
+            "detail": "Background-subtracted observed and calculated profiles remain strongly aligned.",
+            "measured": 0.9906276630207598,
+            "criterion": "Pearson correlation >= 0.98"
+          },
+          {
+            "check_id": "qpa_weight_fraction",
+            "status": "passed",
+            "detail": "Hill--Howard weight fractions agree with the independently weighed phase fractions.",
+            "measured": 0.005486111632034163,
+            "criterion": "maximum absolute phase error <= 0.02"
+          },
+          {
+            "check_id": "qpa_covariance",
+            "status": "passed",
+            "detail": "The final scale covariance propagates analytically to finite phase-fraction uncertainties.",
+            "measured": 0.0008582417990739013,
+            "criterion": "finite nonnegative propagated variance for every phase fraction"
+          }
+        ],
+        "notes": [
+          "Calculated crystalline weight fractions: Al2O3=30.839%, ZnO=34.192%, CaF2=34.969%.",
+          "Maximum propagated phase-fraction standard uncertainty=0.00085824.",
+          "Stage 1 termination=max_iterations, iterations=8, evaluations=32, Rwp=0.26381966.",
+          "Stage 2 termination=max_iterations, iterations=28, evaluations=29, Rwp=0.19931143.",
+          "Stage 3 scale polish termination=converged, iterations=1, evaluations=2, Poisson Rwp=0.19930231, unit-weight Rwp=0.13206292, Rp=0.15639017.",
+          "Expanded sites at tolerance 1e-4: {'Al2O3': 30, 'ZnO': 4, 'CaF2': 12}.",
+          "CIF anisotropic displacement tensors are evaluated directly and remain fixed.",
+          "Sites without CIF displacement values start from Uiso=0.005 \u00c5\u00b2 and are refined.",
+          "Fixed Cu K-alpha1 Cromer--Liberman offsets are used for both doublet components; component-dependent dispersion is not interpolated.",
+          "The supplied SH/L=0.002 is included through the documented equal-height FCJ mapping; absorption is not yet included, and lattice/component wavelengths remain fixed."
+        ]
+      },
+      "stage_seconds": [
+        [
+          0.1128012499975739,
+          0.21979991699481616,
+          0.013668208004673943
+        ],
+        [
+          0.11312495799938915,
+          0.22035275000234833,
+          0.013659791002282873
+        ],
+        [
+          0.11310608300118474,
+          0.22118741699523525,
+          0.013905916996009182
+        ],
+        [
+          0.11316858299687738,
+          0.2237681250044261,
+          0.014513499998429324
+        ],
+        [
+          0.1124587089943816,
+          0.22069979200023226,
+          0.013534916994103696
+        ]
+      ],
+      "median_seconds": 0.4125589579998632
+    },
+    "combined_1_percent_2": {
+      "accuracy": {
+        "fast_fcj": true,
+        "tail_area_tolerance": 0.01
+      },
+      "threads": 2,
+      "seconds": [
+        0.3516763750012615,
+        0.3486518749996321,
+        0.35401795899815625,
+        0.35636670800158754,
+        0.35001245899911737
+      ],
+      "scientific": {
+        "dataset_id": "iucr-qarr-1g",
+        "status": "passed",
+        "sample_count": 7251,
+        "reflection_count": 110,
+        "checks": [
+          {
+            "check_id": "observed_grid",
+            "status": "passed",
+            "detail": "QARR 1g pattern spans the published 5-150 degree grid.",
+            "measured": 7251.0,
+            "criterion": "7251 samples with endpoints 5 and 150 degrees"
+          },
+          {
+            "check_id": "site_expansion",
+            "status": "passed",
+            "detail": "The documented 1e-4 CIF coordinate tolerance gives physical unit-cell contents.",
+            "measured": 46.0,
+            "criterion": "expanded site counts Al2O3=30, ZnO=4, CaF2=12"
+          },
+          {
+            "check_id": "refinement_termination",
+            "status": "passed",
+            "detail": "Refinement returns a finite last accepted state under explicit iteration budgets.",
+            "measured": null,
+            "criterion": "no numerical failure, divergence, repeated rejection, or empty data"
+          },
+          {
+            "check_id": "poisson_rwp",
+            "status": "passed",
+            "detail": "Poisson-weighted QARR profile gate with fixed CIF anisotropic displacement.",
+            "measured": 0.19923659272059474,
+            "criterion": "Rwp with sigma=sqrt(max(counts, 1)) <= 0.20"
+          },
+          {
+            "check_id": "unit_weight_rwp",
+            "status": "passed",
+            "detail": "Unit-weight profile residual is reported separately from Poisson-weighted Rwp.",
+            "measured": 0.1319583247713846,
+            "criterion": "unit-weight Rwp <= 0.15"
+          },
+          {
+            "check_id": "profile_correlation",
+            "status": "passed",
+            "detail": "Background-subtracted observed and calculated profiles remain strongly aligned.",
+            "measured": 0.9906298440663034,
+            "criterion": "Pearson correlation >= 0.98"
+          },
+          {
+            "check_id": "qpa_weight_fraction",
+            "status": "passed",
+            "detail": "Hill--Howard weight fractions agree with the independently weighed phase fractions.",
+            "measured": 0.005486346802763331,
+            "criterion": "maximum absolute phase error <= 0.02"
+          },
+          {
+            "check_id": "qpa_covariance",
+            "status": "passed",
+            "detail": "The final scale covariance propagates analytically to finite phase-fraction uncertainties.",
+            "measured": 0.0008575441125098628,
+            "criterion": "finite nonnegative propagated variance for every phase fraction"
+          }
+        ],
+        "notes": [
+          "Calculated crystalline weight fractions: Al2O3=30.836%, ZnO=34.196%, CaF2=34.969%.",
+          "Maximum propagated phase-fraction standard uncertainty=0.00085754.",
+          "Stage 1 termination=max_iterations, iterations=8, evaluations=32, Rwp=0.26381966.",
+          "Stage 2 termination=max_iterations, iterations=28, evaluations=29, Rwp=0.19924204.",
+          "Stage 3 scale polish termination=converged, iterations=1, evaluations=2, Poisson Rwp=0.19923659, unit-weight Rwp=0.13195832, Rp=0.15635852.",
+          "Expanded sites at tolerance 1e-4: {'Al2O3': 30, 'ZnO': 4, 'CaF2': 12}.",
+          "CIF anisotropic displacement tensors are evaluated directly and remain fixed.",
+          "Sites without CIF displacement values start from Uiso=0.005 \u00c5\u00b2 and are refined.",
+          "Fixed Cu K-alpha1 Cromer--Liberman offsets are used for both doublet components; component-dependent dispersion is not interpolated.",
+          "The supplied SH/L=0.002 is included through the documented equal-height FCJ mapping; absorption is not yet included, and lattice/component wavelengths remain fixed."
+        ]
+      },
+      "stage_seconds": [
+        [
+          0.08763870799884899,
+          0.1867910419969121,
+          0.01321908299723873
+        ],
+        [
+          0.08772333399974741,
+          0.1842506249959115,
+          0.01251629099715501
+        ],
+        [
+          0.08808920799492626,
+          0.18830479100142838,
+          0.012834750006732065
+        ],
+        [
+          0.08748287500202423,
+          0.183933916996466,
+          0.012572916995850392
+        ],
+        [
+          0.08796945900394348,
+          0.18472558399662375,
+          0.012534374996903352
+        ]
+      ],
+      "median_seconds": 0.3516763750012615
+    },
+    "reference_8": {
+      "accuracy": {
+        "fast_fcj": false,
+        "tail_area_tolerance": null
+      },
+      "threads": 8,
+      "seconds": [
+        0.3389935829982278,
+        0.34337487499578856,
+        0.3411564999987604,
+        0.3393009169958532,
+        0.3421167500055162
+      ],
+      "scientific": {
+        "dataset_id": "iucr-qarr-1g",
+        "status": "passed",
+        "sample_count": 7251,
+        "reflection_count": 110,
+        "checks": [
+          {
+            "check_id": "observed_grid",
+            "status": "passed",
+            "detail": "QARR 1g pattern spans the published 5-150 degree grid.",
+            "measured": 7251.0,
+            "criterion": "7251 samples with endpoints 5 and 150 degrees"
+          },
+          {
+            "check_id": "site_expansion",
+            "status": "passed",
+            "detail": "The documented 1e-4 CIF coordinate tolerance gives physical unit-cell contents.",
+            "measured": 46.0,
+            "criterion": "expanded site counts Al2O3=30, ZnO=4, CaF2=12"
+          },
+          {
+            "check_id": "refinement_termination",
+            "status": "passed",
+            "detail": "Refinement returns a finite last accepted state under explicit iteration budgets.",
+            "measured": null,
+            "criterion": "no numerical failure, divergence, repeated rejection, or empty data"
+          },
+          {
+            "check_id": "poisson_rwp",
+            "status": "passed",
+            "detail": "Poisson-weighted QARR profile gate with fixed CIF anisotropic displacement.",
+            "measured": 0.19816460010715792,
+            "criterion": "Rwp with sigma=sqrt(max(counts, 1)) <= 0.20"
+          },
+          {
+            "check_id": "unit_weight_rwp",
+            "status": "passed",
+            "detail": "Unit-weight profile residual is reported separately from Poisson-weighted Rwp.",
+            "measured": 0.1317936160063607,
+            "criterion": "unit-weight Rwp <= 0.15"
+          },
+          {
+            "check_id": "profile_correlation",
+            "status": "passed",
+            "detail": "Background-subtracted observed and calculated profiles remain strongly aligned.",
+            "measured": 0.9906400670400214,
+            "criterion": "Pearson correlation >= 0.98"
+          },
+          {
+            "check_id": "qpa_weight_fraction",
+            "status": "passed",
+            "detail": "Hill--Howard weight fractions agree with the independently weighed phase fractions.",
+            "measured": 0.006179751338108996,
+            "criterion": "maximum absolute phase error <= 0.02"
+          },
+          {
+            "check_id": "qpa_covariance",
+            "status": "passed",
+            "detail": "The final scale covariance propagates analytically to finite phase-fraction uncertainties.",
+            "measured": 0.0008580507980025356,
+            "criterion": "finite nonnegative propagated variance for every phase fraction"
+          }
+        ],
+        "notes": [
+          "Calculated crystalline weight fractions: Al2O3=30.752%, ZnO=34.223%, CaF2=35.025%.",
+          "Maximum propagated phase-fraction standard uncertainty=0.00085805.",
+          "Stage 1 termination=max_iterations, iterations=7, evaluations=31, Rwp=0.26375366.",
+          "Stage 2 termination=max_iterations, iterations=28, evaluations=29, Rwp=0.19816792.",
+          "Stage 3 scale polish termination=converged, iterations=1, evaluations=2, Poisson Rwp=0.19816460, unit-weight Rwp=0.13179362, Rp=0.15539767.",
+          "Expanded sites at tolerance 1e-4: {'Al2O3': 30, 'ZnO': 4, 'CaF2': 12}.",
+          "CIF anisotropic displacement tensors are evaluated directly and remain fixed.",
+          "Sites without CIF displacement values start from Uiso=0.005 \u00c5\u00b2 and are refined.",
+          "Fixed Cu K-alpha1 Cromer--Liberman offsets are used for both doublet components; component-dependent dispersion is not interpolated.",
+          "The supplied SH/L=0.002 is included through the documented equal-height FCJ mapping; absorption is not yet included, and lattice/component wavelengths remain fixed."
+        ]
+      },
+      "stage_seconds": [
+        [
+          0.08216925000306219,
+          0.17976308400102425,
+          0.01304266600345727
+        ],
+        [
+          0.08227633399656042,
+          0.18089666600280907,
+          0.013047583001025487
+        ],
+        [
+          0.08402612499776296,
+          0.17948475000594044,
+          0.012860374998126645
+        ],
+        [
+          0.08268287499959115,
+          0.18006237499503186,
+          0.012519500000053085
+        ],
+        [
+          0.08285099999920931,
+          0.18015837499842746,
+          0.012386832997435704
+        ]
+      ],
+      "median_seconds": 0.3411564999987604
+    },
+    "fast_fcj_8": {
+      "accuracy": {
+        "fast_fcj": true,
+        "tail_area_tolerance": null
+      },
+      "threads": 8,
+      "seconds": [
+        0.3055686660009087,
+        0.3091466669939109,
+        0.3135859160029213,
+        0.30881166699691676,
+        0.31217162500252016
+      ],
+      "scientific": {
+        "dataset_id": "iucr-qarr-1g",
+        "status": "passed",
+        "sample_count": 7251,
+        "reflection_count": 110,
+        "checks": [
+          {
+            "check_id": "observed_grid",
+            "status": "passed",
+            "detail": "QARR 1g pattern spans the published 5-150 degree grid.",
+            "measured": 7251.0,
+            "criterion": "7251 samples with endpoints 5 and 150 degrees"
+          },
+          {
+            "check_id": "site_expansion",
+            "status": "passed",
+            "detail": "The documented 1e-4 CIF coordinate tolerance gives physical unit-cell contents.",
+            "measured": 46.0,
+            "criterion": "expanded site counts Al2O3=30, ZnO=4, CaF2=12"
+          },
+          {
+            "check_id": "refinement_termination",
+            "status": "passed",
+            "detail": "Refinement returns a finite last accepted state under explicit iteration budgets.",
+            "measured": null,
+            "criterion": "no numerical failure, divergence, repeated rejection, or empty data"
+          },
+          {
+            "check_id": "poisson_rwp",
+            "status": "passed",
+            "detail": "Poisson-weighted QARR profile gate with fixed CIF anisotropic displacement.",
+            "measured": 0.19888449842424982,
+            "criterion": "Rwp with sigma=sqrt(max(counts, 1)) <= 0.20"
+          },
+          {
+            "check_id": "unit_weight_rwp",
+            "status": "passed",
+            "detail": "Unit-weight profile residual is reported separately from Poisson-weighted Rwp.",
+            "measured": 0.1327658759927708,
+            "criterion": "unit-weight Rwp <= 0.15"
+          },
+          {
+            "check_id": "profile_correlation",
+            "status": "passed",
+            "detail": "Background-subtracted observed and calculated profiles remain strongly aligned.",
+            "measured": 0.990604714868621,
+            "criterion": "Pearson correlation >= 0.98"
+          },
+          {
+            "check_id": "qpa_weight_fraction",
+            "status": "passed",
+            "detail": "Hill--Howard weight fractions agree with the independently weighed phase fractions.",
+            "measured": 0.005975486440563782,
+            "criterion": "maximum absolute phase error <= 0.02"
+          },
+          {
+            "check_id": "qpa_covariance",
+            "status": "passed",
+            "detail": "The final scale covariance propagates analytically to finite phase-fraction uncertainties.",
+            "measured": 0.0008627884852261613,
+            "criterion": "finite nonnegative propagated variance for every phase fraction"
+          }
+        ],
+        "notes": [
+          "Calculated crystalline weight fractions: Al2O3=30.778%, ZnO=34.205%, CaF2=35.018%.",
+          "Maximum propagated phase-fraction standard uncertainty=0.00086279.",
+          "Stage 1 termination=max_iterations, iterations=7, evaluations=31, Rwp=0.26375365.",
+          "Stage 2 termination=max_iterations, iterations=28, evaluations=29, Rwp=0.19892088.",
+          "Stage 3 scale polish termination=converged, iterations=1, evaluations=2, Poisson Rwp=0.19888450, unit-weight Rwp=0.13276588, Rp=0.15590696.",
+          "Expanded sites at tolerance 1e-4: {'Al2O3': 30, 'ZnO': 4, 'CaF2': 12}.",
+          "CIF anisotropic displacement tensors are evaluated directly and remain fixed.",
+          "Sites without CIF displacement values start from Uiso=0.005 \u00c5\u00b2 and are refined.",
+          "Fixed Cu K-alpha1 Cromer--Liberman offsets are used for both doublet components; component-dependent dispersion is not interpolated.",
+          "The supplied SH/L=0.002 is included through the documented equal-height FCJ mapping; absorption is not yet included, and lattice/component wavelengths remain fixed."
+        ]
+      },
+      "stage_seconds": [
+        [
+          0.07049108300270746,
+          0.15889954099839088,
+          0.012137459001678508
+        ],
+        [
+          0.0715092079990427,
+          0.15656304200092563,
+          0.01296258299407782
+        ],
+        [
+          0.0780160420035827,
+          0.15908099999796832,
+          0.012202500001876615
+        ],
+        [
+          0.07109466700057965,
+          0.1604904580017319,
+          0.012758249999023974
+        ],
+        [
+          0.07212108300154796,
+          0.16146658299840055,
+          0.013337374999537133
+        ]
+      ],
+      "median_seconds": 0.3091466669939109
+    },
+    "tail_1_percent_8": {
+      "accuracy": {
+        "fast_fcj": false,
+        "tail_area_tolerance": 0.01
+      },
+      "threads": 8,
+      "seconds": [
+        0.28231679199961945,
+        0.27876279200427234,
+        0.28184583399706753,
+        0.2823319589952007,
+        0.280385332996957
+      ],
+      "scientific": {
+        "dataset_id": "iucr-qarr-1g",
+        "status": "passed",
+        "sample_count": 7251,
+        "reflection_count": 110,
+        "checks": [
+          {
+            "check_id": "observed_grid",
+            "status": "passed",
+            "detail": "QARR 1g pattern spans the published 5-150 degree grid.",
+            "measured": 7251.0,
+            "criterion": "7251 samples with endpoints 5 and 150 degrees"
+          },
+          {
+            "check_id": "site_expansion",
+            "status": "passed",
+            "detail": "The documented 1e-4 CIF coordinate tolerance gives physical unit-cell contents.",
+            "measured": 46.0,
+            "criterion": "expanded site counts Al2O3=30, ZnO=4, CaF2=12"
+          },
+          {
+            "check_id": "refinement_termination",
+            "status": "passed",
+            "detail": "Refinement returns a finite last accepted state under explicit iteration budgets.",
+            "measured": null,
+            "criterion": "no numerical failure, divergence, repeated rejection, or empty data"
+          },
+          {
+            "check_id": "poisson_rwp",
+            "status": "passed",
+            "detail": "Poisson-weighted QARR profile gate with fixed CIF anisotropic displacement.",
+            "measured": 0.19930230671643076,
+            "criterion": "Rwp with sigma=sqrt(max(counts, 1)) <= 0.20"
+          },
+          {
+            "check_id": "unit_weight_rwp",
+            "status": "passed",
+            "detail": "Unit-weight profile residual is reported separately from Poisson-weighted Rwp.",
+            "measured": 0.1320629152622462,
+            "criterion": "unit-weight Rwp <= 0.15"
+          },
+          {
+            "check_id": "profile_correlation",
+            "status": "passed",
+            "detail": "Background-subtracted observed and calculated profiles remain strongly aligned.",
+            "measured": 0.9906276630207598,
+            "criterion": "Pearson correlation >= 0.98"
+          },
+          {
+            "check_id": "qpa_weight_fraction",
+            "status": "passed",
+            "detail": "Hill--Howard weight fractions agree with the independently weighed phase fractions.",
+            "measured": 0.005486111632034163,
+            "criterion": "maximum absolute phase error <= 0.02"
+          },
+          {
+            "check_id": "qpa_covariance",
+            "status": "passed",
+            "detail": "The final scale covariance propagates analytically to finite phase-fraction uncertainties.",
+            "measured": 0.0008582417990739013,
+            "criterion": "finite nonnegative propagated variance for every phase fraction"
+          }
+        ],
+        "notes": [
+          "Calculated crystalline weight fractions: Al2O3=30.839%, ZnO=34.192%, CaF2=34.969%.",
+          "Maximum propagated phase-fraction standard uncertainty=0.00085824.",
+          "Stage 1 termination=max_iterations, iterations=8, evaluations=32, Rwp=0.26381966.",
+          "Stage 2 termination=max_iterations, iterations=28, evaluations=29, Rwp=0.19931143.",
+          "Stage 3 scale polish termination=converged, iterations=1, evaluations=2, Poisson Rwp=0.19930231, unit-weight Rwp=0.13206292, Rp=0.15639017.",
+          "Expanded sites at tolerance 1e-4: {'Al2O3': 30, 'ZnO': 4, 'CaF2': 12}.",
+          "CIF anisotropic displacement tensors are evaluated directly and remain fixed.",
+          "Sites without CIF displacement values start from Uiso=0.005 \u00c5\u00b2 and are refined.",
+          "Fixed Cu K-alpha1 Cromer--Liberman offsets are used for both doublet components; component-dependent dispersion is not interpolated.",
+          "The supplied SH/L=0.002 is included through the documented equal-height FCJ mapping; absorption is not yet included, and lattice/component wavelengths remain fixed."
+        ]
+      },
+      "stage_seconds": [
+        [
+          0.06213025000033667,
+          0.14284062499791617,
+          0.011304667001240887
+        ],
+        [
+          0.06004908300383249,
+          0.14346679199661594,
+          0.011318250006297603
+        ],
+        [
+          0.061758625000948086,
+          0.1448579999996582,
+          0.01119904200459132
+        ],
+        [
+          0.06180524999945192,
+          0.14365033299691277,
+          0.011383416996977758
+        ],
+        [
+          0.060935041001357604,
+          0.14436008299526293,
+          0.011127040997962467
+        ]
+      ],
+      "median_seconds": 0.28184583399706753
+    },
+    "combined_1_percent_8": {
+      "accuracy": {
+        "fast_fcj": true,
+        "tail_area_tolerance": 0.01
+      },
+      "threads": 8,
+      "seconds": [
+        0.2653379999974277,
+        0.2663231670012465,
+        0.26381908299663337,
+        0.2638725409997278,
+        0.2625080829966464
+      ],
+      "scientific": {
+        "dataset_id": "iucr-qarr-1g",
+        "status": "passed",
+        "sample_count": 7251,
+        "reflection_count": 110,
+        "checks": [
+          {
+            "check_id": "observed_grid",
+            "status": "passed",
+            "detail": "QARR 1g pattern spans the published 5-150 degree grid.",
+            "measured": 7251.0,
+            "criterion": "7251 samples with endpoints 5 and 150 degrees"
+          },
+          {
+            "check_id": "site_expansion",
+            "status": "passed",
+            "detail": "The documented 1e-4 CIF coordinate tolerance gives physical unit-cell contents.",
+            "measured": 46.0,
+            "criterion": "expanded site counts Al2O3=30, ZnO=4, CaF2=12"
+          },
+          {
+            "check_id": "refinement_termination",
+            "status": "passed",
+            "detail": "Refinement returns a finite last accepted state under explicit iteration budgets.",
+            "measured": null,
+            "criterion": "no numerical failure, divergence, repeated rejection, or empty data"
+          },
+          {
+            "check_id": "poisson_rwp",
+            "status": "passed",
+            "detail": "Poisson-weighted QARR profile gate with fixed CIF anisotropic displacement.",
+            "measured": 0.19923659272059474,
+            "criterion": "Rwp with sigma=sqrt(max(counts, 1)) <= 0.20"
+          },
+          {
+            "check_id": "unit_weight_rwp",
+            "status": "passed",
+            "detail": "Unit-weight profile residual is reported separately from Poisson-weighted Rwp.",
+            "measured": 0.1319583247713846,
+            "criterion": "unit-weight Rwp <= 0.15"
+          },
+          {
+            "check_id": "profile_correlation",
+            "status": "passed",
+            "detail": "Background-subtracted observed and calculated profiles remain strongly aligned.",
+            "measured": 0.9906298440663034,
+            "criterion": "Pearson correlation >= 0.98"
+          },
+          {
+            "check_id": "qpa_weight_fraction",
+            "status": "passed",
+            "detail": "Hill--Howard weight fractions agree with the independently weighed phase fractions.",
+            "measured": 0.005486346802763331,
+            "criterion": "maximum absolute phase error <= 0.02"
+          },
+          {
+            "check_id": "qpa_covariance",
+            "status": "passed",
+            "detail": "The final scale covariance propagates analytically to finite phase-fraction uncertainties.",
+            "measured": 0.0008575441125098628,
+            "criterion": "finite nonnegative propagated variance for every phase fraction"
+          }
+        ],
+        "notes": [
+          "Calculated crystalline weight fractions: Al2O3=30.836%, ZnO=34.196%, CaF2=34.969%.",
+          "Maximum propagated phase-fraction standard uncertainty=0.00085754.",
+          "Stage 1 termination=max_iterations, iterations=8, evaluations=32, Rwp=0.26381966.",
+          "Stage 2 termination=max_iterations, iterations=28, evaluations=29, Rwp=0.19924204.",
+          "Stage 3 scale polish termination=converged, iterations=1, evaluations=2, Poisson Rwp=0.19923659, unit-weight Rwp=0.13195832, Rp=0.15635852.",
+          "Expanded sites at tolerance 1e-4: {'Al2O3': 30, 'ZnO': 4, 'CaF2': 12}.",
+          "CIF anisotropic displacement tensors are evaluated directly and remain fixed.",
+          "Sites without CIF displacement values start from Uiso=0.005 \u00c5\u00b2 and are refined.",
+          "Fixed Cu K-alpha1 Cromer--Liberman offsets are used for both doublet components; component-dependent dispersion is not interpolated.",
+          "The supplied SH/L=0.002 is included through the documented equal-height FCJ mapping; absorption is not yet included, and lattice/component wavelengths remain fixed."
+        ]
+      },
+      "stage_seconds": [
+        [
+          0.05610624999826541,
+          0.13290662500367034,
+          0.011559999999008141
+        ],
+        [
+          0.057323667002492584,
+          0.13337337499979185,
+          0.011307000000670087
+        ],
+        [
+          0.055866542003059294,
+          0.1329348330036737,
+          0.010931459000858013
+        ],
+        [
+          0.054745415996876545,
+          0.1345004169997992,
+          0.010660667001502588
+        ],
+        [
+          0.05392283399851294,
+          0.13347324999631383,
+          0.010884875002375338
+        ]
+      ],
+      "median_seconds": 0.2638725409997278
+    }
+  },
+  "pbso4": {
+    "reference_x-ray": {
+      "dataset_id": "gsasii-pbso4-cw-x-ray",
+      "status": "passed",
+      "sample_count": 5697,
+      "reflection_count": 383,
+      "elapsed_seconds": 6.990107124998758,
+      "checks": [
+        {
+          "check_id": "observed_grid",
+          "status": "passed",
+          "detail": "Selected PbSO4 pattern uses the official combined-refinement angular range.",
+          "measured": 5697.0,
+          "criterion": ">2000 samples with endpoints 16.0 and 158.4 degrees"
+        },
+        {
+          "check_id": "refinement_termination",
+          "status": "passed",
+          "detail": "Every intelligent recipe stage terminates safely under explicit budgets.",
+          "measured": null,
+          "criterion": "all planned stages are attempted; repeated rejection requires an accepted Rwp improvement >= 0.0001; iteration exhaustion fails"
+        },
+        {
+          "check_id": "poisson_rwp",
+          "status": "passed",
+          "detail": "Poisson-weighted complete-pattern residual for the PbSO4 workflow.",
+          "measured": 0.10344569200723859,
+          "criterion": "Rwp <= 0.11"
+        },
+        {
+          "check_id": "unit_weight_rwp",
+          "status": "passed",
+          "detail": "Unit-weight PbSO4 residual is reported separately.",
+          "measured": 0.08722721048812518,
+          "criterion": "unit-weight Rwp <= 0.1"
+        },
+        {
+          "check_id": "profile_correlation",
+          "status": "passed",
+          "detail": "Background-subtracted observed and calculated profiles remain aligned.",
+          "measured": 0.9955656856424212,
+          "criterion": "Pearson correlation >= 0.99"
+        },
+        {
+          "check_id": "reference_cell_relative_error",
+          "status": "passed",
+          "detail": "Refined cell remains close to the supplied PbSO4 reference model.",
+          "measured": 0.0,
+          "criterion": "maximum relative error across a, b, c <= 0.005"
+        }
+      ],
+      "notes": [
+        "Final cell a=8.48000000, b=5.39800000, c=6.95800000 angstrom.",
+        "Termination=converged; iterations=114; evaluations=115.",
+        "Stage scale_background: Rwp 0.33718655 -> 0.33542902; termination=converged; iterations=8.",
+        "Stage positions: Rwp 0.33542902 -> 0.19012346; termination=converged; iterations=22.",
+        "Stage structure: Rwp 0.19012346 -> 0.15848610; termination=converged; iterations=28.",
+        "Stage final_polish: Rwp 0.15848610 -> 0.10344569; termination=converged; iterations=114.",
+        "This plan is advisory workflow orchestration; the Rietveld solver remains general.",
+        "Every stage is cumulative and limited to parameter families authorized by input.selection.",
+        "Lattice refinement was unavailable or disabled and was not proposed.",
+        "The residual background coefficients are initialized by weighted linear least squares against the starting structural profile.",
+        "Background is a fixed native Smooth Bruckner estimate plus a refined three-term Chebyshev residual correction."
+      ]
+    },
+    "reference_neutron": {
+      "dataset_id": "gsasii-pbso4-cw-neutron",
+      "status": "passed",
+      "sample_count": 2681,
+      "reflection_count": 217,
+      "elapsed_seconds": 0.7321199580037501,
+      "checks": [
+        {
+          "check_id": "observed_grid",
+          "status": "passed",
+          "detail": "Selected PbSO4 pattern uses the official combined-refinement angular range.",
+          "measured": 2681.0,
+          "criterion": ">2000 samples with endpoints 19.0 and 153.0 degrees"
+        },
+        {
+          "check_id": "refinement_termination",
+          "status": "passed",
+          "detail": "Every intelligent recipe stage terminates safely under explicit budgets.",
+          "measured": null,
+          "criterion": "all planned stages are attempted; repeated rejection requires an accepted Rwp improvement >= 0.0001; iteration exhaustion fails"
+        },
+        {
+          "check_id": "poisson_rwp",
+          "status": "passed",
+          "detail": "Poisson-weighted complete-pattern residual for the PbSO4 workflow.",
+          "measured": 0.04217168086166863,
+          "criterion": "Rwp <= 0.05"
+        },
+        {
+          "check_id": "unit_weight_rwp",
+          "status": "passed",
+          "detail": "Unit-weight PbSO4 residual is reported separately.",
+          "measured": 0.04526967783174779,
+          "criterion": "unit-weight Rwp <= 0.06"
+        },
+        {
+          "check_id": "profile_correlation",
+          "status": "passed",
+          "detail": "Background-subtracted observed and calculated profiles remain aligned.",
+          "measured": 0.9966437275126071,
+          "criterion": "Pearson correlation >= 0.99"
+        },
+        {
+          "check_id": "reference_cell_relative_error",
+          "status": "passed",
+          "detail": "Refined cell remains close to the supplied PbSO4 reference model.",
+          "measured": 0.0011671079297770456,
+          "criterion": "maximum relative error across a, b, c <= 0.005"
+        }
+      ],
+      "notes": [
+        "Final cell a=8.47044936, b=5.39169995, c=6.95148212 angstrom.",
+        "Termination=converged; iterations=17; evaluations=18.",
+        "Debye-Scherrer geometry: fixed radius=650.000 mm; refined X=910.803093 micrometre, Y=-529.547106 micrometre.",
+        "Stage scale_background: Rwp 0.27846683 -> 0.27770859; termination=converged; iterations=3.",
+        "Stage positions: Rwp 0.27770859 -> 0.10779195; termination=converged; iterations=15.",
+        "Stage structure: Rwp 0.10779195 -> 0.07296848; termination=converged; iterations=22.",
+        "Stage final_polish: Rwp 0.07296848 -> 0.04217168; termination=converged; iterations=17.",
+        "This plan is advisory workflow orchestration; the Rietveld solver remains general.",
+        "Every stage is cumulative and limited to parameter families authorized by input.selection.",
+        "Debye-Scherrer X/Y displacement was authorized and is proposed in the position-alignment stage before profile widths.",
+        "The residual background coefficients are initialized by weighted linear least squares against the starting structural profile.",
+        "Background is a fixed native Smooth Bruckner estimate plus a refined three-term Chebyshev residual correction."
+      ]
+    },
+    "fast_fcj_x-ray": {
+      "dataset_id": "gsasii-pbso4-cw-x-ray",
+      "status": "passed",
+      "sample_count": 5697,
+      "reflection_count": 383,
+      "elapsed_seconds": 5.062085915997159,
+      "checks": [
+        {
+          "check_id": "observed_grid",
+          "status": "passed",
+          "detail": "Selected PbSO4 pattern uses the official combined-refinement angular range.",
+          "measured": 5697.0,
+          "criterion": ">2000 samples with endpoints 16.0 and 158.4 degrees"
+        },
+        {
+          "check_id": "refinement_termination",
+          "status": "passed",
+          "detail": "Every intelligent recipe stage terminates safely under explicit budgets.",
+          "measured": null,
+          "criterion": "all planned stages are attempted; repeated rejection requires an accepted Rwp improvement >= 0.0001; iteration exhaustion fails"
+        },
+        {
+          "check_id": "poisson_rwp",
+          "status": "passed",
+          "detail": "Poisson-weighted complete-pattern residual for the PbSO4 workflow.",
+          "measured": 0.10344462364796478,
+          "criterion": "Rwp <= 0.11"
+        },
+        {
+          "check_id": "unit_weight_rwp",
+          "status": "passed",
+          "detail": "Unit-weight PbSO4 residual is reported separately.",
+          "measured": 0.08719403981787893,
+          "criterion": "unit-weight Rwp <= 0.1"
+        },
+        {
+          "check_id": "profile_correlation",
+          "status": "passed",
+          "detail": "Background-subtracted observed and calculated profiles remain aligned.",
+          "measured": 0.9955699812848021,
+          "criterion": "Pearson correlation >= 0.99"
+        },
+        {
+          "check_id": "reference_cell_relative_error",
+          "status": "passed",
+          "detail": "Refined cell remains close to the supplied PbSO4 reference model.",
+          "measured": 0.0,
+          "criterion": "maximum relative error across a, b, c <= 0.005"
+        }
+      ],
+      "notes": [
+        "Final cell a=8.48000000, b=5.39800000, c=6.95800000 angstrom.",
+        "Termination=converged; iterations=105; evaluations=108.",
+        "Stage scale_background: Rwp 0.33718655 -> 0.33542902; termination=converged; iterations=8.",
+        "Stage positions: Rwp 0.33542902 -> 0.19012345; termination=converged; iterations=22.",
+        "Stage structure: Rwp 0.19012345 -> 0.15848610; termination=converged; iterations=28.",
+        "Stage final_polish: Rwp 0.15848610 -> 0.10344462; termination=converged; iterations=105.",
+        "This plan is advisory workflow orchestration; the Rietveld solver remains general.",
+        "Every stage is cumulative and limited to parameter families authorized by input.selection.",
+        "Lattice refinement was unavailable or disabled and was not proposed.",
+        "The residual background coefficients are initialized by weighted linear least squares against the starting structural profile.",
+        "Background is a fixed native Smooth Bruckner estimate plus a refined three-term Chebyshev residual correction."
+      ]
+    },
+    "fast_fcj_neutron": {
+      "dataset_id": "gsasii-pbso4-cw-neutron",
+      "status": "passed",
+      "sample_count": 2681,
+      "reflection_count": 217,
+      "elapsed_seconds": 0.7300982920060051,
+      "checks": [
+        {
+          "check_id": "observed_grid",
+          "status": "passed",
+          "detail": "Selected PbSO4 pattern uses the official combined-refinement angular range.",
+          "measured": 2681.0,
+          "criterion": ">2000 samples with endpoints 19.0 and 153.0 degrees"
+        },
+        {
+          "check_id": "refinement_termination",
+          "status": "passed",
+          "detail": "Every intelligent recipe stage terminates safely under explicit budgets.",
+          "measured": null,
+          "criterion": "all planned stages are attempted; repeated rejection requires an accepted Rwp improvement >= 0.0001; iteration exhaustion fails"
+        },
+        {
+          "check_id": "poisson_rwp",
+          "status": "passed",
+          "detail": "Poisson-weighted complete-pattern residual for the PbSO4 workflow.",
+          "measured": 0.04217168086166863,
+          "criterion": "Rwp <= 0.05"
+        },
+        {
+          "check_id": "unit_weight_rwp",
+          "status": "passed",
+          "detail": "Unit-weight PbSO4 residual is reported separately.",
+          "measured": 0.04526967783174779,
+          "criterion": "unit-weight Rwp <= 0.06"
+        },
+        {
+          "check_id": "profile_correlation",
+          "status": "passed",
+          "detail": "Background-subtracted observed and calculated profiles remain aligned.",
+          "measured": 0.9966437275126071,
+          "criterion": "Pearson correlation >= 0.99"
+        },
+        {
+          "check_id": "reference_cell_relative_error",
+          "status": "passed",
+          "detail": "Refined cell remains close to the supplied PbSO4 reference model.",
+          "measured": 0.0011671079297770456,
+          "criterion": "maximum relative error across a, b, c <= 0.005"
+        }
+      ],
+      "notes": [
+        "Final cell a=8.47044936, b=5.39169995, c=6.95148212 angstrom.",
+        "Termination=converged; iterations=17; evaluations=18.",
+        "Debye-Scherrer geometry: fixed radius=650.000 mm; refined X=910.803093 micrometre, Y=-529.547106 micrometre.",
+        "Stage scale_background: Rwp 0.27846683 -> 0.27770859; termination=converged; iterations=3.",
+        "Stage positions: Rwp 0.27770859 -> 0.10779195; termination=converged; iterations=15.",
+        "Stage structure: Rwp 0.10779195 -> 0.07296848; termination=converged; iterations=22.",
+        "Stage final_polish: Rwp 0.07296848 -> 0.04217168; termination=converged; iterations=17.",
+        "This plan is advisory workflow orchestration; the Rietveld solver remains general.",
+        "Every stage is cumulative and limited to parameter families authorized by input.selection.",
+        "Debye-Scherrer X/Y displacement was authorized and is proposed in the position-alignment stage before profile widths.",
+        "The residual background coefficients are initialized by weighted linear least squares against the starting structural profile.",
+        "Background is a fixed native Smooth Bruckner estimate plus a refined three-term Chebyshev residual correction."
+      ]
+    },
+    "tail_1_percent_x-ray": {
+      "dataset_id": "gsasii-pbso4-cw-x-ray",
+      "status": "passed",
+      "sample_count": 5697,
+      "reflection_count": 383,
+      "elapsed_seconds": 4.205885000003036,
+      "checks": [
+        {
+          "check_id": "observed_grid",
+          "status": "passed",
+          "detail": "Selected PbSO4 pattern uses the official combined-refinement angular range.",
+          "measured": 5697.0,
+          "criterion": ">2000 samples with endpoints 16.0 and 158.4 degrees"
+        },
+        {
+          "check_id": "refinement_termination",
+          "status": "passed",
+          "detail": "Every intelligent recipe stage terminates safely under explicit budgets.",
+          "measured": null,
+          "criterion": "all planned stages are attempted; repeated rejection requires an accepted Rwp improvement >= 0.0001; iteration exhaustion fails"
+        },
+        {
+          "check_id": "poisson_rwp",
+          "status": "passed",
+          "detail": "Poisson-weighted complete-pattern residual for the PbSO4 workflow.",
+          "measured": 0.1033839819654029,
+          "criterion": "Rwp <= 0.11"
+        },
+        {
+          "check_id": "unit_weight_rwp",
+          "status": "passed",
+          "detail": "Unit-weight PbSO4 residual is reported separately.",
+          "measured": 0.08712637285202672,
+          "criterion": "unit-weight Rwp <= 0.1"
+        },
+        {
+          "check_id": "profile_correlation",
+          "status": "passed",
+          "detail": "Background-subtracted observed and calculated profiles remain aligned.",
+          "measured": 0.9955752617933376,
+          "criterion": "Pearson correlation >= 0.99"
+        },
+        {
+          "check_id": "reference_cell_relative_error",
+          "status": "passed",
+          "detail": "Refined cell remains close to the supplied PbSO4 reference model.",
+          "measured": 0.0,
+          "criterion": "maximum relative error across a, b, c <= 0.005"
+        }
+      ],
+      "notes": [
+        "Final cell a=8.48000000, b=5.39800000, c=6.95800000 angstrom.",
+        "Termination=converged; iterations=105; evaluations=106.",
+        "Stage scale_background: Rwp 0.33718655 -> 0.33548050; termination=converged; iterations=7.",
+        "Stage positions: Rwp 0.33548050 -> 0.19024165; termination=converged; iterations=23.",
+        "Stage structure: Rwp 0.19024165 -> 0.15837952; termination=converged; iterations=28.",
+        "Stage final_polish: Rwp 0.15837952 -> 0.10338398; termination=converged; iterations=105.",
+        "This plan is advisory workflow orchestration; the Rietveld solver remains general.",
+        "Every stage is cumulative and limited to parameter families authorized by input.selection.",
+        "Lattice refinement was unavailable or disabled and was not proposed.",
+        "The residual background coefficients are initialized by weighted linear least squares against the starting structural profile.",
+        "Background is a fixed native Smooth Bruckner estimate plus a refined three-term Chebyshev residual correction."
+      ]
+    },
+    "tail_1_percent_neutron": {
+      "dataset_id": "gsasii-pbso4-cw-neutron",
+      "status": "passed",
+      "sample_count": 2681,
+      "reflection_count": 217,
+      "elapsed_seconds": 0.6752442500001052,
+      "checks": [
+        {
+          "check_id": "observed_grid",
+          "status": "passed",
+          "detail": "Selected PbSO4 pattern uses the official combined-refinement angular range.",
+          "measured": 2681.0,
+          "criterion": ">2000 samples with endpoints 19.0 and 153.0 degrees"
+        },
+        {
+          "check_id": "refinement_termination",
+          "status": "passed",
+          "detail": "Every intelligent recipe stage terminates safely under explicit budgets.",
+          "measured": null,
+          "criterion": "all planned stages are attempted; repeated rejection requires an accepted Rwp improvement >= 0.0001; iteration exhaustion fails"
+        },
+        {
+          "check_id": "poisson_rwp",
+          "status": "passed",
+          "detail": "Poisson-weighted complete-pattern residual for the PbSO4 workflow.",
+          "measured": 0.04288857165880773,
+          "criterion": "Rwp <= 0.05"
+        },
+        {
+          "check_id": "unit_weight_rwp",
+          "status": "passed",
+          "detail": "Unit-weight PbSO4 residual is reported separately.",
+          "measured": 0.04565195726302233,
+          "criterion": "unit-weight Rwp <= 0.06"
+        },
+        {
+          "check_id": "profile_correlation",
+          "status": "passed",
+          "detail": "Background-subtracted observed and calculated profiles remain aligned.",
+          "measured": 0.9965829098347839,
+          "criterion": "Pearson correlation >= 0.99"
+        },
+        {
+          "check_id": "reference_cell_relative_error",
+          "status": "passed",
+          "detail": "Refined cell remains close to the supplied PbSO4 reference model.",
+          "measured": 0.0011696631419762992,
+          "criterion": "maximum relative error across a, b, c <= 0.005"
+        }
+      ],
+      "notes": [
+        "Final cell a=8.47044212, b=5.39168616, c=6.95146043 angstrom.",
+        "Termination=converged; iterations=19; evaluations=48.",
+        "Debye-Scherrer geometry: fixed radius=650.000 mm; refined X=907.454547 micrometre, Y=-526.228836 micrometre.",
+        "Stage scale_background: Rwp 0.27846683 -> 0.27794172; termination=converged; iterations=3.",
+        "Stage positions: Rwp 0.27794172 -> 0.10846917; termination=converged; iterations=15.",
+        "Stage structure: Rwp 0.10846917 -> 0.07396671; termination=converged; iterations=21.",
+        "Stage final_polish: Rwp 0.07396671 -> 0.04288857; termination=converged; iterations=19.",
+        "This plan is advisory workflow orchestration; the Rietveld solver remains general.",
+        "Every stage is cumulative and limited to parameter families authorized by input.selection.",
+        "Debye-Scherrer X/Y displacement was authorized and is proposed in the position-alignment stage before profile widths.",
+        "The residual background coefficients are initialized by weighted linear least squares against the starting structural profile.",
+        "Background is a fixed native Smooth Bruckner estimate plus a refined three-term Chebyshev residual correction."
+      ]
+    },
+    "combined_1_percent_x-ray": {
+      "dataset_id": "gsasii-pbso4-cw-x-ray",
+      "status": "passed",
+      "sample_count": 5697,
+      "reflection_count": 383,
+      "elapsed_seconds": 2.493549582999549,
+      "checks": [
+        {
+          "check_id": "observed_grid",
+          "status": "passed",
+          "detail": "Selected PbSO4 pattern uses the official combined-refinement angular range.",
+          "measured": 5697.0,
+          "criterion": ">2000 samples with endpoints 16.0 and 158.4 degrees"
+        },
+        {
+          "check_id": "refinement_termination",
+          "status": "passed",
+          "detail": "Every intelligent recipe stage terminates safely under explicit budgets.",
+          "measured": null,
+          "criterion": "all planned stages are attempted; repeated rejection requires an accepted Rwp improvement >= 0.0001; iteration exhaustion fails"
+        },
+        {
+          "check_id": "poisson_rwp",
+          "status": "passed",
+          "detail": "Poisson-weighted complete-pattern residual for the PbSO4 workflow.",
+          "measured": 0.10346556284047134,
+          "criterion": "Rwp <= 0.11"
+        },
+        {
+          "check_id": "unit_weight_rwp",
+          "status": "passed",
+          "detail": "Unit-weight PbSO4 residual is reported separately.",
+          "measured": 0.08752303826509229,
+          "criterion": "unit-weight Rwp <= 0.1"
+        },
+        {
+          "check_id": "profile_correlation",
+          "status": "passed",
+          "detail": "Background-subtracted observed and calculated profiles remain aligned.",
+          "measured": 0.995525240211162,
+          "criterion": "Pearson correlation >= 0.99"
+        },
+        {
+          "check_id": "reference_cell_relative_error",
+          "status": "passed",
+          "detail": "Refined cell remains close to the supplied PbSO4 reference model.",
+          "measured": 0.0,
+          "criterion": "maximum relative error across a, b, c <= 0.005"
+        }
+      ],
+      "notes": [
+        "Final cell a=8.48000000, b=5.39800000, c=6.95800000 angstrom.",
+        "Termination=repeated_rejections; iterations=54; evaluations=90.",
+        "Stage scale_background: Rwp 0.33718655 -> 0.33548050; termination=converged; iterations=7.",
+        "Stage positions: Rwp 0.33548050 -> 0.19024163; termination=converged; iterations=23.",
+        "Stage structure: Rwp 0.19024163 -> 0.15837956; termination=converged; iterations=28.",
+        "Stage final_polish: Rwp 0.15837956 -> 0.10346556; termination=repeated_rejections; iterations=54.",
+        "This plan is advisory workflow orchestration; the Rietveld solver remains general.",
+        "Every stage is cumulative and limited to parameter families authorized by input.selection.",
+        "Lattice refinement was unavailable or disabled and was not proposed.",
+        "The residual background coefficients are initialized by weighted linear least squares against the starting structural profile.",
+        "Background is a fixed native Smooth Bruckner estimate plus a refined three-term Chebyshev residual correction."
+      ]
+    },
+    "combined_1_percent_neutron": {
+      "dataset_id": "gsasii-pbso4-cw-neutron",
+      "status": "passed",
+      "sample_count": 2681,
+      "reflection_count": 217,
+      "elapsed_seconds": 0.6759433339975658,
+      "checks": [
+        {
+          "check_id": "observed_grid",
+          "status": "passed",
+          "detail": "Selected PbSO4 pattern uses the official combined-refinement angular range.",
+          "measured": 2681.0,
+          "criterion": ">2000 samples with endpoints 19.0 and 153.0 degrees"
+        },
+        {
+          "check_id": "refinement_termination",
+          "status": "passed",
+          "detail": "Every intelligent recipe stage terminates safely under explicit budgets.",
+          "measured": null,
+          "criterion": "all planned stages are attempted; repeated rejection requires an accepted Rwp improvement >= 0.0001; iteration exhaustion fails"
+        },
+        {
+          "check_id": "poisson_rwp",
+          "status": "passed",
+          "detail": "Poisson-weighted complete-pattern residual for the PbSO4 workflow.",
+          "measured": 0.04288857165880773,
+          "criterion": "Rwp <= 0.05"
+        },
+        {
+          "check_id": "unit_weight_rwp",
+          "status": "passed",
+          "detail": "Unit-weight PbSO4 residual is reported separately.",
+          "measured": 0.04565195726302233,
+          "criterion": "unit-weight Rwp <= 0.06"
+        },
+        {
+          "check_id": "profile_correlation",
+          "status": "passed",
+          "detail": "Background-subtracted observed and calculated profiles remain aligned.",
+          "measured": 0.9965829098347839,
+          "criterion": "Pearson correlation >= 0.99"
+        },
+        {
+          "check_id": "reference_cell_relative_error",
+          "status": "passed",
+          "detail": "Refined cell remains close to the supplied PbSO4 reference model.",
+          "measured": 0.0011696631419762992,
+          "criterion": "maximum relative error across a, b, c <= 0.005"
+        }
+      ],
+      "notes": [
+        "Final cell a=8.47044212, b=5.39168616, c=6.95146043 angstrom.",
+        "Termination=converged; iterations=19; evaluations=48.",
+        "Debye-Scherrer geometry: fixed radius=650.000 mm; refined X=907.454547 micrometre, Y=-526.228836 micrometre.",
+        "Stage scale_background: Rwp 0.27846683 -> 0.27794172; termination=converged; iterations=3.",
+        "Stage positions: Rwp 0.27794172 -> 0.10846917; termination=converged; iterations=15.",
+        "Stage structure: Rwp 0.10846917 -> 0.07396671; termination=converged; iterations=21.",
+        "Stage final_polish: Rwp 0.07396671 -> 0.04288857; termination=converged; iterations=19.",
+        "This plan is advisory workflow orchestration; the Rietveld solver remains general.",
+        "Every stage is cumulative and limited to parameter families authorized by input.selection.",
+        "Debye-Scherrer X/Y displacement was authorized and is proposed in the position-alignment stage before profile widths.",
+        "The residual background coefficients are initialized by weighted linear least squares against the starting structural profile.",
+        "Background is a fixed native Smooth Bruckner estimate plus a refined three-term Chebyshev residual correction."
+      ]
+    }
+  },
+  "quality_gates_passed": true
+}

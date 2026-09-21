@@ -1,0 +1,206 @@
+{
+  "build_mode": "release",
+  "cases": [
+    {
+      "configuration": {
+        "probe": "x-ray",
+        "threads": 1
+      },
+      "dataset_id": "gsasii-pbso4-cw-x-ray",
+      "discarded_warmups": 1,
+      "measured_repetitions": 1,
+      "scientific_fingerprint_sha256": "f3e271371f322a7986bc9de6da37b6031b346973dcf58d8613a405f8d0b72f96",
+      "scientific_result": {
+        "checks": [
+          {
+            "check_id": "observed_grid",
+            "criterion": ">2000 samples with endpoints 16.0 and 158.4 degrees",
+            "detail": "Selected PbSO4 pattern uses the official combined-refinement angular range.",
+            "measured": 5697.0,
+            "status": "passed"
+          },
+          {
+            "check_id": "refinement_termination",
+            "criterion": "all planned stages are attempted; repeated rejection requires an accepted Rwp improvement >= 0.0001; iteration exhaustion fails",
+            "detail": "Every intelligent recipe stage terminates safely under explicit budgets.",
+            "measured": null,
+            "status": "passed"
+          },
+          {
+            "check_id": "poisson_rwp",
+            "criterion": "Rwp <= 0.11",
+            "detail": "Poisson-weighted complete-pattern residual for the PbSO4 workflow.",
+            "measured": 0.10344569200723859,
+            "status": "passed"
+          },
+          {
+            "check_id": "unit_weight_rwp",
+            "criterion": "unit-weight Rwp <= 0.1",
+            "detail": "Unit-weight PbSO4 residual is reported separately.",
+            "measured": 0.08722721048812518,
+            "status": "passed"
+          },
+          {
+            "check_id": "profile_correlation",
+            "criterion": "Pearson correlation >= 0.99",
+            "detail": "Background-subtracted observed and calculated profiles remain aligned.",
+            "measured": 0.9955656856424212,
+            "status": "passed"
+          },
+          {
+            "check_id": "reference_cell_relative_error",
+            "criterion": "maximum relative error across a, b, c <= 0.005",
+            "detail": "Refined cell remains close to the supplied PbSO4 reference model.",
+            "measured": 0.0,
+            "status": "passed"
+          }
+        ],
+        "dataset_id": "gsasii-pbso4-cw-x-ray",
+        "notes": [
+          "Final cell a=8.48000000, b=5.39800000, c=6.95800000 angstrom.",
+          "Termination=converged; iterations=114; evaluations=115.",
+          "Stage scale_background: Rwp 0.33718655 -> 0.33542902; termination=converged; iterations=8.",
+          "Stage positions: Rwp 0.33542902 -> 0.19012346; termination=converged; iterations=22.",
+          "Stage structure: Rwp 0.19012346 -> 0.15848610; termination=converged; iterations=28.",
+          "Stage final_polish: Rwp 0.15848610 -> 0.10344569; termination=converged; iterations=114.",
+          "This plan is advisory workflow orchestration; the Rietveld solver remains general.",
+          "Every stage is cumulative and limited to parameter families authorized by input.selection.",
+          "Lattice refinement was unavailable or disabled and was not proposed.",
+          "The residual background coefficients are initialized by weighted linear least squares against the starting structural profile.",
+          "Background is a fixed native Smooth Bruckner estimate plus a refined three-term Chebyshev residual correction."
+        ],
+        "reflection_count": 383,
+        "sample_count": 5697,
+        "status": "passed"
+      },
+      "timing": {
+        "cold": {
+          "driver_wall_ms": 7107.426083,
+          "reported_workflow_ms": 7106.364750005014
+        },
+        "warm": {
+          "driver_wall": {
+            "median_ms": 7173.621625,
+            "minimum_ms": 7173.621625,
+            "p95_ms": 7173.621625,
+            "timings_ms": [
+              7173.621625
+            ]
+          },
+          "reported_workflow": {
+            "median_ms": 7172.7472499987925,
+            "minimum_ms": 7172.7472499987925,
+            "p95_ms": 7172.7472499987925,
+            "timings_ms": [
+              7172.7472499987925
+            ]
+          }
+        }
+      }
+    },
+    {
+      "configuration": {
+        "probe": "neutron",
+        "threads": 1
+      },
+      "dataset_id": "gsasii-pbso4-cw-neutron",
+      "discarded_warmups": 1,
+      "measured_repetitions": 1,
+      "scientific_fingerprint_sha256": "a7e1e73b6afd25be5d755de71524f80f935b4ee8ae919873e7e1fb80bbc95e1f",
+      "scientific_result": {
+        "checks": [
+          {
+            "check_id": "observed_grid",
+            "criterion": ">2000 samples with endpoints 19.0 and 153.0 degrees",
+            "detail": "Selected PbSO4 pattern uses the official combined-refinement angular range.",
+            "measured": 2681.0,
+            "status": "passed"
+          },
+          {
+            "check_id": "refinement_termination",
+            "criterion": "all planned stages are attempted; repeated rejection requires an accepted Rwp improvement >= 0.0001; iteration exhaustion fails",
+            "detail": "Every intelligent recipe stage terminates safely under explicit budgets.",
+            "measured": null,
+            "status": "passed"
+          },
+          {
+            "check_id": "poisson_rwp",
+            "criterion": "Rwp <= 0.05",
+            "detail": "Poisson-weighted complete-pattern residual for the PbSO4 workflow.",
+            "measured": 0.04217168086166863,
+            "status": "passed"
+          },
+          {
+            "check_id": "unit_weight_rwp",
+            "criterion": "unit-weight Rwp <= 0.06",
+            "detail": "Unit-weight PbSO4 residual is reported separately.",
+            "measured": 0.04526967783174779,
+            "status": "passed"
+          },
+          {
+            "check_id": "profile_correlation",
+            "criterion": "Pearson correlation >= 0.99",
+            "detail": "Background-subtracted observed and calculated profiles remain aligned.",
+            "measured": 0.9966437275126071,
+            "status": "passed"
+          },
+          {
+            "check_id": "reference_cell_relative_error",
+            "criterion": "maximum relative error across a, b, c <= 0.005",
+            "detail": "Refined cell remains close to the supplied PbSO4 reference model.",
+            "measured": 0.0011671079297770456,
+            "status": "passed"
+          }
+        ],
+        "dataset_id": "gsasii-pbso4-cw-neutron",
+        "notes": [
+          "Final cell a=8.47044936, b=5.39169995, c=6.95148212 angstrom.",
+          "Termination=converged; iterations=17; evaluations=18.",
+          "Debye-Scherrer geometry: fixed radius=650.000 mm; refined X=910.803093 micrometre, Y=-529.547106 micrometre.",
+          "Stage scale_background: Rwp 0.27846683 -> 0.27770859; termination=converged; iterations=3.",
+          "Stage positions: Rwp 0.27770859 -> 0.10779195; termination=converged; iterations=15.",
+          "Stage structure: Rwp 0.10779195 -> 0.07296848; termination=converged; iterations=22.",
+          "Stage final_polish: Rwp 0.07296848 -> 0.04217168; termination=converged; iterations=17.",
+          "This plan is advisory workflow orchestration; the Rietveld solver remains general.",
+          "Every stage is cumulative and limited to parameter families authorized by input.selection.",
+          "Debye-Scherrer X/Y displacement was authorized and is proposed in the position-alignment stage before profile widths.",
+          "The residual background coefficients are initialized by weighted linear least squares against the starting structural profile.",
+          "Background is a fixed native Smooth Bruckner estimate plus a refined three-term Chebyshev residual correction."
+        ],
+        "reflection_count": 217,
+        "sample_count": 2681,
+        "status": "passed"
+      },
+      "timing": {
+        "cold": {
+          "driver_wall_ms": 776.9685,
+          "reported_workflow_ms": 776.3492919984856
+        },
+        "warm": {
+          "driver_wall": {
+            "median_ms": 772.111916,
+            "minimum_ms": 772.111916,
+            "p95_ms": 772.111916,
+            "timings_ms": [
+              772.111916
+            ]
+          },
+          "reported_workflow": {
+            "median_ms": 771.9411670041154,
+            "minimum_ms": 771.9411670041154,
+            "p95_ms": 771.9411670041154,
+            "timings_ms": [
+              771.9411670041154
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "environment": {
+    "platform": "macOS-26.6.2-arm64-arm-64bit",
+    "python_version": "3.12.13"
+  },
+  "schema_version": 1,
+  "scope": "checksum_pinned_real_data_native_workflows"
+}

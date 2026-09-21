@@ -196,7 +196,12 @@ class PatternCalculationResult:
 
 @dataclass(frozen=True, slots=True)
 class StructuralReflectionResult:
-    """Structure-factor and geometry diagnostics in stable reflection order."""
+    """Structure-factor and geometry diagnostics in stable reflection order.
+
+    ``f`` is the representative complex amplitude; ``f_squared`` and
+    ``integrated_intensity`` use the Friedel-pair mean for powder calculations.
+    Consequently ``f_squared`` need not equal ``abs(f)**2`` with dispersion.
+    """
 
     reflection_ids: tuple[str, ...]
     f: NDArray[np.complex128]

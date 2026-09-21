@@ -528,6 +528,26 @@ impl RietveldStructuralLayout {
             .collect())
     }
 
+    /// Native rows reached by selected physical parameters, including all tie
+    /// targets. Union membership avoids cancellation between parameter terms.
+    #[must_use]
+    pub fn native_active_rows(&self) -> Vec<Vec<bool>> {
+        self.phases
+            .iter()
+            .map(|phase| {
+                let mut active = vec![false; phase.native_count];
+                for mapping in &phase.mappings {
+                    for &(row, coefficient) in &mapping.native_terms {
+                        if coefficient != 0.0 {
+                            active[row] = true;
+                        }
+                    }
+                }
+                active
+            })
+            .collect()
+    }
+
     /// Project native per-phase reverse products into physical parameter order.
     ///
     /// # Errors

@@ -1,0 +1,189 @@
+{
+  "dataset_id": "iucr-qarr-1g",
+  "source": "existing run_qarr_1g_validation final scale polish",
+  "fit_report": {
+    "schema": "phasesmith.fit-report.v1",
+    "residuals": {
+      "included_count": 7251,
+      "adjacent_pair_count": 7250,
+      "chi_square": 34060.20039383699,
+      "mean": -6.757385408932355,
+      "weighted_rms": 2.1673280254908796,
+      "durbin_watson": 0.4273864378407866,
+      "regions": [
+        {
+          "lower": 5.0,
+          "upper": 12.25,
+          "count": 363,
+          "chi_square": 832.6673029067802,
+          "chi_square_fraction": 0.024446929063207945,
+          "maximum_absolute_weighted_residual": 3.90365062970017
+        },
+        {
+          "lower": 12.25,
+          "upper": 19.5,
+          "count": 362,
+          "chi_square": 1335.7465139874137,
+          "chi_square_fraction": 0.039217224166100614,
+          "maximum_absolute_weighted_residual": 3.9238823828498943
+        },
+        {
+          "lower": 19.5,
+          "upper": 26.75,
+          "count": 363,
+          "chi_square": 1040.4175871662244,
+          "chi_square_fraction": 0.030546431763052176,
+          "maximum_absolute_weighted_residual": 5.910652982998803
+        },
+        {
+          "lower": 26.75,
+          "upper": 34.0,
+          "count": 362,
+          "chi_square": 3736.540656901051,
+          "chi_square_fraction": 0.10970401270971847,
+          "maximum_absolute_weighted_residual": 14.321299349670594
+        },
+        {
+          "lower": 34.0,
+          "upper": 41.25,
+          "count": 363,
+          "chi_square": 3500.985234125816,
+          "chi_square_fraction": 0.10278815725227795,
+          "maximum_absolute_weighted_residual": 14.919156152356024
+        },
+        {
+          "lower": 41.25,
+          "upper": 48.5,
+          "count": 362,
+          "chi_square": 2184.4642524971873,
+          "chi_square_fraction": 0.06413539049207868,
+          "maximum_absolute_weighted_residual": 9.288858365957788
+        },
+        {
+          "lower": 48.5,
+          "upper": 55.75,
+          "count": 363,
+          "chi_square": 878.5877464843138,
+          "chi_square_fraction": 0.02579514319719885,
+          "maximum_absolute_weighted_residual": 7.179110891036782
+        },
+        {
+          "lower": 55.75,
+          "upper": 63.0,
+          "count": 362,
+          "chi_square": 2851.8928602920355,
+          "chi_square_fraction": 0.08373094777234694,
+          "maximum_absolute_weighted_residual": 14.335211125143877
+        },
+        {
+          "lower": 63.0,
+          "upper": 70.25,
+          "count": 363,
+          "chi_square": 1779.0675423360103,
+          "chi_square_fraction": 0.05223303215379564,
+          "maximum_absolute_weighted_residual": 9.996009501193125
+        },
+        {
+          "lower": 70.25,
+          "upper": 77.5,
+          "count": 362,
+          "chi_square": 1106.0065874759123,
+          "chi_square_fraction": 0.0324721104012071,
+          "maximum_absolute_weighted_residual": 7.593133788797498
+        },
+        {
+          "lower": 77.5,
+          "upper": 84.75,
+          "count": 363,
+          "chi_square": 872.1204012005921,
+          "chi_square_fraction": 0.025605263360646512,
+          "maximum_absolute_weighted_residual": 6.492497468620474
+        },
+        {
+          "lower": 84.75,
+          "upper": 92.0,
+          "count": 362,
+          "chi_square": 1492.056757763548,
+          "chi_square_fraction": 0.043806458579542816,
+          "maximum_absolute_weighted_residual": 11.071728122588606
+        },
+        {
+          "lower": 92.0,
+          "upper": 99.25,
+          "count": 363,
+          "chi_square": 1301.7602310944878,
+          "chi_square_fraction": 0.038219394367686524,
+          "maximum_absolute_weighted_residual": 10.251957304887243
+        },
+        {
+          "lower": 99.25,
+          "upper": 106.5,
+          "count": 362,
+          "chi_square": 1575.629011364138,
+          "chi_square_fraction": 0.04626012158311434,
+          "maximum_absolute_weighted_residual": 8.377375821031402
+        },
+        {
+          "lower": 106.5,
+          "upper": 113.75,
+          "count": 363,
+          "chi_square": 858.9745199438355,
+          "chi_square_fraction": 0.02521930317530552,
+          "maximum_absolute_weighted_residual": 5.190804902689575
+        },
+        {
+          "lower": 113.75,
+          "upper": 121.0,
+          "count": 362,
+          "chi_square": 1095.8687781096505,
+          "chi_square_fraction": 0.03217446654565022,
+          "maximum_absolute_weighted_residual": 6.2177000181111035
+        },
+        {
+          "lower": 121.0,
+          "upper": 128.25,
+          "count": 363,
+          "chi_square": 1705.0679192112757,
+          "chi_square_fraction": 0.050060419477737386,
+          "maximum_absolute_weighted_residual": 7.512724056691592
+        },
+        {
+          "lower": 128.25,
+          "upper": 135.5,
+          "count": 362,
+          "chi_square": 1695.3637276870274,
+          "chi_square_fraction": 0.04977550654674934,
+          "maximum_absolute_weighted_residual": 10.27505850129019
+        },
+        {
+          "lower": 135.5,
+          "upper": 142.75,
+          "count": 363,
+          "chi_square": 1535.655810070678,
+          "chi_square_fraction": 0.045086517175880934,
+          "maximum_absolute_weighted_residual": 7.164738945583474
+        },
+        {
+          "lower": 142.75,
+          "upper": 150.0,
+          "count": 363,
+          "chi_square": 2681.3269532190775,
+          "chi_square_fraction": 0.07872317021670398,
+          "maximum_absolute_weighted_residual": 7.713298316634573
+        }
+      ]
+    },
+    "termination_reason": "converged",
+    "jacobian_rank": 3,
+    "covariance_available": true,
+    "advice": [
+      {
+        "code": "inspect_residual_regions",
+        "message": "Inspect the intervals with the largest chi-square contributions alongside observed/calculated curves. Error concentration does not establish its cause.",
+        "parameter_labels": []
+      }
+    ],
+    "attribution_available": false,
+    "attribution_unavailable_reason": "Residual location alone does not distinguish background, profile, structure, missing phases, or experimental errors. No cause or parameter gain is inferred."
+  }
+}

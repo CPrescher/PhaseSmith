@@ -1,0 +1,300 @@
+{
+  "manifest": {
+    "schema_version": 4,
+    "scope": "Original CW scientific requests and gates, with matrix-free bounded steps.",
+    "common": {
+      "profile_parameters": [
+        "u_deg2",
+        "v_deg2",
+        "w_deg2",
+        "x_deg",
+        "y_deg"
+      ],
+      "signed_intensities": false,
+      "use_uncertainty": true,
+      "merge_friedel": true,
+      "initial_intensity": 1.0,
+      "background_iterations": 50,
+      "max_evaluations": 1000,
+      "max_rejections": 20,
+      "max_seconds": 240.0,
+      "max_elements": 150000000,
+      "rank_tolerance": 1e-10,
+      "tolerance": 1e-09,
+      "damping": 1e-06,
+      "max_active_iterations": 2000,
+      "minimum_relative_chi_square_improvement": 0.05,
+      "rwp_recomputation_absolute_tolerance": 1e-12,
+      "accepted_terminations": [
+        "converged"
+      ],
+      "repeats": 2,
+      "solver": "matrix_free",
+      "linear_tolerance": 1e-11,
+      "max_linear_iterations": 4000
+    },
+    "datasets": {
+      "aps-sucrose-11bmb": {
+        "range_deg": [
+          1.0,
+          24.0
+        ],
+        "maximum_rwp": 0.25,
+        "minimum_profile_correlation": 0.95,
+        "max_iterations": 40,
+        "instrument": [
+          0.413259,
+          0.0001163,
+          -1.26e-05,
+          6.3e-06,
+          0.00173,
+          0.0
+        ],
+        "data_file": "11bmb_8716.fxye",
+        "data_format": "gsas_fxye",
+        "cell": [
+          7.715231369389035,
+          8.663866877499101,
+          10.809618877725404,
+          90.0,
+          102.98249193732556,
+          90.0
+        ],
+        "space_group_number": 4,
+        "support_fwhm": 30.0,
+        "background": {
+          "kind": "physical_width",
+          "width_deg": 0.1
+        },
+        "lattice": null
+      },
+      "ansto-echidna-lab6-cw-neutron": {
+        "range_deg": [
+          20.0,
+          125.5
+        ],
+        "maximum_rwp": 0.3,
+        "minimum_profile_correlation": 0.9,
+        "max_iterations": 40,
+        "instrument": [
+          2.047,
+          0.014,
+          -0.253,
+          0.516,
+          0.05,
+          0.0
+        ],
+        "data_file": "ECH0034258_LaB6.xyd",
+        "data_format": "columns",
+        "cell": [
+          4.156826,
+          4.156826,
+          4.156826,
+          90.0,
+          90.0,
+          90.0
+        ],
+        "space_group_number": 221,
+        "support_fwhm": 8.0,
+        "background": {
+          "kind": "sample_window",
+          "points": 20
+        },
+        "lattice": null
+      }
+    }
+  },
+  "results": [
+    {
+      "dataset": "aps-sucrose-11bmb",
+      "verified_files": {
+        "11bmb_8716.fxye": "0971eebded2fdc6d8ae81a228325b2075ac45f6605da67468750e16ec23ecadd",
+        "11bmb_8716.prm": "ef606d5620cc8c8d9e7b712e1ba6113c9628e83f085835a2d477d4cd4d0d312c"
+      },
+      "request_sha256": "d3cb5c24e75d602b9ceb335faecbf020e372fc6784b44458dae5241475863156",
+      "samples": 23003,
+      "reflections": 811,
+      "times_seconds": [
+        136.91348212503362,
+        136.928381833015
+      ],
+      "rwp": 0.06605374866918251,
+      "initial_rwp": 0.6276574517481527,
+      "profile_correlation": 0.996743939867821,
+      "rank": null,
+      "termination": "converged",
+      "accepted_steps": 20,
+      "active_width_bounds": false,
+      "covariance_limitation": "matrix-free solve: exact rank and full covariance not computed",
+      "lattice_parameters": {},
+      "profile_coefficients": {
+        "u_deg2": 0.0006020739009314174,
+        "v_deg2": -8.488432653947155e-05,
+        "w_deg2": 4.703778978523189e-06,
+        "x_deg": 0.0022130839120909043,
+        "y_deg": 0.020289551272388545
+      },
+      "diagnostics": [
+        {
+          "evaluations": 191,
+          "linear_iterations": 1281,
+          "krylov_iterations": 196971,
+          "evaluation_seconds": 3.870725617000002,
+          "qr_seconds": 0.0,
+          "face_seconds": 126.86638152699994,
+          "multiplier_seconds": 3.0367835820000013,
+          "diagnostic_seconds": 0.021040792,
+          "convergence_criterion": "support_relative_objective",
+          "backtrack_rejections": 163,
+          "last_step_norm": 7.662611288307854e-06,
+          "projected_gradient_norm": 3.517331282995294e-07,
+          "infeasible_trials": 0,
+          "last_rejected_error": null
+        },
+        {
+          "evaluations": 191,
+          "linear_iterations": 1281,
+          "krylov_iterations": 196971,
+          "evaluation_seconds": 3.863826297000003,
+          "qr_seconds": 0.0,
+          "face_seconds": 126.97889553899996,
+          "multiplier_seconds": 3.0366955680000007,
+          "diagnostic_seconds": 0.021392292,
+          "convergence_criterion": "support_relative_objective",
+          "backtrack_rejections": 163,
+          "last_step_norm": 7.662611288307854e-06,
+          "projected_gradient_norm": 3.517331282995294e-07,
+          "infeasible_trials": 0,
+          "last_rejected_error": null
+        }
+      ],
+      "accepted_history": [
+        7067491.093540869,
+        247815.17392455152,
+        80200.43450040143,
+        78288.77404058147,
+        78274.11486716001,
+        78274.04524641842,
+        78274.04397349551,
+        78274.04139121376,
+        78274.03608887912,
+        78274.03608887513,
+        78274.03451472774,
+        78274.03451472605,
+        78274.03354525646,
+        78273.51500326107,
+        78273.51391078894,
+        78273.5139047266,
+        78273.51385454071,
+        78273.5138545407,
+        78273.5138545112,
+        78273.5138545105,
+        78273.51385450995
+      ],
+      "checks": {
+        "rwp": true,
+        "correlation": true,
+        "improvement": true,
+        "manual_weighting": true,
+        "intensity_policy": true,
+        "converged": true,
+        "repeatable": true
+      },
+      "passed": true
+    },
+    {
+      "dataset": "ansto-echidna-lab6-cw-neutron",
+      "verified_files": {
+        "ECH0034258_LaB6.xyd": "09950aaf3596518a40b2c5173ffdfd870043f55dcd3390fb83dc9f64e348e115",
+        "ECH0034258_LaB6.cif": "0fa02945683ea39d56dfb81d0f99de629e4e336abab85c6d92b3689b42d130d1"
+      },
+      "request_sha256": "670aaaa23f7ebee5d2273076568d2af8309f31f619902dfff1dbd6f79e4ccd39",
+      "samples": 2111,
+      "reflections": 13,
+      "times_seconds": [
+        0.015581041050609201,
+        0.015591957955621183
+      ],
+      "rwp": 0.2848692925124326,
+      "initial_rwp": 0.6855593252527982,
+      "profile_correlation": 0.9575662376327589,
+      "rank": null,
+      "termination": "converged",
+      "accepted_steps": 10,
+      "active_width_bounds": false,
+      "covariance_limitation": "matrix-free solve: exact rank and full covariance not computed",
+      "lattice_parameters": {},
+      "profile_coefficients": {
+        "u_deg2": 0.011830242985849483,
+        "v_deg2": -0.029803392718441932,
+        "w_deg2": 0.05949585260380969,
+        "x_deg": 0.28293072594228885,
+        "y_deg": -0.3178425053696049
+      },
+      "diagnostics": [
+        {
+          "evaluations": 14,
+          "linear_iterations": 43,
+          "krylov_iterations": 321,
+          "evaluation_seconds": 0.0018976280000000002,
+          "qr_seconds": 0.0,
+          "face_seconds": 0.008568583000000005,
+          "multiplier_seconds": 0.0010588750000000001,
+          "diagnostic_seconds": 6.8125e-05,
+          "convergence_criterion": "relative_objective",
+          "backtrack_rejections": 3,
+          "last_step_norm": 0.08596836691359044,
+          "projected_gradient_norm": null,
+          "infeasible_trials": 1,
+          "last_rejected_error": "CW component 0 for reflection 12 is invalid: derived Lorentzian FWHM must be non-negative and finite"
+        },
+        {
+          "evaluations": 14,
+          "linear_iterations": 43,
+          "krylov_iterations": 321,
+          "evaluation_seconds": 0.0018863340000000001,
+          "qr_seconds": 0.0,
+          "face_seconds": 0.008619914999999999,
+          "multiplier_seconds": 0.0010318340000000001,
+          "diagnostic_seconds": 6.7042e-05,
+          "convergence_criterion": "relative_objective",
+          "backtrack_rejections": 3,
+          "last_step_norm": 0.08596836691359044,
+          "projected_gradient_norm": null,
+          "infeasible_trials": 1,
+          "last_rejected_error": "CW component 0 for reflection 12 is invalid: derived Lorentzian FWHM must be non-negative and finite"
+        }
+      ],
+      "accepted_history": [
+        671621.1877788333,
+        393958.023404304,
+        270808.1228292752,
+        168651.27781790102,
+        133995.52257466997,
+        121750.66592685276,
+        116041.15563703454,
+        115965.17066883844,
+        115964.64185877563,
+        115964.63816165461,
+        115964.63813129858
+      ],
+      "checks": {
+        "rwp": true,
+        "correlation": true,
+        "improvement": true,
+        "manual_weighting": true,
+        "intensity_policy": true,
+        "converged": true,
+        "repeatable": true
+      },
+      "passed": true
+    }
+  ],
+  "provenance": {
+    "python": "3.13.5",
+    "numpy": "2.5.3",
+    "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+    "native_binary_sha256": "b083b0be1151462b9a8fdf788d54875a1fa12a3ac4c3f617e909357c186d442e",
+    "runner_sha256": "7eb0063412350c39382002ae32f5de4c7d912d162eb1ce1e8f8176fa04ee9b37"
+  }
+}

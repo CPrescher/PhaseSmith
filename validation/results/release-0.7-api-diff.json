@@ -1,0 +1,189 @@
+{
+  "from": "0.6.0",
+  "to": "0.7.0",
+  "modules": [
+    {
+      "module": "phasesmith",
+      "added": [
+        {
+          "kind": "class",
+          "name": "EmpiricalGaussianConvention",
+          "signature": "(reference_phase_id: 'str', reference_rms_microstrain: 'float') -> None",
+          "target": "phasesmith.empirical.EmpiricalGaussianConvention"
+        },
+        {
+          "kind": "class",
+          "name": "FitAdvice",
+          "signature": "(code: 'str', message: 'str', parameter_labels: 'tuple[str, ...]' = ()) -> None",
+          "target": "phasesmith.fit_report.FitAdvice"
+        },
+        {
+          "kind": "class",
+          "name": "FitReport",
+          "signature": "(residuals: 'ResidualDiagnostics', termination_reason: 'str', jacobian_rank: 'int | None', covariance_available: 'bool', advice: 'tuple[FitAdvice, ...]', attribution_available: 'bool' = False, attribution_unavailable_reason: 'str' = 'Residual location alone does not distinguish background, profile, structure, missing phases, or experimental errors. No cause or parameter gain is inferred.') -> None",
+          "target": "phasesmith.fit_report.FitReport"
+        },
+        {
+          "kind": "class",
+          "name": "ProfileAccuracy",
+          "signature": "(fast_fcj: bool = False, tail_area_tolerance: float | None = None) -> None",
+          "target": "phasesmith.accuracy.ProfileAccuracy"
+        },
+        {
+          "kind": "class",
+          "name": "ResidualDiagnostics",
+          "signature": "(included_count: 'int', adjacent_pair_count: 'int', chi_square: 'float', mean: 'float', weighted_rms: 'float', durbin_watson: 'float | None', regions: 'tuple[ResidualRegion, ...]') -> None",
+          "target": "phasesmith.fit_report.ResidualDiagnostics"
+        },
+        {
+          "kind": "class",
+          "name": "ResidualRegion",
+          "signature": "(lower: 'float', upper: 'float', count: 'int', chi_square: 'float', chi_square_fraction: 'float', maximum_absolute_weighted_residual: 'float') -> None",
+          "target": "phasesmith.fit_report.ResidualRegion"
+        },
+        {
+          "kind": "function",
+          "name": "build_fit_report",
+          "signature": "(result: 'RietveldResult', pattern: 'PowderPattern', *, region_count: 'int' = 20) -> 'FitReport'",
+          "target": "phasesmith.fit_report.build_fit_report"
+        },
+        {
+          "kind": "function",
+          "name": "diagnose_residuals",
+          "signature": "(x: 'ArrayLike', residual: 'ArrayLike', *, weighted_residual: 'ArrayLike | None' = None, included: 'ArrayLike | None' = None, region_count: 'int' = 20) -> 'ResidualDiagnostics'",
+          "target": "phasesmith.fit_report.diagnose_residuals"
+        }
+      ],
+      "removed": [],
+      "changed": [
+        {
+          "before": {
+            "kind": "class",
+            "name": "PreparedStructuralPattern",
+            "signature": "(pattern: 'PowderPattern', experiment: 'ConstantWavelengthExperiment', phase: 'RietveldPhase', *, support_fwhm: 'float' = 20.0, jacobian_layout: \"Literal['support', 'dense']\" = 'support', execution: 'ExecutionPolicy | None' = None) -> 'None'",
+            "target": "phasesmith.structural_calculation.PreparedStructuralPattern"
+          },
+          "after": {
+            "kind": "class",
+            "name": "PreparedStructuralPattern",
+            "signature": "(pattern: 'PowderPattern', experiment: 'ConstantWavelengthExperiment', phase: 'RietveldPhase', *, support_fwhm: 'float' = 20.0, profile_accuracy: 'ProfileAccuracy | None' = None, jacobian_layout: \"Literal['support', 'dense']\" = 'support', execution: 'ExecutionPolicy | None' = None) -> 'None'",
+            "target": "phasesmith.structural_calculation.PreparedStructuralPattern"
+          }
+        },
+        {
+          "before": {
+            "kind": "function",
+            "name": "accumulate_cw_contributions",
+            "signature": "(x: 'ArrayLike', two_theta_deg: 'ArrayLike', base_integrated_intensities: 'ArrayLike', instrument: 'ConstantWavelengthInstrument', contributions: 'PhysicsContribution', *, geometry: 'FcjGeometry | None' = None, support_fwhm: 'float' = 20.0, jacobian_layout: \"Literal['support', 'dense']\" = 'support') -> 'AccumulationResult'",
+            "target": "phasesmith.cw.accumulate_cw_contributions"
+          },
+          "after": {
+            "kind": "function",
+            "name": "accumulate_cw_contributions",
+            "signature": "(x: 'ArrayLike', two_theta_deg: 'ArrayLike', base_integrated_intensities: 'ArrayLike', instrument: 'ConstantWavelengthInstrument', contributions: 'PhysicsContribution', *, geometry: 'FcjGeometry | None' = None, support_fwhm: 'float' = 20.0, profile_accuracy: 'ProfileAccuracy | None' = None, jacobian_layout: \"Literal['support', 'dense']\" = 'support') -> 'AccumulationResult'",
+            "target": "phasesmith.cw.accumulate_cw_contributions"
+          }
+        },
+        {
+          "before": {
+            "kind": "function",
+            "name": "calculate_structural_pattern",
+            "signature": "(pattern: 'PowderPattern', experiment: 'ConstantWavelengthExperiment', phase: 'RietveldPhase', *, support_fwhm: 'float' = 20.0, jacobian_layout: \"Literal['support', 'dense']\" = 'support', execution: 'ExecutionPolicy | None' = None) -> 'StructuralPatternCalculationResult'",
+            "target": "phasesmith.structural_calculation.calculate_structural_pattern"
+          },
+          "after": {
+            "kind": "function",
+            "name": "calculate_structural_pattern",
+            "signature": "(pattern: 'PowderPattern', experiment: 'ConstantWavelengthExperiment', phase: 'RietveldPhase', *, support_fwhm: 'float' = 20.0, profile_accuracy: 'ProfileAccuracy | None' = None, jacobian_layout: \"Literal['support', 'dense']\" = 'support', execution: 'ExecutionPolicy | None' = None) -> 'StructuralPatternCalculationResult'",
+            "target": "phasesmith.structural_calculation.calculate_structural_pattern"
+          }
+        },
+        {
+          "before": {
+            "kind": "function",
+            "name": "calculate_structure_factor_values",
+            "signature": "(structure: 'CrystalStructure', hkl: 'ArrayLike', multiplicity: 'ArrayLike', scattering: 'ScatteringFactorProvider', *, correction: 'IntegratedIntensityCorrectionProvider | None' = None, scale: 'float' = 1.0, coordinate_tolerance: 'float' = 1e-10, execution: 'ExecutionPolicy | None' = None) -> 'StructureFactorValuesResult'",
+            "target": "phasesmith.crystallography.calculate_structure_factor_values"
+          },
+          "after": {
+            "kind": "function",
+            "name": "calculate_structure_factor_values",
+            "signature": "(structure: 'CrystalStructure', hkl: 'ArrayLike', multiplicity: 'ArrayLike', scattering: 'ScatteringFactorProvider', *, powder_average: 'bool' = False, correction: 'IntegratedIntensityCorrectionProvider | None' = None, scale: 'float' = 1.0, coordinate_tolerance: 'float' = 1e-10, execution: 'ExecutionPolicy | None' = None) -> 'StructureFactorValuesResult'",
+            "target": "phasesmith.crystallography.calculate_structure_factor_values"
+          }
+        },
+        {
+          "before": {
+            "kind": "function",
+            "name": "calculate_structure_factors",
+            "signature": "(structure: 'CrystalStructure', hkl: 'ArrayLike', multiplicity: 'ArrayLike', scattering: 'ScatteringFactorProvider', *, correction: 'IntegratedIntensityCorrectionProvider | None' = None, scale: 'float' = 1.0, coordinate_tolerance: 'float' = 1e-10, max_dense_derivative_elements: 'int' = 50000000) -> 'StructureFactorResult'",
+            "target": "phasesmith.crystallography.calculate_structure_factors"
+          },
+          "after": {
+            "kind": "function",
+            "name": "calculate_structure_factors",
+            "signature": "(structure: 'CrystalStructure', hkl: 'ArrayLike', multiplicity: 'ArrayLike', scattering: 'ScatteringFactorProvider', *, powder_average: 'bool' = False, correction: 'IntegratedIntensityCorrectionProvider | None' = None, scale: 'float' = 1.0, coordinate_tolerance: 'float' = 1e-10, max_dense_derivative_elements: 'int' = 50000000) -> 'StructureFactorResult'",
+            "target": "phasesmith.crystallography.calculate_structure_factors"
+          }
+        },
+        {
+          "before": {
+            "kind": "function",
+            "name": "profile_fcj",
+            "signature": "(x_deg: 'ArrayLike', position_deg: 'float', gaussian_fwhm_deg: 'float', lorentzian_fwhm_deg: 'float', geometry: 'FcjGeometry') -> 'FcjProfileResult'",
+            "target": "phasesmith.fcj.profile_fcj"
+          },
+          "after": {
+            "kind": "function",
+            "name": "profile_fcj",
+            "signature": "(x_deg: 'ArrayLike', position_deg: 'float', gaussian_fwhm_deg: 'float', lorentzian_fwhm_deg: 'float', geometry: 'FcjGeometry', *, profile_accuracy: 'ProfileAccuracy | None' = None) -> 'FcjProfileResult'",
+            "target": "phasesmith.fcj.profile_fcj"
+          }
+        }
+      ]
+    },
+    {
+      "module": "phasesmith.io",
+      "added": [],
+      "removed": [],
+      "changed": []
+    },
+    {
+      "module": "phasesmith.refinement",
+      "added": [
+        {
+          "kind": "module",
+          "name": "pawley",
+          "signature": null,
+          "target": "phasesmith.refinement.pawley"
+        },
+        {
+          "kind": "module",
+          "name": "tof_pawley",
+          "signature": null,
+          "target": "phasesmith.refinement.tof_pawley"
+        }
+      ],
+      "removed": [],
+      "changed": []
+    },
+    {
+      "module": "phasesmith.integrations",
+      "added": [],
+      "removed": [],
+      "changed": []
+    },
+    {
+      "module": "phasesmith.oracle",
+      "added": [],
+      "removed": [],
+      "changed": []
+    },
+    {
+      "module": "phasesmith.validation",
+      "added": [],
+      "removed": [],
+      "changed": []
+    }
+  ]
+}

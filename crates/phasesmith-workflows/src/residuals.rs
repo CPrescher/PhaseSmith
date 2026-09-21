@@ -95,7 +95,7 @@ pub fn evaluate_tof_residuals(
     )
 }
 
-fn evaluate_residual_arrays(
+pub(crate) fn evaluate_residual_arrays(
     sample_count: usize,
     observed_y: Option<&[f64]>,
     uncertainty: Option<&[f64]>,

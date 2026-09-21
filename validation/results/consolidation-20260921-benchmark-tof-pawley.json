@@ -1,0 +1,110 @@
+{
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "python": "3.13.5",
+  "numpy": "2.5.3",
+  "native_binary_sha256": "47d21c4130a2596ed6ca7491201b777ce222cd7123b10e743b3b1046b972be68",
+  "runner_sha256": "613cda8fdeb58f9881f5e24b568872657ac09791c88cdb485d16cbb1691fb19a",
+  "cases": [
+    {
+      "banks": 1,
+      "families_per_bank": 256,
+      "samples_per_bank": 10001,
+      "solver": "dense",
+      "times_seconds": [
+        1.9843015830265358,
+        1.9902955000288785
+      ],
+      "median_seconds": 1.9872985415277071,
+      "relative_l2": 6.0239107105337125e-12,
+      "termination": "converged",
+      "profile_sha256": "3824e3f8adfdf7709900d3c7d4edc76c219523d84fa304c1082d1e1736e0d863",
+      "history_sha256": "639892ab85feee2e24f907a69f87c28a4086a6be09abcece58d20dda06e13b98",
+      "exact_repeats": true,
+      "jacobian_storage_elements": 397825,
+      "diagnostics": {
+        "evaluations": 3,
+        "linear_iterations": 5,
+        "krylov_iterations": 0,
+        "evaluation_seconds": 1.330033958,
+        "qr_seconds": 0.34016304199999997,
+        "face_seconds": 2.1541999999999998e-05,
+        "multiplier_seconds": 0.0,
+        "diagnostic_seconds": 0.281763583,
+        "convergence_criterion": "projected_gradient",
+        "backtrack_rejections": 0,
+        "last_step_norm": 4.915392091038658e-10,
+        "projected_gradient_norm": 5.604769788466829e-12,
+        "infeasible_trials": 0,
+        "last_rejected_error": null
+      }
+    },
+    {
+      "banks": 1,
+      "families_per_bank": 256,
+      "samples_per_bank": 10001,
+      "solver": "matrix_free",
+      "times_seconds": [
+        1.3682016670354642,
+        1.3668922079959884
+      ],
+      "median_seconds": 1.3675469375157263,
+      "relative_l2": 6.067101708382748e-12,
+      "termination": "converged",
+      "profile_sha256": "344589b89e116972b30a5e1d1d316de4a99b5155a91b5506c377bae3c0eea2c1",
+      "history_sha256": "0b38751a90398eeefda287c8b755b9d82a932d94a788b726cc15d5ca9a872b6e",
+      "exact_repeats": true,
+      "jacobian_storage_elements": 397825,
+      "diagnostics": {
+        "evaluations": 3,
+        "linear_iterations": 5,
+        "krylov_iterations": 24,
+        "evaluation_seconds": 1.325292584,
+        "qr_seconds": 0.0,
+        "face_seconds": 0.009726625,
+        "multiplier_seconds": 8.4e-08,
+        "diagnostic_seconds": 0.002507541,
+        "convergence_criterion": "projected_gradient",
+        "backtrack_rejections": 0,
+        "last_step_norm": 0.0,
+        "projected_gradient_norm": 7.545463269338141e-12,
+        "infeasible_trials": 0,
+        "last_rejected_error": null
+      }
+    },
+    {
+      "banks": 3,
+      "families_per_bank": 256,
+      "samples_per_bank": 10001,
+      "solver": "matrix_free",
+      "times_seconds": [
+        4.203349000017624,
+        4.2036423329846
+      ],
+      "median_seconds": 4.203495666501112,
+      "relative_l2": 8.525166212876005e-12,
+      "termination": "converged",
+      "profile_sha256": "71d4aa95fd28ef12d414a178d6a7effbd2f853e04e2a76393b7eca60dd6083db",
+      "history_sha256": "8d046f22edce0e6ee09b1280a7f8be4758c9b2d30ce695e3175c99fff54e3644",
+      "exact_repeats": true,
+      "jacobian_storage_elements": 1194317,
+      "diagnostics": {
+        "evaluations": 3,
+        "linear_iterations": 4,
+        "krylov_iterations": 34,
+        "evaluation_seconds": 4.02010325,
+        "qr_seconds": 0.0,
+        "face_seconds": 0.039846334000000004,
+        "multiplier_seconds": 1.25e-07,
+        "diagnostic_seconds": 0.0188625,
+        "convergence_criterion": "projected_gradient",
+        "backtrack_rejections": 0,
+        "last_step_norm": 3.099563604583296e-09,
+        "projected_gradient_norm": 2.6667313511071745e-11,
+        "infeasible_trials": 0,
+        "last_rejected_error": null
+      }
+    }
+  ],
+  "peak_process_rss_bytes": 259735552,
+  "note": "Process RSS includes the preceding dense case, Python and returned arrays."
+}

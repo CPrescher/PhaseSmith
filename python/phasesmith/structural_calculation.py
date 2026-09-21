@@ -14,6 +14,7 @@ from numpy.typing import ArrayLike, NDArray
 
 from . import _core
 from ._api import _vector
+from .accuracy import ProfileAccuracy
 from .crystallography import calculate_structure_factor_values, p1_parameter_names
 from .cw import CW_GLOBAL_PARAMETER_ORDER, CW_LOCAL_PARAMETER_ORDER, accumulate_cw_contributions
 from .execution import ExecutionPolicy
@@ -592,6 +593,7 @@ def _fallback_calculate(
         phase.reflections.hkl,
         phase.reflections.multiplicity,
         phase.scattering,
+        powder_average=True,
         correction=phase.intensity_correction,
         scale=phase.scale,
         coordinate_tolerance=phase.coordinate_tolerance,
@@ -643,6 +645,7 @@ class PreparedStructuralPattern:
     experiment: ConstantWavelengthExperiment
     phase: RietveldPhase
     support_fwhm: float
+    profile_accuracy: ProfileAccuracy
     jacobian_layout: Literal["support", "dense"]
     execution: ExecutionPolicy
     _native: object | None
@@ -660,6 +663,7 @@ class PreparedStructuralPattern:
         phase: RietveldPhase,
         *,
         support_fwhm: float = 20.0,
+        profile_accuracy: ProfileAccuracy | None = None,
         jacobian_layout: Literal["support", "dense"] = "support",
         execution: ExecutionPolicy | None = None,
     ) -> None:
@@ -678,6 +682,10 @@ class PreparedStructuralPattern:
         selected_execution = ExecutionPolicy() if execution is None else execution
         if not isinstance(selected_execution, ExecutionPolicy):
             raise TypeError("execution must be an ExecutionPolicy")
+        accuracy = ProfileAccuracy() if profile_accuracy is None else profile_accuracy
+        if not isinstance(accuracy, ProfileAccuracy):
+            raise TypeError("profile_accuracy must be ProfileAccuracy")
+        object.__setattr__(self, "profile_accuracy", accuracy)
         _check_probe(phase, experiment)
         object.__setattr__(self, "pattern", pattern)
         object.__setattr__(self, "experiment", experiment)
@@ -695,6 +703,7 @@ class PreparedStructuralPattern:
                     component_experiment,
                     component_phase,
                     support_fwhm=support_fwhm,
+                    profile_accuracy=accuracy,
                     jacobian_layout=jacobian_layout,
                     execution=selected_execution,
                 )
@@ -727,6 +736,7 @@ class PreparedStructuralPattern:
                     else _core._StructuralMultiphase([native_model], selected_execution._native)
                 ),
             )
+            self._configure_accuracy()
             return
         native = _native_phase(phase, selected_execution)
         contribution = None
@@ -760,6 +770,14 @@ class PreparedStructuralPattern:
                 else _core._StructuralMultiphase([native_model], selected_execution._native)
             ),
         )
+
+        self._configure_accuracy()
+
+    def _configure_accuracy(self) -> None:
+        if self._native_multiphase is not None:
+            self.profile_accuracy._apply(self._native_multiphase)
+        elif self.profile_accuracy != ProfileAccuracy() and not self._components:
+            raise NotImplementedError("profile_accuracy requires native structural models")
 
     @property
     def uses_native_fused_path(self) -> bool:
@@ -1092,6 +1110,7 @@ def calculate_structural_pattern(
     phase: RietveldPhase,
     *,
     support_fwhm: float = 20.0,
+    profile_accuracy: ProfileAccuracy | None = None,
     jacobian_layout: Literal["support", "dense"] = "support",
     execution: ExecutionPolicy | None = None,
 ) -> StructuralPatternCalculationResult:
@@ -1102,6 +1121,7 @@ def calculate_structural_pattern(
         experiment,
         phase,
         support_fwhm=support_fwhm,
+        profile_accuracy=profile_accuracy,
         jacobian_layout=jacobian_layout,
         execution=execution,
     ).calculate()

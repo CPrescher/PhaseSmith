@@ -4,7 +4,7 @@ PhaseSmith is an early-stage powder-diffraction computation library with a
 Rust numerical core and a typed Python/NumPy API. The current implementation
 includes symmetric TCH, CW U/V/W/X/Y broadening, FCJ asymmetry, wavelength
 components, extensible sample physics, multi-phase CW X-ray/neutron and neutron
-TOF calculation, plus a first-class scripted Le Bail workflow. Analytical
+TOF calculation, plus scripted Le Bail, [CW Pawley](docs/pawley.md) and [TOF Pawley](docs/tof-pawley.md) workflows. Analytical
 derivatives are computed during fused peak accumulation. The crystallography
 foundation includes native general-cell mathematics, P1 complex structure
 factors, exact symmetry, bounded reflection generation, and prepared X-ray and
@@ -615,9 +615,11 @@ structured-provenance proposal before `phasesmith run plan.json --approve
 PLAN_ID [--proposal recipe.json]` executes it. Post-run `review` and
 `review-packet` commands support lineage-bound iterations with a new approval
 each time. All JSON contracts are available through `phasesmith schema` and
-under `schemas/automation/`; a reusable agent skill and offline end-to-end
-example live under `skills/phasesmith-ai-workflows/` and
-`examples/automation/`. Raw pattern/CIF
+under `schemas/automation/`. The [agent skill](docs/agent-skill/index.md) ships
+with the Python package: `phasesmith skill --path` locates it and
+`phasesmith skill --print all` prints the complete instructions. Its canonical
+source and the offline end-to-end example live under
+`skills/phasesmith-ai-workflows/` and `examples/automation/`. Raw pattern/CIF
 inspection, checkpoint resume, strict schemas, structured errors, and the
 scientific recipe rubric are documented in [AI-guided
 automation](docs/ai-automation.md). PhaseSmith does not depend on an AI SDK or

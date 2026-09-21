@@ -53,9 +53,15 @@
 
 mod backgrounds;
 mod constraints;
+mod fit_diagnostics;
 mod lattice;
 mod lebail;
 mod parameters;
+mod pawley;
+mod pawley_operator;
+mod pawley_solver;
+mod pawley_support;
+pub use pawley_operator::PawleyJacobian;
 mod phase_scale_estimation;
 mod profile_estimation;
 mod quantitative;
@@ -93,6 +99,7 @@ pub use constraints::{
     AffineConstraint, Constraint, ConstraintDerivativeMatrix, ConstraintError, ConstraintTransform,
     FixedConstraint, LinearConstraint, LinearTerm,
 };
+pub use fit_diagnostics::{ResidualDiagnostics, ResidualRegion, diagnose_residuals};
 pub use lattice::{
     CwLatticeGeometry, GeneratedLatticeDomain, LatticeBounds, LatticeError,
     LatticeParameterization, LatticeReflectionDomain, TofLatticeGeometry, cw_lattice_geometry,
@@ -226,4 +233,23 @@ pub use tof_structural_multibank_solver::{
 };
 pub use tof_structural_project::{
     StructuralTofMultiBankAnalysis, StructuralTofMultiBankProjectState, StructuralTofProjectError,
+};
+
+pub use pawley::{
+    PAWLEY_PROFILE_NAMES, PawleyCoincidentGroup, PawleyError, PawleyEvaluation, PawleyInput,
+    PawleyPhase, evaluate_pawley, evaluate_pawley_with_storage, pawley_key, pawley_parameters,
+};
+pub use pawley_solver::{
+    PawleyCheckpoint, PawleyDiagnostics, PawleyOptions, PawleyResult, PawleySolver, refine_pawley,
+    refine_pawley_with_runtime,
+};
+
+mod pawley_project;
+pub use pawley_project::{PawleyAnalysis, PawleyProjectState};
+
+mod tof_pawley;
+pub use tof_pawley::{
+    TofPawleyAnalysis, TofPawleyBank, TofPawleyCheckpoint, TofPawleyInput, TofPawleyPhase,
+    TofPawleyProjectState, TofPawleyResult, evaluate_tof_pawley, refine_tof_pawley,
+    refine_tof_pawley_with_runtime, tof_pawley_parameters,
 };

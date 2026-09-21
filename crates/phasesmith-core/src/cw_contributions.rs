@@ -3,6 +3,7 @@
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 
+use crate::ProfileAccuracy;
 use crate::cw::{ConstantWavelengthInstrument, CwBatchError, CwError, CwProfileParameters};
 use crate::fcj::{FcjError, FcjGeometry, FcjProfile, FcjProfilePoint};
 use crate::profile::{
@@ -422,9 +423,20 @@ struct PreparedProfile {
 }
 
 impl PreparedProfile {
-    fn evaluate(&self, x_deg: f64, position_deg: f64) -> FcjProfilePoint {
+    fn evaluate_batch<const AXIAL: bool>(
+        &self,
+        x_deg: [f64; 4],
+        position_deg: f64,
+    ) -> [FcjProfilePoint; 4] {
         if let Some(fcj) = &self.fcj {
-            return fcj.evaluate_supported(x_deg, self.support_radius_deg);
+            return fcj.evaluate_batch::<AXIAL>(x_deg, self.support_radius_deg);
+        }
+        x_deg.map(|x| self.evaluate::<AXIAL>(x, position_deg))
+    }
+
+    fn evaluate<const AXIAL: bool>(&self, x_deg: f64, position_deg: f64) -> FcjProfilePoint {
+        if let Some(fcj) = &self.fcj {
+            return fcj.evaluate_selected::<AXIAL>(x_deg, self.support_radius_deg);
         }
         let point = self.tch.evaluate(x_deg - position_deg);
         FcjProfilePoint {
@@ -458,6 +470,7 @@ fn prepare_profile(
     contributions: CwContributionsView<'_>,
     geometry: Option<FcjGeometry>,
     support: SupportPolicy,
+    accuracy: ProfileAccuracy,
 ) -> Result<PreparedProfile, CwContributionsError> {
     let base =
         CwProfileParameters::from_validated_instrument(position, instrument).map_err(|reason| {
@@ -491,16 +504,17 @@ fn prepare_profile(
         .d_gaussian_fwhm_d_instrument
         .map(|value| value * instrument_gaussian_scale);
     let d_gaussian_d_variance = GAUSSIAN_FWHM_PER_SIGMA / (2.0 * variance.sqrt());
-    let support_radius_deg = support.radius(tch.total_fwhm);
+    let support_radius_deg = accuracy.radius(tch.total_fwhm, tch.eta, support);
     let fcj = geometry
         .map(|geometry| {
-            FcjProfile::new(
+            FcjProfile::new_with_accuracy(
                 position,
                 TchWidths {
                     gaussian_fwhm: gaussian,
                     lorentzian_fwhm: lorentzian,
                 },
                 geometry,
+                accuracy.fast_fcj,
             )
             .map_err(|reason| CwContributionsError::Fcj { reflection, reason })
         })
@@ -526,6 +540,7 @@ fn prepare_batch(
     contributions: CwContributionsView<'_>,
     geometry: Option<FcjGeometry>,
     support: SupportPolicy,
+    accuracy: ProfileAccuracy,
 ) -> Result<PreparedBatch, CwContributionsError> {
     let reflection_count = positions_deg.len();
     let mut profiles = Vec::new();
@@ -553,10 +568,14 @@ fn prepare_batch(
             contributions,
             geometry,
             support,
+            accuracy,
         )?;
         let range = match &profile.fcj {
             Some(fcj) => fcj.support_range(profile.support_radius_deg),
-            None => support.range(positions_deg[reflection], profile.tch.total_fwhm),
+            None => crate::SupportRange {
+                left: positions_deg[reflection] - profile.support_radius_deg,
+                right: positions_deg[reflection] + profile.support_radius_deg,
+            },
         };
         let lower = x.partition_point(|value| *value < range.left);
         let upper = x.partition_point(|value| *value <= range.right);
@@ -616,7 +635,7 @@ pub fn accumulate_cw_contributions_batch_with_context(
     support: SupportPolicy,
     execution: &ExecutionContext,
 ) -> Result<Accumulation, CwContributionsError> {
-    accumulate_cw_contributions_impl(
+    accumulate_cw_contributions_impl::<true>(
         grid,
         positions_deg,
         base_intensities,
@@ -624,6 +643,7 @@ pub fn accumulate_cw_contributions_batch_with_context(
         contributions,
         None,
         support,
+        ProfileAccuracy::default(),
         execution,
     )
 }
@@ -674,7 +694,7 @@ pub fn accumulate_cw_fcj_contributions_batch_with_context(
     support: SupportPolicy,
     execution: &ExecutionContext,
 ) -> Result<Accumulation, CwContributionsError> {
-    accumulate_cw_contributions_impl(
+    accumulate_cw_contributions_impl::<true>(
         grid,
         positions_deg,
         base_intensities,
@@ -682,12 +702,46 @@ pub fn accumulate_cw_fcj_contributions_batch_with_context(
         contributions,
         Some(geometry),
         support,
+        ProfileAccuracy::default(),
         execution,
     )
 }
 
-#[allow(clippy::too_many_arguments, clippy::too_many_lines)]
-fn accumulate_cw_contributions_impl(
+/// Accumulate values and required derivatives with fixed axial geometry.
+/// The two axial derivative rows are retained as zeros; all other rows and
+/// closed finite-support boundaries are identical to the full calculation.
+/// # Errors
+/// Returns an error for invalid grids, profiles or contribution arrays.
+#[allow(clippy::too_many_arguments)]
+pub fn accumulate_cw_fixed_axial_contributions_with_context(
+    grid: GridView<'_>,
+    positions_deg: &[f64],
+    base_intensities: &[f64],
+    instrument: ConstantWavelengthInstrument,
+    contributions: CwContributionsView<'_>,
+    geometry: FcjGeometry,
+    support: SupportPolicy,
+    execution: &ExecutionContext,
+) -> Result<Accumulation, CwContributionsError> {
+    accumulate_cw_contributions_impl::<false>(
+        grid,
+        positions_deg,
+        base_intensities,
+        instrument,
+        contributions,
+        Some(geometry),
+        support,
+        ProfileAccuracy::default(),
+        execution,
+    )
+}
+
+/// Accumulate structural CW profiles with an explicit numerical accuracy policy.
+/// Values and requested derivatives are fused; fixed axial rows can be omitted.
+/// # Errors
+/// Returns an error for invalid arrays, geometry or accuracy controls.
+#[allow(clippy::too_many_arguments)]
+pub fn accumulate_cw_contributions_with_accuracy(
     grid: GridView<'_>,
     positions_deg: &[f64],
     base_intensities: &[f64],
@@ -695,9 +749,51 @@ fn accumulate_cw_contributions_impl(
     contributions: CwContributionsView<'_>,
     geometry: Option<FcjGeometry>,
     support: SupportPolicy,
+    accuracy: ProfileAccuracy,
+    axial_derivatives: bool,
+    execution: &ExecutionContext,
+) -> Result<Accumulation, CwContributionsError> {
+    if axial_derivatives {
+        accumulate_cw_contributions_impl::<true>(
+            grid,
+            positions_deg,
+            base_intensities,
+            instrument,
+            contributions,
+            geometry,
+            support,
+            accuracy,
+            execution,
+        )
+    } else {
+        accumulate_cw_contributions_impl::<false>(
+            grid,
+            positions_deg,
+            base_intensities,
+            instrument,
+            contributions,
+            geometry,
+            support,
+            accuracy,
+            execution,
+        )
+    }
+}
+
+#[allow(clippy::too_many_arguments, clippy::too_many_lines)]
+fn accumulate_cw_contributions_impl<const AXIAL: bool>(
+    grid: GridView<'_>,
+    positions_deg: &[f64],
+    base_intensities: &[f64],
+    instrument: ConstantWavelengthInstrument,
+    contributions: CwContributionsView<'_>,
+    geometry: Option<FcjGeometry>,
+    support: SupportPolicy,
+    accuracy: ProfileAccuracy,
     execution: &ExecutionContext,
 ) -> Result<Accumulation, CwContributionsError> {
     support.validate()?;
+    accuracy.validate()?;
     let reflections = crate::cw::CwReflectionBatchView::new(positions_deg, base_intensities)
         .map_err(|reason| CwContributionsError::Cw { reason })?;
     instrument
@@ -729,6 +825,7 @@ fn accumulate_cw_contributions_impl(
         contributions,
         geometry,
         support,
+        accuracy,
     )?;
 
     let active_count = prepared.offsets.last().copied().unwrap_or(0);
@@ -755,46 +852,57 @@ fn accumulate_cw_contributions_impl(
             }
             let begin = prepared.offsets[reflection];
             let end = prepared.offsets[reflection + 1];
-            for active in begin..end {
-                let sample = prepared.starts[reflection] + active - begin;
-                let point = profile.evaluate(x[sample], positions_deg[reflection]);
-                y[sample] += effective_intensity * point.value;
-                let local = active * LOCAL_PARAMETER_COUNT;
-                local_values[local] = multiplier * point.value;
-                local_values[local + 1] = base_intensity
-                    * (contributions.d_intensity_multiplier_d_position[reflection] * point.value
-                        + multiplier
-                            * (point.d_position
-                                + point.d_gaussian_fwhm * profile.d_gaussian_d_position
-                                + point.d_lorentzian_fwhm * profile.d_lorentzian_d_position));
-                for parameter in 0..INSTRUMENT_PARAMETER_COUNT {
-                    let derivative = point.d_gaussian_fwhm
-                        * profile.d_gaussian_d_instrument[parameter]
-                        + point.d_lorentzian_fwhm * profile.d_lorentzian_d_instrument[parameter];
-                    global_values[parameter * x.len() + sample] += effective_intensity * derivative;
-                }
-                if geometry.is_some() {
-                    global_values[INSTRUMENT_PARAMETER_COUNT * x.len() + sample] +=
-                        effective_intensity * point.d_sample_over_radius;
-                    global_values[(INSTRUMENT_PARAMETER_COUNT + 1) * x.len() + sample] +=
-                        effective_intensity * point.d_detector_over_radius;
-                }
-                for parameter in 0..contributions.parameter_count {
-                    let index = contributions.derivative_index(parameter, reflection);
-                    let d_multiplier = contributions.d_intensity_multiplier_d_parameters[index];
-                    let d_gaussian = profile.d_gaussian_d_variance
-                        * contributions.d_gaussian_variance_d_parameters[index];
-                    let d_lorentzian = contributions.d_lorentzian_fwhm_d_parameters[index];
-                    let derivative = base_intensity
-                        * (d_multiplier * point.value
+            for chunk in (begin..end).step_by(4) {
+                let count = (end - chunk).min(4);
+                let coordinates = std::array::from_fn(|lane| {
+                    x[prepared.starts[reflection] + chunk - begin + lane.min(count - 1)]
+                });
+                let points =
+                    profile.evaluate_batch::<AXIAL>(coordinates, positions_deg[reflection]);
+                for (lane, point) in points.into_iter().take(count).enumerate() {
+                    let active = chunk + lane;
+                    let sample = prepared.starts[reflection] + active - begin;
+                    y[sample] += effective_intensity * point.value;
+                    let local = active * LOCAL_PARAMETER_COUNT;
+                    local_values[local] = multiplier * point.value;
+                    local_values[local + 1] = base_intensity
+                        * (contributions.d_intensity_multiplier_d_position[reflection]
+                            * point.value
                             + multiplier
-                                * (point.d_gaussian_fwhm * d_gaussian
-                                    + point.d_lorentzian_fwhm * d_lorentzian));
-                    global_values[(INSTRUMENT_PARAMETER_COUNT
-                        + axial_parameter_count
-                        + parameter)
-                        * x.len()
-                        + sample] += derivative;
+                                * (point.d_position
+                                    + point.d_gaussian_fwhm * profile.d_gaussian_d_position
+                                    + point.d_lorentzian_fwhm * profile.d_lorentzian_d_position));
+                    for parameter in 0..INSTRUMENT_PARAMETER_COUNT {
+                        let derivative = point.d_gaussian_fwhm
+                            * profile.d_gaussian_d_instrument[parameter]
+                            + point.d_lorentzian_fwhm
+                                * profile.d_lorentzian_d_instrument[parameter];
+                        global_values[parameter * x.len() + sample] +=
+                            effective_intensity * derivative;
+                    }
+                    if geometry.is_some() {
+                        global_values[INSTRUMENT_PARAMETER_COUNT * x.len() + sample] +=
+                            effective_intensity * point.d_sample_over_radius;
+                        global_values[(INSTRUMENT_PARAMETER_COUNT + 1) * x.len() + sample] +=
+                            effective_intensity * point.d_detector_over_radius;
+                    }
+                    for parameter in 0..contributions.parameter_count {
+                        let index = contributions.derivative_index(parameter, reflection);
+                        let d_multiplier = contributions.d_intensity_multiplier_d_parameters[index];
+                        let d_gaussian = profile.d_gaussian_d_variance
+                            * contributions.d_gaussian_variance_d_parameters[index];
+                        let d_lorentzian = contributions.d_lorentzian_fwhm_d_parameters[index];
+                        let derivative = base_intensity
+                            * (d_multiplier * point.value
+                                + multiplier
+                                    * (point.d_gaussian_fwhm * d_gaussian
+                                        + point.d_lorentzian_fwhm * d_lorentzian));
+                        global_values[(INSTRUMENT_PARAMETER_COUNT
+                            + axial_parameter_count
+                            + parameter)
+                            * x.len()
+                            + sample] += derivative;
+                    }
                 }
             }
         }
@@ -827,48 +935,56 @@ fn accumulate_cw_contributions_impl(
                         .ok_or(CwContributionsError::AllocationOverflow)?,
                 )?,
             };
-            for support_index in 0..support_count {
-                let sample = block.start + support_index;
-                let point = profile.evaluate(x[sample], positions_deg[reflection]);
-                block.y[support_index] = effective_intensity * point.value;
-                let local = support_index * LOCAL_PARAMETER_COUNT;
-                block.local[local] = multiplier * point.value;
-                block.local[local + 1] = base_intensity
-                    * (contributions.d_intensity_multiplier_d_position[reflection] * point.value
-                        + multiplier
-                            * (point.d_position
-                                + point.d_gaussian_fwhm * profile.d_gaussian_d_position
-                                + point.d_lorentzian_fwhm * profile.d_lorentzian_d_position));
-                for parameter in 0..INSTRUMENT_PARAMETER_COUNT {
-                    let derivative = point.d_gaussian_fwhm
-                        * profile.d_gaussian_d_instrument[parameter]
-                        + point.d_lorentzian_fwhm * profile.d_lorentzian_d_instrument[parameter];
-                    block.global[parameter * support_count + support_index] =
-                        effective_intensity * derivative;
-                }
-                if geometry.is_some() {
-                    block.global[INSTRUMENT_PARAMETER_COUNT * support_count + support_index] =
-                        effective_intensity * point.d_sample_over_radius;
-                    block.global
-                        [(INSTRUMENT_PARAMETER_COUNT + 1) * support_count + support_index] =
-                        effective_intensity * point.d_detector_over_radius;
-                }
-                for parameter in 0..contributions.parameter_count {
-                    let index = contributions.derivative_index(parameter, reflection);
-                    let d_multiplier = contributions.d_intensity_multiplier_d_parameters[index];
-                    let d_gaussian = profile.d_gaussian_d_variance
-                        * contributions.d_gaussian_variance_d_parameters[index];
-                    let d_lorentzian = contributions.d_lorentzian_fwhm_d_parameters[index];
-                    let derivative = base_intensity
-                        * (d_multiplier * point.value
+            for chunk in (0..support_count).step_by(4) {
+                let count = (support_count - chunk).min(4);
+                let coordinates =
+                    std::array::from_fn(|lane| x[block.start + chunk + lane.min(count - 1)]);
+                let points =
+                    profile.evaluate_batch::<AXIAL>(coordinates, positions_deg[reflection]);
+                for (lane, point) in points.into_iter().take(count).enumerate() {
+                    let support_index = chunk + lane;
+                    block.y[support_index] = effective_intensity * point.value;
+                    let local = support_index * LOCAL_PARAMETER_COUNT;
+                    block.local[local] = multiplier * point.value;
+                    block.local[local + 1] = base_intensity
+                        * (contributions.d_intensity_multiplier_d_position[reflection]
+                            * point.value
                             + multiplier
-                                * (point.d_gaussian_fwhm * d_gaussian
-                                    + point.d_lorentzian_fwhm * d_lorentzian));
-                    block.global[(INSTRUMENT_PARAMETER_COUNT
-                        + axial_parameter_count
-                        + parameter)
-                        * support_count
-                        + support_index] = derivative;
+                                * (point.d_position
+                                    + point.d_gaussian_fwhm * profile.d_gaussian_d_position
+                                    + point.d_lorentzian_fwhm * profile.d_lorentzian_d_position));
+                    for parameter in 0..INSTRUMENT_PARAMETER_COUNT {
+                        let derivative = point.d_gaussian_fwhm
+                            * profile.d_gaussian_d_instrument[parameter]
+                            + point.d_lorentzian_fwhm
+                                * profile.d_lorentzian_d_instrument[parameter];
+                        block.global[parameter * support_count + support_index] =
+                            effective_intensity * derivative;
+                    }
+                    if geometry.is_some() {
+                        block.global[INSTRUMENT_PARAMETER_COUNT * support_count + support_index] =
+                            effective_intensity * point.d_sample_over_radius;
+                        block.global
+                            [(INSTRUMENT_PARAMETER_COUNT + 1) * support_count + support_index] =
+                            effective_intensity * point.d_detector_over_radius;
+                    }
+                    for parameter in 0..contributions.parameter_count {
+                        let index = contributions.derivative_index(parameter, reflection);
+                        let d_multiplier = contributions.d_intensity_multiplier_d_parameters[index];
+                        let d_gaussian = profile.d_gaussian_d_variance
+                            * contributions.d_gaussian_variance_d_parameters[index];
+                        let d_lorentzian = contributions.d_lorentzian_fwhm_d_parameters[index];
+                        let derivative = base_intensity
+                            * (d_multiplier * point.value
+                                + multiplier
+                                    * (point.d_gaussian_fwhm * d_gaussian
+                                        + point.d_lorentzian_fwhm * d_lorentzian));
+                        block.global[(INSTRUMENT_PARAMETER_COUNT
+                            + axial_parameter_count
+                            + parameter)
+                            * support_count
+                            + support_index] = derivative;
+                    }
                 }
             }
             Ok(block)
@@ -913,6 +1029,88 @@ fn accumulate_cw_contributions_impl(
 mod tests {
     use super::*;
     use crate::cw::{CwReflectionBatchView, accumulate_cw_batch};
+
+    #[test]
+    fn accuracy_support_is_closed_and_omitted_axial_rows_preserve_values() {
+        let position = 40.0;
+        let accuracy = ProfileAccuracy {
+            fast_fcj: true,
+            tail_area_tolerance: Some(0.01),
+        };
+        let owned = OwnedCwContributions::neutral(1);
+        let contributions = owned.as_view();
+        let support = SupportPolicy::FwhmMultiple(20.0);
+        let profile = prepare_profile(
+            0,
+            position,
+            instrument(),
+            contributions,
+            None,
+            support,
+            accuracy,
+        )
+        .unwrap();
+        let right = position + profile.support_radius_deg;
+        let x = [
+            position,
+            f64::from_bits(right.to_bits() - 1),
+            right,
+            f64::from_bits(right.to_bits() + 1),
+        ];
+        let context = ExecutionContext::serial();
+        let result = accumulate_cw_contributions_with_accuracy(
+            GridView::new(&x).unwrap(),
+            &[position],
+            &[1.0],
+            instrument(),
+            contributions,
+            None,
+            support,
+            accuracy,
+            true,
+            &context,
+        )
+        .unwrap();
+        assert!(result.y[1] > 0.0 && result.y[2] > 0.0);
+        assert_eq!(result.y[3].to_bits(), 0.0_f64.to_bits());
+        let axial = Some(FcjGeometry {
+            sample_over_radius: 0.001,
+            detector_over_radius: 0.001,
+        });
+        let full = accumulate_cw_contributions_with_accuracy(
+            GridView::new(&x).unwrap(),
+            &[position],
+            &[1.0],
+            instrument(),
+            contributions,
+            axial,
+            support,
+            accuracy,
+            true,
+            &context,
+        )
+        .unwrap();
+        let selected = accumulate_cw_contributions_with_accuracy(
+            GridView::new(&x).unwrap(),
+            &[position],
+            &[1.0],
+            instrument(),
+            contributions,
+            axial,
+            support,
+            accuracy,
+            false,
+            &context,
+        )
+        .unwrap();
+        assert_eq!(full.y, selected.y);
+        assert_eq!(full.derivatives.local, selected.derivatives.local);
+        assert!(
+            selected.derivatives.global.unwrap().values[5 * x.len()..]
+                .iter()
+                .all(|&v| v == 0.0)
+        );
+    }
 
     fn instrument() -> ConstantWavelengthInstrument {
         ConstantWavelengthInstrument {

@@ -1,0 +1,145 @@
+{
+  "modules": [
+    {
+      "exports": [
+        {
+          "kind": "class",
+          "name": "PawleyCalculation",
+          "signature": "(calculated_y: 'NDArray[np.float64]', background_y: 'NDArray[np.float64]', intensities: 'NDArray[np.float64]', positions: 'NDArray[np.float64]', jacobian: 'NDArray[np.float64] | None', jacobian_operator: 'PawleyJacobian', residual: 'NDArray[np.float64]', weighted_residual: 'NDArray[np.float64]', included: 'NDArray[np.bool_]', rp: 'float', rwp: 'float', chi_square: 'float', reduced_chi_square: 'float', inactive_columns: 'tuple[int, ...]', unobserved_reflections: 'tuple[tuple[str, str], ...]', coincident_groups: 'tuple[tuple[tuple[tuple[str, str], ...], float], ...]') -> None",
+          "target": "phasesmith.refinement.pawley.PawleyCalculation"
+        },
+        {
+          "kind": "class",
+          "name": "PawleyInput",
+          "signature": "(pattern: 'PowderPattern', instrument: 'ConstantWavelengthInstrument', phases: 'tuple[PawleyPhase, ...]', background: 'DifferentiableBackground | None' = None, axial_geometry: 'FcjGeometry | None' = None, signed_intensities: 'bool' = False, parameters: 'ParameterSet | None' = None, constraints: 'tuple[Constraint, ...]' = (), fixed_spectrum: 'WavelengthComponents | None' = None) -> None",
+          "target": "phasesmith.refinement.pawley.PawleyInput"
+        },
+        {
+          "kind": "class",
+          "name": "PawleyJacobian",
+          "signature": "(_native: 'object') -> None",
+          "target": "phasesmith.refinement.pawley.PawleyJacobian"
+        },
+        {
+          "kind": "class",
+          "name": "PawleyOptions",
+          "signature": "(solver: 'str' = 'dense', linear_tolerance: 'float' = 1e-11, max_linear_iterations: 'int' = 4000, support_fwhm: 'float' = 20.0, use_uncertainty: 'bool' = True, max_elements: 'int' = 50000000, rank_tolerance: 'float' = 1e-10, tolerance: 'float' = 1e-09, damping: 'float' = 1e-06, max_active_iterations: 'int' = 2000) -> None",
+          "target": "phasesmith.refinement.pawley.PawleyOptions"
+        },
+        {
+          "kind": "class",
+          "name": "PawleyPhase",
+          "signature": "(phase_id: 'str', reflection_ids: 'tuple[str, ...]', two_theta_deg: 'NDArray[np.float64]', intensities: 'NDArray[np.float64]', hkl: 'NDArray[np.int64] | None' = None, lattice: 'CwLatticeReflectionDomain | None' = None) -> None",
+          "target": "phasesmith.refinement.pawley.PawleyPhase"
+        },
+        {
+          "kind": "class",
+          "name": "PawleyProject",
+          "signature": "(input: 'PawleyInput', options: 'PawleyOptions' = PawleyOptions(solver='dense', linear_tolerance=1e-11, max_linear_iterations=4000, support_fwhm=20.0, use_uncertainty=True, max_elements=50000000, rank_tolerance=1e-10, tolerance=1e-09, damping=1e-06, max_active_iterations=2000), checkpoint: 'str | None' = None) -> None",
+          "target": "phasesmith.refinement.pawley.PawleyProject"
+        },
+        {
+          "kind": "class",
+          "name": "PawleyResult",
+          "signature": "(calculation: 'PawleyCalculation', termination_reason: 'str', rank: 'int | None', observed_free_parameters: 'int', active_bounds: 'tuple[int, ...]', active_width_bounds: 'bool', covariance: 'NDArray[np.float64] | None', covariance_limitation: 'str | None', history: 'NDArray[np.float64]', free: 'NDArray[np.float64]', checkpoint: 'str', parameters: 'ParameterSet', diagnostics: 'Mapping[str, float | int | str | None]') -> None",
+          "target": "phasesmith.refinement.pawley.PawleyResult"
+        },
+        {
+          "kind": "function",
+          "name": "build_parameter_set",
+          "signature": "(request: 'PawleyInput', *, profile_parameters: 'tuple[str, ...]' = (), lattice: 'bool' = False) -> 'ParameterSet'",
+          "target": "phasesmith.refinement.pawley.build_parameter_set"
+        },
+        {
+          "kind": "function",
+          "name": "calculate",
+          "signature": "(request: 'PawleyInput', options: 'PawleyOptions' = PawleyOptions(solver='dense', linear_tolerance=1e-11, max_linear_iterations=4000, support_fwhm=20.0, use_uncertainty=True, max_elements=50000000, rank_tolerance=1e-10, tolerance=1e-09, damping=1e-06, max_active_iterations=2000)) -> 'PawleyCalculation'",
+          "target": "phasesmith.refinement.pawley.calculate"
+        },
+        {
+          "kind": "function",
+          "name": "parameter_key",
+          "signature": "(family: 'str', owner: 'str', name: 'str') -> 'ParameterKey'",
+          "target": "phasesmith.refinement.pawley.parameter_key"
+        },
+        {
+          "kind": "function",
+          "name": "refine",
+          "signature": "(request: 'PawleyInput', options: 'PawleyOptions' = PawleyOptions(solver='dense', linear_tolerance=1e-11, max_linear_iterations=4000, support_fwhm=20.0, use_uncertainty=True, max_elements=50000000, rank_tolerance=1e-10, tolerance=1e-09, damping=1e-06, max_active_iterations=2000), *, checkpoint: 'str | None' = None, max_iterations: 'int' = 100, max_evaluations: 'int' = 1000, max_rejections: 'int' = 20, max_seconds: 'float | None' = None, cancellation: 'CancellationToken | None' = None, progress: 'Callable[[dict], None] | None' = None) -> 'PawleyResult'",
+          "target": "phasesmith.refinement.pawley.refine"
+        }
+      ],
+      "module": "phasesmith.refinement.pawley",
+      "tier": "workflow"
+    },
+    {
+      "exports": [
+        {
+          "kind": "class",
+          "name": "ProjectBundle",
+          "signature": "(_native: 'object') -> None",
+          "target": "phasesmith.project_bundle.ProjectBundle"
+        }
+      ],
+      "module": "phasesmith.project_bundle",
+      "tier": "workflow"
+    },
+    {
+      "exports": [
+        {
+          "kind": "class",
+          "name": "TofPawleyBackground",
+          "signature": "(coefficients: 'tuple[float, ...]', domain_us: 'tuple[float, float]', background_id: 'str' = 'background') -> None",
+          "target": "phasesmith.refinement.tof_pawley.TofPawleyBackground"
+        },
+        {
+          "kind": "class",
+          "name": "TofPawleyBank",
+          "signature": "(bank_id: 'str', pattern: 'TofPowderPattern', instrument: 'TofInstrument', phases: 'tuple[TofPawleyPhase, ...]', normalization: 'str', background: 'TofPawleyBackground | None' = None) -> None",
+          "target": "phasesmith.refinement.tof_pawley.TofPawleyBank"
+        },
+        {
+          "kind": "class",
+          "name": "TofPawleyInput",
+          "signature": "(banks: 'tuple[TofPawleyBank, ...]', shared_lattice: 'tuple[TofSharedLatticePhase, ...]' = (), signed_intensities: 'bool' = False, tail_log: 'float' = 20.0, parameters: 'ParameterSet | None' = None, constraints: 'tuple[Constraint, ...]' = ()) -> None",
+          "target": "phasesmith.refinement.tof_pawley.TofPawleyInput"
+        },
+        {
+          "kind": "class",
+          "name": "TofPawleyPhase",
+          "signature": "(phase_id: 'str', reflection_ids: 'tuple[str, ...]', d_spacing_angstrom: 'NDArray[np.float64]', intensities: 'NDArray[np.float64]', hkl: 'NDArray[np.int64] | None' = None) -> None",
+          "target": "phasesmith.refinement.tof_pawley.TofPawleyPhase"
+        },
+        {
+          "kind": "class",
+          "name": "TofPawleyProject",
+          "signature": "(input: 'TofPawleyInput', options: 'PawleyOptions' = PawleyOptions(solver='dense', linear_tolerance=1e-11, max_linear_iterations=4000, support_fwhm=20.0, use_uncertainty=True, max_elements=50000000, rank_tolerance=1e-10, tolerance=1e-09, damping=1e-06, max_active_iterations=2000), checkpoint: 'str | None' = None) -> None",
+          "target": "phasesmith.refinement.tof_pawley.TofPawleyProject"
+        },
+        {
+          "kind": "function",
+          "name": "build_parameter_set",
+          "signature": "(request: 'TofPawleyInput', *, profile_parameters: 'dict[str, tuple[str, ...]] | None' = None, lattice: 'bool' = False) -> 'ParameterSet'",
+          "target": "phasesmith.refinement.tof_pawley.build_parameter_set"
+        },
+        {
+          "kind": "function",
+          "name": "calculate",
+          "signature": "(request: 'TofPawleyInput', options: 'PawleyOptions' = PawleyOptions(solver='dense', linear_tolerance=1e-11, max_linear_iterations=4000, support_fwhm=20.0, use_uncertainty=True, max_elements=50000000, rank_tolerance=1e-10, tolerance=1e-09, damping=1e-06, max_active_iterations=2000)) -> 'PawleyCalculation'",
+          "target": "phasesmith.refinement.tof_pawley.calculate"
+        },
+        {
+          "kind": "function",
+          "name": "refine",
+          "signature": "(request: 'TofPawleyInput', options: 'PawleyOptions' = PawleyOptions(solver='dense', linear_tolerance=1e-11, max_linear_iterations=4000, support_fwhm=20.0, use_uncertainty=True, max_elements=50000000, rank_tolerance=1e-10, tolerance=1e-09, damping=1e-06, max_active_iterations=2000), *, checkpoint: 'str | None' = None, max_iterations: 'int' = 100, max_evaluations: 'int' = 1000, max_rejections: 'int' = 20, max_seconds: 'float | None' = None, cancellation: 'CancellationToken | None' = None, progress: 'Callable[[dict], None] | None' = None) -> 'PawleyResult'",
+          "target": "phasesmith.refinement.tof_pawley.refine"
+        }
+      ],
+      "module": "phasesmith.refinement.tof_pawley",
+      "tier": "workflow"
+    }
+  ],
+  "package_version": "0.5.0",
+  "schema_version": 1,
+  "scope": "Names in __all__ for the listed modules; callable signatures use inspect.signature without evaluating string annotations"
+}

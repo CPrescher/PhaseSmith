@@ -1,0 +1,439 @@
+{
+  "original_working_file_count": 72,
+  "accepted_numerical_commit": "eb11711",
+  "note": "Dispositions describe accepted consolidation; original bytes remain on the snapshot refs and in the external backup.",
+  "files": [
+    {
+      "worktree": "develop",
+      "path": ".gitattributes",
+      "original_sha256": "d8ab15d08ddf5f16a0cac1cbb9558962e2f3d2cf16c0336e5b72cc41a14703f0",
+      "disposition": "Integrated unchanged"
+    },
+    {
+      "worktree": "develop",
+      "path": ".github/workflows/ci.yml",
+      "original_sha256": "64009e0cf027d10d64e8481872474dc611e1655249953e054b300a71c7ee4ba0",
+      "disposition": "Reviewed revision integrated; original bytes preserved on codex/consolidation-snapshot-20260921"
+    },
+    {
+      "worktree": "develop",
+      "path": ".github/workflows/release.yml",
+      "original_sha256": "6c72e6267bb74554e5d999e428bb49354dab1ec27da2b3283a14114993681de2",
+      "disposition": "Integrated unchanged"
+    },
+    {
+      "worktree": "develop",
+      "path": ".readthedocs.yaml",
+      "original_sha256": "54535c537b4b4f9e96853a80e4cf7873eb38ff0e9921f3105ac1c4ce256f5f39",
+      "disposition": "Integrated unchanged"
+    },
+    {
+      "worktree": "develop",
+      "path": "CHANGELOG.md",
+      "original_sha256": "91e233b59b6a14f2b64c637d4d01abe1c21ed700be1bf3ba32b49e5abe659b86",
+      "disposition": "Reviewed revision integrated; original bytes preserved on codex/consolidation-snapshot-20260921"
+    },
+    {
+      "worktree": "develop",
+      "path": "PROJECT_BRIEF.md",
+      "original_sha256": "4073ac27d27a5252eb4251749b58842155a1dc308c3c9a72551cc5f6298959b2",
+      "disposition": "Reviewed revision integrated; original bytes preserved on codex/consolidation-snapshot-20260921"
+    },
+    {
+      "worktree": "develop",
+      "path": "README.md",
+      "original_sha256": "3a1e9e29d16253c52736dd130e7dea65559e55336139a5ae36e3d3a67750116d",
+      "disposition": "Integrated unchanged"
+    },
+    {
+      "worktree": "develop",
+      "path": "api/python-public-api-v0.5.0.json",
+      "original_sha256": "82d597221abf0d1399fa9a02015b4b5415ff132dbc6d1e10d2608e8fbc915bfb",
+      "disposition": "Committed baseline retained; experimental edits preserved on codex/consolidation-snapshot-20260921"
+    },
+    {
+      "worktree": "develop",
+      "path": "benchmarks/qarr_convergence.py",
+      "original_sha256": "b951ffae533183172d054bce5227c2789cb2cd7a5677da59e1e5ba3d515b9dd2",
+      "disposition": "Committed baseline retained; experimental edits preserved on codex/consolidation-snapshot-20260921"
+    },
+    {
+      "worktree": "develop",
+      "path": "benchmarks/qarr_convergence_polish.py",
+      "original_sha256": "cd1144b70c998f228f2febf45b8986999349ba5f848cc2f3936528d1f85199ba",
+      "disposition": "Committed baseline retained; experimental edits preserved on codex/consolidation-snapshot-20260921"
+    },
+    {
+      "worktree": "develop",
+      "path": "benchmarks/refinement_assessment.py",
+      "original_sha256": "b1498756800ec46d3078882ccc0805a751a05c6d131f54ca4673943e50b51bf2",
+      "disposition": "Integrated unchanged"
+    },
+    {
+      "worktree": "develop",
+      "path": "crates/phasesmith-persistence/src/rietveld_wire.rs",
+      "original_sha256": "6e3468083cbea2d93f2c1f3c7e8de7be77cbe6238889fa975167393264825f68",
+      "disposition": "Committed baseline retained; experimental edits preserved on codex/consolidation-snapshot-20260921"
+    },
+    {
+      "worktree": "develop",
+      "path": "crates/phasesmith-py/src/rietveld.rs",
+      "original_sha256": "bc1970798acdef35ec473661a43194464ed27de85ea66c5bd527d7eb8333a668",
+      "disposition": "Committed baseline retained; experimental edits preserved on codex/consolidation-snapshot-20260921"
+    },
+    {
+      "worktree": "develop",
+      "path": "crates/phasesmith-workflows/src/lib.rs",
+      "original_sha256": "3c9f0e3b8477f4dd374ba6df896d6ff361c795e7aba948fd2ffffd5eed71dd74",
+      "disposition": "Committed baseline retained; experimental edits preserved on codex/consolidation-snapshot-20260921"
+    },
+    {
+      "worktree": "develop",
+      "path": "crates/phasesmith-workflows/src/rietveld_feasible_step.rs",
+      "original_sha256": "165b4aa2e9a417be3e67332d6eb77ba8547a13f794066145463df898b2e3ddaf",
+      "disposition": "Committed baseline retained; experimental edits preserved on codex/consolidation-snapshot-20260921"
+    },
+    {
+      "worktree": "develop",
+      "path": "crates/phasesmith-workflows/src/rietveld_general_objective.rs",
+      "original_sha256": "c4b3e7697863a85be66e975341ac098d142f4c7e446207309737509d582a580b",
+      "disposition": "Reviewed revision integrated; original bytes preserved on codex/consolidation-snapshot-20260921"
+    },
+    {
+      "worktree": "develop",
+      "path": "crates/phasesmith-workflows/src/rietveld_general_solver.rs",
+      "original_sha256": "17597cda8420a3ff96c2e68afecd1df547946856301e14d2a1b1013f2b7cb157",
+      "disposition": "Reviewed revision integrated; original bytes preserved on codex/consolidation-snapshot-20260921"
+    },
+    {
+      "worktree": "develop",
+      "path": "crates/phasesmith-workflows/src/rietveld_solver.rs",
+      "original_sha256": "86a2ba0dc8409719da443833a033784f701f4f12d7cb5fbc57db19e8f2655593",
+      "disposition": "Committed baseline retained; experimental edits preserved on codex/consolidation-snapshot-20260921"
+    },
+    {
+      "worktree": "develop",
+      "path": "crates/phasesmith-workflows/tests/rietveld_general_solver.rs",
+      "original_sha256": "3bc5560c07260cd02e815311684541ab4740fe36f6acf835a2a6791be17015a3",
+      "disposition": "Reviewed revision integrated; original bytes preserved on codex/consolidation-snapshot-20260921"
+    },
+    {
+      "worktree": "develop",
+      "path": "docs/agent-skill/index.md",
+      "original_sha256": "129ad2307a0262725edc9f8310aa054408166b5645c6d6e0ef4439a9a6d3471a",
+      "disposition": "Integrated unchanged"
+    },
+    {
+      "worktree": "develop",
+      "path": "docs/agent-skill/references/experiment.md",
+      "original_sha256": "3c6964cb525a938b640b16951c4072c72fd17360ba969e71a159d4183f5f1287",
+      "disposition": "Integrated unchanged"
+    },
+    {
+      "worktree": "develop",
+      "path": "docs/agent-skill/references/interpretation.md",
+      "original_sha256": "aa93d75902f5aef52949301211aaa1bb43777fa47f141e9d2fa6079d49d55172",
+      "disposition": "Integrated unchanged"
+    },
+    {
+      "worktree": "develop",
+      "path": "docs/agent-skill/references/workflow.md",
+      "original_sha256": "58701ead2d65089d6dc914a108f6b9d4bd0cef4983162c8918ed085aa24641cb",
+      "disposition": "Integrated unchanged"
+    },
+    {
+      "worktree": "develop",
+      "path": "docs/ai-automation.md",
+      "original_sha256": "81736eecc01351b905123996ffd71f6ecfb63413fae08c6b1654690dacd7cd4c",
+      "disposition": "Integrated unchanged"
+    },
+    {
+      "worktree": "develop",
+      "path": "docs/documentation.md",
+      "original_sha256": "7a5464ddfc37fde7c608b493b8dd66916701e1500b7d7b5d32879b62d9c16647",
+      "disposition": "Integrated unchanged"
+    },
+    {
+      "worktree": "develop",
+      "path": "docs/feasible-width-steps.md",
+      "original_sha256": "8d8b1088bc52abb3e9765a2f08c0c1e299d887823adef26bea9742a5870968af",
+      "disposition": "Reviewed revision integrated; original bytes preserved on codex/consolidation-snapshot-20260921"
+    },
+    {
+      "worktree": "develop",
+      "path": "docs/index.md",
+      "original_sha256": "406fff0c3bf53cfa3cc007ea9e862a5efe5d52cf4c1568ab555ea1eb6ed06c2a",
+      "disposition": "Integrated unchanged"
+    },
+    {
+      "worktree": "develop",
+      "path": "docs/qarr-convergence-audit.md",
+      "original_sha256": "606dc3031d731c363764ad01f5a9fcae90e748c1c1f375c69fc27e0e331298d8",
+      "disposition": "Committed baseline retained; experimental edits preserved on codex/consolidation-snapshot-20260921"
+    },
+    {
+      "worktree": "develop",
+      "path": "docs/refinement-assessment.md",
+      "original_sha256": "82ab3cff4469f3f6acef12e549751aa840f1efb63ab2dd0192596a42e647d621",
+      "disposition": "Integrated unchanged"
+    },
+    {
+      "worktree": "develop",
+      "path": "docs/refinement-convergence-recovery.md",
+      "original_sha256": "078577f0d452499b13f24686cd99361006323833594a6bbda6fbe2da98275c1e",
+      "disposition": "Reviewed revision integrated; original bytes preserved on codex/consolidation-snapshot-20260921"
+    },
+    {
+      "worktree": "develop",
+      "path": "docs/releasing.md",
+      "original_sha256": "1cd1c54d717db154545b532ee30e68a7a5be1f476651ca1072d3ff5e8665d03b",
+      "disposition": "Integrated unchanged"
+    },
+    {
+      "worktree": "develop",
+      "path": "docs/repository-consolidation-plan.md",
+      "original_sha256": "d816163213b6a00b420ca31c591c4e0bac3dd0bf5019082ae5d15eb04faef04e",
+      "disposition": "Reviewed revision integrated; original bytes preserved on codex/consolidation-snapshot-20260921"
+    },
+    {
+      "worktree": "develop",
+      "path": "mkdocs.yml",
+      "original_sha256": "1203774a56b1c2e9c1f7d61b207a2a4b8087d8995a3cfcf87f5dee7780fa5450",
+      "disposition": "Integrated unchanged"
+    },
+    {
+      "worktree": "develop",
+      "path": "pyproject.toml",
+      "original_sha256": "74b29f72eef187ca149ed892e5a728e64181750b4987d3362f62f413847815c1",
+      "disposition": "Integrated unchanged"
+    },
+    {
+      "worktree": "develop",
+      "path": "python/phasesmith/_native_persistence.py",
+      "original_sha256": "13c7bbac6393985836f5f04a6aa7b330bea90e7e4076613b7a4d6c70902e0f08",
+      "disposition": "Committed baseline retained; experimental edits preserved on codex/consolidation-snapshot-20260921"
+    },
+    {
+      "worktree": "develop",
+      "path": "python/phasesmith/_skill.py",
+      "original_sha256": "d9187cac1bbdd593ddb21a7a245e47fb7f97cffd2492d54f0f08650307bc09f0",
+      "disposition": "Integrated unchanged"
+    },
+    {
+      "worktree": "develop",
+      "path": "python/phasesmith/_skills/phasesmith-ai-workflows/SKILL.md",
+      "original_sha256": "3f9eeb33ce33f2a28090ef9ad5e78cdd83b4f245a3139b1a3fee5ba7f67479c6",
+      "disposition": "Integrated unchanged"
+    },
+    {
+      "worktree": "develop",
+      "path": "python/phasesmith/_skills/phasesmith-ai-workflows/agents/openai.yaml",
+      "original_sha256": "030bb55ab5d731be94d3f23bc58802d5a277e6c08510844da9fb2e6740b25e87",
+      "disposition": "Integrated unchanged"
+    },
+    {
+      "worktree": "develop",
+      "path": "python/phasesmith/_skills/phasesmith-ai-workflows/references/experiment.md",
+      "original_sha256": "804f5f36181e85e562ffea7a664dabc859dddbf0d4ea7c09ec437e12bd1c3145",
+      "disposition": "Integrated unchanged"
+    },
+    {
+      "worktree": "develop",
+      "path": "python/phasesmith/_skills/phasesmith-ai-workflows/references/interpretation.md",
+      "original_sha256": "37dbecaa0c4eae7132dbb329bccb8e5210369a156ad11b305f0b4e16696edfdf",
+      "disposition": "Integrated unchanged"
+    },
+    {
+      "worktree": "develop",
+      "path": "python/phasesmith/_skills/phasesmith-ai-workflows/references/workflow.md",
+      "original_sha256": "dfe18af400b7fb9f85f188283f79550ec9ce7f300027b65291370d5147e5123c",
+      "disposition": "Integrated unchanged"
+    },
+    {
+      "worktree": "develop",
+      "path": "python/phasesmith/cli.py",
+      "original_sha256": "b0d2721f46ccada720abb2573ce18768750f6c9c51c7655285bfc955d8762567",
+      "disposition": "Integrated unchanged"
+    },
+    {
+      "worktree": "develop",
+      "path": "python/phasesmith/refinement/_feasible_step.py",
+      "original_sha256": "6d5cd31be99c6de0005a6ba103d27029ee3b9b5192a63d3c035bb9b3da94f4c3",
+      "disposition": "Committed baseline retained; experimental edits preserved on codex/consolidation-snapshot-20260921"
+    },
+    {
+      "worktree": "develop",
+      "path": "python/phasesmith/refinement/rietveld.py",
+      "original_sha256": "1efd30e63c527fd6c6cb3abe49b2c01cca25c0da367252024591278f0923d498",
+      "disposition": "Reviewed revision integrated; original bytes preserved on codex/consolidation-snapshot-20260921"
+    },
+    {
+      "worktree": "develop",
+      "path": "scripts/sync_skill.py",
+      "original_sha256": "32b04b3038fc04c930264a80e4e882861b57c7b722891068001399261c180a53",
+      "disposition": "Integrated unchanged"
+    },
+    {
+      "worktree": "develop",
+      "path": "skills/phasesmith-ai-workflows/SKILL.md",
+      "original_sha256": "3f9eeb33ce33f2a28090ef9ad5e78cdd83b4f245a3139b1a3fee5ba7f67479c6",
+      "disposition": "Integrated unchanged"
+    },
+    {
+      "worktree": "develop",
+      "path": "skills/phasesmith-ai-workflows/references/experiment.md",
+      "original_sha256": "804f5f36181e85e562ffea7a664dabc859dddbf0d4ea7c09ec437e12bd1c3145",
+      "disposition": "Integrated unchanged"
+    },
+    {
+      "worktree": "develop",
+      "path": "skills/phasesmith-ai-workflows/references/interpretation.md",
+      "original_sha256": "37dbecaa0c4eae7132dbb329bccb8e5210369a156ad11b305f0b4e16696edfdf",
+      "disposition": "Integrated unchanged"
+    },
+    {
+      "worktree": "develop",
+      "path": "skills/phasesmith-ai-workflows/references/workflow.md",
+      "original_sha256": "dfe18af400b7fb9f85f188283f79550ec9ce7f300027b65291370d5147e5123c",
+      "disposition": "Integrated unchanged"
+    },
+    {
+      "worktree": "develop",
+      "path": "tests/skill_evaluation/README.md",
+      "original_sha256": "7e1872b00f793070c9907a891eb1337e9f9143eb37fda733a65a96a2cda98f9e",
+      "disposition": "Integrated unchanged"
+    },
+    {
+      "worktree": "develop",
+      "path": "tests/test_feasible_width_steps.py",
+      "original_sha256": "7a039c7e866e3e1aa3666a4d548e6a7320c98431fc24aa87aab5c3fc0eb308c9",
+      "disposition": "Committed baseline retained; experimental edits preserved on codex/consolidation-snapshot-20260921"
+    },
+    {
+      "worktree": "develop",
+      "path": "tests/test_refinement_recovery.py",
+      "original_sha256": "9c31b3e110c19348f627164a87cacc5d48e9613ec1da59dee58f23d5d1200f9c",
+      "disposition": "Reviewed revision integrated; original bytes preserved on codex/consolidation-snapshot-20260921"
+    },
+    {
+      "worktree": "develop",
+      "path": "tests/test_skill.py",
+      "original_sha256": "92f75cbeaca1bb67cfd1f0d46baf10e34499d0a621dbff97194d686c04c9191c",
+      "disposition": "Integrated unchanged"
+    },
+    {
+      "worktree": "develop",
+      "path": "validation/refinement-assessment-v1.json",
+      "original_sha256": "6872a1fddf1c8489139f85747777e82d508a42dbbd23856bd2d0cb152f4c455b",
+      "disposition": "Integrated unchanged"
+    },
+    {
+      "worktree": "develop",
+      "path": "validation/results/agent-skill-20260918.json",
+      "original_sha256": "99986fa0bbdfc9603fa0bbc0b5cede1daa50f2c5e3d2692f57eca47f832b8f89",
+      "disposition": "Integrated unchanged"
+    },
+    {
+      "worktree": "develop",
+      "path": "validation/results/convergence-recovery-empirical-20260917.json",
+      "original_sha256": "6e086bfb0ae8ec20d943b51464c4ad74c94c408d20c74c75ed6ad13206d03fe2",
+      "disposition": "Integrated unchanged"
+    },
+    {
+      "worktree": "develop",
+      "path": "validation/results/convergence-recovery-qarr-audit-20260917.json",
+      "original_sha256": "56a38dc2f2ff6dd7bf42509c0faf646d06716308c7a8515d7f6201ff0a1f99b1",
+      "disposition": "Integrated unchanged"
+    },
+    {
+      "worktree": "develop",
+      "path": "validation/results/convergence-recovery-qarr-timing-20260917.json",
+      "original_sha256": "d93a44e5be1634fa2dfbefe01186d6965533fd96894cfc28910b400e6faadc49",
+      "disposition": "Integrated unchanged"
+    },
+    {
+      "worktree": "develop",
+      "path": "validation/results/convergence-recovery-real-data-20260917.json",
+      "original_sha256": "badb1ac56cf566d257e00f6fd2bbe38c9b0c391677b638a9f32cb23c1282b062",
+      "disposition": "Integrated unchanged"
+    },
+    {
+      "worktree": "develop",
+      "path": "validation/results/feasible-width-all-stages-20260917.json",
+      "original_sha256": "4ea9a3b3bd282896fcdaa64863e8042296e976352020a10fb27c05b1ee142bbc",
+      "disposition": "Integrated unchanged"
+    },
+    {
+      "worktree": "develop",
+      "path": "validation/results/feasible-width-continuation-20260917.json",
+      "original_sha256": "972839d5191cdcfc9f1d7310a32acef35060b0608f644afc5f64ddf2fcac16bd",
+      "disposition": "Integrated unchanged"
+    },
+    {
+      "worktree": "develop",
+      "path": "validation/results/feasible-width-default-regression-20260917.json",
+      "original_sha256": "bb1a821972604aec4219299ff5fd5c213c030176fd8202f83cea58ecbaf52bec",
+      "disposition": "Integrated unchanged"
+    },
+    {
+      "worktree": "develop",
+      "path": "validation/results/feasible-width-timing-all-20260917.json",
+      "original_sha256": "ae8a204dcc29454237b48adacdfa5fbd52334b8f4d8180ba182e9a856ba2bb33",
+      "disposition": "Integrated unchanged"
+    },
+    {
+      "worktree": "develop",
+      "path": "validation/results/feasible-width-timing-default-20260917.json",
+      "original_sha256": "c46b6f4696ccae43f464c4097320fd75e6f123eaa3d2670ba5b400299d346f87",
+      "disposition": "Integrated unchanged"
+    },
+    {
+      "worktree": "develop",
+      "path": "validation/results/feasible-width-timing-joint-20260917.json",
+      "original_sha256": "bea08f18ab55ab830fba50c8e2b5880e9024bbd76e6af5f17917f2ddd1af1e28",
+      "disposition": "Integrated unchanged"
+    },
+    {
+      "worktree": "develop",
+      "path": "validation/results/refinement-assessment-20260917-summary.json",
+      "original_sha256": "a315a2f244d129016f05c7e814fff8abcbefabe1591590ae838db1a220a5beb8",
+      "disposition": "Integrated unchanged"
+    },
+    {
+      "worktree": "develop",
+      "path": "validation/results/refinement-assessment-20260917.json",
+      "original_sha256": "3e3952d89d0ff819d1dd87261c7fa75654546d5ab5baac2bfd13327e86d87c72",
+      "disposition": "Integrated unchanged"
+    },
+    {
+      "worktree": "pawley",
+      "path": "oracle/fixtures/pawley_optimizer_v1/data 2.npz",
+      "original_sha256": "2a44133a1f40066e54b2ab055b9b89976878473a55215870113ccbe445ef9c74",
+      "disposition": "Historical variant retained on codex/pawley-evidence-snapshot-20260921; Pawley integration parked"
+    },
+    {
+      "worktree": "pawley",
+      "path": "oracle/fixtures/pawley_optimizer_v1/manifest 2.json",
+      "original_sha256": "e0456ab304b55472a1a7a3d1f9827c2eacd4f699cd83649714a518f1dbc2ff0f",
+      "disposition": "Historical variant retained on codex/pawley-evidence-snapshot-20260921; Pawley integration parked"
+    },
+    {
+      "worktree": "pawley",
+      "path": "validation/results/pawley-20260917-fixed-spectrum 2.json",
+      "original_sha256": "bb4d88e5e3e615cb9c864b8510db8364a9496034adf96fd0913f327d92133beb",
+      "disposition": "Historical variant retained on codex/pawley-evidence-snapshot-20260921; Pawley integration parked"
+    },
+    {
+      "worktree": "pawley",
+      "path": "validation/results/pawley-20260917-live-oracle-comparison 2.json",
+      "original_sha256": "76864f30531ce92b0d377bdc7f94d2080f252f1e73e8ed88a2b36e30d418bb30",
+      "disposition": "Historical variant retained on codex/pawley-evidence-snapshot-20260921; Pawley integration parked"
+    },
+    {
+      "worktree": "pawley",
+      "path": "validation/results/pawley-20260917-profile-diagnosis 2.json",
+      "original_sha256": "b5c762266a921761c110134699c1123b659d94ba38e497c35fb104bedc0fdc11",
+      "disposition": "Historical variant retained on codex/pawley-evidence-snapshot-20260921; Pawley integration parked"
+    }
+  ]
+}

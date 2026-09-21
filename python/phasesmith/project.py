@@ -8,6 +8,8 @@ from pathlib import Path
 
 from ._native_persistence import load_native_rietveld_project
 from .control import CancellationToken
+from .empirical import _metadata
+from .fit_report import FitReport, build_fit_report
 from .persistence import PersistenceBundle, PersistenceError, load_bundle, save_bundle
 from .radiation import MonochromaticRadiation, RadiationProbe
 from .refinement import rietveld as native_rietveld
@@ -50,6 +52,11 @@ class RietveldProject:
             raise TypeError("options must be RietveldOptions")
         if self.checkpoint is not None and not isinstance(self.checkpoint, RietveldCheckpoint):
             raise TypeError("checkpoint must be RietveldCheckpoint or None")
+        if (
+            self.checkpoint is not None
+            and self.checkpoint.empirical_gaussian != self.input.empirical_gaussian
+        ):
+            raise ValueError("checkpoint empirical Gaussian convention changed")
 
     def calculate(self) -> RietveldCalculationResult:
         """Calculate from the last accepted state without changing it."""
@@ -68,6 +75,7 @@ class RietveldProject:
             phases,
             background=background,
             support_fwhm=self.options.support_fwhm,
+            profile_accuracy=self.options.profile_accuracy,
             execution=self.options.execution,
         )
 
@@ -107,6 +115,13 @@ class RietveldProject:
         """Review provenance, active models, and risky selections without mutation."""
 
         return review_rietveld_input(self.input)
+
+    def fit_report(self, *, region_count: int = 20) -> FitReport:
+        """Return read-only residual evidence and advice for the last fit."""
+
+        if self.last_result is None:
+            raise ValueError("the project has no refinement result to report")
+        return build_fit_report(self.last_result, self.input.pattern, region_count=region_count)
 
     def refine_recipe(
         self,
@@ -194,6 +209,7 @@ class RietveldProject:
                         probe,
                         None if self.checkpoint is None else self.checkpoint._native,
                         overwrite,
+                        _metadata(self.input.empirical_gaussian),
                     )
                 except ValueError as error:
                     raise PersistenceError(
@@ -213,6 +229,7 @@ class RietveldProject:
                 rietveld_background=self.input.background,
                 parameters=self.input.parameters,
                 constraints=self.input.constraints,
+                metadata=_metadata(self.input.empirical_gaussian),
             ),
             overwrite=overwrite,
         )

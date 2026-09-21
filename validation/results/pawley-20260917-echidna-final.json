@@ -1,0 +1,78 @@
+{
+  "manifest": {
+    "schema_version": 1,
+    "scope": "CW Pawley real-data smoke and repeatability gates; not cross-program optimizer parity",
+    "datasets": {
+      "aps-sucrose-11bmb": {
+        "range_deg": [
+          1.0,
+          24.0
+        ],
+        "maximum_rwp": 0.25,
+        "minimum_profile_correlation": 0.95,
+        "max_iterations": 40,
+        "background_width_deg": 0.1
+      },
+      "ansto-echidna-lab6-cw-neutron": {
+        "range_deg": [
+          20.0,
+          125.5
+        ],
+        "maximum_rwp": 0.3,
+        "minimum_profile_correlation": 0.9,
+        "max_iterations": 40,
+        "background_window_samples": 20
+      }
+    },
+    "common": {
+      "nonnegative_areas": true,
+      "minimum_relative_chi_square_improvement": 0.05,
+      "rwp_recomputation_absolute_tolerance": 1e-12,
+      "repeatability": "exact accepted history and calculated array",
+      "accepted_terminations": [
+        "converged"
+      ],
+      "weights": "supplied one-sigma uncertainties",
+      "profile_parameters": [
+        "u_deg2",
+        "v_deg2",
+        "w_deg2",
+        "x_deg",
+        "y_deg"
+      ],
+      "cell_and_wavelength": "fixed",
+      "background": "fixed Smooth Bruckner baseline plus one fitted Chebyshev constant"
+    }
+  },
+  "results": [
+    {
+      "dataset": "ansto-echidna-lab6-cw-neutron",
+      "verified_files": [
+        "ECH0034258_LaB6.xyd",
+        "ECH0034258_LaB6.cif"
+      ],
+      "samples": 2111,
+      "reflections": 13,
+      "times_seconds": [
+        0.07500149999395944,
+        0.07481299999926705
+      ],
+      "rwp": 0.2848692925121033,
+      "initial_rwp": 0.6855593252527982,
+      "profile_correlation": 0.9575662654447682,
+      "rank": 18,
+      "termination": "stagnated",
+      "accepted_steps": 25,
+      "checks": {
+        "rwp": true,
+        "correlation": true,
+        "improvement": true,
+        "manual_weighting": true,
+        "nonnegative": true,
+        "converged": false,
+        "repeatable": true
+      },
+      "passed": false
+    }
+  ]
+}

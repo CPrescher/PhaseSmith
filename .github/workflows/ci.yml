@@ -45,6 +45,7 @@ jobs:
           cache-dependency-path: docs/requirements.txt
       - run: python -m pip install --requirement docs/requirements.txt
       - run: python scripts/sync_math_docs.py --check
+      - run: python scripts/sync_skill.py --check
       - run: mkdocs build --strict
 
   python:
@@ -62,10 +63,16 @@ jobs:
           cache-dependency-path: pyproject.toml
       - uses: dtolnay/rust-toolchain@stable
       - run: python -m pip install --upgrade pip
-      - run: python -m pip install maturin pytest numpy ruff 'gemmi>=0.7.5,<0.8'
+      - run: python -m pip install maturin pytest numpy ruff jsonschema 'gemmi>=0.7.5,<0.8' 'mpmath>=1.3,<2'
       - run: maturin build --release --out dist
       - run: python -m pip install dist/*.whl
       - run: python -m pytest -q
+      - name: Check both frozen QARR 1g entry points
+        if: matrix.python-version == '3.13'
+        run: |
+          python -c "from phasesmith.validation import fetch_validation_dataset; fetch_validation_dataset('iucr-qarr-1g', 'validation/data/iucr-qarr-1g')"
+          python -m pytest -q -m real_data tests/test_real_data_integration.py \
+            -k 'qarr_canonical_native_entry_point_regression or qarr_real_pattern_two_thread_regression'
       - name: Run Rust/Python differential contracts
         if: matrix.python-version == '3.14'
         env:

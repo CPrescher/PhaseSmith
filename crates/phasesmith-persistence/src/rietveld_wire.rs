@@ -161,6 +161,10 @@ struct WireLinearTerm {
 #[serde(deny_unknown_fields)]
 struct WireOptions {
     support_fwhm: f64,
+    #[serde(default, skip_serializing_if = "is_false")]
+    fast_fcj: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    tail_area_tolerance: Option<f64>,
     use_uncertainty: bool,
     requested_threads: Option<usize>,
     minimum_parallel_tasks: usize,
@@ -191,6 +195,10 @@ struct WireCovarianceOptions {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct WireCheckpoint {
+    #[serde(default, skip_serializing_if = "is_false")]
+    fast_fcj: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    tail_area_tolerance: Option<f64>,
     completed_iterations: usize,
     parameters: Vec<WireParameterValue>,
     objective: f64,
@@ -415,6 +423,8 @@ fn encode_constraint(value: &Constraint) -> WireConstraint {
 fn encode_options(value: &RietveldRefinementOptions) -> WireOptions {
     WireOptions {
         support_fwhm: value.calculation.support_fwhm,
+        fast_fcj: value.calculation.profile_accuracy.fast_fcj,
+        tail_area_tolerance: value.calculation.profile_accuracy.tail_area_tolerance,
         use_uncertainty: value.calculation.use_uncertainty,
         requested_threads: value.calculation.execution.requested_threads(),
         minimum_parallel_tasks: value.calculation.execution.minimum_parallel_tasks(),
@@ -437,6 +447,8 @@ fn encode_options(value: &RietveldRefinementOptions) -> WireOptions {
 
 fn encode_checkpoint(value: &RietveldGeneralCheckpoint) -> WireCheckpoint {
     WireCheckpoint {
+        fast_fcj: value.profile_accuracy.fast_fcj,
+        tail_area_tolerance: value.profile_accuracy.tail_area_tolerance,
         completed_iterations: value.completed_iterations,
         parameters: value
             .parameters
@@ -891,7 +903,7 @@ fn decode_constraint(value: WireConstraint) -> Result<Constraint, PersistenceErr
 fn decode_options(value: &WireOptions) -> Result<RietveldRefinementOptions, PersistenceError> {
     let execution = ExecutionPolicy::new(value.requested_threads, value.minimum_parallel_tasks)
         .map_err(|error| invalid(format!("invalid execution policy: {error}")))?;
-    let calculation =
+    let mut calculation =
         RietveldCalculationOptions::new(value.support_fwhm, value.use_uncertainty, execution)
             .map_err(|error| invalid(format!("invalid calculation options: {error}")))?;
     let limits = RefinementLimits::new(
@@ -901,6 +913,10 @@ fn decode_options(value: &WireOptions) -> Result<RietveldRefinementOptions, Pers
         value.max_consecutive_rejections,
     )
     .map_err(|error| invalid(format!("invalid refinement limits: {error}")))?;
+    calculation.profile_accuracy = phasesmith_core::ProfileAccuracy {
+        fast_fcj: value.fast_fcj,
+        tail_area_tolerance: value.tail_area_tolerance,
+    };
     RietveldRefinementOptions::new(
         calculation,
         limits,
@@ -960,6 +976,10 @@ fn decode_checkpoint(
         .map(decode_iteration)
         .collect::<Result<Vec<_>, _>>()?;
     let checkpoint = RietveldGeneralCheckpoint {
+        profile_accuracy: phasesmith_core::ProfileAccuracy {
+            fast_fcj: value.fast_fcj,
+            tail_area_tolerance: value.tail_area_tolerance,
+        },
         completed_iterations: value.completed_iterations,
         input: accepted_input,
         selection: selection.clone(),
@@ -1019,4 +1039,9 @@ fn decode_iteration(value: WireIteration) -> Result<RietveldIterationRecord, Per
 
 fn invalid(message: String) -> PersistenceError {
     PersistenceError::InvalidRecord { message }
+}
+
+#[allow(clippy::trivially_copy_pass_by_ref)] // Serde requires a borrowed predicate.
+fn is_false(value: &bool) -> bool {
+    !value
 }

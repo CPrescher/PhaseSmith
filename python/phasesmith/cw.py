@@ -10,6 +10,7 @@ from numpy.typing import ArrayLike, NDArray
 
 from . import _core
 from ._api import _vector
+from .accuracy import ProfileAccuracy
 from .extensions import PhysicsContribution
 from .instrument import ConstantWavelengthInstrument, FcjGeometry
 from .radiation import WavelengthComponents, component_global_parameter_names
@@ -102,10 +103,14 @@ def accumulate_cw_contributions(
     *,
     geometry: FcjGeometry | None = None,
     support_fwhm: float = 20.0,
+    profile_accuracy: ProfileAccuracy | None = None,
     jacobian_layout: Literal["support", "dense"] = "support",
 ) -> AccumulationResult:
     """Accumulate one vectorized sample-physics batch with optional FCJ asymmetry."""
 
+    accuracy = ProfileAccuracy() if profile_accuracy is None else profile_accuracy
+    if not isinstance(accuracy, ProfileAccuracy):
+        raise TypeError("profile_accuracy must be ProfileAccuracy")
     if jacobian_layout not in ("support", "dense"):
         raise ValueError("jacobian_layout must be 'support' or 'dense'")
     if geometry is not None and not isinstance(geometry, FcjGeometry):
@@ -133,6 +138,8 @@ def accumulate_cw_contributions(
         float(support_fwhm),
         None if geometry is None else geometry.sample_over_radius,
         None if geometry is None else geometry.detector_over_radius,
+        accuracy.fast_fcj,
+        accuracy.tail_area_tolerance,
     )
     return _build_accumulation_result(
         y,
