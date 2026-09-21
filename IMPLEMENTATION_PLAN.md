@@ -1661,15 +1661,13 @@ against this baseline, followed by the 1.0 release candidate gates.
 
 ## Definition of the next completed milestone
 
-Repository consolidation is complete for the validated Rietveld/packaging
-slice. Original histories and working files are preserved remotely; truthful
-bounded stopping passes the canonical QARR regression and fixed assessment.
-Feasible-width research remains experimental. Pawley and its shared FCJ
-correction remain on `codex/pawley-integration` pending the macOS Intel dense
-solver convergence failure and installed validation CLI path fixes. Resolve
-those gates before promotion; do not weaken assertions or scientific limits.
-See `docs/repository-consolidation.md` for evidence, runtime tradeoffs and the
-separate main/API-cleanup reconciliation boundary.
+Repository consolidation and Pawley integration are complete. Original histories
+and working files remain preserved remotely. The Intel dense-solver boundary
+failure and installed validation CLI paths are repaired; unchanged scientific
+gates, both Python architectures, Rust checks and the distribution matrix pass.
+Feasible-width research remains experimental, and main's separate API cleanup
+still requires its own reconciliation. See `docs/pawley-repair-20260921.md` and
+`docs/repository-consolidation.md` for evidence and the existing scientific limits.
 
 The second refinement performance pass implements ordered four-sample FCJ
 evaluation, contiguous active structural rows, reusable unit-scale profiles

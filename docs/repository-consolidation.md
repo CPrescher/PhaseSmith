@@ -1,6 +1,6 @@
 # Repository consolidation, 2026-09-21
 
-## Rietveld accepted; Pawley follow-up validation underway
+## Consolidation and Pawley integration complete
 
 The first consolidation preserves the existing six development commits, adds
 version-matched skill distribution, and repairs the newly exposed canonical
@@ -8,10 +8,9 @@ QARR 1g termination failure without changing scientific gates or budgets.
 The feasible-width API and implementation remain on the preserved experimental
 branch. Pawley and the shared FCJ correction have a separate combined branch;
 the first review parked that branch after an Intel convergence failure.
-The follow-up repair addresses that failure and installed validation paths;
-see the [boundary contract](pawley-boundary-feasibility.md) and
-[Pawley review](pawley-consolidation-review.md). Promotion still requires the
-final cross-platform and measured checks.
+The [follow-up repair](pawley-repair-20260921.md) resolves that failure and the
+installed validation paths. Final measured gates and cross-platform distribution
+checks pass, qualifying the repaired Pawley/FCJ integration for develop.
 
 ## Preservation and history
 
@@ -103,18 +102,19 @@ from `8d9d86e`; hashes and complete installed Python sources are recorded.
 Preserved historical snapshots intentionally retain their original defects.
 A preservation branch is not a release-readiness claim.
 
-## Pawley review outcome and remaining gates
+## Initial Pawley review and resolved gates
 
 `codex/pawley-integration` retains the reconciled Pawley implementation, shared
 FCJ geometric-Jacobian correction, Windows fixture line-ending fix, and all new
-review evidence. None of those changes is promoted to develop in this handoff.
-This is the separate-branch outcome allowed by step 5 of the approved plan.
+review evidence. The first handoff kept those changes separate, as permitted
+by step 5 of the plan. The user-requested follow-up has now resolved the blockers
+and completed promotion checks; the initial findings are retained below.
 
 Local tests (964 passed), normal CI, the unchanged eight-case Rietveld panel,
 CW/cell/TOF measured Pawley gates, and realistic Pawley benchmarks pass on the
 reviewed ARM64 build. The pinned oracle comparison passes its declared
 engineering gates while retaining its documented strict-equivalence exception.
-These results do not override the following unresolved gates:
+Those initial results did not override the following failures, now resolved:
 
 1. The [distribution dry run](https://github.com/CPrescher/PhaseSmith/actions/runs/35579612465)
    fails `test_joint_composed_lorentzian_boundary[dense]` on macOS Intel:
@@ -126,10 +126,11 @@ These results do not override the following unresolved gates:
    with its explicit manifest option; spectrum numerical helper calls succeed
    with an explicit fixture path. Those diagnostics do not fix the CLI defaults.
 
-Future promotion requires resolving these failures, repeating the distribution
-checks, and preserving the existing physics, support and scientific gates.
-The branch contains `docs/pawley-consolidation-review.md` with raw evidence and
-specific reproduction commands. Main's separate API cleanup also remains a
+The [repair report](pawley-repair-20260921.md) records the fixes, 970 passing
+Python tests on each local architecture, 365 Rust tests, 11 differential tests,
+unchanged measured gates and successful final CI/distribution checks. No physics,
+support or acceptance threshold was loosened. The original findings remain in
+`docs/pawley-consolidation-review.md`. Main's separate API cleanup remains a
 future reconciliation task.
 
 ## Final accounting

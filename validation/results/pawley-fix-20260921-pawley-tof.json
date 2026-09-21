@@ -1,0 +1,271 @@
+{
+  "passed": true,
+  "manifest_sha256": "4c06c795561399c89d4fe48c6d4b40d082cc88457f525707158ab6c0aa1bf5d2",
+  "runner_sha256": "ca463b13bb5684d45de80a66cd3e2673261781215887b0b5a331d91374112a7c",
+  "native_binary_sha256": "b083b0be1151462b9a8fdf788d54875a1fa12a3ac4c3f617e909357c186d442e",
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "manifest": {
+    "version": 1,
+    "description": "TOF Pawley release checks, frozen before measured fitting. Dataset parsing, density convention, fixed calibration and quality thresholds reuse the existing independently reviewed TOF validations; the solver is native bounded Pawley least squares.",
+    "options": {
+      "solver": "matrix_free",
+      "support_fwhm": 20.0,
+      "max_elements": 150000000,
+      "tolerance": 1e-09
+    },
+    "runtime": {
+      "max_iterations": 100,
+      "max_evaluations": 1500,
+      "max_rejections": 30,
+      "max_seconds": 180.0
+    },
+    "repeats": 2,
+    "tail_log": 20.0,
+    "background": {
+      "bruckner_radius": 20,
+      "bruckner_iterations": 50
+    },
+    "cases": [
+      {
+        "id": "powgen",
+        "dataset": "powgen-lab6-tof-calibration",
+        "data_file": "PG3_17541.gsa",
+        "instrument_file": "PGHR_60-2015A.prm",
+        "banks": [
+          2
+        ],
+        "space_group": 221,
+        "cell_angstrom": 4.156826,
+        "tof_range": null,
+        "d_range": [
+          0.25,
+          5.0
+        ],
+        "background_terms": 16,
+        "refine_cell": false,
+        "refine_zero": false,
+        "minimum_correlation": 0.95,
+        "minimum_families": 300,
+        "maximum_rwp": null
+      },
+      {
+        "id": "nickel",
+        "dataset": "lanl-nickel-tof",
+        "data_file": "nickel.raw",
+        "instrument_file": "inst_tof.prm",
+        "banks": [
+          2,
+          3,
+          4
+        ],
+        "space_group": 225,
+        "cell_angstrom": 3.523,
+        "tof_range": [
+          1101.6,
+          8189.6
+        ],
+        "d_range": [
+          0.2,
+          3.0
+        ],
+        "background_terms": 12,
+        "refine_cell": true,
+        "refine_zero": true,
+        "minimum_correlation": 0.998,
+        "minimum_families": 1,
+        "maximum_rwp": 0.03,
+        "target_cell_angstrom": 3.5234,
+        "maximum_cell_error_angstrom": 0.0005
+      }
+    ]
+  },
+  "cases": [
+    {
+      "id": "powgen",
+      "sources_sha256": {
+        "PG3_17541.gsa": "ff7a408451e75d23e828ab2bb35a061a53517ff3430331bffeed21fcbc87d69c",
+        "PGHR_60-2015A.prm": "1a098c260555d27642ab0501708c5d9058c5836fb201dec5bc7ab9880cea1cb8"
+      },
+      "settings": {
+        "id": "powgen",
+        "dataset": "powgen-lab6-tof-calibration",
+        "data_file": "PG3_17541.gsa",
+        "instrument_file": "PGHR_60-2015A.prm",
+        "banks": [
+          2
+        ],
+        "space_group": 221,
+        "cell_angstrom": 4.156826,
+        "tof_range": null,
+        "d_range": [
+          0.25,
+          5.0
+        ],
+        "background_terms": 16,
+        "refine_cell": false,
+        "refine_zero": false,
+        "minimum_correlation": 0.95,
+        "minimum_families": 300,
+        "maximum_rwp": null
+      },
+      "checks": {
+        "converged": true,
+        "improved": true,
+        "nonnegative": true,
+        "finite": true,
+        "family_coverage": true,
+        "correlation": true
+      },
+      "passed": true,
+      "termination": "converged",
+      "rwp": 0.2167973299730344,
+      "initial_rwp": 0.6315448184572703,
+      "cell_angstrom": null,
+      "banks": [
+        {
+          "id": "bank2",
+          "samples": 6824,
+          "included": 6823,
+          "families": 330,
+          "rwp": 0.21679732997303408,
+          "correlation": 0.9690009664616158
+        }
+      ],
+      "history": [
+        4175283.518212794,
+        492023.0820202061,
+        492023.08192105155
+      ],
+      "times_seconds": [
+        0.303537292056717,
+        0.3065172500209883
+      ],
+      "diagnostics": {
+        "evaluations": 3,
+        "linear_iterations": 6,
+        "krylov_iterations": 216,
+        "evaluation_seconds": 0.229183499,
+        "qr_seconds": 0.0,
+        "face_seconds": 0.045025375,
+        "multiplier_seconds": 0.001656541,
+        "diagnostic_seconds": 0.002638958,
+        "convergence_criterion": "relative_objective",
+        "backtrack_rejections": 0,
+        "last_step_norm": 0.1903141993451031,
+        "projected_gradient_norm": null,
+        "infeasible_trials": 0,
+        "last_rejected_error": null
+      },
+      "profile_sha256": "ba97f4041aa29bae704cda00fcdaf56e694f87ac3e902ab47040efad009907df",
+      "covariance_limitation": "matrix-free solve: exact rank and full covariance not computed"
+    },
+    {
+      "id": "nickel",
+      "sources_sha256": {
+        "nickel.raw": "bfe2afd6843a11dc1935cbbdb3ca05962c3242b9ddc60baa6a4ff6a48491c3e7",
+        "inst_tof.prm": "9a4f06cb560c8b7f783fd0773b37814dae1d705042087e66f8cd2be719477038"
+      },
+      "settings": {
+        "id": "nickel",
+        "dataset": "lanl-nickel-tof",
+        "data_file": "nickel.raw",
+        "instrument_file": "inst_tof.prm",
+        "banks": [
+          2,
+          3,
+          4
+        ],
+        "space_group": 225,
+        "cell_angstrom": 3.523,
+        "tof_range": [
+          1101.6,
+          8189.6
+        ],
+        "d_range": [
+          0.2,
+          3.0
+        ],
+        "background_terms": 12,
+        "refine_cell": true,
+        "refine_zero": true,
+        "minimum_correlation": 0.998,
+        "minimum_families": 1,
+        "maximum_rwp": 0.03,
+        "target_cell_angstrom": 3.5234,
+        "maximum_cell_error_angstrom": 0.0005
+      },
+      "checks": {
+        "converged": true,
+        "improved": true,
+        "nonnegative": true,
+        "finite": true,
+        "family_coverage": true,
+        "correlation": true,
+        "rwp": true,
+        "cell": true
+      },
+      "passed": true,
+      "termination": "converged",
+      "rwp": 0.020989415432600075,
+      "initial_rwp": 0.368534899946576,
+      "cell_angstrom": 3.5236691543235263,
+      "banks": [
+        {
+          "id": "bank2",
+          "samples": 4431,
+          "included": 4431,
+          "families": 186,
+          "rwp": 0.02211591964522855,
+          "correlation": 0.9992676086665394
+        },
+        {
+          "id": "bank3",
+          "samples": 4431,
+          "included": 4431,
+          "families": 186,
+          "rwp": 0.01999959748125572,
+          "correlation": 0.99900400437068
+        },
+        {
+          "id": "bank4",
+          "samples": 4431,
+          "included": 4431,
+          "families": 186,
+          "rwp": 0.02047688618861617,
+          "correlation": 0.9989818893217782
+        }
+      ],
+      "history": [
+        8633264.666975256,
+        57058.52455656996,
+        28033.83285231678,
+        28003.994110553227,
+        28003.89933025816,
+        28003.898768379106,
+        28003.898764812693
+      ],
+      "times_seconds": [
+        12.157152667001355,
+        12.262243125005625
+      ],
+      "diagnostics": {
+        "evaluations": 7,
+        "linear_iterations": 175,
+        "krylov_iterations": 25606,
+        "evaluation_seconds": 1.759397458,
+        "qr_seconds": 0.0,
+        "face_seconds": 9.950915718999992,
+        "multiplier_seconds": 0.3891367089999999,
+        "diagnostic_seconds": 0.007847708,
+        "convergence_criterion": "relative_objective",
+        "backtrack_rejections": 0,
+        "last_step_norm": 0.04269068765747636,
+        "projected_gradient_norm": null,
+        "infeasible_trials": 0,
+        "last_rejected_error": null
+      },
+      "profile_sha256": "71ecd11fd454f84d0885f9c67449ebf4709501769a15d02997ac80b5883b0abf",
+      "covariance_limitation": "matrix-free solve: exact rank and full covariance not computed"
+    }
+  ]
+}
