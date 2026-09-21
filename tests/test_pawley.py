@@ -354,6 +354,10 @@ def test_joint_composed_lorentzian_boundary(solver):
     fit = refine(r, PawleyOptions(solver=solver))
     assert fit.calculation.rwp < 1e-6
     assert fit.termination_reason == "converged"
+    assert fit.diagnostics["convergence_criterion"] == "projected_gradient"
+    assert fit.diagnostics["projected_gradient_norm"] <= 1e-9 * (
+        1.0 + np.sqrt(fit.calculation.chi_square)
+    )
     assert fit.active_width_bounds
     assert fit.covariance is None
 

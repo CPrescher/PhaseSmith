@@ -12,10 +12,13 @@ not part of the numerical library.
 
 ## Current implementation status
 
-This Pawley integration branch is parked after the 2026-09-21 review. macOS
-Intel dense-solver convergence and installed validation CLI paths remain
-unresolved; see `docs/pawley-consolidation-review.md`. Develop receives the
-validated Rietveld/packaging slice separately.
+This Pawley integration branch is undergoing follow-up validation after the
+2026-09-21 review. Scale-relative active-set feasibility fixes the reproduced
+Intel dense-solver boundary failure without relaxing convergence or physics.
+Validation CLI assets now resolve from explicit paths or the working directory.
+See `docs/pawley-boundary-feasibility.md` for the numerical contract and
+`docs/pawley-consolidation-review.md` for the outstanding distribution gates.
+Develop retains the validated Rietveld/packaging slice separately.
 
 
 Repository consolidation (2026-09-21) preserves the original working state,
