@@ -1,0 +1,194 @@
+{
+  "manifest": {
+    "schema_version": 3,
+    "scope": "Additional measured CW Pawley joint cell/profile gate; conditional on the declared fixed wavelength, not an absolute lattice calibration.",
+    "common": {
+      "profile_parameters": [
+        "u_deg2",
+        "v_deg2",
+        "w_deg2",
+        "x_deg",
+        "y_deg"
+      ],
+      "signed_intensities": false,
+      "use_uncertainty": true,
+      "merge_friedel": true,
+      "initial_intensity": 1.0,
+      "background_iterations": 50,
+      "max_evaluations": 1000,
+      "max_rejections": 20,
+      "max_seconds": 240.0,
+      "max_elements": 150000000,
+      "rank_tolerance": 1e-10,
+      "tolerance": 1e-09,
+      "damping": 1e-06,
+      "max_active_iterations": 2000,
+      "minimum_relative_chi_square_improvement": 0.05,
+      "rwp_recomputation_absolute_tolerance": 1e-12,
+      "accepted_terminations": [
+        "converged"
+      ],
+      "repeats": 2
+    },
+    "datasets": {
+      "ansto-echidna-lab6-cw-neutron": {
+        "range_deg": [
+          20.0,
+          125.5
+        ],
+        "maximum_rwp": 0.3,
+        "minimum_profile_correlation": 0.9,
+        "max_iterations": 40,
+        "instrument": [
+          2.047,
+          0.04,
+          -0.253,
+          0.516,
+          0.05,
+          0.0
+        ],
+        "data_file": "ECH0034258_LaB6.xyd",
+        "data_format": "columns",
+        "cell": [
+          4.16,
+          4.16,
+          4.16,
+          90.0,
+          90.0,
+          90.0
+        ],
+        "space_group_number": 221,
+        "support_fwhm": 8.0,
+        "background": {
+          "kind": "sample_window",
+          "points": 20
+        },
+        "lattice": {
+          "refine": [
+            "a_angstrom"
+          ],
+          "relative_length": 0.01,
+          "angle_delta_deg": 0.5,
+          "accepted_ranges": {
+            "a_angstrom": [
+              4.15,
+              4.17
+            ]
+          }
+        }
+      }
+    }
+  },
+  "results": [
+    {
+      "dataset": "ansto-echidna-lab6-cw-neutron",
+      "verified_files": {
+        "ECH0034258_LaB6.xyd": "09950aaf3596518a40b2c5173ffdfd870043f55dcd3390fb83dc9f64e348e115",
+        "ECH0034258_LaB6.cif": "0fa02945683ea39d56dfb81d0f99de629e4e336abab85c6d92b3689b42d130d1"
+      },
+      "request_sha256": "46ea1cfd70b9820c089590acc7ee28f7e053f81962cfaec6c8e70bc6d6a22167",
+      "samples": 2111,
+      "reflections": 15,
+      "times_seconds": [
+        0.02571749995695427,
+        0.02562687499448657
+      ],
+      "rwp": 0.21841209998089553,
+      "initial_rwp": 0.6855606231158444,
+      "profile_correlation": 0.9905335460002259,
+      "rank": 19,
+      "termination": "converged",
+      "accepted_steps": 23,
+      "active_width_bounds": false,
+      "covariance_limitation": "rank deficient or unobserved free columns",
+      "lattice_parameters": {
+        "pawley_lattice[ansto-echidna-lab6-cw-neutron].a_angstrom": 4.159345676913581
+      },
+      "profile_coefficients": {
+        "u_deg2": 0.009500204877075355,
+        "v_deg2": -0.04426422569186335,
+        "w_deg2": 0.08020158409662978,
+        "x_deg": 0.1707961156610299,
+        "y_deg": -0.1735222364959396
+      },
+      "diagnostics": [
+        {
+          "evaluations": 46,
+          "linear_iterations": 135,
+          "krylov_iterations": 0,
+          "evaluation_seconds": 0.013302917999999999,
+          "qr_seconds": 0.0038324159999999995,
+          "face_seconds": 0.002184323999999999,
+          "multiplier_seconds": 0.00019108599999999984,
+          "diagnostic_seconds": 0.000435417,
+          "convergence_criterion": "relative_objective",
+          "backtrack_rejections": 22,
+          "last_step_norm": 0.01166051193732772,
+          "projected_gradient_norm": null,
+          "infeasible_trials": 22,
+          "last_rejected_error": "constant-wavelength reflection 14 is invalid: derived Lorentzian FWHM must be non-negative and finite"
+        },
+        {
+          "evaluations": 46,
+          "linear_iterations": 135,
+          "krylov_iterations": 0,
+          "evaluation_seconds": 0.013269792000000002,
+          "qr_seconds": 0.003911705,
+          "face_seconds": 0.0021099589999999976,
+          "multiplier_seconds": 0.00017175200000000003,
+          "diagnostic_seconds": 0.000428125,
+          "convergence_criterion": "relative_objective",
+          "backtrack_rejections": 22,
+          "last_step_norm": 0.01166051193732772,
+          "projected_gradient_norm": null,
+          "infeasible_trials": 22,
+          "last_rejected_error": "constant-wavelength reflection 14 is invalid: derived Lorentzian FWHM must be non-negative and finite"
+        }
+      ],
+      "accepted_history": [
+        671623.7307335091,
+        397664.935461302,
+        269650.35695757007,
+        141801.62364917924,
+        86519.97827555276,
+        72759.99650694773,
+        69332.04928175749,
+        68468.00942331308,
+        68245.64969629796,
+        68189.01755501553,
+        68174.26095125772,
+        68170.68652245497,
+        68169.59798406172,
+        68169.27952255988,
+        68169.17895308959,
+        68169.14410075905,
+        68169.13080061768,
+        68169.12527616294,
+        68169.12282854774,
+        68169.12169516136,
+        68169.12115524845,
+        68169.12089348187,
+        68169.12076517568,
+        68169.12070186027
+      ],
+      "checks": {
+        "rwp": true,
+        "correlation": true,
+        "improvement": true,
+        "manual_weighting": true,
+        "intensity_policy": true,
+        "converged": true,
+        "repeatable": true,
+        "lattice_interval": true
+      },
+      "passed": true
+    }
+  ],
+  "provenance": {
+    "python": "3.13.5",
+    "numpy": "2.5.3",
+    "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+    "native_binary_sha256": "59df299c3b33c9909252807a41c875c3f007820140a21e6fa425989b0603a1b9",
+    "runner_sha256": "7eb0063412350c39382002ae32f5de4c7d912d162eb1ce1e8f8176fa04ee9b37"
+  }
+}

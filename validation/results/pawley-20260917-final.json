@@ -1,0 +1,132 @@
+{
+  "manifest": {
+    "schema_version": 1,
+    "scope": "CW Pawley real-data smoke and repeatability gates; not cross-program optimizer parity",
+    "datasets": {
+      "aps-sucrose-11bmb": {
+        "range_deg": [
+          1.0,
+          24.0
+        ],
+        "maximum_rwp": 0.25,
+        "minimum_profile_correlation": 0.95,
+        "max_iterations": 40,
+        "background_width_deg": 0.1
+      },
+      "ansto-echidna-lab6-cw-neutron": {
+        "range_deg": [
+          20.0,
+          125.5
+        ],
+        "maximum_rwp": 0.3,
+        "minimum_profile_correlation": 0.9,
+        "max_iterations": 40,
+        "background_window_samples": 20
+      }
+    },
+    "common": {
+      "nonnegative_areas": true,
+      "minimum_relative_chi_square_improvement": 0.05,
+      "rwp_recomputation_absolute_tolerance": 1e-12,
+      "repeatability": "exact accepted history and calculated array",
+      "accepted_terminations": [
+        "converged"
+      ],
+      "weights": "supplied one-sigma uncertainties",
+      "profile_parameters": [
+        "u_deg2",
+        "v_deg2",
+        "w_deg2",
+        "x_deg",
+        "y_deg"
+      ],
+      "cell_and_wavelength": "fixed",
+      "background": "fixed Smooth Bruckner baseline plus one fitted Chebyshev constant"
+    }
+  },
+  "results": [
+    {
+      "dataset": "aps-sucrose-11bmb",
+      "verified_files": [
+        "11bmb_8716.fxye",
+        "11bmb_8716.prm"
+      ],
+      "samples": 23003,
+      "reflections": 811,
+      "times_seconds": [
+        247.28336254200258,
+        246.98540270800004
+      ],
+      "rwp": 0.06605397125862113,
+      "initial_rwp": 0.6276574517481527,
+      "profile_correlation": 0.9967438709773871,
+      "rank": 817,
+      "termination": "max_runtime",
+      "accepted_steps": 16,
+      "active_width_bounds": false,
+      "covariance_limitation": "bound-active solution: Gaussian covariance omitted",
+      "profile_coefficients": {
+        "u_deg2": 0.000601362239552926,
+        "v_deg2": -8.480315493520699e-05,
+        "w_deg2": 4.701658339451507e-06,
+        "x_deg": 0.002212708386118985,
+        "y_deg": 0.020297081179583874
+      },
+      "checks": {
+        "rwp": true,
+        "correlation": true,
+        "improvement": true,
+        "manual_weighting": true,
+        "nonnegative": true,
+        "converged": false,
+        "repeatable": true
+      },
+      "passed": false
+    },
+    {
+      "dataset": "ansto-echidna-lab6-cw-neutron",
+      "verified_files": [
+        "ECH0034258_LaB6.xyd",
+        "ECH0034258_LaB6.cif"
+      ],
+      "samples": 2111,
+      "reflections": 13,
+      "times_seconds": [
+        0.007470833006664179,
+        0.007398415997158736
+      ],
+      "rwp": 0.28486929251219156,
+      "initial_rwp": 0.6855593252527982,
+      "profile_correlation": 0.9575662657422672,
+      "rank": 18,
+      "termination": "converged",
+      "accepted_steps": 10,
+      "active_width_bounds": false,
+      "covariance_limitation": "rank deficient or unobserved free columns",
+      "profile_coefficients": {
+        "u_deg2": 0.011830447156497842,
+        "v_deg2": -0.02980401578606613,
+        "w_deg2": 0.05949637473362687,
+        "x_deg": 0.2829284160461481,
+        "y_deg": -0.3178396740135159
+      },
+      "checks": {
+        "rwp": true,
+        "correlation": true,
+        "improvement": true,
+        "manual_weighting": true,
+        "nonnegative": true,
+        "converged": true,
+        "repeatable": true
+      },
+      "passed": true
+    }
+  ],
+  "provenance": {
+    "python": "3.13.7",
+    "numpy": "2.5.3",
+    "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+    "native_binary_sha256": "1d457593de812c9118e1a6bdc474149835b7b956e1760c5dd9b1da6010a96825",
+    "runner_sha256": "9be8398f9cdcbc8abcd041e637f0da5aedeaddbbcdeabb8ecb78c9fd07604da5"
+  }
+}

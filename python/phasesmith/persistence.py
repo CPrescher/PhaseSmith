@@ -13,7 +13,9 @@ from typing import Any, Final, Protocol, runtime_checkable
 import numpy as np
 from numpy.typing import NDArray
 
+from .accuracy import ProfileAccuracy
 from .calculation import CalculationOptions
+from .empirical import EmpiricalGaussianConvention, _from_metadata
 from .execution import ExecutionPolicy
 from .extensions import CompositePhysicsProvider, ReflectionPhysicsProvider
 from .instrument import ConstantWavelengthInstrument, FcjGeometry, TofInstrument
@@ -255,6 +257,7 @@ class PersistenceBundle:
                 else self.rietveld_selection
             ),
             self.rietveld_background,
+            empirical_gaussian=_from_metadata(self.metadata),
         )
 
 
@@ -1076,7 +1079,11 @@ def _rietveld_options_record(options: RietveldOptions | None) -> dict[str, Any] 
         **{
             name: getattr(options, name)
             for name in RietveldOptions.__dataclass_fields__
-            if name not in {"execution", "limits"}
+            if name not in {"execution", "limits", "profile_accuracy"}
+        },
+        "profile_accuracy": {
+            "fast_fcj": options.profile_accuracy.fast_fcj,
+            "tail_area_tolerance": options.profile_accuracy.tail_area_tolerance,
         },
         "execution": _execution_policy_record(options.execution),
         "limits": {
@@ -1091,6 +1098,7 @@ def _rietveld_options_from_record(record: dict[str, Any] | None) -> RietveldOpti
     values = dict(record)
     values["limits"] = RefinementLimits(**values["limits"])
     values["execution"] = _execution_policy_from_record(values.get("execution"))
+    values["profile_accuracy"] = ProfileAccuracy(**values.get("profile_accuracy", {}))
     return RietveldOptions(**values)
 
 
@@ -1167,6 +1175,15 @@ def _rietveld_checkpoint_record(
     if checkpoint is None:
         return None
     return {
+        "profile_accuracy": {
+            "fast_fcj": checkpoint.profile_accuracy.fast_fcj,
+            "tail_area_tolerance": checkpoint.profile_accuracy.tail_area_tolerance,
+        },
+        "empirical_gaussian": (
+            None
+            if checkpoint.empirical_gaussian is None
+            else checkpoint.empirical_gaussian.to_record()
+        ),
         "completed_iterations": checkpoint.completed_iterations,
         "phases": [
             _rietveld_phase_record(phase, arrays, f"rietveld_checkpoint_{index}", codecs)
@@ -1214,6 +1231,12 @@ def _rietveld_checkpoint_from_record(
         tuple(_rietveld_iteration_from_record(item) for item in record["history"]),
         _experiment_from_record(record.get("experiment")),
         _background_from_record(record.get("background")),
+        profile_accuracy=ProfileAccuracy(**record.get("profile_accuracy", {})),
+        empirical_gaussian=(
+            None
+            if record.get("empirical_gaussian") is None
+            else EmpiricalGaussianConvention.from_record(record["empirical_gaussian"])
+        ),
     )
 
 

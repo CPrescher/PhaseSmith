@@ -269,6 +269,7 @@ def profile_fcj(
     detector_over_radius: float,
     *,
     quadrature_order: int | None = None,
+    fast_fcj: bool = False,
     support_radius_deg: float | None = None,
 ) -> ReferenceFcjProfile:
     """Convolve TCH with FCJ axial divergence using a regular height integral.
@@ -322,7 +323,8 @@ def profile_fcj(
     if quadrature_order is None:
         total_fwhm = tch_shape_from_fwhm(gaussian_fwhm_deg, lorentzian_fwhm_deg).total_fwhm
         axial_span = abs(np.rad2deg(np.arccos(limit_argument)) - position)
-        quadrature_order = 8 if axial_span / total_fwhm <= 0.2 else 48
+        ratio = axial_span / total_fwhm
+        quadrature_order = 4 if fast_fcj and ratio <= 0.02 else 8 if ratio <= 0.2 else 48
 
     nodes, weights = np.polynomial.legendre.leggauss(quadrature_order)
     t = 0.5 * (nodes + 1.0)
@@ -363,10 +365,10 @@ def profile_fcj(
         d_value_d_height = -evaluated.d_delta * d_apparent_d_height_deg[:, None]
         d_apparent_d_position = np.sin(position_rad) * square_root / sine_apparent
         d_value_d_position = -evaluated.d_delta * d_apparent_d_position[:, None]
-        geometry = 1.0 / (square_root * sine_apparent)
+        geometry = 1.0 / ((1.0 + height**2) * sine_apparent)
         cotangent_apparent = np.cos(apparent_rad) / sine_apparent
         d_geometry_d_height = geometry * (
-            -height / (1.0 + height**2) - cotangent_apparent * d_apparent_d_height_rad
+            -2.0 * height / (1.0 + height**2) - cotangent_apparent * d_apparent_d_height_rad
         )
         d_geometry_d_position = (
             geometry * -cotangent_apparent * d_apparent_d_position * np.pi / 180.0
@@ -1057,6 +1059,8 @@ def accumulate_cw_fcj(
     detector_over_radius: float,
     support_fwhm: float = 20.0,
     quadrature_order: int | None = None,
+    fast_fcj: bool = False,
+    tail_area_tolerance: float | None = None,
 ) -> tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]]:
     """Accumulate FCJ-asymmetric CW reflections as a transparent reference."""
 
@@ -1075,7 +1079,12 @@ def accumulate_cw_fcj(
     local = np.zeros((positions.size, 2, x_values.size), dtype=np.float64)
     global_jacobian = np.zeros((7, x_values.size), dtype=np.float64)
     for reflection, (position, intensity) in enumerate(zip(positions, intensities, strict=True)):
-        support_radius = support_fwhm * parameters.total_fwhm_deg[reflection]
+        multiple = (
+            support_fwhm
+            if tail_area_tolerance is None
+            else tail_support_multiple(tail_area_tolerance, parameters.eta[reflection])
+        )
+        support_radius = multiple * parameters.total_fwhm_deg[reflection]
         maximum_height = sample_over_radius + detector_over_radius
         apparent_limit = np.rad2deg(
             np.arccos(np.cos(np.deg2rad(position)) * np.sqrt(1.0 + maximum_height**2))
@@ -1091,6 +1100,7 @@ def accumulate_cw_fcj(
             sample_over_radius,
             detector_over_radius,
             quadrature_order=quadrature_order,
+            fast_fcj=fast_fcj,
             support_radius_deg=float(support_radius),
         )
         y_values[active] += intensity * evaluated.value
@@ -1245,3 +1255,27 @@ def accumulate_cw_components(
                 intensity * weights[0] * (component_values[secondary + 1] - mixture)
             )
     return y_values, local, global_jacobian
+
+
+def tail_support_multiple(tolerance: float, eta: float) -> float:
+    """Independent conservative continuous-tail bound for normalized pseudo-Voigt."""
+    if not np.isfinite(tolerance) or not 1e-8 <= tolerance <= 0.1:
+        raise ValueError("tail tolerance must be in [1e-8, 0.1]")
+    if not np.isfinite(eta) or not 0 <= eta <= 1:
+        raise ValueError("eta must be in [0, 1]")
+
+    def bound(radius):
+        lorentz = eta * 2 / np.pi * np.arctan(1 / (2 * radius))
+        gaussian = (1 - eta) * np.exp(-4 * np.log(2) * radius**2)
+        return lorentz + gaussian
+
+    lo, hi = 0.0, 1.0
+    while bound(hi) > tolerance:
+        hi *= 2
+    for _ in range(64):
+        mid = (lo + hi) / 2
+        if bound(mid) > tolerance:
+            lo = mid
+        else:
+            hi = mid
+    return hi

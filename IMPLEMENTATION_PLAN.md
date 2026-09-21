@@ -1657,10 +1657,61 @@ whose version matches the Cargo/Python version, while the live-package test
 reports an exact unified diff for additions, removals, aliases, kinds, or
 signature changes. Existing versioned snapshots are never silently
 overwritten. The intentional 0.6 cleanup has now been reviewed against this
-baseline. The next release milestone is the 1.0 release candidate gate and
-removal of the documented one-release compatibility aliases.
+baseline. The next release milestone is the combined 0.7.0 candidate. The 0.6 API
+snapshot remains immutable; its warning-backed aliases remain available until
+1.0. See `docs/release-candidate-0.7.md` for scope and validation.
 
 ## Recent completed milestones and next release gates
+
+Repository consolidation and Pawley integration are complete. Original histories
+and working files remain preserved remotely. The Intel dense-solver boundary
+failure and installed validation CLI paths are repaired; unchanged scientific
+gates, both Python architectures, Rust checks and the distribution matrix pass.
+Main's 0.6 API cleanup and bounded download retries are now reconciled with
+develop for the 0.7.0 candidate. Feasible-width research remains experimental. See `docs/pawley-repair-20260921.md` and
+`docs/repository-consolidation.md` for evidence and the existing scientific limits.
+
+The second refinement performance pass implements ordered four-sample FCJ
+evaluation, contiguous active structural rows, reusable unit-scale profiles
+for scale-only fits, and native phase-diagnostic export with complete axial
+derivatives. The general solver continues to enforce bounds, constraints and
+checkpoint semantics. See `docs/refinement-performance-round2.md` for the
+numerical contract, real-data measurements and limits of diagnostic reuse.
+
+The QARR performance unit implements selected derivative rows, fixed-axial
+derivative elision, bounded exact-key preparation reuse, cheaper backtracking,
+native fixed-spectrum facade routing, and residual-checked small direct solves
+with CG fallback. The numerical contract is in `docs/refinement-performance.md`.
+No support truncation or scientific acceptance threshold is relaxed.
+
+The rietx comparison adds a completed first fit-report slice and a measured
+performance baseline, documented in `docs/fit-report.md` and
+`docs/rietx-comparison.md`. Native residual diagnostics and the read-only
+Python/project report preserve weighting and masks, disclose unavailable
+attribution, and do not expand automation authority. Constraint-aware
+parameter-gain suggestions, additional anisotropic models, vendor imports,
+restraints and indexing remain proposed independent units, not capabilities
+claimed by this slice. Pawley now has a dedicated delivery
+plan in `docs/pawley-plan.md`; see the comparison for the other candidates.
+
+The primary speed evidence is the unchanged measured IUCr QARR 1g validation,
+paired with a mapped rietx workflow. Every run passes real-data profile/QPA
+acceptance and repeatability checks. Stricter model-equivalence checks fail
+and remain visible; no identical-workload speed ratio is claimed. Synthetic
+refinement and multi-peak kernel timings serve as supporting diagnostics.
+
+### Independent workflow: CW Pawley refinement
+
+The P1–P7 workflow implementation in `docs/pawley-plan.md` is complete:
+CW, fixed detected-area spectra and single-/multi-bank TOF now include bounded
+areas, analytical selected cell/profile/background chains, dense and matrix-free
+solvers, accepted-state restart and lossless native format-7 mixed bundles.
+The unchanged measured sucrose, Echidna and TOF gates pass. A pinned live
+GSAS-II comparison is available; strict profile equivalence remains false and
+its diagnosed FCJ quadrature/support limits remain explicit. Matrix-free mode
+does not provide global rank/covariance, and automation remains Rietveld-only.
+See `docs/pawley-validation.md` and `docs/pawley-repair-20260921.md` for final
+evidence; earlier dense-budget failures are historical records.
 
 ### Unit 39: constrained automation and AI recipe guidance (0.5.0)
 
@@ -1748,10 +1799,9 @@ for removal at 1.0. The migration table, new immutable snapshot, release
 metadata, source and fresh-package gates form the exit evidence. No numerical
 behavior or persistence schema changes in this unit.
 
-The next release gate is the 1.0 release candidate: remove the documented 0.6
-compatibility aliases, run the complete numerical/oracle/performance matrix,
-and freeze the stable module-qualified contract. Additive work that is not
-required for that gate remains outside the release-critical path.
+The immediate release gate is the combined 0.7.0 candidate described in
+`docs/release-candidate-0.7.md`. Removing compatibility aliases and freezing
+the stable module-qualified contract remain a separate future 1.0 decision.
 
 ### Deferred post-1.0 target: automatic measured-pattern peak picking
 

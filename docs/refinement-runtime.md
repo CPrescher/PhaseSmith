@@ -123,3 +123,12 @@ every execution budget, rejected/non-finite trials, checkpoint callback
 failure, restart equivalence, and restoration of signal/terminal state.
 The native suite additionally launches cancellation from another OS thread and
 runs a configured stop-sequence differential check against the Python runtime.
+
+## CW Pawley workflow
+
+[CW Pawley refinement](pawley.md) provides independent bounded family areas,
+selected analytical cell/profile/background refinement and accepted-state restart.
+Use `phasesmith.refinement.pawley` in Python or `phasesmith::workflows` in Rust.
+Its [standalone version-1 JSON format](pawley.md#runtime-and-persistence) is separate
+from existing mixed-method project bundles. See the [validation report](pawley-validation.md)
+for current scientific coverage and limitations.

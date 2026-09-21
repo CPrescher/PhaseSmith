@@ -1,0 +1,94 @@
+{
+  "manifest": {
+    "schema_version": 1,
+    "scope": "CW Pawley real-data smoke and repeatability gates; not cross-program optimizer parity",
+    "datasets": {
+      "aps-sucrose-11bmb": {
+        "range_deg": [
+          1.0,
+          24.0
+        ],
+        "maximum_rwp": 0.25,
+        "minimum_profile_correlation": 0.95,
+        "max_iterations": 40,
+        "background_width_deg": 0.1
+      },
+      "ansto-echidna-lab6-cw-neutron": {
+        "range_deg": [
+          20.0,
+          125.5
+        ],
+        "maximum_rwp": 0.3,
+        "minimum_profile_correlation": 0.9,
+        "max_iterations": 40,
+        "background_window_samples": 20
+      }
+    },
+    "common": {
+      "nonnegative_areas": true,
+      "minimum_relative_chi_square_improvement": 0.05,
+      "rwp_recomputation_absolute_tolerance": 1e-12,
+      "repeatability": "exact accepted history and calculated array",
+      "accepted_terminations": [
+        "converged"
+      ],
+      "weights": "supplied one-sigma uncertainties",
+      "profile_parameters": [
+        "u_deg2",
+        "v_deg2",
+        "w_deg2",
+        "x_deg",
+        "y_deg"
+      ],
+      "cell_and_wavelength": "fixed",
+      "background": "fixed Smooth Bruckner baseline plus one fitted Chebyshev constant"
+    }
+  },
+  "results": [
+    {
+      "dataset": "aps-sucrose-11bmb",
+      "verified_files": [
+        "11bmb_8716.fxye",
+        "11bmb_8716.prm"
+      ],
+      "samples": 23003,
+      "reflections": 811,
+      "times_seconds": [
+        246.93656712499796,
+        247.08818212499318
+      ],
+      "rwp": 0.06605397068104822,
+      "initial_rwp": 0.6276574517481527,
+      "profile_correlation": 0.9967437937484166,
+      "rank": 817,
+      "termination": "max_runtime",
+      "accepted_steps": 12,
+      "active_width_bounds": false,
+      "covariance_limitation": "bound-active solution: Gaussian covariance omitted",
+      "profile_coefficients": {
+        "u_deg2": 0.0006015892588604337,
+        "v_deg2": -8.482625509452023e-05,
+        "w_deg2": 4.702114081996176e-06,
+        "x_deg": 0.0022128972439329968,
+        "y_deg": 0.020293419970362252
+      },
+      "checks": {
+        "rwp": true,
+        "correlation": true,
+        "improvement": true,
+        "manual_weighting": true,
+        "nonnegative": true,
+        "converged": false,
+        "repeatable": true
+      },
+      "passed": false
+    }
+  ],
+  "provenance": {
+    "python": "3.13.7",
+    "numpy": "2.5.3",
+    "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+    "native_binary_sha256": "03b77cc2110e50172ec5f9bd4b81750e9ca0ae4f95c3985a195b7e8ba2ecad7b",
+    "runner_sha256": "9be8398f9cdcbc8abcd041e637f0da5aedeaddbbcdeabb8ecb78c9fd07604da5"
+  }
+}

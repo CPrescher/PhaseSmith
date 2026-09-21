@@ -1,0 +1,147 @@
+{
+  "scope": "Pawley optimizer comparison with declared profile-model differences; not exact GSAS-II equivalence",
+  "area_convention": "0.01 * F_obs_squared * intensity_correction; no second multiplicity factor",
+  "runner_sha256": "0cd498b8ced5d9a77348f013829981cfb7dbd0297b50d1a22f57a3e24b687da7",
+  "native_support_fwhm": 10000.0,
+  "signed_areas": true,
+  "unit_weights": true,
+  "overlap_group_rule": "connected adjacent gaps at most three times the larger TCH FWHM",
+  "fixture_manifest_sha256": "261dfbcc817904abdb45162d4ef30230c6bff152c8e5cdbbdb214a6f0e389dce",
+  "native_binary_sha256": "ace0868385eeda2cbdc7a340840271e12de1b280f8fba6586de4511a8f4f1b83",
+  "gsasii_revision": "c0bc79b259cdf0065480b5fbd57674ddf12c4a23",
+  "results": [
+    {
+      "case": "fixed_cell",
+      "reflections": 53,
+      "samples": 24001,
+      "oracle_relative_l2": 6.853239228080238e-18,
+      "fixed_profile_relative_l2": 0.00036913087643331303,
+      "fitted_profile_relative_l2": 0.0003642881824659341,
+      "termination": "converged",
+      "isolated_reflections": 42,
+      "overlap_groups": [
+        [
+          12,
+          13
+        ],
+        [
+          21,
+          22
+        ],
+        [
+          28,
+          29,
+          30
+        ],
+        [
+          39,
+          40
+        ],
+        [
+          43,
+          44
+        ]
+      ],
+      "isolated_area_max_relative_error": 8.456495282860299e-05,
+      "group_sum_max_relative_error": 8.456495282860299e-05,
+      "all_individual_area_max_relative_error": 0.011555569852391256,
+      "native_cell": [
+        3.7,
+        4.2,
+        5.1,
+        87.0,
+        95.0,
+        102.0
+      ],
+      "oracle_cell": [
+        3.7,
+        4.2,
+        5.1,
+        87.0,
+        95.0,
+        102.0
+      ],
+      "cell_length_max_relative_error": 0.0,
+      "cell_angle_max_absolute_error_deg": 0.0,
+      "strict_fixed_profile_equivalence": false,
+      "checks": {
+        "oracle_recovers_observations": true,
+        "native_converged": true,
+        "fixed_profile_agreement": true,
+        "fitted_profile_agreement": true,
+        "isolated_area_agreement": true,
+        "overlap_sum_agreement": true,
+        "cell_length_agreement": true,
+        "cell_angle_agreement": true
+      },
+      "passed": true
+    },
+    {
+      "case": "refined_cell",
+      "reflections": 53,
+      "samples": 24001,
+      "oracle_relative_l2": 7.92177415135176e-06,
+      "fixed_profile_relative_l2": 0.0003683744883990939,
+      "fitted_profile_relative_l2": 0.00019892535405309158,
+      "termination": "converged",
+      "isolated_reflections": 42,
+      "overlap_groups": [
+        [
+          12,
+          13
+        ],
+        [
+          21,
+          22
+        ],
+        [
+          28,
+          29,
+          30
+        ],
+        [
+          39,
+          40
+        ],
+        [
+          43,
+          44
+        ]
+      ],
+      "isolated_area_max_relative_error": 8.803600514328824e-05,
+      "group_sum_max_relative_error": 0.0005391810858355051,
+      "all_individual_area_max_relative_error": 0.007123564323473719,
+      "native_cell": [
+        3.700004848370282,
+        4.200008128654975,
+        5.100002892601439,
+        86.99999509626437,
+        94.99999676116802,
+        101.99997906249644
+      ],
+      "oracle_cell": [
+        3.7000000075421275,
+        4.199999889707222,
+        5.100000167143788,
+        86.99999722696002,
+        94.99999908642003,
+        101.9999989524213
+      ],
+      "cell_length_max_relative_error": 1.961654278570535e-06,
+      "cell_angle_max_absolute_error_deg": 1.9889924857352526e-05,
+      "strict_fixed_profile_equivalence": false,
+      "checks": {
+        "oracle_recovers_observations": true,
+        "native_converged": true,
+        "fixed_profile_agreement": true,
+        "fitted_profile_agreement": true,
+        "isolated_area_agreement": true,
+        "overlap_sum_agreement": true,
+        "cell_length_agreement": true,
+        "cell_angle_agreement": true
+      },
+      "passed": true
+    }
+  ],
+  "passed": true
+}

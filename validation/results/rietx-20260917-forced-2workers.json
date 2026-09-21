@@ -1,0 +1,223 @@
+{
+  "schema": "phasesmith.rietx-thread-audit.v1",
+  "rietx_version": "1.4.0",
+  "requested_workers": 2,
+  "compiled_source_sha256": "3aae419bd8992f34e19c45314d690deaa8f28c48779b8a96ad020fea35310392",
+  "parallel_row_threshold": 1,
+  "warmup_spread_row_histogram": {
+    "36": 99,
+    "58": 99,
+    "128": 99
+  },
+  "warmup_pool_requests": 297,
+  "pool_created_after_measurements": true,
+  "loaded_native_threadpools": [],
+  "shared_phasesmith_preparation_default_workers": 1,
+  "repetitions": 5,
+  "median_after_preparation_cpu_to_wall": 1.034493151860329,
+  "measurements": [
+    {
+      "workflow_wall_seconds": 0.4380722079949919,
+      "workflow_cpu_seconds": 0.450736,
+      "preparation": {
+        "cpu_seconds": 0.06968700000000005,
+        "wall_seconds": 0.06972854200284928
+      },
+      "after_preparation_wall_seconds": 0.36834366599214263,
+      "after_preparation_cpu_seconds": 0.38104899999999997,
+      "after_preparation_cpu_to_wall": 1.034493151860329
+    },
+    {
+      "workflow_wall_seconds": 0.4315423750085756,
+      "workflow_cpu_seconds": 0.44404500000000025,
+      "preparation": {
+        "cpu_seconds": 0.06905300000000003,
+        "wall_seconds": 0.06906658300431445
+      },
+      "after_preparation_wall_seconds": 0.36247579200426117,
+      "after_preparation_cpu_seconds": 0.3749920000000002,
+      "after_preparation_cpu_to_wall": 1.0345297762549392
+    },
+    {
+      "workflow_wall_seconds": 0.4249960830056807,
+      "workflow_cpu_seconds": 0.43737000000000004,
+      "preparation": {
+        "cpu_seconds": 0.06832700000000003,
+        "wall_seconds": 0.06835341699479613
+      },
+      "after_preparation_wall_seconds": 0.35664266601088457,
+      "after_preparation_cpu_seconds": 0.369043,
+      "after_preparation_cpu_to_wall": 1.0347696312609356
+    },
+    {
+      "workflow_wall_seconds": 0.42441608299850486,
+      "workflow_cpu_seconds": 0.4363579999999998,
+      "preparation": {
+        "cpu_seconds": 0.06888000000000005,
+        "wall_seconds": 0.06891333300154656
+      },
+      "after_preparation_wall_seconds": 0.3555027499969583,
+      "after_preparation_cpu_seconds": 0.36747799999999975,
+      "after_preparation_cpu_to_wall": 1.0336853934411026
+    },
+    {
+      "workflow_wall_seconds": 0.43217354199441615,
+      "workflow_cpu_seconds": 0.4437300000000004,
+      "preparation": {
+        "cpu_seconds": 0.06914600000000037,
+        "wall_seconds": 0.06952550000278279
+      },
+      "after_preparation_wall_seconds": 0.36264804199163336,
+      "after_preparation_cpu_seconds": 0.37458400000000003,
+      "after_preparation_cpu_to_wall": 1.032913339178161
+    }
+  ],
+  "scientific_results": {
+    "poisson_rwp": 0.19260110440383335,
+    "unit_weight_rwp": 0.13268418941267238,
+    "profile_correlation": 0.9903820634353105,
+    "weight_fractions": {
+      "Al2O3": 0.304574617241206,
+      "ZnO": 0.3431431747718534,
+      "CaF2": 0.3522822079869405
+    },
+    "maximum_weight_fraction_error": 0.009125382758793987,
+    "qpa_covariance_available": true,
+    "stages": [
+      {
+        "termination": "converged",
+        "rwp": 0.21489338418817033,
+        "parameters": [
+          "phases.0.scale",
+          "phases.1.scale",
+          "phases.2.scale",
+          "instrument.zero_shift",
+          "instrument.profile.u",
+          "instrument.profile.v",
+          "instrument.profile.w",
+          "instrument.background.c0",
+          "instrument.background.c1",
+          "instrument.background.c2"
+        ],
+        "stages": [
+          {
+            "name": "stage1",
+            "status": "converged",
+            "n_iterations": 13,
+            "cost_initial": 30799.277858708927,
+            "cost_final": 20040.950155029608,
+            "freed": [
+              "phases.0.scale",
+              "phases.1.scale",
+              "phases.2.scale",
+              "instrument.zero_shift",
+              "instrument.profile.u",
+              "instrument.profile.v",
+              "instrument.profile.w",
+              "instrument.background.c0",
+              "instrument.background.c1",
+              "instrument.background.c2"
+            ],
+            "ftol": null,
+            "n_constraint_truncations": 0,
+            "held": [],
+            "released": []
+          }
+        ]
+      },
+      {
+        "termination": "converged",
+        "rwp": 0.19217750037605663,
+        "parameters": [
+          "phases.0.scale",
+          "phases.0.preferred_orientation.r",
+          "phases.0.lor_size",
+          "phases.0.gauss_strain",
+          "phases.1.scale",
+          "phases.1.preferred_orientation.r",
+          "phases.1.lor_size",
+          "phases.1.gauss_strain",
+          "phases.1.atoms.0.biso",
+          "phases.1.atoms.1.biso",
+          "phases.2.scale",
+          "phases.2.lor_size",
+          "phases.2.gauss_strain",
+          "phases.2.atoms.0.biso",
+          "phases.2.atoms.1.biso",
+          "instrument.zero_shift",
+          "instrument.profile.u",
+          "instrument.profile.v",
+          "instrument.profile.w"
+        ],
+        "stages": [
+          {
+            "name": "stage2",
+            "status": "converged",
+            "n_iterations": 29,
+            "cost_initial": 20054.614413204894,
+            "cost_final": 16027.924863088641,
+            "freed": [
+              "phases.0.scale",
+              "phases.0.preferred_orientation.r",
+              "phases.0.lor_size",
+              "phases.0.gauss_strain",
+              "phases.1.scale",
+              "phases.1.preferred_orientation.r",
+              "phases.1.lor_size",
+              "phases.1.gauss_strain",
+              "phases.1.atoms.0.biso",
+              "phases.1.atoms.1.biso",
+              "phases.2.scale",
+              "phases.2.lor_size",
+              "phases.2.gauss_strain",
+              "phases.2.atoms.0.biso",
+              "phases.2.atoms.1.biso",
+              "instrument.zero_shift",
+              "instrument.profile.u",
+              "instrument.profile.v",
+              "instrument.profile.w"
+            ],
+            "ftol": null,
+            "n_constraint_truncations": 0,
+            "held": [],
+            "released": []
+          }
+        ]
+      },
+      {
+        "termination": "converged",
+        "rwp": 0.19260110440383335,
+        "parameters": [
+          "phases.0.scale",
+          "phases.1.scale",
+          "phases.2.scale"
+        ],
+        "stages": [
+          {
+            "name": "stage3",
+            "status": "converged",
+            "n_iterations": 3,
+            "cost_initial": 16099.339985698625,
+            "cost_final": 16098.66130548331,
+            "freed": [
+              "phases.0.scale",
+              "phases.1.scale",
+              "phases.2.scale"
+            ],
+            "ftol": null,
+            "n_constraint_truncations": 0,
+            "held": [],
+            "released": []
+          }
+        ]
+      }
+    ]
+  },
+  "notes": [
+    "Dispatch instrumentation runs only during the warmup, outside measured runs.",
+    "CPU time sums all process threads; CPU/wall estimates average busy cores, not affinity.",
+    "After-preparation timing includes all three rietx fits and final result reporting.",
+    "Shared PhaseSmith preparation is explicitly restricted to one worker in this experiment."
+  ],
+  "intervention": "temporary in-process row threshold override; installed files unchanged"
+}

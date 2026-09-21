@@ -1,7 +1,9 @@
 //! Reusable matrix-free structural Rietveld objective products.
 
+use phasesmith_engine::StructuralPreparationCache;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
+use std::sync::Arc;
 
 use phasesmith_core::SupportPolicy;
 use phasesmith_engine::{
@@ -33,6 +35,7 @@ pub struct PreparedRietveldObjective {
     options: RietveldCalculationOptions,
     layout: RietveldStructuralLayout,
     prepared: PreparedStructuralMultiphase,
+    cache: Arc<StructuralPreparationCache>,
 }
 
 impl PreparedRietveldObjective {
@@ -45,6 +48,15 @@ impl PreparedRietveldObjective {
         input: RietveldInput,
         options: RietveldCalculationOptions,
         layout: RietveldStructuralLayout,
+    ) -> Result<Self, RietveldObjectiveError> {
+        Self::new_cached(input, options, layout, Arc::default())
+    }
+
+    pub(crate) fn new_cached(
+        input: RietveldInput,
+        options: RietveldCalculationOptions,
+        layout: RietveldStructuralLayout,
+        cache: Arc<StructuralPreparationCache>,
     ) -> Result<Self, RietveldObjectiveError> {
         input.validate()?;
         options.validate()?;
@@ -62,6 +74,7 @@ impl PreparedRietveldObjective {
             options,
             layout,
             prepared,
+            cache,
         })
     }
 
@@ -97,7 +110,11 @@ impl PreparedRietveldObjective {
     /// Returns [`RietveldObjectiveError`] for engine, shape, projection, or
     /// calculation failures.
     pub fn linearize(&self) -> Result<PreparedRietveldLinearization, RietveldObjectiveError> {
-        let products = self.with_inputs(|inputs| self.prepared.linearize(inputs))?;
+        let selected = self.layout.native_active_rows();
+        let products = self.with_inputs(|inputs| {
+            self.prepared
+                .linearize_selected(inputs, &selected, Some(&self.cache))
+        })?;
         let sample_count = self.input.pattern.sample_count();
         let jacobians = products
             .iter()
@@ -263,6 +280,8 @@ impl PreparedRietveldObjective {
                 position_correction: self.input.position_correction,
                 contributions,
                 support: SupportPolicy::FwhmMultiple(self.options.support_fwhm),
+                profile_accuracy: self.options.profile_accuracy,
+                calculate_axial_derivatives: true,
             })
             .collect::<Vec<_>>();
         operation(&inputs).map_err(Into::into)

@@ -6,9 +6,38 @@ development versions.
 
 ## Unreleased
 
+## 0.7.0
+
+- Fix Pawley stagnation at tiny composed-width boundary steps using relative
+  feasibility checks, retaining the existing convergence certificates. Cache
+  constraint norms without changing numerical results. Resolve installed Pawley
+  validation manifests and oracle fixtures from caller-provided paths.
+
+- Verify CW Rietveld stopping independently of damping and share one bounded
+  recovery trial allowance across coordinates. Preserve truthful stagnation,
+  caller runtime guards, physical bounds and scientific acceptance gates.
+  Cover the canonical native QARR entry point in real-data regression tests.
+
+- Ship the PhaseSmith agent skill with the Python distribution, expose
+  `phasesmith skill --path` and `--print`, and publish generated documentation
+  from its canonical instructions. Add scientific references for experimental
+  context, identifiable recipes, fit interpretation, and QPA; check resource
+  parity, documentation drift, and the offline advisor example during testing.
+
+- Add native CW and single-/multi-bank TOF Pawley refinement with bounded/tied
+  family areas, analytical shared-cell and bank-local profile/background chains,
+  dense and matrix-free solving, diagnostics, cancellation and exact accepted-state
+  restart. CW supports fixed detected-area spectra. Add independent NumPy references,
+  measured CW/spectrum/TOF gates and pinned external comparisons with explicit
+  profile-model limits. Provide Python/Rust examples, standalone CW v2/TOF v1
+  codecs, lossless mixed native format-7 bundles and backward migration.
+
 - Harden explicit external-validation downloads with three bounded HTTPS
   attempts, short backoff, and a 120-second per-attempt timeout while retaining
   atomic writes and exact pinned-size and SHA-256 verification.
+
+- Reconcile the 0.6 namespace cleanup with the integrated Pawley API. Keep all
+  0.5 compatibility aliases until 1.0 and preserve earlier API snapshots.
 
 ## 0.6.0
 

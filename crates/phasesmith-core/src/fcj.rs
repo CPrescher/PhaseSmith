@@ -6,6 +6,19 @@ use std::fmt::{Display, Formatter};
 use crate::profile::SupportRange;
 use crate::tch::{TchError, TchShape, TchWidths};
 
+const FAST_SMALL_SPAN_NODES: [f64; 4] = [
+    0.069_431_844_202_973_71,
+    0.330_009_478_207_571_87,
+    0.669_990_521_792_428_1,
+    0.930_568_155_797_026_2,
+];
+const FAST_SMALL_SPAN_WEIGHTS: [f64; 4] = [
+    0.173_927_422_568_726_92,
+    0.326_072_577_431_273_07,
+    0.326_072_577_431_273_07,
+    0.173_927_422_568_726_92,
+];
+
 const DEGREE_TO_RADIAN: f64 = std::f64::consts::PI / 180.0;
 const RADIAN_TO_DEGREE: f64 = 180.0 / std::f64::consts::PI;
 pub(crate) const QUADRATURE_ORDER: usize = 48;
@@ -251,6 +264,20 @@ impl FcjProfile {
         widths: TchWidths,
         geometry: FcjGeometry,
     ) -> Result<Self, FcjError> {
+        Self::new_with_accuracy(position_deg, widths, geometry, false)
+    }
+
+    /// Prepare with optional lower-order small-span quadrature. Physical axial
+    /// geometry and all analytical derivatives remain active.
+    /// # Errors
+    /// Returns the same validation errors as [`Self::new`].
+    #[allow(clippy::too_many_lines)] // Keep geometry and derivative normalization together.
+    pub fn new_with_accuracy(
+        position_deg: f64,
+        widths: TchWidths,
+        geometry: FcjGeometry,
+        fast_fcj: bool,
+    ) -> Result<Self, FcjError> {
         validate_position(position_deg)?;
         validate_geometry(geometry)?;
         let shape = TchShape::from_component_fwhm(widths)
@@ -293,8 +320,14 @@ impl FcjProfile {
             .sample_over_radius
             .min(geometry.detector_over_radius);
         let difference = major - minor;
-        let (quadrature_nodes, quadrature_weights) =
-            quadrature_rule((apparent_limit_deg - position_deg).abs(), shape.total_fwhm);
+        let span = (apparent_limit_deg - position_deg).abs();
+        let ratio = span / shape.total_fwhm;
+        let (quadrature_nodes, quadrature_weights): (&[f64], &[f64]) = if fast_fcj && ratio <= 0.02
+        {
+            (&FAST_SMALL_SPAN_NODES, &FAST_SMALL_SPAN_WEIGHTS)
+        } else {
+            quadrature_rule(span, shape.total_fwhm)
+        };
         let piece_count = if difference == 0.0 { 1 } else { 2 };
         let mut nodes = Vec::with_capacity(piece_count * quadrature_nodes.len());
         let mut normalization = 0.0;
@@ -356,7 +389,7 @@ impl FcjProfile {
     /// Evaluate the full FCJ-convolved profile at one sample coordinate.
     #[must_use]
     pub fn evaluate(&self, x_deg: f64) -> FcjProfilePoint {
-        self.evaluate_with_radius(x_deg, f64::INFINITY)
+        self.evaluate_with_radius::<true>(x_deg, f64::INFINITY)
     }
 
     #[must_use]
@@ -365,7 +398,7 @@ impl FcjProfile {
         x_deg: f64,
         support_radius_deg: f64,
     ) -> FcjProfilePoint {
-        self.evaluate_with_radius(x_deg, support_radius_deg)
+        self.evaluate_with_radius::<true>(x_deg, support_radius_deg)
     }
 
     #[must_use]
@@ -376,7 +409,88 @@ impl FcjProfile {
         }
     }
 
-    fn evaluate_with_radius(&self, x_deg: f64, support_radius_deg: f64) -> FcjProfilePoint {
+    pub(crate) fn evaluate_selected<const AXIAL: bool>(
+        &self,
+        x_deg: f64,
+        support_radius_deg: f64,
+    ) -> FcjProfilePoint {
+        self.evaluate_with_radius::<AXIAL>(x_deg, support_radius_deg)
+    }
+
+    pub(crate) fn evaluate_batch<const AXIAL: bool>(
+        &self,
+        x_deg: [f64; 4],
+        support_radius_deg: f64,
+    ) -> [FcjProfilePoint; 4] {
+        let mut numerator = [0.0; 4];
+        let mut numerator_position = [0.0; 4];
+        let mut numerator_gaussian = [0.0; 4];
+        let mut numerator_lorentzian = [0.0; 4];
+        let mut numerator_major = [0.0; 4];
+        let mut numerator_minor = [0.0; 4];
+        for node in &self.nodes {
+            for lane in 0..4 {
+                let delta = x_deg[lane] - node.apparent_position_deg;
+                if delta.abs() > support_radius_deg {
+                    continue;
+                }
+                let point = self.shape.evaluate(delta);
+                numerator[lane] += node.weighted_geometry * point.value;
+                numerator_position[lane] += node.d_weighted_geometry_d_position * point.value
+                    - node.weighted_geometry * point.d_delta * node.d_apparent_d_position;
+                numerator_gaussian[lane] += node.weighted_geometry * point.d_gaussian_fwhm;
+                numerator_lorentzian[lane] += node.weighted_geometry * point.d_lorentzian_fwhm;
+                if AXIAL {
+                    numerator_major[lane] += node.d_weighted_geometry_d_major * point.value
+                        - node.weighted_geometry * point.d_delta * node.d_apparent_d_major;
+                    numerator_minor[lane] += node.d_weighted_geometry_d_minor * point.value
+                        - node.weighted_geometry * point.d_delta * node.d_apparent_d_minor;
+                }
+            }
+        }
+        std::array::from_fn(|lane| {
+            let value = numerator[lane] / self.normalization;
+            let d_position = (numerator_position[lane] - value * self.d_normalization_d_position)
+                / self.normalization;
+            let d_gaussian_fwhm = numerator_gaussian[lane] / self.normalization;
+            let d_lorentzian_fwhm = numerator_lorentzian[lane] / self.normalization;
+            let d_major = if AXIAL {
+                (numerator_major[lane] - value * self.d_normalization_d_major) / self.normalization
+            } else {
+                0.0
+            };
+            let d_minor = if AXIAL {
+                (numerator_minor[lane] - value * self.d_normalization_d_minor) / self.normalization
+            } else {
+                0.0
+            };
+            let (d_sample_over_radius, d_detector_over_radius) =
+                if self.geometry.sample_over_radius > self.geometry.detector_over_radius {
+                    (d_major, d_minor)
+                } else if self.geometry.detector_over_radius > self.geometry.sample_over_radius {
+                    (d_minor, d_major)
+                } else {
+                    // Preserve the established arithmetic order for deterministic profile derivatives.
+                    #[allow(clippy::manual_midpoint)]
+                    let equal = 0.5 * (d_major + d_minor);
+                    (equal, equal)
+                };
+            FcjProfilePoint {
+                value,
+                d_position,
+                d_gaussian_fwhm,
+                d_lorentzian_fwhm,
+                d_sample_over_radius,
+                d_detector_over_radius,
+            }
+        })
+    }
+
+    fn evaluate_with_radius<const AXIAL: bool>(
+        &self,
+        x_deg: f64,
+        support_radius_deg: f64,
+    ) -> FcjProfilePoint {
         let mut numerator = 0.0;
         let mut numerator_position = 0.0;
         let mut numerator_gaussian = 0.0;
@@ -394,18 +508,28 @@ impl FcjProfile {
                 - node.weighted_geometry * point.d_delta * node.d_apparent_d_position;
             numerator_gaussian += node.weighted_geometry * point.d_gaussian_fwhm;
             numerator_lorentzian += node.weighted_geometry * point.d_lorentzian_fwhm;
-            numerator_major += node.d_weighted_geometry_d_major * point.value
-                - node.weighted_geometry * point.d_delta * node.d_apparent_d_major;
-            numerator_minor += node.d_weighted_geometry_d_minor * point.value
-                - node.weighted_geometry * point.d_delta * node.d_apparent_d_minor;
+            if AXIAL {
+                numerator_major += node.d_weighted_geometry_d_major * point.value
+                    - node.weighted_geometry * point.d_delta * node.d_apparent_d_major;
+                numerator_minor += node.d_weighted_geometry_d_minor * point.value
+                    - node.weighted_geometry * point.d_delta * node.d_apparent_d_minor;
+            }
         }
         let value = numerator / self.normalization;
         let d_position =
             (numerator_position - value * self.d_normalization_d_position) / self.normalization;
         let d_gaussian_fwhm = numerator_gaussian / self.normalization;
         let d_lorentzian_fwhm = numerator_lorentzian / self.normalization;
-        let d_major = (numerator_major - value * self.d_normalization_d_major) / self.normalization;
-        let d_minor = (numerator_minor - value * self.d_normalization_d_minor) / self.normalization;
+        let d_major = if AXIAL {
+            (numerator_major - value * self.d_normalization_d_major) / self.normalization
+        } else {
+            0.0
+        };
+        let d_minor = if AXIAL {
+            (numerator_minor - value * self.d_normalization_d_minor) / self.normalization
+        } else {
+            0.0
+        };
         let (d_sample_over_radius, d_detector_over_radius) =
             if self.geometry.sample_over_radius > self.geometry.detector_over_radius {
                 (d_major, d_minor)
@@ -451,10 +575,12 @@ fn prepare_node(
     let sine_apparent = apparent_rad.sin();
     let d_apparent_d_height = -position_rad.cos() * height / (square_root * sine_apparent);
     let d_apparent_d_position = position_rad.sin() * square_root / sine_apparent;
-    let geometry = (square_root * sine_apparent).recip();
+    // FCJ angular density W/(z cos(a)) times |da/dz| cancels to
+    // W/((1+z²) sin(a)); both powers of the square root are required.
+    let geometry = ((1.0 + height * height) * sine_apparent).recip();
     let cotangent_apparent = apparent_rad.cos() / sine_apparent;
-    let d_geometry_d_height =
-        geometry * (-height / (1.0 + height * height) - cotangent_apparent * d_apparent_d_height);
+    let d_geometry_d_height = geometry
+        * (-2.0 * height / (1.0 + height * height) - cotangent_apparent * d_apparent_d_height);
     let d_geometry_d_position =
         geometry * -cotangent_apparent * d_apparent_d_position * DEGREE_TO_RADIAN;
     PreparedNode {
@@ -514,6 +640,48 @@ mod tests {
             (actual - expected).abs() <= tolerance * scale,
             "actual={actual:.17e}, expected={expected:.17e}, tolerance={tolerance:.1e}"
         );
+    }
+
+    #[test]
+    fn batched_points_preserve_scalar_arithmetic_and_node_support() {
+        for position in [12.0, 42.0, 120.0] {
+            for (sample, detector) in [(0.0, 0.0), (0.001, 0.001), (0.013, 0.009), (0.009, 0.013)] {
+                let profile = FcjProfile::new(
+                    position,
+                    TchWidths {
+                        gaussian_fwhm: 0.018,
+                        lorentzian_fwhm: 0.006,
+                    },
+                    FcjGeometry {
+                        sample_over_radius: sample,
+                        detector_over_radius: detector,
+                    },
+                )
+                .unwrap();
+                let radius = 0.03;
+                for node in &profile.nodes {
+                    let edge = node.apparent_position_deg + radius;
+                    let xs = [
+                        f64::from_bits(edge.to_bits() - 1),
+                        edge,
+                        f64::from_bits(edge.to_bits() + 1),
+                        position - 0.0123,
+                    ];
+                    let actual = profile.evaluate_batch::<true>(xs, radius);
+                    let fixed = profile.evaluate_batch::<false>(xs, radius);
+                    for lane in 0..4 {
+                        assert_eq!(
+                            actual[lane],
+                            profile.evaluate_with_radius::<true>(xs[lane], radius)
+                        );
+                        assert_eq!(
+                            fixed[lane],
+                            profile.evaluate_with_radius::<false>(xs[lane], radius)
+                        );
+                    }
+                }
+            }
+        }
     }
 
     #[test]

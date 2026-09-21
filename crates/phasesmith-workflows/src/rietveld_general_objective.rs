@@ -1,7 +1,9 @@
 //! Complete matrix-free Rietveld objective with small explicit global columns.
 
+use phasesmith_engine::StructuralPreparationCache;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
+use std::sync::Arc;
 
 use crate::{
     ConstraintDerivativeMatrix, DifferentiableBackground, LatticeError, LatticeParameterization,
@@ -41,6 +43,14 @@ impl PreparedGeneralFreeLinearization {
     #[must_use]
     pub const fn parameter_count(&self) -> usize {
         self.parameter_count
+    }
+
+    /// Diagonal of the undamped normal matrix in scaled free coordinates.
+    pub(crate) fn normal_diagonal(&self) -> Vec<f64> {
+        self.weighted_jacobian
+            .chunks_exact(self.sample_scale.len())
+            .map(|column| column.iter().map(|value| value * value).sum())
+            .collect()
     }
 
     /// Apply the weighted free Jacobian.
@@ -98,6 +108,50 @@ impl PreparedGeneralFreeLinearization {
         Ok(result)
     }
 
+    /// Solve a small damped normal system directly, with a residual check.
+    /// Larger or poorly conditioned systems retain the existing CG fallback.
+    /// Zero CG iterations in solver history identifies a successful direct solve.
+    pub(crate) fn solve_damped(
+        &self,
+        rhs: &[f64],
+        damping: f64,
+        tolerance: f64,
+    ) -> Option<Vec<f64>> {
+        let count = self.parameter_count;
+        if count == 0 || count > 64 || rhs.len() != count || !damping.is_finite() || damping <= 0.0
+        {
+            return None;
+        }
+        let samples = self.sample_scale.len();
+        let mut normal = nalgebra::DMatrix::zeros(count, count);
+        for i in 0..count {
+            for j in 0..=i {
+                let value = self.weighted_jacobian[i * samples..(i + 1) * samples]
+                    .iter()
+                    .zip(&self.weighted_jacobian[j * samples..(j + 1) * samples])
+                    .map(|(a, b)| a * b)
+                    .sum::<f64>();
+                normal[(i, j)] = value;
+                normal[(j, i)] = value;
+            }
+            normal[(i, i)] += damping;
+        }
+        let factor = normal.cholesky()?;
+        let solution = factor.solve(&nalgebra::DVector::from_column_slice(rhs));
+        if solution.iter().any(|v| !v.is_finite()) {
+            return None;
+        }
+        let product = self.normal_product(solution.as_slice(), damping).ok()?;
+        let residual = product
+            .iter()
+            .zip(rhs)
+            .map(|(a, b)| (a - b).powi(2))
+            .sum::<f64>()
+            .sqrt();
+        let limit = tolerance * rhs.iter().map(|v| v * v).sum::<f64>().sqrt().max(1.0);
+        (residual <= limit).then(|| solution.as_slice().to_vec())
+    }
+
     /// Calculate the scaled free gradient for the stored calculation.
     ///
     /// # Errors
@@ -120,6 +174,93 @@ impl PreparedGeneralFreeLinearization {
     }
 }
 
+/// Unit-scale profiles for a solve whose entire physical layout contains scales.
+/// The immutable basis also retains complete local/global diagnostic derivatives.
+pub(crate) struct ScaleProfileBasis {
+    phases: Vec<phasesmith_engine::StructuralPatternResult>,
+    jacobian: Vec<f64>,
+}
+
+impl ScaleProfileBasis {
+    pub(crate) fn eligible(input: &RietveldInput, layout: &RietveldParameterLayout) -> bool {
+        let specs = layout.parameters().specs();
+        !specs.is_empty()
+            && specs
+                .len()
+                .checked_mul(input.pattern.sample_count())
+                .is_some_and(|size| size <= DEFAULT_MAX_LINEARIZATION_ELEMENTS)
+            && specs
+                .iter()
+                .all(|spec| spec.key().module() == "phase" && spec.key().name() == "scale")
+    }
+
+    pub(crate) fn new(
+        input: &RietveldInput,
+        layout: &RietveldParameterLayout,
+        options: &RietveldCalculationOptions,
+    ) -> Result<Self, RietveldGeneralObjectiveError> {
+        let mut unit = input.clone();
+        for phase in &mut unit.phases {
+            let mut definition = phase.definition().clone();
+            definition.scale = 1.0;
+            *phase = phase.with_definition(definition)?;
+        }
+        let calculation = calculate_rietveld_pattern(&unit, options)?;
+        let mut jacobian = Vec::new();
+        for spec in layout.structural_layout().parameters().specs() {
+            let phase = calculation
+                .phases
+                .iter()
+                .find(|phase| phase.phase_id.as_str() == spec.key().owner_id())
+                .ok_or(RietveldError::CalculationShapeMismatch)?;
+            jacobian.extend_from_slice(&phase.result.accumulation.y);
+        }
+        Ok(Self {
+            phases: calculation
+                .phases
+                .into_iter()
+                .map(|phase| phase.result)
+                .collect(),
+            jacobian,
+        })
+    }
+
+    fn calculate(
+        &self,
+        input: &RietveldInput,
+        options: &RietveldCalculationOptions,
+    ) -> Result<RietveldCalculation, RietveldGeneralObjectiveError> {
+        let mut phases = self.phases.clone();
+        for (result, phase) in phases.iter_mut().zip(&input.phases) {
+            let scale = phase.definition().scale;
+            for value in &mut result.structure_factors.intensity {
+                *value *= scale;
+            }
+            for value in &mut result.accumulation.y {
+                *value *= scale;
+            }
+            // Local intensity derivatives are scale-independent; positions are not.
+            for row in result
+                .accumulation
+                .derivatives
+                .local
+                .values
+                .chunks_exact_mut(2)
+            {
+                row[1] *= scale;
+            }
+            if let Some(global) = &mut result.accumulation.derivatives.global {
+                for value in &mut global.values {
+                    *value *= scale;
+                }
+            }
+        }
+        Ok(crate::rietveld::assemble_rietveld_calculation(
+            input, options, phases,
+        )?)
+    }
+}
+
 /// Reusable complete physical objective for one accepted native state.
 pub struct PreparedGeneralRietveldObjective {
     input: RietveldInput,
@@ -129,6 +270,7 @@ pub struct PreparedGeneralRietveldObjective {
     calculation: RietveldCalculation,
     dense_structural_jacobian: Option<Vec<f64>>,
     explicit_columns: Vec<(usize, Vec<f64>)>,
+    reused_scale_basis: bool,
 }
 
 impl PreparedGeneralRietveldObjective {
@@ -171,14 +313,38 @@ impl PreparedGeneralRietveldObjective {
         layout: RietveldParameterLayout,
         max_linearization_elements: usize,
     ) -> Result<Self, RietveldGeneralObjectiveError> {
-        let structural = PreparedRietveldObjective::new(
+        Self::new_cached(
+            input,
+            options,
+            layout,
+            max_linearization_elements,
+            Arc::default(),
+            None,
+        )
+    }
+
+    pub(crate) fn new_cached(
+        input: RietveldInput,
+        options: RietveldCalculationOptions,
+        layout: RietveldParameterLayout,
+        max_linearization_elements: usize,
+        cache: Arc<StructuralPreparationCache>,
+        scale_basis: Option<&ScaleProfileBasis>,
+    ) -> Result<Self, RietveldGeneralObjectiveError> {
+        let structural = PreparedRietveldObjective::new_cached(
             input.clone(),
             options.clone(),
             layout.structural_layout().clone(),
+            cache,
         )?;
         let dense_enabled = max_linearization_elements > 0
             && structural.dense_element_count()? <= max_linearization_elements;
-        let (calculation, dense_structural_jacobian) = if dense_enabled {
+        let (calculation, dense_structural_jacobian) = if let Some(basis) = scale_basis {
+            (
+                basis.calculate(&input, &options)?,
+                Some(basis.jacobian.clone()),
+            )
+        } else if dense_enabled {
             let linearization = structural.linearize()?;
             (linearization.calculation, Some(linearization.jacobian))
         } else {
@@ -195,6 +361,7 @@ impl PreparedGeneralRietveldObjective {
             calculation,
             dense_structural_jacobian,
             explicit_columns,
+            reused_scale_basis: scale_basis.is_some(),
         })
     }
 
@@ -207,7 +374,9 @@ impl PreparedGeneralRietveldObjective {
     /// Return expensive model products consumed while preparing the gradient.
     #[must_use]
     pub const fn preparation_evaluation_count(&self) -> usize {
-        if self.uses_dense_linearization() {
+        if self.reused_scale_basis {
+            0
+        } else if self.uses_dense_linearization() {
             1
         } else {
             2

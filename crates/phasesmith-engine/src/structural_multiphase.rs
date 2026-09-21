@@ -4,6 +4,8 @@ use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::sync::Arc;
 
+use crate::structural_pattern::StructuralPreparationCache;
+
 use phasesmith_core::{
     ConstantWavelengthInstrument, CwContributionsView, FcjGeometry, OwnedCwContributions,
     SupportPolicy,
@@ -76,6 +78,22 @@ impl PreparedStructuralModel {
         }
     }
 
+    fn linearize_selected(
+        &self,
+        input: &PreparedStructuralModelInputView<'_>,
+        selected: &[bool],
+        cache: Option<&StructuralPreparationCache>,
+    ) -> Result<StructuralPatternDenseResult, StructuralMultiphaseError> {
+        match self {
+            Self::Monochromatic(phase) => phase
+                .linearize_selected(&input.monochromatic_input()?, selected, cache)
+                .map_err(StructuralMultiphaseError::Structural),
+            Self::FixedSpectrum(spectrum) => spectrum
+                .linearize_selected(&input.spectrum_input(), selected, cache)
+                .map_err(StructuralMultiphaseError::Spectrum),
+        }
+    }
+
     fn jvp(
         &self,
         input: &PreparedStructuralModelInputView<'_>,
@@ -122,6 +140,10 @@ pub struct PreparedStructuralModelInputView<'a> {
     pub contributions: &'a [CwContributionsView<'a>],
     /// Exact finite profile-support policy.
     pub support: SupportPolicy,
+    /// Explicit CW profile accuracy controls.
+    pub profile_accuracy: phasesmith_core::ProfileAccuracy,
+    /// Whether calculation includes axial derivative rows; omitted rows are zero.
+    pub calculate_axial_derivatives: bool,
 }
 
 /// Owned sample-physics inputs for one prepared structural model.
@@ -146,6 +168,10 @@ pub struct StructuralCalculationRequest {
     pub phase_inputs: Vec<StructuralModelInput>,
     /// Exact finite profile-support policy.
     pub support: SupportPolicy,
+    /// Explicit CW profile accuracy controls.
+    pub profile_accuracy: phasesmith_core::ProfileAccuracy,
+    /// Whether calculation includes axial derivative rows; omitted rows are zero.
+    pub calculate_axial_derivatives: bool,
 }
 
 impl<'a> PreparedStructuralModelInputView<'a> {
@@ -162,6 +188,8 @@ impl<'a> PreparedStructuralModelInputView<'a> {
             position_correction: self.position_correction,
             contributions: self.contributions[0],
             support: self.support,
+            profile_accuracy: self.profile_accuracy,
+            calculate_axial_derivatives: self.calculate_axial_derivatives,
         })
     }
 
@@ -173,6 +201,8 @@ impl<'a> PreparedStructuralModelInputView<'a> {
             position_correction: self.position_correction,
             contributions: self.contributions,
             support: self.support,
+            profile_accuracy: self.profile_accuracy,
+            calculate_axial_derivatives: self.calculate_axial_derivatives,
         }
     }
 }
@@ -336,6 +366,8 @@ impl PreparedStructuralMultiphase {
                 position_correction: request.position_correction,
                 contributions,
                 support: request.support,
+                profile_accuracy: request.profile_accuracy,
+                calculate_axial_derivatives: request.calculate_axial_derivatives,
             })
             .collect::<Vec<_>>();
         let result = self.calculate(&inputs)?;
@@ -356,6 +388,23 @@ impl PreparedStructuralMultiphase {
         inputs: &[PreparedStructuralModelInputView<'_>],
     ) -> Result<Vec<StructuralPatternDenseResult>, StructuralMultiphaseError> {
         self.map_models(inputs, PreparedStructuralModel::linearize)
+    }
+
+    /// Linearize only the selected native rows of each phase.
+    /// # Errors
+    /// Returns an error for incompatible phase masks or invalid inputs.
+    pub fn linearize_selected(
+        &self,
+        inputs: &[PreparedStructuralModelInputView<'_>],
+        selected: &[Vec<bool>],
+        cache: Option<&StructuralPreparationCache>,
+    ) -> Result<Vec<StructuralPatternDenseResult>, StructuralMultiphaseError> {
+        if selected.len() != self.phase_count() {
+            return Err(StructuralMultiphaseError::TangentCountMismatch);
+        }
+        self.map_models_indexed(inputs, |index, model, input| {
+            model.linearize_selected(input, &selected[index], cache)
+        })
     }
 
     /// Calculate one structural forward product per phase.
@@ -540,6 +589,8 @@ mod tests {
             },
             phase_inputs: Vec::new(),
             support: SupportPolicy::FwhmMultiple(8.0),
+            profile_accuracy: phasesmith_core::ProfileAccuracy::default(),
+            calculate_axial_derivatives: true,
         };
         assert!(matches!(
             prepared.calculate_request(request),

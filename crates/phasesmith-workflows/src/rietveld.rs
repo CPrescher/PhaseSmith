@@ -914,6 +914,8 @@ fn transfer_contributions(
 pub struct RietveldCalculationOptions {
     /// Exact finite profile support in multiples of FWHM.
     pub support_fwhm: f64,
+    /// Explicit profile approximation controls; default preserves existing calculations.
+    pub profile_accuracy: phasesmith_core::ProfileAccuracy,
     /// Apply supplied one-sigma uncertainties to residual metrics.
     pub use_uncertainty: bool,
     /// Persistent bounded execution policy.
@@ -933,6 +935,7 @@ impl RietveldCalculationOptions {
     ) -> Result<Self, RietveldError> {
         let options = Self {
             support_fwhm,
+            profile_accuracy: phasesmith_core::ProfileAccuracy::default(),
             use_uncertainty,
             execution,
         };
@@ -941,6 +944,9 @@ impl RietveldCalculationOptions {
     }
 
     pub(crate) fn validate(&self) -> Result<(), RietveldError> {
+        self.profile_accuracy
+            .validate()
+            .map_err(|_| RietveldError::InvalidOptions)?;
         if !self.support_fwhm.is_finite() || self.support_fwhm <= 0.0 {
             return Err(RietveldError::InvalidOptions);
         }
@@ -984,6 +990,21 @@ pub fn calculate_rietveld_pattern(
     input: &RietveldInput,
     options: &RietveldCalculationOptions,
 ) -> Result<RietveldCalculation, RietveldError> {
+    calculate_rietveld_pattern_impl(input, options, true)
+}
+
+pub(crate) fn calculate_rietveld_trial(
+    input: &RietveldInput,
+    options: &RietveldCalculationOptions,
+) -> Result<RietveldCalculation, RietveldError> {
+    calculate_rietveld_pattern_impl(input, options, false)
+}
+
+fn calculate_rietveld_pattern_impl(
+    input: &RietveldInput,
+    options: &RietveldCalculationOptions,
+    axial_derivatives: bool,
+) -> Result<RietveldCalculation, RietveldError> {
     input.validate()?;
     options.validate()?;
     let models = input
@@ -1008,6 +1029,8 @@ pub fn calculate_rietveld_pattern(
             .map(|contributions| StructuralModelInput { contributions })
             .collect(),
         support: SupportPolicy::FwhmMultiple(options.support_fwhm),
+        profile_accuracy: options.profile_accuracy,
+        calculate_axial_derivatives: axial_derivatives,
     };
     let calculated = prepared
         .calculate_request(request)

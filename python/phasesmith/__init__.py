@@ -33,6 +33,7 @@ from ._api import (
     tch_shape_from_fwhm,
     tch_shape_from_gaussian_sigma,
 )
+from .accuracy import ProfileAccuracy
 from .background import (
     XYPATTERN_REVISION,
     BackgroundSubtractionResult,
@@ -84,6 +85,7 @@ from .cw import (
     accumulate_cw_contributions,
     cw_profile_parameters,
 )
+from .empirical import EmpiricalGaussianConvention
 from .execution import ExecutionPolicy
 from .extensions import (
     PHYSICS_PROVIDER_API_VERSION,
@@ -101,6 +103,14 @@ from .fcj import (
     accumulate_cw_fcj,
     accumulate_cw_fcj_components,
     profile_fcj,
+)
+from .fit_report import (
+    FitAdvice,
+    FitReport,
+    ResidualDiagnostics,
+    ResidualRegion,
+    build_fit_report,
+    diagnose_residuals,
 )
 from .fpa_calibration import (
     BraggBrentanoFundamentalProfile,
@@ -298,10 +308,13 @@ __all__ = [
     "DSpacingRange",
     "DSpacingResult",
     "DebyeScherrerGeometry",
+    "EmpiricalGaussianConvention",
     "ExecutionPolicy",
     "ExpandedSites",
     "FcjGeometry",
     "FcjProfileResult",
+    "FitAdvice",
+    "FitReport",
     "FundamentalEmissionLine",
     "FundamentalPeakDiagnostic",
     "FundamentalPeakPattern",
@@ -337,6 +350,7 @@ __all__ = [
     "PreparedReflectionGenerator",
     "PreparedStructuralPattern",
     "PreparedXrayNonResonant",
+    "ProfileAccuracy",
     "ProfileEstimationMode",
     "ProfileEstimationOptions",
     "ProfileEstimationResult",
@@ -355,6 +369,8 @@ __all__ = [
     "ReflectionGeometryBatch",
     "ReflectionPhysicsProvider",
     "ReflectionRange",
+    "ResidualDiagnostics",
+    "ResidualRegion",
     "RietveldPhase",
     "RietveldProject",
     "ScatteringContext",
@@ -410,6 +426,7 @@ __all__ = [
     "accumulate_tof",
     "automation",
     "background",
+    "build_fit_report",
     "calculate_cw_pattern",
     "calculate_monochromatic_cw_pattern",
     "calculate_monochromatic_pattern",
@@ -422,6 +439,7 @@ __all__ = [
     "calculate_structure_factors",
     "calibrate_fundamental_profile",
     "cw_profile_parameters",
+    "diagnose_residuals",
     "estimate_effective_profile",
     "evaluate_intensity_correction",
     "evaluate_scattering_provider",

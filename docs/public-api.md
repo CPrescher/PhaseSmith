@@ -4,6 +4,21 @@ The Python package is a scientific library first. Every normal calculation and
 refinement workflow must be expressible from a script without project files,
 global state, callbacks per reflection, or GUI objects.
 
+CW numerical performance controls are explicit through `ProfileAccuracy`:
+see [profile accuracy](profile-accuracy.md) for opt-in quadrature and tail-area
+budgets, their numerical contracts, and persistence behavior.
+
+Structural powder calculations use [Friedel-averaged intensities](powder-friedel.md).
+The individual structure-factor API retains representative complex amplitudes;
+its explicit `powder_average=True` mode averages squared amplitudes and intensity
+derivatives without changing the meaning of complex `f` or `d_f`.
+
+CW requests can opt into `EmpiricalGaussianConvention(reference_phase_id,
+reference_rms_microstrain).apply(request)` when a calibrated instrument/sample
+Gaussian decomposition is unavailable. The reference constraint and empirical
+interpretation persist across stages, checkpoints and project saves. See
+[empirical Gaussian widths](empirical-gaussian.md) for domain and reporting rules.
+
 ## Stable module boundaries
 
 ```text
@@ -114,6 +129,11 @@ phasesmith.quantitative  [implemented]
   Hill--Howard conversion of compatible phase scales into labeled normalized
   crystalline weight fractions, with optional analytical scale-covariance
   propagation. This interpretation remains separate from the refinement solver.
+
+phasesmith.fit_report  [implemented]
+  Native mask-aware residual localization and typed read-only fit evidence.
+  build_fit_report and RietveldProject.fit_report preserve actual fit weights
+  and disclose unavailable attribution; advice never executes a fit.
 
 phasesmith.validation  [implemented]
   Explicit checksum-pinned external dataset retrieval and reproducible
@@ -400,8 +420,8 @@ checkpointing. Their physics and state transitions remain separate:
 - Rietveld refinement obtains integrated intensities from a structure-factor
   layer and optimizes structural/profile parameters against the same pattern
   calculator.
-- Future Pawley or whole-pattern methods get their own method modules and
-  result types rather than conditionals in one large refinement function.
+- Pawley fits independent bounded family areas through dedicated CW and TOF
+  method modules, sharing parameter, constraint and solver infrastructure.
 
 ## Le Bail contract
 
@@ -553,3 +573,19 @@ continuation, and a progress callback receiving plain event dictionaries. The
 result reports its stable termination reason and the last accepted checkpoint.
 Callback delivery occurs only at orchestration boundaries; no Python code runs
 inside the reflection/sample loop.
+
+## Pawley workflows
+
+[CW Pawley refinement](pawley.md) supports monochromatic and fixed-spectrum
+family areas; [TOF Pawley](tof-pawley.md) supports single banks and joint banks
+with shared cells. Both provide bounded/tied parameters, analytical derivatives,
+dense or matrix-free solving, cancellation and accepted-state restart.
+Use `phasesmith.refinement.pawley` or `phasesmith.refinement.tof_pawley` in Python,
+and `phasesmith::workflows` in Rust. Standalone CW version 2 and TOF version 1
+codecs also integrate into lossless [native format-7 bundles](native-persistence.md).
+See [validation](pawley-validation.md) for measured gates and model limitations.
+
+The unreleased supplement `api/python-pawley-api-unreleased.json` covers
+`phasesmith.refinement.pawley`, `phasesmith.refinement.tof_pawley` and
+`phasesmith.project_bundle`; pytest checks all three modules. The historical
+0.5.0 snapshot remains unchanged.

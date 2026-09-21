@@ -1,0 +1,394 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "format": {
+      "const": "phasesmith-tof-pawley"
+    },
+    "version": {
+      "const": 1
+    },
+    "input": {
+      "$ref": "#/$defs/input"
+    },
+    "options": {
+      "$ref": "https://phasesmith.readthedocs.io/schemas/pawley-project-v2.schema.json#/$defs/options"
+    },
+    "checkpoint": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/checkpoint"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "format",
+    "version",
+    "input",
+    "options",
+    "checkpoint"
+  ],
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://phasesmith.dev/schemas/tof-pawley-project-v1.schema.json",
+  "title": "PhaseSmith standalone joint TOF Pawley version 1",
+  "$defs": {
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "banks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/bank"
+          }
+        },
+        "shared_lattice": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/cell"
+          }
+        },
+        "signed_intensities": {
+          "type": "boolean"
+        },
+        "tail_log": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "parameters": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "$ref": "https://phasesmith.readthedocs.io/schemas/pawley-project-v2.schema.json#/$defs/parameter"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "constraints": {
+          "type": "array",
+          "items": {
+            "$ref": "https://phasesmith.readthedocs.io/schemas/pawley-project-v2.schema.json#/$defs/constraint"
+          }
+        }
+      },
+      "required": [
+        "banks",
+        "shared_lattice",
+        "signed_intensities",
+        "tail_log",
+        "parameters",
+        "constraints"
+      ]
+    },
+    "bank": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "tof_us": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        },
+        "observed_y": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "uncertainty": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "mask": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "boolean"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "background_y": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        },
+        "instrument": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 15,
+          "maxItems": 15
+        },
+        "phases": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/phase"
+          }
+        },
+        "background": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/background"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "normalization": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "id",
+        "tof_us",
+        "observed_y",
+        "uncertainty",
+        "mask",
+        "background_y",
+        "instrument",
+        "phases",
+        "background",
+        "normalization"
+      ]
+    },
+    "phase": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reflection_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "hkl": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": -2147483648,
+              "maximum": 2147483647
+            },
+            "minItems": 3,
+            "maxItems": 3
+          }
+        },
+        "d_spacing_angstrom": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        },
+        "intensities": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "reflection_ids",
+        "hkl",
+        "d_spacing_angstrom",
+        "intensities"
+      ]
+    },
+    "cell": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "cell": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 6,
+          "maxItems": 6
+        },
+        "reference_cell": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 6,
+          "maxItems": 6
+        },
+        "operations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "rotation": {
+                "type": "array",
+                "items": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer"
+                  },
+                  "minItems": 3,
+                  "maxItems": 3
+                },
+                "minItems": 3,
+                "maxItems": 3
+              },
+              "translation": {
+                "type": "array",
+                "items": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer"
+                  },
+                  "minItems": 2,
+                  "maxItems": 2
+                },
+                "minItems": 3,
+                "maxItems": 3
+              }
+            },
+            "required": [
+              "rotation",
+              "translation"
+            ]
+          }
+        },
+        "lower": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        },
+        "upper": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "cell",
+        "reference_cell",
+        "operations",
+        "lower",
+        "upper"
+      ]
+    },
+    "background": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "coefficients": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        },
+        "domain_us": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        }
+      },
+      "required": [
+        "id",
+        "coefficients",
+        "domain_us"
+      ]
+    },
+    "checkpoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "request_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "linear_initialized": {
+          "type": "boolean"
+        },
+        "free": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        },
+        "chi_square_history": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        },
+        "damping": {
+          "type": "number"
+        },
+        "support_local": {
+          "const": false
+        }
+      },
+      "required": [
+        "request_sha256",
+        "linear_initialized",
+        "free",
+        "chi_square_history",
+        "damping"
+      ]
+    }
+  }
+}

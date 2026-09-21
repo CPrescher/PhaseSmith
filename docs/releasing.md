@@ -55,7 +55,13 @@ crates.io job remains safely skipped while the variable is absent.
 2. Generate the new versioned public API snapshot when the version changes,
    review its diff, and run `python scripts/public_api_snapshot.py --check`.
 3. Run `python scripts/release_version.py --tag v<version>`.
-4. Run the complete Rust and Python gates and the crates.io dry run.
+4. Run the complete Rust and Python gates and the crates.io dry run. Verify
+   `python scripts/sync_skill.py --check`, build the strict documentation, and
+   check `phasesmith skill --path` and `phasesmith skill --print all` from the
+   installed wheel outside the checkout. Run the offline advisor-cycle example
+   in a new temporary directory; the installed skill must match the release's
+   commands and schemas. Substantial instruction changes also need the fresh
+   agent scenarios documented in `tests/skill_evaluation/README.md`.
 5. Run the Release workflow manually. This builds and tests artifacts but does
    not publish them.
 6. Commit and push the release state to `main`; confirm CI is green.

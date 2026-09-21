@@ -63,7 +63,13 @@ nav:
       - Effective starting profile: effective-profile-estimation.md
       - Fundamental-profile calibration: fundamental-profile-calibration.md
       - Rietveld refinement: rietveld.md
+      - Empirical Gaussian widths: empirical-gaussian.md
       - AI-guided automation: ai-automation.md
+      - Agent skill:
+          - Overview: agent-skill/index.md
+          - Experimental context: agent-skill/references/experiment.md
+          - Automation protocol: agent-skill/references/workflow.md
+          - Interpretation: agent-skill/references/interpretation.md
       - Refinement infrastructure: refinement.md
       - Runtime and recovery: refinement-runtime.md
       - Quantitative phase analysis: quantitative-phase-analysis.md
@@ -106,6 +112,12 @@ nav:
       - Rust API: rust-api.md
       - Dioptas integration: dioptas-integration.md
   - Validation and development:
+      - CW Pawley refinement: pawley.md
+      - TOF Pawley refinement: tof-pawley.md
+      - Pawley validation: pawley-validation.md
+      - Pawley profile diagnosis: pawley-profile-diagnosis.md
+      - Pawley implementation plan: pawley-plan.md
+      - Pawley completion audit: pawley-completion-audit.md
       - GSAS-II comparisons: gsasii-performance.md
       - Real-data benchmark report: gsasii-benchmark-report.md
       - Benchmark campaign ledger: gsasii-benchmark-campaign.md
@@ -114,6 +126,7 @@ nav:
       - XRD-Rust performance: xrd-rust-performance.md
       - Rowles optics audit: topas-rowles-model.md
       - Documentation development: documentation.md
+      - Release candidate 0.7: release-candidate-0.7.md
       - Release process: releasing.md
 
 not_in_nav: |

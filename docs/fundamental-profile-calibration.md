@@ -106,8 +106,11 @@ follow Cheary and Coelho, *J. Appl. Cryst.* **31** (1998), 851--861,
 [doi:10.1107/S0021889898006876](https://doi.org/10.1107/S0021889898006876),
 and the explicit NIST conventions in Mendenhall, Mullen and Cline. The
 integration and coordinate transform are independent PhaseSmith derivations.
-The point-source/point-sample limit is tested directly against the independent
-FCJ reference.
+The separately evaluated point-source/point-sample case uses the exact FCJ
+coordinate density `cos(gamma)^2 / sin(a)` and is tested against the independent
+FCJ reference. This branch was corrected by the direct angular-equation audit;
+the finite-source ray-density approximation above is a separate model and is
+not validated by that point-source equality test.
 
 This increment still excludes flat-plate transparency, equatorial divergence
 beyond the ideal apertures, tube tails, passband-induced angular dispersion,

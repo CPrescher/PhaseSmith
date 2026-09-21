@@ -10,6 +10,7 @@ from numpy.typing import ArrayLike, NDArray
 
 from . import _core
 from ._api import _vector
+from .accuracy import ProfileAccuracy
 from .instrument import ConstantWavelengthInstrument, FcjGeometry
 from .radiation import WavelengthComponents, component_global_parameter_names
 from .results import AccumulationResult, _build_accumulation_result
@@ -43,9 +44,16 @@ def profile_fcj(
     gaussian_fwhm_deg: float,
     lorentzian_fwhm_deg: float,
     geometry: FcjGeometry,
+    *,
+    profile_accuracy: ProfileAccuracy | None = None,
 ) -> FcjProfileResult:
     """Evaluate one normalized FCJ-convolved TCH profile."""
 
+    accuracy = ProfileAccuracy() if profile_accuracy is None else profile_accuracy
+    if not isinstance(accuracy, ProfileAccuracy):
+        raise TypeError("profile_accuracy must be ProfileAccuracy")
+    if accuracy.tail_area_tolerance is not None:
+        raise ValueError("profile_fcj is untruncated; tail policy belongs to accumulation")
     arrays = _core.profile_fcj(
         _vector(x_deg, "x_deg"),
         float(position_deg),
@@ -53,6 +61,7 @@ def profile_fcj(
         float(lorentzian_fwhm_deg),
         geometry.sample_over_radius,
         geometry.detector_over_radius,
+        accuracy.fast_fcj,
     )
     return FcjProfileResult(*arrays)
 

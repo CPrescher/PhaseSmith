@@ -1,0 +1,195 @@
+{
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "python": "3.13.5",
+  "numpy": "2.5.3",
+  "build": "maturin develop --release",
+  "native_binary_sha256": "47d21c4130a2596ed6ca7491201b777ce222cd7123b10e743b3b1046b972be68",
+  "runner_sha256": "d061d44f1d5facb87e6ab97694aa74551f4dafd824be700b36a985035f5b4210",
+  "peak_process_rss_bytes": 182534144,
+  "cases": [
+    {
+      "reflections": 256,
+      "samples": 10001,
+      "phases": 2,
+      "fcj": false,
+      "joint_width": false,
+      "serial_native": true,
+      "solver": "matrix_free",
+      "fixed_spectrum": true,
+      "jacobian_storage_elements": 153511,
+      "times_seconds": [
+        0.04860191699117422,
+        0.048486042011063546
+      ],
+      "median_seconds": 0.048543979501118883,
+      "p95_seconds": 0.048596123242168686,
+      "scientific": {
+        "relative_l2": 4.7845279737788975e-14,
+        "rank": null,
+        "accepted_steps": 2,
+        "termination": "converged",
+        "profile_sha256": "a9d88aca8246eb76d9c73361bc527891c8c077dc442428f0780d65145ed44b95",
+        "history_sha256": "2692bb19a4553f6d8a4f26566e42b5b76cb2fbf2ec6b195a694802ea604dedce",
+        "evaluations": 3,
+        "linear_iterations": 4
+      },
+      "diagnostics": [
+        {
+          "evaluations": 3,
+          "linear_iterations": 4,
+          "krylov_iterations": 39,
+          "evaluation_seconds": 0.016720666999999998,
+          "qr_seconds": 0.0,
+          "face_seconds": 0.006048791,
+          "multiplier_seconds": 8.4e-08,
+          "diagnostic_seconds": 0.003031,
+          "convergence_criterion": "projected_gradient",
+          "backtrack_rejections": 0,
+          "last_step_norm": 1.505757922204596e-10,
+          "projected_gradient_norm": 8.498707425347438e-11,
+          "infeasible_trials": 0,
+          "last_rejected_error": null
+        },
+        {
+          "evaluations": 3,
+          "linear_iterations": 4,
+          "krylov_iterations": 39,
+          "evaluation_seconds": 0.016520125,
+          "qr_seconds": 0.0,
+          "face_seconds": 0.006077334,
+          "multiplier_seconds": 8.4e-08,
+          "diagnostic_seconds": 0.003052375,
+          "convergence_criterion": "projected_gradient",
+          "backtrack_rejections": 0,
+          "last_step_norm": 1.505757922204596e-10,
+          "projected_gradient_norm": 8.498707425347438e-11,
+          "infeasible_trials": 0,
+          "last_rejected_error": null
+        }
+      ]
+    },
+    {
+      "reflections": 256,
+      "samples": 10001,
+      "phases": 2,
+      "fcj": true,
+      "joint_width": true,
+      "serial_native": true,
+      "solver": "matrix_free",
+      "fixed_spectrum": true,
+      "jacobian_storage_elements": 153527,
+      "times_seconds": [
+        0.13644637499237433,
+        0.13637295801891014
+      ],
+      "median_seconds": 0.13640966650564224,
+      "p95_seconds": 0.13644270414370113,
+      "scientific": {
+        "relative_l2": 2.082526721605687e-15,
+        "rank": null,
+        "accepted_steps": 5,
+        "termination": "converged",
+        "profile_sha256": "bae067d33e1a5c3b4ea33cffc31ca3d4eca767e7ccb3fce6262ea6c953b39c31",
+        "history_sha256": "a9a19a573675f882d9009e487e86db47c58caf9ee4fd22bcf06151a6cd5f7d22",
+        "evaluations": 6,
+        "linear_iterations": 8
+      },
+      "diagnostics": [
+        {
+          "evaluations": 6,
+          "linear_iterations": 8,
+          "krylov_iterations": 96,
+          "evaluation_seconds": 0.079333791,
+          "qr_seconds": 0.0,
+          "face_seconds": 0.014759001,
+          "multiplier_seconds": 1.26e-07,
+          "diagnostic_seconds": 0.003460333,
+          "convergence_criterion": "projected_gradient",
+          "backtrack_rejections": 0,
+          "last_step_norm": 0.0,
+          "projected_gradient_norm": 2.9907430828373905e-12,
+          "infeasible_trials": 0,
+          "last_rejected_error": null
+        },
+        {
+          "evaluations": 6,
+          "linear_iterations": 8,
+          "krylov_iterations": 96,
+          "evaluation_seconds": 0.079166708,
+          "qr_seconds": 0.0,
+          "face_seconds": 0.014770875000000001,
+          "multiplier_seconds": 1.24e-07,
+          "diagnostic_seconds": 0.0034355,
+          "convergence_criterion": "projected_gradient",
+          "backtrack_rejections": 0,
+          "last_step_norm": 0.0,
+          "projected_gradient_norm": 2.9907430828373905e-12,
+          "infeasible_trials": 0,
+          "last_rejected_error": null
+        }
+      ]
+    },
+    {
+      "reflections": 811,
+      "samples": 23003,
+      "phases": 2,
+      "fcj": false,
+      "joint_width": false,
+      "serial_native": true,
+      "solver": "matrix_free",
+      "fixed_spectrum": true,
+      "jacobian_storage_elements": 868340,
+      "times_seconds": [
+        0.31075462501030415,
+        0.313046958995983
+      ],
+      "median_seconds": 0.3119007920031436,
+      "p95_seconds": 0.3129323422966991,
+      "scientific": {
+        "relative_l2": 5.927170431479663e-14,
+        "rank": null,
+        "accepted_steps": 2,
+        "termination": "converged",
+        "profile_sha256": "37ab3762551d3bbdeaf6dc9fdbe6c23e0d9decd0d040ee11ed98601d5b6cfbc7",
+        "history_sha256": "cc1ba2546d539bf8fc8938bdbdd2b0a1ce19a6639f431b32be25ae58ca1d643e",
+        "evaluations": 3,
+        "linear_iterations": 4
+      },
+      "diagnostics": [
+        {
+          "evaluations": 3,
+          "linear_iterations": 4,
+          "krylov_iterations": 84,
+          "evaluation_seconds": 0.10835045800000001,
+          "qr_seconds": 0.0,
+          "face_seconds": 0.06723949900000001,
+          "multiplier_seconds": 4.2e-08,
+          "diagnostic_seconds": 0.021279167,
+          "convergence_criterion": "projected_gradient",
+          "backtrack_rejections": 0,
+          "last_step_norm": 8.328350740312146e-10,
+          "projected_gradient_norm": 2.445236959149231e-10,
+          "infeasible_trials": 0,
+          "last_rejected_error": null
+        },
+        {
+          "evaluations": 3,
+          "linear_iterations": 4,
+          "krylov_iterations": 84,
+          "evaluation_seconds": 0.10888104100000001,
+          "qr_seconds": 0.0,
+          "face_seconds": 0.068563501,
+          "multiplier_seconds": 4.2e-08,
+          "diagnostic_seconds": 0.020292459,
+          "convergence_criterion": "projected_gradient",
+          "backtrack_rejections": 0,
+          "last_step_norm": 8.328350740312146e-10,
+          "projected_gradient_norm": 2.445236959149231e-10,
+          "infeasible_trials": 0,
+          "last_rejected_error": null
+        }
+      ]
+    }
+  ],
+  "note": "Process RSS includes Python, reference data and returned derivatives for the selected solver."
+}

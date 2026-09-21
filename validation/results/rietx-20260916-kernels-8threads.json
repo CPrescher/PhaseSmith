@@ -1,0 +1,201 @@
+{
+  "schema": "phasesmith.rietx-kernel-benchmark.v1",
+  "scope": "symmetric_profile_accumulation_and_four_local_derivatives",
+  "excludes": [
+    "structure factors",
+    "reflection generation",
+    "optimization",
+    "file I/O",
+    "process/import startup",
+    "rietx frozen layout preparation"
+  ],
+  "notes": [
+    "PhaseSmith includes boundary validation and support discovery on each call.",
+    "rietx uses precomputed frozen padded windows; allocations and derivative scaling are timed.",
+    "No claim about default rietx support, FCJ, or complete refinement speed."
+  ],
+  "environment": {
+    "platform": "macOS-26.6.2-arm64-arm-64bit",
+    "processor": "arm",
+    "python": "3.12.13",
+    "cpu_count": 14,
+    "versions": {
+      "phasesmith": "0.5.0",
+      "rietx": "1.4.0",
+      "numpy": "2.5.3",
+      "numba": "0.67.0",
+      "scipy": "1.18.1"
+    },
+    "phasesmith_build": "release",
+    "phasesmith_threads": 1,
+    "rietx_threads": 8,
+    "rietx_kernel_source_sha256": "5f1b9531d712cebd4f454a139aa07e609dac341f60cce4b924394526ba4c8e6a"
+  },
+  "rietx_compile_or_cache_load_ms": 119.75912500201957,
+  "warmups": 3,
+  "repetitions": 11,
+  "cases": [
+    {
+      "peaks": 400,
+      "samples": 20001,
+      "active_peak_samples": 163727,
+      "rietx_padded_peak_samples": 274000,
+      "support_fwhm": 20.0,
+      "gate": {
+        "passed": true,
+        "maximum_absolute_derivative_error": 5.820766091346741e-10,
+        "value_rtol": 2e-12,
+        "value_atol": 2e-10,
+        "derivative_rtol": 2e-11,
+        "derivative_atol": 2e-08
+      },
+      "timings": {
+        "phasesmith": {
+          "min_ms": 0.748584,
+          "median_ms": 0.765666,
+          "p95_ms": 0.7945,
+          "timings_ms": [
+            0.760125,
+            0.7945,
+            0.748584,
+            0.758708,
+            0.777416,
+            0.765666,
+            0.781875,
+            0.787084,
+            0.762291,
+            0.781625,
+            0.758625
+          ]
+        },
+        "rietx": {
+          "min_ms": 1.122542,
+          "median_ms": 1.161583,
+          "p95_ms": 1.252916,
+          "timings_ms": [
+            1.154125,
+            1.252916,
+            1.178875,
+            1.122542,
+            1.14825,
+            1.144667,
+            1.161583,
+            1.182,
+            1.163666,
+            1.140125,
+            1.177792
+          ]
+        }
+      },
+      "rietx_over_phasesmith_median": 1.5170883910216728
+    },
+    {
+      "peaks": 1600,
+      "samples": 20001,
+      "active_peak_samples": 643897,
+      "rietx_padded_peak_samples": 1096000,
+      "support_fwhm": 20.0,
+      "gate": {
+        "passed": true,
+        "maximum_absolute_derivative_error": 4.656612873077393e-10,
+        "value_rtol": 2e-12,
+        "value_atol": 2e-10,
+        "derivative_rtol": 2e-11,
+        "derivative_atol": 2e-08
+      },
+      "timings": {
+        "phasesmith": {
+          "min_ms": 2.683542,
+          "median_ms": 2.769375,
+          "p95_ms": 2.874125,
+          "timings_ms": [
+            2.706083,
+            2.683542,
+            2.769375,
+            2.760083,
+            2.841,
+            2.770166,
+            2.853417,
+            2.718875,
+            2.724792,
+            2.832542,
+            2.874125
+          ]
+        },
+        "rietx": {
+          "min_ms": 1.771041,
+          "median_ms": 1.996791,
+          "p95_ms": 2.100209,
+          "timings_ms": [
+            1.820792,
+            1.80125,
+            2.061542,
+            1.771041,
+            2.100209,
+            1.91375,
+            2.039292,
+            1.896125,
+            2.059167,
+            1.996791,
+            2.031291
+          ]
+        }
+      },
+      "rietx_over_phasesmith_median": 0.7210258632362897
+    },
+    {
+      "peaks": 1600,
+      "samples": 100001,
+      "active_peak_samples": 3219449,
+      "rietx_padded_peak_samples": 5481600,
+      "support_fwhm": 20.0,
+      "gate": {
+        "passed": true,
+        "maximum_absolute_derivative_error": 9.313225746154785e-10,
+        "value_rtol": 2e-12,
+        "value_atol": 2e-10,
+        "derivative_rtol": 2e-11,
+        "derivative_atol": 2e-08
+      },
+      "timings": {
+        "phasesmith": {
+          "min_ms": 13.632458,
+          "median_ms": 14.07175,
+          "p95_ms": 14.279666,
+          "timings_ms": [
+            14.228792,
+            13.99825,
+            14.236375,
+            14.07175,
+            13.931041,
+            13.632458,
+            14.01525,
+            14.083625,
+            14.026458,
+            14.130084,
+            14.279666
+          ]
+        },
+        "rietx": {
+          "min_ms": 7.883666,
+          "median_ms": 8.206834,
+          "p95_ms": 11.394625,
+          "timings_ms": [
+            8.262625,
+            8.206834,
+            9.438042,
+            7.963375,
+            8.257417,
+            7.883666,
+            8.147417,
+            8.091417,
+            8.257333,
+            7.907875,
+            11.394625
+          ]
+        }
+      },
+      "rietx_over_phasesmith_median": 0.5832134595910247
+    }
+  ]
+}

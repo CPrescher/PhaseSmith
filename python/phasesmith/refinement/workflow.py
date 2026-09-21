@@ -283,6 +283,7 @@ def run_rietveld_recipe(
         current.phases,
         background=current.background,
         support_fwhm=selected_options.support_fwhm,
+        profile_accuracy=selected_options.profile_accuracy,
         execution=selected_options.execution,
     )
     current_rwp = evaluate_residuals(

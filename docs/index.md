@@ -19,6 +19,8 @@ consume directly—no Python process or sidecar is required for a Rust GUI.
    with checkpoints and reports.
 6. [AI-guided automation](ai-automation.md) — let an external AI propose
    auditable staged recipes without giving it numerical or execution authority.
+   The [agent skill](agent-skill/index.md) packages the operating protocol and
+   scientific decision rules for use in an agent's own environment.
 7. [Persistence](persistence.md) — save and restore Python workflow state.
 8. [Native project persistence](native-persistence.md) — use the Rust-only,
    multi-histogram JSON+NPZ project and reporting boundary.
@@ -27,6 +29,9 @@ consume directly—no Python process or sidecar is required for a Rust GUI.
 
 For shared refinement controls, cancellation, logs, and safe checkpoints, see
 [refinement](refinement.md) and [refinement runtime](refinement-runtime.md).
+For post-fit evidence, see [fit reports](fit-report.md). The
+[rietx comparison](rietx-comparison.md) records controlled speed measurements
+and the proposed capability development sequence.
 
 ## Numerical conventions
 
@@ -55,8 +60,37 @@ For shared refinement controls, cancellation, logs, and safe checkpoints, see
 - [Public Python architecture](public-api.md)
 - [Native Rust API and GUI integration](rust-api.md)
 
+- [Empirical Gaussian widths](empirical-gaussian.md) — explicit reference-phase
+  convention when independent instrument calibration is unavailable.
+
+## Pawley refinement
+
+- [CW Pawley user guide](pawley.md) — bounded family areas, joint cell/profile
+  refinement, diagnostics and restart.
+- [Pawley validation](pawley-validation.md) and
+  [implementation roadmap](pawley-plan.md), including fixed CW spectra and
+  [joint multi-bank TOF](tof-pawley.md).
+
 ## Validation and performance
 
+- [Original-recipe convergence audit](qarr-convergence-audit.md) — repeated
+  timings and feasible-descent checks expose a stopping-condition weakness.
+
+- [QARR holdout investigation](qarr-holdout-investigation.md) — distinguish
+  convergence, width assumptions and phase-fraction accuracy on a second sample.
+
+- [Quality-first recovery](refinement-quality-recovery.md) — fixed-quality
+  convergence benchmarks and retained-state damping recovery.
+
+- [Powder Friedel averaging](powder-friedel.md) — corrected anomalous powder
+  intensities and analytical derivatives; individual-reflection API semantics.
+- [Choosing profile accuracy](profile-accuracy.md) — explicit FCJ quadrature
+  and tail-area controls with persistence and validation contracts.
+- [rietx workload audit](rietx-workload-audit.md) — controlled real-data
+  experiments isolate axial approximations, support windows and solver work.
+- [Refinement performance improvements](refinement-performance-round2.md) —
+  batched FCJ evaluation, reusable scale profiles, native diagnostics and real
+  QARR measurements, with links to the earlier optimization work.
 - [PhaseSmith versus XRD-Rust](xrd-rust-performance.md) — reproducible public
   stick-pattern timings, numerical checks, and retained raw results.
 - [PhaseSmith versus GSAS-II](gsasii-performance.md) — pinned-oracle kernel and

@@ -1256,7 +1256,7 @@ def test_project_facade_refines_stops_reports_and_resumes(tmp_path) -> None:
 
     saved = project.save(tmp_path / "project")
     manifest = json.loads((saved / "manifest.json").read_text())
-    assert manifest["format_version"] == 5
+    assert manifest["format_version"] == 7
     restored = phasesmith.RietveldProject.load(saved)
     assert restored.checkpoint is not None and project.checkpoint is not None
     assert restored.checkpoint._native is not None
@@ -1467,7 +1467,7 @@ def test_native_adapter_saves_validates_and_restores_restart_handle(tmp_path) ->
     )
 
     manifest = json.loads((tmp_path / "native-project" / "manifest.json").read_text())
-    assert manifest["format_version"] == 5
+    assert manifest["format_version"] == 7
     stored = _core._StoredRietveldProject.load(destination)
     assert stored.project_record() == ("python-project", 4, "Python project")
     assert stored.histogram_records() == [("histogram", "Observed pattern")]

@@ -1,0 +1,291 @@
+{
+  "manifest": {
+    "schema_version": 2,
+    "scope": "CW Pawley real-data smoke and repeatability gates; not cross-program optimizer parity",
+    "common": {
+      "profile_parameters": [
+        "u_deg2",
+        "v_deg2",
+        "w_deg2",
+        "x_deg",
+        "y_deg"
+      ],
+      "signed_intensities": false,
+      "use_uncertainty": true,
+      "merge_friedel": true,
+      "initial_intensity": 1.0,
+      "background_iterations": 50,
+      "max_evaluations": 1000,
+      "max_rejections": 20,
+      "max_seconds": 240.0,
+      "max_elements": 150000000,
+      "rank_tolerance": 1e-10,
+      "tolerance": 1e-09,
+      "damping": 1e-06,
+      "max_active_iterations": 2000,
+      "minimum_relative_chi_square_improvement": 0.05,
+      "rwp_recomputation_absolute_tolerance": 1e-12,
+      "accepted_terminations": [
+        "converged"
+      ],
+      "repeats": 2
+    },
+    "datasets": {
+      "aps-sucrose-11bmb": {
+        "range_deg": [
+          1.0,
+          24.0
+        ],
+        "maximum_rwp": 0.25,
+        "minimum_profile_correlation": 0.95,
+        "max_iterations": 40,
+        "instrument": [
+          0.413259,
+          0.0001163,
+          -1.26e-05,
+          6.3e-06,
+          0.00173,
+          0.0
+        ],
+        "data_file": "11bmb_8716.fxye",
+        "data_format": "gsas_fxye",
+        "cell": [
+          7.715231369389035,
+          8.663866877499101,
+          10.809618877725404,
+          90.0,
+          102.98249193732556,
+          90.0
+        ],
+        "space_group_number": 4,
+        "support_fwhm": 30.0,
+        "background": {
+          "kind": "physical_width",
+          "width_deg": 0.1
+        }
+      },
+      "ansto-echidna-lab6-cw-neutron": {
+        "range_deg": [
+          20.0,
+          125.5
+        ],
+        "maximum_rwp": 0.3,
+        "minimum_profile_correlation": 0.9,
+        "max_iterations": 40,
+        "instrument": [
+          2.047,
+          0.014,
+          -0.253,
+          0.516,
+          0.05,
+          0.0
+        ],
+        "data_file": "ECH0034258_LaB6.xyd",
+        "data_format": "columns",
+        "cell": [
+          4.156826,
+          4.156826,
+          4.156826,
+          90.0,
+          90.0,
+          90.0
+        ],
+        "space_group_number": 221,
+        "support_fwhm": 8.0,
+        "background": {
+          "kind": "sample_window",
+          "points": 20
+        }
+      }
+    }
+  },
+  "results": [
+    {
+      "dataset": "aps-sucrose-11bmb",
+      "verified_files": {
+        "11bmb_8716.fxye": "0971eebded2fdc6d8ae81a228325b2075ac45f6605da67468750e16ec23ecadd",
+        "11bmb_8716.prm": "ef606d5620cc8c8d9e7b712e1ba6113c9628e83f085835a2d477d4cd4d0d312c"
+      },
+      "request_sha256": "395969d0cadb8e1138603eec58ded5b27df3789bc29244d193df90e0ce436dc0",
+      "samples": 23003,
+      "reflections": 811,
+      "times_seconds": [
+        84.5402968749986,
+        85.07289229099115
+      ],
+      "rwp": 0.06605397125781577,
+      "initial_rwp": 0.6276574517481527,
+      "profile_correlation": 0.9967438709727038,
+      "rank": 817,
+      "termination": "stagnated",
+      "accepted_steps": 20,
+      "active_width_bounds": false,
+      "covariance_limitation": "bound-active solution: Gaussian covariance omitted",
+      "lattice_parameters": {},
+      "profile_coefficients": {
+        "u_deg2": 0.0006013622246653612,
+        "v_deg2": -8.480315072912679e-05,
+        "w_deg2": 4.701658135975816e-06,
+        "x_deg": 0.0022127083937447875,
+        "y_deg": 0.02029708106940725
+      },
+      "diagnostics": [
+        {
+          "evaluations": 220,
+          "linear_iterations": 336,
+          "evaluation_seconds": 3.332042705000002,
+          "qr_seconds": 59.19862879,
+          "face_seconds": 12.369940474000007,
+          "multiplier_seconds": 1.0636690039999996,
+          "diagnostic_seconds": 6.4370275,
+          "convergence_criterion": null,
+          "backtrack_rejections": 199,
+          "last_step_norm": 8.701757355742382e-08,
+          "projected_gradient_norm": 0.08466989485450752,
+          "infeasible_trials": 0,
+          "last_rejected_error": null
+        },
+        {
+          "evaluations": 220,
+          "linear_iterations": 336,
+          "evaluation_seconds": 3.357147048999999,
+          "qr_seconds": 60.04470129,
+          "face_seconds": 12.598265241999991,
+          "multiplier_seconds": 1.0800434039999998,
+          "diagnostic_seconds": 5.910996292,
+          "convergence_criterion": null,
+          "backtrack_rejections": 199,
+          "last_step_norm": 8.701757355742382e-08,
+          "projected_gradient_norm": 0.08466989485450752,
+          "infeasible_trials": 0,
+          "last_rejected_error": null
+        }
+      ],
+      "accepted_history": [
+        7067491.093540869,
+        247815.17392455487,
+        80200.43450041724,
+        78288.7740405806,
+        78274.11486715998,
+        78274.04524641842,
+        78274.04412325966,
+        78274.0416144844,
+        78274.0415012806,
+        78274.04144485597,
+        78274.04141670193,
+        78274.04140271322,
+        78274.04139605816,
+        78274.04139089292,
+        78274.0413893887,
+        78274.04138926177,
+        78274.04138925833,
+        78274.04138925819,
+        78274.0413892581,
+        78274.04138925792,
+        78274.04138925782
+      ],
+      "checks": {
+        "rwp": true,
+        "correlation": true,
+        "improvement": true,
+        "manual_weighting": true,
+        "intensity_policy": true,
+        "converged": false,
+        "repeatable": true
+      },
+      "passed": false
+    },
+    {
+      "dataset": "ansto-echidna-lab6-cw-neutron",
+      "verified_files": {
+        "ECH0034258_LaB6.xyd": "09950aaf3596518a40b2c5173ffdfd870043f55dcd3390fb83dc9f64e348e115",
+        "ECH0034258_LaB6.cif": "0fa02945683ea39d56dfb81d0f99de629e4e336abab85c6d92b3689b42d130d1"
+      },
+      "request_sha256": "be638891bcc88b6f92315019773a187c73a3024eaa8bc072669dbd8560cc1751",
+      "samples": 2111,
+      "reflections": 13,
+      "times_seconds": [
+        0.007240208011353388,
+        0.007293542003026232
+      ],
+      "rwp": 0.2848692925121915,
+      "initial_rwp": 0.6855593252527982,
+      "profile_correlation": 0.9575662657422671,
+      "rank": 18,
+      "termination": "converged",
+      "accepted_steps": 10,
+      "active_width_bounds": false,
+      "covariance_limitation": "rank deficient or unobserved free columns",
+      "lattice_parameters": {},
+      "profile_coefficients": {
+        "u_deg2": 0.011830447156497937,
+        "v_deg2": -0.029804015786066385,
+        "w_deg2": 0.05949637473362704,
+        "x_deg": 0.2829284160461475,
+        "y_deg": -0.31783967401351515
+      },
+      "diagnostics": [
+        {
+          "evaluations": 13,
+          "linear_iterations": 39,
+          "evaluation_seconds": 0.001548665,
+          "qr_seconds": 0.0013211680000000002,
+          "face_seconds": 0.0006020020000000002,
+          "multiplier_seconds": 5.3583999999999994e-05,
+          "diagnostic_seconds": 0.000326458,
+          "convergence_criterion": "relative_objective",
+          "backtrack_rejections": 2,
+          "last_step_norm": 0.051482509219948965,
+          "projected_gradient_norm": null,
+          "infeasible_trials": 0,
+          "last_rejected_error": null
+        },
+        {
+          "evaluations": 13,
+          "linear_iterations": 39,
+          "evaluation_seconds": 0.001501708,
+          "qr_seconds": 0.0013256680000000003,
+          "face_seconds": 0.0005759570000000003,
+          "multiplier_seconds": 4.724699999999999e-05,
+          "diagnostic_seconds": 0.000333208,
+          "convergence_criterion": "relative_objective",
+          "backtrack_rejections": 2,
+          "last_step_norm": 0.051482509219948965,
+          "projected_gradient_norm": null,
+          "infeasible_trials": 0,
+          "last_rejected_error": null
+        }
+      ],
+      "accepted_history": [
+        671621.1877788333,
+        393958.0234043038,
+        270808.1228292673,
+        168651.2778179722,
+        133995.52257479125,
+        116960.30502258631,
+        115970.65449129467,
+        115964.69712994099,
+        115964.63870968683,
+        115964.63813727896,
+        115964.6381311023
+      ],
+      "checks": {
+        "rwp": true,
+        "correlation": true,
+        "improvement": true,
+        "manual_weighting": true,
+        "intensity_policy": true,
+        "converged": true,
+        "repeatable": true
+      },
+      "passed": true
+    }
+  ],
+  "provenance": {
+    "python": "3.13.7",
+    "numpy": "2.5.3",
+    "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+    "native_binary_sha256": "121af36e7ee0fac45faf3a5116f0f39cf9e897a4c7c61bccd09e9f05ea6f69d5",
+    "runner_sha256": "b3a17bb0f924a088121ebf9a2cbf18092a716b48c996eff87db29d3b7d75ae4b"
+  }
+}

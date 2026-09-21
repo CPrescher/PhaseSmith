@@ -11,6 +11,7 @@ from concurrent.futures import Executor
 from contextlib import nullcontext, suppress
 from dataclasses import dataclass, field, replace
 from functools import partial
+from itertools import islice
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal, TypeVar, cast
 
@@ -18,8 +19,10 @@ import numpy as np
 from numpy.typing import NDArray
 
 from .. import _core
+from ..accuracy import ProfileAccuracy
 from ..control import CancellationCallback, CancellationToken
 from ..crystallography import p1_parameter_names
+from ..empirical import EmpiricalGaussianConvention
 from ..execution import ExecutionPolicy, execution_pool
 from ..extensions import CompositePhysicsProvider
 from ..intensity_corrections import (
@@ -611,10 +614,12 @@ def _native_multiphase(
 ) -> object | None:
     if not prepared or any(item._native_model is None for item in prepared):
         return None
-    return _core._StructuralMultiphase(
+    native = _core._StructuralMultiphase(
         [item._native_model for item in prepared],
         prepared[0].execution._native,
     )
+    prepared[0].profile_accuracy._apply(native)
+    return native
 
 
 def _prepared_for_task(task: object) -> PreparedStructuralPattern:
@@ -817,6 +822,7 @@ def calculate(
     phases: tuple[RietveldPhase, ...],
     *,
     support_fwhm: float = 20.0,
+    profile_accuracy: ProfileAccuracy | None = None,
     background: DifferentiableBackground | None = None,
     execution: ExecutionPolicy | None = None,
 ) -> RietveldCalculationResult:
@@ -834,6 +840,7 @@ def calculate(
             experiment,
             phase,
             support_fwhm=support_fwhm,
+            profile_accuracy=profile_accuracy,
             execution=selected_execution,
         )
         for phase in selected
@@ -868,6 +875,7 @@ class RietveldInput:
     constraints: tuple[Constraint, ...] = ()
     selection: RietveldParameterSelection = RietveldParameterSelection()
     background: DifferentiableBackground | None = None
+    empirical_gaussian: EmpiricalGaussianConvention | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "phases", tuple(self.phases))
@@ -920,6 +928,24 @@ class RietveldInput:
                 atol=2.0e-12,
             ):
                 raise ValueError(f"parameter value for {key.label} does not match its domain")
+        if self.empirical_gaussian is not None:
+            if not isinstance(self.empirical_gaussian, EmpiricalGaussianConvention):
+                raise TypeError("empirical_gaussian must be EmpiricalGaussianConvention")
+            self.empirical_gaussian.validate_phases(self.phases)
+            reference_key = sample_parameter_key(
+                self.empirical_gaussian.reference_phase_id, "isotropic_microstrain.rms"
+            )
+            if reference_key in self.parameters.keys:
+                from .workflow import _constraint_keys
+
+                required = FixedConstraint(
+                    reference_key, self.empirical_gaussian.reference_rms_microstrain
+                )
+                related = tuple(c for c in self.constraints if reference_key in _constraint_keys(c))
+                if related and related != (required,):
+                    raise ValueError("constraint conflicts with empirical Gaussian reference")
+                if not related:
+                    object.__setattr__(self, "constraints", (*self.constraints, required))
         transform = ConstraintTransform(self.parameters, self.constraints)
         constrained_values = transform.unpack(transform.pack())
         for key, value in domain_values.items():
@@ -1112,6 +1138,7 @@ class RietveldOptions:
     max_backtracks: int = 8
     use_uncertainty: bool = True
     support_fwhm: float = 20.0
+    profile_accuracy: ProfileAccuracy = field(default_factory=ProfileAccuracy)
     max_linearization_elements: int = 10_000_000
     estimate_covariance: bool = True
     max_covariance_parameters: int = 64
@@ -1119,6 +1146,8 @@ class RietveldOptions:
     execution: ExecutionPolicy = field(default_factory=ExecutionPolicy)
 
     def __post_init__(self) -> None:
+        if not isinstance(self.profile_accuracy, ProfileAccuracy):
+            raise TypeError("profile_accuracy must be ProfileAccuracy")
         if not isinstance(self.limits, RefinementLimits):
             raise TypeError("limits must be RefinementLimits")
         if not isinstance(self.execution, ExecutionPolicy):
@@ -1227,8 +1256,16 @@ class RietveldCheckpoint:
     experiment: ConstantWavelengthExperiment | None = None
     background: DifferentiableBackground | None = None
     _native: object | None = field(default=None, repr=False, compare=False)
+    profile_accuracy: ProfileAccuracy = field(default_factory=ProfileAccuracy)
+    empirical_gaussian: EmpiricalGaussianConvention | None = None
 
     def __post_init__(self) -> None:
+        if self.empirical_gaussian is not None:
+            if not isinstance(self.empirical_gaussian, EmpiricalGaussianConvention):
+                raise TypeError("checkpoint empirical_gaussian must be EmpiricalGaussianConvention")
+            self.empirical_gaussian.validate_phases(self.phases)
+        if not isinstance(self.profile_accuracy, ProfileAccuracy):
+            raise TypeError("checkpoint profile_accuracy must be ProfileAccuracy")
         object.__setattr__(self, "phases", tuple(self.phases))
         object.__setattr__(self, "lattice_domains", tuple(self.lattice_domains))
         object.__setattr__(self, "history", tuple(self.history))
@@ -1590,6 +1627,7 @@ class _RietveldLinearization:
                 experiment,
                 phase,
                 support_fwhm=options.support_fwhm,
+                profile_accuracy=options.profile_accuracy,
                 execution=(options.execution if executor is None else ExecutionPolicy(threads=1)),
             )
             for phase in phases
@@ -2064,6 +2102,8 @@ def _checkpoint(
     objective: float,
     damping: float,
     history: list[RietveldIterationRecord],
+    profile_accuracy: ProfileAccuracy,
+    empirical_gaussian: EmpiricalGaussianConvention | None,
 ) -> RietveldCheckpoint:
     return RietveldCheckpoint(
         len(history),
@@ -2075,6 +2115,8 @@ def _checkpoint(
         tuple(history),
         experiment,
         background,
+        profile_accuracy=profile_accuracy,
+        empirical_gaussian=empirical_gaussian,
     )
 
 
@@ -2147,6 +2189,12 @@ def _refine_with_executor(
     selected = RietveldOptions() if options is None else options
     if not isinstance(selected, RietveldOptions):
         raise TypeError("options must be RietveldOptions")
+    if checkpoint is not None and not isinstance(checkpoint, RietveldCheckpoint):
+        raise TypeError("checkpoint must be RietveldCheckpoint")
+    if checkpoint is not None and checkpoint.empirical_gaussian != input_data.empirical_gaussian:
+        raise ValueError("checkpoint empirical Gaussian convention changed")
+    if checkpoint is not None and checkpoint.profile_accuracy != selected.profile_accuracy:
+        raise ValueError("checkpoint profile accuracy changed")
     runtime = RefinementRuntime(
         selected.limits,
         cancellation=cancellation,
@@ -2229,38 +2277,133 @@ def _refine_with_executor(
                 if step_norm > selected.max_scaled_parameter_step:
                     step *= selected.max_scaled_parameter_step / step_norm
                     step_norm = selected.max_scaled_parameter_step
-                if step_norm < selected.parameter_tolerance:
-                    termination = TerminationReason.CONVERGED
-                    termination_message = "scaled parameter step reached tolerance"
-                    break
                 packed = transform.pack()
-                accepted = False
-                for backtrack in range(selected.max_backtracks + 1):
-                    factor = 0.5**backtrack
-                    trial_values = transform.unpack(packed + factor * step, clip=True)
-                    trial_experiment, trial_background = _apply_profile_background_values(
-                        experiment,
-                        background,
-                        trial_values,
-                    )
-                    trial_lattice_domains = tuple(
-                        None
-                        if domain is None
-                        else replace(
-                            domain,
-                            wavelength_angstrom=trial_experiment.radiation.wavelength_angstrom,
+                projected_step = np.array(
+                    [
+                        np.clip(
+                            (value + delta) * parameters.spec(key).scale,
+                            parameters.spec(key).bounds.lower,
+                            parameters.spec(key).bounds.upper,
                         )
-                        for domain in lattice_domains
-                    )
-                    trial_phases, topology_changes = _apply_parameter_values(
-                        phases,
-                        trial_lattice_domains,
-                        parameters,
-                        trial_values,
-                        coordinate_models=linearization.coordinate_models,
-                    )
-                    trial_parameters = parameters.replace_values(trial_values)
+                        / parameters.spec(key).scale
+                        - value
+                        for value, delta, key in zip(packed, step, transform.free_keys, strict=True)
+                    ]
+                )
+                recovery = np.linalg.norm(projected_step) < selected.parameter_tolerance or (
+                    len(history) >= selected.min_iterations
+                    and bool(history)
+                    and history[-1].objective_change
+                    <= selected.objective_tolerance * max(objective, 1.0)
+                )
+                directions: list[tuple[int, float] | None] = [None]
+                if recovery:
                     try:
+                        undamped, _ = _conjugate_gradient(
+                            partial(_normal_product, linearization, 1.0e-18),
+                            -gradient,
+                            selected.cg_tolerance,
+                            selected.max_cg_iterations,
+                        )
+                        residual = _normal_product(linearization, 1.0e-18, undamped) + gradient
+                        small_undamped_step = np.linalg.norm(
+                            undamped
+                        ) < selected.parameter_tolerance and np.linalg.norm(
+                            residual
+                        ) <= selected.cg_tolerance * max(float(np.linalg.norm(gradient)), 1.0)
+                    except FloatingPointError:
+                        # A singular or numerically indefinite undamped solve
+                        # cannot certify a stop; retain the diagonal check.
+                        small_undamped_step = False
+                    if small_undamped_step:
+                        termination = TerminationReason.CONVERGED
+                        termination_message = "undamped parameter step reached tolerance"
+                        break
+                    if linearization.weighted_free_jacobian is not None:
+                        diagonal = np.sum(linearization.weighted_free_jacobian**2, axis=1)
+                    else:
+                        diagonal = np.empty(len(gradient))
+                        for index in range(len(gradient)):
+                            unit = np.zeros_like(gradient)
+                            unit[index] = 1.0
+                            column = linearization.jvp(unit)
+                            diagonal[index] = column @ column
+                    candidates = []
+                    predicted_gain = 0.0
+                    for index, (g, curvature) in enumerate(zip(gradient, diagonal, strict=True)):
+                        if curvature <= 0.0 or not np.isfinite(curvature):
+                            continue
+                        spec = parameters.spec(transform.free_keys[index])
+                        full_target = np.clip(
+                            (packed[index] - g / curvature) * spec.scale,
+                            spec.bounds.lower,
+                            spec.bounds.upper,
+                        )
+                        full_delta = full_target / spec.scale - packed[index]
+                        predicted_gain += max(
+                            -g * full_delta - 0.5 * curvature * full_delta**2, 0.0
+                        )
+                        delta = np.clip(
+                            full_delta,
+                            -selected.max_scaled_parameter_step,
+                            selected.max_scaled_parameter_step,
+                        )
+                        target = np.clip(
+                            (packed[index] + delta) * spec.scale,
+                            spec.bounds.lower,
+                            spec.bounds.upper,
+                        )
+                        delta = target / spec.scale - packed[index]
+                        gain = -g * delta - 0.5 * curvature * delta**2
+                        if gain > 0.0:
+                            candidates.append((index, delta, gain))
+                    if predicted_gain <= selected.objective_tolerance * max(objective, 1.0):
+                        termination = TerminationReason.CONVERGED
+                        termination_message = (
+                            "projected undamped local improvement reached tolerance"
+                        )
+                        break
+                    candidates.sort(key=lambda candidate: -candidate[2])
+                    directions = [(index, delta) for index, delta, _ in candidates]
+                accepted = False
+                # One shared line-search allowance, independent of parameter
+                # count. Visit ranked coordinates before halving their steps.
+                trials = (
+                    (coordinate, backtrack)
+                    for backtrack in range(selected.max_backtracks + 1)
+                    for coordinate in directions
+                )
+                for coordinate, backtrack in islice(trials, selected.max_backtracks + 1):
+                    if coordinate is not None:
+                        index, delta = coordinate
+                        step = np.zeros_like(gradient)
+                        step[index] = delta
+                    step_norm = float(np.linalg.norm(step))
+                    factor = 0.5**backtrack
+                    try:
+                        trial_values = transform.unpack(packed + factor * step, clip=True)
+                        trial_experiment, trial_background = _apply_profile_background_values(
+                            experiment,
+                            background,
+                            trial_values,
+                        )
+                        trial_lattice_domains = tuple(
+                            None
+                            if domain is None
+                            else replace(
+                                domain,
+                                wavelength_angstrom=trial_experiment.radiation.wavelength_angstrom,
+                            )
+                            for domain in lattice_domains
+                        )
+                        trial_phases, topology_changes = _apply_parameter_values(
+                            phases,
+                            trial_lattice_domains,
+                            parameters,
+                            trial_values,
+                            coordinate_models=linearization.coordinate_models,
+                        )
+                        trial_parameters = parameters.replace_values(trial_values)
                         trial_linearization = _RietveldLinearization.prepare(
                             input_data,
                             trial_experiment,
@@ -2296,7 +2439,10 @@ def _refine_with_executor(
                         "structural trial evaluated",
                         (("objective", trial_objective), ("backtrack", backtrack)),
                     )
-                    if trial_objective < objective:
+                    required_improvement = (
+                        selected.objective_tolerance * max(objective, 1.0) if recovery else 0.0
+                    )
+                    if objective - trial_objective > required_improvement:
                         before = parameters.values()
                         changes = tuple(
                             RietveldParameterChange(
@@ -2345,6 +2491,8 @@ def _refine_with_executor(
                             objective,
                             damping,
                             history,
+                            selected.profile_accuracy,
+                            input_data.empirical_gaussian,
                         )
                         runtime.accept_step(state)
                         runtime.emit(
@@ -2354,12 +2502,6 @@ def _refine_with_executor(
                             (("objective", objective), ("rwp", metrics.rwp)),
                         )
                         accepted = True
-                        if (
-                            len(history) >= selected.min_iterations
-                            and change <= selected.objective_tolerance * max(objective, 1.0)
-                        ):
-                            termination = TerminationReason.CONVERGED
-                            termination_message = "objective change reached tolerance"
                         break
                     runtime.emit(
                         RefinementEventKind.STEP_REJECTED,
@@ -2371,7 +2513,11 @@ def _refine_with_executor(
                 if termination is TerminationReason.CONVERGED:
                     break
                 if not accepted:
-                    damping *= selected.damping_increase
+                    if recovery:
+                        termination = TerminationReason.STAGNATED
+                        termination_message = "no improving bounded recovery step was found"
+                        break
+                    damping = max(damping * selected.damping_increase, selected.initial_damping)
                     continue
                 runtime.emit(
                     RefinementEventKind.ITERATION,
@@ -2409,6 +2555,8 @@ def _refine_with_executor(
             0.5 * metrics.chi_square if calculation is not None else 0.0,
             damping,
             history,
+            selected.profile_accuracy,
+            input_data.empirical_gaussian,
         )
         if checkpoint_callback is not None:
             with suppress(Exception):
@@ -2425,6 +2573,8 @@ def _refine_with_executor(
         objective,
         damping,
         history,
+        selected.profile_accuracy,
+        input_data.empirical_gaussian,
     )
     try:
         jacobian_rank, covariance, correlations = _covariance_diagnostics(
@@ -2604,7 +2754,7 @@ def _native_request(input_data: RietveldInput, options: RietveldOptions) -> obje
     axial = experiment.axial_geometry
     instrument = experiment.instrument
     limits = options.limits
-    return _core._RietveldRequest(
+    request = _core._RietveldRequest(
         input_data.pattern.x,
         input_data.pattern.observed_y,
         input_data.pattern.uncertainty,
@@ -2655,6 +2805,14 @@ def _native_request(input_data: RietveldInput, options: RietveldOptions) -> obje
         options.max_covariance_parameters,
         options.unresolved_correlation,
     )
+
+    options.profile_accuracy._apply(request)
+    if isinstance(experiment.radiation, ComponentRadiation):
+        components = experiment.radiation.components
+        request.set_fixed_spectrum(
+            components.wavelengths_angstrom.tolist(), components.relative_intensities.tolist()
+        )
+    return request
 
 
 def _native_termination_message(reason: TerminationReason) -> str:
@@ -2722,19 +2880,22 @@ def _refine_native(
         values,
         wavelength_angstrom=wavelength,
     )
-    diagnostic = calculate(
-        input_data.pattern,
-        experiment,
-        phases,
-        background=background,
-        support_fwhm=options.support_fwhm,
-        execution=options.execution,
+    phase_diagnostics = tuple(
+        PreparedStructuralPattern(
+            input_data.pattern,
+            experiment,
+            phase,
+            support_fwhm=options.support_fwhm,
+            profile_accuracy=options.profile_accuracy,
+            execution=options.execution,
+        )._calculation_from_native_arrays(arrays)
+        for phase, arrays in zip(phases, native.phase_calculations(), strict=True)
     )
     calculation = RietveldCalculationResult(
         native.calculated_y(),
         native.profile_y(),
         native.background_y(),
-        diagnostic.phase_calculations,
+        phase_diagnostics,
     )
     rp, rwp, chi_square, reduced_chi_square = native.metrics()
     metrics = ResidualEvaluation(
@@ -2778,6 +2939,8 @@ def _refine_native(
         experiment,
         background,
         native.checkpoint(),
+        profile_accuracy=options.profile_accuracy,
+        empirical_gaussian=input_data.empirical_gaussian,
     )
     reason = TerminationReason(native.termination_reason)
     termination_message = (
@@ -2831,6 +2994,12 @@ def refine(
     selected = RietveldOptions() if options is None else options
     if not isinstance(selected, RietveldOptions):
         raise TypeError("options must be RietveldOptions")
+    if checkpoint is not None and not isinstance(checkpoint, RietveldCheckpoint):
+        raise TypeError("checkpoint must be RietveldCheckpoint")
+    if checkpoint is not None and checkpoint.empirical_gaussian != input_data.empirical_gaussian:
+        raise ValueError("checkpoint empirical Gaussian convention changed")
+    if checkpoint is not None and checkpoint.profile_accuracy != selected.profile_accuracy:
+        raise ValueError("checkpoint profile accuracy changed")
     native_only = all(
         _native_model_configuration(phase) is not None
         and _supports_fused_structural_physics(phase.physics)
@@ -2846,12 +3015,12 @@ def refine(
     native_checkpoint_available = checkpoint is None or checkpoint._native is not None
     if (
         native_only
-        and not isinstance(input_data.experiment.radiation, ComponentRadiation)
         and _supports_native_background(input_data.background)
         and _supports_native_constraints(input_data.constraints)
         and native_callbacks_absent
         and native_cancellation_available
         and native_checkpoint_available
+        and selected.max_linearization_elements == 10_000_000
     ):
         return _refine_native(input_data, selected, checkpoint, cancellation)
     pool = (
