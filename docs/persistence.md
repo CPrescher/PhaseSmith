@@ -124,6 +124,6 @@ Previous formats remain documented by
 [CW Pawley refinement](pawley.md) provides independent bounded family areas,
 selected analytical cell/profile/background refinement and accepted-state restart.
 Use `phasesmith.refinement.pawley` in Python or `phasesmith::workflows` in Rust.
-Its [standalone version-1 JSON format](pawley.md#runtime-and-persistence) is separate
-from existing mixed-method project bundles. See the [validation report](pawley-validation.md)
+Its [standalone version-2 JSON format](pawley.md#runtime-and-persistence) reads
+version 1, and native format-7 bundles retain mixed-method analyses. See the [validation report](pawley-validation.md)
 for current scientific coverage and limitations.

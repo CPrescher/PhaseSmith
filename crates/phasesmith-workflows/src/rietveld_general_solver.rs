@@ -133,6 +133,11 @@ impl RietveldGeneralCheckpoint {
         constraints: &[Constraint],
     ) -> Result<(), RietveldGeneralRefinementError> {
         self.input.validate()?;
+        self.profile_accuracy.validate().map_err(|_| {
+            RietveldGeneralRefinementError::InvalidCheckpoint {
+                reason: "profile accuracy is invalid",
+            }
+        })?;
         let invalid = if &self.selection != selection {
             Some("parameter selection changed")
         } else if self.lattice_bounds != lattice_bounds {
@@ -336,7 +341,12 @@ pub fn refine_general_rietveld_with_runtime(
             }
             objective
         };
-        final_calculation = Some(objective.calculation().clone());
+        // Selected dense rows omit fixed axial derivatives. They are sufficient
+        // for optimization, but must not escape as the complete public result.
+        final_calculation = (live_input.axial_geometry.is_none()
+            || !objective.uses_dense_linearization()
+            || scale_basis.is_some())
+        .then(|| objective.calculation().clone());
         let layout = objective.layout().clone();
         let solver_parameters = live_parameters.clone();
         let transform = ConstraintTransform::new(solver_parameters.clone(), constraints.to_vec())?;
@@ -699,7 +709,10 @@ pub fn refine_general_rietveld_with_runtime(
             reduced_chi_square: accepted_metrics.reduced_chi_square,
         });
         live_input = trial_input;
-        final_calculation = Some(trial_calculation.clone());
+        // Both selected dense and values-only trials omit axial derivatives.
+        // The scale basis is the exception: it retains all diagnostic rows.
+        final_calculation = (live_input.axial_geometry.is_none() || scale_basis.is_some())
+            .then_some(trial_calculation);
         let accepted_layout = RietveldParameterLayout::new(&live_input, selection, lattice_bounds)?;
         live_parameters = stable_layout
             .parameters()

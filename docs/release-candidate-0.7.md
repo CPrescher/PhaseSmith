@@ -61,7 +61,10 @@ and powder-family averaging. The exact diff is recorded in
 
 Review gates cover all removed 0.5 aliases, installed imports, native/Python
 bundle exchange, older-format migration, accepted-state resume and examples
-outside the checkout. No saved-project schema is changed by the merge.
+outside the checkout. The combined change adds native format 7 and optional
+profile-accuracy fields to Rietveld records while retaining older-format
+compatibility. The reconciliation itself adds no further schema changes beyond
+those already present in the repaired develop implementation.
 
 ## Validation
 

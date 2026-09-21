@@ -57,6 +57,59 @@ fn complete_native_analysis_round_trips_and_rejects_corrupt_parameter_identity()
 }
 
 #[test]
+fn native_analysis_rejects_invalid_tail_accuracy_on_load_and_save() {
+    let directory = temporary_path("invalid-tail-accuracy");
+    let original = state();
+    save_rietveld_project(&directory, &original, ProjectSaveOptions::default()).unwrap();
+    let manifest_path = directory.join(PROJECT_MANIFEST_NAME);
+    let original_manifest: serde_json::Value =
+        serde_json::from_slice(&fs::read(&manifest_path).unwrap()).unwrap();
+    for bad in [0.0, -0.1, 1.0e-9, 0.11] {
+        let mut manifest = original_manifest.clone();
+        // Matching corrupt policies must not bypass checkpoint identity checks.
+        manifest["rietveld_analyses"][0]["options"]["tail_area_tolerance"] = serde_json::json!(bad);
+        manifest["rietveld_analyses"][0]["checkpoint"]["tail_area_tolerance"] =
+            serde_json::json!(bad);
+        fs::write(&manifest_path, serde_json::to_vec(&manifest).unwrap()).unwrap();
+        assert!(
+            load_rietveld_project(&directory, ProjectReadLimits::default()).is_err(),
+            "invalid tail-area tolerance {bad} must fail during load"
+        );
+        let mut invalid = original.clone();
+        invalid.analyses[0]
+            .options
+            .calculation
+            .profile_accuracy
+            .tail_area_tolerance = Some(bad);
+        invalid.analyses[0]
+            .checkpoint
+            .as_mut()
+            .unwrap()
+            .profile_accuracy
+            .tail_area_tolerance = Some(bad);
+        assert!(invalid.validate().is_err());
+        let analysis = &invalid.analyses[0];
+        assert!(
+            analysis
+                .checkpoint
+                .as_ref()
+                .unwrap()
+                .validate_for(
+                    &analysis.input,
+                    &analysis.selection,
+                    &analysis.lattice_bounds,
+                    &analysis.constraints,
+                )
+                .is_err()
+        );
+        assert!(
+            save_rietveld_project(&directory, &invalid, ProjectSaveOptions::default()).is_err()
+        );
+    }
+    cleanup(directory);
+}
+
+#[test]
 fn native_analysis_counts_obey_project_read_limits() {
     let directory = temporary_path("analysis-limits");
     let state = state();
