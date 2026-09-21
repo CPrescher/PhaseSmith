@@ -9,6 +9,7 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import TextIO, cast
 
+from ._skill import REFERENCES, skill_path, skill_text
 from .automation import (
     AutomationError,
     advisor_packet,
@@ -42,6 +43,18 @@ def _parser() -> _JsonArgumentParser:
         description="Inspect, plan, approve, run, and resume bounded PhaseSmith tasks.",
     )
     commands = parser.add_subparsers(dest="command", required=True)
+
+    skill = commands.add_parser("skill", help="locate or read the bundled agent skill")
+    skill_action = skill.add_mutually_exclusive_group(required=True)
+    skill_action.add_argument("--path", action="store_true", help="print the skill directory")
+    skill_action.add_argument(
+        "--print",
+        dest="skill_reference",
+        nargs="?",
+        const="skill",
+        choices=("skill", *REFERENCES, "all"),
+        help="print the entrypoint (default), a named reference, or all instructions as text",
+    )
 
     schema = commands.add_parser("schema", help="print an automation JSON Schema")
     schema.add_argument(
@@ -183,7 +196,13 @@ def main(argv: Sequence[str] | None = None) -> int:
     try:
         exit_status = 0
         args = _parser().parse_args(argv)
-        if args.command == "schema":
+        if args.command == "skill":
+            if args.path:
+                sys.stdout.write(str(skill_path()) + "\n")
+            else:
+                sys.stdout.write(skill_text(args.skill_reference))
+            return 0
+        elif args.command == "schema":
             result = automation_schema(args.contract)
         elif args.command == "inspect-pattern":
             result = inspect_powder_file(

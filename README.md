@@ -615,9 +615,11 @@ structured-provenance proposal before `phasesmith run plan.json --approve
 PLAN_ID [--proposal recipe.json]` executes it. Post-run `review` and
 `review-packet` commands support lineage-bound iterations with a new approval
 each time. All JSON contracts are available through `phasesmith schema` and
-under `schemas/automation/`; a reusable agent skill and offline end-to-end
-example live under `skills/phasesmith-ai-workflows/` and
-`examples/automation/`. Raw pattern/CIF
+under `schemas/automation/`. The [agent skill](docs/agent-skill/index.md) ships
+with the Python package: `phasesmith skill --path` locates it and
+`phasesmith skill --print all` prints the complete instructions. Its canonical
+source and the offline end-to-end example live under
+`skills/phasesmith-ai-workflows/` and `examples/automation/`. Raw pattern/CIF
 inspection, checkpoint resume, strict schemas, structured errors, and the
 scientific recipe rubric are documented in [AI-guided
 automation](docs/ai-automation.md). PhaseSmith does not depend on an AI SDK or

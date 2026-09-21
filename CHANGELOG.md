@@ -6,6 +6,11 @@ development versions.
 
 ## Unreleased
 
+- Ship the PhaseSmith agent skill with the Python distribution, expose
+  `phasesmith skill --path` and `--print`, and publish generated documentation
+  from its canonical instructions. Add scientific references for experimental
+  context, identifiable recipes, fit interpretation, and QPA; check resource
+  parity, documentation drift, and the offline advisor example during testing.
 - Add an opt-in, checksum-pinned opXRD robustness campaign with a fixed
   14-pattern stratified selection, explicit grid and negative-count boundaries,
   independent background diagnostics, five residual measures, three disclosed

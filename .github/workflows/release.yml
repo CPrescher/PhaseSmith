@@ -36,6 +36,8 @@ jobs:
           else
             python scripts/release_version.py --github-output "$GITHUB_OUTPUT"
           fi
+      - name: Verify bundled skill and documentation match canonical sources
+        run: python scripts/sync_skill.py --check
 
   linux-wheels:
     name: Linux wheel (${{ matrix.target }})
