@@ -2,3 +2,5 @@
 /skills/phasesmith-ai-workflows/** text eol=lf
 /python/phasesmith/_skills/phasesmith-ai-workflows/** text eol=lf
 /docs/agent-skill/** text eol=lf
+# Oracle diagnostics bind exact manifest bytes by SHA-256 on every platform.
+/oracle/**/*.json text eol=lf
