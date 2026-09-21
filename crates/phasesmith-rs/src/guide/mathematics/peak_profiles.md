@@ -142,7 +142,7 @@ still owns one total integrated intensity. See
 a(z,b) = acos[cos(b) sqrt(1+z²)]
 M = max(s,h)       m = min(s,h)
 A = M-m            B = M+m
-g(z,b) = 1/[sqrt(1+z²) sin(a(z,b))].
+g(z,b) = 1/[(1+z²) sin(a(z,b))].
 ```
 
 For intrinsic normalized profile `R`, the regularized FCJ integral is

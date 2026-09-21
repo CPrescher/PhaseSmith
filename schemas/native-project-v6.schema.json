@@ -1,0 +1,719 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://phasesmith.dev/schemas/native-project-v6.schema.json",
+  "title": "PhaseSmith native project bundle version 6",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format_version",
+    "archive",
+    "arrays",
+    "project",
+    "rietveld_analyses",
+    "tof_lebail_analyses",
+    "tof_multibank_geometry_analyses",
+    "structural_tof_multibank_analyses",
+    "pawley_analyses"
+  ],
+  "properties": {
+    "format_version": {
+      "const": 6
+    },
+    "archive": {
+      "$ref": "native-project-v1.schema.json#/properties/archive"
+    },
+    "arrays": {
+      "$ref": "native-project-v1.schema.json#/properties/arrays"
+    },
+    "project": {
+      "$ref": "native-project-v3.schema.json#/$defs/project"
+    },
+    "rietveld_analyses": {
+      "type": "array",
+      "items": {
+        "$ref": "native-project-v2.schema.json#/$defs/analysis"
+      }
+    },
+    "tof_lebail_analyses": {
+      "type": "array",
+      "items": {
+        "$ref": "native-project-v3.schema.json#/$defs/tofAnalysis"
+      }
+    },
+    "tof_multibank_geometry_analyses": {
+      "type": "array",
+      "items": {
+        "$ref": "native-project-v4.schema.json#/$defs/geometryAnalysis"
+      }
+    },
+    "structural_tof_multibank_analyses": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/structuralTofAnalysis"
+      }
+    },
+    "pawley_analyses": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/pawleyAnalysis"
+      }
+    }
+  },
+  "$defs": {
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1
+    },
+    "finiteNumber": {
+      "type": "number"
+    },
+    "structuralTofAnalysis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "analysis_id",
+        "phase_id",
+        "site_ids",
+        "structural_selection",
+        "lattice_bounds",
+        "banks",
+        "input_options",
+        "options",
+        "checkpoint"
+      ],
+      "properties": {
+        "analysis_id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "phase_id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "site_ids": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          }
+        },
+        "structural_selection": {
+          "$ref": "#/$defs/structuralSelection"
+        },
+        "lattice_bounds": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/latticeBounds"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "banks": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "$ref": "#/$defs/structuralBank"
+          }
+        },
+        "input_options": {
+          "$ref": "#/$defs/inputOptions"
+        },
+        "options": {
+          "$ref": "#/$defs/refinementOptions"
+        },
+        "checkpoint": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/checkpoint"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "structuralSelection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "lattice",
+        "coordinates",
+        "occupancy",
+        "u_iso"
+      ],
+      "properties": {
+        "lattice": {
+          "type": "boolean"
+        },
+        "coordinates": {
+          "type": "boolean"
+        },
+        "occupancy": {
+          "type": "boolean"
+        },
+        "u_iso": {
+          "type": "boolean"
+        }
+      }
+    },
+    "latticeBounds": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "lower",
+        "upper"
+      ],
+      "properties": {
+        "lower": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/finiteNumber"
+          }
+        },
+        "upper": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/finiteNumber"
+          }
+        }
+      }
+    },
+    "structuralBank": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "bank_id",
+        "two_theta_deg",
+        "correction",
+        "scale",
+        "scale_bounds",
+        "refine_scale",
+        "background",
+        "refine_background",
+        "instrument_bounds"
+      ],
+      "properties": {
+        "bank_id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "two_theta_deg": {
+          "$ref": "#/$defs/finiteNumber"
+        },
+        "correction": {
+          "enum": [
+            "neutral",
+            "time_of_flight_neutron_lorentz"
+          ]
+        },
+        "scale": {
+          "$ref": "#/$defs/finiteNumber"
+        },
+        "scale_bounds": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "oneOf": [
+              {
+                "$ref": "#/$defs/finiteNumber"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "refine_scale": {
+          "type": "boolean"
+        },
+        "background": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/background"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "refine_background": {
+          "type": "boolean"
+        },
+        "instrument_bounds": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/instrumentBound"
+          }
+        }
+      }
+    },
+    "background": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "background_id",
+        "coefficients",
+        "domain_us"
+      ],
+      "properties": {
+        "background_id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "coefficients": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/finiteNumber"
+          }
+        },
+        "domain_us": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "$ref": "#/$defs/finiteNumber"
+          }
+        }
+      }
+    },
+    "instrumentBound": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "parameter",
+        "lower",
+        "upper"
+      ],
+      "properties": {
+        "parameter": {
+          "enum": [
+            "zero",
+            "difc",
+            "difa",
+            "difb",
+            "alpha",
+            "beta0",
+            "beta1",
+            "betaq",
+            "sigma0",
+            "sigma1",
+            "sigma2",
+            "sigmaq",
+            "x",
+            "y",
+            "z"
+          ]
+        },
+        "lower": {
+          "$ref": "#/$defs/finiteNumber"
+        },
+        "upper": {
+          "$ref": "#/$defs/finiteNumber"
+        }
+      }
+    },
+    "inputOptions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "support_fwhm",
+        "tail_log",
+        "use_uncertainty",
+        "requested_threads",
+        "minimum_parallel_tasks"
+      ],
+      "properties": {
+        "support_fwhm": {
+          "$ref": "#/$defs/finiteNumber"
+        },
+        "tail_log": {
+          "$ref": "#/$defs/finiteNumber"
+        },
+        "use_uncertainty": {
+          "type": "boolean"
+        },
+        "requested_threads": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "minimum": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "minimum_parallel_tasks": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "refinementOptions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "max_iterations",
+        "max_evaluations",
+        "max_runtime_seconds",
+        "max_consecutive_rejections",
+        "min_iterations",
+        "objective_tolerance",
+        "parameter_tolerance",
+        "initial_damping",
+        "damping_increase",
+        "damping_decrease",
+        "max_scaled_parameter_step",
+        "max_backtracks"
+      ],
+      "properties": {
+        "max_iterations": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "max_evaluations": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "max_runtime_seconds": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/finiteNumber"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "max_consecutive_rejections": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "min_iterations": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "objective_tolerance": {
+          "$ref": "#/$defs/finiteNumber"
+        },
+        "parameter_tolerance": {
+          "$ref": "#/$defs/finiteNumber"
+        },
+        "initial_damping": {
+          "$ref": "#/$defs/finiteNumber"
+        },
+        "damping_increase": {
+          "$ref": "#/$defs/finiteNumber"
+        },
+        "damping_decrease": {
+          "$ref": "#/$defs/finiteNumber"
+        },
+        "max_scaled_parameter_step": {
+          "$ref": "#/$defs/finiteNumber"
+        },
+        "max_backtracks": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "checkpoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "phase",
+        "banks",
+        "parameters",
+        "objective",
+        "damping",
+        "history"
+      ],
+      "properties": {
+        "phase": {
+          "$ref": "#/$defs/acceptedPhase"
+        },
+        "banks": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "$ref": "#/$defs/acceptedBank"
+          }
+        },
+        "parameters": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/parameter"
+          }
+        },
+        "objective": {
+          "$ref": "#/$defs/finiteNumber"
+        },
+        "damping": {
+          "$ref": "#/$defs/finiteNumber"
+        },
+        "history": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/iteration"
+          }
+        }
+      }
+    },
+    "acceptedPhase": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "cell",
+        "fractional_xyz",
+        "occupancy",
+        "u_iso_angstrom2"
+      ],
+      "properties": {
+        "cell": {
+          "type": "array",
+          "minItems": 6,
+          "maxItems": 6,
+          "items": {
+            "$ref": "#/$defs/finiteNumber"
+          }
+        },
+        "fractional_xyz": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "array",
+            "minItems": 3,
+            "maxItems": 3,
+            "items": {
+              "$ref": "#/$defs/finiteNumber"
+            }
+          }
+        },
+        "occupancy": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/finiteNumber"
+          }
+        },
+        "u_iso_angstrom2": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/finiteNumber"
+          }
+        }
+      }
+    },
+    "acceptedBank": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "bank_id",
+        "instrument",
+        "scale",
+        "background_coefficients"
+      ],
+      "properties": {
+        "bank_id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "instrument": {
+          "type": "array",
+          "minItems": 15,
+          "maxItems": 15,
+          "items": {
+            "$ref": "#/$defs/finiteNumber"
+          }
+        },
+        "scale": {
+          "$ref": "#/$defs/finiteNumber"
+        },
+        "background_coefficients": {
+          "oneOf": [
+            {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/$defs/finiteNumber"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "parameter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "module",
+        "owner_id",
+        "name",
+        "value",
+        "unit",
+        "bounds",
+        "scale",
+        "refine"
+      ],
+      "properties": {
+        "module": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "owner_id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "name": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "value": {
+          "$ref": "#/$defs/finiteNumber"
+        },
+        "unit": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "bounds": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "oneOf": [
+              {
+                "$ref": "#/$defs/finiteNumber"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "scale": {
+          "$ref": "#/$defs/finiteNumber"
+        },
+        "refine": {
+          "type": "boolean"
+        }
+      }
+    },
+    "iteration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "iteration",
+        "objective",
+        "objective_change",
+        "scaled_step_norm",
+        "damping",
+        "backtracks",
+        "parameter_changes"
+      ],
+      "properties": {
+        "iteration": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "objective": {
+          "$ref": "#/$defs/finiteNumber"
+        },
+        "objective_change": {
+          "$ref": "#/$defs/finiteNumber"
+        },
+        "scaled_step_norm": {
+          "$ref": "#/$defs/finiteNumber"
+        },
+        "damping": {
+          "$ref": "#/$defs/finiteNumber"
+        },
+        "backtracks": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "parameter_changes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/parameterChange"
+          }
+        }
+      }
+    },
+    "parameterChange": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "module",
+        "owner_id",
+        "name",
+        "before",
+        "after",
+        "scaled_change"
+      ],
+      "properties": {
+        "module": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "owner_id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "name": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "before": {
+          "$ref": "#/$defs/finiteNumber"
+        },
+        "after": {
+          "$ref": "#/$defs/finiteNumber"
+        },
+        "scaled_change": {
+          "$ref": "#/$defs/finiteNumber"
+        }
+      }
+    },
+    "pawleyAnalysis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "phases",
+        "background",
+        "signed_intensities",
+        "parameters",
+        "constraints",
+        "histogram_id",
+        "options",
+        "checkpoint"
+      ],
+      "properties": {
+        "phases": {
+          "$ref": "https://phasesmith.readthedocs.io/schemas/pawley-project-v2.schema.json#/$defs/input/properties/phases"
+        },
+        "background": {
+          "$ref": "https://phasesmith.readthedocs.io/schemas/pawley-project-v2.schema.json#/$defs/input/properties/background"
+        },
+        "signed_intensities": {
+          "$ref": "https://phasesmith.readthedocs.io/schemas/pawley-project-v2.schema.json#/$defs/input/properties/signed_intensities"
+        },
+        "parameters": {
+          "$ref": "https://phasesmith.readthedocs.io/schemas/pawley-project-v2.schema.json#/$defs/input/properties/parameters"
+        },
+        "constraints": {
+          "$ref": "https://phasesmith.readthedocs.io/schemas/pawley-project-v2.schema.json#/$defs/input/properties/constraints"
+        },
+        "histogram_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "options": {
+          "$ref": "https://phasesmith.readthedocs.io/schemas/pawley-project-v2.schema.json#/$defs/options"
+        },
+        "checkpoint": {
+          "$ref": "https://phasesmith.readthedocs.io/schemas/pawley-project-v2.schema.json#/properties/checkpoint"
+        }
+      }
+    }
+  }
+}

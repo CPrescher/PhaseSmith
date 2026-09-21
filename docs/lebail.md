@@ -125,3 +125,12 @@ environment. It compares profile parameters, grouped extracted intensities,
 `Ycalc`, residual improvement, and convergence trend. The reflection-table
 conversion to this library's degree-density integrated intensity is explicitly
 `0.01 * Fobs^2 * intensity_correction`.
+
+## CW Pawley workflow
+
+[CW Pawley refinement](pawley.md) provides independent bounded family areas,
+selected analytical cell/profile/background refinement and accepted-state restart.
+Use `phasesmith.refinement.pawley` in Python or `phasesmith::workflows` in Rust.
+Its [standalone version-1 JSON format](pawley.md#runtime-and-persistence) is separate
+from existing mixed-method project bundles. See the [validation report](pawley-validation.md)
+for current scientific coverage and limitations.

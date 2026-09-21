@@ -89,3 +89,112 @@ def probe_symmetric_profile(
         float(position), sigma_centidegrees_squared, gamma_centidegrees, x
     )
     return 100.0 * np.asarray(values, dtype=np.float64)
+
+
+def initialize_pawley(
+    phase: Any,
+    histogram: Any,
+    gsas_module: ModuleType,
+    reflections: ArrayLike,
+    observed: ArrayLike,
+    *,
+    initial_fraction: float = 0.5,
+    starting_cell: ArrayLike | None = None,
+) -> None:
+    """Initialize documented Pawley rows on the exact pinned external oracle.
+
+    The public scripting API supplies reflection records but has no Pawley-table
+    initializer at this revision. This adapter writes records only; it neither
+    evaluates profiles nor implements or copies GSAS-II's optimization method.
+    Row convention: h, k, l, multiplicity, d, refine, F-squared, sigma(F-squared).
+    """
+    revision = detected_revision(gsas_module)
+    if revision != PINNED_REVISION:
+        raise RuntimeError(f"private GSAS-II probe requires {PINNED_REVISION}, detected {revision}")
+    if any(np.iscomplexobj(v) for v in (reflections, observed, starting_cell) if v is not None):
+        raise TypeError("Pawley oracle arrays must be real-valued")
+    refs = np.asarray(reflections, dtype=np.float64)
+    y = np.asarray(observed, dtype=np.float64)
+    if (
+        refs.ndim != 2
+        or refs.shape[0] == 0
+        or refs.shape[1] != 15
+        or not np.isfinite(refs).all()
+        or np.any(refs[:, :4] != np.rint(refs[:, :4]))
+        or np.any(refs[:, 3:5] <= 0)
+        or y.ndim != 1
+        or not np.isfinite(y).all()
+        or not np.isfinite(initial_fraction)
+        or initial_fraction <= 0
+    ):
+        raise ValueError("invalid pinned CW Pawley reflection/observation schema")
+    general = phase.data.get("General")
+    if not isinstance(general, dict) or not isinstance(phase.data.get("Pawley ref"), list):
+        raise RuntimeError("unexpected pinned GSAS-II phase schema")
+    values = histogram.data["data"][1]
+    if len(values) < 3 or any(np.asarray(v).shape != y.shape for v in values[:3]):
+        raise RuntimeError("unexpected pinned GSAS-II histogram schema")
+    cell = None
+    if starting_cell is not None:
+        cell = np.asarray(starting_cell, dtype=np.float64)
+        if (
+            cell.shape != (6,)
+            or not np.isfinite(cell).all()
+            or np.any(cell[:3] <= 0)
+            or np.any((cell[3:] <= 0) | (cell[3:] >= 180))
+        ):
+            raise ValueError("invalid starting cell")
+        cosines = np.cos(np.deg2rad(cell[3:]))
+        volume_factor = 1 + 2 * np.prod(cosines) - np.sum(cosines**2)
+        if volume_factor <= 0 or len(general["Cell"]) != 8:
+            raise ValueError("invalid starting metric or pinned cell schema")
+    # All validation precedes writes to the isolated oracle project.
+    general["doPawley"] = True
+    general["Pawley dmin"] = float(np.min(refs[:, 4])) * 0.99
+    general["Pawley dmax"] = float(np.max(refs[:, 4])) * 1.01
+    general["Pawley neg wt"] = 0.0
+    phase.data["Pawley ref"] = [
+        [
+            int(r[0]),
+            int(r[1]),
+            int(r[2]),
+            int(r[3]),
+            float(r[4]),
+            True,
+            float(r[9]) * initial_fraction,
+            0.0,
+        ]
+        for r in refs
+    ]
+    if cell is not None:
+        general["Cell"][1:7] = cell.tolist()
+        general["Cell"][7] = float(np.prod(cell[:3]) * np.sqrt(volume_factor))
+    values[1][:] = y
+    values[2][:] = 1.0
+
+
+def probe_fcj_profile_and_support(
+    gsas_pwd_module: ModuleType,
+    x: ArrayLike,
+    *,
+    position_deg: float,
+    sigma2_centideg2: float,
+    gamma_centideg: float,
+    axial_sum: float,
+) -> tuple[NDArray[np.float64], tuple[float, float]]:
+    """Probe the pinned compiled FCJ value and reported histogram cutoff distances.
+
+    This is an external black-box call, not an implementation of its equations.
+    The output density is converted from inverse centidegrees to inverse degrees.
+    """
+    revision = detected_revision(gsas_pwd_module)
+    if revision != PINNED_REVISION:
+        raise RuntimeError(f"private GSAS-II probe requires {PINNED_REVISION}, detected {revision}")
+    x = np.ascontiguousarray(x, dtype=np.float64)
+    values, _ = gsas_pwd_module.getFCJVoigt3(
+        position_deg, sigma2_centideg2, gamma_centideg, axial_sum, x
+    )
+    _, left, right = gsas_pwd_module.getWidthsCW(
+        position_deg, sigma2_centideg2, gamma_centideg, axial_sum
+    )
+    return 100.0 * np.asarray(values, dtype=np.float64), (float(left), float(right))

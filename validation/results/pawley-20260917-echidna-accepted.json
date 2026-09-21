@@ -1,0 +1,85 @@
+{
+  "manifest": {
+    "schema_version": 1,
+    "scope": "CW Pawley real-data smoke and repeatability gates; not cross-program optimizer parity",
+    "datasets": {
+      "aps-sucrose-11bmb": {
+        "range_deg": [
+          1.0,
+          24.0
+        ],
+        "maximum_rwp": 0.25,
+        "minimum_profile_correlation": 0.95,
+        "max_iterations": 40,
+        "background_width_deg": 0.1
+      },
+      "ansto-echidna-lab6-cw-neutron": {
+        "range_deg": [
+          20.0,
+          125.5
+        ],
+        "maximum_rwp": 0.3,
+        "minimum_profile_correlation": 0.9,
+        "max_iterations": 40,
+        "background_window_samples": 20
+      }
+    },
+    "common": {
+      "nonnegative_areas": true,
+      "minimum_relative_chi_square_improvement": 0.05,
+      "rwp_recomputation_absolute_tolerance": 1e-12,
+      "repeatability": "exact accepted history and calculated array",
+      "accepted_terminations": [
+        "converged"
+      ],
+      "weights": "supplied one-sigma uncertainties",
+      "profile_parameters": [
+        "u_deg2",
+        "v_deg2",
+        "w_deg2",
+        "x_deg",
+        "y_deg"
+      ],
+      "cell_and_wavelength": "fixed",
+      "background": "fixed Smooth Bruckner baseline plus one fitted Chebyshev constant"
+    }
+  },
+  "results": [
+    {
+      "dataset": "ansto-echidna-lab6-cw-neutron",
+      "verified_files": [
+        "ECH0034258_LaB6.xyd",
+        "ECH0034258_LaB6.cif"
+      ],
+      "samples": 2111,
+      "reflections": 13,
+      "times_seconds": [
+        0.010273750012856908,
+        0.010419666999951005
+      ],
+      "rwp": 0.28486929251211623,
+      "initial_rwp": 0.6855593252527982,
+      "profile_correlation": 0.9575662600937224,
+      "rank": 18,
+      "termination": "converged",
+      "accepted_steps": 15,
+      "checks": {
+        "rwp": true,
+        "correlation": true,
+        "improvement": true,
+        "manual_weighting": true,
+        "nonnegative": true,
+        "converged": true,
+        "repeatable": true
+      },
+      "passed": true
+    }
+  ],
+  "provenance": {
+    "python": "3.13.7",
+    "numpy": "2.5.3",
+    "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+    "native_binary_sha256": "8c8b35e9b66cb95a14feb1722dceb82f786ccc7c767dd32301abf235d07df64f",
+    "runner_sha256": "a532ba8f8f94bb64bb970169fb896e834c126e146649120b21e9e1d844794ba8"
+  }
+}

@@ -365,10 +365,10 @@ def profile_fcj(
         d_value_d_height = -evaluated.d_delta * d_apparent_d_height_deg[:, None]
         d_apparent_d_position = np.sin(position_rad) * square_root / sine_apparent
         d_value_d_position = -evaluated.d_delta * d_apparent_d_position[:, None]
-        geometry = 1.0 / (square_root * sine_apparent)
+        geometry = 1.0 / ((1.0 + height**2) * sine_apparent)
         cotangent_apparent = np.cos(apparent_rad) / sine_apparent
         d_geometry_d_height = geometry * (
-            -height / (1.0 + height**2) - cotangent_apparent * d_apparent_d_height_rad
+            -2.0 * height / (1.0 + height**2) - cotangent_apparent * d_apparent_d_height_rad
         )
         d_geometry_d_position = (
             geometry * -cotangent_apparent * d_apparent_d_position * np.pi / 180.0

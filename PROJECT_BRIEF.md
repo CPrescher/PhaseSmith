@@ -30,10 +30,68 @@ the promotion boundary. See `docs/refinement-bounded-recovery.md` and the
 repository consolidation record. The feasible-width option remains solely on
 its preserved experimental branch and is not added to the committed public API.
 
-Refinement optimization priority: seek the lowest stable, scientifically valid
-Rwp with verified convergence, retaining QPA and physical-model checks. Judge
-speed at comparable attained fit quality; a faster iteration-limited fit with
-a higher Rwp is a diagnostic tradeoff, not the target outcome.
+The live pinned GSAS-II Pawley optimizer comparison now covers fixed-cell and
+six-cell-parameter fits with 53 families, isolated areas and overlap sums.
+The revision-gated initializer, immutable fixture, compiled-binary provenance
+and executable comparison are committed separately from production code.
+Declared engineering agreement checks pass; a stricter 1e-5 profile-equivalence
+check remains false. A subsequent black-box diagnosis isolates the mismatch
+to the pinned FCJ numerical profile evaluator and finite cutoff policy: native
+quadrature matches a converged independent reference, oracle profiles with their
+cutoffs reconstruct the histogram, and an independent linear solve attributes
+the overlapping-area difference to the profile basis rather than the optimizer.
+A subsequent direct, high-precision angular-integral audit exposed a shared
+native/NumPy change-of-variable error: the geometric denominator must contain
+`1+z²`, not `sqrt(1+z²)`. Values and analytical height derivatives are corrected
+together. Its effect in the Pawley fixture is about 1e-9 relative at sampled
+points and does not account for the much larger pinned-oracle mismatch.
+The new angular reference uses adaptive tanh-sinh integration without the
+production substitution; mpmath is a test-only dependency.
+See `docs/pawley-profile-diagnosis.md` for the before/after equation audit.
+Direct inspection of the pinned GSAS-II call path subsequently confirmed
+single-node FCJ quadrature for every reflection in this fixture. Rebuilding
+the unmodified external routine in double precision preserves the discrepancy
+and reproduces the predicted single shifted intrinsic peak. This identifies
+under-integration as the dominant oracle cause, with secondary roundoff and
+support differences; no GSAS-II implementation was copied into PhaseSmith.
+
+Native project format 7 now adds typed CW and joint TOF Pawley analysis ownership and a lossless
+mixed-method `ProjectBundle` API. Shared histogram arrays are stored once;
+cell-only Pawley domains require no atom models. All existing native analysis
+families and checkpoints survive mixed load/save, formats 1–6 migrate, and
+Python/native save/load/resume tests verify exact accepted profiles and history.
+Standalone Pawley formats remain compatible. The latest upstream numerical
+work is merged into the Pawley worktree; the combined Python suite passes.
+
+Pawley now provides bounded CW family-area refinement in dense and matrix-free
+modes, analytical cell/profile/background derivatives, exact ties, independent
+NumPy validation, accepted-state restart and standalone format-2 persistence
+with format-1 migration. The matrix-free measured release gate passes unchanged
+scientific thresholds and budgets: sucrose converges in 137–138 seconds with
+Rwp 0.066054, and LaB6 converges with Rwp 0.284869. Repeated arrays and histories
+are exact. Sucrose convergence is explicitly local to the hard-support objective;
+positive finite cutoff jumps define one-sided feasible directions, with
+conservative exclusions for interacting or cancelling events. Support values
+and endpoints are unchanged. Matrix-free mode omits global rank/covariance;
+dense mode remains the small-problem reference. The separate measured LaB6
+cell/profile gate passes at Rwp 0.2184. Fixed CW spectra now use one area per family, normalized fixed detected weights,
+component-union domains and native analytical chains. Standalone and shared
+bundles retain spectra; independent derivatives, pinned doublet profiles and
+measured ceria comparisons are covered. TOF now reuses the same bounded native
+solver with microsecond density observations, bank-local areas/calibration/profile
+and backgrounds, and symmetry-constrained shared cells. Analytical chains,
+nonuniform support, uncertainty conventions, a DIFC/cell gauge guard, atomic
+restart, native format-7 bundles and independent NumPy/pinned-profile checks
+are implemented. The measured POWGEN gate converges at Rwp 0.21680; the joint
+three-bank nickel gate converges at Rwp 0.02099 with all banks below 0.03.
+Upstream committed numerical work through `9afd808c` is reconciled. See `docs/pawley.md`,
+`docs/tof-pawley.md`, `docs/pawley-validation.md` and the completion audit.
+
+Refinement development priority: validate practical bounded workflows across
+the fixed assessment panel. Preserve fit/composition gates, truthful stops and
+acceptable cost together. Further QARR-specific tuning and feasible-width
+development remain paused. Historical timings and convergence claims below
+refer to their stated implementation checkpoints.
 
 The subsequent original-recipe convergence audit identifies a termination
 weakness: the general solver can report convergence when repeated damping

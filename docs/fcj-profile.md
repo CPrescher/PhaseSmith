@@ -58,10 +58,13 @@ A = M - m
 B = M + m.
 ```
 
-Changing variables in Hester equation 3 gives the regular geometry factor
+Changing variables in FCJ equations 6–8 (also Hester equation 3) gives the
+regular geometry factor. In units where L=1, the angular density is proportional
+to `W(z)/(z cos(a))`. Since `|da/dz|=|cos(b)| z/[sqrt(1+z²) sin(a)]`
+and `cos(a)=cos(b) sqrt(1+z²)`, both square-root factors must be retained:
 
 ```text
-g(z,b) = 1 / [sqrt(1+z^2) sin(a(z,b))].
+g(z,b) = 1 / [(1+z^2) sin(a(z,b))].
 ```
 
 For any intrinsic normalized profile `R(x-a(z,b))`, define
@@ -94,6 +97,9 @@ With `c=cos(b)`, `r=sqrt(1+z^2)`, and `q=sqrt(1-c^2 r^2)`:
 ```text
 da/dz = -c z / (r q)
 da/db =  sin(b) r / q.
+
+dg/dz = g [-2z/(1+z²) - cot(a) da/dz]
+dg/db = -g cot(a) da/db.
 ```
 
 For `f(z,b)=R(x-a(z,b))`:

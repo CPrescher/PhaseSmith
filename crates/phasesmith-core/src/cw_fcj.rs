@@ -83,4 +83,51 @@ mod tests {
             symmetric.derivatives.global.expect("global").values
         );
     }
+    #[test]
+    fn support_preflight_matches_accumulation_including_endpoints() {
+        let instrument = instrument();
+        let profile = crate::CwProfileParameters::from_instrument(40.0, instrument).unwrap();
+        let radius = 20.0 * profile.tch.total_fwhm;
+        let x = [
+            40.0 - radius - 1e-5,
+            40.0 - radius,
+            40.0,
+            40.0 + radius,
+            40.0 + radius + 1e-5,
+        ];
+        let grid = GridView::new(&x).unwrap();
+        let positions = [40.0];
+        let areas = [1.0];
+        let batch = CwReflectionBatchView::new(&positions, &areas).unwrap();
+        let wavelengths = [instrument.wavelength_angstrom];
+        let weights = [1.0];
+        let components = WavelengthComponentsView::new(&wavelengths, &weights).unwrap();
+        for axial in [0.0, 0.005] {
+            let geometry = FcjGeometry {
+                sample_over_radius: axial,
+                detector_over_radius: axial,
+            };
+            let count = crate::cw_components_support_samples(
+                grid,
+                batch,
+                instrument,
+                components,
+                geometry,
+                SupportPolicy::FwhmMultiple(20.0),
+            )
+            .unwrap();
+            let evaluated = accumulate_cw_fcj_batch(
+                grid,
+                batch,
+                instrument,
+                geometry,
+                SupportPolicy::FwhmMultiple(20.0),
+            )
+            .unwrap();
+            assert_eq!(Some(&count), evaluated.derivatives.local.offsets.last());
+            if axial == 0.0 {
+                assert_eq!(count, 3);
+            }
+        }
+    }
 }

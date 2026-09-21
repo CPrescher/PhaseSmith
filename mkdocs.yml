@@ -111,6 +111,12 @@ nav:
       - Rust API: rust-api.md
       - Dioptas integration: dioptas-integration.md
   - Validation and development:
+      - CW Pawley refinement: pawley.md
+      - TOF Pawley refinement: tof-pawley.md
+      - Pawley validation: pawley-validation.md
+      - Pawley profile diagnosis: pawley-profile-diagnosis.md
+      - Pawley implementation plan: pawley-plan.md
+      - Pawley completion audit: pawley-completion-audit.md
       - GSAS-II comparisons: gsasii-performance.md
       - Real-data benchmark report: gsasii-benchmark-report.md
       - Benchmark campaign ledger: gsasii-benchmark-campaign.md

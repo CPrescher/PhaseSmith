@@ -80,3 +80,15 @@ def test_snapshot_cli_reports_a_reviewable_diff(tmp_path: Path) -> None:
     assert "public API snapshot differs from the live package" in result.stderr
     assert "removed_or_renamed" in result.stderr
     assert "live-public-api" in result.stderr
+
+
+def test_pawley_supplemental_snapshot_matches_live_exports() -> None:
+    module = _snapshot_module()
+    module.verify_snapshot(
+        ROOT / "api" / "python-pawley-api-unreleased.json",
+        modules=(
+            ("phasesmith.refinement.pawley", "workflow"),
+            ("phasesmith.project_bundle", "workflow"),
+            ("phasesmith.refinement.tof_pawley", "workflow"),
+        ),
+    )

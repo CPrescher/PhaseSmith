@@ -1,0 +1,213 @@
+{
+  "gsasii_revision": "c0bc79b259cdf0065480b5fbd57674ddf12c4a23",
+  "runner_sha256": "e88ee6b63450eb6accb9a66347fb41637d8047c026ee6d65afd710e2be2a75b7",
+  "angular_audit_sha256": "df263e31f9786840afbba6d8fbcebe997f26c3635e9db8c969708d3bf85dea14",
+  "compiler": "GNU Fortran (Homebrew GCC 16.1.0) 16.1.0\nCopyright (C) 2026 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n",
+  "sources_sha256": {
+    "sources/powsubs/psvfcjo.for": "f49eab7002aa1d4692131e98e61bb3edb8acdd2b964e70e4e6e804a62f417600",
+    "sources/powsubs/psvoigt.for": "d485091f25d79a938044ba846b6a144fa2037b1765dcc1a714ba88a580f869a7",
+    "sources/powsubs/gauleg.for": "ac8c77ad49768da8b883a559560c84818747efe6da07ce3b63f44103efbc3c35",
+    "sources/powsubs/sind.for": "8e9f70a799123608124152f3c1454b212bdf9bd9a38e23bca8c9973913c84b5b",
+    "sources/powsubs/cosd.for": "9c7c5f6c804b8b805359d467269415c2b6ed8d92a20d7b320c41a8228057dc0b",
+    "sources/powsubs/tand.for": "5c56bfabef91f1a2f4c0cf07c5c45f0e55442d2ad04fe91ad9ae3979fbbc4388",
+    "sources/powsubs/acosd.for": "3650870a27ed2a4b878da38cc0841a7a86ce439625463b06ce30483566e8c1c0",
+    "sources/powsubs/lorentz.for": "2d188464205d024f0676e7b272dcb0e84fc413340066f0e63525062ea75a08a8"
+  },
+  "builds": {
+    "single": {
+      "command": [
+        "/opt/homebrew/bin/gfortran",
+        "-shared",
+        "-fPIC",
+        "-O2",
+        "-std=legacy",
+        "-ffixed-line-length-none",
+        "-I",
+        "/Users/clemens/Software/gsasII/GSAS-II-c0bc79/sources/powsubs",
+        "/Users/clemens/Software/gsasII/GSAS-II-c0bc79/sources/powsubs/psvfcjo.for",
+        "/Users/clemens/Software/gsasII/GSAS-II-c0bc79/sources/powsubs/psvoigt.for",
+        "/Users/clemens/Software/gsasII/GSAS-II-c0bc79/sources/powsubs/gauleg.for",
+        "/Users/clemens/Software/gsasII/GSAS-II-c0bc79/sources/powsubs/sind.for",
+        "/Users/clemens/Software/gsasII/GSAS-II-c0bc79/sources/powsubs/cosd.for",
+        "/Users/clemens/Software/gsasII/GSAS-II-c0bc79/sources/powsubs/tand.for",
+        "/Users/clemens/Software/gsasII/GSAS-II-c0bc79/sources/powsubs/acosd.for",
+        "/Users/clemens/Software/gsasII/GSAS-II-c0bc79/sources/powsubs/lorentz.for",
+        "-o",
+        "/private/tmp/phasesmith-gsas-source-audit-verified/single.dylib"
+      ],
+      "binary_sha256": "505950f59da80612d1abcc5560830ca5749fb715c24a8af2ee31e091d131ba42"
+    },
+    "double": {
+      "command": [
+        "/opt/homebrew/bin/gfortran",
+        "-shared",
+        "-fPIC",
+        "-O2",
+        "-std=legacy",
+        "-ffixed-line-length-none",
+        "-fdefault-real-8",
+        "-freal-4-real-8",
+        "-I",
+        "/Users/clemens/Software/gsasII/GSAS-II-c0bc79/sources/powsubs",
+        "/Users/clemens/Software/gsasII/GSAS-II-c0bc79/sources/powsubs/psvfcjo.for",
+        "/Users/clemens/Software/gsasII/GSAS-II-c0bc79/sources/powsubs/psvoigt.for",
+        "/Users/clemens/Software/gsasII/GSAS-II-c0bc79/sources/powsubs/gauleg.for",
+        "/Users/clemens/Software/gsasII/GSAS-II-c0bc79/sources/powsubs/sind.for",
+        "/Users/clemens/Software/gsasII/GSAS-II-c0bc79/sources/powsubs/cosd.for",
+        "/Users/clemens/Software/gsasII/GSAS-II-c0bc79/sources/powsubs/tand.for",
+        "/Users/clemens/Software/gsasII/GSAS-II-c0bc79/sources/powsubs/acosd.for",
+        "/Users/clemens/Software/gsasII/GSAS-II-c0bc79/sources/powsubs/lorentz.for",
+        "-o",
+        "/private/tmp/phasesmith-gsas-source-audit-verified/double.dylib"
+      ],
+      "binary_sha256": "a4e81e113d485675fa1a03f193fe958b09eea8c96eefa2f773d2d83b34ea1726"
+    }
+  },
+  "selection_indicator_range": [
+    0.0458302706921607,
+    0.4128720448828533
+  ],
+  "results": [
+    {
+      "reflection": 0,
+      "position_deg": 21.627023716660172,
+      "axial_span_deg": 0.00028902843646250176,
+      "one_node_shift_deg": -0.0001221577908658844,
+      "double_vs_single_node_prediction": 1.321980350451724e-13,
+      "comparisons": {
+        "single": {
+          "values": [
+            0.18060022266581655,
+            3.6104895174503326,
+            18.23110729455948,
+            35.327887535095215,
+            19.509921967983246,
+            2.9057124629616737,
+            0.17181166913360357
+          ],
+          "vs_integral": 0.004930201410026186,
+          "vs_pinned": 0.0
+        },
+        "double": {
+          "values": [
+            0.18057145828825602,
+            3.608082039472573,
+            18.224024966112154,
+            35.328579405939095,
+            19.517119696334593,
+            2.9076987063579933,
+            0.17183769730594423
+          ],
+          "vs_integral": 0.004692409175564684,
+          "vs_pinned": 0.00023787806954707612
+        }
+      }
+    },
+    {
+      "reflection": 10,
+      "position_deg": 36.321956870342206,
+      "axial_span_deg": 0.0001558724058838834,
+      "one_node_shift_deg": -6.587943038738331e-05,
+      "double_vs_single_node_prediction": 4.3537323114034226e-13,
+      "comparisons": {
+        "single": {
+          "values": [
+            0.21314923651516438,
+            3.4117892384529114,
+            17.02900528907776,
+            34.71144139766693,
+            17.098155617713928,
+            3.434533253312111,
+            0.21348788868635893
+          ],
+          "vs_integral": 0.002306950743958065,
+          "vs_pinned": 0.00023999503975586763
+        },
+        "double": {
+          "values": [
+            0.2131776881850556,
+            3.4136981273517955,
+            17.03482052339948,
+            34.711458869982074,
+            17.092335324425385,
+            3.432615279397755,
+            0.21345936294812776
+          ],
+          "vs_integral": 0.002510490500120751,
+          "vs_pinned": 3.645426015373427e-05
+        }
+      }
+    },
+    {
+      "reflection": 30,
+      "position_deg": 52.50534977747424,
+      "axial_span_deg": 8.791216151848857e-05,
+      "one_node_shift_deg": -3.7156051398312684e-05,
+      "double_vs_single_node_prediction": 4.816702156976287e-13,
+      "comparisons": {
+        "single": {
+          "values": [
+            0.2387064043432474,
+            2.892283722758293,
+            16.735710203647614,
+            32.58917033672333,
+            17.747125029563904,
+            3.1963061541318893,
+            0.22743612062186003
+          ],
+          "vs_integral": 0.0014077224770649244,
+          "vs_pinned": 0.0
+        },
+        "double": {
+          "values": [
+            0.23869232501571866,
+            2.8915859439916645,
+            16.73329777167504,
+            32.58905415872746,
+            17.74957164740279,
+            3.197069219575579,
+            0.22744899128451734
+          ],
+          "vs_integral": 0.00132002318731105,
+          "vs_pinned": 8.76993676015924e-05
+        }
+      }
+    },
+    {
+      "reflection": 52,
+      "position_deg": 64.07269594209943,
+      "axial_span_deg": 5.5710128208374954e-05,
+      "one_node_shift_deg": -2.35458706896452e-05,
+      "double_vs_single_node_prediction": 1.4250464732438915e-13,
+      "comparisons": {
+        "single": {
+          "values": [
+            0.23452348541468382,
+            3.3616289496421814,
+            16.229131817817688,
+            30.22467792034149,
+            15.828433632850647,
+            3.224506974220276,
+            0.23214376997202635
+          ],
+          "vs_integral": 0.0009233528384655564,
+          "vs_pinned": 9.688005056849736e-08
+        },
+        "double": {
+          "values": [
+            0.2345030909275802,
+            3.3604459711440144,
+            16.22572879030886,
+            30.224285323355243,
+            15.831812773731958,
+            3.2256460108347573,
+            0.2321637129175249
+          ],
+          "vs_integral": 0.0007897879064985648,
+          "vs_pinned": 0.00013355022832065085
+        }
+      }
+    }
+  ],
+  "scope": "Unmodified pinned source rebuilds; precision promotion does not increase quadrature"
+}

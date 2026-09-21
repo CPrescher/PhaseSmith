@@ -575,10 +575,12 @@ fn prepare_node(
     let sine_apparent = apparent_rad.sin();
     let d_apparent_d_height = -position_rad.cos() * height / (square_root * sine_apparent);
     let d_apparent_d_position = position_rad.sin() * square_root / sine_apparent;
-    let geometry = (square_root * sine_apparent).recip();
+    // FCJ angular density W/(z cos(a)) times |da/dz| cancels to
+    // W/((1+z²) sin(a)); both powers of the square root are required.
+    let geometry = ((1.0 + height * height) * sine_apparent).recip();
     let cotangent_apparent = apparent_rad.cos() / sine_apparent;
-    let d_geometry_d_height =
-        geometry * (-height / (1.0 + height * height) - cotangent_apparent * d_apparent_d_height);
+    let d_geometry_d_height = geometry
+        * (-2.0 * height / (1.0 + height * height) - cotangent_apparent * d_apparent_d_height);
     let d_geometry_d_position =
         geometry * -cotangent_apparent * d_apparent_d_position * DEGREE_TO_RADIAN;
     PreparedNode {
