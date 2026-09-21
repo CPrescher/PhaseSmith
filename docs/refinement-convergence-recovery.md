@@ -1,5 +1,9 @@
 # Rietveld stopping verification and feasible recovery
 
+Historical investigation of the preserved experimental implementation. The
+integrated solver now uses [one shared recovery trial allowance](refinement-bounded-recovery.md).
+The long-budget measurements below have not been regenerated or relabelled.
+
 The [consolidated assessment](refinement-assessment.md) now reviews this change
 on fixed practical recipes. It separates the correctness of honest stopping
 from the cost and compatibility of recovery. The long QARR investigations

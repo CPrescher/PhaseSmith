@@ -397,6 +397,18 @@ def test_lanl_nickel_tof_transferability_workflow_passes() -> None:
 
 
 @pytest.mark.real_data
+def test_qarr_canonical_native_entry_point_regression() -> None:
+    # Omitting execution selects the native validator's own frozen recipe.
+    # The explicit-execution test below cannot substitute for this call.
+    report = run_qarr_1g_validation(available_dataset("iucr-qarr-1g"))
+    assert report.status == "passed"
+    checks = {check.check_id: check for check in report.checks}
+    assert checks["refinement_termination"].status == "passed"
+    assert checks["poisson_rwp"].measured <= 0.20
+    assert checks["qpa_weight_fraction"].measured <= 0.02
+
+
+@pytest.mark.real_data
 def test_qarr_real_pattern_two_thread_regression() -> None:
     report = run_qarr_1g_validation(
         available_dataset("iucr-qarr-1g"),

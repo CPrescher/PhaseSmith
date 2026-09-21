@@ -403,10 +403,6 @@ pub fn refine_general_rietveld_with_runtime(
             }
             step_norm = options.max_scaled_parameter_step;
         }
-        if step_norm < options.parameter_tolerance {
-            termination = TerminationReason::Converged;
-            break;
-        }
         let current_calculation = objective.calculation().clone();
         let current_objective = 0.5 * current_calculation.metrics.chi_square;
         let current_values = solver_parameters
@@ -415,8 +411,116 @@ pub fn refine_general_rietveld_with_runtime(
             .map(crate::ParameterSpec::value)
             .collect::<Vec<_>>();
         let packed = transform.pack()?;
+        // A small regularized step or objective change is only a candidate
+        // stop. Check the undamped local model before declaring convergence.
+        let projected_step = packed
+            .iter()
+            .zip(&step)
+            .zip(transform.free_keys())
+            .map(|((&value, &delta), key)| {
+                let spec = solver_parameters
+                    .spec(key)
+                    .ok_or(RietveldGeneralRefinementError::InternalInvariant)?;
+                Ok(spec.bounds().clip((value + delta) * spec.scale()) / spec.scale() - value)
+            })
+            .collect::<Result<Vec<_>, RietveldGeneralRefinementError>>()?;
+        let recovery = norm(&projected_step) < options.parameter_tolerance
+            || (history.len() >= options.min_iterations
+                && history.last().is_some_and(|record| {
+                    record.objective_change
+                        <= options.objective_tolerance * current_objective.max(1.0)
+                }));
+        // Store coordinate descriptors, not a quadratic array of directions.
+        let mut directions = vec![None];
+        if recovery {
+            // A genuinely small, residual-checked undamped Gauss-Newton step
+            // retains the parameter-tolerance contract. Damping alone cannot
+            // pass this test, including when initial_damping is very large.
+            let undamped = free_linearization.as_ref().and_then(|linearization| {
+                linearization.solve_damped(&right_hand_side, 1.0e-18, options.cg_tolerance)
+            });
+            if undamped
+                .as_ref()
+                .is_some_and(|direction| norm(direction) < options.parameter_tolerance)
+            {
+                termination = TerminationReason::Converged;
+                break;
+            }
+            let diagonal = if let Some(linearization) = &free_linearization {
+                linearization.normal_diagonal()
+            } else {
+                let mut diagonal = Vec::with_capacity(scaled_gradient.len());
+                for index in 0..scaled_gradient.len() {
+                    if let Err(error) =
+                        reserve_products(runtime, objective.normal_product_evaluation_count())
+                    {
+                        termination = normal_stop(&error)?;
+                        break 'iterations;
+                    }
+                    let mut direction = vec![0.0; scaled_gradient.len()];
+                    direction[index] = 1.0;
+                    let physical = forward_product(&derivative, &direction);
+                    let product = objective.normal_product(&physical, 0.0)?;
+                    diagonal.push(transpose_product(&derivative, &product)[index]);
+                }
+                diagonal
+            };
+            let mut candidates = Vec::new();
+            let mut predicted_gain = 0.0;
+            for (index, (&gradient, &curvature)) in
+                scaled_gradient.iter().zip(&diagonal).enumerate()
+            {
+                if curvature <= 0.0 || !curvature.is_finite() {
+                    continue;
+                }
+                let spec = solver_parameters
+                    .spec(&transform.free_keys()[index])
+                    .ok_or(RietveldGeneralRefinementError::InternalInvariant)?;
+                let full_target = spec
+                    .bounds()
+                    .clip((packed[index] - gradient / curvature) * spec.scale());
+                let full_delta = full_target / spec.scale() - packed[index];
+                predicted_gain +=
+                    (-gradient * full_delta - 0.5 * curvature * full_delta * full_delta).max(0.0);
+                let delta = full_delta.clamp(
+                    -options.max_scaled_parameter_step,
+                    options.max_scaled_parameter_step,
+                );
+                let target = spec.bounds().clip((packed[index] + delta) * spec.scale());
+                let delta = target / spec.scale() - packed[index];
+                let gain = -gradient * delta - 0.5 * curvature * delta * delta;
+                if gain > 0.0 {
+                    candidates.push((index, delta, gain));
+                }
+            }
+            if predicted_gain <= options.objective_tolerance * current_objective.max(1.0) {
+                termination = TerminationReason::Converged;
+                break;
+            }
+            // Stable sorting gives deterministic tie breaking by parameter order.
+            candidates.sort_by(|left, right| right.2.total_cmp(&left.2));
+            directions = candidates
+                .iter()
+                .map(|&(index, delta, _)| Some((index, delta)))
+                .collect();
+        }
         let mut accepted = None;
-        for backtrack in 0..=options.max_backtracks {
+        // Share the ordinary line-search trial allowance across recovery
+        // coordinates. Try the highest-gain directions before smaller factors;
+        // parameter count must not multiply the recovery cost/rejection budget.
+        for (coordinate, backtrack) in (0..=options.max_backtracks)
+            .flat_map(|backtrack| {
+                directions
+                    .iter()
+                    .map(move |coordinate| (coordinate, backtrack))
+            })
+            .take(options.max_backtracks.saturating_add(1))
+        {
+            if let Some((index, delta)) = coordinate {
+                step.fill(0.0);
+                step[*index] = *delta;
+            }
+            step_norm = norm(&step);
             let factor = 0.5_f64.powi(i32::try_from(backtrack).unwrap_or(i32::MAX));
             let trial_free = packed
                 .iter()
@@ -505,7 +609,12 @@ pub fn refine_general_rietveld_with_runtime(
                     DiagnosticValue::Float(trial_objective),
                 )],
             )?;
-            if trial_objective < current_objective {
+            let required_improvement = if recovery {
+                options.objective_tolerance * current_objective.max(1.0)
+            } else {
+                0.0
+            };
+            if current_objective - trial_objective > required_improvement {
                 accepted = Some((
                     backtrack,
                     factor,
@@ -532,6 +641,10 @@ pub fn refine_general_rietveld_with_runtime(
             objective,
         )) = accepted
         else {
+            if recovery && termination == TerminationReason::MaxIterations {
+                termination = TerminationReason::Stagnated;
+                break;
+            }
             // Rejected trials do not change the accepted state or its Jacobian.
             // Recover a useful regularization scale without traversing decades
             // below the caller's initial damping after a long accepted sequence.
@@ -621,12 +734,6 @@ pub fn refine_general_rietveld_with_runtime(
                 ),
             ],
         )?;
-        if history.len() >= options.min_iterations
-            && objective_change <= options.objective_tolerance * objective.max(1.0)
-        {
-            termination = TerminationReason::Converged;
-            break;
-        }
     }
     let final_layout = stable_layout;
     let final_domain_layout = RietveldParameterLayout::new(&live_input, selection, lattice_bounds)?;

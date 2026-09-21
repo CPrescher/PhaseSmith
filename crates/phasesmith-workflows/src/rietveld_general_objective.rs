@@ -45,6 +45,14 @@ impl PreparedGeneralFreeLinearization {
         self.parameter_count
     }
 
+    /// Diagonal of the undamped normal matrix in scaled free coordinates.
+    pub(crate) fn normal_diagonal(&self) -> Vec<f64> {
+        self.weighted_jacobian
+            .chunks_exact(self.sample_scale.len())
+            .map(|column| column.iter().map(|value| value * value).sum())
+            .collect()
+    }
+
     /// Apply the weighted free Jacobian.
     ///
     /// # Errors
