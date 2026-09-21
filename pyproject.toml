@@ -46,6 +46,7 @@ manifest-path = "crates/phasesmith-py/Cargo.toml"
 python-source = "python"
 module-name = "phasesmith._core"
 features = ["pyo3/extension-module"]
+include = [{ path = "skills/phasesmith-ai-workflows/**/*", format = "sdist" }]
 
 [tool.pytest.ini_options]
 addopts = "-ra -m 'not external_oracle and not real_data'"

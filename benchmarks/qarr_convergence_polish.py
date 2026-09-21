@@ -21,9 +21,10 @@ import qarr_convergence as benchmark
 from investigate_qarr_holdout import request_after
 from phasesmith.refinement import RefinementLimits
 from phasesmith.refinement import rietveld as rv
+from phasesmith.validation import verify_validation_dataset
 
 
-def run(sample, workers):
+def run(sample, workers, feasible_width_steps=False):
     saved = []
     finish = benchmark.finish
 
@@ -59,6 +60,7 @@ def run(sample, workers):
         parameter_tolerance=1e-9,
         estimate_covariance=False,
         execution=execution,
+        feasible_width_steps=feasible_width_steps,
     )
     iterations = []
     stable = False
@@ -97,6 +99,7 @@ def run(sample, workers):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--workers", type=int, default=8)
+    parser.add_argument("--feasible-width-steps", action="store_true")
     parser.add_argument("--json-output", required=True, type=Path)
     args = parser.parse_args()
     if args.workers < 1 or ps._core.BUILD_MODE != "release":
@@ -107,9 +110,27 @@ def main():
     record = dict(
         schema="phasesmith.qarr-convergence-polish.v1",
         workers=args.workers,
+        feasible_width_steps=args.feasible_width_steps,
         native_sha256=hashlib.sha256(Path(ps._core.__file__).read_bytes()).hexdigest(),
         driver_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         convergence_driver_sha256=hashlib.sha256(Path(benchmark.__file__).read_bytes()).hexdigest(),
+        solver_source_sha256={
+            path: hashlib.sha256((benchmark.ROOT / path).read_bytes()).hexdigest()
+            for path in (
+                "crates/phasesmith-workflows/src/rietveld_general_solver.rs",
+                "crates/phasesmith-workflows/src/rietveld_feasible_step.rs",
+                "crates/phasesmith-workflows/src/rietveld_general_objective.rs",
+                "python/phasesmith/refinement/rietveld.py",
+                "python/phasesmith/refinement/_feasible_step.py",
+            )
+        },
+        dataset_sha256={
+            str(path.relative_to(benchmark.ROOT)): hashlib.sha256(path.read_bytes()).hexdigest()
+            for sample in ("1g", "1h")
+            for path in verify_validation_dataset(
+                f"iucr-qarr-{sample}", benchmark.ROOT / f"validation/data/iucr-qarr-{sample}"
+            )
+        },
         cases={},
         notes=[
             "No new profile terms, empirical convention, or background freedom.",
@@ -119,7 +140,7 @@ def main():
         ],
     )
     for sample in ("1g", "1h"):
-        record["cases"][sample] = run(sample, args.workers)
+        record["cases"][sample] = run(sample, args.workers, args.feasible_width_steps)
         last = record["cases"][sample]["polish"][-1]["scientific"]
         print(sample, last, flush=True)
         args.json_output.write_text(json.dumps(record, indent=2, allow_nan=False) + "\n")

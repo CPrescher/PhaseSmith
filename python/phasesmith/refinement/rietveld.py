@@ -63,6 +63,7 @@ from ..structural_calculation import (
 )
 from ..structure import AtomSite, CrystalStructure
 from ..symmetry import CwTwoThetaRange, DSpacingRange, PreparedReflectionGenerator
+from ._feasible_step import solve_quadratic, width_inequalities
 from .background import (
     AmorphousBackground,
     ChebyshevBackground,
@@ -1120,7 +1121,13 @@ class RietveldInput:
 
 @dataclass(frozen=True, slots=True)
 class RietveldOptions:
-    """Numerical controls for bounded matrix-free structural refinement."""
+    """Numerical controls for bounded structural refinement.
+
+    ``feasible_width_steps`` opts into small dense coupled-width proposals for
+    fixed-cell CW fits. Unsupported or unverifiable subproblems use the ordinary
+    solver. It changes the search path, not profile physics or fit tolerances;
+    staged fits can reach different endpoints. See ``docs/feasible-width-steps.md``.
+    """
 
     limits: RefinementLimits = field(
         default_factory=lambda: RefinementLimits(max_iterations=50, max_evaluations=5_000)
@@ -1143,8 +1150,11 @@ class RietveldOptions:
     max_covariance_parameters: int = 64
     unresolved_correlation: float = 1.0 - 1.0e-10
     execution: ExecutionPolicy = field(default_factory=ExecutionPolicy)
+    feasible_width_steps: bool = False
 
     def __post_init__(self) -> None:
+        if not isinstance(self.feasible_width_steps, bool):
+            raise TypeError("feasible_width_steps must be boolean")
         if not isinstance(self.profile_accuracy, ProfileAccuracy):
             raise TypeError("profile_accuracy must be ProfileAccuracy")
         if not isinstance(self.limits, RefinementLimits):
@@ -2266,48 +2276,183 @@ def _refine_with_executor(
                 weighted_residual = metrics.residual * linearization.sample_weight
                 gradient = linearization.vjp(weighted_residual)
 
-                step, cg_iterations = _conjugate_gradient(
-                    partial(_normal_product, linearization, damping),
-                    -gradient,
-                    selected.cg_tolerance,
-                    selected.max_cg_iterations,
+                inequalities = (
+                    width_inequalities(
+                        experiment, calculation, parameters, linearization.physical_to_free
+                    )
+                    if selected.feasible_width_steps
+                    and linearization.weighted_free_jacobian is not None
+                    else None
                 )
+                normal = (
+                    linearization.weighted_free_jacobian @ linearization.weighted_free_jacobian.T
+                    if inequalities is not None
+                    else None
+                )
+                step = (
+                    solve_quadratic(
+                        normal + damping * np.eye(len(gradient)),
+                        -gradient,
+                        inequalities,
+                        selected.cg_tolerance,
+                    )
+                    if normal is not None
+                    else None
+                )
+                if step is None:
+                    step, cg_iterations = _conjugate_gradient(
+                        partial(_normal_product, linearization, damping),
+                        -gradient,
+                        selected.cg_tolerance,
+                        selected.max_cg_iterations,
+                    )
+                else:
+                    cg_iterations = 0
                 step_norm = float(np.linalg.norm(step))
                 if step_norm > selected.max_scaled_parameter_step:
                     step *= selected.max_scaled_parameter_step / step_norm
                     step_norm = selected.max_scaled_parameter_step
-                if step_norm < selected.parameter_tolerance:
-                    termination = TerminationReason.CONVERGED
-                    termination_message = "scaled parameter step reached tolerance"
-                    break
                 packed = transform.pack()
-                accepted = False
-                for backtrack in range(selected.max_backtracks + 1):
-                    factor = 0.5**backtrack
-                    trial_values = transform.unpack(packed + factor * step, clip=True)
-                    trial_experiment, trial_background = _apply_profile_background_values(
-                        experiment,
-                        background,
-                        trial_values,
-                    )
-                    trial_lattice_domains = tuple(
-                        None
-                        if domain is None
-                        else replace(
-                            domain,
-                            wavelength_angstrom=trial_experiment.radiation.wavelength_angstrom,
+                projected_step = np.array(
+                    [
+                        np.clip(
+                            (value + delta) * parameters.spec(key).scale,
+                            parameters.spec(key).bounds.lower,
+                            parameters.spec(key).bounds.upper,
                         )
-                        for domain in lattice_domains
+                        / parameters.spec(key).scale
+                        - value
+                        for value, delta, key in zip(packed, step, transform.free_keys, strict=True)
+                    ]
+                )
+                recovery = np.linalg.norm(projected_step) < selected.parameter_tolerance or (
+                    len(history) >= selected.min_iterations
+                    and bool(history)
+                    and history[-1].objective_change
+                    <= selected.objective_tolerance * max(objective, 1.0)
+                )
+                directions: list[tuple[int, float] | None] = [None]
+                if recovery:
+                    feasible_undamped = (
+                        solve_quadratic(
+                            normal + 1e-18 * np.eye(len(gradient)),
+                            -gradient,
+                            inequalities,
+                            selected.cg_tolerance,
+                        )
+                        if normal is not None
+                        else None
                     )
-                    trial_phases, topology_changes = _apply_parameter_values(
-                        phases,
-                        trial_lattice_domains,
-                        parameters,
-                        trial_values,
-                        coordinate_models=linearization.coordinate_models,
-                    )
-                    trial_parameters = parameters.replace_values(trial_values)
+                    if (
+                        feasible_undamped is not None
+                        and np.linalg.norm(feasible_undamped) < selected.parameter_tolerance
+                    ):
+                        termination = TerminationReason.CONVERGED
+                        termination_message = "undamped feasible parameter step reached tolerance"
+                        break
                     try:
+                        undamped, _ = _conjugate_gradient(
+                            partial(_normal_product, linearization, 1.0e-18),
+                            -gradient,
+                            selected.cg_tolerance,
+                            selected.max_cg_iterations,
+                        )
+                        residual = _normal_product(linearization, 1.0e-18, undamped) + gradient
+                        small_undamped_step = np.linalg.norm(
+                            undamped
+                        ) < selected.parameter_tolerance and np.linalg.norm(
+                            residual
+                        ) <= selected.cg_tolerance * max(float(np.linalg.norm(gradient)), 1.0)
+                    except FloatingPointError:
+                        # A singular or numerically indefinite undamped solve
+                        # cannot certify a stop; retain the diagonal check.
+                        small_undamped_step = False
+                    if small_undamped_step:
+                        termination = TerminationReason.CONVERGED
+                        termination_message = "undamped parameter step reached tolerance"
+                        break
+                    if linearization.weighted_free_jacobian is not None:
+                        diagonal = np.sum(linearization.weighted_free_jacobian**2, axis=1)
+                    else:
+                        diagonal = np.empty(len(gradient))
+                        for index in range(len(gradient)):
+                            unit = np.zeros_like(gradient)
+                            unit[index] = 1.0
+                            column = linearization.jvp(unit)
+                            diagonal[index] = column @ column
+                    candidates = []
+                    predicted_gain = 0.0
+                    for index, (g, curvature) in enumerate(zip(gradient, diagonal, strict=True)):
+                        if curvature <= 0.0 or not np.isfinite(curvature):
+                            continue
+                        spec = parameters.spec(transform.free_keys[index])
+                        full_target = np.clip(
+                            (packed[index] - g / curvature) * spec.scale,
+                            spec.bounds.lower,
+                            spec.bounds.upper,
+                        )
+                        full_delta = full_target / spec.scale - packed[index]
+                        predicted_gain += max(
+                            -g * full_delta - 0.5 * curvature * full_delta**2, 0.0
+                        )
+                        delta = np.clip(
+                            full_delta,
+                            -selected.max_scaled_parameter_step,
+                            selected.max_scaled_parameter_step,
+                        )
+                        target = np.clip(
+                            (packed[index] + delta) * spec.scale,
+                            spec.bounds.lower,
+                            spec.bounds.upper,
+                        )
+                        delta = target / spec.scale - packed[index]
+                        gain = -g * delta - 0.5 * curvature * delta**2
+                        if gain > 0.0:
+                            candidates.append((index, delta, gain))
+                    if predicted_gain <= selected.objective_tolerance * max(objective, 1.0):
+                        termination = TerminationReason.CONVERGED
+                        termination_message = (
+                            "projected undamped local improvement reached tolerance"
+                        )
+                        break
+                    candidates.sort(key=lambda candidate: -candidate[2])
+                    directions = [(index, delta) for index, delta, _ in candidates]
+                accepted = False
+                for coordinate, backtrack in (
+                    (coordinate, backtrack)
+                    for coordinate in directions
+                    for backtrack in range(selected.max_backtracks + 1)
+                ):
+                    if coordinate is not None and backtrack == 0:
+                        index, delta = coordinate
+                        step = np.zeros_like(gradient)
+                        step[index] = delta
+                    step_norm = float(np.linalg.norm(step))
+                    factor = 0.5**backtrack
+                    try:
+                        trial_values = transform.unpack(packed + factor * step, clip=True)
+                        trial_experiment, trial_background = _apply_profile_background_values(
+                            experiment,
+                            background,
+                            trial_values,
+                        )
+                        trial_lattice_domains = tuple(
+                            None
+                            if domain is None
+                            else replace(
+                                domain,
+                                wavelength_angstrom=trial_experiment.radiation.wavelength_angstrom,
+                            )
+                            for domain in lattice_domains
+                        )
+                        trial_phases, topology_changes = _apply_parameter_values(
+                            phases,
+                            trial_lattice_domains,
+                            parameters,
+                            trial_values,
+                            coordinate_models=linearization.coordinate_models,
+                        )
+                        trial_parameters = parameters.replace_values(trial_values)
                         trial_linearization = _RietveldLinearization.prepare(
                             input_data,
                             trial_experiment,
@@ -2343,7 +2488,10 @@ def _refine_with_executor(
                         "structural trial evaluated",
                         (("objective", trial_objective), ("backtrack", backtrack)),
                     )
-                    if trial_objective < objective:
+                    required_improvement = (
+                        selected.objective_tolerance * max(objective, 1.0) if recovery else 0.0
+                    )
+                    if objective - trial_objective > required_improvement:
                         before = parameters.values()
                         changes = tuple(
                             RietveldParameterChange(
@@ -2403,12 +2551,6 @@ def _refine_with_executor(
                             (("objective", objective), ("rwp", metrics.rwp)),
                         )
                         accepted = True
-                        if (
-                            len(history) >= selected.min_iterations
-                            and change <= selected.objective_tolerance * max(objective, 1.0)
-                        ):
-                            termination = TerminationReason.CONVERGED
-                            termination_message = "objective change reached tolerance"
                         break
                     runtime.emit(
                         RefinementEventKind.STEP_REJECTED,
@@ -2420,6 +2562,10 @@ def _refine_with_executor(
                 if termination is TerminationReason.CONVERGED:
                     break
                 if not accepted:
+                    if recovery:
+                        termination = TerminationReason.STAGNATED
+                        termination_message = "no improving bounded recovery step was found"
+                        break
                     damping = max(damping * selected.damping_increase, selected.initial_damping)
                     continue
                 runtime.emit(
@@ -2709,6 +2855,7 @@ def _native_request(input_data: RietveldInput, options: RietveldOptions) -> obje
         options.unresolved_correlation,
     )
 
+    request.set_feasible_width_steps(options.feasible_width_steps)
     options.profile_accuracy._apply(request)
     if isinstance(experiment.radiation, ComponentRadiation):
         components = experiment.radiation.components

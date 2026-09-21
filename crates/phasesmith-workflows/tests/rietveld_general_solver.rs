@@ -682,7 +682,8 @@ options = rietveld.RietveldOptions(
     max_backtracks=10, use_uncertainty=True, support_fwhm=20.0,
     estimate_covariance=False, execution=phasesmith.ExecutionPolicy(1, 2),
 )
-result = rietveld.refine(request, options)
+result = rietveld.refine(request, options, logger=lambda event: None)
+assert result.backend != "native", "this comparison must exercise independent Python orchestration"
 print(format(result.background.coefficients[0], ".17g"), format(result.background.coefficients[1], ".17g"), format(result.phases[0].scale, ".17g"))
 print(len(result.history))
 print(" ".join(format(row.objective, ".17g") for row in result.history))
@@ -862,4 +863,43 @@ fn rejected_trials_reuse_the_accepted_jacobian_and_recover_tiny_damping() {
     );
     assert_eq!(rejected.input, input);
     assert!(rejected.history.is_empty());
+}
+
+#[test]
+fn large_damping_does_not_certify_convergence_far_from_solution() {
+    let input = input_from_truth(phase(1.0, 0.01), vec![0.0], phase(1.0, 0.5), vec![0.0]);
+    let selection = RietveldParameterSelection::new(
+        RietveldStructuralSelection {
+            occupancy: true,
+            ..RietveldStructuralSelection::default()
+        },
+        Vec::new(),
+        false,
+        false,
+    )
+    .unwrap();
+    let mut controls = options(100);
+    controls.initial_damping = 1e20;
+    controls.max_scaled_parameter_step = 0.25;
+    let result = refine_general_rietveld(
+        &input,
+        &selection,
+        &[None],
+        &[],
+        &controls,
+        RietveldCovarianceOptions::new(false, 1, 1.0).unwrap(),
+        None,
+        None,
+    )
+    .unwrap();
+    assert!(!result.history.is_empty());
+    assert_eq!(result.termination_reason, TerminationReason::Converged);
+    assert!(result.calculation.metrics.rwp < 1e-8);
+    assert!((result.input.phases[0].definition().occupancy[0] - 0.5).abs() < 2e-9);
+    assert!(
+        result
+            .history
+            .windows(2)
+            .all(|pair| pair[1].objective < pair[0].objective)
+    );
 }

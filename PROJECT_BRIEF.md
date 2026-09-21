@@ -12,10 +12,64 @@ not part of the numerical library.
 
 ## Current implementation status
 
-Refinement optimization priority: seek the lowest stable, scientifically valid
-Rwp with verified convergence, retaining QPA and physical-model checks. Judge
-speed at comparable attained fit quality; a faster iteration-limited fit with
-a higher Rwp is a diagnostic tradeoff, not the target outcome.
+The user-facing agent skill now ships as version-matched Python package
+resources, discoverable through `phasesmith skill --path` and `--print`.
+`skills/phasesmith-ai-workflows/` remains canonical; a standard-library generator
+produces byte-identical packaged resources and the public agent-skill pages.
+CI, documentation builds, and release validation reject drift. Focused
+references distinguish experimental prerequisites, the CW automation contract,
+identifiability, accepted execution, optimizer convergence, and scientific
+acceptance. This is documentation and distribution infrastructure: numerical
+behavior, authorization, and the external GSAS-II oracle boundary are unchanged.
+
+Refinement development decision (2026-09-17): pause further QARR solver tuning
+and assess practical, bounded workflows across the fixed panel in
+`validation/refinement-assessment-v1.json`. Retain established kernel/physics
+improvements and honest termination reporting. Park `feasible_width_steps`
+off by default; do not promote it based on its mixed two-sample results.
+Judge Rwp, relevant parameter/composition accuracy, physical assumptions,
+termination, repeatability and runtime together. Full convergence on QARR 1g/1h
+is not the sole development target. Separate truthful stopping from the cost
+of extensive recovery; an accepted bounded workflow need not certify an optimum.
+Existing scientific gates and recipes stay fixed during assessment. Rowles,
+Echidna and nickel provide transfer checks outside this optimization campaign;
+they are not untouched data across the whole project. See
+`docs/refinement-assessment.md` for the consolidated evidence and priorities.
+
+That panel identifies a release blocker in the combined uncommitted stopping/
+recovery change: canonical native QARR 1g changes from passed to failed because
+stage two now exhausts its rejection guard, with identical final Rwp/QPA.
+Earlier explicit-execution checks used a different recipe and missed this
+entry point. Rowles transfer cases still pass their numerical gates but show
+extra evaluations and almost unchanged fit quality. Keep honest stopping;
+address its bounded-workflow compatibility and recovery cost before promotion.
+
+The complete CW solver and independent Python fallback now verify candidate
+stops using undamped local information and try bounded coordinate recovery
+before reporting stagnation. Heavy damping or a tiny user step cap alone can
+no longer certify convergence. Physical models, profile policies and bounds
+are unchanged. The original-width QARR diagnostic improves to Rwp 19.69002%
+on 1g and 19.68952% on 1h, with maximum composition errors 0.59790 and
+1.41122 percentage points. Its main stages now honestly report stagnation;
+the feasible-coordinate probe finds no remaining descent above its reporting
+threshold, but this is not full constrained stationarity. Recovery is slower,
+and tighter staged fits can still reach worse endpoints. See
+`docs/refinement-convergence-recovery.md` for the algorithm and validation.
+Historical convergence labels in the earlier investigations below refer to
+the superseded stopping test.
+
+An optional `feasible_width_steps` solver control now tests coupled Gaussian
+and Lorentzian instrument-domain proposals, including affine physical bounds,
+for small dense fixed-cell CW fits. Native Rust and independent NumPy use
+checked active-set quadratic subproblems with bounded fallback to the ordinary
+solver. It is off by default: enabling it throughout the original QARR recipe
+improves 1g Rwp to 19.67659% but worsens 1h to 19.90818%, because the changed
+initial-stage background is frozen afterward. Stage-two-only proposals retain
+almost the default endpoints; tight continuation improves 1h only to 19.68947%.
+The joint stages still stagnate. Physical models, tolerances and acceptance
+gates are unchanged. This is an experimental search option, not a demonstrated
+accuracy breakthrough or full-convergence solution. See
+`docs/feasible-width-steps.md` for equations, scope and retained evidence.
 
 The subsequent original-recipe convergence audit identifies a termination
 weakness: the general solver can report convergence when repeated damping
@@ -24,9 +78,9 @@ remain. Large-budget original-width fits report Rwp 19.87759% on 1g and
 20.10151% on 1h, with repeatable full-workflow timings of 1.720/2.413 seconds
 at eight workers. These are times to reported convergence, not stationarity
 certificates. Tighter 1h fits can stall at worse results; feasible coordinate
-probes demonstrate the issue. See `docs/qarr-convergence-audit.md`. Production
-solver behavior is unchanged by the audit; convergence/stagnation detection
-and feasible-step recovery are the next implementation priorities.
+probes demonstrate the issue. See `docs/qarr-convergence-audit.md`. The audit
+itself changed no production behavior; the recovery implementation above
+addresses its stopping-condition finding.
 
 The subsequent QARR holdout investigation separates budget exhaustion from
 width decomposition. The common diagnostic's original-width recipe converges

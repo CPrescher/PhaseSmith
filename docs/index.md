@@ -19,6 +19,8 @@ consume directly—no Python process or sidecar is required for a Rust GUI.
    with checkpoints and reports.
 6. [AI-guided automation](ai-automation.md) — let an external AI propose
    auditable staged recipes without giving it numerical or execution authority.
+   The [agent skill](agent-skill/index.md) packages the operating protocol and
+   scientific decision rules for use in an agent's own environment.
 7. [Persistence](persistence.md) — save and restore Python workflow state.
 8. [Native project persistence](native-persistence.md) — use the Rust-only,
    multi-histogram JSON+NPZ project and reporting boundary.

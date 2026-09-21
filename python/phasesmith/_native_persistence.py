@@ -448,6 +448,7 @@ def _options(record: dict[str, Any], covariance: dict[str, Any]) -> RietveldOpti
         max_cg_iterations=int(record["max_cg_iterations"]),
         max_scaled_parameter_step=float(record["max_scaled_parameter_step"]),
         max_backtracks=int(record["max_backtracks"]),
+        feasible_width_steps=bool(record.get("feasible_width_steps", False)),
         use_uncertainty=bool(record["use_uncertainty"]),
         support_fwhm=float(record["support_fwhm"]),
         profile_accuracy=ProfileAccuracy(

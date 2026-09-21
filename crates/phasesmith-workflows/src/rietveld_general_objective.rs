@@ -45,6 +45,14 @@ impl PreparedGeneralFreeLinearization {
         self.parameter_count
     }
 
+    /// Diagonal of the undamped normal matrix in scaled free coordinates.
+    pub(crate) fn normal_diagonal(&self) -> Vec<f64> {
+        self.weighted_jacobian
+            .chunks_exact(self.sample_scale.len())
+            .map(|column| column.iter().map(|value| value * value).sum())
+            .collect()
+    }
+
     /// Apply the weighted free Jacobian.
     ///
     /// # Errors
@@ -114,20 +122,7 @@ impl PreparedGeneralFreeLinearization {
         {
             return None;
         }
-        let samples = self.sample_scale.len();
-        let mut normal = nalgebra::DMatrix::zeros(count, count);
-        for i in 0..count {
-            for j in 0..=i {
-                let value = self.weighted_jacobian[i * samples..(i + 1) * samples]
-                    .iter()
-                    .zip(&self.weighted_jacobian[j * samples..(j + 1) * samples])
-                    .map(|(a, b)| a * b)
-                    .sum::<f64>();
-                normal[(i, j)] = value;
-                normal[(j, i)] = value;
-            }
-            normal[(i, i)] += damping;
-        }
+        let normal = self.damped_normal(damping);
         let factor = normal.cholesky()?;
         let solution = factor.solve(&nalgebra::DVector::from_column_slice(rhs));
         if solution.iter().any(|v| !v.is_finite()) {
@@ -142,6 +137,25 @@ impl PreparedGeneralFreeLinearization {
             .sqrt();
         let limit = tolerance * rhs.iter().map(|v| v * v).sum::<f64>().sqrt().max(1.0);
         (residual <= limit).then(|| solution.as_slice().to_vec())
+    }
+
+    pub(crate) fn damped_normal(&self, damping: f64) -> nalgebra::DMatrix<f64> {
+        let count = self.parameter_count;
+        let samples = self.sample_scale.len();
+        let mut normal = nalgebra::DMatrix::zeros(count, count);
+        for i in 0..count {
+            for j in 0..=i {
+                let value = self.weighted_jacobian[i * samples..(i + 1) * samples]
+                    .iter()
+                    .zip(&self.weighted_jacobian[j * samples..(j + 1) * samples])
+                    .map(|(a, b)| a * b)
+                    .sum::<f64>();
+                normal[(i, j)] = value;
+                normal[(j, i)] = value;
+            }
+            normal[(i, i)] += damping;
+        }
+        normal
     }
 
     /// Calculate the scaled free gradient for the stored calculation.
