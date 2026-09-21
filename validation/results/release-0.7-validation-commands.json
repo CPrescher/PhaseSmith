@@ -1,0 +1,85 @@
+[
+  {
+    "name": "pawley-cw",
+    "command": [
+      "/Users/clemens/PhaseSmith-work/release-venv/bin/python",
+      "-m",
+      "phasesmith.validation.pawley",
+      "--data-root",
+      "/Users/clemens/PhaseSmith-work/release-reconciliation/validation/data",
+      "--manifest",
+      "/Users/clemens/PhaseSmith-work/release-reconciliation/validation/pawley-matrix-free-acceptance-v4.json",
+      "--output",
+      "/Users/clemens/PhaseSmith-preservation/release-reconciliation-20260921/pawley-cw.json"
+    ],
+    "cwd": "/Users/clemens/PhaseSmith-preservation/release-reconciliation-20260921",
+    "exit_code": 0,
+    "seconds": 333.916198958992
+  },
+  {
+    "name": "pawley-cell",
+    "command": [
+      "/Users/clemens/PhaseSmith-work/release-venv/bin/python",
+      "-m",
+      "phasesmith.validation.pawley",
+      "--data-root",
+      "/Users/clemens/PhaseSmith-work/release-reconciliation/validation/data",
+      "--manifest",
+      "/Users/clemens/PhaseSmith-work/release-reconciliation/validation/pawley-cell-acceptance-v3.json",
+      "--output",
+      "/Users/clemens/PhaseSmith-preservation/release-reconciliation-20260921/pawley-cell.json"
+    ],
+    "cwd": "/Users/clemens/PhaseSmith-preservation/release-reconciliation-20260921",
+    "exit_code": 0,
+    "seconds": 0.30347308301134035
+  },
+  {
+    "name": "pawley-tof",
+    "command": [
+      "/Users/clemens/PhaseSmith-work/release-venv/bin/python",
+      "-m",
+      "phasesmith.validation.tof_pawley",
+      "--data-root",
+      "/Users/clemens/PhaseSmith-work/release-reconciliation/validation/data",
+      "--manifest",
+      "/Users/clemens/PhaseSmith-work/release-reconciliation/validation/pawley-tof-acceptance-v1.json",
+      "--output",
+      "/Users/clemens/PhaseSmith-preservation/release-reconciliation-20260921/pawley-tof.json"
+    ],
+    "cwd": "/Users/clemens/PhaseSmith-preservation/release-reconciliation-20260921",
+    "exit_code": 0,
+    "seconds": 25.513051666959655
+  },
+  {
+    "name": "pawley-spectrum",
+    "command": [
+      "/Users/clemens/PhaseSmith-work/release-venv/bin/python",
+      "-m",
+      "phasesmith.validation.pawley_spectrum",
+      "--data-root",
+      "/Users/clemens/PhaseSmith-work/release-reconciliation/validation/data/iucr-ceria-size-strain-round-robin",
+      "--oracle-fixture",
+      "/Users/clemens/PhaseSmith-work/release-reconciliation/oracle/fixtures/wavelength_components_v1",
+      "--output",
+      "/Users/clemens/PhaseSmith-preservation/release-reconciliation-20260921/pawley-spectrum.json"
+    ],
+    "cwd": "/Users/clemens/PhaseSmith-preservation/release-reconciliation-20260921",
+    "exit_code": 0,
+    "seconds": 81.73209491698071
+  },
+  {
+    "name": "pawley-oracle",
+    "command": [
+      "/Users/clemens/PhaseSmith-work/release-venv/bin/python",
+      "-m",
+      "phasesmith.validation.pawley_oracle",
+      "--fixture",
+      "/Users/clemens/PhaseSmith-work/release-reconciliation/oracle/fixtures/pawley_optimizer_v1",
+      "--output",
+      "/Users/clemens/PhaseSmith-preservation/release-reconciliation-20260921/pawley-oracle.json"
+    ],
+    "cwd": "/Users/clemens/PhaseSmith-preservation/release-reconciliation-20260921",
+    "exit_code": 0,
+    "seconds": 10.22704612504458
+  }
+]

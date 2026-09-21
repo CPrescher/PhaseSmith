@@ -65,11 +65,32 @@ outside the checkout. No saved-project schema is changed by the merge.
 
 ## Validation
 
-Candidate validation is in progress. The prior Pawley scientific, differential
-and benchmark evidence is in the [repair report](pawley-repair-20260921.md).
-The combined candidate must pass fresh installed-wheel tests, Rust checks,
-API snapshots, strict documentation, installed examples, and the complete
-distribution dry run before being recommended for publication.
+The combined installed wheel passes **975 Python tests** (11 external-data
+skips and 34 opt-in deselections), **365 Rust tests/doctests**, **12 differential
+checks**, and both frozen QARR 1g entry-point tests. A focused API/TOF suite
+passes 30 tests with deprecation warnings treated as errors. All 168 moved
+aliases resolve with their expected warning. Strict Clippy, Rust/Python
+formatting, Rustdoc, generated-document checks and MkDocs pass. The documented
+CW/TOF examples, skill discovery and offline advisor example run from the
+installed wheel outside the checkout.
+
+Fresh CW, cell/profile, TOF, fixed-spectrum and pinned-oracle engineering gates
+pass. Scientific records match the repaired develop reports exactly after
+excluding timings, source/binary provenance and checkout paths. Sucrose takes
+133.36 and 137.11 seconds per repeat, below its unchanged 240-second limit.
+The exact commands, hashes, outcomes and fit histories are recorded in
+`validation/results/release-0.7-*.json`. The reconciliation changes no Rust
+implementation or numerical fixture; the earlier measured benchmark evidence
+is retained in the [Pawley repair report](pawley-repair-20260921.md).
+
+The [candidate distribution dry run](https://github.com/CPrescher/PhaseSmith/actions/runs/35593890298)
+tests implementation commit `1797604` across macOS Intel/ARM64, Windows,
+Linux x86-64, Linux AArch64 construction and an independently installed sdist.
+Publication jobs are skipped for this manual dispatch. Its job results and
+[PR checks](https://github.com/CPrescher/PhaseSmith/pull/7/checks) are the
+authoritative cross-platform status; all required jobs must pass before
+publication. Subsequent evidence/documentation commits do not change the
+package implementation tested by the distribution run.
 
 ## Known scientific limits
 
