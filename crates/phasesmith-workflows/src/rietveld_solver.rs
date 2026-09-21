@@ -40,6 +40,9 @@ pub struct RietveldRefinementOptions {
     pub max_scaled_parameter_step: f64,
     /// Number of half-step retries after the full trial.
     pub max_backtracks: usize,
+    /// Opt in to verified small constrained steps for coupled CW widths.
+    /// Only the complete fixed-cell solver with dense free Jacobians uses this.
+    pub feasible_width_steps: bool,
 }
 
 impl RietveldRefinementOptions {
@@ -77,6 +80,7 @@ impl RietveldRefinementOptions {
             max_cg_iterations,
             max_scaled_parameter_step,
             max_backtracks,
+            feasible_width_steps: false,
         };
         result.validate()?;
         Ok(result)

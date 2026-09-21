@@ -444,6 +444,11 @@ impl NativeRietveldCancellation {
 
 #[pymethods]
 impl NativeRietveldRequest {
+    /// Select the opt-in small constrained width solver.
+    fn set_feasible_width_steps(&mut self, enabled: bool) {
+        self.options.feasible_width_steps = enabled;
+    }
+
     /// Attach a validated fixed spectrum before refinement or serialization.
     fn set_fixed_spectrum(&mut self, wavelengths: Vec<f64>, weights: Vec<f64>) -> PyResult<()> {
         let mut input = self.input.clone();

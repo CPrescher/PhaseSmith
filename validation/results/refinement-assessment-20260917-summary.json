@@ -1,0 +1,428 @@
+{
+  "source_sha256": "3e3952d89d0ff819d1dd87261c7fa75654546d5ab5baac2bfd13327e86d87c72",
+  "case_count": 8,
+  "new_gate_failures": [
+    "iucr-qarr-1g"
+  ],
+  "retained_gate_failures": [
+    "iucr-qarr-1h"
+  ],
+  "cases": {
+    "iucr-qarr-1g": {
+      "baseline": {
+        "status": "passed",
+        "failed_checks": [],
+        "median_seconds": 0.599029270990286,
+        "measurements": {
+          "observed_grid": 7251.0,
+          "site_expansion": 46.0,
+          "poisson_rwp": 0.19896901016081717,
+          "unit_weight_rwp": 0.13331117047727264,
+          "profile_correlation": 0.9903837542806914,
+          "qpa_weight_fraction": 0.011179307709242248,
+          "qpa_covariance": 0.0008529420568530502
+        },
+        "terminations": [
+          "max_iterations",
+          "converged",
+          "converged"
+        ]
+      },
+      "candidate": {
+        "status": "failed",
+        "failed_checks": [
+          "refinement_termination"
+        ],
+        "median_seconds": 0.7385639375133906,
+        "measurements": {
+          "observed_grid": 7251.0,
+          "site_expansion": 46.0,
+          "poisson_rwp": 0.19896901016081717,
+          "unit_weight_rwp": 0.13331117047727264,
+          "profile_correlation": 0.9903837542806914,
+          "qpa_weight_fraction": 0.011179307709242248,
+          "qpa_covariance": 0.0008529420568530502
+        },
+        "terminations": [
+          "max_iterations",
+          "repeated_rejections",
+          "converged"
+        ]
+      },
+      "scientific_report_identical": false
+    },
+    "iucr-qarr-1h": {
+      "baseline": {
+        "status": "failed",
+        "failed_checks": [
+          "poisson_rwp",
+          "unit_weight_rwp",
+          "profile_correlation"
+        ],
+        "median_seconds": 0.5920347919891356,
+        "measurements": {
+          "observed_grid": 7251.0,
+          "site_expansion": 46.0,
+          "poisson_rwp": 0.2865442972568657,
+          "unit_weight_rwp": 0.2526499623968294,
+          "profile_correlation": 0.9755624393134137,
+          "qpa_weight_fraction": 0.017289603904971695,
+          "qpa_covariance": 0.0009381046442115559
+        },
+        "terminations": [
+          "max_iterations",
+          "max_iterations",
+          "converged"
+        ]
+      },
+      "candidate": {
+        "status": "failed",
+        "failed_checks": [
+          "poisson_rwp",
+          "unit_weight_rwp",
+          "profile_correlation"
+        ],
+        "median_seconds": 0.5979405624966603,
+        "measurements": {
+          "observed_grid": 7251.0,
+          "site_expansion": 46.0,
+          "poisson_rwp": 0.2865442972568657,
+          "unit_weight_rwp": 0.2526499623968294,
+          "profile_correlation": 0.9755624393134137,
+          "qpa_weight_fraction": 0.017289603904971695,
+          "qpa_covariance": 0.0009381046442115559
+        },
+        "terminations": [
+          "max_iterations",
+          "max_iterations",
+          "converged"
+        ]
+      },
+      "scientific_report_identical": true
+    },
+    "gsasii-pbso4-cw-x-ray": {
+      "baseline": {
+        "status": "passed",
+        "failed_checks": [],
+        "median_seconds": 3.9312613119836897,
+        "measurements": {
+          "observed_grid": 5697.0,
+          "poisson_rwp": 0.1034517961208671,
+          "unit_weight_rwp": 0.08727683073738457,
+          "profile_correlation": 0.9955588203108414,
+          "reference_cell_relative_error": 0.0
+        },
+        "terminations": [
+          "converged",
+          "converged",
+          "converged",
+          "converged"
+        ]
+      },
+      "candidate": {
+        "status": "passed",
+        "failed_checks": [],
+        "median_seconds": 4.339148687504348,
+        "measurements": {
+          "observed_grid": 5697.0,
+          "poisson_rwp": 0.10344460501173165,
+          "unit_weight_rwp": 0.08719462948884535,
+          "profile_correlation": 0.995569931265333,
+          "reference_cell_relative_error": 0.0
+        },
+        "terminations": [
+          "converged",
+          "converged",
+          "converged",
+          "converged"
+        ]
+      },
+      "scientific_report_identical": false
+    },
+    "gsasii-pbso4-cw-neutron": {
+      "baseline": {
+        "status": "passed",
+        "failed_checks": [],
+        "median_seconds": 0.5772163124929648,
+        "measurements": {
+          "observed_grid": 2681.0,
+          "poisson_rwp": 0.04217168088104872,
+          "unit_weight_rwp": 0.04526951301851548,
+          "profile_correlation": 0.9966437476234071,
+          "reference_cell_relative_error": 0.0011671101728359399
+        },
+        "terminations": [
+          "converged",
+          "converged",
+          "converged",
+          "converged",
+          "converged"
+        ]
+      },
+      "candidate": {
+        "status": "passed",
+        "failed_checks": [],
+        "median_seconds": 0.5865976044879062,
+        "measurements": {
+          "observed_grid": 2681.0,
+          "poisson_rwp": 0.04217168088104872,
+          "unit_weight_rwp": 0.04526951301851548,
+          "profile_correlation": 0.9966437476234071,
+          "reference_cell_relative_error": 0.0011671101728359399
+        },
+        "terminations": [
+          "converged",
+          "converged",
+          "converged",
+          "converged",
+          "converged"
+        ]
+      },
+      "scientific_report_identical": true
+    },
+    "rowles-1a": {
+      "baseline": {
+        "status": "passed",
+        "failed_checks": [],
+        "median_seconds": 3.158610686994507,
+        "measurements": {
+          "free_parameter_count": 26,
+          "maximum_weight_fraction_error": 0.007560488389910358,
+          "poisson_rwp": 0.08782364951576352,
+          "profile_correlation": 0.9969360431958574,
+          "reflection_count": 109,
+          "sample": "1a",
+          "sample_count": 14066,
+          "termination_reasons": [
+            "max_iterations",
+            "repeated_rejections",
+            "repeated_rejections",
+            "converged",
+            "repeated_rejections",
+            "converged"
+          ],
+          "unit_weight_rwp": 0.0763415418311401,
+          "weight_fractions": {
+            "Al2O3": 0.015371372999878083,
+            "CaF2": 0.9517891153900323,
+            "ZnO": 0.03283951161008964
+          }
+        },
+        "terminations": [
+          "max_iterations",
+          "repeated_rejections",
+          "repeated_rejections",
+          "converged",
+          "repeated_rejections",
+          "converged"
+        ]
+      },
+      "candidate": {
+        "status": "passed",
+        "failed_checks": [],
+        "median_seconds": 3.7272073959902627,
+        "measurements": {
+          "free_parameter_count": 26,
+          "maximum_weight_fraction_error": 0.007578674117593602,
+          "poisson_rwp": 0.08782342779109112,
+          "profile_correlation": 0.9969360329676776,
+          "reflection_count": 109,
+          "sample": "1a",
+          "sample_count": 14066,
+          "termination_reasons": [
+            "max_iterations",
+            "repeated_rejections",
+            "repeated_rejections",
+            "repeated_rejections",
+            "repeated_rejections",
+            "repeated_rejections"
+          ],
+          "unit_weight_rwp": 0.07634175102777103,
+          "weight_fractions": {
+            "Al2O3": 0.015368326560889775,
+            "CaF2": 0.9518103475567038,
+            "ZnO": 0.032821325882406396
+          }
+        },
+        "terminations": [
+          "max_iterations",
+          "repeated_rejections",
+          "repeated_rejections",
+          "repeated_rejections",
+          "repeated_rejections",
+          "repeated_rejections"
+        ]
+      },
+      "scientific_report_identical": false
+    },
+    "rowles-1e": {
+      "baseline": {
+        "status": "passed",
+        "failed_checks": [],
+        "median_seconds": 2.3980793125083437,
+        "measurements": {
+          "free_parameter_count": 26,
+          "maximum_weight_fraction_error": 0.02223434911844413,
+          "poisson_rwp": 0.08283128515172944,
+          "profile_correlation": 0.9951938062561659,
+          "reflection_count": 109,
+          "sample": "1e",
+          "sample_count": 14091,
+          "termination_reasons": [
+            "max_iterations",
+            "converged",
+            "max_iterations",
+            "converged",
+            "converged",
+            "converged"
+          ],
+          "unit_weight_rwp": 0.08981135936926633,
+          "weight_fractions": {
+            "Al2O3": 0.5734343491184442,
+            "CaF2": 0.287335991952463,
+            "ZnO": 0.13922965892909275
+          }
+        },
+        "terminations": [
+          "max_iterations",
+          "converged",
+          "max_iterations",
+          "converged",
+          "converged",
+          "converged"
+        ]
+      },
+      "candidate": {
+        "status": "passed",
+        "failed_checks": [],
+        "median_seconds": 3.427698709012475,
+        "measurements": {
+          "free_parameter_count": 26,
+          "maximum_weight_fraction_error": 0.022234831697324542,
+          "poisson_rwp": 0.08283140055167135,
+          "profile_correlation": 0.9951937886901087,
+          "reflection_count": 109,
+          "sample": "1e",
+          "sample_count": 14091,
+          "termination_reasons": [
+            "max_iterations",
+            "repeated_rejections",
+            "max_iterations",
+            "converged",
+            "repeated_rejections",
+            "repeated_rejections"
+          ],
+          "unit_weight_rwp": 0.08981155930283896,
+          "weight_fractions": {
+            "Al2O3": 0.5734348316973246,
+            "CaF2": 0.28733545912309455,
+            "ZnO": 0.13922970917958083
+          }
+        },
+        "terminations": [
+          "max_iterations",
+          "repeated_rejections",
+          "max_iterations",
+          "converged",
+          "repeated_rejections",
+          "repeated_rejections"
+        ]
+      },
+      "scientific_report_identical": false
+    },
+    "ansto-echidna-lab6-cw-neutron": {
+      "baseline": {
+        "status": "passed",
+        "failed_checks": [],
+        "median_seconds": 0.008263749492471106,
+        "measurements": {
+          "observed_grid": 2111.0,
+          "profile_improvement": 0.788425328757837,
+          "profile_correlation": 0.9062074107280349,
+          "uncertainty_weighting": 0.0,
+          "reflection_coverage": 13.0
+        },
+        "terminations": [
+          "converged"
+        ]
+      },
+      "candidate": {
+        "status": "passed",
+        "failed_checks": [],
+        "median_seconds": 0.008165646504494362,
+        "measurements": {
+          "observed_grid": 2111.0,
+          "profile_improvement": 0.788425328757837,
+          "profile_correlation": 0.9062074107280349,
+          "uncertainty_weighting": 0.0,
+          "reflection_coverage": 13.0
+        },
+        "terminations": [
+          "converged"
+        ]
+      },
+      "scientific_report_identical": true
+    },
+    "lanl-nickel-tof": {
+      "baseline": {
+        "status": "passed",
+        "failed_checks": [],
+        "median_seconds": 51.973248520997004,
+        "measurements": {
+          "tof_nickel_bank_geometry": 88.05,
+          "tof_non_powgen_format": 5120.0,
+          "tof_profile_function_one": 1.0,
+          "tof_nickel_incident_spectrum": 8190.400000000001,
+          "tof_nickel_fit_window": 4431.0,
+          "tof_nickel_reflections": 102.0,
+          "tof_nickel_profile_fit": 0.024858689217005354,
+          "tof_nickel_profile_correlation": 0.9989124246863262,
+          "tof_nickel_convergence": 20.0,
+          "tof_nickel_derivatives": 15.0,
+          "tof_nickel_multibank_atomic": 13293.0,
+          "tof_nickel_multibank_fit": 0.022733056318157426,
+          "tof_nickel_multibank_lattice": 3.523611957358181,
+          "tof_nickel_multibank_identifiability": 4.0,
+          "tof_nickel_structural_multibank": 7.0,
+          "tof_nickel_structural_fit": 0.03278208249496335,
+          "tof_nickel_structural_correlation": 0.9974901003005688,
+          "tof_nickel_structural_lattice": 3.5237311302969303,
+          "tof_nickel_structural_u_iso": 0.003965072926727362
+        },
+        "terminations": []
+      },
+      "candidate": {
+        "status": "passed",
+        "failed_checks": [],
+        "median_seconds": 52.30816797899024,
+        "measurements": {
+          "tof_nickel_bank_geometry": 88.05,
+          "tof_non_powgen_format": 5120.0,
+          "tof_profile_function_one": 1.0,
+          "tof_nickel_incident_spectrum": 8190.400000000001,
+          "tof_nickel_fit_window": 4431.0,
+          "tof_nickel_reflections": 102.0,
+          "tof_nickel_profile_fit": 0.024858689217005354,
+          "tof_nickel_profile_correlation": 0.9989124246863262,
+          "tof_nickel_convergence": 20.0,
+          "tof_nickel_derivatives": 15.0,
+          "tof_nickel_multibank_atomic": 13293.0,
+          "tof_nickel_multibank_fit": 0.022733056318157426,
+          "tof_nickel_multibank_lattice": 3.523611957358181,
+          "tof_nickel_multibank_identifiability": 4.0,
+          "tof_nickel_structural_multibank": 7.0,
+          "tof_nickel_structural_fit": 0.03278208249496335,
+          "tof_nickel_structural_correlation": 0.9974901003005688,
+          "tof_nickel_structural_lattice": 3.5237311302969303,
+          "tof_nickel_structural_u_iso": 0.003965072926727362
+        },
+        "terminations": []
+      },
+      "scientific_report_identical": true
+    }
+  },
+  "all_scientific_gates_passed": false,
+  "all_reported_scientific_results_repeat_exactly": true,
+  "promotion_ready": false,
+  "decision": "Park feasible-width tuning; combined stopping/recovery change requires a bounded-workflow termination repair before promotion. Fresh checks use existing project data, not pristine holdouts."
+}

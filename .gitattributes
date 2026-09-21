@@ -1,0 +1,4 @@
+# Skill generation compares exact bytes across the supported release platforms.
+/skills/phasesmith-ai-workflows/** text eol=lf
+/python/phasesmith/_skills/phasesmith-ai-workflows/** text eol=lf
+/docs/agent-skill/** text eol=lf

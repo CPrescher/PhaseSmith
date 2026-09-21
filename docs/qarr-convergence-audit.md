@@ -10,6 +10,9 @@ convergence**, not certified convergence or evidence of a global optimum.
 No production solver, default recipe, profile equation, derivative, scientific
 acceptance threshold or oracle fixture was changed by this experiment.
 
+The subsequent implementation and its more conservative termination results
+are documented in [Rietveld stopping verification and feasible recovery](refinement-convergence-recovery.md).
+
 ## Repeated measurements
 
 Full workflows include data loading, background and scale preparation, all

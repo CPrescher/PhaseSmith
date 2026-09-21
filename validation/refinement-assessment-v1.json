@@ -1,0 +1,24 @@
+{
+  "schema": "phasesmith.refinement-assessment.v1",
+  "purpose": "Consolidate bounded production-workflow evidence before further solver development.",
+  "policy": {
+    "recipes": "Existing validation recipes, unchanged; full default profiles; feasible_width_steps disabled.",
+    "budgets": "Existing per-stage iteration/evaluation/rejection budgets; no additional polish or retries after a failed gate.",
+    "workers": "Native validation defaults; Rowles explicitly one worker; same settings in both builds.",
+    "acceptance": "Preserve each case's existing scientific gates. Record termination independently; passing a bounded recipe is not full convergence.",
+    "freshness": "Rowles, Echidna and nickel are transfer checks not used in this QARR optimization campaign. All are previously registered project data, not pristine project-wide holdouts.",
+    "timing": "One discarded warmup and two measurements per build/case, alternating build order in persistent subprocesses; no concurrent campaign fits.",
+    "promotion": "No promotion based only on lower Rwp or test counts. Require physical validity, relevant scientific accuracy, transparent stops, repeatability and acceptable bounded-workflow cost across the panel.",
+    "stop_rule": "Complete this panel once without retuning. Keep failures and unavailable diagnostics. Park feasible-width development pending a reproducible practical failure or broader benefit."
+  },
+  "cases": [
+    {"id": "iucr-qarr-1g", "dataset": "iucr-qarr-1g", "role": "development regression"},
+    {"id": "iucr-qarr-1h", "dataset": "iucr-qarr-1h", "role": "known failing bounded recipe; no longer an untouched holdout"},
+    {"id": "gsasii-pbso4-cw-x-ray", "dataset": "gsasii-pbso4-cw", "role": "structural CW regression"},
+    {"id": "gsasii-pbso4-cw-neutron", "dataset": "gsasii-pbso4-cw", "role": "structural neutron regression"},
+    {"id": "rowles-1a", "dataset": "curtin-rowles-qpa-topas", "role": "QPA transfer", "limits": {"poisson_rwp": 0.095, "maximum_weight_fraction_error": 0.01, "profile_correlation_min": 0.995}},
+    {"id": "rowles-1e", "dataset": "curtin-rowles-qpa-topas", "role": "QPA transfer", "limits": {"poisson_rwp": 0.09, "maximum_weight_fraction_error": 0.03, "profile_correlation_min": 0.995}},
+    {"id": "ansto-echidna-lab6-cw-neutron", "dataset": "ansto-echidna-lab6-cw-neutron", "role": "CW neutron smoke coverage; not general structural accuracy"},
+    {"id": "lanl-nickel-tof", "dataset": "lanl-nickel-tof", "role": "TOF transfer/control; unaffected solver family"}
+  ]
+}

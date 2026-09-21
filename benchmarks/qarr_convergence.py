@@ -136,8 +136,8 @@ def stationarity_probe(request, options, result):
     )
 
 
-def run_case(sample, workers, name, probe=False):
-    config = CONFIGS[name]
+def run_case(sample, workers, name, probe=False, feasible_stages=()):
+    config = {**CONFIGS[name], "feasible_stages": list(feasible_stages)}
     started = time.perf_counter()
     execution = ps.ExecutionPolicy(threads=workers)
     initial = starting_request(ROOT / f"validation/data/iucr-qarr-{sample}", sample, execution)
@@ -167,6 +167,7 @@ def run_case(sample, workers, name, probe=False):
             execution=execution,
             objective_tolerance=config["objective_tolerance"],
             parameter_tolerance=config["parameter_tolerance"],
+            feasible_width_steps=(i + 1 in feasible_stages),
         )
         result = rv.refine(request, options)
         if result.backend != "native":
@@ -243,6 +244,14 @@ def invariant(record):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--workers", type=int, nargs="+", default=[1, 8])
+    parser.add_argument(
+        "--feasible-stages",
+        type=int,
+        nargs="*",
+        choices=[1, 2, 3],
+        default=[],
+        help="One-based stages using opt-in constrained width steps",
+    )
     parser.add_argument("--case", choices=CONFIGS, action="append")
     parser.add_argument("--sample", choices=TARGETS, action="append")
     parser.add_argument("--repetitions", type=int, default=3)
@@ -282,6 +291,16 @@ def main():
         source_revision=subprocess.check_output(
             ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True
         ).strip(),
+        solver_source_sha256={
+            path: hashlib.sha256((ROOT / path).read_bytes()).hexdigest()
+            for path in (
+                "crates/phasesmith-workflows/src/rietveld_general_solver.rs",
+                "crates/phasesmith-workflows/src/rietveld_feasible_step.rs",
+                "python/phasesmith/refinement/_feasible_step.py",
+                "crates/phasesmith-workflows/src/rietveld_general_objective.rs",
+                "python/phasesmith/refinement/rietveld.py",
+            )
+        },
         native_sha256=hashlib.sha256(Path(ps._core.__file__).read_bytes()).hexdigest(),
         driver_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         preparation_driver_sha256=hashlib.sha256(
@@ -308,7 +327,7 @@ def main():
     references = {}
     for repeat in range(-args.warmups, args.repetitions):
         for sample, workers, name in combinations if repeat % 2 else list(reversed(combinations)):
-            record = run_case(sample, workers, name, args.probe)
+            record = run_case(sample, workers, name, args.probe, args.feasible_stages)
             key = f"{sample}/{name}/{workers}"
             common = f"{sample}/{name}"
             value = invariant(record)

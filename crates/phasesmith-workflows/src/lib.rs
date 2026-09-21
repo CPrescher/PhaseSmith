@@ -62,6 +62,7 @@ mod profile_estimation;
 mod quantitative;
 mod residuals;
 mod rietveld;
+mod rietveld_feasible_step;
 mod rietveld_general_objective;
 mod rietveld_general_parameters;
 mod rietveld_general_solver;

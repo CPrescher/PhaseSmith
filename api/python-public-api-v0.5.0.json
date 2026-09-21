@@ -2171,7 +2171,7 @@
         {
           "kind": "class",
           "name": "RietveldOptions",
-          "signature": "(limits: 'RefinementLimits' = <factory>, min_iterations: 'int' = 1, objective_tolerance: 'float' = 1e-10, parameter_tolerance: 'float' = 1e-07, initial_damping: 'float' = 1e-06, damping_increase: 'float' = 10.0, damping_decrease: 'float' = 0.3, cg_tolerance: 'float' = 1e-06, max_cg_iterations: 'int' = 30, max_scaled_parameter_step: 'float' = 0.25, max_backtracks: 'int' = 8, use_uncertainty: 'bool' = True, support_fwhm: 'float' = 20.0, profile_accuracy: 'ProfileAccuracy' = <factory>, max_linearization_elements: 'int' = 10000000, estimate_covariance: 'bool' = True, max_covariance_parameters: 'int' = 64, unresolved_correlation: 'float' = 0.9999999999, execution: 'ExecutionPolicy' = <factory>) -> None",
+          "signature": "(limits: 'RefinementLimits' = <factory>, min_iterations: 'int' = 1, objective_tolerance: 'float' = 1e-10, parameter_tolerance: 'float' = 1e-07, initial_damping: 'float' = 1e-06, damping_increase: 'float' = 10.0, damping_decrease: 'float' = 0.3, cg_tolerance: 'float' = 1e-06, max_cg_iterations: 'int' = 30, max_scaled_parameter_step: 'float' = 0.25, max_backtracks: 'int' = 8, use_uncertainty: 'bool' = True, support_fwhm: 'float' = 20.0, profile_accuracy: 'ProfileAccuracy' = <factory>, max_linearization_elements: 'int' = 10000000, estimate_covariance: 'bool' = True, max_covariance_parameters: 'int' = 64, unresolved_correlation: 'float' = 0.9999999999, execution: 'ExecutionPolicy' = <factory>, feasible_width_steps: 'bool' = False) -> None",
           "target": "phasesmith.refinement.rietveld.RietveldOptions"
         },
         {

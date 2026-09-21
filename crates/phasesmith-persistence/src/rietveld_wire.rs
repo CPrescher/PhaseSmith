@@ -182,6 +182,8 @@ struct WireOptions {
     max_cg_iterations: usize,
     max_scaled_parameter_step: f64,
     max_backtracks: usize,
+    #[serde(default, skip_serializing_if = "is_false")]
+    feasible_width_steps: bool,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -442,6 +444,7 @@ fn encode_options(value: &RietveldRefinementOptions) -> WireOptions {
         max_cg_iterations: value.max_cg_iterations,
         max_scaled_parameter_step: value.max_scaled_parameter_step,
         max_backtracks: value.max_backtracks,
+        feasible_width_steps: value.feasible_width_steps,
     }
 }
 
@@ -931,6 +934,10 @@ fn decode_options(value: &WireOptions) -> Result<RietveldRefinementOptions, Pers
         value.max_scaled_parameter_step,
         value.max_backtracks,
     )
+    .map(|mut options| {
+        options.feasible_width_steps = value.feasible_width_steps;
+        options
+    })
     .map_err(|error| invalid(format!("invalid Rietveld options: {error}")))
 }
 
