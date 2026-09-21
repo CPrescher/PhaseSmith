@@ -165,7 +165,8 @@ impl PreparedStructuralPhase {
         self.with_input(input, calculate_structural_pattern_dense_with_context)
     }
 
-    /// Linearize selected native rows; omitted structural/axial rows are zero.
+    /// Linearize selected native rows; omitted structural rows are zero.
+    /// Axial derivatives follow the input's explicit calculation flag.
     /// # Errors
     /// Returns an error for invalid inputs or mask dimensions.
     pub fn linearize_selected(
@@ -438,6 +439,14 @@ mod tests {
                 calculate_axial_derivatives: true,
             };
             let full = phase.linearize(&input).expect("full");
+            let fixed_input = PreparedStructuralPatternInputView {
+                calculate_axial_derivatives: false,
+                ..input
+            };
+            let fixed = phase
+                .linearize(&fixed_input)
+                .expect("explicit axial opt-out");
+            assert_ne!(full.result.accumulation, fixed.result.accumulation);
             for mask in [
                 vec![false; 17],
                 vec![true; 17],
@@ -450,7 +459,14 @@ mod tests {
                     .linearize_selected(&input, &mask, None)
                     .expect("uncached");
                 assert_eq!(selected, uncached);
-                assert_eq!(selected.result.accumulation.y, full.result.accumulation.y);
+                assert_eq!(selected.result.accumulation, full.result.accumulation);
+                let fixed_selected = phase
+                    .linearize_selected(&fixed_input, &mask, Some(&cache))
+                    .expect("selected axial opt-out");
+                assert_eq!(
+                    fixed_selected.result.accumulation,
+                    fixed.result.accumulation
+                );
                 for (parameter, active) in mask.iter().enumerate() {
                     for sample in 0..x.len() {
                         let expected = if *active {

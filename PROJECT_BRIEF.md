@@ -13,10 +13,10 @@ not part of the numerical library.
 ## Current implementation status
 
 A fresh post-merge review repairs the complete native Rietveld result contract:
-selected/trial calculations with omitted fixed axial derivatives are finalized
-through the full calculation path before returning. Optimization and accepted
-histories retain their existing arithmetic; finalization can add one complete
-profile evaluation. Refinement options and checkpoints now reject invalid
+selected/trial calculations retain fixed axial derivatives in their existing
+fused pass. Returning the accepted state requires no extra profile evaluation,
+including at a runtime limit. Optimization and accepted histories retain their
+existing arithmetic. Refinement options and checkpoints now reject invalid
 profile-accuracy policies at validation/load time. CW and TOF Pawley constructors
 also reject unsigned HKLs that overflow signed storage instead of wrapping their
 values. No equation, support boundary, Pawley solver, or persistence format

@@ -560,6 +560,8 @@ fn final_axial_calculation_matches_the_complete_accepted_state() {
         phase_scale: true,
         ..RietveldStructuralSelection::default()
     });
+    let mut controls = options(1);
+    controls.limits = RefinementLimits::new(1, 2, None, 20).unwrap();
     for (truth_scale, accepted_steps) in [(0.7, 0), (1.3, 1)] {
         let mut truth = input.clone();
         truth.phases = vec![phase(truth_scale, 1.0)];
@@ -573,13 +575,14 @@ fn final_axial_calculation_matches_the_complete_accepted_state() {
             &selected,
             &[None],
             &[],
-            &options(1),
+            &controls,
             RietveldCovarianceOptions::new(false, 1, 1.0).unwrap(),
             None,
             None,
         )
         .unwrap();
         assert_eq!(result.history.len(), accepted_steps);
+        assert_eq!(result.evaluations, accepted_steps + 1);
         let expected = calculate_rietveld_pattern(&result.input, &calculation()).unwrap();
         assert_eq!(result.calculation.y, expected.y);
         assert_eq!(
