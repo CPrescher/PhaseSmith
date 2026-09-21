@@ -1,6 +1,13 @@
 # Pawley consolidation review, 2026-09-21
 
-## Decision: keep this integration branch separate
+## Follow-up outcome: promotion gates resolved
+
+The [Pawley repair](pawley-repair-20260921.md) resolves the Intel convergence
+failure and installed CLI paths without relaxing any scientific or convergence
+gates. The final distribution matrix and measured validations pass. The initial
+review below is retained to explain the earlier decision and its evidence.
+
+## Initial decision: keep the integration branch separate
 
 `codex/pawley-integration` is preserved for continued review. Develop receives
 only the validated Rietveld and skill-packaging consolidation. This branch
@@ -8,7 +15,7 @@ combines the existing Pawley history with that baseline and the shared FCJ
 geometric-Jacobian correction. Its local success does not make it portable
 across all supported wheel targets yet.
 
-## Unresolved promotion gates
+## Gates found by the initial review
 
 The [release dry run](https://github.com/CPrescher/PhaseSmith/actions/runs/35579612465)
 fails on macOS Intel in
@@ -90,6 +97,6 @@ the exact sequential command ledger. The ledger correctly records the two
 original CLI failures. The explicit-path diagnostic JSONs are additional
 results and do not replace those failures.
 
-Resolve the Intel convergence and installed CLI gates before repeating the
-full distribution matrix and considering promotion. The original separate
-Pawley evidence snapshots remain available for provenance.
+The follow-up repair resolves these gates and repeats the full distribution
+matrix before promotion. Original separate Pawley evidence snapshots remain
+available for provenance.

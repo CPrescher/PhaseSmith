@@ -12,14 +12,16 @@ not part of the numerical library.
 
 ## Current implementation status
 
-This Pawley integration branch is undergoing follow-up validation after the
-2026-09-21 review. Scale-relative active-set feasibility fixes the reproduced
-Intel dense-solver boundary failure without relaxing convergence or physics.
-Validation CLI assets now resolve from explicit paths or the working directory.
-See `docs/pawley-boundary-feasibility.md` for the numerical contract and
-`docs/pawley-consolidation-review.md` for the outstanding distribution gates.
-Develop retains the validated Rietveld/packaging slice separately.
-
+Pawley integration is validated after the 2026-09-21 repair. Scale-relative
+active-set feasibility fixes the Intel dense-solver boundary failure without
+relaxing convergence or physics; cached norms preserve performance and exact
+scientific records. Installed validation assets resolve from explicit paths or
+the working directory. Both architectures pass 970 Python tests; full Rust,
+measured Pawley gates and the cross-platform distribution dry run pass.
+See `docs/pawley-boundary-feasibility.md` and `docs/pawley-repair-20260921.md`.
+The shared FCJ correction and Pawley APIs accompany the consolidated develop
+baseline; feasible-width research and main's separate API cleanup remain outside
+this integration. No release is published by the consolidation.
 
 Repository consolidation (2026-09-21) preserves the original working state,
 Pawley history and feasible-width research on separate remote branches. The
@@ -35,9 +37,7 @@ actual caller runtime guards retain their own stop reasons. Scientific gates,
 physical models and budgets are unchanged. The canonical QARR 1g entry point
 has a dedicated regression test, and the fixed eight-case assessment remains
 the promotion boundary. See `docs/refinement-bounded-recovery.md` and the
-`docs/repository-consolidation.md`. Pawley and the shared FCJ correction remain
-parked on `codex/pawley-integration`: macOS Intel convergence and installed
-validation CLI paths are unresolved. The feasible-width option remains solely on
+`docs/repository-consolidation.md`. The feasible-width option remains solely on
 its preserved experimental branch and is not added to the committed public API.
 
 The live pinned GSAS-II Pawley optimizer comparison now covers fixed-cell and

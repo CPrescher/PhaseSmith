@@ -6,6 +6,11 @@ development versions.
 
 ## Unreleased
 
+- Fix Pawley stagnation at tiny composed-width boundary steps using relative
+  feasibility checks, retaining the existing convergence certificates. Cache
+  constraint norms without changing numerical results. Resolve installed Pawley
+  validation manifests and oracle fixtures from caller-provided paths.
+
 - Verify CW Rietveld stopping independently of damping and share one bounded
   recovery trial allowance across coordinates. Preserve truthful stagnation,
   caller runtime guards, physical bounds and scientific acceptance gates.

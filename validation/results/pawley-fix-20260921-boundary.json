@@ -1,0 +1,135 @@
+{
+  "baseline_commit": "9529309545e3b26b769e02e0032da7fc8abe2bea",
+  "tested_commit": "d0ce20a445d8c374b94322680b8145fa5c8af7fb",
+  "platform": "Intel macOS release wheel under Rosetta",
+  "before": {
+    "dense": {
+      "solver": "dense",
+      "termination": "stagnated",
+      "rwp": 6.45159038048313e-12,
+      "diagnostics": {
+        "evaluations": 99,
+        "linear_iterations": 82,
+        "krylov_iterations": 0,
+        "evaluation_seconds": 0.007291457999999999,
+        "qr_seconds": 0.0008419999999999999,
+        "face_seconds": 0.00017896100000000002,
+        "multiplier_seconds": 6.7626e-05,
+        "diagnostic_seconds": 0.00016775,
+        "convergence_criterion": null,
+        "backtrack_rejections": 85,
+        "last_step_norm": 9.999481483403224e-10,
+        "projected_gradient_norm": 1.0005590101818716e-09,
+        "infeasible_trials": 74,
+        "last_rejected_error": "constant-wavelength reflection 0 is invalid: derived Lorentzian FWHM must be non-negative and finite"
+      },
+      "history": [
+        554.2897405850138,
+        222.8873091774644,
+        0.023065036110232688,
+        1.163781167521279e-16,
+        2.909461505076425e-17,
+        2.5571306665643817e-17,
+        1.9578011364628453e-17,
+        1.720723283039897e-17,
+        1.7073191664412972e-17,
+        1.705647580417267e-17,
+        1.7056247139901518e-17,
+        4.264895514366866e-18,
+        1.0667540278015642e-18,
+        1.0011183329268702e-18
+      ]
+    },
+    "matrix_free": {
+      "solver": "matrix_free",
+      "termination": "converged",
+      "rwp": 1.3126581770033327e-16,
+      "diagnostics": {
+        "evaluations": 5,
+        "linear_iterations": 20,
+        "krylov_iterations": 41,
+        "evaluation_seconds": 0.000840456,
+        "qr_seconds": 0.0,
+        "face_seconds": 0.00286029,
+        "multiplier_seconds": 0.000518001,
+        "diagnostic_seconds": 6.8417e-05,
+        "convergence_criterion": "projected_gradient",
+        "backtrack_rejections": 0,
+        "last_step_norm": 0.0,
+        "projected_gradient_norm": 1.9347079500450827e-14,
+        "infeasible_trials": 0,
+        "last_rejected_error": null
+      },
+      "history": [
+        554.2897405850138,
+        222.8873091774644,
+        0.0230650361102313,
+        1.163781167524256e-16,
+        4.144337729433043e-28
+      ]
+    }
+  },
+  "after": {
+    "dense": {
+      "solver": "dense",
+      "termination": "converged",
+      "rwp": 7.152461490559753e-17,
+      "diagnostics": {
+        "evaluations": 5,
+        "linear_iterations": 19,
+        "krylov_iterations": 0,
+        "evaluation_seconds": 0.000976708,
+        "qr_seconds": 0.000338958,
+        "face_seconds": 0.000111042,
+        "multiplier_seconds": 1.8167e-05,
+        "diagnostic_seconds": 0.000181792,
+        "convergence_criterion": "projected_gradient",
+        "backtrack_rejections": 0,
+        "last_step_norm": 1.3327880860494144e-14,
+        "projected_gradient_norm": 7.952948718029073e-15,
+        "infeasible_trials": 0,
+        "last_rejected_error": null
+      },
+      "history": [
+        554.2897405850138,
+        222.8873091774644,
+        0.023065036110232688,
+        1.163781167521279e-16,
+        1.230446965233282e-28
+      ]
+    },
+    "matrix_free": {
+      "solver": "matrix_free",
+      "termination": "converged",
+      "rwp": 1.3126581770033327e-16,
+      "diagnostics": {
+        "evaluations": 5,
+        "linear_iterations": 21,
+        "krylov_iterations": 41,
+        "evaluation_seconds": 0.000911584,
+        "qr_seconds": 0.0,
+        "face_seconds": 0.002942459999999999,
+        "multiplier_seconds": 0.0005284150000000001,
+        "diagnostic_seconds": 7.2291e-05,
+        "convergence_criterion": "projected_gradient",
+        "backtrack_rejections": 0,
+        "last_step_norm": 0.0,
+        "projected_gradient_norm": 1.895892414238958e-14,
+        "infeasible_trials": 0,
+        "last_rejected_error": null
+      },
+      "history": [
+        554.2897405850138,
+        222.8873091774644,
+        0.0230650361102313,
+        1.163781167524256e-16,
+        4.144337729433043e-28
+      ]
+    }
+  },
+  "wheel_sha256": {
+    "baseline-wheels/phasesmith-0.5.0-cp311-abi3-macosx_10_12_x86_64.whl": "ef1a29630557a2326ebfdfc143acd2f7850c773659f97ece2dfa12edeb6ec9f8",
+    "final-intel-wheels/phasesmith-0.5.0-cp311-abi3-macosx_10_12_x86_64.whl": "6aed15644ee79e94765dd52fa4bd0caf987384b51f3122c7909cde681384cfd2",
+    "final-arm-wheels/phasesmith-0.5.0-cp311-abi3-macosx_11_0_arm64.whl": "aefb385db2b8496a075a318b19113168a673fa5d86ebf936e5a3fa6621290f2d"
+  }
+}
