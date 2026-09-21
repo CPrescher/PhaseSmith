@@ -89,6 +89,7 @@ impl RietveldRefinementOptions {
     /// Returns [`RietveldRefinementError::InvalidOptions`] for inconsistent
     /// tolerances, damping, iteration, or step controls.
     pub fn validate(&self) -> Result<(), RietveldRefinementError> {
+        self.calculation.validate()?;
         let positive = [
             self.objective_tolerance,
             self.parameter_tolerance,

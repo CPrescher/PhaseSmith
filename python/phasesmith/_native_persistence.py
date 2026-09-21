@@ -102,7 +102,7 @@ def load_native_rietveld_project(
     stored = _core._StoredRietveldProject.load(str(source))
     manifest = json.loads((source / MANIFEST_NAME).read_text(encoding="utf-8"))
     if manifest.get("format_version") not in (2, 3, 4, 5, 6, 7):
-        raise ValueError("RietveldProject requires native project format 2, 3, 4, 5, or 6")
+        raise ValueError("RietveldProject requires native project format 2, 3, 4, 5, 6, or 7")
     project = manifest["project"]
     analyses = manifest["rietveld_analyses"]
     if len(project["histograms"]) != 1 or len(analyses) != 1:

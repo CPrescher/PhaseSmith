@@ -12,6 +12,14 @@ not part of the numerical library.
 
 ## Current implementation status
 
+A fresh post-merge review repairs the complete native Rietveld result contract:
+selected/trial calculations with omitted fixed axial derivatives are finalized
+through the full calculation path before returning. Optimization and accepted
+histories retain their existing arithmetic; finalization can add one complete
+profile evaluation. Refinement options and checkpoints now reject invalid
+profile-accuracy policies at validation/load time. No equation, support boundary,
+Pawley solver, or persistence format changes in this follow-up.
+
 The 0.7.0 release candidate reconciles main's 0.6 API cleanup and bounded
 validation-download retries with the validated develop/Pawley implementation.
 Module-owned imports and warning-backed 0.5 compatibility aliases are retained;

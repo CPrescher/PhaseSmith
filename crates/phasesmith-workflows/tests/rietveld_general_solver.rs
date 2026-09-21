@@ -550,6 +550,91 @@ fn cancellation_returns_the_unchanged_restartable_complete_state() {
 }
 
 #[test]
+fn final_axial_calculation_matches_the_complete_accepted_state() {
+    let mut input = input_from_truth(phase(0.7, 1.0), vec![0.0], phase(1.3, 1.0), vec![0.0]);
+    input.axial_geometry = Some(phasesmith_core::FcjGeometry {
+        sample_over_radius: 0.01,
+        detector_over_radius: 0.015,
+    });
+    let selected = selection(RietveldStructuralSelection {
+        phase_scale: true,
+        ..RietveldStructuralSelection::default()
+    });
+    for (truth_scale, accepted_steps) in [(0.7, 0), (1.3, 1)] {
+        let mut truth = input.clone();
+        truth.phases = vec![phase(truth_scale, 1.0)];
+        input.pattern.observed_y = Some(
+            calculate_rietveld_pattern(&truth, &calculation())
+                .unwrap()
+                .y,
+        );
+        let result = refine_general_rietveld(
+            &input,
+            &selected,
+            &[None],
+            &[],
+            &options(1),
+            RietveldCovarianceOptions::new(false, 1, 1.0).unwrap(),
+            None,
+            None,
+        )
+        .unwrap();
+        assert_eq!(result.history.len(), accepted_steps);
+        let expected = calculate_rietveld_pattern(&result.input, &calculation()).unwrap();
+        assert_eq!(result.calculation.y, expected.y);
+        assert!(
+            result.calculation.phases == expected.phases,
+            "final phase calculations must retain complete local/global derivatives"
+        );
+    }
+}
+
+#[test]
+fn accepted_backtracked_trial_retains_axial_derivatives_at_the_iteration_limit() {
+    let mut input = input_from_truth(phase(1.0, 0.01), vec![0.0], phase(1.0, 0.5), vec![0.0]);
+    input.axial_geometry = Some(phasesmith_core::FcjGeometry {
+        sample_over_radius: 0.01,
+        detector_over_radius: 0.015,
+    });
+    let mut truth = input.clone();
+    truth.phases = vec![phase(1.0, 0.5)];
+    input.pattern.observed_y = Some(
+        calculate_rietveld_pattern(&truth, &calculation())
+            .unwrap()
+            .y,
+    );
+    let selected = RietveldParameterSelection::new(
+        RietveldStructuralSelection {
+            occupancy: true,
+            ..RietveldStructuralSelection::default()
+        },
+        Vec::new(),
+        false,
+        false,
+    )
+    .unwrap();
+    let mut controls = options(1);
+    controls.max_scaled_parameter_step = 100.0;
+    let result = refine_general_rietveld(
+        &input,
+        &selected,
+        &[None],
+        &[],
+        &controls,
+        RietveldCovarianceOptions::new(false, 1, 1.0).unwrap(),
+        None,
+        None,
+    )
+    .unwrap();
+    assert_eq!(result.termination_reason, TerminationReason::MaxIterations);
+    assert_eq!(result.history.len(), 1);
+    assert!(result.history[0].backtracks > 0);
+    let expected = calculate_rietveld_pattern(&result.input, &calculation()).unwrap();
+    assert_eq!(result.calculation.y, expected.y);
+    assert!(result.calculation.phases == expected.phases);
+}
+
+#[test]
 fn accepted_dense_trial_is_the_next_current_linearization() {
     let input = input_from_truth(phase(0.7, 1.0), vec![0.0], phase(1.3, 1.0), vec![0.0]);
     let selection = RietveldParameterSelection::new(
