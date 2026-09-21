@@ -63,6 +63,14 @@ and the proposed capability development sequence.
 - [Empirical Gaussian widths](empirical-gaussian.md) — explicit reference-phase
   convention when independent instrument calibration is unavailable.
 
+## Pawley refinement
+
+- [CW Pawley user guide](pawley.md) — bounded family areas, joint cell/profile
+  refinement, diagnostics and restart.
+- [Pawley validation](pawley-validation.md) and
+  [implementation roadmap](pawley-plan.md), including fixed CW spectra and
+  [joint multi-bank TOF](tof-pawley.md).
+
 ## Validation and performance
 
 - [Original-recipe convergence audit](qarr-convergence-audit.md) — repeated

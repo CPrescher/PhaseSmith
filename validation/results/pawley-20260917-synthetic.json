@@ -1,0 +1,73 @@
+{
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "python": "3.13.7",
+  "numpy": "2.5.3",
+  "build": "maturin develop --release",
+  "peak_process_rss_bytes": 1394016256,
+  "cases": [
+    {
+      "reflections": 256,
+      "samples": 10001,
+      "phases": 2,
+      "fcj": false,
+      "joint_width": false,
+      "serial_native": true,
+      "times_seconds": [
+        0.9249423330038553,
+        0.9168931669992162,
+        0.9139472920069238
+      ],
+      "median_seconds": 0.9168931669992162,
+      "p95_seconds": 0.9241374164033914,
+      "scientific": {
+        "relative_l2": 3.647422079390873e-14,
+        "rank": 256,
+        "accepted_steps": 2,
+        "termination": "converged"
+      }
+    },
+    {
+      "reflections": 256,
+      "samples": 10001,
+      "phases": 2,
+      "fcj": true,
+      "joint_width": true,
+      "serial_native": true,
+      "times_seconds": [
+        1.1203515420056647,
+        1.1312197920051403,
+        1.1150245830067433
+      ],
+      "median_seconds": 1.1203515420056647,
+      "p95_seconds": 1.1301329670051927,
+      "scientific": {
+        "relative_l2": 1.4468995526756747e-14,
+        "rank": 257,
+        "accepted_steps": 4,
+        "termination": "converged"
+      }
+    },
+    {
+      "reflections": 811,
+      "samples": 23003,
+      "phases": 2,
+      "fcj": false,
+      "joint_width": false,
+      "serial_native": true,
+      "times_seconds": [
+        18.015513709004153,
+        18.026079625007696,
+        18.08829916700779
+      ],
+      "median_seconds": 18.026079625007696,
+      "p95_seconds": 18.082077212807782,
+      "scientific": {
+        "relative_l2": 3.5039896036303815e-14,
+        "rank": 811,
+        "accepted_steps": 2,
+        "termination": "converged"
+      }
+    }
+  ],
+  "note": "Process RSS includes Python, reference data and returned dense Jacobians."
+}

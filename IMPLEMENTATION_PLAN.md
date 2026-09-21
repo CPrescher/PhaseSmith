@@ -1688,15 +1688,31 @@ performance baseline, documented in `docs/fit-report.md` and
 Python/project report preserve weighting and masks, disclose unavailable
 attribution, and do not expand automation authority. Constraint-aware
 parameter-gain suggestions, additional anisotropic models, vendor imports,
-Pawley, restraints and indexing remain proposed independent units, not
-capabilities claimed by this slice. See the comparison for their validation
-requirements and order.
+restraints and indexing remain proposed independent units, not capabilities
+claimed by this slice. Pawley now has a dedicated delivery
+plan in `docs/pawley-plan.md`; see the comparison for the other candidates.
 
 The primary speed evidence is the unchanged measured IUCr QARR 1g validation,
 paired with a mapped rietx workflow. Every run passes real-data profile/QPA
 acceptance and repeatability checks. Stricter model-equivalence checks fail
 and remain visible; no identical-workload speed ratio is claimed. Synthetic
 refinement and multi-peak kernel timings serve as supporting diagnostics.
+
+### Independent workflow: CW Pawley refinement
+
+The dependency-ordered plan in `docs/pawley-plan.md` defines P1–P5 as the first
+complete CW milestone: independent reference and conventions, fixed-geometry
+bounded intensity extraction, joint analytical cell/profile refinement and
+runtime, public native/Python APIs and persistence, then scientific/performance
+and documentation gates. Fixed CW spectra (P6) and TOF (P7) follow separately.
+The CW implementation now includes the native objective/solver, independent
+NumPy reference, constraints, diagnostics, runtime checkpoints, public Python
+facade and standalone native JSON persistence. See `docs/pawley-validation.md`
+for test and measured-data evidence. The neutron measured gate passes; sucrose
+meets quality gates but stops at its time budget, leaving the full P5 large-data
+release gate open. Dense memory limits are explicit;
+matrix-free solving, mixed-method bundles and live GSAS-II optimizer comparison
+remain outstanding. Existing automation stays Rietveld-only.
 
 ### Unit 39: constrained automation and AI recipe guidance (0.5.0)
 

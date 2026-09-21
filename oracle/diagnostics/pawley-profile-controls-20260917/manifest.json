@@ -1,0 +1,127 @@
+{
+  "gsasii_revision": "c0bc79b259cdf0065480b5fbd57674ddf12c4a23",
+  "original_manifest_sha256": "261dfbcc817904abdb45162d4ef30230c6bff152c8e5cdbbdb214a6f0e389dce",
+  "archive_sha256": "7b4d288c0b2c9886d4f2c0bf4b556be14f4bbc68b8652b56a08afc15f3068214",
+  "generator_sha256": "19379e52d78d8c5a27ecd8548514c3882129c81dbac2749236a8b9bb90ad1581",
+  "adapter_sha256": "54f50a567e1beb82094131d00902ee99eaa22d29991118270bd63e197b603441",
+  "binaries_sha256": {
+    "fmask.cpython-313-darwin.so": "ef9998ce64cb16f19a1862e40903e5bd595857b62654f5514d217e5104e4a0a4",
+    "histogram2d.cpython-313-darwin.so": "9a3386278ce02d7e80f9dedbc3205f9b990c2768e01268ae6c92de492ebc6031",
+    "kvec_general.cpython-313-darwin.so": "467c2b427feb6e627b961e8625ea025005e9a54c707dc0cfce341777919d7c0a",
+    "pack_f.cpython-313-darwin.so": "2323722cc45a15c715cf6f134d4c6f39b42c0d7bfc879b59afced4341bbd089d",
+    "pydiffax.cpython-313-darwin.so": "2a17e17f1ecebb6f7fa77d37e423eac7c24f0ffac8d9f547e14b626fc2dd7f3e",
+    "pypowder.cpython-313-darwin.so": "3a68141e963d2efdf5f6a6a3c12cc39acff8d128d43e676485c38f43121f5b0b",
+    "pyspg.cpython-313-darwin.so": "a16d1df83518af8b30930f7760e35a328f768ba02dce010cfc3e594eab79019a",
+    "pytexture.cpython-313-darwin.so": "ee5f128a21572360c3136d11d56a55967f8a6aba48bf8ab2047a3203bbf767ad",
+    "unpack_cbf.cpython-313-darwin.so": "aef1686823625a8aa9e3aabeb8c41001fc20d7af42cf3dee66f81b173fa751f4"
+  },
+  "sweep": [
+    {
+      "key": "sweep_0",
+      "axial_sum": 0.0001,
+      "width_scale": 0.1
+    },
+    {
+      "key": "sweep_1",
+      "axial_sum": 0.0001,
+      "width_scale": 1.0
+    },
+    {
+      "key": "sweep_2",
+      "axial_sum": 0.0001,
+      "width_scale": 10.0
+    },
+    {
+      "key": "sweep_3",
+      "axial_sum": 0.0005,
+      "width_scale": 0.1
+    },
+    {
+      "key": "sweep_4",
+      "axial_sum": 0.0005,
+      "width_scale": 1.0
+    },
+    {
+      "key": "sweep_5",
+      "axial_sum": 0.0005,
+      "width_scale": 10.0
+    },
+    {
+      "key": "sweep_6",
+      "axial_sum": 0.001,
+      "width_scale": 0.1
+    },
+    {
+      "key": "sweep_7",
+      "axial_sum": 0.001,
+      "width_scale": 1.0
+    },
+    {
+      "key": "sweep_8",
+      "axial_sum": 0.001,
+      "width_scale": 10.0
+    },
+    {
+      "key": "sweep_9",
+      "axial_sum": 0.002,
+      "width_scale": 0.1
+    },
+    {
+      "key": "sweep_10",
+      "axial_sum": 0.002,
+      "width_scale": 1.0
+    },
+    {
+      "key": "sweep_11",
+      "axial_sum": 0.002,
+      "width_scale": 10.0
+    },
+    {
+      "key": "sweep_12",
+      "axial_sum": 0.005,
+      "width_scale": 0.1
+    },
+    {
+      "key": "sweep_13",
+      "axial_sum": 0.005,
+      "width_scale": 1.0
+    },
+    {
+      "key": "sweep_14",
+      "axial_sum": 0.005,
+      "width_scale": 10.0
+    },
+    {
+      "key": "sweep_15",
+      "axial_sum": 0.01,
+      "width_scale": 0.1
+    },
+    {
+      "key": "sweep_16",
+      "axial_sum": 0.01,
+      "width_scale": 1.0
+    },
+    {
+      "key": "sweep_17",
+      "axial_sum": 0.01,
+      "width_scale": 10.0
+    },
+    {
+      "key": "sweep_18",
+      "axial_sum": 0.02,
+      "width_scale": 0.1
+    },
+    {
+      "key": "sweep_19",
+      "axial_sum": 0.02,
+      "width_scale": 1.0
+    },
+    {
+      "key": "sweep_20",
+      "axial_sum": 0.02,
+      "width_scale": 10.0
+    }
+  ],
+  "axial_sum": 0.002,
+  "scope": "Black-box fixed-profile controls, not a replacement golden fixture"
+}

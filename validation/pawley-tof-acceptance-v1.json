@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "description": "TOF Pawley release checks, frozen before measured fitting. Dataset parsing, density convention, fixed calibration and quality thresholds reuse the existing independently reviewed TOF validations; the solver is native bounded Pawley least squares.",
+  "options": {"solver": "matrix_free", "support_fwhm": 20.0, "max_elements": 150000000, "tolerance": 1e-9},
+  "runtime": {"max_iterations": 100, "max_evaluations": 1500, "max_rejections": 30, "max_seconds": 180.0},
+  "repeats": 2,
+  "tail_log": 20.0,
+  "background": {"bruckner_radius": 20, "bruckner_iterations": 50},
+  "cases": [
+    {"id": "powgen", "dataset": "powgen-lab6-tof-calibration", "data_file": "PG3_17541.gsa", "instrument_file": "PGHR_60-2015A.prm", "banks": [2], "space_group": 221, "cell_angstrom": 4.156826, "tof_range": null, "d_range": [0.25, 5.0], "background_terms": 16, "refine_cell": false, "refine_zero": false, "minimum_correlation": 0.95, "minimum_families": 300, "maximum_rwp": null},
+    {"id": "nickel", "dataset": "lanl-nickel-tof", "data_file": "nickel.raw", "instrument_file": "inst_tof.prm", "banks": [2,3,4], "space_group": 225, "cell_angstrom": 3.523, "tof_range": [1101.6,8189.6], "d_range": [0.2,3.0], "background_terms": 12, "refine_cell": true, "refine_zero": true, "minimum_correlation": 0.998, "minimum_families": 1, "maximum_rwp": 0.03, "target_cell_angstrom": 3.5234, "maximum_cell_error_angstrom": 0.0005}
+  ]
+}

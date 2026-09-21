@@ -145,3 +145,171 @@ All scales must come from the same calculation and share structure-factor,
 multiplicity, correction, and scale conventions. Fractions normalize only over
 the supplied crystalline phases; amorphous or unidentified material requires a
 separate experimental/internal-standard model.
+
+## Pawley family-area least squares
+
+[`crate::workflows::evaluate_pawley`] implements one fixed-wavelength CW histogram:
+
+```text
+y_i = b_fixed,i + sum_k c_k B_ik + sum_r A_r p(x_i; q_r(cell), profile)
+r_i = (y_i - y_obs,i) / sigma_i, for included samples only
+chi² = sum_i r_i².
+```
+
+`A_r` is a powder-family integrated area in observed-y times degrees, before
+finite-support truncation. It already absorbs multiplicity, phase scale and
+fixed amplitude corrections; there is no independent phase scale or atomic
+structure factor. Default bounds are `A_r >= 0`; signed areas require explicit
+opt-in. Observations remain signed. Unit weights replace missing sigmas, and
+least squares has no bin-width factor.
+
+Native CW/FCJ kernels evaluate profiles and derivatives in the same sample pass:
+
+```text
+dy_i/dA_r = p_ir
+dy_i/dcell_j = sum_r A_r (dp_ir/dq_r)(dq_r/dcell_j)
+dy_i/dprofile_j = sum_r A_r dp_ir/dprofile_j
+dy_i/dc_k = B_ik
+J_free = W J_physical D,  D = d physical / d scaled_free.
+```
+
+The constraint-chain product skips exact zero entries of `D` and accumulates
+nonzero terms in physical-parameter order. Composed-width constraints likewise
+skip zero physical derivatives. These are sparse evaluations of the same
+linear map, without changing weights, support or bounds. Physical area columns
+are stored only over their native contiguous support; profile, cell and
+background columns use full-grid storage. `PawleyJacobian` applies `J v` and
+`J^T u` through these columns and the sparse constraint chain. Its adjoint and
+weighted column norms are tested against dense materialization, including ties
+and unobserved columns. Optional matrix-free mode uses these products directly.
+Let `N` contain column norms of `W J_physical D`, and `K = W J_physical D N^-1`.
+On each active constraint face, projected preconditioned CG solves
+`P (K^T K + damping I) P z = -P (K^T r + H particular)`.
+`P` is applied through coordinate selection or a twice-reorthogonalized SVD row
+space; neither a dense projector nor the observation-by-free matrix is formed.
+The recomputed residual must satisfy `linear_tolerance * (1 + initial_norm)`.
+Diagonal 32-column Gram blocks, stabilized by `max(damping, 0.01) I`, serve only
+as a preconditioner. The checked operator retains the requested damping.
+Euclidean projected-gradient checks use direct tangent projection, not QR of
+an identity matrix. Quadratic constraint workspace remains explicitly bounded.
+
+The position derivative includes the position dependence of CW widths and FCJ
+shape. Finite-support endpoints follow the native kernel; no observed-grid
+renormalization occurs. Derivatives hold support membership fixed and are not
+defined at a moving cutoff. Cell trials preserve the fixed conservative
+reflection domain and reject inaccessible reflections.
+
+[`crate::workflows::refine_pawley`] initializes areas/background at fixed
+geometry, then uses joint damped Gauss–Newton steps. Column-normalized augmented
+QR avoids forming normal equations. An active-face solve uses QR for independent
+boxes. For coupled parameter bounds through `D`, including tied dependent
+parameters, SVD identifies the constraint row space and a particular solution.
+Twice-reorthogonalized basis completion constructs its null space; QR solves the
+reduced least-squares problem there. This avoids treating roundoff in an
+`I - C^+ C` projector as additional physical directions.
+Independent box faces may enter together only when their projection satisfies
+all coupled constraints. Initialization and unsupported columns are frozen
+inside the constrained solve. Composed Gaussian variance and Lorentzian width
+inequalities include their cell
+chains. Complete-profile backtracking rejects infeasible or non-improving trials.
+Convergence uses the normalized feasible step, the undamped projected gradient,
+or relative objective reduction with positive predicted reduction and actual
+reduction at least 0.1 times that prediction. Both reductions must be below the
+requested relative tolerance, damping cannot exceed its initial value, and the
+accepted step must be at least one tenth of the proposed step. Heavy damping
+alone cannot imply convergence. Accepting less than one tenth of a proposed
+step increases the next damping by ten instead of decreasing it; larger accepted
+steps decrease damping by four. The hard-support objective can be discontinuous,
+so neither this damping rule nor a good Rwp guarantees convergence. Stagnation
+and budget exhaustion remain unsuccessful stops.
+
+For symmetric fixed-position CW profiles, the optimizer can identify local
+barriers at moving hard-support cutoffs. If a sample enters or leaves a unit
+profile, its weighted residual changes by `delta = +/- A p / sigma`. Its exact
+finite objective jump is `2 r delta + delta²`; the smooth Jacobian does not
+include this discontinuity. A strictly positive jump excludes that crossing
+from infinitesimal descent. The support-radius gradient adds the corresponding
+one-sided inequality to the local feasible cone. Several events are certified
+only if their sample sets are disjoint and none has a negative jump; otherwise
+ordinary line search continues without this certificate. Coincident profiles
+are combined before evaluating a jump.
+
+Event detection uses a roundoff-sized geometric interval and additionally
+requires the parameter distance to lie within the requested normalized step
+tolerance. Nonlinear radius constraints are retracted together by an analytical
+Newton correction, then the original physical validation and full objective
+are checked again. A newly entered local support face resets damping to its
+initial value. Heavy backtracking can bisect its final improving interval,
+retaining only states that decrease the full objective; this avoids spending
+many outer steps approaching a discontinuity asymptotically.
+
+Convergence on such a face is explicitly identified by a `support_` criterion.
+It means local stationarity for this discontinuous finite-support objective,
+not stationarity of an untruncated profile or a global optimum. The same step,
+projected-gradient and relative-objective tolerances apply. Gaussian covariance
+is omitted at a support boundary. Axial profiles, moving peak positions,
+interacting sample jumps and negative-jump combinations are not certified by
+this local treatment. None of these rules changes profile values, support
+endpoints or observation weights.
+
+Rank is measured from the undamped weighted normalized Jacobian. Exactly
+coincident families report their total area and identities; their individual
+split is not identifiable. Unobserved columns retain their accepted value.
+Covariance is available only at converged interior full-rank solutions with
+positive residual degrees of freedom; active width or parameter boundaries
+suppress it. Covariance lives in scaled free coordinates and follows the `D`
+propagation above. Matrix-free mode reports neither global numerical rank nor
+covariance; observed-column counts and exact-coincidence diagnostics remain.
+Allocation is explicitly bounded in both modes. Fixed spectra and joint TOF
+use the same area objective, as described below.
+
+Methodological source: G. S. Pawley, *J. Appl. Cryst.* **14**, 357–361 (1981),
+[doi:10.1107/S0021889881009618](https://doi.org/10.1107/S0021889881009618).
+
+
+### Pawley fixed detected spectra
+
+For fixed component wavelengths and nonnegative relative weights, the family
+basis and position chain are:
+
+```text
+w[c] = r[c] / sum(r)
+P[k](x) = sum(c, w[c] * p(x; 2 asin((lambda[c]/lambda[0]) sin(theta[k,0])), q))
+d(2 theta[k,c])/d(2 theta[k,0]) = (lambda[c]/lambda[0]) cos(theta[k,0])/cos(theta[k,c])
+```
+
+The complete family area multiplies this basis once.
+The cell chain multiplies that factor; each component uses its own composed
+widths. The existing fused component kernel accumulates values and derivatives
+in one pass. Component ratios are fixed detected-area ratios and no extra
+multiplicity, LP or structural correction is applied. Each component retains
+its own finite support, with the observable family support equal to their union.
+
+### Joint TOF Pawley
+
+The joint objective concatenates native microsecond-density banks:
+
+```text
+y[b,i] = fixed_background[b,i] + sum(j, c[b,j] T[j](u[b,i]))
+         + sum(k, I[b,k] p_TOF(t[b,i]; d[k](cell), q[b]))
+Phi = 0.5 * sum(b,i included, ((y[b,i] - observed[b,i]) / sigma[b,i])^2)
+t0(d) = zero + DIFC*d + DIFA*d^2 + DIFB/d
+support = [t0 - support_fwhm*H - tail_log/alpha,
+           t0 + support_fwhm*H + tail_log/beta]   (inclusive)
+dy/d(cell[j]) = sum(k, I[b,k] * dp_TOF/dd[k] * dd[k]/d(cell[j]))
+```
+
+Areas, backgrounds and all fifteen calibration/profile coefficients are bank
+local; symmetry-independent cells are shared by phase identity. Areas have
+units density times microseconds. They absorb fixed amplitude corrections;
+no second multiplicity or incident-spectrum factor is applied. Bin widths do
+not enter statistical weights. Uncertainty weighting requires sigmas in every
+bank or none; unit weighting can be selected explicitly.
+
+The existing fused TOF kernel provides calibration/profile and d-spacing
+chains in the same evaluation. Fixed HKL lists must cover allowed-cell and
+tail margins. Physical trials validate the increasing calibration and positive
+composed shapes. At least one DIFC stays fixed when shared lengths vary, to
+anchor their scale gauge. Support-local CW certificates do not apply to TOF.
+A joint checkpoint stores one accepted state and is bound to every bank,
+normalization record, shared cell, support policy and constraint.

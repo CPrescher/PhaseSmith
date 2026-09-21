@@ -292,6 +292,37 @@ fn prepare_batch(
     })
 }
 
+/// Count native union-support samples before allocating derivative arrays.
+///
+/// # Errors
+/// Uses the same instrument, component, geometry and support validation as accumulation.
+pub fn cw_components_support_samples(
+    grid: GridView<'_>,
+    reflections: CwReflectionBatchView<'_>,
+    instrument: ConstantWavelengthInstrument,
+    components: WavelengthComponentsView<'_>,
+    geometry: FcjGeometry,
+    support: SupportPolicy,
+) -> Result<usize, CwComponentsBatchError> {
+    support.validate()?;
+    instrument
+        .validate()
+        .map_err(|reason| CwComponentsBatchError::InvalidInstrument { reason })?;
+    validate_reference_wavelength(instrument, components)?;
+    Ok(prepare_batch(
+        grid.as_slice(),
+        reflections,
+        instrument,
+        components,
+        geometry,
+        support,
+    )?
+    .offsets
+    .last()
+    .copied()
+    .unwrap_or(0))
+}
+
 #[allow(clippy::too_many_arguments, clippy::too_many_lines)]
 fn accumulate_components(
     grid: GridView<'_>,

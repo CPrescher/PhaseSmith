@@ -144,3 +144,14 @@ explicit top-level, I/O, refinement, integration, oracle, and validation
 exports. Run `python scripts/public_api_snapshot.py --check` to compare it with
 the installed package; any name, target, kind, or callable-signature change is
 reported as a unified diff.
+
+## Pawley workflows
+
+[CW Pawley refinement](pawley.md) supports monochromatic and fixed-spectrum
+family areas; [TOF Pawley](tof-pawley.md) supports single banks and joint banks
+with shared cells. Both provide bounded/tied parameters, analytical derivatives,
+dense or matrix-free solving, cancellation and accepted-state restart.
+Use `phasesmith.refinement.pawley` or `phasesmith.refinement.tof_pawley` in Python,
+and `phasesmith::workflows` in Rust. Standalone CW version 2 and TOF version 1
+codecs also integrate into lossless [native format-7 bundles](native-persistence.md).
+See [validation](pawley-validation.md) for measured gates and model limitations.

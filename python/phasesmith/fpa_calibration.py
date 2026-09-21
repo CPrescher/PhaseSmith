@@ -654,7 +654,9 @@ def _coordinate_axial_rays(
         diffracted, geometry.diffracted_soller_full_width_deg
     )
     apparent = _apparent_axial_angle(position_deg, incident, diffracted)
-    ray_weights = ray_weights * np.cos(incident) * np.cos(diffracted) / np.sin(apparent)
+    # Exact FCJ point-source/point-sample branch: z=tan(gamma), so the
+    # coordinate density 1/((1+z²) sin(a)) is cos²(gamma)/sin(a).
+    ray_weights = ray_weights * np.cos(diffracted) ** 2 / np.sin(apparent)
     return _normalize_axial_rays(apparent, ray_weights)
 
 

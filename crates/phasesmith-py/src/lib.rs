@@ -59,10 +59,13 @@ use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyTuple};
 
 mod fit_diagnostics;
+mod pawley;
 mod profile_estimation;
+mod project_bundle;
 mod rietveld;
 mod tof_lebail;
 mod tof_multibank;
+mod tof_pawley;
 mod tof_structural_multibank;
 
 type ProfileArrays<'py> = (
@@ -4269,6 +4272,9 @@ fn _core(module: &Bound<'_, PyModule>) -> PyResult<()> {
     fit_diagnostics::register(module)?;
     profile_estimation::register(module)?;
     tof_lebail::register(module)?;
+    pawley::register(module)?;
+    tof_pawley::register(module)?;
+    project_bundle::register(module)?;
     tof_multibank::register(module)?;
     tof_structural_multibank::register(module)?;
     module.add_function(wrap_pyfunction!(unit_cell_geometry, module)?)?;

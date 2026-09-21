@@ -16,6 +16,15 @@ development versions.
   from its canonical instructions. Add scientific references for experimental
   context, identifiable recipes, fit interpretation, and QPA; check resource
   parity, documentation drift, and the offline advisor example during testing.
+
+- Add native CW and single-/multi-bank TOF Pawley refinement with bounded/tied
+  family areas, analytical shared-cell and bank-local profile/background chains,
+  dense and matrix-free solving, diagnostics, cancellation and exact accepted-state
+  restart. CW supports fixed detected-area spectra. Add independent NumPy references,
+  measured CW/spectrum/TOF gates and pinned external comparisons with explicit
+  profile-model limits. Provide Python/Rust examples, standalone CW v2/TOF v1
+  codecs, lossless mixed native format-7 bundles and backward migration.
+
 - Add an opt-in, checksum-pinned opXRD robustness campaign with a fixed
   14-pattern stratified selection, explicit grid and negative-count boundaries,
   independent background diagnostics, five residual measures, three disclosed

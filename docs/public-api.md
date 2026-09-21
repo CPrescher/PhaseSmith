@@ -414,8 +414,8 @@ checkpointing. Their physics and state transitions remain separate:
 - Rietveld refinement obtains integrated intensities from a structure-factor
   layer and optimizes structural/profile parameters against the same pattern
   calculator.
-- Future Pawley or whole-pattern methods get their own method modules and
-  result types rather than conditionals in one large refinement function.
+- Pawley fits independent bounded family areas through dedicated CW and TOF
+  method modules, sharing parameter, constraint and solver infrastructure.
 
 ## Le Bail contract
 
@@ -567,3 +567,19 @@ continuation, and a progress callback receiving plain event dictionaries. The
 result reports its stable termination reason and the last accepted checkpoint.
 Callback delivery occurs only at orchestration boundaries; no Python code runs
 inside the reflection/sample loop.
+
+## Pawley workflows
+
+[CW Pawley refinement](pawley.md) supports monochromatic and fixed-spectrum
+family areas; [TOF Pawley](tof-pawley.md) supports single banks and joint banks
+with shared cells. Both provide bounded/tied parameters, analytical derivatives,
+dense or matrix-free solving, cancellation and accepted-state restart.
+Use `phasesmith.refinement.pawley` or `phasesmith.refinement.tof_pawley` in Python,
+and `phasesmith::workflows` in Rust. Standalone CW version 2 and TOF version 1
+codecs also integrate into lossless [native format-7 bundles](native-persistence.md).
+See [validation](pawley-validation.md) for measured gates and model limitations.
+
+The unreleased supplement `api/python-pawley-api-unreleased.json` covers
+`phasesmith.refinement.pawley`, `phasesmith.refinement.tof_pawley` and
+`phasesmith.project_bundle`; pytest checks all three modules. The historical
+0.5.0 snapshot remains unchanged.

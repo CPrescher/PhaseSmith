@@ -1,0 +1,201 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://phasesmith.dev/schemas/native-project-v7.schema.json",
+  "title": "PhaseSmith native project bundle version 7",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format_version",
+    "archive",
+    "arrays",
+    "project",
+    "rietveld_analyses",
+    "tof_lebail_analyses",
+    "tof_multibank_geometry_analyses",
+    "structural_tof_multibank_analyses",
+    "pawley_analyses",
+    "tof_pawley_analyses"
+  ],
+  "properties": {
+    "format_version": {
+      "const": 7
+    },
+    "archive": {
+      "$ref": "native-project-v1.schema.json#/properties/archive"
+    },
+    "arrays": {
+      "$ref": "native-project-v1.schema.json#/properties/arrays"
+    },
+    "project": {
+      "$ref": "native-project-v3.schema.json#/$defs/project"
+    },
+    "rietveld_analyses": {
+      "type": "array",
+      "items": {
+        "$ref": "native-project-v2.schema.json#/$defs/analysis"
+      }
+    },
+    "tof_lebail_analyses": {
+      "type": "array",
+      "items": {
+        "$ref": "native-project-v3.schema.json#/$defs/tofAnalysis"
+      }
+    },
+    "tof_multibank_geometry_analyses": {
+      "type": "array",
+      "items": {
+        "$ref": "native-project-v4.schema.json#/$defs/geometryAnalysis"
+      }
+    },
+    "structural_tof_multibank_analyses": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/structuralTofAnalysis"
+      }
+    },
+    "pawley_analyses": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/pawleyAnalysis"
+      }
+    },
+    "tof_pawley_analyses": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/tofPawleyAnalysis"
+      }
+    }
+  },
+  "$defs": {
+    "nonEmptyString": {
+      "$ref": "native-project-v6.schema.json#/$defs/nonEmptyString"
+    },
+    "finiteNumber": {
+      "$ref": "native-project-v6.schema.json#/$defs/finiteNumber"
+    },
+    "structuralTofAnalysis": {
+      "$ref": "native-project-v6.schema.json#/$defs/structuralTofAnalysis"
+    },
+    "structuralSelection": {
+      "$ref": "native-project-v6.schema.json#/$defs/structuralSelection"
+    },
+    "latticeBounds": {
+      "$ref": "native-project-v6.schema.json#/$defs/latticeBounds"
+    },
+    "structuralBank": {
+      "$ref": "native-project-v6.schema.json#/$defs/structuralBank"
+    },
+    "background": {
+      "$ref": "native-project-v6.schema.json#/$defs/background"
+    },
+    "instrumentBound": {
+      "$ref": "native-project-v6.schema.json#/$defs/instrumentBound"
+    },
+    "inputOptions": {
+      "$ref": "native-project-v6.schema.json#/$defs/inputOptions"
+    },
+    "refinementOptions": {
+      "$ref": "native-project-v6.schema.json#/$defs/refinementOptions"
+    },
+    "checkpoint": {
+      "$ref": "native-project-v6.schema.json#/$defs/checkpoint"
+    },
+    "acceptedPhase": {
+      "$ref": "native-project-v6.schema.json#/$defs/acceptedPhase"
+    },
+    "acceptedBank": {
+      "$ref": "native-project-v6.schema.json#/$defs/acceptedBank"
+    },
+    "parameter": {
+      "$ref": "native-project-v6.schema.json#/$defs/parameter"
+    },
+    "iteration": {
+      "$ref": "native-project-v6.schema.json#/$defs/iteration"
+    },
+    "parameterChange": {
+      "$ref": "native-project-v6.schema.json#/$defs/parameterChange"
+    },
+    "pawleyAnalysis": {
+      "$ref": "native-project-v6.schema.json#/$defs/pawleyAnalysis"
+    },
+    "tofPawleyAnalysis": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "shared_lattice": {
+          "$ref": "tof-pawley-project-v1.schema.json#/$defs/input/properties/shared_lattice"
+        },
+        "signed_intensities": {
+          "$ref": "tof-pawley-project-v1.schema.json#/$defs/input/properties/signed_intensities"
+        },
+        "tail_log": {
+          "$ref": "tof-pawley-project-v1.schema.json#/$defs/input/properties/tail_log"
+        },
+        "parameters": {
+          "$ref": "tof-pawley-project-v1.schema.json#/$defs/input/properties/parameters"
+        },
+        "constraints": {
+          "$ref": "tof-pawley-project-v1.schema.json#/$defs/input/properties/constraints"
+        },
+        "analysis_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "banks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/tofPawleyBank"
+          }
+        },
+        "options": {
+          "$ref": "https://phasesmith.readthedocs.io/schemas/pawley-project-v2.schema.json#/$defs/options"
+        },
+        "checkpoint": {
+          "anyOf": [
+            {
+              "$ref": "tof-pawley-project-v1.schema.json#/$defs/checkpoint"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "shared_lattice",
+        "signed_intensities",
+        "tail_log",
+        "parameters",
+        "constraints",
+        "analysis_id",
+        "banks",
+        "options",
+        "checkpoint"
+      ]
+    },
+    "tofPawleyBank": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "tof-pawley-project-v1.schema.json#/$defs/bank/properties/id"
+        },
+        "phases": {
+          "$ref": "tof-pawley-project-v1.schema.json#/$defs/bank/properties/phases"
+        },
+        "background": {
+          "$ref": "tof-pawley-project-v1.schema.json#/$defs/bank/properties/background"
+        },
+        "normalization": {
+          "$ref": "tof-pawley-project-v1.schema.json#/$defs/bank/properties/normalization"
+        }
+      },
+      "required": [
+        "id",
+        "phases",
+        "background",
+        "normalization"
+      ]
+    }
+  }
+}
