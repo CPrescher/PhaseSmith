@@ -67,6 +67,12 @@ jobs:
       - run: maturin build --release --out dist
       - run: python -m pip install dist/*.whl
       - run: python -m pytest -q
+      - name: Check both frozen QARR 1g entry points
+        if: matrix.python-version == '3.13'
+        run: |
+          python -c "from phasesmith.validation import fetch_validation_dataset; fetch_validation_dataset('iucr-qarr-1g', 'validation/data/iucr-qarr-1g')"
+          python -m pytest -q -m real_data tests/test_real_data_integration.py \
+            -k 'qarr_canonical_native_entry_point_regression or qarr_real_pattern_two_thread_regression'
       - name: Run Rust/Python differential contracts
         if: matrix.python-version == '3.14'
         env:
