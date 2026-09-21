@@ -1661,13 +1661,15 @@ against this baseline, followed by the 1.0 release candidate gates.
 
 ## Definition of the next completed milestone
 
-Repository consolidation takes priority over further QARR tuning. Preserve all
-local histories, integrate the packaged agent skill and bounded truthful
-stopping, and require the canonical native QARR regression plus the fixed
-assessment panel before promotion. Feasible-width research remains on its
-preserved experimental branch. Pawley and its shared FCJ correction require a
-separate integration review. The execution sequence and exit gates are in
-`docs/repository-consolidation-plan.md`.
+Repository consolidation is complete for the validated Rietveld/packaging
+slice. Original histories and working files are preserved remotely; truthful
+bounded stopping passes the canonical QARR regression and fixed assessment.
+Feasible-width research remains experimental. Pawley and its shared FCJ
+correction remain on `codex/pawley-integration` pending the macOS Intel dense
+solver convergence failure and installed validation CLI path fixes. Resolve
+those gates before promotion; do not weaken assertions or scientific limits.
+See `docs/repository-consolidation.md` for evidence, runtime tradeoffs and the
+separate main/API-cleanup reconciliation boundary.
 
 The second refinement performance pass implements ordered four-sample FCJ
 evaluation, contiguous active structural rows, reusable unit-scale profiles

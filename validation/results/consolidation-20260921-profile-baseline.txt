@@ -1,0 +1,20 @@
+python=3.13.5 numpy=2.5.3
+platform=macOS-26.6.2-arm64-arm-64bit-Mach-O
+native_build_mode=release native_module=/Users/clemens/PhaseSmith-preservation/20260921-consolidation/baseline-package/phasesmith/_core.abi3.so
+peaks=200 samples=5001 active_peak_samples=14410 tch_active_peak_samples=13644 cw_active_peak_samples=12444 sample_active_peak_samples=91741 fcj_active_peak_samples=12620 tof_active_peak_samples=8:63837,20:85142 wavelength_component_counts=1,2 support_fwhm=20
+input_mb=0.046 repetitions=3
+case=values_only output_mb=0.040 min_ms=0.046 median_ms=0.046 p95_ms=0.048
+case=support_jacobian output_mb=0.504 min_ms=0.084 median_ms=0.090 p95_ms=0.105
+case=dense_jacobian output_mb=32.046 min_ms=0.484 median_ms=0.794 p95_ms=1.256
+case=tch_support_jacobian output_mb=0.480 min_ms=0.101 median_ms=0.102 p95_ms=0.130
+case=cw_local_and_global_jacobian output_mb=0.442 min_ms=0.137 median_ms=0.140 p95_ms=0.161
+case=cw_size_strain_provider_and_native_jacobian output_mb=1.791 min_ms=1.470 median_ms=1.480 p95_ms=1.557
+case=cw_size_strain_orientation_provider_and_native_jacobian output_mb=1.831 min_ms=1.609 median_ms=1.696 p95_ms=1.727
+case=cw_four_phase_size_strain_provider_and_native_jacobian output_mb=2.191 min_ms=2.562 median_ms=2.838 p95_ms=2.880
+case=cw_prepared_four_phase_native_jacobian output_mb=2.191 min_ms=2.232 median_ms=2.245 p95_ms=2.321
+case=neutron_cw_typed_local_and_global_jacobian output_mb=0.442 min_ms=0.137 median_ms=0.143 p95_ms=0.149
+case=neutron_cw_fcj_typed_local_and_global_jacobian output_mb=0.525 min_ms=2.187 median_ms=2.196 p95_ms=2.204
+case=cw_fcj_local_and_global_jacobian_order_48 output_mb=0.525 min_ms=2.189 median_ms=2.196 p95_ms=2.268
+case=cw_fcj_doublet_local_and_global_jacobian_order_48 output_mb=0.633 min_ms=4.401 median_ms=4.417 p95_ms=4.447
+case=tof_tail_log_8_local_and_global_jacobian_order_192 output_mb=1.665 min_ms=68.954 median_ms=69.203 p95_ms=71.172
+case=tof_tail_log_20_local_and_global_jacobian_order_192 output_mb=2.006 min_ms=82.282 median_ms=82.430 p95_ms=82.453
