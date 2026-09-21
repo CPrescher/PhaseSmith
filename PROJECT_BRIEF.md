@@ -35,7 +35,9 @@ actual caller runtime guards retain their own stop reasons. Scientific gates,
 physical models and budgets are unchanged. The canonical QARR 1g entry point
 has a dedicated regression test, and the fixed eight-case assessment remains
 the promotion boundary. See `docs/refinement-bounded-recovery.md` and the
-`docs/repository-consolidation.md`. The feasible-width option remains solely on
+`docs/repository-consolidation.md`. Pawley and the shared FCJ correction remain
+parked on `codex/pawley-integration`: macOS Intel convergence and installed
+validation CLI paths are unresolved. The feasible-width option remains solely on
 its preserved experimental branch and is not added to the committed public API.
 
 The live pinned GSAS-II Pawley optimizer comparison now covers fixed-cell and
@@ -101,16 +103,16 @@ acceptable cost together. Further QARR-specific tuning and feasible-width
 development remain paused. Historical timings and convergence claims below
 refer to their stated implementation checkpoints.
 
-The subsequent original-recipe convergence audit identifies a termination
+The pre-consolidation original-recipe convergence audit identified a termination
 weakness: the general solver can report convergence when repeated damping
 increases make its proposed step tiny, even though valid descent directions
 remain. Large-budget original-width fits report Rwp 19.87759% on 1g and
 20.10151% on 1h, with repeatable full-workflow timings of 1.720/2.413 seconds
 at eight workers. These are times to reported convergence, not stationarity
 certificates. Tighter 1h fits can stall at worse results; feasible coordinate
-probes demonstrate the issue. See `docs/qarr-convergence-audit.md`. Production
-solver behavior is unchanged by the audit; convergence/stagnation detection
-and feasible-step recovery are the next implementation priorities.
+probes demonstrate the issue. See `docs/qarr-convergence-audit.md`. That audit did not itself change production
+behavior; the bounded stopping repair described above now addresses the
+reported termination weakness, with its measured runtime cost retained.
 
 The subsequent QARR holdout investigation separates budget exhaustion from
 width decomposition. The common diagnostic's original-width recipe converges
