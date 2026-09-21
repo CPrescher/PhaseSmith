@@ -7,6 +7,7 @@ import numpy as np
 import phasesmith as ps
 import pytest
 from phasesmith import reference
+from phasesmith._numpy_compat import trapezoid
 from phasesmith.refinement import RefinementLimits
 from phasesmith.refinement import rietveld as rv
 from test_rietveld_optimization import doublet_request
@@ -164,9 +165,9 @@ def test_fused_accuracy_policy_matches_numpy_values_and_all_derivative_rows():
     np.testing.assert_allclose(result.jacobian, local, rtol=2e-9, atol=2e-7)
     np.testing.assert_allclose(result.derivatives.global_jacobian, global_j, rtol=2e-9, atol=2e-7)
     # Discrete integration includes a small sampling error; areas are not renormalized.
-    integral = np.trapezoid(result.y, x)
+    integral = trapezoid(result.y, x)
     assert 0.989 < integral / sum(areas) < 1.001
-    assert np.trapezoid(x * result.y, x) == pytest.approx(np.trapezoid(x * y, x), rel=2e-10)
+    assert trapezoid(x * result.y, x) == pytest.approx(trapezoid(x * y, x), rel=2e-10)
 
 
 @pytest.mark.parametrize("callbacks", [False, True])

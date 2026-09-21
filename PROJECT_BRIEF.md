@@ -12,6 +12,18 @@ not part of the numerical library.
 
 ## Current implementation status
 
+A fresh post-merge review repairs the complete native Rietveld result contract:
+selected/trial calculations retain fixed axial derivatives in their existing
+fused pass. Returning the accepted state requires no extra profile evaluation,
+including at a runtime limit. Optimization and accepted histories retain their
+existing arithmetic. Refinement options and checkpoints now reject invalid
+profile-accuracy policies at validation/load time. CW and TOF Pawley constructors
+also reject unsigned HKLs that overflow signed storage instead of wrapping their
+values. No equation, support boundary, Pawley solver, or persistence format
+changes in this follow-up.
+Validation integrals and tests select the supported NumPy trapezoidal-integration
+name on both 1.26 and 2.x; CI now exercises the declared NumPy minimum explicitly.
+
 The 0.7.0 release candidate reconciles main's 0.6 API cleanup and bounded
 validation-download retries with the validated develop/Pawley implementation.
 Module-owned imports and warning-backed 0.5 compatibility aliases are retained;

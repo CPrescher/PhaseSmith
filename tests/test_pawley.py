@@ -6,6 +6,7 @@ from dataclasses import replace
 import numpy as np
 import pytest
 from phasesmith import ConstantWavelengthInstrument, PowderPattern, UnitCell
+from phasesmith._numpy_compat import trapezoid
 from phasesmith.control import CancellationToken
 from phasesmith.instrument import FcjGeometry
 from phasesmith.pawley_reference import evaluate, exhaustive_linear_fit
@@ -270,9 +271,9 @@ def test_boundaries_invalid_and_finite_support():
     with pytest.raises(ValueError, match="included"):
         refine(no_points)
     y = calculate(r).calculated_y
-    area = np.trapezoid(y, r.pattern.x)
+    area = trapezoid(y, r.pattern.x)
     assert 2.99 < area < 3.0  # finite Lorentzian tail loss, not grid renormalization
-    assert np.trapezoid((r.pattern.x - 40) * y, r.pattern.x) == pytest.approx(0.0, abs=1e-12)
+    assert trapezoid((r.pattern.x - 40) * y, r.pattern.x) == pytest.approx(0.0, abs=1e-12)
     assert np.all(calculate(r, PawleyOptions(support_fwhm=1.0)).calculated_y[:100] == 0)
 
 
