@@ -1,13 +1,14 @@
 # Repository consolidation, 2026-09-21
 
-## Rietveld consolidation accepted; Pawley integration under review
+## Consolidation complete; Pawley integration parked
 
 The first consolidation preserves the existing six development commits, adds
 version-matched skill distribution, and repairs the newly exposed canonical
 QARR 1g termination failure without changing scientific gates or budgets.
 The feasible-width API and implementation remain on the preserved experimental
 branch. Pawley and the shared FCJ correction have a separate combined branch;
-its measured and distribution gates must finish before promotion.
+it remains parked because the macOS Intel distribution test fails a convergence
+assertion. The validated Rietveld/packaging slice is the develop handoff.
 
 ## Preservation and history
 
@@ -91,10 +92,57 @@ from `8d9d86e`; hashes and complete installed Python sources are recorded.
   including skill resources, CLI discovery and the offline advisor cycle.
 - Formatting, strict Clippy, strict documentation, mathematics/skill generation,
   public API and release metadata checks pass.
-- [Remote CI](https://github.com/CPrescher/PhaseSmith/actions/runs/35577853523)
+- [Remote CI](https://github.com/CPrescher/PhaseSmith/actions/runs/35579776368)
   and the [untagged distribution dry run](https://github.com/CPrescher/PhaseSmith/actions/runs/35578206362)
   pass. The latter covers Linux x86-64/AArch64, macOS Intel/ARM64, Windows,
   and sdist construction; the configured test jobs pass. No publishing ran.
 
 Preserved historical snapshots intentionally retain their original defects.
 A preservation branch is not a release-readiness claim.
+
+## Pawley review outcome and remaining gates
+
+`codex/pawley-integration` retains the reconciled Pawley implementation, shared
+FCJ geometric-Jacobian correction, Windows fixture line-ending fix, and all new
+review evidence. None of those changes is promoted to develop in this handoff.
+This is the separate-branch outcome allowed by step 5 of the approved plan.
+
+Local tests (964 passed), normal CI, the unchanged eight-case Rietveld panel,
+CW/cell/TOF measured Pawley gates, and realistic Pawley benchmarks pass on the
+reviewed ARM64 build. The pinned oracle comparison passes its declared
+engineering gates while retaining its documented strict-equivalence exception.
+These results do not override the following unresolved gates:
+
+1. The [distribution dry run](https://github.com/CPrescher/PhaseSmith/actions/runs/35579612465)
+   fails `test_joint_composed_lorentzian_boundary[dense]` on macOS Intel:
+   the profile meets its error threshold, but termination is `stagnated`
+   instead of the required `converged`. The test and stopping semantics remain
+   unchanged. Linux, Windows, macOS ARM64 and sdist jobs pass.
+2. Installed TOF and fixed-spectrum validation CLIs infer repository fixture
+   paths from `site-packages` and fail without path correction. TOF succeeds
+   with its explicit manifest option; spectrum numerical helper calls succeed
+   with an explicit fixture path. Those diagnostics do not fix the CLI defaults.
+
+Future promotion requires resolving these failures, repeating the distribution
+checks, and preserving the existing physics, support and scientific gates.
+The branch contains `docs/pawley-consolidation-review.md` with raw evidence and
+specific reproduction commands. Main's separate API cleanup also remains a
+future reconciliation task.
+
+## Final accounting
+
+All 72 original working files and every initially local-only commit are backed
+up remotely and in the verified external bundle. The per-file inventory is
+`validation/results/consolidation-20260921-file-dispositions.json`; original
+hashes identify exactly which content was integrated, revised or retained on
+an experimental/preservation branch. The original Pawley checkout remains on
+its clean evidence-preservation branch. The main checkout advances to develop
+only after its dirty state was preserved exactly.
+
+The 200-peak, 5,001-sample profile measurements are retained as
+`validation/results/consolidation-20260921-profile-baseline.txt` and
+`validation/results/consolidation-20260921-profile-recovery.txt`. Representative
+median times are 0.046 → 0.045 ms for values, 2.196 → 2.183 ms for FCJ value and
+Jacobian, and 82.430 → 82.188 ms for the wider TOF tail. Three repetitions are
+only a smoke benchmark; full-workflow costs and their limitations are reported
+above. No release tag or package publication was performed.
