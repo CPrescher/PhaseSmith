@@ -12,6 +12,11 @@ not part of the numerical library.
 
 ## Current implementation status
 
+This Pawley integration branch is parked after the 2026-09-21 review. macOS
+Intel dense-solver convergence and installed validation CLI paths remain
+unresolved; see `docs/pawley-consolidation-review.md`. Develop receives the
+validated Rietveld/packaging slice separately.
+
 
 Repository consolidation (2026-09-21) preserves the original working state,
 Pawley history and feasible-width research on separate remote branches. The

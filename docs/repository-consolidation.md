@@ -1,13 +1,15 @@
 # Repository consolidation, 2026-09-21
 
-## Rietveld consolidation accepted; Pawley integration under review
+## Rietveld accepted; this Pawley integration remains parked
 
 The first consolidation preserves the existing six development commits, adds
 version-matched skill distribution, and repairs the newly exposed canonical
 QARR 1g termination failure without changing scientific gates or budgets.
 The feasible-width API and implementation remain on the preserved experimental
 branch. Pawley and the shared FCJ correction have a separate combined branch;
-its measured and distribution gates must finish before promotion.
+its macOS Intel convergence assertion and installed validation CLI paths remain
+unresolved. See the [Pawley review](pawley-consolidation-review.md) for the
+completed measurements and required fixes.
 
 ## Preservation and history
 
