@@ -1338,8 +1338,8 @@ impl StepModel for DenseStep<'_> {
 // Account for roundoff in the constrained solve at the current step scale.
 // A unit floor admits outward motion near zero-width faces even after all
 // coordinates have become small; the full norm allows null-space solve error.
-fn feasibility_roundoff(a: &DMatrix<f64>, b: &DVector<f64>, row: usize, d: &DVector<f64>) -> f64 {
-    1e-13 * (b[row].abs() + a.row(row).norm() * d.norm())
+fn feasibility_roundoff(bound: f64, row_norm: f64, step_norm: f64) -> f64 {
+    1e-13 * (bound.abs() + row_norm * step_norm)
 }
 
 #[allow(clippy::too_many_lines)]
@@ -1352,6 +1352,8 @@ fn active_step_model<C>(
     diagnostics: &mut PawleyDiagnostics,
 ) -> Result<DVector<f64>, StepError> {
     let n = model.dimensions();
+    // Constraint rows stay fixed throughout one active-set solve.
+    let row_norms: Vec<f64> = a.row_iter().map(|row| row.norm()).collect();
     let mut d = DVector::zeros(n);
     let mut active = Vec::<usize>::new();
     for _ in 0..limit {
@@ -1369,6 +1371,7 @@ fn active_step_model<C>(
         if candidate.iter().any(|v| !v.is_finite()) {
             return Err(StepError::Numerical);
         }
+        let candidate_norm = candidate.norm();
         // Enter independent box faces together when their projection is feasible
         // for every coupled constraint. This avoids one full SVD per negative
         // area in large fixed-geometry initializations; general faces retain the
@@ -1413,10 +1416,11 @@ fn active_step_model<C>(
                     box_faces = faces;
                 }
             }
+            let projected_norm = projected.norm();
             if box_faces.len() > 1
                 && (0..a.nrows()).all(|row| {
                     a.row(row).transpose().dot(&projected)
-                        >= b[row] - feasibility_roundoff(a, b, row, &projected)
+                        >= b[row] - feasibility_roundoff(b[row], row_norms[row], projected_norm)
                 })
             {
                 d = projected;
@@ -1444,7 +1448,8 @@ fn active_step_model<C>(
                 continue;
             }
             let candidate_slack = a.row(row).transpose().dot(&candidate) - b[row];
-            let feasibility_tolerance = feasibility_roundoff(a, b, row, &candidate);
+            let feasibility_tolerance =
+                feasibility_roundoff(b[row], row_norms[row], candidate_norm);
             // A numerically satisfied face must not be re-added as a dependent blocker.
             if candidate_slack >= -feasibility_tolerance {
                 continue;
@@ -1472,8 +1477,10 @@ fn active_step_model<C>(
         if let Some(q) = remove {
             active.remove(q);
         } else {
+            let step_norm = d.norm();
             if (0..a.nrows()).any(|row| {
-                a.row(row).transpose().dot(&d) < b[row] - feasibility_roundoff(a, b, row, &d)
+                a.row(row).transpose().dot(&d)
+                    < b[row] - feasibility_roundoff(b[row], row_norms[row], step_norm)
             }) {
                 return Err(StepError::Numerical);
             }
@@ -1490,8 +1497,10 @@ fn active_step_model<C>(
                     }
                 }
             }
+            let step_norm = d.norm();
             if (0..a.nrows()).any(|row| {
-                a.row(row).transpose().dot(&d) < b[row] - feasibility_roundoff(a, b, row, &d)
+                a.row(row).transpose().dot(&d)
+                    < b[row] - feasibility_roundoff(b[row], row_norms[row], step_norm)
             }) {
                 return Err(StepError::Numerical);
             }

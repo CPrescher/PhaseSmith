@@ -24,6 +24,9 @@ but repeated rejections increased damping and caused stagnation. Removing the
 unit floor keeps the same relative coefficient and scales the allowance with
 the subproblem. The full norm accounts for null-space factorization roundoff;
 using only a row's scalar products was too strict for coupled solves.
+Constraint-row norms are cached for each active-set solve, and step norms are
+evaluated once per unchanged vector. This avoids repeated norm calculations
+inside each constraint-row loop without changing the arithmetic convention.
 
 Any negative motion toward a violated constraint can now identify a blocking
 face; the former absolute `-1e-14` motion cutoff is removed. This does not change
