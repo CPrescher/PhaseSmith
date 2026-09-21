@@ -11,6 +11,7 @@ use phasesmith_crystallography::{
     IntegratedIntensityCorrectionModel, PreparedXrayScattering, SpaceGroup,
     StructureFactorBatchView, SymmetryOperation, UnitCell, calculate_structure_factor_values,
 };
+use phasesmith_engine::structural_pattern::calculate_structural_pattern_selected_with_context;
 use phasesmith_engine::{
     BuiltInScatteringModel, StructuralPatternInputView, calculate_structural_pattern,
 };
@@ -192,6 +193,56 @@ impl BenchmarkCase {
         self.fused_with_model(&[], &[], &self.anisotropic_mask)
     }
 
+    fn selected_fcj(&self, axial_derivatives: bool) -> usize {
+        let mut selected = vec![false; 7 + 5 * self.xyz.len()];
+        selected[6] = true; // Scale row; global profile rows remain available.
+        calculate_structural_pattern_selected_with_context(
+            self.cell,
+            &self.group,
+            &StructuralPatternInputView {
+                x_deg: &self.x,
+                hkl: &self.hkl,
+                multiplicity: &self.multiplicity,
+                fractional_xyz: &self.xyz,
+                occupancy: &self.occupancy,
+                u_iso_angstrom2: &self.u_iso,
+                anisotropic_mask: &self.anisotropic_mask,
+                u_aniso_cif_angstrom2: &self.u_aniso,
+                scattering_species: &self.species,
+                scattering_real_offset: &[],
+                scattering_imag_offset: &[],
+                scale: 1.3,
+                coordinate_tolerance: 1.0e-10,
+                instrument: self.instrument,
+                axial_geometry: Some(phasesmith_core::FcjGeometry {
+                    sample_over_radius: 0.005,
+                    detector_over_radius: 0.003,
+                }),
+                position_correction: phasesmith_engine::MonochromaticPositionCorrection {
+                    zero_shift_deg: 0.0,
+                    bragg_brentano_mm: None,
+                    debye_scherrer_micrometre: None,
+                },
+                correction_model: IntegratedIntensityCorrectionModel::Neutral,
+                scattering_model: BuiltInScatteringModel::XrayNonResonant,
+                contributions: self.contributions(),
+                support: SupportPolicy::FwhmMultiple(20.0),
+                profile_accuracy: phasesmith_core::ProfileAccuracy::default(),
+                calculate_axial_derivatives: axial_derivatives,
+            },
+            &phasesmith_execution::ExecutionContext::serial(),
+            Some(&selected),
+            None,
+        )
+        .map(black_box)
+        .expect("selected FCJ linearization")
+        .result
+        .accumulation
+        .derivatives
+        .local
+        .active_sample_count()
+    }
+
     fn fused_dispersion(&self) -> usize {
         self.fused_with_model(
             &self.site_real_offset,
@@ -304,6 +355,19 @@ fn structural_pattern_benchmark(criterion: &mut Criterion) {
             bench.iter(|| black_box(case.separate()));
         },
     );
+    group.finish();
+
+    let case = BenchmarkCase::new(256, 8);
+    let mut group = criterion.benchmark_group("selected_fcj_256_reflections_8_sites");
+    for axial in [false, true] {
+        group.bench_with_input(
+            BenchmarkId::new("axial_derivatives", axial),
+            &axial,
+            |b, &a| {
+                b.iter(|| black_box(case.selected_fcj(a)));
+            },
+        );
+    }
     group.finish();
 }
 

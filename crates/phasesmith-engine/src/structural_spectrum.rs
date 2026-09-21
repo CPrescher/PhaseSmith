@@ -230,7 +230,7 @@ impl PreparedStructuralSpectrum {
         combine_dense_products(products, &self.normalized_weights)
     }
 
-    /// Linearize selected structural rows with fixed axial geometry.
+    /// Linearize selected structural rows, honoring the axial-derivative flag.
     /// # Errors
     /// Returns an error for invalid component inputs or mask dimensions.
     pub fn linearize_selected(

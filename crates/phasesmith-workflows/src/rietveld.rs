@@ -990,21 +990,6 @@ pub fn calculate_rietveld_pattern(
     input: &RietveldInput,
     options: &RietveldCalculationOptions,
 ) -> Result<RietveldCalculation, RietveldError> {
-    calculate_rietveld_pattern_impl(input, options, true)
-}
-
-pub(crate) fn calculate_rietveld_trial(
-    input: &RietveldInput,
-    options: &RietveldCalculationOptions,
-) -> Result<RietveldCalculation, RietveldError> {
-    calculate_rietveld_pattern_impl(input, options, false)
-}
-
-fn calculate_rietveld_pattern_impl(
-    input: &RietveldInput,
-    options: &RietveldCalculationOptions,
-    axial_derivatives: bool,
-) -> Result<RietveldCalculation, RietveldError> {
     input.validate()?;
     options.validate()?;
     let models = input
@@ -1030,7 +1015,7 @@ fn calculate_rietveld_pattern_impl(
             .collect(),
         support: SupportPolicy::FwhmMultiple(options.support_fwhm),
         profile_accuracy: options.profile_accuracy,
-        calculate_axial_derivatives: axial_derivatives,
+        calculate_axial_derivatives: true,
     };
     let calculated = prepared
         .calculate_request(request)
