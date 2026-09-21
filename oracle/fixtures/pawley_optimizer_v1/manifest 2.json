@@ -1,0 +1,374 @@
+{
+  "format_version": 1,
+  "fixture_id": "gsasii_pawley_optimizer_v1",
+  "kind": "powder_histogram",
+  "provenance": {
+    "gsasii_repository": "https://github.com/AdvancedPhotonSource/GSAS-II",
+    "gsasii_revision": "c0bc79b259cdf0065480b5fbd57674ddf12c4a23",
+    "gsasii_tag": 5838,
+    "python_version": "3.13.9",
+    "numpy_version": "2.2.6",
+    "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+    "generated_at_utc": "2026-09-17T09:11:59.069609+00:00",
+    "generator_sha256": "98530e21dba70cde7e9daffdb74d6b02f6373c7945239e951352870f3ddfdc87",
+    "adapter_sha256": "510efafb162a94ed4f63909a4130184d773e3519fa4dbd4d5b979f770e05a3b6",
+    "helper_sha256": "ebdc4b0b411552f764dcc64502982bd067619617147f7a39d0dc9caaa9f23a76",
+    "binary_sha256": {
+      "fmask.cpython-313-darwin.so": "ef9998ce64cb16f19a1862e40903e5bd595857b62654f5514d217e5104e4a0a4",
+      "histogram2d.cpython-313-darwin.so": "9a3386278ce02d7e80f9dedbc3205f9b990c2768e01268ae6c92de492ebc6031",
+      "kvec_general.cpython-313-darwin.so": "467c2b427feb6e627b961e8625ea025005e9a54c707dc0cfce341777919d7c0a",
+      "pack_f.cpython-313-darwin.so": "2323722cc45a15c715cf6f134d4c6f39b42c0d7bfc879b59afced4341bbd089d",
+      "pydiffax.cpython-313-darwin.so": "2a17e17f1ecebb6f7fa77d37e423eac7c24f0ffac8d9f547e14b626fc2dd7f3e",
+      "pypowder.cpython-313-darwin.so": "3a68141e963d2efdf5f6a6a3c12cc39acff8d128d43e676485c38f43121f5b0b",
+      "pyspg.cpython-313-darwin.so": "a16d1df83518af8b30930f7760e35a328f768ba02dce010cfc3e594eab79019a",
+      "pytexture.cpython-313-darwin.so": "ee5f128a21572360c3136d11d56a55967f8a6aba48bf8ab2047a3203bbf767ad",
+      "unpack_cbf.cpython-313-darwin.so": "aef1686823625a8aa9e3aabeb8c41001fc20d7af42cf3dee66f81b173fa751f4"
+    }
+  },
+  "source": {
+    "api": [
+      "G2Project.refine",
+      "G2PwdrData.getdata/reflections",
+      "G2Phase.get_cell"
+    ],
+    "private_probe": true,
+    "adapter_version": 1,
+    "native_units": {
+      "position": "degree",
+      "sigma2": "centidegree^2",
+      "gamma": "centidegree",
+      "F_squared": "GSAS-II phase convention",
+      "area": "0.01 * F_obs_squared * intensity_correction; multiplicity already included"
+    }
+  },
+  "input": {
+    "kind": "parameter_cases",
+    "sha256": "3826b2700052baec144c52a4af4992ecb1796ac875fa78baff611a14e7e342be"
+  },
+  "archive": {
+    "file": "data.npz",
+    "sha256": "2a44133a1f40066e54b2ab055b9b89976878473a55215870113ccbe445ef9c74"
+  },
+  "arrays": {
+    "fixed_cell_x_deg": {
+      "dtype": "float64",
+      "shape": [
+        24001
+      ],
+      "sha256": "14fc90f5b3eea0f705ed1b3269556a7dd69bbdd7fab67a5821affe0b6cf0c29a",
+      "finite": true,
+      "unit": "degree_2theta",
+      "description": "Public scripting fixed_cell_x_deg array"
+    },
+    "fixed_cell_observed_y": {
+      "dtype": "float64",
+      "shape": [
+        24001
+      ],
+      "sha256": "4064b584a9aaf3a7bcb5b5f88ace65fd44aa538ed9206967a010f1a5be4b5256",
+      "finite": true,
+      "unit": "intensity",
+      "description": "Public scripting fixed_cell_observed_y array"
+    },
+    "fixed_cell_ycalc": {
+      "dtype": "float64",
+      "shape": [
+        24001
+      ],
+      "sha256": "e5f628cc29c446126b60fe0d4b759c03948bd63f2b1a9b46baf6f09da18a6699",
+      "finite": true,
+      "unit": "intensity",
+      "description": "Public scripting fixed_cell_ycalc array"
+    },
+    "fixed_cell_background": {
+      "dtype": "float64",
+      "shape": [
+        24001
+      ],
+      "sha256": "120f3a4106efd8a94c6f53f984f69030377df180e7dcc132f76160339d768621",
+      "finite": true,
+      "unit": "intensity",
+      "description": "Public scripting fixed_cell_background array"
+    },
+    "fixed_cell_weight": {
+      "dtype": "float64",
+      "shape": [
+        24001
+      ],
+      "sha256": "120f3a4106efd8a94c6f53f984f69030377df180e7dcc132f76160339d768621",
+      "finite": true,
+      "unit": "inverse_intensity_squared",
+      "description": "Public scripting fixed_cell_weight array"
+    },
+    "fixed_cell_initial_reflections": {
+      "dtype": "float64",
+      "shape": [
+        53,
+        15
+      ],
+      "sha256": "fb258ebe96ccf7c875b1e6c1ae30a3ea11bb0b120105172f7a63dfe8efedeedf",
+      "finite": true,
+      "unit": "mixed_by_column",
+      "description": "Public scripting fixed_cell_initial_reflections array"
+    },
+    "fixed_cell_reflections": {
+      "dtype": "float64",
+      "shape": [
+        53,
+        15
+      ],
+      "sha256": "75da6a17e818d712285ec47d6bce8bc40fd574bd825e6c18347cf8e33d94bdf8",
+      "finite": true,
+      "unit": "mixed_by_column",
+      "description": "Public scripting fixed_cell_reflections array"
+    },
+    "fixed_cell_cell": {
+      "dtype": "float64",
+      "shape": [
+        6
+      ],
+      "sha256": "b2ff8bf24de1219096606d6f3dc7610f123f9a9abddfcc531616a542f5c581cc",
+      "finite": true,
+      "unit": "angstrom_lengths_degree_angles",
+      "description": "Public scripting fixed_cell_cell array"
+    },
+    "refined_cell_x_deg": {
+      "dtype": "float64",
+      "shape": [
+        24001
+      ],
+      "sha256": "14fc90f5b3eea0f705ed1b3269556a7dd69bbdd7fab67a5821affe0b6cf0c29a",
+      "finite": true,
+      "unit": "degree_2theta",
+      "description": "Public scripting refined_cell_x_deg array"
+    },
+    "refined_cell_observed_y": {
+      "dtype": "float64",
+      "shape": [
+        24001
+      ],
+      "sha256": "4064b584a9aaf3a7bcb5b5f88ace65fd44aa538ed9206967a010f1a5be4b5256",
+      "finite": true,
+      "unit": "intensity",
+      "description": "Public scripting refined_cell_observed_y array"
+    },
+    "refined_cell_ycalc": {
+      "dtype": "float64",
+      "shape": [
+        24001
+      ],
+      "sha256": "17e4fdca564710ea24681e1c9bf849539f3cdeb4d758b1827d86315fb23dbe65",
+      "finite": true,
+      "unit": "intensity",
+      "description": "Public scripting refined_cell_ycalc array"
+    },
+    "refined_cell_background": {
+      "dtype": "float64",
+      "shape": [
+        24001
+      ],
+      "sha256": "120f3a4106efd8a94c6f53f984f69030377df180e7dcc132f76160339d768621",
+      "finite": true,
+      "unit": "intensity",
+      "description": "Public scripting refined_cell_background array"
+    },
+    "refined_cell_weight": {
+      "dtype": "float64",
+      "shape": [
+        24001
+      ],
+      "sha256": "120f3a4106efd8a94c6f53f984f69030377df180e7dcc132f76160339d768621",
+      "finite": true,
+      "unit": "inverse_intensity_squared",
+      "description": "Public scripting refined_cell_weight array"
+    },
+    "refined_cell_initial_reflections": {
+      "dtype": "float64",
+      "shape": [
+        53,
+        15
+      ],
+      "sha256": "f2c3baf579262aa631fea2ceea2c7a138b50d5f9e5e801bd608bac9f9b75d73c",
+      "finite": true,
+      "unit": "mixed_by_column",
+      "description": "Public scripting refined_cell_initial_reflections array"
+    },
+    "refined_cell_reflections": {
+      "dtype": "float64",
+      "shape": [
+        53,
+        15
+      ],
+      "sha256": "479692fc470263c362f87042d9515dae4b3818605034e9832ad13a83b3394db7",
+      "finite": true,
+      "unit": "mixed_by_column",
+      "description": "Public scripting refined_cell_reflections array"
+    },
+    "refined_cell_cell": {
+      "dtype": "float64",
+      "shape": [
+        6
+      ],
+      "sha256": "928448b6f78f605a635993ada705b9c04c75a50ca49b2490026c466338011f13",
+      "finite": true,
+      "unit": "angstrom_lengths_degree_angles",
+      "description": "Public scripting refined_cell_cell array"
+    }
+  },
+  "cases": [
+    {
+      "id": "fixed_cell",
+      "case_kind": "histogram",
+      "arrays": {
+        "x_deg": "fixed_cell_x_deg",
+        "observed_y": "fixed_cell_observed_y",
+        "ycalc": "fixed_cell_ycalc",
+        "background": "fixed_cell_background",
+        "weight": "fixed_cell_weight",
+        "initial_reflections": "fixed_cell_initial_reflections",
+        "reflections": "fixed_cell_reflections",
+        "cell": "fixed_cell_cell"
+      },
+      "parameters": {
+        "method": "Pawley",
+        "instrument": {
+          "wavelength_angstrom": 1.54056,
+          "u_gsas_centideg2": 2.0,
+          "v_gsas_centideg2": -1.0,
+          "w_gsas_centideg2": 1.2,
+          "x_gsas_centideg": 0.15,
+          "y_gsas_centideg": 0.3
+        },
+        "range_deg": [
+          20.0,
+          65.0
+        ],
+        "formal_sh_over_l": 0.0,
+        "pinned_minimum_sh_over_l": 0.002,
+        "reflection_columns": [
+          "h",
+          "k",
+          "l",
+          "multiplicity",
+          "d_spacing_angstrom",
+          "position_deg",
+          "sigma2_centideg2",
+          "gamma_centideg",
+          "f_obs2",
+          "f_calc2",
+          "phase_deg",
+          "intensity_correction",
+          "preferred_orientation",
+          "transmission",
+          "extinction"
+        ],
+        "cell": [
+          3.7,
+          4.2,
+          5.1,
+          87.0,
+          95.0,
+          102.0
+        ],
+        "starting_cell": [
+          3.7,
+          4.2,
+          5.1,
+          87.0,
+          95.0,
+          102.0
+        ],
+        "initial_f_squared_fraction": 0.5,
+        "signed_f_squared": true,
+        "gsasii_residuals": {
+          "R": 1.9969918420065003e-17,
+          "wR": 6.853239228080239e-16,
+          "wRmin": 97.60334780545213,
+          "Rb": 2.8467441650651044e-16,
+          "0:0:Rf^2": 5.133879721309281e-07,
+          "0:0:Nref": 53.0,
+          "0:0:sumInt": 86.43891691423157,
+          "wRb": 2.1666113753093736e-15,
+          "0:0:Rf": 1.9693584212012274e-07
+        }
+      }
+    },
+    {
+      "id": "refined_cell",
+      "case_kind": "histogram",
+      "arrays": {
+        "x_deg": "refined_cell_x_deg",
+        "observed_y": "refined_cell_observed_y",
+        "ycalc": "refined_cell_ycalc",
+        "background": "refined_cell_background",
+        "weight": "refined_cell_weight",
+        "initial_reflections": "refined_cell_initial_reflections",
+        "reflections": "refined_cell_reflections",
+        "cell": "refined_cell_cell"
+      },
+      "parameters": {
+        "method": "Pawley",
+        "instrument": {
+          "wavelength_angstrom": 1.54056,
+          "u_gsas_centideg2": 2.0,
+          "v_gsas_centideg2": -1.0,
+          "w_gsas_centideg2": 1.2,
+          "x_gsas_centideg": 0.15,
+          "y_gsas_centideg": 0.3
+        },
+        "range_deg": [
+          20.0,
+          65.0
+        ],
+        "formal_sh_over_l": 0.0,
+        "pinned_minimum_sh_over_l": 0.002,
+        "reflection_columns": [
+          "h",
+          "k",
+          "l",
+          "multiplicity",
+          "d_spacing_angstrom",
+          "position_deg",
+          "sigma2_centideg2",
+          "gamma_centideg",
+          "f_obs2",
+          "f_calc2",
+          "phase_deg",
+          "intensity_correction",
+          "preferred_orientation",
+          "transmission",
+          "extinction"
+        ],
+        "cell": [
+          3.7,
+          4.2,
+          5.1,
+          87.0,
+          95.0,
+          102.0
+        ],
+        "starting_cell": [
+          3.7005,
+          4.1995,
+          5.1005,
+          87.001,
+          94.999,
+          102.001
+        ],
+        "initial_f_squared_fraction": 0.5,
+        "signed_f_squared": true,
+        "gsasii_residuals": {
+          "R": 8.774102165778215e-05,
+          "wR": 0.000792177415135176,
+          "wRmin": 97.60334780545213,
+          "Rb": 0.0010549946018872387,
+          "0:0:Rf^2": 0.0008602173069341353,
+          "0:0:Nref": 53.0,
+          "0:0:sumInt": 86.4388608139665,
+          "wRb": 0.0023631104014780755,
+          "0:0:Rf": 0.00017419397463328681
+        }
+      }
+    }
+  ]
+}
