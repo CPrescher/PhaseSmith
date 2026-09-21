@@ -12,16 +12,17 @@ from time import perf_counter
 
 import numpy as np
 
-from phasesmith import UnitCell, _core, smooth_bruckner, space_group_by_number
+from phasesmith import UnitCell, _core, smooth_bruckner
 from phasesmith.io import read_gsas_tof_instrument, read_tof_powder_data
+from phasesmith.io.space_groups import space_group_by_number
 from phasesmith.pattern import TofPowderPattern
 from phasesmith.refinement import (
     LatticeParameterBounds,
     LatticeParameterization,
-    TofSharedLatticePhase,
 )
 from phasesmith.refinement.core import Bounds, ParameterSet
 from phasesmith.refinement.pawley import PawleyOptions, parameter_key
+from phasesmith.refinement.tof_multibank import TofSharedLatticePhase
 from phasesmith.refinement.tof_pawley import (
     TofPawleyBackground,
     TofPawleyBank,

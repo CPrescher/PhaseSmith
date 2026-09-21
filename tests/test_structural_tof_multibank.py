@@ -10,11 +10,15 @@ import numpy as np
 import phasesmith
 import pytest
 from phasesmith.io import PowderReadLimits
+from phasesmith.io.space_groups import space_group_by_number
 from phasesmith.refinement import (
     Bounds,
     LatticeParameterBounds,
     LatticeParameterization,
     RefinementLimits,
+)
+from phasesmith.refinement.tof_multibank import TofInstrumentParameterBound
+from phasesmith.refinement.tof_structural import (
     StructuralTofBank,
     StructuralTofCancellation,
     StructuralTofMultiBankInput,
@@ -23,7 +27,6 @@ from phasesmith.refinement import (
     StructuralTofRequestProvenance,
     StructuralTofSelection,
     StructuralTofSourceDigest,
-    TofInstrumentParameterBound,
     refine_structural_tof_multibank,
 )
 
@@ -453,7 +456,7 @@ def test_python_structural_tof_checkpoint_resumes_exactly() -> None:
 
 
 def test_python_structural_tof_recovers_one_shared_cubic_cell() -> None:
-    group = phasesmith.space_group_by_number(221).space_group
+    group = space_group_by_number(221).space_group
     initial_cell = phasesmith.UnitCell(3.98, 3.98, 3.98, 90.0, 90.0, 90.0)
     truth_cell = phasesmith.UnitCell(4.0, 4.0, 4.0, 90.0, 90.0, 90.0)
     structure = phasesmith.CrystalStructure(

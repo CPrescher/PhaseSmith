@@ -251,7 +251,7 @@ d-spacing derivative are reusable across detector banks.
 The public Python path keeps the same unit boundary:
 
 ```python
-from phasesmith.refinement import TofLeBailInput, refine_tof_lebail
+from phasesmith.refinement.tof_lebail import TofLeBailInput, refine_tof_lebail
 
 request = TofLeBailInput.from_files(
     "PG3_17541.gsa",

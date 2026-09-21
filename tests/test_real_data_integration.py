@@ -5,9 +5,9 @@ from pathlib import Path
 
 import phasesmith
 import pytest
-from phasesmith.io import convert_rowles_topas_bundle
-from phasesmith.refinement import (
-    RefinementLimits,
+from phasesmith.io.topas import convert_rowles_topas_bundle
+from phasesmith.refinement import RefinementLimits
+from phasesmith.refinement.tof_structural import (
     StructuralTofMultiBankInput,
     StructuralTofRefinementOptions,
     refine_structural_tof_multibank,

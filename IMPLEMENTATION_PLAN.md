@@ -1656,17 +1656,19 @@ targets and introspectable signatures. Release metadata requires the snapshot
 whose version matches the Cargo/Python version, while the live-package test
 reports an exact unified diff for additions, removals, aliases, kinds, or
 signature changes. Existing versioned snapshots are never silently
-overwritten. The next release milestone is intentional 0.x cleanup reviewed
-against this baseline, followed by the 1.0 release candidate gates.
+overwritten. The intentional 0.6 cleanup has now been reviewed against this
+baseline. The next release milestone is the combined 0.7.0 candidate. The 0.6 API
+snapshot remains immutable; its warning-backed aliases remain available until
+1.0. See `docs/release-candidate-0.7.md` for scope and validation.
 
-## Definition of the next completed milestone
+## Recent completed milestones and next release gates
 
 Repository consolidation and Pawley integration are complete. Original histories
 and working files remain preserved remotely. The Intel dense-solver boundary
 failure and installed validation CLI paths are repaired; unchanged scientific
 gates, both Python architectures, Rust checks and the distribution matrix pass.
-Feasible-width research remains experimental, and main's separate API cleanup
-still requires its own reconciliation. See `docs/pawley-repair-20260921.md` and
+Main's 0.6 API cleanup and bounded download retries are now reconciled with
+develop for the 0.7.0 candidate. Feasible-width research remains experimental. See `docs/pawley-repair-20260921.md` and
 `docs/repository-consolidation.md` for evidence and the existing scientific limits.
 
 The second refinement performance pass implements ordered four-sample FCJ
@@ -1700,19 +1702,16 @@ refinement and multi-peak kernel timings serve as supporting diagnostics.
 
 ### Independent workflow: CW Pawley refinement
 
-The dependency-ordered plan in `docs/pawley-plan.md` defines P1–P5 as the first
-complete CW milestone: independent reference and conventions, fixed-geometry
-bounded intensity extraction, joint analytical cell/profile refinement and
-runtime, public native/Python APIs and persistence, then scientific/performance
-and documentation gates. Fixed CW spectra (P6) and TOF (P7) follow separately.
-The CW implementation now includes the native objective/solver, independent
-NumPy reference, constraints, diagnostics, runtime checkpoints, public Python
-facade and standalone native JSON persistence. See `docs/pawley-validation.md`
-for test and measured-data evidence. The neutron measured gate passes; sucrose
-meets quality gates but stops at its time budget, leaving the full P5 large-data
-release gate open. Dense memory limits are explicit;
-matrix-free solving, mixed-method bundles and live GSAS-II optimizer comparison
-remain outstanding. Existing automation stays Rietveld-only.
+The P1–P7 workflow implementation in `docs/pawley-plan.md` is complete:
+CW, fixed detected-area spectra and single-/multi-bank TOF now include bounded
+areas, analytical selected cell/profile/background chains, dense and matrix-free
+solvers, accepted-state restart and lossless native format-7 mixed bundles.
+The unchanged measured sucrose, Echidna and TOF gates pass. A pinned live
+GSAS-II comparison is available; strict profile equivalence remains false and
+its diagnosed FCJ quadrature/support limits remain explicit. Matrix-free mode
+does not provide global rank/covariance, and automation remains Rietveld-only.
+See `docs/pawley-validation.md` and `docs/pawley-repair-20260921.md` for final
+evidence; earlier dense-budget failures are historical records.
 
 ### Unit 39: constrained automation and AI recipe guidance (0.5.0)
 
@@ -1777,6 +1776,46 @@ raw inspectors, structured lint/review output, digest-linked accepted-state
 replanning, structured CLI errors, and actual persisted-checkpoint
 continuation. No numerical equation, production hot loop, or GSAS-II boundary
 changes in this unit.
+
+### Unit 40: intentional pre-1.0 Python API cleanup (0.6.0)
+
+This milestone is complete. The 0.5 exported-name/signature snapshot was used
+as the review baseline. The cleanup makes three ownership rules observable:
+
+1. The top-level namespace remains a notebook convenience for domain models,
+   calculations, and mathematical primitives; automation, I/O adapters,
+   readiness review, and reporting use their named modules.
+2. `phasesmith.refinement` exports shared refinement infrastructure and named
+   method modules. Le Bail, Rietveld, workflow, and TOF records and entry
+   points are imported from the module that owns their contract, eliminating
+   the ambiguous aggregate `refine` name.
+3. `phasesmith.io` exports general CIF, powder, space-group, and TOF-instrument
+   adapters. Dataset-specific converters remain available from their named
+   submodules rather than appearing to be general file-format contracts.
+
+Moved 0.5 spellings are absent from the 0.6 `__all__` lists and snapshot but
+remain explicit warning-backed aliases for this release. They are scheduled
+for removal at 1.0. The migration table, new immutable snapshot, release
+metadata, source and fresh-package gates form the exit evidence. No numerical
+behavior or persistence schema changes in this unit.
+
+The immediate release gate is the combined 0.7.0 candidate described in
+`docs/release-candidate-0.7.md`. Removing compatibility aliases and freezing
+the stable module-qualified contract remain a separate future 1.0 decision.
+
+### Deferred post-1.0 target: automatic measured-pattern peak picking
+
+After API stabilization, add a public deterministic detector for candidate
+peaks in measured one-dimensional powder patterns. Its contract must state
+preprocessing, thresholds, minimum separation, boundary behavior, uncertainty
+or prominence diagnostics, ordering, and repeatability, and it must be tested
+on synthetic edge cases plus representative measured patterns.
+
+This target does not generate reflections from a known structure, assign HKLs,
+or identify phases from a database. Reflection generation, HKL indexing, and
+database phase identification retain separate APIs and validation claims. The
+existing private opXRD validation helper is not to be exposed as-is; it may
+inform test-case discovery only after its provenance and behavior are reviewed.
 
 Implementation units 0 through 24 are complete, including the Python-free
 Rietveld/Le Bail workflows, persistence and application boundaries, joint

@@ -14,6 +14,7 @@ from phasesmith.refinement import (
 )
 from phasesmith.refinement import rietveld as rv
 from phasesmith.refinement.workflow import _stage_input
+from phasesmith.reporting import rietveld_result_record
 from test_rietveld_refinement import P1_CIF, component_experiment, experiment, selection
 
 
@@ -154,8 +155,7 @@ def test_refinement_and_resume_preserve_convention(python_path):
     assert _strain(complete.phases[0]).rms_microstrain == 2e-4
     assert complete.metrics.rwp < 1e-7
     assert (
-        ps.rietveld_result_record(complete)["empirical_gaussian"]
-        == new.empirical_gaussian.to_record()
+        rietveld_result_record(complete)["empirical_gaussian"] == new.empirical_gaussian.to_record()
     )
     with pytest.raises(ValueError, match="convention changed"):
         rv.refine(old, options, checkpoint=partial.checkpoint)

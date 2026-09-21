@@ -11,8 +11,8 @@ repository.workspace = true
 readme.workspace = true
 
 [dependencies]
-phasesmith-core = { version = "0.5.0", path = "../phasesmith-core" }
-phasesmith-engine = { version = "0.5.0", path = "../phasesmith-engine" }
+phasesmith-core = { version = "0.7.0", path = "../phasesmith-core" }
+phasesmith-engine = { version = "0.7.0", path = "../phasesmith-engine" }
 
 [lints]
 workspace = true

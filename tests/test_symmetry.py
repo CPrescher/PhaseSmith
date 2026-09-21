@@ -5,6 +5,7 @@ from dataclasses import replace
 import numpy as np
 import phasesmith
 import pytest
+from phasesmith.io.space_groups import space_group_by_number
 from phasesmith.symmetry_reference import (
     reference_conventional_hkl,
     reference_expand_sites,
@@ -143,7 +144,7 @@ def test_reflection_family_topology_matches_independent_reference() -> None:
 
 
 def test_fcc_conventional_hkl_uses_powder_display_convention() -> None:
-    group = phasesmith.space_group_by_number(225).space_group
+    group = space_group_by_number(225).space_group
     generator = phasesmith.PreparedReflectionGenerator(group)
     generated = generator.generate(
         phasesmith.UnitCell(4.078, 4.078, 4.078, 90.0, 90.0, 90.0),
