@@ -18,6 +18,8 @@ from typing import Any
 import numpy as np
 from numpy.typing import NDArray
 
+from phasesmith._numpy_compat import trapezoid
+
 from ..background import SmoothBrucknerBackground
 from ..extensions import CompositePhysicsProvider
 from ..instrument import ConstantWavelengthInstrument
@@ -421,19 +423,17 @@ def _peak_metrics(
         calculated = profile_y[selected]
         if x.size < 5:
             raise ValueError("ceria peak metric window contains too few samples")
-        observed_area = float(np.trapezoid(observed, x))
-        calculated_area = float(np.trapezoid(calculated, x))
+        observed_area = float(trapezoid(observed, x))
+        calculated_area = float(trapezoid(calculated, x))
         if observed_area <= 0.0 or calculated_area <= 0.0:
             raise ValueError("ceria peak metric requires positive observed/calculated area")
-        observed_centroid = float(np.trapezoid(x * observed, x) / observed_area)
-        calculated_centroid = float(np.trapezoid(x * calculated, x) / calculated_area)
+        observed_centroid = float(trapezoid(x * observed, x) / observed_area)
+        calculated_centroid = float(trapezoid(x * calculated, x) / calculated_area)
         observed_rms = float(
-            np.sqrt(np.trapezoid(np.square(x - observed_centroid) * observed, x) / observed_area)
+            np.sqrt(trapezoid(np.square(x - observed_centroid) * observed, x) / observed_area)
         )
         calculated_rms = float(
-            np.sqrt(
-                np.trapezoid(np.square(x - calculated_centroid) * calculated, x) / calculated_area
-            )
+            np.sqrt(trapezoid(np.square(x - calculated_centroid) * calculated, x) / calculated_area)
         )
         metrics.append(
             CeriaPeakMetric(
@@ -450,7 +450,7 @@ def _peak_metrics(
                 observed_rms_width_deg=observed_rms,
                 calculated_rms_width_deg=calculated_rms,
                 rms_width_error_deg=calculated_rms - observed_rms,
-                normalized_l1=float(np.trapezoid(np.abs(observed - calculated), x) / observed_area),
+                normalized_l1=float(trapezoid(np.abs(observed - calculated), x) / observed_area),
             )
         )
     return tuple(metrics)

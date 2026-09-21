@@ -3,6 +3,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 from phasesmith import reference
+from phasesmith._numpy_compat import trapezoid
 
 
 def arguments() -> tuple[float, float, float, float, float]:
@@ -135,9 +136,9 @@ def test_normalization_centroid_shift_and_skew_reverse_above_ninety() -> None:
         profile = reference.profile_fcj(
             x, position, 0.05, 0.0, 0.02, 0.01, quadrature_order=64
         ).value
-        area = np.trapezoid(profile, x)
-        centroid = np.trapezoid(x * profile, x) / area
-        third_moment = np.trapezoid((x - centroid) ** 3 * profile, x) / area
+        area = trapezoid(profile, x)
+        centroid = trapezoid(x * profile, x) / area
+        third_moment = trapezoid((x - centroid) ** 3 * profile, x) / area
         results.append((area, centroid - position, third_moment))
 
     for area, _shift, _third_moment in results:

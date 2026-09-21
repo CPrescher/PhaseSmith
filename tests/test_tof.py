@@ -6,6 +6,7 @@ import numpy as np
 import phasesmith
 import pytest
 from phasesmith import reference
+from phasesmith._numpy_compat import trapezoid
 
 
 def instrument() -> phasesmith.TofInstrument:
@@ -129,13 +130,13 @@ def test_normalization_centroid_and_asymmetry_moments() -> None:
     tail_log = 20.0
     x = np.linspace(-300.0, 800.0, 44_001)
     y = phasesmith.profile_tof(x, 0.0, alpha, beta, 10.0, 0.0, tail_log=tail_log).value
-    area = np.trapezoid(y, x)
-    centroid = np.trapezoid(x * y, x) / area
+    area = trapezoid(y, x)
+    centroid = trapezoid(x * y, x) / area
     exponential_mean = (1.0 - (tail_log + 1.0) * np.exp(-tail_log)) / (1.0 - np.exp(-tail_log))
     left_fraction = beta / (alpha + beta)
     right_fraction = alpha / (alpha + beta)
     expected_centroid = exponential_mean * (-left_fraction / alpha + right_fraction / beta)
-    third_moment = np.trapezoid((x - centroid) ** 3 * y, x) / area
+    third_moment = trapezoid((x - centroid) ** 3 * y, x) / area
 
     assert area == pytest.approx(1.0, rel=2e-5)
     assert centroid == pytest.approx(expected_centroid, abs=3e-4)
