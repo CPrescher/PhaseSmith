@@ -1,8 +1,8 @@
 # Repository consolidation and package reliability plan
 
-Prepared 2026-09-21. This is a proposed execution sequence; none of its
-preservation, integration, solver repair, or publication steps are completed
-by writing this document.
+Prepared 2026-09-21. The original execution sequence is retained below.
+Completed work, validation and remaining boundaries are recorded in the
+[consolidation report](repository-consolidation.md).
 
 ## Objective and current evidence
 

@@ -1,0 +1,1886 @@
+{
+  "schema": "phasesmith.refinement-assessment-results.v1",
+  "protocol": {
+    "schema": "phasesmith.refinement-assessment.v1",
+    "purpose": "Consolidate bounded production-workflow evidence before further solver development.",
+    "policy": {
+      "recipes": "Existing validation recipes, unchanged; full default profiles; feasible_width_steps disabled.",
+      "budgets": "Existing per-stage iteration/evaluation/rejection budgets; no additional polish or retries after a failed gate.",
+      "workers": "Native validation defaults; Rowles explicitly one worker; same settings in both builds.",
+      "acceptance": "Preserve each case's existing scientific gates. Record termination independently; passing a bounded recipe is not full convergence.",
+      "freshness": "Rowles, Echidna and nickel are transfer checks not used in this QARR optimization campaign. All are previously registered project data, not pristine project-wide holdouts.",
+      "timing": "One discarded warmup and two measurements per build/case, alternating build order in persistent subprocesses; no concurrent campaign fits.",
+      "promotion": "No promotion based only on lower Rwp or test counts. Require physical validity, relevant scientific accuracy, transparent stops, repeatability and acceptable bounded-workflow cost across the panel.",
+      "stop_rule": "Complete this panel once without retuning. Keep failures and unavailable diagnostics. Park feasible-width development pending a reproducible practical failure or broader benefit."
+    },
+    "cases": [
+      {
+        "id": "iucr-qarr-1g",
+        "dataset": "iucr-qarr-1g",
+        "role": "development regression"
+      },
+      {
+        "id": "iucr-qarr-1h",
+        "dataset": "iucr-qarr-1h",
+        "role": "known failing bounded recipe; no longer an untouched holdout"
+      },
+      {
+        "id": "gsasii-pbso4-cw-x-ray",
+        "dataset": "gsasii-pbso4-cw",
+        "role": "structural CW regression"
+      },
+      {
+        "id": "gsasii-pbso4-cw-neutron",
+        "dataset": "gsasii-pbso4-cw",
+        "role": "structural neutron regression"
+      },
+      {
+        "id": "rowles-1a",
+        "dataset": "curtin-rowles-qpa-topas",
+        "role": "QPA transfer",
+        "limits": {
+          "poisson_rwp": 0.095,
+          "maximum_weight_fraction_error": 0.01,
+          "profile_correlation_min": 0.995
+        }
+      },
+      {
+        "id": "rowles-1e",
+        "dataset": "curtin-rowles-qpa-topas",
+        "role": "QPA transfer",
+        "limits": {
+          "poisson_rwp": 0.09,
+          "maximum_weight_fraction_error": 0.03,
+          "profile_correlation_min": 0.995
+        }
+      },
+      {
+        "id": "ansto-echidna-lab6-cw-neutron",
+        "dataset": "ansto-echidna-lab6-cw-neutron",
+        "role": "CW neutron smoke coverage; not general structural accuracy"
+      },
+      {
+        "id": "lanl-nickel-tof",
+        "dataset": "lanl-nickel-tof",
+        "role": "TOF transfer/control; unaffected solver family"
+      }
+    ]
+  },
+  "protocol_sha256": "6872a1fddf1c8489139f85747777e82d508a42dbbd23856bd2d0cb152f4c455b",
+  "driver_sha256": "b1498756800ec46d3078882ccc0805a751a05c6d131f54ca4673943e50b51bf2",
+  "environment": {
+    "python": "3.13.5",
+    "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O"
+  },
+  "source_revision": "7a7d27925890c6b2c21b7cbf89d2040f854057f2",
+  "working_tree_patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "datasets": {
+    "validation/data/ansto-echidna-lab6-cw-neutron/ECH0034258_LaB6.cif": "0fa02945683ea39d56dfb81d0f99de629e4e336abab85c6d92b3689b42d130d1",
+    "validation/data/ansto-echidna-lab6-cw-neutron/ECH0034258_LaB6.xyd": "09950aaf3596518a40b2c5173ffdfd870043f55dcd3390fb83dc9f64e348e115",
+    "validation/data/curtin-rowles-qpa-topas/1a_1000000_0-010_n001.xy": "04643a24457bdefadb44b3432c569d353c49e777d1b3089e42b91a23db7c8a84",
+    "validation/data/curtin-rowles-qpa-topas/1e_1000000_0-010_n001.xy": "d12cf03415965666eabed014f4519360a9dd8a806b2d5ff09a0a31f36d0a2487",
+    "validation/data/curtin-rowles-qpa-topas/robustness2_1a_4.INP": "87d00f688194d0b498687cc7030425f20dff3841b9bb87028c4a890f0d107d9f",
+    "validation/data/curtin-rowles-qpa-topas/robustness2_1e_4.INP": "85f5e899ca527d3407296eed2bcb8e891e3fe4ce02c43de4afaddb5720495b1c",
+    "validation/data/curtin-rowles-qpa-topas/row119.inc": "f1b13d60c6b73b3139c984e99ba50c2880a0dea5e1d2ce1e81873da56c9c2bd3",
+    "validation/data/gsasii-pbso4-cw/INST_XRY.PRM": "e59413059bc3b12a51f1c6eebc5d581470320d05a31f11a41dbb32e16d1d16b9",
+    "validation/data/gsasii-pbso4-cw/PBSO4.CWN": "59462ba6d7c72c9800b0b6bf41903f9933ed5ac5adab101d27022d5d25cf18ba",
+    "validation/data/gsasii-pbso4-cw/PBSO4.XRA": "ca2da02fc7e17d2fc912de22a979f8101ba6140f2e8104f9d3aa64f030ca58bb",
+    "validation/data/gsasii-pbso4-cw/PbSO4-Wyckoff.cif": "9bc19d0995561afd78a5f0563599c032751621da994e36c7570b4f515d9f0e2f",
+    "validation/data/gsasii-pbso4-cw/inst_d1a.prm": "a1031174a9b509f889377752f5c095a1dad49a25fb0a72c057f184f7b321fcea",
+    "validation/data/iucr-qarr-1g/Al2O3.cif": "bc8b07c4e27fdb9df562c7b72d181a05394df20274a56b7e1ef50f6ec2c85709",
+    "validation/data/iucr-qarr-1g/CaF2.cif": "b55fd04a3e344f73d4ece983da412056d04874b8ada7dfd4ecb93118e7905cd9",
+    "validation/data/iucr-qarr-1g/ZnO.cif": "021db20c9bdabcfd63bc794367fae3536197425ca5826d63541b2417e47d3c1a",
+    "validation/data/iucr-qarr-1g/cpd-1g.prn": "afd16d03c8742abf315ab5f94585a6e540ab5c2e2c6df6917ac8dbf6be69d990",
+    "validation/data/iucr-qarr-1g/cuka.instprm": "aef315a10622fdb1afae5b264d43e7f9dcc053aba80aa3d9fa05067146922a08",
+    "validation/data/iucr-qarr-1h/Al2O3.cif": "bc8b07c4e27fdb9df562c7b72d181a05394df20274a56b7e1ef50f6ec2c85709",
+    "validation/data/iucr-qarr-1h/CaF2.cif": "b55fd04a3e344f73d4ece983da412056d04874b8ada7dfd4ecb93118e7905cd9",
+    "validation/data/iucr-qarr-1h/ZnO.cif": "021db20c9bdabcfd63bc794367fae3536197425ca5826d63541b2417e47d3c1a",
+    "validation/data/iucr-qarr-1h/cpd-1h.prn": "0c36af18d7a341f03f4d8f24972608791351c45c951c431dd93fb54eb8e56da3",
+    "validation/data/iucr-qarr-1h/cuka.instprm": "aef315a10622fdb1afae5b264d43e7f9dcc053aba80aa3d9fa05067146922a08",
+    "validation/data/lanl-nickel-tof/inst_tof.prm": "9a4f06cb560c8b7f783fd0773b37814dae1d705042087e66f8cd2be719477038",
+    "validation/data/lanl-nickel-tof/nickel.raw": "bfe2afd6843a11dc1935cbbdb3ca05962c3242b9ddc60baa6a4ff6a48491c3e7"
+  },
+  "builds": {
+    "baseline": {
+      "native_sha256": "286ad235a891aeb8752e23d46f51681245de4f43bb4add78743940c3f506ad4a",
+      "package": "/Users/clemens/PhaseSmith-preservation/20260921-consolidation/baseline-package/phasesmith",
+      "sources": {
+        "__init__.py": "f8b2ab75a3e16117b5d72872ae9ba41c0e0b0ad354d4eae2146ca1e265615453",
+        "_api.py": "286090bba9c0ec9727ab0e98d281f55793407f7a4d39f204051c32536aecf86d",
+        "_native_persistence.py": "a6ef91ce20a31d9249768f5b9de9cd3435e1438ad5b6a9ec8cc6b0faff3117fb",
+        "accuracy.py": "d1df0c46e7e73d57173639cdb64303d116e3680973bf022040d21f47bdcca404",
+        "automation.py": "d1168f8e97cdf2219b537c63c3b619a88f342495386354303a92f03a84371346",
+        "background.py": "8e32ef5a36b86531a46f20345cf82d756751046aacec8f88efe1d55c43ccc5fc",
+        "background_reference.py": "dda9a6464b2ac07166c5546622caa5b3c9c38dc8a4198dd5d51071c12753edca",
+        "calculation.py": "74c7ef9431764ad3938aaa39f4ed1454f0f646816b6a5a8ccfd5e7780d471179",
+        "cli.py": "83271fc90a4338ffd0548be6a124de8bc18bb2a6a2b39b4d131d4972e4459790",
+        "control.py": "d661aa4b58ecc6aa675bf2021ea8f66d641e5b9f3605144e763cc81d2df45f48",
+        "crystallography.py": "3bed1ebaa2049dcae69a6c46160a7c266f8b1f40037e4b3ea52d35a9d22c7521",
+        "crystallography_reference.py": "126f7b4bdd405868f87072970f18b234b6e35feb4560e899159bdf76d1c80369",
+        "cw.py": "3c4925cb5035fa10a36abda473d7c3d53cedcfc9ab71970f02e0b4a6731881f9",
+        "empirical.py": "3c813f5b5d14fc52926a563d8d1d429facfb2414f4bd33572086c836045489c3",
+        "execution.py": "2835fd457971c3f3f19efe0d2749cb75eb72eb24f2b8304b70b53dddbac14984",
+        "extensions.py": "1170c3eaf1de113ce982ac293ce225ddbb5e8cf34ce2c4ee25e773d1f3b5542e",
+        "fcj.py": "7650aba3336b115ca0f2628d9e0ee09290c300504e1efaa56ec53324542daf74",
+        "fit_report.py": "94ed87ecf1acd04e62f19618240ebe1f925c32e5bbcf39dbdf678fa50ceb0162",
+        "fit_report_reference.py": "ad9bcd46d9d03c013273e1f4eecb572a624ac8822ed01884fe0aa6bb2517dc40",
+        "fpa_calibration.py": "78f030d1187125c64a910e33f5faa1ecd6a198179db2b9055b6049e4fb363519",
+        "instrument.py": "9ca06bb21935b10e33791db1d2a3938c5780bbef90eaffe318b35d68482067b7",
+        "integrations/__init__.py": "f6cfe23c9716127c2b4d4766cd6fc03dec68287f144b801d717c7c60a5efd6b5",
+        "integrations/dioptas.py": "c936ae005ed4164a7eb7effff3e21a5a6e9d2037cf04d5c3fba083ce08b9b6bd",
+        "intensity_corrections.py": "f95de1b08513fcd0229d4a3f92be6c0d70e7b87bc98d7d9eb51c72e45fec8cea",
+        "io/__init__.py": "5575fc0e12d1d2b96a56eb30b2fa665073b14f52cfd8661e10cd4bbbf444dfaf",
+        "io/_gemmi.py": "3eca3cadf7591b39adeb68cd0ebd639d62da599da82d11d0baabcc5e82925112",
+        "io/bath_ltl.py": "043c3a4ae77c6d5db0c562bb0cdbd24f48a6bcbff1d742e2ee51b24a6ea1ef29",
+        "io/cif.py": "50ba28cf0c312ee12c34b75db1e21c34a71331114ac2ff44310fb4fce8180ca2",
+        "io/iucr_silicon_standard.py": "c26c0db403f860b8378f58dd5a672aec24b74b340bbdc8a1eee8fc725809720b",
+        "io/iucr_sodium_citrate_silicon.py": "1e05cd859a11ff2199dbf98ca44f0e0149c87616f7d906eaa9f9f1d625771706",
+        "io/iucr_tripotassium_citrate_silicon.py": "3cbd1673ccdff3caf2fd3ee0d4158b377cde71295c92ceffeebdedd5a57e325b",
+        "io/iucr_trirubidium_citrate_silicon.py": "79b0865835298c3379ce17ed96a95eb09b6191d361c233e6ba8d874f7e78644e",
+        "io/powder.py": "f845468b539920d8d8e9d0392ad5a00c75ff6863ccb09f635d9e9a63aa95a4c6",
+        "io/space_groups.py": "962c002a3f1b4243359bc6b0d44d0d6176116858e28dfa53d71f65456b2a630f",
+        "io/tof_instrument.py": "5469ff1a1cbfd78ea40d447bbc95138795c1f091ea9f7c27911cf6b82dc11450",
+        "io/topas.py": "c834f2512ed54640f9cf7972cda31c108e5aba99362bbfe3526f4c2b3fefc606",
+        "io/xred.py": "425c0669470ba42500beadb1a801d2f93786c94c82bd0f7e328cfe6b9f7c3c40",
+        "oracle/__init__.py": "f5b2d8708dd309db1f09ff8ffa0bac86f95ecb0dfa519aa436fdb26fd96a1e0a",
+        "oracle/_pinned_probe.py": "4c261327857ec985afc6af043e0bdd31c3ecf277175de62d5be9cad464780b7a",
+        "oracle/conventions.py": "6b5d0e85b794006974a2546172ff1e6a9b3e7fe2a48e85b23e7724bd8e314d0b",
+        "oracle/fixtures.py": "79cb263ead6a9999f61c285cc81bbac9415277cc315787b5b064b355938798c3",
+        "oracle/gsasii.py": "8171afe51fb843b052b079a7483a6135d8465409d9825da9091db7ee58da6839",
+        "pattern.py": "d6d5a27a7b892276b6ea57e467439887a91993b0fb11c5b8fa7ce925db3ce283",
+        "persistence.py": "8c8dca9c3f4678bdd5893ead736db571f40295ca9dfd1ee0406dbc2f2d2073e5",
+        "phase.py": "cc129c4c8f079a59151296c6c9d18349e481b8119e2012bd3091250e8f8232e2",
+        "profile_estimation.py": "c4ebb0d74dcedbe85541796af56e012c6981caca1f3900df1b21c5ec7f655dd6",
+        "project.py": "1b018d07a71091b56cf38fb6d0d1ebbfecc5c9e0c83123c74086af4203563dcb",
+        "quantitative.py": "b18b5ea9b440a18d79e83580200506d52f323ef9106fca4e1b4b0ecf47239b03",
+        "radiation.py": "0713e982ad9927285af25822c1e76a05c50051569060f5cc8231291de332ef2a",
+        "reference.py": "1da866d5a8e3e5e27091ee310ceec9424243e323dff1b966ca8c319499993dcc",
+        "refinement/__init__.py": "22d9d8bc7faa10cee8d53234bc9705c0c89ab60fb00430111006109cb6a75da0",
+        "refinement/background.py": "34facc3323edf9be1089b8d4cf3912dca4eab4eeb46c0ec573b8383c42feaba8",
+        "refinement/core.py": "56857ef27b330ea92218a54727c7e989533c43801ae098d3acaf0bceddb6d6da",
+        "refinement/lattice.py": "ce687dbc9002b7446b4f46555fd6c2f393da98f05c68afae0da8e6af0d56a925",
+        "refinement/lebail.py": "3171dacd4657b46b7c69f27e79ae665319a1da5950bcbb952918777495b45cb1",
+        "refinement/readiness.py": "38aaa2e7b9e954594cc6cdf070d2440ed1017114d7527dde096d855667173d51",
+        "refinement/rietveld.py": "e7a69d4326e634ed68a7844bb33a485402e2ea2564002d193787ca9bcd657be7",
+        "refinement/runtime.py": "62e1243c9ba256844cfc2f41ceaf143a9bc0053f4cf18d616da7cfc533fa39d1",
+        "refinement/scipy.py": "b0bb56fd8ad6fe6c8b3005717cb9b29261c6de2705fecd57ac441c955b735f20",
+        "refinement/tof_lebail.py": "da8304047d1c08a33572112ded0cfac2f2f8187ba23e3c45c6521af22650ace1",
+        "refinement/tof_multibank.py": "02835ad575c7bd26ac7581d1e15afbce8aa6b90761e9b5c1f626757b5f524952",
+        "refinement/tof_structural.py": "2914e66bb5e0aba94706da486dc296da464fe358d6c1706f368c1fa89d4db570",
+        "refinement/workflow.py": "e851a7da28cc3cbc6c755d42b1a4cdd1b9df57940a446fe94774dd23c3e0f4ef",
+        "reporting.py": "e0513392086c2e986c94066cfe4a4f3d2682a954c194ea047b87268634e13b9c",
+        "results.py": "3d1148a52f09973ec6f307e86c6c6bb0f84e1a15ef40a688a8b117283d75195d",
+        "sample.py": "c50dbbf26950b78497ffa38c4587b26d1d5de03554ea12383c5f1f5edae95d3d",
+        "scattering.py": "4a863baffef9b8843e4dc60ec272fc18f6ce485a7aa8cf30a2bbee09e71755fe",
+        "scattering_reference.py": "12b778342a2876fd0528ebb44eda1338efb2ebb3fc6b9b9a3871b91797971d34",
+        "structural_calculation.py": "c206425b64a4d54380eb87c74567a8ea616d3166fe417881a02dcbc3b4e4785a",
+        "structure.py": "568af00b0baf4f54efe63f0851a79e9bcbc4a3903813957d55ef075fd80358a2",
+        "symmetry.py": "db13d9b2b6453f65a449589a3d50c829a3765cbb009a39474def1cec1ab0f7d1",
+        "symmetry_reference.py": "7ea78230cb494c756b8c8906173eb1bd202fa67f3dffe1e80a0c46c5bfe1f87b",
+        "terminal.py": "092b80cc6f6247f870e39cb3f0c5b637317f28362c0391381f95dc2ba992d23d",
+        "tof.py": "88931dc0f6438c0a70dcc25e1bf713445bd5cce2e1422632f450f56b7069953f",
+        "validation/__init__.py": "4dfad91b9c9c8ccbf6f05d998e7e817c704a22c9b3ea927364c8e811927da79a",
+        "validation/_rietveld_parity.py": "1f60baf749db724a631eb9332a360cb97097cdce09c4b7cdff3a887cafa88346",
+        "validation/bath_ltl.py": "718a8f04c18f58992d6d4e4a7640cfa6858116e84675f7812088ba5324111ed9",
+        "validation/ceria_transferability.py": "953cde171e6f85c23ec0ac60b49ff895c33e3220c8b19c5d3a1b867c68d8b611",
+        "validation/citrate_broadening_ablation.py": "ca5c51efdfbeea093c3dd7d314229704d949e8d0b24343de1e0583eb71723fdc",
+        "validation/citrate_source_fidelity.py": "83576b442945887dbf83ad3fd41b620bc1d5b09fc4d353f259b5e71cb67fb0b5",
+        "validation/citrate_stephens_ablation.py": "7cad6b520e6c88f3da3ffb23621ef57d7f7993873c20db0e63d5aced50e1c857",
+        "validation/datasets.py": "b76bc86f160011394ea61f3a3fff7531074b1783142c009fc122b87a980acdab",
+        "validation/iucr_silicon_standard.py": "ad25d9a1476e55d74231ccb140094d9775590b1112363e02497f0ac47990284c",
+        "validation/iucr_sodium_citrate_silicon.py": "2ebd72ae48af3bc9feded72c6befc9ee6c0c24f18708dcc92d33a3aa42b70272",
+        "validation/iucr_tripotassium_citrate_silicon.py": "636f9a30304b35469d0fe476179dd7656b3c67086892890c976029ef140fac62",
+        "validation/iucr_trirubidium_citrate_silicon.py": "4b06e10101459f60ce44226abe3525dd6dfefd6c5460b7c5cc4a0f555fd1626d",
+        "validation/nist_srm660c_parity.py": "6fbc96a8b1c10c6efb2c1af689926b29958b6ee8c8d0fb21b4462c64f6cf4ff9",
+        "validation/opxrd.py": "e9cee5c10bb71f4d2663fe4c3313c9ac0797ed0fac001019710918bdc8eada1e",
+        "validation/qarr_parity.py": "7ed3f31bcd1995fd2cdeb9cc610c762aa25c386e30eca93f8fc7c401e3c29656",
+        "validation/real_data.py": "87781aac939a6be4fe2ad76511947dbb73c90eb76b791b2dba8741e7492addc5",
+        "validation/rowles.py": "2a01ffe8457c1c2e1f93c68afaf08cdfd5164f170280f484bf1e9050b0e1e4e5",
+        "validation/suite.py": "58a6a3ecfe186985ef6bcb4072711ec180ae6d17f26607d3bede0e53446fd828",
+        "validation/xred_tio2.py": "88360fb4247f02b2f5146c078669908d2f820fd5a327ed8cc58d25ebc5bc7a75"
+      }
+    },
+    "candidate": {
+      "native_sha256": "a16dc6b02053f281956bfd44c419c3b4bc233f0e1bada6bf95cef64762d7d2f5",
+      "package": "/private/tmp/phasesmith-skill-a3Oeyp/test-env/lib/python3.13/site-packages/phasesmith",
+      "sources": {
+        "__init__.py": "f8b2ab75a3e16117b5d72872ae9ba41c0e0b0ad354d4eae2146ca1e265615453",
+        "_api.py": "286090bba9c0ec9727ab0e98d281f55793407f7a4d39f204051c32536aecf86d",
+        "_native_persistence.py": "13c7bbac6393985836f5f04a6aa7b330bea90e7e4076613b7a4d6c70902e0f08",
+        "_skill.py": "d9187cac1bbdd593ddb21a7a245e47fb7f97cffd2492d54f0f08650307bc09f0",
+        "accuracy.py": "d1df0c46e7e73d57173639cdb64303d116e3680973bf022040d21f47bdcca404",
+        "automation.py": "d1168f8e97cdf2219b537c63c3b619a88f342495386354303a92f03a84371346",
+        "background.py": "8e32ef5a36b86531a46f20345cf82d756751046aacec8f88efe1d55c43ccc5fc",
+        "background_reference.py": "dda9a6464b2ac07166c5546622caa5b3c9c38dc8a4198dd5d51071c12753edca",
+        "calculation.py": "74c7ef9431764ad3938aaa39f4ed1454f0f646816b6a5a8ccfd5e7780d471179",
+        "cli.py": "b0d2721f46ccada720abb2573ce18768750f6c9c51c7655285bfc955d8762567",
+        "control.py": "d661aa4b58ecc6aa675bf2021ea8f66d641e5b9f3605144e763cc81d2df45f48",
+        "crystallography.py": "3bed1ebaa2049dcae69a6c46160a7c266f8b1f40037e4b3ea52d35a9d22c7521",
+        "crystallography_reference.py": "126f7b4bdd405868f87072970f18b234b6e35feb4560e899159bdf76d1c80369",
+        "cw.py": "3c4925cb5035fa10a36abda473d7c3d53cedcfc9ab71970f02e0b4a6731881f9",
+        "empirical.py": "3c813f5b5d14fc52926a563d8d1d429facfb2414f4bd33572086c836045489c3",
+        "execution.py": "2835fd457971c3f3f19efe0d2749cb75eb72eb24f2b8304b70b53dddbac14984",
+        "extensions.py": "1170c3eaf1de113ce982ac293ce225ddbb5e8cf34ce2c4ee25e773d1f3b5542e",
+        "fcj.py": "7650aba3336b115ca0f2628d9e0ee09290c300504e1efaa56ec53324542daf74",
+        "fit_report.py": "94ed87ecf1acd04e62f19618240ebe1f925c32e5bbcf39dbdf678fa50ceb0162",
+        "fit_report_reference.py": "ad9bcd46d9d03c013273e1f4eecb572a624ac8822ed01884fe0aa6bb2517dc40",
+        "fpa_calibration.py": "78f030d1187125c64a910e33f5faa1ecd6a198179db2b9055b6049e4fb363519",
+        "instrument.py": "9ca06bb21935b10e33791db1d2a3938c5780bbef90eaffe318b35d68482067b7",
+        "integrations/__init__.py": "f6cfe23c9716127c2b4d4766cd6fc03dec68287f144b801d717c7c60a5efd6b5",
+        "integrations/dioptas.py": "c936ae005ed4164a7eb7effff3e21a5a6e9d2037cf04d5c3fba083ce08b9b6bd",
+        "intensity_corrections.py": "f95de1b08513fcd0229d4a3f92be6c0d70e7b87bc98d7d9eb51c72e45fec8cea",
+        "io/__init__.py": "5575fc0e12d1d2b96a56eb30b2fa665073b14f52cfd8661e10cd4bbbf444dfaf",
+        "io/_gemmi.py": "3eca3cadf7591b39adeb68cd0ebd639d62da599da82d11d0baabcc5e82925112",
+        "io/bath_ltl.py": "043c3a4ae77c6d5db0c562bb0cdbd24f48a6bcbff1d742e2ee51b24a6ea1ef29",
+        "io/cif.py": "50ba28cf0c312ee12c34b75db1e21c34a71331114ac2ff44310fb4fce8180ca2",
+        "io/iucr_silicon_standard.py": "c26c0db403f860b8378f58dd5a672aec24b74b340bbdc8a1eee8fc725809720b",
+        "io/iucr_sodium_citrate_silicon.py": "1e05cd859a11ff2199dbf98ca44f0e0149c87616f7d906eaa9f9f1d625771706",
+        "io/iucr_tripotassium_citrate_silicon.py": "3cbd1673ccdff3caf2fd3ee0d4158b377cde71295c92ceffeebdedd5a57e325b",
+        "io/iucr_trirubidium_citrate_silicon.py": "79b0865835298c3379ce17ed96a95eb09b6191d361c233e6ba8d874f7e78644e",
+        "io/powder.py": "f845468b539920d8d8e9d0392ad5a00c75ff6863ccb09f635d9e9a63aa95a4c6",
+        "io/space_groups.py": "962c002a3f1b4243359bc6b0d44d0d6176116858e28dfa53d71f65456b2a630f",
+        "io/tof_instrument.py": "5469ff1a1cbfd78ea40d447bbc95138795c1f091ea9f7c27911cf6b82dc11450",
+        "io/topas.py": "c834f2512ed54640f9cf7972cda31c108e5aba99362bbfe3526f4c2b3fefc606",
+        "io/xred.py": "425c0669470ba42500beadb1a801d2f93786c94c82bd0f7e328cfe6b9f7c3c40",
+        "oracle/__init__.py": "f5b2d8708dd309db1f09ff8ffa0bac86f95ecb0dfa519aa436fdb26fd96a1e0a",
+        "oracle/_pinned_probe.py": "4c261327857ec985afc6af043e0bdd31c3ecf277175de62d5be9cad464780b7a",
+        "oracle/conventions.py": "6b5d0e85b794006974a2546172ff1e6a9b3e7fe2a48e85b23e7724bd8e314d0b",
+        "oracle/fixtures.py": "79cb263ead6a9999f61c285cc81bbac9415277cc315787b5b064b355938798c3",
+        "oracle/gsasii.py": "8171afe51fb843b052b079a7483a6135d8465409d9825da9091db7ee58da6839",
+        "pattern.py": "d6d5a27a7b892276b6ea57e467439887a91993b0fb11c5b8fa7ce925db3ce283",
+        "persistence.py": "8c8dca9c3f4678bdd5893ead736db571f40295ca9dfd1ee0406dbc2f2d2073e5",
+        "phase.py": "cc129c4c8f079a59151296c6c9d18349e481b8119e2012bd3091250e8f8232e2",
+        "profile_estimation.py": "c4ebb0d74dcedbe85541796af56e012c6981caca1f3900df1b21c5ec7f655dd6",
+        "project.py": "1b018d07a71091b56cf38fb6d0d1ebbfecc5c9e0c83123c74086af4203563dcb",
+        "quantitative.py": "b18b5ea9b440a18d79e83580200506d52f323ef9106fca4e1b4b0ecf47239b03",
+        "radiation.py": "0713e982ad9927285af25822c1e76a05c50051569060f5cc8231291de332ef2a",
+        "reference.py": "1da866d5a8e3e5e27091ee310ceec9424243e323dff1b966ca8c319499993dcc",
+        "refinement/__init__.py": "22d9d8bc7faa10cee8d53234bc9705c0c89ab60fb00430111006109cb6a75da0",
+        "refinement/_feasible_step.py": "6d5cd31be99c6de0005a6ba103d27029ee3b9b5192a63d3c035bb9b3da94f4c3",
+        "refinement/background.py": "34facc3323edf9be1089b8d4cf3912dca4eab4eeb46c0ec573b8383c42feaba8",
+        "refinement/core.py": "56857ef27b330ea92218a54727c7e989533c43801ae098d3acaf0bceddb6d6da",
+        "refinement/lattice.py": "ce687dbc9002b7446b4f46555fd6c2f393da98f05c68afae0da8e6af0d56a925",
+        "refinement/lebail.py": "3171dacd4657b46b7c69f27e79ae665319a1da5950bcbb952918777495b45cb1",
+        "refinement/readiness.py": "38aaa2e7b9e954594cc6cdf070d2440ed1017114d7527dde096d855667173d51",
+        "refinement/rietveld.py": "1efd30e63c527fd6c6cb3abe49b2c01cca25c0da367252024591278f0923d498",
+        "refinement/runtime.py": "62e1243c9ba256844cfc2f41ceaf143a9bc0053f4cf18d616da7cfc533fa39d1",
+        "refinement/scipy.py": "b0bb56fd8ad6fe6c8b3005717cb9b29261c6de2705fecd57ac441c955b735f20",
+        "refinement/tof_lebail.py": "da8304047d1c08a33572112ded0cfac2f2f8187ba23e3c45c6521af22650ace1",
+        "refinement/tof_multibank.py": "02835ad575c7bd26ac7581d1e15afbce8aa6b90761e9b5c1f626757b5f524952",
+        "refinement/tof_structural.py": "2914e66bb5e0aba94706da486dc296da464fe358d6c1706f368c1fa89d4db570",
+        "refinement/workflow.py": "e851a7da28cc3cbc6c755d42b1a4cdd1b9df57940a446fe94774dd23c3e0f4ef",
+        "reporting.py": "e0513392086c2e986c94066cfe4a4f3d2682a954c194ea047b87268634e13b9c",
+        "results.py": "3d1148a52f09973ec6f307e86c6c6bb0f84e1a15ef40a688a8b117283d75195d",
+        "sample.py": "c50dbbf26950b78497ffa38c4587b26d1d5de03554ea12383c5f1f5edae95d3d",
+        "scattering.py": "4a863baffef9b8843e4dc60ec272fc18f6ce485a7aa8cf30a2bbee09e71755fe",
+        "scattering_reference.py": "12b778342a2876fd0528ebb44eda1338efb2ebb3fc6b9b9a3871b91797971d34",
+        "structural_calculation.py": "c206425b64a4d54380eb87c74567a8ea616d3166fe417881a02dcbc3b4e4785a",
+        "structure.py": "568af00b0baf4f54efe63f0851a79e9bcbc4a3903813957d55ef075fd80358a2",
+        "symmetry.py": "db13d9b2b6453f65a449589a3d50c829a3765cbb009a39474def1cec1ab0f7d1",
+        "symmetry_reference.py": "7ea78230cb494c756b8c8906173eb1bd202fa67f3dffe1e80a0c46c5bfe1f87b",
+        "terminal.py": "092b80cc6f6247f870e39cb3f0c5b637317f28362c0391381f95dc2ba992d23d",
+        "tof.py": "88931dc0f6438c0a70dcc25e1bf713445bd5cce2e1422632f450f56b7069953f",
+        "validation/__init__.py": "4dfad91b9c9c8ccbf6f05d998e7e817c704a22c9b3ea927364c8e811927da79a",
+        "validation/_rietveld_parity.py": "1f60baf749db724a631eb9332a360cb97097cdce09c4b7cdff3a887cafa88346",
+        "validation/bath_ltl.py": "718a8f04c18f58992d6d4e4a7640cfa6858116e84675f7812088ba5324111ed9",
+        "validation/ceria_transferability.py": "953cde171e6f85c23ec0ac60b49ff895c33e3220c8b19c5d3a1b867c68d8b611",
+        "validation/citrate_broadening_ablation.py": "ca5c51efdfbeea093c3dd7d314229704d949e8d0b24343de1e0583eb71723fdc",
+        "validation/citrate_source_fidelity.py": "83576b442945887dbf83ad3fd41b620bc1d5b09fc4d353f259b5e71cb67fb0b5",
+        "validation/citrate_stephens_ablation.py": "7cad6b520e6c88f3da3ffb23621ef57d7f7993873c20db0e63d5aced50e1c857",
+        "validation/datasets.py": "b76bc86f160011394ea61f3a3fff7531074b1783142c009fc122b87a980acdab",
+        "validation/iucr_silicon_standard.py": "ad25d9a1476e55d74231ccb140094d9775590b1112363e02497f0ac47990284c",
+        "validation/iucr_sodium_citrate_silicon.py": "2ebd72ae48af3bc9feded72c6befc9ee6c0c24f18708dcc92d33a3aa42b70272",
+        "validation/iucr_tripotassium_citrate_silicon.py": "636f9a30304b35469d0fe476179dd7656b3c67086892890c976029ef140fac62",
+        "validation/iucr_trirubidium_citrate_silicon.py": "4b06e10101459f60ce44226abe3525dd6dfefd6c5460b7c5cc4a0f555fd1626d",
+        "validation/nist_srm660c_parity.py": "6fbc96a8b1c10c6efb2c1af689926b29958b6ee8c8d0fb21b4462c64f6cf4ff9",
+        "validation/opxrd.py": "e9cee5c10bb71f4d2663fe4c3313c9ac0797ed0fac001019710918bdc8eada1e",
+        "validation/qarr_parity.py": "7ed3f31bcd1995fd2cdeb9cc610c762aa25c386e30eca93f8fc7c401e3c29656",
+        "validation/real_data.py": "87781aac939a6be4fe2ad76511947dbb73c90eb76b791b2dba8741e7492addc5",
+        "validation/rowles.py": "2a01ffe8457c1c2e1f93c68afaf08cdfd5164f170280f484bf1e9050b0e1e4e5",
+        "validation/suite.py": "58a6a3ecfe186985ef6bcb4072711ec180ae6d17f26607d3bede0e53446fd828",
+        "validation/xred_tio2.py": "88360fb4247f02b2f5146c078669908d2f820fd5a327ed8cc58d25ebc5bc7a75"
+      }
+    }
+  },
+  "results": {
+    "iucr-qarr-1g": {
+      "baseline": {
+        "scientific": {
+          "checks": [
+            {
+              "check_id": "observed_grid",
+              "criterion": "7251 samples with endpoints 5 and 150 degrees",
+              "detail": "QARR 1g pattern spans the published 5-150 degree grid.",
+              "measured": 7251.0,
+              "status": "passed"
+            },
+            {
+              "check_id": "site_expansion",
+              "criterion": "expanded site counts Al2O3=30, ZnO=4, CaF2=12",
+              "detail": "The documented 1e-4 CIF coordinate tolerance gives physical unit-cell contents.",
+              "measured": 46.0,
+              "status": "passed"
+            },
+            {
+              "check_id": "refinement_termination",
+              "criterion": "no numerical failure, divergence, repeated rejection, or empty data",
+              "detail": "Refinement returns a finite last accepted state under explicit iteration budgets.",
+              "measured": null,
+              "status": "passed"
+            },
+            {
+              "check_id": "poisson_rwp",
+              "criterion": "Rwp with sigma=sqrt(max(counts, 1)) <= 0.20",
+              "detail": "Poisson-weighted QARR profile gate with fixed CIF anisotropic displacement.",
+              "measured": 0.19896901016081717,
+              "status": "passed"
+            },
+            {
+              "check_id": "unit_weight_rwp",
+              "criterion": "unit-weight Rwp <= 0.15",
+              "detail": "Unit-weight profile residual is reported separately from Poisson-weighted Rwp.",
+              "measured": 0.13331117047727264,
+              "status": "passed"
+            },
+            {
+              "check_id": "profile_correlation",
+              "criterion": "Pearson correlation >= 0.98",
+              "detail": "Background-subtracted observed and calculated profiles remain strongly aligned.",
+              "measured": 0.9903837542806914,
+              "status": "passed"
+            },
+            {
+              "check_id": "qpa_weight_fraction",
+              "criterion": "maximum absolute phase error <= 0.02",
+              "detail": "Hill--Howard weight fractions agree with the independently weighed phase fractions.",
+              "measured": 0.011179307709242248,
+              "status": "passed"
+            },
+            {
+              "check_id": "qpa_covariance",
+              "criterion": "finite nonnegative propagated variance for every phase fraction",
+              "detail": "The final scale-only covariance is identifiable and propagates analytically to finite phase-fraction uncertainties.",
+              "measured": 0.0008529420568530502,
+              "status": "passed"
+            }
+          ],
+          "dataset_id": "iucr-qarr-1g",
+          "notes": [
+            "Calculated crystalline weight fractions: Al2O3=30.556%, ZnO=33.906%, CaF2=35.538%.",
+            "Maximum propagated phase-fraction standard uncertainty=0.00085294.",
+            "Stage 1 termination=max_iterations, iterations=8, evaluations=31, Rwp=0.26462940.",
+            "Stage 2 termination=converged, iterations=32, evaluations=43, Rwp=0.19896901.",
+            "Stage 3 scale polish termination=converged, iterations=1, evaluations=2, Rwp=0.19896901.",
+            "Expanded sites at tolerance 1e-4: [30, 4, 12].",
+            "Fixed Cu K-alpha1 dispersion offsets are used for both fixed spectrum components."
+          ],
+          "reflection_count": 110,
+          "reported_terminations": [
+            "max_iterations",
+            "converged",
+            "converged"
+          ],
+          "sample_count": 7251,
+          "status": "passed"
+        },
+        "seconds": [
+          0.6260355840204284,
+          0.6257022920181043
+        ],
+        "exact_repeatability": true
+      },
+      "candidate": {
+        "scientific": {
+          "checks": [
+            {
+              "check_id": "observed_grid",
+              "criterion": "7251 samples with endpoints 5 and 150 degrees",
+              "detail": "QARR 1g pattern spans the published 5-150 degree grid.",
+              "measured": 7251.0,
+              "status": "passed"
+            },
+            {
+              "check_id": "site_expansion",
+              "criterion": "expanded site counts Al2O3=30, ZnO=4, CaF2=12",
+              "detail": "The documented 1e-4 CIF coordinate tolerance gives physical unit-cell contents.",
+              "measured": 46.0,
+              "status": "passed"
+            },
+            {
+              "check_id": "refinement_termination",
+              "criterion": "no numerical failure, divergence, repeated rejection, or empty data",
+              "detail": "Refinement returns a finite last accepted state under explicit iteration budgets.",
+              "measured": null,
+              "status": "failed"
+            },
+            {
+              "check_id": "poisson_rwp",
+              "criterion": "Rwp with sigma=sqrt(max(counts, 1)) <= 0.20",
+              "detail": "Poisson-weighted QARR profile gate with fixed CIF anisotropic displacement.",
+              "measured": 0.19896901016081717,
+              "status": "passed"
+            },
+            {
+              "check_id": "unit_weight_rwp",
+              "criterion": "unit-weight Rwp <= 0.15",
+              "detail": "Unit-weight profile residual is reported separately from Poisson-weighted Rwp.",
+              "measured": 0.13331117047727264,
+              "status": "passed"
+            },
+            {
+              "check_id": "profile_correlation",
+              "criterion": "Pearson correlation >= 0.98",
+              "detail": "Background-subtracted observed and calculated profiles remain strongly aligned.",
+              "measured": 0.9903837542806914,
+              "status": "passed"
+            },
+            {
+              "check_id": "qpa_weight_fraction",
+              "criterion": "maximum absolute phase error <= 0.02",
+              "detail": "Hill--Howard weight fractions agree with the independently weighed phase fractions.",
+              "measured": 0.011179307709242248,
+              "status": "passed"
+            },
+            {
+              "check_id": "qpa_covariance",
+              "criterion": "finite nonnegative propagated variance for every phase fraction",
+              "detail": "The final scale-only covariance is identifiable and propagates analytically to finite phase-fraction uncertainties.",
+              "measured": 0.0008529420568530502,
+              "status": "passed"
+            }
+          ],
+          "dataset_id": "iucr-qarr-1g",
+          "notes": [
+            "Calculated crystalline weight fractions: Al2O3=30.556%, ZnO=33.906%, CaF2=35.538%.",
+            "Maximum propagated phase-fraction standard uncertainty=0.00085294.",
+            "Stage 1 termination=max_iterations, iterations=8, evaluations=31, Rwp=0.26462940.",
+            "Stage 2 termination=repeated_rejections, iterations=32, evaluations=64, Rwp=0.19896901.",
+            "Stage 3 scale polish termination=converged, iterations=1, evaluations=2, Rwp=0.19896901.",
+            "Expanded sites at tolerance 1e-4: [30, 4, 12].",
+            "Fixed Cu K-alpha1 dispersion offsets are used for both fixed spectrum components."
+          ],
+          "reflection_count": 110,
+          "reported_terminations": [
+            "max_iterations",
+            "repeated_rejections",
+            "converged"
+          ],
+          "sample_count": 7251,
+          "status": "failed"
+        },
+        "seconds": [
+          0.7653777080122381,
+          0.7610467080376111
+        ],
+        "exact_repeatability": true
+      }
+    },
+    "iucr-qarr-1h": {
+      "baseline": {
+        "scientific": {
+          "checks": [
+            {
+              "check_id": "observed_grid",
+              "criterion": "7251 samples with endpoints 5 and 150 degrees",
+              "detail": "QARR 1h pattern spans the published 5-150 degree grid.",
+              "measured": 7251.0,
+              "status": "passed"
+            },
+            {
+              "check_id": "site_expansion",
+              "criterion": "expanded site counts Al2O3=30, ZnO=4, CaF2=12",
+              "detail": "The documented 1e-4 CIF coordinate tolerance gives physical unit-cell contents.",
+              "measured": 46.0,
+              "status": "passed"
+            },
+            {
+              "check_id": "refinement_termination",
+              "criterion": "no numerical failure, divergence, repeated rejection, or empty data",
+              "detail": "Refinement returns a finite last accepted state under explicit iteration budgets.",
+              "measured": null,
+              "status": "passed"
+            },
+            {
+              "check_id": "poisson_rwp",
+              "criterion": "Rwp with sigma=sqrt(max(counts, 1)) <= 0.20",
+              "detail": "Poisson-weighted QARR profile gate with fixed CIF anisotropic displacement.",
+              "measured": 0.2865442972568657,
+              "status": "failed"
+            },
+            {
+              "check_id": "unit_weight_rwp",
+              "criterion": "unit-weight Rwp <= 0.15",
+              "detail": "Unit-weight profile residual is reported separately from Poisson-weighted Rwp.",
+              "measured": 0.2526499623968294,
+              "status": "failed"
+            },
+            {
+              "check_id": "profile_correlation",
+              "criterion": "Pearson correlation >= 0.98",
+              "detail": "Background-subtracted observed and calculated profiles remain strongly aligned.",
+              "measured": 0.9755624393134137,
+              "status": "failed"
+            },
+            {
+              "check_id": "qpa_weight_fraction",
+              "criterion": "maximum absolute phase error <= 0.02",
+              "detail": "Hill--Howard weight fractions agree with the independently weighed phase fractions.",
+              "measured": 0.017289603904971695,
+              "status": "passed"
+            },
+            {
+              "check_id": "qpa_covariance",
+              "criterion": "finite nonnegative propagated variance for every phase fraction",
+              "detail": "The final scale-only covariance is identifiable and propagates analytically to finite phase-fraction uncertainties.",
+              "measured": 0.0009381046442115559,
+              "status": "passed"
+            }
+          ],
+          "dataset_id": "iucr-qarr-1h",
+          "notes": [
+            "Calculated crystalline weight fractions: Al2O3=34.260%, ZnO=29.321%, CaF2=36.419%.",
+            "Maximum propagated phase-fraction standard uncertainty=0.00093810.",
+            "Stage 1 termination=max_iterations, iterations=8, evaluations=23, Rwp=0.30557415.",
+            "Stage 2 termination=max_iterations, iterations=35, evaluations=36, Rwp=0.28664433.",
+            "Stage 3 scale polish termination=converged, iterations=1, evaluations=2, Rwp=0.28654430.",
+            "Expanded sites at tolerance 1e-4: [30, 4, 12].",
+            "Fixed Cu K-alpha1 dispersion offsets are used for both fixed spectrum components."
+          ],
+          "reflection_count": 110,
+          "reported_terminations": [
+            "max_iterations",
+            "max_iterations",
+            "converged"
+          ],
+          "sample_count": 7251,
+          "status": "failed"
+        },
+        "seconds": [
+          0.6073686250019819,
+          0.6034159169648774
+        ],
+        "exact_repeatability": true
+      },
+      "candidate": {
+        "scientific": {
+          "checks": [
+            {
+              "check_id": "observed_grid",
+              "criterion": "7251 samples with endpoints 5 and 150 degrees",
+              "detail": "QARR 1h pattern spans the published 5-150 degree grid.",
+              "measured": 7251.0,
+              "status": "passed"
+            },
+            {
+              "check_id": "site_expansion",
+              "criterion": "expanded site counts Al2O3=30, ZnO=4, CaF2=12",
+              "detail": "The documented 1e-4 CIF coordinate tolerance gives physical unit-cell contents.",
+              "measured": 46.0,
+              "status": "passed"
+            },
+            {
+              "check_id": "refinement_termination",
+              "criterion": "no numerical failure, divergence, repeated rejection, or empty data",
+              "detail": "Refinement returns a finite last accepted state under explicit iteration budgets.",
+              "measured": null,
+              "status": "passed"
+            },
+            {
+              "check_id": "poisson_rwp",
+              "criterion": "Rwp with sigma=sqrt(max(counts, 1)) <= 0.20",
+              "detail": "Poisson-weighted QARR profile gate with fixed CIF anisotropic displacement.",
+              "measured": 0.2865442972568657,
+              "status": "failed"
+            },
+            {
+              "check_id": "unit_weight_rwp",
+              "criterion": "unit-weight Rwp <= 0.15",
+              "detail": "Unit-weight profile residual is reported separately from Poisson-weighted Rwp.",
+              "measured": 0.2526499623968294,
+              "status": "failed"
+            },
+            {
+              "check_id": "profile_correlation",
+              "criterion": "Pearson correlation >= 0.98",
+              "detail": "Background-subtracted observed and calculated profiles remain strongly aligned.",
+              "measured": 0.9755624393134137,
+              "status": "failed"
+            },
+            {
+              "check_id": "qpa_weight_fraction",
+              "criterion": "maximum absolute phase error <= 0.02",
+              "detail": "Hill--Howard weight fractions agree with the independently weighed phase fractions.",
+              "measured": 0.017289603904971695,
+              "status": "passed"
+            },
+            {
+              "check_id": "qpa_covariance",
+              "criterion": "finite nonnegative propagated variance for every phase fraction",
+              "detail": "The final scale-only covariance is identifiable and propagates analytically to finite phase-fraction uncertainties.",
+              "measured": 0.0009381046442115559,
+              "status": "passed"
+            }
+          ],
+          "dataset_id": "iucr-qarr-1h",
+          "notes": [
+            "Calculated crystalline weight fractions: Al2O3=34.260%, ZnO=29.321%, CaF2=36.419%.",
+            "Maximum propagated phase-fraction standard uncertainty=0.00093810.",
+            "Stage 1 termination=max_iterations, iterations=8, evaluations=23, Rwp=0.30557415.",
+            "Stage 2 termination=max_iterations, iterations=35, evaluations=36, Rwp=0.28664433.",
+            "Stage 3 scale polish termination=converged, iterations=1, evaluations=2, Rwp=0.28654430.",
+            "Expanded sites at tolerance 1e-4: [30, 4, 12].",
+            "Fixed Cu K-alpha1 dispersion offsets are used for both fixed spectrum components."
+          ],
+          "reflection_count": 110,
+          "reported_terminations": [
+            "max_iterations",
+            "max_iterations",
+            "converged"
+          ],
+          "sample_count": 7251,
+          "status": "failed"
+        },
+        "seconds": [
+          0.6022465829737484,
+          0.625884833978489
+        ],
+        "exact_repeatability": true
+      }
+    },
+    "gsasii-pbso4-cw-x-ray": {
+      "baseline": {
+        "scientific": {
+          "checks": [
+            {
+              "check_id": "observed_grid",
+              "criterion": ">2000 samples with endpoints 16.0 and 158.4 degrees",
+              "detail": "Selected PbSO4 pattern uses the official combined-refinement angular range.",
+              "measured": 5697.0,
+              "status": "passed"
+            },
+            {
+              "check_id": "refinement_termination",
+              "criterion": "all planned stages are attempted; repeated rejection requires an accepted Rwp improvement >= 0.0001; iteration exhaustion fails",
+              "detail": "Every intelligent recipe stage terminates safely under explicit budgets.",
+              "measured": null,
+              "status": "passed"
+            },
+            {
+              "check_id": "poisson_rwp",
+              "criterion": "Rwp <= 0.11",
+              "detail": "Poisson-weighted complete-pattern residual for the PbSO4 workflow.",
+              "measured": 0.1034517961208671,
+              "status": "passed"
+            },
+            {
+              "check_id": "unit_weight_rwp",
+              "criterion": "unit-weight Rwp <= 0.10",
+              "detail": "Unit-weight PbSO4 residual is reported separately.",
+              "measured": 0.08727683073738457,
+              "status": "passed"
+            },
+            {
+              "check_id": "profile_correlation",
+              "criterion": "Pearson correlation >= 0.99",
+              "detail": "Background-subtracted observed and calculated profiles remain aligned.",
+              "measured": 0.9955588203108414,
+              "status": "passed"
+            },
+            {
+              "check_id": "reference_cell_relative_error",
+              "criterion": "maximum relative error across a, b, c <= 0.005",
+              "detail": "Refined cell remains close to the supplied PbSO4 reference model.",
+              "measured": 0.0,
+              "status": "passed"
+            }
+          ],
+          "dataset_id": "gsasii-pbso4-cw-x-ray",
+          "notes": [
+            "Final cell a=8.48000000, b=5.39800000, c=6.95800000 angstrom.",
+            "Cu K-alpha is evaluated as the exact fixed 1.5405/1.5443 angstrom doublet with relative intensity 0.5.",
+            "Background is a fixed native Smooth Bruckner estimate plus a refined three-term Chebyshev residual correction.",
+            "Stage scale_background: Rwp 0.33717246 -> 0.33542902; termination=converged; iterations=11; evaluations=12; CG iterations=0; backtracks=0.",
+            "Stage positions: Rwp 0.33542902 -> 0.19012346; termination=converged; iterations=22; evaluations=25; CG iterations=0; backtracks=2.",
+            "Stage structure: Rwp 0.19012346 -> 0.15848610; termination=converged; iterations=28; evaluations=29; CG iterations=0; backtracks=0.",
+            "Stage final_polish: Rwp 0.15848610 -> 0.10345180; termination=converged; iterations=89; evaluations=90; CG iterations=1230; backtracks=0."
+          ],
+          "reflection_count": 383,
+          "reported_terminations": [
+            "converged",
+            "converged",
+            "converged",
+            "converged"
+          ],
+          "sample_count": 5697,
+          "status": "passed"
+        },
+        "seconds": [
+          4.146178791997954,
+          4.230840125004761
+        ],
+        "exact_repeatability": true
+      },
+      "candidate": {
+        "scientific": {
+          "checks": [
+            {
+              "check_id": "observed_grid",
+              "criterion": ">2000 samples with endpoints 16.0 and 158.4 degrees",
+              "detail": "Selected PbSO4 pattern uses the official combined-refinement angular range.",
+              "measured": 5697.0,
+              "status": "passed"
+            },
+            {
+              "check_id": "refinement_termination",
+              "criterion": "all planned stages are attempted; repeated rejection requires an accepted Rwp improvement >= 0.0001; iteration exhaustion fails",
+              "detail": "Every intelligent recipe stage terminates safely under explicit budgets.",
+              "measured": null,
+              "status": "passed"
+            },
+            {
+              "check_id": "poisson_rwp",
+              "criterion": "Rwp <= 0.11",
+              "detail": "Poisson-weighted complete-pattern residual for the PbSO4 workflow.",
+              "measured": 0.10344460501173165,
+              "status": "passed"
+            },
+            {
+              "check_id": "unit_weight_rwp",
+              "criterion": "unit-weight Rwp <= 0.10",
+              "detail": "Unit-weight PbSO4 residual is reported separately.",
+              "measured": 0.08719462948884535,
+              "status": "passed"
+            },
+            {
+              "check_id": "profile_correlation",
+              "criterion": "Pearson correlation >= 0.99",
+              "detail": "Background-subtracted observed and calculated profiles remain aligned.",
+              "measured": 0.995569931265333,
+              "status": "passed"
+            },
+            {
+              "check_id": "reference_cell_relative_error",
+              "criterion": "maximum relative error across a, b, c <= 0.005",
+              "detail": "Refined cell remains close to the supplied PbSO4 reference model.",
+              "measured": 0.0,
+              "status": "passed"
+            }
+          ],
+          "dataset_id": "gsasii-pbso4-cw-x-ray",
+          "notes": [
+            "Final cell a=8.48000000, b=5.39800000, c=6.95800000 angstrom.",
+            "Cu K-alpha is evaluated as the exact fixed 1.5405/1.5443 angstrom doublet with relative intensity 0.5.",
+            "Background is a fixed native Smooth Bruckner estimate plus a refined three-term Chebyshev residual correction.",
+            "Stage scale_background: Rwp 0.33717246 -> 0.33542902; termination=converged; iterations=11; evaluations=12; CG iterations=0; backtracks=0.",
+            "Stage positions: Rwp 0.33542902 -> 0.19012346; termination=converged; iterations=22; evaluations=26; CG iterations=0; backtracks=2.",
+            "Stage structure: Rwp 0.19012346 -> 0.15848610; termination=converged; iterations=28; evaluations=29; CG iterations=0; backtracks=0.",
+            "Stage final_polish: Rwp 0.15848610 -> 0.10344461; termination=converged; iterations=104; evaluations=108; CG iterations=1380; backtracks=2."
+          ],
+          "reflection_count": 383,
+          "reported_terminations": [
+            "converged",
+            "converged",
+            "converged",
+            "converged"
+          ],
+          "sample_count": 5697,
+          "status": "passed"
+        },
+        "seconds": [
+          4.539907916972879,
+          4.5522695829859
+        ],
+        "exact_repeatability": true
+      }
+    },
+    "gsasii-pbso4-cw-neutron": {
+      "baseline": {
+        "scientific": {
+          "checks": [
+            {
+              "check_id": "observed_grid",
+              "criterion": "more than 2000 samples with endpoints 19 and 153 degrees",
+              "detail": "Selected PbSO4 pattern uses the official combined-refinement angular range.",
+              "measured": 2681.0,
+              "status": "passed"
+            },
+            {
+              "check_id": "refinement_termination",
+              "criterion": "all stages converge or stagnate safely; iteration exhaustion fails",
+              "detail": "Every intelligent recipe stage terminates safely under explicit budgets.",
+              "measured": null,
+              "status": "passed"
+            },
+            {
+              "check_id": "poisson_rwp",
+              "criterion": "Rwp <= 0.05",
+              "detail": "Poisson-weighted complete-pattern residual for the PbSO4 workflow.",
+              "measured": 0.04217168088104872,
+              "status": "passed"
+            },
+            {
+              "check_id": "unit_weight_rwp",
+              "criterion": "unit-weight Rwp <= 0.06",
+              "detail": "Unit-weight PbSO4 residual is reported separately.",
+              "measured": 0.04526951301851548,
+              "status": "passed"
+            },
+            {
+              "check_id": "profile_correlation",
+              "criterion": "Pearson correlation >= 0.99",
+              "detail": "Background-subtracted observed and calculated profiles remain aligned.",
+              "measured": 0.9966437476234071,
+              "status": "passed"
+            },
+            {
+              "check_id": "reference_cell_relative_error",
+              "criterion": "maximum relative error across a, b, c <= 0.005",
+              "detail": "Refined cell remains close to the supplied PbSO4 reference model.",
+              "measured": 0.0011671101728359399,
+              "status": "passed"
+            }
+          ],
+          "dataset_id": "gsasii-pbso4-cw-neutron",
+          "notes": [
+            "Final cell a=8.47044934, b=5.39169994, c=6.95148210 angstrom.",
+            "Termination=converged; iterations=16; evaluations=17.",
+            "Debye-Scherrer geometry: fixed radius=650.000 mm; refined X=910.794678 micrometre, Y=-529.542986 micrometre.",
+            "Stage scale_background: Rwp 0.27846683 -> 0.27770859; termination=converged; iterations=3.",
+            "Stage positions: Rwp 0.27770859 -> 0.10779195; termination=converged; iterations=15.",
+            "Stage structure: Rwp 0.10779195 -> 0.07296848; termination=converged; iterations=22.",
+            "Stage final_polish: Rwp 0.07296848 -> 0.04217168; termination=converged; iterations=16.",
+            "This plan is advisory workflow orchestration; the Rietveld solver remains general.",
+            "Every stage is cumulative and limited to parameter families authorized by the maximum selection.",
+            "Debye-Scherrer X/Y displacement was authorized and is proposed in the position-alignment stage before profile widths.",
+            "The residual background coefficients are initialized by weighted linear least squares against the starting structural profile.",
+            "Background is a fixed native Smooth Bruckner estimate plus a refined three-term Chebyshev residual correction."
+          ],
+          "reflection_count": 217,
+          "reported_terminations": [
+            "converged",
+            "converged",
+            "converged",
+            "converged",
+            "converged"
+          ],
+          "sample_count": 2681,
+          "status": "passed"
+        },
+        "seconds": [
+          0.5956876249983907,
+          0.5956351250060834
+        ],
+        "exact_repeatability": true
+      },
+      "candidate": {
+        "scientific": {
+          "checks": [
+            {
+              "check_id": "observed_grid",
+              "criterion": "more than 2000 samples with endpoints 19 and 153 degrees",
+              "detail": "Selected PbSO4 pattern uses the official combined-refinement angular range.",
+              "measured": 2681.0,
+              "status": "passed"
+            },
+            {
+              "check_id": "refinement_termination",
+              "criterion": "all stages converge or stagnate safely; iteration exhaustion fails",
+              "detail": "Every intelligent recipe stage terminates safely under explicit budgets.",
+              "measured": null,
+              "status": "passed"
+            },
+            {
+              "check_id": "poisson_rwp",
+              "criterion": "Rwp <= 0.05",
+              "detail": "Poisson-weighted complete-pattern residual for the PbSO4 workflow.",
+              "measured": 0.04217168088104872,
+              "status": "passed"
+            },
+            {
+              "check_id": "unit_weight_rwp",
+              "criterion": "unit-weight Rwp <= 0.06",
+              "detail": "Unit-weight PbSO4 residual is reported separately.",
+              "measured": 0.04526951301851548,
+              "status": "passed"
+            },
+            {
+              "check_id": "profile_correlation",
+              "criterion": "Pearson correlation >= 0.99",
+              "detail": "Background-subtracted observed and calculated profiles remain aligned.",
+              "measured": 0.9966437476234071,
+              "status": "passed"
+            },
+            {
+              "check_id": "reference_cell_relative_error",
+              "criterion": "maximum relative error across a, b, c <= 0.005",
+              "detail": "Refined cell remains close to the supplied PbSO4 reference model.",
+              "measured": 0.0011671101728359399,
+              "status": "passed"
+            }
+          ],
+          "dataset_id": "gsasii-pbso4-cw-neutron",
+          "notes": [
+            "Final cell a=8.47044934, b=5.39169994, c=6.95148210 angstrom.",
+            "Termination=converged; iterations=16; evaluations=17.",
+            "Debye-Scherrer geometry: fixed radius=650.000 mm; refined X=910.794678 micrometre, Y=-529.542986 micrometre.",
+            "Stage scale_background: Rwp 0.27846683 -> 0.27770859; termination=converged; iterations=3.",
+            "Stage positions: Rwp 0.27770859 -> 0.10779195; termination=converged; iterations=15.",
+            "Stage structure: Rwp 0.10779195 -> 0.07296848; termination=converged; iterations=22.",
+            "Stage final_polish: Rwp 0.07296848 -> 0.04217168; termination=converged; iterations=16.",
+            "This plan is advisory workflow orchestration; the Rietveld solver remains general.",
+            "Every stage is cumulative and limited to parameter families authorized by the maximum selection.",
+            "Debye-Scherrer X/Y displacement was authorized and is proposed in the position-alignment stage before profile widths.",
+            "The residual background coefficients are initialized by weighted linear least squares against the starting structural profile.",
+            "Background is a fixed native Smooth Bruckner estimate plus a refined three-term Chebyshev residual correction."
+          ],
+          "reflection_count": 217,
+          "reported_terminations": [
+            "converged",
+            "converged",
+            "converged",
+            "converged",
+            "converged"
+          ],
+          "sample_count": 2681,
+          "status": "passed"
+        },
+        "seconds": [
+          0.6037167920148931,
+          0.6032147079822607
+        ],
+        "exact_repeatability": true
+      }
+    },
+    "rowles-1a": {
+      "baseline": {
+        "scientific": {
+          "checks": {
+            "correlation": true,
+            "poisson_rwp": true,
+            "qpa": true,
+            "reflection_count": true,
+            "sample_count": true
+          },
+          "largest_residual_intervals": [
+            {
+              "chi_square_fraction": 0.22244068865879216,
+              "two_theta_range": [
+                21.00685435,
+                33.90095697
+              ]
+            },
+            {
+              "chi_square_fraction": 0.2002455844820147,
+              "two_theta_range": [
+                124.2146999,
+                137.0996318
+              ]
+            },
+            {
+              "chi_square_fraction": 0.15440312222164695,
+              "two_theta_range": [
+                85.5232213,
+                98.41732392
+              ]
+            }
+          ],
+          "measurements": {
+            "free_parameter_count": 26,
+            "maximum_weight_fraction_error": 0.007560488389910358,
+            "poisson_rwp": 0.08782364951576352,
+            "profile_correlation": 0.9969360431958574,
+            "reflection_count": 109,
+            "sample": "1a",
+            "sample_count": 14066,
+            "termination_reasons": [
+              "max_iterations",
+              "repeated_rejections",
+              "repeated_rejections",
+              "converged",
+              "repeated_rejections",
+              "converged"
+            ],
+            "unit_weight_rwp": 0.0763415418311401,
+            "weight_fractions": {
+              "Al2O3": 0.015371372999878083,
+              "CaF2": 0.9517891153900323,
+              "ZnO": 0.03283951161008964
+            }
+          },
+          "profile_sha256": "e8b3f4e1d045003f482364c7e2544205e3efa70d4a65a6331cff1f23286a0b15",
+          "stages": [
+            {
+              "accepted_iterations": 24,
+              "backend": "native",
+              "evaluations": 25,
+              "max_evaluations": 2000,
+              "max_iterations": 24,
+              "rwp": 0.09871950284889724,
+              "termination": "max_iterations"
+            },
+            {
+              "accepted_iterations": 25,
+              "backend": "native",
+              "evaluations": 79,
+              "max_evaluations": 2000,
+              "max_iterations": 30,
+              "rwp": 0.09313740113566996,
+              "termination": "repeated_rejections"
+            },
+            {
+              "accepted_iterations": 10,
+              "backend": "native",
+              "evaluations": 44,
+              "max_evaluations": 2000,
+              "max_iterations": 24,
+              "rwp": 0.08803723382382828,
+              "termination": "repeated_rejections"
+            },
+            {
+              "accepted_iterations": 12,
+              "backend": "native",
+              "evaluations": 13,
+              "max_evaluations": 2000,
+              "max_iterations": 30,
+              "rwp": 0.08792586728376535,
+              "termination": "converged"
+            },
+            {
+              "accepted_iterations": 3,
+              "backend": "native",
+              "evaluations": 31,
+              "max_evaluations": 2000,
+              "max_iterations": 24,
+              "rwp": 0.08787404450275835,
+              "termination": "repeated_rejections"
+            },
+            {
+              "accepted_iterations": 8,
+              "backend": "native",
+              "evaluations": 9,
+              "max_evaluations": 2000,
+              "max_iterations": 30,
+              "rwp": 0.08784123159376414,
+              "termination": "converged"
+            }
+          ],
+          "status": "passed"
+        },
+        "seconds": [
+          3.1720936670317315,
+          3.1270676249987446
+        ],
+        "exact_repeatability": true
+      },
+      "candidate": {
+        "scientific": {
+          "checks": {
+            "correlation": true,
+            "poisson_rwp": true,
+            "qpa": true,
+            "reflection_count": true,
+            "sample_count": true
+          },
+          "largest_residual_intervals": [
+            {
+              "chi_square_fraction": 0.22244931097397835,
+              "two_theta_range": [
+                21.00685435,
+                33.90095697
+              ]
+            },
+            {
+              "chi_square_fraction": 0.20024369153107635,
+              "two_theta_range": [
+                124.2146999,
+                137.0996318
+              ]
+            },
+            {
+              "chi_square_fraction": 0.15439893412857011,
+              "two_theta_range": [
+                85.5232213,
+                98.41732392
+              ]
+            }
+          ],
+          "measurements": {
+            "free_parameter_count": 26,
+            "maximum_weight_fraction_error": 0.007578674117593602,
+            "poisson_rwp": 0.08782342779109112,
+            "profile_correlation": 0.9969360329676776,
+            "reflection_count": 109,
+            "sample": "1a",
+            "sample_count": 14066,
+            "termination_reasons": [
+              "max_iterations",
+              "repeated_rejections",
+              "repeated_rejections",
+              "repeated_rejections",
+              "repeated_rejections",
+              "repeated_rejections"
+            ],
+            "unit_weight_rwp": 0.07634175102777103,
+            "weight_fractions": {
+              "Al2O3": 0.015368326560889775,
+              "CaF2": 0.9518103475567038,
+              "ZnO": 0.032821325882406396
+            }
+          },
+          "profile_sha256": "06d02931f7af484e0085e2004c92f6fd6dbf337ceec73629fdb98ff85815c047",
+          "stages": [
+            {
+              "accepted_iterations": 24,
+              "backend": "native",
+              "evaluations": 25,
+              "max_evaluations": 2000,
+              "max_iterations": 24,
+              "rwp": 0.09871950284889724,
+              "termination": "max_iterations"
+            },
+            {
+              "accepted_iterations": 25,
+              "backend": "native",
+              "evaluations": 79,
+              "max_evaluations": 2000,
+              "max_iterations": 30,
+              "rwp": 0.09313740113566996,
+              "termination": "repeated_rejections"
+            },
+            {
+              "accepted_iterations": 10,
+              "backend": "native",
+              "evaluations": 44,
+              "max_evaluations": 2000,
+              "max_iterations": 24,
+              "rwp": 0.08803723382382828,
+              "termination": "repeated_rejections"
+            },
+            {
+              "accepted_iterations": 13,
+              "backend": "native",
+              "evaluations": 34,
+              "max_evaluations": 2000,
+              "max_iterations": 30,
+              "rwp": 0.08792577352921796,
+              "termination": "repeated_rejections"
+            },
+            {
+              "accepted_iterations": 4,
+              "backend": "native",
+              "evaluations": 36,
+              "max_evaluations": 2000,
+              "max_iterations": 24,
+              "rwp": 0.08787340231222025,
+              "termination": "repeated_rejections"
+            },
+            {
+              "accepted_iterations": 6,
+              "backend": "native",
+              "evaluations": 27,
+              "max_evaluations": 2000,
+              "max_iterations": 30,
+              "rwp": 0.08784088411342499,
+              "termination": "repeated_rejections"
+            }
+          ],
+          "status": "passed"
+        },
+        "seconds": [
+          3.7472776669892482,
+          3.69125862501096
+        ],
+        "exact_repeatability": true
+      }
+    },
+    "rowles-1e": {
+      "baseline": {
+        "scientific": {
+          "checks": {
+            "correlation": true,
+            "poisson_rwp": true,
+            "qpa": true,
+            "reflection_count": true,
+            "sample_count": true
+          },
+          "largest_residual_intervals": [
+            {
+              "chi_square_fraction": 0.23554630007249802,
+              "two_theta_range": [
+                33.91408538,
+                46.80422682
+              ]
+            },
+            {
+              "chi_square_fraction": 0.1471713249689784,
+              "two_theta_range": [
+                21.00563408,
+                33.90493045
+              ]
+            },
+            {
+              "chi_square_fraction": 0.1395477238090037,
+              "two_theta_range": [
+                46.81338175,
+                59.70352319
+              ]
+            }
+          ],
+          "measurements": {
+            "free_parameter_count": 26,
+            "maximum_weight_fraction_error": 0.02223434911844413,
+            "poisson_rwp": 0.08283128515172944,
+            "profile_correlation": 0.9951938062561659,
+            "reflection_count": 109,
+            "sample": "1e",
+            "sample_count": 14091,
+            "termination_reasons": [
+              "max_iterations",
+              "converged",
+              "max_iterations",
+              "converged",
+              "converged",
+              "converged"
+            ],
+            "unit_weight_rwp": 0.08981135936926633,
+            "weight_fractions": {
+              "Al2O3": 0.5734343491184442,
+              "CaF2": 0.287335991952463,
+              "ZnO": 0.13922965892909275
+            }
+          },
+          "profile_sha256": "8c09af509d7de3bf37a764a426778d24d5f5fe82f98fb2a303d1d0893b3895ed",
+          "stages": [
+            {
+              "accepted_iterations": 24,
+              "backend": "native",
+              "evaluations": 25,
+              "max_evaluations": 2000,
+              "max_iterations": 24,
+              "rwp": 0.14936122222942402,
+              "termination": "max_iterations"
+            },
+            {
+              "accepted_iterations": 19,
+              "backend": "native",
+              "evaluations": 30,
+              "max_evaluations": 2000,
+              "max_iterations": 30,
+              "rwp": 0.13945817700165491,
+              "termination": "converged"
+            },
+            {
+              "accepted_iterations": 24,
+              "backend": "native",
+              "evaluations": 25,
+              "max_evaluations": 2000,
+              "max_iterations": 24,
+              "rwp": 0.08508088766141571,
+              "termination": "max_iterations"
+            },
+            {
+              "accepted_iterations": 5,
+              "backend": "native",
+              "evaluations": 15,
+              "max_evaluations": 2000,
+              "max_iterations": 30,
+              "rwp": 0.08312433137740831,
+              "termination": "converged"
+            },
+            {
+              "accepted_iterations": 8,
+              "backend": "native",
+              "evaluations": 27,
+              "max_evaluations": 2000,
+              "max_iterations": 24,
+              "rwp": 0.08296897694137573,
+              "termination": "converged"
+            },
+            {
+              "accepted_iterations": 5,
+              "backend": "native",
+              "evaluations": 21,
+              "max_evaluations": 2000,
+              "max_iterations": 30,
+              "rwp": 0.08286909952675954,
+              "termination": "converged"
+            }
+          ],
+          "status": "passed"
+        },
+        "seconds": [
+          2.38540083297994,
+          2.358332749980036
+        ],
+        "exact_repeatability": true
+      },
+      "candidate": {
+        "scientific": {
+          "checks": {
+            "correlation": true,
+            "poisson_rwp": true,
+            "qpa": true,
+            "reflection_count": true,
+            "sample_count": true
+          },
+          "largest_residual_intervals": [
+            {
+              "chi_square_fraction": 0.2355477628324968,
+              "two_theta_range": [
+                33.91408538,
+                46.80422682
+              ]
+            },
+            {
+              "chi_square_fraction": 0.1471716813435287,
+              "two_theta_range": [
+                21.00563408,
+                33.90493045
+              ]
+            },
+            {
+              "chi_square_fraction": 0.1395470686667659,
+              "two_theta_range": [
+                46.81338175,
+                59.70352319
+              ]
+            }
+          ],
+          "measurements": {
+            "free_parameter_count": 26,
+            "maximum_weight_fraction_error": 0.022234831697324542,
+            "poisson_rwp": 0.08283140055167135,
+            "profile_correlation": 0.9951937886901087,
+            "reflection_count": 109,
+            "sample": "1e",
+            "sample_count": 14091,
+            "termination_reasons": [
+              "max_iterations",
+              "repeated_rejections",
+              "max_iterations",
+              "converged",
+              "repeated_rejections",
+              "repeated_rejections"
+            ],
+            "unit_weight_rwp": 0.08981155930283896,
+            "weight_fractions": {
+              "Al2O3": 0.5734348316973246,
+              "CaF2": 0.28733545912309455,
+              "ZnO": 0.13922970917958083
+            }
+          },
+          "profile_sha256": "b9910177080572af97da47fcf3ac0eadaf30745dea520ec70b72539b187a2742",
+          "stages": [
+            {
+              "accepted_iterations": 24,
+              "backend": "native",
+              "evaluations": 25,
+              "max_evaluations": 2000,
+              "max_iterations": 24,
+              "rwp": 0.14936122222942402,
+              "termination": "max_iterations"
+            },
+            {
+              "accepted_iterations": 23,
+              "backend": "native",
+              "evaluations": 76,
+              "max_evaluations": 2000,
+              "max_iterations": 30,
+              "rwp": 0.1394581769426102,
+              "termination": "repeated_rejections"
+            },
+            {
+              "accepted_iterations": 24,
+              "backend": "native",
+              "evaluations": 25,
+              "max_evaluations": 2000,
+              "max_iterations": 24,
+              "rwp": 0.08508096327310598,
+              "termination": "max_iterations"
+            },
+            {
+              "accepted_iterations": 5,
+              "backend": "native",
+              "evaluations": 6,
+              "max_evaluations": 2000,
+              "max_iterations": 30,
+              "rwp": 0.0831244267210037,
+              "termination": "converged"
+            },
+            {
+              "accepted_iterations": 7,
+              "backend": "native",
+              "evaluations": 43,
+              "max_evaluations": 2000,
+              "max_iterations": 24,
+              "rwp": 0.0829690777272191,
+              "termination": "repeated_rejections"
+            },
+            {
+              "accepted_iterations": 6,
+              "backend": "native",
+              "evaluations": 45,
+              "max_evaluations": 2000,
+              "max_iterations": 30,
+              "rwp": 0.08286919687000005,
+              "termination": "repeated_rejections"
+            }
+          ],
+          "status": "passed"
+        },
+        "seconds": [
+          3.387835624977015,
+          3.374606625002343
+        ],
+        "exact_repeatability": true
+      }
+    },
+    "ansto-echidna-lab6-cw-neutron": {
+      "baseline": {
+        "scientific": {
+          "checks": [
+            {
+              "check_id": "observed_grid",
+              "criterion": "at least 2000 selected samples with finite positive uncertainties",
+              "detail": "The deposited three-column pattern supplies a sorted real grid with positive uncertainties.",
+              "measured": 2111.0,
+              "status": "passed"
+            },
+            {
+              "check_id": "profile_improvement",
+              "criterion": "final Rwp / first-cycle Rwp < 1",
+              "detail": "Native analytical profile refinement lowers Rwp relative to the first extraction cycle.",
+              "measured": 0.788425328757837,
+              "status": "passed"
+            },
+            {
+              "check_id": "profile_correlation",
+              "criterion": "Pearson correlation >= 0.90",
+              "detail": "Background-subtracted observed and calculated neutron profiles remain aligned.",
+              "measured": 0.9062074107280349,
+              "status": "passed"
+            },
+            {
+              "check_id": "integrated_intensities",
+              "criterion": "all finite and >= 0",
+              "detail": "Every extracted LaB6 integrated intensity is finite and nonnegative.",
+              "measured": null,
+              "status": "passed"
+            },
+            {
+              "check_id": "uncertainty_weighting",
+              "criterion": "absolute Rwp recomputation difference <= 2e-15",
+              "detail": "An independent direct sum reproduces the reported uncertainty-weighted Rwp.",
+              "measured": 0.0,
+              "status": "passed"
+            },
+            {
+              "check_id": "reflection_coverage",
+              "criterion": "13 reflection centers inside 20-125.5 degrees",
+              "detail": "Every generated LaB6 reflection center lies inside the selected observed interval.",
+              "measured": 13.0,
+              "status": "passed"
+            }
+          ],
+          "dataset_id": "ansto-echidna-lab6-cw-neutron",
+          "notes": [
+            "First-cycle Rwp=0.51822224; final Rwp=0.40857954; correlation=0.90620741.",
+            "Termination=converged; iterations=12.",
+            "The fixed background is a ten-term Chebyshev polynomial initialized from 20 regular anchors on a Smooth Bruckner estimate; the Smooth Bruckner array is not part of the refinement model.",
+            "The Zenodo metadata labels 2.047 A as approximate; wavelength calibration and instrument-specific detector-zero refinement are intentionally not claimed."
+          ],
+          "reflection_count": 13,
+          "reported_terminations": [
+            "converged"
+          ],
+          "sample_count": 2111,
+          "status": "passed"
+        },
+        "seconds": [
+          0.008254124957602471,
+          0.008021083020139486
+        ],
+        "exact_repeatability": true
+      },
+      "candidate": {
+        "scientific": {
+          "checks": [
+            {
+              "check_id": "observed_grid",
+              "criterion": "at least 2000 selected samples with finite positive uncertainties",
+              "detail": "The deposited three-column pattern supplies a sorted real grid with positive uncertainties.",
+              "measured": 2111.0,
+              "status": "passed"
+            },
+            {
+              "check_id": "profile_improvement",
+              "criterion": "final Rwp / first-cycle Rwp < 1",
+              "detail": "Native analytical profile refinement lowers Rwp relative to the first extraction cycle.",
+              "measured": 0.788425328757837,
+              "status": "passed"
+            },
+            {
+              "check_id": "profile_correlation",
+              "criterion": "Pearson correlation >= 0.90",
+              "detail": "Background-subtracted observed and calculated neutron profiles remain aligned.",
+              "measured": 0.9062074107280349,
+              "status": "passed"
+            },
+            {
+              "check_id": "integrated_intensities",
+              "criterion": "all finite and >= 0",
+              "detail": "Every extracted LaB6 integrated intensity is finite and nonnegative.",
+              "measured": null,
+              "status": "passed"
+            },
+            {
+              "check_id": "uncertainty_weighting",
+              "criterion": "absolute Rwp recomputation difference <= 2e-15",
+              "detail": "An independent direct sum reproduces the reported uncertainty-weighted Rwp.",
+              "measured": 0.0,
+              "status": "passed"
+            },
+            {
+              "check_id": "reflection_coverage",
+              "criterion": "13 reflection centers inside 20-125.5 degrees",
+              "detail": "Every generated LaB6 reflection center lies inside the selected observed interval.",
+              "measured": 13.0,
+              "status": "passed"
+            }
+          ],
+          "dataset_id": "ansto-echidna-lab6-cw-neutron",
+          "notes": [
+            "First-cycle Rwp=0.51822224; final Rwp=0.40857954; correlation=0.90620741.",
+            "Termination=converged; iterations=12.",
+            "The fixed background is a ten-term Chebyshev polynomial initialized from 20 regular anchors on a Smooth Bruckner estimate; the Smooth Bruckner array is not part of the refinement model.",
+            "The Zenodo metadata labels 2.047 A as approximate; wavelength calibration and instrument-specific detector-zero refinement are intentionally not claimed."
+          ],
+          "reflection_count": 13,
+          "reported_terminations": [
+            "converged"
+          ],
+          "sample_count": 2111,
+          "status": "passed"
+        },
+        "seconds": [
+          0.008012584003154188,
+          0.008221749973017722
+        ],
+        "exact_repeatability": true
+      }
+    },
+    "lanl-nickel-tof": {
+      "baseline": {
+        "scientific": {
+          "checks": [
+            {
+              "check_id": "tof_nickel_bank_geometry",
+              "criterion": "LANL bank 2 two_theta_deg = 88.05",
+              "detail": "The LANL BNKPAR scattering-angle field is imported into the same facility-neutral bank geometry used for POWGEN.",
+              "measured": 88.05,
+              "status": "passed"
+            },
+            {
+              "check_id": "tof_non_powgen_format",
+              "criterion": "bank 2, gsas_const_std, 5120 imported bins",
+              "detail": "The native adapter resolves the packed constant-step microsecond convention independently of POWGEN SLOG FXYE.",
+              "measured": 5120.0,
+              "status": "passed"
+            },
+            {
+              "check_id": "tof_profile_function_one",
+              "criterion": "profile function 1 with DIFC=4368.97 us/A and alpha=0.142760",
+              "detail": "Legacy GSAS profile function 1 is translated into the common typed 15-coefficient model.",
+              "measured": 1.0,
+              "status": "passed"
+            },
+            {
+              "check_id": "tof_nickel_incident_spectrum",
+              "criterion": "type 4 incident spectrum valid on 750.0..8190.4 us",
+              "detail": "The bounded adapter translates the bank-local Maxwellian/Chebyshev spectrum into the facility-neutral microsecond contract.",
+              "measured": 8190.400000000001,
+              "status": "passed"
+            },
+            {
+              "check_id": "tof_nickel_fit_window",
+              "criterion": "4431 centers from 1101.6 through 8189.6 us",
+              "detail": "The published tutorial fit interval uses bin centers in microseconds.",
+              "measured": 4431.0,
+              "status": "passed"
+            },
+            {
+              "check_id": "tof_nickel_reflections",
+              "criterion": "102 reflection families",
+              "detail": "The Fm-3m nickel cell generates stable reflection families across the selected bank.",
+              "measured": 102.0,
+              "status": "passed"
+            },
+            {
+              "check_id": "tof_nickel_profile_fit",
+              "criterion": "uncertainty-weighted Rwp <= 0.026",
+              "detail": "The native fixed-instrument TOF extraction fits the non-POWGEN nickel observations.",
+              "measured": 0.024858689217005354,
+              "status": "passed"
+            },
+            {
+              "check_id": "tof_nickel_profile_correlation",
+              "criterion": "masked Pearson correlation >= 0.998",
+              "detail": "The background-subtracted observations and extracted profile remain aligned.",
+              "measured": 0.9989124246863262,
+              "status": "passed"
+            },
+            {
+              "check_id": "tof_nickel_convergence",
+              "criterion": "20 cycles with non-increasing Rwp",
+              "detail": "Every accepted nonnegative redistribution cycle is non-increasing in Rwp.",
+              "measured": 20.0,
+              "status": "passed"
+            },
+            {
+              "check_id": "tof_nickel_derivatives",
+              "criterion": "15 instrument derivative rows",
+              "detail": "The real-pattern calculation retains all analytical instrument rows from the fused pass.",
+              "measured": 15.0,
+              "status": "passed"
+            },
+            {
+              "check_id": "tof_nickel_multibank_atomic",
+              "criterion": "3 banks, 20 accepted cycles, and 13293 included observations",
+              "detail": "Banks 2--4 advance in one atomic shared-cell/local-instrument workflow.",
+              "measured": 13293.0,
+              "status": "passed"
+            },
+            {
+              "check_id": "tof_nickel_multibank_fit",
+              "criterion": "joint Rwp <= 0.03 and every bank Rwp <= 0.03",
+              "detail": "The concatenated real observations and every member bank pass explicit Rwp gates.",
+              "measured": 0.022733056318157426,
+              "status": "passed"
+            },
+            {
+              "check_id": "tof_nickel_multibank_lattice",
+              "criterion": "|a - 3.5234 A| <= 0.0005 A",
+              "detail": "The displaced shared cubic cell returns to the published nickel lattice.",
+              "measured": 3.523611957358181,
+              "status": "passed"
+            },
+            {
+              "check_id": "tof_nickel_multibank_identifiability",
+              "criterion": "4 selected columns, rank 4, and at least one cross-family correlation",
+              "detail": "Rank and lattice/instrument correlations are retained for the real joint system.",
+              "measured": 4.0,
+              "status": "passed"
+            },
+            {
+              "check_id": "tof_nickel_structural_multibank",
+              "criterion": "3 banks, 13293 included observations, 8 parameters, and at least one accepted step",
+              "detail": "One structural Fm-3m nickel phase and three explicit bank models refine in one accepted-state objective.",
+              "measured": 7.0,
+              "status": "passed"
+            },
+            {
+              "check_id": "tof_nickel_structural_fit",
+              "criterion": "joint Rwp <= 0.04",
+              "detail": "The native neutron structure-factor intensities reproduce every real bank without Le Bail intensity redistribution.",
+              "measured": 0.03278208249496335,
+              "status": "passed"
+            },
+            {
+              "check_id": "tof_nickel_structural_correlation",
+              "criterion": "minimum bank profile correlation >= 0.995",
+              "detail": "Every incident-normalized bank retains a high background-subtracted structural profile correlation.",
+              "measured": 0.9974901003005688,
+              "status": "passed"
+            },
+            {
+              "check_id": "tof_nickel_structural_lattice",
+              "criterion": "|a - 3.5234 A| <= 0.002 A",
+              "detail": "The real structural objective returns the displaced shared cubic cell to the published nickel lattice.",
+              "measured": 3.5237311302969303,
+              "status": "passed"
+            },
+            {
+              "check_id": "tof_nickel_structural_u_iso",
+              "criterion": "0 <= Uiso <= 0.05 A^2",
+              "detail": "The shared Ni isotropic displacement remains in an explicit physical validation interval.",
+              "measured": 0.003965072926727362,
+              "status": "passed"
+            }
+          ],
+          "dataset_id": "lanl-nickel-tof",
+          "notes": [
+            "LANL bank 2 profile function 1; range=1101.6..8189.6 us; DIFC=4368.97000 us/A.",
+            "Final Rwp=0.02485869; Rp=0.01835585; correlation=0.99891242; background=Smooth Bruckner + 12-term Chebyshev.",
+            "Joint banks 2--4 Rwp=0.02273306; bank Rwp=[0.023358447964705806, 0.022057168758441447, 0.02260670521944436]; a=3.52361196 A; rank=4/4.",
+            "Structural banks 2--4 Rwp=0.03278208; minimum correlation=0.99749010; a=3.52373113 A; Ni Uiso=0.00396507 A^2; accepted steps=7; evaluations=71."
+          ],
+          "reflection_count": 102,
+          "reported_terminations": [],
+          "sample_count": 4431,
+          "status": "passed"
+        },
+        "seconds": [
+          52.40156708296854,
+          51.95849641598761
+        ],
+        "exact_repeatability": true
+      },
+      "candidate": {
+        "scientific": {
+          "checks": [
+            {
+              "check_id": "tof_nickel_bank_geometry",
+              "criterion": "LANL bank 2 two_theta_deg = 88.05",
+              "detail": "The LANL BNKPAR scattering-angle field is imported into the same facility-neutral bank geometry used for POWGEN.",
+              "measured": 88.05,
+              "status": "passed"
+            },
+            {
+              "check_id": "tof_non_powgen_format",
+              "criterion": "bank 2, gsas_const_std, 5120 imported bins",
+              "detail": "The native adapter resolves the packed constant-step microsecond convention independently of POWGEN SLOG FXYE.",
+              "measured": 5120.0,
+              "status": "passed"
+            },
+            {
+              "check_id": "tof_profile_function_one",
+              "criterion": "profile function 1 with DIFC=4368.97 us/A and alpha=0.142760",
+              "detail": "Legacy GSAS profile function 1 is translated into the common typed 15-coefficient model.",
+              "measured": 1.0,
+              "status": "passed"
+            },
+            {
+              "check_id": "tof_nickel_incident_spectrum",
+              "criterion": "type 4 incident spectrum valid on 750.0..8190.4 us",
+              "detail": "The bounded adapter translates the bank-local Maxwellian/Chebyshev spectrum into the facility-neutral microsecond contract.",
+              "measured": 8190.400000000001,
+              "status": "passed"
+            },
+            {
+              "check_id": "tof_nickel_fit_window",
+              "criterion": "4431 centers from 1101.6 through 8189.6 us",
+              "detail": "The published tutorial fit interval uses bin centers in microseconds.",
+              "measured": 4431.0,
+              "status": "passed"
+            },
+            {
+              "check_id": "tof_nickel_reflections",
+              "criterion": "102 reflection families",
+              "detail": "The Fm-3m nickel cell generates stable reflection families across the selected bank.",
+              "measured": 102.0,
+              "status": "passed"
+            },
+            {
+              "check_id": "tof_nickel_profile_fit",
+              "criterion": "uncertainty-weighted Rwp <= 0.026",
+              "detail": "The native fixed-instrument TOF extraction fits the non-POWGEN nickel observations.",
+              "measured": 0.024858689217005354,
+              "status": "passed"
+            },
+            {
+              "check_id": "tof_nickel_profile_correlation",
+              "criterion": "masked Pearson correlation >= 0.998",
+              "detail": "The background-subtracted observations and extracted profile remain aligned.",
+              "measured": 0.9989124246863262,
+              "status": "passed"
+            },
+            {
+              "check_id": "tof_nickel_convergence",
+              "criterion": "20 cycles with non-increasing Rwp",
+              "detail": "Every accepted nonnegative redistribution cycle is non-increasing in Rwp.",
+              "measured": 20.0,
+              "status": "passed"
+            },
+            {
+              "check_id": "tof_nickel_derivatives",
+              "criterion": "15 instrument derivative rows",
+              "detail": "The real-pattern calculation retains all analytical instrument rows from the fused pass.",
+              "measured": 15.0,
+              "status": "passed"
+            },
+            {
+              "check_id": "tof_nickel_multibank_atomic",
+              "criterion": "3 banks, 20 accepted cycles, and 13293 included observations",
+              "detail": "Banks 2--4 advance in one atomic shared-cell/local-instrument workflow.",
+              "measured": 13293.0,
+              "status": "passed"
+            },
+            {
+              "check_id": "tof_nickel_multibank_fit",
+              "criterion": "joint Rwp <= 0.03 and every bank Rwp <= 0.03",
+              "detail": "The concatenated real observations and every member bank pass explicit Rwp gates.",
+              "measured": 0.022733056318157426,
+              "status": "passed"
+            },
+            {
+              "check_id": "tof_nickel_multibank_lattice",
+              "criterion": "|a - 3.5234 A| <= 0.0005 A",
+              "detail": "The displaced shared cubic cell returns to the published nickel lattice.",
+              "measured": 3.523611957358181,
+              "status": "passed"
+            },
+            {
+              "check_id": "tof_nickel_multibank_identifiability",
+              "criterion": "4 selected columns, rank 4, and at least one cross-family correlation",
+              "detail": "Rank and lattice/instrument correlations are retained for the real joint system.",
+              "measured": 4.0,
+              "status": "passed"
+            },
+            {
+              "check_id": "tof_nickel_structural_multibank",
+              "criterion": "3 banks, 13293 included observations, 8 parameters, and at least one accepted step",
+              "detail": "One structural Fm-3m nickel phase and three explicit bank models refine in one accepted-state objective.",
+              "measured": 7.0,
+              "status": "passed"
+            },
+            {
+              "check_id": "tof_nickel_structural_fit",
+              "criterion": "joint Rwp <= 0.04",
+              "detail": "The native neutron structure-factor intensities reproduce every real bank without Le Bail intensity redistribution.",
+              "measured": 0.03278208249496335,
+              "status": "passed"
+            },
+            {
+              "check_id": "tof_nickel_structural_correlation",
+              "criterion": "minimum bank profile correlation >= 0.995",
+              "detail": "Every incident-normalized bank retains a high background-subtracted structural profile correlation.",
+              "measured": 0.9974901003005688,
+              "status": "passed"
+            },
+            {
+              "check_id": "tof_nickel_structural_lattice",
+              "criterion": "|a - 3.5234 A| <= 0.002 A",
+              "detail": "The real structural objective returns the displaced shared cubic cell to the published nickel lattice.",
+              "measured": 3.5237311302969303,
+              "status": "passed"
+            },
+            {
+              "check_id": "tof_nickel_structural_u_iso",
+              "criterion": "0 <= Uiso <= 0.05 A^2",
+              "detail": "The shared Ni isotropic displacement remains in an explicit physical validation interval.",
+              "measured": 0.003965072926727362,
+              "status": "passed"
+            }
+          ],
+          "dataset_id": "lanl-nickel-tof",
+          "notes": [
+            "LANL bank 2 profile function 1; range=1101.6..8189.6 us; DIFC=4368.97000 us/A.",
+            "Final Rwp=0.02485869; Rp=0.01835585; correlation=0.99891242; background=Smooth Bruckner + 12-term Chebyshev.",
+            "Joint banks 2--4 Rwp=0.02273306; bank Rwp=[0.023358447964705806, 0.022057168758441447, 0.02260670521944436]; a=3.52361196 A; rank=4/4.",
+            "Structural banks 2--4 Rwp=0.03278208; minimum correlation=0.99749010; a=3.52373113 A; Ni Uiso=0.00396507 A^2; accepted steps=7; evaluations=71."
+          ],
+          "reflection_count": 102,
+          "reported_terminations": [],
+          "sample_count": 4431,
+          "status": "passed"
+        },
+        "seconds": [
+          52.75780883303378,
+          55.028951166023035
+        ],
+        "exact_repeatability": true
+      }
+    }
+  },
+  "timing_note": "Shared desktop; paired sequential fits, other workloads not controlled. Imports, verification and Rowles conversion excluded; complete fixed recipe included."
+}
