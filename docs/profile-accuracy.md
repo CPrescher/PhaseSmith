@@ -39,7 +39,9 @@ For example, compare a fitted state with the established calculation using:
 from phasesmith.refinement import rietveld
 
 reference = rietveld.calculate(
-    request.pattern, result.experiment, result.phases,
+    request.pattern,
+    result.experiment,
+    result.phases,
     background=result.background,
     support_fwhm=options.support_fwhm,
     profile_accuracy=ProfileAccuracy(),
@@ -179,8 +181,8 @@ degrees, zero geometry, and all five FCJ derivatives.
 
 Raw measurements:
 
-- [Policies and PbSO4 checks](../validation/results/rietx-20260916-profile-accuracy.json)
-- [Default before/after comparison](../validation/results/rietx-20260916-accuracy-default-comparison.json)
+- [Policies and PbSO4 checks](https://github.com/CPrescher/PhaseSmith/blob/8d9d86e44901c336a6b0a6e7c35ea8ad82d6da6d/validation/results/rietx-20260916-profile-accuracy.json)
+- [Default before/after comparison](https://github.com/CPrescher/PhaseSmith/blob/8d9d86e44901c336a6b0a6e7c35ea8ad82d6da6d/validation/results/rietx-20260916-accuracy-default-comparison.json)
 
 ### Fresh paired rietx comparison
 
@@ -207,5 +209,5 @@ Reproduce with `benchmarks/compare_rietx_qarr.py --fast-fcj
 under the same single-thread BLAS/OpenMP environment, then repeat at eight
 workers. Records include the selected accuracy policy and unchanged gates:
 
-- [One worker](../validation/results/rietx-20260916-profile-accuracy-vs-rietx-1thread.json)
-- [Eight workers](../validation/results/rietx-20260916-profile-accuracy-vs-rietx-8threads.json)
+- [One worker](https://github.com/CPrescher/PhaseSmith/blob/8d9d86e44901c336a6b0a6e7c35ea8ad82d6da6d/validation/results/rietx-20260916-profile-accuracy-vs-rietx-1thread.json)
+- [Eight workers](https://github.com/CPrescher/PhaseSmith/blob/8d9d86e44901c336a6b0a6e7c35ea8ad82d6da6d/validation/results/rietx-20260916-profile-accuracy-vs-rietx-8threads.json)

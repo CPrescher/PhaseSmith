@@ -81,9 +81,7 @@ def test_fast_fcj_near_angular_limits_and_ninety_degrees(position):
     actual = ps.profile_fcj(
         x, position, 0.04, 0.01, geometry, profile_accuracy=ps.ProfileAccuracy(fast_fcj=True)
     )
-    expected = reference.profile_fcj(
-        x, position, 0.04, 0.01, 0.0001, 0.00007, quadrature_order=256
-    )
+    expected = reference.profile_fcj(x, position, 0.04, 0.01, 0.0001, 0.00007, quadrature_order=256)
     for field in actual.__dataclass_fields__:
         ref_values = getattr(expected, field)
         scale = max(float(np.max(np.abs(ref_values))), 1.0)

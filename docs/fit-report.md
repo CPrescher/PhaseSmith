@@ -13,6 +13,7 @@ for action in report.advice:
     print(action.code, action.message, action.parameter_labels)
 
 import json
+
 print(json.dumps(report.to_record(), allow_nan=False))
 ```
 

@@ -77,7 +77,7 @@ has not been fully attributed. Matching the support multiplier does not make
 the per-node and frozen-window support conventions identical.
 
 Reproduce with `benchmarks/friedel_equivalence.py --json-output forward.json`.
-The [recorded forward results](../validation/results/rietx-20260916-friedel-corrected-forward.json)
+The [recorded forward results](https://github.com/CPrescher/PhaseSmith/blob/8d9d86e44901c336a6b0a6e7c35ea8ad82d6da6d/validation/results/rietx-20260916-friedel-corrected-forward.json)
 include input hashes and both profile policies. The successful row establishes
 the initial forward gate only, not final-fit equivalence or identical math.
 
@@ -113,7 +113,7 @@ its existing acceptance rule permits after sufficient improvement; this is
 not reported as convergence. Its Rwp is 10.3466%; the combined neutron fit
 converges at 4.2889%.
 
-The [corrected accuracy sweep](../validation/results/rietx-20260916-friedel-corrected-accuracy.json)
+The [corrected accuracy sweep](https://github.com/CPrescher/PhaseSmith/blob/8d9d86e44901c336a6b0a6e7c35ea8ad82d6da6d/validation/results/rietx-20260916-friedel-corrected-accuracy.json)
 contains all repetitions, stage timings, scientific checks, termination reasons
 and data hashes. Reproduce with `benchmarks/profile_accuracy.py --repetitions 5
 --json-output corrected.json` in a release environment.
@@ -123,7 +123,7 @@ wheel measured default QARR times of 0.7890 -> 0.7950 s at one worker and
 0.3449 -> 0.3487 s at eight: approximately 0.8% and 1.1% additional time in
 that run. These are small whole-workflow differences, including the changed
 physical intensities and fit trajectory, rather than isolated kernel timings.
-The [before/after record](../validation/results/rietx-20260916-friedel-before-after.json)
+The [before/after record](https://github.com/CPrescher/PhaseSmith/blob/8d9d86e44901c336a6b0a6e7c35ea8ad82d6da6d/validation/results/rietx-20260916-friedel-before-after.json)
 retains both scientific results. The optional profile speed controls remain
 available on top of the corrected powder intensities.
 
@@ -151,8 +151,8 @@ this preparation, including inside the rietx workflow. Those records are
 therefore not strictly single-worker whole-workflow measurements. The updated
 benchmark retains the same input model, and its complete scientific records
 and equivalence checks exactly match the earlier corrected-physics runs at
-both worker counts. See the [one-worker record](../validation/results/rietx-20260916-controlled-paired-1worker.json)
-and [eight-worker record](../validation/results/rietx-20260916-controlled-paired-8workers.json).
+both worker counts. See the [one-worker record](https://github.com/CPrescher/PhaseSmith/blob/8d9d86e44901c336a6b0a6e7c35ea8ad82d6da6d/validation/results/rietx-20260916-controlled-paired-1worker.json)
+and [eight-worker record](https://github.com/CPrescher/PhaseSmith/blob/8d9d86e44901c336a6b0a6e7c35ea8ad82d6da6d/validation/results/rietx-20260916-controlled-paired-8workers.json).
 
 Both workflows pass their existing scientific acceptance gates. Strict
 cross-engine equivalence still fails: initial relative L2 difference is
@@ -185,10 +185,10 @@ consistent with run-to-run variation on the same serial path, not evidence
 of parallel overhead or scaling. Larger batches can take its parallel path;
 this result is specific to the QARR case.
 
-The [audit script](../benchmarks/audit_rietx_threads.py) records source hashes,
+The [audit script](https://github.com/CPrescher/PhaseSmith/blob/8d9d86e44901c336a6b0a6e7c35ea8ad82d6da6d/benchmarks/audit_rietx_threads.py) records source hashes,
 dispatch counts and individual CPU/wall measurements. Its
-[one-worker](../validation/results/rietx-20260916-thread-audit-1worker.json) and
-[eight-worker](../validation/results/rietx-20260916-thread-audit-8workers.json)
+[one-worker](https://github.com/CPrescher/PhaseSmith/blob/8d9d86e44901c336a6b0a6e7c35ea8ad82d6da6d/validation/results/rietx-20260916-thread-audit-1worker.json) and
+[eight-worker](https://github.com/CPrescher/PhaseSmith/blob/8d9d86e44901c336a6b0a6e7c35ea8ad82d6da6d/validation/results/rietx-20260916-thread-audit-8workers.json)
 records measure preparation separately, preserving the original default
 two-worker preparation for diagnosis. Run each setting in a fresh process:
 
@@ -285,9 +285,9 @@ sample width identifiability and when background is frozen, then compare time
 to a shared Rwp target under a documented common model. Another profile-kernel
 speedup would not resolve the demonstrated staging issue.
 
-Reproduce with [investigate_rietx_rwp.py](../benchmarks/investigate_rietx_rwp.py)
+Reproduce with [investigate_rietx_rwp.py](https://github.com/CPrescher/PhaseSmith/blob/8d9d86e44901c336a6b0a6e7c35ea8ad82d6da6d/benchmarks/investigate_rietx_rwp.py)
 in the optional benchmark environment, with BLAS/OpenMP environment limits
-set to one. The [diagnostic record](../validation/results/rietx-20260916-rwp-diagnostic.json)
+set to one. The [diagnostic record](https://github.com/CPrescher/PhaseSmith/blob/8d9d86e44901c336a6b0a6e7c35ea8ad82d6da6d/validation/results/rietx-20260916-rwp-diagnostic.json)
 contains individual stage histories, acceptance checks, fitted parameters,
 width checks and dataset hashes. Timings are diagnostic only; no production
 numerics, recipe defaults or acceptance thresholds were changed.
