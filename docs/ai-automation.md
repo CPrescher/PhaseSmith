@@ -246,11 +246,18 @@ same reviewed files live under `schemas/automation/`; verify them with:
 python scripts/export_automation_schemas.py --check
 ```
 
-The repository skill at `skills/phasesmith-ai-workflows/` gives coding agents
-the approval, provenance, scientific-ordering, review, and stop rules for this
-boundary. Keep this repository copy under review and install it through the
-agent's normal local-skill mechanism when it is not discovered directly from
-the checkout. The complete offline example creates a synthetic project and
+The [agent skill](agent-skill/index.md) gives agents the approval, provenance,
+scientific-ordering, review, and stop rules for this boundary, with focused
+references for experimental prerequisites and interpreting results. It ships
+with the Python distribution: `phasesmith skill --path` locates the complete
+directory, `phasesmith skill --print` reads its entrypoint, and
+`phasesmith skill --print all` reads all instructions. Copy the whole directory
+through your agent's normal skill-installation mechanism and refresh it after
+upgrading PhaseSmith. The repository source remains
+`skills/phasesmith-ai-workflows/`; the published skill page and packaged
+resources are generated from it and checked for drift.
+
+The complete offline example creates a synthetic project and
 writes the first plan/packet/proposal/lint/run/review plus a second
 lineage-bound plan and review packet:
 

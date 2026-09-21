@@ -1,114 +1,73 @@
 ---
 name: phasesmith-ai-workflows
-description: Guide safe AI-assisted PhaseSmith Rietveld workflows. Use when planning, proposing or linting staged refinement recipes, preparing model-facing advisor packets, running an explicitly approved PhaseSmith plan, reviewing refinement evidence, or creating a lineage-bound next iteration from persisted project or automation JSON files.
+description: Use PhaseSmith to inspect diffraction inputs, advise on staged Rietveld recipes, execute approved automation plans, and interpret refinement evidence. Apply to PhaseSmith scientific workflows and their JSON/CLI boundary, including missing experimental context, correlated parameters, and review or replanning of a fit.
 ---
 
 # PhaseSmith AI workflows
 
-Use PhaseSmith's versioned JSON/CLI boundary. Treat an AI as an external
-scientific advisor, never as numerical authority or an in-solver callback.
+Help the user carry out and judge a PhaseSmith diffraction workflow. PhaseSmith
+performs the numerical calculation; the agent supplies advice and explanation.
+Use the installed version's commands, schemas, and result records as the API
+contract. This skill is for using PhaseSmith, not modifying its numerical core.
+It needs neither a source checkout nor GSAS-II nor a model-provider SDK.
 
-## Establish the boundary
+## Read what the task needs
 
-1. Read the repository `PROJECT_BRIEF.md` before changing architecture or
-   numerical behavior.
-2. Operate on a reviewed, persisted `RietveldProject` for runnable workflows.
-3. Use `phasesmith inspect-pattern` and `phasesmith inspect-cif` only to report
-   bounded facts about raw inputs. Never infer radiation, wavelength,
-   instrument response, geometry, background, phases, or authorization from
-   those files.
-4. Keep GSAS-II outside the runtime. Treat it only as the repository's pinned
-   black-box validation oracle.
+| Task | Reference |
+| --- | --- |
+| Raw pattern/CIF, missing experiment facts, choice of model or parameter groups | [Experimental context](references/experiment.md) |
+| Plan, advisor packet, recipe proposal, lint, approved execution, resume, or another iteration | [Automation protocol](references/workflow.md) |
+| Fit quality, termination, correlations, QPA, or instrument/sample broadening claims | [Interpretation](references/interpretation.md) |
 
-## Prepare advice
+Inspect the user's existing artifacts before requesting information they may
+already contain. For a raw-input task, use `phasesmith inspect-pattern` and
+`phasesmith inspect-cif`; record known facts and remaining unknowns. A CIF
+supplies a candidate structure, not evidence of phase completeness. Do not
+choose a wavelength or geometry from an extension, a plausible cell, or a good
+fit. Readiness checks cannot establish the truth of supplied metadata.
 
-Create and retain the full byte-bound plan:
+## Choose the appropriate boundary
 
-```shell
-phasesmith plan workflow-spec.json --output plan.json
-```
+The automation v1 CLI starts from a reviewed, persisted `RietveldProject`.
+Project construction requires a Python script with explicit experimental and
+model choices. Other PhaseSmith Python workflows exist; do not force TOF,
+calibration, or Le Bail inputs through a CW Rietveld JSON contract. Consult the
+installed API and the experimental-context reference for those tasks.
 
-Create the sanitized model-facing packet:
+For the automation path, prepare a plan and a path-free advisor packet, propose
+only caller-authorized stages, lint the proposal, then execute the reviewed
+plan. Follow the workflow reference for the exact commands and contracts.
+Existing approval of that exact plan is sufficient; do not request it again.
+Approval of an earlier plan does not authorize a changed plan. Do not use a
+lower-level API to bypass the chosen workflow's approval or authorization.
 
-```shell
-phasesmith advisor-packet plan.json > advisor-packet.json
-```
+No refinement or approval is needed just to inspect inputs, explain a result,
+prepare a plan, lint a proposal, or read a skill reference. Match the response
+to the user's task. Return schema-only JSON when asked for a recipe proposal;
+use ordinary explanation for inspection and interpretation.
 
-Share the advisor packet, not the full plan. Confirm its privacy flags and
-review visible identifiers and scientific metadata before remote disclosure.
-Use `phasesmith schema recipe-proposal` as the exact response contract.
+## Scientific decision rules
 
-## Propose a recipe
+- Establish justified scale/background and peak positions before releasing
+  highly correlated width, structural, or intensity terms. This is a starting
+  rubric, not a universal fixed recipe; explain data-specific departures.
+- Check identifiability before freeing correlated parameters. Staging cannot
+  remove a degeneracy. If the authorized final selection is scientifically
+  unjustified, explain the conflict and request revised authorization rather
+  than silently omitting parameters or submitting a misleading recipe.
+- Separate safe workflow completion, optimizer convergence, and scientific
+  acceptance. A completed run or smaller Rwp alone establishes neither the
+  physical model nor accurate reported parameters.
+- Preserve experimental inputs, masks, weighting, bounds, numerical policies,
+  and provenance. Treat a proposed change to them as a disclosed new modeling
+  decision, not a hidden way to improve the score.
+- Report missing evidence explicitly: unknown covariance is not zero
+  uncertainty; a residual location is not identification of a missing phase;
+  fitted effective widths are not automatically instrumental calibration.
 
-Return only recipe-proposal JSON. Apply these rules:
-
-- Bind `plan_id` to the packet's plan and
-  `provenance.advisor_packet_id` to its packet ID.
-- Record `provenance.kind`, proposer/model name, provider for models, optional
-  model snapshot/version, client, prompt SHA-256, and request ID truthfully.
-- State uncertainty in `assumptions`; do not invent absent physics.
-- Use only `authorization.maximum_selection` fields and parameter names.
-- Keep stages cumulative and make the final stage exactly equal to the maximum
-  selection.
-- Establish scale and justified background before correlated intensity terms.
-- Align justified position terms before profile widths.
-- Delay occupancy and sample/structural terms until scale, background, and
-  positions are credible.
-- Call out scale--occupancy, lattice--wavelength, and
-  zero--displacement correlation risks.
-- Never change solver options, termination policy, limits, or constraints.
-
-Lint before asking for approval:
-
-```shell
-phasesmith lint-recipe plan.json recipe-proposal.json
-```
-
-Treat lint warnings as prompts for scientific review, not automatic rejection
-or acceptance. Correct contract errors before numerical work.
-
-## Approval and execution
-
-Present the plan ID, readiness findings, proposed stages, assumptions, lint
-findings, budgets, and outputs to the user. Do not execute until the user
-explicitly approves that exact plan ID.
-
-```shell
-phasesmith run plan.json --proposal recipe-proposal.json --approve PLAN_ID
-```
-
-Never substitute a different plan ID, reuse an earlier approval, silently
-overwrite outputs, or broaden authorization.
-
-## Review and iterate
-
-Create deterministic post-run evidence:
-
-```shell
-phasesmith review OUTPUT_DIRECTORY > review.json
-```
-
-Review termination, stage improvement, parameter motion, bounds, rank,
-correlations, regional/serial residual structure, provenance, plots, and
-physical plausibility together. Never accept a fit from lower Rwp alone.
-
-Prepare a new plan and path-free review packet for another advisory pass:
-
-```shell
-phasesmith review-packet OUTPUT_DIRECTORY \
-  --output-directory NEXT_OUTPUT_DIRECTORY \
-  --plan-output next-plan.json > review-packet.json
-```
-
-Share the complete path-free `review-packet.json` so the prior review remains
-available as evidence. Bind the next proposal only to its nested
-`next_advisor_packet`, lint it against `next-plan.json`, present the new
-evidence, and require approval of the new plan ID. Do not edit the parent audit
-directory or place an AI callback inside an active solve.
-
-## Stop conditions
-
-Stop and ask for scientific input when readiness has errors, essential
-experimental metadata is absent, requested parameters exceed authorization,
-the proposed parameterization is not identifiable, or a result would require
-claiming phase completeness or physical validity not supported by the packet.
+When essential facts, identifiable parameterization, or authorization are
+missing, continue useful inspection and preparation, but pause the dependent
+numerical action or scientific claim. Ask for the specific missing evidence.
+Do not silently enlarge budgets, relax acceptance criteria, fabricate metadata,
+or label a stalled result converged. Retain the evidence needed for the user
+to decide the next step.

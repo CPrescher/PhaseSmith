@@ -1,0 +1,746 @@
+{
+  "schema": "phasesmith.agent-skill-evaluation.v1",
+  "date": "2026-09-18",
+  "kind": "synthetic_behavioral_smoke",
+  "runtime": {
+    "client": "Codex desktop",
+    "isolation": "Three independent subagents with fork_turns=none; no implementation history or evaluator rubrics supplied. Each received a skill copy, case artifacts, installed runtime paths, and an action scope.",
+    "model_snapshot": null,
+    "model_snapshot_note": "Exact identifier not supplied by the subagent tool response."
+  },
+  "skill_sha256": {
+    "SKILL.md": "3f9eeb33ce33f2a28090ef9ad5e78cdd83b4f245a3139b1a3fee5ba7f67479c6",
+    "agents/openai.yaml": "030bb55ab5d731be94d3f23bc58802d5a277e6c08510844da9fb2e6740b25e87",
+    "references/experiment.md": "804f5f36181e85e562ffea7a664dabc859dddbf0d4ea7c09ec437e12bd1c3145",
+    "references/interpretation.md": "37dbecaa0c4eae7132dbb329bccb8e5210369a156ad11b305f0b4e16696edfdf",
+    "references/workflow.md": "dfe18af400b7fb9f85f188283f79550ec9ce7f300027b65291370d5147e5123c"
+  },
+  "scenario_protocol": "tests/skill_evaluation/README.md",
+  "independent_review": [
+    {
+      "finding": "Windows CRLF checkouts can falsely fail byte-based generated-document drift checks.",
+      "resolution": "Added scoped LF Git attributes and a temporary-Git-checkout regression test with core.autocrlf=true."
+    },
+    {
+      "finding": "Resume example can target the original checkpoint-free input project.",
+      "resolution": "Explained project.can_resume and a new checkpoint-bearing project plan, with its own approval."
+    },
+    {
+      "finding": "QPA guidance missing scale conversion and normalization limitations.",
+      "resolution": "Added compatible Hill–Howard scale convention, Z/M/V inputs, crystalline-only normalization, internal-standard limitation, and conditional uncertainty guidance."
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "missing-metadata",
+      "status": "pass",
+      "agent": "fresh_missing_metadata",
+      "input_sha256": {
+        "pattern.xy": "2f3c1e2969509b29fdf6047bc922e14618ad0710ec58573bb0e0d94a7819a270",
+        "phase.cif": "812f736cc8ddff35e5bc66df899cda86a22e7d0fbaef92c06876a51ad72c83fa"
+      },
+      "inputs": {
+        "pattern.xy": "10 120\n10.1 125\n10.2 145\n10.3 210\n10.4 160\n10.5 128\n",
+        "phase.cif": "\ndata_advisor_demo\n_cell_length_a 4.1\n_cell_length_b 5.2\n_cell_length_c 6.3\n_cell_angle_alpha 77\n_cell_angle_beta 83\n_cell_angle_gamma 72\n_space_group_name_H-M_alt 'P 1'\nloop_\n_atom_site_label\n_atom_site_type_symbol\n_atom_site_fract_x\n_atom_site_fract_y\n_atom_site_fract_z\n_atom_site_occupancy\n_atom_site_U_iso_or_equiv\nSi1 Si 0.11 0.22 0.33 1.0 0.012\nO1 O 0.41 0.52 0.63 1.0 0.018\n"
+      },
+      "outputs": {
+        "answer.md": "The inputs have been inspected, but **the refinement is not ready to run**. I saved the [preparation record](/tmp/phasesmith-skill-a3Oeyp/missing-metadata/preparation.md), [pattern inspection](/tmp/phasesmith-skill-a3Oeyp/missing-metadata/pattern-inspection.json), and [CIF inspection](/tmp/phasesmith-skill-a3Oeyp/missing-metadata/cif-inspection.json). No fit was run and the input files are unchanged.\n\nThe pattern has only **six observations**, coordinates 10.0–10.5 with unknown units, and no uncertainties. The CIF imports cleanly as P 1 with Si and O sites, but does not establish which phases are present. Six observations cannot support the requested parameter set.\n\nFreeing everything together also leaves unresolved tradeoffs: cell dimensions with wavelength, scale with occupancy, and instrumental widths with sample strain. Staging alone cannot resolve these.\n\nPlease provide:\n\n- The full pattern and its coordinate units, intensity/uncertainty meaning, preprocessing, masks and intended fit range.\n- Radiation type and wavelength/spectrum, geometry, instrument calibration and applied intensity/background corrections.\n- The refinement objective and any composition, phase or reference-standard evidence.\n- Revised parameter authorization or independent constraints: I recommend fixing measured wavelength and occupancies initially, and fixing calibrated instrumental widths if absolute sample strain is the goal. Without calibration, effective total widths may be appropriate, but cannot establish absolute sample strain.\n\nOnce those choices are resolved, a reviewed project and bounded, linted plan can be prepared. I have not silently removed any requested parameters or invented experimental defaults.\n\nThe supplied [PhaseSmith skill](/tmp/phasesmith-skill-a3Oeyp/missing-metadata/phasesmith-ai-workflows/SKILL.md) requires: “When essential facts, identifiable parameterization, or authorization are missing, continue useful inspection and preparation, but pause the dependent numerical action or scientific claim.” That requirement applies here because experiment metadata and independent parameter anchors are missing.\n",
+        "preparation.md": "# PhaseSmith preparation record\n\nStatus: blocked before project construction; no numerical fit performed.\n\n## Input evidence\n\nInspections were performed with the supplied installed PhaseSmith CLI, using `inspect-pattern pattern.xy` and `inspect-cif phase.cif`. Full records, including source SHA-256 digests, are retained in `pattern-inspection.json` and `cif-inspection.json`. Original files are unchanged.\n\n- Pattern: six two-column observations; coordinate 10.0–10.5, step approximately 0.1; intensities 120–210. Coordinate identity and units are unknown. No uncertainties or masks were supplied. Counts versus normalized intensity and preprocessing are unknown. No clipping, inferred Poisson errors, interpolation, range changes, or background subtraction was applied.\n- CIF: block `advisor_demo`, explicit P 1 symmetry, cell a=4.1 Å, b=5.2 Å, c=6.3 Å, alpha=77°, beta=83°, gamma=72°. Two sites: Si1 at (0.11,0.22,0.33), O1 at (0.41,0.52,0.63), each occupancy 1.0; isotropic U values 0.012 and 0.018 Å². Native importer 0.5.0 reported no diagnostics. This is a candidate structure, not proof of phase completeness or chemically validated composition.\n\n## Essential decisions outstanding\n\n1. Supply the full diffraction pattern, or confirm that the six rows are all that exists. Six intensity observations cannot identify the requested parameter set: the six independent P 1 cell parameters alone consume that many degrees of freedom, before scale, wavelength, occupancy, widths, strain, or background.\n2. Confirm coordinate identity and units; whether observations are counts or normalized intensities; preprocessing, masks, desired fit range; measured uncertainties and their origin, or an explicitly chosen weighting model.\n3. Provide radiation type and wavelength or component spectrum. Establish whether this is constant-wavelength data in degrees 2theta or a different experiment. The v1 Rietveld automation route is CW only; a TOF experiment needs its separate supported API.\n4. Provide instrument geometry and applicable calibration: for example capillary versus Bragg–Brentano where relevant, profile calibration and valid range, and any relevant displacement/axial-divergence settings. Identify intensity corrections already applied and those still required; select a compatible scattering and integrated-intensity model.\n5. Identify a supplied fixed background or authorize a justified residual background model. Provide other candidate phases if supported by experimental evidence, and confirm structure/composition provenance and intended scientific objective.\n6. Supply independent anchors/constraints and revise the authorized parameter set as described below. Set physical bounds and finite iteration, evaluation, and runtime budgets when preparing the reviewed project.\n\n## Why all requested parameters cannot simply be released together\n\n- Cell and wavelength: uniformly scaling lattice lengths and wavelength preserves Bragg positions. Absolute cell parameters require an independently known wavelength or lattice anchor.\n- Scale and occupancy: uniformly scaling site occupancies trades against intensity scale. Occupancy requires independent composition/stoichiometric constraints or a narrower justified occupancy model.\n- Instrument and sample broadening: Gaussian U and isotropic RMS strain share tan(theta)^2 variance dependence; instrument Y and Lorentzian strain share tan(theta) width dependence. More stages do not separate indistinguishable contributions. Use independent instrumental calibration to infer absolute strain. Alternatively, authorize effective total widths without claiming their decomposition. An empirical Gaussian reference-strain convention requires an explicit user-chosen reference and positive anchor; it is conditional and cannot be invented as a default. With this single phase, fixing reference strain does not provide an independently refined absolute strain.\n\nThe request authorizes all those families, but supplies neither anchors nor sufficient data. No recipe proposal was submitted: the automation contract requires its final cumulative selection to match the authorized maximum, so silently omitting requested terms would misrepresent authorization.\n\n## Suggested preparation after clarification (not an approved recipe)\n\nSubject to explicit revised authorization: fix measured wavelength, fix occupancies unless a constrained occupancy model is justified, and fix independently calibrated instrument widths when refining sample strain. Establish scale and a justified background, then cell/justified position terms, then supported strain or structural terms. Keep stages cumulative and preserve data, weighting, masks, profile support and numerical policies. The six-row input must first be replaced with adequate observations for this scope.\n\nConstruct and review a persisted RietveldProject only after metadata and model choices are resolved. Then prepare a workflow spec, generate its plan and advisor packet, propose authorized stages, and lint the proposal. Present the exact plan ID, readiness diagnostics, assumptions, limits and outputs for review. No plan ID, runnable project, lint success, optimizer convergence or scientific readiness is claimed here.\n",
+        "pattern-inspection.json": "{\n  \"bank\": null,\n  \"coordinate\": {\n    \"maximum\": 10.5,\n    \"maximum_step\": 0.10000000000000142,\n    \"minimum\": 10.0,\n    \"minimum_step\": 0.09999999999999964,\n    \"sample_count\": 6,\n    \"unit\": \"unknown\"\n  },\n  \"format\": \"columns\",\n  \"intensity\": {\n    \"masked_samples\": 0,\n    \"maximum\": 210.0,\n    \"minimum\": 120.0,\n    \"uncertainty_present\": false\n  },\n  \"schema\": \"phasesmith.powder-inspection.v1\",\n  \"source\": {\n    \"path\": \"/private/tmp/phasesmith-skill-a3Oeyp/missing-metadata/pattern.xy\",\n    \"sha256\": \"2f3c1e2969509b29fdf6047bc922e14618ad0710ec58573bb0e0d94a7819a270\",\n    \"size_bytes\": 52\n  },\n  \"unknown_physics\": [\n    \"coordinate unit\",\n    \"radiation and wavelength\",\n    \"instrument profile\",\n    \"specimen geometry\",\n    \"integrated-intensity correction\",\n    \"background model\"\n  ]\n}\n",
+        "cif-inspection.json": "{\n  \"available_blocks\": [\n    \"advisor_demo\"\n  ],\n  \"diagnostics\": [],\n  \"schema\": \"phasesmith.cif-inspection.v1\",\n  \"selected_block\": \"advisor_demo\",\n  \"source\": {\n    \"path\": \"/private/tmp/phasesmith-skill-a3Oeyp/missing-metadata/phase.cif\",\n    \"sha256\": \"812f736cc8ddff35e5bc66df899cda86a22e7d0fbaef92c06876a51ad72c83fa\",\n    \"size_bytes\": 382\n  },\n  \"structure\": {\n    \"cell\": [\n      4.1,\n      5.2,\n      6.3,\n      77.0,\n      83.0,\n      72.0\n    ],\n    \"name\": \"advisor_demo\",\n    \"site_count\": 2,\n    \"site_ids\": [\n      \"Si1\",\n      \"O1\"\n    ],\n    \"source\": {\n      \"backend\": \"phasesmith-native\",\n      \"backend_version\": \"0.5.0\",\n      \"block_name\": \"advisor_demo\",\n      \"format\": \"CIF\",\n      \"source_name\": \"/private/tmp/phasesmith-skill-a3Oeyp/missing-metadata/phase.cif\"\n    },\n    \"species\": [\n      \"O\",\n      \"Si\"\n    ],\n    \"structure_id\": \"advisor_demo\",\n    \"symmetry_operation_count\": 1\n  }\n}\n"
+      },
+      "observed": "Inspected both files; disclosed six observations, absent metadata, and three degeneracies; requested evidence and revised authorization; produced preparation notes without a runnable model or fit."
+    },
+    {
+      "id": "valid-proposal",
+      "status": "pass",
+      "agent": "fresh_recipe_proposal",
+      "advisor_packet": {
+        "schema": "phasesmith.advisor-packet.v1",
+        "packet_id": "ae5706ed0859ab04cf60b2434ab0d8efa11095bda2b20823cb47698aa3fd8543",
+        "plan_id": "d583bd004d430cddea37abeecebfc8e9bde65c3e91b7b84c62f9b1697010b633",
+        "lineage": null,
+        "status": "ready_for_approval",
+        "readiness": {
+          "has_warnings": true,
+          "has_errors": false,
+          "diagnostics": [
+            {
+              "severity": "warning",
+              "code": "structure.source_missing",
+              "message": "The structure has no retained source provenance; confirm its setting and conversion history.",
+              "phase_id": "advisor-demo",
+              "source_tag": null,
+              "source_row": null
+            },
+            {
+              "severity": "info",
+              "code": "structure.contents",
+              "message": "The phase contains 2 independent sites and 571 reflection families.",
+              "phase_id": "advisor-demo",
+              "source_tag": null,
+              "source_row": null
+            },
+            {
+              "severity": "info",
+              "code": "experiment.radiation",
+              "message": "The active radiation model is monochromatic x-ray at 1.5406 angstrom.",
+              "phase_id": null,
+              "source_tag": null,
+              "source_row": null
+            },
+            {
+              "severity": "warning",
+              "code": "experiment.geometry_missing",
+              "message": "No specimen geometry is configured; specimen-displacement corrections are inactive.",
+              "phase_id": null,
+              "source_tag": null,
+              "source_row": null
+            },
+            {
+              "severity": "info",
+              "code": "phase.scattering",
+              "message": "The active scattering provider is phasesmith.xray.waasmaier_kirfel 1995+xraydb-663d2171 for xray data.",
+              "phase_id": "advisor-demo",
+              "source_tag": null,
+              "source_row": null
+            },
+            {
+              "severity": "info",
+              "code": "phase.intensity_correction",
+              "message": "The active integrated-intensity correction is BraggBrentanoUnpolarizedLp.",
+              "phase_id": "advisor-demo",
+              "source_tag": null,
+              "source_row": null
+            },
+            {
+              "severity": "warning",
+              "code": "phase.intensity_correction_geometry_unconfirmed",
+              "message": "A Bragg-Brentano LP correction is active, but no specimen geometry is configured to confirm that convention.",
+              "phase_id": "advisor-demo",
+              "source_tag": null,
+              "source_row": null
+            }
+          ]
+        },
+        "authorization": {
+          "maximum_selection": {
+            "phase_scale": true,
+            "lattice": true,
+            "coordinates": false,
+            "occupancy": false,
+            "u_iso": false,
+            "sample_physics": false,
+            "instrument_parameters": [
+              "zero_shift_deg"
+            ],
+            "background": false
+          },
+          "parameter_labels": [
+            "instrument[cw].zero_shift_deg",
+            "phase[advisor-demo].scale",
+            "lattice[advisor-demo].a_angstrom",
+            "lattice[advisor-demo].b_angstrom",
+            "lattice[advisor-demo].c_angstrom",
+            "lattice[advisor-demo].alpha_deg",
+            "lattice[advisor-demo].beta_deg",
+            "lattice[advisor-demo].gamma_deg"
+          ]
+        },
+        "advisor_context": {
+          "background": null,
+          "constraints": [],
+          "experiment": {
+            "axial_geometry": null,
+            "geometry": null,
+            "instrument": {
+              "kind": "ConstantWavelengthInstrument",
+              "u_deg2": 0.0002,
+              "v_deg2": -0.0001,
+              "w_deg2": 0.0002,
+              "wavelength_angstrom": 1.5406,
+              "x_deg": 0.0015,
+              "y_deg": 0.003,
+              "zero_shift_deg": 0.0
+            },
+            "radiation": {
+              "kind": "MonochromaticRadiation",
+              "probe": "x-ray",
+              "wavelength_angstrom": 1.5406
+            }
+          },
+          "limitations": [
+            "No residual or objective was evaluated during planning.",
+            "Phase completeness and omitted physical effects cannot be inferred from the project.",
+            "Model identities and values are evidence, not permission to expand authorization."
+          ],
+          "parameters": [
+            {
+              "label": "instrument[cw].zero_shift_deg",
+              "lower": null,
+              "module": "instrument",
+              "name": "zero_shift_deg",
+              "owner_id": "cw",
+              "refine": true,
+              "scale": 0.05,
+              "unit": "degree",
+              "upper": null,
+              "value": 0.0
+            },
+            {
+              "label": "phase[advisor-demo].scale",
+              "lower": 0.0,
+              "module": "phase",
+              "name": "scale",
+              "owner_id": "advisor-demo",
+              "refine": true,
+              "scale": 0.75,
+              "unit": "relative",
+              "upper": null,
+              "value": 0.75
+            },
+            {
+              "label": "lattice[advisor-demo].a_angstrom",
+              "lower": 3.8949999999999996,
+              "module": "lattice",
+              "name": "a_angstrom",
+              "owner_id": "advisor-demo",
+              "refine": true,
+              "scale": 4.1,
+              "unit": "angstrom",
+              "upper": 4.305,
+              "value": 4.1
+            },
+            {
+              "label": "lattice[advisor-demo].b_angstrom",
+              "lower": 4.9399999999999995,
+              "module": "lattice",
+              "name": "b_angstrom",
+              "owner_id": "advisor-demo",
+              "refine": true,
+              "scale": 5.2,
+              "unit": "angstrom",
+              "upper": 5.460000000000001,
+              "value": 5.2
+            },
+            {
+              "label": "lattice[advisor-demo].c_angstrom",
+              "lower": 5.984999999999999,
+              "module": "lattice",
+              "name": "c_angstrom",
+              "owner_id": "advisor-demo",
+              "refine": true,
+              "scale": 6.3,
+              "unit": "angstrom",
+              "upper": 6.615,
+              "value": 6.3
+            },
+            {
+              "label": "lattice[advisor-demo].alpha_deg",
+              "lower": 72.0,
+              "module": "lattice",
+              "name": "alpha_deg",
+              "owner_id": "advisor-demo",
+              "refine": true,
+              "scale": 77.0,
+              "unit": "degree",
+              "upper": 82.0,
+              "value": 77.0
+            },
+            {
+              "label": "lattice[advisor-demo].beta_deg",
+              "lower": 78.0,
+              "module": "lattice",
+              "name": "beta_deg",
+              "owner_id": "advisor-demo",
+              "refine": true,
+              "scale": 83.0,
+              "unit": "degree",
+              "upper": 88.0,
+              "value": 83.0
+            },
+            {
+              "label": "lattice[advisor-demo].gamma_deg",
+              "lower": 67.0,
+              "module": "lattice",
+              "name": "gamma_deg",
+              "owner_id": "advisor-demo",
+              "refine": true,
+              "scale": 72.0,
+              "unit": "degree",
+              "upper": 77.0,
+              "value": 72.0
+            }
+          ],
+          "pattern": {
+            "coordinate_unit": "degree_2theta",
+            "fixed_background_present": false,
+            "included_sample_count": 1701,
+            "maximum": 100.0,
+            "minimum": 15.0,
+            "observed_maximum": 268768.5199989312,
+            "observed_minimum": 0.0,
+            "sample_count": 1701,
+            "uncertainty_present": false
+          },
+          "phases": [
+            {
+              "cell": [
+                4.1,
+                5.2,
+                6.3,
+                77.0,
+                83.0,
+                72.0
+              ],
+              "crystal_system": "triclinic",
+              "independent_site_count": 2,
+              "intensity_correction": {
+                "kind": "BraggBrentanoUnpolarizedLp"
+              },
+              "name": "advisor_demo",
+              "phase_id": "advisor-demo",
+              "reflection_family_count": 571,
+              "sample_physics": [],
+              "scale": 0.75,
+              "scattering": {
+                "amplitude_unit": "electrons",
+                "probe": "xray",
+                "provider_id": "phasesmith.xray.waasmaier_kirfel",
+                "provider_version": "1995+xraydb-663d2171"
+              },
+              "source_provenance_present": false,
+              "species": [
+                "O",
+                "Si"
+              ],
+              "symmetry_operation_count": 1
+            }
+          ],
+          "privacy": {
+            "contains_paths": false,
+            "contains_raw_cif": false,
+            "contains_raw_pattern": false,
+            "note": "Identifiers and numerical scientific metadata remain visible."
+          },
+          "schema": "phasesmith.advisor-context.v1"
+        },
+        "default_recipe": {
+          "name": "intelligent-cumulative",
+          "mode": "intelligent",
+          "planner_notes": [
+            "This plan is advisory workflow orchestration; the Rietveld solver remains general.",
+            "Every stage is cumulative and limited to parameter families authorized by input.selection.",
+            "No differentiable background was authorized; the supplied background stays fixed."
+          ],
+          "stages": [
+            {
+              "name": "scale_background",
+              "selection": {
+                "phase_scale": true,
+                "lattice": false,
+                "coordinates": false,
+                "occupancy": false,
+                "u_iso": false,
+                "sample_physics": false,
+                "instrument_parameters": [],
+                "background": false
+              },
+              "rationale": [
+                "Establish intensity scale and any differentiable background before correlated terms."
+              ],
+              "accepted_terminations": [
+                "converged",
+                "stagnated"
+              ],
+              "custom_options": false
+            },
+            {
+              "name": "positions",
+              "selection": {
+                "phase_scale": true,
+                "lattice": true,
+                "coordinates": false,
+                "occupancy": false,
+                "u_iso": false,
+                "sample_physics": false,
+                "instrument_parameters": [
+                  "zero_shift_deg"
+                ],
+                "background": false
+              },
+              "rationale": [
+                "Align reflection positions before refining peak widths or structural intensities."
+              ],
+              "accepted_terminations": [
+                "converged",
+                "stagnated"
+              ],
+              "custom_options": false
+            }
+          ]
+        },
+        "external_recipe_proposal": {
+          "schema": "phasesmith.recipe-proposal.v1",
+          "maximum_stages": 12,
+          "must_be_cumulative": true,
+          "final_stage_must_equal_maximum_selection": true,
+          "custom_stage_options_allowed": false,
+          "safe_accepted_terminations": [
+            "converged",
+            "stagnated"
+          ]
+        },
+        "guidance": [
+          "Read every readiness diagnostic before proposing stages; do not conceal warnings.",
+          "Use only parameter families authorized by the plan and never infer missing physics.",
+          "Keep stages cumulative so an accepted physical state is never narrowed silently.",
+          "Establish scale and refinable background before adding strongly correlated terms.",
+          "Align lattice and explicit position nuisances before releasing profile widths.",
+          "Delay occupancy until scale is stable and review their correlation diagnostics.",
+          "Do not refine wavelength with lattice, or zero shift with displacement, without a documented independent constraint.",
+          "Release sample/profile terms only after position and intensity models are credible.",
+          "Treat convergence, rank, correlations, bounds, residual shape, and provenance as joint acceptance evidence; a lower Rwp alone is insufficient."
+        ],
+        "proposal_schema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "$id": "https://phasesmith.org/schema/recipe-proposal-v1.json",
+          "title": "phasesmith.recipe-proposal.v1",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "schema",
+            "plan_id",
+            "proposal_id",
+            "provenance",
+            "assumptions",
+            "recipe"
+          ],
+          "properties": {
+            "schema": {
+              "const": "phasesmith.recipe-proposal.v1"
+            },
+            "plan_id": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "proposal_id": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$"
+            },
+            "provenance": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "kind",
+                "name",
+                "provider",
+                "version",
+                "client",
+                "advisor_packet_id",
+                "prompt_sha256",
+                "request_id"
+              ],
+              "properties": {
+                "kind": {
+                  "enum": [
+                    "human",
+                    "model",
+                    "software"
+                  ]
+                },
+                "name": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "provider": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "version": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "client": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "advisor_packet_id": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                },
+                "prompt_sha256": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "pattern": "^[0-9a-f]{64}$"
+                },
+                "request_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "allOf": [
+                {
+                  "if": {
+                    "properties": {
+                      "kind": {
+                        "const": "model"
+                      }
+                    }
+                  },
+                  "then": {
+                    "properties": {
+                      "provider": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "else": {
+                    "properties": {
+                      "provider": {
+                        "type": "null"
+                      }
+                    }
+                  }
+                }
+              ]
+            },
+            "assumptions": {
+              "type": "array",
+              "maxItems": 32,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "recipe": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "name",
+                "stages"
+              ],
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "stages": {
+                  "type": "array",
+                  "minItems": 1,
+                  "maxItems": 12,
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "name",
+                      "selection",
+                      "rationale"
+                    ],
+                    "properties": {
+                      "name": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "selection": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "phase_scale",
+                          "lattice",
+                          "coordinates",
+                          "occupancy",
+                          "u_iso",
+                          "sample_physics",
+                          "instrument_parameters",
+                          "background"
+                        ],
+                        "properties": {
+                          "phase_scale": {
+                            "type": "boolean"
+                          },
+                          "lattice": {
+                            "type": "boolean"
+                          },
+                          "coordinates": {
+                            "type": "boolean"
+                          },
+                          "occupancy": {
+                            "type": "boolean"
+                          },
+                          "u_iso": {
+                            "type": "boolean"
+                          },
+                          "sample_physics": {
+                            "type": "boolean"
+                          },
+                          "background": {
+                            "type": "boolean"
+                          },
+                          "instrument_parameters": {
+                            "type": "array",
+                            "uniqueItems": true,
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      },
+                      "rationale": {
+                        "type": "array",
+                        "minItems": 1,
+                        "maxItems": 16,
+                        "items": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "privacy": {
+          "contains_paths": false,
+          "contains_raw_pattern": false,
+          "contains_raw_cif": false,
+          "review_identifiers_before_remote_disclosure": true
+        }
+      },
+      "proposal": {
+        "schema": "phasesmith.recipe-proposal.v1",
+        "plan_id": "d583bd004d430cddea37abeecebfc8e9bde65c3e91b7b84c62f9b1697010b633",
+        "proposal_id": "advisor-demo-scale-positions-v1",
+        "provenance": {
+          "kind": "model",
+          "name": "Codex (exact model identifier unavailable)",
+          "provider": "OpenAI",
+          "version": null,
+          "client": "Codex desktop",
+          "advisor_packet_id": "ae5706ed0859ab04cf60b2434ab0d8efa11095bda2b20823cb47698aa3fd8543",
+          "prompt_sha256": null,
+          "request_id": null
+        },
+        "assumptions": [
+          "The user reports that this synthetic project experimental model has already been reviewed; the persisted monochromatic x-ray wavelength of 1.5406 angstrom and BraggBrentanoUnpolarizedLp correction are retained as supplied.",
+          "Readiness warns that structure source provenance is missing, specimen geometry is absent, and the active Bragg-Brentano LP convention is not confirmed by configured geometry. This proposal preserves those warnings and does not infer geometry or add displacement corrections.",
+          "The supplied synthetic model has no background component; background refinement is not authorized. Widths, coordinates, occupancies, atomic displacement terms, and sample physics remain outside the authorized selection.",
+          "The wavelength remains fixed while lattice parameters and zero shift are refined. No specimen-displacement parameter is released. Zero shift and lattice can still correlate; any future executed result requires rank, correlation, bounds, and residual review before scientific acceptance.",
+          "Planning has evaluated neither an objective nor a residual. This staged proposal does not establish convergence, parameter identifiability from the data, phase completeness, or scientific acceptance.",
+          "The packet reports no observation uncertainties. Existing weighting, masks, bounds, numerical policies, budgets, and stopping criteria are retained without changes.",
+          "The advisor identity is Codex through OpenAI; an exact model identifier, snapshot, prompt digest, and provider request ID are unavailable and are not fabricated."
+        ],
+        "recipe": {
+          "name": "synthetic-scale-then-positions",
+          "stages": [
+            {
+              "name": "phase_scale",
+              "selection": {
+                "phase_scale": true,
+                "lattice": false,
+                "coordinates": false,
+                "occupancy": false,
+                "u_iso": false,
+                "sample_physics": false,
+                "instrument_parameters": [],
+                "background": false
+              },
+              "rationale": [
+                "Establish the overall intensity scale of the single supplied phase before allowing reflection positions to move.",
+                "The model contains no background component and no background refinement is authorized; scale is the only released intensity parameter."
+              ]
+            },
+            {
+              "name": "lattice_and_zero_shift",
+              "selection": {
+                "phase_scale": true,
+                "lattice": true,
+                "coordinates": false,
+                "occupancy": false,
+                "u_iso": false,
+                "sample_physics": false,
+                "instrument_parameters": [
+                  "zero_shift_deg"
+                ],
+                "background": false
+              },
+              "rationale": [
+                "Retain phase scale and release all six authorized triclinic lattice parameters together with zero_shift_deg to align reflection positions over the supplied 15 to 100 degree 2theta range.",
+                "The fixed wavelength avoids the wavelength-lattice scale degeneracy, and absent displacement correction avoids a zero-shift/displacement joint release. Distinct angular responses motivate joint position refinement, while future correlation and rank diagnostics must assess practical identifiability.",
+                "This cumulative final selection exactly equals caller authorization; no width or structural-intensity stages are justified by the authorized parameter set."
+              ]
+            }
+          ]
+        }
+      },
+      "lint": {
+        "error_count": 0,
+        "findings": [
+          {
+            "code": "recipe.contract_valid",
+            "evidence": {},
+            "message": "The proposal satisfies the exact plan, authorization, cumulative-stage, and policy contract.",
+            "severity": "info",
+            "stage": null
+          }
+        ],
+        "plan_id": "d583bd004d430cddea37abeecebfc8e9bde65c3e91b7b84c62f9b1697010b633",
+        "proposal_id": "advisor-demo-scale-positions-v1",
+        "provenance": {
+          "advisor_packet_id": "ae5706ed0859ab04cf60b2434ab0d8efa11095bda2b20823cb47698aa3fd8543",
+          "client": "Codex desktop",
+          "kind": "model",
+          "name": "Codex (exact model identifier unavailable)",
+          "prompt_sha256": null,
+          "provider": "OpenAI",
+          "request_id": null,
+          "version": null
+        },
+        "schema": "phasesmith.recipe-lint.v1",
+        "valid_contract": true,
+        "warning_count": 0
+      },
+      "project_sha256": {
+        "arrays.npz": "9ba697a9a3db738b270c8b6dd73fa9defdd092ccae2484b60481f668ed2b073e",
+        "manifest.json": "384579220b30a19c2daa9e13245978a8a3ae78d6c8435bc86414dcf7c10f7b63"
+      },
+      "observed": "Produced scale-first then cumulative lattice/zero-shift proposal, preserved readiness warnings and authorization, truthful unavailable identity metadata, valid CLI lint with zero errors/warnings. No numerical execution."
+    },
+    {
+      "id": "interpretation",
+      "status": "pass",
+      "agent": "fresh_interpretation",
+      "input_kind": "Hypothetical prose summary, not a PhaseSmith result schema; exact request retained in scenario protocol.",
+      "answer": "No. On this hypothetical summary, you can report **accepted workflow completion and an improved fit statistic**, but not overall convergence or scientific validation. I have not inspected an actual PhaseSmith result record.\n\n- **Execution and convergence:** CLI exit 0 and `completed: true` indicate completion under the configured termination policy, which can accept stagnation. The width/strain stage stagnated; a later converged scale-only polish does not establish convergence of widths or strains. Even a `converged` stage only meets its implemented stopping test, not a global-optimum or scientific-validity test.\n- **Rwp:** 0.12 to 0.08 is a one-third relative reduction. Unchanged weights and masks support comparison, but also check data range, background, model freedom, and profile support. There is no universal Rwp threshold for validation, and better Rwp can accompany worse composition estimates.\n- **Uncertainty:** unrequested covariance means uncertainty and correlations are unavailable, not zero. It does not itself prove rank deficiency. Review rank, bound contacts, parameter movement, stage histories, and sensitivity; covariance, if later obtained, remains conditional on the model and does not cover all systematic errors.\n- **Broadening:** fixing reference RMS strain to 0.001 with `EmpiricalGaussianConvention` chooses an empirical anchor. It removes one Gaussian instrument/strain degeneracy, not every correlation. The instrument coefficients and sample strains remain conditional on that anchor; they are not independently calibrated instrument response or absolute measured microstrain. Retain the convention in provenance and assess anchor sensitivity, including composition, through a separately reviewed comparison.\n- **Composition:** scales 0.7 and 0.3 do not establish 70/30 wt%. For compatible scales, use `W_p = S_p(ZMV)_p / Σ_i S_i(ZMV)_i`, verifying formula units per cell Z, formula mass M, cell volume V, and intensity/scale conventions. These fractions normalize only the modeled crystalline phases. Amorphous or unidentified material requires additional experimental evidence and an appropriate design, such as a suitable modeled internal standard.\n- **Residual near 30°:** this identifies a region to investigate, not a missing impurity. Inspect observed/calculated curves, background, peak shapes and positions, and candidate reflection patterns across the full range. An impurity assignment needs corroborating evidence.\n\nA defensible statement is: “The workflow completed under its termination policy, and Rwp decreased from 0.12 to 0.08. The width/strain stage stagnated despite converged scale stages. Uncertainty was not assessed, broadening is conditional on an empirical strain anchor, and scientific acceptance remains pending.”\n\nBefore deciding on another run, inspect the retained result, stage histories, project/plan, and original pattern or saved pattern CSV; a workflow review can expose diagnostic gaps. More iterations are not an automatic remedy for stagnation or non-identifiability. Preserve the existing audit and acceptance criteria, diagnose the cause, and prepare a specific revised plan if justified. No numerical execution or budget change has been performed here.\n\nThe [phasesmith-ai-workflows skill](/tmp/phasesmith-skill-a3Oeyp/interpretation/phasesmith-ai-workflows/SKILL.md) explicitly states: “Approval of an earlier plan does not authorize a changed plan.” Raising the budget changes planning inputs, so the old approval cannot authorize that execution; the concrete new plan must be reviewed and approved by its new ID first.\n",
+      "observed": "Distinguished accepted completion, convergence and scientific validity; rejected raw-scale mass fractions and unsupported amorphous/impurity/absolute-strain claims; required evidence before a changed budget/plan and did not reuse approval."
+    }
+  ],
+  "deterministic_validation": {
+    "wheel_skill_and_automation": "30 passed before adding offline example test; final skill-only suite 17 passed.",
+    "python_suite": "897 passed, 11 skipped, 33 deselected before the additional offline-example test; that added test passed in the final 17-test skill suite.",
+    "offline_advisor_cycle": "Completed first synthetic plan/proposal/lint/run/review; prepared distinct child plan/packet without a second run.",
+    "distribution": "Built macOS ARM64 ABI3 wheel and sdist; all five skill resources present in both; sdist canonical and packaged copies byte-identical.",
+    "docs": "Strict baseline and candidate builds each had the same 26 pre-existing unresolved links in powder-friedel.md, profile-accuracy.md, rietx-solver-audit.md, and solver-isolation.md. No new warnings.",
+    "skill_validator": "Passed bundled skill-creator quick_validate.py.",
+    "lint_format": "Changed Python files pass Ruff lint and format checks.",
+    "sdist_install": "Installed the sdist into a second isolated environment and ran all 31 skill/automation tests from outside the checkout; all passed."
+  },
+  "limitations": [
+    "One run per scenario, one agent runtime, no no-skill baseline; this is evidence of usable instructions, not causal benefit or model reliability.",
+    "No production data, external oracle, network disclosure, or scientific acceptance was tested by the fresh agents.",
+    "Paths and digest-bound plan/packet identifiers in retained transcripts are historical test artifacts, not reusable approvals.",
+    "Existing numerical working-tree changes were retained; the Python suite tests that current tree and is not an isolated numerical release assessment."
+  ]
+}

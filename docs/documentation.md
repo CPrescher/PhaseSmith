@@ -11,6 +11,7 @@ python -m venv .venv-docs
 source .venv-docs/bin/activate
 python -m pip install -r docs/requirements.txt
 python scripts/sync_math_docs.py --check
+python scripts/sync_skill.py --check
 mkdocs build --strict
 ```
 
@@ -40,6 +41,36 @@ The generator changes rustdoc-only links into portable Rust owner names, adds
 the matching Python modules, and links both API references. Edit the canonical
 Rust Markdown and regenerate; do not edit the generated pages directly. CI
 rejects stale generated copies before building MkDocs.
+
+## Shared agent skill
+
+The canonical user-facing skill lives in `skills/phasesmith-ai-workflows/`.
+Edit its `SKILL.md` and focused `references/` files there, then regenerate:
+
+```shell
+python scripts/sync_skill.py
+python scripts/sync_skill.py --check
+```
+
+The generator needs only the Python standard library and does not import
+PhaseSmith. It copies the whole skill to
+`python/phasesmith/_skills/phasesmith-ai-workflows/` for wheels/sdists and renders
+the entrypoint and references under `docs/agent-skill/`. The entrypoint's YAML
+frontmatter is omitted from the rendered page and its headings are adjusted;
+the operating instructions are otherwise the same. Agent UI metadata ships
+with the skill but is not part of the rendered protocol. Do not edit either
+generated tree directly. Regeneration removes obsolete files in those two
+managed trees. CI, Read the Docs, and release validation reject stale copies.
+
+`tests/test_skill.py` exercises discovery from an unrelated working directory,
+complete resource parity with the canonical skill, text output, CLI errors,
+and drift detection. The release wheel and sdist test jobs run these tests
+against the installed package. The offline advisor-cycle example exercises the
+actual plan/proposal/lint/run/review contracts; it is synthetic software advice,
+not a measurement of model quality. For substantial instruction changes, also
+test fresh agent contexts on the scenarios in
+`tests/skill_evaluation/README.md`, and retain their outcomes separately from
+deterministic test results.
 
 ## Mathematical notation
 

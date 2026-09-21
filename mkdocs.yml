@@ -65,6 +65,11 @@ nav:
       - Rietveld refinement: rietveld.md
       - Empirical Gaussian widths: empirical-gaussian.md
       - AI-guided automation: ai-automation.md
+      - Agent skill:
+          - Overview: agent-skill/index.md
+          - Experimental context: agent-skill/references/experiment.md
+          - Automation protocol: agent-skill/references/workflow.md
+          - Interpretation: agent-skill/references/interpretation.md
       - Refinement infrastructure: refinement.md
       - Runtime and recovery: refinement-runtime.md
       - Quantitative phase analysis: quantitative-phase-analysis.md
