@@ -27,7 +27,7 @@ actual caller runtime guards retain their own stop reasons. Scientific gates,
 physical models and budgets are unchanged. The canonical QARR 1g entry point
 has a dedicated regression test, and the fixed eight-case assessment remains
 the promotion boundary. See `docs/refinement-bounded-recovery.md` and the
-repository consolidation record. The feasible-width option remains solely on
+`docs/repository-consolidation.md`. The feasible-width option remains solely on
 its preserved experimental branch and is not added to the committed public API.
 
 The live pinned GSAS-II Pawley optimizer comparison now covers fixed-cell and
@@ -211,7 +211,7 @@ Controlled kernel and synthetic-fit measurements are supporting diagnostics.
 Results and limitations are in `docs/rietx-comparison.md`; neither library
 has a blanket speed advantage.
 
-PhaseSmith 0.4.1 is the current released baseline. The completed library now
+PhaseSmith 0.5.0 is the current released baseline. The completed library now
 includes Python-free CW and TOF Le Bail/Rietveld workflows, public Python
 facades, native project persistence, and facility-neutral single-/multi-bank
 TOF composition with explicit calibration, correction, background-domain, and
