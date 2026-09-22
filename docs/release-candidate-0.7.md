@@ -86,22 +86,25 @@ those already present in the repaired develop implementation.
 
 ## Validation
 
-The final reviewed installed wheel passes **981 Python tests** on each of
+After the reference CPU-dispatch repair, the installed package passes **982
+Python tests** on each of
 NumPy 1.26.4/Python 3.12 and NumPy 2.5.3/Python 3.13 (11 unavailable external-data
 skips and 34 opt-in deselections each), **368 Rust tests/doctests**, **12
 Rust/Python differential checks**, both frozen QARR 1g entry-point tests and
-three pinned-spectrum engineering comparisons on NumPy 1.26. Strict Clippy,
+three pinned-spectrum engineering comparisons on NumPy 1.26. The latter
+real-data checks describe the unchanged native implementation validated in
+PR #8; the full Python/Rust suites were rerun after the reference repair. Strict Clippy,
 Rust/Python formatting, generated-document checks and MkDocs pass.
 
 All eight fixed real-data assessment cases have exactly identical scientific
 records across the pre-repair and final builds, including evaluation counts,
 and exact deterministic repeats within each build. Seven pass; the frozen
 QARR 1h bounded-workflow failure remains. No scientific gate or tolerance was
-relaxed. The tested native binary has SHA-256
+relaxed. The locally tested unchanged native binary has SHA-256
 `807e98b026b45102c84a556ed4b5e381b147b5e13867c99b81df489fbe367156`.
 
-The [final distribution dry run](https://github.com/CPrescher/PhaseSmith/actions/runs/35619489937)
-passes on implementation commit `4f4fe93`: Linux x86-64, Windows, macOS Intel
+The [fresh-review distribution dry run](https://github.com/CPrescher/PhaseSmith/actions/runs/35619489937)
+passed on implementation commit `4f4fe93`: Linux x86-64, Windows, macOS Intel
 and Apple Silicon installed-wheel tests, Linux AArch64 construction, and an
 independently installed source distribution. AArch64 Linux is build-tested,
 not runtime-tested by this workflow. Publication jobs were skipped for this
