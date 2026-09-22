@@ -40,8 +40,8 @@ Pawley modules are explicit refinement exports. Existing snapshots remain
 immutable, with new 0.7 snapshots covering the combined surface. This
 reconciliation changes no numerical equations or persistence formats.
 See `docs/release-candidate-0.7.md` for the final release review, validation
-evidence and authoritative publication links. Final documentation preparation
-changes no numerical behavior. The reviewed implementation passes 981 Python
+evidence and authoritative publication links. Native implementation remains
+unchanged by final reference/documentation preparation. The package passes 982 Python
 tests on NumPy 1.26 and 2.x, 368 Rust tests/doctests and the cross-platform
 distribution dry run; the frozen QARR 1h failure remains.
 

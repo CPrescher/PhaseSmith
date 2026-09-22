@@ -66,3 +66,10 @@ subprocess regression compares the reference under default and disabled
 AVX-512 dispatch: component geometry must be identical, and FCJ fields must
 satisfy the existing scaled 2e-9 derivative envelope. CI records the minimum
 NumPy job's CPU features and runs its normal full suite with SIMD enabled.
+
+Local final checks pass 982 Python tests on each of NumPy 1.26.4/Python 3.12
+and NumPy 2.5.3/Python 3.13 (11 unavailable-data skips and 34 opt-in
+deselections), 368 Rust tests/doctests, strict Clippy/formatting, generated
+documentation and MkDocs. The native multi-peak benchmark also completes;
+production sources and the native binary are unchanged, so no native
+performance improvement is claimed.
