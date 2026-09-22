@@ -6,6 +6,8 @@ the Rust extension. It is the first differential-testing layer for native code.
 
 from __future__ import annotations
 
+import math
+from collections.abc import Callable
 from dataclasses import dataclass
 
 import numpy as np
@@ -260,6 +262,19 @@ def cw_profile_parameters(
     )
 
 
+def _scalar_math(function: Callable[[float], float], values: ArrayLike) -> NDArray[np.float64]:
+    """Evaluate small angular arrays through scalar libm, independent of SIMD dispatch.
+
+    One-ulp vector trig differences become amplified when narrow profiles
+    subtract angular coordinates or differentiate normalized FCJ integrals.
+    The independent reference favors a consistent angular path over speed.
+    """
+    array = np.asarray(values, dtype=np.float64)
+    return np.fromiter((function(float(v)) for v in array.flat), dtype=np.float64).reshape(
+        array.shape
+    )
+
+
 def profile_fcj(
     x_deg: ArrayLike,
     position_deg: float,
@@ -297,7 +312,7 @@ def profile_fcj(
 
     position_rad = np.deg2rad(position)
     maximum_height = sample + detector
-    limit_argument = np.cos(position_rad) * np.sqrt(1.0 + maximum_height**2)
+    limit_argument = math.cos(position_rad) * np.sqrt(1.0 + maximum_height**2)
     if abs(limit_argument) > 1.0:
         raise ValueError("FCJ axial ratios extend beyond the angular domain")
     if maximum_height == 0.0:
@@ -322,7 +337,7 @@ def profile_fcj(
 
     if quadrature_order is None:
         total_fwhm = tch_shape_from_fwhm(gaussian_fwhm_deg, lorentzian_fwhm_deg).total_fwhm
-        axial_span = abs(np.rad2deg(np.arccos(limit_argument)) - position)
+        axial_span = abs(np.rad2deg(math.acos(limit_argument)) - position)
         ratio = axial_span / total_fwhm
         quadrature_order = 4 if fast_fcj and ratio <= 0.02 else 8 if ratio <= 0.2 else 48
 
@@ -344,7 +359,7 @@ def profile_fcj(
         NDArray[np.float64],
     ]:
         square_root = np.sqrt(1.0 + height**2)
-        apparent_rad = np.arccos(np.cos(position_rad) * square_root)
+        apparent_rad = _scalar_math(math.acos, math.cos(position_rad) * square_root)
         apparent_deg = np.rad2deg(apparent_rad)
         evaluated = profile_tch(
             x_values[None, :] - apparent_deg[:, None],
@@ -359,14 +374,14 @@ def profile_fcj(
                 d_gaussian_fwhm=np.where(active, evaluated.d_gaussian_fwhm, 0.0),
                 d_lorentzian_fwhm=np.where(active, evaluated.d_lorentzian_fwhm, 0.0),
             )
-        sine_apparent = np.sin(apparent_rad)
-        d_apparent_d_height_rad = -np.cos(position_rad) * height / (square_root * sine_apparent)
+        sine_apparent = _scalar_math(math.sin, apparent_rad)
+        d_apparent_d_height_rad = -math.cos(position_rad) * height / (square_root * sine_apparent)
         d_apparent_d_height_deg = np.rad2deg(d_apparent_d_height_rad)
         d_value_d_height = -evaluated.d_delta * d_apparent_d_height_deg[:, None]
-        d_apparent_d_position = np.sin(position_rad) * square_root / sine_apparent
+        d_apparent_d_position = math.sin(position_rad) * square_root / sine_apparent
         d_value_d_position = -evaluated.d_delta * d_apparent_d_position[:, None]
         geometry = 1.0 / ((1.0 + height**2) * sine_apparent)
-        cotangent_apparent = np.cos(apparent_rad) / sine_apparent
+        cotangent_apparent = _scalar_math(math.cos, apparent_rad) / sine_apparent
         d_geometry_d_height = geometry * (
             -2.0 * height / (1.0 + height**2) - cotangent_apparent * d_apparent_d_height_rad
         )
@@ -1133,15 +1148,24 @@ def wavelength_component_positions(
     wavelengths = np.asarray(wavelengths_angstrom, dtype=np.float64)
     ratios = wavelengths / reference_wavelength_angstrom
     base_theta = np.deg2rad(base / 2.0)
-    component_sines = np.sin(base_theta)[:, None] * ratios[None, :]
+    component_sines = _scalar_math(math.sin, base_theta)[:, None] * ratios[None, :]
     if np.any(component_sines <= 0.0) or np.any(component_sines >= 1.0):
         raise ValueError("wavelength component lies outside the Bragg domain")
-    component_theta = np.arcsin(component_sines)
+    component_theta = _scalar_math(math.asin, component_sines)
     positions = np.rad2deg(2.0 * component_theta)
     positions[:, 0] = base
-    d_position_d_base = ratios[None, :] * np.cos(base_theta)[:, None] / np.cos(component_theta)
+    d_position_d_base = (
+        ratios[None, :]
+        * _scalar_math(math.cos, base_theta)[:, None]
+        / _scalar_math(math.cos, component_theta)
+    )
     d_position_d_base[:, 0] = 1.0
-    d_position_d_ratio = 360.0 / np.pi * np.sin(base_theta)[:, None] / np.cos(component_theta)
+    d_position_d_ratio = (
+        360.0
+        / np.pi
+        * _scalar_math(math.sin, base_theta)[:, None]
+        / _scalar_math(math.cos, component_theta)
+    )
     return positions, d_position_d_base, d_position_d_ratio
 
 
