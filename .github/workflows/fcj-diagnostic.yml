@@ -1,0 +1,37 @@
+name: FCJ CPU diagnosis
+on:
+  push:
+    branches: [codex/fcj-ci-diagnosis]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        probe: [1, 2, 3, 4]
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Install reviewed release wheel and minimum NumPy
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run download 35705122984 --repo CPrescher/PhaseSmith --name distributions-linux-x86_64 --dir /tmp/wheel
+          python -m pip install numpy==1.26.4 pytest jsonschema 'gemmi>=0.7.5,<0.8' 'mpmath>=1.3,<2' threadpoolctl /tmp/wheel/*.whl
+      - name: Compare default, scalar-libm and SIMD-disabled reference arithmetic
+        run: |
+          mkdir evidence
+          lscpu > evidence/cpu.txt
+          python scripts/diagnose_fcj_cpu.py legacy > evidence/legacy.log 2>&1
+          python scripts/diagnose_fcj_cpu.py scalar > evidence/scalar.log 2>&1
+          NPY_DISABLE_CPU_FEATURES=AVX512F,AVX512CD,AVX512_SKX,AVX512_CLX,AVX512_CNL,AVX512_ICL python scripts/diagnose_fcj_cpu.py legacy > evidence/no-avx512.log 2>&1
+          cat evidence/*.log
+      - uses: actions/upload-artifact@v7.0.0
+        with:
+          name: fcj-cpu-${{ matrix.probe }}
+          path: evidence/*
