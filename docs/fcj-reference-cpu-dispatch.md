@@ -63,7 +63,8 @@ consumers can see last-bit changes; native refinement histories are unaffected.
 The existing randomized FCJ comparisons, finite differences, high-precision
 angular integrals, normalization and doublet tests remain required. A new
 subprocess regression compares the reference under default and disabled
-AVX-512 dispatch: component geometry must be identical, and FCJ fields must
+AVX-512 dispatch on x86 (ordinary deterministic repeats elsewhere), clearing
+inherited CPU-disabling settings: component geometry must be identical, and FCJ fields must
 satisfy the existing scaled 2e-9 derivative envelope. CI records the minimum
 NumPy job's CPU features and runs its normal full suite with SIMD enabled.
 
