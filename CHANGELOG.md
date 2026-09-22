@@ -8,6 +8,10 @@ development versions.
 
 ## 0.7.0
 
+- Make the independent Python FCJ and wavelength-component reference use scalar
+  angular math to avoid NumPy 1.26 AVX-512 rounding differences amplified by
+  narrow peaks. Keep native kernels and all numerical tolerances unchanged.
+
 This release includes the unreleased 0.6 namespace changes below; 0.5.0 was the
 previous published release.
 
