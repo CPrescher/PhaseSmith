@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import platform
 import subprocess
 import sys
 from pathlib import Path
@@ -38,16 +39,14 @@ def test_reference_geometry_across_numpy_cpu_dispatch(tmp_path):
     paths = [tmp_path / "default.npz", tmp_path / "no-avx512.npz"]
     for disabled, path in zip((False, True), paths, strict=True):
         env = os.environ.copy()
-        if disabled:
-            env["NPY_DISABLE_CPU_FEATURES"] = ",".join(
-                filter(
-                    None,
-                    (
-                        env.get("NPY_DISABLE_CPU_FEATURES", ""),
-                        "AVX512F,AVX512CD,AVX512_SKX,AVX512_CLX,AVX512_CNL,AVX512_ICL",
-                    ),
-                )
+        # The default probe must not inherit a caller's disabled SIMD path.
+        env.pop("NPY_DISABLE_CPU_FEATURES", None)
+        if disabled and platform.machine().lower() in {"x86_64", "amd64", "i386", "i686"}:
+            env["NPY_DISABLE_CPU_FEATURES"] = (
+                "AVX512F,AVX512CD,AVX512_SKX,AVX512_CLX,AVX512_CNL,AVX512_ICL"
             )
+        # Other architectures have no AVX-512 path; compare ordinary repeats
+        # without passing unsupported x86 feature names to their NumPy build.
         subprocess.run([sys.executable, __file__, str(path)], env=env, check=True)
     with np.load(paths[0]) as default, np.load(paths[1]) as baseline:
         for name in default.files:
