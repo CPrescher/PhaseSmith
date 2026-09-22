@@ -141,14 +141,6 @@ These medians use two timed repetitions per build/case on a shared desktop;
 they are not universal performance guarantees. Restoring the result contract
 does not change optimization histories or evaluation counts.
 
-The maintainer's raw fresh-review evidence is preserved outside the repository
-at `/Users/clemens/PhaseSmith-preservation/fresh-review-20260921/`, including
-`pr-body.md`, `fused-assessment.json`, `fused-assessment-summary.json`,
-`fused-profile-benchmark.log`, `fused-cargo-test.log`, `fused-pytest.log`,
-`fused-numpy-minimum.log`, `fused-differential.log` and
-`fused-persistence-differential.log`. Public readers can use the linked PR and
-Actions runs; these local files are not package resources.
-
 ## Known scientific limits
 
 - The frozen QARR 1h bounded-workflow assessment still fails its existing gate.
@@ -165,8 +157,12 @@ Actions runs; these local files are not package resources.
 The final documentation is reviewed through a pull request and merged after
 its checks pass. The annotated `v0.7.0` tag must point to that reviewed main
 commit. The tag-triggered workflow builds and tests distributions, publishes
-PyPI and the nine public Rust crates, and creates the GitHub Release with
-checksums and provenance. Manual dispatch only validates distributions.
+PyPI and creates the GitHub Release with checksums and provenance. Publishing
+the nine public Rust crates additionally requires the repository variable
+`CRATES_IO_TRUSTED_PUBLISHING=true` and configured trusted publishers; the
+crates job is skipped otherwise, and that skip does not block a GitHub Release.
+The variable was verified enabled during 0.7.0 preparation. Verify all nine
+registry versions after the run. Manual dispatch only validates distributions.
 
 The [GitHub release](https://github.com/CPrescher/PhaseSmith/releases/tag/v0.7.0),
 [PyPI version](https://pypi.org/project/phasesmith/0.7.0/),
