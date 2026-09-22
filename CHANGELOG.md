@@ -8,6 +8,24 @@ development versions.
 
 ## 0.7.0
 
+- Make the independent Python FCJ and wavelength-component reference use scalar
+  angular math to avoid NumPy 1.26 AVX-512 rounding differences amplified by
+  narrow peaks. Keep native kernels and all numerical tolerances unchanged.
+
+This release includes the unreleased 0.6 namespace changes below; 0.5.0 was the
+previous published release.
+
+- Restore complete fixed FCJ axial derivatives in native Rietveld results by
+  retaining them in the existing fused passes. Returning the accepted state
+  does not add a profile evaluation after a runtime limit.
+- Validate persisted profile-accuracy policies through refinement options and
+  checkpoints. Reject oversized unsigned CW/TOF Pawley HKLs before signed
+  conversion, and correct stale native-persistence documentation.
+- Support validation integration on both NumPy 1.26 and 2.x, with a dedicated
+  minimum-version CI job.
+- Correct the FCJ geometric Jacobian and powder Friedel-family averaging.
+  Include optional profile-accuracy and empirical Gaussian-width controls.
+
 - Fix Pawley stagnation at tiny composed-width boundary steps using relative
   feasibility checks, retaining the existing convergence certificates. Cache
   constraint norms without changing numerical results. Resolve installed Pawley
@@ -39,7 +57,18 @@ development versions.
 - Reconcile the 0.6 namespace cleanup with the integrated Pawley API. Keep all
   0.5 compatibility aliases until 1.0 and preserve earlier API snapshots.
 
+Known limits remain: the frozen QARR 1h bounded-workflow gate fails; strict
+GSAS-II Pawley profile equivalence remains false because of documented FCJ
+quadrature and finite-cutoff differences. Matrix-free Pawley omits global
+rank/covariance, and hard-support convergence claims are local. Restoring the
+complete FCJ derivatives costs about 6–10% (up to 10.3%) in the measured complete
+FCJ refinements; these shared-desktop measurements are not performance
+guarantees. See the [0.7 release review](docs/release-candidate-0.7.md) for the
+validation evidence and measurement conditions.
+
 ## 0.6.0
+
+Unpublished development milestone, included in 0.7.0.
 
 - Align aggregate Python namespaces with their documented ownership before
   1.0. `phasesmith.refinement` now exports shared refinement infrastructure and
