@@ -103,7 +103,7 @@ QARR 1h bounded-workflow failure remains. No scientific gate or tolerance was
 relaxed. The locally tested unchanged native binary has SHA-256
 `807e98b026b45102c84a556ed4b5e381b147b5e13867c99b81df489fbe367156`.
 
-The [fresh-review distribution dry run](https://github.com/CPrescher/PhaseSmith/actions/runs/35619489937)
+The prior [PR #8 distribution dry run](https://github.com/CPrescher/PhaseSmith/actions/runs/35619489937)
 passed on implementation commit `4f4fe93`: Linux x86-64, Windows, macOS Intel
 and Apple Silicon installed-wheel tests, Linux AArch64 construction, and an
 independently installed source distribution. AArch64 Linux is build-tested,
@@ -113,6 +113,17 @@ also passes on `002b76a`. The [PR #8 report](https://github.com/CPrescher/PhaseS
 records the final checks and timings. Its two review findings (an evaluation
 budget overrun and stale persistence documentation) were fixed in `4f4fe93`;
 their unresolved review-thread status does not indicate unfixed code.
+
+After the CPU-dispatch repair, the
+[repaired-implementation distribution dry run](https://github.com/CPrescher/PhaseSmith/actions/runs/35717065927)
+passes all wheel and source-distribution jobs on `902bc87`; publishing jobs
+were skipped. The final test-harness portability adjustment in `02ef677`
+changes only tests and documentation, and both its
+[push CI](https://github.com/CPrescher/PhaseSmith/actions/runs/35718323020) and
+[PR CI](https://github.com/CPrescher/PhaseSmith/actions/runs/35718327290) pass.
+The minimum-NumPy hosted job confirms AVX-512 enabled with 982 passing tests.
+These runs establish validation of the reference repair; the PR #8 links
+above retain provenance for the unchanged native implementation.
 
 Earlier reconciliation evidence remains in
 `validation/results/release-0.7-*.json`: the focused API/TOF suite passed 30
