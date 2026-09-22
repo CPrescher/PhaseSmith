@@ -24,14 +24,17 @@ changes in this follow-up.
 Validation integrals and tests select the supported NumPy trapezoidal-integration
 name on both 1.26 and 2.x; CI now exercises the declared NumPy minimum explicitly.
 
-The 0.7.0 release candidate reconciles main's 0.6 API cleanup and bounded
+The 0.7.0 release reconciles main's 0.6 API cleanup and bounded
 validation-download retries with the validated develop/Pawley implementation.
 Module-owned imports and warning-backed 0.5 compatibility aliases are retained;
 Pawley modules are explicit refinement exports. Existing snapshots remain
 immutable, with new 0.7 snapshots covering the combined surface. This
 reconciliation changes no numerical equations or persistence formats.
-See `docs/release-candidate-0.7.md` for the version proposal and release review.
-No tag or publication is included.
+See `docs/release-candidate-0.7.md` for the final release review, validation
+evidence and authoritative publication links. Final documentation preparation
+changes no numerical behavior. The reviewed implementation passes 981 Python
+tests on NumPy 1.26 and 2.x, 368 Rust tests/doctests and the cross-platform
+distribution dry run; the frozen QARR 1h failure remains.
 
 Pawley integration is validated after the 2026-09-21 repair. Scale-relative
 active-set feasibility fixes the Intel dense-solver boundary failure without
@@ -42,7 +45,8 @@ measured Pawley gates and the cross-platform distribution dry run pass.
 See `docs/pawley-boundary-feasibility.md` and `docs/pawley-repair-20260921.md`.
 The shared FCJ correction and Pawley APIs accompany the consolidated develop
 baseline. Feasible-width research remains outside this integration; the API
-cleanup is now reconciled in the 0.7 candidate. No release is published.
+cleanup is now reconciled in 0.7. The 970-test counts above describe the
+earlier Pawley integration checkpoint, superseded by the fresh review.
 
 Repository consolidation (2026-09-21) preserves the original working state,
 Pawley history and feasible-width research on separate remote branches. The
@@ -242,8 +246,8 @@ Controlled kernel and synthetic-fit measurements are supporting diagnostics.
 Results and limitations are in `docs/rietx-comparison.md`; neither library
 has a blanket speed advantage.
 
-PhaseSmith 0.5.0 is the current released baseline. The completed library now
-includes Python-free CW and TOF Le Bail/Rietveld workflows, public Python
+PhaseSmith 0.5.0 was the published baseline before the 0.7.0 release. The
+completed library includes Python-free CW and TOF Le Bail/Rietveld workflows, public Python
 facades, native project persistence, and facility-neutral single-/multi-bank
 TOF composition with explicit calibration, correction, background-domain, and
 provenance contracts. The TOF roadmap through implementation unit 38d is

@@ -1,14 +1,20 @@
-# PhaseSmith 0.7.0 release candidate review
+# PhaseSmith 0.7.0 release review
 
-## Version proposal and scope
+## Version and scope
 
-Propose **0.7.0** as the next published release after 0.5.0. Main already
-records the intentional 0.6 namespace cleanup and its immutable API snapshot,
-but 0.6 has not been tagged or published on GitHub. The combined candidate adds
-the validated develop/Pawley implementation without replacing that baseline.
-The package metadata uses 0.7.0 for candidate builds; this document does not
-authorize a tag or publication. This is a pre-1.0 release, not a 1.0 stability
-claim or a published `rc1` artifact.
+**0.7.0** is the next release after 0.5.0. It includes the intentional 0.6
+namespace cleanup and its immutable API snapshot; 0.6 was never tagged or
+published. The combined release adds the validated develop/Pawley
+implementation and the final fresh-review repairs. This remains a pre-1.0
+release, with no 1.0 stability claim or separate published `rc1` artifact.
+
+[PR #7](https://github.com/CPrescher/PhaseSmith/pull/7) reconciled the histories.
+[PR #8](https://github.com/CPrescher/PhaseSmith/pull/8) repaired the four
+fresh-review defects below. Reviewed implementation commit
+`4f4fe93941fe199cde90be3d7d1037e5ea346365` and its main merge
+`002b76a7ba25dcbd5fcccb84172bf1a8e887a57d` have the same tree. Final release
+preparation updates documentation only; numerical gates and oracle fixtures
+remain unchanged.
 
 The reconciliation starts from develop `2e5edb7` and merges main `9207016`.
 Both histories and all preservation branches remain intact. Main contributes
@@ -18,7 +24,7 @@ qualified Pawley/FCJ integration, truthful Rietveld stopping, performance work,
 and the distributed agent instructions. No solver or profile equation is
 changed by this reconciliation.
 
-## Proposed release notes
+## Release highlights
 
 - Add native CW, fixed-spectrum and single-/multi-bank TOF Pawley fitting with
   bounded/tied family areas, analytical selected cell/profile/background
@@ -41,6 +47,14 @@ changed by this reconciliation.
 - Include installed agent instructions with `phasesmith skill --path` and
   `--print`, clear external validation asset paths, and checksum-preserving
   download retries. Normal package use does not require GSAS-II.
+- Retain complete fixed FCJ axial derivatives in native Rietveld results within
+  the existing fused selected/trial passes. Returning the accepted state uses
+  no extra profile evaluation, including after a runtime limit.
+- Validate persisted profile-accuracy policies in refinement options and
+  checkpoints, reject oversized unsigned CW/TOF Pawley HKLs before signed
+  conversion, and correct stale native-persistence/schema documentation.
+- Use supported integration names on both NumPy 1.26 and 2.x and exercise the
+  declared NumPy minimum in CI.
 
 ## API and persistence review
 
@@ -68,32 +82,72 @@ those already present in the repaired develop implementation.
 
 ## Validation
 
-The combined installed wheel passes **975 Python tests** (11 external-data
-skips and 34 opt-in deselections), **365 Rust tests/doctests**, **12 differential
-checks**, and both frozen QARR 1g entry-point tests. A focused API/TOF suite
-passes 30 tests with deprecation warnings treated as errors. All 168 moved
-aliases resolve with their expected warning. Strict Clippy, Rust/Python
-formatting, Rustdoc, generated-document checks and MkDocs pass. The documented
-CW/TOF examples, skill discovery and offline advisor example run from the
-installed wheel outside the checkout.
+The final reviewed installed wheel passes **981 Python tests** on each of
+NumPy 1.26.4/Python 3.12 and NumPy 2.5.3/Python 3.13 (11 unavailable external-data
+skips and 34 opt-in deselections each), **368 Rust tests/doctests**, **12
+Rust/Python differential checks**, both frozen QARR 1g entry-point tests and
+three pinned-spectrum engineering comparisons on NumPy 1.26. Strict Clippy,
+Rust/Python formatting, generated-document checks and MkDocs pass.
 
-Fresh CW, cell/profile, TOF, fixed-spectrum and pinned-oracle engineering gates
-pass. Scientific records match the repaired develop reports exactly after
-excluding timings, source/binary provenance and checkout paths. Sucrose takes
-133.36 and 137.11 seconds per repeat, below its unchanged 240-second limit.
-The exact commands, hashes, outcomes and fit histories are recorded in
-`validation/results/release-0.7-*.json`. The reconciliation changes no Rust
-implementation or numerical fixture; the earlier measured benchmark evidence
-is retained in the [Pawley repair report](pawley-repair-20260921.md).
+All eight fixed real-data assessment cases have exactly identical scientific
+records across the pre-repair and final builds, including evaluation counts,
+and exact deterministic repeats within each build. Seven pass; the frozen
+QARR 1h bounded-workflow failure remains. No scientific gate or tolerance was
+relaxed. The tested native binary has SHA-256
+`807e98b026b45102c84a556ed4b5e381b147b5e13867c99b81df489fbe367156`.
 
-The [candidate distribution dry run](https://github.com/CPrescher/PhaseSmith/actions/runs/35593890298)
-tests implementation commit `1797604` across macOS Intel/ARM64, Windows,
-Linux x86-64, Linux AArch64 construction and an independently installed sdist.
-Publication jobs are skipped for this manual dispatch. Its job results and
-[PR checks](https://github.com/CPrescher/PhaseSmith/pull/7/checks) are the
-authoritative cross-platform status; all required jobs must pass before
-publication. Subsequent evidence/documentation commits do not change the
-package implementation tested by the distribution run.
+The [final distribution dry run](https://github.com/CPrescher/PhaseSmith/actions/runs/35619489937)
+passes on implementation commit `4f4fe93`: Linux x86-64, Windows, macOS Intel
+and Apple Silicon installed-wheel tests, Linux AArch64 construction, and an
+independently installed source distribution. AArch64 Linux is build-tested,
+not runtime-tested by this workflow. Publication jobs were skipped for this
+manual dispatch. [Post-merge CI](https://github.com/CPrescher/PhaseSmith/actions/runs/35621053727)
+also passes on `002b76a`. The [PR #8 report](https://github.com/CPrescher/PhaseSmith/pull/8)
+records the final checks and timings. Its two review findings (an evaluation
+budget overrun and stale persistence documentation) were fixed in `4f4fe93`;
+their unresolved review-thread status does not indicate unfixed code.
+
+Earlier reconciliation evidence remains in
+`validation/results/release-0.7-*.json`: the focused API/TOF suite passed 30
+tests with deprecation warnings treated as errors, all 168 moved aliases
+resolved with their expected warnings, and installed CW/TOF examples, skill
+discovery and the offline advisor example passed outside the checkout.
+CW, cell/profile, TOF, fixed-spectrum and pinned-oracle engineering gates
+passed with scientific records identical to the repaired develop reports
+apart from timings, source/binary provenance and checkout paths. Sucrose took
+133.36 and 137.11 seconds per repeat against its unchanged 240-second limit.
+Those records describe the earlier reconciliation checkpoint; the final
+fresh-review counts above supersede its 975 Python/365 Rust counts.
+
+### Measured cost of restoring complete FCJ derivatives
+
+The realistic 256-reflection/eight-site benchmark measured **6.60 ms** with
+axial derivatives disabled and **7.59 ms** with them retained (about 15% for
+that pass). Complete FCJ refinements cost approximately **6–10% more**, up to
+10.3%, while other measured cases vary about -1% to +2%.
+
+| Complete refinement | Before (s) | After (s) | Change |
+| --- | ---: | ---: | ---: |
+| QARR 1g | 0.7581 | 0.8023 | +5.8% |
+| QARR 1h | 0.6013 | 0.6462 | +7.5% |
+| PbSO4 CW X-ray | 4.5024 | 4.8208 | +7.1% |
+| PbSO4 CW neutron | 0.5681 | 0.5630 | -0.9% |
+| Rowles 1a | 3.7001 | 4.0616 | +9.8% |
+| Rowles 1e | 3.2773 | 3.6146 | +10.3% |
+| Echidna LaB6 | 0.0093 | 0.0095 | +2.0% |
+| LANL nickel TOF | 52.4041 | 52.3543 | -0.1% |
+
+These medians use two timed repetitions per build/case on a shared desktop;
+they are not universal performance guarantees. Restoring the result contract
+does not change optimization histories or evaluation counts.
+
+The maintainer's raw fresh-review evidence is preserved outside the repository
+at `/Users/clemens/PhaseSmith-preservation/fresh-review-20260921/`, including
+`pr-body.md`, `fused-assessment.json`, `fused-assessment-summary.json`,
+`fused-profile-benchmark.log`, `fused-cargo-test.log`, `fused-pytest.log`,
+`fused-numpy-minimum.log`, `fused-differential.log` and
+`fused-persistence-differential.log`. Public readers can use the linked PR and
+Actions runs; these local files are not package resources.
 
 ## Known scientific limits
 
@@ -106,10 +160,19 @@ package implementation tested by the distribution run.
 - Pawley does not establish a unique structure or Rietveld mass fractions.
   Automation remains Rietveld-only, and feasible-width research stays separate.
 
-## Publication decision
+## Publication workflow
 
-Review the reconciled change and this version proposal after validation.
-Publishing would be a separate action: approve the final version/release notes,
-merge the reviewed candidate to main, and create its release tag. The release
-workflow publishes only on tag pushes; a manual dispatch tests distributions
-without publishing them.
+The final documentation is reviewed through a pull request and merged after
+its checks pass. The annotated `v0.7.0` tag must point to that reviewed main
+commit. The tag-triggered workflow builds and tests distributions, publishes
+PyPI and the nine public Rust crates, and creates the GitHub Release with
+checksums and provenance. Manual dispatch only validates distributions.
+
+The [GitHub release](https://github.com/CPrescher/PhaseSmith/releases/tag/v0.7.0),
+[PyPI version](https://pypi.org/project/phasesmith/0.7.0/),
+[crates.io version](https://crates.io/crates/phasesmith/0.7.0) and
+[Release workflow runs](https://github.com/CPrescher/PhaseSmith/actions/workflows/release.yml)
+are the authoritative publication records; the preparation checks above do
+not themselves establish successful publication. Follow the
+[release checklist](releasing.md) to verify registry artifacts and installation.
+Never replace an existing release tag.
