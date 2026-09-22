@@ -12,6 +12,15 @@ not part of the numerical library.
 
 ## Current implementation status
 
+The final 0.7 release gate exposed NumPy 1.26 AVX-512 trigonometric rounding
+in the independent FCJ/component reference. Four controlled hosted probes
+reproduce both failures with vector trig and pass with scalar libm or with
+AVX-512 disabled. The reference now evaluates its small angular arrays through
+scalar libm; Rust kernels, equations, support, and assertion tolerances are
+unchanged. CI retains default SIMD dispatch and adds a subprocess comparison
+of default versus disabled AVX-512 reference geometry. See
+`docs/fcj-reference-cpu-dispatch.md` for evidence and the numerical boundary.
+
 A fresh post-merge review repairs the complete native Rietveld result contract:
 selected/trial calculations retain fixed axial derivatives in their existing
 fused pass. Returning the accepted state requires no extra profile evaluation,

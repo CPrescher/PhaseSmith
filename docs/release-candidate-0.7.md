@@ -13,8 +13,10 @@ release, with no 1.0 stability claim or separate published `rc1` artifact.
 fresh-review defects below. Reviewed implementation commit
 `4f4fe93941fe199cde90be3d7d1037e5ea346365` and its main merge
 `002b76a7ba25dcbd5fcccb84172bf1a8e887a57d` have the same tree. Final release
-preparation updates documentation only; numerical gates and oracle fixtures
-remain unchanged.
+preparation also stabilizes the independent Python reference's angular math
+after a NumPy 1.26 AVX-512 CI failure. Native implementation, numerical gates
+and oracle fixtures remain unchanged. See the
+[CPU-dispatch diagnosis](fcj-reference-cpu-dispatch.md).
 
 The reconciliation starts from develop `2e5edb7` and merges main `9207016`.
 Both histories and all preservation branches remain intact. Main contributes
@@ -54,7 +56,9 @@ changed by this reconciliation.
   checkpoints, reject oversized unsigned CW/TOF Pawley HKLs before signed
   conversion, and correct stale native-persistence/schema documentation.
 - Use supported integration names on both NumPy 1.26 and 2.x and exercise the
-  declared NumPy minimum in CI.
+  declared NumPy minimum in CI. Use scalar angular math in the independent
+  FCJ/component reference to prevent amplified NumPy AVX-512 rounding
+  differences, with CPU-dispatch regression coverage and unchanged tolerances.
 
 ## API and persistence review
 
