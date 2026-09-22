@@ -126,7 +126,7 @@ nav:
       - XRD-Rust performance: xrd-rust-performance.md
       - Rowles optics audit: topas-rowles-model.md
       - Documentation development: documentation.md
-      - Release candidate 0.7: release-candidate-0.7.md
+      - Release review 0.7: release-candidate-0.7.md
       - Release process: releasing.md
 
 not_in_nav: |
