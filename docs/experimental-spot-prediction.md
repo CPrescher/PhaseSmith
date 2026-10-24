@@ -1,10 +1,12 @@
 # Experimental rotation prediction and positional refinement
 
-This adds no material/structure prior, symmetry assignment, intensity model or
+This adds no material/structure prior, space-group assignment, intensity model or
 standard-release API. It consumes the **blindly inferred** lattice and tentative
 HKLs from `experimental.indexing`. Instrument geometry, wavelength, omega-zero
 convention and axis are held fixed; nine reciprocal-basis coefficients refine
-the unconstrained cell and orientation together. No GSAS-II/DIALS runtime or
+the unconstrained cell and orientation together. A separate optional
+[orthorhombic metric constraint](experimental-orthorhombic.md) uses six parameters
+and retains the exact integer lattice setting. No GSAS-II/DIALS runtime or
 implementation code is used. The equations below follow elastic scattering and
 ray/plane geometry; the centroid-refinement workflow is described by
 [Waterman et al. (2016)](https://journals.iucr.org/d/issues/2016/04/00/gm5043/).

@@ -161,13 +161,22 @@ def refine_crystal(
     eligible=None,
     options=None,
     progress=None,
+    symmetry="triclinic",
 ):
     """Robust, training-only refinement of nine reciprocal-basis coefficients.
 
-    Fixed assignments, fixed instrument, no symmetry constraint. Measurements
+    symmetry="orthorhombic" constrains the metric to three perpendicular axes
+    with three lengths and three orientation parameters; default is unconstrained.
+    Fixed assignments and fixed instrument. Measurements
     are one original weighted x/y/omega centroid per linked track, not every
     frame observation. Scales are declared loss weights, not calibrated errors.
     """
+    if symmetry not in ("triclinic", "orthorhombic"):
+        raise ValueError("symmetry must be triclinic or orthorhombic")
+    from .orthorhombic import orthorhombic_chain, orthorhombic_step, project_orthorhombic
+
+    constrained = symmetry == "orthorhombic"
+    dimensions = 6 if constrained else 9
     observed, h, b = triples(observed, "observed"), _hkl(hkl), _basis(reciprocal_basis)
     if len(observed) != len(h):
         raise ValueError("observed and hkl sizes differ")
@@ -213,21 +222,34 @@ def refine_crystal(
         ).sum()
         return float(cost), residual, prediction.jacobian / scale[None, :, None], weights
 
+    if constrained:
+        b = project_orthorhombic(b)
     current = evaluate(b)
+    if current is None:
+        raise ValueError("initial constrained model has invalid training predictions")
     history = [current[0]]
     damping, converged = 1e-3, False
     for iteration in range(options.max_iterations):
         if progress is not None:
             progress(iteration, options.max_iterations)
         cost, residual, jac, weights = current
-        j = (jac * np.sqrt(weights)[:, None, None]).reshape(-1, 9)
+        if constrained:
+            jac = jac @ orthorhombic_chain(b)
+        j = (jac * np.sqrt(weights)[:, None, None]).reshape(-1, dimensions)
         r = (residual * np.sqrt(weights)[:, None]).ravel()
-        if np.linalg.matrix_rank(j) < 9:
+        if np.linalg.matrix_rank(j) < dimensions:
             raise ValueError("centroid refinement is rank deficient")
         normal, gradient = j.T @ j, j.T @ r
         diagonal = np.maximum(np.diag(normal), 1e-12)
-        step = np.linalg.solve(normal + damping * np.diag(diagonal), -gradient).reshape(3, 3)
-        trial = b + step
+        step = np.linalg.solve(normal + damping * np.diag(diagonal), -gradient)
+        if constrained:
+            # Avoid overflow in the exponential before evaluating trial bounds.
+            if np.max(abs(step)) > 0.2:
+                damping *= 10
+                continue
+            trial = orthorhombic_step(b, step)
+        else:
+            trial = b + step.reshape(3, 3)
         if np.linalg.det(trial) * np.linalg.det(b0) <= 0 or np.linalg.norm(
             trial - b0
         ) > 0.2 * np.linalg.norm(b0):
@@ -298,6 +320,7 @@ def predict_scan(
     qmax,
     max_hkl=250_000,
     max_predictions=1_000_000,
+    lattice_transform=None,
 ):
     """Enumerate possible integer-HKL crossings; no extinctions/intensities.
 
@@ -333,6 +356,18 @@ def predict_scan(
     if np.prod(sizes.astype(object)) > max_hkl:
         raise ValueError("HKL enumeration budget exceeded")
     h = np.indices(tuple(sizes), dtype=np.int64).reshape(3, -1).T - limits
+    if lattice_transform is not None:
+        t = np.asarray(lattice_transform)
+        if (
+            t.shape != (3, 3)
+            or t.dtype.kind not in "iu"
+            or (abs(t.astype(float)) > 1_000_000).any()
+        ):
+            raise ValueError("lattice_transform must be bounded integer (3,3)")
+        if abs(np.linalg.det(t)) < 0.5:
+            raise ValueError("lattice_transform must be nonsingular")
+        primitive_h = h @ np.linalg.inv(t).T
+        h = h[np.max(abs(primitive_h - np.rint(primitive_h)), axis=1) < 1e-8]
     norm = np.linalg.norm(h @ b, axis=1)
     h = h[(norm <= qmax) & (norm > 0)]
     height, width = image_shape
