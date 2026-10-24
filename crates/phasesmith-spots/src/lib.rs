@@ -11,6 +11,7 @@
 
 use std::fmt::{Display, Formatter};
 
+pub mod prediction;
 pub mod reciprocal;
 pub mod rotation;
 

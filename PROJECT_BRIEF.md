@@ -22,6 +22,13 @@ Fourier search proposes unconstrained cells from positions alone, with separate
 training/validation data and supercell checks. It supplies no material prior,
 symmetry assignment, proven primitive cell or integrated rocking intensities.
 See `docs/experimental-reciprocal-indexing.md` for equations and limitations.
+A further optional positional step predicts Ewald crossings in detector x/y
+and omega, with fused native analytical derivatives. Robust training-only
+refinement updates the unconstrained cell and orientation while holding the
+instrument fixed. Initial/refined predictions and independent validation
+residuals remain available even when validation does not improve; there is no
+intensity, extinction or space-group model. See
+`docs/experimental-spot-prediction.md` for equations, boundaries and validation.
 File/angle import and inspection stay in opt-in Dioptas, outside this
 library and the standard release path. See `docs/experimental-rotation-positions.md`.
 
