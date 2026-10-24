@@ -26,9 +26,10 @@ class IndexingOptions:
     min_indexed: int = 20
     min_fraction: float = 0.2
     consensus_slack: float = 0.02
+    max_candidates: int = 40
 
     def __post_init__(self):
-        for name in ("grid_size", "fft_peaks", "basis_vectors", "min_indexed"):
+        for name in ("grid_size", "fft_peaks", "basis_vectors", "min_indexed", "max_candidates"):
             if isinstance(getattr(self, name), bool) or not isinstance(getattr(self, name), int):
                 raise ValueError(f"{name} must be an integer")
         for name in (
@@ -53,11 +54,13 @@ class IndexingOptions:
             raise ValueError("invalid consensus requirements")
         if not 0 <= self.consensus_slack <= 0.05:
             raise ValueError("consensus_slack must lie in [0,.05]")
+        if not 1 <= self.max_candidates <= 80:
+            raise ValueError("max_candidates must lie in [1,80]")
 
 
 @dataclass(frozen=True)
 class LatticeCandidate:
-    direct_basis: np.ndarray  # rows, angstroms; primitive proposal only
+    direct_basis: np.ndarray  # rows, angstroms; primitivity unproven
     cell: np.ndarray  # a,b,c,alpha,beta,gamma
     volume: float
     hkl: np.ndarray
@@ -77,7 +80,10 @@ class IndexingResult:
     translation_vectors: np.ndarray
     translation_scores: np.ndarray
     message: str
-    options: IndexingOptions
+    options: object  # IndexingOptions or GrainSearchOptions
+    method: str = "compact_fft"
+    labels: np.ndarray | None = None  # one-based model ID; zero residual/ambiguous
+    diagnostics: tuple = ()
 
 
 def cell_parameters(basis):
@@ -268,7 +274,7 @@ def _subdivide(q, basis, options):
 
 
 def find_lattices(points, *, training=None, options=None):
-    """Propose up to five size-reduced cells with a training/validation separation.
+    """Propose bounded size-reduced cells with a training/validation separation.
 
     Supply a boolean training mask partitioned by frame/track for real scans.
     Default holds out every fifth input point. No validation points contribute
@@ -349,7 +355,7 @@ def find_lattices(points, *, training=None, options=None):
 
     proposals.sort(key=rank)
     candidates = []
-    for basis in proposals[:5]:
+    for basis in proposals[: options.max_candidates]:
         hkl, indexed, residual = _assign(q, basis, options)
         train_fraction = float(np.mean(indexed[training]))
         validation_fraction = float(np.mean(indexed[~training]))

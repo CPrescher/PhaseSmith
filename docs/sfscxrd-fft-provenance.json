@@ -1,0 +1,9 @@
+{
+  "origin": "SFSCXRD workspace implementation; imported at user request",
+  "sha256": {
+    "rust/fft_indexing/src/engine.rs": "93ad191afeb19feaa07243951641437f58184cfb53d19e67ab0a440a7e8ca88c",
+    "rust/fft_indexing/src/python.rs": "ba936a6d0b93edf1d1e0548d3977c42603b46c61873916ccfb60a299712c1c6a",
+    "source/fft_lattice_search.py": "ea50bf836edb8c98bc1908d43811a010c58233db1bc8c09af3785349d38a1e48",
+    "source/fft_validated_search.py": "6a3ee0d9a1949d4d2e1b66f9808e13373acd4766f27d5987191e005db1fc985e"
+  }
+}

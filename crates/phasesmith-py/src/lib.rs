@@ -58,6 +58,8 @@ use pyo3::exceptions::{PyNotImplementedError, PyValueError};
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyTuple};
 
+#[cfg(feature = "experimental-spots")]
+mod fft;
 mod fit_diagnostics;
 mod pawley;
 mod profile_estimation;
@@ -4265,6 +4267,8 @@ fn run_native_validation(py: Python<'_>, runner: String, directory: String) -> P
 fn _core(module: &Bound<'_, PyModule>) -> PyResult<()> {
     #[cfg(feature = "experimental-spots")]
     spots::register(module)?;
+    #[cfg(feature = "experimental-spots")]
+    fft::register(module)?;
     module.add_class::<NativeExecutionPolicy>()?;
     module.add_class::<NativePreparedXrayScattering>()?;
     module.add_class::<NativePreparedNeutronScattering>()?;

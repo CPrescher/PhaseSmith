@@ -12,6 +12,18 @@ not part of the numerical library.
 
 ## Current implementation status
 
+An opt-in **FFT grain search** now centralises position-only lattice discovery
+and competing grain ownership in PhaseSmith. Unindexed reciprocal positions
+produce inferred HKLs and grain orientations; several orientations may share
+one cell. RustFFT and a bounded private Rayon pool live only in the experimental
+spots crate. Training-only discovery/refinement freezes the model pool before
+reserved rotation-block validation; all candidates, rejected models and proposal
+audits remain accessible. Dioptas supplies geometry, tables and selection, with
+no runtime dependency on a research checkout. The compact search remains a
+comparison method and has an explicit candidate budget. Neither method proves
+primitivity, Bravais class or space group. See `docs/experimental-grain-search.md`.
+Default builds/releases and the powder numerical core are unchanged.
+
 The experimental rotation workflow can now search a bounded set of integer
 lattice axes for an orthorhombic metric setting (P/A/B/C/I/F), retaining the exact
 change of basis and any conventional-cell lattice index. An optional six-parameter
@@ -44,8 +56,8 @@ File/angle import and inspection stay in opt-in Dioptas, outside this
 library and the standard release path. See `docs/experimental-rotation-positions.md`.
 
 An isolated experimental branch adds structure-independent 2D detector spot
-detection and signed finite-aperture intensity extraction. The separate,
-dependency-free `phasesmith-spots` numerical crate is exposed through the
+detection and signed finite-aperture intensity extraction. The separate
+`phasesmith-spots` numerical crate is exposed through the
 `experimental-spots` feature only; default facade/extension builds omit it.
 The Python API is explicitly under `phasesmith.experimental`, and Dioptas is
 an external opt-in consumer. No standard release or powder API changes are
