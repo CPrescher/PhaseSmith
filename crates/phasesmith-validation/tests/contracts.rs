@@ -119,7 +119,7 @@ fn checked_in_python_baseline_reports_decode_without_schema_translation() {
     let source = fs::read_to_string(baseline).unwrap();
     let suite: serde_json::Value = serde_json::from_str(&source).unwrap();
     let reports = suite["reports"].as_array().unwrap();
-    assert!(!reports.is_empty());
+    assert_ne!(reports.len(), 0);
     for report in reports {
         let encoded = serde_json::to_string(report).unwrap();
         RealDataValidationReport::from_json(&encoded).unwrap();

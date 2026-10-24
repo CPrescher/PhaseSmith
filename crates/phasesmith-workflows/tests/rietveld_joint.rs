@@ -498,7 +498,10 @@ fn joint_solver_recovers_shared_cell_and_local_scales_from_one_summed_fit() {
     .unwrap()
     .objective;
     let result = refine_joint_rietveld(&histograms, &[], solver_options(30), None, None).unwrap();
-    assert!(!result.history.is_empty());
+    assert_ne!(
+        result.history,
+        [] as [phasesmith_workflows::JointRietveldIterationRecord; 0]
+    );
     assert!(
         result.checkpoint.objective < initial * 1.0e-8,
         "initial={initial:.12e}, final={:.12e}, termination={:?}, history={:?}",
@@ -605,7 +608,10 @@ fn joint_checkpoint_resumes_and_pre_cancel_is_a_normal_unchanged_result() {
     )
     .unwrap();
     assert_eq!(cancelled.termination_reason, TerminationReason::Cancelled);
-    assert!(cancelled.history.is_empty());
+    assert_eq!(
+        cancelled.history,
+        [] as [phasesmith_workflows::JointRietveldIterationRecord; 0]
+    );
     assert_eq!(cancelled.histograms, histograms);
 }
 

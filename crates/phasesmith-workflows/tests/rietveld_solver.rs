@@ -142,7 +142,10 @@ fn phase_scale_recovery_is_bounded_and_deterministic() {
     assert_eq!(first.termination_reason, TerminationReason::Converged);
     assert!((first.phases[0].definition().scale - 1.4).abs() < 1.0e-10);
     assert!(first.calculation.metrics.rwp < 1.0e-11);
-    assert!(!first.history.is_empty());
+    assert_ne!(
+        first.history,
+        [] as [phasesmith_workflows::RietveldIterationRecord; 0]
+    );
     assert_eq!(first.checkpoint.completed_iterations, first.history.len());
 }
 
@@ -217,14 +220,20 @@ fn cancellation_and_evaluation_budget_return_last_accepted_state() {
     )
     .unwrap();
     assert_eq!(cancelled.termination_reason, TerminationReason::Cancelled);
-    assert!(cancelled.history.is_empty());
+    assert_eq!(
+        cancelled.history,
+        [] as [phasesmith_workflows::RietveldIterationRecord; 0]
+    );
 
     let bounded = refine_rietveld(&input, selection, &[None], &options(8, 2), None, None).unwrap();
     assert_eq!(
         bounded.termination_reason,
         TerminationReason::MaxEvaluations
     );
-    assert!(bounded.history.is_empty());
+    assert_eq!(
+        bounded.history,
+        [] as [phasesmith_workflows::RietveldIterationRecord; 0]
+    );
 
     let mut excluded = input.clone();
     excluded.pattern.mask = Some(vec![false; excluded.pattern.sample_count()]);
@@ -234,7 +243,10 @@ fn cancellation_and_evaluation_budget_return_last_accepted_state() {
         no_observations.termination_reason,
         TerminationReason::NoObservations
     );
-    assert!(no_observations.history.is_empty());
+    assert_eq!(
+        no_observations.history,
+        [] as [phasesmith_workflows::RietveldIterationRecord; 0]
+    );
 
     let partial =
         refine_rietveld(&input, selection, &[None], &options(1, 100), None, None).unwrap();

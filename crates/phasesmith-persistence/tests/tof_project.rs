@@ -52,11 +52,11 @@ fn format_three_round_trips_tof_histogram_analysis_and_checkpoint() {
         load_project(&directory, ProjectReadLimits::default()).unwrap(),
         state.project
     );
-    assert!(
+    assert_eq!(
         load_rietveld_project(&directory, ProjectReadLimits::default())
             .unwrap()
-            .analyses
-            .is_empty()
+            .analyses,
+        [] as [phasesmith_workflows::RietveldAnalysis; 0]
     );
 
     let manifest: serde_json::Value =
@@ -141,17 +141,17 @@ fn format_four_round_trips_joint_geometry_and_complete_checkpoint() {
         load_project(&directory, ProjectReadLimits::default()).unwrap(),
         state.project
     );
-    assert!(
+    assert_eq!(
         load_tof_lebail_project(&directory, ProjectReadLimits::default())
             .unwrap()
-            .analyses
-            .is_empty()
+            .analyses,
+        [] as [phasesmith_workflows::TofLeBailAnalysis; 0]
     );
-    assert!(
+    assert_eq!(
         load_rietveld_project(&directory, ProjectReadLimits::default())
             .unwrap()
-            .analyses
-            .is_empty()
+            .analyses,
+        [] as [phasesmith_workflows::RietveldAnalysis; 0]
     );
 
     let manifest: serde_json::Value =
@@ -210,11 +210,11 @@ fn format_five_round_trips_structural_tof_and_complete_checkpoint() {
         load_project(&directory, ProjectReadLimits::default()).unwrap(),
         state.project
     );
-    assert!(
+    assert_eq!(
         load_tof_multibank_geometry_project(&directory, ProjectReadLimits::default())
             .unwrap()
-            .analyses
-            .is_empty()
+            .analyses,
+        [] as [phasesmith_workflows::TofMultiBankGeometryAnalysis; 0]
     );
 
     let mut manifest: serde_json::Value =
@@ -470,7 +470,10 @@ fn structural_tof_state(bank_count: usize) -> StructuralTofMultiBankProjectState
     let checkpoint = refine_structural_tof_multibank(&input, options, None, None)
         .unwrap()
         .checkpoint;
-    assert!(!checkpoint.history.is_empty());
+    assert_ne!(
+        checkpoint.history,
+        [] as [phasesmith_workflows::StructuralTofMultiBankIterationRecord; 0]
+    );
     let project = ProjectRecord {
         project_id: id("structural-tof-project"),
         revision: 5,

@@ -163,8 +163,8 @@ fn explicit_site_ids_and_symmetry_allowed_coordinate_models_are_stable() {
         [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
     );
     assert!(!general.is_special_position());
-    assert!(fixed.parameter_names().is_empty());
-    assert!(fixed.basis().is_empty());
+    assert_eq!(fixed.parameter_names().len(), 0);
+    assert_eq!(fixed.basis().len(), 0);
     assert!(fixed.is_special_position());
 
     let mirror = SpaceGroup::new(vec![

@@ -11,7 +11,7 @@ fn number_lookup_returns_exact_conventional_operations() {
     let info = space_group_by_number(225).expect("F m -3 m must resolve");
     assert_eq!(info.number, 225);
     assert_eq!(info.hm_symbol, "F m -3 m");
-    assert!(!info.hall_symbol.is_empty());
+    assert_ne!(info.hall_symbol, "");
     assert_eq!(info.space_group.operations().len(), 192);
     assert!(
         info.space_group

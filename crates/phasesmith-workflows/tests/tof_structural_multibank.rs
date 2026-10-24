@@ -480,7 +480,10 @@ fn single_bank_solver_recovers_local_scale_and_zero() {
 fn special_position_coordinates_use_incremental_state_and_resume_exactly() {
     let request = special_position_coordinate_solver_request();
     let partial = refine_structural_tof_multibank(&request, solver_options(2), None, None).unwrap();
-    assert!(!partial.history.is_empty());
+    assert_ne!(
+        partial.history,
+        [] as [phasesmith_workflows::StructuralTofMultiBankIterationRecord; 0]
+    );
     assert!(
         partial.input.phase.definition().fractional_xyz[0]
             .iter()
@@ -514,7 +517,10 @@ fn bounded_solver_recovers_bank_scales_and_zero_terms() {
     let (request, truth_values, initial) = scale_zero_solver_request();
     let result = refine_structural_tof_multibank(&request, solver_options(20), None, None).unwrap();
     assert_eq!(result.termination_reason, TerminationReason::Converged);
-    assert!(!result.history.is_empty());
+    assert_ne!(
+        result.history,
+        [] as [phasesmith_workflows::StructuralTofMultiBankIterationRecord; 0]
+    );
     assert!(result.calculation.objective < 1.0e-12);
     for ((spec, truth), start) in result
         .parameters
@@ -600,7 +606,10 @@ fn cancellation_and_evaluation_limit_return_the_last_accepted_state() {
         bounded.termination_reason,
         TerminationReason::MaxEvaluations
     );
-    assert!(bounded.history.is_empty());
+    assert_eq!(
+        bounded.history,
+        [] as [phasesmith_workflows::StructuralTofMultiBankIterationRecord; 0]
+    );
     assert_eq!(bounded.input, request);
 }
 

@@ -192,7 +192,10 @@ fn selected_local_instrument_columns_recover_distinct_bank_truth() {
     assert_eq!(result.diagnostics.parameter_count, 2);
     assert_eq!(result.diagnostics.jacobian_rank, 2);
     assert_eq!(result.diagnostics.maximum_absolute_correlation, Some(0.0));
-    assert!(result.diagnostics.unresolved_correlations.is_empty());
+    assert_eq!(
+        result.diagnostics.unresolved_correlations,
+        [] as [phasesmith_workflows::TofInstrumentCorrelation; 0]
+    );
     assert!(result.history.iter().any(|row| {
         row.instrument_parameter_changes
             .iter()

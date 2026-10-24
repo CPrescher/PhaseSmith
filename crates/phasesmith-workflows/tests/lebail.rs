@@ -614,7 +614,10 @@ fn profile_backtracking_obeys_the_host_evaluation_budget() {
     )
     .unwrap();
     assert_eq!(result.termination_reason, TerminationReason::MaxEvaluations);
-    assert!(result.history.is_empty());
+    assert_eq!(
+        result.history,
+        [] as [phasesmith_workflows::LeBailIterationRecord; 0]
+    );
     assert_eq!(runtime.evaluations(), 2);
 }
 
@@ -671,7 +674,10 @@ fn runtime_cancellation_events_and_checkpoint_delivery_are_integrated() {
     let mut runtime = RefinementRuntime::new(limits, Some(token)).unwrap();
     let cancelled = refine_lebail_with_runtime(&input, &options(10), None, &mut runtime).unwrap();
     assert_eq!(cancelled.termination_reason, TerminationReason::Cancelled);
-    assert!(cancelled.history.is_empty());
+    assert_eq!(
+        cancelled.history,
+        [] as [phasesmith_workflows::LeBailIterationRecord; 0]
+    );
 
     let delivered = Arc::new(Mutex::new(Vec::new()));
     let observed = delivered.clone();
