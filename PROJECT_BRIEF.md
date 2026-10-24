@@ -12,6 +12,15 @@ not part of the numerical library.
 
 ## Current implementation status
 
+The experimental rotation workflow can now search a bounded set of integer
+lattice axes for an orthorhombic metric setting (P/A/B/C/I/F), retaining the exact
+change of basis and any conventional-cell lattice index. An optional six-parameter
+orthorhombic fit constrains angles to 90° while retaining training-only selection,
+fixed HKLs, fixed instrument and independent held-out diagnostics. Centred settings
+restrict predictions to the original reciprocal lattice. This is a metric candidate,
+not a proof of primitivity, intensity symmetry, extinction rules or space group.
+See `docs/experimental-orthorhombic.md`. Default builds and releases are unchanged.
+
 The experimental detector branch now prioritizes rotation-series **positions**
 before integrated intensities: streamed per-frame detection, explicit omega
 exposure bounds, deterministic adjacent-frame linking, weighted position
