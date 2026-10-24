@@ -168,3 +168,38 @@ def test_centroid_translation_and_fixed_weight_derivatives():
     shifted = _core.experimental_rotation_centroid(translated)
     np.testing.assert_allclose(shifted[:3] - result[:3], [1000.0, -2000.0, 1e6], atol=1e-10, rtol=0)
     np.testing.assert_allclose(shifted[3], result[3], atol=1e-12, rtol=0)
+
+
+def test_finished_frame_observer_is_ordered_and_does_not_change_results():
+    images, bounds = scene()
+    events, snapshots = [], []
+
+    def finished(index, table):
+        events.append(("frame", index))
+        snapshots.append(table)
+        assert not table.values.flags.writeable
+        assert not table.flags.flags.writeable
+
+    observed = r.locate_series(
+        images.__getitem__,
+        bounds,
+        frame_finished=finished,
+        progress=lambda done, total: events.append(("progress", done)),
+    )
+    original = r.locate_series(images.__getitem__, bounds)
+    assert events == [
+        event for i in range(len(images)) for event in (("frame", i), ("progress", i + 1))
+    ]
+    assert [len(t) for t in snapshots] == [0, 0, 1, 1, 1, 0, 0]
+    for name in ("values", "flags", "observations", "boxes", "frame_ranges"):
+        np.testing.assert_array_equal(getattr(observed, name), getattr(original, name))
+    assert observed.frame_hashes == original.frame_hashes
+    calls = []
+
+    def cancel(index, table):
+        calls.append(index)
+        raise RuntimeError("cancel observer")
+
+    with pytest.raises(RuntimeError, match="cancel observer"):
+        r.locate_series(images.__getitem__, bounds, frame_finished=cancel)
+    assert calls == [0]

@@ -113,3 +113,15 @@ from the desktop's Xcode/Git tool selection; selecting Command Line Tools and
 Homebrew Git passed the three failures and then the complete suite. No test
 threshold or scientific assertion was weakened. Hosted cross-platform results
 must be checked separately from these local results.
+
+
+## Optional frame-completion observer
+
+`locate_series(..., frame_finished=callback)` calls the observer with a zero-based
+frame index and immutable `SpotTable` after detection/fingerprinting and the
+observation-budget check, before that frame's progress notification. These are
+per-frame candidates, before cross-frame linking and track-level flags. The
+observer runs synchronously on the caller's thread; an exception aborts the job.
+Without an observer the numerical pipeline is unchanged. Live consumers may
+retain only the latest source image/candidate snapshot and marshal presentation
+to their own GUI thread. Enabling preview must not alter positions or hashes.
