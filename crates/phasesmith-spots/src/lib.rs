@@ -1,7 +1,8 @@
 //! Experimental, structure-independent detector spot measurements.
 //!
-//! Native, deterministic and single-threaded. No file formats, GUI, crystal
-//! model, interpreter, global thread pool or external numerical dependencies.
+//! Native and deterministic; detector kernels are single-threaded. The opt-in
+//! FFT grain search uses a bounded private Rayon pool and `RustFFT`. No file
+//! formats, GUI, interpreter, or global thread pool.
 //! See `docs/experimental-spots.md` for equations and uncertainty limitations.
 
 // Pixel counts/coordinates are validated below 2^32, exactly representable in f64.
@@ -11,6 +12,7 @@
 
 use std::fmt::{Display, Formatter};
 
+pub mod fft;
 pub mod prediction;
 pub mod reciprocal;
 pub mod rotation;

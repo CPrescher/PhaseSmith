@@ -1,0 +1,36 @@
+{
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "positions": 2674,
+  "options": {
+    "min_length": 1.5,
+    "max_length": 15,
+    "grid_size": 192,
+    "fft_peaks": 192,
+    "basis_vectors": 64,
+    "max_pairs": 96,
+    "cell_refinements": 32,
+    "max_grains": 4,
+    "workers": 4,
+    "fractional_tolerance": 0.15,
+    "reciprocal_tolerance": 0.015,
+    "min_indexed": 20,
+    "min_volume": 15.0,
+    "max_volume": 20000.0,
+    "max_condition": 20.0,
+    "ambiguity_ratio": 0.8,
+    "null_rotations": 64,
+    "seed": 842024
+  },
+  "wall_seconds": [
+    0.9659993329551071,
+    0.9519243329996243,
+    0.936659375031013
+  ],
+  "cpu_seconds": [
+    1.173714,
+    1.1589559999999999,
+    1.147221
+  ],
+  "exact_repeat": true,
+  "accepted": 2
+}
