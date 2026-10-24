@@ -177,7 +177,10 @@ fn intelligent_planner_is_cumulative_advice_and_matches_python_when_configured()
             .collect::<Vec<_>>(),
         ["scale_background", "positions"]
     );
-    assert!(recipe.stages()[0].selection().instrument.is_empty());
+    assert_eq!(
+        recipe.stages()[0].selection().instrument,
+        [] as [phasesmith_workflows::RietveldInstrumentParameter; 0]
+    );
     assert_eq!(
         recipe.stages()[1].selection().instrument,
         [RietveldInstrumentParameter::ZeroShiftDeg]

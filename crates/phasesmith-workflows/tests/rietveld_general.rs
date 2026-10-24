@@ -740,11 +740,11 @@ fn invalid_general_selections_fail_before_preparation() {
         true,
     )
     .unwrap();
-    assert!(
+    assert_eq!(
         RietveldParameterLayout::new(&input(), &sample_physics, &[None])
             .unwrap()
             .parameters()
-            .specs()
-            .is_empty()
+            .specs(),
+        []
     );
 }

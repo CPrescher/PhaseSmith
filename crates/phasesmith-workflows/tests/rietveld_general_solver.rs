@@ -228,7 +228,10 @@ fn affine_background_and_phase_scale_recover_with_physical_covariance() {
     let source = covariance.values[0];
     assert!((covariance.values[4] - 0.25 * source).abs() < 1.0e-12 * source.abs().max(1.0));
     assert!((covariance.values[1] - 0.5 * source).abs() < 1.0e-12 * source.abs().max(1.0));
-    assert!(result.unresolved_correlations.is_empty());
+    assert_eq!(
+        result.unresolved_correlations,
+        [] as [phasesmith_workflows::RietveldParameterCorrelation; 0]
+    );
     for row in &result.history {
         assert!(row.rp.is_finite());
         assert!(row.rwp.is_finite());
@@ -542,7 +545,10 @@ fn cancellation_returns_the_unchanged_restartable_complete_state() {
     )
     .unwrap();
     assert_eq!(result.termination_reason, TerminationReason::Cancelled);
-    assert!(result.history.is_empty());
+    assert_eq!(
+        result.history,
+        [] as [phasesmith_workflows::RietveldIterationRecord; 0]
+    );
     assert_eq!(result.input, input);
     assert_eq!(result.checkpoint.input, input);
     assert_eq!(result.checkpoint.completed_iterations, 0);
@@ -912,7 +918,10 @@ fn rejected_trials_reuse_the_accepted_jacobian_and_recover_tiny_damping() {
         None,
     )
     .unwrap();
-    assert!(partial.history.is_empty());
+    assert_eq!(
+        partial.history,
+        [] as [phasesmith_workflows::RietveldIterationRecord; 0]
+    );
     assert_eq!(partial.input, input);
     assert_eq!(
         partial.checkpoint.damping.to_bits(),
@@ -950,7 +959,10 @@ fn rejected_trials_reuse_the_accepted_jacobian_and_recover_tiny_damping() {
         TerminationReason::RepeatedRejections
     );
     assert_eq!(rejected.input, input);
-    assert!(rejected.history.is_empty());
+    assert_eq!(
+        rejected.history,
+        [] as [phasesmith_workflows::RietveldIterationRecord; 0]
+    );
 }
 
 #[test]
@@ -980,7 +992,10 @@ fn large_damping_does_not_certify_convergence_far_from_solution() {
         None,
     )
     .unwrap();
-    assert!(!result.history.is_empty());
+    assert_ne!(
+        result.history,
+        [] as [phasesmith_workflows::RietveldIterationRecord; 0]
+    );
     assert_eq!(result.termination_reason, TerminationReason::Converged);
     assert!(result.calculation.metrics.rwp < 1e-8);
     assert!((result.input.phases[0].definition().occupancy[0] - 0.5).abs() < 2e-9);
@@ -1028,7 +1043,10 @@ fn coordinate_recovery_has_one_trial_allowance_and_preserves_rejection_guard() {
         )
         .unwrap();
         assert_eq!(result.termination_reason, expected);
-        assert!(result.history.is_empty());
+        assert_eq!(
+            result.history,
+            [] as [phasesmith_workflows::RietveldIterationRecord; 0]
+        );
         assert_eq!(result.input, input);
         assert!(result.calculation.metrics.rwp > 0.49);
     }

@@ -221,7 +221,7 @@ mod tests {
         let empty = IntegratedIntensityCorrectionModel::Neutral
             .evaluate(&[])
             .expect("empty neutral");
-        assert!(empty.values.is_empty());
+        assert_eq!(empty.values, [] as [f64; 0]);
         let values = IntegratedIntensityCorrectionModel::Neutral
             .evaluate(&[0.01, 0.1, 1.0])
             .expect("neutral");
