@@ -140,7 +140,69 @@ fn experimental_spots<'py>(
 pub(super) fn register(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_function(wrap_pyfunction!(experimental_spots, module)?)?;
     module.add_function(wrap_pyfunction!(experimental_rotation_link, module)?)?;
-    module.add_function(wrap_pyfunction!(experimental_rotation_centroid, module)?)
+    module.add_function(wrap_pyfunction!(experimental_rotation_centroid, module)?)?;
+    module.add_function(wrap_pyfunction!(experimental_reciprocal, module)?)?;
+    module.add_function(wrap_pyfunction!(experimental_lattice_fourier, module)?)
+}
+
+fn triples(array: PyReadonlyArray2<'_, f64>) -> PyResult<Vec<[f64; 3]>> {
+    if array.as_array().ncols() != 3 {
+        return Err(PyValueError::new_err("expected shape (n,3)"));
+    }
+    Ok(array
+        .as_array()
+        .rows()
+        .into_iter()
+        .map(|r| [r[0], r[1], r[2]])
+        .collect())
+}
+
+#[pyfunction]
+fn experimental_reciprocal<'py>(
+    py: Python<'py>,
+    samples: PyReadonlyArray2<'py, f64>,
+    parameters: PyReadonlyArray2<'py, f64>,
+    wavelength: f64,
+) -> PyResult<Bound<'py, PyArray2<f64>>> {
+    let samples = triples(samples)?;
+    let p = triples(parameters)?;
+    if p.len() != 5 {
+        return Err(PyValueError::new_err("geometry must be (5,3)"));
+    }
+    let g = phasesmith_spots::reciprocal::Geometry {
+        origin: p[0],
+        fast: p[1],
+        slow: p[2],
+        beam: p[3],
+        axis: p[4],
+        wavelength,
+    };
+    let result = py
+        .detach(move || g.convert(&samples))
+        .map_err(|e| PyValueError::new_err(e.to_string()))?;
+    Ok(
+        Array2::from_shape_vec((result.len(), 3), result.into_iter().flatten().collect())
+            .unwrap()
+            .into_pyarray(py),
+    )
+}
+
+#[pyfunction]
+fn experimental_lattice_fourier<'py>(
+    py: Python<'py>,
+    points: PyReadonlyArray2<'py, f64>,
+    vectors: PyReadonlyArray2<'py, f64>,
+) -> PyResult<Bound<'py, PyArray2<f64>>> {
+    let points = triples(points)?;
+    let vectors = triples(vectors)?;
+    let result = py
+        .detach(move || phasesmith_spots::reciprocal::fourier(&points, &vectors))
+        .map_err(|e| PyValueError::new_err(e.to_string()))?;
+    Ok(
+        Array2::from_shape_vec((result.len(), 13), result.into_iter().flatten().collect())
+            .unwrap()
+            .into_pyarray(py),
+    )
 }
 
 #[pyfunction]
