@@ -610,6 +610,7 @@ dependencies = [
  "phasesmith-io",
  "phasesmith-model",
  "phasesmith-persistence",
+ "phasesmith-spots",
  "phasesmith-workflows",
 ]
 
@@ -692,10 +693,15 @@ dependencies = [
  "phasesmith-io",
  "phasesmith-model",
  "phasesmith-persistence",
+ "phasesmith-spots",
  "phasesmith-validation",
  "phasesmith-workflows",
  "pyo3",
 ]
+
+[[package]]
+name = "phasesmith-spots"
+version = "0.7.0"
 
 [[package]]
 name = "phasesmith-validation"

@@ -63,6 +63,8 @@ mod pawley;
 mod profile_estimation;
 mod project_bundle;
 mod rietveld;
+#[cfg(feature = "experimental-spots")]
+mod spots;
 mod tof_lebail;
 mod tof_multibank;
 mod tof_pawley;
@@ -4259,7 +4261,10 @@ fn run_native_validation(py: Python<'_>, runner: String, directory: String) -> P
 
 /// Native Python module.
 #[pymodule]
+#[allow(clippy::too_many_lines)] // Explicit registration of the extension's independent modules.
 fn _core(module: &Bound<'_, PyModule>) -> PyResult<()> {
+    #[cfg(feature = "experimental-spots")]
+    spots::register(module)?;
     module.add_class::<NativeExecutionPolicy>()?;
     module.add_class::<NativePreparedXrayScattering>()?;
     module.add_class::<NativePreparedNeutronScattering>()?;

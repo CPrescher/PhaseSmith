@@ -13,6 +13,7 @@ keywords = ["diffraction", "rietveld", "crystallography", "powder", "science"]
 categories = ["science"]
 
 [dependencies]
+phasesmith-spots = { version = "0.7.0", path = "../phasesmith-spots", optional = true }
 phasesmith-core = { version = "0.7.0", path = "../phasesmith-core" }
 phasesmith-crystallography = { version = "0.7.0", path = "../phasesmith-crystallography" }
 phasesmith-engine = { version = "0.7.0", path = "../phasesmith-engine" }
@@ -24,3 +25,6 @@ phasesmith-workflows = { version = "0.7.0", path = "../phasesmith-workflows" }
 
 [lints]
 workspace = true
+
+[features]
+experimental-spots = ["dep:phasesmith-spots"]

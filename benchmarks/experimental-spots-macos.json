@@ -1,0 +1,30 @@
+{
+  "seed": 2026102408,
+  "shape": [
+    2048,
+    2048
+  ],
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "options": {
+    "threshold_sigma": 5.0,
+    "threshold_absolute": 0.0,
+    "inner_radius": 2,
+    "outer_radius": 8,
+    "min_pixels": 3,
+    "max_pixels": 4096,
+    "padding": 2,
+    "background_margin": 4,
+    "min_background": 12,
+    "max_spots": 10000
+  },
+  "native_workers": 1,
+  "spots": 1024,
+  "flagged": 0,
+  "exact_repeated_records": true,
+  "times_s": [
+    0.17755533300805837,
+    0.17797837499529123,
+    0.17664970800979063
+  ],
+  "median_s": 0.17755533300805837
+}

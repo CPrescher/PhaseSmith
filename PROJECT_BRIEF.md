@@ -12,6 +12,17 @@ not part of the numerical library.
 
 ## Current implementation status
 
+An isolated experimental branch adds structure-independent 2D detector spot
+detection and signed finite-aperture intensity extraction. The separate,
+dependency-free `phasesmith-spots` numerical crate is exposed through the
+`experimental-spots` feature only; default facade/extension builds omit it.
+The Python API is explicitly under `phasesmith.experimental`, and Dioptas is
+an external opt-in consumer. No standard release or powder API changes are
+authorized. See `docs/experimental-spots.md` for support, noise, flags,
+independent-reference validation and the distinction from corrected I(hkl).
+This user-requested detector experiment is separate from the deferred public
+one-dimensional powder peak picker and introduces no GUI into the library.
+
 The final 0.7 release gate exposed NumPy 1.26 AVX-512 trigonometric rounding
 in the independent FCJ/component reference. Four controlled hosted probes
 reproduce both failures with vector trig and pass with scalar libm or with

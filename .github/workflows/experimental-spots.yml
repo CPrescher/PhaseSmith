@@ -1,0 +1,28 @@
+name: Experimental detector spots
+on:
+  push:
+    branches: [codex/experimental-spots]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native-and-python:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo test -p phasesmith-spots --locked
+      - run: python -m pip install maturin numpy pytest
+      - run: maturin build --release --locked --features experimental-spots --out dist-experimental
+      - shell: bash
+        run: python -m pip install dist-experimental/*.whl
+      - run: python -m pytest tests/test_experimental_spots.py -q
+      - run: python benchmarks/spots.py --size 512 --repetitions 2
