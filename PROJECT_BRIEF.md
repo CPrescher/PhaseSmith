@@ -24,7 +24,9 @@ See `docs/experimental-orthorhombic.md`. Default builds and releases are unchang
 The experimental detector branch now prioritizes rotation-series **positions**
 before integrated intensities: streamed per-frame detection, explicit omega
 exposure bounds, deterministic adjacent-frame linking, weighted position
-summaries and retained frame observations. Ambiguity/scan-edge flags remain
+summaries and retained frame observations. An optional immutable per-frame
+detection observer supports live inspection without changing the numerical
+results or source hashes. Ambiguity/scan-edge flags remain
 visible. An optional explicit planar detector/sample geometry now transforms
 each observation to reciprocal space before combining tracks. A bounded blind
 Fourier search proposes unconstrained cells from positions alone, with separate

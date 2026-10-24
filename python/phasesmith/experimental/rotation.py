@@ -160,12 +160,16 @@ def locate_series(
     read_noise=0.0,
     saturation=None,
     progress: Callable[[int, int], None] | None = None,
+    frame_finished: Callable[[int, SpotTable], None] | None = None,
 ) -> PositionTable:
     """First-stage peak hunt: read a series once and return x/y/omega candidates.
 
     Existing detector sums serve only as positive centroid weights and noise
     thresholds. This performs no forced-aperture rocking integration, profile
     fit, reciprocal-space transform, unit-cell solution or symmetry assignment.
+    frame_finished receives a zero-based index and immutable per-frame detections
+    after fingerprinting, before progress/linking. It runs on the caller's thread;
+    exceptions abort processing. It must not mutate or retain mutable loader data.
     """
     bounds, segments = angle_segments(omega_bounds)
     if not isinstance(spot_options, SpotOptions) or not isinstance(
@@ -203,6 +207,8 @@ def locate_series(
         count += len(table)
         if count > rotation_options.max_observations:
             raise ValueError("rotation observation budget exceeded")
+        if frame_finished:
+            frame_finished(i, table)
         if progress:
             progress(i + 1, len(bounds))
     labels = link_spots(tables, bounds, options=rotation_options)
