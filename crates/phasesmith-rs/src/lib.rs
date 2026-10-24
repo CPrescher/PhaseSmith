@@ -17,5 +17,8 @@ pub use phasesmith_io as io;
 pub use phasesmith_model as model;
 /// Canonical native project persistence and reporting.
 pub use phasesmith_persistence as persistence;
+/// Experimental detector spot measurements; absent from default builds.
+#[cfg(feature = "experimental-spots")]
+pub use phasesmith_spots as spots;
 /// Le Bail, Rietveld, quantitative, residual, and validation workflows.
 pub use phasesmith_workflows as workflows;

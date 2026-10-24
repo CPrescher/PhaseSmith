@@ -11,6 +11,9 @@ __pycache__/
 *.dylib
 *.egg-info/
 dist/
+dist-experimental/
+dist-default/
+/runs/
 build/
 validation/data/
 validation/results/local*.json
