@@ -25,5 +25,5 @@ jobs:
       - shell: bash
         run: python -m pip install dist-experimental/*.whl
       - run: python -c "from phasesmith.experimental.spots import available; assert available()"
-      - run: python -m pytest tests/test_experimental_spots.py -q
+      - run: python -m pytest tests/test_experimental_spots.py tests/test_experimental_rotation.py -q
       - run: python benchmarks/spots.py --size 512 --repetitions 2
