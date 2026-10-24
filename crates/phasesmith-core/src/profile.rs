@@ -816,10 +816,10 @@ mod tests {
     #[test]
     fn empty_and_outside_support_blocks_are_well_formed() {
         let empty = accumulate_peaks(&[], &[], 2.0).expect("empty accumulation");
-        assert!(empty.y.is_empty());
-        assert!(empty.derivatives.local.starts.is_empty());
+        assert_eq!(empty.y, Vec::<f64>::new());
+        assert_eq!(empty.derivatives.local.starts, Vec::<usize>::new());
         assert_eq!(empty.derivatives.local.offsets, [0]);
-        assert!(empty.derivatives.local.values.is_empty());
+        assert_eq!(empty.derivatives.local.values, Vec::<f64>::new());
 
         let outside = accumulate_peaks(
             &[0.0, 1.0],
@@ -835,7 +835,7 @@ mod tests {
         assert_eq!(outside.y, [0.0, 0.0]);
         assert_eq!(outside.derivatives.local.starts, [2]);
         assert_eq!(outside.derivatives.local.offsets, [0, 0]);
-        assert!(outside.derivatives.local.values.is_empty());
+        assert_eq!(outside.derivatives.local.values, Vec::<f64>::new());
     }
 
     #[test]
