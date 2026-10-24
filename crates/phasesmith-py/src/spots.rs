@@ -142,7 +142,73 @@ pub(super) fn register(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_function(wrap_pyfunction!(experimental_rotation_link, module)?)?;
     module.add_function(wrap_pyfunction!(experimental_rotation_centroid, module)?)?;
     module.add_function(wrap_pyfunction!(experimental_reciprocal, module)?)?;
+    module.add_function(wrap_pyfunction!(experimental_predict_spots, module)?)?;
     module.add_function(wrap_pyfunction!(experimental_lattice_fourier, module)?)
+}
+
+#[pyfunction]
+#[allow(clippy::type_complexity)] // Flat owned numerical snapshots.
+fn experimental_predict_spots<'py>(
+    py: Python<'py>,
+    hkl: PyReadonlyArray2<'py, i64>,
+    basis: PyReadonlyArray2<'py, f64>,
+    hints: PyReadonlyArray1<'py, f64>,
+    parameters: PyReadonlyArray2<'py, f64>,
+    wavelength: f64,
+    other: bool,
+) -> PyResult<(
+    Bound<'py, PyArray2<f64>>,
+    Bound<'py, PyArray2<f64>>,
+    Bound<'py, PyArray1<u32>>,
+)> {
+    if hkl.as_array().ncols() != 3 {
+        return Err(PyValueError::new_err("hkl must be (n,3)"));
+    }
+    let hkl: Vec<[i64; 3]> = hkl
+        .as_array()
+        .rows()
+        .into_iter()
+        .map(|r| [r[0], r[1], r[2]])
+        .collect();
+    let hints = hints.as_slice()?.to_vec();
+    let b = triples(basis)?;
+    let p = triples(parameters)?;
+    if b.len() != 3 || p.len() != 5 {
+        return Err(PyValueError::new_err(
+            "basis (3,3), geometry (5,3) required",
+        ));
+    }
+    let geometry = phasesmith_spots::reciprocal::Geometry {
+        origin: p[0],
+        fast: p[1],
+        slow: p[2],
+        beam: p[3],
+        axis: p[4],
+        wavelength,
+    };
+    let result = py
+        .detach(move || {
+            phasesmith_spots::prediction::predict(geometry, [b[0], b[1], b[2]], &hkl, &hints, other)
+        })
+        .map_err(|e| PyValueError::new_err(e.to_string()))?;
+    let n = result.len();
+    let mut values = Vec::with_capacity(n * 3);
+    let mut jacobian = Vec::with_capacity(n * 27);
+    let mut flags = Vec::with_capacity(n);
+    for r in result {
+        values.extend(r.values);
+        jacobian.extend(r.jacobian);
+        flags.push(r.flags);
+    }
+    Ok((
+        Array2::from_shape_vec((n, 3), values)
+            .unwrap()
+            .into_pyarray(py),
+        Array2::from_shape_vec((n, 27), jacobian)
+            .unwrap()
+            .into_pyarray(py),
+        flags.into_pyarray(py),
+    ))
 }
 
 fn triples(array: PyReadonlyArray2<'_, f64>) -> PyResult<Vec<[f64; 3]>> {
