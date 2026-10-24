@@ -12,6 +12,14 @@ not part of the numerical library.
 
 ## Current implementation status
 
+The experimental detector branch now prioritizes rotation-series **positions**
+before integrated intensities: streamed per-frame detection, explicit omega
+exposure bounds, deterministic adjacent-frame linking, weighted position
+summaries and retained frame observations. Ambiguity/scan-edge flags remain
+visible. It does not solve a cell, infer a space group or integrate rocking
+curves. File/angle import and inspection stay in opt-in Dioptas, outside this
+library and the standard release path. See `docs/experimental-rotation-positions.md`.
+
 An isolated experimental branch adds structure-independent 2D detector spot
 detection and signed finite-aperture intensity extraction. The separate,
 dependency-free `phasesmith-spots` numerical crate is exposed through the

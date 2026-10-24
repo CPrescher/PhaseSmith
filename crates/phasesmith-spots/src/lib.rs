@@ -11,6 +11,8 @@
 
 use std::fmt::{Display, Formatter};
 
+pub mod rotation;
+
 /// Truncated aperture at a detector boundary.
 pub const EDGE: u32 = 1;
 /// Excluded pixels in a signal aperture.

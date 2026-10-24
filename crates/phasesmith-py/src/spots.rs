@@ -138,5 +138,55 @@ fn experimental_spots<'py>(
     arrays(py, result)
 }
 pub(super) fn register(module: &Bound<'_, PyModule>) -> PyResult<()> {
-    module.add_function(wrap_pyfunction!(experimental_spots, module)?)
+    module.add_function(wrap_pyfunction!(experimental_spots, module)?)?;
+    module.add_function(wrap_pyfunction!(experimental_rotation_link, module)?)?;
+    module.add_function(wrap_pyfunction!(experimental_rotation_centroid, module)?)
+}
+
+#[pyfunction]
+fn experimental_rotation_link<'py>(
+    py: Python<'py>,
+    frames: PyReadonlyArray1<'py, u32>,
+    xy: PyReadonlyArray2<'py, f64>,
+    segments: PyReadonlyArray1<'py, u32>,
+    radius: f64,
+    max_candidates: usize,
+) -> PyResult<Bound<'py, PyArray1<u32>>> {
+    if xy.as_array().ncols() != 2 {
+        return Err(PyValueError::new_err("xy must have shape (n,2)"));
+    }
+    let frames = frames.as_slice()?.to_vec();
+    let xy: Vec<[f64; 2]> = xy
+        .as_array()
+        .rows()
+        .into_iter()
+        .map(|r| [r[0], r[1]])
+        .collect();
+    let segments = segments.as_slice()?.to_vec();
+    let result = py
+        .detach(move || {
+            phasesmith_spots::rotation::link(&frames, &xy, &segments, radius, max_candidates)
+        })
+        .map_err(|e| PyValueError::new_err(e.to_string()))?;
+    Ok(result.into_pyarray(py))
+}
+
+#[pyfunction]
+fn experimental_rotation_centroid<'py>(
+    py: Python<'py>,
+    samples: PyReadonlyArray2<'py, f64>,
+) -> PyResult<Bound<'py, PyArray1<f64>>> {
+    if samples.as_array().ncols() != 4 {
+        return Err(PyValueError::new_err("samples must have shape (n,4)"));
+    }
+    let samples: Vec<[f64; 4]> = samples
+        .as_array()
+        .rows()
+        .into_iter()
+        .map(|r| [r[0], r[1], r[2], r[3]])
+        .collect();
+    let result = py
+        .detach(move || phasesmith_spots::rotation::summarize(&samples))
+        .map_err(|e| PyValueError::new_err(e.to_string()))?;
+    Ok(result.to_vec().into_pyarray(py))
 }
