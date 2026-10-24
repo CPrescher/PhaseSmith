@@ -2,6 +2,7 @@
 
 import numpy as np
 import pytest
+from phasesmith import _core
 from phasesmith.experimental.orthorhombic import (
     find_orthorhombic_settings,
     orthorhombic_chain,
@@ -11,6 +12,10 @@ from phasesmith.experimental.orthorhombic import (
 from phasesmith.experimental.prediction import predict_spots, refine_crystal
 from phasesmith.experimental.prediction_reference import predict as reference
 from test_experimental_prediction import setup
+
+pytestmark = pytest.mark.skipif(
+    not hasattr(_core, "experimental_predict_spots"), reason="experimental-spots feature not built"
+)
 
 
 @pytest.mark.parametrize(
