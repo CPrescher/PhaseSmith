@@ -10,12 +10,18 @@ This is opt-in under `experimental-spots`; no standard release or powder API cha
 
 ```python
 from phasesmith.experimental.cell_comparison import compare_cells, CellComparisonOptions
-result = compare_cells(q, inferred.direct_basis, training=training,
-    observed=centroids, geometry=geometry,
-    options=CellComparisonOptions(max_subcell_index=8))
+
+result = compare_cells(
+    q,
+    inferred.direct_basis,
+    training=training,
+    observed=centroids,
+    geometry=geometry,
+    options=CellComparisonOptions(max_subcell_index=8),
+)
 for hypothesis in result.primitives:  # Includes rejected hypotheses and exclusions.
     print(hypothesis.index, hypothesis.cell, hypothesis.excluded_training, hypothesis.supported)
-for fit in result.settings:          # Includes distinct monoclinic axes, not just one row/type.
+for fit in result.settings:  # Includes distinct monoclinic axes, not just one row/type.
     print(fit.setting.symbol, fit.cell, fit.training_metrics, fit.validation_metrics)
 print(result.recommended.setting.symbol)
 ```
