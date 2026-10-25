@@ -12,6 +12,18 @@ not part of the numerical library.
 
 ## Current implementation status
 
+An opt-in primitive/Bravais comparison now follows position-only lattice discovery.
+Native Selling-Delaunay reduction retains exact integer basis transformations;
+complete low-index reciprocal HNF hypotheses expose excluded reflections rather
+than silently discarding them. All 14 Bravais types are searched in bounded
+reduced axes, retaining distinct metric constraints and conventional centring.
+Training-only constrained positional fits use the existing fused native prediction
+partials, with fixed HKLs/populations and descriptive held-out residuals. The
+recommendation uses a declared parameter penalty, not a symmetry probability.
+P1 favours an orthorhombic primitive metric but retains its larger inferred cell;
+no material/cell prior, proven space group or smaller physical cell is supplied.
+See `docs/experimental-cell-comparison.md`. Default releases remain unchanged.
+
 An opt-in **FFT grain search** now centralises position-only lattice discovery
 and competing grain ownership in PhaseSmith. Unindexed reciprocal positions
 produce inferred HKLs and grain orientations; several orientations may share

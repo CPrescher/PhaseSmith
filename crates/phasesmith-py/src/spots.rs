@@ -138,6 +138,7 @@ fn experimental_spots<'py>(
     arrays(py, result)
 }
 pub(super) fn register(module: &Bound<'_, PyModule>) -> PyResult<()> {
+    module.add_function(wrap_pyfunction!(experimental_reduce_lattice, module)?)?;
     module.add_function(wrap_pyfunction!(experimental_spots, module)?)?;
     module.add_function(wrap_pyfunction!(experimental_rotation_link, module)?)?;
     module.add_function(wrap_pyfunction!(experimental_rotation_centroid, module)?)?;
@@ -317,4 +318,30 @@ fn experimental_rotation_centroid<'py>(
         .detach(move || phasesmith_spots::rotation::summarize(&samples))
         .map_err(|e| PyValueError::new_err(e.to_string()))?;
     Ok(result.to_vec().into_pyarray(py))
+}
+
+#[pyfunction]
+#[allow(clippy::type_complexity)] // Two owned 3x3 snapshots and an iteration count.
+fn experimental_reduce_lattice<'py>(
+    py: Python<'py>,
+    basis: PyReadonlyArray2<'py, f64>,
+    tolerance: f64,
+    max_iterations: usize,
+) -> PyResult<(Bound<'py, PyArray2<f64>>, Bound<'py, PyArray2<i64>>, usize)> {
+    let rows = triples(basis)?;
+    let basis: [[f64; 3]; 3] = rows
+        .try_into()
+        .map_err(|_| PyValueError::new_err("basis must be (3,3)"))?;
+    let result = py
+        .detach(move || phasesmith_spots::reduction::reduce(basis, tolerance, max_iterations))
+        .map_err(|e| PyValueError::new_err(e.to_string()))?;
+    Ok((
+        Array2::from_shape_vec((3, 3), result.basis.into_iter().flatten().collect())
+            .unwrap()
+            .into_pyarray(py),
+        Array2::from_shape_vec((3, 3), result.transform.into_iter().flatten().collect())
+            .unwrap()
+            .into_pyarray(py),
+        result.iterations,
+    ))
 }

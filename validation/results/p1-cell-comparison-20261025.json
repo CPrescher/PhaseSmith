@@ -1,0 +1,848 @@
+{
+  "scope": "Exploratory positions-only P1 follow-up. Original held-out split reused, not a new independent benchmark. No known material/cell, reference indexing, saved UB or other sample run.",
+  "protocol": {
+    "input_policy": "Measured P1 positions, calibrated detector geometry, and the existing training-derived inferred basis only. No known cell, material, structure, saved UB, reference HKLs or other sample runs.",
+    "primary": "Consistent intensity-weighted x/y/omega centroids transformed to q; detector-space fixed-instrument fits.",
+    "sensitivity": "Prior equal-observation q centroids, reciprocal-space fits.",
+    "fitting": "Training only; fixed inferred HKLs and fixed parent/hypothesis populations; all 14 Bravais types in bounded reduced axes.",
+    "ranking": "Smallest supported primitive hypothesis by exact HNF index; within it 2*training radial Huber cost + p*log(3*N), fixed scales. Not a calibrated BIC or symmetry probability.",
+    "validation": "Original 1052/243 rotation-block split reused. Exploratory diagnostic, not a fresh independent benchmark. Held-out residuals do not select or refine models.",
+    "options": {
+      "max_subcell_index": 8,
+      "minimum_retention": 0.9,
+      "q_tolerance": 0.015,
+      "q_scale": 0.005,
+      "max_strain": 0.01,
+      "max_angle": 1.0,
+      "coefficient_limit": 2,
+      "xy_scale": 2.0,
+      "omega_scale": 0.3,
+      "initial_xy_gate": 25.0,
+      "initial_omega_gate": 2.0,
+      "huber": 2.5,
+      "max_iterations": 60
+    },
+    "sources": [
+      "diagnostic-inputs.npz",
+      "P1_fft_grains.json geometry snapshot"
+    ]
+  },
+  "inputs": [
+    {
+      "path": "/Users/clemens/Programming/PhaseSmith/runs/p1-blind-diagnosis-20261025/diagnostic-inputs.npz",
+      "sha256": "c00fe92f3922b6d3b2dbf89ed46c0d5436d739dd971a044baf8098c7f25684f7"
+    },
+    {
+      "path": "/Users/clemens/Programming/PhaseSmith/runs/fe7c3-fft-grains-20261025/P1_fft_grains.json",
+      "sha256": "d5ef2092af91fba5c905abc1d45d3abcb43567d691858e3b4d358a3542e81f4d"
+    }
+  ],
+  "runs": {
+    "primary_detector": {
+      "parent_train": 551,
+      "parent_validation": 127,
+      "primitive_hypotheses": 390,
+      "supported_primitive_hypotheses": 1,
+      "type_status": {
+        "aP": 1,
+        "mP": 3,
+        "mC": 0,
+        "oP": 1,
+        "oC": 0,
+        "oI": 0,
+        "oF": 0,
+        "tP": 0,
+        "tI": 0,
+        "hP": 0,
+        "hR": 0,
+        "cP": 0,
+        "cI": 0,
+        "cF": 0
+      },
+      "recommended_setting_index": 4,
+      "settings": [
+        {
+          "row": 0,
+          "primitive_id": 0,
+          "symbol": "aP",
+          "index": 1,
+          "transform": [
+            [
+              -1,
+              0,
+              0
+            ],
+            [
+              0,
+              -1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "strain": 3.3306690738754696e-16,
+          "cell": [
+            4.349013731050091,
+            11.644851606754063,
+            13.406471698032078,
+            90.04820050886373,
+            89.99889059748995,
+            90.00716125643575
+          ],
+          "volume": 678.9520062847349,
+          "basis": [
+            [
+              -0.227273519456129,
+              -0.02860900271685566,
+              -0.019984615805664265
+            ],
+            [
+              -0.011152103972336814,
+              0.03396520781257558,
+              0.07808003668076792
+            ],
+            [
+              -0.005880848972819792,
+              0.06790148869671568,
+              -0.030308430547007412
+            ]
+          ],
+          "training": {
+            "count": 546,
+            "rms_scaled": 1.36911015052688,
+            "rms_xy": 1.5791656489109538,
+            "rms_omega": 0.33554722630958855
+          },
+          "validation": {
+            "count": 127,
+            "rms_scaled": 1.5603023009285613,
+            "rms_xy": 2.0233141525239025,
+            "rms_omega": 0.35636833575654203
+          },
+          "parameters": 9,
+          "training_score": 894.5210340340701,
+          "history": [
+            417.7115183638085,
+            414.0349192324231,
+            413.95755709721266,
+            413.95506220390297,
+            413.9549791983572,
+            413.95497642312637,
+            413.954976330283,
+            413.9549763271765
+          ],
+          "converged": true,
+          "status": "converged",
+          "recommended": false
+        },
+        {
+          "row": 1,
+          "primitive_id": 0,
+          "symbol": "mP",
+          "index": 1,
+          "transform": [
+            [
+              0,
+              0,
+              -1
+            ],
+            [
+              -1,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ],
+          "strain": 0.0001884129782654398,
+          "cell": [
+            13.406941876076672,
+            4.34901273614178,
+            11.644712715785133,
+            90.0,
+            90.04913280740489,
+            89.99999999999997
+          ],
+          "volume": 678.9675602051002,
+          "basis": [
+            [
+              0.005880508129522859,
+              -0.0679001213435067,
+              0.03030512458981006
+            ],
+            [
+              -0.22727177778744265,
+              -0.028610555079152156,
+              -0.020002776193607207
+            ],
+            [
+              0.011147925333702761,
+              -0.033964875348095884,
+              -0.07808190509216517
+            ]
+          ],
+          "training": {
+            "count": 546,
+            "rms_scaled": 1.36920920233543,
+            "rms_xy": 1.5816429603035385,
+            "rms_omega": 0.3353209960115129
+          },
+          "validation": {
+            "count": 127,
+            "rms_scaled": 1.5623720519266935,
+            "rms_xy": 2.0292531544841266,
+            "rms_omega": 0.35642466295924496
+          },
+          "parameters": 7,
+          "training_score": 879.9844995867657,
+          "history": [
+            419.2271031702629,
+            414.1558135256046,
+            414.08963958999897,
+            414.0879839841033,
+            414.0879414902854,
+            414.0879403961168,
+            414.0879403679373
+          ],
+          "converged": true,
+          "status": "converged",
+          "recommended": false
+        },
+        {
+          "row": 2,
+          "primitive_id": 0,
+          "symbol": "mP",
+          "index": 1,
+          "transform": [
+            [
+              -1,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              -1
+            ],
+            [
+              0,
+              -1,
+              0
+            ]
+          ],
+          "strain": 0.00038579933272142597,
+          "cell": [
+            4.349116759480341,
+            13.412413679141663,
+            11.647363767105036,
+            89.99999999999999,
+            90.00905419713179,
+            90.0
+          ],
+          "volume": 679.4157981894051,
+          "basis": [
+            [
+              -0.22727057306380827,
+              -0.028593194518580705,
+              -0.019978086020797627
+            ],
+            [
+              0.005870811604282995,
+              -0.06785594083533081,
+              0.03033100354358547
+            ],
+            [
+              -0.0111460653539971,
+              0.03393405965775787,
+              0.07807404034155521
+            ]
+          ],
+          "training": {
+            "count": 546,
+            "rms_scaled": 1.3673895134681024,
+            "rms_xy": 1.5760445803817569,
+            "rms_omega": 0.3352457988602349
+          },
+          "validation": {
+            "count": 127,
+            "rms_scaled": 1.5644112527142344,
+            "rms_xy": 2.0258776340955302,
+            "rms_omega": 0.35765958235214595
+          },
+          "parameters": 7,
+          "training_score": 881.876471700044,
+          "history": [
+            419.04507027955106,
+            415.0722608663326,
+            415.0346057026102,
+            415.03393874061794,
+            415.03392664830375,
+            415.0339264285696,
+            415.03392642457646
+          ],
+          "converged": true,
+          "status": "converged",
+          "recommended": false
+        },
+        {
+          "row": 3,
+          "primitive_id": 0,
+          "symbol": "mP",
+          "index": 1,
+          "transform": [
+            [
+              -1,
+              0,
+              0
+            ],
+            [
+              0,
+              -1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "strain": 0.00041934284190925375,
+          "cell": [
+            4.3490767225422475,
+            11.647318570957694,
+            13.412799788951181,
+            90.00000000000001,
+            89.99602954404756,
+            90.0
+          ],
+          "volume": 679.4264725601511,
+          "basis": [
+            [
+              -0.22727055019237968,
+              -0.02859863185340363,
+              -0.019994891466740525
+            ],
+            [
+              -0.011139017026857776,
+              0.0339337317014856,
+              0.07807555397587669
+            ],
+            [
+              -0.005865096917527263,
+              0.06785521043529555,
+              -0.030328467738048884
+            ]
+          ],
+          "training": {
+            "count": 546,
+            "rms_scaled": 1.367637272942534,
+            "rms_xy": 1.5789285679916056,
+            "rms_omega": 0.33503135214081325
+          },
+          "validation": {
+            "count": 127,
+            "rms_scaled": 1.5667294284221207,
+            "rms_xy": 2.031868593558043,
+            "rms_omega": 0.3578081533253285
+          },
+          "parameters": 7,
+          "training_score": 882.2209270453613,
+          "history": [
+            421.2957441870759,
+            415.244274015826,
+            415.20679857135633,
+            415.2061652264521,
+            415.20615428968733,
+            415.2061541005084,
+            415.2061540972351
+          ],
+          "converged": true,
+          "status": "converged",
+          "recommended": false
+        },
+        {
+          "row": 4,
+          "primitive_id": 0,
+          "symbol": "oP",
+          "index": 1,
+          "transform": [
+            [
+              -1,
+              0,
+              0
+            ],
+            [
+              0,
+              -1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "strain": 0.0004469134544058395,
+          "cell": [
+            4.3491069787811005,
+            11.647267159236259,
+            13.413063299940303,
+            89.99999999999999,
+            90.00000000000003,
+            90.00000000000001
+          ],
+          "volume": 679.4415500852376,
+          "basis": [
+            [
+              -0.2272688921039156,
+              -0.02859580090661286,
+              -0.01999938497101291
+            ],
+            [
+              -0.011140185959735639,
+              0.033933099917472426,
+              0.07807607852839793
+            ],
+            [
+              -0.005868796999596927,
+              0.0678536461180616,
+              -0.030327650774151102
+            ]
+          ],
+          "training": {
+            "count": 546,
+            "rms_scaled": 1.3674961523528026,
+            "rms_xy": 1.5789445324869382,
+            "rms_omega": 0.3349778113217215
+          },
+          "validation": {
+            "count": 127,
+            "rms_scaled": 1.5671292914564234,
+            "rms_xy": 2.0329289110450754,
+            "rms_omega": 0.35783023965561994
+          },
+          "parameters": 6,
+          "training_score": 874.8537812092546,
+          "history": [
+            420.68008269701454,
+            415.2588603088636,
+            415.2237847569614,
+            415.22320669411147,
+            415.2231969776861,
+            415.22319681414126,
+            415.2231968113883
+          ],
+          "converged": true,
+          "status": "converged",
+          "recommended": true
+        }
+      ],
+      "largest_smaller_support": 299,
+      "evidence_hashes": {
+        "primary_detector-primitives.csv": "904e572dc5c5e4898ef10837f43aed5ee6d5b054225c7d5d73bf6ca2492ea4a6",
+        "primary_detector-settings.csv": "d9feacd0d1250276e0462144f18b099f846850faa014cd27fb0e901f7e920d60",
+        "primary_detector.json": "077aabccec2e96e154d26cd0b4c76196e5e84ffee750a1e59c7ccc64b582e525",
+        "primary_detector.npz": "2d7b192f018001f5a9bad72c4cf6e2a353682118b7c4d9536868619ba0ea0a5a"
+      }
+    },
+    "sensitivity_q_mean": {
+      "parent_train": 550,
+      "parent_validation": 127,
+      "primitive_hypotheses": 390,
+      "supported_primitive_hypotheses": 1,
+      "type_status": {
+        "aP": 1,
+        "mP": 3,
+        "mC": 0,
+        "oP": 1,
+        "oC": 0,
+        "oI": 0,
+        "oF": 0,
+        "tP": 0,
+        "tI": 0,
+        "hP": 0,
+        "hR": 0,
+        "cP": 0,
+        "cI": 0,
+        "cF": 0
+      },
+      "recommended_setting_index": 4,
+      "settings": [
+        {
+          "row": 0,
+          "primitive_id": 0,
+          "symbol": "aP",
+          "index": 1,
+          "transform": [
+            [
+              -1,
+              0,
+              0
+            ],
+            [
+              0,
+              -1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "strain": 3.3306690738754696e-16,
+          "cell": [
+            4.349398124939516,
+            11.642998435730654,
+            13.416779149864473,
+            90.0616179796946,
+            90.02916891352244,
+            90.00545139450377
+          ],
+          "volume": 679.425689261289,
+          "basis": [
+            [
+              -0.22727963279625651,
+              -0.028388972062835624,
+              -0.01999539273617747
+            ],
+            [
+              -0.011120413930954608,
+              0.03394917592278801,
+              0.07810657931024488
+            ],
+            [
+              -0.005854913363685164,
+              0.06786915133611277,
+              -0.030244904230174313
+            ]
+          ],
+          "training": {
+            "count": 550,
+            "rms_scaled": 0.8959119937704056,
+            "rms_q": 0.004479559968852028
+          },
+          "validation": {
+            "count": 127,
+            "rms_scaled": 0.9579295678793016,
+            "rms_q": 0.004789647839396509
+          },
+          "parameters": 9,
+          "training_score": 507.69504374968,
+          "history": [
+            220.5096968571291,
+            220.50913442671197,
+            220.5091343238663,
+            220.50913432381418
+          ],
+          "converged": true,
+          "status": "converged",
+          "recommended": false
+        },
+        {
+          "row": 1,
+          "primitive_id": 0,
+          "symbol": "mP",
+          "index": 1,
+          "transform": [
+            [
+              0,
+              -1,
+              0
+            ],
+            [
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "strain": 0.00025450906650781313,
+          "cell": [
+            11.643089363825613,
+            4.349182593137653,
+            13.415996722324005,
+            89.99999999999999,
+            90.06138302427587,
+            90.0
+          ],
+          "volume": 679.3578002265847,
+          "basis": [
+            [
+              -0.011108274549168712,
+              0.03395196489693061,
+              0.07810635599470676
+            ],
+            [
+              0.22729019074827816,
+              0.028410508387366126,
+              0.019975445504060187
+            ],
+            [
+              -0.0058261218200362655,
+              0.06787602263143866,
+              -0.03024573195876871
+            ]
+          ],
+          "training": {
+            "count": 550,
+            "rms_scaled": 0.8962495066635726,
+            "rms_q": 0.004481247533317864
+          },
+          "validation": {
+            "count": 127,
+            "rms_scaled": 0.9578813923960955,
+            "rms_q": 0.0047894069619804774
+          },
+          "parameters": 7,
+          "training_score": 493.22639123436676,
+          "history": [
+            220.75391481579908,
+            220.68334061973604,
+            220.68333863395992,
+            220.6833386330522
+          ],
+          "converged": true,
+          "status": "converged",
+          "recommended": false
+        },
+        {
+          "row": 2,
+          "primitive_id": 0,
+          "symbol": "mP",
+          "index": 1,
+          "transform": [
+            [
+              -1,
+              0,
+              0
+            ],
+            [
+              0,
+              -1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "strain": 0.0005380330910884634,
+          "cell": [
+            4.349336997425712,
+            11.647110868949595,
+            13.421762010035582,
+            90.0,
+            90.02290488601682,
+            90.0
+          ],
+          "volume": 679.9089652749884,
+          "basis": [
+            [
+              -0.22728409641764016,
+              -0.028380001704032203,
+              -0.019994402414965785
+            ],
+            [
+              -0.011104490769500444,
+              0.033914880145398174,
+              0.07809034558776329
+            ],
+            [
+              -0.005834617521919535,
+              0.06782248024392049,
+              -0.030285200139036288
+            ]
+          ],
+          "training": {
+            "count": 550,
+            "rms_scaled": 0.8973160955884353,
+            "rms_q": 0.004486580477942177
+          },
+          "validation": {
+            "count": 127,
+            "rms_scaled": 0.959609345501386,
+            "rms_q": 0.004798046727506931
+          },
+          "parameters": 7,
+          "training_score": 494.2607436247982,
+          "history": [
+            222.20741997799541,
+            221.20052152767067,
+            221.2005148285456,
+            221.2005148282679
+          ],
+          "converged": true,
+          "status": "converged",
+          "recommended": false
+        },
+        {
+          "row": 3,
+          "primitive_id": 0,
+          "symbol": "mP",
+          "index": 1,
+          "transform": [
+            [
+              -1,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              -1
+            ],
+            [
+              0,
+              -1,
+              0
+            ]
+          ],
+          "strain": 0.0005911904431981085,
+          "cell": [
+            4.349165762328469,
+            13.42096779720066,
+            11.647179643897463,
+            90.00000000000003,
+            89.99960942541924,
+            90.0
+          ],
+          "volume": 679.8460346764891,
+          "basis": [
+            [
+              -0.22729331144074338,
+              -0.02839664852853527,
+              -0.01996988556772618
+            ],
+            [
+              0.005813112728355089,
+              -0.06782851680779675,
+              0.030286648771496043
+            ],
+            [
+              -0.011097757016416515,
+              0.033917330655405434,
+              0.07808968112807373
+            ]
+          ],
+          "training": {
+            "count": 550,
+            "rms_scaled": 0.8975728346440722,
+            "rms_q": 0.004487864173220361
+          },
+          "validation": {
+            "count": 127,
+            "rms_scaled": 0.9592956660695289,
+            "rms_q": 0.004796478330347643
+          },
+          "parameters": 7,
+          "training_score": 494.5319463040768,
+          "history": [
+            222.5287214418421,
+            221.33612296929672,
+            221.3361161680209,
+            221.33611616790722
+          ],
+          "converged": true,
+          "status": "converged",
+          "recommended": false
+        },
+        {
+          "row": 4,
+          "primitive_id": 0,
+          "symbol": "oP",
+          "index": 1,
+          "transform": [
+            [
+              -1,
+              0,
+              0
+            ],
+            [
+              0,
+              -1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ],
+          "strain": 0.0006111079140564968,
+          "cell": [
+            4.34916554811257,
+            11.647180597888996,
+            13.420951318537305,
+            90.0,
+            90.0,
+            90.0
+          ],
+          "volume": 679.8452221561131,
+          "basis": [
+            [
+              -0.22729340445499693,
+              -0.028396619040577803,
+              -0.019968999141652264
+            ],
+            [
+              -0.011098032852174932,
+              0.033917346578673346,
+              0.07808962727680227
+            ],
+            [
+              -0.005813217869660987,
+              0.0678285671828459,
+              -0.030286740844418722
+            ]
+          ],
+          "training": {
+            "count": 550,
+            "rms_scaled": 0.8975726493617282,
+            "rms_q": 0.004487863246808641
+          },
+          "validation": {
+            "count": 127,
+            "rms_scaled": 0.9592676062811356,
+            "rms_q": 0.004796338031405679
+          },
+          "parameters": 6,
+          "training_score": 487.1235803475191,
+          "history": [
+            222.4036908695695,
+            221.33620449425888,
+            221.3361984731044,
+            221.33619847307568
+          ],
+          "converged": true,
+          "status": "converged",
+          "recommended": true
+        }
+      ],
+      "largest_smaller_support": 298,
+      "evidence_hashes": {
+        "sensitivity_q_mean-primitives.csv": "e62a3bb591c441733090edc67f76f26da0f4777a5b04efc8b5c5934c89fc1e32",
+        "sensitivity_q_mean-settings.csv": "a2d202dadee26627e7e22ea1517c0dd511bb92cac3bbb607c4727cc0473baf7a",
+        "sensitivity_q_mean.json": "509549d19a40dbd682065a43fcc1db3120c9f26dbc78480fbfccbe5d8457831e",
+        "sensitivity_q_mean.npz": "d278ba9ad35f6c31a89343c550e46f517f1145629585e1b05624e8694047f2ac"
+      }
+    }
+  },
+  "implementation_sha256": {
+    "crates/phasesmith-spots/src/reduction.rs": "2220923f18056cefb0c4253effe33711a46e114c8b26a06cbf3071ea50dfcd6f",
+    "python/phasesmith/experimental/cell_metrics.py": "ff1cf6945e3a1d6f64c7d564359f25590f6add21e3cbbce0288f969ed99e8f9f",
+    "python/phasesmith/experimental/cell_comparison.py": "826e095691b8c33be562e3da1dc511941d3033a278c2295522ce595b644d1fa2",
+    "benchmarks/p1_cell_comparison.py": "2afb5d04b1b91857cd489b03394923dc4ce5c489173f9745aebad5082c2c0db7"
+  }
+}

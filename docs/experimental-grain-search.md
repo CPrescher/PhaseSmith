@@ -6,6 +6,8 @@ uses **unindexed reciprocal peak positions** (NumPy `(N,3)`, inverse Å, no
 orientations. It accepts no input cell, HKLs, material, composition or symmetry.
 Several orientations can describe grains of the same cell. This is not a space
 group solver, a chemical identification or an exact DAFi implementation.
+For primitive hypotheses and all 14 Bravais metric types after discovery, see
+[experimental cell comparison](experimental-cell-comparison.md).
 The feature remains opt-in (`experimental-spots`), outside default releases.
 
 ## Ownership and provenance
