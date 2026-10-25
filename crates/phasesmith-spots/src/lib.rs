@@ -15,6 +15,7 @@ use std::fmt::{Display, Formatter};
 pub mod fft;
 pub mod prediction;
 pub mod reciprocal;
+pub mod reduction;
 pub mod rotation;
 
 /// Truncated aperture at a detector boundary.
