@@ -447,7 +447,7 @@
       "evidence_hashes": {
         "primary_detector-primitives.csv": "904e572dc5c5e4898ef10837f43aed5ee6d5b054225c7d5d73bf6ca2492ea4a6",
         "primary_detector-settings.csv": "d9feacd0d1250276e0462144f18b099f846850faa014cd27fb0e901f7e920d60",
-        "primary_detector.json": "077aabccec2e96e154d26cd0b4c76196e5e84ffee750a1e59c7ccc64b582e525",
+        "primary_detector.json": "3a905c46d1eb9cedac52d31f901c82ffe458256fcbe8a4e0a1777a934e7d8277",
         "primary_detector.npz": "2d7b192f018001f5a9bad72c4cf6e2a353682118b7c4d9536868619ba0ea0a5a"
       }
     },
@@ -834,14 +834,14 @@
       "evidence_hashes": {
         "sensitivity_q_mean-primitives.csv": "e62a3bb591c441733090edc67f76f26da0f4777a5b04efc8b5c5934c89fc1e32",
         "sensitivity_q_mean-settings.csv": "a2d202dadee26627e7e22ea1517c0dd511bb92cac3bbb607c4727cc0473baf7a",
-        "sensitivity_q_mean.json": "509549d19a40dbd682065a43fcc1db3120c9f26dbc78480fbfccbe5d8457831e",
+        "sensitivity_q_mean.json": "5aebb5cf6d9b025ee17c673a101d5a446059b377ad1876223aa5a3def6bc5d07",
         "sensitivity_q_mean.npz": "d278ba9ad35f6c31a89343c550e46f517f1145629585e1b05624e8694047f2ac"
       }
     }
   },
   "implementation_sha256": {
     "crates/phasesmith-spots/src/reduction.rs": "2220923f18056cefb0c4253effe33711a46e114c8b26a06cbf3071ea50dfcd6f",
-    "python/phasesmith/experimental/cell_metrics.py": "ff1cf6945e3a1d6f64c7d564359f25590f6add21e3cbbce0288f969ed99e8f9f",
+    "python/phasesmith/experimental/cell_metrics.py": "c7d3e575917e4f7a55e418c49b9caebadd9eb800ff7a93e9b50de1470e241d1c",
     "python/phasesmith/experimental/cell_comparison.py": "826e095691b8c33be562e3da1dc511941d3033a278c2295522ce595b644d1fa2",
     "benchmarks/p1_cell_comparison.py": "2afb5d04b1b91857cd489b03394923dc4ce5c489173f9745aebad5082c2c0db7"
   }

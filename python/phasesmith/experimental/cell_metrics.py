@@ -229,7 +229,7 @@ def find_bravais_settings(direct_basis, *, max_strain=0.01, max_angle=1.0, coeff
     equal = abs(length[:, None] / length[None, :] - 1) <= 4 * max_strain
     base, strain = project_metric(a, "aP")
     result = [BravaisSetting("aP", reduction, a, base, strain)]
-    keys = [("aP", _constraint_key(reduction, "aP"))]
+    keys = [("aP", _constraint_key(np.eye(3), "aP"))]
     scores = [(float(np.sum(a * a)), tuple(reduction.ravel()))]
     # b perpendicular a and c covers monoclinic and all orthogonal settings;
     # the second pass covers hexagonal a/b, c perpendicular to both.
@@ -279,7 +279,8 @@ def find_bravais_settings(direct_basis, *, max_strain=0.01, max_angle=1.0, coeff
                 symbols.append("h" + centre)
             if not symbols:
                 continue
-            t = t @ reduction
+            reduced_t = t
+            t = reduced_t @ reduction
             exact = t @ np.asarray(direct_basis)
             for symbol in symbols:
                 try:
@@ -288,7 +289,7 @@ def find_bravais_settings(direct_basis, *, max_strain=0.01, max_angle=1.0, coeff
                     continue
                 if strain > max_strain:
                     continue
-                key = _constraint_key(t, symbol)
+                key = _constraint_key(reduced_t, symbol)
                 duplicate = next(
                     (
                         r
