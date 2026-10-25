@@ -320,3 +320,14 @@ def test_explicit_experimental_feature_error(monkeypatch):
     monkeypatch.delattr(_core, "ExperimentalLatticeEngine")
     with pytest.raises(RuntimeError, match="experimental-spots"):
         compare_cells(np.ones((12, 3)), np.eye(3), training=np.ones(12, bool))
+
+
+def test_extreme_input_shear_does_not_duplicate_conventional_constraints():
+    from collections import Counter
+
+    a = reduce_cell(synthetic("cF")).direct_basis
+    sheared = np.array([[1, 1000, 0], [0, 1, 0], [0, 0, 1]]) @ a
+    canonical = find_bravais_settings(a)
+    alternative = find_bravais_settings(sheared)
+    assert Counter(s.symbol for s in canonical) == Counter(s.symbol for s in alternative)
+    assert sum(s.symbol == "cF" for s in alternative) == 1

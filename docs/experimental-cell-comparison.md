@@ -81,9 +81,10 @@ projection strain must be <= `max_strain` (default 1%). Metric strain is the lar
 absolute principal stretch minus one between projected and supplied direct Gram
 metrics; this is **not** Le Page's obliquity. Equal-axis prefilter is a permissive
 4× strain relative-length bound; the Gram projection supplies the final test.
-Equivalent linear constraint subspaces in the original primitive Gram coordinates
+Equivalent linear constraint subspaces in the reduced primitive Gram coordinates
 are deduplicated by their orthogonal projectors (max entry difference <1e-8).
-Different monoclinic unique axes remain separate rows. Equivalent representations
+Working in reduced coordinates prevents large input shears from introducing
+spurious numerical duplicates. Different monoclinic unique axes remain separate rows. Equivalent representations
 prefer short conventional axes, beta>=90°, and a<=b when applicable, with a
 lexicographic integer-transform tie break. Enumeration is bounded; no setting
 inside the bounds does not imply a mathematical impossibility outside them.
