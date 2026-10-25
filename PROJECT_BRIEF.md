@@ -19,7 +19,10 @@ than silently discarding them. All 14 Bravais types are searched in bounded
 reduced axes, retaining distinct metric constraints and conventional centring.
 Training-only constrained positional fits use the existing fused native prediction
 partials, with fixed HKLs/populations and descriptive held-out residuals. The
-recommendation uses a declared parameter penalty, not a symmetry probability.
+recommendation ranks highest lattice symmetry first within a declared window of
+comparable penalised training scores. Stable fit IDs, explicit ranks, score deltas
+and ranking reasons are exported; poorer/invalid fits remain visible. Scores stay
+within each fixed primitive population and are not symmetry probabilities.
 P1 favours an orthorhombic primitive metric but retains its larger inferred cell;
 no material/cell prior, proven space group or smaller physical cell is supplied.
 See `docs/experimental-cell-comparison.md`. Default releases remain unchanged.

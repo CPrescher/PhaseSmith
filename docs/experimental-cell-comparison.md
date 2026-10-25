@@ -132,14 +132,47 @@ native analytical derivatives are reused each iteration. Accepted history strict
 decreases; convergence, rank failure and budget termination are explicit. Trial
 reciprocal bases may move at most 20% of the initial projected Frobenius norm.
 
+## Explicit proposal ranking
+
 The recommendation first chooses the smallest supported primitive by exact HNF
-index, then retained training count and stable hypothesis ID. Within **that one
-fixed population**, rank by `2*Huber training cost + p*log(3*N_train)`, stable row
-tie break. This is a declared robust parameter penalty, **not a calibrated BIC,
-likelihood, p-value or symmetry probability**. It does not compare scores between
-primitive populations. Held-out data enter neither fits, primitive support nor
-ranking. Training-derived input bases and training partitions are the caller's
-responsibility; importing an all-data-fitted basis cannot recover independence.
+index, then retained training count and stable hypothesis ID. Within **each one
+fixed population**, calculate `S=2*Huber training cost + p*log(3*N_train)` and
+`delta=S-min(S_finite)`. A fit is comparable when its score is finite and
+`delta <= ranking_score_window` (inclusive; default 10, configurable down to 0).
+This window is an explicit heuristic in the existing score units, not a calibrated
+probability or significance threshold. It does not change fitted values, support,
+metric tolerances or the original training/held-out split.
+
+Within a primitive population:
+
+1. Comparable fits, **highest lattice symmetry first**, then lower S and stable
+   fit index. Lattice holohedry orders, including inversion, are a:2, m:4, o:8,
+   t:16, hR:12, hP:24, c:48. Centring adds no point symmetry; cP/cI/cF tie here.
+2. Finite fits outside the window, by lower S, then higher lattice symmetry and
+   stable fit index. A poorly fitting higher-symmetry model cannot outrank the
+   comparable group merely because of its symmetry.
+3. Invalid fits remain visible at the end of the entire proposal list.
+
+Primitive populations retain the support/index order above; scores and score
+deltas are never compared across different retained reflection populations.
+Rejected primitive hypotheses stay in `primitives`, with their support exclusions;
+they are not promoted into the list of fitted cell proposals.
+
+`result.ranking` contains immutable `CellRank` records with one-based rank,
+stable `setting_index`, primitive priority, lattice symmetry order, score delta,
+comparable flag and reason. `result.ranked_settings` supplies fits in proposal
+order, and `result.recommended` is the first one. The original `settings` pool
+and its row IDs do not move, preserving HKL/array/export correspondence. CSV rows
+are written in proposal order with both rank and stable row ID; JSON retains the
+original pool plus the explicit ranking. The ranking is provisional, not a space
+group or an assertion that a higher-symmetry physical crystal has been proven.
+
+The score is a declared robust parameter penalty, **not a calibrated BIC,
+likelihood, p-value or symmetry probability**. Held-out data enter neither fits,
+primitive support nor ranking. Training-derived input bases and training
+partitions are the caller's responsibility; importing an all-data-fitted basis
+cannot recover independence. Nonconvergence and residuals remain separate visible
+fit diagnostics, not confidence estimates.
 
 ## Bounds, validation and cost
 
@@ -218,3 +251,39 @@ CSV/JSON exports and shows all 14 type outcomes and all rejected subcells.
 All new source is first-principles implementation. No GSAS-II or other program's
 implementation is copied or mechanically translated, and no oracle object enters
 the runtime API. Existing orthorhombic/refinement APIs retain their behaviour.
+
+## Ranked P1 follow-up
+
+The explicit ranking uses the same positions, inferred basis and instrument with
+no known material/cell, new cell search or refitting policy. A fresh frozen run is
+written to `runs/p1-ranked-cells-20261025/` by:
+
+```sh
+python benchmarks/p1_cell_comparison.py --output runs/p1-ranked-cells-20261025
+```
+
+For the detector fit, the proposed order is oP first (S=874.854, delta=0), the
+three mP settings next (delta=5.131, 7.023, 7.367), then aP (delta=19.667,
+outside the default comparable window). The original fit matrices, residuals,
+reflection membership and larger-cell conclusion are unchanged. This is an
+explicit change to proposal ranking; it does not turn the earlier held-out
+residuals into evidence for higher symmetry.
+
+Ranking tests cover higher symmetry with a slightly worse comparable score,
+rejection from the preferred group outside the inclusive window, invalid/NaN
+fits, stable ties, C/I/F equal point symmetry, separate primitive populations,
+held-out invariance and exact rank-to-fit-pool correspondence. Gemmi's independent
+lattice rotation orders also check every ranking symmetry order. The existing
+multi-reflection benchmark checks exact repeated ranks as well as fit matrices.
+Ranking changes no production profile kernel, analytical derivative, intensity
+normalisation or diffraction support rule; those numerical tests remain intact.
+
+The compact frozen ranking record is
+`validation/results/p1-ranked-cells-20261025.json`; the prior full numerical-fit
+record is preserved unchanged. The repeated 5,399-position/390-hypothesis full
+comparison plus ranking takes 0.188-0.190 s on the recorded host, with identical
+ranks and fitted matrices on three runs (`experimental-cell-ranking-macos.json`).
+There is no meaningful observed regression against the earlier 0.184-0.189 s
+measurement; this is a small timing sample, not a speedup claim. Ranking adds
+bounded population grouping and O(J log J) sorting of J fit proposals, without
+another pass over the detector images or a new fit.

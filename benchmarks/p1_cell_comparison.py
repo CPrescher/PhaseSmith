@@ -51,9 +51,9 @@ protocol = dict(
         " all 14 Bravais types in bounded reduced axes."
     ),
     ranking=(
-        "Smallest supported primitive hypothesis by exact HNF index; within it "
-        "2*training radial Huber cost + p*log(3*N), fixed scales. Not a calibrated "
-        "BIC or symmetry probability."
+        "Smaller supported primitive hypotheses first. Highest lattice holohedry "
+        "within ranking_score_window of the best penalised training score per fixed "
+        "population; poorer/invalid fits follow. Not a symmetry probability."
     ),
     validation=(
         "Original 1052/243 rotation-block split reused. Exploratory diagnostic, not "
@@ -64,7 +64,10 @@ protocol = dict(
     sources=["diagnostic-inputs.npz", "P1_fft_grains.json geometry snapshot"],
 )
 if (OUT / "protocol.json").exists():
-    assert json.loads((OUT / "protocol.json").read_text()) == protocol
+    if json.loads((OUT / "protocol.json").read_text()) != protocol:
+        raise ValueError(
+            "Output contains a different frozen protocol; choose a fresh --output directory"
+        )
 else:
     write(OUT / "protocol.json", protocol)
 z = np.load(BytesIO(read(DIAG / "diagnostic-inputs.npz")))
@@ -97,10 +100,17 @@ for label, q, kwargs in [
         )
         for p in r.primitives
     ]
+    ranks = {row.setting_index: row for row in r.ranking}
     settings = [
         dict(
             row=i,
             primitive_id=f.primitive_id,
+            rank=ranks[i].rank,
+            symmetry_order=ranks[i].symmetry_order,
+            score_delta=ranks[i].score_delta,
+            comparable=ranks[i].comparable,
+            ranking_reason=ranks[i].reason,
+            primitive_priority=ranks[i].primitive_priority,
             symbol=f.setting.symbol,
             index=f.setting.index,
             transform=f.setting.transform.tolist(),
@@ -128,6 +138,7 @@ for label, q, kwargs in [
         recommended_setting_index=r.recommended_setting_index,
         primitives=primitives,
         settings=settings,
+        ranking=[asdict(row) for row in r.ranking],
         type_status={
             symbol: sum(f.setting.symbol == symbol for f in r.settings) for symbol in BRAVAIS
         },
@@ -164,8 +175,14 @@ for label, q, kwargs in [
         writer.writerows(primitives)
     with (OUT / f"{label}-settings.csv").open("w", newline="") as stream:
         fields = [
+            "rank",
             "row",
             "primitive_id",
+            "primitive_priority",
+            "symmetry_order",
+            "score_delta",
+            "comparable",
+            "ranking_reason",
             "symbol",
             "index",
             "strain",
@@ -182,7 +199,7 @@ for label, q, kwargs in [
         ]
         writer = csv.DictWriter(stream, fieldnames=fields, extrasaction="ignore")
         writer.writeheader()
-        writer.writerows(settings)
+        writer.writerows(sorted(settings, key=lambda fit: fit["rank"]))
     results[label] = record
     print(
         label,
