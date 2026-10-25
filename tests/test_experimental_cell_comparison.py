@@ -157,6 +157,9 @@ def test_smaller_cells_rejected_for_populated_parities_and_training_only():
     changed[~train] *= 1.03
     again = compare_cells(changed, a, training=train)
     assert again.recommended_setting_index == result.recommended_setting_index
+    assert again.ranking == result.ranking
+    assert result.ranked_settings[0] is result.recommended
+    assert result.ranking[0].setting_index == result.recommended_setting_index
     for first, second in zip(result.settings, again.settings, strict=True):
         np.testing.assert_array_equal(first.reciprocal_basis, second.reciprocal_basis)
         assert first.training_score == second.training_score
@@ -253,6 +256,9 @@ def test_gemmi_black_box_selling_energy_and_lattice_holohedry(symbol):
         order = 6
     # Gemmi returns proper rotations and separate centring translations.
     assert len(group.sym_ops) == order
+    from phasesmith.experimental.cell_comparison import _symmetry_order
+
+    assert _symmetry_order(symbol) == 2 * len(group.sym_ops)
     assert len(group.cen_ops) == setting.index
 
 
@@ -331,3 +337,109 @@ def test_extreme_input_shear_does_not_duplicate_conventional_constraints():
     alternative = find_bravais_settings(sheared)
     assert Counter(s.symbol for s in canonical) == Counter(s.symbol for s in alternative)
     assert sum(s.symbol == "cF" for s in alternative) == 1
+
+
+def test_highest_symmetry_ranking_respects_fit_window_and_stable_ids():
+    from dataclasses import replace
+
+    from phasesmith.experimental.cell_comparison import SettingFit, _rank_settings
+    from phasesmith.experimental.cell_metrics import BravaisSetting
+
+    def model(symbol, score, pid=0):
+        return SettingFit(
+            pid,
+            BravaisSetting(symbol, np.eye(3, dtype=int), np.eye(3), np.eye(3), 0.0),
+            np.eye(3),
+            np.eye(3, dtype=int),
+            np.ones(3, bool),
+            np.array([score / 2]),
+            {"count": 3},
+            {"count": 1, "rms_scaled": 1.0},
+            9,
+            score,
+            True,
+            "converged",
+        )
+
+    # Higher symmetry may have a slightly worse score, but must stay in the
+    # declared inclusive window. Invalid and badly fitting cubic rows stay visible.
+    fits = (
+        model("aP", 100.0),
+        model("oP", 110.0),
+        model("cP", 110.0001),
+        model("tP", 105.0),
+        model("cI", float("inf")),
+        model("mP", 100.0),
+    )
+    ranking = _rank_settings(fits, [0], 10.0)
+    assert [row.setting_index for row in ranking] == [3, 1, 5, 0, 2, 4]
+    assert [row.rank for row in ranking] == list(range(1, 7))
+    assert ranking[1].score_delta == 10.0
+    assert ranking[1].comparable
+    assert not ranking[-2].comparable
+    assert ranking[-1].reason == "Invalid training fit"
+    # No validation values, even arbitrary/infinite ones, can change the ranking.
+    changed = tuple(replace(f, validation_metrics={"rms_scaled": float("inf")}) for f in fits)
+    assert _rank_settings(changed, [0], 10.0) == ranking
+    assert [r.setting_index for r in _rank_settings(fits, [0], 0.0)][:2] == [5, 0]
+
+
+def test_ranking_never_compares_scores_across_primitive_populations():
+    from dataclasses import replace
+
+    from phasesmith.experimental.cell_comparison import SettingFit, _rank_settings
+    from phasesmith.experimental.cell_metrics import BravaisSetting
+
+    fit = SettingFit(
+        0,
+        BravaisSetting("aP", np.eye(3, dtype=int), np.eye(3), np.eye(3), 0.0),
+        np.eye(3),
+        np.eye(3, dtype=int),
+        np.ones(3, bool),
+        np.zeros(1),
+        {},
+        {},
+        9,
+        1000.0,
+        True,
+        "converged",
+    )
+    other = replace(fit, primitive_id=1, training_score=1.0)
+    ranking = _rank_settings((fit, other), [0, 1], 10.0)
+    assert [r.setting_index for r in ranking] == [0, 1]
+    assert [r.primitive_priority for r in ranking] == [1, 2]
+    assert [r.score_delta for r in ranking] == [0.0, 0.0]
+    invalid = replace(fit, training_score=float("nan"))
+    with_invalid = _rank_settings((fit, invalid, other), [0, 1], 10.0)
+    assert [r.setting_index for r in with_invalid] == [0, 2, 1]
+    assert np.isinf(with_invalid[-1].score_delta)
+
+
+def test_ranking_ties_deterministic_and_centering_adds_no_point_symmetry():
+    from dataclasses import replace
+
+    from phasesmith.experimental.cell_comparison import SettingFit, _rank_settings, _symmetry_order
+    from phasesmith.experimental.cell_metrics import BravaisSetting
+
+    fit = SettingFit(
+        0,
+        BravaisSetting("cP", np.eye(3, dtype=int), np.eye(3), np.eye(3), 0.0),
+        np.eye(3),
+        np.eye(3, dtype=int),
+        np.ones(3, bool),
+        np.zeros(1),
+        {},
+        {},
+        4,
+        10.0,
+        True,
+        "converged",
+    )
+    centred = replace(fit, setting=replace(fit.setting, symbol="cF"))
+    assert [r.setting_index for r in _rank_settings((centred, fit, fit), [0], 0.0)] == [0, 1, 2]
+    assert _symmetry_order("cP") == _symmetry_order("cI") == _symmetry_order("cF") == 48
+    assert _symmetry_order("hR") == 12
+    assert _symmetry_order("hP") == 24
+    for window in [-1.0, np.inf, np.nan]:
+        with pytest.raises(ValueError, match="ranking_score_window"):
+            CellComparisonOptions(ranking_score_window=window)

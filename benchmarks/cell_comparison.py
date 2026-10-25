@@ -23,6 +23,7 @@ training = np.arange(len(q)) % 5 != 0
 options = CellComparisonOptions(max_subcell_index=8)
 times = []
 previous = None
+previous_ranking = None
 for _ in range(3):
     start = time.perf_counter()
     result = compare_cells(q, basis, training=training, options=options)
@@ -31,7 +32,9 @@ for _ in range(3):
     bases = np.array([s.reciprocal_basis for s in result.settings])
     if previous is not None:
         np.testing.assert_array_equal(bases, previous)
+        assert result.ranking == previous_ranking
     previous = bases
+    previous_ranking = result.ranking
 record = dict(
     platform=platform.platform(),
     positions=len(q),

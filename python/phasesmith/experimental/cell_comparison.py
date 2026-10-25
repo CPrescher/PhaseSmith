@@ -5,7 +5,7 @@ and fused spot prediction kernels. Fixed HKLs and fixed eligible populations mak
 nested metric fits comparable. No reference cell, material or intensity input.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from itertools import product
 
 import numpy as np
@@ -41,6 +41,7 @@ class CellComparisonOptions:
     initial_omega_gate: float = 2.0
     huber: float = 2.5
     max_iterations: int = 60
+    ranking_score_window: float = 10.0
 
     def __post_init__(self):
         for name, lo, hi in [
@@ -62,6 +63,8 @@ class CellComparisonOptions:
         ):
             if not np.isfinite(getattr(self, name)) or getattr(self, name) <= 0:
                 raise ValueError(f"{name} must be finite and positive")
+        if not np.isfinite(self.ranking_score_window) or self.ranking_score_window < 0:
+            raise ValueError("ranking_score_window must be finite and nonnegative")
         if not np.isfinite(self.minimum_retention) or not 0.5 < self.minimum_retention <= 1:
             raise ValueError("minimum_retention must lie in (.5,1]")
         if not np.isfinite(self.max_strain) or not 0 < self.max_strain <= 0.1:
@@ -127,6 +130,77 @@ class SettingFit:
 
 
 @dataclass(frozen=True)
+class CellRank:
+    """One-based proposal rank; score deltas are local to one fixed population."""
+
+    rank: int
+    setting_index: int  # Stable index into CellComparison.settings; never renumber the fit pool.
+    primitive_priority: int  # Smaller supported primitive first; populations stay separate.
+    symmetry_order: int  # Full lattice holohedry, including inversion; not a space group.
+    score_delta: float
+    comparable: bool
+    reason: str
+
+
+def _symmetry_order(symbol):
+    if symbol not in BRAVAIS:
+        raise ValueError("unknown Bravais symbol")
+    if symbol == "hR":
+        return 12
+    return {"a": 2, "m": 4, "o": 8, "t": 16, "h": 24, "c": 48}[symbol[0]]
+
+
+def _rank_settings(settings, primitive_order, score_window):
+    """Highest metric symmetry within an inclusive training-score window.
+
+    Preserve every row, including invalid fits. Never inspect held-out metrics.
+    Symmetry is a preference within comparable evidence, not an override of it.
+    """
+    ranking = []
+    for priority, pid in enumerate(primitive_order, start=1):
+        indices = [i for i, fit in enumerate(settings) if fit.primitive_id == pid]
+        finite = {i for i in indices if np.isfinite(settings[i].training_score)}
+        best = min((settings[i].training_score for i in finite), default=float("inf"))
+        deltas = {
+            i: settings[i].training_score - best if i in finite else float("inf") for i in indices
+        }
+        comparable = {i: i in finite and deltas[i] <= score_window for i in indices}
+
+        def key(i, comparable=comparable, finite=finite):
+            symmetry = _symmetry_order(settings[i].setting.symbol)
+            if comparable[i]:
+                return (0, -symmetry, settings[i].training_score, i)
+            if i in finite:
+                return (1, settings[i].training_score, -symmetry, i)
+            return (2, 0, -symmetry, i)
+
+        for i in sorted(indices, key=key):
+            reason = (
+                "Comparable training fit; highest lattice symmetry first"
+                if comparable[i]
+                else "Outside comparable training-score window"
+                if i in finite
+                else "Invalid training fit"
+            )
+            ranking.append(
+                CellRank(
+                    len(ranking) + 1,
+                    i,
+                    priority,
+                    _symmetry_order(settings[i].setting.symbol),
+                    float(deltas[i]),
+                    bool(comparable[i]),
+                    reason,
+                )
+            )
+    # An invalid fit cannot precede a usable proposal from another population.
+    ordered = [
+        row for row in ranking if np.isfinite(settings[row.setting_index].training_score)
+    ] + [row for row in ranking if not np.isfinite(settings[row.setting_index].training_score)]
+    return tuple(replace(row, rank=rank) for rank, row in enumerate(ordered, start=1))
+
+
+@dataclass(frozen=True)
 class CellComparison:
     primitives: tuple[PrimitiveHypothesis, ...]
     settings: tuple[SettingFit, ...]
@@ -137,6 +211,7 @@ class CellComparison:
     recommended_setting_index: int
     options: CellComparisonOptions
     mode: str
+    ranking: tuple[CellRank, ...]
     searched_types: tuple[str, ...] = BRAVAIS
 
     def __post_init__(self):
@@ -146,6 +221,11 @@ class CellComparison:
     @property
     def recommended(self):
         return self.settings[self.recommended_setting_index]
+
+    @property
+    def ranked_settings(self):
+        """Fits in proposal order; the original fit pool and row IDs remain stable."""
+        return tuple(self.settings[row.setting_index] for row in self.ranking)
 
 
 def reciprocal_hnfs(max_index):
@@ -294,8 +374,10 @@ def compare_cells(
     Smaller cells must retain >=minimum_retention of fixed parent training
     assignments. Rejected hypotheses and excluded-reflection counts are retained.
     A recommendation is bounded evidence, not proof of primitivity or symmetry.
-    Ranking uses a declared robust parameter penalty, not a calibrated BIC or a
-    space-group probability, and is only compared within one primitive population.
+    Within an inclusive training-score window, rank highest lattice symmetry
+    first; retain poorer/invalid fits below it with explicit reasons. Scores use a
+    declared robust parameter penalty, not a calibrated BIC or a space-group
+    probability, and are only compared within one primitive population.
     """
     points = triples(points, "points")
     a = _basis(direct_basis)
@@ -423,22 +505,25 @@ def compare_cells(
     # Only training support and exact index decide the preferred primitive;
     # nested metric scores are compared on its one fixed population.
     available = {settings[i].primitive_id for i in finite}
-    chosen = min(
+    ordered_primitives = sorted(
         (p for p in primitives if p.id in available),
         key=lambda p: (-p.index, -p.training_count, p.id),
     )
-    recommended = min(
-        (i for i in finite if settings[i].primitive_id == chosen.id),
-        key=lambda i: (settings[i].training_score, i),
-    )
+    # Keep invalid fits in the ranking, after all finite supported populations.
+    other_ids = sorted({s.primitive_id for s in settings} - available)
+    primitive_order = [p.id for p in ordered_primitives] + other_ids
+    ranking = _rank_settings(settings, primitive_order, options.ranking_score_window)
+    recommended = ranking[0].setting_index
+    chosen_id = settings[recommended].primitive_id
     return CellComparison(
         tuple(primitives),
         tuple(settings),
         h,
         parent,
         training,
-        chosen.id,
+        chosen_id,
         recommended,
         options,
         "reciprocal" if observed is None else "detector",
+        ranking,
     )
