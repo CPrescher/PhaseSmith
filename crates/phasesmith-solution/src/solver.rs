@@ -79,6 +79,8 @@ pub struct SolveOptions {
     pub symmetry_tolerance_angstrom: f64,
     /// Maximum constrained-polishing iterations, in [0,200].
     pub symmetry_iterations: usize,
+    /// Attempt one weakest-species orbit completion from stronger symmetry orbits.
+    pub completion: bool,
 }
 
 impl Default for SolveOptions {
@@ -100,6 +102,7 @@ impl Default for SolveOptions {
             refinement: Some(crate::AdpMode::Anisotropic),
             symmetry_tolerance_angstrom: 0.15,
             symmetry_iterations: 80,
+            completion: true,
         }
     }
 }
@@ -129,6 +132,8 @@ pub struct Candidate {
     pub refinement: Option<crate::RefinementSummary>,
     /// Why a requested refinement was unavailable; the P1 hypothesis is retained.
     pub refinement_diagnostic: Option<String>,
+    /// Actual partial-framework completion attempt, including failure diagnostics.
+    pub completion: Option<crate::CompletionSummary>,
 }
 
 /// A complete bounded result; the best model may still be incorrect.
@@ -408,6 +413,7 @@ pub fn solve(
                         element_swaps: swaps,
                         refinement: None,
                         refinement_diagnostic: None,
+                        completion: None,
                     };
                     if let Some(mode) = options.refinement {
                         match refine_candidate(
@@ -431,6 +437,24 @@ pub fn solve(
                                 candidate.refinement = Some(summary);
                             }
                             Err(e) => candidate.refinement_diagnostic = Some(e.to_string()),
+                        }
+                    }
+                    if options.completion && !target(&candidate, options) {
+                        if let Some(mode) = options.refinement {
+                            let (repaired, audit) = crate::complete_candidate(
+                                cell,
+                                group,
+                                &result.data,
+                                shape,
+                                &candidate,
+                                mode,
+                                options,
+                                deadline,
+                            );
+                            if let Some(repaired) = repaired {
+                                candidate = repaired;
+                            }
+                            candidate.completion = Some(audit);
                         }
                     }
                     let preferred = candidate.refinement.is_some();

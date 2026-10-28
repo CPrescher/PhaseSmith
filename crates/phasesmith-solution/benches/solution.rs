@@ -1,9 +1,9 @@
 #![allow(missing_docs)]
 use criterion::{Criterion, criterion_group, criterion_main};
-use phasesmith_crystallography::{SpaceGroup, SymmetryOperation, UnitCell};
+use phasesmith_crystallography::{Rational, SpaceGroup, SymmetryOperation, UnitCell};
 use phasesmith_solution::{
-    AdpMode, DualSpaceOptions, FlipOptions, PreparedSymmetricModel, charge_flip, dual_space,
-    recover_symmetry,
+    AdpMode, DualSpaceOptions, FlipOptions, PreparedOrbitSearch, PreparedSymmetricModel,
+    charge_flip, dual_space, recover_symmetry,
 };
 
 #[allow(clippy::too_many_lines)]
@@ -109,6 +109,53 @@ fn benchmark(c: &mut Criterion) {
                     None,
                 )
                 .unwrap()
+            });
+        },
+    );
+    let mut operations = Vec::new();
+    for centre in [0, 1] {
+        for x in [-1, 1] {
+            for y in [-1, 1] {
+                for z in [-1, 1] {
+                    operations.push(
+                        SymmetryOperation::new(
+                            [[x, 0, 0], [0, y, 0], [0, 0, z]],
+                            [Rational::new(centre, 2).unwrap(); 3],
+                        )
+                        .unwrap(),
+                    );
+                }
+            }
+        }
+    }
+    let orbit_group = SpaceGroup::new(operations).unwrap();
+    let framework = orbit_group
+        .expand_sites(&[[0.08, 0.17, 0.29]], 1e-8)
+        .unwrap()
+        .fractional_xyz;
+    let indices = (0..hkl.len())
+        .filter(|&i| (hkl[i][0] + hkl[i][1] + hkl[i][2]) % 2 == 0)
+        .collect::<Vec<_>>();
+    let orbit_hkl = indices.iter().map(|&i| hkl[i]).collect::<Vec<_>>();
+    let orbit_observed = indices.iter().map(|&i| amplitudes[i]).collect::<Vec<_>>();
+    let orbit = PreparedOrbitSearch::new(
+        cell,
+        &orbit_group,
+        &vec!["Si".to_owned(); framework.len()],
+        &framework,
+        "O",
+        &orbit_hkl,
+        &orbit_observed,
+        0.01,
+    )
+    .unwrap();
+    c.bench_function(
+        "completion_orbit_16_images_multi_reflection_fused_gradient",
+        |b| {
+            b.iter(|| {
+                orbit
+                    .evaluate(std::hint::black_box([0.31, 0.43, 0.67]))
+                    .unwrap()
             });
         },
     );

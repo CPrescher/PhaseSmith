@@ -10,6 +10,8 @@ use pyo3::{
 
 use crate::{NativePreparedReflectionGenerator, crystallographic_cell, hkl_rows};
 
+#[path = "solution_completion.rs"]
+mod completion;
 #[path = "solution_dual.rs"]
 mod dual;
 #[path = "solution_symmetry.rs"]
@@ -60,6 +62,7 @@ fn solve_structure<'py>(
     symmetry_tolerance_angstrom: f64,
     symmetry_iterations: usize,
     phasing: String,
+    completion: bool,
 ) -> PyResult<Bound<'py, PyDict>> {
     let hkl = hkl_rows(&hkl)?;
     let intensity = intensity.as_slice()?.to_vec();
@@ -108,6 +111,7 @@ fn solve_structure<'py>(
         symmetry_tolerance_angstrom,
         symmetry_iterations,
         phasing,
+        completion,
     };
     let result = py
         .detach(move || {
@@ -146,6 +150,11 @@ fn solve_structure<'py>(
         item.set_item("polish_steps", c.polish_steps)?;
         item.set_item("element_swaps", c.element_swaps)?;
         item.set_item("refinement_diagnostic", c.refinement_diagnostic)?;
+        if let Some(audit) = &c.completion {
+            item.set_item("completion", completion::summary(py, audit)?)?;
+        } else {
+            item.set_item("completion", py.None())?;
+        }
         if let Some(refined) = &c.refinement {
             item.set_item("refinement", symmetry_adp::summary(py, refined)?)?;
         } else {
@@ -262,6 +271,7 @@ impl NativeCancellation {
 pub fn register(module: &Bound<'_, PyModule>) -> PyResult<()> {
     symmetry_adp::register(module)?;
     dual::register(module)?;
+    completion::register(module)?;
     module.add_class::<NativeCancellation>()?;
     module.add_function(wrap_pyfunction!(solve_structure, module)?)?;
     module.add_function(wrap_pyfunction!(flip, module)?)?;

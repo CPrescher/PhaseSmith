@@ -48,10 +48,28 @@ existing total budgets. Charge flipping remains the default. The input cell,
 symmetry and full-cell composition contract is unchanged. Per-trial method,
 initialization/fallback, Patterson vector, score and fixed controls are exported
 in experimental result schema v3. Independent NumPy complete-cycle and Gaussian
-support/moment checks accompany the native implementation. Reused development
-cases recover thiourea and BiSeI, but K[BrF4] still fails despite a lower P1 R1;
+support/moment checks accompany the native implementation. The original uncompleted development
+cases recover thiourea and BiSeI, but K[BrF4] fails despite a lower P1 R1;
 no increase in demonstrated solve coverage is claimed. Equations, bounded
 implementation choices and measured results live in `docs/solution-dual-space.md`.
+
+A bounded partial-framework completion step now follows failed or insufficient
+atomic candidates. It removes the weakest species, recovers symmetry from the
+stronger atoms, retains up to eight different framework origin/settings and
+searches a signed difference-Fourier map for one missing orbit. Generic affine
+fixed-set projections generate special-position proposals without reference
+coordinates or Wyckoff tables. All complete proposals use fused value/analytic
+coordinate derivatives and the existing constrained ADP refiner. A completion
+must improve the original amplitude objective; exact counts, non-overlap and
+original density-frame transformations remain observable. The explicit
+`completion=False` option preserves the earlier path; historical benchmark
+commands keep completion off unless `--completion` is supplied. Experimental
+JSON schema v4 records typed actual completion effort/outcomes. On reused K[BrF4]
+data, the native dual-space search now recovers all 24 atoms to 0.006 angstrom at
+R1 0.0222664 without external/reference coordinates. This does not implement
+general multi-orbit fragment assembly or automatic space-group selection.
+See `docs/solution-completion.md`. External binary inspection is kept outside the
+repository and has not been used to implement these numerical equations.
 
 An opt-in primitive/Bravais comparison now follows position-only lattice discovery.
 Native Selling-Delaunay reduction retains exact integer basis transformations;

@@ -1,0 +1,545 @@
+{
+  "schema": "phasesmith.experimental-dual-comparison.v1",
+  "qualification": "Reused development cases, not new validation holdouts. Reference coordinates are excluded from all searches. Unweighted non-resonant amplitude fits; no equal-objective SHELX comparison.",
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "python": "3.13.7",
+  "numpy": "2.5.4",
+  "native_extension_sha256": "0cd39238548d95fc96bb9f154cf69e77cb55b06c4d8b203874c925df1bf64c23",
+  "implementation_sha256": {
+    "Cargo.lock": "f8a427cc7edfd5463a2929aa00c5473c10dd674553132052aadcef11fd41cdee",
+    "crates/phasesmith-solution/Cargo.toml": "2c1512d81ec22795385ac738779eb7402e410fcd3672384005d444ec8c895917",
+    "crates/phasesmith-py/src/solution.rs": "de4836e7a31e579a0a82f0f2ba14396fb0ecb4332b9d7bd2c5ef492bc3bdaf30",
+    "crates/phasesmith-py/src/solution_symmetry.rs": "c37b9b63c61f745bcf35bb02ff53586a2587adf9eb8d3fb59bc5a07ee0866f8d",
+    "crates/phasesmith-py/src/solution_dual.rs": "148bd4cf47cc84ea9f2ee3e9a52365278bf3396c83199481b3ddb220ce8e4755",
+    "crates/phasesmith-py/src/solution_completion.rs": "f054ef8c49ce3f1d6aad5e8c36b94da3f3cf3b0a08570e841060a4bbcbf81517",
+    "python/phasesmith/experimental/solution_completion_reference.py": "ce05df8ac0ce37c5775eff8a5d199a7c6d005544086bafff584da6467a88df38",
+    "python/phasesmith/experimental/solution_dual_reference.py": "7ae441bb31c7fb8237bbb92c2b7abe68114f4e53b4bfea7c712b6020a741429a",
+    "python/phasesmith/experimental/solution_symmetry.py": "feffc42ed9cec6b5baf77fb9feaacac5264f8fc472dd88e333796ca54588b350",
+    "python/phasesmith/experimental/solution_reference.py": "012940aad3305672b92af791086a7c38157dfc17b044c776c4335157c85b7a20",
+    "python/phasesmith/experimental/solution.py": "7193f9530748f87d38807a014d0773e3486780d7546a190062f1897ec31a97fb",
+    "python/phasesmith/io/hkl.py": "b64e22a693116d1883b015a271b0df83ef60755881a29289efe5150640c9b434",
+    "crates/phasesmith-crystallography/src/p1.rs": "e1e8fbd22537cb7984bd99a42ad42b56844fc6d9f791437cfdef3bcc60cd62a5",
+    "crates/phasesmith-crystallography/src/scattering.rs": "e65904e84e3b77f43eaac46ec23cdde02364aa3006f4c1f901b5731ed8ef002f",
+    "crates/phasesmith-crystallography/src/scattering_data.rs": "56b90b345418218a5856aad9fecfa9583f3c1c290e36a36bfc8aef3f3fd361f7",
+    "crates/phasesmith-crystallography/src/cell.rs": "a14120432f02fc198ef70402d6fa7fba5535d03c1936ea1e4612d0d05f230d29",
+    "crates/phasesmith-crystallography/src/symmetry.rs": "ad88b01583c92f6b93765ba09774bb8d0d918a29c09ff3c5205b75d62ed8ccb5",
+    "crates/phasesmith-solution/src/adp_refinement.rs": "3212f7b234c101792234bfd38940ccd369c5e4f1bf32e11b6baab83e68ad31c1",
+    "crates/phasesmith-solution/src/completion.rs": "08523bbe80b71f0f29f01345d36713ac8dd3cb6134e812414ea6be5c94dd3081",
+    "crates/phasesmith-solution/src/completion_orbit.rs": "3f4052adb4873772fd8f436e54663878a2398acb05a0c8faa1984767f6c01eb9",
+    "crates/phasesmith-solution/src/data.rs": "3f27a939350ff94f6722c23b1d2609ff10b9ec8119794e2a7cf2076cea27468e",
+    "crates/phasesmith-solution/src/dual_space.rs": "74ff8bbf6d8a6fdbdde1f20f3aa651028b2c77acaa9c86eb716a268ac8721d55",
+    "crates/phasesmith-solution/src/fourier.rs": "60a656ab69dc751e6dcea384f477a770f021a33a5bb28c7a3df840576ea680c8",
+    "crates/phasesmith-solution/src/lib.rs": "c2fb5d6ba146f1d0083eb31b43a72afc4826d65bcb1a8450bd1068f33b357e52",
+    "crates/phasesmith-solution/src/math3.rs": "fa00ccf3888b6bd86fa62c7b160a8e5f11d933e3736231342a179459d247bd4d",
+    "crates/phasesmith-solution/src/model.rs": "c0d802de5d8725f527ab1b40181fe0d4b12387b2c715ad188de5b409e0105139",
+    "crates/phasesmith-solution/src/solver.rs": "01c9b3ab6360554134ec0635ead478676da422853c8ab8d7283c8d6be289772a",
+    "crates/phasesmith-solution/src/symmetry_model.rs": "77008da3b39f478d80b51669ce3944b5a2a96afa6c6a0029d6159d5a0f21356b",
+    "benchmarks/solution_adp_transfer.py": "344239532b298921594af7d24dcb071a16d1528df0e7b5cbfa4467f8f6e83d59",
+    "benchmarks/structure_solution.py": "58191cddd8fc86a6b5371297a694b838f63ba91ea92452425bb7475e7cd4714e",
+    "benchmarks/solution_dual_comparison.py": "192310964da7ff51250c4899205fb18a318be8117b3bf8023cb3b8f5c2eeaab3"
+  },
+  "source_manifest_sha256": {
+    "validation/structure-solution-thiourea.json": "e1b4c3656867b4e271823bd33993e1f369f6ad7d66b0dcd44205b19f53fa3e01",
+    "validation/structure-solution-adp-transfer.json": "6bc23cc45404cbbe1124970a0a6f3e884107cd066d5de647c4ea8692e7da8ad7"
+  },
+  "cases": {
+    "thiourea": {
+      "charge_flip": {
+        "r1": 0.049409049998160065,
+        "target_met": true,
+        "termination": "r1_target",
+        "elapsed_seconds": 3.985668834007811,
+        "phasing_trials": [
+          {
+            "method": "charge_flip",
+            "initialization": "random",
+            "patterson_vector_grid": null,
+            "seed": 0,
+            "completed_cycles": 1200,
+            "best_cycle": 681,
+            "score_kind": "normalized_l1",
+            "mask_sigma_angstrom": null,
+            "hybrid_m": null,
+            "sharpening_q": null,
+            "omit_fraction": null,
+            "omit_period": null
+          }
+        ],
+        "post_solve_reference": {
+          "max_element_matched_error_angstrom": 0.010371707829093534,
+          "rms_error_angstrom": 0.007707376640275076,
+          "reference_used_after_solve_only": true,
+          "non_h_atom_count": 16
+        },
+        "symmetry_refined": true,
+        "completion": null,
+        "options": {
+          "seed": 0,
+          "trials": 8,
+          "cycles": 1200,
+          "phasing": "charge_flip",
+          "delta_sigma": 1.0,
+          "weak_fraction": 0.2,
+          "cleanup_cycles": 10,
+          "polish_iterations": 50,
+          "assignment_rounds": 4,
+          "max_seconds": 60,
+          "r1_target": 0.06,
+          "grid_shape": null,
+          "refinement": "anisotropic",
+          "symmetry_tolerance_angstrom": 0.15,
+          "symmetry_iterations": 80,
+          "completion": true
+        }
+      },
+      "dual_space": {
+        "r1": 0.049409049998159836,
+        "target_met": true,
+        "termination": "r1_target",
+        "elapsed_seconds": 3.6417955000069924,
+        "phasing_trials": [
+          {
+            "method": "dual_space",
+            "initialization": "patterson",
+            "patterson_vector_grid": [
+              16,
+              16,
+              16
+            ],
+            "seed": 0,
+            "completed_cycles": 1200,
+            "best_cycle": 592,
+            "score_kind": "profiled_amplitude_sse",
+            "mask_sigma_angstrom": 0.24513987380696448,
+            "hybrid_m": 3.0,
+            "sharpening_q": 0.5,
+            "omit_fraction": 0.1,
+            "omit_period": 3
+          }
+        ],
+        "post_solve_reference": {
+          "max_element_matched_error_angstrom": 0.01037170782909256,
+          "rms_error_angstrom": 0.007707376640274752,
+          "reference_used_after_solve_only": true,
+          "non_h_atom_count": 16
+        },
+        "symmetry_refined": true,
+        "completion": null,
+        "options": {
+          "seed": 0,
+          "trials": 8,
+          "cycles": 1200,
+          "phasing": "dual_space",
+          "delta_sigma": 1.0,
+          "weak_fraction": 0.2,
+          "cleanup_cycles": 10,
+          "polish_iterations": 50,
+          "assignment_rounds": 4,
+          "max_seconds": 60,
+          "r1_target": 0.06,
+          "grid_shape": null,
+          "refinement": "anisotropic",
+          "symmetry_tolerance_angstrom": 0.15,
+          "symmetry_iterations": 80,
+          "completion": true
+        }
+      }
+    },
+    "BiSeI": {
+      "charge_flip": {
+        "cod": "2010577",
+        "input_rows": 457,
+        "termination": "r1_target",
+        "target_met": true,
+        "elapsed_seconds": 0.47163045799243264,
+        "r1": 0.05228505465169308,
+        "symmetry_refined": true,
+        "completion": null,
+        "candidate_count": 1,
+        "phasing_trials": [
+          {
+            "method": "charge_flip",
+            "initialization": "random",
+            "patterson_vector_grid": null,
+            "seed": 0,
+            "completed_cycles": 1200,
+            "best_cycle": 213,
+            "score_kind": "normalized_l1",
+            "mask_sigma_angstrom": null,
+            "hybrid_m": null,
+            "sharpening_q": null,
+            "omit_fraction": null,
+            "omit_period": null
+          }
+        ],
+        "all_candidates": [
+          {
+            "trial": 0,
+            "r1": 0.05228505465169308,
+            "symmetry_refined": true
+          }
+        ],
+        "diagnostic": null,
+        "post_solve_reference": {
+          "max_element_matched_error_angstrom": 0.0025164089327204832,
+          "rms_error_angstrom": 0.0017469685862153337,
+          "reference_used_after_solve_only": true,
+          "non_h_atom_count": 12
+        },
+        "p1_r1": 0.07103383286501092,
+        "parameter_count": 18,
+        "asymmetric_sites": 3,
+        "options": {
+          "seed": 0,
+          "trials": 8,
+          "cycles": 1200,
+          "phasing": "charge_flip",
+          "delta_sigma": 1.0,
+          "weak_fraction": 0.2,
+          "cleanup_cycles": 10,
+          "polish_iterations": 50,
+          "assignment_rounds": 4,
+          "max_seconds": 60,
+          "r1_target": 0.06,
+          "grid_shape": null,
+          "refinement": "anisotropic",
+          "symmetry_tolerance_angstrom": 0.15,
+          "symmetry_iterations": 80,
+          "completion": true
+        }
+      },
+      "dual_space": {
+        "cod": "2010577",
+        "input_rows": 457,
+        "termination": "r1_target",
+        "target_met": true,
+        "elapsed_seconds": 4.008810917002847,
+        "r1": 0.05228505465125905,
+        "symmetry_refined": true,
+        "completion": null,
+        "candidate_count": 4,
+        "phasing_trials": [
+          {
+            "method": "dual_space",
+            "initialization": "patterson",
+            "patterson_vector_grid": [
+              16,
+              0,
+              8
+            ],
+            "seed": 0,
+            "completed_cycles": 1200,
+            "best_cycle": 480,
+            "score_kind": "profiled_amplitude_sse",
+            "mask_sigma_angstrom": 0.27000406526782644,
+            "hybrid_m": 3.0,
+            "sharpening_q": 0.5,
+            "omit_fraction": 0.1,
+            "omit_period": 3
+          },
+          {
+            "method": "dual_space",
+            "initialization": "patterson",
+            "patterson_vector_grid": [
+              8,
+              8,
+              16
+            ],
+            "seed": 1,
+            "completed_cycles": 1200,
+            "best_cycle": 837,
+            "score_kind": "profiled_amplitude_sse",
+            "mask_sigma_angstrom": 0.27000406526782644,
+            "hybrid_m": 3.0,
+            "sharpening_q": 0.5,
+            "omit_fraction": 0.1,
+            "omit_period": 3
+          },
+          {
+            "method": "dual_space",
+            "initialization": "patterson",
+            "patterson_vector_grid": [
+              11,
+              8,
+              2
+            ],
+            "seed": 2,
+            "completed_cycles": 1200,
+            "best_cycle": 963,
+            "score_kind": "profiled_amplitude_sse",
+            "mask_sigma_angstrom": 0.27000406526782644,
+            "hybrid_m": 3.0,
+            "sharpening_q": 0.5,
+            "omit_fraction": 0.1,
+            "omit_period": 3
+          },
+          {
+            "method": "dual_space",
+            "initialization": "random",
+            "patterson_vector_grid": null,
+            "seed": 3,
+            "completed_cycles": 1200,
+            "best_cycle": 228,
+            "score_kind": "profiled_amplitude_sse",
+            "mask_sigma_angstrom": 0.27000406526782644,
+            "hybrid_m": 3.0,
+            "sharpening_q": 0.5,
+            "omit_fraction": 0.1,
+            "omit_period": 3
+          }
+        ],
+        "all_candidates": [
+          {
+            "trial": 3,
+            "r1": 0.05228505465125905,
+            "symmetry_refined": true
+          },
+          {
+            "trial": 1,
+            "r1": 0.07103436005367668,
+            "symmetry_refined": false
+          },
+          {
+            "trial": 2,
+            "r1": 0.07219064296949777,
+            "symmetry_refined": false
+          },
+          {
+            "trial": 0,
+            "r1": 0.0728298889141271,
+            "symmetry_refined": false
+          }
+        ],
+        "diagnostic": null,
+        "post_solve_reference": {
+          "max_element_matched_error_angstrom": 0.002516408935505908,
+          "rms_error_angstrom": 0.00174696858744853,
+          "reference_used_after_solve_only": true,
+          "non_h_atom_count": 12
+        },
+        "p1_r1": 0.07219061548044951,
+        "parameter_count": 18,
+        "asymmetric_sites": 3,
+        "options": {
+          "seed": 0,
+          "trials": 8,
+          "cycles": 1200,
+          "phasing": "dual_space",
+          "delta_sigma": 1.0,
+          "weak_fraction": 0.2,
+          "cleanup_cycles": 10,
+          "polish_iterations": 50,
+          "assignment_rounds": 4,
+          "max_seconds": 60,
+          "r1_target": 0.06,
+          "grid_shape": null,
+          "refinement": "anisotropic",
+          "symmetry_tolerance_angstrom": 0.15,
+          "symmetry_iterations": 80,
+          "completion": true
+        }
+      }
+    },
+    "K[BrF4]": {
+      "charge_flip": {
+        "cod": "1549359",
+        "input_rows": 214,
+        "termination": "r1_target",
+        "target_met": true,
+        "elapsed_seconds": 3.466957333002938,
+        "r1": 0.022266400601553226,
+        "symmetry_refined": true,
+        "completion": {
+          "applied": true,
+          "status": "applied",
+          "diagnostic": null,
+          "framework_species": [
+            "Br",
+            "K"
+          ],
+          "framework_atoms": 8,
+          "added_species": "F",
+          "added_atoms": 16,
+          "seed_count": 320,
+          "projection_trials": 4096,
+          "orbit_trials": 24,
+          "refinements": 18,
+          "framework_hypotheses": 4,
+          "selected_framework": 3,
+          "framework_maximum_error": 0.08782848321966487,
+          "initial_objective": 0.015910526406991855,
+          "best_objective": 0.0008707812145681309
+        },
+        "candidate_count": 1,
+        "phasing_trials": [
+          {
+            "method": "charge_flip",
+            "initialization": "random",
+            "patterson_vector_grid": null,
+            "seed": 0,
+            "completed_cycles": 1200,
+            "best_cycle": 173,
+            "score_kind": "normalized_l1",
+            "mask_sigma_angstrom": null,
+            "hybrid_m": null,
+            "sharpening_q": null,
+            "omit_fraction": null,
+            "omit_period": null
+          }
+        ],
+        "all_candidates": [
+          {
+            "trial": 0,
+            "r1": 0.022266400601553226,
+            "symmetry_refined": true
+          }
+        ],
+        "diagnostic": null,
+        "post_solve_reference": {
+          "max_element_matched_error_angstrom": 0.00590878387396905,
+          "rms_error_angstrom": 0.004824501830536417,
+          "reference_used_after_solve_only": true,
+          "non_h_atom_count": 24
+        },
+        "p1_r1": 0.11157590696731953,
+        "parameter_count": 11,
+        "asymmetric_sites": 3,
+        "options": {
+          "seed": 0,
+          "trials": 8,
+          "cycles": 1200,
+          "phasing": "charge_flip",
+          "delta_sigma": 1.0,
+          "weak_fraction": 0.2,
+          "cleanup_cycles": 10,
+          "polish_iterations": 50,
+          "assignment_rounds": 4,
+          "max_seconds": 60,
+          "r1_target": 0.06,
+          "grid_shape": null,
+          "refinement": "anisotropic",
+          "symmetry_tolerance_angstrom": 0.15,
+          "symmetry_iterations": 80,
+          "completion": true
+        }
+      },
+      "dual_space": {
+        "cod": "1549359",
+        "input_rows": 214,
+        "termination": "r1_target",
+        "target_met": true,
+        "elapsed_seconds": 4.701201374991797,
+        "r1": 0.022266400442626986,
+        "symmetry_refined": true,
+        "completion": {
+          "applied": true,
+          "status": "applied",
+          "diagnostic": null,
+          "framework_species": [
+            "Br",
+            "K"
+          ],
+          "framework_atoms": 8,
+          "added_species": "F",
+          "added_atoms": 16,
+          "seed_count": 320,
+          "projection_trials": 7680,
+          "orbit_trials": 18,
+          "refinements": 16,
+          "framework_hypotheses": 4,
+          "selected_framework": 3,
+          "framework_maximum_error": 0.08433612263070611,
+          "initial_objective": 0.012776375647123864,
+          "best_objective": 0.0008707812145681336
+        },
+        "candidate_count": 1,
+        "phasing_trials": [
+          {
+            "method": "dual_space",
+            "initialization": "patterson",
+            "patterson_vector_grid": [
+              32,
+              0,
+              32
+            ],
+            "seed": 0,
+            "completed_cycles": 1200,
+            "best_cycle": 391,
+            "score_kind": "profiled_amplitude_sse",
+            "mask_sigma_angstrom": 0.2357674430663847,
+            "hybrid_m": 3.0,
+            "sharpening_q": 0.5,
+            "omit_fraction": 0.1,
+            "omit_period": 3
+          }
+        ],
+        "all_candidates": [
+          {
+            "trial": 0,
+            "r1": 0.022266400442626986,
+            "symmetry_refined": true
+          }
+        ],
+        "diagnostic": null,
+        "post_solve_reference": {
+          "max_element_matched_error_angstrom": 0.005908783390131203,
+          "rms_error_angstrom": 0.00482450143548406,
+          "reference_used_after_solve_only": true,
+          "non_h_atom_count": 24
+        },
+        "p1_r1": 0.10707626715222315,
+        "parameter_count": 11,
+        "asymmetric_sites": 3,
+        "options": {
+          "seed": 0,
+          "trials": 8,
+          "cycles": 1200,
+          "phasing": "dual_space",
+          "delta_sigma": 1.0,
+          "weak_fraction": 0.2,
+          "cleanup_cycles": 10,
+          "polish_iterations": 50,
+          "assignment_rounds": 4,
+          "max_seconds": 60,
+          "r1_target": 0.06,
+          "grid_shape": null,
+          "refinement": "anisotropic",
+          "symmetry_tolerance_angstrom": 0.15,
+          "symmetry_iterations": 80,
+          "completion": true
+        }
+      }
+    }
+  },
+  "prior_uncompleted_comparison": {
+    "file": "benchmarks/structure-solution-dual-space-macos.json",
+    "sha256": "bdb417f716fe2147678a2ca59dc8e60f4fe77ca413d924a761a62c9bab0f9125"
+  },
+  "completion_scope": "One missing weakest-element orbit; stronger-framework setting alternatives, difference Fourier and fixed-set projection. No reference or external solver coordinates enter searches.",
+  "verification": {
+    "python_passed": 1234,
+    "python_skipped": 11,
+    "python_deselected": 34,
+    "rust_passed": 387,
+    "rust_ignored": 34,
+    "strict_workspace_clippy": "passed",
+    "default_wheel_smoke": "passed; optional search absent"
+  },
+  "orbit_hot_loop": {
+    "reflections": 1060,
+    "fixed_atoms": 16,
+    "added_orbit_images": 16,
+    "coordinate_derivatives": 3,
+    "samples": 10,
+    "slope_nanoseconds": {
+      "confidence_interval": {
+        "confidence_level": 0.95,
+        "lower_bound": 133337.11364386982,
+        "upper_bound": 134047.43077316473
+      },
+      "point_estimate": 133700.4684804247,
+      "standard_error": 180.3791328750922
+    },
+    "benchmark_source_sha256": "c9fb930c661aafd91d9ee89a2567cbc74d3b41b13e994ef4a54d9fb879993af3"
+  }
+}
