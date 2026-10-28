@@ -25,6 +25,30 @@ pub(super) fn summary<'py>(
     d.set_item("final_refinements", s.final_refinements)?;
     d.set_item("promoted_candidates", s.promoted_candidates)?;
     d.set_item("screened_out", s.screened_out)?;
+    d.set_item("integrated_peak_density", s.integrated_peak_density)?;
+    d.set_item(
+        "peak_density_radius_angstrom",
+        s.peak_density_radius_angstrom,
+    )?;
+    d.set_item("density_map_builds", s.density_map_builds)?;
+    d.set_item("density_evaluations", s.density_evaluations)?;
+    d.set_item("density_label_rejections", s.density_label_rejections)?;
+    d.set_item("density_label_rescues", s.density_label_rescues)?;
+    d.set_item("density_birth_skips", s.density_birth_skips)?;
+    d.set_item("density_relabel_skips", s.density_relabel_skips)?;
+
+    let calibrations = PyList::empty(py);
+    for c in &s.density_calibrations {
+        let item = PyDict::new(py);
+        item.set_item("trial", c.trial)?;
+        item.set_item("lineage", c.lineage)?;
+        item.set_item("round", c.round)?;
+        item.set_item("scale", c.scale)?;
+        item.set_item("anchors", c.anchors)?;
+        item.set_item("shortlist_limit", c.shortlist_limit)?;
+        calibrations.append(item)?;
+    }
+    d.set_item("density_calibrations", calibrations)?;
     d.set_item("staged_refinement", s.staged_refinement)?;
     d.set_item("screening_iterations", s.screening_iterations)?;
     d.set_item("refinement_shortlist", s.refinement_shortlist)?;
@@ -119,7 +143,61 @@ fn shortlist(
     phasesmith_solution::screening_shortlist(scores.as_slice()?, &birth_elements, &missing, limit)
         .map_err(invalid)
 }
+#[pyclass(name = "_IntegratedPeakDensity", frozen)]
+struct NativeDensity {
+    inner: phasesmith_solution::IntegratedPeakDensity,
+}
+#[pymethods]
+impl NativeDensity {
+    #[new]
+    fn new(
+        py: Python<'_>,
+        cell_parameters: Vec<f64>,
+        shape: [usize; 3],
+        hkl: PyReadonlyArray1<'_, i64>,
+        observed: PyReadonlyArray1<'_, f64>,
+        density: PyReadonlyArray1<'_, f64>,
+        radius: f64,
+    ) -> PyResult<Self> {
+        let cell = cell(&cell_parameters)?;
+        let indices = hkl_rows(&hkl)?;
+        let amplitudes = observed.as_slice()?.to_vec();
+        let rho = density.as_slice()?.to_vec();
+        let inner = py
+            .detach(move || {
+                phasesmith_solution::IntegratedPeakDensity::new(
+                    cell,
+                    shape,
+                    &indices,
+                    &amplitudes,
+                    &rho,
+                    radius,
+                )
+            })
+            .map_err(invalid)?;
+        Ok(Self { inner })
+    }
+    fn evaluate(&self, point: [f64; 3]) -> PyResult<(f64, [f64; 3], f64)> {
+        let value = self.inner.evaluate(point).map_err(invalid)?;
+        Ok((value.value, value.gradient, value.radius_derivative))
+    }
+    #[getter]
+    fn phased_reflections(&self) -> usize {
+        self.inner.phased_reflections
+    }
+}
+#[pyfunction(name = "_solution_ball_transform")]
+fn ball(q: f64, radius: f64) -> PyResult<(f64, f64)> {
+    phasesmith_solution::ball_transform(q, radius).map_err(invalid)
+}
+#[pyfunction(name = "_solution_density_labels")]
+fn labels(mass: f64, scale: Option<f64>, numbers: Vec<u8>) -> PyResult<Vec<bool>> {
+    phasesmith_solution::density_label_mask(mass, scale, &numbers).map_err(invalid)
+}
 pub(super) fn register(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_class::<NativePool>()?;
+    module.add_class::<NativeDensity>()?;
+    module.add_function(wrap_pyfunction!(ball, module)?)?;
+    module.add_function(wrap_pyfunction!(labels, module)?)?;
     module.add_function(wrap_pyfunction!(shortlist, module)?)
 }

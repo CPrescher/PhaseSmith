@@ -19,7 +19,17 @@ mod shared;
 #[path = "solution_symmetry.rs"]
 mod symmetry_adp;
 
-type SharedSearchRequest = (Vec<String>, usize, usize, usize, bool, usize, usize);
+type SharedSearchRequest = (
+    Vec<String>,
+    usize,
+    usize,
+    usize,
+    bool,
+    usize,
+    usize,
+    bool,
+    f64,
+);
 
 fn invalid(error: impl ToString) -> PyErr {
     PyValueError::new_err(error.to_string())
@@ -128,6 +138,8 @@ fn solve_structure<'py>(
                 staged_refinement,
                 screening_iterations,
                 refinement_shortlist,
+                integrated_peak_density,
+                peak_density_radius_angstrom,
             )) = shared_search
             {
                 if !composition.is_empty() {
@@ -148,6 +160,8 @@ fn solve_structure<'py>(
                         staged_refinement,
                         screening_iterations,
                         refinement_shortlist,
+                        integrated_peak_density,
+                        peak_density_radius_angstrom,
                     },
                 )
             } else {

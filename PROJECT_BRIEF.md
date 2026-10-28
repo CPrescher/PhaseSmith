@@ -113,6 +113,21 @@ are 3.250/2.260 s for K[BrF4], 2.314/1.123 s for BiSeI and 28.288/7.572 s
 for thiourea (1.44x, 2.06x and 3.74x). These are reused development cases. See
 `docs/solution-shared-search.md`.
 
+Shared element search also has an integrated-peak-density guide. One unsharpened
+measured-amplitude map per phase start is integrated over Cartesian balls by an
+analytic Fourier kernel. Periodic interpolation returns the integral, three center
+derivatives and a radius derivative in one pass. Relative mass/Z calibration of
+current strong orbits narrows birth/relabel alternatives and the staged shortlist;
+nearby elements, missing types and the leading diffraction proposal retain rescue
+paths. Exact counts and coordinates are never inputs. The prior staged search is
+available with `integrated_peak_density=False`. Independent quadrature, direct
+Fourier, derivative and Gaussian-volume checks cover the new kernel; see
+Three serial paired repeats per measured development case preserve all counts,
+reference geometry and R1. Staged/density-guided medians are 2.269/1.696 s for
+K[BrF4], 1.150/0.973 s for BiSeI and 7.546/5.658 s for thiourea (1.34x, 1.18x
+and 1.33x). See `docs/solution-peak-density.md`. Default powder builds remain
+unchanged.
+
 An opt-in primitive/Bravais comparison now follows position-only lattice discovery.
 Native Selling-Delaunay reduction retains exact integer basis transformations;
 complete low-index reciprocal HNF hypotheses expose excluded reflections rather

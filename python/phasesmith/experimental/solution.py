@@ -234,6 +234,18 @@ class SharedMove:
 
 
 @dataclass(frozen=True, slots=True)
+class DensityCalibration:
+    """Relative strong-atom mass scale for one parent in one setting."""
+
+    trial: int
+    lineage: int
+    round: int
+    scale: float | None
+    anchors: int
+    shortlist_limit: int
+
+
+@dataclass(frozen=True, slots=True)
 class SharedSearchAudit:
     """Actual work and inferred topology, without source composition."""
 
@@ -249,6 +261,15 @@ class SharedSearchAudit:
     final_refinements: int
     promoted_candidates: int
     screened_out: int
+    integrated_peak_density: bool
+    peak_density_radius_angstrom: float
+    density_map_builds: int
+    density_evaluations: int
+    density_label_rejections: int
+    density_label_rescues: int
+    density_birth_skips: int
+    density_relabel_skips: int
+    density_calibrations: tuple[DensityCalibration, ...]
     staged_refinement: bool
     screening_iterations: int
     refinement_shortlist: int
@@ -261,6 +282,14 @@ class SharedSearchAudit:
 
     def __post_init__(self):
         object.__setattr__(self, "elements", tuple(self.elements))
+        object.__setattr__(
+            self,
+            "density_calibrations",
+            tuple(
+                c if isinstance(c, DensityCalibration) else DensityCalibration(**c)
+                for c in self.density_calibrations
+            ),
+        )
         object.__setattr__(
             self,
             "accepted_moves",
@@ -418,6 +447,8 @@ def solve_structure_elements(
     staged_refinement: bool = True,
     screening_iterations: int = 8,
     refinement_shortlist: int = 3,
+    integrated_peak_density: bool = True,
+    peak_density_radius_angstrom: float = 0.7,
     cancellation: SolutionCancellation | None = None,
 ) -> SolutionResult:
     """Infer full-cell counts and labels by shared-map symmetry-orbit edits.
@@ -443,6 +474,14 @@ def solve_structure_elements(
         raise ValueError("elements must be 1..8 distinct neutral non-H symbols")
     if not isinstance(staged_refinement, bool):
         raise TypeError("staged_refinement must be boolean")
+    if not isinstance(integrated_peak_density, bool):
+        raise TypeError("integrated_peak_density must be boolean")
+    if (
+        isinstance(peak_density_radius_angstrom, bool)
+        or not np.isfinite(peak_density_radius_angstrom)
+        or not 1e-4 <= peak_density_radius_angstrom <= 2
+    ):
+        raise ValueError("peak_density_radius_angstrom must be finite in [1e-4,2]")
     if maximum_atoms is None:
         maximum_atoms = min(128, int(np.ceil(cell.geometry().volume_angstrom3 / 8)))
     for name, value, high in (
@@ -472,6 +511,8 @@ def solve_structure_elements(
         staged_refinement,
         screening_iterations,
         refinement_shortlist,
+        integrated_peak_density,
+        peak_density_radius_angstrom,
     )
     return _run_solution(observations, cell, group, (), controls, cancellation, shared)
 

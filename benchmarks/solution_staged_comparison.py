@@ -78,6 +78,7 @@ def main():
         "platform": platform.platform(),
         "repeats": args.repeats,
         "options": asdict(options),
+        "integrated_peak_density": False,
         "screening_iterations": 8,
         "refinement_shortlist": 3,
         "cases": cases,
@@ -112,6 +113,7 @@ def main():
                     elements=case["elements"],
                     options=options,
                     staged_refinement=staged,
+                    integrated_peak_density=False,
                 )
                 elapsed = time.perf_counter() - start
                 write_solution(result, destination)

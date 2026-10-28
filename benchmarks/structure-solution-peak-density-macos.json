@@ -1,0 +1,2696 @@
+{
+  "schema": "phasesmith.peak-density-comparison.v1",
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "repeats": 3,
+  "options": {
+    "seed": 0,
+    "trials": 1,
+    "cycles": 800,
+    "phasing": "charge_flip",
+    "delta_sigma": 1.0,
+    "weak_fraction": 0.2,
+    "cleanup_cycles": 10,
+    "polish_iterations": 50,
+    "assignment_rounds": 4,
+    "max_seconds": 60,
+    "r1_target": 0.06,
+    "grid_shape": null,
+    "refinement": "anisotropic",
+    "symmetry_tolerance_angstrom": 0.15,
+    "symmetry_iterations": 80,
+    "completion": false
+  },
+  "staged_refinement": true,
+  "peak_density_radius_angstrom": 0.7,
+  "screening_iterations": 8,
+  "refinement_shortlist": 3,
+  "cases": [
+    {
+      "name": "kbrf4",
+      "hkl": "validation/data/structure-solution/cod-1549359/1549359.hkl",
+      "hkl_format": "cif",
+      "hkl_sha256": "d76a88377a6d7236416c47a48b4b61ab15f82199e853184dc76e945e3123c2b0",
+      "cell": [
+        6.0999,
+        6.0999,
+        11.0509,
+        90.0,
+        90.0,
+        90.0
+      ],
+      "space_group": "I4/mcm",
+      "elements": [
+        "Br",
+        "F",
+        "K"
+      ],
+      "reference_after_solving": "validation/data/structure-solution/cod-1549359/1549359.cif",
+      "reference_sha256": "518988e3c4fd244dd24e47d12925722fd5f347ad2c61e398de1f4e5b24033f47"
+    },
+    {
+      "name": "bisei",
+      "hkl": "validation/data/structure-solution/cod-2010577/2010577.hkl",
+      "hkl_format": "cif",
+      "hkl_sha256": "49e22aae5122b83855bc8df2f68e98862d92342e2752390a8254237c2d0f07d0",
+      "cell": [
+        8.6967,
+        4.2205,
+        10.574,
+        90.0,
+        90.0,
+        90.0
+      ],
+      "space_group": "Pnma",
+      "elements": [
+        "Bi",
+        "Se",
+        "I"
+      ],
+      "reference_after_solving": "validation/data/structure-solution/cod-2010577/2010577.cif",
+      "reference_sha256": "50e814119da83512c1328e26fc2a92081aa494b0a81c748119a1737fc8e37337"
+    },
+    {
+      "name": "thiourea",
+      "hkl": "validation/data/structure-solution/thiourea/18MPC001T130K.hkl",
+      "hkl_format": "hkl4",
+      "hkl_sha256": "9138164bc1f542b320094b395819af191dbbe77ac4c01f2e21ba55099c074cc1",
+      "cell": [
+        7.4962,
+        8.5211,
+        5.4695,
+        90.0,
+        90.0,
+        90.0
+      ],
+      "space_group": "P 21 m a",
+      "elements": [
+        "C",
+        "N",
+        "S"
+      ],
+      "reference_after_solving": "validation/data/structure-solution/thiourea/archive_18MPC001T130K.cif",
+      "reference_sha256": "b3fc549fbe77d935839d6f566dc968e3abc13913be206c6b59f98ebbf2cd74c2"
+    }
+  ],
+  "native_sha256": "d9f49cea4122fb97d328a849f7b830d8d8410f088f8c81b66a716df34215bcae",
+  "implementation_sha256": {
+    "crates/phasesmith-solution/src/adp_refinement.rs": "f1261ba348d00732aac087be9db054c82451e5701ce559f641152ea31af8c625",
+    "crates/phasesmith-solution/src/completion.rs": "08523bbe80b71f0f29f01345d36713ac8dd3cb6134e812414ea6be5c94dd3081",
+    "crates/phasesmith-solution/src/completion_orbit.rs": "74901c137016cfdf5b18f911282fa2b995b80fb183508856b91ca8a902b52227",
+    "crates/phasesmith-solution/src/data.rs": "3f27a939350ff94f6722c23b1d2609ff10b9ec8119794e2a7cf2076cea27468e",
+    "crates/phasesmith-solution/src/dual_space.rs": "74ff8bbf6d8a6fdbdde1f20f3aa651028b2c77acaa9c86eb716a268ac8721d55",
+    "crates/phasesmith-solution/src/fourier.rs": "60a656ab69dc751e6dcea384f477a770f021a33a5bb28c7a3df840576ea680c8",
+    "crates/phasesmith-solution/src/lib.rs": "3c0545e1ebd80dab2949fb6ccdb011ed2e3b76a8105d5dff7d4b4ae44e6895d0",
+    "crates/phasesmith-solution/src/math3.rs": "fa00ccf3888b6bd86fa62c7b160a8e5f11d933e3736231342a179459d247bd4d",
+    "crates/phasesmith-solution/src/model.rs": "c0d802de5d8725f527ab1b40181fe0d4b12387b2c715ad188de5b409e0105139",
+    "crates/phasesmith-solution/src/peak_density.rs": "97a242cae68157a2adc647beb78c2fa6c8a4a60ff80b875cd9fa2a60362cf37f",
+    "crates/phasesmith-solution/src/shared_pool.rs": "31dc671b92ea761471b2cc3b2c742d1b83e844851ec80ff4f9472e7961aab629",
+    "crates/phasesmith-solution/src/shared_search.rs": "0b34d51f4c274ccd9f062830e5d7fd71d2bdd156f924bcf5c2d53d5c70455a7f",
+    "crates/phasesmith-solution/src/solver.rs": "837283f376ddedd265e9335a4478b0d872c79182eea9b1b8521a6d255329089e",
+    "crates/phasesmith-solution/src/staged_refinement.rs": "6c1ddf05693cea5b20528059d46af3e93e61b7de3ddaef30bc3416ee6ff31657",
+    "crates/phasesmith-solution/src/symmetry_model.rs": "77008da3b39f478d80b51669ce3944b5a2a96afa6c6a0029d6159d5a0f21356b",
+    "crates/phasesmith-py/src/solution.rs": "ebc39e49ab4913132368a505a885c2ce19a65cd917e2f322958cf50a55561ced",
+    "crates/phasesmith-py/src/solution_completion.rs": "f054ef8c49ce3f1d6aad5e8c36b94da3f3cf3b0a08570e841060a4bbcbf81517",
+    "crates/phasesmith-py/src/solution_dual.rs": "148bd4cf47cc84ea9f2ee3e9a52365278bf3396c83199481b3ddb220ce8e4755",
+    "crates/phasesmith-py/src/solution_shared.rs": "40e3b38db94590477e17e41bfc729417335ecc87861fb0c8708f648b543f6f33",
+    "crates/phasesmith-py/src/solution_symmetry.rs": "bea6226d0263c9a8afe158b68751ba0d5d944c07059d6a6fdcdafae243d4859a",
+    "Cargo.lock": "f8a427cc7edfd5463a2929aa00c5473c10dd674553132052aadcef11fd41cdee",
+    "crates/phasesmith-solution/benches/solution.rs": "3ed7ca7db64c6126893602a4fb3865604d6abc46942f9ef1778958780e294e0b",
+    "python/phasesmith/experimental/solution.py": "de817b7553093ec29881c10c81d5dcf96ca030957987a0be5791d32c29df4e29",
+    "python/phasesmith/experimental/solution_shared_reference.py": "4bbb33e0bc6991f65171c2b4db1452c342c7d54952d4fa612f50375eb29dfe7b",
+    "python/phasesmith/experimental/solution_peak_density_reference.py": "0aa18c02afa708f4b883065ffa3cfad1f6e280985894678d81a56dd7cbdd4397",
+    "benchmarks/solution_peak_density_comparison.py": "090cb4bb8569f5b4d003963fa4c43f10079e089482e45d7578e4dc5537fbeaf4",
+    "benchmarks/solution_adp_transfer.py": "344239532b298921594af7d24dcb071a16d1528df0e7b5cbfa4467f8f6e83d59",
+    "benchmarks/structure_solution.py": "58191cddd8fc86a6b5371297a694b838f63ba91ea92452425bb7475e7cd4714e"
+  },
+  "input_manifest_sha256": "a1292a5a6685c46b696ba0018f60df083a86d5f030bfa4ae8fbc72f9e4b0eeae",
+  "qualification": "Serial paired solves, alternating baseline/density-guided order by repeat. Shared inputs and settings; no counts/coordinates supplied. References read only after all paired solves and reports are saved. Reused development data; no general coverage guarantee.",
+  "runs": [
+    {
+      "case": "kbrf4",
+      "repeat": 0,
+      "mode": "staged",
+      "seconds": 2.268876125017414,
+      "r1": 0.022266400409313075,
+      "counts": {
+        "Br": 4,
+        "F": 16,
+        "K": 4
+      },
+      "target_met": true,
+      "termination": "r1_target",
+      "effort": {
+        "elements": [
+          "Br",
+          "K",
+          "F"
+        ],
+        "phasing_starts": 1,
+        "framework_hypotheses": 4,
+        "initial_prefix": 4,
+        "rounds": 2,
+        "orbit_proposals": 16,
+        "element_scores": 48,
+        "refinements": 104,
+        "screening_refinements": 74,
+        "final_refinements": 30,
+        "promoted_candidates": 26,
+        "screened_out": 48,
+        "integrated_peak_density": false,
+        "peak_density_radius_angstrom": 0.7,
+        "density_map_builds": 0,
+        "density_evaluations": 0,
+        "density_label_rejections": 0,
+        "density_label_rescues": 0,
+        "density_birth_skips": 0,
+        "density_relabel_skips": 0,
+        "density_calibrations": [],
+        "staged_refinement": true,
+        "screening_iterations": 8,
+        "refinement_shortlist": 3,
+        "deletion_trials": 8,
+        "relabel_trials": 24,
+        "maximum_atoms": 52,
+        "beam_width": 4,
+        "required_elements_present": true,
+        "accepted_moves": [
+          {
+            "kind": "initial",
+            "element": "Br",
+            "atoms": 4,
+            "r1": 0.49527233653817687,
+            "score": -302.2789345245023
+          },
+          {
+            "kind": "birth",
+            "element": "K",
+            "atoms": 8,
+            "r1": 0.2376105666969505,
+            "score": -529.5847676492581
+          },
+          {
+            "kind": "birth",
+            "element": "F",
+            "atoms": 24,
+            "r1": 0.022266400409313075,
+            "score": -1443.4779253300585
+          }
+        ]
+      },
+      "directory": "kbrf4/staged-0",
+      "counts_match_reference_after_solving": true,
+      "post_solve_geometry": {
+        "max_element_matched_error_angstrom": 0.005908783376389764,
+        "rms_error_angstrom": 0.004824501424264222,
+        "reference_used_after_solve_only": true,
+        "non_h_atom_count": 24
+      },
+      "cif_checks": {
+        "candidate-p1.cif": {
+          "r1": 0.022266400409154206,
+          "absolute_r1_difference": 1.5886944537690795e-13,
+          "sha256": "3678e5505b7e96531479c4860a823866fe935e317dad670a82576e8a3c74ca4f"
+        },
+        "candidate.cif": {
+          "r1": 0.022266400409225742,
+          "absolute_r1_difference": 8.733291867457638e-14,
+          "sha256": "b4f66e76d73acce7af9cf79d4417e8fefe7ed2c482a403f799d1f97821de054e"
+        }
+      }
+    },
+    {
+      "case": "kbrf4",
+      "repeat": 0,
+      "mode": "integrated",
+      "seconds": 1.6958852499956265,
+      "r1": 0.022266400409313075,
+      "counts": {
+        "Br": 4,
+        "F": 16,
+        "K": 4
+      },
+      "target_met": true,
+      "termination": "r1_target",
+      "effort": {
+        "elements": [
+          "Br",
+          "K",
+          "F"
+        ],
+        "phasing_starts": 1,
+        "framework_hypotheses": 4,
+        "initial_prefix": 4,
+        "rounds": 2,
+        "orbit_proposals": 16,
+        "element_scores": 48,
+        "refinements": 66,
+        "screening_refinements": 48,
+        "final_refinements": 18,
+        "promoted_candidates": 14,
+        "screened_out": 34,
+        "integrated_peak_density": true,
+        "peak_density_radius_angstrom": 0.7,
+        "density_map_builds": 1,
+        "density_evaluations": 352,
+        "density_label_rejections": 24,
+        "density_label_rescues": 4,
+        "density_birth_skips": 18,
+        "density_relabel_skips": 8,
+        "density_calibrations": [
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 1,
+            "scale": 0.7828045603577196,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 1,
+            "scale": 0.7828045603577196,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 2,
+            "round": 1,
+            "scale": 0.7828045603577195,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 3,
+            "round": 1,
+            "scale": 0.7828045603577195,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 3,
+            "round": 2,
+            "scale": 0.7828045603577195,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 2,
+            "scale": 0.7828045603577196,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 2,
+            "round": 2,
+            "scale": 0.7828045603577195,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 2,
+            "scale": 0.7828045603577196,
+            "anchors": 1,
+            "shortlist_limit": 1
+          }
+        ],
+        "staged_refinement": true,
+        "screening_iterations": 8,
+        "refinement_shortlist": 3,
+        "deletion_trials": 8,
+        "relabel_trials": 16,
+        "maximum_atoms": 52,
+        "beam_width": 4,
+        "required_elements_present": true,
+        "accepted_moves": [
+          {
+            "kind": "initial",
+            "element": "Br",
+            "atoms": 4,
+            "r1": 0.49527233653817687,
+            "score": -302.2789345245023
+          },
+          {
+            "kind": "birth",
+            "element": "K",
+            "atoms": 8,
+            "r1": 0.2376105666969505,
+            "score": -529.5847676492581
+          },
+          {
+            "kind": "birth",
+            "element": "F",
+            "atoms": 24,
+            "r1": 0.022266400409313075,
+            "score": -1443.4779253300585
+          }
+        ]
+      },
+      "directory": "kbrf4/integrated-0",
+      "counts_match_reference_after_solving": true,
+      "post_solve_geometry": {
+        "max_element_matched_error_angstrom": 0.005908783376389764,
+        "rms_error_angstrom": 0.004824501424264222,
+        "reference_used_after_solve_only": true,
+        "non_h_atom_count": 24
+      },
+      "cif_checks": {
+        "candidate-p1.cif": {
+          "r1": 0.022266400409154206,
+          "absolute_r1_difference": 1.5886944537690795e-13,
+          "sha256": "3678e5505b7e96531479c4860a823866fe935e317dad670a82576e8a3c74ca4f"
+        },
+        "candidate.cif": {
+          "r1": 0.022266400409225742,
+          "absolute_r1_difference": 8.733291867457638e-14,
+          "sha256": "b4f66e76d73acce7af9cf79d4417e8fefe7ed2c482a403f799d1f97821de054e"
+        }
+      }
+    },
+    {
+      "case": "bisei",
+      "repeat": 0,
+      "mode": "staged",
+      "seconds": 1.1497306249802932,
+      "r1": 0.05228505465883755,
+      "counts": {
+        "Bi": 4,
+        "I": 4,
+        "Se": 4
+      },
+      "target_met": true,
+      "termination": "r1_target",
+      "effort": {
+        "elements": [
+          "Bi",
+          "I",
+          "Se"
+        ],
+        "phasing_starts": 1,
+        "framework_hypotheses": 1,
+        "initial_prefix": 4,
+        "rounds": 2,
+        "orbit_proposals": 31,
+        "element_scores": 93,
+        "refinements": 75,
+        "screening_refinements": 56,
+        "final_refinements": 19,
+        "promoted_candidates": 18,
+        "screened_out": 38,
+        "integrated_peak_density": false,
+        "peak_density_radius_angstrom": 0.7,
+        "density_map_builds": 0,
+        "density_evaluations": 0,
+        "density_label_rejections": 0,
+        "density_label_rescues": 0,
+        "density_birth_skips": 0,
+        "density_relabel_skips": 0,
+        "density_calibrations": [],
+        "staged_refinement": true,
+        "screening_iterations": 8,
+        "refinement_shortlist": 3,
+        "deletion_trials": 8,
+        "relabel_trials": 18,
+        "maximum_atoms": 49,
+        "beam_width": 4,
+        "required_elements_present": true,
+        "accepted_moves": [
+          {
+            "kind": "initial",
+            "element": "Bi",
+            "atoms": 4,
+            "r1": 0.4889876849452135,
+            "score": -564.0853382589139
+          },
+          {
+            "kind": "birth",
+            "element": "I",
+            "atoms": 8,
+            "r1": 0.3040013304642801,
+            "score": -969.6360431260385
+          },
+          {
+            "kind": "birth",
+            "element": "Se",
+            "atoms": 12,
+            "r1": 0.05228505465883755,
+            "score": -2455.320240381798
+          }
+        ]
+      },
+      "directory": "bisei/staged-0",
+      "counts_match_reference_after_solving": true,
+      "post_solve_geometry": {
+        "max_element_matched_error_angstrom": 0.002516409331457885,
+        "rms_error_angstrom": 0.0017469687619605545,
+        "reference_used_after_solve_only": true,
+        "non_h_atom_count": 12
+      },
+      "cif_checks": {
+        "candidate-p1.cif": {
+          "r1": 0.05228505465838227,
+          "absolute_r1_difference": 4.55281645717065e-13,
+          "sha256": "e294a045f1d3824735dcb333ba2ff6ad9e9ab3f4d82ca3e947c40e8042d93de6"
+        },
+        "candidate.cif": {
+          "r1": 0.05228505465894189,
+          "absolute_r1_difference": 1.0434014763305299e-13,
+          "sha256": "09d28aaaeaea493f3c13ff94212fac51612bb09b74dd3f1d2e354602da37c898"
+        }
+      }
+    },
+    {
+      "case": "bisei",
+      "repeat": 0,
+      "mode": "integrated",
+      "seconds": 0.9988324999867473,
+      "r1": 0.05228505465883755,
+      "counts": {
+        "Bi": 4,
+        "I": 4,
+        "Se": 4
+      },
+      "target_met": true,
+      "termination": "r1_target",
+      "effort": {
+        "elements": [
+          "Bi",
+          "I",
+          "Se"
+        ],
+        "phasing_starts": 1,
+        "framework_hypotheses": 1,
+        "initial_prefix": 4,
+        "rounds": 2,
+        "orbit_proposals": 31,
+        "element_scores": 93,
+        "refinements": 39,
+        "screening_refinements": 29,
+        "final_refinements": 10,
+        "promoted_candidates": 9,
+        "screened_out": 20,
+        "integrated_peak_density": true,
+        "peak_density_radius_angstrom": 0.7,
+        "density_map_builds": 1,
+        "density_evaluations": 164,
+        "density_label_rejections": 30,
+        "density_label_rescues": 1,
+        "density_birth_skips": 7,
+        "density_relabel_skips": 4,
+        "density_calibrations": [
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 1,
+            "scale": 0.8854339260334831,
+            "anchors": 1,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 2,
+            "scale": 0.9129972998389354,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 2,
+            "scale": 0.9100027653135752,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 2,
+            "scale": 0.8854339260334831,
+            "anchors": 1,
+            "shortlist_limit": 2
+          }
+        ],
+        "staged_refinement": true,
+        "screening_iterations": 8,
+        "refinement_shortlist": 3,
+        "deletion_trials": 4,
+        "relabel_trials": 8,
+        "maximum_atoms": 49,
+        "beam_width": 4,
+        "required_elements_present": true,
+        "accepted_moves": [
+          {
+            "kind": "initial",
+            "element": "Bi",
+            "atoms": 4,
+            "r1": 0.4889876849452135,
+            "score": -564.0853382589139
+          },
+          {
+            "kind": "birth",
+            "element": "I",
+            "atoms": 8,
+            "r1": 0.3040013304642801,
+            "score": -969.6360431260385
+          },
+          {
+            "kind": "birth",
+            "element": "Se",
+            "atoms": 12,
+            "r1": 0.05228505465883755,
+            "score": -2455.320240381798
+          }
+        ]
+      },
+      "directory": "bisei/integrated-0",
+      "counts_match_reference_after_solving": true,
+      "post_solve_geometry": {
+        "max_element_matched_error_angstrom": 0.002516409331457885,
+        "rms_error_angstrom": 0.0017469687619605545,
+        "reference_used_after_solve_only": true,
+        "non_h_atom_count": 12
+      },
+      "cif_checks": {
+        "candidate-p1.cif": {
+          "r1": 0.05228505465838227,
+          "absolute_r1_difference": 4.55281645717065e-13,
+          "sha256": "e294a045f1d3824735dcb333ba2ff6ad9e9ab3f4d82ca3e947c40e8042d93de6"
+        },
+        "candidate.cif": {
+          "r1": 0.05228505465894189,
+          "absolute_r1_difference": 1.0434014763305299e-13,
+          "sha256": "09d28aaaeaea493f3c13ff94212fac51612bb09b74dd3f1d2e354602da37c898"
+        }
+      }
+    },
+    {
+      "case": "thiourea",
+      "repeat": 0,
+      "mode": "staged",
+      "seconds": 7.442197291995399,
+      "r1": 0.049409049967854266,
+      "counts": {
+        "C": 4,
+        "N": 8,
+        "S": 4
+      },
+      "target_met": true,
+      "termination": "r1_target",
+      "effort": {
+        "elements": [
+          "S",
+          "N",
+          "C"
+        ],
+        "phasing_starts": 1,
+        "framework_hypotheses": 2,
+        "initial_prefix": 4,
+        "rounds": 4,
+        "orbit_proposals": 106,
+        "element_scores": 318,
+        "refinements": 286,
+        "screening_refinements": 240,
+        "final_refinements": 46,
+        "promoted_candidates": 44,
+        "screened_out": 196,
+        "integrated_peak_density": false,
+        "peak_density_radius_angstrom": 0.7,
+        "density_map_builds": 0,
+        "density_evaluations": 0,
+        "density_label_rejections": 0,
+        "density_label_rescues": 0,
+        "density_birth_skips": 0,
+        "density_relabel_skips": 0,
+        "density_calibrations": [],
+        "staged_refinement": true,
+        "screening_iterations": 8,
+        "refinement_shortlist": 3,
+        "deletion_trials": 52,
+        "relabel_trials": 104,
+        "maximum_atoms": 44,
+        "beam_width": 4,
+        "required_elements_present": true,
+        "accepted_moves": [
+          {
+            "kind": "initial",
+            "element": "S",
+            "atoms": 4,
+            "r1": 0.2668332456528867,
+            "score": -1228.3159340055047
+          },
+          {
+            "kind": "birth",
+            "element": "N",
+            "atoms": 8,
+            "r1": 0.22278429173804243,
+            "score": -1416.2571865985583
+          },
+          {
+            "kind": "birth",
+            "element": "N",
+            "atoms": 12,
+            "r1": 0.17376645155193865,
+            "score": -1805.9917743692963
+          },
+          {
+            "kind": "birth",
+            "element": "C",
+            "atoms": 14,
+            "r1": 0.11488941497632522,
+            "score": -2303.524988951136
+          },
+          {
+            "kind": "birth",
+            "element": "C",
+            "atoms": 16,
+            "r1": 0.049409049967854266,
+            "score": -3284.4523910481603
+          }
+        ]
+      },
+      "directory": "thiourea/staged-0",
+      "counts_match_reference_after_solving": true,
+      "post_solve_geometry": {
+        "max_element_matched_error_angstrom": 0.010371708291770466,
+        "rms_error_angstrom": 0.0077073765890118395,
+        "reference_used_after_solve_only": true,
+        "non_h_atom_count": 16
+      },
+      "cif_checks": {
+        "candidate-p1.cif": {
+          "r1": 0.049409049967820924,
+          "absolute_r1_difference": 3.334138520827423e-14,
+          "sha256": "a2c6763ecc31a0c94aab65422a244714ba19a1e85fd7bc114ae977938dba79ae"
+        },
+        "candidate.cif": {
+          "r1": 0.04940904996794525,
+          "absolute_r1_difference": 9.098277686803158e-14,
+          "sha256": "0804b564cb693f2653a4ec7c8e6fd73f96512747eb8bdd0372ada8e9a58ee51e"
+        }
+      }
+    },
+    {
+      "case": "thiourea",
+      "repeat": 0,
+      "mode": "integrated",
+      "seconds": 5.614359333005268,
+      "r1": 0.049409049967854266,
+      "counts": {
+        "C": 4,
+        "N": 8,
+        "S": 4
+      },
+      "target_met": true,
+      "termination": "r1_target",
+      "effort": {
+        "elements": [
+          "S",
+          "N",
+          "C"
+        ],
+        "phasing_starts": 1,
+        "framework_hypotheses": 2,
+        "initial_prefix": 4,
+        "rounds": 4,
+        "orbit_proposals": 106,
+        "element_scores": 318,
+        "refinements": 192,
+        "screening_refinements": 160,
+        "final_refinements": 32,
+        "promoted_candidates": 30,
+        "screened_out": 130,
+        "integrated_peak_density": true,
+        "peak_density_radius_angstrom": 0.7,
+        "density_map_builds": 1,
+        "density_evaluations": 468,
+        "density_label_rejections": 62,
+        "density_label_rescues": 0,
+        "density_birth_skips": 24,
+        "density_relabel_skips": 56,
+        "density_calibrations": [
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 1,
+            "scale": 0.359783756609742,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 1,
+            "scale": 0.35978375660974204,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 2,
+            "scale": 0.3598939968666619,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 2,
+            "scale": 0.3598939968572955,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 2,
+            "scale": 0.3598868497429647,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 2,
+            "scale": 0.35988684975930185,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 3,
+            "scale": 0.36011035323425955,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 3,
+            "scale": 0.3601103532340772,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 3,
+            "scale": 0.36010569865282216,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 3,
+            "scale": 0.36010569866382913,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 4,
+            "scale": 0.3600777978211354,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 4,
+            "scale": 0.36007779782113536,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 4,
+            "scale": 0.3600984345120765,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 4,
+            "scale": 0.36009843451207635,
+            "anchors": 2,
+            "shortlist_limit": 2
+          }
+        ],
+        "staged_refinement": true,
+        "screening_iterations": 8,
+        "refinement_shortlist": 3,
+        "deletion_trials": 52,
+        "relabel_trials": 48,
+        "maximum_atoms": 44,
+        "beam_width": 4,
+        "required_elements_present": true,
+        "accepted_moves": [
+          {
+            "kind": "initial",
+            "element": "S",
+            "atoms": 4,
+            "r1": 0.2668332456528867,
+            "score": -1228.3159340055047
+          },
+          {
+            "kind": "birth",
+            "element": "N",
+            "atoms": 8,
+            "r1": 0.22278429173804243,
+            "score": -1416.2571865985583
+          },
+          {
+            "kind": "birth",
+            "element": "N",
+            "atoms": 12,
+            "r1": 0.17376645155193865,
+            "score": -1805.9917743692963
+          },
+          {
+            "kind": "birth",
+            "element": "C",
+            "atoms": 14,
+            "r1": 0.11488941497632522,
+            "score": -2303.524988951136
+          },
+          {
+            "kind": "birth",
+            "element": "C",
+            "atoms": 16,
+            "r1": 0.049409049967854266,
+            "score": -3284.4523910481603
+          }
+        ]
+      },
+      "directory": "thiourea/integrated-0",
+      "counts_match_reference_after_solving": true,
+      "post_solve_geometry": {
+        "max_element_matched_error_angstrom": 0.010371708291770466,
+        "rms_error_angstrom": 0.0077073765890118395,
+        "reference_used_after_solve_only": true,
+        "non_h_atom_count": 16
+      },
+      "cif_checks": {
+        "candidate-p1.cif": {
+          "r1": 0.049409049967820924,
+          "absolute_r1_difference": 3.334138520827423e-14,
+          "sha256": "a2c6763ecc31a0c94aab65422a244714ba19a1e85fd7bc114ae977938dba79ae"
+        },
+        "candidate.cif": {
+          "r1": 0.04940904996794525,
+          "absolute_r1_difference": 9.098277686803158e-14,
+          "sha256": "0804b564cb693f2653a4ec7c8e6fd73f96512747eb8bdd0372ada8e9a58ee51e"
+        }
+      }
+    },
+    {
+      "case": "kbrf4",
+      "repeat": 1,
+      "mode": "integrated",
+      "seconds": 1.6631300000008196,
+      "r1": 0.022266400409313075,
+      "counts": {
+        "Br": 4,
+        "F": 16,
+        "K": 4
+      },
+      "target_met": true,
+      "termination": "r1_target",
+      "effort": {
+        "elements": [
+          "Br",
+          "K",
+          "F"
+        ],
+        "phasing_starts": 1,
+        "framework_hypotheses": 4,
+        "initial_prefix": 4,
+        "rounds": 2,
+        "orbit_proposals": 16,
+        "element_scores": 48,
+        "refinements": 66,
+        "screening_refinements": 48,
+        "final_refinements": 18,
+        "promoted_candidates": 14,
+        "screened_out": 34,
+        "integrated_peak_density": true,
+        "peak_density_radius_angstrom": 0.7,
+        "density_map_builds": 1,
+        "density_evaluations": 352,
+        "density_label_rejections": 24,
+        "density_label_rescues": 4,
+        "density_birth_skips": 18,
+        "density_relabel_skips": 8,
+        "density_calibrations": [
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 1,
+            "scale": 0.7828045603577196,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 1,
+            "scale": 0.7828045603577196,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 2,
+            "round": 1,
+            "scale": 0.7828045603577195,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 3,
+            "round": 1,
+            "scale": 0.7828045603577195,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 3,
+            "round": 2,
+            "scale": 0.7828045603577195,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 2,
+            "scale": 0.7828045603577196,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 2,
+            "round": 2,
+            "scale": 0.7828045603577195,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 2,
+            "scale": 0.7828045603577196,
+            "anchors": 1,
+            "shortlist_limit": 1
+          }
+        ],
+        "staged_refinement": true,
+        "screening_iterations": 8,
+        "refinement_shortlist": 3,
+        "deletion_trials": 8,
+        "relabel_trials": 16,
+        "maximum_atoms": 52,
+        "beam_width": 4,
+        "required_elements_present": true,
+        "accepted_moves": [
+          {
+            "kind": "initial",
+            "element": "Br",
+            "atoms": 4,
+            "r1": 0.49527233653817687,
+            "score": -302.2789345245023
+          },
+          {
+            "kind": "birth",
+            "element": "K",
+            "atoms": 8,
+            "r1": 0.2376105666969505,
+            "score": -529.5847676492581
+          },
+          {
+            "kind": "birth",
+            "element": "F",
+            "atoms": 24,
+            "r1": 0.022266400409313075,
+            "score": -1443.4779253300585
+          }
+        ]
+      },
+      "directory": "kbrf4/integrated-1",
+      "counts_match_reference_after_solving": true,
+      "post_solve_geometry": {
+        "max_element_matched_error_angstrom": 0.005908783376389764,
+        "rms_error_angstrom": 0.004824501424264222,
+        "reference_used_after_solve_only": true,
+        "non_h_atom_count": 24
+      },
+      "cif_checks": {
+        "candidate-p1.cif": {
+          "r1": 0.022266400409154206,
+          "absolute_r1_difference": 1.5886944537690795e-13,
+          "sha256": "3678e5505b7e96531479c4860a823866fe935e317dad670a82576e8a3c74ca4f"
+        },
+        "candidate.cif": {
+          "r1": 0.022266400409225742,
+          "absolute_r1_difference": 8.733291867457638e-14,
+          "sha256": "b4f66e76d73acce7af9cf79d4417e8fefe7ed2c482a403f799d1f97821de054e"
+        }
+      }
+    },
+    {
+      "case": "kbrf4",
+      "repeat": 1,
+      "mode": "staged",
+      "seconds": 2.2388639579876326,
+      "r1": 0.022266400409313075,
+      "counts": {
+        "Br": 4,
+        "F": 16,
+        "K": 4
+      },
+      "target_met": true,
+      "termination": "r1_target",
+      "effort": {
+        "elements": [
+          "Br",
+          "K",
+          "F"
+        ],
+        "phasing_starts": 1,
+        "framework_hypotheses": 4,
+        "initial_prefix": 4,
+        "rounds": 2,
+        "orbit_proposals": 16,
+        "element_scores": 48,
+        "refinements": 104,
+        "screening_refinements": 74,
+        "final_refinements": 30,
+        "promoted_candidates": 26,
+        "screened_out": 48,
+        "integrated_peak_density": false,
+        "peak_density_radius_angstrom": 0.7,
+        "density_map_builds": 0,
+        "density_evaluations": 0,
+        "density_label_rejections": 0,
+        "density_label_rescues": 0,
+        "density_birth_skips": 0,
+        "density_relabel_skips": 0,
+        "density_calibrations": [],
+        "staged_refinement": true,
+        "screening_iterations": 8,
+        "refinement_shortlist": 3,
+        "deletion_trials": 8,
+        "relabel_trials": 24,
+        "maximum_atoms": 52,
+        "beam_width": 4,
+        "required_elements_present": true,
+        "accepted_moves": [
+          {
+            "kind": "initial",
+            "element": "Br",
+            "atoms": 4,
+            "r1": 0.49527233653817687,
+            "score": -302.2789345245023
+          },
+          {
+            "kind": "birth",
+            "element": "K",
+            "atoms": 8,
+            "r1": 0.2376105666969505,
+            "score": -529.5847676492581
+          },
+          {
+            "kind": "birth",
+            "element": "F",
+            "atoms": 24,
+            "r1": 0.022266400409313075,
+            "score": -1443.4779253300585
+          }
+        ]
+      },
+      "directory": "kbrf4/staged-1",
+      "counts_match_reference_after_solving": true,
+      "post_solve_geometry": {
+        "max_element_matched_error_angstrom": 0.005908783376389764,
+        "rms_error_angstrom": 0.004824501424264222,
+        "reference_used_after_solve_only": true,
+        "non_h_atom_count": 24
+      },
+      "cif_checks": {
+        "candidate-p1.cif": {
+          "r1": 0.022266400409154206,
+          "absolute_r1_difference": 1.5886944537690795e-13,
+          "sha256": "3678e5505b7e96531479c4860a823866fe935e317dad670a82576e8a3c74ca4f"
+        },
+        "candidate.cif": {
+          "r1": 0.022266400409225742,
+          "absolute_r1_difference": 8.733291867457638e-14,
+          "sha256": "b4f66e76d73acce7af9cf79d4417e8fefe7ed2c482a403f799d1f97821de054e"
+        }
+      }
+    },
+    {
+      "case": "bisei",
+      "repeat": 1,
+      "mode": "integrated",
+      "seconds": 0.9728036250162404,
+      "r1": 0.05228505465883755,
+      "counts": {
+        "Bi": 4,
+        "I": 4,
+        "Se": 4
+      },
+      "target_met": true,
+      "termination": "r1_target",
+      "effort": {
+        "elements": [
+          "Bi",
+          "I",
+          "Se"
+        ],
+        "phasing_starts": 1,
+        "framework_hypotheses": 1,
+        "initial_prefix": 4,
+        "rounds": 2,
+        "orbit_proposals": 31,
+        "element_scores": 93,
+        "refinements": 39,
+        "screening_refinements": 29,
+        "final_refinements": 10,
+        "promoted_candidates": 9,
+        "screened_out": 20,
+        "integrated_peak_density": true,
+        "peak_density_radius_angstrom": 0.7,
+        "density_map_builds": 1,
+        "density_evaluations": 164,
+        "density_label_rejections": 30,
+        "density_label_rescues": 1,
+        "density_birth_skips": 7,
+        "density_relabel_skips": 4,
+        "density_calibrations": [
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 1,
+            "scale": 0.8854339260334831,
+            "anchors": 1,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 2,
+            "scale": 0.9129972998389354,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 2,
+            "scale": 0.9100027653135752,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 2,
+            "scale": 0.8854339260334831,
+            "anchors": 1,
+            "shortlist_limit": 2
+          }
+        ],
+        "staged_refinement": true,
+        "screening_iterations": 8,
+        "refinement_shortlist": 3,
+        "deletion_trials": 4,
+        "relabel_trials": 8,
+        "maximum_atoms": 49,
+        "beam_width": 4,
+        "required_elements_present": true,
+        "accepted_moves": [
+          {
+            "kind": "initial",
+            "element": "Bi",
+            "atoms": 4,
+            "r1": 0.4889876849452135,
+            "score": -564.0853382589139
+          },
+          {
+            "kind": "birth",
+            "element": "I",
+            "atoms": 8,
+            "r1": 0.3040013304642801,
+            "score": -969.6360431260385
+          },
+          {
+            "kind": "birth",
+            "element": "Se",
+            "atoms": 12,
+            "r1": 0.05228505465883755,
+            "score": -2455.320240381798
+          }
+        ]
+      },
+      "directory": "bisei/integrated-1",
+      "counts_match_reference_after_solving": true,
+      "post_solve_geometry": {
+        "max_element_matched_error_angstrom": 0.002516409331457885,
+        "rms_error_angstrom": 0.0017469687619605545,
+        "reference_used_after_solve_only": true,
+        "non_h_atom_count": 12
+      },
+      "cif_checks": {
+        "candidate-p1.cif": {
+          "r1": 0.05228505465838227,
+          "absolute_r1_difference": 4.55281645717065e-13,
+          "sha256": "e294a045f1d3824735dcb333ba2ff6ad9e9ab3f4d82ca3e947c40e8042d93de6"
+        },
+        "candidate.cif": {
+          "r1": 0.05228505465894189,
+          "absolute_r1_difference": 1.0434014763305299e-13,
+          "sha256": "09d28aaaeaea493f3c13ff94212fac51612bb09b74dd3f1d2e354602da37c898"
+        }
+      }
+    },
+    {
+      "case": "bisei",
+      "repeat": 1,
+      "mode": "staged",
+      "seconds": 1.130863833008334,
+      "r1": 0.05228505465883755,
+      "counts": {
+        "Bi": 4,
+        "I": 4,
+        "Se": 4
+      },
+      "target_met": true,
+      "termination": "r1_target",
+      "effort": {
+        "elements": [
+          "Bi",
+          "I",
+          "Se"
+        ],
+        "phasing_starts": 1,
+        "framework_hypotheses": 1,
+        "initial_prefix": 4,
+        "rounds": 2,
+        "orbit_proposals": 31,
+        "element_scores": 93,
+        "refinements": 75,
+        "screening_refinements": 56,
+        "final_refinements": 19,
+        "promoted_candidates": 18,
+        "screened_out": 38,
+        "integrated_peak_density": false,
+        "peak_density_radius_angstrom": 0.7,
+        "density_map_builds": 0,
+        "density_evaluations": 0,
+        "density_label_rejections": 0,
+        "density_label_rescues": 0,
+        "density_birth_skips": 0,
+        "density_relabel_skips": 0,
+        "density_calibrations": [],
+        "staged_refinement": true,
+        "screening_iterations": 8,
+        "refinement_shortlist": 3,
+        "deletion_trials": 8,
+        "relabel_trials": 18,
+        "maximum_atoms": 49,
+        "beam_width": 4,
+        "required_elements_present": true,
+        "accepted_moves": [
+          {
+            "kind": "initial",
+            "element": "Bi",
+            "atoms": 4,
+            "r1": 0.4889876849452135,
+            "score": -564.0853382589139
+          },
+          {
+            "kind": "birth",
+            "element": "I",
+            "atoms": 8,
+            "r1": 0.3040013304642801,
+            "score": -969.6360431260385
+          },
+          {
+            "kind": "birth",
+            "element": "Se",
+            "atoms": 12,
+            "r1": 0.05228505465883755,
+            "score": -2455.320240381798
+          }
+        ]
+      },
+      "directory": "bisei/staged-1",
+      "counts_match_reference_after_solving": true,
+      "post_solve_geometry": {
+        "max_element_matched_error_angstrom": 0.002516409331457885,
+        "rms_error_angstrom": 0.0017469687619605545,
+        "reference_used_after_solve_only": true,
+        "non_h_atom_count": 12
+      },
+      "cif_checks": {
+        "candidate-p1.cif": {
+          "r1": 0.05228505465838227,
+          "absolute_r1_difference": 4.55281645717065e-13,
+          "sha256": "e294a045f1d3824735dcb333ba2ff6ad9e9ab3f4d82ca3e947c40e8042d93de6"
+        },
+        "candidate.cif": {
+          "r1": 0.05228505465894189,
+          "absolute_r1_difference": 1.0434014763305299e-13,
+          "sha256": "09d28aaaeaea493f3c13ff94212fac51612bb09b74dd3f1d2e354602da37c898"
+        }
+      }
+    },
+    {
+      "case": "thiourea",
+      "repeat": 1,
+      "mode": "integrated",
+      "seconds": 5.700437666993821,
+      "r1": 0.049409049967854266,
+      "counts": {
+        "C": 4,
+        "N": 8,
+        "S": 4
+      },
+      "target_met": true,
+      "termination": "r1_target",
+      "effort": {
+        "elements": [
+          "S",
+          "N",
+          "C"
+        ],
+        "phasing_starts": 1,
+        "framework_hypotheses": 2,
+        "initial_prefix": 4,
+        "rounds": 4,
+        "orbit_proposals": 106,
+        "element_scores": 318,
+        "refinements": 192,
+        "screening_refinements": 160,
+        "final_refinements": 32,
+        "promoted_candidates": 30,
+        "screened_out": 130,
+        "integrated_peak_density": true,
+        "peak_density_radius_angstrom": 0.7,
+        "density_map_builds": 1,
+        "density_evaluations": 468,
+        "density_label_rejections": 62,
+        "density_label_rescues": 0,
+        "density_birth_skips": 24,
+        "density_relabel_skips": 56,
+        "density_calibrations": [
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 1,
+            "scale": 0.359783756609742,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 1,
+            "scale": 0.35978375660974204,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 2,
+            "scale": 0.3598939968666619,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 2,
+            "scale": 0.3598939968572955,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 2,
+            "scale": 0.3598868497429647,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 2,
+            "scale": 0.35988684975930185,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 3,
+            "scale": 0.36011035323425955,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 3,
+            "scale": 0.3601103532340772,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 3,
+            "scale": 0.36010569865282216,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 3,
+            "scale": 0.36010569866382913,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 4,
+            "scale": 0.3600777978211354,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 4,
+            "scale": 0.36007779782113536,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 4,
+            "scale": 0.3600984345120765,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 4,
+            "scale": 0.36009843451207635,
+            "anchors": 2,
+            "shortlist_limit": 2
+          }
+        ],
+        "staged_refinement": true,
+        "screening_iterations": 8,
+        "refinement_shortlist": 3,
+        "deletion_trials": 52,
+        "relabel_trials": 48,
+        "maximum_atoms": 44,
+        "beam_width": 4,
+        "required_elements_present": true,
+        "accepted_moves": [
+          {
+            "kind": "initial",
+            "element": "S",
+            "atoms": 4,
+            "r1": 0.2668332456528867,
+            "score": -1228.3159340055047
+          },
+          {
+            "kind": "birth",
+            "element": "N",
+            "atoms": 8,
+            "r1": 0.22278429173804243,
+            "score": -1416.2571865985583
+          },
+          {
+            "kind": "birth",
+            "element": "N",
+            "atoms": 12,
+            "r1": 0.17376645155193865,
+            "score": -1805.9917743692963
+          },
+          {
+            "kind": "birth",
+            "element": "C",
+            "atoms": 14,
+            "r1": 0.11488941497632522,
+            "score": -2303.524988951136
+          },
+          {
+            "kind": "birth",
+            "element": "C",
+            "atoms": 16,
+            "r1": 0.049409049967854266,
+            "score": -3284.4523910481603
+          }
+        ]
+      },
+      "directory": "thiourea/integrated-1",
+      "counts_match_reference_after_solving": true,
+      "post_solve_geometry": {
+        "max_element_matched_error_angstrom": 0.010371708291770466,
+        "rms_error_angstrom": 0.0077073765890118395,
+        "reference_used_after_solve_only": true,
+        "non_h_atom_count": 16
+      },
+      "cif_checks": {
+        "candidate-p1.cif": {
+          "r1": 0.049409049967820924,
+          "absolute_r1_difference": 3.334138520827423e-14,
+          "sha256": "a2c6763ecc31a0c94aab65422a244714ba19a1e85fd7bc114ae977938dba79ae"
+        },
+        "candidate.cif": {
+          "r1": 0.04940904996794525,
+          "absolute_r1_difference": 9.098277686803158e-14,
+          "sha256": "0804b564cb693f2653a4ec7c8e6fd73f96512747eb8bdd0372ada8e9a58ee51e"
+        }
+      }
+    },
+    {
+      "case": "thiourea",
+      "repeat": 1,
+      "mode": "staged",
+      "seconds": 7.545514375000494,
+      "r1": 0.049409049967854266,
+      "counts": {
+        "C": 4,
+        "N": 8,
+        "S": 4
+      },
+      "target_met": true,
+      "termination": "r1_target",
+      "effort": {
+        "elements": [
+          "S",
+          "N",
+          "C"
+        ],
+        "phasing_starts": 1,
+        "framework_hypotheses": 2,
+        "initial_prefix": 4,
+        "rounds": 4,
+        "orbit_proposals": 106,
+        "element_scores": 318,
+        "refinements": 286,
+        "screening_refinements": 240,
+        "final_refinements": 46,
+        "promoted_candidates": 44,
+        "screened_out": 196,
+        "integrated_peak_density": false,
+        "peak_density_radius_angstrom": 0.7,
+        "density_map_builds": 0,
+        "density_evaluations": 0,
+        "density_label_rejections": 0,
+        "density_label_rescues": 0,
+        "density_birth_skips": 0,
+        "density_relabel_skips": 0,
+        "density_calibrations": [],
+        "staged_refinement": true,
+        "screening_iterations": 8,
+        "refinement_shortlist": 3,
+        "deletion_trials": 52,
+        "relabel_trials": 104,
+        "maximum_atoms": 44,
+        "beam_width": 4,
+        "required_elements_present": true,
+        "accepted_moves": [
+          {
+            "kind": "initial",
+            "element": "S",
+            "atoms": 4,
+            "r1": 0.2668332456528867,
+            "score": -1228.3159340055047
+          },
+          {
+            "kind": "birth",
+            "element": "N",
+            "atoms": 8,
+            "r1": 0.22278429173804243,
+            "score": -1416.2571865985583
+          },
+          {
+            "kind": "birth",
+            "element": "N",
+            "atoms": 12,
+            "r1": 0.17376645155193865,
+            "score": -1805.9917743692963
+          },
+          {
+            "kind": "birth",
+            "element": "C",
+            "atoms": 14,
+            "r1": 0.11488941497632522,
+            "score": -2303.524988951136
+          },
+          {
+            "kind": "birth",
+            "element": "C",
+            "atoms": 16,
+            "r1": 0.049409049967854266,
+            "score": -3284.4523910481603
+          }
+        ]
+      },
+      "directory": "thiourea/staged-1",
+      "counts_match_reference_after_solving": true,
+      "post_solve_geometry": {
+        "max_element_matched_error_angstrom": 0.010371708291770466,
+        "rms_error_angstrom": 0.0077073765890118395,
+        "reference_used_after_solve_only": true,
+        "non_h_atom_count": 16
+      },
+      "cif_checks": {
+        "candidate-p1.cif": {
+          "r1": 0.049409049967820924,
+          "absolute_r1_difference": 3.334138520827423e-14,
+          "sha256": "a2c6763ecc31a0c94aab65422a244714ba19a1e85fd7bc114ae977938dba79ae"
+        },
+        "candidate.cif": {
+          "r1": 0.04940904996794525,
+          "absolute_r1_difference": 9.098277686803158e-14,
+          "sha256": "0804b564cb693f2653a4ec7c8e6fd73f96512747eb8bdd0372ada8e9a58ee51e"
+        }
+      }
+    },
+    {
+      "case": "kbrf4",
+      "repeat": 2,
+      "mode": "staged",
+      "seconds": 2.322079333011061,
+      "r1": 0.022266400409313075,
+      "counts": {
+        "Br": 4,
+        "F": 16,
+        "K": 4
+      },
+      "target_met": true,
+      "termination": "r1_target",
+      "effort": {
+        "elements": [
+          "Br",
+          "K",
+          "F"
+        ],
+        "phasing_starts": 1,
+        "framework_hypotheses": 4,
+        "initial_prefix": 4,
+        "rounds": 2,
+        "orbit_proposals": 16,
+        "element_scores": 48,
+        "refinements": 104,
+        "screening_refinements": 74,
+        "final_refinements": 30,
+        "promoted_candidates": 26,
+        "screened_out": 48,
+        "integrated_peak_density": false,
+        "peak_density_radius_angstrom": 0.7,
+        "density_map_builds": 0,
+        "density_evaluations": 0,
+        "density_label_rejections": 0,
+        "density_label_rescues": 0,
+        "density_birth_skips": 0,
+        "density_relabel_skips": 0,
+        "density_calibrations": [],
+        "staged_refinement": true,
+        "screening_iterations": 8,
+        "refinement_shortlist": 3,
+        "deletion_trials": 8,
+        "relabel_trials": 24,
+        "maximum_atoms": 52,
+        "beam_width": 4,
+        "required_elements_present": true,
+        "accepted_moves": [
+          {
+            "kind": "initial",
+            "element": "Br",
+            "atoms": 4,
+            "r1": 0.49527233653817687,
+            "score": -302.2789345245023
+          },
+          {
+            "kind": "birth",
+            "element": "K",
+            "atoms": 8,
+            "r1": 0.2376105666969505,
+            "score": -529.5847676492581
+          },
+          {
+            "kind": "birth",
+            "element": "F",
+            "atoms": 24,
+            "r1": 0.022266400409313075,
+            "score": -1443.4779253300585
+          }
+        ]
+      },
+      "directory": "kbrf4/staged-2",
+      "counts_match_reference_after_solving": true,
+      "post_solve_geometry": {
+        "max_element_matched_error_angstrom": 0.005908783376389764,
+        "rms_error_angstrom": 0.004824501424264222,
+        "reference_used_after_solve_only": true,
+        "non_h_atom_count": 24
+      },
+      "cif_checks": {
+        "candidate-p1.cif": {
+          "r1": 0.022266400409154206,
+          "absolute_r1_difference": 1.5886944537690795e-13,
+          "sha256": "3678e5505b7e96531479c4860a823866fe935e317dad670a82576e8a3c74ca4f"
+        },
+        "candidate.cif": {
+          "r1": 0.022266400409225742,
+          "absolute_r1_difference": 8.733291867457638e-14,
+          "sha256": "b4f66e76d73acce7af9cf79d4417e8fefe7ed2c482a403f799d1f97821de054e"
+        }
+      }
+    },
+    {
+      "case": "kbrf4",
+      "repeat": 2,
+      "mode": "integrated",
+      "seconds": 1.7543025840132032,
+      "r1": 0.022266400409313075,
+      "counts": {
+        "Br": 4,
+        "F": 16,
+        "K": 4
+      },
+      "target_met": true,
+      "termination": "r1_target",
+      "effort": {
+        "elements": [
+          "Br",
+          "K",
+          "F"
+        ],
+        "phasing_starts": 1,
+        "framework_hypotheses": 4,
+        "initial_prefix": 4,
+        "rounds": 2,
+        "orbit_proposals": 16,
+        "element_scores": 48,
+        "refinements": 66,
+        "screening_refinements": 48,
+        "final_refinements": 18,
+        "promoted_candidates": 14,
+        "screened_out": 34,
+        "integrated_peak_density": true,
+        "peak_density_radius_angstrom": 0.7,
+        "density_map_builds": 1,
+        "density_evaluations": 352,
+        "density_label_rejections": 24,
+        "density_label_rescues": 4,
+        "density_birth_skips": 18,
+        "density_relabel_skips": 8,
+        "density_calibrations": [
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 1,
+            "scale": 0.7828045603577196,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 1,
+            "scale": 0.7828045603577196,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 2,
+            "round": 1,
+            "scale": 0.7828045603577195,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 3,
+            "round": 1,
+            "scale": 0.7828045603577195,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 3,
+            "round": 2,
+            "scale": 0.7828045603577195,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 2,
+            "scale": 0.7828045603577196,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 2,
+            "round": 2,
+            "scale": 0.7828045603577195,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 2,
+            "scale": 0.7828045603577196,
+            "anchors": 1,
+            "shortlist_limit": 1
+          }
+        ],
+        "staged_refinement": true,
+        "screening_iterations": 8,
+        "refinement_shortlist": 3,
+        "deletion_trials": 8,
+        "relabel_trials": 16,
+        "maximum_atoms": 52,
+        "beam_width": 4,
+        "required_elements_present": true,
+        "accepted_moves": [
+          {
+            "kind": "initial",
+            "element": "Br",
+            "atoms": 4,
+            "r1": 0.49527233653817687,
+            "score": -302.2789345245023
+          },
+          {
+            "kind": "birth",
+            "element": "K",
+            "atoms": 8,
+            "r1": 0.2376105666969505,
+            "score": -529.5847676492581
+          },
+          {
+            "kind": "birth",
+            "element": "F",
+            "atoms": 24,
+            "r1": 0.022266400409313075,
+            "score": -1443.4779253300585
+          }
+        ]
+      },
+      "directory": "kbrf4/integrated-2",
+      "counts_match_reference_after_solving": true,
+      "post_solve_geometry": {
+        "max_element_matched_error_angstrom": 0.005908783376389764,
+        "rms_error_angstrom": 0.004824501424264222,
+        "reference_used_after_solve_only": true,
+        "non_h_atom_count": 24
+      },
+      "cif_checks": {
+        "candidate-p1.cif": {
+          "r1": 0.022266400409154206,
+          "absolute_r1_difference": 1.5886944537690795e-13,
+          "sha256": "3678e5505b7e96531479c4860a823866fe935e317dad670a82576e8a3c74ca4f"
+        },
+        "candidate.cif": {
+          "r1": 0.022266400409225742,
+          "absolute_r1_difference": 8.733291867457638e-14,
+          "sha256": "b4f66e76d73acce7af9cf79d4417e8fefe7ed2c482a403f799d1f97821de054e"
+        }
+      }
+    },
+    {
+      "case": "bisei",
+      "repeat": 2,
+      "mode": "staged",
+      "seconds": 1.1635528339829762,
+      "r1": 0.05228505465883755,
+      "counts": {
+        "Bi": 4,
+        "I": 4,
+        "Se": 4
+      },
+      "target_met": true,
+      "termination": "r1_target",
+      "effort": {
+        "elements": [
+          "Bi",
+          "I",
+          "Se"
+        ],
+        "phasing_starts": 1,
+        "framework_hypotheses": 1,
+        "initial_prefix": 4,
+        "rounds": 2,
+        "orbit_proposals": 31,
+        "element_scores": 93,
+        "refinements": 75,
+        "screening_refinements": 56,
+        "final_refinements": 19,
+        "promoted_candidates": 18,
+        "screened_out": 38,
+        "integrated_peak_density": false,
+        "peak_density_radius_angstrom": 0.7,
+        "density_map_builds": 0,
+        "density_evaluations": 0,
+        "density_label_rejections": 0,
+        "density_label_rescues": 0,
+        "density_birth_skips": 0,
+        "density_relabel_skips": 0,
+        "density_calibrations": [],
+        "staged_refinement": true,
+        "screening_iterations": 8,
+        "refinement_shortlist": 3,
+        "deletion_trials": 8,
+        "relabel_trials": 18,
+        "maximum_atoms": 49,
+        "beam_width": 4,
+        "required_elements_present": true,
+        "accepted_moves": [
+          {
+            "kind": "initial",
+            "element": "Bi",
+            "atoms": 4,
+            "r1": 0.4889876849452135,
+            "score": -564.0853382589139
+          },
+          {
+            "kind": "birth",
+            "element": "I",
+            "atoms": 8,
+            "r1": 0.3040013304642801,
+            "score": -969.6360431260385
+          },
+          {
+            "kind": "birth",
+            "element": "Se",
+            "atoms": 12,
+            "r1": 0.05228505465883755,
+            "score": -2455.320240381798
+          }
+        ]
+      },
+      "directory": "bisei/staged-2",
+      "counts_match_reference_after_solving": true,
+      "post_solve_geometry": {
+        "max_element_matched_error_angstrom": 0.002516409331457885,
+        "rms_error_angstrom": 0.0017469687619605545,
+        "reference_used_after_solve_only": true,
+        "non_h_atom_count": 12
+      },
+      "cif_checks": {
+        "candidate-p1.cif": {
+          "r1": 0.05228505465838227,
+          "absolute_r1_difference": 4.55281645717065e-13,
+          "sha256": "e294a045f1d3824735dcb333ba2ff6ad9e9ab3f4d82ca3e947c40e8042d93de6"
+        },
+        "candidate.cif": {
+          "r1": 0.05228505465894189,
+          "absolute_r1_difference": 1.0434014763305299e-13,
+          "sha256": "09d28aaaeaea493f3c13ff94212fac51612bb09b74dd3f1d2e354602da37c898"
+        }
+      }
+    },
+    {
+      "case": "bisei",
+      "repeat": 2,
+      "mode": "integrated",
+      "seconds": 0.9715114170103334,
+      "r1": 0.05228505465883755,
+      "counts": {
+        "Bi": 4,
+        "I": 4,
+        "Se": 4
+      },
+      "target_met": true,
+      "termination": "r1_target",
+      "effort": {
+        "elements": [
+          "Bi",
+          "I",
+          "Se"
+        ],
+        "phasing_starts": 1,
+        "framework_hypotheses": 1,
+        "initial_prefix": 4,
+        "rounds": 2,
+        "orbit_proposals": 31,
+        "element_scores": 93,
+        "refinements": 39,
+        "screening_refinements": 29,
+        "final_refinements": 10,
+        "promoted_candidates": 9,
+        "screened_out": 20,
+        "integrated_peak_density": true,
+        "peak_density_radius_angstrom": 0.7,
+        "density_map_builds": 1,
+        "density_evaluations": 164,
+        "density_label_rejections": 30,
+        "density_label_rescues": 1,
+        "density_birth_skips": 7,
+        "density_relabel_skips": 4,
+        "density_calibrations": [
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 1,
+            "scale": 0.8854339260334831,
+            "anchors": 1,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 2,
+            "scale": 0.9129972998389354,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 2,
+            "scale": 0.9100027653135752,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 2,
+            "scale": 0.8854339260334831,
+            "anchors": 1,
+            "shortlist_limit": 2
+          }
+        ],
+        "staged_refinement": true,
+        "screening_iterations": 8,
+        "refinement_shortlist": 3,
+        "deletion_trials": 4,
+        "relabel_trials": 8,
+        "maximum_atoms": 49,
+        "beam_width": 4,
+        "required_elements_present": true,
+        "accepted_moves": [
+          {
+            "kind": "initial",
+            "element": "Bi",
+            "atoms": 4,
+            "r1": 0.4889876849452135,
+            "score": -564.0853382589139
+          },
+          {
+            "kind": "birth",
+            "element": "I",
+            "atoms": 8,
+            "r1": 0.3040013304642801,
+            "score": -969.6360431260385
+          },
+          {
+            "kind": "birth",
+            "element": "Se",
+            "atoms": 12,
+            "r1": 0.05228505465883755,
+            "score": -2455.320240381798
+          }
+        ]
+      },
+      "directory": "bisei/integrated-2",
+      "counts_match_reference_after_solving": true,
+      "post_solve_geometry": {
+        "max_element_matched_error_angstrom": 0.002516409331457885,
+        "rms_error_angstrom": 0.0017469687619605545,
+        "reference_used_after_solve_only": true,
+        "non_h_atom_count": 12
+      },
+      "cif_checks": {
+        "candidate-p1.cif": {
+          "r1": 0.05228505465838227,
+          "absolute_r1_difference": 4.55281645717065e-13,
+          "sha256": "e294a045f1d3824735dcb333ba2ff6ad9e9ab3f4d82ca3e947c40e8042d93de6"
+        },
+        "candidate.cif": {
+          "r1": 0.05228505465894189,
+          "absolute_r1_difference": 1.0434014763305299e-13,
+          "sha256": "09d28aaaeaea493f3c13ff94212fac51612bb09b74dd3f1d2e354602da37c898"
+        }
+      }
+    },
+    {
+      "case": "thiourea",
+      "repeat": 2,
+      "mode": "staged",
+      "seconds": 7.616913749981904,
+      "r1": 0.049409049967854266,
+      "counts": {
+        "C": 4,
+        "N": 8,
+        "S": 4
+      },
+      "target_met": true,
+      "termination": "r1_target",
+      "effort": {
+        "elements": [
+          "S",
+          "N",
+          "C"
+        ],
+        "phasing_starts": 1,
+        "framework_hypotheses": 2,
+        "initial_prefix": 4,
+        "rounds": 4,
+        "orbit_proposals": 106,
+        "element_scores": 318,
+        "refinements": 286,
+        "screening_refinements": 240,
+        "final_refinements": 46,
+        "promoted_candidates": 44,
+        "screened_out": 196,
+        "integrated_peak_density": false,
+        "peak_density_radius_angstrom": 0.7,
+        "density_map_builds": 0,
+        "density_evaluations": 0,
+        "density_label_rejections": 0,
+        "density_label_rescues": 0,
+        "density_birth_skips": 0,
+        "density_relabel_skips": 0,
+        "density_calibrations": [],
+        "staged_refinement": true,
+        "screening_iterations": 8,
+        "refinement_shortlist": 3,
+        "deletion_trials": 52,
+        "relabel_trials": 104,
+        "maximum_atoms": 44,
+        "beam_width": 4,
+        "required_elements_present": true,
+        "accepted_moves": [
+          {
+            "kind": "initial",
+            "element": "S",
+            "atoms": 4,
+            "r1": 0.2668332456528867,
+            "score": -1228.3159340055047
+          },
+          {
+            "kind": "birth",
+            "element": "N",
+            "atoms": 8,
+            "r1": 0.22278429173804243,
+            "score": -1416.2571865985583
+          },
+          {
+            "kind": "birth",
+            "element": "N",
+            "atoms": 12,
+            "r1": 0.17376645155193865,
+            "score": -1805.9917743692963
+          },
+          {
+            "kind": "birth",
+            "element": "C",
+            "atoms": 14,
+            "r1": 0.11488941497632522,
+            "score": -2303.524988951136
+          },
+          {
+            "kind": "birth",
+            "element": "C",
+            "atoms": 16,
+            "r1": 0.049409049967854266,
+            "score": -3284.4523910481603
+          }
+        ]
+      },
+      "directory": "thiourea/staged-2",
+      "counts_match_reference_after_solving": true,
+      "post_solve_geometry": {
+        "max_element_matched_error_angstrom": 0.010371708291770466,
+        "rms_error_angstrom": 0.0077073765890118395,
+        "reference_used_after_solve_only": true,
+        "non_h_atom_count": 16
+      },
+      "cif_checks": {
+        "candidate-p1.cif": {
+          "r1": 0.049409049967820924,
+          "absolute_r1_difference": 3.334138520827423e-14,
+          "sha256": "a2c6763ecc31a0c94aab65422a244714ba19a1e85fd7bc114ae977938dba79ae"
+        },
+        "candidate.cif": {
+          "r1": 0.04940904996794525,
+          "absolute_r1_difference": 9.098277686803158e-14,
+          "sha256": "0804b564cb693f2653a4ec7c8e6fd73f96512747eb8bdd0372ada8e9a58ee51e"
+        }
+      }
+    },
+    {
+      "case": "thiourea",
+      "repeat": 2,
+      "mode": "integrated",
+      "seconds": 5.658002167008817,
+      "r1": 0.049409049967854266,
+      "counts": {
+        "C": 4,
+        "N": 8,
+        "S": 4
+      },
+      "target_met": true,
+      "termination": "r1_target",
+      "effort": {
+        "elements": [
+          "S",
+          "N",
+          "C"
+        ],
+        "phasing_starts": 1,
+        "framework_hypotheses": 2,
+        "initial_prefix": 4,
+        "rounds": 4,
+        "orbit_proposals": 106,
+        "element_scores": 318,
+        "refinements": 192,
+        "screening_refinements": 160,
+        "final_refinements": 32,
+        "promoted_candidates": 30,
+        "screened_out": 130,
+        "integrated_peak_density": true,
+        "peak_density_radius_angstrom": 0.7,
+        "density_map_builds": 1,
+        "density_evaluations": 468,
+        "density_label_rejections": 62,
+        "density_label_rescues": 0,
+        "density_birth_skips": 24,
+        "density_relabel_skips": 56,
+        "density_calibrations": [
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 1,
+            "scale": 0.359783756609742,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 1,
+            "scale": 0.35978375660974204,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 2,
+            "scale": 0.3598939968666619,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 2,
+            "scale": 0.3598939968572955,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 2,
+            "scale": 0.3598868497429647,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 2,
+            "scale": 0.35988684975930185,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 3,
+            "scale": 0.36011035323425955,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 3,
+            "scale": 0.3601103532340772,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 3,
+            "scale": 0.36010569865282216,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 3,
+            "scale": 0.36010569866382913,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 4,
+            "scale": 0.3600777978211354,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 4,
+            "scale": 0.36007779782113536,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 4,
+            "scale": 0.3600984345120765,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 4,
+            "scale": 0.36009843451207635,
+            "anchors": 2,
+            "shortlist_limit": 2
+          }
+        ],
+        "staged_refinement": true,
+        "screening_iterations": 8,
+        "refinement_shortlist": 3,
+        "deletion_trials": 52,
+        "relabel_trials": 48,
+        "maximum_atoms": 44,
+        "beam_width": 4,
+        "required_elements_present": true,
+        "accepted_moves": [
+          {
+            "kind": "initial",
+            "element": "S",
+            "atoms": 4,
+            "r1": 0.2668332456528867,
+            "score": -1228.3159340055047
+          },
+          {
+            "kind": "birth",
+            "element": "N",
+            "atoms": 8,
+            "r1": 0.22278429173804243,
+            "score": -1416.2571865985583
+          },
+          {
+            "kind": "birth",
+            "element": "N",
+            "atoms": 12,
+            "r1": 0.17376645155193865,
+            "score": -1805.9917743692963
+          },
+          {
+            "kind": "birth",
+            "element": "C",
+            "atoms": 14,
+            "r1": 0.11488941497632522,
+            "score": -2303.524988951136
+          },
+          {
+            "kind": "birth",
+            "element": "C",
+            "atoms": 16,
+            "r1": 0.049409049967854266,
+            "score": -3284.4523910481603
+          }
+        ]
+      },
+      "directory": "thiourea/integrated-2",
+      "counts_match_reference_after_solving": true,
+      "post_solve_geometry": {
+        "max_element_matched_error_angstrom": 0.010371708291770466,
+        "rms_error_angstrom": 0.0077073765890118395,
+        "reference_used_after_solve_only": true,
+        "non_h_atom_count": 16
+      },
+      "cif_checks": {
+        "candidate-p1.cif": {
+          "r1": 0.049409049967820924,
+          "absolute_r1_difference": 3.334138520827423e-14,
+          "sha256": "a2c6763ecc31a0c94aab65422a244714ba19a1e85fd7bc114ae977938dba79ae"
+        },
+        "candidate.cif": {
+          "r1": 0.04940904996794525,
+          "absolute_r1_difference": 9.098277686803158e-14,
+          "sha256": "0804b564cb693f2653a4ec7c8e6fd73f96512747eb8bdd0372ada8e9a58ee51e"
+        }
+      }
+    }
+  ],
+  "summary": [
+    {
+      "case": "kbrf4",
+      "baseline_median_seconds": 2.268876125017414,
+      "integrated_median_seconds": 1.6958852499956265,
+      "speedup": 1.3378712533900894,
+      "quality_preserved": true,
+      "pairs": [
+        {
+          "repeat": 0,
+          "speedup": 1.3378712533900894,
+          "quality_preserved": true
+        },
+        {
+          "repeat": 1,
+          "speedup": 1.3461749580529059,
+          "quality_preserved": true
+        },
+        {
+          "repeat": 2,
+          "speedup": 1.3236481289898074,
+          "quality_preserved": true
+        }
+      ]
+    },
+    {
+      "case": "bisei",
+      "baseline_median_seconds": 1.1497306249802932,
+      "integrated_median_seconds": 0.9728036250162404,
+      "speedup": 1.1818732942746786,
+      "quality_preserved": true,
+      "pairs": [
+        {
+          "repeat": 0,
+          "speedup": 1.1510745044795279,
+          "quality_preserved": true
+        },
+        {
+          "repeat": 1,
+          "speedup": 1.162479049139496,
+          "quality_preserved": true
+        },
+        {
+          "repeat": 2,
+          "speedup": 1.1976728359648297,
+          "quality_preserved": true
+        }
+      ]
+    },
+    {
+      "case": "thiourea",
+      "baseline_median_seconds": 7.545514375000494,
+      "integrated_median_seconds": 5.658002167008817,
+      "speedup": 1.3336004745628325,
+      "quality_preserved": true,
+      "pairs": [
+        {
+          "repeat": 0,
+          "speedup": 1.3255648330602525,
+          "quality_preserved": true
+        },
+        {
+          "repeat": 1,
+          "speedup": 1.3236728152804609,
+          "quality_preserved": true
+        },
+        {
+          "repeat": 2,
+          "speedup": 1.3462196593693943,
+          "quality_preserved": true
+        }
+      ]
+    }
+  ],
+  "all_quality_gates_passed": true,
+  "report_before_reference_sha256": "f2d584d22e5c34cc7839426492c16386251cf047efbf31ac4f4d9a3b834a9cb6",
+  "quality_gates": {
+    "matching_full_cell_counts": true,
+    "maximum_reference_error_angstrom": 0.02,
+    "paired_maximum_error_increase_angstrom": 0.0001,
+    "paired_r1_increase": 1e-07,
+    "exported_cif_r1_difference": 2e-10
+  },
+  "date": "2026-10-28",
+  "output_directory": "runs/peak-density-comparison-final",
+  "comparison_report_sha256": "728bb5007c6262a868c53ce8803446e49fb416c1fb67e24502d7779775c833b1",
+  "validation": {
+    "python": "1333 passed, 11 skipped, 34 deselected in 63.87s (0:01:03)",
+    "rust_passed_failed_ignored": [
+      388,
+      0,
+      34
+    ],
+    "clippy": "workspace/all-targets/all-features/-D warnings passed",
+    "normalization_and_derivatives": "40 peak-density tests: disk quadrature, Fourier direct sums, radius/center differences, periodicity, missing F000, width stability, validation and structure recovery",
+    "default_wheel": "fresh default wheel imports; experimental solver and integrated-density class absent"
+  },
+  "kernel_benchmarks": {
+    "integrated_peak_map_32cubed_2108_reflections": {
+      "mean": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": 981480.0796101713,
+          "upper_bound": 992376.0875608291
+        },
+        "point_estimate": 986928.0354866332,
+        "standard_error": 2801.7149152750503
+      },
+      "median": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": 978240.2857142857,
+          "upper_bound": 993975.8947368421
+        },
+        "point_estimate": 989060.0046052631,
+        "standard_error": 5006.915083039741
+      },
+      "median_abs_dev": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": 659.1917238233774,
+          "upper_bound": 16216.733645121752
+        },
+        "point_estimate": 12412.141654640436,
+        "standard_error": 4036.6185867593204
+      },
+      "slope": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": 983993.4694380806,
+          "upper_bound": 993265.3350397366
+        },
+        "point_estimate": 988779.3790840738,
+        "standard_error": 2313.348832595919
+      },
+      "std_dev": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": 5998.496250378277,
+          "upper_bound": 11401.629760583843
+        },
+        "point_estimate": 9345.930537144412,
+        "standard_error": 1422.8994651594312
+      }
+    },
+    "integrated_peak_32_centers_fused_value_gradient_radius": {
+      "mean": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": 506.6712933219495,
+          "upper_bound": 516.3479896773791
+        },
+        "point_estimate": 511.37220172674586,
+        "standard_error": 2.485969596750871
+      },
+      "median": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": 503.96912553420316,
+          "upper_bound": 517.8966617609601
+        },
+        "point_estimate": 511.7206003515756,
+        "standard_error": 3.194270586051612
+      },
+      "median_abs_dev": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": 1.7595632179430958,
+          "upper_bound": 15.255007840094903
+        },
+        "point_estimate": 8.33554212705957,
+        "standard_error": 3.505117918766527
+      },
+      "slope": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": 504.15539362284034,
+          "upper_bound": 515.3440157500513
+        },
+        "point_estimate": 509.1376466060756,
+        "standard_error": 2.8749269138185864
+      },
+      "std_dev": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": 4.534183667174207,
+          "upper_bound": 10.39391993089025
+        },
+        "point_estimate": 8.2706547114123,
+        "standard_error": 1.51299235023123
+      }
+    }
+  }
+}
