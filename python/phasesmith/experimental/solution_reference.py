@@ -112,3 +112,51 @@ def amplitude_model_reference(
         "amplitude_scale": float(scale),
         "r1": float(np.abs(scale * amplitude - observed).sum() / observed.sum()),
     }
+
+
+def symmetric_model_reference(metadata, cell_basis, hkl, observed, scattering, parameters):
+    """Independent direct NumPy sums for a fixed symmetry topology.
+
+    The topology supplies exact operations and tangent bases; no native values,
+    eigensolver, structure-factor evaluator or analytical derivatives are used.
+    Returns physical tensors and normalized residuals. Derivatives can be
+    checked by centered differences of this function.
+    """
+    parameters = np.asarray(parameters)
+    hkl, observed = np.asarray(hkl), np.asarray(observed)
+    reciprocal = hkl @ np.linalg.inv(np.asarray(cell_basis))
+    calculated = np.zeros(len(hkl), dtype=complex)
+    positions, tensors = [], []
+    for i, site in enumerate(metadata["sites"]):
+        coordinate_offset, tensor_offset = metadata["offsets"][i]
+        directions = np.asarray(site["coordinate_basis"]).reshape(-1, 3)
+        position = (
+            np.asarray(site["fractional_xyz"])
+            + parameters[coordinate_offset : coordinate_offset + len(directions)] @ directions
+        )
+        basis = np.asarray(metadata["tensor_bases"][i])
+        logarithm = np.einsum(
+            "i,ijk->jk", parameters[tensor_offset : tensor_offset + len(basis)], basis
+        )
+        eigenvalues, eigenvectors = np.linalg.eigh(logarithm)
+        tensor = (eigenvectors * np.exp(eigenvalues)) @ eigenvectors.T
+        positions.append(position)
+        tensors.append(tensor)
+        for image in site["images"]:
+            xyz = np.asarray(image["rotation"]) @ position + image["translation"]
+            rotation = np.asarray(image["cartesian_rotation"])
+            rotated = rotation @ tensor @ rotation.T
+            exponent = -2 * np.pi**2 * np.einsum("ri,ij,rj->r", reciprocal, rotated, reciprocal)
+            calculated += scattering[:, i] * np.exp(exponent + 2j * np.pi * (hkl @ xyz))
+    amplitudes = np.abs(calculated)
+    scale = (amplitudes @ observed) / (amplitudes @ amplitudes)
+    residual = (scale * amplitudes - observed) / np.linalg.norm(observed)
+    return {
+        "amplitudes": amplitudes,
+        "amplitude_scale": scale,
+        "residual": residual,
+        "objective": residual @ residual,
+        "r1": np.abs(scale * amplitudes - observed).sum() / observed.sum(),
+        "fractional_xyz": np.asarray(positions),
+        "u_cartesian": np.asarray(tensors),
+    }

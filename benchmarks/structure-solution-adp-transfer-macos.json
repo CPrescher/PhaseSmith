@@ -1,0 +1,81 @@
+{
+  "implementation_sha256": {
+    "crates/phasesmith-solution/src/adp_refinement.rs": "3212f7b234c101792234bfd38940ccd369c5e4f1bf32e11b6baab83e68ad31c1",
+    "crates/phasesmith-solution/src/data.rs": "3f27a939350ff94f6722c23b1d2609ff10b9ec8119794e2a7cf2076cea27468e",
+    "crates/phasesmith-solution/src/fourier.rs": "0aa29a0ed5e4783688fe1896bfad0dccd304e3ae18bb2211c41242e14dda1701",
+    "crates/phasesmith-solution/src/lib.rs": "fafcf861aec2b35511036af9618103b9fc0e38652a641b13ef55a2edc3f6015f",
+    "crates/phasesmith-solution/src/math3.rs": "fa00ccf3888b6bd86fa62c7b160a8e5f11d933e3736231342a179459d247bd4d",
+    "crates/phasesmith-solution/src/model.rs": "c0d802de5d8725f527ab1b40181fe0d4b12387b2c715ad188de5b409e0105139",
+    "crates/phasesmith-solution/src/solver.rs": "600d727a7b0d2cab4396489341664d3c2c1ddabdb1f2ba93b73e634315ec88f7",
+    "crates/phasesmith-solution/src/symmetry_model.rs": "3c1c82bb06133a016da5e096e2c7d8f40dc7897e481f12564e114a910ed3444a",
+    "Cargo.lock": "f8a427cc7edfd5463a2929aa00c5473c10dd674553132052aadcef11fd41cdee",
+    "crates/phasesmith-py/src/solution.rs": "7646b71e9c1a653561e7fa0e2aba426680f589a43577352fdd0d1d17e2435430",
+    "crates/phasesmith-py/src/solution_symmetry.rs": "c37b9b63c61f745bcf35bb02ff53586a2587adf9eb8d3fb59bc5a07ee0866f8d",
+    "python/phasesmith/experimental/solution.py": "724f2768bc58609e03006c0354b1ac2707d5da726b5565c819aecd5b505df421",
+    "python/phasesmith/experimental/solution_symmetry.py": "feffc42ed9cec6b5baf77fb9feaacac5264f8fc472dd88e333796ca54588b350",
+    "python/phasesmith/experimental/solution_reference.py": "012940aad3305672b92af791086a7c38157dfc17b044c776c4335157c85b7a20",
+    "benchmarks/solution_adp_transfer.py": "9e0b64a9f5ff551c400d84b9d51c098bec00ed38a8f45370b07a380c8f6a10c7",
+    "benchmarks/structure_solution.py": "4332baa3cb4db4ce6b3d8ee89fbad4022813374961f80250666f23b492b51297"
+  },
+  "source_manifest_sha256": "6bc23cc45404cbbe1124970a0a6f3e884107cd066d5de647c4ea8692e7da8ad7",
+  "native_extension_sha256": "95119f8ece5bdd81f678378e7d4cda36f06060111d6a910b0003a09649a773f4",
+  "python": "3.13.7",
+  "numpy": "2.5.4",
+  "qualification": "Fixed settings across two preselected transfer cases; reference coordinates read only after saving blind results. R1 uses unweighted non-resonant amplitudes, unlike deposited refinement objectives.",
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "options": {
+    "seed": 0,
+    "trials": 8,
+    "cycles": 1200,
+    "delta_sigma": 1.0,
+    "weak_fraction": 0.2,
+    "cleanup_cycles": 10,
+    "polish_iterations": 50,
+    "assignment_rounds": 4,
+    "max_seconds": 60,
+    "r1_target": 0.06,
+    "grid_shape": null,
+    "refinement": "anisotropic",
+    "symmetry_tolerance_angstrom": 0.15,
+    "symmetry_iterations": 80
+  },
+  "cases": [
+    {
+      "cod": "2010577",
+      "input_rows": 457,
+      "termination": "r1_target",
+      "target_met": true,
+      "elapsed_seconds": 0.5553537500090897,
+      "r1": 0.05228505465169308,
+      "symmetry_refined": true,
+      "candidate_count": 1,
+      "diagnostic": null,
+      "post_solve_reference": {
+        "max_element_matched_error_angstrom": 0.0025164089327204832,
+        "rms_error_angstrom": 0.0017469685862153337,
+        "reference_used_after_solve_only": true,
+        "non_h_atom_count": 12
+      },
+      "p1_r1": 0.07103383286501092,
+      "parameter_count": 18,
+      "asymmetric_sites": 3
+    },
+    {
+      "cod": "1549359",
+      "input_rows": 214,
+      "termination": "trial_budget",
+      "target_met": false,
+      "elapsed_seconds": 28.378337417001603,
+      "r1": 0.09121199791359322,
+      "symmetry_refined": false,
+      "candidate_count": 8,
+      "diagnostic": "no origin/hand matches the supplied symmetry within tolerance",
+      "post_solve_reference": {
+        "max_element_matched_error_angstrom": 3.245637482980698,
+        "rms_error_angstrom": 1.527387185876111,
+        "reference_used_after_solve_only": true,
+        "non_h_atom_count": 24
+      }
+    }
+  ]
+}

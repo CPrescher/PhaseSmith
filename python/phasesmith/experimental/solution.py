@@ -2,7 +2,7 @@
 
 Build with ``maturin develop --release --features experimental-solution``.
 Run ``python -m phasesmith.experimental.solution --help`` for file-based use.
-The input symmetry expands intensities; output candidates are full-cell P1 models.
+The supplied symmetry constrains optional site/ADP refinement after P1 phasing.
 """
 
 from __future__ import annotations
@@ -22,6 +22,7 @@ from ..io.hkl import HklData, read_hkl
 from ..io.space_groups import space_group_by_symbol
 from ..structure import AtomSite, CrystalStructure
 from ..symmetry import SpaceGroup
+from .solution_symmetry import SymmetryRefinement, candidate_cif, symmetry_records
 
 
 def _freeze(array: object, dtype: object = np.float64) -> np.ndarray:
@@ -65,6 +66,9 @@ class SolutionOptions:
     max_seconds: float = 60.0
     r1_target: float = 0.1
     grid_shape: tuple[int, int, int] | None = None
+    refinement: str = "anisotropic"
+    symmetry_tolerance_angstrom: float = 0.15
+    symmetry_iterations: int = 80
 
     def __post_init__(self) -> None:
         for name, low, high in (
@@ -74,6 +78,7 @@ class SolutionOptions:
             ("cleanup_cycles", 0, 100),
             ("polish_iterations", 0, 200),
             ("assignment_rounds", 0, 8),
+            ("symmetry_iterations", 0, 200),
         ):
             value = getattr(self, name)
             if not isinstance(value, int) or isinstance(value, bool) or not low <= value <= high:
@@ -83,10 +88,13 @@ class SolutionOptions:
             ("weak_fraction", 0.0, 0.5),
             ("max_seconds", 0.0, 3600.0),
             ("r1_target", 0.0, 1.0),
+            ("symmetry_tolerance_angstrom", 1e-5, 0.5),
         ):
             value = getattr(self, name)
             if isinstance(value, bool) or not np.isfinite(value) or not low <= value <= high:
                 raise ValueError(f"{name} must be finite in [{low},{high}]")
+        if self.refinement not in ("none", "isotropic", "anisotropic"):
+            raise ValueError("refinement must be none, isotropic, or anisotropic")
         if self.max_seconds == 0:
             raise ValueError("max_seconds must be strictly positive")
         if self.grid_shape is not None:
@@ -112,9 +120,13 @@ class SolutionCandidate:
     trial: int
     polish_steps: int
     element_swaps: int
+    refinement: SymmetryRefinement | None = None
+    refinement_diagnostic: str | None = None
 
     def as_structure(self, cell: UnitCell) -> CrystalStructure:
-        """Create a P1 structure without asserting a symmetry origin or handedness."""
+        """Create the refined asymmetric model, or the retained P1 hypothesis."""
+        if self.refinement is not None:
+            return self.refinement.as_structure(cell)
         sites = tuple(
             AtomSite(
                 site_id=f"{element}{index + 1}",
@@ -149,6 +161,8 @@ class SolutionCandidate:
             "trial": self.trial,
             "polish_steps": self.polish_steps,
             "element_swaps": self.element_swaps,
+            "refinement": None if self.refinement is None else self.refinement.to_record(),
+            "refinement_diagnostic": self.refinement_diagnostic,
         }
 
 
@@ -184,14 +198,19 @@ class SolutionResult:
     def to_record(self) -> dict[str, object]:
         """Summarize a run without embedding large input or density arrays."""
         return {
-            "schema": "phasesmith.experimental-solution.v1",
+            "schema": "phasesmith.experimental-solution.v2",
             "experimental": True,
             "source_name": self.observations.source_name,
             "source_sha256": self.observations.source_sha256,
             "cell": self.cell.as_tuple(),
             "composition_full_cell": dict(self.composition),
             "input_symmetry_operation_count": len(self.input_space_group.operations),
-            "output_space_group": "P 1",
+            "input_symmetry_operations": symmetry_records(self.input_space_group),
+            "output_space_group": (
+                "supplied operations"
+                if self.best is not None and self.best.refinement is not None
+                else "P 1"
+            ),
             "options": asdict(self.options),
             "grid_shape": self.density.shape,
             "density_units": "arbitrary",
@@ -208,8 +227,9 @@ class SolutionResult:
             "rejected_trials": list(self.rejected_trials),
             "limitations": [
                 "Numerical target is not proof of a correct or unique structure.",
-                "Friedel merged; non-resonant X-ray model, full occupancy, common isotropic U.",
-                "Element assignments are provisional; arbitrary origin and inversion remain.",
+                "Friedel merged; non-resonant X-ray model, full occupancy, no hydrogens.",
+                "Element assignments are provisional; "
+                "density-frame origin/hand transforms are explicit.",
                 "Negative means clipped only for derived amplitudes; "
                 "unweighted amplitude objective.",
             ],
@@ -277,6 +297,10 @@ def solve_structure(
         SolutionCandidate(
             species=tuple(c["species"]),
             fractional_xyz=_freeze(c["fractional_xyz"]),
+            refinement=None
+            if c["refinement"] is None
+            else SymmetryRefinement.from_native(c["refinement"], group),
+            refinement_diagnostic=c["refinement_diagnostic"],
             **{
                 key: c[key]
                 for key in (
@@ -336,43 +360,26 @@ def write_solution(result: SolutionResult, directory: str | Path) -> Path:
         amplitudes=result.amplitudes,
     )
     if result.best is not None:
-        lines = [
-            "data_experimental_candidate",
-            "# Unvalidated PhaseSmith candidate; arbitrary origin and inversion.",
-            "_space_group_name_H-M_alt 'P 1'",
-            "_space_group_IT_number 1",
-        ]
-        for key, value in zip(
-            ("length_a", "length_b", "length_c", "angle_alpha", "angle_beta", "angle_gamma"),
-            result.cell.as_tuple(),
-            strict=True,
-        ):
-            lines.append(f"_cell_{key} {value:.12g}")
-        lines.extend(
-            [
-                "loop_",
-                "_atom_site_label",
-                "_atom_site_type_symbol",
-                "_atom_site_fract_x",
-                "_atom_site_fract_y",
-                "_atom_site_fract_z",
-                "_atom_site_U_iso_or_equiv",
-                "_atom_site_occupancy",
-            ]
+        best = result.best
+        refined = best.refinement
+        full_u = np.full(len(best.species), best.u_iso) if refined is None else refined.full_u_equiv
+        full_cif = None if refined is None else refined.full_u_cif
+        (destination / "candidate-p1.cif").write_text(
+            candidate_cif(
+                result.cell, best.species, best.fractional_xyz, full_u, SpaceGroup.p1(), full_cif
+            ),
+            encoding="ascii",
         )
-        for index, (species, xyz) in enumerate(
-            zip(
-                result.best.species,
-                result.best.fractional_xyz,
-                strict=True,
+        if refined is not None:
+            text = candidate_cif(
+                result.cell,
+                refined.species,
+                refined.fractional_xyz,
+                refined.u_equiv,
+                result.input_space_group,
+                refined.u_cif,
             )
-        ):
-            lines.append(
-                f"{species}{index + 1} {species} "
-                + " ".join(f"{v:.12g}" for v in xyz)
-                + f" {result.best.u_iso:.12g} 1",
-            )
-        (destination / "candidate-p1.cif").write_text("\n".join(lines) + "\n", encoding="ascii")
+            (destination / "candidate.cif").write_text(text, encoding="ascii")
     return destination
 
 
@@ -401,6 +408,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--cycles", type=int, default=800)
     parser.add_argument("--max-seconds", type=float, default=60)
     parser.add_argument("--r1-target", type=float, default=0.1)
+    parser.add_argument(
+        "--refinement", choices=("none", "isotropic", "anisotropic"), default="anisotropic"
+    )
     args = parser.parse_args(argv)
     try:
         if args.output.exists():
@@ -422,6 +432,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 cycles=args.cycles,
                 max_seconds=args.max_seconds,
                 r1_target=args.r1_target,
+                refinement=args.refinement,
             ),
         )
         write_solution(result, args.output)

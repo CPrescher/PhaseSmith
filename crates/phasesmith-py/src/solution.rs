@@ -10,6 +10,9 @@ use pyo3::{
 
 use crate::{NativePreparedReflectionGenerator, crystallographic_cell, hkl_rows};
 
+#[path = "solution_symmetry.rs"]
+mod symmetry_adp;
+
 fn invalid(error: impl ToString) -> PyErr {
     PyValueError::new_err(error.to_string())
 }
@@ -51,6 +54,9 @@ fn solve_structure<'py>(
     r1_target: f64,
     grid_shape: Option<[usize; 3]>,
     cancellation: Option<PyRef<'py, NativeCancellation>>,
+    refinement: String,
+    symmetry_tolerance_angstrom: f64,
+    symmetry_iterations: usize,
 ) -> PyResult<Bound<'py, PyDict>> {
     let hkl = hkl_rows(&hkl)?;
     let intensity = intensity.as_slice()?.to_vec();
@@ -70,6 +76,12 @@ fn solve_structure<'py>(
         .collect();
     let cell = cell(&cell_parameters)?;
     let group = group.space_group().clone();
+    let refinement = match refinement.as_str() {
+        "none" => None,
+        "isotropic" => Some(phasesmith_solution::AdpMode::Isotropic),
+        "anisotropic" => Some(phasesmith_solution::AdpMode::Anisotropic),
+        _ => return Err(invalid("unknown symmetry refinement mode")),
+    };
     let options = SolveOptions {
         seed,
         trials,
@@ -83,6 +95,9 @@ fn solve_structure<'py>(
         r1_target,
         grid_shape,
         cancellation: cancellation.map(|token| token.inner.clone()),
+        refinement,
+        symmetry_tolerance_angstrom,
+        symmetry_iterations,
     };
     let result = py
         .detach(move || {
@@ -116,6 +131,12 @@ fn solve_structure<'py>(
         item.set_item("trial", c.trial)?;
         item.set_item("polish_steps", c.polish_steps)?;
         item.set_item("element_swaps", c.element_swaps)?;
+        item.set_item("refinement_diagnostic", c.refinement_diagnostic)?;
+        if let Some(refined) = &c.refinement {
+            item.set_item("refinement", symmetry_adp::summary(py, refined)?)?;
+        } else {
+            item.set_item("refinement", py.None())?;
+        }
         candidates.append(item)?;
     }
     out.set_item("candidates", candidates)?;
@@ -225,6 +246,7 @@ impl NativeCancellation {
 }
 
 pub fn register(module: &Bound<'_, PyModule>) -> PyResult<()> {
+    symmetry_adp::register(module)?;
     module.add_class::<NativeCancellation>()?;
     module.add_function(wrap_pyfunction!(solve_structure, module)?)?;
     module.add_function(wrap_pyfunction!(flip, module)?)?;

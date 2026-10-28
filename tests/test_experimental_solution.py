@@ -279,16 +279,38 @@ def test_blind_quartz_recovery_and_outputs(tmp_path):
     assert result.best.r1 < 1e-4
     assert _coordinate_error(expected, species, result.best, cell) < 0.005
     assert result.target_met and result.termination == "r1_target"
-    assert result.best.as_structure(cell).space_group == space_group_by_symbol("P 1").space_group
+    assert (
+        result.best.as_structure(cell).space_group == space_group_by_symbol("P 31 2 1").space_group
+    )
+    assert len(result.best.as_structure(cell).sites) == 2
     path = write_solution(result, tmp_path / "solution")
     record = json.loads((path / "result.json").read_text())
-    assert record["output_space_group"] == "P 1" and record["experimental"]
+    assert record["output_space_group"] == "supplied operations" and record["experimental"]
     with np.load(path / "density-and-observations.npz") as stored:
         np.testing.assert_array_equal(stored["input_intensity"], data.intensity)
     import gemmi
 
     block = gemmi.cif.read_file(str(path / "candidate-p1.cif")).sole_block()
     assert len(block.find_values("_atom_site_label")) == 9
+    # Check both exported frames with the separate general structure-factor path.
+    import phasesmith
+    from phasesmith.io.cif import read_cif
+    from phasesmith.scattering import XrayNonResonant
+
+    structures = [result.best.as_structure(cell)] + [
+        read_cif(path / name).structure for name in ("candidate.cif", "candidate-p1.cif")
+    ]
+    for structure in structures:
+        values = phasesmith.calculate_structure_factor_values(
+            structure,
+            result.expanded_hkl,
+            np.ones(len(result.expanded_hkl), dtype=np.int64),
+            XrayNonResonant(),
+        )
+        predicted = result.best.amplitude_scale * np.sqrt(values.f_squared)
+        exported_r1 = np.abs(predicted - result.amplitudes).sum() / result.amplitudes.sum()
+        assert abs(exported_r1 - result.best.r1) < 2e-10
+    assert not result.best.refinement.u_cartesian.flags.writeable
     with pytest.raises(FileExistsError):
         write_solution(result, path)
 
@@ -383,3 +405,17 @@ def test_cli_preserves_source_and_reports_unmet_target(tmp_path):
     assert path.read_text() == text
     again = subprocess.run(command, capture_output=True, text=True, check=False)
     assert again.returncode == 2 and "already exists" in again.stderr
+
+
+@NATIVE
+def test_legacy_p1_mode_remains_explicit():
+    cell, data, _, _ = _quartz()
+    result = solve_structure(
+        data,
+        cell=cell,
+        composition={"Si": 3, "O": 6},
+        space_group=space_group_by_symbol("P 31 2 1").space_group,
+        options=SolutionOptions(trials=1, cycles=800, r1_target=1e-4, refinement="none"),
+    )
+    assert result.best.refinement is None
+    assert result.best.as_structure(cell).space_group == space_group_by_symbol("P 1").space_group

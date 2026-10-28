@@ -298,7 +298,7 @@ pub fn polish_model(
     })
 }
 
-fn cholesky_solve(matrix: &[f64], rhs: &[f64]) -> Option<Vec<f64>> {
+pub(crate) fn cholesky_solve(matrix: &[f64], rhs: &[f64]) -> Option<Vec<f64>> {
     let n = rhs.len();
     let mut lower = vec![0.; n * n];
     for i in 0..n {

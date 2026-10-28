@@ -20,9 +20,15 @@ negative merged intensities become zero **only in the derived phasing amplitudes
 `Fo = sqrt(max(Imean, 0))`. This is an explicitly biased initial phasing
 approximation, not a replacement for a likelihood treatment of weak data.
 Systematically absent observations are excluded and counted, not silently fitted.
-Input symmetry supplies intensity equivalences and absences; this implementation
-does not impose or recover a symmetry origin. Atomic candidates are returned and
-exported as a **full-cell P1 model**, up to arbitrary origin and inversion.
+Input symmetry supplies intensity equivalences and absences. After P1 phasing,
+the default experimental path also recovers the supplied origin/hand and refines
+an asymmetric-unit model with site-symmetry constraints and positive-definite
+anisotropic displacement tensors. This does not discover or prove a space group.
+Use `refinement="isotropic"` for constrained per-site isotropic U, or
+`refinement="none"` for the historical P1/common-U path. Failed alignment retains
+the P1 hypothesis and an explicit diagnostic; it cannot meet a requested
+symmetry-refined target. Successfully constrained candidates rank ahead of P1
+fallbacks, then by amplitude objective. See [equations](solution-symmetry-adp.md).
 
 ## Equations and independent implementation
 
@@ -98,6 +104,14 @@ python -m phasesmith.experimental.solution sample.hkl \
 
 The output directory must be new. It contains `result.json`,
 `density-and-observations.npz`, and, if a candidate exists, `candidate-p1.cif`.
+A successful constrained refinement additionally writes `candidate.cif` with
+asymmetric sites, explicit supplied operations and anisotropic CIF tensors.
+`candidate-p1.cif` carries the equivalent full-cell model in the density frame,
+including individual ADPs. `candidate.as_structure(cell)` returns the constrained
+asymmetric model when available and the P1 fallback otherwise. `result.json`
+schema v2 records exact rational operations, the transformation and both models.
+The compatibility scalar `u_iso` is the full-cell mean U-equivalent after
+constrained refinement; physical per-atom tensors live in `candidate.refinement`.
 CLI exit status 0 means the requested numerical R1 target was met; 3 means it
 was not met; 2 means invalid input or an execution error. Both 0 and 3 retain
 candidate diagnostics. The input HKL file is never overwritten.
@@ -162,10 +176,10 @@ the solve. Reference atom coordinates are read afterwards, solely for a separate
 origin/inversion/element-permutation audit. This is an exploratory development
 case, not an untouched validation holdout. It is a molecular crystal and does
 not establish performance across inorganic materials. The deposited model has
-hydrogens and anisotropic displacement, while the current solver does not.
+hydrogens and anisotropic displacement, while the historical P1 baseline did not.
 Published and native residuals therefore do not represent the same objective.
 
-### Recorded 28 October 2026
+### Historical P1 baseline, recorded 28 October 2026
 
 - Independent FFT-cycle comparisons cover plain/weak-perturbed phasing, free
   missing coefficients, fixed zeros, Friedel symmetry and normalization. Native
@@ -195,7 +209,61 @@ Published and native residuals therefore do not represent the same objective.
   exclusions remain visible. A freshly built default wheel passes a native
   crystallography smoke check and correctly omits the experimental solver.
 
-The scope remains initial full-cell P1 hypotheses for ordered non-resonant
-X-ray structures with supplied composition/symmetry. Automatic space-group
-selection, asymmetric-unit reconstruction, individual/anisotropic displacement,
-hydrogen placement, anomalous data, disorder and twinning are future work.
+The frozen baseline above is preserved. The following experimental follow-up
+adds asymmetric reconstruction and individual displacement refinement; hydrogen
+placement, automatic space-group selection, anomalous data, disorder and twinning
+remain future work.
+
+## Symmetry/ADP follow-up, 28 October 2026
+
+`benchmarks/structure_solution.py` retains `--refinement none` as its default,
+so rerunning the historical benchmark does not silently select the new model.
+For the follow-up, run:
+
+```sh
+python benchmarks/structure_solution.py --refinement anisotropic \
+  --output runs/thiourea-adp
+python benchmarks/solution_adp_transfer.py --download-data \
+  --output runs/adp-transfer
+```
+
+The transfer source manifest is
+`validation/structure-solution-adp-transfer.json`: exact sizes/SHA-256s of COD
+CIF reflection loops and separate reference CIFs, original authors/DOIs, metadata,
+retrieval date and CC0 attribution. Measured signed F² and sigma are translated
+without conversion or clipping. Reference atom tables are parsed only after the blind
+result is saved. Two compact ternary non-H cases were selected before solver
+outcomes and share seed 0, eight starts, 1,200 cycles, a 60 s budget and 0.06 R1
+target. Neither failure nor success was used to retune these settings.
+
+| Case | P1 R1 | Constrained R1 | Geometric check after solving |
+| --- | ---: | ---: | --- |
+| Thiourea, development | 0.101923 | 0.049409 | 16 non-H atoms; max/RMS error 0.01037/0.00771 Å |
+| BiSeI, COD 2010577 | 0.071034 | 0.052285 | 12 atoms; max/RMS error 0.00252/0.00175 Å |
+| K[BrF4], COD 1549359 | 0.091212 | unavailable | Wrong P1 candidate; max/RMS error 3.24564/1.52739 Å; no symmetry match |
+
+Thiourea reaches its numerical target on the first start with six asymmetric
+sites and 41 independent coordinate/ADP parameters (13 coordinate parameters,
+one free polar-origin direction removed). The first validated run took 4.67 s (the frozen repeat took 4.73 s). BiSeI uses
+three mirror sites and 18 parameters; the initial recorded transfer takes 0.55 s.
+K[BrF4] exhausts eight starts and remains an explicit failure. Its moderately low
+P1 residual demonstrates why geometry and symmetry are assessed separately.
+Times describe these builds/runs; no equal-objective SHELX speed claim is made.
+Hydrogens and wavelength-dependent anomalous terms are still absent, and the
+native unweighted amplitude objective differs from deposited refinement metrics.
+
+The new frozen reports are `benchmarks/structure-solution-thiourea-adp-macos.json`
+and `benchmarks/structure-solution-adp-transfer-macos.json`; previous records are
+untouched. Implementation/input/native-extension hashes accompany the results.
+The fused eight-atom, 2,108-reflection, 69-parameter ADP value/Jacobian evaluation
+takes 0.764–0.768 ms in a 10-sample Criterion run on this host. There was no previous
+constrained-ADP hot loop; the earlier Fourier benchmark remains separate.
+
+Tests cover independently computed complex amplitudes and centered differences
+in P1, inversion, mirror, nonorthogonal trigonal and cubic settings, repeated ADP
+eigenvalues, special-position multiplicity, polar origin gauges, invariant tensors,
+bounds, F000, closest periodic images, cancellation and export equivalence.
+The full Python suite passes: **1,209 passed**, 11 skipped, 34 deselected.
+Workspace all-feature Rust tests pass: **386 passed**, 34 ignored.
+Formatting and strict Clippy pass; the default
+wheel remains independently checked without the optional solver.

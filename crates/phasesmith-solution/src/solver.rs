@@ -1,4 +1,4 @@
-//! Budgeted multi-start phasing and full-cell P1 candidate construction.
+//! Budgeted multi-start phasing and supplied-symmetry candidate refinement.
 
 use std::time::{Duration, Instant};
 
@@ -39,6 +39,12 @@ pub struct SolveOptions {
     pub grid_shape: Option<[usize; 3]>,
     /// Optional shared cooperative stop token; separate from reproducible numerics.
     pub cancellation: Option<crate::Cancellation>,
+    /// Optional symmetry-constrained site displacement model after P1 assignment.
+    pub refinement: Option<crate::AdpMode>,
+    /// Maximum accepted same-element matching displacement, in angstrom.
+    pub symmetry_tolerance_angstrom: f64,
+    /// Maximum constrained-polishing iterations, in [0,200].
+    pub symmetry_iterations: usize,
 }
 
 impl Default for SolveOptions {
@@ -56,18 +62,21 @@ impl Default for SolveOptions {
             r1_target: 0.1,
             grid_shape: None,
             cancellation: None,
+            refinement: Some(crate::AdpMode::Anisotropic),
+            symmetry_tolerance_angstrom: 0.15,
+            symmetry_iterations: 80,
         }
     }
 }
 
-/// One full-cell P1 atomic hypothesis, with provisional element assignments.
+/// One full-cell atomic hypothesis with optional aligned asymmetric refinement.
 #[derive(Clone, Debug)]
 pub struct Candidate {
     /// One species for every full-cell atom.
     pub species: Vec<String>,
     /// Fractional coordinates in [0,1), in an arbitrary origin and hand.
     pub fractional_xyz: Vec<[f64; 3]>,
-    /// Common isotropic displacement parameter in square angstrom.
+    /// Common isotropic U, or full-cell mean U-equivalent after constrained refinement.
     pub u_iso: f64,
     /// Profiled amplitude scale.
     pub amplitude_scale: f64,
@@ -81,6 +90,10 @@ pub struct Candidate {
     pub polish_steps: usize,
     /// Number of accepted composition-preserving element swaps.
     pub element_swaps: usize,
+    /// Supplied-setting asymmetric model and physical per-atom tensors.
+    pub refinement: Option<crate::RefinementSummary>,
+    /// Why a requested refinement was unavailable; the P1 hypothesis is retained.
+    pub refinement_diagnostic: Option<String>,
 }
 
 /// A complete bounded result; the best model may still be incorrect.
@@ -107,7 +120,7 @@ pub struct Solution {
 /// Solve from corrected integrated intensities without using reference coordinates.
 ///
 /// `composition` must enumerate every non-hydrogen atom in the full conventional
-/// cell. Input symmetry expands intensity constraints only; output remains P1.
+/// cell. Supplied symmetry also constrains the optional final site/ADP model.
 ///
 /// # Errors
 /// Rejects invalid controls, cell/symmetry, composition, data, or resource sizes.
@@ -129,6 +142,9 @@ pub fn solve(
         || options.cleanup_cycles > 100
         || options.polish_iterations > 200
         || options.assignment_rounds > 8
+        || options.symmetry_iterations > 200
+        || !options.symmetry_tolerance_angstrom.is_finite()
+        || !(1e-5..=0.5).contains(&options.symmetry_tolerance_angstrom)
         || !options.delta_sigma.is_finite()
         || !(0.1..=2.5).contains(&options.delta_sigma)
         || !options.weak_fraction.is_finite()
@@ -276,11 +292,7 @@ pub fn solve(
                     let (assigned, polished, swaps) =
                         assign_elements(cell, &result.data, &species, polished, options, deadline)?;
                     let fit = polished.evaluation;
-                    if fit.objective < best_objective {
-                        best_objective = fit.objective;
-                        result.density = flip.density;
-                    }
-                    result.candidates.push(Candidate {
+                    let mut candidate = Candidate {
                         species: assigned,
                         fractional_xyz: polished.fractional_xyz,
                         u_iso: polished.u_iso,
@@ -290,7 +302,43 @@ pub fn solve(
                         trial,
                         polish_steps: polished.accepted_steps,
                         element_swaps: swaps,
-                    });
+                        refinement: None,
+                        refinement_diagnostic: None,
+                    };
+                    if let Some(mode) = options.refinement {
+                        match refine_candidate(
+                            cell,
+                            group,
+                            &result.data,
+                            &candidate,
+                            mode,
+                            options,
+                            deadline,
+                        ) {
+                            Ok(refined) => {
+                                let (summary, xyz) =
+                                    refined.summarize(mode, candidate.r1, candidate.objective);
+                                candidate.fractional_xyz = xyz;
+                                candidate.u_iso = summary.full_u_equiv.iter().sum::<f64>()
+                                    / summary.full_u_equiv.len() as f64;
+                                candidate.amplitude_scale = refined.evaluation.amplitude_scale;
+                                candidate.r1 = refined.evaluation.r1;
+                                candidate.objective = refined.evaluation.objective;
+                                candidate.refinement = Some(summary);
+                            }
+                            Err(e) => candidate.refinement_diagnostic = Some(e.to_string()),
+                        }
+                    }
+                    let preferred = candidate.refinement.is_some();
+                    let previous_preferred =
+                        result.candidates.iter().any(|c| c.refinement.is_some());
+                    if (preferred && !previous_preferred)
+                        || (preferred == previous_preferred && candidate.objective < best_objective)
+                    {
+                        best_objective = candidate.objective;
+                        result.density = flip.density;
+                    }
+                    result.candidates.push(candidate);
                 }
                 Err(e) => result.rejected_trials.push((trial, e.to_string())),
             }
@@ -309,19 +357,21 @@ pub fn solve(
             result.termination = stop_reason(options);
             break;
         }
-        if result.candidates.iter().any(|c| c.r1 <= options.r1_target) {
+        if result.candidates.iter().any(|c| target(c, options)) {
             result.target_met = true;
             result.termination = "r1_target";
             break;
         }
     }
     result.candidates.sort_by(|a, b| {
-        a.objective
-            .total_cmp(&b.objective)
+        a.refinement
+            .is_none()
+            .cmp(&b.refinement.is_none())
+            .then(a.objective.total_cmp(&b.objective))
             .then(a.trial.cmp(&b.trial))
     });
     // Timeout takes precedence as a stop reason, but never hides a retained fit.
-    result.target_met = result.candidates.iter().any(|c| c.r1 <= options.r1_target);
+    result.target_met = result.candidates.iter().any(|c| target(c, options));
     Ok(result)
 }
 
@@ -469,4 +519,43 @@ fn stop_reason(options: &SolveOptions) -> &'static str {
     } else {
         "max_runtime"
     }
+}
+
+fn target(candidate: &Candidate, options: &SolveOptions) -> bool {
+    candidate.r1 <= options.r1_target
+        && (options.refinement.is_none() || candidate.refinement.is_some())
+}
+
+#[allow(clippy::too_many_arguments)]
+fn refine_candidate(
+    cell: UnitCell,
+    group: &SpaceGroup,
+    data: &PreparedData,
+    candidate: &Candidate,
+    mode: crate::AdpMode,
+    options: &SolveOptions,
+    deadline: Instant,
+) -> Result<crate::SymmetricRefinement, SolutionError> {
+    let symmetry = crate::recover_symmetry(
+        cell,
+        group,
+        &candidate.species,
+        &candidate.fractional_xyz,
+        options.symmetry_tolerance_angstrom,
+        Some(deadline),
+        options.cancellation.as_ref(),
+    )?;
+    let model = crate::PreparedSymmetricModel::new(symmetry, &data.hkl, &data.amplitudes, mode)?;
+    if data.family_count <= model.parameter_count + 1 {
+        return Err(error(
+            "insufficient independent reflection families for the requested symmetric refinement",
+        ));
+    }
+    let initial = model.initial_parameters(candidate.u_iso.clamp(1e-5, 0.2))?;
+    model.refine(
+        &initial,
+        options.symmetry_iterations,
+        Some(deadline),
+        options.cancellation.as_ref(),
+    )
 }
