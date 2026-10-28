@@ -18,9 +18,9 @@ pub struct PreparedOrbitSearch {
     pub group: SpaceGroup,
     /// Projected full-cell framework positions.
     pub fixed_xyz: Vec<[f64; 3]>,
-    hkl: Vec<[i32; 3]>,
-    observed: Vec<f64>,
-    base: Vec<Complex<f64>>,
+    pub(crate) hkl: Vec<[i32; 3]>,
+    pub(crate) observed: Vec<f64>,
+    pub(crate) base: Vec<Complex<f64>>,
     added_factor: Vec<f64>,
 }
 

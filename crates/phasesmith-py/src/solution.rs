@@ -14,6 +14,8 @@ use crate::{NativePreparedReflectionGenerator, crystallographic_cell, hkl_rows};
 mod completion;
 #[path = "solution_dual.rs"]
 mod dual;
+#[path = "solution_shared.rs"]
+mod shared;
 #[path = "solution_symmetry.rs"]
 mod symmetry_adp;
 
@@ -37,7 +39,7 @@ fn array2<T: npy::Element>(py: Python<'_>, rows: Vec<[T; 3]>) -> Bound<'_, npy::
 }
 
 #[pyfunction(name = "_solve_structure")]
-#[allow(clippy::too_many_arguments)]
+#[allow(clippy::too_many_arguments, clippy::too_many_lines)]
 fn solve_structure<'py>(
     py: Python<'py>,
     hkl: PyReadonlyArray1<'py, i64>,
@@ -63,6 +65,7 @@ fn solve_structure<'py>(
     symmetry_iterations: usize,
     phasing: String,
     completion: bool,
+    shared_search: Option<(Vec<String>, usize, usize, usize)>,
 ) -> PyResult<Bound<'py, PyDict>> {
     let hkl = hkl_rows(&hkl)?;
     let intensity = intensity.as_slice()?.to_vec();
@@ -115,10 +118,35 @@ fn solve_structure<'py>(
     };
     let result = py
         .detach(move || {
-            phasesmith_solution::solve(&observations, cell, &group, &composition, &options)
+            if let Some((elements, maximum_atoms, beam_width, rounds)) = shared_search {
+                if !composition.is_empty() {
+                    return Err(phasesmith_solution::SolutionError(
+                        "shared search does not accept composition".into(),
+                    ));
+                }
+                phasesmith_solution::solve_elements(
+                    &observations,
+                    cell,
+                    &group,
+                    &elements,
+                    &options,
+                    &phasesmith_solution::SharedSearchOptions {
+                        maximum_atoms,
+                        beam_width,
+                        rounds,
+                    },
+                )
+            } else {
+                phasesmith_solution::solve(&observations, cell, &group, &composition, &options)
+            }
         })
         .map_err(invalid)?;
     let out = PyDict::new(py);
+    if let Some(audit) = &result.shared_search {
+        out.set_item("shared_search", shared::summary(py, audit)?)?;
+    } else {
+        out.set_item("shared_search", py.None())?;
+    }
     out.set_item("hkl", array2(py, result.data.hkl))?;
     out.set_item("intensity", result.data.intensity.into_pyarray(py))?;
     out.set_item("sigma", result.data.sigma.into_pyarray(py))?;
@@ -272,6 +300,7 @@ pub fn register(module: &Bound<'_, PyModule>) -> PyResult<()> {
     symmetry_adp::register(module)?;
     dual::register(module)?;
     completion::register(module)?;
+    shared::register(module)?;
     module.add_class::<NativeCancellation>()?;
     module.add_function(wrap_pyfunction!(solve_structure, module)?)?;
     module.add_function(wrap_pyfunction!(flip, module)?)?;

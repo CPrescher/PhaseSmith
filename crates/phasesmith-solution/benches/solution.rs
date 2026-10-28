@@ -2,8 +2,8 @@
 use criterion::{Criterion, criterion_group, criterion_main};
 use phasesmith_crystallography::{Rational, SpaceGroup, SymmetryOperation, UnitCell};
 use phasesmith_solution::{
-    AdpMode, DualSpaceOptions, FlipOptions, PreparedOrbitSearch, PreparedSymmetricModel,
-    charge_flip, dual_space, recover_symmetry,
+    AdpMode, DualSpaceOptions, FlipOptions, PreparedElementPool, PreparedOrbitSearch,
+    PreparedSymmetricModel, charge_flip, dual_space, recover_symmetry,
 };
 
 #[allow(clippy::too_many_lines)]
@@ -149,6 +149,58 @@ fn benchmark(c: &mut Criterion) {
         0.01,
     )
     .unwrap();
+    let shared = PreparedElementPool::new(
+        cell,
+        &orbit_group,
+        &vec!["Si".to_owned(); framework.len()],
+        &framework,
+        &["Si".to_owned(), "O".to_owned(), "Fe".to_owned()],
+        &orbit_hkl,
+        &orbit_observed,
+        0.01,
+    )
+    .unwrap();
+    c.bench_function(
+        "shared_orbit_16_images_1060_reflections_three_labels_fused_gradient",
+        |b| {
+            b.iter(|| {
+                shared
+                    .evaluate(std::hint::black_box([0.31, 0.43, 0.67]))
+                    .unwrap()
+            });
+        },
+    );
+    let separate: Vec<_> = ["Si", "O", "Fe"]
+        .into_iter()
+        .map(|element| {
+            PreparedOrbitSearch::new(
+                cell,
+                &orbit_group,
+                &vec!["Si".to_owned(); framework.len()],
+                &framework,
+                element,
+                &orbit_hkl,
+                &orbit_observed,
+                0.01,
+            )
+            .unwrap()
+        })
+        .collect();
+    c.bench_function(
+        "independent_orbit_16_images_1060_reflections_three_labels_fused_gradient",
+        |b| {
+            b.iter(|| {
+                separate
+                    .iter()
+                    .map(|orbit| {
+                        orbit
+                            .evaluate(std::hint::black_box([0.31, 0.43, 0.67]))
+                            .unwrap()
+                    })
+                    .collect::<Vec<_>>()
+            });
+        },
+    );
     c.bench_function(
         "completion_orbit_16_images_multi_reflection_fused_gradient",
         |b| {
