@@ -125,3 +125,57 @@ volume/periodic moments, the 50-cycle peak-count transition, omitted masks,
 centring-vector fallback, malformed boundaries, degenerate masks, stop handling,
 and typed portfolio provenance/JSON export. No statistical model uncertainties
 or broader crystallographic validity are inferred from this test count.
+
+
+## Why K[BrF4] fails: external diagnosis, 28 October 2026
+
+A subsequent blind external run on the same 214 corrected intensity records
+**does solve K[BrF4]**. SHELXT 2018/2, SHA-256
+`4d712cb17f8952e1f59f476af7c61ad4ab5261e594c75441c7f81dcefe7b5560`,
+receives cell, symmetry instructions, Br/F/K and cell counts, with **no atom
+coordinates**. CIF reflection-loop values are converted to fixed-width HKLF 4
+and checked to preserve every intensity/sigma exactly. The run produces an
+I4/mcm model with three asymmetric sites, Br:F:K = 1:4:1 and reported R1 0.021.
+All 24 expanded atoms match the reference to 0.00144 Å maximum (0.00118 Å RMS),
+verified only after the external solution exists. Reported internal/wall times
+are 0.341/0.471 s, with 14 parallel attempts/threads; this is not an equal-work
+speed comparison with the serial native search. Several subgroup alternatives
+are also reported; the lowest residual alone is not a space-group certificate.
+
+The original [Ivlev & Kraus paper](https://doi.org/10.1107/S2414314618006466)
+also reports SHELXT2014 solution and SHELXL2016 refinement. A local SHELXL2025/1
+anisotropic refinement started from the blind SHELXT model, using an extinction
+term and default WGHT 0.1, gives R1 0.0178 over all 214 reflections (0.0159 for
+198 observed reflections), with 13 parameters. Its weighting differs from the
+published refinement and wR2 is not compared as parity evidence.
+
+The more informative diagnosis is conditional **native** refinement: starting
+from the blind SHELXT coordinates, the existing PhaseSmith symmetry/ADP kernel
+reaches R1 **0.0222664** in five accepted steps. It uses two coordinate parameters
+and nine tensor parameters, plus the profiled scale. This is not a native blind
+solution; it demonstrates that the constrained model/refiner can fit this case.
+Missing dispersion/extinction physics does not explain the much larger native
+blind-solution error by itself.
+
+After origin/hand alignment using only Br and K, the best native dual-space
+candidate has Br/K RMS coordinate errors of 0.0204/0.0516 Å, but F RMS error is
+1.299 Å. Before P1 polishing the same density's top-24 extraction has F RMS error
+1.028 Å and only 10 of 16 reference F sites have a map maximum within 0.15 Å.
+For charge flipping those counts are 8 of 16 despite inspecting 128 maxima.
+The weak-atom problem therefore exists before final refinement; unconstrained
+amplitude polishing does not reliably repair it.
+
+The current pipeline refines 69 independent P1 coordinates before demanding a
+complete same-element symmetry match; the correct model has only **two**
+coordinate variables. Both the partial F recovery and late symmetry gate are
+observed limitations. A specific unique Fourier/mask/normalization cause has
+not been isolated. The next targeted change should accept/project the recovered
+Br/K substructure, identify its symmetry/orbits, and complete the F sites with
+symmetry-aware difference-Fourier or constrained model search. More of the same
+unconstrained starts is not yet an evidence-backed fix.
+
+The frozen audit is `benchmarks/structure-solution-kbrf4-shelx-audit-macos.json`.
+It preserves input instructions, binary/source/output hashes, the external
+solution, conditional native fit and per-element before/after diagnostics.
+The local raw runs are under `runs/kbrf4-shelx-audit/`. No production numerical
+code or existing frozen benchmark is changed by this diagnosis.

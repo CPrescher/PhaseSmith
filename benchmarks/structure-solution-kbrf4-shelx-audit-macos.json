@@ -1,0 +1,658 @@
+{
+  "source_hkl_sha256": "d76a88377a6d7236416c47a48b4b61ab15f82199e853184dc76e945e3123c2b0",
+  "binary_sha256": "4d712cb17f8952e1f59f476af7c61ad4ab5261e594c75441c7f81dcefe7b5560",
+  "returncode": 0,
+  "seconds": 0.4714399999938905,
+  "rows": 214,
+  "reference_coordinates_in_inputs": false,
+  "input_instructions": [
+    "TITL Blind KBrF4 external HKL comparison; no atom coordinates",
+    "CELL 0.71073 6.0999 6.0999 11.0509 90 90 90",
+    "LATT 2",
+    "SYMM -Y,X,Z",
+    "SYMM -X,-Y,Z",
+    "SYMM Y,-X,Z",
+    "SYMM X,-Y,-Z+1/2",
+    "SYMM -Y,-X,-Z+1/2",
+    "SYMM -X,Y,-Z+1/2",
+    "SYMM Y,X,-Z+1/2",
+    "SFAC Br F K",
+    "UNIT 4 16 4",
+    "HKLF 4",
+    "END"
+  ],
+  "files": [
+    "stdout.txt",
+    "sample.ins",
+    "sample.hkl",
+    "sample_e.hkl",
+    "sample_d.hkl",
+    "sample_a.hkl",
+    "sample_c.hkl",
+    "sample_b.hkl",
+    "sample_d.res",
+    "sample_e.res",
+    "sample.lxt",
+    "sample_b.res",
+    "sample_c.res",
+    "sample_a.res"
+  ],
+  "schema": "phasesmith.kbrf4-external-diagnosis.v1",
+  "date": "2026-10-28",
+  "native_implementation_commit": "901198d",
+  "qualification": "Read-only diagnosis of an existing failed development case. Native refinement seeded from the blind external solution is explicitly conditional, not a native structure-solution success. Timings, objectives, resolution treatment and parallelism differ.",
+  "published_source": {
+    "authors": "S. I. Ivlev and F. Kraus",
+    "doi": "10.1107/S2414314618006466",
+    "url": "https://iucrdata.iucr.org/x/issues/2018/05/00/wm4077/",
+    "published_solution_program": "SHELXT2014",
+    "published_refinement_program": "SHELXL2016",
+    "source_manifest": "validation/structure-solution-adp-transfer.json"
+  },
+  "shelxt": {
+    "version": "2018/2",
+    "space_group": "I4/mcm",
+    "reported_r1": 0.021,
+    "attempts": 14,
+    "threads": 14,
+    "reported_internal_seconds": 0.341,
+    "wall_seconds": 0.4714399999938905,
+    "solution_file": "blind-shelxt/sample_a.res",
+    "reference_atom_coordinates_in_inputs": false,
+    "formula": "Br F4 K",
+    "asymmetric_sites": 3,
+    "solution_res_text": "TITL sample_a.res in I4/mcm\nREM Old TITL Blind KBrF4 external HKL comparison; no atom coordinates\nREM SHELXT solution in I4/mcm: R1 0.021, Rweak 0.002, Alpha 0.043\nREM <I/s>   0.000 for    0 systematic absences,  Orientation as input\nREM Formula found by SHELXT:  Br F4 K\n\nCELL  0.71073   6.0999   6.0999  11.0509   90.000   90.000   90.000\nZERR    1.000   0.0020   0.0020   0.0020    0.030    0.030    0.030\nLATT  2\nSYMM -X, -Y, Z\nSYMM -Y, X, Z\nSYMM Y, -X, Z\nSYMM -X, Y, 1/2-Z\nSYMM X, -Y, 1/2-Z\nSYMM Y, X, 1/2-Z\nSYMM -Y, -X, 1/2-Z\nSFAC BR F K\nUNIT 4 16 4\nL.S. 10\nBOND\nLIST 6\nFMAP 2\nPLAN 20\nBR01  1  0.50000  0.00000  0.50000 10.12500  0.00719  35.76\nK002  3  0.50000  0.50000  0.75000 10.12500  0.01115  18.53\nF003  2  0.65522  0.15522  0.62104 10.50000  0.01391   8.94\nHKLF 4\nEND\n",
+    "full_cell_atoms": 24
+  },
+  "diagnosis": {
+    "external_shelxt_reference_geometry": {
+      "max_element_matched_error_angstrom": 0.0014342189133329164,
+      "rms_error_angstrom": 0.0011710348390377026,
+      "reference_used_after_solve_only": true,
+      "non_h_atom_count": 24
+    },
+    "conditional_native_refinement": {
+      "label": "Conditional native refinement from blind SHELXT coordinates; not a native blind solution",
+      "initial_r1": 0.051046255310870745,
+      "final_r1": 0.022266400689636957,
+      "parameter_count_excluding_scale": 11,
+      "coordinate_parameters": 2,
+      "termination": "gradient",
+      "accepted_steps": 5,
+      "seconds": 0.011821874999441206
+    },
+    "candidate_geometry": {
+      "charge_flip": [
+        {
+          "trial": 5,
+          "r1": 0.09121199791359322,
+          "heavy_atom_alignment_sse": 12.068326317922827,
+          "hand": 1,
+          "origin_shift": [
+            0.054533697015397946,
+            0.8407345009676788,
+            0.4367411909022842
+          ],
+          "per_element": {
+            "Br": {
+              "rms_angstrom": 0.042714960619708364,
+              "max_angstrom": 0.060059865776784335
+            },
+            "K": {
+              "rms_angstrom": 0.046542089195443,
+              "max_angstrom": 0.05161138869618479
+            },
+            "F": {
+              "rms_angstrom": 1.3907533261113965,
+              "max_angstrom": 3.739750823724633
+            }
+          }
+        },
+        {
+          "trial": 6,
+          "r1": 0.09040801301576591,
+          "heavy_atom_alignment_sse": 11.393718220891785,
+          "hand": -1,
+          "origin_shift": [
+            0.0005673284319141025,
+            0.1630947077067404,
+            0.6476226691864619
+          ],
+          "per_element": {
+            "Br": {
+              "rms_angstrom": 0.04206418067362195,
+              "max_angstrom": 0.057399455682062124
+            },
+            "K": {
+              "rms_angstrom": 0.043430471639889646,
+              "max_angstrom": 0.05448542444732599
+            },
+            "F": {
+              "rms_angstrom": 2.230085094052349,
+              "max_angstrom": 3.060488442064016
+            }
+          }
+        },
+        {
+          "trial": 4,
+          "r1": 0.09246281401335975,
+          "heavy_atom_alignment_sse": 13.555537985980413,
+          "hand": 1,
+          "origin_shift": [
+            0.4448530578938233,
+            0.6832615459353238,
+            0.06382642572720387
+          ],
+          "per_element": {
+            "Br": {
+              "rms_angstrom": 0.049753304393034936,
+              "max_angstrom": 0.057350041684832445
+            },
+            "K": {
+              "rms_angstrom": 0.031426392758469764,
+              "max_angstrom": 0.04300778038275188
+            },
+            "F": {
+              "rms_angstrom": 1.361291938680413,
+              "max_angstrom": 2.639166486996767
+            }
+          }
+        },
+        {
+          "trial": 7,
+          "r1": 0.1030494014353558,
+          "heavy_atom_alignment_sse": 7.443285024718084,
+          "hand": -1,
+          "origin_shift": [
+            0.23742016167058175,
+            0.31990415180893095,
+            0.8428682645072626
+          ],
+          "per_element": {
+            "Br": {
+              "rms_angstrom": 0.025880317160676163,
+              "max_angstrom": 0.03029390710120933
+            },
+            "K": {
+              "rms_angstrom": 0.05368234016779152,
+              "max_angstrom": 0.05820490001693341
+            },
+            "F": {
+              "rms_angstrom": 2.199139346086732,
+              "max_angstrom": 2.882925406662084
+            }
+          }
+        },
+        {
+          "trial": 2,
+          "r1": 0.10598966972632462,
+          "heavy_atom_alignment_sse": 4.4443996479113155,
+          "hand": 1,
+          "origin_shift": [
+            0.05181427388638621,
+            0.16248224387099597,
+            0.09427841257242471
+          ],
+          "per_element": {
+            "Br": {
+              "rms_angstrom": 0.0158329330897703,
+              "max_angstrom": 0.01871516484623638
+            },
+            "K": {
+              "rms_angstrom": 0.04719308905964695,
+              "max_angstrom": 0.059417715321739645
+            },
+            "F": {
+              "rms_angstrom": 2.1110224839528007,
+              "max_angstrom": 3.0626155030572653
+            }
+          }
+        },
+        {
+          "trial": 3,
+          "r1": 0.11174371297408807,
+          "heavy_atom_alignment_sse": 12.725782902443752,
+          "hand": -1,
+          "origin_shift": [
+            0.3047042095134123,
+            0.2966276194962085,
+            0.7048134429899094
+          ],
+          "per_element": {
+            "Br": {
+              "rms_angstrom": 0.04843170030195401,
+              "max_angstrom": 0.052651755891633
+            },
+            "K": {
+              "rms_angstrom": 0.029211686690633218,
+              "max_angstrom": 0.035842887001615295
+            },
+            "F": {
+              "rms_angstrom": 1.7353114646470493,
+              "max_angstrom": 2.853971954992752
+            }
+          }
+        },
+        {
+          "trial": 0,
+          "r1": 0.11157590696731953,
+          "heavy_atom_alignment_sse": 6.242862074407867,
+          "hand": 1,
+          "origin_shift": [
+            0.023152524476409753,
+            0.7235265772280903,
+            0.26855972669105643
+          ],
+          "per_element": {
+            "Br": {
+              "rms_angstrom": 0.03442078065077318,
+              "max_angstrom": 0.04133233131242703
+            },
+            "K": {
+              "rms_angstrom": 0.017404077940673654,
+              "max_angstrom": 0.02618502396488498
+            },
+            "F": {
+              "rms_angstrom": 1.7133815429611654,
+              "max_angstrom": 2.848459827291003
+            }
+          }
+        },
+        {
+          "trial": 1,
+          "r1": 0.11933656678189102,
+          "heavy_atom_alignment_sse": 4.766892813012122,
+          "hand": 1,
+          "origin_shift": [
+            0.566310861427237,
+            0.688312947988697,
+            0.9053324861665845
+          ],
+          "per_element": {
+            "Br": {
+              "rms_angstrom": 0.019327659016134025,
+              "max_angstrom": 0.02467268755826769
+            },
+            "K": {
+              "rms_angstrom": 0.045094980082032186,
+              "max_angstrom": 0.05406525302107596
+            },
+            "F": {
+              "rms_angstrom": 1.5926381116101693,
+              "max_angstrom": 3.1774978374657743
+            }
+          }
+        }
+      ],
+      "dual_space": [
+        {
+          "trial": 1,
+          "r1": 0.08087928682513236,
+          "heavy_atom_alignment_sse": 5.891380448228089,
+          "hand": -1,
+          "origin_shift": [
+            0.49837664411115856,
+            0.0015014704765537405,
+            0.0018515621106525828
+          ],
+          "per_element": {
+            "Br": {
+              "rms_angstrom": 0.020445480606653223,
+              "max_angstrom": 0.026071870456416273
+            },
+            "K": {
+              "rms_angstrom": 0.05158897478902816,
+              "max_angstrom": 0.05584043611964567
+            },
+            "F": {
+              "rms_angstrom": 1.2990540412380378,
+              "max_angstrom": 1.780873096661929
+            }
+          }
+        },
+        {
+          "trial": 3,
+          "r1": 0.08195324850984628,
+          "heavy_atom_alignment_sse": 8.15472330848378,
+          "hand": 1,
+          "origin_shift": [
+            0.7537428205448955,
+            0.3457814355784562,
+            0.7294762428698138
+          ],
+          "per_element": {
+            "Br": {
+              "rms_angstrom": 0.024233038965056228,
+              "max_angstrom": 0.0317669245340813
+            },
+            "K": {
+              "rms_angstrom": 0.06045331088508185,
+              "max_angstrom": 0.07273425111749834
+            },
+            "F": {
+              "rms_angstrom": 1.5968128104588157,
+              "max_angstrom": 1.9640600399574373
+            }
+          }
+        },
+        {
+          "trial": 7,
+          "r1": 0.08547383395358646,
+          "heavy_atom_alignment_sse": 9.875910363805382,
+          "hand": 1,
+          "origin_shift": [
+            0.3832497751888631,
+            0.8486383916423759,
+            0.35948971763360216
+          ],
+          "per_element": {
+            "Br": {
+              "rms_angstrom": 0.038918552154931105,
+              "max_angstrom": 0.0565609261616857
+            },
+            "K": {
+              "rms_angstrom": 0.04122523788636119,
+              "max_angstrom": 0.04674266200992645
+            },
+            "F": {
+              "rms_angstrom": 1.5748248043358894,
+              "max_angstrom": 3.1208272796494048
+            }
+          }
+        },
+        {
+          "trial": 5,
+          "r1": 0.09606475457984738,
+          "heavy_atom_alignment_sse": 4.749311072398555,
+          "hand": 1,
+          "origin_shift": [
+            0.0009339232375873419,
+            0.9992861557088919,
+            0.24803090388211585
+          ],
+          "per_element": {
+            "Br": {
+              "rms_angstrom": 0.017399850011470493,
+              "max_angstrom": 0.022646846620517996
+            },
+            "K": {
+              "rms_angstrom": 0.04755673567711956,
+              "max_angstrom": 0.05134984287371339
+            },
+            "F": {
+              "rms_angstrom": 0.8159537645072241,
+              "max_angstrom": 1.6898829200850192
+            }
+          }
+        },
+        {
+          "trial": 0,
+          "r1": 0.10707626715222315,
+          "heavy_atom_alignment_sse": 3.395893446874536,
+          "hand": 1,
+          "origin_shift": [
+            0.5003210915077783,
+            0.5007104301537773,
+            0.26070847250934687
+          ],
+          "per_element": {
+            "Br": {
+              "rms_angstrom": 0.013102311622149174,
+              "max_angstrom": 0.016019708845557066
+            },
+            "K": {
+              "rms_angstrom": 0.04206171806383542,
+              "max_angstrom": 0.04633719598368899
+            },
+            "F": {
+              "rms_angstrom": 1.0919245219883464,
+              "max_angstrom": 2.0904565146551715
+            }
+          }
+        },
+        {
+          "trial": 4,
+          "r1": 0.10647773342256205,
+          "heavy_atom_alignment_sse": 15.020163159738882,
+          "hand": 1,
+          "origin_shift": [
+            0.9990831837790048,
+            0.002674159277506678,
+            0.24913220734501307
+          ],
+          "per_element": {
+            "Br": {
+              "rms_angstrom": 0.04574338527454814,
+              "max_angstrom": 0.054198676264512205
+            },
+            "K": {
+              "rms_angstrom": 0.05745721283817537,
+              "max_angstrom": 0.06541314984568837
+            },
+            "F": {
+              "rms_angstrom": 1.8186460437213037,
+              "max_angstrom": 3.125737399738836
+            }
+          }
+        },
+        {
+          "trial": 6,
+          "r1": 0.10894421237343115,
+          "heavy_atom_alignment_sse": 5.230954879206272,
+          "hand": 1,
+          "origin_shift": [
+            0.3422594624025778,
+            0.15605765867439803,
+            0.6096817720410959
+          ],
+          "per_element": {
+            "Br": {
+              "rms_angstrom": 0.012242385700956582,
+              "max_angstrom": 0.015482293955657962
+            },
+            "K": {
+              "rms_angstrom": 0.055802893381758686,
+              "max_angstrom": 0.07750668708517656
+            },
+            "F": {
+              "rms_angstrom": 1.2612161199286096,
+              "max_angstrom": 2.8367091934021182
+            }
+          }
+        },
+        {
+          "trial": 2,
+          "r1": 0.1094613450623551,
+          "heavy_atom_alignment_sse": 7.040928970592673,
+          "hand": 1,
+          "origin_shift": [
+            0.49894872025549464,
+            0.502600725633668,
+            0.7500075985699194
+          ],
+          "per_element": {
+            "Br": {
+              "rms_angstrom": 0.028372090672466627,
+              "max_angstrom": 0.030916352113667854
+            },
+            "K": {
+              "rms_angstrom": 0.04630793053742826,
+              "max_angstrom": 0.05061173413214821
+            },
+            "F": {
+              "rms_angstrom": 1.5511461517406402,
+              "max_angstrom": 2.947960672569374
+            }
+          }
+        }
+      ]
+    }
+  },
+  "initial_density_diagnostic": {
+    "charge_flip": {
+      "initial_top24_geometry": {
+        "trial": -1,
+        "r1": null,
+        "heavy_atom_alignment_sse": 7.483285138775661,
+        "hand": 1,
+        "origin_shift": [
+          0.06574222818513495,
+          0.844716418581483,
+          0.43749901914078554
+        ],
+        "per_element": {
+          "Br": {
+            "rms_angstrom": 0.018683061223459824,
+            "max_angstrom": 0.01876555954290116
+          },
+          "K": {
+            "rms_angstrom": 0.06322861683505242,
+            "max_angstrom": 0.0636767866032582
+          },
+          "F": {
+            "rms_angstrom": 1.3446834930907412,
+            "max_angstrom": 2.8555952698633216
+          }
+        }
+      },
+      "fluorine_nearest_peak_rank_1based": [
+        56,
+        22,
+        23,
+        73,
+        14,
+        10,
+        11,
+        15,
+        9,
+        13,
+        16,
+        12,
+        21,
+        55,
+        74,
+        24
+      ],
+      "fluorine_nearest_peak_distance_angstrom": [
+        0.3223947237987673,
+        0.24896444459848116,
+        0.24128290192277582,
+        0.30461749784403613,
+        0.1034928727641512,
+        0.09201028074713863,
+        0.09550428153349629,
+        0.0956748051058483,
+        0.09201028074713936,
+        0.10349287276415174,
+        0.09567480510584896,
+        0.0955042815334978,
+        0.24896444459848158,
+        0.32239472379876793,
+        0.3046174978440346,
+        0.24128290192277527
+      ],
+      "fluorine_sites_with_any_peak_within_0_15_angstrom": 8,
+      "peaks_inspected": 128
+    },
+    "dual_space": {
+      "initial_top24_geometry": {
+        "trial": -1,
+        "r1": null,
+        "heavy_atom_alignment_sse": 10.619413578869697,
+        "hand": -1,
+        "origin_shift": [
+          0.9999453472323397,
+          0.5012968255036436,
+          0.00368548831659771
+        ],
+        "per_element": {
+          "Br": {
+            "rms_angstrom": 0.023401995132659673,
+            "max_angstrom": 0.03011981212967544
+          },
+          "K": {
+            "rms_angstrom": 0.07413355487316517,
+            "max_angstrom": 0.07461764465408137
+          },
+          "F": {
+            "rms_angstrom": 1.0281266589515197,
+            "max_angstrom": 1.7066102879666474
+          }
+        }
+      },
+      "fluorine_nearest_peak_rank_1based": [
+        9,
+        20,
+        12,
+        21,
+        14,
+        18,
+        16,
+        23,
+        17,
+        13,
+        24,
+        15,
+        19,
+        10,
+        22,
+        11
+      ],
+      "fluorine_nearest_peak_distance_angstrom": [
+        0.10007957661462727,
+        0.10555068274073652,
+        0.053376270209848205,
+        0.11648755360288615,
+        1.6859151621995894,
+        1.7066102879666474,
+        0.10023355512936294,
+        1.6290809665035908,
+        1.7066102879666467,
+        1.6859151621995898,
+        1.6290809665035906,
+        0.10023355512936363,
+        0.10555068274073462,
+        0.1000795766146268,
+        0.11648755360288626,
+        0.05337627020984774
+      ],
+      "fluorine_sites_with_any_peak_within_0_15_angstrom": 10,
+      "peaks_inspected": 24
+    }
+  },
+  "shelxl": {
+    "binary_sha256": "1f0e21b04ff8c560bb9f5a52d38d056912430b41ca605b8cadfdf705c7b79e58",
+    "seconds": 0.6328182500146795,
+    "returncode": 0,
+    "initial_model": "blind SHELXT sample_a; no archive atoms",
+    "anisotropic": true,
+    "extinction": true,
+    "weighting": "WGHT 0.1 default; not matched to published weights",
+    "version": "2025/1",
+    "refined_parameters": 13,
+    "r1_all_214_reflections": 0.0178,
+    "r1_198_observed_reflections": 0.0159,
+    "wR2": 0.0722,
+    "coordinates_come_from": "blind SHELXT output only"
+  },
+  "reasoning": {
+    "observed": "Both native strategies recover the heavy-atom framework substantially better than the fluorine sublattice; the native refiner fits the externally recovered complete model at R1 0.0222664.",
+    "structural_parameterization": "The current P1 polishing stage has 69 coordinate degrees of freedom for 24 atoms before late symmetry matching. The correct three-site I4/mcm model has only two coordinate degrees of freedom.",
+    "localization": "The observed blocker is initial/partial atom recovery and late all-atom symmetry reconstruction, not a demonstrated inability of the native constrained ADP model to fit these data.",
+    "remaining_uncertainty": "This audit does not isolate a single unique Fourier/mask/normalization cause of the missed F sites. It does not establish parity with all SHELXT mechanisms.",
+    "next_target": "Recover and constrain the Br/K substructure first, permit partial-orbit symmetry alignment, and complete weak F sites with symmetry-aware difference-Fourier/model search."
+  },
+  "artifact_sha256": {
+    "blind-shelxt/sample.ins": "b4e852996eb8e8df4e9f1f0aa5bb1f2f7a511200203d291aa1bb354b8a365aa9",
+    "blind-shelxt/sample.hkl": "6eb82b6f8f7213f7faf11db7383bbc9c567b9dde3fdaf3dd86158c0ad29349f9",
+    "blind-shelxt/sample_a.res": "437854417807bb6188a7d1ed65933a92552c28a8230b787743854ce701b11b34",
+    "blind-shelxt/sample.lxt": "a286d43cafbff0e7e4b10a1c01a658b0ff39dfaf4b96883ae07436e6cca960ef",
+    "blind-shelxt/stdout.txt": "dd113aeb194eb95f5f8b31da071ba23610e1ca3223af66d93d528f74a17f6b64",
+    "shelxl-anisotropic-from-blind/sample.ins": "f03102c5ff80742b91491ccae98452fe87cc177c3b563505684887e9ced4e0b9",
+    "shelxl-anisotropic-from-blind/sample.res": "8dc93c2a39a6bace17395fd9d42c6be706102532eaa21392b212aebb7010b3e4",
+    "shelxl-anisotropic-from-blind/sample.cif": "64d1e07cb1b1e8cbbb729326e598b29697c310553aaea00369d1c10ebb00f61f",
+    "shelxl-anisotropic-from-blind/stdout.txt": "e0526c71485b04cc98361abe21efe89db28b19b66d9867d0f4941f9f184a80ad",
+    "diagnose-initial.py": "55a310d02043760828c09cbdfba184196a0ee626ddf6ddfe10a7ebc32ea463e1"
+  },
+  "native_extension_sha256": "764bda0a1c378754a595755405ae92c8046261ad7485fcba5168fc7450d2ae4b"
+}
