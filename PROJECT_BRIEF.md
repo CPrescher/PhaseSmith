@@ -71,6 +71,16 @@ general multi-orbit fragment assembly or automatic space-group selection.
 See `docs/solution-completion.md`. External binary inspection is kept outside the
 repository and has not been used to implement these numerical equations.
 
+A separate bounded element-only benchmark now enumerates sampled symmetry-orbit
+multiplicities and repeated count-constrained solves under a declared volume
+bound. Its inputs contain element types, cell and exact symmetry, with no formula
+or reference coordinates. It saves every count proposal, failed/capped outcomes
+and a descriptive complexity ranking; it does not change the native API to a
+general unknown-composition solver. On reused K[BrF4] data, 45 count hypotheses
+select Br4 K4 F16 at R1 0.0222664 with all 24 atoms within 0.006 angstrom;
+30 hypotheses hit their time caps. Exact I4/mcm and cell remain supplied priors.
+See `docs/solution-element-counts.md`.
+
 An opt-in primitive/Bravais comparison now follows position-only lattice discovery.
 Native Selling-Delaunay reduction retains exact integer basis transformations;
 complete low-index reciprocal HNF hypotheses expose excluded reflections rather

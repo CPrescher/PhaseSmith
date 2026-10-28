@@ -1,0 +1,1100 @@
+{
+  "schema": "phasesmith.element-count-experiment.v1",
+  "elements_only": [
+    "Br",
+    "F",
+    "K"
+  ],
+  "cell": [
+    6.0999,
+    6.0999,
+    11.0509,
+    90.0,
+    90.0,
+    90.0
+  ],
+  "space_group": "I4/mcm",
+  "source_sha256": "d76a88377a6d7236416c47a48b4b61ab15f82199e853184dc76e945e3123c2b0",
+  "minimum_volume_per_atom_angstrom3": 8.0,
+  "maximum_atoms": 52,
+  "sampled_orbit_sizes": [
+    4,
+    8,
+    16,
+    32
+  ],
+  "hypotheses": [
+    {
+      "Br": 4,
+      "K": 4,
+      "F": 4
+    },
+    {
+      "Br": 4,
+      "K": 4,
+      "F": 8
+    },
+    {
+      "Br": 4,
+      "K": 8,
+      "F": 4
+    },
+    {
+      "Br": 8,
+      "K": 4,
+      "F": 4
+    },
+    {
+      "Br": 4,
+      "K": 8,
+      "F": 8
+    },
+    {
+      "Br": 8,
+      "K": 4,
+      "F": 8
+    },
+    {
+      "Br": 8,
+      "K": 8,
+      "F": 4
+    },
+    {
+      "Br": 4,
+      "K": 4,
+      "F": 16
+    },
+    {
+      "Br": 4,
+      "K": 16,
+      "F": 4
+    },
+    {
+      "Br": 8,
+      "K": 8,
+      "F": 8
+    },
+    {
+      "Br": 16,
+      "K": 4,
+      "F": 4
+    },
+    {
+      "Br": 4,
+      "K": 8,
+      "F": 16
+    },
+    {
+      "Br": 4,
+      "K": 16,
+      "F": 8
+    },
+    {
+      "Br": 8,
+      "K": 4,
+      "F": 16
+    },
+    {
+      "Br": 8,
+      "K": 16,
+      "F": 4
+    },
+    {
+      "Br": 16,
+      "K": 4,
+      "F": 8
+    },
+    {
+      "Br": 16,
+      "K": 8,
+      "F": 4
+    },
+    {
+      "Br": 8,
+      "K": 8,
+      "F": 16
+    },
+    {
+      "Br": 8,
+      "K": 16,
+      "F": 8
+    },
+    {
+      "Br": 16,
+      "K": 8,
+      "F": 8
+    },
+    {
+      "Br": 4,
+      "K": 16,
+      "F": 16
+    },
+    {
+      "Br": 16,
+      "K": 4,
+      "F": 16
+    },
+    {
+      "Br": 16,
+      "K": 16,
+      "F": 4
+    },
+    {
+      "Br": 4,
+      "K": 4,
+      "F": 32
+    },
+    {
+      "Br": 4,
+      "K": 32,
+      "F": 4
+    },
+    {
+      "Br": 8,
+      "K": 16,
+      "F": 16
+    },
+    {
+      "Br": 16,
+      "K": 8,
+      "F": 16
+    },
+    {
+      "Br": 16,
+      "K": 16,
+      "F": 8
+    },
+    {
+      "Br": 32,
+      "K": 4,
+      "F": 4
+    },
+    {
+      "Br": 4,
+      "K": 8,
+      "F": 32
+    },
+    {
+      "Br": 4,
+      "K": 32,
+      "F": 8
+    },
+    {
+      "Br": 8,
+      "K": 4,
+      "F": 32
+    },
+    {
+      "Br": 8,
+      "K": 32,
+      "F": 4
+    },
+    {
+      "Br": 32,
+      "K": 4,
+      "F": 8
+    },
+    {
+      "Br": 32,
+      "K": 8,
+      "F": 4
+    },
+    {
+      "Br": 8,
+      "K": 8,
+      "F": 32
+    },
+    {
+      "Br": 8,
+      "K": 32,
+      "F": 8
+    },
+    {
+      "Br": 16,
+      "K": 16,
+      "F": 16
+    },
+    {
+      "Br": 32,
+      "K": 8,
+      "F": 8
+    },
+    {
+      "Br": 4,
+      "K": 16,
+      "F": 32
+    },
+    {
+      "Br": 4,
+      "K": 32,
+      "F": 16
+    },
+    {
+      "Br": 16,
+      "K": 4,
+      "F": 32
+    },
+    {
+      "Br": 16,
+      "K": 32,
+      "F": 4
+    },
+    {
+      "Br": 32,
+      "K": 4,
+      "F": 16
+    },
+    {
+      "Br": 32,
+      "K": 16,
+      "F": 4
+    }
+  ],
+  "workers": 4,
+  "options": {
+    "seed": 0,
+    "trials": 1,
+    "cycles": 1200,
+    "phasing": "dual_space",
+    "delta_sigma": 1.0,
+    "weak_fraction": 0.2,
+    "cleanup_cycles": 10,
+    "polish_iterations": 50,
+    "assignment_rounds": 4,
+    "max_seconds": 12,
+    "r1_target": 0.06,
+    "grid_shape": null,
+    "refinement": "anisotropic",
+    "symmetry_tolerance_angstrom": 0.15,
+    "symmetry_iterations": 80,
+    "completion": true
+  },
+  "ranking": "symmetry refined, no pair <0.5 A; minimize N*log(amplitude objective)+(ADP/coordinate parameters+scale)*log(N), N=merged families; descriptive only",
+  "qualification": "Reused development data. One sampled orbit count per element; supplied cell and exact symmetry. No source composition or coordinates read. Each hypothesis uses the existing count-constrained solver. Time caps can affect determinism.",
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "script_sha256": "75e16e2b295705f13722ff6a1f1f6a08a79ac77a7bce3633fe4560320609384e",
+  "native_sha256": "0cd39238548d95fc96bb9f154cf69e77cb55b06c4d8b203874c925df1bf64c23",
+  "support_sha256": {
+    "benchmarks/solution_adp_transfer.py": "344239532b298921594af7d24dcb071a16d1528df0e7b5cbfa4467f8f6e83d59",
+    "benchmarks/structure_solution.py": "58191cddd8fc86a6b5371297a694b838f63ba91ea92452425bb7475e7cd4714e",
+    "python/phasesmith/experimental/solution.py": "7193f9530748f87d38807a014d0773e3486780d7546a190062f1897ec31a97fb",
+    "python/phasesmith/experimental/solution_symmetry.py": "feffc42ed9cec6b5baf77fb9feaacac5264f8fc472dd88e333796ca54588b350",
+    "Cargo.lock": "f8a427cc7edfd5463a2929aa00c5473c10dd674553132052aadcef11fd41cdee"
+  },
+  "elapsed_seconds": 116.20537979199435,
+  "completed": 45,
+  "records": [
+    {
+      "index": 0,
+      "counts": {
+        "Br": 4,
+        "K": 4,
+        "F": 4
+      },
+      "termination": "trial_budget",
+      "r1": 0.18440392422223645,
+      "objective": 0.035201195973088566,
+      "symmetry_refined": false,
+      "overlap": false,
+      "parameters": null,
+      "family_count": 214,
+      "ranking_score": null,
+      "seconds": 3.9283497919968795
+    },
+    {
+      "index": 1,
+      "counts": {
+        "Br": 4,
+        "K": 4,
+        "F": 8
+      },
+      "termination": "trial_budget",
+      "r1": 0.09707131579061484,
+      "objective": 0.012341505607044207,
+      "symmetry_refined": false,
+      "overlap": false,
+      "parameters": null,
+      "family_count": 214,
+      "ranking_score": null,
+      "seconds": 3.851770542009035
+    },
+    {
+      "index": 2,
+      "counts": {
+        "Br": 4,
+        "K": 8,
+        "F": 4
+      },
+      "termination": "trial_budget",
+      "r1": 0.09018182272519261,
+      "objective": 0.00820584039802176,
+      "symmetry_refined": false,
+      "overlap": false,
+      "parameters": null,
+      "family_count": 214,
+      "ranking_score": null,
+      "seconds": 5.572556708008051
+    },
+    {
+      "index": 3,
+      "counts": {
+        "Br": 8,
+        "K": 4,
+        "F": 4
+      },
+      "termination": "trial_budget",
+      "r1": 0.1911812477153743,
+      "objective": 0.0437558178766877,
+      "symmetry_refined": false,
+      "overlap": false,
+      "parameters": null,
+      "family_count": 214,
+      "ranking_score": null,
+      "seconds": 4.545078666997142
+    },
+    {
+      "index": 4,
+      "counts": {
+        "Br": 4,
+        "K": 8,
+        "F": 8
+      },
+      "termination": "trial_budget",
+      "r1": 0.09606001719382072,
+      "objective": 0.009018916327642162,
+      "symmetry_refined": false,
+      "overlap": false,
+      "parameters": null,
+      "family_count": 214,
+      "ranking_score": null,
+      "seconds": 6.82333362501231
+    },
+    {
+      "index": 5,
+      "counts": {
+        "Br": 8,
+        "K": 4,
+        "F": 8
+      },
+      "termination": "trial_budget",
+      "r1": 0.21045445590155187,
+      "objective": 0.03836224607632354,
+      "symmetry_refined": false,
+      "overlap": false,
+      "parameters": null,
+      "family_count": 214,
+      "ranking_score": null,
+      "seconds": 7.417557874985505
+    },
+    {
+      "index": 6,
+      "counts": {
+        "Br": 8,
+        "K": 8,
+        "F": 4
+      },
+      "termination": "trial_budget",
+      "r1": 0.1984393564132445,
+      "objective": 0.03961526981868104,
+      "symmetry_refined": false,
+      "overlap": false,
+      "parameters": null,
+      "family_count": 214,
+      "ranking_score": null,
+      "seconds": 5.71391545899678
+    },
+    {
+      "index": 7,
+      "counts": {
+        "Br": 4,
+        "K": 4,
+        "F": 16
+      },
+      "termination": "r1_target",
+      "r1": 0.022266400442626986,
+      "objective": 0.0008707812145681336,
+      "symmetry_refined": true,
+      "overlap": false,
+      "parameters": 12,
+      "family_count": 214,
+      "ranking_score": -1443.4779253300612,
+      "seconds": 4.892638833000092
+    },
+    {
+      "index": 8,
+      "counts": {
+        "Br": 4,
+        "K": 16,
+        "F": 4
+      },
+      "termination": "trial_budget",
+      "r1": 0.20193874268822348,
+      "objective": 0.036415433490262605,
+      "symmetry_refined": false,
+      "overlap": false,
+      "parameters": null,
+      "family_count": 214,
+      "ranking_score": null,
+      "seconds": 6.67300750000868
+    },
+    {
+      "index": 9,
+      "counts": {
+        "Br": 8,
+        "K": 8,
+        "F": 8
+      },
+      "termination": "trial_budget",
+      "r1": 0.19099907975331573,
+      "objective": 0.03734237295670885,
+      "symmetry_refined": false,
+      "overlap": false,
+      "parameters": null,
+      "family_count": 214,
+      "ranking_score": null,
+      "seconds": 6.724759333010297
+    },
+    {
+      "index": 10,
+      "counts": {
+        "Br": 16,
+        "K": 4,
+        "F": 4
+      },
+      "termination": "max_runtime",
+      "r1": 0.33189714559262407,
+      "objective": 0.10148929893296335,
+      "symmetry_refined": false,
+      "overlap": false,
+      "parameters": null,
+      "family_count": 214,
+      "ranking_score": null,
+      "seconds": 12.005631875013933
+    },
+    {
+      "index": 11,
+      "counts": {
+        "Br": 4,
+        "K": 8,
+        "F": 16
+      },
+      "termination": "trial_budget",
+      "r1": 0.13077006801470936,
+      "objective": 0.016187763376590166,
+      "symmetry_refined": false,
+      "overlap": true,
+      "parameters": null,
+      "family_count": 214,
+      "ranking_score": null,
+      "seconds": 7.853254957997706
+    },
+    {
+      "index": 12,
+      "counts": {
+        "Br": 4,
+        "K": 16,
+        "F": 8
+      },
+      "termination": "trial_budget",
+      "r1": 0.22668102288915057,
+      "objective": 0.04485623831715316,
+      "symmetry_refined": false,
+      "overlap": false,
+      "parameters": null,
+      "family_count": 214,
+      "ranking_score": null,
+      "seconds": 5.333294540992938
+    },
+    {
+      "index": 13,
+      "counts": {
+        "Br": 8,
+        "K": 4,
+        "F": 16
+      },
+      "termination": "trial_budget",
+      "r1": 0.18178955995238733,
+      "objective": 0.0349732519841572,
+      "symmetry_refined": false,
+      "overlap": false,
+      "parameters": null,
+      "family_count": 214,
+      "ranking_score": null,
+      "seconds": 4.949070291972021
+    },
+    {
+      "index": 14,
+      "counts": {
+        "Br": 8,
+        "K": 16,
+        "F": 4
+      },
+      "termination": "max_runtime",
+      "r1": 0.24810346258588764,
+      "objective": 0.053611758386052796,
+      "symmetry_refined": false,
+      "overlap": false,
+      "parameters": null,
+      "family_count": 214,
+      "ranking_score": null,
+      "seconds": 12.005595624999842
+    },
+    {
+      "index": 15,
+      "counts": {
+        "Br": 16,
+        "K": 4,
+        "F": 8
+      },
+      "termination": "max_runtime",
+      "r1": 0.3794268544475382,
+      "objective": 0.116861852096001,
+      "symmetry_refined": false,
+      "overlap": false,
+      "parameters": null,
+      "family_count": 214,
+      "ranking_score": null,
+      "seconds": 12.00724025000818
+    },
+    {
+      "index": 16,
+      "counts": {
+        "Br": 16,
+        "K": 8,
+        "F": 4
+      },
+      "termination": "max_runtime",
+      "r1": 0.35414189764885295,
+      "objective": 0.10791436691385166,
+      "symmetry_refined": false,
+      "overlap": false,
+      "parameters": null,
+      "family_count": 214,
+      "ranking_score": null,
+      "seconds": 12.005968374985969
+    },
+    {
+      "index": 17,
+      "counts": {
+        "Br": 8,
+        "K": 8,
+        "F": 16
+      },
+      "termination": "trial_budget",
+      "r1": 0.20257204195927014,
+      "objective": 0.03964417281093253,
+      "symmetry_refined": false,
+      "overlap": false,
+      "parameters": null,
+      "family_count": 214,
+      "ranking_score": null,
+      "seconds": 9.451143999991473
+    },
+    {
+      "index": 18,
+      "counts": {
+        "Br": 8,
+        "K": 16,
+        "F": 8
+      },
+      "termination": "max_runtime",
+      "r1": 0.20316092038714081,
+      "objective": 0.037680854290521086,
+      "symmetry_refined": false,
+      "overlap": true,
+      "parameters": null,
+      "family_count": 214,
+      "ranking_score": null,
+      "seconds": 12.011147084005643
+    },
+    {
+      "index": 19,
+      "counts": {
+        "Br": 16,
+        "K": 8,
+        "F": 8
+      },
+      "termination": "max_runtime",
+      "r1": 0.34362758833845986,
+      "objective": 0.09664585292207356,
+      "symmetry_refined": false,
+      "overlap": true,
+      "parameters": null,
+      "family_count": 214,
+      "ranking_score": null,
+      "seconds": 12.011603291990468
+    },
+    {
+      "index": 20,
+      "counts": {
+        "Br": 4,
+        "K": 16,
+        "F": 16
+      },
+      "termination": "max_runtime",
+      "r1": 0.23148342661455262,
+      "objective": 0.051339614559879884,
+      "symmetry_refined": false,
+      "overlap": true,
+      "parameters": null,
+      "family_count": 214,
+      "ranking_score": null,
+      "seconds": 12.007964999997057
+    },
+    {
+      "index": 21,
+      "counts": {
+        "Br": 16,
+        "K": 4,
+        "F": 16
+      },
+      "termination": "max_runtime",
+      "r1": 0.33730918885458316,
+      "objective": 0.09914819626302435,
+      "symmetry_refined": false,
+      "overlap": false,
+      "parameters": null,
+      "family_count": 214,
+      "ranking_score": null,
+      "seconds": 12.007663124997634
+    },
+    {
+      "index": 22,
+      "counts": {
+        "Br": 16,
+        "K": 16,
+        "F": 4
+      },
+      "termination": "max_runtime",
+      "r1": 0.27621021029582704,
+      "objective": 0.07172031517595899,
+      "symmetry_refined": false,
+      "overlap": true,
+      "parameters": null,
+      "family_count": 214,
+      "ranking_score": null,
+      "seconds": 12.012696833000518
+    },
+    {
+      "index": 23,
+      "counts": {
+        "Br": 4,
+        "K": 4,
+        "F": 32
+      },
+      "termination": "max_runtime",
+      "r1": 0.10781224514948091,
+      "objective": 0.012901872931309143,
+      "symmetry_refined": false,
+      "overlap": true,
+      "parameters": null,
+      "family_count": 214,
+      "ranking_score": null,
+      "seconds": 12.005865624989383
+    },
+    {
+      "index": 24,
+      "counts": {
+        "Br": 4,
+        "K": 32,
+        "F": 4
+      },
+      "termination": "max_runtime",
+      "r1": 0.3463121164872676,
+      "objective": 0.1096049393894547,
+      "symmetry_refined": false,
+      "overlap": true,
+      "parameters": null,
+      "family_count": 214,
+      "ranking_score": null,
+      "seconds": 12.010497707989998
+    },
+    {
+      "index": 25,
+      "counts": {
+        "Br": 8,
+        "K": 16,
+        "F": 16
+      },
+      "termination": "max_runtime",
+      "r1": 0.20519566552643603,
+      "objective": 0.0380236471445925,
+      "symmetry_refined": false,
+      "overlap": true,
+      "parameters": null,
+      "family_count": 214,
+      "ranking_score": null,
+      "seconds": 12.007308166008443
+    },
+    {
+      "index": 26,
+      "counts": {
+        "Br": 16,
+        "K": 8,
+        "F": 16
+      },
+      "termination": "max_runtime",
+      "r1": 0.2698860653062006,
+      "objective": 0.06184607633264395,
+      "symmetry_refined": false,
+      "overlap": true,
+      "parameters": null,
+      "family_count": 214,
+      "ranking_score": null,
+      "seconds": 12.005928458995186
+    },
+    {
+      "index": 27,
+      "counts": {
+        "Br": 16,
+        "K": 16,
+        "F": 8
+      },
+      "termination": "max_runtime",
+      "r1": 0.2835433004832661,
+      "objective": 0.07451876444718142,
+      "symmetry_refined": false,
+      "overlap": true,
+      "parameters": null,
+      "family_count": 214,
+      "ranking_score": null,
+      "seconds": 12.014097958017373
+    },
+    {
+      "index": 28,
+      "counts": {
+        "Br": 32,
+        "K": 4,
+        "F": 4
+      },
+      "termination": "max_runtime",
+      "r1": 0.41890167134609857,
+      "objective": 0.15724353611565756,
+      "symmetry_refined": false,
+      "overlap": true,
+      "parameters": null,
+      "family_count": 214,
+      "ranking_score": null,
+      "seconds": 12.00900958298007
+    },
+    {
+      "index": 29,
+      "counts": {
+        "Br": 4,
+        "K": 8,
+        "F": 32
+      },
+      "termination": "trial_budget",
+      "r1": 0.15751434287186936,
+      "objective": 0.026547926580916672,
+      "symmetry_refined": false,
+      "overlap": true,
+      "parameters": null,
+      "family_count": 214,
+      "ranking_score": null,
+      "seconds": 7.319798834010726
+    },
+    {
+      "index": 30,
+      "counts": {
+        "Br": 4,
+        "K": 32,
+        "F": 8
+      },
+      "termination": "max_runtime",
+      "r1": 0.28762289970546434,
+      "objective": 0.07732969316298229,
+      "symmetry_refined": false,
+      "overlap": true,
+      "parameters": null,
+      "family_count": 214,
+      "ranking_score": null,
+      "seconds": 12.005249082983937
+    },
+    {
+      "index": 31,
+      "counts": {
+        "Br": 8,
+        "K": 4,
+        "F": 32
+      },
+      "termination": "max_runtime",
+      "r1": 0.1603895938453415,
+      "objective": 0.022256625008812956,
+      "symmetry_refined": false,
+      "overlap": true,
+      "parameters": null,
+      "family_count": 214,
+      "ranking_score": null,
+      "seconds": 12.015377291972982
+    },
+    {
+      "index": 32,
+      "counts": {
+        "Br": 8,
+        "K": 32,
+        "F": 4
+      },
+      "termination": "max_runtime",
+      "r1": 0.22621074103091912,
+      "objective": 0.04494883492863352,
+      "symmetry_refined": false,
+      "overlap": true,
+      "parameters": null,
+      "family_count": 214,
+      "ranking_score": null,
+      "seconds": 12.006079750019126
+    },
+    {
+      "index": 33,
+      "counts": {
+        "Br": 32,
+        "K": 4,
+        "F": 8
+      },
+      "termination": "max_runtime",
+      "r1": 0.42299597359944296,
+      "objective": 0.1575007399559134,
+      "symmetry_refined": false,
+      "overlap": true,
+      "parameters": null,
+      "family_count": 214,
+      "ranking_score": null,
+      "seconds": 12.013524582987884
+    },
+    {
+      "index": 34,
+      "counts": {
+        "Br": 32,
+        "K": 8,
+        "F": 4
+      },
+      "termination": "max_runtime",
+      "r1": 0.38259592916645035,
+      "objective": 0.13855797482308618,
+      "symmetry_refined": false,
+      "overlap": true,
+      "parameters": null,
+      "family_count": 214,
+      "ranking_score": null,
+      "seconds": 12.015636624972103
+    },
+    {
+      "index": 35,
+      "counts": {
+        "Br": 8,
+        "K": 8,
+        "F": 32
+      },
+      "termination": "max_runtime",
+      "r1": 0.1769216191803389,
+      "objective": 0.031071528786606885,
+      "symmetry_refined": false,
+      "overlap": true,
+      "parameters": null,
+      "family_count": 214,
+      "ranking_score": null,
+      "seconds": 12.010257916001137
+    },
+    {
+      "index": 36,
+      "counts": {
+        "Br": 8,
+        "K": 32,
+        "F": 8
+      },
+      "termination": "max_runtime",
+      "r1": 0.20703439021345646,
+      "objective": 0.05067861096231503,
+      "symmetry_refined": false,
+      "overlap": false,
+      "parameters": null,
+      "family_count": 214,
+      "ranking_score": null,
+      "seconds": 12.008764375001192
+    },
+    {
+      "index": 37,
+      "counts": {
+        "Br": 16,
+        "K": 16,
+        "F": 16
+      },
+      "termination": "max_runtime",
+      "r1": 0.31321524882569757,
+      "objective": 0.09476257161111645,
+      "symmetry_refined": false,
+      "overlap": true,
+      "parameters": null,
+      "family_count": 214,
+      "ranking_score": null,
+      "seconds": 12.017290999996476
+    },
+    {
+      "index": 38,
+      "counts": {
+        "Br": 32,
+        "K": 8,
+        "F": 8
+      },
+      "termination": "max_runtime",
+      "r1": 0.33349759161968023,
+      "objective": 0.1210976487769286,
+      "symmetry_refined": false,
+      "overlap": true,
+      "parameters": null,
+      "family_count": 214,
+      "ranking_score": null,
+      "seconds": 12.020646832999773
+    },
+    {
+      "index": 39,
+      "counts": {
+        "Br": 4,
+        "K": 16,
+        "F": 32
+      },
+      "termination": "max_runtime",
+      "r1": 0.24365037945842,
+      "objective": 0.05850253412570378,
+      "symmetry_refined": false,
+      "overlap": true,
+      "parameters": null,
+      "family_count": 214,
+      "ranking_score": null,
+      "seconds": 12.008808167011011
+    },
+    {
+      "index": 40,
+      "counts": {
+        "Br": 4,
+        "K": 32,
+        "F": 16
+      },
+      "termination": "max_runtime",
+      "r1": 0.2792935931244155,
+      "objective": 0.07999082561201011,
+      "symmetry_refined": false,
+      "overlap": true,
+      "parameters": null,
+      "family_count": 214,
+      "ranking_score": null,
+      "seconds": 12.012253583001439
+    },
+    {
+      "index": 41,
+      "counts": {
+        "Br": 16,
+        "K": 4,
+        "F": 32
+      },
+      "termination": "max_runtime",
+      "r1": 0.2638866295906047,
+      "objective": 0.0710466826470295,
+      "symmetry_refined": false,
+      "overlap": true,
+      "parameters": null,
+      "family_count": 214,
+      "ranking_score": null,
+      "seconds": 12.022961540991673
+    },
+    {
+      "index": 42,
+      "counts": {
+        "Br": 16,
+        "K": 32,
+        "F": 4
+      },
+      "termination": "max_runtime",
+      "r1": 0.3087426578050467,
+      "objective": 0.09509251334620561,
+      "symmetry_refined": false,
+      "overlap": true,
+      "parameters": null,
+      "family_count": 214,
+      "ranking_score": null,
+      "seconds": 12.02161112500471
+    },
+    {
+      "index": 43,
+      "counts": {
+        "Br": 32,
+        "K": 4,
+        "F": 16
+      },
+      "termination": "max_runtime",
+      "r1": 0.31918722531494687,
+      "objective": 0.1008953064843188,
+      "symmetry_refined": false,
+      "overlap": true,
+      "parameters": null,
+      "family_count": 214,
+      "ranking_score": null,
+      "seconds": 12.019154500012519
+    },
+    {
+      "index": 44,
+      "counts": {
+        "Br": 32,
+        "K": 16,
+        "F": 4
+      },
+      "termination": "max_runtime",
+      "r1": 0.36124791094948727,
+      "objective": 0.13420463266651197,
+      "symmetry_refined": false,
+      "overlap": true,
+      "parameters": null,
+      "family_count": 214,
+      "ranking_score": null,
+      "seconds": 12.014284833014244
+    }
+  ],
+  "ranked_indices": [
+    7
+  ],
+  "post_solve_audit": {
+    "selected_index_before_reference_read": 7,
+    "reference_sha256": "518988e3c4fd244dd24e47d12925722fd5f347ad2c61e398de1f4e5b24033f47",
+    "full_cell_counts_match_reference": {
+      "Br": 4,
+      "K": 4,
+      "F": 16
+    },
+    "geometry": {
+      "max_element_matched_error_angstrom": 0.005908783390131203,
+      "rms_error_angstrom": 0.00482450143548406,
+      "reference_used_after_solve_only": true,
+      "non_h_atom_count": 24
+    },
+    "general_structure_factor_path_cif_checks": {
+      "candidate-p1.cif": {
+        "r1": 0.02226640044236279,
+        "sha256": "17f95c3f5a152e67ef3eae7c45aab3d5c3c24c3b5a3f871a37097d640f16ecac"
+      },
+      "candidate.cif": {
+        "r1": 0.02226640044304611,
+        "sha256": "afd69c24b7c8535f6e0580b1780af60e62a1e15cef5f865bf9617161ae3b317b"
+      }
+    },
+    "ranked_report_sha256": "636af7a8ed619bba84e6e933dd21608b24f00aeed655a817f96c4d92ce77faf1"
+  },
+  "output_directory": "runs/element-only-count-search-final",
+  "verification": {
+    "python": "1246 passed, 11 skipped, 34 deselected",
+    "rust": "387 passed, 34 ignored",
+    "clippy": "workspace, all targets, all features, -D warnings passed",
+    "formatting": "cargo fmt and ruff passed",
+    "native_numerical_changes": false
+  },
+  "first_run_repeat_check": {
+    "output_directory": "runs/element-only-count-search",
+    "elapsed_seconds": 115.99472208399675,
+    "completed": 45,
+    "ranked_indices": [
+      7
+    ],
+    "selected_r1": 0.022266400442626986,
+    "qualification": "Initial script differed in input-validation, formatting and provenance snapshot additions; count enumeration, controls and ranking were identical. First launch overlapped test execution."
+  }
+}
