@@ -213,7 +213,6 @@ def test_infers_counts_and_multiple_orbits_without_composition(symbol, counts, t
         {"maximum_atoms": True},
         {"beam_width": 9},
         {"search_rounds": 0},
-        {"options": SolutionOptions(phasing="dual_space")},
         {"options": SolutionOptions(refinement="none")},
     ],
 )

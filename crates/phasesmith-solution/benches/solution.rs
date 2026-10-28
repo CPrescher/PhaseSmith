@@ -136,7 +136,37 @@ fn benchmark(c: &mut Criterion) {
                     &support,
                     &DualSpaceOptions {
                         cycles: 50,
-                        atom_count: 4,
+                        peak_selection: phasesmith_solution::PeakSelection::Fixed(4),
+                        mask_sigma: 0.3,
+                        hybrid_m: 3.,
+                        omit_fraction: 0.1,
+                        seed: 0,
+                        patterson_rank: Some(0),
+                        cancellation: None,
+                    },
+                    None,
+                )
+                .unwrap()
+            });
+        },
+    );
+    c.bench_function(
+        "count_free_dual_space_32cubed_2108_reflections_50_cycles",
+        |b| {
+            b.iter(|| {
+                dual_space(
+                    shape,
+                    cell,
+                    &hkl,
+                    &amplitudes,
+                    &phases,
+                    &support,
+                    &DualSpaceOptions {
+                        cycles: 50,
+                        peak_selection: phasesmith_solution::PeakSelection::Adaptive {
+                            sigma: 2.,
+                            cap: 128,
+                        },
                         mask_sigma: 0.3,
                         hybrid_m: 3.,
                         omit_fraction: 0.1,

@@ -39,6 +39,9 @@ def main():
     parser.add_argument("--reference-after-solving", type=Path)
     parser.add_argument("--repeats", type=int, default=3)
     parser.add_argument("--max-seconds", type=float, default=30)
+    parser.add_argument(
+        "--phasing", choices=("charge_flip", "dual_space", "portfolio"), default="charge_flip"
+    )
     parser.add_argument("--no-staged-refinement", action="store_true")
     parser.add_argument("--no-integrated-peak-density", action="store_true")
     parser.add_argument("--screening-iterations", type=int, default=8)
@@ -50,7 +53,12 @@ def main():
     group = space_group_by_symbol(args.space_group).space_group
     data = reflection_data(args.hkl) if args.hkl_format == "cif" else read_hkl(args.hkl)
     options = SolutionOptions(
-        trials=1, cycles=800, max_seconds=args.max_seconds, r1_target=0.06, completion=False
+        trials=1,
+        cycles=800,
+        max_seconds=args.max_seconds,
+        r1_target=0.06,
+        completion=False,
+        phasing=args.phasing,
     )
     args.output.mkdir(exist_ok=False, parents=True)
     (args.output / "experiment-source.py").write_bytes(Path(__file__).read_bytes())

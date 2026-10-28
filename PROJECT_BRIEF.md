@@ -121,12 +121,27 @@ current strong orbits narrows birth/relabel alternatives and the staged shortlis
 nearby elements, missing types and the leading diffraction proposal retain rescue
 paths. Exact counts and coordinates are never inputs. The prior staged search is
 available with `integrated_peak_density=False`. Independent quadrature, direct
-Fourier, derivative and Gaussian-volume checks cover the new kernel; see
+Fourier, derivative and Gaussian-volume checks cover the new kernel.
 Three serial paired repeats per measured development case preserve all counts,
 reference geometry and R1. Staged/density-guided medians are 2.269/1.696 s for
 K[BrF4], 1.150/0.973 s for BiSeI and 7.546/5.658 s for thiourea (1.34x, 1.18x
 and 1.33x). See `docs/solution-peak-density.md`. Default powder builds remain
 unchanged.
+
+Shared element-only search now also accepts count-free Patterson/dual-space
+phasing. A positive map-RMS peak selector replaces the supplied-N atomicity mask;
+its explicit peak cap is a resource bound, independent of the downstream atom
+bound. Per-cycle requested/effective thresholds and selected/omitted peak counts
+are exported separately from inferred composition. The fixed-count path remains
+explicit, and portfolio starts share the existing total budgets. Independent
+NumPy complete-cycle and projection references, boundary cases and synthetic
+count-recovery tests cover the extension. Three serial paired measured repeats
+recover K[BrF4] and thiourea with unchanged counts, geometry and R1, but cost
+2.547 versus 1.719 s and 6.001 versus 5.583 s. BiSeI fails framework initialization
+with the new phasing while charge flipping solves in 0.993 s. No speed or coverage
+improvement is claimed; charge flipping stays the default. See
+`docs/solution-count-free-dual-space.md` for the frozen comparison and limitations.
+Default powder builds remain unchanged.
 
 An opt-in primitive/Bravais comparison now follows position-only lattice discovery.
 Native Selling-Delaunay reduction retains exact integer basis transformations;

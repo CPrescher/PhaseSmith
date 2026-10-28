@@ -33,7 +33,10 @@ pub use completion_orbit::{
     DifferenceMap, OrbitEvaluation, PreparedOrbitSearch, project_fixed_sets,
 };
 pub use data::{Observation, PreparedData, prepare_data};
-pub use dual_space::{DualSpaceOptions, DualSpaceResult, atomic_projection, dual_space};
+pub use dual_space::{
+    AdaptivePeakHistory, DualSpaceOptions, DualSpaceResult, PeakSelection, adaptive_peaks,
+    atomic_projection, dual_space,
+};
 pub use fourier::{FlipOptions, FlipResult, charge_flip, extract_peaks};
 pub use model::{ModelEvaluation, PolishedModel, evaluate_model, polish_model};
 pub use peak_density::{IntegratedPeakDensity, PeakIntegral, ball_transform, density_label_mask};
