@@ -70,6 +70,7 @@ class SolutionOptions:
     refinement: str = "anisotropic"
     symmetry_tolerance_angstrom: float = 0.15
     symmetry_iterations: int = 80
+    completion: bool = True
 
     def __post_init__(self) -> None:
         for name, low, high in (
@@ -94,6 +95,8 @@ class SolutionOptions:
             value = getattr(self, name)
             if isinstance(value, bool) or not np.isfinite(value) or not low <= value <= high:
                 raise ValueError(f"{name} must be finite in [{low},{high}]")
+        if not isinstance(self.completion, bool):
+            raise TypeError("completion must be boolean")
         if self.phasing not in ("charge_flip", "dual_space", "portfolio"):
             raise ValueError("phasing must be charge_flip, dual_space, or portfolio")
         if self.refinement not in ("none", "isotropic", "anisotropic"):
@@ -111,6 +114,31 @@ class SolutionOptions:
 
 
 @dataclass(frozen=True, slots=True)
+class CompletionAttempt:
+    """Actual partial-framework work; a retained candidate can precede a stop."""
+
+    applied: bool
+    status: str
+    diagnostic: str | None
+    framework_species: tuple[str, ...]
+    framework_atoms: int
+    added_species: str | None
+    added_atoms: int
+    seed_count: int
+    projection_trials: int
+    orbit_trials: int
+    refinements: int
+    framework_hypotheses: int
+    selected_framework: int | None
+    framework_maximum_error: float | None
+    initial_objective: float
+    best_objective: float | None
+
+    def __post_init__(self):
+        object.__setattr__(self, "framework_species", tuple(self.framework_species))
+
+
+@dataclass(frozen=True, slots=True)
 class SolutionCandidate:
     """Full-cell atomic hypothesis; a good amplitude fit does not prove correctness."""
 
@@ -125,6 +153,7 @@ class SolutionCandidate:
     element_swaps: int
     refinement: SymmetryRefinement | None = None
     refinement_diagnostic: str | None = None
+    completion: CompletionAttempt | None = None
 
     def as_structure(self, cell: UnitCell) -> CrystalStructure:
         """Create the refined asymmetric model, or the retained P1 hypothesis."""
@@ -166,6 +195,7 @@ class SolutionCandidate:
             "element_swaps": self.element_swaps,
             "refinement": None if self.refinement is None else self.refinement.to_record(),
             "refinement_diagnostic": self.refinement_diagnostic,
+            "completion": None if self.completion is None else asdict(self.completion),
         }
 
 
@@ -224,7 +254,7 @@ class SolutionResult:
     def to_record(self) -> dict[str, object]:
         """Summarize a run without embedding large input or density arrays."""
         return {
-            "schema": "phasesmith.experimental-solution.v3",
+            "schema": "phasesmith.experimental-solution.v4",
             "experimental": True,
             "source_name": self.observations.source_name,
             "source_sha256": self.observations.source_sha256,
@@ -328,6 +358,7 @@ def solve_structure(
             if c["refinement"] is None
             else SymmetryRefinement.from_native(c["refinement"], group),
             refinement_diagnostic=c["refinement_diagnostic"],
+            completion=None if c["completion"] is None else CompletionAttempt(**c["completion"]),
             **{
                 key: c[key]
                 for key in (
@@ -442,6 +473,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument(
         "--refinement", choices=("none", "isotropic", "anisotropic"), default="anisotropic"
     )
+    parser.add_argument(
+        "--no-completion", action="store_true", help="disable weakest-species orbit completion"
+    )
     args = parser.parse_args(argv)
     try:
         if args.output.exists():
@@ -462,6 +496,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 trials=args.trials,
                 cycles=args.cycles,
                 phasing=args.phasing,
+                completion=not args.no_completion,
                 max_seconds=args.max_seconds,
                 r1_target=args.r1_target,
                 refinement=args.refinement,

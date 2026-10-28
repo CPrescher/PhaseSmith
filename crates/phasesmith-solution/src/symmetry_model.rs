@@ -203,7 +203,7 @@ fn match_operations(
     clippy::too_many_lines,
     clippy::cast_precision_loss
 )]
-pub fn recover_symmetry(
+fn recover_models(
     cell: UnitCell,
     group: &SpaceGroup,
     elements: &[String],
@@ -211,7 +211,8 @@ pub fn recover_symmetry(
     tolerance: f64,
     deadline: Option<Instant>,
     cancellation: Option<&Cancellation>,
-) -> Result<SymmetryModel, SolutionError> {
+    maximum_models: usize,
+) -> Result<Vec<SymmetryModel>, SolutionError> {
     if points.is_empty()
         || points.len() > 128
         || points.len() != elements.len()
@@ -251,6 +252,7 @@ pub fn recover_symmetry(
     });
     anchors.truncate(12);
     let mut best = None;
+    let mut alternatives: Vec<OriginMatch> = Vec::new();
     for hand in [1, -1] {
         let reflected: Vec<_> = points
             .iter()
@@ -278,6 +280,16 @@ pub fn recover_symmetry(
                     if let Ok((permutations, maximum, score)) =
                         match_operations(&g, group, &aligned, elements, tolerance)
                     {
+                        if maximum_models > 1 {
+                            alternatives.push((
+                                hand,
+                                shift,
+                                aligned.clone(),
+                                permutations.clone(),
+                                maximum,
+                                score,
+                            ));
+                        }
                         if best
                             .as_ref()
                             .is_none_or(|&(_, _, _, _, _, old)| score < old - 1e-12)
@@ -289,9 +301,47 @@ pub fn recover_symmetry(
             }
         }
     }
-    let (hand, shift, aligned, permutations, maximum, _) =
+    let best =
         best.ok_or_else(|| error("no origin/hand matches the supplied symmetry within tolerance"))?;
-    let mut parent: Vec<_> = (0..points.len()).collect();
+    alternatives.sort_by(|a, b| a.5.total_cmp(&b.5));
+    let mut raw = vec![best];
+    raw.extend(alternatives);
+    let mut models = Vec::new();
+    for matched in raw {
+        if crate::stopped(deadline, cancellation) {
+            return Err(error(
+                "symmetry recovery interrupted by cancellation or runtime limit",
+            ));
+        }
+        let model = build_model(&g, group, elements, matched)?;
+        let mut duplicate = false;
+        for previous in &models {
+            if equivalent_framework(&model, previous)? {
+                duplicate = true;
+                break;
+            }
+        }
+        if !duplicate {
+            models.push(model);
+        }
+        if models.len() >= maximum_models {
+            break;
+        }
+    }
+    Ok(models)
+}
+
+type OriginMatch = (i32, [f64; 3], Vec<[f64; 3]>, Vec<Vec<usize>>, f64, f64);
+
+#[allow(clippy::too_many_lines, clippy::cast_precision_loss)]
+fn build_model(
+    g: &CellGeometry,
+    group: &SpaceGroup,
+    elements: &[String],
+    matched: OriginMatch,
+) -> Result<SymmetryModel, SolutionError> {
+    let (hand, shift, aligned, permutations, maximum, _) = matched;
+    let mut parent: Vec<_> = (0..elements.len()).collect();
     for permutation in &permutations {
         for (i, &j) in permutation.iter().enumerate() {
             let a = root(&parent, i);
@@ -309,22 +359,22 @@ pub fn recover_symmetry(
     });
     let free_basis = orthogonal_vectors(transpose(free_projector), g.direct_metric);
     let mut sites = Vec::new();
-    for rep in 0..points.len() {
+    for rep in 0..elements.len() {
         if root(&parent, rep) != rep {
             continue;
         }
-        let orbit: Vec<_> = (0..points.len())
+        let orbit: Vec<_> = (0..elements.len())
             .filter(|&j| root(&parent, j) == rep)
             .collect();
         let mut adjustment = [0.; 3];
         for (op_index, &op) in group.operations().iter().enumerate() {
             let j = permutations[op_index][rep];
             let difference =
-                periodic_difference(&g, sub(op.apply_fractional(aligned[rep]), aligned[j]))?;
+                periodic_difference(g, sub(op.apply_fractional(aligned[rep]), aligned[j]))?;
             let inverse = multiply(
                 multiply(
                     transpose(g.reciprocal_basis),
-                    transpose(cart_rotation(&g, op)),
+                    transpose(cart_rotation(g, op)),
                 ),
                 g.direct_basis,
             );
@@ -350,13 +400,13 @@ pub fn recover_symmetry(
                 op.rotation()
                     .map(|r| r.map(|v| f64::from(v) / stabilizing.len() as f64)),
             );
-            let difference = periodic_difference(&g, sub(op.apply_fractional(point), point))?;
+            let difference = periodic_difference(g, sub(op.apply_fractional(point), point))?;
             projection = add(projection, difference);
         }
         point =
             add(point, scaled(projection, 1. / stabilizing.len() as f64)).map(|v| v.rem_euclid(1.));
         for &op in &stabilizing {
-            let d = periodic_difference(&g, sub(op.apply_fractional(point), point))?;
+            let d = periodic_difference(g, sub(op.apply_fractional(point), point))?;
             if dot(d, mv(g.direct_metric, d)) > 1e-16 {
                 return Err(error("site-stabilizer projection is inconsistent"));
             }
@@ -391,7 +441,7 @@ pub fn recover_symmetry(
                 let op = group.operations()[index];
                 Ok(SymmetryImage {
                     operation: op,
-                    cartesian_rotation: cart_rotation(&g, op),
+                    cartesian_rotation: cart_rotation(g, op),
                     source_index: j,
                 })
             })
@@ -400,21 +450,138 @@ pub fn recover_symmetry(
             species: elements[rep].clone(),
             fractional_xyz: point,
             coordinate_basis: basis,
-            stabilizer: stabilizing
-                .iter()
-                .map(|&op| cart_rotation(&g, op))
-                .collect(),
+            stabilizer: stabilizing.iter().map(|&op| cart_rotation(g, op)).collect(),
             images,
         });
     }
     Ok(SymmetryModel {
-        geometry: g,
+        geometry: *g,
         group: group.clone(),
         sites,
         hand,
         origin_shift: shift,
         maximum_matching_error: maximum,
         origin_gauge_dimension: free_basis.len(),
-        full_count: points.len(),
+        full_count: elements.len(),
     })
+}
+
+/// Retain distinct partial-framework settings; origin shifts normalizing the full
+/// supplied group are deduplicated, while inequivalent heavy-site settings survive.
+///
+/// # Errors
+/// The same boundary as `recover_symmetry`, with a hypothesis budget in [1,16].
+#[allow(clippy::too_many_arguments)]
+pub fn recover_symmetry_hypotheses(
+    cell: UnitCell,
+    group: &SpaceGroup,
+    elements: &[String],
+    points: &[[f64; 3]],
+    tolerance: f64,
+    deadline: Option<Instant>,
+    cancellation: Option<&Cancellation>,
+    maximum_models: usize,
+) -> Result<Vec<SymmetryModel>, SolutionError> {
+    if !(1..=16).contains(&maximum_models) {
+        return Err(error("symmetry hypothesis budget must lie in [1,16]"));
+    }
+    recover_models(
+        cell,
+        group,
+        elements,
+        points,
+        tolerance,
+        deadline,
+        cancellation,
+        maximum_models,
+    )
+}
+
+/// Identify one deterministic origin/hand and project complete symmetry orbits.
+///
+/// # Errors
+/// Rejects malformed/incompatible models, poor matching or exhausted resources.
+#[allow(clippy::too_many_arguments)]
+pub fn recover_symmetry(
+    cell: UnitCell,
+    group: &SpaceGroup,
+    elements: &[String],
+    points: &[[f64; 3]],
+    tolerance: f64,
+    deadline: Option<Instant>,
+    cancellation: Option<&Cancellation>,
+) -> Result<SymmetryModel, SolutionError> {
+    recover_models(
+        cell,
+        group,
+        elements,
+        points,
+        tolerance,
+        deadline,
+        cancellation,
+        1,
+    )?
+    .pop()
+    .ok_or_else(|| error("no symmetry model"))
+}
+
+fn equivalent_framework(a: &SymmetryModel, b: &SymmetryModel) -> Result<bool, SolutionError> {
+    fn expand(model: &SymmetryModel) -> Vec<(&String, [f64; 3])> {
+        model
+            .sites
+            .iter()
+            .flat_map(|s| {
+                s.images.iter().map(|image| {
+                    (
+                        &s.species,
+                        image.operation.apply_fractional(s.fractional_xyz),
+                    )
+                })
+            })
+            .collect::<Vec<_>>()
+    }
+    let left = expand(a);
+    let right = expand(b);
+    for &(element, anchor) in &right {
+        if *element != a.sites[0].species {
+            continue;
+        }
+        let shift = sub(left[0].1, anchor);
+        let mut normalizes = true;
+        for op in a.group.operations() {
+            let d = periodic_difference(
+                &a.geometry,
+                sub(mv(op.rotation().map(|r| r.map(f64::from)), shift), shift),
+            )?;
+            if dot(d, mv(a.geometry.direct_metric, d)) > 1e-14 {
+                normalizes = false;
+                break;
+            }
+        }
+        if !normalizes {
+            continue;
+        }
+        let mut all = true;
+        for &(element, point) in &left {
+            let mut found = false;
+            for &(other, target) in &right {
+                if element != other {
+                    continue;
+                }
+                let d = periodic_difference(&a.geometry, sub(point, add(target, shift)))?;
+                if dot(d, mv(a.geometry.direct_metric, d)) < 1e-14 {
+                    found = true;
+                    break;
+                }
+            }
+            if !found {
+                all = false;
+                break;
+            }
+        }
+        if all {
+            return Ok(true);
+        }
+    }
+    Ok(false)
 }

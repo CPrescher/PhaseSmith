@@ -207,6 +207,11 @@ def main():
     parser.add_argument(
         "--phasing", choices=("charge_flip", "dual_space", "portfolio"), default="charge_flip"
     )
+    parser.add_argument(
+        "--completion",
+        action="store_true",
+        help="explicitly enable partial-framework orbit completion",
+    )
     args = parser.parse_args()
     if args.output.exists():
         parser.error("output directory must be new")
@@ -225,6 +230,7 @@ def main():
         r1_target=0.06,
         refinement=args.refinement,
         phasing=args.phasing,
+        completion=args.completion,
     )
     start = time.perf_counter()
     result = solve_structure(
@@ -257,6 +263,8 @@ def main():
         "crates/phasesmith-py/src/solution.rs",
         "crates/phasesmith-py/src/solution_symmetry.rs",
         "crates/phasesmith-py/src/solution_dual.rs",
+        "crates/phasesmith-py/src/solution_completion.rs",
+        "python/phasesmith/experimental/solution_completion_reference.py",
         "python/phasesmith/experimental/solution_dual_reference.py",
         "python/phasesmith/experimental/solution_symmetry.py",
         "python/phasesmith/experimental/solution_reference.py",

@@ -47,11 +47,21 @@ def main():
     parser.add_argument(
         "--phasing", choices=("charge_flip", "dual_space", "portfolio"), default="charge_flip"
     )
+    parser.add_argument(
+        "--completion",
+        action="store_true",
+        help="explicitly enable partial-framework orbit completion",
+    )
     args = parser.parse_args()
     args.output.mkdir(exist_ok=False, parents=True)
     source = json.loads((ROOT / "validation/structure-solution-adp-transfer.json").read_text())
     options = SolutionOptions(
-        trials=8, cycles=1200, max_seconds=60, r1_target=0.06, phasing=args.phasing
+        trials=8,
+        cycles=1200,
+        max_seconds=60,
+        r1_target=0.06,
+        phasing=args.phasing,
+        completion=args.completion,
     )
     from phasesmith import _core
 
@@ -62,6 +72,8 @@ def main():
             "crates/phasesmith-py/src/solution.rs",
             "crates/phasesmith-py/src/solution_symmetry.rs",
             "crates/phasesmith-py/src/solution_dual.rs",
+            "crates/phasesmith-py/src/solution_completion.rs",
+            "python/phasesmith/experimental/solution_completion_reference.py",
             "python/phasesmith/experimental/solution_dual_reference.py",
             "python/phasesmith/experimental/solution.py",
             "python/phasesmith/experimental/solution_symmetry.py",
@@ -123,6 +135,7 @@ def main():
             "elapsed_seconds": elapsed,
             "r1": result.best.r1 if result.best else None,
             "symmetry_refined": bool(result.best and result.best.refinement),
+            "completion": result.best.to_record()["completion"] if result.best else None,
             "candidate_count": len(result.candidates),
             "phasing_trials": result.to_record()["phasing_trials"],
             "all_candidates": [

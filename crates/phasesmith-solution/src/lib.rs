@@ -5,6 +5,8 @@
 //! No external crystallographic program is imported, executed, or required.
 
 mod adp_refinement;
+mod completion;
+mod completion_orbit;
 mod data;
 mod dual_space;
 mod fourier;
@@ -22,12 +24,18 @@ use std::sync::{
 pub use adp_refinement::{
     AdpMode, PreparedSymmetricModel, RefinementSummary, SymmetricEvaluation, SymmetricRefinement,
 };
+pub use completion::{CompletionSummary, complete_candidate};
+pub use completion_orbit::{
+    DifferenceMap, OrbitEvaluation, PreparedOrbitSearch, project_fixed_sets,
+};
 pub use data::{Observation, PreparedData, prepare_data};
 pub use dual_space::{DualSpaceOptions, DualSpaceResult, atomic_projection, dual_space};
 pub use fourier::{FlipOptions, FlipResult, charge_flip, extract_peaks};
 pub use model::{ModelEvaluation, PolishedModel, evaluate_model, polish_model};
 pub use solver::{Candidate, PhasingMethod, PhasingTrial, Solution, SolveOptions, solve};
-pub use symmetry_model::{AsymmetricSite, SymmetryImage, SymmetryModel, recover_symmetry};
+pub use symmetry_model::{
+    AsymmetricSite, SymmetryImage, SymmetryModel, recover_symmetry, recover_symmetry_hypotheses,
+};
 
 /// Thread-safe cooperative cancellation between bounded numerical steps.
 #[derive(Clone, Debug, Default)]

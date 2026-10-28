@@ -109,8 +109,9 @@ asymmetric sites, explicit supplied operations and anisotropic CIF tensors.
 `candidate-p1.cif` carries the equivalent full-cell model in the density frame,
 including individual ADPs. `candidate.as_structure(cell)` returns the constrained
 asymmetric model when available and the P1 fallback otherwise. `result.json`
-schema v3 records exact rational operations, the transformation, both models
-and actual per-trial phasing provenance (v2 introduced the symmetry/ADP output).
+schema v4 records exact rational operations, the transformation, both models,
+per-trial phasing and completion provenance (v2 added symmetry/ADPs; v3 added
+phasing strategies).
 The compatibility scalar `u_iso` is the full-cell mean U-equivalent after
 constrained refinement; physical per-atom tensors live in `candidate.refinement`.
 CLI exit status 0 means the requested numerical R1 target was met; 3 means it
@@ -175,6 +176,20 @@ omit schedule are fixed, documented and recorded; no per-material tuning is
 performed. `result.phasing_trials` contains immutable typed records aligned
 with histories and candidate trial indices. Score definitions differ between
 methods and are labelled; candidate ranking still uses the common atomic fit.
+
+## Partial-framework completion
+
+[Partial-framework completion](solution-completion.md) is enabled by default for
+symmetry-refined experimental searches. If the complete candidate is insufficient,
+it keeps the stronger species, tests compatible framework settings and searches
+for one missing weakest-species orbit using difference Fourier and fixed-set
+projection. Disable it with `SolutionOptions(completion=False)` or CLI
+`--no-completion`. Existing frozen benchmark definitions default to disabled;
+`--completion` explicitly enables the follow-up. The original total runtime,
+trial and cancellation budgets continue to apply. A completion must improve the
+candidate objective and its effort/outcome remains in `candidate.completion`.
+Only the single-missing-orbit slice is implemented; general fragment completion
+and automatic space-group determination remain outside scope.
 
 ## Experimental development case
 

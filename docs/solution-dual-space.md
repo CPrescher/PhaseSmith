@@ -179,3 +179,9 @@ It preserves input instructions, binary/source/output hashes, the external
 solution, conditional native fit and per-element before/after diagnostics.
 The local raw runs are under `runs/kbrf4-shelx-audit/`. No production numerical
 code or existing frozen benchmark is changed by this diagnosis.
+
+
+The subsequent [partial-framework completion](solution-completion.md) implements
+the targeted follow-up above. It retains inequivalent framework settings before
+locating the missing orbit, and now recovers K[BrF4] natively at R1 0.0222664 with
+all atoms within 0.006 Å. The earlier failed-search records remain unchanged.

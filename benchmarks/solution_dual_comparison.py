@@ -21,6 +21,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--download-data", action="store_true")
+    parser.add_argument("--completion", action="store_true")
     args = parser.parse_args()
     args.output = args.output.resolve()
     args.output.mkdir(parents=True, exist_ok=False)
@@ -43,6 +44,8 @@ def main():
             ]
             if script == "structure_solution.py":
                 command += ["--refinement", "anisotropic"]
+            if args.completion:
+                command += ["--completion"]
             if args.download_data:
                 command += ["--download-data"]
             with (args.output / f"{method}-{label}.log").open("x") as stream:
@@ -67,6 +70,7 @@ def main():
                     "phasing_trials": report["phasing_trials"],
                     "post_solve_reference": report.get("post_solve_reference_audit"),
                     "symmetry_refined": bool(best and best["refinement"]),
+                    "completion": None if best is None else best["completion"],
                     "options": report["options"],
                 }
             else:
