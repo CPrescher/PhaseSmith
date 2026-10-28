@@ -1,0 +1,1800 @@
+{
+  "schema": "phasesmith.staged-refinement-comparison.v1",
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "repeats": 3,
+  "options": {
+    "seed": 0,
+    "trials": 1,
+    "cycles": 800,
+    "phasing": "charge_flip",
+    "delta_sigma": 1.0,
+    "weak_fraction": 0.2,
+    "cleanup_cycles": 10,
+    "polish_iterations": 50,
+    "assignment_rounds": 4,
+    "max_seconds": 60,
+    "r1_target": 0.06,
+    "grid_shape": null,
+    "refinement": "anisotropic",
+    "symmetry_tolerance_angstrom": 0.15,
+    "symmetry_iterations": 80,
+    "completion": false
+  },
+  "screening_iterations": 8,
+  "refinement_shortlist": 3,
+  "cases": [
+    {
+      "name": "kbrf4",
+      "hkl": "validation/data/structure-solution/cod-1549359/1549359.hkl",
+      "hkl_format": "cif",
+      "hkl_sha256": "d76a88377a6d7236416c47a48b4b61ab15f82199e853184dc76e945e3123c2b0",
+      "cell": [
+        6.0999,
+        6.0999,
+        11.0509,
+        90.0,
+        90.0,
+        90.0
+      ],
+      "space_group": "I4/mcm",
+      "elements": [
+        "Br",
+        "F",
+        "K"
+      ],
+      "reference_after_solving": "validation/data/structure-solution/cod-1549359/1549359.cif",
+      "reference_sha256": "518988e3c4fd244dd24e47d12925722fd5f347ad2c61e398de1f4e5b24033f47"
+    },
+    {
+      "name": "bisei",
+      "hkl": "validation/data/structure-solution/cod-2010577/2010577.hkl",
+      "hkl_format": "cif",
+      "hkl_sha256": "49e22aae5122b83855bc8df2f68e98862d92342e2752390a8254237c2d0f07d0",
+      "cell": [
+        8.6967,
+        4.2205,
+        10.574,
+        90.0,
+        90.0,
+        90.0
+      ],
+      "space_group": "Pnma",
+      "elements": [
+        "Bi",
+        "Se",
+        "I"
+      ],
+      "reference_after_solving": "validation/data/structure-solution/cod-2010577/2010577.cif",
+      "reference_sha256": "50e814119da83512c1328e26fc2a92081aa494b0a81c748119a1737fc8e37337"
+    },
+    {
+      "name": "thiourea",
+      "hkl": "validation/data/structure-solution/thiourea/18MPC001T130K.hkl",
+      "hkl_format": "hkl4",
+      "hkl_sha256": "9138164bc1f542b320094b395819af191dbbe77ac4c01f2e21ba55099c074cc1",
+      "cell": [
+        7.4962,
+        8.5211,
+        5.4695,
+        90.0,
+        90.0,
+        90.0
+      ],
+      "space_group": "P 21 m a",
+      "elements": [
+        "C",
+        "N",
+        "S"
+      ],
+      "reference_after_solving": "validation/data/structure-solution/thiourea/archive_18MPC001T130K.cif",
+      "reference_sha256": "b3fc549fbe77d935839d6f566dc968e3abc13913be206c6b59f98ebbf2cd74c2"
+    }
+  ],
+  "native_sha256": "e60fa7300a752d75a0740c27e55382e4ee156f32c20fbf3f4ba2b57de9ebf2c1",
+  "implementation_sha256": {
+    "crates/phasesmith-solution/src/adp_refinement.rs": "f1261ba348d00732aac087be9db054c82451e5701ce559f641152ea31af8c625",
+    "crates/phasesmith-solution/src/completion.rs": "08523bbe80b71f0f29f01345d36713ac8dd3cb6134e812414ea6be5c94dd3081",
+    "crates/phasesmith-solution/src/completion_orbit.rs": "74901c137016cfdf5b18f911282fa2b995b80fb183508856b91ca8a902b52227",
+    "crates/phasesmith-solution/src/data.rs": "3f27a939350ff94f6722c23b1d2609ff10b9ec8119794e2a7cf2076cea27468e",
+    "crates/phasesmith-solution/src/dual_space.rs": "74ff8bbf6d8a6fdbdde1f20f3aa651028b2c77acaa9c86eb716a268ac8721d55",
+    "crates/phasesmith-solution/src/fourier.rs": "60a656ab69dc751e6dcea384f477a770f021a33a5bb28c7a3df840576ea680c8",
+    "crates/phasesmith-solution/src/lib.rs": "c6c607d4b8ef36e8a91a8fff202ce51a529ac33d6639984b05dd5ba02fc584c0",
+    "crates/phasesmith-solution/src/math3.rs": "fa00ccf3888b6bd86fa62c7b160a8e5f11d933e3736231342a179459d247bd4d",
+    "crates/phasesmith-solution/src/model.rs": "c0d802de5d8725f527ab1b40181fe0d4b12387b2c715ad188de5b409e0105139",
+    "crates/phasesmith-solution/src/shared_pool.rs": "31dc671b92ea761471b2cc3b2c742d1b83e844851ec80ff4f9472e7961aab629",
+    "crates/phasesmith-solution/src/shared_search.rs": "a0e4d2b58db6b55b194a1d53b7c1905f8006d7abcf9ac2aa3f18dcf65e6171c4",
+    "crates/phasesmith-solution/src/solver.rs": "837283f376ddedd265e9335a4478b0d872c79182eea9b1b8521a6d255329089e",
+    "crates/phasesmith-solution/src/staged_refinement.rs": "6c1ddf05693cea5b20528059d46af3e93e61b7de3ddaef30bc3416ee6ff31657",
+    "crates/phasesmith-solution/src/symmetry_model.rs": "77008da3b39f478d80b51669ce3944b5a2a96afa6c6a0029d6159d5a0f21356b",
+    "crates/phasesmith-py/src/solution.rs": "7bae35f890ecd64909b7faa100e94d10954b82693a0e454e93a9564663418d15",
+    "crates/phasesmith-py/src/solution_completion.rs": "f054ef8c49ce3f1d6aad5e8c36b94da3f3cf3b0a08570e841060a4bbcbf81517",
+    "crates/phasesmith-py/src/solution_dual.rs": "148bd4cf47cc84ea9f2ee3e9a52365278bf3396c83199481b3ddb220ce8e4755",
+    "crates/phasesmith-py/src/solution_shared.rs": "ddceffda1cb6aaeb243cb0eb1fc2d7d5159c410a1e39e31db27bf2f11ce3071e",
+    "crates/phasesmith-py/src/solution_symmetry.rs": "bea6226d0263c9a8afe158b68751ba0d5d944c07059d6a6fdcdafae243d4859a",
+    "Cargo.lock": "f8a427cc7edfd5463a2929aa00c5473c10dd674553132052aadcef11fd41cdee",
+    "python/phasesmith/experimental/solution.py": "093f120533d04b402d6ca6965f03d9122142c8e5c4d419bac398c8d10b417ebc",
+    "python/phasesmith/experimental/solution_shared_reference.py": "4bbb33e0bc6991f65171c2b4db1452c342c7d54952d4fa612f50375eb29dfe7b",
+    "benchmarks/solution_staged_comparison.py": "42d088c20054e5cd0febd536f0002cd792cec1341f6a0dabd447c1957d5df202",
+    "benchmarks/solution_adp_transfer.py": "344239532b298921594af7d24dcb071a16d1528df0e7b5cbfa4467f8f6e83d59",
+    "benchmarks/structure_solution.py": "58191cddd8fc86a6b5371297a694b838f63ba91ea92452425bb7475e7cd4714e"
+  },
+  "input_manifest_sha256": "a1292a5a6685c46b696ba0018f60df083a86d5f030bfa4ae8fbc72f9e4b0eeae",
+  "qualification": "Serial paired solves, alternating full/staged order by repeat. Shared inputs and settings; no counts/coordinates supplied. References read only after all paired solves and reports are saved. Reused development data; no general coverage guarantee.",
+  "runs": [
+    {
+      "case": "kbrf4",
+      "repeat": 0,
+      "mode": "full",
+      "seconds": 3.1936649580020458,
+      "r1": 0.022266400538654547,
+      "counts": {
+        "Br": 4,
+        "F": 16,
+        "K": 4
+      },
+      "target_met": true,
+      "termination": "r1_target",
+      "effort": {
+        "elements": [
+          "Br",
+          "K",
+          "F"
+        ],
+        "phasing_starts": 1,
+        "framework_hypotheses": 4,
+        "initial_prefix": 4,
+        "rounds": 2,
+        "orbit_proposals": 16,
+        "element_scores": 48,
+        "refinements": 78,
+        "screening_refinements": 0,
+        "final_refinements": 78,
+        "promoted_candidates": 0,
+        "screened_out": 0,
+        "staged_refinement": false,
+        "screening_iterations": 8,
+        "refinement_shortlist": 3,
+        "deletion_trials": 8,
+        "relabel_trials": 24,
+        "maximum_atoms": 52,
+        "beam_width": 4,
+        "required_elements_present": true,
+        "accepted_moves": [
+          {
+            "kind": "initial",
+            "element": "Br",
+            "atoms": 4,
+            "r1": 0.49527233653817687,
+            "score": -302.2789345245023
+          },
+          {
+            "kind": "birth",
+            "element": "K",
+            "atoms": 8,
+            "r1": 0.23761056675486603,
+            "score": -529.5847676492585
+          },
+          {
+            "kind": "birth",
+            "element": "F",
+            "atoms": 24,
+            "r1": 0.022266400538654547,
+            "score": -1443.477925330061
+          }
+        ]
+      },
+      "directory": "kbrf4/full-0",
+      "counts_match_reference_after_solving": true,
+      "post_solve_geometry": {
+        "max_element_matched_error_angstrom": 0.005908783834042713,
+        "rms_error_angstrom": 0.004824501797936302,
+        "reference_used_after_solve_only": true,
+        "non_h_atom_count": 24
+      },
+      "cif_checks": {
+        "candidate-p1.cif": {
+          "r1": 0.022266400538647847,
+          "absolute_r1_difference": 6.699502064222429e-15,
+          "sha256": "5b749c7bee77efef5e517d1d688b38d146dcd907cc1e6a1cf965c45d6ca69492"
+        },
+        "candidate.cif": {
+          "r1": 0.022266400539367084,
+          "absolute_r1_difference": 7.125376677574735e-13,
+          "sha256": "16d8bc4118e0b54c50427544b1638d25384d0f7db69f6888aa4a39476a436af6"
+        }
+      }
+    },
+    {
+      "case": "kbrf4",
+      "repeat": 0,
+      "mode": "staged",
+      "seconds": 2.2214740829949733,
+      "r1": 0.022266400409313075,
+      "counts": {
+        "Br": 4,
+        "F": 16,
+        "K": 4
+      },
+      "target_met": true,
+      "termination": "r1_target",
+      "effort": {
+        "elements": [
+          "Br",
+          "K",
+          "F"
+        ],
+        "phasing_starts": 1,
+        "framework_hypotheses": 4,
+        "initial_prefix": 4,
+        "rounds": 2,
+        "orbit_proposals": 16,
+        "element_scores": 48,
+        "refinements": 104,
+        "screening_refinements": 74,
+        "final_refinements": 30,
+        "promoted_candidates": 26,
+        "screened_out": 48,
+        "staged_refinement": true,
+        "screening_iterations": 8,
+        "refinement_shortlist": 3,
+        "deletion_trials": 8,
+        "relabel_trials": 24,
+        "maximum_atoms": 52,
+        "beam_width": 4,
+        "required_elements_present": true,
+        "accepted_moves": [
+          {
+            "kind": "initial",
+            "element": "Br",
+            "atoms": 4,
+            "r1": 0.49527233653817687,
+            "score": -302.2789345245023
+          },
+          {
+            "kind": "birth",
+            "element": "K",
+            "atoms": 8,
+            "r1": 0.2376105666969505,
+            "score": -529.5847676492581
+          },
+          {
+            "kind": "birth",
+            "element": "F",
+            "atoms": 24,
+            "r1": 0.022266400409313075,
+            "score": -1443.4779253300585
+          }
+        ]
+      },
+      "directory": "kbrf4/staged-0",
+      "counts_match_reference_after_solving": true,
+      "post_solve_geometry": {
+        "max_element_matched_error_angstrom": 0.005908783376389764,
+        "rms_error_angstrom": 0.004824501424264222,
+        "reference_used_after_solve_only": true,
+        "non_h_atom_count": 24
+      },
+      "cif_checks": {
+        "candidate-p1.cif": {
+          "r1": 0.022266400409154206,
+          "absolute_r1_difference": 1.5886944537690795e-13,
+          "sha256": "3678e5505b7e96531479c4860a823866fe935e317dad670a82576e8a3c74ca4f"
+        },
+        "candidate.cif": {
+          "r1": 0.022266400409225742,
+          "absolute_r1_difference": 8.733291867457638e-14,
+          "sha256": "b4f66e76d73acce7af9cf79d4417e8fefe7ed2c482a403f799d1f97821de054e"
+        }
+      }
+    },
+    {
+      "case": "bisei",
+      "repeat": 0,
+      "mode": "full",
+      "seconds": 2.3028240419807844,
+      "r1": 0.05228505485935892,
+      "counts": {
+        "Bi": 4,
+        "I": 4,
+        "Se": 4
+      },
+      "target_met": true,
+      "termination": "r1_target",
+      "effort": {
+        "elements": [
+          "Bi",
+          "I",
+          "Se"
+        ],
+        "phasing_starts": 1,
+        "framework_hypotheses": 1,
+        "initial_prefix": 4,
+        "rounds": 2,
+        "orbit_proposals": 31,
+        "element_scores": 93,
+        "refinements": 57,
+        "screening_refinements": 0,
+        "final_refinements": 57,
+        "promoted_candidates": 0,
+        "screened_out": 0,
+        "staged_refinement": false,
+        "screening_iterations": 8,
+        "refinement_shortlist": 3,
+        "deletion_trials": 8,
+        "relabel_trials": 18,
+        "maximum_atoms": 49,
+        "beam_width": 4,
+        "required_elements_present": true,
+        "accepted_moves": [
+          {
+            "kind": "initial",
+            "element": "Bi",
+            "atoms": 4,
+            "r1": 0.4889876849452135,
+            "score": -564.0853382589139
+          },
+          {
+            "kind": "birth",
+            "element": "I",
+            "atoms": 8,
+            "r1": 0.30400133048192163,
+            "score": -969.6360431260379
+          },
+          {
+            "kind": "birth",
+            "element": "Se",
+            "atoms": 12,
+            "r1": 0.05228505485935892,
+            "score": -2455.3202403817986
+          }
+        ]
+      },
+      "directory": "bisei/full-0",
+      "counts_match_reference_after_solving": true,
+      "post_solve_geometry": {
+        "max_element_matched_error_angstrom": 0.002516407742175359,
+        "rms_error_angstrom": 0.001746968076547535,
+        "reference_used_after_solve_only": true,
+        "non_h_atom_count": 12
+      },
+      "cif_checks": {
+        "candidate-p1.cif": {
+          "r1": 0.05228505485906734,
+          "absolute_r1_difference": 2.9157926073608564e-13,
+          "sha256": "c1495bf141edd4fe6f94afe50ee36ac2ee8a3a6525c3de7db0a333e11b51bc0d"
+        },
+        "candidate.cif": {
+          "r1": 0.05228505485871746,
+          "absolute_r1_difference": 6.414591080527998e-13,
+          "sha256": "ce1f0dd878af0d4408709c1c0c4341d298ab989952b942096dae97cf1eb354b3"
+        }
+      }
+    },
+    {
+      "case": "bisei",
+      "repeat": 0,
+      "mode": "staged",
+      "seconds": 1.1189725839940365,
+      "r1": 0.05228505465883755,
+      "counts": {
+        "Bi": 4,
+        "I": 4,
+        "Se": 4
+      },
+      "target_met": true,
+      "termination": "r1_target",
+      "effort": {
+        "elements": [
+          "Bi",
+          "I",
+          "Se"
+        ],
+        "phasing_starts": 1,
+        "framework_hypotheses": 1,
+        "initial_prefix": 4,
+        "rounds": 2,
+        "orbit_proposals": 31,
+        "element_scores": 93,
+        "refinements": 75,
+        "screening_refinements": 56,
+        "final_refinements": 19,
+        "promoted_candidates": 18,
+        "screened_out": 38,
+        "staged_refinement": true,
+        "screening_iterations": 8,
+        "refinement_shortlist": 3,
+        "deletion_trials": 8,
+        "relabel_trials": 18,
+        "maximum_atoms": 49,
+        "beam_width": 4,
+        "required_elements_present": true,
+        "accepted_moves": [
+          {
+            "kind": "initial",
+            "element": "Bi",
+            "atoms": 4,
+            "r1": 0.4889876849452135,
+            "score": -564.0853382589139
+          },
+          {
+            "kind": "birth",
+            "element": "I",
+            "atoms": 8,
+            "r1": 0.3040013304642801,
+            "score": -969.6360431260385
+          },
+          {
+            "kind": "birth",
+            "element": "Se",
+            "atoms": 12,
+            "r1": 0.05228505465883755,
+            "score": -2455.320240381798
+          }
+        ]
+      },
+      "directory": "bisei/staged-0",
+      "counts_match_reference_after_solving": true,
+      "post_solve_geometry": {
+        "max_element_matched_error_angstrom": 0.002516409331457885,
+        "rms_error_angstrom": 0.0017469687619605543,
+        "reference_used_after_solve_only": true,
+        "non_h_atom_count": 12
+      },
+      "cif_checks": {
+        "candidate-p1.cif": {
+          "r1": 0.05228505465838227,
+          "absolute_r1_difference": 4.55281645717065e-13,
+          "sha256": "e294a045f1d3824735dcb333ba2ff6ad9e9ab3f4d82ca3e947c40e8042d93de6"
+        },
+        "candidate.cif": {
+          "r1": 0.05228505465894189,
+          "absolute_r1_difference": 1.0434014763305299e-13,
+          "sha256": "09d28aaaeaea493f3c13ff94212fac51612bb09b74dd3f1d2e354602da37c898"
+        }
+      }
+    },
+    {
+      "case": "thiourea",
+      "repeat": 0,
+      "mode": "full",
+      "seconds": 27.90429650002625,
+      "r1": 0.04940904986302627,
+      "counts": {
+        "C": 4,
+        "N": 8,
+        "S": 4
+      },
+      "target_met": true,
+      "termination": "r1_target",
+      "effort": {
+        "elements": [
+          "S",
+          "N",
+          "C"
+        ],
+        "phasing_starts": 1,
+        "framework_hypotheses": 2,
+        "initial_prefix": 4,
+        "rounds": 4,
+        "orbit_proposals": 106,
+        "element_scores": 318,
+        "refinements": 242,
+        "screening_refinements": 0,
+        "final_refinements": 242,
+        "promoted_candidates": 0,
+        "screened_out": 0,
+        "staged_refinement": false,
+        "screening_iterations": 8,
+        "refinement_shortlist": 3,
+        "deletion_trials": 52,
+        "relabel_trials": 104,
+        "maximum_atoms": 44,
+        "beam_width": 4,
+        "required_elements_present": true,
+        "accepted_moves": [
+          {
+            "kind": "initial",
+            "element": "S",
+            "atoms": 4,
+            "r1": 0.2668332456528867,
+            "score": -1228.3159340055047
+          },
+          {
+            "kind": "birth",
+            "element": "N",
+            "atoms": 8,
+            "r1": 0.2227842921634599,
+            "score": -1416.2571865985597
+          },
+          {
+            "kind": "birth",
+            "element": "N",
+            "atoms": 12,
+            "r1": 0.17376645179954742,
+            "score": -1805.9917743692997
+          },
+          {
+            "kind": "birth",
+            "element": "C",
+            "atoms": 14,
+            "r1": 0.1148894161317856,
+            "score": -2303.524988951133
+          },
+          {
+            "kind": "birth",
+            "element": "C",
+            "atoms": 16,
+            "r1": 0.04940904986302627,
+            "score": -3284.4523910481557
+          }
+        ]
+      },
+      "directory": "thiourea/full-0",
+      "counts_match_reference_after_solving": true,
+      "post_solve_geometry": {
+        "max_element_matched_error_angstrom": 0.01037170758304695,
+        "rms_error_angstrom": 0.007707376162847073,
+        "reference_used_after_solve_only": true,
+        "non_h_atom_count": 16
+      },
+      "cif_checks": {
+        "candidate-p1.cif": {
+          "r1": 0.04940904986301378,
+          "absolute_r1_difference": 1.2490009027033011e-14,
+          "sha256": "83c1af90c56ec87b88e1f82277743710266f06b372c3acf4b3e78a779713531b"
+        },
+        "candidate.cif": {
+          "r1": 0.04940904986318869,
+          "absolute_r1_difference": 1.624186896087565e-13,
+          "sha256": "9428c53e09656fabeead140d28d5a1369cc7369fee695ada560c5200fade4bf0"
+        }
+      }
+    },
+    {
+      "case": "thiourea",
+      "repeat": 0,
+      "mode": "staged",
+      "seconds": 7.56222708299174,
+      "r1": 0.049409049967854266,
+      "counts": {
+        "C": 4,
+        "N": 8,
+        "S": 4
+      },
+      "target_met": true,
+      "termination": "r1_target",
+      "effort": {
+        "elements": [
+          "S",
+          "N",
+          "C"
+        ],
+        "phasing_starts": 1,
+        "framework_hypotheses": 2,
+        "initial_prefix": 4,
+        "rounds": 4,
+        "orbit_proposals": 106,
+        "element_scores": 318,
+        "refinements": 286,
+        "screening_refinements": 240,
+        "final_refinements": 46,
+        "promoted_candidates": 44,
+        "screened_out": 196,
+        "staged_refinement": true,
+        "screening_iterations": 8,
+        "refinement_shortlist": 3,
+        "deletion_trials": 52,
+        "relabel_trials": 104,
+        "maximum_atoms": 44,
+        "beam_width": 4,
+        "required_elements_present": true,
+        "accepted_moves": [
+          {
+            "kind": "initial",
+            "element": "S",
+            "atoms": 4,
+            "r1": 0.2668332456528867,
+            "score": -1228.3159340055047
+          },
+          {
+            "kind": "birth",
+            "element": "N",
+            "atoms": 8,
+            "r1": 0.22278429173804243,
+            "score": -1416.2571865985583
+          },
+          {
+            "kind": "birth",
+            "element": "N",
+            "atoms": 12,
+            "r1": 0.17376645155193865,
+            "score": -1805.9917743692963
+          },
+          {
+            "kind": "birth",
+            "element": "C",
+            "atoms": 14,
+            "r1": 0.11488941497632522,
+            "score": -2303.524988951136
+          },
+          {
+            "kind": "birth",
+            "element": "C",
+            "atoms": 16,
+            "r1": 0.049409049967854266,
+            "score": -3284.4523910481603
+          }
+        ]
+      },
+      "directory": "thiourea/staged-0",
+      "counts_match_reference_after_solving": true,
+      "post_solve_geometry": {
+        "max_element_matched_error_angstrom": 0.010371708291770466,
+        "rms_error_angstrom": 0.0077073765890118395,
+        "reference_used_after_solve_only": true,
+        "non_h_atom_count": 16
+      },
+      "cif_checks": {
+        "candidate-p1.cif": {
+          "r1": 0.049409049967820924,
+          "absolute_r1_difference": 3.334138520827423e-14,
+          "sha256": "a2c6763ecc31a0c94aab65422a244714ba19a1e85fd7bc114ae977938dba79ae"
+        },
+        "candidate.cif": {
+          "r1": 0.04940904996794525,
+          "absolute_r1_difference": 9.098277686803158e-14,
+          "sha256": "0804b564cb693f2653a4ec7c8e6fd73f96512747eb8bdd0372ada8e9a58ee51e"
+        }
+      }
+    },
+    {
+      "case": "kbrf4",
+      "repeat": 1,
+      "mode": "staged",
+      "seconds": 2.2958635409886483,
+      "r1": 0.022266400409313075,
+      "counts": {
+        "Br": 4,
+        "F": 16,
+        "K": 4
+      },
+      "target_met": true,
+      "termination": "r1_target",
+      "effort": {
+        "elements": [
+          "Br",
+          "K",
+          "F"
+        ],
+        "phasing_starts": 1,
+        "framework_hypotheses": 4,
+        "initial_prefix": 4,
+        "rounds": 2,
+        "orbit_proposals": 16,
+        "element_scores": 48,
+        "refinements": 104,
+        "screening_refinements": 74,
+        "final_refinements": 30,
+        "promoted_candidates": 26,
+        "screened_out": 48,
+        "staged_refinement": true,
+        "screening_iterations": 8,
+        "refinement_shortlist": 3,
+        "deletion_trials": 8,
+        "relabel_trials": 24,
+        "maximum_atoms": 52,
+        "beam_width": 4,
+        "required_elements_present": true,
+        "accepted_moves": [
+          {
+            "kind": "initial",
+            "element": "Br",
+            "atoms": 4,
+            "r1": 0.49527233653817687,
+            "score": -302.2789345245023
+          },
+          {
+            "kind": "birth",
+            "element": "K",
+            "atoms": 8,
+            "r1": 0.2376105666969505,
+            "score": -529.5847676492581
+          },
+          {
+            "kind": "birth",
+            "element": "F",
+            "atoms": 24,
+            "r1": 0.022266400409313075,
+            "score": -1443.4779253300585
+          }
+        ]
+      },
+      "directory": "kbrf4/staged-1",
+      "counts_match_reference_after_solving": true,
+      "post_solve_geometry": {
+        "max_element_matched_error_angstrom": 0.005908783376389764,
+        "rms_error_angstrom": 0.004824501424264222,
+        "reference_used_after_solve_only": true,
+        "non_h_atom_count": 24
+      },
+      "cif_checks": {
+        "candidate-p1.cif": {
+          "r1": 0.022266400409154206,
+          "absolute_r1_difference": 1.5886944537690795e-13,
+          "sha256": "3678e5505b7e96531479c4860a823866fe935e317dad670a82576e8a3c74ca4f"
+        },
+        "candidate.cif": {
+          "r1": 0.022266400409225742,
+          "absolute_r1_difference": 8.733291867457638e-14,
+          "sha256": "b4f66e76d73acce7af9cf79d4417e8fefe7ed2c482a403f799d1f97821de054e"
+        }
+      }
+    },
+    {
+      "case": "kbrf4",
+      "repeat": 1,
+      "mode": "full",
+      "seconds": 3.2672224169946276,
+      "r1": 0.022266400538654547,
+      "counts": {
+        "Br": 4,
+        "F": 16,
+        "K": 4
+      },
+      "target_met": true,
+      "termination": "r1_target",
+      "effort": {
+        "elements": [
+          "Br",
+          "K",
+          "F"
+        ],
+        "phasing_starts": 1,
+        "framework_hypotheses": 4,
+        "initial_prefix": 4,
+        "rounds": 2,
+        "orbit_proposals": 16,
+        "element_scores": 48,
+        "refinements": 78,
+        "screening_refinements": 0,
+        "final_refinements": 78,
+        "promoted_candidates": 0,
+        "screened_out": 0,
+        "staged_refinement": false,
+        "screening_iterations": 8,
+        "refinement_shortlist": 3,
+        "deletion_trials": 8,
+        "relabel_trials": 24,
+        "maximum_atoms": 52,
+        "beam_width": 4,
+        "required_elements_present": true,
+        "accepted_moves": [
+          {
+            "kind": "initial",
+            "element": "Br",
+            "atoms": 4,
+            "r1": 0.49527233653817687,
+            "score": -302.2789345245023
+          },
+          {
+            "kind": "birth",
+            "element": "K",
+            "atoms": 8,
+            "r1": 0.23761056675486603,
+            "score": -529.5847676492585
+          },
+          {
+            "kind": "birth",
+            "element": "F",
+            "atoms": 24,
+            "r1": 0.022266400538654547,
+            "score": -1443.477925330061
+          }
+        ]
+      },
+      "directory": "kbrf4/full-1",
+      "counts_match_reference_after_solving": true,
+      "post_solve_geometry": {
+        "max_element_matched_error_angstrom": 0.005908783834042713,
+        "rms_error_angstrom": 0.004824501797936302,
+        "reference_used_after_solve_only": true,
+        "non_h_atom_count": 24
+      },
+      "cif_checks": {
+        "candidate-p1.cif": {
+          "r1": 0.022266400538647847,
+          "absolute_r1_difference": 6.699502064222429e-15,
+          "sha256": "5b749c7bee77efef5e517d1d688b38d146dcd907cc1e6a1cf965c45d6ca69492"
+        },
+        "candidate.cif": {
+          "r1": 0.022266400539367084,
+          "absolute_r1_difference": 7.125376677574735e-13,
+          "sha256": "16d8bc4118e0b54c50427544b1638d25384d0f7db69f6888aa4a39476a436af6"
+        }
+      }
+    },
+    {
+      "case": "bisei",
+      "repeat": 1,
+      "mode": "staged",
+      "seconds": 1.122992416989291,
+      "r1": 0.05228505465883755,
+      "counts": {
+        "Bi": 4,
+        "I": 4,
+        "Se": 4
+      },
+      "target_met": true,
+      "termination": "r1_target",
+      "effort": {
+        "elements": [
+          "Bi",
+          "I",
+          "Se"
+        ],
+        "phasing_starts": 1,
+        "framework_hypotheses": 1,
+        "initial_prefix": 4,
+        "rounds": 2,
+        "orbit_proposals": 31,
+        "element_scores": 93,
+        "refinements": 75,
+        "screening_refinements": 56,
+        "final_refinements": 19,
+        "promoted_candidates": 18,
+        "screened_out": 38,
+        "staged_refinement": true,
+        "screening_iterations": 8,
+        "refinement_shortlist": 3,
+        "deletion_trials": 8,
+        "relabel_trials": 18,
+        "maximum_atoms": 49,
+        "beam_width": 4,
+        "required_elements_present": true,
+        "accepted_moves": [
+          {
+            "kind": "initial",
+            "element": "Bi",
+            "atoms": 4,
+            "r1": 0.4889876849452135,
+            "score": -564.0853382589139
+          },
+          {
+            "kind": "birth",
+            "element": "I",
+            "atoms": 8,
+            "r1": 0.3040013304642801,
+            "score": -969.6360431260385
+          },
+          {
+            "kind": "birth",
+            "element": "Se",
+            "atoms": 12,
+            "r1": 0.05228505465883755,
+            "score": -2455.320240381798
+          }
+        ]
+      },
+      "directory": "bisei/staged-1",
+      "counts_match_reference_after_solving": true,
+      "post_solve_geometry": {
+        "max_element_matched_error_angstrom": 0.002516409331457885,
+        "rms_error_angstrom": 0.0017469687619605543,
+        "reference_used_after_solve_only": true,
+        "non_h_atom_count": 12
+      },
+      "cif_checks": {
+        "candidate-p1.cif": {
+          "r1": 0.05228505465838227,
+          "absolute_r1_difference": 4.55281645717065e-13,
+          "sha256": "e294a045f1d3824735dcb333ba2ff6ad9e9ab3f4d82ca3e947c40e8042d93de6"
+        },
+        "candidate.cif": {
+          "r1": 0.05228505465894189,
+          "absolute_r1_difference": 1.0434014763305299e-13,
+          "sha256": "09d28aaaeaea493f3c13ff94212fac51612bb09b74dd3f1d2e354602da37c898"
+        }
+      }
+    },
+    {
+      "case": "bisei",
+      "repeat": 1,
+      "mode": "full",
+      "seconds": 2.3139200000150595,
+      "r1": 0.05228505485935892,
+      "counts": {
+        "Bi": 4,
+        "I": 4,
+        "Se": 4
+      },
+      "target_met": true,
+      "termination": "r1_target",
+      "effort": {
+        "elements": [
+          "Bi",
+          "I",
+          "Se"
+        ],
+        "phasing_starts": 1,
+        "framework_hypotheses": 1,
+        "initial_prefix": 4,
+        "rounds": 2,
+        "orbit_proposals": 31,
+        "element_scores": 93,
+        "refinements": 57,
+        "screening_refinements": 0,
+        "final_refinements": 57,
+        "promoted_candidates": 0,
+        "screened_out": 0,
+        "staged_refinement": false,
+        "screening_iterations": 8,
+        "refinement_shortlist": 3,
+        "deletion_trials": 8,
+        "relabel_trials": 18,
+        "maximum_atoms": 49,
+        "beam_width": 4,
+        "required_elements_present": true,
+        "accepted_moves": [
+          {
+            "kind": "initial",
+            "element": "Bi",
+            "atoms": 4,
+            "r1": 0.4889876849452135,
+            "score": -564.0853382589139
+          },
+          {
+            "kind": "birth",
+            "element": "I",
+            "atoms": 8,
+            "r1": 0.30400133048192163,
+            "score": -969.6360431260379
+          },
+          {
+            "kind": "birth",
+            "element": "Se",
+            "atoms": 12,
+            "r1": 0.05228505485935892,
+            "score": -2455.3202403817986
+          }
+        ]
+      },
+      "directory": "bisei/full-1",
+      "counts_match_reference_after_solving": true,
+      "post_solve_geometry": {
+        "max_element_matched_error_angstrom": 0.002516407742175359,
+        "rms_error_angstrom": 0.001746968076547535,
+        "reference_used_after_solve_only": true,
+        "non_h_atom_count": 12
+      },
+      "cif_checks": {
+        "candidate-p1.cif": {
+          "r1": 0.05228505485906734,
+          "absolute_r1_difference": 2.9157926073608564e-13,
+          "sha256": "c1495bf141edd4fe6f94afe50ee36ac2ee8a3a6525c3de7db0a333e11b51bc0d"
+        },
+        "candidate.cif": {
+          "r1": 0.05228505485871746,
+          "absolute_r1_difference": 6.414591080527998e-13,
+          "sha256": "ce1f0dd878af0d4408709c1c0c4341d298ab989952b942096dae97cf1eb354b3"
+        }
+      }
+    },
+    {
+      "case": "thiourea",
+      "repeat": 1,
+      "mode": "staged",
+      "seconds": 7.630392374994699,
+      "r1": 0.049409049967854266,
+      "counts": {
+        "C": 4,
+        "N": 8,
+        "S": 4
+      },
+      "target_met": true,
+      "termination": "r1_target",
+      "effort": {
+        "elements": [
+          "S",
+          "N",
+          "C"
+        ],
+        "phasing_starts": 1,
+        "framework_hypotheses": 2,
+        "initial_prefix": 4,
+        "rounds": 4,
+        "orbit_proposals": 106,
+        "element_scores": 318,
+        "refinements": 286,
+        "screening_refinements": 240,
+        "final_refinements": 46,
+        "promoted_candidates": 44,
+        "screened_out": 196,
+        "staged_refinement": true,
+        "screening_iterations": 8,
+        "refinement_shortlist": 3,
+        "deletion_trials": 52,
+        "relabel_trials": 104,
+        "maximum_atoms": 44,
+        "beam_width": 4,
+        "required_elements_present": true,
+        "accepted_moves": [
+          {
+            "kind": "initial",
+            "element": "S",
+            "atoms": 4,
+            "r1": 0.2668332456528867,
+            "score": -1228.3159340055047
+          },
+          {
+            "kind": "birth",
+            "element": "N",
+            "atoms": 8,
+            "r1": 0.22278429173804243,
+            "score": -1416.2571865985583
+          },
+          {
+            "kind": "birth",
+            "element": "N",
+            "atoms": 12,
+            "r1": 0.17376645155193865,
+            "score": -1805.9917743692963
+          },
+          {
+            "kind": "birth",
+            "element": "C",
+            "atoms": 14,
+            "r1": 0.11488941497632522,
+            "score": -2303.524988951136
+          },
+          {
+            "kind": "birth",
+            "element": "C",
+            "atoms": 16,
+            "r1": 0.049409049967854266,
+            "score": -3284.4523910481603
+          }
+        ]
+      },
+      "directory": "thiourea/staged-1",
+      "counts_match_reference_after_solving": true,
+      "post_solve_geometry": {
+        "max_element_matched_error_angstrom": 0.010371708291770466,
+        "rms_error_angstrom": 0.0077073765890118395,
+        "reference_used_after_solve_only": true,
+        "non_h_atom_count": 16
+      },
+      "cif_checks": {
+        "candidate-p1.cif": {
+          "r1": 0.049409049967820924,
+          "absolute_r1_difference": 3.334138520827423e-14,
+          "sha256": "a2c6763ecc31a0c94aab65422a244714ba19a1e85fd7bc114ae977938dba79ae"
+        },
+        "candidate.cif": {
+          "r1": 0.04940904996794525,
+          "absolute_r1_difference": 9.098277686803158e-14,
+          "sha256": "0804b564cb693f2653a4ec7c8e6fd73f96512747eb8bdd0372ada8e9a58ee51e"
+        }
+      }
+    },
+    {
+      "case": "thiourea",
+      "repeat": 1,
+      "mode": "full",
+      "seconds": 28.29283929200028,
+      "r1": 0.04940904986302627,
+      "counts": {
+        "C": 4,
+        "N": 8,
+        "S": 4
+      },
+      "target_met": true,
+      "termination": "r1_target",
+      "effort": {
+        "elements": [
+          "S",
+          "N",
+          "C"
+        ],
+        "phasing_starts": 1,
+        "framework_hypotheses": 2,
+        "initial_prefix": 4,
+        "rounds": 4,
+        "orbit_proposals": 106,
+        "element_scores": 318,
+        "refinements": 242,
+        "screening_refinements": 0,
+        "final_refinements": 242,
+        "promoted_candidates": 0,
+        "screened_out": 0,
+        "staged_refinement": false,
+        "screening_iterations": 8,
+        "refinement_shortlist": 3,
+        "deletion_trials": 52,
+        "relabel_trials": 104,
+        "maximum_atoms": 44,
+        "beam_width": 4,
+        "required_elements_present": true,
+        "accepted_moves": [
+          {
+            "kind": "initial",
+            "element": "S",
+            "atoms": 4,
+            "r1": 0.2668332456528867,
+            "score": -1228.3159340055047
+          },
+          {
+            "kind": "birth",
+            "element": "N",
+            "atoms": 8,
+            "r1": 0.2227842921634599,
+            "score": -1416.2571865985597
+          },
+          {
+            "kind": "birth",
+            "element": "N",
+            "atoms": 12,
+            "r1": 0.17376645179954742,
+            "score": -1805.9917743692997
+          },
+          {
+            "kind": "birth",
+            "element": "C",
+            "atoms": 14,
+            "r1": 0.1148894161317856,
+            "score": -2303.524988951133
+          },
+          {
+            "kind": "birth",
+            "element": "C",
+            "atoms": 16,
+            "r1": 0.04940904986302627,
+            "score": -3284.4523910481557
+          }
+        ]
+      },
+      "directory": "thiourea/full-1",
+      "counts_match_reference_after_solving": true,
+      "post_solve_geometry": {
+        "max_element_matched_error_angstrom": 0.01037170758304695,
+        "rms_error_angstrom": 0.007707376162847073,
+        "reference_used_after_solve_only": true,
+        "non_h_atom_count": 16
+      },
+      "cif_checks": {
+        "candidate-p1.cif": {
+          "r1": 0.04940904986301378,
+          "absolute_r1_difference": 1.2490009027033011e-14,
+          "sha256": "83c1af90c56ec87b88e1f82277743710266f06b372c3acf4b3e78a779713531b"
+        },
+        "candidate.cif": {
+          "r1": 0.04940904986318869,
+          "absolute_r1_difference": 1.624186896087565e-13,
+          "sha256": "9428c53e09656fabeead140d28d5a1369cc7369fee695ada560c5200fade4bf0"
+        }
+      }
+    },
+    {
+      "case": "kbrf4",
+      "repeat": 2,
+      "mode": "full",
+      "seconds": 3.2495062079979107,
+      "r1": 0.022266400538654547,
+      "counts": {
+        "Br": 4,
+        "F": 16,
+        "K": 4
+      },
+      "target_met": true,
+      "termination": "r1_target",
+      "effort": {
+        "elements": [
+          "Br",
+          "K",
+          "F"
+        ],
+        "phasing_starts": 1,
+        "framework_hypotheses": 4,
+        "initial_prefix": 4,
+        "rounds": 2,
+        "orbit_proposals": 16,
+        "element_scores": 48,
+        "refinements": 78,
+        "screening_refinements": 0,
+        "final_refinements": 78,
+        "promoted_candidates": 0,
+        "screened_out": 0,
+        "staged_refinement": false,
+        "screening_iterations": 8,
+        "refinement_shortlist": 3,
+        "deletion_trials": 8,
+        "relabel_trials": 24,
+        "maximum_atoms": 52,
+        "beam_width": 4,
+        "required_elements_present": true,
+        "accepted_moves": [
+          {
+            "kind": "initial",
+            "element": "Br",
+            "atoms": 4,
+            "r1": 0.49527233653817687,
+            "score": -302.2789345245023
+          },
+          {
+            "kind": "birth",
+            "element": "K",
+            "atoms": 8,
+            "r1": 0.23761056675486603,
+            "score": -529.5847676492585
+          },
+          {
+            "kind": "birth",
+            "element": "F",
+            "atoms": 24,
+            "r1": 0.022266400538654547,
+            "score": -1443.477925330061
+          }
+        ]
+      },
+      "directory": "kbrf4/full-2",
+      "counts_match_reference_after_solving": true,
+      "post_solve_geometry": {
+        "max_element_matched_error_angstrom": 0.005908783834042713,
+        "rms_error_angstrom": 0.004824501797936302,
+        "reference_used_after_solve_only": true,
+        "non_h_atom_count": 24
+      },
+      "cif_checks": {
+        "candidate-p1.cif": {
+          "r1": 0.022266400538647847,
+          "absolute_r1_difference": 6.699502064222429e-15,
+          "sha256": "5b749c7bee77efef5e517d1d688b38d146dcd907cc1e6a1cf965c45d6ca69492"
+        },
+        "candidate.cif": {
+          "r1": 0.022266400539367084,
+          "absolute_r1_difference": 7.125376677574735e-13,
+          "sha256": "16d8bc4118e0b54c50427544b1638d25384d0f7db69f6888aa4a39476a436af6"
+        }
+      }
+    },
+    {
+      "case": "kbrf4",
+      "repeat": 2,
+      "mode": "staged",
+      "seconds": 2.2600534160155803,
+      "r1": 0.022266400409313075,
+      "counts": {
+        "Br": 4,
+        "F": 16,
+        "K": 4
+      },
+      "target_met": true,
+      "termination": "r1_target",
+      "effort": {
+        "elements": [
+          "Br",
+          "K",
+          "F"
+        ],
+        "phasing_starts": 1,
+        "framework_hypotheses": 4,
+        "initial_prefix": 4,
+        "rounds": 2,
+        "orbit_proposals": 16,
+        "element_scores": 48,
+        "refinements": 104,
+        "screening_refinements": 74,
+        "final_refinements": 30,
+        "promoted_candidates": 26,
+        "screened_out": 48,
+        "staged_refinement": true,
+        "screening_iterations": 8,
+        "refinement_shortlist": 3,
+        "deletion_trials": 8,
+        "relabel_trials": 24,
+        "maximum_atoms": 52,
+        "beam_width": 4,
+        "required_elements_present": true,
+        "accepted_moves": [
+          {
+            "kind": "initial",
+            "element": "Br",
+            "atoms": 4,
+            "r1": 0.49527233653817687,
+            "score": -302.2789345245023
+          },
+          {
+            "kind": "birth",
+            "element": "K",
+            "atoms": 8,
+            "r1": 0.2376105666969505,
+            "score": -529.5847676492581
+          },
+          {
+            "kind": "birth",
+            "element": "F",
+            "atoms": 24,
+            "r1": 0.022266400409313075,
+            "score": -1443.4779253300585
+          }
+        ]
+      },
+      "directory": "kbrf4/staged-2",
+      "counts_match_reference_after_solving": true,
+      "post_solve_geometry": {
+        "max_element_matched_error_angstrom": 0.005908783376389764,
+        "rms_error_angstrom": 0.004824501424264222,
+        "reference_used_after_solve_only": true,
+        "non_h_atom_count": 24
+      },
+      "cif_checks": {
+        "candidate-p1.cif": {
+          "r1": 0.022266400409154206,
+          "absolute_r1_difference": 1.5886944537690795e-13,
+          "sha256": "3678e5505b7e96531479c4860a823866fe935e317dad670a82576e8a3c74ca4f"
+        },
+        "candidate.cif": {
+          "r1": 0.022266400409225742,
+          "absolute_r1_difference": 8.733291867457638e-14,
+          "sha256": "b4f66e76d73acce7af9cf79d4417e8fefe7ed2c482a403f799d1f97821de054e"
+        }
+      }
+    },
+    {
+      "case": "bisei",
+      "repeat": 2,
+      "mode": "full",
+      "seconds": 2.3223974579887,
+      "r1": 0.05228505485935892,
+      "counts": {
+        "Bi": 4,
+        "I": 4,
+        "Se": 4
+      },
+      "target_met": true,
+      "termination": "r1_target",
+      "effort": {
+        "elements": [
+          "Bi",
+          "I",
+          "Se"
+        ],
+        "phasing_starts": 1,
+        "framework_hypotheses": 1,
+        "initial_prefix": 4,
+        "rounds": 2,
+        "orbit_proposals": 31,
+        "element_scores": 93,
+        "refinements": 57,
+        "screening_refinements": 0,
+        "final_refinements": 57,
+        "promoted_candidates": 0,
+        "screened_out": 0,
+        "staged_refinement": false,
+        "screening_iterations": 8,
+        "refinement_shortlist": 3,
+        "deletion_trials": 8,
+        "relabel_trials": 18,
+        "maximum_atoms": 49,
+        "beam_width": 4,
+        "required_elements_present": true,
+        "accepted_moves": [
+          {
+            "kind": "initial",
+            "element": "Bi",
+            "atoms": 4,
+            "r1": 0.4889876849452135,
+            "score": -564.0853382589139
+          },
+          {
+            "kind": "birth",
+            "element": "I",
+            "atoms": 8,
+            "r1": 0.30400133048192163,
+            "score": -969.6360431260379
+          },
+          {
+            "kind": "birth",
+            "element": "Se",
+            "atoms": 12,
+            "r1": 0.05228505485935892,
+            "score": -2455.3202403817986
+          }
+        ]
+      },
+      "directory": "bisei/full-2",
+      "counts_match_reference_after_solving": true,
+      "post_solve_geometry": {
+        "max_element_matched_error_angstrom": 0.002516407742175359,
+        "rms_error_angstrom": 0.001746968076547535,
+        "reference_used_after_solve_only": true,
+        "non_h_atom_count": 12
+      },
+      "cif_checks": {
+        "candidate-p1.cif": {
+          "r1": 0.05228505485906734,
+          "absolute_r1_difference": 2.9157926073608564e-13,
+          "sha256": "c1495bf141edd4fe6f94afe50ee36ac2ee8a3a6525c3de7db0a333e11b51bc0d"
+        },
+        "candidate.cif": {
+          "r1": 0.05228505485871746,
+          "absolute_r1_difference": 6.414591080527998e-13,
+          "sha256": "ce1f0dd878af0d4408709c1c0c4341d298ab989952b942096dae97cf1eb354b3"
+        }
+      }
+    },
+    {
+      "case": "bisei",
+      "repeat": 2,
+      "mode": "staged",
+      "seconds": 1.1279760829929728,
+      "r1": 0.05228505465883755,
+      "counts": {
+        "Bi": 4,
+        "I": 4,
+        "Se": 4
+      },
+      "target_met": true,
+      "termination": "r1_target",
+      "effort": {
+        "elements": [
+          "Bi",
+          "I",
+          "Se"
+        ],
+        "phasing_starts": 1,
+        "framework_hypotheses": 1,
+        "initial_prefix": 4,
+        "rounds": 2,
+        "orbit_proposals": 31,
+        "element_scores": 93,
+        "refinements": 75,
+        "screening_refinements": 56,
+        "final_refinements": 19,
+        "promoted_candidates": 18,
+        "screened_out": 38,
+        "staged_refinement": true,
+        "screening_iterations": 8,
+        "refinement_shortlist": 3,
+        "deletion_trials": 8,
+        "relabel_trials": 18,
+        "maximum_atoms": 49,
+        "beam_width": 4,
+        "required_elements_present": true,
+        "accepted_moves": [
+          {
+            "kind": "initial",
+            "element": "Bi",
+            "atoms": 4,
+            "r1": 0.4889876849452135,
+            "score": -564.0853382589139
+          },
+          {
+            "kind": "birth",
+            "element": "I",
+            "atoms": 8,
+            "r1": 0.3040013304642801,
+            "score": -969.6360431260385
+          },
+          {
+            "kind": "birth",
+            "element": "Se",
+            "atoms": 12,
+            "r1": 0.05228505465883755,
+            "score": -2455.320240381798
+          }
+        ]
+      },
+      "directory": "bisei/staged-2",
+      "counts_match_reference_after_solving": true,
+      "post_solve_geometry": {
+        "max_element_matched_error_angstrom": 0.002516409331457885,
+        "rms_error_angstrom": 0.0017469687619605543,
+        "reference_used_after_solve_only": true,
+        "non_h_atom_count": 12
+      },
+      "cif_checks": {
+        "candidate-p1.cif": {
+          "r1": 0.05228505465838227,
+          "absolute_r1_difference": 4.55281645717065e-13,
+          "sha256": "e294a045f1d3824735dcb333ba2ff6ad9e9ab3f4d82ca3e947c40e8042d93de6"
+        },
+        "candidate.cif": {
+          "r1": 0.05228505465894189,
+          "absolute_r1_difference": 1.0434014763305299e-13,
+          "sha256": "09d28aaaeaea493f3c13ff94212fac51612bb09b74dd3f1d2e354602da37c898"
+        }
+      }
+    },
+    {
+      "case": "thiourea",
+      "repeat": 2,
+      "mode": "full",
+      "seconds": 28.28751250001369,
+      "r1": 0.04940904986302627,
+      "counts": {
+        "C": 4,
+        "N": 8,
+        "S": 4
+      },
+      "target_met": true,
+      "termination": "r1_target",
+      "effort": {
+        "elements": [
+          "S",
+          "N",
+          "C"
+        ],
+        "phasing_starts": 1,
+        "framework_hypotheses": 2,
+        "initial_prefix": 4,
+        "rounds": 4,
+        "orbit_proposals": 106,
+        "element_scores": 318,
+        "refinements": 242,
+        "screening_refinements": 0,
+        "final_refinements": 242,
+        "promoted_candidates": 0,
+        "screened_out": 0,
+        "staged_refinement": false,
+        "screening_iterations": 8,
+        "refinement_shortlist": 3,
+        "deletion_trials": 52,
+        "relabel_trials": 104,
+        "maximum_atoms": 44,
+        "beam_width": 4,
+        "required_elements_present": true,
+        "accepted_moves": [
+          {
+            "kind": "initial",
+            "element": "S",
+            "atoms": 4,
+            "r1": 0.2668332456528867,
+            "score": -1228.3159340055047
+          },
+          {
+            "kind": "birth",
+            "element": "N",
+            "atoms": 8,
+            "r1": 0.2227842921634599,
+            "score": -1416.2571865985597
+          },
+          {
+            "kind": "birth",
+            "element": "N",
+            "atoms": 12,
+            "r1": 0.17376645179954742,
+            "score": -1805.9917743692997
+          },
+          {
+            "kind": "birth",
+            "element": "C",
+            "atoms": 14,
+            "r1": 0.1148894161317856,
+            "score": -2303.524988951133
+          },
+          {
+            "kind": "birth",
+            "element": "C",
+            "atoms": 16,
+            "r1": 0.04940904986302627,
+            "score": -3284.4523910481557
+          }
+        ]
+      },
+      "directory": "thiourea/full-2",
+      "counts_match_reference_after_solving": true,
+      "post_solve_geometry": {
+        "max_element_matched_error_angstrom": 0.01037170758304695,
+        "rms_error_angstrom": 0.007707376162847073,
+        "reference_used_after_solve_only": true,
+        "non_h_atom_count": 16
+      },
+      "cif_checks": {
+        "candidate-p1.cif": {
+          "r1": 0.04940904986301378,
+          "absolute_r1_difference": 1.2490009027033011e-14,
+          "sha256": "83c1af90c56ec87b88e1f82277743710266f06b372c3acf4b3e78a779713531b"
+        },
+        "candidate.cif": {
+          "r1": 0.04940904986318869,
+          "absolute_r1_difference": 1.624186896087565e-13,
+          "sha256": "9428c53e09656fabeead140d28d5a1369cc7369fee695ada560c5200fade4bf0"
+        }
+      }
+    },
+    {
+      "case": "thiourea",
+      "repeat": 2,
+      "mode": "staged",
+      "seconds": 7.57166824999149,
+      "r1": 0.049409049967854266,
+      "counts": {
+        "C": 4,
+        "N": 8,
+        "S": 4
+      },
+      "target_met": true,
+      "termination": "r1_target",
+      "effort": {
+        "elements": [
+          "S",
+          "N",
+          "C"
+        ],
+        "phasing_starts": 1,
+        "framework_hypotheses": 2,
+        "initial_prefix": 4,
+        "rounds": 4,
+        "orbit_proposals": 106,
+        "element_scores": 318,
+        "refinements": 286,
+        "screening_refinements": 240,
+        "final_refinements": 46,
+        "promoted_candidates": 44,
+        "screened_out": 196,
+        "staged_refinement": true,
+        "screening_iterations": 8,
+        "refinement_shortlist": 3,
+        "deletion_trials": 52,
+        "relabel_trials": 104,
+        "maximum_atoms": 44,
+        "beam_width": 4,
+        "required_elements_present": true,
+        "accepted_moves": [
+          {
+            "kind": "initial",
+            "element": "S",
+            "atoms": 4,
+            "r1": 0.2668332456528867,
+            "score": -1228.3159340055047
+          },
+          {
+            "kind": "birth",
+            "element": "N",
+            "atoms": 8,
+            "r1": 0.22278429173804243,
+            "score": -1416.2571865985583
+          },
+          {
+            "kind": "birth",
+            "element": "N",
+            "atoms": 12,
+            "r1": 0.17376645155193865,
+            "score": -1805.9917743692963
+          },
+          {
+            "kind": "birth",
+            "element": "C",
+            "atoms": 14,
+            "r1": 0.11488941497632522,
+            "score": -2303.524988951136
+          },
+          {
+            "kind": "birth",
+            "element": "C",
+            "atoms": 16,
+            "r1": 0.049409049967854266,
+            "score": -3284.4523910481603
+          }
+        ]
+      },
+      "directory": "thiourea/staged-2",
+      "counts_match_reference_after_solving": true,
+      "post_solve_geometry": {
+        "max_element_matched_error_angstrom": 0.010371708291770466,
+        "rms_error_angstrom": 0.0077073765890118395,
+        "reference_used_after_solve_only": true,
+        "non_h_atom_count": 16
+      },
+      "cif_checks": {
+        "candidate-p1.cif": {
+          "r1": 0.049409049967820924,
+          "absolute_r1_difference": 3.334138520827423e-14,
+          "sha256": "a2c6763ecc31a0c94aab65422a244714ba19a1e85fd7bc114ae977938dba79ae"
+        },
+        "candidate.cif": {
+          "r1": 0.04940904996794525,
+          "absolute_r1_difference": 9.098277686803158e-14,
+          "sha256": "0804b564cb693f2653a4ec7c8e6fd73f96512747eb8bdd0372ada8e9a58ee51e"
+        }
+      }
+    }
+  ],
+  "summary": [
+    {
+      "case": "kbrf4",
+      "full_median_seconds": 3.2495062079979107,
+      "staged_median_seconds": 2.2600534160155803,
+      "speedup": 1.4378006223086142,
+      "quality_preserved": true,
+      "pairs": [
+        {
+          "repeat": 0,
+          "speedup": 1.437633228516613,
+          "quality_preserved": true
+        },
+        {
+          "repeat": 1,
+          "speedup": 1.4230908582605442,
+          "quality_preserved": true
+        },
+        {
+          "repeat": 2,
+          "speedup": 1.4378006223086142,
+          "quality_preserved": true
+        }
+      ]
+    },
+    {
+      "case": "bisei",
+      "full_median_seconds": 2.3139200000150595,
+      "staged_median_seconds": 1.122992416989291,
+      "speedup": 2.060494768271552,
+      "quality_preserved": true,
+      "pairs": [
+        {
+          "repeat": 0,
+          "speedup": 2.0579807538815063,
+          "quality_preserved": true
+        },
+        {
+          "repeat": 1,
+          "speedup": 2.060494768271552,
+          "quality_preserved": true
+        },
+        {
+          "repeat": 2,
+          "speedup": 2.058906649710558,
+          "quality_preserved": true
+        }
+      ]
+    },
+    {
+      "case": "thiourea",
+      "full_median_seconds": 28.28751250001369,
+      "staged_median_seconds": 7.57166824999149,
+      "speedup": 3.735968292066347,
+      "quality_preserved": true,
+      "pairs": [
+        {
+          "repeat": 0,
+          "speedup": 3.6899574945039677,
+          "quality_preserved": true
+        },
+        {
+          "repeat": 1,
+          "speedup": 3.7079140759153866,
+          "quality_preserved": true
+        },
+        {
+          "repeat": 2,
+          "speedup": 3.735968292066347,
+          "quality_preserved": true
+        }
+      ]
+    }
+  ],
+  "all_quality_gates_passed": true,
+  "report_before_reference_sha256": "a7e2f4bb6dc0aff0ae3794f252a151f4620ef392f42e77b7b8592b89e6363895",
+  "quality_gates": {
+    "matching_full_cell_counts": true,
+    "maximum_reference_error_angstrom": 0.02,
+    "paired_maximum_error_increase_angstrom": 0.0001,
+    "paired_r1_increase": 1e-07,
+    "exported_cif_r1_difference": 2e-10
+  },
+  "validation": {
+    "python": "1293 passed, 11 skipped, 34 deselected in 62.44s (0:01:02)",
+    "rust_passed_failed_ignored": [
+      388,
+      0,
+      34
+    ],
+    "clippy": "workspace, all-targets, all-features, -D warnings passed",
+    "formatting": "cargo fmt and selected ruff passed",
+    "default_wheel": "fresh default wheel imports; experimental solver entry points absent",
+    "independent_checks": "NumPy shortlist/set union and log-tensor seed; isotropic/anisotropic embedding across five symmetry cases; strongly anisotropic synthetic solution preserved"
+  },
+  "output_directory": "runs/staged-comparison-final",
+  "comparison_report_sha256": "83a086c943070d821be3d8c021b67dc6369dddb37b794cb31565119ca3e15370"
+}

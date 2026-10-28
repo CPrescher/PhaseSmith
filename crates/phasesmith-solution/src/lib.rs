@@ -15,6 +15,7 @@ mod model;
 mod shared_pool;
 mod shared_search;
 mod solver;
+mod staged_refinement;
 mod symmetry_model;
 
 use std::fmt::{Display, Formatter};
@@ -37,6 +38,7 @@ pub use model::{ModelEvaluation, PolishedModel, evaluate_model, polish_model};
 pub use shared_pool::PreparedElementPool;
 pub use shared_search::{SharedMove, SharedSearchOptions, SharedSearchSummary, solve_elements};
 pub use solver::{Candidate, PhasingMethod, PhasingTrial, Solution, SolveOptions, solve};
+pub use staged_refinement::screening_shortlist;
 pub use symmetry_model::{
     AsymmetricSite, SymmetryImage, SymmetryModel, recover_symmetry, recover_symmetry_hypotheses,
 };

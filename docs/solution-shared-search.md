@@ -78,7 +78,8 @@ a conservative search cap rather than a density measurement. Defaults are one
 30-second total budget. Up to 24 positive signed difference-map peaks and eight
 transformed original-map peaks seed each state's pool. Up to 32 projection states
 per seed, three constraints and 64 distinct valid new orbits are allowed. The best
-two proposals for each allowed element undergo full refinement. Both full and
+two proposals for each allowed element enter the refinement schedule. With
+staging enabled, a conservative subset receives full anisotropic refinement. Both full and
 partial states can survive; all required elements and the R1 target must hold in
 the preferred state before success is reported. The source observations remain
 unchanged, including negative intensities.
@@ -95,8 +96,9 @@ Schema v5 records `composition_source="inferred_shared_orbit_search"`, the input
 element list and actual phase, proposal, label, refinement and edit effort. Only
 the selected accepted edit path is called accepted; unsuccessful trials still
 contribute to effort counters. The legacy `p1_r1/p1_objective` refinement fields
-carry the initial projected common-U fit for this path, explicitly identified by
-`refinement_baseline_kind="initial_projected_common_u"`. No independent P1 model
+carry the initial projected seed fit for this path: `initial_projected_common_u`
+for the original full-fit schedule and `initial_projected_isotropic_sites` for
+the staged schedule. This is explicit in `refinement_baseline_kind`. No independent P1 model
 was fitted. Count-constrained runs retain schema v4 and their existing semantics.
 
 This is a local beam search with a strong-peak initializer, not exhaustive
@@ -105,7 +107,7 @@ local minima, missing elements, insufficient observations, or budget limits can
 prevent a correct result. Supplied exact symmetry remains a substantial prior.
 No claim of SHELXT equivalence follows from a successful development case.
 
-## Measured development results, 28 October 2026
+## Full-refinement baseline results, 28 October 2026
 
 All three measured cases used only the listed element types, the externally
 measured cell and exact supplied symmetry. The same default controls applied.
@@ -147,9 +149,82 @@ report, input/code/native hashes, timing intervals and post-solve geometry audit
 are in `benchmarks/structure-solution-shared-search-macos.json`. Full diagnostic
 maps and CIFs remain in `runs/shared-search-final/`.
 
-Validation for this saved implementation: 1270 Python tests passed (11 skipped,
+Validation for the saved baseline (`8d1b9e1`): 1270 Python tests passed (11 skipped,
 34 deselected); 388 Rust tests passed (34 ignored). Strict workspace clippy,
 cargo formatting and selected Python lint checks passed. A fresh default wheel
 imported successfully and excluded both experimental native solver entry points.
 A separate multi-start regression verifies that the selected map and origin
 belong to the winning phasing start, rather than an earlier diagnostic map.
+
+## Staged refinement design
+
+The staged schedule screens each proposed edit with a bounded isotropic fit.
+Only screened candidates compete at this stage; an isotropic score is never
+compared directly with an anisotropically refined parent's score. Select the
+best `refinement_shortlist` scores, include all scores within 2 of that cutoff,
+and rescue the best birth introducing each still-missing required element.
+The 2-unit window is a conservative heuristic, not a probability interval.
+Promote these candidates to the requested final ADP model, then use the existing
+final-model score and improvement test. Initial frameworks receive full fits.
+Screened states cannot enter the retained beam or satisfy the target.
+
+Promotion preserves screened coordinates, source-atom ordering and composed
+origin/hand. For each site, initialize the final invariant log-tensor parameters
+from `H_i = log(Uiso_i) I`, with coefficient `trace(H_i B_ij)` in the existing
+orthonormal invariant basis. This embeds the isotropic model exactly in the
+anisotropic model, apart from clamping roundoff to the existing [1e-5,0.2] U
+bounds. All structure-factor values, derivatives, spatial support and final
+objectives use the existing kernels; there is no new scattering/profile term.
+An independent NumPy selector and tensor-seed reference check the orchestration.
+GSAS-II does not expose this search schedule, so it supplies no oracle fixture.
+
+Defaults for anisotropic shared search are `staged_refinement=True`,
+`screening_iterations=8` and `refinement_shortlist=3`. The shortlist is per parent,
+so different origin lineages are screened independently. `staged_refinement=False`
+reproduces the full-fit schedule; requested isotropic refinement bypasses staging.
+Only requested-mode fits enter the beam or satisfy the target. During a stop,
+unpromoted screening fits are discarded and completed full-mode states survive.
+The effort report separates total, screening and final refinements, attempted
+promotions and valid screened-out edits. These additive v5 fields do not change
+count-constrained schema v4. The shared-search CLI benchmark accepts
+`--no-staged-refinement` to reproduce its historical schedule.
+
+The paired benchmark is `benchmarks/solution_staged_comparison.py --output ...`.
+It pins the same three reflection files, alternates method order across three
+serial repeats, and uses identical inputs and 60-second total solver budgets.
+Reference counts and coordinates are opened only after every solve has been
+saved. Gates require equal inferred/reference counts, maximum coordinate error
+below 0.02 A, paired error increase at most 0.0001 A and R1 increase at most 1e-7.
+Both exported CIF frames must reproduce native R1 within 2e-10. These checks
+assess preserved structure recovery on reused development data; they cannot
+establish a general guarantee that isotropic screening never discards a useful
+anisotropic model.
+
+### Paired staged-refinement results, 28 October 2026
+
+The serial alternating-order comparison completed three pairs per dataset, 18
+solves in total. All runs recovered the correct full-cell non-H counts, retained
+the reference geometry and passed the native/exported-CIF checks.
+
+| Case | Full-fit median | Staged median | Speedup | Full requested-mode fits |
+| --- | --- | --- | --- | --- |
+| K[BrF4] | 3.250 s | 2.260 s | 1.44x | 78 → 30 |
+| BiSeI | 2.314 s | 1.123 s | 2.06x | 57 → 19 |
+| Thiourea | 28.288 s | 7.572 s | 3.74x | 242 → 46 |
+
+All paired speedups were positive. Inferred counts and accepted edit kinds were
+preserved. R1 differences were below 2.1e-10; maximum reference-coordinate errors
+across both schedules were 0.005909 A, 0.002517 A and 0.010372 A respectively.
+The number of total fits increases because many are now short isotropic screens;
+requested-mode fit counts and elapsed times, rather than total fit count alone,
+measure the saving. Geometry and both CIF-frame checks were performed after all
+18 models had been saved, using no reference counts or coordinates in search.
+
+The frozen result is `benchmarks/structure-solution-staged-refinement-macos.json`;
+full outputs and the before-reference report remain in
+`runs/staged-comparison-final/`. Historical shared-search reports remain unchanged.
+Validation: 1293 Python tests passed (11 skipped, 34 deselected); 388 Rust tests
+passed (34 ignored). Strict workspace clippy, cargo formatting and selected ruff
+checks passed. A freshly built default wheel imported without experimental solver
+entry points. No structure-factor value/Jacobian loop was changed; the paired
+multi-atom, multi-reflection benchmark measures the new scheduling behavior.

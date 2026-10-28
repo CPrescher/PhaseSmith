@@ -99,6 +99,20 @@ and thiourea in 27.981 s. K[BrF4] is 36.7 times faster than the recorded 45-coun
 sweep; this is not a thread-matched comparison with SHELXT. See
 `docs/solution-shared-search.md` for controls and qualifications.
 
+Shared search now has a staged refinement schedule: short isotropic fits screen
+proposed edits, a conservative per-parent shortlist preserves close scores and
+missing-element birth proposals, and only fully refined requested-mode states
+enter the retained beam. Per-site isotropic tensors and composed coordinate
+frames seed final anisotropic fits exactly. `staged_refinement=False` retains
+the previous full-fit path for controlled comparison. Independent selection and
+tensor-seed references accompany the unchanged value/derivative kernels. The
+paired benchmark pins observation inputs and defers reference-formula/geometry
+checks until every solve has been saved. Three serial alternating pairs per case
+preserve all counts, reference geometry and exported-CIF fits. Full/staged medians
+are 3.250/2.260 s for K[BrF4], 2.314/1.123 s for BiSeI and 28.288/7.572 s
+for thiourea (1.44x, 2.06x and 3.74x). These are reused development cases. See
+`docs/solution-shared-search.md`.
+
 An opt-in primitive/Bravais comparison now follows position-only lattice discovery.
 Native Selling-Delaunay reduction retains exact integer basis transformations;
 complete low-index reciprocal HNF hypotheses expose excluded reflections rather

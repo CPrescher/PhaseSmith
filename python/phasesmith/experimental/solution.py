@@ -245,6 +245,13 @@ class SharedSearchAudit:
     orbit_proposals: int
     element_scores: int
     refinements: int
+    screening_refinements: int
+    final_refinements: int
+    promoted_candidates: int
+    screened_out: int
+    staged_refinement: bool
+    screening_iterations: int
+    refinement_shortlist: int
     deletion_trials: int
     relabel_trials: int
     maximum_atoms: int
@@ -336,7 +343,11 @@ class SolutionResult:
             record["schema"] = "phasesmith.experimental-solution.v5"
             record["composition_source"] = "inferred_shared_orbit_search"
             record["input_elements"] = list(self.shared_search.elements)
-            record["refinement_baseline_kind"] = "initial_projected_common_u"
+            record["refinement_baseline_kind"] = (
+                "initial_projected_isotropic_sites"
+                if self.shared_search.staged_refinement
+                else "initial_projected_common_u"
+            )
             record["shared_search"] = asdict(self.shared_search)
             record["limitations"] = [
                 item for item in record["limitations"] if "composition" not in item.lower()
@@ -404,6 +415,9 @@ def solve_structure_elements(
     maximum_atoms: int | None = None,
     beam_width: int = 4,
     search_rounds: int = 8,
+    staged_refinement: bool = True,
+    screening_iterations: int = 8,
+    refinement_shortlist: int = 3,
     cancellation: SolutionCancellation | None = None,
 ) -> SolutionResult:
     """Infer full-cell counts and labels by shared-map symmetry-orbit edits.
@@ -427,12 +441,16 @@ def solve_structure_elements(
         or len(set(elements)) != len(elements)
     ):
         raise ValueError("elements must be 1..8 distinct neutral non-H symbols")
+    if not isinstance(staged_refinement, bool):
+        raise TypeError("staged_refinement must be boolean")
     if maximum_atoms is None:
         maximum_atoms = min(128, int(np.ceil(cell.geometry().volume_angstrom3 / 8)))
     for name, value, high in (
         ("maximum_atoms", maximum_atoms, 128),
         ("beam_width", beam_width, 8),
         ("search_rounds", search_rounds, 16),
+        ("screening_iterations", screening_iterations, 40),
+        ("refinement_shortlist", refinement_shortlist, 16),
     ):
         if isinstance(value, bool) or not isinstance(value, int) or not 1 <= value <= high:
             raise ValueError(f"{name} must be an integer in [1,{high}]")
@@ -446,7 +464,15 @@ def solve_structure_elements(
         raise TypeError("space_group and options must be SpaceGroup and SolutionOptions")
     if cancellation is not None and not isinstance(cancellation, SolutionCancellation):
         raise TypeError("cancellation must be SolutionCancellation or None")
-    shared = (elements, maximum_atoms, beam_width, search_rounds)
+    shared = (
+        elements,
+        maximum_atoms,
+        beam_width,
+        search_rounds,
+        staged_refinement,
+        screening_iterations,
+        refinement_shortlist,
+    )
     return _run_solution(observations, cell, group, (), controls, cancellation, shared)
 
 

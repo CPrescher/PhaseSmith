@@ -44,3 +44,30 @@ def shared_orbit_reference(
             }
         )
     return {"q": q, "dq": dq, "images": images, "evaluations": results}
+
+
+def screening_shortlist_reference(scores, birth_elements, missing, limit):
+    """Independent set-union selection; final-mode scores are deliberately absent."""
+    scores = np.asarray(scores)
+    order = np.lexsort((np.arange(len(scores)), scores))
+    if not len(order):
+        return []
+    selected = set(order[:limit])
+    cutoff = scores[order[min(limit, len(order)) - 1]]
+    selected.update(np.flatnonzero(scores <= cutoff + 2))
+    for element in missing:
+        candidates = [i for i, birth in enumerate(birth_elements) if birth == element]
+        if candidates:
+            selected.add(min(candidates, key=lambda i: (scores[i], i)))
+    return [int(i) for i in order if i in selected]
+
+
+def isotropic_site_seed_reference(metadata, site_u):
+    """Dense Frobenius embedding of log(U_i) I, without native parameter setup."""
+    parameters = np.zeros(metadata["parameter_count"])
+    for i, u in enumerate(site_u):
+        tensor = np.log(u) * np.eye(3)
+        start = metadata["offsets"][i][1]
+        basis = np.asarray(metadata["tensor_bases"][i])
+        parameters[start : start + len(basis)] = np.einsum("ij,kij->k", tensor, basis)
+    return parameters
