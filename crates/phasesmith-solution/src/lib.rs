@@ -12,6 +12,7 @@ mod dual_space;
 mod fourier;
 mod math3;
 mod model;
+mod peak_density;
 mod shared_pool;
 mod shared_search;
 mod solver;
@@ -35,8 +36,11 @@ pub use data::{Observation, PreparedData, prepare_data};
 pub use dual_space::{DualSpaceOptions, DualSpaceResult, atomic_projection, dual_space};
 pub use fourier::{FlipOptions, FlipResult, charge_flip, extract_peaks};
 pub use model::{ModelEvaluation, PolishedModel, evaluate_model, polish_model};
+pub use peak_density::{IntegratedPeakDensity, PeakIntegral, ball_transform, density_label_mask};
 pub use shared_pool::PreparedElementPool;
-pub use shared_search::{SharedMove, SharedSearchOptions, SharedSearchSummary, solve_elements};
+pub use shared_search::{
+    DensityCalibration, SharedMove, SharedSearchOptions, SharedSearchSummary, solve_elements,
+};
 pub use solver::{Candidate, PhasingMethod, PhasingTrial, Solution, SolveOptions, solve};
 pub use staged_refinement::screening_shortlist;
 pub use symmetry_model::{

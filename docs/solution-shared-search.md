@@ -228,3 +228,11 @@ passed (34 ignored). Strict workspace clippy, cargo formatting and selected ruff
 checks passed. A freshly built default wheel imported without experimental solver
 entry points. No structure-factor value/Jacobian loop was changed; the paired
 multi-atom, multi-reflection benchmark measures the new scheduling behavior.
+
+Integrated peak-density guidance is now a separate default-enabled assignment
+option. It uses an unsharpened amplitude map, relative spherical masses and the
+same final refinement objective. See `docs/solution-peak-density.md` for equations,
+rescue rules and paired timings. Set `integrated_peak_density=False` to reproduce
+the staged baseline above; the historical staged-comparison command does this
+explicitly. The current single-case benchmark accepts
+`--no-integrated-peak-density` for the same comparison.

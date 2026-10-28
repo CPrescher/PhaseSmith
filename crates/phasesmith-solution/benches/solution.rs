@@ -2,8 +2,8 @@
 use criterion::{Criterion, criterion_group, criterion_main};
 use phasesmith_crystallography::{Rational, SpaceGroup, SymmetryOperation, UnitCell};
 use phasesmith_solution::{
-    AdpMode, DualSpaceOptions, FlipOptions, PreparedElementPool, PreparedOrbitSearch,
-    PreparedSymmetricModel, charge_flip, dual_space, recover_symmetry,
+    AdpMode, DualSpaceOptions, FlipOptions, IntegratedPeakDensity, PreparedElementPool,
+    PreparedOrbitSearch, PreparedSymmetricModel, charge_flip, dual_space, recover_symmetry,
 };
 
 #[allow(clippy::too_many_lines)]
@@ -59,6 +59,44 @@ fn benchmark(c: &mut Criterion) {
         beta_deg: 90.,
         gamma_deg: 90.,
     };
+    let source = charge_flip(
+        shape,
+        &hkl,
+        &amplitudes,
+        &phases,
+        &support,
+        &FlipOptions {
+            cycles: 50,
+            delta_sigma: 1.,
+            weak_fraction: 0.2,
+            cleanup_cycles: 0,
+            cancellation: None,
+        },
+        None,
+    )
+    .unwrap()
+    .density;
+    let integrated =
+        IntegratedPeakDensity::new(cell, shape, &hkl, &amplitudes, &source, 0.7).unwrap();
+    c.bench_function("integrated_peak_map_32cubed_2108_reflections", |b| {
+        b.iter(|| {
+            IntegratedPeakDensity::new(cell, shape, &hkl, &amplitudes, &source, 0.7).unwrap()
+        });
+    });
+    let centers: Vec<_> = (0..32)
+        .map(|i| [f64::from(i) / 32. + 0.013, 0.271, 0.413])
+        .collect();
+    c.bench_function(
+        "integrated_peak_32_centers_fused_value_gradient_radius",
+        |b| {
+            b.iter(|| {
+                centers
+                    .iter()
+                    .map(|&p| integrated.evaluate(std::hint::black_box(p)).unwrap())
+                    .collect::<Vec<_>>()
+            });
+        },
+    );
     let points = [
         [0.03, 0.07, 0.11],
         [0.17, 0.29, 0.41],

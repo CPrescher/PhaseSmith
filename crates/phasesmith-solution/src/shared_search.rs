@@ -1,10 +1,10 @@
 //! One count-independent phase map and a bounded beam of editable symmetry orbits.
 use crate::math3::{dot, mv, periodic_difference, sub};
 use crate::{
-    AdpMode, Candidate, FlipOptions, Observation, PhasingMethod, PhasingTrial, PreparedData,
-    PreparedElementPool, PreparedSymmetricModel, Solution, SolutionError, SolveOptions,
-    SymmetryModel, charge_flip, error, extract_peaks, prepare_data, project_fixed_sets,
-    recover_symmetry, recover_symmetry_hypotheses,
+    AdpMode, Candidate, FlipOptions, IntegratedPeakDensity, Observation, PhasingMethod,
+    PhasingTrial, PreparedData, PreparedElementPool, PreparedSymmetricModel, Solution,
+    SolutionError, SolveOptions, SymmetryModel, charge_flip, error, extract_peaks, prepare_data,
+    project_fixed_sets, recover_symmetry, recover_symmetry_hypotheses,
 };
 use phasesmith_crystallography::{
     CellGeometry, PreparedXrayScattering, SpaceGroup, SymmetryOperation, UnitCell,
@@ -27,6 +27,10 @@ pub struct SharedSearchOptions {
     pub screening_iterations: usize,
     /// Minimum number shortlisted per parent, in [1,16], plus ties/rescues.
     pub refinement_shortlist: usize,
+    /// Guide element edits using relative integrated measured-amplitude density.
+    pub integrated_peak_density: bool,
+    /// Cartesian integration radius, in [1e-4,2] angstrom.
+    pub peak_density_radius_angstrom: f64,
 }
 impl Default for SharedSearchOptions {
     fn default() -> Self {
@@ -37,6 +41,8 @@ impl Default for SharedSearchOptions {
             staged_refinement: true,
             screening_iterations: 8,
             refinement_shortlist: 3,
+            integrated_peak_density: true,
+            peak_density_radius_angstrom: 0.7,
         }
     }
 }
@@ -53,6 +59,22 @@ pub struct SharedMove {
     pub r1: f64,
     /// Descriptive penalized fit score.
     pub score: f64,
+}
+/// One provisional strong-atom density calibration, with no source composition.
+#[derive(Clone, Debug)]
+pub struct DensityCalibration {
+    /// Actual phasing start index.
+    pub trial: usize,
+    /// Retained setting lineage.
+    pub lineage: usize,
+    /// Global edit-round counter.
+    pub round: usize,
+    /// Relative mass per neutral atomic number, or no usable evidence.
+    pub scale: Option<f64>,
+    /// Strong asymmetric orbits with positive mass.
+    pub anchors: usize,
+    /// Density-ambiguity cap on the final-fit shortlist for this parent.
+    pub shortlist_limit: usize,
 }
 /// Actual shared work, including unsuccessful edits and budget-limited states.
 #[derive(Clone, Debug, Default)]
@@ -81,6 +103,24 @@ pub struct SharedSearchSummary {
     pub promoted_candidates: usize,
     /// Valid screened edits omitted from the full-fit shortlist.
     pub screened_out: usize,
+    /// Whether integrated-density assignment guidance was enabled.
+    pub integrated_peak_density: bool,
+    /// Integration sphere radius in angstrom.
+    pub peak_density_radius_angstrom: f64,
+    /// Actual measured-amplitude integrated maps prepared.
+    pub density_map_builds: usize,
+    /// Atomic-center integrals evaluated, including orbit averages.
+    pub density_evaluations: usize,
+    /// Raw birth label scores outside the density prior.
+    pub density_label_rejections: usize,
+    /// Rejected birth labels rescued by missing-type or best-fit rules.
+    pub density_label_rescues: usize,
+    /// Net birth screening fits saved relative to two per type.
+    pub density_birth_skips: usize,
+    /// Relabel screening fits omitted by the density guide.
+    pub density_relabel_skips: usize,
+    /// Strong-atom scale evidence for each processed parent.
+    pub density_calibrations: Vec<DensityCalibration>,
     /// Whether staged scheduling is active for this requested ADP mode.
     pub staged_refinement: bool,
     /// Declared maximum screening steps.
@@ -120,6 +160,86 @@ struct State {
     moves: Vec<SharedMove>,
     initial_prefix: usize,
     promotion: Option<PromotionSeed>,
+}
+
+fn orbit_mass(
+    map: &IntegratedPeakDensity,
+    group: &SpaceGroup,
+    point: [f64; 3],
+    frame: (i32, [f64; 3]),
+    audit: &mut SharedSearchSummary,
+) -> Result<f64, SolutionError> {
+    let images = group
+        .expand_sites(&[point], 1e-8)
+        .map_err(|e| error(e.to_string()))?
+        .fractional_xyz;
+    image_mass(map, &images, frame, audit)
+}
+fn image_mass(
+    map: &IntegratedPeakDensity,
+    images: &[[f64; 3]],
+    frame: (i32, [f64; 3]),
+    audit: &mut SharedSearchSummary,
+) -> Result<f64, SolutionError> {
+    let mut sum = 0.;
+    for p in images {
+        let original =
+            std::array::from_fn(|i| ((p[i] - frame.1[i]) * f64::from(frame.0)).rem_euclid(1.));
+        sum += map.evaluate(original)?.value;
+        audit.density_evaluations += 1;
+    }
+    #[allow(clippy::cast_precision_loss)]
+    Ok(sum / images.len() as f64)
+}
+
+fn density_scale(
+    map: &IntegratedPeakDensity,
+    group: &SpaceGroup,
+    parent: &State,
+    audit: &mut SharedSearchSummary,
+) -> Result<Option<f64>, SolutionError> {
+    let model = parent
+        .candidate
+        .refinement
+        .as_ref()
+        .expect("refined parent");
+    let strongest = model
+        .species
+        .iter()
+        .filter_map(|e| xray_species_metadata(e).map(|m| m.atomic_number))
+        .max()
+        .unwrap_or(0);
+    let mut ratios = Vec::new();
+    for (element, &point) in model.species.iter().zip(&model.fractional_xyz) {
+        let z = xray_species_metadata(element).map_or(0, |m| m.atomic_number);
+        if f64::from(z) < 0.75 * f64::from(strongest) {
+            continue;
+        }
+        let mass = orbit_mass(map, group, point, (model.hand, model.origin_shift), audit)?;
+        if mass > 0. {
+            ratios.push(mass / f64::from(z));
+        }
+    }
+    ratios.sort_by(f64::total_cmp);
+    let scale = if ratios.is_empty() || ratios[ratios.len() - 1] > 2. * ratios[0] {
+        None
+    } else {
+        let n = ratios.len();
+        Some(if n % 2 == 0 {
+            ratios[n / 2 - 1] / 2. + ratios[n / 2] / 2.
+        } else {
+            ratios[n / 2]
+        })
+    };
+    audit.density_calibrations.push(DensityCalibration {
+        trial: parent.candidate.trial,
+        lineage: parent.lineage,
+        round: audit.rounds,
+        scale,
+        anchors: ratios.len(),
+        shortlist_limit: audit.refinement_shortlist,
+    });
+    Ok(scale)
 }
 
 fn distance2(g: &CellGeometry, a: [f64; 3], b: [f64; 3]) -> Result<f64, SolutionError> {
@@ -515,6 +635,7 @@ pub fn solve_elements(
     search: &SharedSearchOptions,
 ) -> Result<Solution, SolutionError> {
     crate::solver::validate_options(options)?;
+    crate::ball_transform(0., search.peak_density_radius_angstrom)?;
     if !(1..=128).contains(&search.maximum_atoms)
         || !(1..=8).contains(&search.beam_width)
         || !(1..=16).contains(&search.rounds)
@@ -632,6 +753,8 @@ pub fn solve_elements(
             && options.refinement == Some(AdpMode::Anisotropic),
         screening_iterations: search.screening_iterations,
         refinement_shortlist: search.refinement_shortlist,
+        integrated_peak_density: search.integrated_peak_density,
+        peak_density_radius_angstrom: search.peak_density_radius_angstrom,
         maximum_atoms: search.maximum_atoms,
         beam_width: search.beam_width,
         ..SharedSearchSummary::default()
@@ -670,6 +793,19 @@ pub fn solve_elements(
             mask_sigma: None,
         });
         result.histories.push(flip.history);
+        let integrated_map = if search.integrated_peak_density {
+            audit.density_map_builds += 1;
+            Some(IntegratedPeakDensity::new(
+                cell,
+                shape,
+                &result.data.hkl,
+                &result.data.amplitudes,
+                &flip.density,
+                search.peak_density_radius_angstrom,
+            )?)
+        } else {
+            None
+        };
         let peaks = extract_peaks(&flip.density, shape, 32.max(minimum))?;
         if winners.is_empty() {
             result.density.clone_from(&flip.density);
@@ -771,6 +907,30 @@ pub fn solve_elements(
                     break;
                 }
                 let base_sites = sites(parent);
+                let calibration = if let Some(map) = &integrated_map {
+                    density_scale(map, group, parent, &mut audit)?
+                } else {
+                    None
+                };
+                let numbers: Vec<_> = elements
+                    .iter()
+                    .map(|e| xray_species_metadata(e).map_or(0, |m| m.atomic_number))
+                    .collect();
+                let frame_ref = parent.candidate.refinement.as_ref().expect("refined state");
+                let density_frame = (frame_ref.hand, frame_ref.origin_shift);
+                let mut site_masks = Vec::new();
+                for (_, point) in &base_sites {
+                    let mask = if let Some(map) = &integrated_map {
+                        crate::density_label_mask(
+                            orbit_mass(map, group, *point, density_frame, &mut audit)?,
+                            calibration,
+                            &numbers,
+                        )?
+                    } else {
+                        vec![true; elements.len()]
+                    };
+                    site_masks.push(mask);
+                }
                 let mut screened = Vec::new();
                 let pass = if audit.staged_refinement {
                     FitPass::Screen(search.screening_iterations)
@@ -806,20 +966,66 @@ pub fn solve_elements(
                     deadline,
                 )?;
                 let mut scored = vec![Vec::new(); elements.len()];
+                let mut raw_best: Option<(f64, usize)> = None;
+                let mut plausible_label_count = elements.len();
                 for point in proposals {
                     if crate::stopped(Some(deadline), options.cancellation.as_ref()) {
                         break;
                     }
                     let evaluations = pool.evaluate(point)?;
+                    let mask = if let Some(map) = &integrated_map {
+                        crate::density_label_mask(
+                            image_mass(
+                                map,
+                                &evaluations[0].fractional_xyz,
+                                density_frame,
+                                &mut audit,
+                            )?,
+                            calibration,
+                            &numbers,
+                        )?
+                    } else {
+                        vec![true; elements.len()]
+                    };
                     audit.orbit_proposals += 1;
                     audit.element_scores += elements.len();
                     for (index, evaluation) in evaluations.into_iter().enumerate() {
-                        scored[index].push((evaluation.objective, point));
+                        if raw_best.is_none_or(|(best, _)| evaluation.objective < best) {
+                            raw_best = Some((evaluation.objective, index));
+                            plausible_label_count = mask.iter().filter(|&&allowed| allowed).count();
+                        }
+                        if !mask[index] {
+                            audit.density_label_rejections += 1;
+                        }
+                        scored[index].push((evaluation.objective, point, mask[index]));
                     }
                 }
                 for (index, mut proposals) in scored.into_iter().enumerate() {
                     proposals.sort_by(|a, b| a.0.total_cmp(&b.0));
-                    for (_, point) in proposals.into_iter().take(2) {
+                    let baseline_count = proposals.len().min(2);
+                    // Prune the original amplitude shortlist without adding new,
+                    // lower-ranked topology proposals solely from the density prior.
+                    let mut selected: Vec<_> = proposals
+                        .iter()
+                        .take(2)
+                        .enumerate()
+                        .filter(|(_, p)| p.2)
+                        .map(|(i, _)| i)
+                        .collect();
+                    let missing = !parent.candidate.species.contains(&elements[index]);
+                    if (missing || raw_best.is_some_and(|(_, e)| e == index))
+                        && !proposals.is_empty()
+                        && !selected.contains(&0)
+                    {
+                        selected.push(0);
+                        if !proposals[0].2 {
+                            audit.density_label_rescues += 1;
+                        }
+                    }
+                    audit.density_birth_skips += baseline_count - selected.len();
+                    selected.sort_unstable();
+                    for selected_index in selected {
+                        let (_, point, _) = proposals[selected_index];
                         if crate::stopped(Some(deadline), options.cancellation.as_ref()) {
                             break;
                         }
@@ -874,12 +1080,18 @@ pub fn solve_elements(
                             }
                         }
                     }
-                    for element in &elements {
+                    for (label_index, element) in elements.iter().enumerate() {
                         if *element == base_sites[index].0 {
                             continue;
                         }
                         if crate::stopped(Some(deadline), options.cancellation.as_ref()) {
                             break;
+                        }
+                        if !site_masks[index][label_index]
+                            && parent.candidate.species.contains(element)
+                        {
+                            audit.density_relabel_skips += 1;
+                            continue;
                         }
                         let mut relabeled = base_sites.clone();
                         relabeled[index].0.clone_from(element);
@@ -906,6 +1118,16 @@ pub fn solve_elements(
                     }
                 }
                 if audit.staged_refinement {
+                    let shortlist_limit = search
+                        .refinement_shortlist
+                        .min(plausible_label_count.max(1));
+                    if let Some(c) = audit
+                        .density_calibrations
+                        .last_mut()
+                        .filter(|_| search.integrated_peak_density)
+                    {
+                        c.shortlist_limit = shortlist_limit;
+                    }
                     let screening_ranks: Vec<_> = screened.iter().map(|s| s.score).collect();
                     let births: Vec<_> = screened
                         .iter()
@@ -923,7 +1145,7 @@ pub fn solve_elements(
                         &screening_ranks,
                         &births,
                         &missing,
-                        search.refinement_shortlist,
+                        shortlist_limit,
                     )?;
                     audit.screened_out += screened.len() - selected.len();
                     for index in selected {

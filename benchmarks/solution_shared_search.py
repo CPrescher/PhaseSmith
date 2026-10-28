@@ -40,6 +40,7 @@ def main():
     parser.add_argument("--repeats", type=int, default=3)
     parser.add_argument("--max-seconds", type=float, default=30)
     parser.add_argument("--no-staged-refinement", action="store_true")
+    parser.add_argument("--no-integrated-peak-density", action="store_true")
     parser.add_argument("--screening-iterations", type=int, default=8)
     parser.add_argument("--refinement-shortlist", type=int, default=3)
     args = parser.parse_args()
@@ -62,6 +63,7 @@ def main():
                 "Cargo.lock",
                 "python/phasesmith/experimental/solution.py",
                 "python/phasesmith/experimental/solution_shared_reference.py",
+                "python/phasesmith/experimental/solution_peak_density_reference.py",
                 "benchmarks/solution_shared_search.py",
                 "benchmarks/solution_adp_transfer.py",
                 "benchmarks/structure_solution.py",
@@ -78,6 +80,7 @@ def main():
         "options": asdict(options),
         "repeats": args.repeats,
         "staged_refinement": not args.no_staged_refinement,
+        "integrated_peak_density": not args.no_integrated_peak_density,
         "screening_iterations": args.screening_iterations,
         "refinement_shortlist": args.refinement_shortlist,
         "platform": platform.platform(),
@@ -104,6 +107,7 @@ def main():
             space_group=group,
             options=options,
             staged_refinement=not args.no_staged_refinement,
+            integrated_peak_density=not args.no_integrated_peak_density,
             screening_iterations=args.screening_iterations,
             refinement_shortlist=args.refinement_shortlist,
         )
