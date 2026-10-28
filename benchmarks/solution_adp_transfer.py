@@ -44,10 +44,15 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--download-data", action="store_true")
+    parser.add_argument(
+        "--phasing", choices=("charge_flip", "dual_space", "portfolio"), default="charge_flip"
+    )
     args = parser.parse_args()
     args.output.mkdir(exist_ok=False, parents=True)
     source = json.loads((ROOT / "validation/structure-solution-adp-transfer.json").read_text())
-    options = SolutionOptions(trials=8, cycles=1200, max_seconds=60, r1_target=0.06)
+    options = SolutionOptions(
+        trials=8, cycles=1200, max_seconds=60, r1_target=0.06, phasing=args.phasing
+    )
     from phasesmith import _core
 
     implementation = sorted((ROOT / "crates/phasesmith-solution/src").glob("*.rs")) + [
@@ -56,6 +61,8 @@ def main():
             "Cargo.lock",
             "crates/phasesmith-py/src/solution.rs",
             "crates/phasesmith-py/src/solution_symmetry.rs",
+            "crates/phasesmith-py/src/solution_dual.rs",
+            "python/phasesmith/experimental/solution_dual_reference.py",
             "python/phasesmith/experimental/solution.py",
             "python/phasesmith/experimental/solution_symmetry.py",
             "python/phasesmith/experimental/solution_reference.py",
@@ -74,7 +81,9 @@ def main():
         "native_extension_sha256": hashlib.sha256(Path(_core.__file__).read_bytes()).hexdigest(),
         "python": platform.python_version(),
         "numpy": np.__version__,
-        "qualification": "Fixed settings across two preselected transfer cases; "
+        "qualification": "Fixed settings across two previously selected cases, "
+        "reused as development "
+        "evidence for alternative phasing methods; "
         "reference coordinates read only after saving blind results. "
         "R1 uses unweighted non-resonant amplitudes, unlike deposited refinement objectives.",
     }
@@ -115,6 +124,11 @@ def main():
             "r1": result.best.r1 if result.best else None,
             "symmetry_refined": bool(result.best and result.best.refinement),
             "candidate_count": len(result.candidates),
+            "phasing_trials": result.to_record()["phasing_trials"],
+            "all_candidates": [
+                {"trial": c.trial, "r1": c.r1, "symmetry_refined": c.refinement is not None}
+                for c in result.candidates
+            ],
             "diagnostic": result.best.refinement_diagnostic if result.best else None,
         }
         if result.best:

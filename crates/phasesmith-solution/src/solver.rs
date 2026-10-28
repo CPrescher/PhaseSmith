@@ -12,6 +12,38 @@ use crate::{
     polish_model, prepare_data,
 };
 
+/// Explicit phasing strategy; the historical default stays unchanged.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PhasingMethod {
+    /// Published charge flipping.
+    ChargeFlip,
+    /// Patterson/random starts and hybrid atomic dual-space recycling.
+    DualSpace,
+    /// Alternate both methods within the existing total trial/time budget.
+    Portfolio,
+}
+
+/// Actual per-trial phasing provenance, including initialization fallbacks.
+#[derive(Clone, Debug)]
+pub struct PhasingTrial {
+    /// `charge_flip` or `dual_space`.
+    pub method: &'static str,
+    /// Actual starting method.
+    pub initialization: &'static str,
+    /// Patterson grid vector when used.
+    pub patterson_vector: Option<[i32; 3]>,
+    /// Deterministic start/omission seed.
+    pub seed: u64,
+    /// Number of completed iteration scores.
+    pub cycles: usize,
+    /// Selected best map cycle, zero-based.
+    pub best_cycle: usize,
+    /// `normalized_l1` or `profiled_amplitude_sse`.
+    pub score_kind: &'static str,
+    /// Gaussian sigma in angstrom for the atomic method.
+    pub mask_sigma: Option<f64>,
+}
+
 /// Explicit resource budgets and experimental numerical controls.
 #[derive(Clone, Debug)]
 pub struct SolveOptions {
@@ -21,6 +53,8 @@ pub struct SolveOptions {
     pub trials: usize,
     /// Phasing cycles per trial, in [1,20000].
     pub cycles: usize,
+    /// Charge flipping, atomic dual-space, or an alternating portfolio.
+    pub phasing: PhasingMethod,
     /// Base threshold; successive starts cycle through 1,1.1,1.2 times this value.
     pub delta_sigma: f64,
     /// Weak-reflection perturbation fraction, in [0,0.5].
@@ -53,6 +87,7 @@ impl Default for SolveOptions {
             seed: 0,
             trials: 8,
             cycles: 800,
+            phasing: PhasingMethod::ChargeFlip,
             delta_sigma: 1.0,
             weak_fraction: 0.2,
             cleanup_cycles: 10,
@@ -109,6 +144,8 @@ pub struct Solution {
     pub density: Vec<f64>,
     /// Phasing misfit histories for all attempted trials.
     pub histories: Vec<Vec<f64>>,
+    /// Method and initialization aligned one-to-one with histories.
+    pub phasing_trials: Vec<PhasingTrial>,
     /// Trials with too few maxima or a numerically degenerate candidate.
     pub rejected_trials: Vec<(usize, String)>,
     /// `r1_target`, `trial_budget`, or `max_runtime`; not a correctness certificate.
@@ -248,6 +285,7 @@ pub fn solve(
         candidates: Vec::new(),
         density: vec![0.; n],
         histories: Vec::new(),
+        phasing_trials: Vec::new(),
         rejected_trials: Vec::new(),
         termination: "trial_budget",
         target_met: false,
@@ -258,22 +296,88 @@ pub fn solve(
             result.termination = stop_reason(options);
             break;
         }
-        let phases = initial_phases(&result.data.hkl, options.seed.wrapping_add(trial as u64));
-        let flip = charge_flip(
-            shape,
-            &result.data.hkl,
-            &sharpened,
-            &phases,
-            &support,
-            &FlipOptions {
-                cycles: options.cycles,
-                delta_sigma: options.delta_sigma * (1.0 + 0.1 * (trial % 3) as f64),
-                weak_fraction: options.weak_fraction,
-                cleanup_cycles: options.cleanup_cycles,
-                cancellation: options.cancellation.clone(),
+        let seed = options.seed.wrapping_add(trial as u64);
+        let phases = initial_phases(&result.data.hkl, seed);
+        let use_dual = options.phasing == PhasingMethod::DualSpace
+            || (options.phasing == PhasingMethod::Portfolio && trial % 2 == 1);
+        let (flip, initialization, vector) = if use_dual {
+            let dual_index = if options.phasing == PhasingMethod::Portfolio {
+                trial / 2
+            } else {
+                trial
+            };
+            let mixed: Vec<_> = sharpened
+                .iter()
+                .zip(&result.data.amplitudes)
+                .map(|(&e, &f)| e.sqrt() * f.sqrt())
+                .collect();
+            let result = crate::dual_space(
+                shape,
+                cell,
+                &result.data.hkl,
+                &mixed,
+                &phases,
+                &support,
+                &crate::DualSpaceOptions {
+                    cycles: options.cycles,
+                    atom_count: species.len(),
+                    mask_sigma: 0.35 * result.data.d_min,
+                    hybrid_m: 3.,
+                    omit_fraction: 0.1,
+                    seed,
+                    patterson_rank: if dual_index % 4 == 3 {
+                        None
+                    } else {
+                        Some(dual_index)
+                    },
+                    cancellation: options.cancellation.clone(),
+                },
+                Some(deadline),
+            )?;
+            (result.trial, result.initialization, result.patterson_vector)
+        } else {
+            (
+                charge_flip(
+                    shape,
+                    &result.data.hkl,
+                    &sharpened,
+                    &phases,
+                    &support,
+                    &FlipOptions {
+                        cycles: options.cycles,
+                        delta_sigma: options.delta_sigma * (1.0 + 0.1 * (trial % 3) as f64),
+                        weak_fraction: options.weak_fraction,
+                        cleanup_cycles: options.cleanup_cycles,
+                        cancellation: options.cancellation.clone(),
+                    },
+                    Some(deadline),
+                )?,
+                "random",
+                None,
+            )
+        };
+        result.phasing_trials.push(PhasingTrial {
+            method: if use_dual {
+                "dual_space"
+            } else {
+                "charge_flip"
             },
-            Some(deadline),
-        )?;
+            initialization,
+            patterson_vector: vector,
+            seed,
+            cycles: flip.history.len(),
+            best_cycle: flip.best_cycle,
+            score_kind: if use_dual {
+                "profiled_amplitude_sse"
+            } else {
+                "normalized_l1"
+            },
+            mask_sigma: if use_dual {
+                Some(0.35 * result.data.d_min)
+            } else {
+                None
+            },
+        });
         result.histories.push(flip.history);
         let peaks = extract_peaks(&flip.density, shape, species.len())?;
         if peaks.len() == species.len() {

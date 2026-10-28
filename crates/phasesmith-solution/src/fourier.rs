@@ -37,7 +37,7 @@ pub struct FlipResult {
     pub cancelled: bool,
 }
 
-struct Transform {
+pub(crate) struct Transform {
     shape: [usize; 3],
     forward: [Arc<dyn Fft<f64>>; 3],
     inverse: [Arc<dyn Fft<f64>>; 3],
@@ -46,7 +46,7 @@ struct Transform {
 }
 
 impl Transform {
-    fn new(shape: [usize; 3]) -> Self {
+    pub(crate) fn new(shape: [usize; 3]) -> Self {
         let mut planner = FftPlanner::new();
         let forward = shape.map(|n| planner.plan_fft_forward(n));
         let inverse = shape.map(|n| planner.plan_fft_inverse(n));
@@ -65,7 +65,7 @@ impl Transform {
         }
     }
 
-    fn apply(&mut self, values: &mut [Complex<f64>], inverse: bool) {
+    pub(crate) fn apply(&mut self, values: &mut [Complex<f64>], inverse: bool) {
         for axis in (0..3).rev() {
             let length = self.shape[axis];
             let stride: usize = self.shape[axis + 1..].iter().product();
@@ -111,30 +111,15 @@ pub(crate) fn grid_index(hkl: [i32; 3], shape: [usize; 3]) -> usize {
     (h[0] * shape[1] + h[1]) * shape[2] + h[2]
 }
 
-/// Run charge flipping with explicit initial phases and a reciprocal support mask.
-///
-/// `support` is 0 for fixed zeros (outside sphere or known absences), 1 for free
-/// missing coefficients, and 2 for measured coefficients. 000 must be free.
-/// Input must contain both Friedel mates; their amplitudes and phases must agree.
-///
-/// # Errors
-/// Rejects aliased/duplicate/unsorted HKLs, non-Hermitian inputs, invalid mask,
-/// zero amplitudes everywhere, nonfinite values, or controls beyond fixed bounds.
-#[allow(
-    clippy::too_many_arguments,
-    clippy::too_many_lines,
-    clippy::cast_precision_loss,
-    clippy::naive_bytecount // Dependency-free bounded mask validation.
-)]
-pub fn charge_flip(
+/// Validate the shared Fourier boundary and construct owned Hermitian coefficients.
+#[allow(clippy::too_many_lines, clippy::naive_bytecount)]
+pub(crate) fn prepare_fourier(
     shape: [usize; 3],
     hkl: &[[i32; 3]],
     amplitudes: &[f64],
     phases: &[f64],
     support: &[u8],
-    options: &FlipOptions,
-    deadline: Option<Instant>,
-) -> Result<FlipResult, SolutionError> {
+) -> Result<(Vec<usize>, Vec<Complex<f64>>), SolutionError> {
     let n = grid_len(shape)?;
     if hkl.is_empty()
         || hkl.len() != amplitudes.len()
@@ -148,16 +133,8 @@ pub fn charge_flip(
             .iter()
             .any(|a| !a.is_finite() || *a < 0.0 || *a > 1e100)
         || phases.iter().any(|p| !p.is_finite())
-        || !(1..=20_000).contains(&options.cycles)
-        || !(0.0..=0.5).contains(&options.weak_fraction)
-        || !options.weak_fraction.is_finite()
-        || !options.delta_sigma.is_finite()
-        || !(0.1..=3.0).contains(&options.delta_sigma)
-        || options.cleanup_cycles > 100
     {
-        return Err(error(
-            "invalid charge-flipping arrays, support, or iteration controls",
-        ));
+        return Err(error("invalid Fourier arrays or support"));
     }
     let sum_a: f64 = amplitudes.iter().sum();
     if sum_a <= 0.0 || !sum_a.is_finite() {
@@ -209,6 +186,45 @@ pub fn charge_flip(
             ));
         }
     }
+    Ok((indices, f))
+}
+
+/// Run charge flipping with explicit initial phases and a reciprocal support mask.
+///
+/// `support` is 0 for fixed zeros (outside sphere or known absences), 1 for free
+/// missing coefficients, and 2 for measured coefficients. 000 must be free.
+/// Input must contain both Friedel mates; their amplitudes and phases must agree.
+///
+/// # Errors
+/// Rejects aliased/duplicate/unsorted HKLs, non-Hermitian inputs, invalid mask,
+/// zero amplitudes everywhere, nonfinite values, or controls beyond fixed bounds.
+#[allow(
+    clippy::too_many_arguments,
+    clippy::too_many_lines,
+    clippy::cast_precision_loss,
+    clippy::naive_bytecount // Dependency-free bounded mask validation.
+)]
+pub fn charge_flip(
+    shape: [usize; 3],
+    hkl: &[[i32; 3]],
+    amplitudes: &[f64],
+    phases: &[f64],
+    support: &[u8],
+    options: &FlipOptions,
+    deadline: Option<Instant>,
+) -> Result<FlipResult, SolutionError> {
+    let n = grid_len(shape)?;
+    if !(1..=20_000).contains(&options.cycles)
+        || !(0.0..=0.5).contains(&options.weak_fraction)
+        || !options.weak_fraction.is_finite()
+        || !options.delta_sigma.is_finite()
+        || !(0.1..=3.0).contains(&options.delta_sigma)
+        || options.cleanup_cycles > 100
+    {
+        return Err(error("invalid charge-flipping controls"));
+    }
+    let (indices, mut f) = prepare_fourier(shape, hkl, amplitudes, phases, support)?;
+    let sum_a: f64 = amplitudes.iter().sum();
     // Ties all receive the same weak treatment, preserving Friedel symmetry.
     let mut ordered = amplitudes.to_vec();
     ordered.sort_by(f64::total_cmp);

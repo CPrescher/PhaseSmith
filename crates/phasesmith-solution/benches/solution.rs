@@ -2,9 +2,11 @@
 use criterion::{Criterion, criterion_group, criterion_main};
 use phasesmith_crystallography::{SpaceGroup, SymmetryOperation, UnitCell};
 use phasesmith_solution::{
-    AdpMode, FlipOptions, PreparedSymmetricModel, charge_flip, recover_symmetry,
+    AdpMode, DualSpaceOptions, FlipOptions, PreparedSymmetricModel, charge_flip, dual_space,
+    recover_symmetry,
 };
 
+#[allow(clippy::too_many_lines)]
 fn benchmark(c: &mut Criterion) {
     let shape = [32; 3];
     let mut hkl = Vec::new();
@@ -80,6 +82,33 @@ fn benchmark(c: &mut Criterion) {
                 prepared
                     .evaluate(std::hint::black_box(&parameters))
                     .unwrap()
+            });
+        },
+    );
+    c.bench_function(
+        "dual_space_32cubed_four_atoms_2108_reflections_50_cycles",
+        |b| {
+            b.iter(|| {
+                dual_space(
+                    shape,
+                    cell,
+                    &hkl,
+                    &amplitudes,
+                    &phases,
+                    &support,
+                    &DualSpaceOptions {
+                        cycles: 50,
+                        atom_count: 4,
+                        mask_sigma: 0.3,
+                        hybrid_m: 3.,
+                        omit_fraction: 0.1,
+                        seed: 0,
+                        patterson_rank: Some(0),
+                        cancellation: None,
+                    },
+                    None,
+                )
+                .unwrap()
             });
         },
     );

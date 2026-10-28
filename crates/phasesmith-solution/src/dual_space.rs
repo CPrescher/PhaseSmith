@@ -1,0 +1,427 @@
+//! Patterson superposition, hybrid difference Fourier and random-omit atomicity.
+
+use crate::fourier::{Transform, grid_index, grid_len, prepare_fourier};
+use crate::{FlipResult, SolutionError, error, extract_peaks};
+use phasesmith_crystallography::{CellGeometry, UnitCell};
+use rustfft::num_complex::Complex;
+use std::time::Instant;
+
+/// Explicit controls for the independently implemented published dual-space mechanisms.
+#[derive(Clone, Debug)]
+pub struct DualSpaceOptions {
+    /// Maximum cycles, in [1,20000].
+    pub cycles: usize,
+    /// Complete-cell atom count, in [1,128].
+    pub atom_count: usize,
+    /// Cartesian Gaussian mask sigma in angstrom, strictly positive.
+    pub mask_sigma: f64,
+    /// Hybrid difference multiplier, in [1,4].
+    pub hybrid_m: f64,
+    /// Fraction of mask peaks omitted every third cycle, in [0,0.3].
+    pub omit_fraction: f64,
+    /// Stateless omission seed.
+    pub seed: u64,
+    /// Ranked Patterson vector, or None to use the supplied random phases.
+    pub patterson_rank: Option<usize>,
+    /// Cooperative stop token.
+    pub cancellation: Option<crate::Cancellation>,
+}
+
+/// Fourier trial and actual initialization (fallbacks are never hidden).
+#[derive(Clone, Debug)]
+pub struct DualSpaceResult {
+    /// Atomic map, score history and stop flags.
+    pub trial: FlipResult,
+    /// `patterson`, `random`, or `random_no_patterson_vector`.
+    pub initialization: &'static str,
+    /// Integer Patterson shift modulo grid shape, if used.
+    pub patterson_vector: Option<[i32; 3]>,
+}
+
+pub(crate) fn hash64(mut value: u64) -> u64 {
+    value = value.wrapping_add(0x9e37_79b9_7f4a_7c15);
+    value = (value ^ (value >> 30)).wrapping_mul(0xbf58_476d_1ce4_e5b9);
+    value = (value ^ (value >> 27)).wrapping_mul(0x94d0_49bb_1331_11eb);
+    value ^ (value >> 31)
+}
+
+#[allow(
+    clippy::cast_precision_loss,
+    clippy::cast_possible_truncation,
+    clippy::cast_sign_loss
+)]
+fn omitted(count: usize, cycle: usize, options: &DualSpaceOptions) -> Vec<bool> {
+    let mut mask = vec![false; count];
+    if cycle % 3 != 2 || count < 2 || options.omit_fraction == 0. {
+        return mask;
+    }
+    let number = ((count as f64 * options.omit_fraction).floor() as usize)
+        .max(1)
+        .min(count - 1);
+    let mut ranks: Vec<_> = (0..count).collect();
+    ranks.sort_by_key(|&i| {
+        (
+            hash64(options.seed ^ hash64(cycle as u64) ^ hash64(i as u64)),
+            i,
+        )
+    });
+    for i in ranks.into_iter().take(number) {
+        mask[i] = true;
+    }
+    mask
+}
+
+fn mask_bounds(shape: [usize; 3], g: &CellGeometry, sigma: f64) -> Result<[i32; 3], SolutionError> {
+    let mut bounds = [0; 3];
+    for i in 0..3 {
+        let fractional = 3. * sigma * g.reciprocal_metric[i][i].sqrt();
+        let steps = fractional * f64::from(u16::try_from(shape[i]).unwrap_or(0));
+        if !steps.is_finite() || fractional >= 0.5 || steps > 16. {
+            return Err(error(
+                "Gaussian mask exceeds half-axis or 16-step support budget",
+            ));
+        }
+        #[allow(clippy::cast_possible_truncation)]
+        {
+            bounds[i] = steps.ceil() as i32 + 1;
+        }
+    }
+    Ok(bounds)
+}
+
+/// Finite Cartesian Gaussian atomicity projection, with deterministic random omission.
+///
+/// # Errors
+/// Rejects malformed arrays, controls, cell geometry or an excessive mask support.
+#[allow(
+    clippy::cast_precision_loss,
+    clippy::cast_possible_truncation,
+    clippy::too_many_arguments
+)]
+pub fn atomic_projection(
+    density: &[f64],
+    shape: [usize; 3],
+    cell: UnitCell,
+    options: &DualSpaceOptions,
+    cycle: usize,
+) -> Result<Vec<f64>, SolutionError> {
+    validate_options(options)?;
+    let geometry = cell.geometry().map_err(|e| error(e.to_string()))?;
+    let bounds = mask_bounds(shape, &geometry, options.mask_sigma)?;
+    let count = if cycle < 50 {
+        (2 * options.atom_count).min(128)
+    } else {
+        options.atom_count
+    };
+    let peaks = extract_peaks(density, shape, count)?;
+    let skip = omitted(peaks.len(), cycle, options);
+    let mut mask = vec![0.; density.len()];
+    let radius2 = (3. * options.mask_sigma).powi(2) * (1. + 1e-12);
+    let normalization = (std::f64::consts::TAU).powf(-1.5) / options.mask_sigma.powi(3);
+    for (&point, &skip) in peaks.iter().zip(&skip) {
+        if skip {
+            continue;
+        }
+        let centre = std::array::from_fn::<_, 3, _>(|i| point[i] * shape[i] as f64);
+        let origin = centre.map(|v| v.round() as i32);
+        for dx in -bounds[0]..=bounds[0] {
+            for dy in -bounds[1]..=bounds[1] {
+                for dz in -bounds[2]..=bounds[2] {
+                    let index = [origin[0] + dx, origin[1] + dy, origin[2] + dz];
+                    let delta = std::array::from_fn(|i| {
+                        (f64::from(index[i]) - centre[i]) / shape[i] as f64
+                    });
+                    let squared =
+                        crate::math3::dot(delta, crate::math3::mv(geometry.direct_metric, delta));
+                    if squared <= radius2 {
+                        mask[grid_index(index, shape)] +=
+                            normalization * (-0.5 * squared / options.mask_sigma.powi(2)).exp();
+                    }
+                }
+            }
+        }
+    }
+    Ok(density
+        .iter()
+        .zip(mask)
+        .map(|(&v, m)| v.max(0.) * m)
+        .collect())
+}
+
+fn validate_options(o: &DualSpaceOptions) -> Result<(), SolutionError> {
+    if !(1..=20_000).contains(&o.cycles)
+        || !(1..=128).contains(&o.atom_count)
+        || !o.mask_sigma.is_finite()
+        || !(1e-4..=5.).contains(&o.mask_sigma)
+        || !o.hybrid_m.is_finite()
+        || !(1.0..=4.0).contains(&o.hybrid_m)
+        || !o.omit_fraction.is_finite()
+        || !(0.0..=0.3).contains(&o.omit_fraction)
+        || o.patterson_rank.is_some_and(|v| v > 127)
+    {
+        return Err(error("invalid dual-space controls"));
+    }
+    Ok(())
+}
+
+struct PattersonStart {
+    density: Vec<f64>,
+    vector: [i32; 3],
+}
+
+#[allow(clippy::cast_precision_loss, clippy::cast_possible_truncation)]
+fn patterson_start(
+    shape: [usize; 3],
+    hkl: &[[i32; 3]],
+    amplitudes: &[f64],
+    rank: usize,
+    fft: &mut Transform,
+) -> Result<Option<PattersonStart>, SolutionError> {
+    let n = grid_len(shape)?;
+    let mut coefficients = vec![Complex::default(); n];
+    for (&h, &a) in hkl.iter().zip(amplitudes) {
+        coefficients[grid_index(h, shape)] = Complex::new(a * a, 0.);
+    }
+    fft.apply(&mut coefficients, false);
+    let map: Vec<_> = coefficients.iter().map(|v| v.re / n as f64).collect();
+    let peaks = extract_peaks(&map, shape, 128)?;
+    let mut vectors = Vec::new();
+    for peak in peaks {
+        let vector = std::array::from_fn::<_, 3, _>(|i| (peak[i] * shape[i] as f64).round() as i32);
+        let negative = vector.map(|v| -v);
+        if grid_index(vector, shape) == 0 || grid_index(vector, shape) > grid_index(negative, shape)
+        {
+            continue;
+        }
+        let centring = hkl.iter().all(|h| {
+            let phase: f64 = (0..3)
+                .map(|i| f64::from(h[i]) * f64::from(vector[i]) / shape[i] as f64)
+                .sum();
+            (phase - phase.round()).abs() < 1e-9
+        });
+        if !centring {
+            vectors.push(vector);
+        }
+    }
+    if vectors.is_empty() {
+        return Ok(None);
+    }
+    let vector = vectors[rank % vectors.len()];
+    let initial = (0..n)
+        .map(|i| {
+            let p = [
+                i / (shape[1] * shape[2]),
+                (i / shape[2]) % shape[1],
+                i % shape[2],
+            ];
+            let shifted = std::array::from_fn(|j| i32::try_from(p[j]).unwrap_or(0) - vector[j]);
+            map[i].min(map[grid_index(shifted, shape)]).max(0.)
+        })
+        .collect();
+    Ok(Some(PattersonStart {
+        density: initial,
+        vector,
+    }))
+}
+
+/// Run published hybrid difference-Fourier recycling with a Gaussian atomicity mask.
+///
+/// # Errors
+/// Rejects the shared Fourier boundary or bounded dual-space controls. Degenerate
+/// iterates return an unsuccessful finite trial, never a fabricated success.
+#[allow(
+    clippy::too_many_arguments,
+    clippy::too_many_lines,
+    clippy::cast_precision_loss
+)]
+pub fn dual_space(
+    shape: [usize; 3],
+    cell: UnitCell,
+    hkl: &[[i32; 3]],
+    amplitudes: &[f64],
+    phases: &[f64],
+    support: &[u8],
+    options: &DualSpaceOptions,
+    deadline: Option<Instant>,
+) -> Result<DualSpaceResult, SolutionError> {
+    validate_options(options)?;
+    let geometry = cell.geometry().map_err(|e| error(e.to_string()))?;
+    mask_bounds(shape, &geometry, options.mask_sigma)?;
+    let (indices, mut f) = prepare_fourier(shape, hkl, amplitudes, phases, support)?;
+    let n = grid_len(shape)?;
+    let maximum = amplitudes.iter().copied().fold(0.0_f64, f64::max);
+    let rms = (amplitudes
+        .iter()
+        .map(|a| (a / maximum).powi(2))
+        .sum::<f64>()
+        / amplitudes.len() as f64)
+        .sqrt();
+    let target: Vec<_> = amplitudes.iter().map(|a| (a / maximum) / rms).collect();
+    for (&i, &a) in indices.iter().zip(&target) {
+        f[i] = Complex::from_polar(a, f[i].arg());
+    }
+    let mut fft = Transform::new(shape);
+    let start = if let Some(rank) = options.patterson_rank {
+        patterson_start(shape, hkl, &target, rank, &mut fft)?
+    } else {
+        None
+    };
+    let (mut density, initialization, vector) = if let Some(start) = start {
+        (start.density, "patterson", Some(start.vector))
+    } else {
+        fft.apply(&mut f, false);
+        (
+            f.iter().map(|v| v.re / n as f64).collect(),
+            if options.patterson_rank.is_some() {
+                "random_no_patterson_vector"
+            } else {
+                "random"
+            },
+            None,
+        )
+    };
+    let mut history = Vec::with_capacity(options.cycles);
+    let mut best = density.clone();
+    let mut best_score = f64::INFINITY;
+    let mut best_cycle = 0;
+    let target_norm: f64 = target.iter().map(|a| a * a).sum();
+    for cycle in 0..options.cycles {
+        if crate::stopped(deadline, options.cancellation.as_ref()) {
+            break;
+        }
+        let projected = atomic_projection(&density, shape, cell, options, cycle)?;
+        if crate::stopped(deadline, options.cancellation.as_ref()) {
+            break;
+        }
+        let mut calculated: Vec<_> = projected.iter().map(|&v| Complex::new(v, 0.)).collect();
+        fft.apply(&mut calculated, true);
+        let norm: f64 = indices.iter().map(|&i| calculated[i].norm_sqr()).sum();
+        if !norm.is_finite() || norm <= 1e-250 {
+            history.push(1.);
+            density = projected;
+            break;
+        }
+        let scale = indices
+            .iter()
+            .zip(&target)
+            .map(|(&i, &a)| calculated[i].norm() * a)
+            .sum::<f64>()
+            / norm;
+        let score = indices
+            .iter()
+            .zip(&target)
+            .map(|(&i, &a)| (scale * calculated[i].norm() - a).powi(2))
+            .sum::<f64>()
+            / target_norm;
+        history.push(score);
+        let eligible = options.omit_fraction == 0. || cycle % 3 != 2;
+        if eligible && (cycle >= 50 || options.cycles <= 50) && score < best_score {
+            best_score = score;
+            best = projected;
+            best_cycle = cycle;
+        }
+        for (value, &code) in calculated.iter_mut().zip(support) {
+            *value = if code == 0 {
+                Complex::default()
+            } else {
+                *value * scale
+            };
+        }
+        for (&i, &a) in indices.iter().zip(&target) {
+            let magnitude = calculated[i].norm();
+            let phase = if magnitude > 0. {
+                calculated[i] / magnitude
+            } else {
+                Complex::new(1., 0.)
+            };
+            calculated[i] = phase * (options.hybrid_m * a - (options.hybrid_m - 1.) * magnitude);
+        }
+        fft.apply(&mut calculated, false);
+        density = calculated.iter().map(|v| v.re / n as f64).collect();
+        if density.iter().any(|v| !v.is_finite()) {
+            return Err(error("nonfinite dual-space iterate"));
+        }
+    }
+    if !best_score.is_finite() {
+        best = density;
+    }
+    Ok(DualSpaceResult {
+        trial: FlipResult {
+            density: best,
+            history,
+            best_cycle,
+            timed_out: deadline.is_some_and(|end| Instant::now() >= end),
+            cancelled: options
+                .cancellation
+                .as_ref()
+                .is_some_and(crate::Cancellation::is_cancelled),
+        },
+        initialization,
+        patterson_vector: vector,
+    })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn centring_fallback_and_cooperative_stops_are_explicit() {
+        let cell = UnitCell {
+            a_angstrom: 5.,
+            b_angstrom: 5.,
+            c_angstrom: 5.,
+            alpha_deg: 90.,
+            beta_deg: 90.,
+            gamma_deg: 90.,
+        };
+        let shape = [8; 3];
+        let hkl = [[-2, 0, 0], [2, 0, 0]];
+        let mut support = vec![0; 512];
+        support[0] = 1;
+        for h in hkl {
+            support[grid_index(h, shape)] = 2;
+        }
+        let mut options = DualSpaceOptions {
+            cycles: 2,
+            atom_count: 1,
+            mask_sigma: 0.2,
+            hybrid_m: 3.,
+            omit_fraction: 0.1,
+            seed: 0,
+            patterson_rank: Some(0),
+            cancellation: None,
+        };
+        let deadline = Some(Instant::now());
+        let stopped = dual_space(
+            shape,
+            cell,
+            &hkl,
+            &[1., 1.],
+            &[0., 0.],
+            &support,
+            &options,
+            deadline,
+        )
+        .unwrap();
+        assert!(stopped.trial.timed_out);
+        assert_eq!(stopped.trial.history, [] as [f64; 0]);
+        assert_eq!(stopped.initialization, "random_no_patterson_vector");
+        let token = crate::Cancellation::default();
+        assert!(token.cancel());
+        options.cancellation = Some(token);
+        let stopped = dual_space(
+            shape,
+            cell,
+            &hkl,
+            &[1., 1.],
+            &[0., 0.],
+            &support,
+            &options,
+            None,
+        )
+        .unwrap();
+        assert!(stopped.trial.cancelled);
+        assert!(!stopped.trial.timed_out);
+        assert_eq!(stopped.trial.history, [] as [f64; 0]);
+    }
+}

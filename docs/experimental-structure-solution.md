@@ -109,7 +109,8 @@ asymmetric sites, explicit supplied operations and anisotropic CIF tensors.
 `candidate-p1.cif` carries the equivalent full-cell model in the density frame,
 including individual ADPs. `candidate.as_structure(cell)` returns the constrained
 asymmetric model when available and the P1 fallback otherwise. `result.json`
-schema v2 records exact rational operations, the transformation and both models.
+schema v3 records exact rational operations, the transformation, both models
+and actual per-trial phasing provenance (v2 introduced the symmetry/ADP output).
 The compatibility scalar `u_iso` is the full-cell mean U-equivalent after
 constrained refinement; physical per-atom tensors live in `candidate.refinement`.
 CLI exit status 0 means the requested numerical R1 target was met; 3 means it
@@ -150,6 +151,30 @@ swap reduces the amplitude objective and is followed by coordinate/U polishing.
 The number of accepted swaps is recorded. This is a bounded heuristic, not an
 exhaustive chemical search. Common-U polishing has a first-atom translational
 gauge and does not impose special positions or equality of symmetry-related atoms.
+
+## Alternative dual-space phasing
+
+The default remains `phasing="charge_flip"`. Select `"dual_space"` to use
+Patterson superposition starts, hybrid difference-Fourier updates and Gaussian
+atomicity masks with random omission. Select `"portfolio"` to alternate the two
+methods within the existing total trial/time budget. This is an independent
+implementation of selected published mechanisms, not full SHELXT intrinsic
+phasing. Cell, supplied symmetry and composition are still required. See
+[equations and measured comparison](solution-dual-space.md).
+
+```sh
+python -m phasesmith.experimental.solution sample.hkl \
+  --cell 4.913 4.913 5.405 90 90 120 \
+  --space-group 'P 31 2 1' --composition Si=3 O=6 \
+  --phasing dual_space --output runs/sample-dual-space
+```
+
+`delta_sigma`, `weak_fraction` and `cleanup_cycles` apply to charge flipping.
+The alternative's sharpening exponent, hybrid multiplier, Gaussian width and
+omit schedule are fixed, documented and recorded; no per-material tuning is
+performed. `result.phasing_trials` contains immutable typed records aligned
+with histories and candidate trial indices. Score definitions differ between
+methods and are labelled; candidate ranking still uses the common atomic fit.
 
 ## Experimental development case
 

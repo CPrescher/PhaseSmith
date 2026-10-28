@@ -58,6 +58,7 @@ class SolutionOptions:
     seed: int = 0
     trials: int = 8
     cycles: int = 800
+    phasing: str = "charge_flip"
     delta_sigma: float = 1.0
     weak_fraction: float = 0.2
     cleanup_cycles: int = 10
@@ -93,6 +94,8 @@ class SolutionOptions:
             value = getattr(self, name)
             if isinstance(value, bool) or not np.isfinite(value) or not low <= value <= high:
                 raise ValueError(f"{name} must be finite in [{low},{high}]")
+        if self.phasing not in ("charge_flip", "dual_space", "portfolio"):
+            raise ValueError("phasing must be charge_flip, dual_space, or portfolio")
         if self.refinement not in ("none", "isotropic", "anisotropic"):
             raise ValueError("refinement must be none, isotropic, or anisotropic")
         if self.max_seconds == 0:
@@ -167,6 +170,28 @@ class SolutionCandidate:
 
 
 @dataclass(frozen=True, slots=True)
+class PhasingTrial:
+    """Immutable record of an actual Fourier trial and its initialization."""
+
+    method: str
+    initialization: str
+    patterson_vector_grid: tuple[int, int, int] | None
+    seed: int
+    completed_cycles: int
+    best_cycle: int
+    score_kind: str
+    mask_sigma_angstrom: float | None
+    hybrid_m: float | None = None
+    sharpening_q: float | None = None
+    omit_fraction: float | None = None
+    omit_period: int | None = None
+
+    def __post_init__(self):
+        if self.patterson_vector_grid is not None:
+            object.__setattr__(self, "patterson_vector_grid", tuple(self.patterson_vector_grid))
+
+
+@dataclass(frozen=True, slots=True)
 class SolutionResult:
     """Candidates, diagnostic map, signed inputs, provenance, and truthful stop reason."""
 
@@ -186,6 +211,7 @@ class SolutionResult:
     nonpositive_families: int
     d_min: float
     histories: tuple[NDArray[np.float64], ...]
+    phasing_trials: tuple[PhasingTrial, ...]
     rejected_trials: tuple[tuple[int, str], ...]
     termination: str
     target_met: bool
@@ -198,7 +224,7 @@ class SolutionResult:
     def to_record(self) -> dict[str, object]:
         """Summarize a run without embedding large input or density arrays."""
         return {
-            "schema": "phasesmith.experimental-solution.v2",
+            "schema": "phasesmith.experimental-solution.v3",
             "experimental": True,
             "source_name": self.observations.source_name,
             "source_sha256": self.observations.source_sha256,
@@ -224,6 +250,7 @@ class SolutionResult:
             "r1_target_met": self.target_met,
             "candidates": [c.to_record() for c in self.candidates],
             "phasing_histories": [h.tolist() for h in self.histories],
+            "phasing_trials": [asdict(t) for t in self.phasing_trials],
             "rejected_trials": list(self.rejected_trials),
             "limitations": [
                 "Numerical target is not proof of a correct or unique structure.",
@@ -333,6 +360,7 @@ def solve_structure(
         raw["nonpositive_families"],
         raw["d_min"],
         tuple(_freeze(h) for h in raw["histories"]),
+        tuple(PhasingTrial(**t) for t in raw["phasing_trials"]),
         tuple(tuple(r) for r in raw["rejected_trials"]),
         raw["termination"],
         raw["target_met"],
@@ -406,6 +434,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--trials", type=int, default=8)
     parser.add_argument("--cycles", type=int, default=800)
+    parser.add_argument(
+        "--phasing", choices=("charge_flip", "dual_space", "portfolio"), default="charge_flip"
+    )
     parser.add_argument("--max-seconds", type=float, default=60)
     parser.add_argument("--r1-target", type=float, default=0.1)
     parser.add_argument(
@@ -430,6 +461,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 seed=args.seed,
                 trials=args.trials,
                 cycles=args.cycles,
+                phasing=args.phasing,
                 max_seconds=args.max_seconds,
                 r1_target=args.r1_target,
                 refinement=args.refinement,
