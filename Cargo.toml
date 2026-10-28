@@ -1,5 +1,6 @@
 [workspace]
 members = [
+  "crates/phasesmith-solution",
   "crates/phasesmith-rs",
   "crates/phasesmith-spots",
   "crates/phasesmith-core",

@@ -17,6 +17,9 @@ pub use phasesmith_io as io;
 pub use phasesmith_model as model;
 /// Canonical native project persistence and reporting.
 pub use phasesmith_persistence as persistence;
+/// Experimental structure solution from corrected single-crystal intensities.
+#[cfg(feature = "experimental-solution")]
+pub use phasesmith_solution as solution;
 /// Experimental detector spot measurements; absent from default builds.
 #[cfg(feature = "experimental-spots")]
 pub use phasesmith_spots as spots;

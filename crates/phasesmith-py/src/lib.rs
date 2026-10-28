@@ -65,6 +65,8 @@ mod pawley;
 mod profile_estimation;
 mod project_bundle;
 mod rietveld;
+#[cfg(feature = "experimental-solution")]
+mod solution;
 #[cfg(feature = "experimental-spots")]
 mod spots;
 mod tof_lebail;
@@ -4265,6 +4267,8 @@ fn run_native_validation(py: Python<'_>, runner: String, directory: String) -> P
 #[pymodule]
 #[allow(clippy::too_many_lines)] // Explicit registration of the extension's independent modules.
 fn _core(module: &Bound<'_, PyModule>) -> PyResult<()> {
+    #[cfg(feature = "experimental-solution")]
+    solution::register(module)?;
     #[cfg(feature = "experimental-spots")]
     spots::register(module)?;
     #[cfg(feature = "experimental-spots")]

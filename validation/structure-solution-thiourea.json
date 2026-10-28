@@ -1,0 +1,37 @@
+{
+  "schema": "phasesmith.experimental-solution-source.v1",
+  "title": "Raw X-ray diffraction data for Thiourea at 130 K - Low temperature phase - non-modulated",
+  "creator": "Antonio L. Llamas-Saiz, Universidad de Santiago de Compostela",
+  "doi": "10.5281/zenodo.18910433",
+  "landing_url": "https://zenodo.org/records/18910433",
+  "license": "CC-BY-4.0",
+  "license_url": "https://creativecommons.org/licenses/by/4.0/",
+  "publication_date": "2026-03-08",
+  "checked_date": "2026-10-28",
+  "archive_url": "https://zenodo.org/records/18910433/files/2_T130K_18MPC001.zip",
+  "archive_bytes_from_repository": 318376082,
+  "archive_md5_from_repository": "8fd65514a2bcd5b7332b401795c350a4",
+  "archive_whole_file_locally_verified": false,
+  "members": {
+    "hkl": {
+      "archive_member": "2_T130K_18MPC001/work/18MPC001T130K.hkl",
+      "filename": "18MPC001T130K.hkl",
+      "bytes": 271440,
+      "sha256": "9138164bc1f542b320094b395819af191dbbe77ac4c01f2e21ba55099c074cc1"
+    },
+    "reference_cif": {
+      "archive_member": "2_T130K_18MPC001/work/archive_18MPC001T130K.cif",
+      "filename": "archive_18MPC001T130K.cif",
+      "bytes": 285142,
+      "sha256": "b3fc549fbe77d935839d6f566dc968e3abc13913be206c6b59f98ebbf2cd74c2"
+    }
+  },
+  "solver_inputs": {
+    "cell_angstrom_degrees": [7.4962, 8.5211, 5.4695, 90, 90, 90],
+    "known_space_group": "P 21 m a",
+    "composition_full_cell_non_hydrogen": {"C": 4, "N": 8, "S": 4},
+    "source_population": "9047 corrected unmerged observations, including 544 negative intensities",
+    "reference_coordinates_supplied_to_solver": false
+  },
+  "qualification": "Exploratory experimental development case, not an untouched holdout or an inorganic-material validation panel. The source includes hydrogen atoms and anisotropic displacement; the initial solver uses a common isotropic U and excludes H. Published and native R1 use different models/populations and are not an equal-objective comparison."
+}

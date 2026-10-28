@@ -1,0 +1,22 @@
+[package]
+name = "phasesmith-solution"
+description = "Experimental single-crystal structure solution from corrected intensities"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish = false
+
+[dependencies]
+phasesmith-crystallography = { version = "0.7.0", path = "../phasesmith-crystallography" }
+rustfft = "=6.4.1"
+
+[dev-dependencies]
+criterion = "0.7"
+
+[[bench]]
+name = "solution"
+harness = false
+
+[lints]
+workspace = true

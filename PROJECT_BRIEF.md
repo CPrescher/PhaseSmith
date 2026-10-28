@@ -12,6 +12,19 @@ not part of the numerical library.
 
 ## Current implementation status
 
+An opt-in `experimental-solution` module now accepts externally integrated,
+corrected HKLF 4 observations, a cell, known symmetry, and full-cell non-H
+composition. A separate Rust crate owns multi-start charge flipping, periodic
+peak extraction, provisional element assignment and analytical coordinate/U
+polishing; an independent NumPy reference checks the numerical equations.
+Signed source observations remain authoritative. Symmetry/Friedel merging and
+derived nonnegative phasing amplitudes are explicit. The output is a full-cell
+P1 candidate in an arbitrary origin/hand, with density, provenance, budgets and
+trial diagnostics; a fit target is not a correctness certificate. This capability
+does not require detector integration, a GUI, or external solvers. Default powder
+builds and stable APIs are unchanged. Scope, equations, usage and measured
+validation are recorded in `docs/experimental-structure-solution.md`.
+
 An opt-in primitive/Bravais comparison now follows position-only lattice discovery.
 Native Selling-Delaunay reduction retains exact integer basis transformations;
 complete low-index reciprocal HNF hypotheses expose excluded reflections rather
@@ -988,6 +1001,8 @@ documented; GSAS-II itself is never vendored.
 
 ## Architecture
 
+- `crates/phasesmith-solution`: opt-in, file-independent single-crystal phasing
+  and candidate-polishing kernels; RustFFT stays outside `phasesmith-core`.
 - `crates/phasesmith-core`: dependency-light numerical types and kernels.
 - Numerical primitives such as CW width laws and FCJ geometry remain separate;
   explicit composition modules fuse them for production accumulation.
