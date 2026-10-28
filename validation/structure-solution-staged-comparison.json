@@ -1,0 +1,71 @@
+{
+  "qualification": "Pinned reused development datasets; formula and reference coordinates are not solver inputs.",
+  "cases": [
+    {
+      "name": "kbrf4",
+      "hkl": "validation/data/structure-solution/cod-1549359/1549359.hkl",
+      "hkl_format": "cif",
+      "hkl_sha256": "d76a88377a6d7236416c47a48b4b61ab15f82199e853184dc76e945e3123c2b0",
+      "cell": [
+        6.0999,
+        6.0999,
+        11.0509,
+        90.0,
+        90.0,
+        90.0
+      ],
+      "space_group": "I4/mcm",
+      "elements": [
+        "Br",
+        "F",
+        "K"
+      ],
+      "reference_after_solving": "validation/data/structure-solution/cod-1549359/1549359.cif",
+      "reference_sha256": "518988e3c4fd244dd24e47d12925722fd5f347ad2c61e398de1f4e5b24033f47"
+    },
+    {
+      "name": "bisei",
+      "hkl": "validation/data/structure-solution/cod-2010577/2010577.hkl",
+      "hkl_format": "cif",
+      "hkl_sha256": "49e22aae5122b83855bc8df2f68e98862d92342e2752390a8254237c2d0f07d0",
+      "cell": [
+        8.6967,
+        4.2205,
+        10.574,
+        90.0,
+        90.0,
+        90.0
+      ],
+      "space_group": "Pnma",
+      "elements": [
+        "Bi",
+        "Se",
+        "I"
+      ],
+      "reference_after_solving": "validation/data/structure-solution/cod-2010577/2010577.cif",
+      "reference_sha256": "50e814119da83512c1328e26fc2a92081aa494b0a81c748119a1737fc8e37337"
+    },
+    {
+      "name": "thiourea",
+      "hkl": "validation/data/structure-solution/thiourea/18MPC001T130K.hkl",
+      "hkl_format": "hkl4",
+      "hkl_sha256": "9138164bc1f542b320094b395819af191dbbe77ac4c01f2e21ba55099c074cc1",
+      "cell": [
+        7.4962,
+        8.5211,
+        5.4695,
+        90.0,
+        90.0,
+        90.0
+      ],
+      "space_group": "P 21 m a",
+      "elements": [
+        "C",
+        "N",
+        "S"
+      ],
+      "reference_after_solving": "validation/data/structure-solution/thiourea/archive_18MPC001T130K.cif",
+      "reference_sha256": "b3fc549fbe77d935839d6f566dc968e3abc13913be206c6b59f98ebbf2cd74c2"
+    }
+  ]
+}

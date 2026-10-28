@@ -1,7 +1,7 @@
 //! One count-independent phase map and a bounded beam of editable symmetry orbits.
 use crate::math3::{dot, mv, periodic_difference, sub};
 use crate::{
-    Candidate, FlipOptions, Observation, PhasingMethod, PhasingTrial, PreparedData,
+    AdpMode, Candidate, FlipOptions, Observation, PhasingMethod, PhasingTrial, PreparedData,
     PreparedElementPool, PreparedSymmetricModel, Solution, SolutionError, SolveOptions,
     SymmetryModel, charge_flip, error, extract_peaks, prepare_data, project_fixed_sets,
     recover_symmetry, recover_symmetry_hypotheses,
@@ -21,6 +21,12 @@ pub struct SharedSearchOptions {
     pub beam_width: usize,
     /// Maximum edit rounds per phasing start, in [1,16].
     pub rounds: usize,
+    /// Screen edits isotropically before requested anisotropic fits.
+    pub staged_refinement: bool,
+    /// Maximum isotropic screening iterations, in [1,40].
+    pub screening_iterations: usize,
+    /// Minimum number shortlisted per parent, in [1,16], plus ties/rescues.
+    pub refinement_shortlist: usize,
 }
 impl Default for SharedSearchOptions {
     fn default() -> Self {
@@ -28,6 +34,9 @@ impl Default for SharedSearchOptions {
             maximum_atoms: 128,
             beam_width: 4,
             rounds: 8,
+            staged_refinement: true,
+            screening_iterations: 8,
+            refinement_shortlist: 3,
         }
     }
 }
@@ -64,6 +73,20 @@ pub struct SharedSearchSummary {
     pub element_scores: usize,
     /// Complete constrained refinements attempted.
     pub refinements: usize,
+    /// Actual short isotropic screening fits.
+    pub screening_refinements: usize,
+    /// Requested final-mode fits, including initial frameworks and promotions.
+    pub final_refinements: usize,
+    /// Screened edits sent to full refinement.
+    pub promoted_candidates: usize,
+    /// Valid screened edits omitted from the full-fit shortlist.
+    pub screened_out: usize,
+    /// Whether staged scheduling is active for this requested ADP mode.
+    pub staged_refinement: bool,
+    /// Declared maximum screening steps.
+    pub screening_iterations: usize,
+    /// Declared base shortlist size.
+    pub refinement_shortlist: usize,
     /// Whole-orbit deletion trials.
     pub deletion_trials: usize,
     /// Whole-orbit relabel trials.
@@ -78,6 +101,17 @@ pub struct SharedSearchSummary {
     pub accepted_moves: Vec<SharedMove>,
 }
 #[derive(Clone)]
+struct PromotionSeed {
+    model: SymmetryModel,
+    site_u: Vec<f64>,
+}
+#[derive(Clone, Copy)]
+enum FitPass<'a> {
+    Full,
+    Screen(usize),
+    Promote(&'a [f64]),
+}
+#[derive(Clone)]
 struct State {
     candidate: Candidate,
     aligned: Vec<[f64; 3]>,
@@ -85,6 +119,7 @@ struct State {
     lineage: usize,
     moves: Vec<SharedMove>,
     initial_prefix: usize,
+    promotion: Option<PromotionSeed>,
 }
 
 fn distance2(g: &CellGeometry, a: [f64; 3], b: [f64; 3]) -> Result<f64, SolutionError> {
@@ -126,10 +161,15 @@ fn refine(
     kind: &'static str,
     element: String,
     audit: &mut SharedSearchSummary,
+    pass: FitPass<'_>,
 ) -> Result<State, SolutionError> {
-    let mode = options
+    let requested_mode = options
         .refinement
         .ok_or_else(|| error("shared search requires constrained refinement"))?;
+    let (mode, iterations) = match pass {
+        FitPass::Screen(n) => (AdpMode::Isotropic, n),
+        _ => (requested_mode, options.symmetry_iterations),
+    };
     let mut species = vec![String::new(); model.full_count];
     for site in &model.sites {
         for image in &site.images {
@@ -140,12 +180,20 @@ fn refine(
     if data.family_count <= prepared.parameter_count + 1 {
         return Err(error("shared model is underdetermined"));
     }
-    let initial = prepared.initial_parameters(u.clamp(1e-5, 0.2))?;
+    let initial = match pass {
+        FitPass::Promote(site_u) => prepared.initial_site_parameters(site_u)?,
+        _ => prepared.initial_parameters(u.clamp(1e-5, 0.2))?,
+    };
     let baseline = prepared.evaluate(&initial)?;
     audit.refinements += 1;
+    if matches!(pass, FitPass::Screen(_)) {
+        audit.screening_refinements += 1;
+    } else {
+        audit.final_refinements += 1;
+    }
     let fit = prepared.refine(
         &initial,
-        options.symmetry_iterations,
+        iterations,
         Some(deadline),
         options.cancellation.as_ref(),
     )?;
@@ -170,6 +218,7 @@ fn refine(
             *value = ((*value - shift) * f64::from(frame.0)).rem_euclid(1.);
         }
     }
+    let promotion = matches!(pass, FitPass::Screen(_)).then(|| promotion_seed(&fit, &summary));
     let score = rank(
         fit.evaluation.objective,
         data.family_count,
@@ -205,7 +254,24 @@ fn refine(
         lineage,
         moves,
         initial_prefix: audit.initial_prefix,
+        promotion,
     })
+}
+
+fn promotion_seed(
+    fit: &crate::SymmetricRefinement,
+    summary: &crate::RefinementSummary,
+) -> PromotionSeed {
+    let mut model = fit.model.symmetry.clone();
+    for (site, &point) in model.sites.iter_mut().zip(&fit.evaluation.fractional_xyz) {
+        site.fractional_xyz = point;
+    }
+    model.hand = summary.hand;
+    model.origin_shift = summary.origin_shift;
+    PromotionSeed {
+        model,
+        site_u: summary.u_equiv.iter().map(|u| u.clamp(1e-5, 0.2)).collect(),
+    }
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -220,6 +286,7 @@ fn edited(
     options: &SolveOptions,
     deadline: Instant,
     audit: &mut SharedSearchSummary,
+    pass: FitPass<'_>,
 ) -> Result<State, SolutionError> {
     let mut species = Vec::new();
     let mut points = Vec::new();
@@ -259,6 +326,7 @@ fn edited(
         kind,
         element,
         audit,
+        pass,
     )
 }
 
@@ -450,6 +518,8 @@ pub fn solve_elements(
     if !(1..=128).contains(&search.maximum_atoms)
         || !(1..=8).contains(&search.beam_width)
         || !(1..=16).contains(&search.rounds)
+        || !(1..=40).contains(&search.screening_iterations)
+        || !(1..=16).contains(&search.refinement_shortlist)
         || options.phasing != PhasingMethod::ChargeFlip
         || options.refinement.is_none()
     {
@@ -558,6 +628,10 @@ pub fn solve_elements(
     };
     let mut audit = SharedSearchSummary {
         elements: elements.clone(),
+        staged_refinement: search.staged_refinement
+            && options.refinement == Some(AdpMode::Anisotropic),
+        screening_iterations: search.screening_iterations,
+        refinement_shortlist: search.refinement_shortlist,
         maximum_atoms: search.maximum_atoms,
         beam_width: search.beam_width,
         ..SharedSearchSummary::default()
@@ -664,6 +738,7 @@ pub fn solve_elements(
                 "initial",
                 elements[0].clone(),
                 &mut audit,
+                FitPass::Full,
             ) {
                 beam.push(state);
             }
@@ -696,6 +771,12 @@ pub fn solve_elements(
                     break;
                 }
                 let base_sites = sites(parent);
+                let mut screened = Vec::new();
+                let pass = if audit.staged_refinement {
+                    FitPass::Screen(search.screening_iterations)
+                } else {
+                    FitPass::Full
+                };
                 let pool = PreparedElementPool::new(
                     cell,
                     group,
@@ -755,8 +836,11 @@ pub fn solve_elements(
                             options,
                             deadline,
                             &mut audit,
+                            pass,
                         ) {
-                            if s.score < parent.score - 1e-7 {
+                            if audit.staged_refinement {
+                                screened.push(s);
+                            } else if s.score < parent.score - 1e-7 {
                                 next.push(s);
                             }
                         }
@@ -781,8 +865,11 @@ pub fn solve_elements(
                             options,
                             deadline,
                             &mut audit,
+                            pass,
                         ) {
-                            if s.score < parent.score - 1e-7 {
+                            if audit.staged_refinement {
+                                screened.push(s);
+                            } else if s.score < parent.score - 1e-7 {
                                 next.push(s);
                             }
                         }
@@ -808,9 +895,61 @@ pub fn solve_elements(
                             options,
                             deadline,
                             &mut audit,
+                            pass,
                         ) {
-                            if s.score < parent.score - 1e-7 {
+                            if audit.staged_refinement {
+                                screened.push(s);
+                            } else if s.score < parent.score - 1e-7 {
                                 next.push(s);
+                            }
+                        }
+                    }
+                }
+                if audit.staged_refinement {
+                    let screening_ranks: Vec<_> = screened.iter().map(|s| s.score).collect();
+                    let births: Vec<_> = screened
+                        .iter()
+                        .map(|s| {
+                            let m = s.moves.last().expect("screened edit");
+                            (m.kind == "birth").then(|| m.element.clone())
+                        })
+                        .collect();
+                    let missing: Vec<_> = elements
+                        .iter()
+                        .filter(|e| !parent.candidate.species.contains(e))
+                        .cloned()
+                        .collect();
+                    let selected = crate::screening_shortlist(
+                        &screening_ranks,
+                        &births,
+                        &missing,
+                        search.refinement_shortlist,
+                    )?;
+                    audit.screened_out += screened.len() - selected.len();
+                    for index in selected {
+                        if crate::stopped(Some(deadline), options.cancellation.as_ref()) {
+                            break;
+                        }
+                        let candidate = &screened[index];
+                        let seed = candidate.promotion.as_ref().expect("screened seed");
+                        let edit = candidate.moves.last().expect("screened edit");
+                        audit.promoted_candidates += 1;
+                        if let Ok(full) = refine(
+                            seed.model.clone(),
+                            &result.data,
+                            options,
+                            deadline,
+                            (1, [0.; 3]),
+                            candidate.candidate.u_iso,
+                            candidate.lineage,
+                            &candidate.moves[..candidate.moves.len() - 1],
+                            edit.kind,
+                            edit.element.clone(),
+                            &mut audit,
+                            FitPass::Promote(&seed.site_u),
+                        ) {
+                            if full.score < parent.score - 1e-7 {
+                                next.push(full);
                             }
                         }
                     }
@@ -952,6 +1091,7 @@ mod tests {
             "initial",
             String::new(),
             &mut audit,
+            FitPass::Full,
         )
         .unwrap();
         let mut changed = sites(&state);
@@ -967,6 +1107,7 @@ mod tests {
             &options,
             deadline,
             &mut audit,
+            FitPass::Full,
         )
         .unwrap();
         assert!(fixed.candidate.objective < state.candidate.objective);
@@ -985,6 +1126,7 @@ mod tests {
             &options,
             deadline,
             &mut audit,
+            FitPass::Full,
         )
         .unwrap();
         let mut deleted = sites(&over);
@@ -1000,6 +1142,7 @@ mod tests {
             &options,
             deadline,
             &mut audit,
+            FitPass::Full,
         )
         .unwrap();
         assert!(pruned.candidate.objective < over.candidate.objective);

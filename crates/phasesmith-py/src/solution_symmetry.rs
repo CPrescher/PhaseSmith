@@ -175,6 +175,17 @@ impl NativeModel {
             .map_err(invalid)?
             .into_pyarray(py))
     }
+    fn initial_site_parameters<'py>(
+        &self,
+        py: Python<'py>,
+        site_u: PyReadonlyArray1<'_, f64>,
+    ) -> PyResult<Bound<'py, npy::PyArray1<f64>>> {
+        Ok(self
+            .inner
+            .initial_site_parameters(site_u.as_slice()?)
+            .map_err(invalid)?
+            .into_pyarray(py))
+    }
     fn evaluate<'py>(
         &self,
         py: Python<'py>,

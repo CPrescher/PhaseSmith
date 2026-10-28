@@ -39,6 +39,9 @@ def main():
     parser.add_argument("--reference-after-solving", type=Path)
     parser.add_argument("--repeats", type=int, default=3)
     parser.add_argument("--max-seconds", type=float, default=30)
+    parser.add_argument("--no-staged-refinement", action="store_true")
+    parser.add_argument("--screening-iterations", type=int, default=8)
+    parser.add_argument("--refinement-shortlist", type=int, default=3)
     args = parser.parse_args()
     if not 1 <= args.repeats <= 10:
         parser.error("repeats must be in [1,10]")
@@ -74,6 +77,9 @@ def main():
         "input_rows": len(data.hkl),
         "options": asdict(options),
         "repeats": args.repeats,
+        "staged_refinement": not args.no_staged_refinement,
+        "screening_iterations": args.screening_iterations,
+        "refinement_shortlist": args.refinement_shortlist,
         "platform": platform.platform(),
         "native_sha256": hashlib.sha256(Path(_core.__file__).read_bytes()).hexdigest(),
         "implementation_sha256": {
@@ -92,7 +98,14 @@ def main():
     for repeat in range(args.repeats):
         start = time.perf_counter()
         result = solve_structure_elements(
-            data, cell=cell, elements=args.elements, space_group=group, options=options
+            data,
+            cell=cell,
+            elements=args.elements,
+            space_group=group,
+            options=options,
+            staged_refinement=not args.no_staged_refinement,
+            screening_iterations=args.screening_iterations,
+            refinement_shortlist=args.refinement_shortlist,
         )
         elapsed = time.perf_counter() - start
         write_solution(result, args.output / f"repeat-{repeat}")

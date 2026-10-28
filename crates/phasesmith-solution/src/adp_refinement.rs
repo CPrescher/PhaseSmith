@@ -318,6 +318,29 @@ impl PreparedSymmetricModel {
         Ok(parameters)
     }
 
+    /// Embed independent isotropic site U values in the invariant log-tensor basis.
+    /// # Errors
+    /// Rejects mismatched, nonfinite or out-of-range U values.
+    pub fn initial_site_parameters(&self, site_u: &[f64]) -> Result<Vec<f64>, SolutionError> {
+        if site_u.len() != self.symmetry.sites.len()
+            || site_u
+                .iter()
+                .any(|u| !u.is_finite() || !(1e-5..=0.2).contains(u))
+        {
+            return Err(error(
+                "site U values must match asymmetric sites and lie in [1e-5,0.2]",
+            ));
+        }
+        let mut parameters = vec![0.; self.parameter_count];
+        for (site, (&u, basis)) in site_u.iter().zip(&self.tensor_bases).enumerate() {
+            let h = IDENTITY.map(|r| r.map(|v| v * u.ln()));
+            for (i, &b) in basis.iter().enumerate() {
+                parameters[self.offsets[site].1 + i] = frobenius(h, b);
+            }
+        }
+        Ok(parameters)
+    }
+
     /// Evaluate values and analytical coordinate/log-tensor derivatives together.
     ///
     /// # Errors

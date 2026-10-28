@@ -21,6 +21,14 @@ pub(super) fn summary<'py>(
     d.set_item("orbit_proposals", s.orbit_proposals)?;
     d.set_item("element_scores", s.element_scores)?;
     d.set_item("refinements", s.refinements)?;
+    d.set_item("screening_refinements", s.screening_refinements)?;
+    d.set_item("final_refinements", s.final_refinements)?;
+    d.set_item("promoted_candidates", s.promoted_candidates)?;
+    d.set_item("screened_out", s.screened_out)?;
+    d.set_item("staged_refinement", s.staged_refinement)?;
+    d.set_item("screening_iterations", s.screening_iterations)?;
+    d.set_item("refinement_shortlist", s.refinement_shortlist)?;
+
     d.set_item("deletion_trials", s.deletion_trials)?;
     d.set_item("relabel_trials", s.relabel_trials)?;
     d.set_item("maximum_atoms", s.maximum_atoms)?;
@@ -101,6 +109,17 @@ impl NativePool {
         Ok(result)
     }
 }
+#[pyfunction(name = "_solution_screening_shortlist")]
+fn shortlist(
+    scores: PyReadonlyArray1<'_, f64>,
+    birth_elements: Vec<Option<String>>,
+    missing: Vec<String>,
+    limit: usize,
+) -> PyResult<Vec<usize>> {
+    phasesmith_solution::screening_shortlist(scores.as_slice()?, &birth_elements, &missing, limit)
+        .map_err(invalid)
+}
 pub(super) fn register(module: &Bound<'_, PyModule>) -> PyResult<()> {
-    module.add_class::<NativePool>()
+    module.add_class::<NativePool>()?;
+    module.add_function(wrap_pyfunction!(shortlist, module)?)
 }

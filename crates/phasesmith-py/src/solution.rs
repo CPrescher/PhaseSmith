@@ -19,6 +19,8 @@ mod shared;
 #[path = "solution_symmetry.rs"]
 mod symmetry_adp;
 
+type SharedSearchRequest = (Vec<String>, usize, usize, usize, bool, usize, usize);
+
 fn invalid(error: impl ToString) -> PyErr {
     PyValueError::new_err(error.to_string())
 }
@@ -65,7 +67,7 @@ fn solve_structure<'py>(
     symmetry_iterations: usize,
     phasing: String,
     completion: bool,
-    shared_search: Option<(Vec<String>, usize, usize, usize)>,
+    shared_search: Option<SharedSearchRequest>,
 ) -> PyResult<Bound<'py, PyDict>> {
     let hkl = hkl_rows(&hkl)?;
     let intensity = intensity.as_slice()?.to_vec();
@@ -118,7 +120,16 @@ fn solve_structure<'py>(
     };
     let result = py
         .detach(move || {
-            if let Some((elements, maximum_atoms, beam_width, rounds)) = shared_search {
+            if let Some((
+                elements,
+                maximum_atoms,
+                beam_width,
+                rounds,
+                staged_refinement,
+                screening_iterations,
+                refinement_shortlist,
+            )) = shared_search
+            {
                 if !composition.is_empty() {
                     return Err(phasesmith_solution::SolutionError(
                         "shared search does not accept composition".into(),
@@ -134,6 +145,9 @@ fn solve_structure<'py>(
                         maximum_atoms,
                         beam_width,
                         rounds,
+                        staged_refinement,
+                        screening_iterations,
+                        refinement_shortlist,
                     },
                 )
             } else {
