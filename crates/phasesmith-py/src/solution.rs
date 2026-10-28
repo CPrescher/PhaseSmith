@@ -10,6 +10,8 @@ use pyo3::{
 
 use crate::{NativePreparedReflectionGenerator, crystallographic_cell, hkl_rows};
 
+#[path = "solution_dual.rs"]
+mod dual;
 #[path = "solution_symmetry.rs"]
 mod symmetry_adp;
 
@@ -57,6 +59,7 @@ fn solve_structure<'py>(
     refinement: String,
     symmetry_tolerance_angstrom: f64,
     symmetry_iterations: usize,
+    phasing: String,
 ) -> PyResult<Bound<'py, PyDict>> {
     let hkl = hkl_rows(&hkl)?;
     let intensity = intensity.as_slice()?.to_vec();
@@ -82,6 +85,12 @@ fn solve_structure<'py>(
         "anisotropic" => Some(phasesmith_solution::AdpMode::Anisotropic),
         _ => return Err(invalid("unknown symmetry refinement mode")),
     };
+    let phasing = match phasing.as_str() {
+        "charge_flip" => phasesmith_solution::PhasingMethod::ChargeFlip,
+        "dual_space" => phasesmith_solution::PhasingMethod::DualSpace,
+        "portfolio" => phasesmith_solution::PhasingMethod::Portfolio,
+        _ => return Err(invalid("unknown phasing method")),
+    };
     let options = SolveOptions {
         seed,
         trials,
@@ -98,6 +107,7 @@ fn solve_structure<'py>(
         refinement,
         symmetry_tolerance_angstrom,
         symmetry_iterations,
+        phasing,
     };
     let result = py
         .detach(move || {
@@ -118,6 +128,10 @@ fn solve_structure<'py>(
     out.set_item("termination", result.termination)?;
     out.set_item("target_met", result.target_met)?;
     out.set_item("histories", result.histories)?;
+    out.set_item(
+        "phasing_trials",
+        dual::trial_records(py, result.phasing_trials)?,
+    )?;
     out.set_item("rejected_trials", result.rejected_trials)?;
     let candidates = PyList::empty(py);
     for c in result.candidates {
@@ -247,6 +261,7 @@ impl NativeCancellation {
 
 pub fn register(module: &Bound<'_, PyModule>) -> PyResult<()> {
     symmetry_adp::register(module)?;
+    dual::register(module)?;
     module.add_class::<NativeCancellation>()?;
     module.add_function(wrap_pyfunction!(solve_structure, module)?)?;
     module.add_function(wrap_pyfunction!(flip, module)?)?;

@@ -38,6 +38,21 @@ recorded. This is bounded experimental coverage, not general structure-solution
 validation. Automatic space-group selection, anomalous scattering, hydrogens,
 disorder and twinning remain outside scope.
 
+An additional experimental phasing strategy implements Patterson superposition
+minimum-function starts, hybrid difference-Fourier iteration and Gaussian
+atomicity masks with deterministic periodic random omission, from the published
+Sheldrick (2015) equations. It does not reproduce full SHELXT intrinsic phasing,
+space-group selection or resolution extension. `phasing="dual_space"` selects
+this alternative; `"portfolio"` alternates it with charge flipping inside the
+existing total budgets. Charge flipping remains the default. The input cell,
+symmetry and full-cell composition contract is unchanged. Per-trial method,
+initialization/fallback, Patterson vector, score and fixed controls are exported
+in experimental result schema v3. Independent NumPy complete-cycle and Gaussian
+support/moment checks accompany the native implementation. Reused development
+cases recover thiourea and BiSeI, but K[BrF4] still fails despite a lower P1 R1;
+no increase in demonstrated solve coverage is claimed. Equations, bounded
+implementation choices and measured results live in `docs/solution-dual-space.md`.
+
 An opt-in primitive/Bravais comparison now follows position-only lattice discovery.
 Native Selling-Delaunay reduction retains exact integer basis transformations;
 complete low-index reciprocal HNF hypotheses expose excluded reflections rather

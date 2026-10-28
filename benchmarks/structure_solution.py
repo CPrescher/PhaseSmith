@@ -204,6 +204,9 @@ def main():
         default="none",
         help="Historical P1 baseline is the default; explicitly select the follow-up model.",
     )
+    parser.add_argument(
+        "--phasing", choices=("charge_flip", "dual_space", "portfolio"), default="charge_flip"
+    )
     args = parser.parse_args()
     if args.output.exists():
         parser.error("output directory must be new")
@@ -216,7 +219,12 @@ def main():
     cell = UnitCell(*settings["cell_angstrom_degrees"])
     hkl_path = args.data_directory / source["members"]["hkl"]["filename"]
     options = SolutionOptions(
-        trials=8, cycles=1200, max_seconds=60, r1_target=0.06, refinement=args.refinement
+        trials=8,
+        cycles=1200,
+        max_seconds=60,
+        r1_target=0.06,
+        refinement=args.refinement,
+        phasing=args.phasing,
     )
     start = time.perf_counter()
     result = solve_structure(
@@ -238,6 +246,7 @@ def main():
         "amplitude_target_met": result.target_met,
         "options": result.to_record()["options"],
         "trial_count": len(result.histories),
+        "phasing_trials": result.to_record()["phasing_trials"],
         "best_candidate": None if result.best is None else result.best.to_record(),
     }
     from phasesmith import _core
@@ -247,6 +256,8 @@ def main():
         "crates/phasesmith-solution/Cargo.toml",
         "crates/phasesmith-py/src/solution.rs",
         "crates/phasesmith-py/src/solution_symmetry.rs",
+        "crates/phasesmith-py/src/solution_dual.rs",
+        "python/phasesmith/experimental/solution_dual_reference.py",
         "python/phasesmith/experimental/solution_symmetry.py",
         "python/phasesmith/experimental/solution_reference.py",
         "python/phasesmith/experimental/solution.py",

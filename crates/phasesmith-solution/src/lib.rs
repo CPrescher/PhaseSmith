@@ -6,6 +6,7 @@
 
 mod adp_refinement;
 mod data;
+mod dual_space;
 mod fourier;
 mod math3;
 mod model;
@@ -22,9 +23,10 @@ pub use adp_refinement::{
     AdpMode, PreparedSymmetricModel, RefinementSummary, SymmetricEvaluation, SymmetricRefinement,
 };
 pub use data::{Observation, PreparedData, prepare_data};
+pub use dual_space::{DualSpaceOptions, DualSpaceResult, atomic_projection, dual_space};
 pub use fourier::{FlipOptions, FlipResult, charge_flip, extract_peaks};
 pub use model::{ModelEvaluation, PolishedModel, evaluate_model, polish_model};
-pub use solver::{Candidate, Solution, SolveOptions, solve};
+pub use solver::{Candidate, PhasingMethod, PhasingTrial, Solution, SolveOptions, solve};
 pub use symmetry_model::{AsymmetricSite, SymmetryImage, SymmetryModel, recover_symmetry};
 
 /// Thread-safe cooperative cancellation between bounded numerical steps.

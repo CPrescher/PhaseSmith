@@ -1,0 +1,130 @@
+//! Owned array boundary for independent dual-space equation tests.
+use super::{cell, invalid};
+use crate::hkl_rows;
+use npy::{IntoPyArray, PyReadonlyArray1};
+use phasesmith_solution::DualSpaceOptions;
+use pyo3::{
+    prelude::*,
+    types::{PyDict, PyList},
+};
+
+#[pyfunction(name = "_solution_dual_space")]
+#[allow(clippy::too_many_arguments)]
+fn run<'py>(
+    py: Python<'py>,
+    shape: [usize; 3],
+    cell_parameters: Vec<f64>,
+    hkl: PyReadonlyArray1<'_, i64>,
+    amplitudes: PyReadonlyArray1<'_, f64>,
+    phases: PyReadonlyArray1<'_, f64>,
+    support: PyReadonlyArray1<'_, u8>,
+    cycles: usize,
+    atom_count: usize,
+    mask_sigma: f64,
+    hybrid_m: f64,
+    omit_fraction: f64,
+    seed: u64,
+    patterson_rank: Option<usize>,
+) -> PyResult<Bound<'py, PyDict>> {
+    let cell = cell(&cell_parameters)?;
+    let hkl = hkl_rows(&hkl)?;
+    let amplitudes = amplitudes.as_slice()?.to_vec();
+    let phases = phases.as_slice()?.to_vec();
+    let support = support.as_slice()?.to_vec();
+    let options = DualSpaceOptions {
+        cycles,
+        atom_count,
+        mask_sigma,
+        hybrid_m,
+        omit_fraction,
+        seed,
+        patterson_rank,
+        cancellation: None,
+    };
+    let state = py
+        .detach(move || {
+            phasesmith_solution::dual_space(
+                shape,
+                cell,
+                &hkl,
+                &amplitudes,
+                &phases,
+                &support,
+                &options,
+                None,
+            )
+        })
+        .map_err(invalid)?;
+    let out = PyDict::new(py);
+    out.set_item("density", state.trial.density.into_pyarray(py))?;
+    out.set_item("history", state.trial.history.into_pyarray(py))?;
+    out.set_item("best_cycle", state.trial.best_cycle)?;
+    out.set_item("initialization", state.initialization)?;
+    out.set_item("patterson_vector_grid", state.patterson_vector)?;
+    Ok(out)
+}
+
+#[pyfunction(name = "_solution_atomic_projection")]
+#[allow(clippy::too_many_arguments)]
+fn projection<'py>(
+    py: Python<'py>,
+    density: PyReadonlyArray1<'_, f64>,
+    shape: [usize; 3],
+    cell_parameters: Vec<f64>,
+    atom_count: usize,
+    mask_sigma: f64,
+    omit_fraction: f64,
+    seed: u64,
+    cycle: usize,
+) -> PyResult<Bound<'py, npy::PyArray1<f64>>> {
+    let density = density.as_slice()?.to_vec();
+    let cell = cell(&cell_parameters)?;
+    let options = DualSpaceOptions {
+        cycles: 1,
+        atom_count,
+        mask_sigma,
+        hybrid_m: 3.,
+        omit_fraction,
+        seed,
+        patterson_rank: None,
+        cancellation: None,
+    };
+    let out = py
+        .detach(move || {
+            phasesmith_solution::atomic_projection(&density, shape, cell, &options, cycle)
+        })
+        .map_err(invalid)?;
+    Ok(out.into_pyarray(py))
+}
+
+pub(super) fn trial_records(
+    py: Python<'_>,
+    records: Vec<phasesmith_solution::PhasingTrial>,
+) -> PyResult<Bound<'_, PyList>> {
+    let trials = PyList::empty(py);
+    for t in records {
+        let item = PyDict::new(py);
+        item.set_item("method", t.method)?;
+        item.set_item("initialization", t.initialization)?;
+        item.set_item("patterson_vector_grid", t.patterson_vector)?;
+        item.set_item("seed", t.seed)?;
+        item.set_item("completed_cycles", t.cycles)?;
+        item.set_item("best_cycle", t.best_cycle)?;
+        item.set_item("score_kind", t.score_kind)?;
+        item.set_item("mask_sigma_angstrom", t.mask_sigma)?;
+        if t.method == "dual_space" {
+            item.set_item("hybrid_m", 3.)?;
+            item.set_item("sharpening_q", 0.5)?;
+            item.set_item("omit_fraction", 0.1)?;
+            item.set_item("omit_period", 3)?;
+        }
+        trials.append(item)?;
+    }
+    Ok(trials)
+}
+
+pub(super) fn register(module: &Bound<'_, PyModule>) -> PyResult<()> {
+    module.add_function(wrap_pyfunction!(run, module)?)?;
+    module.add_function(wrap_pyfunction!(projection, module)?)?;
+    Ok(())
+}
