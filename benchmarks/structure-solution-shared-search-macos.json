@@ -1,0 +1,775 @@
+{
+  "schema": "phasesmith.shared-search-macos.v1",
+  "date": "2026-10-28",
+  "cases": {
+    "kbrf4": {
+      "schema": "phasesmith.shared-element-search-benchmark.v1",
+      "elements_only": [
+        "Br",
+        "F",
+        "K"
+      ],
+      "cell": [
+        6.0999,
+        6.0999,
+        11.0509,
+        90.0,
+        90.0,
+        90.0
+      ],
+      "space_group": "I4/mcm",
+      "input_sha256": "d76a88377a6d7236416c47a48b4b61ab15f82199e853184dc76e945e3123c2b0",
+      "input_rows": 214,
+      "options": {
+        "seed": 0,
+        "trials": 1,
+        "cycles": 800,
+        "phasing": "charge_flip",
+        "delta_sigma": 1.0,
+        "weak_fraction": 0.2,
+        "cleanup_cycles": 10,
+        "polish_iterations": 50,
+        "assignment_rounds": 4,
+        "max_seconds": 30,
+        "r1_target": 0.06,
+        "grid_shape": null,
+        "refinement": "anisotropic",
+        "symmetry_tolerance_angstrom": 0.15,
+        "symmetry_iterations": 80,
+        "completion": false
+      },
+      "repeats": 3,
+      "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+      "native_sha256": "0e2575152add8c63ee3bb84b5824da30c0ef93bd350df15e3d4144554744f46c",
+      "implementation_sha256": {
+        "crates/phasesmith-solution/src/adp_refinement.rs": "3212f7b234c101792234bfd38940ccd369c5e4f1bf32e11b6baab83e68ad31c1",
+        "crates/phasesmith-solution/src/completion.rs": "08523bbe80b71f0f29f01345d36713ac8dd3cb6134e812414ea6be5c94dd3081",
+        "crates/phasesmith-solution/src/completion_orbit.rs": "74901c137016cfdf5b18f911282fa2b995b80fb183508856b91ca8a902b52227",
+        "crates/phasesmith-solution/src/data.rs": "3f27a939350ff94f6722c23b1d2609ff10b9ec8119794e2a7cf2076cea27468e",
+        "crates/phasesmith-solution/src/dual_space.rs": "74ff8bbf6d8a6fdbdde1f20f3aa651028b2c77acaa9c86eb716a268ac8721d55",
+        "crates/phasesmith-solution/src/fourier.rs": "60a656ab69dc751e6dcea384f477a770f021a33a5bb28c7a3df840576ea680c8",
+        "crates/phasesmith-solution/src/lib.rs": "95ac751b37a481c8e5bb30d1a628f4f9fdd9bf1c2e979090f4e34f32bc74bbb0",
+        "crates/phasesmith-solution/src/math3.rs": "fa00ccf3888b6bd86fa62c7b160a8e5f11d933e3736231342a179459d247bd4d",
+        "crates/phasesmith-solution/src/model.rs": "c0d802de5d8725f527ab1b40181fe0d4b12387b2c715ad188de5b409e0105139",
+        "crates/phasesmith-solution/src/shared_pool.rs": "31dc671b92ea761471b2cc3b2c742d1b83e844851ec80ff4f9472e7961aab629",
+        "crates/phasesmith-solution/src/shared_search.rs": "c4ef6106274ac859d0bec10ea82bb47602d780ad65c23c14eceeb7b2ac339677",
+        "crates/phasesmith-solution/src/solver.rs": "837283f376ddedd265e9335a4478b0d872c79182eea9b1b8521a6d255329089e",
+        "crates/phasesmith-solution/src/symmetry_model.rs": "77008da3b39f478d80b51669ce3944b5a2a96afa6c6a0029d6159d5a0f21356b",
+        "crates/phasesmith-py/src/solution.rs": "866f71afd55664653facae5e417e06982ace48277237fa56ea4ac21c7b81b3bc",
+        "crates/phasesmith-py/src/solution_completion.rs": "f054ef8c49ce3f1d6aad5e8c36b94da3f3cf3b0a08570e841060a4bbcbf81517",
+        "crates/phasesmith-py/src/solution_dual.rs": "148bd4cf47cc84ea9f2ee3e9a52365278bf3396c83199481b3ddb220ce8e4755",
+        "crates/phasesmith-py/src/solution_shared.rs": "7a869a06856abed78c89e1caa8c3c2fc0db358ebf144fec02802dd39d6889732",
+        "crates/phasesmith-py/src/solution_symmetry.rs": "c37b9b63c61f745bcf35bb02ff53586a2587adf9eb8d3fb59bc5a07ee0866f8d",
+        "Cargo.lock": "f8a427cc7edfd5463a2929aa00c5473c10dd674553132052aadcef11fd41cdee",
+        "python/phasesmith/experimental/solution.py": "16f7bb9f1d32622d085449204c84f820db4cf02ca119df80916e36bedd21f73f",
+        "python/phasesmith/experimental/solution_shared_reference.py": "83cebd53e1da4bef3886d118a0753acdd2ce4759fbb3cb4a3cb3fd225f95d8b1",
+        "benchmarks/solution_shared_search.py": "dbaa0a4218178cedf4eeb11dea39709dc097f80ba0187cfad8ede302b87d2349",
+        "benchmarks/solution_adp_transfer.py": "344239532b298921594af7d24dcb071a16d1528df0e7b5cbfa4467f8f6e83d59",
+        "benchmarks/structure_solution.py": "58191cddd8fc86a6b5371297a694b838f63ba91ea92452425bb7475e7cd4714e"
+      },
+      "qualification": "Reused development data; exact cell and symmetry supplied. No atom counts or reference coordinates enter the search. References opened only after saving every run. Wall times are not a thread-matched SHELXT comparison.",
+      "reference_sha256_after_solving": "518988e3c4fd244dd24e47d12925722fd5f347ad2c61e398de1f4e5b24033f47",
+      "report_before_reference_sha256": "dbb54e57d8bed22d8c5303c9e8b74b35e44d220faf50c62778afdd2dd63437e0",
+      "runs": [
+        {
+          "repeat": 0,
+          "solve_seconds": 3.1704732500074897,
+          "termination": "r1_target",
+          "r1": 0.022266400538654547,
+          "inferred_counts": {
+            "Br": 4,
+            "F": 16,
+            "K": 4
+          },
+          "shared_search": {
+            "elements": [
+              "Br",
+              "K",
+              "F"
+            ],
+            "phasing_starts": 1,
+            "framework_hypotheses": 4,
+            "initial_prefix": 4,
+            "rounds": 2,
+            "orbit_proposals": 16,
+            "element_scores": 48,
+            "refinements": 78,
+            "deletion_trials": 8,
+            "relabel_trials": 24,
+            "maximum_atoms": 52,
+            "beam_width": 4,
+            "required_elements_present": true,
+            "accepted_moves": [
+              {
+                "kind": "initial",
+                "element": "Br",
+                "atoms": 4,
+                "r1": 0.49527233653817687,
+                "score": -302.2789345245023
+              },
+              {
+                "kind": "birth",
+                "element": "K",
+                "atoms": 8,
+                "r1": 0.23761056675486603,
+                "score": -529.5847676492585
+              },
+              {
+                "kind": "birth",
+                "element": "F",
+                "atoms": 24,
+                "r1": 0.022266400538654547,
+                "score": -1443.477925330061
+              }
+            ]
+          },
+          "target_met": true,
+          "counts_match_reference_after_solving": true,
+          "post_solve_geometry": {
+            "max_element_matched_error_angstrom": 0.005908783834042713,
+            "rms_error_angstrom": 0.004824501797936302,
+            "reference_used_after_solve_only": true,
+            "non_h_atom_count": 24
+          }
+        },
+        {
+          "repeat": 1,
+          "solve_seconds": 3.163336249999702,
+          "termination": "r1_target",
+          "r1": 0.022266400538654547,
+          "inferred_counts": {
+            "Br": 4,
+            "F": 16,
+            "K": 4
+          },
+          "shared_search": {
+            "elements": [
+              "Br",
+              "K",
+              "F"
+            ],
+            "phasing_starts": 1,
+            "framework_hypotheses": 4,
+            "initial_prefix": 4,
+            "rounds": 2,
+            "orbit_proposals": 16,
+            "element_scores": 48,
+            "refinements": 78,
+            "deletion_trials": 8,
+            "relabel_trials": 24,
+            "maximum_atoms": 52,
+            "beam_width": 4,
+            "required_elements_present": true,
+            "accepted_moves": [
+              {
+                "kind": "initial",
+                "element": "Br",
+                "atoms": 4,
+                "r1": 0.49527233653817687,
+                "score": -302.2789345245023
+              },
+              {
+                "kind": "birth",
+                "element": "K",
+                "atoms": 8,
+                "r1": 0.23761056675486603,
+                "score": -529.5847676492585
+              },
+              {
+                "kind": "birth",
+                "element": "F",
+                "atoms": 24,
+                "r1": 0.022266400538654547,
+                "score": -1443.477925330061
+              }
+            ]
+          },
+          "target_met": true,
+          "counts_match_reference_after_solving": true,
+          "post_solve_geometry": {
+            "max_element_matched_error_angstrom": 0.005908783834042713,
+            "rms_error_angstrom": 0.004824501797936302,
+            "reference_used_after_solve_only": true,
+            "non_h_atom_count": 24
+          }
+        },
+        {
+          "repeat": 2,
+          "solve_seconds": 3.1667280830151867,
+          "termination": "r1_target",
+          "r1": 0.022266400538654547,
+          "inferred_counts": {
+            "Br": 4,
+            "F": 16,
+            "K": 4
+          },
+          "shared_search": {
+            "elements": [
+              "Br",
+              "K",
+              "F"
+            ],
+            "phasing_starts": 1,
+            "framework_hypotheses": 4,
+            "initial_prefix": 4,
+            "rounds": 2,
+            "orbit_proposals": 16,
+            "element_scores": 48,
+            "refinements": 78,
+            "deletion_trials": 8,
+            "relabel_trials": 24,
+            "maximum_atoms": 52,
+            "beam_width": 4,
+            "required_elements_present": true,
+            "accepted_moves": [
+              {
+                "kind": "initial",
+                "element": "Br",
+                "atoms": 4,
+                "r1": 0.49527233653817687,
+                "score": -302.2789345245023
+              },
+              {
+                "kind": "birth",
+                "element": "K",
+                "atoms": 8,
+                "r1": 0.23761056675486603,
+                "score": -529.5847676492585
+              },
+              {
+                "kind": "birth",
+                "element": "F",
+                "atoms": 24,
+                "r1": 0.022266400538654547,
+                "score": -1443.477925330061
+              }
+            ]
+          },
+          "target_met": true,
+          "counts_match_reference_after_solving": true,
+          "post_solve_geometry": {
+            "max_element_matched_error_angstrom": 0.005908783834042713,
+            "rms_error_angstrom": 0.004824501797936302,
+            "reference_used_after_solve_only": true,
+            "non_h_atom_count": 24
+          }
+        }
+      ],
+      "median_solve_seconds": 3.1667280830151867
+    },
+    "bisei": {
+      "schema": "phasesmith.shared-element-search-benchmark.v1",
+      "elements_only": [
+        "Bi",
+        "Se",
+        "I"
+      ],
+      "cell": [
+        8.6967,
+        4.2205,
+        10.574,
+        90.0,
+        90.0,
+        90.0
+      ],
+      "space_group": "Pnma",
+      "input_sha256": "49e22aae5122b83855bc8df2f68e98862d92342e2752390a8254237c2d0f07d0",
+      "input_rows": 457,
+      "options": {
+        "seed": 0,
+        "trials": 1,
+        "cycles": 800,
+        "phasing": "charge_flip",
+        "delta_sigma": 1.0,
+        "weak_fraction": 0.2,
+        "cleanup_cycles": 10,
+        "polish_iterations": 50,
+        "assignment_rounds": 4,
+        "max_seconds": 30,
+        "r1_target": 0.06,
+        "grid_shape": null,
+        "refinement": "anisotropic",
+        "symmetry_tolerance_angstrom": 0.15,
+        "symmetry_iterations": 80,
+        "completion": false
+      },
+      "repeats": 1,
+      "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+      "native_sha256": "0e2575152add8c63ee3bb84b5824da30c0ef93bd350df15e3d4144554744f46c",
+      "implementation_sha256": {
+        "crates/phasesmith-solution/src/adp_refinement.rs": "3212f7b234c101792234bfd38940ccd369c5e4f1bf32e11b6baab83e68ad31c1",
+        "crates/phasesmith-solution/src/completion.rs": "08523bbe80b71f0f29f01345d36713ac8dd3cb6134e812414ea6be5c94dd3081",
+        "crates/phasesmith-solution/src/completion_orbit.rs": "74901c137016cfdf5b18f911282fa2b995b80fb183508856b91ca8a902b52227",
+        "crates/phasesmith-solution/src/data.rs": "3f27a939350ff94f6722c23b1d2609ff10b9ec8119794e2a7cf2076cea27468e",
+        "crates/phasesmith-solution/src/dual_space.rs": "74ff8bbf6d8a6fdbdde1f20f3aa651028b2c77acaa9c86eb716a268ac8721d55",
+        "crates/phasesmith-solution/src/fourier.rs": "60a656ab69dc751e6dcea384f477a770f021a33a5bb28c7a3df840576ea680c8",
+        "crates/phasesmith-solution/src/lib.rs": "95ac751b37a481c8e5bb30d1a628f4f9fdd9bf1c2e979090f4e34f32bc74bbb0",
+        "crates/phasesmith-solution/src/math3.rs": "fa00ccf3888b6bd86fa62c7b160a8e5f11d933e3736231342a179459d247bd4d",
+        "crates/phasesmith-solution/src/model.rs": "c0d802de5d8725f527ab1b40181fe0d4b12387b2c715ad188de5b409e0105139",
+        "crates/phasesmith-solution/src/shared_pool.rs": "31dc671b92ea761471b2cc3b2c742d1b83e844851ec80ff4f9472e7961aab629",
+        "crates/phasesmith-solution/src/shared_search.rs": "c4ef6106274ac859d0bec10ea82bb47602d780ad65c23c14eceeb7b2ac339677",
+        "crates/phasesmith-solution/src/solver.rs": "837283f376ddedd265e9335a4478b0d872c79182eea9b1b8521a6d255329089e",
+        "crates/phasesmith-solution/src/symmetry_model.rs": "77008da3b39f478d80b51669ce3944b5a2a96afa6c6a0029d6159d5a0f21356b",
+        "crates/phasesmith-py/src/solution.rs": "866f71afd55664653facae5e417e06982ace48277237fa56ea4ac21c7b81b3bc",
+        "crates/phasesmith-py/src/solution_completion.rs": "f054ef8c49ce3f1d6aad5e8c36b94da3f3cf3b0a08570e841060a4bbcbf81517",
+        "crates/phasesmith-py/src/solution_dual.rs": "148bd4cf47cc84ea9f2ee3e9a52365278bf3396c83199481b3ddb220ce8e4755",
+        "crates/phasesmith-py/src/solution_shared.rs": "7a869a06856abed78c89e1caa8c3c2fc0db358ebf144fec02802dd39d6889732",
+        "crates/phasesmith-py/src/solution_symmetry.rs": "c37b9b63c61f745bcf35bb02ff53586a2587adf9eb8d3fb59bc5a07ee0866f8d",
+        "Cargo.lock": "f8a427cc7edfd5463a2929aa00c5473c10dd674553132052aadcef11fd41cdee",
+        "python/phasesmith/experimental/solution.py": "16f7bb9f1d32622d085449204c84f820db4cf02ca119df80916e36bedd21f73f",
+        "python/phasesmith/experimental/solution_shared_reference.py": "83cebd53e1da4bef3886d118a0753acdd2ce4759fbb3cb4a3cb3fd225f95d8b1",
+        "benchmarks/solution_shared_search.py": "dbaa0a4218178cedf4eeb11dea39709dc097f80ba0187cfad8ede302b87d2349",
+        "benchmarks/solution_adp_transfer.py": "344239532b298921594af7d24dcb071a16d1528df0e7b5cbfa4467f8f6e83d59",
+        "benchmarks/structure_solution.py": "58191cddd8fc86a6b5371297a694b838f63ba91ea92452425bb7475e7cd4714e"
+      },
+      "qualification": "Reused development data; exact cell and symmetry supplied. No atom counts or reference coordinates enter the search. References opened only after saving every run. Wall times are not a thread-matched SHELXT comparison.",
+      "reference_sha256_after_solving": "50e814119da83512c1328e26fc2a92081aa494b0a81c748119a1737fc8e37337",
+      "report_before_reference_sha256": "ba013fe2a04af5d46d9fab330f25a3709f19af5b9211bb4eca7b00926e72cb5f",
+      "runs": [
+        {
+          "repeat": 0,
+          "solve_seconds": 2.297785250004381,
+          "termination": "r1_target",
+          "r1": 0.05228505485935892,
+          "inferred_counts": {
+            "Bi": 4,
+            "I": 4,
+            "Se": 4
+          },
+          "shared_search": {
+            "elements": [
+              "Bi",
+              "I",
+              "Se"
+            ],
+            "phasing_starts": 1,
+            "framework_hypotheses": 1,
+            "initial_prefix": 4,
+            "rounds": 2,
+            "orbit_proposals": 31,
+            "element_scores": 93,
+            "refinements": 57,
+            "deletion_trials": 8,
+            "relabel_trials": 18,
+            "maximum_atoms": 49,
+            "beam_width": 4,
+            "required_elements_present": true,
+            "accepted_moves": [
+              {
+                "kind": "initial",
+                "element": "Bi",
+                "atoms": 4,
+                "r1": 0.4889876849452135,
+                "score": -564.0853382589139
+              },
+              {
+                "kind": "birth",
+                "element": "I",
+                "atoms": 8,
+                "r1": 0.30400133048192163,
+                "score": -969.6360431260379
+              },
+              {
+                "kind": "birth",
+                "element": "Se",
+                "atoms": 12,
+                "r1": 0.05228505485935892,
+                "score": -2455.3202403817986
+              }
+            ]
+          },
+          "target_met": true,
+          "counts_match_reference_after_solving": true,
+          "post_solve_geometry": {
+            "max_element_matched_error_angstrom": 0.002516407742175359,
+            "rms_error_angstrom": 0.001746968076547535,
+            "reference_used_after_solve_only": true,
+            "non_h_atom_count": 12
+          }
+        }
+      ],
+      "median_solve_seconds": 2.297785250004381
+    },
+    "thiourea": {
+      "schema": "phasesmith.shared-element-search-benchmark.v1",
+      "elements_only": [
+        "C",
+        "N",
+        "S"
+      ],
+      "cell": [
+        7.4962,
+        8.5211,
+        5.4695,
+        90.0,
+        90.0,
+        90.0
+      ],
+      "space_group": "P 21 m a",
+      "input_sha256": "9138164bc1f542b320094b395819af191dbbe77ac4c01f2e21ba55099c074cc1",
+      "input_rows": 9047,
+      "options": {
+        "seed": 0,
+        "trials": 1,
+        "cycles": 800,
+        "phasing": "charge_flip",
+        "delta_sigma": 1.0,
+        "weak_fraction": 0.2,
+        "cleanup_cycles": 10,
+        "polish_iterations": 50,
+        "assignment_rounds": 4,
+        "max_seconds": 30,
+        "r1_target": 0.06,
+        "grid_shape": null,
+        "refinement": "anisotropic",
+        "symmetry_tolerance_angstrom": 0.15,
+        "symmetry_iterations": 80,
+        "completion": false
+      },
+      "repeats": 1,
+      "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+      "native_sha256": "0e2575152add8c63ee3bb84b5824da30c0ef93bd350df15e3d4144554744f46c",
+      "implementation_sha256": {
+        "crates/phasesmith-solution/src/adp_refinement.rs": "3212f7b234c101792234bfd38940ccd369c5e4f1bf32e11b6baab83e68ad31c1",
+        "crates/phasesmith-solution/src/completion.rs": "08523bbe80b71f0f29f01345d36713ac8dd3cb6134e812414ea6be5c94dd3081",
+        "crates/phasesmith-solution/src/completion_orbit.rs": "74901c137016cfdf5b18f911282fa2b995b80fb183508856b91ca8a902b52227",
+        "crates/phasesmith-solution/src/data.rs": "3f27a939350ff94f6722c23b1d2609ff10b9ec8119794e2a7cf2076cea27468e",
+        "crates/phasesmith-solution/src/dual_space.rs": "74ff8bbf6d8a6fdbdde1f20f3aa651028b2c77acaa9c86eb716a268ac8721d55",
+        "crates/phasesmith-solution/src/fourier.rs": "60a656ab69dc751e6dcea384f477a770f021a33a5bb28c7a3df840576ea680c8",
+        "crates/phasesmith-solution/src/lib.rs": "95ac751b37a481c8e5bb30d1a628f4f9fdd9bf1c2e979090f4e34f32bc74bbb0",
+        "crates/phasesmith-solution/src/math3.rs": "fa00ccf3888b6bd86fa62c7b160a8e5f11d933e3736231342a179459d247bd4d",
+        "crates/phasesmith-solution/src/model.rs": "c0d802de5d8725f527ab1b40181fe0d4b12387b2c715ad188de5b409e0105139",
+        "crates/phasesmith-solution/src/shared_pool.rs": "31dc671b92ea761471b2cc3b2c742d1b83e844851ec80ff4f9472e7961aab629",
+        "crates/phasesmith-solution/src/shared_search.rs": "c4ef6106274ac859d0bec10ea82bb47602d780ad65c23c14eceeb7b2ac339677",
+        "crates/phasesmith-solution/src/solver.rs": "837283f376ddedd265e9335a4478b0d872c79182eea9b1b8521a6d255329089e",
+        "crates/phasesmith-solution/src/symmetry_model.rs": "77008da3b39f478d80b51669ce3944b5a2a96afa6c6a0029d6159d5a0f21356b",
+        "crates/phasesmith-py/src/solution.rs": "866f71afd55664653facae5e417e06982ace48277237fa56ea4ac21c7b81b3bc",
+        "crates/phasesmith-py/src/solution_completion.rs": "f054ef8c49ce3f1d6aad5e8c36b94da3f3cf3b0a08570e841060a4bbcbf81517",
+        "crates/phasesmith-py/src/solution_dual.rs": "148bd4cf47cc84ea9f2ee3e9a52365278bf3396c83199481b3ddb220ce8e4755",
+        "crates/phasesmith-py/src/solution_shared.rs": "7a869a06856abed78c89e1caa8c3c2fc0db358ebf144fec02802dd39d6889732",
+        "crates/phasesmith-py/src/solution_symmetry.rs": "c37b9b63c61f745bcf35bb02ff53586a2587adf9eb8d3fb59bc5a07ee0866f8d",
+        "Cargo.lock": "f8a427cc7edfd5463a2929aa00c5473c10dd674553132052aadcef11fd41cdee",
+        "python/phasesmith/experimental/solution.py": "16f7bb9f1d32622d085449204c84f820db4cf02ca119df80916e36bedd21f73f",
+        "python/phasesmith/experimental/solution_shared_reference.py": "83cebd53e1da4bef3886d118a0753acdd2ce4759fbb3cb4a3cb3fd225f95d8b1",
+        "benchmarks/solution_shared_search.py": "dbaa0a4218178cedf4eeb11dea39709dc097f80ba0187cfad8ede302b87d2349",
+        "benchmarks/solution_adp_transfer.py": "344239532b298921594af7d24dcb071a16d1528df0e7b5cbfa4467f8f6e83d59",
+        "benchmarks/structure_solution.py": "58191cddd8fc86a6b5371297a694b838f63ba91ea92452425bb7475e7cd4714e"
+      },
+      "qualification": "Reused development data; exact cell and symmetry supplied. No atom counts or reference coordinates enter the search. References opened only after saving every run. Wall times are not a thread-matched SHELXT comparison.",
+      "reference_sha256_after_solving": "b3fc549fbe77d935839d6f566dc968e3abc13913be206c6b59f98ebbf2cd74c2",
+      "report_before_reference_sha256": "6a46e219690aa361b5eaa1a6418d69a9e4b1042cf06e55e793e3647fcc604c08",
+      "runs": [
+        {
+          "repeat": 0,
+          "solve_seconds": 27.9812764590024,
+          "termination": "r1_target",
+          "r1": 0.04940904986302627,
+          "inferred_counts": {
+            "C": 4,
+            "N": 8,
+            "S": 4
+          },
+          "shared_search": {
+            "elements": [
+              "S",
+              "N",
+              "C"
+            ],
+            "phasing_starts": 1,
+            "framework_hypotheses": 2,
+            "initial_prefix": 4,
+            "rounds": 4,
+            "orbit_proposals": 106,
+            "element_scores": 318,
+            "refinements": 242,
+            "deletion_trials": 52,
+            "relabel_trials": 104,
+            "maximum_atoms": 44,
+            "beam_width": 4,
+            "required_elements_present": true,
+            "accepted_moves": [
+              {
+                "kind": "initial",
+                "element": "S",
+                "atoms": 4,
+                "r1": 0.2668332456528867,
+                "score": -1228.3159340055047
+              },
+              {
+                "kind": "birth",
+                "element": "N",
+                "atoms": 8,
+                "r1": 0.2227842921634599,
+                "score": -1416.2571865985597
+              },
+              {
+                "kind": "birth",
+                "element": "N",
+                "atoms": 12,
+                "r1": 0.17376645179954742,
+                "score": -1805.9917743692997
+              },
+              {
+                "kind": "birth",
+                "element": "C",
+                "atoms": 14,
+                "r1": 0.1148894161317856,
+                "score": -2303.524988951133
+              },
+              {
+                "kind": "birth",
+                "element": "C",
+                "atoms": 16,
+                "r1": 0.04940904986302627,
+                "score": -3284.4523910481557
+              }
+            ]
+          },
+          "target_met": true,
+          "counts_match_reference_after_solving": true,
+          "post_solve_geometry": {
+            "max_element_matched_error_angstrom": 0.01037170758304695,
+            "rms_error_angstrom": 0.007707376162847073,
+            "reference_used_after_solve_only": true,
+            "non_h_atom_count": 16
+          }
+        }
+      ],
+      "median_solve_seconds": 27.9812764590024
+    }
+  },
+  "cif_audits": {
+    "kbrf4": [
+      {
+        "repeat": 0,
+        "cif_checks_general_structure_factor_path": {
+          "candidate-p1.cif": {
+            "r1": 0.022266400538647847,
+            "sha256": "5b749c7bee77efef5e517d1d688b38d146dcd907cc1e6a1cf965c45d6ca69492"
+          },
+          "candidate.cif": {
+            "r1": 0.022266400539367084,
+            "sha256": "16d8bc4118e0b54c50427544b1638d25384d0f7db69f6888aa4a39476a436af6"
+          }
+        }
+      },
+      {
+        "repeat": 1,
+        "cif_checks_general_structure_factor_path": {
+          "candidate-p1.cif": {
+            "r1": 0.022266400538647847,
+            "sha256": "5b749c7bee77efef5e517d1d688b38d146dcd907cc1e6a1cf965c45d6ca69492"
+          },
+          "candidate.cif": {
+            "r1": 0.022266400539367084,
+            "sha256": "16d8bc4118e0b54c50427544b1638d25384d0f7db69f6888aa4a39476a436af6"
+          }
+        }
+      },
+      {
+        "repeat": 2,
+        "cif_checks_general_structure_factor_path": {
+          "candidate-p1.cif": {
+            "r1": 0.022266400538647847,
+            "sha256": "5b749c7bee77efef5e517d1d688b38d146dcd907cc1e6a1cf965c45d6ca69492"
+          },
+          "candidate.cif": {
+            "r1": 0.022266400539367084,
+            "sha256": "16d8bc4118e0b54c50427544b1638d25384d0f7db69f6888aa4a39476a436af6"
+          }
+        }
+      }
+    ],
+    "bisei": [
+      {
+        "repeat": 0,
+        "cif_checks_general_structure_factor_path": {
+          "candidate-p1.cif": {
+            "r1": 0.05228505485906734,
+            "sha256": "c1495bf141edd4fe6f94afe50ee36ac2ee8a3a6525c3de7db0a333e11b51bc0d"
+          },
+          "candidate.cif": {
+            "r1": 0.05228505485871746,
+            "sha256": "ce1f0dd878af0d4408709c1c0c4341d298ab989952b942096dae97cf1eb354b3"
+          }
+        }
+      }
+    ],
+    "thiourea": [
+      {
+        "repeat": 0,
+        "cif_checks_general_structure_factor_path": {
+          "candidate-p1.cif": {
+            "r1": 0.04940904986301378,
+            "sha256": "83c1af90c56ec87b88e1f82277743710266f06b372c3acf4b3e78a779713531b"
+          },
+          "candidate.cif": {
+            "r1": 0.04940904986318869,
+            "sha256": "9428c53e09656fabeead140d28d5a1369cc7369fee695ada560c5200fade4bf0"
+          }
+        }
+      }
+    ]
+  },
+  "kernel_estimates_nanoseconds": {
+    "shared_orbit_16_images_1060_reflections_three_labels_fused_gradi": {
+      "mean": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": 159399.87828634089,
+          "upper_bound": 159505.6973068087
+        },
+        "point_estimate": 159451.03303780284,
+        "standard_error": 27.198366701457505
+      },
+      "median": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": 159384.62280701753,
+          "upper_bound": 159525.03640350877
+        },
+        "point_estimate": 159443.16478696742,
+        "standard_error": 28.868781095277047
+      },
+      "median_abs_dev": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": 19.345328603935325,
+          "upper_bound": 173.92783454372778
+        },
+        "point_estimate": 62.06788826209857,
+        "standard_error": 39.72102133166099
+      },
+      "slope": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": 159413.53574026708,
+          "upper_bound": 159564.83450292397
+        },
+        "point_estimate": 159505.96821599454,
+        "standard_error": 39.0758598526889
+      },
+      "std_dev": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": 44.231380283292275,
+          "upper_bound": 116.50261943135075
+        },
+        "point_estimate": 91.2680911972479,
+        "standard_error": 18.37100866887272
+      }
+    },
+    "independent_orbit_16_images_1060_reflections_three_labels_fused_": {
+      "mean": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": 409806.1355066137,
+          "upper_bound": 412656.40432142856
+        },
+        "point_estimate": 411029.0054991181,
+        "standard_error": 740.1288813350183
+      },
+      "median": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": 409601.1611111111,
+          "upper_bound": 411889.5366666667
+        },
+        "point_estimate": 410263.9185185185,
+        "standard_error": 498.58497623938797
+      },
+      "median_abs_dev": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": 47.68480804235395,
+          "upper_bound": 2839.9499015808383
+        },
+        "point_estimate": 1037.9050937957275,
+        "standard_error": 791.3562613975066
+      },
+      "slope": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": 409613.5317535545,
+          "upper_bound": 414542.4319859038
+        },
+        "point_estimate": 412247.5107070707,
+        "standard_error": 1285.3425768121592
+      },
+      "std_dev": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": 606.9237270948327,
+          "upper_bound": 3517.027511048922
+        },
+        "point_estimate": 2476.2959232352096,
+        "standard_error": 824.5016393716007
+      }
+    },
+    "completion_orbit_16_images_multi_reflection_fused_gradient": {
+      "mean": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": 136193.8000386461,
+          "upper_bound": 136461.39567919332
+        },
+        "point_estimate": 136318.34631307743,
+        "standard_error": 68.96457946358449
+      },
+      "median": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": 136177.61194029852,
+          "upper_bound": 136448.25746268657
+        },
+        "point_estimate": 136293.16324626864,
+        "standard_error": 65.36016506844406
+      },
+      "median_abs_dev": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": 18.106528783016028,
+          "upper_bound": 371.87423164416816
+        },
+        "point_estimate": 153.30756798717456,
+        "standard_error": 88.14043869554847
+      },
+      "slope": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": 136134.69402255322,
+          "upper_bound": 136318.0441194116
+        },
+        "point_estimate": 136235.64384570654,
+        "standard_error": 46.724158862494164
+      },
+      "std_dev": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": 79.16289383927152,
+          "upper_bound": 311.8873692887708
+        },
+        "point_estimate": 229.82682098179146,
+        "standard_error": 59.651059767815696
+      }
+    }
+  },
+  "comparison": {
+    "previous_count_sweep_seconds": 116.20537979199435,
+    "shared_kbrf4_median_seconds": 3.1667280830151867,
+    "wall_time_speedup_over_count_sweep": 36.69572402356374,
+    "qualification": "Recorded local wall times, not a controlled thread-matched comparison with SHELXT. Old count sweep used four workers; shared search is one native call. Prior count report preserved unchanged.",
+    "single_label_control_regression_percent": 1.9251
+  },
+  "validation": {
+    "rust_passed_failed_ignored": [
+      388,
+      0,
+      34
+    ],
+    "clippy": "workspace/all-targets/all-features/-D warnings passed",
+    "default_wheel": "imports; experimental shared/native solver absent",
+    "python_final_summary": "1270 passed, 11 skipped, 34 deselected in 60.06s (0:01:00)"
+  },
+  "output_directory": "runs/shared-search-final"
+}

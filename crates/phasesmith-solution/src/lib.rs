@@ -12,6 +12,8 @@ mod dual_space;
 mod fourier;
 mod math3;
 mod model;
+mod shared_pool;
+mod shared_search;
 mod solver;
 mod symmetry_model;
 
@@ -32,6 +34,8 @@ pub use data::{Observation, PreparedData, prepare_data};
 pub use dual_space::{DualSpaceOptions, DualSpaceResult, atomic_projection, dual_space};
 pub use fourier::{FlipOptions, FlipResult, charge_flip, extract_peaks};
 pub use model::{ModelEvaluation, PolishedModel, evaluate_model, polish_model};
+pub use shared_pool::PreparedElementPool;
+pub use shared_search::{SharedMove, SharedSearchOptions, SharedSearchSummary, solve_elements};
 pub use solver::{Candidate, PhasingMethod, PhasingTrial, Solution, SolveOptions, solve};
 pub use symmetry_model::{
     AsymmetricSite, SymmetryImage, SymmetryModel, recover_symmetry, recover_symmetry_hypotheses,

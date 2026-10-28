@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import json
+from collections import Counter
 from collections.abc import Mapping, Sequence
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -222,6 +223,45 @@ class PhasingTrial:
 
 
 @dataclass(frozen=True, slots=True)
+class SharedMove:
+    """One accepted orbit edit on the selected shared-search lineage."""
+
+    kind: str
+    element: str
+    atoms: int
+    r1: float
+    score: float
+
+
+@dataclass(frozen=True, slots=True)
+class SharedSearchAudit:
+    """Actual work and inferred topology, without source composition."""
+
+    elements: tuple[str, ...]
+    phasing_starts: int
+    framework_hypotheses: int
+    initial_prefix: int
+    rounds: int
+    orbit_proposals: int
+    element_scores: int
+    refinements: int
+    deletion_trials: int
+    relabel_trials: int
+    maximum_atoms: int
+    beam_width: int
+    required_elements_present: bool
+    accepted_moves: tuple[SharedMove, ...]
+
+    def __post_init__(self):
+        object.__setattr__(self, "elements", tuple(self.elements))
+        object.__setattr__(
+            self,
+            "accepted_moves",
+            tuple(m if isinstance(m, SharedMove) else SharedMove(**m) for m in self.accepted_moves),
+        )
+
+
+@dataclass(frozen=True, slots=True)
 class SolutionResult:
     """Candidates, diagnostic map, signed inputs, provenance, and truthful stop reason."""
 
@@ -245,15 +285,16 @@ class SolutionResult:
     rejected_trials: tuple[tuple[int, str], ...]
     termination: str
     target_met: bool
+    shared_search: SharedSearchAudit | None = None
 
     @property
     def best(self) -> SolutionCandidate | None:
-        """Lowest amplitude least-squares candidate, possibly still incorrect."""
+        """Preferred method-ranked candidate, possibly still incorrect."""
         return self.candidates[0] if self.candidates else None
 
     def to_record(self) -> dict[str, object]:
         """Summarize a run without embedding large input or density arrays."""
-        return {
+        record = {
             "schema": "phasesmith.experimental-solution.v4",
             "experimental": True,
             "source_name": self.observations.source_name,
@@ -291,6 +332,16 @@ class SolutionResult:
                 "unweighted amplitude objective.",
             ],
         }
+        if self.shared_search is not None:
+            record["schema"] = "phasesmith.experimental-solution.v5"
+            record["composition_source"] = "inferred_shared_orbit_search"
+            record["input_elements"] = list(self.shared_search.elements)
+            record["refinement_baseline_kind"] = "initial_projected_common_u"
+            record["shared_search"] = asdict(self.shared_search)
+            record["limitations"] = [
+                item for item in record["limitations"] if "composition" not in item.lower()
+            ] + ["Bounded shared orbit search with supplied exact symmetry; no uniqueness proof."]
+        return record
 
 
 def solve_structure(
@@ -340,6 +391,66 @@ def solve_structure(
         raise TypeError("space_group and options must be SpaceGroup and SolutionOptions")
     if cancellation is not None and not isinstance(cancellation, SolutionCancellation):
         raise TypeError("cancellation must be SolutionCancellation or None")
+    return _run_solution(observations, cell, group, counts, controls, cancellation, None)
+
+
+def solve_structure_elements(
+    observations: HklData,
+    *,
+    cell: UnitCell,
+    elements: Sequence[str],
+    space_group: SpaceGroup | None = None,
+    options: SolutionOptions | None = None,
+    maximum_atoms: int | None = None,
+    beam_width: int = 4,
+    search_rounds: int = 8,
+    cancellation: SolutionCancellation | None = None,
+) -> SolutionResult:
+    """Infer full-cell counts and labels by shared-map symmetry-orbit edits.
+
+    Every supplied neutral non-H element is required for a target hit. The exact
+    space group remains supplied. Only charge_flip and constrained ADPs are
+    supported. The legacy completion/count-assignment switches are not used.
+    Counts returned in ``composition`` are inferred, never inputs. The default
+    atom cap is ceil(cell volume/8 A³), at most 128; it is a search bound.
+    """
+    if not hasattr(_core, "_SharedOrbitPool"):
+        raise ImportError("shared element search requires experimental-solution native feature")
+    if not isinstance(observations, HklData) or not isinstance(cell, UnitCell):
+        raise TypeError("observations and cell must be HklData and UnitCell")
+    if isinstance(elements, str):
+        raise ValueError("elements must be a sequence of element symbols")
+    elements = tuple(elements)
+    if (
+        not 1 <= len(elements) <= 8
+        or any(not isinstance(e, str) for e in elements)
+        or len(set(elements)) != len(elements)
+    ):
+        raise ValueError("elements must be 1..8 distinct neutral non-H symbols")
+    if maximum_atoms is None:
+        maximum_atoms = min(128, int(np.ceil(cell.geometry().volume_angstrom3 / 8)))
+    for name, value, high in (
+        ("maximum_atoms", maximum_atoms, 128),
+        ("beam_width", beam_width, 8),
+        ("search_rounds", search_rounds, 16),
+    ):
+        if isinstance(value, bool) or not isinstance(value, int) or not 1 <= value <= high:
+            raise ValueError(f"{name} must be an integer in [1,{high}]")
+    group = SpaceGroup.p1() if space_group is None else space_group
+    controls = (
+        options
+        if options is not None
+        else SolutionOptions(trials=1, cycles=800, max_seconds=30, r1_target=0.06, completion=False)
+    )
+    if not isinstance(group, SpaceGroup) or not isinstance(controls, SolutionOptions):
+        raise TypeError("space_group and options must be SpaceGroup and SolutionOptions")
+    if cancellation is not None and not isinstance(cancellation, SolutionCancellation):
+        raise TypeError("cancellation must be SolutionCancellation or None")
+    shared = (elements, maximum_atoms, beam_width, search_rounds)
+    return _run_solution(observations, cell, group, (), controls, cancellation, shared)
+
+
+def _run_solution(observations, cell, group, counts, controls, cancellation, shared):
     raw = _core._solve_structure(
         observations.hkl.reshape(-1),
         observations.intensity,
@@ -349,6 +460,7 @@ def solve_structure(
         list(counts),
         **asdict(controls),
         cancellation=None if cancellation is None else cancellation._native,
+        shared_search=shared,
     )
     candidates = tuple(
         SolutionCandidate(
@@ -374,6 +486,9 @@ def solve_structure(
         )
         for c in raw["candidates"]
     )
+    audit = None if raw["shared_search"] is None else SharedSearchAudit(**raw["shared_search"])
+    if audit is not None:
+        counts = tuple(sorted(Counter(candidates[0].species).items())) if candidates else ()
     return SolutionResult(
         observations,
         cell,
@@ -395,6 +510,7 @@ def solve_structure(
         tuple(tuple(r) for r in raw["rejected_trials"]),
         raw["termination"],
         raw["target_met"],
+        audit,
     )
 
 

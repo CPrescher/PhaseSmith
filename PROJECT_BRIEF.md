@@ -81,6 +81,24 @@ select Br4 K4 F16 at R1 0.0222664 with all 24 atoms within 0.006 angstrom;
 30 hypotheses hit their time caps. Exact I4/mcm and cell remain supplied priors.
 See `docs/solution-element-counts.md`.
 
+The experimental `solve_structure_elements` path now uses a shared native search
+instead of restarting the fixed-composition solver for every count combination.
+One equally weighted element-sharpened charge-flipping map initializes a bounded
+beam of symmetry-compatible strong-site settings. Difference-map orbit proposals
+share their phase sums and analytical coordinate jets across possible elements;
+whole-orbit births, deletions and relabels compete after constrained refinement.
+Counts follow from accepted orbit multiplicities. Required-element coverage,
+periodic non-overlap, explicit budgets and a descriptive complexity penalty govern
+selection. Original density frames and retained partial results remain explicit.
+Experimental schema v5 distinguishes inferred counts from input element types;
+legacy count-constrained schema v4 and stable/default builds remain unchanged.
+The new equations have an independent NumPy reference and derivative tests.
+On three reused measured cases it infers the correct non-H counts and matches
+reference coordinates: K[BrF4] in median 3.167 s (three repeats), BiSeI in 2.298 s
+and thiourea in 27.981 s. K[BrF4] is 36.7 times faster than the recorded 45-count
+sweep; this is not a thread-matched comparison with SHELXT. See
+`docs/solution-shared-search.md` for controls and qualifications.
+
 An opt-in primitive/Bravais comparison now follows position-only lattice discovery.
 Native Selling-Delaunay reduction retains exact integer basis transformations;
 complete low-index reciprocal HNF hypotheses expose excluded reflections rather

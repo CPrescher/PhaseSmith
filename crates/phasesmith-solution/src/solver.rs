@@ -157,6 +157,32 @@ pub struct Solution {
     pub termination: &'static str,
     /// Whether an atomic candidate meets the requested R1 target.
     pub target_met: bool,
+    /// Present only for count-free shared element/orbit search.
+    pub shared_search: Option<crate::SharedSearchSummary>,
+}
+
+pub(crate) fn validate_options(options: &SolveOptions) -> Result<(), SolutionError> {
+    if !(1..=128).contains(&options.trials)
+        || !(1..=20_000).contains(&options.cycles)
+        || options.cleanup_cycles > 100
+        || options.polish_iterations > 200
+        || options.assignment_rounds > 8
+        || options.symmetry_iterations > 200
+        || !options.symmetry_tolerance_angstrom.is_finite()
+        || !(1e-5..=0.5).contains(&options.symmetry_tolerance_angstrom)
+        || !options.delta_sigma.is_finite()
+        || !(0.1..=2.5).contains(&options.delta_sigma)
+        || !options.weak_fraction.is_finite()
+        || !(0.0..=0.5).contains(&options.weak_fraction)
+        || !options.max_seconds.is_finite()
+        || !(0.0..=3600.0).contains(&options.max_seconds)
+        || options.max_seconds == 0.0
+        || !options.r1_target.is_finite()
+        || !(0.0..=1.0).contains(&options.r1_target)
+    {
+        return Err(error("invalid structure-solution options or budgets"));
+    }
+    Ok(())
 }
 
 /// Solve from corrected integrated intensities without using reference coordinates.
@@ -179,26 +205,7 @@ pub fn solve(
     composition: &[(String, usize)],
     options: &SolveOptions,
 ) -> Result<Solution, SolutionError> {
-    if !(1..=128).contains(&options.trials)
-        || !(1..=20_000).contains(&options.cycles)
-        || options.cleanup_cycles > 100
-        || options.polish_iterations > 200
-        || options.assignment_rounds > 8
-        || options.symmetry_iterations > 200
-        || !options.symmetry_tolerance_angstrom.is_finite()
-        || !(1e-5..=0.5).contains(&options.symmetry_tolerance_angstrom)
-        || !options.delta_sigma.is_finite()
-        || !(0.1..=2.5).contains(&options.delta_sigma)
-        || !options.weak_fraction.is_finite()
-        || !(0.0..=0.5).contains(&options.weak_fraction)
-        || !options.max_seconds.is_finite()
-        || !(0.0..=3600.0).contains(&options.max_seconds)
-        || options.max_seconds == 0.0
-        || !options.r1_target.is_finite()
-        || !(0.0..=1.0).contains(&options.r1_target)
-    {
-        return Err(error("invalid structure-solution options or budgets"));
-    }
+    validate_options(options)?;
     let started = Instant::now();
     let deadline = started
         .checked_add(Duration::from_secs_f64(options.max_seconds))
@@ -294,6 +301,7 @@ pub fn solve(
         rejected_trials: Vec::new(),
         termination: "trial_budget",
         target_met: false,
+        shared_search: None,
     };
     let mut best_objective = f64::INFINITY;
     for trial in 0..options.trials {
@@ -504,7 +512,7 @@ pub fn solve(
 }
 
 #[allow(clippy::cast_possible_wrap, clippy::cast_possible_truncation)] // Validated grid axes <=128.
-fn reciprocal_support(
+pub(crate) fn reciprocal_support(
     shape: [usize; 3],
     cell: UnitCell,
     group: &SpaceGroup,
@@ -615,7 +623,7 @@ fn assign_elements(
 }
 
 #[allow(clippy::cast_precision_loss)]
-fn initial_phases(hkl: &[[i32; 3]], seed: u64) -> Vec<f64> {
+pub(crate) fn initial_phases(hkl: &[[i32; 3]], seed: u64) -> Vec<f64> {
     let mut state = seed;
     let mut phases = vec![0.; hkl.len()];
     for (i, &h) in hkl.iter().enumerate() {
@@ -637,7 +645,7 @@ fn initial_phases(hkl: &[[i32; 3]], seed: u64) -> Vec<f64> {
     phases
 }
 
-fn stop_reason(options: &SolveOptions) -> &'static str {
+pub(crate) fn stop_reason(options: &SolveOptions) -> &'static str {
     if options
         .cancellation
         .as_ref()
