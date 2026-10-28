@@ -1,0 +1,130 @@
+{
+  "schema": "phasesmith.count-free-kernel-benchmark.v1",
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "grid": [
+    32,
+    32,
+    32
+  ],
+  "reflections": 2108,
+  "cycles": 50,
+  "sample_size": 10,
+  "warm_up_seconds": 1,
+  "measurement_seconds": 2,
+  "qualification": "Phasing kernel only, four point-atom synthetic amplitudes; no atom-count input to adaptive dual-space. Charge flipping has zero cleanup cycles. Does not measure structure recovery.",
+  "estimates_nanoseconds": {
+    "count_free_dual_space_32cubed_2108_reflections_50_cycles": {
+      "mean": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": 59132122.25,
+          "upper_bound": 59538849.470729165
+        },
+        "point_estimate": 59337100.47916667,
+        "standard_error": 103843.89677347933
+      },
+      "median": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": 59146368.0,
+          "upper_bound": 59586781.22916667
+        },
+        "point_estimate": 59343723.16666667,
+        "standard_error": 83216.30318908625
+      },
+      "median_abs_dev": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": 41386.129627749324,
+          "upper_bound": 597592.8068906106
+        },
+        "point_estimate": 149803.26039046785,
+        "standard_error": 158154.2930960264
+      },
+      "slope": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": 59237648.16404229,
+          "upper_bound": 59406561.0920109
+        },
+        "point_estimate": 59319661.24155844,
+        "standard_error": 42894.83907156139
+      },
+      "std_dev": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": 146043.9251143623,
+          "upper_bound": 469823.117432339
+        },
+        "point_estimate": 348550.335764399,
+        "standard_error": 82114.50199000128
+      }
+    },
+    "charge_flip_32cubed_four_atoms_2108_reflections_50_cycles": {
+      "mean": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": 27595048.90237797,
+          "upper_bound": 27753101.86577381
+        },
+        "point_estimate": 27676470.331091266,
+        "standard_error": 40417.02011619384
+      },
+      "median": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": 27599121.9,
+          "upper_bound": 27779485.14285714
+        },
+        "point_estimate": 27677773.600694444,
+        "standard_error": 45381.5104761774
+      },
+      "median_abs_dev": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": 34178.36895654648,
+          "upper_bound": 228948.27703535557
+        },
+        "point_estimate": 128650.86536598978,
+        "standard_error": 48602.02111800385
+      },
+      "slope": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": 27608284.87207207,
+          "upper_bound": 27775357.876168225
+        },
+        "point_estimate": 27680803.362337664,
+        "standard_error": 43115.55811850569
+      },
+      "std_dev": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": 66235.94541639842,
+          "upper_bound": 178294.94021390876
+        },
+        "point_estimate": 134355.3085143588,
+        "standard_error": 29069.34666751959
+      }
+    }
+  },
+  "implementation_sha256": {
+    "crates/phasesmith-solution/benches/solution.rs": "9fcbbc10e53e3461c6c4ca8b5e5dde57b3d08049ab2fc34817561afa520e443c",
+    "crates/phasesmith-solution/src/adp_refinement.rs": "f1261ba348d00732aac087be9db054c82451e5701ce559f641152ea31af8c625",
+    "crates/phasesmith-solution/src/completion.rs": "08523bbe80b71f0f29f01345d36713ac8dd3cb6134e812414ea6be5c94dd3081",
+    "crates/phasesmith-solution/src/completion_orbit.rs": "74901c137016cfdf5b18f911282fa2b995b80fb183508856b91ca8a902b52227",
+    "crates/phasesmith-solution/src/data.rs": "3f27a939350ff94f6722c23b1d2609ff10b9ec8119794e2a7cf2076cea27468e",
+    "crates/phasesmith-solution/src/dual_space.rs": "ff59690f0d437a6adab0e74c29ba1589a8f981d7ef2ed5e3910b2db8d8d0e7bb",
+    "crates/phasesmith-solution/src/fourier.rs": "6785270fd617e7f0a15b60079cba12eda94c1c1d7432ce0aec1ea507a820a861",
+    "crates/phasesmith-solution/src/lib.rs": "2fa1b3724e6c8d768aa50b8e6b5809c709d1f2aad334af97bb934b8b3fb3a679",
+    "crates/phasesmith-solution/src/math3.rs": "fa00ccf3888b6bd86fa62c7b160a8e5f11d933e3736231342a179459d247bd4d",
+    "crates/phasesmith-solution/src/model.rs": "c0d802de5d8725f527ab1b40181fe0d4b12387b2c715ad188de5b409e0105139",
+    "crates/phasesmith-solution/src/peak_density.rs": "97a242cae68157a2adc647beb78c2fa6c8a4a60ff80b875cd9fa2a60362cf37f",
+    "crates/phasesmith-solution/src/shared_pool.rs": "31dc671b92ea761471b2cc3b2c742d1b83e844851ec80ff4f9472e7961aab629",
+    "crates/phasesmith-solution/src/shared_search.rs": "6d5e437bf612a101fa4cc4de0468c8241a532c3e50860f215200b0a1e0383130",
+    "crates/phasesmith-solution/src/solver.rs": "ceb5185407c054ee23d332e22d3f41a5355d758956d93df6cd55acff21d22316",
+    "crates/phasesmith-solution/src/staged_refinement.rs": "6c1ddf05693cea5b20528059d46af3e93e61b7de3ddaef30bc3416ee6ff31657",
+    "crates/phasesmith-solution/src/symmetry_model.rs": "77008da3b39f478d80b51669ce3944b5a2a96afa6c6a0029d6159d5a0f21356b"
+  },
+  "raw_output": "   Compiling phasesmith-solution v0.7.0 (/Users/clemens/Programming/PhaseSmith-hkl-solution/crates/phasesmith-solution)\n    Finished `bench` profile [optimized] target(s) in 4.62s\n     Running benches/solution.rs (target/release/deps/solution-a51ba219c0abff5d)\nBenchmarking count_free_dual_space_32cubed_2108_reflections_50_cycles\nBenchmarking count_free_dual_space_32cubed_2108_reflections_50_cycles: Warming up for 1.0000 s\n\nWarning: Unable to complete 10 samples in 2.0s. You may wish to increase target time to 3.3s or enable flat sampling.\nBenchmarking count_free_dual_space_32cubed_2108_reflections_50_cycles: Collecting 10 samples in estimated 3.3044 s (55 iterations)\nBenchmarking count_free_dual_space_32cubed_2108_reflections_50_cycles: Analyzing\ncount_free_dual_space_32cubed_2108_reflections_50_cycles\n                        time:   [59.238 ms 59.320 ms 59.407 ms]\nFound 3 outliers among 10 measurements (30.00%)\n  1 (10.00%) low severe\n  2 (20.00%) high mild\n\nBenchmarking charge_flip_32cubed_four_atoms_2108_reflections_50_cycles\nBenchmarking charge_flip_32cubed_four_atoms_2108_reflections_50_cycles: Warming up for 1.0000 s\nBenchmarking charge_flip_32cubed_four_atoms_2108_reflections_50_cycles: Collecting 10 samples in estimated 3.1051 s (110 iterations)\nBenchmarking charge_flip_32cubed_four_atoms_2108_reflections_50_cycles: Analyzing\ncharge_flip_32cubed_four_atoms_2108_reflections_50_cycles\n                        time:   [27.608 ms 27.681 ms 27.775 ms]\n                        change: [\u22122.7426% \u22121.7215% \u22120.8443%] (p = 0.00 < 0.05)\n                        Change within noise threshold.\n\n"
+}

@@ -31,6 +31,10 @@ pub struct SharedSearchOptions {
     pub integrated_peak_density: bool,
     /// Cartesian integration radius, in [1e-4,2] angstrom.
     pub peak_density_radius_angstrom: f64,
+    /// Count-free atomicity map RMS threshold, in [0.1,10].
+    pub dual_peak_sigma: f64,
+    /// Count-free atomicity resource cap, in [1,128].
+    pub dual_peak_cap: usize,
 }
 impl Default for SharedSearchOptions {
     fn default() -> Self {
@@ -43,6 +47,8 @@ impl Default for SharedSearchOptions {
             refinement_shortlist: 3,
             integrated_peak_density: true,
             peak_density_radius_angstrom: 0.7,
+            dual_peak_sigma: 2.,
+            dual_peak_cap: 128,
         }
     }
 }
@@ -641,11 +647,13 @@ pub fn solve_elements(
         || !(1..=16).contains(&search.rounds)
         || !(1..=40).contains(&search.screening_iterations)
         || !(1..=16).contains(&search.refinement_shortlist)
-        || options.phasing != PhasingMethod::ChargeFlip
+        || !search.dual_peak_sigma.is_finite()
+        || !(0.1..=10.).contains(&search.dual_peak_sigma)
+        || !(1..=128).contains(&search.dual_peak_cap)
         || options.refinement.is_none()
     {
         return Err(error(
-            "invalid shared search bounds; requires charge_flip and constrained refinement",
+            "invalid shared search bounds; requires constrained refinement",
         ));
     }
     let mut elements = elements.to_vec();
@@ -766,31 +774,97 @@ pub fn solve_elements(
             break;
         }
         let seed = options.seed.wrapping_add(trial as u64);
-        let flip = charge_flip(
-            shape,
-            &result.data.hkl,
-            &sharpened,
-            &crate::solver::initial_phases(&result.data.hkl, seed),
-            &support,
-            &FlipOptions {
-                cycles: options.cycles,
-                delta_sigma: options.delta_sigma,
-                weak_fraction: options.weak_fraction,
-                cleanup_cycles: options.cleanup_cycles,
-                cancellation: options.cancellation.clone(),
-            },
-            Some(deadline),
-        )?;
+        let use_dual = options.phasing == PhasingMethod::DualSpace
+            || (options.phasing == PhasingMethod::Portfolio && trial % 2 == 1);
+        let phases = crate::solver::initial_phases(&result.data.hkl, seed);
+        let (flip, initialization, vector, adaptive) = if use_dual {
+            let dual_index = if options.phasing == PhasingMethod::Portfolio {
+                trial / 2
+            } else {
+                trial
+            };
+            let mixed: Vec<_> = sharpened
+                .iter()
+                .zip(&result.data.amplitudes)
+                .map(|(&e, &f)| e.sqrt() * f.sqrt())
+                .collect();
+            let state = crate::dual_space(
+                shape,
+                cell,
+                &result.data.hkl,
+                &mixed,
+                &phases,
+                &support,
+                &crate::DualSpaceOptions {
+                    cycles: options.cycles,
+                    peak_selection: crate::PeakSelection::Adaptive {
+                        sigma: search.dual_peak_sigma,
+                        cap: search.dual_peak_cap,
+                    },
+                    mask_sigma: 0.35 * result.data.d_min,
+                    hybrid_m: 3.,
+                    omit_fraction: 0.1,
+                    seed,
+                    patterson_rank: if dual_index % 4 == 3 {
+                        None
+                    } else {
+                        Some(dual_index)
+                    },
+                    cancellation: options.cancellation.clone(),
+                },
+                Some(deadline),
+            )?;
+            (
+                state.trial,
+                state.initialization,
+                state.patterson_vector,
+                state.adaptive_history,
+            )
+        } else {
+            (
+                charge_flip(
+                    shape,
+                    &result.data.hkl,
+                    &sharpened,
+                    &phases,
+                    &support,
+                    &FlipOptions {
+                        cycles: options.cycles,
+                        delta_sigma: options.delta_sigma,
+                        weak_fraction: options.weak_fraction,
+                        cleanup_cycles: options.cleanup_cycles,
+                        cancellation: options.cancellation.clone(),
+                    },
+                    Some(deadline),
+                )?,
+                "random_element_sharpening",
+                None,
+                None,
+            )
+        };
         audit.phasing_starts += 1;
         result.phasing_trials.push(PhasingTrial {
-            method: "charge_flip",
-            initialization: "random_element_sharpening",
-            patterson_vector: None,
+            method: if use_dual {
+                "dual_space"
+            } else {
+                "charge_flip"
+            },
+            initialization,
+            patterson_vector: vector,
             seed,
             cycles: flip.history.len(),
             best_cycle: flip.best_cycle,
-            score_kind: "normalized_l1",
-            mask_sigma: None,
+            score_kind: if use_dual {
+                "profiled_amplitude_sse"
+            } else {
+                "normalized_l1"
+            },
+            mask_sigma: if use_dual {
+                Some(0.35 * result.data.d_min)
+            } else {
+                None
+            },
+            adaptive_peaks: adaptive,
         });
         result.histories.push(flip.history);
         let integrated_map = if search.integrated_peak_density {

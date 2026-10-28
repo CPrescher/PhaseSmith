@@ -42,6 +42,8 @@ pub struct PhasingTrial {
     pub score_kind: &'static str,
     /// Gaussian sigma in angstrom for the atomic method.
     pub mask_sigma: Option<f64>,
+    /// Actual count-free mask selection, absent for fixed-count/charge-flip runs.
+    pub adaptive_peaks: Option<crate::AdaptivePeakHistory>,
 }
 
 /// Explicit resource budgets and experimental numerical controls.
@@ -333,7 +335,7 @@ pub fn solve(
                 &support,
                 &crate::DualSpaceOptions {
                     cycles: options.cycles,
-                    atom_count: species.len(),
+                    peak_selection: crate::PeakSelection::Fixed(species.len()),
                     mask_sigma: 0.35 * result.data.d_min,
                     hybrid_m: 3.,
                     omit_fraction: 0.1,
@@ -390,6 +392,7 @@ pub fn solve(
             } else {
                 None
             },
+            adaptive_peaks: None,
         });
         result.histories.push(flip.history);
         let peaks = extract_peaks(&flip.density, shape, species.len())?;

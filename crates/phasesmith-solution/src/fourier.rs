@@ -367,6 +367,19 @@ pub fn extract_peaks(
     {
         return Err(error("invalid density map or atom count"));
     }
+    let mut maxima = local_maxima(density, shape)?;
+    maxima.truncate(count);
+    Ok(refine_peak_indices(&maxima, density, shape))
+}
+
+#[allow(clippy::cast_possible_wrap, clippy::float_cmp)]
+pub(crate) fn local_maxima(
+    density: &[f64],
+    shape: [usize; 3],
+) -> Result<Vec<usize>, SolutionError> {
+    if density.len() != grid_len(shape)? || density.iter().any(|v| !v.is_finite()) {
+        return Err(error("invalid density map"));
+    }
     let mut maxima = Vec::new();
     for i in 0..density.len() {
         if density[i] <= 0.0 {
@@ -377,7 +390,7 @@ pub fn extract_peaks(
             (i / shape[2]) % shape[1],
             i % shape[2],
         ];
-        let h = p.map(|x| x as i32);
+        let h = p.map(|x| i32::try_from(x).expect("validated grid axis <= 128"));
         let mut is_maximum = true;
         'neighbours: for dx in -1..=1 {
             for dy in -1..=1 {
@@ -398,9 +411,21 @@ pub fn extract_peaks(
         }
     }
     maxima.sort_by(|&i, &j| density[j].total_cmp(&density[i]).then(i.cmp(&j)));
-    maxima.truncate(count);
-    Ok(maxima
-        .into_iter()
+    Ok(maxima)
+}
+#[allow(
+    clippy::cast_precision_loss,
+    clippy::cast_possible_wrap,
+    clippy::cast_possible_truncation
+)]
+pub(crate) fn refine_peak_indices(
+    maxima: &[usize],
+    density: &[f64],
+    shape: [usize; 3],
+) -> Vec<[f64; 3]> {
+    maxima
+        .iter()
+        .copied()
         .map(|i| {
             let p = [
                 i / (shape[1] * shape[2]),
@@ -424,7 +449,7 @@ pub fn extract_peaks(
                 ((p[axis] as f64 + offset) / shape[axis] as f64).rem_euclid(1.0)
             })
         })
-        .collect())
+        .collect()
 }
 
 #[cfg(test)]

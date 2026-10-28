@@ -201,6 +201,21 @@ class SolutionCandidate:
 
 
 @dataclass(frozen=True, slots=True)
+class AdaptivePeakHistory:
+    """Data-selected atomicity peaks, distinct from inferred structure counts."""
+
+    sigma: float
+    cap: int
+    selected: tuple[int, ...]
+    thresholds: tuple[float, ...]
+    omitted: tuple[int, ...]
+
+    def __post_init__(self):
+        for name in ("selected", "thresholds", "omitted"):
+            object.__setattr__(self, name, tuple(getattr(self, name)))
+
+
+@dataclass(frozen=True, slots=True)
 class PhasingTrial:
     """Immutable record of an actual Fourier trial and its initialization."""
 
@@ -217,7 +232,12 @@ class PhasingTrial:
     omit_fraction: float | None = None
     omit_period: int | None = None
 
+    atomicity_mode: str | None = None
+    adaptive_peaks: AdaptivePeakHistory | None = None
+
     def __post_init__(self):
+        if isinstance(self.adaptive_peaks, dict):
+            object.__setattr__(self, "adaptive_peaks", AdaptivePeakHistory(**self.adaptive_peaks))
         if self.patterson_vector_grid is not None:
             object.__setattr__(self, "patterson_vector_grid", tuple(self.patterson_vector_grid))
 
@@ -449,13 +469,17 @@ def solve_structure_elements(
     refinement_shortlist: int = 3,
     integrated_peak_density: bool = True,
     peak_density_radius_angstrom: float = 0.7,
+    dual_peak_sigma: float = 2.0,
+    dual_peak_cap: int = 128,
     cancellation: SolutionCancellation | None = None,
 ) -> SolutionResult:
     """Infer full-cell counts and labels by shared-map symmetry-orbit edits.
 
     Every supplied neutral non-H element is required for a target hit. The exact
-    space group remains supplied. Only charge_flip and constrained ADPs are
-    supported. The legacy completion/count-assignment switches are not used.
+    space group remains supplied. Charge-flipping and count-free dual-space or
+    portfolio phasing use the same constrained refinement. Legacy completion and
+    count-assignment switches are not used. Adaptive peak caps bound resources;
+    their selected mask peaks are distinct from inferred atom counts.
     Counts returned in ``composition`` are inferred, never inputs. The default
     atom cap is ceil(cell volume/8 A³), at most 128; it is a search bound.
     """
@@ -482,6 +506,12 @@ def solve_structure_elements(
         or not 1e-4 <= peak_density_radius_angstrom <= 2
     ):
         raise ValueError("peak_density_radius_angstrom must be finite in [1e-4,2]")
+    if (
+        isinstance(dual_peak_sigma, bool)
+        or not np.isfinite(dual_peak_sigma)
+        or not 0.1 <= dual_peak_sigma <= 10
+    ):
+        raise ValueError("dual_peak_sigma must be finite in [0.1,10]")
     if maximum_atoms is None:
         maximum_atoms = min(128, int(np.ceil(cell.geometry().volume_angstrom3 / 8)))
     for name, value, high in (
@@ -490,6 +520,7 @@ def solve_structure_elements(
         ("search_rounds", search_rounds, 16),
         ("screening_iterations", screening_iterations, 40),
         ("refinement_shortlist", refinement_shortlist, 16),
+        ("dual_peak_cap", dual_peak_cap, 128),
     ):
         if isinstance(value, bool) or not isinstance(value, int) or not 1 <= value <= high:
             raise ValueError(f"{name} must be an integer in [1,{high}]")
@@ -513,6 +544,8 @@ def solve_structure_elements(
         refinement_shortlist,
         integrated_peak_density,
         peak_density_radius_angstrom,
+        dual_peak_sigma,
+        dual_peak_cap,
     )
     return _run_solution(observations, cell, group, (), controls, cancellation, shared)
 

@@ -1,18 +1,47 @@
 //! Patterson superposition, hybrid difference Fourier and random-omit atomicity.
 
-use crate::fourier::{Transform, grid_index, grid_len, prepare_fourier};
+use crate::fourier::{
+    Transform, grid_index, grid_len, local_maxima, prepare_fourier, refine_peak_indices,
+};
 use crate::{FlipResult, SolutionError, error, extract_peaks};
 use phasesmith_crystallography::{CellGeometry, UnitCell};
 use rustfft::num_complex::Complex;
 use std::time::Instant;
 
+/// Atomicity selection, explicitly distinguishing supplied counts from data thresholds.
+#[derive(Clone, Debug)]
+pub enum PeakSelection {
+    /// Supplied complete-cell count; legacy warm-up doubles it for 50 cycles.
+    Fixed(usize),
+    /// Positive maxima above a map RMS threshold, bounded without a count prior.
+    Adaptive {
+        /// Positive density threshold as a multiple of map RMS.
+        sigma: f64,
+        /// Resource bound, independent of composition.
+        cap: usize,
+    },
+}
+/// Actual adaptive selection aligned to completed Fourier cycles.
+#[derive(Clone, Debug)]
+pub struct AdaptivePeakHistory {
+    /// Requested density RMS multiplier.
+    pub sigma: f64,
+    /// Resource cap on simultaneous mask peaks.
+    pub cap: usize,
+    /// Actual pre-omission selected peak counts.
+    pub selected: Vec<usize>,
+    /// Actual effective RMS multipliers after overflow adjustment.
+    pub thresholds: Vec<f64>,
+    /// Actual omitted counts, zero outside omission cycles.
+    pub omitted: Vec<usize>,
+}
 /// Explicit controls for the independently implemented published dual-space mechanisms.
 #[derive(Clone, Debug)]
 pub struct DualSpaceOptions {
     /// Maximum cycles, in [1,20000].
     pub cycles: usize,
-    /// Complete-cell atom count, in [1,128].
-    pub atom_count: usize,
+    /// Fixed-count or data-adaptive atomicity selection.
+    pub peak_selection: PeakSelection,
     /// Cartesian Gaussian mask sigma in angstrom, strictly positive.
     pub mask_sigma: f64,
     /// Hybrid difference multiplier, in [1,4].
@@ -36,6 +65,8 @@ pub struct DualSpaceResult {
     pub initialization: &'static str,
     /// Integer Patterson shift modulo grid shape, if used.
     pub patterson_vector: Option<[i32; 3]>,
+    /// Present only for genuinely count-free adaptive selection.
+    pub adaptive_history: Option<AdaptivePeakHistory>,
 }
 
 pub(crate) fn hash64(mut value: u64) -> u64 {
@@ -105,16 +136,76 @@ pub fn atomic_projection(
     options: &DualSpaceOptions,
     cycle: usize,
 ) -> Result<Vec<f64>, SolutionError> {
+    Ok(project_atomicity(density, shape, cell, options, cycle)?.density)
+}
+struct Projection {
+    density: Vec<f64>,
+    selected: usize,
+    sigma: f64,
+    omitted: usize,
+}
+/// Data-selected positions and effective threshold for independent diagnostics.
+/// # Errors
+/// Rejects invalid controls, maps, grid dimensions or a zero RMS multiplier.
+#[allow(clippy::cast_precision_loss)]
+pub fn adaptive_peaks(
+    density: &[f64],
+    shape: [usize; 3],
+    sigma: f64,
+    cap: usize,
+) -> Result<(Vec<[f64; 3]>, f64), SolutionError> {
+    if !sigma.is_finite() || !(0.1..=10.).contains(&sigma) || !(1..=128).contains(&cap) {
+        return Err(error("invalid adaptive peak threshold or cap"));
+    }
+    let maxima = local_maxima(density, shape)?;
+    let maximum = density.iter().map(|v| v.abs()).fold(0., f64::max);
+    if maximum == 0. {
+        return Ok((Vec::new(), sigma));
+    }
+    let rms = maximum
+        * (density.iter().map(|v| (v / maximum).powi(2)).sum::<f64>() / density.len() as f64)
+            .sqrt();
+    let mut effective = sigma;
+    loop {
+        let chosen: Vec<_> = maxima
+            .iter()
+            .copied()
+            .take_while(|&i| density[i] >= effective * rms)
+            .collect();
+        if chosen.len() <= cap {
+            return Ok((refine_peak_indices(&chosen, density, shape), effective));
+        }
+        effective *= 1.5;
+    }
+}
+#[allow(clippy::cast_precision_loss, clippy::cast_possible_truncation)]
+fn project_atomicity(
+    density: &[f64],
+    shape: [usize; 3],
+    cell: UnitCell,
+    options: &DualSpaceOptions,
+    cycle: usize,
+) -> Result<Projection, SolutionError> {
     validate_options(options)?;
     let geometry = cell.geometry().map_err(|e| error(e.to_string()))?;
     let bounds = mask_bounds(shape, &geometry, options.mask_sigma)?;
-    let count = if cycle < 50 {
-        (2 * options.atom_count).min(128)
-    } else {
-        options.atom_count
+    let (peaks, effective) = match options.peak_selection {
+        PeakSelection::Fixed(count) => (
+            extract_peaks(
+                density,
+                shape,
+                if cycle < 50 {
+                    (2 * count).min(128)
+                } else {
+                    count
+                },
+            )?,
+            0.,
+        ),
+        PeakSelection::Adaptive { sigma, cap } => adaptive_peaks(density, shape, sigma, cap)?,
     };
-    let peaks = extract_peaks(density, shape, count)?;
     let skip = omitted(peaks.len(), cycle, options);
+    let omitted_count = skip.iter().filter(|&&v| v).count();
     let mut mask = vec![0.; density.len()];
     let radius2 = (3. * options.mask_sigma).powi(2) * (1. + 1e-12);
     let normalization = (std::f64::consts::TAU).powf(-1.5) / options.mask_sigma.powi(3);
@@ -141,16 +232,26 @@ pub fn atomic_projection(
             }
         }
     }
-    Ok(density
-        .iter()
-        .zip(mask)
-        .map(|(&v, m)| v.max(0.) * m)
-        .collect())
+    Ok(Projection {
+        density: density
+            .iter()
+            .zip(mask)
+            .map(|(&v, m)| v.max(0.) * m)
+            .collect(),
+        selected: peaks.len(),
+        sigma: effective,
+        omitted: omitted_count,
+    })
 }
 
 fn validate_options(o: &DualSpaceOptions) -> Result<(), SolutionError> {
     if !(1..=20_000).contains(&o.cycles)
-        || !(1..=128).contains(&o.atom_count)
+        || match o.peak_selection {
+            PeakSelection::Fixed(n) => !(1..=128).contains(&n),
+            PeakSelection::Adaptive { sigma, cap } => {
+                !sigma.is_finite() || !(0.1..=10.).contains(&sigma) || !(1..=128).contains(&cap)
+            }
+        }
         || !o.mask_sigma.is_finite()
         || !(1e-4..=5.).contains(&o.mask_sigma)
         || !o.hybrid_m.is_finite()
@@ -281,6 +382,16 @@ pub fn dual_space(
         )
     };
     let mut history = Vec::with_capacity(options.cycles);
+    let mut adaptive_history = match options.peak_selection {
+        PeakSelection::Adaptive { sigma, cap } => Some(AdaptivePeakHistory {
+            sigma,
+            cap,
+            selected: Vec::new(),
+            thresholds: Vec::new(),
+            omitted: Vec::new(),
+        }),
+        PeakSelection::Fixed(_) => None,
+    };
     let mut best = density.clone();
     let mut best_score = f64::INFINITY;
     let mut best_cycle = 0;
@@ -289,12 +400,18 @@ pub fn dual_space(
         if crate::stopped(deadline, options.cancellation.as_ref()) {
             break;
         }
-        let projected = atomic_projection(&density, shape, cell, options, cycle)?;
+        let projection = project_atomicity(&density, shape, cell, options, cycle)?;
+        let projected = projection.density;
         if crate::stopped(deadline, options.cancellation.as_ref()) {
             break;
         }
         let mut calculated: Vec<_> = projected.iter().map(|&v| Complex::new(v, 0.)).collect();
         fft.apply(&mut calculated, true);
+        if let Some(audit) = &mut adaptive_history {
+            audit.selected.push(projection.selected);
+            audit.thresholds.push(projection.sigma);
+            audit.omitted.push(projection.omitted);
+        }
         let norm: f64 = indices.iter().map(|&i| calculated[i].norm_sqr()).sum();
         if !norm.is_finite() || norm <= 1e-250 {
             history.push(1.);
@@ -358,6 +475,7 @@ pub fn dual_space(
         },
         initialization,
         patterson_vector: vector,
+        adaptive_history,
     })
 }
 
@@ -383,7 +501,7 @@ mod tests {
         }
         let mut options = DualSpaceOptions {
             cycles: 2,
-            atom_count: 1,
+            peak_selection: PeakSelection::Fixed(1),
             mask_sigma: 0.2,
             hybrid_m: 3.,
             omit_fraction: 0.1,

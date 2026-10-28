@@ -33,7 +33,7 @@ fn run<'py>(
     let support = support.as_slice()?.to_vec();
     let options = DualSpaceOptions {
         cycles,
-        atom_count,
+        peak_selection: phasesmith_solution::PeakSelection::Fixed(atom_count),
         mask_sigma,
         hybrid_m,
         omit_fraction,
@@ -81,7 +81,7 @@ fn projection<'py>(
     let cell = cell(&cell_parameters)?;
     let options = DualSpaceOptions {
         cycles: 1,
-        atom_count,
+        peak_selection: phasesmith_solution::PeakSelection::Fixed(atom_count),
         mask_sigma,
         hybrid_m: 3.,
         omit_fraction,
@@ -97,6 +97,117 @@ fn projection<'py>(
     Ok(out.into_pyarray(py))
 }
 
+pub(super) fn adaptive_record<'py>(
+    py: Python<'py>,
+    h: &phasesmith_solution::AdaptivePeakHistory,
+) -> PyResult<Bound<'py, PyDict>> {
+    let d = PyDict::new(py);
+    d.set_item("sigma", h.sigma)?;
+    d.set_item("cap", h.cap)?;
+    d.set_item("selected", &h.selected)?;
+    d.set_item("thresholds", &h.thresholds)?;
+    d.set_item("omitted", &h.omitted)?;
+    Ok(d)
+}
+#[pyfunction(name = "_solution_count_free_dual_space")]
+#[allow(clippy::too_many_arguments)]
+fn count_free<'py>(
+    py: Python<'py>,
+    shape: [usize; 3],
+    cell_parameters: Vec<f64>,
+    hkl: PyReadonlyArray1<'_, i64>,
+    amplitudes: PyReadonlyArray1<'_, f64>,
+    phases: PyReadonlyArray1<'_, f64>,
+    support: PyReadonlyArray1<'_, u8>,
+    cycles: usize,
+    peak_sigma: f64,
+    peak_cap: usize,
+    mask_sigma: f64,
+    hybrid_m: f64,
+    omit_fraction: f64,
+    seed: u64,
+    patterson_rank: Option<usize>,
+) -> PyResult<Bound<'py, PyDict>> {
+    let cell = cell(&cell_parameters)?;
+    let hkl = hkl_rows(&hkl)?;
+    let amplitudes = amplitudes.as_slice()?.to_vec();
+    let phases = phases.as_slice()?.to_vec();
+    let support = support.as_slice()?.to_vec();
+    let options = DualSpaceOptions {
+        cycles,
+        peak_selection: phasesmith_solution::PeakSelection::Adaptive {
+            sigma: peak_sigma,
+            cap: peak_cap,
+        },
+        mask_sigma,
+        hybrid_m,
+        omit_fraction,
+        seed,
+        patterson_rank,
+        cancellation: None,
+    };
+    let state = py
+        .detach(move || {
+            phasesmith_solution::dual_space(
+                shape,
+                cell,
+                &hkl,
+                &amplitudes,
+                &phases,
+                &support,
+                &options,
+                None,
+            )
+        })
+        .map_err(invalid)?;
+    let d = PyDict::new(py);
+    d.set_item("density", state.trial.density.into_pyarray(py))?;
+    d.set_item("history", state.trial.history.into_pyarray(py))?;
+    d.set_item("best_cycle", state.trial.best_cycle)?;
+    d.set_item("initialization", state.initialization)?;
+    d.set_item("patterson_vector_grid", state.patterson_vector)?;
+    if let Some(h) = state.adaptive_history {
+        d.set_item("adaptive_peaks", adaptive_record(py, &h)?)?;
+    }
+    Ok(d)
+}
+#[pyfunction(name = "_solution_adaptive_projection")]
+#[allow(clippy::too_many_arguments)]
+fn adaptive_projection<'py>(
+    py: Python<'py>,
+    density: PyReadonlyArray1<'_, f64>,
+    shape: [usize; 3],
+    cell_parameters: Vec<f64>,
+    sigma: f64,
+    cap: usize,
+    mask_sigma: f64,
+    omit_fraction: f64,
+    seed: u64,
+    cycle: usize,
+) -> PyResult<Bound<'py, PyDict>> {
+    let rho = density.as_slice()?.to_vec();
+    let cell = cell(&cell_parameters)?;
+    let options = DualSpaceOptions {
+        cycles: 1,
+        peak_selection: phasesmith_solution::PeakSelection::Adaptive { sigma, cap },
+        mask_sigma,
+        hybrid_m: 3.,
+        omit_fraction,
+        seed,
+        patterson_rank: None,
+        cancellation: None,
+    };
+    let (peaks, effective) =
+        phasesmith_solution::adaptive_peaks(&rho, shape, sigma, cap).map_err(invalid)?;
+    let projected = py
+        .detach(move || phasesmith_solution::atomic_projection(&rho, shape, cell, &options, cycle))
+        .map_err(invalid)?;
+    let d = PyDict::new(py);
+    d.set_item("density", projected.into_pyarray(py))?;
+    d.set_item("peaks", super::array2(py, peaks))?;
+    d.set_item("effective_sigma", effective)?;
+    Ok(d)
+}
 pub(super) fn trial_records(
     py: Python<'_>,
     records: Vec<phasesmith_solution::PhasingTrial>,
@@ -112,6 +223,12 @@ pub(super) fn trial_records(
         item.set_item("best_cycle", t.best_cycle)?;
         item.set_item("score_kind", t.score_kind)?;
         item.set_item("mask_sigma_angstrom", t.mask_sigma)?;
+        if let Some(h) = &t.adaptive_peaks {
+            item.set_item("adaptive_peaks", adaptive_record(py, h)?)?;
+            item.set_item("atomicity_mode", "adaptive")?;
+        } else if t.method == "dual_space" {
+            item.set_item("atomicity_mode", "fixed")?;
+        }
         if t.method == "dual_space" {
             item.set_item("hybrid_m", 3.)?;
             item.set_item("sharpening_q", 0.5)?;
@@ -125,6 +242,8 @@ pub(super) fn trial_records(
 
 pub(super) fn register(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_function(wrap_pyfunction!(run, module)?)?;
+    module.add_function(wrap_pyfunction!(count_free, module)?)?;
+    module.add_function(wrap_pyfunction!(adaptive_projection, module)?)?;
     module.add_function(wrap_pyfunction!(projection, module)?)?;
     Ok(())
 }

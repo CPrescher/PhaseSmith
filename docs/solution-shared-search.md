@@ -86,7 +86,10 @@ the preferred state before success is reported. The source observations remain
 unchanged, including negative intensities.
 
 `SolutionOptions` supplies the common phase/refinement budgets and target. This
-path requires `phasing="charge_flip"` and constrained ADPs. Legacy count-based
+path requires constrained ADPs. `phasing="dual_space"` now uses adaptive,
+count-free atomicity; `"portfolio"` alternates strategies. See
+[the count-free comparison](solution-count-free-dual-space.md) for its lower
+demonstrated coverage. Legacy count-based
 completion, P1 polish and fixed-composition assignment controls do not apply.
 `maximum_atoms`, `beam_width` and `search_rounds` are explicit API arguments.
 Cancellation and time limits retain completed initial/edited candidates. The
