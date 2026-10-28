@@ -1,0 +1,201 @@
+# Experimental structure solution from integrated HKL data
+
+This opt-in capability accepts **externally integrated and corrected single-crystal
+X-ray intensities**, independently of PhaseSmith's detector workflow. It is a
+first implementation of published charge-flipping methods, not a claim of
+SHELXT-level coverage. No external solver is a runtime dependency.
+
+## Contract and conventions
+
+The input is a SHELX HKLF 4 table (`h k l I sigma(I)`, optionally a positive
+batch number), a cell in angstrom/degrees, a known space group, and **non-hydrogen
+atom counts in the complete conventional cell**. Twinned HKLF 5 observations,
+amplitudes masquerading as intensities, neutron data, disorder, partial occupancy,
+and anomalous phasing are outside this first slice. No atom coordinates enter
+the solver. An HKL file alone generally does not contain the cell or composition.
+
+Signed source intensities and positive uncertainties are retained unchanged.
+Symmetry-equivalent observations and Friedel mates are inverse-variance merged;
+negative merged intensities become zero **only in the derived phasing amplitudes**,
+`Fo = sqrt(max(Imean, 0))`. This is an explicitly biased initial phasing
+approximation, not a replacement for a likelihood treatment of weak data.
+Systematically absent observations are excluded and counted, not silently fitted.
+Input symmetry supplies intensity equivalences and absences; this implementation
+does not impose or recover a symmetry origin. Atomic candidates are returned and
+exported as a **full-cell P1 model**, up to arbitrary origin and inversion.
+
+## Equations and independent implementation
+
+The independently implemented algorithm follows Oszlanyi & Suto (2004),
+*Acta Cryst.* A60, 134–141, DOI
+[10.1107/S0108767303027569](https://doi.org/10.1107/S0108767303027569), and their
+2008 tutorial, A64, 123–134, especially sections 3–6 and 8, DOI
+[10.1107/S0108767307046028](https://doi.org/10.1107/S0108767307046028).
+No SHELX, SUPERFLIP, or GSAS-II implementation code is used.
+
+For non-resonant scattering, `F(h) = sum_j f_j(s) exp(2 pi i h.x_j)` and
+`s = 1/(2d)`. Phasing uses sharpened amplitudes
+`A(h) = Fo(h) / sqrt(sum_j f_j(s)^2)`, with the existing independently sourced
+Waasmaier–Kirfel scattering table. Source intensities are not altered.
+On an `Nx,Ny,Nz` periodic grid with `N = Nx Ny Nz`, the discrete convention is
+`rho = FFT(F).real / N`, `F = N IFFT(rho)` (NumPy signs). Map values are arbitrary
+units, not calibrated electrons per cubic angstrom. Both FFT signs and this
+normalization are checked against an independent NumPy implementation.
+
+Random starting phases obey Hermitian/Friedel symmetry. `F(000)` starts at zero
+and is subsequently free. With fixed `delta = delta_sigma * std(rho_initial)`,
+one cycle changes `rho < delta` to `-rho` and leaves `rho >= delta` unchanged.
+Measured magnitudes are imposed after transformation; unmeasured coefficients
+inside the measured resolution sphere are free, known absences and coefficients
+outside the sphere are zero. The sphere includes its boundary within a relative
+rounding tolerance of `1e-12`. No measured index may alias a grid/Nyquist boundary.
+The optional weak-reflection variant retains calculated weak magnitudes and
+shifts Friedel-pair phases by opposite `pi/2`, following section 6 of the tutorial.
+Its mask is fixed from the lowest measured sharpened amplitudes.
+
+Candidates are extracted from periodic 26-neighbour maxima with deterministic
+tie breaking and parabolic sub-voxel interpolation. The requested atom count
+selects the strongest maxima; initial element assignment follows descending
+atomic number. This assignment is a hypothesis. Coordinate polishing fits
+unsharpened amplitudes using a common bounded isotropic U and an analytically
+profiled positive amplitude scale. The objective is unweighted amplitude least
+squares; uncertainties are used for merging, not as objective weights.
+
+For calculated amplitudes `a`, `k = (a.Fo)/(a.a)` and `r = k a - Fo`.
+The Jacobian includes `dk/dp`,
+`dk/dp = ((da/dp).Fo - 2 k a.(da/dp))/(a.a)`, and
+`dr/dp = k da/dp + a dk/dp`. Existing native fused structure-factor values and
+analytical coordinate/U derivatives supply `da/dp`. The first atom fixes the
+translational gauge. Damped Gauss–Newton steps use a bounded backtracking search.
+No covariance, uncertainty on atom positions, or statistical confidence is claimed.
+
+## Acceptance and validation
+
+Every run retains trial diagnostics and an explicit budget/termination reason.
+Meeting the caller's amplitude-R1 target means only that the candidate meets
+that numerical target; it is **not proof of a correct or unique structure**.
+Density maps from unsuccessful trials remain diagnostic, not solved structures.
+Synthetic recovery is checked up to origin, inversion, and same-element
+permutations, separately from amplitude fit. Experimental comparisons must
+preserve source provenance and keep archived coordinates out of solver inputs.
+SHELXT is an optional black-box comparison; GSAS-II does not cover this phasing
+algorithm. Its powder oracle fixtures are therefore unchanged.
+
+The numerical crate and binding use the explicit `experimental-solution` feature.
+The default powder build and stable public API remain unchanged.
+
+## Use
+
+Build the experimental feature in a development environment:
+
+```sh
+maturin develop --release --features experimental-solution
+python -m phasesmith.experimental.solution sample.hkl \
+  --cell 4.913 4.913 5.405 90 90 120 \
+  --space-group 'P 31 2 1' --composition Si=3 O=6 \
+  --output runs/sample-solution
+```
+
+The output directory must be new. It contains `result.json`,
+`density-and-observations.npz`, and, if a candidate exists, `candidate-p1.cif`.
+CLI exit status 0 means the requested numerical R1 target was met; 3 means it
+was not met; 2 means invalid input or an execution error. Both 0 and 3 retain
+candidate diagnostics. The input HKL file is never overwritten.
+
+```python
+from phasesmith.crystallography import UnitCell
+from phasesmith.io.hkl import read_hkl
+from phasesmith.io.space_groups import space_group_by_symbol
+from phasesmith.experimental.solution import SolutionOptions, solve_structure
+
+result = solve_structure(
+    read_hkl("sample.hkl"),
+    cell=UnitCell(4.913, 4.913, 5.405, 90, 90, 120),
+    space_group=space_group_by_symbol("P 31 2 1").space_group,
+    composition={"Si": 3, "O": 6},  # all atoms in the complete cell
+    options=SolutionOptions(seed=0, trials=8, cycles=800, max_seconds=60),
+)
+candidate = result.best  # None when no atomic candidate was constructed
+structure = None if candidate is None else candidate.as_structure(result.cell)
+```
+
+`SolutionCancellation` can be supplied separately as `cancellation=token`.
+Another thread may call `token.cancel()` while Rust runs without the GIL.
+Cancellation and wall-clock limits are cooperative, checked between FFT cycles,
+model evaluations and assignment proposals; setup/one numerical operation is
+not preempted. The last available candidates and histories are retained.
+The first slice does not provide checkpoint/resume or live progress callbacks.
+Seeds reproduce a run on the same numerical build/platform when a wall-clock
+or cancellation limit does not intervene; chaotic phasing trajectories can
+differ across FFT implementations/platforms.
+
+Element assignment can use up to `assignment_rounds` (default 4, maximum 8)
+composition-preserving swaps, scoring at most 256 unlike-element pairs per
+round, ordered by atomic-number difference and then site index. Each accepted
+swap reduces the amplitude objective and is followed by coordinate/U polishing.
+The number of accepted swaps is recorded. This is a bounded heuristic, not an
+exhaustive chemical search. Common-U polishing has a first-atom translational
+gauge and does not impose special positions or equality of symmetry-related atoms.
+
+## Experimental development case
+
+The benchmark-only reference audit requires Gemmi and SciPy (the `test` and
+`refinement` extras); the native solver itself requires neither package.
+
+The explicit benchmark `benchmarks/structure_solution.py` uses Antonio L.
+Llamas-Saiz's [thiourea 130 K deposit](https://doi.org/10.5281/zenodo.18910433)
+(8 March 2026, CC-BY-4.0). Exact HKL and reference-CIF members and local SHA-256
+hashes are pinned in `validation/structure-solution-thiourea.json`. The whole
+318 MB archive was not downloaded or locally MD5-verified. Only bounded ZIP
+ranges and the two required members were retrieved.
+
+```sh
+# Network retrieval happens only with the explicit --download-data flag.
+python benchmarks/structure_solution.py --download-data --output runs/thiourea
+# Optional local black-box comparison; exact binary hash is checked:
+python benchmarks/structure_solution.py --output runs/thiourea-with-oracle \
+  --shelxt-executable ~/.local/opt/shelx/versions/2026-10-28/bin/shelxt
+```
+
+Only the corrected HKL, known cell/symmetry and complete non-H composition enter
+the solve. Reference atom coordinates are read afterwards, solely for a separate
+origin/inversion/element-permutation audit. This is an exploratory development
+case, not an untouched validation holdout. It is a molecular crystal and does
+not establish performance across inorganic materials. The deposited model has
+hydrogens and anisotropic displacement, while the current solver does not.
+Published and native residuals therefore do not represent the same objective.
+
+### Recorded 28 October 2026
+
+- Independent FFT-cycle comparisons cover plain/weak-perturbed phasing, free
+  missing coefficients, fixed zeros, Friedel symmetry and normalization. Native
+  amplitude residuals/Jacobians match independent complex sums on fixed and
+  deterministic randomized cases; centered finite differences check polishing.
+- Blind synthetic quartz recovery finds all 9 non-H atoms with amplitude
+  R1 about `8.4e-12`; coordinate matching is checked independently up to origin,
+  inversion and equal-element permutations, with a 0.005 angstrom maximum gate.
+- On the 9,047-observation thiourea file, 8 starts recover all 16 non-H atom
+  positions **and element labels**: maximum/RMS reference distance
+  `0.01527/0.01095` angstrom. Native amplitude R1 remains `0.101923`, so the
+  requested `0.06` target is **not met**, and the stop is `trial_budget`.
+  The recorded wall time is 24.75 seconds on the development Apple Silicon host.
+  A separate pinned SHELXT 2018/2 run also returns a structure, in the equivalent
+  Pmc21 setting with permuted axes. Its search/model and reported R1 differ;
+  this is not an equal-objective accuracy or speed comparison.
+- The frozen numerical/environment record is
+  `benchmarks/structure-solution-thiourea-macos.json`; it includes input and
+  implementation hashes, native-extension hash, options, all best-candidate
+  coordinates, the separate reference audit, and external executable provenance.
+- A 32-cubed Fourier field with 4 point atoms and 2,108 reflection constraints
+  takes about 30 ms for 50 native cycles (Criterion, 10 samples; measured interval
+  28.8–33.6 ms). No established production solver is replaced by this new kernel.
+- `cargo fmt`, strict workspace Clippy, and workspace tests with all features
+  pass: **383 Rust tests/doctests passed**, 34 ignored. The full Python suite
+  passes: **1,199 passed**, 11 skipped, 34 deselected. External/opt-in test
+  exclusions remain visible. A freshly built default wheel passes a native
+  crystallography smoke check and correctly omits the experimental solver.
+
+The scope remains initial full-cell P1 hypotheses for ordered non-resonant
+X-ray structures with supplied composition/symmetry. Automatic space-group
+selection, asymmetric-unit reconstruction, individual/anisotropic displacement,
+hydrogen placement, anomalous data, disorder and twinning are future work.

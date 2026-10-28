@@ -610,6 +610,7 @@ dependencies = [
  "phasesmith-io",
  "phasesmith-model",
  "phasesmith-persistence",
+ "phasesmith-solution",
  "phasesmith-spots",
  "phasesmith-workflows",
 ]
@@ -693,10 +694,20 @@ dependencies = [
  "phasesmith-io",
  "phasesmith-model",
  "phasesmith-persistence",
+ "phasesmith-solution",
  "phasesmith-spots",
  "phasesmith-validation",
  "phasesmith-workflows",
  "pyo3",
+]
+
+[[package]]
+name = "phasesmith-solution"
+version = "0.7.0"
+dependencies = [
+ "criterion",
+ "phasesmith-crystallography",
+ "rustfft",
 ]
 
 [[package]]

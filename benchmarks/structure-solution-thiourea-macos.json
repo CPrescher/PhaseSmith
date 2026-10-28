@@ -1,0 +1,234 @@
+{
+  "source": {
+    "schema": "phasesmith.experimental-solution-source.v1",
+    "title": "Raw X-ray diffraction data for Thiourea at 130 K - Low temperature phase - non-modulated",
+    "creator": "Antonio L. Llamas-Saiz, Universidad de Santiago de Compostela",
+    "doi": "10.5281/zenodo.18910433",
+    "landing_url": "https://zenodo.org/records/18910433",
+    "license": "CC-BY-4.0",
+    "license_url": "https://creativecommons.org/licenses/by/4.0/",
+    "publication_date": "2026-03-08",
+    "checked_date": "2026-10-28",
+    "archive_url": "https://zenodo.org/records/18910433/files/2_T130K_18MPC001.zip",
+    "archive_bytes_from_repository": 318376082,
+    "archive_md5_from_repository": "8fd65514a2bcd5b7332b401795c350a4",
+    "archive_whole_file_locally_verified": false,
+    "members": {
+      "hkl": {
+        "archive_member": "2_T130K_18MPC001/work/18MPC001T130K.hkl",
+        "filename": "18MPC001T130K.hkl",
+        "bytes": 271440,
+        "sha256": "9138164bc1f542b320094b395819af191dbbe77ac4c01f2e21ba55099c074cc1"
+      },
+      "reference_cif": {
+        "archive_member": "2_T130K_18MPC001/work/archive_18MPC001T130K.cif",
+        "filename": "archive_18MPC001T130K.cif",
+        "bytes": 285142,
+        "sha256": "b3fc549fbe77d935839d6f566dc968e3abc13913be206c6b59f98ebbf2cd74c2"
+      }
+    },
+    "solver_inputs": {
+      "cell_angstrom_degrees": [
+        7.4962,
+        8.5211,
+        5.4695,
+        90,
+        90,
+        90
+      ],
+      "known_space_group": "P 21 m a",
+      "composition_full_cell_non_hydrogen": {
+        "C": 4,
+        "N": 8,
+        "S": 4
+      },
+      "source_population": "9047 corrected unmerged observations, including 544 negative intensities",
+      "reference_coordinates_supplied_to_solver": false
+    },
+    "qualification": "Exploratory experimental development case, not an untouched holdout or an inorganic-material validation panel. The source includes hydrogen atoms and anisotropic displacement; the initial solver uses a common isotropic U and excludes H. Published and native R1 use different models/populations and are not an equal-objective comparison."
+  },
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "python": "3.13.7",
+  "numpy": "2.5.4",
+  "wall_seconds": 24.745564417011337,
+  "native_termination": "trial_budget",
+  "amplitude_target_met": false,
+  "options": {
+    "seed": 0,
+    "trials": 8,
+    "cycles": 1200,
+    "delta_sigma": 1.0,
+    "weak_fraction": 0.2,
+    "cleanup_cycles": 10,
+    "polish_iterations": 50,
+    "assignment_rounds": 4,
+    "max_seconds": 60,
+    "r1_target": 0.06,
+    "grid_shape": null
+  },
+  "trial_count": 8,
+  "best_candidate": {
+    "species": [
+      "S",
+      "S",
+      "S",
+      "S",
+      "C",
+      "C",
+      "C",
+      "N",
+      "N",
+      "N",
+      "N",
+      "N",
+      "N",
+      "N",
+      "N",
+      "C"
+    ],
+    "fractional_xyz": [
+      [
+        0.5965384384124415,
+        0.5622115338127086,
+        0.5928629770256305
+      ],
+      [
+        0.09653843841289621,
+        0.5622115338126957,
+        0.8407830188189357
+      ],
+      [
+        0.6148739865657142,
+        0.06216634736496312,
+        0.3682920877901038
+      ],
+      [
+        0.1148739865659019,
+        0.06216634736460902,
+        0.06535390806329608
+      ],
+      [
+        0.7162367246583794,
+        0.5622719888325666,
+        0.3286472213723693
+      ],
+      [
+        0.21623672467251262,
+        0.562271988832336,
+        0.10499877452518021
+      ],
+      [
+        0.54335731903696,
+        0.06206659445787529,
+        0.6654511014861084
+      ],
+      [
+        0.5171095603849502,
+        0.19600876326880223,
+        0.7870074617776578
+      ],
+      [
+        0.5170969905363015,
+        0.9281702365830459,
+        0.7870051166082536
+      ],
+      [
+        0.7661452537098538,
+        0.6968698540371321,
+        0.2222079205515501
+      ],
+      [
+        0.7661358395733566,
+        0.42771662214532336,
+        0.22222469384672275
+      ],
+      [
+        0.26614525373159204,
+        0.6968698540368148,
+        0.2114380751772612
+      ],
+      [
+        0.01710956030761305,
+        0.19600876327685363,
+        0.646638534110185
+      ],
+      [
+        0.017096990534993996,
+        0.9281702365767039,
+        0.6466408792525546
+      ],
+      [
+        0.26613583962599374,
+        0.42771662214539646,
+        0.2114213018560569
+      ],
+      [
+        0.04335731903440241,
+        0.06206659445951303,
+        0.7681948943985468
+      ]
+    ],
+    "u_iso": 0.023333173779672263,
+    "amplitude_scale": 0.5186420003492274,
+    "r1": 0.10192261953001701,
+    "objective": 0.00955613307723925,
+    "trial": 0,
+    "polish_steps": 77,
+    "element_swaps": 3
+  },
+  "implementation_sha256": {
+    "Cargo.lock": "f8a427cc7edfd5463a2929aa00c5473c10dd674553132052aadcef11fd41cdee",
+    "crates/phasesmith-solution/Cargo.toml": "2c1512d81ec22795385ac738779eb7402e410fcd3672384005d444ec8c895917",
+    "crates/phasesmith-py/src/solution.rs": "e84b19c1ab75fc0328d07f6e170749d24552ab941c2a92b622b9e90d3b26b1c4",
+    "python/phasesmith/experimental/solution.py": "3219162030845103656cd7d3fe84212b8b2761909fcc281e5f883d021122e8a5",
+    "python/phasesmith/io/hkl.py": "b64e22a693116d1883b015a271b0df83ef60755881a29289efe5150640c9b434",
+    "crates/phasesmith-crystallography/src/p1.rs": "e1e8fbd22537cb7984bd99a42ad42b56844fc6d9f791437cfdef3bcc60cd62a5",
+    "crates/phasesmith-crystallography/src/scattering.rs": "e65904e84e3b77f43eaac46ec23cdde02364aa3006f4c1f901b5731ed8ef002f",
+    "crates/phasesmith-crystallography/src/scattering_data.rs": "56b90b345418218a5856aad9fecfa9583f3c1c290e36a36bfc8aef3f3fd361f7",
+    "crates/phasesmith-crystallography/src/cell.rs": "a14120432f02fc198ef70402d6fa7fba5535d03c1936ea1e4612d0d05f230d29",
+    "crates/phasesmith-crystallography/src/symmetry.rs": "ad88b01583c92f6b93765ba09774bb8d0d918a29c09ff3c5205b75d62ed8ccb5",
+    "crates/phasesmith-solution/src/data.rs": "3f27a939350ff94f6722c23b1d2609ff10b9ec8119794e2a7cf2076cea27468e",
+    "crates/phasesmith-solution/src/fourier.rs": "0aa29a0ed5e4783688fe1896bfad0dccd304e3ae18bb2211c41242e14dda1701",
+    "crates/phasesmith-solution/src/lib.rs": "f91d4779ac032ae9e2820e0685be3f84edfdd6de32d08dbc24b66ea963239f8b",
+    "crates/phasesmith-solution/src/model.rs": "ea33556efe2a92c43bcf6084407a9ab1b88b754db9f38242a5fa6623e18c6d89",
+    "crates/phasesmith-solution/src/solver.rs": "717399b4a38dcfa3076bb1271e0146c7bfefead22e5f5cb4908afbc41c21fc2b"
+  },
+  "native_extension_sha256": "d4f18fc41547829a4dee822c51c6d56ffe81e40115fcb2606bb72f20920e9502",
+  "native_features": [
+    "experimental-solution",
+    "experimental-spots"
+  ],
+  "post_solve_reference_audit": {
+    "max_element_matched_error_angstrom": 0.015267093603004035,
+    "rms_error_angstrom": 0.01094752165117408,
+    "reference_used_after_solve_only": true,
+    "non_h_atom_count": 16
+  },
+  "external_shelxt": {
+    "binary_sha256": "4d712cb17f8952e1f59f476af7c61ad4ab5261e594c75441c7f81dcefe7b5560",
+    "version": "2018/2",
+    "returncode": 0,
+    "wall_seconds_including_startup": 0.5060594170063268,
+    "instructions": [
+      "TITL External HKL comparison; no coordinates",
+      "CELL 0.71073 7.4962 8.5211 5.4695 90 90 90",
+      "LATT -1",
+      "SYMM x+1/2,y,-z",
+      "SYMM x+1/2,-y,-z",
+      "SYMM x,-y,z",
+      "SFAC C N S",
+      "UNIT 4 8 4",
+      "HKLF 4",
+      "END"
+    ],
+    "qualification": "Default SHELXT model/space-group search differs; timings and R1 are not equal-objective comparisons.",
+    "output_sha256": {
+      "sample.ins": "3109f01852d86b5f2671a3b953c3a74e3a0ca703d184c5827a6964c2f5b37d6f",
+      "sample.hkl": "9138164bc1f542b320094b395819af191dbbe77ac4c01f2e21ba55099c074cc1",
+      "solution.txt": "57d559add3374740a0b573cc0a1f7b9c2847b37ad0d5c8bccdf72421e9a29da5",
+      "sample_a.hkl": "6f4b6c9bab2a16bc5554f68b1ac300b9e200da5c540020ae2e5df05eaf3406ff",
+      "sample.lxt": "1b09c045892808dfaaddfe52e4c72a3054fe9533008970fe8cc10f55e0fd71bc",
+      "sample_a.res": "abb08c19f757e801be0fa707fbbf40be3ba7905b66b767c045543eb2996b7526"
+    }
+  }
+}

@@ -1,0 +1,446 @@
+"""Experimental native structure solution from externally corrected HKLF 4 data.
+
+Build with ``maturin develop --release --features experimental-solution``.
+Run ``python -m phasesmith.experimental.solution --help`` for file-based use.
+The input symmetry expands intensities; output candidates are full-cell P1 models.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+from collections.abc import Mapping, Sequence
+from dataclasses import asdict, dataclass
+from pathlib import Path
+
+import numpy as np
+from numpy.typing import NDArray
+
+from .. import _core
+from ..crystallography import UnitCell
+from ..io.hkl import HklData, read_hkl
+from ..io.space_groups import space_group_by_symbol
+from ..structure import AtomSite, CrystalStructure
+from ..symmetry import SpaceGroup
+
+
+def _freeze(array: object, dtype: object = np.float64) -> np.ndarray:
+    result = np.array(array, dtype=dtype, order="C", copy=True)
+    result.flags.writeable = False
+    return result
+
+
+class SolutionCancellation:
+    """Thread-safe cooperative stop token; cancellation retains completed candidates."""
+
+    __slots__ = ("_native",)
+
+    def __init__(self) -> None:
+        if not hasattr(_core, "_SolutionCancellation"):
+            raise ImportError("cancellation requires the experimental-solution native feature")
+        self._native = _core._SolutionCancellation()
+
+    def cancel(self) -> bool:
+        """Request a stop; return true only for the first request."""
+        return self._native.cancel()
+
+    @property
+    def is_cancelled(self) -> bool:
+        """Whether a stop was requested."""
+        return self._native.is_cancelled()
+
+
+@dataclass(frozen=True, slots=True)
+class SolutionOptions:
+    """Explicit reproducible phase starts, iteration limits, and numerical target."""
+
+    seed: int = 0
+    trials: int = 8
+    cycles: int = 800
+    delta_sigma: float = 1.0
+    weak_fraction: float = 0.2
+    cleanup_cycles: int = 10
+    polish_iterations: int = 50
+    assignment_rounds: int = 4
+    max_seconds: float = 60.0
+    r1_target: float = 0.1
+    grid_shape: tuple[int, int, int] | None = None
+
+    def __post_init__(self) -> None:
+        for name, low, high in (
+            ("seed", 0, 2**64 - 1),
+            ("trials", 1, 128),
+            ("cycles", 1, 20_000),
+            ("cleanup_cycles", 0, 100),
+            ("polish_iterations", 0, 200),
+            ("assignment_rounds", 0, 8),
+        ):
+            value = getattr(self, name)
+            if not isinstance(value, int) or isinstance(value, bool) or not low <= value <= high:
+                raise ValueError(f"{name} must be an integer in [{low},{high}]")
+        for name, low, high in (
+            ("delta_sigma", 0.1, 2.5),
+            ("weak_fraction", 0.0, 0.5),
+            ("max_seconds", 0.0, 3600.0),
+            ("r1_target", 0.0, 1.0),
+        ):
+            value = getattr(self, name)
+            if isinstance(value, bool) or not np.isfinite(value) or not low <= value <= high:
+                raise ValueError(f"{name} must be finite in [{low},{high}]")
+        if self.max_seconds == 0:
+            raise ValueError("max_seconds must be strictly positive")
+        if self.grid_shape is not None:
+            shape = tuple(self.grid_shape)
+            if len(shape) != 3 or any(
+                not isinstance(n, int) or isinstance(n, bool) or not 8 <= n <= 128 or n % 2
+                for n in shape
+            ):
+                raise ValueError("grid_shape must contain three even integers in [8,128]")
+            object.__setattr__(self, "grid_shape", shape)
+
+
+@dataclass(frozen=True, slots=True)
+class SolutionCandidate:
+    """Full-cell atomic hypothesis; a good amplitude fit does not prove correctness."""
+
+    species: tuple[str, ...]
+    fractional_xyz: NDArray[np.float64]
+    u_iso: float
+    amplitude_scale: float
+    r1: float
+    objective: float
+    trial: int
+    polish_steps: int
+    element_swaps: int
+
+    def as_structure(self, cell: UnitCell) -> CrystalStructure:
+        """Create a P1 structure without asserting a symmetry origin or handedness."""
+        sites = tuple(
+            AtomSite(
+                site_id=f"{element}{index + 1}",
+                source_label=f"{element}{index + 1}",
+                type_symbol=element,
+                element_symbol=element,
+                fractional_xyz=tuple(float(v) for v in point),
+                u_iso_angstrom2=self.u_iso,
+            )
+            for index, (element, point) in enumerate(
+                zip(self.species, self.fractional_xyz, strict=True)
+            )
+        )
+        return CrystalStructure(
+            structure_id="experimental-solution",
+            name="Experimental full-cell P1 candidate",
+            cell=cell,
+            space_group=SpaceGroup.p1(),
+            sites=sites,
+            metadata={"status": "unvalidated structure-solution candidate"},
+        )
+
+    def to_record(self) -> dict[str, object]:
+        """Finite JSON-compatible numerical record."""
+        return {
+            "species": list(self.species),
+            "fractional_xyz": self.fractional_xyz.tolist(),
+            "u_iso": self.u_iso,
+            "amplitude_scale": self.amplitude_scale,
+            "r1": self.r1,
+            "objective": self.objective,
+            "trial": self.trial,
+            "polish_steps": self.polish_steps,
+            "element_swaps": self.element_swaps,
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class SolutionResult:
+    """Candidates, diagnostic map, signed inputs, provenance, and truthful stop reason."""
+
+    observations: HklData
+    cell: UnitCell
+    input_space_group: SpaceGroup
+    composition: tuple[tuple[str, int], ...]
+    options: SolutionOptions
+    candidates: tuple[SolutionCandidate, ...]
+    density: NDArray[np.float64]
+    expanded_hkl: NDArray[np.int64]
+    merged_intensity: NDArray[np.float64]
+    merged_sigma: NDArray[np.float64]
+    amplitudes: NDArray[np.float64]
+    family_count: int
+    absent_observations: int
+    nonpositive_families: int
+    d_min: float
+    histories: tuple[NDArray[np.float64], ...]
+    rejected_trials: tuple[tuple[int, str], ...]
+    termination: str
+    target_met: bool
+
+    @property
+    def best(self) -> SolutionCandidate | None:
+        """Lowest amplitude least-squares candidate, possibly still incorrect."""
+        return self.candidates[0] if self.candidates else None
+
+    def to_record(self) -> dict[str, object]:
+        """Summarize a run without embedding large input or density arrays."""
+        return {
+            "schema": "phasesmith.experimental-solution.v1",
+            "experimental": True,
+            "source_name": self.observations.source_name,
+            "source_sha256": self.observations.source_sha256,
+            "cell": self.cell.as_tuple(),
+            "composition_full_cell": dict(self.composition),
+            "input_symmetry_operation_count": len(self.input_space_group.operations),
+            "output_space_group": "P 1",
+            "options": asdict(self.options),
+            "grid_shape": self.density.shape,
+            "density_units": "arbitrary",
+            "source_observation_count": len(self.observations.hkl),
+            "source_negative_count": int(np.count_nonzero(self.observations.intensity < 0)),
+            "family_count": self.family_count,
+            "absent_observations": self.absent_observations,
+            "nonpositive_families": self.nonpositive_families,
+            "d_min_angstrom": self.d_min,
+            "termination": self.termination,
+            "r1_target_met": self.target_met,
+            "candidates": [c.to_record() for c in self.candidates],
+            "phasing_histories": [h.tolist() for h in self.histories],
+            "rejected_trials": list(self.rejected_trials),
+            "limitations": [
+                "Numerical target is not proof of a correct or unique structure.",
+                "Friedel merged; non-resonant X-ray model, full occupancy, common isotropic U.",
+                "Element assignments are provisional; arbitrary origin and inversion remain.",
+                "Negative means clipped only for derived amplitudes; "
+                "unweighted amplitude objective.",
+            ],
+        }
+
+
+def solve_structure(
+    observations: HklData,
+    *,
+    cell: UnitCell,
+    composition: Mapping[str, int],
+    space_group: SpaceGroup | None = None,
+    options: SolutionOptions | None = None,
+    cancellation: SolutionCancellation | None = None,
+) -> SolutionResult:
+    """Phase corrected HKL intensities and return experimental full-cell candidates.
+
+    ``composition`` gives non-H atom counts in the **whole conventional cell**,
+    not the asymmetric unit or one formula unit. No coordinates are accepted.
+    Absent ``space_group`` means P1, with Friedel merging; symmetry is not inferred.
+    """
+    if not hasattr(_core, "_solve_structure"):
+        raise ImportError(
+            "structure solution requires the experimental-solution native feature; "
+            "build with maturin develop --release --features experimental-solution"
+        )
+    if not isinstance(observations, HklData) or not isinstance(cell, UnitCell):
+        raise TypeError("observations and cell must be HklData and UnitCell")
+    if not isinstance(composition, Mapping) or not composition:
+        raise ValueError("composition must map non-hydrogen species to positive full-cell counts")
+    if any(not isinstance(name, str) for name in composition):
+        raise ValueError("composition species must be strings")
+    counts = tuple(sorted(composition.items()))
+    if (
+        any(
+            not isinstance(name, str)
+            or not name
+            or not isinstance(count, int)
+            or isinstance(count, bool)
+            or not 1 <= count <= 128
+            for name, count in counts
+        )
+        or sum(count for _, count in counts) > 128
+    ):
+        raise ValueError(
+            "composition must contain string species and positive counts totaling <=128"
+        )
+    group = SpaceGroup.p1() if space_group is None else space_group
+    controls = SolutionOptions() if options is None else options
+    if not isinstance(group, SpaceGroup) or not isinstance(controls, SolutionOptions):
+        raise TypeError("space_group and options must be SpaceGroup and SolutionOptions")
+    if cancellation is not None and not isinstance(cancellation, SolutionCancellation):
+        raise TypeError("cancellation must be SolutionCancellation or None")
+    raw = _core._solve_structure(
+        observations.hkl.reshape(-1),
+        observations.intensity,
+        observations.sigma,
+        list(cell.as_tuple()),
+        group._native,
+        list(counts),
+        **asdict(controls),
+        cancellation=None if cancellation is None else cancellation._native,
+    )
+    candidates = tuple(
+        SolutionCandidate(
+            species=tuple(c["species"]),
+            fractional_xyz=_freeze(c["fractional_xyz"]),
+            **{
+                key: c[key]
+                for key in (
+                    "u_iso",
+                    "amplitude_scale",
+                    "r1",
+                    "objective",
+                    "trial",
+                    "polish_steps",
+                    "element_swaps",
+                )
+            },
+        )
+        for c in raw["candidates"]
+    )
+    return SolutionResult(
+        observations,
+        cell,
+        group,
+        counts,
+        controls,
+        candidates,
+        _freeze(np.asarray(raw["density"]).reshape(raw["grid_shape"])),
+        _freeze(raw["hkl"], np.int64),
+        _freeze(raw["intensity"]),
+        _freeze(raw["sigma"]),
+        _freeze(raw["amplitudes"]),
+        raw["family_count"],
+        raw["absent_observations"],
+        raw["nonpositive_families"],
+        raw["d_min"],
+        tuple(_freeze(h) for h in raw["histories"]),
+        tuple(tuple(r) for r in raw["rejected_trials"]),
+        raw["termination"],
+        raw["target_met"],
+    )
+
+
+def write_solution(result: SolutionResult, directory: str | Path) -> Path:
+    """Write a fresh output folder containing a report, map/input arrays, and P1 CIF."""
+    destination = Path(directory)
+    destination.mkdir(parents=True, exist_ok=False)
+    (destination / "result.json").write_text(
+        json.dumps(result.to_record(), indent=2, allow_nan=False) + "\n",
+        encoding="utf-8",
+    )
+    np.savez_compressed(
+        destination / "density-and-observations.npz",
+        density=result.density,
+        input_hkl=result.observations.hkl,
+        input_intensity=result.observations.intensity,
+        input_sigma=result.observations.sigma,
+        input_batch=result.observations.batch,
+        expanded_hkl=result.expanded_hkl,
+        merged_intensity=result.merged_intensity,
+        merged_sigma=result.merged_sigma,
+        amplitudes=result.amplitudes,
+    )
+    if result.best is not None:
+        lines = [
+            "data_experimental_candidate",
+            "# Unvalidated PhaseSmith candidate; arbitrary origin and inversion.",
+            "_space_group_name_H-M_alt 'P 1'",
+            "_space_group_IT_number 1",
+        ]
+        for key, value in zip(
+            ("length_a", "length_b", "length_c", "angle_alpha", "angle_beta", "angle_gamma"),
+            result.cell.as_tuple(),
+            strict=True,
+        ):
+            lines.append(f"_cell_{key} {value:.12g}")
+        lines.extend(
+            [
+                "loop_",
+                "_atom_site_label",
+                "_atom_site_type_symbol",
+                "_atom_site_fract_x",
+                "_atom_site_fract_y",
+                "_atom_site_fract_z",
+                "_atom_site_U_iso_or_equiv",
+                "_atom_site_occupancy",
+            ]
+        )
+        for index, (species, xyz) in enumerate(
+            zip(
+                result.best.species,
+                result.best.fractional_xyz,
+                strict=True,
+            )
+        ):
+            lines.append(
+                f"{species}{index + 1} {species} "
+                + " ".join(f"{v:.12g}" for v in xyz)
+                + f" {result.best.u_iso:.12g} 1",
+            )
+        (destination / "candidate-p1.cif").write_text("\n".join(lines) + "\n", encoding="ascii")
+    return destination
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    """Solve a pre-integrated HKL file; exit 3 when the numerical target is unmet."""
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("hkl", type=Path)
+    parser.add_argument(
+        "--cell",
+        type=float,
+        nargs=6,
+        required=True,
+        metavar=("A", "B", "C", "ALPHA", "BETA", "GAMMA"),
+    )
+    parser.add_argument(
+        "--composition", nargs="+", required=True, help="full-cell non-H counts, e.g. Si=3 O=6"
+    )
+    parser.add_argument(
+        "--space-group",
+        required=True,
+        help="known HM symbol, e.g. 'P 31 2 1'; P1 for a complete list",
+    )
+    parser.add_argument("--output", type=Path, required=True, help="new output directory")
+    parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--trials", type=int, default=8)
+    parser.add_argument("--cycles", type=int, default=800)
+    parser.add_argument("--max-seconds", type=float, default=60)
+    parser.add_argument("--r1-target", type=float, default=0.1)
+    args = parser.parse_args(argv)
+    try:
+        if args.output.exists():
+            raise ValueError(f"output directory already exists: {args.output}")
+        composition = {}
+        for token in args.composition:
+            name, count = token.split("=", 1)
+            if name in composition:
+                raise ValueError(f"duplicate composition species: {name}")
+            composition[name] = int(count)
+        result = solve_structure(
+            read_hkl(args.hkl),
+            cell=UnitCell(*args.cell),
+            composition=composition,
+            space_group=space_group_by_symbol(args.space_group).space_group,
+            options=SolutionOptions(
+                seed=args.seed,
+                trials=args.trials,
+                cycles=args.cycles,
+                max_seconds=args.max_seconds,
+                r1_target=args.r1_target,
+            ),
+        )
+        write_solution(result, args.output)
+        print(
+            json.dumps(
+                {
+                    "output": str(args.output.resolve()),
+                    "termination": result.termination,
+                    "r1_target_met": result.target_met,
+                    "experimental": True,
+                    "best_r1": None if result.best is None else result.best.r1,
+                },
+                allow_nan=False,
+            )
+        )
+        return 0 if result.target_met else 3
+    except (ValueError, TypeError, OSError, ImportError) as exc:
+        parser.exit(2, f"structure solution: {exc}\n")
+
+
+if __name__ == "__main__":  # pragma: no cover
+    raise SystemExit(main())
