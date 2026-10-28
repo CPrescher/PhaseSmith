@@ -1,6 +1,9 @@
 #![allow(missing_docs)]
 use criterion::{Criterion, criterion_group, criterion_main};
-use phasesmith_solution::{FlipOptions, charge_flip};
+use phasesmith_crystallography::{SpaceGroup, SymmetryOperation, UnitCell};
+use phasesmith_solution::{
+    AdpMode, FlipOptions, PreparedSymmetricModel, charge_flip, recover_symmetry,
+};
 
 fn benchmark(c: &mut Criterion) {
     let shape = [32; 3];
@@ -46,6 +49,40 @@ fn benchmark(c: &mut Criterion) {
         let v = h.map(|x| usize::try_from(x.rem_euclid(32)).unwrap());
         support[(v[0] * 32 + v[1]) * 32 + v[2]] = 2;
     }
+    let cell = UnitCell {
+        a_angstrom: 8.,
+        b_angstrom: 9.,
+        c_angstrom: 10.,
+        alpha_deg: 90.,
+        beta_deg: 90.,
+        gamma_deg: 90.,
+    };
+    let points = [
+        [0.03, 0.07, 0.11],
+        [0.17, 0.29, 0.41],
+        [0.36, 0.62, 0.13],
+        [0.73, 0.21, 0.84],
+        [0.25, 0.75, 0.31],
+        [0.43, 0.14, 0.68],
+        [0.82, 0.56, 0.27],
+        [0.61, 0.87, 0.49],
+    ];
+    let elements = ["Si", "Si", "O", "O", "O", "O", "O", "O"].map(str::to_owned);
+    let group = SpaceGroup::new(vec![SymmetryOperation::identity()]).unwrap();
+    let symmetric = recover_symmetry(cell, &group, &elements, &points, 0.01, None, None).unwrap();
+    let prepared =
+        PreparedSymmetricModel::new(symmetric, &hkl, &amplitudes, AdpMode::Anisotropic).unwrap();
+    let parameters = prepared.initial_parameters(0.015).unwrap();
+    c.bench_function(
+        "symmetric_adp_evaluate_8_atoms_2108_reflections_69_parameters",
+        |b| {
+            b.iter(|| {
+                prepared
+                    .evaluate(std::hint::black_box(&parameters))
+                    .unwrap()
+            });
+        },
+    );
     c.bench_function(
         "charge_flip_32cubed_four_atoms_2108_reflections_50_cycles",
         |b| {

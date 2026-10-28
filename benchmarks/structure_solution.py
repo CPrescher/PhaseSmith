@@ -198,6 +198,12 @@ def main():
     parser.add_argument("--download-data", action="store_true")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--shelxt-executable", type=Path)
+    parser.add_argument(
+        "--refinement",
+        choices=("none", "isotropic", "anisotropic"),
+        default="none",
+        help="Historical P1 baseline is the default; explicitly select the follow-up model.",
+    )
     args = parser.parse_args()
     if args.output.exists():
         parser.error("output directory must be new")
@@ -209,7 +215,9 @@ def main():
     settings = source["solver_inputs"]
     cell = UnitCell(*settings["cell_angstrom_degrees"])
     hkl_path = args.data_directory / source["members"]["hkl"]["filename"]
-    options = SolutionOptions(trials=8, cycles=1200, max_seconds=60, r1_target=0.06)
+    options = SolutionOptions(
+        trials=8, cycles=1200, max_seconds=60, r1_target=0.06, refinement=args.refinement
+    )
     start = time.perf_counter()
     result = solve_structure(
         read_hkl(hkl_path),
@@ -238,6 +246,9 @@ def main():
         "Cargo.lock",
         "crates/phasesmith-solution/Cargo.toml",
         "crates/phasesmith-py/src/solution.rs",
+        "crates/phasesmith-py/src/solution_symmetry.rs",
+        "python/phasesmith/experimental/solution_symmetry.py",
+        "python/phasesmith/experimental/solution_reference.py",
         "python/phasesmith/experimental/solution.py",
         "python/phasesmith/io/hkl.py",
         "crates/phasesmith-crystallography/src/p1.rs",

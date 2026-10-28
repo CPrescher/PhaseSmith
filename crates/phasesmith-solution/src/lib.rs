@@ -1,13 +1,16 @@
 //! Experimental, bounded, file-independent X-ray structure solution.
 //!
 //! Equations and scope: `docs/experimental-structure-solution.md`.
-//! Input symmetry expands intensities; candidates are full-cell P1 models.
+//! Supplied symmetry also constrains optional site/ADP refinement after P1 phasing.
 //! No external crystallographic program is imported, executed, or required.
 
+mod adp_refinement;
 mod data;
 mod fourier;
+mod math3;
 mod model;
 mod solver;
+mod symmetry_model;
 
 use std::fmt::{Display, Formatter};
 use std::sync::{
@@ -15,10 +18,14 @@ use std::sync::{
     atomic::{AtomicBool, Ordering},
 };
 
+pub use adp_refinement::{
+    AdpMode, PreparedSymmetricModel, RefinementSummary, SymmetricEvaluation, SymmetricRefinement,
+};
 pub use data::{Observation, PreparedData, prepare_data};
 pub use fourier::{FlipOptions, FlipResult, charge_flip, extract_peaks};
 pub use model::{ModelEvaluation, PolishedModel, evaluate_model, polish_model};
 pub use solver::{Candidate, Solution, SolveOptions, solve};
+pub use symmetry_model::{AsymmetricSite, SymmetryImage, SymmetryModel, recover_symmetry};
 
 /// Thread-safe cooperative cancellation between bounded numerical steps.
 #[derive(Clone, Debug, Default)]
