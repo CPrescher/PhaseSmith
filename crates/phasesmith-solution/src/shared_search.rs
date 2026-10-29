@@ -63,6 +63,10 @@ pub struct SharedSearchOptions {
     pub calculated_shell_normalization: bool,
     /// Align origins from measured phases and screen complete peak-orbit models first.
     pub phase_origin_selection: bool,
+    /// Add motif density scales and post-screen coupled element assignments.
+    pub chemical_assignment: bool,
+    /// Solve large damped refinement systems with an iterative normal operator.
+    pub iterative_refinement: bool,
 }
 impl Default for SharedSearchOptions {
     fn default() -> Self {
@@ -89,6 +93,8 @@ impl Default for SharedSearchOptions {
             phase_first_selection: true,
             calculated_shell_normalization: true,
             phase_origin_selection: false,
+            chemical_assignment: false,
+            iterative_refinement: false,
         }
     }
 }
@@ -204,6 +210,10 @@ pub struct SharedSearchSummary {
     pub calculated_shell_normalization: bool,
     /// Requested phase-origin/cheap-completion path.
     pub phase_origin_selection: bool,
+    /// Add motif density scales and post-screen coupled element assignments.
+    pub chemical_assignment: bool,
+    /// Solve large damped refinement systems with an iterative normal operator.
+    pub iterative_refinement: bool,
     /// Actual origin/setting/completion work, including failed maps.
     pub phase_origins: Vec<PhaseOriginAudit>,
     /// Successful normalization, or None when not requested/failed.
@@ -286,6 +296,7 @@ struct PromotionSeed {
 enum FitPass<'a> {
     Full,
     Screen(usize),
+    ScreenSeed(&'a [f64], usize),
     Promote(&'a [f64]),
 }
 #[derive(Clone)]
@@ -441,7 +452,7 @@ fn refine(
         .refinement
         .ok_or_else(|| error("shared search requires constrained refinement"))?;
     let (mode, iterations) = match pass {
-        FitPass::Screen(n) => (AdpMode::Isotropic, n),
+        FitPass::Screen(n) | FitPass::ScreenSeed(_, n) => (AdpMode::Isotropic, n),
         _ => (requested_mode, options.symmetry_iterations),
     };
     let mut species = vec![String::new(); model.full_count];
@@ -461,21 +472,24 @@ fn refine(
         return Err(error("shared model is underdetermined"));
     }
     let initial = match pass {
-        FitPass::Promote(site_u) => prepared.initial_site_parameters(site_u)?,
+        FitPass::Promote(site_u) | FitPass::ScreenSeed(site_u, _) => {
+            prepared.initial_site_parameters(site_u)?
+        }
         _ => prepared.initial_parameters(u.clamp(1e-5, 0.2))?,
     };
     let baseline = prepared.evaluate(&initial)?;
     audit.refinements += 1;
-    if matches!(pass, FitPass::Screen(_)) {
+    if matches!(pass, FitPass::Screen(_) | FitPass::ScreenSeed(_, _)) {
         audit.screening_refinements += 1;
     } else {
         audit.final_refinements += 1;
     }
-    let fit = prepared.refine(
+    let fit = prepared.refine_with_solver(
         &initial,
         iterations,
         Some(deadline),
         options.cancellation.as_ref(),
+        audit.iterative_refinement,
     )?;
     let (mut summary, mut full) = fit.summarize(mode, baseline.r1, baseline.objective);
     let aligned: Vec<_> = full
@@ -498,7 +512,8 @@ fn refine(
             *value = ((*value - shift) * f64::from(frame.0)).rem_euclid(1.);
         }
     }
-    let promotion = matches!(pass, FitPass::Screen(_)).then(|| promotion_seed(&fit, &summary));
+    let promotion = matches!(pass, FitPass::Screen(_) | FitPass::ScreenSeed(_, _))
+        .then(|| promotion_seed(&fit, &summary));
     let score = rank(
         fit.evaluation.objective,
         data.family_count,
@@ -1675,6 +1690,7 @@ pub fn solve_elements(
         || !(1..=50).contains(&search.recycling_cycles)
         || (search.tangent_refinement && options.phasing != PhasingMethod::DualSpace)
         || (search.phase_quality_selection && options.phasing != PhasingMethod::DualSpace)
+        || (search.chemical_assignment && !search.phase_origin_selection)
         || options.refinement.is_none()
     {
         return Err(error(
@@ -1836,6 +1852,8 @@ pub fn solve_elements(
         phase_first_selection: search.phase_first_selection,
         calculated_shell_normalization: search.calculated_shell_normalization,
         phase_origin_selection: search.phase_origin_selection,
+        chemical_assignment: search.chemical_assignment,
+        iterative_refinement: search.iterative_refinement,
         normalization: normalization.as_ref().map(|n| n.audit.clone()),
         normalization_diagnostic,
         staged_refinement: search.staged_refinement

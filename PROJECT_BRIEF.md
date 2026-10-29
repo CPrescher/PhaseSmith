@@ -2196,6 +2196,25 @@ improvement. Requested-mode fit attempts fall from 712 to 100. SHELXT still
 recovers 13 structures and 29 totals at a 0.877-second median. These are fixed
 single-seed development collections, not repeated timing or holdout evidence.
 
+A further opt-in pair adds motif-based density scale proposals and coupled
+post-isotropic-fit label changes (`chemical_assignment`) and a diagonally scaled
+conjugate-gradient normal solve for large refinements (`iterative_refinement`).
+The normal solver retains the original analytical Jacobian and all resource
+caps, but avoids building its dense normal matrix. The chemistry search keeps
+required types and total topology, tests single changes and paired swaps after
+coordinate/displacement relaxation, and accepts only improved refined screens.
+Both are independently validated and leave prior defaults available. Equations,
+controls and development-only comparisons are in `docs/solution-chemical-refinement.md`.
+In the same-build four-way 35-case development ablation, chemistry improves
+labelled recovery from 12 to 14 and exact element-count sets from 13 to 15,
+with no lost recoveries and unchanged 26 exact total counts. Iterative refinement
+alone keeps the same 12 structures and lowers median all-outcome time from
+4.308 to 3.535 seconds. Combined reaches 14 structures at 3.348 seconds and
+11 strict 0.02-angstrom recoveries versus control's 9. Requested-mode fitting
+time drops from 63.895 to 34.825 seconds across the panel. These are single-seed
+serial development results with unchanged caps; both controls remain opt-in and
+the 65 holdout outcomes remain unopened.
+
 ## Quality bar
 
 Public behavior is typed and documented. Invalid shapes, non-finite values,

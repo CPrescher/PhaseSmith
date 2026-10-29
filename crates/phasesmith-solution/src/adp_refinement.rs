@@ -710,6 +710,22 @@ impl PreparedSymmetricModel {
         deadline: Option<Instant>,
         cancellation: Option<&Cancellation>,
     ) -> Result<SymmetricRefinement, SolutionError> {
+        self.refine_with_solver(initial, iterations, deadline, cancellation, false)
+    }
+
+    /// Damped polishing with optional diagonally scaled CG for 32 or more parameters.
+    /// The original dense Jacobian budget and line search remain unchanged.
+    /// # Errors
+    /// Rejects the same invalid inputs as `refine`.
+    #[allow(clippy::too_many_lines)]
+    pub fn refine_with_solver(
+        self,
+        initial: &[f64],
+        iterations: usize,
+        deadline: Option<Instant>,
+        cancellation: Option<&Cancellation>,
+        iterative: bool,
+    ) -> Result<SymmetricRefinement, SolutionError> {
         if iterations > 200 {
             return Err(error("symmetric iteration budget must not exceed 200"));
         }
@@ -729,7 +745,8 @@ impl PreparedSymmetricModel {
                 };
                 break;
             }
-            let mut normal = vec![0.; count * count];
+            let use_iterative = iterative && count >= 32;
+            let mut normal = vec![0.; if use_iterative { 0 } else { count * count }];
             let mut gradient = vec![0.; count];
             for i in 0..count {
                 let row = &evaluation.jacobian[i * reflections..(i + 1) * reflections];
@@ -738,7 +755,7 @@ impl PreparedSymmetricModel {
                     .zip(&evaluation.residual)
                     .map(|(a, b)| a * b)
                     .sum();
-                for j in 0..=i {
+                for j in 0..if use_iterative { 0 } else { i + 1 } {
                     let value = row
                         .iter()
                         .zip(&evaluation.jacobian[j * reflections..(j + 1) * reflections])
@@ -753,10 +770,25 @@ impl PreparedSymmetricModel {
                 break;
             }
             for i in 0..count {
-                normal[i * count + i] += damping * normal[i * count + i].max(1e-8);
+                if !use_iterative {
+                    normal[i * count + i] += damping * normal[i * count + i].max(1e-8);
+                }
                 gradient[i] = -gradient[i];
             }
-            let Some(mut step) = crate::model::cholesky_solve(&normal, &gradient) else {
+            let solved = if use_iterative {
+                crate::iterative_normal_step(
+                    &evaluation.jacobian,
+                    &evaluation.residual,
+                    damping,
+                    deadline,
+                    cancellation,
+                )
+                .ok()
+                .map(|v| v.0)
+            } else {
+                crate::model::cholesky_solve(&normal, &gradient)
+            };
+            let Some(mut step) = solved else {
                 damping *= 10.;
                 continue;
             };

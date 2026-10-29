@@ -70,6 +70,8 @@ def worker(args):
         wilson_normalization=args.wilson_normalization,
         phase_quality_selection=args.phase_quality_selection,
         phase_origin_selection=args.phase_origin_selection,
+        chemical_assignment=args.chemical_assignment,
+        iterative_refinement=args.iterative_refinement,
         phase_first_selection=args.phase_first_selection,
         calculated_shell_normalization=not args.legacy_quality_normalization,
     )
@@ -244,6 +246,8 @@ def run(args):
             or previous.get("phase_quality_selection", False) != args.phase_quality_selection
             or previous.get("phase_first_selection", False) != args.phase_first_selection
             or previous.get("phase_origin_selection", False) != args.phase_origin_selection
+            or previous.get("chemical_assignment", False) != args.chemical_assignment
+            or previous.get("iterative_refinement", False) != args.iterative_refinement
             or previous.get("calculated_shell_normalization", False)
             == args.legacy_quality_normalization
         ):
@@ -285,6 +289,8 @@ def run(args):
         "wilson_normalization": args.wilson_normalization,
         "phase_quality_selection": args.phase_quality_selection,
         "phase_origin_selection": args.phase_origin_selection,
+        "chemical_assignment": args.chemical_assignment,
+        "iterative_refinement": args.iterative_refinement,
         "phase_first_selection": args.phase_first_selection,
         "calculated_shell_normalization": not args.legacy_quality_normalization,
         "implementation_sha256": {str(p.relative_to(ROOT)): sha(p) for p in sources},
@@ -403,6 +409,8 @@ def run(args):
                     *(["--legacy-counts"] if args.legacy_counts else []),
                     *(["--wilson-normalization"] if args.wilson_normalization else []),
                     *(["--phase-origin-selection"] if args.phase_origin_selection else []),
+                    *(["--chemical-assignment"] if args.chemical_assignment else []),
+                    *(["--iterative-refinement"] if args.iterative_refinement else []),
                     *(["--phase-quality-selection"] if args.phase_quality_selection else []),
                     *(
                         ["--phase-first-selection"]

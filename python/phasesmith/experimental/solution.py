@@ -388,8 +388,13 @@ class PhaseSettingAudit:
     screens: int
     promotions: int
     diagnostic: str | None
+    chemical_scales: tuple[tuple[str, float, int], ...] = ()
+    reassignment_evaluations: int = 0
+    reassignment_changes: int = 0
+    reassignment_screens: int = 0
 
     def __post_init__(self):
+        object.__setattr__(self, "chemical_scales", tuple(tuple(s) for s in self.chemical_scales))
         object.__setattr__(self, "shift", tuple(self.shift))
         object.__setattr__(self, "scales", tuple(self.scales))
 
@@ -468,6 +473,8 @@ class SharedSearchAudit:
     phase_first_selection: bool = False
     calculated_shell_normalization: bool = False
     phase_origin_selection: bool = False
+    chemical_assignment: bool = False
+    iterative_refinement: bool = False
     phase_origins: tuple[PhaseOriginAudit, ...] = ()
     normalization: WilsonNormalizationAudit | None = None
     normalization_diagnostic: str | None = None
@@ -686,6 +693,8 @@ def solve_structure_elements(
     phase_first_selection: bool = True,
     calculated_shell_normalization: bool = True,
     phase_origin_selection: bool = False,
+    chemical_assignment: bool = False,
+    iterative_refinement: bool = False,
     cancellation: SolutionCancellation | None = None,
 ) -> SolutionResult:
     """Infer full-cell counts and labels by shared-map symmetry-orbit edits.
@@ -708,6 +717,11 @@ def solve_structure_elements(
     framework/edit and adaptive-count schedule; it remains opt-in. Per-map
     origin hypotheses, diagnostics, work counters and stage timings appear in
     ``shared_search.phase_origins``. This does not infer a space group.
+    ``chemical_assignment=True`` adds motif scale proposals and coupled element
+    reassignment after short coordinate/displacement fits; it requires phase-origin
+    selection. ``iterative_refinement=True`` avoids dense normal-matrix construction
+    for fits with at least 32 parameters. The dense Jacobian and original resource
+    caps are retained. Both controls are experimental and off by default.
     Original observations still
     govern final refinement. Missing-data resolution extension is not added here.
     ``adaptive_counts=True`` compares nested residual-orbit additions, repeats
@@ -739,6 +753,14 @@ def solve_structure_elements(
         or len(set(elements)) != len(elements)
     ):
         raise ValueError("elements must be 1..8 distinct neutral non-H symbols")
+    for name, value in (
+        ("chemical_assignment", chemical_assignment),
+        ("iterative_refinement", iterative_refinement),
+    ):
+        if not isinstance(value, bool):
+            raise TypeError(f"{name} must be boolean")
+    if chemical_assignment and not phase_origin_selection:
+        raise ValueError("chemical_assignment requires phase_origin_selection")
     if not isinstance(phase_origin_selection, bool):
         raise TypeError("phase_origin_selection must be boolean")
     if not isinstance(wilson_normalization, bool):
@@ -828,7 +850,7 @@ def solve_structure_elements(
             phase_quality_selection,
             phase_first_selection,
             calculated_shell_normalization,
-            phase_origin_selection,
+            (phase_origin_selection, chemical_assignment, iterative_refinement),
         ),
     )
     return _run_solution(observations, cell, group, (), controls, cancellation, shared)

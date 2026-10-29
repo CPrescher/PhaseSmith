@@ -8,6 +8,7 @@ def peak_completion_reference(
 ):
     """Orbit phase values/jets and profiled amplitude objective, independently in NumPy."""
     hkl, factors = np.asarray(hkl), np.asarray(factors)
+    site_u = np.asarray(u_iso)
     total = np.zeros(len(hkl), dtype=complex)
     derivatives = np.zeros((len(points), 3, len(hkl)), dtype=complex)
     for i, (point, label) in enumerate(zip(points, labels, strict=True)):
@@ -20,11 +21,13 @@ def peak_completion_reference(
                 images.append(image)
                 jacobians.append(rotation)
         phases = np.exp(2j * np.pi * (hkl @ np.asarray(images).T))
+        if site_u.ndim:
+            phases *= np.exp(-8 * np.pi**2 * site_u[i] * s_squared)[:, None]
         total += phases.sum(axis=1) * factors[:, label]
         for a in range(3):
             wave = np.asarray([hkl @ r[:, a] for r in jacobians]).T
             derivatives[i, a] = (2j * np.pi * wave * phases).sum(axis=1) * factors[:, label]
-    attenuation = np.exp(-8 * np.pi**2 * u_iso * np.asarray(s_squared))
+    attenuation = np.exp(-8 * np.pi**2 * (0.0 if site_u.ndim else u_iso) * np.asarray(s_squared))
     magnitude = np.abs(total)
     amplitude = magnitude * attenuation
     k = amplitude @ observed / (amplitude @ amplitude)
@@ -92,3 +95,11 @@ def phase_origin_reference(hkl, amplitudes, coefficients, rotations, translation
         "hessian": (2 * np.pi) ** 2 * np.einsum("n,na,nb->ab", w * np.cos(eta), q, q),
         "alpha_gradient": 12 / np.pi * ((w * eta) @ q),
     }
+
+
+def iterative_normal_reference(jacobian, residual, damping):
+    """Independent dense NumPy solution; J is parameter-major."""
+    j = np.asarray(jacobian).T
+    normal = j.T @ j
+    diagonal = np.maximum(np.diag(normal), 1e-8)
+    return np.linalg.solve(normal + damping * np.diag(diagonal), -(j.T @ residual))

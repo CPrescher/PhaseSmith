@@ -122,8 +122,11 @@ def test_hand_equivalents_do_not_crowd_out_a_distinct_quarter_origin():
 
 
 @pytest.mark.parametrize("symbol", ["P1", "P-1", "Pm"])
+@pytest.mark.parametrize("chemical_assignment", [False, True])
 @pytest.mark.parametrize("maximum_atoms", [32, 128])
-def test_phase_origin_completion_recovers_counts_and_source_frame(symbol, maximum_atoms):
+def test_phase_origin_completion_recovers_counts_and_source_frame(
+    symbol, maximum_atoms, chemical_assignment
+):
     from phasesmith.experimental.solution import SolutionOptions, solve_structure_elements
     from test_solution_shared_search import synthetic
 
@@ -139,6 +142,8 @@ def test_phase_origin_completion_recovers_counts_and_source_frame(symbol, maximu
         wilson_normalization=True,
         phase_quality_selection=True,
         phase_origin_selection=True,
+        chemical_assignment=chemical_assignment,
+        iterative_refinement=chemical_assignment,
         options=SolutionOptions(
             phasing="dual_space",
             trials=4,

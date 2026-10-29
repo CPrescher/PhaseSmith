@@ -10,6 +10,7 @@ mod completion_orbit;
 mod data;
 mod dual_space;
 mod fourier;
+mod linear_step;
 mod math3;
 mod model;
 mod peak_completion;
@@ -44,8 +45,12 @@ pub use dual_space::{
     dual_space_monitored,
 };
 pub use fourier::{FlipOptions, FlipResult, charge_flip, extract_peaks};
+pub use linear_step::iterative_normal_step;
 pub use model::{ModelEvaluation, PolishedModel, evaluate_model, polish_model};
-pub use peak_completion::{PeakCompletionCandidate, PeakCompletionResult, PreparedPeakCompletion};
+pub use peak_completion::{
+    ChemicalScale, PeakCompletionCandidate, PeakCompletionResult, PreparedPeakCompletion,
+    chemical_density_scales,
+};
 pub use peak_density::{IntegratedPeakDensity, PeakIntegral, ball_transform, density_label_mask};
 pub use phase_origin::{
     PhaseOriginCandidate, PhaseOriginEvaluation, PhaseOriginMap, PreparedPhaseOrigin,
