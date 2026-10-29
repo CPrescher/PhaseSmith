@@ -1,0 +1,191 @@
+{
+  "schema": "phasesmith.reflection-prediction-kernels.v1",
+  "recorded_utc": "2026-10-29T21:28:10.575986+00:00",
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "command": "cargo bench -p phasesmith-solution --bench solution -- 'reflection_prediction_' --sample-size 10 --warm-up-time 1 --measurement-time 2 --noplot",
+  "qualification": "Multi-peak 32-cubed maps, 2108 measured rows, observed-envelope theory support at reciprocal extension factor 1.2. Criterion intervals/estimates in nanoseconds. Isolated from corpus collection and tests. These are kernel costs, not whole-search speed estimates.",
+  "benchmark_source": "crates/phasesmith-solution/benches/solution.rs",
+  "benchmark_source_sha256": "8ebb520341a153e83462cedc1fcb518311d202ff314e820e583c16f1cffa265e",
+  "executable": "target/release/deps/solution-a51ba219c0abff5d",
+  "executable_sha256": "370fabb1a47c2e4bf3525176c16680c19e0f9a1d6e865b126840d5e086b9892f",
+  "numerical_source_sha256": {
+    "crates/phasesmith-solution/src/adp_refinement.rs": "a95be6a17099f74e8880df9f7e9da648c59b0da1eae6d196c869c3b518c9381e",
+    "crates/phasesmith-solution/src/chemical_labels.rs": "ed35d2221ae708f5b0febde579971ca364da2129977427e7c1a8b08897466062",
+    "crates/phasesmith-solution/src/completion.rs": "08523bbe80b71f0f29f01345d36713ac8dd3cb6134e812414ea6be5c94dd3081",
+    "crates/phasesmith-solution/src/completion_orbit.rs": "74901c137016cfdf5b18f911282fa2b995b80fb183508856b91ca8a902b52227",
+    "crates/phasesmith-solution/src/data.rs": "3f27a939350ff94f6722c23b1d2609ff10b9ec8119794e2a7cf2076cea27468e",
+    "crates/phasesmith-solution/src/dual_space.rs": "40a9fe090687abb01a366f0abd7559f3330b71d86b52e87534a9431e066eeb14",
+    "crates/phasesmith-solution/src/fourier.rs": "6785270fd617e7f0a15b60079cba12eda94c1c1d7432ce0aec1ea507a820a861",
+    "crates/phasesmith-solution/src/lib.rs": "2dcfac78142312d83187e29e3b15fb9853f516742c14dcb0dad37605a818181d",
+    "crates/phasesmith-solution/src/linear_step.rs": "e5e899d91cbba62ca3d83059982785705d4bd2a195eb8f34d7a1d59355e0d4ea",
+    "crates/phasesmith-solution/src/math3.rs": "fa00ccf3888b6bd86fa62c7b160a8e5f11d933e3736231342a179459d247bd4d",
+    "crates/phasesmith-solution/src/model.rs": "c0d802de5d8725f527ab1b40181fe0d4b12387b2c715ad188de5b409e0105139",
+    "crates/phasesmith-solution/src/peak_completion.rs": "4bf240d56f4aac6cfda5cad4d0ba35c159b8bd9db297a2163890bc4601c77550",
+    "crates/phasesmith-solution/src/peak_density.rs": "97a242cae68157a2adc647beb78c2fa6c8a4a60ff80b875cd9fa2a60362cf37f",
+    "crates/phasesmith-solution/src/phase_origin.rs": "02de98a759578726460fe27b9b7b0ced7ef430b242bb6eac728d3c9912ed5022",
+    "crates/phasesmith-solution/src/phase_quality.rs": "848a42a21f5192c6f843f86161b355c9129e963cb806f62df186ce19eec56580",
+    "crates/phasesmith-solution/src/reflection_prediction.rs": "2dd0a2f8d1ccc5cccab9d1bafcb034bc52fd409d45284b026c6ad95f26ee07f9",
+    "crates/phasesmith-solution/src/shared_phase_path.rs": "91e43902a676429c8827a99488a2bd8d5ed7b1e71104695e13cf816edc5bee47",
+    "crates/phasesmith-solution/src/shared_pool.rs": "31dc671b92ea761471b2cc3b2c742d1b83e844851ec80ff4f9472e7961aab629",
+    "crates/phasesmith-solution/src/shared_search.rs": "40641486a05141622721c5f54437f1e07aef4cf6b16518eea00c5ae5b1e1d4c2",
+    "crates/phasesmith-solution/src/solver.rs": "302429ec1b3522b848abdc7a050a5511796913842f233b6f0c53834bbf584e22",
+    "crates/phasesmith-solution/src/staged_refinement.rs": "6c1ddf05693cea5b20528059d46af3e93e61b7de3ddaef30bc3416ee6ff31657",
+    "crates/phasesmith-solution/src/symmetry_model.rs": "aec3f512ca23f882476081e0708dbaaadf0ba6a8d88088e4d69fab602c207005",
+    "crates/phasesmith-solution/src/symmetry_recycling.rs": "40331677028e57cc51a5d874d2dfff103d199a52ad8abdcd67f17804769c51bd",
+    "crates/phasesmith-solution/src/tangent.rs": "25fab86895c4401d46d722d04900fda1c912d4247f346f6ed7f0fd7c04393e79"
+  },
+  "samples": {
+    "reflection_prediction_plan_32cubed_2108_measured_rows": {
+      "estimates": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 959114.0348491542,
+            "upper_bound": 966349.5704628761
+          },
+          "point_estimate": 962695.1632758982,
+          "standard_error": 1855.3535606825249
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 957153.5131578947,
+            "upper_bound": 968354.8976608186
+          },
+          "point_estimate": 962521.7166353384,
+          "standard_error": 3966.4706429984685
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 452.3199481099892,
+            "upper_bound": 9600.249372324815
+          },
+          "point_estimate": 8104.885662030629,
+          "standard_error": 2487.535499382923
+        },
+        "slope": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 957419.9991840065,
+            "upper_bound": 966011.096320824
+          },
+          "point_estimate": 961347.2146958305,
+          "standard_error": 2203.063617220071
+        },
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 4204.766049712003,
+            "upper_bound": 6959.314500398755
+          },
+          "point_estimate": 6174.266438693429,
+          "standard_error": 698.3639279709056
+        }
+      },
+      "raw": {
+        "sampling_mode": "Linear",
+        "iters": [
+          38.0,
+          76.0,
+          114.0,
+          152.0,
+          190.0,
+          228.0,
+          266.0,
+          304.0,
+          342.0,
+          380.0
+        ],
+        "times": [
+          36859125.0,
+          72743667.0,
+          110643250.0,
+          145755959.0,
+          181909792.0,
+          220780791.0,
+          256988625.0,
+          290252125.0,
+          330622625.0,
+          363643500.0
+        ]
+      }
+    },
+    "reflection_prediction_update_32cubed_2108_measured_rows": {
+      "estimates": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 25861.380396104934,
+            "upper_bound": 26803.69791832487
+          },
+          "point_estimate": 26347.168033198388,
+          "standard_error": 243.59419598304424
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 25409.281700288186,
+            "upper_bound": 27038.635046429714
+          },
+          "point_estimate": 26606.11881432688,
+          "standard_error": 455.3240573445407
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 58.689275398976974,
+            "upper_bound": 1307.5088422589786
+          },
+          "point_estimate": 671.2294541735944,
+          "standard_error": 396.27672070129796
+        },
+        "slope": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 26568.26936789634,
+            "upper_bound": 27025.110891604876
+          },
+          "point_estimate": 26890.96966952356,
+          "standard_error": 119.42350875013011
+        },
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 428.0332603124525,
+            "upper_bound": 931.3490401865873
+          },
+          "point_estimate": 810.7590142170278,
+          "standard_error": 118.61231991918065
+        }
+      },
+      "raw": {
+        "sampling_mode": "Linear",
+        "iters": [
+          1388.0,
+          2776.0,
+          4164.0,
+          5552.0,
+          6940.0,
+          8328.0,
+          9716.0,
+          11104.0,
+          12492.0,
+          13880.0
+        ],
+        "times": [
+          35268083.0,
+          69863750.0,
+          105125292.0,
+          145251500.0,
+          182656917.0,
+          225060083.0,
+          261290417.0,
+          301729958.0,
+          338127083.0,
+          374895750.0
+        ]
+      }
+    }
+  }
+}

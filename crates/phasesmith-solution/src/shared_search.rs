@@ -67,6 +67,10 @@ pub struct SharedSearchOptions {
     pub chemical_assignment: bool,
     /// Solve large damped refinement systems with an iterative normal operator.
     pub iterative_refinement: bool,
+    /// Regularize allowed unmeasured coefficients using the observed Wilson envelope.
+    pub missing_reflections: bool,
+    /// Reciprocal-radius extension multiplier, in [1,1.5].
+    pub resolution_extension: f64,
 }
 impl Default for SharedSearchOptions {
     fn default() -> Self {
@@ -95,6 +99,8 @@ impl Default for SharedSearchOptions {
             phase_origin_selection: false,
             chemical_assignment: false,
             iterative_refinement: false,
+            missing_reflections: false,
+            resolution_extension: 1.,
         }
     }
 }
@@ -214,6 +220,20 @@ pub struct SharedSearchSummary {
     pub chemical_assignment: bool,
     /// Solve large damped refinement systems with an iterative normal operator.
     pub iterative_refinement: bool,
+    /// Requested observed-envelope gap treatment.
+    pub missing_reflections: bool,
+    /// Requested reciprocal-radius extension.
+    pub resolution_extension: f64,
+    /// Actual reciprocal support provenance, absent for the original path.
+    pub prediction: Option<crate::PredictionAudit>,
+    /// Actual prediction calls in phasing and supplied-symmetry recycling.
+    pub prediction_steps: usize,
+    /// Actual nonzero predicted pair updates, summed over calls.
+    pub prediction_updates: usize,
+    /// Updates reaching the normalized magnitude cap.
+    pub prediction_clipped: usize,
+    /// Time in prediction updates (also included in parent stage timers).
+    pub prediction_seconds: f64,
     /// Actual origin/setting/completion work, including failed maps.
     pub phase_origins: Vec<PhaseOriginAudit>,
     /// Successful normalization, or None when not requested/failed.
@@ -1691,6 +1711,12 @@ pub fn solve_elements(
         || (search.tangent_refinement && options.phasing != PhasingMethod::DualSpace)
         || (search.phase_quality_selection && options.phasing != PhasingMethod::DualSpace)
         || (search.chemical_assignment && !search.phase_origin_selection)
+        || !search.resolution_extension.is_finite()
+        || !(1. ..=1.5).contains(&search.resolution_extension)
+        || ((search.missing_reflections || search.resolution_extension > 1.)
+            && (!search.phase_origin_selection
+                || !search.wilson_normalization
+                || options.phasing != PhasingMethod::DualSpace))
         || options.refinement.is_none()
     {
         return Err(error(
@@ -1735,11 +1761,25 @@ pub fn solve_elements(
     if lengths.iter().any(|l| l / data.d_min >= 64.) {
         return Err(error("shared resolution sphere exceeds FFT bound"));
     }
+    let prediction_enabled = search.missing_reflections || search.resolution_extension > 1.;
+    let grid_factor = if search.resolution_extension > 1. {
+        lengths
+            .iter()
+            .map(|l| (64. - 1e-6) * data.d_min / l)
+            .fold(search.resolution_extension, f64::min)
+    } else {
+        1.
+    };
     let shape = options.grid_shape.unwrap_or_else(|| {
         lengths.map(|l| {
-            (2 * (l / data.d_min).ceil() as usize + 2)
+            let n = (2 * (l * grid_factor / data.d_min).ceil() as usize + 2)
                 .max(8)
-                .next_power_of_two()
+                .next_power_of_two();
+            if search.resolution_extension > 1. {
+                n.min(128)
+            } else {
+                n
+            }
         })
     });
     crate::fourier::grid_len(shape)?;
@@ -1788,6 +1828,48 @@ pub fn solve_elements(
     {
         sharpened.clone_from(&norm.e_values);
     }
+    let prediction_f = if prediction_enabled {
+        Some(crate::PreparedReflectionPrediction::new(
+            shape,
+            cell,
+            group,
+            &data,
+            normalization
+                .as_ref()
+                .ok_or_else(|| error("prediction normalization failed"))?,
+            &elements,
+            &data.amplitudes,
+            1.,
+            search.missing_reflections,
+            search.resolution_extension,
+        )?)
+    } else {
+        None
+    };
+    let prediction_g = if prediction_enabled {
+        let mixed: Vec<_> = sharpened
+            .iter()
+            .zip(&data.amplitudes)
+            .map(|(&e, &f)| e.sqrt() * f.sqrt())
+            .collect();
+        Some(crate::PreparedReflectionPrediction::new(
+            shape,
+            cell,
+            group,
+            &data,
+            normalization
+                .as_ref()
+                .ok_or_else(|| error("prediction normalization failed"))?,
+            &elements,
+            &mixed,
+            0.5,
+            search.missing_reflections,
+            search.resolution_extension,
+        )?)
+    } else {
+        None
+    };
+    let support = prediction_g.as_ref().map_or(support, |p| p.support.clone());
     let quality_plan = if search.phase_quality_selection {
         normalization
             .as_ref()
@@ -1854,6 +1936,9 @@ pub fn solve_elements(
         phase_origin_selection: search.phase_origin_selection,
         chemical_assignment: search.chemical_assignment,
         iterative_refinement: search.iterative_refinement,
+        missing_reflections: search.missing_reflections,
+        resolution_extension: search.resolution_extension,
+        prediction: prediction_f.as_ref().map(|p| p.audit.clone()),
         normalization: normalization.as_ref().map(|n| n.audit.clone()),
         normalization_diagnostic,
         staged_refinement: search.staged_refinement
@@ -1898,7 +1983,11 @@ pub fn solve_elements(
         tangent_plan.as_ref()
     };
     let phase_context = if search.phase_origin_selection {
-        Some(phase_path::PhaseSearchContext::new(&result.data, group)?)
+        Some(phase_path::PhaseSearchContext::new(
+            &result.data,
+            group,
+            prediction_f,
+        )?)
     } else {
         None
     };
@@ -1990,7 +2079,7 @@ pub fn solve_elements(
             } else {
                 deadline
             };
-            let mut state = crate::dual_space::dual_space_guided(
+            let mut state = crate::dual_space::dual_space_guided_prediction(
                 shape,
                 cell,
                 &phasing_hkl,
@@ -2022,7 +2111,12 @@ pub fn solve_elements(
                 },
                 dual_tangent,
                 quality_plan.as_ref(),
+                prediction_g.as_ref(),
             )?;
+            audit.prediction_steps += state.prediction.len();
+            audit.prediction_updates += state.prediction.iter().map(|s| s.updated).sum::<usize>();
+            audit.prediction_clipped += state.prediction.iter().map(|s| s.clipped).sum::<usize>();
+            audit.prediction_seconds += state.prediction_seconds;
             if let Some(mut quality) = state.quality.take() {
                 if phase_first
                     && !search.phase_origin_selection

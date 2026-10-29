@@ -73,8 +73,11 @@ def compare(paths, manifest, pairs=()):
                 "phase_origin_selection",
                 "chemical_assignment",
                 "iterative_refinement",
+                "missing_reflections",
+                "resolution_extension",
             ):
-                if row["effort"].get(flag, False) != report.get(flag, False):
+                default = 1.0 if flag == "resolution_extension" else False
+                if row["effort"].get(flag, default) != report.get(flag, default):
                     raise ValueError("header/worker feature mismatch")
         common = [id for id in ids if rows[id]["correct"] and baseline[id]["correct"]]
         cases = []
@@ -107,6 +110,9 @@ def compare(paths, manifest, pairs=()):
                     "seconds": r["wall_seconds_including_startup"],
                     "r1": r["model"]["reported_r1"] if r.get("model") else None,
                     "phasing_starts": r["effort"]["phasing_starts"],
+                    "quality_scored_cycles": sum(
+                        len(q.get("cfom", [])) for q in r["effort"].get("phase_quality", [])
+                    ),
                     "screening_refinements": r["effort"].get("screening_refinements", 0),
                     "final_refinements": r["effort"].get("final_refinements", 0),
                     "completion_evaluations": sum(
@@ -124,6 +130,11 @@ def compare(paths, manifest, pairs=()):
                     "chemical_scale_proposals": sum(
                         len(s.get("chemical_scales", [])) for a in origins for s in a["settings"]
                     ),
+                    "prediction": r["effort"].get("prediction"),
+                    "prediction_steps": r["effort"].get("prediction_steps", 0),
+                    "prediction_updates": r["effort"].get("prediction_updates", 0),
+                    "prediction_clipped": r["effort"].get("prediction_clipped", 0),
+                    "prediction_seconds": r["effort"].get("prediction_seconds", 0.0),
                     "stage_seconds": stage_seconds,
                     "quality_alternatives": sum(
                         q.get("alternative_handoffs", 0)
@@ -141,6 +152,8 @@ def compare(paths, manifest, pairs=()):
             "phase_origin_selection": report.get("phase_origin_selection", False),
             "chemical_assignment": report.get("chemical_assignment", False),
             "iterative_refinement": report.get("iterative_refinement", False),
+            "missing_reflections": report.get("missing_reflections", False),
+            "resolution_extension": report.get("resolution_extension", 1.0),
             "phase_first_selection": report.get(
                 "phase_first_selection", report["phase_quality_selection"]
             ),
@@ -151,6 +164,7 @@ def compare(paths, manifest, pairs=()):
                 k: sum(c[k] for c in cases)
                 for k in (
                     "phasing_starts",
+                    "quality_scored_cycles",
                     "screening_refinements",
                     "final_refinements",
                     "completion_evaluations",
@@ -158,6 +172,10 @@ def compare(paths, manifest, pairs=()):
                     "reassignment_changes",
                     "reassignment_screens",
                     "chemical_scale_proposals",
+                    "prediction_steps",
+                    "prediction_updates",
+                    "prediction_clipped",
+                    "prediction_seconds",
                 )
             },
             "stage_seconds_totals": {

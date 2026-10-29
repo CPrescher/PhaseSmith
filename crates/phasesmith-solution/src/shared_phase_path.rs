@@ -72,9 +72,14 @@ pub struct PhaseOriginAudit {
 pub(super) struct PhaseSearchContext {
     plan: PreparedPhaseOrigin,
     data: PreparedData,
+    prediction: Option<crate::PreparedReflectionPrediction>,
 }
 impl PhaseSearchContext {
-    pub(super) fn new(data: &PreparedData, group: &SpaceGroup) -> Result<Self, SolutionError> {
+    pub(super) fn new(
+        data: &PreparedData,
+        group: &SpaceGroup,
+        prediction: Option<crate::PreparedReflectionPrediction>,
+    ) -> Result<Self, SolutionError> {
         let plan = PreparedPhaseOrigin::new(group, &data.hkl, &data.amplitudes)?;
         let reps = &plan.representatives;
         let count = reps.len().min(2048);
@@ -93,6 +98,7 @@ impl PhaseSearchContext {
         Ok(Self {
             plan,
             data: screening,
+            prediction,
         })
     }
 }
@@ -290,7 +296,11 @@ pub(super) fn search(
         }
     };
     trace.origin_candidates = origins.len();
-    let support = crate::solver::reciprocal_support(shape, cell, group, &result.data)?;
+    let support = if let Some(p) = &context.prediction {
+        p.support.clone()
+    } else {
+        crate::solver::reciprocal_support(shape, cell, group, &result.data)?
+    };
     let mut screened = Vec::new();
     for origin in origins.into_iter().filter(|c| c.alpha <= 0.3).take(2) {
         if crate::stopped(Some(deadline), options.cancellation.as_ref()) {
@@ -315,7 +325,7 @@ pub(super) fn search(
             reassignment_screens: 0,
         };
         let start = Instant::now();
-        let recycled = crate::recycle_density_guided(
+        let recycled = crate::symmetry_recycling::recycle_density_guided_prediction(
             shape,
             &result.data.hkl,
             &result.data.amplitudes,
@@ -329,6 +339,7 @@ pub(super) fn search(
             options.cancellation.as_ref(),
             tangent,
             options.seed.wrapping_add(trial as u64),
+            context.prediction.as_ref(),
         );
         trace.recycling_seconds += start.elapsed().as_secs_f64();
         let recycled = match recycled {
@@ -339,6 +350,10 @@ pub(super) fn search(
                 continue;
             }
         };
+        audit.prediction_steps += recycled.prediction.len();
+        audit.prediction_updates += recycled.prediction.iter().map(|s| s.updated).sum::<usize>();
+        audit.prediction_clipped += recycled.prediction.iter().map(|s| s.clipped).sum::<usize>();
+        audit.prediction_seconds += recycled.prediction_seconds;
         let start = Instant::now();
         let proposed = (|| {
             let (points, masses) = peak_orbits(

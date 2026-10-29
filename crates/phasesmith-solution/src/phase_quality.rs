@@ -107,6 +107,31 @@ fn residual_at(shells: &[WilsonShell], x: f64) -> f64 {
     shells.last().expect("nonempty shells").log_residual
 }
 impl WilsonNormalization {
+    /// Evaluate the fitted observed envelope at additional HKLs without adding observations.
+    /// # Errors
+    /// Rejects malformed reciprocal rows, cells, species or invalid extrapolations.
+    pub fn expected_for_hkl(
+        &self,
+        cell: UnitCell,
+        group: &SpaceGroup,
+        elements: &[String],
+        hkl: &[[i32; 3]],
+    ) -> Result<Vec<f64>, SolutionError> {
+        if hkl.len() > 1_048_576
+            || hkl
+                .iter()
+                .any(|h| *h == [0; 3] || h.iter().any(|v| v.unsigned_abs() > 1024))
+        {
+            return Err(error("invalid prediction envelope HKLs"));
+        }
+        let x = resolution(cell, hkl)?;
+        let c = form_squares(elements, &x)?;
+        hkl.iter()
+            .zip(x)
+            .zip(c)
+            .map(|((&h, x), c)| self.expected(x, c, epsilon(group, h)?))
+            .collect()
+    }
     fn expected(&self, x: f64, c: f64, eps: usize) -> Result<f64, SolutionError> {
         #[allow(clippy::cast_precision_loss)]
         let value = eps as f64

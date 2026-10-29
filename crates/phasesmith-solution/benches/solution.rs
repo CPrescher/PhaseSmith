@@ -254,6 +254,71 @@ fn benchmark(c: &mut Criterion) {
                 .unwrap()
         });
     });
+    let prediction_observations: Vec<_> = hkl
+        .iter()
+        .zip(&amplitudes)
+        .map(|(&h, &a)| Observation {
+            hkl: h,
+            intensity: a * a,
+            sigma: (a * a * 0.02).max(0.1),
+        })
+        .collect();
+    let prediction_data =
+        phasesmith_solution::prepare_data(&prediction_observations, cell, &group).unwrap();
+    let prediction_norm = phasesmith_solution::normalize_wilson(
+        cell,
+        &group,
+        &prediction_data.hkl,
+        &prediction_data.intensity,
+        &cache_elements,
+    )
+    .unwrap();
+    let make_prediction = || {
+        phasesmith_solution::PreparedReflectionPrediction::new(
+            shape,
+            cell,
+            &group,
+            &prediction_data,
+            &prediction_norm,
+            &cache_elements,
+            &prediction_data.amplitudes,
+            1.,
+            true,
+            1.2,
+        )
+        .unwrap()
+    };
+    let prediction = make_prediction();
+    let mut prediction_values = vec![rustfft::num_complex::Complex::default(); 32_usize.pow(3)];
+    for (index, value) in prediction_values.iter_mut().enumerate() {
+        if prediction.support[index] == 0 {
+            continue;
+        }
+        let node = [index / 1024, index / 32 % 32, index % 32];
+        let h = node.map(|i| f64::from(i32::try_from(i).unwrap()) - if i >= 16 { 32. } else { 0. });
+        for (site, p) in points.iter().enumerate() {
+            let angle = std::f64::consts::TAU * (0..3).map(|a| h[a] * p[a]).sum::<f64>();
+            *value +=
+                rustfft::num_complex::Complex::from_polar(if site < 2 { 14. } else { 8. }, angle);
+        }
+        *value /= prediction.observed_rms;
+    }
+    c.bench_function(
+        "reflection_prediction_plan_32cubed_2108_measured_rows",
+        |b| {
+            b.iter(make_prediction);
+        },
+    );
+    c.bench_function(
+        "reflection_prediction_update_32cubed_2108_measured_rows",
+        |b| {
+            b.iter(|| {
+                prediction
+                    .apply(&mut prediction_values.clone(), 1., 24)
+                    .unwrap()
+            });
+        },
+    );
     c.bench_function("peak_completion_cache_8_atoms_1054_rows", |b| {
         b.iter(make_cache);
     });
