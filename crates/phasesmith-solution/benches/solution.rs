@@ -2,9 +2,10 @@
 use criterion::{Criterion, criterion_group, criterion_main};
 use phasesmith_crystallography::{Rational, SpaceGroup, SymmetryOperation, UnitCell};
 use phasesmith_solution::{
-    AdpMode, DualSpaceOptions, FlipOptions, IntegratedPeakDensity, PreparedElementPool,
-    PreparedOrbitSearch, PreparedSymmetricModel, PreparedTangent, charge_flip, dual_space,
-    recover_symmetry, recycle_density, recycle_density_guided,
+    AdpMode, DualSpaceOptions, FlipOptions, IntegratedPeakDensity, Observation, PhasingMethod,
+    PreparedElementPool, PreparedOrbitSearch, PreparedSymmetricModel, PreparedTangent,
+    SharedSearchOptions, SolveOptions, charge_flip, dual_space, recover_symmetry, recycle_density,
+    recycle_density_guided,
 };
 
 #[allow(clippy::too_many_lines)]
@@ -482,6 +483,64 @@ fn benchmark(c: &mut Criterion) {
             });
         },
     );
+    // Actual multi-atom/count search over 2,108 measured reflection rows,
+    // including density recycling, candidate generation and constrained fits.
+    let calibration = phasesmith_solution::evaluate_model(
+        cell,
+        &hkl,
+        &vec![1.; hkl.len()],
+        &elements,
+        &points,
+        0.012,
+    )
+    .unwrap();
+    #[allow(clippy::cast_precision_loss)]
+    let reference_norm = (hkl.len() as f64).sqrt();
+    let count_observations: Vec<_> = hkl
+        .iter()
+        .zip(&calibration.residual)
+        .map(|(&hkl, &r)| {
+            let amplitude = (r * reference_norm + 1.) / calibration.amplitude_scale;
+            Observation {
+                hkl,
+                intensity: amplitude * amplitude,
+                sigma: 1.,
+            }
+        })
+        .collect();
+    let mut count_benches = c.benchmark_group("count_selection_8_atoms_2108_reflections");
+    count_benches
+        .sample_size(10)
+        .warm_up_time(std::time::Duration::from_secs(1))
+        .measurement_time(std::time::Duration::from_secs(3));
+    for adaptive in [false, true] {
+        count_benches.bench_function(if adaptive { "adaptive" } else { "legacy" }, |b| {
+            b.iter(|| {
+                phasesmith_solution::solve_elements(
+                    &count_observations,
+                    cell,
+                    &group,
+                    &["Si".to_owned(), "O".to_owned()],
+                    &SolveOptions {
+                        trials: 1,
+                        cycles: 64,
+                        max_seconds: 2.,
+                        r1_target: 0.06,
+                        phasing: PhasingMethod::DualSpace,
+                        ..SolveOptions::default()
+                    },
+                    &SharedSearchOptions {
+                        maximum_atoms: 32,
+                        symmetry_recycling: true,
+                        adaptive_counts: adaptive,
+                        ..SharedSearchOptions::default()
+                    },
+                )
+                .unwrap()
+            });
+        });
+    }
+    count_benches.finish();
     c.bench_function(
         "charge_flip_32cubed_four_atoms_2108_reflections_50_cycles",
         |b| {

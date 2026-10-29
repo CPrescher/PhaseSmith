@@ -1,0 +1,2159 @@
+{
+  "schema": "phasesmith.tangent-comparison.v2",
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "repeats": 1,
+  "seeds": [
+    0
+  ],
+  "options": {
+    "seed": 0,
+    "trials": 1,
+    "cycles": 800,
+    "phasing": "dual_space",
+    "delta_sigma": 1.0,
+    "weak_fraction": 0.2,
+    "cleanup_cycles": 10,
+    "polish_iterations": 50,
+    "assignment_rounds": 4,
+    "max_seconds": 60,
+    "r1_target": 0.06,
+    "grid_shape": null,
+    "refinement": "anisotropic",
+    "symmetry_tolerance_angstrom": 0.15,
+    "symmetry_iterations": 80,
+    "completion": false
+  },
+  "options_by_method": {
+    "baseline": {
+      "seed": 0,
+      "trials": 1,
+      "cycles": 800,
+      "phasing": "dual_space",
+      "delta_sigma": 1.0,
+      "weak_fraction": 0.2,
+      "cleanup_cycles": 10,
+      "polish_iterations": 50,
+      "assignment_rounds": 4,
+      "max_seconds": 60,
+      "r1_target": 0.06,
+      "grid_shape": null,
+      "refinement": "anisotropic",
+      "symmetry_tolerance_angstrom": 0.15,
+      "symmetry_iterations": 80,
+      "completion": false,
+      "tangent_refinement": false,
+      "tangent_in_recycling": false,
+      "symmetry_recycling": true
+    },
+    "tangent": {
+      "seed": 0,
+      "trials": 1,
+      "cycles": 800,
+      "phasing": "dual_space",
+      "delta_sigma": 1.0,
+      "weak_fraction": 0.2,
+      "cleanup_cycles": 10,
+      "polish_iterations": 50,
+      "assignment_rounds": 4,
+      "max_seconds": 60,
+      "r1_target": 0.06,
+      "grid_shape": null,
+      "refinement": "anisotropic",
+      "symmetry_tolerance_angstrom": 0.15,
+      "symmetry_iterations": 80,
+      "completion": false,
+      "tangent_refinement": true,
+      "tangent_in_recycling": true,
+      "symmetry_recycling": true
+    }
+  },
+  "methods": [
+    "baseline",
+    "tangent"
+  ],
+  "baseline_kind": "no_tangent",
+  "coupled_phase_placement": "after_supplied_symmetry_projection_before_positivity",
+  "post_symmetry_quartet_guard_tolerance": 1e-12,
+  "coupled_relative_sign_tie_tolerance": 1e-12,
+  "coupled_frozen_magnitude_source": "exact_measured_Fo",
+  "dual_checkpoints": true,
+  "cached_refinement": true,
+  "recycling_cycles": 10,
+  "symmetry_recycling": true,
+  "dual_peak_sigma": 2.0,
+  "dual_peak_cap": 128,
+  "integrated_peak_density": true,
+  "staged_refinement": true,
+  "tangent_controls": {
+    "maximum_strong_variables": 256,
+    "minimum_strong_e": 1.2,
+    "minimum_strong_i_over_sigma": 2.0,
+    "maximum_weak_e_upper_2sigma": 0.9,
+    "maximum_triplets_per_target": 64,
+    "maximum_cross_pairs_per_group": 32,
+    "maximum_quartet_combinations": 2000000,
+    "maximum_quartet_candidates": 32768,
+    "maximum_quartets": 4096,
+    "maximum_quartets_per_variable": 16,
+    "frozen_fraction": 0.4,
+    "annealed_cycles": 12,
+    "initial_temperature_radians": 0.35,
+    "temperature_decay": 0.85,
+    "maximum_perturbation_radians": 1.0471975511965976,
+    "initial_blend": 0.25,
+    "maximum_backtracking_halvings": 6,
+    "quartet_acceptance_tolerance": 1e-12
+  },
+  "peak_density_radius_angstrom": 0.7,
+  "screening_iterations": 8,
+  "refinement_shortlist": 3,
+  "cases": [
+    {
+      "name": "kbrf4",
+      "hkl": "validation/data/structure-solution/cod-1549359/1549359.hkl",
+      "hkl_format": "cif",
+      "hkl_sha256": "d76a88377a6d7236416c47a48b4b61ab15f82199e853184dc76e945e3123c2b0",
+      "cell": [
+        6.0999,
+        6.0999,
+        11.0509,
+        90.0,
+        90.0,
+        90.0
+      ],
+      "space_group": "I4/mcm",
+      "elements": [
+        "Br",
+        "F",
+        "K"
+      ],
+      "reference_after_solving": "validation/data/structure-solution/cod-1549359/1549359.cif",
+      "reference_sha256": "518988e3c4fd244dd24e47d12925722fd5f347ad2c61e398de1f4e5b24033f47"
+    },
+    {
+      "name": "bisei",
+      "hkl": "validation/data/structure-solution/cod-2010577/2010577.hkl",
+      "hkl_format": "cif",
+      "hkl_sha256": "49e22aae5122b83855bc8df2f68e98862d92342e2752390a8254237c2d0f07d0",
+      "cell": [
+        8.6967,
+        4.2205,
+        10.574,
+        90.0,
+        90.0,
+        90.0
+      ],
+      "space_group": "Pnma",
+      "elements": [
+        "Bi",
+        "Se",
+        "I"
+      ],
+      "reference_after_solving": "validation/data/structure-solution/cod-2010577/2010577.cif",
+      "reference_sha256": "50e814119da83512c1328e26fc2a92081aa494b0a81c748119a1737fc8e37337"
+    },
+    {
+      "name": "thiourea",
+      "hkl": "validation/data/structure-solution/thiourea/18MPC001T130K.hkl",
+      "hkl_format": "hkl4",
+      "hkl_sha256": "9138164bc1f542b320094b395819af191dbbe77ac4c01f2e21ba55099c074cc1",
+      "cell": [
+        7.4962,
+        8.5211,
+        5.4695,
+        90.0,
+        90.0,
+        90.0
+      ],
+      "space_group": "P 21 m a",
+      "elements": [
+        "C",
+        "N",
+        "S"
+      ],
+      "reference_after_solving": "validation/data/structure-solution/thiourea/archive_18MPC001T130K.cif",
+      "reference_sha256": "b3fc549fbe77d935839d6f566dc968e3abc13913be206c6b59f98ebbf2cd74c2"
+    }
+  ],
+  "native_sha256": "3ae464acbfae1ddef6ff63d4c3790b7f35dc5225650c8470668d40ba975c10c1",
+  "implementation_sha256": {
+    "crates/phasesmith-solution/src/adp_refinement.rs": "60970f43c95f1aa6af162fe7a8fa2b380686c96defc061e00c19741284f9002e",
+    "crates/phasesmith-solution/src/completion.rs": "08523bbe80b71f0f29f01345d36713ac8dd3cb6134e812414ea6be5c94dd3081",
+    "crates/phasesmith-solution/src/completion_orbit.rs": "74901c137016cfdf5b18f911282fa2b995b80fb183508856b91ca8a902b52227",
+    "crates/phasesmith-solution/src/data.rs": "3f27a939350ff94f6722c23b1d2609ff10b9ec8119794e2a7cf2076cea27468e",
+    "crates/phasesmith-solution/src/dual_space.rs": "f5844c6af4f85a2a0f03545f95c7f30111957f3f86c474965385f0dce90bfd48",
+    "crates/phasesmith-solution/src/fourier.rs": "6785270fd617e7f0a15b60079cba12eda94c1c1d7432ce0aec1ea507a820a861",
+    "crates/phasesmith-solution/src/lib.rs": "6deffa2b3ad927d05b98221b0a35708097197759ae60ab504c33aa46792f6b39",
+    "crates/phasesmith-solution/src/math3.rs": "fa00ccf3888b6bd86fa62c7b160a8e5f11d933e3736231342a179459d247bd4d",
+    "crates/phasesmith-solution/src/model.rs": "c0d802de5d8725f527ab1b40181fe0d4b12387b2c715ad188de5b409e0105139",
+    "crates/phasesmith-solution/src/peak_density.rs": "97a242cae68157a2adc647beb78c2fa6c8a4a60ff80b875cd9fa2a60362cf37f",
+    "crates/phasesmith-solution/src/shared_pool.rs": "31dc671b92ea761471b2cc3b2c742d1b83e844851ec80ff4f9472e7961aab629",
+    "crates/phasesmith-solution/src/shared_search.rs": "84477033aee6970a1ce526cadce20549b143309d72ccd459590734eddaa20dd6",
+    "crates/phasesmith-solution/src/solver.rs": "302429ec1b3522b848abdc7a050a5511796913842f233b6f0c53834bbf584e22",
+    "crates/phasesmith-solution/src/staged_refinement.rs": "6c1ddf05693cea5b20528059d46af3e93e61b7de3ddaef30bc3416ee6ff31657",
+    "crates/phasesmith-solution/src/symmetry_model.rs": "94393e4a05ea3e23df86fdfedf2567a5a0cd413e65994dc6389cf3ef611ddba0",
+    "crates/phasesmith-solution/src/symmetry_recycling.rs": "fc061adddfce869156809996c4944aae046baacfda6cd2ad5e15fcbdd35250fe",
+    "crates/phasesmith-solution/src/tangent.rs": "25fab86895c4401d46d722d04900fda1c912d4247f346f6ed7f0fd7c04393e79",
+    "crates/phasesmith-py/src/solution.rs": "39d86418bbbb14ef68a0533f7ed5dfaecb9734851a778349c585f4d7b899c52a",
+    "crates/phasesmith-py/src/solution_completion.rs": "f054ef8c49ce3f1d6aad5e8c36b94da3f3cf3b0a08570e841060a4bbcbf81517",
+    "crates/phasesmith-py/src/solution_dual.rs": "e8266ae6c8eaf1fced54e78d2033bc6317f81723daf1a846b9c1b8ceccabbbad",
+    "crates/phasesmith-py/src/solution_recycling.rs": "e3f2aa5c969436017d3975c7d404c47d6bfb206366fcf4863e302ed5f4c85cf5",
+    "crates/phasesmith-py/src/solution_shared.rs": "7be1e1a991a9afeee8dcd376551ac904f7886114e21c6e54595c12f494b28ecc",
+    "crates/phasesmith-py/src/solution_symmetry.rs": "318aee0703bfb6bfdbdba0b3779d31bdf4cc3aad4f98069b02bc40655e804f20",
+    "crates/phasesmith-py/src/solution_tangent.rs": "34afbb8faa00b6d8aedfdbe5408dcf2fd15f0e71f5661a2d1830c46da544454f",
+    "Cargo.lock": "f8a427cc7edfd5463a2929aa00c5473c10dd674553132052aadcef11fd41cdee",
+    "crates/phasesmith-solution/benches/solution.rs": "b6a37fc9012d103d8c640098265ad20d8fc31eb912e79fc7841d7aed8600e1c6",
+    "python/phasesmith/experimental/solution.py": "f202a1cee8bba6ca67b57c2b099e5cefc5366f550eab33a184767d798224d41d",
+    "python/phasesmith/experimental/solution_shared_reference.py": "4bbb33e0bc6991f65171c2b4db1452c342c7d54952d4fa612f50375eb29dfe7b",
+    "python/phasesmith/experimental/solution_peak_density_reference.py": "0aa18c02afa708f4b883065ffa3cfad1f6e280985894678d81a56dd7cbdd4397",
+    "benchmarks/solution_tangent_comparison.py": "5f6947df6223b5d755a93390c914cffe0c7b53ee5e423cd5597f6bc490b892c3",
+    "python/phasesmith/experimental/solution_reference.py": "7103e662ff6da761f026b1d21bfa656594492ea1ab73dda54f61512c3626f626",
+    "python/phasesmith/experimental/solution_recycling_reference.py": "285ea001a20ae5955e03d1941944f0ac66703dd802c23496554ab1b267741e72",
+    "python/phasesmith/experimental/solution_tangent_reference.py": "0c68928588736ebc42816d73e1b0e7212b312e46de6aac846bd0bf975f02c158",
+    "python/phasesmith/experimental/solution_count_free_reference.py": "73c4d7731afad95e9b0e809124fbf725afbfa54b0c551044efbb955fea8d93e5",
+    "benchmarks/solution_adp_transfer.py": "344239532b298921594af7d24dcb071a16d1528df0e7b5cbfa4467f8f6e83d59",
+    "benchmarks/structure_solution.py": "58191cddd8fc86a6b5371297a694b838f63ba91ea92452425bb7475e7cd4714e"
+  },
+  "input_manifest_sha256": "a1292a5a6685c46b696ba0018f60df083a86d5f030bfa4ae8fbc72f9e4b0eeae",
+  "qualification": "Serial paired solves, alternating baseline/tangent order by repeat. Shared inputs and settings; no counts/coordinates supplied. References read only after all paired solves and reports are saved. Reused development data; no general coverage guarantee.",
+  "runs": [
+    {
+      "case": "kbrf4",
+      "repeat": 0,
+      "seed": 0,
+      "mode": "baseline",
+      "seconds": 1.9608694159833249,
+      "r1": 0.02226640040931319,
+      "counts": {
+        "Br": 4,
+        "F": 16,
+        "K": 4
+      },
+      "target_met": true,
+      "termination": "r1_target",
+      "effort": {
+        "elements": [
+          "Br",
+          "K",
+          "F"
+        ],
+        "phasing_starts": 1,
+        "framework_hypotheses": 4,
+        "initial_prefix": 4,
+        "rounds": 1,
+        "orbit_proposals": 4,
+        "element_scores": 12,
+        "refinements": 34,
+        "screening_refinements": 20,
+        "final_refinements": 14,
+        "promoted_candidates": 10,
+        "screened_out": 10,
+        "integrated_peak_density": true,
+        "peak_density_radius_angstrom": 0.7,
+        "density_map_builds": 5,
+        "density_evaluations": 472,
+        "density_label_rejections": 6,
+        "density_label_rescues": 0,
+        "density_birth_skips": 6,
+        "density_relabel_skips": 12,
+        "density_calibrations": [
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 0,
+            "scale": 0.7795729910295022,
+            "anchors": 1,
+            "shortlist_limit": 3
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 0,
+            "scale": 0.7900432560770322,
+            "anchors": 1,
+            "shortlist_limit": 3
+          },
+          {
+            "trial": 0,
+            "lineage": 2,
+            "round": 0,
+            "scale": 0.7774204136152599,
+            "anchors": 1,
+            "shortlist_limit": 3
+          },
+          {
+            "trial": 0,
+            "lineage": 3,
+            "round": 0,
+            "scale": 0.7790877872743271,
+            "anchors": 1,
+            "shortlist_limit": 3
+          },
+          {
+            "trial": 0,
+            "lineage": 2,
+            "round": 1,
+            "scale": 0.7774204136152599,
+            "anchors": 1,
+            "shortlist_limit": 3
+          },
+          {
+            "trial": 0,
+            "lineage": 2,
+            "round": 1,
+            "scale": 0.7774204136152599,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 3,
+            "round": 1,
+            "scale": 0.7790877872743271,
+            "anchors": 1,
+            "shortlist_limit": 3
+          },
+          {
+            "trial": 0,
+            "lineage": 3,
+            "round": 1,
+            "scale": 0.7790877872743271,
+            "anchors": 1,
+            "shortlist_limit": 3
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 1,
+            "scale": 0.7900432560770322,
+            "anchors": 1,
+            "shortlist_limit": 3
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 1,
+            "scale": 0.7795729910295022,
+            "anchors": 1,
+            "shortlist_limit": 3
+          }
+        ],
+        "staged_refinement": true,
+        "screening_iterations": 8,
+        "refinement_shortlist": 3,
+        "deletion_trials": 6,
+        "relabel_trials": 0,
+        "maximum_atoms": 52,
+        "beam_width": 4,
+        "required_elements_present": true,
+        "accepted_moves": [
+          {
+            "kind": "initial",
+            "element": "Br",
+            "atoms": 4,
+            "r1": 0.49527233653804476,
+            "score": -302.2789345245015
+          },
+          {
+            "kind": "recycle_batch",
+            "element": "",
+            "atoms": 24,
+            "r1": 0.02226640040931319,
+            "score": -1443.4779253300578
+          }
+        ],
+        "dual_checkpoints": true,
+        "cached_refinement": true,
+        "symmetry_recycling": true,
+        "recycling_cycles": 10,
+        "recycling": [
+          {
+            "trial": 0,
+            "lineage": 0,
+            "hand": 1,
+            "origin_shift": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "cycles": 10,
+            "predicted_coefficients": 1,
+            "peaks": 8,
+            "batch_orbits": 1,
+            "label_scores": 15,
+            "label_changes": 0,
+            "batch_refined": true,
+            "tangent": null
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "hand": 1,
+            "origin_shift": [
+              0.0,
+              0.0,
+              0.25
+            ],
+            "cycles": 10,
+            "predicted_coefficients": 1,
+            "peaks": 40,
+            "batch_orbits": 1,
+            "label_scores": 21,
+            "label_changes": 0,
+            "batch_refined": true,
+            "tangent": null
+          },
+          {
+            "trial": 0,
+            "lineage": 2,
+            "hand": 1,
+            "origin_shift": [
+              0.0,
+              0.5,
+              0.0
+            ],
+            "cycles": 10,
+            "predicted_coefficients": 1,
+            "peaks": 24,
+            "batch_orbits": 1,
+            "label_scores": 24,
+            "label_changes": 0,
+            "batch_refined": true,
+            "tangent": null
+          },
+          {
+            "trial": 0,
+            "lineage": 3,
+            "hand": 1,
+            "origin_shift": [
+              0.0,
+              0.5,
+              0.25
+            ],
+            "cycles": 10,
+            "predicted_coefficients": 1,
+            "peaks": 24,
+            "batch_orbits": 1,
+            "label_scores": 21,
+            "label_changes": 0,
+            "batch_refined": true,
+            "tangent": null
+          }
+        ],
+        "tangent_refinement": false,
+        "tangent_trials": [],
+        "tangent_in_recycling": false,
+        "adaptive_counts": true,
+        "count_prefix_screenings": 4,
+        "bounded_map_handoffs": 1
+      },
+      "phasing_trials": [
+        {
+          "method": "dual_space",
+          "initialization": "patterson",
+          "patterson_vector_grid": [
+            0,
+            32,
+            32
+          ],
+          "seed": 0,
+          "completed_cycles": 4,
+          "best_cycle": 0,
+          "score_kind": "profiled_amplitude_sse",
+          "mask_sigma_angstrom": 0.2357674430663847,
+          "hybrid_m": 3.0,
+          "sharpening_q": 0.5,
+          "omit_fraction": 0.1,
+          "omit_period": 3,
+          "checkpoints": [
+            {
+              "completed_cycles": 4,
+              "best_cycle": 0,
+              "score": 0.09353511892906569,
+              "accepted": true
+            }
+          ],
+          "atomicity_mode": "adaptive",
+          "adaptive_peaks": {
+            "sigma": 2.0,
+            "cap": 128,
+            "selected": [
+              40,
+              54,
+              18,
+              70
+            ],
+            "thresholds": [
+              2.0,
+              2.0,
+              2.0,
+              2.0
+            ],
+            "omitted": [
+              0,
+              0,
+              1,
+              0
+            ]
+          }
+        }
+      ],
+      "rejected_trials": [],
+      "directory": "kbrf4/seed-0/baseline-0",
+      "counts_match_reference_after_solving": true,
+      "post_solve_geometry": {
+        "max_element_matched_error_angstrom": 0.005908783376389764,
+        "rms_error_angstrom": 0.004824501424264222,
+        "reference_used_after_solve_only": true,
+        "non_h_atom_count": 24
+      },
+      "cif_checks": {
+        "candidate-p1.cif": {
+          "r1": 0.0222664004092257,
+          "absolute_r1_difference": 8.748904378741429e-14,
+          "sha256": "eb9493171b2c6864647595d2bee2dca2a7ac837a97384e9398f415fce4b16c5f"
+        },
+        "candidate.cif": {
+          "r1": 0.02226640040922575,
+          "absolute_r1_difference": 8.744047153008694e-14,
+          "sha256": "1825dde9221d8ca29804410faf53f81049c29d351e92c080066dc8013d1b6585"
+        }
+      }
+    },
+    {
+      "case": "kbrf4",
+      "repeat": 0,
+      "seed": 0,
+      "mode": "tangent",
+      "seconds": 1.1921992499846965,
+      "r1": 0.02226640040931319,
+      "counts": {
+        "Br": 4,
+        "F": 16,
+        "K": 4
+      },
+      "target_met": true,
+      "termination": "r1_target",
+      "effort": {
+        "elements": [
+          "Br",
+          "K",
+          "F"
+        ],
+        "phasing_starts": 1,
+        "framework_hypotheses": 4,
+        "initial_prefix": 4,
+        "rounds": 1,
+        "orbit_proposals": 4,
+        "element_scores": 12,
+        "refinements": 34,
+        "screening_refinements": 20,
+        "final_refinements": 14,
+        "promoted_candidates": 10,
+        "screened_out": 10,
+        "integrated_peak_density": true,
+        "peak_density_radius_angstrom": 0.7,
+        "density_map_builds": 5,
+        "density_evaluations": 472,
+        "density_label_rejections": 6,
+        "density_label_rescues": 0,
+        "density_birth_skips": 6,
+        "density_relabel_skips": 12,
+        "density_calibrations": [
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 0,
+            "scale": 0.7795729910295022,
+            "anchors": 1,
+            "shortlist_limit": 3
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 0,
+            "scale": 0.7900432560770322,
+            "anchors": 1,
+            "shortlist_limit": 3
+          },
+          {
+            "trial": 0,
+            "lineage": 2,
+            "round": 0,
+            "scale": 0.7774204136152599,
+            "anchors": 1,
+            "shortlist_limit": 3
+          },
+          {
+            "trial": 0,
+            "lineage": 3,
+            "round": 0,
+            "scale": 0.7790877872743271,
+            "anchors": 1,
+            "shortlist_limit": 3
+          },
+          {
+            "trial": 0,
+            "lineage": 2,
+            "round": 1,
+            "scale": 0.7774204136152599,
+            "anchors": 1,
+            "shortlist_limit": 3
+          },
+          {
+            "trial": 0,
+            "lineage": 2,
+            "round": 1,
+            "scale": 0.7774204136152599,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 3,
+            "round": 1,
+            "scale": 0.7790877872743271,
+            "anchors": 1,
+            "shortlist_limit": 3
+          },
+          {
+            "trial": 0,
+            "lineage": 3,
+            "round": 1,
+            "scale": 0.7790877872743271,
+            "anchors": 1,
+            "shortlist_limit": 3
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 1,
+            "scale": 0.7900432560770322,
+            "anchors": 1,
+            "shortlist_limit": 3
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 1,
+            "scale": 0.7795729910295022,
+            "anchors": 1,
+            "shortlist_limit": 3
+          }
+        ],
+        "staged_refinement": true,
+        "screening_iterations": 8,
+        "refinement_shortlist": 3,
+        "deletion_trials": 6,
+        "relabel_trials": 0,
+        "maximum_atoms": 52,
+        "beam_width": 4,
+        "required_elements_present": true,
+        "accepted_moves": [
+          {
+            "kind": "initial",
+            "element": "Br",
+            "atoms": 4,
+            "r1": 0.49527233653804476,
+            "score": -302.2789345245015
+          },
+          {
+            "kind": "recycle_batch",
+            "element": "",
+            "atoms": 24,
+            "r1": 0.02226640040931319,
+            "score": -1443.4779253300578
+          }
+        ],
+        "dual_checkpoints": true,
+        "cached_refinement": true,
+        "symmetry_recycling": true,
+        "recycling_cycles": 10,
+        "recycling": [
+          {
+            "trial": 0,
+            "lineage": 0,
+            "hand": 1,
+            "origin_shift": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "cycles": 10,
+            "predicted_coefficients": 1,
+            "peaks": 8,
+            "batch_orbits": 1,
+            "label_scores": 15,
+            "label_changes": 0,
+            "batch_refined": true,
+            "tangent": {
+              "trial": 0,
+              "variables": 1312,
+              "strong": 256,
+              "triplets": 16056,
+              "quartets": 0,
+              "truncated": false,
+              "steps": 10,
+              "annealed_steps": 10,
+              "proposals": 1540,
+              "changed": 0,
+              "declined_steps": 0,
+              "quartet_before": [
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              "quartet_after": [
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              "symmetry_restorations": 10,
+              "symmetry_declined_steps": 0
+            }
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "hand": 1,
+            "origin_shift": [
+              0.0,
+              0.0,
+              0.25
+            ],
+            "cycles": 10,
+            "predicted_coefficients": 1,
+            "peaks": 40,
+            "batch_orbits": 1,
+            "label_scores": 21,
+            "label_changes": 0,
+            "batch_refined": true,
+            "tangent": {
+              "trial": 0,
+              "variables": 1312,
+              "strong": 256,
+              "triplets": 16056,
+              "quartets": 0,
+              "truncated": false,
+              "steps": 10,
+              "annealed_steps": 10,
+              "proposals": 1540,
+              "changed": 0,
+              "declined_steps": 0,
+              "quartet_before": [
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              "quartet_after": [
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              "symmetry_restorations": 10,
+              "symmetry_declined_steps": 0
+            }
+          },
+          {
+            "trial": 0,
+            "lineage": 2,
+            "hand": 1,
+            "origin_shift": [
+              0.0,
+              0.5,
+              0.0
+            ],
+            "cycles": 10,
+            "predicted_coefficients": 1,
+            "peaks": 24,
+            "batch_orbits": 1,
+            "label_scores": 24,
+            "label_changes": 0,
+            "batch_refined": true,
+            "tangent": {
+              "trial": 0,
+              "variables": 1312,
+              "strong": 256,
+              "triplets": 16056,
+              "quartets": 0,
+              "truncated": false,
+              "steps": 10,
+              "annealed_steps": 10,
+              "proposals": 1540,
+              "changed": 0,
+              "declined_steps": 0,
+              "quartet_before": [
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              "quartet_after": [
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              "symmetry_restorations": 10,
+              "symmetry_declined_steps": 0
+            }
+          },
+          {
+            "trial": 0,
+            "lineage": 3,
+            "hand": 1,
+            "origin_shift": [
+              0.0,
+              0.5,
+              0.25
+            ],
+            "cycles": 10,
+            "predicted_coefficients": 1,
+            "peaks": 24,
+            "batch_orbits": 1,
+            "label_scores": 21,
+            "label_changes": 0,
+            "batch_refined": true,
+            "tangent": {
+              "trial": 0,
+              "variables": 1312,
+              "strong": 256,
+              "triplets": 16056,
+              "quartets": 0,
+              "truncated": false,
+              "steps": 10,
+              "annealed_steps": 10,
+              "proposals": 1540,
+              "changed": 0,
+              "declined_steps": 0,
+              "quartet_before": [
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              "quartet_after": [
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ],
+              "symmetry_restorations": 10,
+              "symmetry_declined_steps": 0
+            }
+          }
+        ],
+        "tangent_refinement": true,
+        "tangent_trials": [],
+        "tangent_in_recycling": true,
+        "adaptive_counts": true,
+        "count_prefix_screenings": 4,
+        "bounded_map_handoffs": 1
+      },
+      "phasing_trials": [
+        {
+          "method": "dual_space",
+          "initialization": "patterson",
+          "patterson_vector_grid": [
+            0,
+            32,
+            32
+          ],
+          "seed": 0,
+          "completed_cycles": 4,
+          "best_cycle": 0,
+          "score_kind": "profiled_amplitude_sse",
+          "mask_sigma_angstrom": 0.2357674430663847,
+          "hybrid_m": 3.0,
+          "sharpening_q": 0.5,
+          "omit_fraction": 0.1,
+          "omit_period": 3,
+          "checkpoints": [
+            {
+              "completed_cycles": 4,
+              "best_cycle": 0,
+              "score": 0.09353511892906569,
+              "accepted": true
+            }
+          ],
+          "atomicity_mode": "adaptive",
+          "adaptive_peaks": {
+            "sigma": 2.0,
+            "cap": 128,
+            "selected": [
+              40,
+              54,
+              18,
+              70
+            ],
+            "thresholds": [
+              2.0,
+              2.0,
+              2.0,
+              2.0
+            ],
+            "omitted": [
+              0,
+              0,
+              1,
+              0
+            ]
+          }
+        }
+      ],
+      "rejected_trials": [],
+      "directory": "kbrf4/seed-0/tangent-0",
+      "counts_match_reference_after_solving": true,
+      "post_solve_geometry": {
+        "max_element_matched_error_angstrom": 0.005908783376389764,
+        "rms_error_angstrom": 0.004824501424264222,
+        "reference_used_after_solve_only": true,
+        "non_h_atom_count": 24
+      },
+      "cif_checks": {
+        "candidate-p1.cif": {
+          "r1": 0.0222664004092257,
+          "absolute_r1_difference": 8.748904378741429e-14,
+          "sha256": "eb9493171b2c6864647595d2bee2dca2a7ac837a97384e9398f415fce4b16c5f"
+        },
+        "candidate.cif": {
+          "r1": 0.02226640040922575,
+          "absolute_r1_difference": 8.744047153008694e-14,
+          "sha256": "1825dde9221d8ca29804410faf53f81049c29d351e92c080066dc8013d1b6585"
+        }
+      }
+    },
+    {
+      "case": "bisei",
+      "repeat": 0,
+      "seed": 0,
+      "mode": "baseline",
+      "seconds": 0.4159032499883324,
+      "r1": 0.05228505465883765,
+      "counts": {
+        "Bi": 4,
+        "I": 4,
+        "Se": 4
+      },
+      "target_met": true,
+      "termination": "r1_target",
+      "effort": {
+        "elements": [
+          "Bi",
+          "I",
+          "Se"
+        ],
+        "phasing_starts": 1,
+        "framework_hypotheses": 1,
+        "initial_prefix": 4,
+        "rounds": 1,
+        "orbit_proposals": 6,
+        "element_scores": 18,
+        "refinements": 17,
+        "screening_refinements": 12,
+        "final_refinements": 5,
+        "promoted_candidates": 4,
+        "screened_out": 3,
+        "integrated_peak_density": true,
+        "peak_density_radius_angstrom": 0.7,
+        "density_map_builds": 2,
+        "density_evaluations": 200,
+        "density_label_rejections": 8,
+        "density_label_rescues": 0,
+        "density_birth_skips": 3,
+        "density_relabel_skips": 5,
+        "density_calibrations": [
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 0,
+            "scale": 0.9013915819147961,
+            "anchors": 1,
+            "shortlist_limit": 3
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 1,
+            "scale": 0.9325703381156804,
+            "anchors": 1,
+            "shortlist_limit": 3
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 1,
+            "scale": 0.9325703381156804,
+            "anchors": 1,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 1,
+            "scale": 0.9013915819147961,
+            "anchors": 1,
+            "shortlist_limit": 3
+          }
+        ],
+        "staged_refinement": true,
+        "screening_iterations": 8,
+        "refinement_shortlist": 3,
+        "deletion_trials": 3,
+        "relabel_trials": 1,
+        "maximum_atoms": 49,
+        "beam_width": 4,
+        "required_elements_present": true,
+        "accepted_moves": [
+          {
+            "kind": "initial",
+            "element": "Bi",
+            "atoms": 4,
+            "r1": 0.48898768495233746,
+            "score": -564.0853382589136
+          },
+          {
+            "kind": "recycle_batch",
+            "element": "",
+            "atoms": 12,
+            "r1": 0.05228505465883765,
+            "score": -2455.320240381799
+          }
+        ],
+        "dual_checkpoints": true,
+        "cached_refinement": true,
+        "symmetry_recycling": true,
+        "recycling_cycles": 10,
+        "recycling": [
+          {
+            "trial": 0,
+            "lineage": 0,
+            "hand": 1,
+            "origin_shift": [
+              0.12571834229122797,
+              0.75,
+              0.6252104353270014
+            ],
+            "cycles": 10,
+            "predicted_coefficients": 307,
+            "peaks": 20,
+            "batch_orbits": 2,
+            "label_scores": 126,
+            "label_changes": 2,
+            "batch_refined": true,
+            "tangent": null
+          }
+        ],
+        "tangent_refinement": false,
+        "tangent_trials": [],
+        "tangent_in_recycling": false,
+        "adaptive_counts": true,
+        "count_prefix_screenings": 3,
+        "bounded_map_handoffs": 1
+      },
+      "phasing_trials": [
+        {
+          "method": "dual_space",
+          "initialization": "patterson",
+          "patterson_vector_grid": [
+            16,
+            0,
+            8
+          ],
+          "seed": 0,
+          "completed_cycles": 4,
+          "best_cycle": 3,
+          "score_kind": "profiled_amplitude_sse",
+          "mask_sigma_angstrom": 0.27000406526782644,
+          "hybrid_m": 3.0,
+          "sharpening_q": 0.5,
+          "omit_fraction": 0.1,
+          "omit_period": 3,
+          "checkpoints": [
+            {
+              "completed_cycles": 4,
+              "best_cycle": 3,
+              "score": 0.12226011864782574,
+              "accepted": true
+            }
+          ],
+          "atomicity_mode": "adaptive",
+          "adaptive_peaks": {
+            "sigma": 2.0,
+            "cap": 128,
+            "selected": [
+              26,
+              56,
+              38,
+              46
+            ],
+            "thresholds": [
+              2.0,
+              2.0,
+              2.0,
+              2.0
+            ],
+            "omitted": [
+              0,
+              0,
+              3,
+              0
+            ]
+          }
+        }
+      ],
+      "rejected_trials": [],
+      "directory": "bisei/seed-0/baseline-0",
+      "counts_match_reference_after_solving": true,
+      "post_solve_geometry": {
+        "max_element_matched_error_angstrom": 0.0025164093314575956,
+        "rms_error_angstrom": 0.0017469687619604394,
+        "reference_used_after_solve_only": true,
+        "non_h_atom_count": 12
+      },
+      "cif_checks": {
+        "candidate-p1.cif": {
+          "r1": 0.052285054659125516,
+          "absolute_r1_difference": 2.878669524974953e-13,
+          "sha256": "bc51a204b6451bb868a5e3c382f7ee90e5177a9036e2002576de1640d6e3bc00"
+        },
+        "candidate.cif": {
+          "r1": 0.052285054658941954,
+          "absolute_r1_difference": 1.0430545316353346e-13,
+          "sha256": "72f87350d94c047ea2824e20e12087ec7feecae96177debc8bab6d9d8972beb7"
+        }
+      }
+    },
+    {
+      "case": "bisei",
+      "repeat": 0,
+      "seed": 0,
+      "mode": "tangent",
+      "seconds": 0.603130333009176,
+      "r1": 0.05228505465883765,
+      "counts": {
+        "Bi": 4,
+        "I": 4,
+        "Se": 4
+      },
+      "target_met": true,
+      "termination": "r1_target",
+      "effort": {
+        "elements": [
+          "Bi",
+          "I",
+          "Se"
+        ],
+        "phasing_starts": 1,
+        "framework_hypotheses": 1,
+        "initial_prefix": 4,
+        "rounds": 1,
+        "orbit_proposals": 6,
+        "element_scores": 18,
+        "refinements": 17,
+        "screening_refinements": 12,
+        "final_refinements": 5,
+        "promoted_candidates": 4,
+        "screened_out": 3,
+        "integrated_peak_density": true,
+        "peak_density_radius_angstrom": 0.7,
+        "density_map_builds": 2,
+        "density_evaluations": 200,
+        "density_label_rejections": 8,
+        "density_label_rescues": 0,
+        "density_birth_skips": 3,
+        "density_relabel_skips": 5,
+        "density_calibrations": [
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 0,
+            "scale": 0.9013915819147961,
+            "anchors": 1,
+            "shortlist_limit": 3
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 1,
+            "scale": 0.9325703381156804,
+            "anchors": 1,
+            "shortlist_limit": 3
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 1,
+            "scale": 0.9325703381156804,
+            "anchors": 1,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 1,
+            "scale": 0.9013915819147961,
+            "anchors": 1,
+            "shortlist_limit": 3
+          }
+        ],
+        "staged_refinement": true,
+        "screening_iterations": 8,
+        "refinement_shortlist": 3,
+        "deletion_trials": 3,
+        "relabel_trials": 1,
+        "maximum_atoms": 49,
+        "beam_width": 4,
+        "required_elements_present": true,
+        "accepted_moves": [
+          {
+            "kind": "initial",
+            "element": "Bi",
+            "atoms": 4,
+            "r1": 0.48898768495233746,
+            "score": -564.0853382589136
+          },
+          {
+            "kind": "recycle_batch",
+            "element": "",
+            "atoms": 12,
+            "r1": 0.05228505465883765,
+            "score": -2455.320240381799
+          }
+        ],
+        "dual_checkpoints": true,
+        "cached_refinement": true,
+        "symmetry_recycling": true,
+        "recycling_cycles": 10,
+        "recycling": [
+          {
+            "trial": 0,
+            "lineage": 0,
+            "hand": 1,
+            "origin_shift": [
+              0.12571834229122797,
+              0.75,
+              0.6252104353270014
+            ],
+            "cycles": 10,
+            "predicted_coefficients": 307,
+            "peaks": 20,
+            "batch_orbits": 2,
+            "label_scores": 126,
+            "label_changes": 2,
+            "batch_refined": true,
+            "tangent": {
+              "trial": 0,
+              "variables": 1522,
+              "strong": 256,
+              "triplets": 7819,
+              "quartets": 400,
+              "truncated": false,
+              "steps": 10,
+              "annealed_steps": 10,
+              "proposals": 1540,
+              "changed": 0,
+              "declined_steps": 10,
+              "quartet_before": [
+                0.0464265898560114,
+                0.0464265898560114,
+                0.0464265898560114,
+                0.0464265898560114,
+                0.0464265898560114,
+                0.0464265898560114,
+                0.0464265898560114,
+                0.0464265898560114,
+                0.0464265898560114,
+                0.0464265898560114
+              ],
+              "quartet_after": [
+                0.0464265898560114,
+                0.0464265898560114,
+                0.0464265898560114,
+                0.0464265898560114,
+                0.0464265898560114,
+                0.0464265898560114,
+                0.0464265898560114,
+                0.0464265898560114,
+                0.0464265898560114,
+                0.0464265898560114
+              ],
+              "symmetry_restorations": 0,
+              "symmetry_declined_steps": 0
+            }
+          }
+        ],
+        "tangent_refinement": true,
+        "tangent_trials": [],
+        "tangent_in_recycling": true,
+        "adaptive_counts": true,
+        "count_prefix_screenings": 3,
+        "bounded_map_handoffs": 1
+      },
+      "phasing_trials": [
+        {
+          "method": "dual_space",
+          "initialization": "patterson",
+          "patterson_vector_grid": [
+            16,
+            0,
+            8
+          ],
+          "seed": 0,
+          "completed_cycles": 4,
+          "best_cycle": 3,
+          "score_kind": "profiled_amplitude_sse",
+          "mask_sigma_angstrom": 0.27000406526782644,
+          "hybrid_m": 3.0,
+          "sharpening_q": 0.5,
+          "omit_fraction": 0.1,
+          "omit_period": 3,
+          "checkpoints": [
+            {
+              "completed_cycles": 4,
+              "best_cycle": 3,
+              "score": 0.12226011864782574,
+              "accepted": true
+            }
+          ],
+          "atomicity_mode": "adaptive",
+          "adaptive_peaks": {
+            "sigma": 2.0,
+            "cap": 128,
+            "selected": [
+              26,
+              56,
+              38,
+              46
+            ],
+            "thresholds": [
+              2.0,
+              2.0,
+              2.0,
+              2.0
+            ],
+            "omitted": [
+              0,
+              0,
+              3,
+              0
+            ]
+          }
+        }
+      ],
+      "rejected_trials": [],
+      "directory": "bisei/seed-0/tangent-0",
+      "counts_match_reference_after_solving": true,
+      "post_solve_geometry": {
+        "max_element_matched_error_angstrom": 0.0025164093314575956,
+        "rms_error_angstrom": 0.0017469687619604394,
+        "reference_used_after_solve_only": true,
+        "non_h_atom_count": 12
+      },
+      "cif_checks": {
+        "candidate-p1.cif": {
+          "r1": 0.052285054659125516,
+          "absolute_r1_difference": 2.878669524974953e-13,
+          "sha256": "bc51a204b6451bb868a5e3c382f7ee90e5177a9036e2002576de1640d6e3bc00"
+        },
+        "candidate.cif": {
+          "r1": 0.052285054658941954,
+          "absolute_r1_difference": 1.0430545316353346e-13,
+          "sha256": "72f87350d94c047ea2824e20e12087ec7feecae96177debc8bab6d9d8972beb7"
+        }
+      }
+    },
+    {
+      "case": "thiourea",
+      "repeat": 0,
+      "seed": 0,
+      "mode": "baseline",
+      "seconds": 2.58717720900313,
+      "r1": 0.04940904996785434,
+      "counts": {
+        "C": 4,
+        "N": 8,
+        "S": 4
+      },
+      "target_met": true,
+      "termination": "r1_target",
+      "effort": {
+        "elements": [
+          "S",
+          "N",
+          "C"
+        ],
+        "phasing_starts": 1,
+        "framework_hypotheses": 2,
+        "initial_prefix": 4,
+        "rounds": 1,
+        "orbit_proposals": 8,
+        "element_scores": 24,
+        "refinements": 48,
+        "screening_refinements": 38,
+        "final_refinements": 10,
+        "promoted_candidates": 8,
+        "screened_out": 22,
+        "integrated_peak_density": true,
+        "peak_density_radius_angstrom": 0.7,
+        "density_map_builds": 4,
+        "density_evaluations": 284,
+        "density_label_rejections": 8,
+        "density_label_rescues": 0,
+        "density_birth_skips": 4,
+        "density_relabel_skips": 16,
+        "density_calibrations": [
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 0,
+            "scale": 0.35117739580873975,
+            "anchors": 2,
+            "shortlist_limit": 3
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 0,
+            "scale": 0.35117739580873975,
+            "anchors": 2,
+            "shortlist_limit": 3
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 1,
+            "scale": 0.3514719556659607,
+            "anchors": 2,
+            "shortlist_limit": 3
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 1,
+            "scale": 0.3514719556659607,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 1,
+            "scale": 0.3514719556659608,
+            "anchors": 2,
+            "shortlist_limit": 3
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 1,
+            "scale": 0.3514719556659608,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 1,
+            "scale": 0.35117739580873975,
+            "anchors": 2,
+            "shortlist_limit": 3
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 1,
+            "scale": 0.35117739580873975,
+            "anchors": 2,
+            "shortlist_limit": 3
+          }
+        ],
+        "staged_refinement": true,
+        "screening_iterations": 8,
+        "refinement_shortlist": 3,
+        "deletion_trials": 12,
+        "relabel_trials": 8,
+        "maximum_atoms": 44,
+        "beam_width": 4,
+        "required_elements_present": true,
+        "accepted_moves": [
+          {
+            "kind": "initial",
+            "element": "S",
+            "atoms": 4,
+            "r1": 0.2668332456525159,
+            "score": -1228.315934005503
+          },
+          {
+            "kind": "recycle_batch",
+            "element": "",
+            "atoms": 16,
+            "r1": 0.04940904996785434,
+            "score": -3284.4523910481603
+          }
+        ],
+        "dual_checkpoints": true,
+        "cached_refinement": true,
+        "symmetry_recycling": true,
+        "recycling_cycles": 10,
+        "recycling": [
+          {
+            "trial": 0,
+            "lineage": 0,
+            "hand": 1,
+            "origin_shift": [
+              0.0,
+              9.133722206419651e-05,
+              0.8603720149775294
+            ],
+            "cycles": 10,
+            "predicted_coefficients": 1,
+            "peaks": 16,
+            "batch_orbits": 2,
+            "label_scores": 138,
+            "label_changes": 3,
+            "batch_refined": true,
+            "tangent": null
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "hand": -1,
+            "origin_shift": [
+              0.0,
+              0.9999086627779359,
+              0.6396279850224705
+            ],
+            "cycles": 10,
+            "predicted_coefficients": 1,
+            "peaks": 16,
+            "batch_orbits": 2,
+            "label_scores": 138,
+            "label_changes": 3,
+            "batch_refined": true,
+            "tangent": null
+          }
+        ],
+        "tangent_refinement": false,
+        "tangent_trials": [],
+        "tangent_in_recycling": false,
+        "adaptive_counts": true,
+        "count_prefix_screenings": 8,
+        "bounded_map_handoffs": 2
+      },
+      "phasing_trials": [
+        {
+          "method": "dual_space",
+          "initialization": "patterson",
+          "patterson_vector_grid": [
+            16,
+            16,
+            16
+          ],
+          "seed": 0,
+          "completed_cycles": 16,
+          "best_cycle": 15,
+          "score_kind": "profiled_amplitude_sse",
+          "mask_sigma_angstrom": 0.24513987380696448,
+          "hybrid_m": 3.0,
+          "sharpening_q": 0.5,
+          "omit_fraction": 0.1,
+          "omit_period": 3,
+          "checkpoints": [
+            {
+              "completed_cycles": 4,
+              "best_cycle": 3,
+              "score": 0.1241032595287042,
+              "accepted": false
+            },
+            {
+              "completed_cycles": 16,
+              "best_cycle": 15,
+              "score": 0.07651523621777816,
+              "accepted": true
+            }
+          ],
+          "atomicity_mode": "adaptive",
+          "adaptive_peaks": {
+            "sigma": 2.0,
+            "cap": 128,
+            "selected": [
+              26,
+              50,
+              31,
+              60,
+              32,
+              52,
+              36,
+              47,
+              40,
+              38,
+              40,
+              43,
+              43,
+              43,
+              40,
+              43
+            ],
+            "thresholds": [
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0
+            ],
+            "omitted": [
+              0,
+              0,
+              3,
+              0,
+              0,
+              5,
+              0,
+              0,
+              4,
+              0,
+              0,
+              4,
+              0,
+              0,
+              4,
+              0
+            ]
+          }
+        }
+      ],
+      "rejected_trials": [
+        [
+          0,
+          "no initial density prefix matches supplied symmetry"
+        ]
+      ],
+      "directory": "thiourea/seed-0/baseline-0",
+      "counts_match_reference_after_solving": true,
+      "post_solve_geometry": {
+        "max_element_matched_error_angstrom": 0.010371708291770702,
+        "rms_error_angstrom": 0.007707376589012123,
+        "reference_used_after_solve_only": true,
+        "non_h_atom_count": 16
+      },
+      "cif_checks": {
+        "candidate-p1.cif": {
+          "r1": 0.04940904996795589,
+          "absolute_r1_difference": 1.0155071228368229e-13,
+          "sha256": "1f133763e8dfd6f7d9d7bd5cf5460c46f27bf0ef4aba6ff1c606b154ae8f2dbf"
+        },
+        "candidate.cif": {
+          "r1": 0.04940904996803753,
+          "absolute_r1_difference": 1.8318679906315083e-13,
+          "sha256": "a0c275e53184bac69e5fb473538aaf10d15202a0395587db543884d50de46255"
+        }
+      }
+    },
+    {
+      "case": "thiourea",
+      "repeat": 0,
+      "seed": 0,
+      "mode": "tangent",
+      "seconds": 2.590394708007807,
+      "r1": 0.049409049967854314,
+      "counts": {
+        "C": 4,
+        "N": 8,
+        "S": 4
+      },
+      "target_met": true,
+      "termination": "r1_target",
+      "effort": {
+        "elements": [
+          "S",
+          "N",
+          "C"
+        ],
+        "phasing_starts": 1,
+        "framework_hypotheses": 2,
+        "initial_prefix": 4,
+        "rounds": 1,
+        "orbit_proposals": 8,
+        "element_scores": 24,
+        "refinements": 48,
+        "screening_refinements": 38,
+        "final_refinements": 10,
+        "promoted_candidates": 8,
+        "screened_out": 22,
+        "integrated_peak_density": true,
+        "peak_density_radius_angstrom": 0.7,
+        "density_map_builds": 4,
+        "density_evaluations": 284,
+        "density_label_rejections": 8,
+        "density_label_rescues": 0,
+        "density_birth_skips": 4,
+        "density_relabel_skips": 16,
+        "density_calibrations": [
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 0,
+            "scale": 0.35081684730960305,
+            "anchors": 2,
+            "shortlist_limit": 3
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 0,
+            "scale": 0.3508573976768232,
+            "anchors": 2,
+            "shortlist_limit": 3
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 1,
+            "scale": 0.3510531819407684,
+            "anchors": 2,
+            "shortlist_limit": 3
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 1,
+            "scale": 0.3510531819407684,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 1,
+            "scale": 0.3510034812978218,
+            "anchors": 2,
+            "shortlist_limit": 3
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 1,
+            "scale": 0.3510034812978218,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 1,
+            "scale": 0.3508573976768232,
+            "anchors": 2,
+            "shortlist_limit": 3
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 1,
+            "scale": 0.35081684730960305,
+            "anchors": 2,
+            "shortlist_limit": 3
+          }
+        ],
+        "staged_refinement": true,
+        "screening_iterations": 8,
+        "refinement_shortlist": 3,
+        "deletion_trials": 12,
+        "relabel_trials": 8,
+        "maximum_atoms": 44,
+        "beam_width": 4,
+        "required_elements_present": true,
+        "accepted_moves": [
+          {
+            "kind": "initial",
+            "element": "S",
+            "atoms": 4,
+            "r1": 0.26683324565251565,
+            "score": -1228.3159340055045
+          },
+          {
+            "kind": "recycle_batch",
+            "element": "",
+            "atoms": 16,
+            "r1": 0.049409049967854314,
+            "score": -3284.452391048161
+          }
+        ],
+        "dual_checkpoints": true,
+        "cached_refinement": true,
+        "symmetry_recycling": true,
+        "recycling_cycles": 10,
+        "recycling": [
+          {
+            "trial": 0,
+            "lineage": 0,
+            "hand": 1,
+            "origin_shift": [
+              0.0,
+              9.133722206419651e-05,
+              0.8603720149775294
+            ],
+            "cycles": 10,
+            "predicted_coefficients": 1,
+            "peaks": 16,
+            "batch_orbits": 2,
+            "label_scores": 138,
+            "label_changes": 3,
+            "batch_refined": true,
+            "tangent": {
+              "trial": 0,
+              "variables": 2034,
+              "strong": 256,
+              "triplets": 10716,
+              "quartets": 83,
+              "truncated": false,
+              "steps": 10,
+              "annealed_steps": 10,
+              "proposals": 1540,
+              "changed": 1440,
+              "declined_steps": 0,
+              "quartet_before": [
+                0.05569850433384073,
+                0.06590767308782104,
+                0.06609643202097498,
+                0.06464345351274527,
+                0.06384471023013366,
+                0.06402097746699174,
+                0.064440008984385,
+                0.06400134097036199,
+                0.06494653852154697,
+                0.06489385033003968
+              ],
+              "quartet_after": [
+                0.043728219545974986,
+                0.05751800542714492,
+                0.05879124279850496,
+                0.05967770834104079,
+                0.06081950892224075,
+                0.06200881278848548,
+                0.06190431754366977,
+                0.06328350163657229,
+                0.06331591002236589,
+                0.06407846977770185
+              ],
+              "symmetry_restorations": 10,
+              "symmetry_declined_steps": 0
+            }
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "hand": -1,
+            "origin_shift": [
+              0.0,
+              0.9999086627779359,
+              0.6396279850224705
+            ],
+            "cycles": 10,
+            "predicted_coefficients": 1,
+            "peaks": 16,
+            "batch_orbits": 2,
+            "label_scores": 138,
+            "label_changes": 3,
+            "batch_refined": true,
+            "tangent": {
+              "trial": 0,
+              "variables": 2034,
+              "strong": 256,
+              "triplets": 10716,
+              "quartets": 83,
+              "truncated": false,
+              "steps": 10,
+              "annealed_steps": 10,
+              "proposals": 1540,
+              "changed": 1440,
+              "declined_steps": 0,
+              "quartet_before": [
+                0.05569850433384071,
+                0.0664198920923374,
+                0.06655591886597119,
+                0.06477437203381829,
+                0.06354986964720986,
+                0.06330946187551778,
+                0.0636047420438978,
+                0.06309106302501537,
+                0.06407021450586892,
+                0.06401953475494726
+              ],
+              "quartet_after": [
+                0.04372821954597498,
+                0.05780471385423652,
+                0.05905995154497943,
+                0.05962154855221274,
+                0.06052700956367809,
+                0.06133800998893065,
+                0.06102392856847729,
+                0.06243104789111415,
+                0.06263908856201633,
+                0.06356279894100261
+              ],
+              "symmetry_restorations": 10,
+              "symmetry_declined_steps": 0
+            }
+          }
+        ],
+        "tangent_refinement": true,
+        "tangent_trials": [],
+        "tangent_in_recycling": true,
+        "adaptive_counts": true,
+        "count_prefix_screenings": 8,
+        "bounded_map_handoffs": 2
+      },
+      "phasing_trials": [
+        {
+          "method": "dual_space",
+          "initialization": "patterson",
+          "patterson_vector_grid": [
+            16,
+            16,
+            16
+          ],
+          "seed": 0,
+          "completed_cycles": 16,
+          "best_cycle": 15,
+          "score_kind": "profiled_amplitude_sse",
+          "mask_sigma_angstrom": 0.24513987380696448,
+          "hybrid_m": 3.0,
+          "sharpening_q": 0.5,
+          "omit_fraction": 0.1,
+          "omit_period": 3,
+          "checkpoints": [
+            {
+              "completed_cycles": 4,
+              "best_cycle": 3,
+              "score": 0.1241032595287042,
+              "accepted": false
+            },
+            {
+              "completed_cycles": 16,
+              "best_cycle": 15,
+              "score": 0.07651523621777816,
+              "accepted": true
+            }
+          ],
+          "atomicity_mode": "adaptive",
+          "adaptive_peaks": {
+            "sigma": 2.0,
+            "cap": 128,
+            "selected": [
+              26,
+              50,
+              31,
+              60,
+              32,
+              52,
+              36,
+              47,
+              40,
+              38,
+              40,
+              43,
+              43,
+              43,
+              40,
+              43
+            ],
+            "thresholds": [
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0
+            ],
+            "omitted": [
+              0,
+              0,
+              3,
+              0,
+              0,
+              5,
+              0,
+              0,
+              4,
+              0,
+              0,
+              4,
+              0,
+              0,
+              4,
+              0
+            ]
+          }
+        }
+      ],
+      "rejected_trials": [
+        [
+          0,
+          "no initial density prefix matches supplied symmetry"
+        ]
+      ],
+      "directory": "thiourea/seed-0/tangent-0",
+      "counts_match_reference_after_solving": true,
+      "post_solve_geometry": {
+        "max_element_matched_error_angstrom": 0.010371708291771276,
+        "rms_error_angstrom": 0.007707376589012374,
+        "reference_used_after_solve_only": true,
+        "non_h_atom_count": 16
+      },
+      "cif_checks": {
+        "candidate-p1.cif": {
+          "r1": 0.0494090499679558,
+          "absolute_r1_difference": 1.0148826223854712e-13,
+          "sha256": "c9c5de642007a273dcdd5cfd42005e3e3e1e4c91fe8e11456ededa4f4967d6cb"
+        },
+        "candidate.cif": {
+          "r1": 0.04940904996789571,
+          "absolute_r1_difference": 4.1397441030710525e-14,
+          "sha256": "8a23218299d7067b45fc971a0d29942ac28d3201ea28c779d2f447bdb69d9018"
+        }
+      }
+    }
+  ],
+  "summary": [
+    {
+      "case": "kbrf4",
+      "baseline_median_seconds": 1.9608694159833249,
+      "tangent_median_seconds": 1.1921992499846965,
+      "wall_time_ratio_baseline_over_tangent": 1.644749748004367,
+      "solve_speedup": 1.644749748004367,
+      "baseline_correct": 1,
+      "tangent_correct": 1,
+      "quality_preserved": true,
+      "pairs": [
+        {
+          "repeat": 0,
+          "seed": 0,
+          "wall_time_ratio_baseline_over_tangent": 1.644749748004367,
+          "solve_speedup": 1.644749748004367,
+          "quality_preserved": true
+        }
+      ]
+    },
+    {
+      "case": "bisei",
+      "baseline_median_seconds": 0.4159032499883324,
+      "tangent_median_seconds": 0.603130333009176,
+      "wall_time_ratio_baseline_over_tangent": 0.6895744206949128,
+      "solve_speedup": 0.6895744206949128,
+      "baseline_correct": 1,
+      "tangent_correct": 1,
+      "quality_preserved": true,
+      "pairs": [
+        {
+          "repeat": 0,
+          "seed": 0,
+          "wall_time_ratio_baseline_over_tangent": 0.6895744206949128,
+          "solve_speedup": 0.6895744206949128,
+          "quality_preserved": true
+        }
+      ]
+    },
+    {
+      "case": "thiourea",
+      "baseline_median_seconds": 2.58717720900313,
+      "tangent_median_seconds": 2.590394708007807,
+      "wall_time_ratio_baseline_over_tangent": 0.9987579116824434,
+      "solve_speedup": 0.9987579116824434,
+      "baseline_correct": 1,
+      "tangent_correct": 1,
+      "quality_preserved": true,
+      "pairs": [
+        {
+          "repeat": 0,
+          "seed": 0,
+          "wall_time_ratio_baseline_over_tangent": 0.9987579116824434,
+          "solve_speedup": 0.9987579116824434,
+          "quality_preserved": true
+        }
+      ]
+    }
+  ],
+  "all_quality_gates_passed": true,
+  "report_before_reference_sha256": "66cfda0b0d8d663eaee4c115ce8ea44e10242c9f6d52ffe59d687a9aa1891529",
+  "quality_gates": {
+    "matching_full_cell_counts": true,
+    "maximum_reference_error_angstrom": 0.02,
+    "paired_maximum_error_increase_angstrom": 0.0001,
+    "paired_r1_increase": 1e-07,
+    "exported_cif_r1_difference": 2e-10
+  }
+}

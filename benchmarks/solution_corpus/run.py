@@ -66,6 +66,7 @@ def worker(args):
         maximum_atoms=maximum_atoms,
         symmetry_recycling=True,
         tangent_refinement=True,
+        adaptive_counts=not args.legacy_counts,
     )
     elapsed = time.perf_counter() - start
     write_solution(result, args.output)
@@ -231,6 +232,8 @@ def run(args):
             raise ValueError("resume inputs/budget differ from collection")
         if previous["split"] != args.split:
             raise ValueError("resume split differs")
+        if previous.get("adaptive_counts", True) != (not args.legacy_counts):
+            raise ValueError("resume count policy differs")
         if previous["native_sha256"] != sha(Path(_core.__file__)) or previous[
             "shelxt_sha256"
         ] != sha(args.shelxt):
@@ -264,6 +267,7 @@ def run(args):
         "platform": platform.platform(),
         "python": sys.version,
         "seconds_per_job": args.seconds,
+        "adaptive_counts": not args.legacy_counts,
         "implementation_sha256": {str(p.relative_to(ROOT)): sha(p) for p in sources},
         "native_sha256": sha(Path(_core.__file__)),
         "shelxt_sha256": sha(args.shelxt),
@@ -377,6 +381,7 @@ def run(args):
                     str(args.seconds),
                     "--maximum-atoms",
                     str(atom_cap),
+                    *(["--legacy-counts"] if args.legacy_counts else []),
                 ]
             else:
                 (work / "sample.ins").write_text(instructions(packet))

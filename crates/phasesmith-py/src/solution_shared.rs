@@ -45,6 +45,9 @@ pub(super) fn summary<'py>(
     d.set_item("recycling", recycling)?;
     d.set_item("tangent_refinement", s.tangent_refinement)?;
     d.set_item("tangent_in_recycling", s.tangent_in_recycling)?;
+    d.set_item("adaptive_counts", s.adaptive_counts)?;
+    d.set_item("count_prefix_screenings", s.count_prefix_screenings)?;
+    d.set_item("bounded_map_handoffs", s.bounded_map_handoffs)?;
     let tangent_trials = PyList::empty(py);
     for trial in &s.tangent_trials {
         tangent_trials.append(super::tangent::audit(py, trial)?)?;

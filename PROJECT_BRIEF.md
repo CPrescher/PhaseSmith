@@ -2116,6 +2116,22 @@ reruns. Protocol, thresholds, limitations and results are documented in
 `docs/solution-corpus-benchmark.md`; the committed full report is
 `benchmarks/structure-solution-corpus-development-macos.json`.
 
+A subsequent development-only count policy preserves the initial density batch,
+then competes one-/two-orbit residual additions using common isotropic screens
+before a requested-mode fit. Weak-density candidates can use diffraction-based
+labels, poor early maps have bounded handoff budgets, and promising models retain
+the global budget. `adaptive_counts=False` preserves the earlier policy. No
+expected atom counts enter either path. The first complete follow-up screen
+improves exact total counts from 9/35 to 13/35 and full element-labelled coordinate
+recovery from 5/35 to 7/35, preserving all five former successes. Runtime has not
+improved overall. The contemporary same-native ablation recovers 4/35 versus
+7/35 structures and 7/35 versus 13/35 total counts, with median all-outcome times
+13.357 versus 13.390 s; these are serial collections, not paired repeated timings.
+Independent NumPy score checks, synthetic symmetry/count ablations and a realistic
+full-search microbenchmark accompany the existing unchanged analytical kernels.
+See `docs/solution-count-selection.md`. The 65 holdout outcomes remain unopened;
+this solver is still serial, and SHELXT remains pinned to one thread for comparison.
+
 ## Quality bar
 
 Public behavior is typed and documented. Invalid shapes, non-finite values,
