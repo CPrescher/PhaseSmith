@@ -33,10 +33,18 @@ pub(super) fn summary<'py>(
         item.set_item("label_scores", r.label_scores)?;
         item.set_item("label_changes", r.label_changes)?;
         item.set_item("batch_refined", r.batch_refined)?;
+        item.set_item(
+            "tangent",
+            r.tangent
+                .as_ref()
+                .map(|a| super::tangent::audit(py, a))
+                .transpose()?,
+        )?;
         recycling.append(item)?;
     }
     d.set_item("recycling", recycling)?;
     d.set_item("tangent_refinement", s.tangent_refinement)?;
+    d.set_item("tangent_in_recycling", s.tangent_in_recycling)?;
     let tangent_trials = PyList::empty(py);
     for trial in &s.tangent_trials {
         tangent_trials.append(super::tangent::audit(py, trial)?)?;

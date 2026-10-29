@@ -296,9 +296,12 @@ class RecyclingAudit:
     label_scores: int
     label_changes: int
     batch_refined: bool
+    tangent: TangentAudit | None = None
 
     def __post_init__(self):
         object.__setattr__(self, "origin_shift", tuple(self.origin_shift))
+        if isinstance(self.tangent, dict):
+            object.__setattr__(self, "tangent", TangentAudit(**self.tangent))
 
 
 @dataclass(frozen=True, slots=True)
@@ -318,6 +321,8 @@ class TangentAudit:
     declined_steps: int
     quartet_before: tuple[float, ...]
     quartet_after: tuple[float, ...]
+    symmetry_restorations: int = 0
+    symmetry_declined_steps: int = 0
 
     def __post_init__(self):
         object.__setattr__(self, "quartet_before", tuple(self.quartet_before))
@@ -365,6 +370,7 @@ class SharedSearchAudit:
     recycling: tuple[RecyclingAudit, ...] = ()
     tangent_refinement: bool = False
     tangent_trials: tuple[TangentAudit, ...] = ()
+    tangent_in_recycling: bool = True
 
     def __post_init__(self):
         object.__setattr__(self, "elements", tuple(self.elements))
@@ -556,6 +562,7 @@ def solve_structure_elements(
     symmetry_recycling: bool = False,
     recycling_cycles: int = 10,
     tangent_refinement: bool = False,
+    tangent_in_recycling: bool = True,
     cancellation: SolutionCancellation | None = None,
 ) -> SolutionResult:
     """Infer full-cell counts and labels by shared-map symmetry-orbit edits.
@@ -571,7 +578,10 @@ def solve_structure_elements(
     cycles per retained origin before weak-peak assignment; ``recycling_cycles``
     controls the bounded cycle budget. ``tangent_refinement=True`` adds measured-only
     tangent phases, cooling perturbations and negative-quartet guards; it requires
-    ``phasing="dual_space"`` in SolutionOptions. Recycling remains opt-in because easy cases
+    ``phasing="dual_space"`` in SolutionOptions. With symmetry recycling, tangent
+    steps run after origin recovery and are checked after restoring symmetry.
+    ``tangent_in_recycling=False`` retains the earlier unconstrained placement.
+    Recycling remains opt-in because easy cases
     can become slower. Counts returned in ``composition`` are inferred, never inputs. The default
     atom cap is ceil(cell volume/8 A³), at most 128; it is a search bound.
     """
@@ -590,6 +600,8 @@ def solve_structure_elements(
         raise ValueError("elements must be 1..8 distinct neutral non-H symbols")
     if not isinstance(tangent_refinement, bool):
         raise TypeError("tangent_refinement must be boolean")
+    if not isinstance(tangent_in_recycling, bool):
+        raise TypeError("tangent_in_recycling must be boolean")
     if not isinstance(symmetry_recycling, bool):
         raise TypeError("symmetry_recycling must be boolean")
     if not isinstance(cached_refinement, bool):
@@ -655,6 +667,7 @@ def solve_structure_elements(
             symmetry_recycling,
             recycling_cycles,
             tangent_refinement,
+            tangent_in_recycling,
         ),
     )
     return _run_solution(observations, cell, group, (), controls, cancellation, shared)

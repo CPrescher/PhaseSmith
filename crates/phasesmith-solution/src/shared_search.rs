@@ -46,6 +46,8 @@ pub struct SharedSearchOptions {
     pub recycling_cycles: usize,
     /// Add measured-only tangent phases, annealing and negative-quartet checks.
     pub tangent_refinement: bool,
+    /// When both options are enabled, refine phases within supplied-symmetry recycling.
+    pub tangent_in_recycling: bool,
 }
 impl Default for SharedSearchOptions {
     fn default() -> Self {
@@ -65,6 +67,7 @@ impl Default for SharedSearchOptions {
             symmetry_recycling: false,
             recycling_cycles: 10,
             tangent_refinement: false,
+            tangent_in_recycling: true,
         }
     }
 }
@@ -123,6 +126,8 @@ pub struct RecyclingAudit {
     pub label_changes: usize,
     /// Batch candidate survived a complete requested-mode fit.
     pub batch_refined: bool,
+    /// Actual optional phase updates in this supplied symmetry setting.
+    pub tangent: Option<crate::TangentAudit>,
 }
 struct RecyclingContext {
     peaks: Vec<[f64; 3]>,
@@ -163,6 +168,8 @@ pub struct SharedSearchSummary {
     pub recycling: Vec<RecyclingAudit>,
     /// Whether optional reciprocal phase refinement was requested.
     pub tangent_refinement: bool,
+    /// Requested placement policy; active only with tangent and symmetry recycling.
+    pub tangent_in_recycling: bool,
     /// Actual measured-only phase plans and completed work per start.
     pub tangent_trials: Vec<crate::TangentAudit>,
     /// Recovered initial framework settings.
@@ -944,6 +951,7 @@ fn search_phase_map(
     winners: &mut Vec<State>,
     result: &mut Solution,
     audit: &mut SharedSearchSummary,
+    tangent: Option<&crate::PreparedTangent>,
 ) -> Result<bool, SolutionError> {
     let geometry = cell.geometry().map_err(|e| error(e.to_string()))?;
     let integrated_map = if search.integrated_peak_density {
@@ -1041,7 +1049,7 @@ fn search_phase_map(
                 break;
             }
             let frame = parent.candidate.refinement.as_ref().expect("refined state");
-            let attempt = crate::recycle_density(
+            let attempt = crate::recycle_density_guided(
                 shape,
                 &result.data.hkl,
                 &result.data.amplitudes,
@@ -1053,6 +1061,8 @@ fn search_phase_map(
                 search.recycling_cycles,
                 Some(deadline),
                 options.cancellation.as_ref(),
+                tangent,
+                options.seed.wrapping_add(trial as u64),
             );
             if let Err(error) = &attempt {
                 result.rejected_trials.push((
@@ -1093,6 +1103,10 @@ fn search_phase_map(
                     label_scores: 0,
                     label_changes: 0,
                     batch_refined: false,
+                    tangent: recycled.tangent.map(|mut a| {
+                        a.trial = trial;
+                        a
+                    }),
                 });
                 recycling[parent.lineage % search.beam_width] = Some(RecyclingContext {
                     peaks,
@@ -1626,6 +1640,7 @@ pub fn solve_elements(
         symmetry_recycling: search.symmetry_recycling,
         recycling_cycles: search.recycling_cycles,
         tangent_refinement: search.tangent_refinement,
+        tangent_in_recycling: search.tangent_in_recycling,
         staged_refinement: search.staged_refinement
             && options.refinement == Some(AdpMode::Anisotropic),
         screening_iterations: search.screening_iterations,
@@ -1654,6 +1669,16 @@ pub fn solve_elements(
         }
     } else {
         None
+    };
+    let recycle_tangent = if search.symmetry_recycling && search.tangent_in_recycling {
+        tangent_plan.as_ref()
+    } else {
+        None
+    };
+    let dual_tangent = if recycle_tangent.is_some() {
+        None
+    } else {
+        tangent_plan.as_ref()
     };
     let mut winners: Vec<State> = Vec::new();
     for trial in 0..options.trials {
@@ -1698,6 +1723,7 @@ pub fn solve_elements(
                     &mut winners,
                     &mut result,
                     &mut audit,
+                    recycle_tangent,
                 )?;
                 if old_winners.first().is_some_and(|old| {
                     winners
@@ -1749,7 +1775,7 @@ pub fn solve_elements(
                 } else {
                     None
                 },
-                tangent_plan.as_ref(),
+                dual_tangent,
             )?;
             if let Some(mut tangent) = state.tangent.take() {
                 tangent.trial = trial;
@@ -1832,6 +1858,7 @@ pub fn solve_elements(
                 &mut winners,
                 &mut result,
                 &mut audit,
+                recycle_tangent,
             )?;
         }
         if winners.first().is_some_and(|state| {

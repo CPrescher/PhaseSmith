@@ -53,7 +53,7 @@ pub use staged_refinement::screening_shortlist;
 pub use symmetry_model::{
     AsymmetricSite, SymmetryImage, SymmetryModel, recover_symmetry, recover_symmetry_hypotheses,
 };
-pub use symmetry_recycling::{RecycledDensity, recycle_density};
+pub use symmetry_recycling::{RecycledDensity, recycle_density, recycle_density_guided};
 pub use tangent::{
     NegativeQuartet, PhaseTerm, PhaseTriplet, PreparedTangent, TangentAudit, TangentEvaluation,
     TangentStep,

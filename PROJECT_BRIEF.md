@@ -223,6 +223,31 @@ thiourea search leaves this option off by default. K[BrF4] supplies no eligible
 negative quartets, reported explicitly. See `docs/solution-tangent-refinement.md`
 for equations, resource bounds, interpretation limits and frozen reports.
 
+A follow-up improves the combined tangent/recycling path by deferring tangent
+updates until a strong-framework origin is known. Each existing recycling cycle
+then restores supplied symmetry, proposes an annealed tangent step and restores
+symmetry again; a second negative-quartet guard checks the actual constrained
+phases before positivity. Exact stored Fo values keep the frozen-set ranking
+stable across equal symmetry-related amplitudes, and an explicit local cost-tie
+convention stabilizes centric cases. Accepted phase-change counts exclude zero
+amplitudes. Independent NumPy complete-cycle references and synthetic cases cover
+all operations and actual guard rejections without loosening global tolerances.
+`tangent_in_recycling=False` retains the original P1 placement for ablation;
+without recycling the original tangent path is unchanged. Per-origin typed
+audits distinguish constrained work from P1 tangent work. The map diagnostic
+traces the thiourea regression to lower symmetry-phase coherence, a one-orbit
+joint proposal instead of four, and 258/46 screening/final fits instead of 50/14.
+The revised combination restores the four-orbit proposal and one edit round for
+seed 0. See `docs/solution-tangent-recycling.md` for equations, timing and an
+eight-seed comparison across all three measured development structures.
+Three paired legacy/improved medians are 0.7817/0.7896 s for K[BrF4],
+0.3083/0.2887 s for BiSeI and 5.7752/1.3347 s for thiourea (4.33x faster).
+Eight predeclared seeds recover all three structures and exact non-H counts
+(24/24 improved solves); all paired geometry, R1 and both-CIF checks pass.
+Thiourea still spans 0.654–7.302 s across seeds: the slow seeds also have long
+searches with recycling alone. Both options remain opt-in, and these reused
+development cases are not a general solve-coverage claim.
+
 An opt-in primitive/Bravais comparison now follows position-only lattice discovery.
 Native Selling-Delaunay reduction retains exact integer basis transformations;
 complete low-index reciprocal HNF hypotheses expose excluded reflections rather

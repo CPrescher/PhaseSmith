@@ -419,12 +419,7 @@ pub(crate) fn dual_space_guided(
     mask_bounds(shape, &geometry, options.mask_sigma)?;
     let (indices, mut f) = prepare_fourier(shape, hkl, amplitudes, phases, support)?;
     if let Some(plan) = tangent {
-        if plan.full_terms.len() != hkl.len()
-            || hkl
-                .iter()
-                .zip(&plan.full_terms)
-                .any(|(h, t)| plan.hkl[t.index].map(|value| value * t.sign) != *h)
-        {
+        if !plan.matches_hkl(hkl) {
             return Err(error("tangent plan does not match measured reflections"));
         }
     }

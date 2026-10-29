@@ -1,0 +1,63 @@
+{
+  "schema": "phasesmith.coupled-tangent-kernel-benchmark.v1",
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "command": "cargo bench -p phasesmith-solution --bench solution -- recycling_10_cycles --sample-size 20 --warm-up-time 1 --measurement-time 1",
+  "qualification": "Serial run after all paired and seed campaigns. Both kernels use the same eight-atom Pm field with 2108 measured coefficients and a 32-cubed FFT grid. The tangent plan is reusable and excluded from per-map timings; full searches include its preparation.",
+  "observed_coefficients": 2108,
+  "target_model_atoms": 8,
+  "space_group": "Pm",
+  "cycles": 10,
+  "benchmarks": {
+    "symmetry_recycling_10_cycles_32cubed_8_peaks_2108_reflections": {
+      "median_ns": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": 6403929.142857143,
+          "upper_bound": 6657334.55882353
+        },
+        "point_estimate": 6424769.543859649,
+        "standard_error": 67574.87182648081
+      },
+      "mean_ns": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": 6464000.898641793,
+          "upper_bound": 6748813.906499727
+        },
+        "point_estimate": 6591658.520884021,
+        "standard_error": 73302.3735083362
+      },
+      "estimates_sha256": "8627b728c03af8433efbe585b7bee6faac0aa1847b605b8378f4c20fb9444e9f",
+      "sample_sha256": "b4e08a6bb2b5f6677cc30c0e443a83c9d9ed188f144b36cf2aa8dca0a9b62f62"
+    },
+    "symmetry_tangent_recycling_10_cycles_32cubed_8_peaks_2108_reflections": {
+      "median_ns": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": 8015843.388888889,
+          "upper_bound": 8248399.826923077
+        },
+        "point_estimate": 8121569.458333334,
+        "standard_error": 56885.08835797447
+      },
+      "mean_ns": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": 8069121.3147055525,
+          "upper_bound": 8290162.763106204
+        },
+        "point_estimate": 8173761.0062724855,
+        "standard_error": 56480.90390245784
+      },
+      "estimates_sha256": "f767a733e7c3b96188bdb8b222a75b784e1db5babab0c85e28378fd3e09e7ef8",
+      "sample_sha256": "f5a9783083054454e0866c917082c9fc670fc98e53fd17ccbfacb69c424aabab"
+    }
+  },
+  "implementation_sha256": {
+    "Cargo.lock": "f8a427cc7edfd5463a2929aa00c5473c10dd674553132052aadcef11fd41cdee",
+    "crates/phasesmith-solution/benches/solution.rs": "099a23b7c91fe69f607c4ecf7578f99f66cdb95cffeb46a655640d1dad966446",
+    "crates/phasesmith-solution/src/symmetry_recycling.rs": "fc061adddfce869156809996c4944aae046baacfda6cd2ad5e15fcbdd35250fe",
+    "crates/phasesmith-solution/src/tangent.rs": "25fab86895c4401d46d722d04900fda1c912d4247f346f6ed7f0fd7c04393e79",
+    "crates/phasesmith-solution/src/fourier.rs": "6785270fd617e7f0a15b60079cba12eda94c1c1d7432ce0aec1ea507a820a861"
+  }
+}

@@ -4,7 +4,7 @@ use phasesmith_crystallography::{Rational, SpaceGroup, SymmetryOperation, UnitCe
 use phasesmith_solution::{
     AdpMode, DualSpaceOptions, FlipOptions, IntegratedPeakDensity, PreparedElementPool,
     PreparedOrbitSearch, PreparedSymmetricModel, PreparedTangent, charge_flip, dual_space,
-    recover_symmetry, recycle_density,
+    recover_symmetry, recycle_density, recycle_density_guided,
 };
 
 #[allow(clippy::too_many_lines)]
@@ -201,6 +201,29 @@ fn benchmark(c: &mut Criterion) {
         .iter()
         .map(|h| f64::from(h[0] + 3 * h[1] + 7 * h[2]) * 0.137)
         .collect();
+    c.bench_function(
+        "symmetry_tangent_recycling_10_cycles_32cubed_8_peaks_2108_reflections",
+        |b| {
+            b.iter(|| {
+                recycle_density_guided(
+                    shape,
+                    &hkl,
+                    &recycling_amplitudes,
+                    &support,
+                    &mirror_group,
+                    &source,
+                    1,
+                    [0.137, 0.271, 0.419],
+                    10,
+                    None,
+                    None,
+                    Some(&tangent),
+                    471,
+                )
+                .unwrap()
+            });
+        },
+    );
     let phase_magnitudes = tangent.normalized_values().0.to_vec();
     c.bench_function("tangent_plan_8_atoms_2108_reflections", |b| {
         b.iter(|| {
