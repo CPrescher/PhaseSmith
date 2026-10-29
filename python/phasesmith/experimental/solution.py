@@ -371,6 +371,9 @@ class SharedSearchAudit:
     tangent_refinement: bool = False
     tangent_trials: tuple[TangentAudit, ...] = ()
     tangent_in_recycling: bool = True
+    adaptive_counts: bool = False
+    count_prefix_screenings: int = 0
+    bounded_map_handoffs: int = 0
 
     def __post_init__(self):
         object.__setattr__(self, "elements", tuple(self.elements))
@@ -563,6 +566,7 @@ def solve_structure_elements(
     recycling_cycles: int = 10,
     tangent_refinement: bool = False,
     tangent_in_recycling: bool = True,
+    adaptive_counts: bool = True,
     cancellation: SolutionCancellation | None = None,
 ) -> SolutionResult:
     """Infer full-cell counts and labels by shared-map symmetry-orbit edits.
@@ -572,6 +576,9 @@ def solve_structure_elements(
     portfolio phasing use the same constrained refinement. Legacy completion and
     count-assignment switches are not used. Adaptive peak caps bound resources;
     their selected mask peaks are distinct from inferred atom counts.
+    ``adaptive_counts=True`` compares nested residual-orbit additions, repeats
+    count proposals after framework refinement, and bounds poor early-map
+    handoffs. ``False`` retains the previous single-batch/edit schedule.
     ``dual_checkpoints`` tests early maps with full requested refinement and
     resumes the same Fourier trajectory when a structure misses the target.
     ``symmetry_recycling=True`` adds ten supplied-symmetry phase/positivity
@@ -598,6 +605,8 @@ def solve_structure_elements(
         or len(set(elements)) != len(elements)
     ):
         raise ValueError("elements must be 1..8 distinct neutral non-H symbols")
+    if not isinstance(adaptive_counts, bool):
+        raise TypeError("adaptive_counts must be boolean")
     if not isinstance(tangent_refinement, bool):
         raise TypeError("tangent_refinement must be boolean")
     if not isinstance(tangent_in_recycling, bool):
@@ -668,6 +677,7 @@ def solve_structure_elements(
             recycling_cycles,
             tangent_refinement,
             tangent_in_recycling,
+            adaptive_counts,
         ),
     )
     return _run_solution(observations, cell, group, (), controls, cancellation, shared)

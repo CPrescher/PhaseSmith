@@ -48,6 +48,8 @@ pub struct SharedSearchOptions {
     pub tangent_refinement: bool,
     /// When both options are enabled, refine phases within supplied-symmetry recycling.
     pub tangent_in_recycling: bool,
+    /// Explore nested orbit counts and bound early-map refinement effort.
+    pub adaptive_counts: bool,
 }
 impl Default for SharedSearchOptions {
     fn default() -> Self {
@@ -68,6 +70,7 @@ impl Default for SharedSearchOptions {
             recycling_cycles: 10,
             tangent_refinement: false,
             tangent_in_recycling: true,
+            adaptive_counts: true,
         }
     }
 }
@@ -130,6 +133,7 @@ pub struct RecyclingAudit {
     pub tangent: Option<crate::TangentAudit>,
 }
 struct RecyclingContext {
+    shape: [usize; 3],
     peaks: Vec<[f64; 3]>,
     integral: IntegratedPeakDensity,
     frame: (i32, [f64; 3]),
@@ -170,6 +174,12 @@ pub struct SharedSearchSummary {
     pub tangent_refinement: bool,
     /// Requested placement policy; active only with tangent and symmetry recycling.
     pub tangent_in_recycling: bool,
+    /// Whether joint count-prefix exploration is active.
+    pub adaptive_counts: bool,
+    /// Isotropic count prefixes actually screened.
+    pub count_prefix_screenings: usize,
+    /// Phase maps handed off under a local refinement budget.
+    pub bounded_map_handoffs: usize,
     /// Actual measured-only phase plans and completed work per start.
     pub tangent_trials: Vec<crate::TangentAudit>,
     /// Recovered initial framework settings.
@@ -354,6 +364,17 @@ fn separated(
 #[allow(clippy::cast_precision_loss)]
 fn rank(j: f64, n: usize, p: usize) -> f64 {
     n as f64 * j.max(1e-300).ln() + p as f64 * (n as f64).ln()
+}
+// Nested data-proposed orbit prefixes, including the maximal admissible prefix.
+fn count_prefixes(available: usize) -> Vec<usize> {
+    let mut out: Vec<_> = [1, 2, 4, 8, 16, 32]
+        .into_iter()
+        .filter(|&n| n <= available)
+        .collect();
+    if available > 0 && out.last() != Some(&available) {
+        out.push(available);
+    }
+    out
 }
 fn complete(state: &State, elements: &[String]) -> bool {
     elements.iter().all(|e| state.candidate.species.contains(e))
@@ -735,12 +756,30 @@ fn recycled_batch(
     let Some(scale) = density_scale(&context.integral, group, parent, frame, audit)? else {
         return Ok(None);
     };
-    let seeds: Vec<_> = context
+    let pool = PreparedElementPool::new(
+        cell,
+        group,
+        &parent.candidate.species,
+        &parent.aligned,
+        elements,
+        &data.hkl,
+        &data.amplitudes,
+        parent.candidate.u_iso.clamp(0., 0.2),
+    )?;
+    let mut seeds: Vec<_> = context
         .peaks
         .iter()
-        .take(24)
+        .take(if search.adaptive_counts { 128 } else { 24 })
         .map(|p| std::array::from_fn(|i| (f64::from(frame.0) * p[i] + frame.1[i]).rem_euclid(1.)))
         .collect();
+    if search.adaptive_counts {
+        let residual = pool.parent.difference_map(context.shape)?;
+        seeds.extend(extract_peaks(
+            &residual.density,
+            context.shape,
+            search.maximum_atoms.max(32),
+        )?);
+    }
     let points = proposals(
         group,
         &cell.geometry().map_err(|e| error(e.to_string()))?,
@@ -758,16 +797,6 @@ fn recycled_batch(
         .collect();
     let min_z = f64::from(*numbers.iter().min().expect("elements"));
     let max_z = f64::from(*numbers.iter().max().expect("elements"));
-    let pool = PreparedElementPool::new(
-        cell,
-        group,
-        &parent.candidate.species,
-        &parent.aligned,
-        elements,
-        &data.hkl,
-        &data.amplitudes,
-        parent.candidate.u_iso.clamp(0., 0.2),
-    )?;
     let mut candidates = Vec::new();
     for point in points {
         if crate::stopped(Some(deadline), options.cancellation.as_ref()) {
@@ -777,17 +806,25 @@ fn recycled_batch(
         audit.recycling[context.audit].label_scores += values.len();
         let mass = image_mass(&context.integral, &values[0].fractional_xyz, frame, audit)?;
         let estimate = mass / scale;
-        if estimate < 0.6 * min_z || estimate > 1.6 * max_z {
+        let mass_plausible =
+            estimate.is_finite() && estimate >= 0.6 * min_z && estimate <= 1.6 * max_z;
+        if !mass_plausible && !search.adaptive_counts {
             continue;
         }
-        let label = (0..elements.len())
-            .min_by(|&i, &j| {
-                (estimate / f64::from(numbers[i]))
-                    .ln()
-                    .abs()
-                    .total_cmp(&(estimate / f64::from(numbers[j])).ln().abs())
-            })
-            .expect("elements");
+        let label = if mass_plausible {
+            (0..elements.len())
+                .min_by(|&i, &j| {
+                    (estimate / f64::from(numbers[i]))
+                        .ln()
+                        .abs()
+                        .total_cmp(&(estimate / f64::from(numbers[j])).ln().abs())
+                })
+                .expect("elements")
+        } else {
+            (0..elements.len())
+                .min_by(|&i, &j| values[i].objective.total_cmp(&values[j].objective))
+                .expect("labels")
+        };
         candidates.push((
             values[label].objective,
             label,
@@ -800,7 +837,9 @@ fn recycled_batch(
     let mut occupied = parent.aligned.clone();
     let mut added = 0;
     for (_, label, point, images) in candidates {
-        if added >= 8 || images.len() + occupied.len() > search.maximum_atoms {
+        if added >= if search.adaptive_counts { 2 } else { 8 }
+            || images.len() + occupied.len() > search.maximum_atoms
+        {
             continue;
         }
         if !separated(&geometry, &images, &occupied)? {
@@ -886,19 +925,40 @@ fn recycled_batch(
             _ => Ok(None),
         };
     }
-    let Ok(screen) = edited(
-        cell,
-        group,
-        data,
-        parent,
-        &selected,
-        "recycle_batch",
-        String::new(),
-        options,
-        deadline,
-        audit,
-        FitPass::Screen(search.screening_iterations),
-    ) else {
+    // Compete nested whole-orbit counts under the same isotropic score before
+    // paying for a single requested-mode fit. No expected N enters this path.
+    let base = sites(parent).len();
+    let prefixes = if search.adaptive_counts {
+        count_prefixes(selected.len() - base)
+    } else {
+        vec![selected.len() - base]
+    };
+    let mut screens = Vec::new();
+    for count in prefixes {
+        if crate::stopped(Some(deadline), options.cancellation.as_ref()) {
+            break;
+        }
+        if let Ok(state) = edited(
+            cell,
+            group,
+            data,
+            parent,
+            &selected[..base + count],
+            "recycle_batch",
+            String::new(),
+            options,
+            deadline,
+            audit,
+            FitPass::Screen(search.screening_iterations),
+        ) {
+            audit.count_prefix_screenings += usize::from(search.adaptive_counts);
+            screens.push(state);
+        }
+    }
+    let Some(screen) = screens
+        .into_iter()
+        .min_by(|a, b| a.score.total_cmp(&b.score))
+    else {
         return Ok(None);
     };
     if screen.score >= parent.score {
@@ -947,7 +1007,8 @@ fn search_phase_map(
     elements: &[String],
     trial: usize,
     density: &[f64],
-    deadline: Instant,
+    mut deadline: Instant,
+    global_deadline: Instant,
     winners: &mut Vec<State>,
     result: &mut Solution,
     audit: &mut SharedSearchSummary,
@@ -1071,7 +1132,15 @@ fn search_phase_map(
                 ));
             }
             if let Ok(recycled) = attempt {
-                let mut peaks = extract_peaks(&recycled.density, shape, 32)?;
+                let mut peaks = extract_peaks(
+                    &recycled.density,
+                    shape,
+                    if search.adaptive_counts {
+                        search.maximum_atoms.max(32)
+                    } else {
+                        32
+                    },
+                )?;
                 if let Some(first) = peaks.first() {
                     let idx = std::array::from_fn(|i| (first[i] * shape[i] as f64).round() as i32);
                     let threshold = 0.1 * recycled.density[crate::fourier::grid_index(idx, shape)];
@@ -1109,6 +1178,7 @@ fn search_phase_map(
                     }),
                 });
                 recycling[parent.lineage % search.beam_width] = Some(RecyclingContext {
+                    shape,
                     peaks,
                     integral,
                     frame: (frame.hand, frame.origin_shift),
@@ -1133,6 +1203,10 @@ fn search_phase_map(
         return Ok(true);
     }
     if search.symmetry_recycling && search.integrated_peak_density {
+        let initial_search = SharedSearchOptions {
+            adaptive_counts: false,
+            ..search.clone()
+        };
         let mut expanded = beam.clone();
         for parent in &beam {
             if let Some(context) = &recycling[parent.lineage % search.beam_width] {
@@ -1143,7 +1217,7 @@ fn search_phase_map(
                     parent,
                     context,
                     elements,
-                    search,
+                    &initial_search,
                     options,
                     deadline,
                     audit,
@@ -1153,6 +1227,11 @@ fn search_phase_map(
             }
         }
         beam = retain(expanded, search.beam_width);
+    }
+    // A promising atomic model earns the remaining budget; poor early maps
+    // return to Fourier recycling instead of monopolizing count editing.
+    if search.adaptive_counts && beam.iter().any(|s| s.candidate.r1 < 0.3) {
+        deadline = global_deadline;
     }
     for _ in 0..search.rounds {
         if crate::stopped(Some(deadline), options.cancellation.as_ref()) {
@@ -1171,6 +1250,25 @@ fn search_phase_map(
             }
             let base_sites = sites(parent);
             let context = recycling[parent.lineage % search.beam_width].as_ref();
+            if search.adaptive_counts
+                && search.integrated_peak_density
+                && let Some(context) = context
+                && let Some(batch) = recycled_batch(
+                    cell,
+                    group,
+                    &result.data,
+                    parent,
+                    context,
+                    elements,
+                    search,
+                    options,
+                    deadline,
+                    audit,
+                )?
+            {
+                next.push(batch);
+                continue;
+            }
             let active_map = if search.integrated_peak_density {
                 context.map(|c| &c.integral).or(integrated_map.as_ref())
             } else {
@@ -1452,6 +1550,9 @@ fn search_phase_map(
         }
         let previous = beam.clone();
         beam = retain(next, search.beam_width);
+        if search.adaptive_counts && beam.iter().any(|s| s.candidate.r1 < 0.3) {
+            deadline = global_deadline;
+        }
         let progressed = beam.iter().any(|s| {
             s.score
                 < previous
@@ -1641,6 +1742,7 @@ pub fn solve_elements(
         recycling_cycles: search.recycling_cycles,
         tangent_refinement: search.tangent_refinement,
         tangent_in_recycling: search.tangent_in_recycling,
+        adaptive_counts: search.adaptive_counts,
         staged_refinement: search.staged_refinement
             && options.refinement == Some(AdpMode::Anisotropic),
         screening_iterations: search.screening_iterations,
@@ -1705,10 +1807,18 @@ pub fn solve_elements(
             let phasing_hkl = result.data.hkl.clone();
             let mask_sigma = 0.35 * result.data.d_min;
             let mut chosen_cycle = None;
-            let mut handoff = |density: &[f64], _cycles: usize, selected_cycle: usize| {
+            let mut handoff = |density: &[f64], cycles: usize, selected_cycle: usize| {
                 // Keep candidates and their density frame together across failed checkpoints.
                 let old_winners = std::mem::take(&mut winners);
                 let old_density = std::mem::take(&mut result.density);
+                let map_deadline = if search.adaptive_counts {
+                    audit.bounded_map_handoffs += 1;
+                    deadline.min(
+                        Instant::now() + Duration::from_secs_f64(if cycles < 64 { 2. } else { 4. }),
+                    )
+                } else {
+                    deadline
+                };
                 search_phase_map(
                     cell,
                     group,
@@ -1719,6 +1829,7 @@ pub fn solve_elements(
                     &elements,
                     trial,
                     density,
+                    map_deadline,
                     deadline,
                     &mut winners,
                     &mut result,
@@ -1854,6 +1965,7 @@ pub fn solve_elements(
                 &elements,
                 trial,
                 &flip.density,
+                deadline,
                 deadline,
                 &mut winners,
                 &mut result,

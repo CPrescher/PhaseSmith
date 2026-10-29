@@ -192,7 +192,7 @@ def main():
         "--manifest", type=Path, default=ROOT / "validation/solution-corpus-v5.json"
     )
     seal_parser.add_argument("--discovery", type=Path, required=True)
-    seal_parser.add_argument("--lock-revision", type=int, default=4)
+    seal_parser.add_argument("--lock-revision", type=int, default=5)
     fetch_parser = commands.add_parser("fetch")
     fetch_parser.add_argument(
         "--manifest", type=Path, default=ROOT / "validation/solution-corpus-v5.json"
@@ -201,7 +201,8 @@ def main():
     r.add_argument("--manifest", type=Path, default=ROOT / "validation/solution-corpus-v5.json")
     r.add_argument("--output", type=Path, required=True)
     r.add_argument("--resume", action="store_true")
-    r.add_argument("--lock-revision", type=int, default=4)
+    r.add_argument("--legacy-counts", action="store_true")
+    r.add_argument("--lock-revision", type=int, default=5)
     r.add_argument("--split", choices=["development", "holdout"], default="development")
     r.add_argument("--open-holdout", action="store_true")
     r.add_argument("--seconds", type=float, default=30)
@@ -211,6 +212,7 @@ def main():
         default=Path("/Users/clemens/.local/opt/shelx/versions/2026-10-28/bin/shelxt"),
     )
     w = commands.add_parser("worker")
+    w.add_argument("--legacy-counts", action="store_true")
     w.add_argument("--input", type=Path, required=True)
     w.add_argument("--hkl", type=Path, required=True)
     w.add_argument("--output", type=Path, required=True)

@@ -35,7 +35,7 @@ type SharedSearchRequest = (
     f64,
     f64,
     usize,
-    (bool, bool, bool, usize, bool, bool),
+    (bool, bool, bool, usize, bool, bool, bool),
 );
 
 fn invalid(error: impl ToString) -> PyErr {
@@ -156,6 +156,7 @@ fn solve_structure<'py>(
                     recycling_cycles,
                     tangent_refinement,
                     tangent_in_recycling,
+                    adaptive_counts,
                 ),
             )) = shared_search
             {
@@ -187,6 +188,7 @@ fn solve_structure<'py>(
                         recycling_cycles,
                         tangent_refinement,
                         tangent_in_recycling,
+                        adaptive_counts,
                     },
                 )
             } else {

@@ -241,7 +241,9 @@ That command requires the locally retained original collection. A fresh clone
 can retrieve inputs with `fetch` and perform a new timed collection with `run`;
 it cannot reconstruct historical wall times. The historical collection used v4
 locks 2/3; the current adapters and corrected reference registry are sealed by
-`validation/solution-corpus-v5.benchmark4.lock.json`. Raw data, bulky solver output
+`validation/solution-corpus-v5.benchmark4.lock.json`. The later count-policy CLI
+is sealed separately by `validation/solution-corpus-v5.benchmark5.lock.json`,
+which current commands use by default. Raw data, bulky solver output
 and discovery snapshots are kept in ignored data/run directories; the committed
 manifests and result retain their hashes and source URLs. The user-supplied pinned
 SHELXT executable is required separately.
@@ -257,3 +259,7 @@ timeouts, reference matching, special-position precision and all 230 reference
 groups. The complete Rust suite passes 394 tests; formatting and strict Clippy
 checks pass. The full Python suite and repository lint checks also pass (external
 data/oracle tests retain their normal opt-in skips).
+
+The subsequent count-selection investigation and same-build ablation are in
+[the count-selection follow-up](solution-count-selection.md). The results above
+remain the original frozen screen; they are not silently replaced by later runs.
