@@ -14,6 +14,8 @@ use crate::{NativePreparedReflectionGenerator, crystallographic_cell, hkl_rows};
 mod completion;
 #[path = "solution_dual.rs"]
 mod dual;
+#[path = "solution_recycling.rs"]
+mod recycling;
 #[path = "solution_shared.rs"]
 mod shared;
 #[path = "solution_symmetry.rs"]
@@ -31,7 +33,7 @@ type SharedSearchRequest = (
     f64,
     f64,
     usize,
-    (bool, bool),
+    (bool, bool, bool, usize),
 );
 
 fn invalid(error: impl ToString) -> PyErr {
@@ -145,7 +147,7 @@ fn solve_structure<'py>(
                 peak_density_radius_angstrom,
                 dual_peak_sigma,
                 dual_peak_cap,
-                (dual_checkpoints, cached_refinement),
+                (dual_checkpoints, cached_refinement, symmetry_recycling, recycling_cycles),
             )) = shared_search
             {
                 if !composition.is_empty() {
@@ -172,6 +174,8 @@ fn solve_structure<'py>(
                         dual_peak_cap,
                         dual_checkpoints,
                         cached_refinement,
+                        symmetry_recycling,
+                        recycling_cycles,
                     },
                 )
             } else {
@@ -339,6 +343,7 @@ pub fn register(module: &Bound<'_, PyModule>) -> PyResult<()> {
     dual::register(module)?;
     completion::register(module)?;
     shared::register(module)?;
+    recycling::register(module)?;
     module.add_class::<NativeCancellation>()?;
     module.add_function(wrap_pyfunction!(solve_structure, module)?)?;
     module.add_function(wrap_pyfunction!(flip, module)?)?;
