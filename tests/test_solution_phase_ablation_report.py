@@ -30,17 +30,19 @@ def test_pair_labels_are_distinct_from_prediction_case_pairs():
     assert report["comparisons"][0]["before"] == "legacy"
 
 
-@pytest.mark.parametrize("corruption", ["partial", "holdout", "budget"])
+@pytest.mark.parametrize("corruption", ["partial", "holdout", "budget", "origin_flag"])
 def test_comparison_rejects_incomplete_opened_or_changed_panels(tmp_path, corruption):
     report = json.loads(UPDATED.read_text())
     if corruption == "partial":
         report["runs"].pop()
     elif corruption == "holdout":
         report["holdout_opened"] = True
+    elif corruption == "origin_flag":
+        report["phase_origin_selection"] = True
     else:
         row = next(r for r in report["runs"] if r["method"] == "phasesmith")
         row["options"]["seed"] += 1
     path = tmp_path / "changed.json"
     path.write_text(json.dumps(report))
-    with pytest.raises(ValueError, match=r"complete|controls changed"):
+    with pytest.raises(ValueError, match=r"complete|controls changed|feature mismatch"):
         module.compare({"control": CONTROL, "changed": path}, MANIFEST)

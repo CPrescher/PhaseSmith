@@ -3,9 +3,9 @@ use criterion::{Criterion, criterion_group, criterion_main};
 use phasesmith_crystallography::{Rational, SpaceGroup, SymmetryOperation, UnitCell};
 use phasesmith_solution::{
     AdpMode, DualSpaceOptions, FlipOptions, IntegratedPeakDensity, Observation, PhasingMethod,
-    PreparedElementPool, PreparedOrbitSearch, PreparedSymmetricModel, PreparedTangent,
-    SharedSearchOptions, SolveOptions, charge_flip, dual_space, recover_symmetry, recycle_density,
-    recycle_density_guided,
+    PreparedElementPool, PreparedOrbitSearch, PreparedPeakCompletion, PreparedPhaseOrigin,
+    PreparedSymmetricModel, PreparedTangent, SharedSearchOptions, SolveOptions, charge_flip,
+    dual_space, recover_symmetry, recycle_density, recycle_density_guided,
 };
 
 #[allow(clippy::too_many_lines)]
@@ -164,6 +164,85 @@ fn benchmark(c: &mut Criterion) {
             re.hypot(im)
         })
         .collect();
+    // Eight separated periodic peaks on a realistic multi-reflection grid.
+    let shifted: Vec<_> = mirror_points
+        .iter()
+        .map(|p| {
+            std::array::from_fn::<_, 3, _>(|a| (p[a] + [0.137, 0.271, 0.419][a]).rem_euclid(1.))
+        })
+        .collect();
+    let mut origin_density = vec![0.; 32_usize.pow(3)];
+    for (index, value) in origin_density.iter_mut().enumerate() {
+        let node = [index / 1024, index / 32 % 32, index % 32];
+        for (p, species) in shifted.iter().zip(&mirror_elements) {
+            let d2: f64 = (0..3)
+                .map(|a| {
+                    let d = (f64::from(u32::try_from(node[a]).unwrap()) / 32. - p[a] + 0.5)
+                        .rem_euclid(1.)
+                        - 0.5;
+                    d * d
+                })
+                .sum();
+            *value += if species == "Si" { 14. } else { 8. } * (-d2 / 0.0008).exp();
+        }
+    }
+    let origin_plan = PreparedPhaseOrigin::new(&mirror_group, &hkl, &recycling_amplitudes).unwrap();
+    let origin_map = origin_plan.map(&origin_density, shape, 1).unwrap();
+    c.bench_function(
+        "phase_origin_fused_loss_gradient_hessian_8_peaks_2108_rows",
+        |b| {
+            b.iter(|| {
+                origin_map
+                    .evaluate(std::hint::black_box([0.137, 0.271, 0.419]))
+                    .unwrap()
+            });
+        },
+    );
+    c.bench_function("phase_origin_search_32cubed_8_peaks_2108_rows", |b| {
+        b.iter(|| {
+            origin_plan
+                .search(&origin_density, shape, 4, None, None)
+                .unwrap()
+        });
+    });
+    let cache_rows: Vec<_> = hkl
+        .iter()
+        .zip(&recycling_amplitudes)
+        .filter(|(h, _)| **h > [0; 3])
+        .collect();
+    let cache_hkl: Vec<_> = cache_rows.iter().map(|(h, _)| **h).collect();
+    let cache_observed: Vec<_> = cache_rows.iter().map(|(_, a)| **a).collect();
+    let cache_elements = ["Si".to_owned(), "O".to_owned()];
+    let make_cache = || {
+        PreparedPeakCompletion::new(
+            cell,
+            &mirror_group,
+            &points[..4],
+            &cache_elements,
+            &cache_hkl,
+            &cache_observed,
+            32,
+        )
+        .unwrap()
+    };
+    let cache = make_cache();
+    let labels = [Some(0), Some(0), Some(1), Some(1)];
+    c.bench_function("peak_completion_cache_8_atoms_1054_rows", |b| {
+        b.iter(make_cache);
+    });
+    c.bench_function(
+        "peak_completion_fused_value_gradient_8_atoms_1054_rows",
+        |b| {
+            b.iter(|| cache.evaluate(std::hint::black_box(&labels), 2).unwrap());
+        },
+    );
+    c.bench_function("peak_completion_counts_labels_8_atoms_1054_rows", |b| {
+        b.iter(|| {
+            cache
+                .search(&[28., 28., 16., 16.], &[1.7, 2., 2.3], 4, None, None)
+                .unwrap()
+        });
+    });
     c.bench_function(
         "symmetry_recycling_10_cycles_32cubed_8_peaks_2108_reflections",
         |b| {

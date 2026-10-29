@@ -11,6 +11,9 @@ use phasesmith_crystallography::{
     xray_species_metadata,
 };
 use std::time::{Duration, Instant};
+#[path = "shared_phase_path.rs"]
+mod phase_path;
+pub use phase_path::{PhaseOriginAudit, PhaseSettingAudit};
 
 /// Explicit bounds for shared site/element editing, never a composition.
 #[allow(clippy::struct_excessive_bools)]
@@ -58,6 +61,8 @@ pub struct SharedSearchOptions {
     pub phase_first_selection: bool,
     /// Independently normalize calculated amplitudes in resolution shells for Rweak.
     pub calculated_shell_normalization: bool,
+    /// Align origins from measured phases and screen complete peak-orbit models first.
+    pub phase_origin_selection: bool,
 }
 impl Default for SharedSearchOptions {
     fn default() -> Self {
@@ -83,6 +88,7 @@ impl Default for SharedSearchOptions {
             phase_quality_selection: false,
             phase_first_selection: true,
             calculated_shell_normalization: true,
+            phase_origin_selection: false,
         }
     }
 }
@@ -196,6 +202,10 @@ pub struct SharedSearchSummary {
     pub phase_first_selection: bool,
     /// Independently normalize calculated amplitudes in resolution shells for Rweak.
     pub calculated_shell_normalization: bool,
+    /// Requested phase-origin/cheap-completion path.
+    pub phase_origin_selection: bool,
+    /// Actual origin/setting/completion work, including failed maps.
+    pub phase_origins: Vec<PhaseOriginAudit>,
     /// Successful normalization, or None when not requested/failed.
     pub normalization: Option<crate::WilsonAudit>,
     /// Explicit normalization failure; fallback sharpening is labelled.
@@ -1041,7 +1051,14 @@ fn search_phase_map(
     result: &mut Solution,
     audit: &mut SharedSearchSummary,
     tangent: Option<&crate::PreparedTangent>,
+    phase_context: Option<&phase_path::PhaseSearchContext>,
 ) -> Result<bool, SolutionError> {
+    if let Some(context) = phase_context {
+        return phase_path::search(
+            context, cell, group, options, search, shape, elements, trial, density, deadline,
+            winners, result, audit, tangent,
+        );
+    }
     let geometry = cell.geometry().map_err(|e| error(e.to_string()))?;
     let integrated_map = if search.integrated_peak_density {
         audit.density_map_builds += 1;
@@ -1818,6 +1835,7 @@ pub fn solve_elements(
         phase_quality_selection: search.phase_quality_selection,
         phase_first_selection: search.phase_first_selection,
         calculated_shell_normalization: search.calculated_shell_normalization,
+        phase_origin_selection: search.phase_origin_selection,
         normalization: normalization.as_ref().map(|n| n.audit.clone()),
         normalization_diagnostic,
         staged_refinement: search.staged_refinement
@@ -1849,7 +1867,9 @@ pub fn solve_elements(
     } else {
         None
     };
-    let recycle_tangent = if search.symmetry_recycling && search.tangent_in_recycling {
+    let recycle_tangent = if (search.symmetry_recycling || search.phase_origin_selection)
+        && search.tangent_in_recycling
+    {
         tangent_plan.as_ref()
     } else {
         None
@@ -1858,6 +1878,11 @@ pub fn solve_elements(
         None
     } else {
         tangent_plan.as_ref()
+    };
+    let phase_context = if search.phase_origin_selection {
+        Some(phase_path::PhaseSearchContext::new(&result.data, group)?)
+    } else {
+        None
     };
     let mut winners: Vec<State> = Vec::new();
     let mut phase_pool: Vec<(f64, usize, Vec<f64>)> = Vec::new();
@@ -1913,6 +1938,7 @@ pub fn solve_elements(
                     &mut result,
                     &mut audit,
                     recycle_tangent,
+                    phase_context.as_ref(),
                 )?;
                 if old_winners.first().is_some_and(|old| {
                     winners
@@ -1980,7 +2006,10 @@ pub fn solve_elements(
                 quality_plan.as_ref(),
             )?;
             if let Some(mut quality) = state.quality.take() {
-                if phase_first && let Some(&score) = quality.cfom.get(state.trial.best_cycle) {
+                if phase_first
+                    && !search.phase_origin_selection
+                    && let Some(&score) = quality.cfom.get(state.trial.best_cycle)
+                {
                     phase_pool.push((score, trial, state.trial.density.clone()));
                     phase_pool.sort_by(|a, b| b.0.total_cmp(&a.0).then(a.1.cmp(&b.1)));
                     phase_pool.truncate(search.beam_width);
@@ -2054,6 +2083,30 @@ pub fn solve_elements(
             checkpoints,
         });
         result.histories.push(flip.history);
+        // A promising P1 score earns cheap phase-origin/completion validation.
+        // If the resulting complete model fails, continue independent starts.
+        if phase_first && search.phase_origin_selection {
+            audit.phase_model_trials.push(trial);
+            let local = deadline.min(Instant::now() + Duration::from_secs(4));
+            search_phase_map(
+                cell,
+                group,
+                options,
+                search,
+                shape,
+                minimum,
+                &elements,
+                trial,
+                &flip.density,
+                local,
+                deadline,
+                &mut winners,
+                &mut result,
+                &mut audit,
+                recycle_tangent,
+                phase_context.as_ref(),
+            )?;
+        }
         if (!use_dual || !search.dual_checkpoints) && quality_plan.is_none() {
             search_phase_map(
                 cell,
@@ -2071,9 +2124,13 @@ pub fn solve_elements(
                 &mut result,
                 &mut audit,
                 recycle_tangent,
+                phase_context.as_ref(),
             )?;
         }
-        if phase_first && phase_pool.first().is_some_and(|p| p.0 >= 0.9) {
+        if phase_first
+            && !search.phase_origin_selection
+            && phase_pool.first().is_some_and(|p| p.0 >= 0.9)
+        {
             break;
         }
         if winners.first().is_some_and(|state| {
@@ -2089,7 +2146,7 @@ pub fn solve_elements(
             break;
         }
     }
-    if phase_first {
+    if phase_first && !search.phase_origin_selection {
         phase_pool.sort_by(|a, b| b.0.total_cmp(&a.0).then(a.1.cmp(&b.1)));
         for (_, trial, density) in phase_pool {
             if crate::stopped(Some(deadline), options.cancellation.as_ref()) {
@@ -2113,6 +2170,7 @@ pub fn solve_elements(
                 &mut result,
                 &mut audit,
                 recycle_tangent,
+                phase_context.as_ref(),
             )?;
             if winners.first().is_some_and(|s| {
                 complete(s, &elements)

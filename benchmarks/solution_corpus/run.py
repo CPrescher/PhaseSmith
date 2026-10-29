@@ -69,6 +69,7 @@ def worker(args):
         adaptive_counts=not args.legacy_counts,
         wilson_normalization=args.wilson_normalization,
         phase_quality_selection=args.phase_quality_selection,
+        phase_origin_selection=args.phase_origin_selection,
         phase_first_selection=args.phase_first_selection,
         calculated_shell_normalization=not args.legacy_quality_normalization,
     )
@@ -242,6 +243,7 @@ def run(args):
             previous.get("wilson_normalization", False) != args.wilson_normalization
             or previous.get("phase_quality_selection", False) != args.phase_quality_selection
             or previous.get("phase_first_selection", False) != args.phase_first_selection
+            or previous.get("phase_origin_selection", False) != args.phase_origin_selection
             or previous.get("calculated_shell_normalization", False)
             == args.legacy_quality_normalization
         ):
@@ -282,6 +284,7 @@ def run(args):
         "adaptive_counts": not args.legacy_counts,
         "wilson_normalization": args.wilson_normalization,
         "phase_quality_selection": args.phase_quality_selection,
+        "phase_origin_selection": args.phase_origin_selection,
         "phase_first_selection": args.phase_first_selection,
         "calculated_shell_normalization": not args.legacy_quality_normalization,
         "implementation_sha256": {str(p.relative_to(ROOT)): sha(p) for p in sources},
@@ -399,6 +402,7 @@ def run(args):
                     str(atom_cap),
                     *(["--legacy-counts"] if args.legacy_counts else []),
                     *(["--wilson-normalization"] if args.wilson_normalization else []),
+                    *(["--phase-origin-selection"] if args.phase_origin_selection else []),
                     *(["--phase-quality-selection"] if args.phase_quality_selection else []),
                     *(
                         ["--phase-first-selection"]

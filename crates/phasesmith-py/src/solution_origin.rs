@@ -1,0 +1,269 @@
+//! Owned diagnostic boundary for measured-phase origin equations.
+use super::invalid;
+use crate::{NativePreparedReflectionGenerator, hkl_rows};
+use npy::PyReadonlyArray1;
+use phasesmith_solution::{PhaseOriginMap, PreparedPhaseOrigin};
+use pyo3::{
+    prelude::*,
+    types::{PyDict, PyList},
+};
+use std::time::{Duration, Instant};
+
+pub(super) fn origin_records<'py>(
+    py: Python<'py>,
+    records: &[phasesmith_solution::PhaseOriginAudit],
+) -> PyResult<Bound<'py, PyList>> {
+    let out = PyList::empty(py);
+    for a in records {
+        let d = PyDict::new(py);
+        d.set_item("trial", a.trial)?;
+        d.set_item("screening_families", a.screening_families)?;
+        d.set_item("phase_families", a.phase_families)?;
+        d.set_item("origin_candidates", a.origin_candidates)?;
+        d.set_item("origin_seconds", a.origin_seconds)?;
+        d.set_item("recycling_seconds", a.recycling_seconds)?;
+        d.set_item("completion_seconds", a.completion_seconds)?;
+        d.set_item("screening_seconds", a.screening_seconds)?;
+        d.set_item("refinement_seconds", a.refinement_seconds)?;
+        d.set_item("diagnostic", &a.diagnostic)?;
+        let settings = PyList::empty(py);
+        for s in &a.settings {
+            let r = PyDict::new(py);
+            r.set_item("hand", s.hand)?;
+            r.set_item("shift", s.shift)?;
+            r.set_item("alpha", s.alpha)?;
+            r.set_item("chord", s.chord)?;
+            r.set_item("orbits", s.orbits)?;
+            r.set_item("scales", &s.scales)?;
+            r.set_item("candidates", s.candidates)?;
+            r.set_item("evaluations", s.evaluations)?;
+            r.set_item("changes", s.changes)?;
+            r.set_item("screens", s.screens)?;
+            r.set_item("promotions", s.promotions)?;
+            r.set_item("diagnostic", &s.diagnostic)?;
+            settings.append(r)?;
+        }
+        d.set_item("settings", settings)?;
+        out.append(d)?;
+    }
+    Ok(out)
+}
+
+#[pyclass(name = "_PeakCompletionPlan", frozen)]
+struct NativeCompletion {
+    inner: phasesmith_solution::PreparedPeakCompletion,
+}
+#[pymethods]
+impl NativeCompletion {
+    #[new]
+    #[pyo3(signature=(cell_parameters,group,points,elements,hkl,observed,maximum_atoms=128))]
+    #[allow(clippy::too_many_arguments)]
+    fn new(
+        py: Python<'_>,
+        cell_parameters: Vec<f64>,
+        group: PyRef<'_, NativePreparedReflectionGenerator>,
+        points: PyReadonlyArray1<'_, f64>,
+        elements: Vec<String>,
+        hkl: PyReadonlyArray1<'_, i64>,
+        observed: PyReadonlyArray1<'_, f64>,
+        maximum_atoms: usize,
+    ) -> PyResult<Self> {
+        let cell = super::cell(&cell_parameters)?;
+        let group = group.space_group().clone();
+        let raw = points.as_slice()?;
+        if raw.len() % 3 != 0 {
+            return Err(invalid("points must be flattened triples"));
+        }
+        let points: Vec<_> = raw.chunks_exact(3).map(|p| [p[0], p[1], p[2]]).collect();
+        let hkl = hkl_rows(&hkl)?;
+        let observed = observed.as_slice()?.to_vec();
+        py.detach(move || {
+            phasesmith_solution::PreparedPeakCompletion::new(
+                cell,
+                &group,
+                &points,
+                &elements,
+                &hkl,
+                &observed,
+                maximum_atoms,
+            )
+            .map(|inner| Self { inner })
+        })
+        .map_err(invalid)
+    }
+    fn evaluate<'py>(
+        &self,
+        py: Python<'py>,
+        labels: Vec<i32>,
+        u: usize,
+    ) -> PyResult<Bound<'py, PyDict>> {
+        let labels = completion_labels(labels)?;
+        let (objective, gradient) = py
+            .detach(|| self.inner.evaluate(&labels, u))
+            .map_err(invalid)?;
+        let d = PyDict::new(py);
+        d.set_item("objective", objective)?;
+        d.set_item("gradient", gradient)?;
+        Ok(d)
+    }
+    #[pyo3(signature=(masses,scales,maximum=4,max_seconds=10.))]
+    fn search<'py>(
+        &self,
+        py: Python<'py>,
+        masses: PyReadonlyArray1<'_, f64>,
+        scales: PyReadonlyArray1<'_, f64>,
+        maximum: usize,
+        max_seconds: f64,
+    ) -> PyResult<Bound<'py, PyDict>> {
+        if !max_seconds.is_finite() || !(0.001..=3600.).contains(&max_seconds) {
+            return Err(invalid("invalid completion time budget"));
+        }
+        let masses = masses.as_slice()?.to_vec();
+        let scales = scales.as_slice()?.to_vec();
+        let result = py
+            .detach(|| {
+                self.inner.search(
+                    &masses,
+                    &scales,
+                    maximum,
+                    Some(Instant::now() + Duration::from_secs_f64(max_seconds)),
+                    None,
+                )
+            })
+            .map_err(invalid)?;
+        let d = PyDict::new(py);
+        let candidates = PyList::empty(py);
+        for c in result.candidates {
+            let r = PyDict::new(py);
+            let labels: Vec<_> = c
+                .labels
+                .into_iter()
+                .map(|l| l.map_or(-1, |v| i32::try_from(v).unwrap_or(-1)))
+                .collect();
+            r.set_item("labels", labels)?;
+            r.set_item("objective", c.objective)?;
+            r.set_item("score", c.score)?;
+            r.set_item("u_iso", c.u_iso)?;
+            r.set_item("atoms", c.atoms)?;
+            candidates.append(r)?;
+        }
+        d.set_item("candidates", candidates)?;
+        d.set_item("evaluations", result.evaluations)?;
+        d.set_item("changes", result.changes)?;
+        Ok(d)
+    }
+}
+fn completion_labels(raw: Vec<i32>) -> PyResult<Vec<Option<usize>>> {
+    raw.into_iter()
+        .map(|l| {
+            if l == -1 {
+                Ok(None)
+            } else {
+                usize::try_from(l)
+                    .map(Some)
+                    .map_err(|_| invalid("invalid completion label"))
+            }
+        })
+        .collect()
+}
+
+#[pyclass(name = "_PhaseOriginMap", frozen)]
+struct NativeMap {
+    inner: PhaseOriginMap,
+}
+#[pymethods]
+impl NativeMap {
+    fn evaluate<'py>(&self, py: Python<'py>, shift: [f64; 3]) -> PyResult<Bound<'py, PyDict>> {
+        let e = self.inner.evaluate(shift).map_err(invalid)?;
+        let d = PyDict::new(py);
+        d.set_item("chord", e.chord)?;
+        d.set_item("gradient", e.gradient)?;
+        d.set_item("hessian", e.hessian)?;
+        d.set_item("alpha", e.alpha)?;
+        d.set_item("alpha_gradient", e.alpha_gradient)?;
+        d.set_item("pairs", self.inner.pairs)?;
+        Ok(d)
+    }
+}
+#[pyclass(name = "_PhaseOriginPlan", frozen)]
+struct NativePlan {
+    inner: PreparedPhaseOrigin,
+}
+#[pymethods]
+impl NativePlan {
+    #[new]
+    fn new(
+        py: Python<'_>,
+        group: PyRef<'_, NativePreparedReflectionGenerator>,
+        hkl: PyReadonlyArray1<'_, i64>,
+        amplitudes: PyReadonlyArray1<'_, f64>,
+    ) -> PyResult<Self> {
+        let group = group.space_group().clone();
+        let hkl = hkl_rows(&hkl)?;
+        let amplitudes = amplitudes.as_slice()?.to_vec();
+        py.detach(move || {
+            PreparedPhaseOrigin::new(&group, &hkl, &amplitudes).map(|inner| Self { inner })
+        })
+        .map_err(invalid)
+    }
+    fn map(
+        &self,
+        py: Python<'_>,
+        density: PyReadonlyArray1<'_, f64>,
+        shape: [usize; 3],
+        hand: i32,
+    ) -> PyResult<NativeMap> {
+        let source = density.as_slice()?.to_vec();
+        py.detach(|| {
+            self.inner
+                .map(&source, shape, hand)
+                .map(|inner| NativeMap { inner })
+        })
+        .map_err(invalid)
+    }
+    #[pyo3(signature=(density,shape,maximum=4,max_seconds=10.))]
+    fn search<'py>(
+        &self,
+        py: Python<'py>,
+        density: PyReadonlyArray1<'_, f64>,
+        shape: [usize; 3],
+        maximum: usize,
+        max_seconds: f64,
+    ) -> PyResult<Bound<'py, PyDict>> {
+        if !max_seconds.is_finite() || !(0.001..=3600.).contains(&max_seconds) {
+            return Err(invalid("invalid origin time budget"));
+        }
+        let source = density.as_slice()?.to_vec();
+        let found = py
+            .detach(|| {
+                self.inner.search(
+                    &source,
+                    shape,
+                    maximum,
+                    Some(Instant::now() + Duration::from_secs_f64(max_seconds)),
+                    None,
+                )
+            })
+            .map_err(invalid)?;
+        let d = PyDict::new(py);
+        let origins = PyList::empty(py);
+        for c in found {
+            let row = PyDict::new(py);
+            row.set_item("hand", c.hand)?;
+            row.set_item("shift", c.shift)?;
+            row.set_item("alpha", c.alpha)?;
+            row.set_item("chord", c.chord)?;
+            origins.append(row)?;
+        }
+        d.set_item("origins", origins)?;
+        d.set_item("families", self.inner.selected_families)?;
+        d.set_item("representatives", &self.inner.representatives)?;
+        Ok(d)
+    }
+}
+pub(super) fn register(module: &Bound<'_, PyModule>) -> PyResult<()> {
+    module.add_class::<NativePlan>()?;
+    module.add_class::<NativeMap>()?;
+    module.add_class::<NativeCompletion>()?;
+    Ok(())
+}
