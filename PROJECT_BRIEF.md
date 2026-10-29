@@ -190,6 +190,25 @@ medians are 0.732/0.514 s for K[BrF4], 0.487/0.356 s for BiSeI and 6.573/4.451 s
 for thiourea (1.42x, 1.37x and 1.48x). Screening/final fit counts are identical
 between paired modes; no candidate shortlisting or atom-count prior is changed.
 
+The shared element-only solver now has opt-in supplied-symmetry density recycling
+before weak-peak assignment. Each retained framework origin receives ten phase
+symmetry/Friedel averaging and positive-density cycles, with measured amplitudes
+restored and missing coefficients kept as predictions. Recycled peaks and
+integrals seed bounded joint whole-orbit proposals; coordinate-fixed shared
+label sweeps and the original constrained refinement/complete shortlist resolve
+assignments. A batch may meet the target only after a complete ordinary edit
+round finds its preferred complete lineage stable. Counts remain inferred, and
+original density frames and both CIF exports retain their provenance. Independent
+NumPy full cycles cover translated/inverted origins and screw symmetry; existing
+shared structure-factor/derivative references cover the assignment objective.
+Three serial paired dual-space repeats preserve all three development structures,
+counts, geometry and R1. Previous/recycled medians are 0.521/0.767 s for K[BrF4],
+0.356/0.252 s for BiSeI and 4.516/1.499 s for thiourea: 47% slower, 1.41x and 3.01x
+faster respectively. The option `symmetry_recycling=True` remains explicit because
+of the K[BrF4] regression. There is no compound-specific dispatch or input count
+prior. See `docs/solution-symmetry-recycling.md` for equations, safeguards and
+frozen comparisons. Default powder builds and default shared search are unchanged.
+
 An opt-in primitive/Bravais comparison now follows position-only lattice discovery.
 Native Selling-Delaunay reduction retains exact integer basis transformations;
 complete low-index reciprocal HNF hypotheses expose excluded reflections rather

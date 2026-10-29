@@ -282,6 +282,26 @@ class DensityCalibration:
 
 
 @dataclass(frozen=True, slots=True)
+class RecyclingAudit:
+    """One supplied-origin recycling attempt and whole-orbit batch proposal."""
+
+    trial: int
+    lineage: int
+    hand: int
+    origin_shift: tuple[float, float, float]
+    cycles: int
+    predicted_coefficients: int
+    peaks: int
+    batch_orbits: int
+    label_scores: int
+    label_changes: int
+    batch_refined: bool
+
+    def __post_init__(self):
+        object.__setattr__(self, "origin_shift", tuple(self.origin_shift))
+
+
+@dataclass(frozen=True, slots=True)
 class SharedSearchAudit:
     """Actual work and inferred topology, without source composition."""
 
@@ -317,9 +337,19 @@ class SharedSearchAudit:
     accepted_moves: tuple[SharedMove, ...]
     dual_checkpoints: bool = False
     cached_refinement: bool = False
+    symmetry_recycling: bool = False
+    recycling_cycles: int = 10
+    recycling: tuple[RecyclingAudit, ...] = ()
 
     def __post_init__(self):
         object.__setattr__(self, "elements", tuple(self.elements))
+        object.__setattr__(
+            self,
+            "recycling",
+            tuple(
+                r if isinstance(r, RecyclingAudit) else RecyclingAudit(**r) for r in self.recycling
+            ),
+        )
         object.__setattr__(
             self,
             "density_calibrations",
@@ -491,6 +521,8 @@ def solve_structure_elements(
     dual_peak_cap: int = 128,
     dual_checkpoints: bool = True,
     cached_refinement: bool = True,
+    symmetry_recycling: bool = False,
+    recycling_cycles: int = 10,
     cancellation: SolutionCancellation | None = None,
 ) -> SolutionResult:
     """Infer full-cell counts and labels by shared-map symmetry-orbit edits.
@@ -502,7 +534,10 @@ def solve_structure_elements(
     their selected mask peaks are distinct from inferred atom counts.
     ``dual_checkpoints`` tests early maps with full requested refinement and
     resumes the same Fourier trajectory when a structure misses the target.
-    Counts returned in ``composition`` are inferred, never inputs. The default
+    ``symmetry_recycling=True`` adds ten supplied-symmetry phase/positivity
+    cycles per retained origin before weak-peak assignment; ``recycling_cycles``
+    controls the bounded cycle budget. It remains opt-in because easy cases
+    can become slower. Counts returned in ``composition`` are inferred, never inputs. The default
     atom cap is ceil(cell volume/8 A³), at most 128; it is a search bound.
     """
     if not hasattr(_core, "_SharedOrbitPool"):
@@ -518,6 +553,8 @@ def solve_structure_elements(
         or len(set(elements)) != len(elements)
     ):
         raise ValueError("elements must be 1..8 distinct neutral non-H symbols")
+    if not isinstance(symmetry_recycling, bool):
+        raise TypeError("symmetry_recycling must be boolean")
     if not isinstance(cached_refinement, bool):
         raise TypeError("cached_refinement must be boolean")
     if not isinstance(dual_checkpoints, bool):
@@ -547,6 +584,7 @@ def solve_structure_elements(
         ("screening_iterations", screening_iterations, 40),
         ("refinement_shortlist", refinement_shortlist, 16),
         ("dual_peak_cap", dual_peak_cap, 128),
+        ("recycling_cycles", recycling_cycles, 50),
     ):
         if isinstance(value, bool) or not isinstance(value, int) or not 1 <= value <= high:
             raise ValueError(f"{name} must be an integer in [1,{high}]")
@@ -572,7 +610,7 @@ def solve_structure_elements(
         peak_density_radius_angstrom,
         dual_peak_sigma,
         dual_peak_cap,
-        (dual_checkpoints, cached_refinement),
+        (dual_checkpoints, cached_refinement, symmetry_recycling, recycling_cycles),
     )
     return _run_solution(observations, cell, group, (), controls, cancellation, shared)
 

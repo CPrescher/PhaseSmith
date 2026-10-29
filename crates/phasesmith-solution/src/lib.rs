@@ -18,6 +18,7 @@ mod shared_search;
 mod solver;
 mod staged_refinement;
 mod symmetry_model;
+mod symmetry_recycling;
 
 use std::fmt::{Display, Formatter};
 use std::sync::{
@@ -43,13 +44,15 @@ pub use model::{ModelEvaluation, PolishedModel, evaluate_model, polish_model};
 pub use peak_density::{IntegratedPeakDensity, PeakIntegral, ball_transform, density_label_mask};
 pub use shared_pool::PreparedElementPool;
 pub use shared_search::{
-    DensityCalibration, SharedMove, SharedSearchOptions, SharedSearchSummary, solve_elements,
+    DensityCalibration, RecyclingAudit, SharedMove, SharedSearchOptions, SharedSearchSummary,
+    solve_elements,
 };
 pub use solver::{Candidate, PhasingMethod, PhasingTrial, Solution, SolveOptions, solve};
 pub use staged_refinement::screening_shortlist;
 pub use symmetry_model::{
     AsymmetricSite, SymmetryImage, SymmetryModel, recover_symmetry, recover_symmetry_hypotheses,
 };
+pub use symmetry_recycling::{RecycledDensity, recycle_density};
 
 /// Thread-safe cooperative cancellation between bounded numerical steps.
 #[derive(Clone, Debug, Default)]

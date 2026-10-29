@@ -17,6 +17,25 @@ pub(super) fn summary<'py>(
     d.set_item("phasing_starts", s.phasing_starts)?;
     d.set_item("dual_checkpoints", s.dual_checkpoints)?;
     d.set_item("cached_refinement", s.cached_refinement)?;
+    d.set_item("symmetry_recycling", s.symmetry_recycling)?;
+    d.set_item("recycling_cycles", s.recycling_cycles)?;
+    let recycling = PyList::empty(py);
+    for r in &s.recycling {
+        let item = PyDict::new(py);
+        item.set_item("trial", r.trial)?;
+        item.set_item("lineage", r.lineage)?;
+        item.set_item("hand", r.hand)?;
+        item.set_item("origin_shift", r.origin_shift)?;
+        item.set_item("cycles", r.cycles)?;
+        item.set_item("predicted_coefficients", r.predicted_coefficients)?;
+        item.set_item("peaks", r.peaks)?;
+        item.set_item("batch_orbits", r.batch_orbits)?;
+        item.set_item("label_scores", r.label_scores)?;
+        item.set_item("label_changes", r.label_changes)?;
+        item.set_item("batch_refined", r.batch_refined)?;
+        recycling.append(item)?;
+    }
+    d.set_item("recycling", recycling)?;
     d.set_item("framework_hypotheses", s.framework_hypotheses)?;
     d.set_item("initial_prefix", s.initial_prefix)?;
     d.set_item("rounds", s.rounds)?;

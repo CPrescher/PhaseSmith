@@ -1,0 +1,42 @@
+{
+  "schema": "phasesmith.symmetry-recycling-kernel-benchmark.v1",
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "command": "cargo bench -p phasesmith-solution --bench solution -- symmetry_recycling_10_cycles --sample-size 20 --warm-up-time 1 --measurement-time 3",
+  "qualification": "New complete projection kernel; no prior equivalent kernel baseline. Includes bounded orbit-plan preparation and ten complete FFT/positivity cycles plus final reciprocal projection. Serial run after paired experiments.",
+  "shape": [
+    32,
+    32,
+    32
+  ],
+  "observed_coefficients": 2108,
+  "space_group": "Pm",
+  "cycles": 10,
+  "median_ns": {
+    "confidence_interval": {
+      "confidence_level": 0.95,
+      "lower_bound": 6233617.354166666,
+      "upper_bound": 6279040.903030303
+    },
+    "point_estimate": 6254431.047619048,
+    "standard_error": 12030.22734771267
+  },
+  "mean_ns": {
+    "confidence_interval": {
+      "confidence_level": 0.95,
+      "lower_bound": 6246111.567596058,
+      "upper_bound": 6326210.769012147
+    },
+    "point_estimate": 6282406.495274951,
+    "standard_error": 20623.544275962155
+  },
+  "implementation_sha256": {
+    "Cargo.lock": "f8a427cc7edfd5463a2929aa00c5473c10dd674553132052aadcef11fd41cdee",
+    "crates/phasesmith-solution/src/symmetry_recycling.rs": "293f294fcc612bfa8436c5b4e5000a3456e59ee42d64f6002f2a2ae001d5a83a",
+    "crates/phasesmith-solution/benches/solution.rs": "ca2a36d321a0e36d05fe7e2d833ac5b6fb2ea59033024f81de07aebf952c69b0",
+    "crates/phasesmith-solution/src/fourier.rs": "6785270fd617e7f0a15b60079cba12eda94c1c1d7432ce0aec1ea507a820a861"
+  },
+  "estimates_sha256": "26de047237cd3f02610df11b08cb3212df9ba38e21c0bdd7111c13298c81f5cc",
+  "sample_sha256": "b7a5bea724aab748d5c8c4a60e2c21fcfb23fa12e3091b5e7b569bfb07a678bc",
+  "source_model_atoms": 4,
+  "target_model_atoms": 8
+}

@@ -61,3 +61,11 @@ first low-R1 candidate is not safe: the recorded thiourea C/N failure is retaine
 in the earlier handoff report. Chemistry-specific carbon/bond heuristics and
 parallel/f32 kernels are not substituted for the general mineral-compatible
 search or its correctness checks.
+
+
+Follow-up: supplied-symmetry density recycling and joint weak-orbit proposals
+are now independently implemented and measured in
+[solution-symmetry-recycling.md](solution-symmetry-recycling.md). All three
+structures/counts are retained; thiourea and BiSeI become faster, while K[BrF4]
+becomes slower, so this feature stays opt-in. The conjugate-gradient solver
+replacement remains unimplemented.

@@ -4,6 +4,7 @@ use phasesmith_crystallography::{Rational, SpaceGroup, SymmetryOperation, UnitCe
 use phasesmith_solution::{
     AdpMode, DualSpaceOptions, FlipOptions, IntegratedPeakDensity, PreparedElementPool,
     PreparedOrbitSearch, PreparedSymmetricModel, charge_flip, dual_space, recover_symmetry,
+    recycle_density,
 };
 
 #[allow(clippy::too_many_lines)]
@@ -146,6 +147,43 @@ fn benchmark(c: &mut Criterion) {
         ));
         mirror_points.extend(images.fractional_xyz);
     }
+    let recycling_amplitudes: Vec<_> = hkl
+        .iter()
+        .map(|h| {
+            let mut re = 0.;
+            let mut im = 0.;
+            for (point, species) in mirror_points.iter().zip(&mirror_elements) {
+                let angle =
+                    std::f64::consts::TAU * (0..3).map(|a| f64::from(h[a]) * point[a]).sum::<f64>();
+                let (sin, cos) = angle.sin_cos();
+                let weight = if species == "Si" { 14. } else { 8. };
+                re += weight * cos;
+                im += weight * sin;
+            }
+            re.hypot(im)
+        })
+        .collect();
+    c.bench_function(
+        "symmetry_recycling_10_cycles_32cubed_8_peaks_2108_reflections",
+        |b| {
+            b.iter(|| {
+                recycle_density(
+                    shape,
+                    &hkl,
+                    &recycling_amplitudes,
+                    &support,
+                    &mirror_group,
+                    &source,
+                    1,
+                    [0.137, 0.271, 0.419],
+                    10,
+                    None,
+                    None,
+                )
+                .unwrap()
+            });
+        },
+    );
     let mirror = recover_symmetry(
         cell,
         &mirror_group,

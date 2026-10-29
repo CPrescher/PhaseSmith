@@ -40,6 +40,10 @@ pub struct SharedSearchOptions {
     pub dual_checkpoints: bool,
     /// Cache fixed reflection/image geometry in constrained refinements.
     pub cached_refinement: bool,
+    /// Recycle each supplied-symmetry setting before weak-peak assignment.
+    pub symmetry_recycling: bool,
+    /// Positivity/phase-projection cycles, in [1,50].
+    pub recycling_cycles: usize,
 }
 impl Default for SharedSearchOptions {
     fn default() -> Self {
@@ -56,13 +60,15 @@ impl Default for SharedSearchOptions {
             dual_peak_cap: 128,
             dual_checkpoints: true,
             cached_refinement: true,
+            symmetry_recycling: false,
+            recycling_cycles: 10,
         }
     }
 }
 /// One accepted edit along the selected state's lineage.
 #[derive(Clone, Debug)]
 pub struct SharedMove {
-    /// `initial`, `birth`, `delete`, or `relabel`.
+    /// `initial`, `birth`, `delete`, `relabel`, or `recycle_batch`.
     pub kind: &'static str,
     /// Element assigned/deleted; empty for initialization.
     pub element: String,
@@ -89,6 +95,50 @@ pub struct DensityCalibration {
     /// Density-ambiguity cap on the final-fit shortlist for this parent.
     pub shortlist_limit: usize,
 }
+/// One actual symmetry-setting recycling attempt.
+#[derive(Clone, Debug)]
+pub struct RecyclingAudit {
+    /// Phase-start index.
+    pub trial: usize,
+    /// Strong-framework lineage.
+    pub lineage: usize,
+    /// Source-map hand to supplied symmetry setting.
+    pub hand: i32,
+    /// Source-map origin shift to supplied symmetry setting.
+    pub origin_shift: [f64; 3],
+    /// Actual completed positivity cycles.
+    pub cycles: usize,
+    /// Allowed unmeasured predicted coefficients, including F000.
+    pub predicted_coefficients: usize,
+    /// Extracted positive map maxima.
+    pub peaks: usize,
+    /// Whole weak orbits proposed together.
+    pub batch_orbits: usize,
+    /// Alternative-label scores in joint proposals and coordinate-fixed sweeps.
+    pub label_scores: usize,
+    /// Accepted coordinate-fixed label changes.
+    pub label_changes: usize,
+    /// Batch candidate survived a complete requested-mode fit.
+    pub batch_refined: bool,
+}
+struct RecyclingContext {
+    peaks: Vec<[f64; 3]>,
+    integral: IntegratedPeakDensity,
+    frame: (i32, [f64; 3]),
+    audit: usize,
+}
+// Converts recycled-frame coordinates to a current candidate's symmetry frame.
+fn recycling_frame(parent: &State, context: &RecyclingContext) -> (i32, [f64; 3]) {
+    let current = parent.candidate.refinement.as_ref().expect("refined state");
+    let hand = current.hand * context.frame.0;
+    (
+        hand,
+        std::array::from_fn(|i| {
+            (current.origin_shift[i] - f64::from(hand) * context.frame.1[i]).rem_euclid(1.)
+        }),
+    )
+}
+
 /// Actual shared work, including unsuccessful edits and budget-limited states.
 // These are independent configuration/outcome facts in a diagnostic record.
 #[allow(clippy::struct_excessive_bools)]
@@ -102,6 +152,12 @@ pub struct SharedSearchSummary {
     pub dual_checkpoints: bool,
     /// Cache fixed reflection/image geometry in constrained refinements.
     pub cached_refinement: bool,
+    /// Whether supplied-symmetry map recycling was enabled.
+    pub symmetry_recycling: bool,
+    /// Requested cycle budget per setting.
+    pub recycling_cycles: usize,
+    /// Actual setting attempts and batch proposals.
+    pub recycling: Vec<RecyclingAudit>,
     /// Recovered initial framework settings.
     pub framework_hypotheses: usize,
     /// Number of strongest-map peaks in the selected initial closed prefix.
@@ -110,7 +166,7 @@ pub struct SharedSearchSummary {
     pub rounds: usize,
     /// Distinct candidate orbits scored.
     pub orbit_proposals: usize,
-    /// Label scores sharing the candidate orbit phase sums.
+    /// Serial edit label scores; recycling batch scores are recorded per setting.
     pub element_scores: usize,
     /// Complete constrained refinements attempted.
     pub refinements: usize,
@@ -179,6 +235,7 @@ struct State {
     moves: Vec<SharedMove>,
     initial_prefix: usize,
     promotion: Option<PromotionSeed>,
+    recycling_validated: bool,
 }
 
 fn orbit_mass(
@@ -215,6 +272,7 @@ fn density_scale(
     map: &IntegratedPeakDensity,
     group: &SpaceGroup,
     parent: &State,
+    frame: (i32, [f64; 3]),
     audit: &mut SharedSearchSummary,
 ) -> Result<Option<f64>, SolutionError> {
     let model = parent
@@ -234,7 +292,7 @@ fn density_scale(
         if f64::from(z) < 0.75 * f64::from(strongest) {
             continue;
         }
-        let mass = orbit_mass(map, group, point, (model.hand, model.origin_shift), audit)?;
+        let mass = orbit_mass(map, group, point, frame, audit)?;
         if mass > 0. {
             ratios.push(mass / f64::from(z));
         }
@@ -287,7 +345,11 @@ fn complete(state: &State, elements: &[String]) -> bool {
     elements.iter().all(|e| state.candidate.species.contains(e))
 }
 
-#[allow(clippy::too_many_arguments, clippy::cast_precision_loss)]
+#[allow(
+    clippy::too_many_arguments,
+    clippy::too_many_lines,
+    clippy::cast_precision_loss
+)]
 fn refine(
     model: SymmetryModel,
     data: &PreparedData,
@@ -400,6 +462,8 @@ fn refine(
         moves,
         initial_prefix: audit.initial_prefix,
         promotion,
+        recycling_validated: kind != "recycle_batch"
+            && !old_moves.iter().any(|m| m.kind == "recycle_batch"),
     })
 }
 
@@ -640,6 +704,218 @@ fn retain(mut candidates: Vec<State>, width: usize) -> Vec<State> {
     chosen
 }
 
+#[allow(clippy::too_many_arguments, clippy::too_many_lines)]
+fn recycled_batch(
+    cell: UnitCell,
+    group: &SpaceGroup,
+    data: &PreparedData,
+    parent: &State,
+    context: &RecyclingContext,
+    elements: &[String],
+    search: &SharedSearchOptions,
+    options: &SolveOptions,
+    deadline: Instant,
+    audit: &mut SharedSearchSummary,
+) -> Result<Option<State>, SolutionError> {
+    let frame = recycling_frame(parent, context);
+    let Some(scale) = density_scale(&context.integral, group, parent, frame, audit)? else {
+        return Ok(None);
+    };
+    let seeds: Vec<_> = context
+        .peaks
+        .iter()
+        .take(24)
+        .map(|p| std::array::from_fn(|i| (f64::from(frame.0) * p[i] + frame.1[i]).rem_euclid(1.)))
+        .collect();
+    let points = proposals(
+        group,
+        &cell.geometry().map_err(|e| error(e.to_string()))?,
+        &seeds,
+        &parent.aligned,
+        search.maximum_atoms,
+        options.symmetry_tolerance_angstrom,
+        options,
+        deadline,
+    )?;
+    let geometry = cell.geometry().map_err(|e| error(e.to_string()))?;
+    let numbers: Vec<_> = elements
+        .iter()
+        .map(|e| xray_species_metadata(e).map_or(0, |m| m.atomic_number))
+        .collect();
+    let min_z = f64::from(*numbers.iter().min().expect("elements"));
+    let max_z = f64::from(*numbers.iter().max().expect("elements"));
+    let pool = PreparedElementPool::new(
+        cell,
+        group,
+        &parent.candidate.species,
+        &parent.aligned,
+        elements,
+        &data.hkl,
+        &data.amplitudes,
+        parent.candidate.u_iso.clamp(0., 0.2),
+    )?;
+    let mut candidates = Vec::new();
+    for point in points {
+        if crate::stopped(Some(deadline), options.cancellation.as_ref()) {
+            break;
+        }
+        let values = pool.evaluate(point)?;
+        audit.recycling[context.audit].label_scores += values.len();
+        let mass = image_mass(&context.integral, &values[0].fractional_xyz, frame, audit)?;
+        let estimate = mass / scale;
+        if estimate < 0.6 * min_z || estimate > 1.6 * max_z {
+            continue;
+        }
+        let label = (0..elements.len())
+            .min_by(|&i, &j| {
+                (estimate / f64::from(numbers[i]))
+                    .ln()
+                    .abs()
+                    .total_cmp(&(estimate / f64::from(numbers[j])).ln().abs())
+            })
+            .expect("elements");
+        candidates.push((
+            values[label].objective,
+            label,
+            point,
+            values[0].fractional_xyz.clone(),
+        ));
+    }
+    candidates.sort_by(|a, b| a.0.total_cmp(&b.0));
+    let mut selected = sites(parent);
+    let mut occupied = parent.aligned.clone();
+    let mut added = 0;
+    for (_, label, point, images) in candidates {
+        if added >= 8 || images.len() + occupied.len() > search.maximum_atoms {
+            continue;
+        }
+        if !separated(&geometry, &images, &occupied)? {
+            continue;
+        }
+        selected.push((elements[label].clone(), point));
+        occupied.extend(images);
+        added += 1;
+    }
+    audit.recycling[context.audit].batch_orbits = added;
+    if added == 0 {
+        return Ok(None);
+    }
+    // Coordinate-fixed, shared-phase label sweeps; no count enumeration.
+    for _ in 0..4 {
+        let mut changed = false;
+        for index in sites(parent).len()..selected.len() {
+            if crate::stopped(Some(deadline), options.cancellation.as_ref()) {
+                break;
+            }
+            let mut fixed_species = Vec::new();
+            let mut fixed_points = Vec::new();
+            for (j, (label, point)) in selected.iter().enumerate() {
+                if j == index {
+                    continue;
+                }
+                let images = group
+                    .expand_sites(&[*point], 1e-8)
+                    .map_err(|e| error(e.to_string()))?;
+                fixed_species.extend(std::iter::repeat_n(
+                    label.clone(),
+                    images.fractional_xyz.len(),
+                ));
+                fixed_points.extend(images.fractional_xyz);
+            }
+            let pool = PreparedElementPool::new(
+                cell,
+                group,
+                &fixed_species,
+                &fixed_points,
+                elements,
+                &data.hkl,
+                &data.amplitudes,
+                parent.candidate.u_iso.clamp(0., 0.2),
+            )?;
+            let scored = pool.evaluate(selected[index].1)?;
+            audit.recycling[context.audit].label_scores += scored.len();
+            let current = elements
+                .iter()
+                .position(|e| *e == selected[index].0)
+                .expect("allowed label");
+            let best = (0..elements.len())
+                .min_by(|&i, &j| scored[i].objective.total_cmp(&scored[j].objective))
+                .expect("labels");
+            if scored[best].objective < scored[current].objective - 1e-10 {
+                selected[index].0.clone_from(&elements[best]);
+                audit.recycling[context.audit].label_changes += 1;
+                changed = true;
+            }
+        }
+        if !changed {
+            break;
+        }
+    }
+    if !audit.staged_refinement {
+        return match edited(
+            cell,
+            group,
+            data,
+            parent,
+            &selected,
+            "recycle_batch",
+            String::new(),
+            options,
+            deadline,
+            audit,
+            FitPass::Full,
+        ) {
+            Ok(state) if state.score < parent.score => {
+                audit.recycling[context.audit].batch_refined = true;
+                Ok(Some(state))
+            }
+            _ => Ok(None),
+        };
+    }
+    let Ok(screen) = edited(
+        cell,
+        group,
+        data,
+        parent,
+        &selected,
+        "recycle_batch",
+        String::new(),
+        options,
+        deadline,
+        audit,
+        FitPass::Screen(search.screening_iterations),
+    ) else {
+        return Ok(None);
+    };
+    if screen.score >= parent.score {
+        audit.screened_out += 1;
+        return Ok(None);
+    }
+    let seed = screen.promotion.as_ref().expect("screened seed");
+    audit.promoted_candidates += 1;
+    let full = refine(
+        seed.model.clone(),
+        data,
+        options,
+        deadline,
+        (1, [0.; 3]),
+        screen.candidate.u_iso,
+        parent.lineage,
+        &parent.moves,
+        "recycle_batch",
+        String::new(),
+        audit,
+        FitPass::Promote(&seed.site_u),
+    );
+    match full {
+        Ok(state) if state.score < parent.score => {
+            audit.recycling[context.audit].batch_refined = true;
+            Ok(Some(state))
+        }
+        _ => Ok(None),
+    }
+}
+
 #[allow(
     clippy::too_many_arguments,
     clippy::too_many_lines,
@@ -749,6 +1025,77 @@ fn search_phase_map(
             beam.push(state);
         }
     }
+    let mut recycling: Vec<Option<RecyclingContext>> =
+        (0..search.beam_width).map(|_| None).collect();
+    if search.symmetry_recycling && !crate::stopped(Some(deadline), options.cancellation.as_ref()) {
+        let support = crate::solver::reciprocal_support(shape, cell, group, &result.data)?;
+        for parent in &beam {
+            if crate::stopped(Some(deadline), options.cancellation.as_ref()) {
+                break;
+            }
+            let frame = parent.candidate.refinement.as_ref().expect("refined state");
+            let attempt = crate::recycle_density(
+                shape,
+                &result.data.hkl,
+                &result.data.amplitudes,
+                &support,
+                group,
+                density,
+                frame.hand,
+                frame.origin_shift,
+                search.recycling_cycles,
+                Some(deadline),
+                options.cancellation.as_ref(),
+            );
+            if let Err(error) = &attempt {
+                result.rejected_trials.push((
+                    trial,
+                    format!("symmetry recycling lineage {}: {error}", parent.lineage),
+                ));
+            }
+            if let Ok(recycled) = attempt {
+                let mut peaks = extract_peaks(&recycled.density, shape, 32)?;
+                if let Some(first) = peaks.first() {
+                    let idx = std::array::from_fn(|i| (first[i] * shape[i] as f64).round() as i32);
+                    let threshold = 0.1 * recycled.density[crate::fourier::grid_index(idx, shape)];
+                    peaks.retain(|point| {
+                        let idx =
+                            std::array::from_fn(|i| (point[i] * shape[i] as f64).round() as i32);
+                        recycled.density[crate::fourier::grid_index(idx, shape)] >= threshold
+                    });
+                }
+                let integral = IntegratedPeakDensity::new(
+                    cell,
+                    shape,
+                    &result.data.hkl,
+                    &result.data.amplitudes,
+                    &recycled.density,
+                    search.peak_density_radius_angstrom,
+                )?;
+                audit.density_map_builds += 1;
+                let index = audit.recycling.len();
+                audit.recycling.push(RecyclingAudit {
+                    trial,
+                    lineage: parent.lineage,
+                    hand: frame.hand,
+                    origin_shift: frame.origin_shift,
+                    cycles: recycled.cycles,
+                    predicted_coefficients: recycled.predicted_coefficients,
+                    peaks: peaks.len(),
+                    batch_orbits: 0,
+                    label_scores: 0,
+                    label_changes: 0,
+                    batch_refined: false,
+                });
+                recycling[parent.lineage % search.beam_width] = Some(RecyclingContext {
+                    peaks,
+                    integral,
+                    frame: (frame.hand, frame.origin_shift),
+                    audit: index,
+                });
+            }
+        }
+    }
     record(
         winners,
         &beam,
@@ -758,12 +1105,33 @@ fn search_phase_map(
         density,
         result,
     );
-    if winners
-        .first()
-        .is_some_and(|s| complete(s, elements) && s.candidate.r1 <= options.r1_target)
-    {
+    if winners.first().is_some_and(|s| {
+        complete(s, elements) && s.recycling_validated && s.candidate.r1 <= options.r1_target
+    }) {
         result.termination = "r1_target";
         return Ok(true);
+    }
+    if search.symmetry_recycling && search.integrated_peak_density {
+        let mut expanded = beam.clone();
+        for parent in &beam {
+            if let Some(context) = &recycling[parent.lineage % search.beam_width] {
+                if let Some(batch) = recycled_batch(
+                    cell,
+                    group,
+                    &result.data,
+                    parent,
+                    context,
+                    elements,
+                    search,
+                    options,
+                    deadline,
+                    audit,
+                )? {
+                    expanded.push(batch);
+                }
+            }
+        }
+        beam = retain(expanded, search.beam_width);
     }
     for _ in 0..search.rounds {
         if crate::stopped(Some(deadline), options.cancellation.as_ref()) {
@@ -771,14 +1139,28 @@ fn search_phase_map(
             break;
         }
         audit.rounds += 1;
+        let previous_preferred = beam
+            .iter()
+            .min_by(|a, b| ordering(a, b, elements))
+            .map(|s| (s.score, complete(s, elements), s.lineage));
         let mut next = beam.clone();
         for parent in &beam {
             if crate::stopped(Some(deadline), options.cancellation.as_ref()) {
                 break;
             }
             let base_sites = sites(parent);
-            let calibration = if let Some(map) = &integrated_map {
-                density_scale(map, group, parent, audit)?
+            let context = recycling[parent.lineage % search.beam_width].as_ref();
+            let active_map = if search.integrated_peak_density {
+                context.map(|c| &c.integral).or(integrated_map.as_ref())
+            } else {
+                None
+            };
+            let frame_ref = parent.candidate.refinement.as_ref().expect("refined state");
+            let density_frame = context.map_or((frame_ref.hand, frame_ref.origin_shift), |c| {
+                recycling_frame(parent, c)
+            });
+            let calibration = if let Some(map) = active_map {
+                density_scale(map, group, parent, density_frame, audit)?
             } else {
                 None
             };
@@ -786,11 +1168,9 @@ fn search_phase_map(
                 .iter()
                 .map(|e| xray_species_metadata(e).map_or(0, |m| m.atomic_number))
                 .collect();
-            let frame_ref = parent.candidate.refinement.as_ref().expect("refined state");
-            let density_frame = (frame_ref.hand, frame_ref.origin_shift);
             let mut site_masks = Vec::new();
             for (_, point) in &base_sites {
-                let mask = if let Some(map) = &integrated_map {
+                let mask = if let Some(map) = active_map {
                     crate::density_label_mask(
                         orbit_mass(map, group, *point, density_frame, audit)?,
                         calibration,
@@ -820,11 +1200,19 @@ fn search_phase_map(
             let map = pool.parent.difference_map(shape)?;
             let mut seeds = extract_peaks(&map.density, shape, 24)?;
             let frame = parent.candidate.refinement.as_ref().expect("refined state");
-            seeds.extend(peaks.iter().take(8).map(|p| {
-                std::array::from_fn(|i| {
-                    (f64::from(frame.hand) * p[i] + frame.origin_shift[i]).rem_euclid(1.)
-                })
-            }));
+            if let Some(context) = context {
+                seeds.extend(context.peaks.iter().take(16).map(|p| {
+                    std::array::from_fn(|i| {
+                        (f64::from(density_frame.0) * p[i] + density_frame.1[i]).rem_euclid(1.)
+                    })
+                }));
+            } else {
+                seeds.extend(peaks.iter().take(8).map(|p| {
+                    std::array::from_fn(|i| {
+                        (f64::from(frame.hand) * p[i] + frame.origin_shift[i]).rem_euclid(1.)
+                    })
+                }));
+            }
             let proposals = proposals(
                 group,
                 &geometry,
@@ -843,7 +1231,7 @@ fn search_phase_map(
                     break;
                 }
                 let evaluations = pool.evaluate(point)?;
-                let mask = if let Some(map) = &integrated_map {
+                let mask = if let Some(map) = active_map {
                     crate::density_label_mask(
                         image_mass(map, &evaluations[0].fractional_xyz, density_frame, audit)?,
                         calibration,
@@ -1061,10 +1449,21 @@ fn search_phase_map(
             density,
             result,
         );
-        if winners
-            .first()
-            .is_some_and(|s| complete(s, elements) && s.candidate.r1 <= options.r1_target)
+        if !crate::stopped(Some(deadline), options.cancellation.as_ref())
+            && previous_preferred.is_some_and(|(score, covered, lineage)| {
+                covered
+                    && winners
+                        .first()
+                        .is_some_and(|best| best.lineage == lineage && best.score >= score - 1e-7)
+            })
         {
+            if let Some(best) = winners.first_mut() {
+                best.recycling_validated = true;
+            }
+        }
+        if winners.first().is_some_and(|s| {
+            complete(s, elements) && s.recycling_validated && s.candidate.r1 <= options.r1_target
+        }) {
             result.termination = "r1_target";
             result.density = density.to_vec();
             return Ok(true);
@@ -1106,6 +1505,7 @@ pub fn solve_elements(
         || !search.dual_peak_sigma.is_finite()
         || !(0.1..=10.).contains(&search.dual_peak_sigma)
         || !(1..=128).contains(&search.dual_peak_cap)
+        || !(1..=50).contains(&search.recycling_cycles)
         || options.refinement.is_none()
     {
         return Err(error(
@@ -1215,6 +1615,8 @@ pub fn solve_elements(
         elements: elements.clone(),
         dual_checkpoints: search.dual_checkpoints,
         cached_refinement: search.cached_refinement,
+        symmetry_recycling: search.symmetry_recycling,
+        recycling_cycles: search.recycling_cycles,
         staged_refinement: search.staged_refinement
             && options.refinement == Some(AdpMode::Anisotropic),
         screening_iterations: search.screening_iterations,
@@ -1280,7 +1682,9 @@ pub fn solve_elements(
                     chosen_cycle = Some(selected_cycle);
                 }
                 let accepted = winners.first().is_some_and(|state| {
-                    complete(state, &elements) && state.candidate.r1 <= options.r1_target
+                    complete(state, &elements)
+                        && state.recycling_validated
+                        && state.candidate.r1 <= options.r1_target
                 });
                 if !accepted && result.termination == "r1_target" {
                     result.termination = "search_budget";
@@ -1398,7 +1802,9 @@ pub fn solve_elements(
             )?;
         }
         if winners.first().is_some_and(|state| {
-            complete(state, &elements) && state.candidate.r1 <= options.r1_target
+            complete(state, &elements)
+                && state.recycling_validated
+                && state.candidate.r1 <= options.r1_target
         }) {
             result.termination = "r1_target";
             break;
@@ -1413,8 +1819,9 @@ pub fn solve_elements(
         audit.initial_prefix = best.initial_prefix;
         audit.required_elements_present = complete(best, &elements);
         audit.accepted_moves.clone_from(&best.moves);
-        result.target_met =
-            audit.required_elements_present && best.candidate.r1 <= options.r1_target;
+        result.target_met = audit.required_elements_present
+            && best.recycling_validated
+            && best.candidate.r1 <= options.r1_target;
     }
     result.candidates = winners
         .into_iter()

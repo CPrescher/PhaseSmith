@@ -144,13 +144,20 @@ def synthetic(symbol="Pm"):
     "symbol,counts",
     [("P1", {"Fe": 1, "O": 2}), ("P-1", {"Fe": 2, "O": 2}), ("Pm", {"Fe": 2, "O": 3})],
 )
-def test_infers_counts_and_multiple_orbits_without_composition(symbol, counts, tmp_path):
+@pytest.mark.parametrize("recycling", [False, True])
+def test_infers_counts_and_multiple_orbits_without_composition(symbol, counts, tmp_path, recycling):
     cell, group, data, xyz, species = synthetic(symbol)
     options = SolutionOptions(
         trials=1, cycles=800, max_seconds=10, r1_target=0.005, completion=False
     )
     result = solve_structure_elements(
-        data, cell=cell, elements=["O", "Fe"], space_group=group, options=options, maximum_atoms=32
+        data,
+        cell=cell,
+        elements=["O", "Fe"],
+        space_group=group,
+        options=options,
+        maximum_atoms=32,
+        symmetry_recycling=recycling,
     )
     assert result.target_met
     assert result.best.trial < len(result.phasing_trials)
@@ -159,8 +166,15 @@ def test_infers_counts_and_multiple_orbits_without_composition(symbol, counts, t
     assert result.shared_search.phasing_starts == 1
     assert result.shared_search.element_scores == 2 * result.shared_search.orbit_proposals
     assert result.shared_search.required_elements_present
+    assert result.shared_search.symmetry_recycling == recycling
+    if recycling:
+        assert result.shared_search.recycling
+        assert all(r.cycles == 10 for r in result.shared_search.recycling)
+        assert all(r.predicted_coefficients > 0 for r in result.shared_search.recycling)
+    else:
+        assert not result.shared_search.recycling
     assert all(
-        m.kind in {"initial", "birth", "delete", "relabel"}
+        m.kind in {"initial", "birth", "delete", "relabel", "recycle_batch"}
         for m in result.shared_search.accepted_moves
     )
     assert result.shared_search.accepted_moves[-1].atoms == len(xyz)
@@ -194,7 +208,13 @@ def test_infers_counts_and_multiple_orbits_without_composition(symbol, counts, t
     assert not result.best.fractional_xyz.flags.writeable
     # Same complete run with reversed user type order remains bitwise deterministic.
     again = solve_structure_elements(
-        data, cell=cell, elements=["Fe", "O"], space_group=group, options=options, maximum_atoms=32
+        data,
+        cell=cell,
+        elements=["Fe", "O"],
+        space_group=group,
+        options=options,
+        maximum_atoms=32,
+        symmetry_recycling=recycling,
     )
     np.testing.assert_array_equal(result.best.fractional_xyz, again.best.fractional_xyz)
     assert result.shared_search == again.shared_search
@@ -213,6 +233,10 @@ def test_infers_counts_and_multiple_orbits_without_composition(symbol, counts, t
         {"maximum_atoms": True},
         {"beam_width": 9},
         {"search_rounds": 0},
+        {"symmetry_recycling": 1},
+        {"recycling_cycles": 0},
+        {"recycling_cycles": 51},
+        {"recycling_cycles": True},
         {"options": SolutionOptions(refinement="none")},
     ],
 )
