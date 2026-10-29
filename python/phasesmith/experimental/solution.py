@@ -316,6 +316,7 @@ class SharedSearchAudit:
     required_elements_present: bool
     accepted_moves: tuple[SharedMove, ...]
     dual_checkpoints: bool = False
+    cached_refinement: bool = False
 
     def __post_init__(self):
         object.__setattr__(self, "elements", tuple(self.elements))
@@ -489,6 +490,7 @@ def solve_structure_elements(
     dual_peak_sigma: float = 2.0,
     dual_peak_cap: int = 128,
     dual_checkpoints: bool = True,
+    cached_refinement: bool = True,
     cancellation: SolutionCancellation | None = None,
 ) -> SolutionResult:
     """Infer full-cell counts and labels by shared-map symmetry-orbit edits.
@@ -516,6 +518,8 @@ def solve_structure_elements(
         or len(set(elements)) != len(elements)
     ):
         raise ValueError("elements must be 1..8 distinct neutral non-H symbols")
+    if not isinstance(cached_refinement, bool):
+        raise TypeError("cached_refinement must be boolean")
     if not isinstance(dual_checkpoints, bool):
         raise TypeError("dual_checkpoints must be boolean")
     if not isinstance(staged_refinement, bool):
@@ -568,7 +572,7 @@ def solve_structure_elements(
         peak_density_radius_angstrom,
         dual_peak_sigma,
         dual_peak_cap,
-        dual_checkpoints,
+        (dual_checkpoints, cached_refinement),
     )
     return _run_solution(observations, cell, group, (), controls, cancellation, shared)
 

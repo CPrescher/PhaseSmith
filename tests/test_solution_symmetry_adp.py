@@ -15,7 +15,7 @@ pytestmark = pytest.mark.skipif(
 )
 
 
-def model_case(symbol, cell, sites, *, mode="anisotropic", shift=(0, 0, 0)):
+def model_case(symbol, cell, sites, *, mode="anisotropic", shift=(0, 0, 0), cache_geometry=True):
     import gemmi
 
     full, species = [], []
@@ -41,6 +41,7 @@ def model_case(symbol, cell, sites, *, mode="anisotropic", shift=(0, 0, 0)):
         observed,
         mode,
         0.01,
+        cache_geometry,
     )
     metadata = native.metadata()
     q = hkl @ np.linalg.inv(cell.geometry().direct_basis)

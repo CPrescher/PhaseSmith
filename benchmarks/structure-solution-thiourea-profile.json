@@ -1,0 +1,39 @@
+{
+  "schema": "phasesmith.thiourea-native-profile.v1",
+  "qualification": "Native macOS sampled stacks during complete element-only dual-space solves. Top-stack counts identify hotspots, not exact exclusive wall-time fractions. No timing subtraction proxy.",
+  "baseline_commit": "3123844",
+  "source_profile_sha256": "a2c62418995f2e73c70f791c54c544a8582d87bd0cbee103db9cc1009331ebbf",
+  "expanded_reflections": 4068,
+  "screening_refinements": 156,
+  "final_refinements": 34,
+  "selected_top_stack_counts": [
+    {
+      "symbol": "_RNvMs_NtCsggDNi2p0Do9_19phasesmith_solution14adp_refinementNtB4_22PreparedSymmetricModel8evaluate  (in _core.abi3.so)",
+      "top_stack_samples": 952
+    },
+    {
+      "symbol": "_RNvMs_NtCsggDNi2p0Do9_19phasesmith_solution14adp_refinementNtB4_22PreparedSymmetricModel6refine  (in _core.abi3.so)",
+      "top_stack_samples": 558
+    },
+    {
+      "symbol": "__sincos_stret  (in libsystem_m.dylib)",
+      "top_stack_samples": 443
+    },
+    {
+      "symbol": "_RNvNtCsggDNi2p0Do9_19phasesmith_solution14symmetry_model7nearest  (in _core.abi3.so)",
+      "top_stack_samples": 23
+    },
+    {
+      "symbol": "_RNvNtCsggDNi2p0Do9_19phasesmith_solution5math319periodic_difference  (in _core.abi3.so)",
+      "top_stack_samples": 14
+    },
+    {
+      "symbol": "DYLD-STUB$$__sincos_stret  (in _core.abi3.so)",
+      "top_stack_samples": 10
+    },
+    {
+      "symbol": "_RNvMNtCsggDNi2p0Do9_19phasesmith_solution7fourierNtB2_9Transform5apply  (in _core.abi3.so)",
+      "top_stack_samples": 8
+    }
+  ]
+}
