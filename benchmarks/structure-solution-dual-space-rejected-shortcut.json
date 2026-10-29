@@ -1,0 +1,1168 @@
+{
+  "schema": "phasesmith.count-free-phasing-comparison.v2",
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "options_by_method": {
+    "charge_flip": {
+      "seed": 0,
+      "trials": 1,
+      "cycles": 800,
+      "phasing": "charge_flip",
+      "delta_sigma": 1.0,
+      "weak_fraction": 0.2,
+      "cleanup_cycles": 10,
+      "polish_iterations": 50,
+      "assignment_rounds": 4,
+      "max_seconds": 60,
+      "r1_target": 0.06,
+      "grid_shape": null,
+      "refinement": "anisotropic",
+      "symmetry_tolerance_angstrom": 0.15,
+      "symmetry_iterations": 80,
+      "completion": false
+    },
+    "dual_space": {
+      "seed": 0,
+      "trials": 1,
+      "cycles": 800,
+      "phasing": "dual_space",
+      "delta_sigma": 1.0,
+      "weak_fraction": 0.2,
+      "cleanup_cycles": 10,
+      "polish_iterations": 50,
+      "assignment_rounds": 4,
+      "max_seconds": 60,
+      "r1_target": 0.06,
+      "grid_shape": null,
+      "refinement": "anisotropic",
+      "symmetry_tolerance_angstrom": 0.15,
+      "symmetry_iterations": 80,
+      "completion": false
+    }
+  },
+  "input_manifest_sha256": "a1292a5a6685c46b696ba0018f60df083a86d5f030bfa4ae8fbc72f9e4b0eeae",
+  "native_sha256": "736bd0c7d96ab935f0bea55b0187d2bc6573d7ab8abe1a3286a5fd834f1416cc",
+  "implementation_sha256": {
+    "crates/phasesmith-solution/src/adp_refinement.rs": "f1261ba348d00732aac087be9db054c82451e5701ce559f641152ea31af8c625",
+    "crates/phasesmith-solution/src/completion.rs": "08523bbe80b71f0f29f01345d36713ac8dd3cb6134e812414ea6be5c94dd3081",
+    "crates/phasesmith-solution/src/completion_orbit.rs": "74901c137016cfdf5b18f911282fa2b995b80fb183508856b91ca8a902b52227",
+    "crates/phasesmith-solution/src/data.rs": "3f27a939350ff94f6722c23b1d2609ff10b9ec8119794e2a7cf2076cea27468e",
+    "crates/phasesmith-solution/src/dual_space.rs": "6fece6aef10ee46257c314b7fa80d863055608cf81903a9e45d05b05a9a1a2b5",
+    "crates/phasesmith-solution/src/fourier.rs": "6785270fd617e7f0a15b60079cba12eda94c1c1d7432ce0aec1ea507a820a861",
+    "crates/phasesmith-solution/src/lib.rs": "5816af5fcc103441f95125e61e4ab26fe12345d3169ca794c842286a168a40d1",
+    "crates/phasesmith-solution/src/math3.rs": "fa00ccf3888b6bd86fa62c7b160a8e5f11d933e3736231342a179459d247bd4d",
+    "crates/phasesmith-solution/src/model.rs": "c0d802de5d8725f527ab1b40181fe0d4b12387b2c715ad188de5b409e0105139",
+    "crates/phasesmith-solution/src/peak_density.rs": "97a242cae68157a2adc647beb78c2fa6c8a4a60ff80b875cd9fa2a60362cf37f",
+    "crates/phasesmith-solution/src/shared_pool.rs": "31dc671b92ea761471b2cc3b2c742d1b83e844851ec80ff4f9472e7961aab629",
+    "crates/phasesmith-solution/src/shared_search.rs": "b05f567d673b9092138a2c1d7d96750af574f60e7862d8b4191e08cf4146f8c7",
+    "crates/phasesmith-solution/src/solver.rs": "302429ec1b3522b848abdc7a050a5511796913842f233b6f0c53834bbf584e22",
+    "crates/phasesmith-solution/src/staged_refinement.rs": "6c1ddf05693cea5b20528059d46af3e93e61b7de3ddaef30bc3416ee6ff31657",
+    "crates/phasesmith-solution/src/symmetry_model.rs": "94393e4a05ea3e23df86fdfedf2567a5a0cd413e65994dc6389cf3ef611ddba0",
+    "crates/phasesmith-py/src/solution.rs": "80f52cf88119c63a3317f0ead5c4928f86b9e009c44a151d156bf0d151c0e19b",
+    "crates/phasesmith-py/src/solution_completion.rs": "f054ef8c49ce3f1d6aad5e8c36b94da3f3cf3b0a08570e841060a4bbcbf81517",
+    "crates/phasesmith-py/src/solution_dual.rs": "e8266ae6c8eaf1fced54e78d2033bc6317f81723daf1a846b9c1b8ceccabbbad",
+    "crates/phasesmith-py/src/solution_shared.rs": "40e3b38db94590477e17e41bfc729417335ecc87861fb0c8708f648b543f6f33",
+    "crates/phasesmith-py/src/solution_symmetry.rs": "bea6226d0263c9a8afe158b68751ba0d5d944c07059d6a6fdcdafae243d4859a",
+    "Cargo.lock": "f8a427cc7edfd5463a2929aa00c5473c10dd674553132052aadcef11fd41cdee",
+    "crates/phasesmith-solution/benches/solution.rs": "0f0d32f067d7bc7773733011769940397026426a6f6d346eb83d11bf3ef91ab8",
+    "python/phasesmith/experimental/solution.py": "c3fd80ea850b172a06bda7e55c8afc4973c65b7e1c3f10c74c347b7571e91db9",
+    "python/phasesmith/experimental/solution_shared_reference.py": "4bbb33e0bc6991f65171c2b4db1452c342c7d54952d4fa612f50375eb29dfe7b",
+    "python/phasesmith/experimental/solution_peak_density_reference.py": "0aa18c02afa708f4b883065ffa3cfad1f6e280985894678d81a56dd7cbdd4397",
+    "benchmarks/solution_count_free_comparison.py": "be9e1e2a6c5f21c8d267dcc0b216266dc07fdd88e92f28db1e2cd58c09997566",
+    "python/phasesmith/experimental/solution_count_free_reference.py": "73c4d7731afad95e9b0e809124fbf725afbfa54b0c551044efbb955fea8d93e5",
+    "benchmarks/solution_adp_transfer.py": "344239532b298921594af7d24dcb071a16d1528df0e7b5cbfa4467f8f6e83d59",
+    "benchmarks/structure_solution.py": "58191cddd8fc86a6b5371297a694b838f63ba91ea92452425bb7475e7cd4714e"
+  },
+  "quality_gates": {
+    "matching_full_cell_counts": true,
+    "maximum_reference_error_angstrom": 0.02,
+    "paired_maximum_error_increase_angstrom": 0.0001,
+    "paired_r1_increase": 1e-07,
+    "exported_cif_r1_difference": 2e-10
+  },
+  "all_quality_gates_passed": false,
+  "summary": [
+    {
+      "case": "kbrf4",
+      "baseline_median_seconds": 1.688908458017977,
+      "dual_space_median_seconds": 0.2951568329881411,
+      "wall_time_ratio_cf_over_dual": 5.722071350744688,
+      "solve_speedup": 5.722071350744688,
+      "charge_flip_correct": 3,
+      "dual_space_correct": 3,
+      "quality_preserved": true,
+      "pairs": [
+        {
+          "repeat": 0,
+          "wall_time_ratio_cf_over_dual": 5.624202204416882,
+          "solve_speedup": 5.624202204416882,
+          "quality_preserved": true
+        },
+        {
+          "repeat": 1,
+          "wall_time_ratio_cf_over_dual": 5.771869650139661,
+          "solve_speedup": 5.771869650139661,
+          "quality_preserved": true
+        },
+        {
+          "repeat": 2,
+          "wall_time_ratio_cf_over_dual": 5.764072749995867,
+          "solve_speedup": 5.764072749995867,
+          "quality_preserved": true
+        }
+      ]
+    },
+    {
+      "case": "bisei",
+      "baseline_median_seconds": 1.025362957996549,
+      "dual_space_median_seconds": 0.2059148330008611,
+      "wall_time_ratio_cf_over_dual": 4.979548792350773,
+      "solve_speedup": 4.979548792350773,
+      "charge_flip_correct": 3,
+      "dual_space_correct": 3,
+      "quality_preserved": true,
+      "pairs": [
+        {
+          "repeat": 0,
+          "wall_time_ratio_cf_over_dual": 4.936571601840569,
+          "solve_speedup": 4.936571601840569,
+          "quality_preserved": true
+        },
+        {
+          "repeat": 1,
+          "wall_time_ratio_cf_over_dual": 4.979548792350773,
+          "solve_speedup": 4.979548792350773,
+          "quality_preserved": true
+        },
+        {
+          "repeat": 2,
+          "wall_time_ratio_cf_over_dual": 5.018446381952862,
+          "solve_speedup": 5.018446381952862,
+          "quality_preserved": true
+        }
+      ]
+    },
+    {
+      "case": "thiourea",
+      "baseline_median_seconds": 5.491747291991487,
+      "dual_space_median_seconds": 4.842931708000833,
+      "wall_time_ratio_cf_over_dual": 1.1339716566555686,
+      "solve_speedup": null,
+      "charge_flip_correct": 3,
+      "dual_space_correct": 0,
+      "quality_preserved": false,
+      "pairs": [
+        {
+          "repeat": 0,
+          "wall_time_ratio_cf_over_dual": 1.1244740474565813,
+          "solve_speedup": null,
+          "quality_preserved": false
+        },
+        {
+          "repeat": 1,
+          "wall_time_ratio_cf_over_dual": 1.1402854143141556,
+          "solve_speedup": null,
+          "quality_preserved": false
+        },
+        {
+          "repeat": 2,
+          "wall_time_ratio_cf_over_dual": 1.1339716566555686,
+          "solve_speedup": null,
+          "quality_preserved": false
+        }
+      ]
+    }
+  ],
+  "qualification": "Exploratory shortcut rejected by reference count gates. First R1-target fit stopped the current shortlist/beam round prematurely; final code removes that shortcut.",
+  "runs": [
+    {
+      "case": "kbrf4",
+      "mode": "charge_flip",
+      "repeat": 0,
+      "seconds": 1.6650035839993507,
+      "counts": {
+        "Br": 4,
+        "F": 16,
+        "K": 4
+      },
+      "r1": 0.022266400409313075,
+      "counts_match_reference_after_solving": true,
+      "phasing_trials": [
+        {
+          "method": "charge_flip",
+          "initialization": "random_element_sharpening",
+          "patterson_vector_grid": null,
+          "seed": 0,
+          "completed_cycles": 800,
+          "best_cycle": 710,
+          "score_kind": "normalized_l1",
+          "mask_sigma_angstrom": null,
+          "hybrid_m": null,
+          "sharpening_q": null,
+          "omit_fraction": null,
+          "omit_period": null,
+          "checkpoints": [],
+          "atomicity_mode": null,
+          "adaptive_peaks": null
+        }
+      ]
+    },
+    {
+      "case": "kbrf4",
+      "mode": "dual_space",
+      "repeat": 0,
+      "seconds": 0.2960426249774173,
+      "counts": {
+        "Br": 4,
+        "F": 16,
+        "K": 4
+      },
+      "r1": 0.022266400409313235,
+      "counts_match_reference_after_solving": true,
+      "phasing_trials": [
+        {
+          "method": "dual_space",
+          "initialization": "patterson",
+          "patterson_vector_grid": [
+            0,
+            32,
+            32
+          ],
+          "seed": 0,
+          "completed_cycles": 4,
+          "best_cycle": 0,
+          "score_kind": "profiled_amplitude_sse",
+          "mask_sigma_angstrom": 0.2357674430663847,
+          "hybrid_m": 3.0,
+          "sharpening_q": 0.5,
+          "omit_fraction": 0.1,
+          "omit_period": 3,
+          "checkpoints": [
+            {
+              "completed_cycles": 4,
+              "best_cycle": 0,
+              "score": 0.09353511892906569,
+              "accepted": true
+            }
+          ],
+          "atomicity_mode": "adaptive",
+          "adaptive_peaks": {
+            "sigma": 2.0,
+            "cap": 128,
+            "selected": [
+              40,
+              54,
+              18,
+              70
+            ],
+            "thresholds": [
+              2.0,
+              2.0,
+              2.0,
+              2.0
+            ],
+            "omitted": [
+              0,
+              0,
+              1,
+              0
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "case": "bisei",
+      "mode": "charge_flip",
+      "repeat": 0,
+      "seconds": 1.0169302499853075,
+      "counts": {
+        "Bi": 4,
+        "I": 4,
+        "Se": 4
+      },
+      "r1": 0.05228505465883755,
+      "counts_match_reference_after_solving": true,
+      "phasing_trials": [
+        {
+          "method": "charge_flip",
+          "initialization": "random_element_sharpening",
+          "patterson_vector_grid": null,
+          "seed": 0,
+          "completed_cycles": 800,
+          "best_cycle": 722,
+          "score_kind": "normalized_l1",
+          "mask_sigma_angstrom": null,
+          "hybrid_m": null,
+          "sharpening_q": null,
+          "omit_fraction": null,
+          "omit_period": null,
+          "checkpoints": [],
+          "atomicity_mode": null,
+          "adaptive_peaks": null
+        }
+      ]
+    },
+    {
+      "case": "bisei",
+      "mode": "dual_space",
+      "repeat": 0,
+      "seconds": 0.20599929100717418,
+      "counts": {
+        "Bi": 4,
+        "I": 4,
+        "Se": 4
+      },
+      "r1": 0.05228505465883758,
+      "counts_match_reference_after_solving": true,
+      "phasing_trials": [
+        {
+          "method": "dual_space",
+          "initialization": "patterson",
+          "patterson_vector_grid": [
+            16,
+            0,
+            8
+          ],
+          "seed": 0,
+          "completed_cycles": 4,
+          "best_cycle": 3,
+          "score_kind": "profiled_amplitude_sse",
+          "mask_sigma_angstrom": 0.27000406526782644,
+          "hybrid_m": 3.0,
+          "sharpening_q": 0.5,
+          "omit_fraction": 0.1,
+          "omit_period": 3,
+          "checkpoints": [
+            {
+              "completed_cycles": 4,
+              "best_cycle": 3,
+              "score": 0.12226011864782574,
+              "accepted": true
+            }
+          ],
+          "atomicity_mode": "adaptive",
+          "adaptive_peaks": {
+            "sigma": 2.0,
+            "cap": 128,
+            "selected": [
+              26,
+              56,
+              38,
+              46
+            ],
+            "thresholds": [
+              2.0,
+              2.0,
+              2.0,
+              2.0
+            ],
+            "omitted": [
+              0,
+              0,
+              3,
+              0
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "case": "thiourea",
+      "mode": "charge_flip",
+      "repeat": 0,
+      "seconds": 5.45738562499173,
+      "counts": {
+        "C": 4,
+        "N": 8,
+        "S": 4
+      },
+      "r1": 0.049409049967854266,
+      "counts_match_reference_after_solving": true,
+      "phasing_trials": [
+        {
+          "method": "charge_flip",
+          "initialization": "random_element_sharpening",
+          "patterson_vector_grid": null,
+          "seed": 0,
+          "completed_cycles": 800,
+          "best_cycle": 416,
+          "score_kind": "normalized_l1",
+          "mask_sigma_angstrom": null,
+          "hybrid_m": null,
+          "sharpening_q": null,
+          "omit_fraction": null,
+          "omit_period": null,
+          "checkpoints": [],
+          "atomicity_mode": null,
+          "adaptive_peaks": null
+        }
+      ]
+    },
+    {
+      "case": "thiourea",
+      "mode": "dual_space",
+      "repeat": 0,
+      "seconds": 4.853278416994726,
+      "counts": {
+        "C": 2,
+        "N": 10,
+        "S": 4
+      },
+      "r1": 0.053617564108364775,
+      "counts_match_reference_after_solving": false,
+      "phasing_trials": [
+        {
+          "method": "dual_space",
+          "initialization": "patterson",
+          "patterson_vector_grid": [
+            16,
+            16,
+            16
+          ],
+          "seed": 0,
+          "completed_cycles": 16,
+          "best_cycle": 15,
+          "score_kind": "profiled_amplitude_sse",
+          "mask_sigma_angstrom": 0.24513987380696448,
+          "hybrid_m": 3.0,
+          "sharpening_q": 0.5,
+          "omit_fraction": 0.1,
+          "omit_period": 3,
+          "checkpoints": [
+            {
+              "completed_cycles": 4,
+              "best_cycle": 3,
+              "score": 0.1241032595287042,
+              "accepted": false
+            },
+            {
+              "completed_cycles": 16,
+              "best_cycle": 15,
+              "score": 0.07651523621777816,
+              "accepted": true
+            }
+          ],
+          "atomicity_mode": "adaptive",
+          "adaptive_peaks": {
+            "sigma": 2.0,
+            "cap": 128,
+            "selected": [
+              26,
+              50,
+              31,
+              60,
+              32,
+              52,
+              36,
+              47,
+              40,
+              38,
+              40,
+              43,
+              43,
+              43,
+              40,
+              43
+            ],
+            "thresholds": [
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0
+            ],
+            "omitted": [
+              0,
+              0,
+              3,
+              0,
+              0,
+              5,
+              0,
+              0,
+              4,
+              0,
+              0,
+              4,
+              0,
+              0,
+              4,
+              0
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "case": "kbrf4",
+      "mode": "dual_space",
+      "repeat": 1,
+      "seconds": 0.2926102910132613,
+      "counts": {
+        "Br": 4,
+        "F": 16,
+        "K": 4
+      },
+      "r1": 0.022266400409313235,
+      "counts_match_reference_after_solving": true,
+      "phasing_trials": [
+        {
+          "method": "dual_space",
+          "initialization": "patterson",
+          "patterson_vector_grid": [
+            0,
+            32,
+            32
+          ],
+          "seed": 0,
+          "completed_cycles": 4,
+          "best_cycle": 0,
+          "score_kind": "profiled_amplitude_sse",
+          "mask_sigma_angstrom": 0.2357674430663847,
+          "hybrid_m": 3.0,
+          "sharpening_q": 0.5,
+          "omit_fraction": 0.1,
+          "omit_period": 3,
+          "checkpoints": [
+            {
+              "completed_cycles": 4,
+              "best_cycle": 0,
+              "score": 0.09353511892906569,
+              "accepted": true
+            }
+          ],
+          "atomicity_mode": "adaptive",
+          "adaptive_peaks": {
+            "sigma": 2.0,
+            "cap": 128,
+            "selected": [
+              40,
+              54,
+              18,
+              70
+            ],
+            "thresholds": [
+              2.0,
+              2.0,
+              2.0,
+              2.0
+            ],
+            "omitted": [
+              0,
+              0,
+              1,
+              0
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "case": "kbrf4",
+      "mode": "charge_flip",
+      "repeat": 1,
+      "seconds": 1.688908458017977,
+      "counts": {
+        "Br": 4,
+        "F": 16,
+        "K": 4
+      },
+      "r1": 0.022266400409313075,
+      "counts_match_reference_after_solving": true,
+      "phasing_trials": [
+        {
+          "method": "charge_flip",
+          "initialization": "random_element_sharpening",
+          "patterson_vector_grid": null,
+          "seed": 0,
+          "completed_cycles": 800,
+          "best_cycle": 710,
+          "score_kind": "normalized_l1",
+          "mask_sigma_angstrom": null,
+          "hybrid_m": null,
+          "sharpening_q": null,
+          "omit_fraction": null,
+          "omit_period": null,
+          "checkpoints": [],
+          "atomicity_mode": null,
+          "adaptive_peaks": null
+        }
+      ]
+    },
+    {
+      "case": "bisei",
+      "mode": "dual_space",
+      "repeat": 1,
+      "seconds": 0.2059148330008611,
+      "counts": {
+        "Bi": 4,
+        "I": 4,
+        "Se": 4
+      },
+      "r1": 0.05228505465883758,
+      "counts_match_reference_after_solving": true,
+      "phasing_trials": [
+        {
+          "method": "dual_space",
+          "initialization": "patterson",
+          "patterson_vector_grid": [
+            16,
+            0,
+            8
+          ],
+          "seed": 0,
+          "completed_cycles": 4,
+          "best_cycle": 3,
+          "score_kind": "profiled_amplitude_sse",
+          "mask_sigma_angstrom": 0.27000406526782644,
+          "hybrid_m": 3.0,
+          "sharpening_q": 0.5,
+          "omit_fraction": 0.1,
+          "omit_period": 3,
+          "checkpoints": [
+            {
+              "completed_cycles": 4,
+              "best_cycle": 3,
+              "score": 0.12226011864782574,
+              "accepted": true
+            }
+          ],
+          "atomicity_mode": "adaptive",
+          "adaptive_peaks": {
+            "sigma": 2.0,
+            "cap": 128,
+            "selected": [
+              26,
+              56,
+              38,
+              46
+            ],
+            "thresholds": [
+              2.0,
+              2.0,
+              2.0,
+              2.0
+            ],
+            "omitted": [
+              0,
+              0,
+              3,
+              0
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "case": "bisei",
+      "mode": "charge_flip",
+      "repeat": 1,
+      "seconds": 1.025362957996549,
+      "counts": {
+        "Bi": 4,
+        "I": 4,
+        "Se": 4
+      },
+      "r1": 0.05228505465883755,
+      "counts_match_reference_after_solving": true,
+      "phasing_trials": [
+        {
+          "method": "charge_flip",
+          "initialization": "random_element_sharpening",
+          "patterson_vector_grid": null,
+          "seed": 0,
+          "completed_cycles": 800,
+          "best_cycle": 722,
+          "score_kind": "normalized_l1",
+          "mask_sigma_angstrom": null,
+          "hybrid_m": null,
+          "sharpening_q": null,
+          "omit_fraction": null,
+          "omit_period": null,
+          "checkpoints": [],
+          "atomicity_mode": null,
+          "adaptive_peaks": null
+        }
+      ]
+    },
+    {
+      "case": "thiourea",
+      "mode": "dual_space",
+      "repeat": 1,
+      "seconds": 4.827619666000828,
+      "counts": {
+        "C": 2,
+        "N": 10,
+        "S": 4
+      },
+      "r1": 0.053617564108364775,
+      "counts_match_reference_after_solving": false,
+      "phasing_trials": [
+        {
+          "method": "dual_space",
+          "initialization": "patterson",
+          "patterson_vector_grid": [
+            16,
+            16,
+            16
+          ],
+          "seed": 0,
+          "completed_cycles": 16,
+          "best_cycle": 15,
+          "score_kind": "profiled_amplitude_sse",
+          "mask_sigma_angstrom": 0.24513987380696448,
+          "hybrid_m": 3.0,
+          "sharpening_q": 0.5,
+          "omit_fraction": 0.1,
+          "omit_period": 3,
+          "checkpoints": [
+            {
+              "completed_cycles": 4,
+              "best_cycle": 3,
+              "score": 0.1241032595287042,
+              "accepted": false
+            },
+            {
+              "completed_cycles": 16,
+              "best_cycle": 15,
+              "score": 0.07651523621777816,
+              "accepted": true
+            }
+          ],
+          "atomicity_mode": "adaptive",
+          "adaptive_peaks": {
+            "sigma": 2.0,
+            "cap": 128,
+            "selected": [
+              26,
+              50,
+              31,
+              60,
+              32,
+              52,
+              36,
+              47,
+              40,
+              38,
+              40,
+              43,
+              43,
+              43,
+              40,
+              43
+            ],
+            "thresholds": [
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0
+            ],
+            "omitted": [
+              0,
+              0,
+              3,
+              0,
+              0,
+              5,
+              0,
+              0,
+              4,
+              0,
+              0,
+              4,
+              0,
+              0,
+              4,
+              0
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "case": "thiourea",
+      "mode": "charge_flip",
+      "repeat": 1,
+      "seconds": 5.50486429099692,
+      "counts": {
+        "C": 4,
+        "N": 8,
+        "S": 4
+      },
+      "r1": 0.049409049967854266,
+      "counts_match_reference_after_solving": true,
+      "phasing_trials": [
+        {
+          "method": "charge_flip",
+          "initialization": "random_element_sharpening",
+          "patterson_vector_grid": null,
+          "seed": 0,
+          "completed_cycles": 800,
+          "best_cycle": 416,
+          "score_kind": "normalized_l1",
+          "mask_sigma_angstrom": null,
+          "hybrid_m": null,
+          "sharpening_q": null,
+          "omit_fraction": null,
+          "omit_period": null,
+          "checkpoints": [],
+          "atomicity_mode": null,
+          "adaptive_peaks": null
+        }
+      ]
+    },
+    {
+      "case": "kbrf4",
+      "mode": "charge_flip",
+      "repeat": 2,
+      "seconds": 1.7013054580020253,
+      "counts": {
+        "Br": 4,
+        "F": 16,
+        "K": 4
+      },
+      "r1": 0.022266400409313075,
+      "counts_match_reference_after_solving": true,
+      "phasing_trials": [
+        {
+          "method": "charge_flip",
+          "initialization": "random_element_sharpening",
+          "patterson_vector_grid": null,
+          "seed": 0,
+          "completed_cycles": 800,
+          "best_cycle": 710,
+          "score_kind": "normalized_l1",
+          "mask_sigma_angstrom": null,
+          "hybrid_m": null,
+          "sharpening_q": null,
+          "omit_fraction": null,
+          "omit_period": null,
+          "checkpoints": [],
+          "atomicity_mode": null,
+          "adaptive_peaks": null
+        }
+      ]
+    },
+    {
+      "case": "kbrf4",
+      "mode": "dual_space",
+      "repeat": 2,
+      "seconds": 0.2951568329881411,
+      "counts": {
+        "Br": 4,
+        "F": 16,
+        "K": 4
+      },
+      "r1": 0.022266400409313235,
+      "counts_match_reference_after_solving": true,
+      "phasing_trials": [
+        {
+          "method": "dual_space",
+          "initialization": "patterson",
+          "patterson_vector_grid": [
+            0,
+            32,
+            32
+          ],
+          "seed": 0,
+          "completed_cycles": 4,
+          "best_cycle": 0,
+          "score_kind": "profiled_amplitude_sse",
+          "mask_sigma_angstrom": 0.2357674430663847,
+          "hybrid_m": 3.0,
+          "sharpening_q": 0.5,
+          "omit_fraction": 0.1,
+          "omit_period": 3,
+          "checkpoints": [
+            {
+              "completed_cycles": 4,
+              "best_cycle": 0,
+              "score": 0.09353511892906569,
+              "accepted": true
+            }
+          ],
+          "atomicity_mode": "adaptive",
+          "adaptive_peaks": {
+            "sigma": 2.0,
+            "cap": 128,
+            "selected": [
+              40,
+              54,
+              18,
+              70
+            ],
+            "thresholds": [
+              2.0,
+              2.0,
+              2.0,
+              2.0
+            ],
+            "omitted": [
+              0,
+              0,
+              1,
+              0
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "case": "bisei",
+      "mode": "charge_flip",
+      "repeat": 2,
+      "seconds": 1.03240712499246,
+      "counts": {
+        "Bi": 4,
+        "I": 4,
+        "Se": 4
+      },
+      "r1": 0.05228505465883755,
+      "counts_match_reference_after_solving": true,
+      "phasing_trials": [
+        {
+          "method": "charge_flip",
+          "initialization": "random_element_sharpening",
+          "patterson_vector_grid": null,
+          "seed": 0,
+          "completed_cycles": 800,
+          "best_cycle": 722,
+          "score_kind": "normalized_l1",
+          "mask_sigma_angstrom": null,
+          "hybrid_m": null,
+          "sharpening_q": null,
+          "omit_fraction": null,
+          "omit_period": null,
+          "checkpoints": [],
+          "atomicity_mode": null,
+          "adaptive_peaks": null
+        }
+      ]
+    },
+    {
+      "case": "bisei",
+      "mode": "dual_space",
+      "repeat": 2,
+      "seconds": 0.20572245799121447,
+      "counts": {
+        "Bi": 4,
+        "I": 4,
+        "Se": 4
+      },
+      "r1": 0.05228505465883758,
+      "counts_match_reference_after_solving": true,
+      "phasing_trials": [
+        {
+          "method": "dual_space",
+          "initialization": "patterson",
+          "patterson_vector_grid": [
+            16,
+            0,
+            8
+          ],
+          "seed": 0,
+          "completed_cycles": 4,
+          "best_cycle": 3,
+          "score_kind": "profiled_amplitude_sse",
+          "mask_sigma_angstrom": 0.27000406526782644,
+          "hybrid_m": 3.0,
+          "sharpening_q": 0.5,
+          "omit_fraction": 0.1,
+          "omit_period": 3,
+          "checkpoints": [
+            {
+              "completed_cycles": 4,
+              "best_cycle": 3,
+              "score": 0.12226011864782574,
+              "accepted": true
+            }
+          ],
+          "atomicity_mode": "adaptive",
+          "adaptive_peaks": {
+            "sigma": 2.0,
+            "cap": 128,
+            "selected": [
+              26,
+              56,
+              38,
+              46
+            ],
+            "thresholds": [
+              2.0,
+              2.0,
+              2.0,
+              2.0
+            ],
+            "omitted": [
+              0,
+              0,
+              3,
+              0
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "case": "thiourea",
+      "mode": "charge_flip",
+      "repeat": 2,
+      "seconds": 5.491747291991487,
+      "counts": {
+        "C": 4,
+        "N": 8,
+        "S": 4
+      },
+      "r1": 0.049409049967854266,
+      "counts_match_reference_after_solving": true,
+      "phasing_trials": [
+        {
+          "method": "charge_flip",
+          "initialization": "random_element_sharpening",
+          "patterson_vector_grid": null,
+          "seed": 0,
+          "completed_cycles": 800,
+          "best_cycle": 416,
+          "score_kind": "normalized_l1",
+          "mask_sigma_angstrom": null,
+          "hybrid_m": null,
+          "sharpening_q": null,
+          "omit_fraction": null,
+          "omit_period": null,
+          "checkpoints": [],
+          "atomicity_mode": null,
+          "adaptive_peaks": null
+        }
+      ]
+    },
+    {
+      "case": "thiourea",
+      "mode": "dual_space",
+      "repeat": 2,
+      "seconds": 4.842931708000833,
+      "counts": {
+        "C": 2,
+        "N": 10,
+        "S": 4
+      },
+      "r1": 0.053617564108364775,
+      "counts_match_reference_after_solving": false,
+      "phasing_trials": [
+        {
+          "method": "dual_space",
+          "initialization": "patterson",
+          "patterson_vector_grid": [
+            16,
+            16,
+            16
+          ],
+          "seed": 0,
+          "completed_cycles": 16,
+          "best_cycle": 15,
+          "score_kind": "profiled_amplitude_sse",
+          "mask_sigma_angstrom": 0.24513987380696448,
+          "hybrid_m": 3.0,
+          "sharpening_q": 0.5,
+          "omit_fraction": 0.1,
+          "omit_period": 3,
+          "checkpoints": [
+            {
+              "completed_cycles": 4,
+              "best_cycle": 3,
+              "score": 0.1241032595287042,
+              "accepted": false
+            },
+            {
+              "completed_cycles": 16,
+              "best_cycle": 15,
+              "score": 0.07651523621777816,
+              "accepted": true
+            }
+          ],
+          "atomicity_mode": "adaptive",
+          "adaptive_peaks": {
+            "sigma": 2.0,
+            "cap": 128,
+            "selected": [
+              26,
+              50,
+              31,
+              60,
+              32,
+              52,
+              36,
+              47,
+              40,
+              38,
+              40,
+              43,
+              43,
+              43,
+              40,
+              43
+            ],
+            "thresholds": [
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0
+            ],
+            "omitted": [
+              0,
+              0,
+              3,
+              0,
+              0,
+              5,
+              0,
+              0,
+              4,
+              0,
+              0,
+              4,
+              0,
+              0,
+              4,
+              0
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

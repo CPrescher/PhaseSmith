@@ -1,5 +1,9 @@
 # Count-free Patterson/dual-space phasing
 
+The [29 October follow-up](solution-dual-space-handoffs.md) fixes the BiSeI origin
+search and adds early full-structure handoffs. Results below retain the original
+28 October implementation as a recorded baseline.
+
 The shared element-only solver can phase without a supplied composition or
 atomicity-mask atom count. A data-adaptive selection replaces the fixed-N mask.
 The existing fixed-count dual-space path remains separate and reproducible.

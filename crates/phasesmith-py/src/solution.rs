@@ -31,6 +31,7 @@ type SharedSearchRequest = (
     f64,
     f64,
     usize,
+    bool,
 );
 
 fn invalid(error: impl ToString) -> PyErr {
@@ -144,6 +145,7 @@ fn solve_structure<'py>(
                 peak_density_radius_angstrom,
                 dual_peak_sigma,
                 dual_peak_cap,
+                dual_checkpoints,
             )) = shared_search
             {
                 if !composition.is_empty() {
@@ -168,6 +170,7 @@ fn solve_structure<'py>(
                         peak_density_radius_angstrom,
                         dual_peak_sigma,
                         dual_peak_cap,
+                        dual_checkpoints,
                     },
                 )
             } else {

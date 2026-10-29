@@ -166,7 +166,9 @@ def test_count_free_search_recovers_synthetic_counts(symbol, counts, tmp_path):
     assert trial.method == "dual_space" and trial.atomicity_mode == "adaptive"
     assert trial.initialization == "patterson"
     audit = trial.adaptive_peaks
-    assert len(audit.selected) == trial.completed_cycles == 800
+    assert len(audit.selected) == trial.completed_cycles <= 800
+    assert trial.checkpoints[-1].accepted
+    assert trial.checkpoints[-1].completed_cycles == trial.completed_cycles
     assert all(0 <= n <= audit.cap for n in audit.selected)
     out = write_solution(result, tmp_path / "result")
     record = json.loads((out / "result.json").read_text())
@@ -182,6 +184,7 @@ def test_atom_bound_does_not_enter_phasing_and_portfolio_is_explicit():
             space_group=group,
             elements=["Fe", "O"],
             maximum_atoms=bound,
+            dual_checkpoints=False,
             search_rounds=1,
             options=SolutionOptions(
                 phasing="dual_space", trials=1, cycles=12, max_seconds=15, r1_target=0
@@ -238,3 +241,94 @@ def test_cancelled_and_expired_count_free_search():
         )
         assert result.termination == expected
         assert not result.target_met and not result.phasing_trials
+
+
+def test_declined_checkpoints_continue_identical_fourier_trajectory():
+    from phasesmith.experimental.solution_count_free_reference import checkpoint_window_reference
+
+    cell, group, data, _, _ = synthetic("P-1")
+    settings = dict(
+        cell=cell,
+        space_group=group,
+        elements=["Fe", "O"],
+        maximum_atoms=2,
+        search_rounds=1,
+        options=SolutionOptions(
+            phasing="dual_space", trials=1, cycles=20, r1_target=0, max_seconds=15
+        ),
+    )
+    monitored = solve_structure_elements(data, **settings)
+    full = solve_structure_elements(data, **settings, dual_checkpoints=False)
+    np.testing.assert_array_equal(monitored.histories[0], full.histories[0])
+    assert monitored.phasing_trials[0].adaptive_peaks == full.phasing_trials[0].adaptive_peaks
+    assert not monitored.target_met
+    assert monitored.shared_search.dual_checkpoints
+    assert not full.shared_search.dual_checkpoints
+    attempts = monitored.phasing_trials[0].checkpoints
+    assert [c.completed_cycles for c in attempts] == [4, 16, 20]
+    start = 0
+    for c in attempts:
+        assert not c.accepted
+        assert c.best_cycle == checkpoint_window_reference(
+            monitored.histories[0], c.completed_cycles, start
+        )
+        assert c.score == monitored.histories[0][c.best_cycle]
+        start = c.completed_cycles
+    assert not full.phasing_trials[0].checkpoints
+
+
+def test_checkpoint_control_requires_boolean():
+    cell, group, data, _, _ = synthetic()
+    with pytest.raises(TypeError, match="dual_checkpoints"):
+        solve_structure_elements(
+            data, cell=cell, space_group=group, elements=["Fe", "O"], dual_checkpoints=1
+        )
+
+
+@pytest.mark.parametrize(
+    "accept,rank,cycles", [(4, None, 20), (16, None, 20), (0, None, 54), (4, 0, 20)]
+)
+def test_monitored_cycles_match_independent_numpy(accept, rank, cycles):
+    shape, cell, hkl, amplitude, phases, support = inputs()
+    native = _core._solution_count_free_dual_space(
+        shape,
+        list(cell.as_tuple()),
+        hkl.ravel(),
+        amplitude,
+        phases,
+        support.ravel(),
+        cycles,
+        2.0,
+        128,
+        0.25,
+        3.0,
+        0.0,
+        987,
+        rank,
+        accept,
+    )
+    ref = count_free_dual_space_reference(
+        shape,
+        cell.geometry().direct_basis,
+        hkl,
+        amplitude,
+        phases,
+        support,
+        cycles=cycles,
+        mask_sigma=0.25,
+        omit_fraction=0.0,
+        seed=987,
+        patterson_rank=rank,
+        checkpoint_accept_cycle=accept,
+    )
+    np.testing.assert_allclose(
+        np.array(native["density"]).reshape(shape), ref["density"], rtol=3e-9, atol=2e-11
+    )
+    np.testing.assert_allclose(native["history"], ref["history"], rtol=2e-10, atol=3e-12)
+    assert native["adaptive_peaks"] == ref["adaptive_peaks"]
+    assert native["best_cycle"] == ref["best_cycle"]
+    assert len(native["checkpoints"]) == len(ref["checkpoints"])
+    for a, b in zip(native["checkpoints"], ref["checkpoints"], strict=True):
+        for k in ("accepted", "completed_cycles", "best_cycle"):
+            assert a[k] == b[k]
+        assert abs(a["score"] - b["score"]) < 3e-12

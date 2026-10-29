@@ -180,6 +180,38 @@ fn benchmark(c: &mut Criterion) {
             });
         },
     );
+    c.bench_function(
+        "monitored_dual_space_32cubed_2108_reflections_50_cycles",
+        |b| {
+            b.iter(|| {
+                let mut decline = |_: &[f64], _: usize, _: usize| Ok(false);
+                phasesmith_solution::dual_space_monitored(
+                    shape,
+                    cell,
+                    &hkl,
+                    &amplitudes,
+                    &phases,
+                    &support,
+                    &DualSpaceOptions {
+                        cycles: 50,
+                        peak_selection: phasesmith_solution::PeakSelection::Adaptive {
+                            sigma: 2.,
+                            cap: 128,
+                        },
+                        mask_sigma: 0.3,
+                        hybrid_m: 3.,
+                        omit_fraction: 0.1,
+                        seed: 0,
+                        patterson_rank: Some(0),
+                        cancellation: None,
+                    },
+                    None,
+                    Some(&mut decline),
+                )
+                .unwrap()
+            });
+        },
+    );
     let mut operations = Vec::new();
     for centre in [0, 1] {
         for x in [-1, 1] {

@@ -75,6 +75,7 @@ def count_free_dual_space_reference(
     omit_fraction=0.1,
     seed=0,
     patterson_rank=None,
+    checkpoint_accept_cycle=None,
 ):
     hkl, amplitude = np.asarray(hkl), np.asarray(amplitude)
     amplitude = amplitude / amplitude.max()
@@ -91,6 +92,8 @@ def count_free_dual_space_reference(
     support = np.asarray(support).reshape(shape)
     history, best, best_score, best_cycle = [], rho.copy(), np.inf, 0
     selected, thresholds, omitted = [], [], []
+    checkpoints, window_start, next_checkpoint = [], 0, 4
+    window_maps = {}
     for cycle in range(cycles):
         projected, peaks, threshold, skipped = adaptive_projection_reference(
             rho,
@@ -102,6 +105,8 @@ def count_free_dual_space_reference(
             seed=seed,
             omit_fraction=omit_fraction,
         )
+        if checkpoint_accept_cycle is not None:
+            window_maps[cycle] = projected.copy()
         selected.append(len(peaks))
         thresholds.append(threshold)
         omitted.append(skipped)
@@ -121,6 +126,31 @@ def count_free_dual_space_reference(
             and score < best_score
         ):
             best, best_score, best_cycle = projected.copy(), score, cycle
+        if checkpoint_accept_cycle is not None and (
+            cycle + 1 == next_checkpoint or cycle + 1 == cycles
+        ):
+            selected_cycle = checkpoint_window_reference(
+                history, cycle + 1, window_start, omit_fraction
+            )
+            # Keep the actual window map independently, never obtain it from native code.
+            if selected_cycle is not None:
+                accepted = checkpoint_accept_cycle > 0 and cycle + 1 >= checkpoint_accept_cycle
+                checkpoints.append(
+                    dict(
+                        completed_cycles=cycle + 1,
+                        best_cycle=selected_cycle,
+                        score=history[selected_cycle],
+                        accepted=accepted,
+                    )
+                )
+                if accepted:
+                    best, best_score, best_cycle = (
+                        window_maps[selected_cycle],
+                        history[selected_cycle],
+                        selected_cycle,
+                    )
+                    break
+            window_start, next_checkpoint = cycle + 1, next_checkpoint * 4
         calculated *= scale
         calculated[support == 0] = 0
         values = calculated[indices]
@@ -135,6 +165,7 @@ def count_free_dual_space_reference(
         "history": np.array(history),
         "best_cycle": best_cycle,
         "patterson_vector_grid": vector,
+        "checkpoints": checkpoints,
         "adaptive_peaks": {
             "sigma": peak_sigma,
             "cap": peak_cap,
@@ -143,3 +174,29 @@ def count_free_dual_space_reference(
             "omitted": omitted,
         },
     }
+
+
+def checkpoint_window_reference(history, completed_cycles, start=0, omit_fraction=0.1):
+    """First minimum SSE in the window, excluding omission cycles."""
+    scores = np.asarray(history)
+    candidates = np.arange(start, completed_cycles)
+    if omit_fraction > 0:
+        candidates = candidates[candidates % 3 != 2]
+    candidates = candidates[np.isfinite(scores[candidates])]
+    if not len(candidates):
+        return None
+    return int(candidates[np.argmin(scores[candidates])])
+
+
+def inversion_origin_seeds_reference(points, labels, translation, anchor=0):
+    """Solve -2s = p_j+p_anchor-t modulo integers using all eight branches."""
+    points = np.asarray(points)
+    shifts = []
+    for j, label in enumerate(labels):
+        if label != labels[anchor]:
+            continue
+        base = (np.asarray(translation) - points[anchor] - points[j]) / 2
+        # Match branch integer order explicitly, independent of native iteration.
+        branches = np.array([[i & 1, (i >> 1) & 1, (i >> 2) & 1] for i in range(8)])
+        shifts.extend((base + branches / 2) % 1)
+    return np.array(shifts)

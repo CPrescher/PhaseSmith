@@ -198,3 +198,36 @@ def test_f000_counts_every_image_and_has_no_adp_derivative():
     assert abs(state["amplitude_scale"] - 1) < 1e-14
     np.testing.assert_allclose(state["jacobian"], 0, atol=1e-15)
     assert state["r1"] < 1e-14
+
+
+@pytest.mark.parametrize(
+    "shift", [(-0.125, -0.25, -0.125), (0.137, 0.287, 0.391), (0.493, 0.081, 0.714)]
+)
+def test_inversion_pairs_recover_pseudosymmetric_framework_origin(shift):
+    from phasesmith.experimental.solution_count_free_reference import (
+        inversion_origin_seeds_reference,
+    )
+
+    cell = UnitCell(8.6967, 4.2205, 10.574, 90, 90, 90)
+    # Synthetic rational four-site orbit; no measured/reference coordinates.
+    native, metadata, _, _, _ = model_case(
+        "Pnma", cell, [("Si", (0.125, 0.25, 0.125))], shift=shift, mode="isotropic"
+    )
+    assert metadata["maximum_matching_error"] < 1e-12
+    full = np.array(
+        [
+            image
+            for image in space_group_by_symbol("Pnma")
+            .space_group.expand_sites([[0.125, 0.25, 0.125]])
+            .fractional_xyz
+        ]
+    )
+    points = (full + shift) % 1
+    seeds = inversion_origin_seeds_reference(points, ["Si"] * len(points), np.zeros(3))
+    recovered = np.array(metadata["origin_shift"])
+    delta = (seeds - recovered + 0.5) % 1 - 0.5
+    assert np.linalg.norm(delta, axis=1).min() < 1e-12
+    state = native.evaluate(native.initial_parameters(0.012))
+    assert metadata["full_count"] == 4
+    expanded = space_group_by_symbol("Pnma").space_group.expand_sites(state["fractional_xyz"])
+    assert len(expanded.fractional_xyz) == 4

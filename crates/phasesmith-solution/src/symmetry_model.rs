@@ -116,6 +116,39 @@ fn origin_operators(group: &SpaceGroup) -> Vec<SymmetryOperation> {
     selected
 }
 
+// Inversion gives -2s = p_j + p_anchor - t (mod integer lattice).
+// Enumerate the eight half-cell branches without fixing any coordinate/origin.
+fn inversion_origin_seeds(
+    group: &SpaceGroup,
+    points: &[[f64; 3]],
+    elements: &[String],
+    anchor: usize,
+) -> Vec<[f64; 3]> {
+    let inversion = group
+        .operations()
+        .iter()
+        .find(|op| op.rotation() == [[-1, 0, 0], [0, -1, 0], [0, 0, -1]]);
+    let Some(op) = inversion else {
+        return Vec::new();
+    };
+    let translation = op.apply_fractional([0.; 3]);
+    let mut seeds = Vec::new();
+    for (j, point) in points.iter().enumerate() {
+        if elements[j] != elements[anchor] {
+            continue;
+        }
+        for branch in 0..8 {
+            let seed = std::array::from_fn(|axis| {
+                (-0.5 * (points[anchor][axis] + point[axis] - translation[axis])
+                    + 0.5 * f64::from((branch >> axis) & 1))
+                .rem_euclid(1.)
+            });
+            seeds.push(seed);
+        }
+    }
+    seeds
+}
+
 fn fit_origin(
     g: &CellGeometry,
     ops: &[SymmetryOperation],
@@ -253,49 +286,62 @@ fn recover_models(
     anchors.truncate(12);
     let mut best = None;
     let mut alternatives: Vec<OriginMatch> = Vec::new();
-    for hand in [1, -1] {
-        let reflected: Vec<_> = points
-            .iter()
-            .map(|&p| p.map(|v| (v * f64::from(hand)).rem_euclid(1.)))
-            .collect();
-        let grid = if ops.is_empty() { 1 } else { 4 };
-        for a in 0..grid {
-            for b in 0..grid {
-                for c in 0..grid {
-                    if crate::stopped(deadline, cancellation) {
-                        return Err(error(
-                            "symmetry recovery interrupted by cancellation or runtime limit",
+    for pair_seeds in [false, true] {
+        if pair_seeds && best.is_some() {
+            break;
+        }
+        for hand in [1, -1] {
+            let reflected: Vec<_> = points
+                .iter()
+                .map(|&p| p.map(|v| (v * f64::from(hand)).rem_euclid(1.)))
+                .collect();
+            let starts = if pair_seeds {
+                inversion_origin_seeds(group, &reflected, elements, anchors[0])
+            } else {
+                let grid = if ops.is_empty() { 1 } else { 4 };
+                let mut starts = Vec::new();
+                for a in 0..grid {
+                    for b in 0..grid {
+                        for c in 0..grid {
+                            starts.push([
+                                f64::from(a) / f64::from(grid),
+                                f64::from(b) / f64::from(grid),
+                                f64::from(c) / f64::from(grid),
+                            ]);
+                        }
+                    }
+                }
+                starts
+            };
+            for start in starts {
+                if crate::stopped(deadline, cancellation) {
+                    return Err(error(
+                        "symmetry recovery interrupted by cancellation or runtime limit",
+                    ));
+                }
+                let shift = fit_origin(&g, &ops, &reflected, elements, &anchors, start)?;
+                let aligned: Vec<_> = reflected
+                    .iter()
+                    .map(|&p| add(p, shift).map(|v| v.rem_euclid(1.)))
+                    .collect();
+                if let Ok((permutations, maximum, score)) =
+                    match_operations(&g, group, &aligned, elements, tolerance)
+                {
+                    if maximum_models > 1 {
+                        alternatives.push((
+                            hand,
+                            shift,
+                            aligned.clone(),
+                            permutations.clone(),
+                            maximum,
+                            score,
                         ));
                     }
-                    let start = [
-                        f64::from(a) / f64::from(grid),
-                        f64::from(b) / f64::from(grid),
-                        f64::from(c) / f64::from(grid),
-                    ];
-                    let shift = fit_origin(&g, &ops, &reflected, elements, &anchors, start)?;
-                    let aligned: Vec<_> = reflected
-                        .iter()
-                        .map(|&p| add(p, shift).map(|v| v.rem_euclid(1.)))
-                        .collect();
-                    if let Ok((permutations, maximum, score)) =
-                        match_operations(&g, group, &aligned, elements, tolerance)
+                    if best
+                        .as_ref()
+                        .is_none_or(|&(_, _, _, _, _, old)| score < old - 1e-12)
                     {
-                        if maximum_models > 1 {
-                            alternatives.push((
-                                hand,
-                                shift,
-                                aligned.clone(),
-                                permutations.clone(),
-                                maximum,
-                                score,
-                            ));
-                        }
-                        if best
-                            .as_ref()
-                            .is_none_or(|&(_, _, _, _, _, old)| score < old - 1e-12)
-                        {
-                            best = Some((hand, shift, aligned, permutations, maximum, score));
-                        }
+                        best = Some((hand, shift, aligned, permutations, maximum, score));
                     }
                 }
             }
@@ -584,4 +630,48 @@ fn equivalent_framework(a: &SymmetryModel, b: &SymmetryModel) -> Result<bool, So
         }
     }
     Ok(false)
+}
+
+#[cfg(test)]
+mod inversion_seed_tests {
+    use super::*;
+    use phasesmith_crystallography::Rational;
+
+    #[test]
+    fn inversion_seeds_satisfy_correspondence_with_translated_center() {
+        let inversion = SymmetryOperation::new(
+            [[-1, 0, 0], [0, -1, 0], [0, 0, -1]],
+            [
+                Rational::new(1, 3).unwrap(),
+                Rational::new(1, 4).unwrap(),
+                Rational::new(1, 2).unwrap(),
+            ],
+        )
+        .unwrap();
+        let group = SpaceGroup::new(vec![SymmetryOperation::identity(), inversion]).unwrap();
+        let points = [[0.137, 0.259, 0.382], [0.641, 0.314, 0.728]];
+        let labels = vec!["Si".into(), "Si".into()];
+        let seeds = inversion_origin_seeds(&group, &points, &labels, 0);
+        assert_eq!(seeds.len(), 16);
+        for (j, branch) in seeds.chunks_exact(8).enumerate() {
+            for &shift in branch {
+                let image = inversion.apply_fractional(add(points[0], shift));
+                for axis in 0..3 {
+                    let d = image[axis] - points[j][axis] - shift[axis];
+                    assert!((d - d.round()).abs() < 1e-14);
+                }
+            }
+        }
+        let labels = vec!["Si".into(), "O".into()];
+        assert_eq!(inversion_origin_seeds(&group, &points, &labels, 0).len(), 8);
+    }
+
+    #[test]
+    fn noncentrosymmetric_group_has_no_inversion_seeds() {
+        let group = SpaceGroup::new(vec![SymmetryOperation::identity()]).unwrap();
+        assert_eq!(
+            inversion_origin_seeds(&group, &[[0.1; 3]], &["Si".into()], 0),
+            [] as [[f64; 3]; 0]
+        );
+    }
 }
