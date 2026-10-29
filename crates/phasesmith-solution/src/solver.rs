@@ -44,6 +44,8 @@ pub struct PhasingTrial {
     pub mask_sigma: Option<f64>,
     /// Actual count-free mask selection, absent for fixed-count/charge-flip runs.
     pub adaptive_peaks: Option<crate::AdaptivePeakHistory>,
+    /// Actual complete-model handoffs during phasing.
+    pub checkpoints: Vec<crate::DualSpaceCheckpoint>,
 }
 
 /// Explicit resource budgets and experimental numerical controls.
@@ -393,6 +395,7 @@ pub fn solve(
                 None
             },
             adaptive_peaks: None,
+            checkpoints: Vec::new(),
         });
         result.histories.push(flip.history);
         let peaks = extract_peaks(&flip.density, shape, species.len())?;

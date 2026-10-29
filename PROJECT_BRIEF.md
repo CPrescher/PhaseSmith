@@ -143,6 +143,30 @@ improvement is claimed; charge flipping stays the default. See
 `docs/solution-count-free-dual-space.md` for the frozen comparison and limitations.
 Default powder builds remain unchanged.
 
+The count-free dual-space follow-up fixes a missed-origin failure in nearly
+rational centrosymmetric frameworks. If the existing coarse origin grid fails,
+inversion-related peak pairs provide all half-cell branches analytically before
+the unchanged full-group bijection/tolerance check. The saved BiSeI framework
+matches within 0.049 angstrom and now completes without input counts or reference
+coordinates. Count-free dual-space also hands window-best maps to full shared
+search at 4,16,64,... cycles, accepting only complete requested-mode refinements
+that meet the original R1 target. Failed handoffs resume the same Fourier arrays
+and global cycle budget. Beams and their density frames remain paired across
+checkpoints; actual window selections and acceptance are exported. The explicit
+`dual_checkpoints=False` ablation keeps full-budget phasing. Independent NumPy
+window/seed/cycle references and translated synthetic-orbit regressions cover
+these changes; existing profile/structure-factor derivatives are unchanged.
+Three serial paired repeats now recover all three measured development structures
+with the correct counts, geometry and original-observation fits. Charge-flipping /
+dual-space medians are 1.705/0.667 s for K[BrF4], 0.970/0.435 s for BiSeI and
+5.486/5.761 s for thiourea: 2.56x and 2.23x speedups for the first two, but a 5%
+slowdown for thiourea. The same-build full-budget ablation also recovers all three,
+isolating the origin fix from the checkpoint schedule. An experimental shortcut
+stopping at the first R1-target fit misassigned C/N and was rejected; the final
+path completes the original refinement shortlist and beam round.
+See `docs/solution-dual-space-handoffs.md` for diagnosis, validation and timings.
+Charge flipping remains the default; default powder builds remain unchanged.
+
 An opt-in primitive/Bravais comparison now follows position-only lattice discovery.
 Native Selling-Delaunay reduction retains exact integer basis transformations;
 complete low-index reciprocal HNF hypotheses expose excluded reflections rather

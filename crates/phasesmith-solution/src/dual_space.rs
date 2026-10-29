@@ -56,6 +56,19 @@ pub struct DualSpaceOptions {
     pub cancellation: Option<crate::Cancellation>,
 }
 
+/// One attempted handoff of a Fourier window to full shared structure search.
+#[derive(Clone, Debug)]
+pub struct DualSpaceCheckpoint {
+    /// Completed Fourier cycles, including this window.
+    pub completed_cycles: usize,
+    /// Zero-based cycle of this window's best non-omitted atomic map.
+    pub best_cycle: usize,
+    /// Profiled mixed-amplitude SSE of that map.
+    pub score: f64,
+    /// True only if downstream complete-model refinement meets its target.
+    pub accepted: bool,
+}
+
 /// Fourier trial and actual initialization (fallbacks are never hidden).
 #[derive(Clone, Debug)]
 pub struct DualSpaceResult {
@@ -67,6 +80,8 @@ pub struct DualSpaceResult {
     pub patterson_vector: Option<[i32; 3]>,
     /// Present only for genuinely count-free adaptive selection.
     pub adaptive_history: Option<AdaptivePeakHistory>,
+    /// Actual structure-search handoffs, empty for unmonitored runs.
+    pub checkpoints: Vec<DualSpaceCheckpoint>,
 }
 
 pub(crate) fn hash64(mut value: u64) -> u64 {
@@ -345,6 +360,35 @@ pub fn dual_space(
     options: &DualSpaceOptions,
     deadline: Option<Instant>,
 ) -> Result<DualSpaceResult, SolutionError> {
+    dual_space_monitored(
+        shape, cell, hkl, amplitudes, phases, support, options, deadline, None,
+    )
+}
+
+/// A read-only window-map handoff; true means the caller's full target was met.
+pub type CheckpointCallback<'a> =
+    dyn FnMut(&[f64], usize, usize) -> Result<bool, SolutionError> + 'a;
+
+#[allow(
+    clippy::too_many_arguments,
+    clippy::too_many_lines,
+    clippy::cast_precision_loss
+)]
+/// Recycle Fourier iterates with optional complete-model handoffs at 4,16,64,... cycles.
+/// Rejected handoffs resume the same trajectory; the cycle ceiling remains global.
+/// # Errors
+/// Propagates input validation, Fourier errors and errors from the caller's handoff.
+pub fn dual_space_monitored(
+    shape: [usize; 3],
+    cell: UnitCell,
+    hkl: &[[i32; 3]],
+    amplitudes: &[f64],
+    phases: &[f64],
+    support: &[u8],
+    options: &DualSpaceOptions,
+    deadline: Option<Instant>,
+    mut checkpoint: Option<&mut CheckpointCallback<'_>>,
+) -> Result<DualSpaceResult, SolutionError> {
     validate_options(options)?;
     let geometry = cell.geometry().map_err(|e| error(e.to_string()))?;
     mask_bounds(shape, &geometry, options.mask_sigma)?;
@@ -392,6 +436,11 @@ pub fn dual_space(
         }),
         PeakSelection::Fixed(_) => None,
     };
+    let mut window_best = Vec::new();
+    let mut window_score = f64::INFINITY;
+    let mut window_cycle = 0;
+    let mut next_checkpoint = 4;
+    let mut checkpoints = Vec::new();
     let mut best = density.clone();
     let mut best_score = f64::INFINITY;
     let mut best_cycle = 0;
@@ -432,10 +481,36 @@ pub fn dual_space(
             / target_norm;
         history.push(score);
         let eligible = options.omit_fraction == 0. || cycle % 3 != 2;
+        if checkpoint.is_some() && eligible && score < window_score {
+            window_score = score;
+            window_best.clone_from(&projected);
+            window_cycle = cycle;
+        }
         if eligible && (cycle >= 50 || options.cycles <= 50) && score < best_score {
             best_score = score;
             best = projected;
             best_cycle = cycle;
+        }
+        if let Some(accept) = &mut checkpoint {
+            if (cycle + 1 == next_checkpoint || cycle + 1 == options.cycles)
+                && window_score.is_finite()
+            {
+                let accepted = accept(&window_best, cycle + 1, window_cycle)?;
+                checkpoints.push(DualSpaceCheckpoint {
+                    completed_cycles: cycle + 1,
+                    best_cycle: window_cycle,
+                    score: window_score,
+                    accepted,
+                });
+                if accepted {
+                    best = window_best;
+                    best_cycle = window_cycle;
+                    best_score = window_score;
+                    break;
+                }
+                window_score = f64::INFINITY;
+                next_checkpoint *= 4;
+            }
         }
         for (value, &code) in calculated.iter_mut().zip(support) {
             *value = if code == 0 {
@@ -476,6 +551,7 @@ pub fn dual_space(
         initialization,
         patterson_vector: vector,
         adaptive_history,
+        checkpoints,
     })
 }
 

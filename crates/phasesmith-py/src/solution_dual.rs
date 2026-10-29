@@ -111,6 +111,7 @@ pub(super) fn adaptive_record<'py>(
 }
 #[pyfunction(name = "_solution_count_free_dual_space")]
 #[allow(clippy::too_many_arguments)]
+#[pyo3(signature = (shape, cell_parameters, hkl, amplitudes, phases, support, cycles, peak_sigma, peak_cap, mask_sigma, hybrid_m, omit_fraction, seed, patterson_rank, checkpoint_accept_cycle=None))]
 fn count_free<'py>(
     py: Python<'py>,
     shape: [usize; 3],
@@ -127,6 +128,7 @@ fn count_free<'py>(
     omit_fraction: f64,
     seed: u64,
     patterson_rank: Option<usize>,
+    checkpoint_accept_cycle: Option<usize>,
 ) -> PyResult<Bound<'py, PyDict>> {
     let cell = cell(&cell_parameters)?;
     let hkl = hkl_rows(&hkl)?;
@@ -148,7 +150,10 @@ fn count_free<'py>(
     };
     let state = py
         .detach(move || {
-            phasesmith_solution::dual_space(
+            let mut handoff = |_: &[f64], done: usize, _: usize| {
+                Ok(checkpoint_accept_cycle.is_some_and(|n| n > 0 && done >= n))
+            };
+            phasesmith_solution::dual_space_monitored(
                 shape,
                 cell,
                 &hkl,
@@ -157,6 +162,11 @@ fn count_free<'py>(
                 &support,
                 &options,
                 None,
+                if checkpoint_accept_cycle.is_some() {
+                    Some(&mut handoff)
+                } else {
+                    None
+                },
             )
         })
         .map_err(invalid)?;
@@ -169,6 +179,7 @@ fn count_free<'py>(
     if let Some(h) = state.adaptive_history {
         d.set_item("adaptive_peaks", adaptive_record(py, &h)?)?;
     }
+    d.set_item("checkpoints", checkpoint_records(py, &state.checkpoints)?)?;
     Ok(d)
 }
 #[pyfunction(name = "_solution_adaptive_projection")]
@@ -208,6 +219,22 @@ fn adaptive_projection<'py>(
     d.set_item("effective_sigma", effective)?;
     Ok(d)
 }
+fn checkpoint_records<'py>(
+    py: Python<'py>,
+    records: &[phasesmith_solution::DualSpaceCheckpoint],
+) -> PyResult<Bound<'py, PyList>> {
+    let items = PyList::empty(py);
+    for c in records {
+        let d = PyDict::new(py);
+        d.set_item("completed_cycles", c.completed_cycles)?;
+        d.set_item("best_cycle", c.best_cycle)?;
+        d.set_item("score", c.score)?;
+        d.set_item("accepted", c.accepted)?;
+        items.append(d)?;
+    }
+    Ok(items)
+}
+
 pub(super) fn trial_records(
     py: Python<'_>,
     records: Vec<phasesmith_solution::PhasingTrial>,
@@ -223,6 +250,7 @@ pub(super) fn trial_records(
         item.set_item("best_cycle", t.best_cycle)?;
         item.set_item("score_kind", t.score_kind)?;
         item.set_item("mask_sigma_angstrom", t.mask_sigma)?;
+        item.set_item("checkpoints", checkpoint_records(py, &t.checkpoints)?)?;
         if let Some(h) = &t.adaptive_peaks {
             item.set_item("adaptive_peaks", adaptive_record(py, h)?)?;
             item.set_item("atomicity_mode", "adaptive")?;

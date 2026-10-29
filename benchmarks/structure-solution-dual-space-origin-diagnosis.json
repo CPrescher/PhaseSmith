@@ -1,0 +1,54 @@
+{
+  "schema": "phasesmith.dual-space-origin-diagnosis.v1",
+  "qualification": "Post-solve diagnostic of a frozen failed density map, not solver input. The 75%-height prefix is data selected. No reference coordinates/formula were read.",
+  "source_result_sha256": "76aa0d256370bc0d328dfbc4d4a5a2dbc802d30e279c565e487a2337463a6347",
+  "source_maps_sha256": "e16821906f979e1208327b7aed6030efc60d88fc6859b5746b9d3a0ab900b092",
+  "original_input_sha256": "49e22aae5122b83855bc8df2f68e98862d92342e2752390a8254237c2d0f07d0",
+  "original_rejections": [
+    [
+      0,
+      "no initial density prefix matches supplied symmetry"
+    ]
+  ],
+  "space_group": "Pnma",
+  "cell": [
+    8.6967,
+    4.2205,
+    10.574,
+    90.0,
+    90.0,
+    90.0
+  ],
+  "framework_element": "Bi",
+  "selected_peak_positions": [
+    [
+      0.004372972613092831,
+      0.0,
+      0.0027127339497253567
+    ],
+    [
+      0.7491009592106318,
+      0.5,
+      0.7501223634982912
+    ],
+    [
+      0.49909320820952,
+      0.0,
+      0.2487636943157658
+    ],
+    [
+      0.24710071594813032,
+      0.5,
+      0.5044920653092229
+    ]
+  ],
+  "symmetry_tolerance_angstrom": 0.15,
+  "recovered_maximum_matching_error_angstrom": 0.04882187790742599,
+  "recovered_hand": 1,
+  "recovered_origin_shift": [
+    0.6250830360046563,
+    0.75,
+    0.6234772857317487
+  ],
+  "native_sha256": "e58fbad2b6cbe7e5d9df455d16f6f9fd2cc110461fe8bd8057b5f599a09f6cc6"
+}

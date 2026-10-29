@@ -35,6 +35,8 @@ pub struct SharedSearchOptions {
     pub dual_peak_sigma: f64,
     /// Count-free atomicity resource cap, in [1,128].
     pub dual_peak_cap: usize,
+    /// Test window maps with complete shared refinement before the cycle ceiling.
+    pub dual_checkpoints: bool,
 }
 impl Default for SharedSearchOptions {
     fn default() -> Self {
@@ -49,6 +51,7 @@ impl Default for SharedSearchOptions {
             peak_density_radius_angstrom: 0.7,
             dual_peak_sigma: 2.,
             dual_peak_cap: 128,
+            dual_checkpoints: true,
         }
     }
 }
@@ -83,12 +86,16 @@ pub struct DensityCalibration {
     pub shortlist_limit: usize,
 }
 /// Actual shared work, including unsuccessful edits and budget-limited states.
+// These are independent configuration/outcome facts in a diagnostic record.
+#[allow(clippy::struct_excessive_bools)]
 #[derive(Clone, Debug, Default)]
 pub struct SharedSearchSummary {
     /// Required element types, without counts.
     pub elements: Vec<String>,
     /// Actual count-independent phase starts.
     pub phasing_starts: usize,
+    /// Whether early dual-space structure handoffs were requested.
+    pub dual_checkpoints: bool,
     /// Recovered initial framework settings.
     pub framework_hypotheses: usize,
     /// Number of strongest-map peaks in the selected initial closed prefix.
@@ -621,6 +628,443 @@ fn retain(mut candidates: Vec<State>, width: usize) -> Vec<State> {
     chosen
 }
 
+#[allow(
+    clippy::too_many_arguments,
+    clippy::too_many_lines,
+    clippy::cast_precision_loss,
+    clippy::cast_possible_truncation,
+    clippy::cast_sign_loss
+)]
+fn search_phase_map(
+    cell: UnitCell,
+    group: &SpaceGroup,
+    options: &SolveOptions,
+    search: &SharedSearchOptions,
+    shape: [usize; 3],
+    minimum: usize,
+    elements: &[String],
+    trial: usize,
+    density: &[f64],
+    deadline: Instant,
+    winners: &mut Vec<State>,
+    result: &mut Solution,
+    audit: &mut SharedSearchSummary,
+) -> Result<bool, SolutionError> {
+    let geometry = cell.geometry().map_err(|e| error(e.to_string()))?;
+    let integrated_map = if search.integrated_peak_density {
+        audit.density_map_builds += 1;
+        Some(IntegratedPeakDensity::new(
+            cell,
+            shape,
+            &result.data.hkl,
+            &result.data.amplitudes,
+            density,
+            search.peak_density_radius_angstrom,
+        )?)
+    } else {
+        None
+    };
+    let peaks = extract_peaks(density, shape, 32.max(minimum))?;
+    if winners.is_empty() {
+        result.density = density.to_vec();
+    }
+    if peaks.len() < minimum {
+        result
+            .rejected_trials
+            .push((trial, "too few initial peaks".into()));
+        return Ok(false);
+    }
+    // A density-height prefix is a proposal heuristic, never supplied atom counts.
+    let top = peaks
+        .iter()
+        .map(|p| {
+            let index = std::array::from_fn(|i| (p[i] * shape[i] as f64).round() as i32);
+            density[crate::fourier::grid_index(index, shape)]
+        })
+        .collect::<Vec<_>>();
+    let desired = top
+        .iter()
+        .take_while(|v| **v >= 0.75 * top[0])
+        .count()
+        .max(minimum);
+    let mut prefixes = (minimum..=peaks.len().min(search.maximum_atoms)).collect::<Vec<_>>();
+    prefixes.sort_by_key(|n| (n.abs_diff(desired), *n));
+    let mut frameworks = Vec::new();
+    for prefix in prefixes {
+        if crate::stopped(Some(deadline), options.cancellation.as_ref()) {
+            break;
+        }
+        let initial_species = vec![elements[0].clone(); prefix];
+        if let Ok(found) = recover_symmetry_hypotheses(
+            cell,
+            group,
+            &initial_species,
+            &peaks[..prefix],
+            options.symmetry_tolerance_angstrom,
+            Some(deadline),
+            options.cancellation.as_ref(),
+            search.beam_width,
+        ) {
+            frameworks = found;
+            audit.initial_prefix = prefix;
+            break;
+        }
+    }
+    if frameworks.is_empty() {
+        result.rejected_trials.push((
+            trial,
+            "no initial density prefix matches supplied symmetry".into(),
+        ));
+        return Ok(false);
+    }
+    audit.framework_hypotheses += frameworks.len();
+    let mut beam = Vec::new();
+    for (lineage, model) in frameworks.into_iter().enumerate() {
+        if let Ok(state) = refine(
+            model,
+            &result.data,
+            options,
+            deadline,
+            (1, [0.; 3]),
+            0.01,
+            trial * search.beam_width + lineage,
+            &[],
+            "initial",
+            elements[0].clone(),
+            audit,
+            FitPass::Full,
+        ) {
+            beam.push(state);
+        }
+    }
+    record(
+        winners,
+        &beam,
+        elements,
+        search.beam_width,
+        trial,
+        density,
+        result,
+    );
+    if winners
+        .first()
+        .is_some_and(|s| complete(s, elements) && s.candidate.r1 <= options.r1_target)
+    {
+        result.termination = "r1_target";
+        return Ok(true);
+    }
+    for _ in 0..search.rounds {
+        if crate::stopped(Some(deadline), options.cancellation.as_ref()) {
+            result.termination = crate::solver::stop_reason(options);
+            break;
+        }
+        audit.rounds += 1;
+        let mut next = beam.clone();
+        for parent in &beam {
+            if crate::stopped(Some(deadline), options.cancellation.as_ref()) {
+                break;
+            }
+            let base_sites = sites(parent);
+            let calibration = if let Some(map) = &integrated_map {
+                density_scale(map, group, parent, audit)?
+            } else {
+                None
+            };
+            let numbers: Vec<_> = elements
+                .iter()
+                .map(|e| xray_species_metadata(e).map_or(0, |m| m.atomic_number))
+                .collect();
+            let frame_ref = parent.candidate.refinement.as_ref().expect("refined state");
+            let density_frame = (frame_ref.hand, frame_ref.origin_shift);
+            let mut site_masks = Vec::new();
+            for (_, point) in &base_sites {
+                let mask = if let Some(map) = &integrated_map {
+                    crate::density_label_mask(
+                        orbit_mass(map, group, *point, density_frame, audit)?,
+                        calibration,
+                        &numbers,
+                    )?
+                } else {
+                    vec![true; elements.len()]
+                };
+                site_masks.push(mask);
+            }
+            let mut screened = Vec::new();
+            let pass = if audit.staged_refinement {
+                FitPass::Screen(search.screening_iterations)
+            } else {
+                FitPass::Full
+            };
+            let pool = PreparedElementPool::new(
+                cell,
+                group,
+                &parent.candidate.species,
+                &parent.aligned,
+                elements,
+                &result.data.hkl,
+                &result.data.amplitudes,
+                parent.candidate.u_iso.clamp(0., 0.2),
+            )?;
+            let map = pool.parent.difference_map(shape)?;
+            let mut seeds = extract_peaks(&map.density, shape, 24)?;
+            let frame = parent.candidate.refinement.as_ref().expect("refined state");
+            seeds.extend(peaks.iter().take(8).map(|p| {
+                std::array::from_fn(|i| {
+                    (f64::from(frame.hand) * p[i] + frame.origin_shift[i]).rem_euclid(1.)
+                })
+            }));
+            let proposals = proposals(
+                group,
+                &geometry,
+                &seeds,
+                &parent.aligned,
+                search.maximum_atoms,
+                options.symmetry_tolerance_angstrom,
+                options,
+                deadline,
+            )?;
+            let mut scored = vec![Vec::new(); elements.len()];
+            let mut raw_best: Option<(f64, usize)> = None;
+            let mut plausible_label_count = elements.len();
+            for point in proposals {
+                if crate::stopped(Some(deadline), options.cancellation.as_ref()) {
+                    break;
+                }
+                let evaluations = pool.evaluate(point)?;
+                let mask = if let Some(map) = &integrated_map {
+                    crate::density_label_mask(
+                        image_mass(map, &evaluations[0].fractional_xyz, density_frame, audit)?,
+                        calibration,
+                        &numbers,
+                    )?
+                } else {
+                    vec![true; elements.len()]
+                };
+                audit.orbit_proposals += 1;
+                audit.element_scores += elements.len();
+                for (index, evaluation) in evaluations.into_iter().enumerate() {
+                    if raw_best.is_none_or(|(best, _)| evaluation.objective < best) {
+                        raw_best = Some((evaluation.objective, index));
+                        plausible_label_count = mask.iter().filter(|&&allowed| allowed).count();
+                    }
+                    if !mask[index] {
+                        audit.density_label_rejections += 1;
+                    }
+                    scored[index].push((evaluation.objective, point, mask[index]));
+                }
+            }
+            for (index, mut proposals) in scored.into_iter().enumerate() {
+                proposals.sort_by(|a, b| a.0.total_cmp(&b.0));
+                let baseline_count = proposals.len().min(2);
+                // Prune the original amplitude shortlist without adding new,
+                // lower-ranked topology proposals solely from the density prior.
+                let mut selected: Vec<_> = proposals
+                    .iter()
+                    .take(2)
+                    .enumerate()
+                    .filter(|(_, p)| p.2)
+                    .map(|(i, _)| i)
+                    .collect();
+                let missing = !parent.candidate.species.contains(&elements[index]);
+                if (missing || raw_best.is_some_and(|(_, e)| e == index))
+                    && !proposals.is_empty()
+                    && !selected.contains(&0)
+                {
+                    selected.push(0);
+                    if !proposals[0].2 {
+                        audit.density_label_rescues += 1;
+                    }
+                }
+                audit.density_birth_skips += baseline_count - selected.len();
+                selected.sort_unstable();
+                for selected_index in selected {
+                    let (_, point, _) = proposals[selected_index];
+                    if crate::stopped(Some(deadline), options.cancellation.as_ref()) {
+                        break;
+                    }
+                    let mut added = base_sites.clone();
+                    added.push((elements[index].clone(), point));
+                    if let Ok(s) = edited(
+                        cell,
+                        group,
+                        &result.data,
+                        parent,
+                        &added,
+                        "birth",
+                        elements[index].clone(),
+                        options,
+                        deadline,
+                        audit,
+                        pass,
+                    ) {
+                        if audit.staged_refinement {
+                            screened.push(s);
+                        } else if s.score < parent.score - 1e-7 {
+                            next.push(s);
+                        }
+                    }
+                }
+            }
+            for index in 0..base_sites.len() {
+                if crate::stopped(Some(deadline), options.cancellation.as_ref()) {
+                    break;
+                }
+                if base_sites.len() > 1 {
+                    let mut deleted = base_sites.clone();
+                    let (e, _) = deleted.remove(index);
+                    audit.deletion_trials += 1;
+                    if let Ok(s) = edited(
+                        cell,
+                        group,
+                        &result.data,
+                        parent,
+                        &deleted,
+                        "delete",
+                        e,
+                        options,
+                        deadline,
+                        audit,
+                        pass,
+                    ) {
+                        if audit.staged_refinement {
+                            screened.push(s);
+                        } else if s.score < parent.score - 1e-7 {
+                            next.push(s);
+                        }
+                    }
+                }
+                for (label_index, element) in elements.iter().enumerate() {
+                    if *element == base_sites[index].0 {
+                        continue;
+                    }
+                    if crate::stopped(Some(deadline), options.cancellation.as_ref()) {
+                        break;
+                    }
+                    if !site_masks[index][label_index] && parent.candidate.species.contains(element)
+                    {
+                        audit.density_relabel_skips += 1;
+                        continue;
+                    }
+                    let mut relabeled = base_sites.clone();
+                    relabeled[index].0.clone_from(element);
+                    audit.relabel_trials += 1;
+                    if let Ok(s) = edited(
+                        cell,
+                        group,
+                        &result.data,
+                        parent,
+                        &relabeled,
+                        "relabel",
+                        element.clone(),
+                        options,
+                        deadline,
+                        audit,
+                        pass,
+                    ) {
+                        if audit.staged_refinement {
+                            screened.push(s);
+                        } else if s.score < parent.score - 1e-7 {
+                            next.push(s);
+                        }
+                    }
+                }
+            }
+            if audit.staged_refinement {
+                let shortlist_limit = search
+                    .refinement_shortlist
+                    .min(plausible_label_count.max(1));
+                if let Some(c) = audit
+                    .density_calibrations
+                    .last_mut()
+                    .filter(|_| search.integrated_peak_density)
+                {
+                    c.shortlist_limit = shortlist_limit;
+                }
+                let screening_ranks: Vec<_> = screened.iter().map(|s| s.score).collect();
+                let births: Vec<_> = screened
+                    .iter()
+                    .map(|s| {
+                        let m = s.moves.last().expect("screened edit");
+                        (m.kind == "birth").then(|| m.element.clone())
+                    })
+                    .collect();
+                let missing: Vec<_> = elements
+                    .iter()
+                    .filter(|e| !parent.candidate.species.contains(e))
+                    .cloned()
+                    .collect();
+                let selected = crate::screening_shortlist(
+                    &screening_ranks,
+                    &births,
+                    &missing,
+                    shortlist_limit,
+                )?;
+                audit.screened_out += screened.len() - selected.len();
+                for index in selected {
+                    if crate::stopped(Some(deadline), options.cancellation.as_ref()) {
+                        break;
+                    }
+                    let candidate = &screened[index];
+                    let seed = candidate.promotion.as_ref().expect("screened seed");
+                    let edit = candidate.moves.last().expect("screened edit");
+                    audit.promoted_candidates += 1;
+                    if let Ok(full) = refine(
+                        seed.model.clone(),
+                        &result.data,
+                        options,
+                        deadline,
+                        (1, [0.; 3]),
+                        candidate.candidate.u_iso,
+                        candidate.lineage,
+                        &candidate.moves[..candidate.moves.len() - 1],
+                        edit.kind,
+                        edit.element.clone(),
+                        audit,
+                        FitPass::Promote(&seed.site_u),
+                    ) {
+                        if full.score < parent.score - 1e-7 {
+                            next.push(full);
+                        }
+                    }
+                }
+            }
+        }
+        let previous = beam.clone();
+        beam = retain(next, search.beam_width);
+        let progressed = beam.iter().any(|s| {
+            s.score
+                < previous
+                    .iter()
+                    .filter(|p| p.lineage == s.lineage)
+                    .map(|p| p.score)
+                    .fold(f64::INFINITY, f64::min)
+                    - 1e-7
+        });
+        record(
+            winners,
+            &beam,
+            elements,
+            search.beam_width,
+            trial,
+            density,
+            result,
+        );
+        if winners
+            .first()
+            .is_some_and(|s| complete(s, elements) && s.candidate.r1 <= options.r1_target)
+        {
+            result.termination = "r1_target";
+            result.density = density.to_vec();
+            return Ok(true);
+        }
+        if !progressed {
+            result.termination = "stagnated";
+            break;
+        }
+    }
+    Ok(false)
+}
+
 /// Infer counts and labels by shared-map orbit editing, without composition enumeration.
 /// # Errors
 /// Rejects invalid options, required neutral elements, data, geometry or budgets.
@@ -757,6 +1201,7 @@ pub fn solve_elements(
     };
     let mut audit = SharedSearchSummary {
         elements: elements.clone(),
+        dual_checkpoints: search.dual_checkpoints,
         staged_refinement: search.staged_refinement
             && options.refinement == Some(AdpMode::Anisotropic),
         screening_iterations: search.screening_iterations,
@@ -768,7 +1213,7 @@ pub fn solve_elements(
         ..SharedSearchSummary::default()
     };
     let mut winners: Vec<State> = Vec::new();
-    'trials: for trial in 0..options.trials {
+    for trial in 0..options.trials {
         if crate::stopped(Some(deadline), options.cancellation.as_ref()) {
             result.termination = crate::solver::stop_reason(options);
             break;
@@ -777,7 +1222,7 @@ pub fn solve_elements(
         let use_dual = options.phasing == PhasingMethod::DualSpace
             || (options.phasing == PhasingMethod::Portfolio && trial % 2 == 1);
         let phases = crate::solver::initial_phases(&result.data.hkl, seed);
-        let (flip, initialization, vector, adaptive) = if use_dual {
+        let (flip, initialization, vector, adaptive, checkpoints) = if use_dual {
             let dual_index = if options.phasing == PhasingMethod::Portfolio {
                 trial / 2
             } else {
@@ -788,10 +1233,51 @@ pub fn solve_elements(
                 .zip(&result.data.amplitudes)
                 .map(|(&e, &f)| e.sqrt() * f.sqrt())
                 .collect();
-            let state = crate::dual_space(
+            // The callback owns downstream state; phasing uses independent owned input arrays.
+            let phasing_hkl = result.data.hkl.clone();
+            let mask_sigma = 0.35 * result.data.d_min;
+            let mut chosen_cycle = None;
+            let mut handoff = |density: &[f64], _cycles: usize, selected_cycle: usize| {
+                // Keep candidates and their density frame together across failed checkpoints.
+                let old_winners = std::mem::take(&mut winners);
+                let old_density = std::mem::take(&mut result.density);
+                search_phase_map(
+                    cell,
+                    group,
+                    options,
+                    search,
+                    shape,
+                    minimum,
+                    &elements,
+                    trial,
+                    density,
+                    deadline,
+                    &mut winners,
+                    &mut result,
+                    &mut audit,
+                )?;
+                if old_winners.first().is_some_and(|old| {
+                    winners
+                        .first()
+                        .is_none_or(|new| ordering(old, new, &elements).is_le())
+                }) {
+                    winners = old_winners;
+                    result.density = old_density;
+                } else if !winners.is_empty() {
+                    chosen_cycle = Some(selected_cycle);
+                }
+                let accepted = winners.first().is_some_and(|state| {
+                    complete(state, &elements) && state.candidate.r1 <= options.r1_target
+                });
+                if !accepted && result.termination == "r1_target" {
+                    result.termination = "search_budget";
+                }
+                Ok(accepted)
+            };
+            let mut state = crate::dual_space::dual_space_monitored(
                 shape,
                 cell,
-                &result.data.hkl,
+                &phasing_hkl,
                 &mixed,
                 &phases,
                 &support,
@@ -801,7 +1287,7 @@ pub fn solve_elements(
                         sigma: search.dual_peak_sigma,
                         cap: search.dual_peak_cap,
                     },
-                    mask_sigma: 0.35 * result.data.d_min,
+                    mask_sigma,
                     hybrid_m: 3.,
                     omit_fraction: 0.1,
                     seed,
@@ -813,12 +1299,24 @@ pub fn solve_elements(
                     cancellation: options.cancellation.clone(),
                 },
                 Some(deadline),
+                if search.dual_checkpoints {
+                    Some(&mut handoff)
+                } else {
+                    None
+                },
             )?;
+            if let Some(selected_cycle) = chosen_cycle {
+                state.trial.best_cycle = selected_cycle;
+                state.trial.density.clone_from(&result.density);
+            } else if winners.is_empty() {
+                result.density.clone_from(&state.trial.density);
+            }
             (
                 state.trial,
                 state.initialization,
                 state.patterson_vector,
                 state.adaptive_history,
+                state.checkpoints,
             )
         } else {
             (
@@ -840,6 +1338,7 @@ pub fn solve_elements(
                 "random_element_sharpening",
                 None,
                 None,
+                Vec::new(),
             )
         };
         audit.phasing_starts += 1;
@@ -865,424 +1364,31 @@ pub fn solve_elements(
                 None
             },
             adaptive_peaks: adaptive,
+            checkpoints,
         });
         result.histories.push(flip.history);
-        let integrated_map = if search.integrated_peak_density {
-            audit.density_map_builds += 1;
-            Some(IntegratedPeakDensity::new(
-                cell,
-                shape,
-                &result.data.hkl,
-                &result.data.amplitudes,
-                &flip.density,
-                search.peak_density_radius_angstrom,
-            )?)
-        } else {
-            None
-        };
-        let peaks = extract_peaks(&flip.density, shape, 32.max(minimum))?;
-        if winners.is_empty() {
-            result.density.clone_from(&flip.density);
-        }
-        if peaks.len() < minimum {
-            result
-                .rejected_trials
-                .push((trial, "too few initial peaks".into()));
-            continue;
-        }
-        // A density-height prefix is a proposal heuristic, never supplied atom counts.
-        let top = peaks
-            .iter()
-            .map(|p| {
-                let index = std::array::from_fn(|i| (p[i] * shape[i] as f64).round() as i32);
-                flip.density[crate::fourier::grid_index(index, shape)]
-            })
-            .collect::<Vec<_>>();
-        let desired = top
-            .iter()
-            .take_while(|v| **v >= 0.75 * top[0])
-            .count()
-            .max(minimum);
-        let mut prefixes = (minimum..=peaks.len().min(search.maximum_atoms)).collect::<Vec<_>>();
-        prefixes.sort_by_key(|n| (n.abs_diff(desired), *n));
-        let mut frameworks = Vec::new();
-        for prefix in prefixes {
-            if crate::stopped(Some(deadline), options.cancellation.as_ref()) {
-                break;
-            }
-            let initial_species = vec![elements[0].clone(); prefix];
-            if let Ok(found) = recover_symmetry_hypotheses(
+        if !use_dual || !search.dual_checkpoints {
+            search_phase_map(
                 cell,
                 group,
-                &initial_species,
-                &peaks[..prefix],
-                options.symmetry_tolerance_angstrom,
-                Some(deadline),
-                options.cancellation.as_ref(),
-                search.beam_width,
-            ) {
-                frameworks = found;
-                audit.initial_prefix = prefix;
-                break;
-            }
-        }
-        if frameworks.is_empty() {
-            result.rejected_trials.push((
-                trial,
-                "no initial density prefix matches supplied symmetry".into(),
-            ));
-            continue;
-        }
-        audit.framework_hypotheses += frameworks.len();
-        let mut beam = Vec::new();
-        for (lineage, model) in frameworks.into_iter().enumerate() {
-            if let Ok(state) = refine(
-                model,
-                &result.data,
                 options,
-                deadline,
-                (1, [0.; 3]),
-                0.01,
-                trial * search.beam_width + lineage,
-                &[],
-                "initial",
-                elements[0].clone(),
-                &mut audit,
-                FitPass::Full,
-            ) {
-                beam.push(state);
-            }
-        }
-        record(
-            &mut winners,
-            &beam,
-            &elements,
-            search.beam_width,
-            trial,
-            &flip.density,
-            &mut result,
-        );
-        if winners
-            .first()
-            .is_some_and(|s| complete(s, &elements) && s.candidate.r1 <= options.r1_target)
-        {
-            result.termination = "r1_target";
-            break;
-        }
-        for _ in 0..search.rounds {
-            if crate::stopped(Some(deadline), options.cancellation.as_ref()) {
-                result.termination = crate::solver::stop_reason(options);
-                break;
-            }
-            audit.rounds += 1;
-            let mut next = beam.clone();
-            for parent in &beam {
-                if crate::stopped(Some(deadline), options.cancellation.as_ref()) {
-                    break;
-                }
-                let base_sites = sites(parent);
-                let calibration = if let Some(map) = &integrated_map {
-                    density_scale(map, group, parent, &mut audit)?
-                } else {
-                    None
-                };
-                let numbers: Vec<_> = elements
-                    .iter()
-                    .map(|e| xray_species_metadata(e).map_or(0, |m| m.atomic_number))
-                    .collect();
-                let frame_ref = parent.candidate.refinement.as_ref().expect("refined state");
-                let density_frame = (frame_ref.hand, frame_ref.origin_shift);
-                let mut site_masks = Vec::new();
-                for (_, point) in &base_sites {
-                    let mask = if let Some(map) = &integrated_map {
-                        crate::density_label_mask(
-                            orbit_mass(map, group, *point, density_frame, &mut audit)?,
-                            calibration,
-                            &numbers,
-                        )?
-                    } else {
-                        vec![true; elements.len()]
-                    };
-                    site_masks.push(mask);
-                }
-                let mut screened = Vec::new();
-                let pass = if audit.staged_refinement {
-                    FitPass::Screen(search.screening_iterations)
-                } else {
-                    FitPass::Full
-                };
-                let pool = PreparedElementPool::new(
-                    cell,
-                    group,
-                    &parent.candidate.species,
-                    &parent.aligned,
-                    &elements,
-                    &result.data.hkl,
-                    &result.data.amplitudes,
-                    parent.candidate.u_iso.clamp(0., 0.2),
-                )?;
-                let map = pool.parent.difference_map(shape)?;
-                let mut seeds = extract_peaks(&map.density, shape, 24)?;
-                let frame = parent.candidate.refinement.as_ref().expect("refined state");
-                seeds.extend(peaks.iter().take(8).map(|p| {
-                    std::array::from_fn(|i| {
-                        (f64::from(frame.hand) * p[i] + frame.origin_shift[i]).rem_euclid(1.)
-                    })
-                }));
-                let proposals = proposals(
-                    group,
-                    &geometry,
-                    &seeds,
-                    &parent.aligned,
-                    search.maximum_atoms,
-                    options.symmetry_tolerance_angstrom,
-                    options,
-                    deadline,
-                )?;
-                let mut scored = vec![Vec::new(); elements.len()];
-                let mut raw_best: Option<(f64, usize)> = None;
-                let mut plausible_label_count = elements.len();
-                for point in proposals {
-                    if crate::stopped(Some(deadline), options.cancellation.as_ref()) {
-                        break;
-                    }
-                    let evaluations = pool.evaluate(point)?;
-                    let mask = if let Some(map) = &integrated_map {
-                        crate::density_label_mask(
-                            image_mass(
-                                map,
-                                &evaluations[0].fractional_xyz,
-                                density_frame,
-                                &mut audit,
-                            )?,
-                            calibration,
-                            &numbers,
-                        )?
-                    } else {
-                        vec![true; elements.len()]
-                    };
-                    audit.orbit_proposals += 1;
-                    audit.element_scores += elements.len();
-                    for (index, evaluation) in evaluations.into_iter().enumerate() {
-                        if raw_best.is_none_or(|(best, _)| evaluation.objective < best) {
-                            raw_best = Some((evaluation.objective, index));
-                            plausible_label_count = mask.iter().filter(|&&allowed| allowed).count();
-                        }
-                        if !mask[index] {
-                            audit.density_label_rejections += 1;
-                        }
-                        scored[index].push((evaluation.objective, point, mask[index]));
-                    }
-                }
-                for (index, mut proposals) in scored.into_iter().enumerate() {
-                    proposals.sort_by(|a, b| a.0.total_cmp(&b.0));
-                    let baseline_count = proposals.len().min(2);
-                    // Prune the original amplitude shortlist without adding new,
-                    // lower-ranked topology proposals solely from the density prior.
-                    let mut selected: Vec<_> = proposals
-                        .iter()
-                        .take(2)
-                        .enumerate()
-                        .filter(|(_, p)| p.2)
-                        .map(|(i, _)| i)
-                        .collect();
-                    let missing = !parent.candidate.species.contains(&elements[index]);
-                    if (missing || raw_best.is_some_and(|(_, e)| e == index))
-                        && !proposals.is_empty()
-                        && !selected.contains(&0)
-                    {
-                        selected.push(0);
-                        if !proposals[0].2 {
-                            audit.density_label_rescues += 1;
-                        }
-                    }
-                    audit.density_birth_skips += baseline_count - selected.len();
-                    selected.sort_unstable();
-                    for selected_index in selected {
-                        let (_, point, _) = proposals[selected_index];
-                        if crate::stopped(Some(deadline), options.cancellation.as_ref()) {
-                            break;
-                        }
-                        let mut added = base_sites.clone();
-                        added.push((elements[index].clone(), point));
-                        if let Ok(s) = edited(
-                            cell,
-                            group,
-                            &result.data,
-                            parent,
-                            &added,
-                            "birth",
-                            elements[index].clone(),
-                            options,
-                            deadline,
-                            &mut audit,
-                            pass,
-                        ) {
-                            if audit.staged_refinement {
-                                screened.push(s);
-                            } else if s.score < parent.score - 1e-7 {
-                                next.push(s);
-                            }
-                        }
-                    }
-                }
-                for index in 0..base_sites.len() {
-                    if crate::stopped(Some(deadline), options.cancellation.as_ref()) {
-                        break;
-                    }
-                    if base_sites.len() > 1 {
-                        let mut deleted = base_sites.clone();
-                        let (e, _) = deleted.remove(index);
-                        audit.deletion_trials += 1;
-                        if let Ok(s) = edited(
-                            cell,
-                            group,
-                            &result.data,
-                            parent,
-                            &deleted,
-                            "delete",
-                            e,
-                            options,
-                            deadline,
-                            &mut audit,
-                            pass,
-                        ) {
-                            if audit.staged_refinement {
-                                screened.push(s);
-                            } else if s.score < parent.score - 1e-7 {
-                                next.push(s);
-                            }
-                        }
-                    }
-                    for (label_index, element) in elements.iter().enumerate() {
-                        if *element == base_sites[index].0 {
-                            continue;
-                        }
-                        if crate::stopped(Some(deadline), options.cancellation.as_ref()) {
-                            break;
-                        }
-                        if !site_masks[index][label_index]
-                            && parent.candidate.species.contains(element)
-                        {
-                            audit.density_relabel_skips += 1;
-                            continue;
-                        }
-                        let mut relabeled = base_sites.clone();
-                        relabeled[index].0.clone_from(element);
-                        audit.relabel_trials += 1;
-                        if let Ok(s) = edited(
-                            cell,
-                            group,
-                            &result.data,
-                            parent,
-                            &relabeled,
-                            "relabel",
-                            element.clone(),
-                            options,
-                            deadline,
-                            &mut audit,
-                            pass,
-                        ) {
-                            if audit.staged_refinement {
-                                screened.push(s);
-                            } else if s.score < parent.score - 1e-7 {
-                                next.push(s);
-                            }
-                        }
-                    }
-                }
-                if audit.staged_refinement {
-                    let shortlist_limit = search
-                        .refinement_shortlist
-                        .min(plausible_label_count.max(1));
-                    if let Some(c) = audit
-                        .density_calibrations
-                        .last_mut()
-                        .filter(|_| search.integrated_peak_density)
-                    {
-                        c.shortlist_limit = shortlist_limit;
-                    }
-                    let screening_ranks: Vec<_> = screened.iter().map(|s| s.score).collect();
-                    let births: Vec<_> = screened
-                        .iter()
-                        .map(|s| {
-                            let m = s.moves.last().expect("screened edit");
-                            (m.kind == "birth").then(|| m.element.clone())
-                        })
-                        .collect();
-                    let missing: Vec<_> = elements
-                        .iter()
-                        .filter(|e| !parent.candidate.species.contains(e))
-                        .cloned()
-                        .collect();
-                    let selected = crate::screening_shortlist(
-                        &screening_ranks,
-                        &births,
-                        &missing,
-                        shortlist_limit,
-                    )?;
-                    audit.screened_out += screened.len() - selected.len();
-                    for index in selected {
-                        if crate::stopped(Some(deadline), options.cancellation.as_ref()) {
-                            break;
-                        }
-                        let candidate = &screened[index];
-                        let seed = candidate.promotion.as_ref().expect("screened seed");
-                        let edit = candidate.moves.last().expect("screened edit");
-                        audit.promoted_candidates += 1;
-                        if let Ok(full) = refine(
-                            seed.model.clone(),
-                            &result.data,
-                            options,
-                            deadline,
-                            (1, [0.; 3]),
-                            candidate.candidate.u_iso,
-                            candidate.lineage,
-                            &candidate.moves[..candidate.moves.len() - 1],
-                            edit.kind,
-                            edit.element.clone(),
-                            &mut audit,
-                            FitPass::Promote(&seed.site_u),
-                        ) {
-                            if full.score < parent.score - 1e-7 {
-                                next.push(full);
-                            }
-                        }
-                    }
-                }
-            }
-            let previous = beam.clone();
-            beam = retain(next, search.beam_width);
-            let progressed = beam.iter().any(|s| {
-                s.score
-                    < previous
-                        .iter()
-                        .filter(|p| p.lineage == s.lineage)
-                        .map(|p| p.score)
-                        .fold(f64::INFINITY, f64::min)
-                        - 1e-7
-            });
-            record(
-                &mut winners,
-                &beam,
+                search,
+                shape,
+                minimum,
                 &elements,
-                search.beam_width,
                 trial,
                 &flip.density,
+                deadline,
+                &mut winners,
                 &mut result,
-            );
-            if winners
-                .first()
-                .is_some_and(|s| complete(s, &elements) && s.candidate.r1 <= options.r1_target)
-            {
-                result.termination = "r1_target";
-                result.density.clone_from(&flip.density);
-                break 'trials;
-            }
-            if !progressed {
-                result.termination = "stagnated";
-                break;
-            }
+                &mut audit,
+            )?;
+        }
+        if winners.first().is_some_and(|state| {
+            complete(state, &elements) && state.candidate.r1 <= options.r1_target
+        }) {
+            result.termination = "r1_target";
+            break;
         }
         if crate::stopped(Some(deadline), options.cancellation.as_ref()) {
             result.termination = crate::solver::stop_reason(options);

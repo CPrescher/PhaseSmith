@@ -41,6 +41,7 @@ def main():
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--repeats", type=int, default=3)
     parser.add_argument("--trials", type=int, default=1)
+    parser.add_argument("--no-dual-checkpoints", action="store_true")
     args = parser.parse_args()
     if not 1 <= args.trials <= 8:
         parser.error("trials must lie in [1,8]")
@@ -80,7 +81,7 @@ def main():
         ]
     )
     header = {
-        "schema": "phasesmith.count-free-phasing-comparison.v1",
+        "schema": "phasesmith.count-free-phasing-comparison.v2",
         "platform": platform.platform(),
         "repeats": args.repeats,
         "options": asdict(options),
@@ -89,6 +90,7 @@ def main():
             for method in ("charge_flip", "dual_space")
         },
         "methods": ["charge_flip", "dual_space"],
+        "dual_checkpoints": not args.no_dual_checkpoints,
         "dual_peak_sigma": 2.0,
         "dual_peak_cap": 128,
         "integrated_peak_density": True,
@@ -130,6 +132,7 @@ def main():
                     options=replace(options, phasing=label),
                     staged_refinement=True,
                     integrated_peak_density=True,
+                    dual_checkpoints=not args.no_dual_checkpoints,
                 )
                 elapsed = time.perf_counter() - start
                 write_solution(result, destination)

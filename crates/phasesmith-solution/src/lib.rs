@@ -34,8 +34,9 @@ pub use completion_orbit::{
 };
 pub use data::{Observation, PreparedData, prepare_data};
 pub use dual_space::{
-    AdaptivePeakHistory, DualSpaceOptions, DualSpaceResult, PeakSelection, adaptive_peaks,
-    atomic_projection, dual_space,
+    AdaptivePeakHistory, CheckpointCallback, DualSpaceCheckpoint, DualSpaceOptions,
+    DualSpaceResult, PeakSelection, adaptive_peaks, atomic_projection, dual_space,
+    dual_space_monitored,
 };
 pub use fourier::{FlipOptions, FlipResult, charge_flip, extract_peaks};
 pub use model::{ModelEvaluation, PolishedModel, evaluate_model, polish_model};

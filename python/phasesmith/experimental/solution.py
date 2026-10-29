@@ -216,6 +216,16 @@ class AdaptivePeakHistory:
 
 
 @dataclass(frozen=True, slots=True)
+class DualSpaceCheckpoint:
+    """One complete-model handoff, accepted only when the fit target is met."""
+
+    completed_cycles: int
+    best_cycle: int
+    score: float
+    accepted: bool
+
+
+@dataclass(frozen=True, slots=True)
 class PhasingTrial:
     """Immutable record of an actual Fourier trial and its initialization."""
 
@@ -232,10 +242,16 @@ class PhasingTrial:
     omit_fraction: float | None = None
     omit_period: int | None = None
 
+    checkpoints: tuple[DualSpaceCheckpoint, ...] = ()
     atomicity_mode: str | None = None
     adaptive_peaks: AdaptivePeakHistory | None = None
 
     def __post_init__(self):
+        object.__setattr__(
+            self,
+            "checkpoints",
+            tuple(DualSpaceCheckpoint(**c) if isinstance(c, dict) else c for c in self.checkpoints),
+        )
         if isinstance(self.adaptive_peaks, dict):
             object.__setattr__(self, "adaptive_peaks", AdaptivePeakHistory(**self.adaptive_peaks))
         if self.patterson_vector_grid is not None:
@@ -299,6 +315,7 @@ class SharedSearchAudit:
     beam_width: int
     required_elements_present: bool
     accepted_moves: tuple[SharedMove, ...]
+    dual_checkpoints: bool = False
 
     def __post_init__(self):
         object.__setattr__(self, "elements", tuple(self.elements))
@@ -471,6 +488,7 @@ def solve_structure_elements(
     peak_density_radius_angstrom: float = 0.7,
     dual_peak_sigma: float = 2.0,
     dual_peak_cap: int = 128,
+    dual_checkpoints: bool = True,
     cancellation: SolutionCancellation | None = None,
 ) -> SolutionResult:
     """Infer full-cell counts and labels by shared-map symmetry-orbit edits.
@@ -480,6 +498,8 @@ def solve_structure_elements(
     portfolio phasing use the same constrained refinement. Legacy completion and
     count-assignment switches are not used. Adaptive peak caps bound resources;
     their selected mask peaks are distinct from inferred atom counts.
+    ``dual_checkpoints`` tests early maps with full requested refinement and
+    resumes the same Fourier trajectory when a structure misses the target.
     Counts returned in ``composition`` are inferred, never inputs. The default
     atom cap is ceil(cell volume/8 A³), at most 128; it is a search bound.
     """
@@ -496,6 +516,8 @@ def solve_structure_elements(
         or len(set(elements)) != len(elements)
     ):
         raise ValueError("elements must be 1..8 distinct neutral non-H symbols")
+    if not isinstance(dual_checkpoints, bool):
+        raise TypeError("dual_checkpoints must be boolean")
     if not isinstance(staged_refinement, bool):
         raise TypeError("staged_refinement must be boolean")
     if not isinstance(integrated_peak_density, bool):
@@ -546,6 +568,7 @@ def solve_structure_elements(
         peak_density_radius_angstrom,
         dual_peak_sigma,
         dual_peak_cap,
+        dual_checkpoints,
     )
     return _run_solution(observations, cell, group, (), controls, cancellation, shared)
 
