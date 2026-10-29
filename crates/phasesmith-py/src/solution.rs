@@ -37,7 +37,19 @@ type SharedSearchRequest = (
     f64,
     f64,
     usize,
-    (bool, bool, bool, usize, bool, bool, bool, bool, bool),
+    (
+        bool,
+        bool,
+        bool,
+        usize,
+        bool,
+        bool,
+        bool,
+        bool,
+        bool,
+        bool,
+        bool,
+    ),
 );
 
 fn invalid(error: impl ToString) -> PyErr {
@@ -161,6 +173,8 @@ fn solve_structure<'py>(
                     adaptive_counts,
                     wilson_normalization,
                     phase_quality_selection,
+                    phase_first_selection,
+                    calculated_shell_normalization,
                 ),
             )) = shared_search
             {
@@ -195,6 +209,8 @@ fn solve_structure<'py>(
                         adaptive_counts,
                         wilson_normalization,
                         phase_quality_selection,
+                        phase_first_selection,
+                        calculated_shell_normalization,
                     },
                 )
             } else {

@@ -54,6 +54,10 @@ pub struct SharedSearchOptions {
     pub wilson_normalization: bool,
     /// Rank Fourier maps by CC-Rweak before count assignment.
     pub phase_quality_selection: bool,
+    /// Retain the earlier phase-first schedule instead of checkpoint alternatives.
+    pub phase_first_selection: bool,
+    /// Independently normalize calculated amplitudes in resolution shells for Rweak.
+    pub calculated_shell_normalization: bool,
 }
 impl Default for SharedSearchOptions {
     fn default() -> Self {
@@ -77,6 +81,8 @@ impl Default for SharedSearchOptions {
             adaptive_counts: true,
             wilson_normalization: false,
             phase_quality_selection: false,
+            phase_first_selection: true,
+            calculated_shell_normalization: true,
         }
     }
 }
@@ -186,6 +192,10 @@ pub struct SharedSearchSummary {
     pub wilson_normalization: bool,
     /// Requested measured-only phase-quality ranking.
     pub phase_quality_selection: bool,
+    /// Requested legacy phase-first schedule (also used without checkpoints).
+    pub phase_first_selection: bool,
+    /// Independently normalize calculated amplitudes in resolution shells for Rweak.
+    pub calculated_shell_normalization: bool,
     /// Successful normalization, or None when not requested/failed.
     pub normalization: Option<crate::WilsonAudit>,
     /// Explicit normalization failure; fallback sharpening is labelled.
@@ -1757,12 +1767,15 @@ pub fn solve_elements(
                     &elements,
                     norm,
                     search.wilson_normalization,
+                    search.calculated_shell_normalization,
                 )
             })
             .transpose()?
     } else {
         None
     };
+    let phase_first =
+        quality_plan.is_some() && (search.phase_first_selection || !search.dual_checkpoints);
     let mut minimum = group.operations().len();
     for x in [0., 0.125, 0.25, 1. / 3., 0.137] {
         for y in [0., 0.125, 0.25, 1. / 3., 0.271] {
@@ -1803,6 +1816,8 @@ pub fn solve_elements(
         adaptive_counts: search.adaptive_counts,
         wilson_normalization: search.wilson_normalization,
         phase_quality_selection: search.phase_quality_selection,
+        phase_first_selection: search.phase_first_selection,
+        calculated_shell_normalization: search.calculated_shell_normalization,
         normalization: normalization.as_ref().map(|n| n.audit.clone()),
         normalization_diagnostic,
         staged_refinement: search.staged_refinement
@@ -1921,7 +1936,7 @@ pub fn solve_elements(
             };
             // Quality selection first explores cheap independent phase starts,
             // retaining complete candidate maps before any atom-count refinement.
-            let phase_deadline = if quality_plan.is_some() {
+            let phase_deadline = if phase_first {
                 deadline.min(
                     Instant::now()
                         + Duration::from_secs_f64(
@@ -1956,7 +1971,7 @@ pub fn solve_elements(
                     cancellation: options.cancellation.clone(),
                 },
                 Some(phase_deadline),
-                if search.dual_checkpoints && quality_plan.is_none() {
+                if search.dual_checkpoints && !phase_first {
                     Some(&mut handoff)
                 } else {
                     None
@@ -1965,7 +1980,7 @@ pub fn solve_elements(
                 quality_plan.as_ref(),
             )?;
             if let Some(mut quality) = state.quality.take() {
-                if let Some(&score) = quality.cfom.get(state.trial.best_cycle) {
+                if phase_first && let Some(&score) = quality.cfom.get(state.trial.best_cycle) {
                     phase_pool.push((score, trial, state.trial.density.clone()));
                     phase_pool.sort_by(|a, b| b.0.total_cmp(&a.0).then(a.1.cmp(&b.1)));
                     phase_pool.truncate(search.beam_width);
@@ -2058,7 +2073,7 @@ pub fn solve_elements(
                 recycle_tangent,
             )?;
         }
-        if quality_plan.is_some() && phase_pool.first().is_some_and(|p| p.0 >= 0.9) {
+        if phase_first && phase_pool.first().is_some_and(|p| p.0 >= 0.9) {
             break;
         }
         if winners.first().is_some_and(|state| {
@@ -2074,7 +2089,7 @@ pub fn solve_elements(
             break;
         }
     }
-    if quality_plan.is_some() {
+    if phase_first {
         phase_pool.sort_by(|a, b| b.0.total_cmp(&a.0).then(a.1.cmp(&b.1)));
         for (_, trial, density) in phase_pool {
             if crate::stopped(Some(deadline), options.cancellation.as_ref()) {

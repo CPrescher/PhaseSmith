@@ -10,6 +10,31 @@ from .data import assign_splits, common_hkl, inspect_reference, reflection_data,
 from .run import INPUT_KEYS, ROOT, SCRIPT
 
 
+def reseal_adapters(args):
+    """Version adapters against an unchanged registry without reopening source data."""
+    lock_path = args.manifest.with_suffix(f".benchmark{args.lock_revision}.lock.json")
+    if lock_path.exists():
+        raise ValueError("corpus locks are immutable")
+    parent = json.loads(args.parent_lock.read_text())
+    if parent["manifest_sha256"] != sha(args.manifest):
+        raise ValueError("adapter-only sealing requires the identical registry")
+    parent.update(
+        adapter_revision_parent={
+            "path": str(args.parent_lock.relative_to(ROOT)),
+            "sha256": sha(args.parent_lock),
+        },
+        adapter_only_revision=True,
+        adapter_revision_qualification=(
+            "Unchanged registry and inherited input/split/curation provenance; "
+            "only adapter source hashes refreshed. No raw/reference data reopened."
+        ),
+        verified_implementation_sha256={
+            name: sha(ROOT / name) for name in parent["verified_implementation_sha256"]
+        },
+    )
+    lock_path.write_text(json.dumps(parent, indent=2) + "\n")
+
+
 def seal(args):
     lock_path = args.manifest.with_suffix(f".benchmark{args.lock_revision}.lock.json")
     if lock_path.exists():

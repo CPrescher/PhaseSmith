@@ -2146,6 +2146,31 @@ outcomes remain unopened.
 See `docs/solution-phase-quality.md` for the same-build control, timing limitations,
 normalization assumptions and retained complete results.
 
+A subsequent frozen-parent ablation separates observed normalization (8/35
+structures, 14/35 total counts) from the original quality/scheduling option
+(7/35 structures, 12/35 total counts). A renewed external SHELXT data-flow review
+finds an important difference: calculated map amplitudes are independently
+normalized before its weak-reflection statistic. PhaseSmith had reused the
+observed envelope instead. An independent conditional-second-moment shell
+normalization now supplies calculated E-squared and fused analytical derivatives;
+the prior statistic remains an explicit reference mode. A separate checkpoint
+portfolio preserves early amplitude-map fits before offering distinct quality
+alternatives; the previous phase-first schedule remains explicit. These changes
+are tested separately on all 35 development cases, retaining the original input,
+count/geometry and budget controls. No holdout outcomes are opened. Equations,
+source-confidence limits, comparisons and qualifications are recorded in
+`docs/solution-phase-ablation.md`.
+
+The corrected calculated normalization with phase-first scheduling recovers
+9/35 structures versus a same-build old-statistic control's 7/35, gaining COD
+2010705 and 2243618 with no lost recoveries. Both get 11/35 total counts correct.
+Seven common successes take median 8.803 versus 10.932 seconds; all-outcome
+medians remain near the 13-second budget. The checkpoint alternative recovers
+only 7/35, so quality selection keeps phase-first ordering by default. All feature
+switches remain experimental and opt-in. Count accuracy remains limited and
+SHELXT still recovers 13/35 labelled structures and 29/35 total counts. No holdout
+outcomes have been opened.
+
 ## Quality bar
 
 Public behavior is typed and documented. Invalid shapes, non-finite values,

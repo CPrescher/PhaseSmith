@@ -45,6 +45,8 @@ pub(super) fn trace_records<'py>(
         d.set_item("r_weak", &a.r_weak)?;
         d.set_item("cfom", &a.cfom)?;
         d.set_item("deferred_handoffs", a.deferred_handoffs)?;
+        d.set_item("alternative_handoffs", a.alternative_handoffs)?;
+        d.set_item("calculated_shells", a.calculated_shells)?;
         out.append(d)?;
     }
     Ok(out)
@@ -59,7 +61,7 @@ struct NativeQuality {
 impl NativeQuality {
     #[new]
     #[allow(clippy::too_many_arguments)]
-    #[pyo3(signature=(cell_parameters,group,hkl,intensity,sigma,elements,wilson=true))]
+    #[pyo3(signature=(cell_parameters,group,hkl,intensity,sigma,elements,wilson=true,calculated_shell_normalization=true))]
     fn new(
         py: Python<'_>,
         cell_parameters: Vec<f64>,
@@ -69,6 +71,7 @@ impl NativeQuality {
         sigma: PyReadonlyArray1<'_, f64>,
         elements: Vec<String>,
         wilson: bool,
+        calculated_shell_normalization: bool,
     ) -> PyResult<Self> {
         let cell = cell(&cell_parameters)?;
         let group = group.space_group().clone();
@@ -99,8 +102,16 @@ impl NativeQuality {
                 &data.intensity,
                 &elements,
             )?;
-            let plan =
-                PreparedPhaseQuality::new(cell, &group, &data, &raw, &elements, &norm, wilson)?;
+            let plan = PreparedPhaseQuality::new(
+                cell,
+                &group,
+                &data,
+                &raw,
+                &elements,
+                &norm,
+                wilson,
+                calculated_shell_normalization,
+            )?;
             Ok(Self {
                 norm,
                 plan,
@@ -123,6 +134,7 @@ impl NativeQuality {
         d.set_item("quality_hkl", array2(py, self.plan.hkl.clone()))?;
         d.set_item("target", &self.plan.target)?;
         d.set_item("e_weights", &self.plan.e_weights)?;
+        d.set_item("calculated_shell", &self.plan.calculated_shell)?;
         d.set_item("weak", &self.plan.weak)?;
         d.set_item("allowed", self.plan.allowed)?;
         Ok(d)

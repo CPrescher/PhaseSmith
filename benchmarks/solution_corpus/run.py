@@ -69,6 +69,8 @@ def worker(args):
         adaptive_counts=not args.legacy_counts,
         wilson_normalization=args.wilson_normalization,
         phase_quality_selection=args.phase_quality_selection,
+        phase_first_selection=args.phase_first_selection,
+        calculated_shell_normalization=not args.legacy_quality_normalization,
     )
     elapsed = time.perf_counter() - start
     write_solution(result, args.output)
@@ -239,6 +241,9 @@ def run(args):
         if (
             previous.get("wilson_normalization", False) != args.wilson_normalization
             or previous.get("phase_quality_selection", False) != args.phase_quality_selection
+            or previous.get("phase_first_selection", False) != args.phase_first_selection
+            or previous.get("calculated_shell_normalization", False)
+            == args.legacy_quality_normalization
         ):
             raise ValueError("resume normalization/phase ranking differs")
         if previous["native_sha256"] != sha(Path(_core.__file__)) or previous[
@@ -277,6 +282,8 @@ def run(args):
         "adaptive_counts": not args.legacy_counts,
         "wilson_normalization": args.wilson_normalization,
         "phase_quality_selection": args.phase_quality_selection,
+        "phase_first_selection": args.phase_first_selection,
+        "calculated_shell_normalization": not args.legacy_quality_normalization,
         "implementation_sha256": {str(p.relative_to(ROOT)): sha(p) for p in sources},
         "native_sha256": sha(Path(_core.__file__)),
         "shelxt_sha256": sha(args.shelxt),
@@ -393,6 +400,16 @@ def run(args):
                     *(["--legacy-counts"] if args.legacy_counts else []),
                     *(["--wilson-normalization"] if args.wilson_normalization else []),
                     *(["--phase-quality-selection"] if args.phase_quality_selection else []),
+                    *(
+                        ["--phase-first-selection"]
+                        if args.phase_first_selection
+                        else ["--quality-checkpoints"]
+                    ),
+                    *(
+                        ["--legacy-quality-normalization"]
+                        if args.legacy_quality_normalization
+                        else []
+                    ),
                 ]
             else:
                 (work / "sample.ins").write_text(instructions(packet))

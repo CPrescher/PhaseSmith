@@ -49,6 +49,11 @@ pub(super) fn summary<'py>(
     d.set_item("adaptive_counts", s.adaptive_counts)?;
     d.set_item("wilson_normalization", s.wilson_normalization)?;
     d.set_item("phase_quality_selection", s.phase_quality_selection)?;
+    d.set_item("phase_first_selection", s.phase_first_selection)?;
+    d.set_item(
+        "calculated_shell_normalization",
+        s.calculated_shell_normalization,
+    )?;
     d.set_item(
         "normalization",
         s.normalization

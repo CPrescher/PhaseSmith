@@ -341,6 +341,10 @@ pub struct PhaseQualityTrace {
     pub cfom: Vec<f64>,
     /// Early handoffs deferred because CFOM < 0.4.
     pub deferred_handoffs: usize,
+    /// Checkpoint quality alternatives evaluated after the amplitude-SSE map.
+    pub alternative_handoffs: usize,
+    /// Calculated-amplitude resolution shells (zero for the earlier fixed envelope).
+    pub calculated_shells: usize,
 }
 /// Prepared unique-family comparison, including actually observed forbidden reflections.
 #[derive(Clone, Debug)]
@@ -355,11 +359,14 @@ pub struct PreparedPhaseQuality {
     pub weak: Vec<bool>,
     /// Count of allowed rows used for CC.
     pub allowed: usize,
+    /// Fixed equal-population calculated-normalization shells; empty selects the legacy statistic.
+    pub calculated_shell: Vec<usize>,
 }
 impl PreparedPhaseQuality {
     /// Construct a measured-only comparison with the same amplitude transform as phasing.
     /// # Errors
     /// Propagates normalization, symmetry and shape errors.
+    #[allow(clippy::too_many_arguments, clippy::too_many_lines)]
     pub fn new(
         cell: UnitCell,
         group: &SpaceGroup,
@@ -368,6 +375,7 @@ impl PreparedPhaseQuality {
         elements: &[String],
         norm: &WilsonNormalization,
         wilson: bool,
+        calculated_shell_normalization: bool,
     ) -> Result<Self, SolutionError> {
         let mut hkl: Vec<_> = norm.representatives.iter().map(|&i| data.hkl[i]).collect();
         let mut target = Vec::new();
@@ -441,12 +449,33 @@ impl PreparedPhaseQuality {
             .iter()
             .map(|&e| e <= cut + 1e-12 * cut.abs())
             .collect();
+        let mut calculated_shell = Vec::new();
+        if calculated_shell_normalization {
+            let x = resolution(cell, &hkl)?;
+            let xmax = x.iter().copied().fold(0., f64::max);
+            let mut order: Vec<_> = (0..hkl.len()).collect();
+            order.sort_by(|&i, &j| {
+                (x[i] / xmax * 1e12)
+                    .round()
+                    .total_cmp(&(x[j] / xmax * 1e12).round())
+                    .then(hkl[i].cmp(&hkl[j]))
+            });
+            let bins = (hkl.len() / 80).clamp(1, 20);
+            calculated_shell.resize(hkl.len(), 0);
+            for b in 0..bins {
+                for &i in &order[b * hkl.len() / bins..(b + 1) * hkl.len() / bins] {
+                    calculated_shell[i] = b;
+                }
+            }
+            e_weights.fill(1.);
+        }
         Ok(Self {
             hkl,
             target,
             e_weights,
             weak,
             allowed,
+            calculated_shell,
         })
     }
     /// Evaluate scale-invariant CC/Rweak and a fused analytic CFOM gradient.
@@ -455,7 +484,20 @@ impl PreparedPhaseQuality {
     #[allow(clippy::cast_precision_loss)]
     pub fn evaluate(&self, calculated: &[f64]) -> Result<PhaseQualityScore, SolutionError> {
         let n = calculated.len();
-        if n != self.hkl.len() || calculated.iter().any(|c| !c.is_finite() || *c < 0.) {
+        if n != self.hkl.len()
+            || n == 0
+            || self.allowed == 0
+            || self.allowed > n
+            || self.target.len() != n
+            || self.e_weights.len() != n
+            || self.weak.len() != n
+            || (!self.calculated_shell.is_empty() && self.calculated_shell.len() != n)
+            || self.calculated_shell.iter().any(|&b| b >= n)
+            || self.target.iter().any(|v| !v.is_finite())
+            || self.e_weights.iter().any(|v| !v.is_finite() || *v <= 0.)
+            || !self.weak.iter().any(|&w| w)
+            || calculated.iter().any(|c| !c.is_finite() || *c < 0.)
+        {
             return Err(error("invalid quality magnitudes"));
         }
         let max = calculated.iter().copied().fold(0., f64::max);
@@ -486,24 +528,36 @@ impl PreparedPhaseQuality {
             0.
         };
         let weak_n = self.weak.iter().filter(|&&w| w).count() as f64;
-        let total = c
-            .iter()
-            .zip(&self.e_weights)
-            .map(|(v, w)| v * v * w)
-            .sum::<f64>()
-            / n as f64;
-        if total <= 1e-250 || !total.is_finite() {
+        let bins = self.calculated_shell.iter().max().map_or(1, |b| b + 1);
+        let shell = |i| self.calculated_shell.get(i).copied().unwrap_or(0);
+        let mut populations = vec![0.; bins];
+        let mut sums = vec![0.; bins];
+        let mut weak_sums = vec![0.; bins];
+        for (i, &amplitude) in c.iter().enumerate() {
+            let b = shell(i);
+            let value = amplitude * amplitude * self.e_weights[i];
+            populations[b] += 1.;
+            sums[b] += value;
+            if self.weak[i] {
+                weak_sums[b] += value;
+            }
+        }
+        if sums.iter().sum::<f64>() <= 1e-250 || sums.iter().any(|s| !s.is_finite()) {
             return Err(error("degenerate calculated E normalization"));
         }
-        let weak_mean = c
+        let means: Vec<_> = sums
             .iter()
-            .zip(&self.e_weights)
-            .zip(&self.weak)
-            .filter(|(_, w)| **w)
-            .map(|((v, w), _)| v * v * w)
-            .sum::<f64>()
-            / weak_n;
-        let rw = weak_mean / total;
+            .zip(&populations)
+            .map(|(s, n)| if *n > 0. { s / n } else { 0. })
+            .collect();
+        // A completely zero shell contributes zero and has zero derivative by
+        // explicit convention; positive shells are independently normalized.
+        let rw = means
+            .iter()
+            .zip(&weak_sums)
+            .filter(|(d, _)| **d > 0.)
+            .map(|(d, a)| a / d / weak_n)
+            .sum::<f64>();
         let gradient = (0..n)
             .map(|i| {
                 let dcc = if defined && i < self.allowed {
@@ -511,11 +565,13 @@ impl PreparedPhaseQuality {
                 } else {
                     0.
                 };
-                let dr = 2.
-                    * c[i]
-                    * self.e_weights[i]
-                    * (f64::from(self.weak[i]) / weak_n - rw / n as f64)
-                    / total;
+                let b = shell(i);
+                let dr = if means[b] > 0. {
+                    2. * c[i] * self.e_weights[i] / (weak_n * means[b])
+                        * (f64::from(self.weak[i]) - weak_sums[b] / sums[b])
+                } else {
+                    0.
+                };
                 (dcc - dr) / max
             })
             .collect();
@@ -534,6 +590,7 @@ impl PreparedPhaseQuality {
             allowed_families: self.allowed,
             absent_families: self.hkl.len() - self.allowed,
             weak_families: self.weak.iter().filter(|&&v| v).count(),
+            calculated_shells: self.calculated_shell.iter().max().map_or(0, |b| b + 1),
             ..PhaseQualityTrace::default()
         }
     }
@@ -551,6 +608,7 @@ mod tests {
             e_weights: vec![1.; 8],
             weak: vec![false, false, false, false, false, false, true, true],
             allowed: 8,
+            calculated_shell: Vec::new(),
         };
         let a = [10., 10., 9., 9., 2., 2., 1., 1.];
         let b = [10.8, 9.2, 9.8, 8.2, 2., 2., 0.1, 0.1];
@@ -578,6 +636,7 @@ mod tests {
             e_weights: vec![1.; 3],
             weak: vec![true; 3],
             allowed: 3,
+            calculated_shell: Vec::new(),
         };
         let value = plan.evaluate(&[1., 2., 3.]).unwrap();
         assert!(!value.correlation_defined);

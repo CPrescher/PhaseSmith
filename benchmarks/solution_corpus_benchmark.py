@@ -192,7 +192,11 @@ def main():
         "--manifest", type=Path, default=ROOT / "validation/solution-corpus-v5.json"
     )
     seal_parser.add_argument("--discovery", type=Path, required=True)
-    seal_parser.add_argument("--lock-revision", type=int, default=6)
+    seal_parser.add_argument("--lock-revision", type=int, default=9)
+    adapters = commands.add_parser("seal-adapters")
+    adapters.add_argument("--manifest", type=Path, required=True)
+    adapters.add_argument("--parent-lock", type=Path, required=True)
+    adapters.add_argument("--lock-revision", type=int, required=True)
     fetch_parser = commands.add_parser("fetch")
     fetch_parser.add_argument(
         "--manifest", type=Path, default=ROOT / "validation/solution-corpus-v5.json"
@@ -204,7 +208,10 @@ def main():
     r.add_argument("--legacy-counts", action="store_true")
     r.add_argument("--wilson-normalization", action="store_true")
     r.add_argument("--phase-quality-selection", action="store_true")
-    r.add_argument("--lock-revision", type=int, default=6)
+    r.add_argument("--phase-first-selection", action="store_true", default=True)
+    r.add_argument("--quality-checkpoints", dest="phase_first_selection", action="store_false")
+    r.add_argument("--legacy-quality-normalization", action="store_true")
+    r.add_argument("--lock-revision", type=int, default=9)
     r.add_argument("--split", choices=["development", "holdout"], default="development")
     r.add_argument("--open-holdout", action="store_true")
     r.add_argument("--seconds", type=float, default=30)
@@ -217,13 +224,25 @@ def main():
     w.add_argument("--legacy-counts", action="store_true")
     w.add_argument("--wilson-normalization", action="store_true")
     w.add_argument("--phase-quality-selection", action="store_true")
+    w.add_argument("--phase-first-selection", action="store_true", default=True)
+    w.add_argument("--quality-checkpoints", dest="phase_first_selection", action="store_false")
+    w.add_argument("--legacy-quality-normalization", action="store_true")
     w.add_argument("--input", type=Path, required=True)
     w.add_argument("--hkl", type=Path, required=True)
     w.add_argument("--output", type=Path, required=True)
     w.add_argument("--seconds", type=float, required=True)
     w.add_argument("--maximum-atoms", type=int, required=True)
     args = parser.parse_args()
-    for name in ["manifest", "discovery", "data", "output", "input", "hkl", "shelxt"]:
+    for name in [
+        "manifest",
+        "discovery",
+        "data",
+        "output",
+        "input",
+        "hkl",
+        "shelxt",
+        "parent_lock",
+    ]:
         value = getattr(args, name, None)
         if value is not None:
             setattr(args, name, value.resolve())
@@ -239,6 +258,10 @@ def main():
         from solution_corpus.seal import fetch_manifest
 
         fetch_manifest(args)
+    elif args.command == "seal-adapters":
+        from solution_corpus.seal import reseal_adapters
+
+        reseal_adapters(args)
     elif args.command == "worker":
         from solution_corpus.run import worker
 

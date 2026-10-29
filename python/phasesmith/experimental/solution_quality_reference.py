@@ -96,7 +96,7 @@ def wilson_reference(hkl, intensity, cell, rotations, form_squares):
     }
 
 
-def phase_quality_reference(target, calculated, e_weights, weak, allowed):
+def phase_quality_reference(target, calculated, e_weights, weak, allowed, calculated_shell=None):
     """CC-Rweak and analytic derivatives of the complete scale-invariant statistic."""
     target, c, weights = map(np.asarray, (target, calculated, e_weights))
     weak = np.asarray(weak, dtype=bool)
@@ -110,7 +110,42 @@ def phase_quality_reference(target, calculated, e_weights, weak, allowed):
         dcc[:allowed] = centered_t / np.sqrt(vt * vc) - cc * centered_c / vc
     else:
         cc = 0.0
-    total = np.mean(c * c * weights)
-    rw = np.mean((c * c * weights)[weak]) / total
-    dr = 2 * c * weights * (weak.astype(float) / weak.sum() - rw / len(c)) / total
+    shells = (
+        np.zeros(len(c), dtype=int) if calculated_shell is None else np.asarray(calculated_shell)
+    )
+    if len(shells) == 0:
+        shells = np.zeros(len(c), dtype=int)
+    rw = 0.0
+    dr = np.zeros_like(c)
+    for shell in np.unique(shells):
+        rows = shells == shell
+        values = c[rows] ** 2 * weights[rows]
+        mean = np.mean(values)
+        if mean == 0:
+            continue
+        selected = weak[rows]
+        weak_sum = values[selected].sum()
+        rw += weak_sum / mean / weak.sum()
+        dr[rows] = (
+            2
+            * c[rows]
+            * weights[rows]
+            / (weak.sum() * mean)
+            * (selected.astype(float) - weak_sum / values.sum())
+        )
     return {"correlation": cc, "r_weak": rw, "cfom": cc - rw, "gradient": dcc - dr}
+
+
+def checkpoint_candidates_reference(sse, cfom, first_cycle=0, omit_fraction=0.1):
+    """Amplitude safeguard followed by a distinct quality winner, stable under ties.
+
+    Inputs describe one completed checkpoint window. Omitted mask iterations are
+    excluded from both candidates; no absolute quality threshold delays a window.
+    """
+    sse, cfom = np.asarray(sse), np.asarray(cfom)
+    valid = np.arange(len(sse))
+    if omit_fraction:
+        valid = valid[(valid + first_cycle) % 3 != 2]
+    primary = int(valid[np.argmin(sse[valid])])
+    alternative = int(valid[np.argmax(cfom[valid])])
+    return [primary + first_cycle] + ([alternative + first_cycle] if alternative != primary else [])
