@@ -364,6 +364,8 @@ class PhaseQualityAudit:
     r_weak: tuple[float, ...]
     cfom: tuple[float, ...]
     deferred_handoffs: int
+    alternative_handoffs: int = 0
+    calculated_shells: int = 0
 
     def __post_init__(self):
         for name in ("correlation", "r_weak", "cfom"):
@@ -417,6 +419,8 @@ class SharedSearchAudit:
     bounded_map_handoffs: int = 0
     wilson_normalization: bool = False
     phase_quality_selection: bool = False
+    phase_first_selection: bool = False
+    calculated_shell_normalization: bool = False
     normalization: WilsonNormalizationAudit | None = None
     normalization_diagnostic: str | None = None
     phase_quality: tuple[PhaseQualityAudit, ...] = ()
@@ -626,6 +630,8 @@ def solve_structure_elements(
     adaptive_counts: bool = True,
     wilson_normalization: bool = False,
     phase_quality_selection: bool = False,
+    phase_first_selection: bool = True,
+    calculated_shell_normalization: bool = True,
     cancellation: SolutionCancellation | None = None,
 ) -> SolutionResult:
     """Infer full-cell counts and labels by shared-map symmetry-orbit edits.
@@ -637,8 +643,12 @@ def solve_structure_elements(
     their selected mask peaks are distinct from inferred atom counts.
     ``wilson_normalization=True`` fits signed, independent-family resolution
     shells with epsilon corrections and uses the resulting E values for phasing.
-    ``phase_quality_selection=True`` ranks maps by CC-Rweak and defers poor early
-    handoffs. Both are explicit experimental options; original observations still
+    ``phase_quality_selection=True`` ranks P1 maps before model fitting, with
+    independently normalized calculated amplitudes for the weak statistic.
+    ``phase_first_selection=False`` tests a checkpoint portfolio instead; this
+    control is ignored when quality selection is off.
+    ``calculated_shell_normalization=False`` retains the earlier statistic.
+    Original observations still
     govern final refinement. Missing-data resolution extension is not added here.
     ``adaptive_counts=True`` compares nested residual-orbit additions, repeats
     count proposals after framework refinement, and bounds poor early-map
@@ -671,6 +681,10 @@ def solve_structure_elements(
         raise ValueError("elements must be 1..8 distinct neutral non-H symbols")
     if not isinstance(wilson_normalization, bool):
         raise TypeError("wilson_normalization must be boolean")
+    if not isinstance(calculated_shell_normalization, bool):
+        raise TypeError("calculated_shell_normalization must be boolean")
+    if not isinstance(phase_first_selection, bool):
+        raise TypeError("phase_first_selection must be boolean")
     if not isinstance(phase_quality_selection, bool):
         raise TypeError("phase_quality_selection must be boolean")
     if not isinstance(adaptive_counts, bool):
@@ -750,6 +764,8 @@ def solve_structure_elements(
             adaptive_counts,
             wilson_normalization,
             phase_quality_selection,
+            phase_first_selection,
+            calculated_shell_normalization,
         ),
     )
     return _run_solution(observations, cell, group, (), controls, cancellation, shared)

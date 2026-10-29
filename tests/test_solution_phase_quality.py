@@ -54,9 +54,16 @@ def case(symbol="P1"):
     return cell, group, rotations, h, intensity, sigma
 
 
-def native_plan(cell, group, h, intensity, sigma, *, wilson=True):
+def native_plan(cell, group, h, intensity, sigma, *, wilson=True, calculated_shells=True):
     return _core._PhaseQualityPlan(
-        list(cell.as_tuple()), group._native, h.ravel(), intensity, sigma, ["Fe", "O"], wilson
+        list(cell.as_tuple()),
+        group._native,
+        h.ravel(),
+        intensity,
+        sigma,
+        ["Fe", "O"],
+        wilson,
+        calculated_shells,
     )
 
 
@@ -96,15 +103,18 @@ def test_normalization_matches_independent_shell_equations_and_unit_mean(symbol)
 
 
 @pytest.mark.parametrize("wilson", [False, True])
-def test_phase_quality_values_gradients_and_scale_invariance(wilson):
+@pytest.mark.parametrize("calculated_shells", [False, True])
+def test_phase_quality_values_gradients_and_scale_invariance(wilson, calculated_shells):
     cell, group, _, h, intensity, sigma = case("P21")
-    plan = native_plan(cell, group, h, intensity, sigma, wilson=wilson)
+    plan = native_plan(
+        cell, group, h, intensity, sigma, wilson=wilson, calculated_shells=calculated_shells
+    )
     m = plan.metadata()
     assert len(m["quality_hkl"]) > m["allowed"]  # measured absences retained
     assert all(m["weak"][m["allowed"] :])
     rng = np.random.default_rng(428)
     c = rng.uniform(0.2, 5, len(m["quality_hkl"]))
-    args = (m["target"], c, m["e_weights"], m["weak"], m["allowed"])
+    args = (m["target"], c, m["e_weights"], m["weak"], m["allowed"], m["calculated_shell"])
     ref = phase_quality_reference(*args)
     actual = plan.evaluate(c)
     for key in ("correlation", "r_weak", "cfom", "gradient"):
@@ -140,7 +150,8 @@ def test_intensity_unit_change_preserves_e_and_quality(factor):
 
 
 @pytest.mark.parametrize("symbol", ["P1", "P-1", "Pm"])
-def test_normalized_quality_search_still_infers_synthetic_counts(symbol):
+@pytest.mark.parametrize("phase_first", [False, True])
+def test_normalized_quality_search_still_infers_synthetic_counts(symbol, phase_first):
     from test_solution_shared_search import synthetic
 
     cell, group, data, _, species = synthetic(symbol)
@@ -152,6 +163,7 @@ def test_normalized_quality_search_still_infers_synthetic_counts(symbol):
         maximum_atoms=32,
         wilson_normalization=True,
         phase_quality_selection=True,
+        phase_first_selection=phase_first,
         symmetry_recycling=True,
         tangent_refinement=True,
         options=SolutionOptions(
@@ -172,6 +184,13 @@ def test_normalized_quality_search_still_infers_synthetic_counts(symbol):
     assert a.normalization is not None and a.normalization_diagnostic is None
     assert a.phase_quality and all(q.cfom for q in a.phase_quality)
     assert all(np.isfinite(q.cfom).all() for q in a.phase_quality)
+    assert a.phase_first_selection is phase_first
+    if phase_first:
+        assert a.phase_model_trials
+        assert not result.phasing_trials[0].checkpoints
+    else:
+        assert result.phasing_trials[0].checkpoints[0].completed_cycles == 4
+        assert not a.phase_model_trials
     assert result.to_record()["shared_search"]["normalization"]["families"] == result.family_count
 
 
@@ -183,6 +202,7 @@ def test_public_quality_flags_are_boolean_and_phasing_is_explicit():
         ({"wilson_normalization": 1}, TypeError),
         ({"phase_quality_selection": 1}, TypeError),
         ({"phase_quality_selection": True}, ValueError),
+        ({"phase_first_selection": 1}, TypeError),
     ]:
         with pytest.raises(error):
             solve_structure_elements(
@@ -245,3 +265,76 @@ def test_normalization_rejects_non_type_element_lists(elements):
         _core._PhaseQualityPlan(
             list(cell.as_tuple()), group._native, h.ravel(), intensity, sigma, elements
         )
+
+
+def test_checkpoint_reference_preserves_amplitude_candidate_and_excludes_omissions():
+    from phasesmith.experimental.solution_quality_reference import checkpoint_candidates_reference
+
+    assert checkpoint_candidates_reference([0.8, 0.4, 0.1, 0.6], [0.2, 0.1, 0.99, 0.3]) == [1, 3]
+    assert checkpoint_candidates_reference(
+        [0.8, 0.4, 0.1, 0.6], [0.2, 0.1, 0.99, 0.3], omit_fraction=0
+    ) == [2]
+    assert checkpoint_candidates_reference(
+        [0.8, 0.4, 0.1, 0.6], [0.2, 0.1, 0.99, 0.3], first_cycle=4
+    ) == [6]
+
+
+def test_calculated_shell_normalization_removes_independent_map_envelope_bias():
+    cell, group, _, h, intensity, sigma = case()
+    plan = native_plan(cell, group, h, intensity, sigma)
+    m = plan.metadata()
+    shells = np.asarray(m["calculated_shell"])
+    assert len(np.unique(shells)) > 1
+    c = np.random.default_rng(938).uniform(0.2, 3, len(shells))
+    factors = np.geomspace(0.05, 20, shells.max() + 1)
+    assert plan.evaluate(c * factors[shells])["r_weak"] == pytest.approx(
+        plan.evaluate(c)["r_weak"], abs=2e-13
+    )
+    legacy = native_plan(cell, group, h, intensity, sigma, calculated_shells=False)
+    assert abs(legacy.evaluate(c * factors[shells])["r_weak"] - legacy.evaluate(c)["r_weak"]) > 1e-3
+
+
+def test_completely_zero_calculated_shell_has_explicit_finite_boundary():
+    cell, group, _, h, intensity, sigma = case()
+    plan = native_plan(cell, group, h, intensity, sigma)
+    m = plan.metadata()
+    shells = np.asarray(m["calculated_shell"])
+    c = np.linspace(0.2, 3, len(shells))
+    c[shells == 0] = 0
+    value = plan.evaluate(c)
+    expected = phase_quality_reference(
+        m["target"], c, m["e_weights"], m["weak"], m["allowed"], shells
+    )
+    assert np.isfinite(value["gradient"]).all()
+    assert value["cfom"] == pytest.approx(expected["cfom"], abs=2e-13)
+    np.testing.assert_allclose(value["gradient"], expected["gradient"], rtol=2e-12, atol=2e-14)
+
+
+def test_default_quality_mode_retains_phase_first_order_after_full_panel_ablation():
+    from test_solution_shared_search import synthetic
+
+    cell, group, data, _, species = synthetic()
+    result = solve_structure_elements(
+        data,
+        cell=cell,
+        elements=["Fe", "O"],
+        space_group=group,
+        maximum_atoms=32,
+        wilson_normalization=True,
+        phase_quality_selection=True,
+        symmetry_recycling=True,
+        tangent_refinement=True,
+        options=SolutionOptions(
+            phasing="dual_space",
+            trials=1,
+            cycles=800,
+            max_seconds=20,
+            r1_target=0.005,
+            completion=False,
+        ),
+    )
+    assert result.target_met and len(result.best.species) == len(species)
+    assert result.shared_search.phase_first_selection
+    assert result.shared_search.calculated_shell_normalization
+    assert result.shared_search.phase_model_trials
+    assert not result.phasing_trials[0].checkpoints

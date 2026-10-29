@@ -1,5 +1,12 @@
 # Composition-free normalization and phase-quality selection
 
+This is the historical experiment at `1be278b`. The subsequent
+[separate ablations and calculated-normalization correction](solution-phase-ablation.md)
+retain these results and explain the changed current options. On the current
+build, `phase_first_selection=True` plus
+`calculated_shell_normalization=False` selects the earlier method; use the
+historical checkout and adapter seal for exact source-level reproduction.
+
 This opt-in experimental follow-up implements resolution-dependent normalization
 and phase-map selection from published equations and first principles. It does
 not translate decompiled program code, implement complete SHELXT, change the

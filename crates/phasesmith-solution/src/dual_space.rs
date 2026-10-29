@@ -478,6 +478,9 @@ pub(crate) fn dual_space_guided(
     let mut window_score = f64::INFINITY;
     let mut window_rank = f64::INFINITY;
     let mut window_cycle = 0;
+    let mut amplitude_best = Vec::new();
+    let mut amplitude_score = f64::INFINITY;
+    let mut amplitude_cycle = 0;
     let mut next_checkpoint = 4;
     let mut checkpoints = Vec::new();
     let mut best = density.clone();
@@ -536,6 +539,11 @@ pub(crate) fn dual_space_guided(
         }
         let ranking = quality_score.as_ref().map_or(score, |q| -q.cfom);
         let eligible = options.omit_fraction == 0. || cycle % 3 != 2;
+        if checkpoint.is_some() && quality.is_some() && eligible && score < amplitude_score {
+            amplitude_score = score;
+            amplitude_best.clone_from(&projected);
+            amplitude_cycle = cycle;
+        }
         if checkpoint.is_some() && eligible && ranking < window_rank {
             window_rank = ranking;
             window_score = score;
@@ -558,18 +566,32 @@ pub(crate) fn dual_space_guided(
             if (cycle + 1 == next_checkpoint || cycle + 1 == options.cycles)
                 && window_score.is_finite()
             {
-                // Only premature handoffs are gated. At >=64 cycles and the
-                // final checkpoint a map is always assessed, preserving partial outcomes.
-                if quality.is_some()
-                    && cycle + 1 < 64
-                    && cycle + 1 < options.cycles
-                    && -window_rank < 0.4
+                // Preserve the amplitude candidate: P1 quality alone is not a
+                // reliable proxy for recovery after supplied-symmetry recycling.
+                // Only spend additional work on a distinct quality candidate if
+                // the first model was not accepted and budget remains.
+                if quality.is_some() {
+                    let accepted = accept(&amplitude_best, cycle + 1, amplitude_cycle)?;
+                    checkpoints.push(DualSpaceCheckpoint {
+                        completed_cycles: cycle + 1,
+                        best_cycle: amplitude_cycle,
+                        score: amplitude_score,
+                        accepted,
+                    });
+                    if accepted {
+                        best = amplitude_best;
+                        best_cycle = amplitude_cycle;
+                        best_score = amplitude_score;
+                        break;
+                    }
+                }
+                if quality.is_none()
+                    || (window_cycle != amplitude_cycle
+                        && !crate::stopped(deadline, options.cancellation.as_ref()))
                 {
                     if let Some(trace) = &mut quality_trace {
-                        trace.deferred_handoffs += 1;
+                        trace.alternative_handoffs += 1;
                     }
-                    next_checkpoint *= 4;
-                } else {
                     let accepted = accept(&window_best, cycle + 1, window_cycle)?;
                     checkpoints.push(DualSpaceCheckpoint {
                         completed_cycles: cycle + 1,
@@ -583,10 +605,11 @@ pub(crate) fn dual_space_guided(
                         best_score = window_score;
                         break;
                     }
-                    window_score = f64::INFINITY;
-                    window_rank = f64::INFINITY;
-                    next_checkpoint *= 4;
                 }
+                window_score = f64::INFINITY;
+                window_rank = f64::INFINITY;
+                amplitude_score = f64::INFINITY;
+                next_checkpoint *= 4;
             }
         }
         if let (Some(plan), Some(audit)) = (tangent, &mut tangent_audit) {
@@ -663,6 +686,119 @@ pub(crate) fn dual_space_guided(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    #[allow(clippy::too_many_lines)]
+    fn quality_checkpoints_preserve_early_amplitude_maps_and_offer_alternatives() {
+        let cell = UnitCell {
+            a_angstrom: 5.,
+            b_angstrom: 5.,
+            c_angstrom: 5.,
+            alpha_deg: 90.,
+            beta_deg: 90.,
+            gamma_deg: 90.,
+        };
+        let shape = [8; 3];
+        let hkl: Vec<_> = (-2..=2)
+            .flat_map(|h| {
+                (-2..=2).flat_map(move |k| {
+                    (-2..=2).filter_map(move |l| ([h, k, l] != [0; 3]).then_some([h, k, l]))
+                })
+            })
+            .collect();
+        let amplitudes: Vec<_> = hkl
+            .iter()
+            .map(|h| {
+                (2. + (0.7 * f64::from(h[0]) + 1.1 * f64::from(h[1]) + 0.3 * f64::from(h[2])).cos())
+                    .sqrt()
+            })
+            .collect();
+        let phases = crate::solver::initial_phases(&hkl, 0);
+        let mut support = vec![0; 512];
+        support[0] = 1;
+        for &h in &hkl {
+            support[grid_index(h, shape)] = 2;
+        }
+        let options = DualSpaceOptions {
+            cycles: 16,
+            peak_selection: PeakSelection::Fixed(4),
+            mask_sigma: 0.2,
+            hybrid_m: 3.,
+            omit_fraction: 0.1,
+            seed: 0,
+            patterson_rank: None,
+            cancellation: None,
+        };
+        let plan = crate::PreparedPhaseQuality {
+            hkl: hkl.clone(),
+            target: amplitudes.clone(),
+            e_weights: vec![1.; hkl.len()],
+            weak: (0..hkl.len()).map(|i| i % 10 == 0).collect(),
+            allowed: hkl.len(),
+            calculated_shell: Vec::new(),
+        };
+        let mut legacy_maps = Vec::new();
+        let mut legacy_callback = |map: &[f64], cycles, selected| {
+            legacy_maps.push((cycles, selected, map.to_vec()));
+            Ok(false)
+        };
+        let legacy = dual_space_guided(
+            shape,
+            cell,
+            &hkl,
+            &amplitudes,
+            &phases,
+            &support,
+            &options,
+            None,
+            Some(&mut legacy_callback),
+            None,
+            None,
+        )
+        .unwrap();
+        let mut quality_maps = Vec::new();
+        let mut quality_callback = |map: &[f64], cycles, selected| {
+            quality_maps.push((cycles, selected, map.to_vec()));
+            Ok(false)
+        };
+        let quality = dual_space_guided(
+            shape,
+            cell,
+            &hkl,
+            &amplitudes,
+            &phases,
+            &support,
+            &options,
+            None,
+            Some(&mut quality_callback),
+            None,
+            Some(&plan),
+        )
+        .unwrap();
+        assert_eq!(legacy.trial.history, quality.trial.history);
+        assert_eq!(legacy_maps[0].0, 4);
+        for primary in &legacy_maps {
+            assert_eq!(
+                quality_maps.iter().find(|m| m.0 == primary.0).unwrap(),
+                primary
+            );
+        }
+        let trace = quality.quality.unwrap();
+        assert_eq!(trace.deferred_handoffs, 0);
+        assert_eq!(
+            quality_maps.len(),
+            legacy_maps.len() + trace.alternative_handoffs
+        );
+        for group in quality
+            .checkpoints
+            .chunk_by(|a, b| a.completed_cycles == b.completed_cycles)
+        {
+            assert!(group.len() <= 2);
+            if group.len() == 2 {
+                assert_ne!(group[0].best_cycle, group[1].best_cycle);
+                assert!(trace.cfom[group[1].best_cycle] >= trace.cfom[group[0].best_cycle]);
+            }
+        }
+    }
     #[test]
     fn centring_fallback_and_cooperative_stops_are_explicit() {
         let cell = UnitCell {

@@ -1,0 +1,343 @@
+{
+  "schema": "phasesmith.phase-ablation-kernels.v1",
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "rustc": "rustc 1.99.1 (58cf8f9c3 2026-10-13)",
+  "native_sha256": "376cd126d271bef7f8bf24f095fe612c39146b1833d7349e2b7c16a1cb273de6",
+  "command": "cargo bench -p phasesmith-solution --bench solution -- 'phase_schedule|phase_quality_fused|wilson_normalization' --sample-size 10 --warm-up-time 1 --measurement-time 3",
+  "units": "nanoseconds",
+  "fixture": "Eight-atom Si/O, 2108 measured rows / 1054 independent families; schedule modes share 16-cycle, one-round bounds with a 30-second safety deadline. See exact source.",
+  "holdout_outcomes_opened": false,
+  "implementation_sha256": {
+    "crates/phasesmith-solution/src/phase_quality.rs": "97ec51827878ef10233b0812c24cfc8210342bfa615cb09a20a822444478478a",
+    "crates/phasesmith-solution/src/dual_space.rs": "fb9ad5cc66f12f6e94858509b3bac2ed65d82062fb6803937b0b6970e6e1c010",
+    "crates/phasesmith-solution/src/shared_search.rs": "2a2f0b6c3d924fc9bc9120ecb68a39ccf64cd28f6aa4a06450249a6ce41891b7",
+    "crates/phasesmith-solution/benches/solution.rs": "d3c2adcfa4b68e4580cfbef4e6aae577f41b57a25ede3acab37ea2829377a0c8",
+    "Cargo.lock": "f8a427cc7edfd5463a2929aa00c5473c10dd674553132052aadcef11fd41cdee"
+  },
+  "benchmarks": {
+    "wilson_normalization_8_atoms_2108_reflections": {
+      "benchmark": {
+        "group_id": "wilson_normalization_8_atoms_2108_reflections",
+        "function_id": null,
+        "value_str": null,
+        "throughput": null,
+        "full_id": "wilson_normalization_8_atoms_2108_reflections",
+        "directory_name": "wilson_normalization_8_atoms_2108_reflections",
+        "title": "wilson_normalization_8_atoms_2108_reflections"
+      },
+      "estimates": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 953148.8976571006,
+            "upper_bound": 1065865.8016251063
+          },
+          "point_estimate": 1012355.2480938209,
+          "standard_error": 28890.789172938865
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 937384.8852040817,
+            "upper_bound": 1073928.3486607145
+          },
+          "point_estimate": 1057504.7410714286,
+          "standard_error": 41564.34111737181
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 3151.58284092299,
+            "upper_bound": 171158.18541070985
+          },
+          "point_estimate": 82303.72118715012,
+          "standard_error": 46228.75897449503
+        },
+        "slope": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 960896.8606983061,
+            "upper_bound": 1101862.251385135
+          },
+          "point_estimate": 1028300.5447588126,
+          "standard_error": 36963.835275726255
+        },
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 49551.75031094889,
+            "upper_bound": 127022.91527057659
+          },
+          "point_estimate": 96998.24818043112,
+          "standard_error": 20879.165153224534
+        }
+      },
+      "sample": {
+        "sampling_mode": "Linear",
+        "iters": [
+          56.0,
+          112.0,
+          168.0,
+          224.0,
+          280.0,
+          336.0,
+          392.0,
+          448.0,
+          504.0,
+          560.0
+        ],
+        "times": [
+          45673084.0,
+          118025333.0,
+          162745375.0,
+          237711458.0,
+          303203834.0,
+          357915458.0,
+          367454875.0,
+          477113666.0,
+          576155083.0,
+          521135292.0
+        ]
+      }
+    },
+    "phase_quality_fused_value_gradient_8_atoms_1054_families": {
+      "benchmark": {
+        "group_id": "phase_quality_fused_value_gradient_8_atoms_1054_families",
+        "function_id": null,
+        "value_str": null,
+        "throughput": null,
+        "full_id": "phase_quality_fused_value_gradient_8_atoms_1054_families",
+        "directory_name": "phase_quality_fused_value_gradient_8_atoms_1054_families",
+        "title": "phase_quality_fused_value_gradient_8_atoms_1054_families"
+      },
+      "estimates": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 16308.296978852864,
+            "upper_bound": 17609.56413019452
+          },
+          "point_estimate": 16951.350122073804,
+          "standard_error": 332.201208784627
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 16420.378633399647,
+            "upper_bound": 17611.588859416446
+          },
+          "point_estimate": 16796.285832701782,
+          "standard_error": 296.1473267731308
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 163.75991575979037,
+            "upper_bound": 1853.3735170960435
+          },
+          "point_estimate": 716.1455783104128,
+          "standard_error": 478.3722818326389
+        },
+        "slope": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 16502.24117160255,
+            "upper_bound": 18091.623859148072
+          },
+          "point_estimate": 17332.809903028006,
+          "standard_error": 410.1370519866426
+        },
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 490.3513632152007,
+            "upper_bound": 1476.9771319794656
+          },
+          "point_estimate": 1103.5503447663984,
+          "standard_error": 250.54794988322786
+        }
+      },
+      "sample": {
+        "sampling_mode": "Linear",
+        "iters": [
+          3016.0,
+          6032.0,
+          9048.0,
+          12064.0,
+          15080.0,
+          18096.0,
+          21112.0,
+          24128.0,
+          27144.0,
+          30160.0
+        ],
+        "times": [
+          50954458.0,
+          102054000.0,
+          135537667.0,
+          220824416.0,
+          248150917.0,
+          292628125.0,
+          352525167.0,
+          402210958.0,
+          514148084.0,
+          527197250.0
+        ]
+      }
+    },
+    "phase_schedule_8_atoms_2108_reflections/phase_first": {
+      "benchmark": {
+        "group_id": "phase_schedule_8_atoms_2108_reflections",
+        "function_id": "phase_first",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "phase_schedule_8_atoms_2108_reflections/phase_first",
+        "directory_name": "phase_schedule_8_atoms_2108_reflections/phase_first",
+        "title": "phase_schedule_8_atoms_2108_reflections/phase_first"
+      },
+      "estimates": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 438825775.55,
+            "upper_bound": 464694196.0
+          },
+          "point_estimate": 451510108.5,
+          "standard_error": 6610618.161249573
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 439144396.5,
+            "upper_bound": 464162667.0
+          },
+          "point_estimate": 449862854.0,
+          "standard_error": 7347874.721007323
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 3867052.909246087,
+            "upper_bound": 38326661.52626574
+          },
+          "point_estimate": 18144799.036565423,
+          "standard_error": 8135183.139512457
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 10166806.525689106,
+            "upper_bound": 29556505.434228014
+          },
+          "point_estimate": 22044938.00548953,
+          "standard_error": 5067770.799623298
+        }
+      },
+      "sample": {
+        "sampling_mode": "Flat",
+        "iters": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "times": [
+          456590958.0,
+          493553667.0,
+          412460708.0,
+          442669959.0,
+          435618834.0,
+          454879250.0,
+          439629875.0,
+          470688709.0,
+          444846458.0,
+          464162667.0
+        ]
+      }
+    },
+    "phase_schedule_8_atoms_2108_reflections/checkpoint": {
+      "benchmark": {
+        "group_id": "phase_schedule_8_atoms_2108_reflections",
+        "function_id": "checkpoint",
+        "value_str": null,
+        "throughput": null,
+        "full_id": "phase_schedule_8_atoms_2108_reflections/checkpoint",
+        "directory_name": "phase_schedule_8_atoms_2108_reflections/checkpoint",
+        "title": "phase_schedule_8_atoms_2108_reflections/checkpoint"
+      },
+      "estimates": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 828430758.9,
+            "upper_bound": 956904785.6899999
+          },
+          "point_estimate": 880008133.7,
+          "standard_error": 34381568.536698975
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 814985979.5,
+            "upper_bound": 898470458.0
+          },
+          "point_estimate": 854209500.5,
+          "standard_error": 24236114.05440913
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 9038269.696238637,
+            "upper_bound": 99865679.19242978
+          },
+          "point_estimate": 60862797.88776934,
+          "standard_error": 22171623.38304681
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 28399096.687319692,
+            "upper_bound": 172686292.6790606
+          },
+          "point_estimate": 114545943.8329052,
+          "standard_error": 47565413.21874446
+        }
+      },
+      "sample": {
+        "sampling_mode": "Flat",
+        "iters": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "times": [
+          816367667.0,
+          841416917.0,
+          808889750.0,
+          789842584.0,
+          867002084.0,
+          898470458.0,
+          900034292.0,
+          1187993542.0,
+          821082209.0,
+          868981834.0
+        ]
+      }
+    }
+  }
+}

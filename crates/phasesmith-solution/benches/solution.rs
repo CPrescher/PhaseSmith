@@ -527,6 +527,7 @@ fn benchmark(c: &mut Criterion) {
         &quality_elements,
         &quality_norm,
         true,
+        true,
     )
     .unwrap();
     c.bench_function("wilson_normalization_8_atoms_2108_reflections", |b| {
@@ -584,6 +585,52 @@ fn benchmark(c: &mut Criterion) {
         });
     }
     count_benches.finish();
+    // Fixed cycle/round work, with a generous deadline, isolates orchestration
+    // instead of measuring the wall-clock cap on a scalar statistic call.
+    let mut schedules = c.benchmark_group("phase_schedule_8_atoms_2108_reflections");
+    schedules
+        .sample_size(10)
+        .warm_up_time(std::time::Duration::from_secs(1))
+        .measurement_time(std::time::Duration::from_secs(3));
+    for phase_first in [true, false] {
+        schedules.bench_function(
+            if phase_first {
+                "phase_first"
+            } else {
+                "checkpoint"
+            },
+            |b| {
+                b.iter(|| {
+                    phasesmith_solution::solve_elements(
+                        &count_observations,
+                        cell,
+                        &group,
+                        &quality_elements,
+                        &SolveOptions {
+                            trials: 1,
+                            cycles: 16,
+                            max_seconds: 30.,
+                            r1_target: 0.06,
+                            phasing: PhasingMethod::DualSpace,
+                            ..SolveOptions::default()
+                        },
+                        &SharedSearchOptions {
+                            maximum_atoms: 16,
+                            beam_width: 1,
+                            rounds: 1,
+                            symmetry_recycling: true,
+                            wilson_normalization: true,
+                            phase_quality_selection: true,
+                            phase_first_selection: phase_first,
+                            ..SharedSearchOptions::default()
+                        },
+                    )
+                    .unwrap()
+                });
+            },
+        );
+    }
+    schedules.finish();
     c.bench_function(
         "charge_flip_32cubed_four_atoms_2108_reflections_50_cycles",
         |b| {
