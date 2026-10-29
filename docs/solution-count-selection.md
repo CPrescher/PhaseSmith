@@ -182,7 +182,9 @@ qualification. A multicore comparison would be a separately declared experiment.
 
 ## Reproduce
 
-Build the release `experimental-solution` feature, then use a new directory (the current adapter seal is revision 5):
+Build the release `experimental-solution` feature, then use a new directory
+(this campaign used adapter seal revision 5; the current adapter is revision 6,
+adding the opt-in [normalization/phase-quality experiment](solution-phase-quality.md)):
 
 ```sh
 .venv/bin/python benchmarks/solution_corpus_benchmark.py run \

@@ -8,6 +8,7 @@ use pyo3::{
     types::{PyDict, PyList},
 };
 
+#[allow(clippy::too_many_lines)]
 pub(super) fn summary<'py>(
     py: Python<'py>,
     s: &SharedSearchSummary,
@@ -46,6 +47,21 @@ pub(super) fn summary<'py>(
     d.set_item("tangent_refinement", s.tangent_refinement)?;
     d.set_item("tangent_in_recycling", s.tangent_in_recycling)?;
     d.set_item("adaptive_counts", s.adaptive_counts)?;
+    d.set_item("wilson_normalization", s.wilson_normalization)?;
+    d.set_item("phase_quality_selection", s.phase_quality_selection)?;
+    d.set_item(
+        "normalization",
+        s.normalization
+            .as_ref()
+            .map(|n| super::quality::normalization_record(py, n))
+            .transpose()?,
+    )?;
+    d.set_item("normalization_diagnostic", &s.normalization_diagnostic)?;
+    d.set_item(
+        "phase_quality",
+        super::quality::trace_records(py, &s.phase_quality)?,
+    )?;
+    d.set_item("phase_model_trials", &s.phase_model_trials)?;
     d.set_item("count_prefix_screenings", s.count_prefix_screenings)?;
     d.set_item("bounded_map_handoffs", s.bounded_map_handoffs)?;
     let tangent_trials = PyList::empty(py);

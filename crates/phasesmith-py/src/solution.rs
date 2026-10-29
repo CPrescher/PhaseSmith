@@ -14,6 +14,8 @@ use crate::{NativePreparedReflectionGenerator, crystallographic_cell, hkl_rows};
 mod completion;
 #[path = "solution_dual.rs"]
 mod dual;
+#[path = "solution_quality.rs"]
+mod quality;
 #[path = "solution_recycling.rs"]
 mod recycling;
 #[path = "solution_shared.rs"]
@@ -35,7 +37,7 @@ type SharedSearchRequest = (
     f64,
     f64,
     usize,
-    (bool, bool, bool, usize, bool, bool, bool),
+    (bool, bool, bool, usize, bool, bool, bool, bool, bool),
 );
 
 fn invalid(error: impl ToString) -> PyErr {
@@ -157,6 +159,8 @@ fn solve_structure<'py>(
                     tangent_refinement,
                     tangent_in_recycling,
                     adaptive_counts,
+                    wilson_normalization,
+                    phase_quality_selection,
                 ),
             )) = shared_search
             {
@@ -189,6 +193,8 @@ fn solve_structure<'py>(
                         tangent_refinement,
                         tangent_in_recycling,
                         adaptive_counts,
+                        wilson_normalization,
+                        phase_quality_selection,
                     },
                 )
             } else {
@@ -356,6 +362,7 @@ pub fn register(module: &Bound<'_, PyModule>) -> PyResult<()> {
     dual::register(module)?;
     completion::register(module)?;
     shared::register(module)?;
+    quality::register(module)?;
     recycling::register(module)?;
     tangent::register(module)?;
     module.add_class::<NativeCancellation>()?;

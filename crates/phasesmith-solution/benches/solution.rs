@@ -508,6 +508,49 @@ fn benchmark(c: &mut Criterion) {
             }
         })
         .collect();
+    let quality_data =
+        phasesmith_solution::prepare_data(&count_observations, cell, &group).unwrap();
+    let quality_elements = ["Si".to_owned(), "O".to_owned()];
+    let quality_norm = phasesmith_solution::normalize_wilson(
+        cell,
+        &group,
+        &quality_data.hkl,
+        &quality_data.intensity,
+        &quality_elements,
+    )
+    .unwrap();
+    let quality_plan = phasesmith_solution::PreparedPhaseQuality::new(
+        cell,
+        &group,
+        &quality_data,
+        &count_observations,
+        &quality_elements,
+        &quality_norm,
+        true,
+    )
+    .unwrap();
+    c.bench_function("wilson_normalization_8_atoms_2108_reflections", |b| {
+        b.iter(|| {
+            phasesmith_solution::normalize_wilson(
+                cell,
+                &group,
+                &quality_data.hkl,
+                &quality_data.intensity,
+                &quality_elements,
+            )
+            .unwrap()
+        });
+    });
+    c.bench_function(
+        "phase_quality_fused_value_gradient_8_atoms_1054_families",
+        |b| {
+            b.iter(|| {
+                quality_plan
+                    .evaluate(std::hint::black_box(&quality_plan.target))
+                    .unwrap()
+            });
+        },
+    );
     let mut count_benches = c.benchmark_group("count_selection_8_atoms_2108_reflections");
     count_benches
         .sample_size(10)

@@ -67,6 +67,8 @@ def worker(args):
         symmetry_recycling=True,
         tangent_refinement=True,
         adaptive_counts=not args.legacy_counts,
+        wilson_normalization=args.wilson_normalization,
+        phase_quality_selection=args.phase_quality_selection,
     )
     elapsed = time.perf_counter() - start
     write_solution(result, args.output)
@@ -234,6 +236,11 @@ def run(args):
             raise ValueError("resume split differs")
         if previous.get("adaptive_counts", True) != (not args.legacy_counts):
             raise ValueError("resume count policy differs")
+        if (
+            previous.get("wilson_normalization", False) != args.wilson_normalization
+            or previous.get("phase_quality_selection", False) != args.phase_quality_selection
+        ):
+            raise ValueError("resume normalization/phase ranking differs")
         if previous["native_sha256"] != sha(Path(_core.__file__)) or previous[
             "shelxt_sha256"
         ] != sha(args.shelxt):
@@ -268,6 +275,8 @@ def run(args):
         "python": sys.version,
         "seconds_per_job": args.seconds,
         "adaptive_counts": not args.legacy_counts,
+        "wilson_normalization": args.wilson_normalization,
+        "phase_quality_selection": args.phase_quality_selection,
         "implementation_sha256": {str(p.relative_to(ROOT)): sha(p) for p in sources},
         "native_sha256": sha(Path(_core.__file__)),
         "shelxt_sha256": sha(args.shelxt),
@@ -382,6 +391,8 @@ def run(args):
                     "--maximum-atoms",
                     str(atom_cap),
                     *(["--legacy-counts"] if args.legacy_counts else []),
+                    *(["--wilson-normalization"] if args.wilson_normalization else []),
+                    *(["--phase-quality-selection"] if args.phase_quality_selection else []),
                 ]
             else:
                 (work / "sample.ins").write_text(instructions(packet))
