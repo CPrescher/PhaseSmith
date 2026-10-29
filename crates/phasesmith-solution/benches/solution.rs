@@ -123,6 +123,65 @@ fn benchmark(c: &mut Criterion) {
             });
         },
     );
+    let mirror_group = SpaceGroup::new(vec![
+        SymmetryOperation::identity(),
+        SymmetryOperation::new(
+            [[1, 0, 0], [0, -1, 0], [0, 0, 1]],
+            [Rational::new(0, 1).unwrap(); 3],
+        )
+        .unwrap(),
+    ])
+    .unwrap();
+    let mut mirror_points = Vec::new();
+    let mut mirror_elements = Vec::new();
+    for (i, point) in points[..4].iter().enumerate() {
+        let images = mirror_group.expand_sites(&[*point], 1e-8).unwrap();
+        mirror_elements.extend(std::iter::repeat_n(
+            if i < 2 {
+                "Si".to_owned()
+            } else {
+                "O".to_owned()
+            },
+            images.fractional_xyz.len(),
+        ));
+        mirror_points.extend(images.fractional_xyz);
+    }
+    let mirror = recover_symmetry(
+        cell,
+        &mirror_group,
+        &mirror_elements,
+        &mirror_points,
+        0.01,
+        None,
+        None,
+    )
+    .unwrap();
+    for (mode_name, mode) in [
+        ("isotropic", AdpMode::Isotropic),
+        ("anisotropic", AdpMode::Anisotropic),
+    ] {
+        for (cache_name, enabled) in [("direct", false), ("cached", true)] {
+            let model = PreparedSymmetricModel::new_with_geometry_cache(
+                mirror.clone(),
+                &hkl,
+                &amplitudes,
+                mode,
+                enabled,
+            )
+            .unwrap();
+            let seed = model.initial_parameters(0.015).unwrap();
+            c.bench_function(&format!("refinement_geometry_{mode_name}_{cache_name}_evaluate_8_images_2108_reflections"), |b| {
+                b.iter(|| model.evaluate(std::hint::black_box(&seed)).unwrap());
+            });
+            c.bench_function(&format!("refinement_geometry_{mode_name}_{cache_name}_prepare_fit8_8_images_2108_reflections"), |b| {
+                b.iter(|| {
+                    let prepared=PreparedSymmetricModel::new_with_geometry_cache(mirror.clone(),&hkl,&amplitudes,mode,enabled).unwrap();
+                    let start=prepared.initial_parameters(0.015).unwrap();
+                    prepared.refine(&start,8,None,None).unwrap()
+                });
+            });
+        }
+    }
     c.bench_function(
         "dual_space_32cubed_four_atoms_2108_reflections_50_cycles",
         |b| {

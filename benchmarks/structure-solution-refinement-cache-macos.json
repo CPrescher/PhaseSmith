@@ -1,0 +1,4541 @@
+{
+  "schema": "phasesmith.refinement-cache-comparison.v1",
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "repeats": 3,
+  "options": {
+    "seed": 0,
+    "trials": 1,
+    "cycles": 800,
+    "phasing": "dual_space",
+    "delta_sigma": 1.0,
+    "weak_fraction": 0.2,
+    "cleanup_cycles": 10,
+    "polish_iterations": 50,
+    "assignment_rounds": 4,
+    "max_seconds": 60,
+    "r1_target": 0.06,
+    "grid_shape": null,
+    "refinement": "anisotropic",
+    "symmetry_tolerance_angstrom": 0.15,
+    "symmetry_iterations": 80,
+    "completion": false
+  },
+  "options_by_method": {
+    "direct": {
+      "seed": 0,
+      "trials": 1,
+      "cycles": 800,
+      "phasing": "dual_space",
+      "delta_sigma": 1.0,
+      "weak_fraction": 0.2,
+      "cleanup_cycles": 10,
+      "polish_iterations": 50,
+      "assignment_rounds": 4,
+      "max_seconds": 60,
+      "r1_target": 0.06,
+      "grid_shape": null,
+      "refinement": "anisotropic",
+      "symmetry_tolerance_angstrom": 0.15,
+      "symmetry_iterations": 80,
+      "completion": false,
+      "cached_refinement": false
+    },
+    "cached": {
+      "seed": 0,
+      "trials": 1,
+      "cycles": 800,
+      "phasing": "dual_space",
+      "delta_sigma": 1.0,
+      "weak_fraction": 0.2,
+      "cleanup_cycles": 10,
+      "polish_iterations": 50,
+      "assignment_rounds": 4,
+      "max_seconds": 60,
+      "r1_target": 0.06,
+      "grid_shape": null,
+      "refinement": "anisotropic",
+      "symmetry_tolerance_angstrom": 0.15,
+      "symmetry_iterations": 80,
+      "completion": false,
+      "cached_refinement": true
+    }
+  },
+  "methods": [
+    "direct",
+    "cached"
+  ],
+  "dual_checkpoints": true,
+  "dual_peak_sigma": 2.0,
+  "dual_peak_cap": 128,
+  "integrated_peak_density": true,
+  "staged_refinement": true,
+  "peak_density_radius_angstrom": 0.7,
+  "screening_iterations": 8,
+  "refinement_shortlist": 3,
+  "cases": [
+    {
+      "name": "kbrf4",
+      "hkl": "validation/data/structure-solution/cod-1549359/1549359.hkl",
+      "hkl_format": "cif",
+      "hkl_sha256": "d76a88377a6d7236416c47a48b4b61ab15f82199e853184dc76e945e3123c2b0",
+      "cell": [
+        6.0999,
+        6.0999,
+        11.0509,
+        90.0,
+        90.0,
+        90.0
+      ],
+      "space_group": "I4/mcm",
+      "elements": [
+        "Br",
+        "F",
+        "K"
+      ],
+      "reference_after_solving": "validation/data/structure-solution/cod-1549359/1549359.cif",
+      "reference_sha256": "518988e3c4fd244dd24e47d12925722fd5f347ad2c61e398de1f4e5b24033f47"
+    },
+    {
+      "name": "bisei",
+      "hkl": "validation/data/structure-solution/cod-2010577/2010577.hkl",
+      "hkl_format": "cif",
+      "hkl_sha256": "49e22aae5122b83855bc8df2f68e98862d92342e2752390a8254237c2d0f07d0",
+      "cell": [
+        8.6967,
+        4.2205,
+        10.574,
+        90.0,
+        90.0,
+        90.0
+      ],
+      "space_group": "Pnma",
+      "elements": [
+        "Bi",
+        "Se",
+        "I"
+      ],
+      "reference_after_solving": "validation/data/structure-solution/cod-2010577/2010577.cif",
+      "reference_sha256": "50e814119da83512c1328e26fc2a92081aa494b0a81c748119a1737fc8e37337"
+    },
+    {
+      "name": "thiourea",
+      "hkl": "validation/data/structure-solution/thiourea/18MPC001T130K.hkl",
+      "hkl_format": "hkl4",
+      "hkl_sha256": "9138164bc1f542b320094b395819af191dbbe77ac4c01f2e21ba55099c074cc1",
+      "cell": [
+        7.4962,
+        8.5211,
+        5.4695,
+        90.0,
+        90.0,
+        90.0
+      ],
+      "space_group": "P 21 m a",
+      "elements": [
+        "C",
+        "N",
+        "S"
+      ],
+      "reference_after_solving": "validation/data/structure-solution/thiourea/archive_18MPC001T130K.cif",
+      "reference_sha256": "b3fc549fbe77d935839d6f566dc968e3abc13913be206c6b59f98ebbf2cd74c2"
+    }
+  ],
+  "native_sha256": "3ca040da8d51e3709f0a4690a3e204418b84924db7182df08002d0f448f558b5",
+  "implementation_sha256": {
+    "crates/phasesmith-solution/src/adp_refinement.rs": "60970f43c95f1aa6af162fe7a8fa2b380686c96defc061e00c19741284f9002e",
+    "crates/phasesmith-solution/src/completion.rs": "08523bbe80b71f0f29f01345d36713ac8dd3cb6134e812414ea6be5c94dd3081",
+    "crates/phasesmith-solution/src/completion_orbit.rs": "74901c137016cfdf5b18f911282fa2b995b80fb183508856b91ca8a902b52227",
+    "crates/phasesmith-solution/src/data.rs": "3f27a939350ff94f6722c23b1d2609ff10b9ec8119794e2a7cf2076cea27468e",
+    "crates/phasesmith-solution/src/dual_space.rs": "6fece6aef10ee46257c314b7fa80d863055608cf81903a9e45d05b05a9a1a2b5",
+    "crates/phasesmith-solution/src/fourier.rs": "6785270fd617e7f0a15b60079cba12eda94c1c1d7432ce0aec1ea507a820a861",
+    "crates/phasesmith-solution/src/lib.rs": "5816af5fcc103441f95125e61e4ab26fe12345d3169ca794c842286a168a40d1",
+    "crates/phasesmith-solution/src/math3.rs": "fa00ccf3888b6bd86fa62c7b160a8e5f11d933e3736231342a179459d247bd4d",
+    "crates/phasesmith-solution/src/model.rs": "c0d802de5d8725f527ab1b40181fe0d4b12387b2c715ad188de5b409e0105139",
+    "crates/phasesmith-solution/src/peak_density.rs": "97a242cae68157a2adc647beb78c2fa6c8a4a60ff80b875cd9fa2a60362cf37f",
+    "crates/phasesmith-solution/src/shared_pool.rs": "31dc671b92ea761471b2cc3b2c742d1b83e844851ec80ff4f9472e7961aab629",
+    "crates/phasesmith-solution/src/shared_search.rs": "350a2a88e8e84a7d27b7cb28b4f874a071cf9e7e72c991229a32d7141f26f0d3",
+    "crates/phasesmith-solution/src/solver.rs": "302429ec1b3522b848abdc7a050a5511796913842f233b6f0c53834bbf584e22",
+    "crates/phasesmith-solution/src/staged_refinement.rs": "6c1ddf05693cea5b20528059d46af3e93e61b7de3ddaef30bc3416ee6ff31657",
+    "crates/phasesmith-solution/src/symmetry_model.rs": "94393e4a05ea3e23df86fdfedf2567a5a0cd413e65994dc6389cf3ef611ddba0",
+    "crates/phasesmith-py/src/solution.rs": "e6c308786b4704e707ea9028fa0f3c3bce9ef904f993ef158f04a473ea2551cf",
+    "crates/phasesmith-py/src/solution_completion.rs": "f054ef8c49ce3f1d6aad5e8c36b94da3f3cf3b0a08570e841060a4bbcbf81517",
+    "crates/phasesmith-py/src/solution_dual.rs": "e8266ae6c8eaf1fced54e78d2033bc6317f81723daf1a846b9c1b8ceccabbbad",
+    "crates/phasesmith-py/src/solution_shared.rs": "59ee9b6394a58a202e1b8a68b9a88050f1fbc26a7c4e2d60fc43e5a5431fb251",
+    "crates/phasesmith-py/src/solution_symmetry.rs": "318aee0703bfb6bfdbdba0b3779d31bdf4cc3aad4f98069b02bc40655e804f20",
+    "Cargo.lock": "f8a427cc7edfd5463a2929aa00c5473c10dd674553132052aadcef11fd41cdee",
+    "crates/phasesmith-solution/benches/solution.rs": "9072e4b79d0c5a3a3d3575f307d5be944f572507e1411271fd992b26cfba0c85",
+    "python/phasesmith/experimental/solution.py": "16454c3b9c70f6dde3cc832a6351208df07038b7f69df534c1ce0576a4014e6c",
+    "python/phasesmith/experimental/solution_shared_reference.py": "4bbb33e0bc6991f65171c2b4db1452c342c7d54952d4fa612f50375eb29dfe7b",
+    "python/phasesmith/experimental/solution_peak_density_reference.py": "0aa18c02afa708f4b883065ffa3cfad1f6e280985894678d81a56dd7cbdd4397",
+    "benchmarks/solution_refinement_cache_comparison.py": "664be226ae680f049b5ed1b921d176940d2aece10448c3be71bc4bc157c492c4",
+    "python/phasesmith/experimental/solution_reference.py": "7103e662ff6da761f026b1d21bfa656594492ea1ab73dda54f61512c3626f626",
+    "python/phasesmith/experimental/solution_count_free_reference.py": "73c4d7731afad95e9b0e809124fbf725afbfa54b0c551044efbb955fea8d93e5",
+    "benchmarks/solution_adp_transfer.py": "344239532b298921594af7d24dcb071a16d1528df0e7b5cbfa4467f8f6e83d59",
+    "benchmarks/structure_solution.py": "58191cddd8fc86a6b5371297a694b838f63ba91ea92452425bb7475e7cd4714e"
+  },
+  "input_manifest_sha256": "a1292a5a6685c46b696ba0018f60df083a86d5f030bfa4ae8fbc72f9e4b0eeae",
+  "qualification": "Serial paired solves, alternating direct/cached refinement order by repeat. Shared inputs and settings; no counts/coordinates supplied. References read only after all paired solves and reports are saved. Reused development data; no general coverage guarantee.",
+  "runs": [
+    {
+      "case": "kbrf4",
+      "repeat": 0,
+      "mode": "direct",
+      "seconds": 0.7383901670109481,
+      "r1": 0.022266400409313075,
+      "counts": {
+        "Br": 4,
+        "F": 16,
+        "K": 4
+      },
+      "target_met": true,
+      "termination": "r1_target",
+      "effort": {
+        "elements": [
+          "Br",
+          "K",
+          "F"
+        ],
+        "phasing_starts": 1,
+        "framework_hypotheses": 4,
+        "initial_prefix": 4,
+        "rounds": 2,
+        "orbit_proposals": 16,
+        "element_scores": 48,
+        "refinements": 60,
+        "screening_refinements": 42,
+        "final_refinements": 18,
+        "promoted_candidates": 14,
+        "screened_out": 28,
+        "integrated_peak_density": true,
+        "peak_density_radius_angstrom": 0.7,
+        "density_map_builds": 1,
+        "density_evaluations": 352,
+        "density_label_rejections": 32,
+        "density_label_rescues": 4,
+        "density_birth_skips": 24,
+        "density_relabel_skips": 8,
+        "density_calibrations": [
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 1,
+            "scale": 0.7513633389728073,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 1,
+            "scale": 0.7513633389728073,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 2,
+            "round": 1,
+            "scale": 0.7513633389728073,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 3,
+            "round": 1,
+            "scale": 0.7513633389728073,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 2,
+            "round": 2,
+            "scale": 0.7513633389728073,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 2,
+            "scale": 0.7513633389728073,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 3,
+            "round": 2,
+            "scale": 0.7513633389728073,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 2,
+            "scale": 0.7513633389728073,
+            "anchors": 1,
+            "shortlist_limit": 1
+          }
+        ],
+        "staged_refinement": true,
+        "screening_iterations": 8,
+        "refinement_shortlist": 3,
+        "deletion_trials": 8,
+        "relabel_trials": 16,
+        "maximum_atoms": 52,
+        "beam_width": 4,
+        "required_elements_present": true,
+        "accepted_moves": [
+          {
+            "kind": "initial",
+            "element": "Br",
+            "atoms": 4,
+            "r1": 0.4952723365381538,
+            "score": -302.27893452450087
+          },
+          {
+            "kind": "birth",
+            "element": "K",
+            "atoms": 8,
+            "r1": 0.2376105666969505,
+            "score": -529.5847676492581
+          },
+          {
+            "kind": "birth",
+            "element": "F",
+            "atoms": 24,
+            "r1": 0.022266400409313075,
+            "score": -1443.4779253300585
+          }
+        ],
+        "dual_checkpoints": true,
+        "cached_refinement": false
+      },
+      "phasing_trials": [
+        {
+          "method": "dual_space",
+          "initialization": "patterson",
+          "patterson_vector_grid": [
+            0,
+            32,
+            32
+          ],
+          "seed": 0,
+          "completed_cycles": 4,
+          "best_cycle": 0,
+          "score_kind": "profiled_amplitude_sse",
+          "mask_sigma_angstrom": 0.2357674430663847,
+          "hybrid_m": 3.0,
+          "sharpening_q": 0.5,
+          "omit_fraction": 0.1,
+          "omit_period": 3,
+          "checkpoints": [
+            {
+              "completed_cycles": 4,
+              "best_cycle": 0,
+              "score": 0.09353511892906569,
+              "accepted": true
+            }
+          ],
+          "atomicity_mode": "adaptive",
+          "adaptive_peaks": {
+            "sigma": 2.0,
+            "cap": 128,
+            "selected": [
+              40,
+              54,
+              18,
+              70
+            ],
+            "thresholds": [
+              2.0,
+              2.0,
+              2.0,
+              2.0
+            ],
+            "omitted": [
+              0,
+              0,
+              1,
+              0
+            ]
+          }
+        }
+      ],
+      "rejected_trials": [],
+      "directory": "kbrf4/direct-0",
+      "counts_match_reference_after_solving": true,
+      "post_solve_geometry": {
+        "max_element_matched_error_angstrom": 0.005908783376389764,
+        "rms_error_angstrom": 0.004824501424264222,
+        "reference_used_after_solve_only": true,
+        "non_h_atom_count": 24
+      },
+      "cif_checks": {
+        "candidate-p1.cif": {
+          "r1": 0.02226640040922575,
+          "absolute_r1_difference": 8.732597978067247e-14,
+          "sha256": "c8d94d09c71ede6738c0e58b8858a5341d813d582955b4d014d680aefd67db08"
+        },
+        "candidate.cif": {
+          "r1": 0.022266400409225742,
+          "absolute_r1_difference": 8.733291867457638e-14,
+          "sha256": "b4f66e76d73acce7af9cf79d4417e8fefe7ed2c482a403f799d1f97821de054e"
+        }
+      }
+    },
+    {
+      "case": "kbrf4",
+      "repeat": 0,
+      "mode": "cached",
+      "seconds": 0.514802208985202,
+      "r1": 0.022266400409313297,
+      "counts": {
+        "Br": 4,
+        "F": 16,
+        "K": 4
+      },
+      "target_met": true,
+      "termination": "r1_target",
+      "effort": {
+        "elements": [
+          "Br",
+          "K",
+          "F"
+        ],
+        "phasing_starts": 1,
+        "framework_hypotheses": 4,
+        "initial_prefix": 4,
+        "rounds": 2,
+        "orbit_proposals": 16,
+        "element_scores": 48,
+        "refinements": 60,
+        "screening_refinements": 42,
+        "final_refinements": 18,
+        "promoted_candidates": 14,
+        "screened_out": 28,
+        "integrated_peak_density": true,
+        "peak_density_radius_angstrom": 0.7,
+        "density_map_builds": 1,
+        "density_evaluations": 352,
+        "density_label_rejections": 32,
+        "density_label_rescues": 4,
+        "density_birth_skips": 24,
+        "density_relabel_skips": 8,
+        "density_calibrations": [
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 1,
+            "scale": 0.7513633389728073,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 1,
+            "scale": 0.7513633389728073,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 2,
+            "round": 1,
+            "scale": 0.7513633389728073,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 3,
+            "round": 1,
+            "scale": 0.7513633389728073,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 2,
+            "round": 2,
+            "scale": 0.7513633389728073,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 2,
+            "scale": 0.7513633389728073,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 3,
+            "round": 2,
+            "scale": 0.7513633389728073,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 2,
+            "scale": 0.7513633389728073,
+            "anchors": 1,
+            "shortlist_limit": 1
+          }
+        ],
+        "staged_refinement": true,
+        "screening_iterations": 8,
+        "refinement_shortlist": 3,
+        "deletion_trials": 8,
+        "relabel_trials": 16,
+        "maximum_atoms": 52,
+        "beam_width": 4,
+        "required_elements_present": true,
+        "accepted_moves": [
+          {
+            "kind": "initial",
+            "element": "Br",
+            "atoms": 4,
+            "r1": 0.49527233653804476,
+            "score": -302.2789345245015
+          },
+          {
+            "kind": "birth",
+            "element": "K",
+            "atoms": 8,
+            "r1": 0.23761056651523732,
+            "score": -529.584767649259
+          },
+          {
+            "kind": "birth",
+            "element": "F",
+            "atoms": 24,
+            "r1": 0.022266400409313297,
+            "score": -1443.4779253300592
+          }
+        ],
+        "dual_checkpoints": true,
+        "cached_refinement": true
+      },
+      "phasing_trials": [
+        {
+          "method": "dual_space",
+          "initialization": "patterson",
+          "patterson_vector_grid": [
+            0,
+            32,
+            32
+          ],
+          "seed": 0,
+          "completed_cycles": 4,
+          "best_cycle": 0,
+          "score_kind": "profiled_amplitude_sse",
+          "mask_sigma_angstrom": 0.2357674430663847,
+          "hybrid_m": 3.0,
+          "sharpening_q": 0.5,
+          "omit_fraction": 0.1,
+          "omit_period": 3,
+          "checkpoints": [
+            {
+              "completed_cycles": 4,
+              "best_cycle": 0,
+              "score": 0.09353511892906569,
+              "accepted": true
+            }
+          ],
+          "atomicity_mode": "adaptive",
+          "adaptive_peaks": {
+            "sigma": 2.0,
+            "cap": 128,
+            "selected": [
+              40,
+              54,
+              18,
+              70
+            ],
+            "thresholds": [
+              2.0,
+              2.0,
+              2.0,
+              2.0
+            ],
+            "omitted": [
+              0,
+              0,
+              1,
+              0
+            ]
+          }
+        }
+      ],
+      "rejected_trials": [],
+      "directory": "kbrf4/cached-0",
+      "counts_match_reference_after_solving": true,
+      "post_solve_geometry": {
+        "max_element_matched_error_angstrom": 0.005908783376389764,
+        "rms_error_angstrom": 0.004824501424264222,
+        "reference_used_after_solve_only": true,
+        "non_h_atom_count": 24
+      },
+      "cif_checks": {
+        "candidate-p1.cif": {
+          "r1": 0.022266400409225888,
+          "absolute_r1_difference": 8.740924650751936e-14,
+          "sha256": "c8d94d09c71ede6738c0e58b8858a5341d813d582955b4d014d680aefd67db08"
+        },
+        "candidate.cif": {
+          "r1": 0.02226640040922588,
+          "absolute_r1_difference": 8.741618540142326e-14,
+          "sha256": "b4f66e76d73acce7af9cf79d4417e8fefe7ed2c482a403f799d1f97821de054e"
+        }
+      }
+    },
+    {
+      "case": "bisei",
+      "repeat": 0,
+      "mode": "direct",
+      "seconds": 0.48735474998829886,
+      "r1": 0.05228505465883758,
+      "counts": {
+        "Bi": 4,
+        "I": 4,
+        "Se": 4
+      },
+      "target_met": true,
+      "termination": "r1_target",
+      "effort": {
+        "elements": [
+          "Bi",
+          "I",
+          "Se"
+        ],
+        "phasing_starts": 1,
+        "framework_hypotheses": 1,
+        "initial_prefix": 4,
+        "rounds": 2,
+        "orbit_proposals": 33,
+        "element_scores": 99,
+        "refinements": 33,
+        "screening_refinements": 23,
+        "final_refinements": 10,
+        "promoted_candidates": 9,
+        "screened_out": 14,
+        "integrated_peak_density": true,
+        "peak_density_radius_angstrom": 0.7,
+        "density_map_builds": 1,
+        "density_evaluations": 172,
+        "density_label_rejections": 60,
+        "density_label_rescues": 3,
+        "density_birth_skips": 13,
+        "density_relabel_skips": 4,
+        "density_calibrations": [
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 1,
+            "scale": 0.8217781348877525,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 2,
+            "scale": 0.8482002266259783,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 2,
+            "scale": 0.8468452208471289,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 2,
+            "scale": 0.8217781348877525,
+            "anchors": 1,
+            "shortlist_limit": 1
+          }
+        ],
+        "staged_refinement": true,
+        "screening_iterations": 8,
+        "refinement_shortlist": 3,
+        "deletion_trials": 4,
+        "relabel_trials": 8,
+        "maximum_atoms": 49,
+        "beam_width": 4,
+        "required_elements_present": true,
+        "accepted_moves": [
+          {
+            "kind": "initial",
+            "element": "Bi",
+            "atoms": 4,
+            "r1": 0.48898768495233946,
+            "score": -564.0853382589136
+          },
+          {
+            "kind": "birth",
+            "element": "I",
+            "atoms": 8,
+            "r1": 0.30400133046428024,
+            "score": -969.6360431260385
+          },
+          {
+            "kind": "birth",
+            "element": "Se",
+            "atoms": 12,
+            "r1": 0.05228505465883758,
+            "score": -2455.3202403817986
+          }
+        ],
+        "dual_checkpoints": true,
+        "cached_refinement": false
+      },
+      "phasing_trials": [
+        {
+          "method": "dual_space",
+          "initialization": "patterson",
+          "patterson_vector_grid": [
+            16,
+            0,
+            8
+          ],
+          "seed": 0,
+          "completed_cycles": 4,
+          "best_cycle": 3,
+          "score_kind": "profiled_amplitude_sse",
+          "mask_sigma_angstrom": 0.27000406526782644,
+          "hybrid_m": 3.0,
+          "sharpening_q": 0.5,
+          "omit_fraction": 0.1,
+          "omit_period": 3,
+          "checkpoints": [
+            {
+              "completed_cycles": 4,
+              "best_cycle": 3,
+              "score": 0.12226011864782574,
+              "accepted": true
+            }
+          ],
+          "atomicity_mode": "adaptive",
+          "adaptive_peaks": {
+            "sigma": 2.0,
+            "cap": 128,
+            "selected": [
+              26,
+              56,
+              38,
+              46
+            ],
+            "thresholds": [
+              2.0,
+              2.0,
+              2.0,
+              2.0
+            ],
+            "omitted": [
+              0,
+              0,
+              3,
+              0
+            ]
+          }
+        }
+      ],
+      "rejected_trials": [],
+      "directory": "bisei/direct-0",
+      "counts_match_reference_after_solving": true,
+      "post_solve_geometry": {
+        "max_element_matched_error_angstrom": 0.002516409331457885,
+        "rms_error_angstrom": 0.0017469687619607332,
+        "reference_used_after_solve_only": true,
+        "non_h_atom_count": 12
+      },
+      "cif_checks": {
+        "candidate-p1.cif": {
+          "r1": 0.052285054659125516,
+          "absolute_r1_difference": 2.8793634143653435e-13,
+          "sha256": "bc51a204b6451bb868a5e3c382f7ee90e5177a9036e2002576de1640d6e3bc00"
+        },
+        "candidate.cif": {
+          "r1": 0.052285054658941954,
+          "absolute_r1_difference": 1.0437484210257253e-13,
+          "sha256": "72f87350d94c047ea2824e20e12087ec7feecae96177debc8bab6d9d8972beb7"
+        }
+      }
+    },
+    {
+      "case": "bisei",
+      "repeat": 0,
+      "mode": "cached",
+      "seconds": 0.3559165420010686,
+      "r1": 0.05228505465883771,
+      "counts": {
+        "Bi": 4,
+        "I": 4,
+        "Se": 4
+      },
+      "target_met": true,
+      "termination": "r1_target",
+      "effort": {
+        "elements": [
+          "Bi",
+          "I",
+          "Se"
+        ],
+        "phasing_starts": 1,
+        "framework_hypotheses": 1,
+        "initial_prefix": 4,
+        "rounds": 2,
+        "orbit_proposals": 33,
+        "element_scores": 99,
+        "refinements": 33,
+        "screening_refinements": 23,
+        "final_refinements": 10,
+        "promoted_candidates": 9,
+        "screened_out": 14,
+        "integrated_peak_density": true,
+        "peak_density_radius_angstrom": 0.7,
+        "density_map_builds": 1,
+        "density_evaluations": 172,
+        "density_label_rejections": 60,
+        "density_label_rescues": 3,
+        "density_birth_skips": 13,
+        "density_relabel_skips": 4,
+        "density_calibrations": [
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 1,
+            "scale": 0.8217781348877389,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 2,
+            "scale": 0.8482002266124236,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 2,
+            "scale": 0.8468452208471285,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 2,
+            "scale": 0.8217781348877389,
+            "anchors": 1,
+            "shortlist_limit": 1
+          }
+        ],
+        "staged_refinement": true,
+        "screening_iterations": 8,
+        "refinement_shortlist": 3,
+        "deletion_trials": 4,
+        "relabel_trials": 8,
+        "maximum_atoms": 49,
+        "beam_width": 4,
+        "required_elements_present": true,
+        "accepted_moves": [
+          {
+            "kind": "initial",
+            "element": "Bi",
+            "atoms": 4,
+            "r1": 0.48898768495233746,
+            "score": -564.0853382589136
+          },
+          {
+            "kind": "birth",
+            "element": "I",
+            "atoms": 8,
+            "r1": 0.30400133045450456,
+            "score": -969.6360431260358
+          },
+          {
+            "kind": "birth",
+            "element": "Se",
+            "atoms": 12,
+            "r1": 0.05228505465883771,
+            "score": -2455.3202403817977
+          }
+        ],
+        "dual_checkpoints": true,
+        "cached_refinement": true
+      },
+      "phasing_trials": [
+        {
+          "method": "dual_space",
+          "initialization": "patterson",
+          "patterson_vector_grid": [
+            16,
+            0,
+            8
+          ],
+          "seed": 0,
+          "completed_cycles": 4,
+          "best_cycle": 3,
+          "score_kind": "profiled_amplitude_sse",
+          "mask_sigma_angstrom": 0.27000406526782644,
+          "hybrid_m": 3.0,
+          "sharpening_q": 0.5,
+          "omit_fraction": 0.1,
+          "omit_period": 3,
+          "checkpoints": [
+            {
+              "completed_cycles": 4,
+              "best_cycle": 3,
+              "score": 0.12226011864782574,
+              "accepted": true
+            }
+          ],
+          "atomicity_mode": "adaptive",
+          "adaptive_peaks": {
+            "sigma": 2.0,
+            "cap": 128,
+            "selected": [
+              26,
+              56,
+              38,
+              46
+            ],
+            "thresholds": [
+              2.0,
+              2.0,
+              2.0,
+              2.0
+            ],
+            "omitted": [
+              0,
+              0,
+              3,
+              0
+            ]
+          }
+        }
+      ],
+      "rejected_trials": [],
+      "directory": "bisei/cached-0",
+      "counts_match_reference_after_solving": true,
+      "post_solve_geometry": {
+        "max_element_matched_error_angstrom": 0.002516409331456727,
+        "rms_error_angstrom": 0.0017469687619603865,
+        "reference_used_after_solve_only": true,
+        "non_h_atom_count": 12
+      },
+      "cif_checks": {
+        "candidate-p1.cif": {
+          "r1": 0.052285054659125516,
+          "absolute_r1_difference": 2.878045024523601e-13,
+          "sha256": "bc51a204b6451bb868a5e3c382f7ee90e5177a9036e2002576de1640d6e3bc00"
+        },
+        "candidate.cif": {
+          "r1": 0.052285054658941954,
+          "absolute_r1_difference": 1.0424300311839829e-13,
+          "sha256": "72f87350d94c047ea2824e20e12087ec7feecae96177debc8bab6d9d8972beb7"
+        }
+      }
+    },
+    {
+      "case": "thiourea",
+      "repeat": 0,
+      "mode": "direct",
+      "seconds": 6.57076158298878,
+      "r1": 0.049409049967854134,
+      "counts": {
+        "C": 4,
+        "N": 8,
+        "S": 4
+      },
+      "target_met": true,
+      "termination": "r1_target",
+      "effort": {
+        "elements": [
+          "S",
+          "N",
+          "C"
+        ],
+        "phasing_starts": 1,
+        "framework_hypotheses": 2,
+        "initial_prefix": 4,
+        "rounds": 4,
+        "orbit_proposals": 144,
+        "element_scores": 432,
+        "refinements": 190,
+        "screening_refinements": 156,
+        "final_refinements": 34,
+        "promoted_candidates": 32,
+        "screened_out": 124,
+        "integrated_peak_density": true,
+        "peak_density_radius_angstrom": 0.7,
+        "density_map_builds": 2,
+        "density_evaluations": 552,
+        "density_label_rejections": 102,
+        "density_label_rescues": 0,
+        "density_birth_skips": 28,
+        "density_relabel_skips": 56,
+        "density_calibrations": [
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 1,
+            "scale": 0.3368838924697807,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 1,
+            "scale": 0.33688389246978073,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 2,
+            "scale": 0.33772620915231594,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 2,
+            "scale": 0.337726209152316,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 2,
+            "scale": 0.33767256109700916,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 2,
+            "scale": 0.3376725610937617,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 3,
+            "scale": 0.3378747365112067,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 3,
+            "scale": 0.33787473650972544,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 3,
+            "scale": 0.3378484887371095,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 3,
+            "scale": 0.33784848874543394,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 4,
+            "scale": 0.33795692456128246,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 4,
+            "scale": 0.33795692456128257,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 4,
+            "scale": 0.33792915183746497,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 4,
+            "scale": 0.3379291518373133,
+            "anchors": 2,
+            "shortlist_limit": 2
+          }
+        ],
+        "staged_refinement": true,
+        "screening_iterations": 8,
+        "refinement_shortlist": 3,
+        "deletion_trials": 52,
+        "relabel_trials": 48,
+        "maximum_atoms": 44,
+        "beam_width": 4,
+        "required_elements_present": true,
+        "accepted_moves": [
+          {
+            "kind": "initial",
+            "element": "S",
+            "atoms": 4,
+            "r1": 0.2668332456525158,
+            "score": -1228.315934005504
+          },
+          {
+            "kind": "birth",
+            "element": "N",
+            "atoms": 8,
+            "r1": 0.22278429214136272,
+            "score": -1416.2571865985587
+          },
+          {
+            "kind": "birth",
+            "element": "N",
+            "atoms": 12,
+            "r1": 0.17376645150898215,
+            "score": -1805.9917743692972
+          },
+          {
+            "kind": "birth",
+            "element": "C",
+            "atoms": 14,
+            "r1": 0.11488941484036791,
+            "score": -2303.524988951139
+          },
+          {
+            "kind": "birth",
+            "element": "C",
+            "atoms": 16,
+            "r1": 0.049409049967854134,
+            "score": -3284.452391048162
+          }
+        ],
+        "dual_checkpoints": true,
+        "cached_refinement": false
+      },
+      "phasing_trials": [
+        {
+          "method": "dual_space",
+          "initialization": "patterson",
+          "patterson_vector_grid": [
+            16,
+            16,
+            16
+          ],
+          "seed": 0,
+          "completed_cycles": 16,
+          "best_cycle": 15,
+          "score_kind": "profiled_amplitude_sse",
+          "mask_sigma_angstrom": 0.24513987380696448,
+          "hybrid_m": 3.0,
+          "sharpening_q": 0.5,
+          "omit_fraction": 0.1,
+          "omit_period": 3,
+          "checkpoints": [
+            {
+              "completed_cycles": 4,
+              "best_cycle": 3,
+              "score": 0.1241032595287042,
+              "accepted": false
+            },
+            {
+              "completed_cycles": 16,
+              "best_cycle": 15,
+              "score": 0.07651523621777816,
+              "accepted": true
+            }
+          ],
+          "atomicity_mode": "adaptive",
+          "adaptive_peaks": {
+            "sigma": 2.0,
+            "cap": 128,
+            "selected": [
+              26,
+              50,
+              31,
+              60,
+              32,
+              52,
+              36,
+              47,
+              40,
+              38,
+              40,
+              43,
+              43,
+              43,
+              40,
+              43
+            ],
+            "thresholds": [
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0
+            ],
+            "omitted": [
+              0,
+              0,
+              3,
+              0,
+              0,
+              5,
+              0,
+              0,
+              4,
+              0,
+              0,
+              4,
+              0,
+              0,
+              4,
+              0
+            ]
+          }
+        }
+      ],
+      "rejected_trials": [
+        [
+          0,
+          "no initial density prefix matches supplied symmetry"
+        ]
+      ],
+      "directory": "thiourea/direct-0",
+      "counts_match_reference_after_solving": true,
+      "post_solve_geometry": {
+        "max_element_matched_error_angstrom": 0.010371708291770702,
+        "rms_error_angstrom": 0.007707376589012114,
+        "reference_used_after_solve_only": true,
+        "non_h_atom_count": 16
+      },
+      "cif_checks": {
+        "candidate-p1.cif": {
+          "r1": 0.04940904996795569,
+          "absolute_r1_difference": 1.015576511775862e-13,
+          "sha256": "a9d55939da985ae0809d6008de113bf775ce938b8eb2bb6f2ab87652035ccc6a"
+        },
+        "candidate.cif": {
+          "r1": 0.04940904996803739,
+          "absolute_r1_difference": 1.832561880021899e-13,
+          "sha256": "696df42334bb9b2debd4f2a497dc66b8ece503b08e5a90011d5680d837f732b6"
+        }
+      }
+    },
+    {
+      "case": "thiourea",
+      "repeat": 0,
+      "mode": "cached",
+      "seconds": 4.45121895801276,
+      "r1": 0.04940904996785407,
+      "counts": {
+        "C": 4,
+        "N": 8,
+        "S": 4
+      },
+      "target_met": true,
+      "termination": "r1_target",
+      "effort": {
+        "elements": [
+          "S",
+          "N",
+          "C"
+        ],
+        "phasing_starts": 1,
+        "framework_hypotheses": 2,
+        "initial_prefix": 4,
+        "rounds": 4,
+        "orbit_proposals": 144,
+        "element_scores": 432,
+        "refinements": 190,
+        "screening_refinements": 156,
+        "final_refinements": 34,
+        "promoted_candidates": 32,
+        "screened_out": 124,
+        "integrated_peak_density": true,
+        "peak_density_radius_angstrom": 0.7,
+        "density_map_builds": 2,
+        "density_evaluations": 552,
+        "density_label_rejections": 102,
+        "density_label_rescues": 0,
+        "density_birth_skips": 28,
+        "density_relabel_skips": 56,
+        "density_calibrations": [
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 1,
+            "scale": 0.3368838924697807,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 1,
+            "scale": 0.33688389246978073,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 2,
+            "scale": 0.337726209152316,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 2,
+            "scale": 0.337726209152316,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 2,
+            "scale": 0.33767256109538546,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 2,
+            "scale": 0.3376725610953854,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 3,
+            "scale": 0.3378747365147018,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 3,
+            "scale": 0.3378747365162482,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 3,
+            "scale": 0.337848488745434,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 3,
+            "scale": 0.33784848874543405,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 4,
+            "scale": 0.33795692456128257,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 4,
+            "scale": 0.33795692456128257,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 4,
+            "scale": 0.3379291518374157,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 4,
+            "scale": 0.33792915183720246,
+            "anchors": 2,
+            "shortlist_limit": 2
+          }
+        ],
+        "staged_refinement": true,
+        "screening_iterations": 8,
+        "refinement_shortlist": 3,
+        "deletion_trials": 52,
+        "relabel_trials": 48,
+        "maximum_atoms": 44,
+        "beam_width": 4,
+        "required_elements_present": true,
+        "accepted_moves": [
+          {
+            "kind": "initial",
+            "element": "S",
+            "atoms": 4,
+            "r1": 0.26683324565251565,
+            "score": -1228.3159340055045
+          },
+          {
+            "kind": "birth",
+            "element": "N",
+            "atoms": 8,
+            "r1": 0.2227842921413626,
+            "score": -1416.2571865985587
+          },
+          {
+            "kind": "birth",
+            "element": "N",
+            "atoms": 12,
+            "r1": 0.17376645123156667,
+            "score": -1805.9917743692977
+          },
+          {
+            "kind": "birth",
+            "element": "C",
+            "atoms": 14,
+            "r1": 0.11488941471342476,
+            "score": -2303.524988951139
+          },
+          {
+            "kind": "birth",
+            "element": "C",
+            "atoms": 16,
+            "r1": 0.04940904996785407,
+            "score": -3284.452391048162
+          }
+        ],
+        "dual_checkpoints": true,
+        "cached_refinement": true
+      },
+      "phasing_trials": [
+        {
+          "method": "dual_space",
+          "initialization": "patterson",
+          "patterson_vector_grid": [
+            16,
+            16,
+            16
+          ],
+          "seed": 0,
+          "completed_cycles": 16,
+          "best_cycle": 15,
+          "score_kind": "profiled_amplitude_sse",
+          "mask_sigma_angstrom": 0.24513987380696448,
+          "hybrid_m": 3.0,
+          "sharpening_q": 0.5,
+          "omit_fraction": 0.1,
+          "omit_period": 3,
+          "checkpoints": [
+            {
+              "completed_cycles": 4,
+              "best_cycle": 3,
+              "score": 0.1241032595287042,
+              "accepted": false
+            },
+            {
+              "completed_cycles": 16,
+              "best_cycle": 15,
+              "score": 0.07651523621777816,
+              "accepted": true
+            }
+          ],
+          "atomicity_mode": "adaptive",
+          "adaptive_peaks": {
+            "sigma": 2.0,
+            "cap": 128,
+            "selected": [
+              26,
+              50,
+              31,
+              60,
+              32,
+              52,
+              36,
+              47,
+              40,
+              38,
+              40,
+              43,
+              43,
+              43,
+              40,
+              43
+            ],
+            "thresholds": [
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0
+            ],
+            "omitted": [
+              0,
+              0,
+              3,
+              0,
+              0,
+              5,
+              0,
+              0,
+              4,
+              0,
+              0,
+              4,
+              0,
+              0,
+              4,
+              0
+            ]
+          }
+        }
+      ],
+      "rejected_trials": [
+        [
+          0,
+          "no initial density prefix matches supplied symmetry"
+        ]
+      ],
+      "directory": "thiourea/cached-0",
+      "counts_match_reference_after_solving": true,
+      "post_solve_geometry": {
+        "max_element_matched_error_angstrom": 0.010371708291771276,
+        "rms_error_angstrom": 0.007707376589012349,
+        "reference_used_after_solve_only": true,
+        "non_h_atom_count": 16
+      },
+      "cif_checks": {
+        "candidate-p1.cif": {
+          "r1": 0.049409049967955795,
+          "absolute_r1_difference": 1.0172418463127997e-13,
+          "sha256": "c22daa598aefd8e8124d5f1c0f30f4901f522ab1b7deafab04fffcac59c72618"
+        },
+        "candidate.cif": {
+          "r1": 0.0494090499678957,
+          "absolute_r1_difference": 4.162642452953946e-14,
+          "sha256": "23b1e216e3690a37561eae5b9e981e39669914694a427d80e0610db7a7a78906"
+        }
+      }
+    },
+    {
+      "case": "kbrf4",
+      "repeat": 1,
+      "mode": "cached",
+      "seconds": 0.5138729590107687,
+      "r1": 0.022266400409313297,
+      "counts": {
+        "Br": 4,
+        "F": 16,
+        "K": 4
+      },
+      "target_met": true,
+      "termination": "r1_target",
+      "effort": {
+        "elements": [
+          "Br",
+          "K",
+          "F"
+        ],
+        "phasing_starts": 1,
+        "framework_hypotheses": 4,
+        "initial_prefix": 4,
+        "rounds": 2,
+        "orbit_proposals": 16,
+        "element_scores": 48,
+        "refinements": 60,
+        "screening_refinements": 42,
+        "final_refinements": 18,
+        "promoted_candidates": 14,
+        "screened_out": 28,
+        "integrated_peak_density": true,
+        "peak_density_radius_angstrom": 0.7,
+        "density_map_builds": 1,
+        "density_evaluations": 352,
+        "density_label_rejections": 32,
+        "density_label_rescues": 4,
+        "density_birth_skips": 24,
+        "density_relabel_skips": 8,
+        "density_calibrations": [
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 1,
+            "scale": 0.7513633389728073,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 1,
+            "scale": 0.7513633389728073,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 2,
+            "round": 1,
+            "scale": 0.7513633389728073,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 3,
+            "round": 1,
+            "scale": 0.7513633389728073,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 2,
+            "round": 2,
+            "scale": 0.7513633389728073,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 2,
+            "scale": 0.7513633389728073,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 3,
+            "round": 2,
+            "scale": 0.7513633389728073,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 2,
+            "scale": 0.7513633389728073,
+            "anchors": 1,
+            "shortlist_limit": 1
+          }
+        ],
+        "staged_refinement": true,
+        "screening_iterations": 8,
+        "refinement_shortlist": 3,
+        "deletion_trials": 8,
+        "relabel_trials": 16,
+        "maximum_atoms": 52,
+        "beam_width": 4,
+        "required_elements_present": true,
+        "accepted_moves": [
+          {
+            "kind": "initial",
+            "element": "Br",
+            "atoms": 4,
+            "r1": 0.49527233653804476,
+            "score": -302.2789345245015
+          },
+          {
+            "kind": "birth",
+            "element": "K",
+            "atoms": 8,
+            "r1": 0.23761056651523732,
+            "score": -529.584767649259
+          },
+          {
+            "kind": "birth",
+            "element": "F",
+            "atoms": 24,
+            "r1": 0.022266400409313297,
+            "score": -1443.4779253300592
+          }
+        ],
+        "dual_checkpoints": true,
+        "cached_refinement": true
+      },
+      "phasing_trials": [
+        {
+          "method": "dual_space",
+          "initialization": "patterson",
+          "patterson_vector_grid": [
+            0,
+            32,
+            32
+          ],
+          "seed": 0,
+          "completed_cycles": 4,
+          "best_cycle": 0,
+          "score_kind": "profiled_amplitude_sse",
+          "mask_sigma_angstrom": 0.2357674430663847,
+          "hybrid_m": 3.0,
+          "sharpening_q": 0.5,
+          "omit_fraction": 0.1,
+          "omit_period": 3,
+          "checkpoints": [
+            {
+              "completed_cycles": 4,
+              "best_cycle": 0,
+              "score": 0.09353511892906569,
+              "accepted": true
+            }
+          ],
+          "atomicity_mode": "adaptive",
+          "adaptive_peaks": {
+            "sigma": 2.0,
+            "cap": 128,
+            "selected": [
+              40,
+              54,
+              18,
+              70
+            ],
+            "thresholds": [
+              2.0,
+              2.0,
+              2.0,
+              2.0
+            ],
+            "omitted": [
+              0,
+              0,
+              1,
+              0
+            ]
+          }
+        }
+      ],
+      "rejected_trials": [],
+      "directory": "kbrf4/cached-1",
+      "counts_match_reference_after_solving": true,
+      "post_solve_geometry": {
+        "max_element_matched_error_angstrom": 0.005908783376389764,
+        "rms_error_angstrom": 0.004824501424264222,
+        "reference_used_after_solve_only": true,
+        "non_h_atom_count": 24
+      },
+      "cif_checks": {
+        "candidate-p1.cif": {
+          "r1": 0.022266400409225888,
+          "absolute_r1_difference": 8.740924650751936e-14,
+          "sha256": "c8d94d09c71ede6738c0e58b8858a5341d813d582955b4d014d680aefd67db08"
+        },
+        "candidate.cif": {
+          "r1": 0.02226640040922588,
+          "absolute_r1_difference": 8.741618540142326e-14,
+          "sha256": "b4f66e76d73acce7af9cf79d4417e8fefe7ed2c482a403f799d1f97821de054e"
+        }
+      }
+    },
+    {
+      "case": "kbrf4",
+      "repeat": 1,
+      "mode": "direct",
+      "seconds": 0.7317221249977592,
+      "r1": 0.022266400409313075,
+      "counts": {
+        "Br": 4,
+        "F": 16,
+        "K": 4
+      },
+      "target_met": true,
+      "termination": "r1_target",
+      "effort": {
+        "elements": [
+          "Br",
+          "K",
+          "F"
+        ],
+        "phasing_starts": 1,
+        "framework_hypotheses": 4,
+        "initial_prefix": 4,
+        "rounds": 2,
+        "orbit_proposals": 16,
+        "element_scores": 48,
+        "refinements": 60,
+        "screening_refinements": 42,
+        "final_refinements": 18,
+        "promoted_candidates": 14,
+        "screened_out": 28,
+        "integrated_peak_density": true,
+        "peak_density_radius_angstrom": 0.7,
+        "density_map_builds": 1,
+        "density_evaluations": 352,
+        "density_label_rejections": 32,
+        "density_label_rescues": 4,
+        "density_birth_skips": 24,
+        "density_relabel_skips": 8,
+        "density_calibrations": [
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 1,
+            "scale": 0.7513633389728073,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 1,
+            "scale": 0.7513633389728073,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 2,
+            "round": 1,
+            "scale": 0.7513633389728073,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 3,
+            "round": 1,
+            "scale": 0.7513633389728073,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 2,
+            "round": 2,
+            "scale": 0.7513633389728073,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 2,
+            "scale": 0.7513633389728073,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 3,
+            "round": 2,
+            "scale": 0.7513633389728073,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 2,
+            "scale": 0.7513633389728073,
+            "anchors": 1,
+            "shortlist_limit": 1
+          }
+        ],
+        "staged_refinement": true,
+        "screening_iterations": 8,
+        "refinement_shortlist": 3,
+        "deletion_trials": 8,
+        "relabel_trials": 16,
+        "maximum_atoms": 52,
+        "beam_width": 4,
+        "required_elements_present": true,
+        "accepted_moves": [
+          {
+            "kind": "initial",
+            "element": "Br",
+            "atoms": 4,
+            "r1": 0.4952723365381538,
+            "score": -302.27893452450087
+          },
+          {
+            "kind": "birth",
+            "element": "K",
+            "atoms": 8,
+            "r1": 0.2376105666969505,
+            "score": -529.5847676492581
+          },
+          {
+            "kind": "birth",
+            "element": "F",
+            "atoms": 24,
+            "r1": 0.022266400409313075,
+            "score": -1443.4779253300585
+          }
+        ],
+        "dual_checkpoints": true,
+        "cached_refinement": false
+      },
+      "phasing_trials": [
+        {
+          "method": "dual_space",
+          "initialization": "patterson",
+          "patterson_vector_grid": [
+            0,
+            32,
+            32
+          ],
+          "seed": 0,
+          "completed_cycles": 4,
+          "best_cycle": 0,
+          "score_kind": "profiled_amplitude_sse",
+          "mask_sigma_angstrom": 0.2357674430663847,
+          "hybrid_m": 3.0,
+          "sharpening_q": 0.5,
+          "omit_fraction": 0.1,
+          "omit_period": 3,
+          "checkpoints": [
+            {
+              "completed_cycles": 4,
+              "best_cycle": 0,
+              "score": 0.09353511892906569,
+              "accepted": true
+            }
+          ],
+          "atomicity_mode": "adaptive",
+          "adaptive_peaks": {
+            "sigma": 2.0,
+            "cap": 128,
+            "selected": [
+              40,
+              54,
+              18,
+              70
+            ],
+            "thresholds": [
+              2.0,
+              2.0,
+              2.0,
+              2.0
+            ],
+            "omitted": [
+              0,
+              0,
+              1,
+              0
+            ]
+          }
+        }
+      ],
+      "rejected_trials": [],
+      "directory": "kbrf4/direct-1",
+      "counts_match_reference_after_solving": true,
+      "post_solve_geometry": {
+        "max_element_matched_error_angstrom": 0.005908783376389764,
+        "rms_error_angstrom": 0.004824501424264222,
+        "reference_used_after_solve_only": true,
+        "non_h_atom_count": 24
+      },
+      "cif_checks": {
+        "candidate-p1.cif": {
+          "r1": 0.02226640040922575,
+          "absolute_r1_difference": 8.732597978067247e-14,
+          "sha256": "c8d94d09c71ede6738c0e58b8858a5341d813d582955b4d014d680aefd67db08"
+        },
+        "candidate.cif": {
+          "r1": 0.022266400409225742,
+          "absolute_r1_difference": 8.733291867457638e-14,
+          "sha256": "b4f66e76d73acce7af9cf79d4417e8fefe7ed2c482a403f799d1f97821de054e"
+        }
+      }
+    },
+    {
+      "case": "bisei",
+      "repeat": 1,
+      "mode": "cached",
+      "seconds": 0.35484262500540353,
+      "r1": 0.05228505465883771,
+      "counts": {
+        "Bi": 4,
+        "I": 4,
+        "Se": 4
+      },
+      "target_met": true,
+      "termination": "r1_target",
+      "effort": {
+        "elements": [
+          "Bi",
+          "I",
+          "Se"
+        ],
+        "phasing_starts": 1,
+        "framework_hypotheses": 1,
+        "initial_prefix": 4,
+        "rounds": 2,
+        "orbit_proposals": 33,
+        "element_scores": 99,
+        "refinements": 33,
+        "screening_refinements": 23,
+        "final_refinements": 10,
+        "promoted_candidates": 9,
+        "screened_out": 14,
+        "integrated_peak_density": true,
+        "peak_density_radius_angstrom": 0.7,
+        "density_map_builds": 1,
+        "density_evaluations": 172,
+        "density_label_rejections": 60,
+        "density_label_rescues": 3,
+        "density_birth_skips": 13,
+        "density_relabel_skips": 4,
+        "density_calibrations": [
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 1,
+            "scale": 0.8217781348877389,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 2,
+            "scale": 0.8482002266124236,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 2,
+            "scale": 0.8468452208471285,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 2,
+            "scale": 0.8217781348877389,
+            "anchors": 1,
+            "shortlist_limit": 1
+          }
+        ],
+        "staged_refinement": true,
+        "screening_iterations": 8,
+        "refinement_shortlist": 3,
+        "deletion_trials": 4,
+        "relabel_trials": 8,
+        "maximum_atoms": 49,
+        "beam_width": 4,
+        "required_elements_present": true,
+        "accepted_moves": [
+          {
+            "kind": "initial",
+            "element": "Bi",
+            "atoms": 4,
+            "r1": 0.48898768495233746,
+            "score": -564.0853382589136
+          },
+          {
+            "kind": "birth",
+            "element": "I",
+            "atoms": 8,
+            "r1": 0.30400133045450456,
+            "score": -969.6360431260358
+          },
+          {
+            "kind": "birth",
+            "element": "Se",
+            "atoms": 12,
+            "r1": 0.05228505465883771,
+            "score": -2455.3202403817977
+          }
+        ],
+        "dual_checkpoints": true,
+        "cached_refinement": true
+      },
+      "phasing_trials": [
+        {
+          "method": "dual_space",
+          "initialization": "patterson",
+          "patterson_vector_grid": [
+            16,
+            0,
+            8
+          ],
+          "seed": 0,
+          "completed_cycles": 4,
+          "best_cycle": 3,
+          "score_kind": "profiled_amplitude_sse",
+          "mask_sigma_angstrom": 0.27000406526782644,
+          "hybrid_m": 3.0,
+          "sharpening_q": 0.5,
+          "omit_fraction": 0.1,
+          "omit_period": 3,
+          "checkpoints": [
+            {
+              "completed_cycles": 4,
+              "best_cycle": 3,
+              "score": 0.12226011864782574,
+              "accepted": true
+            }
+          ],
+          "atomicity_mode": "adaptive",
+          "adaptive_peaks": {
+            "sigma": 2.0,
+            "cap": 128,
+            "selected": [
+              26,
+              56,
+              38,
+              46
+            ],
+            "thresholds": [
+              2.0,
+              2.0,
+              2.0,
+              2.0
+            ],
+            "omitted": [
+              0,
+              0,
+              3,
+              0
+            ]
+          }
+        }
+      ],
+      "rejected_trials": [],
+      "directory": "bisei/cached-1",
+      "counts_match_reference_after_solving": true,
+      "post_solve_geometry": {
+        "max_element_matched_error_angstrom": 0.002516409331456727,
+        "rms_error_angstrom": 0.0017469687619603865,
+        "reference_used_after_solve_only": true,
+        "non_h_atom_count": 12
+      },
+      "cif_checks": {
+        "candidate-p1.cif": {
+          "r1": 0.052285054659125516,
+          "absolute_r1_difference": 2.878045024523601e-13,
+          "sha256": "bc51a204b6451bb868a5e3c382f7ee90e5177a9036e2002576de1640d6e3bc00"
+        },
+        "candidate.cif": {
+          "r1": 0.052285054658941954,
+          "absolute_r1_difference": 1.0424300311839829e-13,
+          "sha256": "72f87350d94c047ea2824e20e12087ec7feecae96177debc8bab6d9d8972beb7"
+        }
+      }
+    },
+    {
+      "case": "bisei",
+      "repeat": 1,
+      "mode": "direct",
+      "seconds": 0.4855551669897977,
+      "r1": 0.05228505465883758,
+      "counts": {
+        "Bi": 4,
+        "I": 4,
+        "Se": 4
+      },
+      "target_met": true,
+      "termination": "r1_target",
+      "effort": {
+        "elements": [
+          "Bi",
+          "I",
+          "Se"
+        ],
+        "phasing_starts": 1,
+        "framework_hypotheses": 1,
+        "initial_prefix": 4,
+        "rounds": 2,
+        "orbit_proposals": 33,
+        "element_scores": 99,
+        "refinements": 33,
+        "screening_refinements": 23,
+        "final_refinements": 10,
+        "promoted_candidates": 9,
+        "screened_out": 14,
+        "integrated_peak_density": true,
+        "peak_density_radius_angstrom": 0.7,
+        "density_map_builds": 1,
+        "density_evaluations": 172,
+        "density_label_rejections": 60,
+        "density_label_rescues": 3,
+        "density_birth_skips": 13,
+        "density_relabel_skips": 4,
+        "density_calibrations": [
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 1,
+            "scale": 0.8217781348877525,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 2,
+            "scale": 0.8482002266259783,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 2,
+            "scale": 0.8468452208471289,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 2,
+            "scale": 0.8217781348877525,
+            "anchors": 1,
+            "shortlist_limit": 1
+          }
+        ],
+        "staged_refinement": true,
+        "screening_iterations": 8,
+        "refinement_shortlist": 3,
+        "deletion_trials": 4,
+        "relabel_trials": 8,
+        "maximum_atoms": 49,
+        "beam_width": 4,
+        "required_elements_present": true,
+        "accepted_moves": [
+          {
+            "kind": "initial",
+            "element": "Bi",
+            "atoms": 4,
+            "r1": 0.48898768495233946,
+            "score": -564.0853382589136
+          },
+          {
+            "kind": "birth",
+            "element": "I",
+            "atoms": 8,
+            "r1": 0.30400133046428024,
+            "score": -969.6360431260385
+          },
+          {
+            "kind": "birth",
+            "element": "Se",
+            "atoms": 12,
+            "r1": 0.05228505465883758,
+            "score": -2455.3202403817986
+          }
+        ],
+        "dual_checkpoints": true,
+        "cached_refinement": false
+      },
+      "phasing_trials": [
+        {
+          "method": "dual_space",
+          "initialization": "patterson",
+          "patterson_vector_grid": [
+            16,
+            0,
+            8
+          ],
+          "seed": 0,
+          "completed_cycles": 4,
+          "best_cycle": 3,
+          "score_kind": "profiled_amplitude_sse",
+          "mask_sigma_angstrom": 0.27000406526782644,
+          "hybrid_m": 3.0,
+          "sharpening_q": 0.5,
+          "omit_fraction": 0.1,
+          "omit_period": 3,
+          "checkpoints": [
+            {
+              "completed_cycles": 4,
+              "best_cycle": 3,
+              "score": 0.12226011864782574,
+              "accepted": true
+            }
+          ],
+          "atomicity_mode": "adaptive",
+          "adaptive_peaks": {
+            "sigma": 2.0,
+            "cap": 128,
+            "selected": [
+              26,
+              56,
+              38,
+              46
+            ],
+            "thresholds": [
+              2.0,
+              2.0,
+              2.0,
+              2.0
+            ],
+            "omitted": [
+              0,
+              0,
+              3,
+              0
+            ]
+          }
+        }
+      ],
+      "rejected_trials": [],
+      "directory": "bisei/direct-1",
+      "counts_match_reference_after_solving": true,
+      "post_solve_geometry": {
+        "max_element_matched_error_angstrom": 0.002516409331457885,
+        "rms_error_angstrom": 0.0017469687619607332,
+        "reference_used_after_solve_only": true,
+        "non_h_atom_count": 12
+      },
+      "cif_checks": {
+        "candidate-p1.cif": {
+          "r1": 0.052285054659125516,
+          "absolute_r1_difference": 2.8793634143653435e-13,
+          "sha256": "bc51a204b6451bb868a5e3c382f7ee90e5177a9036e2002576de1640d6e3bc00"
+        },
+        "candidate.cif": {
+          "r1": 0.052285054658941954,
+          "absolute_r1_difference": 1.0437484210257253e-13,
+          "sha256": "72f87350d94c047ea2824e20e12087ec7feecae96177debc8bab6d9d8972beb7"
+        }
+      }
+    },
+    {
+      "case": "thiourea",
+      "repeat": 1,
+      "mode": "cached",
+      "seconds": 4.452458625019062,
+      "r1": 0.04940904996785407,
+      "counts": {
+        "C": 4,
+        "N": 8,
+        "S": 4
+      },
+      "target_met": true,
+      "termination": "r1_target",
+      "effort": {
+        "elements": [
+          "S",
+          "N",
+          "C"
+        ],
+        "phasing_starts": 1,
+        "framework_hypotheses": 2,
+        "initial_prefix": 4,
+        "rounds": 4,
+        "orbit_proposals": 144,
+        "element_scores": 432,
+        "refinements": 190,
+        "screening_refinements": 156,
+        "final_refinements": 34,
+        "promoted_candidates": 32,
+        "screened_out": 124,
+        "integrated_peak_density": true,
+        "peak_density_radius_angstrom": 0.7,
+        "density_map_builds": 2,
+        "density_evaluations": 552,
+        "density_label_rejections": 102,
+        "density_label_rescues": 0,
+        "density_birth_skips": 28,
+        "density_relabel_skips": 56,
+        "density_calibrations": [
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 1,
+            "scale": 0.3368838924697807,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 1,
+            "scale": 0.33688389246978073,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 2,
+            "scale": 0.337726209152316,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 2,
+            "scale": 0.337726209152316,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 2,
+            "scale": 0.33767256109538546,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 2,
+            "scale": 0.3376725610953854,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 3,
+            "scale": 0.3378747365147018,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 3,
+            "scale": 0.3378747365162482,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 3,
+            "scale": 0.337848488745434,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 3,
+            "scale": 0.33784848874543405,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 4,
+            "scale": 0.33795692456128257,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 4,
+            "scale": 0.33795692456128257,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 4,
+            "scale": 0.3379291518374157,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 4,
+            "scale": 0.33792915183720246,
+            "anchors": 2,
+            "shortlist_limit": 2
+          }
+        ],
+        "staged_refinement": true,
+        "screening_iterations": 8,
+        "refinement_shortlist": 3,
+        "deletion_trials": 52,
+        "relabel_trials": 48,
+        "maximum_atoms": 44,
+        "beam_width": 4,
+        "required_elements_present": true,
+        "accepted_moves": [
+          {
+            "kind": "initial",
+            "element": "S",
+            "atoms": 4,
+            "r1": 0.26683324565251565,
+            "score": -1228.3159340055045
+          },
+          {
+            "kind": "birth",
+            "element": "N",
+            "atoms": 8,
+            "r1": 0.2227842921413626,
+            "score": -1416.2571865985587
+          },
+          {
+            "kind": "birth",
+            "element": "N",
+            "atoms": 12,
+            "r1": 0.17376645123156667,
+            "score": -1805.9917743692977
+          },
+          {
+            "kind": "birth",
+            "element": "C",
+            "atoms": 14,
+            "r1": 0.11488941471342476,
+            "score": -2303.524988951139
+          },
+          {
+            "kind": "birth",
+            "element": "C",
+            "atoms": 16,
+            "r1": 0.04940904996785407,
+            "score": -3284.452391048162
+          }
+        ],
+        "dual_checkpoints": true,
+        "cached_refinement": true
+      },
+      "phasing_trials": [
+        {
+          "method": "dual_space",
+          "initialization": "patterson",
+          "patterson_vector_grid": [
+            16,
+            16,
+            16
+          ],
+          "seed": 0,
+          "completed_cycles": 16,
+          "best_cycle": 15,
+          "score_kind": "profiled_amplitude_sse",
+          "mask_sigma_angstrom": 0.24513987380696448,
+          "hybrid_m": 3.0,
+          "sharpening_q": 0.5,
+          "omit_fraction": 0.1,
+          "omit_period": 3,
+          "checkpoints": [
+            {
+              "completed_cycles": 4,
+              "best_cycle": 3,
+              "score": 0.1241032595287042,
+              "accepted": false
+            },
+            {
+              "completed_cycles": 16,
+              "best_cycle": 15,
+              "score": 0.07651523621777816,
+              "accepted": true
+            }
+          ],
+          "atomicity_mode": "adaptive",
+          "adaptive_peaks": {
+            "sigma": 2.0,
+            "cap": 128,
+            "selected": [
+              26,
+              50,
+              31,
+              60,
+              32,
+              52,
+              36,
+              47,
+              40,
+              38,
+              40,
+              43,
+              43,
+              43,
+              40,
+              43
+            ],
+            "thresholds": [
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0
+            ],
+            "omitted": [
+              0,
+              0,
+              3,
+              0,
+              0,
+              5,
+              0,
+              0,
+              4,
+              0,
+              0,
+              4,
+              0,
+              0,
+              4,
+              0
+            ]
+          }
+        }
+      ],
+      "rejected_trials": [
+        [
+          0,
+          "no initial density prefix matches supplied symmetry"
+        ]
+      ],
+      "directory": "thiourea/cached-1",
+      "counts_match_reference_after_solving": true,
+      "post_solve_geometry": {
+        "max_element_matched_error_angstrom": 0.010371708291771276,
+        "rms_error_angstrom": 0.007707376589012349,
+        "reference_used_after_solve_only": true,
+        "non_h_atom_count": 16
+      },
+      "cif_checks": {
+        "candidate-p1.cif": {
+          "r1": 0.049409049967955795,
+          "absolute_r1_difference": 1.0172418463127997e-13,
+          "sha256": "c22daa598aefd8e8124d5f1c0f30f4901f522ab1b7deafab04fffcac59c72618"
+        },
+        "candidate.cif": {
+          "r1": 0.0494090499678957,
+          "absolute_r1_difference": 4.162642452953946e-14,
+          "sha256": "23b1e216e3690a37561eae5b9e981e39669914694a427d80e0610db7a7a78906"
+        }
+      }
+    },
+    {
+      "case": "thiourea",
+      "repeat": 1,
+      "mode": "direct",
+      "seconds": 6.578661458013812,
+      "r1": 0.049409049967854134,
+      "counts": {
+        "C": 4,
+        "N": 8,
+        "S": 4
+      },
+      "target_met": true,
+      "termination": "r1_target",
+      "effort": {
+        "elements": [
+          "S",
+          "N",
+          "C"
+        ],
+        "phasing_starts": 1,
+        "framework_hypotheses": 2,
+        "initial_prefix": 4,
+        "rounds": 4,
+        "orbit_proposals": 144,
+        "element_scores": 432,
+        "refinements": 190,
+        "screening_refinements": 156,
+        "final_refinements": 34,
+        "promoted_candidates": 32,
+        "screened_out": 124,
+        "integrated_peak_density": true,
+        "peak_density_radius_angstrom": 0.7,
+        "density_map_builds": 2,
+        "density_evaluations": 552,
+        "density_label_rejections": 102,
+        "density_label_rescues": 0,
+        "density_birth_skips": 28,
+        "density_relabel_skips": 56,
+        "density_calibrations": [
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 1,
+            "scale": 0.3368838924697807,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 1,
+            "scale": 0.33688389246978073,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 2,
+            "scale": 0.33772620915231594,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 2,
+            "scale": 0.337726209152316,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 2,
+            "scale": 0.33767256109700916,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 2,
+            "scale": 0.3376725610937617,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 3,
+            "scale": 0.3378747365112067,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 3,
+            "scale": 0.33787473650972544,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 3,
+            "scale": 0.3378484887371095,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 3,
+            "scale": 0.33784848874543394,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 4,
+            "scale": 0.33795692456128246,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 4,
+            "scale": 0.33795692456128257,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 4,
+            "scale": 0.33792915183746497,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 4,
+            "scale": 0.3379291518373133,
+            "anchors": 2,
+            "shortlist_limit": 2
+          }
+        ],
+        "staged_refinement": true,
+        "screening_iterations": 8,
+        "refinement_shortlist": 3,
+        "deletion_trials": 52,
+        "relabel_trials": 48,
+        "maximum_atoms": 44,
+        "beam_width": 4,
+        "required_elements_present": true,
+        "accepted_moves": [
+          {
+            "kind": "initial",
+            "element": "S",
+            "atoms": 4,
+            "r1": 0.2668332456525158,
+            "score": -1228.315934005504
+          },
+          {
+            "kind": "birth",
+            "element": "N",
+            "atoms": 8,
+            "r1": 0.22278429214136272,
+            "score": -1416.2571865985587
+          },
+          {
+            "kind": "birth",
+            "element": "N",
+            "atoms": 12,
+            "r1": 0.17376645150898215,
+            "score": -1805.9917743692972
+          },
+          {
+            "kind": "birth",
+            "element": "C",
+            "atoms": 14,
+            "r1": 0.11488941484036791,
+            "score": -2303.524988951139
+          },
+          {
+            "kind": "birth",
+            "element": "C",
+            "atoms": 16,
+            "r1": 0.049409049967854134,
+            "score": -3284.452391048162
+          }
+        ],
+        "dual_checkpoints": true,
+        "cached_refinement": false
+      },
+      "phasing_trials": [
+        {
+          "method": "dual_space",
+          "initialization": "patterson",
+          "patterson_vector_grid": [
+            16,
+            16,
+            16
+          ],
+          "seed": 0,
+          "completed_cycles": 16,
+          "best_cycle": 15,
+          "score_kind": "profiled_amplitude_sse",
+          "mask_sigma_angstrom": 0.24513987380696448,
+          "hybrid_m": 3.0,
+          "sharpening_q": 0.5,
+          "omit_fraction": 0.1,
+          "omit_period": 3,
+          "checkpoints": [
+            {
+              "completed_cycles": 4,
+              "best_cycle": 3,
+              "score": 0.1241032595287042,
+              "accepted": false
+            },
+            {
+              "completed_cycles": 16,
+              "best_cycle": 15,
+              "score": 0.07651523621777816,
+              "accepted": true
+            }
+          ],
+          "atomicity_mode": "adaptive",
+          "adaptive_peaks": {
+            "sigma": 2.0,
+            "cap": 128,
+            "selected": [
+              26,
+              50,
+              31,
+              60,
+              32,
+              52,
+              36,
+              47,
+              40,
+              38,
+              40,
+              43,
+              43,
+              43,
+              40,
+              43
+            ],
+            "thresholds": [
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0
+            ],
+            "omitted": [
+              0,
+              0,
+              3,
+              0,
+              0,
+              5,
+              0,
+              0,
+              4,
+              0,
+              0,
+              4,
+              0,
+              0,
+              4,
+              0
+            ]
+          }
+        }
+      ],
+      "rejected_trials": [
+        [
+          0,
+          "no initial density prefix matches supplied symmetry"
+        ]
+      ],
+      "directory": "thiourea/direct-1",
+      "counts_match_reference_after_solving": true,
+      "post_solve_geometry": {
+        "max_element_matched_error_angstrom": 0.010371708291770702,
+        "rms_error_angstrom": 0.007707376589012114,
+        "reference_used_after_solve_only": true,
+        "non_h_atom_count": 16
+      },
+      "cif_checks": {
+        "candidate-p1.cif": {
+          "r1": 0.04940904996795569,
+          "absolute_r1_difference": 1.015576511775862e-13,
+          "sha256": "a9d55939da985ae0809d6008de113bf775ce938b8eb2bb6f2ab87652035ccc6a"
+        },
+        "candidate.cif": {
+          "r1": 0.04940904996803739,
+          "absolute_r1_difference": 1.832561880021899e-13,
+          "sha256": "696df42334bb9b2debd4f2a497dc66b8ece503b08e5a90011d5680d837f732b6"
+        }
+      }
+    },
+    {
+      "case": "kbrf4",
+      "repeat": 2,
+      "mode": "direct",
+      "seconds": 0.7312222500040662,
+      "r1": 0.022266400409313075,
+      "counts": {
+        "Br": 4,
+        "F": 16,
+        "K": 4
+      },
+      "target_met": true,
+      "termination": "r1_target",
+      "effort": {
+        "elements": [
+          "Br",
+          "K",
+          "F"
+        ],
+        "phasing_starts": 1,
+        "framework_hypotheses": 4,
+        "initial_prefix": 4,
+        "rounds": 2,
+        "orbit_proposals": 16,
+        "element_scores": 48,
+        "refinements": 60,
+        "screening_refinements": 42,
+        "final_refinements": 18,
+        "promoted_candidates": 14,
+        "screened_out": 28,
+        "integrated_peak_density": true,
+        "peak_density_radius_angstrom": 0.7,
+        "density_map_builds": 1,
+        "density_evaluations": 352,
+        "density_label_rejections": 32,
+        "density_label_rescues": 4,
+        "density_birth_skips": 24,
+        "density_relabel_skips": 8,
+        "density_calibrations": [
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 1,
+            "scale": 0.7513633389728073,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 1,
+            "scale": 0.7513633389728073,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 2,
+            "round": 1,
+            "scale": 0.7513633389728073,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 3,
+            "round": 1,
+            "scale": 0.7513633389728073,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 2,
+            "round": 2,
+            "scale": 0.7513633389728073,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 2,
+            "scale": 0.7513633389728073,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 3,
+            "round": 2,
+            "scale": 0.7513633389728073,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 2,
+            "scale": 0.7513633389728073,
+            "anchors": 1,
+            "shortlist_limit": 1
+          }
+        ],
+        "staged_refinement": true,
+        "screening_iterations": 8,
+        "refinement_shortlist": 3,
+        "deletion_trials": 8,
+        "relabel_trials": 16,
+        "maximum_atoms": 52,
+        "beam_width": 4,
+        "required_elements_present": true,
+        "accepted_moves": [
+          {
+            "kind": "initial",
+            "element": "Br",
+            "atoms": 4,
+            "r1": 0.4952723365381538,
+            "score": -302.27893452450087
+          },
+          {
+            "kind": "birth",
+            "element": "K",
+            "atoms": 8,
+            "r1": 0.2376105666969505,
+            "score": -529.5847676492581
+          },
+          {
+            "kind": "birth",
+            "element": "F",
+            "atoms": 24,
+            "r1": 0.022266400409313075,
+            "score": -1443.4779253300585
+          }
+        ],
+        "dual_checkpoints": true,
+        "cached_refinement": false
+      },
+      "phasing_trials": [
+        {
+          "method": "dual_space",
+          "initialization": "patterson",
+          "patterson_vector_grid": [
+            0,
+            32,
+            32
+          ],
+          "seed": 0,
+          "completed_cycles": 4,
+          "best_cycle": 0,
+          "score_kind": "profiled_amplitude_sse",
+          "mask_sigma_angstrom": 0.2357674430663847,
+          "hybrid_m": 3.0,
+          "sharpening_q": 0.5,
+          "omit_fraction": 0.1,
+          "omit_period": 3,
+          "checkpoints": [
+            {
+              "completed_cycles": 4,
+              "best_cycle": 0,
+              "score": 0.09353511892906569,
+              "accepted": true
+            }
+          ],
+          "atomicity_mode": "adaptive",
+          "adaptive_peaks": {
+            "sigma": 2.0,
+            "cap": 128,
+            "selected": [
+              40,
+              54,
+              18,
+              70
+            ],
+            "thresholds": [
+              2.0,
+              2.0,
+              2.0,
+              2.0
+            ],
+            "omitted": [
+              0,
+              0,
+              1,
+              0
+            ]
+          }
+        }
+      ],
+      "rejected_trials": [],
+      "directory": "kbrf4/direct-2",
+      "counts_match_reference_after_solving": true,
+      "post_solve_geometry": {
+        "max_element_matched_error_angstrom": 0.005908783376389764,
+        "rms_error_angstrom": 0.004824501424264222,
+        "reference_used_after_solve_only": true,
+        "non_h_atom_count": 24
+      },
+      "cif_checks": {
+        "candidate-p1.cif": {
+          "r1": 0.02226640040922575,
+          "absolute_r1_difference": 8.732597978067247e-14,
+          "sha256": "c8d94d09c71ede6738c0e58b8858a5341d813d582955b4d014d680aefd67db08"
+        },
+        "candidate.cif": {
+          "r1": 0.022266400409225742,
+          "absolute_r1_difference": 8.733291867457638e-14,
+          "sha256": "b4f66e76d73acce7af9cf79d4417e8fefe7ed2c482a403f799d1f97821de054e"
+        }
+      }
+    },
+    {
+      "case": "kbrf4",
+      "repeat": 2,
+      "mode": "cached",
+      "seconds": 0.5144407500047237,
+      "r1": 0.022266400409313297,
+      "counts": {
+        "Br": 4,
+        "F": 16,
+        "K": 4
+      },
+      "target_met": true,
+      "termination": "r1_target",
+      "effort": {
+        "elements": [
+          "Br",
+          "K",
+          "F"
+        ],
+        "phasing_starts": 1,
+        "framework_hypotheses": 4,
+        "initial_prefix": 4,
+        "rounds": 2,
+        "orbit_proposals": 16,
+        "element_scores": 48,
+        "refinements": 60,
+        "screening_refinements": 42,
+        "final_refinements": 18,
+        "promoted_candidates": 14,
+        "screened_out": 28,
+        "integrated_peak_density": true,
+        "peak_density_radius_angstrom": 0.7,
+        "density_map_builds": 1,
+        "density_evaluations": 352,
+        "density_label_rejections": 32,
+        "density_label_rescues": 4,
+        "density_birth_skips": 24,
+        "density_relabel_skips": 8,
+        "density_calibrations": [
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 1,
+            "scale": 0.7513633389728073,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 1,
+            "scale": 0.7513633389728073,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 2,
+            "round": 1,
+            "scale": 0.7513633389728073,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 3,
+            "round": 1,
+            "scale": 0.7513633389728073,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 2,
+            "round": 2,
+            "scale": 0.7513633389728073,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 2,
+            "scale": 0.7513633389728073,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 3,
+            "round": 2,
+            "scale": 0.7513633389728073,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 2,
+            "scale": 0.7513633389728073,
+            "anchors": 1,
+            "shortlist_limit": 1
+          }
+        ],
+        "staged_refinement": true,
+        "screening_iterations": 8,
+        "refinement_shortlist": 3,
+        "deletion_trials": 8,
+        "relabel_trials": 16,
+        "maximum_atoms": 52,
+        "beam_width": 4,
+        "required_elements_present": true,
+        "accepted_moves": [
+          {
+            "kind": "initial",
+            "element": "Br",
+            "atoms": 4,
+            "r1": 0.49527233653804476,
+            "score": -302.2789345245015
+          },
+          {
+            "kind": "birth",
+            "element": "K",
+            "atoms": 8,
+            "r1": 0.23761056651523732,
+            "score": -529.584767649259
+          },
+          {
+            "kind": "birth",
+            "element": "F",
+            "atoms": 24,
+            "r1": 0.022266400409313297,
+            "score": -1443.4779253300592
+          }
+        ],
+        "dual_checkpoints": true,
+        "cached_refinement": true
+      },
+      "phasing_trials": [
+        {
+          "method": "dual_space",
+          "initialization": "patterson",
+          "patterson_vector_grid": [
+            0,
+            32,
+            32
+          ],
+          "seed": 0,
+          "completed_cycles": 4,
+          "best_cycle": 0,
+          "score_kind": "profiled_amplitude_sse",
+          "mask_sigma_angstrom": 0.2357674430663847,
+          "hybrid_m": 3.0,
+          "sharpening_q": 0.5,
+          "omit_fraction": 0.1,
+          "omit_period": 3,
+          "checkpoints": [
+            {
+              "completed_cycles": 4,
+              "best_cycle": 0,
+              "score": 0.09353511892906569,
+              "accepted": true
+            }
+          ],
+          "atomicity_mode": "adaptive",
+          "adaptive_peaks": {
+            "sigma": 2.0,
+            "cap": 128,
+            "selected": [
+              40,
+              54,
+              18,
+              70
+            ],
+            "thresholds": [
+              2.0,
+              2.0,
+              2.0,
+              2.0
+            ],
+            "omitted": [
+              0,
+              0,
+              1,
+              0
+            ]
+          }
+        }
+      ],
+      "rejected_trials": [],
+      "directory": "kbrf4/cached-2",
+      "counts_match_reference_after_solving": true,
+      "post_solve_geometry": {
+        "max_element_matched_error_angstrom": 0.005908783376389764,
+        "rms_error_angstrom": 0.004824501424264222,
+        "reference_used_after_solve_only": true,
+        "non_h_atom_count": 24
+      },
+      "cif_checks": {
+        "candidate-p1.cif": {
+          "r1": 0.022266400409225888,
+          "absolute_r1_difference": 8.740924650751936e-14,
+          "sha256": "c8d94d09c71ede6738c0e58b8858a5341d813d582955b4d014d680aefd67db08"
+        },
+        "candidate.cif": {
+          "r1": 0.02226640040922588,
+          "absolute_r1_difference": 8.741618540142326e-14,
+          "sha256": "b4f66e76d73acce7af9cf79d4417e8fefe7ed2c482a403f799d1f97821de054e"
+        }
+      }
+    },
+    {
+      "case": "bisei",
+      "repeat": 2,
+      "mode": "direct",
+      "seconds": 0.4866352920071222,
+      "r1": 0.05228505465883758,
+      "counts": {
+        "Bi": 4,
+        "I": 4,
+        "Se": 4
+      },
+      "target_met": true,
+      "termination": "r1_target",
+      "effort": {
+        "elements": [
+          "Bi",
+          "I",
+          "Se"
+        ],
+        "phasing_starts": 1,
+        "framework_hypotheses": 1,
+        "initial_prefix": 4,
+        "rounds": 2,
+        "orbit_proposals": 33,
+        "element_scores": 99,
+        "refinements": 33,
+        "screening_refinements": 23,
+        "final_refinements": 10,
+        "promoted_candidates": 9,
+        "screened_out": 14,
+        "integrated_peak_density": true,
+        "peak_density_radius_angstrom": 0.7,
+        "density_map_builds": 1,
+        "density_evaluations": 172,
+        "density_label_rejections": 60,
+        "density_label_rescues": 3,
+        "density_birth_skips": 13,
+        "density_relabel_skips": 4,
+        "density_calibrations": [
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 1,
+            "scale": 0.8217781348877525,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 2,
+            "scale": 0.8482002266259783,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 2,
+            "scale": 0.8468452208471289,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 2,
+            "scale": 0.8217781348877525,
+            "anchors": 1,
+            "shortlist_limit": 1
+          }
+        ],
+        "staged_refinement": true,
+        "screening_iterations": 8,
+        "refinement_shortlist": 3,
+        "deletion_trials": 4,
+        "relabel_trials": 8,
+        "maximum_atoms": 49,
+        "beam_width": 4,
+        "required_elements_present": true,
+        "accepted_moves": [
+          {
+            "kind": "initial",
+            "element": "Bi",
+            "atoms": 4,
+            "r1": 0.48898768495233946,
+            "score": -564.0853382589136
+          },
+          {
+            "kind": "birth",
+            "element": "I",
+            "atoms": 8,
+            "r1": 0.30400133046428024,
+            "score": -969.6360431260385
+          },
+          {
+            "kind": "birth",
+            "element": "Se",
+            "atoms": 12,
+            "r1": 0.05228505465883758,
+            "score": -2455.3202403817986
+          }
+        ],
+        "dual_checkpoints": true,
+        "cached_refinement": false
+      },
+      "phasing_trials": [
+        {
+          "method": "dual_space",
+          "initialization": "patterson",
+          "patterson_vector_grid": [
+            16,
+            0,
+            8
+          ],
+          "seed": 0,
+          "completed_cycles": 4,
+          "best_cycle": 3,
+          "score_kind": "profiled_amplitude_sse",
+          "mask_sigma_angstrom": 0.27000406526782644,
+          "hybrid_m": 3.0,
+          "sharpening_q": 0.5,
+          "omit_fraction": 0.1,
+          "omit_period": 3,
+          "checkpoints": [
+            {
+              "completed_cycles": 4,
+              "best_cycle": 3,
+              "score": 0.12226011864782574,
+              "accepted": true
+            }
+          ],
+          "atomicity_mode": "adaptive",
+          "adaptive_peaks": {
+            "sigma": 2.0,
+            "cap": 128,
+            "selected": [
+              26,
+              56,
+              38,
+              46
+            ],
+            "thresholds": [
+              2.0,
+              2.0,
+              2.0,
+              2.0
+            ],
+            "omitted": [
+              0,
+              0,
+              3,
+              0
+            ]
+          }
+        }
+      ],
+      "rejected_trials": [],
+      "directory": "bisei/direct-2",
+      "counts_match_reference_after_solving": true,
+      "post_solve_geometry": {
+        "max_element_matched_error_angstrom": 0.002516409331457885,
+        "rms_error_angstrom": 0.0017469687619607332,
+        "reference_used_after_solve_only": true,
+        "non_h_atom_count": 12
+      },
+      "cif_checks": {
+        "candidate-p1.cif": {
+          "r1": 0.052285054659125516,
+          "absolute_r1_difference": 2.8793634143653435e-13,
+          "sha256": "bc51a204b6451bb868a5e3c382f7ee90e5177a9036e2002576de1640d6e3bc00"
+        },
+        "candidate.cif": {
+          "r1": 0.052285054658941954,
+          "absolute_r1_difference": 1.0437484210257253e-13,
+          "sha256": "72f87350d94c047ea2824e20e12087ec7feecae96177debc8bab6d9d8972beb7"
+        }
+      }
+    },
+    {
+      "case": "bisei",
+      "repeat": 2,
+      "mode": "cached",
+      "seconds": 0.35941087498213165,
+      "r1": 0.05228505465883771,
+      "counts": {
+        "Bi": 4,
+        "I": 4,
+        "Se": 4
+      },
+      "target_met": true,
+      "termination": "r1_target",
+      "effort": {
+        "elements": [
+          "Bi",
+          "I",
+          "Se"
+        ],
+        "phasing_starts": 1,
+        "framework_hypotheses": 1,
+        "initial_prefix": 4,
+        "rounds": 2,
+        "orbit_proposals": 33,
+        "element_scores": 99,
+        "refinements": 33,
+        "screening_refinements": 23,
+        "final_refinements": 10,
+        "promoted_candidates": 9,
+        "screened_out": 14,
+        "integrated_peak_density": true,
+        "peak_density_radius_angstrom": 0.7,
+        "density_map_builds": 1,
+        "density_evaluations": 172,
+        "density_label_rejections": 60,
+        "density_label_rescues": 3,
+        "density_birth_skips": 13,
+        "density_relabel_skips": 4,
+        "density_calibrations": [
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 1,
+            "scale": 0.8217781348877389,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 2,
+            "scale": 0.8482002266124236,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 2,
+            "scale": 0.8468452208471285,
+            "anchors": 1,
+            "shortlist_limit": 1
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 2,
+            "scale": 0.8217781348877389,
+            "anchors": 1,
+            "shortlist_limit": 1
+          }
+        ],
+        "staged_refinement": true,
+        "screening_iterations": 8,
+        "refinement_shortlist": 3,
+        "deletion_trials": 4,
+        "relabel_trials": 8,
+        "maximum_atoms": 49,
+        "beam_width": 4,
+        "required_elements_present": true,
+        "accepted_moves": [
+          {
+            "kind": "initial",
+            "element": "Bi",
+            "atoms": 4,
+            "r1": 0.48898768495233746,
+            "score": -564.0853382589136
+          },
+          {
+            "kind": "birth",
+            "element": "I",
+            "atoms": 8,
+            "r1": 0.30400133045450456,
+            "score": -969.6360431260358
+          },
+          {
+            "kind": "birth",
+            "element": "Se",
+            "atoms": 12,
+            "r1": 0.05228505465883771,
+            "score": -2455.3202403817977
+          }
+        ],
+        "dual_checkpoints": true,
+        "cached_refinement": true
+      },
+      "phasing_trials": [
+        {
+          "method": "dual_space",
+          "initialization": "patterson",
+          "patterson_vector_grid": [
+            16,
+            0,
+            8
+          ],
+          "seed": 0,
+          "completed_cycles": 4,
+          "best_cycle": 3,
+          "score_kind": "profiled_amplitude_sse",
+          "mask_sigma_angstrom": 0.27000406526782644,
+          "hybrid_m": 3.0,
+          "sharpening_q": 0.5,
+          "omit_fraction": 0.1,
+          "omit_period": 3,
+          "checkpoints": [
+            {
+              "completed_cycles": 4,
+              "best_cycle": 3,
+              "score": 0.12226011864782574,
+              "accepted": true
+            }
+          ],
+          "atomicity_mode": "adaptive",
+          "adaptive_peaks": {
+            "sigma": 2.0,
+            "cap": 128,
+            "selected": [
+              26,
+              56,
+              38,
+              46
+            ],
+            "thresholds": [
+              2.0,
+              2.0,
+              2.0,
+              2.0
+            ],
+            "omitted": [
+              0,
+              0,
+              3,
+              0
+            ]
+          }
+        }
+      ],
+      "rejected_trials": [],
+      "directory": "bisei/cached-2",
+      "counts_match_reference_after_solving": true,
+      "post_solve_geometry": {
+        "max_element_matched_error_angstrom": 0.002516409331456727,
+        "rms_error_angstrom": 0.0017469687619603865,
+        "reference_used_after_solve_only": true,
+        "non_h_atom_count": 12
+      },
+      "cif_checks": {
+        "candidate-p1.cif": {
+          "r1": 0.052285054659125516,
+          "absolute_r1_difference": 2.878045024523601e-13,
+          "sha256": "bc51a204b6451bb868a5e3c382f7ee90e5177a9036e2002576de1640d6e3bc00"
+        },
+        "candidate.cif": {
+          "r1": 0.052285054658941954,
+          "absolute_r1_difference": 1.0424300311839829e-13,
+          "sha256": "72f87350d94c047ea2824e20e12087ec7feecae96177debc8bab6d9d8972beb7"
+        }
+      }
+    },
+    {
+      "case": "thiourea",
+      "repeat": 2,
+      "mode": "direct",
+      "seconds": 6.573194665979827,
+      "r1": 0.049409049967854134,
+      "counts": {
+        "C": 4,
+        "N": 8,
+        "S": 4
+      },
+      "target_met": true,
+      "termination": "r1_target",
+      "effort": {
+        "elements": [
+          "S",
+          "N",
+          "C"
+        ],
+        "phasing_starts": 1,
+        "framework_hypotheses": 2,
+        "initial_prefix": 4,
+        "rounds": 4,
+        "orbit_proposals": 144,
+        "element_scores": 432,
+        "refinements": 190,
+        "screening_refinements": 156,
+        "final_refinements": 34,
+        "promoted_candidates": 32,
+        "screened_out": 124,
+        "integrated_peak_density": true,
+        "peak_density_radius_angstrom": 0.7,
+        "density_map_builds": 2,
+        "density_evaluations": 552,
+        "density_label_rejections": 102,
+        "density_label_rescues": 0,
+        "density_birth_skips": 28,
+        "density_relabel_skips": 56,
+        "density_calibrations": [
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 1,
+            "scale": 0.3368838924697807,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 1,
+            "scale": 0.33688389246978073,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 2,
+            "scale": 0.33772620915231594,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 2,
+            "scale": 0.337726209152316,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 2,
+            "scale": 0.33767256109700916,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 2,
+            "scale": 0.3376725610937617,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 3,
+            "scale": 0.3378747365112067,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 3,
+            "scale": 0.33787473650972544,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 3,
+            "scale": 0.3378484887371095,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 3,
+            "scale": 0.33784848874543394,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 4,
+            "scale": 0.33795692456128246,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 4,
+            "scale": 0.33795692456128257,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 4,
+            "scale": 0.33792915183746497,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 4,
+            "scale": 0.3379291518373133,
+            "anchors": 2,
+            "shortlist_limit": 2
+          }
+        ],
+        "staged_refinement": true,
+        "screening_iterations": 8,
+        "refinement_shortlist": 3,
+        "deletion_trials": 52,
+        "relabel_trials": 48,
+        "maximum_atoms": 44,
+        "beam_width": 4,
+        "required_elements_present": true,
+        "accepted_moves": [
+          {
+            "kind": "initial",
+            "element": "S",
+            "atoms": 4,
+            "r1": 0.2668332456525158,
+            "score": -1228.315934005504
+          },
+          {
+            "kind": "birth",
+            "element": "N",
+            "atoms": 8,
+            "r1": 0.22278429214136272,
+            "score": -1416.2571865985587
+          },
+          {
+            "kind": "birth",
+            "element": "N",
+            "atoms": 12,
+            "r1": 0.17376645150898215,
+            "score": -1805.9917743692972
+          },
+          {
+            "kind": "birth",
+            "element": "C",
+            "atoms": 14,
+            "r1": 0.11488941484036791,
+            "score": -2303.524988951139
+          },
+          {
+            "kind": "birth",
+            "element": "C",
+            "atoms": 16,
+            "r1": 0.049409049967854134,
+            "score": -3284.452391048162
+          }
+        ],
+        "dual_checkpoints": true,
+        "cached_refinement": false
+      },
+      "phasing_trials": [
+        {
+          "method": "dual_space",
+          "initialization": "patterson",
+          "patterson_vector_grid": [
+            16,
+            16,
+            16
+          ],
+          "seed": 0,
+          "completed_cycles": 16,
+          "best_cycle": 15,
+          "score_kind": "profiled_amplitude_sse",
+          "mask_sigma_angstrom": 0.24513987380696448,
+          "hybrid_m": 3.0,
+          "sharpening_q": 0.5,
+          "omit_fraction": 0.1,
+          "omit_period": 3,
+          "checkpoints": [
+            {
+              "completed_cycles": 4,
+              "best_cycle": 3,
+              "score": 0.1241032595287042,
+              "accepted": false
+            },
+            {
+              "completed_cycles": 16,
+              "best_cycle": 15,
+              "score": 0.07651523621777816,
+              "accepted": true
+            }
+          ],
+          "atomicity_mode": "adaptive",
+          "adaptive_peaks": {
+            "sigma": 2.0,
+            "cap": 128,
+            "selected": [
+              26,
+              50,
+              31,
+              60,
+              32,
+              52,
+              36,
+              47,
+              40,
+              38,
+              40,
+              43,
+              43,
+              43,
+              40,
+              43
+            ],
+            "thresholds": [
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0
+            ],
+            "omitted": [
+              0,
+              0,
+              3,
+              0,
+              0,
+              5,
+              0,
+              0,
+              4,
+              0,
+              0,
+              4,
+              0,
+              0,
+              4,
+              0
+            ]
+          }
+        }
+      ],
+      "rejected_trials": [
+        [
+          0,
+          "no initial density prefix matches supplied symmetry"
+        ]
+      ],
+      "directory": "thiourea/direct-2",
+      "counts_match_reference_after_solving": true,
+      "post_solve_geometry": {
+        "max_element_matched_error_angstrom": 0.010371708291770702,
+        "rms_error_angstrom": 0.007707376589012114,
+        "reference_used_after_solve_only": true,
+        "non_h_atom_count": 16
+      },
+      "cif_checks": {
+        "candidate-p1.cif": {
+          "r1": 0.04940904996795569,
+          "absolute_r1_difference": 1.015576511775862e-13,
+          "sha256": "a9d55939da985ae0809d6008de113bf775ce938b8eb2bb6f2ab87652035ccc6a"
+        },
+        "candidate.cif": {
+          "r1": 0.04940904996803739,
+          "absolute_r1_difference": 1.832561880021899e-13,
+          "sha256": "696df42334bb9b2debd4f2a497dc66b8ece503b08e5a90011d5680d837f732b6"
+        }
+      }
+    },
+    {
+      "case": "thiourea",
+      "repeat": 2,
+      "mode": "cached",
+      "seconds": 4.4479824579902925,
+      "r1": 0.04940904996785407,
+      "counts": {
+        "C": 4,
+        "N": 8,
+        "S": 4
+      },
+      "target_met": true,
+      "termination": "r1_target",
+      "effort": {
+        "elements": [
+          "S",
+          "N",
+          "C"
+        ],
+        "phasing_starts": 1,
+        "framework_hypotheses": 2,
+        "initial_prefix": 4,
+        "rounds": 4,
+        "orbit_proposals": 144,
+        "element_scores": 432,
+        "refinements": 190,
+        "screening_refinements": 156,
+        "final_refinements": 34,
+        "promoted_candidates": 32,
+        "screened_out": 124,
+        "integrated_peak_density": true,
+        "peak_density_radius_angstrom": 0.7,
+        "density_map_builds": 2,
+        "density_evaluations": 552,
+        "density_label_rejections": 102,
+        "density_label_rescues": 0,
+        "density_birth_skips": 28,
+        "density_relabel_skips": 56,
+        "density_calibrations": [
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 1,
+            "scale": 0.3368838924697807,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 1,
+            "scale": 0.33688389246978073,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 2,
+            "scale": 0.337726209152316,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 2,
+            "scale": 0.337726209152316,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 2,
+            "scale": 0.33767256109538546,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 2,
+            "scale": 0.3376725610953854,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 3,
+            "scale": 0.3378747365147018,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 3,
+            "scale": 0.3378747365162482,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 3,
+            "scale": 0.337848488745434,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 3,
+            "scale": 0.33784848874543405,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 4,
+            "scale": 0.33795692456128257,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 4,
+            "scale": 0.33795692456128257,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 1,
+            "round": 4,
+            "scale": 0.3379291518374157,
+            "anchors": 2,
+            "shortlist_limit": 2
+          },
+          {
+            "trial": 0,
+            "lineage": 0,
+            "round": 4,
+            "scale": 0.33792915183720246,
+            "anchors": 2,
+            "shortlist_limit": 2
+          }
+        ],
+        "staged_refinement": true,
+        "screening_iterations": 8,
+        "refinement_shortlist": 3,
+        "deletion_trials": 52,
+        "relabel_trials": 48,
+        "maximum_atoms": 44,
+        "beam_width": 4,
+        "required_elements_present": true,
+        "accepted_moves": [
+          {
+            "kind": "initial",
+            "element": "S",
+            "atoms": 4,
+            "r1": 0.26683324565251565,
+            "score": -1228.3159340055045
+          },
+          {
+            "kind": "birth",
+            "element": "N",
+            "atoms": 8,
+            "r1": 0.2227842921413626,
+            "score": -1416.2571865985587
+          },
+          {
+            "kind": "birth",
+            "element": "N",
+            "atoms": 12,
+            "r1": 0.17376645123156667,
+            "score": -1805.9917743692977
+          },
+          {
+            "kind": "birth",
+            "element": "C",
+            "atoms": 14,
+            "r1": 0.11488941471342476,
+            "score": -2303.524988951139
+          },
+          {
+            "kind": "birth",
+            "element": "C",
+            "atoms": 16,
+            "r1": 0.04940904996785407,
+            "score": -3284.452391048162
+          }
+        ],
+        "dual_checkpoints": true,
+        "cached_refinement": true
+      },
+      "phasing_trials": [
+        {
+          "method": "dual_space",
+          "initialization": "patterson",
+          "patterson_vector_grid": [
+            16,
+            16,
+            16
+          ],
+          "seed": 0,
+          "completed_cycles": 16,
+          "best_cycle": 15,
+          "score_kind": "profiled_amplitude_sse",
+          "mask_sigma_angstrom": 0.24513987380696448,
+          "hybrid_m": 3.0,
+          "sharpening_q": 0.5,
+          "omit_fraction": 0.1,
+          "omit_period": 3,
+          "checkpoints": [
+            {
+              "completed_cycles": 4,
+              "best_cycle": 3,
+              "score": 0.1241032595287042,
+              "accepted": false
+            },
+            {
+              "completed_cycles": 16,
+              "best_cycle": 15,
+              "score": 0.07651523621777816,
+              "accepted": true
+            }
+          ],
+          "atomicity_mode": "adaptive",
+          "adaptive_peaks": {
+            "sigma": 2.0,
+            "cap": 128,
+            "selected": [
+              26,
+              50,
+              31,
+              60,
+              32,
+              52,
+              36,
+              47,
+              40,
+              38,
+              40,
+              43,
+              43,
+              43,
+              40,
+              43
+            ],
+            "thresholds": [
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0,
+              2.0
+            ],
+            "omitted": [
+              0,
+              0,
+              3,
+              0,
+              0,
+              5,
+              0,
+              0,
+              4,
+              0,
+              0,
+              4,
+              0,
+              0,
+              4,
+              0
+            ]
+          }
+        }
+      ],
+      "rejected_trials": [
+        [
+          0,
+          "no initial density prefix matches supplied symmetry"
+        ]
+      ],
+      "directory": "thiourea/cached-2",
+      "counts_match_reference_after_solving": true,
+      "post_solve_geometry": {
+        "max_element_matched_error_angstrom": 0.010371708291771276,
+        "rms_error_angstrom": 0.007707376589012349,
+        "reference_used_after_solve_only": true,
+        "non_h_atom_count": 16
+      },
+      "cif_checks": {
+        "candidate-p1.cif": {
+          "r1": 0.049409049967955795,
+          "absolute_r1_difference": 1.0172418463127997e-13,
+          "sha256": "c22daa598aefd8e8124d5f1c0f30f4901f522ab1b7deafab04fffcac59c72618"
+        },
+        "candidate.cif": {
+          "r1": 0.0494090499678957,
+          "absolute_r1_difference": 4.162642452953946e-14,
+          "sha256": "23b1e216e3690a37561eae5b9e981e39669914694a427d80e0610db7a7a78906"
+        }
+      }
+    }
+  ],
+  "summary": [
+    {
+      "case": "kbrf4",
+      "baseline_median_seconds": 0.7317221249977592,
+      "cached_median_seconds": 0.5144407500047237,
+      "wall_time_ratio_direct_over_cached": 1.4223642372635537,
+      "solve_speedup": 1.4223642372635537,
+      "direct_correct": 3,
+      "cached_correct": 3,
+      "quality_preserved": true,
+      "pairs": [
+        {
+          "repeat": 0,
+          "wall_time_ratio_direct_over_cached": 1.4343181791439692,
+          "solve_speedup": 1.4343181791439692,
+          "quality_preserved": true
+        },
+        {
+          "repeat": 1,
+          "wall_time_ratio_direct_over_cached": 1.423935842832363,
+          "solve_speedup": 1.423935842832363,
+          "quality_preserved": true
+        },
+        {
+          "repeat": 2,
+          "wall_time_ratio_direct_over_cached": 1.421392551032071,
+          "solve_speedup": 1.421392551032071,
+          "quality_preserved": true
+        }
+      ]
+    },
+    {
+      "case": "bisei",
+      "baseline_median_seconds": 0.4866352920071222,
+      "cached_median_seconds": 0.3559165420010686,
+      "wall_time_ratio_direct_over_cached": 1.3672736009152986,
+      "solve_speedup": 1.3672736009152986,
+      "direct_correct": 3,
+      "cached_correct": 3,
+      "quality_preserved": true,
+      "pairs": [
+        {
+          "repeat": 0,
+          "wall_time_ratio_direct_over_cached": 1.3692950241881021,
+          "solve_speedup": 1.3692950241881021,
+          "quality_preserved": true
+        },
+        {
+          "repeat": 1,
+          "wall_time_ratio_direct_over_cached": 1.368367644621059,
+          "solve_speedup": 1.368367644621059,
+          "quality_preserved": true
+        },
+        {
+          "repeat": 2,
+          "wall_time_ratio_direct_over_cached": 1.3539804326491667,
+          "solve_speedup": 1.3539804326491667,
+          "quality_preserved": true
+        }
+      ]
+    },
+    {
+      "case": "thiourea",
+      "baseline_median_seconds": 6.573194665979827,
+      "cached_median_seconds": 4.45121895801276,
+      "wall_time_ratio_direct_over_cached": 1.4767178896349822,
+      "solve_speedup": 1.4767178896349822,
+      "direct_correct": 3,
+      "cached_correct": 3,
+      "quality_preserved": true,
+      "pairs": [
+        {
+          "repeat": 0,
+          "wall_time_ratio_direct_over_cached": 1.4761712791415427,
+          "solve_speedup": 1.4761712791415427,
+          "quality_preserved": true
+        },
+        {
+          "repeat": 1,
+          "wall_time_ratio_direct_over_cached": 1.4775345515952205,
+          "solve_speedup": 1.4775345515952205,
+          "quality_preserved": true
+        },
+        {
+          "repeat": 2,
+          "wall_time_ratio_direct_over_cached": 1.4777923987024348,
+          "solve_speedup": 1.4777923987024348,
+          "quality_preserved": true
+        }
+      ]
+    }
+  ],
+  "all_quality_gates_passed": true,
+  "report_before_reference_sha256": "ccdfdb97855e144576db98cba66cca088a081a2c286bf9cf8ec90373c0b71f72",
+  "quality_gates": {
+    "matching_full_cell_counts": true,
+    "maximum_reference_error_angstrom": 0.02,
+    "paired_maximum_error_increase_angstrom": 0.0001,
+    "paired_r1_increase": 1e-07,
+    "exported_cif_r1_difference": 2e-10
+  }
+}

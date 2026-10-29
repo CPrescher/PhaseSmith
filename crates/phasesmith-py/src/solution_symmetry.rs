@@ -65,6 +65,7 @@ pub(super) fn metadata<'py>(
     out.set_item("origin_gauge_dimension", symmetry.origin_gauge_dimension)?;
     out.set_item("full_count", symmetry.full_count)?;
     out.set_item("parameter_count", model.parameter_count)?;
+    out.set_item("geometry_cache_bytes", model.geometry_cache_bytes())?;
     out.set_item("offsets", model.offsets.clone())?;
     out.set_item("tensor_bases", model.tensor_bases.clone())?;
     let sites = PyList::empty(py);
@@ -116,6 +117,7 @@ struct NativeModel {
 #[pymethods]
 impl NativeModel {
     #[new]
+    #[pyo3(signature = (cell_parameters, group, species, xyz, hkl, observed, mode, tolerance, cache_geometry=true))]
     #[allow(clippy::too_many_arguments)]
     fn new(
         py: Python<'_>,
@@ -127,6 +129,7 @@ impl NativeModel {
         observed: PyReadonlyArray1<'_, f64>,
         mode: String,
         tolerance: f64,
+        cache_geometry: bool,
     ) -> PyResult<Self> {
         let cell = cell(&cell_parameters)?;
         let group = group.space_group().clone();
@@ -156,7 +159,13 @@ impl NativeModel {
                     Some(Instant::now() + Duration::from_secs(60)),
                     None,
                 )?;
-                PreparedSymmetricModel::new(symmetry, &hkl, &observed, mode)
+                PreparedSymmetricModel::new_with_geometry_cache(
+                    symmetry,
+                    &hkl,
+                    &observed,
+                    mode,
+                    cache_geometry,
+                )
             })
             .map_err(invalid)?;
         Ok(Self { inner })

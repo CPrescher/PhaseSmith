@@ -13,6 +13,7 @@ use phasesmith_crystallography::{
 use std::time::{Duration, Instant};
 
 /// Explicit bounds for shared site/element editing, never a composition.
+#[allow(clippy::struct_excessive_bools)]
 #[derive(Clone, Debug)]
 pub struct SharedSearchOptions {
     /// Maximum full-cell atoms, in [1,128].
@@ -37,6 +38,8 @@ pub struct SharedSearchOptions {
     pub dual_peak_cap: usize,
     /// Test window maps with complete shared refinement before the cycle ceiling.
     pub dual_checkpoints: bool,
+    /// Cache fixed reflection/image geometry in constrained refinements.
+    pub cached_refinement: bool,
 }
 impl Default for SharedSearchOptions {
     fn default() -> Self {
@@ -52,6 +55,7 @@ impl Default for SharedSearchOptions {
             dual_peak_sigma: 2.,
             dual_peak_cap: 128,
             dual_checkpoints: true,
+            cached_refinement: true,
         }
     }
 }
@@ -96,6 +100,8 @@ pub struct SharedSearchSummary {
     pub phasing_starts: usize,
     /// Whether early dual-space structure handoffs were requested.
     pub dual_checkpoints: bool,
+    /// Cache fixed reflection/image geometry in constrained refinements.
+    pub cached_refinement: bool,
     /// Recovered initial framework settings.
     pub framework_hypotheses: usize,
     /// Number of strongest-map peaks in the selected initial closed prefix.
@@ -309,7 +315,13 @@ fn refine(
             species[image.source_index].clone_from(&site.species);
         }
     }
-    let prepared = PreparedSymmetricModel::new(model, &data.hkl, &data.amplitudes, mode)?;
+    let prepared = PreparedSymmetricModel::new_with_geometry_cache(
+        model,
+        &data.hkl,
+        &data.amplitudes,
+        mode,
+        audit.cached_refinement,
+    )?;
     if data.family_count <= prepared.parameter_count + 1 {
         return Err(error("shared model is underdetermined"));
     }
@@ -1202,6 +1214,7 @@ pub fn solve_elements(
     let mut audit = SharedSearchSummary {
         elements: elements.clone(),
         dual_checkpoints: search.dual_checkpoints,
+        cached_refinement: search.cached_refinement,
         staged_refinement: search.staged_refinement
             && options.refinement == Some(AdpMode::Anisotropic),
         screening_iterations: search.screening_iterations,

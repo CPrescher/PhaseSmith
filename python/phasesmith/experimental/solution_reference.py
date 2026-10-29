@@ -160,3 +160,17 @@ def symmetric_model_reference(metadata, cell_basis, hkl, observed, scattering, p
         "fractional_xyz": np.asarray(positions),
         "u_cartesian": np.asarray(tensors),
     }
+
+
+def image_geometry_reference(
+    hkl, reciprocal, rotation, translation, position, tangents, cartesian_rotation
+):
+    """NumPy geometry factorization, independent of native caching and allocation."""
+    h = np.asarray(hkl, dtype=float)
+    r = np.asarray(rotation)
+    base = 2 * np.pi * (h @ (r @ position + translation))
+    directions = np.asarray(tangents).reshape(-1, 3)
+    coefficients = 2 * np.pi * (h @ r @ directions.T)
+    vectors = np.asarray(reciprocal) @ np.asarray(cartesian_rotation)
+    outer = -2 * np.pi**2 * np.einsum("ri,rj->rij", vectors, vectors)
+    return base, coefficients, outer

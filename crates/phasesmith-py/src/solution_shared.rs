@@ -16,6 +16,7 @@ pub(super) fn summary<'py>(
     d.set_item("elements", &s.elements)?;
     d.set_item("phasing_starts", s.phasing_starts)?;
     d.set_item("dual_checkpoints", s.dual_checkpoints)?;
+    d.set_item("cached_refinement", s.cached_refinement)?;
     d.set_item("framework_hypotheses", s.framework_hypotheses)?;
     d.set_item("initial_prefix", s.initial_prefix)?;
     d.set_item("rounds", s.rounds)?;

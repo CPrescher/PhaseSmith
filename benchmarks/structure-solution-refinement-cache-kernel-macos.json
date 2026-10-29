@@ -1,0 +1,453 @@
+{
+  "schema": "phasesmith.refinement-geometry-kernel.v1",
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "reflections": 2108,
+  "full_images": 8,
+  "sample_size": 10,
+  "warm_up_seconds": 1,
+  "measurement_seconds": 2,
+  "qualification": "Four asymmetric sites plus mirror images. Fused values/Jacobians; prepare+fit8 includes cache construction and identity safeguards. Recovery is audited separately.",
+  "kernels": {
+    "refinement_geometry_isotropic_direct_evaluate": {
+      "estimates_nanoseconds": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 468246.0842541717,
+            "upper_bound": 470053.74472934473
+          },
+          "point_estimate": 469053.0954222629,
+          "standard_error": 465.8111999962761
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 468052.21794871794,
+            "upper_bound": 470148.18333333335
+          },
+          "point_estimate": 468428.3060897436,
+          "standard_error": 464.958312317699
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 142.26069458976016,
+            "upper_bound": 2139.4290231286473
+          },
+          "point_estimate": 937.3048625902933,
+          "standard_error": 513.4502816258233
+        },
+        "slope": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 467978.53707681916,
+            "upper_bound": 470272.7174162366
+          },
+          "point_estimate": 469036.7867132867,
+          "standard_error": 634.9388619564951
+        },
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 452.28779655470777,
+            "upper_bound": 2059.1141260165577
+          },
+          "point_estimate": 1553.8837678509449,
+          "standard_error": 425.0250464542858
+        }
+      }
+    },
+    "refinement_geometry_isotropic_cached_evaluate": {
+      "estimates_nanoseconds": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 306588.08004306717,
+            "upper_bound": 308852.58260504203
+          },
+          "point_estimate": 307677.8385247432,
+          "standard_error": 582.4834931774483
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 306305.65021008404,
+            "upper_bound": 309831.756302521
+          },
+          "point_estimate": 306989.5420168067,
+          "standard_error": 820.615895450555
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 129.20578447083054,
+            "upper_bound": 3154.58184840674
+          },
+          "point_estimate": 1376.902085359046,
+          "standard_error": 897.5354674476705
+        },
+        "slope": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 306141.08092516003,
+            "upper_bound": 307602.9490299403
+          },
+          "point_estimate": 306881.82265633525,
+          "standard_error": 366.7506146586607
+        },
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 942.6798021690054,
+            "upper_bound": 2340.5852728096847
+          },
+          "point_estimate": 1936.812290130362,
+          "standard_error": 329.04512523762156
+        }
+      }
+    },
+    "refinement_geometry_isotropic_direct_prepare_fit8": {
+      "estimates_nanoseconds": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 5209372.801020409,
+            "upper_bound": 5242353.873996599
+          },
+          "point_estimate": 5226146.546139455,
+          "standard_error": 8479.506518242923
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 5196535.714285715,
+            "upper_bound": 5250313.987500001
+          },
+          "point_estimate": 5227018.707482994,
+          "standard_error": 11216.69041123648
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 3201.205657452897,
+            "upper_bound": 48937.14555976292
+          },
+          "point_estimate": 33654.63110251053,
+          "standard_error": 12836.21781723579
+        },
+        "slope": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 5217111.256709957,
+            "upper_bound": 5248485.317157048
+          },
+          "point_estimate": 5236004.624118739,
+          "standard_error": 7846.0776365689735
+        },
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 16448.504197140664,
+            "upper_bound": 35073.39809603233
+          },
+          "point_estimate": 28317.816833221434,
+          "standard_error": 4806.774278473132
+        }
+      }
+    },
+    "refinement_geometry_isotropic_cached_prepare_fit8": {
+      "estimates_nanoseconds": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 3890377.396555555,
+            "upper_bound": 3917436.605714286
+          },
+          "point_estimate": 3902432.819376984,
+          "standard_error": 6951.355679171679
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 3883768.34,
+            "upper_bound": 3910570.4833333334
+          },
+          "point_estimate": 3901895.746527778,
+          "standard_error": 6930.980585202963
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 3246.9155636058176,
+            "upper_bound": 32112.798318217458
+          },
+          "point_estimate": 17864.403057843447,
+          "standard_error": 7409.189860663484
+        },
+        "slope": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 3891540.252330162,
+            "upper_bound": 3923635.630612245
+          },
+          "point_estimate": 3903970.8883116883,
+          "standard_error": 8382.43650803733
+        },
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 9405.41978190672,
+            "upper_bound": 32812.93511165429
+          },
+          "point_estimate": 23074.253067651614,
+          "standard_error": 6995.258151126433
+        }
+      }
+    },
+    "refinement_geometry_anisotropic_direct_evaluate": {
+      "estimates_nanoseconds": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 712915.8753816526,
+            "upper_bound": 716567.892485294
+          },
+          "point_estimate": 714600.3467366946,
+          "standard_error": 936.7626075174734
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 712079.2892156863,
+            "upper_bound": 717076.2892156863
+          },
+          "point_estimate": 713592.1674836602,
+          "standard_error": 1244.9688495814767
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 324.35023737890856,
+            "upper_bound": 5036.631942934794
+          },
+          "point_estimate": 3038.181657826208,
+          "standard_error": 1188.5063382379149
+        },
+        "slope": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 712276.7934161664,
+            "upper_bound": 714810.765617875
+          },
+          "point_estimate": 713262.2725744843,
+          "standard_error": 644.5866325670669
+        },
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1381.1157498717662,
+            "upper_bound": 4020.961541107293
+          },
+          "point_estimate": 3119.05181008226,
+          "standard_error": 686.2202623945914
+        }
+      }
+    },
+    "refinement_geometry_anisotropic_cached_evaluate": {
+      "estimates_nanoseconds": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 513584.8231187123,
+            "upper_bound": 516419.2545187793
+          },
+          "point_estimate": 514899.28307176393,
+          "standard_error": 725.8979217293864
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 513016.0799295774,
+            "upper_bound": 516687.2089201878
+          },
+          "point_estimate": 514450.68812877266,
+          "standard_error": 780.5135042936863
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 204.55355270647078,
+            "upper_bound": 3993.765860082401
+          },
+          "point_estimate": 1693.7008061983727,
+          "standard_error": 901.73478280346
+        },
+        "slope": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 512961.26959834003,
+            "upper_bound": 515779.6396095873
+          },
+          "point_estimate": 514146.3955368575,
+          "standard_error": 711.6808923545525
+        },
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 941.6364290225762,
+            "upper_bound": 3057.351592980124
+          },
+          "point_estimate": 2418.9070124639306,
+          "standard_error": 535.921803168171
+        }
+      }
+    },
+    "refinement_geometry_anisotropic_direct_prepare_fit8": {
+      "estimates_nanoseconds": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 11509661.933258928,
+            "upper_bound": 11575169.577291666
+          },
+          "point_estimate": 11544516.073779762,
+          "standard_error": 16816.443840455388
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 11512964.6,
+            "upper_bound": 11589231.8125
+          },
+          "point_estimate": 11550707.415625,
+          "standard_error": 19681.913136695213
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 11887.112629586762,
+            "upper_bound": 91567.93649246971
+          },
+          "point_estimate": 56536.88362251995,
+          "standard_error": 19668.945176029658
+        },
+        "slope": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 11542422.583820663,
+            "upper_bound": 11593609.731831396
+          },
+          "point_estimate": 11565449.62077922,
+          "standard_error": 13441.48712455583
+        },
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 26341.841406893753,
+            "upper_bound": 74524.45416038028
+          },
+          "point_estimate": 56194.33790747489,
+          "standard_error": 12986.283106244806
+        }
+      }
+    },
+    "refinement_geometry_anisotropic_cached_prepare_fit8": {
+      "estimates_nanoseconds": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 9974622.774375001,
+            "upper_bound": 10017879.076235862
+          },
+          "point_estimate": 9997206.375684524,
+          "standard_error": 10972.24229065786
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 9985458.1625,
+            "upper_bound": 10011245.8
+          },
+          "point_estimate": 10002954.421875,
+          "standard_error": 6372.709634449455
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 443.899698369205,
+            "upper_bound": 54491.6029825802
+          },
+          "point_estimate": 18804.25561303273,
+          "standard_error": 12591.856370425201
+        },
+        "slope": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 9987358.635084428,
+            "upper_bound": 10008408.41914498
+          },
+          "point_estimate": 9995523.427922077,
+          "standard_error": 5444.764600124266
+        },
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 8851.673954378373,
+            "upper_bound": 52266.63126918168
+          },
+          "point_estimate": 36537.44651468805,
+          "standard_error": 11336.193420738775
+        }
+      }
+    }
+  },
+  "summary": [
+    {
+      "mode": "isotropic",
+      "work": "evaluate",
+      "direct_ms": 0.4690367867132867,
+      "cached_ms": 0.30688182265633523,
+      "speedup": 1.52839546719762
+    },
+    {
+      "mode": "isotropic",
+      "work": "prepare_fit8",
+      "direct_ms": 5.236004624118739,
+      "cached_ms": 3.9039708883116884,
+      "speedup": 1.3411997102219946
+    },
+    {
+      "mode": "anisotropic",
+      "work": "evaluate",
+      "direct_ms": 0.7132622725744844,
+      "cached_ms": 0.5141463955368575,
+      "speedup": 1.3872746726731704
+    },
+    {
+      "mode": "anisotropic",
+      "work": "prepare_fit8",
+      "direct_ms": 11.56544962077922,
+      "cached_ms": 9.995523427922077,
+      "speedup": 1.1570629296382438
+    }
+  ],
+  "implementation_sha256": {
+    "crates/phasesmith-solution/benches/solution.rs": "9072e4b79d0c5a3a3d3575f307d5be944f572507e1411271fd992b26cfba0c85",
+    "crates/phasesmith-solution/src/adp_refinement.rs": "60970f43c95f1aa6af162fe7a8fa2b380686c96defc061e00c19741284f9002e",
+    "crates/phasesmith-solution/src/completion.rs": "08523bbe80b71f0f29f01345d36713ac8dd3cb6134e812414ea6be5c94dd3081",
+    "crates/phasesmith-solution/src/completion_orbit.rs": "74901c137016cfdf5b18f911282fa2b995b80fb183508856b91ca8a902b52227",
+    "crates/phasesmith-solution/src/data.rs": "3f27a939350ff94f6722c23b1d2609ff10b9ec8119794e2a7cf2076cea27468e",
+    "crates/phasesmith-solution/src/dual_space.rs": "6fece6aef10ee46257c314b7fa80d863055608cf81903a9e45d05b05a9a1a2b5",
+    "crates/phasesmith-solution/src/fourier.rs": "6785270fd617e7f0a15b60079cba12eda94c1c1d7432ce0aec1ea507a820a861",
+    "crates/phasesmith-solution/src/lib.rs": "5816af5fcc103441f95125e61e4ab26fe12345d3169ca794c842286a168a40d1",
+    "crates/phasesmith-solution/src/math3.rs": "fa00ccf3888b6bd86fa62c7b160a8e5f11d933e3736231342a179459d247bd4d",
+    "crates/phasesmith-solution/src/model.rs": "c0d802de5d8725f527ab1b40181fe0d4b12387b2c715ad188de5b409e0105139",
+    "crates/phasesmith-solution/src/peak_density.rs": "97a242cae68157a2adc647beb78c2fa6c8a4a60ff80b875cd9fa2a60362cf37f",
+    "crates/phasesmith-solution/src/shared_pool.rs": "31dc671b92ea761471b2cc3b2c742d1b83e844851ec80ff4f9472e7961aab629",
+    "crates/phasesmith-solution/src/shared_search.rs": "350a2a88e8e84a7d27b7cb28b4f874a071cf9e7e72c991229a32d7141f26f0d3",
+    "crates/phasesmith-solution/src/solver.rs": "302429ec1b3522b848abdc7a050a5511796913842f233b6f0c53834bbf584e22",
+    "crates/phasesmith-solution/src/staged_refinement.rs": "6c1ddf05693cea5b20528059d46af3e93e61b7de3ddaef30bc3416ee6ff31657",
+    "crates/phasesmith-solution/src/symmetry_model.rs": "94393e4a05ea3e23df86fdfedf2567a5a0cd413e65994dc6389cf3ef611ddba0"
+  },
+  "raw_output": "   Compiling phasesmith-solution v0.7.0 (/Users/clemens/Programming/PhaseSmith-hkl-solution/crates/phasesmith-solution)\n    Finished `bench` profile [optimized] target(s) in 4.56s\n     Running benches/solution.rs (target/release/deps/solution-a51ba219c0abff5d)\nBenchmarking refinement_geometry_isotropic_direct_evaluate_8_images_2108_reflections\nBenchmarking refinement_geometry_isotropic_direct_evaluate_8_images_2108_reflections: Warming up for 1.0000 s\nBenchmarking refinement_geometry_isotropic_direct_evaluate_8_images_2108_reflections: Collecting 10 samples in estimated 2.0195 s (4290 iterations)\nBenchmarking refinement_geometry_isotropic_direct_evaluate_8_images_2108_reflections: Analyzing\nrefinement_geometry_isotropic_direct_evaluate_8_images_2108_reflections\n                        time:   [467.98 \u00b5s 469.04 \u00b5s 470.27 \u00b5s]\n                        change: [\u22121.2561% \u22120.8700% \u22120.4965%] (p = 0.00 < 0.05)\n                        Change within noise threshold.\nFound 2 outliers among 10 measurements (20.00%)\n  1 (10.00%) high mild\n  1 (10.00%) high severe\n\nBenchmarking refinement_geometry_isotropic_direct_prepare_fit8_8_images_2108_reflections\nBenchmarking refinement_geometry_isotropic_direct_prepare_fit8_8_images_2108_reflections: Warming up for 1.0000 s\nBenchmarking refinement_geometry_isotropic_direct_prepare_fit8_8_images_2108_reflections: Collecting 10 samples in estimated 2.0316 s (385 iterations)\nBenchmarking refinement_geometry_isotropic_direct_prepare_fit8_8_images_2108_reflections: Analyzing\nrefinement_geometry_isotropic_direct_prepare_fit8_8_images_2108_reflections\n                        time:   [5.2171 ms 5.2360 ms 5.2485 ms]\n                        change: [\u22120.9504% \u22120.5874% \u22120.2286%] (p = 0.01 < 0.05)\n                        Change within noise threshold.\n\nBenchmarking refinement_geometry_isotropic_cached_evaluate_8_images_2108_reflections\nBenchmarking refinement_geometry_isotropic_cached_evaluate_8_images_2108_reflections: Warming up for 1.0000 s\nBenchmarking refinement_geometry_isotropic_cached_evaluate_8_images_2108_reflections: Collecting 10 samples in estimated 2.0145 s (6545 iterations)\nBenchmarking refinement_geometry_isotropic_cached_evaluate_8_images_2108_reflections: Analyzing\nrefinement_geometry_isotropic_cached_evaluate_8_images_2108_reflections\n                        time:   [306.14 \u00b5s 306.88 \u00b5s 307.60 \u00b5s]\n                        change: [+3.5670% +3.9970% +4.4941%] (p = 0.00 < 0.05)\n                        Performance has regressed.\n\nBenchmarking refinement_geometry_isotropic_cached_prepare_fit8_8_images_2108_reflections\nBenchmarking refinement_geometry_isotropic_cached_prepare_fit8_8_images_2108_reflections: Warming up for 1.0000 s\nBenchmarking refinement_geometry_isotropic_cached_prepare_fit8_8_images_2108_reflections: Collecting 10 samples in estimated 2.1445 s (550 iterations)\nBenchmarking refinement_geometry_isotropic_cached_prepare_fit8_8_images_2108_reflections: Analyzing\nrefinement_geometry_isotropic_cached_prepare_fit8_8_images_2108_reflections\n                        time:   [3.8915 ms 3.9040 ms 3.9236 ms]\n                        change: [+1.2344% +1.6084% +2.0107%] (p = 0.00 < 0.05)\n                        Performance has regressed.\nFound 1 outliers among 10 measurements (10.00%)\n  1 (10.00%) high mild\n\nBenchmarking refinement_geometry_anisotropic_direct_evaluate_8_images_2108_reflections\nBenchmarking refinement_geometry_anisotropic_direct_evaluate_8_images_2108_reflections: Warming up for 1.0000 s\nBenchmarking refinement_geometry_anisotropic_direct_evaluate_8_images_2108_reflections: Collecting 10 samples in estimated 2.0070 s (2805 iterations)\nBenchmarking refinement_geometry_anisotropic_direct_evaluate_8_images_2108_reflections: Analyzing\nrefinement_geometry_anisotropic_direct_evaluate_8_images_2108_reflections\n                        time:   [712.28 \u00b5s 713.26 \u00b5s 714.81 \u00b5s]\n                        change: [\u22122.1539% \u22121.8430% \u22121.4845%] (p = 0.00 < 0.05)\n                        Performance has improved.\nFound 1 outliers among 10 measurements (10.00%)\n  1 (10.00%) high mild\n\nBenchmarking refinement_geometry_anisotropic_direct_prepare_fit8_8_images_2108_reflections\nBenchmarking refinement_geometry_anisotropic_direct_prepare_fit8_8_images_2108_reflections: Warming up for 1.0000 s\nBenchmarking refinement_geometry_anisotropic_direct_prepare_fit8_8_images_2108_reflections: Collecting 10 samples in estimated 2.5543 s (220 iterations)\nBenchmarking refinement_geometry_anisotropic_direct_prepare_fit8_8_images_2108_reflections: Analyzing\nrefinement_geometry_anisotropic_direct_prepare_fit8_8_images_2108_reflections\n                        time:   [11.542 ms 11.565 ms 11.594 ms]\n                        change: [+0.2737% +0.8136% +1.3599%] (p = 0.01 < 0.05)\n                        Change within noise threshold.\n\nBenchmarking refinement_geometry_anisotropic_cached_evaluate_8_images_2108_reflections\nBenchmarking refinement_geometry_anisotropic_cached_evaluate_8_images_2108_reflections: Warming up for 1.0000 s\nBenchmarking refinement_geometry_anisotropic_cached_evaluate_8_images_2108_reflections: Collecting 10 samples in estimated 2.0021 s (3905 iterations)\nBenchmarking refinement_geometry_anisotropic_cached_evaluate_8_images_2108_reflections: Analyzing\nrefinement_geometry_anisotropic_cached_evaluate_8_images_2108_reflections\n                        time:   [512.96 \u00b5s 514.15 \u00b5s 515.78 \u00b5s]\n                        change: [\u22121.0890% \u22120.7842% \u22120.4416%] (p = 0.00 < 0.05)\n                        Change within noise threshold.\nFound 2 outliers among 10 measurements (20.00%)\n  2 (20.00%) high mild\n\nBenchmarking refinement_geometry_anisotropic_cached_prepare_fit8_8_images_2108_reflections\nBenchmarking refinement_geometry_anisotropic_cached_prepare_fit8_8_images_2108_reflections: Warming up for 1.0000 s\nBenchmarking refinement_geometry_anisotropic_cached_prepare_fit8_8_images_2108_reflections: Collecting 10 samples in estimated 2.2108 s (220 iterations)\nBenchmarking refinement_geometry_anisotropic_cached_prepare_fit8_8_images_2108_reflections: Analyzing\nrefinement_geometry_anisotropic_cached_prepare_fit8_8_images_2108_reflections\n                        time:   [9.9874 ms 9.9955 ms 10.008 ms]\n                        change: [+1.1084% +1.4462% +1.7413%] (p = 0.00 < 0.05)\n                        Performance has regressed.\nFound 2 outliers among 10 measurements (20.00%)\n  1 (10.00%) low severe\n  1 (10.00%) high severe\n\n"
+}

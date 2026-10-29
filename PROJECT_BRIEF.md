@@ -167,6 +167,24 @@ path completes the original refinement shortlist and beam round.
 See `docs/solution-dual-space-handoffs.md` for diagnosis, validation and timings.
 Charge flipping remains the default; default powder builds remain unchanged.
 
+Prepared experimental structure refinements now cache fixed reciprocal/image
+geometry in bounded contiguous arrays, rather than recomputing symmetry-rotated
+vectors, coordinate phase derivatives and tensor quadratic forms on each fit
+evaluation. Isotropic fits also share attenuation and its analytical derivative
+across symmetry images of a site/reflection. Values and derivatives remain fused,
+with unchanged candidate shortlists, orbit edits, ranking and full anisotropic
+final fits. An explicit `cached_refinement=False` shared-search ablation retains
+the original direct arithmetic. The 32 MiB per-model cache cap falls back to the
+direct kernel without dropping observations; independent direct NumPy values,
+centered derivatives, deterministic native comparisons and memory-boundary tests
+cover the factorization. Native sampling motivated this change: thiourea has
+156 screening and 34 final fits over 4,068 expanded reflections. See `docs/solution-refinement-geometry-cache.md` for equations and validation.
+Three serial paired dual-space repeats preserve counts, geometry, original-data
+R1 and both CIF frames for all three development structures. Direct/cached
+medians are 0.732/0.514 s for K[BrF4], 0.487/0.356 s for BiSeI and 6.573/4.451 s
+for thiourea (1.42x, 1.37x and 1.48x). Screening/final fit counts are identical
+between paired modes; no candidate shortlisting or atom-count prior is changed.
+
 An opt-in primitive/Bravais comparison now follows position-only lattice discovery.
 Native Selling-Delaunay reduction retains exact integer basis transformations;
 complete low-index reciprocal HNF hypotheses expose excluded reflections rather
