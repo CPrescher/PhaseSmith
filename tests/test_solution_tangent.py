@@ -217,10 +217,12 @@ def test_tangent_enabled_still_infers_synthetic_counts(symbol):
     )
     assert result.best.r1 < 1e-6
     audit = result.shared_search
-    assert audit.tangent_refinement and audit.tangent_trials
-    assert all(t.triplets > 0 and t.steps > 0 for t in audit.tangent_trials)
-    assert any(t.changed > 0 for t in audit.tangent_trials)
-    assert all(len(t.quartet_after) == t.steps for t in audit.tangent_trials)
+    assert audit.tangent_refinement and audit.tangent_in_recycling
+    assert not audit.tangent_trials
+    attempts = [r.tangent for r in audit.recycling if r.tangent is not None]
+    assert attempts
+    assert all(t.triplets > 0 and t.steps > 0 for t in attempts)
+    assert all(len(t.quartet_after) == t.steps for t in attempts)
 
 
 def test_public_tangent_controls_are_explicit():
@@ -229,6 +231,7 @@ def test_public_tangent_controls_are_explicit():
     cell, group, data, _, _ = synthetic()
     for kwargs, error in (
         ({"tangent_refinement": 1}, TypeError),
+        ({"tangent_in_recycling": 1}, TypeError),
         ({"tangent_refinement": True}, ValueError),
     ):
         with pytest.raises(error):

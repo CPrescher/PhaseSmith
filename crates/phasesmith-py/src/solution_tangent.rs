@@ -18,13 +18,15 @@ pub(super) fn audit<'py>(py: Python<'py>, a: &TangentAudit) -> PyResult<Bound<'p
     d.set_item("proposals", a.proposals)?;
     d.set_item("changed", a.changed)?;
     d.set_item("declined_steps", a.declined_steps)?;
+    d.set_item("symmetry_restorations", a.symmetry_restorations)?;
+    d.set_item("symmetry_declined_steps", a.symmetry_declined_steps)?;
     d.set_item("quartet_before", &a.quartet_before)?;
     d.set_item("quartet_after", &a.quartet_after)?;
     Ok(d)
 }
 #[pyclass(name = "_PreparedTangent", frozen)]
-struct NativeTangent {
-    inner: PreparedTangent,
+pub(super) struct NativeTangent {
+    pub(super) inner: PreparedTangent,
 }
 #[pymethods]
 impl NativeTangent {

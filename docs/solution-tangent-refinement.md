@@ -1,5 +1,10 @@
 # Count-free tangent phases, annealing and negative quartets
 
+The combined symmetry-recycling path now places these updates after origin
+recovery and checks the restored symmetry phases. See
+`solution-tangent-recycling.md` for the follow-up. The measurements below retain
+the original unconstrained placement, available with `tangent_in_recycling=False`.
+
 Experimental extension, independently derived from phase-invariant equations,
 not a translation of decompiled SHELX. Tangent and seven-magnitude quartet
 relations are described in the

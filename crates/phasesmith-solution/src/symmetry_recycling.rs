@@ -32,6 +32,8 @@ pub struct RecycledDensity {
     pub negative_fractions: Vec<f64>,
     /// Degenerate phasor averages using the documented deterministic fallback.
     pub phase_fallbacks: usize,
+    /// Optional tangent work after projection into this supplied symmetry frame.
+    pub tangent: Option<crate::TangentAudit>,
 }
 
 #[allow(clippy::cast_possible_wrap, clippy::cast_possible_truncation)]
@@ -220,6 +222,47 @@ pub fn recycle_density(
     deadline: Option<Instant>,
     cancellation: Option<&Cancellation>,
 ) -> Result<RecycledDensity, SolutionError> {
+    recycle_density_guided(
+        shape,
+        hkl,
+        amplitudes,
+        support,
+        group,
+        source,
+        hand,
+        shift,
+        cycles,
+        deadline,
+        cancellation,
+        None,
+        0,
+    )
+}
+
+/// Recycle with optional tangent updates inside the supplied symmetry frame.
+/// The quartet guard is checked again after restoring reciprocal symmetry.
+/// # Errors
+/// As for [`recycle_density`]; also rejects a mismatched measured phase plan.
+#[allow(
+    clippy::too_many_arguments,
+    clippy::too_many_lines,
+    clippy::cast_precision_loss
+)]
+pub fn recycle_density_guided(
+    shape: [usize; 3],
+    hkl: &[[i32; 3]],
+    amplitudes: &[f64],
+    support: &[u8],
+    group: &SpaceGroup,
+    source: &[f64],
+    hand: i32,
+    shift: [f64; 3],
+    cycles: usize,
+    deadline: Option<Instant>,
+    cancellation: Option<&Cancellation>,
+    tangent: Option<&crate::PreparedTangent>,
+    seed: u64,
+) -> Result<RecycledDensity, SolutionError> {
     let n = grid_len(shape)?;
     if source.len() != n
         || source.iter().any(|v| !v.is_finite() || v.abs() > 1e100)
@@ -230,6 +273,11 @@ pub fn recycle_density(
         return Err(error("invalid symmetry recycling map/transform/cycles"));
     }
     prepare_fourier(shape, hkl, amplitudes, &vec![0.; hkl.len()], support)?;
+    if tangent.is_some_and(|t| !t.matches_hkl(hkl)) {
+        return Err(error(
+            "recycling tangent plan does not match measured reflections",
+        ));
+    }
     let orbits = plan(shape, hkl, amplitudes, support, group)?;
     let mut fft = Transform::new(shape);
     let mut original: Vec<_> = source.iter().map(|&v| Complex::new(v, 0.)).collect();
@@ -249,11 +297,78 @@ pub fn recycle_density(
     let mut projected = vec![Complex::default(); n];
     let mut negative_fractions = Vec::new();
     let mut fallbacks = 0;
-    for _ in 0..cycles {
+    let mut tangent_audit = tangent.map(crate::PreparedTangent::audit);
+    // Projection restores measured Fo exactly. Use those observations for the
+    // frozen-set ranking, so norm roundoff cannot reorder equivalent amplitudes.
+    let tangent_magnitudes = tangent.map(|t| {
+        let mut values = vec![0.; t.hkl.len()];
+        for (&a, term) in amplitudes.iter().zip(&t.full_terms) {
+            if term.sign == 1 {
+                values[term.index] = a;
+            }
+        }
+        values
+    });
+    for cycle in 0..cycles {
         if crate::stopped(deadline, cancellation) {
             break;
         }
         fallbacks += project(&coefficients, &mut projected, &orbits);
+        if let (Some(tangent), Some(audit), Some(magnitudes)) =
+            (tangent, &mut tangent_audit, &tangent_magnitudes)
+        {
+            let phases: Vec<_> = tangent
+                .hkl
+                .iter()
+                .map(|&h| projected[grid_index(h, shape)].arg())
+                .collect();
+            let mut step = tangent.symmetry_step(&phases, magnitudes, cycle, seed)?;
+            if step.changed > 0 {
+                audit.symmetry_restorations += 1;
+                let mut proposal = projected.clone();
+                for (&h, term) in hkl.iter().zip(&tangent.full_terms) {
+                    let index = grid_index(h, shape);
+                    proposal[index] = Complex::from_polar(
+                        projected[index].norm(),
+                        f64::from(term.sign) * step.phases[term.index],
+                    );
+                }
+                fallbacks += project(&proposal, &mut coefficients, &orbits);
+                let restored: Vec<_> = tangent
+                    .hkl
+                    .iter()
+                    .map(|&h| coefficients[grid_index(h, shape)].arg())
+                    .collect();
+                let after = tangent.quartet_value_gradient(&restored).0;
+                if after <= step.quartet_before + 1e-12 {
+                    step.changed = phases
+                        .iter()
+                        .zip(&restored)
+                        .zip(magnitudes)
+                        .filter(|((old, new), magnitude)| {
+                            let difference = (*old - *new + std::f64::consts::PI)
+                                .rem_euclid(std::f64::consts::TAU)
+                                - std::f64::consts::PI;
+                            **magnitude > 1e-100 && difference.abs() > 1e-12
+                        })
+                        .count();
+                    step.quartet_after = after;
+                    std::mem::swap(&mut projected, &mut coefficients);
+                } else {
+                    audit.symmetry_declined_steps += 1;
+                    step.changed = 0;
+                    step.blend = 0.;
+                    step.quartet_after = step.quartet_before;
+                }
+            }
+            audit.steps += 1;
+            audit.annealed_steps += usize::from(step.temperature > 0.);
+            audit.proposals += step.proposals;
+            audit.changed += step.changed;
+            audit.declined_steps += usize::from(step.blend == 0.);
+            audit.quartet_before.push(step.quartet_before);
+            audit.quartet_after.push(step.quartet_after);
+        }
         fft.apply(&mut projected, false);
         let negative = projected.iter().filter(|v| v.re < 0.).count();
         negative_fractions.push(negative as f64 / n as f64);
@@ -277,5 +392,6 @@ pub fn recycle_density(
         predicted_coefficients,
         negative_fractions,
         phase_fallbacks: fallbacks,
+        tangent: tangent_audit,
     })
 }

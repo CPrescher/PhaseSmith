@@ -138,7 +138,7 @@ def uniform_reference(seed, cycle, index, lane):
     return ((value >> 12) + 0.5) / 2**52
 
 
-def step_reference(metadata, phases, magnitudes, cycle, seed):
+def step_reference(metadata, phases, magnitudes, cycle, seed, *, relative_tie_tolerance=0.0):
     old = np.array(phases)
     proposed = old.copy()
     strong = metadata["strong"]
@@ -167,7 +167,9 @@ def step_reference(metadata, phases, magnitudes, cycle, seed):
                 trial[index] = value
                 return weights[incident] @ (1 + np.cos(q[incident] @ trial))
 
-            proposed[index] = plus if score(plus) <= score(minus) else minus
+            plus_cost, minus_cost = score(plus), score(minus)
+            tolerance = relative_tie_tolerance * (1 + abs(plus_cost) + abs(minus_cost))
+            proposed[index] = plus if plus_cost <= minus_cost + tolerance else minus
         else:
             proposed[index] = minus if uniform_reference(seed, cycle, index, 1) < 0.5 else plus
         proposals += 1

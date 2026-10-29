@@ -1,0 +1,120 @@
+{
+  "schema": "phasesmith.tangent-recycling-diagnosis.v1",
+  "space_group": "P 21 m a",
+  "qualification": "Saved development maps in each framework's first supplied-symmetry setting. Coherence is the length of the symmetry/Friedel-aligned mean unit phasor; it measures cancellation risk, not correctness. No reference structure is read.",
+  "analysis_sha256": "195fc4e54f23d289f14d65c7b6ab31628b7cc9ca292353c6ff270ed7bb233b49",
+  "baseline": {
+    "files_sha256": {
+      "result.json": "8966b3668e7ebcb834f4c2d01572814c75f6bfb217b004b3423bcae9123cae63",
+      "density-and-observations.npz": "3f01511fab25fc7e559168badddab1f92f35cb32cac4065ed0b6ada55cc6997d"
+    },
+    "expanded_observations": 4068,
+    "source_to_symmetry_hand": 1,
+    "source_to_symmetry_shift": [
+      0.0,
+      9.133722206419651e-05,
+      0.8603720149775294
+    ],
+    "mean_symmetry_phase_coherence": 0.8424873233766745,
+    "median_symmetry_phase_coherence": 0.9395654525246302,
+    "fraction_coherence_below_half": 0.0943952802359882,
+    "recycled_peak_counts": [
+      16,
+      16
+    ],
+    "joint_batch_orbits": [
+      4,
+      4
+    ],
+    "rounds": 1,
+    "screening_refinements": 50,
+    "final_refinements": 14,
+    "accepted_moves": [
+      {
+        "kind": "initial",
+        "element": "S",
+        "atoms": 4,
+        "r1": 0.2668332456525159,
+        "score": -1228.315934005503
+      },
+      {
+        "kind": "recycle_batch",
+        "element": "",
+        "atoms": 16,
+        "r1": 0.04940904996785434,
+        "score": -3284.4523910481603
+      }
+    ]
+  },
+  "unconstrained_tangent": {
+    "files_sha256": {
+      "result.json": "a9a4db2a334b248cd9b789a40785e79d5a140d4c0a5969d4125f213330e5f3e5",
+      "density-and-observations.npz": "1821adb1c313647ab4983d1f2cc805a67ff70766449bfa09d88b86ef4ca853e4"
+    },
+    "expanded_observations": 4068,
+    "source_to_symmetry_hand": 1,
+    "source_to_symmetry_shift": [
+      0.0,
+      0.9998541489047127,
+      0.8645600588632147
+    ],
+    "mean_symmetry_phase_coherence": 0.7579482755766221,
+    "median_symmetry_phase_coherence": 0.8952377917710828,
+    "fraction_coherence_below_half": 0.19616519174041297,
+    "recycled_peak_counts": [
+      20,
+      20
+    ],
+    "joint_batch_orbits": [
+      1,
+      1
+    ],
+    "rounds": 5,
+    "screening_refinements": 258,
+    "final_refinements": 46,
+    "accepted_moves": [
+      {
+        "kind": "initial",
+        "element": "S",
+        "atoms": 4,
+        "r1": 0.2668332456875814,
+        "score": -1228.315934005504
+      },
+      {
+        "kind": "recycle_batch",
+        "element": "",
+        "atoms": 6,
+        "r1": 0.23732963767205556,
+        "score": -1289.2905219258103
+      },
+      {
+        "kind": "birth",
+        "element": "N",
+        "atoms": 10,
+        "r1": 0.18853962272539043,
+        "score": -1558.9417435156747
+      },
+      {
+        "kind": "birth",
+        "element": "N",
+        "atoms": 14,
+        "r1": 0.11688012103413736,
+        "score": -2265.81814994094
+      },
+      {
+        "kind": "birth",
+        "element": "C",
+        "atoms": 16,
+        "r1": 0.053271689979482686,
+        "score": -3170.2600189510677
+      },
+      {
+        "kind": "relabel",
+        "element": "C",
+        "atoms": 16,
+        "r1": 0.04940904996834466,
+        "score": -3284.452391048164
+      }
+    ]
+  }
+}

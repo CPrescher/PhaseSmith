@@ -8,7 +8,7 @@ import json
 import platform
 import time
 from collections import Counter
-from dataclasses import asdict
+from dataclasses import asdict, replace
 from pathlib import Path
 
 import gemmi
@@ -42,7 +42,21 @@ def main():
     parser.add_argument("--repeats", type=int, default=3)
     parser.add_argument("--trials", type=int, default=1)
     parser.add_argument("--symmetry-recycling", action="store_true")
+    parser.add_argument("--seeds", type=int, nargs="+", default=[0])
+    parser.add_argument(
+        "--legacy-tangent-baseline",
+        action="store_true",
+        help="compare earlier unconstrained tangent placement with coupled recycling",
+    )
     args = parser.parse_args()
+    if args.legacy_tangent_baseline and not args.symmetry_recycling:
+        parser.error("--legacy-tangent-baseline requires --symmetry-recycling")
+    if (
+        not 1 <= len(args.seeds) <= 32
+        or len(set(args.seeds)) != len(args.seeds)
+        or any(not 0 <= seed < 2**64 for seed in args.seeds)
+    ):
+        parser.error("seeds must be 1..32 distinct unsigned 64-bit integers")
     if not 1 <= args.trials <= 8:
         parser.error("trials must lie in [1,8]")
     if not 1 <= args.repeats <= 10:
@@ -89,19 +103,26 @@ def main():
         ]
     )
     header = {
-        "schema": "phasesmith.tangent-comparison.v1",
+        "schema": "phasesmith.tangent-comparison.v2",
         "platform": platform.platform(),
         "repeats": args.repeats,
+        "seeds": args.seeds,
         "options": asdict(options),
         "options_by_method": {
             method: {
                 **asdict(options),
-                "tangent_refinement": method == "tangent",
+                "tangent_refinement": method == "tangent" or args.legacy_tangent_baseline,
+                "tangent_in_recycling": method == "tangent",
                 "symmetry_recycling": args.symmetry_recycling,
             }
             for method in ("baseline", "tangent")
         },
         "methods": ["baseline", "tangent"],
+        "baseline_kind": "unconstrained_tangent" if args.legacy_tangent_baseline else "no_tangent",
+        "coupled_phase_placement": "after_supplied_symmetry_projection_before_positivity",
+        "post_symmetry_quartet_guard_tolerance": 1e-12,
+        "coupled_relative_sign_tie_tolerance": 1e-12,
+        "coupled_frozen_magnitude_source": "exact_measured_Fo",
         "dual_checkpoints": True,
         "cached_refinement": True,
         "recycling_cycles": 10,
@@ -151,48 +172,55 @@ def main():
     (args.output / "inputs.json").write_text(json.dumps(header, indent=2) + "\n")
     records = []
     solutions = []
-    for repeat in range(args.repeats):
-        for case in cases:
-            data, cell, group = prepared[case["name"]]
-            for label in ("baseline", "tangent") if repeat % 2 == 0 else ("tangent", "baseline"):
-                destination = args.output / case["name"] / f"{label}-{repeat}"
-                start = time.perf_counter()
-                result = solve_structure_elements(
-                    data,
-                    cell=cell,
-                    space_group=group,
-                    elements=case["elements"],
-                    options=options,
-                    staged_refinement=True,
-                    integrated_peak_density=True,
-                    dual_checkpoints=True,
-                    cached_refinement=True,
-                    symmetry_recycling=args.symmetry_recycling,
-                    tangent_refinement=label == "tangent",
-                    recycling_cycles=10,
-                )
-                elapsed = time.perf_counter() - start
-                write_solution(result, destination)
-                record = {
-                    "case": case["name"],
-                    "repeat": repeat,
-                    "mode": label,
-                    "seconds": elapsed,
-                    "r1": result.best.r1 if result.best else None,
-                    "counts": dict(result.composition),
-                    "target_met": result.target_met,
-                    "termination": result.termination,
-                    "effort": asdict(result.shared_search),
-                    "phasing_trials": [asdict(t) for t in result.phasing_trials],
-                    "rejected_trials": result.rejected_trials,
-                    "directory": str(destination.relative_to(args.output)),
-                }
-                records.append(record)
-                solutions.append((case, result, record))
-                (args.output / "report-before-reference.json").write_text(
-                    json.dumps({**header, "runs": records}, indent=2) + "\n"
-                )
-                print(json.dumps(record), flush=True)
+    base_options = options
+    for seed in args.seeds:
+        options = replace(base_options, seed=seed)
+        for repeat in range(args.repeats):
+            for case in cases:
+                data, cell, group = prepared[case["name"]]
+                for label in (
+                    ("baseline", "tangent") if repeat % 2 == 0 else ("tangent", "baseline")
+                ):
+                    destination = args.output / case["name"] / f"seed-{seed}" / f"{label}-{repeat}"
+                    start = time.perf_counter()
+                    result = solve_structure_elements(
+                        data,
+                        cell=cell,
+                        space_group=group,
+                        elements=case["elements"],
+                        options=options,
+                        staged_refinement=True,
+                        integrated_peak_density=True,
+                        dual_checkpoints=True,
+                        cached_refinement=True,
+                        symmetry_recycling=args.symmetry_recycling,
+                        tangent_refinement=label == "tangent" or args.legacy_tangent_baseline,
+                        tangent_in_recycling=label == "tangent",
+                        recycling_cycles=10,
+                    )
+                    elapsed = time.perf_counter() - start
+                    write_solution(result, destination)
+                    record = {
+                        "case": case["name"],
+                        "repeat": repeat,
+                        "seed": seed,
+                        "mode": label,
+                        "seconds": elapsed,
+                        "r1": result.best.r1 if result.best else None,
+                        "counts": dict(result.composition),
+                        "target_met": result.target_met,
+                        "termination": result.termination,
+                        "effort": asdict(result.shared_search),
+                        "phasing_trials": [asdict(t) for t in result.phasing_trials],
+                        "rejected_trials": result.rejected_trials,
+                        "directory": str(destination.relative_to(args.output)),
+                    }
+                    records.append(record)
+                    solutions.append((case, result, record))
+                    (args.output / "report-before-reference.json").write_text(
+                        json.dumps({**header, "runs": records}, indent=2) + "\n"
+                    )
+                    print(json.dumps(record), flush=True)
     for case in cases:
         path = ROOT / case["reference_after_solving"]
         checked(path, case["reference_sha256"])
@@ -262,7 +290,8 @@ def main():
         pairs = []
         for before, after in zip(full, staged, strict=True):
             pair_valid = (
-                after["counts"] == before["counts"]
+                after["seed"] == before["seed"]
+                and after["counts"] == before["counts"]
                 and before["r1"] is not None
                 and after["r1"] is not None
                 and after["r1"] <= before["r1"] + 1e-7
@@ -278,6 +307,7 @@ def main():
             pairs.append(
                 {
                     "repeat": before["repeat"],
+                    "seed": before["seed"],
                     "wall_time_ratio_baseline_over_tangent": before["seconds"] / after["seconds"],
                     "solve_speedup": (before["seconds"] / after["seconds"]) if pair_valid else None,
                     "quality_preserved": pair_valid,

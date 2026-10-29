@@ -96,6 +96,10 @@ pub struct TangentAudit {
     pub changed: usize,
     /// Whole steps declined by the quartet guard.
     pub declined_steps: usize,
+    /// Candidate phase steps subsequently restored to supplied symmetry.
+    pub symmetry_restorations: usize,
+    /// Such restored candidates declined by the additional quartet check.
+    pub symmetry_declined_steps: usize,
     /// Per-step quartet values before projection.
     pub quartet_before: Vec<f64>,
     /// Per-step quartet values after projection.
@@ -260,6 +264,13 @@ impl PreparedTangent {
     #[must_use]
     pub fn mapping(&self) -> &[PhaseTerm] {
         &self.full_terms
+    }
+    pub(crate) fn matches_hkl(&self, hkl: &[[i32; 3]]) -> bool {
+        self.full_terms.len() == hkl.len()
+            && hkl
+                .iter()
+                .zip(&self.full_terms)
+                .all(|(h, t)| self.hkl[t.index].map(|value| value * t.sign) == *h)
     }
     /// Immutable resolution-shell centers and scaled means.
     #[must_use]
@@ -548,7 +559,7 @@ impl PreparedTangent {
     }
     // The acceptance guard needs only quartets. Keep their values and derivatives
     // fused without reevaluating every triplet during each backtracking attempt.
-    fn quartet_value_gradient(&self, phases: &[f64]) -> (f64, Vec<f64>) {
+    pub(crate) fn quartet_value_gradient(&self, phases: &[f64]) -> (f64, Vec<f64>) {
         let mut value = 0.;
         let mut gradient = vec![0.; phases.len()];
         let total = self.quartets.iter().map(|t| t.weight).sum::<f64>();
@@ -595,6 +606,28 @@ impl PreparedTangent {
         cycle: usize,
         seed: u64,
     ) -> Result<TangentStep, SolutionError> {
+        self.step_with_tie_tolerance(phases, magnitudes, cycle, seed, 0.)
+    }
+    pub(crate) fn symmetry_step(
+        &self,
+        phases: &[f64],
+        magnitudes: &[f64],
+        cycle: usize,
+        seed: u64,
+    ) -> Result<TangentStep, SolutionError> {
+        self.step_with_tie_tolerance(phases, magnitudes, cycle, seed, 1e-12)
+    }
+    // Symmetry phase lines create exact +/- cost ties. Resolve their floating
+    // point neighborhood consistently instead of letting roundoff choose a sign.
+    #[allow(clippy::cast_precision_loss, clippy::too_many_lines)]
+    fn step_with_tie_tolerance(
+        &self,
+        phases: &[f64],
+        magnitudes: &[f64],
+        cycle: usize,
+        seed: u64,
+        relative_tie_tolerance: f64,
+    ) -> Result<TangentStep, SolutionError> {
         self.validate_phases(phases)?;
         if magnitudes.len() != phases.len()
             || magnitudes.iter().any(|v| !v.is_finite() || *v < 0.)
@@ -640,12 +673,15 @@ impl PreparedTangent {
                 } else {
                     plus
                 }
-            } else if self.local_quartet(target, plus, phases)
-                <= self.local_quartet(target, minus, phases)
-            {
-                plus
             } else {
-                minus
+                let plus_cost = self.local_quartet(target, plus, phases);
+                let minus_cost = self.local_quartet(target, minus, phases);
+                let tolerance = relative_tie_tolerance * (1. + plus_cost.abs() + minus_cost.abs());
+                if plus_cost <= minus_cost + tolerance {
+                    plus
+                } else {
+                    minus
+                }
             };
             proposals += 1;
         }
