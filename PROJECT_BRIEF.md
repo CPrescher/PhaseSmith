@@ -2127,6 +2127,25 @@ full-search microbenchmark accompany the existing unchanged analytical kernels.
 See `docs/solution-count-selection.md`. The 65 holdout outcomes remain unopened;
 this solver is still serial, and SHELXT remains pinned to one thread for comparison.
 
+A further opt-in shared-search path fits an isotropic Wilson/shell envelope from
+signed independent-family intensities with symmetry epsilon factors and an
+explicit unit-mean E-squared convention. Mixed E/F amplitudes feed dual-space
+phasing; measured-family CC minus weak calculated E-squared selects complete
+atomic maps before count refinement. Rust values and analytical phase-quality
+derivatives have an independent NumPy reference. This is a published-equation
+implementation with explicit empirical shell/scheduling choices, not a recovered
+SHELXT implementation. Both new options remain off by default: the complete
+35-case development campaign preserves the same seven recovered structures but
+recovers only 12 total counts versus the preceding campaign's 13, with no overall
+speed improvement and slower successful solves. The same-build control recovers
+8/35 structures and 13/35 total counts versus 7/35 and 12/35 with the new options;
+the seven common recoveries slow from median 1.776 to 10.320 seconds. This is a
+regression, with no gained structures and one lost recovery (COD 2243618).
+All original scoring gates and input-derived caps remain fixed; the 65 holdout
+outcomes remain unopened.
+See `docs/solution-phase-quality.md` for the same-build control, timing limitations,
+normalization assumptions and retained complete results.
+
 ## Quality bar
 
 Public behavior is typed and documented. Invalid shapes, non-finite values,

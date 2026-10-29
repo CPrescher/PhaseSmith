@@ -330,6 +330,47 @@ class TangentAudit:
 
 
 @dataclass(frozen=True, slots=True)
+class WilsonShell:
+    s_squared: float
+    families: int
+    reduced_mean: float
+    log_residual: float
+
+
+@dataclass(frozen=True, slots=True)
+class WilsonNormalizationAudit:
+    families: int
+    nonpositive_families: int
+    log_scale: float
+    slope: float
+    mean_e_squared: float
+    shells: tuple[WilsonShell, ...]
+
+    def __post_init__(self):
+        object.__setattr__(
+            self,
+            "shells",
+            tuple(WilsonShell(**s) if isinstance(s, dict) else s for s in self.shells),
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class PhaseQualityAudit:
+    trial: int
+    allowed_families: int
+    absent_families: int
+    weak_families: int
+    correlation: tuple[float, ...]
+    r_weak: tuple[float, ...]
+    cfom: tuple[float, ...]
+    deferred_handoffs: int
+
+    def __post_init__(self):
+        for name in ("correlation", "r_weak", "cfom"):
+            object.__setattr__(self, name, tuple(getattr(self, name)))
+
+
+@dataclass(frozen=True, slots=True)
 class SharedSearchAudit:
     """Actual work and inferred topology, without source composition."""
 
@@ -374,8 +415,24 @@ class SharedSearchAudit:
     adaptive_counts: bool = False
     count_prefix_screenings: int = 0
     bounded_map_handoffs: int = 0
+    wilson_normalization: bool = False
+    phase_quality_selection: bool = False
+    normalization: WilsonNormalizationAudit | None = None
+    normalization_diagnostic: str | None = None
+    phase_quality: tuple[PhaseQualityAudit, ...] = ()
+    phase_model_trials: tuple[int, ...] = ()
 
     def __post_init__(self):
+        object.__setattr__(self, "phase_model_trials", tuple(self.phase_model_trials))
+        if isinstance(self.normalization, dict):
+            object.__setattr__(
+                self, "normalization", WilsonNormalizationAudit(**self.normalization)
+            )
+        object.__setattr__(
+            self,
+            "phase_quality",
+            tuple(PhaseQualityAudit(**q) if isinstance(q, dict) else q for q in self.phase_quality),
+        )
         object.__setattr__(self, "elements", tuple(self.elements))
         object.__setattr__(
             self,
@@ -567,6 +624,8 @@ def solve_structure_elements(
     tangent_refinement: bool = False,
     tangent_in_recycling: bool = True,
     adaptive_counts: bool = True,
+    wilson_normalization: bool = False,
+    phase_quality_selection: bool = False,
     cancellation: SolutionCancellation | None = None,
 ) -> SolutionResult:
     """Infer full-cell counts and labels by shared-map symmetry-orbit edits.
@@ -576,6 +635,11 @@ def solve_structure_elements(
     portfolio phasing use the same constrained refinement. Legacy completion and
     count-assignment switches are not used. Adaptive peak caps bound resources;
     their selected mask peaks are distinct from inferred atom counts.
+    ``wilson_normalization=True`` fits signed, independent-family resolution
+    shells with epsilon corrections and uses the resulting E values for phasing.
+    ``phase_quality_selection=True`` ranks maps by CC-Rweak and defers poor early
+    handoffs. Both are explicit experimental options; original observations still
+    govern final refinement. Missing-data resolution extension is not added here.
     ``adaptive_counts=True`` compares nested residual-orbit additions, repeats
     count proposals after framework refinement, and bounds poor early-map
     handoffs. ``False`` retains the previous single-batch/edit schedule.
@@ -605,6 +669,10 @@ def solve_structure_elements(
         or len(set(elements)) != len(elements)
     ):
         raise ValueError("elements must be 1..8 distinct neutral non-H symbols")
+    if not isinstance(wilson_normalization, bool):
+        raise TypeError("wilson_normalization must be boolean")
+    if not isinstance(phase_quality_selection, bool):
+        raise TypeError("phase_quality_selection must be boolean")
     if not isinstance(adaptive_counts, bool):
         raise TypeError("adaptive_counts must be boolean")
     if not isinstance(tangent_refinement, bool):
@@ -654,6 +722,8 @@ def solve_structure_elements(
     )
     if not isinstance(group, SpaceGroup) or not isinstance(controls, SolutionOptions):
         raise TypeError("space_group and options must be SpaceGroup and SolutionOptions")
+    if phase_quality_selection and controls.phasing != "dual_space":
+        raise ValueError("phase_quality_selection requires phasing=dual_space")
     if tangent_refinement and controls.phasing != "dual_space":
         raise ValueError("tangent_refinement requires phasing=dual_space")
     if cancellation is not None and not isinstance(cancellation, SolutionCancellation):
@@ -678,6 +748,8 @@ def solve_structure_elements(
             tangent_refinement,
             tangent_in_recycling,
             adaptive_counts,
+            wilson_normalization,
+            phase_quality_selection,
         ),
     )
     return _run_solution(observations, cell, group, (), controls, cancellation, shared)

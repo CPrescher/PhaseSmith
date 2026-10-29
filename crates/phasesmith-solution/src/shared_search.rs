@@ -50,6 +50,10 @@ pub struct SharedSearchOptions {
     pub tangent_in_recycling: bool,
     /// Explore nested orbit counts and bound early-map refinement effort.
     pub adaptive_counts: bool,
+    /// Fit resolution-dependent intensity normalization without composition counts.
+    pub wilson_normalization: bool,
+    /// Rank Fourier maps by CC-Rweak before count assignment.
+    pub phase_quality_selection: bool,
 }
 impl Default for SharedSearchOptions {
     fn default() -> Self {
@@ -71,6 +75,8 @@ impl Default for SharedSearchOptions {
             tangent_refinement: false,
             tangent_in_recycling: true,
             adaptive_counts: true,
+            wilson_normalization: false,
+            phase_quality_selection: false,
         }
     }
 }
@@ -176,6 +182,18 @@ pub struct SharedSearchSummary {
     pub tangent_in_recycling: bool,
     /// Whether joint count-prefix exploration is active.
     pub adaptive_counts: bool,
+    /// Requested empirical Wilson normalization.
+    pub wilson_normalization: bool,
+    /// Requested measured-only phase-quality ranking.
+    pub phase_quality_selection: bool,
+    /// Successful normalization, or None when not requested/failed.
+    pub normalization: Option<crate::WilsonAudit>,
+    /// Explicit normalization failure; fallback sharpening is labelled.
+    pub normalization_diagnostic: Option<String>,
+    /// Actual per-start CC/Rweak values and deferred handoffs.
+    pub phase_quality: Vec<crate::PhaseQualityTrace>,
+    /// Actual phase-start order sent to count refinement after CFOM ranking.
+    pub phase_model_trials: Vec<usize>,
     /// Isotropic count prefixes actually screened.
     pub count_prefix_screenings: usize,
     /// Phase maps handed off under a local refinement budget.
@@ -1629,6 +1647,7 @@ pub fn solve_elements(
         || !(1..=128).contains(&search.dual_peak_cap)
         || !(1..=50).contains(&search.recycling_cycles)
         || (search.tangent_refinement && options.phasing != PhasingMethod::DualSpace)
+        || (search.phase_quality_selection && options.phasing != PhasingMethod::DualSpace)
         || options.refinement.is_none()
     {
         return Err(error(
@@ -1699,12 +1718,51 @@ pub fn solve_elements(
         .and_then(|p| p.evaluate(&s))
         .map_err(|e| error(e.to_string()))?
         .real;
-    let sharpened: Vec<_> = data
+    let mut sharpened: Vec<_> = data
         .amplitudes
         .iter()
         .zip(factors.chunks_exact(elements.len()))
         .map(|(&a, f)| a / f.iter().map(|v| v * v).sum::<f64>().sqrt())
         .collect();
+    let normalization_result = if search.wilson_normalization || search.phase_quality_selection {
+        Some(crate::normalize_wilson(
+            cell,
+            group,
+            &data.hkl,
+            &data.intensity,
+            &elements,
+        ))
+    } else {
+        None
+    };
+    let (normalization, normalization_diagnostic) = match normalization_result {
+        Some(Ok(norm)) => (Some(norm), None),
+        Some(Err(e)) => (None, Some(e.to_string())),
+        None => (None, None),
+    };
+    if search.wilson_normalization
+        && let Some(norm) = &normalization
+    {
+        sharpened.clone_from(&norm.e_values);
+    }
+    let quality_plan = if search.phase_quality_selection {
+        normalization
+            .as_ref()
+            .map(|norm| {
+                crate::PreparedPhaseQuality::new(
+                    cell,
+                    group,
+                    &data,
+                    observations,
+                    &elements,
+                    norm,
+                    search.wilson_normalization,
+                )
+            })
+            .transpose()?
+    } else {
+        None
+    };
     let mut minimum = group.operations().len();
     for x in [0., 0.125, 0.25, 1. / 3., 0.137] {
         for y in [0., 0.125, 0.25, 1. / 3., 0.271] {
@@ -1743,6 +1801,10 @@ pub fn solve_elements(
         tangent_refinement: search.tangent_refinement,
         tangent_in_recycling: search.tangent_in_recycling,
         adaptive_counts: search.adaptive_counts,
+        wilson_normalization: search.wilson_normalization,
+        phase_quality_selection: search.phase_quality_selection,
+        normalization: normalization.as_ref().map(|n| n.audit.clone()),
+        normalization_diagnostic,
         staged_refinement: search.staged_refinement
             && options.refinement == Some(AdpMode::Anisotropic),
         screening_iterations: search.screening_iterations,
@@ -1783,6 +1845,7 @@ pub fn solve_elements(
         tangent_plan.as_ref()
     };
     let mut winners: Vec<State> = Vec::new();
+    let mut phase_pool: Vec<(f64, usize, Vec<f64>)> = Vec::new();
     for trial in 0..options.trials {
         if crate::stopped(Some(deadline), options.cancellation.as_ref()) {
             result.termination = crate::solver::stop_reason(options);
@@ -1856,6 +1919,18 @@ pub fn solve_elements(
                 }
                 Ok(accepted)
             };
+            // Quality selection first explores cheap independent phase starts,
+            // retaining complete candidate maps before any atom-count refinement.
+            let phase_deadline = if quality_plan.is_some() {
+                deadline.min(
+                    Instant::now()
+                        + Duration::from_secs_f64(
+                            (0.30 * options.max_seconds / options.trials as f64).max(0.01),
+                        ),
+                )
+            } else {
+                deadline
+            };
             let mut state = crate::dual_space::dual_space_guided(
                 shape,
                 cell,
@@ -1880,14 +1955,24 @@ pub fn solve_elements(
                     },
                     cancellation: options.cancellation.clone(),
                 },
-                Some(deadline),
-                if search.dual_checkpoints {
+                Some(phase_deadline),
+                if search.dual_checkpoints && quality_plan.is_none() {
                     Some(&mut handoff)
                 } else {
                     None
                 },
                 dual_tangent,
+                quality_plan.as_ref(),
             )?;
+            if let Some(mut quality) = state.quality.take() {
+                if let Some(&score) = quality.cfom.get(state.trial.best_cycle) {
+                    phase_pool.push((score, trial, state.trial.density.clone()));
+                    phase_pool.sort_by(|a, b| b.0.total_cmp(&a.0).then(a.1.cmp(&b.1)));
+                    phase_pool.truncate(search.beam_width);
+                }
+                quality.trial = trial;
+                audit.phase_quality.push(quality);
+            }
             if let Some(mut tangent) = state.tangent.take() {
                 tangent.trial = trial;
                 audit.tangent_trials.push(tangent);
@@ -1954,7 +2039,7 @@ pub fn solve_elements(
             checkpoints,
         });
         result.histories.push(flip.history);
-        if !use_dual || !search.dual_checkpoints {
+        if (!use_dual || !search.dual_checkpoints) && quality_plan.is_none() {
             search_phase_map(
                 cell,
                 group,
@@ -1973,6 +2058,9 @@ pub fn solve_elements(
                 recycle_tangent,
             )?;
         }
+        if quality_plan.is_some() && phase_pool.first().is_some_and(|p| p.0 >= 0.9) {
+            break;
+        }
         if winners.first().is_some_and(|state| {
             complete(state, &elements)
                 && state.recycling_validated
@@ -1984,6 +2072,41 @@ pub fn solve_elements(
         if crate::stopped(Some(deadline), options.cancellation.as_ref()) {
             result.termination = crate::solver::stop_reason(options);
             break;
+        }
+    }
+    if quality_plan.is_some() {
+        phase_pool.sort_by(|a, b| b.0.total_cmp(&a.0).then(a.1.cmp(&b.1)));
+        for (_, trial, density) in phase_pool {
+            if crate::stopped(Some(deadline), options.cancellation.as_ref()) {
+                break;
+            }
+            audit.phase_model_trials.push(trial);
+            let local = deadline.min(Instant::now() + Duration::from_secs(4));
+            search_phase_map(
+                cell,
+                group,
+                options,
+                search,
+                shape,
+                minimum,
+                &elements,
+                trial,
+                &density,
+                local,
+                deadline,
+                &mut winners,
+                &mut result,
+                &mut audit,
+                recycle_tangent,
+            )?;
+            if winners.first().is_some_and(|s| {
+                complete(s, &elements)
+                    && s.recycling_validated
+                    && s.candidate.r1 <= options.r1_target
+            }) {
+                result.termination = "r1_target";
+                break;
+            }
         }
     }
     winners.sort_by(|a, b| ordering(a, b, &elements));

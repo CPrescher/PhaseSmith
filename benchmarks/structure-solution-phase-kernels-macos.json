@@ -1,0 +1,187 @@
+{
+  "schema": "phasesmith.phase-quality-kernel-benchmark.v1",
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "rustc": "rustc 1.99.1 (58cf8f9c3 2026-10-13)",
+  "native_sha256": "b4f0f7fc9c2011d597969cd4e27aa2352ba22d509b428399930731d2c3cd7a08",
+  "command": "cargo bench -p phasesmith-solution --bench solution -- 'wilson_normalization|phase_quality_fused' --sample-size 10 --warm-up-time 1 --measurement-time 3",
+  "fixture": "Eight-atom Si/O synthetic model, 2108 measured rows and 1054 independent Friedel families; exact fixture in benchmark source.",
+  "holdout_outcomes_opened": false,
+  "implementation_sha256": {
+    "crates/phasesmith-solution/src/phase_quality.rs": "6e50a1e340dbb023e53f10033145e4e645f379b07ec321bc3075e40f076c05ad",
+    "crates/phasesmith-solution/benches/solution.rs": "1fa2448d946059a84c01c0f79a891a1b95bbca683c82893455af9bd318c27c3c",
+    "Cargo.lock": "f8a427cc7edfd5463a2929aa00c5473c10dd674553132052aadcef11fd41cdee"
+  },
+  "units": "nanoseconds",
+  "benchmarks": {
+    "wilson_normalization_8_atoms_2108_reflections": {
+      "benchmark": {
+        "group_id": "wilson_normalization_8_atoms_2108_reflections",
+        "function_id": null,
+        "value_str": null,
+        "throughput": null,
+        "full_id": "wilson_normalization_8_atoms_2108_reflections",
+        "directory_name": "wilson_normalization_8_atoms_2108_reflections",
+        "title": "wilson_normalization_8_atoms_2108_reflections"
+      },
+      "estimates": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 602810.5972159092,
+            "upper_bound": 605756.1703598484
+          },
+          "point_estimate": 604335.1985416666,
+          "standard_error": 753.8307321484184
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 602317.9431818182,
+            "upper_bound": 606584.949810606
+          },
+          "point_estimate": 604322.2133522728,
+          "standard_error": 1002.0665008537986
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 401.328019465958,
+            "upper_bound": 4091.2472631612413
+          },
+          "point_estimate": 2697.969725965091,
+          "standard_error": 946.549779486105
+        },
+        "slope": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 604063.8653546554,
+            "upper_bound": 606836.2988501883
+          },
+          "point_estimate": 605503.7632821724,
+          "standard_error": 735.112383797895
+        },
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1401.6989838121215,
+            "upper_bound": 3203.036601136955
+          },
+          "point_estimate": 2520.3748975143535,
+          "standard_error": 465.1602388724885
+        }
+      },
+      "sample": {
+        "sampling_mode": "Linear",
+        "iters": [
+          88.0,
+          176.0,
+          264.0,
+          352.0,
+          440.0,
+          528.0,
+          616.0,
+          704.0,
+          792.0,
+          880.0
+        ],
+        "times": [
+          52957000.0,
+          105555833.0,
+          159948833.0,
+          212015916.0,
+          265995084.0,
+          320656041.0,
+          373269792.0,
+          425293542.0,
+          478362375.0,
+          534807875.0
+        ]
+      }
+    },
+    "phase_quality_fused_value_gradient_8_atoms_1054_families": {
+      "benchmark": {
+        "group_id": "phase_quality_fused_value_gradient_8_atoms_1054_families",
+        "function_id": null,
+        "value_str": null,
+        "throughput": null,
+        "full_id": "phase_quality_fused_value_gradient_8_atoms_1054_families",
+        "directory_name": "phase_quality_fused_value_gradient_8_atoms_1054_families",
+        "title": "phase_quality_fused_value_gradient_8_atoms_1054_families"
+      },
+      "estimates": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 7413.274936244362,
+            "upper_bound": 7478.998845656234
+          },
+          "point_estimate": 7444.223504320228,
+          "standard_error": 16.839178999991336
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 7398.790248735821,
+            "upper_bound": 7483.818140403626
+          },
+          "point_estimate": 7433.413489134891,
+          "standard_error": 20.17815586073372
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 10.564309980548003,
+            "upper_bound": 90.84204533725641
+          },
+          "point_estimate": 53.78374384492897,
+          "standard_error": 21.54453967944811
+        },
+        "slope": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 7428.239820222871,
+            "upper_bound": 7508.140030550137
+          },
+          "point_estimate": 7463.008521695607,
+          "standard_error": 21.9501464615371
+        },
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 26.813742387676793,
+            "upper_bound": 72.34778895357913
+          },
+          "point_estimate": 55.931452558893454,
+          "standard_error": 11.88872414096195
+        }
+      },
+      "sample": {
+        "sampling_mode": "Linear",
+        "iters": [
+          7317.0,
+          14634.0,
+          21951.0,
+          29268.0,
+          36585.0,
+          43902.0,
+          51219.0,
+          58536.0,
+          65853.0,
+          73170.0
+        ],
+        "times": [
+          54015709.0,
+          107953291.0,
+          164277292.0,
+          219632208.0,
+          271141125.0,
+          325549125.0,
+          380327500.0,
+          435584584.0,
+          497537125.0,
+          544854417.0
+        ]
+      }
+    }
+  }
+}

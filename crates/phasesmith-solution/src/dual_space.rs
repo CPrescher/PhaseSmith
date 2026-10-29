@@ -84,6 +84,8 @@ pub struct DualSpaceResult {
     pub checkpoints: Vec<DualSpaceCheckpoint>,
     /// Actual optional tangent/annealing work, absent for the legacy path.
     pub tangent: Option<crate::TangentAudit>,
+    /// Actual CC/Rweak ranking trace, absent on the legacy trajectory.
+    pub quality: Option<crate::PhaseQualityTrace>,
 }
 
 pub(crate) fn hash64(mut value: u64) -> u64 {
@@ -392,7 +394,7 @@ pub fn dual_space_monitored(
     checkpoint: Option<&mut CheckpointCallback<'_>>,
 ) -> Result<DualSpaceResult, SolutionError> {
     dual_space_guided(
-        shape, cell, hkl, amplitudes, phases, support, options, deadline, checkpoint, None,
+        shape, cell, hkl, amplitudes, phases, support, options, deadline, checkpoint, None, None,
     )
 }
 
@@ -413,6 +415,7 @@ pub(crate) fn dual_space_guided(
     deadline: Option<Instant>,
     mut checkpoint: Option<&mut CheckpointCallback<'_>>,
     tangent: Option<&crate::PreparedTangent>,
+    quality: Option<&crate::PreparedPhaseQuality>,
 ) -> Result<DualSpaceResult, SolutionError> {
     validate_options(options)?;
     let geometry = cell.geometry().map_err(|e| error(e.to_string()))?;
@@ -456,6 +459,10 @@ pub(crate) fn dual_space_guided(
         )
     };
     let mut tangent_audit = tangent.map(crate::PreparedTangent::audit);
+    let mut quality_trace = quality.map(crate::PreparedPhaseQuality::trace);
+    let quality_indices: Vec<_> = quality.map_or_else(Vec::new, |plan| {
+        plan.hkl.iter().map(|&h| grid_index(h, shape)).collect()
+    });
     let mut history = Vec::with_capacity(options.cycles);
     let mut adaptive_history = match options.peak_selection {
         PeakSelection::Adaptive { sigma, cap } => Some(AdaptivePeakHistory {
@@ -469,11 +476,13 @@ pub(crate) fn dual_space_guided(
     };
     let mut window_best = Vec::new();
     let mut window_score = f64::INFINITY;
+    let mut window_rank = f64::INFINITY;
     let mut window_cycle = 0;
     let mut next_checkpoint = 4;
     let mut checkpoints = Vec::new();
     let mut best = density.clone();
     let mut best_score = f64::INFINITY;
+    let mut best_rank = f64::INFINITY;
     let mut best_cycle = 0;
     let target_norm: f64 = target.iter().map(|a| a * a).sum();
     for cycle in 0..options.cycles {
@@ -511,36 +520,73 @@ pub(crate) fn dual_space_guided(
             .sum::<f64>()
             / target_norm;
         history.push(score);
+        let quality_score = if let Some(plan) = quality {
+            let magnitudes: Vec<_> = quality_indices
+                .iter()
+                .map(|&i| calculated[i].norm())
+                .collect();
+            Some(plan.evaluate(&magnitudes)?)
+        } else {
+            None
+        };
+        if let (Some(q), Some(trace)) = (&quality_score, &mut quality_trace) {
+            trace.correlation.push(q.correlation);
+            trace.r_weak.push(q.r_weak);
+            trace.cfom.push(q.cfom);
+        }
+        let ranking = quality_score.as_ref().map_or(score, |q| -q.cfom);
         let eligible = options.omit_fraction == 0. || cycle % 3 != 2;
-        if checkpoint.is_some() && eligible && score < window_score {
+        if checkpoint.is_some() && eligible && ranking < window_rank {
+            window_rank = ranking;
             window_score = score;
             window_best.clone_from(&projected);
             window_cycle = cycle;
         }
-        if eligible && (cycle >= 50 || options.cycles <= 50) && score < best_score {
+        if eligible
+            && (cycle >= 50 || options.cycles <= 50 || quality.is_some())
+            && ranking < best_rank
+        {
+            best_rank = ranking;
             best_score = score;
             best = projected;
             best_cycle = cycle;
+        }
+        if quality.is_some() && checkpoint.is_none() && cycle + 1 >= 32 && best_rank <= -0.9 {
+            break;
         }
         if let Some(accept) = &mut checkpoint {
             if (cycle + 1 == next_checkpoint || cycle + 1 == options.cycles)
                 && window_score.is_finite()
             {
-                let accepted = accept(&window_best, cycle + 1, window_cycle)?;
-                checkpoints.push(DualSpaceCheckpoint {
-                    completed_cycles: cycle + 1,
-                    best_cycle: window_cycle,
-                    score: window_score,
-                    accepted,
-                });
-                if accepted {
-                    best = window_best;
-                    best_cycle = window_cycle;
-                    best_score = window_score;
-                    break;
+                // Only premature handoffs are gated. At >=64 cycles and the
+                // final checkpoint a map is always assessed, preserving partial outcomes.
+                if quality.is_some()
+                    && cycle + 1 < 64
+                    && cycle + 1 < options.cycles
+                    && -window_rank < 0.4
+                {
+                    if let Some(trace) = &mut quality_trace {
+                        trace.deferred_handoffs += 1;
+                    }
+                    next_checkpoint *= 4;
+                } else {
+                    let accepted = accept(&window_best, cycle + 1, window_cycle)?;
+                    checkpoints.push(DualSpaceCheckpoint {
+                        completed_cycles: cycle + 1,
+                        best_cycle: window_cycle,
+                        score: window_score,
+                        accepted,
+                    });
+                    if accepted {
+                        best = window_best;
+                        best_cycle = window_cycle;
+                        best_score = window_score;
+                        break;
+                    }
+                    window_score = f64::INFINITY;
+                    window_rank = f64::INFINITY;
+                    next_checkpoint *= 4;
                 }
-                window_score = f64::INFINITY;
-                next_checkpoint *= 4;
             }
         }
         if let (Some(plan), Some(audit)) = (tangent, &mut tangent_audit) {
@@ -610,6 +656,7 @@ pub(crate) fn dual_space_guided(
         adaptive_history,
         checkpoints,
         tangent: tangent_audit,
+        quality: quality_trace,
     })
 }
 
