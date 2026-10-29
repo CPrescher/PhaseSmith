@@ -2,6 +2,7 @@
 
 import math
 from dataclasses import dataclass
+from typing import Protocol
 
 import numpy as np
 
@@ -18,6 +19,26 @@ def triples(values, name):
     return a
 
 
+class PixelCoordinateMap(Protocol):
+    """Application-owned coordinates around the native affine plane.
+
+    Batch methods consume/return finite float (n,2) arrays. inverse_jacobian
+    returns d(image xy)/d(plane xy), shape (n,2,2), evaluated at plane xy.
+    Boundary and nonunique-inverse conventions belong to the map's provenance.
+    """
+
+    def to_plane(self, xy: np.ndarray) -> np.ndarray: ...
+    def from_plane(self, xy: np.ndarray) -> np.ndarray: ...
+    def inverse_jacobian(self, xy: np.ndarray) -> np.ndarray: ...
+
+
+def mapped_xy(pixel_map, xy, *, inverse=False):
+    result = np.asarray((pixel_map.from_plane if inverse else pixel_map.to_plane)(xy))
+    if result.dtype.kind not in "fiu" or result.shape != xy.shape or not np.isfinite(result).all():
+        raise ValueError("pixel coordinate map must return finite real (n,2) coordinates")
+    return np.ascontiguousarray(result, dtype=np.float64)
+
+
 @dataclass(frozen=True)
 class PanelGeometry:
     """Five lab vectors: pixel(0,0) centre, fast/slow pixel steps (m), beam, axis.
@@ -28,6 +49,7 @@ class PanelGeometry:
 
     vectors: np.ndarray
     wavelength: float
+    pixel_map: PixelCoordinateMap | None = None
 
     def __post_init__(self):
         a = triples(self.vectors, "geometry vectors")
@@ -42,6 +64,11 @@ class PanelGeometry:
             raise ValueError("wavelength must be positive and finite")
         a.flags.writeable = False
         object.__setattr__(self, "vectors", a)
+        if self.pixel_map is not None and not all(
+            callable(getattr(self.pixel_map, name, None))
+            for name in ("to_plane", "from_plane", "inverse_jacobian")
+        ):
+            raise TypeError("pixel_map must implement to_plane, from_plane and inverse_jacobian")
 
     @classmethod
     def from_poni(
@@ -91,6 +118,8 @@ def reciprocal_vectors(xyomega, geometry):
         raise TypeError("geometry must be PanelGeometry")
     if not hasattr(_core, "experimental_reciprocal"):
         raise RuntimeError("build PhaseSmith with --features experimental-spots")
+    if geometry.pixel_map is not None:
+        a[:, :2] = mapped_xy(geometry.pixel_map, a[:, :2])
     return _core.experimental_reciprocal(a, geometry.vectors, geometry.wavelength)
 
 

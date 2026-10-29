@@ -42,6 +42,50 @@ def test_position_hunt_reads_once_and_keeps_per_frame_observations():
     np.testing.assert_array_equal(actual.observations, repeat.observations)
 
 
+@pytest.mark.parametrize("workers", [1, 3])
+def test_supplied_variance_survives_background_subtraction_and_buffer_reuse(workers):
+    images, bounds = scene()
+    residuals = images - 5
+    variances = np.maximum(images, 1)
+    image_buffer = np.empty_like(images[0])
+    variance_buffer = np.empty_like(variances[0])
+    loaded = []
+
+    def image_loader(i):
+        image_buffer[:] = residuals[i]
+        return image_buffer
+
+    def variance_loader(i):
+        loaded.append(i)
+        variance_buffer[:] = variances[i]
+        return variance_buffer
+
+    actual = r.locate_series(image_loader, bounds, variance_loader=variance_loader, workers=workers)
+    expected = r.locate_series(residuals.__getitem__, bounds, variance_loader=variances.__getitem__)
+    assert loaded == list(range(len(images)))
+    np.testing.assert_array_equal(actual.values, expected.values)
+    np.testing.assert_array_equal(actual.observations, expected.observations)
+    assert actual.frame_hashes == expected.frame_hashes
+    tables = [detect_spots(a, variance=v) for a, v in zip(residuals, variances, strict=True)]
+    np.testing.assert_array_equal(
+        actual.observations[:, 2:4], np.concatenate([t.values[:, :2] for t in tables])
+    )
+    # Hashes include uncertainty inputs, even if centroids/detections are unchanged.
+    changed = r.locate_series(
+        residuals.__getitem__, bounds, variance_loader=lambda i: variances[i] * 1.01
+    )
+    assert actual.frame_hashes != changed.frame_hashes
+
+
+@pytest.mark.parametrize(
+    "variance", [np.ones((2, 3)), np.zeros((48, 60)), np.full((48, 60), np.nan)]
+)
+def test_invalid_supplied_frame_variances_fail(variance):
+    images, bounds = scene()
+    with pytest.raises(ValueError, match="variance"):
+        r.locate_series(images.__getitem__, bounds, variance_loader=lambda _: variance)
+
+
 def test_link_reference_randomized_and_centroid_reference():
     rng = np.random.default_rng(42)
     for _ in range(6):
@@ -203,3 +247,131 @@ def test_finished_frame_observer_is_ordered_and_does_not_change_results():
     with pytest.raises(RuntimeError, match="cancel observer"):
         r.locate_series(images.__getitem__, bounds, frame_finished=cancel)
     assert calls == [0]
+
+
+@pytest.mark.parametrize("workers", [1, 2, 4, 32])
+def test_parallel_complete_records_and_loader_reuse_are_byte_identical(workers):
+    from threading import get_ident
+
+    images, bounds = scene()
+    rng = np.random.default_rng(9821)
+    images += rng.normal(0, 0.2, images.shape)
+    masks = rng.random(images.shape) < 0.01
+    images[masks] = np.nan
+    expected = r.locate_series(images.__getitem__, bounds, mask_loader=masks.__getitem__)
+    buffer, mask_buffer = np.empty_like(images[0]), np.empty_like(masks[0])
+    calls, events, snapshots = [], [], []
+    caller = get_ident()
+
+    def load(i):
+        assert get_ident() == caller
+        calls.append(i)
+        buffer[:] = images[i]
+        return buffer
+
+    def mask(i):
+        assert get_ident() == caller
+        mask_buffer[:] = masks[i]
+        return mask_buffer
+
+    def finished(i, table):
+        assert get_ident() == caller
+        events.append(("frame", i))
+        snapshots.append(table)
+
+    result = r.locate_series(
+        load,
+        bounds,
+        mask_loader=mask,
+        workers=workers,
+        frame_finished=finished,
+        progress=lambda done, total: events.append(("progress", done)),
+    )
+    assert calls == list(range(len(images)))
+    assert events == [event for i in calls for event in (("frame", i), ("progress", i + 1))]
+    for name in ("values", "flags", "observations", "boxes", "frame_ranges", "omega_bounds"):
+        assert getattr(result, name).tobytes() == getattr(expected, name).tobytes(), name
+    assert result.frame_hashes == expected.frame_hashes
+    for i, table in enumerate(snapshots):
+        original = detect_spots(images[i], mask=masks[i])
+        for name in ("values", "boxes", "flags"):
+            assert getattr(table, name).tobytes() == getattr(original, name).tobytes()
+
+
+def test_parallel_detectors_overlap_but_callbacks_remain_ordered(monkeypatch):
+    from threading import Barrier, get_ident
+
+    images, bounds = scene()
+    barrier = Barrier(2, timeout=10)
+    original = r._measure_frame
+    threads = set()
+    caller = get_ident()
+
+    def measure(*args):
+        threads.add(get_ident())
+        barrier.wait()
+        return original(*args)
+
+    monkeypatch.setattr(r, "_measure_frame", measure)
+    completed = []
+    # Four frames form two batches; a serial implementation would time out.
+    r.locate_series(
+        images.__getitem__,
+        bounds[:4],
+        workers=2,
+        frame_finished=lambda i, table: completed.append(i),
+    )
+    assert len(threads) == 2 and caller not in threads
+    assert completed == list(range(4))
+
+
+@pytest.mark.parametrize("stop", ["observer", "progress", "budget", "loader", "detector"])
+def test_parallel_failure_is_bounded_ordered_and_joins_workers(monkeypatch, stop):
+    from threading import enumerate as thread_list
+
+    images, bounds = scene()
+    loaded, completed = [], []
+    original = r._measure_frame
+
+    def load(i):
+        loaded.append(i)
+        if stop == "loader" and i == 1:
+            raise RuntimeError("loader stop")
+        return images[2] if stop == "budget" else images[i]
+
+    def finished(i, table):
+        completed.append(i)
+        if stop == "observer":
+            raise RuntimeError("observer stop")
+
+    def progress(done, total):
+        if stop == "progress":
+            raise RuntimeError("progress stop")
+
+    def measure(*args):
+        if stop == "detector":
+            raise RuntimeError("detector stop")
+        return original(*args)
+
+    monkeypatch.setattr(r, "_measure_frame", measure)
+    with pytest.raises((RuntimeError, ValueError), match=r"stop|budget"):
+        r.locate_series(
+            load,
+            bounds,
+            workers=2,
+            frame_finished=finished,
+            progress=progress,
+            rotation_options=r.RotationOptions(max_observations=1 if stop == "budget" else 100),
+        )
+    assert loaded == ([0, 1, 2] if stop == "budget" else [0, 1])
+    assert completed == ([] if stop == "detector" else [0])
+    assert not any(t.name.startswith("phasesmith-spots") for t in thread_list())
+
+
+@pytest.mark.parametrize("workers", [True, np.bool_(False), 1.5, "2", 0, -1, 33])
+def test_invalid_worker_count_does_not_read_frames(workers):
+    _, bounds = scene()
+    with pytest.raises((ValueError, TypeError), match="workers"):
+        r.locate_series(
+            lambda _: pytest.fail("must validate before loading"), bounds, workers=workers
+        )
