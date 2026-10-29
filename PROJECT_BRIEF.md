@@ -2084,6 +2084,38 @@ LPSD, tube-tail, continuum, or coupled-dispersion production terms. The frozen
 promotion protocol in `docs/profile-transferability-gate.md` still applies to
 any future in-house or provenance-complete external pair.
 
+## Experimental structure-solution transfer benchmark
+
+The structure-solution numerical implementation remains frozen at `8bc4efc` for
+the first broader transfer screen. A checksum-pinned corpus now registers 100
+measured COD reflection/reference pairs from 100 distinct DOI/formula families,
+covering all seven crystal systems and 27 space-group types. A deterministic
+family-separated split reserves 65 cases as unopened solver holdout outcomes;
+35 development cases were compared serially against user-provided SHELXT 2018/2,
+one thread, element types only, supplied cell/symmetry and a 15-second per-job
+wall ceiling. Both consume identical rounded HKLF4 observations, without reference
+coordinates or composition quantities in numerical workers. Exclusions and failed
+searches remain visible. No production numerical code or dependencies change.
+
+Exact full-cell non-H element counts plus coordinate recovery (maximum 0.05 Å,
+RMS 0.025 Å) succeed in 5/35 PhaseSmith cases and 13/35 SHELXT cases. Total atom
+counts alone agree in 9/35 and 29/35. All-outcome median wall times are 13.220 s
+and 0.889 s on native arm64 PhaseSmith versus x86_64-compatible SHELXT; these are
+not matched successful-solve times. Seven references exceed PhaseSmith's current
+input-derived dense-model capacity and remain in the denominator. This evidence
+shows a substantial generalization gap, despite prior success on three reused
+structures. Count/orbit selection, capacity and element assignment should be
+improved on development cases before opening the holdout.
+
+Registry v5 corrects rounded special-position reference-image multiplicities for
+nine cases, corroborated against registered cell-formula counts across all 100.
+It preserves the v4 collection registry, source bytes, solver inputs, predictions
+and timings. Output syntax/origin/precision corrections are re-audits of each
+program's saved chosen model, never reference-selected alternatives or search
+reruns. Protocol, thresholds, limitations and results are documented in
+`docs/solution-corpus-benchmark.md`; the committed full report is
+`benchmarks/structure-solution-corpus-development-macos.json`.
+
 ## Quality bar
 
 Public behavior is typed and documented. Invalid shapes, non-finite values,
