@@ -112,6 +112,7 @@ def dual_space_reference(
     omit_fraction=0.1,
     seed=0,
     patterson_rank=None,
+    prediction=None,
 ):
     hkl, amplitude = np.asarray(hkl), np.asarray(amplitude)
     amplitude = amplitude / amplitude.max()
@@ -148,6 +149,8 @@ def dual_space_reference(
             best, best_score, best_cycle = projected.copy(), score, cycle
         calculated *= scale
         calculated[support == 0] = 0
+        if prediction is not None:
+            calculated = prediction(calculated, cycle)
         values = calculated[indices]
         norms = np.abs(values)
         phase = np.divide(values, norms, out=np.ones_like(values), where=norms > 0)

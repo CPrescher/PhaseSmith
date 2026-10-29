@@ -2209,6 +2209,27 @@ time drops from 63.895 to 34.825 seconds across the panel. These are single-seed
 serial development results with unchanged caps; both controls remain opt-in and
 the 65 holdout outcomes remain unopened.
 
+A further opt-in prediction experiment distinguishes the existing free missing
+coefficients inside the measured sphere from bounded, observed-envelope-normalized
+prediction (`missing_reflections`) and added reciprocal support beyond measured
+resolution (`resolution_extension`). New coefficients remain theoretical predictions:
+original observations, origin/weak-reflection tests, peak-mass integrals, final
+fits and atom caps remain measured-only. Both P1 atomicity and supplied-symmetry
+positivity recycling can use the bounded predictions. Local complex values and
+analytical coefficient Jacobians have independent NumPy and finite-difference
+checks, and complete Fourier-cycle parity is tested. The previous combined path
+remains the control. Equations, bounds and 35-case development-only comparisons
+are in `docs/solution-reflection-prediction.md`; the holdout stays closed.
+The same-build four-way development comparison gives 14/35 structures and 26
+correct total counts for the current control, 14/27 for missing-only, 15/26
+for extension-only, and 14/27 for both. Exact per-element counts stay at 15/35
+in all modes. Medians rise from 3.388 seconds to 4.455, 4.244 and 4.268 seconds.
+Extension's one gained structure is also recovered by a larger-grid-only probe
+without extrapolated coefficients; the gain cannot be assigned to prediction.
+The combined path gains that structure but loses another coordinate recovery.
+Both controls therefore remain off, with all outcomes retained and no change to
+correctness gates or input-derived caps. The 65 holdout outcomes remain unopened.
+
 ## Quality bar
 
 Public behavior is typed and documented. Invalid shapes, non-finite values,

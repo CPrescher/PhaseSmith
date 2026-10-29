@@ -52,6 +52,19 @@ pub(super) fn summary<'py>(
     d.set_item("phase_origin_selection", s.phase_origin_selection)?;
     d.set_item("chemical_assignment", s.chemical_assignment)?;
     d.set_item("iterative_refinement", s.iterative_refinement)?;
+    d.set_item("missing_reflections", s.missing_reflections)?;
+    d.set_item("resolution_extension", s.resolution_extension)?;
+    d.set_item("prediction_steps", s.prediction_steps)?;
+    d.set_item("prediction_updates", s.prediction_updates)?;
+    d.set_item("prediction_clipped", s.prediction_clipped)?;
+    d.set_item("prediction_seconds", s.prediction_seconds)?;
+    d.set_item(
+        "prediction",
+        s.prediction
+            .as_ref()
+            .map(|a| super::prediction::audit(py, a))
+            .transpose()?,
+    )?;
     d.set_item(
         "phase_origins",
         super::origin::origin_records(py, &s.phase_origins)?,

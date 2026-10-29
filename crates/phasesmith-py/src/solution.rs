@@ -16,6 +16,8 @@ mod completion;
 mod dual;
 #[path = "solution_origin.rs"]
 mod origin;
+#[path = "solution_prediction.rs"]
+mod prediction;
 #[path = "solution_quality.rs"]
 mod quality;
 #[path = "solution_recycling.rs"]
@@ -51,7 +53,7 @@ type SharedSearchRequest = (
         bool,
         bool,
         bool,
-        (bool, bool, bool),
+        (bool, bool, bool, bool, f64),
     ),
 );
 
@@ -178,7 +180,13 @@ fn solve_structure<'py>(
                     phase_quality_selection,
                     phase_first_selection,
                     calculated_shell_normalization,
-                    (phase_origin_selection, chemical_assignment, iterative_refinement),
+                    (
+                        phase_origin_selection,
+                        chemical_assignment,
+                        iterative_refinement,
+                        missing_reflections,
+                        resolution_extension,
+                    ),
                 ),
             )) = shared_search
             {
@@ -218,6 +226,8 @@ fn solve_structure<'py>(
                         phase_origin_selection,
                         chemical_assignment,
                         iterative_refinement,
+                        missing_reflections,
+                        resolution_extension,
                     },
                 )
             } else {
@@ -387,6 +397,7 @@ pub fn register(module: &Bound<'_, PyModule>) -> PyResult<()> {
     shared::register(module)?;
     quality::register(module)?;
     origin::register(module)?;
+    prediction::register(module)?;
     recycling::register(module)?;
     tangent::register(module)?;
     module.add_class::<NativeCancellation>()?;

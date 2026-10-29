@@ -86,6 +86,10 @@ pub struct DualSpaceResult {
     pub tangent: Option<crate::TangentAudit>,
     /// Actual CC/Rweak ranking trace, absent on the legacy trajectory.
     pub quality: Option<crate::PhaseQualityTrace>,
+    /// Actual optional prediction steps, not observed scores.
+    pub prediction: Vec<crate::PredictionStep>,
+    /// Time in prediction updates.
+    pub prediction_seconds: f64,
 }
 
 pub(crate) fn hash64(mut value: u64) -> u64 {
@@ -369,6 +373,43 @@ pub fn dual_space(
     )
 }
 
+/// Dual-space iteration with a separately prepared predicted-reflection domain.
+/// # Errors
+/// Rejects incompatible prediction support, Fourier arrays or iteration controls.
+#[allow(clippy::too_many_arguments)]
+pub fn dual_space_with_prediction(
+    shape: [usize; 3],
+    cell: UnitCell,
+    hkl: &[[i32; 3]],
+    amplitudes: &[f64],
+    phases: &[f64],
+    support: &[u8],
+    options: &DualSpaceOptions,
+    deadline: Option<Instant>,
+    prediction: &crate::PreparedReflectionPrediction,
+) -> Result<DualSpaceResult, SolutionError> {
+    if prediction.audit.shape != shape
+        || prediction.support != support
+        || prediction.audit.measured_rows != hkl.len()
+    {
+        return Err(error("prediction plan does not match Fourier support"));
+    }
+    dual_space_guided_prediction(
+        shape,
+        cell,
+        hkl,
+        amplitudes,
+        phases,
+        support,
+        options,
+        deadline,
+        None,
+        None,
+        None,
+        Some(prediction),
+    )
+}
+
 /// A read-only window-map handoff; true means the caller's full target was met.
 pub type CheckpointCallback<'a> =
     dyn FnMut(&[f64], usize, usize) -> Result<bool, SolutionError> + 'a;
@@ -413,9 +454,34 @@ pub(crate) fn dual_space_guided(
     support: &[u8],
     options: &DualSpaceOptions,
     deadline: Option<Instant>,
+    checkpoint: Option<&mut CheckpointCallback<'_>>,
+    tangent: Option<&crate::PreparedTangent>,
+    quality: Option<&crate::PreparedPhaseQuality>,
+) -> Result<DualSpaceResult, SolutionError> {
+    dual_space_guided_prediction(
+        shape, cell, hkl, amplitudes, phases, support, options, deadline, checkpoint, tangent,
+        quality, None,
+    )
+}
+
+#[allow(
+    clippy::too_many_arguments,
+    clippy::too_many_lines,
+    clippy::cast_precision_loss
+)]
+pub(crate) fn dual_space_guided_prediction(
+    shape: [usize; 3],
+    cell: UnitCell,
+    hkl: &[[i32; 3]],
+    amplitudes: &[f64],
+    phases: &[f64],
+    support: &[u8],
+    options: &DualSpaceOptions,
+    deadline: Option<Instant>,
     mut checkpoint: Option<&mut CheckpointCallback<'_>>,
     tangent: Option<&crate::PreparedTangent>,
     quality: Option<&crate::PreparedPhaseQuality>,
+    prediction: Option<&crate::PreparedReflectionPrediction>,
 ) -> Result<DualSpaceResult, SolutionError> {
     validate_options(options)?;
     let geometry = cell.geometry().map_err(|e| error(e.to_string()))?;
@@ -463,6 +529,8 @@ pub(crate) fn dual_space_guided(
     let quality_indices: Vec<_> = quality.map_or_else(Vec::new, |plan| {
         plan.hkl.iter().map(|&h| grid_index(h, shape)).collect()
     });
+    let mut prediction_trace = Vec::new();
+    let mut prediction_seconds = 0.;
     let mut history = Vec::with_capacity(options.cycles);
     let mut adaptive_history = match options.peak_selection {
         PeakSelection::Adaptive { sigma, cap } => Some(AdaptivePeakHistory {
@@ -645,6 +713,11 @@ pub(crate) fn dual_space_guided(
                 *value * scale
             };
         }
+        if let Some(plan) = prediction {
+            let start = Instant::now();
+            prediction_trace.push(plan.apply(&mut calculated, 1., cycle)?);
+            prediction_seconds += start.elapsed().as_secs_f64();
+        }
         for (&i, &a) in indices.iter().zip(&target) {
             let magnitude = calculated[i].norm();
             let phase = if magnitude > 0. {
@@ -680,6 +753,8 @@ pub(crate) fn dual_space_guided(
         checkpoints,
         tangent: tangent_audit,
         quality: quality_trace,
+        prediction: prediction_trace,
+        prediction_seconds,
     })
 }
 

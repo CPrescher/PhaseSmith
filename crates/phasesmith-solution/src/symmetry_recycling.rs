@@ -34,6 +34,10 @@ pub struct RecycledDensity {
     pub phase_fallbacks: usize,
     /// Optional tangent work after projection into this supplied symmetry frame.
     pub tangent: Option<crate::TangentAudit>,
+    /// Actual optional prediction steps.
+    pub prediction: Vec<crate::PredictionStep>,
+    /// Time in prediction updates.
+    pub prediction_seconds: f64,
 }
 
 #[allow(clippy::cast_possible_wrap, clippy::cast_possible_truncation)]
@@ -263,6 +267,45 @@ pub fn recycle_density_guided(
     tangent: Option<&crate::PreparedTangent>,
     seed: u64,
 ) -> Result<RecycledDensity, SolutionError> {
+    recycle_density_guided_prediction(
+        shape,
+        hkl,
+        amplitudes,
+        support,
+        group,
+        source,
+        hand,
+        shift,
+        cycles,
+        deadline,
+        cancellation,
+        tangent,
+        seed,
+        None,
+    )
+}
+
+#[allow(
+    clippy::too_many_arguments,
+    clippy::too_many_lines,
+    clippy::cast_precision_loss
+)]
+pub(crate) fn recycle_density_guided_prediction(
+    shape: [usize; 3],
+    hkl: &[[i32; 3]],
+    amplitudes: &[f64],
+    support: &[u8],
+    group: &SpaceGroup,
+    source: &[f64],
+    hand: i32,
+    shift: [f64; 3],
+    cycles: usize,
+    deadline: Option<Instant>,
+    cancellation: Option<&Cancellation>,
+    tangent: Option<&crate::PreparedTangent>,
+    seed: u64,
+    prediction: Option<&crate::PreparedReflectionPrediction>,
+) -> Result<RecycledDensity, SolutionError> {
     let n = grid_len(shape)?;
     if source.len() != n
         || source.iter().any(|v| !v.is_finite() || v.abs() > 1e100)
@@ -309,10 +352,20 @@ pub fn recycle_density_guided(
         }
         values
     });
+    let mut prediction_trace = Vec::new();
+    let mut prediction_seconds = 0.;
     for cycle in 0..cycles {
         if crate::stopped(deadline, cancellation) {
             break;
         }
+        let prediction_statistics = if let Some(p) = prediction {
+            let start = Instant::now();
+            let stats = p.statistics(&coefficients, 1. / p.observed_rms)?;
+            prediction_seconds += start.elapsed().as_secs_f64();
+            Some(stats)
+        } else {
+            None
+        };
         fallbacks += project(&coefficients, &mut projected, &orbits);
         if let (Some(tangent), Some(audit), Some(magnitudes)) =
             (tangent, &mut tangent_audit, &tangent_magnitudes)
@@ -369,6 +422,16 @@ pub fn recycle_density_guided(
             audit.quartet_before.push(step.quartet_before);
             audit.quartet_after.push(step.quartet_after);
         }
+        if let (Some(plan), Some(stats)) = (prediction, prediction_statistics.as_ref()) {
+            let start = Instant::now();
+            prediction_trace.push(plan.apply_with_statistics(
+                &mut projected,
+                1. / plan.observed_rms,
+                32 + cycle,
+                stats,
+            )?);
+            prediction_seconds += start.elapsed().as_secs_f64();
+        }
         fft.apply(&mut projected, false);
         let negative = projected.iter().filter(|v| v.re < 0.).count();
         negative_fractions.push(negative as f64 / n as f64);
@@ -379,6 +442,17 @@ pub fn recycle_density_guided(
         std::mem::swap(&mut coefficients, &mut projected);
     }
     fallbacks += project(&coefficients, &mut projected, &orbits);
+    if let Some(p) = prediction {
+        let start = Instant::now();
+        let stats = p.statistics(&coefficients, 1. / p.observed_rms)?;
+        prediction_trace.push(p.apply_with_statistics(
+            &mut projected,
+            1. / p.observed_rms,
+            32 + cycles,
+            &stats,
+        )?);
+        prediction_seconds += start.elapsed().as_secs_f64();
+    }
     fft.apply(&mut projected, false);
     let density: Vec<_> = projected.iter().map(|v| v.re / n as f64).collect();
     if density.iter().any(|v| !v.is_finite()) {
@@ -393,5 +467,7 @@ pub fn recycle_density_guided(
         negative_fractions,
         phase_fallbacks: fallbacks,
         tangent: tangent_audit,
+        prediction: prediction_trace,
+        prediction_seconds,
     })
 }

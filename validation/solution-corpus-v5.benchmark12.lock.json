@@ -1,0 +1,1049 @@
+{
+  "schema": "phasesmith.solution-corpus-lock.v1",
+  "manifest_sha256": "f815629e42e608c784113ddd7400268f9e897b3db5b2af7d54224886af206f6c",
+  "cases": 100,
+  "families": 100,
+  "splits": {
+    "holdout": 65,
+    "development": 35
+  },
+  "crystal_systems": {
+    "triclinic": 18,
+    "monoclinic": 29,
+    "orthorhombic": 17,
+    "tetragonal": 16,
+    "trigonal": 8,
+    "hexagonal": 6,
+    "cubic": 6
+  },
+  "space_group_types": 27,
+  "chemistry": {
+    "light": 39,
+    "heavy": 61
+  },
+  "hydrogen_present": 66,
+  "observation_count_range": [
+    50,
+    7459
+  ],
+  "gemmi_version": "0.7.5",
+  "discovery_snapshot": "validation/data/solution-corpus-v1/discovery-v3",
+  "holdout_solver_outcomes_opened": false,
+  "verified_implementation_sha256": {
+    "benchmarks/solution_corpus/__init__.py": "2b8ea6877c5325bde0eb18eebea8099c15c3656cd618e11f124813a6376dce62",
+    "benchmarks/solution_corpus/audit.py": "d65dc309cea50780f937940c4ece3d880968c657b274c5efac6ab9ff522298c5",
+    "benchmarks/solution_corpus/data.py": "cddb7ad095f7add50f4dc5aa02b2a48e3109ab5adfd342145ad8b274158d8bd5",
+    "benchmarks/solution_corpus/run.py": "d9bb3a07a8e191607a4eb9a3df944ad6ccf4978501eb8eda5cee76c9f25fbbfb",
+    "benchmarks/solution_corpus/seal.py": "939ba9e5a3710a4395e9ed789caa8a1aa06d222f4399a14968c170a27d9858ee",
+    "benchmarks/solution_corpus_benchmark.py": "0b679f19503051f5f067e90a4e0246bd8ba39a97dbb32c38d759df208bcd343b"
+  },
+  "quality_checks": [
+    {
+      "id": "cod-2011007",
+      "observations": 7459,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2010901",
+      "observations": 3398,
+      "quantization": {
+        "intensity_maximum_relative_change": 1.924419946542937e-07,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2021292",
+      "observations": 2643,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2011426",
+      "observations": 2002,
+      "quantization": {
+        "intensity_maximum_relative_change": 9.768926777655329e-08,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2243196",
+      "observations": 3068,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2021226",
+      "observations": 2353,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2102156",
+      "observations": 1862,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2010532",
+      "observations": 2184,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2011371",
+      "observations": 1133,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2243197",
+      "observations": 1592,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2242644",
+      "observations": 2159,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2241300",
+      "observations": 601,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2108342",
+      "observations": 553,
+      "quantization": {
+        "intensity_maximum_relative_change": 3.9152068010420197e-07,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2241159",
+      "observations": 1112,
+      "quantization": {
+        "intensity_maximum_relative_change": 4.7674827155732656e-07,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-4326074",
+      "observations": 176,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2021310",
+      "observations": 2180,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2206101",
+      "observations": 554,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2021185",
+      "observations": 737,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2215687",
+      "observations": 50,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2010918",
+      "observations": 4817,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2010825",
+      "observations": 2694,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2021316",
+      "observations": 3712,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2011512",
+      "observations": 994,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2010934",
+      "observations": 2630,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2011363",
+      "observations": 1938,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2006996",
+      "observations": 252,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2011038",
+      "observations": 495,
+      "quantization": {
+        "intensity_maximum_relative_change": 4.834764664286847e-07,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2010543",
+      "observations": 3004,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2010993",
+      "observations": 2003,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2242680",
+      "observations": 2079,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-1548676",
+      "observations": 1334,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2011638",
+      "observations": 721,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2010647",
+      "observations": 4157,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2241796",
+      "observations": 167,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2011590",
+      "observations": 903,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2021199",
+      "observations": 3050,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2011318",
+      "observations": 3442,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2011236",
+      "observations": 1019,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2011346",
+      "observations": 3039,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2101990",
+      "observations": 1615,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2021040",
+      "observations": 1959,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2211527",
+      "observations": 102,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2207460",
+      "observations": 209,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2200818",
+      "observations": 89,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2023383",
+      "observations": 85,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2242589",
+      "observations": 2483,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2242657",
+      "observations": 2407,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-1562003",
+      "observations": 1350,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2242610",
+      "observations": 2642,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2022708",
+      "observations": 288,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2312802",
+      "observations": 500,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2020973",
+      "observations": 3233,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2011355",
+      "observations": 2071,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-1519649",
+      "observations": 2901,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2232654",
+      "observations": 113,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2011750",
+      "observations": 1708,
+      "quantization": {
+        "intensity_maximum_relative_change": 4.283405530382871e-07,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2011241",
+      "observations": 1795,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2010705",
+      "observations": 1826,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2010654",
+      "observations": 1507,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2021374",
+      "observations": 1898,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2201295",
+      "observations": 1367,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2017324",
+      "observations": 189,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2011344",
+      "observations": 3914,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2011666",
+      "observations": 3097,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2207083",
+      "observations": 109,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2232444",
+      "observations": 419,
+      "quantization": {
+        "intensity_maximum_relative_change": 4.54507647667112e-07,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2010746",
+      "observations": 116,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2011393",
+      "observations": 2428,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2011271",
+      "observations": 3119,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2011181",
+      "observations": 1956,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2223219",
+      "observations": 181,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2014187",
+      "observations": 231,
+      "quantization": {
+        "intensity_maximum_relative_change": 3.243834848063411e-07,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2107296",
+      "observations": 115,
+      "quantization": {
+        "intensity_maximum_relative_change": 2.2474346094918188e-07,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2011089",
+      "observations": 3969,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2101973",
+      "observations": 1435,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-1556408",
+      "observations": 322,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2242352",
+      "observations": 848,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2203173",
+      "observations": 440,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2243590",
+      "observations": 480,
+      "quantization": {
+        "intensity_maximum_relative_change": 3.548561263173286e-07,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2240852",
+      "observations": 1291,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2020988",
+      "observations": 4807,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2011056",
+      "observations": 347,
+      "quantization": {
+        "intensity_maximum_relative_change": 2.671036481729895e-07,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-1550276",
+      "observations": 2892,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2242615",
+      "observations": 2972,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2011144",
+      "observations": 3777,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2011501",
+      "observations": 5291,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-1548678",
+      "observations": 3347,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2011044",
+      "observations": 1469,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2233659",
+      "observations": 294,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2012343",
+      "observations": 450,
+      "quantization": {
+        "intensity_maximum_relative_change": 4.2280133781411257e-07,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2243618",
+      "observations": 489,
+      "quantization": {
+        "intensity_maximum_relative_change": 3.7444930203209104e-07,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2021003",
+      "observations": 1515,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-1549038",
+      "observations": 2652,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2011451",
+      "observations": 1758,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-1550295",
+      "observations": 101,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2022343",
+      "observations": 91,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2200381",
+      "observations": 358,
+      "quantization": {
+        "intensity_maximum_relative_change": 3.2139242618408827e-07,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2010875",
+      "observations": 2445,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-1549173",
+      "observations": 1787,
+      "quantization": {
+        "intensity_maximum_relative_change": 0.0,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    },
+    {
+      "id": "cod-2211965",
+      "observations": 89,
+      "quantization": {
+        "intensity_maximum_relative_change": 2.561961683714032e-07,
+        "sigma_maximum_relative_change": 0.0
+      },
+      "source_hashes_verified": true,
+      "reference_format_symmetry_occupancy_verified": true
+    }
+  ],
+  "qualification": "Format, provenance and supported-model checks do not prove the published model is physically correct; no solver outcomes used in curation.",
+  "adapter_revision_parent": {
+    "path": "validation/solution-corpus-v5.benchmark11.lock.json",
+    "sha256": "5fee4757228e280580faa00321d853561b43ca6abc2b69c78d37f8ee5c80df71"
+  },
+  "adapter_only_revision": true,
+  "adapter_revision_qualification": "Unchanged registry and inherited input/split/curation provenance; only adapter source hashes refreshed. No raw/reference data reopened."
+}

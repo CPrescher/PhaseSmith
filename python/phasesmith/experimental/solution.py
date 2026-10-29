@@ -424,6 +424,23 @@ class PhaseOriginAudit:
 
 
 @dataclass(frozen=True, slots=True)
+class ReflectionPredictionAudit:
+    """Separate measured and predicted reciprocal support provenance."""
+
+    shape: tuple[int, int, int]
+    measured_rows: int
+    missing_pairs: int
+    extended_pairs: int
+    observed_d_min: float
+    requested_extension: float
+    effective_extension: float
+    effective_d_min: float
+
+    def __post_init__(self):
+        object.__setattr__(self, "shape", tuple(self.shape))
+
+
+@dataclass(frozen=True, slots=True)
 class SharedSearchAudit:
     """Actual work and inferred topology, without source composition."""
 
@@ -475,6 +492,13 @@ class SharedSearchAudit:
     phase_origin_selection: bool = False
     chemical_assignment: bool = False
     iterative_refinement: bool = False
+    missing_reflections: bool = False
+    resolution_extension: float = 1.0
+    prediction: ReflectionPredictionAudit | None = None
+    prediction_steps: int = 0
+    prediction_updates: int = 0
+    prediction_clipped: int = 0
+    prediction_seconds: float = 0.0
     phase_origins: tuple[PhaseOriginAudit, ...] = ()
     normalization: WilsonNormalizationAudit | None = None
     normalization_diagnostic: str | None = None
@@ -482,6 +506,8 @@ class SharedSearchAudit:
     phase_model_trials: tuple[int, ...] = ()
 
     def __post_init__(self):
+        if isinstance(self.prediction, dict):
+            object.__setattr__(self, "prediction", ReflectionPredictionAudit(**self.prediction))
         object.__setattr__(
             self,
             "phase_origins",
@@ -695,6 +721,8 @@ def solve_structure_elements(
     phase_origin_selection: bool = False,
     chemical_assignment: bool = False,
     iterative_refinement: bool = False,
+    missing_reflections: bool = False,
+    resolution_extension: float = 1.0,
     cancellation: SolutionCancellation | None = None,
 ) -> SolutionResult:
     """Infer full-cell counts and labels by shared-map symmetry-orbit edits.
@@ -723,7 +751,12 @@ def solve_structure_elements(
     for fits with at least 32 parameters. The dense Jacobian and original resource
     caps are retained. Both controls are experimental and off by default.
     Original observations still
-    govern final refinement. Missing-data resolution extension is not added here.
+    govern final refinement. ``missing_reflections=True`` regularizes unmeasured
+    allowed coefficients using
+    the observed Wilson envelope. ``resolution_extension`` extends reciprocal radius
+    (1 means no extension, maximum 1.5); actual bounds and prediction work are audited.
+    Both require Wilson normalization, phase-origin selection and dual-space phasing.
+    Predicted coefficients never enter observation arrays, scoring or peak-mass integrals.
     ``adaptive_counts=True`` compares nested residual-orbit additions, repeats
     count proposals after framework refinement, and bounds poor early-map
     handoffs. ``False`` retains the previous single-batch/edit schedule.
@@ -756,9 +789,20 @@ def solve_structure_elements(
     for name, value in (
         ("chemical_assignment", chemical_assignment),
         ("iterative_refinement", iterative_refinement),
+        ("missing_reflections", missing_reflections),
     ):
         if not isinstance(value, bool):
             raise TypeError(f"{name} must be boolean")
+    if (
+        isinstance(resolution_extension, bool)
+        or not np.isfinite(resolution_extension)
+        or not 1 <= resolution_extension <= 1.5
+    ):
+        raise ValueError("resolution_extension must be finite in [1,1.5]")
+    if (missing_reflections or resolution_extension > 1) and not (
+        phase_origin_selection and wilson_normalization
+    ):
+        raise ValueError("prediction requires phase_origin_selection and wilson_normalization")
     if chemical_assignment and not phase_origin_selection:
         raise ValueError("chemical_assignment requires phase_origin_selection")
     if not isinstance(phase_origin_selection, bool):
@@ -820,6 +864,8 @@ def solve_structure_elements(
     )
     if not isinstance(group, SpaceGroup) or not isinstance(controls, SolutionOptions):
         raise TypeError("space_group and options must be SpaceGroup and SolutionOptions")
+    if (missing_reflections or resolution_extension > 1) and controls.phasing != "dual_space":
+        raise ValueError("prediction requires phasing=dual_space")
     if phase_quality_selection and controls.phasing != "dual_space":
         raise ValueError("phase_quality_selection requires phasing=dual_space")
     if tangent_refinement and controls.phasing != "dual_space":
@@ -850,7 +896,13 @@ def solve_structure_elements(
             phase_quality_selection,
             phase_first_selection,
             calculated_shell_normalization,
-            (phase_origin_selection, chemical_assignment, iterative_refinement),
+            (
+                phase_origin_selection,
+                chemical_assignment,
+                iterative_refinement,
+                missing_reflections,
+                resolution_extension,
+            ),
         ),
     )
     return _run_solution(observations, cell, group, (), controls, cancellation, shared)

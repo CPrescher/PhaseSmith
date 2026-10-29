@@ -17,6 +17,7 @@ mod peak_completion;
 mod peak_density;
 mod phase_origin;
 mod phase_quality;
+mod reflection_prediction;
 mod shared_pool;
 mod shared_search;
 mod solver;
@@ -42,7 +43,7 @@ pub use data::{Observation, PreparedData, prepare_data};
 pub use dual_space::{
     AdaptivePeakHistory, CheckpointCallback, DualSpaceCheckpoint, DualSpaceOptions,
     DualSpaceResult, PeakSelection, adaptive_peaks, atomic_projection, dual_space,
-    dual_space_monitored,
+    dual_space_monitored, dual_space_with_prediction,
 };
 pub use fourier::{FlipOptions, FlipResult, charge_flip, extract_peaks};
 pub use linear_step::iterative_normal_step;
@@ -58,6 +59,10 @@ pub use phase_origin::{
 pub use phase_quality::{
     PhaseQualityScore, PhaseQualityTrace, PreparedPhaseQuality, WilsonAudit, WilsonNormalization,
     WilsonShell, normalize_wilson,
+};
+pub use reflection_prediction::{
+    PredictedCoefficient, PredictionAudit, PredictionStep, PreparedReflectionPrediction,
+    prediction_coefficient,
 };
 pub use shared_pool::PreparedElementPool;
 pub use shared_search::{
