@@ -12,7 +12,9 @@ mod dual_space;
 mod fourier;
 mod math3;
 mod model;
+mod peak_completion;
 mod peak_density;
+mod phase_origin;
 mod phase_quality;
 mod shared_pool;
 mod shared_search;
@@ -43,15 +45,19 @@ pub use dual_space::{
 };
 pub use fourier::{FlipOptions, FlipResult, charge_flip, extract_peaks};
 pub use model::{ModelEvaluation, PolishedModel, evaluate_model, polish_model};
+pub use peak_completion::{PeakCompletionCandidate, PeakCompletionResult, PreparedPeakCompletion};
 pub use peak_density::{IntegratedPeakDensity, PeakIntegral, ball_transform, density_label_mask};
+pub use phase_origin::{
+    PhaseOriginCandidate, PhaseOriginEvaluation, PhaseOriginMap, PreparedPhaseOrigin,
+};
 pub use phase_quality::{
     PhaseQualityScore, PhaseQualityTrace, PreparedPhaseQuality, WilsonAudit, WilsonNormalization,
     WilsonShell, normalize_wilson,
 };
 pub use shared_pool::PreparedElementPool;
 pub use shared_search::{
-    DensityCalibration, RecyclingAudit, SharedMove, SharedSearchOptions, SharedSearchSummary,
-    solve_elements,
+    DensityCalibration, PhaseOriginAudit, PhaseSettingAudit, RecyclingAudit, SharedMove,
+    SharedSearchOptions, SharedSearchSummary, solve_elements,
 };
 pub use solver::{Candidate, PhasingMethod, PhasingTrial, Solution, SolveOptions, solve};
 pub use staged_refinement::screening_shortlist;

@@ -512,6 +512,41 @@ fn build_model(
     })
 }
 
+/// Build an already aligned orbit model without an origin/hand search.
+pub(crate) fn model_in_setting(
+    cell: UnitCell,
+    group: &SpaceGroup,
+    sites: &[(String, [f64; 3])],
+) -> Result<SymmetryModel, SolutionError> {
+    if sites.is_empty() {
+        return Err(error("empty aligned peak model"));
+    }
+    let geometry = cell.geometry().map_err(|e| error(e.to_string()))?;
+    let mut points = Vec::new();
+    let mut species = Vec::new();
+    for (label, point) in sites {
+        let images = group
+            .expand_sites(&[*point], 1e-8)
+            .map_err(|e| error(e.to_string()))?;
+        species.extend(std::iter::repeat_n(
+            label.clone(),
+            images.fractional_xyz.len(),
+        ));
+        points.extend(images.fractional_xyz);
+    }
+    if points.len() > 128 {
+        return Err(error("aligned model exceeds 128 atoms"));
+    }
+    let (permutations, maximum, score) =
+        match_operations(&geometry, group, &points, &species, 1e-6)?;
+    build_model(
+        &geometry,
+        group,
+        &species,
+        (1, [0.; 3], points, permutations, maximum, score),
+    )
+}
+
 /// Retain distinct partial-framework settings; origin shifts normalizing the full
 /// supplied group are deduplicated, while inequivalent heavy-site settings survive.
 ///

@@ -373,6 +373,52 @@ class PhaseQualityAudit:
 
 
 @dataclass(frozen=True, slots=True)
+class PhaseSettingAudit:
+    """One phase-aligned supplied-symmetry setting and its completion effort."""
+
+    hand: int
+    shift: tuple[float, float, float]
+    alpha: float
+    chord: float
+    orbits: int
+    scales: tuple[float, ...]
+    candidates: int
+    evaluations: int
+    changes: int
+    screens: int
+    promotions: int
+    diagnostic: str | None
+
+    def __post_init__(self):
+        object.__setattr__(self, "shift", tuple(self.shift))
+        object.__setattr__(self, "scales", tuple(self.scales))
+
+
+@dataclass(frozen=True, slots=True)
+class PhaseOriginAudit:
+    """Phase-only origin search and measured downstream work for one P1 map."""
+
+    trial: int
+    screening_families: int
+    phase_families: int
+    origin_candidates: int
+    settings: tuple[PhaseSettingAudit, ...]
+    origin_seconds: float
+    recycling_seconds: float
+    completion_seconds: float
+    screening_seconds: float
+    refinement_seconds: float
+    diagnostic: str | None
+
+    def __post_init__(self):
+        object.__setattr__(
+            self,
+            "settings",
+            tuple(PhaseSettingAudit(**a) if isinstance(a, dict) else a for a in self.settings),
+        )
+
+
+@dataclass(frozen=True, slots=True)
 class SharedSearchAudit:
     """Actual work and inferred topology, without source composition."""
 
@@ -421,12 +467,19 @@ class SharedSearchAudit:
     phase_quality_selection: bool = False
     phase_first_selection: bool = False
     calculated_shell_normalization: bool = False
+    phase_origin_selection: bool = False
+    phase_origins: tuple[PhaseOriginAudit, ...] = ()
     normalization: WilsonNormalizationAudit | None = None
     normalization_diagnostic: str | None = None
     phase_quality: tuple[PhaseQualityAudit, ...] = ()
     phase_model_trials: tuple[int, ...] = ()
 
     def __post_init__(self):
+        object.__setattr__(
+            self,
+            "phase_origins",
+            tuple(PhaseOriginAudit(**a) if isinstance(a, dict) else a for a in self.phase_origins),
+        )
         object.__setattr__(self, "phase_model_trials", tuple(self.phase_model_trials))
         if isinstance(self.normalization, dict):
             object.__setattr__(
@@ -632,6 +685,7 @@ def solve_structure_elements(
     phase_quality_selection: bool = False,
     phase_first_selection: bool = True,
     calculated_shell_normalization: bool = True,
+    phase_origin_selection: bool = False,
     cancellation: SolutionCancellation | None = None,
 ) -> SolutionResult:
     """Infer full-cell counts and labels by shared-map symmetry-orbit edits.
@@ -648,6 +702,12 @@ def solve_structure_elements(
     ``phase_first_selection=False`` tests a checkpoint portfolio instead; this
     control is ignored when quality selection is off.
     ``calculated_shell_normalization=False`` retains the earlier statistic.
+    ``phase_origin_selection=True`` aligns P1 phases to the supplied symmetry
+    before assigning peaks. Cached whole-orbit count/label proposals and short
+    isotropic screens then precede full refinement. This replaces the earlier
+    framework/edit and adaptive-count schedule; it remains opt-in. Per-map
+    origin hypotheses, diagnostics, work counters and stage timings appear in
+    ``shared_search.phase_origins``. This does not infer a space group.
     Original observations still
     govern final refinement. Missing-data resolution extension is not added here.
     ``adaptive_counts=True`` compares nested residual-orbit additions, repeats
@@ -679,6 +739,8 @@ def solve_structure_elements(
         or len(set(elements)) != len(elements)
     ):
         raise ValueError("elements must be 1..8 distinct neutral non-H symbols")
+    if not isinstance(phase_origin_selection, bool):
+        raise TypeError("phase_origin_selection must be boolean")
     if not isinstance(wilson_normalization, bool):
         raise TypeError("wilson_normalization must be boolean")
     if not isinstance(calculated_shell_normalization, bool):
@@ -766,6 +828,7 @@ def solve_structure_elements(
             phase_quality_selection,
             phase_first_selection,
             calculated_shell_normalization,
+            phase_origin_selection,
         ),
     )
     return _run_solution(observations, cell, group, (), controls, cancellation, shared)

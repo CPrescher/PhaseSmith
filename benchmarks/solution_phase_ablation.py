@@ -67,13 +67,32 @@ def compare(paths, manifest, pairs=()):
                 or any(row["effort"][k] != a["effort"][k] for k in controls)
             ):
                 raise ValueError("other numerical controls changed: " + label + ":" + id)
-            for flag in ("wilson_normalization", "phase_quality_selection"):
-                if row["effort"][flag] != report[flag]:
+            for flag in (
+                "wilson_normalization",
+                "phase_quality_selection",
+                "phase_origin_selection",
+            ):
+                if row["effort"].get(flag, False) != report.get(flag, False):
                     raise ValueError("header/worker feature mismatch")
         common = [id for id in ids if rows[id]["correct"] and baseline[id]["correct"]]
         cases = []
         for id in sorted(ids):
             r = rows[id]
+            origins = r["effort"].get("phase_origins", [])
+            stage_seconds = (
+                {
+                    k: sum(a[k] for a in origins)
+                    for k in (
+                        "origin_seconds",
+                        "recycling_seconds",
+                        "completion_seconds",
+                        "screening_seconds",
+                        "refinement_seconds",
+                    )
+                }
+                if report.get("phase_origin_selection", False)
+                else None
+            )
             cases.append(
                 {
                     "id": id,
@@ -86,6 +105,12 @@ def compare(paths, manifest, pairs=()):
                     "seconds": r["wall_seconds_including_startup"],
                     "r1": r["model"]["reported_r1"] if r.get("model") else None,
                     "phasing_starts": r["effort"]["phasing_starts"],
+                    "screening_refinements": r["effort"].get("screening_refinements", 0),
+                    "final_refinements": r["effort"].get("final_refinements", 0),
+                    "completion_evaluations": sum(
+                        s["evaluations"] for a in origins for s in a["settings"]
+                    ),
+                    "stage_seconds": stage_seconds,
                     "quality_alternatives": sum(
                         q.get("alternative_handoffs", 0)
                         for q in r["effort"].get("phase_quality", [])
@@ -99,12 +124,27 @@ def compare(paths, manifest, pairs=()):
             "same_native_as_control": report["native_sha256"] == control["native_sha256"],
             "wilson_normalization": report["wilson_normalization"],
             "phase_quality_selection": report["phase_quality_selection"],
+            "phase_origin_selection": report.get("phase_origin_selection", False),
             "phase_first_selection": report.get(
                 "phase_first_selection", report["phase_quality_selection"]
             ),
             "calculated_shell_normalization": report.get("calculated_shell_normalization", False),
             "summary": report["summary"],
             "exact_element_counts": sum(c["element_counts_correct"] for c in cases),
+            "work_totals": {
+                k: sum(c[k] for c in cases)
+                for k in (
+                    "phasing_starts",
+                    "screening_refinements",
+                    "final_refinements",
+                    "completion_evaluations",
+                )
+            },
+            "stage_seconds_totals": {
+                k: sum(c["stage_seconds"][k] for c in cases) for k in cases[0]["stage_seconds"]
+            }
+            if cases[0]["stage_seconds"] is not None
+            else None,
             "gained": sorted(
                 id for id in ids if rows[id]["correct"] and not baseline[id]["correct"]
             ),

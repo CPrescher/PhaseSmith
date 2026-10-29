@@ -14,6 +14,8 @@ use crate::{NativePreparedReflectionGenerator, crystallographic_cell, hkl_rows};
 mod completion;
 #[path = "solution_dual.rs"]
 mod dual;
+#[path = "solution_origin.rs"]
+mod origin;
 #[path = "solution_quality.rs"]
 mod quality;
 #[path = "solution_recycling.rs"]
@@ -42,6 +44,7 @@ type SharedSearchRequest = (
         bool,
         bool,
         usize,
+        bool,
         bool,
         bool,
         bool,
@@ -175,6 +178,7 @@ fn solve_structure<'py>(
                     phase_quality_selection,
                     phase_first_selection,
                     calculated_shell_normalization,
+                    phase_origin_selection,
                 ),
             )) = shared_search
             {
@@ -211,6 +215,7 @@ fn solve_structure<'py>(
                         phase_quality_selection,
                         phase_first_selection,
                         calculated_shell_normalization,
+                        phase_origin_selection,
                     },
                 )
             } else {
@@ -379,6 +384,7 @@ pub fn register(module: &Bound<'_, PyModule>) -> PyResult<()> {
     completion::register(module)?;
     shared::register(module)?;
     quality::register(module)?;
+    origin::register(module)?;
     recycling::register(module)?;
     tangent::register(module)?;
     module.add_class::<NativeCancellation>()?;

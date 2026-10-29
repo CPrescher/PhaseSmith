@@ -2176,6 +2176,26 @@ switches remain experimental and opt-in. Count accuracy remains limited and
 SHELXT still recovers 13/35 labelled structures and 29/35 total counts. No holdout
 outcomes have been opened.
 
+An additional opt-in `phase_origin_selection` path changes the order of the
+element-only search. A measured phase-equivalence origin/hand search aligns each
+P1 density before atom labels are assigned. Supplied-symmetry density recycling
+then provides complete orbit proposals. Cached orbit Fourier columns and fused
+coordinate jets support cheap whole-orbit count/element edits, followed by short
+isotropic screens; only a small complete-model shortlist receives requested-mode
+refinement on all original observations. Independent NumPy equations check both
+new kernels. This is an implementation from published equations and first
+principles, with explicit bounded heuristics, not translated decompiled SHELX
+code. It searches the supplied group only. The previous solver remains the
+default reference path. Development results, stage costs and limitations are in
+`docs/solution-phase-origin.md`; the 65 holdout outcomes remain unopened.
+The same-build 35-case comparison improves correct labelled structures from
+8 to 12, exact total counts from 14 to 26 and exact per-element counts from
+8 to 13; median all-outcome wall time falls from 13.217 to 4.376 seconds.
+Six recoveries are gained and two lost, so the new path is not a universal
+improvement. Requested-mode fit attempts fall from 712 to 100. SHELXT still
+recovers 13 structures and 29 totals at a 0.877-second median. These are fixed
+single-seed development collections, not repeated timing or holdout evidence.
+
 ## Quality bar
 
 Public behavior is typed and documented. Invalid shapes, non-finite values,
