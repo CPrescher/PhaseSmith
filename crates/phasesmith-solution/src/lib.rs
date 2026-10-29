@@ -19,6 +19,7 @@ mod solver;
 mod staged_refinement;
 mod symmetry_model;
 mod symmetry_recycling;
+mod tangent;
 
 use std::fmt::{Display, Formatter};
 use std::sync::{
@@ -53,6 +54,10 @@ pub use symmetry_model::{
     AsymmetricSite, SymmetryImage, SymmetryModel, recover_symmetry, recover_symmetry_hypotheses,
 };
 pub use symmetry_recycling::{RecycledDensity, recycle_density};
+pub use tangent::{
+    NegativeQuartet, PhaseTerm, PhaseTriplet, PreparedTangent, TangentAudit, TangentEvaluation,
+    TangentStep,
+};
 
 /// Thread-safe cooperative cancellation between bounded numerical steps.
 #[derive(Clone, Debug, Default)]

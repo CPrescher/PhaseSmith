@@ -209,6 +209,25 @@ of the K[BrF4] regression. There is no compound-specific dispatch or input count
 prior. See `docs/solution-symmetry-recycling.md` for equations, safeguards and
 frozen comparisons. Default powder builds and default shared search are unchanged.
 
+The shared element-only dual-space solver additionally supports opt-in
+`tangent_refinement=True`: empirical count-independent normalized magnitudes,
+measured strong-triplet tangent updates, cooling phase perturbations and measured
+weak-cross negative-quartet guards. A bounded immutable phase plan is reused
+across starts; actual relation counts, updates and accepted/declined quartet
+checks are exported. Rust owns the numerical work and fused phase-invariant
+values/derivatives; independent NumPy graph enumeration, dense derivatives and
+complete-step references validate the equations. This is an independent bounded
+variant from published direct-method ideas, not a translation of SHELX code or
+an exact SHELXS annealing probability model. Counts and labels remain inferred.
+Three paired repeats with and without symmetry recycling preserve correct
+counts, coordinates, R1 and both CIF frames for all three development structures.
+Without recycling, baseline/tangent medians are 0.5395/0.5490 s for K[BrF4],
+0.3722/0.4724 s for BiSeI and 4.6447/3.4749 s for thiourea. With recycling they
+are 0.7881/0.8004, 0.2559/0.3212 and 1.5386/6.0270 s. The regression on combined
+thiourea search leaves this option off by default. K[BrF4] supplies no eligible
+negative quartets, reported explicitly. See `docs/solution-tangent-refinement.md`
+for equations, resource bounds, interpretation limits and frozen reports.
+
 An opt-in primitive/Bravais comparison now follows position-only lattice discovery.
 Native Selling-Delaunay reduction retains exact integer basis transformations;
 complete low-index reciprocal HNF hypotheses expose excluded reflections rather

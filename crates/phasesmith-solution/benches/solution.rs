@@ -3,8 +3,8 @@ use criterion::{Criterion, criterion_group, criterion_main};
 use phasesmith_crystallography::{Rational, SpaceGroup, SymmetryOperation, UnitCell};
 use phasesmith_solution::{
     AdpMode, DualSpaceOptions, FlipOptions, IntegratedPeakDensity, PreparedElementPool,
-    PreparedOrbitSearch, PreparedSymmetricModel, charge_flip, dual_space, recover_symmetry,
-    recycle_density,
+    PreparedOrbitSearch, PreparedSymmetricModel, PreparedTangent, charge_flip, dual_space,
+    recover_symmetry, recycle_density,
 };
 
 #[allow(clippy::too_many_lines)]
@@ -184,6 +184,57 @@ fn benchmark(c: &mut Criterion) {
             });
         },
     );
+    let phase_intensity: Vec<_> = recycling_amplitudes.iter().map(|a| a * a).collect();
+    let phase_sigma: Vec<_> = phase_intensity.iter().map(|i| 0.01 + 0.02 * i).collect();
+    let tangent = PreparedTangent::new(
+        cell,
+        &mirror_group,
+        &hkl,
+        &phase_intensity,
+        &phase_sigma,
+        None,
+        None,
+    )
+    .unwrap();
+    let phase_values: Vec<_> = tangent
+        .independent_hkl()
+        .iter()
+        .map(|h| f64::from(h[0] + 3 * h[1] + 7 * h[2]) * 0.137)
+        .collect();
+    let phase_magnitudes = tangent.normalized_values().0.to_vec();
+    c.bench_function("tangent_plan_8_atoms_2108_reflections", |b| {
+        b.iter(|| {
+            PreparedTangent::new(
+                cell,
+                &mirror_group,
+                &hkl,
+                &phase_intensity,
+                &phase_sigma,
+                None,
+                None,
+            )
+            .unwrap()
+        });
+    });
+    c.bench_function("tangent_fused_values_gradients_2108_reflections", |b| {
+        b.iter(|| {
+            tangent
+                .evaluate(std::hint::black_box(&phase_values))
+                .unwrap()
+        });
+    });
+    c.bench_function("tangent_complete_annealed_step_2108_reflections", |b| {
+        b.iter(|| {
+            tangent
+                .step(
+                    std::hint::black_box(&phase_values),
+                    &phase_magnitudes,
+                    3,
+                    471,
+                )
+                .unwrap()
+        });
+    });
     let mirror = recover_symmetry(
         cell,
         &mirror_group,

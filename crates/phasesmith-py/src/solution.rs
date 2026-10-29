@@ -20,6 +20,8 @@ mod recycling;
 mod shared;
 #[path = "solution_symmetry.rs"]
 mod symmetry_adp;
+#[path = "solution_tangent.rs"]
+mod tangent;
 
 type SharedSearchRequest = (
     Vec<String>,
@@ -33,7 +35,7 @@ type SharedSearchRequest = (
     f64,
     f64,
     usize,
-    (bool, bool, bool, usize),
+    (bool, bool, bool, usize, bool),
 );
 
 fn invalid(error: impl ToString) -> PyErr {
@@ -147,7 +149,13 @@ fn solve_structure<'py>(
                 peak_density_radius_angstrom,
                 dual_peak_sigma,
                 dual_peak_cap,
-                (dual_checkpoints, cached_refinement, symmetry_recycling, recycling_cycles),
+                (
+                    dual_checkpoints,
+                    cached_refinement,
+                    symmetry_recycling,
+                    recycling_cycles,
+                    tangent_refinement,
+                ),
             )) = shared_search
             {
                 if !composition.is_empty() {
@@ -176,6 +184,7 @@ fn solve_structure<'py>(
                         cached_refinement,
                         symmetry_recycling,
                         recycling_cycles,
+                        tangent_refinement,
                     },
                 )
             } else {
@@ -344,6 +353,7 @@ pub fn register(module: &Bound<'_, PyModule>) -> PyResult<()> {
     completion::register(module)?;
     shared::register(module)?;
     recycling::register(module)?;
+    tangent::register(module)?;
     module.add_class::<NativeCancellation>()?;
     module.add_function(wrap_pyfunction!(solve_structure, module)?)?;
     module.add_function(wrap_pyfunction!(flip, module)?)?;

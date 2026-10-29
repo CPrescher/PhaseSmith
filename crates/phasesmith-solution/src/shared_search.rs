@@ -44,6 +44,8 @@ pub struct SharedSearchOptions {
     pub symmetry_recycling: bool,
     /// Positivity/phase-projection cycles, in [1,50].
     pub recycling_cycles: usize,
+    /// Add measured-only tangent phases, annealing and negative-quartet checks.
+    pub tangent_refinement: bool,
 }
 impl Default for SharedSearchOptions {
     fn default() -> Self {
@@ -62,6 +64,7 @@ impl Default for SharedSearchOptions {
             cached_refinement: true,
             symmetry_recycling: false,
             recycling_cycles: 10,
+            tangent_refinement: false,
         }
     }
 }
@@ -158,6 +161,10 @@ pub struct SharedSearchSummary {
     pub recycling_cycles: usize,
     /// Actual setting attempts and batch proposals.
     pub recycling: Vec<RecyclingAudit>,
+    /// Whether optional reciprocal phase refinement was requested.
+    pub tangent_refinement: bool,
+    /// Actual measured-only phase plans and completed work per start.
+    pub tangent_trials: Vec<crate::TangentAudit>,
     /// Recovered initial framework settings.
     pub framework_hypotheses: usize,
     /// Number of strongest-map peaks in the selected initial closed prefix.
@@ -1506,6 +1513,7 @@ pub fn solve_elements(
         || !(0.1..=10.).contains(&search.dual_peak_sigma)
         || !(1..=128).contains(&search.dual_peak_cap)
         || !(1..=50).contains(&search.recycling_cycles)
+        || (search.tangent_refinement && options.phasing != PhasingMethod::DualSpace)
         || options.refinement.is_none()
     {
         return Err(error(
@@ -1617,6 +1625,7 @@ pub fn solve_elements(
         cached_refinement: search.cached_refinement,
         symmetry_recycling: search.symmetry_recycling,
         recycling_cycles: search.recycling_cycles,
+        tangent_refinement: search.tangent_refinement,
         staged_refinement: search.staged_refinement
             && options.refinement == Some(AdpMode::Anisotropic),
         screening_iterations: search.screening_iterations,
@@ -1626,6 +1635,25 @@ pub fn solve_elements(
         maximum_atoms: search.maximum_atoms,
         beam_width: search.beam_width,
         ..SharedSearchSummary::default()
+    };
+    let tangent_plan = if search.tangent_refinement
+        && !crate::stopped(Some(deadline), options.cancellation.as_ref())
+    {
+        match crate::PreparedTangent::new(
+            cell,
+            group,
+            &result.data.hkl,
+            &result.data.intensity,
+            &result.data.sigma,
+            Some(deadline),
+            options.cancellation.as_ref(),
+        ) {
+            Ok(plan) => Some(plan),
+            Err(_) if crate::stopped(Some(deadline), options.cancellation.as_ref()) => None,
+            Err(error) => return Err(error),
+        }
+    } else {
+        None
     };
     let mut winners: Vec<State> = Vec::new();
     for trial in 0..options.trials {
@@ -1691,7 +1719,7 @@ pub fn solve_elements(
                 }
                 Ok(accepted)
             };
-            let mut state = crate::dual_space::dual_space_monitored(
+            let mut state = crate::dual_space::dual_space_guided(
                 shape,
                 cell,
                 &phasing_hkl,
@@ -1721,7 +1749,12 @@ pub fn solve_elements(
                 } else {
                     None
                 },
+                tangent_plan.as_ref(),
             )?;
+            if let Some(mut tangent) = state.tangent.take() {
+                tangent.trial = trial;
+                audit.tangent_trials.push(tangent);
+            }
             if let Some(selected_cycle) = chosen_cycle {
                 state.trial.best_cycle = selected_cycle;
                 state.trial.density.clone_from(&result.density);

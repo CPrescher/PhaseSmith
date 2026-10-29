@@ -1,0 +1,83 @@
+{
+  "schema": "phasesmith.tangent-kernel-benchmark.v1",
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "command": "cargo bench -p phasesmith-solution --bench solution -- tangent_ --sample-size 20 --measurement-time 1 --warm-up-time 1",
+  "qualification": "Serial run after both paired campaigns; new kernels have no prior equivalent. Preparation includes empirical normalization and bounded relation discovery. Reusable-plan evaluation and full annealed step are timed separately.",
+  "observed_coefficients": 2108,
+  "source_model_atoms": 4,
+  "target_model_atoms": 8,
+  "space_group": "Pm",
+  "benchmarks": {
+    "tangent_plan_8_atoms_2108_reflections": {
+      "median_ns": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": 41439270.75,
+          "upper_bound": 41788864.5
+        },
+        "point_estimate": 41620093.75,
+        "standard_error": 86821.10891630086
+      },
+      "mean_ns": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": 41546287.315,
+          "upper_bound": 42052492.725
+        },
+        "point_estimate": 41755859.4,
+        "standard_error": 131858.5492180762
+      },
+      "estimates_sha256": "dbb11532ac87735db771cbf4489983899bfc539862cd600a13ed9bf3df9d5def",
+      "sample_sha256": "7323662dfccb994b53e19ddf027f581fd8084f7918cc6b13c9fb29e013031b90"
+    },
+    "tangent_fused_values_gradients_2108_reflections": {
+      "median_ns": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": 38384.80711574953,
+          "upper_bound": 39232.778477822576
+        },
+        "point_estimate": 38814.71993530663,
+        "standard_error": 214.07691687002634
+      },
+      "mean_ns": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": 38463.79976628802,
+          "upper_bound": 39312.89044015115
+        },
+        "point_estimate": 38868.09866962094,
+        "standard_error": 217.33778863866678
+      },
+      "estimates_sha256": "6e4b17b5a94b6ea76de0a86b4f647608598c29e1802c997b72aa8ac1593f221a",
+      "sample_sha256": "64294daad24a0414f9207dbd9ae8f982169c223faba9108a19f674a1ee39d5eb"
+    },
+    "tangent_complete_annealed_step_2108_reflections": {
+      "median_ns": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": 44659.8195754717,
+          "upper_bound": 45132.11509433962
+        },
+        "point_estimate": 44846.140199161426,
+        "standard_error": 127.36471798958631
+      },
+      "mean_ns": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": 44765.51321974609,
+          "upper_bound": 45078.53088485399
+        },
+        "point_estimate": 44913.923598567475,
+        "standard_error": 79.9109483199264
+      },
+      "estimates_sha256": "492b78b721b4b2d634c6f10ba6e4083bab0fad7e8b01a56ab04d3e33386dac6c",
+      "sample_sha256": "5d82aa9ce688104b5b18335a0216a5b65bcec9cb8ed166481b0e541da7f942d9"
+    }
+  },
+  "implementation_sha256": {
+    "Cargo.lock": "f8a427cc7edfd5463a2929aa00c5473c10dd674553132052aadcef11fd41cdee",
+    "crates/phasesmith-solution/benches/solution.rs": "bc81f52c4e894390b29c37dabca1319ff47d32352d0b4b7d3d3ed95793329991",
+    "crates/phasesmith-solution/src/tangent.rs": "e33d2cd42f656ae58988a5d1e58f0c8054b0e7ab87a1b16788ebbcc971fa4c92"
+  }
+}
