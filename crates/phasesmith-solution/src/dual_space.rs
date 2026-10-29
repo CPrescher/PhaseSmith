@@ -82,6 +82,8 @@ pub struct DualSpaceResult {
     pub adaptive_history: Option<AdaptivePeakHistory>,
     /// Actual structure-search handoffs, empty for unmonitored runs.
     pub checkpoints: Vec<DualSpaceCheckpoint>,
+    /// Actual optional tangent/annealing work, absent for the legacy path.
+    pub tangent: Option<crate::TangentAudit>,
 }
 
 pub(crate) fn hash64(mut value: u64) -> u64 {
@@ -387,12 +389,45 @@ pub fn dual_space_monitored(
     support: &[u8],
     options: &DualSpaceOptions,
     deadline: Option<Instant>,
+    checkpoint: Option<&mut CheckpointCallback<'_>>,
+) -> Result<DualSpaceResult, SolutionError> {
+    dual_space_guided(
+        shape, cell, hkl, amplitudes, phases, support, options, deadline, checkpoint, None,
+    )
+}
+
+/// Existing dual-space trajectory with optional measured-only phase relations.
+#[allow(
+    clippy::too_many_arguments,
+    clippy::too_many_lines,
+    clippy::cast_precision_loss
+)]
+pub(crate) fn dual_space_guided(
+    shape: [usize; 3],
+    cell: UnitCell,
+    hkl: &[[i32; 3]],
+    amplitudes: &[f64],
+    phases: &[f64],
+    support: &[u8],
+    options: &DualSpaceOptions,
+    deadline: Option<Instant>,
     mut checkpoint: Option<&mut CheckpointCallback<'_>>,
+    tangent: Option<&crate::PreparedTangent>,
 ) -> Result<DualSpaceResult, SolutionError> {
     validate_options(options)?;
     let geometry = cell.geometry().map_err(|e| error(e.to_string()))?;
     mask_bounds(shape, &geometry, options.mask_sigma)?;
     let (indices, mut f) = prepare_fourier(shape, hkl, amplitudes, phases, support)?;
+    if let Some(plan) = tangent {
+        if plan.full_terms.len() != hkl.len()
+            || hkl
+                .iter()
+                .zip(&plan.full_terms)
+                .any(|(h, t)| plan.hkl[t.index].map(|value| value * t.sign) != *h)
+        {
+            return Err(error("tangent plan does not match measured reflections"));
+        }
+    }
     let n = grid_len(shape)?;
     let maximum = amplitudes.iter().copied().fold(0.0_f64, f64::max);
     let rms = (amplitudes
@@ -425,6 +460,7 @@ pub fn dual_space_monitored(
             None,
         )
     };
+    let mut tangent_audit = tangent.map(crate::PreparedTangent::audit);
     let mut history = Vec::with_capacity(options.cycles);
     let mut adaptive_history = match options.peak_selection {
         PeakSelection::Adaptive { sigma, cap } => Some(AdaptivePeakHistory {
@@ -512,6 +548,32 @@ pub fn dual_space_monitored(
                 next_checkpoint *= 4;
             }
         }
+        if let (Some(plan), Some(audit)) = (tangent, &mut tangent_audit) {
+            let independent: Vec<_> = plan
+                .hkl
+                .iter()
+                .map(|&h| calculated[grid_index(h, shape)].arg())
+                .collect();
+            let magnitudes: Vec<_> = plan
+                .hkl
+                .iter()
+                .map(|&h| calculated[grid_index(h, shape)].norm())
+                .collect();
+            let update = plan.step(&independent, &magnitudes, cycle, options.seed)?;
+            audit.steps += 1;
+            audit.annealed_steps += usize::from(update.temperature > 0.);
+            audit.proposals += update.proposals;
+            audit.changed += update.changed;
+            audit.declined_steps += usize::from(update.blend == 0.);
+            audit.quartet_before.push(update.quartet_before);
+            audit.quartet_after.push(update.quartet_after);
+            for (&index, term) in indices.iter().zip(&plan.full_terms) {
+                calculated[index] = Complex::from_polar(
+                    calculated[index].norm(),
+                    f64::from(term.sign) * update.phases[term.index],
+                );
+            }
+        }
         for (value, &code) in calculated.iter_mut().zip(support) {
             *value = if code == 0 {
                 Complex::default()
@@ -552,6 +614,7 @@ pub fn dual_space_monitored(
         patterson_vector: vector,
         adaptive_history,
         checkpoints,
+        tangent: tangent_audit,
     })
 }
 

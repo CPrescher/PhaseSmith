@@ -302,6 +302,29 @@ class RecyclingAudit:
 
 
 @dataclass(frozen=True, slots=True)
+class TangentAudit:
+    """Actual measured-only invariant preparation and reciprocal phase work."""
+
+    trial: int
+    variables: int
+    strong: int
+    triplets: int
+    quartets: int
+    truncated: bool
+    steps: int
+    annealed_steps: int
+    proposals: int
+    changed: int
+    declined_steps: int
+    quartet_before: tuple[float, ...]
+    quartet_after: tuple[float, ...]
+
+    def __post_init__(self):
+        object.__setattr__(self, "quartet_before", tuple(self.quartet_before))
+        object.__setattr__(self, "quartet_after", tuple(self.quartet_after))
+
+
+@dataclass(frozen=True, slots=True)
 class SharedSearchAudit:
     """Actual work and inferred topology, without source composition."""
 
@@ -340,9 +363,18 @@ class SharedSearchAudit:
     symmetry_recycling: bool = False
     recycling_cycles: int = 10
     recycling: tuple[RecyclingAudit, ...] = ()
+    tangent_refinement: bool = False
+    tangent_trials: tuple[TangentAudit, ...] = ()
 
     def __post_init__(self):
         object.__setattr__(self, "elements", tuple(self.elements))
+        object.__setattr__(
+            self,
+            "tangent_trials",
+            tuple(
+                t if isinstance(t, TangentAudit) else TangentAudit(**t) for t in self.tangent_trials
+            ),
+        )
         object.__setattr__(
             self,
             "recycling",
@@ -523,6 +555,7 @@ def solve_structure_elements(
     cached_refinement: bool = True,
     symmetry_recycling: bool = False,
     recycling_cycles: int = 10,
+    tangent_refinement: bool = False,
     cancellation: SolutionCancellation | None = None,
 ) -> SolutionResult:
     """Infer full-cell counts and labels by shared-map symmetry-orbit edits.
@@ -536,7 +569,9 @@ def solve_structure_elements(
     resumes the same Fourier trajectory when a structure misses the target.
     ``symmetry_recycling=True`` adds ten supplied-symmetry phase/positivity
     cycles per retained origin before weak-peak assignment; ``recycling_cycles``
-    controls the bounded cycle budget. It remains opt-in because easy cases
+    controls the bounded cycle budget. ``tangent_refinement=True`` adds measured-only
+    tangent phases, cooling perturbations and negative-quartet guards; it requires
+    ``phasing="dual_space"`` in SolutionOptions. Recycling remains opt-in because easy cases
     can become slower. Counts returned in ``composition`` are inferred, never inputs. The default
     atom cap is ceil(cell volume/8 A³), at most 128; it is a search bound.
     """
@@ -553,6 +588,8 @@ def solve_structure_elements(
         or len(set(elements)) != len(elements)
     ):
         raise ValueError("elements must be 1..8 distinct neutral non-H symbols")
+    if not isinstance(tangent_refinement, bool):
+        raise TypeError("tangent_refinement must be boolean")
     if not isinstance(symmetry_recycling, bool):
         raise TypeError("symmetry_recycling must be boolean")
     if not isinstance(cached_refinement, bool):
@@ -596,6 +633,8 @@ def solve_structure_elements(
     )
     if not isinstance(group, SpaceGroup) or not isinstance(controls, SolutionOptions):
         raise TypeError("space_group and options must be SpaceGroup and SolutionOptions")
+    if tangent_refinement and controls.phasing != "dual_space":
+        raise ValueError("tangent_refinement requires phasing=dual_space")
     if cancellation is not None and not isinstance(cancellation, SolutionCancellation):
         raise TypeError("cancellation must be SolutionCancellation or None")
     shared = (
@@ -610,7 +649,13 @@ def solve_structure_elements(
         peak_density_radius_angstrom,
         dual_peak_sigma,
         dual_peak_cap,
-        (dual_checkpoints, cached_refinement, symmetry_recycling, recycling_cycles),
+        (
+            dual_checkpoints,
+            cached_refinement,
+            symmetry_recycling,
+            recycling_cycles,
+            tangent_refinement,
+        ),
     )
     return _run_solution(observations, cell, group, (), controls, cancellation, shared)
 

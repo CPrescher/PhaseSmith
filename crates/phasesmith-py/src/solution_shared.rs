@@ -36,6 +36,12 @@ pub(super) fn summary<'py>(
         recycling.append(item)?;
     }
     d.set_item("recycling", recycling)?;
+    d.set_item("tangent_refinement", s.tangent_refinement)?;
+    let tangent_trials = PyList::empty(py);
+    for trial in &s.tangent_trials {
+        tangent_trials.append(super::tangent::audit(py, trial)?)?;
+    }
+    d.set_item("tangent_trials", tangent_trials)?;
     d.set_item("framework_hypotheses", s.framework_hypotheses)?;
     d.set_item("initial_prefix", s.initial_prefix)?;
     d.set_item("rounds", s.rounds)?;
