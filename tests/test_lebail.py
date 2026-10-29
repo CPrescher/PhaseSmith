@@ -397,6 +397,8 @@ def test_custom_optimizer_protocol_drives_profile_updates() -> None:
 
 def test_optional_scipy_adapter_imports_only_when_used(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setitem(sys.modules, "scipy", None)
+    # Simulate the absent optional dependency even after another test used it.
+    monkeypatch.setitem(sys.modules, "scipy.optimize", None)
     adapter = phasesmith.refinement.ScipyLeastSquaresAdapter()
     with pytest.raises(ImportError, match="optional dependency"):
         adapter.solve(
