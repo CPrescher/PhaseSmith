@@ -38,4 +38,7 @@ def predict(hkl, basis, geometry, hints, *, other=False):
             continue
         xy = np.linalg.lstsq(np.column_stack([fast, slow]), distance * ray - origin, rcond=None)[0]
         result[i] = [*xy, np.rad2deg(theta)]
+    if getattr(geometry, "pixel_map", None) is not None:
+        valid = np.isfinite(result).all(axis=1)
+        result[valid, :2] = geometry.pixel_map.from_plane(result[valid, :2])
     return result

@@ -13,10 +13,18 @@
 use std::fmt::{Display, Formatter};
 
 pub mod fft;
+pub mod integration;
+pub mod intensity_model;
+pub mod local_background;
+pub mod omega_background;
 pub mod prediction;
+pub mod profiles;
+mod profiles_affine;
+pub mod profiles_variation;
 pub mod reciprocal;
 pub mod reduction;
 pub mod rotation;
+pub mod scan_scaling;
 
 /// Truncated aperture at a detector boundary.
 pub const EDGE: u32 = 1;

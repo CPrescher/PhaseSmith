@@ -18,6 +18,16 @@ position hunting. Angular gaps exceeding `1e-8` degrees split linking segments.
 A missing/empty detector frame is not bridged. Nothing derives omega from frame
 numbers, exposure time, chi, or detector motor readings in the numerical core.
 
+An optional `variance_loader(frame)` supplies independent per-pixel variances in
+squared count units, matching the frame shape and positive/finite at unmasked
+pixels. This uses the existing supplied-variance spot kernel; default Poisson
+noise, linking and centroid equations are unchanged. Image/mask/variance loader
+buffers are snapshotted before parallel submission, and variance inputs enter
+frame fingerprints. For background-subtracted inputs the caller can retain the
+original counting-noise estimate rather than infer it from small signed
+residuals. This conditional noise estimate does not include fitted-background
+uncertainty or the correlations introduced by background estimation.
+
 Dioptas groups files by their common prefix and numeric suffix. Per-frame
 `omega0` and `omegaR` sidecars require explicit start/width interpretation at
 import. Alternatively, the user supplies first start, step, and exposure width
@@ -72,8 +82,9 @@ spot contract. Linking sorts by x per frame, then checks Q candidate pairs:
 O(K log K + Q alpha(K)) time, O(K+F) metadata memory. In dense cases Q can be
 quadratic in observations per neighbouring frame; the explicit budget fails
 rather than truncates. Grouping and moment summaries are O(K log K + K), apart
-from per-track NumPy convenience allocations. Detector arrays are streamed, so
-memory is O(P+K+F), never the full F-by-P image cube.
+from per-track NumPy convenience allocations. With `workers=W`, detector arrays
+are streamed using O(WP+K+F) memory, rather than retaining the F-by-P image cube.
+The default W=1 preserves serial streaming.
 
 The independent Python reference uses an all-pairs graph with explicit traversal
 and direct NumPy moment sums. Tests cover deterministic repeated records,
@@ -125,3 +136,44 @@ observer runs synchronously on the caller's thread; an exception aborts the job.
 Without an observer the numerical pipeline is unchanged. Live consumers may
 retain only the latest source image/candidate snapshot and marshal presentation
 to their own GUI thread. Enabling preview must not alter positions or hashes.
+
+## Bounded parallel frame detection
+
+`locate_series(..., workers=2)` schedules independent frame detectors on a private
+thread pool. The integer worker limit is explicit (1..32, bounded by frame
+count); no global pool or process workers are used. The existing native detector
+releases the interpreter lock. Each detector remains single-threaded.
+
+The caller's thread loads images and masks serially, once per frame in source
+order. Parallel runs snapshot both arrays before loading another frame, including
+when a caller reuses mutable loading buffers. At most W frame tasks are in flight;
+this is a rolling queue, not an eager submission of the whole scan. Image copies,
+native snapshots and summed-area buffers multiply with W, so callers should use
+a small worker count on memory-constrained machines.
+
+Completed detections and fingerprints are consumed in original frame order.
+Observers and progress run synchronously on the caller's thread in that same
+order. The observation budget is checked before the observer. Loading can run
+ahead of observers, so an image-preview consumer must retain images by frame
+index instead of using a single "most recently loaded" image. Dioptas does this
+with a bounded snapshot map. Its shared startup resource policy selects frame
+workers, reserves CPU headroom, caps macOS concurrency at the detected
+performance-core count, and reduces concurrency for image memory and task count.
+The numerical library still defaults to one worker.
+
+The linker, component numbering and compensated centroid sums are unchanged.
+Loader errors are reported in frame order; a detector, budget, observer or
+progress error stops further loading and cancels queued tasks. Already running
+detectors are joined before returning. Cancellation latency is therefore bounded
+by the running frame operations, rather than the remaining scan.
+
+`benchmarks/rotation_performance.py` compares an explicitly preserved baseline
+build with the candidate. It checks dtype, shape and exact bytes (including NaN
+representations) of all six position arrays, source/mask fingerprints and a
+digest of every frame's complete spots, flags, rejected-component count and
+noise convention. Timing includes loading, detection, hashing, callbacks,
+linking and centroid summaries; it excludes one full warm-up per configuration
+and reports three individual times and their median. Optional measured inputs
+are all 76 frames of each prescribed Fe7C3 narrow scan, with explicit sidecar
+bounds, zero-padding masks and source checksums. No indexed/structure files enter
+the benchmark. See `rotation-processing-performance.md` for measured results.

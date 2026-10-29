@@ -7,7 +7,9 @@ frame bounds are exposure start/end, not an inferred step or motor readback.
 from __future__ import annotations
 
 import hashlib
+from collections import deque
 from collections.abc import Callable, Sequence
+from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import dataclass
 from typing import ClassVar
 
@@ -149,11 +151,101 @@ class PositionTable:
         return self.values[:, self.columns.index(name)]
 
 
+def _measure_frame(image, mask, spot_options, gain, read_noise, saturation, variance=None):
+    table = detect_spots(
+        image,
+        mask=mask,
+        options=spot_options,
+        gain=gain,
+        read_noise=read_noise,
+        saturation=saturation,
+        variance=variance,
+    )
+    fingerprint = hashlib.sha256()
+    for a in (image, mask):
+        fingerprint.update(str((a.shape, a.dtype)).encode())
+        fingerprint.update(memoryview(np.ascontiguousarray(a)).cast("B"))
+    if variance is not None:
+        fingerprint.update(str((variance.shape, variance.dtype)).encode())
+        fingerprint.update(memoryview(np.ascontiguousarray(variance)).cast("B"))
+    return table, fingerprint.hexdigest()
+
+
+def _detect_frames(
+    frame_loader,
+    mask_loader,
+    count,
+    workers,
+    options,
+    gain,
+    read_noise,
+    saturation,
+    variance_loader=None,
+):
+    """Bounded detection; loaders and ordered callbacks stay on the calling thread."""
+    shape = None
+
+    def load(i):
+        nonlocal shape
+        image = np.asarray(frame_loader(i))
+        if shape is None:
+            shape = image.shape
+        if image.shape != shape:
+            raise ValueError("all series frames must have the same detector shape")
+        mask = np.zeros(shape, bool) if mask_loader is None else np.asarray(mask_loader(i))
+        variance = None if variance_loader is None else np.asarray(variance_loader(i))
+        if workers > 1:
+            # A caller may reuse a loading buffer. Snapshot before requesting
+            # another frame, not later when a detector thread happens to start.
+            image, mask = image.copy(), mask.copy()
+            if variance is not None:
+                variance = variance.copy()
+        return image, mask, variance
+
+    if workers == 1:
+        for i in range(count):
+            image, mask, variance = load(i)
+            yield i, _measure_frame(image, mask, options, gain, read_noise, saturation, variance)
+        return
+
+    pool = ThreadPoolExecutor(max_workers=workers, thread_name_prefix="phasesmith-spots")
+    pending = deque()
+    next_frame, failed = 0, False
+
+    def submit():
+        nonlocal next_frame, failed
+        i = next_frame
+        next_frame += 1
+        try:
+            image, mask, variance = load(i)
+            future = pool.submit(
+                _measure_frame, image, mask, options, gain, read_noise, saturation, variance
+            )
+        except Exception as exc:
+            # Surface loader/shape errors in source order, after earlier callbacks.
+            future = Future()
+            future.set_exception(exc)
+            failed = True
+        pending.append((i, future))
+
+    try:
+        while next_frame < min(count, workers) and not failed:
+            submit()
+        while pending:
+            i, future = pending.popleft()
+            yield i, future.result()
+            if next_frame < count and not failed:
+                submit()
+    finally:
+        pool.shutdown(wait=True, cancel_futures=True)
+
+
 def locate_series(
     frame_loader: Callable[[int], NDArray],
     omega_bounds,
     *,
     mask_loader: Callable[[int], NDArray] | None = None,
+    variance_loader: Callable[[int], NDArray] | None = None,
     spot_options=_DEFAULT_SPOTS,
     rotation_options=_DEFAULT_ROTATION,
     gain=1.0,
@@ -161,6 +253,7 @@ def locate_series(
     saturation=None,
     progress: Callable[[int, int], None] | None = None,
     frame_finished: Callable[[int, SpotTable], None] | None = None,
+    workers: int = 1,
 ) -> PositionTable:
     """First-stage peak hunt: read a series once and return x/y/omega candidates.
 
@@ -170,6 +263,15 @@ def locate_series(
     frame_finished receives a zero-based index and immutable per-frame detections
     after fingerprinting, before progress/linking. It runs on the caller's thread;
     exceptions abort processing. It must not mutate or retain mutable loader data.
+
+    workers=1 retains streaming serial execution. With more workers, at most
+    workers frames are in flight, with owned image/mask snapshots. Loaders remain
+    serial on the caller's thread but can run ahead of completed-frame observers.
+    Observers, progress, budgets and linking consume results in source order.
+    A callback error stops loading and joins/cancels the bounded pending work.
+    variance_loader optionally supplies independent per-pixel variances in
+    squared count units. It shares the image shape/mask and must be positive
+    and finite at unmasked pixels. Variances are fingerprinted with each frame.
     """
     bounds, segments = angle_segments(omega_bounds)
     if not isinstance(spot_options, SpotOptions) or not isinstance(
@@ -180,37 +282,37 @@ def locate_series(
         raise RuntimeError(
             "build PhaseSmith with --features experimental-spots for rotation support"
         )
+    if isinstance(workers, (bool, np.bool_)) or not isinstance(workers, (int, np.integer)):
+        raise TypeError("workers must be an integer from 1 to 32")
+    if not 1 <= workers <= 32:
+        raise ValueError("workers must be an integer from 1 to 32")
+    workers = min(int(workers), len(bounds))
     tables, hashes = [], []
-    shape = None
     count = 0
-    for i in range(len(bounds)):
-        image = np.asarray(frame_loader(i))
-        if shape is None:
-            shape = image.shape
-        if image.shape != shape:
-            raise ValueError("all series frames must have the same detector shape")
-        mask = np.zeros(shape, bool) if mask_loader is None else np.asarray(mask_loader(i))
-        table = detect_spots(
-            image,
-            mask=mask,
-            options=spot_options,
-            gain=gain,
-            read_noise=read_noise,
-            saturation=saturation,
-        )
-        tables.append(table)
-        fingerprint = hashlib.sha256()
-        for a in (image, mask):
-            fingerprint.update(str((a.shape, a.dtype)).encode())
-            fingerprint.update(a.tobytes(order="C"))
-        hashes.append(fingerprint.hexdigest())
-        count += len(table)
-        if count > rotation_options.max_observations:
-            raise ValueError("rotation observation budget exceeded")
-        if frame_finished:
-            frame_finished(i, table)
-        if progress:
-            progress(i + 1, len(bounds))
+    detections = _detect_frames(
+        frame_loader,
+        mask_loader,
+        len(bounds),
+        workers,
+        spot_options,
+        gain,
+        read_noise,
+        saturation,
+        variance_loader,
+    )
+    try:
+        for i, (table, fingerprint) in detections:
+            tables.append(table)
+            hashes.append(fingerprint)
+            count += len(table)
+            if count > rotation_options.max_observations:
+                raise ValueError("rotation observation budget exceeded")
+            if frame_finished:
+                frame_finished(i, table)
+            if progress:
+                progress(i + 1, len(bounds))
+    finally:
+        detections.close()
     labels = link_spots(tables, bounds, options=rotation_options)
     frames = np.repeat(np.arange(len(bounds)), [len(t) for t in tables])
     detected = np.concatenate([t.values for t in tables])

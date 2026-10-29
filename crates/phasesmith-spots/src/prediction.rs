@@ -53,13 +53,13 @@ fn failed(flags: u32) -> Prediction {
 /// # Errors
 /// Rejects nonfinite/degenerate geometry/B, invalid hints and unbounded work.
 #[allow(clippy::too_many_lines)] // One audited centroid/Jacobian pass.
-pub fn predict(
+fn predict_impl<T: PredictionRecord>(
     geometry: Geometry,
     basis: [[f64; 3]; 3],
     hkl: &[[i64; 3]],
     hints: &[f64],
     other: bool,
-) -> Result<Vec<Prediction>, SpotError> {
+) -> Result<Vec<T>, SpotError> {
     geometry.convert(&[])?;
     let volume = dot(basis[0], cross(basis[1], basis[2]));
     if hkl.len() != hints.len()
@@ -109,7 +109,7 @@ pub fn predict(
             return Err(invalid("prediction overflow"));
         }
         if radius <= 1e-14 || target.abs() > radius {
-            out.push(failed(NO_CROSSING));
+            out.push(T::failed(NO_CROSSING));
             continue;
         }
         let phase = v.atan2(u);
@@ -126,7 +126,7 @@ pub fn predict(
         let angular_direction = cross(a, lab);
         let slope = dot(b, angular_direction);
         if slope.abs() <= 1e-10 * radius.max(1.0) {
-            out.push(failed(TANGENT));
+            out.push(T::failed(TANGENT));
             continue;
         }
         let inverse_beam = rotate(a, b, -angle);
@@ -136,7 +136,7 @@ pub fn predict(
         let denominator = dot(n, ray);
         let t = panel_distance / denominator;
         if denominator.abs() <= 1e-12 || t <= 0.0 || !t.is_finite() {
-            out.push(failed(NO_PANEL));
+            out.push(T::failed(NO_PANEL));
             continue;
         }
         let displacement = std::array::from_fn(|j| t * ray[j] - geometry.origin[j]);
@@ -163,11 +163,93 @@ pub fn predict(
         if values.iter().chain(&jacobian).any(|v| !v.is_finite()) {
             return Err(invalid("prediction/Jacobian overflow"));
         }
-        out.push(Prediction {
+        out.push(T::make(values, jacobian, || {
+            let mut detector = [0.0; 27];
+            for row in 0..2 {
+                let ray_component = dot(dual[row], ray) / denominator;
+                for j in 0..3 {
+                    let gradient = -dual[row][j] + ray_component * n[j];
+                    detector[row * 9 + j] = gradient;
+                    detector[row * 9 + 3 + j] = values[0] * gradient;
+                    detector[row * 9 + 6 + j] = values[1] * gradient;
+                }
+            }
+            detector
+        }));
+    }
+    Ok(out)
+}
+
+/// Predicted positions plus derivatives with respect to detector origin/steps.
+#[derive(Clone, Debug)]
+pub struct DetectorPrediction {
+    /// The unchanged position and reciprocal-basis Jacobian.
+    pub prediction: Prediction,
+    /// Row-major (3,9): origin xyz, fast xyz, slow xyz; omega rows are zero.
+    pub detector_jacobian: [f64; 27],
+}
+
+trait PredictionRecord: Sized {
+    fn failed(flags: u32) -> Self;
+    fn make(values: [f64; 3], jacobian: [f64; 27], detector: impl FnOnce() -> [f64; 27]) -> Self;
+}
+impl PredictionRecord for Prediction {
+    fn failed(flags: u32) -> Self {
+        failed(flags)
+    }
+    fn make(values: [f64; 3], jacobian: [f64; 27], _detector: impl FnOnce() -> [f64; 27]) -> Self {
+        Self {
             values,
             jacobian,
             flags: 0,
-        });
+        }
     }
-    Ok(out)
+}
+impl PredictionRecord for DetectorPrediction {
+    fn failed(flags: u32) -> Self {
+        Self {
+            prediction: failed(flags),
+            detector_jacobian: [f64::NAN; 27],
+        }
+    }
+    fn make(values: [f64; 3], jacobian: [f64; 27], detector: impl FnOnce() -> [f64; 27]) -> Self {
+        Self {
+            prediction: Prediction {
+                values,
+                jacobian,
+                flags: 0,
+            },
+            detector_jacobian: detector(),
+        }
+    }
+}
+
+/// Predict Ewald roots and reciprocal-basis derivatives without detector derivatives.
+/// # Errors
+/// Rejects invalid arrays, geometry and exceeded work budgets.
+pub fn predict(
+    geometry: Geometry,
+    basis: [[f64; 3]; 3],
+    hkl: &[[i64; 3]],
+    hints: &[f64],
+    other: bool,
+) -> Result<Vec<Prediction>, SpotError> {
+    predict_impl(geometry, basis, hkl, hints, other)
+}
+
+/// Predict positions and both analytical Jacobians in one reflection pass.
+///
+/// Detector partials follow the implicit plane equation
+/// `origin + x*fast + y*slow = t*ray`; the ray is fixed for these partials.
+/// Invalid roots retain NaN values and partials with the original flags.
+/// # Errors
+/// Rejects invalid arrays, geometry and exceeded work budgets.
+pub fn predict_with_detector(
+    geometry: Geometry,
+    basis: [[f64; 3]; 3],
+    hkl: &[[i64; 3]],
+    hints: &[f64],
+    other: bool,
+) -> Result<Vec<DetectorPrediction>, SpotError> {
+    predict_impl(geometry, basis, hkl, hints, other)
 }

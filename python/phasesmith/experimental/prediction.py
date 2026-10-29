@@ -8,7 +8,7 @@ import numpy as np
 from phasesmith import _core
 
 from .indexing import cell_parameters
-from .reciprocal import PanelGeometry, triples
+from .reciprocal import PanelGeometry, mapped_xy, triples
 
 
 def _readonly(a, dtype=None):
@@ -44,6 +44,27 @@ class Predictions:
             object.__setattr__(self, name, _readonly(getattr(self, name)))
 
 
+def map_predictions(values, jacobians, flags, geometry):
+    """Map valid plane predictions and their analytical rows in the same batch.
+
+    Native arrays are owned. Invalid native crossings retain their NaNs/flags.
+    No arithmetic or copying changes for the established affine path.
+    """
+    if geometry.pixel_map is None:
+        return values, jacobians
+    valid = flags == 0
+    xy = values[valid, :2].copy()
+    mapped = mapped_xy(geometry.pixel_map, xy, inverse=True)
+    chain = np.asarray(geometry.pixel_map.inverse_jacobian(xy))
+    if (chain.dtype.kind not in "fiu" or chain.shape != (len(xy), 2, 2)
+            or not np.isfinite(chain).all()):
+        raise ValueError("pixel inverse Jacobian must be finite real shape (n,2,2)")
+    values[valid, :2] = mapped
+    for jac in jacobians:
+        jac[valid, :2] = np.einsum("nij,njk->nik", chain, jac[valid, :2])
+    return values, jacobians
+
+
 def predict_spots(hkl, reciprocal_basis, geometry, omega_hint, *, other=False):
     """Solve the Ewald equation and project onto the calibrated detector plane.
 
@@ -64,7 +85,9 @@ def predict_spots(hkl, reciprocal_basis, geometry, omega_hint, *, other=False):
     values, jacobian, flags = _core.experimental_predict_spots(
         h, b, hints, geometry.vectors, geometry.wavelength, bool(other)
     )
-    return Predictions(values, jacobian.reshape(-1, 3, 9), flags)
+    jacobian = jacobian.reshape(-1, 3, 9)
+    values, (jacobian,) = map_predictions(values, (jacobian,), flags, geometry)
+    return Predictions(values, jacobian, flags)
 
 
 @dataclass(frozen=True)

@@ -5,6 +5,9 @@ import numpy as np
 
 def reciprocal_vectors(xyomega, geometry):
     v = geometry.vectors
+    if getattr(geometry, "pixel_map", None) is not None:
+        xyomega = np.array(xyomega, dtype=float, copy=True)
+        xyomega[:, :2] = geometry.pixel_map.to_plane(xyomega[:, :2])
     points = v[0] + xyomega[:, :1] * v[1] + xyomega[:, 1:2] * v[2]
     rays = points / np.linalg.norm(points, axis=1)[:, None]
     q = (rays - v[3] / np.linalg.norm(v[3])) / geometry.wavelength
