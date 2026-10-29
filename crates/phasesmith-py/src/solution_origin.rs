@@ -1,7 +1,7 @@
 //! Owned diagnostic boundary for measured-phase origin equations.
 use super::invalid;
 use crate::{NativePreparedReflectionGenerator, hkl_rows};
-use npy::PyReadonlyArray1;
+use npy::{IntoPyArray, PyReadonlyArray1};
 use phasesmith_solution::{PhaseOriginMap, PreparedPhaseOrigin};
 use pyo3::{
     prelude::*,
@@ -41,6 +41,10 @@ pub(super) fn origin_records<'py>(
             r.set_item("screens", s.screens)?;
             r.set_item("promotions", s.promotions)?;
             r.set_item("diagnostic", &s.diagnostic)?;
+            r.set_item("chemical_scales", &s.chemical_scales)?;
+            r.set_item("reassignment_evaluations", s.reassignment_evaluations)?;
+            r.set_item("reassignment_changes", s.reassignment_changes)?;
+            r.set_item("reassignment_screens", s.reassignment_screens)?;
             settings.append(r)?;
         }
         d.set_item("settings", settings)?;
@@ -131,28 +135,55 @@ impl NativeCompletion {
                 )
             })
             .map_err(invalid)?;
-        let d = PyDict::new(py);
-        let candidates = PyList::empty(py);
-        for c in result.candidates {
-            let r = PyDict::new(py);
-            let labels: Vec<_> = c
-                .labels
-                .into_iter()
-                .map(|l| l.map_or(-1, |v| i32::try_from(v).unwrap_or(-1)))
-                .collect();
-            r.set_item("labels", labels)?;
-            r.set_item("objective", c.objective)?;
-            r.set_item("score", c.score)?;
-            r.set_item("u_iso", c.u_iso)?;
-            r.set_item("atoms", c.atoms)?;
-            candidates.append(r)?;
-        }
-        d.set_item("candidates", candidates)?;
-        d.set_item("evaluations", result.evaluations)?;
-        d.set_item("changes", result.changes)?;
-        Ok(d)
+        completion_result(py, result)
+    }
+    fn displaced(&self, site_u: Vec<f64>) -> PyResult<Self> {
+        self.inner
+            .clone()
+            .with_site_displacements(&site_u)
+            .map(|inner| Self { inner })
+            .map_err(invalid)
+    }
+    fn reassign<'py>(&self, py: Python<'py>, labels: Vec<i32>) -> PyResult<Bound<'py, PyDict>> {
+        let labels = completion_labels(labels)?;
+        let result = py
+            .detach(|| {
+                self.inner.reassign(
+                    &labels,
+                    Some(Instant::now() + Duration::from_secs(10)),
+                    None,
+                )
+            })
+            .map_err(invalid)?;
+        completion_result(py, result)
     }
 }
+fn completion_result(
+    py: Python<'_>,
+    result: phasesmith_solution::PeakCompletionResult,
+) -> PyResult<Bound<'_, PyDict>> {
+    let d = PyDict::new(py);
+    let candidates = PyList::empty(py);
+    for c in result.candidates {
+        let r = PyDict::new(py);
+        let labels: Vec<_> = c
+            .labels
+            .into_iter()
+            .map(|l| l.map_or(-1, |v| i32::try_from(v).unwrap_or(-1)))
+            .collect();
+        r.set_item("labels", labels)?;
+        r.set_item("objective", c.objective)?;
+        r.set_item("score", c.score)?;
+        r.set_item("u_iso", c.u_iso)?;
+        r.set_item("atoms", c.atoms)?;
+        candidates.append(r)?;
+    }
+    d.set_item("candidates", candidates)?;
+    d.set_item("evaluations", result.evaluations)?;
+    d.set_item("changes", result.changes)?;
+    Ok(d)
+}
+
 fn completion_labels(raw: Vec<i32>) -> PyResult<Vec<Option<usize>>> {
     raw.into_iter()
         .map(|l| {
@@ -261,7 +292,58 @@ impl NativePlan {
         Ok(d)
     }
 }
+#[pyfunction(name = "_iterative_normal_step")]
+fn normal_step<'py>(
+    py: Python<'py>,
+    jacobian: PyReadonlyArray1<'_, f64>,
+    residual: PyReadonlyArray1<'_, f64>,
+    damping: f64,
+) -> PyResult<Bound<'py, PyDict>> {
+    let j = jacobian.as_slice()?.to_vec();
+    let r = residual.as_slice()?.to_vec();
+    let (step, iterations) = py
+        .detach(|| phasesmith_solution::iterative_normal_step(&j, &r, damping, None, None))
+        .map_err(invalid)?;
+    let out = PyDict::new(py);
+    out.set_item("step", step.into_pyarray(py))?;
+    out.set_item("iterations", iterations)?;
+    Ok(out)
+}
+#[pyfunction(name = "_chemical_density_scales")]
+fn chemical_scales<'py>(
+    py: Python<'py>,
+    cell_parameters: Vec<f64>,
+    group: PyRef<'_, NativePreparedReflectionGenerator>,
+    points: PyReadonlyArray1<'_, f64>,
+    masses: PyReadonlyArray1<'_, f64>,
+    elements: Vec<String>,
+) -> PyResult<Bound<'py, PyList>> {
+    let cell = super::cell(&cell_parameters)?;
+    let group = group.space_group().clone();
+    let raw = points.as_slice()?;
+    if raw.len() % 3 != 0 {
+        return Err(invalid("chemical points must be flattened triples"));
+    }
+    let points: Vec<_> = raw.chunks_exact(3).map(|p| [p[0], p[1], p[2]]).collect();
+    let masses = masses.as_slice()?.to_vec();
+    let proposals = py
+        .detach(|| {
+            phasesmith_solution::chemical_density_scales(cell, &group, &points, &masses, &elements)
+        })
+        .map_err(invalid)?;
+    let out = PyList::empty(py);
+    for p in proposals {
+        let row = PyDict::new(py);
+        row.set_item("kind", p.kind)?;
+        row.set_item("scale", p.scale)?;
+        row.set_item("support", p.support)?;
+        out.append(row)?;
+    }
+    Ok(out)
+}
 pub(super) fn register(module: &Bound<'_, PyModule>) -> PyResult<()> {
+    module.add_function(wrap_pyfunction!(normal_step, module)?)?;
+    module.add_function(wrap_pyfunction!(chemical_scales, module)?)?;
     module.add_class::<NativePlan>()?;
     module.add_class::<NativeMap>()?;
     module.add_class::<NativeCompletion>()?;

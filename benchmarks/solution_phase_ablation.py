@@ -71,6 +71,8 @@ def compare(paths, manifest, pairs=()):
                 "wilson_normalization",
                 "phase_quality_selection",
                 "phase_origin_selection",
+                "chemical_assignment",
+                "iterative_refinement",
             ):
                 if row["effort"].get(flag, False) != report.get(flag, False):
                     raise ValueError("header/worker feature mismatch")
@@ -110,6 +112,18 @@ def compare(paths, manifest, pairs=()):
                     "completion_evaluations": sum(
                         s["evaluations"] for a in origins for s in a["settings"]
                     ),
+                    "reassignment_evaluations": sum(
+                        s.get("reassignment_evaluations", 0) for a in origins for s in a["settings"]
+                    ),
+                    "reassignment_changes": sum(
+                        s.get("reassignment_changes", 0) for a in origins for s in a["settings"]
+                    ),
+                    "reassignment_screens": sum(
+                        s.get("reassignment_screens", 0) for a in origins for s in a["settings"]
+                    ),
+                    "chemical_scale_proposals": sum(
+                        len(s.get("chemical_scales", [])) for a in origins for s in a["settings"]
+                    ),
                     "stage_seconds": stage_seconds,
                     "quality_alternatives": sum(
                         q.get("alternative_handoffs", 0)
@@ -125,6 +139,8 @@ def compare(paths, manifest, pairs=()):
             "wilson_normalization": report["wilson_normalization"],
             "phase_quality_selection": report["phase_quality_selection"],
             "phase_origin_selection": report.get("phase_origin_selection", False),
+            "chemical_assignment": report.get("chemical_assignment", False),
+            "iterative_refinement": report.get("iterative_refinement", False),
             "phase_first_selection": report.get(
                 "phase_first_selection", report["phase_quality_selection"]
             ),
@@ -138,6 +154,10 @@ def compare(paths, manifest, pairs=()):
                     "screening_refinements",
                     "final_refinements",
                     "completion_evaluations",
+                    "reassignment_evaluations",
+                    "reassignment_changes",
+                    "reassignment_screens",
+                    "chemical_scale_proposals",
                 )
             },
             "stage_seconds_totals": {
@@ -196,7 +216,7 @@ def compare(paths, manifest, pairs=()):
         "qualification": (
             "Complete serial collections, unchanged inputs/options/caps and primary scoring gates. "
             "Single-seed deadline-bounded outcomes; timing is not a paired repeated estimate. "
-            "Old quality mode includes phase-first scheduling; improved mode changes that schedule."
+            "Feature flags and actual work counters identify each requested mode."
         ),
         "runs": result,
         "comparisons": comparisons,

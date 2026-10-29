@@ -34,6 +34,14 @@ pub struct PhaseSettingAudit {
     pub promotions: usize,
     /// Rejection or numerical/resource diagnostic.
     pub diagnostic: Option<String>,
+    /// Motif kind, relative scale and supporting images.
+    pub chemical_scales: Vec<(String, f64, usize)>,
+    /// Cheap post-fit label scores.
+    pub reassignment_evaluations: usize,
+    /// Accepted cached label changes.
+    pub reassignment_changes: usize,
+    /// Post-fit label alternatives actually refined.
+    pub reassignment_screens: usize,
 }
 /// Actual per-map work; all stage timers include unsuccessful attempts.
 #[derive(Clone, Debug, Default)]
@@ -301,6 +309,10 @@ pub(super) fn search(
             screens: 0,
             promotions: 0,
             diagnostic: None,
+            chemical_scales: Vec::new(),
+            reassignment_evaluations: 0,
+            reassignment_changes: 0,
+            reassignment_screens: 0,
         };
         let start = Instant::now();
         let recycled = crate::recycle_density_guided(
@@ -344,6 +356,25 @@ pub(super) fn search(
                 return Err(error("no separated positive peak orbits"));
             }
             setting.scales = density_scales(cell, group, &points, &masses, elements)?;
+            if search.chemical_assignment {
+                for proposal in
+                    crate::chemical_density_scales(cell, group, &points, &masses, elements)?
+                {
+                    setting.chemical_scales.push((
+                        proposal.kind.to_owned(),
+                        proposal.scale,
+                        proposal.support,
+                    ));
+                    for factor in [0.9, 1., 1.1] {
+                        let scale = proposal.scale * factor;
+                        if setting.scales.len() < 8
+                            && setting.scales.iter().all(|v| (v / scale - 1.).abs() > 0.02)
+                        {
+                            setting.scales.push(scale);
+                        }
+                    }
+                }
+            }
             let cache = PreparedPeakCompletion::new(
                 cell,
                 group,
@@ -412,6 +443,85 @@ pub(super) fn search(
         trace.settings.push(setting);
     }
     screened.sort_by(|a, b| a.0.score.total_cmp(&b.0.score));
+    if search.chemical_assignment {
+        let start = Instant::now();
+        for (state, setting_index) in screened.iter_mut().take(2) {
+            for _ in 0..2 {
+                if crate::stopped(Some(deadline), options.cancellation.as_ref())
+                    || state.candidate.r1 > 0.3
+                {
+                    break;
+                }
+                let Some(seed) = state.promotion.as_ref() else {
+                    break;
+                };
+                let points: Vec<_> = seed.model.sites.iter().map(|s| s.fractional_xyz).collect();
+                let labels: Vec<_> = seed
+                    .model
+                    .sites
+                    .iter()
+                    .map(|s| elements.iter().position(|e| *e == s.species))
+                    .collect();
+                let cache = PreparedPeakCompletion::new(
+                    cell,
+                    group,
+                    &points,
+                    elements,
+                    &context.data.hkl,
+                    &context.data.amplitudes,
+                    search.maximum_atoms,
+                )?
+                .with_site_displacements(&seed.site_u)?;
+                let changed =
+                    cache.reassign(&labels, Some(deadline), options.cancellation.as_ref())?;
+                let setting = &mut trace.settings[*setting_index];
+                setting.reassignment_evaluations += changed.evaluations;
+                setting.reassignment_changes += changed.changes;
+                let mut improved = None;
+                for proposal in changed.candidates.into_iter().take(2) {
+                    if crate::stopped(Some(deadline), options.cancellation.as_ref()) {
+                        break;
+                    }
+                    let mut model = seed.model.clone();
+                    for (site, label) in model.sites.iter_mut().zip(proposal.labels) {
+                        site.species.clone_from(
+                            &elements[label.ok_or_else(|| error("omitted reassignment orbit"))?],
+                        );
+                    }
+                    setting.reassignment_screens += 1;
+                    if let Ok(next) = refine(
+                        model,
+                        &context.data,
+                        options,
+                        deadline,
+                        (1, [0.; 3]),
+                        state.candidate.u_iso,
+                        state.lineage,
+                        &state.moves,
+                        "chemical_relabel",
+                        String::new(),
+                        audit,
+                        FitPass::ScreenSeed(&seed.site_u, search.screening_iterations.min(4)),
+                    ) {
+                        if next.score < state.score - 1e-8
+                            && improved
+                                .as_ref()
+                                .is_none_or(|old: &State| next.score < old.score)
+                        {
+                            improved = Some(next);
+                        }
+                    }
+                }
+                if let Some(next) = improved {
+                    *state = next;
+                } else {
+                    break;
+                }
+            }
+        }
+        trace.screening_seconds += start.elapsed().as_secs_f64();
+        screened.sort_by(|a, b| a.0.score.total_cmp(&b.0.score));
+    }
     let start = Instant::now();
     for (state, setting) in screened
         .into_iter()

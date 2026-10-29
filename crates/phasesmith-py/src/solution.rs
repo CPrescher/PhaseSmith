@@ -51,7 +51,7 @@ type SharedSearchRequest = (
         bool,
         bool,
         bool,
-        bool,
+        (bool, bool, bool),
     ),
 );
 
@@ -178,7 +178,7 @@ fn solve_structure<'py>(
                     phase_quality_selection,
                     phase_first_selection,
                     calculated_shell_normalization,
-                    phase_origin_selection,
+                    (phase_origin_selection, chemical_assignment, iterative_refinement),
                 ),
             )) = shared_search
             {
@@ -216,6 +216,8 @@ fn solve_structure<'py>(
                         phase_first_selection,
                         calculated_shell_normalization,
                         phase_origin_selection,
+                        chemical_assignment,
+                        iterative_refinement,
                     },
                 )
             } else {

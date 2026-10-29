@@ -125,6 +125,23 @@ fn benchmark(c: &mut Criterion) {
             });
         },
     );
+    for iterative in [false, true] {
+        c.bench_function(
+            if iterative {
+                "refinement_cg_8_atoms_2108_rows_69_parameters_3_steps"
+            } else {
+                "refinement_dense_8_atoms_2108_rows_69_parameters_3_steps"
+            },
+            |b| {
+                b.iter(|| {
+                    prepared
+                        .clone()
+                        .refine_with_solver(&parameters, 3, None, None, iterative)
+                        .unwrap()
+                });
+            },
+        );
+    }
     let mirror_group = SpaceGroup::new(vec![
         SymmetryOperation::identity(),
         SymmetryOperation::new(
@@ -227,6 +244,16 @@ fn benchmark(c: &mut Criterion) {
     };
     let cache = make_cache();
     let labels = [Some(0), Some(0), Some(1), Some(1)];
+    let displaced_cache = make_cache()
+        .with_site_displacements(&[0.01, 0.02, 0.015, 0.03])
+        .unwrap();
+    c.bench_function("chemical_reassignment_8_atoms_1054_rows", |b| {
+        b.iter(|| {
+            displaced_cache
+                .reassign(&[Some(1), Some(0), Some(1), Some(0)], None, None)
+                .unwrap()
+        });
+    });
     c.bench_function("peak_completion_cache_8_atoms_1054_rows", |b| {
         b.iter(make_cache);
     });

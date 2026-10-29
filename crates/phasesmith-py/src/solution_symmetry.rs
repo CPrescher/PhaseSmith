@@ -206,6 +206,7 @@ impl NativeModel {
             .map_err(invalid)?;
         evaluation(py, &state)
     }
+    #[pyo3(signature=(parameters, iterations, max_seconds, cancellation, iterative=false))]
     fn refine<'py>(
         &self,
         py: Python<'py>,
@@ -213,6 +214,7 @@ impl NativeModel {
         iterations: usize,
         max_seconds: f64,
         cancellation: Option<PyRef<'_, NativeCancellation>>,
+        iterative: bool,
     ) -> PyResult<Bound<'py, PyDict>> {
         if !max_seconds.is_finite() || !(0.0..=3600.).contains(&max_seconds) || max_seconds == 0. {
             return Err(PyValueError::new_err("invalid refinement runtime"));
@@ -222,11 +224,12 @@ impl NativeModel {
         let model = self.inner.clone();
         let state = py
             .detach(move || {
-                model.refine(
+                model.refine_with_solver(
                     &parameters,
                     iterations,
                     Some(Instant::now() + Duration::from_secs_f64(max_seconds)),
                     cancellation.as_ref(),
+                    iterative,
                 )
             })
             .map_err(invalid)?;

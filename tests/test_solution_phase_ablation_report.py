@@ -30,15 +30,22 @@ def test_pair_labels_are_distinct_from_prediction_case_pairs():
     assert report["comparisons"][0]["before"] == "legacy"
 
 
-@pytest.mark.parametrize("corruption", ["partial", "holdout", "budget", "origin_flag"])
+@pytest.mark.parametrize(
+    "corruption", ["partial", "holdout", "budget", "origin_flag", "chemical_flag", "iterative_flag"]
+)
 def test_comparison_rejects_incomplete_opened_or_changed_panels(tmp_path, corruption):
     report = json.loads(UPDATED.read_text())
     if corruption == "partial":
         report["runs"].pop()
     elif corruption == "holdout":
         report["holdout_opened"] = True
-    elif corruption == "origin_flag":
-        report["phase_origin_selection"] = True
+    elif corruption.endswith("_flag"):
+        key = {
+            "origin_flag": "phase_origin_selection",
+            "chemical_flag": "chemical_assignment",
+            "iterative_flag": "iterative_refinement",
+        }[corruption]
+        report[key] = True
     else:
         row = next(r for r in report["runs"] if r["method"] == "phasesmith")
         row["options"]["seed"] += 1
