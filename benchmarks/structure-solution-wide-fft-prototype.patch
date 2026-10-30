@@ -1,0 +1,1380 @@
+diff --git a/PROJECT_BRIEF.md b/PROJECT_BRIEF.md
+index 5f81e1a..d855dea 100644
+--- a/PROJECT_BRIEF.md
++++ b/PROJECT_BRIEF.md
+@@ -2523,6 +2523,14 @@ wall time changes only 70.044-to-69.438 seconds (0.87% less), with a paired medi
+ ratio of 1.00961. The small overall gain remains host-sensitive despite 16.5%
+ lower isolated evaluation cost. The flag stays opt-in; the holdout remains closed.
+ 
++An opt-in `wide_fft_batches` path targets P1 Fourier packing and dispatch with
++up to 32 line-contiguous packed-real FFTs per batch, retaining original plans,
++axis order, arithmetic, grid caps and partial-batch semantics. It requires
++`real_fft`, adds at most 48 KiB staging storage, and reports actual wide FFT
++operations separately from the requested flag. Independent NumPy equations,
++bitwise Fourier/phase-history checks and complete development comparison are
++specified in `docs/solution-wide-fft.md`. The holdout remains closed.
++
+ Public behavior is typed and documented. Invalid shapes, non-finite values,
+ unsorted grids, non-positive widths, and fractions outside `[0, 1]` fail with a
+ clear error. Tests are deterministic. Numerical tolerances are justified near
+diff --git a/benchmarks/solution_ambiguity_interleaved.py b/benchmarks/solution_ambiguity_interleaved.py
+index 7c51e91..cd8a90c 100644
+--- a/benchmarks/solution_ambiguity_interleaved.py
++++ b/benchmarks/solution_ambiguity_interleaved.py
+@@ -60,6 +60,7 @@ def main():
+             ambiguous_assignments=mode == "ambiguity",
+             cached_assignment_refinement=False,
+             specialized_isotropic_refinement=False,
++            wide_fft_batches=False,
+             work_sliced_phasing=True,
+             independent_origin_sampling=False,
+             phase_first_selection=True,
+diff --git a/benchmarks/solution_assignment_cache_interleaved.py b/benchmarks/solution_assignment_cache_interleaved.py
+index 53ff0bd..054c93f 100644
+--- a/benchmarks/solution_assignment_cache_interleaved.py
++++ b/benchmarks/solution_assignment_cache_interleaved.py
+@@ -60,6 +60,7 @@ def main():
+             ambiguous_assignments=True,
+             cached_assignment_refinement=mode == "cache",
+             specialized_isotropic_refinement=False,
++            wide_fft_batches=False,
+             work_sliced_phasing=True,
+             independent_origin_sampling=False,
+             phase_first_selection=True,
+diff --git a/benchmarks/solution_assignment_interleaved.py b/benchmarks/solution_assignment_interleaved.py
+index 520816f..ad051a4 100644
+--- a/benchmarks/solution_assignment_interleaved.py
++++ b/benchmarks/solution_assignment_interleaved.py
+@@ -60,6 +60,7 @@ def main():
+             ambiguous_assignments=False,
+             cached_assignment_refinement=False,
+             specialized_isotropic_refinement=False,
++            wide_fft_batches=False,
+             work_sliced_phasing=True,
+             independent_origin_sampling=False,
+             phase_first_selection=True,
+diff --git a/benchmarks/solution_corpus/run.py b/benchmarks/solution_corpus/run.py
+index b5a0f24..97b7242 100644
+--- a/benchmarks/solution_corpus/run.py
++++ b/benchmarks/solution_corpus/run.py
+@@ -86,6 +86,7 @@ def worker(args):
+         ambiguous_assignments=args.ambiguous_assignments,
+         cached_assignment_refinement=args.cached_assignment_refinement,
+         specialized_isotropic_refinement=args.specialized_isotropic_refinement,
++        wide_fft_batches=args.wide_fft_batches,
+         reusable_fourier_workspaces=args.reusable_fourier_workspaces,
+         independent_origin_sampling=args.independent_origin_sampling,
+         resolution_extension=args.resolution_extension,
+@@ -281,6 +282,7 @@ def collect_jobs(args):
+             or previous.get("fused_phase_workspace", False) != args.fused_phase_workspace
+             or previous.get("cached_normal_refinement", False) != args.cached_normal_refinement
+             or previous.get("ambiguous_assignments", False) != args.ambiguous_assignments
++            or previous.get("wide_fft_batches", False) != args.wide_fft_batches
+             or previous.get("specialized_isotropic_refinement", False)
+             != args.specialized_isotropic_refinement
+             or previous.get("cached_assignment_refinement", False)
+@@ -357,6 +359,7 @@ def collect_jobs(args):
+         "ambiguous_assignments": args.ambiguous_assignments,
+         "cached_assignment_refinement": args.cached_assignment_refinement,
+         "specialized_isotropic_refinement": args.specialized_isotropic_refinement,
++        "wide_fft_batches": args.wide_fft_batches,
+         "reusable_fourier_workspaces": args.reusable_fourier_workspaces,
+         "independent_origin_sampling": args.independent_origin_sampling,
+         "resolution_extension": args.resolution_extension,
+@@ -490,6 +493,7 @@ def collect_jobs(args):
+                     *(["--fused-phase-workspace"] if args.fused_phase_workspace else []),
+                     *(["--cached-normal-refinement"] if args.cached_normal_refinement else []),
+                     *(["--ambiguous-assignments"] if args.ambiguous_assignments else []),
++                    *(["--wide-fft-batches"] if args.wide_fft_batches else []),
+                     *(
+                         ["--specialized-isotropic-refinement"]
+                         if args.specialized_isotropic_refinement
+diff --git a/benchmarks/solution_corpus_benchmark.py b/benchmarks/solution_corpus_benchmark.py
+index 20bc10e..9461870 100644
+--- a/benchmarks/solution_corpus_benchmark.py
++++ b/benchmarks/solution_corpus_benchmark.py
+@@ -220,6 +220,7 @@ def main():
+     r.add_argument("--ambiguous-assignments", action="store_true")
+     r.add_argument("--cached-assignment-refinement", action="store_true")
+     r.add_argument("--specialized-isotropic-refinement", action="store_true")
++    r.add_argument("--wide-fft-batches", action="store_true")
+     r.add_argument("--isotropic-assignment-refinement", action="store_true")
+     r.add_argument("--score-only-evaluation", action="store_true")
+     r.add_argument("--reusable-fourier-workspaces", action="store_true")
+@@ -256,6 +257,7 @@ def main():
+     w.add_argument("--ambiguous-assignments", action="store_true")
+     w.add_argument("--cached-assignment-refinement", action="store_true")
+     w.add_argument("--specialized-isotropic-refinement", action="store_true")
++    w.add_argument("--wide-fft-batches", action="store_true")
+     w.add_argument("--isotropic-assignment-refinement", action="store_true")
+     w.add_argument("--score-only-evaluation", action="store_true")
+     w.add_argument("--reusable-fourier-workspaces", action="store_true")
+diff --git a/benchmarks/solution_execution_interleaved.py b/benchmarks/solution_execution_interleaved.py
+index b5cf142..90547a4 100644
+--- a/benchmarks/solution_execution_interleaved.py
++++ b/benchmarks/solution_execution_interleaved.py
+@@ -88,6 +88,7 @@ def main():
+             ambiguous_assignments=False,
+             cached_assignment_refinement=False,
+             specialized_isotropic_refinement=False,
++            wide_fft_batches=False,
+             work_sliced_phasing=False,
+             independent_origin_sampling=False,
+             phase_first_selection=True,
+diff --git a/benchmarks/solution_family_interleaved.py b/benchmarks/solution_family_interleaved.py
+index 04221a4..4b3c59a 100644
+--- a/benchmarks/solution_family_interleaved.py
++++ b/benchmarks/solution_family_interleaved.py
+@@ -60,6 +60,7 @@ def main():
+             ambiguous_assignments=False,
+             cached_assignment_refinement=False,
+             specialized_isotropic_refinement=False,
++            wide_fft_batches=False,
+             work_sliced_phasing=True,
+             independent_origin_sampling=False,
+             phase_first_selection=True,
+diff --git a/benchmarks/solution_fft_interleaved.py b/benchmarks/solution_fft_interleaved.py
+index 764452d..9b893af 100644
+--- a/benchmarks/solution_fft_interleaved.py
++++ b/benchmarks/solution_fft_interleaved.py
+@@ -60,6 +60,7 @@ def main():
+             ambiguous_assignments=False,
+             cached_assignment_refinement=False,
+             specialized_isotropic_refinement=False,
++            wide_fft_batches=False,
+             work_sliced_phasing=True,
+             independent_origin_sampling=False,
+             phase_first_selection=True,
+diff --git a/benchmarks/solution_isotropic_evaluation_interleaved.py b/benchmarks/solution_isotropic_evaluation_interleaved.py
+index 313c720..9a19389 100644
+--- a/benchmarks/solution_isotropic_evaluation_interleaved.py
++++ b/benchmarks/solution_isotropic_evaluation_interleaved.py
+@@ -60,6 +60,7 @@ def main():
+             ambiguous_assignments=True,
+             cached_assignment_refinement=True,
+             specialized_isotropic_refinement=mode == "cache",
++            wide_fft_batches=False,
+             work_sliced_phasing=True,
+             independent_origin_sampling=False,
+             phase_first_selection=True,
+diff --git a/benchmarks/solution_normal_interleaved.py b/benchmarks/solution_normal_interleaved.py
+index b80fffc..d35fa4e 100644
+--- a/benchmarks/solution_normal_interleaved.py
++++ b/benchmarks/solution_normal_interleaved.py
+@@ -60,6 +60,7 @@ def main():
+             ambiguous_assignments=False,
+             cached_assignment_refinement=False,
+             specialized_isotropic_refinement=False,
++            wide_fft_batches=False,
+             work_sliced_phasing=True,
+             independent_origin_sampling=False,
+             phase_first_selection=True,
+diff --git a/benchmarks/solution_peak_interleaved.py b/benchmarks/solution_peak_interleaved.py
+index 11e79d0..98da978 100644
+--- a/benchmarks/solution_peak_interleaved.py
++++ b/benchmarks/solution_peak_interleaved.py
+@@ -60,6 +60,7 @@ def main():
+             ambiguous_assignments=False,
+             cached_assignment_refinement=False,
+             specialized_isotropic_refinement=False,
++            wide_fft_batches=False,
+             work_sliced_phasing=True,
+             independent_origin_sampling=False,
+             phase_first_selection=True,
+diff --git a/benchmarks/solution_phase_ablation.py b/benchmarks/solution_phase_ablation.py
+index 4954563..47e54fa 100644
+--- a/benchmarks/solution_phase_ablation.py
++++ b/benchmarks/solution_phase_ablation.py
+@@ -106,6 +106,7 @@ def compare(paths, manifest, pairs=()):
+                 "ambiguous_assignments",
+                 "cached_assignment_refinement",
+                 "specialized_isotropic_refinement",
++                "wide_fft_batches",
+                 "reusable_fourier_workspaces",
+                 "independent_origin_sampling",
+                 "resolution_extension",
+@@ -161,6 +162,7 @@ def compare(paths, manifest, pairs=()):
+                     "filtered_peak_cycles": r["effort"].get("filtered_peak_cycles", 0),
+                     "batched_phase_transforms": r["effort"].get("batched_phase_transforms", 0),
+                     "real_phase_transforms": r["effort"].get("real_phase_transforms", 0),
++                    "wide_fft_transforms": r["effort"].get("wide_fft_transforms", 0),
+                     "cached_mask_cycles": r["effort"].get("cached_mask_cycles", 0),
+                     "fused_fourier_transforms": r["effort"].get("fused_fourier_transforms", 0),
+                     "cached_normal_solves": r["effort"].get("cached_normal_solves", 0),
+@@ -271,6 +273,7 @@ def compare(paths, manifest, pairs=()):
+             "specialized_isotropic_refinement": report.get(
+                 "specialized_isotropic_refinement", False
+             ),
++            "wide_fft_batches": report.get("wide_fft_batches", False),
+             "reusable_fourier_workspaces": report.get("reusable_fourier_workspaces", False),
+             "independent_origin_sampling": report.get("independent_origin_sampling", False),
+             "resolution_extension": report.get("resolution_extension", 1.0),
+@@ -294,6 +297,7 @@ def compare(paths, manifest, pairs=()):
+                     "filtered_peak_cycles",
+                     "batched_phase_transforms",
+                     "real_phase_transforms",
++                    "wide_fft_transforms",
+                     "cached_mask_cycles",
+                     "fused_fourier_transforms",
+                     "cached_normal_solves",
+diff --git a/benchmarks/solution_phase_workspace_interleaved.py b/benchmarks/solution_phase_workspace_interleaved.py
+index d5dd141..eb23959 100644
+--- a/benchmarks/solution_phase_workspace_interleaved.py
++++ b/benchmarks/solution_phase_workspace_interleaved.py
+@@ -60,6 +60,7 @@ def main():
+             ambiguous_assignments=False,
+             cached_assignment_refinement=False,
+             specialized_isotropic_refinement=False,
++            wide_fft_batches=False,
+             work_sliced_phasing=True,
+             independent_origin_sampling=False,
+             phase_first_selection=True,
+diff --git a/benchmarks/solution_real_fft_interleaved.py b/benchmarks/solution_real_fft_interleaved.py
+index 9e97ac9..187ccfb 100644
+--- a/benchmarks/solution_real_fft_interleaved.py
++++ b/benchmarks/solution_real_fft_interleaved.py
+@@ -60,6 +60,7 @@ def main():
+             ambiguous_assignments=False,
+             cached_assignment_refinement=False,
+             specialized_isotropic_refinement=False,
++            wide_fft_batches=False,
+             work_sliced_phasing=True,
+             independent_origin_sampling=False,
+             phase_first_selection=True,
+diff --git a/benchmarks/solution_timeslice_interleaved.py b/benchmarks/solution_timeslice_interleaved.py
+index e1a6173..329ef53 100644
+--- a/benchmarks/solution_timeslice_interleaved.py
++++ b/benchmarks/solution_timeslice_interleaved.py
+@@ -60,6 +60,7 @@ def main():
+             ambiguous_assignments=False,
+             cached_assignment_refinement=False,
+             specialized_isotropic_refinement=False,
++            wide_fft_batches=False,
+             work_sliced_phasing=mode == "work",
+             independent_origin_sampling=False,
+             phase_first_selection=True,
+diff --git a/crates/phasesmith-py/src/solution.rs b/crates/phasesmith-py/src/solution.rs
+index 61a3835..8fda03b 100644
+--- a/crates/phasesmith-py/src/solution.rs
++++ b/crates/phasesmith-py/src/solution.rs
+@@ -65,7 +65,7 @@ type SharedSearchRequest = (
+             bool,
+             bool,
+             bool,
+-            (bool, bool, bool, bool, bool, bool, bool, bool, bool),
++            (bool, bool, bool, bool, bool, bool, bool, bool, bool, bool),
+         ),
+     ),
+ );
+@@ -215,6 +215,7 @@ fn solve_structure<'py>(
+                             ambiguous_assignments,
+                             cached_assignment_refinement,
+                             specialized_isotropic_refinement,
++                            wide_fft_batches,
+                         ),
+                     ),
+                 ),
+@@ -273,6 +274,7 @@ fn solve_structure<'py>(
+                         ambiguous_assignments,
+                         cached_assignment_refinement,
+                         specialized_isotropic_refinement,
++                        wide_fft_batches,
+                     },
+                 )
+             } else {
+diff --git a/crates/phasesmith-py/src/solution_dual.rs b/crates/phasesmith-py/src/solution_dual.rs
+index a66016f..bf3a4d3 100644
+--- a/crates/phasesmith-py/src/solution_dual.rs
++++ b/crates/phasesmith-py/src/solution_dual.rs
+@@ -62,6 +62,7 @@ fn run<'py>(
+                     batched_fft: false,
+                     real_fft: false,
+                     fused_phase_workspace: false,
++                    wide_fft_batches: false,
+                 },
+             )
+         })
+@@ -130,7 +131,7 @@ pub(super) fn adaptive_record<'py>(
+ }
+ #[pyfunction(name = "_solution_count_free_dual_space")]
+ #[allow(clippy::too_many_arguments, clippy::fn_params_excessive_bools)] // Independent diagnostic controls.
+-#[pyo3(signature = (shape, cell_parameters, hkl, amplitudes, phases, support, cycles, peak_sigma, peak_cap, mask_sigma, hybrid_m, omit_fraction, seed, patterson_rank, checkpoint_accept_cycle=None, reusable_workspaces=false, filtered_peak_search=false,batched_fft=false, real_fft=false, fused_phase_workspace=false))]
++#[pyo3(signature = (shape, cell_parameters, hkl, amplitudes, phases, support, cycles, peak_sigma, peak_cap, mask_sigma, hybrid_m, omit_fraction, seed, patterson_rank, checkpoint_accept_cycle=None, reusable_workspaces=false, filtered_peak_search=false,batched_fft=false, real_fft=false, fused_phase_workspace=false, wide_fft_batches=false))]
+ fn count_free<'py>(
+     py: Python<'py>,
+     shape: [usize; 3],
+@@ -153,6 +154,7 @@ fn count_free<'py>(
+     batched_fft: bool,
+     real_fft: bool,
+     fused_phase_workspace: bool,
++    wide_fft_batches: bool,
+ ) -> PyResult<Bound<'py, PyDict>> {
+     let cell = cell(&cell_parameters)?;
+     let hkl = hkl_rows(&hkl)?;
+@@ -192,6 +194,7 @@ fn count_free<'py>(
+                         batched_fft,
+                         real_fft,
+                         fused_phase_workspace,
++                        wide_fft_batches,
+                     },
+                 );
+             }
+@@ -200,6 +203,7 @@ fn count_free<'py>(
+                 || batched_fft
+                 || real_fft
+                 || fused_phase_workspace
++                || wide_fft_batches
+             {
+                 return Err(phasesmith_solution::SolutionError(
+                     "diagnostic checkpoint and execution modes must be tested separately".into(),
+@@ -227,6 +231,7 @@ fn count_free<'py>(
+         .map_err(invalid)?;
+     let d = PyDict::new(py);
+     d.set_item("cached_mask_cycles", state.cached_mask_cycles)?;
++    d.set_item("wide_fft_transforms", state.wide_fft_transforms)?;
+     d.set_item("density", state.trial.density.into_pyarray(py))?;
+     d.set_item("history", state.trial.history.into_pyarray(py))?;
+     d.set_item("best_cycle", state.trial.best_cycle)?;
+@@ -406,12 +411,14 @@ fn fft_transform<'py>(
+ }
+ 
+ #[pyfunction(name = "_solution_real_fft_transform")]
++#[pyo3(signature = (real, imaginary, shape, to_density, wide_fft_batches=false))]
+ fn real_fft_transform<'py>(
+     py: Python<'py>,
+     real: PyReadonlyArray1<'_, f64>,
+     imaginary: PyReadonlyArray1<'_, f64>,
+     shape: [usize; 3],
+     to_density: bool,
++    wide_fft_batches: bool,
+ ) -> PyResult<Bound<'py, PyDict>> {
+     let a = real.as_slice()?;
+     let b = imaginary.as_slice()?;
+@@ -424,7 +431,14 @@ fn real_fft_transform<'py>(
+         .map(|(&r, &i)| phasesmith_solution::FourierComplex::new(r, i))
+         .collect();
+     let out = py
+-        .detach(|| phasesmith_solution::real_density_transform(shape, &input, to_density))
++        .detach(|| {
++            phasesmith_solution::real_density_transform_with_batches(
++                shape,
++                &input,
++                to_density,
++                wide_fft_batches,
++            )
++        })
+         .map_err(invalid)?;
+     let result = PyDict::new(py);
+     result.set_item(
+diff --git a/crates/phasesmith-py/src/solution_shared.rs b/crates/phasesmith-py/src/solution_shared.rs
+index 5f1627e..7fbdd8e 100644
+--- a/crates/phasesmith-py/src/solution_shared.rs
++++ b/crates/phasesmith-py/src/solution_shared.rs
+@@ -61,6 +61,8 @@ pub(super) fn summary<'py>(
+     d.set_item("cached_mask_cycles", s.cached_mask_cycles)?;
+     d.set_item("fused_fourier_transforms", s.fused_fourier_transforms)?;
+     d.set_item("real_phase_transforms", s.real_phase_transforms)?;
++    d.set_item("wide_fft_batches", s.wide_fft_batches)?;
++    d.set_item("wide_fft_transforms", s.wide_fft_transforms)?;
+     d.set_item("batched_phase_transforms", s.batched_phase_transforms)?;
+     d.set_item("filtered_peak_cycles", s.filtered_peak_cycles)?;
+     d.set_item(
+diff --git a/crates/phasesmith-solution/benches/solution.rs b/crates/phasesmith-solution/benches/solution.rs
+index 74720df..1daade6 100644
+--- a/crates/phasesmith-solution/benches/solution.rs
++++ b/crates/phasesmith-solution/benches/solution.rs
+@@ -873,6 +873,7 @@ fn benchmark(c: &mut Criterion) {
+                     batched_fft: false,
+                     real_fft: false,
+                     fused_phase_workspace: false,
++                    wide_fft_batches: false,
+                 };
+                 let options = DualSpaceOptions {
+                     cycles: 64,
+@@ -934,6 +935,7 @@ fn benchmark(c: &mut Criterion) {
+                     batched_fft: false,
+                     real_fft: false,
+                     fused_phase_workspace: false,
++                    wide_fft_batches: false,
+                 };
+                 let options = DualSpaceOptions {
+                     cycles: 64,
+@@ -995,6 +997,7 @@ fn benchmark(c: &mut Criterion) {
+                     batched_fft: batched,
+                     real_fft: false,
+                     fused_phase_workspace: false,
++                    wide_fft_batches: false,
+                 };
+                 let options = DualSpaceOptions {
+                     cycles: 64,
+@@ -1056,6 +1059,7 @@ fn benchmark(c: &mut Criterion) {
+                     batched_fft: true,
+                     real_fft: real,
+                     fused_phase_workspace: false,
++                    wide_fft_batches: false,
+                 };
+                 let options = DualSpaceOptions {
+                     cycles: 64,
+@@ -1107,6 +1111,83 @@ fn benchmark(c: &mut Criterion) {
+             },
+         );
+     }
++    for shape in [shape, [64; 3]] {
++        let mut support = vec![0; shape.iter().product()];
++        support[0] = 1;
++        for h in &quality_data.hkl {
++            let v = std::array::from_fn::<_, 3, _>(|i| {
++                usize::try_from(h[i].rem_euclid(i32::try_from(shape[i]).unwrap())).unwrap()
++            });
++            support[(v[0] * shape[1] + v[1]) * shape[2] + v[2]] = 2;
++        }
++        for (label, real) in [("control", false), ("wide", true)] {
++            c.bench_function(
++                &format!(
++                    "wide_fft_phase_{}cubed_8_atoms_2108_rows_64_cycle_cap_{label}",
++                    shape[0]
++                ),
++                |b| {
++                    let execution = phasesmith_solution::PhasingExecution {
++                        score_only_evaluation: true,
++                        reusable_fourier_workspaces: true,
++                        filtered_peak_search: true,
++                        batched_fft: true,
++                        real_fft: true,
++                        fused_phase_workspace: true,
++                        wide_fft_batches: real,
++                    };
++                    let options = DualSpaceOptions {
++                        cycles: 64,
++                        peak_selection: PeakSelection::Adaptive {
++                            sigma: 2.,
++                            cap: 128,
++                        },
++                        mask_sigma: 0.25,
++                        hybrid_m: 3.,
++                        omit_fraction: 0.1,
++                        seed: 1034,
++                        patterson_rank: Some(0),
++                        cancellation: None,
++                    };
++                    let sample = phasesmith_solution::dual_space_with_execution(
++                        shape,
++                        cell,
++                        &quality_data.hkl,
++                        &quality_data.amplitudes,
++                        &phases,
++                        &support,
++                        &options,
++                        None,
++                        Some(&quality_plan),
++                        execution,
++                    )
++                    .unwrap();
++                    eprintln!(
++                        "wide_fft_sample {} {label} completed_cycles {} real_transforms {}",
++                        shape[0],
++                        sample.trial.history.len(),
++                        sample.real_phase_transforms
++                    );
++                    drop(sample);
++                    b.iter(|| {
++                        phasesmith_solution::dual_space_with_execution(
++                            shape,
++                            cell,
++                            &quality_data.hkl,
++                            &quality_data.amplitudes,
++                            &phases,
++                            &support,
++                            &options,
++                            None,
++                            Some(&quality_plan),
++                            execution,
++                        )
++                        .unwrap()
++                    });
++                },
++            );
++        }
++    }
+     for (label, cached) in [("control", false), ("fused", true)] {
+         c.bench_function(
+             &format!("phase_workspace_phase_32cubed_8_atoms_2108_rows_64_cycle_cap_{label}"),
+@@ -1118,6 +1199,7 @@ fn benchmark(c: &mut Criterion) {
+                     batched_fft: true,
+                     real_fft: true,
+                     fused_phase_workspace: cached,
++                    wide_fft_batches: false,
+                 };
+                 let options = DualSpaceOptions {
+                     cycles: 64,
+@@ -1880,6 +1962,78 @@ fn benchmark(c: &mut Criterion) {
+             },
+         );
+     }
++    for cached in [false, true] {
++        let label = if cached { "cache" } else { "control" };
++        let options = SolveOptions {
++            phasing: PhasingMethod::DualSpace,
++            trials: 2,
++            cycles: 128,
++            max_seconds: 60.,
++            r1_target: 1e-6,
++            ..SolveOptions::default()
++        };
++        let search = SharedSearchOptions {
++            maximum_atoms: 32,
++            symmetry_recycling: true,
++            tangent_refinement: true,
++            wilson_normalization: true,
++            phase_quality_selection: true,
++            phase_origin_selection: true,
++            chemical_assignment: true,
++            iterative_refinement: true,
++            score_only_evaluation: true,
++            reusable_fourier_workspaces: true,
++            work_sliced_phasing: true,
++            isotropic_assignment_refinement: true,
++            filtered_peak_search: true,
++            batched_fft: true,
++            real_fft: true,
++            fused_phase_workspace: true,
++            cached_normal_refinement: true,
++            multiplicity_weighted_refinement: true,
++            ambiguous_assignments: true,
++            cached_assignment_refinement: true,
++            specialized_isotropic_refinement: true,
++            wide_fft_batches: cached,
++            ..SharedSearchOptions::default()
++        };
++        c.bench_function(
++            &format!("wide_fft_search_32cubed_8_atoms_2108_rows_{label}"),
++            |b| {
++                let sample = phasesmith_solution::solve_elements(
++                    &ambiguity_observations,
++                    cell,
++                    &group,
++                    &ambiguity_elements,
++                    &options,
++                    &search,
++                )
++                .unwrap();
++                let a = sample.shared_search.unwrap();
++                eprintln!(
++                    "wide_fft_search_sample {label} starts {} cycles {} extra_fits {} cached_steps {}",
++                    a.phasing_starts,
++                    a.fourier_workspace_cycles,
++                    a.phase_origins
++                        .iter()
++                        .map(|t| t.ambiguity_relaxations)
++                        .sum::<usize>(),
++                    a.assignment_cached_normal_solves
++                );
++                b.iter(|| {
++                    phasesmith_solution::solve_elements(
++                        &ambiguity_observations,
++                        cell,
++                        &group,
++                        &ambiguity_elements,
++                        &options,
++                        &search,
++                    )
++                    .unwrap()
++                });
++            },
++        );
++    }
+     for atom_count in [8, 12] {
+         let mut fit_points = points.to_vec();
+         if atom_count == 12 {
+diff --git a/crates/phasesmith-solution/src/dual_space.rs b/crates/phasesmith-solution/src/dual_space.rs
+index 5308954..e15662d 100644
+--- a/crates/phasesmith-solution/src/dual_space.rs
++++ b/crates/phasesmith-solution/src/dual_space.rs
+@@ -102,6 +102,8 @@ pub struct DualSpaceResult {
+     pub batched_phase_transforms: usize,
+     /// Actual packed-real transforms in P1 cycles, excluding initialization.
+     pub real_phase_transforms: usize,
++    /// Actual P1 packed-real transforms using wide streaming batches.
++    pub wide_fft_transforms: usize,
+     /// Actual cycles using exact cached Gaussian mask geometry.
+     pub cached_mask_cycles: usize,
+     /// Actual packed Fourier operations using direct density-array transfers.
+@@ -583,6 +585,8 @@ pub struct PhasingExecution {
+     pub real_fft: bool,
+     /// Cache exact Gaussian axis geometry inside reusable projection workspaces.
+     pub fused_phase_workspace: bool,
++    /// Process up to 32 strided packed-real FFT lines per batch.
++    pub wide_fft_batches: bool,
+ }
+ 
+ /// Diagnostic/benchmark entry point with explicit arithmetic-preserving execution.
+@@ -704,6 +708,7 @@ pub(crate) fn dual_space_guided_prediction(
+         batched_fft,
+         real_fft,
+         fused_phase_workspace,
++        wide_fft_batches,
+     } = execution;
+     validate_options(options)?;
+     if (filtered_peak_search || batched_fft || fused_phase_workspace)
+@@ -713,6 +718,9 @@ pub(crate) fn dual_space_guided_prediction(
+             "filtered peak search and batched FFT require reusable Fourier workspaces",
+         ));
+     }
++    if wide_fft_batches && !real_fft {
++        return Err(error("wide FFT batches require real FFT"));
++    }
+     if real_fft && !batched_fft {
+         return Err(error("real FFT requires batched FFTs"));
+     }
+@@ -737,7 +745,7 @@ pub(crate) fn dual_space_guided_prediction(
+         f[i] = Complex::from_polar(a, f[i].arg());
+     }
+     let mut fft = if real_fft {
+-        Transform::real(shape)
++        Transform::real_with_batches(shape, wide_fft_batches)
+     } else if batched_fft {
+         Transform::batched(shape)
+     } else if reusable_fourier_workspaces {
+@@ -1140,6 +1148,11 @@ pub(crate) fn dual_space_guided_prediction(
+         fourier_workspace_cycles,
+         batched_phase_transforms: fft.batched_calls(),
+         real_phase_transforms: fft.real_calls(),
++        wide_fft_transforms: if wide_fft_batches {
++            fft.real_calls()
++        } else {
++            0
++        },
+         cached_mask_cycles: workspace.as_ref().map_or(0, |w| w.cached_cycles),
+         fused_fourier_transforms,
+         filtered_peak_cycles: if filtered_peak_search
+@@ -1234,6 +1247,7 @@ mod tests {
+                         batched_fft: false,
+                         real_fft: false,
+                         fused_phase_workspace: false,
++                        wide_fft_batches: false,
+                     },
+                     PhasingExecution {
+                         score_only_evaluation: false,
+@@ -1242,6 +1256,7 @@ mod tests {
+                         batched_fft: false,
+                         real_fft: false,
+                         fused_phase_workspace: false,
++                        wide_fft_batches: false,
+                     },
+                     PhasingExecution {
+                         score_only_evaluation: true,
+@@ -1250,6 +1265,7 @@ mod tests {
+                         batched_fft: false,
+                         real_fft: false,
+                         fused_phase_workspace: false,
++                        wide_fft_batches: false,
+                     },
+                     PhasingExecution {
+                         score_only_evaluation: true,
+@@ -1258,6 +1274,7 @@ mod tests {
+                         batched_fft: false,
+                         real_fft: false,
+                         fused_phase_workspace: false,
++                        wide_fft_batches: false,
+                     },
+                     PhasingExecution {
+                         score_only_evaluation: true,
+@@ -1266,6 +1283,7 @@ mod tests {
+                         batched_fft: true,
+                         real_fft: false,
+                         fused_phase_workspace: false,
++                        wide_fft_batches: false,
+                     },
+                 ] {
+                     let new = dual_space_with_execution(
+diff --git a/crates/phasesmith-solution/src/fourier.rs b/crates/phasesmith-solution/src/fourier.rs
+index 212a164..4e0da50 100644
+--- a/crates/phasesmith-solution/src/fourier.rs
++++ b/crates/phasesmith-solution/src/fourier.rs
+@@ -93,11 +93,15 @@ impl Transform {
+     }
+ 
+     pub(crate) fn real(shape: [usize; 3]) -> Self {
++        Self::real_with_batches(shape, false)
++    }
++    pub(crate) fn real_with_batches(shape: [usize; 3], wide: bool) -> Self {
+         let mut plan = Self::batched(shape);
+         plan.real = Some(real::RealTransform::new(
+             shape,
+             &plan.forward,
+             &plan.inverse,
++            wide,
+         ));
+         plan
+     }
+@@ -234,6 +238,18 @@ pub fn real_density_transform(
+     shape: [usize; 3],
+     values: &[Complex<f64>],
+     to_density: bool,
++) -> Result<Vec<Complex<f64>>, SolutionError> {
++    real_density_transform_with_batches(shape, values, to_density, false)
++}
++
++/// Same real Fourier equations with optional 32-line streaming FFT batches.
++/// # Errors
++/// Rejects the same grid, array and real-density boundaries as the original.
++pub fn real_density_transform_with_batches(
++    shape: [usize; 3],
++    values: &[Complex<f64>],
++    to_density: bool,
++    wide: bool,
+ ) -> Result<Vec<Complex<f64>>, SolutionError> {
+     if values.len() != grid_len(shape)?
+         || values
+@@ -242,7 +258,11 @@ pub fn real_density_transform(
+     {
+         return Err(error("invalid real-density transform input"));
+     }
+-    let mut fft = Transform::real(shape);
++    let mut fft = if wide {
++        Transform::real_with_batches(shape, true)
++    } else {
++        Transform::real(shape)
++    };
+     let mut out = values.to_vec();
+     if to_density {
+         fft.fourier_to_density(&mut out);
+diff --git a/crates/phasesmith-solution/src/lib.rs b/crates/phasesmith-solution/src/lib.rs
+index 3b6ce1c..1b06652 100644
+--- a/crates/phasesmith-solution/src/lib.rs
++++ b/crates/phasesmith-solution/src/lib.rs
+@@ -57,7 +57,8 @@ pub use dual_space::{
+     dual_space, dual_space_monitored, dual_space_with_prediction,
+ };
+ pub use fourier::{
+-    FlipOptions, FlipResult, charge_flip, extract_peaks, real_density_transform, transform_3d,
++    FlipOptions, FlipResult, charge_flip, extract_peaks, real_density_transform,
++    real_density_transform_with_batches, transform_3d,
+ };
+ pub use linear_step::{CachedNormalStep, cached_normal_step, iterative_normal_step};
+ pub use model::{ModelEvaluation, PolishedModel, evaluate_model, polish_model};
+diff --git a/crates/phasesmith-solution/src/real_fourier.rs b/crates/phasesmith-solution/src/real_fourier.rs
+index e0131ea..087798f 100644
+--- a/crates/phasesmith-solution/src/real_fourier.rs
++++ b/crates/phasesmith-solution/src/real_fourier.rs
+@@ -5,6 +5,7 @@ use std::sync::Arc;
+ 
+ pub(super) struct RealTransform {
+     shape: [usize; 3],
++    batch_lines: usize,
+     work: Vec<Complex<f64>>,
+     line: Vec<Complex<f64>>,
+     batch: Vec<Complex<f64>>,
+@@ -19,7 +20,9 @@ impl RealTransform {
+         shape: [usize; 3],
+         original_forward: &[Arc<dyn Fft<f64>>; 3],
+         original_inverse: &[Arc<dyn Fft<f64>>; 3],
++        wide: bool,
+     ) -> Self {
++        let batch_lines = if wide { 32 } else { layout::BATCH_LINES };
+         let [nx, ny, nz] = shape;
+         let half = nz / 2;
+         let mut planner = FftPlanner::new();
+@@ -45,9 +48,10 @@ impl RealTransform {
+             .collect();
+         Self {
+             shape,
++            batch_lines,
+             work: vec![Complex::default(); nx * ny * (half + 1)],
+             line: vec![Complex::default(); half],
+-            batch: vec![Complex::default(); layout::BATCH_LINES * nx.max(ny)],
++            batch: vec![Complex::default(); batch_lines * nx.max(ny)],
+             scratch: vec![Complex::default(); scratch_size],
+             forward,
+             inverse,
+@@ -71,13 +75,29 @@ impl RealTransform {
+                 &self.forward[axis]
+             };
+             for outer in 0..self.work.len() / block {
+-                for inner in (0..stride).step_by(layout::BATCH_LINES) {
+-                    let lanes = layout::BATCH_LINES.min(stride - inner);
++                for inner in (0..stride).step_by(self.batch_lines) {
++                    let lanes = self.batch_lines.min(stride - inner);
+                     let offset = outer * block + inner;
+                     let batch = &mut self.batch[..lanes * length];
+-                    layout::pack(&self.work, batch, offset, stride, length, lanes);
++                    if self.batch_lines > layout::BATCH_LINES {
++                        for (lane, line) in batch.chunks_exact_mut(length).enumerate() {
++                            for (row, out) in line.iter_mut().enumerate() {
++                                *out = self.work[offset + row * stride + lane];
++                            }
++                        }
++                    } else {
++                        layout::pack(&self.work, batch, offset, stride, length, lanes);
++                    }
+                     plan.process_with_scratch(batch, &mut self.scratch);
+-                    layout::unpack(batch, &mut self.work, offset, stride, length, lanes);
++                    if self.batch_lines > layout::BATCH_LINES {
++                        for (lane, line) in batch.chunks_exact(length).enumerate() {
++                            for (row, &value) in line.iter().enumerate() {
++                                self.work[offset + row * stride + lane] = value;
++                            }
++                        }
++                    } else {
++                        layout::unpack(batch, &mut self.work, offset, stride, length, lanes);
++                    }
+                 }
+             }
+         }
+@@ -191,7 +211,7 @@ mod tests {
+             let mut old: Vec<_> = density.iter().map(|&v| Complex::new(v, 0.)).collect();
+             let mut fused = vec![Complex::default(); count];
+             let mut first = Transform::real(shape);
+-            let mut second = Transform::real(shape);
++            let mut second = Transform::real_with_batches(shape, true);
+             first.density_to_fourier(&mut old);
+             second.density_slice_to_fourier(&density, &mut fused);
+             assert_eq!(
+@@ -225,7 +245,9 @@ mod tests {
+         let mut planner = FftPlanner::new();
+         let forward = [128; 3].map(|n| planner.plan_fft_forward(n));
+         let inverse = [128; 3].map(|n| planner.plan_fft_inverse(n));
+-        let plan = RealTransform::new([128; 3], &forward, &inverse);
++        let plan = RealTransform::new([128; 3], &forward, &inverse, true);
++        assert_eq!(plan.batch_lines, 32);
++        assert_eq!(plan.batch.len() * size_of::<Complex<f64>>(), 65_536);
+         assert_eq!(plan.work.len(), 128 * 128 * 65);
+         let bytes = (plan.work.len()
+             + plan.line.len()
+diff --git a/crates/phasesmith-solution/src/shared_search.rs b/crates/phasesmith-solution/src/shared_search.rs
+index 29b9fc3..640c465 100644
+--- a/crates/phasesmith-solution/src/shared_search.rs
++++ b/crates/phasesmith-solution/src/shared_search.rs
+@@ -97,6 +97,8 @@ pub struct SharedSearchOptions {
+     pub cached_assignment_refinement: bool,
+     /// Specialize canonical isotropic cached structure-factor/derivative evaluation.
+     pub specialized_isotropic_refinement: bool,
++    /// Use wide line-contiguous packed-real P1 FFT batches.
++    pub wide_fft_batches: bool,
+     /// Regularize allowed unmeasured coefficients using the observed Wilson envelope.
+     pub missing_reflections: bool,
+     /// Reciprocal-radius extension multiplier, in [1,1.5].
+@@ -144,6 +146,7 @@ impl Default for SharedSearchOptions {
+             ambiguous_assignments: false,
+             cached_assignment_refinement: false,
+             specialized_isotropic_refinement: false,
++            wide_fft_batches: false,
+             missing_reflections: false,
+             resolution_extension: 1.,
+         }
+@@ -295,6 +298,8 @@ pub struct SharedSearchSummary {
+     pub cached_assignment_refinement: bool,
+     /// Specialize canonical isotropic cached structure-factor/derivative evaluation.
+     pub specialized_isotropic_refinement: bool,
++    /// Use wide line-contiguous packed-real P1 FFT batches.
++    pub wide_fft_batches: bool,
+     /// Requested observed-envelope gap treatment.
+     pub missing_reflections: bool,
+     /// Requested reciprocal-radius extension.
+@@ -311,6 +316,8 @@ pub struct SharedSearchSummary {
+     pub batched_phase_transforms: usize,
+     /// Actual packed-real P1 transforms (forward plus backward).
+     pub real_phase_transforms: usize,
++    /// Actual P1 packed-real transforms using wide streaming batches.
++    pub wide_fft_transforms: usize,
+     /// Actual cycles using cached Gaussian-mask geometry.
+     pub cached_mask_cycles: usize,
+     /// Actual Fourier operations with direct real-density transfers.
+@@ -1858,6 +1865,7 @@ pub fn solve_elements(
+         || ((search.filtered_peak_search || search.batched_fft)
+             && !search.reusable_fourier_workspaces)
+         || (search.fused_phase_workspace && !search.reusable_fourier_workspaces)
++        || (search.wide_fft_batches && !search.real_fft)
+         || (search.real_fft && !search.batched_fft)
+         || (search.cached_normal_refinement && !search.iterative_refinement)
+         || (search.cached_assignment_refinement
+@@ -2115,6 +2123,7 @@ pub fn solve_elements(
+         ambiguous_assignments: search.ambiguous_assignments,
+         cached_assignment_refinement: search.cached_assignment_refinement,
+         specialized_isotropic_refinement: search.specialized_isotropic_refinement,
++        wide_fft_batches: search.wide_fft_batches,
+         missing_reflections: search.missing_reflections,
+         resolution_extension: search.resolution_extension,
+         prediction: prediction_f.as_ref().map(|p| p.audit.clone()),
+@@ -2305,6 +2314,7 @@ pub fn solve_elements(
+                     batched_fft: search.batched_fft,
+                     real_fft: search.real_fft,
+                     fused_phase_workspace: search.fused_phase_workspace,
++                    wide_fft_batches: search.wide_fft_batches,
+                 },
+             )?;
+             audit.phase_slices.push(crate::PhaseSliceAudit {
+@@ -2334,6 +2344,7 @@ pub fn solve_elements(
+             audit.filtered_peak_cycles += state.filtered_peak_cycles;
+             audit.batched_phase_transforms += state.batched_phase_transforms;
+             audit.real_phase_transforms += state.real_phase_transforms;
++            audit.wide_fft_transforms += state.wide_fft_transforms;
+             audit.cached_mask_cycles += state.cached_mask_cycles;
+             audit.fused_fourier_transforms += state.fused_fourier_transforms;
+             audit
+diff --git a/python/phasesmith/experimental/solution.py b/python/phasesmith/experimental/solution.py
+index 1f797c7..ba4aa71 100644
+--- a/python/phasesmith/experimental/solution.py
++++ b/python/phasesmith/experimental/solution.py
+@@ -538,6 +538,7 @@ class SharedSearchAudit:
+     cached_normal_refinement: bool = False
+     multiplicity_weighted_refinement: bool = False
+     ambiguous_assignments: bool = False
++    wide_fft_batches: bool = False
+     specialized_isotropic_refinement: bool = False
+     cached_assignment_refinement: bool = False
+     specialized_isotropic_fits: int = 0
+@@ -561,6 +562,7 @@ class SharedSearchAudit:
+     fused_phase_workspace: bool = False
+     cached_mask_cycles: int = 0
+     fused_fourier_transforms: int = 0
++    wide_fft_transforms: int = 0
+     real_phase_transforms: int = 0
+     batched_phase_transforms: int = 0
+     filtered_peak_cycles: int = 0
+@@ -816,6 +818,7 @@ def solve_structure_elements(
+     ambiguous_assignments: bool = False,
+     cached_assignment_refinement: bool = False,
+     specialized_isotropic_refinement: bool = False,
++    wide_fft_batches: bool = False,
+     missing_reflections: bool = False,
+     resolution_extension: float = 1.0,
+     score_only_evaluation: bool = False,
+@@ -847,6 +850,8 @@ def solve_structure_elements(
+     ``cached_normal_refinement=True`` caches preconditioned normal matrices in final
+     iterative fits, verifies steps against the original Jacobian and falls back
+     to the matrix-free solver if needed. It requires iterative refinement.
++    ``wide_fft_batches=True`` streams 32 packed-real P1 FFT lines per batch;
++    it requires ``real_fft`` and preserves transform equations and axis order.
+     ``specialized_isotropic_refinement=True`` uses a fused canonical isotropic
+     cached evaluator with unchanged equations and generic fallback.
+     ``cached_assignment_refinement=True`` uses guarded normal caches in short
+@@ -937,6 +942,7 @@ def solve_structure_elements(
+         ("ambiguous_assignments", ambiguous_assignments),
+         ("cached_assignment_refinement", cached_assignment_refinement),
+         ("specialized_isotropic_refinement", specialized_isotropic_refinement),
++        ("wide_fft_batches", wide_fft_batches),
+         ("missing_reflections", missing_reflections),
+         ("adaptive_checkpoints", adaptive_checkpoints),
+         ("score_only_evaluation", score_only_evaluation),
+@@ -973,6 +979,8 @@ def solve_structure_elements(
+         raise ValueError("cached_normal_refinement requires iterative_refinement")
+     if fused_phase_workspace and not reusable_fourier_workspaces:
+         raise ValueError("fused_phase_workspace requires reusable_fourier_workspaces")
++    if wide_fft_batches and not real_fft:
++        raise ValueError("wide_fft_batches requires real_fft")
+     if real_fft and not batched_fft:
+         raise ValueError("real_fft requires batched_fft")
+     if batched_fft and not reusable_fourier_workspaces:
+@@ -1124,6 +1132,7 @@ def solve_structure_elements(
+                     ambiguous_assignments,
+                     cached_assignment_refinement,
+                     specialized_isotropic_refinement,
++                    wide_fft_batches,
+                 ),
+             ),
+         ),
+diff --git a/tests/test_solution_phase_ablation_report.py b/tests/test_solution_phase_ablation_report.py
+index 5b044a5..291814f 100644
+--- a/tests/test_solution_phase_ablation_report.py
++++ b/tests/test_solution_phase_ablation_report.py
+@@ -54,6 +54,7 @@ def test_pair_labels_are_distinct_from_prediction_case_pairs():
+         "ambiguity_flag",
+         "assignment_cache_flag",
+         "isotropic_evaluation_flag",
++        "wide_fft_flag",
+     ],
+ )
+ def test_comparison_rejects_incomplete_opened_or_changed_panels(tmp_path, corruption):
+@@ -82,6 +83,7 @@ def test_comparison_rejects_incomplete_opened_or_changed_panels(tmp_path, corrup
+             "ambiguity_flag": "ambiguous_assignments",
+             "assignment_cache_flag": "cached_assignment_refinement",
+             "isotropic_evaluation_flag": "specialized_isotropic_refinement",
++            "wide_fft_flag": "wide_fft_batches",
+         }[corruption]
+         report[key] = 1.2 if corruption == "extension_flag" else True
+     else:
+diff --git a/benchmarks/solution_wide_fft_interleaved.py b/benchmarks/solution_wide_fft_interleaved.py
+new file mode 100644
+index 0000000..1855f3b
+--- /dev/null
++++ b/benchmarks/solution_wide_fft_interleaved.py
+@@ -0,0 +1,89 @@
++"""Balanced serial wide streaming FFT comparison; development only."""
++
++from __future__ import annotations
++
++import argparse
++import json
++from pathlib import Path
++from types import SimpleNamespace
++
++from solution_corpus.run import collect_jobs
++from solution_execution_interleaved import collect_balanced
++
++ROOT = Path(__file__).resolve().parents[1]
++MODES = ("control", "cache")
++
++def main():
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument(
++        "--manifest", type=Path, default=ROOT / "validation/solution-corpus-v5.json"
++    )
++    parser.add_argument("--output", type=Path, required=True)
++    parser.add_argument("--seconds", type=float, default=15.0)
++    parser.add_argument("--lock-revision", type=int, default=27)
++    parser.add_argument(
++        "--shelxt",
++        type=Path,
++        default=Path("/Users/clemens/.local/opt/shelx/versions/2026-10-28/bin/shelxt"),
++    )
++    args = parser.parse_args()
++    if args.output.exists() or not 5 <= args.seconds <= 120:
++        parser.error("a new directory and seconds in [5,120] are required")
++    args.output.mkdir(parents=True)
++    streams = {}
++    for mode in MODES:
++        controls = SimpleNamespace(
++            manifest=args.manifest.resolve(),
++            output=(args.output / mode).resolve(),
++            seconds=args.seconds,
++            shelxt=args.shelxt.resolve(),
++            split="development",
++            resume=False,
++            lock_revision=args.lock_revision,
++            legacy_counts=False,
++            wilson_normalization=True,
++            phase_quality_selection=True,
++            phase_origin_selection=True,
++            chemical_assignment=True,
++            iterative_refinement=True,
++            missing_reflections=False,
++            resolution_extension=1.0,
++            adaptive_checkpoints=False,
++            isotropic_assignment_refinement=True,
++            filtered_peak_search=True,
++            batched_fft=True,
++            real_fft=True,
++            fused_phase_workspace=True,
++            cached_normal_refinement=True,
++            multiplicity_weighted_refinement=True,
++            ambiguous_assignments=True,
++            cached_assignment_refinement=True,
++            specialized_isotropic_refinement=True,
++            wide_fft_batches=mode == "cache",
++            work_sliced_phasing=True,
++            independent_origin_sampling=False,
++            phase_first_selection=True,
++            legacy_quality_normalization=False,
++            score_only_evaluation=True,
++            reusable_fourier_workspaces=True,
++            collection_schedule="balanced serial case-interleaved wide streaming FFT comparison",
++            collection_scheduler_source="benchmarks/solution_wide_fft_interleaved.py",
++        )
++        streams[mode] = collect_jobs(controls)
++    events = []
++
++    def record(mode, event):
++        events.append({"mode": mode, **event})
++        (args.output / "schedule.json").write_text(json.dumps(events, indent=2) + "\n")
++        print(json.dumps({"mode": mode, **event}), flush=True)
++
++    count = collect_balanced(streams, record)
++    expected = 2 * sum(
++        c["split"] == "development" for c in json.loads(args.manifest.read_text())["cases"]
++    )
++    if count != expected:
++        raise ValueError("incomplete development collection")
++    print(json.dumps({"complete_rounds": count, "modes": MODES, "holdout_opened": False}))
++
++if __name__ == "__main__":
++    main()
+diff --git a/docs/solution-wide-fft.md b/docs/solution-wide-fft.md
+new file mode 100644
+index 0000000..b8baae8
+--- /dev/null
++++ b/docs/solution-wide-fft.md
+@@ -0,0 +1,108 @@
++# Wide streaming batches for P1 phasing
++
++This experiment starts from `461aaa0`, the specialized isotropic evaluator path
++recovering 19 of 35 development structures. `wide_fft_batches` is an experimental
++execution option, false by default, requiring `real_fft`. All preceding fast
++controls, including specialized isotropic evaluation, stay enabled in both modes.
++
++## Fresh profile evidence
++
++Three sequential five-second native samples repeat full development solves for
++COD 2243618, 2010647 and 2241159 with the preceding best settings. The first has
++742 collapsed self samples in a native FFT butterfly, 482 in packed-real XY
++packing/dispatch, and 519 in adaptive peak selection. The second has 466 XY
++samples and 640 across its leading FFT butterflies, compared with 580 in peak
++selection. The third has 455 XY samples, 540 in its leading FFT butterfly and
++285 in the FFT radix kernel, compared with 447 in peak selection. Together the
++FFT arithmetic and layout transfers form the largest combined P1 cost in these
++profiles. Their sample fractions are representative, not a full-corpus time
++allocation. Raw stacks, checksums, sampled library UUIDs, exact driver scripts
++and native hashes are recorded in
++`benchmarks/structure-solution-wide-fft-profiles-macos.json` and
++`runs/post-isotropic-phasing-profile/`. No own heavy workloads overlapped sampling.
++
++## Execution and equations
++
++The existing packed-real transform stores the half spectrum in XYZ order with
++last-axis width nz/2+1. Its X/Y operations repeatedly gather eight strided lines,
++call the unchanged RustFFT plan, then scatter them back. The new option stages
++up to 32 lines and streams each packed line contiguously, reducing FFT dispatch
++count and scattered writes inside the packing loop. It allocates a bounded
++32*max(nx,ny) complex staging buffer: at most 65,536 bytes, compared with 16,384
++previously. It adds no full-grid buffer. The half-spectrum workspace still fits
++the existing 18-MiB bound at the maximum supported grid. All grid/input resource
++limits stay fixed.
++
++For line length L, source stride s and batch offset o, the exact permutation is
++
++    packed[lane*L + row] = work[o + row*s + lane].
++
++After the same planned one-dimensional transforms, the inverse permutation
++restores the original XYZ layout. Final partial batches use only the remaining
++lines. These are assignments of unchanged complex f64 values, with no arithmetic
++reduction. Each line uses the same FFT length, direction and plan. The existing
++real packing, twiddles, Hermitian averaging for arbitrary complex input, and
++Nyquist/end-point handling remain unchanged.
++
++The density-to-spectrum convention remains the unnormalized positive DFT,
++
++    F(h) = sum_x rho(x) exp(+2 pi i h.x).
++
++The return operation remains the real part of the unnormalized negative DFT,
++accepting general non-Hermitian complex input. Density-to-spectrum keeps its
++Z/Y/X order; return maps keep X/Y/Z. Normalization is still applied at the
++original caller boundary. Patterson initialization, phase quality scores,
++weak-reflection tests, atomicity masks, omission seeds, peak thresholds, count
++selection, refinements and stopping rules are unchanged. No precision change,
++fast-math, arithmetic reassociation, external FFT dependency or additional
++numerical thread is introduced.
++
++The independent NumPy implementation in
++`python/phasesmith/experimental/solution_fft_reference.py` already expresses
++these equations without native calls; no equation update is needed. Tests cover
++random, constant, impulse and Nyquist maps; both directions; general complex
++return input; tiny/large finite scales; noncubic, non-power-of-two, short/tail
++batches; and all original invalid-input boundaries. Native outputs are compared
++bitwise with eight-line control output and numerically with independent NumPy.
++Complete 80-cycle histories and adaptive/omission decisions are compared bitwise
++for three seeds, random/Patterson starts and omitted/non-omitted masks. Three
++synthetic element-only searches check exact final models, counts and requested
++anisotropic mode. Existing direct density-transfer tests also run the wide
++backend, and the maximum workspace test checks its staging bound.
++
++This changes layout execution of an existing linear Fourier operator, without
++new fit parameters or profile terms. Existing independent physical/refinement
++and analytical-derivative tests remain in the full workspace suite. The pinned
++GSAS-II powder-profile oracle does not cover this single-crystal FFT path.
++
++The diagnostic Rust transform function and private Python FFT/dual-space helpers
++expose the same execution choice. The shared-search audit records the requested
++option and `wide_fft_transforms`, the actual number of packed-real P1 operations
++using the wide backend. Original real-FFT counters are retained independently.
++
++## Validation protocol
++
++The balanced serial runner `benchmarks/solution_wide_fft_interleaved.py` collects
++all 35 development cases under identical settings in both modes, differing only
++in `wide_fft_batches`. Seed zero, four starts, 800 requested cycles, native
++13-second/outer 15-second limits, requested anisotropic final fits and every
++previous fast option remain fixed. Leading mode alternates 18/17 by case. All
++140 predictions precede both reference audit barriers. Seven above-cap
++references remain in every denominator. Adapter-only seal revision 27 inherits
++the unchanged registry and 35/65 split from revision 26 without reopening raw or
++reference data. The 65 holdout outcomes remain unopened. No task-owned builds,
++tests, profiling or kernel benchmarks overlap timed corpus collection.
++
++Criterion `wide_fft_` cases compare the same executable on complete 64-cycle
++32-cubed/64-cubed multi-peak phasing runs and a full eight-atom Fe/C/N/O search
++on 2,108 expanded rows. Actual completed cycles/transforms and full-search work
++are printed in its raw log. Historical Criterion automatic build-to-build deltas
++are not used as paired execution comparisons.
++
++```sh
++cargo bench -p phasesmith-solution --bench solution -- wide_fft_ --sample-size 20 --warm-up-time 1 --measurement-time 2
++.venv/bin/python benchmarks/solution_wide_fft_interleaved.py --output runs/wide-fft-new --seconds 15
++```
++
++Results are recorded after complete prediction collection, normalized development
++auditing, and explicit comparison with the previous 19-success case set.
+diff --git a/tests/test_solution_wide_fft.py b/tests/test_solution_wide_fft.py
+new file mode 100644
+index 0000000..fc4e5e7
+--- /dev/null
++++ b/tests/test_solution_wide_fft.py
+@@ -0,0 +1,169 @@
++"""Wide streaming FFT batches preserve equations, float bits and phase decisions."""
++
++import numpy as np
++import pytest
++from phasesmith import _core
++from phasesmith.experimental.solution_fft_reference import real_density_transform_reference
++
++pytestmark = pytest.mark.skipif(
++    not hasattr(_core, "_solution_real_fft_transform"), reason="experimental-solution"
++)
++
++def transform(values, to_density, wide):
++    return _core._solution_real_fft_transform(
++        np.ascontiguousarray(values.real).ravel(),
++        np.ascontiguousarray(values.imag).ravel(),
++        values.shape,
++        to_density,
++        wide_fft_batches=wide,
++    )
++
++@pytest.mark.parametrize(
++    "shape", [(8, 8, 8), (10, 14, 18), (32, 16, 64), (64, 32, 16), (8, 128, 8), (64, 64, 64)]
++)
++@pytest.mark.parametrize("kind", ["random", "impulse", "constant", "nyquist"])
++@pytest.mark.parametrize("to_density", [False, True])
++def test_wide_outputs_preserve_bits_and_independent_dft(shape, kind, to_density):
++    rng = np.random.default_rng(312)
++    values = rng.normal(size=shape).astype(complex)
++    if to_density:
++        values += 1j * rng.normal(size=shape)
++    if kind == "impulse":
++        values.fill(0)
++        values[-1, 1, -2] = 1 + (2j if to_density else 0)
++    elif kind == "constant":
++        values.fill(1 + (0.3j if to_density else 0))
++    elif kind == "nyquist":
++        values = ((-1.0) ** np.indices(shape).sum(axis=0)).astype(complex)
++    for scale in [1e-150, 1.0, 1e150]:
++        sample = values * scale
++        before = sample.copy()
++        old, new = transform(sample, to_density, False), transform(sample, to_density, True)
++        for key in old:
++            np.testing.assert_array_equal(old[key].view(np.uint64), new[key].view(np.uint64))
++        got = (new["real"] + 1j * new["imaginary"]).reshape(shape)
++        ref = real_density_transform_reference(sample, to_density=to_density)
++        np.testing.assert_allclose(got, ref, rtol=2e-12, atol=8e-12 * scale)
++        np.testing.assert_array_equal(sample, before)
++
++@pytest.mark.parametrize("seed", [0, 42, 1034])
++@pytest.mark.parametrize("rank", [None, 0])
++@pytest.mark.parametrize("omit", [0.0, 0.1])
++def test_complete_phase_history_and_random_omission_are_bitwise_identical(seed, rank, omit):
++    from test_solution_dual_space import inputs
++
++    shape, cell, h, amp, phases, support = inputs()
++    args = (
++        shape,
++        list(cell.as_tuple()),
++        h.ravel(),
++        amp,
++        phases,
++        support.ravel(),
++        80,
++        1.5,
++        64,
++        0.25,
++        3.0,
++        omit,
++        seed,
++        rank,
++    )
++    common = dict(
++        reusable_workspaces=True,
++        filtered_peak_search=True,
++        batched_fft=True,
++        real_fft=True,
++        fused_phase_workspace=True,
++    )
++    old = _core._solution_count_free_dual_space(*args, **common)
++    new = _core._solution_count_free_dual_space(*args, **common, wide_fft_batches=True)
++    for key in ["density", "history"]:
++        np.testing.assert_array_equal(old[key].view(np.uint64), new[key].view(np.uint64))
++    assert old["adaptive_peaks"] == new["adaptive_peaks"]
++    assert old["best_cycle"] == new["best_cycle"]
++    assert old["wide_fft_transforms"] == 0
++    assert new["wide_fft_transforms"] == 2 * len(new["history"])
++    bad = dict(common, real_fft=False)
++    with pytest.raises(ValueError, match="require"):
++        _core._solution_count_free_dual_space(*args, **bad, wide_fft_batches=True)
++
++@pytest.mark.parametrize("invalid", ["nan", "inf", "length", "odd", "small", "large", "complex"])
++def test_original_input_boundaries_still_apply(invalid):
++    real, imaginary, shape = np.ones(512), np.zeros(512), (8, 8, 8)
++    if invalid == "nan":
++        real[0] = np.nan
++    elif invalid == "inf":
++        imaginary[0] = np.inf
++    elif invalid == "length":
++        imaginary = imaginary[:-1]
++    elif invalid == "odd":
++        shape = (8, 7, 8)
++    elif invalid == "small":
++        shape = (8, 6, 8)
++    elif invalid == "large":
++        shape = (8, 130, 8)
++    else:
++        imaginary[0] = 1
++    with pytest.raises(ValueError):
++        _core._solution_real_fft_transform(real, imaginary, shape, False, wide_fft_batches=True)
++
++@pytest.mark.parametrize("symbol", ["P1", "P-1", "Pm"])
++def test_shared_search_keeps_counts_and_exact_final_model(symbol):
++    from phasesmith.experimental.solution import SolutionOptions, solve_structure_elements
++    from test_solution_shared_search import synthetic
++
++    cell, group, data, _, species = synthetic(symbol)
++    common = dict(
++        cell=cell,
++        space_group=group,
++        elements=["Fe", "O"],
++        maximum_atoms=12,
++        symmetry_recycling=True,
++        tangent_refinement=True,
++        wilson_normalization=True,
++        phase_quality_selection=True,
++        phase_origin_selection=True,
++        chemical_assignment=True,
++        iterative_refinement=True,
++        score_only_evaluation=True,
++        reusable_fourier_workspaces=True,
++        work_sliced_phasing=True,
++        isotropic_assignment_refinement=True,
++        filtered_peak_search=True,
++        batched_fft=True,
++        real_fft=True,
++        fused_phase_workspace=True,
++        cached_normal_refinement=True,
++        multiplicity_weighted_refinement=True,
++        ambiguous_assignments=True,
++        cached_assignment_refinement=True,
++        specialized_isotropic_refinement=True,
++        options=SolutionOptions(
++            phasing="dual_space",
++            trials=4,
++            cycles=800,
++            max_seconds=60,
++            r1_target=0.005,
++            completion=False,
++        ),
++    )
++    old = solve_structure_elements(data, **common)
++    new = solve_structure_elements(data, **common, wide_fft_batches=True)
++    assert old.target_met and new.target_met
++    assert (
++        dict(old.composition)
++        == dict(new.composition)
++        == {e: int(np.count_nonzero(species == e)) for e in set(species)}
++    )
++    np.testing.assert_array_equal(
++        old.best.fractional_xyz.view(np.uint64), new.best.fractional_xyz.view(np.uint64)
++    )
++    assert old.best.r1 == new.best.r1
++    assert new.shared_search.wide_fft_transforms == new.shared_search.real_phase_transforms > 0
++    assert old.shared_search.wide_fft_transforms == 0
++    with pytest.raises(TypeError, match="boolean"):
++        solve_structure_elements(data, **common, wide_fft_batches=1)
++    bad = dict(common, real_fft=False)
++    with pytest.raises(ValueError, match="requires"):
++        solve_structure_elements(data, **bad, wide_fft_batches=True)

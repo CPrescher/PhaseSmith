@@ -60,6 +60,7 @@ def main():
             ambiguous_assignments=True,
             cached_assignment_refinement=True,
             specialized_isotropic_refinement=mode == "cache",
+            streamed_peak_search=False,
             work_sliced_phasing=True,
             independent_origin_sampling=False,
             phase_first_selection=True,

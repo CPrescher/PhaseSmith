@@ -105,6 +105,7 @@ def compare(paths, manifest, pairs=()):
                 "multiplicity_weighted_refinement",
                 "ambiguous_assignments",
                 "cached_assignment_refinement",
+                "streamed_peak_search",
                 "specialized_isotropic_refinement",
                 "reusable_fourier_workspaces",
                 "independent_origin_sampling",
@@ -159,6 +160,8 @@ def compare(paths, manifest, pairs=()):
                     "score_only_evaluations": r["effort"].get("score_only_evaluations", 0),
                     "fourier_workspace_cycles": r["effort"].get("fourier_workspace_cycles", 0),
                     "filtered_peak_cycles": r["effort"].get("filtered_peak_cycles", 0),
+                    "streamed_peak_cycles": r["effort"].get("streamed_peak_cycles", 0),
+                    "peak_rms_fallbacks": r["effort"].get("peak_rms_fallbacks", 0),
                     "batched_phase_transforms": r["effort"].get("batched_phase_transforms", 0),
                     "real_phase_transforms": r["effort"].get("real_phase_transforms", 0),
                     "cached_mask_cycles": r["effort"].get("cached_mask_cycles", 0),
@@ -271,6 +274,7 @@ def compare(paths, manifest, pairs=()):
             "specialized_isotropic_refinement": report.get(
                 "specialized_isotropic_refinement", False
             ),
+            "streamed_peak_search": report.get("streamed_peak_search", False),
             "reusable_fourier_workspaces": report.get("reusable_fourier_workspaces", False),
             "independent_origin_sampling": report.get("independent_origin_sampling", False),
             "resolution_extension": report.get("resolution_extension", 1.0),
@@ -292,6 +296,8 @@ def compare(paths, manifest, pairs=()):
                     "short_quota_completions",
                     "fourier_workspace_cycles",
                     "filtered_peak_cycles",
+                    "streamed_peak_cycles",
+                    "peak_rms_fallbacks",
                     "batched_phase_transforms",
                     "real_phase_transforms",
                     "cached_mask_cycles",

@@ -88,6 +88,7 @@ def main():
             ambiguous_assignments=False,
             cached_assignment_refinement=False,
             specialized_isotropic_refinement=False,
+            streamed_peak_search=False,
             work_sliced_phasing=False,
             independent_origin_sampling=False,
             phase_first_selection=True,

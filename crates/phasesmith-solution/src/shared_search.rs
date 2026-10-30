@@ -97,6 +97,8 @@ pub struct SharedSearchOptions {
     pub cached_assignment_refinement: bool,
     /// Specialize canonical isotropic cached structure-factor/derivative evaluation.
     pub specialized_isotropic_refinement: bool,
+    /// Guard vectorized peak statistics and stream threshold candidates.
+    pub streamed_peak_search: bool,
     /// Regularize allowed unmeasured coefficients using the observed Wilson envelope.
     pub missing_reflections: bool,
     /// Reciprocal-radius extension multiplier, in [1,1.5].
@@ -144,6 +146,7 @@ impl Default for SharedSearchOptions {
             ambiguous_assignments: false,
             cached_assignment_refinement: false,
             specialized_isotropic_refinement: false,
+            streamed_peak_search: false,
             missing_reflections: false,
             resolution_extension: 1.,
         }
@@ -295,6 +298,8 @@ pub struct SharedSearchSummary {
     pub cached_assignment_refinement: bool,
     /// Specialize canonical isotropic cached structure-factor/derivative evaluation.
     pub specialized_isotropic_refinement: bool,
+    /// Guard vectorized peak statistics and stream threshold candidates.
+    pub streamed_peak_search: bool,
     /// Requested observed-envelope gap treatment.
     pub missing_reflections: bool,
     /// Requested reciprocal-radius extension.
@@ -307,6 +312,10 @@ pub struct SharedSearchSummary {
     pub fourier_workspace_cycles: usize,
     /// Actual threshold-filtered adaptive peak cycles.
     pub filtered_peak_cycles: usize,
+    /// Actual selections using streamed guarded statistics.
+    pub streamed_peak_cycles: usize,
+    /// Actual scalar RMS fallbacks for uncertain thresholds.
+    pub peak_rms_fallbacks: usize,
     /// Actual batched 3D transforms inside P1 phase calls.
     pub batched_phase_transforms: usize,
     /// Actual packed-real P1 transforms (forward plus backward).
@@ -1858,6 +1867,7 @@ pub fn solve_elements(
         || ((search.filtered_peak_search || search.batched_fft)
             && !search.reusable_fourier_workspaces)
         || (search.fused_phase_workspace && !search.reusable_fourier_workspaces)
+        || (search.streamed_peak_search && !search.filtered_peak_search)
         || (search.real_fft && !search.batched_fft)
         || (search.cached_normal_refinement && !search.iterative_refinement)
         || (search.cached_assignment_refinement
@@ -2115,6 +2125,7 @@ pub fn solve_elements(
         ambiguous_assignments: search.ambiguous_assignments,
         cached_assignment_refinement: search.cached_assignment_refinement,
         specialized_isotropic_refinement: search.specialized_isotropic_refinement,
+        streamed_peak_search: search.streamed_peak_search,
         missing_reflections: search.missing_reflections,
         resolution_extension: search.resolution_extension,
         prediction: prediction_f.as_ref().map(|p| p.audit.clone()),
@@ -2302,6 +2313,7 @@ pub fn solve_elements(
                     score_only_evaluation: search.score_only_evaluation,
                     reusable_fourier_workspaces: search.reusable_fourier_workspaces,
                     filtered_peak_search: search.filtered_peak_search,
+                    streamed_peak_search: search.streamed_peak_search,
                     batched_fft: search.batched_fft,
                     real_fft: search.real_fft,
                     fused_phase_workspace: search.fused_phase_workspace,
@@ -2332,6 +2344,8 @@ pub fn solve_elements(
             audit.score_only_evaluations += state.score_only_evaluations;
             audit.fourier_workspace_cycles += state.fourier_workspace_cycles;
             audit.filtered_peak_cycles += state.filtered_peak_cycles;
+            audit.streamed_peak_cycles += state.streamed_peak_cycles;
+            audit.peak_rms_fallbacks += state.peak_rms_fallbacks;
             audit.batched_phase_transforms += state.batched_phase_transforms;
             audit.real_phase_transforms += state.real_phase_transforms;
             audit.cached_mask_cycles += state.cached_mask_cycles;

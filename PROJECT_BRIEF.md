@@ -2517,6 +2517,21 @@ wall time changes only 70.044-to-69.438 seconds (0.87% less), with a paired medi
 ratio of 1.00961. The small overall gain remains host-sensitive despite 16.5%
 lower isolated evaluation cost. The flag stays opt-in; the holdout remains closed.
 
+An opt-in `streamed_peak_search` path targets P1 adaptive-map statistics with
+fixed eight-lane RMS accumulation and a conservative threshold interval.
+Ambiguous or non-normal thresholds recompute the original scalar statistic;
+streamed local maxima retain all possible scalar survivors and all 26-neighbor
+tie rules. Exact peak/phase decisions, current refinement, grid caps and search
+budgets remain explicit. The option requires filtered peak search and reports
+actual selections and scalar fallbacks. Equations, error bounds, independent
+checks, a set-aside FFT prototype and the complete development protocol are in
+`docs/solution-peak-statistics.md`. The matched run preserves all 19 structures,
+all 35 inferred count vectors/model records, 26 correct total counts, 19 correct
+per-element counts and 15 strict structures. P1 phase time falls 30.978-to-29.634
+seconds (4.34%) and summed wall time 69.511-to-67.610 seconds (2.74%), with a paired
+median ratio of 1.01977. The gain remains modest and host-sensitive. The execution
+flag stays false by default; the holdout remains closed.
+
 Public behavior is typed and documented. Invalid shapes, non-finite values,
 unsorted grids, non-positive widths, and fractions outside `[0, 1]` fail with a
 clear error. Tests are deterministic. Numerical tolerances are justified near
