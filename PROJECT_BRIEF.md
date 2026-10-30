@@ -2596,6 +2596,28 @@ false by default and the holdout remains closed. The collector's final round-
 count assertion was corrected after collection with original snapshots retained;
 all 280 predictions and four audit barriers are verified.
 
+Experimental element-only solving now accepts an explicit `workers` budget
+(default one, 1..64 capped to available logical CPUs). One solve-owned reusable
+pool partitions fused reflection value/derivative evaluation; serial reductions,
+seeded phase starts, candidate ordering and stopping stay ordered. Numerical
+state and pools do not escape the call. This reuses `phasesmith-execution` without
+installing a global pool or changing the powder core. Extra tile storage is one
+bounded Jacobian rather than one full model per worker. Independent equations,
+bitwise worker-count checks, lifetime tests and the 1/2/4/8-worker latency and
+cold independent-process throughput protocol are in
+`docs/solution-bounded-workers.md`. Concurrent callers must divide an application
+budget across solves; throughput experiments use one inner worker per outer job.
+The complete 35-development-case 1/2/4/8 comparison retains the exact prior 19
+structures, all 35 inferred count vectors, 26 correct total counts, 19 element
+counts and 15 strict structures in every latency and batch panel. Four internal
+workers reduce summed library solve time 38.269-to-34.412 seconds (10.08% less).
+Eight independent single-worker jobs reduce cold batch elapsed time from 46.546
+to 9.967 seconds (4.670x throughput); SHELXT's corresponding batch takes 17.396
+seconds, including one timeout. SHELXT's multi-threaded single solves scale more
+strongly but recover 13/14/13/10 structures at 1/2/4/8 threads, so timing and
+recovery must be read together. All 560 predictions precede reference grading.
+The worker default remains one and the holdout remains closed.
+
 A further opt-in cycle-effort experiment separates long intermediate-start
 plateaus from agreement between independent complete models. The latter checks
 labelled full-cell geometry, fit/ambiguity gates and actual random-start identity

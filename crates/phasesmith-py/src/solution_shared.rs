@@ -70,6 +70,11 @@ pub(super) fn summary<'py>(
     d.set_item("phase_plateau_stopping", s.phase_plateau_stopping)?;
     d.set_item("late_phase_plateau_stopping", s.late_phase_plateau_stopping)?;
     d.set_item("model_consensus_stopping", s.model_consensus_stopping)?;
+    d.set_item("requested_workers", s.requested_workers)?;
+    d.set_item("workers", s.workers)?;
+    d.set_item("parallel_maps", s.parallel_maps)?;
+    d.set_item("parallel_tasks", s.parallel_tasks)?;
+    d.set_item("max_active_workers", s.max_active_workers)?;
     d.set_item("model_consensus_checks", s.model_consensus_checks)?;
     d.set_item("model_consensus_stops", s.model_consensus_stops)?;
     d.set_item("model_consensus_trials", s.model_consensus_trials)?;

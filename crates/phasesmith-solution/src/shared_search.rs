@@ -21,6 +21,8 @@ pub use phase_path::{PhaseOriginAudit, PhaseSettingAudit};
 pub struct SharedSearchOptions {
     /// Maximum full-cell atoms, in [1,128].
     pub maximum_atoms: usize,
+    /// Bounded worker budget for independent numerical work, in [1,64].
+    pub workers: usize,
     /// Maximum live states and initial settings, in [1,8].
     pub beam_width: usize,
     /// Maximum edit rounds per phasing start, in [1,16].
@@ -122,6 +124,7 @@ impl Default for SharedSearchOptions {
     fn default() -> Self {
         Self {
             maximum_atoms: 128,
+            workers: 1,
             beam_width: 4,
             rounds: 8,
             staged_refinement: true,
@@ -255,6 +258,16 @@ fn recycling_frame(parent: &State, context: &RecyclingContext) -> (i32, [f64; 3]
 #[allow(clippy::struct_excessive_bools)]
 #[derive(Clone, Debug, Default)]
 pub struct SharedSearchSummary {
+    /// Requested worker budget.
+    pub requested_workers: usize,
+    /// Resolved available worker budget.
+    pub workers: usize,
+    /// Actual parallel ordered maps.
+    pub parallel_maps: usize,
+    /// Tasks in parallel maps.
+    pub parallel_tasks: usize,
+    /// Peak distinct pool workers active at once.
+    pub max_active_workers: usize,
     /// Required element types, without counts.
     pub elements: Vec<String>,
     /// Actual count-independent phase starts.
@@ -1915,6 +1928,32 @@ fn search_phase_map(
     clippy::cast_sign_loss
 )]
 pub fn solve_elements(
+    observations: &[Observation],
+    cell: UnitCell,
+    group: &SpaceGroup,
+    elements: &[String],
+    options: &SolveOptions,
+    search: &SharedSearchOptions,
+) -> Result<Solution, SolutionError> {
+    let (mut result, stats) = crate::with_solution_workers(search.workers, || {
+        solve_elements_inner(observations, cell, group, elements, options, search)
+    })?;
+    if let Some(a) = &mut result.shared_search {
+        a.requested_workers = stats.requested;
+        a.workers = stats.resolved;
+        a.parallel_maps = stats.maps;
+        a.parallel_tasks = stats.tasks;
+        a.max_active_workers = stats.maximum_active;
+    }
+    Ok(result)
+}
+#[allow(
+    clippy::too_many_lines,
+    clippy::cast_precision_loss,
+    clippy::cast_possible_truncation,
+    clippy::cast_sign_loss
+)]
+fn solve_elements_inner(
     observations: &[Observation],
     cell: UnitCell,
     group: &SpaceGroup,

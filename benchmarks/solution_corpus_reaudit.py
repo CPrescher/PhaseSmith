@@ -51,8 +51,9 @@ def reaudit(args):
             try:
                 model = shelxt_candidate(model_path)
                 log = model_path.with_name("stdout.txt").read_text(errors="replace")
-                if "1 threads running in parallel" not in log:
-                    raise ValueError("one-thread external execution not confirmed")
+                threads = report.get("shelxt_threads", 1)
+                if f"{threads} threads running in parallel" not in log:
+                    raise ValueError("requested external thread execution not confirmed")
                 record["collection_output_adapter_status"] = record["status"]
                 if "output_adapter_error" in record:
                     record["collection_output_adapter_error"] = record.pop("output_adapter_error")

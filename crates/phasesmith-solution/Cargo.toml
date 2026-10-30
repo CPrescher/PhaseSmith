@@ -8,6 +8,7 @@ license.workspace = true
 publish = false
 
 [dependencies]
+phasesmith-execution = { version = "0.7.0", path = "../phasesmith-execution" }
 phasesmith-crystallography = { version = "0.7.0", path = "../phasesmith-crystallography" }
 rustfft = "=6.4.1"
 ndarray = { version = "=0.17.2", default-features = false, features = ["std"] }

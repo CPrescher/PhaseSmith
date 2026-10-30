@@ -2595,7 +2595,7 @@ fn benchmark(c: &mut Criterion) {
             );
         }
     }
-    for atom_count in [8, 12] {
+    for atom_count in [8, 12, 48] {
         let mut fit_points = points.to_vec();
         if atom_count == 12 {
             fit_points.extend([
@@ -2604,6 +2604,15 @@ fn benchmark(c: &mut Criterion) {
                 [0.41, 0.72, 0.56],
                 [0.86, 0.09, 0.66],
             ]);
+        }
+        if atom_count == 48 {
+            fit_points.extend((0..40).map(|i| {
+                [
+                    (f64::from(i) * 0.137 + 0.11).fract(),
+                    (f64::from(i) * 0.279 + 0.21).fract(),
+                    (f64::from(i) * 0.317 + 0.31).fract(),
+                ]
+            }));
         }
         let fit_species: Vec<_> = (0..atom_count)
             .map(|i| ["C", "N", "O"][i % 3].to_owned())
@@ -2626,6 +2635,34 @@ fn benchmark(c: &mut Criterion) {
             .collect();
         let symmetry =
             recover_symmetry(cell, &group, &fit_species, &fit_points, 0.01, None, None).unwrap();
+        for workers in [1, 2, 4, 8] {
+            let prepared = PreparedSymmetricModel::new(
+                symmetry.clone(),
+                &selected_h,
+                &observed,
+                AdpMode::Isotropic,
+            )
+            .unwrap()
+            .with_specialized_isotropic_evaluation(true)
+            .with_blocked_normal_matrices(true);
+            let initial = prepared.initial_parameters(0.015).unwrap();
+            c.bench_function(
+                &format!("bounded_workers_fit_{atom_count}_atoms_1054_rows_fit8_w{workers}"),
+                |b| {
+                    b.iter(|| {
+                        phasesmith_solution::with_solution_workers(workers, || {
+                            prepared
+                                .clone()
+                                .refine_with_normal_reuse(&initial, 8, None, None, true, true, true)
+                        })
+                        .unwrap()
+                    });
+                },
+            );
+        }
+        if atom_count == 48 {
+            continue;
+        }
         for fast in [false, true] {
             let label = if fast { "cache" } else { "control" };
             let prepared = PreparedSymmetricModel::new(

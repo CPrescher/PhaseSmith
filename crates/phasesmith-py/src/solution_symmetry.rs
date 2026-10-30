@@ -222,18 +222,26 @@ impl NativeModel {
             .map_err(invalid)?
             .into_pyarray(py))
     }
+    #[pyo3(signature=(parameters, workers=1))]
     fn evaluate<'py>(
         &self,
         py: Python<'py>,
         parameters: PyReadonlyArray1<'_, f64>,
+        workers: usize,
     ) -> PyResult<Bound<'py, PyDict>> {
         let parameters = parameters.as_slice()?.to_vec();
-        let state = py
-            .detach(|| self.inner.evaluate(&parameters))
+        let (state, execution) = py
+            .detach(|| {
+                phasesmith_solution::with_solution_workers(workers, || {
+                    self.inner.evaluate(&parameters)
+                })
+            })
             .map_err(invalid)?;
-        evaluation(py, &state)
+        let out = evaluation(py, &state)?;
+        worker_stats(&out, execution)?;
+        Ok(out)
     }
-    #[pyo3(signature=(parameters, iterations, max_seconds, cancellation, iterative=false, cached_normal=false, reuse_normal=false, blocked_normal=false, assignment_stopping=false))]
+    #[pyo3(signature=(parameters, iterations, max_seconds, cancellation, iterative=false, cached_normal=false, reuse_normal=false, blocked_normal=false, assignment_stopping=false, workers=1))]
     #[allow(clippy::too_many_arguments, clippy::fn_params_excessive_bools)]
     fn refine<'py>(
         &self,
@@ -247,6 +255,7 @@ impl NativeModel {
         reuse_normal: bool,
         blocked_normal: bool,
         assignment_stopping: bool,
+        workers: usize,
     ) -> PyResult<Bound<'py, PyDict>> {
         if !max_seconds.is_finite() || !(0.0..=3600.).contains(&max_seconds) || max_seconds == 0. {
             return Err(PyValueError::new_err("invalid refinement runtime"));
@@ -258,21 +267,33 @@ impl NativeModel {
             .clone()
             .with_blocked_normal_matrices(blocked_normal)
             .with_assignment_convergence_stopping(assignment_stopping);
-        let state = py
+        let (state, execution) = py
             .detach(move || {
-                model.refine_with_normal_reuse(
-                    &parameters,
-                    iterations,
-                    Some(Instant::now() + Duration::from_secs_f64(max_seconds)),
-                    cancellation.as_ref(),
-                    iterative,
-                    cached_normal,
-                    reuse_normal,
-                )
+                phasesmith_solution::with_solution_workers(workers, || {
+                    model.refine_with_normal_reuse(
+                        &parameters,
+                        iterations,
+                        Some(Instant::now() + Duration::from_secs_f64(max_seconds)),
+                        cancellation.as_ref(),
+                        iterative,
+                        cached_normal,
+                        reuse_normal,
+                    )
+                })
             })
             .map_err(invalid)?;
-        result(py, &state)
+        let out = result(py, &state)?;
+        worker_stats(&out, execution)?;
+        Ok(out)
     }
+}
+
+fn worker_stats(out: &Bound<'_, PyDict>, stats: phasesmith_solution::WorkerStats) -> PyResult<()> {
+    out.set_item("requested_workers", stats.requested)?;
+    out.set_item("workers", stats.resolved)?;
+    out.set_item("parallel_maps", stats.maps)?;
+    out.set_item("parallel_tasks", stats.tasks)?;
+    out.set_item("max_active_workers", stats.maximum_active)
 }
 
 pub(super) fn register(module: &Bound<'_, PyModule>) -> PyResult<()> {

@@ -506,6 +506,155 @@ impl PreparedSymmetricModel {
         })
     }
 
+    #[allow(clippy::too_many_arguments, clippy::too_many_lines)]
+    fn evaluate_rows(
+        &self,
+        parameters: &[f64],
+        positions: &[[f64; 3]],
+        tensors: &[Matrix3],
+        tensor_derivatives: &[Vec<Matrix3>],
+        geometry: Option<&GeometryCache>,
+        start: usize,
+        amplitudes: &mut [f64],
+        jacobian: &mut [f64],
+    ) {
+        let reflection_count = amplitudes.len();
+        let site_count = self.symmetry.sites.len();
+        if let Some(block_geometry) = geometry.filter(|_| isotropic::eligible(self, geometry)) {
+            isotropic::evaluate(
+                self,
+                start,
+                parameters,
+                tensors,
+                tensor_derivatives,
+                block_geometry,
+                amplitudes,
+                jacobian,
+            );
+        } else {
+            let mut dre = vec![0.; self.parameter_count];
+            let mut dim = vec![0.; self.parameter_count];
+            for (local, reflection) in (start..start + reflection_count).enumerate() {
+                let hkl = self.hkl[reflection];
+                let q = self.reciprocal[reflection];
+                dre.fill(0.);
+                dim.fill(0.);
+                let mut real = 0.;
+                let mut imaginary = 0.;
+                let mut image_index = reflection * self.symmetry.full_count;
+                for (site_index, site) in self.symmetry.sites.iter().enumerate() {
+                    let factor = self.factors[reflection * site_count + site_index];
+                    // For U=uI every orthogonal symmetry image has the same exponent.
+                    let isotropic = (self.mode == AdpMode::Isotropic
+                        && geometry.is_some()
+                        && canonical_isotropic(&self.tensor_bases[site_index]))
+                    .then(|| {
+                        let weight = -2. * std::f64::consts::PI.powi(2) * dot(q, q);
+                        (
+                            (weight * tensors[site_index][0][0]).exp(),
+                            weight * tensor_derivatives[site_index][0][0][0],
+                        )
+                    });
+                    for image in &site.images {
+                        let cached = geometry.map(|g| &g.entries[image_index]);
+                        image_index += 1;
+                        let (phase, displacement, vector) = if let Some(g) = cached {
+                            let mut phase = g.phase;
+                            for i in 0..site.coordinate_basis.len() {
+                                phase += g.coordinate_phase[i]
+                                    * parameters[self.offsets[site_index].0 + i];
+                            }
+                            (
+                                phase,
+                                isotropic.map_or_else(
+                                    || {
+                                        tensor_contraction(g.tensor_weight, tensors[site_index])
+                                            .exp()
+                                    },
+                                    |v| v.0,
+                                ),
+                                [0.; 3],
+                            )
+                        } else {
+                            let position = add(
+                                mv(
+                                    image.operation.rotation().map(|r| r.map(f64::from)),
+                                    positions[site_index],
+                                ),
+                                image
+                                    .operation
+                                    .translation()
+                                    .map(phasesmith_crystallography::Rational::as_f64),
+                            );
+                            let phase = std::f64::consts::TAU * dot(hkl.map(f64::from), position);
+                            let vector = mv(transpose(image.cartesian_rotation), q);
+                            let displacement = (-2.
+                                * std::f64::consts::PI.powi(2)
+                                * dot(vector, mv(tensors[site_index], vector)))
+                            .exp();
+                            (phase, displacement, vector)
+                        };
+                        let (sin, cos) = phase.sin_cos();
+                        let re = factor * displacement * cos;
+                        let im = factor * displacement * sin;
+                        real += re;
+                        imaginary += im;
+                        for (i, &basis) in site.coordinate_basis.iter().enumerate() {
+                            let derivative = cached.map_or_else(
+                                || {
+                                    std::f64::consts::TAU
+                                        * dot(
+                                            hkl.map(f64::from),
+                                            mv(
+                                                image
+                                                    .operation
+                                                    .rotation()
+                                                    .map(|r| r.map(f64::from)),
+                                                basis,
+                                            ),
+                                        )
+                                },
+                                |g| g.coordinate_phase[i],
+                            );
+                            let parameter = self.offsets[site_index].0 + i;
+                            dre[parameter] -= derivative * im;
+                            dim[parameter] += derivative * re;
+                        }
+                        for (i, &derivative) in tensor_derivatives[site_index].iter().enumerate() {
+                            let value = isotropic.map_or_else(
+                                || {
+                                    cached.map_or_else(
+                                        || {
+                                            -2. * std::f64::consts::PI.powi(2)
+                                                * dot(vector, mv(derivative, vector))
+                                        },
+                                        |g| tensor_contraction(g.tensor_weight, derivative),
+                                    )
+                                },
+                                |v| v.1,
+                            );
+                            let parameter = self.offsets[site_index].1 + i;
+                            dre[parameter] += value * re;
+                            dim[parameter] += value * im;
+                        }
+                    }
+                }
+                let amplitude = real.hypot(imaginary);
+                let weight = self
+                    .families
+                    .as_ref()
+                    .map_or(1., |p| p.square_roots[reflection]);
+                amplitudes[local] = amplitude * weight;
+                if amplitude > 1e-14 {
+                    for i in 0..self.parameter_count {
+                        jacobian[i * reflection_count + local] =
+                            ((real * dre[i] + imaginary * dim[i]) / amplitude) * weight;
+                    }
+                }
+            }
+        }
+    }
+
     /// Enable canonical isotropic cached evaluation with generic fallback.
     #[must_use]
     pub fn with_specialized_isotropic_evaluation(mut self, enabled: bool) -> Self {
@@ -655,138 +804,53 @@ impl PreparedSymmetricModel {
             tensor_derivatives.push(derivatives);
         }
         let reflection_count = self.hkl.len();
-        let site_count = self.symmetry.sites.len();
         let mut amplitudes = vec![0.; reflection_count];
         let mut jacobian = vec![0.; self.parameter_count * reflection_count];
-        if let Some(block_geometry) = geometry.filter(|_| isotropic::eligible(self, geometry)) {
-            isotropic::evaluate(
-                self,
+        let tasks = crate::execution::current().map(|workers| {
+            let tasks = workers
+                .count()
+                .min(reflection_count / 128)
+                .min(reflection_count * self.symmetry.full_count / 8192);
+            (workers, tasks)
+        });
+        if let Some((workers, tasks)) = tasks.filter(|(_, tasks)| *tasks >= 2) {
+            let width = reflection_count.div_ceil(tasks);
+            let tiles = workers.map(tasks, |i| {
+                let start = i * width;
+                let end = (start + width).min(reflection_count);
+                let mut a = vec![0.; end - start];
+                let mut j = vec![0.; self.parameter_count * (end - start)];
+                self.evaluate_rows(
+                    parameters,
+                    &positions,
+                    &tensors,
+                    &tensor_derivatives,
+                    geometry,
+                    start,
+                    &mut a,
+                    &mut j,
+                );
+                (start, a, j)
+            })?;
+            for (start, a, j) in tiles {
+                amplitudes[start..start + a.len()].copy_from_slice(&a);
+                for parameter in 0..self.parameter_count {
+                    jacobian[parameter * reflection_count + start
+                        ..parameter * reflection_count + start + a.len()]
+                        .copy_from_slice(&j[parameter * a.len()..(parameter + 1) * a.len()]);
+                }
+            }
+        } else {
+            self.evaluate_rows(
                 parameters,
+                &positions,
                 &tensors,
                 &tensor_derivatives,
-                block_geometry,
+                geometry,
+                0,
                 &mut amplitudes,
                 &mut jacobian,
             );
-        } else {
-            let mut dre = vec![0.; self.parameter_count];
-            let mut dim = vec![0.; self.parameter_count];
-            for (reflection, (&hkl, &q)) in self.hkl.iter().zip(&self.reciprocal).enumerate() {
-                dre.fill(0.);
-                dim.fill(0.);
-                let mut real = 0.;
-                let mut imaginary = 0.;
-                let mut image_index = reflection * self.symmetry.full_count;
-                for (site_index, site) in self.symmetry.sites.iter().enumerate() {
-                    let factor = self.factors[reflection * site_count + site_index];
-                    // For U=uI every orthogonal symmetry image has the same exponent.
-                    let isotropic = (self.mode == AdpMode::Isotropic
-                        && geometry.is_some()
-                        && canonical_isotropic(&self.tensor_bases[site_index]))
-                    .then(|| {
-                        let weight = -2. * std::f64::consts::PI.powi(2) * dot(q, q);
-                        (
-                            (weight * tensors[site_index][0][0]).exp(),
-                            weight * tensor_derivatives[site_index][0][0][0],
-                        )
-                    });
-                    for image in &site.images {
-                        let cached = geometry.map(|g| &g.entries[image_index]);
-                        image_index += 1;
-                        let (phase, displacement, vector) = if let Some(g) = cached {
-                            let mut phase = g.phase;
-                            for i in 0..site.coordinate_basis.len() {
-                                phase += g.coordinate_phase[i]
-                                    * parameters[self.offsets[site_index].0 + i];
-                            }
-                            (
-                                phase,
-                                isotropic.map_or_else(
-                                    || {
-                                        tensor_contraction(g.tensor_weight, tensors[site_index])
-                                            .exp()
-                                    },
-                                    |v| v.0,
-                                ),
-                                [0.; 3],
-                            )
-                        } else {
-                            let position = add(
-                                mv(
-                                    image.operation.rotation().map(|r| r.map(f64::from)),
-                                    positions[site_index],
-                                ),
-                                image
-                                    .operation
-                                    .translation()
-                                    .map(phasesmith_crystallography::Rational::as_f64),
-                            );
-                            let phase = std::f64::consts::TAU * dot(hkl.map(f64::from), position);
-                            let vector = mv(transpose(image.cartesian_rotation), q);
-                            let displacement = (-2.
-                                * std::f64::consts::PI.powi(2)
-                                * dot(vector, mv(tensors[site_index], vector)))
-                            .exp();
-                            (phase, displacement, vector)
-                        };
-                        let (sin, cos) = phase.sin_cos();
-                        let re = factor * displacement * cos;
-                        let im = factor * displacement * sin;
-                        real += re;
-                        imaginary += im;
-                        for (i, &basis) in site.coordinate_basis.iter().enumerate() {
-                            let derivative = cached.map_or_else(
-                                || {
-                                    std::f64::consts::TAU
-                                        * dot(
-                                            hkl.map(f64::from),
-                                            mv(
-                                                image
-                                                    .operation
-                                                    .rotation()
-                                                    .map(|r| r.map(f64::from)),
-                                                basis,
-                                            ),
-                                        )
-                                },
-                                |g| g.coordinate_phase[i],
-                            );
-                            let parameter = self.offsets[site_index].0 + i;
-                            dre[parameter] -= derivative * im;
-                            dim[parameter] += derivative * re;
-                        }
-                        for (i, &derivative) in tensor_derivatives[site_index].iter().enumerate() {
-                            let value = isotropic.map_or_else(
-                                || {
-                                    cached.map_or_else(
-                                        || {
-                                            -2. * std::f64::consts::PI.powi(2)
-                                                * dot(vector, mv(derivative, vector))
-                                        },
-                                        |g| tensor_contraction(g.tensor_weight, derivative),
-                                    )
-                                },
-                                |v| v.1,
-                            );
-                            let parameter = self.offsets[site_index].1 + i;
-                            dre[parameter] += value * re;
-                            dim[parameter] += value * im;
-                        }
-                    }
-                }
-                let amplitude = real.hypot(imaginary);
-                let weight = self
-                    .families
-                    .as_ref()
-                    .map_or(1., |p| p.square_roots[reflection]);
-                amplitudes[reflection] = amplitude * weight;
-                if amplitude > 1e-14 {
-                    for i in 0..self.parameter_count {
-                        jacobian[i * reflection_count + reflection] =
-                            ((real * dre[i] + imaginary * dim[i]) / amplitude) * weight;
-                    }
-                }
-            }
         }
         let denominator: f64 = amplitudes.iter().map(|a| a * a).sum();
         let norm = self.observed.iter().map(|a| a * a).sum::<f64>().sqrt();
