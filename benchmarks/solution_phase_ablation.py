@@ -102,6 +102,7 @@ def compare(paths, manifest, pairs=()):
                 "real_fft",
                 "fused_phase_workspace",
                 "cached_normal_refinement",
+                "multiplicity_weighted_refinement",
                 "reusable_fourier_workspaces",
                 "independent_origin_sampling",
                 "resolution_extension",
@@ -161,6 +162,13 @@ def compare(paths, manifest, pairs=()):
                     "fused_fourier_transforms": r["effort"].get("fused_fourier_transforms", 0),
                     "cached_normal_solves": r["effort"].get("cached_normal_solves", 0),
                     "normal_cache_fallbacks": r["effort"].get("normal_cache_fallbacks", 0),
+                    "weighted_refinement_fits": r["effort"].get("weighted_refinement_fits", 0),
+                    "weighted_refinement_input_rows": r["effort"].get(
+                        "weighted_refinement_input_rows", 0
+                    ),
+                    "weighted_refinement_family_rows": r["effort"].get(
+                        "weighted_refinement_family_rows", 0
+                    ),
                     "adaptive_checkpoint_tests": len(r["effort"].get("phase_checkpoints", [])),
                     "stable_map_handoffs": sum(
                         c["reason"] == "stable_map"
@@ -231,6 +239,9 @@ def compare(paths, manifest, pairs=()):
             "real_fft": report.get("real_fft", False),
             "fused_phase_workspace": report.get("fused_phase_workspace", False),
             "cached_normal_refinement": report.get("cached_normal_refinement", False),
+            "multiplicity_weighted_refinement": report.get(
+                "multiplicity_weighted_refinement", False
+            ),
             "reusable_fourier_workspaces": report.get("reusable_fourier_workspaces", False),
             "independent_origin_sampling": report.get("independent_origin_sampling", False),
             "resolution_extension": report.get("resolution_extension", 1.0),
@@ -258,6 +269,9 @@ def compare(paths, manifest, pairs=()):
                     "fused_fourier_transforms",
                     "cached_normal_solves",
                     "normal_cache_fallbacks",
+                    "weighted_refinement_fits",
+                    "weighted_refinement_input_rows",
+                    "weighted_refinement_family_rows",
                     "stable_map_handoffs",
                     "screening_refinements",
                     "final_refinements",

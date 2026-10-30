@@ -17,6 +17,7 @@ mod model;
 mod peak_completion;
 mod peak_density;
 mod peak_scan;
+mod refinement_families;
 pub use peak_scan::PreparedAdaptivePeaks;
 mod phase_checkpoint;
 mod phase_origin;

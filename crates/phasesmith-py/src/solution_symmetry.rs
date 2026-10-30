@@ -66,6 +66,19 @@ pub(super) fn metadata<'py>(
     out.set_item("full_count", symmetry.full_count)?;
     out.set_item("parameter_count", model.parameter_count)?;
     out.set_item("geometry_cache_bytes", model.geometry_cache_bytes())?;
+    out.set_item("input_reflection_count", model.input_reflection_count())?;
+    out.set_item(
+        "evaluated_reflection_count",
+        model.evaluated_reflection_count(),
+    )?;
+    out.set_item(
+        "reflection_representatives",
+        model.reflection_representatives(),
+    )?;
+    out.set_item(
+        "reflection_multiplicities",
+        model.reflection_multiplicities(),
+    )?;
     out.set_item("offsets", model.offsets.clone())?;
     out.set_item("tensor_bases", model.tensor_bases.clone())?;
     let sites = PyList::empty(py);
@@ -119,7 +132,7 @@ struct NativeModel {
 #[pymethods]
 impl NativeModel {
     #[new]
-    #[pyo3(signature = (cell_parameters, group, species, xyz, hkl, observed, mode, tolerance, cache_geometry=true))]
+    #[pyo3(signature = (cell_parameters, group, species, xyz, hkl, observed, mode, tolerance, cache_geometry=true, weight_families=false))]
     #[allow(clippy::too_many_arguments)]
     fn new(
         py: Python<'_>,
@@ -132,6 +145,7 @@ impl NativeModel {
         mode: String,
         tolerance: f64,
         cache_geometry: bool,
+        weight_families: bool,
     ) -> PyResult<Self> {
         let cell = cell(&cell_parameters)?;
         let group = group.space_group().clone();
@@ -161,12 +175,13 @@ impl NativeModel {
                     Some(Instant::now() + Duration::from_secs(60)),
                     None,
                 )?;
-                PreparedSymmetricModel::new_with_geometry_cache(
+                PreparedSymmetricModel::new_with_family_weighting(
                     symmetry,
                     &hkl,
                     &observed,
                     mode,
                     cache_geometry,
+                    weight_families,
                 )
             })
             .map_err(invalid)?;

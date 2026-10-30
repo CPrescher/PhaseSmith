@@ -530,6 +530,10 @@ class SharedSearchAudit:
     chemical_assignment: bool = False
     iterative_refinement: bool = False
     cached_normal_refinement: bool = False
+    multiplicity_weighted_refinement: bool = False
+    weighted_refinement_fits: int = 0
+    weighted_refinement_input_rows: int = 0
+    weighted_refinement_family_rows: int = 0
     cached_normal_solves: int = 0
     normal_cache_fallbacks: int = 0
     missing_reflections: bool = False
@@ -794,6 +798,7 @@ def solve_structure_elements(
     chemical_assignment: bool = False,
     iterative_refinement: bool = False,
     cached_normal_refinement: bool = False,
+    multiplicity_weighted_refinement: bool = False,
     missing_reflections: bool = False,
     resolution_extension: float = 1.0,
     score_only_evaluation: bool = False,
@@ -825,6 +830,8 @@ def solve_structure_elements(
     ``cached_normal_refinement=True`` caches preconditioned normal matrices in final
     iterative fits, verifies steps against the original Jacobian and falls back
     to the matrix-free solver if needed. It requires iterative refinement.
+    ``multiplicity_weighted_refinement=True`` evaluates final constrained fits on
+    measured symmetry/Friedel families with their original multiplicities.
     ``fused_phase_workspace=True`` reuses exact Gaussian axis geometry and, with
     packed real FFTs, transfers density arrays directly at Fourier boundaries.
     It requires reusable workspaces and preserves arithmetic and support.
@@ -903,6 +910,7 @@ def solve_structure_elements(
         ("chemical_assignment", chemical_assignment),
         ("iterative_refinement", iterative_refinement),
         ("cached_normal_refinement", cached_normal_refinement),
+        ("multiplicity_weighted_refinement", multiplicity_weighted_refinement),
         ("missing_reflections", missing_reflections),
         ("adaptive_checkpoints", adaptive_checkpoints),
         ("score_only_evaluation", score_only_evaluation),
@@ -1074,7 +1082,7 @@ def solve_structure_elements(
                 isotropic_assignment_refinement,
                 (
                     filtered_peak_search, batched_fft, cached_normal_refinement,
-                    real_fft, fused_phase_workspace,
+                    real_fft, fused_phase_workspace, multiplicity_weighted_refinement,
                 ),
             ),
         ),

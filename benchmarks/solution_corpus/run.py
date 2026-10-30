@@ -82,6 +82,7 @@ def worker(args):
         real_fft=args.real_fft,
         fused_phase_workspace=args.fused_phase_workspace,
         cached_normal_refinement=args.cached_normal_refinement,
+        multiplicity_weighted_refinement=args.multiplicity_weighted_refinement,
         reusable_fourier_workspaces=args.reusable_fourier_workspaces,
         independent_origin_sampling=args.independent_origin_sampling,
         resolution_extension=args.resolution_extension,
@@ -276,6 +277,8 @@ def collect_jobs(args):
             or previous.get("real_fft", False) != args.real_fft
             or previous.get("fused_phase_workspace", False) != args.fused_phase_workspace
             or previous.get("cached_normal_refinement", False) != args.cached_normal_refinement
+            or previous.get("multiplicity_weighted_refinement", False)
+            != args.multiplicity_weighted_refinement
             or previous.get("isotropic_assignment_refinement", False)
             != args.isotropic_assignment_refinement
             or previous.get("reusable_fourier_workspaces", False)
@@ -342,6 +345,7 @@ def collect_jobs(args):
         "real_fft": args.real_fft,
         "fused_phase_workspace": args.fused_phase_workspace,
         "cached_normal_refinement": args.cached_normal_refinement,
+        "multiplicity_weighted_refinement": args.multiplicity_weighted_refinement,
         "reusable_fourier_workspaces": args.reusable_fourier_workspaces,
         "independent_origin_sampling": args.independent_origin_sampling,
         "resolution_extension": args.resolution_extension,
@@ -474,6 +478,11 @@ def collect_jobs(args):
                     *(["--real-fft"] if args.real_fft else []),
                     *(["--fused-phase-workspace"] if args.fused_phase_workspace else []),
                     *(["--cached-normal-refinement"] if args.cached_normal_refinement else []),
+                    *(
+                        ["--multiplicity-weighted-refinement"]
+                        if args.multiplicity_weighted_refinement
+                        else []
+                    ),
                     *(
                         ["--isotropic-assignment-refinement"]
                         if args.isotropic_assignment_refinement

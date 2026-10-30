@@ -114,7 +114,9 @@ def amplitude_model_reference(
     }
 
 
-def symmetric_model_reference(metadata, cell_basis, hkl, observed, scattering, parameters):
+def symmetric_model_reference(
+    metadata, cell_basis, hkl, observed, scattering, parameters, multiplicities=None
+):
     """Independent direct NumPy sums for a fixed symmetry topology.
 
     The topology supplies exact operations and tangent bases; no native values,
@@ -149,14 +151,19 @@ def symmetric_model_reference(metadata, cell_basis, hkl, observed, scattering, p
             exponent = -2 * np.pi**2 * np.einsum("ri,ij,rj->r", reciprocal, rotated, reciprocal)
             calculated += scattering[:, i] * np.exp(exponent + 2j * np.pi * (hkl @ xyz))
     amplitudes = np.abs(calculated)
-    scale = (amplitudes @ observed) / (amplitudes @ amplitudes)
-    residual = (scale * amplitudes - observed) / np.linalg.norm(observed)
+    weights = np.ones(len(hkl)) if multiplicities is None else np.asarray(multiplicities)
+    if weights.shape != (len(hkl),) or not np.all(np.isfinite(weights)) or np.any(weights <= 0):
+        raise ValueError("multiplicities must be finite and positive with one value per row")
+    scale = np.sum(weights * amplitudes * observed) / np.sum(weights * amplitudes**2)
+    residual = (
+        np.sqrt(weights) * (scale * amplitudes - observed) / np.sqrt(np.sum(weights * observed**2))
+    )
     return {
         "amplitudes": amplitudes,
         "amplitude_scale": scale,
         "residual": residual,
         "objective": residual @ residual,
-        "r1": np.abs(scale * amplitudes - observed).sum() / observed.sum(),
+        "r1": np.sum(weights * np.abs(scale * amplitudes - observed)) / np.sum(weights * observed),
         "fractional_xyz": np.asarray(positions),
         "u_cartesian": np.asarray(tensors),
     }
