@@ -74,6 +74,8 @@ def compare(paths, manifest, pairs=()):
                 "chemical_assignment",
                 "iterative_refinement",
                 "missing_reflections",
+                "adaptive_checkpoints",
+                "independent_origin_sampling",
                 "resolution_extension",
             ):
                 default = 1.0 if flag == "resolution_extension" else False
@@ -110,6 +112,11 @@ def compare(paths, manifest, pairs=()):
                     "seconds": r["wall_seconds_including_startup"],
                     "r1": r["model"]["reported_r1"] if r.get("model") else None,
                     "phasing_starts": r["effort"]["phasing_starts"],
+                    "adaptive_checkpoint_tests": len(r["effort"].get("phase_checkpoints", [])),
+                    "stable_map_handoffs": sum(
+                        c["reason"] == "stable_map"
+                        for c in r["effort"].get("phase_checkpoints", [])
+                    ),
                     "quality_scored_cycles": sum(
                         len(q.get("cfom", [])) for q in r["effort"].get("phase_quality", [])
                     ),
@@ -153,6 +160,8 @@ def compare(paths, manifest, pairs=()):
             "chemical_assignment": report.get("chemical_assignment", False),
             "iterative_refinement": report.get("iterative_refinement", False),
             "missing_reflections": report.get("missing_reflections", False),
+            "adaptive_checkpoints": report.get("adaptive_checkpoints", False),
+            "independent_origin_sampling": report.get("independent_origin_sampling", False),
             "resolution_extension": report.get("resolution_extension", 1.0),
             "phase_first_selection": report.get(
                 "phase_first_selection", report["phase_quality_selection"]
@@ -165,6 +174,8 @@ def compare(paths, manifest, pairs=()):
                 for k in (
                     "phasing_starts",
                     "quality_scored_cycles",
+                    "adaptive_checkpoint_tests",
+                    "stable_map_handoffs",
                     "screening_refinements",
                     "final_refinements",
                     "completion_evaluations",

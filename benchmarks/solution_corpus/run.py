@@ -73,6 +73,8 @@ def worker(args):
         chemical_assignment=args.chemical_assignment,
         iterative_refinement=args.iterative_refinement,
         missing_reflections=args.missing_reflections,
+        adaptive_checkpoints=args.adaptive_checkpoints,
+        independent_origin_sampling=args.independent_origin_sampling,
         resolution_extension=args.resolution_extension,
         phase_first_selection=args.phase_first_selection,
         calculated_shell_normalization=not args.legacy_quality_normalization,
@@ -251,6 +253,9 @@ def run(args):
             or previous.get("chemical_assignment", False) != args.chemical_assignment
             or previous.get("iterative_refinement", False) != args.iterative_refinement
             or previous.get("missing_reflections", False) != args.missing_reflections
+            or previous.get("adaptive_checkpoints", False) != args.adaptive_checkpoints
+            or previous.get("independent_origin_sampling", False)
+            != args.independent_origin_sampling
             or previous.get("resolution_extension", 1.0) != args.resolution_extension
             or previous.get("calculated_shell_normalization", False)
             == args.legacy_quality_normalization
@@ -296,6 +301,8 @@ def run(args):
         "chemical_assignment": args.chemical_assignment,
         "iterative_refinement": args.iterative_refinement,
         "missing_reflections": args.missing_reflections,
+        "adaptive_checkpoints": args.adaptive_checkpoints,
+        "independent_origin_sampling": args.independent_origin_sampling,
         "resolution_extension": args.resolution_extension,
         "phase_first_selection": args.phase_first_selection,
         "calculated_shell_normalization": not args.legacy_quality_normalization,
@@ -418,6 +425,12 @@ def run(args):
                     *(["--chemical-assignment"] if args.chemical_assignment else []),
                     *(["--iterative-refinement"] if args.iterative_refinement else []),
                     *(["--missing-reflections"] if args.missing_reflections else []),
+                    *(["--adaptive-checkpoints"] if args.adaptive_checkpoints else []),
+                    *(
+                        ["--independent-origin-sampling"]
+                        if args.independent_origin_sampling
+                        else []
+                    ),
                     "--resolution-extension",
                     str(args.resolution_extension),
                     *(["--phase-quality-selection"] if args.phase_quality_selection else []),

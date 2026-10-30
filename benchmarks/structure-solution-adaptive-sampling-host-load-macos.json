@@ -1,0 +1,21 @@
+{
+  "schema": "phasesmith.post-collection-host-load.v1",
+  "recorded_utc": "2026-10-30T05:44:38.888554+00:00",
+  "logical_cpus": 14,
+  "load_average": [
+    8.2978515625,
+    15.99169921875,
+    13.3876953125
+  ],
+  "process_groups_over_25_percent_cpu": {
+    "Dioptas Python": {
+      "processes": 3,
+      "summed_percent_cpu": 301.2
+    },
+    "PeridoroGuard": {
+      "processes": 1,
+      "summed_percent_cpu": 74.4
+    }
+  },
+  "qualification": "Read-only post-collection snapshot, not a continuous load trace. ps CPU percentages are approximate. Other user-owned calculations were left running. Unchanged SHELXT medians across corrected panels also drift from 0.843 to 1.606 seconds; wall-time changes cannot be attributed only to solver controls."
+}

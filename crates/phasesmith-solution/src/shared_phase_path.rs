@@ -54,6 +54,10 @@ pub struct PhaseOriginAudit {
     pub phase_families: usize,
     /// Returned origin candidates before the alpha gate.
     pub origin_candidates: usize,
+    /// Actual FFT seed grid for origin alignment.
+    pub origin_sampling_shape: [usize; 3],
+    /// Largest phase-equivalence harmonic per axis (Nyquist clipping is observable).
+    pub origin_harmonic_extent: [usize; 3],
     /// Settings actually passed to density recycling/completion.
     pub settings: Vec<PhaseSettingAudit>,
     /// Time in phase-only origin search.
@@ -279,12 +283,19 @@ pub(super) fn search(
         ..PhaseOriginAudit::default()
     };
     let start = Instant::now();
-    let origins = context.plan.search(
+    trace.origin_sampling_shape = if search.independent_origin_sampling {
+        context.plan.sampling_shape()
+    } else {
+        shape.map(|n| n.clamp(16, 64))
+    };
+    trace.origin_harmonic_extent = context.plan.sampling_extent();
+    let origins = context.plan.search_sampled(
         density,
         shape,
         search.beam_width.min(4),
         Some(deadline),
         options.cancellation.as_ref(),
+        search.independent_origin_sampling,
     );
     trace.origin_seconds = start.elapsed().as_secs_f64();
     let origins = match origins {

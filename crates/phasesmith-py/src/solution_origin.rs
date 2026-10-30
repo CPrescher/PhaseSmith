@@ -20,6 +20,8 @@ pub(super) fn origin_records<'py>(
         d.set_item("screening_families", a.screening_families)?;
         d.set_item("phase_families", a.phase_families)?;
         d.set_item("origin_candidates", a.origin_candidates)?;
+        d.set_item("origin_sampling_shape", a.origin_sampling_shape)?;
+        d.set_item("origin_harmonic_extent", a.origin_harmonic_extent)?;
         d.set_item("origin_seconds", a.origin_seconds)?;
         d.set_item("recycling_seconds", a.recycling_seconds)?;
         d.set_item("completion_seconds", a.completion_seconds)?;
@@ -252,7 +254,7 @@ impl NativePlan {
         })
         .map_err(invalid)
     }
-    #[pyo3(signature=(density,shape,maximum=4,max_seconds=10.))]
+    #[pyo3(signature=(density,shape,maximum=4,max_seconds=10.,independent_sampling=false))]
     fn search<'py>(
         &self,
         py: Python<'py>,
@@ -260,6 +262,7 @@ impl NativePlan {
         shape: [usize; 3],
         maximum: usize,
         max_seconds: f64,
+        independent_sampling: bool,
     ) -> PyResult<Bound<'py, PyDict>> {
         if !max_seconds.is_finite() || !(0.001..=3600.).contains(&max_seconds) {
             return Err(invalid("invalid origin time budget"));
@@ -267,12 +270,13 @@ impl NativePlan {
         let source = density.as_slice()?.to_vec();
         let found = py
             .detach(|| {
-                self.inner.search(
+                self.inner.search_sampled(
                     &source,
                     shape,
                     maximum,
                     Some(Instant::now() + Duration::from_secs_f64(max_seconds)),
                     None,
+                    independent_sampling,
                 )
             })
             .map_err(invalid)?;
@@ -288,9 +292,74 @@ impl NativePlan {
         }
         d.set_item("origins", origins)?;
         d.set_item("families", self.inner.selected_families)?;
+        d.set_item("harmonic_extent", self.inner.sampling_extent())?;
+        d.set_item(
+            "sampling_shape",
+            if independent_sampling {
+                self.inner.sampling_shape()
+            } else {
+                shape.map(|n| n.clamp(16, 64))
+            },
+        )?;
         d.set_item("representatives", &self.inner.representatives)?;
         Ok(d)
     }
+}
+#[pyfunction(name = "_phase_checkpoint_select")]
+#[pyo3(signature=(maps,cycles,quality,scores,ceilings,best_quality=None))]
+fn checkpoint_select(
+    py: Python<'_>,
+    maps: Vec<Vec<f64>>,
+    cycles: Vec<usize>,
+    quality: Vec<f64>,
+    scores: Vec<f64>,
+    ceilings: Vec<bool>,
+    best_quality: Option<Vec<f64>>,
+) -> PyResult<Bound<'_, PyList>> {
+    let n = maps.len();
+    let best_quality = best_quality.unwrap_or_else(|| quality.clone());
+    if [
+        cycles.len(),
+        quality.len(),
+        scores.len(),
+        ceilings.len(),
+        best_quality.len(),
+    ]
+    .iter()
+    .any(|&v| v != n)
+    {
+        return Err(invalid("mismatched checkpoint sequences"));
+    }
+    let result = py
+        .detach(|| {
+            let mut selector = phasesmith_solution::PhaseCheckpointSelector::default();
+            (0..n)
+                .map(|i| {
+                    selector.consider(
+                        &maps[i],
+                        cycles[i],
+                        quality[i],
+                        scores[i],
+                        best_quality[i],
+                        ceilings[i],
+                    )
+                })
+                .collect::<Result<Vec<_>, _>>()
+        })
+        .map_err(invalid)?;
+    let out = PyList::empty(py);
+    for c in result {
+        let row = PyDict::new(py);
+        row.set_item("cycles", c.cycles)?;
+        row.set_item("cfom", c.cfom)?;
+        row.set_item("best_cfom", c.best_cfom)?;
+        row.set_item("score", c.score)?;
+        row.set_item("map_cosine", c.map_cosine)?;
+        row.set_item("selected", c.selected)?;
+        row.set_item("reason", c.reason)?;
+        out.append(row)?;
+    }
+    Ok(out)
 }
 #[pyfunction(name = "_iterative_normal_step")]
 fn normal_step<'py>(
@@ -343,6 +412,7 @@ fn chemical_scales<'py>(
 }
 pub(super) fn register(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_function(wrap_pyfunction!(normal_step, module)?)?;
+    module.add_function(wrap_pyfunction!(checkpoint_select, module)?)?;
     module.add_function(wrap_pyfunction!(chemical_scales, module)?)?;
     module.add_class::<NativePlan>()?;
     module.add_class::<NativeMap>()?;

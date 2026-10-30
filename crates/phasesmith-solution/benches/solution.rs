@@ -222,6 +222,31 @@ fn benchmark(c: &mut Criterion) {
                 .unwrap()
         });
     });
+    c.bench_function("phase_origin_independent_32cubed_8_peaks_2108_rows", |b| {
+        b.iter(|| {
+            origin_plan
+                .search_sampled(&origin_density, shape, 4, None, None, true)
+                .unwrap()
+        });
+    });
+    c.bench_function("phase_checkpoint_32cubed_8_peaks", |b| {
+        let mut selector = phasesmith_solution::PhaseCheckpointSelector::default();
+        selector
+            .consider(&origin_density, 16, 0.7, 0.1, 0.7, false)
+            .unwrap();
+        b.iter(|| {
+            selector
+                .consider(
+                    std::hint::black_box(&origin_density),
+                    64,
+                    0.7,
+                    0.1,
+                    0.7,
+                    false,
+                )
+                .unwrap()
+        });
+    });
     let cache_rows: Vec<_> = hkl
         .iter()
         .zip(&recycling_amplitudes)
