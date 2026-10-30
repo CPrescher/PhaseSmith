@@ -1,0 +1,2176 @@
+diff --git a/crates/phasesmith-py/src/solution.rs b/crates/phasesmith-py/src/solution.rs
+index 4acf0c8..ec02b67 100644
+--- a/crates/phasesmith-py/src/solution.rs
++++ b/crates/phasesmith-py/src/solution.rs
+@@ -53,7 +53,19 @@ type SharedSearchRequest = (
+         bool,
+         bool,
+         bool,
+-        (bool, bool, bool, bool, f64, bool, bool, bool, bool, bool),
++        (
++            bool,
++            bool,
++            bool,
++            bool,
++            f64,
++            bool,
++            bool,
++            bool,
++            bool,
++            bool,
++            bool,
++        ),
+     ),
+ );
+
+@@ -191,6 +203,7 @@ fn solve_structure<'py>(
+                         score_only_evaluation,
+                         reusable_fourier_workspaces,
+                         work_sliced_phasing,
++                        isotropic_assignment_refinement,
+                     ),
+                 ),
+             )) = shared_search
+@@ -238,6 +251,7 @@ fn solve_structure<'py>(
+                         score_only_evaluation,
+                         reusable_fourier_workspaces,
+                         work_sliced_phasing,
++                        isotropic_assignment_refinement,
+                     },
+                 )
+             } else {
+diff --git a/crates/phasesmith-py/src/solution_origin.rs b/crates/phasesmith-py/src/solution_origin.rs
+index 9e33cde..070952e 100644
+--- a/crates/phasesmith-py/src/solution_origin.rs
++++ b/crates/phasesmith-py/src/solution_origin.rs
+@@ -28,6 +28,17 @@ pub(super) fn origin_records<'py>(
+         d.set_item("screening_seconds", a.screening_seconds)?;
+         d.set_item("refinement_seconds", a.refinement_seconds)?;
+         d.set_item("diagnostic", &a.diagnostic)?;
++        d.set_item("assignment_parent_fits", a.assignment_parent_fits)?;
++        d.set_item("assignment_neighbor_scores", a.assignment_neighbor_scores)?;
++        d.set_item("assignment_neighbor_fits", a.assignment_neighbor_fits)?;
++        d.set_item("assignment_retained", a.assignment_retained)?;
++        d.set_item(
++            "assignment_deferred_promotions",
++            a.assignment_deferred_promotions,
++        )?;
++        d.set_item("assignment_full_families", a.assignment_full_families)?;
++        d.set_item("assignment_scores", &a.assignment_scores)?;
++
+         let settings = PyList::empty(py);
+         for s in &a.settings {
+             let r = PyDict::new(py);
+@@ -159,6 +170,26 @@ impl NativeCompletion {
+             .map_err(invalid)?;
+         completion_result(py, result)
+     }
++    #[pyo3(signature=(labels,maximum=4))]
++    fn neighbors<'py>(
++        &self,
++        py: Python<'py>,
++        labels: Vec<i32>,
++        maximum: usize,
++    ) -> PyResult<Bound<'py, PyDict>> {
++        let labels = completion_labels(labels)?;
++        let result = py
++            .detach(|| {
++                self.inner.assignment_neighbors(
++                    &labels,
++                    maximum,
++                    Some(Instant::now() + Duration::from_secs(10)),
++                    None,
++                )
++            })
++            .map_err(invalid)?;
++        completion_result(py, result)
++    }
+ }
+ fn completion_result(
+     py: Python<'_>,
+diff --git a/crates/phasesmith-py/src/solution_shared.rs b/crates/phasesmith-py/src/solution_shared.rs
+index 59cbb96..1ee7b7b 100644
+--- a/crates/phasesmith-py/src/solution_shared.rs
++++ b/crates/phasesmith-py/src/solution_shared.rs
+@@ -54,6 +54,10 @@ pub(super) fn summary<'py>(
+     d.set_item("score_only_evaluation", s.score_only_evaluation)?;
+     d.set_item("reusable_fourier_workspaces", s.reusable_fourier_workspaces)?;
+     d.set_item("work_sliced_phasing", s.work_sliced_phasing)?;
++    d.set_item(
++        "isotropic_assignment_refinement",
++        s.isotropic_assignment_refinement,
++    )?;
+     let slices = PyList::empty(py);
+     for a in &s.phase_slices {
+         let row = PyDict::new(py);
+diff --git a/crates/phasesmith-solution/src/chemical_labels.rs b/crates/phasesmith-solution/src/chemical_labels.rs
+index 94e0b97..9ed748e 100644
+--- a/crates/phasesmith-solution/src/chemical_labels.rs
++++ b/crates/phasesmith-solution/src/chemical_labels.rs
+@@ -176,6 +176,88 @@ impl PreparedPeakCompletion {
+             .sum::<f64>()
+             / self.observed.iter().map(|v| v * v).sum::<f64>()
+     }
++    /// Retain nearby complete single relabels and paired swaps for subsequent relaxation.
++    /// Unlike `reassign`, alternatives need not improve at fixed geometry/displacement.
++    /// The explicit proposal band is `J <= 1.25*J_parent + 1e-4`; it is not an error bar.
++    /// # Errors
++    /// Rejects incomplete labels or a maximum outside [1,8].
++    #[allow(clippy::too_many_lines)]
++    pub fn assignment_neighbors(
++        &self,
++        labels: &[Option<usize>],
++        maximum: usize,
++        deadline: Option<Instant>,
++        cancellation: Option<&Cancellation>,
++    ) -> Result<PeakCompletionResult, SolutionError> {
++        self.evaluate(labels, 0)?;
++        if labels.iter().any(Option::is_none)
++            || !self.covered(labels)
++            || !(1..=8).contains(&maximum)
++        {
++            return Err(error(
++                "assignment neighbors require complete labels and maximum in [1,8]",
++            ));
++        }
++        let total = self.sum(labels);
++        let ceiling = 1.25 * self.fixed_objective(&total) + 1e-4;
++        let mut out = PeakCompletionResult::default();
++        let mut priorities = Vec::new();
++        let mut retain = |next: Vec<Option<usize>>, value: f64| {
++            out.evaluations += 1;
++            if value.is_finite() && value <= ceiling && self.covered(&next) {
++                out.candidates.push(PeakCompletionCandidate {
++                    atoms: self.atoms(&next),
++                    score: self.rank(value, &next),
++                    labels: next,
++                    u_iso: 0.,
++                    objective: value,
++                });
++            }
++        };
++        for i in 0..labels.len() {
++            if crate::stopped(deadline, cancellation) {
++                break;
++            }
++            let mut priority = f64::INFINITY;
++            for e in 0..self.elements.len() {
++                if labels[i] == Some(e) {
++                    continue;
++                }
++                let value = self.fixed_objective(&self.updated(&total, i, labels[i], Some(e)));
++                priority = priority.min(value);
++                let mut next = labels.to_vec();
++                next[i] = Some(e);
++                retain(next, value);
++            }
++            priorities.push((priority, i));
++        }
++        priorities.sort_by(|a, b| a.0.total_cmp(&b.0).then(a.1.cmp(&b.1)));
++        priorities.truncate(24);
++        for (slot, &(_, i)) in priorities.iter().enumerate() {
++            if crate::stopped(deadline, cancellation) {
++                break;
++            }
++            for &(_, j) in &priorities[..slot] {
++                if labels[i] == labels[j] {
++                    continue;
++                }
++                let proposal = self.updated(
++                    &self.updated(&total, i, labels[i], labels[j]),
++                    j,
++                    labels[j],
++                    labels[i],
++                );
++                let mut next = labels.to_vec();
++                next.swap(i, j);
++                retain(next, self.fixed_objective(&proposal));
++            }
++        }
++        out.candidates
++            .sort_by(|a, b| a.score.total_cmp(&b.score).then(a.labels.cmp(&b.labels)));
++        out.candidates.dedup_by(|a, b| a.labels == b.labels);
++        out.candidates.truncate(maximum);
++        Ok(out)
++    }
+     /// Improve full supplied labels using single changes and paired swaps at fixed geometry/U.
+     /// Returns only improving alternatives; counts/topology and required types are preserved.
+     /// # Errors
+diff --git a/crates/phasesmith-solution/src/shared_phase_path.rs b/crates/phasesmith-solution/src/shared_phase_path.rs
+index 39b6b06..2ab2d0b 100644
+--- a/crates/phasesmith-solution/src/shared_phase_path.rs
++++ b/crates/phasesmith-solution/src/shared_phase_path.rs
+@@ -7,6 +7,9 @@ use super::{
+ };
+ use crate::{PreparedPeakCompletion, PreparedPhaseOrigin};
+
++#[path = "isotropic_assignment.rs"]
++mod assignment;
++
+ /// One tested phase-origin setting and its actual completion effort.
+ #[derive(Clone, Debug)]
+ pub struct PhaseSettingAudit {
+@@ -72,6 +75,20 @@ pub struct PhaseOriginAudit {
+     pub refinement_seconds: f64,
+     /// Map-level rejection diagnostic.
+     pub diagnostic: Option<String>,
++    /// Full-data isotropic parent fits attempted.
++    pub assignment_parent_fits: usize,
++    /// Fixed-geometry alternative-label scores.
++    pub assignment_neighbor_scores: usize,
++    /// Full-data isotropic alternative fits attempted.
++    pub assignment_neighbor_fits: usize,
++    /// Full-data candidates retained for promotion.
++    pub assignment_retained: usize,
++    /// Original two-slot promotions avoided by selective promotion.
++    pub assignment_deferred_promotions: usize,
++    /// Independent full-data families used for assignment relaxation.
++    pub assignment_full_families: usize,
++    /// Comparable full-data isotropic ranks, ordered best first.
++    pub assignment_scores: Vec<f64>,
+ }
+ pub(super) struct PhaseSearchContext {
+     plan: PreparedPhaseOrigin,
+@@ -549,12 +566,41 @@ pub(super) fn search(
+         trace.screening_seconds += start.elapsed().as_secs_f64();
+         screened.sort_by(|a, b| a.0.score.total_cmp(&b.0.score));
+     }
++    if search.isotropic_assignment_refinement {
++        let start = Instant::now();
++        screened = assignment::relax(
++            context,
++            cell,
++            group,
++            options,
++            search,
++            elements,
++            &result.data,
++            deadline,
++            screened,
++            &mut trace,
++            audit,
++        )?;
++        trace.screening_seconds += start.elapsed().as_secs_f64();
++    }
+     let start = Instant::now();
+-    for (state, setting) in screened
++    let best_isotropic = screened.first().map_or(f64::INFINITY, |s| s.0.score);
++    let mut primary_fit = false;
++    let mut primary_target = false;
++    for (index, (state, setting)) in screened
+         .into_iter()
+         .filter(|(s, _)| s.candidate.r1 <= 0.3)
+         .take(2)
++        .enumerate()
+     {
++        if search.isotropic_assignment_refinement
++            && trace.assignment_full_families > 0
++            && index > 0
++            && (primary_target || (primary_fit && state.score > best_isotropic + 6.))
++        {
++            trace.assignment_deferred_promotions += 1;
++            continue;
++        }
+         if crate::stopped(Some(deadline), options.cancellation.as_ref()) {
+             break;
+         }
+@@ -574,6 +620,8 @@ pub(super) fn search(
+             audit,
+             FitPass::Promote(&seed.site_u),
+         ) {
++            primary_fit = true;
++            primary_target = complete(&full, elements) && full.candidate.r1 <= options.r1_target;
+             record(
+                 winners,
+                 &[full],
+diff --git a/crates/phasesmith-solution/src/shared_search.rs b/crates/phasesmith-solution/src/shared_search.rs
+index 80f6605..676df67 100644
+--- a/crates/phasesmith-solution/src/shared_search.rs
++++ b/crates/phasesmith-solution/src/shared_search.rs
+@@ -71,6 +71,8 @@ pub struct SharedSearchOptions {
+     pub reusable_fourier_workspaces: bool,
+     /// Hand early phase starts to model validation at a deterministic half-work quota.
+     pub work_sliced_phasing: bool,
++    /// Relax competing labels isotropically before selective requested-mode promotion.
++    pub isotropic_assignment_refinement: bool,
+     /// Select origin FFT sampling from phase-equivalence frequencies.
+     pub independent_origin_sampling: bool,
+     /// Add motif density scales and post-screen coupled element assignments.
+@@ -111,6 +113,7 @@ impl Default for SharedSearchOptions {
+             score_only_evaluation: false,
+             reusable_fourier_workspaces: false,
+             work_sliced_phasing: false,
++            isotropic_assignment_refinement: false,
+             independent_origin_sampling: false,
+             chemical_assignment: false,
+             iterative_refinement: false,
+@@ -239,6 +242,8 @@ pub struct SharedSearchSummary {
+     pub reusable_fourier_workspaces: bool,
+     /// Hand early phase starts to model validation at a deterministic half-work quota.
+     pub work_sliced_phasing: bool,
++    /// Relax competing labels isotropically before selective requested-mode promotion.
++    pub isotropic_assignment_refinement: bool,
+     /// Select origin FFT sampling from phase-equivalence frequencies.
+     pub independent_origin_sampling: bool,
+     /// Add motif density scales and post-screen coupled element assignments.
+@@ -1747,6 +1752,8 @@ pub fn solve_elements(
+         || (search.independent_origin_sampling && !search.phase_origin_selection)
+         || (search.score_only_evaluation && !search.phase_quality_selection)
+         || (search.reusable_fourier_workspaces && options.phasing != PhasingMethod::DualSpace)
++        || (search.isotropic_assignment_refinement
++            && (!search.phase_origin_selection || !search.chemical_assignment))
+         || (search.work_sliced_phasing
+             && (!search.phase_origin_selection
+                 || !search.phase_quality_selection
+@@ -1984,6 +1991,7 @@ pub fn solve_elements(
+         score_only_evaluation: search.score_only_evaluation,
+         reusable_fourier_workspaces: search.reusable_fourier_workspaces,
+         work_sliced_phasing: search.work_sliced_phasing,
++        isotropic_assignment_refinement: search.isotropic_assignment_refinement,
+         independent_origin_sampling: search.independent_origin_sampling,
+         chemical_assignment: search.chemical_assignment,
+         iterative_refinement: search.iterative_refinement,
+diff --git a/python/phasesmith/experimental/solution.py b/python/phasesmith/experimental/solution.py
+index 9bfdbd4..c2e52dc 100644
+--- a/python/phasesmith/experimental/solution.py
++++ b/python/phasesmith/experimental/solution.py
+@@ -441,8 +441,16 @@ class PhaseOriginAudit:
+     diagnostic: str | None
+     origin_sampling_shape: tuple[int, int, int] = (0, 0, 0)
+     origin_harmonic_extent: tuple[int, int, int] = (0, 0, 0)
++    assignment_parent_fits: int = 0
++    assignment_neighbor_scores: int = 0
++    assignment_neighbor_fits: int = 0
++    assignment_retained: int = 0
++    assignment_deferred_promotions: int = 0
++    assignment_full_families: int = 0
++    assignment_scores: tuple[float, ...] = ()
+
+     def __post_init__(self):
++        object.__setattr__(self, "assignment_scores", tuple(self.assignment_scores))
+         object.__setattr__(self, "origin_sampling_shape", tuple(self.origin_sampling_shape))
+         object.__setattr__(self, "origin_harmonic_extent", tuple(self.origin_harmonic_extent))
+         object.__setattr__(
+@@ -525,6 +533,7 @@ class SharedSearchAudit:
+     score_only_evaluation: bool = False
+     reusable_fourier_workspaces: bool = False
+     work_sliced_phasing: bool = False
++    isotropic_assignment_refinement: bool = False
+     phase_slices: tuple[PhaseSliceAudit, ...] = ()
+     score_only_evaluations: int = 0
+     fourier_workspace_cycles: int = 0
+@@ -777,6 +786,7 @@ def solve_structure_elements(
+     score_only_evaluation: bool = False,
+     reusable_fourier_workspaces: bool = False,
+     work_sliced_phasing: bool = False,
++    isotropic_assignment_refinement: bool = False,
+     adaptive_checkpoints: bool = False,
+     independent_origin_sampling: bool = False,
+     cancellation: SolutionCancellation | None = None,
+@@ -795,6 +805,9 @@ def solve_structure_elements(
+     ``phase_first_selection=False`` tests a checkpoint portfolio instead; this
+     control is ignored when quality selection is off.
+     ``calculated_shell_normalization=False`` retains the earlier statistic.
++    ``isotropic_assignment_refinement=True`` relaxes competing complete labelings
++    on all observations before selectively promoting to the requested final mode.
++    It requires phase-origin selection and chemical assignment.
+     ``work_sliced_phasing=True`` uses half-cycle quotas for the first half of
+     independent starts, retaining full-cycle fallback starts and existing wall limits.
+     Existing model validation still decides acceptance; no input atom counts are used.
+@@ -863,6 +876,7 @@ def solve_structure_elements(
+         ("score_only_evaluation", score_only_evaluation),
+         ("reusable_fourier_workspaces", reusable_fourier_workspaces),
+         ("work_sliced_phasing", work_sliced_phasing),
++        ("isotropic_assignment_refinement", isotropic_assignment_refinement),
+         ("independent_origin_sampling", independent_origin_sampling),
+     ):
+         if not isinstance(value, bool):
+@@ -877,6 +891,11 @@ def solve_structure_elements(
+         phase_origin_selection and wilson_normalization
+     ):
+         raise ValueError("prediction requires phase_origin_selection and wilson_normalization")
++    if isotropic_assignment_refinement and not (phase_origin_selection and chemical_assignment):
++        raise ValueError(
++            "isotropic_assignment_refinement requires phase_origin_selection "
++            "and chemical_assignment"
++        )
+     if work_sliced_phasing and not (
+         phase_origin_selection
+         and phase_quality_selection
+@@ -1006,6 +1025,7 @@ def solve_structure_elements(
+                 score_only_evaluation,
+                 reusable_fourier_workspaces,
+                 work_sliced_phasing,
++                isotropic_assignment_refinement,
+             ),
+         ),
+     )
+diff --git a/crates/phasesmith-solution/src/isotropic_assignment.rs b/crates/phasesmith-solution/src/isotropic_assignment.rs
+new file mode 100644
+index 0000000..c4e3870
+--- /dev/null
++++ b/crates/phasesmith-solution/src/isotropic_assignment.rs
+@@ -0,0 +1,149 @@
++//! Bounded isotropic relaxation of competing labels, using original observations.
++use super::{
++    FitPass, Instant, PhaseOriginAudit, PhaseSearchContext, PreparedData, PreparedPeakCompletion,
++    SharedSearchOptions, SharedSearchSummary, SolutionError, SolveOptions, SpaceGroup, State,
++    UnitCell, distance2, error, refine,
++};
++
++/// Parent candidates remain in the competition even when a neighbor looks better cheaply.
++/// Full-data ranks never compete numerically with subsampled screening ranks.
++#[allow(clippy::too_many_arguments, clippy::too_many_lines)]
++pub(super) fn relax(
++    context: &PhaseSearchContext,
++    cell: UnitCell,
++    group: &SpaceGroup,
++    options: &SolveOptions,
++    search: &SharedSearchOptions,
++    elements: &[String],
++    data: &PreparedData,
++    deadline: Instant,
++    screened: Vec<(State, usize)>,
++    trace: &mut PhaseOriginAudit,
++    audit: &mut SharedSearchSummary,
++) -> Result<Vec<(State, usize)>, SolutionError> {
++    let mut relaxed = Vec::new();
++    for (state, setting) in screened
++        .iter()
++        .filter(|(s, _)| s.candidate.r1 <= 0.3)
++        .take(2)
++    {
++        if crate::stopped(Some(deadline), options.cancellation.as_ref()) {
++            break;
++        }
++        let seed = state.promotion.as_ref().expect("isotropic seed");
++        trace.assignment_parent_fits += 1;
++        if let Ok(next) = refine(
++            seed.model.clone(),
++            data,
++            options,
++            deadline,
++            (1, [0.; 3]),
++            state.candidate.u_iso,
++            state.lineage,
++            &state.moves,
++            "isotropic_assignment_parent",
++            String::new(),
++            audit,
++            FitPass::ScreenSeed(&seed.site_u, 12),
++        ) {
++            relaxed.push((next, *setting));
++        }
++    }
++    if relaxed.is_empty() {
++        return Ok(screened);
++    }
++    // Generate neighbors at relaxed coordinates/U on the existing bounded family cache.
++    // Select two alternatives globally by their relative cheap objective, not by
++    // mixing cheap and full-data BIC ranks.
++    let mut proposals = Vec::new();
++    for (index, (state, _)) in relaxed.iter().enumerate() {
++        if crate::stopped(Some(deadline), options.cancellation.as_ref()) {
++            break;
++        }
++        let seed = state.promotion.as_ref().expect("isotropic seed");
++        let points: Vec<_> = seed.model.sites.iter().map(|s| s.fractional_xyz).collect();
++        let labels: Vec<_> = seed
++            .model
++            .sites
++            .iter()
++            .map(|s| elements.iter().position(|e| *e == s.species))
++            .collect();
++        let cache = PreparedPeakCompletion::new(
++            cell,
++            group,
++            &points,
++            elements,
++            &context.data.hkl,
++            &context.data.amplitudes,
++            search.maximum_atoms,
++        )?
++        .with_site_displacements(&seed.site_u)?;
++        let parent_objective = cache.evaluate(&labels, 0)?.0;
++        let neighbors = cache.assignment_neighbors(
++            &labels,
++            2,
++            Some(deadline),
++            options.cancellation.as_ref(),
++        )?;
++        trace.assignment_neighbor_scores += neighbors.evaluations;
++        for proposal in neighbors.candidates {
++            // Avoid spending a fit on an already retained identical labeling/topology.
++            if relaxed.iter().any(|(s, _)| {
++                let other = s.promotion.as_ref().expect("isotropic seed");
++                other.model.sites.len() == seed.model.sites.len()
++                    && other
++                        .model
++                        .sites
++                        .iter()
++                        .zip(&proposal.labels)
++                        .zip(&points)
++                        .all(|((site, label), p)| {
++                            label.is_some_and(|e| site.species == elements[e])
++                                && distance2(&seed.model.geometry, site.fractional_xyz, *p)
++                                    .is_ok_and(|d| d < 1e-8)
++                        })
++            }) {
++                continue;
++            }
++            let merit = (proposal.objective + 1e-4) / (parent_objective + 1e-4);
++            proposals.push((merit, index, proposal));
++        }
++    }
++    proposals.sort_by(|a, b| a.0.total_cmp(&b.0).then(a.1.cmp(&b.1)));
++    let mut alternatives = Vec::new();
++    for (_, index, proposal) in proposals.into_iter().take(2) {
++        if crate::stopped(Some(deadline), options.cancellation.as_ref()) {
++            break;
++        }
++        let (parent, setting) = &relaxed[index];
++        let seed = parent.promotion.as_ref().expect("isotropic seed");
++        let mut model = seed.model.clone();
++        for (site, label) in model.sites.iter_mut().zip(proposal.labels) {
++            site.species
++                .clone_from(&elements[label.ok_or_else(|| error("omitted assignment orbit"))?]);
++        }
++        trace.assignment_neighbor_fits += 1;
++        if let Ok(next) = refine(
++            model,
++            data,
++            options,
++            deadline,
++            (1, [0.; 3]),
++            parent.candidate.u_iso,
++            parent.lineage,
++            &parent.moves,
++            "isotropic_assignment_neighbor",
++            String::new(),
++            audit,
++            FitPass::ScreenSeed(&seed.site_u, 8),
++        ) {
++            alternatives.push((next, *setting));
++        }
++    }
++    relaxed.extend(alternatives);
++    relaxed.sort_by(|a, b| a.0.score.total_cmp(&b.0.score));
++    trace.assignment_full_families = data.family_count;
++    trace.assignment_retained = relaxed.len();
++    trace.assignment_scores = relaxed.iter().map(|(s, _)| s.score).collect();
++    Ok(relaxed)
++}
+diff --git a/benchmarks/solution_corpus/run.py b/benchmarks/solution_corpus/run.py
+index 6c2d2e6..d63889a 100644
+--- a/benchmarks/solution_corpus/run.py
++++ b/benchmarks/solution_corpus/run.py
+@@ -76,6 +76,7 @@ def worker(args):
+         adaptive_checkpoints=args.adaptive_checkpoints,
+         score_only_evaluation=args.score_only_evaluation,
+         work_sliced_phasing=args.work_sliced_phasing,
++        isotropic_assignment_refinement=args.isotropic_assignment_refinement,
+         reusable_fourier_workspaces=args.reusable_fourier_workspaces,
+         independent_origin_sampling=args.independent_origin_sampling,
+         resolution_extension=args.resolution_extension,
+@@ -265,6 +266,8 @@ def collect_jobs(args):
+             or previous.get("adaptive_checkpoints", False) != args.adaptive_checkpoints
+             or previous.get("score_only_evaluation", False) != args.score_only_evaluation
+             or previous.get("work_sliced_phasing", False) != args.work_sliced_phasing
++            or previous.get("isotropic_assignment_refinement", False)
++            != args.isotropic_assignment_refinement
+             or previous.get("reusable_fourier_workspaces", False)
+             != args.reusable_fourier_workspaces
+             or previous.get("independent_origin_sampling", False)
+@@ -323,6 +326,7 @@ def collect_jobs(args):
+         "adaptive_checkpoints": args.adaptive_checkpoints,
+         "score_only_evaluation": args.score_only_evaluation,
+         "work_sliced_phasing": args.work_sliced_phasing,
++        "isotropic_assignment_refinement": args.isotropic_assignment_refinement,
+         "reusable_fourier_workspaces": args.reusable_fourier_workspaces,
+         "independent_origin_sampling": args.independent_origin_sampling,
+         "resolution_extension": args.resolution_extension,
+@@ -450,6 +454,11 @@ def collect_jobs(args):
+                     *(["--adaptive-checkpoints"] if args.adaptive_checkpoints else []),
+                     *(["--score-only-evaluation"] if args.score_only_evaluation else []),
+                     *(["--work-sliced-phasing"] if args.work_sliced_phasing else []),
++                    *(
++                        ["--isotropic-assignment-refinement"]
++                        if args.isotropic_assignment_refinement
++                        else []
++                    ),
+                     *(
+                         ["--reusable-fourier-workspaces"]
+                         if args.reusable_fourier_workspaces
+diff --git a/benchmarks/solution_corpus_benchmark.py b/benchmarks/solution_corpus_benchmark.py
+index 1781bfb..2fba475 100644
+--- a/benchmarks/solution_corpus_benchmark.py
++++ b/benchmarks/solution_corpus_benchmark.py
+@@ -192,7 +192,7 @@ def main():
+         "--manifest", type=Path, default=ROOT / "validation/solution-corpus-v5.json"
+     )
+     seal_parser.add_argument("--discovery", type=Path, required=True)
+-    seal_parser.add_argument("--lock-revision", type=int, default=15)
++    seal_parser.add_argument("--lock-revision", type=int, default=16)
+     adapters = commands.add_parser("seal-adapters")
+     adapters.add_argument("--manifest", type=Path, required=True)
+     adapters.add_argument("--parent-lock", type=Path, required=True)
+@@ -211,6 +211,7 @@ def main():
+     r.add_argument("--chemical-assignment", action="store_true")
+     r.add_argument("--iterative-refinement", action="store_true")
+     r.add_argument("--work-sliced-phasing", action="store_true")
++    r.add_argument("--isotropic-assignment-refinement", action="store_true")
+     r.add_argument("--score-only-evaluation", action="store_true")
+     r.add_argument("--reusable-fourier-workspaces", action="store_true")
+     r.add_argument("--adaptive-checkpoints", action="store_true")
+@@ -221,7 +222,7 @@ def main():
+     r.add_argument("--phase-first-selection", action="store_true", default=True)
+     r.add_argument("--quality-checkpoints", dest="phase_first_selection", action="store_false")
+     r.add_argument("--legacy-quality-normalization", action="store_true")
+-    r.add_argument("--lock-revision", type=int, default=15)
++    r.add_argument("--lock-revision", type=int, default=16)
+     r.add_argument("--split", choices=["development", "holdout"], default="development")
+     r.add_argument("--open-holdout", action="store_true")
+     r.add_argument("--seconds", type=float, default=30)
+@@ -237,6 +238,7 @@ def main():
+     w.add_argument("--chemical-assignment", action="store_true")
+     w.add_argument("--iterative-refinement", action="store_true")
+     w.add_argument("--work-sliced-phasing", action="store_true")
++    w.add_argument("--isotropic-assignment-refinement", action="store_true")
+     w.add_argument("--score-only-evaluation", action="store_true")
+     w.add_argument("--reusable-fourier-workspaces", action="store_true")
+     w.add_argument("--adaptive-checkpoints", action="store_true")
+diff --git a/benchmarks/solution_execution_interleaved.py b/benchmarks/solution_execution_interleaved.py
+index 34b4dd9..e9db4c8 100644
+--- a/benchmarks/solution_execution_interleaved.py
++++ b/benchmarks/solution_execution_interleaved.py
+@@ -49,7 +49,7 @@ def main():
+     )
+     parser.add_argument("--output", type=Path, required=True)
+     parser.add_argument("--seconds", type=float, default=15.0)
+-    parser.add_argument("--lock-revision", type=int, default=15)
++    parser.add_argument("--lock-revision", type=int, default=16)
+     parser.add_argument(
+         "--shelxt",
+         type=Path,
+@@ -78,6 +78,7 @@ def main():
+             missing_reflections=False,
+             resolution_extension=1.0,
+             adaptive_checkpoints=False,
++            isotropic_assignment_refinement=False,
+             work_sliced_phasing=False,
+             independent_origin_sampling=False,
+             phase_first_selection=True,
+diff --git a/benchmarks/solution_phase_ablation.py b/benchmarks/solution_phase_ablation.py
+index 243af0f..66d8482 100644
+--- a/benchmarks/solution_phase_ablation.py
++++ b/benchmarks/solution_phase_ablation.py
+@@ -96,6 +96,7 @@ def compare(paths, manifest, pairs=()):
+                 "adaptive_checkpoints",
+                 "score_only_evaluation",
+                 "work_sliced_phasing",
++                "isotropic_assignment_refinement",
+                 "reusable_fourier_workspaces",
+                 "independent_origin_sampling",
+                 "resolution_extension",
+@@ -161,6 +162,19 @@ def compare(paths, manifest, pairs=()):
+                     "completion_evaluations": sum(
+                         s["evaluations"] for a in origins for s in a["settings"]
+                     ),
++                    "assignment_parent_fits": sum(
++                        a.get("assignment_parent_fits", 0) for a in origins
++                    ),
++                    "assignment_neighbor_scores": sum(
++                        a.get("assignment_neighbor_scores", 0) for a in origins
++                    ),
++                    "assignment_neighbor_fits": sum(
++                        a.get("assignment_neighbor_fits", 0) for a in origins
++                    ),
++                    "assignment_retained": sum(a.get("assignment_retained", 0) for a in origins),
++                    "assignment_deferred_promotions": sum(
++                        a.get("assignment_deferred_promotions", 0) for a in origins
++                    ),
+                     "reassignment_evaluations": sum(
+                         s.get("reassignment_evaluations", 0) for a in origins for s in a["settings"]
+                     ),
+@@ -199,6 +213,7 @@ def compare(paths, manifest, pairs=()):
+             "adaptive_checkpoints": report.get("adaptive_checkpoints", False),
+             "score_only_evaluation": report.get("score_only_evaluation", False),
+             "work_sliced_phasing": report.get("work_sliced_phasing", False),
++            "isotropic_assignment_refinement": report.get("isotropic_assignment_refinement", False),
+             "reusable_fourier_workspaces": report.get("reusable_fourier_workspaces", False),
+             "independent_origin_sampling": report.get("independent_origin_sampling", False),
+             "resolution_extension": report.get("resolution_extension", 1.0),
+@@ -223,6 +238,11 @@ def compare(paths, manifest, pairs=()):
+                     "screening_refinements",
+                     "final_refinements",
+                     "completion_evaluations",
++                    "assignment_parent_fits",
++                    "assignment_neighbor_scores",
++                    "assignment_neighbor_fits",
++                    "assignment_retained",
++                    "assignment_deferred_promotions",
+                     "reassignment_evaluations",
+                     "reassignment_changes",
+                     "reassignment_screens",
+diff --git a/benchmarks/solution_timeslice_interleaved.py b/benchmarks/solution_timeslice_interleaved.py
+index 7faff7e..d91e373 100644
+--- a/benchmarks/solution_timeslice_interleaved.py
++++ b/benchmarks/solution_timeslice_interleaved.py
+@@ -21,7 +21,7 @@ def main():
+     )
+     parser.add_argument("--output", type=Path, required=True)
+     parser.add_argument("--seconds", type=float, default=15.0)
+-    parser.add_argument("--lock-revision", type=int, default=15)
++    parser.add_argument("--lock-revision", type=int, default=16)
+     parser.add_argument(
+         "--shelxt",
+         type=Path,
+@@ -50,6 +50,7 @@ def main():
+             missing_reflections=False,
+             resolution_extension=1.0,
+             adaptive_checkpoints=False,
++            isotropic_assignment_refinement=False,
+             work_sliced_phasing=mode == "work",
+             independent_origin_sampling=False,
+             phase_first_selection=True,
+diff --git a/crates/phasesmith-solution/benches/solution.rs b/crates/phasesmith-solution/benches/solution.rs
+index db48d71..49ebe03 100644
+--- a/crates/phasesmith-solution/benches/solution.rs
++++ b/crates/phasesmith-solution/benches/solution.rs
+@@ -860,6 +860,48 @@ fn benchmark(c: &mut Criterion) {
+             },
+         );
+     }
++    for assignment in [false, true] {
++        let options = SolveOptions {
++            phasing: PhasingMethod::DualSpace,
++            trials: 2,
++            cycles: 128,
++            max_seconds: 60.,
++            r1_target: 1e-6,
++            ..SolveOptions::default()
++        };
++        let search = SharedSearchOptions {
++            maximum_atoms: 32,
++            symmetry_recycling: true,
++            tangent_refinement: true,
++            wilson_normalization: true,
++            phase_quality_selection: true,
++            phase_origin_selection: true,
++            chemical_assignment: true,
++            iterative_refinement: true,
++            score_only_evaluation: true,
++            reusable_fourier_workspaces: true,
++            work_sliced_phasing: true,
++            isotropic_assignment_refinement: assignment,
++            ..SharedSearchOptions::default()
++        };
++        let label = if assignment { "assignment" } else { "control" };
++        c.bench_function(
++            &format!("isotropic_assignment_search_32cubed_8_atoms_2108_rows_{label}"),
++            |b| {
++                b.iter(|| {
++                    phasesmith_solution::solve_elements(
++                        &count_observations,
++                        cell,
++                        &group,
++                        &quality_elements,
++                        &options,
++                        &search,
++                    )
++                    .unwrap()
++                });
++            },
++        );
++    }
+     let mut count_benches = c.benchmark_group("count_selection_8_atoms_2108_reflections");
+     count_benches
+         .sample_size(10)
+diff --git a/tests/test_solution_phase_ablation_report.py b/tests/test_solution_phase_ablation_report.py
+index 139f96b..ebbdbe8 100644
+--- a/tests/test_solution_phase_ablation_report.py
++++ b/tests/test_solution_phase_ablation_report.py
+@@ -44,6 +44,7 @@ def test_pair_labels_are_distinct_from_prediction_case_pairs():
+         "score_only_flag",
+         "workspace_flag",
+         "work_slice_flag",
++        "assignment_flag",
+     ],
+ )
+ def test_comparison_rejects_incomplete_opened_or_changed_panels(tmp_path, corruption):
+@@ -62,6 +63,7 @@ def test_comparison_rejects_incomplete_opened_or_changed_panels(tmp_path, corrup
+             "score_only_flag": "score_only_evaluation",
+             "workspace_flag": "reusable_fourier_workspaces",
+             "work_slice_flag": "work_sliced_phasing",
++            "assignment_flag": "isotropic_assignment_refinement",
+         }[corruption]
+         report[key] = 1.2 if corruption == "extension_flag" else True
+     else:
+diff --git a/benchmarks/solution_assignment_interleaved.py b/benchmarks/solution_assignment_interleaved.py
+new file mode 100644
+--- /dev/null
++++ b/benchmarks/solution_assignment_interleaved.py
+@@ -0,0 +1,81 @@
++"""Balanced serial isotropic-assignment comparison with optimized kernels; development only."""
++
++from __future__ import annotations
++
++import argparse
++import json
++from pathlib import Path
++from types import SimpleNamespace
++
++from solution_corpus.run import collect_jobs
++from solution_execution_interleaved import collect_balanced
++
++ROOT = Path(__file__).resolve().parents[1]
++MODES = ("control", "assignment")
++
++
++def main():
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument(
++        "--manifest", type=Path, default=ROOT / "validation/solution-corpus-v5.json"
++    )
++    parser.add_argument("--output", type=Path, required=True)
++    parser.add_argument("--seconds", type=float, default=15.0)
++    parser.add_argument("--lock-revision", type=int, default=16)
++    parser.add_argument(
++        "--shelxt",
++        type=Path,
++        default=Path("/Users/clemens/.local/opt/shelx/versions/2026-10-28/bin/shelxt"),
++    )
++    args = parser.parse_args()
++    if args.output.exists() or not 5 <= args.seconds <= 120:
++        parser.error("a new directory and seconds in [5,120] are required")
++    args.output.mkdir(parents=True)
++    streams = {}
++    for mode in MODES:
++        controls = SimpleNamespace(
++            manifest=args.manifest.resolve(),
++            output=(args.output / mode).resolve(),
++            seconds=args.seconds,
++            shelxt=args.shelxt.resolve(),
++            split="development",
++            resume=False,
++            lock_revision=args.lock_revision,
++            legacy_counts=False,
++            wilson_normalization=True,
++            phase_quality_selection=True,
++            phase_origin_selection=True,
++            chemical_assignment=True,
++            iterative_refinement=True,
++            missing_reflections=False,
++            resolution_extension=1.0,
++            adaptive_checkpoints=False,
++            isotropic_assignment_refinement=mode == "assignment",
++            work_sliced_phasing=True,
++            independent_origin_sampling=False,
++            phase_first_selection=True,
++            legacy_quality_normalization=False,
++            score_only_evaluation=True,
++            reusable_fourier_workspaces=True,
++            collection_schedule="balanced serial case-interleaved isotropic-assignment comparison",
++            collection_scheduler_source="benchmarks/solution_assignment_interleaved.py",
++        )
++        streams[mode] = collect_jobs(controls)
++    events = []
++
++    def record(mode, event):
++        events.append({"mode": mode, **event})
++        (args.output / "schedule.json").write_text(json.dumps(events, indent=2) + "\n")
++        print(json.dumps({"mode": mode, **event}), flush=True)
++
++    count = collect_balanced(streams, record)
++    expected = 2 * sum(
++        c["split"] == "development" for c in json.loads(args.manifest.read_text())["cases"]
++    )
++    if count != expected:
++        raise ValueError("incomplete development collection")
++    print(json.dumps({"complete_rounds": count, "modes": MODES, "holdout_opened": False}))
++
++
++if __name__ == "__main__":
++    main()
+diff --git a/python/phasesmith/experimental/solution_assignment_reference.py b/python/phasesmith/experimental/solution_assignment_reference.py
+new file mode 100644
+--- /dev/null
++++ b/python/phasesmith/experimental/solution_assignment_reference.py
+@@ -0,0 +1,57 @@
++"""Independent NumPy enumeration of bounded fixed-geometry label alternatives."""
++
++import itertools
++
++import numpy as np
++
++
++def assignment_neighbors_reference(columns, factors, observed, labels, maximum=4):
++    """Columns include each orbit's phases and fixed site displacement attenuation.
++
++    Return ordered (labels, objective) alternatives inside the explicit proposal
++    band. This band guides relaxation; it is not a statistical confidence region.
++    """
++    columns = np.asarray(columns, complex)
++    factors = np.asarray(factors, float)
++    observed = np.asarray(observed, float)
++    labels = tuple(labels)
++    elements = factors.shape[1]
++    if (
++        columns.shape != (len(observed), len(labels))
++        or factors.shape[0] != len(observed)
++        or not 1 <= maximum <= 8
++        or any(label is None or not 0 <= label < elements for label in labels)
++        or set(labels) != set(range(elements))
++    ):
++        raise ValueError("complete labels and bounded maximum required")
++
++    def objective(assignment):
++        amplitude = np.abs(np.sum(columns * factors[:, assignment], axis=1))
++        scale = amplitude @ observed / (amplitude @ amplitude)
++        return float(np.sum((scale * amplitude - observed) ** 2) / np.sum(observed**2))
++
++    ceiling = 1.25 * objective(labels) + 1e-4
++    candidates = {}
++    priorities = []
++    for site in range(len(labels)):
++        best = np.inf
++        for element in range(elements):
++            if element == labels[site]:
++                continue
++            proposed = list(labels)
++            proposed[site] = element
++            score = objective(proposed)
++            best = min(best, score)
++            if set(proposed) == set(labels) and score <= ceiling:
++                candidates[tuple(proposed)] = score
++        priorities.append((best, site))
++    selected = [site for _, site in sorted(priorities)[:24]]
++    for i, j in itertools.combinations(selected, 2):
++        if labels[i] == labels[j]:
++            continue
++        proposed = list(labels)
++        proposed[i], proposed[j] = proposed[j], proposed[i]
++        score = objective(proposed)
++        if score <= ceiling:
++            candidates[tuple(proposed)] = score
++    return sorted(candidates.items(), key=lambda p: (p[1], p[0]))[:maximum]
+diff --git a/tests/test_solution_isotropic_assignments.py b/tests/test_solution_isotropic_assignments.py
+new file mode 100644
+--- /dev/null
++++ b/tests/test_solution_isotropic_assignments.py
+@@ -0,0 +1,161 @@
++"""Ambiguous label proposals and full-observation isotropic ranking before promotion."""
++
++import itertools
++
++import numpy as np
++import pytest
++from phasesmith import _core
++from phasesmith.crystallography import UnitCell
++from phasesmith.experimental.solution import SolutionOptions, solve_structure_elements
++from phasesmith.experimental.solution_assignment_reference import assignment_neighbors_reference
++from phasesmith.io.space_groups import space_group_by_symbol
++from phasesmith.scattering_reference import xray_non_resonant
++
++pytestmark = pytest.mark.skipif(
++    not hasattr(getattr(_core, "_PeakCompletionPlan", object), "neighbors"),
++    reason="experimental-solution",
++)
++
++
++@pytest.mark.parametrize("seed", range(6))
++@pytest.mark.parametrize("symbol", ["P1", "P-1", "Pm"])
++def test_neighbors_match_independent_enumeration_with_unequal_displacements(seed, symbol):
++    from test_solution_shared_search import unique_operations
++
++    rng = np.random.default_rng(134 + seed)
++    cell = UnitCell(6, 7, 8, 90, 100, 90)
++    group = space_group_by_symbol(symbol).space_group
++    points = rng.uniform(0.1, 0.9, (5, 3))
++    if symbol == "Pm":
++        points[0, 1] = 0
++    hkl = np.array(
++        [h for h in itertools.product(range(-3, 4), repeat=3) if h != (0, 0, 0)],
++        dtype=np.int64,
++    )
++    s2 = np.sum((hkl @ np.linalg.inv(cell.geometry().direct_basis)) ** 2, axis=1) / 4
++    site_u = rng.uniform(0.005, 0.04, len(points))
++    columns = np.column_stack(
++        [np.exp(2j * np.pi * (hkl @ unique_operations(group, p)[0].T)).sum(axis=1) for p in points]
++    ) * np.exp(-8 * np.pi**2 * s2[:, None] * site_u)
++    factors, _ = xray_non_resonant(["C", "O", "Fe"], np.sqrt(s2))
++    labels = [0, 1, 2, 1, 0]
++    # Noisy observations give a genuine near-tie neighborhood, not only exact minima.
++    observed = np.abs(np.sum(columns * factors[:, [0, 2, 1, 1, 0]], axis=1))
++    observed *= rng.uniform(0.96, 1.04, len(observed))
++    plan = _core._PeakCompletionPlan(
++        list(cell.as_tuple()),
++        group._native,
++        points.ravel(),
++        ["C", "O", "Fe"],
++        hkl.ravel(),
++        observed,
++        32,
++    ).displaced(site_u)
++    expected = assignment_neighbors_reference(columns, factors, observed, labels, 4)
++    actual = plan.neighbors(labels, 4)
++    assert [tuple(c["labels"]) for c in actual["candidates"]] == [p[0] for p in expected]
++    np.testing.assert_allclose(
++        [c["objective"] for c in actual["candidates"]],
++        [p[1] for p in expected],
++        rtol=3e-12,
++        atol=3e-15,
++    )
++    assert actual["evaluations"] > 0
++    assert actual["changes"] == 0  # Proposals are not accepted changes.
++
++
++def test_homometric_assignment_is_retained_as_ambiguous_not_an_improvement():
++    from test_solution_peak_completion import make_plan, setup
++
++    cell, group, points, hkl, observed, *_ = setup("P1", False)
++    plan = make_plan(cell, group, points[:2], hkl, observed).displaced([0.01, 0.01])
++    assert plan.reassign([1, 0])["candidates"] == []
++    neighbor = plan.neighbors([1, 0])["candidates"][0]
++    assert neighbor["labels"] == [0, 1]
++    assert neighbor["objective"] == pytest.approx(plan.evaluate([1, 0], 0)["objective"], abs=1e-24)
++    for maximum in (0, 9):
++        with pytest.raises(ValueError):
++            plan.neighbors([1, 0], maximum)
++    with pytest.raises(ValueError):
++        plan.neighbors([0, -1])
++    with pytest.raises(ValueError):
++        plan.neighbors([0, 0])
++
++
++@pytest.mark.parametrize("symbol", ["P1", "P-1", "Pm"])
++def test_full_search_keeps_counts_geometry_and_requested_final_mode(symbol):
++    from test_solution_shared_search import synthetic
++
++    cell, group, data, xyz, species = synthetic(symbol)
++    before = data.intensity.copy()
++    result = solve_structure_elements(
++        data,
++        cell=cell,
++        space_group=group,
++        elements=["Fe", "O"],
++        maximum_atoms=12,
++        symmetry_recycling=True,
++        tangent_refinement=True,
++        wilson_normalization=True,
++        phase_quality_selection=True,
++        phase_origin_selection=True,
++        chemical_assignment=True,
++        iterative_refinement=True,
++        score_only_evaluation=True,
++        reusable_fourier_workspaces=True,
++        work_sliced_phasing=True,
++        isotropic_assignment_refinement=True,
++        options=SolutionOptions(
++            phasing="dual_space",
++            trials=4,
++            cycles=800,
++            max_seconds=60,
++            r1_target=0.005,
++            completion=False,
++        ),
++    )
++    assert result.target_met
++    assert dict(result.composition) == {
++        e: int(np.count_nonzero(species == e)) for e in set(species)
++    }
++    assert result.best.refinement.mode == "anisotropic"
++    assert result.shared_search.isotropic_assignment_refinement
++    origins = result.shared_search.phase_origins
++    assert sum(o.assignment_parent_fits for o in origins) > 0
++    for origin in origins:
++        assert origin.assignment_parent_fits <= 2
++        assert origin.assignment_neighbor_fits <= 2
++        assert origin.assignment_retained <= 4
++        assert origin.assignment_scores == tuple(sorted(origin.assignment_scores))
++        if origin.assignment_full_families:
++            assert origin.assignment_full_families > 0
++    # Independently align the full cell in either hand and compare like elements.
++    error = np.inf
++    for hand in (-1, 1):
++        for anchor in xyz[species == result.best.species[0]]:
++            model = (
++                hand * result.best.fractional_xyz + anchor - hand * result.best.fractional_xyz[0]
++            ) % 1
++            maximum = 0.0
++            for e in set(species):
++                d = (
++                    xyz[species == e, None]
++                    - model[None, np.asarray(result.best.species) == e]
++                    + 0.5
++                ) % 1 - 0.5
++                distance = np.linalg.norm(d @ cell.geometry().direct_basis.T, axis=-1)
++                maximum = max(maximum, distance.min(axis=0).max(), distance.min(axis=1).max())
++            error = min(error, maximum)
++    assert error < 1e-5
++    np.testing.assert_array_equal(before, data.intensity)
++
++
++def test_assignment_flag_requires_origin_and_chemical_path_and_boolean():
++    from test_solution_shared_search import synthetic
++
++    cell, group, data, *_ = synthetic("P1")
++    common = dict(cell=cell, space_group=group, elements=["Fe", "O"])
++    with pytest.raises(TypeError, match="boolean"):
++        solve_structure_elements(data, **common, isotropic_assignment_refinement=1)
++    with pytest.raises(ValueError, match="requires"):
++        solve_structure_elements(data, **common, isotropic_assignment_refinement=True)
+diff --git a/validation/solution-corpus-v5.benchmark16.lock.json b/validation/solution-corpus-v5.benchmark16.lock.json
+new file mode 100644
+--- /dev/null
++++ b/validation/solution-corpus-v5.benchmark16.lock.json
+@@ -0,0 +1,1049 @@
++{
++  "schema": "phasesmith.solution-corpus-lock.v1",
++  "manifest_sha256": "f815629e42e608c784113ddd7400268f9e897b3db5b2af7d54224886af206f6c",
++  "cases": 100,
++  "families": 100,
++  "splits": {
++    "holdout": 65,
++    "development": 35
++  },
++  "crystal_systems": {
++    "triclinic": 18,
++    "monoclinic": 29,
++    "orthorhombic": 17,
++    "tetragonal": 16,
++    "trigonal": 8,
++    "hexagonal": 6,
++    "cubic": 6
++  },
++  "space_group_types": 27,
++  "chemistry": {
++    "light": 39,
++    "heavy": 61
++  },
++  "hydrogen_present": 66,
++  "observation_count_range": [
++    50,
++    7459
++  ],
++  "gemmi_version": "0.7.5",
++  "discovery_snapshot": "validation/data/solution-corpus-v1/discovery-v3",
++  "holdout_solver_outcomes_opened": false,
++  "verified_implementation_sha256": {
++    "benchmarks/solution_corpus/__init__.py": "2b8ea6877c5325bde0eb18eebea8099c15c3656cd618e11f124813a6376dce62",
++    "benchmarks/solution_corpus/audit.py": "d65dc309cea50780f937940c4ece3d880968c657b274c5efac6ab9ff522298c5",
++    "benchmarks/solution_corpus/data.py": "cddb7ad095f7add50f4dc5aa02b2a48e3109ab5adfd342145ad8b274158d8bd5",
++    "benchmarks/solution_corpus/run.py": "066b9779b4c2c56300f1919fae3857e18c31fdc4e43bac8361d6f07e184ed3cf",
++    "benchmarks/solution_corpus/seal.py": "939ba9e5a3710a4395e9ed789caa8a1aa06d222f4399a14968c170a27d9858ee",
++    "benchmarks/solution_corpus_benchmark.py": "26cbe265a353c10ff5aeb4c9c153ae58da60bab59cc051ff4b23f6a295ddf862"
++  },
++  "quality_checks": [
++    {
++      "id": "cod-2011007",
++      "observations": 7459,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2010901",
++      "observations": 3398,
++      "quantization": {
++        "intensity_maximum_relative_change": 1.924419946542937e-07,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2021292",
++      "observations": 2643,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011426",
++      "observations": 2002,
++      "quantization": {
++        "intensity_maximum_relative_change": 9.768926777655329e-08,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2243196",
++      "observations": 3068,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2021226",
++      "observations": 2353,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2102156",
++      "observations": 1862,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2010532",
++      "observations": 2184,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011371",
++      "observations": 1133,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2243197",
++      "observations": 1592,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2242644",
++      "observations": 2159,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2241300",
++      "observations": 601,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2108342",
++      "observations": 553,
++      "quantization": {
++        "intensity_maximum_relative_change": 3.9152068010420197e-07,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2241159",
++      "observations": 1112,
++      "quantization": {
++        "intensity_maximum_relative_change": 4.7674827155732656e-07,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-4326074",
++      "observations": 176,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2021310",
++      "observations": 2180,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2206101",
++      "observations": 554,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2021185",
++      "observations": 737,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2215687",
++      "observations": 50,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2010918",
++      "observations": 4817,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2010825",
++      "observations": 2694,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2021316",
++      "observations": 3712,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011512",
++      "observations": 994,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2010934",
++      "observations": 2630,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011363",
++      "observations": 1938,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2006996",
++      "observations": 252,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011038",
++      "observations": 495,
++      "quantization": {
++        "intensity_maximum_relative_change": 4.834764664286847e-07,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2010543",
++      "observations": 3004,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2010993",
++      "observations": 2003,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2242680",
++      "observations": 2079,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-1548676",
++      "observations": 1334,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011638",
++      "observations": 721,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2010647",
++      "observations": 4157,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2241796",
++      "observations": 167,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011590",
++      "observations": 903,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2021199",
++      "observations": 3050,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011318",
++      "observations": 3442,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011236",
++      "observations": 1019,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011346",
++      "observations": 3039,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2101990",
++      "observations": 1615,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2021040",
++      "observations": 1959,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2211527",
++      "observations": 102,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2207460",
++      "observations": 209,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2200818",
++      "observations": 89,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2023383",
++      "observations": 85,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2242589",
++      "observations": 2483,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2242657",
++      "observations": 2407,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-1562003",
++      "observations": 1350,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2242610",
++      "observations": 2642,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2022708",
++      "observations": 288,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2312802",
++      "observations": 500,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2020973",
++      "observations": 3233,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011355",
++      "observations": 2071,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-1519649",
++      "observations": 2901,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2232654",
++      "observations": 113,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011750",
++      "observations": 1708,
++      "quantization": {
++        "intensity_maximum_relative_change": 4.283405530382871e-07,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011241",
++      "observations": 1795,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2010705",
++      "observations": 1826,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2010654",
++      "observations": 1507,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2021374",
++      "observations": 1898,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2201295",
++      "observations": 1367,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2017324",
++      "observations": 189,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011344",
++      "observations": 3914,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011666",
++      "observations": 3097,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2207083",
++      "observations": 109,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2232444",
++      "observations": 419,
++      "quantization": {
++        "intensity_maximum_relative_change": 4.54507647667112e-07,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2010746",
++      "observations": 116,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011393",
++      "observations": 2428,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011271",
++      "observations": 3119,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011181",
++      "observations": 1956,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2223219",
++      "observations": 181,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2014187",
++      "observations": 231,
++      "quantization": {
++        "intensity_maximum_relative_change": 3.243834848063411e-07,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2107296",
++      "observations": 115,
++      "quantization": {
++        "intensity_maximum_relative_change": 2.2474346094918188e-07,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011089",
++      "observations": 3969,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2101973",
++      "observations": 1435,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-1556408",
++      "observations": 322,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2242352",
++      "observations": 848,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2203173",
++      "observations": 440,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2243590",
++      "observations": 480,
++      "quantization": {
++        "intensity_maximum_relative_change": 3.548561263173286e-07,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2240852",
++      "observations": 1291,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2020988",
++      "observations": 4807,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011056",
++      "observations": 347,
++      "quantization": {
++        "intensity_maximum_relative_change": 2.671036481729895e-07,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-1550276",
++      "observations": 2892,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2242615",
++      "observations": 2972,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011144",
++      "observations": 3777,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011501",
++      "observations": 5291,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-1548678",
++      "observations": 3347,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011044",
++      "observations": 1469,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2233659",
++      "observations": 294,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2012343",
++      "observations": 450,
++      "quantization": {
++        "intensity_maximum_relative_change": 4.2280133781411257e-07,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2243618",
++      "observations": 489,
++      "quantization": {
++        "intensity_maximum_relative_change": 3.7444930203209104e-07,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2021003",
++      "observations": 1515,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-1549038",
++      "observations": 2652,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011451",
++      "observations": 1758,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-1550295",
++      "observations": 101,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2022343",
++      "observations": 91,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2200381",
++      "observations": 358,
++      "quantization": {
++        "intensity_maximum_relative_change": 3.2139242618408827e-07,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2010875",
++      "observations": 2445,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-1549173",
++      "observations": 1787,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2211965",
++      "observations": 89,
++      "quantization": {
++        "intensity_maximum_relative_change": 2.561961683714032e-07,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    }
++  ],
++  "qualification": "Format, provenance and supported-model checks do not prove the published model is physically correct; no solver outcomes used in curation.",
++  "adapter_revision_parent": {
++    "path": "validation/solution-corpus-v5.benchmark15.lock.json",
++    "sha256": "c68ca29f9106b0267c9b01046b17eee0688a94366aae200356acd943592605ca"
++  },
++  "adapter_only_revision": true,
++  "adapter_revision_qualification": "Unchanged registry and inherited input/split/curation provenance; only adapter source hashes refreshed. No raw/reference data reopened."
++}

@@ -53,7 +53,19 @@ type SharedSearchRequest = (
         bool,
         bool,
         bool,
-        (bool, bool, bool, bool, f64, bool, bool, bool, bool, bool),
+        (
+            bool,
+            bool,
+            bool,
+            bool,
+            f64,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+        ),
     ),
 );
 
@@ -191,6 +203,7 @@ fn solve_structure<'py>(
                         score_only_evaluation,
                         reusable_fourier_workspaces,
                         work_sliced_phasing,
+                        isotropic_assignment_refinement,
                     ),
                 ),
             )) = shared_search
@@ -238,6 +251,7 @@ fn solve_structure<'py>(
                         score_only_evaluation,
                         reusable_fourier_workspaces,
                         work_sliced_phasing,
+                        isotropic_assignment_refinement,
                     },
                 )
             } else {

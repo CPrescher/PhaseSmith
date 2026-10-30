@@ -96,6 +96,7 @@ def compare(paths, manifest, pairs=()):
                 "adaptive_checkpoints",
                 "score_only_evaluation",
                 "work_sliced_phasing",
+                "isotropic_assignment_refinement",
                 "reusable_fourier_workspaces",
                 "independent_origin_sampling",
                 "resolution_extension",
@@ -161,6 +162,19 @@ def compare(paths, manifest, pairs=()):
                     "completion_evaluations": sum(
                         s["evaluations"] for a in origins for s in a["settings"]
                     ),
+                    "assignment_parent_fits": sum(
+                        a.get("assignment_parent_fits", 0) for a in origins
+                    ),
+                    "assignment_neighbor_scores": sum(
+                        a.get("assignment_neighbor_scores", 0) for a in origins
+                    ),
+                    "assignment_neighbor_fits": sum(
+                        a.get("assignment_neighbor_fits", 0) for a in origins
+                    ),
+                    "assignment_retained": sum(a.get("assignment_retained", 0) for a in origins),
+                    "assignment_deferred_promotions": sum(
+                        a.get("assignment_deferred_promotions", 0) for a in origins
+                    ),
                     "reassignment_evaluations": sum(
                         s.get("reassignment_evaluations", 0) for a in origins for s in a["settings"]
                     ),
@@ -199,6 +213,7 @@ def compare(paths, manifest, pairs=()):
             "adaptive_checkpoints": report.get("adaptive_checkpoints", False),
             "score_only_evaluation": report.get("score_only_evaluation", False),
             "work_sliced_phasing": report.get("work_sliced_phasing", False),
+            "isotropic_assignment_refinement": report.get("isotropic_assignment_refinement", False),
             "reusable_fourier_workspaces": report.get("reusable_fourier_workspaces", False),
             "independent_origin_sampling": report.get("independent_origin_sampling", False),
             "resolution_extension": report.get("resolution_extension", 1.0),
@@ -223,6 +238,11 @@ def compare(paths, manifest, pairs=()):
                     "screening_refinements",
                     "final_refinements",
                     "completion_evaluations",
+                    "assignment_parent_fits",
+                    "assignment_neighbor_scores",
+                    "assignment_neighbor_fits",
+                    "assignment_retained",
+                    "assignment_deferred_promotions",
                     "reassignment_evaluations",
                     "reassignment_changes",
                     "reassignment_screens",

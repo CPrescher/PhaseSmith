@@ -28,6 +28,17 @@ pub(super) fn origin_records<'py>(
         d.set_item("screening_seconds", a.screening_seconds)?;
         d.set_item("refinement_seconds", a.refinement_seconds)?;
         d.set_item("diagnostic", &a.diagnostic)?;
+        d.set_item("assignment_parent_fits", a.assignment_parent_fits)?;
+        d.set_item("assignment_neighbor_scores", a.assignment_neighbor_scores)?;
+        d.set_item("assignment_neighbor_fits", a.assignment_neighbor_fits)?;
+        d.set_item("assignment_retained", a.assignment_retained)?;
+        d.set_item(
+            "assignment_deferred_promotions",
+            a.assignment_deferred_promotions,
+        )?;
+        d.set_item("assignment_families", a.assignment_families)?;
+        d.set_item("assignment_scores", &a.assignment_scores)?;
+
         let settings = PyList::empty(py);
         for s in &a.settings {
             let r = PyDict::new(py);
@@ -152,6 +163,26 @@ impl NativeCompletion {
             .detach(|| {
                 self.inner.reassign(
                     &labels,
+                    Some(Instant::now() + Duration::from_secs(10)),
+                    None,
+                )
+            })
+            .map_err(invalid)?;
+        completion_result(py, result)
+    }
+    #[pyo3(signature=(labels,maximum=4))]
+    fn neighbors<'py>(
+        &self,
+        py: Python<'py>,
+        labels: Vec<i32>,
+        maximum: usize,
+    ) -> PyResult<Bound<'py, PyDict>> {
+        let labels = completion_labels(labels)?;
+        let result = py
+            .detach(|| {
+                self.inner.assignment_neighbors(
+                    &labels,
+                    maximum,
                     Some(Instant::now() + Duration::from_secs(10)),
                     None,
                 )

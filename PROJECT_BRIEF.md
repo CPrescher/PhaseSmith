@@ -2306,6 +2306,29 @@ and source/native hashes match across panels. The 65 holdout outcomes stay close
 
 ## Quality bar
 
+An additional experimental `isotropic_assignment_refinement` path gives the best
+two complete label models longer isotropic relaxation on the existing bounded
+independent-family observations,
+then tests two bounded single/swap alternatives, including near ties that can
+improve after geometry/U relaxation. At most four comparable isotropic candidates
+compete before one requested-mode final fit; a close runner-up remains available
+when that fit misses the existing target. Original count proposals, final ADP mode,
+ranking/gates and resource caps remain explicit. The flag requires phase-origin
+selection and chemical assignment and defaults to false. Independent enumeration,
+synthetic counts/geometry/final-mode checks and a complete paired 35-case
+development comparison are specified in `docs/solution-isotropic-assignments.md`.
+All predictions precede reference auditing; the 65 holdout outcomes remain closed.
+The first all-row prototype gains one structure/count set but is typically 11.6%
+slower, so its reports and reproducible patch are retained. The revised common-
+family comparison recovers 16/35 structures versus 15/35, retains every control
+success, and improves per-element counts 15-to-16 with total counts unchanged at
+26. Anisotropic fits fall 106-to-100 and their stage time 29.3%; added isotropic
+work leaves a 5.0% cumulative wall saving. Typical paired whole-solve time remains
+essentially unchanged (0.99591x control/new; raw medians 3.362/3.360 seconds).
+Both panels preserve final anisotropic fits on all original observations, and
+all 140 predictions precede reference auditing. The flag stays opt-in; the 65
+holdout outcomes remain unopened.
+
 Public behavior is typed and documented. Invalid shapes, non-finite values,
 unsorted grids, non-positive widths, and fractions outside `[0, 1]` fail with a
 clear error. Tests are deterministic. Numerical tolerances are justified near

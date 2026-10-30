@@ -76,6 +76,7 @@ def worker(args):
         adaptive_checkpoints=args.adaptive_checkpoints,
         score_only_evaluation=args.score_only_evaluation,
         work_sliced_phasing=args.work_sliced_phasing,
+        isotropic_assignment_refinement=args.isotropic_assignment_refinement,
         reusable_fourier_workspaces=args.reusable_fourier_workspaces,
         independent_origin_sampling=args.independent_origin_sampling,
         resolution_extension=args.resolution_extension,
@@ -265,6 +266,8 @@ def collect_jobs(args):
             or previous.get("adaptive_checkpoints", False) != args.adaptive_checkpoints
             or previous.get("score_only_evaluation", False) != args.score_only_evaluation
             or previous.get("work_sliced_phasing", False) != args.work_sliced_phasing
+            or previous.get("isotropic_assignment_refinement", False)
+            != args.isotropic_assignment_refinement
             or previous.get("reusable_fourier_workspaces", False)
             != args.reusable_fourier_workspaces
             or previous.get("independent_origin_sampling", False)
@@ -323,6 +326,7 @@ def collect_jobs(args):
         "adaptive_checkpoints": args.adaptive_checkpoints,
         "score_only_evaluation": args.score_only_evaluation,
         "work_sliced_phasing": args.work_sliced_phasing,
+        "isotropic_assignment_refinement": args.isotropic_assignment_refinement,
         "reusable_fourier_workspaces": args.reusable_fourier_workspaces,
         "independent_origin_sampling": args.independent_origin_sampling,
         "resolution_extension": args.resolution_extension,
@@ -450,6 +454,11 @@ def collect_jobs(args):
                     *(["--adaptive-checkpoints"] if args.adaptive_checkpoints else []),
                     *(["--score-only-evaluation"] if args.score_only_evaluation else []),
                     *(["--work-sliced-phasing"] if args.work_sliced_phasing else []),
+                    *(
+                        ["--isotropic-assignment-refinement"]
+                        if args.isotropic_assignment_refinement
+                        else []
+                    ),
                     *(
                         ["--reusable-fourier-workspaces"]
                         if args.reusable_fourier_workspaces
