@@ -400,6 +400,17 @@ class PhaseSettingAudit:
 
 
 @dataclass(frozen=True, slots=True)
+class PhaseSliceAudit:
+    """One work/time-limited phase start, separate from downstream acceptance."""
+
+    trial: int
+    cycle_quota: int
+    completed_cycles: int
+    seconds: float
+    stop_reason: str
+
+
+@dataclass(frozen=True, slots=True)
 class PhaseCheckpointAudit:
     """A phase-map selection decision; selected does not certify a structure."""
 
@@ -513,6 +524,8 @@ class SharedSearchAudit:
     missing_reflections: bool = False
     score_only_evaluation: bool = False
     reusable_fourier_workspaces: bool = False
+    work_sliced_phasing: bool = False
+    phase_slices: tuple[PhaseSliceAudit, ...] = ()
     score_only_evaluations: int = 0
     fourier_workspace_cycles: int = 0
     adaptive_checkpoints: bool = False
@@ -538,6 +551,11 @@ class SharedSearchAudit:
                 PhaseCheckpointAudit(**c) if isinstance(c, dict) else c
                 for c in self.phase_checkpoints
             ),
+        )
+        object.__setattr__(
+            self,
+            "phase_slices",
+            tuple(PhaseSliceAudit(**a) if isinstance(a, dict) else a for a in self.phase_slices),
         )
         if isinstance(self.prediction, dict):
             object.__setattr__(self, "prediction", ReflectionPredictionAudit(**self.prediction))
@@ -758,6 +776,7 @@ def solve_structure_elements(
     resolution_extension: float = 1.0,
     score_only_evaluation: bool = False,
     reusable_fourier_workspaces: bool = False,
+    work_sliced_phasing: bool = False,
     adaptive_checkpoints: bool = False,
     independent_origin_sampling: bool = False,
     cancellation: SolutionCancellation | None = None,
@@ -776,6 +795,10 @@ def solve_structure_elements(
     ``phase_first_selection=False`` tests a checkpoint portfolio instead; this
     control is ignored when quality selection is off.
     ``calculated_shell_normalization=False`` retains the earlier statistic.
+    ``work_sliced_phasing=True`` uses half-cycle quotas for the first half of
+    independent starts, retaining full-cycle fallback starts and existing wall limits.
+    Existing model validation still decides acceptance; no input atom counts are used.
+    It requires phase-origin/quality/phase-first selection without adaptive_checkpoints.
     ``score_only_evaluation=True`` computes unchanged scalar phase merits using
     cached fixed statistics, without allocating unused gradients.
     ``reusable_fourier_workspaces=True`` reuses full-grid P1 map/mask/complex
@@ -839,6 +862,7 @@ def solve_structure_elements(
         ("adaptive_checkpoints", adaptive_checkpoints),
         ("score_only_evaluation", score_only_evaluation),
         ("reusable_fourier_workspaces", reusable_fourier_workspaces),
+        ("work_sliced_phasing", work_sliced_phasing),
         ("independent_origin_sampling", independent_origin_sampling),
     ):
         if not isinstance(value, bool):
@@ -853,6 +877,16 @@ def solve_structure_elements(
         phase_origin_selection and wilson_normalization
     ):
         raise ValueError("prediction requires phase_origin_selection and wilson_normalization")
+    if work_sliced_phasing and not (
+        phase_origin_selection
+        and phase_quality_selection
+        and phase_first_selection
+        and not adaptive_checkpoints
+    ):
+        raise ValueError(
+            "work_sliced_phasing requires phase-origin/quality/phase-first selection "
+            "without adaptive_checkpoints"
+        )
     if score_only_evaluation and not phase_quality_selection:
         raise ValueError("score_only_evaluation requires phase_quality_selection")
     if independent_origin_sampling and not phase_origin_selection:
@@ -971,6 +1005,7 @@ def solve_structure_elements(
                 independent_origin_sampling,
                 score_only_evaluation,
                 reusable_fourier_workspaces,
+                work_sliced_phasing,
             ),
         ),
     )

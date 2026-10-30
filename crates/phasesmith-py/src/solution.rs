@@ -53,7 +53,7 @@ type SharedSearchRequest = (
         bool,
         bool,
         bool,
-        (bool, bool, bool, bool, f64, bool, bool, bool, bool),
+        (bool, bool, bool, bool, f64, bool, bool, bool, bool, bool),
     ),
 );
 
@@ -190,6 +190,7 @@ fn solve_structure<'py>(
                         independent_origin_sampling,
                         score_only_evaluation,
                         reusable_fourier_workspaces,
+                        work_sliced_phasing,
                     ),
                 ),
             )) = shared_search
@@ -236,6 +237,7 @@ fn solve_structure<'py>(
                         independent_origin_sampling,
                         score_only_evaluation,
                         reusable_fourier_workspaces,
+                        work_sliced_phasing,
                     },
                 )
             } else {

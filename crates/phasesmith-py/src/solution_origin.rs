@@ -410,7 +410,12 @@ fn chemical_scales<'py>(
     }
     Ok(out)
 }
+#[pyfunction(name = "_phase_cycle_quota")]
+fn phase_quota(cycles: usize, trials: usize, trial: usize) -> PyResult<usize> {
+    phasesmith_solution::phase_cycle_quota(cycles, trials, trial).map_err(invalid)
+}
 pub(super) fn register(module: &Bound<'_, PyModule>) -> PyResult<()> {
+    module.add_function(wrap_pyfunction!(phase_quota, module)?)?;
     module.add_function(wrap_pyfunction!(normal_step, module)?)?;
     module.add_function(wrap_pyfunction!(checkpoint_select, module)?)?;
     module.add_function(wrap_pyfunction!(chemical_scales, module)?)?;

@@ -95,6 +95,7 @@ def compare(paths, manifest, pairs=()):
                 "missing_reflections",
                 "adaptive_checkpoints",
                 "score_only_evaluation",
+                "work_sliced_phasing",
                 "reusable_fourier_workspaces",
                 "independent_origin_sampling",
                 "resolution_extension",
@@ -133,6 +134,18 @@ def compare(paths, manifest, pairs=()):
                     "seconds": r["wall_seconds_including_startup"],
                     "r1": r["model"]["reported_r1"] if r.get("model") else None,
                     "phasing_starts": r["effort"]["phasing_starts"],
+                    "phase_search_seconds": sum(
+                        a["seconds"] for a in r["effort"].get("phase_slices", [])
+                    ),
+                    "short_phase_slices": sum(
+                        a["cycle_quota"] < r["options"]["cycles"]
+                        for a in r["effort"].get("phase_slices", [])
+                    ),
+                    "short_quota_completions": sum(
+                        a["cycle_quota"] < r["options"]["cycles"]
+                        and a["stop_reason"] == "cycle_limit"
+                        for a in r["effort"].get("phase_slices", [])
+                    ),
                     "score_only_evaluations": r["effort"].get("score_only_evaluations", 0),
                     "fourier_workspace_cycles": r["effort"].get("fourier_workspace_cycles", 0),
                     "adaptive_checkpoint_tests": len(r["effort"].get("phase_checkpoints", [])),
@@ -185,6 +198,7 @@ def compare(paths, manifest, pairs=()):
             "missing_reflections": report.get("missing_reflections", False),
             "adaptive_checkpoints": report.get("adaptive_checkpoints", False),
             "score_only_evaluation": report.get("score_only_evaluation", False),
+            "work_sliced_phasing": report.get("work_sliced_phasing", False),
             "reusable_fourier_workspaces": report.get("reusable_fourier_workspaces", False),
             "independent_origin_sampling": report.get("independent_origin_sampling", False),
             "resolution_extension": report.get("resolution_extension", 1.0),
@@ -201,6 +215,9 @@ def compare(paths, manifest, pairs=()):
                     "quality_scored_cycles",
                     "adaptive_checkpoint_tests",
                     "score_only_evaluations",
+                    "phase_search_seconds",
+                    "short_phase_slices",
+                    "short_quota_completions",
                     "fourier_workspace_cycles",
                     "stable_map_handoffs",
                     "screening_refinements",

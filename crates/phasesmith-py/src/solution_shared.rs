@@ -53,6 +53,18 @@ pub(super) fn summary<'py>(
     d.set_item("adaptive_checkpoints", s.adaptive_checkpoints)?;
     d.set_item("score_only_evaluation", s.score_only_evaluation)?;
     d.set_item("reusable_fourier_workspaces", s.reusable_fourier_workspaces)?;
+    d.set_item("work_sliced_phasing", s.work_sliced_phasing)?;
+    let slices = PyList::empty(py);
+    for a in &s.phase_slices {
+        let row = PyDict::new(py);
+        row.set_item("trial", a.trial)?;
+        row.set_item("cycle_quota", a.cycle_quota)?;
+        row.set_item("completed_cycles", a.completed_cycles)?;
+        row.set_item("seconds", a.seconds)?;
+        row.set_item("stop_reason", a.stop_reason)?;
+        slices.append(row)?;
+    }
+    d.set_item("phase_slices", slices)?;
     d.set_item("score_only_evaluations", s.score_only_evaluations)?;
     d.set_item("fourier_workspace_cycles", s.fourier_workspace_cycles)?;
     d.set_item("independent_origin_sampling", s.independent_origin_sampling)?;

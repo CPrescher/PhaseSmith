@@ -2276,6 +2276,28 @@ same 95 starts and 104 full refinements. No end-to-end speed claim is made from
 the lower unpaired median alone. The full schedule/audits are retained, and no
 holdout outcome has been opened.
 
+A further opt-in `work_sliced_phasing` policy limits the first half of phase-first
+starts to half the requested cycles (floor 32), retaining full-quota fallback
+starts and the original wall/global safety ceilings. With four starts and 800
+requested cycles the work quotas are 400/400/800/800, independent of atom counts
+or element identities. Existing symmetry/count/chemical/refinement validation
+still decides acceptance; no plateau or fit target becomes a correctness
+certificate. Per-start quota/cycle/time/reason audits and independent integer
+references accompany unchanged phase/refinement equations. A paired serial
+interleaved comparison on all 35 development cases keeps both fast execution
+controls on, with all chosen predictions saved before auditing references.
+Details and results are in `docs/solution-time-slice-scheduling.md`; the 65
+holdout outcomes remain unopened.
+The completed paired comparison recovers 15/35 structures versus 14/35, with no
+lost success and unchanged 26 total-count/15 per-element-count recoveries. Phase
+cycles fall 14.4%, phase time 8.0% and summed solve wall time 3.7%; the typical
+paired wall ratio is only 1.00345x, so a broad latency gain is not established.
+The raw wall medians are 3.297/3.398 seconds. Twenty-nine early starts finish their
+short work quota, while 50 starts still reach the wall backstop. Extra fallback
+starts/refinements partly offset savings; the option stays experimental and
+disabled by default. All 140 predictions precede the two reference barriers,
+and source/native hashes match across panels. The 65 holdout outcomes stay closed.
+
 ## Quality bar
 
 Public behavior is typed and documented. Invalid shapes, non-finite values,
