@@ -38,6 +38,7 @@ pub struct PreparedSymmetricModel {
     mode: AdpMode,
     families: Option<crate::refinement_families::ReflectionFamilies>,
     specialized_isotropic_evaluation: bool,
+    blocked_normal_matrices: bool,
 }
 
 // Cached reciprocal/image geometry, in reflection/site/image order.
@@ -199,6 +200,10 @@ pub struct SymmetricRefinement {
     pub normal_matrix_builds: usize,
     /// Attempts using a retained matrix after a rejected step.
     pub normal_matrix_reuses: usize,
+    /// Normal matrices formed by the blocked backend.
+    pub blocked_normal_builds: usize,
+    /// Blocked systems replaced by the legacy Gram after a failed checked solve.
+    pub blocked_normal_fallbacks: usize,
 }
 
 /// Lightweight final candidate; excludes prepared scattering and dense Jacobians.
@@ -485,6 +490,7 @@ impl PreparedSymmetricModel {
         Ok(Self {
             families,
             specialized_isotropic_evaluation: false,
+            blocked_normal_matrices: false,
             mode,
             geometry,
             symmetry,
@@ -504,6 +510,13 @@ impl PreparedSymmetricModel {
         self.specialized_isotropic_evaluation = enabled;
         self
     }
+    /// Use blocked Gram formation in eligible reused normal solves.
+    #[must_use]
+    pub fn with_blocked_normal_matrices(mut self, enabled: bool) -> Self {
+        self.blocked_normal_matrices = enabled;
+        self
+    }
+
     /// Whether current geometry and tensor bases permit isotropic specialization.
     #[must_use]
     pub fn uses_specialized_isotropic_evaluation(&self) -> bool {
@@ -927,6 +940,7 @@ impl PreparedSymmetricModel {
         let mut cached_normal_solves = 0;
         let mut normal_cache_fallbacks = 0;
         let mut linear_cache = crate::linear_step::NormalReuse::default();
+        linear_cache.blocked = self.blocked_normal_matrices;
         for _ in 0..iterations {
             if crate::stopped(deadline, cancellation) {
                 termination = if cancellation.is_some_and(Cancellation::is_cancelled) {
@@ -1088,6 +1102,8 @@ impl PreparedSymmetricModel {
             normal_cache_fallbacks,
             normal_matrix_builds: linear_cache.builds,
             normal_matrix_reuses: linear_cache.reuses,
+            blocked_normal_builds: linear_cache.blocked_builds,
+            blocked_normal_fallbacks: linear_cache.blocked_fallbacks,
         })
     }
 }

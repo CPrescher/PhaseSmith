@@ -106,6 +106,7 @@ def compare(paths, manifest, pairs=()):
                 "ambiguous_assignments",
                 "cached_assignment_refinement",
                 "short_phase_starts",
+                "blocked_normal_matrices",
                 "reuse_normal_matrices",
                 "streamed_peak_search",
                 "specialized_isotropic_refinement",
@@ -172,6 +173,8 @@ def compare(paths, manifest, pairs=()):
                     "normal_cache_fallbacks": r["effort"].get("normal_cache_fallbacks", 0),
                     "normal_matrix_builds": r["effort"].get("normal_matrix_builds", 0),
                     "normal_matrix_reuses": r["effort"].get("normal_matrix_reuses", 0),
+                    "blocked_normal_builds": r["effort"].get("blocked_normal_builds", 0),
+                    "blocked_normal_fallbacks": r["effort"].get("blocked_normal_fallbacks", 0),
                     "specialized_isotropic_fits": r["effort"].get("specialized_isotropic_fits", 0),
                     "assignment_cached_refinements": r["effort"].get(
                         "assignment_cached_refinements", 0
@@ -281,6 +284,7 @@ def compare(paths, manifest, pairs=()):
             "streamed_peak_search": report.get("streamed_peak_search", False),
             "reuse_normal_matrices": report.get("reuse_normal_matrices", False),
             "short_phase_starts": report.get("short_phase_starts", False),
+            "blocked_normal_matrices": report.get("blocked_normal_matrices", False),
             "reusable_fourier_workspaces": report.get("reusable_fourier_workspaces", False),
             "independent_origin_sampling": report.get("independent_origin_sampling", False),
             "resolution_extension": report.get("resolution_extension", 1.0),
@@ -312,6 +316,8 @@ def compare(paths, manifest, pairs=()):
                     "normal_cache_fallbacks",
                     "normal_matrix_builds",
                     "normal_matrix_reuses",
+                    "blocked_normal_builds",
+                    "blocked_normal_fallbacks",
                     "assignment_cached_refinements",
                     "specialized_isotropic_fits",
                     "assignment_cached_normal_solves",

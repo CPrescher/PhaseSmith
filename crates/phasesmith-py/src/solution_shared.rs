@@ -66,6 +66,9 @@ pub(super) fn summary<'py>(
     d.set_item("streamed_peak_search", s.streamed_peak_search)?;
     d.set_item("reuse_normal_matrices", s.reuse_normal_matrices)?;
     d.set_item("short_phase_starts", s.short_phase_starts)?;
+    d.set_item("blocked_normal_matrices", s.blocked_normal_matrices)?;
+    d.set_item("blocked_normal_builds", s.blocked_normal_builds)?;
+    d.set_item("blocked_normal_fallbacks", s.blocked_normal_fallbacks)?;
     d.set_item("normal_matrix_builds", s.normal_matrix_builds)?;
     d.set_item("normal_matrix_reuses", s.normal_matrix_reuses)?;
     d.set_item("streamed_peak_cycles", s.streamed_peak_cycles)?;

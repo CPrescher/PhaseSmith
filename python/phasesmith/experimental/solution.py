@@ -539,9 +539,12 @@ class SharedSearchAudit:
     multiplicity_weighted_refinement: bool = False
     ambiguous_assignments: bool = False
     short_phase_starts: bool = False
+    blocked_normal_matrices: bool = False
     reuse_normal_matrices: bool = False
     normal_matrix_builds: int = 0
     normal_matrix_reuses: int = 0
+    blocked_normal_builds: int = 0
+    blocked_normal_fallbacks: int = 0
     streamed_peak_search: bool = False
     specialized_isotropic_refinement: bool = False
     cached_assignment_refinement: bool = False
@@ -826,6 +829,7 @@ def solve_structure_elements(
     streamed_peak_search: bool = False,
     reuse_normal_matrices: bool = False,
     short_phase_starts: bool = False,
+    blocked_normal_matrices: bool = False,
     missing_reflections: bool = False,
     resolution_extension: float = 1.0,
     score_only_evaluation: bool = False,
@@ -857,6 +861,8 @@ def solve_structure_elements(
     ``cached_normal_refinement=True`` caches preconditioned normal matrices in final
     iterative fits, verifies steps against the original Jacobian and falls back
     to the matrix-free solver if needed. It requires iterative refinement.
+    ``blocked_normal_matrices=True`` uses blocked, single-threaded Gram formation
+    within reused normal solves, checked against the original Jacobian operator.
     ``short_phase_starts=True`` uses quarter-work early starts, a 32-cycle floor
     and full-work later starts; it requires ``work_sliced_phasing``.
     ``reuse_normal_matrices=True`` retains a checked CG normal matrix while only
@@ -956,6 +962,7 @@ def solve_structure_elements(
         ("streamed_peak_search", streamed_peak_search),
         ("reuse_normal_matrices", reuse_normal_matrices),
         ("short_phase_starts", short_phase_starts),
+        ("blocked_normal_matrices", blocked_normal_matrices),
         ("missing_reflections", missing_reflections),
         ("adaptive_checkpoints", adaptive_checkpoints),
         ("score_only_evaluation", score_only_evaluation),
@@ -992,6 +999,8 @@ def solve_structure_elements(
         raise ValueError("cached_normal_refinement requires iterative_refinement")
     if fused_phase_workspace and not reusable_fourier_workspaces:
         raise ValueError("fused_phase_workspace requires reusable_fourier_workspaces")
+    if blocked_normal_matrices and not reuse_normal_matrices:
+        raise ValueError("blocked_normal_matrices requires reuse_normal_matrices")
     if short_phase_starts and not work_sliced_phasing:
         raise ValueError("short_phase_starts requires work_sliced_phasing")
     if reuse_normal_matrices and not (
@@ -1153,7 +1162,7 @@ def solve_structure_elements(
                     specialized_isotropic_refinement,
                     streamed_peak_search,
                     reuse_normal_matrices,
-                    short_phase_starts,
+                    (short_phase_starts, blocked_normal_matrices),
                 ),
             ),
         ),

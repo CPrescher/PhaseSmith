@@ -442,19 +442,22 @@ fn checkpoint_select(
     Ok(out)
 }
 #[pyfunction(name = "_iterative_normal_step")]
-#[pyo3(signature=(jacobian, residual, damping, cached=false))]
+#[pyo3(signature=(jacobian, residual, damping, cached=false, blocked=false))]
 fn normal_step<'py>(
     py: Python<'py>,
     jacobian: PyReadonlyArray1<'_, f64>,
     residual: PyReadonlyArray1<'_, f64>,
     damping: f64,
     cached: bool,
+    blocked: bool,
 ) -> PyResult<Bound<'py, PyDict>> {
     let j = jacobian.as_slice()?.to_vec();
     let r = residual.as_slice()?.to_vec();
     let value = py
         .detach(|| {
-            if cached {
+            if blocked {
+                phasesmith_solution::blocked_normal_step(&j, &r, damping, None, None)
+            } else if cached {
                 phasesmith_solution::cached_normal_step(&j, &r, damping, None, None)
             } else {
                 phasesmith_solution::iterative_normal_step(&j, &r, damping, None, None).map(

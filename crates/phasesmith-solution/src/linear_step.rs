@@ -14,6 +14,25 @@ pub struct CachedNormalStep {
     pub fell_back: bool,
 }
 
+/// Form a blocked Gram matrix and solve with the same checked CG equations.
+/// A failed original-Jacobian residual check retries legacy Gram formation and
+/// then the existing matrix-free solve. Unsuitable shapes use matrix-free CG.
+/// # Errors
+/// Rejects malformed, stopped and unconverged systems as `cached_normal_step`.
+pub fn blocked_normal_step(
+    jacobian: &[f64],
+    residual: &[f64],
+    damping: f64,
+    deadline: Option<Instant>,
+    cancellation: Option<&Cancellation>,
+) -> Result<CachedNormalStep, SolutionError> {
+    NormalReuse {
+        blocked: true,
+        ..Default::default()
+    }
+    .step(jacobian, residual, damping, deadline, cancellation)
+}
+
 const NORMAL_CACHE_BYTES: usize = 8 * 1024 * 1024;
 
 // Fixed eight-lane reduction allows vectorization without fast-math or FMA.
@@ -96,6 +115,7 @@ struct PreparedNormalSystem {
     rhs: Vec<f64>,
     norm: f64,
     matrix: Vec<f64>,
+    blocked: bool,
 }
 impl PreparedNormalSystem {
     fn new(
@@ -103,6 +123,15 @@ impl PreparedNormalSystem {
         observed_residual: &[f64],
         deadline: Option<Instant>,
         cancellation: Option<&Cancellation>,
+    ) -> Result<Self, SolutionError> {
+        Self::prepare(jacobian, observed_residual, deadline, cancellation, false)
+    }
+    fn prepare(
+        jacobian: &[f64],
+        observed_residual: &[f64],
+        deadline: Option<Instant>,
+        cancellation: Option<&Cancellation>,
+        blocked: bool,
     ) -> Result<Self, SolutionError> {
         let reflections = observed_residual.len();
         let parameters = jacobian.len() / reflections;
@@ -131,6 +160,9 @@ impl PreparedNormalSystem {
                 parameters * parameters
             }
         ];
+        if blocked && norm != 0. {
+            blocked_gram(jacobian, reflections, &mut matrix, deadline, cancellation)?;
+        }
         for i in 0..if norm == 0. { 0 } else { parameters } {
             if crate::stopped(deadline, cancellation) {
                 return Err(error("normal cache stopped"));
@@ -138,10 +170,14 @@ impl PreparedNormalSystem {
             for k in 0..=i {
                 let value = scales[i]
                     * scales[k]
-                    * lane_dot(
-                        &jacobian[i * reflections..(i + 1) * reflections],
-                        &jacobian[k * reflections..(k + 1) * reflections],
-                    );
+                    * if blocked {
+                        matrix[i * parameters + k]
+                    } else {
+                        lane_dot(
+                            &jacobian[i * reflections..(i + 1) * reflections],
+                            &jacobian[k * reflections..(k + 1) * reflections],
+                        )
+                    };
                 matrix[i * parameters + k] = value;
                 matrix[k * parameters + i] = value;
             }
@@ -151,6 +187,7 @@ impl PreparedNormalSystem {
             rhs,
             norm,
             matrix,
+            blocked,
         })
     }
     #[allow(clippy::too_many_lines)]
@@ -242,6 +279,9 @@ pub(crate) struct NormalReuse {
     prepared: Option<PreparedNormalSystem>,
     pub(crate) builds: usize,
     pub(crate) reuses: usize,
+    pub(crate) blocked: bool,
+    pub(crate) blocked_builds: usize,
+    pub(crate) blocked_fallbacks: usize,
 }
 impl NormalReuse {
     pub(crate) fn clear(&mut self) {
@@ -260,12 +300,39 @@ impl NormalReuse {
         if eligible {
             if self.prepared.is_some() {
                 self.reuses += 1;
-            } else if let Ok(p) =
-                PreparedNormalSystem::new(jacobian, residual, deadline, cancellation)
-            {
+            } else if let Ok(p) = PreparedNormalSystem::prepare(
+                jacobian,
+                residual,
+                deadline,
+                cancellation,
+                self.blocked,
+            ) {
                 self.prepared = Some(p);
                 self.builds += 1;
+                self.blocked_builds += usize::from(self.blocked);
             }
+            if let Some(p) = &self.prepared {
+                if let Ok((step, iterations)) =
+                    p.solve(jacobian, residual, damping, deadline, cancellation)
+                {
+                    return Ok(CachedNormalStep {
+                        step,
+                        iterations,
+                        used_cache: true,
+                        fell_back: false,
+                    });
+                }
+            }
+        }
+        // A changed Gram summation order must still satisfy the original J
+        // operator. On failure retain the legacy Gram for this linearization.
+        if self.prepared.as_ref().is_some_and(|p| p.blocked)
+            && !crate::stopped(deadline, cancellation)
+        {
+            self.blocked_fallbacks += 1;
+            self.prepared =
+                PreparedNormalSystem::new(jacobian, residual, deadline, cancellation).ok();
+            self.builds += usize::from(self.prepared.is_some());
             if let Some(p) = &self.prepared {
                 if let Ok((step, iterations)) =
                     p.solve(jacobian, residual, damping, deadline, cancellation)
@@ -288,6 +355,49 @@ impl NormalReuse {
             fell_back: eligible,
         })
     }
+}
+
+// J is parameter-major. Only lower block tiles are needed; the caller scales
+// and mirrors the lower triangle. Views borrow existing storage; matrixmultiply
+// packs panels internally and uses its single-threaded portable SIMD backend.
+fn blocked_gram(
+    jacobian: &[f64],
+    reflections: usize,
+    matrix: &mut [f64],
+    deadline: Option<Instant>,
+    cancellation: Option<&Cancellation>,
+) -> Result<(), SolutionError> {
+    use ndarray::{ArrayView2, ArrayViewMut2, ShapeBuilder, linalg::general_mat_mul};
+    const TILE: usize = 32;
+    let parameters = jacobian.len() / reflections;
+    for i in (0..parameters).step_by(TILE) {
+        let rows = TILE.min(parameters - i);
+        let a = ArrayView2::from_shape(
+            (rows, reflections),
+            &jacobian[i * reflections..(i + rows) * reflections],
+        )
+        .map_err(|e| error(e.to_string()))?;
+        for k in (0..=i).step_by(TILE) {
+            if crate::stopped(deadline, cancellation) {
+                return Err(error("blocked normal cache stopped"));
+            }
+            let cols = TILE.min(parameters - k);
+            let b = ArrayView2::from_shape(
+                (cols, reflections),
+                &jacobian[k * reflections..(k + cols) * reflections],
+            )
+            .map_err(|e| error(e.to_string()))?;
+            let start = i * parameters + k;
+            let end = start + (rows - 1) * parameters + cols;
+            let mut c = ArrayViewMut2::from_shape(
+                (rows, cols).strides((parameters, 1)),
+                &mut matrix[start..end],
+            )
+            .map_err(|e| error(e.to_string()))?;
+            general_mat_mul(1., &a, &b.t(), 0., &mut c);
+        }
+    }
+    Ok(())
 }
 
 fn cache_shape(parameters: usize, reflections: usize) -> bool {
@@ -505,6 +615,52 @@ pub fn iterative_normal_step(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    #[allow(clippy::cast_precision_loss)]
+    fn blocked_tiles_match_legacy_with_partial_edges_and_preserve_guards() {
+        for (parameters, rows) in [(32, 67), (33, 131), (69, 333)] {
+            let j: Vec<_> = (0..parameters * rows)
+                .map(|i| (i as f64 * 0.731).sin() + (i as f64 * 0.017).cos())
+                .collect();
+            let r: Vec<_> = (0..rows).map(|i| (i as f64 * 0.379).cos()).collect();
+            let legacy = PreparedNormalSystem::new(&j, &r, None, None).unwrap();
+            let blocked = PreparedNormalSystem::prepare(&j, &r, None, None, true).unwrap();
+            assert_eq!(legacy.scales, blocked.scales);
+            assert_eq!(legacy.rhs, blocked.rhs);
+            for (a, b) in legacy.matrix.iter().zip(&blocked.matrix) {
+                assert!((a - b).abs() <= 3e-14);
+            }
+            let mut cache = NormalReuse {
+                blocked: true,
+                ..Default::default()
+            };
+            cache.step(&j, &r, 0.1, None, None).unwrap();
+            assert_eq!(cache.blocked_builds, 1);
+            // Corrupt only the cached matrix. A failed original-operator guard
+            // must rebuild the legacy matrix, never accept this changed system.
+            cache.prepared.as_mut().unwrap().matrix.fill(0.);
+            let result = cache.step(&j, &r, 0.1, None, None).unwrap();
+            assert_eq!(cache.blocked_fallbacks, 1);
+            assert!(result.used_cache);
+            assert_eq!(
+                result.step,
+                cached_normal_step(&j, &r, 0.1, None, None).unwrap().step
+            );
+            assert!(!cache.prepared.as_ref().unwrap().blocked);
+            cache.step(&j, &r, 1., None, None).unwrap();
+            assert_eq!(cache.blocked_builds, 1);
+            cache.clear();
+            cache.step(&j, &r, 1., None, None).unwrap();
+            assert_eq!(cache.blocked_builds, 2);
+            assert!(blocked_normal_step(&j, &r, 0.1, Some(Instant::now()), None).is_err());
+            let token = Cancellation::default();
+            let _ = token.cancel();
+            assert!(blocked_normal_step(&j, &r, 0.1, None, Some(&token)).is_err());
+            let z = blocked_normal_step(&j, &vec![0.; rows], 0.1, None, None).unwrap();
+            assert_eq!(z.step, vec![0.; parameters]);
+            assert_eq!(z.iterations, 0);
+        }
+    }
     #[test]
     fn blocked_dense_step_satisfies_original_system_and_stops() {
         let rows = 197;
