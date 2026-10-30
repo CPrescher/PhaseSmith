@@ -65,6 +65,10 @@ pub struct SharedSearchOptions {
     pub phase_origin_selection: bool,
     /// Hand off stable quality-ready maps before the phase cycle ceiling.
     pub adaptive_checkpoints: bool,
+    /// Evaluate scalar phase merits without unused gradients.
+    pub score_only_evaluation: bool,
+    /// Reuse dual-space Fourier/map/mask buffers across cycles.
+    pub reusable_fourier_workspaces: bool,
     /// Select origin FFT sampling from phase-equivalence frequencies.
     pub independent_origin_sampling: bool,
     /// Add motif density scales and post-screen coupled element assignments.
@@ -102,6 +106,8 @@ impl Default for SharedSearchOptions {
             calculated_shell_normalization: true,
             phase_origin_selection: false,
             adaptive_checkpoints: false,
+            score_only_evaluation: false,
+            reusable_fourier_workspaces: false,
             independent_origin_sampling: false,
             chemical_assignment: false,
             iterative_refinement: false,
@@ -224,6 +230,10 @@ pub struct SharedSearchSummary {
     pub phase_origin_selection: bool,
     /// Hand off stable quality-ready maps before the phase cycle ceiling.
     pub adaptive_checkpoints: bool,
+    /// Evaluate scalar phase merits without unused gradients.
+    pub score_only_evaluation: bool,
+    /// Reuse dual-space Fourier/map/mask buffers across cycles.
+    pub reusable_fourier_workspaces: bool,
     /// Select origin FFT sampling from phase-equivalence frequencies.
     pub independent_origin_sampling: bool,
     /// Add motif density scales and post-screen coupled element assignments.
@@ -234,6 +244,10 @@ pub struct SharedSearchSummary {
     pub missing_reflections: bool,
     /// Requested reciprocal-radius extension.
     pub resolution_extension: f64,
+    /// Actual scalar-only phase scores evaluated.
+    pub score_only_evaluations: usize,
+    /// Actual P1 projections evaluated with reusable full-grid buffers.
+    pub fourier_workspace_cycles: usize,
     /// Per-start phase checkpoint decisions (start index, decision).
     pub phase_checkpoints: Vec<(usize, crate::PhaseCheckpoint)>,
     /// Actual reciprocal support provenance, absent for the original path.
@@ -1724,6 +1738,8 @@ pub fn solve_elements(
         || (search.phase_quality_selection && options.phasing != PhasingMethod::DualSpace)
         || (search.chemical_assignment && !search.phase_origin_selection)
         || (search.independent_origin_sampling && !search.phase_origin_selection)
+        || (search.score_only_evaluation && !search.phase_quality_selection)
+        || (search.reusable_fourier_workspaces && options.phasing != PhasingMethod::DualSpace)
         || (search.adaptive_checkpoints
             && (!search.phase_origin_selection
                 || !search.phase_quality_selection
@@ -1953,6 +1969,8 @@ pub fn solve_elements(
         calculated_shell_normalization: search.calculated_shell_normalization,
         phase_origin_selection: search.phase_origin_selection,
         adaptive_checkpoints: search.adaptive_checkpoints,
+        score_only_evaluation: search.score_only_evaluation,
+        reusable_fourier_workspaces: search.reusable_fourier_workspaces,
         independent_origin_sampling: search.independent_origin_sampling,
         chemical_assignment: search.chemical_assignment,
         iterative_refinement: search.iterative_refinement,
@@ -2133,7 +2151,11 @@ pub fn solve_elements(
                 quality_plan.as_ref(),
                 prediction_g.as_ref(),
                 search.adaptive_checkpoints,
+                search.score_only_evaluation,
+                search.reusable_fourier_workspaces,
             )?;
+            audit.score_only_evaluations += state.score_only_evaluations;
+            audit.fourier_workspace_cycles += state.fourier_workspace_cycles;
             audit
                 .phase_checkpoints
                 .extend(state.phase_checkpoints.drain(..).map(|c| (trial, c)));

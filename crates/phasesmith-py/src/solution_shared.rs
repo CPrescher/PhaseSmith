@@ -51,6 +51,10 @@ pub(super) fn summary<'py>(
     d.set_item("phase_quality_selection", s.phase_quality_selection)?;
     d.set_item("phase_origin_selection", s.phase_origin_selection)?;
     d.set_item("adaptive_checkpoints", s.adaptive_checkpoints)?;
+    d.set_item("score_only_evaluation", s.score_only_evaluation)?;
+    d.set_item("reusable_fourier_workspaces", s.reusable_fourier_workspaces)?;
+    d.set_item("score_only_evaluations", s.score_only_evaluations)?;
+    d.set_item("fourier_workspace_cycles", s.fourier_workspace_cycles)?;
     d.set_item("independent_origin_sampling", s.independent_origin_sampling)?;
     let decisions = PyList::empty(py);
     for (trial, c) in &s.phase_checkpoints {

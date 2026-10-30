@@ -39,6 +39,7 @@ pub struct FlipResult {
 
 pub(crate) struct Transform {
     shape: [usize; 3],
+    direct_contiguous: bool,
     forward: [Arc<dyn Fft<f64>>; 3],
     inverse: [Arc<dyn Fft<f64>>; 3],
     line: Vec<Complex<f64>>,
@@ -58,11 +59,18 @@ impl Transform {
             .unwrap_or(0);
         Self {
             shape,
+            direct_contiguous: false,
             forward,
             inverse,
             line: vec![Complex::default(); *shape.iter().max().unwrap()],
             scratch: vec![Complex::default(); scratch_len],
         }
+    }
+
+    pub(crate) fn reusable(shape: [usize; 3]) -> Self {
+        let mut plan = Self::new(shape);
+        plan.direct_contiguous = true;
+        plan
     }
 
     pub(crate) fn apply(&mut self, values: &mut [Complex<f64>], inverse: bool) {
@@ -75,6 +83,12 @@ impl Transform {
             } else {
                 &self.forward[axis]
             };
+            if self.direct_contiguous && stride == 1 {
+                for line in values.chunks_exact_mut(length) {
+                    plan.process_with_scratch(line, &mut self.scratch);
+                }
+                continue;
+            }
             for outer in 0..values.len() / block {
                 for inner in 0..stride {
                     let offset = outer * block + inner;

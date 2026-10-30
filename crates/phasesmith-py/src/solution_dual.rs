@@ -9,6 +9,7 @@ use pyo3::{
 };
 
 #[pyfunction(name = "_solution_dual_space")]
+#[pyo3(signature=(shape,cell_parameters,hkl,amplitudes,phases,support,cycles,atom_count,mask_sigma,hybrid_m,omit_fraction,seed,patterson_rank,reusable_workspaces=false))]
 #[allow(clippy::too_many_arguments)]
 fn run<'py>(
     py: Python<'py>,
@@ -25,6 +26,7 @@ fn run<'py>(
     omit_fraction: f64,
     seed: u64,
     patterson_rank: Option<usize>,
+    reusable_workspaces: bool,
 ) -> PyResult<Bound<'py, PyDict>> {
     let cell = cell(&cell_parameters)?;
     let hkl = hkl_rows(&hkl)?;
@@ -43,7 +45,7 @@ fn run<'py>(
     };
     let state = py
         .detach(move || {
-            phasesmith_solution::dual_space(
+            phasesmith_solution::dual_space_with_execution(
                 shape,
                 cell,
                 &hkl,
@@ -52,6 +54,11 @@ fn run<'py>(
                 &support,
                 &options,
                 None,
+                None,
+                phasesmith_solution::PhasingExecution {
+                    score_only_evaluation: false,
+                    reusable_fourier_workspaces: reusable_workspaces,
+                },
             )
         })
         .map_err(invalid)?;

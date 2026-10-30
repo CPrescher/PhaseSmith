@@ -92,6 +92,10 @@ pub struct DualSpaceResult {
     pub prediction_seconds: f64,
     /// Actual optional phase checkpoint decisions.
     pub phase_checkpoints: Vec<crate::PhaseCheckpoint>,
+    /// Actual scalar-only merit evaluations.
+    pub score_only_evaluations: usize,
+    /// Actual projections using reused full-grid buffers.
+    pub fourier_workspace_cycles: usize,
 }
 
 pub(crate) fn hash64(mut value: u64) -> u64 {
@@ -203,6 +207,94 @@ pub fn adaptive_peaks(
         effective *= 1.5;
     }
 }
+struct AtomicWorkspace {
+    geometry: CellGeometry,
+    bounds: [i32; 3],
+    radius2: f64,
+    normalization: f64,
+    mask: Vec<f64>,
+    projected: Vec<f64>,
+}
+impl AtomicWorkspace {
+    fn new(
+        shape: [usize; 3],
+        cell: UnitCell,
+        options: &DualSpaceOptions,
+    ) -> Result<Self, SolutionError> {
+        validate_options(options)?;
+        let geometry = cell.geometry().map_err(|e| error(e.to_string()))?;
+        let bounds = mask_bounds(shape, &geometry, options.mask_sigma)?;
+        let n = grid_len(shape)?;
+        Ok(Self {
+            geometry,
+            bounds,
+            radius2: (3. * options.mask_sigma).powi(2) * (1. + 1e-12),
+            normalization: (std::f64::consts::TAU).powf(-1.5) / options.mask_sigma.powi(3),
+            mask: vec![0.; n],
+            projected: vec![0.; n],
+        })
+    }
+    #[allow(clippy::cast_precision_loss, clippy::cast_possible_truncation)]
+    fn update(
+        &mut self,
+        density: &[f64],
+        shape: [usize; 3],
+        options: &DualSpaceOptions,
+        cycle: usize,
+    ) -> Result<(usize, f64, usize), SolutionError> {
+        let (peaks, effective) = match options.peak_selection {
+            PeakSelection::Fixed(count) => (
+                extract_peaks(
+                    density,
+                    shape,
+                    if cycle < 50 {
+                        (2 * count).min(128)
+                    } else {
+                        count
+                    },
+                )?,
+                0.,
+            ),
+            PeakSelection::Adaptive { sigma, cap } => adaptive_peaks(density, shape, sigma, cap)?,
+        };
+        let skip = omitted(peaks.len(), cycle, options);
+        let omitted_count = skip.iter().filter(|&&v| v).count();
+        self.mask.fill(0.);
+        let radius2 = self.radius2;
+        let normalization = self.normalization;
+        for (&point, &skip) in peaks.iter().zip(&skip) {
+            if skip {
+                continue;
+            }
+            let centre = std::array::from_fn::<_, 3, _>(|i| point[i] * shape[i] as f64);
+            let origin = centre.map(|v| v.round() as i32);
+            for dx in -self.bounds[0]..=self.bounds[0] {
+                for dy in -self.bounds[1]..=self.bounds[1] {
+                    for dz in -self.bounds[2]..=self.bounds[2] {
+                        let index = [origin[0] + dx, origin[1] + dy, origin[2] + dz];
+                        let delta = std::array::from_fn(|i| {
+                            (f64::from(index[i]) - centre[i]) / shape[i] as f64
+                        });
+                        let squared = crate::math3::dot(
+                            delta,
+                            crate::math3::mv(self.geometry.direct_metric, delta),
+                        );
+                        if squared <= radius2 {
+                            self.mask[grid_index(index, shape)] +=
+                                normalization * (-0.5 * squared / options.mask_sigma.powi(2)).exp();
+                        }
+                    }
+                }
+            }
+        }
+
+        for ((out, &v), &m) in self.projected.iter_mut().zip(density).zip(&self.mask) {
+            *out = v.max(0.) * m;
+        }
+        Ok((peaks.len(), effective, omitted_count))
+    }
+}
+// Retain the original allocating kernel as the execution-control ablation.
 #[allow(clippy::cast_precision_loss, clippy::cast_possible_truncation)]
 fn project_atomicity(
     density: &[f64],
@@ -410,6 +502,55 @@ pub fn dual_space_with_prediction(
         None,
         Some(prediction),
         false,
+        false,
+        false,
+    )
+}
+
+/// Execution-only optimizations, independent of the numerical phasing options.
+#[derive(Clone, Copy, Debug, Default)]
+pub struct PhasingExecution {
+    /// Cache scalar merits; no gradient computation in scoring-only callers.
+    pub score_only_evaluation: bool,
+    /// Reuse full-grid buffers and process contiguous FFT lines in place.
+    pub reusable_fourier_workspaces: bool,
+}
+
+/// Diagnostic/benchmark entry point with explicit arithmetic-preserving execution.
+/// # Errors
+/// Rejects invalid phasing arrays and score-only requests without a quality plan.
+#[allow(clippy::too_many_arguments)]
+pub fn dual_space_with_execution(
+    shape: [usize; 3],
+    cell: UnitCell,
+    hkl: &[[i32; 3]],
+    amplitudes: &[f64],
+    phases: &[f64],
+    support: &[u8],
+    options: &DualSpaceOptions,
+    deadline: Option<Instant>,
+    quality: Option<&crate::PreparedPhaseQuality>,
+    execution: PhasingExecution,
+) -> Result<DualSpaceResult, SolutionError> {
+    if execution.score_only_evaluation && quality.is_none() {
+        return Err(error("score-only execution requires a quality plan"));
+    }
+    dual_space_guided_prediction(
+        shape,
+        cell,
+        hkl,
+        amplitudes,
+        phases,
+        support,
+        options,
+        deadline,
+        None,
+        None,
+        quality,
+        None,
+        false,
+        execution.score_only_evaluation,
+        execution.reusable_fourier_workspaces,
     )
 }
 
@@ -463,7 +604,7 @@ pub(crate) fn dual_space_guided(
 ) -> Result<DualSpaceResult, SolutionError> {
     dual_space_guided_prediction(
         shape, cell, hkl, amplitudes, phases, support, options, deadline, checkpoint, tangent,
-        quality, None, false,
+        quality, None, false, false, false,
     )
 }
 
@@ -486,6 +627,8 @@ pub(crate) fn dual_space_guided_prediction(
     quality: Option<&crate::PreparedPhaseQuality>,
     prediction: Option<&crate::PreparedReflectionPrediction>,
     adaptive_checkpoints: bool,
+    score_only_evaluation: bool,
+    reusable_fourier_workspaces: bool,
 ) -> Result<DualSpaceResult, SolutionError> {
     validate_options(options)?;
     let geometry = cell.geometry().map_err(|e| error(e.to_string()))?;
@@ -508,7 +651,11 @@ pub(crate) fn dual_space_guided_prediction(
     for (&i, &a) in indices.iter().zip(&target) {
         f[i] = Complex::from_polar(a, f[i].arg());
     }
-    let mut fft = Transform::new(shape);
+    let mut fft = if reusable_fourier_workspaces {
+        Transform::reusable(shape)
+    } else {
+        Transform::new(shape)
+    };
     let start = if let Some(rank) = options.patterson_rank {
         patterson_start(shape, hkl, &target, rank, &mut fft)?
     } else {
@@ -530,6 +677,13 @@ pub(crate) fn dual_space_guided_prediction(
     };
     let mut tangent_audit = tangent.map(crate::PreparedTangent::audit);
     let mut quality_trace = quality.map(crate::PreparedPhaseQuality::trace);
+    let mut scalar_score = if score_only_evaluation {
+        quality.map(crate::PreparedPhaseScore::new).transpose()?
+    } else {
+        None
+    };
+    let mut score_only_evaluations = 0;
+    let mut fourier_workspace_cycles = 0;
     let quality_indices: Vec<_> = quality.map_or_else(Vec::new, |plan| {
         plan.hkl.iter().map(|&h| grid_index(h, shape)).collect()
     });
@@ -563,16 +717,48 @@ pub(crate) fn dual_space_guided_prediction(
     let mut best_rank = f64::INFINITY;
     let mut best_cycle = 0;
     let target_norm: f64 = target.iter().map(|a| a * a).sum();
+    let mut workspace = if reusable_fourier_workspaces {
+        Some(AtomicWorkspace::new(shape, cell, options)?)
+    } else {
+        None
+    };
+    let mut recycled_coefficients = if reusable_fourier_workspaces {
+        f
+    } else {
+        Vec::new()
+    };
+    let mut quality_magnitudes = Vec::new();
+    let mut tangent_phases = Vec::new();
+    let mut tangent_magnitudes = Vec::new();
     for cycle in 0..options.cycles {
         if crate::stopped(deadline, options.cancellation.as_ref()) {
             break;
         }
-        let projection = project_atomicity(&density, shape, cell, options, cycle)?;
-        let projected = projection.density;
+        let projection = if let Some(w) = &mut workspace {
+            fourier_workspace_cycles += 1;
+            let stats = w.update(&density, shape, options, cycle)?;
+            Projection {
+                density: std::mem::take(&mut w.projected),
+                selected: stats.0,
+                sigma: stats.1,
+                omitted: stats.2,
+            }
+        } else {
+            project_atomicity(&density, shape, cell, options, cycle)?
+        };
+        let mut projected = projection.density;
         if crate::stopped(deadline, options.cancellation.as_ref()) {
             break;
         }
-        let mut calculated: Vec<_> = projected.iter().map(|&v| Complex::new(v, 0.)).collect();
+        let mut calculated: Vec<_> = if reusable_fourier_workspaces {
+            let mut values = std::mem::take(&mut recycled_coefficients);
+            for (out, &v) in values.iter_mut().zip(&projected) {
+                *out = Complex::new(v, 0.);
+            }
+            values
+        } else {
+            projected.iter().map(|&v| Complex::new(v, 0.)).collect()
+        };
         fft.apply(&mut calculated, true);
         if let Some(audit) = &mut adaptive_history {
             audit.selected.push(projection.selected);
@@ -599,14 +785,30 @@ pub(crate) fn dual_space_guided_prediction(
             / target_norm;
         history.push(score);
         let quality_score = if let Some(plan) = quality {
-            let magnitudes: Vec<_> = quality_indices
-                .iter()
-                .map(|&i| calculated[i].norm())
-                .collect();
-            Some(plan.evaluate(&magnitudes)?)
+            let mut evaluate = |magnitudes: &[f64]| {
+                if let Some(scorer) = &mut scalar_score {
+                    score_only_evaluations += 1;
+                    scorer.evaluate(magnitudes)
+                } else {
+                    plan.evaluate(magnitudes)
+                        .map(crate::PhaseQualityValue::from)
+                }
+            };
+            Some(if reusable_fourier_workspaces {
+                quality_magnitudes.clear();
+                quality_magnitudes.extend(quality_indices.iter().map(|&i| calculated[i].norm()));
+                evaluate(&quality_magnitudes)?
+            } else {
+                let magnitudes: Vec<_> = quality_indices
+                    .iter()
+                    .map(|&i| calculated[i].norm())
+                    .collect();
+                evaluate(&magnitudes)?
+            })
         } else {
             None
         };
+
         if let (Some(q), Some(trace)) = (&quality_score, &mut quality_trace) {
             trace.correlation.push(q.correlation);
             trace.r_weak.push(q.r_weak);
@@ -641,7 +843,11 @@ pub(crate) fn dual_space_guided_prediction(
         {
             best_rank = ranking;
             best_score = score;
-            best = projected;
+            if reusable_fourier_workspaces {
+                std::mem::swap(&mut best, &mut projected);
+            } else {
+                best = std::mem::take(&mut projected);
+            }
             best_cycle = cycle;
         }
         if let Some(sample) = phase_sample
@@ -721,17 +927,33 @@ pub(crate) fn dual_space_guided_prediction(
             }
         }
         if let (Some(plan), Some(audit)) = (tangent, &mut tangent_audit) {
-            let independent: Vec<_> = plan
-                .hkl
-                .iter()
-                .map(|&h| calculated[grid_index(h, shape)].arg())
-                .collect();
-            let magnitudes: Vec<_> = plan
-                .hkl
-                .iter()
-                .map(|&h| calculated[grid_index(h, shape)].norm())
-                .collect();
-            let update = plan.step(&independent, &magnitudes, cycle, options.seed)?;
+            let update = if reusable_fourier_workspaces {
+                tangent_phases.clear();
+                tangent_magnitudes.clear();
+                tangent_phases.extend(
+                    plan.hkl
+                        .iter()
+                        .map(|&h| calculated[grid_index(h, shape)].arg()),
+                );
+                tangent_magnitudes.extend(
+                    plan.hkl
+                        .iter()
+                        .map(|&h| calculated[grid_index(h, shape)].norm()),
+                );
+                plan.step(&tangent_phases, &tangent_magnitudes, cycle, options.seed)?
+            } else {
+                let independent: Vec<_> = plan
+                    .hkl
+                    .iter()
+                    .map(|&h| calculated[grid_index(h, shape)].arg())
+                    .collect();
+                let magnitudes: Vec<_> = plan
+                    .hkl
+                    .iter()
+                    .map(|&h| calculated[grid_index(h, shape)].norm())
+                    .collect();
+                plan.step(&independent, &magnitudes, cycle, options.seed)?
+            };
             audit.steps += 1;
             audit.annealed_steps += usize::from(update.temperature > 0.);
             audit.proposals += update.proposals;
@@ -768,7 +990,15 @@ pub(crate) fn dual_space_guided_prediction(
             calculated[i] = phase * (options.hybrid_m * a - (options.hybrid_m - 1.) * magnitude);
         }
         fft.apply(&mut calculated, false);
-        density = calculated.iter().map(|v| v.re / n as f64).collect();
+        if reusable_fourier_workspaces {
+            for (out, v) in density.iter_mut().zip(&calculated) {
+                *out = v.re / n as f64;
+            }
+            recycled_coefficients = calculated;
+            workspace.as_mut().expect("workspace enabled").projected = projected;
+        } else {
+            density = calculated.iter().map(|v| v.re / n as f64).collect();
+        }
         if density.iter().any(|v| !v.is_finite()) {
             return Err(error("nonfinite dual-space iterate"));
         }
@@ -796,12 +1026,150 @@ pub(crate) fn dual_space_guided_prediction(
         prediction: prediction_trace,
         prediction_seconds,
         phase_checkpoints,
+        score_only_evaluations,
+        fourier_workspace_cycles,
     })
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    #[allow(clippy::too_many_lines)]
+    fn execution_modes_preserve_all_cycles_maps_and_scores_bitwise() {
+        let shape = [16, 24, 8];
+        let cell = UnitCell {
+            a_angstrom: 5.,
+            b_angstrom: 6.,
+            c_angstrom: 7.,
+            alpha_deg: 90.,
+            beta_deg: 98.,
+            gamma_deg: 90.,
+        };
+        let hkl: Vec<_> = (-2..=2)
+            .flat_map(|h| {
+                (-2..=2).flat_map(move |k| {
+                    (-2..=2).filter_map(move |l| ([h, k, l] != [0; 3]).then_some([h, k, l]))
+                })
+            })
+            .collect();
+        let amplitude: Vec<_> = hkl
+            .iter()
+            .map(|h| {
+                (2. + (0.7 * f64::from(h[0]) + 1.1 * f64::from(h[1]) + 0.3 * f64::from(h[2])).cos())
+                    .sqrt()
+            })
+            .collect();
+        let phases = crate::solver::initial_phases(&hkl, 19);
+        let mut support = vec![0; 16 * 24 * 8];
+        support[0] = 1;
+        for &h in &hkl {
+            support[grid_index(h, shape)] = 2;
+        }
+        let p = crate::PreparedPhaseQuality {
+            hkl: hkl.clone(),
+            target: amplitude.clone(),
+            e_weights: vec![1.; hkl.len()],
+            weak: (0..hkl.len()).map(|i| i % 10 == 0).collect(),
+            allowed: hkl.len(),
+            calculated_shell: Vec::new(),
+        };
+        for selection in [
+            PeakSelection::Fixed(4),
+            PeakSelection::Adaptive {
+                sigma: 1.5,
+                cap: 32,
+            },
+        ] {
+            for rank in [None, Some(0)] {
+                let options = DualSpaceOptions {
+                    cycles: 64,
+                    peak_selection: selection.clone(),
+                    mask_sigma: 0.25,
+                    hybrid_m: 3.,
+                    omit_fraction: 0.1,
+                    seed: 19,
+                    patterson_rank: rank,
+                    cancellation: None,
+                };
+                let old = dual_space_with_execution(
+                    shape,
+                    cell,
+                    &hkl,
+                    &amplitude,
+                    &phases,
+                    &support,
+                    &options,
+                    None,
+                    Some(&p),
+                    PhasingExecution::default(),
+                )
+                .unwrap();
+                for execution in [
+                    PhasingExecution {
+                        score_only_evaluation: true,
+                        reusable_fourier_workspaces: false,
+                    },
+                    PhasingExecution {
+                        score_only_evaluation: false,
+                        reusable_fourier_workspaces: true,
+                    },
+                    PhasingExecution {
+                        score_only_evaluation: true,
+                        reusable_fourier_workspaces: true,
+                    },
+                ] {
+                    let new = dual_space_with_execution(
+                        shape,
+                        cell,
+                        &hkl,
+                        &amplitude,
+                        &phases,
+                        &support,
+                        &options,
+                        None,
+                        Some(&p),
+                        execution,
+                    )
+                    .unwrap();
+                    assert_eq!(old.trial.history, new.trial.history);
+                    assert_eq!(old.trial.best_cycle, new.trial.best_cycle);
+                    assert_eq!(
+                        old.trial
+                            .density
+                            .iter()
+                            .map(|x| x.to_bits())
+                            .collect::<Vec<_>>(),
+                        new.trial
+                            .density
+                            .iter()
+                            .map(|x| x.to_bits())
+                            .collect::<Vec<_>>()
+                    );
+                    assert_eq!(
+                        old.quality.as_ref().unwrap().cfom,
+                        new.quality.as_ref().unwrap().cfom
+                    );
+                    assert_eq!(
+                        new.score_only_evaluations,
+                        if execution.score_only_evaluation {
+                            new.trial.history.len()
+                        } else {
+                            0
+                        }
+                    );
+                    assert_eq!(
+                        new.fourier_workspace_cycles,
+                        if execution.reusable_fourier_workspaces {
+                            new.trial.history.len()
+                        } else {
+                            0
+                        }
+                    );
+                }
+            }
+        }
+    }
     #[test]
     #[allow(clippy::too_many_lines)]
     fn quality_checkpoints_preserve_early_amplitude_maps_and_offer_alternatives() {

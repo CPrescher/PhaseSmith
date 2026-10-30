@@ -139,6 +139,37 @@ impl NativeQuality {
         d.set_item("allowed", self.plan.allowed)?;
         Ok(d)
     }
+    #[pyo3(signature=(calculated, rows=1))]
+    fn evaluate_values<'py>(
+        &self,
+        py: Python<'py>,
+        calculated: PyReadonlyArray1<'_, f64>,
+        rows: usize,
+    ) -> PyResult<Bound<'py, pyo3::types::PyList>> {
+        let values = calculated.as_slice()?.to_vec();
+        if rows == 0 || values.len() != rows.checked_mul(self.plan.hkl.len()).unwrap_or(0) {
+            return Err(invalid("invalid score-only batch shape"));
+        }
+        let result = py
+            .detach(|| {
+                let mut scorer = phasesmith_solution::PreparedPhaseScore::new(&self.plan)?;
+                values
+                    .chunks_exact(self.plan.hkl.len())
+                    .map(|v| scorer.evaluate(v))
+                    .collect::<Result<Vec<_>, _>>()
+            })
+            .map_err(invalid)?;
+        let out = pyo3::types::PyList::empty(py);
+        for r in result {
+            let d = PyDict::new(py);
+            d.set_item("correlation", r.correlation)?;
+            d.set_item("r_weak", r.r_weak)?;
+            d.set_item("cfom", r.cfom)?;
+            d.set_item("correlation_defined", r.correlation_defined)?;
+            out.append(d)?;
+        }
+        Ok(out)
+    }
     fn evaluate<'py>(
         &self,
         py: Python<'py>,

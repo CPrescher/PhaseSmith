@@ -511,6 +511,10 @@ class SharedSearchAudit:
     chemical_assignment: bool = False
     iterative_refinement: bool = False
     missing_reflections: bool = False
+    score_only_evaluation: bool = False
+    reusable_fourier_workspaces: bool = False
+    score_only_evaluations: int = 0
+    fourier_workspace_cycles: int = 0
     adaptive_checkpoints: bool = False
     independent_origin_sampling: bool = False
     resolution_extension: float = 1.0
@@ -752,6 +756,8 @@ def solve_structure_elements(
     iterative_refinement: bool = False,
     missing_reflections: bool = False,
     resolution_extension: float = 1.0,
+    score_only_evaluation: bool = False,
+    reusable_fourier_workspaces: bool = False,
     adaptive_checkpoints: bool = False,
     independent_origin_sampling: bool = False,
     cancellation: SolutionCancellation | None = None,
@@ -770,6 +776,10 @@ def solve_structure_elements(
     ``phase_first_selection=False`` tests a checkpoint portfolio instead; this
     control is ignored when quality selection is off.
     ``calculated_shell_normalization=False`` retains the earlier statistic.
+    ``score_only_evaluation=True`` computes unchanged scalar phase merits using
+    cached fixed statistics, without allocating unused gradients.
+    ``reusable_fourier_workspaces=True`` reuses full-grid P1 map/mask/complex
+    buffers and input arrays; double precision, support and cycle rules are unchanged.
     ``adaptive_checkpoints=True`` selects stable quality-ready maps at geometric
     phase checkpoints before the cycle ceiling; full structure validation still
     follows. It requires phase-origin, phase-quality and phase-first selection.
@@ -827,6 +837,8 @@ def solve_structure_elements(
         ("iterative_refinement", iterative_refinement),
         ("missing_reflections", missing_reflections),
         ("adaptive_checkpoints", adaptive_checkpoints),
+        ("score_only_evaluation", score_only_evaluation),
+        ("reusable_fourier_workspaces", reusable_fourier_workspaces),
         ("independent_origin_sampling", independent_origin_sampling),
     ):
         if not isinstance(value, bool):
@@ -841,6 +853,8 @@ def solve_structure_elements(
         phase_origin_selection and wilson_normalization
     ):
         raise ValueError("prediction requires phase_origin_selection and wilson_normalization")
+    if score_only_evaluation and not phase_quality_selection:
+        raise ValueError("score_only_evaluation requires phase_quality_selection")
     if independent_origin_sampling and not phase_origin_selection:
         raise ValueError("independent_origin_sampling requires phase_origin_selection")
     if adaptive_checkpoints and not (
@@ -913,6 +927,8 @@ def solve_structure_elements(
     )
     if not isinstance(group, SpaceGroup) or not isinstance(controls, SolutionOptions):
         raise TypeError("space_group and options must be SpaceGroup and SolutionOptions")
+    if reusable_fourier_workspaces and controls.phasing != "dual_space":
+        raise ValueError("reusable_fourier_workspaces requires dual_space phasing")
     if (missing_reflections or resolution_extension > 1) and controls.phasing != "dual_space":
         raise ValueError("prediction requires phasing=dual_space")
     if phase_quality_selection and controls.phasing != "dual_space":
@@ -953,6 +969,8 @@ def solve_structure_elements(
                 resolution_extension,
                 adaptive_checkpoints,
                 independent_origin_sampling,
+                score_only_evaluation,
+                reusable_fourier_workspaces,
             ),
         ),
     )
