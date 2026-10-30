@@ -65,7 +65,7 @@ type SharedSearchRequest = (
             bool,
             bool,
             bool,
-            (bool, bool, bool, bool, bool, bool, bool),
+            (bool, bool, bool, bool, bool, bool, bool, bool),
         ),
     ),
 );
@@ -213,6 +213,7 @@ fn solve_structure<'py>(
                             fused_phase_workspace,
                             multiplicity_weighted_refinement,
                             ambiguous_assignments,
+                            cached_assignment_refinement,
                         ),
                     ),
                 ),
@@ -269,6 +270,7 @@ fn solve_structure<'py>(
                         cached_normal_refinement,
                         multiplicity_weighted_refinement,
                         ambiguous_assignments,
+                        cached_assignment_refinement,
                     },
                 )
             } else {

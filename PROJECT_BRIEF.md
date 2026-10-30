@@ -2306,6 +2306,26 @@ and source/native hashes match across panels. The 65 holdout outcomes stay close
 
 ## Quality bar
 
+An experimental `cached_assignment_refinement` option activates the existing
+checked normal-matrix cache in short isotropic assignment fits. It requires
+iterative and isotropic assignment refinement, stays false by default, and keeps
+all competing labels, iteration limits, conservative guards and final anisotropic
+fits. Original-Jacobian checks and original-solver fallbacks remain; screening
+cache counters are separate from final-fit counters. New dense/iterative short-fit
+checks reuse independent equations and finite differences, with full search
+recovery compared on all 35 development cases. Diagnosis and results are in
+`docs/solution-assignment-cache.md`; the 65 holdout outcomes remain unopened.
+The completed matched comparison retains the same 19 structures, 26 total counts,
+19 per-element counts and 15 strict structures, with unchanged recovery case sets
+and inferred count vectors. Screening time falls 14.087 to 12.646 seconds (10.23%),
+and summed solve wall time falls 70.908 to 69.393 seconds (2.14%). The median paired
+wall ratio is only 1.00712x (0.71% less time); a broad typical-latency gain is not
+established. All 675 screening fits and 125 final fits remain. There are 4,640
+accepted cached screening steps and zero fallbacks. Full validation passes 2,209
+Python and 414 Rust tests; all 140 predictions precede both reference barriers,
+with matching native/source hashes. This is single-seed development evidence;
+the option stays opt-in and the holdout remains closed.
+
 An experimental `ambiguous_assignments` option adds displacement-compensated
 single/coupled near-element relabels, bounded count-diverse isotropic competition
 and retention of close requested-mode alternatives. It requires the existing
