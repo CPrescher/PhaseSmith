@@ -59,6 +59,7 @@ fn run<'py>(
                     score_only_evaluation: false,
                     reusable_fourier_workspaces: reusable_workspaces,
                     filtered_peak_search: false,
+                    streamed_peak_search: false,
                     batched_fft: false,
                     real_fft: false,
                     fused_phase_workspace: false,
@@ -130,7 +131,7 @@ pub(super) fn adaptive_record<'py>(
 }
 #[pyfunction(name = "_solution_count_free_dual_space")]
 #[allow(clippy::too_many_arguments, clippy::fn_params_excessive_bools)] // Independent diagnostic controls.
-#[pyo3(signature = (shape, cell_parameters, hkl, amplitudes, phases, support, cycles, peak_sigma, peak_cap, mask_sigma, hybrid_m, omit_fraction, seed, patterson_rank, checkpoint_accept_cycle=None, reusable_workspaces=false, filtered_peak_search=false,batched_fft=false, real_fft=false, fused_phase_workspace=false))]
+#[pyo3(signature = (shape, cell_parameters, hkl, amplitudes, phases, support, cycles, peak_sigma, peak_cap, mask_sigma, hybrid_m, omit_fraction, seed, patterson_rank, checkpoint_accept_cycle=None, reusable_workspaces=false, filtered_peak_search=false,batched_fft=false, real_fft=false, fused_phase_workspace=false, streamed_peak_search=false))]
 fn count_free<'py>(
     py: Python<'py>,
     shape: [usize; 3],
@@ -153,6 +154,7 @@ fn count_free<'py>(
     batched_fft: bool,
     real_fft: bool,
     fused_phase_workspace: bool,
+    streamed_peak_search: bool,
 ) -> PyResult<Bound<'py, PyDict>> {
     let cell = cell(&cell_parameters)?;
     let hkl = hkl_rows(&hkl)?;
@@ -189,6 +191,7 @@ fn count_free<'py>(
                         score_only_evaluation: false,
                         reusable_fourier_workspaces: reusable_workspaces,
                         filtered_peak_search,
+                        streamed_peak_search,
                         batched_fft,
                         real_fft,
                         fused_phase_workspace,
@@ -200,6 +203,7 @@ fn count_free<'py>(
                 || batched_fft
                 || real_fft
                 || fused_phase_workspace
+                || streamed_peak_search
             {
                 return Err(phasesmith_solution::SolutionError(
                     "diagnostic checkpoint and execution modes must be tested separately".into(),
@@ -227,6 +231,8 @@ fn count_free<'py>(
         .map_err(invalid)?;
     let d = PyDict::new(py);
     d.set_item("cached_mask_cycles", state.cached_mask_cycles)?;
+    d.set_item("streamed_peak_cycles", state.streamed_peak_cycles)?;
+    d.set_item("peak_rms_fallbacks", state.peak_rms_fallbacks)?;
     d.set_item("density", state.trial.density.into_pyarray(py))?;
     d.set_item("history", state.trial.history.into_pyarray(py))?;
     d.set_item("best_cycle", state.trial.best_cycle)?;
@@ -240,7 +246,7 @@ fn count_free<'py>(
 }
 
 #[pyfunction(name = "_solution_filtered_peaks")]
-#[pyo3(signature=(density,shape,sigma,cap,filtered=true))]
+#[pyo3(signature=(density,shape,sigma,cap,filtered=true,streamed=false))]
 fn filtered_peaks<'py>(
     py: Python<'py>,
     density: PyReadonlyArray1<'_, f64>,
@@ -248,20 +254,29 @@ fn filtered_peaks<'py>(
     sigma: f64,
     cap: usize,
     filtered: bool,
+    streamed: bool,
 ) -> PyResult<Bound<'py, PyDict>> {
     let density = density.as_slice()?.to_vec();
-    let (peaks, effective) = py
+    if streamed && !filtered {
+        return Err(invalid("streamed search requires filtered peaks"));
+    }
+    let (peaks, effective, fallbacks) = py
         .detach(|| {
             if filtered {
-                phasesmith_solution::PreparedAdaptivePeaks::new(shape)?.select(&density, sigma, cap)
+                let mut plan = phasesmith_solution::PreparedAdaptivePeaks::new(shape)?
+                    .with_streamed_scan(streamed);
+                let (peaks, sigma) = plan.select(&density, sigma, cap)?;
+                Ok((peaks, sigma, plan.exact_rms_fallbacks()))
             } else {
                 phasesmith_solution::adaptive_peaks(&density, shape, sigma, cap)
+                    .map(|(p, s)| (p, s, 0))
             }
         })
         .map_err(invalid)?;
     let out = PyDict::new(py);
     out.set_item("peaks", super::array2(py, peaks))?;
     out.set_item("effective_sigma", effective)?;
+    out.set_item("peak_rms_fallbacks", fallbacks)?;
     Ok(out)
 }
 #[pyfunction(name = "_solution_adaptive_projection")]

@@ -1,0 +1,1505 @@
+{
+  "schema": "phasesmith.peak-statistics-retention.v1",
+  "development_cases": 35,
+  "holdout_outcomes_opened": false,
+  "report_sha256": {
+    "control": "3eb3514872e6612b465b35ae9ae41ecdc162600c4ac6f3856deaca93730739d7",
+    "cache": "47e27358ead07f551edc539ab2ad5cc1baeb39fc647ad362fbcbbf7f348d0923"
+  },
+  "previous_best_sha256": "2b2ae34540defad7d1539aa1c2493b13965ad0eb7189d7d5196d566003464d78",
+  "case_sets": {
+    "structures": {
+      "previous_best": [
+        "cod-1549173",
+        "cod-1550276",
+        "cod-2010705",
+        "cod-2010746",
+        "cod-2010901",
+        "cod-2011038",
+        "cod-2011241",
+        "cod-2011451",
+        "cod-2011590",
+        "cod-2021199",
+        "cod-2107296",
+        "cod-2108342",
+        "cod-2203173",
+        "cod-2232654",
+        "cod-2241796",
+        "cod-2242657",
+        "cod-2243197",
+        "cod-2243618",
+        "cod-4326074"
+      ],
+      "control": [
+        "cod-1549173",
+        "cod-1550276",
+        "cod-2010705",
+        "cod-2010746",
+        "cod-2010901",
+        "cod-2011038",
+        "cod-2011241",
+        "cod-2011451",
+        "cod-2011590",
+        "cod-2021199",
+        "cod-2107296",
+        "cod-2108342",
+        "cod-2203173",
+        "cod-2232654",
+        "cod-2241796",
+        "cod-2242657",
+        "cod-2243197",
+        "cod-2243618",
+        "cod-4326074"
+      ],
+      "cache": [
+        "cod-1549173",
+        "cod-1550276",
+        "cod-2010705",
+        "cod-2010746",
+        "cod-2010901",
+        "cod-2011038",
+        "cod-2011241",
+        "cod-2011451",
+        "cod-2011590",
+        "cod-2021199",
+        "cod-2107296",
+        "cod-2108342",
+        "cod-2203173",
+        "cod-2232654",
+        "cod-2241796",
+        "cod-2242657",
+        "cod-2243197",
+        "cod-2243618",
+        "cod-4326074"
+      ]
+    },
+    "total_non_h_counts": {
+      "previous_best": [
+        "cod-1549173",
+        "cod-1550276",
+        "cod-2010543",
+        "cod-2010705",
+        "cod-2010746",
+        "cod-2010825",
+        "cod-2010901",
+        "cod-2011038",
+        "cod-2011241",
+        "cod-2011393",
+        "cod-2011451",
+        "cod-2011590",
+        "cod-2021199",
+        "cod-2021292",
+        "cod-2021310",
+        "cod-2021316",
+        "cod-2107296",
+        "cod-2108342",
+        "cod-2203173",
+        "cod-2232654",
+        "cod-2241796",
+        "cod-2242589",
+        "cod-2242657",
+        "cod-2243197",
+        "cod-2243618",
+        "cod-4326074"
+      ],
+      "control": [
+        "cod-1549173",
+        "cod-1550276",
+        "cod-2010543",
+        "cod-2010705",
+        "cod-2010746",
+        "cod-2010825",
+        "cod-2010901",
+        "cod-2011038",
+        "cod-2011241",
+        "cod-2011393",
+        "cod-2011451",
+        "cod-2011590",
+        "cod-2021199",
+        "cod-2021292",
+        "cod-2021310",
+        "cod-2021316",
+        "cod-2107296",
+        "cod-2108342",
+        "cod-2203173",
+        "cod-2232654",
+        "cod-2241796",
+        "cod-2242589",
+        "cod-2242657",
+        "cod-2243197",
+        "cod-2243618",
+        "cod-4326074"
+      ],
+      "cache": [
+        "cod-1549173",
+        "cod-1550276",
+        "cod-2010543",
+        "cod-2010705",
+        "cod-2010746",
+        "cod-2010825",
+        "cod-2010901",
+        "cod-2011038",
+        "cod-2011241",
+        "cod-2011393",
+        "cod-2011451",
+        "cod-2011590",
+        "cod-2021199",
+        "cod-2021292",
+        "cod-2021310",
+        "cod-2021316",
+        "cod-2107296",
+        "cod-2108342",
+        "cod-2203173",
+        "cod-2232654",
+        "cod-2241796",
+        "cod-2242589",
+        "cod-2242657",
+        "cod-2243197",
+        "cod-2243618",
+        "cod-4326074"
+      ]
+    },
+    "per_element_counts": {
+      "previous_best": [
+        "cod-1549173",
+        "cod-1550276",
+        "cod-2010705",
+        "cod-2010746",
+        "cod-2010901",
+        "cod-2011038",
+        "cod-2011241",
+        "cod-2011451",
+        "cod-2011590",
+        "cod-2021199",
+        "cod-2107296",
+        "cod-2108342",
+        "cod-2203173",
+        "cod-2232654",
+        "cod-2241796",
+        "cod-2242657",
+        "cod-2243197",
+        "cod-2243618",
+        "cod-4326074"
+      ],
+      "control": [
+        "cod-1549173",
+        "cod-1550276",
+        "cod-2010705",
+        "cod-2010746",
+        "cod-2010901",
+        "cod-2011038",
+        "cod-2011241",
+        "cod-2011451",
+        "cod-2011590",
+        "cod-2021199",
+        "cod-2107296",
+        "cod-2108342",
+        "cod-2203173",
+        "cod-2232654",
+        "cod-2241796",
+        "cod-2242657",
+        "cod-2243197",
+        "cod-2243618",
+        "cod-4326074"
+      ],
+      "cache": [
+        "cod-1549173",
+        "cod-1550276",
+        "cod-2010705",
+        "cod-2010746",
+        "cod-2010901",
+        "cod-2011038",
+        "cod-2011241",
+        "cod-2011451",
+        "cod-2011590",
+        "cod-2021199",
+        "cod-2107296",
+        "cod-2108342",
+        "cod-2203173",
+        "cod-2232654",
+        "cod-2241796",
+        "cod-2242657",
+        "cod-2243197",
+        "cod-2243618",
+        "cod-4326074"
+      ]
+    },
+    "strict_002_angstrom": {
+      "previous_best": [
+        "cod-1550276",
+        "cod-2010705",
+        "cod-2010746",
+        "cod-2011038",
+        "cod-2011241",
+        "cod-2011451",
+        "cod-2021199",
+        "cod-2107296",
+        "cod-2203173",
+        "cod-2232654",
+        "cod-2241796",
+        "cod-2242657",
+        "cod-2243197",
+        "cod-2243618",
+        "cod-4326074"
+      ],
+      "control": [
+        "cod-1550276",
+        "cod-2010705",
+        "cod-2010746",
+        "cod-2011038",
+        "cod-2011241",
+        "cod-2011451",
+        "cod-2021199",
+        "cod-2107296",
+        "cod-2203173",
+        "cod-2232654",
+        "cod-2241796",
+        "cod-2242657",
+        "cod-2243197",
+        "cod-2243618",
+        "cod-4326074"
+      ],
+      "cache": [
+        "cod-1550276",
+        "cod-2010705",
+        "cod-2010746",
+        "cod-2011038",
+        "cod-2011241",
+        "cod-2011451",
+        "cod-2021199",
+        "cod-2107296",
+        "cod-2203173",
+        "cod-2232654",
+        "cod-2241796",
+        "cod-2242657",
+        "cod-2243197",
+        "cod-2243618",
+        "cod-4326074"
+      ]
+    }
+  },
+  "cumulative_wall_seconds": {
+    "control": 69.51143179595238,
+    "cache": 67.60997025290271
+  },
+  "cumulative_wall_saving_fraction": 0.027354659426830907,
+  "median_paired_control_over_cache": 1.0197661531574564,
+  "faster_cases": 29,
+  "slower_cases": 6,
+  "identical_model_records_including_no_model": 35,
+  "model_record_mismatch_cases": [],
+  "changed_count_vectors": [],
+  "work_totals": {
+    "control": {
+      "phasing_starts": 95,
+      "quality_scored_cycles": 49655,
+      "adaptive_checkpoint_tests": 0,
+      "score_only_evaluations": 49655,
+      "phase_search_seconds": 30.977531914,
+      "short_phase_slices": 56,
+      "short_quota_completions": 51,
+      "fourier_workspace_cycles": 49657,
+      "filtered_peak_cycles": 49657,
+      "streamed_peak_cycles": 0,
+      "peak_rms_fallbacks": 0,
+      "batched_phase_transforms": 95,
+      "real_phase_transforms": 99302,
+      "cached_mask_cycles": 49657,
+      "fused_fourier_transforms": 99302,
+      "cached_normal_solves": 2460,
+      "normal_cache_fallbacks": 0,
+      "assignment_cached_refinements": 615,
+      "specialized_isotropic_fits": 675,
+      "assignment_cached_normal_solves": 4640,
+      "assignment_normal_cache_fallbacks": 0,
+      "weighted_refinement_fits": 125,
+      "weighted_refinement_input_rows": 768522,
+      "weighted_refinement_family_rows": 233988,
+      "stable_map_handoffs": 0,
+      "screening_refinements": 675,
+      "final_refinements": 125,
+      "completion_evaluations": 74178,
+      "assignment_parent_fits": 107,
+      "ambiguity_continuations": 0,
+      "ambiguity_metric_disagreements": 14,
+      "ambiguity_scores": 10305,
+      "ambiguity_relaxations": 249,
+      "ambiguity_unresolved": 4,
+      "assignment_neighbor_scores": 11799,
+      "assignment_neighbor_fits": 132,
+      "assignment_retained": 488,
+      "assignment_deferred_promotions": 23,
+      "reassignment_evaluations": 21448,
+      "reassignment_changes": 38,
+      "reassignment_screens": 37,
+      "chemical_scale_proposals": 73,
+      "prediction_steps": 0,
+      "prediction_updates": 0,
+      "prediction_clipped": 0,
+      "prediction_seconds": 0.0
+    },
+    "cache": {
+      "phasing_starts": 95,
+      "quality_scored_cycles": 49874,
+      "adaptive_checkpoint_tests": 0,
+      "score_only_evaluations": 49874,
+      "phase_search_seconds": 29.633694747,
+      "short_phase_slices": 56,
+      "short_quota_completions": 51,
+      "fourier_workspace_cycles": 49876,
+      "filtered_peak_cycles": 49876,
+      "streamed_peak_cycles": 49876,
+      "peak_rms_fallbacks": 0,
+      "batched_phase_transforms": 95,
+      "real_phase_transforms": 99740,
+      "cached_mask_cycles": 49876,
+      "fused_fourier_transforms": 99740,
+      "cached_normal_solves": 2460,
+      "normal_cache_fallbacks": 0,
+      "assignment_cached_refinements": 615,
+      "specialized_isotropic_fits": 675,
+      "assignment_cached_normal_solves": 4640,
+      "assignment_normal_cache_fallbacks": 0,
+      "weighted_refinement_fits": 125,
+      "weighted_refinement_input_rows": 768522,
+      "weighted_refinement_family_rows": 233988,
+      "stable_map_handoffs": 0,
+      "screening_refinements": 675,
+      "final_refinements": 125,
+      "completion_evaluations": 74178,
+      "assignment_parent_fits": 107,
+      "ambiguity_continuations": 0,
+      "ambiguity_metric_disagreements": 14,
+      "ambiguity_scores": 10305,
+      "ambiguity_relaxations": 249,
+      "ambiguity_unresolved": 4,
+      "assignment_neighbor_scores": 11799,
+      "assignment_neighbor_fits": 132,
+      "assignment_retained": 488,
+      "assignment_deferred_promotions": 23,
+      "reassignment_evaluations": 21448,
+      "reassignment_changes": 38,
+      "reassignment_screens": 37,
+      "chemical_scale_proposals": 73,
+      "prediction_steps": 0,
+      "prediction_updates": 0,
+      "prediction_clipped": 0,
+      "prediction_seconds": 0.0
+    }
+  },
+  "cases": [
+    {
+      "id": "cod-1549173",
+      "counts": {
+        "previous_best": {
+          "Se": 4,
+          "Cl": 4,
+          "C": 32,
+          "N": 8
+        },
+        "control": {
+          "Se": 4,
+          "Cl": 4,
+          "C": 32,
+          "N": 8
+        },
+        "cache": {
+          "Se": 4,
+          "Cl": 4,
+          "C": 32,
+          "N": 8
+        }
+      },
+      "correct": {
+        "previous_best": true,
+        "control": true,
+        "cache": true
+      },
+      "wall_seconds": {
+        "control": 2.83552437502658,
+        "cache": 2.7272796250181273
+      },
+      "models_identical": true
+    },
+    {
+      "id": "cod-1550276",
+      "counts": {
+        "previous_best": {
+          "S": 8,
+          "O": 16,
+          "N": 8,
+          "C": 4
+        },
+        "control": {
+          "S": 8,
+          "O": 16,
+          "N": 8,
+          "C": 4
+        },
+        "cache": {
+          "S": 8,
+          "O": 16,
+          "N": 8,
+          "C": 4
+        }
+      },
+      "correct": {
+        "previous_best": true,
+        "control": true,
+        "cache": true
+      },
+      "wall_seconds": {
+        "control": 0.9975907080224715,
+        "cache": 0.951800666982308
+      },
+      "models_identical": true
+    },
+    {
+      "id": "cod-2010543",
+      "counts": {
+        "previous_best": {
+          "O": 6,
+          "F": 4,
+          "N": 6,
+          "C": 12
+        },
+        "control": {
+          "O": 6,
+          "F": 4,
+          "N": 6,
+          "C": 12
+        },
+        "cache": {
+          "O": 6,
+          "F": 4,
+          "N": 6,
+          "C": 12
+        }
+      },
+      "correct": {
+        "previous_best": false,
+        "control": false,
+        "cache": false
+      },
+      "wall_seconds": {
+        "control": 4.801328834029846,
+        "cache": 4.763364290993195
+      },
+      "models_identical": true
+    },
+    {
+      "id": "cod-2010647",
+      "counts": {
+        "previous_best": {},
+        "control": {},
+        "cache": {}
+      },
+      "correct": {
+        "previous_best": false,
+        "control": false,
+        "cache": false
+      },
+      "wall_seconds": {
+        "control": 2.3545435830019414,
+        "cache": 2.3043394580017775
+      },
+      "models_identical": true
+    },
+    {
+      "id": "cod-2010705",
+      "counts": {
+        "previous_best": {
+          "Mn": 2,
+          "O": 12,
+          "N": 4,
+          "C": 24
+        },
+        "control": {
+          "Mn": 2,
+          "O": 12,
+          "N": 4,
+          "C": 24
+        },
+        "cache": {
+          "Mn": 2,
+          "O": 12,
+          "N": 4,
+          "C": 24
+        }
+      },
+      "correct": {
+        "previous_best": true,
+        "control": true,
+        "cache": true
+      },
+      "wall_seconds": {
+        "control": 1.8189564580097795,
+        "cache": 1.7687142500071786
+      },
+      "models_identical": true
+    },
+    {
+      "id": "cod-2010746",
+      "counts": {
+        "previous_best": {
+          "Ni": 4,
+          "Cl": 8,
+          "N": 24
+        },
+        "control": {
+          "Ni": 4,
+          "Cl": 8,
+          "N": 24
+        },
+        "cache": {
+          "Ni": 4,
+          "Cl": 8,
+          "N": 24
+        }
+      },
+      "correct": {
+        "previous_best": true,
+        "control": true,
+        "cache": true
+      },
+      "wall_seconds": {
+        "control": 0.6140817090054043,
+        "cache": 0.6193966249702498
+      },
+      "models_identical": true
+    },
+    {
+      "id": "cod-2010825",
+      "counts": {
+        "previous_best": {
+          "I": 2,
+          "N": 16,
+          "O": 6,
+          "C": 14
+        },
+        "control": {
+          "I": 2,
+          "N": 16,
+          "O": 6,
+          "C": 14
+        },
+        "cache": {
+          "I": 2,
+          "N": 16,
+          "O": 6,
+          "C": 14
+        }
+      },
+      "correct": {
+        "previous_best": false,
+        "control": false,
+        "cache": false
+      },
+      "wall_seconds": {
+        "control": 0.9484332090360112,
+        "cache": 0.9456647090264596
+      },
+      "models_identical": true
+    },
+    {
+      "id": "cod-2010901",
+      "counts": {
+        "previous_best": {
+          "Se": 10,
+          "P": 4,
+          "O": 8,
+          "C": 16
+        },
+        "control": {
+          "Se": 10,
+          "P": 4,
+          "O": 8,
+          "C": 16
+        },
+        "cache": {
+          "Se": 10,
+          "P": 4,
+          "O": 8,
+          "C": 16
+        }
+      },
+      "correct": {
+        "previous_best": true,
+        "control": true,
+        "cache": true
+      },
+      "wall_seconds": {
+        "control": 0.7830682079656981,
+        "cache": 0.7224034999962896
+      },
+      "models_identical": true
+    },
+    {
+      "id": "cod-2011038",
+      "counts": {
+        "previous_best": {
+          "Bi": 12,
+          "Ba": 16,
+          "K": 4,
+          "O": 4
+        },
+        "control": {
+          "Bi": 12,
+          "Ba": 16,
+          "K": 4,
+          "O": 4
+        },
+        "cache": {
+          "Bi": 12,
+          "Ba": 16,
+          "K": 4,
+          "O": 4
+        }
+      },
+      "correct": {
+        "previous_best": true,
+        "control": true,
+        "cache": true
+      },
+      "wall_seconds": {
+        "control": 2.018970208999235,
+        "cache": 1.966935749980621
+      },
+      "models_identical": true
+    },
+    {
+      "id": "cod-2011181",
+      "counts": {
+        "previous_best": {
+          "Fe": 4,
+          "Cl": 4,
+          "C": 4,
+          "O": 20
+        },
+        "control": {
+          "Fe": 4,
+          "Cl": 4,
+          "C": 4,
+          "O": 20
+        },
+        "cache": {
+          "Fe": 4,
+          "Cl": 4,
+          "C": 4,
+          "O": 20
+        }
+      },
+      "correct": {
+        "previous_best": false,
+        "control": false,
+        "cache": false
+      },
+      "wall_seconds": {
+        "control": 4.137018541980069,
+        "cache": 4.063233292021323
+      },
+      "models_identical": true
+    },
+    {
+      "id": "cod-2011236",
+      "counts": {
+        "previous_best": {},
+        "control": {},
+        "cache": {}
+      },
+      "correct": {
+        "previous_best": false,
+        "control": false,
+        "cache": false
+      },
+      "wall_seconds": {
+        "control": 1.3185912919580005,
+        "cache": 1.3212432919535786
+      },
+      "models_identical": true
+    },
+    {
+      "id": "cod-2011241",
+      "counts": {
+        "previous_best": {
+          "Cr": 2,
+          "O": 8,
+          "N": 4,
+          "C": 10
+        },
+        "control": {
+          "Cr": 2,
+          "O": 8,
+          "N": 4,
+          "C": 10
+        },
+        "cache": {
+          "Cr": 2,
+          "O": 8,
+          "N": 4,
+          "C": 10
+        }
+      },
+      "correct": {
+        "previous_best": true,
+        "control": true,
+        "cache": true
+      },
+      "wall_seconds": {
+        "control": 1.7691296249977313,
+        "cache": 1.7493587079807185
+      },
+      "models_identical": true
+    },
+    {
+      "id": "cod-2011346",
+      "counts": {
+        "previous_best": {
+          "Cu": 4,
+          "Cl": 16,
+          "N": 8,
+          "C": 4
+        },
+        "control": {
+          "Cu": 4,
+          "Cl": 16,
+          "N": 8,
+          "C": 4
+        },
+        "cache": {
+          "Cu": 4,
+          "Cl": 16,
+          "N": 8,
+          "C": 4
+        }
+      },
+      "correct": {
+        "previous_best": false,
+        "control": false,
+        "cache": false
+      },
+      "wall_seconds": {
+        "control": 4.0041729169897735,
+        "cache": 3.9833707090001553
+      },
+      "models_identical": true
+    },
+    {
+      "id": "cod-2011393",
+      "counts": {
+        "previous_best": {
+          "S": 2,
+          "O": 8,
+          "N": 8,
+          "C": 20
+        },
+        "control": {
+          "S": 2,
+          "O": 8,
+          "N": 8,
+          "C": 20
+        },
+        "cache": {
+          "S": 2,
+          "O": 8,
+          "N": 8,
+          "C": 20
+        }
+      },
+      "correct": {
+        "previous_best": false,
+        "control": false,
+        "cache": false
+      },
+      "wall_seconds": {
+        "control": 2.6156402499764226,
+        "cache": 2.620347833028063
+      },
+      "models_identical": true
+    },
+    {
+      "id": "cod-2011426",
+      "counts": {
+        "previous_best": {
+          "Br": 16,
+          "Ti": 4,
+          "N": 12,
+          "C": 16
+        },
+        "control": {
+          "Br": 16,
+          "Ti": 4,
+          "N": 12,
+          "C": 16
+        },
+        "cache": {
+          "Br": 16,
+          "Ti": 4,
+          "N": 12,
+          "C": 16
+        }
+      },
+      "correct": {
+        "previous_best": false,
+        "control": false,
+        "cache": false
+      },
+      "wall_seconds": {
+        "control": 1.7556008329847828,
+        "cache": 1.7532672499655746
+      },
+      "models_identical": true
+    },
+    {
+      "id": "cod-2011451",
+      "counts": {
+        "previous_best": {
+          "Ni": 2,
+          "Cl": 4,
+          "N": 8,
+          "C": 24
+        },
+        "control": {
+          "Ni": 2,
+          "Cl": 4,
+          "N": 8,
+          "C": 24
+        },
+        "cache": {
+          "Ni": 2,
+          "Cl": 4,
+          "N": 8,
+          "C": 24
+        }
+      },
+      "correct": {
+        "previous_best": true,
+        "control": true,
+        "cache": true
+      },
+      "wall_seconds": {
+        "control": 0.9828152079717256,
+        "cache": 0.948952000006102
+      },
+      "models_identical": true
+    },
+    {
+      "id": "cod-2011590",
+      "counts": {
+        "previous_best": {
+          "O": 4,
+          "N": 4,
+          "C": 5,
+          "Li": 1
+        },
+        "control": {
+          "O": 4,
+          "N": 4,
+          "C": 5,
+          "Li": 1
+        },
+        "cache": {
+          "O": 4,
+          "N": 4,
+          "C": 5,
+          "Li": 1
+        }
+      },
+      "correct": {
+        "previous_best": true,
+        "control": true,
+        "cache": true
+      },
+      "wall_seconds": {
+        "control": 1.2096135000465438,
+        "cache": 1.1751242919708602
+      },
+      "models_identical": true
+    },
+    {
+      "id": "cod-2020988",
+      "counts": {
+        "previous_best": {
+          "S": 4,
+          "O": 10,
+          "N": 12,
+          "C": 14
+        },
+        "control": {
+          "S": 4,
+          "O": 10,
+          "N": 12,
+          "C": 14
+        },
+        "cache": {
+          "S": 4,
+          "O": 10,
+          "N": 12,
+          "C": 14
+        }
+      },
+      "correct": {
+        "previous_best": false,
+        "control": false,
+        "cache": false
+      },
+      "wall_seconds": {
+        "control": 4.266138999955729,
+        "cache": 4.197048207977787
+      },
+      "models_identical": true
+    },
+    {
+      "id": "cod-2021199",
+      "counts": {
+        "previous_best": {
+          "Cl": 6,
+          "O": 4,
+          "C": 26,
+          "N": 6
+        },
+        "control": {
+          "Cl": 6,
+          "O": 4,
+          "C": 26,
+          "N": 6
+        },
+        "cache": {
+          "Cl": 6,
+          "O": 4,
+          "C": 26,
+          "N": 6
+        }
+      },
+      "correct": {
+        "previous_best": true,
+        "control": true,
+        "cache": true
+      },
+      "wall_seconds": {
+        "control": 4.1969422090332955,
+        "cache": 4.101439916994423
+      },
+      "models_identical": true
+    },
+    {
+      "id": "cod-2021292",
+      "counts": {
+        "previous_best": {
+          "Cl": 4,
+          "O": 10,
+          "N": 14,
+          "C": 10
+        },
+        "control": {
+          "Cl": 4,
+          "O": 10,
+          "N": 14,
+          "C": 10
+        },
+        "cache": {
+          "Cl": 4,
+          "O": 10,
+          "N": 14,
+          "C": 10
+        }
+      },
+      "correct": {
+        "previous_best": false,
+        "control": false,
+        "cache": false
+      },
+      "wall_seconds": {
+        "control": 3.9613935420056805,
+        "cache": 3.848244499997236
+      },
+      "models_identical": true
+    },
+    {
+      "id": "cod-2021310",
+      "counts": {
+        "previous_best": {
+          "Br": 3,
+          "O": 6,
+          "N": 6,
+          "C": 30
+        },
+        "control": {
+          "Br": 3,
+          "O": 6,
+          "N": 6,
+          "C": 30
+        },
+        "cache": {
+          "Br": 3,
+          "O": 6,
+          "N": 6,
+          "C": 30
+        }
+      },
+      "correct": {
+        "previous_best": false,
+        "control": false,
+        "cache": false
+      },
+      "wall_seconds": {
+        "control": 0.6075205000233836,
+        "cache": 0.6163142500445247
+      },
+      "models_identical": true
+    },
+    {
+      "id": "cod-2021316",
+      "counts": {
+        "previous_best": {
+          "Br": 4,
+          "O": 10,
+          "N": 8,
+          "C": 22
+        },
+        "control": {
+          "Br": 4,
+          "O": 10,
+          "N": 8,
+          "C": 22
+        },
+        "cache": {
+          "Br": 4,
+          "O": 10,
+          "N": 8,
+          "C": 22
+        }
+      },
+      "correct": {
+        "previous_best": false,
+        "control": false,
+        "cache": false
+      },
+      "wall_seconds": {
+        "control": 1.7853453339776024,
+        "cache": 1.7478768750443123
+      },
+      "models_identical": true
+    },
+    {
+      "id": "cod-2102156",
+      "counts": {
+        "previous_best": {},
+        "control": {},
+        "cache": {}
+      },
+      "correct": {
+        "previous_best": false,
+        "control": false,
+        "cache": false
+      },
+      "wall_seconds": {
+        "control": 2.3555211659986526,
+        "cache": 2.247283582983073
+      },
+      "models_identical": true
+    },
+    {
+      "id": "cod-2107296",
+      "counts": {
+        "previous_best": {
+          "Y": 24,
+          "K": 8,
+          "F": 80
+        },
+        "control": {
+          "Y": 24,
+          "K": 8,
+          "F": 80
+        },
+        "cache": {
+          "Y": 24,
+          "K": 8,
+          "F": 80
+        }
+      },
+      "correct": {
+        "previous_best": true,
+        "control": true,
+        "cache": true
+      },
+      "wall_seconds": {
+        "control": 0.6213012920343317,
+        "cache": 0.6143489169771783
+      },
+      "models_identical": true
+    },
+    {
+      "id": "cod-2108342",
+      "counts": {
+        "previous_best": {
+          "Pb": 4,
+          "Se": 8,
+          "Br": 8,
+          "Cu": 8,
+          "O": 24
+        },
+        "control": {
+          "Pb": 4,
+          "Se": 8,
+          "Br": 8,
+          "Cu": 8,
+          "O": 24
+        },
+        "cache": {
+          "Pb": 4,
+          "Se": 8,
+          "Br": 8,
+          "Cu": 8,
+          "O": 24
+        }
+      },
+      "correct": {
+        "previous_best": true,
+        "control": true,
+        "cache": true
+      },
+      "wall_seconds": {
+        "control": 0.5649111249949783,
+        "cache": 0.5588749589514919
+      },
+      "models_identical": true
+    },
+    {
+      "id": "cod-2201295",
+      "counts": {
+        "previous_best": {},
+        "control": {},
+        "cache": {}
+      },
+      "correct": {
+        "previous_best": false,
+        "control": false,
+        "cache": false
+      },
+      "wall_seconds": {
+        "control": 1.1577903750003316,
+        "cache": 1.1173544169869274
+      },
+      "models_identical": true
+    },
+    {
+      "id": "cod-2203173",
+      "counts": {
+        "previous_best": {
+          "Sc": 6,
+          "O": 36,
+          "C": 18
+        },
+        "control": {
+          "Sc": 6,
+          "O": 36,
+          "C": 18
+        },
+        "cache": {
+          "Sc": 6,
+          "O": 36,
+          "C": 18
+        }
+      },
+      "correct": {
+        "previous_best": true,
+        "control": true,
+        "cache": true
+      },
+      "wall_seconds": {
+        "control": 0.9956412499886937,
+        "cache": 1.003037917020265
+      },
+      "models_identical": true
+    },
+    {
+      "id": "cod-2232654",
+      "counts": {
+        "previous_best": {
+          "Pr": 2,
+          "Br": 2,
+          "O": 2
+        },
+        "control": {
+          "Pr": 2,
+          "Br": 2,
+          "O": 2
+        },
+        "cache": {
+          "Pr": 2,
+          "Br": 2,
+          "O": 2
+        }
+      },
+      "correct": {
+        "previous_best": true,
+        "control": true,
+        "cache": true
+      },
+      "wall_seconds": {
+        "control": 0.24039875000016764,
+        "cache": 0.23842787503963336
+      },
+      "models_identical": true
+    },
+    {
+      "id": "cod-2241159",
+      "counts": {
+        "previous_best": {
+          "Sr": 4,
+          "Ni": 8,
+          "Fe": 4,
+          "P": 12,
+          "O": 16
+        },
+        "control": {
+          "Sr": 4,
+          "Ni": 8,
+          "Fe": 4,
+          "P": 12,
+          "O": 16
+        },
+        "cache": {
+          "Sr": 4,
+          "Ni": 8,
+          "Fe": 4,
+          "P": 12,
+          "O": 16
+        }
+      },
+      "correct": {
+        "previous_best": false,
+        "control": false,
+        "cache": false
+      },
+      "wall_seconds": {
+        "control": 4.067394834011793,
+        "cache": 3.988556416996289
+      },
+      "models_identical": true
+    },
+    {
+      "id": "cod-2241796",
+      "counts": {
+        "previous_best": {
+          "Nb": 2,
+          "F": 8
+        },
+        "control": {
+          "Nb": 2,
+          "F": 8
+        },
+        "cache": {
+          "Nb": 2,
+          "F": 8
+        }
+      },
+      "correct": {
+        "previous_best": true,
+        "control": true,
+        "cache": true
+      },
+      "wall_seconds": {
+        "control": 0.5150784580036998,
+        "cache": 0.4562443339964375
+      },
+      "models_identical": true
+    },
+    {
+      "id": "cod-2242589",
+      "counts": {
+        "previous_best": {
+          "S": 2,
+          "O": 4,
+          "N": 10,
+          "C": 17
+        },
+        "control": {
+          "S": 2,
+          "O": 4,
+          "N": 10,
+          "C": 17
+        },
+        "cache": {
+          "S": 2,
+          "O": 4,
+          "N": 10,
+          "C": 17
+        }
+      },
+      "correct": {
+        "previous_best": false,
+        "control": false,
+        "cache": false
+      },
+      "wall_seconds": {
+        "control": 5.494459167006426,
+        "cache": 4.931231125025079
+      },
+      "models_identical": true
+    },
+    {
+      "id": "cod-2242657",
+      "counts": {
+        "previous_best": {
+          "Te": 2,
+          "O": 14,
+          "C": 12,
+          "N": 4
+        },
+        "control": {
+          "Te": 2,
+          "O": 14,
+          "C": 12,
+          "N": 4
+        },
+        "cache": {
+          "Te": 2,
+          "O": 14,
+          "C": 12,
+          "N": 4
+        }
+      },
+      "correct": {
+        "previous_best": true,
+        "control": true,
+        "cache": true
+      },
+      "wall_seconds": {
+        "control": 0.7230085000046529,
+        "cache": 0.624114083009772
+      },
+      "models_identical": true
+    },
+    {
+      "id": "cod-2243197",
+      "counts": {
+        "previous_best": {
+          "P": 2,
+          "O": 12,
+          "N": 8,
+          "C": 24
+        },
+        "control": {
+          "P": 2,
+          "O": 12,
+          "N": 8,
+          "C": 24
+        },
+        "cache": {
+          "P": 2,
+          "O": 12,
+          "N": 8,
+          "C": 24
+        }
+      },
+      "correct": {
+        "previous_best": true,
+        "control": true,
+        "cache": true
+      },
+      "wall_seconds": {
+        "control": 0.5663935839547776,
+        "cache": 0.6210682920063846
+      },
+      "models_identical": true
+    },
+    {
+      "id": "cod-2243618",
+      "counts": {
+        "previous_best": {
+          "Tl": 6,
+          "Cl": 18,
+          "Mg": 6
+        },
+        "control": {
+          "Tl": 6,
+          "Cl": 18,
+          "Mg": 6
+        },
+        "cache": {
+          "Tl": 6,
+          "Cl": 18,
+          "Mg": 6
+        }
+      },
+      "correct": {
+        "previous_best": true,
+        "control": true,
+        "cache": true
+      },
+      "wall_seconds": {
+        "control": 2.1320531250094064,
+        "cache": 2.0195258329622447
+      },
+      "models_identical": true
+    },
+    {
+      "id": "cod-4326074",
+      "counts": {
+        "previous_best": {
+          "Rb": 1,
+          "As": 3,
+          "Zn": 4
+        },
+        "control": {
+          "Rb": 1,
+          "As": 3,
+          "Zn": 4
+        },
+        "cache": {
+          "Rb": 1,
+          "As": 3,
+          "Zn": 4
+        }
+      },
+      "correct": {
+        "previous_best": true,
+        "control": true,
+        "cache": true
+      },
+      "wall_seconds": {
+        "control": 0.29506012494675815,
+        "cache": 0.29418249998707324
+      },
+      "models_identical": true
+    }
+  ],
+  "qualification": "Complete development panels only. Exact recovery case sets compared with fresh matched control and previous best. All 35 inferred count vectors recorded, including no-model outcomes. One balanced collection; timings remain host-sensitive.",
+  "stage_seconds": {
+    "control": {
+      "origin_seconds": 1.4333042890000003,
+      "recycling_seconds": 1.155893627,
+      "completion_seconds": 1.8400126320000008,
+      "screening_seconds": 11.820411373,
+      "refinement_seconds": 11.945964881000002
+    },
+    "cache": {
+      "origin_seconds": 1.445082748,
+      "recycling_seconds": 1.156433377,
+      "completion_seconds": 1.8337319170000004,
+      "screening_seconds": 11.784237953,
+      "refinement_seconds": 11.652826454000005
+    }
+  },
+  "phase_cycle_variation": [
+    {
+      "id": "cod-2011181",
+      "control": 2245,
+      "cache": 2328
+    },
+    {
+      "id": "cod-2011346",
+      "control": 2334,
+      "cache": 2400
+    },
+    {
+      "id": "cod-2241159",
+      "control": 2223,
+      "cache": 2293
+    }
+  ],
+  "phase_cycle_qualification": "Existing per-start wall-clock safeguards may produce cycle-count differences; scheduling rules, quotas and caps are unchanged.",
+  "retention_verifier_source": "import json,hashlib\nfrom pathlib import Path\nfrom collections import Counter\nimport numpy as np\nprefix='structure-solution-peak-statistics'\ndef load(p):return json.loads(Path(p).read_text())\ndef sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()\ndef rows(p):return {x['id']:x for x in load(p)['runs'] if x['method']=='phasesmith'}\npaths={m:Path('benchmarks')/f'{prefix}-{m}-macos.json' for m in ['control','cache']}\na,b=(rows(paths[m]) for m in ['control','cache'])\nhistory=Path('benchmarks/structure-solution-isotropic-evaluation-cache-macos.json');old=rows(history)\nassert a.keys()==b.keys()==old.keys() and len(a)==35\nchecks={'structures':lambda r:bool(r['correct']),\n 'total_non_h_counts':lambda r:bool(r['total_non_h_count_correct']),\n 'per_element_counts':lambda r:bool((r.get('reference_audit') or {}).get('counts_match')),\n 'strict_002_angstrom':lambda r:bool((r.get('reference_audit') or {}).get('strict_002_angstrom'))}\nsets={k:{m:sorted(i for i,r in rr.items() if fn(r)) for m,rr in [('previous_best',old),('control',a),('cache',b)]} for k,fn in checks.items()}\nassert len(sets['structures']['previous_best'])==19\nassert sets['structures']['control']==sets['structures']['previous_best']\nassert set(sets['structures']['previous_best']) <= set(sets['structures']['cache']), 'lost previous structure'\nfor name, group in sets.items():\n    assert group['previous_best'] == group['control'] == group['cache'], name\nassert [len(sets[k]['cache']) for k in checks] == [19,26,19,15]\ncase_rows=[]\nfor i in sorted(a):\n counts={m:dict(Counter(r[i]['model']['species'])) if r[i].get('model') else {} for m,r in [('previous_best',old),('control',a),('cache',b)]}\n assert counts['previous_best'] == counts['control'] == counts['cache'], i\n same=json.dumps(a[i].get('model'),sort_keys=True,allow_nan=False)==json.dumps(b[i].get('model'),sort_keys=True,allow_nan=False)\n case_rows.append({'id':i,'counts':counts,'correct':{m:r[i]['correct'] for m,r in [('previous_best',old),('control',a),('cache',b)]},'wall_seconds':{m:r[i]['wall_seconds_including_startup'] for m,r in [('control',a),('cache',b)]},'models_identical':same})\ncomparison=load(Path('benchmarks')/f'{prefix}-comparison-macos.json')\nwork={m:comparison['runs'][m]['work_totals'] for m in ['control','cache']}\nwall={m:sum(r['wall_seconds_including_startup'] for r in rr.values()) for m,rr in [('control',a),('cache',b)]}\nratios=[a[i]['wall_seconds_including_startup']/b[i]['wall_seconds_including_startup'] for i in a]\nrecord={'schema':'phasesmith.peak-statistics-retention.v1','development_cases':35,'holdout_outcomes_opened':False,'report_sha256':{m:sha(p) for m,p in paths.items()},'previous_best_sha256':sha(history),'case_sets':sets,'cumulative_wall_seconds':wall,'cumulative_wall_saving_fraction':1-wall['cache']/wall['control'],'median_paired_control_over_cache':float(np.median(ratios)),'faster_cases':sum(r>1 for r in ratios),'slower_cases':sum(r<1 for r in ratios),'identical_model_records_including_no_model':sum(r['models_identical'] for r in case_rows),'model_record_mismatch_cases':[r['id'] for r in case_rows if not r['models_identical']],'changed_count_vectors':[r['id'] for r in case_rows if r['counts']['control']!=r['counts']['cache']],'work_totals':work,'cases':case_rows,'qualification':'Complete development panels only. Exact recovery case sets compared with fresh matched control and previous best. All 35 inferred count vectors recorded, including no-model outcomes. One balanced collection; timings remain host-sensitive.'}\nrecord['stage_seconds']={}\nfor m in ['control','cache']:\n stages=Counter()\n for row in comparison['runs'][m]['cases']:stages.update(row['stage_seconds'])\n record['stage_seconds'][m]=dict(stages)\nca={x['id']:x for x in comparison['runs']['control']['cases']};cb={x['id']:x for x in comparison['runs']['cache']['cases']}\nrecord['phase_cycle_variation']=[{'id':i,'control':ca[i]['fourier_workspace_cycles'],'cache':cb[i]['fourier_workspace_cycles']} for i in ca if ca[i]['fourier_workspace_cycles']!=cb[i]['fourier_workspace_cycles']]\nrecord['phase_cycle_qualification']='Existing per-start wall-clock safeguards may produce cycle-count differences; scheduling rules, quotas and caps are unchanged.'\nrecord['retention_verifier_source']=Path(__file__).read_text()\nPath('benchmarks',f'{prefix}-retention-macos.json').write_text(json.dumps(record,indent=2)+'\\n')\nprint(json.dumps({k:v for k,v in record.items() if k not in ['cases','case_sets','work_totals','retention_verifier_source']},indent=2))\nfor m in ['control','cache']:print(m,comparison['runs'][m]['summary']['phasesmith'],work[m])\n"
+}

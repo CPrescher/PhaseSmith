@@ -98,6 +98,10 @@ pub struct DualSpaceResult {
     pub fourier_workspace_cycles: usize,
     /// Actual cycles using exact threshold-filtered peak selection.
     pub filtered_peak_cycles: usize,
+    /// Actual selections using guarded streamed peak statistics.
+    pub streamed_peak_cycles: usize,
+    /// Actual fallbacks to the original scalar RMS near thresholds.
+    pub peak_rms_fallbacks: usize,
     /// Actual batched 3D transforms in this P1 phase call.
     pub batched_phase_transforms: usize,
     /// Actual packed-real transforms in P1 cycles, excluding initialization.
@@ -191,7 +195,7 @@ pub fn atomic_projection_cached(
     options: &DualSpaceOptions,
     cycle: usize,
 ) -> Result<Vec<f64>, SolutionError> {
-    let mut workspace = AtomicWorkspace::new(shape, cell, options, false, true)?;
+    let mut workspace = AtomicWorkspace::new(shape, cell, options, false, true, false)?;
     workspace.update(density, shape, options, cycle)?;
     Ok(workspace.projected)
 }
@@ -254,6 +258,7 @@ impl AtomicWorkspace {
         options: &DualSpaceOptions,
         filtered_peaks: bool,
         cached_mask: bool,
+        streamed_peaks: bool,
     ) -> Result<Self, SolutionError> {
         validate_options(options)?;
         let geometry = cell.geometry().map_err(|e| error(e.to_string()))?;
@@ -276,7 +281,7 @@ impl AtomicWorkspace {
             mask: vec![0.; n],
             projected: vec![0.; n],
             peaks: if filtered_peaks {
-                Some(crate::PreparedAdaptivePeaks::new(shape)?)
+                Some(crate::PreparedAdaptivePeaks::new(shape)?.with_streamed_scan(streamed_peaks))
             } else {
                 None
             },
@@ -577,6 +582,8 @@ pub struct PhasingExecution {
     pub reusable_fourier_workspaces: bool,
     /// Filter impossible adaptive peaks before cached periodic neighbor comparisons.
     pub filtered_peak_search: bool,
+    /// Stream candidates and guard vectorized RMS threshold decisions.
+    pub streamed_peak_search: bool,
     /// Batch contiguous FFT lines through blocked small-slab staging.
     pub batched_fft: bool,
     /// Packed real-density transforms for the two P1 cycle Fourier operations.
@@ -701,6 +708,7 @@ pub(crate) fn dual_space_guided_prediction(
         score_only_evaluation,
         reusable_fourier_workspaces,
         filtered_peak_search,
+        streamed_peak_search,
         batched_fft,
         real_fft,
         fused_phase_workspace,
@@ -712,6 +720,9 @@ pub(crate) fn dual_space_guided_prediction(
         return Err(error(
             "filtered peak search and batched FFT require reusable Fourier workspaces",
         ));
+    }
+    if streamed_peak_search && !filtered_peak_search {
+        return Err(error("streamed peak search requires filtered peak search"));
     }
     if real_fft && !batched_fft {
         return Err(error("real FFT requires batched FFTs"));
@@ -814,6 +825,7 @@ pub(crate) fn dual_space_guided_prediction(
             options,
             filtered_peak_search,
             fused_phase_workspace,
+            streamed_peak_search,
         )?)
     } else {
         None
@@ -1142,6 +1154,14 @@ pub(crate) fn dual_space_guided_prediction(
         real_phase_transforms: fft.real_calls(),
         cached_mask_cycles: workspace.as_ref().map_or(0, |w| w.cached_cycles),
         fused_fourier_transforms,
+        streamed_peak_cycles: workspace
+            .as_ref()
+            .and_then(|w| w.peaks.as_ref())
+            .map_or(0, crate::PreparedAdaptivePeaks::streamed_calls),
+        peak_rms_fallbacks: workspace
+            .as_ref()
+            .and_then(|w| w.peaks.as_ref())
+            .map_or(0, crate::PreparedAdaptivePeaks::exact_rms_fallbacks),
         filtered_peak_cycles: if filtered_peak_search
             && matches!(options.peak_selection, PeakSelection::Adaptive { .. })
         {
@@ -1231,6 +1251,7 @@ mod tests {
                         score_only_evaluation: true,
                         reusable_fourier_workspaces: false,
                         filtered_peak_search: false,
+                        streamed_peak_search: false,
                         batched_fft: false,
                         real_fft: false,
                         fused_phase_workspace: false,
@@ -1239,6 +1260,7 @@ mod tests {
                         score_only_evaluation: false,
                         reusable_fourier_workspaces: true,
                         filtered_peak_search: false,
+                        streamed_peak_search: false,
                         batched_fft: false,
                         real_fft: false,
                         fused_phase_workspace: false,
@@ -1247,6 +1269,7 @@ mod tests {
                         score_only_evaluation: true,
                         reusable_fourier_workspaces: true,
                         filtered_peak_search: false,
+                        streamed_peak_search: false,
                         batched_fft: false,
                         real_fft: false,
                         fused_phase_workspace: false,
@@ -1255,6 +1278,7 @@ mod tests {
                         score_only_evaluation: true,
                         reusable_fourier_workspaces: true,
                         filtered_peak_search: true,
+                        streamed_peak_search: false,
                         batched_fft: false,
                         real_fft: false,
                         fused_phase_workspace: false,
@@ -1263,6 +1287,7 @@ mod tests {
                         score_only_evaluation: true,
                         reusable_fourier_workspaces: true,
                         filtered_peak_search: true,
+                        streamed_peak_search: false,
                         batched_fft: true,
                         real_fft: false,
                         fused_phase_workspace: false,

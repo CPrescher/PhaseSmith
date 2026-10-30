@@ -1,0 +1,852 @@
+{
+  "schema": "phasesmith.peak-statistics-kernels.v1",
+  "baseline": "461aaa0",
+  "created_utc": "2026-10-30T18:23:03.562096+00:00",
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "command": "cargo bench -p phasesmith-solution --bench solution -- peak_statistics_ --sample-size 20 --warm-up-time 1 --measurement-time 2",
+  "benchmark_source_sha256": "89c31873d8174497176331b575b29af289f3a3a8922085597cde5bfa66229f02",
+  "executable": "target/release/deps/solution-a51ba219c0abff5d",
+  "executable_sha256": "52358a9e3238dab87816544df2d8cfb3be22a9552d01a6dfcd5c7e3de8c9d58a",
+  "source_sha256": {
+    "crates/phasesmith-solution/src/adp_refinement.rs": "19b6a573cf02a5581bb7922fe2aebd76280ce7575eeb100809a69dddf425bd51",
+    "crates/phasesmith-solution/src/assignment_ambiguity.rs": "14d991c0fd8553f4a23818fde9ba24fb2975ea5bb520a531b9417b6049cadded",
+    "crates/phasesmith-solution/src/atomic_mask.rs": "9a376037f445c67e0de4bf855ceda2d7615b41b073a7ae4746fab5b0eeac84eb",
+    "crates/phasesmith-solution/src/chemical_labels.rs": "4a45daa0a0eb236d448578a5ba5b6d2726599e3161e8888c378e7c42e5c6c0d5",
+    "crates/phasesmith-solution/src/completion.rs": "08523bbe80b71f0f29f01345d36713ac8dd3cb6134e812414ea6be5c94dd3081",
+    "crates/phasesmith-solution/src/completion_orbit.rs": "74901c137016cfdf5b18f911282fa2b995b80fb183508856b91ca8a902b52227",
+    "crates/phasesmith-solution/src/data.rs": "3f27a939350ff94f6722c23b1d2609ff10b9ec8119794e2a7cf2076cea27468e",
+    "crates/phasesmith-solution/src/dual_space.rs": "85184fc51c9bab0243f9c1010cb70b3147d765a610ab15c02883c6269d961004",
+    "crates/phasesmith-solution/src/fft_layout.rs": "b7222a0b26104f377447e1f69fa1697aced9b5e579b75526dd268e8abd285a36",
+    "crates/phasesmith-solution/src/fourier.rs": "80b353611b38b749ee0b3a30ddf4667c898b51a8eb473af241928b2177a3a14e",
+    "crates/phasesmith-solution/src/isotropic_assignment.rs": "af377a9977f443bf4562b24ee346098a4f9bf1e0c509c494ed4cd33990ba2dc2",
+    "crates/phasesmith-solution/src/isotropic_evaluation.rs": "004d05d17fd06d307cc65bf1734971f8dea67ac6b816d0a14b5a1bd32bda5bda",
+    "crates/phasesmith-solution/src/lib.rs": "8007593a7d3f4ef185b682a56689bd8aee6df106871dac63e5c2c044563d5479",
+    "crates/phasesmith-solution/src/linear_step.rs": "7d52c8d85a9c27f4c8284749804ff77b233379f665c34095d07f1e3492f7fd63",
+    "crates/phasesmith-solution/src/math3.rs": "fa00ccf3888b6bd86fa62c7b160a8e5f11d933e3736231342a179459d247bd4d",
+    "crates/phasesmith-solution/src/model.rs": "c0d802de5d8725f527ab1b40181fe0d4b12387b2c715ad188de5b409e0105139",
+    "crates/phasesmith-solution/src/peak_completion.rs": "35ad4578efcdb407b78b8a513e24ca2bc6f0246ec4bf6c47f1890f297d71dfde",
+    "crates/phasesmith-solution/src/peak_density.rs": "97a242cae68157a2adc647beb78c2fa6c8a4a60ff80b875cd9fa2a60362cf37f",
+    "crates/phasesmith-solution/src/peak_scan.rs": "4f948de041ccfe83f985646f874b2303475fe26eb9dbc0d687e95bef365f3d2e",
+    "crates/phasesmith-solution/src/phase_checkpoint.rs": "1d227a8d3dff3c8a78bf44785e8d539e22fd5ec496abc765b7f0672ed66c9dec",
+    "crates/phasesmith-solution/src/phase_origin.rs": "99d6778b0eda65dd0c2fa559ed3c05171db7d9caab3e25ddf02dc8d24b29204e",
+    "crates/phasesmith-solution/src/phase_quality.rs": "848a42a21f5192c6f843f86161b355c9129e963cb806f62df186ce19eec56580",
+    "crates/phasesmith-solution/src/phase_schedule.rs": "b11fb2c8e54d6e51836f42396cbbbd1f3759d0c04b9b75120b14019ec438240e",
+    "crates/phasesmith-solution/src/phase_score.rs": "eb637d9c87787eb5eff9663aae9f6edbdc85b501170ad21d2624e115160699c6",
+    "crates/phasesmith-solution/src/real_fourier.rs": "3b9616133fec60090d339fcb6ba7aaaf721149a736b6429ab1a65f97a2daa113",
+    "crates/phasesmith-solution/src/refinement_families.rs": "70901272c21e54b67aaa7493678e83091e6f8661217115c4cf9769f36e9a2957",
+    "crates/phasesmith-solution/src/reflection_prediction.rs": "2dd0a2f8d1ccc5cccab9d1bafcb034bc52fd409d45284b026c6ad95f26ee07f9",
+    "crates/phasesmith-solution/src/shared_phase_path.rs": "2e2336ab565005645d89aa24b2bbd157b7c3d069671b00befa8927dfbb29a98e",
+    "crates/phasesmith-solution/src/shared_pool.rs": "31dc671b92ea761471b2cc3b2c742d1b83e844851ec80ff4f9472e7961aab629",
+    "crates/phasesmith-solution/src/shared_search.rs": "92e3fba11962f1fbfc414e8564b4f92f885088b00f9e353d6f69961d50d4ecb4",
+    "crates/phasesmith-solution/src/solver.rs": "302429ec1b3522b848abdc7a050a5511796913842f233b6f0c53834bbf584e22",
+    "crates/phasesmith-solution/src/staged_refinement.rs": "6c1ddf05693cea5b20528059d46af3e93e61b7de3ddaef30bc3416ee6ff31657",
+    "crates/phasesmith-solution/src/symmetry_model.rs": "aec3f512ca23f882476081e0708dbaaadf0ba6a8d88088e4d69fab602c207005",
+    "crates/phasesmith-solution/src/symmetry_recycling.rs": "b47c3acab847ec5e6b334bf5994fb1c017279bf07541af162bda0991284de950",
+    "crates/phasesmith-solution/src/tangent.rs": "25fab86895c4401d46d722d04900fda1c912d4247f346f6ed7f0fd7c04393e79"
+  },
+  "sample_log_sha256": "8fc873ff72c700af830c13a15754ae5c4270e8eabab841cae7eb5ab2c783a792",
+  "sample_log": "   Compiling phasesmith-solution v0.7.0 (/Users/clemens/Programming/PhaseSmith-hkl-solution/crates/phasesmith-solution)\n    Finished `bench` profile [optimized] target(s) in 8.96s\n     Running benches/solution.rs (target/release/deps/solution-a51ba219c0abff5d)\nBenchmarking peak_statistics_scan_32cubed_multipeak_control\nBenchmarking peak_statistics_scan_32cubed_multipeak_control: Warming up for 1.0000 s\nBenchmarking peak_statistics_scan_32cubed_multipeak_control: Collecting 20 samples in estimated 2.0049 s (41k iterations)\nBenchmarking peak_statistics_scan_32cubed_multipeak_control: Analyzing\npeak_statistics_scan_32cubed_multipeak_control\n                        time:   [47.980 \u00b5s 48.083 \u00b5s 48.145 \u00b5s]\n\nBenchmarking peak_statistics_scan_32cubed_multipeak_streamed\nBenchmarking peak_statistics_scan_32cubed_multipeak_streamed: Warming up for 1.0000 s\nBenchmarking peak_statistics_scan_32cubed_multipeak_streamed: Collecting 20 samples in estimated 2.0026 s (60k iterations)\nBenchmarking peak_statistics_scan_32cubed_multipeak_streamed: Analyzing\npeak_statistics_scan_32cubed_multipeak_streamed\n                        time:   [31.760 \u00b5s 31.797 \u00b5s 31.832 \u00b5s]\nFound 2 outliers among 20 measurements (10.00%)\n  2 (10.00%) low severe\n\nBenchmarking peak_statistics_phase_32cubed_8_atoms_2108_rows_64_cycle_cap_control\nBenchmarking peak_statistics_phase_32cubed_8_atoms_2108_rows_64_cycle_cap_control: Warming up for 1.0000 s\npeak_statistics_sample 32 control completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 32 control completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 32 control completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 32 control completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 32 control completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 32 control completed_cycles 64 real_transforms 128 rms_fallbacks 0\nBenchmarking peak_statistics_phase_32cubed_8_atoms_2108_rows_64_cycle_cap_control: Collecting 20 samples in estimated 2.3623 s (120 iterations)\npeak_statistics_sample 32 control completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 32 control completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 32 control completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 32 control completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 32 control completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 32 control completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 32 control completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 32 control completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 32 control completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 32 control completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 32 control completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 32 control completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 32 control completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 32 control completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 32 control completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 32 control completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 32 control completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 32 control completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 32 control completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 32 control completed_cycles 64 real_transforms 128 rms_fallbacks 0\nBenchmarking peak_statistics_phase_32cubed_8_atoms_2108_rows_64_cycle_cap_control: Analyzing\npeak_statistics_phase_32cubed_8_atoms_2108_rows_64_cycle_cap_control\n                        time:   [19.610 ms 20.028 ms 20.679 ms]\nFound 3 outliers among 20 measurements (15.00%)\n  1 (5.00%) high mild\n  2 (10.00%) high severe\n\nBenchmarking peak_statistics_phase_32cubed_8_atoms_2108_rows_64_cycle_cap_streamed\nBenchmarking peak_statistics_phase_32cubed_8_atoms_2108_rows_64_cycle_cap_streamed: Warming up for 1.0000 s\npeak_statistics_sample 32 streamed completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 32 streamed completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 32 streamed completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 32 streamed completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 32 streamed completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 32 streamed completed_cycles 64 real_transforms 128 rms_fallbacks 0\nBenchmarking peak_statistics_phase_32cubed_8_atoms_2108_rows_64_cycle_cap_streamed: Collecting 20 samples in estimated 2.3473 s (120 iterations)\npeak_statistics_sample 32 streamed completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 32 streamed completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 32 streamed completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 32 streamed completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 32 streamed completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 32 streamed completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 32 streamed completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 32 streamed completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 32 streamed completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 32 streamed completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 32 streamed completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 32 streamed completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 32 streamed completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 32 streamed completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 32 streamed completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 32 streamed completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 32 streamed completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 32 streamed completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 32 streamed completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 32 streamed completed_cycles 64 real_transforms 128 rms_fallbacks 0\nBenchmarking peak_statistics_phase_32cubed_8_atoms_2108_rows_64_cycle_cap_streamed: Analyzing\npeak_statistics_phase_32cubed_8_atoms_2108_rows_64_cycle_cap_streamed\n                        time:   [18.424 ms 18.774 ms 19.310 ms]\nFound 2 outliers among 20 measurements (10.00%)\n  2 (10.00%) high severe\n\nBenchmarking peak_statistics_phase_64cubed_8_atoms_2108_rows_64_cycle_cap_control\nBenchmarking peak_statistics_phase_64cubed_8_atoms_2108_rows_64_cycle_cap_control: Warming up for 1.0000 s\npeak_statistics_sample 64 control completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 64 control completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 64 control completed_cycles 64 real_transforms 128 rms_fallbacks 0\n\nWarning: Unable to complete 20 samples in 2.0s. You may wish to increase target time to 3.3s, or reduce sample count to 10.\nBenchmarking peak_statistics_phase_64cubed_8_atoms_2108_rows_64_cycle_cap_control: Collecting 20 samples in estimated 3.2852 s (20 iterations)\npeak_statistics_sample 64 control completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 64 control completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 64 control completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 64 control completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 64 control completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 64 control completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 64 control completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 64 control completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 64 control completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 64 control completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 64 control completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 64 control completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 64 control completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 64 control completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 64 control completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 64 control completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 64 control completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 64 control completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 64 control completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 64 control completed_cycles 64 real_transforms 128 rms_fallbacks 0\nBenchmarking peak_statistics_phase_64cubed_8_atoms_2108_rows_64_cycle_cap_control: Analyzing\npeak_statistics_phase_64cubed_8_atoms_2108_rows_64_cycle_cap_control\n                        time:   [201.97 ms 219.85 ms 236.90 ms]\n\nBenchmarking peak_statistics_phase_64cubed_8_atoms_2108_rows_64_cycle_cap_streamed\nBenchmarking peak_statistics_phase_64cubed_8_atoms_2108_rows_64_cycle_cap_streamed: Warming up for 1.0000 s\npeak_statistics_sample 64 streamed completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 64 streamed completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 64 streamed completed_cycles 64 real_transforms 128 rms_fallbacks 0\n\nWarning: Unable to complete 20 samples in 2.0s. You may wish to increase target time to 3.1s, or reduce sample count to 10.\nBenchmarking peak_statistics_phase_64cubed_8_atoms_2108_rows_64_cycle_cap_streamed: Collecting 20 samples in estimated 3.0744 s (20 iterations)\npeak_statistics_sample 64 streamed completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 64 streamed completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 64 streamed completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 64 streamed completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 64 streamed completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 64 streamed completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 64 streamed completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 64 streamed completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 64 streamed completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 64 streamed completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 64 streamed completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 64 streamed completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 64 streamed completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 64 streamed completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 64 streamed completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 64 streamed completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 64 streamed completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 64 streamed completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 64 streamed completed_cycles 64 real_transforms 128 rms_fallbacks 0\npeak_statistics_sample 64 streamed completed_cycles 64 real_transforms 128 rms_fallbacks 0\nBenchmarking peak_statistics_phase_64cubed_8_atoms_2108_rows_64_cycle_cap_streamed: Analyzing\npeak_statistics_phase_64cubed_8_atoms_2108_rows_64_cycle_cap_streamed\n                        time:   [152.25 ms 154.07 ms 157.16 ms]\nFound 2 outliers among 20 measurements (10.00%)\n  1 (5.00%) high mild\n  1 (5.00%) high severe\n\nBenchmarking peak_statistics_search_32cubed_8_atoms_2108_rows_control\nBenchmarking peak_statistics_search_32cubed_8_atoms_2108_rows_control: Warming up for 1.0000 s\npeak_statistics_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224\npeak_statistics_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224\npeak_statistics_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224\n\nWarning: Unable to complete 20 samples in 2.0s. You may wish to increase target time to 4.3s, or reduce sample count to 10.\nBenchmarking peak_statistics_search_32cubed_8_atoms_2108_rows_control: Collecting 20 samples in estimated 4.3342 s (20 iterations)\npeak_statistics_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224\npeak_statistics_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224\npeak_statistics_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224\npeak_statistics_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224\npeak_statistics_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224\npeak_statistics_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224\npeak_statistics_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224\npeak_statistics_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224\npeak_statistics_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224\npeak_statistics_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224\npeak_statistics_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224\npeak_statistics_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224\npeak_statistics_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224\npeak_statistics_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224\npeak_statistics_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224\npeak_statistics_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224\npeak_statistics_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224\npeak_statistics_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224\npeak_statistics_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224\npeak_statistics_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224\nBenchmarking peak_statistics_search_32cubed_8_atoms_2108_rows_control: Analyzing\npeak_statistics_search_32cubed_8_atoms_2108_rows_control\n                        time:   [220.15 ms 231.10 ms 244.42 ms]\nFound 5 outliers among 20 measurements (25.00%)\n  1 (5.00%) high mild\n  4 (20.00%) high severe\n\nBenchmarking peak_statistics_search_32cubed_8_atoms_2108_rows_cache\nBenchmarking peak_statistics_search_32cubed_8_atoms_2108_rows_cache: Warming up for 1.0000 s\npeak_statistics_search_sample cache starts 2 cycles 192 extra_fits 8 cached_steps 224\npeak_statistics_search_sample cache starts 2 cycles 192 extra_fits 8 cached_steps 224\npeak_statistics_search_sample cache starts 2 cycles 192 extra_fits 8 cached_steps 224\n\nWarning: Unable to complete 20 samples in 2.0s. You may wish to increase target time to 4.3s, or reduce sample count to 10.\nBenchmarking peak_statistics_search_32cubed_8_atoms_2108_rows_cache: Collecting 20 samples in estimated 4.2759 s (20 iterations)\npeak_statistics_search_sample cache starts 2 cycles 192 extra_fits 8 cached_steps 224\npeak_statistics_search_sample cache starts 2 cycles 192 extra_fits 8 cached_steps 224\npeak_statistics_search_sample cache starts 2 cycles 192 extra_fits 8 cached_steps 224\npeak_statistics_search_sample cache starts 2 cycles 192 extra_fits 8 cached_steps 224\npeak_statistics_search_sample cache starts 2 cycles 192 extra_fits 8 cached_steps 224\npeak_statistics_search_sample cache starts 2 cycles 192 extra_fits 8 cached_steps 224\npeak_statistics_search_sample cache starts 2 cycles 192 extra_fits 8 cached_steps 224\npeak_statistics_search_sample cache starts 2 cycles 192 extra_fits 8 cached_steps 224\npeak_statistics_search_sample cache starts 2 cycles 192 extra_fits 8 cached_steps 224\npeak_statistics_search_sample cache starts 2 cycles 192 extra_fits 8 cached_steps 224\npeak_statistics_search_sample cache starts 2 cycles 192 extra_fits 8 cached_steps 224\npeak_statistics_search_sample cache starts 2 cycles 192 extra_fits 8 cached_steps 224\npeak_statistics_search_sample cache starts 2 cycles 192 extra_fits 8 cached_steps 224\npeak_statistics_search_sample cache starts 2 cycles 192 extra_fits 8 cached_steps 224\npeak_statistics_search_sample cache starts 2 cycles 192 extra_fits 8 cached_steps 224\npeak_statistics_search_sample cache starts 2 cycles 192 extra_fits 8 cached_steps 224\npeak_statistics_search_sample cache starts 2 cycles 192 extra_fits 8 cached_steps 224\npeak_statistics_search_sample cache starts 2 cycles 192 extra_fits 8 cached_steps 224\npeak_statistics_search_sample cache starts 2 cycles 192 extra_fits 8 cached_steps 224\npeak_statistics_search_sample cache starts 2 cycles 192 extra_fits 8 cached_steps 224\nBenchmarking peak_statistics_search_32cubed_8_atoms_2108_rows_cache: Analyzing\npeak_statistics_search_32cubed_8_atoms_2108_rows_cache\n                        time:   [215.27 ms 218.78 ms 223.42 ms]\nFound 3 outliers among 20 measurements (15.00%)\n  2 (10.00%) high mild\n  1 (5.00%) high severe\n\n",
+  "results": [
+    {
+      "id": "peak_statistics_phase_32cubed_8_atoms_2108_rows_64_cycle_cap_control",
+      "sample": {
+        "sampling_mode": "Flat",
+        "iters": [
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0
+        ],
+        "times": [
+          117445084.0,
+          116918959.0,
+          117396167.0,
+          117508166.0,
+          119779375.0,
+          118168084.0,
+          117905667.0,
+          118749500.0,
+          116694417.0,
+          117993959.0,
+          133370750.0,
+          118029875.0,
+          117485084.0,
+          118789125.0,
+          117678791.0,
+          149499458.0,
+          116390750.0,
+          117334916.0,
+          118067834.0,
+          118157208.0
+        ]
+      },
+      "estimates": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 19609726.041666664,
+            "upper_bound": 20679166.598749995
+          },
+          "point_estimate": 20028026.40833333,
+          "standard_error": 282337.4326722469
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 19577514.0,
+            "upper_bound": 19693774.333333336
+          },
+          "point_estimate": 19658302.166666664,
+          "standard_error": 37714.2132934902
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 48066.26179665327,
+            "upper_bound": 240603.2425284404
+          },
+          "point_estimate": 130762.2289285027,
+          "standard_error": 46974.272088874764
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 107048.47848229385,
+            "upper_bound": 1989098.704670185
+          },
+          "point_estimate": 1294423.2654151358,
+          "standard_error": 547716.3868142057
+        }
+      },
+      "benchmark": {
+        "group_id": "peak_statistics_phase_32cubed_8_atoms_2108_rows_64_cycle_cap_control",
+        "function_id": null,
+        "value_str": null,
+        "throughput": null,
+        "full_id": "peak_statistics_phase_32cubed_8_atoms_2108_rows_64_cycle_cap_control",
+        "directory_name": "peak_statistics_phase_32cubed_8_atoms_2108_rows_64_cycle_cap_con",
+        "title": "peak_statistics_phase_32cubed_8_atoms_2108_rows_64_cycle_cap_control"
+      }
+    },
+    {
+      "id": "peak_statistics_phase_32cubed_8_atoms_2108_rows_64_cycle_cap_streamed",
+      "sample": {
+        "sampling_mode": "Flat",
+        "iters": [
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0
+        ],
+        "times": [
+          124447500.0,
+          136448500.0,
+          109807375.0,
+          110120916.0,
+          111102333.0,
+          111028833.0,
+          111054833.0,
+          110575791.0,
+          111728875.0,
+          111053875.0,
+          110628750.0,
+          110255458.0,
+          111275541.0,
+          109545792.0,
+          110336500.0,
+          109711500.0,
+          110561291.0,
+          110738917.0,
+          110273833.0,
+          112218541.0
+        ]
+      },
+      "estimates": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 18423574.75291667,
+            "upper_bound": 19309726.64229167
+          },
+          "point_estimate": 18774291.283333335,
+          "standard_error": 234441.35512138502
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 18384194.416666668,
+            "upper_bound": 18513097.166666664
+          },
+          "point_estimate": 18447305.583333336,
+          "standard_error": 38204.66839443971
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 66099.37237650341,
+            "upper_bound": 230652.5257050991
+          },
+          "point_estimate": 104631.40439242033,
+          "standard_error": 41780.74490199387
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 96511.00685542014,
+            "upper_bound": 1634299.858899442
+          },
+          "point_estimate": 1070928.5298190054,
+          "standard_error": 441078.9309602714
+        }
+      },
+      "benchmark": {
+        "group_id": "peak_statistics_phase_32cubed_8_atoms_2108_rows_64_cycle_cap_streamed",
+        "function_id": null,
+        "value_str": null,
+        "throughput": null,
+        "full_id": "peak_statistics_phase_32cubed_8_atoms_2108_rows_64_cycle_cap_streamed",
+        "directory_name": "peak_statistics_phase_32cubed_8_atoms_2108_rows_64_cycle_cap_str",
+        "title": "peak_statistics_phase_32cubed_8_atoms_2108_rows_64_cycle_cap_streamed"
+      }
+    },
+    {
+      "id": "peak_statistics_phase_64cubed_8_atoms_2108_rows_64_cycle_cap_control",
+      "sample": {
+        "sampling_mode": "Flat",
+        "iters": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "times": [
+          164447292.0,
+          164508750.0,
+          163704083.0,
+          236689292.0,
+          220214000.0,
+          260699167.0,
+          267303041.0,
+          257252291.0,
+          256400500.0,
+          223719208.0,
+          255069958.0,
+          246972333.0,
+          256320625.0,
+          201134542.0,
+          163495583.0,
+          163721084.0,
+          163897916.0,
+          266891250.0,
+          242778708.0,
+          221733375.0
+        ]
+      },
+      "estimates": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 201967520.8,
+            "upper_bound": 236896460.195
+          },
+          "point_estimate": 219847649.9,
+          "standard_error": 8950724.960516084
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 182821646.0,
+            "upper_bound": 255695291.5
+          },
+          "point_estimate": 230204250.0,
+          "standard_error": 17004589.93937512
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 10175701.86354518,
+            "upper_bound": 68750785.72272956
+          },
+          "point_estimate": 41600086.59515083,
+          "standard_error": 15957009.215882894
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 31053579.5174517,
+            "upper_bound": 45967600.918330565
+          },
+          "point_estimate": 41099342.61759546,
+          "standard_error": 3749287.357808633
+        }
+      },
+      "benchmark": {
+        "group_id": "peak_statistics_phase_64cubed_8_atoms_2108_rows_64_cycle_cap_control",
+        "function_id": null,
+        "value_str": null,
+        "throughput": null,
+        "full_id": "peak_statistics_phase_64cubed_8_atoms_2108_rows_64_cycle_cap_control",
+        "directory_name": "peak_statistics_phase_64cubed_8_atoms_2108_rows_64_cycle_cap_con",
+        "title": "peak_statistics_phase_64cubed_8_atoms_2108_rows_64_cycle_cap_control"
+      }
+    },
+    {
+      "id": "peak_statistics_phase_64cubed_8_atoms_2108_rows_64_cycle_cap_streamed",
+      "sample": {
+        "sampling_mode": "Flat",
+        "iters": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "times": [
+          153244041.0,
+          156152209.0,
+          154591916.0,
+          153318542.0,
+          154370541.0,
+          152251000.0,
+          152339333.0,
+          152347625.0,
+          151337291.0,
+          152005792.0,
+          152817542.0,
+          152208500.0,
+          151965291.0,
+          151968542.0,
+          151576917.0,
+          180798708.0,
+          154094500.0,
+          151014292.0,
+          151506167.0,
+          151503500.0
+        ]
+      },
+      "estimates": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 152251069.91250002,
+            "upper_bound": 157157306.79875
+          },
+          "point_estimate": 154070612.45,
+          "standard_error": 1401328.1222497544
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 151966916.5,
+            "upper_bound": 153281291.5
+          },
+          "point_estimate": 152295166.5,
+          "standard_error": 361007.4618846531
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 392086.90643906593,
+            "upper_bound": 2043918.9954131842
+          },
+          "point_estimate": 1171747.6849973202,
+          "standard_error": 418475.9012169131
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 904026.0449513366,
+            "upper_bound": 10474330.86716936
+          },
+          "point_estimate": 6423483.110668954,
+          "standard_error": 3279816.6642832817
+        }
+      },
+      "benchmark": {
+        "group_id": "peak_statistics_phase_64cubed_8_atoms_2108_rows_64_cycle_cap_streamed",
+        "function_id": null,
+        "value_str": null,
+        "throughput": null,
+        "full_id": "peak_statistics_phase_64cubed_8_atoms_2108_rows_64_cycle_cap_streamed",
+        "directory_name": "peak_statistics_phase_64cubed_8_atoms_2108_rows_64_cycle_cap_str",
+        "title": "peak_statistics_phase_64cubed_8_atoms_2108_rows_64_cycle_cap_streamed"
+      }
+    },
+    {
+      "id": "peak_statistics_scan_32cubed_multipeak_control",
+      "sample": {
+        "sampling_mode": "Linear",
+        "iters": [
+          197.0,
+          394.0,
+          591.0,
+          788.0,
+          985.0,
+          1182.0,
+          1379.0,
+          1576.0,
+          1773.0,
+          1970.0,
+          2167.0,
+          2364.0,
+          2561.0,
+          2758.0,
+          2955.0,
+          3152.0,
+          3349.0,
+          3546.0,
+          3743.0,
+          3940.0
+        ],
+        "times": [
+          9374750.0,
+          18851291.0,
+          27898875.0,
+          37422625.0,
+          47195292.0,
+          56621208.0,
+          65394833.0,
+          74921667.0,
+          85411250.0,
+          95027625.0,
+          104030500.0,
+          113124583.0,
+          122361625.0,
+          132416042.0,
+          142430208.0,
+          151803208.0,
+          161328125.0,
+          170771667.0,
+          180360209.0,
+          189915959.0
+        ]
+      },
+      "estimates": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 47764.82699925422,
+            "upper_bound": 48028.46953613222
+          },
+          "point_estimate": 47902.43981060833,
+          "standard_error": 66.9347363048846
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 47812.38119875049,
+            "upper_bound": 48166.47260376232
+          },
+          "point_estimate": 47960.34665436087,
+          "standard_error": 105.86730003967021
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 52.702643985210024,
+            "upper_bound": 480.0903097085085
+          },
+          "point_estimate": 314.77784822935985,
+          "standard_error": 121.28570235807165
+        },
+        "slope": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 47979.76528983571,
+            "upper_bound": 48144.62373214847
+          },
+          "point_estimate": 48082.87159482835,
+          "standard_error": 42.26136082771093
+        },
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 206.60016189312276,
+            "upper_bound": 374.81220489027396
+          },
+          "point_estimate": 308.60848428536866,
+          "standard_error": 42.62772090931703
+        }
+      },
+      "benchmark": {
+        "group_id": "peak_statistics_scan_32cubed_multipeak_control",
+        "function_id": null,
+        "value_str": null,
+        "throughput": null,
+        "full_id": "peak_statistics_scan_32cubed_multipeak_control",
+        "directory_name": "peak_statistics_scan_32cubed_multipeak_control",
+        "title": "peak_statistics_scan_32cubed_multipeak_control"
+      }
+    },
+    {
+      "id": "peak_statistics_scan_32cubed_multipeak_streamed",
+      "sample": {
+        "sampling_mode": "Linear",
+        "iters": [
+          286.0,
+          572.0,
+          858.0,
+          1144.0,
+          1430.0,
+          1716.0,
+          2002.0,
+          2288.0,
+          2574.0,
+          2860.0,
+          3146.0,
+          3432.0,
+          3718.0,
+          4004.0,
+          4290.0,
+          4576.0,
+          4862.0,
+          5148.0,
+          5434.0,
+          5720.0
+        ],
+        "times": [
+          8942167.0,
+          18177250.0,
+          26741708.0,
+          36291208.0,
+          45348334.0,
+          54709916.0,
+          63765791.0,
+          73020334.0,
+          82083292.0,
+          91078000.0,
+          100200333.0,
+          109161375.0,
+          118700459.0,
+          127440417.0,
+          135716459.0,
+          145318542.0,
+          154291709.0,
+          163734417.0,
+          172855125.0,
+          181950000.0
+        ]
+      },
+      "estimates": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 31657.11524707987,
+            "upper_bound": 31822.818461979015
+          },
+          "point_estimate": 31749.621204457268,
+          "standard_error": 42.75264843283468
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 31745.440135232413,
+            "upper_bound": 31847.76430387794
+          },
+          "point_estimate": 31808.184003496503,
+          "standard_error": 22.982743210787422
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 39.43164213211441,
+            "upper_bound": 146.28466109688011
+          },
+          "point_estimate": 93.02405743682931,
+          "standard_error": 28.017539550335133
+        },
+        "slope": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 31759.641890886276,
+            "upper_bound": 31831.716432257377
+          },
+          "point_estimate": 31796.76675154114,
+          "standard_error": 18.259630709546357
+        },
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 63.437870710214675,
+            "upper_bound": 274.56204982571785
+          },
+          "point_estimate": 196.4731697395429,
+          "standard_error": 55.88447305079977
+        }
+      },
+      "benchmark": {
+        "group_id": "peak_statistics_scan_32cubed_multipeak_streamed",
+        "function_id": null,
+        "value_str": null,
+        "throughput": null,
+        "full_id": "peak_statistics_scan_32cubed_multipeak_streamed",
+        "directory_name": "peak_statistics_scan_32cubed_multipeak_streamed",
+        "title": "peak_statistics_scan_32cubed_multipeak_streamed"
+      }
+    },
+    {
+      "id": "peak_statistics_search_32cubed_8_atoms_2108_rows_cache",
+      "sample": {
+        "sampling_mode": "Flat",
+        "iters": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "times": [
+          212260583.0,
+          212425333.0,
+          218330917.0,
+          214356083.0,
+          213454083.0,
+          214114583.0,
+          212365875.0,
+          213915583.0,
+          214519625.0,
+          213630250.0,
+          214834542.0,
+          231655250.0,
+          216137958.0,
+          228853291.0,
+          252381708.0,
+          225986917.0,
+          221322958.0,
+          214057583.0,
+          215586167.0,
+          215477958.0
+        ]
+      },
+      "estimates": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 215271369.54875,
+            "upper_bound": 223420405.80875
+          },
+          "point_estimate": 218783362.35,
+          "standard_error": 2111814.3015376567
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 213986583.0,
+            "upper_bound": 217234437.5
+          },
+          "point_estimate": 214677083.5,
+          "standard_error": 1009389.6949294545
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 848664.68783319,
+            "upper_bound": 6550898.376998305
+          },
+          "point_estimate": 1989556.5021783113,
+          "standard_error": 1506179.4190340352
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 3587215.9126687865,
+            "upper_bound": 14170215.534308136
+          },
+          "point_estimate": 9687049.09244185,
+          "standard_error": 3029139.5748291323
+        }
+      },
+      "benchmark": {
+        "group_id": "peak_statistics_search_32cubed_8_atoms_2108_rows_cache",
+        "function_id": null,
+        "value_str": null,
+        "throughput": null,
+        "full_id": "peak_statistics_search_32cubed_8_atoms_2108_rows_cache",
+        "directory_name": "peak_statistics_search_32cubed_8_atoms_2108_rows_cache",
+        "title": "peak_statistics_search_32cubed_8_atoms_2108_rows_cache"
+      }
+    },
+    {
+      "id": "peak_statistics_search_32cubed_8_atoms_2108_rows_control",
+      "sample": {
+        "sampling_mode": "Flat",
+        "iters": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "times": [
+          216085666.0,
+          216221875.0,
+          219521750.0,
+          215948250.0,
+          215891833.0,
+          216442833.0,
+          217649542.0,
+          216052709.0,
+          216437917.0,
+          216869167.0,
+          216872583.0,
+          216729625.0,
+          309156000.0,
+          290925791.0,
+          268552375.0,
+          268080125.0,
+          232982542.0,
+          218067500.0,
+          216515625.0,
+          216960167.0
+        ]
+      },
+      "estimates": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 220154406.18124998,
+            "upper_bound": 244418397.9
+          },
+          "point_estimate": 231098193.75,
+          "standard_error": 6237312.310395739
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 216440375.0,
+            "upper_bound": 218794625.0
+          },
+          "point_estimate": 216870875.0,
+          "standard_error": 2276680.7772315014
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 478323.81650805473,
+            "upper_bound": 4159990.9424453974
+          },
+          "point_estimate": 1188581.8663984537,
+          "standard_error": 3018983.634611123
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 11909246.16377906,
+            "upper_bound": 37828234.5441918
+          },
+          "point_estimate": 28578976.936999213,
+          "standard_error": 6576949.640804427
+        }
+      },
+      "benchmark": {
+        "group_id": "peak_statistics_search_32cubed_8_atoms_2108_rows_control",
+        "function_id": null,
+        "value_str": null,
+        "throughput": null,
+        "full_id": "peak_statistics_search_32cubed_8_atoms_2108_rows_control",
+        "directory_name": "peak_statistics_search_32cubed_8_atoms_2108_rows_control",
+        "title": "peak_statistics_search_32cubed_8_atoms_2108_rows_control"
+      }
+    }
+  ],
+  "qualification": "Control/treatment within the same executable; sequential pairs, not the Criterion comparison to prior builds. Full search work counters printed in sample log. No corpus runs overlapped."
+}

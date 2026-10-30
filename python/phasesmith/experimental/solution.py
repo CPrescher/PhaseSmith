@@ -538,6 +538,7 @@ class SharedSearchAudit:
     cached_normal_refinement: bool = False
     multiplicity_weighted_refinement: bool = False
     ambiguous_assignments: bool = False
+    streamed_peak_search: bool = False
     specialized_isotropic_refinement: bool = False
     cached_assignment_refinement: bool = False
     specialized_isotropic_fits: int = 0
@@ -563,6 +564,8 @@ class SharedSearchAudit:
     fused_fourier_transforms: int = 0
     real_phase_transforms: int = 0
     batched_phase_transforms: int = 0
+    streamed_peak_cycles: int = 0
+    peak_rms_fallbacks: int = 0
     filtered_peak_cycles: int = 0
     phase_slices: tuple[PhaseSliceAudit, ...] = ()
     score_only_evaluations: int = 0
@@ -816,6 +819,7 @@ def solve_structure_elements(
     ambiguous_assignments: bool = False,
     cached_assignment_refinement: bool = False,
     specialized_isotropic_refinement: bool = False,
+    streamed_peak_search: bool = False,
     missing_reflections: bool = False,
     resolution_extension: float = 1.0,
     score_only_evaluation: bool = False,
@@ -847,6 +851,8 @@ def solve_structure_elements(
     ``cached_normal_refinement=True`` caches preconditioned normal matrices in final
     iterative fits, verifies steps against the original Jacobian and falls back
     to the matrix-free solver if needed. It requires iterative refinement.
+    ``streamed_peak_search=True`` guards vectorized RMS thresholds with scalar
+    fallback and streams peak candidates; it requires ``filtered_peak_search``.
     ``specialized_isotropic_refinement=True`` uses a fused canonical isotropic
     cached evaluator with unchanged equations and generic fallback.
     ``cached_assignment_refinement=True`` uses guarded normal caches in short
@@ -937,6 +943,7 @@ def solve_structure_elements(
         ("ambiguous_assignments", ambiguous_assignments),
         ("cached_assignment_refinement", cached_assignment_refinement),
         ("specialized_isotropic_refinement", specialized_isotropic_refinement),
+        ("streamed_peak_search", streamed_peak_search),
         ("missing_reflections", missing_reflections),
         ("adaptive_checkpoints", adaptive_checkpoints),
         ("score_only_evaluation", score_only_evaluation),
@@ -973,6 +980,8 @@ def solve_structure_elements(
         raise ValueError("cached_normal_refinement requires iterative_refinement")
     if fused_phase_workspace and not reusable_fourier_workspaces:
         raise ValueError("fused_phase_workspace requires reusable_fourier_workspaces")
+    if streamed_peak_search and not filtered_peak_search:
+        raise ValueError("streamed_peak_search requires filtered_peak_search")
     if real_fft and not batched_fft:
         raise ValueError("real_fft requires batched_fft")
     if batched_fft and not reusable_fourier_workspaces:
@@ -1124,6 +1133,7 @@ def solve_structure_elements(
                     ambiguous_assignments,
                     cached_assignment_refinement,
                     specialized_isotropic_refinement,
+                    streamed_peak_search,
                 ),
             ),
         ),

@@ -870,6 +870,7 @@ fn benchmark(c: &mut Criterion) {
                     score_only_evaluation: score_only,
                     reusable_fourier_workspaces: reuse,
                     filtered_peak_search: false,
+                    streamed_peak_search: false,
                     batched_fft: false,
                     real_fft: false,
                     fused_phase_workspace: false,
@@ -931,6 +932,7 @@ fn benchmark(c: &mut Criterion) {
                     score_only_evaluation: true,
                     reusable_fourier_workspaces: true,
                     filtered_peak_search: filtered,
+                    streamed_peak_search: false,
                     batched_fft: false,
                     real_fft: false,
                     fused_phase_workspace: false,
@@ -992,6 +994,7 @@ fn benchmark(c: &mut Criterion) {
                     score_only_evaluation: true,
                     reusable_fourier_workspaces: true,
                     filtered_peak_search: true,
+                    streamed_peak_search: false,
                     batched_fft: batched,
                     real_fft: false,
                     fused_phase_workspace: false,
@@ -1053,6 +1056,7 @@ fn benchmark(c: &mut Criterion) {
                     score_only_evaluation: true,
                     reusable_fourier_workspaces: true,
                     filtered_peak_search: true,
+                    streamed_peak_search: false,
                     batched_fft: true,
                     real_fft: real,
                     fused_phase_workspace: false,
@@ -1115,6 +1119,7 @@ fn benchmark(c: &mut Criterion) {
                     score_only_evaluation: true,
                     reusable_fourier_workspaces: true,
                     filtered_peak_search: true,
+                    streamed_peak_search: false,
                     batched_fft: true,
                     real_fft: true,
                     fused_phase_workspace: cached,
@@ -1191,6 +1196,96 @@ fn benchmark(c: &mut Criterion) {
                 });
             },
         );
+    }
+    for streamed in [false, true] {
+        let label = if streamed { "streamed" } else { "control" };
+        let mut plan = phasesmith_solution::PreparedAdaptivePeaks::new(shape)
+            .unwrap()
+            .with_streamed_scan(streamed);
+        c.bench_function(
+            &format!("peak_statistics_scan_32cubed_multipeak_{label}"),
+            |b| {
+                b.iter(|| plan.select(std::hint::black_box(&source), 2., 128).unwrap());
+            },
+        );
+    }
+    for shape in [shape, [64; 3]] {
+        let mut support = vec![0; shape.iter().product()];
+        support[0] = 1;
+        for h in &quality_data.hkl {
+            let v = std::array::from_fn::<_, 3, _>(|i| {
+                usize::try_from(h[i].rem_euclid(i32::try_from(shape[i]).unwrap())).unwrap()
+            });
+            support[(v[0] * shape[1] + v[1]) * shape[2] + v[2]] = 2;
+        }
+        for (label, streamed) in [("control", false), ("streamed", true)] {
+            c.bench_function(
+                &format!(
+                    "peak_statistics_phase_{}cubed_8_atoms_2108_rows_64_cycle_cap_{label}",
+                    shape[0]
+                ),
+                |b| {
+                    let execution = phasesmith_solution::PhasingExecution {
+                        score_only_evaluation: true,
+                        reusable_fourier_workspaces: true,
+                        filtered_peak_search: true,
+                        batched_fft: true,
+                        real_fft: true,
+                        fused_phase_workspace: true,
+                        streamed_peak_search: streamed,
+                    };
+                    let options = DualSpaceOptions {
+                        cycles: 64,
+                        peak_selection: PeakSelection::Adaptive {
+                            sigma: 2.,
+                            cap: 128,
+                        },
+                        mask_sigma: 0.25,
+                        hybrid_m: 3.,
+                        omit_fraction: 0.1,
+                        seed: 1034,
+                        patterson_rank: Some(0),
+                        cancellation: None,
+                    };
+                    let sample = phasesmith_solution::dual_space_with_execution(
+                        shape,
+                        cell,
+                        &quality_data.hkl,
+                        &quality_data.amplitudes,
+                        &phases,
+                        &support,
+                        &options,
+                        None,
+                        Some(&quality_plan),
+                        execution,
+                    )
+                    .unwrap();
+                    eprintln!(
+                        "peak_statistics_sample {} {label} completed_cycles {} real_transforms {} rms_fallbacks {}",
+                        shape[0],
+                        sample.trial.history.len(),
+                        sample.real_phase_transforms,
+                        sample.peak_rms_fallbacks
+                    );
+                    drop(sample);
+                    b.iter(|| {
+                        phasesmith_solution::dual_space_with_execution(
+                            shape,
+                            cell,
+                            &quality_data.hkl,
+                            &quality_data.amplitudes,
+                            &phases,
+                            &support,
+                            &options,
+                            None,
+                            Some(&quality_plan),
+                            execution,
+                        )
+                        .unwrap()
+                    });
+                },
+            );
+        }
     }
     for work_sliced in [false, true] {
         let options = SolveOptions {
@@ -1858,6 +1953,78 @@ fn benchmark(c: &mut Criterion) {
                 let a = sample.shared_search.unwrap();
                 eprintln!(
                     "isotropic_evaluation_search_sample {label} starts {} cycles {} extra_fits {} cached_steps {}",
+                    a.phasing_starts,
+                    a.fourier_workspace_cycles,
+                    a.phase_origins
+                        .iter()
+                        .map(|t| t.ambiguity_relaxations)
+                        .sum::<usize>(),
+                    a.assignment_cached_normal_solves
+                );
+                b.iter(|| {
+                    phasesmith_solution::solve_elements(
+                        &ambiguity_observations,
+                        cell,
+                        &group,
+                        &ambiguity_elements,
+                        &options,
+                        &search,
+                    )
+                    .unwrap()
+                });
+            },
+        );
+    }
+    for cached in [false, true] {
+        let label = if cached { "cache" } else { "control" };
+        let options = SolveOptions {
+            phasing: PhasingMethod::DualSpace,
+            trials: 2,
+            cycles: 128,
+            max_seconds: 60.,
+            r1_target: 1e-6,
+            ..SolveOptions::default()
+        };
+        let search = SharedSearchOptions {
+            maximum_atoms: 32,
+            symmetry_recycling: true,
+            tangent_refinement: true,
+            wilson_normalization: true,
+            phase_quality_selection: true,
+            phase_origin_selection: true,
+            chemical_assignment: true,
+            iterative_refinement: true,
+            score_only_evaluation: true,
+            reusable_fourier_workspaces: true,
+            work_sliced_phasing: true,
+            isotropic_assignment_refinement: true,
+            filtered_peak_search: true,
+            batched_fft: true,
+            real_fft: true,
+            fused_phase_workspace: true,
+            cached_normal_refinement: true,
+            multiplicity_weighted_refinement: true,
+            ambiguous_assignments: true,
+            cached_assignment_refinement: true,
+            specialized_isotropic_refinement: true,
+            streamed_peak_search: cached,
+            ..SharedSearchOptions::default()
+        };
+        c.bench_function(
+            &format!("peak_statistics_search_32cubed_8_atoms_2108_rows_{label}"),
+            |b| {
+                let sample = phasesmith_solution::solve_elements(
+                    &ambiguity_observations,
+                    cell,
+                    &group,
+                    &ambiguity_elements,
+                    &options,
+                    &search,
+                )
+                .unwrap();
+                let a = sample.shared_search.unwrap();
+                eprintln!(
+                    "peak_statistics_search_sample {label} starts {} cycles {} extra_fits {} cached_steps {}",
                     a.phasing_starts,
                     a.fourier_workspace_cycles,
                     a.phase_origins
