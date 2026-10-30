@@ -2300,6 +2300,30 @@ and source/native hashes match across panels. The 65 holdout outcomes stay close
 
 ## Quality bar
 
+An experimental `cached_normal_refinement` option targets the final-fit linear
+solver after the batched-FFT work. It caches a bounded (at most 8 MiB), f64,
+diagonally preconditioned normal matrix per current Jacobian and checks each
+returned CG step with the original Jacobian operator. It requires iterative
+refinement, affects final requested-mode fits only, and preserves the original
+matrix-free fallback, damping, iteration/residual criteria, observations,
+analytic derivatives, physical constraints, line searches and resource caps.
+Fixed eight-lane reductions change round-off order, with independent normal-
+equation/residual and complete-fit checks. Screening remains unchanged. The
+flag is opt-in. A follow-up extends blocked normal formation to 12–31-parameter
+final models while retaining Cholesky, original damping norms and a checked
+original-calculation fallback. Smaller models retain the old path. The complete
+CG-only experiment/source patch is preserved separately. Fresh final paired
+35-case panels retain the same 16 labelled structures, 26 total counts, 16
+per-element counts and 13 strict structures. Final fitting falls 27.556 to 25.092
+seconds (8.94%), while summed solve wall time falls 101.487 to 99.297 seconds.
+The typical paired wall ratio is only 1.01876x (24 faster cases); among successful
+cases it is 1.00421x. Thus the whole-search gain is modest despite 20.5%/44.5%
+fixed-work small/large fit gains. All 425 screening and 98 final fits remain;
+1,743 checked cache steps return without a successful fallback. Independent
+numerical checks, 2,016 Python and 408 Rust tests pass. Protocol, validation and
+results are in `docs/solution-normal-cache.md`. The 65 holdout outcomes remain
+unopened.
+
 An experimental `batched_fft` execution option applies planned contiguous FFT
 batches after blocked small-slab line packing in P1 phasing and supplied-
 symmetry recycling. It restores each group to XYZ layout and preserves original

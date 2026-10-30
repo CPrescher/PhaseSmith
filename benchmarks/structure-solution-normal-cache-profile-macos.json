@@ -1,0 +1,14 @@
+{
+  "schema": "phasesmith.final-refinement-profile.v1",
+  "qualification": "Eight-second native sample of repeated complete cod-2021292 development solves at 210de96, all current fast options including batched FFTs enabled; one numerical thread. Sample counts locate work, not wall-time speed estimates. No reference coordinates or counts used by the solve. No holdout outcomes opened.",
+  "baseline_commit": "210de96",
+  "input_only_case": "cod-2021292",
+  "native_sha256": "fbff7d3da958ca60bfcf971da3c2fa8220640d885c642a889a7394bdb66bbce9",
+  "raw_profile": "runs/final-refinement-profile/native-sample.txt",
+  "raw_profile_sha256": "e1e96a65d71dbf8365a7d5612c61c877e847c1793eb64397243016ff2a1dbf5d",
+  "script": "import json,time\nfrom pathlib import Path\nfrom phasesmith.crystallography import UnitCell\nfrom phasesmith.io.hkl import read_hkl\nfrom phasesmith.io.space_groups import space_group_by_number\nfrom phasesmith.experimental.solution import SolutionOptions,solve_structure_elements\nbase=Path('/Users/clemens/Programming/PhaseSmith-hkl-solution/runs/batched-fft/batched/cod-2021292/phasesmith')\np=json.loads((base/'inputs.json').read_text());r=json.loads((base/'solution/worker.json').read_text());data=read_hkl(base/'sample.hkl')\nfor _ in range(4):\n start=time.perf_counter()\n solve_structure_elements(data,cell=UnitCell(*p['cell']),space_group=space_group_by_number(p['space_group_number']).space_group,elements=p['elements'],maximum_atoms=r['input_only_resource_atom_cap'],options=SolutionOptions(phasing='dual_space',trials=4,cycles=800,max_seconds=13,r1_target=.06,completion=False),symmetry_recycling=True,tangent_refinement=True,wilson_normalization=True,phase_quality_selection=True,phase_origin_selection=True,chemical_assignment=True,iterative_refinement=True,score_only_evaluation=True,reusable_fourier_workspaces=True,work_sliced_phasing=True,isotropic_assignment_refinement=True,filtered_peak_search=True,batched_fft=True)\n print(time.perf_counter()-start,flush=True)\n",
+  "main_thread_samples": 6690,
+  "matrix_free_normal_samples": 1876,
+  "fused_symmetric_evaluation_samples": 2324,
+  "constrained_refiner_inclusive_samples": 3450
+}

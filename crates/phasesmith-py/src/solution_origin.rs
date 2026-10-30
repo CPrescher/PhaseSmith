@@ -393,20 +393,43 @@ fn checkpoint_select(
     Ok(out)
 }
 #[pyfunction(name = "_iterative_normal_step")]
+#[pyo3(signature=(jacobian, residual, damping, cached=false))]
 fn normal_step<'py>(
     py: Python<'py>,
     jacobian: PyReadonlyArray1<'_, f64>,
     residual: PyReadonlyArray1<'_, f64>,
     damping: f64,
+    cached: bool,
 ) -> PyResult<Bound<'py, PyDict>> {
     let j = jacobian.as_slice()?.to_vec();
     let r = residual.as_slice()?.to_vec();
-    let (step, iterations) = py
-        .detach(|| phasesmith_solution::iterative_normal_step(&j, &r, damping, None, None))
+    let value = py
+        .detach(|| {
+            if cached {
+                phasesmith_solution::cached_normal_step(&j, &r, damping, None, None)
+            } else {
+                phasesmith_solution::iterative_normal_step(&j, &r, damping, None, None).map(
+                    |(step, iterations)| phasesmith_solution::CachedNormalStep {
+                        step,
+                        iterations,
+                        used_cache: false,
+                        fell_back: false,
+                    },
+                )
+            }
+        })
         .map_err(invalid)?;
+    let phasesmith_solution::CachedNormalStep {
+        step,
+        iterations,
+        used_cache,
+        fell_back,
+    } = value;
     let out = PyDict::new(py);
     out.set_item("step", step.into_pyarray(py))?;
     out.set_item("iterations", iterations)?;
+    out.set_item("used_cache", used_cache)?;
+    out.set_item("fell_back", fell_back)?;
     Ok(out)
 }
 #[pyfunction(name = "_chemical_density_scales")]

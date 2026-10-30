@@ -47,6 +47,7 @@ def test_pair_labels_are_distinct_from_prediction_case_pairs():
         "assignment_flag",
         "peak_flag",
         "fft_flag",
+        "normal_flag",
     ],
 )
 def test_comparison_rejects_incomplete_opened_or_changed_panels(tmp_path, corruption):
@@ -68,6 +69,7 @@ def test_comparison_rejects_incomplete_opened_or_changed_panels(tmp_path, corrup
             "assignment_flag": "isotropic_assignment_refinement",
             "peak_flag": "filtered_peak_search",
             "fft_flag": "batched_fft",
+            "normal_flag": "cached_normal_refinement",
         }[corruption]
         report[key] = 1.2 if corruption == "extension_flag" else True
     else:

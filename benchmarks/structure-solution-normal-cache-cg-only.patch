@@ -1,0 +1,2490 @@
+diff --git a/PROJECT_BRIEF.md b/PROJECT_BRIEF.md
+index a540854..1ea119d 100644
+--- a/PROJECT_BRIEF.md
++++ b/PROJECT_BRIEF.md
+@@ -2306,6 +2306,18 @@ and source/native hashes match across panels. The 65 holdout outcomes stay close
+
+ ## Quality bar
+
++An experimental `cached_normal_refinement` option targets the final-fit linear
++solver after the batched-FFT work. It caches a bounded (at most 8 MiB), f64,
++diagonally preconditioned normal matrix per current Jacobian and checks each
++returned CG step with the original Jacobian operator. It requires iterative
++refinement, affects final requested-mode fits only, and preserves the original
++matrix-free fallback, damping, iteration/residual criteria, observations,
++analytic derivatives, physical constraints, line searches and resource caps.
++Fixed eight-lane reductions change round-off order, with independent normal-
++equation/residual and complete-fit checks. Screening remains unchanged. The
++flag is opt-in; protocol and development results are in
++`docs/solution-normal-cache.md`. The 65 holdout outcomes remain unopened.
++
+ An experimental `batched_fft` execution option applies planned contiguous FFT
+ batches after blocked small-slab line packing in P1 phasing and supplied-
+ symmetry recycling. It restores each group to XYZ layout and preserves original
+diff --git a/benchmarks/solution_assignment_interleaved.py b/benchmarks/solution_assignment_interleaved.py
+index 088b049..3e7eeef 100644
+--- a/benchmarks/solution_assignment_interleaved.py
++++ b/benchmarks/solution_assignment_interleaved.py
+@@ -21,7 +21,7 @@ def main():
+     )
+     parser.add_argument("--output", type=Path, required=True)
+     parser.add_argument("--seconds", type=float, default=15.0)
+-    parser.add_argument("--lock-revision", type=int, default=18)
++    parser.add_argument("--lock-revision", type=int, default=19)
+     parser.add_argument(
+         "--shelxt",
+         type=Path,
+@@ -53,6 +53,7 @@ def main():
+             isotropic_assignment_refinement=mode == "assignment",
+             filtered_peak_search=False,
+             batched_fft=False,
++            cached_normal_refinement=False,
+             work_sliced_phasing=True,
+             independent_origin_sampling=False,
+             phase_first_selection=True,
+diff --git a/benchmarks/solution_corpus/run.py b/benchmarks/solution_corpus/run.py
+index 09df62b..3f5e60d 100644
+--- a/benchmarks/solution_corpus/run.py
++++ b/benchmarks/solution_corpus/run.py
+@@ -79,6 +79,7 @@ def worker(args):
+         isotropic_assignment_refinement=args.isotropic_assignment_refinement,
+         filtered_peak_search=args.filtered_peak_search,
+         batched_fft=args.batched_fft,
++        cached_normal_refinement=args.cached_normal_refinement,
+         reusable_fourier_workspaces=args.reusable_fourier_workspaces,
+         independent_origin_sampling=args.independent_origin_sampling,
+         resolution_extension=args.resolution_extension,
+@@ -270,6 +271,7 @@ def collect_jobs(args):
+             or previous.get("work_sliced_phasing", False) != args.work_sliced_phasing
+             or previous.get("filtered_peak_search", False) != args.filtered_peak_search
+             or previous.get("batched_fft", False) != args.batched_fft
++            or previous.get("cached_normal_refinement", False) != args.cached_normal_refinement
+             or previous.get("isotropic_assignment_refinement", False)
+             != args.isotropic_assignment_refinement
+             or previous.get("reusable_fourier_workspaces", False)
+@@ -333,6 +335,7 @@ def collect_jobs(args):
+         "isotropic_assignment_refinement": args.isotropic_assignment_refinement,
+         "filtered_peak_search": args.filtered_peak_search,
+         "batched_fft": args.batched_fft,
++        "cached_normal_refinement": args.cached_normal_refinement,
+         "reusable_fourier_workspaces": args.reusable_fourier_workspaces,
+         "independent_origin_sampling": args.independent_origin_sampling,
+         "resolution_extension": args.resolution_extension,
+@@ -462,6 +465,7 @@ def collect_jobs(args):
+                     *(["--work-sliced-phasing"] if args.work_sliced_phasing else []),
+                     *(["--filtered-peak-search"] if args.filtered_peak_search else []),
+                     *(["--batched-fft"] if args.batched_fft else []),
++                    *(["--cached-normal-refinement"] if args.cached_normal_refinement else []),
+                     *(
+                         ["--isotropic-assignment-refinement"]
+                         if args.isotropic_assignment_refinement
+diff --git a/benchmarks/solution_corpus_benchmark.py b/benchmarks/solution_corpus_benchmark.py
+index 552e10c..0a27310 100644
+--- a/benchmarks/solution_corpus_benchmark.py
++++ b/benchmarks/solution_corpus_benchmark.py
+@@ -192,7 +192,7 @@ def main():
+         "--manifest", type=Path, default=ROOT / "validation/solution-corpus-v5.json"
+     )
+     seal_parser.add_argument("--discovery", type=Path, required=True)
+-    seal_parser.add_argument("--lock-revision", type=int, default=18)
++    seal_parser.add_argument("--lock-revision", type=int, default=19)
+     adapters = commands.add_parser("seal-adapters")
+     adapters.add_argument("--manifest", type=Path, required=True)
+     adapters.add_argument("--parent-lock", type=Path, required=True)
+@@ -213,6 +213,7 @@ def main():
+     r.add_argument("--work-sliced-phasing", action="store_true")
+     r.add_argument("--filtered-peak-search", action="store_true")
+     r.add_argument("--batched-fft", action="store_true")
++    r.add_argument("--cached-normal-refinement", action="store_true")
+     r.add_argument("--isotropic-assignment-refinement", action="store_true")
+     r.add_argument("--score-only-evaluation", action="store_true")
+     r.add_argument("--reusable-fourier-workspaces", action="store_true")
+@@ -224,7 +225,7 @@ def main():
+     r.add_argument("--phase-first-selection", action="store_true", default=True)
+     r.add_argument("--quality-checkpoints", dest="phase_first_selection", action="store_false")
+     r.add_argument("--legacy-quality-normalization", action="store_true")
+-    r.add_argument("--lock-revision", type=int, default=18)
++    r.add_argument("--lock-revision", type=int, default=19)
+     r.add_argument("--split", choices=["development", "holdout"], default="development")
+     r.add_argument("--open-holdout", action="store_true")
+     r.add_argument("--seconds", type=float, default=30)
+@@ -242,6 +243,7 @@ def main():
+     w.add_argument("--work-sliced-phasing", action="store_true")
+     w.add_argument("--filtered-peak-search", action="store_true")
+     w.add_argument("--batched-fft", action="store_true")
++    w.add_argument("--cached-normal-refinement", action="store_true")
+     w.add_argument("--isotropic-assignment-refinement", action="store_true")
+     w.add_argument("--score-only-evaluation", action="store_true")
+     w.add_argument("--reusable-fourier-workspaces", action="store_true")
+diff --git a/benchmarks/solution_execution_interleaved.py b/benchmarks/solution_execution_interleaved.py
+index f6e8f72..bfc7366 100644
+--- a/benchmarks/solution_execution_interleaved.py
++++ b/benchmarks/solution_execution_interleaved.py
+@@ -49,7 +49,7 @@ def main():
+     )
+     parser.add_argument("--output", type=Path, required=True)
+     parser.add_argument("--seconds", type=float, default=15.0)
+-    parser.add_argument("--lock-revision", type=int, default=18)
++    parser.add_argument("--lock-revision", type=int, default=19)
+     parser.add_argument(
+         "--shelxt",
+         type=Path,
+@@ -81,6 +81,7 @@ def main():
+             isotropic_assignment_refinement=False,
+             filtered_peak_search=False,
+             batched_fft=False,
++            cached_normal_refinement=False,
+             work_sliced_phasing=False,
+             independent_origin_sampling=False,
+             phase_first_selection=True,
+diff --git a/benchmarks/solution_fft_interleaved.py b/benchmarks/solution_fft_interleaved.py
+index ad58982..8cd58e6 100644
+--- a/benchmarks/solution_fft_interleaved.py
++++ b/benchmarks/solution_fft_interleaved.py
+@@ -21,7 +21,7 @@ def main():
+     )
+     parser.add_argument("--output", type=Path, required=True)
+     parser.add_argument("--seconds", type=float, default=15.0)
+-    parser.add_argument("--lock-revision", type=int, default=18)
++    parser.add_argument("--lock-revision", type=int, default=19)
+     parser.add_argument(
+         "--shelxt",
+         type=Path,
+@@ -53,6 +53,7 @@ def main():
+             isotropic_assignment_refinement=True,
+             filtered_peak_search=True,
+             batched_fft=mode == "batched",
++            cached_normal_refinement=False,
+             work_sliced_phasing=True,
+             independent_origin_sampling=False,
+             phase_first_selection=True,
+diff --git a/benchmarks/solution_peak_interleaved.py b/benchmarks/solution_peak_interleaved.py
+index 1bb6700..3c57dad 100644
+--- a/benchmarks/solution_peak_interleaved.py
++++ b/benchmarks/solution_peak_interleaved.py
+@@ -21,7 +21,7 @@ def main():
+     )
+     parser.add_argument("--output", type=Path, required=True)
+     parser.add_argument("--seconds", type=float, default=15.0)
+-    parser.add_argument("--lock-revision", type=int, default=18)
++    parser.add_argument("--lock-revision", type=int, default=19)
+     parser.add_argument(
+         "--shelxt",
+         type=Path,
+@@ -53,6 +53,7 @@ def main():
+             isotropic_assignment_refinement=True,
+             filtered_peak_search=mode == "peaks",
+             batched_fft=False,
++            cached_normal_refinement=False,
+             work_sliced_phasing=True,
+             independent_origin_sampling=False,
+             phase_first_selection=True,
+diff --git a/benchmarks/solution_phase_ablation.py b/benchmarks/solution_phase_ablation.py
+index 9df4823..7f1d093 100644
+--- a/benchmarks/solution_phase_ablation.py
++++ b/benchmarks/solution_phase_ablation.py
+@@ -99,6 +99,7 @@ def compare(paths, manifest, pairs=()):
+                 "isotropic_assignment_refinement",
+                 "filtered_peak_search",
+                 "batched_fft",
++                "cached_normal_refinement",
+                 "reusable_fourier_workspaces",
+                 "independent_origin_sampling",
+                 "resolution_extension",
+@@ -153,6 +154,8 @@ def compare(paths, manifest, pairs=()):
+                     "fourier_workspace_cycles": r["effort"].get("fourier_workspace_cycles", 0),
+                     "filtered_peak_cycles": r["effort"].get("filtered_peak_cycles", 0),
+                     "batched_phase_transforms": r["effort"].get("batched_phase_transforms", 0),
++                    "cached_normal_solves": r["effort"].get("cached_normal_solves", 0),
++                    "normal_cache_fallbacks": r["effort"].get("normal_cache_fallbacks", 0),
+                     "adaptive_checkpoint_tests": len(r["effort"].get("phase_checkpoints", [])),
+                     "stable_map_handoffs": sum(
+                         c["reason"] == "stable_map"
+@@ -220,6 +223,7 @@ def compare(paths, manifest, pairs=()):
+             "isotropic_assignment_refinement": report.get("isotropic_assignment_refinement", False),
+             "filtered_peak_search": report.get("filtered_peak_search", False),
+             "batched_fft": report.get("batched_fft", False),
++            "cached_normal_refinement": report.get("cached_normal_refinement", False),
+             "reusable_fourier_workspaces": report.get("reusable_fourier_workspaces", False),
+             "independent_origin_sampling": report.get("independent_origin_sampling", False),
+             "resolution_extension": report.get("resolution_extension", 1.0),
+@@ -242,6 +246,8 @@ def compare(paths, manifest, pairs=()):
+                     "fourier_workspace_cycles",
+                     "filtered_peak_cycles",
+                     "batched_phase_transforms",
++                    "cached_normal_solves",
++                    "normal_cache_fallbacks",
+                     "stable_map_handoffs",
+                     "screening_refinements",
+                     "final_refinements",
+diff --git a/benchmarks/solution_timeslice_interleaved.py b/benchmarks/solution_timeslice_interleaved.py
+index 0c589b9..9414bca 100644
+--- a/benchmarks/solution_timeslice_interleaved.py
++++ b/benchmarks/solution_timeslice_interleaved.py
+@@ -21,7 +21,7 @@ def main():
+     )
+     parser.add_argument("--output", type=Path, required=True)
+     parser.add_argument("--seconds", type=float, default=15.0)
+-    parser.add_argument("--lock-revision", type=int, default=18)
++    parser.add_argument("--lock-revision", type=int, default=19)
+     parser.add_argument(
+         "--shelxt",
+         type=Path,
+@@ -53,6 +53,7 @@ def main():
+             isotropic_assignment_refinement=False,
+             filtered_peak_search=False,
+             batched_fft=False,
++            cached_normal_refinement=False,
+             work_sliced_phasing=mode == "work",
+             independent_origin_sampling=False,
+             phase_first_selection=True,
+diff --git a/crates/phasesmith-py/src/solution.rs b/crates/phasesmith-py/src/solution.rs
+index 7b84ec4..32166c1 100644
+--- a/crates/phasesmith-py/src/solution.rs
++++ b/crates/phasesmith-py/src/solution.rs
+@@ -65,7 +65,7 @@ type SharedSearchRequest = (
+             bool,
+             bool,
+             bool,
+-            (bool, bool),
++            (bool, bool, bool),
+         ),
+     ),
+ );
+@@ -205,7 +205,7 @@ fn solve_structure<'py>(
+                         reusable_fourier_workspaces,
+                         work_sliced_phasing,
+                         isotropic_assignment_refinement,
+-                        (filtered_peak_search, batched_fft),
++                        (filtered_peak_search, batched_fft, cached_normal_refinement),
+                     ),
+                 ),
+             )) = shared_search
+@@ -256,6 +256,7 @@ fn solve_structure<'py>(
+                         isotropic_assignment_refinement,
+                         filtered_peak_search,
+                         batched_fft,
++                        cached_normal_refinement,
+                     },
+                 )
+             } else {
+diff --git a/crates/phasesmith-py/src/solution_origin.rs b/crates/phasesmith-py/src/solution_origin.rs
+index b1963a7..3a552d5 100644
+--- a/crates/phasesmith-py/src/solution_origin.rs
++++ b/crates/phasesmith-py/src/solution_origin.rs
+@@ -393,20 +393,43 @@ fn checkpoint_select(
+     Ok(out)
+ }
+ #[pyfunction(name = "_iterative_normal_step")]
++#[pyo3(signature=(jacobian, residual, damping, cached=false))]
+ fn normal_step<'py>(
+     py: Python<'py>,
+     jacobian: PyReadonlyArray1<'_, f64>,
+     residual: PyReadonlyArray1<'_, f64>,
+     damping: f64,
++    cached: bool,
+ ) -> PyResult<Bound<'py, PyDict>> {
+     let j = jacobian.as_slice()?.to_vec();
+     let r = residual.as_slice()?.to_vec();
+-    let (step, iterations) = py
+-        .detach(|| phasesmith_solution::iterative_normal_step(&j, &r, damping, None, None))
++    let value = py
++        .detach(|| {
++            if cached {
++                phasesmith_solution::cached_normal_step(&j, &r, damping, None, None)
++            } else {
++                phasesmith_solution::iterative_normal_step(&j, &r, damping, None, None).map(
++                    |(step, iterations)| phasesmith_solution::CachedNormalStep {
++                        step,
++                        iterations,
++                        used_cache: false,
++                        fell_back: false,
++                    },
++                )
++            }
++        })
+         .map_err(invalid)?;
++    let phasesmith_solution::CachedNormalStep {
++        step,
++        iterations,
++        used_cache,
++        fell_back,
++    } = value;
+     let out = PyDict::new(py);
+     out.set_item("step", step.into_pyarray(py))?;
+     out.set_item("iterations", iterations)?;
++    out.set_item("used_cache", used_cache)?;
++    out.set_item("fell_back", fell_back)?;
+     Ok(out)
+ }
+ #[pyfunction(name = "_chemical_density_scales")]
+diff --git a/crates/phasesmith-py/src/solution_shared.rs b/crates/phasesmith-py/src/solution_shared.rs
+index f1593e7..111d0e4 100644
+--- a/crates/phasesmith-py/src/solution_shared.rs
++++ b/crates/phasesmith-py/src/solution_shared.rs
+@@ -92,6 +92,9 @@ pub(super) fn summary<'py>(
+     d.set_item("phase_checkpoints", decisions)?;
+     d.set_item("chemical_assignment", s.chemical_assignment)?;
+     d.set_item("iterative_refinement", s.iterative_refinement)?;
++    d.set_item("cached_normal_refinement", s.cached_normal_refinement)?;
++    d.set_item("cached_normal_solves", s.cached_normal_solves)?;
++    d.set_item("normal_cache_fallbacks", s.normal_cache_fallbacks)?;
+     d.set_item("missing_reflections", s.missing_reflections)?;
+     d.set_item("resolution_extension", s.resolution_extension)?;
+     d.set_item("prediction_steps", s.prediction_steps)?;
+diff --git a/crates/phasesmith-py/src/solution_symmetry.rs b/crates/phasesmith-py/src/solution_symmetry.rs
+index 70b878b..0966a47 100644
+--- a/crates/phasesmith-py/src/solution_symmetry.rs
++++ b/crates/phasesmith-py/src/solution_symmetry.rs
+@@ -105,6 +105,8 @@ pub(super) fn result<'py>(
+     out.set_item("evaluation", evaluation(py, &state.evaluation)?)?;
+     out.set_item("parameters", state.parameters.clone().into_pyarray(py))?;
+     out.set_item("accepted_steps", state.accepted_steps)?;
++    out.set_item("cached_normal_solves", state.cached_normal_solves)?;
++    out.set_item("normal_cache_fallbacks", state.normal_cache_fallbacks)?;
+     out.set_item("termination", state.termination)?;
+     Ok(out)
+ }
+@@ -206,7 +208,8 @@ impl NativeModel {
+             .map_err(invalid)?;
+         evaluation(py, &state)
+     }
+-    #[pyo3(signature=(parameters, iterations, max_seconds, cancellation, iterative=false))]
++    #[pyo3(signature=(parameters, iterations, max_seconds, cancellation, iterative=false, cached_normal=false))]
++    #[allow(clippy::too_many_arguments)]
+     fn refine<'py>(
+         &self,
+         py: Python<'py>,
+@@ -215,6 +218,7 @@ impl NativeModel {
+         max_seconds: f64,
+         cancellation: Option<PyRef<'_, NativeCancellation>>,
+         iterative: bool,
++        cached_normal: bool,
+     ) -> PyResult<Bound<'py, PyDict>> {
+         if !max_seconds.is_finite() || !(0.0..=3600.).contains(&max_seconds) || max_seconds == 0. {
+             return Err(PyValueError::new_err("invalid refinement runtime"));
+@@ -224,12 +228,13 @@ impl NativeModel {
+         let model = self.inner.clone();
+         let state = py
+             .detach(move || {
+-                model.refine_with_solver(
++                model.refine_with_normal_cache(
+                     &parameters,
+                     iterations,
+                     Some(Instant::now() + Duration::from_secs_f64(max_seconds)),
+                     cancellation.as_ref(),
+                     iterative,
++                    cached_normal,
+                 )
+             })
+             .map_err(invalid)?;
+diff --git a/crates/phasesmith-solution/benches/solution.rs b/crates/phasesmith-solution/benches/solution.rs
+index 7b940d3..aa5216e 100644
+--- a/crates/phasesmith-solution/benches/solution.rs
++++ b/crates/phasesmith-solution/benches/solution.rs
+@@ -143,6 +143,49 @@ fn benchmark(c: &mut Criterion) {
+             },
+         );
+     }
++    for cached in [false, true] {
++        let label = if cached { "cached" } else { "control" };
++        c.bench_function(
++            &format!("normal_cache_refine_8_atoms_2108_rows_69_parameters_3_steps_{label}"),
++            |b| {
++                b.iter(|| {
++                    prepared
++                        .clone()
++                        .refine_with_normal_cache(&parameters, 3, None, None, true, cached)
++                        .unwrap()
++                });
++            },
++        );
++        let e = prepared.evaluate(&parameters).unwrap();
++        c.bench_function(
++            &format!("normal_cache_step_8_atoms_2108_rows_69_parameters_{label}"),
++            |b| {
++                b.iter(|| {
++                    if cached {
++                        phasesmith_solution::cached_normal_step(
++                            &e.jacobian,
++                            &e.residual,
++                            1e-3,
++                            None,
++                            None,
++                        )
++                        .unwrap()
++                        .step
++                    } else {
++                        phasesmith_solution::iterative_normal_step(
++                            &e.jacobian,
++                            &e.residual,
++                            1e-3,
++                            None,
++                            None,
++                        )
++                        .unwrap()
++                        .0
++                    }
++                });
++            },
++        );
++    }
+     let mirror_group = SpaceGroup::new(vec![
+         SymmetryOperation::identity(),
+         SymmetryOperation::new(
+@@ -1131,6 +1174,67 @@ fn benchmark(c: &mut Criterion) {
+             },
+         );
+     }
++    for cached in [false, true] {
++        let options = SolveOptions {
++            phasing: PhasingMethod::DualSpace,
++            trials: 2,
++            cycles: 128,
++            max_seconds: 60.,
++            r1_target: 1e-6,
++            ..SolveOptions::default()
++        };
++        let search = SharedSearchOptions {
++            maximum_atoms: 32,
++            symmetry_recycling: true,
++            tangent_refinement: true,
++            wilson_normalization: true,
++            phase_quality_selection: true,
++            phase_origin_selection: true,
++            chemical_assignment: true,
++            iterative_refinement: true,
++            score_only_evaluation: true,
++            reusable_fourier_workspaces: true,
++            work_sliced_phasing: true,
++            isotropic_assignment_refinement: true,
++            filtered_peak_search: true,
++            batched_fft: true,
++            cached_normal_refinement: cached,
++            ..SharedSearchOptions::default()
++        };
++        let label = if cached { "cached" } else { "control" };
++        c.bench_function(
++            &format!("normal_cache_search_32cubed_8_atoms_2108_rows_{label}"),
++            |b| {
++                let sample = phasesmith_solution::solve_elements(
++                    &count_observations,
++                    cell,
++                    &group,
++                    &quality_elements,
++                    &options,
++                    &search,
++                )
++                .unwrap();
++                let audit = sample.shared_search.unwrap();
++                eprintln!(
++                    "normal_search_sample {label} final_fits {} cached_solves {} fallbacks {}",
++                    audit.final_refinements,
++                    audit.cached_normal_solves,
++                    audit.normal_cache_fallbacks
++                );
++                b.iter(|| {
++                    phasesmith_solution::solve_elements(
++                        &count_observations,
++                        cell,
++                        &group,
++                        &quality_elements,
++                        &options,
++                        &search,
++                    )
++                    .unwrap()
++                });
++            },
++        );
++    }
+     let mut count_benches = c.benchmark_group("count_selection_8_atoms_2108_reflections");
+     count_benches
+         .sample_size(10)
+diff --git a/crates/phasesmith-solution/src/adp_refinement.rs b/crates/phasesmith-solution/src/adp_refinement.rs
+index 584d405..c79021c 100644
+--- a/crates/phasesmith-solution/src/adp_refinement.rs
++++ b/crates/phasesmith-solution/src/adp_refinement.rs
+@@ -187,6 +187,10 @@ pub struct SymmetricRefinement {
+     pub accepted_steps: usize,
+     /// `gradient`, `max_iterations`, `stagnated`, `cancelled`, or `max_runtime`.
+     pub termination: &'static str,
++    /// Actual linear steps accepted from the bounded normal cache.
++    pub cached_normal_solves: usize,
++    /// Cache attempts that required the original matrix-free solver.
++    pub normal_cache_fallbacks: usize,
+ }
+
+ /// Lightweight final candidate; excludes prepared scattering and dense Jacobians.
+@@ -725,6 +729,30 @@ impl PreparedSymmetricModel {
+         deadline: Option<Instant>,
+         cancellation: Option<&Cancellation>,
+         iterative: bool,
++    ) -> Result<SymmetricRefinement, SolutionError> {
++        self.refine_with_normal_cache(
++            initial,
++            iterations,
++            deadline,
++            cancellation,
++            iterative,
++            false,
++        )
++    }
++
++    /// Optional bounded preconditioned normal cache with original-operator checks.
++    /// All observations, derivatives, line searches and stopping gates are retained.
++    /// # Errors
++    /// Rejects the same invalid inputs as `refine_with_solver`.
++    #[allow(clippy::too_many_lines)]
++    pub fn refine_with_normal_cache(
++        self,
++        initial: &[f64],
++        iterations: usize,
++        deadline: Option<Instant>,
++        cancellation: Option<&Cancellation>,
++        iterative: bool,
++        cached_normal: bool,
+     ) -> Result<SymmetricRefinement, SolutionError> {
+         if iterations > 200 {
+             return Err(error("symmetric iteration budget must not exceed 200"));
+@@ -736,6 +764,8 @@ impl PreparedSymmetricModel {
+         let mut damping = 1e-3_f64;
+         let mut accepted = 0;
+         let mut termination = "max_iterations";
++        let mut cached_normal_solves = 0;
++        let mut normal_cache_fallbacks = 0;
+         for _ in 0..iterations {
+             if crate::stopped(deadline, cancellation) {
+                 termination = if cancellation.is_some_and(Cancellation::is_cancelled) {
+@@ -775,7 +805,21 @@ impl PreparedSymmetricModel {
+                 }
+                 gradient[i] = -gradient[i];
+             }
+-            let solved = if use_iterative {
++            let solved = if use_iterative && cached_normal {
++                crate::cached_normal_step(
++                    &evaluation.jacobian,
++                    &evaluation.residual,
++                    damping,
++                    deadline,
++                    cancellation,
++                )
++                .ok()
++                .map(|v| {
++                    cached_normal_solves += usize::from(v.used_cache);
++                    normal_cache_fallbacks += usize::from(v.fell_back);
++                    v.step
++                })
++            } else if use_iterative {
+                 crate::iterative_normal_step(
+                     &evaluation.jacobian,
+                     &evaluation.residual,
+@@ -849,6 +893,8 @@ impl PreparedSymmetricModel {
+             evaluation,
+             accepted_steps: accepted,
+             termination,
++            cached_normal_solves,
++            normal_cache_fallbacks,
+         })
+     }
+ }
+diff --git a/crates/phasesmith-solution/src/lib.rs b/crates/phasesmith-solution/src/lib.rs
+index b19876e..dd0689a 100644
+--- a/crates/phasesmith-solution/src/lib.rs
++++ b/crates/phasesmith-solution/src/lib.rs
+@@ -55,7 +55,7 @@ pub use dual_space::{
+     dual_space_monitored, dual_space_with_prediction,
+ };
+ pub use fourier::{FlipOptions, FlipResult, charge_flip, extract_peaks, transform_3d};
+-pub use linear_step::iterative_normal_step;
++pub use linear_step::{CachedNormalStep, cached_normal_step, iterative_normal_step};
+ pub use model::{ModelEvaluation, PolishedModel, evaluate_model, polish_model};
+ pub use peak_completion::{
+     ChemicalScale, PeakCompletionCandidate, PeakCompletionResult, PreparedPeakCompletion,
+diff --git a/crates/phasesmith-solution/src/linear_step.rs b/crates/phasesmith-solution/src/linear_step.rs
+index c895c75..21bd410 100644
+--- a/crates/phasesmith-solution/src/linear_step.rs
++++ b/crates/phasesmith-solution/src/linear_step.rs
+@@ -2,19 +2,216 @@
+ use crate::{Cancellation, SolutionError, error};
+ use std::time::Instant;
+
+-/// Solve `(JᵀJ + damping*D) step = -Jᵀr`, `D=max(diag(JᵀJ),1e-8)`.
+-/// J is parameter-major; this retains J but never constructs `JᵀJ`.
+-/// Returns the step and actual CG iterations. A stop is an explicit error.
++/// Actual execution of a guarded normal-cache solve.
++pub struct CachedNormalStep {
++    /// Step in the original parameter units.
++    pub step: Vec<f64>,
++    /// Iterations in the solver that returned the step.
++    pub iterations: usize,
++    /// Whether the normal cache returned the accepted linear step.
++    pub used_cache: bool,
++    /// Whether a cache attempt fell back to the original matrix-free solver.
++    pub fell_back: bool,
++}
++
++const NORMAL_CACHE_BYTES: usize = 8 * 1024 * 1024;
++
++// Fixed eight-lane reduction allows vectorization without fast-math or FMA.
++fn lane_dot(a: &[f64], b: &[f64]) -> f64 {
++    let mut sums = [0.; 8];
++    let mut aa = a.chunks_exact(8);
++    let mut bb = b.chunks_exact(8);
++    for (x, y) in aa.by_ref().zip(bb.by_ref()) {
++        for i in 0..8 {
++            sums[i] += x[i] * y[i];
++        }
++    }
++    let mut result = sums.into_iter().sum::<f64>();
++    for (x, y) in aa.remainder().iter().zip(bb.remainder()) {
++        result += x * y;
++    }
++    result
++}
++
++/// Cache `S J^T J S`, solve by CG, then check against the original J operator.
++/// Keeps the original damping, iteration ceiling and residual tolerances. Uses
++/// at most 8 MiB; unsuitable shapes and numerical failures use the original path.
+ /// # Errors
+-/// Rejects malformed, nonfinite arrays, invalid damping, stops and failed solves.
+-#[allow(clippy::too_many_lines)]
+-pub fn iterative_normal_step(
++/// Rejects the same malformed inputs, stopped or failed systems as the original.
++pub fn cached_normal_step(
+     jacobian: &[f64],
+     residual: &[f64],
+     damping: f64,
+     deadline: Option<Instant>,
+     cancellation: Option<&Cancellation>,
++) -> Result<CachedNormalStep, SolutionError> {
++    validate(jacobian, residual, damping)?;
++    let n = jacobian.len() / residual.len();
++    let eligible = cache_shape(n, residual.len());
++    if eligible {
++        if let Ok((step, iterations)) =
++            cached_solve(jacobian, residual, damping, deadline, cancellation)
++        {
++            return Ok(CachedNormalStep {
++                step,
++                iterations,
++                used_cache: true,
++                fell_back: false,
++            });
++        }
++    }
++    let (step, iterations) =
++        iterative_normal_step(jacobian, residual, damping, deadline, cancellation)?;
++    Ok(CachedNormalStep {
++        step,
++        iterations,
++        used_cache: false,
++        fell_back: eligible,
++    })
++}
++
++#[allow(clippy::too_many_lines)]
++fn cached_solve(
++    jacobian: &[f64],
++    observed_residual: &[f64],
++    damping: f64,
++    deadline: Option<Instant>,
++    cancellation: Option<&Cancellation>,
+ ) -> Result<(Vec<f64>, usize), SolutionError> {
++    let reflections = observed_residual.len();
++    let parameters = jacobian.len() / reflections;
++    let scales: Vec<_> = jacobian
++        .chunks_exact(reflections)
++        .map(|row| 1. / row.iter().map(|v| v * v).sum::<f64>().max(1e-8).sqrt())
++        .collect();
++    let rhs: Vec<_> = jacobian
++        .chunks_exact(reflections)
++        .zip(&scales)
++        .map(|(row, scale)| {
++            -scale
++                * row
++                    .iter()
++                    .zip(observed_residual)
++                    .map(|(a, b)| a * b)
++                    .sum::<f64>()
++        })
++        .collect();
++    let norm: f64 = rhs.iter().map(|v| v * v).sum();
++    if norm == 0. {
++        return Ok((vec![0.; parameters], 0));
++    }
++    let mut matrix = vec![0.; parameters * parameters];
++    for i in 0..parameters {
++        if crate::stopped(deadline, cancellation) {
++            return Err(error("normal cache stopped"));
++        }
++        for k in 0..=i {
++            let value = scales[i]
++                * scales[k]
++                * lane_dot(
++                    &jacobian[i * reflections..(i + 1) * reflections],
++                    &jacobian[k * reflections..(k + 1) * reflections],
++                );
++            matrix[i * parameters + k] = value;
++            matrix[k * parameters + i] = value;
++        }
++    }
++    let mut scaled_step = vec![0.; parameters];
++    let mut residual = rhs;
++    let mut direction = residual.clone();
++    let mut rr = norm;
++    let mut product = vec![0.; parameters];
++    let limit = (2 * parameters).min(256);
++    for iteration in 0..limit {
++        if crate::stopped(deadline, cancellation) {
++            return Err(error("normal cache stopped"));
++        }
++        for (i, row) in matrix.chunks_exact(parameters).enumerate() {
++            product[i] = lane_dot(row, &direction) + damping * direction[i];
++        }
++        let curvature: f64 = direction.iter().zip(&product).map(|(a, b)| a * b).sum();
++        if !curvature.is_finite() || curvature <= 0. {
++            return Err(error("nonpositive cached curvature"));
++        }
++        let alpha = rr / curvature;
++        for i in 0..parameters {
++            scaled_step[i] += alpha * direction[i];
++            residual[i] -= alpha * product[i];
++        }
++        let next: f64 = residual.iter().map(|v| v * v).sum();
++        if next <= norm * 1e-16 || iteration + 1 == limit {
++            // Reapply the original matrix-free operator, not the cached Gram matrix.
++            let actual = original_residual_squared(
++                jacobian,
++                observed_residual,
++                damping,
++                &scales,
++                &scaled_step,
++            );
++            let tolerance = if iteration + 1 == limit { 1e-10 } else { 1e-16 };
++            let step: Vec<_> = scaled_step
++                .iter()
++                .zip(&scales)
++                .map(|(a, b)| a * b)
++                .collect();
++            if actual <= norm * tolerance && step.iter().all(|v| v.is_finite()) {
++                return Ok((step, iteration + 1));
++            }
++            return Err(error("cached step fails original-operator residual check"));
++        }
++        for i in 0..parameters {
++            direction[i] = residual[i] + next / rr * direction[i];
++        }
++        rr = next;
++    }
++    Err(error("cached solve did not converge"))
++}
++
++fn cache_shape(parameters: usize, reflections: usize) -> bool {
++    parameters >= 32
++        && reflections >= 2 * parameters
++        && parameters
++            .checked_mul(parameters)
++            .and_then(|v| v.checked_mul(size_of::<f64>()))
++            .is_some_and(|v| v <= NORMAL_CACHE_BYTES)
++}
++
++fn original_residual_squared(
++    jacobian: &[f64],
++    observed_residual: &[f64],
++    damping: f64,
++    scales: &[f64],
++    scaled_step: &[f64],
++) -> f64 {
++    let reflections = observed_residual.len();
++    let mut jp = vec![0.; reflections];
++    for ((row, scale), value) in jacobian
++        .chunks_exact(reflections)
++        .zip(scales)
++        .zip(scaled_step)
++    {
++        for (out, v) in jp.iter_mut().zip(row) {
++            *out += v * scale * value;
++        }
++    }
++    jacobian
++        .chunks_exact(reflections)
++        .zip(scales)
++        .zip(scaled_step)
++        .map(|((row, scale), value)| {
++            let rhs = -scale
++                * row
++                    .iter()
++                    .zip(observed_residual)
++                    .map(|(a, b)| a * b)
++                    .sum::<f64>();
++            let ax = scale * row.iter().zip(&jp).map(|(a, b)| a * b).sum::<f64>() + damping * value;
++            (rhs - ax).powi(2)
++        })
++        .sum()
++}
++
++fn validate(jacobian: &[f64], residual: &[f64], damping: f64) -> Result<(), SolutionError> {
+     let m = residual.len();
+     if m == 0
+         || jacobian.is_empty()
+@@ -26,6 +223,24 @@ pub fn iterative_normal_step(
+     {
+         return Err(error("invalid iterative normal system"));
+     }
++    Ok(())
++}
++
++/// Solve `(JᵀJ + damping*D) step = -Jᵀr`, `D=max(diag(JᵀJ),1e-8)`.
++/// J is parameter-major; this retains J but never constructs `JᵀJ`.
++/// Returns the step and actual CG iterations. A stop is an explicit error.
++/// # Errors
++/// Rejects malformed, nonfinite arrays, invalid damping, stops and failed solves.
++#[allow(clippy::too_many_lines)]
++pub fn iterative_normal_step(
++    jacobian: &[f64],
++    residual: &[f64],
++    damping: f64,
++    deadline: Option<Instant>,
++    cancellation: Option<&Cancellation>,
++) -> Result<(Vec<f64>, usize), SolutionError> {
++    let m = residual.len();
++    validate(jacobian, residual, damping)?;
+     let n = jacobian.len() / m;
+     let inverse_scale: Vec<_> = jacobian
+         .chunks_exact(m)
+@@ -100,6 +315,34 @@ pub fn iterative_normal_step(
+ mod tests {
+     use super::*;
+     #[test]
++    fn cache_limits_and_original_operator_guard() {
++        assert!(cache_shape(32, 64));
++        assert!(!cache_shape(31, 64));
++        assert!(!cache_shape(32, 63));
++        assert!(!cache_shape(1025, 2050));
++        let jacobian = [1., 0., 0., 1.];
++        let residual = [1., 2.];
++        let scales = [1., 1.];
++        assert_eq!(
++            original_residual_squared(&jacobian, &residual, 1., &scales, &[-0.5, -1.]),
++            0.
++        );
++        assert!(original_residual_squared(&jacobian, &residual, 1., &scales, &[0., 0.]) > 1.);
++        assert!(
++            !original_residual_squared(&jacobian, &residual, 1., &scales, &[f64::NAN, 0.])
++                .is_finite()
++        );
++    }
++    #[test]
++    fn cached_systems_honor_cancellation_and_deadline() {
++        let token = Cancellation::default();
++        let _ = token.cancel();
++        let j = vec![1.; 32 * 64];
++        let r = vec![1.; 64];
++        assert!(cached_normal_step(&j, &r, 0.1, None, Some(&token)).is_err());
++        assert!(cached_normal_step(&j, &r, 0.1, Some(Instant::now()), None).is_err());
++    }
++    #[test]
+     fn stopped_systems_and_invalid_shapes_fail_explicitly() {
+         let token = Cancellation::default();
+         let _ = token.cancel();
+diff --git a/crates/phasesmith-solution/src/shared_search.rs b/crates/phasesmith-solution/src/shared_search.rs
+index cf45557..bab7447 100644
+--- a/crates/phasesmith-solution/src/shared_search.rs
++++ b/crates/phasesmith-solution/src/shared_search.rs
+@@ -83,6 +83,8 @@ pub struct SharedSearchOptions {
+     pub chemical_assignment: bool,
+     /// Solve large damped refinement systems with an iterative normal operator.
+     pub iterative_refinement: bool,
++    /// Cache checked preconditioned normal matrices in final iterative fits only.
++    pub cached_normal_refinement: bool,
+     /// Regularize allowed unmeasured coefficients using the observed Wilson envelope.
+     pub missing_reflections: bool,
+     /// Reciprocal-radius extension multiplier, in [1,1.5].
+@@ -123,6 +125,7 @@ impl Default for SharedSearchOptions {
+             independent_origin_sampling: false,
+             chemical_assignment: false,
+             iterative_refinement: false,
++            cached_normal_refinement: false,
+             missing_reflections: false,
+             resolution_extension: 1.,
+         }
+@@ -260,6 +263,8 @@ pub struct SharedSearchSummary {
+     pub chemical_assignment: bool,
+     /// Solve large damped refinement systems with an iterative normal operator.
+     pub iterative_refinement: bool,
++    /// Cache checked preconditioned normal matrices in final iterative fits only.
++    pub cached_normal_refinement: bool,
+     /// Requested observed-envelope gap treatment.
+     pub missing_reflections: bool,
+     /// Requested reciprocal-radius extension.
+@@ -318,6 +323,10 @@ pub struct SharedSearchSummary {
+     pub screening_refinements: usize,
+     /// Requested final-mode fits, including initial frameworks and promotions.
+     pub final_refinements: usize,
++    /// Final linear steps accepted from the guarded normal cache.
++    pub cached_normal_solves: usize,
++    /// Normal-cache attempts falling back to the original solver.
++    pub normal_cache_fallbacks: usize,
+     /// Screened edits sent to full refinement.
+     pub promoted_candidates: usize,
+     /// Valid screened edits omitted from the full-fit shortlist.
+@@ -556,13 +565,17 @@ fn refine(
+     } else {
+         audit.final_refinements += 1;
+     }
+-    let fit = prepared.refine_with_solver(
++    let fit = prepared.refine_with_normal_cache(
+         &initial,
+         iterations,
+         Some(deadline),
+         options.cancellation.as_ref(),
+         audit.iterative_refinement,
++        audit.cached_normal_refinement
++            && !matches!(pass, FitPass::Screen(_) | FitPass::ScreenSeed(_, _)),
+     )?;
++    audit.cached_normal_solves += fit.cached_normal_solves;
++    audit.normal_cache_fallbacks += fit.normal_cache_fallbacks;
+     let (mut summary, mut full) = fit.summarize(mode, baseline.r1, baseline.objective);
+     let aligned: Vec<_> = full
+         .iter()
+@@ -1768,6 +1781,7 @@ pub fn solve_elements(
+         || (search.reusable_fourier_workspaces && options.phasing != PhasingMethod::DualSpace)
+         || ((search.filtered_peak_search || search.batched_fft)
+             && !search.reusable_fourier_workspaces)
++        || (search.cached_normal_refinement && !search.iterative_refinement)
+         || (search.isotropic_assignment_refinement
+             && (!search.phase_origin_selection || !search.chemical_assignment))
+         || (search.work_sliced_phasing
+@@ -2013,6 +2027,7 @@ pub fn solve_elements(
+         independent_origin_sampling: search.independent_origin_sampling,
+         chemical_assignment: search.chemical_assignment,
+         iterative_refinement: search.iterative_refinement,
++        cached_normal_refinement: search.cached_normal_refinement,
+         missing_reflections: search.missing_reflections,
+         resolution_extension: search.resolution_extension,
+         prediction: prediction_f.as_ref().map(|p| p.audit.clone()),
+diff --git a/python/phasesmith/experimental/solution.py b/python/phasesmith/experimental/solution.py
+index bee6583..f9dc105 100644
+--- a/python/phasesmith/experimental/solution.py
++++ b/python/phasesmith/experimental/solution.py
+@@ -529,6 +529,9 @@ class SharedSearchAudit:
+     phase_origin_selection: bool = False
+     chemical_assignment: bool = False
+     iterative_refinement: bool = False
++    cached_normal_refinement: bool = False
++    cached_normal_solves: int = 0
++    normal_cache_fallbacks: int = 0
+     missing_reflections: bool = False
+     score_only_evaluation: bool = False
+     reusable_fourier_workspaces: bool = False
+@@ -785,6 +788,7 @@ def solve_structure_elements(
+     phase_origin_selection: bool = False,
+     chemical_assignment: bool = False,
+     iterative_refinement: bool = False,
++    cached_normal_refinement: bool = False,
+     missing_reflections: bool = False,
+     resolution_extension: float = 1.0,
+     score_only_evaluation: bool = False,
+@@ -811,6 +815,9 @@ def solve_structure_elements(
+     ``phase_first_selection=False`` tests a checkpoint portfolio instead; this
+     control is ignored when quality selection is off.
+     ``calculated_shell_normalization=False`` retains the earlier statistic.
++    ``cached_normal_refinement=True`` caches preconditioned normal matrices in final
++    iterative fits, verifies steps against the original Jacobian and falls back
++    to the matrix-free solver if needed. It requires iterative refinement.
+     ``batched_fft=True`` batches contiguous Fourier lines after blocked layout
+     transposes, retaining the original plans, axis order and normalization.
+     It requires reusable Fourier workspaces.
+@@ -882,6 +889,7 @@ def solve_structure_elements(
+     for name, value in (
+         ("chemical_assignment", chemical_assignment),
+         ("iterative_refinement", iterative_refinement),
++        ("cached_normal_refinement", cached_normal_refinement),
+         ("missing_reflections", missing_reflections),
+         ("adaptive_checkpoints", adaptive_checkpoints),
+         ("score_only_evaluation", score_only_evaluation),
+@@ -904,6 +912,8 @@ def solve_structure_elements(
+         phase_origin_selection and wilson_normalization
+     ):
+         raise ValueError("prediction requires phase_origin_selection and wilson_normalization")
++    if cached_normal_refinement and not iterative_refinement:
++        raise ValueError("cached_normal_refinement requires iterative_refinement")
+     if batched_fft and not reusable_fourier_workspaces:
+         raise ValueError("batched_fft requires reusable_fourier_workspaces")
+     if filtered_peak_search and not reusable_fourier_workspaces:
+@@ -1043,7 +1053,7 @@ def solve_structure_elements(
+                 reusable_fourier_workspaces,
+                 work_sliced_phasing,
+                 isotropic_assignment_refinement,
+-                (filtered_peak_search, batched_fft),
++                (filtered_peak_search, batched_fft, cached_normal_refinement),
+             ),
+         ),
+     )
+diff --git a/python/phasesmith/experimental/solution_origin_reference.py b/python/phasesmith/experimental/solution_origin_reference.py
+index bc7cb86..1f1d4b9 100644
+--- a/python/phasesmith/experimental/solution_origin_reference.py
++++ b/python/phasesmith/experimental/solution_origin_reference.py
+@@ -103,3 +103,13 @@ def iterative_normal_reference(jacobian, residual, damping):
+     normal = j.T @ j
+     diagonal = np.maximum(np.diag(normal), 1e-8)
+     return np.linalg.solve(normal + damping * np.diag(diagonal), -(j.T @ residual))
++
++
++def preconditioned_normal_reference(jacobian, residual, damping):
++    """Independent normal matrix/rhs in diagonal-scaled coordinates, using NumPy."""
++    j = np.asarray(jacobian, dtype=float)
++    r = np.asarray(residual, dtype=float)
++    scale = np.maximum(np.sum(j * j, axis=1), 1e-8) ** -0.5
++    scaled = scale[:, None] * j
++    normal = scaled @ scaled.T + damping * np.eye(len(scale))
++    return normal, -(scaled @ r), scale
+diff --git a/tests/test_solution_phase_ablation_report.py b/tests/test_solution_phase_ablation_report.py
+index 8af4312..7217680 100644
+--- a/tests/test_solution_phase_ablation_report.py
++++ b/tests/test_solution_phase_ablation_report.py
+@@ -47,6 +47,7 @@ def test_pair_labels_are_distinct_from_prediction_case_pairs():
+         "assignment_flag",
+         "peak_flag",
+         "fft_flag",
++        "normal_flag",
+     ],
+ )
+ def test_comparison_rejects_incomplete_opened_or_changed_panels(tmp_path, corruption):
+@@ -68,6 +69,7 @@ def test_comparison_rejects_incomplete_opened_or_changed_panels(tmp_path, corrup
+             "assignment_flag": "isotropic_assignment_refinement",
+             "peak_flag": "filtered_peak_search",
+             "fft_flag": "batched_fft",
++            "normal_flag": "cached_normal_refinement",
+         }[corruption]
+         report[key] = 1.2 if corruption == "extension_flag" else True
+     else:
+diff --git a/benchmarks/solution_normal_interleaved.py b/benchmarks/solution_normal_interleaved.py
+new file mode 100644
+index 0000000..f14a9fb
+--- /dev/null
++++ b/benchmarks/solution_normal_interleaved.py
+@@ -0,0 +1,84 @@
++"""Balanced serial cached-normal refinement comparison with optimized kernels; development only."""
++
++from __future__ import annotations
++
++import argparse
++import json
++from pathlib import Path
++from types import SimpleNamespace
++
++from solution_corpus.run import collect_jobs
++from solution_execution_interleaved import collect_balanced
++
++ROOT = Path(__file__).resolve().parents[1]
++MODES = ("control", "cached")
++
++
++def main():
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument(
++        "--manifest", type=Path, default=ROOT / "validation/solution-corpus-v5.json"
++    )
++    parser.add_argument("--output", type=Path, required=True)
++    parser.add_argument("--seconds", type=float, default=15.0)
++    parser.add_argument("--lock-revision", type=int, default=19)
++    parser.add_argument(
++        "--shelxt",
++        type=Path,
++        default=Path("/Users/clemens/.local/opt/shelx/versions/2026-10-28/bin/shelxt"),
++    )
++    args = parser.parse_args()
++    if args.output.exists() or not 5 <= args.seconds <= 120:
++        parser.error("a new directory and seconds in [5,120] are required")
++    args.output.mkdir(parents=True)
++    streams = {}
++    for mode in MODES:
++        controls = SimpleNamespace(
++            manifest=args.manifest.resolve(),
++            output=(args.output / mode).resolve(),
++            seconds=args.seconds,
++            shelxt=args.shelxt.resolve(),
++            split="development",
++            resume=False,
++            lock_revision=args.lock_revision,
++            legacy_counts=False,
++            wilson_normalization=True,
++            phase_quality_selection=True,
++            phase_origin_selection=True,
++            chemical_assignment=True,
++            iterative_refinement=True,
++            missing_reflections=False,
++            resolution_extension=1.0,
++            adaptive_checkpoints=False,
++            isotropic_assignment_refinement=True,
++            filtered_peak_search=True,
++            batched_fft=True,
++            cached_normal_refinement=mode == "cached",
++            work_sliced_phasing=True,
++            independent_origin_sampling=False,
++            phase_first_selection=True,
++            legacy_quality_normalization=False,
++            score_only_evaluation=True,
++            reusable_fourier_workspaces=True,
++            collection_schedule="balanced serial case-interleaved normal-cache comparison",
++            collection_scheduler_source="benchmarks/solution_normal_interleaved.py",
++        )
++        streams[mode] = collect_jobs(controls)
++    events = []
++
++    def record(mode, event):
++        events.append({"mode": mode, **event})
++        (args.output / "schedule.json").write_text(json.dumps(events, indent=2) + "\n")
++        print(json.dumps({"mode": mode, **event}), flush=True)
++
++    count = collect_balanced(streams, record)
++    expected = 2 * sum(
++        c["split"] == "development" for c in json.loads(args.manifest.read_text())["cases"]
++    )
++    if count != expected:
++        raise ValueError("incomplete development collection")
++    print(json.dumps({"complete_rounds": count, "modes": MODES, "holdout_opened": False}))
++
++
++if __name__ == "__main__":
++    main()
+diff --git a/docs/solution-normal-cache.md b/docs/solution-normal-cache.md
+new file mode 100644
+index 0000000..8f95530
+--- /dev/null
++++ b/docs/solution-normal-cache.md
+@@ -0,0 +1,126 @@
++# Guarded normal-matrix caching in final refinement
++
++## Diagnosis and scope
++
++The final-refinement follow-up starts at `210de96`, with the latest batched FFT,
++filtered peaks, work-sliced phasing and isotropic competing-assignment settings.
++A native sample of repeated complete `cod-2021292` development solves finds
++1,876 matrix-free CG samples inside 3,450 constrained-refiner samples (54%).
++The fused symmetry evaluator has 2,324 samples across final and screening calls,
++out of 6,690 main-thread samples. These are inclusive stack counts from one
++representative case, not universal time fractions or a speed comparison.
++`benchmarks/structure-solution-normal-cache-profile-macos.json` retains provenance,
++script and raw-profile hash; the raw stack is in `runs/final-refinement-profile/`.
++Friedel-pair reuse was considered, but this implementation targets the larger
++linear-solve cost inside final refinement.
++
++`cached_normal_refinement=True` is experimental and off by default. It requires
++`iterative_refinement=True` and affects requested-mode final fits only. Isotropic
++screening fits, competing-assignment policy, all original observations, analytic
++values/derivatives, physical ADP bounds, site symmetry, damping, step clipping,
++backtracking and acceptance/termination tests retain their existing definitions.
++
++## Equations, memory and validation guard
++
++Let J be the residual Jacobian in conventional reflection-by-parameter notation,
++r the normalized amplitude residual, and
++
++    D_j = max(sum_h J_hj^2, 1e-8), S_j = D_j^(-1/2).
++
++The original damped system is
++
++    (J^T J + lambda D) delta = -J^T r.
++
++Writing delta=S x gives
++
++    (S J^T J S + lambda I) x = b, b=-S J^T r.
++
++The original CG operator streams the parameter-major Jacobian for J(S p) and
++S J^T(J(S p)) on every CG iteration. The new path forms one triangle of the
++preconditioned normal matrix once for the current Jacobian, mirrors it and uses
++contiguous row-major matrix/vector products inside CG. A fixed eight-lane f64
++reduction permits vectorization; tail elements retain explicit ordered handling.
++No fast-math, reduced precision, external BLAS or numerical thread is introduced.
++The matrix is rebuilt when the nonlinear iteration supplies a new Jacobian.
++
++Eligibility is numerical/resource based: at least 32 parameters, at least twice
++as many reflection rows as parameters, and at most 8 MiB for the matrix. Other
++shapes use the original solver. Original dense-Jacobian and input-derived atom,
++reflection and parameter limits remain in force. This adds a bounded temporary
++workspace, without expanding scientific/resource admissibility. It neither
++compresses observations nor changes residual/Jacobian arrays or their ordering.
++
++Normal formation changes floating-point reduction order; bitwise agreement with
++the original CG trajectory is not claimed. Both paths remain deterministic for
++fixed work. Before returning a cached result, the code reapplies the original
++Jacobian operator and checks
++
++    ||b - [S J^T J S + lambda I] x||^2 <= tau ||b||^2.
++
++The original tolerances are retained: tau=1e-16 at normal convergence, or the
++existing explicitly checked inexact bound 1e-10 at the unchanged final iteration
++ceiling min(2*n,256). A failed check, nonpositive curvature or other cache failure
++falls back to the original matrix-free solver, with the original deadline and
++cancellation token. No fit is accepted from a cached objective: the original
++fused evaluator and line search decide acceptance. Successful cache-produced
++linear solves and successful fallback solves are counted separately in the
++shared-search audit. Those counters describe returned linear steps, rather than
++accepted nonlinear updates or every unsuccessful cache attempt.
++
++The independent NumPy reference forms and solves the damped equations, and a
++separate preconditioned reference exposes the original-system residual check.
++Tests cover scaled columns, zero/tiny columns, rank deficiency, several damping
++levels, non-multiple-of-eight lengths, repeated determinism, cache shape/memory
++boundaries, explicit cancellation/deadlines, invalid inputs and complete
++anisotropic fits. The physical amplitude/profile evaluator is unchanged; existing
++independent value/Jacobian and centered finite-difference tests continue to apply.
++No support cutoff or normalization changes. GSAS-II's powder oracle does not
++cover this experimental single-crystal linear solve.
++
++## Comparison protocol
++
++The microbenchmarks compare a real eight-atom, 2,108-reflection, 69-parameter
++anisotropic Jacobian, a complete three-step final fit and a small complete search.
++Both modes share the same final executable; only normal caching differs.
++
++The corpus experiment uses all 35 development cases with seed zero, four starts,
++800 requested cycles, the existing native 13-second/outer 15-second caps and
++final anisotropic fitting. Both modes enable all current fast options, including
++batched FFTs. Original exact non-H counts and geometry gates remain unchanged;
++seven cases above native capacity stay in every denominator. A balanced serial
++scheduler alternates the leading mode by case. All 140 predictions precede both
++reference barriers. Adapter-only seal revision 19 preserves the registry,
++source data and 35/65 split. No task-owned tests, builds or microbenchmarks overlap
++timed collection. The 65 holdout outcomes remain unopened.
++
++## Kernel measurements and local validation
++
++The final source-matched Criterion collection records these sample medians:
++
++| Kernel | Control | Cached | Time change |
++| --- | ---: | ---: | ---: |
++| Original-Jacobian linear step, 69 parameters | 2.214 ms | 0.936 ms | -57.7% |
++| Complete three-step final refinement | 10.425 ms | 5.909 ms | -43.3% |
++| Complete small search | 81.585 ms | 82.535 ms | +1.2% |
++
++The small complete-search diagnostic records one final fit but zero returned
++cached steps in either mode. It provides no evidence of a whole-search speedup;
++the measured small slowdown is retained. These are one-host fixed-work kernel
++results, separate from deadline-limited corpus timings. Raw samples, confidence
++intervals, source/executable hashes and actual small-search counters are saved
++in `benchmarks/structure-solution-normal-cache-kernels-macos.json`.
++
++Workspace validation passes 407 Rust tests (34 ignored) and the full 2,012-test
++Python collection (11 external-data skips, 34 deselections). A subsequent focused
++59-test cached-normal run includes the public-control check added after full
++collection began. Strict all-target/all-feature Clippy, Cargo formatting and
++Python Ruff checks pass. Existing physical-model value, derivative, normalization
++and finite-support tolerances are unchanged. Reordered normal-equation reductions
++are checked through local linear-system residual and complete-fit tolerances.
++
++To reproduce the collection, build the experimental extension explicitly:
++
++```sh
++VIRTUAL_ENV="$PWD/.venv" maturin develop --release --features experimental-solution,experimental-spots
++.venv/bin/python benchmarks/solution_normal_interleaved.py --output runs/normal-cache --seconds 15
++```
+diff --git a/tests/test_solution_cached_normal.py b/tests/test_solution_cached_normal.py
+new file mode 100644
+index 0000000..f31d3df
+--- /dev/null
++++ b/tests/test_solution_cached_normal.py
+@@ -0,0 +1,146 @@
++"""Guarded cached normal equations against independent solves and complete fits."""
++
++import numpy as np
++import pytest
++from phasesmith import _core
++from phasesmith.crystallography import UnitCell
++from phasesmith.experimental.solution_origin_reference import (
++    iterative_normal_reference,
++    preconditioned_normal_reference,
++)
++
++pytestmark = pytest.mark.skipif(
++    not hasattr(_core, "_SharedOrbitPool"), reason="experimental-solution"
++)
++
++
++@pytest.mark.parametrize("seed", range(4))
++@pytest.mark.parametrize("damping", [1e-8, 1e-3, 0.1, 10.0])
++@pytest.mark.parametrize("kind", ["random", "rank_deficient", "tiny_columns"])
++def test_cached_step_matches_independent_damped_equations(seed, damping, kind):
++    rng = np.random.default_rng(seed)
++    j = rng.normal(size=(64, 259))
++    j *= np.geomspace(0.01, 100, 64)[:, None]
++    if kind == "rank_deficient":
++        j[-1] = j[0]
++        j[-2] = 2 * j[1]
++    elif kind == "tiny_columns":
++        j[-1] = 0
++        j[-2] *= 1e-12
++    r = rng.normal(size=j.shape[1])
++    value = _core._iterative_normal_step(j.ravel(), r, damping, cached=True)
++    expected = iterative_normal_reference(j, r, damping)
++    normal, rhs, scale = preconditioned_normal_reference(j, r, damping)
++    x = value["step"] / scale
++    # Same scaled original-system bound as the matrix-free reference tests.
++    assert np.linalg.norm(normal @ x - rhs) <= 2e-8 * np.linalg.norm(rhs)
++    # Near singular modes are weakly identified; compare predicted data and cost.
++    np.testing.assert_allclose(j.T @ value["step"], j.T @ expected, rtol=5e-5, atol=2e-6)
++    assert 0 < value["iterations"] <= 128
++    if damping >= 1e-3 and kind == "random":
++        assert value["used_cache"]
++
++
++@pytest.mark.parametrize("n,m", [(8, 100), (40, 45)])
++def test_unsuitable_shapes_use_the_unchanged_matrix_free_step(n, m):
++    rng = np.random.default_rng(29)
++    j, r = rng.normal(size=(n, m)), rng.normal(size=m)
++    old = _core._iterative_normal_step(j.ravel(), r, 0.1)
++    new = _core._iterative_normal_step(j.ravel(), r, 0.1, cached=True)
++    np.testing.assert_array_equal(old["step"].view(np.uint64), new["step"].view(np.uint64))
++    assert not new["used_cache"] and not new["fell_back"]
++
++
++@pytest.mark.parametrize("invalid", ["nan", "length", "zero", "negative"])
++def test_invalid_linear_systems_fail(invalid):
++    j, r, damping = np.ones(64 * 140), np.ones(140), 0.1
++    if invalid == "nan":
++        j[0] = np.nan
++    elif invalid == "length":
++        j = j[:-1]
++    elif invalid == "zero":
++        damping = 0
++    else:
++        damping = -1
++    with pytest.raises(ValueError):
++        _core._iterative_normal_step(j, r, damping, cached=True)
++
++
++def test_zero_rhs_and_repeated_cached_steps_are_deterministic():
++    rng = np.random.default_rng(911)
++    j = rng.normal(size=(40, 203))
++    z = _core._iterative_normal_step(j.ravel(), np.zeros(203), 0.1, cached=True)
++    assert z["iterations"] == 0 and np.all(z["step"] == 0)
++    r = rng.normal(size=203)
++    a = _core._iterative_normal_step(j.ravel(), r, 0.1, cached=True)
++    b = _core._iterative_normal_step(j.ravel(), r, 0.1, cached=True)
++    np.testing.assert_array_equal(a["step"].view(np.uint64), b["step"].view(np.uint64))
++    assert a["iterations"] == b["iterations"]
++
++
++@pytest.mark.parametrize("symbol", ["P 1", "P -1", "P m"])
++def test_complete_anisotropic_fits_preserve_original_objective_and_derivatives(symbol):
++    from test_solution_symmetry_adp import model_case
++
++    sites = [("Si" if i < 2 else "O", p) for i, p in enumerate(
++        np.random.default_rng(131).uniform(0.05, 0.95, (8, 3))
++    )]
++    model, _, _, _, _ = model_case(symbol, UnitCell(6, 7, 8, 90, 100, 90), sites)
++    p = model.initial_parameters(0.015)
++    old = model.refine(p, 8, 60.0, None, iterative=True)
++    new = model.refine(p, 8, 60.0, None, iterative=True, cached_normal=True)
++    assert new["cached_normal_solves"] > 0
++    for field in ("objective", "r1", "residual", "jacobian", "fractional_xyz", "u_cartesian"):
++        np.testing.assert_allclose(
++            new["evaluation"][field], old["evaluation"][field], rtol=2e-5, atol=2e-7
++        )
++    # Evaluation kernel is untouched and still computes analytic values/derivatives together.
++    evaluated = model.evaluate(new["parameters"])
++    np.testing.assert_array_equal(evaluated["jacobian"], new["evaluation"]["jacobian"])
++    again = model.refine(p, 8, 60.0, None, iterative=True, cached_normal=True)
++    np.testing.assert_array_equal(
++        again["parameters"].view(np.uint64), new["parameters"].view(np.uint64)
++    )
++
++
++def test_public_control_validates_dependency_and_records_final_fit_execution():
++    from phasesmith.experimental.solution import SolutionOptions, solve_structure_elements
++    from test_solution_shared_search import synthetic
++
++    cell, group, data, _, _ = synthetic("P1")
++    common = dict(cell=cell, space_group=group, elements=["Fe", "O"])
++    with pytest.raises(ValueError, match="requires iterative"):
++        solve_structure_elements(data, **common, cached_normal_refinement=True)
++    with pytest.raises(TypeError, match="boolean"):
++        solve_structure_elements(
++            data, **common, iterative_refinement=True, cached_normal_refinement=1
++        )
++    common.update(
++        maximum_atoms=12,
++        symmetry_recycling=True,
++        tangent_refinement=True,
++        wilson_normalization=True,
++        phase_quality_selection=True,
++        phase_origin_selection=True,
++        chemical_assignment=True,
++        iterative_refinement=True,
++        score_only_evaluation=True,
++        reusable_fourier_workspaces=True,
++        work_sliced_phasing=True,
++        isotropic_assignment_refinement=True,
++        filtered_peak_search=True,
++        batched_fft=True,
++        options=SolutionOptions(
++            phasing="dual_space", trials=4, cycles=800,
++            max_seconds=60, r1_target=0.005, completion=False,
++        ),
++    )
++    old = solve_structure_elements(data, **common)
++    new = solve_structure_elements(data, **common, cached_normal_refinement=True)
++    assert old.target_met and new.target_met
++    assert new.composition == old.composition
++    assert new.shared_search.cached_normal_refinement
++    assert new.best.refinement.mode == old.best.refinement.mode == "anisotropic"
++    # This model has fewer than 32 parameters and retains the original solver.
++    assert new.shared_search.cached_normal_solves == 0
++    np.testing.assert_array_equal(new.best.fractional_xyz, old.best.fractional_xyz)
+diff --git a/validation/solution-corpus-v5.benchmark19.lock.json b/validation/solution-corpus-v5.benchmark19.lock.json
+new file mode 100644
+index 0000000..6f8a0ce
+--- /dev/null
++++ b/validation/solution-corpus-v5.benchmark19.lock.json
+@@ -0,0 +1,1049 @@
++{
++  "schema": "phasesmith.solution-corpus-lock.v1",
++  "manifest_sha256": "f815629e42e608c784113ddd7400268f9e897b3db5b2af7d54224886af206f6c",
++  "cases": 100,
++  "families": 100,
++  "splits": {
++    "holdout": 65,
++    "development": 35
++  },
++  "crystal_systems": {
++    "triclinic": 18,
++    "monoclinic": 29,
++    "orthorhombic": 17,
++    "tetragonal": 16,
++    "trigonal": 8,
++    "hexagonal": 6,
++    "cubic": 6
++  },
++  "space_group_types": 27,
++  "chemistry": {
++    "light": 39,
++    "heavy": 61
++  },
++  "hydrogen_present": 66,
++  "observation_count_range": [
++    50,
++    7459
++  ],
++  "gemmi_version": "0.7.5",
++  "discovery_snapshot": "validation/data/solution-corpus-v1/discovery-v3",
++  "holdout_solver_outcomes_opened": false,
++  "verified_implementation_sha256": {
++    "benchmarks/solution_corpus/__init__.py": "2b8ea6877c5325bde0eb18eebea8099c15c3656cd618e11f124813a6376dce62",
++    "benchmarks/solution_corpus/audit.py": "d65dc309cea50780f937940c4ece3d880968c657b274c5efac6ab9ff522298c5",
++    "benchmarks/solution_corpus/data.py": "cddb7ad095f7add50f4dc5aa02b2a48e3109ab5adfd342145ad8b274158d8bd5",
++    "benchmarks/solution_corpus/run.py": "2db9d6463839e965d4b6a7afdcf57b232c48e3dc707376228ad7f09b3e096678",
++    "benchmarks/solution_corpus/seal.py": "939ba9e5a3710a4395e9ed789caa8a1aa06d222f4399a14968c170a27d9858ee",
++    "benchmarks/solution_corpus_benchmark.py": "0aa51fab582d40c74f27beacadf9c4a907f8034d08e02bdcdf0603a477fcd0f5"
++  },
++  "quality_checks": [
++    {
++      "id": "cod-2011007",
++      "observations": 7459,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2010901",
++      "observations": 3398,
++      "quantization": {
++        "intensity_maximum_relative_change": 1.924419946542937e-07,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2021292",
++      "observations": 2643,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011426",
++      "observations": 2002,
++      "quantization": {
++        "intensity_maximum_relative_change": 9.768926777655329e-08,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2243196",
++      "observations": 3068,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2021226",
++      "observations": 2353,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2102156",
++      "observations": 1862,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2010532",
++      "observations": 2184,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011371",
++      "observations": 1133,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2243197",
++      "observations": 1592,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2242644",
++      "observations": 2159,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2241300",
++      "observations": 601,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2108342",
++      "observations": 553,
++      "quantization": {
++        "intensity_maximum_relative_change": 3.9152068010420197e-07,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2241159",
++      "observations": 1112,
++      "quantization": {
++        "intensity_maximum_relative_change": 4.7674827155732656e-07,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-4326074",
++      "observations": 176,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2021310",
++      "observations": 2180,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2206101",
++      "observations": 554,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2021185",
++      "observations": 737,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2215687",
++      "observations": 50,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2010918",
++      "observations": 4817,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2010825",
++      "observations": 2694,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2021316",
++      "observations": 3712,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011512",
++      "observations": 994,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2010934",
++      "observations": 2630,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011363",
++      "observations": 1938,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2006996",
++      "observations": 252,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011038",
++      "observations": 495,
++      "quantization": {
++        "intensity_maximum_relative_change": 4.834764664286847e-07,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2010543",
++      "observations": 3004,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2010993",
++      "observations": 2003,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2242680",
++      "observations": 2079,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-1548676",
++      "observations": 1334,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011638",
++      "observations": 721,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2010647",
++      "observations": 4157,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2241796",
++      "observations": 167,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011590",
++      "observations": 903,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2021199",
++      "observations": 3050,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011318",
++      "observations": 3442,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011236",
++      "observations": 1019,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011346",
++      "observations": 3039,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2101990",
++      "observations": 1615,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2021040",
++      "observations": 1959,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2211527",
++      "observations": 102,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2207460",
++      "observations": 209,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2200818",
++      "observations": 89,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2023383",
++      "observations": 85,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2242589",
++      "observations": 2483,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2242657",
++      "observations": 2407,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-1562003",
++      "observations": 1350,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2242610",
++      "observations": 2642,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2022708",
++      "observations": 288,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2312802",
++      "observations": 500,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2020973",
++      "observations": 3233,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011355",
++      "observations": 2071,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-1519649",
++      "observations": 2901,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2232654",
++      "observations": 113,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011750",
++      "observations": 1708,
++      "quantization": {
++        "intensity_maximum_relative_change": 4.283405530382871e-07,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011241",
++      "observations": 1795,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2010705",
++      "observations": 1826,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2010654",
++      "observations": 1507,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2021374",
++      "observations": 1898,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2201295",
++      "observations": 1367,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2017324",
++      "observations": 189,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011344",
++      "observations": 3914,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011666",
++      "observations": 3097,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2207083",
++      "observations": 109,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2232444",
++      "observations": 419,
++      "quantization": {
++        "intensity_maximum_relative_change": 4.54507647667112e-07,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2010746",
++      "observations": 116,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011393",
++      "observations": 2428,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011271",
++      "observations": 3119,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011181",
++      "observations": 1956,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2223219",
++      "observations": 181,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2014187",
++      "observations": 231,
++      "quantization": {
++        "intensity_maximum_relative_change": 3.243834848063411e-07,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2107296",
++      "observations": 115,
++      "quantization": {
++        "intensity_maximum_relative_change": 2.2474346094918188e-07,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011089",
++      "observations": 3969,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2101973",
++      "observations": 1435,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-1556408",
++      "observations": 322,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2242352",
++      "observations": 848,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2203173",
++      "observations": 440,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2243590",
++      "observations": 480,
++      "quantization": {
++        "intensity_maximum_relative_change": 3.548561263173286e-07,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2240852",
++      "observations": 1291,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2020988",
++      "observations": 4807,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011056",
++      "observations": 347,
++      "quantization": {
++        "intensity_maximum_relative_change": 2.671036481729895e-07,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-1550276",
++      "observations": 2892,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2242615",
++      "observations": 2972,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011144",
++      "observations": 3777,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011501",
++      "observations": 5291,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-1548678",
++      "observations": 3347,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011044",
++      "observations": 1469,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2233659",
++      "observations": 294,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2012343",
++      "observations": 450,
++      "quantization": {
++        "intensity_maximum_relative_change": 4.2280133781411257e-07,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2243618",
++      "observations": 489,
++      "quantization": {
++        "intensity_maximum_relative_change": 3.7444930203209104e-07,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2021003",
++      "observations": 1515,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-1549038",
++      "observations": 2652,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2011451",
++      "observations": 1758,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-1550295",
++      "observations": 101,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2022343",
++      "observations": 91,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2200381",
++      "observations": 358,
++      "quantization": {
++        "intensity_maximum_relative_change": 3.2139242618408827e-07,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2010875",
++      "observations": 2445,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-1549173",
++      "observations": 1787,
++      "quantization": {
++        "intensity_maximum_relative_change": 0.0,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    },
++    {
++      "id": "cod-2211965",
++      "observations": 89,
++      "quantization": {
++        "intensity_maximum_relative_change": 2.561961683714032e-07,
++        "sigma_maximum_relative_change": 0.0
++      },
++      "source_hashes_verified": true,
++      "reference_format_symmetry_occupancy_verified": true
++    }
++  ],
++  "qualification": "Format, provenance and supported-model checks do not prove the published model is physically correct; no solver outcomes used in curation.",
++  "adapter_revision_parent": {
++    "path": "validation/solution-corpus-v5.benchmark18.lock.json",
++    "sha256": "7504bbc5a5b4266ed53b0f7e0d269b4f3994d52be0adf84a89cedf3e09215c66"
++  },
++  "adapter_only_revision": true,
++  "adapter_revision_qualification": "Unchanged registry and inherited input/split/curation provenance; only adapter source hashes refreshed. No raw/reference data reopened."
++}
