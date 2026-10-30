@@ -61,6 +61,7 @@ def main():
             cached_assignment_refinement=True,
             specialized_isotropic_refinement=True,
             streamed_peak_search=mode == "cache",
+            reuse_normal_matrices=False,
             work_sliced_phasing=True,
             independent_origin_sampling=False,
             phase_first_selection=True,

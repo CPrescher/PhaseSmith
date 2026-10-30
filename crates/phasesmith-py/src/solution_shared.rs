@@ -64,6 +64,9 @@ pub(super) fn summary<'py>(
     d.set_item("batched_phase_transforms", s.batched_phase_transforms)?;
     d.set_item("filtered_peak_cycles", s.filtered_peak_cycles)?;
     d.set_item("streamed_peak_search", s.streamed_peak_search)?;
+    d.set_item("reuse_normal_matrices", s.reuse_normal_matrices)?;
+    d.set_item("normal_matrix_builds", s.normal_matrix_builds)?;
+    d.set_item("normal_matrix_reuses", s.normal_matrix_reuses)?;
     d.set_item("streamed_peak_cycles", s.streamed_peak_cycles)?;
     d.set_item("peak_rms_fallbacks", s.peak_rms_fallbacks)?;
     d.set_item(

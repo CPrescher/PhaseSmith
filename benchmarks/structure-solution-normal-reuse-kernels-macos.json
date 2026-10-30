@@ -1,0 +1,444 @@
+{
+  "schema": "phasesmith.normal-reuse-kernels.v1",
+  "baseline": "edbc218",
+  "created_utc": "2026-10-30T18:50:38.786539+00:00",
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "command": "cargo bench -p phasesmith-solution --bench solution -- normal_reuse_ --sample-size 20 --warm-up-time 1 --measurement-time 2",
+  "benchmark_source_sha256": "ba59c24f3ca08426f96a281295e89a811583cbbe1369d2f845921a47e6288275",
+  "executable": "target/release/deps/solution-a51ba219c0abff5d",
+  "executable_sha256": "e8e1d4ff629cf4454a9154d0aa0612301f458dc041e987f1fdd8565a8bcb89a4",
+  "source_sha256": {
+    "crates/phasesmith-solution/src/adp_refinement.rs": "db71cc4a0136871b2d3e141e1c37e2d45956cf00314bc8b60b0bc3da0bc03f0e",
+    "crates/phasesmith-solution/src/assignment_ambiguity.rs": "14d991c0fd8553f4a23818fde9ba24fb2975ea5bb520a531b9417b6049cadded",
+    "crates/phasesmith-solution/src/atomic_mask.rs": "9a376037f445c67e0de4bf855ceda2d7615b41b073a7ae4746fab5b0eeac84eb",
+    "crates/phasesmith-solution/src/chemical_labels.rs": "4a45daa0a0eb236d448578a5ba5b6d2726599e3161e8888c378e7c42e5c6c0d5",
+    "crates/phasesmith-solution/src/completion.rs": "08523bbe80b71f0f29f01345d36713ac8dd3cb6134e812414ea6be5c94dd3081",
+    "crates/phasesmith-solution/src/completion_orbit.rs": "74901c137016cfdf5b18f911282fa2b995b80fb183508856b91ca8a902b52227",
+    "crates/phasesmith-solution/src/data.rs": "3f27a939350ff94f6722c23b1d2609ff10b9ec8119794e2a7cf2076cea27468e",
+    "crates/phasesmith-solution/src/dual_space.rs": "85184fc51c9bab0243f9c1010cb70b3147d765a610ab15c02883c6269d961004",
+    "crates/phasesmith-solution/src/fft_layout.rs": "b7222a0b26104f377447e1f69fa1697aced9b5e579b75526dd268e8abd285a36",
+    "crates/phasesmith-solution/src/fourier.rs": "80b353611b38b749ee0b3a30ddf4667c898b51a8eb473af241928b2177a3a14e",
+    "crates/phasesmith-solution/src/isotropic_assignment.rs": "af377a9977f443bf4562b24ee346098a4f9bf1e0c509c494ed4cd33990ba2dc2",
+    "crates/phasesmith-solution/src/isotropic_evaluation.rs": "004d05d17fd06d307cc65bf1734971f8dea67ac6b816d0a14b5a1bd32bda5bda",
+    "crates/phasesmith-solution/src/lib.rs": "8007593a7d3f4ef185b682a56689bd8aee6df106871dac63e5c2c044563d5479",
+    "crates/phasesmith-solution/src/linear_step.rs": "b1697eb1a2c4c6dc3b2b9a9a83f6e58dd4b91e4f25923217ff83f3da3c15abea",
+    "crates/phasesmith-solution/src/math3.rs": "fa00ccf3888b6bd86fa62c7b160a8e5f11d933e3736231342a179459d247bd4d",
+    "crates/phasesmith-solution/src/model.rs": "c0d802de5d8725f527ab1b40181fe0d4b12387b2c715ad188de5b409e0105139",
+    "crates/phasesmith-solution/src/peak_completion.rs": "35ad4578efcdb407b78b8a513e24ca2bc6f0246ec4bf6c47f1890f297d71dfde",
+    "crates/phasesmith-solution/src/peak_density.rs": "97a242cae68157a2adc647beb78c2fa6c8a4a60ff80b875cd9fa2a60362cf37f",
+    "crates/phasesmith-solution/src/peak_scan.rs": "4f948de041ccfe83f985646f874b2303475fe26eb9dbc0d687e95bef365f3d2e",
+    "crates/phasesmith-solution/src/phase_checkpoint.rs": "1d227a8d3dff3c8a78bf44785e8d539e22fd5ec496abc765b7f0672ed66c9dec",
+    "crates/phasesmith-solution/src/phase_origin.rs": "99d6778b0eda65dd0c2fa559ed3c05171db7d9caab3e25ddf02dc8d24b29204e",
+    "crates/phasesmith-solution/src/phase_quality.rs": "848a42a21f5192c6f843f86161b355c9129e963cb806f62df186ce19eec56580",
+    "crates/phasesmith-solution/src/phase_schedule.rs": "b11fb2c8e54d6e51836f42396cbbbd1f3759d0c04b9b75120b14019ec438240e",
+    "crates/phasesmith-solution/src/phase_score.rs": "eb637d9c87787eb5eff9663aae9f6edbdc85b501170ad21d2624e115160699c6",
+    "crates/phasesmith-solution/src/real_fourier.rs": "3b9616133fec60090d339fcb6ba7aaaf721149a736b6429ab1a65f97a2daa113",
+    "crates/phasesmith-solution/src/refinement_families.rs": "70901272c21e54b67aaa7493678e83091e6f8661217115c4cf9769f36e9a2957",
+    "crates/phasesmith-solution/src/reflection_prediction.rs": "2dd0a2f8d1ccc5cccab9d1bafcb034bc52fd409d45284b026c6ad95f26ee07f9",
+    "crates/phasesmith-solution/src/shared_phase_path.rs": "2e2336ab565005645d89aa24b2bbd157b7c3d069671b00befa8927dfbb29a98e",
+    "crates/phasesmith-solution/src/shared_pool.rs": "31dc671b92ea761471b2cc3b2c742d1b83e844851ec80ff4f9472e7961aab629",
+    "crates/phasesmith-solution/src/shared_search.rs": "3597900d7db7dbe8db1267876fbbb505a507dbce39582096bb2b55812151c472",
+    "crates/phasesmith-solution/src/solver.rs": "302429ec1b3522b848abdc7a050a5511796913842f233b6f0c53834bbf584e22",
+    "crates/phasesmith-solution/src/staged_refinement.rs": "6c1ddf05693cea5b20528059d46af3e93e61b7de3ddaef30bc3416ee6ff31657",
+    "crates/phasesmith-solution/src/symmetry_model.rs": "aec3f512ca23f882476081e0708dbaaadf0ba6a8d88088e4d69fab602c207005",
+    "crates/phasesmith-solution/src/symmetry_recycling.rs": "b47c3acab847ec5e6b334bf5994fb1c017279bf07541af162bda0991284de950",
+    "crates/phasesmith-solution/src/tangent.rs": "25fab86895c4401d46d722d04900fda1c912d4247f346f6ed7f0fd7c04393e79"
+  },
+  "sample_log_sha256": "1d5ffb3b2d9dafa7371afb47fcbe9a7016628bd5472b332ea54914038f0394d6",
+  "sample_log": "   Compiling phasesmith-solution v0.7.0 (/Users/clemens/Programming/PhaseSmith-hkl-solution/crates/phasesmith-solution)\n    Finished `bench` profile [optimized] target(s) in 8.46s\n     Running benches/solution.rs (target/release/deps/solution-a51ba219c0abff5d)\nBenchmarking normal_reuse_fit_8_atoms_2108_rows_40_steps_control\nBenchmarking normal_reuse_fit_8_atoms_2108_rows_40_steps_control: Warming up for 1.0000 s\nnormal_reuse_fit_sample control accepted 28 solves 40 builds 0 reuses 0\nnormal_reuse_fit_sample control accepted 28 solves 40 builds 0 reuses 0\nnormal_reuse_fit_sample control accepted 28 solves 40 builds 0 reuses 0\nnormal_reuse_fit_sample control accepted 28 solves 40 builds 0 reuses 0\nnormal_reuse_fit_sample control accepted 28 solves 40 builds 0 reuses 0\nBenchmarking normal_reuse_fit_8_atoms_2108_rows_40_steps_control: Collecting 20 samples in estimated 2.5344 s (40 iterations)\nnormal_reuse_fit_sample control accepted 28 solves 40 builds 0 reuses 0\nnormal_reuse_fit_sample control accepted 28 solves 40 builds 0 reuses 0\nnormal_reuse_fit_sample control accepted 28 solves 40 builds 0 reuses 0\nnormal_reuse_fit_sample control accepted 28 solves 40 builds 0 reuses 0\nnormal_reuse_fit_sample control accepted 28 solves 40 builds 0 reuses 0\nnormal_reuse_fit_sample control accepted 28 solves 40 builds 0 reuses 0\nnormal_reuse_fit_sample control accepted 28 solves 40 builds 0 reuses 0\nnormal_reuse_fit_sample control accepted 28 solves 40 builds 0 reuses 0\nnormal_reuse_fit_sample control accepted 28 solves 40 builds 0 reuses 0\nnormal_reuse_fit_sample control accepted 28 solves 40 builds 0 reuses 0\nnormal_reuse_fit_sample control accepted 28 solves 40 builds 0 reuses 0\nnormal_reuse_fit_sample control accepted 28 solves 40 builds 0 reuses 0\nnormal_reuse_fit_sample control accepted 28 solves 40 builds 0 reuses 0\nnormal_reuse_fit_sample control accepted 28 solves 40 builds 0 reuses 0\nnormal_reuse_fit_sample control accepted 28 solves 40 builds 0 reuses 0\nnormal_reuse_fit_sample control accepted 28 solves 40 builds 0 reuses 0\nnormal_reuse_fit_sample control accepted 28 solves 40 builds 0 reuses 0\nnormal_reuse_fit_sample control accepted 28 solves 40 builds 0 reuses 0\nnormal_reuse_fit_sample control accepted 28 solves 40 builds 0 reuses 0\nnormal_reuse_fit_sample control accepted 28 solves 40 builds 0 reuses 0\nBenchmarking normal_reuse_fit_8_atoms_2108_rows_40_steps_control: Analyzing\nnormal_reuse_fit_8_atoms_2108_rows_40_steps_control\n                        time:   [63.080 ms 63.322 ms 63.573 ms]\n                        change: [+2.0042% +2.7509% +3.4062%] (p = 0.00 < 0.05)\n                        Performance has regressed.\n\nBenchmarking normal_reuse_fit_8_atoms_2108_rows_40_steps_reuse\nBenchmarking normal_reuse_fit_8_atoms_2108_rows_40_steps_reuse: Warming up for 1.0000 s\nnormal_reuse_fit_sample reuse accepted 28 solves 40 builds 28 reuses 12\nnormal_reuse_fit_sample reuse accepted 28 solves 40 builds 28 reuses 12\nnormal_reuse_fit_sample reuse accepted 28 solves 40 builds 28 reuses 12\nnormal_reuse_fit_sample reuse accepted 28 solves 40 builds 28 reuses 12\nnormal_reuse_fit_sample reuse accepted 28 solves 40 builds 28 reuses 12\nBenchmarking normal_reuse_fit_8_atoms_2108_rows_40_steps_reuse: Collecting 20 samples in estimated 2.2735 s (40 iterations)\nnormal_reuse_fit_sample reuse accepted 28 solves 40 builds 28 reuses 12\nnormal_reuse_fit_sample reuse accepted 28 solves 40 builds 28 reuses 12\nnormal_reuse_fit_sample reuse accepted 28 solves 40 builds 28 reuses 12\nnormal_reuse_fit_sample reuse accepted 28 solves 40 builds 28 reuses 12\nnormal_reuse_fit_sample reuse accepted 28 solves 40 builds 28 reuses 12\nnormal_reuse_fit_sample reuse accepted 28 solves 40 builds 28 reuses 12\nnormal_reuse_fit_sample reuse accepted 28 solves 40 builds 28 reuses 12\nnormal_reuse_fit_sample reuse accepted 28 solves 40 builds 28 reuses 12\nnormal_reuse_fit_sample reuse accepted 28 solves 40 builds 28 reuses 12\nnormal_reuse_fit_sample reuse accepted 28 solves 40 builds 28 reuses 12\nnormal_reuse_fit_sample reuse accepted 28 solves 40 builds 28 reuses 12\nnormal_reuse_fit_sample reuse accepted 28 solves 40 builds 28 reuses 12\nnormal_reuse_fit_sample reuse accepted 28 solves 40 builds 28 reuses 12\nnormal_reuse_fit_sample reuse accepted 28 solves 40 builds 28 reuses 12\nnormal_reuse_fit_sample reuse accepted 28 solves 40 builds 28 reuses 12\nnormal_reuse_fit_sample reuse accepted 28 solves 40 builds 28 reuses 12\nnormal_reuse_fit_sample reuse accepted 28 solves 40 builds 28 reuses 12\nnormal_reuse_fit_sample reuse accepted 28 solves 40 builds 28 reuses 12\nnormal_reuse_fit_sample reuse accepted 28 solves 40 builds 28 reuses 12\nnormal_reuse_fit_sample reuse accepted 28 solves 40 builds 28 reuses 12\nBenchmarking normal_reuse_fit_8_atoms_2108_rows_40_steps_reuse: Analyzing\nnormal_reuse_fit_8_atoms_2108_rows_40_steps_reuse\n                        time:   [54.908 ms 55.108 ms 55.302 ms]\n                        change: [+3.6177% +4.0509% +4.5021%] (p = 0.00 < 0.05)\n                        Performance has regressed.\n\nBenchmarking normal_reuse_search_32cubed_8_atoms_2108_rows_control\nBenchmarking normal_reuse_search_32cubed_8_atoms_2108_rows_control: Warming up for 1.0000 s\nnormal_reuse_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224 builds 0 reuses 0\nnormal_reuse_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224 builds 0 reuses 0\nnormal_reuse_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224 builds 0 reuses 0\n\nWarning: Unable to complete 20 samples in 2.0s. You may wish to increase target time to 4.4s, or reduce sample count to 10.\nBenchmarking normal_reuse_search_32cubed_8_atoms_2108_rows_control: Collecting 20 samples in estimated 4.3697 s (20 iterations)\nnormal_reuse_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224 builds 0 reuses 0\nnormal_reuse_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224 builds 0 reuses 0\nnormal_reuse_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224 builds 0 reuses 0\nnormal_reuse_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224 builds 0 reuses 0\nnormal_reuse_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224 builds 0 reuses 0\nnormal_reuse_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224 builds 0 reuses 0\nnormal_reuse_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224 builds 0 reuses 0\nnormal_reuse_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224 builds 0 reuses 0\nnormal_reuse_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224 builds 0 reuses 0\nnormal_reuse_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224 builds 0 reuses 0\nnormal_reuse_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224 builds 0 reuses 0\nnormal_reuse_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224 builds 0 reuses 0\nnormal_reuse_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224 builds 0 reuses 0\nnormal_reuse_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224 builds 0 reuses 0\nnormal_reuse_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224 builds 0 reuses 0\nnormal_reuse_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224 builds 0 reuses 0\nnormal_reuse_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224 builds 0 reuses 0\nnormal_reuse_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224 builds 0 reuses 0\nnormal_reuse_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224 builds 0 reuses 0\nnormal_reuse_search_sample control starts 2 cycles 192 extra_fits 8 cached_steps 224 builds 0 reuses 0\nBenchmarking normal_reuse_search_32cubed_8_atoms_2108_rows_control: Analyzing\nnormal_reuse_search_32cubed_8_atoms_2108_rows_control\n                        time:   [217.34 ms 221.33 ms 226.90 ms]\n                        change: [+3.6027% +5.5555% +7.9870%] (p = 0.00 < 0.05)\n                        Performance has regressed.\nFound 3 outliers among 20 measurements (15.00%)\n  3 (15.00%) high severe\n\nBenchmarking normal_reuse_search_32cubed_8_atoms_2108_rows_cache\nBenchmarking normal_reuse_search_32cubed_8_atoms_2108_rows_cache: Warming up for 1.0000 s\nnormal_reuse_search_sample cache starts 2 cycles 192 extra_fits 8 cached_steps 224 builds 4 reuses 52\nnormal_reuse_search_sample cache starts 2 cycles 192 extra_fits 8 cached_steps 224 builds 4 reuses 52\nnormal_reuse_search_sample cache starts 2 cycles 192 extra_fits 8 cached_steps 224 builds 4 reuses 52\n\nWarning: Unable to complete 20 samples in 2.0s. You may wish to increase target time to 4.2s, or reduce sample count to 10.\nBenchmarking normal_reuse_search_32cubed_8_atoms_2108_rows_cache: Collecting 20 samples in estimated 4.2195 s (20 iterations)\nnormal_reuse_search_sample cache starts 2 cycles 192 extra_fits 8 cached_steps 224 builds 4 reuses 52\nnormal_reuse_search_sample cache starts 2 cycles 192 extra_fits 8 cached_steps 224 builds 4 reuses 52\nnormal_reuse_search_sample cache starts 2 cycles 192 extra_fits 8 cached_steps 224 builds 4 reuses 52\nnormal_reuse_search_sample cache starts 2 cycles 192 extra_fits 8 cached_steps 224 builds 4 reuses 52\nnormal_reuse_search_sample cache starts 2 cycles 192 extra_fits 8 cached_steps 224 builds 4 reuses 52\nnormal_reuse_search_sample cache starts 2 cycles 192 extra_fits 8 cached_steps 224 builds 4 reuses 52\nnormal_reuse_search_sample cache starts 2 cycles 192 extra_fits 8 cached_steps 224 builds 4 reuses 52\nnormal_reuse_search_sample cache starts 2 cycles 192 extra_fits 8 cached_steps 224 builds 4 reuses 52\nnormal_reuse_search_sample cache starts 2 cycles 192 extra_fits 8 cached_steps 224 builds 4 reuses 52\nnormal_reuse_search_sample cache starts 2 cycles 192 extra_fits 8 cached_steps 224 builds 4 reuses 52\nnormal_reuse_search_sample cache starts 2 cycles 192 extra_fits 8 cached_steps 224 builds 4 reuses 52\nnormal_reuse_search_sample cache starts 2 cycles 192 extra_fits 8 cached_steps 224 builds 4 reuses 52\nnormal_reuse_search_sample cache starts 2 cycles 192 extra_fits 8 cached_steps 224 builds 4 reuses 52\nnormal_reuse_search_sample cache starts 2 cycles 192 extra_fits 8 cached_steps 224 builds 4 reuses 52\nnormal_reuse_search_sample cache starts 2 cycles 192 extra_fits 8 cached_steps 224 builds 4 reuses 52\nnormal_reuse_search_sample cache starts 2 cycles 192 extra_fits 8 cached_steps 224 builds 4 reuses 52\nnormal_reuse_search_sample cache starts 2 cycles 192 extra_fits 8 cached_steps 224 builds 4 reuses 52\nnormal_reuse_search_sample cache starts 2 cycles 192 extra_fits 8 cached_steps 224 builds 4 reuses 52\nnormal_reuse_search_sample cache starts 2 cycles 192 extra_fits 8 cached_steps 224 builds 4 reuses 52\nnormal_reuse_search_sample cache starts 2 cycles 192 extra_fits 8 cached_steps 224 builds 4 reuses 52\nBenchmarking normal_reuse_search_32cubed_8_atoms_2108_rows_cache: Analyzing\nnormal_reuse_search_32cubed_8_atoms_2108_rows_cache\n                        time:   [211.47 ms 211.73 ms 212.00 ms]\n                        change: [+2.1466% +2.9506% +3.6980%] (p = 0.00 < 0.05)\n                        Performance has regressed.\n\n",
+  "results": [
+    {
+      "id": "normal_reuse_fit_8_atoms_2108_rows_40_steps_control",
+      "sample": {
+        "sampling_mode": "Flat",
+        "iters": [
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0
+        ],
+        "times": [
+          125996042.0,
+          127408417.0,
+          128353083.0,
+          127165750.0,
+          128748709.0,
+          125204875.0,
+          126294959.0,
+          128805542.0,
+          126757500.0,
+          127153041.0,
+          127584584.0,
+          125410083.0,
+          125535792.0,
+          125535792.0,
+          125201708.0,
+          126377792.0,
+          127255750.0,
+          126711542.0,
+          125361584.0,
+          126002000.0
+        ]
+      },
+      "estimates": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 63080475.125,
+            "upper_bound": 63573178.175
+          },
+          "point_estimate": 63321613.625,
+          "standard_error": 126159.3106944993
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 62882958.5,
+            "upper_bound": 63605375.0
+          },
+          "point_estimate": 63272333.5,
+          "standard_error": 200528.72351783473
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 280026.0700285435,
+            "upper_bound": 1035225.0609710813
+          },
+          "point_estimate": 694088.4439274669,
+          "standard_error": 176216.1067326731
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 405706.410513955,
+            "upper_bound": 687326.1008401719
+          },
+          "point_estimate": 575994.1630728532,
+          "standard_error": 71798.72497822822
+        }
+      },
+      "benchmark": {
+        "group_id": "normal_reuse_fit_8_atoms_2108_rows_40_steps_control",
+        "function_id": null,
+        "value_str": null,
+        "throughput": null,
+        "full_id": "normal_reuse_fit_8_atoms_2108_rows_40_steps_control",
+        "directory_name": "normal_reuse_fit_8_atoms_2108_rows_40_steps_control",
+        "title": "normal_reuse_fit_8_atoms_2108_rows_40_steps_control"
+      }
+    },
+    {
+      "id": "normal_reuse_fit_8_atoms_2108_rows_40_steps_reuse",
+      "sample": {
+        "sampling_mode": "Flat",
+        "iters": [
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0,
+          2.0
+        ],
+        "times": [
+          109499541.0,
+          112154125.0,
+          111085416.0,
+          110753333.0,
+          110533209.0,
+          111555500.0,
+          110736958.0,
+          110152792.0,
+          109613333.0,
+          108033208.0,
+          109546375.0,
+          110647667.0,
+          110584000.0,
+          110667292.0,
+          110065208.0,
+          109363208.0,
+          109366834.0,
+          110767750.0,
+          109411875.0,
+          109771667.0
+        ]
+      },
+      "estimates": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 54908184.325,
+            "upper_bound": 55302382.25125
+          },
+          "point_estimate": 55107732.275,
+          "standard_error": 100136.18598084846
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 54789927.0,
+            "upper_bound": 55351062.5
+          },
+          "point_estimate": 55171500.25,
+          "standard_error": 169421.14154770088
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 101063.65110576153,
+            "upper_bound": 719864.185769856
+          },
+          "point_estimate": 482216.01208895445,
+          "standard_error": 146185.64534454513
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 293707.6440179078,
+            "upper_bound": 594909.1499195512
+          },
+          "point_estimate": 461771.2558988565,
+          "standard_error": 77335.47763044012
+        }
+      },
+      "benchmark": {
+        "group_id": "normal_reuse_fit_8_atoms_2108_rows_40_steps_reuse",
+        "function_id": null,
+        "value_str": null,
+        "throughput": null,
+        "full_id": "normal_reuse_fit_8_atoms_2108_rows_40_steps_reuse",
+        "directory_name": "normal_reuse_fit_8_atoms_2108_rows_40_steps_reuse",
+        "title": "normal_reuse_fit_8_atoms_2108_rows_40_steps_reuse"
+      }
+    },
+    {
+      "id": "normal_reuse_search_32cubed_8_atoms_2108_rows_cache",
+      "sample": {
+        "sampling_mode": "Flat",
+        "iters": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "times": [
+          212465083.0,
+          211567167.0,
+          212578042.0,
+          211613333.0,
+          212292375.0,
+          210238958.0,
+          212173125.0,
+          212525375.0,
+          211274042.0,
+          211389917.0,
+          212795625.0,
+          211783708.0,
+          211538583.0,
+          211702667.0,
+          211783375.0,
+          211034750.0,
+          211492500.0,
+          212006875.0,
+          211213667.0,
+          211224792.0
+        ]
+      },
+      "estimates": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 211469129.65625,
+            "upper_bound": 211999952.41125
+          },
+          "point_estimate": 211734697.95,
+          "standard_error": 135632.12729686793
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 211441208.5,
+            "upper_bound": 212090000.0
+          },
+          "point_estimate": 211658000.0,
+          "standard_error": 158690.5818481043
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 245370.29564380646,
+            "upper_bound": 898393.3148503304
+          },
+          "point_estimate": 605765.1450455189,
+          "standard_error": 171244.77389840307
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 415081.77373894886,
+            "upper_bound": 789150.0423828198
+          },
+          "point_estimate": 620193.7264236135,
+          "standard_error": 97945.10836215994
+        }
+      },
+      "benchmark": {
+        "group_id": "normal_reuse_search_32cubed_8_atoms_2108_rows_cache",
+        "function_id": null,
+        "value_str": null,
+        "throughput": null,
+        "full_id": "normal_reuse_search_32cubed_8_atoms_2108_rows_cache",
+        "directory_name": "normal_reuse_search_32cubed_8_atoms_2108_rows_cache",
+        "title": "normal_reuse_search_32cubed_8_atoms_2108_rows_cache"
+      }
+    },
+    {
+      "id": "normal_reuse_search_32cubed_8_atoms_2108_rows_control",
+      "sample": {
+        "sampling_mode": "Flat",
+        "iters": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "times": [
+          217341292.0,
+          223508500.0,
+          216779750.0,
+          217396167.0,
+          217257208.0,
+          217672000.0,
+          250797250.0,
+          257608250.0,
+          216918750.0,
+          217460458.0,
+          217809500.0,
+          220410250.0,
+          215857958.0,
+          215219583.0,
+          218445958.0,
+          218600500.0,
+          217629292.0,
+          217071916.0,
+          216250333.0,
+          216472500.0
+        ]
+      },
+      "estimates": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 217341754.85125,
+            "upper_bound": 226900719.84125
+          },
+          "point_estimate": 221325370.75,
+          "standard_error": 2490421.7156963004
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 216995333.0,
+            "upper_bound": 218127729.0
+          },
+          "point_estimate": 217428312.5,
+          "standard_error": 284908.6773414981
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 413182.8214645386,
+            "upper_bound": 2588248.9040493965
+          },
+          "point_estimate": 1189323.166385293,
+          "standard_error": 550734.6896728458
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1204357.3777459986,
+            "upper_bound": 16581618.550409133
+          },
+          "point_estimate": 11432132.413702674,
+          "standard_error": 4078883.465763161
+        }
+      },
+      "benchmark": {
+        "group_id": "normal_reuse_search_32cubed_8_atoms_2108_rows_control",
+        "function_id": null,
+        "value_str": null,
+        "throughput": null,
+        "full_id": "normal_reuse_search_32cubed_8_atoms_2108_rows_control",
+        "directory_name": "normal_reuse_search_32cubed_8_atoms_2108_rows_control",
+        "title": "normal_reuse_search_32cubed_8_atoms_2108_rows_control"
+      }
+    }
+  ],
+  "qualification": "Control/treatment within the same executable; sequential pairs, not the Criterion comparison to prior builds. Full search work counters printed in sample log. No corpus runs overlapped."
+}

@@ -87,6 +87,7 @@ def worker(args):
         cached_assignment_refinement=args.cached_assignment_refinement,
         specialized_isotropic_refinement=args.specialized_isotropic_refinement,
         streamed_peak_search=args.streamed_peak_search,
+        reuse_normal_matrices=args.reuse_normal_matrices,
         reusable_fourier_workspaces=args.reusable_fourier_workspaces,
         independent_origin_sampling=args.independent_origin_sampling,
         resolution_extension=args.resolution_extension,
@@ -282,6 +283,7 @@ def collect_jobs(args):
             or previous.get("fused_phase_workspace", False) != args.fused_phase_workspace
             or previous.get("cached_normal_refinement", False) != args.cached_normal_refinement
             or previous.get("ambiguous_assignments", False) != args.ambiguous_assignments
+            or previous.get("reuse_normal_matrices", False) != args.reuse_normal_matrices
             or previous.get("streamed_peak_search", False) != args.streamed_peak_search
             or previous.get("specialized_isotropic_refinement", False)
             != args.specialized_isotropic_refinement
@@ -360,6 +362,7 @@ def collect_jobs(args):
         "cached_assignment_refinement": args.cached_assignment_refinement,
         "specialized_isotropic_refinement": args.specialized_isotropic_refinement,
         "streamed_peak_search": args.streamed_peak_search,
+        "reuse_normal_matrices": args.reuse_normal_matrices,
         "reusable_fourier_workspaces": args.reusable_fourier_workspaces,
         "independent_origin_sampling": args.independent_origin_sampling,
         "resolution_extension": args.resolution_extension,
@@ -494,6 +497,7 @@ def collect_jobs(args):
                     *(["--cached-normal-refinement"] if args.cached_normal_refinement else []),
                     *(["--ambiguous-assignments"] if args.ambiguous_assignments else []),
                     *(["--streamed-peak-search"] if args.streamed_peak_search else []),
+                    *(["--reuse-normal-matrices"] if args.reuse_normal_matrices else []),
                     *(
                         ["--specialized-isotropic-refinement"]
                         if args.specialized_isotropic_refinement

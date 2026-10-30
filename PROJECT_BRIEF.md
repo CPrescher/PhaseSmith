@@ -2532,6 +2532,22 @@ seconds (4.34%) and summed wall time 69.511-to-67.610 seconds (2.74%), with a pa
 median ratio of 1.01977. The gain remains modest and host-sensitive. The execution
 flag stays false by default; the holdout remains closed.
 
+An opt-in `reuse_normal_matrices` path retains one checked CG normal linearization
+while rejected/backtracked steps change only damping. Accepting any model clears
+it before changing the evaluation; separate fits and candidates never share it.
+The original matrix-free residual guard, fallback, scaling, line search, input
+caps and stopping rules remain intact. It requires iterative refinement and at
+least one normal-cache control, and reports actual preparations/reuses separately
+from requested execution. The retained bounded matrix can add up to 8 MiB plus
+small vectors during backtracking. Equations, exactness/lifetime tests and the
+complete development protocol are in `docs/solution-normal-reuse.md`. The matched
+run retains all 19 structures, all 35 model records/count vectors, 26 correct
+total counts, 19 per-element counts and 15 strict structures. Reuse avoids 882
+of 6,215 eligible preparations. Final refinement time falls 14.00%, screening
+3.61%, and summed wall time 69.783-to-67.437 seconds (3.36% less). The paired
+median ratio is only 1.00539; typical-case time remains almost unchanged. The
+option stays false by default and the holdout remains closed.
+
 Public behavior is typed and documented. Invalid shapes, non-finite values,
 unsorted grids, non-positive widths, and fractions outside `[0, 1]` fail with a
 clear error. Tests are deterministic. Numerical tolerances are justified near

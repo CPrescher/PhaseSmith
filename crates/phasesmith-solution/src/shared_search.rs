@@ -99,6 +99,8 @@ pub struct SharedSearchOptions {
     pub specialized_isotropic_refinement: bool,
     /// Guard vectorized peak statistics and stream threshold candidates.
     pub streamed_peak_search: bool,
+    /// Reuse checked normal matrices across rejected damping attempts.
+    pub reuse_normal_matrices: bool,
     /// Regularize allowed unmeasured coefficients using the observed Wilson envelope.
     pub missing_reflections: bool,
     /// Reciprocal-radius extension multiplier, in [1,1.5].
@@ -147,6 +149,7 @@ impl Default for SharedSearchOptions {
             cached_assignment_refinement: false,
             specialized_isotropic_refinement: false,
             streamed_peak_search: false,
+            reuse_normal_matrices: false,
             missing_reflections: false,
             resolution_extension: 1.,
         }
@@ -300,6 +303,8 @@ pub struct SharedSearchSummary {
     pub specialized_isotropic_refinement: bool,
     /// Guard vectorized peak statistics and stream threshold candidates.
     pub streamed_peak_search: bool,
+    /// Reuse checked normal matrices across rejected damping attempts.
+    pub reuse_normal_matrices: bool,
     /// Requested observed-envelope gap treatment.
     pub missing_reflections: bool,
     /// Requested reciprocal-radius extension.
@@ -388,6 +393,10 @@ pub struct SharedSearchSummary {
     pub cached_normal_solves: usize,
     /// Normal-cache attempts falling back to the original solver.
     pub normal_cache_fallbacks: usize,
+    /// CG linearizations prepared by the optional reuse path.
+    pub normal_matrix_builds: usize,
+    /// CG attempts using retained linearizations in that path.
+    pub normal_matrix_reuses: usize,
     /// Screened edits sent to full refinement.
     pub promoted_candidates: usize,
     /// Valid screened edits omitted from the full-fit shortlist.
@@ -638,7 +647,7 @@ fn refine(
     } else {
         audit.final_refinements += 1;
     }
-    let fit = prepared.refine_with_normal_cache(
+    let fit = prepared.refine_with_normal_reuse(
         &initial,
         iterations,
         Some(deadline),
@@ -649,7 +658,10 @@ fn refine(
         } else {
             audit.cached_normal_refinement
         },
+        audit.reuse_normal_matrices,
     )?;
+    audit.normal_matrix_builds += fit.normal_matrix_builds;
+    audit.normal_matrix_reuses += fit.normal_matrix_reuses;
     if matches!(pass, FitPass::Screen(_) | FitPass::ScreenSeed(_, _)) {
         audit.assignment_cached_refinements += usize::from(fit.cached_normal_solves > 0);
         audit.assignment_cached_normal_solves += fit.cached_normal_solves;
@@ -1867,6 +1879,9 @@ pub fn solve_elements(
         || ((search.filtered_peak_search || search.batched_fft)
             && !search.reusable_fourier_workspaces)
         || (search.fused_phase_workspace && !search.reusable_fourier_workspaces)
+        || (search.reuse_normal_matrices
+            && (!search.iterative_refinement
+                || !(search.cached_normal_refinement || search.cached_assignment_refinement)))
         || (search.streamed_peak_search && !search.filtered_peak_search)
         || (search.real_fft && !search.batched_fft)
         || (search.cached_normal_refinement && !search.iterative_refinement)
@@ -2126,6 +2141,7 @@ pub fn solve_elements(
         cached_assignment_refinement: search.cached_assignment_refinement,
         specialized_isotropic_refinement: search.specialized_isotropic_refinement,
         streamed_peak_search: search.streamed_peak_search,
+        reuse_normal_matrices: search.reuse_normal_matrices,
         missing_reflections: search.missing_reflections,
         resolution_extension: search.resolution_extension,
         prediction: prediction_f.as_ref().map(|p| p.audit.clone()),

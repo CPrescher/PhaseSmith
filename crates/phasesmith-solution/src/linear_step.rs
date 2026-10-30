@@ -78,93 +78,216 @@ fn cached_solve(
     deadline: Option<Instant>,
     cancellation: Option<&Cancellation>,
 ) -> Result<(Vec<f64>, usize), SolutionError> {
-    let reflections = observed_residual.len();
-    let parameters = jacobian.len() / reflections;
-    let scales: Vec<_> = jacobian
-        .chunks_exact(reflections)
-        .map(|row| 1. / row.iter().map(|v| v * v).sum::<f64>().max(1e-8).sqrt())
-        .collect();
-    let rhs: Vec<_> = jacobian
-        .chunks_exact(reflections)
-        .zip(&scales)
-        .map(|(row, scale)| {
-            -scale
-                * row
-                    .iter()
-                    .zip(observed_residual)
-                    .map(|(a, b)| a * b)
-                    .sum::<f64>()
-        })
-        .collect();
-    let norm: f64 = rhs.iter().map(|v| v * v).sum();
-    if norm == 0. {
-        return Ok((vec![0.; parameters], 0));
-    }
-    let mut matrix = vec![0.; parameters * parameters];
-    for i in 0..parameters {
-        if crate::stopped(deadline, cancellation) {
-            return Err(error("normal cache stopped"));
-        }
-        for k in 0..=i {
-            let value = scales[i]
-                * scales[k]
-                * lane_dot(
-                    &jacobian[i * reflections..(i + 1) * reflections],
-                    &jacobian[k * reflections..(k + 1) * reflections],
-                );
-            matrix[i * parameters + k] = value;
-            matrix[k * parameters + i] = value;
-        }
-    }
-    let mut scaled_step = vec![0.; parameters];
-    let mut residual = rhs;
-    let mut direction = residual.clone();
-    let mut rr = norm;
-    let mut product = vec![0.; parameters];
-    let limit = (2 * parameters).min(256);
-    for iteration in 0..limit {
-        if crate::stopped(deadline, cancellation) {
-            return Err(error("normal cache stopped"));
-        }
-        for (i, row) in matrix.chunks_exact(parameters).enumerate() {
-            product[i] = lane_dot(row, &direction) + damping * direction[i];
-        }
-        let curvature: f64 = direction.iter().zip(&product).map(|(a, b)| a * b).sum();
-        if !curvature.is_finite() || curvature <= 0. {
-            return Err(error("nonpositive cached curvature"));
-        }
-        let alpha = rr / curvature;
-        for i in 0..parameters {
-            scaled_step[i] += alpha * direction[i];
-            residual[i] -= alpha * product[i];
-        }
-        let next: f64 = residual.iter().map(|v| v * v).sum();
-        if next <= norm * 1e-16 || iteration + 1 == limit {
-            // Reapply the original matrix-free operator, not the cached Gram matrix.
-            let actual = original_residual_squared(
-                jacobian,
-                observed_residual,
-                damping,
-                &scales,
-                &scaled_step,
-            );
-            let tolerance = if iteration + 1 == limit { 1e-10 } else { 1e-16 };
-            let step: Vec<_> = scaled_step
-                .iter()
-                .zip(&scales)
-                .map(|(a, b)| a * b)
-                .collect();
-            if actual <= norm * tolerance && step.iter().all(|v| v.is_finite()) {
-                return Ok((step, iteration + 1));
+    let mut prepared =
+        PreparedNormalSystem::new(jacobian, observed_residual, deadline, cancellation)?;
+    let rhs = std::mem::take(&mut prepared.rhs);
+    prepared.solve_with_rhs(
+        jacobian,
+        observed_residual,
+        damping,
+        deadline,
+        cancellation,
+        rhs,
+    )
+}
+
+struct PreparedNormalSystem {
+    scales: Vec<f64>,
+    rhs: Vec<f64>,
+    norm: f64,
+    matrix: Vec<f64>,
+}
+impl PreparedNormalSystem {
+    fn new(
+        jacobian: &[f64],
+        observed_residual: &[f64],
+        deadline: Option<Instant>,
+        cancellation: Option<&Cancellation>,
+    ) -> Result<Self, SolutionError> {
+        let reflections = observed_residual.len();
+        let parameters = jacobian.len() / reflections;
+        let scales: Vec<_> = jacobian
+            .chunks_exact(reflections)
+            .map(|row| 1. / row.iter().map(|v| v * v).sum::<f64>().max(1e-8).sqrt())
+            .collect();
+        let rhs: Vec<_> = jacobian
+            .chunks_exact(reflections)
+            .zip(&scales)
+            .map(|(row, scale)| {
+                -scale
+                    * row
+                        .iter()
+                        .zip(observed_residual)
+                        .map(|(a, b)| a * b)
+                        .sum::<f64>()
+            })
+            .collect();
+        let norm: f64 = rhs.iter().map(|v| v * v).sum();
+        let mut matrix = vec![
+            0.;
+            if norm == 0. {
+                0
+            } else {
+                parameters * parameters
             }
-            return Err(error("cached step fails original-operator residual check"));
+        ];
+        for i in 0..if norm == 0. { 0 } else { parameters } {
+            if crate::stopped(deadline, cancellation) {
+                return Err(error("normal cache stopped"));
+            }
+            for k in 0..=i {
+                let value = scales[i]
+                    * scales[k]
+                    * lane_dot(
+                        &jacobian[i * reflections..(i + 1) * reflections],
+                        &jacobian[k * reflections..(k + 1) * reflections],
+                    );
+                matrix[i * parameters + k] = value;
+                matrix[k * parameters + i] = value;
+            }
         }
-        for i in 0..parameters {
-            direction[i] = residual[i] + next / rr * direction[i];
-        }
-        rr = next;
+        Ok(Self {
+            scales,
+            rhs,
+            norm,
+            matrix,
+        })
     }
-    Err(error("cached solve did not converge"))
+    #[allow(clippy::too_many_lines)]
+    fn solve(
+        &self,
+        jacobian: &[f64],
+        observed_residual: &[f64],
+        damping: f64,
+        deadline: Option<Instant>,
+        cancellation: Option<&Cancellation>,
+    ) -> Result<(Vec<f64>, usize), SolutionError> {
+        self.solve_with_rhs(
+            jacobian,
+            observed_residual,
+            damping,
+            deadline,
+            cancellation,
+            self.rhs.clone(),
+        )
+    }
+    #[allow(clippy::too_many_lines, clippy::too_many_arguments)]
+    fn solve_with_rhs(
+        &self,
+        jacobian: &[f64],
+        observed_residual: &[f64],
+        damping: f64,
+        deadline: Option<Instant>,
+        cancellation: Option<&Cancellation>,
+        rhs: Vec<f64>,
+    ) -> Result<(Vec<f64>, usize), SolutionError> {
+        let parameters = self.scales.len();
+        let scales = &self.scales;
+        let matrix = &self.matrix;
+        let norm = self.norm;
+        if norm == 0. {
+            return Ok((vec![0.; parameters], 0));
+        }
+        let mut scaled_step = vec![0.; parameters];
+        let mut residual = rhs;
+        let mut direction = residual.clone();
+        let mut rr = norm;
+        let mut product = vec![0.; parameters];
+        let limit = (2 * parameters).min(256);
+        for iteration in 0..limit {
+            if crate::stopped(deadline, cancellation) {
+                return Err(error("normal cache stopped"));
+            }
+            for (i, row) in matrix.chunks_exact(parameters).enumerate() {
+                product[i] = lane_dot(row, &direction) + damping * direction[i];
+            }
+            let curvature: f64 = direction.iter().zip(&product).map(|(a, b)| a * b).sum();
+            if !curvature.is_finite() || curvature <= 0. {
+                return Err(error("nonpositive cached curvature"));
+            }
+            let alpha = rr / curvature;
+            for i in 0..parameters {
+                scaled_step[i] += alpha * direction[i];
+                residual[i] -= alpha * product[i];
+            }
+            let next: f64 = residual.iter().map(|v| v * v).sum();
+            if next <= norm * 1e-16 || iteration + 1 == limit {
+                // Reapply the original matrix-free operator, not the cached Gram matrix.
+                let actual = original_residual_squared(
+                    jacobian,
+                    observed_residual,
+                    damping,
+                    scales,
+                    &scaled_step,
+                );
+                let tolerance = if iteration + 1 == limit { 1e-10 } else { 1e-16 };
+                let step: Vec<_> = scaled_step.iter().zip(scales).map(|(a, b)| a * b).collect();
+                if actual <= norm * tolerance && step.iter().all(|v| v.is_finite()) {
+                    return Ok((step, iteration + 1));
+                }
+                return Err(error("cached step fails original-operator residual check"));
+            }
+            for i in 0..parameters {
+                direction[i] = residual[i] + next / rr * direction[i];
+            }
+            rr = next;
+        }
+        Err(error("cached solve did not converge"))
+    }
+}
+
+/// A single fit's linearization cache; never shared between candidates or fits.
+#[derive(Default)]
+pub(crate) struct NormalReuse {
+    prepared: Option<PreparedNormalSystem>,
+    pub(crate) builds: usize,
+    pub(crate) reuses: usize,
+}
+impl NormalReuse {
+    pub(crate) fn clear(&mut self) {
+        self.prepared = None;
+    }
+    pub(crate) fn step(
+        &mut self,
+        jacobian: &[f64],
+        residual: &[f64],
+        damping: f64,
+        deadline: Option<Instant>,
+        cancellation: Option<&Cancellation>,
+    ) -> Result<CachedNormalStep, SolutionError> {
+        validate(jacobian, residual, damping)?;
+        let eligible = cache_shape(jacobian.len() / residual.len(), residual.len());
+        if eligible {
+            if self.prepared.is_some() {
+                self.reuses += 1;
+            } else if let Ok(p) =
+                PreparedNormalSystem::new(jacobian, residual, deadline, cancellation)
+            {
+                self.prepared = Some(p);
+                self.builds += 1;
+            }
+            if let Some(p) = &self.prepared {
+                if let Ok((step, iterations)) =
+                    p.solve(jacobian, residual, damping, deadline, cancellation)
+                {
+                    return Ok(CachedNormalStep {
+                        step,
+                        iterations,
+                        used_cache: true,
+                        fell_back: false,
+                    });
+                }
+            }
+        }
+        let (step, iterations) =
+            iterative_normal_step(jacobian, residual, damping, deadline, cancellation)?;
+        Ok(CachedNormalStep {
+            step,
+            iterations,
+            used_cache: false,
+            fell_back: eligible,
+        })
+    }
 }
 
 fn cache_shape(parameters: usize, reflections: usize) -> bool {
@@ -456,5 +579,56 @@ mod tests {
                 .0,
             vec![0.; 2]
         );
+    }
+    #[test]
+    #[allow(clippy::cast_precision_loss)]
+    fn retained_systems_preserve_bits_for_damping_changes_and_clear_on_new_data() {
+        for (parameters, rows) in [(8, 100), (32, 63), (32, 131), (69, 333)] {
+            let mut jacobian: Vec<_> = (0..parameters * rows)
+                .map(|i| ((i as f64) * 0.731).sin())
+                .collect();
+            let residual: Vec<_> = (0..rows).map(|i| ((i as f64) * 0.379).cos()).collect();
+            let mut cache = NormalReuse::default();
+            for damping in [0.001, 0.01, 0.1, 1., 10.] {
+                let a = cached_normal_step(&jacobian, &residual, damping, None, None).unwrap();
+                let b = cache
+                    .step(&jacobian, &residual, damping, None, None)
+                    .unwrap();
+                assert_eq!(a.iterations, b.iterations);
+                assert_eq!(a.used_cache, b.used_cache);
+                assert_eq!(a.fell_back, b.fell_back);
+                assert_eq!(
+                    a.step.iter().map(|v| v.to_bits()).collect::<Vec<_>>(),
+                    b.step.iter().map(|v| v.to_bits()).collect::<Vec<_>>()
+                );
+            }
+            let eligible = cache_shape(parameters, rows);
+            assert_eq!(cache.builds, usize::from(eligible));
+            assert_eq!(cache.reuses, if eligible { 4 } else { 0 });
+            cache.clear();
+            jacobian[0] += 0.1;
+            let a = cached_normal_step(&jacobian, &residual, 0.1, None, None).unwrap();
+            let b = cache.step(&jacobian, &residual, 0.1, None, None).unwrap();
+            assert_eq!(a.step, b.step);
+            assert_eq!(cache.builds, if eligible { 2 } else { 0 });
+        }
+    }
+    #[test]
+    fn retained_systems_honor_stops_invalid_inputs_and_zero_rhs() {
+        let j = vec![1.; 32 * 131];
+        let r = vec![1.; 131];
+        let mut cache = NormalReuse::default();
+        cache.step(&j, &r, 0.1, None, None).unwrap();
+        assert!(cache.step(&j, &r, 0.1, Some(Instant::now()), None).is_err());
+        let token = Cancellation::default();
+        let _ = token.cancel();
+        assert!(cache.step(&j, &r, 0.1, None, Some(&token)).is_err());
+        assert!(cache.step(&j, &r, 0., None, None).is_err());
+        assert!(cache.step(&j[..10], &r, 0.1, None, None).is_err());
+        cache.clear();
+        let zero = cache.step(&j, &vec![0.; 131], 0.1, None, None).unwrap();
+        assert_eq!(zero.iterations, 0);
+        assert_eq!(zero.step, vec![0.; 32]);
+        assert_eq!(cache.prepared.as_ref().unwrap().matrix, Vec::<f64>::new());
     }
 }

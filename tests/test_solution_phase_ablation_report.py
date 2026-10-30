@@ -55,6 +55,7 @@ def test_pair_labels_are_distinct_from_prediction_case_pairs():
         "assignment_cache_flag",
         "isotropic_evaluation_flag",
         "streamed_peak_flag",
+        "normal_reuse_flag",
     ],
 )
 def test_comparison_rejects_incomplete_opened_or_changed_panels(tmp_path, corruption):
@@ -84,6 +85,7 @@ def test_comparison_rejects_incomplete_opened_or_changed_panels(tmp_path, corrup
             "assignment_cache_flag": "cached_assignment_refinement",
             "isotropic_evaluation_flag": "specialized_isotropic_refinement",
             "streamed_peak_flag": "streamed_peak_search",
+            "normal_reuse_flag": "reuse_normal_matrices",
         }[corruption]
         report[key] = 1.2 if corruption == "extension_flag" else True
     else:

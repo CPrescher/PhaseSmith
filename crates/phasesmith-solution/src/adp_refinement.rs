@@ -195,6 +195,10 @@ pub struct SymmetricRefinement {
     pub cached_normal_solves: usize,
     /// Cache attempts that required the original matrix-free solver.
     pub normal_cache_fallbacks: usize,
+    /// Complete bounded normal-matrix preparations in the reuse path.
+    pub normal_matrix_builds: usize,
+    /// Attempts using a retained matrix after a rejected step.
+    pub normal_matrix_reuses: usize,
 }
 
 /// Lightweight final candidate; excludes prepared scattering and dense Jacobians.
@@ -880,6 +884,36 @@ impl PreparedSymmetricModel {
         iterative: bool,
         cached_normal: bool,
     ) -> Result<SymmetricRefinement, SolutionError> {
+        self.refine_with_normal_reuse(
+            initial,
+            iterations,
+            deadline,
+            cancellation,
+            iterative,
+            cached_normal,
+            false,
+        )
+    }
+
+    /// Reuse a checked normal linearization only while its accepted model is unchanged.
+    /// All damping, line searches, residual checks and matrix-free fallback are retained.
+    /// # Errors
+    /// Rejects the same inputs and stopped/failed systems as `refine_with_normal_cache`.
+    #[allow(
+        clippy::too_many_lines,
+        clippy::too_many_arguments,
+        clippy::fn_params_excessive_bools
+    )]
+    pub fn refine_with_normal_reuse(
+        self,
+        initial: &[f64],
+        iterations: usize,
+        deadline: Option<Instant>,
+        cancellation: Option<&Cancellation>,
+        iterative: bool,
+        cached_normal: bool,
+        reuse_normal: bool,
+    ) -> Result<SymmetricRefinement, SolutionError> {
         if iterations > 200 {
             return Err(error("symmetric iteration budget must not exceed 200"));
         }
@@ -892,6 +926,7 @@ impl PreparedSymmetricModel {
         let mut termination = "max_iterations";
         let mut cached_normal_solves = 0;
         let mut normal_cache_fallbacks = 0;
+        let mut linear_cache = crate::linear_step::NormalReuse::default();
         for _ in 0..iterations {
             if crate::stopped(deadline, cancellation) {
                 termination = if cancellation.is_some_and(Cancellation::is_cancelled) {
@@ -944,7 +979,15 @@ impl PreparedSymmetricModel {
                 gradient[i] = -gradient[i];
             }
             let solved = if use_cached {
-                let linear = if use_iterative {
+                let linear = if use_iterative && reuse_normal {
+                    linear_cache.step(
+                        &evaluation.jacobian,
+                        &evaluation.residual,
+                        damping,
+                        deadline,
+                        cancellation,
+                    )
+                } else if use_iterative {
                     crate::cached_normal_step(
                         &evaluation.jacobian,
                         &evaluation.residual,
@@ -1011,6 +1054,7 @@ impl PreparedSymmetricModel {
                 if let Ok(next) = self.evaluate(&trial) {
                     if next.objective < evaluation.objective {
                         parameters = trial;
+                        linear_cache.clear();
                         evaluation = next;
                         accepted += 1;
                         improved = true;
@@ -1042,6 +1086,8 @@ impl PreparedSymmetricModel {
             termination,
             cached_normal_solves,
             normal_cache_fallbacks,
+            normal_matrix_builds: linear_cache.builds,
+            normal_matrix_reuses: linear_cache.reuses,
         })
     }
 }
