@@ -5,6 +5,7 @@
 //! No external crystallographic program is imported, executed, or required.
 
 mod adp_refinement;
+mod atomic_mask;
 mod completion;
 mod completion_orbit;
 mod data;
@@ -51,8 +52,8 @@ pub use completion_orbit::{
 pub use data::{Observation, PreparedData, prepare_data};
 pub use dual_space::{
     AdaptivePeakHistory, CheckpointCallback, DualSpaceCheckpoint, DualSpaceOptions,
-    DualSpaceResult, PeakSelection, adaptive_peaks, atomic_projection, dual_space,
-    dual_space_monitored, dual_space_with_prediction,
+    DualSpaceResult, PeakSelection, adaptive_peaks, atomic_projection, atomic_projection_cached,
+    dual_space, dual_space_monitored, dual_space_with_prediction,
 };
 pub use fourier::{
     FlipOptions, FlipResult, charge_flip, extract_peaks, real_density_transform, transform_3d,

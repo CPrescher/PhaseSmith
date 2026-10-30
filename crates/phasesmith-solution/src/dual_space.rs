@@ -102,6 +102,10 @@ pub struct DualSpaceResult {
     pub batched_phase_transforms: usize,
     /// Actual packed-real transforms in P1 cycles, excluding initialization.
     pub real_phase_transforms: usize,
+    /// Actual cycles using exact cached Gaussian mask geometry.
+    pub cached_mask_cycles: usize,
+    /// Actual packed Fourier operations using direct density-array transfers.
+    pub fused_fourier_transforms: usize,
 }
 
 pub(crate) fn hash64(mut value: u64) -> u64 {
@@ -137,7 +141,11 @@ fn omitted(count: usize, cycle: usize, options: &DualSpaceOptions) -> Vec<bool> 
     mask
 }
 
-fn mask_bounds(shape: [usize; 3], g: &CellGeometry, sigma: f64) -> Result<[i32; 3], SolutionError> {
+pub(crate) fn mask_bounds(
+    shape: [usize; 3],
+    g: &CellGeometry,
+    sigma: f64,
+) -> Result<[i32; 3], SolutionError> {
     let mut bounds = [0; 3];
     for i in 0..3 {
         let fractional = 3. * sigma * g.reciprocal_metric[i][i].sqrt();
@@ -173,6 +181,21 @@ pub fn atomic_projection(
 ) -> Result<Vec<f64>, SolutionError> {
     Ok(project_atomicity(density, shape, cell, options, cycle)?.density)
 }
+/// Exact cached-geometry atomic projection for independent comparisons.
+/// # Errors
+/// Rejects the same controls, grids, density and support bounds as `atomic_projection`.
+pub fn atomic_projection_cached(
+    density: &[f64],
+    shape: [usize; 3],
+    cell: UnitCell,
+    options: &DualSpaceOptions,
+    cycle: usize,
+) -> Result<Vec<f64>, SolutionError> {
+    let mut workspace = AtomicWorkspace::new(shape, cell, options, false, true)?;
+    workspace.update(density, shape, options, cycle)?;
+    Ok(workspace.projected)
+}
+
 struct Projection {
     density: Vec<f64>,
     selected: usize,
@@ -221,6 +244,8 @@ struct AtomicWorkspace {
     mask: Vec<f64>,
     projected: Vec<f64>,
     peaks: Option<crate::PreparedAdaptivePeaks>,
+    mask_plan: Option<Box<crate::atomic_mask::PreparedMask>>,
+    cached_cycles: usize,
 }
 impl AtomicWorkspace {
     fn new(
@@ -228,12 +253,22 @@ impl AtomicWorkspace {
         cell: UnitCell,
         options: &DualSpaceOptions,
         filtered_peaks: bool,
+        cached_mask: bool,
     ) -> Result<Self, SolutionError> {
         validate_options(options)?;
         let geometry = cell.geometry().map_err(|e| error(e.to_string()))?;
         let bounds = mask_bounds(shape, &geometry, options.mask_sigma)?;
         let n = grid_len(shape)?;
         Ok(Self {
+            mask_plan: cached_mask.then(|| {
+                Box::new(crate::atomic_mask::PreparedMask::new(
+                    shape,
+                    &geometry,
+                    bounds,
+                    options.mask_sigma,
+                ))
+            }),
+            cached_cycles: 0,
             geometry,
             bounds,
             radius2: (3. * options.mask_sigma).powi(2) * (1. + 1e-12),
@@ -281,8 +316,15 @@ impl AtomicWorkspace {
         self.mask.fill(0.);
         let radius2 = self.radius2;
         let normalization = self.normalization;
+        if self.mask_plan.is_some() {
+            self.cached_cycles += 1;
+        }
         for (&point, &skip) in peaks.iter().zip(&skip) {
             if skip {
+                continue;
+            }
+            if let Some(plan) = &mut self.mask_plan {
+                plan.add_peak(&mut self.mask, point);
                 continue;
             }
             let centre = std::array::from_fn::<_, 3, _>(|i| point[i] * shape[i] as f64);
@@ -539,6 +581,8 @@ pub struct PhasingExecution {
     pub batched_fft: bool,
     /// Packed real-density transforms for the two P1 cycle Fourier operations.
     pub real_fft: bool,
+    /// Cache exact Gaussian axis geometry inside reusable projection workspaces.
+    pub fused_phase_workspace: bool,
 }
 
 /// Diagnostic/benchmark entry point with explicit arithmetic-preserving execution.
@@ -659,9 +703,12 @@ pub(crate) fn dual_space_guided_prediction(
         filtered_peak_search,
         batched_fft,
         real_fft,
+        fused_phase_workspace,
     } = execution;
     validate_options(options)?;
-    if (filtered_peak_search || batched_fft) && !reusable_fourier_workspaces {
+    if (filtered_peak_search || batched_fft || fused_phase_workspace)
+        && !reusable_fourier_workspaces
+    {
         return Err(error(
             "filtered peak search and batched FFT require reusable Fourier workspaces",
         ));
@@ -726,6 +773,7 @@ pub(crate) fn dual_space_guided_prediction(
     };
     let mut score_only_evaluations = 0;
     let mut fourier_workspace_cycles = 0;
+    let mut fused_fourier_transforms = 0;
     let quality_indices: Vec<_> = quality.map_or_else(Vec::new, |plan| {
         plan.hkl.iter().map(|&h| grid_index(h, shape)).collect()
     });
@@ -765,6 +813,7 @@ pub(crate) fn dual_space_guided_prediction(
             cell,
             options,
             filtered_peak_search,
+            fused_phase_workspace,
         )?)
     } else {
         None
@@ -799,14 +848,21 @@ pub(crate) fn dual_space_guided_prediction(
         }
         let mut calculated: Vec<_> = if reusable_fourier_workspaces {
             let mut values = std::mem::take(&mut recycled_coefficients);
-            for (out, &v) in values.iter_mut().zip(&projected) {
-                *out = Complex::new(v, 0.);
+            if !(fused_phase_workspace && real_fft) {
+                for (out, &v) in values.iter_mut().zip(&projected) {
+                    *out = Complex::new(v, 0.);
+                }
             }
             values
         } else {
             projected.iter().map(|&v| Complex::new(v, 0.)).collect()
         };
-        fft.density_to_fourier(&mut calculated);
+        if fused_phase_workspace && real_fft {
+            fft.density_slice_to_fourier(&projected, &mut calculated);
+            fused_fourier_transforms += 1;
+        } else {
+            fft.density_to_fourier(&mut calculated);
+        }
         if let Some(audit) = &mut adaptive_history {
             audit.selected.push(projection.selected);
             audit.thresholds.push(projection.sigma);
@@ -1036,10 +1092,17 @@ pub(crate) fn dual_space_guided_prediction(
             };
             calculated[i] = phase * (options.hybrid_m * a - (options.hybrid_m - 1.) * magnitude);
         }
-        fft.fourier_to_density(&mut calculated);
+        if fused_phase_workspace && real_fft {
+            fft.fourier_to_density_slice(&calculated, &mut density);
+            fused_fourier_transforms += 1;
+        } else {
+            fft.fourier_to_density(&mut calculated);
+        }
         if reusable_fourier_workspaces {
-            for (out, v) in density.iter_mut().zip(&calculated) {
-                *out = v.re / n as f64;
+            if !(fused_phase_workspace && real_fft) {
+                for (out, v) in density.iter_mut().zip(&calculated) {
+                    *out = v.re / n as f64;
+                }
             }
             recycled_coefficients = calculated;
             workspace.as_mut().expect("workspace enabled").projected = projected;
@@ -1077,6 +1140,8 @@ pub(crate) fn dual_space_guided_prediction(
         fourier_workspace_cycles,
         batched_phase_transforms: fft.batched_calls(),
         real_phase_transforms: fft.real_calls(),
+        cached_mask_cycles: workspace.as_ref().map_or(0, |w| w.cached_cycles),
+        fused_fourier_transforms,
         filtered_peak_cycles: if filtered_peak_search
             && matches!(options.peak_selection, PeakSelection::Adaptive { .. })
         {
@@ -1168,6 +1233,7 @@ mod tests {
                         filtered_peak_search: false,
                         batched_fft: false,
                         real_fft: false,
+                        fused_phase_workspace: false,
                     },
                     PhasingExecution {
                         score_only_evaluation: false,
@@ -1175,6 +1241,7 @@ mod tests {
                         filtered_peak_search: false,
                         batched_fft: false,
                         real_fft: false,
+                        fused_phase_workspace: false,
                     },
                     PhasingExecution {
                         score_only_evaluation: true,
@@ -1182,6 +1249,7 @@ mod tests {
                         filtered_peak_search: false,
                         batched_fft: false,
                         real_fft: false,
+                        fused_phase_workspace: false,
                     },
                     PhasingExecution {
                         score_only_evaluation: true,
@@ -1189,6 +1257,7 @@ mod tests {
                         filtered_peak_search: true,
                         batched_fft: false,
                         real_fft: false,
+                        fused_phase_workspace: false,
                     },
                     PhasingExecution {
                         score_only_evaluation: true,
@@ -1196,6 +1265,7 @@ mod tests {
                         filtered_peak_search: true,
                         batched_fft: true,
                         real_fft: false,
+                        fused_phase_workspace: false,
                     },
                 ] {
                     let new = dual_space_with_execution(

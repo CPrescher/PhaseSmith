@@ -84,12 +84,24 @@ impl RealTransform {
     }
     // Positive-exponent unnormalized DFT of the real density.
     pub(super) fn density_to_spectrum(&mut self, values: &mut [Complex<f64>]) {
+        self.prepare_density(|i| values[i].re);
+        self.restore_spectrum(values);
+    }
+    pub(super) fn density_slice_to_spectrum(
+        &mut self,
+        density: &[f64],
+        values: &mut [Complex<f64>],
+    ) {
+        self.prepare_density(|i| density[i]);
+        self.restore_spectrum(values);
+    }
+    fn prepare_density(&mut self, read: impl Fn(usize) -> f64) {
         let [nx, ny, nz] = self.shape;
         let half = nz / 2;
         let width = half + 1;
         for row in 0..nx * ny {
             for (k, value) in self.line.iter_mut().enumerate() {
-                *value = Complex::new(values[row * nz + 2 * k].re, values[row * nz + 2 * k + 1].re);
+                *value = Complex::new(read(row * nz + 2 * k), read(row * nz + 2 * k + 1));
             }
             self.inverse[2].process_with_scratch(&mut self.line, &mut self.scratch);
             let target = &mut self.work[row * width..(row + 1) * width];
@@ -102,6 +114,10 @@ impl RealTransform {
             }
         }
         self.xy(true);
+    }
+    fn restore_spectrum(&self, values: &mut [Complex<f64>]) {
+        let [nx, ny, nz] = self.shape;
+        let width = nz / 2 + 1;
         for row in 0..nx * ny {
             let target = &mut values[row * nz..(row + 1) * nz];
             target[..width].copy_from_slice(&self.work[row * width..(row + 1) * width]);
@@ -112,6 +128,20 @@ impl RealTransform {
     }
     // Real part of the negative-exponent DFT, valid even for non-Hermitian input.
     pub(super) fn spectrum_to_density(&mut self, values: &mut [Complex<f64>]) {
+        self.prepare_spectrum(values);
+        self.write_density(|i, v| values[i] = Complex::new(v, 0.));
+    }
+    #[allow(clippy::cast_precision_loss)] // Original grid bound makes this conversion exact.
+    pub(super) fn spectrum_to_density_slice(
+        &mut self,
+        values: &[Complex<f64>],
+        density: &mut [f64],
+    ) {
+        self.prepare_spectrum(values);
+        let norm = values.len() as f64;
+        self.write_density(|i, v| density[i] = v / norm);
+    }
+    fn prepare_spectrum(&mut self, values: &[Complex<f64>]) {
         let [nx, ny, nz] = self.shape;
         let half = nz / 2;
         let width = half + 1;
@@ -123,6 +153,11 @@ impl RealTransform {
             }
         }
         self.xy(false);
+    }
+    fn write_density(&mut self, mut write: impl FnMut(usize, f64)) {
+        let [nx, ny, nz] = self.shape;
+        let half = nz / 2;
+        let width = half + 1;
         for row in 0..nx * ny {
             let source = &self.work[row * width..(row + 1) * width];
             self.line[0] = Complex::new(
@@ -136,8 +171,8 @@ impl RealTransform {
             }
             self.forward[2].process_with_scratch(&mut self.line, &mut self.scratch);
             for (k, value) in self.line.iter().enumerate() {
-                values[row * nz + 2 * k] = Complex::new(2. * value.re, 0.);
-                values[row * nz + 2 * k + 1] = Complex::new(2. * value.im, 0.);
+                write(row * nz + 2 * k, 2. * value.re);
+                write(row * nz + 2 * k + 1, 2. * value.im);
             }
         }
     }
@@ -146,6 +181,45 @@ impl RealTransform {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    #[allow(clippy::cast_precision_loss)]
+    fn direct_density_transfers_preserve_every_float_bit() {
+        use crate::fourier::Transform;
+        for shape in [[8; 3], [10, 14, 18], [32, 16, 64]] {
+            let count = shape.iter().product::<usize>();
+            let density: Vec<_> = (0..count).map(|i| (i as f64 * 0.137).sin()).collect();
+            let mut old: Vec<_> = density.iter().map(|&v| Complex::new(v, 0.)).collect();
+            let mut fused = vec![Complex::default(); count];
+            let mut first = Transform::real(shape);
+            let mut second = Transform::real(shape);
+            first.density_to_fourier(&mut old);
+            second.density_slice_to_fourier(&density, &mut fused);
+            assert_eq!(
+                old.iter()
+                    .flat_map(|v| [v.re.to_bits(), v.im.to_bits()])
+                    .collect::<Vec<_>>(),
+                fused
+                    .iter()
+                    .flat_map(|v| [v.re.to_bits(), v.im.to_bits()])
+                    .collect::<Vec<_>>()
+            );
+            // General complex input ensures no implicit Hermitian assumption appears.
+            let spectrum: Vec<_> = (0..count)
+                .map(|i| Complex::new((i as f64 * 0.219).sin(), (i as f64 * 0.331).cos()))
+                .collect();
+            let mut control = spectrum.clone();
+            let mut direct = vec![0.; count];
+            first.fourier_to_density(&mut control);
+            second.fourier_to_density_slice(&spectrum, &mut direct);
+            assert_eq!(
+                control
+                    .iter()
+                    .map(|v| (v.re / count as f64).to_bits())
+                    .collect::<Vec<_>>(),
+                direct.iter().map(|v| v.to_bits()).collect::<Vec<_>>()
+            );
+        }
+    }
     #[test]
     fn maximum_grid_workspace_is_bounded_by_half_spectrum() {
         let mut planner = FftPlanner::new();

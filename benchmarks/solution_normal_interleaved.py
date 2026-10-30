@@ -21,7 +21,7 @@ def main():
     )
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--seconds", type=float, default=15.0)
-    parser.add_argument("--lock-revision", type=int, default=20)
+    parser.add_argument("--lock-revision", type=int, default=21)
     parser.add_argument(
         "--shelxt",
         type=Path,
@@ -54,6 +54,7 @@ def main():
             filtered_peak_search=True,
             batched_fft=True,
             real_fft=False,
+            fused_phase_workspace=False,
             cached_normal_refinement=mode == "cached",
             work_sliced_phasing=True,
             independent_origin_sampling=False,
