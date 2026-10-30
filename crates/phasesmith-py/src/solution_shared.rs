@@ -92,6 +92,9 @@ pub(super) fn summary<'py>(
     d.set_item("phase_checkpoints", decisions)?;
     d.set_item("chemical_assignment", s.chemical_assignment)?;
     d.set_item("iterative_refinement", s.iterative_refinement)?;
+    d.set_item("cached_normal_refinement", s.cached_normal_refinement)?;
+    d.set_item("cached_normal_solves", s.cached_normal_solves)?;
+    d.set_item("normal_cache_fallbacks", s.normal_cache_fallbacks)?;
     d.set_item("missing_reflections", s.missing_reflections)?;
     d.set_item("resolution_extension", s.resolution_extension)?;
     d.set_item("prediction_steps", s.prediction_steps)?;

@@ -99,6 +99,7 @@ def compare(paths, manifest, pairs=()):
                 "isotropic_assignment_refinement",
                 "filtered_peak_search",
                 "batched_fft",
+                "cached_normal_refinement",
                 "reusable_fourier_workspaces",
                 "independent_origin_sampling",
                 "resolution_extension",
@@ -153,6 +154,8 @@ def compare(paths, manifest, pairs=()):
                     "fourier_workspace_cycles": r["effort"].get("fourier_workspace_cycles", 0),
                     "filtered_peak_cycles": r["effort"].get("filtered_peak_cycles", 0),
                     "batched_phase_transforms": r["effort"].get("batched_phase_transforms", 0),
+                    "cached_normal_solves": r["effort"].get("cached_normal_solves", 0),
+                    "normal_cache_fallbacks": r["effort"].get("normal_cache_fallbacks", 0),
                     "adaptive_checkpoint_tests": len(r["effort"].get("phase_checkpoints", [])),
                     "stable_map_handoffs": sum(
                         c["reason"] == "stable_map"
@@ -220,6 +223,7 @@ def compare(paths, manifest, pairs=()):
             "isotropic_assignment_refinement": report.get("isotropic_assignment_refinement", False),
             "filtered_peak_search": report.get("filtered_peak_search", False),
             "batched_fft": report.get("batched_fft", False),
+            "cached_normal_refinement": report.get("cached_normal_refinement", False),
             "reusable_fourier_workspaces": report.get("reusable_fourier_workspaces", False),
             "independent_origin_sampling": report.get("independent_origin_sampling", False),
             "resolution_extension": report.get("resolution_extension", 1.0),
@@ -242,6 +246,8 @@ def compare(paths, manifest, pairs=()):
                     "fourier_workspace_cycles",
                     "filtered_peak_cycles",
                     "batched_phase_transforms",
+                    "cached_normal_solves",
+                    "normal_cache_fallbacks",
                     "stable_map_handoffs",
                     "screening_refinements",
                     "final_refinements",

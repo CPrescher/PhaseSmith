@@ -55,7 +55,7 @@ pub use dual_space::{
     dual_space_monitored, dual_space_with_prediction,
 };
 pub use fourier::{FlipOptions, FlipResult, charge_flip, extract_peaks, transform_3d};
-pub use linear_step::iterative_normal_step;
+pub use linear_step::{CachedNormalStep, cached_normal_step, iterative_normal_step};
 pub use model::{ModelEvaluation, PolishedModel, evaluate_model, polish_model};
 pub use peak_completion::{
     ChemicalScale, PeakCompletionCandidate, PeakCompletionResult, PreparedPeakCompletion,

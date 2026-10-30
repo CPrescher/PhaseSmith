@@ -65,7 +65,7 @@ type SharedSearchRequest = (
             bool,
             bool,
             bool,
-            (bool, bool),
+            (bool, bool, bool),
         ),
     ),
 );
@@ -205,7 +205,7 @@ fn solve_structure<'py>(
                         reusable_fourier_workspaces,
                         work_sliced_phasing,
                         isotropic_assignment_refinement,
-                        (filtered_peak_search, batched_fft),
+                        (filtered_peak_search, batched_fft, cached_normal_refinement),
                     ),
                 ),
             )) = shared_search
@@ -256,6 +256,7 @@ fn solve_structure<'py>(
                         isotropic_assignment_refinement,
                         filtered_peak_search,
                         batched_fft,
+                        cached_normal_refinement,
                     },
                 )
             } else {

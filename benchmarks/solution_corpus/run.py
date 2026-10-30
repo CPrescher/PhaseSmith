@@ -79,6 +79,7 @@ def worker(args):
         isotropic_assignment_refinement=args.isotropic_assignment_refinement,
         filtered_peak_search=args.filtered_peak_search,
         batched_fft=args.batched_fft,
+        cached_normal_refinement=args.cached_normal_refinement,
         reusable_fourier_workspaces=args.reusable_fourier_workspaces,
         independent_origin_sampling=args.independent_origin_sampling,
         resolution_extension=args.resolution_extension,
@@ -270,6 +271,7 @@ def collect_jobs(args):
             or previous.get("work_sliced_phasing", False) != args.work_sliced_phasing
             or previous.get("filtered_peak_search", False) != args.filtered_peak_search
             or previous.get("batched_fft", False) != args.batched_fft
+            or previous.get("cached_normal_refinement", False) != args.cached_normal_refinement
             or previous.get("isotropic_assignment_refinement", False)
             != args.isotropic_assignment_refinement
             or previous.get("reusable_fourier_workspaces", False)
@@ -333,6 +335,7 @@ def collect_jobs(args):
         "isotropic_assignment_refinement": args.isotropic_assignment_refinement,
         "filtered_peak_search": args.filtered_peak_search,
         "batched_fft": args.batched_fft,
+        "cached_normal_refinement": args.cached_normal_refinement,
         "reusable_fourier_workspaces": args.reusable_fourier_workspaces,
         "independent_origin_sampling": args.independent_origin_sampling,
         "resolution_extension": args.resolution_extension,
@@ -462,6 +465,7 @@ def collect_jobs(args):
                     *(["--work-sliced-phasing"] if args.work_sliced_phasing else []),
                     *(["--filtered-peak-search"] if args.filtered_peak_search else []),
                     *(["--batched-fft"] if args.batched_fft else []),
+                    *(["--cached-normal-refinement"] if args.cached_normal_refinement else []),
                     *(
                         ["--isotropic-assignment-refinement"]
                         if args.isotropic_assignment_refinement

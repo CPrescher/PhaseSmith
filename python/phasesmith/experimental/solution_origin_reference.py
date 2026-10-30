@@ -103,3 +103,13 @@ def iterative_normal_reference(jacobian, residual, damping):
     normal = j.T @ j
     diagonal = np.maximum(np.diag(normal), 1e-8)
     return np.linalg.solve(normal + damping * np.diag(diagonal), -(j.T @ residual))
+
+
+def preconditioned_normal_reference(jacobian, residual, damping):
+    """Independent normal matrix/rhs in diagonal-scaled coordinates, using NumPy."""
+    j = np.asarray(jacobian, dtype=float)
+    r = np.asarray(residual, dtype=float)
+    scale = np.maximum(np.sum(j * j, axis=1), 1e-8) ** -0.5
+    scaled = scale[:, None] * j
+    normal = scaled @ scaled.T + damping * np.eye(len(scale))
+    return normal, -(scaled @ r), scale

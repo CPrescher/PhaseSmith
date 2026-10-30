@@ -83,6 +83,8 @@ pub struct SharedSearchOptions {
     pub chemical_assignment: bool,
     /// Solve large damped refinement systems with an iterative normal operator.
     pub iterative_refinement: bool,
+    /// Cache checked preconditioned normal matrices in final iterative fits only.
+    pub cached_normal_refinement: bool,
     /// Regularize allowed unmeasured coefficients using the observed Wilson envelope.
     pub missing_reflections: bool,
     /// Reciprocal-radius extension multiplier, in [1,1.5].
@@ -123,6 +125,7 @@ impl Default for SharedSearchOptions {
             independent_origin_sampling: false,
             chemical_assignment: false,
             iterative_refinement: false,
+            cached_normal_refinement: false,
             missing_reflections: false,
             resolution_extension: 1.,
         }
@@ -260,6 +263,8 @@ pub struct SharedSearchSummary {
     pub chemical_assignment: bool,
     /// Solve large damped refinement systems with an iterative normal operator.
     pub iterative_refinement: bool,
+    /// Cache checked preconditioned normal matrices in final iterative fits only.
+    pub cached_normal_refinement: bool,
     /// Requested observed-envelope gap treatment.
     pub missing_reflections: bool,
     /// Requested reciprocal-radius extension.
@@ -318,6 +323,10 @@ pub struct SharedSearchSummary {
     pub screening_refinements: usize,
     /// Requested final-mode fits, including initial frameworks and promotions.
     pub final_refinements: usize,
+    /// Final linear steps accepted from the guarded normal cache.
+    pub cached_normal_solves: usize,
+    /// Normal-cache attempts falling back to the original solver.
+    pub normal_cache_fallbacks: usize,
     /// Screened edits sent to full refinement.
     pub promoted_candidates: usize,
     /// Valid screened edits omitted from the full-fit shortlist.
@@ -556,13 +565,17 @@ fn refine(
     } else {
         audit.final_refinements += 1;
     }
-    let fit = prepared.refine_with_solver(
+    let fit = prepared.refine_with_normal_cache(
         &initial,
         iterations,
         Some(deadline),
         options.cancellation.as_ref(),
         audit.iterative_refinement,
+        audit.cached_normal_refinement
+            && !matches!(pass, FitPass::Screen(_) | FitPass::ScreenSeed(_, _)),
     )?;
+    audit.cached_normal_solves += fit.cached_normal_solves;
+    audit.normal_cache_fallbacks += fit.normal_cache_fallbacks;
     let (mut summary, mut full) = fit.summarize(mode, baseline.r1, baseline.objective);
     let aligned: Vec<_> = full
         .iter()
@@ -1768,6 +1781,7 @@ pub fn solve_elements(
         || (search.reusable_fourier_workspaces && options.phasing != PhasingMethod::DualSpace)
         || ((search.filtered_peak_search || search.batched_fft)
             && !search.reusable_fourier_workspaces)
+        || (search.cached_normal_refinement && !search.iterative_refinement)
         || (search.isotropic_assignment_refinement
             && (!search.phase_origin_selection || !search.chemical_assignment))
         || (search.work_sliced_phasing
@@ -2013,6 +2027,7 @@ pub fn solve_elements(
         independent_origin_sampling: search.independent_origin_sampling,
         chemical_assignment: search.chemical_assignment,
         iterative_refinement: search.iterative_refinement,
+        cached_normal_refinement: search.cached_normal_refinement,
         missing_reflections: search.missing_reflections,
         resolution_extension: search.resolution_extension,
         prediction: prediction_f.as_ref().map(|p| p.audit.clone()),

@@ -187,6 +187,10 @@ pub struct SymmetricRefinement {
     pub accepted_steps: usize,
     /// `gradient`, `max_iterations`, `stagnated`, `cancelled`, or `max_runtime`.
     pub termination: &'static str,
+    /// Actual linear steps accepted from the bounded normal cache.
+    pub cached_normal_solves: usize,
+    /// Cache attempts that required the original matrix-free solver.
+    pub normal_cache_fallbacks: usize,
 }
 
 /// Lightweight final candidate; excludes prepared scattering and dense Jacobians.
@@ -726,6 +730,30 @@ impl PreparedSymmetricModel {
         cancellation: Option<&Cancellation>,
         iterative: bool,
     ) -> Result<SymmetricRefinement, SolutionError> {
+        self.refine_with_normal_cache(
+            initial,
+            iterations,
+            deadline,
+            cancellation,
+            iterative,
+            false,
+        )
+    }
+
+    /// Optional bounded preconditioned normal cache with original-operator checks.
+    /// All observations, derivatives, line searches and stopping gates are retained.
+    /// # Errors
+    /// Rejects the same invalid inputs as `refine_with_solver`.
+    #[allow(clippy::too_many_lines)]
+    pub fn refine_with_normal_cache(
+        self,
+        initial: &[f64],
+        iterations: usize,
+        deadline: Option<Instant>,
+        cancellation: Option<&Cancellation>,
+        iterative: bool,
+        cached_normal: bool,
+    ) -> Result<SymmetricRefinement, SolutionError> {
         if iterations > 200 {
             return Err(error("symmetric iteration budget must not exceed 200"));
         }
@@ -736,6 +764,8 @@ impl PreparedSymmetricModel {
         let mut damping = 1e-3_f64;
         let mut accepted = 0;
         let mut termination = "max_iterations";
+        let mut cached_normal_solves = 0;
+        let mut normal_cache_fallbacks = 0;
         for _ in 0..iterations {
             if crate::stopped(deadline, cancellation) {
                 termination = if cancellation.is_some_and(Cancellation::is_cancelled) {
@@ -746,7 +776,15 @@ impl PreparedSymmetricModel {
                 break;
             }
             let use_iterative = iterative && count >= 32;
-            let mut normal = vec![0.; if use_iterative { 0 } else { count * count }];
+            let use_cached = cached_normal && iterative && count >= 12;
+            let mut normal = vec![
+                0.;
+                if use_iterative || use_cached {
+                    0
+                } else {
+                    count * count
+                }
+            ];
             let mut gradient = vec![0.; count];
             for i in 0..count {
                 let row = &evaluation.jacobian[i * reflections..(i + 1) * reflections];
@@ -755,7 +793,11 @@ impl PreparedSymmetricModel {
                     .zip(&evaluation.residual)
                     .map(|(a, b)| a * b)
                     .sum();
-                for j in 0..if use_iterative { 0 } else { i + 1 } {
+                for j in 0..if use_iterative || use_cached {
+                    0
+                } else {
+                    i + 1
+                } {
                     let value = row
                         .iter()
                         .zip(&evaluation.jacobian[j * reflections..(j + 1) * reflections])
@@ -770,12 +812,35 @@ impl PreparedSymmetricModel {
                 break;
             }
             for i in 0..count {
-                if !use_iterative {
+                if !use_iterative && !use_cached {
                     normal[i * count + i] += damping * normal[i * count + i].max(1e-8);
                 }
                 gradient[i] = -gradient[i];
             }
-            let solved = if use_iterative {
+            let solved = if use_cached {
+                let linear = if use_iterative {
+                    crate::cached_normal_step(
+                        &evaluation.jacobian,
+                        &evaluation.residual,
+                        damping,
+                        deadline,
+                        cancellation,
+                    )
+                } else {
+                    crate::linear_step::cached_dense_step(
+                        &evaluation.jacobian,
+                        &evaluation.residual,
+                        damping,
+                        deadline,
+                        cancellation,
+                    )
+                };
+                linear.ok().map(|v| {
+                    cached_normal_solves += usize::from(v.used_cache);
+                    normal_cache_fallbacks += usize::from(v.fell_back);
+                    v.step
+                })
+            } else if use_iterative {
                 crate::iterative_normal_step(
                     &evaluation.jacobian,
                     &evaluation.residual,
@@ -849,6 +914,8 @@ impl PreparedSymmetricModel {
             evaluation,
             accepted_steps: accepted,
             termination,
+            cached_normal_solves,
+            normal_cache_fallbacks,
         })
     }
 }

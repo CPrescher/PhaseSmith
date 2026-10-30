@@ -143,6 +143,69 @@ fn benchmark(c: &mut Criterion) {
             },
         );
     }
+    for cached in [false, true] {
+        let label = if cached { "cached" } else { "control" };
+        c.bench_function(
+            &format!("normal_cache_refine_8_atoms_2108_rows_69_parameters_3_steps_{label}"),
+            |b| {
+                b.iter(|| {
+                    prepared
+                        .clone()
+                        .refine_with_normal_cache(&parameters, 3, None, None, true, cached)
+                        .unwrap()
+                });
+            },
+        );
+        let e = prepared.evaluate(&parameters).unwrap();
+        c.bench_function(
+            &format!("normal_cache_step_8_atoms_2108_rows_69_parameters_{label}"),
+            |b| {
+                b.iter(|| {
+                    if cached {
+                        phasesmith_solution::cached_normal_step(
+                            &e.jacobian,
+                            &e.residual,
+                            1e-3,
+                            None,
+                            None,
+                        )
+                        .unwrap()
+                        .step
+                    } else {
+                        phasesmith_solution::iterative_normal_step(
+                            &e.jacobian,
+                            &e.residual,
+                            1e-3,
+                            None,
+                            None,
+                        )
+                        .unwrap()
+                        .0
+                    }
+                });
+            },
+        );
+    }
+    let small_symmetry =
+        recover_symmetry(cell, &group, &elements[..3], &points[..3], 0.01, None, None).unwrap();
+    let small =
+        PreparedSymmetricModel::new(small_symmetry, &hkl, &amplitudes, AdpMode::Anisotropic)
+            .unwrap();
+    let small_parameters = small.initial_parameters(0.015).unwrap();
+    for cached in [false, true] {
+        let label = if cached { "cached" } else { "control" };
+        c.bench_function(
+            &format!("normal_cache_dense_3_atoms_2108_rows_24_parameters_3_steps_{label}"),
+            |b| {
+                b.iter(|| {
+                    small
+                        .clone()
+                        .refine_with_normal_cache(&small_parameters, 3, None, None, true, cached)
+                        .unwrap()
+                });
+            },
+        );
+    }
     let mirror_group = SpaceGroup::new(vec![
         SymmetryOperation::identity(),
         SymmetryOperation::new(
@@ -1117,6 +1180,67 @@ fn benchmark(c: &mut Criterion) {
         c.bench_function(
             &format!("batched_fft_search_32cubed_8_atoms_2108_rows_{label}"),
             |b| {
+                b.iter(|| {
+                    phasesmith_solution::solve_elements(
+                        &count_observations,
+                        cell,
+                        &group,
+                        &quality_elements,
+                        &options,
+                        &search,
+                    )
+                    .unwrap()
+                });
+            },
+        );
+    }
+    for cached in [false, true] {
+        let options = SolveOptions {
+            phasing: PhasingMethod::DualSpace,
+            trials: 2,
+            cycles: 128,
+            max_seconds: 60.,
+            r1_target: 1e-6,
+            ..SolveOptions::default()
+        };
+        let search = SharedSearchOptions {
+            maximum_atoms: 32,
+            symmetry_recycling: true,
+            tangent_refinement: true,
+            wilson_normalization: true,
+            phase_quality_selection: true,
+            phase_origin_selection: true,
+            chemical_assignment: true,
+            iterative_refinement: true,
+            score_only_evaluation: true,
+            reusable_fourier_workspaces: true,
+            work_sliced_phasing: true,
+            isotropic_assignment_refinement: true,
+            filtered_peak_search: true,
+            batched_fft: true,
+            cached_normal_refinement: cached,
+            ..SharedSearchOptions::default()
+        };
+        let label = if cached { "cached" } else { "control" };
+        c.bench_function(
+            &format!("normal_cache_search_32cubed_8_atoms_2108_rows_{label}"),
+            |b| {
+                let sample = phasesmith_solution::solve_elements(
+                    &count_observations,
+                    cell,
+                    &group,
+                    &quality_elements,
+                    &options,
+                    &search,
+                )
+                .unwrap();
+                let audit = sample.shared_search.unwrap();
+                eprintln!(
+                    "normal_search_sample {label} final_fits {} cached_solves {} fallbacks {}",
+                    audit.final_refinements,
+                    audit.cached_normal_solves,
+                    audit.normal_cache_fallbacks
+                );
                 b.iter(|| {
                     phasesmith_solution::solve_elements(
                         &count_observations,
