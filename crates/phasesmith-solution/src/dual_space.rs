@@ -96,6 +96,8 @@ pub struct DualSpaceResult {
     pub score_only_evaluations: usize,
     /// Actual projections using reused full-grid buffers.
     pub fourier_workspace_cycles: usize,
+    /// Actual cycles using exact threshold-filtered peak selection.
+    pub filtered_peak_cycles: usize,
 }
 
 pub(crate) fn hash64(mut value: u64) -> u64 {
@@ -214,12 +216,14 @@ struct AtomicWorkspace {
     normalization: f64,
     mask: Vec<f64>,
     projected: Vec<f64>,
+    peaks: Option<crate::PreparedAdaptivePeaks>,
 }
 impl AtomicWorkspace {
     fn new(
         shape: [usize; 3],
         cell: UnitCell,
         options: &DualSpaceOptions,
+        filtered_peaks: bool,
     ) -> Result<Self, SolutionError> {
         validate_options(options)?;
         let geometry = cell.geometry().map_err(|e| error(e.to_string()))?;
@@ -232,6 +236,11 @@ impl AtomicWorkspace {
             normalization: (std::f64::consts::TAU).powf(-1.5) / options.mask_sigma.powi(3),
             mask: vec![0.; n],
             projected: vec![0.; n],
+            peaks: if filtered_peaks {
+                Some(crate::PreparedAdaptivePeaks::new(shape)?)
+            } else {
+                None
+            },
         })
     }
     #[allow(clippy::cast_precision_loss, clippy::cast_possible_truncation)]
@@ -255,7 +264,13 @@ impl AtomicWorkspace {
                 )?,
                 0.,
             ),
-            PeakSelection::Adaptive { sigma, cap } => adaptive_peaks(density, shape, sigma, cap)?,
+            PeakSelection::Adaptive { sigma, cap } => {
+                if let Some(plan) = &mut self.peaks {
+                    plan.select(density, sigma, cap)?
+                } else {
+                    adaptive_peaks(density, shape, sigma, cap)?
+                }
+            }
         };
         let skip = omitted(peaks.len(), cycle, options);
         let omitted_count = skip.iter().filter(|&&v| v).count();
@@ -502,8 +517,7 @@ pub fn dual_space_with_prediction(
         None,
         Some(prediction),
         false,
-        false,
-        false,
+        PhasingExecution::default(),
     )
 }
 
@@ -514,6 +528,8 @@ pub struct PhasingExecution {
     pub score_only_evaluation: bool,
     /// Reuse full-grid buffers and process contiguous FFT lines in place.
     pub reusable_fourier_workspaces: bool,
+    /// Filter impossible adaptive peaks before cached periodic neighbor comparisons.
+    pub filtered_peak_search: bool,
 }
 
 /// Diagnostic/benchmark entry point with explicit arithmetic-preserving execution.
@@ -536,21 +552,8 @@ pub fn dual_space_with_execution(
         return Err(error("score-only execution requires a quality plan"));
     }
     dual_space_guided_prediction(
-        shape,
-        cell,
-        hkl,
-        amplitudes,
-        phases,
-        support,
-        options,
-        deadline,
-        None,
-        None,
-        quality,
-        None,
-        false,
-        execution.score_only_evaluation,
-        execution.reusable_fourier_workspaces,
+        shape, cell, hkl, amplitudes, phases, support, options, deadline, None, None, quality,
+        None, false, execution,
     )
 }
 
@@ -603,8 +606,20 @@ pub(crate) fn dual_space_guided(
     quality: Option<&crate::PreparedPhaseQuality>,
 ) -> Result<DualSpaceResult, SolutionError> {
     dual_space_guided_prediction(
-        shape, cell, hkl, amplitudes, phases, support, options, deadline, checkpoint, tangent,
-        quality, None, false, false, false,
+        shape,
+        cell,
+        hkl,
+        amplitudes,
+        phases,
+        support,
+        options,
+        deadline,
+        checkpoint,
+        tangent,
+        quality,
+        None,
+        false,
+        PhasingExecution::default(),
     )
 }
 
@@ -627,10 +642,19 @@ pub(crate) fn dual_space_guided_prediction(
     quality: Option<&crate::PreparedPhaseQuality>,
     prediction: Option<&crate::PreparedReflectionPrediction>,
     adaptive_checkpoints: bool,
-    score_only_evaluation: bool,
-    reusable_fourier_workspaces: bool,
+    execution: PhasingExecution,
 ) -> Result<DualSpaceResult, SolutionError> {
+    let PhasingExecution {
+        score_only_evaluation,
+        reusable_fourier_workspaces,
+        filtered_peak_search,
+    } = execution;
     validate_options(options)?;
+    if filtered_peak_search && !reusable_fourier_workspaces {
+        return Err(error(
+            "filtered peak search requires reusable Fourier workspaces",
+        ));
+    }
     let geometry = cell.geometry().map_err(|e| error(e.to_string()))?;
     mask_bounds(shape, &geometry, options.mask_sigma)?;
     let (indices, mut f) = prepare_fourier(shape, hkl, amplitudes, phases, support)?;
@@ -718,7 +742,12 @@ pub(crate) fn dual_space_guided_prediction(
     let mut best_cycle = 0;
     let target_norm: f64 = target.iter().map(|a| a * a).sum();
     let mut workspace = if reusable_fourier_workspaces {
-        Some(AtomicWorkspace::new(shape, cell, options)?)
+        Some(AtomicWorkspace::new(
+            shape,
+            cell,
+            options,
+            filtered_peak_search,
+        )?)
     } else {
         None
     };
@@ -1028,6 +1057,13 @@ pub(crate) fn dual_space_guided_prediction(
         phase_checkpoints,
         score_only_evaluations,
         fourier_workspace_cycles,
+        filtered_peak_cycles: if filtered_peak_search
+            && matches!(options.peak_selection, PeakSelection::Adaptive { .. })
+        {
+            fourier_workspace_cycles
+        } else {
+            0
+        },
     })
 }
 
@@ -1109,14 +1145,22 @@ mod tests {
                     PhasingExecution {
                         score_only_evaluation: true,
                         reusable_fourier_workspaces: false,
+                        filtered_peak_search: false,
                     },
                     PhasingExecution {
                         score_only_evaluation: false,
                         reusable_fourier_workspaces: true,
+                        filtered_peak_search: false,
                     },
                     PhasingExecution {
                         score_only_evaluation: true,
                         reusable_fourier_workspaces: true,
+                        filtered_peak_search: false,
+                    },
+                    PhasingExecution {
+                        score_only_evaluation: true,
+                        reusable_fourier_workspaces: true,
+                        filtered_peak_search: true,
                     },
                 ] {
                     let new = dual_space_with_execution(

@@ -15,6 +15,8 @@ mod math3;
 mod model;
 mod peak_completion;
 mod peak_density;
+mod peak_scan;
+pub use peak_scan::PreparedAdaptivePeaks;
 mod phase_checkpoint;
 mod phase_origin;
 pub use phase_checkpoint::{PhaseCheckpoint, PhaseCheckpointSelector, checkpoint_map_cosine};

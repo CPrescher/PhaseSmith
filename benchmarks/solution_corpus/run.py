@@ -77,6 +77,7 @@ def worker(args):
         score_only_evaluation=args.score_only_evaluation,
         work_sliced_phasing=args.work_sliced_phasing,
         isotropic_assignment_refinement=args.isotropic_assignment_refinement,
+        filtered_peak_search=args.filtered_peak_search,
         reusable_fourier_workspaces=args.reusable_fourier_workspaces,
         independent_origin_sampling=args.independent_origin_sampling,
         resolution_extension=args.resolution_extension,
@@ -266,6 +267,7 @@ def collect_jobs(args):
             or previous.get("adaptive_checkpoints", False) != args.adaptive_checkpoints
             or previous.get("score_only_evaluation", False) != args.score_only_evaluation
             or previous.get("work_sliced_phasing", False) != args.work_sliced_phasing
+            or previous.get("filtered_peak_search", False) != args.filtered_peak_search
             or previous.get("isotropic_assignment_refinement", False)
             != args.isotropic_assignment_refinement
             or previous.get("reusable_fourier_workspaces", False)
@@ -327,6 +329,7 @@ def collect_jobs(args):
         "score_only_evaluation": args.score_only_evaluation,
         "work_sliced_phasing": args.work_sliced_phasing,
         "isotropic_assignment_refinement": args.isotropic_assignment_refinement,
+        "filtered_peak_search": args.filtered_peak_search,
         "reusable_fourier_workspaces": args.reusable_fourier_workspaces,
         "independent_origin_sampling": args.independent_origin_sampling,
         "resolution_extension": args.resolution_extension,
@@ -454,6 +457,7 @@ def collect_jobs(args):
                     *(["--adaptive-checkpoints"] if args.adaptive_checkpoints else []),
                     *(["--score-only-evaluation"] if args.score_only_evaluation else []),
                     *(["--work-sliced-phasing"] if args.work_sliced_phasing else []),
+                    *(["--filtered-peak-search"] if args.filtered_peak_search else []),
                     *(
                         ["--isotropic-assignment-refinement"]
                         if args.isotropic_assignment_refinement

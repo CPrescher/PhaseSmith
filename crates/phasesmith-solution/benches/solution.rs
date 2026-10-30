@@ -769,6 +769,7 @@ fn benchmark(c: &mut Criterion) {
                 let execution = phasesmith_solution::PhasingExecution {
                     score_only_evaluation: score_only,
                     reusable_fourier_workspaces: reuse,
+                    filtered_peak_search: false,
                 };
                 let options = DualSpaceOptions {
                     cycles: 64,
@@ -815,6 +816,86 @@ fn benchmark(c: &mut Criterion) {
                         execution,
                     )
                     .unwrap()
+                });
+            },
+        );
+    }
+    for (label, filtered) in [("control", false), ("filtered", true)] {
+        c.bench_function(
+            &format!("filtered_peak_phase_32cubed_8_atoms_2108_rows_64_cycle_cap_{label}"),
+            |b| {
+                let execution = phasesmith_solution::PhasingExecution {
+                    score_only_evaluation: true,
+                    reusable_fourier_workspaces: true,
+                    filtered_peak_search: filtered,
+                };
+                let options = DualSpaceOptions {
+                    cycles: 64,
+                    peak_selection: PeakSelection::Adaptive {
+                        sigma: 2.,
+                        cap: 128,
+                    },
+                    mask_sigma: 0.25,
+                    hybrid_m: 3.,
+                    omit_fraction: 0.1,
+                    seed: 1034,
+                    patterson_rank: Some(0),
+                    cancellation: None,
+                };
+                let sample = phasesmith_solution::dual_space_with_execution(
+                    shape,
+                    cell,
+                    &quality_data.hkl,
+                    &quality_data.amplitudes,
+                    &phases,
+                    &support,
+                    &options,
+                    None,
+                    Some(&quality_plan),
+                    execution,
+                )
+                .unwrap();
+                eprintln!(
+                    "execution_sample {label} completed_cycles {}",
+                    sample.trial.history.len()
+                );
+                drop(sample);
+                b.iter(|| {
+                    phasesmith_solution::dual_space_with_execution(
+                        shape,
+                        cell,
+                        &quality_data.hkl,
+                        &quality_data.amplitudes,
+                        &phases,
+                        &support,
+                        &options,
+                        None,
+                        Some(&quality_plan),
+                        execution,
+                    )
+                    .unwrap()
+                });
+            },
+        );
+    }
+    for filtered in [false, true] {
+        let mut plan = phasesmith_solution::PreparedAdaptivePeaks::new(shape).unwrap();
+        let label = if filtered { "filtered" } else { "control" };
+        c.bench_function(
+            &format!("filtered_peak_scan_32cubed_8_atoms_{label}"),
+            |b| {
+                b.iter(|| {
+                    if filtered {
+                        plan.select(std::hint::black_box(&source), 2., 128).unwrap()
+                    } else {
+                        phasesmith_solution::adaptive_peaks(
+                            std::hint::black_box(&source),
+                            shape,
+                            2.,
+                            128,
+                        )
+                        .unwrap()
+                    }
                 });
             },
         );
@@ -887,6 +968,49 @@ fn benchmark(c: &mut Criterion) {
         let label = if assignment { "assignment" } else { "control" };
         c.bench_function(
             &format!("isotropic_assignment_search_32cubed_8_atoms_2108_rows_{label}"),
+            |b| {
+                b.iter(|| {
+                    phasesmith_solution::solve_elements(
+                        &count_observations,
+                        cell,
+                        &group,
+                        &quality_elements,
+                        &options,
+                        &search,
+                    )
+                    .unwrap()
+                });
+            },
+        );
+    }
+    for filtered in [false, true] {
+        let options = SolveOptions {
+            phasing: PhasingMethod::DualSpace,
+            trials: 2,
+            cycles: 128,
+            max_seconds: 60.,
+            r1_target: 1e-6,
+            ..SolveOptions::default()
+        };
+        let search = SharedSearchOptions {
+            maximum_atoms: 32,
+            symmetry_recycling: true,
+            tangent_refinement: true,
+            wilson_normalization: true,
+            phase_quality_selection: true,
+            phase_origin_selection: true,
+            chemical_assignment: true,
+            iterative_refinement: true,
+            score_only_evaluation: true,
+            reusable_fourier_workspaces: true,
+            work_sliced_phasing: true,
+            isotropic_assignment_refinement: true,
+            filtered_peak_search: filtered,
+            ..SharedSearchOptions::default()
+        };
+        let label = if filtered { "filtered" } else { "control" };
+        c.bench_function(
+            &format!("filtered_peak_search_32cubed_8_atoms_2108_rows_{label}"),
             |b| {
                 b.iter(|| {
                     phasesmith_solution::solve_elements(

@@ -58,6 +58,7 @@ fn run<'py>(
                 phasesmith_solution::PhasingExecution {
                     score_only_evaluation: false,
                     reusable_fourier_workspaces: reusable_workspaces,
+                    filtered_peak_search: false,
                 },
             )
         })
@@ -118,7 +119,7 @@ pub(super) fn adaptive_record<'py>(
 }
 #[pyfunction(name = "_solution_count_free_dual_space")]
 #[allow(clippy::too_many_arguments)]
-#[pyo3(signature = (shape, cell_parameters, hkl, amplitudes, phases, support, cycles, peak_sigma, peak_cap, mask_sigma, hybrid_m, omit_fraction, seed, patterson_rank, checkpoint_accept_cycle=None))]
+#[pyo3(signature = (shape, cell_parameters, hkl, amplitudes, phases, support, cycles, peak_sigma, peak_cap, mask_sigma, hybrid_m, omit_fraction, seed, patterson_rank, checkpoint_accept_cycle=None, reusable_workspaces=false, filtered_peak_search=false))]
 fn count_free<'py>(
     py: Python<'py>,
     shape: [usize; 3],
@@ -136,6 +137,8 @@ fn count_free<'py>(
     seed: u64,
     patterson_rank: Option<usize>,
     checkpoint_accept_cycle: Option<usize>,
+    reusable_workspaces: bool,
+    filtered_peak_search: bool,
 ) -> PyResult<Bound<'py, PyDict>> {
     let cell = cell(&cell_parameters)?;
     let hkl = hkl_rows(&hkl)?;
@@ -157,6 +160,29 @@ fn count_free<'py>(
     };
     let state = py
         .detach(move || {
+            if checkpoint_accept_cycle.is_none() {
+                return phasesmith_solution::dual_space_with_execution(
+                    shape,
+                    cell,
+                    &hkl,
+                    &amplitudes,
+                    &phases,
+                    &support,
+                    &options,
+                    None,
+                    None,
+                    phasesmith_solution::PhasingExecution {
+                        score_only_evaluation: false,
+                        reusable_fourier_workspaces: reusable_workspaces,
+                        filtered_peak_search,
+                    },
+                );
+            }
+            if filtered_peak_search || reusable_workspaces {
+                return Err(phasesmith_solution::SolutionError(
+                    "diagnostic checkpoint and execution modes must be tested separately".into(),
+                ));
+            }
             let mut handoff = |_: &[f64], done: usize, _: usize| {
                 Ok(checkpoint_accept_cycle.is_some_and(|n| n > 0 && done >= n))
             };
@@ -188,6 +214,32 @@ fn count_free<'py>(
     }
     d.set_item("checkpoints", checkpoint_records(py, &state.checkpoints)?)?;
     Ok(d)
+}
+
+#[pyfunction(name = "_solution_filtered_peaks")]
+#[pyo3(signature=(density,shape,sigma,cap,filtered=true))]
+fn filtered_peaks<'py>(
+    py: Python<'py>,
+    density: PyReadonlyArray1<'_, f64>,
+    shape: [usize; 3],
+    sigma: f64,
+    cap: usize,
+    filtered: bool,
+) -> PyResult<Bound<'py, PyDict>> {
+    let density = density.as_slice()?.to_vec();
+    let (peaks, effective) = py
+        .detach(|| {
+            if filtered {
+                phasesmith_solution::PreparedAdaptivePeaks::new(shape)?.select(&density, sigma, cap)
+            } else {
+                phasesmith_solution::adaptive_peaks(&density, shape, sigma, cap)
+            }
+        })
+        .map_err(invalid)?;
+    let out = PyDict::new(py);
+    out.set_item("peaks", super::array2(py, peaks))?;
+    out.set_item("effective_sigma", effective)?;
+    Ok(out)
 }
 #[pyfunction(name = "_solution_adaptive_projection")]
 #[allow(clippy::too_many_arguments)]
@@ -276,6 +328,7 @@ pub(super) fn trial_records(
 }
 
 pub(super) fn register(module: &Bound<'_, PyModule>) -> PyResult<()> {
+    module.add_function(wrap_pyfunction!(filtered_peaks, module)?)?;
     module.add_function(wrap_pyfunction!(run, module)?)?;
     module.add_function(wrap_pyfunction!(count_free, module)?)?;
     module.add_function(wrap_pyfunction!(adaptive_projection, module)?)?;
