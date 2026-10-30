@@ -65,7 +65,19 @@ type SharedSearchRequest = (
             bool,
             bool,
             bool,
-            (bool, bool, bool, bool, bool, bool, bool, bool, bool, bool),
+            (
+                bool,
+                bool,
+                bool,
+                bool,
+                bool,
+                bool,
+                bool,
+                bool,
+                bool,
+                bool,
+                bool,
+            ),
         ),
     ),
 );
@@ -216,6 +228,7 @@ fn solve_structure<'py>(
                             cached_assignment_refinement,
                             specialized_isotropic_refinement,
                             streamed_peak_search,
+                            reuse_normal_matrices,
                         ),
                     ),
                 ),
@@ -275,6 +288,7 @@ fn solve_structure<'py>(
                         cached_assignment_refinement,
                         specialized_isotropic_refinement,
                         streamed_peak_search,
+                        reuse_normal_matrices,
                     },
                 )
             } else {

@@ -105,6 +105,7 @@ def compare(paths, manifest, pairs=()):
                 "multiplicity_weighted_refinement",
                 "ambiguous_assignments",
                 "cached_assignment_refinement",
+                "reuse_normal_matrices",
                 "streamed_peak_search",
                 "specialized_isotropic_refinement",
                 "reusable_fourier_workspaces",
@@ -168,6 +169,8 @@ def compare(paths, manifest, pairs=()):
                     "fused_fourier_transforms": r["effort"].get("fused_fourier_transforms", 0),
                     "cached_normal_solves": r["effort"].get("cached_normal_solves", 0),
                     "normal_cache_fallbacks": r["effort"].get("normal_cache_fallbacks", 0),
+                    "normal_matrix_builds": r["effort"].get("normal_matrix_builds", 0),
+                    "normal_matrix_reuses": r["effort"].get("normal_matrix_reuses", 0),
                     "specialized_isotropic_fits": r["effort"].get("specialized_isotropic_fits", 0),
                     "assignment_cached_refinements": r["effort"].get(
                         "assignment_cached_refinements", 0
@@ -275,6 +278,7 @@ def compare(paths, manifest, pairs=()):
                 "specialized_isotropic_refinement", False
             ),
             "streamed_peak_search": report.get("streamed_peak_search", False),
+            "reuse_normal_matrices": report.get("reuse_normal_matrices", False),
             "reusable_fourier_workspaces": report.get("reusable_fourier_workspaces", False),
             "independent_origin_sampling": report.get("independent_origin_sampling", False),
             "resolution_extension": report.get("resolution_extension", 1.0),
@@ -304,6 +308,8 @@ def compare(paths, manifest, pairs=()):
                     "fused_fourier_transforms",
                     "cached_normal_solves",
                     "normal_cache_fallbacks",
+                    "normal_matrix_builds",
+                    "normal_matrix_reuses",
                     "assignment_cached_refinements",
                     "specialized_isotropic_fits",
                     "assignment_cached_normal_solves",
