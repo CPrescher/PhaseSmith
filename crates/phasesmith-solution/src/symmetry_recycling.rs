@@ -282,6 +282,7 @@ pub fn recycle_density_guided(
         tangent,
         seed,
         None,
+        false,
     )
 }
 
@@ -305,6 +306,7 @@ pub(crate) fn recycle_density_guided_prediction(
     tangent: Option<&crate::PreparedTangent>,
     seed: u64,
     prediction: Option<&crate::PreparedReflectionPrediction>,
+    reusable_fourier_workspaces: bool,
 ) -> Result<RecycledDensity, SolutionError> {
     let n = grid_len(shape)?;
     if source.len() != n
@@ -322,7 +324,11 @@ pub(crate) fn recycle_density_guided_prediction(
         ));
     }
     let orbits = plan(shape, hkl, amplitudes, support, group)?;
-    let mut fft = Transform::new(shape);
+    let mut fft = if reusable_fourier_workspaces {
+        Transform::reusable(shape)
+    } else {
+        Transform::new(shape)
+    };
     let mut original: Vec<_> = source.iter().map(|&v| Complex::new(v, 0.)).collect();
     fft.apply(&mut original, true);
     let shift = shift.map(|v| v.rem_euclid(1.));

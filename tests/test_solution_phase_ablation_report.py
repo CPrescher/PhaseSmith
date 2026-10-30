@@ -41,6 +41,8 @@ def test_pair_labels_are_distinct_from_prediction_case_pairs():
         "iterative_flag",
         "missing_flag",
         "extension_flag",
+        "score_only_flag",
+        "workspace_flag",
     ],
 )
 def test_comparison_rejects_incomplete_opened_or_changed_panels(tmp_path, corruption):
@@ -56,6 +58,8 @@ def test_comparison_rejects_incomplete_opened_or_changed_panels(tmp_path, corrup
             "iterative_flag": "iterative_refinement",
             "missing_flag": "missing_reflections",
             "extension_flag": "resolution_extension",
+            "score_only_flag": "score_only_evaluation",
+            "workspace_flag": "reusable_fourier_workspaces",
         }[corruption]
         report[key] = 1.2 if corruption == "extension_flag" else True
     else:
@@ -65,3 +69,18 @@ def test_comparison_rejects_incomplete_opened_or_changed_panels(tmp_path, corrup
     path.write_text(json.dumps(report))
     with pytest.raises(ValueError, match=r"complete|controls changed|feature mismatch"):
         module.compare({"control": CONTROL, "changed": path}, MANIFEST)
+
+
+def test_paired_ratio_is_not_the_ratio_of_unpaired_medians():
+    a = {"a": {"time": 1.0}, "b": {"time": 10.0}, "c": {"time": 11.0}}
+    b = {"a": {"time": 0.5}, "b": {"time": 20.0}, "c": {"time": 11.0}}
+    result = module.paired_timing(a, b, a, "time")
+    assert result["cases"] == 3
+    assert result["median_control_over_run"] == 1.0
+    assert result["median_run_minus_control_seconds"] == 0.0
+    assert result["faster_cases"] == result["slower_cases"] == 1
+    assert module.paired_timing(a, b, a, "missing") is None
+    assert module.paired_timing(a, b, [], "time") is None
+    b["c"]["time"] = 0.0
+    with pytest.raises(ValueError, match="positive finite"):
+        module.paired_timing(a, b, a, "time")

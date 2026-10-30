@@ -14,6 +14,25 @@ def sha(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def paired_timing(baseline, rows, ids, field):
+    """Compare matched cases; never silently drop a case with missing timing."""
+    ids = sorted(ids)
+    if not ids or any(field not in source[id] for id in ids for source in (baseline, rows)):
+        return None
+    old = np.array([baseline[id][field] for id in ids], dtype=float)
+    new = np.array([rows[id][field] for id in ids], dtype=float)
+    if not np.all(np.isfinite(old) & np.isfinite(new) & (old > 0) & (new > 0)):
+        raise ValueError("paired timings must be positive finite values")
+    ratio = old / new
+    return {
+        "cases": len(ids),
+        "median_control_over_run": float(np.median(ratio)),
+        "median_run_minus_control_seconds": float(np.median(new - old)),
+        "faster_cases": int(np.count_nonzero(new < old)),
+        "slower_cases": int(np.count_nonzero(new > old)),
+    }
+
+
 def compare(paths, manifest, pairs=()):
     registry = json.loads(manifest.read_text())
     ids = {c["id"] for c in registry["cases"] if c["split"] == "development"}
@@ -75,6 +94,8 @@ def compare(paths, manifest, pairs=()):
                 "iterative_refinement",
                 "missing_reflections",
                 "adaptive_checkpoints",
+                "score_only_evaluation",
+                "reusable_fourier_workspaces",
                 "independent_origin_sampling",
                 "resolution_extension",
             ):
@@ -112,6 +133,8 @@ def compare(paths, manifest, pairs=()):
                     "seconds": r["wall_seconds_including_startup"],
                     "r1": r["model"]["reported_r1"] if r.get("model") else None,
                     "phasing_starts": r["effort"]["phasing_starts"],
+                    "score_only_evaluations": r["effort"].get("score_only_evaluations", 0),
+                    "fourier_workspace_cycles": r["effort"].get("fourier_workspace_cycles", 0),
                     "adaptive_checkpoint_tests": len(r["effort"].get("phase_checkpoints", [])),
                     "stable_map_handoffs": sum(
                         c["reason"] == "stable_map"
@@ -161,6 +184,8 @@ def compare(paths, manifest, pairs=()):
             "iterative_refinement": report.get("iterative_refinement", False),
             "missing_reflections": report.get("missing_reflections", False),
             "adaptive_checkpoints": report.get("adaptive_checkpoints", False),
+            "score_only_evaluation": report.get("score_only_evaluation", False),
+            "reusable_fourier_workspaces": report.get("reusable_fourier_workspaces", False),
             "independent_origin_sampling": report.get("independent_origin_sampling", False),
             "resolution_extension": report.get("resolution_extension", 1.0),
             "phase_first_selection": report.get(
@@ -175,6 +200,8 @@ def compare(paths, manifest, pairs=()):
                     "phasing_starts",
                     "quality_scored_cycles",
                     "adaptive_checkpoint_tests",
+                    "score_only_evaluations",
+                    "fourier_workspace_cycles",
                     "stable_map_handoffs",
                     "screening_refinements",
                     "final_refinements",
@@ -198,6 +225,21 @@ def compare(paths, manifest, pairs=()):
                 id for id in ids if rows[id]["correct"] and not baseline[id]["correct"]
             ),
             "lost": sorted(id for id in ids if baseline[id]["correct"] and not rows[id]["correct"]),
+            "paired_wall_timing_all_cases": paired_timing(
+                baseline, rows, ids, "wall_seconds_including_startup"
+            ),
+            "paired_kernel_timing_all_cases": paired_timing(baseline, rows, ids, "kernel_seconds"),
+            "paired_wall_timing_common_successes": paired_timing(
+                baseline, rows, common, "wall_seconds_including_startup"
+            ),
+            "identical_selected_models_including_no_model": sum(
+                rows[id].get("model") == baseline[id].get("model") for id in ids
+            ),
+            "identical_nonempty_selected_models": sum(
+                baseline[id].get("model") is not None
+                and rows[id].get("model") == baseline[id]["model"]
+                for id in ids
+            ),
             "common_successes": len(common),
             "median_common_seconds_control": float(
                 np.median([baseline[id]["wall_seconds_including_startup"] for id in common])

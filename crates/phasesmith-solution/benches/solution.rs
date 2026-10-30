@@ -2,10 +2,11 @@
 use criterion::{Criterion, criterion_group, criterion_main};
 use phasesmith_crystallography::{Rational, SpaceGroup, SymmetryOperation, UnitCell};
 use phasesmith_solution::{
-    AdpMode, DualSpaceOptions, FlipOptions, IntegratedPeakDensity, Observation, PhasingMethod,
-    PreparedElementPool, PreparedOrbitSearch, PreparedPeakCompletion, PreparedPhaseOrigin,
-    PreparedSymmetricModel, PreparedTangent, SharedSearchOptions, SolveOptions, charge_flip,
-    dual_space, recover_symmetry, recycle_density, recycle_density_guided,
+    AdpMode, DualSpaceOptions, FlipOptions, IntegratedPeakDensity, Observation, PeakSelection,
+    PhasingMethod, PreparedElementPool, PreparedOrbitSearch, PreparedPeakCompletion,
+    PreparedPhaseOrigin, PreparedSymmetricModel, PreparedTangent, SharedSearchOptions,
+    SolveOptions, charge_flip, dual_space, recover_symmetry, recycle_density,
+    recycle_density_guided,
 };
 
 #[allow(clippy::too_many_lines)]
@@ -748,6 +749,76 @@ fn benchmark(c: &mut Criterion) {
             });
         },
     );
+    c.bench_function("phase_quality_values_only_8_atoms_1054_families", |b| {
+        let mut scorer = phasesmith_solution::PreparedPhaseScore::new(&quality_plan).unwrap();
+        b.iter(|| {
+            scorer
+                .evaluate(std::hint::black_box(&quality_plan.target))
+                .unwrap()
+        });
+    });
+    for (label, score_only, reuse) in [
+        ("control", false, false),
+        ("score", true, false),
+        ("workspace", false, true),
+        ("combined", true, true),
+    ] {
+        c.bench_function(
+            &format!("phase_execution_32cubed_8_atoms_2108_rows_64_cycle_cap_{label}"),
+            |b| {
+                let execution = phasesmith_solution::PhasingExecution {
+                    score_only_evaluation: score_only,
+                    reusable_fourier_workspaces: reuse,
+                };
+                let options = DualSpaceOptions {
+                    cycles: 64,
+                    peak_selection: PeakSelection::Adaptive {
+                        sigma: 2.,
+                        cap: 128,
+                    },
+                    mask_sigma: 0.25,
+                    hybrid_m: 3.,
+                    omit_fraction: 0.1,
+                    seed: 1034,
+                    patterson_rank: Some(0),
+                    cancellation: None,
+                };
+                let sample = phasesmith_solution::dual_space_with_execution(
+                    shape,
+                    cell,
+                    &quality_data.hkl,
+                    &quality_data.amplitudes,
+                    &phases,
+                    &support,
+                    &options,
+                    None,
+                    Some(&quality_plan),
+                    execution,
+                )
+                .unwrap();
+                eprintln!(
+                    "execution_sample {label} completed_cycles {}",
+                    sample.trial.history.len()
+                );
+                drop(sample);
+                b.iter(|| {
+                    phasesmith_solution::dual_space_with_execution(
+                        shape,
+                        cell,
+                        &quality_data.hkl,
+                        &quality_data.amplitudes,
+                        &phases,
+                        &support,
+                        &options,
+                        None,
+                        Some(&quality_plan),
+                        execution,
+                    )
+                    .unwrap()
+                });
+            },
+        );
+    }
     let mut count_benches = c.benchmark_group("count_selection_8_atoms_2108_reflections");
     count_benches
         .sample_size(10)

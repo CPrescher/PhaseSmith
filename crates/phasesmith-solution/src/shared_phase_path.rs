@@ -351,6 +351,7 @@ pub(super) fn search(
             tangent,
             options.seed.wrapping_add(trial as u64),
             context.prediction.as_ref(),
+            search.reusable_fourier_workspaces,
         );
         trace.recycling_seconds += start.elapsed().as_secs_f64();
         let recycled = match recycled {

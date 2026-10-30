@@ -2252,6 +2252,30 @@ these are not isolated algorithmic slowdown estimates. A selected fixed-400-cycl
 probe recovers the lost structure in all four modes, supporting a deadline-sensitive
 failure. No useful end-to-end improvement is established; both controls stay off.
 
+An additional execution-only experiment adds `score_only_evaluation` and
+`reusable_fourier_workspaces`. The scalar scorer caches fixed moments/shell
+populations and reuses scratch while preserving the full fused value/gradient
+control. P1 phasing reuses map/mask/complex storage, prepared Gaussian geometry
+and input vectors; contiguous FFT lines can run in place using the same f64 plan.
+Supplied-symmetry recycling shares that contiguous-axis shortcut. Equations,
+precision, support, ranking, refinement and input-derived caps remain unchanged.
+Bitwise fixed-work trajectories, independent NumPy values, invalid boundaries
+and full synthetic structures/counts accompany a balanced, serial interleaved
+four-way comparison on all 35 development cases. All modes' chosen predictions
+are saved before reference auditing. Both flags remain independently opt-in;
+the 65 holdout outcomes stay unopened. Details and results are in
+`docs/solution-execution-workspaces.md`.
+The completed interleaved four-way development comparison preserves all 14/35
+correct structures, 26 total counts and 15 per-element count sets in every mode.
+All 31 returned models are exactly identical; four cases return no model as
+before. Scalar scoring is 2.51x faster and combined 64-cycle kernel time is 8.5%
+lower, but typical paired whole-solve time is essentially unchanged (1.0012x).
+Overall wall medians are 3.405/3.334/3.336/3.291 seconds. Fixed wall-time slices
+mostly spend the saved work on more phasing cycles (+2.36% combined), with the
+same 95 starts and 104 full refinements. No end-to-end speed claim is made from
+the lower unpaired median alone. The full schedule/audits are retained, and no
+holdout outcome has been opened.
+
 ## Quality bar
 
 Public behavior is typed and documented. Invalid shapes, non-finite values,

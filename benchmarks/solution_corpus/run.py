@@ -74,6 +74,8 @@ def worker(args):
         iterative_refinement=args.iterative_refinement,
         missing_reflections=args.missing_reflections,
         adaptive_checkpoints=args.adaptive_checkpoints,
+        score_only_evaluation=args.score_only_evaluation,
+        reusable_fourier_workspaces=args.reusable_fourier_workspaces,
         independent_origin_sampling=args.independent_origin_sampling,
         resolution_extension=args.resolution_extension,
         phase_first_selection=args.phase_first_selection,
@@ -215,6 +217,12 @@ def launch(command, directory, seconds):
 
 
 def run(args):
+    for _ in collect_jobs(args):
+        pass
+
+
+def collect_jobs(args):
+    """Yield saved serial jobs and a reference-audit barrier for balanced scheduling."""
     from phasesmith import _core
     from phasesmith.io.hkl import read_hkl
 
@@ -254,6 +262,9 @@ def run(args):
             or previous.get("iterative_refinement", False) != args.iterative_refinement
             or previous.get("missing_reflections", False) != args.missing_reflections
             or previous.get("adaptive_checkpoints", False) != args.adaptive_checkpoints
+            or previous.get("score_only_evaluation", False) != args.score_only_evaluation
+            or previous.get("reusable_fourier_workspaces", False)
+            != args.reusable_fourier_workspaces
             or previous.get("independent_origin_sampling", False)
             != args.independent_origin_sampling
             or previous.get("resolution_extension", 1.0) != args.resolution_extension
@@ -285,8 +296,11 @@ def run(args):
         + sorted((ROOT / "benchmarks/solution_corpus").glob("*.py"))
         + [SCRIPT, ROOT / "python/phasesmith/experimental/solution.py"]
     )
+    if getattr(args, "collection_schedule", "serial_panel") != "serial_panel":
+        sources.append(ROOT / "benchmarks/solution_execution_interleaved.py")
     header = {
         "schema": "phasesmith.solution-corpus-comparison.v1",
+        "collection_schedule": getattr(args, "collection_schedule", "serial_panel"),
         "split": args.split,
         "holdout_opened": args.split == "holdout",
         "manifest_sha256": sha(args.manifest),
@@ -302,6 +316,8 @@ def run(args):
         "iterative_refinement": args.iterative_refinement,
         "missing_reflections": args.missing_reflections,
         "adaptive_checkpoints": args.adaptive_checkpoints,
+        "score_only_evaluation": args.score_only_evaluation,
+        "reusable_fourier_workspaces": args.reusable_fourier_workspaces,
         "independent_origin_sampling": args.independent_origin_sampling,
         "resolution_extension": args.resolution_extension,
         "phase_first_selection": args.phase_first_selection,
@@ -426,6 +442,12 @@ def run(args):
                     *(["--iterative-refinement"] if args.iterative_refinement else []),
                     *(["--missing-reflections"] if args.missing_reflections else []),
                     *(["--adaptive-checkpoints"] if args.adaptive_checkpoints else []),
+                    *(["--score-only-evaluation"] if args.score_only_evaluation else []),
+                    *(
+                        ["--reusable-fourier-workspaces"]
+                        if args.reusable_fourier_workspaces
+                        else []
+                    ),
                     *(
                         ["--independent-origin-sampling"]
                         if args.independent_origin_sampling
@@ -461,6 +483,7 @@ def run(args):
                 "input_only_resource_atom_cap": atom_cap,
                 "expanded_measured_rows_for_resource_cap": expanded_rows,
                 "adapter_preparation_seconds_outside_timing": prep_seconds,
+                "host_load_average_before_job": list(os.getloadavg()),
                 **launch(command, work, args.seconds),
             }
             try:
@@ -508,6 +531,8 @@ def run(args):
                 ),
                 flush=True,
             )
+            yield {"id": record["id"], "method": record["method"]}
+    yield {"reference_audit_barrier": True}
     # Parse already chosen external _a files again for resumed collections. No
     # candidate selection or search is repeated, and no reference has been opened.
     for record in records:
