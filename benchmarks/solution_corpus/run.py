@@ -90,6 +90,8 @@ def worker(args):
         reuse_normal_matrices=args.reuse_normal_matrices,
         short_phase_starts=args.short_phase_starts,
         blocked_normal_matrices=args.blocked_normal_matrices,
+        assignment_convergence_stopping=args.assignment_convergence_stopping,
+        phase_plateau_stopping=args.phase_plateau_stopping,
         reusable_fourier_workspaces=args.reusable_fourier_workspaces,
         independent_origin_sampling=args.independent_origin_sampling,
         resolution_extension=args.resolution_extension,
@@ -287,6 +289,8 @@ def collect_jobs(args):
             or previous.get("ambiguous_assignments", False) != args.ambiguous_assignments
             or previous.get("short_phase_starts", False) != args.short_phase_starts
             or previous.get("blocked_normal_matrices", False) != args.blocked_normal_matrices
+            or previous.get("assignment_convergence_stopping", False) != args.assignment_convergence_stopping
+            or previous.get("phase_plateau_stopping", False) != args.phase_plateau_stopping
             or previous.get("reuse_normal_matrices", False) != args.reuse_normal_matrices
             or previous.get("streamed_peak_search", False) != args.streamed_peak_search
             or previous.get("specialized_isotropic_refinement", False)
@@ -376,6 +380,8 @@ def collect_jobs(args):
         "reuse_normal_matrices": args.reuse_normal_matrices,
         "short_phase_starts": args.short_phase_starts,
         "blocked_normal_matrices": args.blocked_normal_matrices,
+        "assignment_convergence_stopping": args.assignment_convergence_stopping,
+        "phase_plateau_stopping": args.phase_plateau_stopping,
         "reusable_fourier_workspaces": args.reusable_fourier_workspaces,
         "independent_origin_sampling": args.independent_origin_sampling,
         "resolution_extension": args.resolution_extension,
@@ -513,6 +519,8 @@ def collect_jobs(args):
                     *(["--reuse-normal-matrices"] if args.reuse_normal_matrices else []),
                     *(["--short-phase-starts"] if args.short_phase_starts else []),
                     *(["--blocked-normal-matrices"] if args.blocked_normal_matrices else []),
+                    *(["--assignment-convergence-stopping"] if args.assignment_convergence_stopping else []),
+                    *(["--phase-plateau-stopping"] if args.phase_plateau_stopping else []),
                     *(
                         ["--specialized-isotropic-refinement"]
                         if args.specialized_isotropic_refinement

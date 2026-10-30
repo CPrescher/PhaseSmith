@@ -64,6 +64,8 @@ def main():
             reuse_normal_matrices=True,
             short_phase_starts=True,
             blocked_normal_matrices=mode == "cache",
+            phase_plateau_stopping=False,
+            assignment_convergence_stopping=False,
             work_sliced_phasing=True,
             independent_origin_sampling=False,
             phase_first_selection=True,

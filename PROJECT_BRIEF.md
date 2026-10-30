@@ -2578,6 +2578,24 @@ all 19 structures, every one of the 35 count vectors, 26 correct total counts,
 fits; 29/35 cases are faster. The option remains false by default and the holdout
 remains closed.
 
+Two opt-in stopping controls test high-quality phase plateaus on early starts
+while retaining full-length later starts, and repeated negligible accepted
+improvements in short isotropic assignment screens. Final refinement convergence
+and physical equations remain unchanged. Independent references, exact work
+provenance, solver-only SHELXT listing comparisons and a balanced four-mode
+35-development-case protocol are documented in `docs/solution-search-stopping.md`.
+The complete four-mode comparison retains every previous successful case set
+and all 35 atom-count vectors. Combined stopping reduces summed library solve
+time 52.315-to-49.477 seconds (5.42%), summed wall time 4.76%, and typical paired
+solver time 4.94%. It records 22 plateau handoffs and 367 converged assignment
+screens. All 19 structures, 26 correct total counts, 19 element counts and 15
+strict structures remain. The 34 completed SHELXT pairs list 108 trials and
+12,106 iterations versus 35,621 completed PhaseSmith cycles after this change;
+iteration definitions and refinement endpoints differ. Both controls remain
+false by default and the holdout remains closed. The collector's final round-
+count assertion was corrected after collection with original snapshots retained;
+all 280 predictions and four audit barriers are verified.
+
 Public behavior is typed and documented. Invalid shapes, non-finite values,
 unsorted grids, non-positive widths, and fractions outside `[0, 1]` fail with a
 clear error. Tests are deterministic. Numerical tolerances are justified near

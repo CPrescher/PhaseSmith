@@ -105,6 +105,10 @@ pub struct SharedSearchOptions {
     pub short_phase_starts: bool,
     /// Form reused normal matrices with single-threaded blocked multiplication.
     pub blocked_normal_matrices: bool,
+    /// Stop high-quality plateaued early starts; retain original later starts.
+    pub phase_plateau_stopping: bool,
+    /// Stop short assignment fits after repeated negligible accepted improvements.
+    pub assignment_convergence_stopping: bool,
     /// Regularize allowed unmeasured coefficients using the observed Wilson envelope.
     pub missing_reflections: bool,
     /// Reciprocal-radius extension multiplier, in [1,1.5].
@@ -156,6 +160,8 @@ impl Default for SharedSearchOptions {
             reuse_normal_matrices: false,
             short_phase_starts: false,
             blocked_normal_matrices: false,
+            phase_plateau_stopping: false,
+            assignment_convergence_stopping: false,
             missing_reflections: false,
             resolution_extension: 1.,
         }
@@ -315,6 +321,10 @@ pub struct SharedSearchSummary {
     pub short_phase_starts: bool,
     /// Form reused normal matrices with single-threaded blocked multiplication.
     pub blocked_normal_matrices: bool,
+    /// Stop high-quality plateaued early starts; retain original later starts.
+    pub phase_plateau_stopping: bool,
+    /// Stop short assignment fits after repeated negligible accepted improvements.
+    pub assignment_convergence_stopping: bool,
     /// Requested observed-envelope gap treatment.
     pub missing_reflections: bool,
     /// Requested reciprocal-radius extension.
@@ -411,6 +421,8 @@ pub struct SharedSearchSummary {
     pub blocked_normal_builds: usize,
     /// Blocked matrices replaced by legacy Gram formation after a failed guard.
     pub blocked_normal_fallbacks: usize,
+    /// Short assignment fits stopped by the repeated accepted-improvement gate.
+    pub assignment_convergence_stops: usize,
     /// Screened edits sent to full refinement.
     pub promoted_candidates: usize,
     /// Valid screened edits omitted from the full-fit shortlist.
@@ -638,7 +650,11 @@ fn refine(
             && !matches!(pass, FitPass::Screen(_) | FitPass::ScreenSeed(_, _)),
     )?
     .with_specialized_isotropic_evaluation(audit.specialized_isotropic_refinement)
-    .with_blocked_normal_matrices(audit.blocked_normal_matrices);
+    .with_blocked_normal_matrices(audit.blocked_normal_matrices)
+    .with_assignment_convergence_stopping(
+        audit.assignment_convergence_stopping
+            && matches!(pass, FitPass::Screen(_) | FitPass::ScreenSeed(_, _)),
+    );
     if data.family_count <= prepared.parameter_count + 1 {
         return Err(error("shared model is underdetermined"));
     }
@@ -675,6 +691,7 @@ fn refine(
         },
         audit.reuse_normal_matrices,
     )?;
+    audit.assignment_convergence_stops += usize::from(fit.termination == "assignment_converged");
     audit.normal_matrix_builds += fit.normal_matrix_builds;
     audit.normal_matrix_reuses += fit.normal_matrix_reuses;
     audit.blocked_normal_builds += fit.blocked_normal_builds;
@@ -1897,6 +1914,9 @@ pub fn solve_elements(
             && !search.reusable_fourier_workspaces)
         || (search.fused_phase_workspace && !search.reusable_fourier_workspaces)
         || (search.short_phase_starts && !search.work_sliced_phasing)
+        || (search.phase_plateau_stopping
+            && (!search.work_sliced_phasing || search.adaptive_checkpoints))
+        || (search.assignment_convergence_stopping && !search.isotropic_assignment_refinement)
         || (search.blocked_normal_matrices && !search.reuse_normal_matrices)
         || (search.reuse_normal_matrices
             && (!search.iterative_refinement
@@ -2163,6 +2183,8 @@ pub fn solve_elements(
         reuse_normal_matrices: search.reuse_normal_matrices,
         short_phase_starts: search.short_phase_starts,
         blocked_normal_matrices: search.blocked_normal_matrices,
+        phase_plateau_stopping: search.phase_plateau_stopping,
+        assignment_convergence_stopping: search.assignment_convergence_stopping,
         missing_reflections: search.missing_reflections,
         resolution_extension: search.resolution_extension,
         prediction: prediction_f.as_ref().map(|p| p.audit.clone()),
@@ -2359,6 +2381,8 @@ pub fn solve_elements(
                     batched_fft: search.batched_fft,
                     real_fft: search.real_fft,
                     fused_phase_workspace: search.fused_phase_workspace,
+                    phase_plateau_stopping: search.phase_plateau_stopping
+                        && trial < options.trials / 2,
                 },
             )?;
             audit.phase_slices.push(crate::PhaseSliceAudit {
@@ -2370,6 +2394,8 @@ pub fn solve_elements(
                     "cancelled"
                 } else if state.trial.timed_out {
                     "phase_time_limit"
+                } else if state.plateau_stopped {
+                    "phase_plateau"
                 } else if state.trial.history.len() >= cycle_quota {
                     "cycle_limit"
                 } else if state

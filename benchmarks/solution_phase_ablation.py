@@ -107,6 +107,8 @@ def compare(paths, manifest, pairs=()):
                 "cached_assignment_refinement",
                 "short_phase_starts",
                 "blocked_normal_matrices",
+                "assignment_convergence_stopping",
+                "phase_plateau_stopping",
                 "reuse_normal_matrices",
                 "streamed_peak_search",
                 "specialized_isotropic_refinement",
@@ -151,6 +153,7 @@ def compare(paths, manifest, pairs=()):
                     "phase_search_seconds": sum(
                         a["seconds"] for a in r["effort"].get("phase_slices", [])
                     ),
+                    "phase_plateau_stops": sum(a["stop_reason"] == "phase_plateau" for a in r["effort"].get("phase_slices", [])),
                     "short_phase_slices": sum(
                         a["cycle_quota"] < r["options"]["cycles"]
                         for a in r["effort"].get("phase_slices", [])
@@ -175,6 +178,7 @@ def compare(paths, manifest, pairs=()):
                     "normal_matrix_reuses": r["effort"].get("normal_matrix_reuses", 0),
                     "blocked_normal_builds": r["effort"].get("blocked_normal_builds", 0),
                     "blocked_normal_fallbacks": r["effort"].get("blocked_normal_fallbacks", 0),
+                    "assignment_convergence_stops": r["effort"].get("assignment_convergence_stops", 0),
                     "specialized_isotropic_fits": r["effort"].get("specialized_isotropic_fits", 0),
                     "assignment_cached_refinements": r["effort"].get(
                         "assignment_cached_refinements", 0
@@ -285,6 +289,8 @@ def compare(paths, manifest, pairs=()):
             "reuse_normal_matrices": report.get("reuse_normal_matrices", False),
             "short_phase_starts": report.get("short_phase_starts", False),
             "blocked_normal_matrices": report.get("blocked_normal_matrices", False),
+            "assignment_convergence_stopping": report.get("assignment_convergence_stopping", False),
+            "phase_plateau_stopping": report.get("phase_plateau_stopping", False),
             "reusable_fourier_workspaces": report.get("reusable_fourier_workspaces", False),
             "independent_origin_sampling": report.get("independent_origin_sampling", False),
             "resolution_extension": report.get("resolution_extension", 1.0),
@@ -303,6 +309,7 @@ def compare(paths, manifest, pairs=()):
                     "score_only_evaluations",
                     "phase_search_seconds",
                     "short_phase_slices",
+                    "phase_plateau_stops",
                     "short_quota_completions",
                     "fourier_workspace_cycles",
                     "filtered_peak_cycles",
@@ -318,6 +325,7 @@ def compare(paths, manifest, pairs=()):
                     "normal_matrix_reuses",
                     "blocked_normal_builds",
                     "blocked_normal_fallbacks",
+                    "assignment_convergence_stops",
                     "assignment_cached_refinements",
                     "specialized_isotropic_fits",
                     "assignment_cached_normal_solves",

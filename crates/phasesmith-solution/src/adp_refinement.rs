@@ -39,6 +39,7 @@ pub struct PreparedSymmetricModel {
     families: Option<crate::refinement_families::ReflectionFamilies>,
     specialized_isotropic_evaluation: bool,
     blocked_normal_matrices: bool,
+    assignment_convergence_stopping: bool,
 }
 
 // Cached reciprocal/image geometry, in reflection/site/image order.
@@ -491,6 +492,7 @@ impl PreparedSymmetricModel {
             families,
             specialized_isotropic_evaluation: false,
             blocked_normal_matrices: false,
+            assignment_convergence_stopping: false,
             mode,
             geometry,
             symmetry,
@@ -510,6 +512,13 @@ impl PreparedSymmetricModel {
         self.specialized_isotropic_evaluation = enabled;
         self
     }
+    /// Stop short assignment fits after repeated negligible accepted improvements.
+    #[must_use]
+    pub fn with_assignment_convergence_stopping(mut self, enabled: bool) -> Self {
+        self.assignment_convergence_stopping = enabled;
+        self
+    }
+
     /// Use blocked Gram formation in eligible reused normal solves.
     #[must_use]
     pub fn with_blocked_normal_matrices(mut self, enabled: bool) -> Self {
@@ -941,7 +950,8 @@ impl PreparedSymmetricModel {
         let mut normal_cache_fallbacks = 0;
         let mut linear_cache = crate::linear_step::NormalReuse::default();
         linear_cache.blocked = self.blocked_normal_matrices;
-        for _ in 0..iterations {
+        let mut small_improvements = 0;
+        for iteration in 0..iterations {
             if crate::stopped(deadline, cancellation) {
                 termination = if cancellation.is_some_and(Cancellation::is_cancelled) {
                     "cancelled"
@@ -1037,6 +1047,7 @@ impl PreparedSymmetricModel {
                 crate::model::cholesky_solve(&normal, &gradient)
             };
             let Some(mut step) = solved else {
+                small_improvements = 0;
                 damping *= 10.;
                 continue;
             };
@@ -1067,6 +1078,12 @@ impl PreparedSymmetricModel {
                     .collect();
                 if let Ok(next) = self.evaluate(&trial) {
                     if next.objective < evaluation.objective {
+                        if self.assignment_convergence_stopping {
+                            let small = (evaluation.objective - next.objective)
+                                <= 1e-6 * evaluation.objective.max(1e-30)
+                                && (next.r1 - evaluation.r1).abs() <= 1e-6;
+                            small_improvements = if small { small_improvements + 1 } else { 0 };
+                        }
                         parameters = trial;
                         linear_cache.clear();
                         evaluation = next;
@@ -1077,7 +1094,17 @@ impl PreparedSymmetricModel {
                     }
                 }
             }
+            if self.assignment_convergence_stopping
+                && improved
+                && iteration + 1 >= 4
+                && iteration + 1 < iterations
+                && small_improvements >= 2
+            {
+                termination = "assignment_converged";
+                break;
+            }
             if !improved {
+                small_improvements = 0;
                 damping *= 10.;
                 if damping > 1e10 {
                     termination = "stagnated";

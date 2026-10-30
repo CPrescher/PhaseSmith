@@ -1,0 +1,1798 @@
+{
+  "schema": "phasesmith.stopping-retention.v1",
+  "development_cases": 35,
+  "holdout_opened": false,
+  "qualification": "Four balanced serial development modes. Every prediction saved before any reference audit. Previous best case sets and all inferred count vectors checked. Timings from one collection remain host sensitive; early phase handoffs can alter later models.",
+  "schedule_sha256": "a2d3ce72bca888e886dc254ad9ab9ad77aedfe976dae4e5f12747ce3221c0b88",
+  "leading_cases": {
+    "control": 9,
+    "phase": 9,
+    "assignment": 9,
+    "cache": 8
+  },
+  "report_sha256": {
+    "control": "042d508fd527ecb1534b3e9138aa145e581cac675d7b893afd705e32b223e907",
+    "phase": "50e90d05a46710342a8c263839afcf0bc7b569b600d8ea5947252159b4545433",
+    "assignment": "ccd4253ba741535218fd0f5553370e8393d7361b12ec2d286457f299d772e886",
+    "cache": "c6f2dc3bf2ef05707ba1dbe50efe3cb0aac986387557b074a5ecbae61dc058a1"
+  },
+  "native_sha256": "b7cf7cd20b1967c9004957fc912e9b5e6cd46cb7e36cd3a117cab8c897fffe1b",
+  "source_files_verified": 57,
+  "previous_sha256": "72dec8260eb4a77772c0c3c04fad0ae1b41c779c9599f3af1bbaf9100fd7d888",
+  "case_sets": {
+    "structures": {
+      "previous": [
+        "cod-1549173",
+        "cod-1550276",
+        "cod-2010705",
+        "cod-2010746",
+        "cod-2010901",
+        "cod-2011038",
+        "cod-2011241",
+        "cod-2011451",
+        "cod-2011590",
+        "cod-2021199",
+        "cod-2107296",
+        "cod-2108342",
+        "cod-2203173",
+        "cod-2232654",
+        "cod-2241796",
+        "cod-2242657",
+        "cod-2243197",
+        "cod-2243618",
+        "cod-4326074"
+      ],
+      "control": [
+        "cod-1549173",
+        "cod-1550276",
+        "cod-2010705",
+        "cod-2010746",
+        "cod-2010901",
+        "cod-2011038",
+        "cod-2011241",
+        "cod-2011451",
+        "cod-2011590",
+        "cod-2021199",
+        "cod-2107296",
+        "cod-2108342",
+        "cod-2203173",
+        "cod-2232654",
+        "cod-2241796",
+        "cod-2242657",
+        "cod-2243197",
+        "cod-2243618",
+        "cod-4326074"
+      ],
+      "phase": [
+        "cod-1549173",
+        "cod-1550276",
+        "cod-2010705",
+        "cod-2010746",
+        "cod-2010901",
+        "cod-2011038",
+        "cod-2011241",
+        "cod-2011451",
+        "cod-2011590",
+        "cod-2021199",
+        "cod-2107296",
+        "cod-2108342",
+        "cod-2203173",
+        "cod-2232654",
+        "cod-2241796",
+        "cod-2242657",
+        "cod-2243197",
+        "cod-2243618",
+        "cod-4326074"
+      ],
+      "assignment": [
+        "cod-1549173",
+        "cod-1550276",
+        "cod-2010705",
+        "cod-2010746",
+        "cod-2010901",
+        "cod-2011038",
+        "cod-2011241",
+        "cod-2011451",
+        "cod-2011590",
+        "cod-2021199",
+        "cod-2107296",
+        "cod-2108342",
+        "cod-2203173",
+        "cod-2232654",
+        "cod-2241796",
+        "cod-2242657",
+        "cod-2243197",
+        "cod-2243618",
+        "cod-4326074"
+      ],
+      "cache": [
+        "cod-1549173",
+        "cod-1550276",
+        "cod-2010705",
+        "cod-2010746",
+        "cod-2010901",
+        "cod-2011038",
+        "cod-2011241",
+        "cod-2011451",
+        "cod-2011590",
+        "cod-2021199",
+        "cod-2107296",
+        "cod-2108342",
+        "cod-2203173",
+        "cod-2232654",
+        "cod-2241796",
+        "cod-2242657",
+        "cod-2243197",
+        "cod-2243618",
+        "cod-4326074"
+      ]
+    },
+    "total_non_h_counts": {
+      "previous": [
+        "cod-1549173",
+        "cod-1550276",
+        "cod-2010543",
+        "cod-2010705",
+        "cod-2010746",
+        "cod-2010825",
+        "cod-2010901",
+        "cod-2011038",
+        "cod-2011241",
+        "cod-2011393",
+        "cod-2011451",
+        "cod-2011590",
+        "cod-2021199",
+        "cod-2021292",
+        "cod-2021310",
+        "cod-2021316",
+        "cod-2107296",
+        "cod-2108342",
+        "cod-2203173",
+        "cod-2232654",
+        "cod-2241796",
+        "cod-2242589",
+        "cod-2242657",
+        "cod-2243197",
+        "cod-2243618",
+        "cod-4326074"
+      ],
+      "control": [
+        "cod-1549173",
+        "cod-1550276",
+        "cod-2010543",
+        "cod-2010705",
+        "cod-2010746",
+        "cod-2010825",
+        "cod-2010901",
+        "cod-2011038",
+        "cod-2011241",
+        "cod-2011393",
+        "cod-2011451",
+        "cod-2011590",
+        "cod-2021199",
+        "cod-2021292",
+        "cod-2021310",
+        "cod-2021316",
+        "cod-2107296",
+        "cod-2108342",
+        "cod-2203173",
+        "cod-2232654",
+        "cod-2241796",
+        "cod-2242589",
+        "cod-2242657",
+        "cod-2243197",
+        "cod-2243618",
+        "cod-4326074"
+      ],
+      "phase": [
+        "cod-1549173",
+        "cod-1550276",
+        "cod-2010543",
+        "cod-2010705",
+        "cod-2010746",
+        "cod-2010825",
+        "cod-2010901",
+        "cod-2011038",
+        "cod-2011241",
+        "cod-2011393",
+        "cod-2011451",
+        "cod-2011590",
+        "cod-2021199",
+        "cod-2021292",
+        "cod-2021310",
+        "cod-2021316",
+        "cod-2107296",
+        "cod-2108342",
+        "cod-2203173",
+        "cod-2232654",
+        "cod-2241796",
+        "cod-2242589",
+        "cod-2242657",
+        "cod-2243197",
+        "cod-2243618",
+        "cod-4326074"
+      ],
+      "assignment": [
+        "cod-1549173",
+        "cod-1550276",
+        "cod-2010543",
+        "cod-2010705",
+        "cod-2010746",
+        "cod-2010825",
+        "cod-2010901",
+        "cod-2011038",
+        "cod-2011241",
+        "cod-2011393",
+        "cod-2011451",
+        "cod-2011590",
+        "cod-2021199",
+        "cod-2021292",
+        "cod-2021310",
+        "cod-2021316",
+        "cod-2107296",
+        "cod-2108342",
+        "cod-2203173",
+        "cod-2232654",
+        "cod-2241796",
+        "cod-2242589",
+        "cod-2242657",
+        "cod-2243197",
+        "cod-2243618",
+        "cod-4326074"
+      ],
+      "cache": [
+        "cod-1549173",
+        "cod-1550276",
+        "cod-2010543",
+        "cod-2010705",
+        "cod-2010746",
+        "cod-2010825",
+        "cod-2010901",
+        "cod-2011038",
+        "cod-2011241",
+        "cod-2011393",
+        "cod-2011451",
+        "cod-2011590",
+        "cod-2021199",
+        "cod-2021292",
+        "cod-2021310",
+        "cod-2021316",
+        "cod-2107296",
+        "cod-2108342",
+        "cod-2203173",
+        "cod-2232654",
+        "cod-2241796",
+        "cod-2242589",
+        "cod-2242657",
+        "cod-2243197",
+        "cod-2243618",
+        "cod-4326074"
+      ]
+    },
+    "per_element_counts": {
+      "previous": [
+        "cod-1549173",
+        "cod-1550276",
+        "cod-2010705",
+        "cod-2010746",
+        "cod-2010901",
+        "cod-2011038",
+        "cod-2011241",
+        "cod-2011451",
+        "cod-2011590",
+        "cod-2021199",
+        "cod-2107296",
+        "cod-2108342",
+        "cod-2203173",
+        "cod-2232654",
+        "cod-2241796",
+        "cod-2242657",
+        "cod-2243197",
+        "cod-2243618",
+        "cod-4326074"
+      ],
+      "control": [
+        "cod-1549173",
+        "cod-1550276",
+        "cod-2010705",
+        "cod-2010746",
+        "cod-2010901",
+        "cod-2011038",
+        "cod-2011241",
+        "cod-2011451",
+        "cod-2011590",
+        "cod-2021199",
+        "cod-2107296",
+        "cod-2108342",
+        "cod-2203173",
+        "cod-2232654",
+        "cod-2241796",
+        "cod-2242657",
+        "cod-2243197",
+        "cod-2243618",
+        "cod-4326074"
+      ],
+      "phase": [
+        "cod-1549173",
+        "cod-1550276",
+        "cod-2010705",
+        "cod-2010746",
+        "cod-2010901",
+        "cod-2011038",
+        "cod-2011241",
+        "cod-2011451",
+        "cod-2011590",
+        "cod-2021199",
+        "cod-2107296",
+        "cod-2108342",
+        "cod-2203173",
+        "cod-2232654",
+        "cod-2241796",
+        "cod-2242657",
+        "cod-2243197",
+        "cod-2243618",
+        "cod-4326074"
+      ],
+      "assignment": [
+        "cod-1549173",
+        "cod-1550276",
+        "cod-2010705",
+        "cod-2010746",
+        "cod-2010901",
+        "cod-2011038",
+        "cod-2011241",
+        "cod-2011451",
+        "cod-2011590",
+        "cod-2021199",
+        "cod-2107296",
+        "cod-2108342",
+        "cod-2203173",
+        "cod-2232654",
+        "cod-2241796",
+        "cod-2242657",
+        "cod-2243197",
+        "cod-2243618",
+        "cod-4326074"
+      ],
+      "cache": [
+        "cod-1549173",
+        "cod-1550276",
+        "cod-2010705",
+        "cod-2010746",
+        "cod-2010901",
+        "cod-2011038",
+        "cod-2011241",
+        "cod-2011451",
+        "cod-2011590",
+        "cod-2021199",
+        "cod-2107296",
+        "cod-2108342",
+        "cod-2203173",
+        "cod-2232654",
+        "cod-2241796",
+        "cod-2242657",
+        "cod-2243197",
+        "cod-2243618",
+        "cod-4326074"
+      ]
+    },
+    "strict_002_angstrom": {
+      "previous": [
+        "cod-1550276",
+        "cod-2010705",
+        "cod-2010746",
+        "cod-2011038",
+        "cod-2011241",
+        "cod-2011451",
+        "cod-2021199",
+        "cod-2107296",
+        "cod-2203173",
+        "cod-2232654",
+        "cod-2241796",
+        "cod-2242657",
+        "cod-2243197",
+        "cod-2243618",
+        "cod-4326074"
+      ],
+      "control": [
+        "cod-1550276",
+        "cod-2010705",
+        "cod-2010746",
+        "cod-2011038",
+        "cod-2011241",
+        "cod-2011451",
+        "cod-2021199",
+        "cod-2107296",
+        "cod-2203173",
+        "cod-2232654",
+        "cod-2241796",
+        "cod-2242657",
+        "cod-2243197",
+        "cod-2243618",
+        "cod-4326074"
+      ],
+      "phase": [
+        "cod-1550276",
+        "cod-2010705",
+        "cod-2010746",
+        "cod-2011038",
+        "cod-2011241",
+        "cod-2011451",
+        "cod-2021199",
+        "cod-2107296",
+        "cod-2203173",
+        "cod-2232654",
+        "cod-2241796",
+        "cod-2242657",
+        "cod-2243197",
+        "cod-2243618",
+        "cod-4326074"
+      ],
+      "assignment": [
+        "cod-1550276",
+        "cod-2010705",
+        "cod-2010746",
+        "cod-2011038",
+        "cod-2011241",
+        "cod-2011451",
+        "cod-2021199",
+        "cod-2107296",
+        "cod-2203173",
+        "cod-2232654",
+        "cod-2241796",
+        "cod-2242657",
+        "cod-2243197",
+        "cod-2243618",
+        "cod-4326074"
+      ],
+      "cache": [
+        "cod-1550276",
+        "cod-2010705",
+        "cod-2010746",
+        "cod-2011038",
+        "cod-2011241",
+        "cod-2011451",
+        "cod-2021199",
+        "cod-2107296",
+        "cod-2203173",
+        "cod-2232654",
+        "cod-2241796",
+        "cod-2242657",
+        "cod-2243197",
+        "cod-2243618",
+        "cod-4326074"
+      ]
+    }
+  },
+  "modes": {
+    "control": {
+      "lost_cases": {
+        "structures": [],
+        "total_non_h_counts": [],
+        "per_element_counts": [],
+        "strict_002_angstrom": []
+      },
+      "retains_previous_success_and_count_sets": true,
+      "changed_count_vectors": [],
+      "cumulative_wall_seconds": 60.41926312085707,
+      "cumulative_solver_seconds": 52.314854377822485,
+      "median_paired_wall_control_over_treatment": 1.0,
+      "median_paired_solver_control_over_treatment": 1.0,
+      "faster_cases": 0,
+      "stage_seconds": {
+        "origin_seconds": 1.5672161249999998,
+        "recycling_seconds": 1.2123782069999995,
+        "completion_seconds": 1.9069766289999999,
+        "screening_seconds": 10.908955910999998,
+        "refinement_seconds": 8.814931001
+      },
+      "work_totals": {
+        "phasing_starts": 95,
+        "quality_scored_cycles": 39246,
+        "adaptive_checkpoint_tests": 0,
+        "score_only_evaluations": 39246,
+        "phase_search_seconds": 25.083992752,
+        "short_phase_slices": 56,
+        "phase_plateau_stops": 0,
+        "short_quota_completions": 52,
+        "fourier_workspace_cycles": 39247,
+        "filtered_peak_cycles": 39247,
+        "streamed_peak_cycles": 39247,
+        "peak_rms_fallbacks": 0,
+        "batched_phase_transforms": 95,
+        "real_phase_transforms": 78485,
+        "cached_mask_cycles": 39247,
+        "fused_fourier_transforms": 78485,
+        "cached_normal_solves": 2480,
+        "normal_cache_fallbacks": 0,
+        "normal_matrix_builds": 5287,
+        "normal_matrix_reuses": 922,
+        "blocked_normal_builds": 5287,
+        "blocked_normal_fallbacks": 0,
+        "assignment_convergence_stops": 0,
+        "assignment_cached_refinements": 606,
+        "specialized_isotropic_fits": 667,
+        "assignment_cached_normal_solves": 4591,
+        "assignment_normal_cache_fallbacks": 0,
+        "weighted_refinement_fits": 125,
+        "weighted_refinement_input_rows": 768522,
+        "weighted_refinement_family_rows": 233988,
+        "stable_map_handoffs": 0,
+        "screening_refinements": 667,
+        "final_refinements": 125,
+        "completion_evaluations": 73412,
+        "assignment_parent_fits": 106,
+        "ambiguity_continuations": 0,
+        "ambiguity_metric_disagreements": 17,
+        "ambiguity_scores": 10432,
+        "ambiguity_relaxations": 250,
+        "ambiguity_unresolved": 5,
+        "assignment_neighbor_scores": 11407,
+        "assignment_neighbor_fits": 132,
+        "assignment_retained": 488,
+        "assignment_deferred_promotions": 23,
+        "reassignment_evaluations": 19422,
+        "reassignment_changes": 32,
+        "reassignment_screens": 31,
+        "chemical_scale_proposals": 75,
+        "prediction_steps": 0,
+        "prediction_updates": 0,
+        "prediction_clipped": 0,
+        "prediction_seconds": 0.0
+      }
+    },
+    "phase": {
+      "lost_cases": {
+        "structures": [],
+        "total_non_h_counts": [],
+        "per_element_counts": [],
+        "strict_002_angstrom": []
+      },
+      "retains_previous_success_and_count_sets": true,
+      "changed_count_vectors": [],
+      "cumulative_wall_seconds": 59.69711570913205,
+      "cumulative_solver_seconds": 51.65967254107818,
+      "median_paired_wall_control_over_treatment": 1.017364547959556,
+      "median_paired_solver_control_over_treatment": 1.0140241910010352,
+      "faster_cases": 22,
+      "stage_seconds": {
+        "origin_seconds": 1.5230161660000001,
+        "recycling_seconds": 1.2106797089999999,
+        "completion_seconds": 1.9397097800000003,
+        "screening_seconds": 11.214217947999998,
+        "refinement_seconds": 8.722220499
+      },
+      "work_totals": {
+        "phasing_starts": 95,
+        "quality_scored_cycles": 37896,
+        "adaptive_checkpoint_tests": 0,
+        "score_only_evaluations": 37896,
+        "phase_search_seconds": 24.217351,
+        "short_phase_slices": 56,
+        "phase_plateau_stops": 22,
+        "short_quota_completions": 30,
+        "fourier_workspace_cycles": 37896,
+        "filtered_peak_cycles": 37896,
+        "streamed_peak_cycles": 37896,
+        "peak_rms_fallbacks": 0,
+        "batched_phase_transforms": 95,
+        "real_phase_transforms": 75763,
+        "cached_mask_cycles": 37896,
+        "fused_fourier_transforms": 75763,
+        "cached_normal_solves": 2481,
+        "normal_cache_fallbacks": 0,
+        "normal_matrix_builds": 5306,
+        "normal_matrix_reuses": 922,
+        "blocked_normal_builds": 5306,
+        "blocked_normal_fallbacks": 0,
+        "assignment_convergence_stops": 0,
+        "assignment_cached_refinements": 609,
+        "specialized_isotropic_fits": 671,
+        "assignment_cached_normal_solves": 4624,
+        "assignment_normal_cache_fallbacks": 0,
+        "weighted_refinement_fits": 124,
+        "weighted_refinement_input_rows": 761874,
+        "weighted_refinement_family_rows": 232878,
+        "stable_map_handoffs": 0,
+        "screening_refinements": 671,
+        "final_refinements": 124,
+        "completion_evaluations": 74073,
+        "assignment_parent_fits": 108,
+        "ambiguity_continuations": 0,
+        "ambiguity_metric_disagreements": 17,
+        "ambiguity_scores": 10316,
+        "ambiguity_relaxations": 248,
+        "ambiguity_unresolved": 5,
+        "assignment_neighbor_scores": 11739,
+        "assignment_neighbor_fits": 132,
+        "assignment_retained": 488,
+        "assignment_deferred_promotions": 24,
+        "reassignment_evaluations": 20052,
+        "reassignment_changes": 33,
+        "reassignment_screens": 31,
+        "chemical_scale_proposals": 79,
+        "prediction_steps": 0,
+        "prediction_updates": 0,
+        "prediction_clipped": 0,
+        "prediction_seconds": 0.0
+      }
+    },
+    "assignment": {
+      "lost_cases": {
+        "structures": [],
+        "total_non_h_counts": [],
+        "per_element_counts": [],
+        "strict_002_angstrom": []
+      },
+      "retains_previous_success_and_count_sets": true,
+      "changed_count_vectors": [],
+      "cumulative_wall_seconds": 58.83595804619836,
+      "cumulative_solver_seconds": 50.7331865861197,
+      "median_paired_wall_control_over_treatment": 1.0180116496390683,
+      "median_paired_solver_control_over_treatment": 1.0237516641313102,
+      "faster_cases": 21,
+      "stage_seconds": {
+        "origin_seconds": 1.5264195830000002,
+        "recycling_seconds": 1.20310284,
+        "completion_seconds": 1.9204050839999998,
+        "screening_seconds": 9.417195872,
+        "refinement_seconds": 8.77860429
+      },
+      "work_totals": {
+        "phasing_starts": 95,
+        "quality_scored_cycles": 39407,
+        "adaptive_checkpoint_tests": 0,
+        "score_only_evaluations": 39407,
+        "phase_search_seconds": 25.120405832,
+        "short_phase_slices": 56,
+        "phase_plateau_stops": 0,
+        "short_quota_completions": 52,
+        "fourier_workspace_cycles": 39409,
+        "filtered_peak_cycles": 39409,
+        "streamed_peak_cycles": 39409,
+        "peak_rms_fallbacks": 0,
+        "batched_phase_transforms": 95,
+        "real_phase_transforms": 78807,
+        "cached_mask_cycles": 39409,
+        "fused_fourier_transforms": 78807,
+        "cached_normal_solves": 2512,
+        "normal_cache_fallbacks": 0,
+        "normal_matrix_builds": 4593,
+        "normal_matrix_reuses": 914,
+        "blocked_normal_builds": 4593,
+        "blocked_normal_fallbacks": 0,
+        "assignment_convergence_stops": 364,
+        "assignment_cached_refinements": 606,
+        "specialized_isotropic_fits": 667,
+        "assignment_cached_normal_solves": 3820,
+        "assignment_normal_cache_fallbacks": 0,
+        "weighted_refinement_fits": 125,
+        "weighted_refinement_input_rows": 768522,
+        "weighted_refinement_family_rows": 233988,
+        "stable_map_handoffs": 0,
+        "screening_refinements": 667,
+        "final_refinements": 125,
+        "completion_evaluations": 73412,
+        "assignment_parent_fits": 106,
+        "ambiguity_continuations": 0,
+        "ambiguity_metric_disagreements": 17,
+        "ambiguity_scores": 10432,
+        "ambiguity_relaxations": 250,
+        "ambiguity_unresolved": 4,
+        "assignment_neighbor_scores": 11407,
+        "assignment_neighbor_fits": 132,
+        "assignment_retained": 488,
+        "assignment_deferred_promotions": 23,
+        "reassignment_evaluations": 19422,
+        "reassignment_changes": 32,
+        "reassignment_screens": 31,
+        "chemical_scale_proposals": 75,
+        "prediction_steps": 0,
+        "prediction_updates": 0,
+        "prediction_clipped": 0,
+        "prediction_seconds": 0.0
+      }
+    },
+    "cache": {
+      "lost_cases": {
+        "structures": [],
+        "total_non_h_counts": [],
+        "per_element_counts": [],
+        "strict_002_angstrom": []
+      },
+      "retains_previous_success_and_count_sets": true,
+      "changed_count_vectors": [],
+      "cumulative_wall_seconds": 57.54339483520016,
+      "cumulative_solver_seconds": 49.47749300295254,
+      "median_paired_wall_control_over_treatment": 1.0461288224387746,
+      "median_paired_solver_control_over_treatment": 1.052012508047912,
+      "faster_cases": 29,
+      "stage_seconds": {
+        "origin_seconds": 1.5672800390000006,
+        "recycling_seconds": 1.2355370380000001,
+        "completion_seconds": 1.9451665429999998,
+        "screening_seconds": 9.353377609999999,
+        "refinement_seconds": 8.590334751000002
+      },
+      "work_totals": {
+        "phasing_starts": 95,
+        "quality_scored_cycles": 37621,
+        "adaptive_checkpoint_tests": 0,
+        "score_only_evaluations": 37621,
+        "phase_search_seconds": 23.981113215,
+        "short_phase_slices": 56,
+        "phase_plateau_stops": 22,
+        "short_quota_completions": 30,
+        "fourier_workspace_cycles": 37622,
+        "filtered_peak_cycles": 37622,
+        "streamed_peak_cycles": 37622,
+        "peak_rms_fallbacks": 0,
+        "batched_phase_transforms": 95,
+        "real_phase_transforms": 75213,
+        "cached_mask_cycles": 37622,
+        "fused_fourier_transforms": 75213,
+        "cached_normal_solves": 2389,
+        "normal_cache_fallbacks": 0,
+        "normal_matrix_builds": 4518,
+        "normal_matrix_reuses": 849,
+        "blocked_normal_builds": 4518,
+        "blocked_normal_fallbacks": 0,
+        "assignment_convergence_stops": 367,
+        "assignment_cached_refinements": 609,
+        "specialized_isotropic_fits": 671,
+        "assignment_cached_normal_solves": 3835,
+        "assignment_normal_cache_fallbacks": 0,
+        "weighted_refinement_fits": 124,
+        "weighted_refinement_input_rows": 761874,
+        "weighted_refinement_family_rows": 232878,
+        "stable_map_handoffs": 0,
+        "screening_refinements": 671,
+        "final_refinements": 124,
+        "completion_evaluations": 74020,
+        "assignment_parent_fits": 108,
+        "ambiguity_continuations": 0,
+        "ambiguity_metric_disagreements": 17,
+        "ambiguity_scores": 10316,
+        "ambiguity_relaxations": 248,
+        "ambiguity_unresolved": 4,
+        "assignment_neighbor_scores": 11721,
+        "assignment_neighbor_fits": 132,
+        "assignment_retained": 488,
+        "assignment_deferred_promotions": 24,
+        "reassignment_evaluations": 20034,
+        "reassignment_changes": 33,
+        "reassignment_screens": 31,
+        "chemical_scale_proposals": 79,
+        "prediction_steps": 0,
+        "prediction_updates": 0,
+        "prediction_clipped": 0,
+        "prediction_seconds": 0.0
+      }
+    }
+  },
+  "recommended_mode": "cache",
+  "selection_rule": "Minimum summed library solve time among development variants retaining every prior structure and count success set",
+  "post_collection_fixes": [
+    {
+      "mode": "control",
+      "source": "benchmarks/solution_stopping_interleaved.py",
+      "original_sha256": "c239de08784e543474ac5dbf5e99a058cfa0cab126bbd339474c6b6fe02e659f",
+      "current_sha256": "8ba162c70d13a458ff878dd0278bb44910b250ebabf1014f214387f1b326f935",
+      "qualification": "Only the final completion assertion is corrected: 70 case/method rounds, 280 predictions. All original sources are retained in verified snapshots; no timed code or numerical source changed."
+    },
+    {
+      "mode": "phase",
+      "source": "benchmarks/solution_stopping_interleaved.py",
+      "original_sha256": "c239de08784e543474ac5dbf5e99a058cfa0cab126bbd339474c6b6fe02e659f",
+      "current_sha256": "8ba162c70d13a458ff878dd0278bb44910b250ebabf1014f214387f1b326f935",
+      "qualification": "Only the final completion assertion is corrected: 70 case/method rounds, 280 predictions. All original sources are retained in verified snapshots; no timed code or numerical source changed."
+    },
+    {
+      "mode": "assignment",
+      "source": "benchmarks/solution_stopping_interleaved.py",
+      "original_sha256": "c239de08784e543474ac5dbf5e99a058cfa0cab126bbd339474c6b6fe02e659f",
+      "current_sha256": "8ba162c70d13a458ff878dd0278bb44910b250ebabf1014f214387f1b326f935",
+      "qualification": "Only the final completion assertion is corrected: 70 case/method rounds, 280 predictions. All original sources are retained in verified snapshots; no timed code or numerical source changed."
+    },
+    {
+      "mode": "cache",
+      "source": "benchmarks/solution_stopping_interleaved.py",
+      "original_sha256": "c239de08784e543474ac5dbf5e99a058cfa0cab126bbd339474c6b6fe02e659f",
+      "current_sha256": "8ba162c70d13a458ff878dd0278bb44910b250ebabf1014f214387f1b326f935",
+      "qualification": "Only the final completion assertion is corrected: 70 case/method rounds, 280 predictions. All original sources are retained in verified snapshots; no timed code or numerical source changed."
+    }
+  ],
+  "verifier_sha256": "8cd4b4e9e2e1eadb677f72c58b7ca40a445fe4f28740c418cfad771663038ece",
+  "all_case_counts": {
+    "cod-1549173": {
+      "previous": {
+        "Se": 4,
+        "Cl": 4,
+        "C": 32,
+        "N": 8
+      },
+      "control": {
+        "Se": 4,
+        "Cl": 4,
+        "C": 32,
+        "N": 8
+      },
+      "phase": {
+        "Se": 4,
+        "Cl": 4,
+        "C": 32,
+        "N": 8
+      },
+      "assignment": {
+        "Se": 4,
+        "Cl": 4,
+        "C": 32,
+        "N": 8
+      },
+      "cache": {
+        "Se": 4,
+        "Cl": 4,
+        "C": 32,
+        "N": 8
+      }
+    },
+    "cod-1550276": {
+      "previous": {
+        "S": 8,
+        "O": 16,
+        "N": 8,
+        "C": 4
+      },
+      "control": {
+        "S": 8,
+        "O": 16,
+        "N": 8,
+        "C": 4
+      },
+      "phase": {
+        "S": 8,
+        "O": 16,
+        "N": 8,
+        "C": 4
+      },
+      "assignment": {
+        "S": 8,
+        "O": 16,
+        "N": 8,
+        "C": 4
+      },
+      "cache": {
+        "S": 8,
+        "O": 16,
+        "N": 8,
+        "C": 4
+      }
+    },
+    "cod-2010543": {
+      "previous": {
+        "O": 6,
+        "F": 4,
+        "N": 6,
+        "C": 12
+      },
+      "control": {
+        "O": 6,
+        "F": 4,
+        "N": 6,
+        "C": 12
+      },
+      "phase": {
+        "O": 6,
+        "F": 4,
+        "N": 6,
+        "C": 12
+      },
+      "assignment": {
+        "O": 6,
+        "F": 4,
+        "N": 6,
+        "C": 12
+      },
+      "cache": {
+        "O": 6,
+        "F": 4,
+        "N": 6,
+        "C": 12
+      }
+    },
+    "cod-2010647": {
+      "previous": {},
+      "control": {},
+      "phase": {},
+      "assignment": {},
+      "cache": {}
+    },
+    "cod-2010705": {
+      "previous": {
+        "Mn": 2,
+        "O": 12,
+        "N": 4,
+        "C": 24
+      },
+      "control": {
+        "Mn": 2,
+        "O": 12,
+        "N": 4,
+        "C": 24
+      },
+      "phase": {
+        "Mn": 2,
+        "O": 12,
+        "N": 4,
+        "C": 24
+      },
+      "assignment": {
+        "Mn": 2,
+        "O": 12,
+        "N": 4,
+        "C": 24
+      },
+      "cache": {
+        "Mn": 2,
+        "O": 12,
+        "N": 4,
+        "C": 24
+      }
+    },
+    "cod-2010746": {
+      "previous": {
+        "Ni": 4,
+        "Cl": 8,
+        "N": 24
+      },
+      "control": {
+        "Ni": 4,
+        "Cl": 8,
+        "N": 24
+      },
+      "phase": {
+        "Ni": 4,
+        "Cl": 8,
+        "N": 24
+      },
+      "assignment": {
+        "Ni": 4,
+        "Cl": 8,
+        "N": 24
+      },
+      "cache": {
+        "Ni": 4,
+        "Cl": 8,
+        "N": 24
+      }
+    },
+    "cod-2010825": {
+      "previous": {
+        "I": 2,
+        "N": 16,
+        "O": 6,
+        "C": 14
+      },
+      "control": {
+        "I": 2,
+        "N": 16,
+        "O": 6,
+        "C": 14
+      },
+      "phase": {
+        "I": 2,
+        "N": 16,
+        "O": 6,
+        "C": 14
+      },
+      "assignment": {
+        "I": 2,
+        "N": 16,
+        "O": 6,
+        "C": 14
+      },
+      "cache": {
+        "I": 2,
+        "N": 16,
+        "O": 6,
+        "C": 14
+      }
+    },
+    "cod-2010901": {
+      "previous": {
+        "Se": 10,
+        "P": 4,
+        "O": 8,
+        "C": 16
+      },
+      "control": {
+        "Se": 10,
+        "P": 4,
+        "O": 8,
+        "C": 16
+      },
+      "phase": {
+        "Se": 10,
+        "P": 4,
+        "O": 8,
+        "C": 16
+      },
+      "assignment": {
+        "Se": 10,
+        "P": 4,
+        "O": 8,
+        "C": 16
+      },
+      "cache": {
+        "Se": 10,
+        "P": 4,
+        "O": 8,
+        "C": 16
+      }
+    },
+    "cod-2011038": {
+      "previous": {
+        "Bi": 12,
+        "Ba": 16,
+        "K": 4,
+        "O": 4
+      },
+      "control": {
+        "Bi": 12,
+        "Ba": 16,
+        "K": 4,
+        "O": 4
+      },
+      "phase": {
+        "Bi": 12,
+        "Ba": 16,
+        "K": 4,
+        "O": 4
+      },
+      "assignment": {
+        "Bi": 12,
+        "Ba": 16,
+        "K": 4,
+        "O": 4
+      },
+      "cache": {
+        "Bi": 12,
+        "Ba": 16,
+        "K": 4,
+        "O": 4
+      }
+    },
+    "cod-2011181": {
+      "previous": {
+        "Fe": 4,
+        "Cl": 4,
+        "C": 4,
+        "O": 20
+      },
+      "control": {
+        "Fe": 4,
+        "Cl": 4,
+        "C": 4,
+        "O": 20
+      },
+      "phase": {
+        "Fe": 4,
+        "Cl": 4,
+        "C": 4,
+        "O": 20
+      },
+      "assignment": {
+        "Fe": 4,
+        "Cl": 4,
+        "C": 4,
+        "O": 20
+      },
+      "cache": {
+        "Fe": 4,
+        "Cl": 4,
+        "C": 4,
+        "O": 20
+      }
+    },
+    "cod-2011236": {
+      "previous": {},
+      "control": {},
+      "phase": {},
+      "assignment": {},
+      "cache": {}
+    },
+    "cod-2011241": {
+      "previous": {
+        "Cr": 2,
+        "O": 8,
+        "N": 4,
+        "C": 10
+      },
+      "control": {
+        "Cr": 2,
+        "O": 8,
+        "N": 4,
+        "C": 10
+      },
+      "phase": {
+        "Cr": 2,
+        "O": 8,
+        "N": 4,
+        "C": 10
+      },
+      "assignment": {
+        "Cr": 2,
+        "O": 8,
+        "N": 4,
+        "C": 10
+      },
+      "cache": {
+        "Cr": 2,
+        "O": 8,
+        "N": 4,
+        "C": 10
+      }
+    },
+    "cod-2011346": {
+      "previous": {
+        "Cu": 4,
+        "Cl": 16,
+        "N": 8,
+        "C": 4
+      },
+      "control": {
+        "Cu": 4,
+        "Cl": 16,
+        "N": 8,
+        "C": 4
+      },
+      "phase": {
+        "Cu": 4,
+        "Cl": 16,
+        "N": 8,
+        "C": 4
+      },
+      "assignment": {
+        "Cu": 4,
+        "Cl": 16,
+        "N": 8,
+        "C": 4
+      },
+      "cache": {
+        "Cu": 4,
+        "Cl": 16,
+        "N": 8,
+        "C": 4
+      }
+    },
+    "cod-2011393": {
+      "previous": {
+        "S": 2,
+        "O": 8,
+        "N": 8,
+        "C": 20
+      },
+      "control": {
+        "S": 2,
+        "O": 8,
+        "N": 8,
+        "C": 20
+      },
+      "phase": {
+        "S": 2,
+        "O": 8,
+        "N": 8,
+        "C": 20
+      },
+      "assignment": {
+        "S": 2,
+        "O": 8,
+        "N": 8,
+        "C": 20
+      },
+      "cache": {
+        "S": 2,
+        "O": 8,
+        "N": 8,
+        "C": 20
+      }
+    },
+    "cod-2011426": {
+      "previous": {
+        "Br": 16,
+        "Ti": 4,
+        "N": 12,
+        "C": 16
+      },
+      "control": {
+        "Br": 16,
+        "Ti": 4,
+        "N": 12,
+        "C": 16
+      },
+      "phase": {
+        "Br": 16,
+        "Ti": 4,
+        "N": 12,
+        "C": 16
+      },
+      "assignment": {
+        "Br": 16,
+        "Ti": 4,
+        "N": 12,
+        "C": 16
+      },
+      "cache": {
+        "Br": 16,
+        "Ti": 4,
+        "N": 12,
+        "C": 16
+      }
+    },
+    "cod-2011451": {
+      "previous": {
+        "Ni": 2,
+        "Cl": 4,
+        "N": 8,
+        "C": 24
+      },
+      "control": {
+        "Ni": 2,
+        "Cl": 4,
+        "N": 8,
+        "C": 24
+      },
+      "phase": {
+        "Ni": 2,
+        "Cl": 4,
+        "N": 8,
+        "C": 24
+      },
+      "assignment": {
+        "Ni": 2,
+        "Cl": 4,
+        "N": 8,
+        "C": 24
+      },
+      "cache": {
+        "Ni": 2,
+        "Cl": 4,
+        "N": 8,
+        "C": 24
+      }
+    },
+    "cod-2011590": {
+      "previous": {
+        "O": 4,
+        "N": 4,
+        "C": 5,
+        "Li": 1
+      },
+      "control": {
+        "O": 4,
+        "N": 4,
+        "C": 5,
+        "Li": 1
+      },
+      "phase": {
+        "O": 4,
+        "N": 4,
+        "C": 5,
+        "Li": 1
+      },
+      "assignment": {
+        "O": 4,
+        "N": 4,
+        "C": 5,
+        "Li": 1
+      },
+      "cache": {
+        "O": 4,
+        "N": 4,
+        "C": 5,
+        "Li": 1
+      }
+    },
+    "cod-2020988": {
+      "previous": {
+        "S": 4,
+        "O": 10,
+        "N": 10,
+        "C": 16
+      },
+      "control": {
+        "S": 4,
+        "O": 10,
+        "N": 10,
+        "C": 16
+      },
+      "phase": {
+        "S": 4,
+        "O": 10,
+        "N": 10,
+        "C": 16
+      },
+      "assignment": {
+        "S": 4,
+        "O": 10,
+        "N": 10,
+        "C": 16
+      },
+      "cache": {
+        "S": 4,
+        "O": 10,
+        "N": 10,
+        "C": 16
+      }
+    },
+    "cod-2021199": {
+      "previous": {
+        "Cl": 6,
+        "O": 4,
+        "C": 26,
+        "N": 6
+      },
+      "control": {
+        "Cl": 6,
+        "O": 4,
+        "C": 26,
+        "N": 6
+      },
+      "phase": {
+        "Cl": 6,
+        "O": 4,
+        "C": 26,
+        "N": 6
+      },
+      "assignment": {
+        "Cl": 6,
+        "O": 4,
+        "C": 26,
+        "N": 6
+      },
+      "cache": {
+        "Cl": 6,
+        "O": 4,
+        "C": 26,
+        "N": 6
+      }
+    },
+    "cod-2021292": {
+      "previous": {
+        "Cl": 4,
+        "O": 10,
+        "N": 14,
+        "C": 10
+      },
+      "control": {
+        "Cl": 4,
+        "O": 10,
+        "N": 14,
+        "C": 10
+      },
+      "phase": {
+        "Cl": 4,
+        "O": 10,
+        "N": 14,
+        "C": 10
+      },
+      "assignment": {
+        "Cl": 4,
+        "O": 10,
+        "N": 14,
+        "C": 10
+      },
+      "cache": {
+        "Cl": 4,
+        "O": 10,
+        "N": 14,
+        "C": 10
+      }
+    },
+    "cod-2021310": {
+      "previous": {
+        "Br": 3,
+        "O": 6,
+        "N": 6,
+        "C": 30
+      },
+      "control": {
+        "Br": 3,
+        "O": 6,
+        "N": 6,
+        "C": 30
+      },
+      "phase": {
+        "Br": 3,
+        "O": 6,
+        "N": 6,
+        "C": 30
+      },
+      "assignment": {
+        "Br": 3,
+        "O": 6,
+        "N": 6,
+        "C": 30
+      },
+      "cache": {
+        "Br": 3,
+        "O": 6,
+        "N": 6,
+        "C": 30
+      }
+    },
+    "cod-2021316": {
+      "previous": {
+        "Br": 4,
+        "O": 10,
+        "N": 8,
+        "C": 22
+      },
+      "control": {
+        "Br": 4,
+        "O": 10,
+        "N": 8,
+        "C": 22
+      },
+      "phase": {
+        "Br": 4,
+        "O": 10,
+        "N": 8,
+        "C": 22
+      },
+      "assignment": {
+        "Br": 4,
+        "O": 10,
+        "N": 8,
+        "C": 22
+      },
+      "cache": {
+        "Br": 4,
+        "O": 10,
+        "N": 8,
+        "C": 22
+      }
+    },
+    "cod-2102156": {
+      "previous": {},
+      "control": {},
+      "phase": {},
+      "assignment": {},
+      "cache": {}
+    },
+    "cod-2107296": {
+      "previous": {
+        "Y": 24,
+        "K": 8,
+        "F": 80
+      },
+      "control": {
+        "Y": 24,
+        "K": 8,
+        "F": 80
+      },
+      "phase": {
+        "Y": 24,
+        "K": 8,
+        "F": 80
+      },
+      "assignment": {
+        "Y": 24,
+        "K": 8,
+        "F": 80
+      },
+      "cache": {
+        "Y": 24,
+        "K": 8,
+        "F": 80
+      }
+    },
+    "cod-2108342": {
+      "previous": {
+        "Pb": 4,
+        "Se": 8,
+        "Br": 8,
+        "Cu": 8,
+        "O": 24
+      },
+      "control": {
+        "Pb": 4,
+        "Se": 8,
+        "Br": 8,
+        "Cu": 8,
+        "O": 24
+      },
+      "phase": {
+        "Pb": 4,
+        "Se": 8,
+        "Br": 8,
+        "Cu": 8,
+        "O": 24
+      },
+      "assignment": {
+        "Pb": 4,
+        "Se": 8,
+        "Br": 8,
+        "Cu": 8,
+        "O": 24
+      },
+      "cache": {
+        "Pb": 4,
+        "Se": 8,
+        "Br": 8,
+        "Cu": 8,
+        "O": 24
+      }
+    },
+    "cod-2201295": {
+      "previous": {},
+      "control": {},
+      "phase": {},
+      "assignment": {},
+      "cache": {}
+    },
+    "cod-2203173": {
+      "previous": {
+        "Sc": 6,
+        "O": 36,
+        "C": 18
+      },
+      "control": {
+        "Sc": 6,
+        "O": 36,
+        "C": 18
+      },
+      "phase": {
+        "Sc": 6,
+        "O": 36,
+        "C": 18
+      },
+      "assignment": {
+        "Sc": 6,
+        "O": 36,
+        "C": 18
+      },
+      "cache": {
+        "Sc": 6,
+        "O": 36,
+        "C": 18
+      }
+    },
+    "cod-2232654": {
+      "previous": {
+        "Pr": 2,
+        "Br": 2,
+        "O": 2
+      },
+      "control": {
+        "Pr": 2,
+        "Br": 2,
+        "O": 2
+      },
+      "phase": {
+        "Pr": 2,
+        "Br": 2,
+        "O": 2
+      },
+      "assignment": {
+        "Pr": 2,
+        "Br": 2,
+        "O": 2
+      },
+      "cache": {
+        "Pr": 2,
+        "Br": 2,
+        "O": 2
+      }
+    },
+    "cod-2241159": {
+      "previous": {
+        "Sr": 4,
+        "Ni": 8,
+        "Fe": 4,
+        "P": 12,
+        "O": 16
+      },
+      "control": {
+        "Sr": 4,
+        "Ni": 8,
+        "Fe": 4,
+        "P": 12,
+        "O": 16
+      },
+      "phase": {
+        "Sr": 4,
+        "Ni": 8,
+        "Fe": 4,
+        "P": 12,
+        "O": 16
+      },
+      "assignment": {
+        "Sr": 4,
+        "Ni": 8,
+        "Fe": 4,
+        "P": 12,
+        "O": 16
+      },
+      "cache": {
+        "Sr": 4,
+        "Ni": 8,
+        "Fe": 4,
+        "P": 12,
+        "O": 16
+      }
+    },
+    "cod-2241796": {
+      "previous": {
+        "Nb": 2,
+        "F": 8
+      },
+      "control": {
+        "Nb": 2,
+        "F": 8
+      },
+      "phase": {
+        "Nb": 2,
+        "F": 8
+      },
+      "assignment": {
+        "Nb": 2,
+        "F": 8
+      },
+      "cache": {
+        "Nb": 2,
+        "F": 8
+      }
+    },
+    "cod-2242589": {
+      "previous": {
+        "S": 2,
+        "O": 4,
+        "N": 10,
+        "C": 17
+      },
+      "control": {
+        "S": 2,
+        "O": 4,
+        "N": 10,
+        "C": 17
+      },
+      "phase": {
+        "S": 2,
+        "O": 4,
+        "N": 10,
+        "C": 17
+      },
+      "assignment": {
+        "S": 2,
+        "O": 4,
+        "N": 10,
+        "C": 17
+      },
+      "cache": {
+        "S": 2,
+        "O": 4,
+        "N": 10,
+        "C": 17
+      }
+    },
+    "cod-2242657": {
+      "previous": {
+        "Te": 2,
+        "O": 14,
+        "C": 12,
+        "N": 4
+      },
+      "control": {
+        "Te": 2,
+        "O": 14,
+        "C": 12,
+        "N": 4
+      },
+      "phase": {
+        "Te": 2,
+        "O": 14,
+        "C": 12,
+        "N": 4
+      },
+      "assignment": {
+        "Te": 2,
+        "O": 14,
+        "C": 12,
+        "N": 4
+      },
+      "cache": {
+        "Te": 2,
+        "O": 14,
+        "C": 12,
+        "N": 4
+      }
+    },
+    "cod-2243197": {
+      "previous": {
+        "P": 2,
+        "O": 12,
+        "N": 8,
+        "C": 24
+      },
+      "control": {
+        "P": 2,
+        "O": 12,
+        "N": 8,
+        "C": 24
+      },
+      "phase": {
+        "P": 2,
+        "O": 12,
+        "N": 8,
+        "C": 24
+      },
+      "assignment": {
+        "P": 2,
+        "O": 12,
+        "N": 8,
+        "C": 24
+      },
+      "cache": {
+        "P": 2,
+        "O": 12,
+        "N": 8,
+        "C": 24
+      }
+    },
+    "cod-2243618": {
+      "previous": {
+        "Tl": 6,
+        "Cl": 18,
+        "Mg": 6
+      },
+      "control": {
+        "Tl": 6,
+        "Cl": 18,
+        "Mg": 6
+      },
+      "phase": {
+        "Tl": 6,
+        "Cl": 18,
+        "Mg": 6
+      },
+      "assignment": {
+        "Tl": 6,
+        "Cl": 18,
+        "Mg": 6
+      },
+      "cache": {
+        "Tl": 6,
+        "Cl": 18,
+        "Mg": 6
+      }
+    },
+    "cod-4326074": {
+      "previous": {
+        "Rb": 1,
+        "As": 3,
+        "Zn": 4
+      },
+      "control": {
+        "Rb": 1,
+        "As": 3,
+        "Zn": 4
+      },
+      "phase": {
+        "Rb": 1,
+        "As": 3,
+        "Zn": 4
+      },
+      "assignment": {
+        "Rb": 1,
+        "As": 3,
+        "Zn": 4
+      },
+      "cache": {
+        "Rb": 1,
+        "As": 3,
+        "Zn": 4
+      }
+    }
+  }
+}

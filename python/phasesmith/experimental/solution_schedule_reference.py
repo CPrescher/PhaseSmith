@@ -12,3 +12,16 @@ def phase_cycle_quotas(cycles, trials, *, short=False):
     divisor = 4 if short else 2
     half = min(cycles, max(32, (cycles + divisor - 1) // divisor))
     return [half] * early + [cycles] * (trials - early)
+
+
+def phase_plateau_ready(scores, *, omit_every_third=True):
+    """Pure Python early-map plateau heuristic; no native calculation."""
+    import math
+    values = list(scores)
+    n = len(values)
+    if n < 128 or n % 32 or any(not math.isfinite(x) for x in values):
+        return False
+    allowed = [(i, x) for i, x in enumerate(values) if not omit_every_third or i % 3 != 2]
+    best = max(x for _, x in allowed)
+    earlier = max(x for i, x in allowed if i < n - 32)
+    return best >= 0.8 and best - earlier <= 0.002

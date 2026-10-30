@@ -63,6 +63,7 @@ fn run<'py>(
                     batched_fft: false,
                     real_fft: false,
                     fused_phase_workspace: false,
+                    phase_plateau_stopping: false,
                 },
             )
         })
@@ -195,6 +196,7 @@ fn count_free<'py>(
                         batched_fft,
                         real_fft,
                         fused_phase_workspace,
+                        phase_plateau_stopping: false,
                     },
                 );
             }
