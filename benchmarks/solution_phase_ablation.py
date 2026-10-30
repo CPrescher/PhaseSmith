@@ -108,6 +108,8 @@ def compare(paths, manifest, pairs=()):
                 "short_phase_starts",
                 "blocked_normal_matrices",
                 "assignment_convergence_stopping",
+                "model_consensus_stopping",
+                "late_phase_plateau_stopping",
                 "phase_plateau_stopping",
                 "reuse_normal_matrices",
                 "streamed_peak_search",
@@ -150,6 +152,8 @@ def compare(paths, manifest, pairs=()):
                     "seconds": r["wall_seconds_including_startup"],
                     "r1": r["model"]["reported_r1"] if r.get("model") else None,
                     "phasing_starts": r["effort"]["phasing_starts"],
+                    "termination": r.get("termination"),
+                    "late_phase_plateau_stops": sum(a["stop_reason"] == "late_phase_plateau" for a in r["effort"].get("phase_slices", [])),
                     "phase_search_seconds": sum(
                         a["seconds"] for a in r["effort"].get("phase_slices", [])
                     ),
@@ -179,6 +183,8 @@ def compare(paths, manifest, pairs=()):
                     "blocked_normal_builds": r["effort"].get("blocked_normal_builds", 0),
                     "blocked_normal_fallbacks": r["effort"].get("blocked_normal_fallbacks", 0),
                     "assignment_convergence_stops": r["effort"].get("assignment_convergence_stops", 0),
+                    "model_consensus_stops": r["effort"].get("model_consensus_stops", 0),
+                    "model_consensus_checks": r["effort"].get("model_consensus_checks", 0),
                     "specialized_isotropic_fits": r["effort"].get("specialized_isotropic_fits", 0),
                     "assignment_cached_refinements": r["effort"].get(
                         "assignment_cached_refinements", 0
@@ -290,6 +296,8 @@ def compare(paths, manifest, pairs=()):
             "short_phase_starts": report.get("short_phase_starts", False),
             "blocked_normal_matrices": report.get("blocked_normal_matrices", False),
             "assignment_convergence_stopping": report.get("assignment_convergence_stopping", False),
+            "model_consensus_stopping": report.get("model_consensus_stopping", False),
+            "late_phase_plateau_stopping": report.get("late_phase_plateau_stopping", False),
             "phase_plateau_stopping": report.get("phase_plateau_stopping", False),
             "reusable_fourier_workspaces": report.get("reusable_fourier_workspaces", False),
             "independent_origin_sampling": report.get("independent_origin_sampling", False),
@@ -310,6 +318,7 @@ def compare(paths, manifest, pairs=()):
                     "phase_search_seconds",
                     "short_phase_slices",
                     "phase_plateau_stops",
+                    "late_phase_plateau_stops",
                     "short_quota_completions",
                     "fourier_workspace_cycles",
                     "filtered_peak_cycles",
@@ -326,6 +335,8 @@ def compare(paths, manifest, pairs=()):
                     "blocked_normal_builds",
                     "blocked_normal_fallbacks",
                     "assignment_convergence_stops",
+                    "model_consensus_stops",
+                    "model_consensus_checks",
                     "assignment_cached_refinements",
                     "specialized_isotropic_fits",
                     "assignment_cached_normal_solves",

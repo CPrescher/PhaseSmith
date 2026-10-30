@@ -542,6 +542,12 @@ class SharedSearchAudit:
     blocked_normal_matrices: bool = False
     phase_plateau_stopping: bool = False
     assignment_convergence_stopping: bool = False
+    late_phase_plateau_stopping: bool = False
+    model_consensus_stopping: bool = False
+    model_consensus_checks: int = 0
+    model_consensus_stops: int = 0
+    model_consensus_trials: tuple[int,int] | None = None
+    model_consensus_distance: float | None = None
     assignment_convergence_stops: int = 0
     reuse_normal_matrices: bool = False
     normal_matrix_builds: int = 0
@@ -835,6 +841,8 @@ def solve_structure_elements(
     blocked_normal_matrices: bool = False,
     phase_plateau_stopping: bool = False,
     assignment_convergence_stopping: bool = False,
+    late_phase_plateau_stopping: bool = False,
+    model_consensus_stopping: bool = False,
     missing_reflections: bool = False,
     resolution_extension: float = 1.0,
     score_only_evaluation: bool = False,
@@ -866,6 +874,12 @@ def solve_structure_elements(
     ``cached_normal_refinement=True`` caches preconditioned normal matrices in final
     iterative fits, verifies steps against the original Jacobian and falls back
     to the matrix-free solver if needed. It requires iterative refinement.
+    ``late_phase_plateau_stopping=True`` uses a longer plateau window on intermediate
+    later starts, preserving the last full-length fallback start.
+    ``model_consensus_stopping=True`` can end independent-start exploration when
+    two complete unambiguous models agree geometrically and in labels/fit quality.
+    It requires phase-origin selection and ambiguity checks, and does not change
+    whether the requested R1 target was met.
     ``phase_plateau_stopping=True`` hands off high-quality plateaued early starts
     while keeping later full-length starts; requires work slicing without adaptive checkpoints.
     ``assignment_convergence_stopping=True`` stops only short assignment screens
@@ -974,6 +988,8 @@ def solve_structure_elements(
         ("blocked_normal_matrices", blocked_normal_matrices),
         ("phase_plateau_stopping", phase_plateau_stopping),
         ("assignment_convergence_stopping", assignment_convergence_stopping),
+        ("late_phase_plateau_stopping", late_phase_plateau_stopping),
+        ("model_consensus_stopping", model_consensus_stopping),
         ("missing_reflections", missing_reflections),
         ("adaptive_checkpoints", adaptive_checkpoints),
         ("score_only_evaluation", score_only_evaluation),
@@ -1010,6 +1026,10 @@ def solve_structure_elements(
         raise ValueError("cached_normal_refinement requires iterative_refinement")
     if fused_phase_workspace and not reusable_fourier_workspaces:
         raise ValueError("fused_phase_workspace requires reusable_fourier_workspaces")
+    if late_phase_plateau_stopping and (not work_sliced_phasing or adaptive_checkpoints):
+        raise ValueError("late_phase_plateau_stopping requires work_sliced_phasing without adaptive_checkpoints")
+    if model_consensus_stopping and (not phase_origin_selection or not ambiguous_assignments):
+        raise ValueError("model_consensus_stopping requires phase_origin_selection and ambiguous_assignments")
     if phase_plateau_stopping and (not work_sliced_phasing or adaptive_checkpoints):
         raise ValueError("phase_plateau_stopping requires work_sliced_phasing without adaptive_checkpoints")
     if assignment_convergence_stopping and not isotropic_assignment_refinement:
@@ -1177,7 +1197,7 @@ def solve_structure_elements(
                     specialized_isotropic_refinement,
                     streamed_peak_search,
                     reuse_normal_matrices,
-                    (short_phase_starts, blocked_normal_matrices, phase_plateau_stopping, assignment_convergence_stopping),
+                    (short_phase_starts, blocked_normal_matrices, phase_plateau_stopping, assignment_convergence_stopping, late_phase_plateau_stopping, model_consensus_stopping),
                 ),
             ),
         ),

@@ -523,15 +523,47 @@ fn phase_quota(cycles: usize, trials: usize, trial: usize, short: bool) -> PyRes
         .map_err(invalid)
 }
 #[pyfunction(name = "_phase_plateau_ready")]
-#[pyo3(signature=(scores,omit_every_third=true))]
-fn phase_plateau(scores: PyReadonlyArray1<'_, f64>, omit_every_third: bool) -> PyResult<bool> {
-    Ok(phasesmith_solution::phase_plateau_ready(
-        scores.as_slice()?,
-        omit_every_third,
-    ))
+#[pyo3(signature=(scores,omit_every_third=true,late=false))]
+fn phase_plateau(
+    scores: PyReadonlyArray1<'_, f64>,
+    omit_every_third: bool,
+    late: bool,
+) -> PyResult<bool> {
+    Ok(if late {
+        phasesmith_solution::late_phase_plateau_ready(scores.as_slice()?, omit_every_third)
+    } else {
+        phasesmith_solution::phase_plateau_ready(scores.as_slice()?, omit_every_third)
+    })
+}
+#[pyfunction(name = "_solution_model_agreement")]
+#[allow(clippy::too_many_arguments)]
+fn model_agreement(
+    cell_parameters: Vec<f64>,
+    a_species: Vec<String>,
+    a: PyReadonlyArray1<'_, f64>,
+    b_species: Vec<String>,
+    b: PyReadonlyArray1<'_, f64>,
+) -> PyResult<Option<f64>> {
+    let rows = |v: &[f64]| -> PyResult<Vec<[f64; 3]>> {
+        if v.len() % 3 != 0 {
+            return Err(invalid("coordinates need three columns"));
+        }
+        Ok(v.chunks_exact(3).map(|x| [x[0], x[1], x[2]]).collect())
+    };
+    phasesmith_solution::model_agreement_distance(
+        super::cell(&cell_parameters)?,
+        &a_species,
+        &rows(a.as_slice()?)?,
+        &b_species,
+        &rows(b.as_slice()?)?,
+        None,
+        None,
+    )
+    .map_err(invalid)
 }
 pub(super) fn register(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_function(wrap_pyfunction!(phase_quota, module)?)?;
+    module.add_function(wrap_pyfunction!(model_agreement, module)?)?;
     module.add_function(wrap_pyfunction!(phase_plateau, module)?)?;
     module.add_function(wrap_pyfunction!(normal_step, module)?)?;
     module.add_function(wrap_pyfunction!(checkpoint_select, module)?)?;

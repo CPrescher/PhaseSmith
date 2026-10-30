@@ -64,6 +64,7 @@ fn run<'py>(
                     real_fft: false,
                     fused_phase_workspace: false,
                     phase_plateau_stopping: false,
+                    late_phase_plateau_stopping: false,
                 },
             )
         })
@@ -197,6 +198,7 @@ fn count_free<'py>(
                         real_fft,
                         fused_phase_workspace,
                         phase_plateau_stopping: false,
+                        late_phase_plateau_stopping: false,
                     },
                 );
             }

@@ -1,0 +1,1781 @@
+{
+  "schema": "phasesmith.cycle-effort-retention.v1",
+  "development_cases": 35,
+  "holdout_opened": false,
+  "qualification": "Four balanced serial development modes. Every prediction saved before any reference audit. Previous best case sets and all inferred count vectors checked. Timings from one collection remain host sensitive; early phase handoffs can alter later models.",
+  "schedule_sha256": "3abf1cd8cbfcccd984a5f8c48f5c70933a79d4fffcd603052bf1ea4b6ed77139",
+  "leading_cases": {
+    "control": 9,
+    "late": 9,
+    "consensus": 9,
+    "cache": 8
+  },
+  "report_sha256": {
+    "control": "33c5302e795c21d32a413711d7b13124d6a14f6bc799423fb67344c4cc2adf1e",
+    "late": "e77c8fe4ff5b2624569b83e13a24dfc7501065f015e25629c9bbd05f51e27a22",
+    "consensus": "3045807b0cf77a24746402ec10206ed2acb2b25ed25333ff46051e43f913e329",
+    "cache": "0524003bc1c569977b35e94a02ae4d4301d36ef193d6c3a09784cdd6f815e7d1"
+  },
+  "native_sha256": "c21fbb5f768b9f10190f02108bfb25f53967ef5dfaef37f2be4f06a81b8ec06f",
+  "source_files_verified": 58,
+  "previous_sha256": "c6f2dc3bf2ef05707ba1dbe50efe3cb0aac986387557b074a5ecbae61dc058a1",
+  "case_sets": {
+    "structures": {
+      "previous": [
+        "cod-1549173",
+        "cod-1550276",
+        "cod-2010705",
+        "cod-2010746",
+        "cod-2010901",
+        "cod-2011038",
+        "cod-2011241",
+        "cod-2011451",
+        "cod-2011590",
+        "cod-2021199",
+        "cod-2107296",
+        "cod-2108342",
+        "cod-2203173",
+        "cod-2232654",
+        "cod-2241796",
+        "cod-2242657",
+        "cod-2243197",
+        "cod-2243618",
+        "cod-4326074"
+      ],
+      "control": [
+        "cod-1549173",
+        "cod-1550276",
+        "cod-2010705",
+        "cod-2010746",
+        "cod-2010901",
+        "cod-2011038",
+        "cod-2011241",
+        "cod-2011451",
+        "cod-2011590",
+        "cod-2021199",
+        "cod-2107296",
+        "cod-2108342",
+        "cod-2203173",
+        "cod-2232654",
+        "cod-2241796",
+        "cod-2242657",
+        "cod-2243197",
+        "cod-2243618",
+        "cod-4326074"
+      ],
+      "late": [
+        "cod-1549173",
+        "cod-1550276",
+        "cod-2010705",
+        "cod-2010746",
+        "cod-2010901",
+        "cod-2011038",
+        "cod-2011241",
+        "cod-2011451",
+        "cod-2011590",
+        "cod-2021199",
+        "cod-2107296",
+        "cod-2108342",
+        "cod-2203173",
+        "cod-2232654",
+        "cod-2241796",
+        "cod-2242657",
+        "cod-2243197",
+        "cod-2243618",
+        "cod-4326074"
+      ],
+      "consensus": [
+        "cod-1549173",
+        "cod-1550276",
+        "cod-2010705",
+        "cod-2010746",
+        "cod-2010901",
+        "cod-2011038",
+        "cod-2011241",
+        "cod-2011451",
+        "cod-2011590",
+        "cod-2021199",
+        "cod-2107296",
+        "cod-2108342",
+        "cod-2203173",
+        "cod-2232654",
+        "cod-2241796",
+        "cod-2242657",
+        "cod-2243197",
+        "cod-2243618",
+        "cod-4326074"
+      ],
+      "cache": [
+        "cod-1549173",
+        "cod-1550276",
+        "cod-2010705",
+        "cod-2010746",
+        "cod-2010901",
+        "cod-2011038",
+        "cod-2011241",
+        "cod-2011451",
+        "cod-2011590",
+        "cod-2021199",
+        "cod-2107296",
+        "cod-2108342",
+        "cod-2203173",
+        "cod-2232654",
+        "cod-2241796",
+        "cod-2242657",
+        "cod-2243197",
+        "cod-2243618",
+        "cod-4326074"
+      ]
+    },
+    "total_non_h_counts": {
+      "previous": [
+        "cod-1549173",
+        "cod-1550276",
+        "cod-2010543",
+        "cod-2010705",
+        "cod-2010746",
+        "cod-2010825",
+        "cod-2010901",
+        "cod-2011038",
+        "cod-2011241",
+        "cod-2011393",
+        "cod-2011451",
+        "cod-2011590",
+        "cod-2021199",
+        "cod-2021292",
+        "cod-2021310",
+        "cod-2021316",
+        "cod-2107296",
+        "cod-2108342",
+        "cod-2203173",
+        "cod-2232654",
+        "cod-2241796",
+        "cod-2242589",
+        "cod-2242657",
+        "cod-2243197",
+        "cod-2243618",
+        "cod-4326074"
+      ],
+      "control": [
+        "cod-1549173",
+        "cod-1550276",
+        "cod-2010543",
+        "cod-2010705",
+        "cod-2010746",
+        "cod-2010825",
+        "cod-2010901",
+        "cod-2011038",
+        "cod-2011241",
+        "cod-2011393",
+        "cod-2011451",
+        "cod-2011590",
+        "cod-2021199",
+        "cod-2021292",
+        "cod-2021310",
+        "cod-2021316",
+        "cod-2107296",
+        "cod-2108342",
+        "cod-2203173",
+        "cod-2232654",
+        "cod-2241796",
+        "cod-2242589",
+        "cod-2242657",
+        "cod-2243197",
+        "cod-2243618",
+        "cod-4326074"
+      ],
+      "late": [
+        "cod-1549173",
+        "cod-1550276",
+        "cod-2010543",
+        "cod-2010705",
+        "cod-2010746",
+        "cod-2010825",
+        "cod-2010901",
+        "cod-2011038",
+        "cod-2011241",
+        "cod-2011393",
+        "cod-2011451",
+        "cod-2011590",
+        "cod-2021199",
+        "cod-2021292",
+        "cod-2021310",
+        "cod-2021316",
+        "cod-2107296",
+        "cod-2108342",
+        "cod-2203173",
+        "cod-2232654",
+        "cod-2241796",
+        "cod-2242589",
+        "cod-2242657",
+        "cod-2243197",
+        "cod-2243618",
+        "cod-4326074"
+      ],
+      "consensus": [
+        "cod-1549173",
+        "cod-1550276",
+        "cod-2010543",
+        "cod-2010705",
+        "cod-2010746",
+        "cod-2010825",
+        "cod-2010901",
+        "cod-2011038",
+        "cod-2011241",
+        "cod-2011393",
+        "cod-2011451",
+        "cod-2011590",
+        "cod-2021199",
+        "cod-2021292",
+        "cod-2021310",
+        "cod-2021316",
+        "cod-2107296",
+        "cod-2108342",
+        "cod-2203173",
+        "cod-2232654",
+        "cod-2241796",
+        "cod-2242589",
+        "cod-2242657",
+        "cod-2243197",
+        "cod-2243618",
+        "cod-4326074"
+      ],
+      "cache": [
+        "cod-1549173",
+        "cod-1550276",
+        "cod-2010543",
+        "cod-2010705",
+        "cod-2010746",
+        "cod-2010825",
+        "cod-2010901",
+        "cod-2011038",
+        "cod-2011241",
+        "cod-2011393",
+        "cod-2011451",
+        "cod-2011590",
+        "cod-2021199",
+        "cod-2021292",
+        "cod-2021310",
+        "cod-2021316",
+        "cod-2107296",
+        "cod-2108342",
+        "cod-2203173",
+        "cod-2232654",
+        "cod-2241796",
+        "cod-2242589",
+        "cod-2242657",
+        "cod-2243197",
+        "cod-2243618",
+        "cod-4326074"
+      ]
+    },
+    "per_element_counts": {
+      "previous": [
+        "cod-1549173",
+        "cod-1550276",
+        "cod-2010705",
+        "cod-2010746",
+        "cod-2010901",
+        "cod-2011038",
+        "cod-2011241",
+        "cod-2011451",
+        "cod-2011590",
+        "cod-2021199",
+        "cod-2107296",
+        "cod-2108342",
+        "cod-2203173",
+        "cod-2232654",
+        "cod-2241796",
+        "cod-2242657",
+        "cod-2243197",
+        "cod-2243618",
+        "cod-4326074"
+      ],
+      "control": [
+        "cod-1549173",
+        "cod-1550276",
+        "cod-2010705",
+        "cod-2010746",
+        "cod-2010901",
+        "cod-2011038",
+        "cod-2011241",
+        "cod-2011451",
+        "cod-2011590",
+        "cod-2021199",
+        "cod-2107296",
+        "cod-2108342",
+        "cod-2203173",
+        "cod-2232654",
+        "cod-2241796",
+        "cod-2242657",
+        "cod-2243197",
+        "cod-2243618",
+        "cod-4326074"
+      ],
+      "late": [
+        "cod-1549173",
+        "cod-1550276",
+        "cod-2010705",
+        "cod-2010746",
+        "cod-2010901",
+        "cod-2011038",
+        "cod-2011241",
+        "cod-2011451",
+        "cod-2011590",
+        "cod-2021199",
+        "cod-2107296",
+        "cod-2108342",
+        "cod-2203173",
+        "cod-2232654",
+        "cod-2241796",
+        "cod-2242657",
+        "cod-2243197",
+        "cod-2243618",
+        "cod-4326074"
+      ],
+      "consensus": [
+        "cod-1549173",
+        "cod-1550276",
+        "cod-2010705",
+        "cod-2010746",
+        "cod-2010901",
+        "cod-2011038",
+        "cod-2011241",
+        "cod-2011451",
+        "cod-2011590",
+        "cod-2021199",
+        "cod-2107296",
+        "cod-2108342",
+        "cod-2203173",
+        "cod-2232654",
+        "cod-2241796",
+        "cod-2242657",
+        "cod-2243197",
+        "cod-2243618",
+        "cod-4326074"
+      ],
+      "cache": [
+        "cod-1549173",
+        "cod-1550276",
+        "cod-2010705",
+        "cod-2010746",
+        "cod-2010901",
+        "cod-2011038",
+        "cod-2011241",
+        "cod-2011451",
+        "cod-2011590",
+        "cod-2021199",
+        "cod-2107296",
+        "cod-2108342",
+        "cod-2203173",
+        "cod-2232654",
+        "cod-2241796",
+        "cod-2242657",
+        "cod-2243197",
+        "cod-2243618",
+        "cod-4326074"
+      ]
+    },
+    "strict_002_angstrom": {
+      "previous": [
+        "cod-1550276",
+        "cod-2010705",
+        "cod-2010746",
+        "cod-2011038",
+        "cod-2011241",
+        "cod-2011451",
+        "cod-2021199",
+        "cod-2107296",
+        "cod-2203173",
+        "cod-2232654",
+        "cod-2241796",
+        "cod-2242657",
+        "cod-2243197",
+        "cod-2243618",
+        "cod-4326074"
+      ],
+      "control": [
+        "cod-1550276",
+        "cod-2010705",
+        "cod-2010746",
+        "cod-2011038",
+        "cod-2011241",
+        "cod-2011451",
+        "cod-2021199",
+        "cod-2107296",
+        "cod-2203173",
+        "cod-2232654",
+        "cod-2241796",
+        "cod-2242657",
+        "cod-2243197",
+        "cod-2243618",
+        "cod-4326074"
+      ],
+      "late": [
+        "cod-1550276",
+        "cod-2010705",
+        "cod-2010746",
+        "cod-2011038",
+        "cod-2011241",
+        "cod-2011451",
+        "cod-2021199",
+        "cod-2107296",
+        "cod-2203173",
+        "cod-2232654",
+        "cod-2241796",
+        "cod-2242657",
+        "cod-2243197",
+        "cod-2243618",
+        "cod-4326074"
+      ],
+      "consensus": [
+        "cod-1550276",
+        "cod-2010705",
+        "cod-2010746",
+        "cod-2011038",
+        "cod-2011241",
+        "cod-2011451",
+        "cod-2021199",
+        "cod-2107296",
+        "cod-2203173",
+        "cod-2232654",
+        "cod-2241796",
+        "cod-2242657",
+        "cod-2243197",
+        "cod-2243618",
+        "cod-4326074"
+      ],
+      "cache": [
+        "cod-1550276",
+        "cod-2010705",
+        "cod-2010746",
+        "cod-2011038",
+        "cod-2011241",
+        "cod-2011451",
+        "cod-2021199",
+        "cod-2107296",
+        "cod-2203173",
+        "cod-2232654",
+        "cod-2241796",
+        "cod-2242657",
+        "cod-2243197",
+        "cod-2243618",
+        "cod-4326074"
+      ]
+    }
+  },
+  "modes": {
+    "control": {
+      "lost_cases": {
+        "structures": [],
+        "total_non_h_counts": [],
+        "per_element_counts": [],
+        "strict_002_angstrom": []
+      },
+      "retains_previous_success_and_count_sets": true,
+      "changed_count_vectors": [],
+      "cumulative_wall_seconds": 53.606554916885216,
+      "cumulative_solver_seconds": 46.31714387697866,
+      "median_paired_wall_control_over_treatment": 1.0,
+      "median_paired_solver_control_over_treatment": 1.0,
+      "faster_cases": 0,
+      "stage_seconds": {
+        "origin_seconds": 1.423968794,
+        "recycling_seconds": 1.1346537920000002,
+        "completion_seconds": 1.7890240369999995,
+        "screening_seconds": 8.585355584999999,
+        "refinement_seconds": 8.014659124999998
+      },
+      "work_totals": {
+        "phasing_starts": 95,
+        "quality_scored_cycles": 38120,
+        "adaptive_checkpoint_tests": 0,
+        "score_only_evaluations": 38120,
+        "phase_search_seconds": 22.74272171,
+        "short_phase_slices": 56,
+        "phase_plateau_stops": 22,
+        "late_phase_plateau_stops": 0,
+        "short_quota_completions": 30,
+        "fourier_workspace_cycles": 38121,
+        "filtered_peak_cycles": 38121,
+        "streamed_peak_cycles": 38121,
+        "peak_rms_fallbacks": 0,
+        "batched_phase_transforms": 95,
+        "real_phase_transforms": 76211,
+        "cached_mask_cycles": 38121,
+        "fused_fourier_transforms": 76211,
+        "cached_normal_solves": 2389,
+        "normal_cache_fallbacks": 0,
+        "normal_matrix_builds": 4518,
+        "normal_matrix_reuses": 849,
+        "blocked_normal_builds": 4518,
+        "blocked_normal_fallbacks": 0,
+        "assignment_convergence_stops": 367,
+        "model_consensus_stops": 0,
+        "model_consensus_checks": 0,
+        "assignment_cached_refinements": 609,
+        "specialized_isotropic_fits": 671,
+        "assignment_cached_normal_solves": 3835,
+        "assignment_normal_cache_fallbacks": 0,
+        "weighted_refinement_fits": 124,
+        "weighted_refinement_input_rows": 761874,
+        "weighted_refinement_family_rows": 232878,
+        "stable_map_handoffs": 0,
+        "screening_refinements": 671,
+        "final_refinements": 124,
+        "completion_evaluations": 74020,
+        "assignment_parent_fits": 108,
+        "ambiguity_continuations": 0,
+        "ambiguity_metric_disagreements": 17,
+        "ambiguity_scores": 10316,
+        "ambiguity_relaxations": 248,
+        "ambiguity_unresolved": 4,
+        "assignment_neighbor_scores": 11721,
+        "assignment_neighbor_fits": 132,
+        "assignment_retained": 488,
+        "assignment_deferred_promotions": 24,
+        "reassignment_evaluations": 20034,
+        "reassignment_changes": 33,
+        "reassignment_screens": 31,
+        "chemical_scale_proposals": 79,
+        "prediction_steps": 0,
+        "prediction_updates": 0,
+        "prediction_clipped": 0,
+        "prediction_seconds": 0.0
+      }
+    },
+    "late": {
+      "lost_cases": {
+        "structures": [],
+        "total_non_h_counts": [],
+        "per_element_counts": [],
+        "strict_002_angstrom": []
+      },
+      "retains_previous_success_and_count_sets": true,
+      "changed_count_vectors": [],
+      "cumulative_wall_seconds": 50.863098333997186,
+      "cumulative_solver_seconds": 43.83235666906694,
+      "median_paired_wall_control_over_treatment": 1.0120091636083353,
+      "median_paired_solver_control_over_treatment": 1.000831091007589,
+      "faster_cases": 24,
+      "stage_seconds": {
+        "origin_seconds": 1.416073125,
+        "recycling_seconds": 1.1348036609999999,
+        "completion_seconds": 1.7848294189999998,
+        "screening_seconds": 8.750997044999997,
+        "refinement_seconds": 8.111167709
+      },
+      "work_totals": {
+        "phasing_starts": 95,
+        "quality_scored_cycles": 32954,
+        "adaptive_checkpoint_tests": 0,
+        "score_only_evaluations": 32954,
+        "phase_search_seconds": 19.996901673,
+        "short_phase_slices": 56,
+        "phase_plateau_stops": 22,
+        "late_phase_plateau_stops": 11,
+        "short_quota_completions": 30,
+        "fourier_workspace_cycles": 32954,
+        "filtered_peak_cycles": 32954,
+        "streamed_peak_cycles": 32954,
+        "peak_rms_fallbacks": 0,
+        "batched_phase_transforms": 95,
+        "real_phase_transforms": 65868,
+        "cached_mask_cycles": 32954,
+        "fused_fourier_transforms": 65868,
+        "cached_normal_solves": 2384,
+        "normal_cache_fallbacks": 0,
+        "normal_matrix_builds": 4511,
+        "normal_matrix_reuses": 858,
+        "blocked_normal_builds": 4511,
+        "blocked_normal_fallbacks": 0,
+        "assignment_convergence_stops": 366,
+        "model_consensus_stops": 0,
+        "model_consensus_checks": 0,
+        "assignment_cached_refinements": 610,
+        "specialized_isotropic_fits": 672,
+        "assignment_cached_normal_solves": 3847,
+        "assignment_normal_cache_fallbacks": 0,
+        "weighted_refinement_fits": 124,
+        "weighted_refinement_input_rows": 761874,
+        "weighted_refinement_family_rows": 232878,
+        "stable_map_handoffs": 0,
+        "screening_refinements": 672,
+        "final_refinements": 124,
+        "completion_evaluations": 74222,
+        "assignment_parent_fits": 108,
+        "ambiguity_continuations": 0,
+        "ambiguity_metric_disagreements": 16,
+        "ambiguity_scores": 10313,
+        "ambiguity_relaxations": 249,
+        "ambiguity_unresolved": 4,
+        "assignment_neighbor_scores": 11787,
+        "assignment_neighbor_fits": 132,
+        "assignment_retained": 489,
+        "assignment_deferred_promotions": 24,
+        "reassignment_evaluations": 20039,
+        "reassignment_changes": 32,
+        "reassignment_screens": 30,
+        "chemical_scale_proposals": 78,
+        "prediction_steps": 0,
+        "prediction_updates": 0,
+        "prediction_clipped": 0,
+        "prediction_seconds": 0.0
+      }
+    },
+    "consensus": {
+      "lost_cases": {
+        "structures": [],
+        "total_non_h_counts": [],
+        "per_element_counts": [],
+        "strict_002_angstrom": []
+      },
+      "retains_previous_success_and_count_sets": true,
+      "changed_count_vectors": [],
+      "cumulative_wall_seconds": 45.602712080813944,
+      "cumulative_solver_seconds": 38.39079716807464,
+      "median_paired_wall_control_over_treatment": 1.0069108255364214,
+      "median_paired_solver_control_over_treatment": 1.0022154004541852,
+      "faster_cases": 21,
+      "stage_seconds": {
+        "origin_seconds": 1.2253815450000003,
+        "recycling_seconds": 0.9864963720000001,
+        "completion_seconds": 1.5568488780000005,
+        "screening_seconds": 7.197978708,
+        "refinement_seconds": 7.076976466
+      },
+      "work_totals": {
+        "phasing_starts": 82,
+        "quality_scored_cycles": 27726,
+        "adaptive_checkpoint_tests": 0,
+        "score_only_evaluations": 27726,
+        "phase_search_seconds": 17.814562874,
+        "short_phase_slices": 56,
+        "phase_plateau_stops": 22,
+        "late_phase_plateau_stops": 0,
+        "short_quota_completions": 30,
+        "fourier_workspace_cycles": 27728,
+        "filtered_peak_cycles": 27728,
+        "streamed_peak_cycles": 27728,
+        "peak_rms_fallbacks": 0,
+        "batched_phase_transforms": 82,
+        "real_phase_transforms": 55423,
+        "cached_mask_cycles": 27728,
+        "fused_fourier_transforms": 55423,
+        "cached_normal_solves": 2086,
+        "normal_cache_fallbacks": 0,
+        "normal_matrix_builds": 3832,
+        "normal_matrix_reuses": 849,
+        "blocked_normal_builds": 3832,
+        "blocked_normal_fallbacks": 0,
+        "assignment_convergence_stops": 287,
+        "model_consensus_stops": 9,
+        "model_consensus_checks": 9,
+        "assignment_cached_refinements": 513,
+        "specialized_isotropic_fits": 556,
+        "assignment_cached_normal_solves": 3303,
+        "assignment_normal_cache_fallbacks": 0,
+        "weighted_refinement_fits": 105,
+        "weighted_refinement_input_rows": 645228,
+        "weighted_refinement_family_rows": 197679,
+        "stable_map_handoffs": 0,
+        "screening_refinements": 556,
+        "final_refinements": 105,
+        "completion_evaluations": 64070,
+        "assignment_parent_fits": 90,
+        "ambiguity_continuations": 0,
+        "ambiguity_metric_disagreements": 17,
+        "ambiguity_scores": 8491,
+        "ambiguity_relaxations": 200,
+        "ambiguity_unresolved": 4,
+        "assignment_neighbor_scores": 9960,
+        "assignment_neighbor_fits": 110,
+        "assignment_retained": 400,
+        "assignment_deferred_promotions": 19,
+        "reassignment_evaluations": 17444,
+        "reassignment_changes": 28,
+        "reassignment_screens": 26,
+        "chemical_scale_proposals": 74,
+        "prediction_steps": 0,
+        "prediction_updates": 0,
+        "prediction_clipped": 0,
+        "prediction_seconds": 0.0
+      }
+    },
+    "cache": {
+      "lost_cases": {
+        "structures": [],
+        "total_non_h_counts": [],
+        "per_element_counts": [],
+        "strict_002_angstrom": []
+      },
+      "retains_previous_success_and_count_sets": true,
+      "changed_count_vectors": [],
+      "cumulative_wall_seconds": 42.69431058567716,
+      "cumulative_solver_seconds": 35.598085662466474,
+      "median_paired_wall_control_over_treatment": 1.0293523008937628,
+      "median_paired_solver_control_over_treatment": 1.0100814549716381,
+      "faster_cases": 29,
+      "stage_seconds": {
+        "origin_seconds": 1.229708206,
+        "recycling_seconds": 0.982709831,
+        "completion_seconds": 1.5259891719999998,
+        "screening_seconds": 6.8110515450000015,
+        "refinement_seconds": 6.7608831669999985
+      },
+      "work_totals": {
+        "phasing_starts": 81,
+        "quality_scored_cycles": 23242,
+        "adaptive_checkpoint_tests": 0,
+        "score_only_evaluations": 23242,
+        "phase_search_seconds": 15.755114954000002,
+        "short_phase_slices": 56,
+        "phase_plateau_stops": 22,
+        "late_phase_plateau_stops": 8,
+        "short_quota_completions": 30,
+        "fourier_workspace_cycles": 23244,
+        "filtered_peak_cycles": 23244,
+        "streamed_peak_cycles": 23244,
+        "peak_rms_fallbacks": 0,
+        "batched_phase_transforms": 81,
+        "real_phase_transforms": 46447,
+        "cached_mask_cycles": 23244,
+        "fused_fourier_transforms": 46447,
+        "cached_normal_solves": 2054,
+        "normal_cache_fallbacks": 0,
+        "normal_matrix_builds": 3708,
+        "normal_matrix_reuses": 858,
+        "blocked_normal_builds": 3708,
+        "blocked_normal_fallbacks": 0,
+        "assignment_convergence_stops": 278,
+        "model_consensus_stops": 9,
+        "model_consensus_checks": 9,
+        "assignment_cached_refinements": 499,
+        "specialized_isotropic_fits": 542,
+        "assignment_cached_normal_solves": 3220,
+        "assignment_normal_cache_fallbacks": 0,
+        "weighted_refinement_fits": 103,
+        "weighted_refinement_input_rows": 636368,
+        "weighted_refinement_family_rows": 193249,
+        "stable_map_handoffs": 0,
+        "screening_refinements": 542,
+        "final_refinements": 103,
+        "completion_evaluations": 62960,
+        "assignment_parent_fits": 88,
+        "ambiguity_continuations": 0,
+        "ambiguity_metric_disagreements": 16,
+        "ambiguity_scores": 8076,
+        "ambiguity_relaxations": 195,
+        "ambiguity_unresolved": 4,
+        "assignment_neighbor_scores": 9464,
+        "assignment_neighbor_fits": 108,
+        "assignment_retained": 391,
+        "assignment_deferred_promotions": 19,
+        "reassignment_evaluations": 16325,
+        "reassignment_changes": 26,
+        "reassignment_screens": 24,
+        "chemical_scale_proposals": 72,
+        "prediction_steps": 0,
+        "prediction_updates": 0,
+        "prediction_clipped": 0,
+        "prediction_seconds": 0.0
+      }
+    }
+  },
+  "recommended_mode": "cache",
+  "selection_rule": "Minimum summed library solve time among development variants retaining every prior structure and count success set",
+  "post_collection_fixes": [],
+  "verifier_sha256": "165ae43a12392453b46bca3a9f8814d181435108ea2f47a2cc33105872678091",
+  "all_case_counts": {
+    "cod-1549173": {
+      "previous": {
+        "Se": 4,
+        "Cl": 4,
+        "C": 32,
+        "N": 8
+      },
+      "control": {
+        "Se": 4,
+        "Cl": 4,
+        "C": 32,
+        "N": 8
+      },
+      "late": {
+        "Se": 4,
+        "Cl": 4,
+        "C": 32,
+        "N": 8
+      },
+      "consensus": {
+        "Se": 4,
+        "Cl": 4,
+        "C": 32,
+        "N": 8
+      },
+      "cache": {
+        "Se": 4,
+        "Cl": 4,
+        "C": 32,
+        "N": 8
+      }
+    },
+    "cod-1550276": {
+      "previous": {
+        "S": 8,
+        "O": 16,
+        "N": 8,
+        "C": 4
+      },
+      "control": {
+        "S": 8,
+        "O": 16,
+        "N": 8,
+        "C": 4
+      },
+      "late": {
+        "S": 8,
+        "O": 16,
+        "N": 8,
+        "C": 4
+      },
+      "consensus": {
+        "S": 8,
+        "O": 16,
+        "N": 8,
+        "C": 4
+      },
+      "cache": {
+        "S": 8,
+        "O": 16,
+        "N": 8,
+        "C": 4
+      }
+    },
+    "cod-2010543": {
+      "previous": {
+        "O": 6,
+        "F": 4,
+        "N": 6,
+        "C": 12
+      },
+      "control": {
+        "O": 6,
+        "F": 4,
+        "N": 6,
+        "C": 12
+      },
+      "late": {
+        "O": 6,
+        "F": 4,
+        "N": 6,
+        "C": 12
+      },
+      "consensus": {
+        "O": 6,
+        "F": 4,
+        "N": 6,
+        "C": 12
+      },
+      "cache": {
+        "O": 6,
+        "F": 4,
+        "N": 6,
+        "C": 12
+      }
+    },
+    "cod-2010647": {
+      "previous": {},
+      "control": {},
+      "late": {},
+      "consensus": {},
+      "cache": {}
+    },
+    "cod-2010705": {
+      "previous": {
+        "Mn": 2,
+        "O": 12,
+        "N": 4,
+        "C": 24
+      },
+      "control": {
+        "Mn": 2,
+        "O": 12,
+        "N": 4,
+        "C": 24
+      },
+      "late": {
+        "Mn": 2,
+        "O": 12,
+        "N": 4,
+        "C": 24
+      },
+      "consensus": {
+        "Mn": 2,
+        "O": 12,
+        "N": 4,
+        "C": 24
+      },
+      "cache": {
+        "Mn": 2,
+        "O": 12,
+        "N": 4,
+        "C": 24
+      }
+    },
+    "cod-2010746": {
+      "previous": {
+        "Ni": 4,
+        "Cl": 8,
+        "N": 24
+      },
+      "control": {
+        "Ni": 4,
+        "Cl": 8,
+        "N": 24
+      },
+      "late": {
+        "Ni": 4,
+        "Cl": 8,
+        "N": 24
+      },
+      "consensus": {
+        "Ni": 4,
+        "Cl": 8,
+        "N": 24
+      },
+      "cache": {
+        "Ni": 4,
+        "Cl": 8,
+        "N": 24
+      }
+    },
+    "cod-2010825": {
+      "previous": {
+        "I": 2,
+        "N": 16,
+        "O": 6,
+        "C": 14
+      },
+      "control": {
+        "I": 2,
+        "N": 16,
+        "O": 6,
+        "C": 14
+      },
+      "late": {
+        "I": 2,
+        "N": 16,
+        "O": 6,
+        "C": 14
+      },
+      "consensus": {
+        "I": 2,
+        "N": 16,
+        "O": 6,
+        "C": 14
+      },
+      "cache": {
+        "I": 2,
+        "N": 16,
+        "O": 6,
+        "C": 14
+      }
+    },
+    "cod-2010901": {
+      "previous": {
+        "Se": 10,
+        "P": 4,
+        "O": 8,
+        "C": 16
+      },
+      "control": {
+        "Se": 10,
+        "P": 4,
+        "O": 8,
+        "C": 16
+      },
+      "late": {
+        "Se": 10,
+        "P": 4,
+        "O": 8,
+        "C": 16
+      },
+      "consensus": {
+        "Se": 10,
+        "P": 4,
+        "O": 8,
+        "C": 16
+      },
+      "cache": {
+        "Se": 10,
+        "P": 4,
+        "O": 8,
+        "C": 16
+      }
+    },
+    "cod-2011038": {
+      "previous": {
+        "Bi": 12,
+        "Ba": 16,
+        "K": 4,
+        "O": 4
+      },
+      "control": {
+        "Bi": 12,
+        "Ba": 16,
+        "K": 4,
+        "O": 4
+      },
+      "late": {
+        "Bi": 12,
+        "Ba": 16,
+        "K": 4,
+        "O": 4
+      },
+      "consensus": {
+        "Bi": 12,
+        "Ba": 16,
+        "K": 4,
+        "O": 4
+      },
+      "cache": {
+        "Bi": 12,
+        "Ba": 16,
+        "K": 4,
+        "O": 4
+      }
+    },
+    "cod-2011181": {
+      "previous": {
+        "Fe": 4,
+        "Cl": 4,
+        "C": 4,
+        "O": 20
+      },
+      "control": {
+        "Fe": 4,
+        "Cl": 4,
+        "C": 4,
+        "O": 20
+      },
+      "late": {
+        "Fe": 4,
+        "Cl": 4,
+        "C": 4,
+        "O": 20
+      },
+      "consensus": {
+        "Fe": 4,
+        "Cl": 4,
+        "C": 4,
+        "O": 20
+      },
+      "cache": {
+        "Fe": 4,
+        "Cl": 4,
+        "C": 4,
+        "O": 20
+      }
+    },
+    "cod-2011236": {
+      "previous": {},
+      "control": {},
+      "late": {},
+      "consensus": {},
+      "cache": {}
+    },
+    "cod-2011241": {
+      "previous": {
+        "Cr": 2,
+        "O": 8,
+        "N": 4,
+        "C": 10
+      },
+      "control": {
+        "Cr": 2,
+        "O": 8,
+        "N": 4,
+        "C": 10
+      },
+      "late": {
+        "Cr": 2,
+        "O": 8,
+        "N": 4,
+        "C": 10
+      },
+      "consensus": {
+        "Cr": 2,
+        "O": 8,
+        "N": 4,
+        "C": 10
+      },
+      "cache": {
+        "Cr": 2,
+        "O": 8,
+        "N": 4,
+        "C": 10
+      }
+    },
+    "cod-2011346": {
+      "previous": {
+        "Cu": 4,
+        "Cl": 16,
+        "N": 8,
+        "C": 4
+      },
+      "control": {
+        "Cu": 4,
+        "Cl": 16,
+        "N": 8,
+        "C": 4
+      },
+      "late": {
+        "Cu": 4,
+        "Cl": 16,
+        "N": 8,
+        "C": 4
+      },
+      "consensus": {
+        "Cu": 4,
+        "Cl": 16,
+        "N": 8,
+        "C": 4
+      },
+      "cache": {
+        "Cu": 4,
+        "Cl": 16,
+        "N": 8,
+        "C": 4
+      }
+    },
+    "cod-2011393": {
+      "previous": {
+        "S": 2,
+        "O": 8,
+        "N": 8,
+        "C": 20
+      },
+      "control": {
+        "S": 2,
+        "O": 8,
+        "N": 8,
+        "C": 20
+      },
+      "late": {
+        "S": 2,
+        "O": 8,
+        "N": 8,
+        "C": 20
+      },
+      "consensus": {
+        "S": 2,
+        "O": 8,
+        "N": 8,
+        "C": 20
+      },
+      "cache": {
+        "S": 2,
+        "O": 8,
+        "N": 8,
+        "C": 20
+      }
+    },
+    "cod-2011426": {
+      "previous": {
+        "Br": 16,
+        "Ti": 4,
+        "N": 12,
+        "C": 16
+      },
+      "control": {
+        "Br": 16,
+        "Ti": 4,
+        "N": 12,
+        "C": 16
+      },
+      "late": {
+        "Br": 16,
+        "Ti": 4,
+        "N": 12,
+        "C": 16
+      },
+      "consensus": {
+        "Br": 16,
+        "Ti": 4,
+        "N": 12,
+        "C": 16
+      },
+      "cache": {
+        "Br": 16,
+        "Ti": 4,
+        "N": 12,
+        "C": 16
+      }
+    },
+    "cod-2011451": {
+      "previous": {
+        "Ni": 2,
+        "Cl": 4,
+        "N": 8,
+        "C": 24
+      },
+      "control": {
+        "Ni": 2,
+        "Cl": 4,
+        "N": 8,
+        "C": 24
+      },
+      "late": {
+        "Ni": 2,
+        "Cl": 4,
+        "N": 8,
+        "C": 24
+      },
+      "consensus": {
+        "Ni": 2,
+        "Cl": 4,
+        "N": 8,
+        "C": 24
+      },
+      "cache": {
+        "Ni": 2,
+        "Cl": 4,
+        "N": 8,
+        "C": 24
+      }
+    },
+    "cod-2011590": {
+      "previous": {
+        "O": 4,
+        "N": 4,
+        "C": 5,
+        "Li": 1
+      },
+      "control": {
+        "O": 4,
+        "N": 4,
+        "C": 5,
+        "Li": 1
+      },
+      "late": {
+        "O": 4,
+        "N": 4,
+        "C": 5,
+        "Li": 1
+      },
+      "consensus": {
+        "O": 4,
+        "N": 4,
+        "C": 5,
+        "Li": 1
+      },
+      "cache": {
+        "O": 4,
+        "N": 4,
+        "C": 5,
+        "Li": 1
+      }
+    },
+    "cod-2020988": {
+      "previous": {
+        "S": 4,
+        "O": 10,
+        "N": 10,
+        "C": 16
+      },
+      "control": {
+        "S": 4,
+        "O": 10,
+        "N": 10,
+        "C": 16
+      },
+      "late": {
+        "S": 4,
+        "O": 10,
+        "N": 10,
+        "C": 16
+      },
+      "consensus": {
+        "S": 4,
+        "O": 10,
+        "N": 10,
+        "C": 16
+      },
+      "cache": {
+        "S": 4,
+        "O": 10,
+        "N": 10,
+        "C": 16
+      }
+    },
+    "cod-2021199": {
+      "previous": {
+        "Cl": 6,
+        "O": 4,
+        "C": 26,
+        "N": 6
+      },
+      "control": {
+        "Cl": 6,
+        "O": 4,
+        "C": 26,
+        "N": 6
+      },
+      "late": {
+        "Cl": 6,
+        "O": 4,
+        "C": 26,
+        "N": 6
+      },
+      "consensus": {
+        "Cl": 6,
+        "O": 4,
+        "C": 26,
+        "N": 6
+      },
+      "cache": {
+        "Cl": 6,
+        "O": 4,
+        "C": 26,
+        "N": 6
+      }
+    },
+    "cod-2021292": {
+      "previous": {
+        "Cl": 4,
+        "O": 10,
+        "N": 14,
+        "C": 10
+      },
+      "control": {
+        "Cl": 4,
+        "O": 10,
+        "N": 14,
+        "C": 10
+      },
+      "late": {
+        "Cl": 4,
+        "O": 10,
+        "N": 14,
+        "C": 10
+      },
+      "consensus": {
+        "Cl": 4,
+        "O": 10,
+        "N": 14,
+        "C": 10
+      },
+      "cache": {
+        "Cl": 4,
+        "O": 10,
+        "N": 14,
+        "C": 10
+      }
+    },
+    "cod-2021310": {
+      "previous": {
+        "Br": 3,
+        "O": 6,
+        "N": 6,
+        "C": 30
+      },
+      "control": {
+        "Br": 3,
+        "O": 6,
+        "N": 6,
+        "C": 30
+      },
+      "late": {
+        "Br": 3,
+        "O": 6,
+        "N": 6,
+        "C": 30
+      },
+      "consensus": {
+        "Br": 3,
+        "O": 6,
+        "N": 6,
+        "C": 30
+      },
+      "cache": {
+        "Br": 3,
+        "O": 6,
+        "N": 6,
+        "C": 30
+      }
+    },
+    "cod-2021316": {
+      "previous": {
+        "Br": 4,
+        "O": 10,
+        "N": 8,
+        "C": 22
+      },
+      "control": {
+        "Br": 4,
+        "O": 10,
+        "N": 8,
+        "C": 22
+      },
+      "late": {
+        "Br": 4,
+        "O": 10,
+        "N": 8,
+        "C": 22
+      },
+      "consensus": {
+        "Br": 4,
+        "O": 10,
+        "N": 8,
+        "C": 22
+      },
+      "cache": {
+        "Br": 4,
+        "O": 10,
+        "N": 8,
+        "C": 22
+      }
+    },
+    "cod-2102156": {
+      "previous": {},
+      "control": {},
+      "late": {},
+      "consensus": {},
+      "cache": {}
+    },
+    "cod-2107296": {
+      "previous": {
+        "Y": 24,
+        "K": 8,
+        "F": 80
+      },
+      "control": {
+        "Y": 24,
+        "K": 8,
+        "F": 80
+      },
+      "late": {
+        "Y": 24,
+        "K": 8,
+        "F": 80
+      },
+      "consensus": {
+        "Y": 24,
+        "K": 8,
+        "F": 80
+      },
+      "cache": {
+        "Y": 24,
+        "K": 8,
+        "F": 80
+      }
+    },
+    "cod-2108342": {
+      "previous": {
+        "Pb": 4,
+        "Se": 8,
+        "Br": 8,
+        "Cu": 8,
+        "O": 24
+      },
+      "control": {
+        "Pb": 4,
+        "Se": 8,
+        "Br": 8,
+        "Cu": 8,
+        "O": 24
+      },
+      "late": {
+        "Pb": 4,
+        "Se": 8,
+        "Br": 8,
+        "Cu": 8,
+        "O": 24
+      },
+      "consensus": {
+        "Pb": 4,
+        "Se": 8,
+        "Br": 8,
+        "Cu": 8,
+        "O": 24
+      },
+      "cache": {
+        "Pb": 4,
+        "Se": 8,
+        "Br": 8,
+        "Cu": 8,
+        "O": 24
+      }
+    },
+    "cod-2201295": {
+      "previous": {},
+      "control": {},
+      "late": {},
+      "consensus": {},
+      "cache": {}
+    },
+    "cod-2203173": {
+      "previous": {
+        "Sc": 6,
+        "O": 36,
+        "C": 18
+      },
+      "control": {
+        "Sc": 6,
+        "O": 36,
+        "C": 18
+      },
+      "late": {
+        "Sc": 6,
+        "O": 36,
+        "C": 18
+      },
+      "consensus": {
+        "Sc": 6,
+        "O": 36,
+        "C": 18
+      },
+      "cache": {
+        "Sc": 6,
+        "O": 36,
+        "C": 18
+      }
+    },
+    "cod-2232654": {
+      "previous": {
+        "Pr": 2,
+        "Br": 2,
+        "O": 2
+      },
+      "control": {
+        "Pr": 2,
+        "Br": 2,
+        "O": 2
+      },
+      "late": {
+        "Pr": 2,
+        "Br": 2,
+        "O": 2
+      },
+      "consensus": {
+        "Pr": 2,
+        "Br": 2,
+        "O": 2
+      },
+      "cache": {
+        "Pr": 2,
+        "Br": 2,
+        "O": 2
+      }
+    },
+    "cod-2241159": {
+      "previous": {
+        "Sr": 4,
+        "Ni": 8,
+        "Fe": 4,
+        "P": 12,
+        "O": 16
+      },
+      "control": {
+        "Sr": 4,
+        "Ni": 8,
+        "Fe": 4,
+        "P": 12,
+        "O": 16
+      },
+      "late": {
+        "Sr": 4,
+        "Ni": 8,
+        "Fe": 4,
+        "P": 12,
+        "O": 16
+      },
+      "consensus": {
+        "Sr": 4,
+        "Ni": 8,
+        "Fe": 4,
+        "P": 12,
+        "O": 16
+      },
+      "cache": {
+        "Sr": 4,
+        "Ni": 8,
+        "Fe": 4,
+        "P": 12,
+        "O": 16
+      }
+    },
+    "cod-2241796": {
+      "previous": {
+        "Nb": 2,
+        "F": 8
+      },
+      "control": {
+        "Nb": 2,
+        "F": 8
+      },
+      "late": {
+        "Nb": 2,
+        "F": 8
+      },
+      "consensus": {
+        "Nb": 2,
+        "F": 8
+      },
+      "cache": {
+        "Nb": 2,
+        "F": 8
+      }
+    },
+    "cod-2242589": {
+      "previous": {
+        "S": 2,
+        "O": 4,
+        "N": 10,
+        "C": 17
+      },
+      "control": {
+        "S": 2,
+        "O": 4,
+        "N": 10,
+        "C": 17
+      },
+      "late": {
+        "S": 2,
+        "O": 4,
+        "N": 10,
+        "C": 17
+      },
+      "consensus": {
+        "S": 2,
+        "O": 4,
+        "N": 10,
+        "C": 17
+      },
+      "cache": {
+        "S": 2,
+        "O": 4,
+        "N": 10,
+        "C": 17
+      }
+    },
+    "cod-2242657": {
+      "previous": {
+        "Te": 2,
+        "O": 14,
+        "C": 12,
+        "N": 4
+      },
+      "control": {
+        "Te": 2,
+        "O": 14,
+        "C": 12,
+        "N": 4
+      },
+      "late": {
+        "Te": 2,
+        "O": 14,
+        "C": 12,
+        "N": 4
+      },
+      "consensus": {
+        "Te": 2,
+        "O": 14,
+        "C": 12,
+        "N": 4
+      },
+      "cache": {
+        "Te": 2,
+        "O": 14,
+        "C": 12,
+        "N": 4
+      }
+    },
+    "cod-2243197": {
+      "previous": {
+        "P": 2,
+        "O": 12,
+        "N": 8,
+        "C": 24
+      },
+      "control": {
+        "P": 2,
+        "O": 12,
+        "N": 8,
+        "C": 24
+      },
+      "late": {
+        "P": 2,
+        "O": 12,
+        "N": 8,
+        "C": 24
+      },
+      "consensus": {
+        "P": 2,
+        "O": 12,
+        "N": 8,
+        "C": 24
+      },
+      "cache": {
+        "P": 2,
+        "O": 12,
+        "N": 8,
+        "C": 24
+      }
+    },
+    "cod-2243618": {
+      "previous": {
+        "Tl": 6,
+        "Cl": 18,
+        "Mg": 6
+      },
+      "control": {
+        "Tl": 6,
+        "Cl": 18,
+        "Mg": 6
+      },
+      "late": {
+        "Tl": 6,
+        "Cl": 18,
+        "Mg": 6
+      },
+      "consensus": {
+        "Tl": 6,
+        "Cl": 18,
+        "Mg": 6
+      },
+      "cache": {
+        "Tl": 6,
+        "Cl": 18,
+        "Mg": 6
+      }
+    },
+    "cod-4326074": {
+      "previous": {
+        "Rb": 1,
+        "As": 3,
+        "Zn": 4
+      },
+      "control": {
+        "Rb": 1,
+        "As": 3,
+        "Zn": 4
+      },
+      "late": {
+        "Rb": 1,
+        "As": 3,
+        "Zn": 4
+      },
+      "consensus": {
+        "Rb": 1,
+        "As": 3,
+        "Zn": 4
+      },
+      "cache": {
+        "Rb": 1,
+        "As": 3,
+        "Zn": 4
+      }
+    }
+  }
+}

@@ -74,6 +74,8 @@ pub struct DualSpaceCheckpoint {
 pub struct DualSpaceResult {
     /// Early high-quality plateau handoff; later full-length starts remain available.
     pub plateau_stopped: bool,
+    /// An intermediate later start handed off a stable best map.
+    pub late_plateau_stopped: bool,
     /// Atomic map, score history and stop flags.
     pub trial: FlipResult,
     /// `patterson`, `random`, or `random_no_patterson_vector`.
@@ -594,6 +596,8 @@ pub struct PhasingExecution {
     pub fused_phase_workspace: bool,
     /// Stop eligible early starts on a material phase-quality plateau.
     pub phase_plateau_stopping: bool,
+    /// Use a longer plateau window on an eligible intermediate start.
+    pub late_phase_plateau_stopping: bool,
 }
 
 /// Diagnostic/benchmark entry point with explicit arithmetic-preserving execution.
@@ -823,6 +827,7 @@ pub(crate) fn dual_space_guided_prediction(
     let mut best_rank = f64::INFINITY;
     let mut best_cycle = 0;
     let mut plateau_stopped = false;
+    let mut late_plateau_stopped = false;
     let target_norm: f64 = target.iter().map(|a| a * a).sum();
     let mut workspace = if reusable_fourier_workspaces {
         Some(AtomicWorkspace::new(
@@ -1007,6 +1012,16 @@ pub(crate) fn dual_space_guided_prediction(
             plateau_stopped = true;
             break;
         }
+        if execution.late_phase_plateau_stopping
+            && checkpoint.is_none()
+            && !adaptive_checkpoints
+            && quality_trace.as_ref().is_some_and(|q| {
+                crate::late_phase_plateau_ready(&q.cfom, options.omit_fraction > 0.)
+            })
+        {
+            late_plateau_stopped = true;
+            break;
+        }
         if let Some(accept) = &mut checkpoint {
             if (cycle + 1 == next_checkpoint || cycle + 1 == options.cycles)
                 && window_score.is_finite()
@@ -1146,6 +1161,7 @@ pub(crate) fn dual_space_guided_prediction(
     }
     Ok(DualSpaceResult {
         plateau_stopped,
+        late_plateau_stopped,
         trial: FlipResult {
             density: best,
             history,
@@ -1273,6 +1289,7 @@ mod tests {
                         real_fft: false,
                         fused_phase_workspace: false,
                         phase_plateau_stopping: false,
+                        late_phase_plateau_stopping: false,
                     },
                     PhasingExecution {
                         score_only_evaluation: false,
@@ -1283,6 +1300,7 @@ mod tests {
                         real_fft: false,
                         fused_phase_workspace: false,
                         phase_plateau_stopping: false,
+                        late_phase_plateau_stopping: false,
                     },
                     PhasingExecution {
                         score_only_evaluation: true,
@@ -1293,6 +1311,7 @@ mod tests {
                         real_fft: false,
                         fused_phase_workspace: false,
                         phase_plateau_stopping: false,
+                        late_phase_plateau_stopping: false,
                     },
                     PhasingExecution {
                         score_only_evaluation: true,
@@ -1303,6 +1322,7 @@ mod tests {
                         real_fft: false,
                         fused_phase_workspace: false,
                         phase_plateau_stopping: false,
+                        late_phase_plateau_stopping: false,
                     },
                     PhasingExecution {
                         score_only_evaluation: true,
@@ -1313,6 +1333,7 @@ mod tests {
                         real_fft: false,
                         fused_phase_workspace: false,
                         phase_plateau_stopping: false,
+                        late_phase_plateau_stopping: false,
                     },
                 ] {
                     let new = dual_space_with_execution(
