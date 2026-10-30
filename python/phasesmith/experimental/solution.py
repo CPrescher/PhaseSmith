@@ -441,8 +441,16 @@ class PhaseOriginAudit:
     diagnostic: str | None
     origin_sampling_shape: tuple[int, int, int] = (0, 0, 0)
     origin_harmonic_extent: tuple[int, int, int] = (0, 0, 0)
+    assignment_parent_fits: int = 0
+    assignment_neighbor_scores: int = 0
+    assignment_neighbor_fits: int = 0
+    assignment_retained: int = 0
+    assignment_deferred_promotions: int = 0
+    assignment_families: int = 0
+    assignment_scores: tuple[float, ...] = ()
 
     def __post_init__(self):
+        object.__setattr__(self, "assignment_scores", tuple(self.assignment_scores))
         object.__setattr__(self, "origin_sampling_shape", tuple(self.origin_sampling_shape))
         object.__setattr__(self, "origin_harmonic_extent", tuple(self.origin_harmonic_extent))
         object.__setattr__(
@@ -525,6 +533,7 @@ class SharedSearchAudit:
     score_only_evaluation: bool = False
     reusable_fourier_workspaces: bool = False
     work_sliced_phasing: bool = False
+    isotropic_assignment_refinement: bool = False
     phase_slices: tuple[PhaseSliceAudit, ...] = ()
     score_only_evaluations: int = 0
     fourier_workspace_cycles: int = 0
@@ -777,6 +786,7 @@ def solve_structure_elements(
     score_only_evaluation: bool = False,
     reusable_fourier_workspaces: bool = False,
     work_sliced_phasing: bool = False,
+    isotropic_assignment_refinement: bool = False,
     adaptive_checkpoints: bool = False,
     independent_origin_sampling: bool = False,
     cancellation: SolutionCancellation | None = None,
@@ -795,6 +805,9 @@ def solve_structure_elements(
     ``phase_first_selection=False`` tests a checkpoint portfolio instead; this
     control is ignored when quality selection is off.
     ``calculated_shell_normalization=False`` retains the earlier statistic.
+    ``isotropic_assignment_refinement=True`` relaxes competing complete labelings
+    on common independent-family observations before selective final-mode promotion.
+    It requires phase-origin selection and chemical assignment.
     ``work_sliced_phasing=True`` uses half-cycle quotas for the first half of
     independent starts, retaining full-cycle fallback starts and existing wall limits.
     Existing model validation still decides acceptance; no input atom counts are used.
@@ -863,6 +876,7 @@ def solve_structure_elements(
         ("score_only_evaluation", score_only_evaluation),
         ("reusable_fourier_workspaces", reusable_fourier_workspaces),
         ("work_sliced_phasing", work_sliced_phasing),
+        ("isotropic_assignment_refinement", isotropic_assignment_refinement),
         ("independent_origin_sampling", independent_origin_sampling),
     ):
         if not isinstance(value, bool):
@@ -877,6 +891,11 @@ def solve_structure_elements(
         phase_origin_selection and wilson_normalization
     ):
         raise ValueError("prediction requires phase_origin_selection and wilson_normalization")
+    if isotropic_assignment_refinement and not (phase_origin_selection and chemical_assignment):
+        raise ValueError(
+            "isotropic_assignment_refinement requires phase_origin_selection "
+            "and chemical_assignment"
+        )
     if work_sliced_phasing and not (
         phase_origin_selection
         and phase_quality_selection
@@ -1006,6 +1025,7 @@ def solve_structure_elements(
                 score_only_evaluation,
                 reusable_fourier_workspaces,
                 work_sliced_phasing,
+                isotropic_assignment_refinement,
             ),
         ),
     )

@@ -54,6 +54,10 @@ pub(super) fn summary<'py>(
     d.set_item("score_only_evaluation", s.score_only_evaluation)?;
     d.set_item("reusable_fourier_workspaces", s.reusable_fourier_workspaces)?;
     d.set_item("work_sliced_phasing", s.work_sliced_phasing)?;
+    d.set_item(
+        "isotropic_assignment_refinement",
+        s.isotropic_assignment_refinement,
+    )?;
     let slices = PyList::empty(py);
     for a in &s.phase_slices {
         let row = PyDict::new(py);

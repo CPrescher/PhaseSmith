@@ -7,6 +7,9 @@ use super::{
 };
 use crate::{PreparedPeakCompletion, PreparedPhaseOrigin};
 
+#[path = "isotropic_assignment.rs"]
+mod assignment;
+
 /// One tested phase-origin setting and its actual completion effort.
 #[derive(Clone, Debug)]
 pub struct PhaseSettingAudit {
@@ -72,6 +75,20 @@ pub struct PhaseOriginAudit {
     pub refinement_seconds: f64,
     /// Map-level rejection diagnostic.
     pub diagnostic: Option<String>,
+    /// Longer isotropic parent fits attempted.
+    pub assignment_parent_fits: usize,
+    /// Fixed-geometry alternative-label scores.
+    pub assignment_neighbor_scores: usize,
+    /// Longer isotropic alternative fits attempted.
+    pub assignment_neighbor_fits: usize,
+    /// Comparable isotropic candidates retained for promotion.
+    pub assignment_retained: usize,
+    /// Original two-slot promotions avoided by selective promotion.
+    pub assignment_deferred_promotions: usize,
+    /// Independent observed families used for assignment relaxation.
+    pub assignment_families: usize,
+    /// Comparable independent-family isotropic ranks, ordered best first.
+    pub assignment_scores: Vec<f64>,
 }
 pub(super) struct PhaseSearchContext {
     plan: PreparedPhaseOrigin,
@@ -549,12 +566,41 @@ pub(super) fn search(
         trace.screening_seconds += start.elapsed().as_secs_f64();
         screened.sort_by(|a, b| a.0.score.total_cmp(&b.0.score));
     }
+    if search.isotropic_assignment_refinement {
+        let start = Instant::now();
+        screened = assignment::relax(
+            context,
+            cell,
+            group,
+            options,
+            search,
+            elements,
+            &context.data,
+            deadline,
+            screened,
+            &mut trace,
+            audit,
+        )?;
+        trace.screening_seconds += start.elapsed().as_secs_f64();
+    }
     let start = Instant::now();
-    for (state, setting) in screened
+    let best_isotropic = screened.first().map_or(f64::INFINITY, |s| s.0.score);
+    let mut primary_fit = false;
+    let mut primary_target = false;
+    for (index, (state, setting)) in screened
         .into_iter()
         .filter(|(s, _)| s.candidate.r1 <= 0.3)
         .take(2)
+        .enumerate()
     {
+        if search.isotropic_assignment_refinement
+            && trace.assignment_families > 0
+            && index > 0
+            && (primary_target || (primary_fit && state.score > best_isotropic + 6.))
+        {
+            trace.assignment_deferred_promotions += 1;
+            continue;
+        }
         if crate::stopped(Some(deadline), options.cancellation.as_ref()) {
             break;
         }
@@ -574,6 +620,8 @@ pub(super) fn search(
             audit,
             FitPass::Promote(&seed.site_u),
         ) {
+            primary_fit = true;
+            primary_target = complete(&full, elements) && full.candidate.r1 <= options.r1_target;
             record(
                 winners,
                 &[full],

@@ -44,6 +44,7 @@ def test_pair_labels_are_distinct_from_prediction_case_pairs():
         "score_only_flag",
         "workspace_flag",
         "work_slice_flag",
+        "assignment_flag",
     ],
 )
 def test_comparison_rejects_incomplete_opened_or_changed_panels(tmp_path, corruption):
@@ -62,6 +63,7 @@ def test_comparison_rejects_incomplete_opened_or_changed_panels(tmp_path, corrup
             "score_only_flag": "score_only_evaluation",
             "workspace_flag": "reusable_fourier_workspaces",
             "work_slice_flag": "work_sliced_phasing",
+            "assignment_flag": "isotropic_assignment_refinement",
         }[corruption]
         report[key] = 1.2 if corruption == "extension_flag" else True
     else:

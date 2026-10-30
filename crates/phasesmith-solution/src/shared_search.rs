@@ -71,6 +71,8 @@ pub struct SharedSearchOptions {
     pub reusable_fourier_workspaces: bool,
     /// Hand early phase starts to model validation at a deterministic half-work quota.
     pub work_sliced_phasing: bool,
+    /// Relax competing labels isotropically before selective requested-mode promotion.
+    pub isotropic_assignment_refinement: bool,
     /// Select origin FFT sampling from phase-equivalence frequencies.
     pub independent_origin_sampling: bool,
     /// Add motif density scales and post-screen coupled element assignments.
@@ -111,6 +113,7 @@ impl Default for SharedSearchOptions {
             score_only_evaluation: false,
             reusable_fourier_workspaces: false,
             work_sliced_phasing: false,
+            isotropic_assignment_refinement: false,
             independent_origin_sampling: false,
             chemical_assignment: false,
             iterative_refinement: false,
@@ -239,6 +242,8 @@ pub struct SharedSearchSummary {
     pub reusable_fourier_workspaces: bool,
     /// Hand early phase starts to model validation at a deterministic half-work quota.
     pub work_sliced_phasing: bool,
+    /// Relax competing labels isotropically before selective requested-mode promotion.
+    pub isotropic_assignment_refinement: bool,
     /// Select origin FFT sampling from phase-equivalence frequencies.
     pub independent_origin_sampling: bool,
     /// Add motif density scales and post-screen coupled element assignments.
@@ -1747,6 +1752,8 @@ pub fn solve_elements(
         || (search.independent_origin_sampling && !search.phase_origin_selection)
         || (search.score_only_evaluation && !search.phase_quality_selection)
         || (search.reusable_fourier_workspaces && options.phasing != PhasingMethod::DualSpace)
+        || (search.isotropic_assignment_refinement
+            && (!search.phase_origin_selection || !search.chemical_assignment))
         || (search.work_sliced_phasing
             && (!search.phase_origin_selection
                 || !search.phase_quality_selection
@@ -1984,6 +1991,7 @@ pub fn solve_elements(
         score_only_evaluation: search.score_only_evaluation,
         reusable_fourier_workspaces: search.reusable_fourier_workspaces,
         work_sliced_phasing: search.work_sliced_phasing,
+        isotropic_assignment_refinement: search.isotropic_assignment_refinement,
         independent_origin_sampling: search.independent_origin_sampling,
         chemical_assignment: search.chemical_assignment,
         iterative_refinement: search.iterative_refinement,

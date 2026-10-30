@@ -176,6 +176,88 @@ impl PreparedPeakCompletion {
             .sum::<f64>()
             / self.observed.iter().map(|v| v * v).sum::<f64>()
     }
+    /// Retain nearby complete single relabels and paired swaps for subsequent relaxation.
+    /// Unlike `reassign`, alternatives need not improve at fixed geometry/displacement.
+    /// The explicit proposal band is `J <= 1.25*J_parent + 1e-4`; it is not an error bar.
+    /// # Errors
+    /// Rejects incomplete labels or a maximum outside [1,8].
+    #[allow(clippy::too_many_lines)]
+    pub fn assignment_neighbors(
+        &self,
+        labels: &[Option<usize>],
+        maximum: usize,
+        deadline: Option<Instant>,
+        cancellation: Option<&Cancellation>,
+    ) -> Result<PeakCompletionResult, SolutionError> {
+        self.evaluate(labels, 0)?;
+        if labels.iter().any(Option::is_none)
+            || !self.covered(labels)
+            || !(1..=8).contains(&maximum)
+        {
+            return Err(error(
+                "assignment neighbors require complete labels and maximum in [1,8]",
+            ));
+        }
+        let total = self.sum(labels);
+        let ceiling = 1.25 * self.fixed_objective(&total) + 1e-4;
+        let mut out = PeakCompletionResult::default();
+        let mut priorities = Vec::new();
+        let mut retain = |next: Vec<Option<usize>>, value: f64| {
+            out.evaluations += 1;
+            if value.is_finite() && value <= ceiling && self.covered(&next) {
+                out.candidates.push(PeakCompletionCandidate {
+                    atoms: self.atoms(&next),
+                    score: self.rank(value, &next),
+                    labels: next,
+                    u_iso: 0.,
+                    objective: value,
+                });
+            }
+        };
+        for i in 0..labels.len() {
+            if crate::stopped(deadline, cancellation) {
+                break;
+            }
+            let mut priority = f64::INFINITY;
+            for e in 0..self.elements.len() {
+                if labels[i] == Some(e) {
+                    continue;
+                }
+                let value = self.fixed_objective(&self.updated(&total, i, labels[i], Some(e)));
+                priority = priority.min(value);
+                let mut next = labels.to_vec();
+                next[i] = Some(e);
+                retain(next, value);
+            }
+            priorities.push((priority, i));
+        }
+        priorities.sort_by(|a, b| a.0.total_cmp(&b.0).then(a.1.cmp(&b.1)));
+        priorities.truncate(24);
+        for (slot, &(_, i)) in priorities.iter().enumerate() {
+            if crate::stopped(deadline, cancellation) {
+                break;
+            }
+            for &(_, j) in &priorities[..slot] {
+                if labels[i] == labels[j] {
+                    continue;
+                }
+                let proposal = self.updated(
+                    &self.updated(&total, i, labels[i], labels[j]),
+                    j,
+                    labels[j],
+                    labels[i],
+                );
+                let mut next = labels.to_vec();
+                next.swap(i, j);
+                retain(next, self.fixed_objective(&proposal));
+            }
+        }
+        out.candidates
+            .sort_by(|a, b| a.score.total_cmp(&b.score).then(a.labels.cmp(&b.labels)));
+        out.candidates.dedup_by(|a, b| a.labels == b.labels);
+        out.candidates.truncate(maximum);
+        Ok(out)
+    }
     /// Improve full supplied labels using single changes and paired swaps at fixed geometry/U.
     /// Returns only improving alternatives; counts/topology and required types are preserved.
     /// # Errors

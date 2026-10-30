@@ -1,0 +1,739 @@
+{
+  "schema": "phasesmith.balanced-serial-isotropic-schedule.v1",
+  "development_cases": 35,
+  "modes": [
+    "control",
+    "assignment"
+  ],
+  "holdout_outcomes_opened": false,
+  "schedule_sha256": "4e964acda579baac15f37f6ecf70b621320fb73c5538fc42d42068bd71128a36",
+  "leading_cases": {
+    "control": 18,
+    "assignment": 17
+  },
+  "verified_reports": {
+    "control": {
+      "report_sha256": "02bea8531ed5ec2c9d5a594f83492092e70077dec70c18c23607012a875dcfc4",
+      "before_reference_audit_sha256": "e59ed5fde3074207ce585919c6534f1960c72367223c93dc67455c20fbda5eac",
+      "source_files_verified": 37,
+      "native_sha256": "f5c18e90dce66e3e7a1000de0676fa0262cf351707010255230a5afcafc30212"
+    },
+    "assignment": {
+      "report_sha256": "b492df5cdf85befc7e3841c3b81b09bfb7d6910809fd26e6b1a1a155c4d81b79",
+      "before_reference_audit_sha256": "575f07a34ee92820563a51211d88203d7f8848acb455cfc3d2dec012fe934e24",
+      "source_files_verified": 37,
+      "native_sha256": "f5c18e90dce66e3e7a1000de0676fa0262cf351707010255230a5afcafc30212"
+    }
+  },
+  "current_sources_verified": false,
+  "events": [
+    {
+      "mode": "control",
+      "id": "cod-2010901",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-2010901",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2010901",
+      "method": "shelxt"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-2010901",
+      "method": "shelxt"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-2021292",
+      "method": "shelxt"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2021292",
+      "method": "shelxt"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-2021292",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2021292",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2011426",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-2011426",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2011426",
+      "method": "shelxt"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-2011426",
+      "method": "shelxt"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-2102156",
+      "method": "shelxt"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2102156",
+      "method": "shelxt"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-2102156",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2102156",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2243197",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-2243197",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2243197",
+      "method": "shelxt"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-2243197",
+      "method": "shelxt"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-2108342",
+      "method": "shelxt"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2108342",
+      "method": "shelxt"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-2108342",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2108342",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2241159",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-2241159",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2241159",
+      "method": "shelxt"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-2241159",
+      "method": "shelxt"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-4326074",
+      "method": "shelxt"
+    },
+    {
+      "mode": "control",
+      "id": "cod-4326074",
+      "method": "shelxt"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-4326074",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-4326074",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2021310",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-2021310",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2021310",
+      "method": "shelxt"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-2021310",
+      "method": "shelxt"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-2010825",
+      "method": "shelxt"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2010825",
+      "method": "shelxt"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-2010825",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2010825",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2021316",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-2021316",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2021316",
+      "method": "shelxt"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-2021316",
+      "method": "shelxt"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-2011038",
+      "method": "shelxt"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2011038",
+      "method": "shelxt"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-2011038",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2011038",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2010543",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-2010543",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2010543",
+      "method": "shelxt"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-2010543",
+      "method": "shelxt"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-2010647",
+      "method": "shelxt"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2010647",
+      "method": "shelxt"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-2010647",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2010647",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2241796",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-2241796",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2241796",
+      "method": "shelxt"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-2241796",
+      "method": "shelxt"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-2011590",
+      "method": "shelxt"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2011590",
+      "method": "shelxt"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-2011590",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2011590",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2021199",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-2021199",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2021199",
+      "method": "shelxt"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-2021199",
+      "method": "shelxt"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-2011236",
+      "method": "shelxt"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2011236",
+      "method": "shelxt"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-2011236",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2011236",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2011346",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-2011346",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2011346",
+      "method": "shelxt"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-2011346",
+      "method": "shelxt"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-2242589",
+      "method": "shelxt"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2242589",
+      "method": "shelxt"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-2242589",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2242589",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2242657",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-2242657",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2242657",
+      "method": "shelxt"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-2242657",
+      "method": "shelxt"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-2232654",
+      "method": "shelxt"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2232654",
+      "method": "shelxt"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-2232654",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2232654",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2011241",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-2011241",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2011241",
+      "method": "shelxt"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-2011241",
+      "method": "shelxt"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-2010705",
+      "method": "shelxt"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2010705",
+      "method": "shelxt"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-2010705",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2010705",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2201295",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-2201295",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2201295",
+      "method": "shelxt"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-2201295",
+      "method": "shelxt"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-2010746",
+      "method": "shelxt"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2010746",
+      "method": "shelxt"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-2010746",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2010746",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2011393",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-2011393",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2011393",
+      "method": "shelxt"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-2011393",
+      "method": "shelxt"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-2011181",
+      "method": "shelxt"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2011181",
+      "method": "shelxt"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-2011181",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2011181",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2107296",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-2107296",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2107296",
+      "method": "shelxt"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-2107296",
+      "method": "shelxt"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-2203173",
+      "method": "shelxt"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2203173",
+      "method": "shelxt"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-2203173",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2203173",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2020988",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-2020988",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2020988",
+      "method": "shelxt"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-2020988",
+      "method": "shelxt"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-1550276",
+      "method": "shelxt"
+    },
+    {
+      "mode": "control",
+      "id": "cod-1550276",
+      "method": "shelxt"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-1550276",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-1550276",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2243618",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-2243618",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2243618",
+      "method": "shelxt"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-2243618",
+      "method": "shelxt"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-2011451",
+      "method": "shelxt"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2011451",
+      "method": "shelxt"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-2011451",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2011451",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-1549173",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-1549173",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-1549173",
+      "method": "shelxt"
+    },
+    {
+      "mode": "assignment",
+      "id": "cod-1549173",
+      "method": "shelxt"
+    },
+    {
+      "mode": "assignment",
+      "reference_audit_barrier": true
+    },
+    {
+      "mode": "control",
+      "reference_audit_barrier": true
+    }
+  ]
+}
