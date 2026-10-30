@@ -94,6 +94,8 @@ def main():
             blocked_normal_matrices=False,
             phase_plateau_stopping=False,
             assignment_convergence_stopping=False,
+            late_phase_plateau_stopping=False,
+            model_consensus_stopping=False,
             work_sliced_phasing=False,
             independent_origin_sampling=False,
             phase_first_selection=True,

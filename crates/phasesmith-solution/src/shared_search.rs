@@ -109,6 +109,10 @@ pub struct SharedSearchOptions {
     pub phase_plateau_stopping: bool,
     /// Stop short assignment fits after repeated negligible accepted improvements.
     pub assignment_convergence_stopping: bool,
+    /// Stop plateaued intermediate starts while retaining the last full start.
+    pub late_phase_plateau_stopping: bool,
+    /// Stop on complete agreeing models from independent phase starts.
+    pub model_consensus_stopping: bool,
     /// Regularize allowed unmeasured coefficients using the observed Wilson envelope.
     pub missing_reflections: bool,
     /// Reciprocal-radius extension multiplier, in [1,1.5].
@@ -162,6 +166,8 @@ impl Default for SharedSearchOptions {
             blocked_normal_matrices: false,
             phase_plateau_stopping: false,
             assignment_convergence_stopping: false,
+            late_phase_plateau_stopping: false,
+            model_consensus_stopping: false,
             missing_reflections: false,
             resolution_extension: 1.,
         }
@@ -325,6 +331,10 @@ pub struct SharedSearchSummary {
     pub phase_plateau_stopping: bool,
     /// Stop short assignment fits after repeated negligible accepted improvements.
     pub assignment_convergence_stopping: bool,
+    /// Stop plateaued intermediate starts while retaining the last full start.
+    pub late_phase_plateau_stopping: bool,
+    /// Stop on complete agreeing models from independent phase starts.
+    pub model_consensus_stopping: bool,
     /// Requested observed-envelope gap treatment.
     pub missing_reflections: bool,
     /// Requested reciprocal-radius extension.
@@ -423,6 +433,14 @@ pub struct SharedSearchSummary {
     pub blocked_normal_fallbacks: usize,
     /// Short assignment fits stopped by the repeated accepted-improvement gate.
     pub assignment_convergence_stops: usize,
+    /// Actual geometric comparisons after scalar/ambiguity prechecks.
+    pub model_consensus_checks: usize,
+    /// Accepted independent-model consensus stops (zero or one).
+    pub model_consensus_stops: usize,
+    /// Independent start indices on an accepted consensus stop.
+    pub model_consensus_trials: Option<[usize; 2]>,
+    /// Maximum matched distance for the accepted consensus bijection.
+    pub model_consensus_distance: Option<f64>,
     /// Screened edits sent to full refinement.
     pub promoted_candidates: usize,
     /// Valid screened edits omitted from the full-fit shortlist.
@@ -478,6 +496,7 @@ enum FitPass<'a> {
 }
 #[derive(Clone)]
 struct State {
+    phase_start: usize,
     candidate: Candidate,
     aligned: Vec<[f64; 3]>,
     score: f64,
@@ -488,6 +507,14 @@ struct State {
     recycling_validated: bool,
     assignment_reference: bool,
     assignment_disfavoured: bool,
+}
+
+impl State {
+    #[must_use]
+    fn stamp_phase_start(mut self, trial: usize) -> Self {
+        self.phase_start = trial;
+        self
+    }
 }
 
 fn orbit_mass(
@@ -756,6 +783,7 @@ fn refine(
         score,
     });
     Ok(State {
+        phase_start: lineage / audit.beam_width.max(1),
         assignment_reference: false,
         assignment_disfavoured: false,
         candidate,
@@ -969,7 +997,8 @@ fn record(
     density: &[f64],
     result: &mut Solution,
 ) {
-    winners.extend(beam.iter().cloned());
+    // A setting/lineage index is not an independent random start.
+    winners.extend(beam.iter().cloned().map(|s| s.stamp_phase_start(trial)));
     winners.sort_by(|a, b| ordering(a, b, elements));
     let mut kept = Vec::new();
     for state in winners.drain(..) {
@@ -1917,6 +1946,10 @@ pub fn solve_elements(
         || (search.phase_plateau_stopping
             && (!search.work_sliced_phasing || search.adaptive_checkpoints))
         || (search.assignment_convergence_stopping && !search.isotropic_assignment_refinement)
+        || (search.late_phase_plateau_stopping
+            && (!search.work_sliced_phasing || search.adaptive_checkpoints))
+        || (search.model_consensus_stopping
+            && (!search.phase_origin_selection || !search.ambiguous_assignments))
         || (search.blocked_normal_matrices && !search.reuse_normal_matrices)
         || (search.reuse_normal_matrices
             && (!search.iterative_refinement
@@ -2185,6 +2218,8 @@ pub fn solve_elements(
         blocked_normal_matrices: search.blocked_normal_matrices,
         phase_plateau_stopping: search.phase_plateau_stopping,
         assignment_convergence_stopping: search.assignment_convergence_stopping,
+        late_phase_plateau_stopping: search.late_phase_plateau_stopping,
+        model_consensus_stopping: search.model_consensus_stopping,
         missing_reflections: search.missing_reflections,
         resolution_extension: search.resolution_extension,
         prediction: prediction_f.as_ref().map(|p| p.audit.clone()),
@@ -2381,6 +2416,9 @@ pub fn solve_elements(
                     batched_fft: search.batched_fft,
                     real_fft: search.real_fft,
                     fused_phase_workspace: search.fused_phase_workspace,
+                    late_phase_plateau_stopping: search.late_phase_plateau_stopping
+                        && trial >= options.trials / 2
+                        && trial + 1 < options.trials,
                     phase_plateau_stopping: search.phase_plateau_stopping
                         && trial < options.trials / 2,
                 },
@@ -2394,6 +2432,8 @@ pub fn solve_elements(
                     "cancelled"
                 } else if state.trial.timed_out {
                     "phase_time_limit"
+                } else if state.late_plateau_stopped {
+                    "late_phase_plateau"
                 } else if state.plateau_stopped {
                     "phase_plateau"
                 } else if state.trial.history.len() >= cycle_quota {
@@ -2572,6 +2612,49 @@ pub fn solve_elements(
             result.termination = "r1_target";
             break;
         }
+        if search.model_consensus_stopping
+            && trial > 0
+            && !ambiguous_first
+            && audit
+                .phase_origins
+                .iter()
+                .rev()
+                .take(2)
+                .all(|a| !a.ambiguity_unresolved)
+            && winners.len() >= 2
+        {
+            let a = &winners[0];
+            let b = &winners[1];
+            if a.phase_start != b.phase_start
+                && (a.phase_start == trial || b.phase_start == trial)
+                && [a, b].iter().all(|s| {
+                    complete(s, &elements)
+                        && s.recycling_validated
+                        && !s.assignment_disfavoured
+                        && s.candidate.r1.is_finite()
+                        && s.candidate.r1 <= 0.1
+                })
+                && (a.candidate.r1 - b.candidate.r1).abs() <= 0.001
+                && (a.score - b.score).abs() <= 2.
+            {
+                audit.model_consensus_checks += 1;
+                if let Ok(Some(distance)) = crate::model_agreement_distance(
+                    cell,
+                    &a.candidate.species,
+                    &a.aligned,
+                    &b.candidate.species,
+                    &b.aligned,
+                    Some(deadline),
+                    options.cancellation.as_ref(),
+                ) {
+                    audit.model_consensus_stops = 1;
+                    audit.model_consensus_trials = Some([a.phase_start, b.phase_start]);
+                    audit.model_consensus_distance = Some(distance);
+                    result.termination = "independent_model_consensus";
+                    break;
+                }
+            }
+        }
         if crate::stopped(Some(deadline), options.cancellation.as_ref()) {
             result.termination = crate::solver::stop_reason(options);
             break;
@@ -2642,6 +2725,40 @@ mod tests {
     use super::*;
     use crate::model::evaluate_model;
 
+    #[test]
+    fn settings_from_one_phase_start_do_not_create_independent_agreement() {
+        let state = |lineage| State {
+            phase_start: 999,
+            lineage,
+            candidate: Candidate {
+                species: vec!["Si".into()],
+                fractional_xyz: vec![[0.; 3]],
+                u_iso: 0.01,
+                amplitude_scale: 1.,
+                r1: 0.08,
+                objective: 0.1,
+                trial: lineage,
+                polish_steps: 0,
+                element_swaps: 0,
+                refinement: None,
+                refinement_diagnostic: None,
+                completion: None,
+            },
+            aligned: vec![[0.; 3]],
+            score: 0.1,
+            moves: vec![],
+            initial_prefix: 1,
+            promotion: None,
+            recycling_validated: true,
+            assignment_reference: false,
+            assignment_disfavoured: false,
+        };
+        let a = state(0).stamp_phase_start(1);
+        let b = state(7).stamp_phase_start(1);
+        assert_ne!(a.candidate.trial, b.candidate.trial);
+        assert_eq!(a.phase_start, b.phase_start);
+        assert_ne!(a.phase_start, state(7).stamp_phase_start(2).phase_start);
+    }
     #[test]
     #[allow(clippy::cast_precision_loss, clippy::too_many_lines)]
     fn relabel_and_delete_recover_a_known_generated_model() {

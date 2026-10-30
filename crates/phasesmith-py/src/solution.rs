@@ -77,7 +77,7 @@ type SharedSearchRequest = (
                 bool,
                 bool,
                 bool,
-                (bool, bool, bool, bool),
+                (bool, bool, bool, bool, bool, bool),
             ),
         ),
     ),
@@ -235,6 +235,8 @@ fn solve_structure<'py>(
                                 blocked_normal_matrices,
                                 phase_plateau_stopping,
                                 assignment_convergence_stopping,
+                                late_phase_plateau_stopping,
+                                model_consensus_stopping,
                             ),
                         ),
                     ),
@@ -300,6 +302,8 @@ fn solve_structure<'py>(
                         blocked_normal_matrices,
                         phase_plateau_stopping,
                         assignment_convergence_stopping,
+                        late_phase_plateau_stopping,
+                        model_consensus_stopping,
                     },
                 )
             } else {

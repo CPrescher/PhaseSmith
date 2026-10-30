@@ -2596,6 +2596,24 @@ false by default and the holdout remains closed. The collector's final round-
 count assertion was corrected after collection with original snapshots retained;
 all 280 predictions and four audit barriers are verified.
 
+A further opt-in cycle-effort experiment separates long intermediate-start
+plateaus from agreement between independent complete models. The latter checks
+labelled full-cell geometry, fit/ambiguity gates and actual random-start identity
+instead of confusing origin lineages with independent solutions. It reports a
+separate consensus termination without changing whether the requested R1 target
+was met. The final full-length fallback remains available when acceptance fails.
+Independent geometric references, start-provenance tests and a four-mode
+35-development-case protocol are recorded in `docs/solution-cycle-effort.md`.
+All four development variants retain every prior success set and all 35 atom-
+count vectors. Combined policies reduce completed cycles from 38,120 to 23,242 (39.03%),
+summed solve time from 46.317 to 35.598 seconds (23.14%), and summed wall time by 20.36%.
+The policies fire in 14 cases; typical paired solver time improves only 1.00%.
+Nine consensus stops include three already incorrect interpretations, so the
+new termination is not a correctness certificate and does not mark an unmet R1
+target as met. All 19 structures, 26 correct total counts, 19 element counts and 15
+strict structures remain. Both controls remain false by default and the holdout
+remains closed.
+
 Public behavior is typed and documented. Invalid shapes, non-finite values,
 unsorted grids, non-positive widths, and fractions outside `[0, 1]` fail with a
 clear error. Tests are deterministic. Numerical tolerances are justified near

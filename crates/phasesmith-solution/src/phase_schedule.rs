@@ -55,8 +55,18 @@ pub struct PhaseSliceAudit {
 /// Nonfinite scores fail closed; a plateau is a handoff heuristic, not correctness.
 #[must_use]
 pub fn phase_plateau_ready(scores: &[f64], omit_every_third: bool) -> bool {
+    phase_plateau(scores, omit_every_third, 128, 32)
+}
+
+/// A material plateau on an intermediate later start, after a longer warm-up.
+#[must_use]
+pub fn late_phase_plateau_ready(scores: &[f64], omit_every_third: bool) -> bool {
+    phase_plateau(scores, omit_every_third, 256, 128)
+}
+
+fn phase_plateau(scores: &[f64], omit_every_third: bool, minimum: usize, window: usize) -> bool {
     let n = scores.len();
-    if n < 128 || n % 32 != 0 || scores.iter().any(|x| !x.is_finite()) {
+    if n < minimum || n % 32 != 0 || scores.iter().any(|x| !x.is_finite()) {
         return false;
     }
     let best = |end| {
@@ -68,13 +78,22 @@ pub fn phase_plateau_ready(scores: &[f64], omit_every_third: bool) -> bool {
             .fold(f64::NEG_INFINITY, f64::max)
     };
     let current = best(n);
-    let previous = best(n - 32);
+    let previous = best(n - window);
     current >= 0.8 && current - previous <= 0.002
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn later_plateau_requires_longer_warmup_and_recent_stability() {
+        assert!(!late_phase_plateau_ready(&[0.81; 224], true));
+        assert!(late_phase_plateau_ready(&[0.81; 256], true));
+        assert!(!late_phase_plateau_ready(&[0.79; 256], true));
+        let mut q = vec![0.81; 256];
+        q[255] = 0.83;
+        assert!(!late_phase_plateau_ready(&q, true));
+    }
     #[test]
     fn plateau_requires_quality_stability_and_warmup() {
         assert!(!phase_plateau_ready(&[0.81; 96], true));

@@ -68,6 +68,12 @@ pub(super) fn summary<'py>(
     d.set_item("short_phase_starts", s.short_phase_starts)?;
     d.set_item("blocked_normal_matrices", s.blocked_normal_matrices)?;
     d.set_item("phase_plateau_stopping", s.phase_plateau_stopping)?;
+    d.set_item("late_phase_plateau_stopping", s.late_phase_plateau_stopping)?;
+    d.set_item("model_consensus_stopping", s.model_consensus_stopping)?;
+    d.set_item("model_consensus_checks", s.model_consensus_checks)?;
+    d.set_item("model_consensus_stops", s.model_consensus_stops)?;
+    d.set_item("model_consensus_trials", s.model_consensus_trials)?;
+    d.set_item("model_consensus_distance", s.model_consensus_distance)?;
     d.set_item(
         "assignment_convergence_stopping",
         s.assignment_convergence_stopping,

@@ -1,0 +1,364 @@
+{
+  "schema": "phasesmith.cycle-effort-kernels.v1",
+  "baseline": "bfb4c0f",
+  "created_utc": "2026-10-30T21:28:59.967845+00:00",
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "command": "cargo bench -p phasesmith-solution --bench solution -- cycle_effort_search_ --sample-size 10 --warm-up-time 0.5 --measurement-time 1",
+  "benchmark_source_sha256": "87e101ac94f3e79d908d2a1ae2c9561e6755e3bc9eedf49bcc779d884c89d03a",
+  "executable_sha256": "2095e04d1703288728c1dbefde172cec775857bd9017b931f3182dbd540987a6",
+  "source_sha256": {
+    "crates/phasesmith-solution/src/adp_refinement.rs": "1449841daf36693983fcbe9d9f3f7324c9dd52bd3062a4454c8e023fee3d6b17",
+    "crates/phasesmith-solution/src/assignment_ambiguity.rs": "14d991c0fd8553f4a23818fde9ba24fb2975ea5bb520a531b9417b6049cadded",
+    "crates/phasesmith-solution/src/atomic_mask.rs": "9a376037f445c67e0de4bf855ceda2d7615b41b073a7ae4746fab5b0eeac84eb",
+    "crates/phasesmith-solution/src/chemical_labels.rs": "4a45daa0a0eb236d448578a5ba5b6d2726599e3161e8888c378e7c42e5c6c0d5",
+    "crates/phasesmith-solution/src/completion.rs": "08523bbe80b71f0f29f01345d36713ac8dd3cb6134e812414ea6be5c94dd3081",
+    "crates/phasesmith-solution/src/completion_orbit.rs": "74901c137016cfdf5b18f911282fa2b995b80fb183508856b91ca8a902b52227",
+    "crates/phasesmith-solution/src/data.rs": "3f27a939350ff94f6722c23b1d2609ff10b9ec8119794e2a7cf2076cea27468e",
+    "crates/phasesmith-solution/src/dual_space.rs": "df954b095fd6403480c57f8915a5f6d1a7b19dd49926642c0b6e56873a2ec96e",
+    "crates/phasesmith-solution/src/fft_layout.rs": "b7222a0b26104f377447e1f69fa1697aced9b5e579b75526dd268e8abd285a36",
+    "crates/phasesmith-solution/src/fourier.rs": "80b353611b38b749ee0b3a30ddf4667c898b51a8eb473af241928b2177a3a14e",
+    "crates/phasesmith-solution/src/isotropic_assignment.rs": "af377a9977f443bf4562b24ee346098a4f9bf1e0c509c494ed4cd33990ba2dc2",
+    "crates/phasesmith-solution/src/isotropic_evaluation.rs": "004d05d17fd06d307cc65bf1734971f8dea67ac6b816d0a14b5a1bd32bda5bda",
+    "crates/phasesmith-solution/src/lib.rs": "fd5b813cc7ba332de3259e0ab793e8cd9d332fb027c9a8599c3f0d4607d146a9",
+    "crates/phasesmith-solution/src/linear_step.rs": "bc5d78f7fdcafb2a726e3880264bc7fab7fd56f01ce104d393ae69237248eade",
+    "crates/phasesmith-solution/src/math3.rs": "fa00ccf3888b6bd86fa62c7b160a8e5f11d933e3736231342a179459d247bd4d",
+    "crates/phasesmith-solution/src/model.rs": "c0d802de5d8725f527ab1b40181fe0d4b12387b2c715ad188de5b409e0105139",
+    "crates/phasesmith-solution/src/model_consensus.rs": "dd051aba4c207545ca9ac30fb94bc0f423a929ad12e356af09163281182645ec",
+    "crates/phasesmith-solution/src/peak_completion.rs": "35ad4578efcdb407b78b8a513e24ca2bc6f0246ec4bf6c47f1890f297d71dfde",
+    "crates/phasesmith-solution/src/peak_density.rs": "97a242cae68157a2adc647beb78c2fa6c8a4a60ff80b875cd9fa2a60362cf37f",
+    "crates/phasesmith-solution/src/peak_scan.rs": "4f948de041ccfe83f985646f874b2303475fe26eb9dbc0d687e95bef365f3d2e",
+    "crates/phasesmith-solution/src/phase_checkpoint.rs": "1d227a8d3dff3c8a78bf44785e8d539e22fd5ec496abc765b7f0672ed66c9dec",
+    "crates/phasesmith-solution/src/phase_origin.rs": "99d6778b0eda65dd0c2fa559ed3c05171db7d9caab3e25ddf02dc8d24b29204e",
+    "crates/phasesmith-solution/src/phase_quality.rs": "848a42a21f5192c6f843f86161b355c9129e963cb806f62df186ce19eec56580",
+    "crates/phasesmith-solution/src/phase_schedule.rs": "86ba01217cc3fdcfa7dbe392d7abf03a6dbd5bfeed4fe9af3d6b22ff882687dc",
+    "crates/phasesmith-solution/src/phase_score.rs": "eb637d9c87787eb5eff9663aae9f6edbdc85b501170ad21d2624e115160699c6",
+    "crates/phasesmith-solution/src/real_fourier.rs": "3b9616133fec60090d339fcb6ba7aaaf721149a736b6429ab1a65f97a2daa113",
+    "crates/phasesmith-solution/src/refinement_families.rs": "70901272c21e54b67aaa7493678e83091e6f8661217115c4cf9769f36e9a2957",
+    "crates/phasesmith-solution/src/reflection_prediction.rs": "2dd0a2f8d1ccc5cccab9d1bafcb034bc52fd409d45284b026c6ad95f26ee07f9",
+    "crates/phasesmith-solution/src/shared_phase_path.rs": "2e2336ab565005645d89aa24b2bbd157b7c3d069671b00befa8927dfbb29a98e",
+    "crates/phasesmith-solution/src/shared_pool.rs": "31dc671b92ea761471b2cc3b2c742d1b83e844851ec80ff4f9472e7961aab629",
+    "crates/phasesmith-solution/src/shared_search.rs": "33cd778418c56f372883a3329d842ed7bab2a85713c3daf594737766a03b8ccb",
+    "crates/phasesmith-solution/src/solver.rs": "302429ec1b3522b848abdc7a050a5511796913842f233b6f0c53834bbf584e22",
+    "crates/phasesmith-solution/src/staged_refinement.rs": "6c1ddf05693cea5b20528059d46af3e93e61b7de3ddaef30bc3416ee6ff31657",
+    "crates/phasesmith-solution/src/symmetry_model.rs": "aec3f512ca23f882476081e0708dbaaadf0ba6a8d88088e4d69fab602c207005",
+    "crates/phasesmith-solution/src/symmetry_recycling.rs": "b47c3acab847ec5e6b334bf5994fb1c017279bf07541af162bda0991284de950",
+    "crates/phasesmith-solution/src/tangent.rs": "25fab86895c4401d46d722d04900fda1c912d4247f346f6ed7f0fd7c04393e79"
+  },
+  "sample_log_sha256": "1c14149e3af4c8472c7ff3c77a5b0888b258dd586d9da84fafb29cfaf0a7b2a7",
+  "sample_log": "   Compiling phasesmith-solution v0.7.0 (/Users/clemens/Programming/PhaseSmith-hkl-solution/crates/phasesmith-solution)\n    Finished `bench` profile [optimized] target(s) in 8.05s\n     Running benches/solution.rs (target/release/deps/solution-606c1fd8312a0a21)\nBenchmarking cycle_effort_search_32cubed_8_atoms_2108_rows_control\nBenchmarking cycle_effort_search_32cubed_8_atoms_2108_rows_control: Warming up for 500.00 ms\ncycle_effort_search_sample control starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\n\nWarning: Unable to complete 10 samples in 1.0s. You may wish to increase target time to 11.4s.\nBenchmarking cycle_effort_search_32cubed_8_atoms_2108_rows_control: Collecting 10 samples in estimated 11.388 s (10 iterations)\ncycle_effort_search_sample control starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\ncycle_effort_search_sample control starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\ncycle_effort_search_sample control starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\ncycle_effort_search_sample control starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\ncycle_effort_search_sample control starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\ncycle_effort_search_sample control starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\ncycle_effort_search_sample control starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\ncycle_effort_search_sample control starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\ncycle_effort_search_sample control starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\ncycle_effort_search_sample control starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\nBenchmarking cycle_effort_search_32cubed_8_atoms_2108_rows_control: Analyzing\ncycle_effort_search_32cubed_8_atoms_2108_rows_control\n                        time:   [1.1218 s 1.1274 s 1.1331 s]\n\nBenchmarking cycle_effort_search_32cubed_8_atoms_2108_rows_late\nBenchmarking cycle_effort_search_32cubed_8_atoms_2108_rows_late: Warming up for 500.00 ms\ncycle_effort_search_sample late starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\n\nWarning: Unable to complete 10 samples in 1.0s. You may wish to increase target time to 11.1s.\nBenchmarking cycle_effort_search_32cubed_8_atoms_2108_rows_late: Collecting 10 samples in estimated 11.147 s (10 iterations)\ncycle_effort_search_sample late starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\ncycle_effort_search_sample late starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\ncycle_effort_search_sample late starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\ncycle_effort_search_sample late starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\ncycle_effort_search_sample late starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\ncycle_effort_search_sample late starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\ncycle_effort_search_sample late starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\ncycle_effort_search_sample late starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\ncycle_effort_search_sample late starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\ncycle_effort_search_sample late starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\nBenchmarking cycle_effort_search_32cubed_8_atoms_2108_rows_late: Analyzing\ncycle_effort_search_32cubed_8_atoms_2108_rows_late\n                        time:   [1.1176 s 1.1184 s 1.1193 s]\n\nBenchmarking cycle_effort_search_32cubed_8_atoms_2108_rows_consensus\nBenchmarking cycle_effort_search_32cubed_8_atoms_2108_rows_consensus: Warming up for 500.00 ms\ncycle_effort_search_sample consensus starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\n\nWarning: Unable to complete 10 samples in 1.0s. You may wish to increase target time to 11.2s.\nBenchmarking cycle_effort_search_32cubed_8_atoms_2108_rows_consensus: Collecting 10 samples in estimated 11.208 s (10 iterations)\ncycle_effort_search_sample consensus starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\ncycle_effort_search_sample consensus starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\ncycle_effort_search_sample consensus starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\ncycle_effort_search_sample consensus starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\ncycle_effort_search_sample consensus starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\ncycle_effort_search_sample consensus starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\ncycle_effort_search_sample consensus starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\ncycle_effort_search_sample consensus starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\ncycle_effort_search_sample consensus starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\ncycle_effort_search_sample consensus starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\nBenchmarking cycle_effort_search_32cubed_8_atoms_2108_rows_consensus: Analyzing\ncycle_effort_search_32cubed_8_atoms_2108_rows_consensus\n                        time:   [1.1156 s 1.1172 s 1.1188 s]\n\nBenchmarking cycle_effort_search_32cubed_8_atoms_2108_rows_cache\nBenchmarking cycle_effort_search_32cubed_8_atoms_2108_rows_cache: Warming up for 500.00 ms\ncycle_effort_search_sample cache starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\n\nWarning: Unable to complete 10 samples in 1.0s. You may wish to increase target time to 11.2s.\nBenchmarking cycle_effort_search_32cubed_8_atoms_2108_rows_cache: Collecting 10 samples in estimated 11.165 s (10 iterations)\ncycle_effort_search_sample cache starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\ncycle_effort_search_sample cache starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\ncycle_effort_search_sample cache starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\ncycle_effort_search_sample cache starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\ncycle_effort_search_sample cache starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\ncycle_effort_search_sample cache starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\ncycle_effort_search_sample cache starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\ncycle_effort_search_sample cache starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\ncycle_effort_search_sample cache starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\ncycle_effort_search_sample cache starts 4 cycles 2000 extra_fits 15 cached_steps 428 builds 8 reuses 104\nBenchmarking cycle_effort_search_32cubed_8_atoms_2108_rows_cache: Analyzing\ncycle_effort_search_32cubed_8_atoms_2108_rows_cache\n                        time:   [1.1125 s 1.1140 s 1.1156 s]\n\n",
+  "results": [
+    {
+      "id": "cycle_effort_search_32cubed_8_atoms_2108_rows_cache",
+      "sample": {
+        "sampling_mode": "Flat",
+        "iters": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "times": [
+          1119021334.0,
+          1114378250.0,
+          1110724042.0,
+          1113643709.0,
+          1111178042.0,
+          1111091542.0,
+          1115898583.0,
+          1115128083.0,
+          1113005917.0,
+          1115639417.0
+        ]
+      },
+      "estimates": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1112469021.1,
+            "upper_bound": 1115550216.1399999
+          },
+          "point_estimate": 1113970891.9,
+          "standard_error": 784359.1114957373
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1111178042.0,
+            "upper_bound": 1115639417.0
+          },
+          "point_estimate": 1114010979.5,
+          "standard_error": 1119335.660506019
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 400672.64288663864,
+            "upper_bound": 4821910.30279398
+          },
+          "point_estimate": 2606441.1470264196,
+          "standard_error": 1091414.7237691898
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1471744.010728753,
+            "upper_bound": 3371186.240846526
+          },
+          "point_estimate": 2607316.4609257397,
+          "standard_error": 514233.4291769693
+        }
+      },
+      "benchmark": {
+        "group_id": "cycle_effort_search_32cubed_8_atoms_2108_rows_cache",
+        "function_id": null,
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cycle_effort_search_32cubed_8_atoms_2108_rows_cache",
+        "directory_name": "cycle_effort_search_32cubed_8_atoms_2108_rows_cache",
+        "title": "cycle_effort_search_32cubed_8_atoms_2108_rows_cache"
+      }
+    },
+    {
+      "id": "cycle_effort_search_32cubed_8_atoms_2108_rows_consensus",
+      "sample": {
+        "sampling_mode": "Flat",
+        "iters": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "times": [
+          1117996041.0,
+          1114521167.0,
+          1115571959.0,
+          1120375958.0,
+          1113681083.0,
+          1121185667.0,
+          1120347959.0,
+          1115388167.0,
+          1115771166.0,
+          1116696417.0
+        ]
+      },
+      "estimates": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1115646650.0,
+            "upper_bound": 1118750964.115
+          },
+          "point_estimate": 1117153558.4,
+          "standard_error": 801020.6545141808
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1115046563.0,
+            "upper_bound": 1120347959.0
+          },
+          "point_estimate": 1116233791.5,
+          "standard_error": 1342369.972044896
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 283917.1536594629,
+            "upper_bound": 4340156.4912468195
+          },
+          "point_estimate": 2575924.0504682064,
+          "standard_error": 1081629.738507456
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1545252.6471387893,
+            "upper_bound": 3170040.6447101273
+          },
+          "point_estimate": 2672521.7267530183,
+          "standard_error": 405835.47130981355
+        }
+      },
+      "benchmark": {
+        "group_id": "cycle_effort_search_32cubed_8_atoms_2108_rows_consensus",
+        "function_id": null,
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cycle_effort_search_32cubed_8_atoms_2108_rows_consensus",
+        "directory_name": "cycle_effort_search_32cubed_8_atoms_2108_rows_consensus",
+        "title": "cycle_effort_search_32cubed_8_atoms_2108_rows_consensus"
+      }
+    },
+    {
+      "id": "cycle_effort_search_32cubed_8_atoms_2108_rows_control",
+      "sample": {
+        "sampling_mode": "Flat",
+        "iters": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "times": [
+          1136804166.0,
+          1138059750.0,
+          1138392917.0,
+          1137125166.0,
+          1129136042.0,
+          1117593708.0,
+          1116873666.0,
+          1119901667.0,
+          1114493916.0,
+          1126016708.0
+        ]
+      },
+      "estimates": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1121822453.9,
+            "upper_bound": 1133145245.3
+          },
+          "point_estimate": 1127439770.6,
+          "standard_error": 2927069.6730538234
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1117593708.0,
+            "upper_bound": 1137431958.0
+          },
+          "point_estimate": 1127576375.0,
+          "standard_error": 6031670.313738443
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 930764.4026756287,
+            "upper_bound": 15171476.665252447
+          },
+          "point_estimate": 14478669.558352232,
+          "standard_error": 4472672.846748179
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 6584179.316677074,
+            "upper_bound": 11002313.106767032
+          },
+          "point_estimate": 9730606.238702308,
+          "standard_error": 1157693.093078206
+        }
+      },
+      "benchmark": {
+        "group_id": "cycle_effort_search_32cubed_8_atoms_2108_rows_control",
+        "function_id": null,
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cycle_effort_search_32cubed_8_atoms_2108_rows_control",
+        "directory_name": "cycle_effort_search_32cubed_8_atoms_2108_rows_control",
+        "title": "cycle_effort_search_32cubed_8_atoms_2108_rows_control"
+      }
+    },
+    {
+      "id": "cycle_effort_search_32cubed_8_atoms_2108_rows_late",
+      "sample": {
+        "sampling_mode": "Flat",
+        "iters": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "times": [
+          1121011250.0,
+          1117199750.0,
+          1119594708.0,
+          1119286000.0,
+          1119633583.0,
+          1116162083.0,
+          1117392250.0,
+          1118599708.0,
+          1117059542.0,
+          1118504292.0
+        ]
+      },
+      "estimates": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1117588471.245,
+            "upper_bound": 1119310808.2
+          },
+          "point_estimate": 1118444316.6,
+          "standard_error": 444092.5259461474
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 1117199750.0,
+            "upper_bound": 1119594708.0
+          },
+          "point_estimate": 1118552000.0,
+          "standard_error": 700404.7446438709
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 246636.43602132797,
+            "upper_bound": 2573422.9043126106
+          },
+          "point_estimate": 1661500.1234024763,
+          "standard_error": 583999.6274093435
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 885831.1920453759,
+            "upper_bound": 1875317.3558663758
+          },
+          "point_estimate": 1484926.3938165943,
+          "standard_error": 258018.67981176934
+        }
+      },
+      "benchmark": {
+        "group_id": "cycle_effort_search_32cubed_8_atoms_2108_rows_late",
+        "function_id": null,
+        "value_str": null,
+        "throughput": null,
+        "full_id": "cycle_effort_search_32cubed_8_atoms_2108_rows_late",
+        "directory_name": "cycle_effort_search_32cubed_8_atoms_2108_rows_late",
+        "title": "cycle_effort_search_32cubed_8_atoms_2108_rows_late"
+      }
+    }
+  ],
+  "qualification": "Isolated run after full validation and before timed corpus collection. Within-executable medians, not Criterion historical deltas. Complete eight-atom, 2108-row, 32-cubed searches; work and termination printed in log."
+}
