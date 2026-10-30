@@ -57,6 +57,9 @@ pub(super) fn summary<'py>(
     d.set_item("filtered_peak_search", s.filtered_peak_search)?;
     d.set_item("batched_fft", s.batched_fft)?;
     d.set_item("real_fft", s.real_fft)?;
+    d.set_item("fused_phase_workspace", s.fused_phase_workspace)?;
+    d.set_item("cached_mask_cycles", s.cached_mask_cycles)?;
+    d.set_item("fused_fourier_transforms", s.fused_fourier_transforms)?;
     d.set_item("real_phase_transforms", s.real_phase_transforms)?;
     d.set_item("batched_phase_transforms", s.batched_phase_transforms)?;
     d.set_item("filtered_peak_cycles", s.filtered_peak_cycles)?;

@@ -61,6 +61,7 @@ fn run<'py>(
                     filtered_peak_search: false,
                     batched_fft: false,
                     real_fft: false,
+                    fused_phase_workspace: false,
                 },
             )
         })
@@ -75,6 +76,7 @@ fn run<'py>(
 }
 
 #[pyfunction(name = "_solution_atomic_projection")]
+#[pyo3(signature=(density,shape,cell_parameters,atom_count,mask_sigma,omit_fraction,seed,cycle,cached=false))]
 #[allow(clippy::too_many_arguments)]
 fn projection<'py>(
     py: Python<'py>,
@@ -86,6 +88,7 @@ fn projection<'py>(
     omit_fraction: f64,
     seed: u64,
     cycle: usize,
+    cached: bool,
 ) -> PyResult<Bound<'py, npy::PyArray1<f64>>> {
     let density = density.as_slice()?.to_vec();
     let cell = cell(&cell_parameters)?;
@@ -101,7 +104,13 @@ fn projection<'py>(
     };
     let out = py
         .detach(move || {
-            phasesmith_solution::atomic_projection(&density, shape, cell, &options, cycle)
+            if cached {
+                phasesmith_solution::atomic_projection_cached(
+                    &density, shape, cell, &options, cycle,
+                )
+            } else {
+                phasesmith_solution::atomic_projection(&density, shape, cell, &options, cycle)
+            }
         })
         .map_err(invalid)?;
     Ok(out.into_pyarray(py))
@@ -121,7 +130,7 @@ pub(super) fn adaptive_record<'py>(
 }
 #[pyfunction(name = "_solution_count_free_dual_space")]
 #[allow(clippy::too_many_arguments, clippy::fn_params_excessive_bools)] // Independent diagnostic controls.
-#[pyo3(signature = (shape, cell_parameters, hkl, amplitudes, phases, support, cycles, peak_sigma, peak_cap, mask_sigma, hybrid_m, omit_fraction, seed, patterson_rank, checkpoint_accept_cycle=None, reusable_workspaces=false, filtered_peak_search=false,batched_fft=false, real_fft=false))]
+#[pyo3(signature = (shape, cell_parameters, hkl, amplitudes, phases, support, cycles, peak_sigma, peak_cap, mask_sigma, hybrid_m, omit_fraction, seed, patterson_rank, checkpoint_accept_cycle=None, reusable_workspaces=false, filtered_peak_search=false,batched_fft=false, real_fft=false, fused_phase_workspace=false))]
 fn count_free<'py>(
     py: Python<'py>,
     shape: [usize; 3],
@@ -143,6 +152,7 @@ fn count_free<'py>(
     filtered_peak_search: bool,
     batched_fft: bool,
     real_fft: bool,
+    fused_phase_workspace: bool,
 ) -> PyResult<Bound<'py, PyDict>> {
     let cell = cell(&cell_parameters)?;
     let hkl = hkl_rows(&hkl)?;
@@ -181,10 +191,16 @@ fn count_free<'py>(
                         filtered_peak_search,
                         batched_fft,
                         real_fft,
+                        fused_phase_workspace,
                     },
                 );
             }
-            if filtered_peak_search || reusable_workspaces || batched_fft || real_fft {
+            if filtered_peak_search
+                || reusable_workspaces
+                || batched_fft
+                || real_fft
+                || fused_phase_workspace
+            {
                 return Err(phasesmith_solution::SolutionError(
                     "diagnostic checkpoint and execution modes must be tested separately".into(),
                 ));
@@ -210,6 +226,7 @@ fn count_free<'py>(
         })
         .map_err(invalid)?;
     let d = PyDict::new(py);
+    d.set_item("cached_mask_cycles", state.cached_mask_cycles)?;
     d.set_item("density", state.trial.density.into_pyarray(py))?;
     d.set_item("history", state.trial.history.into_pyarray(py))?;
     d.set_item("best_cycle", state.trial.best_cycle)?;

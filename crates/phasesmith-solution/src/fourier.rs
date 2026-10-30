@@ -120,6 +120,30 @@ impl Transform {
             self.apply(values, false);
         }
     }
+    pub(crate) fn density_slice_to_fourier(
+        &mut self,
+        density: &[f64],
+        values: &mut [Complex<f64>],
+    ) {
+        let plan = self
+            .real
+            .as_mut()
+            .expect("real FFT required for direct transfers");
+        self.real_calls += 1;
+        plan.density_slice_to_spectrum(density, values);
+    }
+    pub(crate) fn fourier_to_density_slice(
+        &mut self,
+        values: &[Complex<f64>],
+        density: &mut [f64],
+    ) {
+        let plan = self
+            .real
+            .as_mut()
+            .expect("real FFT required for direct transfers");
+        self.real_calls += 1;
+        plan.spectrum_to_density_slice(values, density);
+    }
     pub(crate) fn batched_calls(&self) -> usize {
         self.batched_calls
     }

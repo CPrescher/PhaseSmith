@@ -49,6 +49,7 @@ def test_pair_labels_are_distinct_from_prediction_case_pairs():
         "fft_flag",
         "normal_flag",
         "real_flag",
+        "mask_flag",
     ],
 )
 def test_comparison_rejects_incomplete_opened_or_changed_panels(tmp_path, corruption):
@@ -72,6 +73,7 @@ def test_comparison_rejects_incomplete_opened_or_changed_panels(tmp_path, corrup
             "fft_flag": "batched_fft",
             "normal_flag": "cached_normal_refinement",
             "real_flag": "real_fft",
+            "mask_flag": "fused_phase_workspace",
         }[corruption]
         report[key] = 1.2 if corruption == "extension_flag" else True
     else:

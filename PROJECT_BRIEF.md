@@ -2306,6 +2306,27 @@ and source/native hashes match across panels. The 65 holdout outcomes stay close
 
 ## Quality bar
 
+An experimental `fused_phase_workspace` option caches exact Gaussian axis
+geometry and fuses real-density transfers at packed-Fourier boundaries. It
+requires reusable workspaces; packed real FFTs enable the transfer part. The
+same Gaussian support/exponential/accumulation and FFT normalization order are
+retained. A private geometry workspace adds at most 4.5 KiB, without a per-voxel
+cache or additional full-grid buffers. Existing candidates, observations,
+refinement, caps, seeds and scoring gates remain. Bitwise projection, complete
+trajectory, direct-transfer and synthetic model/count checks accompany the
+independent references. The option is false by default. The profile, initial
+geometry-only probe and published SHELXT lessons are recorded separately in
+`docs/solution-phase-workspace.md`; the 65 holdout outcomes remain unopened.
+The completed matched 35-case experiment retains the same 16 labelled
+structures, 26 total atom counts, 16 per-element counts and 13 strict structures.
+All 31 nonempty selected models match. The median paired wall ratio is 1.06094x
+(5.74% less time; 31 faster cases), with wall medians 1.874/1.803 seconds and
+summed wall time 90.347/85.260 seconds. Phase time falls 13.87% while final
+refinement remains around 28 seconds. Fixed-work phasing/small-search kernel
+medians improve 10.0%/2.5%. Full validation passes 2,137 Python and 411 Rust tests;
+all 140 predictions precede two reference barriers, with matching source/native
+hashes. This is one seed and one timing collection; the option stays opt-in.
+
 An experimental `real_fft` option targets the remaining dominant P1 Fourier
 cycles. It packs even/odd real samples into half-length z transforms, runs x/y
 FFTs on a half spectrum, restores the full reciprocal array before constraints,

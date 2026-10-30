@@ -1,0 +1,763 @@
+{
+  "schema": "phasesmith.phase-workspace-kernels.v1",
+  "recorded_utc": "2026-10-30T14:58:25.460371+00:00",
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "command": "cargo bench -p phasesmith-solution --bench solution -- 'phase_workspace_' --sample-size 10 --warm-up-time 1 --measurement-time 2 --noplot",
+  "qualification": "Matched same-executable control/fused, all existing fast controls including packed real FFTs enabled. Exact Gaussian geometry plus direct packed Fourier transfers. Complete 64-cycle P1 work and whole count-free search on multi-atom 32-cubed maps with 2108 measured rows. One numerical thread; no own heavy workload overlaps timing. External host activity uncontrolled.",
+  "benchmark_source": "crates/phasesmith-solution/benches/solution.rs",
+  "benchmark_source_sha256": "84a4db12f5884a010c8071eef670e18cd2577bc2ba6f82def1617e81207d40be",
+  "executable": "target/release/deps/solution-a51ba219c0abff5d",
+  "executable_sha256": "cababbb90d68de8de665c9b46939f3129098791323f9680627a1b7eb557cc174",
+  "numerical_source_sha256": {
+    "crates/phasesmith-solution/src/adp_refinement.rs": "96e2d89e4ec0730c34ba86240d67345a24a0964480b55a2ccebb79f0e57d9bb9",
+    "crates/phasesmith-solution/src/atomic_mask.rs": "9a376037f445c67e0de4bf855ceda2d7615b41b073a7ae4746fab5b0eeac84eb",
+    "crates/phasesmith-solution/src/chemical_labels.rs": "a7b123f660f138aa4ebf0afc75bb2165aad46762ec6d3c645946b3a38191b287",
+    "crates/phasesmith-solution/src/completion.rs": "08523bbe80b71f0f29f01345d36713ac8dd3cb6134e812414ea6be5c94dd3081",
+    "crates/phasesmith-solution/src/completion_orbit.rs": "74901c137016cfdf5b18f911282fa2b995b80fb183508856b91ca8a902b52227",
+    "crates/phasesmith-solution/src/data.rs": "3f27a939350ff94f6722c23b1d2609ff10b9ec8119794e2a7cf2076cea27468e",
+    "crates/phasesmith-solution/src/dual_space.rs": "ba8dd45fac98e041811bc86190ec4a2496d097e591610cf7fb9c8c6a633b057d",
+    "crates/phasesmith-solution/src/fft_layout.rs": "b7222a0b26104f377447e1f69fa1697aced9b5e579b75526dd268e8abd285a36",
+    "crates/phasesmith-solution/src/fourier.rs": "80b353611b38b749ee0b3a30ddf4667c898b51a8eb473af241928b2177a3a14e",
+    "crates/phasesmith-solution/src/isotropic_assignment.rs": "59ed650a338b942870b0e45e935bf0764fdce8da1ce52e6a7d3e1d0cf7354994",
+    "crates/phasesmith-solution/src/lib.rs": "70c46ebbc7e40b7868826fab3f44c29a366f3484c8ae5569b7380ef21620b2c3",
+    "crates/phasesmith-solution/src/linear_step.rs": "7d52c8d85a9c27f4c8284749804ff77b233379f665c34095d07f1e3492f7fd63",
+    "crates/phasesmith-solution/src/math3.rs": "fa00ccf3888b6bd86fa62c7b160a8e5f11d933e3736231342a179459d247bd4d",
+    "crates/phasesmith-solution/src/model.rs": "c0d802de5d8725f527ab1b40181fe0d4b12387b2c715ad188de5b409e0105139",
+    "crates/phasesmith-solution/src/peak_completion.rs": "4bf240d56f4aac6cfda5cad4d0ba35c159b8bd9db297a2163890bc4601c77550",
+    "crates/phasesmith-solution/src/peak_density.rs": "97a242cae68157a2adc647beb78c2fa6c8a4a60ff80b875cd9fa2a60362cf37f",
+    "crates/phasesmith-solution/src/peak_scan.rs": "fd5af96e0c2c8b662dfddad732223fa8da4a5596a06880ee2e921b01c15a0a02",
+    "crates/phasesmith-solution/src/phase_checkpoint.rs": "1d227a8d3dff3c8a78bf44785e8d539e22fd5ec496abc765b7f0672ed66c9dec",
+    "crates/phasesmith-solution/src/phase_origin.rs": "99d6778b0eda65dd0c2fa559ed3c05171db7d9caab3e25ddf02dc8d24b29204e",
+    "crates/phasesmith-solution/src/phase_quality.rs": "848a42a21f5192c6f843f86161b355c9129e963cb806f62df186ce19eec56580",
+    "crates/phasesmith-solution/src/phase_schedule.rs": "b11fb2c8e54d6e51836f42396cbbbd1f3759d0c04b9b75120b14019ec438240e",
+    "crates/phasesmith-solution/src/phase_score.rs": "eb637d9c87787eb5eff9663aae9f6edbdc85b501170ad21d2624e115160699c6",
+    "crates/phasesmith-solution/src/real_fourier.rs": "3b9616133fec60090d339fcb6ba7aaaf721149a736b6429ab1a65f97a2daa113",
+    "crates/phasesmith-solution/src/reflection_prediction.rs": "2dd0a2f8d1ccc5cccab9d1bafcb034bc52fd409d45284b026c6ad95f26ee07f9",
+    "crates/phasesmith-solution/src/shared_phase_path.rs": "c0ee60acb38d207deab3ac02a4ba1103650fbc65b6b12b5707e77390193024bd",
+    "crates/phasesmith-solution/src/shared_pool.rs": "31dc671b92ea761471b2cc3b2c742d1b83e844851ec80ff4f9472e7961aab629",
+    "crates/phasesmith-solution/src/shared_search.rs": "ce76c794aaa21d66e7e1380536c06b14636500ecf3538a2423aba0c3bb0c4345",
+    "crates/phasesmith-solution/src/solver.rs": "302429ec1b3522b848abdc7a050a5511796913842f233b6f0c53834bbf584e22",
+    "crates/phasesmith-solution/src/staged_refinement.rs": "6c1ddf05693cea5b20528059d46af3e93e61b7de3ddaef30bc3416ee6ff31657",
+    "crates/phasesmith-solution/src/symmetry_model.rs": "aec3f512ca23f882476081e0708dbaaadf0ba6a8d88088e4d69fab602c207005",
+    "crates/phasesmith-solution/src/symmetry_recycling.rs": "b47c3acab847ec5e6b334bf5994fb1c017279bf07541af162bda0991284de950",
+    "crates/phasesmith-solution/src/tangent.rs": "25fab86895c4401d46d722d04900fda1c912d4247f346f6ed7f0fd7c04393e79"
+  },
+  "phase_samples": [
+    [
+      "control",
+      "64",
+      "0",
+      "0"
+    ],
+    [
+      "control",
+      "64",
+      "0",
+      "0"
+    ],
+    [
+      "control",
+      "64",
+      "0",
+      "0"
+    ],
+    [
+      "control",
+      "64",
+      "0",
+      "0"
+    ],
+    [
+      "control",
+      "64",
+      "0",
+      "0"
+    ],
+    [
+      "control",
+      "64",
+      "0",
+      "0"
+    ],
+    [
+      "control",
+      "64",
+      "0",
+      "0"
+    ],
+    [
+      "control",
+      "64",
+      "0",
+      "0"
+    ],
+    [
+      "control",
+      "64",
+      "0",
+      "0"
+    ],
+    [
+      "control",
+      "64",
+      "0",
+      "0"
+    ],
+    [
+      "control",
+      "64",
+      "0",
+      "0"
+    ],
+    [
+      "control",
+      "64",
+      "0",
+      "0"
+    ],
+    [
+      "control",
+      "64",
+      "0",
+      "0"
+    ],
+    [
+      "control",
+      "64",
+      "0",
+      "0"
+    ],
+    [
+      "control",
+      "64",
+      "0",
+      "0"
+    ],
+    [
+      "control",
+      "64",
+      "0",
+      "0"
+    ],
+    [
+      "fused",
+      "64",
+      "64",
+      "128"
+    ],
+    [
+      "fused",
+      "64",
+      "64",
+      "128"
+    ],
+    [
+      "fused",
+      "64",
+      "64",
+      "128"
+    ],
+    [
+      "fused",
+      "64",
+      "64",
+      "128"
+    ],
+    [
+      "fused",
+      "64",
+      "64",
+      "128"
+    ],
+    [
+      "fused",
+      "64",
+      "64",
+      "128"
+    ],
+    [
+      "fused",
+      "64",
+      "64",
+      "128"
+    ],
+    [
+      "fused",
+      "64",
+      "64",
+      "128"
+    ],
+    [
+      "fused",
+      "64",
+      "64",
+      "128"
+    ],
+    [
+      "fused",
+      "64",
+      "64",
+      "128"
+    ],
+    [
+      "fused",
+      "64",
+      "64",
+      "128"
+    ],
+    [
+      "fused",
+      "64",
+      "64",
+      "128"
+    ],
+    [
+      "fused",
+      "64",
+      "64",
+      "128"
+    ],
+    [
+      "fused",
+      "64",
+      "64",
+      "128"
+    ],
+    [
+      "fused",
+      "64",
+      "64",
+      "128"
+    ],
+    [
+      "fused",
+      "64",
+      "64",
+      "128"
+    ]
+  ],
+  "search_samples": [
+    [
+      "control",
+      "1",
+      "0",
+      "53",
+      "0"
+    ],
+    [
+      "control",
+      "1",
+      "0",
+      "53",
+      "0"
+    ],
+    [
+      "control",
+      "1",
+      "0",
+      "53",
+      "0"
+    ],
+    [
+      "control",
+      "1",
+      "0",
+      "53",
+      "0"
+    ],
+    [
+      "control",
+      "1",
+      "0",
+      "53",
+      "0"
+    ],
+    [
+      "control",
+      "1",
+      "0",
+      "53",
+      "0"
+    ],
+    [
+      "control",
+      "1",
+      "0",
+      "53",
+      "0"
+    ],
+    [
+      "control",
+      "1",
+      "0",
+      "53",
+      "0"
+    ],
+    [
+      "control",
+      "1",
+      "0",
+      "53",
+      "0"
+    ],
+    [
+      "control",
+      "1",
+      "0",
+      "53",
+      "0"
+    ],
+    [
+      "control",
+      "1",
+      "0",
+      "53",
+      "0"
+    ],
+    [
+      "control",
+      "1",
+      "0",
+      "53",
+      "0"
+    ],
+    [
+      "control",
+      "1",
+      "0",
+      "53",
+      "0"
+    ],
+    [
+      "control",
+      "1",
+      "0",
+      "53",
+      "0"
+    ],
+    [
+      "fused",
+      "1",
+      "53",
+      "53",
+      "105"
+    ],
+    [
+      "fused",
+      "1",
+      "53",
+      "53",
+      "105"
+    ],
+    [
+      "fused",
+      "1",
+      "53",
+      "53",
+      "105"
+    ],
+    [
+      "fused",
+      "1",
+      "53",
+      "53",
+      "105"
+    ],
+    [
+      "fused",
+      "1",
+      "53",
+      "53",
+      "105"
+    ],
+    [
+      "fused",
+      "1",
+      "53",
+      "53",
+      "105"
+    ],
+    [
+      "fused",
+      "1",
+      "53",
+      "53",
+      "105"
+    ],
+    [
+      "fused",
+      "1",
+      "53",
+      "53",
+      "105"
+    ],
+    [
+      "fused",
+      "1",
+      "53",
+      "53",
+      "105"
+    ],
+    [
+      "fused",
+      "1",
+      "53",
+      "53",
+      "105"
+    ],
+    [
+      "fused",
+      "1",
+      "53",
+      "53",
+      "105"
+    ],
+    [
+      "fused",
+      "1",
+      "53",
+      "53",
+      "105"
+    ],
+    [
+      "fused",
+      "1",
+      "53",
+      "53",
+      "105"
+    ],
+    [
+      "fused",
+      "1",
+      "53",
+      "53",
+      "105"
+    ]
+  ],
+  "samples": {
+    "phase_workspace_phase_32cubed_8_atoms_2108_rows_64_cycle_cap_con": {
+      "sample": {
+        "sampling_mode": "Linear",
+        "iters": [
+          2.0,
+          4.0,
+          6.0,
+          8.0,
+          10.0,
+          12.0,
+          14.0,
+          16.0,
+          18.0,
+          20.0
+        ],
+        "times": [
+          47694291.0,
+          92088542.0,
+          138817750.0,
+          188013541.0,
+          229757458.0,
+          285449709.0,
+          324233500.0,
+          374700125.0,
+          410340500.0,
+          465502750.0
+        ]
+      },
+      "estimates": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 23093219.41313492,
+            "upper_bound": 23498245.257187497
+          },
+          "point_estimate": 23292061.23128968,
+          "standard_error": 103524.48873897738
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 23022135.5,
+            "upper_bound": 23561141.5
+          },
+          "point_estimate": 23217336.60714286,
+          "standard_error": 142579.12341860158
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 88466.36977940798,
+            "upper_bound": 591647.3647836596
+          },
+          "point_estimate": 328404.7990358988,
+          "standard_error": 132003.753218641
+        },
+        "slope": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 22991837.96491228,
+            "upper_bound": 23448439.83756345
+          },
+          "point_estimate": 23217132.25064935,
+          "standard_error": 116012.19088239374
+        },
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 185108.73358293847,
+            "upper_bound": 427527.0907145463
+          },
+          "point_estimate": 345441.5249169223,
+          "standard_error": 60674.76816569408
+        }
+      },
+      "benchmark": {
+        "group_id": "phase_workspace_phase_32cubed_8_atoms_2108_rows_64_cycle_cap_control",
+        "function_id": null,
+        "value_str": null,
+        "throughput": null,
+        "full_id": "phase_workspace_phase_32cubed_8_atoms_2108_rows_64_cycle_cap_control",
+        "directory_name": "phase_workspace_phase_32cubed_8_atoms_2108_rows_64_cycle_cap_con",
+        "title": "phase_workspace_phase_32cubed_8_atoms_2108_rows_64_cycle_cap_control"
+      }
+    },
+    "phase_workspace_phase_32cubed_8_atoms_2108_rows_64_cycle_cap_fus": {
+      "sample": {
+        "sampling_mode": "Linear",
+        "iters": [
+          2.0,
+          4.0,
+          6.0,
+          8.0,
+          10.0,
+          12.0,
+          14.0,
+          16.0,
+          18.0,
+          20.0
+        ],
+        "times": [
+          41695000.0,
+          83342500.0,
+          126786666.0,
+          166557000.0,
+          203784834.0,
+          252015333.0,
+          297463000.0,
+          336910833.0,
+          374464125.0,
+          418564125.0
+        ]
+      },
+      "estimates": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 20756730.705000002,
+            "upper_bound": 21034739.34285714
+          },
+          "point_estimate": 20904967.510535713,
+          "standard_error": 70997.20512031976
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 20819593.75,
+            "upper_bound": 21066194.375
+          },
+          "point_estimate": 20887853.125,
+          "standard_error": 75826.29091679506
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 23721.599578857422,
+            "upper_bound": 374292.04658623785
+          },
+          "point_estimate": 146566.3122229278,
+          "standard_error": 90714.30018700962
+        },
+        "slope": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 20791054.28482177,
+            "upper_bound": 21070833.47915058
+          },
+          "point_estimate": 20934195.07142857,
+          "standard_error": 70672.22583175078
+        },
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 100949.23009326478,
+            "upper_bound": 329243.4205842816
+          },
+          "point_estimate": 236676.4510340055,
+          "standard_error": 63007.556717175976
+        }
+      },
+      "benchmark": {
+        "group_id": "phase_workspace_phase_32cubed_8_atoms_2108_rows_64_cycle_cap_fused",
+        "function_id": null,
+        "value_str": null,
+        "throughput": null,
+        "full_id": "phase_workspace_phase_32cubed_8_atoms_2108_rows_64_cycle_cap_fused",
+        "directory_name": "phase_workspace_phase_32cubed_8_atoms_2108_rows_64_cycle_cap_fus",
+        "title": "phase_workspace_phase_32cubed_8_atoms_2108_rows_64_cycle_cap_fused"
+      }
+    },
+    "phase_workspace_search_32cubed_8_atoms_2108_rows_control": {
+      "sample": {
+        "sampling_mode": "Flat",
+        "iters": [
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0
+        ],
+        "times": [
+          229425083.0,
+          231140417.0,
+          234707958.0,
+          230384792.0,
+          230053750.0,
+          231578375.0,
+          235889917.0,
+          233227375.0,
+          231584250.0,
+          229928833.0
+        ]
+      },
+      "estimates": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 76872433.79749998,
+            "upper_bound": 77710959.26083335
+          },
+          "point_estimate": 77264025.00000001,
+          "standard_error": 215764.54885428265
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 76684583.33333333,
+            "upper_bound": 77742458.33333333
+          },
+          "point_estimate": 77119798.66666667,
+          "standard_error": 276597.1428662021
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 109671.1323529445,
+            "upper_bound": 1150054.7763824502
+          },
+          "point_estimate": 676117.2318965344,
+          "standard_error": 277932.1083367841
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 298076.1575999914,
+            "upper_bound": 905599.1012169352
+          },
+          "point_estimate": 719609.1790171426,
+          "standard_error": 148511.28264786047
+        }
+      },
+      "benchmark": {
+        "group_id": "phase_workspace_search_32cubed_8_atoms_2108_rows_control",
+        "function_id": null,
+        "value_str": null,
+        "throughput": null,
+        "full_id": "phase_workspace_search_32cubed_8_atoms_2108_rows_control",
+        "directory_name": "phase_workspace_search_32cubed_8_atoms_2108_rows_control",
+        "title": "phase_workspace_search_32cubed_8_atoms_2108_rows_control"
+      }
+    },
+    "phase_workspace_search_32cubed_8_atoms_2108_rows_fused": {
+      "sample": {
+        "sampling_mode": "Flat",
+        "iters": [
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0,
+          3.0
+        ],
+        "times": [
+          221117667.0,
+          217536666.0,
+          223258833.0,
+          225739375.0,
+          227015250.0,
+          226899125.0,
+          231657042.0,
+          225447083.0,
+          225207875.0,
+          232021125.0
+        ]
+      },
+      "estimates": {
+        "mean": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 74325780.41,
+            "upper_bound": 76036376.4
+          },
+          "point_estimate": 75196668.03333333,
+          "standard_error": 437108.9134343786
+        },
+        "median": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 74387590.33333334,
+            "upper_bound": 76426027.83333334
+          },
+          "point_estimate": 75197743.0,
+          "standard_error": 420299.60512131243
+        },
+        "median_abs_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 131333.6476683543,
+            "upper_bound": 2604279.5162647963
+          },
+          "point_estimate": 928210.6242209673,
+          "standard_error": 697104.9935924634
+        },
+        "slope": null,
+        "std_dev": {
+          "confidence_interval": {
+            "confidence_level": 0.95,
+            "lower_bound": 722807.8905145117,
+            "upper_bound": 1914102.4563812644
+          },
+          "point_estimate": 1458878.9940377777,
+          "standard_error": 306568.89440120483
+        }
+      },
+      "benchmark": {
+        "group_id": "phase_workspace_search_32cubed_8_atoms_2108_rows_fused",
+        "function_id": null,
+        "value_str": null,
+        "throughput": null,
+        "full_id": "phase_workspace_search_32cubed_8_atoms_2108_rows_fused",
+        "directory_name": "phase_workspace_search_32cubed_8_atoms_2108_rows_fused",
+        "title": "phase_workspace_search_32cubed_8_atoms_2108_rows_fused"
+      }
+    }
+  }
+}

@@ -1,0 +1,1254 @@
+diff --git a/benchmarks/solution_assignment_interleaved.py b/benchmarks/solution_assignment_interleaved.py
+index e4818ef..2cff14d 100644
+--- a/benchmarks/solution_assignment_interleaved.py
++++ b/benchmarks/solution_assignment_interleaved.py
+@@ -21,7 +21,7 @@ def main():
+     )
+     parser.add_argument("--output", type=Path, required=True)
+     parser.add_argument("--seconds", type=float, default=15.0)
+-    parser.add_argument("--lock-revision", type=int, default=20)
++    parser.add_argument("--lock-revision", type=int, default=21)
+     parser.add_argument(
+         "--shelxt",
+         type=Path,
+@@ -54,6 +54,7 @@ def main():
+             filtered_peak_search=False,
+             batched_fft=False,
+             real_fft=False,
++            cached_atomic_mask=False,
+             cached_normal_refinement=False,
+             work_sliced_phasing=True,
+             independent_origin_sampling=False,
+diff --git a/benchmarks/solution_corpus_benchmark.py b/benchmarks/solution_corpus_benchmark.py
+index 375f022..99d63f8 100644
+--- a/benchmarks/solution_corpus_benchmark.py
++++ b/benchmarks/solution_corpus_benchmark.py
+@@ -192,7 +192,7 @@ def main():
+         "--manifest", type=Path, default=ROOT / "validation/solution-corpus-v5.json"
+     )
+     seal_parser.add_argument("--discovery", type=Path, required=True)
+-    seal_parser.add_argument("--lock-revision", type=int, default=20)
++    seal_parser.add_argument("--lock-revision", type=int, default=21)
+     adapters = commands.add_parser("seal-adapters")
+     adapters.add_argument("--manifest", type=Path, required=True)
+     adapters.add_argument("--parent-lock", type=Path, required=True)
+@@ -214,6 +214,7 @@ def main():
+     r.add_argument("--filtered-peak-search", action="store_true")
+     r.add_argument("--batched-fft", action="store_true")
+     r.add_argument("--real-fft", action="store_true")
++    r.add_argument("--cached-atomic-mask", action="store_true")
+     r.add_argument("--cached-normal-refinement", action="store_true")
+     r.add_argument("--isotropic-assignment-refinement", action="store_true")
+     r.add_argument("--score-only-evaluation", action="store_true")
+@@ -226,7 +227,7 @@ def main():
+     r.add_argument("--phase-first-selection", action="store_true", default=True)
+     r.add_argument("--quality-checkpoints", dest="phase_first_selection", action="store_false")
+     r.add_argument("--legacy-quality-normalization", action="store_true")
+-    r.add_argument("--lock-revision", type=int, default=20)
++    r.add_argument("--lock-revision", type=int, default=21)
+     r.add_argument("--split", choices=["development", "holdout"], default="development")
+     r.add_argument("--open-holdout", action="store_true")
+     r.add_argument("--seconds", type=float, default=30)
+@@ -245,6 +246,7 @@ def main():
+     w.add_argument("--filtered-peak-search", action="store_true")
+     w.add_argument("--batched-fft", action="store_true")
+     w.add_argument("--real-fft", action="store_true")
++    w.add_argument("--cached-atomic-mask", action="store_true")
+     w.add_argument("--cached-normal-refinement", action="store_true")
+     w.add_argument("--isotropic-assignment-refinement", action="store_true")
+     w.add_argument("--score-only-evaluation", action="store_true")
+diff --git a/benchmarks/solution_execution_interleaved.py b/benchmarks/solution_execution_interleaved.py
+index 99c02db..f5ff08b 100644
+--- a/benchmarks/solution_execution_interleaved.py
++++ b/benchmarks/solution_execution_interleaved.py
+@@ -49,7 +49,7 @@ def main():
+     )
+     parser.add_argument("--output", type=Path, required=True)
+     parser.add_argument("--seconds", type=float, default=15.0)
+-    parser.add_argument("--lock-revision", type=int, default=20)
++    parser.add_argument("--lock-revision", type=int, default=21)
+     parser.add_argument(
+         "--shelxt",
+         type=Path,
+@@ -82,6 +82,7 @@ def main():
+             filtered_peak_search=False,
+             batched_fft=False,
+             real_fft=False,
++            cached_atomic_mask=False,
+             cached_normal_refinement=False,
+             work_sliced_phasing=False,
+             independent_origin_sampling=False,
+diff --git a/benchmarks/solution_fft_interleaved.py b/benchmarks/solution_fft_interleaved.py
+index 8279a6d..6a9311e 100644
+--- a/benchmarks/solution_fft_interleaved.py
++++ b/benchmarks/solution_fft_interleaved.py
+@@ -21,7 +21,7 @@ def main():
+     )
+     parser.add_argument("--output", type=Path, required=True)
+     parser.add_argument("--seconds", type=float, default=15.0)
+-    parser.add_argument("--lock-revision", type=int, default=20)
++    parser.add_argument("--lock-revision", type=int, default=21)
+     parser.add_argument(
+         "--shelxt",
+         type=Path,
+@@ -54,6 +54,7 @@ def main():
+             filtered_peak_search=True,
+             batched_fft=mode == "batched",
+             real_fft=False,
++            cached_atomic_mask=False,
+             cached_normal_refinement=False,
+             work_sliced_phasing=True,
+             independent_origin_sampling=False,
+diff --git a/benchmarks/solution_normal_interleaved.py b/benchmarks/solution_normal_interleaved.py
+index e9ffbda..9e52bbc 100644
+--- a/benchmarks/solution_normal_interleaved.py
++++ b/benchmarks/solution_normal_interleaved.py
+@@ -21,7 +21,7 @@ def main():
+     )
+     parser.add_argument("--output", type=Path, required=True)
+     parser.add_argument("--seconds", type=float, default=15.0)
+-    parser.add_argument("--lock-revision", type=int, default=20)
++    parser.add_argument("--lock-revision", type=int, default=21)
+     parser.add_argument(
+         "--shelxt",
+         type=Path,
+@@ -54,6 +54,7 @@ def main():
+             filtered_peak_search=True,
+             batched_fft=True,
+             real_fft=False,
++            cached_atomic_mask=False,
+             cached_normal_refinement=mode == "cached",
+             work_sliced_phasing=True,
+             independent_origin_sampling=False,
+diff --git a/benchmarks/solution_peak_interleaved.py b/benchmarks/solution_peak_interleaved.py
+index 5ac4dae..3beade9 100644
+--- a/benchmarks/solution_peak_interleaved.py
++++ b/benchmarks/solution_peak_interleaved.py
+@@ -21,7 +21,7 @@ def main():
+     )
+     parser.add_argument("--output", type=Path, required=True)
+     parser.add_argument("--seconds", type=float, default=15.0)
+-    parser.add_argument("--lock-revision", type=int, default=20)
++    parser.add_argument("--lock-revision", type=int, default=21)
+     parser.add_argument(
+         "--shelxt",
+         type=Path,
+@@ -54,6 +54,7 @@ def main():
+             filtered_peak_search=mode == "peaks",
+             batched_fft=False,
+             real_fft=False,
++            cached_atomic_mask=False,
+             cached_normal_refinement=False,
+             work_sliced_phasing=True,
+             independent_origin_sampling=False,
+diff --git a/benchmarks/solution_phase_ablation.py b/benchmarks/solution_phase_ablation.py
+index 3cc69e6..d9d1b2e 100644
+--- a/benchmarks/solution_phase_ablation.py
++++ b/benchmarks/solution_phase_ablation.py
+@@ -100,6 +100,7 @@ def compare(paths, manifest, pairs=()):
+                 "filtered_peak_search",
+                 "batched_fft",
+                 "real_fft",
++                "cached_atomic_mask",
+                 "cached_normal_refinement",
+                 "reusable_fourier_workspaces",
+                 "independent_origin_sampling",
+@@ -156,6 +157,7 @@ def compare(paths, manifest, pairs=()):
+                     "filtered_peak_cycles": r["effort"].get("filtered_peak_cycles", 0),
+                     "batched_phase_transforms": r["effort"].get("batched_phase_transforms", 0),
+                     "real_phase_transforms": r["effort"].get("real_phase_transforms", 0),
++                    "cached_mask_cycles": r["effort"].get("cached_mask_cycles", 0),
+                     "cached_normal_solves": r["effort"].get("cached_normal_solves", 0),
+                     "normal_cache_fallbacks": r["effort"].get("normal_cache_fallbacks", 0),
+                     "adaptive_checkpoint_tests": len(r["effort"].get("phase_checkpoints", [])),
+@@ -226,6 +228,7 @@ def compare(paths, manifest, pairs=()):
+             "filtered_peak_search": report.get("filtered_peak_search", False),
+             "batched_fft": report.get("batched_fft", False),
+             "real_fft": report.get("real_fft", False),
++            "cached_atomic_mask": report.get("cached_atomic_mask", False),
+             "cached_normal_refinement": report.get("cached_normal_refinement", False),
+             "reusable_fourier_workspaces": report.get("reusable_fourier_workspaces", False),
+             "independent_origin_sampling": report.get("independent_origin_sampling", False),
+@@ -250,6 +253,7 @@ def compare(paths, manifest, pairs=()):
+                     "filtered_peak_cycles",
+                     "batched_phase_transforms",
+                     "real_phase_transforms",
++                    "cached_mask_cycles",
+                     "cached_normal_solves",
+                     "normal_cache_fallbacks",
+                     "stable_map_handoffs",
+diff --git a/benchmarks/solution_real_fft_interleaved.py b/benchmarks/solution_real_fft_interleaved.py
+index d21a40b..7ee1163 100644
+--- a/benchmarks/solution_real_fft_interleaved.py
++++ b/benchmarks/solution_real_fft_interleaved.py
+@@ -21,7 +21,7 @@ def main():
+     )
+     parser.add_argument("--output", type=Path, required=True)
+     parser.add_argument("--seconds", type=float, default=15.0)
+-    parser.add_argument("--lock-revision", type=int, default=20)
++    parser.add_argument("--lock-revision", type=int, default=21)
+     parser.add_argument(
+         "--shelxt",
+         type=Path,
+@@ -54,6 +54,7 @@ def main():
+             filtered_peak_search=True,
+             batched_fft=True,
+             real_fft=mode == "real",
++            cached_atomic_mask=False,
+             cached_normal_refinement=True,
+             work_sliced_phasing=True,
+             independent_origin_sampling=False,
+diff --git a/benchmarks/solution_timeslice_interleaved.py b/benchmarks/solution_timeslice_interleaved.py
+index 3835cbb..2e9a22d 100644
+--- a/benchmarks/solution_timeslice_interleaved.py
++++ b/benchmarks/solution_timeslice_interleaved.py
+@@ -21,7 +21,7 @@ def main():
+     )
+     parser.add_argument("--output", type=Path, required=True)
+     parser.add_argument("--seconds", type=float, default=15.0)
+-    parser.add_argument("--lock-revision", type=int, default=20)
++    parser.add_argument("--lock-revision", type=int, default=21)
+     parser.add_argument(
+         "--shelxt",
+         type=Path,
+@@ -54,6 +54,7 @@ def main():
+             filtered_peak_search=False,
+             batched_fft=False,
+             real_fft=False,
++            cached_atomic_mask=False,
+             cached_normal_refinement=False,
+             work_sliced_phasing=mode == "work",
+             independent_origin_sampling=False,
+diff --git a/crates/phasesmith-py/src/solution.rs b/crates/phasesmith-py/src/solution.rs
+index b31959f..0f75aa8 100644
+--- a/crates/phasesmith-py/src/solution.rs
++++ b/crates/phasesmith-py/src/solution.rs
+@@ -65,7 +65,7 @@ type SharedSearchRequest = (
+             bool,
+             bool,
+             bool,
+-            (bool, bool, bool, bool),
++            (bool, bool, bool, bool, bool),
+         ),
+     ),
+ );
+@@ -205,7 +205,13 @@ fn solve_structure<'py>(
+                         reusable_fourier_workspaces,
+                         work_sliced_phasing,
+                         isotropic_assignment_refinement,
+-                        (filtered_peak_search, batched_fft, cached_normal_refinement, real_fft),
++                        (
++                            filtered_peak_search,
++                            batched_fft,
++                            cached_normal_refinement,
++                            real_fft,
++                            cached_atomic_mask,
++                        ),
+                     ),
+                 ),
+             )) = shared_search
+@@ -257,6 +263,7 @@ fn solve_structure<'py>(
+                         filtered_peak_search,
+                         batched_fft,
+                         real_fft,
++                        cached_atomic_mask,
+                         cached_normal_refinement,
+                     },
+                 )
+diff --git a/crates/phasesmith-py/src/solution_dual.rs b/crates/phasesmith-py/src/solution_dual.rs
+index 8015e0b..ca5f413 100644
+--- a/crates/phasesmith-py/src/solution_dual.rs
++++ b/crates/phasesmith-py/src/solution_dual.rs
+@@ -61,6 +61,7 @@ fn run<'py>(
+                     filtered_peak_search: false,
+                     batched_fft: false,
+                     real_fft: false,
++                    cached_atomic_mask: false,
+                 },
+             )
+         })
+@@ -75,6 +76,7 @@ fn run<'py>(
+ }
+
+ #[pyfunction(name = "_solution_atomic_projection")]
++#[pyo3(signature=(density,shape,cell_parameters,atom_count,mask_sigma,omit_fraction,seed,cycle,cached=false))]
+ #[allow(clippy::too_many_arguments)]
+ fn projection<'py>(
+     py: Python<'py>,
+@@ -86,6 +88,7 @@ fn projection<'py>(
+     omit_fraction: f64,
+     seed: u64,
+     cycle: usize,
++    cached: bool,
+ ) -> PyResult<Bound<'py, npy::PyArray1<f64>>> {
+     let density = density.as_slice()?.to_vec();
+     let cell = cell(&cell_parameters)?;
+@@ -101,7 +104,13 @@ fn projection<'py>(
+     };
+     let out = py
+         .detach(move || {
+-            phasesmith_solution::atomic_projection(&density, shape, cell, &options, cycle)
++            if cached {
++                phasesmith_solution::atomic_projection_cached(
++                    &density, shape, cell, &options, cycle,
++                )
++            } else {
++                phasesmith_solution::atomic_projection(&density, shape, cell, &options, cycle)
++            }
+         })
+         .map_err(invalid)?;
+     Ok(out.into_pyarray(py))
+@@ -121,7 +130,7 @@ pub(super) fn adaptive_record<'py>(
+ }
+ #[pyfunction(name = "_solution_count_free_dual_space")]
+ #[allow(clippy::too_many_arguments, clippy::fn_params_excessive_bools)] // Independent diagnostic controls.
+-#[pyo3(signature = (shape, cell_parameters, hkl, amplitudes, phases, support, cycles, peak_sigma, peak_cap, mask_sigma, hybrid_m, omit_fraction, seed, patterson_rank, checkpoint_accept_cycle=None, reusable_workspaces=false, filtered_peak_search=false,batched_fft=false, real_fft=false))]
++#[pyo3(signature = (shape, cell_parameters, hkl, amplitudes, phases, support, cycles, peak_sigma, peak_cap, mask_sigma, hybrid_m, omit_fraction, seed, patterson_rank, checkpoint_accept_cycle=None, reusable_workspaces=false, filtered_peak_search=false,batched_fft=false, real_fft=false, cached_atomic_mask=false))]
+ fn count_free<'py>(
+     py: Python<'py>,
+     shape: [usize; 3],
+@@ -143,6 +152,7 @@ fn count_free<'py>(
+     filtered_peak_search: bool,
+     batched_fft: bool,
+     real_fft: bool,
++    cached_atomic_mask: bool,
+ ) -> PyResult<Bound<'py, PyDict>> {
+     let cell = cell(&cell_parameters)?;
+     let hkl = hkl_rows(&hkl)?;
+@@ -181,10 +191,16 @@ fn count_free<'py>(
+                         filtered_peak_search,
+                         batched_fft,
+                         real_fft,
++                        cached_atomic_mask,
+                     },
+                 );
+             }
+-            if filtered_peak_search || reusable_workspaces || batched_fft || real_fft {
++            if filtered_peak_search
++                || reusable_workspaces
++                || batched_fft
++                || real_fft
++                || cached_atomic_mask
++            {
+                 return Err(phasesmith_solution::SolutionError(
+                     "diagnostic checkpoint and execution modes must be tested separately".into(),
+                 ));
+@@ -210,6 +226,7 @@ fn count_free<'py>(
+         })
+         .map_err(invalid)?;
+     let d = PyDict::new(py);
++    d.set_item("cached_mask_cycles", state.cached_mask_cycles)?;
+     d.set_item("density", state.trial.density.into_pyarray(py))?;
+     d.set_item("history", state.trial.history.into_pyarray(py))?;
+     d.set_item("best_cycle", state.trial.best_cycle)?;
+diff --git a/crates/phasesmith-py/src/solution_shared.rs b/crates/phasesmith-py/src/solution_shared.rs
+index adc47f2..a6f553b 100644
+--- a/crates/phasesmith-py/src/solution_shared.rs
++++ b/crates/phasesmith-py/src/solution_shared.rs
+@@ -57,6 +57,8 @@ pub(super) fn summary<'py>(
+     d.set_item("filtered_peak_search", s.filtered_peak_search)?;
+     d.set_item("batched_fft", s.batched_fft)?;
+     d.set_item("real_fft", s.real_fft)?;
++    d.set_item("cached_atomic_mask", s.cached_atomic_mask)?;
++    d.set_item("cached_mask_cycles", s.cached_mask_cycles)?;
+     d.set_item("real_phase_transforms", s.real_phase_transforms)?;
+     d.set_item("batched_phase_transforms", s.batched_phase_transforms)?;
+     d.set_item("filtered_peak_cycles", s.filtered_peak_cycles)?;
+diff --git a/crates/phasesmith-solution/benches/solution.rs b/crates/phasesmith-solution/benches/solution.rs
+index 75ecb9c..77c0016 100644
+--- a/crates/phasesmith-solution/benches/solution.rs
++++ b/crates/phasesmith-solution/benches/solution.rs
+@@ -835,6 +835,7 @@ fn benchmark(c: &mut Criterion) {
+                     filtered_peak_search: false,
+                     batched_fft: false,
+                     real_fft: false,
++                    cached_atomic_mask: false,
+                 };
+                 let options = DualSpaceOptions {
+                     cycles: 64,
+@@ -895,6 +896,7 @@ fn benchmark(c: &mut Criterion) {
+                     filtered_peak_search: filtered,
+                     batched_fft: false,
+                     real_fft: false,
++                    cached_atomic_mask: false,
+                 };
+                 let options = DualSpaceOptions {
+                     cycles: 64,
+@@ -955,6 +957,7 @@ fn benchmark(c: &mut Criterion) {
+                     filtered_peak_search: true,
+                     batched_fft: batched,
+                     real_fft: false,
++                    cached_atomic_mask: false,
+                 };
+                 let options = DualSpaceOptions {
+                     cycles: 64,
+@@ -1015,6 +1018,7 @@ fn benchmark(c: &mut Criterion) {
+                     filtered_peak_search: true,
+                     batched_fft: true,
+                     real_fft: real,
++                    cached_atomic_mask: false,
+                 };
+                 let options = DualSpaceOptions {
+                     cycles: 64,
+@@ -1066,6 +1070,68 @@ fn benchmark(c: &mut Criterion) {
+             },
+         );
+     }
++    for (label, cached) in [("control", false), ("cached", true)] {
++        c.bench_function(
++            &format!("atomic_mask_phase_32cubed_8_atoms_2108_rows_64_cycle_cap_{label}"),
++            |b| {
++                let execution = phasesmith_solution::PhasingExecution {
++                    score_only_evaluation: true,
++                    reusable_fourier_workspaces: true,
++                    filtered_peak_search: true,
++                    batched_fft: true,
++                    real_fft: true,
++                    cached_atomic_mask: cached,
++                };
++                let options = DualSpaceOptions {
++                    cycles: 64,
++                    peak_selection: PeakSelection::Adaptive {
++                        sigma: 2.,
++                        cap: 128,
++                    },
++                    mask_sigma: 0.25,
++                    hybrid_m: 3.,
++                    omit_fraction: 0.1,
++                    seed: 1034,
++                    patterson_rank: Some(0),
++                    cancellation: None,
++                };
++                let sample = phasesmith_solution::dual_space_with_execution(
++                    shape,
++                    cell,
++                    &quality_data.hkl,
++                    &quality_data.amplitudes,
++                    &phases,
++                    &support,
++                    &options,
++                    None,
++                    Some(&quality_plan),
++                    execution,
++                )
++                .unwrap();
++                eprintln!(
++                    "mask_sample {label} completed_cycles {} cached_cycles {}",
++                    sample.trial.history.len(),
++                    sample.cached_mask_cycles
++                );
++                drop(sample);
++                b.iter(|| {
++                    phasesmith_solution::dual_space_with_execution(
++                        shape,
++                        cell,
++                        &quality_data.hkl,
++                        &quality_data.amplitudes,
++                        &phases,
++                        &support,
++                        &options,
++                        None,
++                        Some(&quality_plan),
++                        execution,
++                    )
++                    .unwrap()
++                });
++            },
++        );
++    }
+     for filtered in [false, true] {
+         let mut plan = phasesmith_solution::PreparedAdaptivePeaks::new(shape).unwrap();
+         let label = if filtered { "filtered" } else { "control" };
+@@ -1381,6 +1447,67 @@ fn benchmark(c: &mut Criterion) {
+             },
+         );
+     }
++    for cached in [false, true] {
++        let options = SolveOptions {
++            phasing: PhasingMethod::DualSpace,
++            trials: 2,
++            cycles: 128,
++            max_seconds: 60.,
++            r1_target: 1e-6,
++            ..SolveOptions::default()
++        };
++        let search = SharedSearchOptions {
++            maximum_atoms: 32,
++            symmetry_recycling: true,
++            tangent_refinement: true,
++            wilson_normalization: true,
++            phase_quality_selection: true,
++            phase_origin_selection: true,
++            chemical_assignment: true,
++            iterative_refinement: true,
++            score_only_evaluation: true,
++            reusable_fourier_workspaces: true,
++            work_sliced_phasing: true,
++            isotropic_assignment_refinement: true,
++            filtered_peak_search: true,
++            batched_fft: true,
++            cached_normal_refinement: true,
++            real_fft: true,
++            cached_atomic_mask: cached,
++            ..SharedSearchOptions::default()
++        };
++        let label = if cached { "cached" } else { "control" };
++        c.bench_function(
++            &format!("atomic_mask_search_32cubed_8_atoms_2108_rows_{label}"),
++            |b| {
++                let sample = phasesmith_solution::solve_elements(
++                    &count_observations,
++                    cell,
++                    &group,
++                    &quality_elements,
++                    &options,
++                    &search,
++                )
++                .unwrap();
++                let audit = sample.shared_search.unwrap();
++                eprintln!(
++                    "mask_search_sample {label} starts {} cached_cycles {} cycles {}",
++                    audit.phasing_starts, audit.cached_mask_cycles, audit.fourier_workspace_cycles
++                );
++                b.iter(|| {
++                    phasesmith_solution::solve_elements(
++                        &count_observations,
++                        cell,
++                        &group,
++                        &quality_elements,
++                        &options,
++                        &search,
++                    )
++                    .unwrap()
++                });
++            },
++        );
++    }
+     let mut count_benches = c.benchmark_group("count_selection_8_atoms_2108_reflections");
+     count_benches
+         .sample_size(10)
+diff --git a/crates/phasesmith-solution/src/dual_space.rs b/crates/phasesmith-solution/src/dual_space.rs
+index dfdc83a..a23248c 100644
+--- a/crates/phasesmith-solution/src/dual_space.rs
++++ b/crates/phasesmith-solution/src/dual_space.rs
+@@ -102,6 +102,8 @@ pub struct DualSpaceResult {
+     pub batched_phase_transforms: usize,
+     /// Actual packed-real transforms in P1 cycles, excluding initialization.
+     pub real_phase_transforms: usize,
++    /// Actual cycles using exact cached Gaussian mask geometry.
++    pub cached_mask_cycles: usize,
+ }
+
+ pub(crate) fn hash64(mut value: u64) -> u64 {
+@@ -137,7 +139,11 @@ fn omitted(count: usize, cycle: usize, options: &DualSpaceOptions) -> Vec<bool>
+     mask
+ }
+
+-fn mask_bounds(shape: [usize; 3], g: &CellGeometry, sigma: f64) -> Result<[i32; 3], SolutionError> {
++pub(crate) fn mask_bounds(
++    shape: [usize; 3],
++    g: &CellGeometry,
++    sigma: f64,
++) -> Result<[i32; 3], SolutionError> {
+     let mut bounds = [0; 3];
+     for i in 0..3 {
+         let fractional = 3. * sigma * g.reciprocal_metric[i][i].sqrt();
+@@ -173,6 +179,21 @@ pub fn atomic_projection(
+ ) -> Result<Vec<f64>, SolutionError> {
+     Ok(project_atomicity(density, shape, cell, options, cycle)?.density)
+ }
++/// Exact cached-geometry atomic projection for independent comparisons.
++/// # Errors
++/// Rejects the same controls, grids, density and support bounds as `atomic_projection`.
++pub fn atomic_projection_cached(
++    density: &[f64],
++    shape: [usize; 3],
++    cell: UnitCell,
++    options: &DualSpaceOptions,
++    cycle: usize,
++) -> Result<Vec<f64>, SolutionError> {
++    let mut workspace = AtomicWorkspace::new(shape, cell, options, false, true)?;
++    workspace.update(density, shape, options, cycle)?;
++    Ok(workspace.projected)
++}
++
+ struct Projection {
+     density: Vec<f64>,
+     selected: usize,
+@@ -221,6 +242,8 @@ struct AtomicWorkspace {
+     mask: Vec<f64>,
+     projected: Vec<f64>,
+     peaks: Option<crate::PreparedAdaptivePeaks>,
++    mask_plan: Option<Box<crate::atomic_mask::PreparedMask>>,
++    cached_cycles: usize,
+ }
+ impl AtomicWorkspace {
+     fn new(
+@@ -228,12 +251,22 @@ impl AtomicWorkspace {
+         cell: UnitCell,
+         options: &DualSpaceOptions,
+         filtered_peaks: bool,
++        cached_mask: bool,
+     ) -> Result<Self, SolutionError> {
+         validate_options(options)?;
+         let geometry = cell.geometry().map_err(|e| error(e.to_string()))?;
+         let bounds = mask_bounds(shape, &geometry, options.mask_sigma)?;
+         let n = grid_len(shape)?;
+         Ok(Self {
++            mask_plan: cached_mask.then(|| {
++                Box::new(crate::atomic_mask::PreparedMask::new(
++                    shape,
++                    &geometry,
++                    bounds,
++                    options.mask_sigma,
++                ))
++            }),
++            cached_cycles: 0,
+             geometry,
+             bounds,
+             radius2: (3. * options.mask_sigma).powi(2) * (1. + 1e-12),
+@@ -281,10 +314,17 @@ impl AtomicWorkspace {
+         self.mask.fill(0.);
+         let radius2 = self.radius2;
+         let normalization = self.normalization;
++        if self.mask_plan.is_some() {
++            self.cached_cycles += 1;
++        }
+         for (&point, &skip) in peaks.iter().zip(&skip) {
+             if skip {
+                 continue;
+             }
++            if let Some(plan) = &mut self.mask_plan {
++                plan.add_peak(&mut self.mask, point);
++                continue;
++            }
+             let centre = std::array::from_fn::<_, 3, _>(|i| point[i] * shape[i] as f64);
+             let origin = centre.map(|v| v.round() as i32);
+             for dx in -self.bounds[0]..=self.bounds[0] {
+@@ -539,6 +579,8 @@ pub struct PhasingExecution {
+     pub batched_fft: bool,
+     /// Packed real-density transforms for the two P1 cycle Fourier operations.
+     pub real_fft: bool,
++    /// Cache exact Gaussian axis geometry inside reusable projection workspaces.
++    pub cached_atomic_mask: bool,
+ }
+
+ /// Diagnostic/benchmark entry point with explicit arithmetic-preserving execution.
+@@ -659,9 +701,10 @@ pub(crate) fn dual_space_guided_prediction(
+         filtered_peak_search,
+         batched_fft,
+         real_fft,
++        cached_atomic_mask,
+     } = execution;
+     validate_options(options)?;
+-    if (filtered_peak_search || batched_fft) && !reusable_fourier_workspaces {
++    if (filtered_peak_search || batched_fft || cached_atomic_mask) && !reusable_fourier_workspaces {
+         return Err(error(
+             "filtered peak search and batched FFT require reusable Fourier workspaces",
+         ));
+@@ -765,6 +808,7 @@ pub(crate) fn dual_space_guided_prediction(
+             cell,
+             options,
+             filtered_peak_search,
++            cached_atomic_mask,
+         )?)
+     } else {
+         None
+@@ -1077,6 +1121,7 @@ pub(crate) fn dual_space_guided_prediction(
+         fourier_workspace_cycles,
+         batched_phase_transforms: fft.batched_calls(),
+         real_phase_transforms: fft.real_calls(),
++        cached_mask_cycles: workspace.as_ref().map_or(0, |w| w.cached_cycles),
+         filtered_peak_cycles: if filtered_peak_search
+             && matches!(options.peak_selection, PeakSelection::Adaptive { .. })
+         {
+@@ -1168,6 +1213,7 @@ mod tests {
+                         filtered_peak_search: false,
+                         batched_fft: false,
+                         real_fft: false,
++                        cached_atomic_mask: false,
+                     },
+                     PhasingExecution {
+                         score_only_evaluation: false,
+@@ -1175,6 +1221,7 @@ mod tests {
+                         filtered_peak_search: false,
+                         batched_fft: false,
+                         real_fft: false,
++                        cached_atomic_mask: false,
+                     },
+                     PhasingExecution {
+                         score_only_evaluation: true,
+@@ -1182,6 +1229,7 @@ mod tests {
+                         filtered_peak_search: false,
+                         batched_fft: false,
+                         real_fft: false,
++                        cached_atomic_mask: false,
+                     },
+                     PhasingExecution {
+                         score_only_evaluation: true,
+@@ -1189,6 +1237,7 @@ mod tests {
+                         filtered_peak_search: true,
+                         batched_fft: false,
+                         real_fft: false,
++                        cached_atomic_mask: false,
+                     },
+                     PhasingExecution {
+                         score_only_evaluation: true,
+@@ -1196,6 +1245,7 @@ mod tests {
+                         filtered_peak_search: true,
+                         batched_fft: true,
+                         real_fft: false,
++                        cached_atomic_mask: false,
+                     },
+                 ] {
+                     let new = dual_space_with_execution(
+diff --git a/crates/phasesmith-solution/src/lib.rs b/crates/phasesmith-solution/src/lib.rs
+index 1bbc6f3..3d85580 100644
+--- a/crates/phasesmith-solution/src/lib.rs
++++ b/crates/phasesmith-solution/src/lib.rs
+@@ -5,6 +5,7 @@
+ //! No external crystallographic program is imported, executed, or required.
+
+ mod adp_refinement;
++mod atomic_mask;
+ mod completion;
+ mod completion_orbit;
+ mod data;
+@@ -51,8 +52,8 @@ pub use completion_orbit::{
+ pub use data::{Observation, PreparedData, prepare_data};
+ pub use dual_space::{
+     AdaptivePeakHistory, CheckpointCallback, DualSpaceCheckpoint, DualSpaceOptions,
+-    DualSpaceResult, PeakSelection, adaptive_peaks, atomic_projection, dual_space,
+-    dual_space_monitored, dual_space_with_prediction,
++    DualSpaceResult, PeakSelection, adaptive_peaks, atomic_projection, atomic_projection_cached,
++    dual_space, dual_space_monitored, dual_space_with_prediction,
+ };
+ pub use fourier::{
+     FlipOptions, FlipResult, charge_flip, extract_peaks, real_density_transform, transform_3d,
+diff --git a/crates/phasesmith-solution/src/shared_search.rs b/crates/phasesmith-solution/src/shared_search.rs
+index d707c13..4b85f63 100644
+--- a/crates/phasesmith-solution/src/shared_search.rs
++++ b/crates/phasesmith-solution/src/shared_search.rs
+@@ -79,6 +79,8 @@ pub struct SharedSearchOptions {
+     pub batched_fft: bool,
+     /// Use packed real P1 Fourier cycles; requires batched FFTs.
+     pub real_fft: bool,
++    /// Exact cached Gaussian-mask geometry in P1 cycles.
++    pub cached_atomic_mask: bool,
+     /// Select origin FFT sampling from phase-equivalence frequencies.
+     pub independent_origin_sampling: bool,
+     /// Add motif density scales and post-screen coupled element assignments.
+@@ -125,6 +127,7 @@ impl Default for SharedSearchOptions {
+             filtered_peak_search: false,
+             batched_fft: false,
+             real_fft: false,
++            cached_atomic_mask: false,
+             independent_origin_sampling: false,
+             chemical_assignment: false,
+             iterative_refinement: false,
+@@ -262,6 +265,8 @@ pub struct SharedSearchSummary {
+     pub batched_fft: bool,
+     /// Use packed real P1 Fourier cycles; requires batched FFTs.
+     pub real_fft: bool,
++    /// Exact cached Gaussian-mask geometry in P1 cycles.
++    pub cached_atomic_mask: bool,
+     /// Select origin FFT sampling from phase-equivalence frequencies.
+     pub independent_origin_sampling: bool,
+     /// Add motif density scales and post-screen coupled element assignments.
+@@ -286,6 +291,8 @@ pub struct SharedSearchSummary {
+     pub batched_phase_transforms: usize,
+     /// Actual packed-real P1 transforms (forward plus backward).
+     pub real_phase_transforms: usize,
++    /// Actual cycles using cached Gaussian-mask geometry.
++    pub cached_mask_cycles: usize,
+     /// Per-start phase checkpoint decisions (start index, decision).
+     pub phase_checkpoints: Vec<(usize, crate::PhaseCheckpoint)>,
+     /// Actual reciprocal support provenance, absent for the original path.
+@@ -1788,6 +1795,7 @@ pub fn solve_elements(
+         || (search.reusable_fourier_workspaces && options.phasing != PhasingMethod::DualSpace)
+         || ((search.filtered_peak_search || search.batched_fft)
+             && !search.reusable_fourier_workspaces)
++        || (search.cached_atomic_mask && !search.reusable_fourier_workspaces)
+         || (search.real_fft && !search.batched_fft)
+         || (search.cached_normal_refinement && !search.iterative_refinement)
+         || (search.isotropic_assignment_refinement
+@@ -2033,6 +2041,7 @@ pub fn solve_elements(
+         filtered_peak_search: search.filtered_peak_search,
+         batched_fft: search.batched_fft,
+         real_fft: search.real_fft,
++        cached_atomic_mask: search.cached_atomic_mask,
+         independent_origin_sampling: search.independent_origin_sampling,
+         chemical_assignment: search.chemical_assignment,
+         iterative_refinement: search.iterative_refinement,
+@@ -2226,6 +2235,7 @@ pub fn solve_elements(
+                     filtered_peak_search: search.filtered_peak_search,
+                     batched_fft: search.batched_fft,
+                     real_fft: search.real_fft,
++                    cached_atomic_mask: search.cached_atomic_mask,
+                 },
+             )?;
+             audit.phase_slices.push(crate::PhaseSliceAudit {
+@@ -2255,6 +2265,7 @@ pub fn solve_elements(
+             audit.filtered_peak_cycles += state.filtered_peak_cycles;
+             audit.batched_phase_transforms += state.batched_phase_transforms;
+             audit.real_phase_transforms += state.real_phase_transforms;
++            audit.cached_mask_cycles += state.cached_mask_cycles;
+             audit
+                 .phase_checkpoints
+                 .extend(state.phase_checkpoints.drain(..).map(|c| (trial, c)));
+diff --git a/python/phasesmith/experimental/solution.py b/python/phasesmith/experimental/solution.py
+index 2ae094a..1687358 100644
+--- a/python/phasesmith/experimental/solution.py
++++ b/python/phasesmith/experimental/solution.py
+@@ -540,6 +540,8 @@ class SharedSearchAudit:
+     filtered_peak_search: bool = False
+     batched_fft: bool = False
+     real_fft: bool = False
++    cached_atomic_mask: bool = False
++    cached_mask_cycles: int = 0
+     real_phase_transforms: int = 0
+     batched_phase_transforms: int = 0
+     filtered_peak_cycles: int = 0
+@@ -800,6 +802,7 @@ def solve_structure_elements(
+     filtered_peak_search: bool = False,
+     batched_fft: bool = False,
+     real_fft: bool = False,
++    cached_atomic_mask: bool = False,
+     adaptive_checkpoints: bool = False,
+     independent_origin_sampling: bool = False,
+     cancellation: SolutionCancellation | None = None,
+@@ -821,6 +824,9 @@ def solve_structure_elements(
+     ``cached_normal_refinement=True`` caches preconditioned normal matrices in final
+     iterative fits, verifies steps against the original Jacobian and falls back
+     to the matrix-free solver if needed. It requires iterative refinement.
++    ``cached_atomic_mask=True`` reuses exact per-axis Gaussian geometry in P1
++    projections. It requires reusable Fourier workspaces and preserves the support
++    boundary, exponential, accumulation order and masks.
+     ``real_fft=True`` uses packed real-density Fourier cycles in P1 phasing,
+     retains full spectra and observations at boundaries, and requires batched FFTs.
+     It changes floating-point operation order and remains experimental.
+@@ -905,6 +911,7 @@ def solve_structure_elements(
+         ("filtered_peak_search", filtered_peak_search),
+         ("batched_fft", batched_fft),
+         ("real_fft", real_fft),
++        ("cached_atomic_mask", cached_atomic_mask),
+         ("independent_origin_sampling", independent_origin_sampling),
+     ):
+         if not isinstance(value, bool):
+@@ -921,6 +928,8 @@ def solve_structure_elements(
+         raise ValueError("prediction requires phase_origin_selection and wilson_normalization")
+     if cached_normal_refinement and not iterative_refinement:
+         raise ValueError("cached_normal_refinement requires iterative_refinement")
++    if cached_atomic_mask and not reusable_fourier_workspaces:
++        raise ValueError("cached_atomic_mask requires reusable_fourier_workspaces")
+     if real_fft and not batched_fft:
+         raise ValueError("real_fft requires batched_fft")
+     if batched_fft and not reusable_fourier_workspaces:
+@@ -1062,7 +1071,7 @@ def solve_structure_elements(
+                 reusable_fourier_workspaces,
+                 work_sliced_phasing,
+                 isotropic_assignment_refinement,
+-                (filtered_peak_search, batched_fft, cached_normal_refinement, real_fft),
++                (filtered_peak_search, batched_fft, cached_normal_refinement, real_fft, cached_atomic_mask),
+             ),
+         ),
+     )
+diff --git a/tests/test_solution_phase_ablation_report.py b/tests/test_solution_phase_ablation_report.py
+index bf9dd2d..df37f7f 100644
+--- a/tests/test_solution_phase_ablation_report.py
++++ b/tests/test_solution_phase_ablation_report.py
+@@ -49,6 +49,7 @@ def test_pair_labels_are_distinct_from_prediction_case_pairs():
+         "fft_flag",
+         "normal_flag",
+         "real_flag",
++        "mask_flag",
+     ],
+ )
+ def test_comparison_rejects_incomplete_opened_or_changed_panels(tmp_path, corruption):
+@@ -72,6 +73,7 @@ def test_comparison_rejects_incomplete_opened_or_changed_panels(tmp_path, corrup
+             "fft_flag": "batched_fft",
+             "normal_flag": "cached_normal_refinement",
+             "real_flag": "real_fft",
++            "mask_flag": "cached_atomic_mask",
+         }[corruption]
+         report[key] = 1.2 if corruption == "extension_flag" else True
+     else:
+diff --git a/crates/phasesmith-solution/src/atomic_mask.rs b/crates/phasesmith-solution/src/atomic_mask.rs
+new file mode 100644
+index 0000000..d1f463a
+--- /dev/null
++++ b/crates/phasesmith-solution/src/atomic_mask.rs
+@@ -0,0 +1,147 @@
++//! Exact axis-factorized Gaussian mask geometry; no changed support or reduction order.
++use crate::math3::dot;
++use phasesmith_crystallography::CellGeometry;
++
++#[derive(Clone, Copy, Default)]
++struct AxisSample {
++    delta: f64,
++    index: usize,
++    products: [f64; 3],
++}
++
++pub(super) struct PreparedMask {
++    shape: [usize; 3],
++    metric: [[f64; 3]; 3],
++    bounds: [i32; 3],
++    radius2: f64,
++    normalization: f64,
++    sigma2: f64,
++    axes: [[AxisSample; 33]; 3],
++}
++impl PreparedMask {
++    pub(super) fn new(
++        shape: [usize; 3],
++        geometry: &CellGeometry,
++        bounds: [i32; 3],
++        sigma: f64,
++    ) -> Self {
++        Self {
++            shape,
++            metric: geometry.direct_metric,
++            bounds,
++            radius2: (3. * sigma).powi(2) * (1. + 1e-12),
++            normalization: std::f64::consts::TAU.powf(-1.5) / sigma.powi(3),
++            sigma2: sigma.powi(2),
++            axes: [[AxisSample::default(); 33]; 3],
++        }
++    }
++    #[allow(
++        clippy::cast_precision_loss,
++        clippy::cast_possible_truncation,
++        clippy::cast_sign_loss
++    )]
++    pub(super) fn add_peak(&mut self, mask: &mut [f64], point: [f64; 3]) {
++        let centre = std::array::from_fn::<_, 3, _>(|i| point[i] * self.shape[i] as f64);
++        let origin = centre.map(|v| v.round() as i32);
++        // Original support budget is at most 16 steps on either side of an axis.
++        for axis in 0..3 {
++            let stride: usize = self.shape[axis + 1..].iter().product();
++            let axis_length = i32::try_from(self.shape[axis]).expect("validated axis at most 128");
++            for (sample, d) in self.axes[axis]
++                .iter_mut()
++                .zip(-self.bounds[axis]..=self.bounds[axis])
++            {
++                let coordinate = origin[axis] + d;
++                sample.delta = (f64::from(coordinate) - centre[axis]) / self.shape[axis] as f64;
++                sample.index = coordinate.rem_euclid(axis_length) as usize * stride;
++                sample.products = self.metric.map(|row| row[axis] * sample.delta);
++            }
++        }
++        let lengths = self.bounds.map(|b| (2 * b + 1) as usize);
++        for x in &self.axes[0][..lengths[0]] {
++            for y in &self.axes[1][..lengths[1]] {
++                // Match Iterator::sum's identity and its original first-two-term order.
++                let prefix = std::array::from_fn::<_, 3, _>(|i| {
++                    [x.products[i], y.products[i]].into_iter().sum::<f64>()
++                });
++                for z in &self.axes[2][..lengths[2]] {
++                    let vector = std::array::from_fn(|i| prefix[i] + z.products[i]);
++                    let squared = dot([x.delta, y.delta, z.delta], vector);
++                    if squared <= self.radius2 {
++                        mask[x.index + y.index + z.index] +=
++                            self.normalization * (-0.5 * squared / self.sigma2).exp();
++                    }
++                }
++            }
++        }
++    }
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++    use crate::fourier::grid_index;
++    use crate::math3::mv;
++    use phasesmith_crystallography::UnitCell;
++    #[test]
++    #[allow(clippy::cast_precision_loss, clippy::cast_possible_truncation)]
++    fn cached_masks_match_direct_at_periodic_and_support_boundaries_bitwise() {
++        for cell in [
++            UnitCell {
++                a_angstrom: 6.,
++                b_angstrom: 7.,
++                c_angstrom: 8.,
++                alpha_deg: 90.,
++                beta_deg: 90.,
++                gamma_deg: 90.,
++            },
++            UnitCell {
++                a_angstrom: 6.,
++                b_angstrom: 7.,
++                c_angstrom: 8.,
++                alpha_deg: 78.,
++                beta_deg: 96.,
++                gamma_deg: 107.,
++            },
++        ] {
++            let geometry = cell.geometry().unwrap();
++            for shape in [[8; 3], [10, 14, 18], [32, 16, 64]] {
++                let sigma = 0.25;
++                let bounds = crate::dual_space::mask_bounds(shape, &geometry, sigma).unwrap();
++                let mut plan = PreparedMask::new(shape, &geometry, bounds, sigma);
++                assert!(size_of::<PreparedMask>() <= 4608);
++                let mut cached = vec![0.; shape.iter().product()];
++                let mut direct = cached.clone();
++                for point in [
++                    [0.; 3],
++                    [0.999_999, 0.03125, 0.5],
++                    [0.1234, 0.4567, 0.8912],
++                    [0.5; 3],
++                ] {
++                    plan.add_peak(&mut cached, point);
++                    let centre = std::array::from_fn::<_, 3, _>(|i| point[i] * shape[i] as f64);
++                    let origin = centre.map(|v| v.round() as i32);
++                    for dx in -bounds[0]..=bounds[0] {
++                        for dy in -bounds[1]..=bounds[1] {
++                            for dz in -bounds[2]..=bounds[2] {
++                                let index = [origin[0] + dx, origin[1] + dy, origin[2] + dz];
++                                let delta = std::array::from_fn(|i| {
++                                    (f64::from(index[i]) - centre[i]) / shape[i] as f64
++                                });
++                                let q2 = dot(delta, mv(geometry.direct_metric, delta));
++                                if q2 <= plan.radius2 {
++                                    direct[grid_index(index, shape)] +=
++                                        plan.normalization * (-0.5 * q2 / sigma.powi(2)).exp();
++                                }
++                            }
++                        }
++                    }
++                }
++                assert_eq!(
++                    cached.iter().map(|v| v.to_bits()).collect::<Vec<_>>(),
++                    direct.iter().map(|v| v.to_bits()).collect::<Vec<_>>()
++                );
++            }
++        }
++    }
++}
+diff --git a/tests/test_solution_cached_atomic_mask.py b/tests/test_solution_cached_atomic_mask.py
+new file mode 100644
+index 0000000..b6be04d
+--- /dev/null
++++ b/tests/test_solution_cached_atomic_mask.py
+@@ -0,0 +1,128 @@
++"""Exact cached Gaussian mask geometry and complete current execution trajectories."""
++
++import numpy as np
++import pytest
++from phasesmith import _core
++from phasesmith.crystallography import UnitCell
++from phasesmith.experimental.solution_dual_reference import atomic_projection_reference
++
++pytestmark = pytest.mark.skipif(
++    not hasattr(_core, "_SharedOrbitPool"), reason="experimental-solution"
++)
++
++
++@pytest.mark.parametrize("shape", [(8, 8, 8), (10, 14, 18), (32, 16, 32), (8, 128, 8)])
++@pytest.mark.parametrize("cell", [UnitCell(6, 7, 8, 90, 90, 90), UnitCell(6, 7, 8, 78, 96, 107)])
++@pytest.mark.parametrize("cycle", [0, 2, 49, 50, 53])
++def test_cached_projection_is_bitwise_equal_at_periodic_edges_and_matches_numpy(shape, cell, cycle):
++    density = np.random.default_rng(901).normal(0, 0.1, shape)
++    density[0, 0, 0] = 6
++    density[-1, 0, shape[2]//2] = 7
++    for scale in [1e-200, 1.0, 1e200]:
++        values = np.ascontiguousarray(density*scale).ravel()
++        args = (values, shape, list(cell.as_tuple()), 3, 0.25, 0.2, 123, cycle)
++        old = _core._solution_atomic_projection(*args)
++        new = _core._solution_atomic_projection(*args, cached=True)
++        np.testing.assert_array_equal(new.view(np.uint64), old.view(np.uint64))
++        np.testing.assert_array_equal(values.reshape(shape), density*scale)
++        if scale == 1:
++            ref = atomic_projection_reference(
++                density, cell.geometry().direct_basis, 3, 0.25,
++                cycle=cycle, seed=123, omit_fraction=0.2,
++            )
++            np.testing.assert_allclose(new.reshape(shape), ref, rtol=2e-12, atol=2e-13)
++
++
++@pytest.mark.parametrize("kind", ["zero", "negative", "plateau", "signed_zero"])
++def test_empty_or_tied_maps_preserve_every_bit(kind):
++    density = np.zeros((8, 8, 8))
++    if kind == "negative":
++        density.fill(-1)
++    elif kind == "plateau":
++        density.fill(1)
++    elif kind == "signed_zero":
++        density.ravel()[::2] = -0.0
++    args = (density.ravel(), density.shape, [6, 7, 8, 90, 90, 90], 3, 0.25, 0.1, 55, 2)
++    old = _core._solution_atomic_projection(*args)
++    new = _core._solution_atomic_projection(*args, cached=True)
++    np.testing.assert_array_equal(new.view(np.uint64), old.view(np.uint64))
++
++
++@pytest.mark.parametrize("invalid", ["nan", "length", "sigma", "support", "odd", "count"])
++def test_cached_projection_rejects_original_invalid_inputs(invalid):
++    density, shape, sigma, count = np.ones(512), (8, 8, 8), 0.25, 3
++    if invalid == "nan":
++        density[0] = np.nan
++    elif invalid == "length":
++        density = density[:-1]
++    elif invalid == "sigma":
++        sigma = 0
++    elif invalid == "support":
++        sigma = 5
++    elif invalid == "odd":
++        shape = (8, 7, 8)
++    else:
++        count = 0
++    with pytest.raises(ValueError):
++        _core._solution_atomic_projection(
++            density, shape, [6, 7, 8, 90, 90, 90], count, sigma, 0.1, 55, 2, cached=True
++        )
++
++
++@pytest.mark.parametrize("real", [False, True])
++@pytest.mark.parametrize("rank,omit", [(None, 0.0), (None, 0.1), (0, 0.1)])
++def test_complete_current_trajectories_remain_bitwise_equal(rank, omit, real):
++    from test_solution_dual_space import inputs
++
++    shape, cell, h, amplitude, phases, support = inputs()
++    args = (
++        shape, list(cell.as_tuple()), h.ravel(), amplitude, phases, support.ravel(),
++        128, 1.5, 64, 0.25, 3.0, omit, 1034, rank,
++    )
++    common = dict(
++        reusable_workspaces=True, filtered_peak_search=True, batched_fft=True, real_fft=real
++    )
++    old = _core._solution_count_free_dual_space(*args, **common)
++    new = _core._solution_count_free_dual_space(*args, **common, cached_atomic_mask=True)
++    for key in ["density", "history"]:
++        np.testing.assert_array_equal(new[key].view(np.uint64), old[key].view(np.uint64))
++    assert old["adaptive_peaks"] == new["adaptive_peaks"]
++    assert old["cached_mask_cycles"] == 0 and new["cached_mask_cycles"] == 128
++
++
++@pytest.mark.parametrize("symbol", ["P1", "P-1", "Pm"])
++def test_complete_structure_and_counts_are_unchanged(symbol):
++    from phasesmith.experimental.solution import SolutionOptions, solve_structure_elements
++    from test_solution_shared_search import synthetic
++
++    cell, group, data, _, species = synthetic(symbol)
++    common = dict(
++        cell=cell, space_group=group, elements=["Fe", "O"], maximum_atoms=12,
++        symmetry_recycling=True, tangent_refinement=True, wilson_normalization=True,
++        phase_quality_selection=True, phase_origin_selection=True, chemical_assignment=True,
++        iterative_refinement=True, score_only_evaluation=True, reusable_fourier_workspaces=True,
++        work_sliced_phasing=True, isotropic_assignment_refinement=True, filtered_peak_search=True,
++        batched_fft=True, real_fft=True, cached_normal_refinement=True,
++        options=SolutionOptions(
++            phasing="dual_space", trials=4, cycles=800, max_seconds=60,
++            r1_target=0.005, completion=False,
++        ),
++    )
++    old = solve_structure_elements(data, **common)
++    new = solve_structure_elements(data, **common, cached_atomic_mask=True)
++    assert old.target_met and new.target_met
++    assert dict(old.composition) == dict(new.composition) == {
++        e: int(np.count_nonzero(species == e)) for e in set(species)
++    }
++    assert new.best.refinement.mode == old.best.refinement.mode == "anisotropic"
++    np.testing.assert_array_equal(
++        new.best.fractional_xyz.view(np.uint64), old.best.fractional_xyz.view(np.uint64)
++    )
++    assert new.shared_search.cached_atomic_mask
++    assert new.shared_search.cached_mask_cycles == new.shared_search.fourier_workspace_cycles
++    with pytest.raises(ValueError, match="requires reusable"):
++        solve_structure_elements(
++            data, cell=cell, space_group=group, elements=["Fe", "O"], cached_atomic_mask=True
++        )
++    with pytest.raises(TypeError, match="boolean"):
++        solve_structure_elements(data, **common, cached_atomic_mask=1)
+diff --git a/benchmarks/solution_atomic_mask_interleaved.py b/benchmarks/solution_atomic_mask_interleaved.py
+new file mode 100644
+index 0000000..df52351
+--- /dev/null
++++ b/benchmarks/solution_atomic_mask_interleaved.py
+@@ -0,0 +1,86 @@
++"""Balanced serial cached Gaussian mask comparison with optimized kernels; development only."""
++
++from __future__ import annotations
++
++import argparse
++import json
++from pathlib import Path
++from types import SimpleNamespace
++
++from solution_corpus.run import collect_jobs
++from solution_execution_interleaved import collect_balanced
++
++ROOT = Path(__file__).resolve().parents[1]
++MODES = ("control", "cached")
++
++
++def main():
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument(
++        "--manifest", type=Path, default=ROOT / "validation/solution-corpus-v5.json"
++    )
++    parser.add_argument("--output", type=Path, required=True)
++    parser.add_argument("--seconds", type=float, default=15.0)
++    parser.add_argument("--lock-revision", type=int, default=21)
++    parser.add_argument(
++        "--shelxt",
++        type=Path,
++        default=Path("/Users/clemens/.local/opt/shelx/versions/2026-10-28/bin/shelxt"),
++    )
++    args = parser.parse_args()
++    if args.output.exists() or not 5 <= args.seconds <= 120:
++        parser.error("a new directory and seconds in [5,120] are required")
++    args.output.mkdir(parents=True)
++    streams = {}
++    for mode in MODES:
++        controls = SimpleNamespace(
++            manifest=args.manifest.resolve(),
++            output=(args.output / mode).resolve(),
++            seconds=args.seconds,
++            shelxt=args.shelxt.resolve(),
++            split="development",
++            resume=False,
++            lock_revision=args.lock_revision,
++            legacy_counts=False,
++            wilson_normalization=True,
++            phase_quality_selection=True,
++            phase_origin_selection=True,
++            chemical_assignment=True,
++            iterative_refinement=True,
++            missing_reflections=False,
++            resolution_extension=1.0,
++            adaptive_checkpoints=False,
++            isotropic_assignment_refinement=True,
++            filtered_peak_search=True,
++            batched_fft=True,
++            real_fft=True,
++            cached_atomic_mask=mode == "cached",
++            cached_normal_refinement=True,
++            work_sliced_phasing=True,
++            independent_origin_sampling=False,
++            phase_first_selection=True,
++            legacy_quality_normalization=False,
++            score_only_evaluation=True,
++            reusable_fourier_workspaces=True,
++            collection_schedule="balanced serial case-interleaved cached Gaussian mask comparison",
++            collection_scheduler_source="benchmarks/solution_atomic_mask_interleaved.py",
++        )
++        streams[mode] = collect_jobs(controls)
++    events = []
++
++    def record(mode, event):
++        events.append({"mode": mode, **event})
++        (args.output / "schedule.json").write_text(json.dumps(events, indent=2) + "\n")
++        print(json.dumps({"mode": mode, **event}), flush=True)
++
++    count = collect_balanced(streams, record)
++    expected = 2 * sum(
++        c["split"] == "development" for c in json.loads(args.manifest.read_text())["cases"]
++    )
++    if count != expected:
++        raise ValueError("incomplete development collection")
++    print(json.dumps({"complete_rounds": count, "modes": MODES, "holdout_opened": False}))
++
++
++if __name__ == "__main__":
++    main()
