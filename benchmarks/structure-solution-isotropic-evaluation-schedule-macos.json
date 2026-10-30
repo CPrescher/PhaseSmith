@@ -1,0 +1,739 @@
+{
+  "schema": "phasesmith.balanced-serial-isotropic-evaluation-schedule.v1",
+  "development_cases": 35,
+  "modes": [
+    "control",
+    "cache"
+  ],
+  "holdout_outcomes_opened": false,
+  "schedule_sha256": "b1f6106b2b066941dfa83e43d6b2389c461944d1bdd355013597a7bf54b3adce",
+  "leading_cases": {
+    "control": 18,
+    "cache": 17
+  },
+  "verified_reports": {
+    "control": {
+      "report_sha256": "659d53457d50c837d257a2b68062c7be6a33ed10c64e98f0d0d237ac47dfb16c",
+      "before_reference_audit_sha256": "08c1f566bf59c354515b47773eebd73db2ab9ba2213425047f1e2911191c7a95",
+      "source_files_verified": 44,
+      "native_sha256": "2446734a5423174accc3ddb62aacbedf2b95fbce34430712cb464f8e5375e217"
+    },
+    "cache": {
+      "report_sha256": "2b2ae34540defad7d1539aa1c2493b13965ad0eb7189d7d5196d566003464d78",
+      "before_reference_audit_sha256": "a2e17c32ac7a4deffb902a942af606d737a3861afd3db476167b2a5805cceee4",
+      "source_files_verified": 44,
+      "native_sha256": "2446734a5423174accc3ddb62aacbedf2b95fbce34430712cb464f8e5375e217"
+    }
+  },
+  "current_sources_verified": true,
+  "events": [
+    {
+      "mode": "control",
+      "id": "cod-2010901",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-2010901",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2010901",
+      "method": "shelxt"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-2010901",
+      "method": "shelxt"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-2021292",
+      "method": "shelxt"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2021292",
+      "method": "shelxt"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-2021292",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2021292",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2011426",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-2011426",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2011426",
+      "method": "shelxt"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-2011426",
+      "method": "shelxt"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-2102156",
+      "method": "shelxt"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2102156",
+      "method": "shelxt"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-2102156",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2102156",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2243197",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-2243197",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2243197",
+      "method": "shelxt"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-2243197",
+      "method": "shelxt"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-2108342",
+      "method": "shelxt"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2108342",
+      "method": "shelxt"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-2108342",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2108342",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2241159",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-2241159",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2241159",
+      "method": "shelxt"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-2241159",
+      "method": "shelxt"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-4326074",
+      "method": "shelxt"
+    },
+    {
+      "mode": "control",
+      "id": "cod-4326074",
+      "method": "shelxt"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-4326074",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-4326074",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2021310",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-2021310",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2021310",
+      "method": "shelxt"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-2021310",
+      "method": "shelxt"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-2010825",
+      "method": "shelxt"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2010825",
+      "method": "shelxt"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-2010825",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2010825",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2021316",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-2021316",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2021316",
+      "method": "shelxt"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-2021316",
+      "method": "shelxt"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-2011038",
+      "method": "shelxt"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2011038",
+      "method": "shelxt"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-2011038",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2011038",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2010543",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-2010543",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2010543",
+      "method": "shelxt"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-2010543",
+      "method": "shelxt"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-2010647",
+      "method": "shelxt"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2010647",
+      "method": "shelxt"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-2010647",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2010647",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2241796",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-2241796",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2241796",
+      "method": "shelxt"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-2241796",
+      "method": "shelxt"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-2011590",
+      "method": "shelxt"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2011590",
+      "method": "shelxt"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-2011590",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2011590",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2021199",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-2021199",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2021199",
+      "method": "shelxt"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-2021199",
+      "method": "shelxt"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-2011236",
+      "method": "shelxt"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2011236",
+      "method": "shelxt"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-2011236",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2011236",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2011346",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-2011346",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2011346",
+      "method": "shelxt"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-2011346",
+      "method": "shelxt"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-2242589",
+      "method": "shelxt"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2242589",
+      "method": "shelxt"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-2242589",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2242589",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2242657",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-2242657",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2242657",
+      "method": "shelxt"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-2242657",
+      "method": "shelxt"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-2232654",
+      "method": "shelxt"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2232654",
+      "method": "shelxt"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-2232654",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2232654",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2011241",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-2011241",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2011241",
+      "method": "shelxt"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-2011241",
+      "method": "shelxt"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-2010705",
+      "method": "shelxt"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2010705",
+      "method": "shelxt"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-2010705",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2010705",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2201295",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-2201295",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2201295",
+      "method": "shelxt"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-2201295",
+      "method": "shelxt"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-2010746",
+      "method": "shelxt"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2010746",
+      "method": "shelxt"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-2010746",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2010746",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2011393",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-2011393",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2011393",
+      "method": "shelxt"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-2011393",
+      "method": "shelxt"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-2011181",
+      "method": "shelxt"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2011181",
+      "method": "shelxt"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-2011181",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2011181",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2107296",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-2107296",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2107296",
+      "method": "shelxt"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-2107296",
+      "method": "shelxt"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-2203173",
+      "method": "shelxt"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2203173",
+      "method": "shelxt"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-2203173",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2203173",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2020988",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-2020988",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2020988",
+      "method": "shelxt"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-2020988",
+      "method": "shelxt"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-1550276",
+      "method": "shelxt"
+    },
+    {
+      "mode": "control",
+      "id": "cod-1550276",
+      "method": "shelxt"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-1550276",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-1550276",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2243618",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-2243618",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2243618",
+      "method": "shelxt"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-2243618",
+      "method": "shelxt"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-2011451",
+      "method": "shelxt"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2011451",
+      "method": "shelxt"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-2011451",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-2011451",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-1549173",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-1549173",
+      "method": "phasesmith"
+    },
+    {
+      "mode": "control",
+      "id": "cod-1549173",
+      "method": "shelxt"
+    },
+    {
+      "mode": "cache",
+      "id": "cod-1549173",
+      "method": "shelxt"
+    },
+    {
+      "mode": "cache",
+      "reference_audit_barrier": true
+    },
+    {
+      "mode": "control",
+      "reference_audit_barrier": true
+    }
+  ]
+}

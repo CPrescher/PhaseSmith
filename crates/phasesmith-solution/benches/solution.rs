@@ -1809,6 +1809,77 @@ fn benchmark(c: &mut Criterion) {
             },
         );
     }
+    for cached in [false, true] {
+        let label = if cached { "cache" } else { "control" };
+        let options = SolveOptions {
+            phasing: PhasingMethod::DualSpace,
+            trials: 2,
+            cycles: 128,
+            max_seconds: 60.,
+            r1_target: 1e-6,
+            ..SolveOptions::default()
+        };
+        let search = SharedSearchOptions {
+            maximum_atoms: 32,
+            symmetry_recycling: true,
+            tangent_refinement: true,
+            wilson_normalization: true,
+            phase_quality_selection: true,
+            phase_origin_selection: true,
+            chemical_assignment: true,
+            iterative_refinement: true,
+            score_only_evaluation: true,
+            reusable_fourier_workspaces: true,
+            work_sliced_phasing: true,
+            isotropic_assignment_refinement: true,
+            filtered_peak_search: true,
+            batched_fft: true,
+            real_fft: true,
+            fused_phase_workspace: true,
+            cached_normal_refinement: true,
+            multiplicity_weighted_refinement: true,
+            ambiguous_assignments: true,
+            cached_assignment_refinement: true,
+            specialized_isotropic_refinement: cached,
+            ..SharedSearchOptions::default()
+        };
+        c.bench_function(
+            &format!("isotropic_evaluation_search_32cubed_8_atoms_2108_rows_{label}"),
+            |b| {
+                let sample = phasesmith_solution::solve_elements(
+                    &ambiguity_observations,
+                    cell,
+                    &group,
+                    &ambiguity_elements,
+                    &options,
+                    &search,
+                )
+                .unwrap();
+                let a = sample.shared_search.unwrap();
+                eprintln!(
+                    "isotropic_evaluation_search_sample {label} starts {} cycles {} extra_fits {} cached_steps {}",
+                    a.phasing_starts,
+                    a.fourier_workspace_cycles,
+                    a.phase_origins
+                        .iter()
+                        .map(|t| t.ambiguity_relaxations)
+                        .sum::<usize>(),
+                    a.assignment_cached_normal_solves
+                );
+                b.iter(|| {
+                    phasesmith_solution::solve_elements(
+                        &ambiguity_observations,
+                        cell,
+                        &group,
+                        &ambiguity_elements,
+                        &options,
+                        &search,
+                    )
+                    .unwrap()
+                });
+            },
+        );
+    }
     for atom_count in [8, 12] {
         let mut fit_points = points.to_vec();
         if atom_count == 12 {
@@ -1856,6 +1927,80 @@ fn benchmark(c: &mut Criterion) {
                         let initial = model.initial_parameters(0.015).unwrap();
                         model
                             .refine_with_normal_cache(&initial, 8, None, None, true, cached)
+                            .unwrap()
+                    });
+                },
+            );
+        }
+    }
+    for atom_count in [8, 12] {
+        let mut fit_points = points.to_vec();
+        if atom_count == 12 {
+            fit_points.extend([
+                [0.23, 0.48, 0.91],
+                [0.64, 0.33, 0.18],
+                [0.41, 0.72, 0.56],
+                [0.86, 0.09, 0.66],
+            ]);
+        }
+        let fit_species: Vec<_> = (0..atom_count)
+            .map(|i| ["C", "N", "O"][i % 3].to_owned())
+            .collect();
+        let norm =
+            f64::from(u32::try_from(selected_h.len()).expect("bounded benchmark rows")).sqrt();
+        let target = phasesmith_solution::evaluate_model(
+            cell,
+            &selected_h,
+            &vec![1.; selected_h.len()],
+            &fit_species,
+            &fit_points,
+            0.025,
+        )
+        .unwrap();
+        let observed: Vec<_> = target
+            .residual
+            .iter()
+            .map(|r| (r * norm + 1.) / target.amplitude_scale)
+            .collect();
+        let symmetry =
+            recover_symmetry(cell, &group, &fit_species, &fit_points, 0.01, None, None).unwrap();
+        for fast in [false, true] {
+            let label = if fast { "cache" } else { "control" };
+            let prepared = PreparedSymmetricModel::new(
+                symmetry.clone(),
+                &selected_h,
+                &observed,
+                AdpMode::Isotropic,
+            )
+            .unwrap()
+            .with_specialized_isotropic_evaluation(fast);
+            let initial = prepared.initial_parameters(0.015).unwrap();
+            c.bench_function(
+                &format!(
+                    "isotropic_evaluation_value_jacobian_{atom_count}_atoms_1054_rows_{label}"
+                ),
+                |b| {
+                    b.iter(|| prepared.evaluate(std::hint::black_box(&initial)).unwrap());
+                },
+            );
+        }
+        for cached in [false, true] {
+            let label = if cached { "cache" } else { "control" };
+            c.bench_function(
+                &format!("isotropic_evaluation_fit_{atom_count}_atoms_1054_rows_fit8_{label}"),
+                |b| {
+                    b.iter(|| {
+                        let model = PreparedSymmetricModel::new(
+                            symmetry.clone(),
+                            &selected_h,
+                            &observed,
+                            AdpMode::Isotropic,
+                        )
+                        .unwrap()
+                        .with_specialized_isotropic_evaluation(cached);
+                        let initial = model.initial_parameters(0.015).unwrap();
+                        model
+                            .refine_with_normal_cache(&initial, 8, None, None, true, true)
                             .unwrap()
                     });
                 },

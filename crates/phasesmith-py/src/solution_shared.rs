@@ -104,6 +104,11 @@ pub(super) fn summary<'py>(
     )?;
     d.set_item("ambiguous_assignments", s.ambiguous_assignments)?;
     d.set_item(
+        "specialized_isotropic_refinement",
+        s.specialized_isotropic_refinement,
+    )?;
+    d.set_item("specialized_isotropic_fits", s.specialized_isotropic_fits)?;
+    d.set_item(
         "cached_assignment_refinement",
         s.cached_assignment_refinement,
     )?;

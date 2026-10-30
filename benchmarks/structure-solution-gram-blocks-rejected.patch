@@ -1,0 +1,193 @@
+diff --git a/crates/phasesmith-solution/benches/solution.rs b/crates/phasesmith-solution/benches/solution.rs
+index dadd5fa..0392651 100644
+--- a/crates/phasesmith-solution/benches/solution.rs
++++ b/crates/phasesmith-solution/benches/solution.rs
+@@ -179,6 +179,23 @@ fn benchmark(c: &mut Criterion) {
+             },
+         );
+     }
++    let evaluation = prepared.evaluate(&parameters).unwrap();
++    for blocked in [false, true] {
++        let label = if blocked { "blocked" } else { "control" };
++        c.bench_function(
++            &format!("gram_blocks_step_8_atoms_2108_rows_{label}"),
++            |b| {
++                b.iter(|| {
++                    let solve = if blocked {
++                        phasesmith_solution::blocked_normal_step
++                    } else {
++                        phasesmith_solution::cached_normal_step
++                    };
++                    solve(&evaluation.jacobian, &evaluation.residual, 1e-3, None, None).unwrap()
++                });
++            },
++        );
++    }
+     for cached in [false, true] {
+         let label = if cached { "cached" } else { "control" };
+         c.bench_function(
+diff --git a/crates/phasesmith-solution/src/lib.rs b/crates/phasesmith-solution/src/lib.rs
+index 3b6ce1c..1bbbeb8 100644
+--- a/crates/phasesmith-solution/src/lib.rs
++++ b/crates/phasesmith-solution/src/lib.rs
+@@ -59,7 +59,9 @@ pub use dual_space::{
+ pub use fourier::{
+     FlipOptions, FlipResult, charge_flip, extract_peaks, real_density_transform, transform_3d,
+ };
+-pub use linear_step::{CachedNormalStep, cached_normal_step, iterative_normal_step};
++pub use linear_step::{
++    CachedNormalStep, blocked_normal_step, cached_normal_step, iterative_normal_step,
++};
+ pub use model::{ModelEvaluation, PolishedModel, evaluate_model, polish_model};
+ pub use peak_completion::{
+     AssignmentAlternative, AssignmentAlternatives, ChemicalScale, PeakCompletionCandidate,
+diff --git a/crates/phasesmith-solution/src/linear_step.rs b/crates/phasesmith-solution/src/linear_step.rs
+index 77556a5..5eccbe9 100644
+--- a/crates/phasesmith-solution/src/linear_step.rs
++++ b/crates/phasesmith-solution/src/linear_step.rs
+@@ -33,6 +33,59 @@ fn lane_dot(a: &[f64], b: &[f64]) -> f64 {
+     result
+ }
+
++// Reuse the left row across up to four products. Each pair retains lane_dot's
++// eight independent accumulators, their final reduction, then the scalar tail.
++fn dot_four(row: &[f64], jacobian: &[f64], width: usize, start: usize, count: usize) -> [f64; 4] {
++    if count != 4 {
++        let mut result = [0.; 4];
++        for (pair, value) in result.iter_mut().enumerate().take(count) {
++            *value = lane_dot(
++                row,
++                &jacobian[(start + pair) * width..(start + pair + 1) * width],
++            );
++        }
++        return result;
++    }
++    let a = &jacobian[start * width..(start + 1) * width];
++    let b = &jacobian[(start + 1) * width..(start + 2) * width];
++    let c = &jacobian[(start + 2) * width..(start + 3) * width];
++    let d = &jacobian[(start + 3) * width..(start + 4) * width];
++    let mut sa = [0.; 8];
++    let mut sb = [0.; 8];
++    let mut sc = [0.; 8];
++    let mut sd = [0.; 8];
++    let mut rows = row.chunks_exact(8);
++    for ((((x, a), b), c), d) in rows
++        .by_ref()
++        .zip(a.chunks_exact(8))
++        .zip(b.chunks_exact(8))
++        .zip(c.chunks_exact(8))
++        .zip(d.chunks_exact(8))
++    {
++        for i in 0..8 {
++            sa[i] += x[i] * a[i];
++            sb[i] += x[i] * b[i];
++            sc[i] += x[i] * c[i];
++            sd[i] += x[i] * d[i];
++        }
++    }
++    let mut result = [
++        sa.into_iter().sum(),
++        sb.into_iter().sum(),
++        sc.into_iter().sum(),
++        sd.into_iter().sum(),
++    ];
++    let full = width / 8 * 8;
++    for (i, &x) in rows.remainder().iter().enumerate() {
++        let j = full + i;
++        result[0] += x * a[j];
++        result[1] += x * b[j];
++        result[2] += x * c[j];
++        result[3] += x * d[j];
++    }
++    result
++}
++
+ /// Cache `S J^T J S`, solve by CG, then check against the original J operator.
+ /// Keeps the original damping, iteration ceiling and residual tolerances. Uses
+ /// at most 8 MiB; unsuitable shapes and numerical failures use the original path.
+@@ -44,13 +97,38 @@ pub fn cached_normal_step(
+     damping: f64,
+     deadline: Option<Instant>,
+     cancellation: Option<&Cancellation>,
++) -> Result<CachedNormalStep, SolutionError> {
++    normal_step(jacobian, residual, damping, deadline, cancellation, false)
++}
++
++/// Checked normal-cache solver with four-row Gram formation.
++/// Uses the same eight-lane reduction order as [`cached_normal_step`].
++/// # Errors
++/// Rejects the same malformed inputs, stopped or failed systems as the original.
++pub fn blocked_normal_step(
++    jacobian: &[f64],
++    residual: &[f64],
++    damping: f64,
++    deadline: Option<Instant>,
++    cancellation: Option<&Cancellation>,
++) -> Result<CachedNormalStep, SolutionError> {
++    normal_step(jacobian, residual, damping, deadline, cancellation, true)
++}
++
++fn normal_step(
++    jacobian: &[f64],
++    residual: &[f64],
++    damping: f64,
++    deadline: Option<Instant>,
++    cancellation: Option<&Cancellation>,
++    blocked: bool,
+ ) -> Result<CachedNormalStep, SolutionError> {
+     validate(jacobian, residual, damping)?;
+     let n = jacobian.len() / residual.len();
+     let eligible = cache_shape(n, residual.len());
+     if eligible {
+         if let Ok((step, iterations)) =
+-            cached_solve(jacobian, residual, damping, deadline, cancellation)
++            cached_solve(jacobian, residual, damping, deadline, cancellation, blocked)
+         {
+             return Ok(CachedNormalStep {
+                 step,
+@@ -77,6 +155,7 @@ fn cached_solve(
+     damping: f64,
+     deadline: Option<Instant>,
+     cancellation: Option<&Cancellation>,
++    blocked: bool,
+ ) -> Result<(Vec<f64>, usize), SolutionError> {
+     let reflections = observed_residual.len();
+     let parameters = jacobian.len() / reflections;
+@@ -105,15 +184,28 @@ fn cached_solve(
+         if crate::stopped(deadline, cancellation) {
+             return Err(error("normal cache stopped"));
+         }
+-        for k in 0..=i {
+-            let value = scales[i]
+-                * scales[k]
+-                * lane_dot(
+-                    &jacobian[i * reflections..(i + 1) * reflections],
+-                    &jacobian[k * reflections..(k + 1) * reflections],
+-                );
+-            matrix[i * parameters + k] = value;
+-            matrix[k * parameters + i] = value;
++        let row = &jacobian[i * reflections..(i + 1) * reflections];
++        for start in (0..=i).step_by(if blocked { 4 } else { 1 }) {
++            let lanes = if blocked { 4.min(i + 1 - start) } else { 1 };
++            let values = if blocked {
++                dot_four(row, jacobian, reflections, start, lanes)
++            } else {
++                [
++                    lane_dot(
++                        row,
++                        &jacobian[start * reflections..(start + 1) * reflections],
++                    ),
++                    0.,
++                    0.,
++                    0.,
++                ]
++            };
++            for lane in 0..lanes {
++                let k = start + lane;
++                let value = scales[i] * scales[k] * values[lane];
++                matrix[i * parameters + k] = value;
++                matrix[k * parameters + i] = value;
++            }
+         }
+     }
+     let mut scaled_step = vec![0.; parameters];

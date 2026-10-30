@@ -1,0 +1,17 @@
+{
+  "baseline": "e9cf62b",
+  "qualification": "Preliminary Python/native evaluation timings only, not a corpus result. Prototype rejected before production integration.",
+  "rows": 2108,
+  "atoms": 12,
+  "repetitions_per_sample": 30,
+  "balanced_samples": 8,
+  "isotropic_seconds": [
+    0.00064285,
+    0.00064816
+  ],
+  "anisotropic_seconds": [
+    0.00104388,
+    0.00106383
+  ],
+  "equality": "All evaluation fields exactly equal for 20 native fixtures across five groups, both ADP modes and weighted/unweighted families."
+}
