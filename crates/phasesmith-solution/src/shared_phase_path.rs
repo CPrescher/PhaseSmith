@@ -89,6 +89,18 @@ pub struct PhaseOriginAudit {
     pub assignment_families: usize,
     /// Comparable independent-family isotropic ranks, ordered best first.
     pub assignment_scores: Vec<f64>,
+    /// Actual bounded assignment-ambiguity diagnostic.
+    pub ambiguity_scores: usize,
+    /// Actual bounded assignment-ambiguity diagnostic.
+    pub ambiguity_relaxations: usize,
+    /// Actual bounded assignment-ambiguity diagnostic.
+    pub ambiguity_rounds: usize,
+    /// Actual bounded assignment-ambiguity diagnostic.
+    pub ambiguity_retained: usize,
+    /// Actual bounded assignment-ambiguity diagnostic.
+    pub ambiguity_unresolved: bool,
+    /// Final competitors with an SSE/R1 tradeoff; retained after the reference.
+    pub ambiguity_metric_disagreements: usize,
 }
 pub(super) struct PhaseSearchContext {
     plan: PreparedPhaseOrigin,
@@ -585,6 +597,14 @@ pub(super) fn search(
         trace.screening_seconds += start.elapsed().as_secs_f64();
     }
     let start = Instant::now();
+    if search.ambiguous_assignments {
+        screened.sort_by(|a, b| {
+            b.0.assignment_reference
+                .cmp(&a.0.assignment_reference)
+                .then(a.0.score.total_cmp(&b.0.score))
+        });
+    }
+    let mut reference_fit = None::<(f64, f64)>;
     let best_isotropic = screened.first().map_or(f64::INFINITY, |s| s.0.score);
     let mut primary_fit = false;
     let mut primary_target = false;
@@ -597,7 +617,8 @@ pub(super) fn search(
         if search.isotropic_assignment_refinement
             && trace.assignment_families > 0
             && index > 0
-            && (primary_target || (primary_fit && state.score > best_isotropic + 6.))
+            && ((primary_target && !search.ambiguous_assignments)
+                || (primary_fit && state.score > best_isotropic + 6.))
         {
             trace.assignment_deferred_promotions += 1;
             continue;
@@ -607,7 +628,7 @@ pub(super) fn search(
         }
         let seed = state.promotion.as_ref().expect("isotropic promotion seed");
         trace.settings[setting].promotions += 1;
-        if let Ok(full) = refine(
+        if let Ok(mut full) = refine(
             seed.model.clone(),
             &result.data,
             options,
@@ -621,6 +642,21 @@ pub(super) fn search(
             audit,
             FitPass::Promote(&seed.site_u),
         ) {
+            if search.ambiguous_assignments {
+                if index == 0 {
+                    reference_fit = Some((full.score, full.candidate.r1));
+                } else if let Some((score, r1)) = reference_fit {
+                    full.assignment_disfavoured =
+                        !crate::peak_completion::ambiguity::replacement_supported(
+                            full.score,
+                            full.candidate.r1,
+                            score,
+                            r1,
+                        );
+                    trace.ambiguity_metric_disagreements +=
+                        usize::from(full.assignment_disfavoured);
+                }
+            }
             primary_fit = true;
             primary_target = complete(&full, elements) && full.candidate.r1 <= options.r1_target;
             record(
@@ -635,6 +671,23 @@ pub(super) fn search(
         }
     }
     trace.refinement_seconds = start.elapsed().as_secs_f64();
+    if search.ambiguous_assignments {
+        let current: Vec<_> = winners
+            .iter()
+            .filter(|s| s.candidate.trial == trial)
+            .take(2)
+            .collect();
+        if let [a, b] = current.as_slice() {
+            let counts = |s: &State| {
+                let mut c = std::collections::BTreeMap::new();
+                for e in &s.candidate.species {
+                    *c.entry(e.clone()).or_insert(0usize) += 1;
+                }
+                c
+            };
+            trace.ambiguity_unresolved = (b.score - a.score).abs() <= 6. && counts(a) != counts(b);
+        }
+    }
     if trace.settings.is_empty() {
         trace.diagnostic = Some("no phase origin passed alpha <= 0.3".into());
     }

@@ -102,6 +102,8 @@ pub(super) fn summary<'py>(
         "multiplicity_weighted_refinement",
         s.multiplicity_weighted_refinement,
     )?;
+    d.set_item("ambiguous_assignments", s.ambiguous_assignments)?;
+    d.set_item("ambiguity_continuations", s.ambiguity_continuations)?;
     d.set_item("weighted_refinement_fits", s.weighted_refinement_fits)?;
     d.set_item(
         "weighted_refinement_input_rows",

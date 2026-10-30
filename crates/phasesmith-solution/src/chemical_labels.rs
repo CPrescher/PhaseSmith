@@ -144,6 +144,7 @@ impl PreparedPeakCompletion {
         {
             return Err(error("invalid fixed completion displacements"));
         }
+        self.displacement_applied = true;
         for (i, &u) in site_u.iter().enumerate() {
             for (h, &s2) in self.s_squared.iter().enumerate() {
                 let factor = (-8. * std::f64::consts::PI.powi(2) * u * s2).exp();
@@ -155,7 +156,7 @@ impl PreparedPeakCompletion {
         }
         Ok(self)
     }
-    fn fixed_objective(&self, total: &[rustfft::num_complex::Complex<f64>]) -> f64 {
+    pub(super) fn fixed_objective(&self, total: &[rustfft::num_complex::Complex<f64>]) -> f64 {
         let square: f64 = total
             .iter()
             .map(rustfft::num_complex::Complex::norm_sqr)

@@ -142,8 +142,129 @@ pub(super) fn relax(
     }
     relaxed.extend(alternatives);
     relaxed.sort_by(|a, b| a.0.score.total_cmp(&b.0.score));
+    if search.ambiguous_assignments {
+        if let Some((parent, _)) = relaxed.first_mut() {
+            parent.assignment_reference = true;
+        }
+        explore(
+            context,
+            cell,
+            group,
+            options,
+            search,
+            elements,
+            data,
+            deadline,
+            &mut relaxed,
+            trace,
+            audit,
+        )?;
+    }
     trace.assignment_families = data.family_count;
     trace.assignment_retained = relaxed.len();
     trace.assignment_scores = relaxed.iter().map(|(s, _)| s.score).collect();
     Ok(relaxed)
+}
+
+#[allow(clippy::too_many_arguments, clippy::too_many_lines)]
+fn explore(
+    context: &PhaseSearchContext,
+    cell: UnitCell,
+    group: &SpaceGroup,
+    options: &SolveOptions,
+    search: &SharedSearchOptions,
+    elements: &[String],
+    data: &PreparedData,
+    deadline: Instant,
+    retained: &mut Vec<(State, usize)>,
+    trace: &mut PhaseOriginAudit,
+    audit: &mut SharedSearchSummary,
+) -> Result<(), SolutionError> {
+    for round in 0..2 {
+        if crate::stopped(Some(deadline), options.cancellation.as_ref()) || retained.is_empty() {
+            break;
+        }
+        let (parent, setting) = retained[0].clone();
+        if parent.candidate.r1 > 0.15
+            && parent.candidate.species.len() * 10 >= search.maximum_atoms * 9
+        {
+            break;
+        }
+        let seed = parent.promotion.as_ref().expect("isotropic seed");
+        let points: Vec<_> = seed.model.sites.iter().map(|s| s.fractional_xyz).collect();
+        let labels: Vec<_> = seed
+            .model
+            .sites
+            .iter()
+            .map(|s| elements.iter().position(|e| *e == s.species))
+            .collect();
+        let cache = PreparedPeakCompletion::new(
+            cell,
+            group,
+            &points,
+            elements,
+            &context.data.hkl,
+            &context.data.amplitudes,
+            search.maximum_atoms,
+        )?;
+        let proposals = cache.ambiguity_neighbors(
+            &labels,
+            &seed.site_u,
+            if round == 0 { 4 } else { 2 },
+            Some(deadline),
+            options.cancellation.as_ref(),
+        )?;
+        trace.ambiguity_scores += proposals.evaluations;
+        trace.ambiguity_rounds += usize::from(proposals.evaluations > 0);
+        for proposal in proposals.candidates {
+            if crate::stopped(Some(deadline), options.cancellation.as_ref()) {
+                break;
+            }
+            if retained.iter().any(|(s, _)| {
+                let other = s.promotion.as_ref().expect("isotropic seed");
+                other.model.sites.len() == points.len()
+                    && other
+                        .model
+                        .sites
+                        .iter()
+                        .zip(&points)
+                        .zip(&proposal.labels)
+                        .all(|((s, p), label)| {
+                            label.is_some_and(|e| s.species == elements[e])
+                                && distance2(&seed.model.geometry, s.fractional_xyz, *p)
+                                    .is_ok_and(|v| v < 1e-6)
+                        })
+            }) {
+                continue;
+            }
+            let mut model = seed.model.clone();
+            for (site, label) in model.sites.iter_mut().zip(&proposal.labels) {
+                site.species
+                    .clone_from(&elements[label.expect("complete assignment")]);
+            }
+            trace.ambiguity_relaxations += 1;
+            if let Ok(next) = refine(
+                model,
+                data,
+                options,
+                deadline,
+                (1, [0.; 3]),
+                parent.candidate.u_iso,
+                parent.lineage,
+                &parent.moves,
+                "ambiguous_assignment",
+                String::new(),
+                audit,
+                FitPass::ScreenSeed(&proposal.site_u, 8),
+            ) {
+                retained.push((next, setting));
+                trace.ambiguity_retained += 1;
+            }
+        }
+        retained.sort_by(|a, b| a.0.score.total_cmp(&b.0.score));
+        if retained[0].0.score >= parent.score - 1e-6 {
+            break;
+        }
+    }
+    Ok(())
 }

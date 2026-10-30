@@ -91,6 +91,8 @@ pub struct SharedSearchOptions {
     pub cached_normal_refinement: bool,
     /// Reduce final constrained fits to multiplicity-weighted measured families.
     pub multiplicity_weighted_refinement: bool,
+    /// Relax coupled near-element assignments and retain close final alternatives.
+    pub ambiguous_assignments: bool,
     /// Regularize allowed unmeasured coefficients using the observed Wilson envelope.
     pub missing_reflections: bool,
     /// Reciprocal-radius extension multiplier, in [1,1.5].
@@ -135,6 +137,7 @@ impl Default for SharedSearchOptions {
             iterative_refinement: false,
             cached_normal_refinement: false,
             multiplicity_weighted_refinement: false,
+            ambiguous_assignments: false,
             missing_reflections: false,
             resolution_extension: 1.,
         }
@@ -280,6 +283,8 @@ pub struct SharedSearchSummary {
     pub cached_normal_refinement: bool,
     /// Reduce final constrained fits to multiplicity-weighted measured families.
     pub multiplicity_weighted_refinement: bool,
+    /// Relax coupled near-element assignments and retain close final alternatives.
+    pub ambiguous_assignments: bool,
     /// Requested observed-envelope gap treatment.
     pub missing_reflections: bool,
     /// Requested reciprocal-radius extension.
@@ -322,6 +327,8 @@ pub struct SharedSearchSummary {
     pub phase_quality: Vec<crate::PhaseQualityTrace>,
     /// Actual phase-start order sent to count refinement after CFOM ranking.
     pub phase_model_trials: Vec<usize>,
+    /// One optional corroborating start after ambiguous first-map assignments.
+    pub ambiguity_continuations: usize,
     /// Isotropic count prefixes actually screened.
     pub count_prefix_screenings: usize,
     /// Phase maps handed off under a local refinement budget.
@@ -417,6 +424,8 @@ struct State {
     initial_prefix: usize,
     promotion: Option<PromotionSeed>,
     recycling_validated: bool,
+    assignment_reference: bool,
+    assignment_disfavoured: bool,
 }
 
 fn orbit_mass(
@@ -662,6 +671,8 @@ fn refine(
         score,
     });
     Ok(State {
+        assignment_reference: false,
+        assignment_disfavoured: false,
         candidate,
         aligned,
         score,
@@ -861,6 +872,7 @@ fn same(a: &State, b: &State) -> bool {
 fn ordering(a: &State, b: &State, elements: &[String]) -> std::cmp::Ordering {
     complete(b, elements)
         .cmp(&complete(a, elements))
+        .then(a.assignment_disfavoured.cmp(&b.assignment_disfavoured))
         .then(a.score.total_cmp(&b.score))
 }
 fn record(
@@ -1818,6 +1830,7 @@ pub fn solve_elements(
         || (search.fused_phase_workspace && !search.reusable_fourier_workspaces)
         || (search.real_fft && !search.batched_fft)
         || (search.cached_normal_refinement && !search.iterative_refinement)
+        || (search.ambiguous_assignments && !search.isotropic_assignment_refinement)
         || (search.isotropic_assignment_refinement
             && (!search.phase_origin_selection || !search.chemical_assignment))
         || (search.work_sliced_phasing
@@ -2067,6 +2080,7 @@ pub fn solve_elements(
         iterative_refinement: search.iterative_refinement,
         cached_normal_refinement: search.cached_normal_refinement,
         multiplicity_weighted_refinement: search.multiplicity_weighted_refinement,
+        ambiguous_assignments: search.ambiguous_assignments,
         missing_reflections: search.missing_reflections,
         resolution_extension: search.resolution_extension,
         prediction: prediction_f.as_ref().map(|p| p.audit.clone()),
@@ -2423,11 +2437,22 @@ pub fn solve_elements(
         {
             break;
         }
-        if winners.first().is_some_and(|state| {
+        let ambiguous_first = search.ambiguous_assignments
+            && trial == 0
+            && options.trials > 1
+            && audit
+                .phase_origins
+                .last()
+                .is_some_and(|a| a.ambiguity_unresolved);
+        let target_ready = winners.first().is_some_and(|state| {
             complete(state, &elements)
                 && state.recycling_validated
                 && state.candidate.r1 <= options.r1_target
-        }) {
+        });
+        if target_ready && ambiguous_first {
+            audit.ambiguity_continuations += 1;
+        }
+        if target_ready && !ambiguous_first {
             result.termination = "r1_target";
             break;
         }

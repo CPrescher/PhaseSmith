@@ -38,6 +38,15 @@ pub(super) fn origin_records<'py>(
         )?;
         d.set_item("assignment_families", a.assignment_families)?;
         d.set_item("assignment_scores", &a.assignment_scores)?;
+        d.set_item("ambiguity_scores", a.ambiguity_scores)?;
+        d.set_item("ambiguity_relaxations", a.ambiguity_relaxations)?;
+        d.set_item("ambiguity_rounds", a.ambiguity_rounds)?;
+        d.set_item("ambiguity_retained", a.ambiguity_retained)?;
+        d.set_item("ambiguity_unresolved", a.ambiguity_unresolved)?;
+        d.set_item(
+            "ambiguity_metric_disagreements",
+            a.ambiguity_metric_disagreements,
+        )?;
 
         let settings = PyList::empty(py);
         for s in &a.settings {
@@ -156,6 +165,46 @@ impl NativeCompletion {
             .with_site_displacements(&site_u)
             .map(|inner| Self { inner })
             .map_err(invalid)
+    }
+    #[pyo3(signature=(labels,site_u,maximum=4))]
+    fn ambiguous<'py>(
+        &self,
+        py: Python<'py>,
+        labels: Vec<i32>,
+        site_u: Vec<f64>,
+        maximum: usize,
+    ) -> PyResult<Bound<'py, PyDict>> {
+        let labels = completion_labels(labels)?;
+        let result = py
+            .detach(|| {
+                self.inner.ambiguity_neighbors(
+                    &labels,
+                    &site_u,
+                    maximum,
+                    Some(Instant::now() + Duration::from_secs(10)),
+                    None,
+                )
+            })
+            .map_err(invalid)?;
+        let out = PyDict::new(py);
+        let candidates = PyList::empty(py);
+        for c in result.candidates {
+            let d = PyDict::new(py);
+            d.set_item(
+                "labels",
+                c.labels
+                    .iter()
+                    .map(|e| e.map_or(-1, |v| i32::try_from(v).expect("bounded labels")))
+                    .collect::<Vec<_>>(),
+            )?;
+            d.set_item("site_u", c.site_u)?;
+            d.set_item("objective", c.objective)?;
+            d.set_item("edits", c.edits)?;
+            candidates.append(d)?;
+        }
+        out.set_item("candidates", candidates)?;
+        out.set_item("evaluations", result.evaluations)?;
+        Ok(out)
     }
     fn reassign<'py>(&self, py: Python<'py>, labels: Vec<i32>) -> PyResult<Bound<'py, PyDict>> {
         let labels = completion_labels(labels)?;
