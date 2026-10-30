@@ -819,6 +819,47 @@ fn benchmark(c: &mut Criterion) {
             },
         );
     }
+    for work_sliced in [false, true] {
+        let options = SolveOptions {
+            phasing: PhasingMethod::DualSpace,
+            trials: 2,
+            cycles: 128,
+            max_seconds: 60.,
+            r1_target: 1e-6,
+            ..SolveOptions::default()
+        };
+        let search = SharedSearchOptions {
+            maximum_atoms: 32,
+            symmetry_recycling: true,
+            tangent_refinement: true,
+            wilson_normalization: true,
+            phase_quality_selection: true,
+            phase_origin_selection: true,
+            chemical_assignment: true,
+            iterative_refinement: true,
+            score_only_evaluation: true,
+            reusable_fourier_workspaces: true,
+            work_sliced_phasing: work_sliced,
+            ..SharedSearchOptions::default()
+        };
+        let label = if work_sliced { "work" } else { "control" };
+        c.bench_function(
+            &format!("work_slice_search_32cubed_8_atoms_2108_rows_{label}"),
+            |b| {
+                b.iter(|| {
+                    phasesmith_solution::solve_elements(
+                        &count_observations,
+                        cell,
+                        &group,
+                        &quality_elements,
+                        &options,
+                        &search,
+                    )
+                    .unwrap()
+                });
+            },
+        );
+    }
     let mut count_benches = c.benchmark_group("count_selection_8_atoms_2108_reflections");
     count_benches
         .sample_size(10)

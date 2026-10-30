@@ -75,6 +75,7 @@ def worker(args):
         missing_reflections=args.missing_reflections,
         adaptive_checkpoints=args.adaptive_checkpoints,
         score_only_evaluation=args.score_only_evaluation,
+        work_sliced_phasing=args.work_sliced_phasing,
         reusable_fourier_workspaces=args.reusable_fourier_workspaces,
         independent_origin_sampling=args.independent_origin_sampling,
         resolution_extension=args.resolution_extension,
@@ -263,6 +264,7 @@ def collect_jobs(args):
             or previous.get("missing_reflections", False) != args.missing_reflections
             or previous.get("adaptive_checkpoints", False) != args.adaptive_checkpoints
             or previous.get("score_only_evaluation", False) != args.score_only_evaluation
+            or previous.get("work_sliced_phasing", False) != args.work_sliced_phasing
             or previous.get("reusable_fourier_workspaces", False)
             != args.reusable_fourier_workspaces
             or previous.get("independent_origin_sampling", False)
@@ -298,6 +300,9 @@ def collect_jobs(args):
     )
     if getattr(args, "collection_schedule", "serial_panel") != "serial_panel":
         sources.append(ROOT / "benchmarks/solution_execution_interleaved.py")
+        scheduler = getattr(args, "collection_scheduler_source", None)
+        if scheduler is not None:
+            sources.append(ROOT / scheduler)
     header = {
         "schema": "phasesmith.solution-corpus-comparison.v1",
         "collection_schedule": getattr(args, "collection_schedule", "serial_panel"),
@@ -317,6 +322,7 @@ def collect_jobs(args):
         "missing_reflections": args.missing_reflections,
         "adaptive_checkpoints": args.adaptive_checkpoints,
         "score_only_evaluation": args.score_only_evaluation,
+        "work_sliced_phasing": args.work_sliced_phasing,
         "reusable_fourier_workspaces": args.reusable_fourier_workspaces,
         "independent_origin_sampling": args.independent_origin_sampling,
         "resolution_extension": args.resolution_extension,
@@ -443,6 +449,7 @@ def collect_jobs(args):
                     *(["--missing-reflections"] if args.missing_reflections else []),
                     *(["--adaptive-checkpoints"] if args.adaptive_checkpoints else []),
                     *(["--score-only-evaluation"] if args.score_only_evaluation else []),
+                    *(["--work-sliced-phasing"] if args.work_sliced_phasing else []),
                     *(
                         ["--reusable-fourier-workspaces"]
                         if args.reusable_fourier_workspaces

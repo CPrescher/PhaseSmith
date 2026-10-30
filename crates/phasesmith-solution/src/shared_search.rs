@@ -69,6 +69,8 @@ pub struct SharedSearchOptions {
     pub score_only_evaluation: bool,
     /// Reuse dual-space Fourier/map/mask buffers across cycles.
     pub reusable_fourier_workspaces: bool,
+    /// Hand early phase starts to model validation at a deterministic half-work quota.
+    pub work_sliced_phasing: bool,
     /// Select origin FFT sampling from phase-equivalence frequencies.
     pub independent_origin_sampling: bool,
     /// Add motif density scales and post-screen coupled element assignments.
@@ -108,6 +110,7 @@ impl Default for SharedSearchOptions {
             adaptive_checkpoints: false,
             score_only_evaluation: false,
             reusable_fourier_workspaces: false,
+            work_sliced_phasing: false,
             independent_origin_sampling: false,
             chemical_assignment: false,
             iterative_refinement: false,
@@ -234,6 +237,8 @@ pub struct SharedSearchSummary {
     pub score_only_evaluation: bool,
     /// Reuse dual-space Fourier/map/mask buffers across cycles.
     pub reusable_fourier_workspaces: bool,
+    /// Hand early phase starts to model validation at a deterministic half-work quota.
+    pub work_sliced_phasing: bool,
     /// Select origin FFT sampling from phase-equivalence frequencies.
     pub independent_origin_sampling: bool,
     /// Add motif density scales and post-screen coupled element assignments.
@@ -244,6 +249,8 @@ pub struct SharedSearchSummary {
     pub missing_reflections: bool,
     /// Requested reciprocal-radius extension.
     pub resolution_extension: f64,
+    /// Actual phase compute slices and their stopping reasons.
+    pub phase_slices: Vec<crate::PhaseSliceAudit>,
     /// Actual scalar-only phase scores evaluated.
     pub score_only_evaluations: usize,
     /// Actual P1 projections evaluated with reusable full-grid buffers.
@@ -1740,6 +1747,11 @@ pub fn solve_elements(
         || (search.independent_origin_sampling && !search.phase_origin_selection)
         || (search.score_only_evaluation && !search.phase_quality_selection)
         || (search.reusable_fourier_workspaces && options.phasing != PhasingMethod::DualSpace)
+        || (search.work_sliced_phasing
+            && (!search.phase_origin_selection
+                || !search.phase_quality_selection
+                || !search.phase_first_selection
+                || search.adaptive_checkpoints))
         || (search.adaptive_checkpoints
             && (!search.phase_origin_selection
                 || !search.phase_quality_selection
@@ -1971,6 +1983,7 @@ pub fn solve_elements(
         adaptive_checkpoints: search.adaptive_checkpoints,
         score_only_evaluation: search.score_only_evaluation,
         reusable_fourier_workspaces: search.reusable_fourier_workspaces,
+        work_sliced_phasing: search.work_sliced_phasing,
         independent_origin_sampling: search.independent_origin_sampling,
         chemical_assignment: search.chemical_assignment,
         iterative_refinement: search.iterative_refinement,
@@ -2117,6 +2130,12 @@ pub fn solve_elements(
             } else {
                 deadline
             };
+            let cycle_quota = if search.work_sliced_phasing && phase_first {
+                crate::phase_cycle_quota(options.cycles, options.trials, trial)?
+            } else {
+                options.cycles
+            };
+            let phase_started = Instant::now();
             let mut state = crate::dual_space::dual_space_guided_prediction(
                 shape,
                 cell,
@@ -2125,7 +2144,7 @@ pub fn solve_elements(
                 &phases,
                 &support,
                 &crate::DualSpaceOptions {
-                    cycles: options.cycles,
+                    cycles: cycle_quota,
                     peak_selection: crate::PeakSelection::Adaptive {
                         sigma: search.dual_peak_sigma,
                         cap: search.dual_peak_cap,
@@ -2154,6 +2173,28 @@ pub fn solve_elements(
                 search.score_only_evaluation,
                 search.reusable_fourier_workspaces,
             )?;
+            audit.phase_slices.push(crate::PhaseSliceAudit {
+                trial,
+                cycle_quota,
+                completed_cycles: state.trial.history.len(),
+                seconds: phase_started.elapsed().as_secs_f64(),
+                stop_reason: if state.trial.cancelled {
+                    "cancelled"
+                } else if state.trial.timed_out {
+                    "phase_time_limit"
+                } else if state.trial.history.len() >= cycle_quota {
+                    "cycle_limit"
+                } else if state
+                    .quality
+                    .as_ref()
+                    .and_then(|q| q.cfom.get(state.trial.best_cycle))
+                    .is_some_and(|q| *q >= 0.9)
+                {
+                    "quality_target"
+                } else {
+                    "degenerate"
+                },
+            });
             audit.score_only_evaluations += state.score_only_evaluations;
             audit.fourier_workspace_cycles += state.fourier_workspace_cycles;
             audit
